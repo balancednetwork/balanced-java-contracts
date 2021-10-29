@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+version = '0.0.1'
 
 repositories {
     // Use Maven Central for resolving dependencies.
@@ -20,16 +21,21 @@ repositories {
 }
 
 dependencies {
-    implementation 'foundation.icon:javaee-api:0.9.0'
+    compileOnly 'foundation.icon:javaee-api:0.9.0'
+    implementation 'foundation.icon:javaee-scorex:0.5.2'
+    implementation 'com.github.sink772:minimal-json:0.9.6'
 
     // Use JUnit Jupiter for testing.
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.7.2'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
 }
 
 optimizedJar {
     mainClassName = 'network.balanced.score.tokens.BoostedBaln'
-    archiveBaseName = 'bBaln'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from {
+        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
+    }
 }
 
 deployJar {
@@ -42,9 +48,18 @@ deployJar {
             uri = 'http://localhost:9082/api/v3'
             nid = 0x3
         }
+        mainnet {
+            uri = 'https://ctz.solidwallet.io/api/v3'
+            nid = 0x1
+        }
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
+    parameters {
+        arg('tokenAddress', 'cxb45058d398614a7c8cdf7be6f556fa0b39399799')
+        arg('name', 'Boosted Baln')
+        arg('symbol', 'bBaln')
+    }
 }
 
 tasks.named('test') {
