@@ -4,13 +4,7 @@
 package network.balanced.score.tokens;
 
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 
 class BoostedBalnTest {
 
-    @Test
-    void appHasAGreeting() {
-        BoostedBaln classUnderTest = new BoostedBaln();
-        assertNotNull(classUnderTest.getGreeting(), "app should have a greeting");
-    }
 }
