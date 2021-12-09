@@ -313,7 +313,7 @@ public class BoostedBaln {
         Context.require(unlockTime.compareTo(blockTimestamp.add(MAXTIME)) <= 0, "Create Lock: Voting Lock can be 4 years max");
 
         this.depositFor(sender, value, unlockTime, locked, CREATE_LOCK_TYPE);
-        this.nonReentrant.updateLock(true);
+        this.nonReentrant.updateLock(false);
     }
 
     private void increaseAmount(Address sender, BigInteger value) {
@@ -334,8 +334,9 @@ public class BoostedBaln {
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         Address token = Context.getCaller();
-        Context.require(token.equals(this.tokenAddress), "Token Fallback: Only bBaln deposits are allowed");
+        Context.require(token.equals(this.tokenAddress), "Token Fallback: Only BALN deposits are allowed");
 
+        Context.require(_value.signum() > 0, "Token value should be a positive number");
         String unpackedData = new String(_data);
         Context.require(!unpackedData.equals(""), "Token Fallback: Data can't be empty");
 
@@ -349,7 +350,7 @@ public class BoostedBaln {
                 this.increaseAmount(_from, _value);
                 break;
             case "createLock":
-                BigInteger unlockTime = BigInteger.valueOf(json.get("unlockTime").asLong());
+                BigInteger unlockTime = BigInteger.valueOf(params.get("unlockTime").asLong());
                 this.createLock(_from, _value, unlockTime);
                 break;
             case "depositFor":
