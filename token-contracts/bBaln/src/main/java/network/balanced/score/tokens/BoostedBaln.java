@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2021 Balanced.network. 
+ * Copyright (c) 2021 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at                                                                                  
+ * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0                                                                                  
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,6 +24,7 @@ import score.annotation.External;
 import score.annotation.Optional;
 
 import java.math.BigInteger;
+import java.util.Map;
 
 public class BoostedBaln {
     public static final BigInteger MAXTIME = BigInteger.valueOf(4L).multiply(TimeConstants.YEAR);
@@ -43,7 +44,7 @@ public class BoostedBaln {
     private final Address tokenAddress;
     private final VarDB<BigInteger> supply = Context.newVarDB("Boosted_Baln_Supply", BigInteger.class);
 
-    private final DictDB<Address, byte []> locked = Context.newDictDB("Boosted_Baln_locked", byte[].class);
+    private final DictDB<Address, byte[]> locked = Context.newDictDB("Boosted_Baln_locked", byte[].class);
 
     private final VarDB<BigInteger> epoch = Context.newVarDB("Boosted_Baln_epoch", BigInteger.class);
     private final DictDB<BigInteger, byte[]> pointHistory = Context.newDictDB("Boosted_baln_point_history", byte[].class);
@@ -55,19 +56,24 @@ public class BoostedBaln {
     private final VarDB<Address> futureAdmin = Context.newVarDB("Boosted_baln_future_admin", Address.class);
 
     @EventLog
-    public void CommitOwnership(Address admin) {}
+    public void CommitOwnership(Address admin) {
+    }
 
     @EventLog
-    public void ApplyOwnership(Address admin) {}
+    public void ApplyOwnership(Address admin) {
+    }
 
     @EventLog(indexed = 2)
-    public void Deposit(Address provider, BigInteger locktime, BigInteger value, int type, BigInteger timestamp) {}
+    public void Deposit(Address provider, BigInteger locktime, BigInteger value, int type, BigInteger timestamp) {
+    }
 
     @EventLog(indexed = 1)
-    public void Withdraw(Address provider, BigInteger value, BigInteger timestamp) {}
+    public void Withdraw(Address provider, BigInteger value, BigInteger timestamp) {
+    }
 
     @EventLog
-    public void Supply(BigInteger prevSupply, BigInteger supply){}
+    public void Supply(BigInteger prevSupply, BigInteger supply) {
+    }
 
     public BoostedBaln(Address tokenAddress, String name, String symbol) {
         this.admin.set(Context.getCaller());
@@ -78,7 +84,7 @@ public class BoostedBaln {
         point.timestamp = BigInteger.valueOf(Context.getBlockTimestamp());
         this.pointHistory.set(BigInteger.ZERO, point.toByteArray());
 
-        this.decimals = ((BigInteger)Context.call(tokenAddress, "decimals", new Object[0])).intValue();
+        this.decimals = ((BigInteger) Context.call(tokenAddress, "decimals", new Object[0])).intValue();
         this.name = name;
         this.symbol = symbol;
         Context.require(this.decimals <= 72, "Decimals should be less than 72");
@@ -118,6 +124,16 @@ public class BoostedBaln {
     }
 
     @External(readonly = true)
+    public Map<String, BigInteger> getLocked(Address _owner) {
+        byte[] bytes = locked.get(_owner);
+        LockedBalance balance = LockedBalance.toLockedBalance(bytes);
+        return Map.of(
+                "amount", balance.amount,
+                "end", balance.end
+        );
+    }
+
+    @External(readonly = true)
     public BigInteger getLastUserSlope(Address address) {
         BigInteger userPointEpoch = this.userPointEpoch.get(address);
         return Point.toPoint((this.userPointHistory.at(address)).get(userPointEpoch)).slope;
@@ -151,7 +167,7 @@ public class BoostedBaln {
                 uOld.bias = uOld.slope.multiply(oldLocked.end.subtract(blockTimestamp));
             }
 
-            if (newLocked.end.compareTo(blockTimestamp) > 0 && newLocked.amount.compareTo(BigInteger.ZERO) > 0 ) {
+            if (newLocked.end.compareTo(blockTimestamp) > 0 && newLocked.amount.compareTo(BigInteger.ZERO) > 0) {
                 uNew.slope = newLocked.amount.divide(MAXTIME);
                 uNew.bias = uNew.slope.multiply(newLocked.end.subtract(blockTimestamp));
             }
@@ -181,7 +197,8 @@ public class BoostedBaln {
         Point initialLastPoint = lastPoint;
         BigInteger blockSlope = BigInteger.ZERO;
         if (blockTimestamp.compareTo(lastPoint.timestamp) > 0) {
-            blockSlope = MULTIPLIER.multiply(blockHeight.subtract(lastPoint.block)).divide(blockTimestamp.subtract(lastPoint.timestamp));
+            blockSlope = MULTIPLIER.multiply(blockHeight.subtract(lastPoint.block))
+                    .divide(blockTimestamp.subtract(lastPoint.timestamp));
 //          If last point is already recorded in this block, slope = 0
 //          But that's ok because we know the block in such case
         }
@@ -189,10 +206,10 @@ public class BoostedBaln {
 //      Go over week's to fill history and calculate what the current point is
         BigInteger timeIterator = lastCheckPoint.divide(TimeConstants.WEEK).multiply(TimeConstants.WEEK);
 
-        for(int index = 0; index < 255; ++index) {
+        for (int index = 0; index < 255; ++index) {
             timeIterator = timeIterator.add(TimeConstants.WEEK);
             BigInteger dSlope = BigInteger.ZERO;
-            if (timeIterator.compareTo(blockTimestamp) < 0) {
+            if (timeIterator.compareTo(blockTimestamp) > 0) {
                 timeIterator = blockTimestamp;
             } else {
                 dSlope = this.slopeChanges.getOrDefault(timeIterator, BigInteger.ZERO);
@@ -280,7 +297,9 @@ public class BoostedBaln {
     }
 
     @External
-    public void checkpoint() { this.checkpoint(Constants.ZERO_ADDRESS, new LockedBalance(), new LockedBalance());}
+    public void checkpoint() {
+        this.checkpoint(Constants.ZERO_ADDRESS, new LockedBalance(), new LockedBalance());
+    }
 
     private void depositFor(Address address, BigInteger value) {
         this.nonReentrant.updateLock(true);
@@ -389,7 +408,7 @@ public class BoostedBaln {
         BigInteger blockTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());
 
         LockedBalance locked = LockedBalance.toLockedBalance(this.locked.get(sender));
-        Context.require(blockTimestamp.compareTo(locked.end) >=0, "Withdraw: The lock didn't expire");
+        Context.require(blockTimestamp.compareTo(locked.end) >= 0, "Withdraw: The lock didn't expire");
         BigInteger value = locked.amount;
 
         LockedBalance oldLocked = locked.newLockedBalance();
@@ -410,9 +429,9 @@ public class BoostedBaln {
         BigInteger min = BigInteger.ZERO;
         BigInteger max = maxEpoch;
 
-        for(int index=0; index < 256 && min.compareTo(max) < 0; ++index) {
+        for (int index = 0; index < 256 && min.compareTo(max) < 0; ++index) {
             BigInteger mid = min.add(max).add(BigInteger.ONE).divide(BigInteger.TWO);
-            if (Point.toPoint(this.pointHistory.get(mid)).block.compareTo(block) <=0 ) {
+            if (Point.toPoint(this.pointHistory.get(mid)).block.compareTo(block) <= 0) {
                 min = mid;
             } else {
                 max = mid.subtract(BigInteger.ONE);
@@ -428,7 +447,7 @@ public class BoostedBaln {
 
         for (int index = 0; index < 256 && min.compareTo(max) < 0; ++index) {
             BigInteger mid = min.add(max).add(BigInteger.ONE).divide(BigInteger.TWO);
-            if (Point.toPoint((this.userPointHistory.at(address)).get(mid)).block.compareTo(block) <=0) {
+            if (Point.toPoint((this.userPointHistory.at(address)).get(mid)).block.compareTo(block) <= 0) {
                 min = mid;
             } else {
                 max = mid.subtract(BigInteger.ONE);
@@ -489,17 +508,17 @@ public class BoostedBaln {
         }
 
         uPoint.bias = uPoint.bias.subtract(uPoint.slope.multiply(blockTime.subtract(uPoint.timestamp)));
-        return uPoint.bias.compareTo(BigInteger.ZERO) >=0 ? uPoint.bias : BigInteger.ZERO;
+        return uPoint.bias.compareTo(BigInteger.ZERO) >= 0 ? uPoint.bias : BigInteger.ZERO;
     }
 
     private BigInteger supplyAt(Point point, BigInteger time) {
         Point lastPoint = point.newPoint();
         BigInteger timestampIterator = lastPoint.timestamp.divide(TimeConstants.WEEK).multiply(TimeConstants.WEEK);
 
-        for (int index=0; index < 255; ++index) {
+        for (int index = 0; index < 255; ++index) {
             timestampIterator = timestampIterator.add(TimeConstants.WEEK);
             BigInteger dSlope = BigInteger.ZERO;
-            if(timestampIterator.compareTo(time) > 0) {
+            if (timestampIterator.compareTo(time) > 0) {
                 timestampIterator = time;
             } else {
                 dSlope = this.slopeChanges.getOrDefault(timestampIterator, BigInteger.ZERO);
@@ -559,16 +578,24 @@ public class BoostedBaln {
     }
 
     @External(readonly = true)
-    public Address admin() {return this.admin.get();}
+    public Address admin() {
+        return this.admin.get();
+    }
 
     @External(readonly = true)
-    public Address futureAdmin() {return this.futureAdmin.get();}
+    public Address futureAdmin() {
+        return this.futureAdmin.get();
+    }
 
     @External(readonly = true)
-    public String name() {return this.name;}
+    public String name() {
+        return this.name;
+    }
 
     @External(readonly = true)
-    public String symbol() {return this.symbol;}
+    public String symbol() {
+        return this.symbol;
+    }
 
     @External(readonly = true)
     public BigInteger userPointEpoch(Address address) {
@@ -576,6 +603,8 @@ public class BoostedBaln {
     }
 
     @External(readonly = true)
-    public int decimals() {return this.decimals;}
+    public int decimals() {
+        return this.decimals;
+    }
 }
 
