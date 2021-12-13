@@ -32,6 +32,10 @@ subprojects {
     apply plugin: 'java'
     apply plugin: 'foundation.icon.javaee'
 
+    dependencies {
+        testImplementation group: 'org.json', name: 'json', version: '20211205'
+    }
+
     java {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
