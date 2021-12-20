@@ -33,15 +33,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @DisplayName("Statemachine Tests")
 public class StateMachineTest extends TestBase {
-    private static final Long WEEK = 86400L * 1000000L * 7L;
-    private static final Long MAX_TIME = 86400L * 1000000L * 365L * 4;
+    private static final Long WEEK = 7 * 86400L * 1000000L;
+    private static final Long MAX_TIME = 4 * 365 * 86400L * 1000000L;
     private static final BigInteger MINT_AMOUNT = BigInteger.TEN.pow(40);
     private static final ServiceManager sm = getServiceManager();
     private static final Account owner = sm.createAccount();
 
     private final ArrayList<Account> accounts = new ArrayList<>();
-    private BigInteger lockDuration;
-    private BigInteger sleepDuration;
+    private final long MAXIMUM_LOCK_WEEKS = 209;
+    private final long BLOCK_TIME = 2 * 1000000;
 
     private Score bBalnScore;
     private Score tokenScore;
@@ -72,10 +72,13 @@ public class StateMachineTest extends TestBase {
 
     @BeforeEach
     public void setup() throws Exception {
+        //Deploy token contract and boosted baln contract
         tokenScore = sm.deploy(owner, BalnToken.class, "Balance Token", "BALN", 18);
         bBalnScore = sm.deploy(owner, BoostedBaln.class, tokenScore.getAddress(), "Boosted Baln", "bBALN");
 
-        for (int counter = 0; counter < 10; counter++) {
+        //Create 10 accounts
+        int numberOfAccounts = 10;
+        for (int accountNumber = 0; accountNumber < numberOfAccounts; accountNumber++) {
             Account account = sm.createAccount();
             accounts.add(account);
             tokenScore.invoke(owner, "mintTo", account.getAddress(), MINT_AMOUNT);
@@ -92,6 +95,10 @@ public class StateMachineTest extends TestBase {
         return data.toString().getBytes();
     }
 
+    public long addWeeksToCurrentTimestamp(long numberOfWeeks) {
+        return ((sm.getBlock().getTimestamp() + numberOfWeeks * WEEK) / WEEK) * WEEK;
+    }
+
     @DisplayName("Create Lock with")
     @Nested
     class CreateLockTests {
@@ -103,7 +110,7 @@ public class StateMachineTest extends TestBase {
         void configuration() {
             value = BigInteger.TEN.pow(20);
             long lockDuration = 5;
-            unlockTime = ((sm.getBlock().getTimestamp() + lockDuration * WEEK) / WEEK) * WEEK;
+            unlockTime = addWeeksToCurrentTimestamp(lockDuration);
         }
 
         @DisplayName("zero locked amount")
@@ -121,7 +128,7 @@ public class StateMachineTest extends TestBase {
         @Test
         void unlockTimeLessThanCurrentTime() {
             // Create lock in past
-            final Long unlockTimeLessThanBlockTime = ((sm.getBlock().getTimestamp() - 2 * WEEK) / WEEK) * WEEK;
+            final Long unlockTimeLessThanBlockTime = addWeeksToCurrentTimestamp(-2);
             AssertionError e = Assertions.assertThrows(AssertionError.class, () -> tokenScore.invoke(accounts.get(0),
                     "transfer", bBalnScore.getAddress(), value, tokenData("createLock", Map.of("unlockTime",
                             unlockTimeLessThanBlockTime))));
@@ -134,7 +141,7 @@ public class StateMachineTest extends TestBase {
         void lockGreaterThanMaxTime() {
             // Create lock with greater than max time
             // 208 weeks is the maximum someone can lock tokens
-            final long unlockTimeGreaterThanMaxTime = ((sm.getBlock().getTimestamp() + 209L * WEEK) / WEEK) * WEEK;
+            final long unlockTimeGreaterThanMaxTime = addWeeksToCurrentTimestamp(MAXIMUM_LOCK_WEEKS);
             AssertionError e = Assertions.assertThrows(AssertionError.class, () -> tokenScore.invoke(accounts.get(1),
                     "transfer", bBalnScore.getAddress(), value, tokenData("createLock", Map.of("unlockTime",
                             unlockTimeGreaterThanMaxTime))));
@@ -194,12 +201,12 @@ public class StateMachineTest extends TestBase {
     class IncreaseAmountTests {
 
         private BigInteger value;
+        private final long lockedWeeks = 5;
 
         @DisplayName("Create Lock of 1000 BALN tokens from account 0")
         @BeforeEach
         void createLock() {
-            long chainTime = sm.getBlock().getTimestamp();
-            long unlockTime = ((chainTime + 5 * WEEK) / WEEK) * WEEK;
+            long unlockTime = addWeeksToCurrentTimestamp(lockedWeeks);
             value = BigInteger.TEN.pow(21);
             tokenScore.invoke(accounts.get(0), "transfer", bBalnScore.getAddress(), value,
                     tokenData("createLock", Map.of("unlockTime", unlockTime)));
@@ -231,10 +238,11 @@ public class StateMachineTest extends TestBase {
         @DisplayName("to an expired lock")
         @Test
         void increaseAmountToExpiredLock() {
-            long deltaBlock = (5 * WEEK) / 2;
-            sm.getBlock().increase(deltaBlock + 100);
+            long deltaBlock = (addWeeksToCurrentTimestamp(lockedWeeks) - sm.getBlock().getTimestamp())/BLOCK_TIME + 1;
+            sm.getBlock().increase(deltaBlock);
             // Check if the lock time has expired
             assertEquals(BigInteger.ZERO, bBalnScore.call("balanceOf", accounts.get(0).getAddress(), BigInteger.ZERO));
+
             AssertionError e = Assertions.assertThrows(AssertionError.class, () -> tokenScore.invoke(accounts.get(0),
                     "transfer", bBalnScore.getAddress(), value, tokenData("increaseAmount", Map.of())));
             assertEquals("Increase amount: Cannot add to expired lock. Withdraw", e.getMessage());
@@ -248,8 +256,7 @@ public class StateMachineTest extends TestBase {
         void increaseAmountWithValidData() {
             tokenScore.invoke(accounts.get(0), "transfer", bBalnScore.getAddress(), value, tokenData("increaseAmount"
                     , Map.of()));
-            VotingBalance vote = votingBalances.getOrDefault(accounts.get(0), new VotingBalance(BigInteger.ZERO,
-                    BigInteger.ZERO));
+            VotingBalance vote = votingBalances.getOrDefault(accounts.get(0), new VotingBalance());
             vote.value = vote.value.add(value);
             votingBalances.put(accounts.get(0), vote);
         }
@@ -260,11 +267,12 @@ public class StateMachineTest extends TestBase {
     class IncreaseUnlockTimeTests {
 
         private long unlockTime;
+        private final long lockedWeeks = 5;
 
         @DisplayName("Create Lock of 1000 BALN tokens from account 0")
         @BeforeEach
         void createLock() {
-            unlockTime = ((sm.getBlock().getTimestamp() + 5 * WEEK) / WEEK) * WEEK;
+            unlockTime = addWeeksToCurrentTimestamp(lockedWeeks);
             BigInteger value = BigInteger.TEN.pow(21);
             tokenScore.invoke(accounts.get(0), "transfer", bBalnScore.getAddress(), value,
                     tokenData("createLock", Map.of("unlockTime", unlockTime)));
@@ -282,13 +290,13 @@ public class StateMachineTest extends TestBase {
         @DisplayName("of expired lock")
         @Test
         void increaseUnlockTimeExpiredLock() {
-            long deltaBlock = (5 * WEEK) / 2;
-            sm.getBlock().increase(deltaBlock + 100);
+            long deltaBlock = (addWeeksToCurrentTimestamp(lockedWeeks) - sm.getBlock().getTimestamp())/BLOCK_TIME + 1;
+            sm.getBlock().increase(deltaBlock);
             // Check if the lock time has expired
             assertEquals(BigInteger.ZERO, bBalnScore.call("balanceOf", accounts.get(0).getAddress(), BigInteger.ZERO));
 
             //Update unlock time
-            unlockTime = ((sm.getBlock().getTimestamp() + 5 * WEEK) / WEEK) * WEEK;
+            unlockTime = addWeeksToCurrentTimestamp(5);
             AssertionError e = Assertions.assertThrows(AssertionError.class, () -> bBalnScore.invoke(accounts.get(0),
                     "increaseUnlockTime", BigInteger.valueOf(unlockTime)));
             assertEquals("Increase unlock time: Lock expired", e.getMessage());
@@ -309,7 +317,7 @@ public class StateMachineTest extends TestBase {
         @DisplayName("with unlock time more than max time")
         @Test
         void increaseUnlockTimeGreaterThanMaxTime() {
-            final long unlockTime = ((sm.getBlock().getTimestamp() + 209 * WEEK) / WEEK) * WEEK;
+            final long unlockTime = addWeeksToCurrentTimestamp(MAXIMUM_LOCK_WEEKS);
 
             AssertionError e = Assertions.assertThrows(AssertionError.class, () -> bBalnScore.invoke(accounts.get(0),
                     "increaseUnlockTime", BigInteger.valueOf(unlockTime)));
@@ -321,19 +329,17 @@ public class StateMachineTest extends TestBase {
         void increaseUnlockFromContract() {
             AssertionError e = Assertions.assertThrows(AssertionError.class,
                     () -> bBalnScore.invoke(Account.getAccount(Account.newScoreAccount(500).getAddress()),
-                            "increaseUnlockTime",
-                            BigInteger.valueOf(unlockTime)));
+                            "increaseUnlockTime", BigInteger.valueOf(unlockTime)));
             assertEquals("Assert Not contract: Smart contract depositors not allowed", e.getMessage());
         }
 
         @DisplayName("with valid data")
         @Test
         void increaseUnlockWithValidData() {
-            long increasedUnlockTime = ((sm.getBlock().getTimestamp() + 10 * WEEK)/ WEEK) * WEEK;
+            long increasedUnlockTime = addWeeksToCurrentTimestamp(10);
 
             bBalnScore.invoke(accounts.get(0), "increaseUnlockTime", BigInteger.valueOf(increasedUnlockTime));
-            VotingBalance vote = votingBalances.getOrDefault(accounts.get(0), new VotingBalance(BigInteger.ZERO,
-                    BigInteger.ZERO));
+            VotingBalance vote = votingBalances.getOrDefault(accounts.get(0), new VotingBalance());
             vote.unlockTime = BigInteger.valueOf(increasedUnlockTime);
             votingBalances.put(accounts.get(0), vote);
         }
@@ -343,10 +349,12 @@ public class StateMachineTest extends TestBase {
     @Nested
     class WithdrawLockTests {
 
+        private final long lockedWeeks = 5;
+
         @DisplayName("Create Lock of 1000 BALN tokens from account 0")
         @BeforeEach
         void createLock() {
-            long unlockTime = ((sm.getBlock().getTimestamp() + 5 * WEEK) / WEEK) * WEEK;
+            long unlockTime = addWeeksToCurrentTimestamp(lockedWeeks);
             BigInteger value = BigInteger.TEN.pow(21);
             tokenScore.invoke(accounts.get(0), "transfer", bBalnScore.getAddress(), value,
                     tokenData("createLock", Map.of("unlockTime", unlockTime)));
@@ -364,8 +372,8 @@ public class StateMachineTest extends TestBase {
         @DisplayName("after the expiry")
         @Test
         void unlockAfterExpiry() {
-            long deltaBlock = (5 * WEEK) / 2;
-            sm.getBlock().increase(deltaBlock + 100);
+            long deltaBlock = (addWeeksToCurrentTimestamp(lockedWeeks) - sm.getBlock().getTimestamp())/BLOCK_TIME + 1;
+            sm.getBlock().increase(deltaBlock);
             // Check if the lock time has expired
             assertEquals(BigInteger.ZERO, bBalnScore.call("balanceOf", accounts.get(0).getAddress(), BigInteger.ZERO));
 
@@ -407,8 +415,7 @@ public class StateMachineTest extends TestBase {
         BigInteger currentTime = BigInteger.valueOf(sm.getBlock().getTimestamp());
         BigInteger totalSupply = BigInteger.ZERO;
         for (Account account : accounts) {
-            VotingBalance vote = votingBalances.getOrDefault(account, new VotingBalance(BigInteger.ZERO,
-                    BigInteger.ZERO));
+            VotingBalance vote = votingBalances.getOrDefault(account, new VotingBalance());
             BigInteger balance = (BigInteger) bBalnScore.call("balanceOf", account.getAddress(), BigInteger.ZERO);
             totalSupply = totalSupply.add(balance);
 
