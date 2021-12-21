@@ -40,7 +40,7 @@ public class StateMachineTest extends TestBase {
     private static final Account owner = sm.createAccount();
 
     private final ArrayList<Account> accounts = new ArrayList<>();
-    private final long MAXIMUM_LOCK_WEEKS = 209;
+    private final long MAXIMUM_LOCK_WEEKS = 208;
     private final long BLOCK_TIME = 2 * 1000000;
 
     private Score bBalnScore;
@@ -141,7 +141,7 @@ public class StateMachineTest extends TestBase {
         void lockGreaterThanMaxTime() {
             // Create lock with greater than max time
             // 208 weeks is the maximum someone can lock tokens
-            final long unlockTimeGreaterThanMaxTime = addWeeksToCurrentTimestamp(MAXIMUM_LOCK_WEEKS);
+            final long unlockTimeGreaterThanMaxTime = addWeeksToCurrentTimestamp(MAXIMUM_LOCK_WEEKS + 1);
             AssertionError e = Assertions.assertThrows(AssertionError.class, () -> tokenScore.invoke(accounts.get(1),
                     "transfer", bBalnScore.getAddress(), value, tokenData("createLock", Map.of("unlockTime",
                             unlockTimeGreaterThanMaxTime))));
@@ -317,7 +317,7 @@ public class StateMachineTest extends TestBase {
         @DisplayName("with unlock time more than max time")
         @Test
         void increaseUnlockTimeGreaterThanMaxTime() {
-            final long unlockTime = addWeeksToCurrentTimestamp(MAXIMUM_LOCK_WEEKS);
+            final long unlockTime = addWeeksToCurrentTimestamp(MAXIMUM_LOCK_WEEKS + 1);
 
             AssertionError e = Assertions.assertThrows(AssertionError.class, () -> bBalnScore.invoke(accounts.get(0),
                     "increaseUnlockTime", BigInteger.valueOf(unlockTime)));
