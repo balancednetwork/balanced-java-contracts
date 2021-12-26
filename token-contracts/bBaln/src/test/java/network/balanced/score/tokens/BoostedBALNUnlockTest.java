@@ -91,7 +91,7 @@ public class BoostedBALNUnlockTest extends TestBase {
     @ParameterizedTest
     @MethodSource("extendedUnlockWeeks")
     public void testIncreaseLockZeroBalance(long unlockTime, long extendedTime) {
-
+        
         long timestamp = sm.getBlock().getTimestamp();
         long expectedUnlock = unlockTime + timestamp;
 
