@@ -48,7 +48,8 @@ public class BoostedBALNUnlockTest extends TestBase {
     private Score bBALNScore;
     private Score tokenScore;
 
-    public static BigInteger WEEK = BigInteger.TEN.pow(6).multiply(BigInteger.valueOf(86400L).multiply(BigInteger.valueOf(7L)));
+    //public static BigInteger WEEK = BigInteger.TEN.pow(6).multiply(BigInteger.valueOf(86400L).multiply(BigInteger.valueOf(7L)));
+    private static final Long WEEK = 7 * 86400L * 1000000L;
     private static final BigInteger INITIAL_SUPPLY = BigInteger.TEN.multiply(ICX);
     private static final String BOOSTED_BALANCE = "Boosted Balance";
     private static final String B_BALANCED_SYMBOL = "bBALN";
@@ -72,7 +73,7 @@ public class BoostedBALNUnlockTest extends TestBase {
         map.put("params", Map.of("unlockTime", expectedUnlock));
         JSONObject json = new JSONObject(map);
         byte[] lockBytes = json.toString().getBytes();
-        tokenScore.invoke(owner, "transfer", bBALNScore.getAddress(), ICX.multiply(BigInteger.ONE), lockBytes);
+        tokenScore.invoke(owner, "transfer", bBALNScore.getAddress(), BigInteger.ONE.multiply(ICX), lockBytes);
 
         Map<String, BigInteger> balance = (Map<String, BigInteger>) bBALNScore.call("getLocked", owner.getAddress());
         long actual_unlock = balance.get("end").longValue();
@@ -126,17 +127,14 @@ public class BoostedBALNUnlockTest extends TestBase {
 
 
     private static Stream<Arguments> weekListLock() {
-
-        long low = WEEK.longValue() * 2;
-        long high = WEEK.longValue() * 52;
+        long low = WEEK * 2;
+        long high = WEEK * 52;
         return Stream.of(Arguments.of(ThreadLocalRandom.current().nextLong(low, high + 1)), Arguments.of(ThreadLocalRandom.current().nextLong(low, high + 1)), Arguments.of(ThreadLocalRandom.current().nextLong(low, high + 1)));
     }
 
     private static Stream<Arguments> extendedUnlockWeeks() {
-
-        long week = WEEK.longValue();
-        long low = week * 2;
-        long high = week * 52;
-        return Stream.of(Arguments.of(ThreadLocalRandom.current().nextLong(low, high + 1), ThreadLocalRandom.current().nextLong(week, low)), Arguments.of(ThreadLocalRandom.current().nextLong(low, high + 1), ThreadLocalRandom.current().nextLong(week, low)), Arguments.of(ThreadLocalRandom.current().nextLong(low, high + 1), ThreadLocalRandom.current().nextLong(week, low)));
+        long low = WEEK * 2;
+        long high = WEEK * 52;
+        return Stream.of(Arguments.of(ThreadLocalRandom.current().nextLong(low, high + 1), ThreadLocalRandom.current().nextLong(WEEK, low)), Arguments.of(ThreadLocalRandom.current().nextLong(low, high + 1), ThreadLocalRandom.current().nextLong(WEEK, low)), Arguments.of(ThreadLocalRandom.current().nextLong(low, high + 1), ThreadLocalRandom.current().nextLong(WEEK, low)));
     }
 }
