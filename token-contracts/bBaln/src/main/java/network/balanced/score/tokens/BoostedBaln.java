@@ -28,7 +28,7 @@ import java.util.Map;
 
 public class BoostedBaln {
     public static final BigInteger MAXTIME = BigInteger.valueOf(4L).multiply(TimeConstants.YEAR);
-    private static final BigInteger MULTIPLIER = BigInteger.TEN.pow(18);
+    private static final BigInteger MULTIPLIER = pow10(18);
 
     private static final int DEPOSIT_FOR_TYPE = 0;
     private static final int CREATE_LOCK_TYPE = 1;
@@ -99,8 +99,11 @@ public class BoostedBaln {
     }
 
     private static BigInteger pow10(int exponent) {
-        return BigInteger.TEN.pow(exponent);
-
+        BigInteger result = BigInteger.ONE;
+        for (int i = 0; i < exponent; i++) {
+            result = result.multiply(BigInteger.TEN);
+        }
+        return result;
     }
 
     @External
