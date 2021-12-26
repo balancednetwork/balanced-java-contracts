@@ -388,7 +388,7 @@ public class StateMachineTest extends TestBase {
         void increaseUnlockWithValidData() {
             long increasedUnlockTime = addWeeksToCurrentTimestamp(10);
             increaseUnlockTime(accounts.get(0), BigInteger.valueOf(increasedUnlockTime));
-            }
+        }
     }
 
     @DisplayName("Withdraw tokens from the voting escrow")
@@ -410,7 +410,7 @@ public class StateMachineTest extends TestBase {
         void unlockBeforeExpiry() {
             Executable withdraw = () ->
                 bBalnScore.invoke(accounts.get(0),
-                    "withdraw");
+                                "withdraw");
 
             String expectedErrorMessage = "Withdraw: The lock didn't expire";
             expectErrorMessage(withdraw, expectedErrorMessage);
