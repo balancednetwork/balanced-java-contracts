@@ -194,7 +194,7 @@ public class BoostedBaln {
 //      initialLastPoint is used for extrapolation to calculate block number
 //      (approximately, for *At methods) and save them
 //      as we cannot figure that out exactly from inside the contract
-        Point initialLastPoint = lastPoint;
+        Point initialLastPoint = lastPoint.newPoint();
         BigInteger blockSlope = BigInteger.ZERO;
         if (blockTimestamp.compareTo(lastPoint.timestamp) > 0) {
             blockSlope = MULTIPLIER.multiply(blockHeight.subtract(lastPoint.block))
@@ -423,6 +423,7 @@ public class BoostedBaln {
 
         Withdraw(sender, value, blockTimestamp);
         Supply(supplyBefore, supplyBefore.subtract(value));
+        this.nonReentrant.updateLock(false);
     }
 
     private BigInteger findBlockEpoch(BigInteger block, BigInteger maxEpoch) {
@@ -554,7 +555,7 @@ public class BoostedBaln {
 
     @External(readonly = true)
     public BigInteger totalSupplyAt(BigInteger block) {
-        BigInteger blockHeight = BigInteger.valueOf(Context.getBlockTimestamp());
+        BigInteger blockHeight = BigInteger.valueOf(Context.getBlockHeight());
         BigInteger blockTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());
 
         Context.require(block.compareTo(blockHeight) <= 0, "TotalSupplyAt: Invalid given block height");
