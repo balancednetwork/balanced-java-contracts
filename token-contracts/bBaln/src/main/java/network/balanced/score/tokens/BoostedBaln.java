@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Balanced.network.
+ * Copyright (c) 2021-2021 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -355,7 +355,7 @@ public class BoostedBaln {
         Address token = Context.getCaller();
         Context.require(token.equals(this.tokenAddress), "Token Fallback: Only BALN deposits are allowed");
 
-        Context.require(_value.signum() > 0, "Token value should be a positive number");
+        Context.require(_value.signum() > 0, "Token Fallback: Token value should be a positive number");
         String unpackedData = new String(_data);
         Context.require(!unpackedData.equals(""), "Token Fallback: Data can't be empty");
 
@@ -392,8 +392,8 @@ public class BoostedBaln {
         LockedBalance locked = LockedBalance.toLockedBalance(this.locked.get(sender));
         unlockTime = unlockTime.divide(TimeConstants.WEEK).multiply(TimeConstants.WEEK);
 
-        Context.require(locked.end.compareTo(blockTimestamp) > 0, "Increase unlock time: Lock expired");
         Context.require(locked.amount.compareTo(BigInteger.ZERO) > 0, "Increase unlock time: Nothing is locked");
+        Context.require(locked.end.compareTo(blockTimestamp) > 0, "Increase unlock time: Lock expired");
         Context.require(unlockTime.compareTo(locked.end) > 0, "Increase unlock time: Can only increase lock duration");
         Context.require(unlockTime.compareTo(blockTimestamp.add(MAXTIME)) <= 0, "Increase unlock time: Voting lock can be 4 years max");
 
@@ -444,7 +444,7 @@ public class BoostedBaln {
 
     private BigInteger findUserPointHistory(Address address, BigInteger block) {
         BigInteger min = BigInteger.ZERO;
-        BigInteger max = this.userPointEpoch.get(address);
+        BigInteger max = this.userPointEpoch.getOrDefault(address, BigInteger.ZERO);
 
         for (int index = 0; index < 256 && min.compareTo(max) < 0; ++index) {
             BigInteger mid = min.add(max).add(BigInteger.ONE).divide(BigInteger.TWO);

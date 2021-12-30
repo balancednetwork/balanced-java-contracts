@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Balanced.network.
+ * Copyright (c) 2021-2021 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import java.math.BigInteger;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-class BoostedBalnTest extends TestBase{
+class BoostedBalnTest extends TestBase {
     private static final ServiceManager sm = getServiceManager();
     private static final Account owner = sm.createAccount();
     private Score bBalnScore;
@@ -88,15 +88,6 @@ class BoostedBalnTest extends TestBase{
     @Test
     void totalSupply() {
         assertEquals(BigInteger.ZERO, bBalnScore.call("totalSupply", BigInteger.ZERO));
-    }
-
-    @Test
-    void createLock() {
-        byte[] createLockBytes = "{\"method\": \"createLock\", \"params\": {\"unlockTime\": 604800000000}}".getBytes();
-        tokenScore.invoke(Account.getAccount(owner.getAddress()), "transfer", bBalnScore.getAddress(),
-                BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(1L)), createLockBytes);
-        System.out.println(((BigInteger)bBalnScore.call("balanceOf", owner.getAddress(), BigInteger.ZERO)));
-        System.out.println(sm);
     }
 
 }
