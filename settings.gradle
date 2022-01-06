@@ -1,0 +1,3 @@
+rootProject.name = 'balanced-contracts-java'
+include (
+    'stability_fund')
