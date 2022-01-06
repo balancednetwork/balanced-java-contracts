@@ -5,6 +5,12 @@
 # Log file
 *.log
 
+# Vscore
+.vscode
+
+# Keystore
+keystore.json
+
 # BlueJ files
 *.ctxt
 
