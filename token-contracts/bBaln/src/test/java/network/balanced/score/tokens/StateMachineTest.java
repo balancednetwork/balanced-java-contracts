@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2021 Balanced.network.
+ * Copyright (c) 2021-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -267,10 +267,10 @@ public class StateMachineTest extends TestBase {
             BigInteger week = BigInteger.valueOf(WEEK);
             long startOfWeek =
                     BigInteger.valueOf(1641081600 * 1_000_000L).divide(week).add(BigInteger.ONE).multiply(week).longValue();
-            setBlockTimestamp(1767225600000000L-4*WEEK-2_000_000);
+            setBlockTimestamp(1767225600000000L-WEEK-2_000_000);
             Account account = accounts.get(9);
             System.out.println("sm.getBlock().getTimestamp() = " + sm.getBlock().getTimestamp());
-            createLock(account, ICX,
+            createLock(account, ICX.multiply(BigInteger.valueOf(126144L)),
                     1767225600000000L);
             System.out.println("sm.getBlock().getTimestamp() = " + sm.getBlock().getTimestamp());
             System.out.println("balance =" + bBalnScore.call("balanceOf", account.getAddress(), BigInteger.ZERO));

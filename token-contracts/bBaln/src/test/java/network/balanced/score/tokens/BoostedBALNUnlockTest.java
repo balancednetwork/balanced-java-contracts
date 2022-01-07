@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Balanced.network.
+ * Copyright (c) 2021-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,6 +74,7 @@ public class BoostedBALNUnlockTest extends TestBase {
         byte[] lockBytes = json.toString().getBytes();
         tokenScore.invoke(owner, "transfer", bBALNScore.getAddress(), ICX.multiply(BigInteger.ONE), lockBytes);
 
+        @SuppressWarnings("unchecked")
         Map<String, BigInteger> balance = (Map<String, BigInteger>) bBALNScore.call("getLocked", owner.getAddress());
         long actual_unlock = balance.get("end").longValue();
         long delta = BigInteger.valueOf(actual_unlock - timestamp).divide(BigInteger.TEN.pow(6)).divide(BigInteger.TWO).longValue();
@@ -103,12 +104,14 @@ public class BoostedBALNUnlockTest extends TestBase {
 
         tokenScore.invoke(owner, "transfer", bBALNScore.getAddress(), ICX.multiply(BigInteger.ONE), lockBytes);
 
+        @SuppressWarnings("unchecked")
         Map<String, BigInteger> balance = (Map<String, BigInteger>) bBALNScore.call("getLocked", owner.getAddress());
         BigInteger initialUnlock = balance.get("end");
         BigInteger expectedExtendedUnlockTime = initialUnlock.add(BigInteger.valueOf(extendedTime));
 
         bBALNScore.invoke(owner, "increaseUnlockTime", expectedExtendedUnlockTime);
 
+        @SuppressWarnings("unchecked")
         Map<String, BigInteger> newBalance = (Map<String, BigInteger>) bBALNScore.call("getLocked", owner.getAddress());
         BigInteger extendedActualUnlock = newBalance.get("end");
 
