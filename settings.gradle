@@ -1,3 +1,2 @@
-rootProject.name = 'balanced-contracts-java'
-include (
-    'stability_fund')
+rootProject.name = 'balanced-java-contracts'
+include (':core-contracts:stability_fund')

@@ -1,9 +1,13 @@
-package network.balanced.score.core-contracts;
+package network.balanced.score.core;
 
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.Account;
+import com.iconloop.score.token.irc2.IRC2Basic;
+
+import com.eclipsesource.json.Json;
+import com.eclipsesource.json.JsonObject;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

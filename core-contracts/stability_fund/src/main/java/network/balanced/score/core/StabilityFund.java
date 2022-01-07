@@ -1,4 +1,4 @@
-package network.balanced.score.core-contracts;
+package network.balanced.score.core;
 
 import score.Context;
 import score.VarDB;
