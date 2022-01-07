@@ -122,7 +122,7 @@ public class StabilityFund {
 
     @External
     public void claimFunding() {
-        // To be implemented once the required functionality has been implemented in the daofund.
+        // To be implemented once this funcitonality has been implemented in the Daofund.
         return;
     }
 

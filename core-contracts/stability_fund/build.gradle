@@ -13,7 +13,7 @@ dependencies {
 }
 
 optimizedJar {
-    mainClassName = 'network.balanced.score.core.StabilityFund'
+    mainClassName = 'network.balanced.score.core-contracts.StabilityFund'
     archivesBaseName = 'stability-fund'
 }
 
