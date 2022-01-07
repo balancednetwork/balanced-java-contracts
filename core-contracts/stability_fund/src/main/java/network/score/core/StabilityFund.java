@@ -1,4 +1,4 @@
-package com.iconloop.score.example;
+package network.balanced.score.core-contracts;
 
 import score.Context;
 import score.VarDB;
@@ -118,6 +118,12 @@ public class StabilityFund {
     public void withdrawStabilityFunds(Address tokenAddress, BigInteger maximumToWithdraw) {
         Context.require(Context.getCaller() == this.governance.get());
         Context.call(tokenAddress, "transfer", this.daofund.get(), maximumToWithdraw.min(getTokenBalance(tokenAddress)), "test".getBytes());
+    }
+
+    @External
+    public void claimFunding() {
+        // To be implemented once the required functionality has been implemented in the daofund.
+        return;
     }
 
     @External
