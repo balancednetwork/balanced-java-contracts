@@ -117,7 +117,7 @@ public class StabilityFund {
     @External
     public void withdrawStabilityFunds(Address tokenAddress, BigInteger maximumToWithdraw) {
         Context.require(Context.getCaller() == this.governance.get());
-        Context.call(tokenAddress, "transfer", this.daofund.get(), maximumToWithdraw.min(getTokenBalance(tokenAddress)), "test".getBytes());
+        Context.call(tokenAddress, "transfer", this.daofund.get(), maximumToWithdraw.min(getTokenBalance(tokenAddress)), new byte[0]);
     }
 
     @External
