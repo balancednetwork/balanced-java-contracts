@@ -122,8 +122,8 @@ class StabilityFundTest extends TestBase {
         Account stabilityFundAccount = stabilityFund.getAccount();
         stabilityFund.invoke(admin, "setSicx", sicx.getAddress());
         stabilityFund.invoke(admin, "setbnUSD", bnusd.getAddress());
-        sicx.invoke(owner, "transfer", stabilityFund.getAddress(), BigInteger.valueOf(67), "test".getBytes());
-        bnusd.invoke(owner, "transfer", stabilityFund.getAddress(), BigInteger.valueOf(65), "test".getBytes());
+        sicx.invoke(owner, "transfer", stabilityFund.getAddress(), BigInteger.valueOf(67), new byte[0]);
+        bnusd.invoke(owner, "transfer", stabilityFund.getAddress(), BigInteger.valueOf(65), new byte[0]);
         stabilityFundAccount.addBalance("sicx", BigInteger.valueOf(67));
         stabilityFundAccount.addBalance("bnusd", BigInteger.valueOf(65));
 
