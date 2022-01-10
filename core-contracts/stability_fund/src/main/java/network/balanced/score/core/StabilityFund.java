@@ -95,14 +95,14 @@ public class StabilityFund {
     @External
     public void raisePrice (BigInteger amount) {
         Context.require(Context.getCaller() == this.rebalancing.get());
-        byte[] data = createDataFieldDex(bnusd.get());
+        byte[] data = createSwapData(bnusd.get());
         transferToken(this.sicx.get(), this.dex.get(), amount, data);
     }
     
     @External
     public void lowerPrice (BigInteger amount) {
         Context.require(Context.getCaller() == this.rebalancing.get());
-        byte[] data = createDataFieldDex(sicx.get());
+        byte[] data = createSwapData(sicx.get());
         transferToken(this.bnusd.get(), this.dex.get(), amount, data);
     }
 
@@ -145,7 +145,7 @@ public class StabilityFund {
         }
     }
 
-    private byte[] createDataFieldDex(Address toToken) {
+    private byte[] createSwapData(Address toToken) {
         JsonObject data = Json.object();
         data.add("method", "_swap");
         data.add("params", Json.object().add("toToken", toToken.toString()));
