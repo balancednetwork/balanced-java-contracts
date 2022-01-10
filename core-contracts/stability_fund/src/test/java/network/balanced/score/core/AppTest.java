@@ -119,17 +119,24 @@ class StabilityFundTest extends TestBase {
 
     @Test
     void getStabilityFundBalance () {
-        Account stabilityFundAccount = stabilityFund.getAccount();
+        // Set required addresses in stabilityfund.
         stabilityFund.invoke(admin, "setSicx", sicx.getAddress());
         stabilityFund.invoke(admin, "setbnUSD", bnusd.getAddress());
+
+        // Transfer sicx and bnusd to stabilityfund.
         sicx.invoke(owner, "transfer", stabilityFund.getAddress(), BigInteger.valueOf(67), new byte[0]);
         bnusd.invoke(owner, "transfer", stabilityFund.getAddress(), BigInteger.valueOf(65), new byte[0]);
+
+        // Set mock balances for stabilityfund contract.
+        Account stabilityFundAccount = stabilityFund.getAccount();
         stabilityFundAccount.addBalance("sicx", BigInteger.valueOf(67));
         stabilityFundAccount.addBalance("bnusd", BigInteger.valueOf(65));
-
+        
+        // Act.
         String balance = (String) stabilityFund.call("getStabilityFundBalance");
         JsonObject json = Json.parse(balance).asObject();
 
+        // Assert.
         assertEquals(stabilityFundAccount.getBalance("sicx"), new BigInteger(json.get("sicx").asString()));
         assertEquals(stabilityFundAccount.getBalance("bnusd"), new BigInteger(json.get("bnusd").asString()));
     }
