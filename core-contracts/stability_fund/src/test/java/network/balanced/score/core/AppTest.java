@@ -71,10 +71,8 @@ class StabilityFundTest extends TestBase {
     }
 
     @Test
-    void testSetGetDaofund() {
+    void setGetDaofund() {
         // Check that sicx is not set.
-        System.out.println(stabilityFund.call("getDaofund"));
-        System.out.flush();
         assertNull(stabilityFund.call("getDaofund"));
 
         // Set sicx and check that it's set.
@@ -84,7 +82,7 @@ class StabilityFundTest extends TestBase {
     }
 
     @Test
-    void testSetGetSicx() {
+    void setGetSicx() {
         // Check that sicx is not set.
         assertNull(stabilityFund.call("getSicx"));
 
@@ -95,7 +93,7 @@ class StabilityFundTest extends TestBase {
     }
 
     @Test
-    void testSetGetRebalancing() {
+    void setGetRebalancing() {
         // Check that bnusd is not set.
         assertNull(stabilityFund.call("getRebalancing"));
 
@@ -106,7 +104,7 @@ class StabilityFundTest extends TestBase {
     }
 
     @Test
-    void testSetGetDex() {
+    void setGetDex() {
         // Check that bnusd is not set.
         assertNull(stabilityFund.call("getDex"));
 
@@ -117,7 +115,7 @@ class StabilityFundTest extends TestBase {
     }
 
     @Test
-    void testSetGetBnusd() {
+    void setGetBnusd() {
         // Check that bnusd is not set.
         assertNull(stabilityFund.call("getbnUSD"));
 
@@ -128,7 +126,7 @@ class StabilityFundTest extends TestBase {
     }
 
     @Test
-    void testGetStabilityFundBalance () {
+    void getStabilityFundBalance () {
 
         // Set required addresses in stabilityfund.
         stabilityFund.invoke(admin, "setSicx", sicx.getAddress());
