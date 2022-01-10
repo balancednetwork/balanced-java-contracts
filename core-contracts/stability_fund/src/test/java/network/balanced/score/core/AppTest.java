@@ -24,12 +24,10 @@ class StabilityFundTest extends TestBase {
 
     private static final ServiceManager sm = getServiceManager();
 
-    // Accounts.
     private static final Account owner = sm.createAccount();
     private static final Account governance = sm.createAccount();
     private static final Account admin = sm.createAccount();
 
-    // Scores to be deployed.
     private static Score stabilityFund;
     private static Score sicx;
     private static Score bnusd;
