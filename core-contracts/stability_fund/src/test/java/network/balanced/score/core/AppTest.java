@@ -43,9 +43,9 @@ class StabilityFundTest extends TestBase {
 
     // Bnusd score deployment settings.
     private static final String nameBnusd = "Balanced usd";
-    private static String symbolBnusd = "BNUSD";
-    private static int decimalsBnusd = 18;
-    private static BigInteger initalsupplyBnusd = BigInteger.valueOf(100);
+    private static final String symbolBnusd = "BNUSD";
+    private static final int decimalsBnusd = 18;
+    private static final BigInteger initalsupplyBnusd = BigInteger.valueOf(100);
 
     public static class IRC2BasicToken extends IRC2Basic {
         public IRC2BasicToken(String _name, String _symbol, int _decimals, BigInteger _totalSupply) {
