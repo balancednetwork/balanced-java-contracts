@@ -12,10 +12,10 @@ import com.eclipsesource.json.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import score.Context;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+
+import score.Context;
 
 import java.math.BigInteger;
 
@@ -37,16 +37,15 @@ class StabilityFundTest extends TestBase {
 
     // Sicx score deployment settings.
     private static final String nameSicx = "Staked icx";
-    private static String symbolSicx = "SICX";
-    private static int decimalsSicx = 18;
-    private static BigInteger initalsupplySicx = BigInteger.valueOf(100);
+    private static final String symbolSicx = "SICX";
+    private static final int decimalsSicx = 18;
+    private static final BigInteger initalsupplySicx = BigInteger.valueOf(100);
 
     // Bnusd score deployment settings.
     private static final String nameBnusd = "Balanced usd";
     private static String symbolBnusd = "BNUSD";
     private static int decimalsBnusd = 18;
     private static BigInteger initalsupplyBnusd = BigInteger.valueOf(100);
-    
 
     public static class IRC2BasicToken extends IRC2Basic {
         public IRC2BasicToken(String _name, String _symbol, int _decimals, BigInteger _totalSupply) {
@@ -119,18 +118,18 @@ class StabilityFundTest extends TestBase {
 
     @Test
     void getStabilityFundBalance () {
-        // Set required addresses in stabilityfund.
+        // Set required addresses in stabilityfund contract.
         stabilityFund.invoke(admin, "setSicx", sicx.getAddress());
         stabilityFund.invoke(admin, "setbnUSD", bnusd.getAddress());
-
-        // Transfer sicx and bnusd to stabilityfund.
-        sicx.invoke(owner, "transfer", stabilityFund.getAddress(), BigInteger.valueOf(67), new byte[0]);
-        bnusd.invoke(owner, "transfer", stabilityFund.getAddress(), BigInteger.valueOf(65), new byte[0]);
 
         // Set mock balances for stabilityfund contract.
         Account stabilityFundAccount = stabilityFund.getAccount();
         stabilityFundAccount.addBalance("sicx", BigInteger.valueOf(67));
         stabilityFundAccount.addBalance("bnusd", BigInteger.valueOf(65));
+
+        // Transfer sicx and bnusd to stabilityfund.
+        sicx.invoke(owner, "transfer", stabilityFund.getAddress(), stabilityFundAccount.getBalance("sicx"), new byte[0]);
+        bnusd.invoke(owner, "transfer", stabilityFund.getAddress(), stabilityFundAccount.getBalance("bnusd"), new byte[0]);
         
         // Act.
         String balance = (String) stabilityFund.call("getStabilityFundBalance");
@@ -140,8 +139,7 @@ class StabilityFundTest extends TestBase {
         assertEquals(stabilityFundAccount.getBalance("sicx"), new BigInteger(json.get("sicx").asString()));
         assertEquals(stabilityFundAccount.getBalance("bnusd"), new BigInteger(json.get("bnusd").asString()));
     }
-
-    // static Score deployTokenScore (String name, String symbol, int decimals, BigInteger initialSupply) throws Exception {
+    // static Score deployIRC2Basic (Address owner, String name, String symbol, int decimals, BigInteger initialSupply) throws Exception {
     //     return sm.deploy(owner, IRC2Basic.class, name, symbol, decimals, initialSupply);
     //}
 }
