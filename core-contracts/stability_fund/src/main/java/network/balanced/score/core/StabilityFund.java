@@ -4,7 +4,6 @@ import score.Context;
 import score.VarDB;
 import score.Address;
 import score.annotation.External;
-import score.annotation.Optional;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
@@ -38,76 +37,76 @@ public class StabilityFund {
     }
 
     @External
-    public void setDaofund (Address address) {
+    public void setDaofund(Address address) {
         Context.require(Context.getCaller() == this.admin.get());
         this.daofund.set(address);
     }
 
     @External(readonly = true)
-    public Address getDaofund () {
+    public Address getDaofund() {
         return this.daofund.get();
     }
 
     @External
-    public void setSicx (Address address) {
+    public void setSicx(Address address) {
         Context.require(Context.getCaller() == this.admin.get());
         this.sicx.set(address);
     }
 
     @External(readonly = true)
-    public Address getSicx () {
+    public Address getSicx() {
         return this.sicx.get();
     }
 
     @External 
-    public void setbnUSD (Address address) {
+    public void setbnUSD(Address address) {
         Context.require(Context.getCaller() == this.admin.get());
         this.bnusd.set(address);
     }
 
     @External(readonly = true)
-    public Address getbnUSD () {
+    public Address getbnUSD() {
         return this.bnusd.get();
     }
 
     @External
-    public void setRebalancing (Address address) {
+    public void setRebalancing(Address address) {
         Context.require(Context.getCaller() == this.admin.get());
         this.rebalancing.set(address);
     }
 
     @External(readonly = true)
-    public Address getRebalancing () {
+    public Address getRebalancing() {
         return this.rebalancing.get();
     }
 
     @External
-    public void setDex (Address address) {
+    public void setDex(Address address) {
         Context.require(Context.getCaller() == this.admin.get());
         this.dex.set(address);
     }
 
     @External(readonly = true)
-    public Address getDex () {
+    public Address getDex() {
         return this.dex.get();
     }
 
     @External
-    public void raisePrice (BigInteger amount) {
+    public void raisePrice(BigInteger amount) {
         Context.require(Context.getCaller() == this.rebalancing.get());
         byte[] data = createSwapData(bnusd.get());
         transferToken(this.sicx.get(), this.dex.get(), amount, data);
     }
     
     @External
-    public void lowerPrice (BigInteger amount) {
+    public void lowerPrice(BigInteger amount) {
         Context.require(Context.getCaller() == this.rebalancing.get());
         byte[] data = createSwapData(sicx.get());
         transferToken(this.bnusd.get(), this.dex.get(), amount, data);
     }
 
     @External(readonly = true)
-    public String getStabilityFundBalance () {
+    public String getStabilityFundBalance() {
         JsonObject balances = Json.object();
         balances.add("sicx", getTokenBalance(this.sicx.get()).toString());
         balances.add("bnusd", getTokenBalance(this.bnusd.get()).toString());
@@ -115,19 +114,19 @@ public class StabilityFund {
     }
 
     @External
-    public void withdrawStabilityFunds(Address tokenAddress, BigInteger maximumToWithdraw) {
+    public void withdrawStabilityFunds(Address token, BigInteger maximumToWithdraw) {
         Context.require(Context.getCaller() == this.governance.get());
-        Context.call(tokenAddress, "transfer", this.daofund.get(), maximumToWithdraw.min(getTokenBalance(tokenAddress)), new byte[0]);
+        transferToken(token, this.daofund.get(), maximumToWithdraw.min(getTokenBalance(token)), new byte[0]);
     }
 
     @External
     public void claimFunding() {
-        // To be implemented once this funcitonality has been implemented in the Daofund.
+        // To be implemented once this functionality has been implemented in the Daofund.
         return;
     }
 
     @External
-    public void tokenFallback (Address from, BigInteger value, byte[] data) {
+    public void tokenFallback(Address from, BigInteger value, byte[] data) {
         return;
     }
 
@@ -136,13 +135,8 @@ public class StabilityFund {
         return (BigInteger) Context.call(token, "balanceOf", Context.getAddress());
     }
 
-    private void transferToken(Address token, Address to, BigInteger amount, @Optional byte[] data) {
-        if (data == null) {
-            Context.call(token, "transfer", to, amount);
-        }
-        else {
-            Context.call(token, "transfer", to, amount, data);
-        }
+    private void transferToken(Address token, Address to, BigInteger amount, byte[] data) {
+        Context.call(token, "transfer", to, amount, data);
     }
 
     private byte[] createSwapData(Address toToken) {
