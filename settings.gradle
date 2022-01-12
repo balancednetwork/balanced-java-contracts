@@ -25,3 +25,5 @@
 
 rootProject.name = 'balanced-java-contracts'
 include(':token-contracts:bBaln')
+include(':core-contracts:StakingRewards')
+

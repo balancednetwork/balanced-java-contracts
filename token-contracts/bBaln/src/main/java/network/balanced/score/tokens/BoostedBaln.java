@@ -18,6 +18,7 @@ package network.balanced.score.tokens;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
+import network.balanced.score.tokens.utils.MathUtils;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -47,10 +48,14 @@ public class BoostedBaln {
     private final DictDB<Address, byte[]> locked = Context.newDictDB("Boosted_Baln_locked", byte[].class);
 
     private final VarDB<BigInteger> epoch = Context.newVarDB("Boosted_Baln_epoch", BigInteger.class);
-    private final DictDB<BigInteger, byte[]> pointHistory = Context.newDictDB("Boosted_baln_point_history", byte[].class);
-    private final BranchDB<Address, DictDB<BigInteger, byte[]>> userPointHistory = Context.newBranchDB("Boosted_baln_user_point_history", byte[].class);
-    private final DictDB<Address, BigInteger> userPointEpoch = Context.newDictDB("Boosted_Baln_user_point_epoch", BigInteger.class);
-    private final DictDB<BigInteger, BigInteger> slopeChanges = Context.newDictDB("Boosted_Baln_slope_changes", BigInteger.class);
+    private final DictDB<BigInteger, byte[]> pointHistory = Context.newDictDB("Boosted_baln_point_history",
+            byte[].class);
+    private final BranchDB<Address, DictDB<BigInteger, byte[]>> userPointHistory = Context.newBranchDB(
+            "Boosted_baln_user_point_history", byte[].class);
+    private final DictDB<Address, BigInteger> userPointEpoch = Context.newDictDB("Boosted_Baln_user_point_epoch",
+            BigInteger.class);
+    private final DictDB<BigInteger, BigInteger> slopeChanges = Context.newDictDB("Boosted_Baln_slope_changes",
+            BigInteger.class);
 
     private final VarDB<Address> admin = Context.newVarDB("Boosted_Baln_admin", Address.class);
     private final VarDB<Address> futureAdmin = Context.newVarDB("Boosted_baln_future_admin", Address.class);
@@ -108,14 +113,16 @@ public class BoostedBaln {
 
     @External
     public void commitTransferOwnership(Address address) {
-        Context.require(Context.getCaller() == this.admin.get(), "Commit Transfer Ownership: Only admin can call this method");
+        Context.require(Context.getCaller() == this.admin.get(), "Commit Transfer Ownership: Only admin can call " +
+                "this" + " method");
         futureAdmin.set(address);
         CommitOwnership(address);
     }
 
     @External
     public void applyTransferOwnership() {
-        Context.require(Context.getCaller() == this.admin.get(), "Apply transfer ownership: Only admin can call this method");
+        Context.require(Context.getCaller() == this.admin.get(), "Apply transfer ownership: Only admin can call this "
+                + "method");
         Address futureAdmin = this.futureAdmin.get();
         Context.require(futureAdmin != null, "Apply transfer ownership: Admin not set");
         this.admin.set(futureAdmin);
@@ -127,10 +134,7 @@ public class BoostedBaln {
     public Map<String, BigInteger> getLocked(Address _owner) {
         byte[] bytes = locked.get(_owner);
         LockedBalance balance = LockedBalance.toLockedBalance(bytes);
-        return Map.of(
-                "amount", balance.amount,
-                "end", balance.end
-        );
+        return Map.of("amount", balance.amount, "end", balance.end);
     }
 
     @External(readonly = true)
@@ -164,12 +168,14 @@ public class BoostedBaln {
 //            Kept at zero when they have to
             if (oldLocked.end.compareTo(blockTimestamp) > 0 && oldLocked.amount.compareTo(BigInteger.ZERO) > 0) {
                 uOld.slope = oldLocked.amount.divide(MAXTIME);
-                uOld.bias = uOld.slope.multiply(oldLocked.end.subtract(blockTimestamp));
+                BigInteger delta = MathUtils.safeSubtract(oldLocked.end, blockTimestamp);
+                uOld.bias = uOld.slope.multiply(delta);
             }
 
             if (newLocked.end.compareTo(blockTimestamp) > 0 && newLocked.amount.compareTo(BigInteger.ZERO) > 0) {
                 uNew.slope = newLocked.amount.divide(MAXTIME);
-                uNew.bias = uNew.slope.multiply(newLocked.end.subtract(blockTimestamp));
+                BigInteger delta = MathUtils.safeSubtract(newLocked.end, blockTimestamp);
+                uNew.bias = uNew.slope.multiply(delta);
             }
 
 //          Read values of scheduled changes in the slope
@@ -197,8 +203,8 @@ public class BoostedBaln {
         Point initialLastPoint = lastPoint.newPoint();
         BigInteger blockSlope = BigInteger.ZERO;
         if (blockTimestamp.compareTo(lastPoint.timestamp) > 0) {
-            blockSlope = MULTIPLIER.multiply(blockHeight.subtract(lastPoint.block))
-                    .divide(blockTimestamp.subtract(lastPoint.timestamp));
+            blockSlope =
+                    MULTIPLIER.multiply(blockHeight.subtract(lastPoint.block)).divide(blockTimestamp.subtract(lastPoint.timestamp));
 //          If last point is already recorded in this block, slope = 0
 //          But that's ok because we know the block in such case
         }
@@ -228,7 +234,8 @@ public class BoostedBaln {
 
             lastCheckPoint = timeIterator;
             lastPoint.timestamp = timeIterator;
-            lastPoint.block = initialLastPoint.block.add(blockSlope.multiply(timeIterator.subtract(initialLastPoint.timestamp)).divide(MULTIPLIER));
+            lastPoint.block =
+                    initialLastPoint.block.add(blockSlope.multiply(timeIterator.subtract(initialLastPoint.timestamp)).divide(MULTIPLIER));
             epoch = epoch.add(BigInteger.ONE);
 
             if (timeIterator.equals(blockTimestamp)) {
@@ -276,7 +283,8 @@ public class BoostedBaln {
         }
     }
 
-    private void depositFor(Address address, BigInteger value, BigInteger unlockTime, LockedBalance lockedBalance, int type) {
+    private void depositFor(Address address, BigInteger value, BigInteger unlockTime, LockedBalance lockedBalance,
+                            int type) {
         LockedBalance locked = lockedBalance.newLockedBalance();
         BigInteger supplyBefore = this.supply.get();
         BigInteger blockTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());
@@ -328,8 +336,10 @@ public class BoostedBaln {
 
         Context.require(value.compareTo(BigInteger.ZERO) > 0, "Create Lock: Need non zero value");
         Context.require(locked.amount.equals(BigInteger.ZERO), "Create Lock: Withdraw old tokens first");
-        Context.require(unlockTime.compareTo(blockTimestamp) > 0, "Create Lock: Can only lock until time in the future");
-        Context.require(unlockTime.compareTo(blockTimestamp.add(MAXTIME)) <= 0, "Create Lock: Voting Lock can be 4 years max");
+        Context.require(unlockTime.compareTo(blockTimestamp) > 0, "Create Lock: Can only lock until time in the " +
+                "future");
+        Context.require(unlockTime.compareTo(blockTimestamp.add(MAXTIME)) <= 0,
+                "Create Lock: Voting Lock can be 4 " + "years max");
 
         this.depositFor(sender, value, unlockTime, locked, CREATE_LOCK_TYPE);
         this.nonReentrant.updateLock(false);
@@ -344,7 +354,8 @@ public class BoostedBaln {
 
         Context.require(value.compareTo(BigInteger.ZERO) > 0, "Increase amount: Need non zero value");
         Context.require(locked.amount.compareTo(BigInteger.ZERO) > 0, "Increase amount: No existing lock found");
-        Context.require(locked.end.compareTo(blockTimestamp) > 0, "Increase amount: Cannot add to expired lock. Withdraw");
+        Context.require(locked.end.compareTo(blockTimestamp) > 0, "Increase amount: Cannot add to expired lock. " +
+                "Withdraw");
 
         this.depositFor(sender, value, BigInteger.ZERO, locked, INCREASE_LOCK_AMOUNT);
         this.nonReentrant.updateLock(false);
@@ -395,7 +406,8 @@ public class BoostedBaln {
         Context.require(locked.amount.compareTo(BigInteger.ZERO) > 0, "Increase unlock time: Nothing is locked");
         Context.require(locked.end.compareTo(blockTimestamp) > 0, "Increase unlock time: Lock expired");
         Context.require(unlockTime.compareTo(locked.end) > 0, "Increase unlock time: Can only increase lock duration");
-        Context.require(unlockTime.compareTo(blockTimestamp.add(MAXTIME)) <= 0, "Increase unlock time: Voting lock can be 4 years max");
+        Context.require(unlockTime.compareTo(blockTimestamp.add(MAXTIME)) <= 0,
+                "Increase unlock time: Voting lock " + "can be 4 years max");
 
         this.depositFor(sender, BigInteger.ZERO, unlockTime, locked, INCREASE_UNLOCK_TIME);
         this.nonReentrant.updateLock(false);
@@ -470,7 +482,8 @@ public class BoostedBaln {
             return BigInteger.ZERO;
         } else {
             Point lastPoint = Point.toPoint(this.userPointHistory.at(address).get(epoch));
-            lastPoint.bias = lastPoint.bias.subtract(lastPoint.slope.multiply(timestamp.subtract(lastPoint.timestamp)));
+            BigInteger _delta = MathUtils.safeSubtract(timestamp, lastPoint.timestamp);
+            lastPoint.bias = lastPoint.bias.subtract(lastPoint.slope.multiply(_delta));
             if (lastPoint.bias.compareTo(BigInteger.ZERO) < 0) {
                 lastPoint.bias = BigInteger.ZERO;
             }
@@ -507,8 +520,8 @@ public class BoostedBaln {
         if (!dBlock.equals(BigInteger.ZERO)) {
             blockTime = blockTime.add(dTime.multiply(block.subtract(point0.block)).divide(dBlock));
         }
-
-        uPoint.bias = uPoint.bias.subtract(uPoint.slope.multiply(blockTime.subtract(uPoint.timestamp)));
+        BigInteger delta = MathUtils.safeSubtract(blockTime, uPoint.timestamp);
+        uPoint.bias = uPoint.bias.subtract(uPoint.slope.multiply(delta));
         return uPoint.bias.compareTo(BigInteger.ZERO) >= 0 ? uPoint.bias : BigInteger.ZERO;
     }
 
@@ -524,8 +537,8 @@ public class BoostedBaln {
             } else {
                 dSlope = this.slopeChanges.getOrDefault(timestampIterator, BigInteger.ZERO);
             }
-
-            lastPoint.bias = lastPoint.bias.subtract(lastPoint.slope.multiply(timestampIterator.subtract(lastPoint.timestamp)));
+            BigInteger delta = MathUtils.safeSubtract(timestampIterator, lastPoint.timestamp);
+            lastPoint.bias = lastPoint.bias.subtract(lastPoint.slope.multiply(delta));
             if (timestampIterator.equals(time)) {
                 break;
             }
