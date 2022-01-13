@@ -112,12 +112,8 @@ public class StateMachineTest extends TestBase {
         VotingBalance vote = votingBalances.getOrDefault(account, new VotingBalance());
         vote.value = vote.value.add(value);
         try {
-            tokenScore.invoke(account,
-                            "transfer", 
-                            bBalnScore.getAddress(), 
-                            value, 
-                            createLockParams);
-        } catch(AssertionError e) {
+            tokenScore.invoke(account, "transfer", bBalnScore.getAddress(), value, createLockParams);
+        } catch (AssertionError e) {
             votingBalances.put(account, vote);
             throw e;
         }
@@ -126,31 +122,22 @@ public class StateMachineTest extends TestBase {
         votingBalances.put(account, vote);
     }
 
-
     public void increaseAmount(Account account, BigInteger value) {
         byte[] increaseAmountParams = tokenData("increaseAmount", Map.of());
-         VotingBalance vote = votingBalances.getOrDefault(account, new VotingBalance());
+        VotingBalance vote = votingBalances.getOrDefault(account, new VotingBalance());
         vote.value = vote.value.add(value);
         votingBalances.put(account, vote);
 
-        tokenScore.invoke(account,
-                        "transfer",
-                        bBalnScore.getAddress(),
-                        value,
-                        increaseAmountParams);
-
+        tokenScore.invoke(account, "transfer", bBalnScore.getAddress(), value, increaseAmountParams);
     }
 
     public void increaseUnlockTime(Account account, BigInteger unlockTime) {
-        bBalnScore.invoke(account,
-                        "increaseUnlockTime",
-                        unlockTime);
+        bBalnScore.invoke(account, "increaseUnlockTime", unlockTime);
 
         //Only if not AssertionError is NOT thrown
         VotingBalance vote = votingBalances.getOrDefault(account, new VotingBalance());
         vote.unlockTime = unlockTime;
         votingBalances.put(account, vote);
-
     }
 
     @DisplayName("Create Lock with")
@@ -181,15 +168,16 @@ public class StateMachineTest extends TestBase {
         @DisplayName("balanceOf for future")
         @Test
         void invalidBalanceOf() {
-            long deltaBlock = (addWeeksToCurrentTimestamp(lockDuration) - sm.getBlock().getTimestamp()) / BLOCK_TIME + 1;
+            long deltaBlock = (addWeeksToCurrentTimestamp(lockDuration) - sm.getBlock()
+                                                                            .getTimestamp()) / BLOCK_TIME + 1;
             sm.getBlock().increase(deltaBlock);
 
-            Executable actualErrorMessage = () ->
-                    bBalnScore.call("balanceOf", accounts.get(0).getAddress(),
-                            BigInteger.valueOf(deltaBlock + 1));
+            Executable balanceOf = () -> bBalnScore.call("balanceOf", accounts.get(0)
+                                                                              .getAddress(),
+                    BigInteger.valueOf(deltaBlock + 1));
 
             String expectedErrorMessage = "Reverted(81): MathUtils.SafeSubtract :: Invalid operation";
-            expectErrorMessage(actualErrorMessage, expectedErrorMessage);
+            expectErrorMessage(balanceOf, expectedErrorMessage);
         }
 
         @DisplayName("unlock time less than current time")
@@ -246,7 +234,7 @@ public class StateMachineTest extends TestBase {
         void minimumAmount() {
             Account account = accounts.get(2);
             BigInteger valueMinimum = BigInteger.valueOf(MAX_TIME);
-            createLock(account,  valueMinimum, unlockTime);
+            createLock(account, valueMinimum, unlockTime);
 
             assert (((BigInteger) bBalnScore.call("balanceOf", account.getAddress(), BigInteger.ZERO)).compareTo(BigInteger.ZERO) > 0);
         }
@@ -280,8 +268,7 @@ public class StateMachineTest extends TestBase {
         @DisplayName("with zero value")
         @Test
         void increaseAmountWithZeroValue() {
-            Executable increaseAmount = () ->
-                increaseAmount(accounts.get(0), BigInteger.ZERO);
+            Executable increaseAmount = () -> increaseAmount(accounts.get(0), BigInteger.ZERO);
 
             String expectedErrorMessage = "Token Fallback: Token value should be a positive number";
             expectErrorMessage(increaseAmount, expectedErrorMessage);
@@ -290,8 +277,7 @@ public class StateMachineTest extends TestBase {
         @DisplayName("for non existing lock in account 1")
         @Test
         void increaseAmountForNonExistingLock() {
-            Executable increaseAmount = () ->
-                increaseAmount(accounts.get(1), value);
+            Executable increaseAmount = () -> increaseAmount(accounts.get(1), value);
 
             String expectedErrorMessage = "Increase amount: No existing lock found";
             expectErrorMessage(increaseAmount, expectedErrorMessage);
@@ -300,13 +286,12 @@ public class StateMachineTest extends TestBase {
         @DisplayName("to an expired lock")
         @Test
         void increaseAmountToExpiredLock() {
-            long deltaBlock = (addWeeksToCurrentTimestamp(lockedWeeks) - sm.getBlock().getTimestamp())/BLOCK_TIME + 1;
+            long deltaBlock = (addWeeksToCurrentTimestamp(lockedWeeks) - sm.getBlock().getTimestamp()) / BLOCK_TIME + 1;
             sm.getBlock().increase(deltaBlock);
             // Check if the lock time has expired
             assertEquals(BigInteger.ZERO, bBalnScore.call("balanceOf", accounts.get(0).getAddress(), BigInteger.ZERO));
 
-            Executable increaseAmount = () ->
-                increaseAmount(accounts.get(0), value);
+            Executable increaseAmount = () -> increaseAmount(accounts.get(0), value);
 
             String expectedErrorMessage = "Increase amount: Cannot add to expired lock. Withdraw";
             expectErrorMessage(increaseAmount, expectedErrorMessage);
@@ -337,8 +322,7 @@ public class StateMachineTest extends TestBase {
         @DisplayName("of non existing lock account")
         @Test
         void increaseUnlockTimeNonExisting() {
-            Executable increaseUnlockTime = () ->
-                increaseUnlockTime(accounts.get(2), BigInteger.valueOf(unlockTime));
+            Executable increaseUnlockTime = () -> increaseUnlockTime(accounts.get(2), BigInteger.valueOf(unlockTime));
 
             String expectedErrorMessage = "Increase unlock time: Nothing is locked";
             expectErrorMessage(increaseUnlockTime, expectedErrorMessage);
@@ -347,15 +331,14 @@ public class StateMachineTest extends TestBase {
         @DisplayName("of expired lock")
         @Test
         void increaseUnlockTimeExpiredLock() {
-            long deltaBlock = (addWeeksToCurrentTimestamp(lockedWeeks) - sm.getBlock().getTimestamp())/BLOCK_TIME + 1;
+            long deltaBlock = (addWeeksToCurrentTimestamp(lockedWeeks) - sm.getBlock().getTimestamp()) / BLOCK_TIME + 1;
             sm.getBlock().increase(deltaBlock);
             // Check if the lock time has expired
             assertEquals(BigInteger.ZERO, bBalnScore.call("balanceOf", accounts.get(0).getAddress(), BigInteger.ZERO));
 
             //Update unlock time
             unlockTime = addWeeksToCurrentTimestamp(5);
-            Executable increaseUnlockTime = () ->
-                increaseUnlockTime(accounts.get(0), BigInteger.valueOf(unlockTime));
+            Executable increaseUnlockTime = () -> increaseUnlockTime(accounts.get(0), BigInteger.valueOf(unlockTime));
 
             String expectedErrorMessage = "Increase unlock time: Lock expired";
             expectErrorMessage(increaseUnlockTime, expectedErrorMessage);
@@ -364,12 +347,11 @@ public class StateMachineTest extends TestBase {
         @DisplayName("with unlock time less than the current unlock time")
         @Test
         void decreaseUnlockTime() {
-            Map<String, BigInteger> locked = (Map<String, BigInteger>) bBalnScore.call("getLocked",
-                    accounts.get(0).getAddress());
+            Map<String, BigInteger> locked = (Map<String, BigInteger>) bBalnScore.call("getLocked", accounts.get(0)
+                                                                                                            .getAddress());
             final BigInteger unlockTime = locked.get("end").subtract(BigInteger.valueOf(2 * WEEK));
 
-            Executable increaseUnlockTime = () ->
-                increaseUnlockTime(accounts.get(0), unlockTime);
+            Executable increaseUnlockTime = () -> increaseUnlockTime(accounts.get(0), unlockTime);
 
             String expectedErrorMessage = "Increase unlock time: Can only increase lock duration";
             expectErrorMessage(increaseUnlockTime, expectedErrorMessage);
@@ -380,8 +362,7 @@ public class StateMachineTest extends TestBase {
         void increaseUnlockTimeGreaterThanMaxTime() {
             final long unlockTime = addWeeksToCurrentTimestamp(MAXIMUM_LOCK_WEEKS + 1);
 
-            Executable increaseUnlockTime = () ->
-                increaseUnlockTime(accounts.get(0), BigInteger.valueOf(unlockTime));
+            Executable increaseUnlockTime = () -> increaseUnlockTime(accounts.get(0), BigInteger.valueOf(unlockTime));
 
             String expectedErrorMessage = "Increase unlock time: Voting lock can be 4 years max";
             expectErrorMessage(increaseUnlockTime, expectedErrorMessage);
@@ -391,8 +372,7 @@ public class StateMachineTest extends TestBase {
         @Test
         void increaseUnlockFromContract() {
             Account account = Account.getAccount(Account.newScoreAccount(500).getAddress());
-            Executable increaseUnlockTime = () ->
-                increaseUnlockTime(account, BigInteger.valueOf(unlockTime));
+            Executable increaseUnlockTime = () -> increaseUnlockTime(account, BigInteger.valueOf(unlockTime));
 
             String expectedErrorMessage = "Assert Not contract: Smart contract depositors not allowed";
             expectErrorMessage(increaseUnlockTime, expectedErrorMessage);
@@ -424,9 +404,7 @@ public class StateMachineTest extends TestBase {
         @DisplayName("before unlock expires")
         @Test
         void unlockBeforeExpiry() {
-            Executable withdraw = () ->
-                bBalnScore.invoke(accounts.get(0),
-                                "withdraw");
+            Executable withdraw = () -> bBalnScore.invoke(accounts.get(0), "withdraw");
 
             String expectedErrorMessage = "Withdraw: The lock didn't expire";
             expectErrorMessage(withdraw, expectedErrorMessage);
@@ -435,7 +413,7 @@ public class StateMachineTest extends TestBase {
         @DisplayName("after the expiry")
         @Test
         void unlockAfterExpiry() {
-            long deltaBlock = (addWeeksToCurrentTimestamp(lockedWeeks) - sm.getBlock().getTimestamp())/BLOCK_TIME + 1;
+            long deltaBlock = (addWeeksToCurrentTimestamp(lockedWeeks) - sm.getBlock().getTimestamp()) / BLOCK_TIME + 1;
             sm.getBlock().increase(deltaBlock);
             // Check if the lock time has expired
             assertEquals(BigInteger.ZERO, bBalnScore.call("balanceOf", accounts.get(0).getAddress(), BigInteger.ZERO));
@@ -481,7 +459,8 @@ public class StateMachineTest extends TestBase {
             BigInteger balance = (BigInteger) bBalnScore.call("balanceOf", account.getAddress(), BigInteger.ZERO);
             totalSupply = totalSupply.add(balance);
 
-            if (vote.unlockTime.compareTo(currentTime) > 0 && vote.value.divide(BigInteger.valueOf(MAX_TIME)).compareTo(BigInteger.ZERO) > 0) {
+            if (vote.unlockTime.compareTo(currentTime) > 0 && vote.value.divide(BigInteger.valueOf(MAX_TIME))
+                                                                        .compareTo(BigInteger.ZERO) > 0) {
                 assert (balance.compareTo(BigInteger.ZERO) > 0);
             } else
                 assert vote.value.compareTo(BigInteger.ZERO) <= 0 && vote.unlockTime.compareTo(currentTime) > 0 || (balance.compareTo(BigInteger.ZERO) == 0);

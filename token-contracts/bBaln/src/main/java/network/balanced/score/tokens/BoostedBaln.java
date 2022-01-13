@@ -113,16 +113,14 @@ public class BoostedBaln {
 
     @External
     public void commitTransferOwnership(Address address) {
-        Context.require(Context.getCaller() == this.admin.get(), "Commit Transfer Ownership: Only admin can call " +
-                "this" + " method");
+        ownerRequired("Commit Transfer Ownership");
         futureAdmin.set(address);
         CommitOwnership(address);
     }
 
     @External
     public void applyTransferOwnership() {
-        Context.require(Context.getCaller() == this.admin.get(), "Apply transfer ownership: Only admin can call this "
-                + "method");
+        ownerRequired("Apply transfer ownership");
         Address futureAdmin = this.futureAdmin.get();
         Context.require(futureAdmin != null, "Apply transfer ownership: Admin not set");
         this.admin.set(futureAdmin);
@@ -164,8 +162,8 @@ public class BoostedBaln {
         BigInteger blockHeight = BigInteger.valueOf(Context.getBlockHeight());
 
         if (!address.equals(Constants.ZERO_ADDRESS)) {
-//            Calculate slopes and biases
-//            Kept at zero when they have to
+            //            Calculate slopes and biases
+            //            Kept at zero when they have to
             if (oldLocked.end.compareTo(blockTimestamp) > 0 && oldLocked.amount.compareTo(BigInteger.ZERO) > 0) {
                 uOld.slope = oldLocked.amount.divide(MAXTIME);
                 BigInteger delta = MathUtils.safeSubtract(oldLocked.end, blockTimestamp);
@@ -178,9 +176,9 @@ public class BoostedBaln {
                 uNew.bias = uNew.slope.multiply(delta);
             }
 
-//          Read values of scheduled changes in the slope
-//          oldLocked.end can be in the past and in the future
-//          newLocked.end can ONLY be in the FUTURE unless everything expired: than zeros
+            //          Read values of scheduled changes in the slope
+            //          oldLocked.end can be in the past and in the future
+            //          newLocked.end can ONLY be in the FUTURE unless everything expired: than zeros
             oldDSlope = this.slopeChanges.getOrDefault(oldLocked.end, BigInteger.ZERO);
             if (!newLocked.end.equals(BigInteger.ZERO)) {
                 if (newLocked.end.equals(oldLocked.end)) {
@@ -197,19 +195,19 @@ public class BoostedBaln {
         }
         BigInteger lastCheckPoint = lastPoint.timestamp;
 
-//      initialLastPoint is used for extrapolation to calculate block number
-//      (approximately, for *At methods) and save them
-//      as we cannot figure that out exactly from inside the contract
+        //      initialLastPoint is used for extrapolation to calculate block number
+        //      (approximately, for *At methods) and save them
+        //      as we cannot figure that out exactly from inside the contract
         Point initialLastPoint = lastPoint.newPoint();
         BigInteger blockSlope = BigInteger.ZERO;
         if (blockTimestamp.compareTo(lastPoint.timestamp) > 0) {
-            blockSlope =
-                    MULTIPLIER.multiply(blockHeight.subtract(lastPoint.block)).divide(blockTimestamp.subtract(lastPoint.timestamp));
-//          If last point is already recorded in this block, slope = 0
-//          But that's ok because we know the block in such case
+            blockSlope = MULTIPLIER.multiply(blockHeight.subtract(lastPoint.block))
+                                   .divide(blockTimestamp.subtract(lastPoint.timestamp));
+            //          If last point is already recorded in this block, slope = 0
+            //          But that's ok because we know the block in such case
         }
 
-//      Go over week's to fill history and calculate what the current point is
+        //      Go over week's to fill history and calculate what the current point is
         BigInteger timeIterator = lastCheckPoint.divide(TimeConstants.WEEK).multiply(TimeConstants.WEEK);
 
         for (int index = 0; index < 255; ++index) {
@@ -234,8 +232,8 @@ public class BoostedBaln {
 
             lastCheckPoint = timeIterator;
             lastPoint.timestamp = timeIterator;
-            lastPoint.block =
-                    initialLastPoint.block.add(blockSlope.multiply(timeIterator.subtract(initialLastPoint.timestamp)).divide(MULTIPLIER));
+            BigInteger dtime = timeIterator.subtract(initialLastPoint.timestamp);
+            lastPoint.block = initialLastPoint.block.add(blockSlope.multiply(dtime).divide(MULTIPLIER));
             epoch = epoch.add(BigInteger.ONE);
 
             if (timeIterator.equals(blockTimestamp)) {
@@ -580,11 +578,15 @@ public class BoostedBaln {
         if (targetEpoch.compareTo(epoch) < 0) {
             Point pointNext = Point.toPoint(this.pointHistory.get(targetEpoch.add(BigInteger.ONE)));
             if (!point.block.equals(pointNext.block)) {
-                dTime = block.subtract(point.block).multiply(pointNext.timestamp.subtract(point.timestamp)).divide(pointNext.block.subtract(point.block));
+                dTime = block.subtract(point.block)
+                             .multiply(pointNext.timestamp.subtract(point.timestamp))
+                             .divide(pointNext.block.subtract(point.block));
             }
         } else {
             if (!point.block.equals(blockHeight)) {
-                dTime = block.subtract(point.block).multiply(blockTimestamp.subtract(point.timestamp)).divide(blockHeight.subtract(point.block));
+                dTime = block.subtract(point.block)
+                             .multiply(blockTimestamp.subtract(point.timestamp))
+                             .divide(blockHeight.subtract(point.block));
             }
         }
 
@@ -619,6 +621,10 @@ public class BoostedBaln {
     @External(readonly = true)
     public int decimals() {
         return this.decimals;
+    }
+
+    private void ownerRequired(String method) {
+        Context.require(Context.getCaller() == this.admin.get(), method + " :: Only admin can call this method");
     }
 }
 
