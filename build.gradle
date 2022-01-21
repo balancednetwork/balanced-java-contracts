@@ -55,7 +55,6 @@ subprojects {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-
     // need to add this option to retrieve formal parameter names
     compileJava {
         options.compilerArgs += ['-parameters']
