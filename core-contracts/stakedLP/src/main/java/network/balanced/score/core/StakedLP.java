@@ -144,7 +144,7 @@ public class StakedLP {
         poolStakedDetails.at(user).set(id, newBalance);
         totalStakedAmount.set(id, newTotal);
 
-        String poolName = Context.call(String.class, dex.get(), "getPoolName", id);
+        String poolName = (String) Context.call(dex.get(), "getPoolName", id);
         Context.call(rewards.get(), "updateRewardsData", poolName, previousTotal, user, previousBalance);
     }
 
