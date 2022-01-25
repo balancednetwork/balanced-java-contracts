@@ -124,10 +124,15 @@ public class StakedLP {
         }
     }
 
+    @External(readonly = true)
+    public boolean isSupportedPool(BigInteger id) {
+        return supportedPools.getOrDefault(id, Boolean.FALSE);
+    }
+
     private void stake(Address user, BigInteger id, BigInteger value) {
+
         // Validate inputs
-        Boolean isSupportedPool = supportedPools.getOrDefault(id, Boolean.FALSE);
-        Context.require(isSupportedPool, "StakedLP: Pool with " + id + " is not supported");
+        Context.require(isSupportedPool(id), "StakedLP: Pool with " + id + " is not supported");
         Context.require(value.compareTo(BigInteger.ZERO) > 0,
                 "StakedLP: Cannot stake less than zero, value to stake " + value);
 
