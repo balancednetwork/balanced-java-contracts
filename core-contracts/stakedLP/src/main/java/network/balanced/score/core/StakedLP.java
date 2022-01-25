@@ -28,7 +28,8 @@ import static network.balanced.score.core.Checks.*;
 public class StakedLP {
 
     // Business Logic
-    private static final DictDB<BigInteger, Boolean> supportedPools = Context.newDictDB("supportedPools", Boolean.class);
+    private static final DictDB<BigInteger, Boolean> supportedPools = Context.newDictDB("supportedPools",
+            Boolean.class);
     public static final BranchDB<Address, DictDB<BigInteger, BigInteger>> poolStakedDetails =
             Context.newBranchDB("poolStakeDetails", BigInteger.class);
     public static final DictDB<BigInteger, BigInteger> totalStakedAmount = Context.newDictDB("totalStaked",
@@ -194,6 +195,5 @@ public class StakedLP {
             Context.revert("StakedLP: No valid method called");
         }
     }
-
 
 }
