@@ -15,7 +15,9 @@ dependencies {
 
 optimizedJar {
     mainClassName = 'network.balanced.score.core.StabilityFund'
-    archivesBaseName = 'stability-fund'
+        from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
 }
 
 deployJar {
