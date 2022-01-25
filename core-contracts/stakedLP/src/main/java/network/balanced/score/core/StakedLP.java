@@ -184,7 +184,7 @@ public class StakedLP {
         String method = json.get("method").asString();
         JsonObject params = json.get("params").asObject();
 
-        if ("_stake".equals(method)) {
+        if ("stake".equals(method)) {
             this.stake(_from, _id, _value);
         } else {
             Context.revert("StakedLP: No valid method called");
