@@ -170,7 +170,11 @@ public class StakedLP {
         String poolName = Context.call(String.class, dex.get(), "getPoolName", id);
         Context.call(rewards.get(), "updateRewardsData", poolName, previousTotal, caller, previousBalance);
 
-        Context.call(dex.get(), "transfer", caller, value, id);
+        try {
+            Context.call(dex.get(), "transfer", caller, value, id, new byte[0]);
+        } catch (Exception e) {
+            Context.revert("StakedLP: Failed to transfer LP tokens back to user. Reason: " + e.getMessage());
+        }
     }
 
     @External
