@@ -151,8 +151,6 @@ public class StakedLP {
     @External
     public void unstake(BigInteger id, BigInteger value) {
 
-        Context.require(supportedPools.getOrDefault(id, Boolean.FALSE), "StakedLP: Pool with id: " + id + " is not " +
-                "supported");
         Address caller = Context.getCaller();
         Context.require(value.compareTo(BigInteger.ZERO) > 0, "StakedLP: Cannot unstake less than zero value");
 
