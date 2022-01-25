@@ -118,6 +118,7 @@ public class StakedLP {
 
     @External
     public void removePool(BigInteger id) {
+        onlyGovernance();
         if (supportedPools.getOrDefault(id, Boolean.FALSE)) {
             supportedPools.set(id, Boolean.FALSE);
         }
