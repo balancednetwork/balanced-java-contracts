@@ -19,6 +19,7 @@ package network.balanced.score.core;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 import score.*;
+import score.annotation.EventLog;
 import score.annotation.External;
 
 import java.math.BigInteger;
@@ -45,6 +46,16 @@ public class StakedLP {
         Context.require(governance.isContract(), "StakedLP: Governance address should be a contract");
         StakedLP.governance.set(governance);
     }
+
+    /*
+     * Events
+     */
+
+    @EventLog(indexed = 1)
+    protected void Stake(Address _owner, BigInteger _id, BigInteger _value) {}
+
+    @EventLog(indexed = 1)
+    protected void Unstake(Address _owner, BigInteger _id, BigInteger _value) {}
 
     @External(readonly = true)
     public String name() {
@@ -145,6 +156,8 @@ public class StakedLP {
         poolStakedDetails.at(user).set(id, newBalance);
         totalStakedAmount.set(id, newTotal);
 
+        Stake(user, id, value);
+
         String poolName = (String) Context.call(dex.get(), "getPoolName", id);
         Context.call(rewards.get(), "updateRewardsData", poolName, previousTotal, user, previousBalance);
     }
@@ -168,7 +181,9 @@ public class StakedLP {
         poolStakedDetails.at(caller).set(id, newBalance);
         totalStakedAmount.set(id, newTotal);
 
-        String poolName = Context.call(String.class, dex.get(), "getPoolName", id);
+        Unstake(caller, id, value);
+
+        String poolName = (String) Context.call(dex.get(), "getPoolName", id);
         Context.call(rewards.get(), "updateRewardsData", poolName, previousTotal, caller, previousBalance);
 
         try {
