@@ -39,6 +39,7 @@ public class StabilityFund {
     @External
     public void setDaofund(Address address) {
         Context.require(Context.getCaller() == this.admin.get());
+        Context.require(address.isContract());
         this.daofund.set(address);
     }
 
@@ -50,6 +51,7 @@ public class StabilityFund {
     @External
     public void setSicx(Address address) {
         Context.require(Context.getCaller() == this.admin.get());
+        Context.require(address.isContract());
         this.sicx.set(address);
     }
 
@@ -61,6 +63,7 @@ public class StabilityFund {
     @External 
     public void setbnUSD(Address address) {
         Context.require(Context.getCaller() == this.admin.get());
+        Context.require(address.isContract());
         this.bnusd.set(address);
     }
 
@@ -72,6 +75,7 @@ public class StabilityFund {
     @External
     public void setRebalancing(Address address) {
         Context.require(Context.getCaller() == this.admin.get());
+        Context.require(address.isContract());
         this.rebalancing.set(address);
     }
 
@@ -83,6 +87,7 @@ public class StabilityFund {
     @External
     public void setDex(Address address) {
         Context.require(Context.getCaller() == this.admin.get());
+        Context.require(address.isContract());
         this.dex.set(address);
     }
 
