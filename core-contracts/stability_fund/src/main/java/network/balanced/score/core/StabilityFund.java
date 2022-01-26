@@ -126,7 +126,7 @@ public class StabilityFund {
     }
 
     @External
-    public void tokenFallback(Address from, BigInteger value, byte[] data) {
+    public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         return;
     }
 
