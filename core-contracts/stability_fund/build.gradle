@@ -34,7 +34,9 @@ deployJar {
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
     parameters {
-        arg('name', 'Alice')
+        arg('name', 'Balanced Stability Fund')
+        arg('governance', '<gov address>')
+        arg('admin', '<gov address>')
     }
 }
 
