@@ -32,20 +32,7 @@ class StabilityFundTest extends TestBase {
     private static Score sicx;
     private static Score bnusd;
 
-    // Stabilityfund score deployment settings.
     private static final String nameStabilityfund = "StabilityFund";
-
-    // Sicx score deployment settings.
-    private static final String nameSicx = "Staked icx";
-    private static final String symbolSicx = "SICX";
-    private static final int decimalsSicx = 18;
-    private static final BigInteger initalsupplySicx = BigInteger.valueOf(100);
-
-    // Bnusd score deployment settings.
-    private static final String nameBnusd = "Balanced usd";
-    private static final String symbolBnusd = "BNUSD";
-    private static final int decimalsBnusd = 18;
-    private static final BigInteger initalsupplyBnusd = BigInteger.valueOf(100);
 
     public static class IRC2BasicToken extends IRC2Basic {
         public IRC2BasicToken(String _name, String _symbol, int _decimals, BigInteger _totalSupply) {
@@ -57,8 +44,8 @@ class StabilityFundTest extends TestBase {
     @BeforeEach
     public void setup() throws Exception {
         stabilityFund = sm.deploy(owner, StabilityFund.class, nameStabilityfund, governance.getAddress(), admin.getAddress());
-        sicx = sm.deploy(owner, IRC2BasicToken.class, nameSicx, symbolSicx, decimalsSicx, initalsupplySicx);
-        bnusd = sm.deploy(owner, IRC2BasicToken.class, nameBnusd, symbolBnusd, decimalsBnusd, initalsupplyBnusd);
+        sicx = deployIRC2Basic(owner, "Staked icx", "sicx", 18, BigInteger.valueOf(1000));
+        bnusd = deployIRC2Basic(owner, "Balanced usd", "bnusd", 18, BigInteger.valueOf(1000));
     }
 
     @Test
@@ -117,7 +104,7 @@ class StabilityFundTest extends TestBase {
     }
 
     @Test
-    void getStabilityFundBalance () {
+    void getStabilityFundBalance() {
         // Set required addresses in stabilityfund contract.
         stabilityFund.invoke(admin, "setSicx", sicx.getAddress());
         stabilityFund.invoke(admin, "setbnUSD", bnusd.getAddress());
@@ -139,7 +126,8 @@ class StabilityFundTest extends TestBase {
         assertEquals(stabilityFundAccount.getBalance("sicx"), new BigInteger(json.get("sicx").asString()));
         assertEquals(stabilityFundAccount.getBalance("bnusd"), new BigInteger(json.get("bnusd").asString()));
     }
-    // static Score deployIRC2Basic (Address owner, String name, String symbol, int decimals, BigInteger initialSupply) throws Exception {
-    //     return sm.deploy(owner, IRC2Basic.class, name, symbol, decimals, initialSupply);
-    //}
+
+    private Score deployIRC2Basic(Account owner, String name, String symbol, int decimals, BigInteger initialSupply) throws Exception {
+        return sm.deploy(owner, IRC2BasicToken.class, name, symbol, decimals, initialSupply);
+   }
 }
