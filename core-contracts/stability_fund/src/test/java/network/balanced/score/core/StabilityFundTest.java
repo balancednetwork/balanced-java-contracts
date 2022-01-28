@@ -69,7 +69,7 @@ class StabilityFundTest extends TestBase {
     @Test
     void setGetDaofund() {
         assertNull(stabilityFund.call("getDaofund"));
-        Account daofund = sm.createAccount();
+        Account daofund = Account.newScoreAccount(1);
 
         stabilityFund.invoke(admin, "setDaofund", daofund.getAddress());
 
@@ -89,7 +89,7 @@ class StabilityFundTest extends TestBase {
     @Test
     void setGetRebalancing() {
         assertNull(stabilityFund.call("getRebalancing"));
-        Account rebalancing = Account.newScoreAccount(2);
+        Account rebalancing = Account.newScoreAccount(1);
 
         stabilityFund.invoke(admin, "setRebalancing", rebalancing.getAddress());
 
@@ -99,7 +99,7 @@ class StabilityFundTest extends TestBase {
     @Test
     void setGetDex() {
         assertNull(stabilityFund.call("getDex"));
-        Account dex = Account.newExternalAccount(3);
+        Account dex = Account.newScoreAccount(1);
 
         stabilityFund.invoke(admin, "setDex", dex.getAddress());
 
