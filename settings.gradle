@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,5 +25,5 @@
  */
 
 rootProject.name = 'balanced-java-contracts'
-include(':core-contracts',
-        ':token-contracts')
+include(':core-contracts:DAOfund',
+        ':token-contracts:')
