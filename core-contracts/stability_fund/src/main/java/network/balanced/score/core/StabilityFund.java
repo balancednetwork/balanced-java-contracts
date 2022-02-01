@@ -126,8 +126,7 @@ public class StabilityFund {
 
     @External
     public void claimFunding() {
-        // To be implemented once this functionality has been implemented in the Daofund.
-        return;
+        Context.call(this.daofund.get(), "claim");
     }
 
     @External
