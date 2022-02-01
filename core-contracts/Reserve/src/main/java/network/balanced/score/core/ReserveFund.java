@@ -39,6 +39,7 @@ public class ReserveFund {
     private static final String SICX_TOKEN = "sicx_token";
     private static final String BALN = "baln";
     private static final String SICX = "sicx";
+    private static final String AWARDS = "awards";
 
     public static final String TAG = "BalancedReserveFund";
 
@@ -49,6 +50,7 @@ public class ReserveFund {
     private final VarDB<Address> sicxToken = Context.newVarDB(SICX_TOKEN, Address.class);
     private final VarDB<BigInteger> baln = Context.newVarDB(BALN, BigInteger.class);
     private final VarDB<BigInteger> sicx = Context.newVarDB(SICX, BigInteger.class);
+    private final BranchDB<Address, DictDB<Address, BigInteger>> awards = Context.newBranchDB(AWARDS, BigInteger.class);
 
     public ReserveFund(@Optional Address governance) {
         if (governance != null) {
@@ -57,8 +59,26 @@ public class ReserveFund {
         }
     }
 
+    public static  class Disbursement {
+        public Address address;
+        public BigInteger amount;
+
+    }
+
+    @EventLog(indexed = 3)
+    protected void Transfer(Address from,  Address to, BigInteger value, byte[] data) {
+    }
+
+    @EventLog(indexed = 2)
+    protected void FundTransfer(Address destination, BigInteger amount, String note) {
+    }
+
     @EventLog(indexed = 2)
     protected void TokenTransfer(Address recipient, BigInteger amount, String note) {
+    }
+
+    @EventLog(indexed = 1)
+    protected void RedeemFail(Address to, String symbol, BigInteger value) {
     }
 
     @External(readonly = true)
@@ -90,6 +110,46 @@ public class ReserveFund {
         return admin.get();
     }
 
+    @External
+    public void setLoans(Address _address){
+        onlyAdmin();
+        Context.require(_address.isContract(), TAG + ": Address provided is an EOA address. A contract address is " +
+        "required.");
+        loansScore.set(_address);
+    }
+
+    @External(readonly = true)
+    public Address getLoans(){
+        return loansScore.get();
+    }
+
+    @External
+    public void setBaln(Address _address){
+        onlyAdmin();
+        Context.require(_address.isContract(), TAG + ": Address provided is an EOA address. A contract address is " +
+        "required.");
+        balnToken.set(_address);
+    }
+
+    @External(readonly = true)
+    public Address getBaln(){
+        return balnToken.get();
+    }
+
+    @External
+    public void setSicx(Address _address){
+        onlyAdmin();
+        Context.require(_address.isContract(), TAG + ": Address provided is an EOA address. A contract address is " +
+        "required.");
+        sicxToken.set(_address);
+    }
+
+    @External(readonly = true)
+    public Address getSicx(){
+        return sicxToken.get();
+    }
+
+    @External()
     @External(readonly = true)
     @SuppressWarnings("unchecked")
     public Map<String, BigInteger> getBalances() {
@@ -146,6 +206,52 @@ public class ReserveFund {
         sicx.set(sicxAmount.subtract(sicxToSend));
         sendToken(sicxTokenAddress, loansScoreAddress, sicxToSend, "To Loans: ");
         return sicxToSend;
+    }
+
+
+    @External
+    public Boolean disburse(Address _recipient, Disbursement[] _amounts){
+        onlyGovernance();
+        for(Disbursement asset: _amounts) {
+            if (asset.address.equals(sicxToken.get())){
+                BigInteger sicx = sicx.get();
+                BigInteger amountToBeClaimedByRecipient = awards.at(_recipient).getOrDefault(asset.address,
+                    BigInteger.ZERO);
+
+                Context.require(sicx.compareTo(asset.amount) > -1, TAG + ":Insufficient balance of asset"+asset.address +" in the reserve fund.");
+                sicx.set(sicx.subtract(asset.amount));
+                awards.at(_recipient).set(asset.address, amountToBeClaimedByRecipient.add(asset.amount));
+            } else if (asset.address.equals(balnToken.get())){
+                BigInteger baln = baln.get();
+                BigInteger amountToBeClaimedByRecipient = awards.at(_recipient).getOrDefault(asset.address,
+                    BigInteger.ZERO);
+
+                Context.require(baln.compareTo(asset.amount) > 1, TAG + ":Insufficient balance of asset"+asset.address +" in the reserve fund.");
+                baln.set(baln.subtract(asset.amount));
+                awards.at(_recipient).set(asset.address, amountToBeClaimedByRecipient.add(asset.amount));
+            } else{
+                Context.revert(TAG + ": Unavailable assets in the reserve fund requested.");
+            }
+        }
+        return Boolean.TRUE;
+    }
+
+    @External
+    @SuppressWarnings("unchecked")
+    public void claim(){
+        Address sender = Context.getCaller();
+        DictDB<Address, BigInteger> disbursement = awards.at(sender);
+
+        Map<String, String> assets = (Map<String, String>) Context.call(loansScore.get(), "getCollateralTokens");
+
+        for (String symbol : assets.keySet()){
+            Address tokenAddress = Address.fromString(assets.get(symbol));
+            BigInteger amountToClaim = disbursement.getOrDefault(tokenAddress, BigInteger.ZERO);
+            if (amountToClaim.signum() > 0) {
+                disbursement.set(tokenAddress, BigInteger.ZERO);
+                sendToken(tokenAddress, sender, amountToClaim, "Balanced Reserve Fund disbursement.");
+            }
+        }
     }
 
 

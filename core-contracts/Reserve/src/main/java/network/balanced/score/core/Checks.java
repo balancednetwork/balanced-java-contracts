@@ -35,4 +35,11 @@ public class Checks {
         Context.require(!governance.equals(defaultAddress), ReserveFund.TAG + ": Governance address not set");
         Context.require(sender.equals(governance), ReserveFund.TAG + ": Sender not governance contract");
     }
+
+    public static void onlyAdmin() {
+        Address admin = ReserveFund.admin.getOrDefault(defaultAddress);
+        Address sender = Context.getCaller();
+        Context.require(!admin.equals(defaultAddress), ReserveFund.TAG + ": Admin address not set");
+        Context.require(sender.equals(admin), ReserveFund.TAG + ": Sender not admin");
+    }
 }
