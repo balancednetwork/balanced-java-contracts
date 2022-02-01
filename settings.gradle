@@ -25,5 +25,5 @@
  */
 
 rootProject.name = 'balanced-java-contracts'
-include(':core-contracts',
+include(':core-contracts:stability_fund',
         ':token-contracts')
