@@ -19,6 +19,8 @@ package network.balanced.score.core;
 import score.Address;
 import score.Context;
 import score.VarDB;
+import score.DictDB;
+import score.BranchDB;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
@@ -44,7 +46,7 @@ public class ReserveFund {
     public static final String TAG = "BalancedReserveFund";
 
     public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
-    private final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
+    public static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
     private final VarDB<Address> loansScore = Context.newVarDB(LOANS_SCORE, Address.class);
     private final VarDB<Address> balnToken = Context.newVarDB(BALN_TOKEN, Address.class);
     private final VarDB<Address> sicxToken = Context.newVarDB(SICX_TOKEN, Address.class);
@@ -149,7 +151,6 @@ public class ReserveFund {
         return sicxToken.get();
     }
 
-    @External()
     @External(readonly = true)
     @SuppressWarnings("unchecked")
     public Map<String, BigInteger> getBalances() {
@@ -210,24 +211,24 @@ public class ReserveFund {
 
 
     @External
-    public Boolean disburse(Address _recipient, Disbursement[] _amounts){
+    public boolean disburse(Address _recipient, Disbursement[] _amounts){
         onlyGovernance();
         for(Disbursement asset: _amounts) {
             if (asset.address.equals(sicxToken.get())){
-                BigInteger sicx = sicx.get();
+                BigInteger sicxAmount = sicx.getOrDefault(BigInteger.ZERO);
                 BigInteger amountToBeClaimedByRecipient = awards.at(_recipient).getOrDefault(asset.address,
                     BigInteger.ZERO);
 
-                Context.require(sicx.compareTo(asset.amount) > -1, TAG + ":Insufficient balance of asset"+asset.address +" in the reserve fund.");
-                sicx.set(sicx.subtract(asset.amount));
+                Context.require(sicxAmount.compareTo(asset.amount) > -1, TAG + ":Insufficient balance of asset"+asset.address +" in the reserve fund.");
+                sicx.set(sicxAmount.subtract(asset.amount));
                 awards.at(_recipient).set(asset.address, amountToBeClaimedByRecipient.add(asset.amount));
             } else if (asset.address.equals(balnToken.get())){
-                BigInteger baln = baln.get();
+                BigInteger balnAmount = baln.getOrDefault(BigInteger.ZERO);
                 BigInteger amountToBeClaimedByRecipient = awards.at(_recipient).getOrDefault(asset.address,
                     BigInteger.ZERO);
 
-                Context.require(baln.compareTo(asset.amount) > 1, TAG + ":Insufficient balance of asset"+asset.address +" in the reserve fund.");
-                baln.set(baln.subtract(asset.amount));
+                Context.require(balnAmount.compareTo(asset.amount) > -1, TAG + ":Insufficient balance of asset"+asset.address +" in the reserve fund.");
+                baln.set(balnAmount.subtract(asset.amount));
                 awards.at(_recipient).set(asset.address, amountToBeClaimedByRecipient.add(asset.amount));
             } else{
                 Context.revert(TAG + ": Unavailable assets in the reserve fund requested.");
