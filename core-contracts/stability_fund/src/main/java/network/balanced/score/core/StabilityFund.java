@@ -12,11 +12,8 @@ import java.math.BigInteger;
 
 
 public class StabilityFund {
-
-    // Contract name.
     private final String name;
 
-    // Balanced contract addresses.
     private final VarDB<Address> admin = Context.newVarDB("admin", Address.class);
     private final VarDB<Address> sicx = Context.newVarDB("sICX", Address.class);
     private final VarDB<Address> bnusd = Context.newVarDB("bnUSD", Address.class);
