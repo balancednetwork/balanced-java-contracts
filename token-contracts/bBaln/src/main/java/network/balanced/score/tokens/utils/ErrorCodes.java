@@ -1,7 +1,8 @@
 package network.balanced.score.tokens.utils;
 
 public enum ErrorCodes {
-    InvalidOperation(81);
+    InvalidOperation(81),
+    RequirementViolationException(82);
 
     private final int code;
 

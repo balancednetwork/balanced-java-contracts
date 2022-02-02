@@ -16,6 +16,8 @@
 
 package network.balanced.score.tokens;
 
+import network.balanced.score.tokens.utils.UnsignedBigInteger;
+
 import java.math.BigInteger;
 
 public class TimeConstants {
@@ -24,6 +26,7 @@ public class TimeConstants {
     public static final BigInteger HOUR = BigInteger.valueOf(60L).multiply(MINUTE);
     public static final BigInteger DAY = BigInteger.valueOf(24L).multiply(HOUR);
     public static final BigInteger WEEK = BigInteger.valueOf(7L).multiply(DAY);
+    public static final UnsignedBigInteger U_WEEK = new UnsignedBigInteger(WEEK);
     public static final BigInteger MONTH = BigInteger.valueOf(30L).multiply(DAY);
     public static final BigInteger YEAR = BigInteger.valueOf(365L).multiply(DAY);
 }

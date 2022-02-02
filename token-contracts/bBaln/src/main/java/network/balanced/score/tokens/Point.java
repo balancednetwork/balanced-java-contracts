@@ -16,6 +16,7 @@
 
 package network.balanced.score.tokens;
 
+import network.balanced.score.tokens.utils.UnsignedBigInteger;
 import score.ByteArrayObjectWriter;
 import score.Context;
 import score.ObjectReader;
@@ -26,29 +27,29 @@ public class Point {
 
     public BigInteger bias;
     public BigInteger slope;
-    public BigInteger timestamp;
-    public BigInteger block;
+    public UnsignedBigInteger timestamp;
+    public UnsignedBigInteger block;
 
     public Point(BigInteger bias, BigInteger slope, BigInteger timestamp, BigInteger block) {
         this.bias = bias;
         this.slope = slope;
-        this.timestamp = timestamp;
-        this.block = block;
+        this.timestamp = new UnsignedBigInteger(timestamp);
+        this.block = new UnsignedBigInteger(block);
     }
 
-    public Point() { this(BigInteger.ZERO, BigInteger.ZERO, BigInteger.ZERO, BigInteger.ZERO);}
+    public Point() {this(BigInteger.ZERO, BigInteger.ZERO, BigInteger.ZERO, BigInteger.ZERO);}
 
     public byte[] toByteArray() {
         ByteArrayObjectWriter pointInBytes = Context.newByteArrayObjectWriter("RLPn");
         pointInBytes.write(this.bias);
         pointInBytes.write(this.slope);
-        pointInBytes.write(this.timestamp);
-        pointInBytes.write(this.block);
+        pointInBytes.write(this.timestamp.toBigInteger());
+        pointInBytes.write(this.block.toBigInteger());
         return pointInBytes.toByteArray();
     }
 
     public Point newPoint() {
-        return new Point(this.bias, this.slope, this.timestamp, this.block);
+        return new Point(this.bias, this.slope, this.timestamp.toBigInteger(), this.block.toBigInteger());
     }
 
     public static Point toPoint(byte[] pointBytesArray) {
@@ -56,7 +57,16 @@ public class Point {
             return new Point();
         } else {
             ObjectReader point = Context.newByteArrayObjectReader("RLPn", pointBytesArray);
-            return new Point(point.readBigInteger(), point.readBigInteger(), point.readBigInteger(), point.readBigInteger());
+            return new Point(point.readBigInteger(), point.readBigInteger(), point.readBigInteger(),
+                    point.readBigInteger());
         }
+    }
+
+    public BigInteger getTimestamp() {
+        return timestamp.toBigInteger();
+    }
+
+    public BigInteger getBlock() {
+        return block.toBigInteger();
     }
 }

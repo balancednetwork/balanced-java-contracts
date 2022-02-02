@@ -164,21 +164,23 @@ public class StateMachineTest extends TestBase {
             String expectedErrorMessage = "Token Fallback: Token value should be a positive number";
             expectErrorMessage(createLockCall, expectedErrorMessage);
         }
-
         @DisplayName("balanceOf for future")
         @Test
         void invalidBalanceOf() {
+            Account account = accounts.get(0);
+            createLock(account, value, unlockTime);
+
             long deltaBlock = (addWeeksToCurrentTimestamp(lockDuration) - sm.getBlock()
                                                                             .getTimestamp()) / BLOCK_TIME + 1;
             sm.getBlock().increase(deltaBlock);
-
             Executable balanceOf = () -> bBalnScore.call("balanceOf", accounts.get(0)
                                                                               .getAddress(),
                     BigInteger.valueOf(deltaBlock + 1));
 
-            String expectedErrorMessage = "Reverted(81): MathUtils.SafeSubtract :: Invalid operation";
+            String expectedErrorMessage = "Reverted(82): subtraction underflow for unsigned numbers";
             expectErrorMessage(balanceOf, expectedErrorMessage);
         }
+
 
         @DisplayName("unlock time less than current time")
         @Test
@@ -246,6 +248,8 @@ public class StateMachineTest extends TestBase {
                 createLock(account, value, unlockTime);
             }
         }
+
+
     }
 
     @DisplayName("Increase Amount")
@@ -293,7 +297,7 @@ public class StateMachineTest extends TestBase {
 
             Executable increaseAmount = () -> increaseAmount(accounts.get(0), value);
 
-            String expectedErrorMessage = "Increase amount: Cannot add to expired lock. Withdraw";
+            String expectedErrorMessage = "Increase amount: Cannot add to expired lock.";
             expectErrorMessage(increaseAmount, expectedErrorMessage);
         }
 

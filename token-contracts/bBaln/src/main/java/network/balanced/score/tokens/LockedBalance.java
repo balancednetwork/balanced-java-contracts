@@ -16,6 +16,7 @@
 
 package network.balanced.score.tokens;
 
+import network.balanced.score.tokens.utils.UnsignedBigInteger;
 import score.ByteArrayObjectWriter;
 import score.Context;
 import score.ObjectReader;
@@ -25,9 +26,13 @@ import java.util.concurrent.locks.Lock;
 
 public class LockedBalance {
     public BigInteger amount;
-    public BigInteger end;
+    public UnsignedBigInteger end;
 
     public LockedBalance(BigInteger amount, BigInteger end) {
+        this(amount, new UnsignedBigInteger(end));
+    }
+
+    public LockedBalance(BigInteger amount, UnsignedBigInteger end) {
         this.amount = amount;
         this.end = end;
     }
@@ -37,7 +42,7 @@ public class LockedBalance {
     public byte[] toByteArray() {
         ByteArrayObjectWriter lockedBalanceInBytes = Context.newByteArrayObjectWriter("RLPn");
         lockedBalanceInBytes.write(this.amount);
-        lockedBalanceInBytes.write(this.end);
+        lockedBalanceInBytes.write(this.end.toBigInteger());
         return lockedBalanceInBytes.toByteArray();
     }
 
@@ -50,5 +55,9 @@ public class LockedBalance {
             ObjectReader lockedBalance = Context.newByteArrayObjectReader("RLPn", lockedBalanceBytesArray);
             return new LockedBalance(lockedBalance.readBigInteger(), lockedBalance.readBigInteger());
         }
+    }
+
+    public BigInteger getEnd() {
+        return this.end.toBigInteger();
     }
 }
