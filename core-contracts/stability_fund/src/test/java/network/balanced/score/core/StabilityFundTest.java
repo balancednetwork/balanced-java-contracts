@@ -21,7 +21,6 @@ import java.math.BigInteger;
 
 
 class StabilityFundTest extends TestBase {
-
     private static final ServiceManager sm = getServiceManager();
 
     private static final Account owner = sm.createAccount();
