@@ -1,4 +1,4 @@
-package com.network.balanced.score.tokens.tokens;
+package network.balanced.score.tokens;
 
 import java.math.BigInteger;
 

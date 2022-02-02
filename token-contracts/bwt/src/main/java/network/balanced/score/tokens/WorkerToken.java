@@ -1,9 +1,8 @@
-package com.network.balanced.score.tokens;
+package network.balanced.score.tokens;
 
 import java.math.BigInteger;
 
 
-import com.network.balanced.score.tokens.tokens.IRC2;
 import score.Address;
 import score.Context;
 import score.VarDB;
