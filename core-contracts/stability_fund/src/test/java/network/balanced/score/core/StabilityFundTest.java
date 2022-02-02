@@ -95,7 +95,7 @@ class StabilityFundTest extends TestBase {
     @Test
     void setGetBnusd() {
         assertNull(stabilityFund.call("getbnUSD"));
-        Account bnusd = Account.newScoreAccount(4);
+        Account bnusd = Account.newScoreAccount(1);
 
         stabilityFund.invoke(admin, "setbnUSD", bnusd.getAddress());
 
