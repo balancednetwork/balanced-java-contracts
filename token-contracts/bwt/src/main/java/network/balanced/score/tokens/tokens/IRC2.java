@@ -1,33 +1,35 @@
-package network.balanced.score.tokens;
+package network.balanced.score.tokens.tokens;
 
 import java.math.BigInteger;
 
+import network.balanced.score.tokens.WorkerToken;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
 
-public class IRC2 implements TokenStandard{
-    private String _NAME = "name";
-    private String _SYMBOL = "symbol";
-    private String _DECIMALS = "decimals";
-    private String _TOTAL_SUPPLY = "total_supply";
-    private String _BALANCES = "balances";
-    private String _ADMIN = "admin";
-    private String _ACCOUNTS = "account";
+public abstract class IRC2 implements TokenStandard {
+    private static String _NAME = "name";
+    private static String _SYMBOL = "symbol";
+    private static String _DECIMALS = "decimals";
+    private static String _TOTAL_SUPPLY = "total_supply";
+    private static String _BALANCES = "balances";
+    private static String _ADMIN = "admin";
+    private static String _ACCOUNTS = "account";
 
 
-    private VarDB<String> _name = Context.newVarDB(_NAME, String.class);
-    private VarDB<String> _symbol = Context.newVarDB(_SYMBOL, String.class);
-    private VarDB<BigInteger> _decimals = Context.newVarDB(_DECIMALS, BigInteger.class);
-    private VarDB<BigInteger> _total_supply = Context.newVarDB(_TOTAL_SUPPLY, BigInteger.class);
+    protected VarDB<String> _name = Context.newVarDB(_NAME, String.class);
+    protected VarDB<String> _symbol = Context.newVarDB(_SYMBOL, String.class);
+    protected VarDB<BigInteger> _decimals = Context.newVarDB(_DECIMALS, BigInteger.class);
+    protected VarDB<BigInteger> _total_supply = Context.newVarDB(_TOTAL_SUPPLY, BigInteger.class);
 
-    //TODO: Check this out later
-    private ArrayDB<Address> _addresses = Context.newArrayDB(_ACCOUNTS, Address.class);
-    private DictDB<Address, BigInteger> _balances = Context.newDictDB(_BALANCES, BigInteger.class);
-    private VarDB<Address> _admin = Context.newVarDB(_ADMIN, Address.class);
+    protected ArrayDB<Address> _addresses = Context.newArrayDB(_ACCOUNTS, Address.class);
+    protected DictDB<Address, BigInteger> _balances = Context.newDictDB(_BALANCES, BigInteger.class);
+    // public because need to use this in onlyAdmin check
+    public static VarDB<Address> _admin = Context.newVarDB(_ADMIN, Address.class);
 
     private final BigInteger MAX_HOLDER_COUNT = BigInteger.valueOf(400);
+
 
     public static BigInteger pow(BigInteger base, int exponent){
         BigInteger res = BigInteger.ONE;
@@ -64,7 +66,7 @@ public class IRC2 implements TokenStandard{
         Context.require(_initialSupply.compareTo(BigInteger.valueOf(0)) >= 0, "Decimals cannot be less than zero");
 
         // set the total supply to the context variable
-        BigInteger supply = _initialSupply.multiply(pow(_initialSupply, _decimals.intValue()));
+        BigInteger supply = _initialSupply.multiply(pow(BigInteger.TEN, _decimals.intValue()));
         _total_supply.set(supply);
         this._decimals.set(_decimals);
 
@@ -81,17 +83,15 @@ public class IRC2 implements TokenStandard{
      * @return Name of the token
      */
     @External(readonly = true)
-    @Override
     public String name() {
         return _name.getOrDefault("");
     }
 
+
     /**
-     *
      * @return Symbol of the token
      */
     @External(readonly = true)
-    @Override
     public String symbol() {
         return _symbol.get();
     }
@@ -101,7 +101,6 @@ public class IRC2 implements TokenStandard{
      * @return Number of decimals
      */
     @External(readonly = true)
-    @Override
     public BigInteger decimals() {
         return _decimals.get();
     }
@@ -111,7 +110,6 @@ public class IRC2 implements TokenStandard{
      * @return total number of tokens in existence.
      */
     @External(readonly = true)
-    @Override
     public BigInteger totalSupply() {
         return _total_supply.get();
     }
@@ -122,7 +120,6 @@ public class IRC2 implements TokenStandard{
      * @return Amount of tokens owned by the `account` with the given address.
      */
     @External(readonly = true)
-    @Override
     public BigInteger balanceOf(Address _owner) {
         return _balances.getOrDefault(_owner, BigInteger.valueOf(0));
     }
@@ -135,13 +132,16 @@ public class IRC2 implements TokenStandard{
     @External
     public void setAdmin(Address _admin){
         Checks.onlyOwner();
-        this._admin.set(_admin);
+        IRC2._admin.set(_admin);
     }
 
 
-    @Override
+    @External
     public void transfer(Address _to, BigInteger _value, byte[] _data) {
-
+        if(_data == null){
+            _data = new byte[0];
+        }
+        _transfer(Context.getCaller(), _to, _value, _data);
     }
 
     /**
@@ -150,7 +150,7 @@ public class IRC2 implements TokenStandard{
      * @param address: Address that we need to check
      * @return: a boolean
      */
-    private boolean arrayDbContains(ArrayDB<Address> arrayDB, Address address){
+    protected boolean arrayDbContains(ArrayDB<Address> arrayDB, Address address){
         final int size =  arrayDB.size();
         for (int i = 0; i < size; i++){
             if (arrayDB.get(i).equals(address)){
@@ -161,7 +161,7 @@ public class IRC2 implements TokenStandard{
         return false;
     }
 
-    private static boolean remove_from_arraydb(Address _item, ArrayDB<Address> _array){
+    protected static boolean remove_from_arraydb(Address _item, ArrayDB<Address> _array){
         final int size = _array.size();
         if(size < 1){
             return false;
@@ -204,7 +204,7 @@ public class IRC2 implements TokenStandard{
         Transfer(_from, _to, _value, _data);
 
         Context.require(
-                _addresses.size() > MAX_HOLDER_COUNT.intValue(),
+                _addresses.size() < MAX_HOLDER_COUNT.intValue(),
                 "The maximum holder count of {MAX_HOLDER_COUNT} has been reached." +
                         "Only transfers of whole balances or moves between current" +
                         "holders is allowed until the total holder count is reduced."
@@ -215,7 +215,9 @@ public class IRC2 implements TokenStandard{
         }
     }
 
-    @EventLog(indexed = 4)
+
+
+    @EventLog(indexed = 3)
     void Transfer(Address _from, Address _to, BigInteger _value, byte[] _data){
 
     }
