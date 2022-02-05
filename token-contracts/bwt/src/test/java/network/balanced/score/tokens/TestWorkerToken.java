@@ -21,14 +21,15 @@ public class TestWorkerToken extends TestBase {
     private static Address governance = owner.getAddress();
     private static Score tokenScore;
     private static Account governanceScore = Account.newScoreAccount(1);
-    private static Account balnScore = Account.newScoreAccount(2);
+    private static Account balnScoreAccount = Account.newScoreAccount(9);
+    private static Account balnScore = Account.newScoreAccount(9);
 
 
     @BeforeAll
     static void setup() throws Exception {
         tokenScore = sm.deploy(owner, WorkerToken.class, governanceScore.getAddress());
         tokenScore.invoke(governanceScore,"setAdmin", admin.getAddress());
-        tokenScore.invoke(admin, "setBaln", balnScore.getAddress());
+        tokenScore.invoke(admin, "setBaln", governanceScore.getAddress());
     }
 
     @Test
@@ -64,12 +65,12 @@ public class TestWorkerToken extends TestBase {
         // test 2
         // TODO: Check token fall back test
         testBalance = (BigInteger) tokenScore.call("balanceOf", testAccount.getAddress());
-        var balnScoreBalance = (BigInteger) tokenScore.call("balanceOf", tokenScore.getAddress());
+        var governanceScoreBalance = (BigInteger) tokenScore.call("balanceOf", governanceScore.getAddress());
         byte[] bytes = new byte[10];
         transferAmount = BigInteger.valueOf(25).multiply(WorkerToken.pow(BigInteger.TEN, 6));
         tokenScore.invoke(admin, "adminTransfer", testAccount.getAddress(), balnScore.getAddress(), transferAmount, info.getBytes());
         assertEquals(testBalance.subtract(transferAmount), tokenScore.call("balanceOf", testAccount.getAddress()));
-        assertEquals(balnScoreBalance.add(transferAmount), tokenScore.call("balanceOf", balnScore.getAddress()));
+        assertEquals(governanceScoreBalance.add(transferAmount), tokenScore.call("balanceOf", governanceScore.getAddress()));
     }
 
 }
