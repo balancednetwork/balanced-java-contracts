@@ -211,7 +211,7 @@ public abstract class IRC2 implements TokenStandard {
         );
 
         if(_to.isContract()) {
-            Context.call(_to, "tokenFallBack", _from, _value, _data);
+            Context.call(_to, "tokenFallback", _from, _value, _data);
         }
     }
 

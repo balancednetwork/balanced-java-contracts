@@ -21,14 +21,14 @@ public class TestWorkerToken extends TestBase {
     private static Address governance = owner.getAddress();
     private static Score tokenScore;
     private static Account governanceScore = Account.newScoreAccount(1);
+    private static Account balnScore = Account.newScoreAccount(2);
 
 
     @BeforeAll
     static void setup() throws Exception {
-        ArrayList<Integer> list = new ArrayList<>();
-        governance = owner.getAddress();
         tokenScore = sm.deploy(owner, WorkerToken.class, governanceScore.getAddress());
         tokenScore.invoke(governanceScore,"setAdmin", admin.getAddress());
+        tokenScore.invoke(admin, "setBaln", balnScore.getAddress());
     }
 
     @Test
@@ -37,7 +37,7 @@ public class TestWorkerToken extends TestBase {
         //tokenScore.invoke(owner, "setGovernance", admin.getAddress());
 
         //test for if for only owner is satisfied
-        //tokenScore.invoke(governanceScore, "setGovernance", admin.getAddress());
+        //tokenScore.invoke(governanceScorhttps://twitter.com/homee, "setGovernance", admin.getAddress());
 
         assertEquals(tokenScore.call("getGovernance"), governanceScore.getAddress());
     }
@@ -55,11 +55,21 @@ public class TestWorkerToken extends TestBase {
         testAccount.addBalance("BALW", testBalance);
 
         var transferAmount = BigInteger.valueOf(50).multiply(WorkerToken.pow(BigInteger.TEN, 6));
+        // test 1
         String info = "Hello there";
         tokenScore.invoke(admin, "adminTransfer", owner.getAddress(), testAccount.getAddress(), transferAmount, info.getBytes());
-
         assertEquals(ownerBalance.subtract(transferAmount), tokenScore.call("balanceOf", owner.getAddress()));
         assertEquals(testBalance.add(transferAmount), tokenScore.call("balanceOf", testAccount.getAddress()));
+
+        // test 2
+        // TODO: Check token fall back test
+        testBalance = (BigInteger) tokenScore.call("balanceOf", testAccount.getAddress());
+        var balnScoreBalance = (BigInteger) tokenScore.call("balanceOf", tokenScore.getAddress());
+        byte[] bytes = new byte[10];
+        transferAmount = BigInteger.valueOf(25).multiply(WorkerToken.pow(BigInteger.TEN, 6));
+        tokenScore.invoke(admin, "adminTransfer", testAccount.getAddress(), balnScore.getAddress(), transferAmount, info.getBytes());
+        assertEquals(testBalance.subtract(transferAmount), tokenScore.call("balanceOf", testAccount.getAddress()));
+        assertEquals(balnScoreBalance.add(transferAmount), tokenScore.call("balanceOf", balnScore.getAddress()));
     }
 
 }

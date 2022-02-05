@@ -99,11 +99,16 @@ public class WorkerToken extends IRC2 {
                 dist = dist.subtract(amount);
                 tokens = tokens.subtract(balance);
                 Context.call(_baln_token.get(), "transfer", address, amount);
-
             }
         }
     }
 
+    /**
+     *
+     * @param _from: Token origination address.
+     * @param _value: Number of tokens sent.
+     * @param _data: unused ignored
+     */
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data){
         if(Context.getCaller().equals(_baln_token.get())){
