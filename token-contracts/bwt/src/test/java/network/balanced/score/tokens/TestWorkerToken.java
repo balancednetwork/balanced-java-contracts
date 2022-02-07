@@ -6,11 +6,9 @@ import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
 import org.junit.jupiter.api.*;
 import score.Address;
+import score.ArrayDB;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -22,14 +20,13 @@ public class TestWorkerToken extends TestBase {
     private static Score tokenScore;
     private static Account governanceScore = Account.newScoreAccount(1);
     private static Account balnScoreAccount = Account.newScoreAccount(9);
-    private static Account balnScore = Account.newScoreAccount(9);
 
 
     @BeforeAll
     static void setup() throws Exception {
         tokenScore = sm.deploy(owner, WorkerToken.class, governanceScore.getAddress());
         tokenScore.invoke(governanceScore,"setAdmin", admin.getAddress());
-        tokenScore.invoke(admin, "setBaln", governanceScore.getAddress());
+        tokenScore.invoke(admin, "setBaln", tokenScore.getAddress());
     }
 
     @Test
@@ -38,9 +35,17 @@ public class TestWorkerToken extends TestBase {
         //tokenScore.invoke(owner, "setGovernance", admin.getAddress());
 
         //test for if for only owner is satisfied
-        //tokenScore.invoke(governanceScorhttps://twitter.com/homee, "setGovernance", admin.getAddress());
+        //tokenScore.invoke(governanceScore, "setGovernance", admin.getAddress());
 
         assertEquals(tokenScore.call("getGovernance"), governanceScore.getAddress());
+        assertEquals(
+                tokenScore.call("balanceOf", owner.getAddress()),
+                tokenScore.call("totalSupply")
+                );
+        assertEquals(
+                tokenScore.call("balanceOf", governanceScore.getAddress()),
+                (BigInteger) governanceScore.getBalance("BALW")
+        );
     }
 
     @Test
@@ -63,14 +68,55 @@ public class TestWorkerToken extends TestBase {
         assertEquals(testBalance.add(transferAmount), tokenScore.call("balanceOf", testAccount.getAddress()));
 
         // test 2
-        // TODO: Check token fall back test
         testBalance = (BigInteger) tokenScore.call("balanceOf", testAccount.getAddress());
-        var governanceScoreBalance = (BigInteger) tokenScore.call("balanceOf", governanceScore.getAddress());
+        var test_balance_2 = (BigInteger) tokenScore.call("balanceOf", tokenScore.getAddress());
         byte[] bytes = new byte[10];
         transferAmount = BigInteger.valueOf(25).multiply(WorkerToken.pow(BigInteger.TEN, 6));
-        tokenScore.invoke(admin, "adminTransfer", testAccount.getAddress(), balnScore.getAddress(), transferAmount, info.getBytes());
+        tokenScore.invoke(admin, "adminTransfer", testAccount.getAddress(), tokenScore.getAddress(), transferAmount, info.getBytes());
         assertEquals(testBalance.subtract(transferAmount), tokenScore.call("balanceOf", testAccount.getAddress()));
-        assertEquals(governanceScoreBalance.add(transferAmount), tokenScore.call("balanceOf", governanceScore.getAddress()));
+        assertEquals(test_balance_2.add(transferAmount), tokenScore.call("balanceOf", tokenScore.getAddress()));
+    }
+
+    public static boolean arrayDbContains(ArrayDB<Address> arrayDB, Address address){
+        final int size =  arrayDB.size();
+        for (int i = 0; i < size; i++){
+            if (arrayDB.get(i).equals(address)){
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Test
+    void distributeTest(){
+        Account testAccount = sm.createAccount();
+        var ownerBalance = (BigInteger) tokenScore.call("balanceOf", owner.getAddress());
+
+
+        BigInteger tokenScoreBalance = (BigInteger) tokenScore.call("balanceOf", tokenScore.getAddress());
+        var transferAmount = BigInteger.valueOf(90).multiply(WorkerToken.pow(BigInteger.TEN, 6));
+        String info = "Hello there";
+        tokenScore.invoke(admin, "adminTransfer", owner.getAddress(), tokenScore.getAddress(), transferAmount, info.getBytes());
+
+        BigInteger baln_token_balance = (BigInteger) tokenScore.call(
+                "balanceOf",
+                (Address ) tokenScore.call("getBaln")
+                );
+
+        ownerBalance = (BigInteger) tokenScore.call("balanceOf", owner.getAddress());
+        tokenScoreBalance = (BigInteger) tokenScore.call("balanceOf", tokenScore.getAddress());
+        BigInteger totalSupply = (BigInteger) tokenScore.call("totalSupply");
+        BigInteger ownerBalanceNew  = (BigInteger ) tokenScore.call("balanceOf", owner.getAddress());
+
+        tokenScore.call("distribute");
+
+        BigInteger amount = ownerBalanceNew.multiply(baln_token_balance).divide(totalSupply);
+        assertEquals(
+                ownerBalanceNew.add(amount),
+                tokenScore.call("balanceOf", owner.getAddress())
+                );
+
     }
 
 }

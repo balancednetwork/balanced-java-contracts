@@ -6,6 +6,7 @@ import java.math.BigInteger;
 import network.balanced.score.tokens.tokens.Checks;
 import network.balanced.score.tokens.tokens.IRC2;
 import score.Address;
+import score.ArrayDB;
 import score.Context;
 import score.VarDB;
 import score.annotation.External;
@@ -44,6 +45,7 @@ public class WorkerToken extends IRC2 {
         Context.require( _address.isContract(), TAG + "Address provided is an EOA address. A contract address is required.");
         _governance.set(_address);
     }
+
 
     /**
      *
@@ -90,15 +92,18 @@ public class WorkerToken extends IRC2 {
         final int size = _addresses.size();
         BigInteger tokens = totalSupply();
 
+        // dist = balance of worker token contract
         BigInteger dist = (BigInteger) Context.call(_baln_token.get(), "balanceOf", Context.getAddress());
         for(int i = 0; i < size; i++){
             Address address = _addresses.get(i);
             BigInteger balance = _balances.getOrDefault(address, BigInteger.ZERO);
             if (balance.compareTo(BigInteger.ZERO) > 0){
-                BigInteger amount = dist.multiply(balance.divide(tokens));
+                // multiply first cause integer division
+                BigInteger amount = dist.multiply(balance).divide(tokens);
                 dist = dist.subtract(amount);
                 tokens = tokens.subtract(balance);
-                Context.call(_baln_token.get(), "transfer", address, amount);
+                byte[] data = new byte[0];
+                Context.call(_baln_token.get(), "transfer", address, amount, data);
             }
         }
     }
@@ -112,7 +117,7 @@ public class WorkerToken extends IRC2 {
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data){
         if(Context.getCaller().equals(_baln_token.get())){
-            _baln.set(_baln.get().add(_value));
+            _baln.set(_baln.getOrDefault(BigInteger.ZERO).add(_value));
         }
         else{
             Context.require(

@@ -23,7 +23,7 @@ public abstract class IRC2 implements TokenStandard {
     protected VarDB<BigInteger> _decimals = Context.newVarDB(_DECIMALS, BigInteger.class);
     protected VarDB<BigInteger> _total_supply = Context.newVarDB(_TOTAL_SUPPLY, BigInteger.class);
 
-    protected ArrayDB<Address> _addresses = Context.newArrayDB(_ACCOUNTS, Address.class);
+    public ArrayDB<Address> _addresses = Context.newArrayDB(_ACCOUNTS, Address.class);
     protected DictDB<Address, BigInteger> _balances = Context.newDictDB(_BALANCES, BigInteger.class);
     // public because need to use this in onlyAdmin check
     public static VarDB<Address> _admin = Context.newVarDB(_ADMIN, Address.class);
@@ -87,7 +87,6 @@ public abstract class IRC2 implements TokenStandard {
         return _name.getOrDefault("");
     }
 
-
     /**
      * @return Symbol of the token
      */
@@ -150,7 +149,7 @@ public abstract class IRC2 implements TokenStandard {
      * @param address: Address that we need to check
      * @return: a boolean
      */
-    protected boolean arrayDbContains(ArrayDB<Address> arrayDB, Address address){
+    public boolean arrayDbContains(ArrayDB<Address> arrayDB, Address address){
         final int size =  arrayDB.size();
         for (int i = 0; i < size; i++){
             if (arrayDB.get(i).equals(address)){

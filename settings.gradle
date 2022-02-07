@@ -25,5 +25,7 @@
  */
 
 rootProject.name = 'balanced-java-contracts'
-include(':core-contracts',
-        ':token-contracts')
+include(
+        'token-contracts:bwt'
+)
+
