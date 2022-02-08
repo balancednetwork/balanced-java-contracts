@@ -2,31 +2,30 @@ package network.balanced.score.tokens.tokens;
 
 import java.math.BigInteger;
 
-import network.balanced.score.tokens.WorkerToken;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
 
 public abstract class IRC2 implements TokenStandard {
-    private static String _NAME = "name";
-    private static String _SYMBOL = "symbol";
-    private static String _DECIMALS = "decimals";
-    private static String _TOTAL_SUPPLY = "total_supply";
-    private static String _BALANCES = "balances";
-    private static String _ADMIN = "admin";
-    private static String _ACCOUNTS = "account";
+    private static String NAME = "name";
+    private static String SYMBOL = "symbol";
+    private static String DECIMALS = "decimals";
+    private static String TOTAL_SUPPLY = "total_supply";
+    private static String BALANCES = "balances";
+    private static String ADMIN = "admin";
+    private static String ACCOUNTS = "account";
 
 
-    protected VarDB<String> _name = Context.newVarDB(_NAME, String.class);
-    protected VarDB<String> _symbol = Context.newVarDB(_SYMBOL, String.class);
-    protected VarDB<BigInteger> _decimals = Context.newVarDB(_DECIMALS, BigInteger.class);
-    protected VarDB<BigInteger> _total_supply = Context.newVarDB(_TOTAL_SUPPLY, BigInteger.class);
+    protected VarDB<String> name = Context.newVarDB(NAME, String.class);
+    protected VarDB<String> symbol = Context.newVarDB(SYMBOL, String.class);
+    protected VarDB<BigInteger> decimals = Context.newVarDB(DECIMALS, BigInteger.class);
+    protected VarDB<BigInteger> total_supply = Context.newVarDB(TOTAL_SUPPLY, BigInteger.class);
 
-    public ArrayDB<Address> _addresses = Context.newArrayDB(_ACCOUNTS, Address.class);
-    protected DictDB<Address, BigInteger> _balances = Context.newDictDB(_BALANCES, BigInteger.class);
+    public ArrayDB<Address> addresses = Context.newArrayDB(ACCOUNTS, Address.class);
+    protected DictDB<Address, BigInteger> balances = Context.newDictDB(BALANCES, BigInteger.class);
     // public because need to use this in onlyAdmin check
-    public static VarDB<Address> _admin = Context.newVarDB(_ADMIN, Address.class);
+    public static VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
 
     private final BigInteger MAX_HOLDER_COUNT = BigInteger.valueOf(400);
 
@@ -67,15 +66,15 @@ public abstract class IRC2 implements TokenStandard {
 
         // set the total supply to the context variable
         BigInteger supply = _initialSupply.multiply(pow(BigInteger.TEN, _decimals.intValue()));
-        _total_supply.set(supply);
-        this._decimals.set(_decimals);
+        total_supply.set(supply);
+        this.decimals.set(_decimals);
 
         // set other values
         final Address caller = Context.getCaller();
-        _name.set(_tokenName);
-        this._symbol.set(_symbolName);
-        _addresses.add(caller);
-        _balances.set(caller, supply);
+        name.set(_tokenName);
+        this.symbol.set(_symbolName);
+        addresses.add(caller);
+        balances.set(caller, supply);
     }
 
     /**
@@ -84,7 +83,7 @@ public abstract class IRC2 implements TokenStandard {
      */
     @External(readonly = true)
     public String name() {
-        return _name.getOrDefault("");
+        return name.getOrDefault("");
     }
 
     /**
@@ -92,7 +91,7 @@ public abstract class IRC2 implements TokenStandard {
      */
     @External(readonly = true)
     public String symbol() {
-        return _symbol.get();
+        return symbol.get();
     }
 
     /**
@@ -101,7 +100,7 @@ public abstract class IRC2 implements TokenStandard {
      */
     @External(readonly = true)
     public BigInteger decimals() {
-        return _decimals.get();
+        return decimals.get();
     }
 
     /**
@@ -110,7 +109,7 @@ public abstract class IRC2 implements TokenStandard {
      */
     @External(readonly = true)
     public BigInteger totalSupply() {
-        return _total_supply.get();
+        return total_supply.get();
     }
 
     /**
@@ -120,18 +119,18 @@ public abstract class IRC2 implements TokenStandard {
      */
     @External(readonly = true)
     public BigInteger balanceOf(Address _owner) {
-        return _balances.getOrDefault(_owner, BigInteger.valueOf(0));
+        return balances.getOrDefault(_owner, BigInteger.valueOf(0));
     }
 
     @External(readonly = true)
     public Address getAdmin(){
-        return _admin.get();
+        return admin.get();
     }
 
     @External
     public void setAdmin(Address _admin){
         Checks.onlyOwner();
-        IRC2._admin.set(_admin);
+        IRC2.admin.set(_admin);
     }
 
 
@@ -190,20 +189,20 @@ public abstract class IRC2 implements TokenStandard {
                 ": Source address must have token greater than transfer amount"
         );
 
-        if(!arrayDbContains(_addresses, _to)) {
-            _addresses.add(_to);
+        if(!arrayDbContains(addresses, _to)) {
+            addresses.add(_to);
         }
 
-        this._balances.set(_from, balanceOf(_from).subtract(_value));
-        this._balances.set(_to, balanceOf(_to).add(_value));
-        if (_balances.getOrDefault(_from, BigInteger.ZERO).equals(BigInteger.ZERO)){
-            remove_from_arraydb(_from, _addresses);
+        this.balances.set(_from, balanceOf(_from).subtract(_value));
+        this.balances.set(_to, balanceOf(_to).add(_value));
+        if (balances.getOrDefault(_from, BigInteger.ZERO).equals(BigInteger.ZERO)){
+            remove_from_arraydb(_from, addresses);
         }
 
         Transfer(_from, _to, _value, _data);
 
         Context.require(
-                _addresses.size() < MAX_HOLDER_COUNT.intValue(),
+                addresses.size() < MAX_HOLDER_COUNT.intValue(),
                 "The maximum holder count of {MAX_HOLDER_COUNT} has been reached." +
                         "Only transfers of whole balances or moves between current" +
                         "holders is allowed until the total holder count is reduced."
