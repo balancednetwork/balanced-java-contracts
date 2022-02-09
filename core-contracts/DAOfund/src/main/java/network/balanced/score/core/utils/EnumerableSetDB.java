@@ -14,14 +14,11 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core;
+package network.balanced.score.core.utils;
 
 import score.ArrayDB;
 import score.Context;
 import score.DictDB;
-
-import java.math.BigInteger;
-import java.util.Iterator;
 
 public class EnumerableSetDB<V> {
     private final ArrayDB<V> entries;
@@ -29,9 +26,9 @@ public class EnumerableSetDB<V> {
 
     public EnumerableSetDB(String varKey, Class<V> valueClass) {
         // array of valueClass
-        this.entries = Context.newArrayDB(varKey+"_es_entries", valueClass);
+        this.entries = Context.newArrayDB(varKey + "_es_entries", valueClass);
         // value => array index
-        this.indexes = Context.newDictDB(varKey+"_es_index", Integer.class);
+        this.indexes = Context.newDictDB(varKey + "_es_index", Integer.class);
     }
 
     public int length() {
