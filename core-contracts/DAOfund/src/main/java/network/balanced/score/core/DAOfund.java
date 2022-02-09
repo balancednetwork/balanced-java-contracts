@@ -91,8 +91,11 @@ public class DAOfund {
         onlyOwner();
         for (int symbolIndex = 0; symbolIndex < symbol.length(); symbolIndex++) {
             String tokenSymbol = symbol.at(symbolIndex);
-            //TODO: Complete this method
-            //            String tokenAddress =
+            String address = TOKEN_ADDRESSES.getOrDefault(tokenSymbol, "");
+            Context.require(!address.equals(""), TAG + ": Address not found for symbol: " + tokenSymbol);
+            this.address.add(address);
+            fund.set(address, fund.getOrDefault(tokenSymbol, BigInteger.ZERO));
+            fund.set(tokenSymbol, BigInteger.ZERO);
         }
     }
 
