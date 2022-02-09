@@ -16,6 +16,7 @@
 
 package network.balanced.score.core;
 
+import network.balanced.score.core.utils.EnumerableSetDB;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -24,10 +25,10 @@ import score.annotation.Payable;
 
 import java.math.BigInteger;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
-import static network.balanced.score.core.Checks.*;
+import static network.balanced.score.core.utils.Checks.*;
+import static network.balanced.score.core.utils.Constants.*;
 
 public class DAOfund {
 
@@ -39,14 +40,6 @@ public class DAOfund {
     public void TokenTransfer(Address recipient, BigInteger amount, String note) {
     }
 
-    private static final String GOVERNANCE = "governance";
-    private static final String ADMIN = "admin";
-    private static final String LOANS_SCORE = "loans_score";
-    private static final String FUND = "fund";
-    private static final String SYMBOL = "symbol";
-    private static final String ADDRESS = "address";
-    private static final String AWARDS = "awards";
-
     public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
     public static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
     private final VarDB<Address> loansScore = Context.newVarDB(LOANS_SCORE, Address.class);
@@ -56,7 +49,6 @@ public class DAOfund {
     private final BranchDB<Address, DictDB<Address, BigInteger>> awards = Context.newBranchDB(AWARDS, BigInteger.class);
 
     public static final String TAG = "Balanced DAOfund";
-    private final String ICX = "ICX";
 
     public static class Disbursement {
         public Address address;
@@ -156,7 +148,6 @@ public class DAOfund {
             String tokenAddress = address.at(addressIndex);
             balances.put(tokenAddress, fund.getOrDefault(tokenAddress, BigInteger.ZERO));
         }
-        balances.put(ICX, fund.getOrDefault(ICX, BigInteger.ZERO));
         return balances;
     }
 
@@ -194,7 +185,6 @@ public class DAOfund {
                 sendToken(symbol, tokenAddress, sender, amountToClaim, "Balanced DAOfund disbursement");
             }
         }
-//        BigInteger icxToClaim = disbursement.getOrDefault(ICX, BigInteger.ZERO);
     }
 
     @External
@@ -229,8 +219,7 @@ public class DAOfund {
 
     @Payable
     public void fallback() {
-        BigInteger currentICXAmountInFund = fund.getOrDefault(ICX, BigInteger.ZERO);
-        fund.set(ICX, currentICXAmountInFund.add(Context.getValue()));
+        Context.revert("ICX not accepted in this contract");
     }
 
 }
