@@ -1,4 +1,4 @@
-package network.balanced.score.core.utils;
+package network.balanced.score.core.reserve.utils;
 
 import score.Address;
 import score.Context;

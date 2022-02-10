@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core;
+package network.balanced.score.core.reserve;
 
 import score.Address;
 import score.Context;
@@ -24,13 +24,12 @@ import score.BranchDB;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
-import score.annotation.Payable;
+import scorex.util.HashMap;
 
 import java.math.BigInteger;
-import java.util.HashMap;
 import java.util.Map;
 
-import static network.balanced.score.core.Checks.*;
+import static network.balanced.score.core.reserve.Checks.*;
 
 public class ReserveFund {
 
@@ -64,27 +63,10 @@ public class ReserveFund {
     public static  class Disbursement {
         public Address address;
         public BigInteger amount;
-        public Disbursement(Address address, BigInteger amount){
-            this.address = address;
-            this.amount = amount;
-        }
-
-    }
-
-    @EventLog(indexed = 3)
-    protected void Transfer(Address from,  Address to, BigInteger value, byte[] data) {
-    }
-
-    @EventLog(indexed = 2)
-    protected void FundTransfer(Address destination, BigInteger amount, String note) {
     }
 
     @EventLog(indexed = 2)
     protected void TokenTransfer(Address recipient, BigInteger amount, String note) {
-    }
-
-    @EventLog(indexed = 1)
-    protected void RedeemFail(Address to, String symbol, BigInteger value) {
     }
 
     @External(readonly = true)
@@ -158,7 +140,7 @@ public class ReserveFund {
     @External(readonly = true)
     @SuppressWarnings("unchecked")
     public Map<String, BigInteger> getBalances() {
-        Map<String, ?> assets = (Map<String, ?>) Context.call(loansScore.getOrDefault(defaultAddress),
+        Map<String, ?> assets = (Map<String, ?>) Context.call(loansScore.getOrDefault(Checks.defaultAddress),
                 "getCollateralTokens");
         Map<String, BigInteger> balances = new HashMap<>();
         for (String symbol : assets.keySet()) {
@@ -242,15 +224,15 @@ public class ReserveFund {
     }
 
     @External
-    @SuppressWarnings("unchecked")
     public void claim(){
         Address sender = Context.getCaller();
         DictDB<Address, BigInteger> disbursement = awards.at(sender);
 
-        Map<String, String> assets = (Map<String, String>) Context.call(loansScore.get(), "getCollateralTokens");
-
+        Map<String, Address> assets = new HashMap<>();
+        assets.put("BALN", balnToken.get());
+        assets.put("sICX", sicxToken.get());
         for (String symbol : assets.keySet()){
-            Address tokenAddress = Address.fromString(assets.get(symbol));
+            Address tokenAddress = assets.get(symbol);
             BigInteger amountToClaim = disbursement.getOrDefault(tokenAddress, BigInteger.ZERO);
             if (amountToClaim.signum() > 0) {
                 disbursement.set(tokenAddress, BigInteger.ZERO);
@@ -258,7 +240,6 @@ public class ReserveFund {
             }
         }
     }
-
 
     private void sendToken(Address tokenAddress, Address to, BigInteger amount, String message) {
         String symbol = "";
@@ -269,10 +250,6 @@ public class ReserveFund {
         } catch (Exception e) {
             Context.revert(TAG + amount + symbol + " not sent to " + to);
         }
-    }
-
-    @Payable
-    public void fallback() {
     }
 
 }

@@ -1,11 +1,11 @@
-package network.balanced.score.core;
+package network.balanced.score.core.reserve;
 
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
 import com.iconloop.score.token.irc2.IRC2Mintable;
-import network.balanced.score.core.utils.Loans;
+import network.balanced.score.core.reserve.utils.Loans;
 import org.junit.jupiter.api.Assertions;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -16,8 +16,6 @@ import score.Address;
 
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -26,6 +24,7 @@ public class ReserveFundTest extends TestBase {
     public static final Account owner = sm.createAccount();
     private Score ReserveScore;
     private static final BigInteger MINT_AMOUNT = BigInteger.TEN.pow(22);
+    Account admin = sm.createAccount();
 
     public static final Account governanceScore = Account.newScoreAccount(1);
     private final Account bob = sm.createAccount();
@@ -70,39 +69,35 @@ public class ReserveFundTest extends TestBase {
         assertEquals(governanceScore.getAddress(), ReserveScore.call("getGovernance"));
     }
 
-
-    Address setAndGetAdmin() {
-        Account admin = sm.createAccount();
+    @Test
+    void setAndGetAdmin() {
         ReserveScore.invoke(Account.getAccount(governanceScore.getAddress()), "setAdmin", admin.getAddress());
         Address actualAdmin = (Address) ReserveScore.call("getAdmin");
         assertEquals(admin.getAddress(), actualAdmin);
-        return actualAdmin;
     }
 
-
-    Address setAndGetLoans() {
-        Address admin = setAndGetAdmin();
-        ReserveScore.invoke(Account.getAccount(admin), "setLoans", loansScore.getAddress());
+    @Test
+    void setAndGetLoans() {
+        setAndGetAdmin();
+        ReserveScore.invoke(Account.getAccount(admin.getAddress()), "setLoans", loansScore.getAddress());
         Address actualLoan = (Address) ReserveScore.call("getLoans");
         assertEquals(loansScore.getAddress(), actualLoan);
-        return actualLoan;
     }
 
     @Test
     void testSetBaln() {
-        Address admin = setAndGetAdmin();
-        ReserveScore.invoke(Account.getAccount(admin), "setBaln", balnScore.getAddress());
+        setAndGetAdmin();
+        ReserveScore.invoke(Account.getAccount(admin.getAddress()), "setBaln", balnScore.getAddress());
         Address actualBaln = (Address) ReserveScore.call("getBaln");
         assertEquals(balnScore.getAddress(), actualBaln);
     }
 
-
-    Address setAndGetSicx() {
-        Address admin = setAndGetAdmin();
-        ReserveScore.invoke(Account.getAccount(admin), "setSicx", sicxScore.getAddress());
+    @Test
+    void setAndGetSicx() {
+        setAndGetAdmin();
+        ReserveScore.invoke(Account.getAccount(admin.getAddress()), "setSicx", sicxScore.getAddress());
         Address actualSicx = (Address) ReserveScore.call("getSicx");
         assertEquals(sicxScore.getAddress(), actualSicx);
-        return actualSicx;
     }
 
     @Test
@@ -126,8 +121,11 @@ public class ReserveFundTest extends TestBase {
     @Test
     void testDisburseSicx(){
         setAndGetSicx();
+        testSetBaln();
         setAndGetLoans();
-        ReserveFund.Disbursement[] amt = new ReserveFund.Disbursement[]{new ReserveFund.Disbursement(sicxScore.getAddress(),BigInteger.TEN.pow(20))};
+        ReserveFund.Disbursement[] amt = new ReserveFund.Disbursement[]{new ReserveFund.Disbursement()};
+        amt[0].address = sicxScore.getAddress();
+        amt[0].amount = BigInteger.TEN.pow(20);
         sicxScore.invoke(owner, "transfer", ReserveScore.getAddress(), BigInteger.TEN.pow(21), new byte[0]);
         ReserveScore.invoke(governanceScore, "disburse", bob.getAddress(), amt);
 
