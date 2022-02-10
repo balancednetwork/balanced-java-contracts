@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,6 @@
  * This project uses @Incubating APIs which are subject to change.
  */
 
-rootProject.name = 'balanced-java-contracts'
-include(
-        'token-contracts:bwt'
-)
-
+include(':core-contracts:Multicall',
+        ':token-contracts',
+        'token-contracts:bwt')
