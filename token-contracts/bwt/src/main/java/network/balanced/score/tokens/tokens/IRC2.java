@@ -8,19 +8,19 @@ import score.annotation.External;
 import score.annotation.Optional;
 
 public abstract class IRC2 implements TokenStandard {
-    private static String NAME = "name";
-    private static String SYMBOL = "symbol";
-    private static String DECIMALS = "decimals";
-    private static String TOTAL_SUPPLY = "total_supply";
-    private static String BALANCES = "balances";
-    private static String ADMIN = "admin";
-    private static String ACCOUNTS = "account";
+    final private static String NAME = "name";
+    final private static String SYMBOL = "symbol";
+    final private static String DECIMALS = "decimals";
+    final private static String TOTAL_SUPPLY = "total_supply";
+    final private static String BALANCES = "balances";
+    final private static String ADMIN = "admin";
+    final private static String ACCOUNTS = "account";
 
 
     protected VarDB<String> name = Context.newVarDB(NAME, String.class);
     protected VarDB<String> symbol = Context.newVarDB(SYMBOL, String.class);
     protected VarDB<BigInteger> decimals = Context.newVarDB(DECIMALS, BigInteger.class);
-    protected VarDB<BigInteger> total_supply = Context.newVarDB(TOTAL_SUPPLY, BigInteger.class);
+    protected VarDB<BigInteger> totalSupply = Context.newVarDB(TOTAL_SUPPLY, BigInteger.class);
 
     public ArrayDB<Address> addresses = Context.newArrayDB(ACCOUNTS, Address.class);
     protected DictDB<Address, BigInteger> balances = Context.newDictDB(BALANCES, BigInteger.class);
@@ -46,13 +46,13 @@ public abstract class IRC2 implements TokenStandard {
      *
      * @param _tokenName: The name of the token.
      * @param _symbolName: The symbol of the token.
-     * @param _initialSupply:The total number of tokens to initialize with.
+     * @param _initialSupply :The total number of tokens to initialize with.
      * 					It is set to total supply in the beginning, 0 by default.
-     * @param _decimals: The number of decimals. Set to 18 by default.
+     * @param _decimals The number of decimals. Set to 18 by default.
      */
-    public IRC2(String _tokenName, String _symbolName, @Optional BigInteger _initialSupply, @Optional BigInteger _decimals){
+    public IRC2(@Optional String _tokenName, @Optional String _symbolName, @Optional BigInteger _initialSupply, @Optional BigInteger _decimals){
         BigInteger DEFAULT_INITIAL_SUPPLY = BigInteger.valueOf(0);
-        BigInteger DEFAULT_DECIMAL_VALUE = BigInteger.valueOf(0x12);
+        BigInteger DEFAULT_DECIMAL_VALUE = BigInteger.valueOf(18L);
 
         if(_initialSupply == null){
             _initialSupply = DEFAULT_INITIAL_SUPPLY;
@@ -66,13 +66,17 @@ public abstract class IRC2 implements TokenStandard {
 
         // set the total supply to the context variable
         BigInteger supply = _initialSupply.multiply(pow(BigInteger.TEN, _decimals.intValue()));
-        total_supply.set(supply);
+        totalSupply.set(supply);
         this.decimals.set(_decimals);
 
         // set other values
         final Address caller = Context.getCaller();
-        name.set(_tokenName);
-        this.symbol.set(_symbolName);
+        if(_tokenName != null){
+            name.set(_tokenName);
+        }
+        if(_symbolName != null){
+            this.symbol.set(_symbolName);
+        }
         addresses.add(caller);
         balances.set(caller, supply);
     }
@@ -109,7 +113,7 @@ public abstract class IRC2 implements TokenStandard {
      */
     @External(readonly = true)
     public BigInteger totalSupply() {
-        return total_supply.get();
+        return totalSupply.get();
     }
 
     /**
@@ -139,7 +143,7 @@ public abstract class IRC2 implements TokenStandard {
         if(_data == null){
             _data = new byte[0];
         }
-        _transfer(Context.getCaller(), _to, _value, _data);
+        transfer(Context.getCaller(), _to, _value, _data);
     }
 
     /**
@@ -182,7 +186,7 @@ public abstract class IRC2 implements TokenStandard {
      * @param _value: The no. of tokens to be transferred
      * @param _data: Any information or message
      */
-    public void _transfer(Address _from, Address _to, BigInteger _value, byte[] _data) {
+    protected void transfer(Address _from, Address _to, BigInteger _value, byte[] _data) {
         Context.require(_value.compareTo(BigInteger.valueOf(0)) > 0, ": Transfer value cannot be zero or less than zero");
         Context.require(
                 balanceOf(_from).compareTo(_value) >= 0,

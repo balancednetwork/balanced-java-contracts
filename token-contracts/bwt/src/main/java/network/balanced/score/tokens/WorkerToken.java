@@ -26,12 +26,14 @@ public class WorkerToken extends IRC2 {
     private static String BALN = "baln";
     
     public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
-    private VarDB<Address> baln_token = Context.newVarDB(BALN_TOKEN, Address.class);
+    private VarDB<Address> balnToken = Context.newVarDB(BALN_TOKEN, Address.class);
     private VarDB<BigInteger> baln = Context.newVarDB(BALN, BigInteger.class);
 
-    public WorkerToken(Address _governance){
+    public WorkerToken(@Optional Address _governance){
         super(TOKEN_NAME, SYMBOL_NAME, INITIAL_SUPPLY, DECIMALS);
-        WorkerToken.governance.set(_governance);
+        if(governance != null){
+            WorkerToken.governance.set(_governance);
+        }
     }
 
     /**
@@ -68,12 +70,12 @@ public class WorkerToken extends IRC2 {
     @External
     public void setBaln(Address _address){
         onlyAdmin();
-        baln_token.set(_address);
+        balnToken.set(_address);
     }
 
     @External(readonly = true)
     public Address getBaln(){
-        return baln_token.get();
+        return balnToken.get();
     }
 
     @External
@@ -83,7 +85,7 @@ public class WorkerToken extends IRC2 {
             _data = new byte[0];
         }
 
-        _transfer(_from, _to, _value, _data);
+        transfer(_from, _to, _value, _data);
     }
 
     @External
@@ -92,7 +94,7 @@ public class WorkerToken extends IRC2 {
         BigInteger totalTokens = totalSupply();
 
         // dist = balance of worker token contract
-        BigInteger dist = (BigInteger) Context.call(baln_token.get(), "balanceOf", Context.getAddress());
+        BigInteger dist = (BigInteger) Context.call(balnToken.get(), "balanceOf", Context.getAddress());
         for(int i = 0; i < size; i++){
             Address address = addresses.get(i);
             BigInteger balance = balances.getOrDefault(address, BigInteger.ZERO);
@@ -102,7 +104,7 @@ public class WorkerToken extends IRC2 {
                 dist = dist.subtract(amount);
                 totalTokens = totalTokens.subtract(balance);
                 byte[] data = new byte[0];
-                Context.call(baln_token.get(), "transfer", address, amount, data);
+                Context.call(balnToken.get(), "transfer", address, amount, data);
             }
         }
     }
@@ -115,17 +117,8 @@ public class WorkerToken extends IRC2 {
      */
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data){
-        if(Context.getCaller().equals(baln_token.get())){
-            baln.set(baln.getOrDefault(BigInteger.ZERO).add(_value));
-        }
-        else{
-            Context.require(
-                    false,
-                    "The Worker Token contract can only accept BALN tokens." +
-                            "Deposit not accepted from" + Context.getCaller() +
-                            "Only accepted from BALN = " + baln.get()
-                    );
-        }
+        Context.require(Context.getCaller().equals(balnToken.get()), "error message");
+        baln.set(baln.getOrDefault(BigInteger.ZERO).add(_value));
     }
 
 }
