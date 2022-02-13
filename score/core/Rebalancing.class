@@ -206,7 +206,7 @@ public class ReserveFund {
         }
         else {
             if (lower) {
-                Context.call(loansScore, "raisePrise", tokenAmount.Abs());
+                Context.call(loansScore, "lowerPrise", tokenAmount.Abs());
             }
         } 
     }
