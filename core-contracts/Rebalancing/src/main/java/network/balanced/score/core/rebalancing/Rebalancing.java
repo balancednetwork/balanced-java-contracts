@@ -191,7 +191,7 @@ public class Rebalancing {
 
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
-        return;
+
     }
     
 }
