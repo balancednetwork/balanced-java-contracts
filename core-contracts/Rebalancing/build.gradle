@@ -33,7 +33,7 @@ dependencies {
 }
 
 optimizedJar {
-    mainClassName = 'network.balanced.score.core.rebalancing'
+    mainClassName = 'network.balanced.score.core.rebalancing.Rebalancing'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
         configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
