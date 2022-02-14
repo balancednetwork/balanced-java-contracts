@@ -23,17 +23,12 @@ import score.DictDB;
 import score.annotation.External;
 
 import java.math.BigInteger;
-import network.balanced.score.core.sICX;
-import network.balanced.score.core.bnUSD;
-import network.balanced.score.core.Dex;
-import network.balanced.score.core.Loans;
-
-import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ArrayList;
+import java.util.List;
 
-import static network.balanced.score.core.Checks.*;
+import static network.balanced.score.core.rebalancing.Checks.*;
 
 public class Rebalancing {
 
@@ -54,8 +49,8 @@ public class Rebalancing {
     private static final VarDB<Address> sicx = Context.newVarDB(SICX_ADDRESS, Address.class);
     private static final VarDB<Address> dex = Context.newVarDB(DEX_ADDRESS, Address.class);
     private static final VarDB<Address> loans = Context.newVarDB(LOANS_ADDRESS, Address.class);
-    private static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE_ADDRESS, Address.class);
-    private static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
+    public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE_ADDRESS, Address.class);
+    public static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
     private static final VarDB<BigInteger> sicxReceivable = Context.newVarDB(SICX_RECEIVABLE, BigInteger.class);
     private static final VarDB<BigInteger> priceThreshold = Context.newVarDB(PRICE_THRESHOLD, BigInteger.class);    
 
@@ -63,7 +58,7 @@ public class Rebalancing {
     public void setBnusd(Address _address) {
         onlyAdmin();
         Context.require(_address.isContract(), TAG + ": Address provided is an EOA address. A contract address is required.");
-        bnUSDScore.set(_address);
+        bnusd.set(_address);
     }
     
     @External
@@ -125,23 +120,8 @@ public class Rebalancing {
         return sicx.get();
     }
 
-    //TODO: move to Checks?
-    private void onlyGovernance() {
-        Address sender = Context.getCaller();
-        Address governance = governance.getOrDefault(Checks.defaultAddress);
-        Context.require(!governance.equals(Checks.defaultAddress), TAG + ": Governance address not set");
-        Context.require(sender.equals(governance), TAG + ": Sender not governance contract");
-    }
-
-    private void onlyAdmin() {
-        Address admin = admin.getOrDefault(Checks.defaultAddress);
-        Address sender = Context.getCaller();
-        Context.require(!adminScore.equals(Checks.defaultAddress), TAG + ": Admin address not set");
-        Context.require(sender.equals(admin), TAG + ": Sender not admin");
-    }
-
     private BigInteger calculateTokensToSell(BigInteger _price, BigInteger _baseSupply, BigInteger _quoteSupply) {
-        return _price.multiply(_baseSupply).multiply(_quoteSupply).divide(EXA).substract(baseSupply).sqrt();
+        return (_price.multiply(_baseSupply).multiply(_quoteSupply).divide(EXA).subtract(_baseSupply).sqrt());
     }
 
     @External
@@ -156,6 +136,7 @@ public class Rebalancing {
     }
 
     @External(readonly = true)
+    @SuppressWarnings("unchecked")
     public List<Object> getRebalancingStatus() {
         List<Object> results = new ArrayList<Object>();
         /* 
@@ -172,7 +153,7 @@ public class Rebalancing {
         BigInteger minDiff = priceThreshold.get();
 
         BigInteger bnusdLastPrice = (BigInteger) Context.call(bnusdScore, "lastPriceInLoop");
-        Map<String, BigInteger> poolStats = (BigInteger) Context.call(dexScore, "getPoolStats", 2);
+        Map<String, BigInteger> poolStats = (Map) Context.call(dexScore, "getPoolStats", 2);
         BigInteger sicxLastPrice = (BigInteger) Context.call(sicxScore, "lastPriceInLoop");
         
         BigInteger price = bnusdLastPrice.multiply(EXA).divide(sicxLastPrice);
@@ -181,11 +162,11 @@ public class Rebalancing {
         BigInteger diff = price.subtract(dexPrice).multiply(EXA).divide(price);
         BigInteger tokensToSell = calculateTokensToSell(price, poolStats.get("base"), poolStats.get("quote"));
         
-        results.Add(diff.GreaterThan(minDiff));
-        results.Add(tokensToSell);
-        results.Add(diff.LessThan(minDiff.multiply(-1)));
+        results.add(diff.compareTo(minDiff) == 1);
+        results.add(tokensToSell);
+        results.add(diff.compareTo(minDiff.negate()) == -1);
 
-        return Results;
+        return results;
     }
 
     @External
@@ -196,14 +177,14 @@ public class Rebalancing {
         boolean higher = (boolean) status.get(0);
         BigInteger tokenAmount = (BigInteger) status.get(1);
         boolean lower = (boolean) status.get(2);
-        if (tokenAmount.GreaterThan(0)) {
+        if (tokenAmount.compareTo(BigInteger.ZERO) == 1) {
             if (higher) {
                 Context.call(loansScore, "raisePrice", tokenAmount);
             }
         }
         else {
             if (lower) {
-                Context.call(loansScore, "lowerPrice", tokenAmount.Abs());
+                Context.call(loansScore, "lowerPrice", tokenAmount.abs());
             }
         } 
     }
