@@ -154,6 +154,10 @@ public class ReserveFundTest extends TestBase {
         reserveScore.invoke(bob, "claim");
         BigInteger sicxAfter = (BigInteger) sicxScore.call("balanceOf", bob.getAddress());
         assertEquals(sicxAfter, sicxBefore.add(BigInteger.TEN.pow(20)));
+
+        //Claim again
+        reserveScore.invoke(bob, "claim");
+        assertEquals(sicxAfter, sicxBefore.add(BigInteger.TEN.pow(20)));
     }
 }
 
