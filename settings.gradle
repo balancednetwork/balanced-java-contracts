@@ -26,4 +26,8 @@
 
 rootProject.name = 'balanced-java-contracts'
 include(':core-contracts:Multicall',
+        ':core-contracts:router',
         ':token-contracts')
+//include 'core-contracts:router'
+//findProject(':core-contracts:router')?.name = 'router'
+
