@@ -185,12 +185,12 @@ public class ReserveFund {
             BigInteger balnRate = (BigInteger) Context.call(balnTokenAddress, "priceInLoop");
             BigInteger balnToSend = _amount.subtract(sicxAmount).multiply(_sicx_rate).divide(balnRate);
             BigInteger balnRemaining = baln.getOrDefault(BigInteger.ZERO).subtract(balnToSend);
-            Context.require(balnRemaining.signum() > -1, TAG + ": Unable to process request at this time.");
+            Context.require(balnRemaining.signum() >= 0, TAG + ": Unable to process request at this time.");
             baln.set(balnRemaining);
             sendToken(balnTokenAddress, _to, balnToSend, "Redeemed: ");
         }
         BigInteger newSicxBalance = sicxAmount.subtract(sicxToSend);
-        Context.require(newSicxBalance.signum() > -1, TAG + ": sICX balance can't be set negative");
+        Context.require(newSicxBalance.signum() >= 0, TAG + ": sICX balance can't be set negative");
         sicx.set(newSicxBalance);
         sendToken(sicxTokenAddress, loansScoreAddress, sicxToSend, "To Loans: ");
         return sicxToSend;
@@ -206,7 +206,7 @@ public class ReserveFund {
                 BigInteger amountToBeClaimedByRecipient = awards.at(_recipient).getOrDefault(asset.address,
                         BigInteger.ZERO);
 
-                Context.require(sicxAmount.compareTo(asset.amount) > -1,
+                Context.require(sicxAmount.compareTo(asset.amount) >= 0,
                         TAG + ":Insufficient balance of asset " + asset.address + " in the reserve fund.");
                 sicx.set(sicxAmount.subtract(asset.amount));
                 awards.at(_recipient).set(asset.address, amountToBeClaimedByRecipient.add(asset.amount));
@@ -215,7 +215,7 @@ public class ReserveFund {
                 BigInteger amountToBeClaimedByRecipient = awards.at(_recipient).getOrDefault(asset.address,
                         BigInteger.ZERO);
 
-                Context.require(balnAmount.compareTo(asset.amount) > -1,
+                Context.require(balnAmount.compareTo(asset.amount) >= 0,
                         TAG + ":Insufficient balance of asset " + asset.address + " in the reserve fund.");
                 baln.set(balnAmount.subtract(asset.amount));
                 awards.at(_recipient).set(asset.address, amountToBeClaimedByRecipient.add(asset.amount));
