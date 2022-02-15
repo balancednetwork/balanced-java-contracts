@@ -24,7 +24,7 @@ import score.annotation.External;
 import score.annotation.Optional;
 
 import java.math.BigInteger;
-import java.util.HashMap;
+import scorex.util.HashMap;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
