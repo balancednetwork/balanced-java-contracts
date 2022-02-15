@@ -139,12 +139,13 @@ public class BatchDisbursement {
     @External(readonly = true)
     public Map<String, Object> getDisbursementDetail(Address _user) {
 
-        Map<String, Object> userClaimableTokens = new HashMap<>();
+        Map<Address, BigInteger> userClaimableTokens = new HashMap<>();
         DictDB<Address, BigInteger> userTokens = this.userClaimableTokens.at(_user);
 
         for (int arrayIndex = 0; arrayIndex < allowedTokenAddress.length(); arrayIndex++) {
             Address token = allowedTokenAddress.at(arrayIndex);
-            userClaimableTokens.put(token.toString(), userTokens.getOrDefault(token, BigInteger.ZERO));
+            BigInteger tokenAmount = userTokens.getOrDefault(token, BigInteger.ZERO);
+            userClaimableTokens.put(token, tokenAmount);
         }
         return Map.of("user", _user, "claimableTokens", userClaimableTokens);
     }
