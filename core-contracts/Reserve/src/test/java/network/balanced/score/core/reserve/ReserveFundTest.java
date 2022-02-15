@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2022-2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package network.balanced.score.core.reserve;
 
 import com.iconloop.score.test.Account;
@@ -21,16 +37,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ReserveFundTest extends TestBase {
     public static final ServiceManager sm = getServiceManager();
+
     public static final Account owner = sm.createAccount();
-    private Score ReserveScore;
-    private static final BigInteger MINT_AMOUNT = BigInteger.TEN.pow(22);
+    private final Account bob = sm.createAccount();
     Account admin = sm.createAccount();
 
+    private static final BigInteger MINT_AMOUNT = BigInteger.TEN.pow(22);
+
     public static final Account governanceScore = Account.newScoreAccount(1);
-    private final Account bob = sm.createAccount();
-    private Score loansScore ;
     private final Account balnScore = Account.newScoreAccount(7);
-    private Score sicxScore ;
+    private Score ReserveScore;
+    private Score loansScore;
+    private Score sicxScore;
 
     public static class SicxToken extends IRC2Mintable {
         public SicxToken(String _name, String _symbol, int _decimals) {
@@ -54,7 +72,8 @@ public class ReserveFundTest extends TestBase {
         Executable deploymentWithNonContract = () -> sm.deploy(owner, ReserveFund.class, notContract.getAddress());
 
         String expectedErrorMessage = "ReserveFund: Governance address should be a contract";
-        InvocationTargetException e = Assertions.assertThrows(InvocationTargetException.class, deploymentWithNonContract);
+        InvocationTargetException e = Assertions.assertThrows(InvocationTargetException.class,
+                deploymentWithNonContract);
         assertEquals(expectedErrorMessage, e.getCause().getMessage());
     }
 
@@ -105,21 +124,21 @@ public class ReserveFundTest extends TestBase {
         setAndGetLoans();
         setAndGetSicx();
 
-        BigInteger prevSicxinOwner = (BigInteger) sicxScore.call("balanceOf", owner.getAddress());
-        BigInteger prevSicxinLoans = (BigInteger) sicxScore.call("balanceOf", loansScore.getAddress());
+        BigInteger prevSicxInOwner = (BigInteger) sicxScore.call("balanceOf", owner.getAddress());
+        BigInteger prevSicxInLoans = (BigInteger) sicxScore.call("balanceOf", loansScore.getAddress());
 
         sicxScore.invoke(owner, "transfer", ReserveScore.getAddress(), BigInteger.TEN.pow(21), new byte[0]);
         loansScore.invoke(owner, "redeem", loansScore.getAddress(), BigInteger.TEN.pow(19), BigInteger.TEN.pow(18));
 
-        BigInteger afterSicxinOwner = (BigInteger) sicxScore.call("balanceOf", owner.getAddress());
-        BigInteger afterSicxinLoans = (BigInteger) sicxScore.call("balanceOf", loansScore.getAddress());
+        BigInteger afterSicxInOwner = (BigInteger) sicxScore.call("balanceOf", owner.getAddress());
+        BigInteger afterSicxInLoans = (BigInteger) sicxScore.call("balanceOf", loansScore.getAddress());
 
-        assertEquals(prevSicxinLoans.add(BigInteger.TEN.pow(19)), afterSicxinLoans);
-        assertEquals(prevSicxinOwner.subtract(BigInteger.TEN.pow(21)),  afterSicxinOwner);
+        assertEquals(prevSicxInLoans.add(BigInteger.TEN.pow(19)), afterSicxInLoans);
+        assertEquals(prevSicxInOwner.subtract(BigInteger.TEN.pow(21)), afterSicxInOwner);
     }
 
     @Test
-    void testDisburseSicx(){
+    void testDisburseSicx() {
         setAndGetSicx();
         testSetBaln();
         setAndGetLoans();
