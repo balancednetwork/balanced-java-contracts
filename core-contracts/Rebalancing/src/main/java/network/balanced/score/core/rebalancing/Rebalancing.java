@@ -35,24 +35,24 @@ public class Rebalancing {
 
     public static final String TAG = "Rebalancing";
     
-    private static final String BNUSD_ADDRESS = "bnUSD_address";
-    private static final String SICX_ADDRESS = "sicx_address";
-    private static final String DEX_ADDRESS = "dex_address";
-    private static final String LOANS_ADDRESS = "loans_address";
+    private final String BNUSD_ADDRESS = "bnUSD_address";
+    private final String SICX_ADDRESS = "sicx_address";
+    private final String DEX_ADDRESS = "dex_address";
+    private final String LOANS_ADDRESS = "loans_address";
     private static final String GOVERNANCE_ADDRESS = "governance_address";
     private static final String ADMIN = "admin";
-    private static final String PRICE_THRESHOLD = "_price_threshold";
+    private final String PRICE_THRESHOLD = "_price_threshold";
 
-    private static final BigInteger EXA = BigInteger.TEN.pow(18); //TODO: move to constants
-    private static final Integer SICX_BNUSD_POOL_ID = 2; 
+    private final BigInteger EXA = BigInteger.TEN.pow(18); //TODO: move to constants
+    private final Integer SICX_BNUSD_POOL_ID = 2; 
 
-    private static final VarDB<Address> bnusd = Context.newVarDB(BNUSD_ADDRESS, Address.class);
-    private static final VarDB<Address> sicx = Context.newVarDB(SICX_ADDRESS, Address.class);
-    private static final VarDB<Address> dex = Context.newVarDB(DEX_ADDRESS, Address.class);
-    private static final VarDB<Address> loans = Context.newVarDB(LOANS_ADDRESS, Address.class);
     public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE_ADDRESS, Address.class);
     public static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
-    private static final VarDB<BigInteger> priceThreshold = Context.newVarDB(PRICE_THRESHOLD, BigInteger.class);    
+    private final VarDB<Address> bnusd = Context.newVarDB(BNUSD_ADDRESS, Address.class);
+    private final VarDB<Address> sicx = Context.newVarDB(SICX_ADDRESS, Address.class);
+    private final VarDB<Address> dex = Context.newVarDB(DEX_ADDRESS, Address.class);
+    private final VarDB<Address> loans = Context.newVarDB(LOANS_ADDRESS, Address.class);
+    private final VarDB<BigInteger> priceThreshold = Context.newVarDB(PRICE_THRESHOLD, BigInteger.class);    
 
     public Rebalancing(@Optional Address governance) {
         if (governance != null) {
@@ -164,7 +164,7 @@ public class Rebalancing {
         BigInteger sicxLastPrice = (BigInteger) Context.call(sicxScore, "lastPriceInLoop");
         
         BigInteger price = bnusdLastPrice.multiply(EXA).divide(sicxLastPrice);
-        BigInteger poolBase = (BigInteger) poolStats.get("base");
+        BigInteger poolBase = BigInteger.valueOf((Integer) poolStats.get("base"));
         BigInteger poolQuote = (BigInteger) poolStats.get("quote");
         BigInteger dexPrice = poolBase.multiply(EXA).divide(poolQuote);
         
