@@ -21,6 +21,7 @@ import score.Context;
 import score.VarDB;
 import score.DictDB;
 import score.annotation.External;
+import score.annotation.Optional;
 
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -39,7 +40,6 @@ public class Rebalancing {
     private static final String DEX_ADDRESS = "dex_address";
     private static final String LOANS_ADDRESS = "loans_address";
     private static final String GOVERNANCE_ADDRESS = "governance_address";
-    private static final String SICX_RECEIVABLE = "sicx_receivable";
     private static final String ADMIN = "admin";
     private static final String PRICE_THRESHOLD = "_price_threshold";
 
@@ -51,8 +51,14 @@ public class Rebalancing {
     private static final VarDB<Address> loans = Context.newVarDB(LOANS_ADDRESS, Address.class);
     public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE_ADDRESS, Address.class);
     public static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
-    private static final VarDB<BigInteger> sicxReceivable = Context.newVarDB(SICX_RECEIVABLE, BigInteger.class);
     private static final VarDB<BigInteger> priceThreshold = Context.newVarDB(PRICE_THRESHOLD, BigInteger.class);    
+
+    public Rebalancing(@Optional Address governance) {
+        if (governance != null) {
+            Context.require(governance.isContract(), TAG + ": Governance address should be a contract");
+            Rebalancing.governance.set(governance);
+        }
+    }
 
     @External
     public void setBnusd(Address _address) {
