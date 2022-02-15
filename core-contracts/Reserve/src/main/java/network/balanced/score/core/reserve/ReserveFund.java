@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core;
+package network.balanced.score.core.reserve;
 
 import score.Address;
 import score.Context;
@@ -24,13 +24,12 @@ import score.BranchDB;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
-import score.annotation.Payable;
+import scorex.util.HashMap;
 
 import java.math.BigInteger;
-import java.util.HashMap;
 import java.util.Map;
 
-import static network.balanced.score.core.Checks.*;
+import static network.balanced.score.core.reserve.Checks.*;
 
 public class ReserveFund {
 
@@ -51,7 +50,7 @@ public class ReserveFund {
     private final VarDB<Address> balnToken = Context.newVarDB(BALN_TOKEN, Address.class);
     private final VarDB<Address> sicxToken = Context.newVarDB(SICX_TOKEN, Address.class);
     private final VarDB<BigInteger> baln = Context.newVarDB(BALN, BigInteger.class);
-    private final VarDB<BigInteger> sicx = Context.newVarDB(SICX, BigInteger.class);
+    public static final VarDB<BigInteger> sicx = Context.newVarDB(SICX, BigInteger.class);
     private final BranchDB<Address, DictDB<Address, BigInteger>> awards = Context.newBranchDB(AWARDS, BigInteger.class);
 
     public ReserveFund(@Optional Address governance) {
@@ -61,26 +60,13 @@ public class ReserveFund {
         }
     }
 
-    public static  class Disbursement {
+    public static class Disbursement {
         public Address address;
         public BigInteger amount;
-
-    }
-
-    @EventLog(indexed = 3)
-    protected void Transfer(Address from,  Address to, BigInteger value, byte[] data) {
-    }
-
-    @EventLog(indexed = 2)
-    protected void FundTransfer(Address destination, BigInteger amount, String note) {
     }
 
     @EventLog(indexed = 2)
     protected void TokenTransfer(Address recipient, BigInteger amount, String note) {
-    }
-
-    @EventLog(indexed = 1)
-    protected void RedeemFail(Address to, String symbol, BigInteger value) {
     }
 
     @External(readonly = true)
@@ -113,48 +99,48 @@ public class ReserveFund {
     }
 
     @External
-    public void setLoans(Address _address){
+    public void setLoans(Address _address) {
         onlyAdmin();
         Context.require(_address.isContract(), TAG + ": Address provided is an EOA address. A contract address is " +
-        "required.");
+                "required.");
         loansScore.set(_address);
     }
 
     @External(readonly = true)
-    public Address getLoans(){
+    public Address getLoans() {
         return loansScore.get();
     }
 
     @External
-    public void setBaln(Address _address){
+    public void setBaln(Address _address) {
         onlyAdmin();
         Context.require(_address.isContract(), TAG + ": Address provided is an EOA address. A contract address is " +
-        "required.");
+                "required.");
         balnToken.set(_address);
     }
 
     @External(readonly = true)
-    public Address getBaln(){
+    public Address getBaln() {
         return balnToken.get();
     }
 
     @External
-    public void setSicx(Address _address){
+    public void setSicx(Address _address) {
         onlyAdmin();
         Context.require(_address.isContract(), TAG + ": Address provided is an EOA address. A contract address is " +
-        "required.");
+                "required.");
         sicxToken.set(_address);
     }
 
     @External(readonly = true)
-    public Address getSicx(){
+    public Address getSicx() {
         return sicxToken.get();
     }
 
     @External(readonly = true)
     @SuppressWarnings("unchecked")
     public Map<String, BigInteger> getBalances() {
-        Map<String, ?> assets = (Map<String, ?>) Context.call(loansScore.getOrDefault(defaultAddress),
+        Map<String, ?> assets = (Map<String, ?>) Context.call(loansScore.getOrDefault(Checks.defaultAddress),
                 "getCollateralTokens");
         Map<String, BigInteger> balances = new HashMap<>();
         for (String symbol : assets.keySet()) {
@@ -176,7 +162,7 @@ public class ReserveFund {
             sicx.set(sicx.getOrDefault(BigInteger.ZERO).add(_value));
         } else {
             Context.revert(TAG + ": The Reserve Fund can only accept BALN or sICX tokens. Deposit not accepted from " +
-                    tokenContract + "Only accepted from BALN = " + balnToken.get() + "Or sICX = " + sicxToken.get());
+                    tokenContract + " Only accepted from BALN = " + balnToken.get() + " Or sICX = " + sicxToken.get());
         }
     }
 
@@ -184,53 +170,55 @@ public class ReserveFund {
     public BigInteger redeem(Address _to, BigInteger _amount, BigInteger _sicx_rate) {
         Address sender = Context.getCaller();
         Address loansScoreAddress = loansScore.get();
-        Context.require(sender.equals(loansScoreAddress), TAG + ": The redeem method can only be called by the Loans SCORE.");
+        Context.require(sender.equals(loansScoreAddress), TAG + ": The redeem method can only be called by the Loans " +
+                "SCORE.");
 
         BigInteger sicxAmount = sicx.getOrDefault(BigInteger.ZERO);
         BigInteger sicxToSend;
         Address balnTokenAddress = balnToken.get();
         Address sicxTokenAddress = sicxToken.get();
 
-        if (_amount.compareTo(sicxAmount) < 1) {
+        if (_amount.compareTo(sicxAmount) <= 0) {
             sicxToSend = _amount;
         } else {
             sicxToSend = sicxAmount;
             BigInteger balnRate = (BigInteger) Context.call(balnTokenAddress, "priceInLoop");
             BigInteger balnToSend = _amount.subtract(sicxAmount).multiply(_sicx_rate).divide(balnRate);
             BigInteger balnRemaining = baln.getOrDefault(BigInteger.ZERO).subtract(balnToSend);
-            Context.require(balnRemaining.signum() > -1, TAG + ": Unable to process request at this time.");
+            Context.require(balnRemaining.signum() >= 0, TAG + ": Unable to process request at this time.");
             baln.set(balnRemaining);
             sendToken(balnTokenAddress, _to, balnToSend, "Redeemed: ");
         }
         BigInteger newSicxBalance = sicxAmount.subtract(sicxToSend);
-        Context.require(newSicxBalance.signum()> -1, TAG + ": sICX balance can't be set negative");
-        sicx.set(sicxAmount.subtract(sicxToSend));
+        Context.require(newSicxBalance.signum() >= 0, TAG + ": sICX balance can't be set negative");
+        sicx.set(newSicxBalance);
         sendToken(sicxTokenAddress, loansScoreAddress, sicxToSend, "To Loans: ");
         return sicxToSend;
     }
 
-
     @External
-    public boolean disburse(Address _recipient, Disbursement[] _amounts){
+    public boolean disburse(Address _recipient, Disbursement[] _amounts) {
         onlyGovernance();
-        for(Disbursement asset: _amounts) {
-            if (asset.address.equals(sicxToken.get())){
+        for (Disbursement asset : _amounts) {
+            if (asset.address.equals(sicxToken.get())) {
                 BigInteger sicxAmount = sicx.getOrDefault(BigInteger.ZERO);
                 BigInteger amountToBeClaimedByRecipient = awards.at(_recipient).getOrDefault(asset.address,
-                    BigInteger.ZERO);
+                        BigInteger.ZERO);
 
-                Context.require(sicxAmount.compareTo(asset.amount) > -1, TAG + ":Insufficient balance of asset"+asset.address +" in the reserve fund.");
+                Context.require(sicxAmount.compareTo(asset.amount) >= 0,
+                        TAG + ":Insufficient balance of asset " + asset.address + " in the reserve fund.");
                 sicx.set(sicxAmount.subtract(asset.amount));
                 awards.at(_recipient).set(asset.address, amountToBeClaimedByRecipient.add(asset.amount));
-            } else if (asset.address.equals(balnToken.get())){
+            } else if (asset.address.equals(balnToken.get())) {
                 BigInteger balnAmount = baln.getOrDefault(BigInteger.ZERO);
                 BigInteger amountToBeClaimedByRecipient = awards.at(_recipient).getOrDefault(asset.address,
-                    BigInteger.ZERO);
+                        BigInteger.ZERO);
 
-                Context.require(balnAmount.compareTo(asset.amount) > -1, TAG + ":Insufficient balance of asset"+asset.address +" in the reserve fund.");
+                Context.require(balnAmount.compareTo(asset.amount) >= 0,
+                        TAG + ":Insufficient balance of asset " + asset.address + " in the reserve fund.");
                 baln.set(balnAmount.subtract(asset.amount));
                 awards.at(_recipient).set(asset.address, amountToBeClaimedByRecipient.add(asset.amount));
-            } else{
+            } else {
                 Context.revert(TAG + ": Unavailable assets in the reserve fund requested.");
             }
         }
@@ -238,15 +226,15 @@ public class ReserveFund {
     }
 
     @External
-    @SuppressWarnings("unchecked")
-    public void claim(){
+    public void claim() {
         Address sender = Context.getCaller();
         DictDB<Address, BigInteger> disbursement = awards.at(sender);
 
-        Map<String, String> assets = (Map<String, String>) Context.call(loansScore.get(), "getCollateralTokens");
-
-        for (String symbol : assets.keySet()){
-            Address tokenAddress = Address.fromString(assets.get(symbol));
+        Map<String, Address> assets = new HashMap<>();
+        assets.put("BALN", balnToken.get());
+        assets.put("sICX", sicxToken.get());
+        for (String symbol : assets.keySet()) {
+            Address tokenAddress = assets.get(symbol);
             BigInteger amountToClaim = disbursement.getOrDefault(tokenAddress, BigInteger.ZERO);
             if (amountToClaim.signum() > 0) {
                 disbursement.set(tokenAddress, BigInteger.ZERO);
@@ -254,7 +242,6 @@ public class ReserveFund {
             }
         }
     }
-
 
     private void sendToken(Address tokenAddress, Address to, BigInteger amount, String message) {
         String symbol = "";
@@ -265,10 +252,6 @@ public class ReserveFund {
         } catch (Exception e) {
             Context.revert(TAG + amount + symbol + " not sent to " + to);
         }
-    }
-
-    @Payable
-    public void fallback() {
     }
 
 }
