@@ -46,7 +46,7 @@ public class ReserveFundTest extends TestBase {
 
     public static final Account governanceScore = Account.newScoreAccount(1);
     private final Account balnScore = Account.newScoreAccount(7);
-    private Score ReserveScore;
+    private Score reserveScore;
     private Score loansScore;
     private Score sicxScore;
 
@@ -58,11 +58,11 @@ public class ReserveFundTest extends TestBase {
 
     @BeforeEach
     public void setup() throws Exception {
-        ReserveScore = sm.deploy(owner, ReserveFund.class, governanceScore.getAddress());
-        assert (ReserveScore.getAddress().isContract());
+        reserveScore = sm.deploy(owner, ReserveFund.class, governanceScore.getAddress());
+        assert (reserveScore.getAddress().isContract());
         sicxScore = sm.deploy(owner, SicxToken.class, "Sicx Token", "sICX", 18);
         sicxScore.invoke(owner, "mintTo", owner.getAddress(), MINT_AMOUNT);
-        loansScore = sm.deploy(owner, Loans.class, ReserveScore.getAddress());
+        loansScore = sm.deploy(owner, Loans.class, reserveScore.getAddress());
     }
 
     @Test
@@ -80,42 +80,42 @@ public class ReserveFundTest extends TestBase {
     @Test
     void name() {
         String contractName = "Balanced Reserve Fund";
-        assertEquals(contractName, ReserveScore.call("name"));
+        assertEquals(contractName, reserveScore.call("name"));
     }
 
     @Test
     void getGovernance() {
-        assertEquals(governanceScore.getAddress(), ReserveScore.call("getGovernance"));
+        assertEquals(governanceScore.getAddress(), reserveScore.call("getGovernance"));
     }
 
     @Test
     void setAndGetAdmin() {
-        ReserveScore.invoke(Account.getAccount(governanceScore.getAddress()), "setAdmin", admin.getAddress());
-        Address actualAdmin = (Address) ReserveScore.call("getAdmin");
+        reserveScore.invoke(Account.getAccount(governanceScore.getAddress()), "setAdmin", admin.getAddress());
+        Address actualAdmin = (Address) reserveScore.call("getAdmin");
         assertEquals(admin.getAddress(), actualAdmin);
     }
 
     @Test
     void setAndGetLoans() {
         setAndGetAdmin();
-        ReserveScore.invoke(Account.getAccount(admin.getAddress()), "setLoans", loansScore.getAddress());
-        Address actualLoan = (Address) ReserveScore.call("getLoans");
+        reserveScore.invoke(Account.getAccount(admin.getAddress()), "setLoans", loansScore.getAddress());
+        Address actualLoan = (Address) reserveScore.call("getLoans");
         assertEquals(loansScore.getAddress(), actualLoan);
     }
 
     @Test
     void testSetBaln() {
         setAndGetAdmin();
-        ReserveScore.invoke(Account.getAccount(admin.getAddress()), "setBaln", balnScore.getAddress());
-        Address actualBaln = (Address) ReserveScore.call("getBaln");
+        reserveScore.invoke(Account.getAccount(admin.getAddress()), "setBaln", balnScore.getAddress());
+        Address actualBaln = (Address) reserveScore.call("getBaln");
         assertEquals(balnScore.getAddress(), actualBaln);
     }
 
     @Test
     void setAndGetSicx() {
         setAndGetAdmin();
-        ReserveScore.invoke(Account.getAccount(admin.getAddress()), "setSicx", sicxScore.getAddress());
-        Address actualSicx = (Address) ReserveScore.call("getSicx");
+        reserveScore.invoke(Account.getAccount(admin.getAddress()), "setSicx", sicxScore.getAddress());
+        Address actualSicx = (Address) reserveScore.call("getSicx");
         assertEquals(sicxScore.getAddress(), actualSicx);
     }
 
@@ -127,7 +127,7 @@ public class ReserveFundTest extends TestBase {
         BigInteger prevSicxInOwner = (BigInteger) sicxScore.call("balanceOf", owner.getAddress());
         BigInteger prevSicxInLoans = (BigInteger) sicxScore.call("balanceOf", loansScore.getAddress());
 
-        sicxScore.invoke(owner, "transfer", ReserveScore.getAddress(), BigInteger.TEN.pow(21), new byte[0]);
+        sicxScore.invoke(owner, "transfer", reserveScore.getAddress(), BigInteger.TEN.pow(21), new byte[0]);
         loansScore.invoke(owner, "redeem", loansScore.getAddress(), BigInteger.TEN.pow(19), BigInteger.TEN.pow(18));
 
         BigInteger afterSicxInOwner = (BigInteger) sicxScore.call("balanceOf", owner.getAddress());
@@ -135,6 +135,8 @@ public class ReserveFundTest extends TestBase {
 
         assertEquals(prevSicxInLoans.add(BigInteger.TEN.pow(19)), afterSicxInLoans);
         assertEquals(prevSicxInOwner.subtract(BigInteger.TEN.pow(21)), afterSicxInOwner);
+        assertEquals(BigInteger.TEN.pow(21).subtract(BigInteger.TEN.pow(19)), sicxScore.call("balanceOf",
+                reserveScore.getAddress()));
     }
 
     @Test
@@ -142,14 +144,14 @@ public class ReserveFundTest extends TestBase {
         setAndGetSicx();
         testSetBaln();
         setAndGetLoans();
-        ReserveFund.Disbursement[] amt = new ReserveFund.Disbursement[]{new ReserveFund.Disbursement()};
-        amt[0].address = sicxScore.getAddress();
-        amt[0].amount = BigInteger.TEN.pow(20);
-        sicxScore.invoke(owner, "transfer", ReserveScore.getAddress(), BigInteger.TEN.pow(21), new byte[0]);
-        ReserveScore.invoke(governanceScore, "disburse", bob.getAddress(), amt);
+        ReserveFund.Disbursement[] disbursements = new ReserveFund.Disbursement[]{new ReserveFund.Disbursement()};
+        disbursements[0].address = sicxScore.getAddress();
+        disbursements[0].amount = BigInteger.TEN.pow(20);
+        sicxScore.invoke(owner, "transfer", reserveScore.getAddress(), BigInteger.TEN.pow(21), new byte[0]);
+        reserveScore.invoke(governanceScore, "disburse", bob.getAddress(), disbursements);
 
         BigInteger sicxBefore = (BigInteger) sicxScore.call("balanceOf", bob.getAddress());
-        ReserveScore.invoke(bob, "claim");
+        reserveScore.invoke(bob, "claim");
         BigInteger sicxAfter = (BigInteger) sicxScore.call("balanceOf", bob.getAddress());
         assertEquals(sicxAfter, sicxBefore.add(BigInteger.TEN.pow(20)));
     }

@@ -178,7 +178,7 @@ public class ReserveFund {
         Address balnTokenAddress = balnToken.get();
         Address sicxTokenAddress = sicxToken.get();
 
-        if (_amount.compareTo(sicxAmount) < 1) {
+        if (_amount.compareTo(sicxAmount) <= 0) {
             sicxToSend = _amount;
         } else {
             sicxToSend = sicxAmount;
@@ -195,7 +195,6 @@ public class ReserveFund {
         sendToken(sicxTokenAddress, loansScoreAddress, sicxToSend, "To Loans: ");
         return sicxToSend;
     }
-
 
     @External
     public boolean disburse(Address _recipient, Disbursement[] _amounts) {
