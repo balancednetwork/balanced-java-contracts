@@ -44,6 +44,7 @@ public class Rebalancing {
     private static final String PRICE_THRESHOLD = "_price_threshold";
 
     private static final BigInteger EXA = BigInteger.TEN.pow(18); //TODO: move to constants
+    private static final Integer SICX_BNUSD_POOL_ID = 2; 
 
     private static final VarDB<Address> bnusd = Context.newVarDB(BNUSD_ADDRESS, Address.class);
     private static final VarDB<Address> sicx = Context.newVarDB(SICX_ADDRESS, Address.class);
@@ -159,14 +160,16 @@ public class Rebalancing {
         BigInteger minDiff = priceThreshold.get();
 
         BigInteger bnusdLastPrice = (BigInteger) Context.call(bnusdScore, "lastPriceInLoop");
-        Map<String, BigInteger> poolStats = (Map) Context.call(dexScore, "getPoolStats", 2);
+        Map<String, Object> poolStats =  (Map<String, Object>) Context.call(dexScore, "getPoolStats", SICX_BNUSD_POOL_ID);
         BigInteger sicxLastPrice = (BigInteger) Context.call(sicxScore, "lastPriceInLoop");
         
         BigInteger price = bnusdLastPrice.multiply(EXA).divide(sicxLastPrice);
-        BigInteger dexPrice = poolStats.get("base").multiply(EXA).divide(poolStats.get("quote"));
+        BigInteger poolBase = (BigInteger) poolStats.get("base");
+        BigInteger poolQuote = (BigInteger) poolStats.get("quote");
+        BigInteger dexPrice = poolBase.multiply(EXA).divide(poolQuote);
         
         BigInteger diff = price.subtract(dexPrice).multiply(EXA).divide(price);
-        BigInteger tokensToSell = calculateTokensToSell(price, poolStats.get("base"), poolStats.get("quote"));
+        BigInteger tokensToSell = calculateTokensToSell(price, poolBase, poolQuote);
         
         results.add(diff.compareTo(minDiff) == 1);
         results.add(tokensToSell);
