@@ -2,7 +2,7 @@ package network.balanced.score.tokens.utils;
 
 import java.math.BigInteger;
 
-public class UnsignedBigInteger extends Number implements Comparable<UnsignedBigInteger> {
+public class UnsignedBigInteger implements Comparable<UnsignedBigInteger> {
 
 
     private final BigInteger value;
@@ -137,22 +137,22 @@ public class UnsignedBigInteger extends Number implements Comparable<UnsignedBig
         return value.toByteArray();
     }
 
-    @Override
+    //    @Override
     public int intValue() {
         return value.intValue();
     }
 
-    @Override
+    //    @Override
     public long longValue() {
         return value.longValue();
     }
 
-    @Override
+    //    @Override
     public float floatValue() {
         return value.floatValue();
     }
 
-    @Override
+    //    @Override
     public double doubleValue() {
         return value.doubleValue();
     }
