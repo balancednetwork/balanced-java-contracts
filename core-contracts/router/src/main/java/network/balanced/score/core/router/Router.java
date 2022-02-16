@@ -2,7 +2,6 @@ package network.balanced.score.core.router;
 
 import com.eclipsesource.json.JsonValue;
 import score.Address;
-import score.ArrayDB;
 import score.Context;
 import score.VarDB;
 import score.annotation.External;
@@ -13,7 +12,6 @@ import com.eclipsesource.json.JsonObject;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class Router {
     private static String DEX_ADDRESS = "dex_address";
@@ -21,7 +19,7 @@ public class Router {
     private static String STAKING_ADDRESS = "staking_address";
     private static String GOVERNANCE_ADDRESS = "governance_address";
     private static String ADMIN = "admin";
-    private static BigInteger JAECHANG_LIMIT = BigInteger.valueOf(4L); // Unbounded iterations won"t pass audit
+    private static BigInteger MAX_NUMBER_OF_ITERATIONS = BigInteger.valueOf(4L); // Unbounded iterations won"t pass audit
     private static Address MINT_ADDRESS = Address.fromString("hx0000000000000000000000000000000000000000");
     private final String TAG = "Balanced Router";
 
@@ -49,7 +47,7 @@ public class Router {
     /**
      *  Gets the current admin address. This user can call using the
      *         `@only_admin` decorator.
-     * @return
+     * @return Returns the address of the current admin
      */
     @External(readonly = true)
     public Address getAdmin() {
@@ -129,6 +127,31 @@ public class Router {
         return governance.get();
     }
 
+    /**
+     *
+     * @return Gets the address of the Staking contract.
+     */
+    @External(readonly = true)
+    public Address getStaking() {
+        return staking.get();
+    }
+
+    /**
+     * Sets new Governance contract address. Should be called before dex use.
+     * @param _address New contract address to set.
+     */
+    @External
+    public void setStaking(Address _address) {
+        Context.require(
+                Context.getCaller() == admin.get(),
+                "Only g governance call this method"
+        );
+        Context.require(_address.isContract(), TAG +
+                "Address provided is an EOA address. A contract address is required.");
+        staking.set(_address);
+    }
+
+
     void swap(Address _fromToken, Address _toToken) {
         if(_fromToken == null) {
             Context.require(
@@ -188,8 +211,8 @@ public class Router {
         }
 
         Context.require(
-                _path.length > JAECHANG_LIMIT.intValue(),
-                "Passed max swaps of" + JAECHANG_LIMIT
+                _path.length > MAX_NUMBER_OF_ITERATIONS.intValue(),
+                "Passed max swaps of" + MAX_NUMBER_OF_ITERATIONS
         );
 
         route(Context.getCaller(), null, _path, _minReceive);
@@ -247,8 +270,8 @@ public class Router {
         }
 
         Context.require(
-                params.get("path").asArray().size() > JAECHANG_LIMIT.intValue(),
-                TAG +"Passed max swaps of " + JAECHANG_LIMIT
+                params.get("path").asArray().size() > MAX_NUMBER_OF_ITERATIONS.intValue(),
+                TAG +"Passed max swaps of " + MAX_NUMBER_OF_ITERATIONS
                 );
 
         ArrayList<Address> path = new ArrayList<>();
