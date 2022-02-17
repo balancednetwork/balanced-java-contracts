@@ -111,12 +111,12 @@ public class BatchDisbursement {
     }
 
     @External(readonly = true)
-    public Map<Address, BigInteger> getTokenBalances() {
-        Map<Address, BigInteger> balances = new HashMap<>();
+    public Map<String, BigInteger> getTokenBalances() {
+        Map<String, BigInteger> balances = new HashMap<>();
         for (int arrayIndex = 0; arrayIndex < allowedTokenAddress.length(); arrayIndex++) {
             Address tokenAddress = allowedTokenAddress.at(arrayIndex);
             BigInteger balance = (BigInteger) Context.call(tokenAddress, "balanceOf", Context.getAddress());
-            balances.put(tokenAddress, balance);
+            balances.put(tokenAddress.toString(), balance);
         }
         return balances;
     }
@@ -139,13 +139,13 @@ public class BatchDisbursement {
     @External(readonly = true)
     public Map<String, Object> getDisbursementDetail(Address _user) {
 
-        Map<Address, BigInteger> userClaimableTokens = new HashMap<>();
+        Map<String, BigInteger> userClaimableTokens = new HashMap<>();
         DictDB<Address, BigInteger> userTokens = this.userClaimableTokens.at(_user);
 
         for (int arrayIndex = 0; arrayIndex < allowedTokenAddress.length(); arrayIndex++) {
             Address token = allowedTokenAddress.at(arrayIndex);
             BigInteger tokenAmount = userTokens.getOrDefault(token, BigInteger.ZERO);
-            userClaimableTokens.put(token, tokenAmount);
+            userClaimableTokens.put(token.toString(), tokenAmount);
         }
         return Map.of("user", _user, "claimableTokens", userClaimableTokens);
     }

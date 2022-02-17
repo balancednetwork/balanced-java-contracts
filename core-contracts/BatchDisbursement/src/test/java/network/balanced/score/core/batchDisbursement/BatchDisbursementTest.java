@@ -27,7 +27,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import score.Address;
-import score.Context;
 
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
@@ -35,7 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class BatchDisbursementTest extends TestBase {
 
@@ -137,11 +136,11 @@ class BatchDisbursementTest extends TestBase {
         setAndGetReserveFund();
 
         batchDisbursement.invoke(governanceScore, "batchDisburse", daofundScore.getAddress());
-        assertEquals(Map.of(balnTokenScore.getAddress(), BigInteger.TEN.pow(22)), batchDisbursement.call(
+        assertEquals(Map.of(balnTokenScore.getAddress().toString(), BigInteger.TEN.pow(22)), batchDisbursement.call(
                 "getTokenBalances"));
 
         batchDisbursement.invoke(governanceScore, "batchDisburse", reserveFundScore.getAddress());
-        assertEquals(Map.of(balnTokenScore.getAddress(), BigInteger.TEN.pow(22).multiply(BigInteger.TWO)),
+        assertEquals(Map.of(balnTokenScore.getAddress().toString(), BigInteger.TEN.pow(22).multiply(BigInteger.TWO)),
                 batchDisbursement.call("getTokenBalances"));
     }
 
@@ -169,9 +168,9 @@ class BatchDisbursementTest extends TestBase {
             Map<String, Object> disbursementDetail = (Map<String, Object>) batchDisbursement.call(
                     "getDisbursementDetail", expectedRecipient);
             Address actualRecipient = (Address) disbursementDetail.get("user");
-            Map<Address, BigInteger> claimableTokens = (Map<Address, BigInteger>) disbursementDetail.get(
+            Map<String, BigInteger> claimableTokens = (Map<String, BigInteger>) disbursementDetail.get(
                     "claimableTokens");
-            BigInteger actualAmount = claimableTokens.get(expectedTokenAddress);
+            BigInteger actualAmount = claimableTokens.get(expectedTokenAddress.toString());
 
             assertEquals(expectedRecipient, actualRecipient);
             assertEquals(expectedAmount, actualAmount);
