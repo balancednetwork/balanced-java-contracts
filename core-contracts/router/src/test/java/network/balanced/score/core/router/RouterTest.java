@@ -8,6 +8,7 @@ import com.iconloop.score.token.irc2.IRC2Basic;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.*;
 import score.Address;
+import score.annotation.External;
 
 import java.math.BigInteger;
 
@@ -90,28 +91,27 @@ public class RouterTest extends TestBase {
     @Test
     void testRoute() throws Exception {
         Account account1 = Account.newScoreAccount(3);
-//        Score token = sm.deploy(owner, Token.class);
-        Account token = Account.newScoreAccount(4);
+        // cannnot transfer balance into score create by using Account.newScoreAccount()
+        // so we need to use a score created by us
+        // hence we use routerScore
+//        Account token = Account.newScoreAccount(4);
+        Score sicxScore = sm.deploy(owner, Token.class);
         Address[] addresses = new Address[1];
-        addresses[0] = token.getAddress();
+        addresses[0] = sicxScore.getAddress();
 
         account1.addBalance("TestToken", BigInteger.TEN);
+
+        Score stakingScore = sm.deploy(owner, Token.class);
+        routerScore.invoke(governanceScore, "setStaking", stakingScore.getAddress());
 
         routerScore.invoke(
                 governanceScore,
                 "setSicx",
-                token.getAddress()
+                sicxScore.getAddress()
         );
 
         BigInteger minReceive = BigInteger.ZERO;
         routerScore.invoke(adminAccount, "route", addresses, minReceive);
-
-    }
-
-    public static class Token extends IRC2Basic {
-        public Token() {
-            super("TestToken", "TestToken", 18);
-        }
 
     }
 }

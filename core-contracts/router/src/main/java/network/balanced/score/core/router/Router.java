@@ -193,13 +193,13 @@ public class Router {
             Context.transfer(_from, balance);
         }
         else {
-            BigInteger balance = (BigInteger) Context.call(currentToken, "balanceOf");
+            BigInteger balance = (BigInteger) Context.call(currentToken, "balanceOf", Context.getAddress());
             Context.require(
                     balance.compareTo(_minReceive) >= 0,
                     TAG + ":Below minimum receive amount of" + _minReceive
             );
             String data = "";
-            Context.call(currentToken, "transfer", balance, data.getBytes());
+            Context.call(currentToken, "transfer", _from, balance, data.getBytes());
         }
     }
 
