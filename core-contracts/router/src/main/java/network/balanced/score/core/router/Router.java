@@ -93,18 +93,18 @@ public class Router {
 
     @External(readonly = true)
     public Address getSicx() {
-        return dex.get();
+        return sicx.get();
     }
 
     @External
     public void setSicx(Address _address) {
         Context.require(
                 Context.getCaller() == admin.get(),
-                "Only g governance call this method"
+                "Only governance address can call this method"
         );
         Context.require(_address.isContract(), TAG +
                 "Address provided is an EOA address. A contract address is required.");
-        dex.set(_address);
+        sicx.set(_address);
     }
 
     /**
@@ -144,7 +144,7 @@ public class Router {
     public void setStaking(Address _address) {
         Context.require(
                 Context.getCaller() == admin.get(),
-                "Only g governance call this method"
+                "Only governance address can call this method"
         );
         Context.require(_address.isContract(), TAG +
                 "Address provided is an EOA address. A contract address is required.");
@@ -203,6 +203,11 @@ public class Router {
         }
     }
 
+    /**
+     * Uses DEX for exchange in the path where highest return can be obtained
+     * @param _path
+     * @param _minReceive
+     */
     @Payable
     @External
     public void route(Address[] _path, @Optional BigInteger _minReceive) {
@@ -211,7 +216,7 @@ public class Router {
         }
 
         Context.require(
-                _path.length > MAX_NUMBER_OF_ITERATIONS.intValue(),
+                _path.length <= MAX_NUMBER_OF_ITERATIONS.intValue(),
                 "Passed max swaps of" + MAX_NUMBER_OF_ITERATIONS
         );
 
