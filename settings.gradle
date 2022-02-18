@@ -27,4 +27,5 @@
 rootProject.name = 'balanced-java-contracts'
 include(':core-contracts:Multicall',
         ':core-contracts:BatchDisbursement',
+        ':core-contracts:Reserve',
         ':token-contracts')
