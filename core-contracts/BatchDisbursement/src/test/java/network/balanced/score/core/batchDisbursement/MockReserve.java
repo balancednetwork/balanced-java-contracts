@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.reserve.utils;
+package network.balanced.score.core.batchDisbursement;
 
 import score.Address;
 import score.Context;
@@ -22,22 +22,18 @@ import score.VarDB;
 import score.annotation.External;
 
 import java.math.BigInteger;
-import java.util.Dictionary;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.Map;
 
-public class Loans {
-    public static final VarDB<Address> reserve = Context.newVarDB("RESERVE", Address.class);
+public class MockReserve {
 
-    public Loans(Address address) {
-        reserve.set(address);
+    private VarDB<Address> balnToken = Context.newVarDB("baln_token", Address.class);
 
+    public MockReserve(Address balnToken) {
+        this.balnToken.set(balnToken);
     }
 
     @External
-    public void redeem(Address _to, BigInteger _amount, BigInteger _sicx_rate) {
-        Context.call(reserve.get(), "redeem", _to, _amount, _sicx_rate);
+    public void claim() {
+        Context.call(balnToken.get(), "transfer", Context.getCaller(), BigInteger.TEN.pow(22), new byte[0]);
     }
 
     @External
