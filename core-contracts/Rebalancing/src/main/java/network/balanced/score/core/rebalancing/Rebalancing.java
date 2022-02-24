@@ -19,12 +19,10 @@ package network.balanced.score.core.rebalancing;
 import score.Address;
 import score.Context;
 import score.VarDB;
-import score.DictDB;
 import score.annotation.External;
 import score.annotation.Optional;
 
 import java.math.BigInteger;
-import scorex.util.HashMap;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,7 +55,7 @@ public class Rebalancing {
     public Rebalancing(@Optional Address governance) {
         if (governance != null) {
             Context.require(governance.isContract(), TAG + ": Governance address should be a contract");
-            Rebalancing.governance.set(governance);
+            Rebalancing.governance.set(governance); 
         }
     }
 
