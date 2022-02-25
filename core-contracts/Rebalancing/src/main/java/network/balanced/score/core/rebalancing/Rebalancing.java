@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static network.balanced.score.core.rebalancing.Checks.*;
+import static network.balanced.score.core.rebalancing.Constants.*;
 
 public class Rebalancing {
 
@@ -41,7 +42,6 @@ public class Rebalancing {
     private static final String ADMIN = "admin";
     private final String PRICE_THRESHOLD = "_price_threshold";
 
-    private final BigInteger EXA = BigInteger.TEN.pow(18); //TODO: move to constants
     private final Integer SICX_BNUSD_POOL_ID = 2; 
 
     public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE_ADDRESS, Address.class);
