@@ -29,3 +29,6 @@ include(':core-contracts:Multicall',
         ':core-contracts:BatchDisbursement',
         ':core-contracts:Reserve',
         ':token-contracts')
+include 'token-contracts:bnUSD'
+findProject(':token-contracts:bnUSD')?.name = 'bnUSD'
+
