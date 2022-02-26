@@ -26,7 +26,7 @@
 
 include(':core-contracts:Multicall',
         ':token-contracts',
-        'token-contracts:bwt'
+        'token-contracts:bwt',
         ':core-contracts:BatchDisbursement',
         ':core-contracts:Reserve',
         ':token-contracts')

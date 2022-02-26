@@ -13,7 +13,6 @@ import score.annotation.Optional;
 
 import static network.balanced.score.tokens.tokens.Checks.*;
 
-//TODO: Generate Java doc
 public class WorkerToken extends IRC2 {
     private static String TOKEN_NAME = "Balanced Worker Token";
     private static String SYMBOL_NAME = "BALW";
@@ -117,7 +116,11 @@ public class WorkerToken extends IRC2 {
      */
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data){
-        Context.require(Context.getCaller().equals(balnToken.get()), "error message");
+        Context.require(
+                Context.getCaller().equals(balnToken.get()),
+                "The Worker Token contract can only accept BALN tokens." +
+                        "Deposit not accepted from" + Context.getCaller() +
+                        "Only accepted from BALN = " + baln.get());
         baln.set(baln.getOrDefault(BigInteger.ZERO).add(_value));
     }
 
