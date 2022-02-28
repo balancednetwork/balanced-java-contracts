@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeAll;
 import com.iconloop.score.test.TestBase;
 import org.junit.jupiter.api.*;
 import score.Address;
+import score.Context;
 
 import java.math.BigInteger;
 import java.util.Stack;
@@ -154,7 +155,31 @@ public class TestBNUSD extends TestBase {
         Score oracle = sm.deploy(owner, DummyOracle.class);
         String oracleName = "Hello there!";
         bnUSDScore.invoke(governance, "setOracle", oracle.getAddress());
-        bnUSDScore.call("lastPriceInLoop");
+        BigInteger result = (BigInteger) bnUSDScore.call("lastPriceInLoop");
+        assertEquals(
+                result,
+                BigInteger.valueOf(597955725813433531L)
+        );
+    }
+
+    @Test
+    void testPrice() throws Exception {
+        Score oracle = sm.deploy(owner, DummyOracle.class);
+        String oracleName = "Hello there!";
+        bnUSDScore.invoke(governance, "setOracle", oracle.getAddress());
+        BigInteger result;
+        Score testContract = sm.deploy(owner, DummyContract.class);
+        result = (BigInteger) testContract.call( "testPriceInLoop", bnUSDScore.getAddress());
+
+        assertEquals(
+                BigInteger.valueOf(Context.getBlockTimestamp()),
+                bnUSDScore.call("getPriceUpdateTime")
+        );
+
+        assertEquals(
+                result,
+                BigInteger.valueOf(597955725813433531L)
+        );
     }
 
 }

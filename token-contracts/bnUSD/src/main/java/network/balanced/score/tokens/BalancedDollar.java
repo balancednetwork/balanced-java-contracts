@@ -144,7 +144,9 @@ public class BalancedDollar extends IRC2Mintable {
      */
     @External
     public BigInteger priceInLoop() {
-        if (BigInteger.valueOf(Context.getBlockTimestamp()).subtract(priceUpdateTime.get()).compareTo(minInterval.get()) > 0){
+        BigInteger blockTimeStamp = BigInteger.valueOf(Context.getBlockTimestamp());
+        BigInteger priceUpdate = priceUpdateTime.getOrDefault(BigInteger.ZERO);
+        if (blockTimeStamp.subtract(priceUpdate).compareTo(minInterval.get()) > 0){
             updateAssetValue();
         }
 
@@ -187,13 +189,12 @@ public class BalancedDollar extends IRC2Mintable {
 
         try {
             HashMap<String, BigInteger> priceData;
-            // TODO: Check unsafe cast
             priceData = (HashMap<String, BigInteger>) Context.call(oracleAddress, "get_reference_data", base, quote);
             lastPrice.set(priceData.getOrDefault("rate", BigInteger.ZERO));
             priceUpdateTime.set(BigInteger.valueOf(Context.getBlockTimestamp()));
             OraclePrice(base + quote, oracleName.get(), oracleAddress, priceData.getOrDefault("rate", BigInteger.ZERO));
         } catch (Exception e) {
-            Context.revert("{" + base + "quote" + " }, { " + oracleName.get() + " }, {" + oracleAddress  + " }.");
+            Context.revert("{" + base + quote + "}, { " + oracleName.get() + " }, {" + oracleAddress  + " }.");
         }
     }
 
