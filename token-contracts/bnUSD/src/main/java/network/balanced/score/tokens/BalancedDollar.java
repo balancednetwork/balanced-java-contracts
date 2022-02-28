@@ -19,7 +19,7 @@ public class BalancedDollar extends IRC2Mintable {
     public static final String TAG = "bnUSD";
     private static String TOKEN_NAME = "Balanced Dollar";
     private static String SYMBOL_NAME = "bnUSD";
-    public String DEFAULT_PEG = "BandChain";
+    public String DEFAULT_PEG = "USD";
     public String DEFAULT_ORACLE_NAME = "BandChain";
     BigInteger INITIAL_PRICE_ESTIMATE = BigInteger.valueOf(125).multiply(pow(BigInteger.TEN, 16));
     BigInteger MIN_UPDATE_TIME = BigInteger.valueOf(30_000_000); // 30 seconds
@@ -159,8 +159,7 @@ public class BalancedDollar extends IRC2Mintable {
         String base = peg.get();
         String quote = "ICX";
         Address oracleAddress = this.oracleAddress.get();
-        HashMap<String, BigInteger> priceData;
-        priceData = (HashMap<String, BigInteger>) Context.call(oracleAddress, "get_reference_data", base, quote);
+        HashMap<String, BigInteger> priceData = (HashMap<String, BigInteger>) Context.call(oracleAddress, "get_reference_data", base, quote);
         return priceData.getOrDefault("rate", BigInteger.ZERO);
     }
 
