@@ -1,6 +1,7 @@
 package network.balanced.score.tokens.tokens;
 
 import score.Address;
+import score.Context;
 import score.annotation.External;
 import score.annotation.Optional;
 
@@ -18,13 +19,25 @@ public class IRC2Burnable extends IRC2{
         super(_tokenName, _symbolName, _initialSupply, _decimals);
     }
 
+    /**
+     * Destroys `_amount` number of tokens from the caller account.
+     * 		Decreases the balance of that account and total supply.
+     * @param _amount Number of tokens to be destroyed.
+     */
     @External
-    public void burn(BigInteger _amount, @Optional byte[] _data) {
-
+    public void burn(BigInteger _amount) {
+        burn(Context.getCaller(), _amount);
     }
 
+    /**
+     * Destroys `_amount` number of tokens from the specified `_account` account.
+     * 		Decreases the balance of that account and total supply.
+     * 		See {IRC2-_burn}
+     * @param _account The account at which token is to be destroyed.
+     * @param _amount Number of tokens to be destroyed at the `_account`.
+     */
     @External
-    public void burnTo(Address _account, BigInteger _amount, @Optional byte[] _data) {
-
+    public void burnFrom(Address _account, BigInteger _amount) {
+        burn(_account, _amount);
     }
 }

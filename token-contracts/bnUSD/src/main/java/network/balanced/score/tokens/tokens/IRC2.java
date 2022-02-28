@@ -23,7 +23,7 @@ public abstract class IRC2 implements TokenStandard {
     protected VarDB<String> name = Context.newVarDB(NAME, String.class);
     protected VarDB<String> symbol = Context.newVarDB(SYMBOL, String.class);
     protected VarDB<BigInteger> decimals = Context.newVarDB(DECIMALS, BigInteger.class);
-    protected VarDB<BigInteger> totalSupply = Context.newVarDB(TOTAL_SUPPLY, BigInteger.class);
+    protected VarDB<BigInteger> total_supply = Context.newVarDB(TOTAL_SUPPLY, BigInteger.class);
 
     public ArrayDB<Address> addresses = Context.newArrayDB(ACCOUNTS, Address.class);
     protected DictDB<Address, BigInteger> balances = Context.newDictDB(BALANCES, BigInteger.class);
@@ -69,7 +69,7 @@ public abstract class IRC2 implements TokenStandard {
 
         // set the total supply to the context variable
         BigInteger supply = _initialSupply.multiply(pow(BigInteger.TEN, _decimals.intValue()));
-        totalSupply.set(supply);
+        total_supply.set(supply);
         this.decimals.set(_decimals);
 
         // set other values
@@ -116,7 +116,7 @@ public abstract class IRC2 implements TokenStandard {
      */
     @External(readonly = true)
     public BigInteger totalSupply() {
-        return totalSupply.get();
+        return total_supply.get();
     }
 
     /**
@@ -221,12 +221,20 @@ public abstract class IRC2 implements TokenStandard {
     }
 
 
-    protected void mint(Address account, BigInteger amount, byte[] _data) {
+    /**
+     * Creates amount number of tokens, and assigns to account
+     * 		Increases the balance of that account and total supply.
+     * 		This is an internal function
+     * @param account The account at which token is to be created.
+     * @param amount Number of tokens to be created at the `account`.
+     * @param _data Number of tokens to be created at the `account`.
+     */
+    protected void mint(Address account, BigInteger amount, @Optional byte[] _data) {
         Checks.onlyAdmin();
         if (amount.signum() < 0) {
             Context.revert("Invalid Value");
         }
-        totalSupply.set(totalSupply.get().add(amount));
+        total_supply.set(total_supply.get().add(amount));
         balances.set(account, balanceOf(account).add(amount));
 
         Mint(account, amount, _data);
@@ -239,17 +247,24 @@ public abstract class IRC2 implements TokenStandard {
         }
     }
 
+    /**
+     * Destroys `amount` number of tokens from `account`
+     * 		Decreases the balance of that `account` and total supply.
+     * 		This is an internal function
+     * @param account The account at which token is to be destroyed.
+     * @param amount The `amount` of tokens of `account` to be destroyed.
+     */
     protected void burn(Address account, BigInteger amount) {
         Checks.onlyAdmin();
         if (amount.signum() < 0) {
-            Context.revert("Invalid Value");
+            Context.revert("Invalid Amount Value");
         }
 
         BigInteger balance = balanceOf(account);
         if (amount.compareTo(balance) < 0) {
             Context.revert("Burn amount { " + amount+ " } larger than available balance.");
         }
-        totalSupply.set(totalSupply.get().subtract(amount));
+        total_supply.set(total_supply.get().subtract(amount));
         balances.set(account, balanceOf(account).subtract(amount));
 
         Burn(account, amount);
