@@ -46,7 +46,7 @@ class StakingTest extends TestBase {
     @BeforeEach
     void setUp() throws Exception {
         Map<String, Object> getPreps = new HashMap<String, Object>();
-        ArrayList lis = new ArrayList();
+        ArrayList prepDetails = new ArrayList();
         Map<String, String> tempDict = new HashMap<String, String>();
         Map<String, String> tempDict2 = new HashMap<String, String>();
         Map<String, Object> termDetails = new HashMap<String, Object>();
@@ -55,11 +55,11 @@ class StakingTest extends TestBase {
         getPreps.put("blockHeight", "0x2c5804c");
         tempDict.put("address", "hx0b047c751658f7ce1b2595da34d57a0e7dad357d");
         tempDict.put("bonded", "0x1a784379d99db42000000");
-        lis.add(tempDict);
+        prepDetails.add(tempDict);
         tempDict2.put("address", "hx0b047c751658f7ce1b2595da34d57a0e7dad357c");
         tempDict2.put("bonded", "0x1a784379d99db41000000");
-        lis.add(tempDict2);
-        getPreps.put("preps", lis);
+        prepDetails.add(tempDict2);
+        getPreps.put("preps", prepDetails);
         termDetails.put("nextPRepTerm", BigInteger.valueOf(1000L));
 
         sicx = sm.deploy(owner, MockSicx.class);
@@ -774,13 +774,13 @@ class StakingTest extends TestBase {
             Score staking = sm.deploy(owner, Staking.class);
             Staking scoreSpy = (Staking) spy(staking.getInstance());
             staking.setInstance(scoreSpy);
-            doNothing().when(scoreSpy).unstake(Address.fromString("hx55814f724bbffe49bfa4555535cd9d7e0e1dff32"),new BigInteger("4000000000000000000"), null);
-            doNothing().when(scoreSpy).unstake(Address.fromString("hx55814f724bbffe49bfa4555535cd9d7e0e1dff32"),new BigInteger("4000000000000000000"), Address.fromString("hx436106433144e736a67710505fc87ea9becb141d"));
+            doNothing().when(scoreSpy).unstake(Address.fromString("hx55814f724bbffe49bfa4555535cd9d7e0e1dff32"), new BigInteger("4000000000000000000"), null);
+            doNothing().when(scoreSpy).unstake(Address.fromString("hx55814f724bbffe49bfa4555535cd9d7e0e1dff32"), new BigInteger("4000000000000000000"), Address.fromString("hx436106433144e736a67710505fc87ea9becb141d"));
             staking.invoke(owner, "toggleStakingOn");
             staking.invoke(owner, "tokenFallback", Address.fromString("hx55814f724bbffe49bfa4555535cd9d7e0e1dff32"),
-                    new BigInteger("4000000000000000000"), "{\"method\": \"unstake\"}".getBytes() );
+                    new BigInteger("4000000000000000000"), "{\"method\": \"unstake\"}".getBytes());
             staking.invoke(owner, "tokenFallback", Address.fromString("hx55814f724bbffe49bfa4555535cd9d7e0e1dff32"),
-                    new BigInteger("4000000000000000000"),"{\"method\": \"unstake\",\"user\":\"hx436106433144e736a67710505fc87ea9becb141d\"}".getBytes() );
+                    new BigInteger("4000000000000000000"), "{\"method\": \"unstake\",\"user\":\"hx436106433144e736a67710505fc87ea9becb141d\"}".getBytes());
 
         } catch (Exception e) {
             e.printStackTrace();
