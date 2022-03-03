@@ -25,7 +25,11 @@
  */
 
 rootProject.name = 'balanced-java-contracts'
-include(':core-contracts:Multicall',
-        ':core-contracts:BatchDisbursement',
-        ':core-contracts:Reserve',
-        ':token-contracts')
+include(':Multicall')
+project(':Multicall').projectDir = file("core-contracts/Multicall")
+
+include(':BatchDisbursement')
+project(':BatchDisbursement').projectDir = file("core-contracts/BatchDisbursement")
+
+include(':Reserve')
+project(':Reserve').projectDir = file("core-contracts/Reserve")
