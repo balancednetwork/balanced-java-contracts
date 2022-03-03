@@ -14,34 +14,30 @@
  * limitations under the License.
  */
 
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath 'foundation.icon:gradle-javaee-plugin:0.8.0'
-    }
-}
+package network.balanced.score.core.batchDisbursement;
 
-subprojects {
-    repositories {
-        mavenCentral()
-    }
+import score.Address;
+import score.Context;
+import score.VarDB;
+import score.annotation.External;
 
-    apply plugin: 'java'
-    apply plugin: 'foundation.icon.javaee'
+import java.math.BigInteger;
 
-    dependencies {
-        testImplementation group: 'org.json', name: 'json', version: '20211205'
+public class MockDaofund {
+
+    private VarDB<Address> balnToken = Context.newVarDB("baln_token", Address.class);
+
+    public MockDaofund(Address balnToken) {
+        this.balnToken.set(balnToken);
     }
 
-    java {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+    @External
+    public void claim() {
+        Context.call(balnToken.get(), "transfer", Context.getCaller(), BigInteger.TEN.pow(22), new byte[0]);
     }
 
-    // need to add this option to retrieve formal parameter names
-    compileJava {
-        options.compilerArgs += ['-parameters']
+    @External
+    public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
+
     }
 }
