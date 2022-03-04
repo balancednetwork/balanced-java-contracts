@@ -20,7 +20,6 @@ import network.balanced.score.core.utils.EnumerableSetDB;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
-import score.annotation.Optional;
 import score.annotation.Payable;
 
 import java.math.BigInteger;
@@ -55,8 +54,8 @@ public class DAOfund {
         public BigInteger amount;
     }
 
-    public DAOfund(@Optional Address _governance) {
-        if (_governance != null) {
+    public DAOfund(Address _governance) {
+        if (governance.getOrDefault(null) == null) {
             ensureContract(_governance);
             governance.set(_governance);
         }
@@ -83,8 +82,7 @@ public class DAOfund {
         onlyOwner();
         for (int symbolIndex = 0; symbolIndex < symbol.length(); symbolIndex++) {
             String tokenSymbol = symbol.at(symbolIndex);
-            String address = TOKEN_ADDRESSES.getOrDefault(tokenSymbol, "");
-            Context.require(!address.equals(""), TAG + ": Address not found for symbol: " + tokenSymbol);
+            String address = TOKEN_ADDRESSES.get(tokenSymbol);
             this.address.add(address);
             fund.set(address, fund.getOrDefault(tokenSymbol, BigInteger.ZERO));
             fund.set(tokenSymbol, BigInteger.ZERO);
@@ -151,6 +149,12 @@ public class DAOfund {
         return balances;
     }
 
+    /**
+     * Disbursement method will be called from the governance SCORE when a vote passes approving an expenditure by
+     * the DAO.
+     * @param _recipient Disbursement recipient address
+     * @param _amounts Amounts of each asset type to disburse
+     */
     @External
     public boolean disburse(Address _recipient, Disbursement[] _amounts) {
         onlyGovernance();
@@ -169,6 +173,9 @@ public class DAOfund {
         return Boolean.TRUE;
     }
 
+    /**
+     * Any funds that are authorized for disbursement through Balanced Governance may be claimed using this method.
+     */
     @External
     public void claim() {
         Address sender = Context.getCaller();
@@ -195,16 +202,6 @@ public class DAOfund {
             address.add(tokenContract);
         }
         fund.set(tokenContract, tokenAmountInDAOfund.add(_value));
-    }
-
-    private void sendICX (Address to, BigInteger amount, String message) {
-        try {
-            Context.transfer(to, amount);
-            FundTransfer(to, amount, message + " " + amount + " ICX sent to " + to);
-        } catch (Exception e) {
-            Context.println(TAG + ":Error in ICX transfer: " + e.getMessage());
-            Context.revert(TAG + ": " + amount + " ICX not sent to " + to);
-        }
     }
 
     private void sendToken(String symbol, Address token, Address to, BigInteger amount, String message) {

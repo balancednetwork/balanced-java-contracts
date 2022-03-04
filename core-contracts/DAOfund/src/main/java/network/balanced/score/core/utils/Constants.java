@@ -16,26 +16,22 @@
 
 package network.balanced.score.core.utils;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public class Constants {
     public static final String GOVERNANCE = "governance";
     public static final String ADMIN = "admin";
     public static final String LOANS_SCORE = "loans_score";
-    public static final String FUND = "fund";
     public static final String SYMBOL = "symbol";
     public static final String ADDRESS = "address";
+    public static final String FUND = "fund";
     public static final String AWARDS = "awards";
 
-    public static final Map<String, String> TOKEN_ADDRESSES = new HashMap<>();
-
-    static {
-        TOKEN_ADDRESSES.put("sICX", "cx2609b924e33ef00b648a409245c7ea394c467824");
-        TOKEN_ADDRESSES.put("bnUSD", "cx88fd7df7ddff82f7cc735c871dc519838cb235bb");
-        TOKEN_ADDRESSES.put("BALN", "cxf61cd5a45dc9f91c15aa65831a30a90d59a09619");
-        TOKEN_ADDRESSES.put("USDS", "cxbb2871f468a3008f80b08fdde5b8b951583acf06");
-        TOKEN_ADDRESSES.put("IUSDC", "cxae3034235540b924dfcc1b45836c293dcc82bfb7");
-        TOKEN_ADDRESSES.put("OMM", "cx1a29259a59f463a67bb2ef84398b30ca56b5830a");
-    }
+    public static final Map<String, String> TOKEN_ADDRESSES = Map.of(
+            "sICX", "cx2609b924e33ef00b648a409245c7ea394c467824",
+            "bnUSD", "cx88fd7df7ddff82f7cc735c871dc519838cb235bb",
+            "BALN", "cxf61cd5a45dc9f91c15aa65831a30a90d59a09619",
+            "USDS", "cxbb2871f468a3008f80b08fdde5b8b951583acf06",
+            "IUSDC", "cxae3034235540b924dfcc1b45836c293dcc82bfb7",
+            "OMM", "cx1a29259a59f463a67bb2ef84398b30ca56b5830a");
 }
