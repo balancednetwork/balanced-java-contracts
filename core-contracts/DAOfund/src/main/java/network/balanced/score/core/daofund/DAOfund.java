@@ -197,10 +197,9 @@ public class DAOfund {
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         String tokenContract = Context.getCaller().toString();
+        Context.require(address.contains(tokenContract), TAG + ": Daofund can't receive this token");
+
         BigInteger tokenAmountInDAOfund = fund.getOrDefault(tokenContract, BigInteger.ZERO);
-        if (!address.contains(tokenContract)) {
-            address.add(tokenContract);
-        }
         fund.set(tokenContract, tokenAmountInDAOfund.add(_value));
     }
 
