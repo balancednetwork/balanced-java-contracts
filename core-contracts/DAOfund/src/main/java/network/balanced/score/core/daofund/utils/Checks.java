@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.utils;
+package network.balanced.score.core.daofund.utils;
 
-import network.balanced.score.core.DAOfund;
+import network.balanced.score.core.daofund.DAOfund;
 import score.Address;
 import score.Context;
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core;
+package network.balanced.score.core.daofund;
 
 import foundation.icon.score.client.ScoreInterface;
 import score.annotation.External;

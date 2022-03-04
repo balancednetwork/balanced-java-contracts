@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.utils;
+package network.balanced.score.core.daofund.utils;
 
 import java.util.Map;
 

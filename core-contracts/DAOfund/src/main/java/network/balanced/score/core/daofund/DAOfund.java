@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core;
+package network.balanced.score.core.daofund;
 
-import network.balanced.score.core.utils.EnumerableSetDB;
+import network.balanced.score.core.daofund.utils.EnumerableSetDB;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -26,8 +26,8 @@ import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
-import static network.balanced.score.core.utils.Checks.*;
-import static network.balanced.score.core.utils.Constants.*;
+import static network.balanced.score.core.daofund.utils.Checks.*;
+import static network.balanced.score.core.daofund.utils.Constants.*;
 
 public class DAOfund {
 
