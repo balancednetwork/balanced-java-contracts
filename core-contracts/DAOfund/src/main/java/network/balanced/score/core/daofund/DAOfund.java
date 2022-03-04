@@ -42,8 +42,10 @@ public class DAOfund {
     public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
     public static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
     private final VarDB<Address> loansScore = Context.newVarDB(LOANS_SCORE, Address.class);
+    // fund represents the total amount that is available to disburse
     private final DictDB<String, BigInteger> fund = Context.newDictDB(FUND, BigInteger.class);
     private final EnumerableSetDB<String> address = new EnumerableSetDB<>(ADDRESS, String.class);
+    // Awards hold the amount that can be claimed by any user
     private final BranchDB<Address, DictDB<Address, BigInteger>> awards = Context.newBranchDB(AWARDS, BigInteger.class);
 
     public static final String TAG = "Balanced DAOfund";
@@ -134,11 +136,13 @@ public class DAOfund {
     }
 
     //Operational methods
+
     /**
      * Disbursement method will be called from the governance SCORE when a vote passes approving an expenditure by
      * the DAO.
+     *
      * @param _recipient Disbursement recipient address
-     * @param _amounts Amounts of each asset type to disburse
+     * @param _amounts   Amounts of each asset type to disburse
      */
     @External
     public boolean disburse(Address _recipient, Disbursement[] _amounts) {
@@ -166,15 +170,12 @@ public class DAOfund {
         Address sender = Context.getCaller();
         DictDB<Address, BigInteger> disbursement = awards.at(sender);
 
-        LoansScoreInterface loans = new LoansScoreInterface(loansScore.getOrDefault(defaultAddress));
-        Map<String, String> assets = loans.getAssetTokens();
-
-        for (String symbol : assets.keySet()) {
-            Address tokenAddress = Address.fromString(assets.get(symbol));
+        for (int addressIndex = 0; addressIndex < address.length(); addressIndex++) {
+            Address tokenAddress = Address.fromString(address.at(addressIndex));
             BigInteger amountToClaim = disbursement.getOrDefault(tokenAddress, BigInteger.ZERO);
             if (amountToClaim.signum() > 0) {
                 disbursement.set(tokenAddress, BigInteger.ZERO);
-                sendToken(symbol, tokenAddress, sender, amountToClaim, "Balanced DAOfund disbursement");
+                sendToken(tokenAddress, sender, amountToClaim, "Balanced DAOfund disbursement");
             }
         }
     }
@@ -189,13 +190,13 @@ public class DAOfund {
         fund.set(tokenContract, tokenAmountInDAOfund.add(_value));
     }
 
-    private void sendToken(String symbol, Address token, Address to, BigInteger amount, String message) {
+    private void sendToken(Address token, Address to, BigInteger amount, String message) {
         try {
             Context.call(token, "transfer", to, amount, new byte[0]);
-            TokenTransfer(to, amount, message + " " + amount + " " + symbol + " sent to " + to);
+            TokenTransfer(to, amount, message + " " + amount + " " + " sent to " + to);
         } catch (Exception e) {
             Context.println(TAG + ":Error in Token Transfer: " + e.getMessage());
-            Context.revert(TAG + " " + amount + " " + symbol + " not sent to " + to);
+            Context.revert(TAG + " " + amount + " " + " not sent to " + to);
         }
     }
 
