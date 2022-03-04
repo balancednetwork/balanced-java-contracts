@@ -32,7 +32,7 @@ import static network.balanced.score.core.daofund.utils.Constants.*;
 public class DAOfund {
 
     @EventLog(indexed = 2)
-    public void FundTransfer(Address DESTINATION, BigInteger amount, String note) {
+    public void FundTransfer(Address destination, BigInteger amount, String note) {
     }
 
     @EventLog(indexed = 2)
@@ -62,40 +62,8 @@ public class DAOfund {
     }
 
     private void ensureContract(Address _address) {
-        Context.require(_address.isContract(), TAG + "Address provided is an EOA address. A contract address is " +
+        Context.require(_address.isContract(), TAG + ": Address provided is an EOA address. A contract address is " +
                 "required.");
-    }
-
-    @External
-    public void addSymbolToSetdb() {
-        onlyOwner();
-        LoansScoreInterface loans = new LoansScoreInterface(loansScore.getOrDefault(defaultAddress));
-        Map<String, String> assets = loans.getAssetTokens();
-
-        for (String symbol : assets.keySet()) {
-            this.symbol.add(symbol);
-        }
-    }
-
-    @External
-    public void addAddressToSetdb() {
-        onlyOwner();
-        for (int symbolIndex = 0; symbolIndex < symbol.length(); symbolIndex++) {
-            String tokenSymbol = symbol.at(symbolIndex);
-            String address = TOKEN_ADDRESSES.get(tokenSymbol);
-            this.address.add(address);
-            fund.set(address, fund.getOrDefault(tokenSymbol, BigInteger.ZERO));
-            fund.set(tokenSymbol, BigInteger.ZERO);
-        }
-    }
-
-    @External
-    public void setTokenBalance(Address _token) {
-        onlyOwner();
-        BigInteger balance = (BigInteger) Context.call(_token, "balanceOf");
-        if (balance.signum() > 0) {
-            fund.set(_token.toString(), balance);
-        }
     }
 
     @External(readonly = true)
@@ -136,6 +104,38 @@ public class DAOfund {
     @External(readonly = true)
     public Address getLoans() {
         return loansScore.get();
+    }
+
+    @External
+    public void addSymbolToSetdb() {
+        onlyOwner();
+        LoansScoreInterface loans = new LoansScoreInterface(loansScore.getOrDefault(defaultAddress));
+        Map<String, String> assets = loans.getAssetTokens();
+
+        for (String symbol : assets.keySet()) {
+            this.symbol.add(symbol);
+        }
+    }
+
+    @External
+    public void addAddressToSetdb() {
+        onlyOwner();
+        for (int symbolIndex = 0; symbolIndex < symbol.length(); symbolIndex++) {
+            String tokenSymbol = symbol.at(symbolIndex);
+            String address = TOKEN_ADDRESSES.get(tokenSymbol);
+            this.address.add(address);
+            fund.set(address, fund.getOrDefault(tokenSymbol, BigInteger.ZERO));
+            fund.set(tokenSymbol, BigInteger.ZERO);
+        }
+    }
+
+    @External
+    public void setTokenBalance(Address _token) {
+        onlyOwner();
+        BigInteger balance = (BigInteger) Context.call(_token, "balanceOf");
+        if (balance.signum() > 0) {
+            fund.set(_token.toString(), balance);
+        }
     }
 
     @External(readonly = true)
