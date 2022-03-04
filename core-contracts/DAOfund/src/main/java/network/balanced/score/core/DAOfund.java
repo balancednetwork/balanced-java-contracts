@@ -68,10 +68,10 @@ public class DAOfund {
     }
 
     @External
-    @SuppressWarnings("unchecked")
     public void addSymbolToSetdb() {
         onlyOwner();
-        Map<String, ?> assets = (Map<String, ?>) Context.call(loansScore.get(), "getAssetTokens");
+        LoansScoreInterface loans = new LoansScoreInterface(loansScore.getOrDefault(defaultAddress));
+        Map<String, String> assets = loans.getAssetTokens();
 
         for (String symbol : assets.keySet()) {
             this.symbol.add(symbol);
@@ -170,12 +170,12 @@ public class DAOfund {
     }
 
     @External
-    @SuppressWarnings("unchecked")
     public void claim() {
         Address sender = Context.getCaller();
         DictDB<Address, BigInteger> disbursement = awards.at(sender);
 
-        Map<String, String> assets = (Map<String, String>) Context.call(loansScore.get(), "getAssetTokens");
+        LoansScoreInterface loans = new LoansScoreInterface(loansScore.getOrDefault(defaultAddress));
+        Map<String, String> assets = loans.getAssetTokens();
 
         for (String symbol : assets.keySet()) {
             Address tokenAddress = Address.fromString(assets.get(symbol));
