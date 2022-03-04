@@ -21,9 +21,9 @@ import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Payable;
+import scorex.util.HashMap;
 
 import java.math.BigInteger;
-import java.util.HashMap;
 import java.util.Map;
 
 import static network.balanced.score.core.daofund.utils.Checks.*;
@@ -133,6 +133,20 @@ public class DAOfund {
             balances.put(tokenAddress, fund.getOrDefault(tokenAddress, BigInteger.ZERO));
         }
         return balances;
+    }
+
+    @External(readonly = true)
+    public Map<String,Object> getDisbursementDetail(Address _user) {
+
+        Map<String, BigInteger> userClaimableTokens = new HashMap<>();
+        DictDB<Address, BigInteger> userTokens = this.awards.at(_user);
+
+        for (int addressIndex = 0; addressIndex < address.length(); addressIndex++) {
+            Address token = Address.fromString(address.at(addressIndex));
+            BigInteger tokenAmount = userTokens.getOrDefault(token, BigInteger.ZERO);
+            userClaimableTokens.put(token.toString(), tokenAmount);
+        }
+        return Map.of("user", _user, "claimableTokens", userClaimableTokens);
     }
 
     //Operational methods
