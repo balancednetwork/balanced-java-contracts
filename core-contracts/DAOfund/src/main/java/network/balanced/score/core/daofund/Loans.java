@@ -27,5 +27,4 @@ public interface Loans {
     @External(readonly = true)
     Map<String, String> getAssetTokens();
 
-
 }

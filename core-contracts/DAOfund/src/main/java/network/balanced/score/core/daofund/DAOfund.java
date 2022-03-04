@@ -43,7 +43,6 @@ public class DAOfund {
     public static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
     private final VarDB<Address> loansScore = Context.newVarDB(LOANS_SCORE, Address.class);
     private final DictDB<String, BigInteger> fund = Context.newDictDB(FUND, BigInteger.class);
-    private final EnumerableSetDB<String> symbol = new EnumerableSetDB<>(SYMBOL, String.class);
     private final EnumerableSetDB<String> address = new EnumerableSetDB<>(ADDRESS, String.class);
     private final BranchDB<Address, DictDB<Address, BigInteger>> awards = Context.newBranchDB(AWARDS, BigInteger.class);
 
@@ -71,6 +70,7 @@ public class DAOfund {
         return TAG;
     }
 
+    //Setup methods
     @External
     public void setGovernance(Address _address) {
         onlyOwner();
@@ -106,35 +106,19 @@ public class DAOfund {
         return loansScore.get();
     }
 
+    /**
+     * This method fetch the asset tokens from loans contract and add it to address enumerable set. Loans provide a
+     * map of token symbol and its address.
+     */
     @External
-    public void addSymbolToSetdb() {
+    public void addAddressToSetdb() {
         onlyOwner();
         LoansScoreInterface loans = new LoansScoreInterface(loansScore.getOrDefault(defaultAddress));
         Map<String, String> assets = loans.getAssetTokens();
 
-        for (String symbol : assets.keySet()) {
-            this.symbol.add(symbol);
-        }
-    }
-
-    @External
-    public void addAddressToSetdb() {
-        onlyOwner();
-        for (int symbolIndex = 0; symbolIndex < symbol.length(); symbolIndex++) {
-            String tokenSymbol = symbol.at(symbolIndex);
-            String address = TOKEN_ADDRESSES.get(tokenSymbol);
+        for (Map.Entry<String, String> tokenSymbolAddress : assets.entrySet()) {
+            String address = tokenSymbolAddress.getValue();
             this.address.add(address);
-            fund.set(address, fund.getOrDefault(tokenSymbol, BigInteger.ZERO));
-            fund.set(tokenSymbol, BigInteger.ZERO);
-        }
-    }
-
-    @External
-    public void setTokenBalance(Address _token) {
-        onlyOwner();
-        BigInteger balance = (BigInteger) Context.call(_token, "balanceOf");
-        if (balance.signum() > 0) {
-            fund.set(_token.toString(), balance);
         }
     }
 
@@ -149,6 +133,7 @@ public class DAOfund {
         return balances;
     }
 
+    //Operational methods
     /**
      * Disbursement method will be called from the governance SCORE when a vote passes approving an expenditure by
      * the DAO.
@@ -163,7 +148,7 @@ public class DAOfund {
             BigInteger amountToBeClaimedByRecipient = awards.at(_recipient).getOrDefault(asset.address,
                     BigInteger.ZERO);
 
-            boolean requiredCondition = amountInDaofund.compareTo(asset.amount) > -1;
+            boolean requiredCondition = amountInDaofund.compareTo(asset.amount) >= 0;
             Context.require(requiredCondition, TAG + ": Insufficient balance of asset " + asset.address.toString() +
                     " in DAOfund");
 
