@@ -229,8 +229,11 @@ public class RebalancingTest extends TestBase {
         //Assert
         assertEquals((boolean)results.get(0), true);
         assertEquals((BigInteger)results.get(1), new BigInteger("1314213562373")); 
+        assertEquals((boolean)results.get(2), false);
     }
 
+    @Test
+    @SuppressWarnings("unchecked")
     void checkRebalanceStatusFalse() {
         //Arrange
         rebalancingScore.invoke(governanceScore, "setAdmin", adminAccount.getAddress());
@@ -250,5 +253,27 @@ public class RebalancingTest extends TestBase {
         //Assert
         assertEquals((boolean)results.get(0), false);
         assertEquals((BigInteger)results.get(1), new BigInteger("414213562373095048")); 
+        assertEquals((boolean)results.get(2), false);
+    }
+
+    @Test
+    void rebalance() {
+        //Arrange
+        rebalancingScore.invoke(governanceScore, "setAdmin", adminAccount.getAddress());
+        rebalancingScore.invoke(adminAccount, "setSicx", sICXScore.getAddress());
+        sICXScore.invoke(adminAccount, "setLastPriceInLoop", pow(BigInteger.TEN, 12));
+        rebalancingScore.invoke(adminAccount, "setBnusd", bnUSDScore.getAddress());
+        bnUSDScore.invoke(adminAccount, "setLastPriceInLoop", pow(BigInteger.TEN, 12));
+        rebalancingScore.invoke(governanceScore, "setPriceDiffThreshold", pow(BigInteger.TEN, 8));
+        rebalancingScore.invoke(adminAccount, "setLoans", loansMock.getAddress());
+        rebalancingScore.invoke(adminAccount, "setDex", dexMock.getAddress());
+        dexMock.invoke(adminAccount, "setPoolStatsBase", pow(BigInteger.TEN, 11));
+        dexMock.invoke(adminAccount, "setPoolStatsQuote", pow(BigInteger.TEN, 13).multiply(BigInteger.TWO));
+        
+        //Act
+        rebalancingScore.invoke(sm.createAccount(), "rebalance");
+        
+        //Assert
+        assertEquals(loansMock.call("getPrice"), new BigInteger("1314214562373"));
     }
 }

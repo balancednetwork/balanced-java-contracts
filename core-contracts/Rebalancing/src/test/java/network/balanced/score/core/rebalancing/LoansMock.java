@@ -27,13 +27,18 @@ public class LoansMock {
     public static BigInteger price = BigInteger.valueOf(1000000);
 
     @External
-    public static void raisePrice(BigInteger _totalTokensRequired) {
+    public void raisePrice(BigInteger _totalTokensRequired) {
         price = price.add(_totalTokensRequired);
     }
 
     @External
-    public static void lowerPrice(BigInteger _totalTokensRequired) {
+    public void lowerPrice(BigInteger _totalTokensRequired) {
         price = price.subtract(_totalTokensRequired);
+    }
+
+    @External(readonly=true)
+    public BigInteger getPrice() {
+        return price;
     }
 }
 
