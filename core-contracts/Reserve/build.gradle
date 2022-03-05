@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-version = '0.0.1'
+version = '0.1.0'
 
 repositories {
     // Use Maven Central for resolving dependencies.
@@ -53,6 +53,7 @@ deployJar {
         mainnet {
             uri = 'https://ctz.solidwallet.io/api/v3'
             nid = 0x1
+            to = "cxf58b9a1898998a31be7f1d99276204a3333ac9b3"
         }
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
