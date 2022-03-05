@@ -14,30 +14,16 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.reserve.utils;
+package network.balanced.score.core.rebalancing;
 
-import score.Address;
-import score.Context;
-import score.VarDB;
-import score.annotation.External;
-
+import com.iconloop.score.test.Account;
+import com.iconloop.score.test.Score;
+import com.iconloop.score.token.irc2.IRC2Mintable;
 import java.math.BigInteger;
 
-public class Loans {
-    public static final VarDB<Address> reserve = Context.newVarDB("RESERVE", Address.class);
-
-    public Loans(Address address) {
-        reserve.set(address);
-
-    }
-
-    @External
-    public void redeem(Address _to, BigInteger _amount, BigInteger _sicx_rate) {
-        Context.call(reserve.get(), "redeem", _to, _amount, _sicx_rate);
-    }
-
-    @External
-    public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
-
+public class SicxToken extends IRC2Mintable {
+    public SicxToken(String _name, String _symbol, int _decimals, BigInteger _totalSupply) {
+        super(_name, _symbol, _decimals);
+        //_mint(Context.getCaller(), _totalSupply);
     }
 }
