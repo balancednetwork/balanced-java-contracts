@@ -136,7 +136,7 @@ public class DAOfund {
     }
 
     @External(readonly = true)
-    public Map<String,Object> getDisbursementDetail(Address _user) {
+    public Map<String, Object> getDisbursementDetail(Address _user) {
 
         Map<String, BigInteger> userClaimableTokens = new HashMap<>();
         DictDB<Address, BigInteger> userTokens = this.awards.at(_user);
@@ -206,10 +206,10 @@ public class DAOfund {
     private void sendToken(Address token, Address to, BigInteger amount, String message) {
         try {
             Context.call(token, "transfer", to, amount, new byte[0]);
-            TokenTransfer(to, amount, message + " " + amount + " " + " sent to " + to);
+            TokenTransfer(to, amount, message + " " + amount + " sent to " + to);
         } catch (Exception e) {
             Context.println(TAG + ":Error in Token Transfer: " + e.getMessage());
-            Context.revert(TAG + " " + amount + " " + " not sent to " + to);
+            Context.revert(TAG + ": " + amount + " not sent to " + to);
         }
     }
 
