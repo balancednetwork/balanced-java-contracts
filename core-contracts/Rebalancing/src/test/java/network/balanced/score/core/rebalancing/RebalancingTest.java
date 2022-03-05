@@ -29,9 +29,11 @@ import score.Address;
 import static network.balanced.score.core.rebalancing.Checks.*;
 import static network.balanced.score.core.rebalancing.Constants.*;
 
+import java.beans.Transient;
 import java.io.Console;
 import java.math.BigInteger;
 import java.util.Map;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
@@ -182,5 +184,71 @@ public class RebalancingTest extends TestBase {
         rebalancingScore.invoke(adminAccount, "setLoans", loansMock.getAddress());
         Address actualLoans = (Address) rebalancingScore.call("getLoans");
         assertEquals(loansMock.getAddress(), actualLoans);
+    }
+
+    @Test
+    void setAndGetPriceDiffThreshold() {
+        final BigInteger testInt = BigInteger.valueOf(12);
+        Executable setThresholdNotFromGovernance = () -> rebalancingScore.invoke(sm.createAccount(), "setPriceDiffThreshold", testInt);
+        String expectedErrorMessage = "Rebalancing: Sender not governance contract";
+        expectErrorMessage(setThresholdNotFromGovernance, expectedErrorMessage);
+
+        rebalancingScore.invoke(governanceScore, "setPriceDiffThreshold", testInt);
+        BigInteger actualThreshold = (BigInteger) rebalancingScore.call("getPriceChangeThreshold");
+        assertEquals(testInt, actualThreshold);
+    }
+
+    private static BigInteger pow(BigInteger base, int exponent){
+        BigInteger res = BigInteger.ONE;
+
+        for(int i = 1; i <= exponent; i++){
+            res = res.multiply(base);
+        }
+
+        return res;
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void checkRebalancingStatusTrue() {
+        //Arrange
+        rebalancingScore.invoke(governanceScore, "setAdmin", adminAccount.getAddress());
+        rebalancingScore.invoke(adminAccount, "setSicx", sICXScore.getAddress());
+        sICXScore.invoke(adminAccount, "setLastPriceInLoop", pow(BigInteger.TEN, 12));
+        rebalancingScore.invoke(adminAccount, "setBnusd", bnUSDScore.getAddress());
+        bnUSDScore.invoke(adminAccount, "setLastPriceInLoop", pow(BigInteger.TEN, 12));
+        rebalancingScore.invoke(governanceScore, "setPriceDiffThreshold", pow(BigInteger.TEN, 8));
+        rebalancingScore.invoke(adminAccount, "setLoans", loansMock.getAddress());
+        rebalancingScore.invoke(adminAccount, "setDex", dexMock.getAddress());
+        dexMock.invoke(adminAccount, "setPoolStatsBase", pow(BigInteger.TEN, 11));
+        dexMock.invoke(adminAccount, "setPoolStatsQuote", pow(BigInteger.TEN, 13).multiply(BigInteger.TWO));
+        
+        //Act
+        List<Object> results = (List<Object>) rebalancingScore.call("getRebalancingStatus");
+        
+        //Assert
+        assertEquals((boolean)results.get(0), true);
+        assertEquals((BigInteger)results.get(1), new BigInteger("1314213562373")); 
+    }
+
+    void checkRebalanceStatusFalse() {
+        //Arrange
+        rebalancingScore.invoke(governanceScore, "setAdmin", adminAccount.getAddress());
+        rebalancingScore.invoke(adminAccount, "setSicx", sICXScore.getAddress());
+        sICXScore.invoke(adminAccount, "setLastPriceInLoop", EXA);
+        rebalancingScore.invoke(adminAccount, "setBnusd", bnUSDScore.getAddress());
+        bnUSDScore.invoke(adminAccount, "setLastPriceInLoop", EXA.multiply(BigInteger.TWO));
+        rebalancingScore.invoke(governanceScore, "setPriceDiffThreshold", EXA);
+        rebalancingScore.invoke(adminAccount, "setLoans", loansMock.getAddress());
+        rebalancingScore.invoke(adminAccount, "setDex", dexMock.getAddress());
+        dexMock.invoke(adminAccount, "setPoolStatsBase", EXA);
+        dexMock.invoke(adminAccount, "setPoolStatsQuote", EXA);
+        
+        //Act
+        List<Object> results = (List<Object>) rebalancingScore.call("getRebalancingStatus");
+        
+        //Assert
+        assertEquals((boolean)results.get(0), false);
+        assertEquals((BigInteger)results.get(1), new BigInteger("414213562373095048")); 
     }
 }

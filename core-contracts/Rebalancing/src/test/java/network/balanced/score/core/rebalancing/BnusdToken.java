@@ -19,10 +19,27 @@ package network.balanced.score.core.rebalancing;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.token.irc2.IRC2Mintable;
+import score.Context;
+import score.VarDB;
+import score.annotation.External;
 import java.math.BigInteger;
 
 public class BnusdToken extends IRC2Mintable {
+    public static final VarDB<BigInteger> lastPriceInLoop = Context.newVarDB("last_price", BigInteger.class);
+
     public BnusdToken (String _name, String _symbol, int _decimals, BigInteger _totalSupply) {
         super(_name, _symbol, _decimals);
+    }
+
+    @External
+    public void setLastPriceInLoop(BigInteger _lastPriceInLoop)
+    {
+        lastPriceInLoop.set(_lastPriceInLoop);
+    }
+
+    @External(readonly = true)
+    public BigInteger lastPriceInLoop()
+    {
+        return lastPriceInLoop.get();
     }
 }
