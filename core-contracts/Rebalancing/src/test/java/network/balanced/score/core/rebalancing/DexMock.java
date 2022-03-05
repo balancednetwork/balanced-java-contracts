@@ -24,17 +24,29 @@ import java.util.Map;
 
 public class DexMock {
 
+    private BigInteger base = BigInteger.ZERO;
+    private BigInteger quote =  BigInteger.valueOf(1000L);
     @External(readonly = true)
     public BigInteger getPoolId(Address _token1Address, Address _token2Address) {
         return BigInteger.ONE;
+    }
+
+    @External()
+    public void setPoolStatsBase(BigInteger _base) {
+        base = _base;
+    }
+
+    @External()
+    public void setPoolStatsQuote(BigInteger _quote) {
+        quote = _quote;
     }
 
     @External(readonly = true)
     public Map<String, ?> getPoolStats(BigInteger _id) {
         return Map.of("base_token", "cx0000000000000000000000000000000000000032",
                 "quote_token", "None",
-                "base", 0,
-                "quote", BigInteger.valueOf(1000L),
+                "base", base,
+                "quote", quote,
                 "total_supply", BigInteger.valueOf(10000000000000L),
                 "price", BigInteger.TEN,
                 "name", "sICX/ICX",

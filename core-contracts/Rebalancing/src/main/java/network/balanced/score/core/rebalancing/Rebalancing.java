@@ -42,7 +42,7 @@ public class Rebalancing {
     private static final String ADMIN = "admin";
     private final String PRICE_THRESHOLD = "_price_threshold";
 
-    private final Integer SICX_BNUSD_POOL_ID = 2; 
+    private final BigInteger SICX_BNUSD_POOL_ID = BigInteger.TWO; 
 
     public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE_ADDRESS, Address.class);
     public static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
@@ -91,7 +91,7 @@ public class Rebalancing {
     public void setDex(Address _address) {
         onlyAdmin();
         Context.require(_address.isContract(), TAG + ": Address provided is an EOA address. A contract address is required.");
-        governance.set(_address);
+        dex.set(_address);
     }
 
     @External
@@ -126,7 +126,7 @@ public class Rebalancing {
     }
 
     private BigInteger calculateTokensToSell(BigInteger _price, BigInteger _baseSupply, BigInteger _quoteSupply) {
-        return (_price.multiply(_baseSupply).multiply(_quoteSupply).divide(EXA).subtract(_baseSupply).sqrt());
+        return _price.multiply(_baseSupply).multiply(_quoteSupply).divide(EXA).sqrt().subtract(_baseSupply);
     }
 
     @External
@@ -162,7 +162,7 @@ public class Rebalancing {
         BigInteger sicxLastPrice = (BigInteger) Context.call(sicxScore, "lastPriceInLoop");
         
         BigInteger price = bnusdLastPrice.multiply(EXA).divide(sicxLastPrice);
-        BigInteger poolBase = BigInteger.valueOf((Integer) poolStats.get("base"));
+        BigInteger poolBase = (BigInteger) poolStats.get("base");
         BigInteger poolQuote = (BigInteger) poolStats.get("quote");
         BigInteger dexPrice = poolBase.multiply(EXA).divide(poolQuote);
         
@@ -178,7 +178,7 @@ public class Rebalancing {
 
     @External
     public void rebalance() {
-        // Calls the retireRedeem method or generateBnusd on loans to balance the sICX/bnUSD price on the DEX.
+        // Calls the raise/lower price on loans to balance the sICX/bnUSD price on the DEX.
         Address loansScore = loans.get();
         List<Object> status = getRebalancingStatus();
         boolean higher = (boolean) status.get(0);
