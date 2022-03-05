@@ -22,6 +22,10 @@ import score.VarDB;
 import score.annotation.External;
 
 import java.math.BigInteger;
+import java.util.Dictionary;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Map;
 
 public class Loans {
     public static final VarDB<Address> reserve = Context.newVarDB("RESERVE", Address.class);
