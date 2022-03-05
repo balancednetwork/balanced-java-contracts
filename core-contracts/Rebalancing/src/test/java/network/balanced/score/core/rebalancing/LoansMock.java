@@ -14,30 +14,26 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.reserve.utils;
+package network.balanced.score.core.rebalancing;
 
 import score.Address;
-import score.Context;
-import score.VarDB;
 import score.annotation.External;
 
 import java.math.BigInteger;
+import java.util.Map;
 
-public class Loans {
-    public static final VarDB<Address> reserve = Context.newVarDB("RESERVE", Address.class);
+public class LoansMock {
 
-    public Loans(Address address) {
-        reserve.set(address);
+    public static BigInteger price = BigInteger.valueOf(1000000);
 
+    @External
+    public static void raisePrice(BigInteger _totalTokensRequired) {
+        price = price.add(_totalTokensRequired);
     }
 
     @External
-    public void redeem(Address _to, BigInteger _amount, BigInteger _sicx_rate) {
-        Context.call(reserve.get(), "redeem", _to, _amount, _sicx_rate);
-    }
-
-    @External
-    public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
-
+    public static void lowerPrice(BigInteger _totalTokensRequired) {
+        price = price.subtract(_totalTokensRequired);
     }
 }
+
