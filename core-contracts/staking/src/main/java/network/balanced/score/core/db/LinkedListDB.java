@@ -1,4 +1,4 @@
-package network.balanced.score.core;
+package network.balanced.score.core.db;
 
 import score.Address;
 import score.Context;
@@ -8,13 +8,12 @@ import scorex.util.ArrayList;
 
 import java.math.BigInteger;
 import java.util.List;
-import java.util.Objects;
 
 public class LinkedListDB {
     private static final String NAME = "_LINKED_LISTDB";
 
     public final VarDB<BigInteger> headId;
-    final VarDB<BigInteger> tailId;
+    public final VarDB<BigInteger> tailId;
     private final VarDB<BigInteger> length;
     private final String name;
 
@@ -37,12 +36,12 @@ public class LinkedListDB {
         return length.getOrDefault(BigInteger.ZERO);
     }
 
-    public _NodeDB node(BigInteger nodeId){
-        return new _NodeDB(nodeId.toString() + name);
+    public NodeDB node(BigInteger nodeId){
+        return new NodeDB(nodeId.toString() + name);
     }
 
     public void updateNode(Address key, BigInteger value, BigInteger blockHeight, Address senderAddress, BigInteger nodeId){
-        _NodeDB node = node(nodeId);
+        NodeDB node = node(nodeId);
         if (node.exists()){
             node.setValue(value);
             node.setKey(key);
@@ -58,13 +57,13 @@ public class LinkedListDB {
             , Address senderAddress, BigInteger nodeId) throws Exception {
         Object[] nodeDetails = createNode(key, value, blockHeight, senderAddress, nodeId);
         BigInteger curId = (BigInteger) nodeDetails[0];
-        _NodeDB cur = (_NodeDB) nodeDetails[1];
+        NodeDB cur = (NodeDB) nodeDetails[1];
         if (length.getOrDefault(BigInteger.ZERO).equals(BigInteger.ZERO)){
             headId.set(curId);
             tailId.set(curId);
         }
         else{
-            _NodeDB tail = getTailNode();
+            NodeDB tail = getTailNode();
             tail.setNext(curId);
             cur.setPrev(tailId.get());
             tailId.set(curId);
@@ -73,15 +72,15 @@ public class LinkedListDB {
         return curId;
     }
 
-    public _NodeDB getNode(BigInteger nodeId) throws Exception {
-        _NodeDB node = node(nodeId);
+    public NodeDB getNode(BigInteger nodeId) throws Exception {
+        NodeDB node = node(nodeId);
         if (! node.exists()){
-            throw Objects.requireNonNull(LinkedNodeNotFound(name, nodeId));
+            LinkedNodeNotFound(name, nodeId);
         }
         return node;
     }
 
-    public _NodeDB getTailNode() throws Exception {
+    public NodeDB getTailNode() throws Exception {
         BigInteger tailId = this.tailId.getOrDefault(BigInteger.ZERO);
         if (tailId== null){
             Context.revert("Linked List does not exists");
@@ -95,9 +94,9 @@ public class LinkedListDB {
         if (nodeId == null) {
             nodeId = new IdFactory(name + "_nodedb").getUid();
         }
-        _NodeDB node = node(nodeId);
+        NodeDB node = node(nodeId);
         if (node.exists()){
-            throw Objects.requireNonNull(LinkedNodeAlreadyExists(name, nodeId));
+            LinkedNodeAlreadyExists(name, nodeId);
         }
         node.setValue(value);
         node.setKey(key);
@@ -111,7 +110,7 @@ public class LinkedListDB {
         if (length.getOrDefault(BigInteger.ZERO).equals(BigInteger.ONE)){
             clear();
         }else{
-            _NodeDB oldHead = getNode(headId.getOrDefault(BigInteger.ZERO));
+            NodeDB oldHead = getNode(headId.getOrDefault(BigInteger.ZERO));
             BigInteger newHead = oldHead.getNext();
             headId.set(newHead);
             getNode(newHead).setPrev(BigInteger.ZERO);
@@ -125,7 +124,7 @@ public class LinkedListDB {
         if (length.getOrDefault(BigInteger.ZERO).equals(BigInteger.ONE)){
             clear();
         }else{
-            _NodeDB oldTail = getNode(tailId.get());
+            NodeDB oldTail = getNode(tailId.get());
             BigInteger newTail = oldTail.getPrev();
             tailId.set(newTail);
             getNode(newTail).setNext(BigInteger.ZERO);
@@ -142,11 +141,11 @@ public class LinkedListDB {
             removeTail();
         }
         else{
-            _NodeDB cur = getNode(curId);
+            NodeDB cur = getNode(curId);
             BigInteger curNextId = cur.getNext();
-            _NodeDB curnext = getNode(curNextId);
+            NodeDB curnext = getNode(curNextId);
             BigInteger curPrevId = cur.getPrev();
-            _NodeDB curprev = getNode(curPrevId);
+            NodeDB curprev = getNode(curPrevId);
             curnext.setPrev(curPrevId);
             curprev.setNext(curNextId);
             cur.delete();
@@ -159,9 +158,9 @@ public class LinkedListDB {
         if (curId == null){
           return;
         }
-        _NodeDB node = getNode(curId);
+        NodeDB node = getNode(curId);
         BigInteger tailId = this.tailId.getOrDefault(BigInteger.ZERO);
-        while (!Objects.equals(curId, tailId)){
+        while (curId != tailId){
             curId = node.getNext();
             node.delete();
             node = getNode(curId);
@@ -176,15 +175,15 @@ public class LinkedListDB {
     public List<List<Object>> iterate() throws Exception {
         BigInteger curId = headId.getOrDefault(BigInteger.ZERO);
         List<List<Object>> newList = new ArrayList<>();
-        if (curId==null){
+        if (curId.equals(BigInteger.ZERO)){
             return newList;
         }
-        _NodeDB node = getNode(curId);
+        NodeDB node = getNode(curId);
 
         newList.add(List.of(curId, node.getValue(), node.getKey(), node.getBlockHeight(), node.getSenderAddress()));
 
         BigInteger tailId = this.tailId.getOrDefault(BigInteger.ZERO);
-        while (!Objects.equals(curId, tailId)){
+        while (curId != tailId){
             curId = node.getNext();
             node = getNode(curId);
             newList.add(List.of(curId, node.getValue(), node.getKey(), node.getBlockHeight(), node.getSenderAddress()));

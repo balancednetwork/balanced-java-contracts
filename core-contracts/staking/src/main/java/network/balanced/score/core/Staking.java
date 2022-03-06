@@ -4,11 +4,13 @@ import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 
 import java.math.BigInteger;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import network.balanced.score.core.db.LinkedListDB;
+import network.balanced.score.core.utils.Constant;
+import network.balanced.score.core.utils.PrepDelegations;
 import score.Address;
 import score.Context;
 import score.VarDB;
@@ -20,16 +22,16 @@ import score.annotation.Payable;
 import score.annotation.EventLog;
 import scorex.util.ArrayList;
 import scorex.util.HashMap;
+import scorex.util.StringTokenizer;
 
 
-import static network.balanced.score.core.Checks.*;
+import static network.balanced.score.core.utils.Checks.*;
 
 public class Staking {
 
-    @SuppressWarnings("unchecked")
-    public Staking() {
+    public Staking() throws Exception {
         Map<String, Object> termDetails = (Map<String, Object>) Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "getIISSInfo");
-        BigInteger nextPrepTerm = (BigInteger) termDetails.getOrDefault("nextPRepTerm", BigInteger.ZERO);
+        BigInteger nextPrepTerm = (BigInteger) termDetails.get("nextPRepTerm");
         blockHeightWeek.set(nextPrepTerm);
         blockHeightDay.set(nextPrepTerm);
         rate.set(Constant.DENOMINATOR);
@@ -257,7 +259,7 @@ public class Staking {
             }
         }
         catch (Exception e) {
-            Context.revert(Constant.TAG + ": Invalid data: "+ Arrays.toString(_data) +".");
+            Context.revert(Constant.TAG + ": Invalid data: .");
 
         }
     }
@@ -270,14 +272,14 @@ public class Staking {
 
     // Created only for test
     @External(readonly = true)
-    public Boolean getDistributing(){
+    public boolean getDistributing(){
         return distributing.getOrDefault(false);
     }
 
     @SuppressWarnings("unchecked")
     public void claimIscore() {
         Map<String, Object> iscoreDetails = (Map<String, Object>) Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "queryIScore", Context.getAddress());
-        BigInteger iscoreGenerated = (BigInteger) iscoreDetails.getOrDefault("estimatedICX", BigInteger.ZERO);
+        BigInteger iscoreGenerated = (BigInteger) iscoreDetails.get("estimatedICX");
         if (iscoreGenerated.compareTo(BigInteger.ZERO) > 0) {
             Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "claimIScore");
             IscoreClaimed(BigInteger.valueOf(Context.getBlockHeight()), iscoreGenerated);
@@ -318,12 +320,12 @@ public class Staking {
 
     @SuppressWarnings("unchecked")
     public void setTopPreps() {
-        Map<String, Object> prepDict = (Map<String, Object>) Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "getPReps", 1,3);
+        Map<String, Object> prepDict = (Map<String, Object>) Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "getPReps", 1,Constant.DENOMINATOR);
         List<Map<String, Object>> prepDetails = new ArrayList<>();
         prepDetails = (List<Map<String, Object>>)prepDict.get("preps");
         List<Address> addresses = getPrepList();
         for (Map<String, Object> preps : prepDetails) {
-            Address prepAddress = Address.fromString((String) preps.get("address"));
+            Address prepAddress =(Address) preps.get("address");
             if (! contains(prepAddress, addresses)) {
                 addresses.add(prepAddress);
                 prepList.add(prepAddress);
@@ -458,7 +460,7 @@ public class Staking {
             addressDelegations.set(addressStr, "");
             for (String prep : previousDelegations.keySet()){
                 BigInteger prepDelegations = this.prepDelegations.getOrDefault(prep, BigInteger.ZERO);
-                BigInteger votesPer = previousDelegations.getOrDefault(prep, BigInteger.ZERO);
+                BigInteger votesPer = previousDelegations.get(prep);
                 BigInteger votesIcx = (votesPer.multiply(icxHoldPreviously)).divide(Constant.DENOMINATOR.multiply(Constant.HUNDRED));
                 this.prepDelegations.set(prep, prepDelegations.subtract(votesIcx));
             }
@@ -469,7 +471,7 @@ public class Staking {
     @SuppressWarnings("unchecked")
     public BigInteger checkForWeek(){
         Map<String, Object> termDetails = (Map<String, Object>) Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "getIISSInfo");
-        BigInteger nextPrepTerm = (BigInteger) termDetails.getOrDefault("nextPRepTerm", BigInteger.ZERO);
+        BigInteger nextPrepTerm = (BigInteger) termDetails.get("nextPRepTerm");
         if (nextPrepTerm.compareTo(blockHeightWeek.getOrDefault(BigInteger.ZERO).add(BigInteger.valueOf(302400L))) > 0){
             blockHeightWeek.set(nextPrepTerm);
             for (int i = 0; i <= this.topPreps.size(); i++) {
@@ -490,7 +492,7 @@ public class Staking {
         BigInteger icxHoldPreviously = (balance.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(Constant.DENOMINATOR);
         BigInteger totalPer = delegateVotes(to, _user_delegations, icxHoldPreviously);
         if (totalPer.compareTo(Constant.HUNDRED.multiply(Constant.DENOMINATOR)) != 0){
-            Context.revert(Constant.TAG+": Total delegations should be 100%.Your delegation preference is "+ Arrays.toString(_user_delegations));
+            Context.revert(Constant.TAG+": Total delegations should be 100%.Your delegation preference is ");
         }
         if (!previousDelegations.isEmpty()){
             stakeAndDelegate(checkForWeek());
@@ -506,7 +508,7 @@ public class Staking {
             List<Map<String,Object>> result = (List<Map<String, Object>>) stakeInNetwork.get("unstakes");
             if (!result.isEmpty()){
                 for (Map<String, Object> unstakeDetails : result){
-                    BigInteger unstakedIcx = (BigInteger) unstakeDetails.getOrDefault("unstake", BigInteger.ZERO);
+                    BigInteger unstakedIcx = (BigInteger) unstakeDetails.get("unstake");
                     totalUnstakeInNetwork = totalUnstakeInNetwork.add(unstakedIcx);
                 }
                 BigInteger dailyReward = (totalUnstakeInNetwork.add(Context.getBalance(Context.getAddress())))
@@ -556,7 +558,7 @@ public class Staking {
     public BigInteger stakeICX(@Optional Address _to, @Optional byte[]  _data) throws Exception {
         stakingOn();
         if (_data == null){
-            _data = "None".getBytes();
+            _data = new byte[0];
         }
         if (_to == null){
             _to = Context.getCaller();
@@ -621,24 +623,35 @@ public class Staking {
         stakeAndDelegate(checkForWeek());
     }
 
+    private List<String> splitResult(StringTokenizer st){
+        List<String> splittedList = new ArrayList<>();
+        while (st.hasMoreTokens()) {
+            splittedList.add(st.nextToken());
+        }
+        return splittedList;
+    }
+
     public Map<String, BigInteger> delegationInPer(Address address){
         String delegationString = addressDelegations.getOrDefault(address.toString(), "");
         if (! delegationString.isEmpty()){
             delegationString = delegationString.substring(0, delegationString.length() - 1);
-            String[] splittedList = delegationString.split("\\.");
+            StringTokenizer st = new StringTokenizer(delegationString, "\\.");
             Map<String, BigInteger>delegationPercent = new HashMap<>();
+            List<String> splittedList = new ArrayList<>();
+            splittedList = splitResult(st);
             for (String item: splittedList){
-                String[] newArray = item.split(":");
-                if (delegationPercent.get(newArray[0]) == null){
-                    delegationPercent.put(newArray[0], new BigInteger(newArray[1]));
+                st = new StringTokenizer(item, ":");
+                splittedList = splitResult(st);
+                if (delegationPercent.get(splittedList.get(0)) == null){
+                    delegationPercent.put(splittedList.get(0), new BigInteger(splittedList.get(1)));
                 }
                 else{
-                    if (!Objects.equals(newArray[1], "0")){
-                        BigInteger value = delegationPercent.get(newArray[0]);
-                        delegationPercent.put(newArray[0],  new BigInteger(newArray[1]).add(value));
+                    if ((splittedList.get(1)!= "0")){
+                        BigInteger value = delegationPercent.get(splittedList.get(0));
+                        delegationPercent.put(splittedList.get(0),  new BigInteger(splittedList.get(1)).add(value));
                     }
                     else{
-                        delegationPercent.put(newArray[0], BigInteger.ZERO);
+                        delegationPercent.put(splittedList.get(0), BigInteger.ZERO);
                     }
                 }
 

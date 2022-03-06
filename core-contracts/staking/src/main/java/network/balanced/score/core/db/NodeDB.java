@@ -1,13 +1,12 @@
-package network.balanced.score.core;
+package network.balanced.score.core.db;
 
 import score.Address;
 import score.Context;
 import score.VarDB;
 
 import java.math.BigInteger;
-import java.util.Objects;
 
-public class _NodeDB {
+public class NodeDB {
 
     private static final String NAME = "_NODEDB";
     private static final BigInteger UNINITIALIZED = BigInteger.ZERO;
@@ -21,7 +20,7 @@ public class _NodeDB {
     private final VarDB<Address> key;
     private final VarDB<Address> senderAddress;
 
-    public _NodeDB(String key) {
+    public NodeDB(String key) {
         String name = key + NAME;
         this.value = Context.newVarDB(name + "_value", BigInteger.class);
         this.blockHeight = Context.newVarDB(name + "_block_height", BigInteger.class);
@@ -43,7 +42,7 @@ public class _NodeDB {
     }
 
     public boolean exists(){
-        return !Objects.equals(init.getOrDefault(BigInteger.ZERO), _NodeDB.UNINITIALIZED);
+        return (init.getOrDefault(BigInteger.ZERO) != NodeDB.UNINITIALIZED);
     }
 
     public BigInteger getValue(){
@@ -63,22 +62,22 @@ public class _NodeDB {
     }
 
     public void setValue(BigInteger value){
-        init.set(_NodeDB.INITIALIZED);
+        init.set(NodeDB.INITIALIZED);
         this.value.set(value);
     }
 
     public void setKey(Address key){
-        init.set(_NodeDB.INITIALIZED);
+        init.set(NodeDB.INITIALIZED);
         this.key.set(key);
     }
 
     public void setBlockHeight(BigInteger blockHeight){
-        init.set(_NodeDB.INITIALIZED);
+        init.set(NodeDB.INITIALIZED);
         this.blockHeight.set(blockHeight);
     }
 
     public void setSenderAddress(Address senderAddress){
-        init.set(_NodeDB.INITIALIZED);
+        init.set(NodeDB.INITIALIZED);
         this.senderAddress.set(senderAddress);
     }
 
