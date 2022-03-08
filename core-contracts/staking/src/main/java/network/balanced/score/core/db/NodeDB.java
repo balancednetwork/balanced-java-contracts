@@ -42,7 +42,7 @@ public class NodeDB {
     }
 
     public boolean exists(){
-        return (init.getOrDefault(BigInteger.ZERO) != NodeDB.UNINITIALIZED);
+        return ( ! init.getOrDefault(BigInteger.ZERO).equals(NodeDB.UNINITIALIZED));
     }
 
     public BigInteger getValue(){

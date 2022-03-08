@@ -1,0 +1,133 @@
+/*
+ * Copyright (c) 2022-2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'foundation.icon:gradle-javaee-plugin:0.7.8'
+    }
+}
+
+subprojects {
+    repositories {
+        mavenCentral()
+    }
+
+    sourceSets {
+        intTest {
+            compileClasspath += sourceSets.main.output
+            runtimeClasspath += sourceSets.main.output
+            java {
+            }
+        }
+
+    }
+
+    configurations {
+        intTestImplementation.extendsFrom testImplementation
+        intTestAnnotationProcessor.extendsFrom testAnnotationProcessor
+        intTestRuntimeOnly.extendsFrom testRuntimeOnly
+    }
+
+    apply plugin: 'java'
+    apply plugin: 'foundation.icon.javaee'
+
+    dependencies {
+        testImplementation group: 'org.json', name: 'json', version: '20211205'
+    }
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    // need to add this option to retrieve formal parameter names
+    compileJava {
+        options.compilerArgs += ['-parameters']
+    }
+}
+
+dependencies {
+    compileOnly 'foundation.icon:javaee-api:0.9.1'
+    implementation 'foundation.icon:javaee-scorex:0.5.2'
+    implementation 'com.github.sink772:minimal-json:0.9.6'
+
+    testImplementation 'foundation.icon:javaee-unittest:0.9.2'
+    testImplementation 'com.github.sink772:javaee-tokens:0.6.1'
+    // Use JUnit Jupiter for testing.
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
+    testImplementation 'org.mockito:mockito-inline:4.3.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+    testImplementation "org.powermock:powermock-module-junit4:2.0.7"
+    testImplementation "org.powermock:powermock-module-junit4-rule:2.0.7"
+    testImplementation "org.powermock:powermock-api-mockito2:2.0.7"
+    testImplementation "org.powermock:powermock-classloading-xstream:1.6.6"
+    testImplementation "org.mockito:mockito-core:2.13.0"
+
+}
+
+optimizedJar {
+    mainClassName = 'network.balanced.score.core.Staking'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from {
+        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
+    }
+}
+def loadProperties = {
+    def prefix = 'score-test.'
+    def props = project.getProperties()
+    def scoreTest = new HashMap<String, Object>()
+
+    scoreTest.put('keystoreName', props.get(prefix + 'keystoreName'))
+    scoreTest.put('keystorePass', props.get(prefix + 'keystorePass'))
+    scoreTest.put('url', props.getOrDefault(prefix + 'url', 'http://localhost:9082/api/v3'))
+    scoreTest.put('nid', props.getOrDefault(prefix + 'nid', 3))
+
+    ext['scoreTest'] = scoreTest
+}
+loadProperties()
+
+deployJar {
+    endpoints {
+        sejong {
+            uri = 'https://sejong.net.solidwallet.io/api/v3'
+            nid = 0x53
+        }
+        local {
+            uri = 'http://localhost:9082/api/v3'
+            nid = 0x3
+        }
+        mainnet {
+            uri = 'https://ctz.solidwallet.io/api/v3'
+            nid = 0x1
+        }
+        berlin {
+            uri = 'https://berlin.net.solidwallet.io/api/v3'
+            nid = 0x7
+        }
+    }
+    keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
+    password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
+    parameters {}
+}
+
+tasks.named('test') {
+    // Use JUnit Platform for unit tests.
+    useJUnitPlatform()
+}
+

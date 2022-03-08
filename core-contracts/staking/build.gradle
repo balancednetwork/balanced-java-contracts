@@ -1,0 +1,95 @@
+import foundation.icon.gradle.plugins.javaee.ext.EndpointContainer
+
+version = '0.0.1'
+
+dependencies {
+    implementation project(':Score')
+    testImplementation project(':TestUtils')
+}
+
+optimizedJar {
+    mainClassName = 'network.balanced.score.core.Staking'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from {
+        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
+    }
+}
+
+deployJar {
+    endpoints {
+        sejong {
+            uri = 'https://sejong.net.solidwallet.io/api/v3'
+            nid = 0x53
+        }
+        local {
+            uri = 'http://localhost:9082/api/v3'
+            nid = 0x3
+        }
+        mainnet {
+            uri = 'https://ctz.solidwallet.io/api/v3'
+            nid = 0x1
+        }
+        berlin {
+            uri = 'https://berlin.net.solidwallet.io/api/v3'
+            nid = 0x7
+        }
+    }
+    keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
+    password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
+    parameters {}
+}
+
+tasks.named('test') {
+    // Use JUnit Platform for unit tests.
+    useJUnitPlatform()
+}
+
+task integrationTest(type: Test, dependsOn: optimizedJar) {
+    useJUnitPlatform()
+    options {
+        testLogging.showStandardStreams = true
+        description = 'Runs integration tests.'
+        group = 'verification'
+        testClassesDirs = sourceSets.intTest.output.classesDirs
+        classpath = sourceSets.intTest.runtimeClasspath
+
+        systemProperty 'url', scoreTest.url
+        systemProperty 'nid', scoreTest.nid
+
+        systemProperty 'keyStore', scoreTest.keystoreName
+        systemProperty 'keyPassword', scoreTest.keystorePass
+
+        systemProperty 'scoreFilePath', project.tasks.optimizedJar.outputJarName
+        project.extensions.deployJar.arguments.each { arg -> systemProperty 'params.' + arg.name, arg.value
+        }
+
+//        dependsOn ":DemoContract:optimizedJar"
+        systemProperty 'sicx.url', scoreTest.url
+        systemProperty 'sicx.nid', scoreTest.nid
+        systemProperty 'sicx.keyStore', scoreTest.keystoreName
+        systemProperty 'sicx.keyPassword', scoreTest.keystorePass
+//
+//
+        systemProperty 'sicx.scoreFilePath', "../../sicx.zip"
+
+
+        systemProperty 'system.url', scoreTest.url
+        systemProperty 'system.nid', scoreTest.nid
+        systemProperty 'system.keyStore', scoreTest.keystoreName
+        systemProperty 'system.keyPassword', scoreTest.keystorePass
+        systemProperty 'system.isUpdate', "false"
+        systemProperty 'system.address', "cx0000000000000000000000000000000000000000"
+
+//
+        systemProperty 'sicx.isUpdate', "false"
+        systemProperty 'isUpdate', "false"
+        systemProperty 'address', "cxd7ce24c5e7be2efef1724967e5b71757a49ba7b7"
+        systemProperty 'sicx.address', "cx14bcb886e3e0236b4edbbcf51599136641a0ea9a"
+
+
+//        systemProperty 'demo.params.defaultValue', '0x1'
+    }
+
+}
+
+

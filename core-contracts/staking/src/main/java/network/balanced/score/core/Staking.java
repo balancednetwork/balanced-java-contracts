@@ -1,5 +1,6 @@
 package network.balanced.score.core;
 
+import ai.ibriz.core.score.interfaces.StakingInterface;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 
@@ -27,7 +28,7 @@ import scorex.util.StringTokenizer;
 
 import static network.balanced.score.core.utils.Checks.*;
 
-public class Staking {
+public class Staking  {
 
     public Staking() throws Exception {
         Map<String, Object> termDetails = (Map<String, Object>) Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "getIISSInfo");
@@ -239,8 +240,8 @@ public class Staking {
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) throws Exception {
         stakingOn();
-        if (Context.getCaller() != sicxAddress.get()) {
-            Context.revert(Constant.TAG + ": The Staking contract only accepts sICX tokens.");
+        if ( ! Context.getCaller().equals(sicxAddress.get())) {
+            Context.revert(Constant.TAG + ": The Staking contract only accepts sICX tokens."+ Context.getCaller() + " ori"+sicxAddress.get());
         }
         try {
             String unpackedData = new String(_data);
@@ -259,7 +260,7 @@ public class Staking {
             }
         }
         catch (Exception e) {
-            Context.revert(Constant.TAG + ": Invalid data: .");
+            Context.revert(Constant.TAG + ": Invalid data:." + _data);
 
         }
     }
@@ -320,7 +321,7 @@ public class Staking {
 
     @SuppressWarnings("unchecked")
     public void setTopPreps() {
-        Map<String, Object> prepDict = (Map<String, Object>) Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "getPReps", 1,Constant.DENOMINATOR);
+        Map<String, Object> prepDict = (Map<String, Object>) Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "getPReps", 1,Constant.TOP_PREP_COUNT);
         List<Map<String, Object>> prepDetails = new ArrayList<>();
         prepDetails = (List<Map<String, Object>>)prepDict.get("preps");
         List<Address> addresses = getPrepList();
@@ -502,7 +503,7 @@ public class Staking {
     @SuppressWarnings("unchecked")
     public void performChecks() throws Exception {
         if (distributing.get()){
-            Map<String, Object> stakeInNetwork = (Map<String, Object>) Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "getStake");
+            Map<String, Object> stakeInNetwork = (Map<String, Object>) Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "getStake", Context.getAddress());
             BigInteger totalUnstakeInNetwork = BigInteger.ZERO;
             List<Map<String,Object>> arr = new ArrayList<>();
             List<Map<String,Object>> result = (List<Map<String, Object>>) stakeInNetwork.get("unstakes");
@@ -589,9 +590,10 @@ public class Staking {
 
     }
 
+    @External
     public void transferUpdateDelegations(Address _from,Address _to,BigInteger _value){
         stakingOn();
-        if (Context.getCaller() != sicxAddress.get()){
+        if (! Context.getCaller().equals(sicxAddress.get())){
             Context.revert(Constant.TAG+": Only sicx token contract can call this function.");
         }
         BigInteger sicxToIcx = _value.multiply(rate.getOrDefault(BigInteger.ZERO)).divide(Constant.DENOMINATOR);
@@ -717,7 +719,7 @@ public class Staking {
         totalStake.set(totalStake.getOrDefault(BigInteger.ZERO).subtract(amountToUnstake));
         delegations(resetTopPreps());
         stake(totalStake.getOrDefault(BigInteger.ZERO));
-        Map<String, Object> stakeInNetwork = (Map<String, Object>) Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "getStake");
+        Map<String, Object> stakeInNetwork = (Map<String, Object>) Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "getStake", Context.getAddress());
         Address addressToSend = to;
         if (senderAddress != null){
             addressToSend = senderAddress;

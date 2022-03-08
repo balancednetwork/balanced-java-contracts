@@ -28,4 +28,11 @@ rootProject.name = 'balanced-java-contracts'
 include(':core-contracts',
         ':token-contracts')
 include ':core-contracts:staking'
+include 'balanced.java.interface'
 
+
+include(':TestUtils')
+findProject(":TestUtils").projectDir = file("libs/TestUtils")
+
+include(':Score')
+findProject(":Score").projectDir = file("libs/Score")

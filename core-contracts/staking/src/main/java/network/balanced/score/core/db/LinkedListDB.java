@@ -160,7 +160,7 @@ public class LinkedListDB {
         }
         NodeDB node = getNode(curId);
         BigInteger tailId = this.tailId.getOrDefault(BigInteger.ZERO);
-        while (curId != tailId){
+        while (! curId.equals(tailId)){
             curId = node.getNext();
             node.delete();
             node = getNode(curId);
@@ -183,7 +183,7 @@ public class LinkedListDB {
         newList.add(List.of(curId, node.getValue(), node.getKey(), node.getBlockHeight(), node.getSenderAddress()));
 
         BigInteger tailId = this.tailId.getOrDefault(BigInteger.ZERO);
-        while (curId != tailId){
+        while (! curId.equals(tailId)){
             curId = node.getNext();
             node = getNode(curId);
             newList.add(List.of(curId, node.getValue(), node.getKey(), node.getBlockHeight(), node.getSenderAddress()));
