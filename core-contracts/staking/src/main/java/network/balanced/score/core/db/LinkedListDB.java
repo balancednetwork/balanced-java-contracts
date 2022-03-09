@@ -175,11 +175,11 @@ public class LinkedListDB {
     public List<List<Object>> iterate() throws Exception {
         BigInteger curId = headId.getOrDefault(BigInteger.ZERO);
         List<List<Object>> newList = new ArrayList<>();
+
         if (curId.equals(BigInteger.ZERO)){
             return newList;
         }
         NodeDB node = getNode(curId);
-
         newList.add(List.of(curId, node.getValue(), node.getKey(), node.getBlockHeight(), node.getSenderAddress()));
 
         BigInteger tailId = this.tailId.getOrDefault(BigInteger.ZERO);

@@ -71,6 +71,7 @@ task integrationTest(type: Test, dependsOn: optimizedJar) {
 //
 //
         systemProperty 'sicx.scoreFilePath', "../../sicx.zip"
+//        systemProperty 'scoreFilePath', "../../staking.zip"
 
 
         systemProperty 'system.url', scoreTest.url
@@ -80,16 +81,18 @@ task integrationTest(type: Test, dependsOn: optimizedJar) {
         systemProperty 'system.isUpdate', "false"
         systemProperty 'system.address', "cx0000000000000000000000000000000000000000"
 
+        systemProperty 'tester.keyStore', scoreTest.get("tester.keystoreName")
+        systemProperty 'tester.keyPassword', scoreTest.get("tester.keystorePass")
+
 //
         systemProperty 'sicx.isUpdate', "false"
         systemProperty 'isUpdate', "false"
-        systemProperty 'address', "cxd7ce24c5e7be2efef1724967e5b71757a49ba7b7"
-        systemProperty 'sicx.address', "cx14bcb886e3e0236b4edbbcf51599136641a0ea9a"
+        systemProperty 'address', "cx916796da1d86b9fc9d7fe1697239c2d5ca1c4cb1"
+        systemProperty 'sicx.address', "cx4f1743589e0f52a443ade51679544bde79817c3b"
 
 
 //        systemProperty 'demo.params.defaultValue', '0x1'
     }
 
 }
-
 

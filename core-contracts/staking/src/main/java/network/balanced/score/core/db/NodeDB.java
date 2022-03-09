@@ -28,7 +28,7 @@ public class NodeDB {
         this.next = Context.newVarDB(name + "_next", BigInteger.class);
         this.prev = Context.newVarDB(name + "_prev", BigInteger.class);
         this.key = Context.newVarDB(name + "_key", Address.class);
-        this.senderAddress = Context.newVarDB(name + "_sender_address", Address.class);
+        this.senderAddress = Context.newVarDB(name + "_address", Address.class);
     }
 
     public void delete(){

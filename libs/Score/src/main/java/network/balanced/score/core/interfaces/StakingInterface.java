@@ -1,4 +1,4 @@
-package ai.ibriz.core.score.interfaces;
+package network.balanced.score.core.interfaces;
 
 import score.*;
 import score.annotation.External;
@@ -102,6 +102,6 @@ public interface StakingInterface {
     public List<List<Object>> getUnstakeInfo() throws Exception;
 
     @External(readonly = true)
-    public Map<String, Object> getUserUnstakeInfo(Address _address) throws Exception;
+    public List<Map<String, Object>> getUserUnstakeInfo(Address _address) throws Exception;
 
 }

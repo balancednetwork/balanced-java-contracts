@@ -1,4 +1,4 @@
-package ai.ibriz.core.score.interfaces;
+package network.balanced.score.core.interfaces;
 
 import score.Address;
 

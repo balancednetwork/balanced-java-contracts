@@ -1,13 +1,11 @@
 package network.balanced.score.core;
 
-import ai.ibriz.core.score.interfaces.StakingInterface;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import network.balanced.score.core.db.LinkedListDB;
 import network.balanced.score.core.utils.Constant;
@@ -32,14 +30,14 @@ public class Staking  {
 
     public Staking() throws Exception {
         Map<String, Object> termDetails = (Map<String, Object>) Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "getIISSInfo");
-        BigInteger nextPrepTerm = (BigInteger) termDetails.get("nextPRepTerm");
-        blockHeightWeek.set(nextPrepTerm);
-        blockHeightDay.set(nextPrepTerm);
-        rate.set(Constant.DENOMINATOR);
-        distributing.set(false);
-        setTopPreps();
-        unstakeBatchLimit.set(Constant.DEFAULT_UNSTAKE_BATCH_LIMIT);
-        stakingOn.set(false);
+//        BigInteger nextPrepTerm = (BigInteger) termDetails.get("nextPRepTerm");
+//        blockHeightWeek.set(nextPrepTerm);
+//        blockHeightDay.set(nextPrepTerm);
+//        rate.set(Constant.DENOMINATOR);
+//        distributing.set(false);
+//        setTopPreps();
+//        unstakeBatchLimit.set(Constant.DEFAULT_UNSTAKE_BATCH_LIMIT);
+//        stakingOn.set(false);
     }
 
 
@@ -322,8 +320,7 @@ public class Staking  {
     @SuppressWarnings("unchecked")
     public void setTopPreps() {
         Map<String, Object> prepDict = (Map<String, Object>) Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "getPReps", 1,Constant.TOP_PREP_COUNT);
-        List<Map<String, Object>> prepDetails = new ArrayList<>();
-        prepDetails = (List<Map<String, Object>>)prepDict.get("preps");
+        List<Map<String, Object>> prepDetails = (List<Map<String, Object>>)prepDict.get("preps");
         List<Address> addresses = getPrepList();
         for (Map<String, Object> preps : prepDetails) {
             Address prepAddress =(Address) preps.get("address");
@@ -745,19 +742,21 @@ public class Staking  {
     }
 
     @External(readonly= true)
-    public Map<String, Object> getUserUnstakeInfo(Address _address) throws Exception {
+    public List<Map<String, Object>> getUserUnstakeInfo(Address _address) throws Exception {
         List<List<Object>>linkedListIter =  linkedListDb.iterate();
-        Map<String, Object>unstakeDict = new HashMap<>();
+        List<Map<String, Object>> response = new ArrayList<>();
         for (List<Object> newList : linkedListIter) {
             if (((Address) newList.get(4)).equals(_address)) {
+                Map<String, Object>unstakeDict = new HashMap<>();
                 unstakeDict.put("amount", newList.get(1));
                 unstakeDict.put("from", newList.get(2));
                 unstakeDict.put("blockHeight", newList.get(3));
                 unstakeDict.put("sender", newList.get(4));
+                response.add(unstakeDict);
             }
 
         }
-        return unstakeDict;
+        return response;
 
     }
 

@@ -1,4 +1,4 @@
-package ai.ibriz.libs.test;
+package network.balanced.score.core.test;
 
 import static foundation.icon.jsonrpc.IconJsonModule.hexToBytes;
 import static org.junit.jupiter.api.Assertions.assertEquals;
