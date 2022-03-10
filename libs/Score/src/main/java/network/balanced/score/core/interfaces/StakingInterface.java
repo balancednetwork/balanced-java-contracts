@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package network.balanced.score.core.interfaces;
 
 import score.*;
@@ -12,96 +28,89 @@ import java.util.Map;
 public interface StakingInterface {
 
     @External(readonly = true)
-    public String name();
+    String name();
 
     @External
-    public void setBlockHeightWeek(BigInteger _height);
+    void setBlockHeightWeek(BigInteger _height);
 
     @External(readonly = true)
-    public BigInteger getBlockHeightWeek();
+    BigInteger getBlockHeightWeek();
 
     @External(readonly = true)
-    public BigInteger getTodayRate();
+    BigInteger getTodayRate();
 
     @External
-    public void toggleStakingOn();
+    void toggleStakingOn();
 
     @External(readonly = true)
-    public Address getSicxAddress();
+    Address getSicxAddress();
 
     @External
-    public void setUnstakeBatchLimit(BigInteger _limit);
+    void setUnstakeBatchLimit(BigInteger _limit);
 
     @External(readonly = true)
-    public BigInteger getUnstakeBatchLimit();
+    BigInteger getUnstakeBatchLimit();
 
     @External(readonly = true)
-    public List<Address> getPrepList();
+    List<Address> getPrepList();
 
     @External(readonly = true)
-    public BigInteger getUnstakingAmount();
+    BigInteger getUnstakingAmount();
 
     @External(readonly = true)
-    public BigInteger getTotalStake();
+    BigInteger getTotalStake();
 
     @External(readonly = true)
-    public BigInteger getLifetimeReward();
+    BigInteger getLifetimeReward();
 
     @External(readonly = true)
-    public List<Address> getTopPreps();
+    List<Address> getTopPreps();
 
     @External(readonly = true)
-    public Map<String, BigInteger> getPrepDelegations();
+    Map<String, BigInteger> getPrepDelegations();
 
     @External
-    public void setSicxAddress(Address _address);
+    void setSicxAddress(Address _address);
 
-    public BigInteger percentToIcx(BigInteger votingPercentage, BigInteger totalAmount);
+    BigInteger percentToIcx(BigInteger votingPercentage, BigInteger totalAmount);
 
-    public void setAddressDelegations(Address to, Address prep, BigInteger votesInPer, BigInteger totalIcxHold);
+    void setAddressDelegations(Address to, Address prep, BigInteger votesInPer, BigInteger totalIcxHold);
 
-    public void setPrepDelegations(Address prep, BigInteger value);
-
-    @External(readonly = true)
-    public BigInteger claimableICX(Address _address);
+    void setPrepDelegations(Address prep, BigInteger value);
 
     @External(readonly = true)
-    public BigInteger totalClaimableIcx();
+    BigInteger claimableICX(Address _address);
+
+    @External(readonly = true)
+    BigInteger totalClaimableIcx();
 
     @Payable
-    public void fallback() throws Exception;
+    void fallback() throws Exception;
 
     @External
-    public void tokenFallback(Address _from, BigInteger _value, byte[] _data) throws Exception;
-
+    void tokenFallback(Address _from, BigInteger _value, byte[] _data) throws Exception;
 
     // Created only for test
     @External(readonly = true)
-    public boolean getDistributing();
-
-    @SuppressWarnings("unchecked")
+    boolean getDistributing();
 
     @External
-    public void claimUnstakedICX(@Optional Address _to);
-
-
-    @SuppressWarnings("unchecked")
+    void claimUnstakedICX(@Optional Address _to);
 
     @External(readonly = true)
-    public Map<String, BigInteger> getAddressDelegations(Address _address);
+    Map<String, BigInteger> getAddressDelegations(Address _address);
 
-        @External
-        public void delegate(PrepDelegations[] _user_delegations) throws Exception ;
-
+    @External
+    void delegate(PrepDelegations[] _user_delegations) throws Exception;
 
     @External
     @Payable
-    public BigInteger stakeICX(@Optional Address _to, @Optional byte[] _data) throws Exception;
+    BigInteger stakeICX(@Optional Address _to, @Optional byte[] _data) throws Exception;
 
     @External(readonly = true)
-    public List<List<Object>> getUnstakeInfo() throws Exception;
+    List<List<Object>> getUnstakeInfo() throws Exception;
 
     @External(readonly = true)
-    public List<Map<String, Object>> getUserUnstakeInfo(Address _address) throws Exception;
+    List<Map<String, Object>> getUserUnstakeInfo(Address _address) throws Exception;
 
 }
