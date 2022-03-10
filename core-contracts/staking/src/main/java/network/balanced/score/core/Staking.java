@@ -508,13 +508,13 @@ public class Staking  {
                 for (Map<String, Object> unstakeDetails : result){
                     BigInteger unstakedIcx = (BigInteger) unstakeDetails.get("unstake");
                     totalUnstakeInNetwork = totalUnstakeInNetwork.add(unstakedIcx);
-                }
+                }}
                 BigInteger dailyReward = (totalUnstakeInNetwork.add(Context.getBalance(Context.getAddress())))
                         .subtract(totalUnstakeAmount.getOrDefault(BigInteger.ZERO).add(Context.getValue().add(icxToClaim.getOrDefault(BigInteger.ZERO))));
                 this.dailyReward.set(dailyReward);
                 totalLifetimeReward.set(getLifetimeReward().add(dailyReward));
                 rate.set(getRate());
-                BigInteger totalStake = this.totalStake.getOrDefault(BigInteger.ZERO);
+                    BigInteger totalStake = this.totalStake.getOrDefault(BigInteger.ZERO);
                 this.totalStake.set(getTotalStake().add(dailyReward));
                 for (Address prep : getPrepList()){
                     BigInteger valueInIcx = prepDelegations.getOrDefault(prep.toString(), BigInteger.ZERO);
@@ -525,7 +525,6 @@ public class Staking  {
                 this.dailyReward.set(BigInteger.ZERO);
                 distributing.set(false);
             }
-        }
         checkForIscore();
         checkForBalance();
     }
