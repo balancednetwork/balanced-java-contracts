@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2022-2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package network.balanced.score.core.db;
 
 import score.Address;
@@ -31,7 +47,7 @@ public class NodeDB {
         this.senderAddress = Context.newVarDB(name + "_address", Address.class);
     }
 
-    public void delete(){
+    public void delete() {
         value.set(null);
         key.set(null);
         blockHeight.set(null);
@@ -41,27 +57,27 @@ public class NodeDB {
         init.set(null);
     }
 
-    public boolean exists(){
-        return ( ! init.getOrDefault(BigInteger.ZERO).equals(NodeDB.UNINITIALIZED));
+    public boolean exists() {
+        return (!init.getOrDefault(BigInteger.ZERO).equals(NodeDB.UNINITIALIZED));
     }
 
-    public BigInteger getValue(){
+    public BigInteger getValue() {
         return value.getOrDefault(BigInteger.ZERO);
     }
 
-    public Address getKey(){
+    public Address getKey() {
         return key.get();
     }
 
-    public BigInteger getBlockHeight(){
+    public BigInteger getBlockHeight() {
         return blockHeight.getOrDefault(BigInteger.ZERO);
     }
 
-    public Address getSenderAddress(){
+    public Address getSenderAddress() {
         return senderAddress.get();
     }
 
-    public void setter(Address key, BigInteger value, BigInteger blockHeight, Address senderAddress){
+    public void setter(Address key, BigInteger value, BigInteger blockHeight, Address senderAddress) {
         init.set(NodeDB.INITIALIZED);
         this.value.set(value);
         this.key.set(key);
@@ -69,19 +85,19 @@ public class NodeDB {
         this.senderAddress.set(senderAddress);
     }
 
-    public BigInteger getNext(){
+    public BigInteger getNext() {
         return next.getOrDefault(BigInteger.ZERO);
     }
 
-    public void setNext(BigInteger nextId){
+    public void setNext(BigInteger nextId) {
         next.set(nextId);
     }
 
-    public BigInteger getPrev(){
+    public BigInteger getPrev() {
         return prev.getOrDefault(BigInteger.ZERO);
     }
 
-    public void setPrev(BigInteger prev_id){
+    public void setPrev(BigInteger prev_id) {
         prev.set(prev_id);
     }
 

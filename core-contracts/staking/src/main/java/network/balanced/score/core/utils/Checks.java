@@ -31,9 +31,8 @@ public class Checks {
     }
 
     public static void stakingOn() {
-        if (!Staking.stakingOn.get())
-        {
-            Context.revert(Constant.TAG+": ICX Staking SCORE is not active.");
+        if (!Staking.stakingOn.get()) {
+            Context.revert(Constant.TAG + ": ICX Staking SCORE is not active.");
         }
     }
 }
