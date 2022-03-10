@@ -32,21 +32,19 @@ public class LinkedListDB {
         length.set(null);
     }
 
-    public BigInteger __len__(){
+    public BigInteger size(){
         return length.getOrDefault(BigInteger.ZERO);
     }
 
-    public NodeDB node(BigInteger nodeId){
+    public NodeDB createNodeInstance(BigInteger nodeId){
         return new NodeDB(nodeId.toString() + name);
     }
 
     public void updateNode(Address key, BigInteger value, BigInteger blockHeight, Address senderAddress, BigInteger nodeId){
-        NodeDB node = node(nodeId);
+        NodeDB node = createNodeInstance(nodeId);
         if (node.exists()){
-            node.setValue(value);
-            node.setKey(key);
-            node.setBlockHeight(blockHeight);
-            node.setSenderAddress(senderAddress);
+            node.setter(key, value, blockHeight, senderAddress);
+
         }
         else{
             Context.revert("There is no node of the provided node id.");
@@ -55,25 +53,23 @@ public class LinkedListDB {
 
     public BigInteger append(Address key, BigInteger value, BigInteger blockHeight
             , Address senderAddress, BigInteger nodeId) throws Exception {
-        Object[] nodeDetails = createNode(key, value, blockHeight, senderAddress, nodeId);
-        BigInteger curId = (BigInteger) nodeDetails[0];
-        NodeDB cur = (NodeDB) nodeDetails[1];
+        NodeDB cur = createNode(key, value, blockHeight, senderAddress, nodeId);
         if (length.getOrDefault(BigInteger.ZERO).equals(BigInteger.ZERO)){
-            headId.set(curId);
-            tailId.set(curId);
+            headId.set(nodeId);
+            tailId.set(nodeId);
         }
         else{
             NodeDB tail = getTailNode();
-            tail.setNext(curId);
+            tail.setNext(nodeId);
             cur.setPrev(tailId.get());
-            tailId.set(curId);
+            tailId.set(nodeId);
         }
         length.set(length.getOrDefault(BigInteger.ZERO).add(BigInteger.ONE));
-        return curId;
+        return nodeId;
     }
 
     public NodeDB getNode(BigInteger nodeId) throws Exception {
-        NodeDB node = node(nodeId);
+        NodeDB node = createNodeInstance(nodeId);
         if (! node.exists()){
             LinkedNodeNotFound(name, nodeId);
         }
@@ -81,28 +77,25 @@ public class LinkedListDB {
     }
 
     public NodeDB getTailNode() throws Exception {
-        BigInteger tailId = this.tailId.getOrDefault(BigInteger.ZERO);
+        BigInteger tailId = this.tailId.get();
         if (tailId== null){
             Context.revert("Linked List does not exists");
         }
         return getNode(tailId);
     }
 
-    public Object[] createNode(Address key, BigInteger value,
-                               BigInteger blockHeight, Address senderAddres,
+    public NodeDB createNode(Address key, BigInteger value,
+                               BigInteger blockHeight, Address senderAddress,
                                BigInteger nodeId) throws Exception {
         if (nodeId == null) {
             nodeId = new IdFactory(name + "_nodedb").getUid();
         }
-        NodeDB node = node(nodeId);
+        NodeDB node = createNodeInstance(nodeId);
         if (node.exists()){
             LinkedNodeAlreadyExists(name, nodeId);
         }
-        node.setValue(value);
-        node.setKey(key);
-        node.setBlockHeight(blockHeight);
-        node.setSenderAddress(senderAddres);
-        return new Object[] {nodeId, node};
+        node.setter(key, value, blockHeight, senderAddress);
+        return node;
     }
 
 
@@ -154,7 +147,7 @@ public class LinkedListDB {
     }
 
     public void clear() throws Exception {
-        BigInteger curId = headId.getOrDefault(BigInteger.ZERO);
+        BigInteger curId = headId.get();
         if (curId == null){
           return;
         }
@@ -193,14 +186,12 @@ public class LinkedListDB {
     }
 
 
-    private Exception LinkedNodeAlreadyExists(String name, BigInteger nodeId) {
+    private void LinkedNodeAlreadyExists(String name, BigInteger nodeId) {
         Context.revert("Linked List "+name+"already exists of nodeId."+ nodeId.toString());
-        return null;
     }
 
-    private Exception LinkedNodeNotFound(String name, BigInteger nodeId) {
+    private void LinkedNodeNotFound(String name, BigInteger nodeId) {
         Context.revert("Linked List  "+name+" Node not found of nodeId "+ nodeId.toString());
-        return null;
     }
 
 

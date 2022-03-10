@@ -61,23 +61,11 @@ public class NodeDB {
         return senderAddress.get();
     }
 
-    public void setValue(BigInteger value){
+    public void setter(Address key, BigInteger value, BigInteger blockHeight, Address senderAddress){
         init.set(NodeDB.INITIALIZED);
         this.value.set(value);
-    }
-
-    public void setKey(Address key){
-        init.set(NodeDB.INITIALIZED);
         this.key.set(key);
-    }
-
-    public void setBlockHeight(BigInteger blockHeight){
-        init.set(NodeDB.INITIALIZED);
         this.blockHeight.set(blockHeight);
-    }
-
-    public void setSenderAddress(Address senderAddress){
-        init.set(NodeDB.INITIALIZED);
         this.senderAddress.set(senderAddress);
     }
 

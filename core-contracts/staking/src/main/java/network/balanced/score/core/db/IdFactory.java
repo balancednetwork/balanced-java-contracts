@@ -14,7 +14,9 @@ public class IdFactory {
     }
 
     public BigInteger getUid(){
-        uid.set(uid.getOrDefault(BigInteger.ZERO).add(BigInteger.ONE));
-        return uid.getOrDefault(BigInteger.ZERO);
+        BigInteger uidValue = uid.getOrDefault(BigInteger.ZERO);
+        BigInteger nextUid = uidValue.add(BigInteger.ONE);
+        uid.set(nextUid);
+        return nextUid;
     }
 }
