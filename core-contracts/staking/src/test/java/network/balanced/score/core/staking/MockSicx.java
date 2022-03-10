@@ -1,8 +1,6 @@
 package network.balanced.score.core;
 
 import score.Address;
-import score.Context;
-import score.VarDB;
 import score.annotation.External;
 
 import java.math.BigInteger;
