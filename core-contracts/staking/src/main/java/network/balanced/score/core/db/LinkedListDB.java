@@ -73,9 +73,10 @@ public class LinkedListDB {
         if (length.getOrDefault(BigInteger.ZERO).equals(BigInteger.ZERO)) {
             headId.set(nodeId);
         } else {
-            NodeDB tail = getTailNode();
+            BigInteger tailId = this.tailId.get();
+            NodeDB tail = getNode(tailId);
             tail.setNext(nodeId);
-            cur.setPrev(tailId.get());
+            cur.setPrev(tailId);
         }
         tailId.set(nodeId);
         length.set(length.getOrDefault(BigInteger.ZERO).add(BigInteger.ONE));
@@ -83,6 +84,9 @@ public class LinkedListDB {
     }
 
     public NodeDB getNode(BigInteger nodeId) {
+        if (nodeId == null) {
+            Context.revert("Invalid Node Id");
+        }
         NodeDB node = createNodeInstance(nodeId);
         if (!node.exists()) {
             LinkedNodeNotFound(name, nodeId);
@@ -114,7 +118,8 @@ public class LinkedListDB {
 
 
     public void removeHead() {
-        if (length.getOrDefault(BigInteger.ZERO).equals(BigInteger.ONE)) {
+        BigInteger size = length.getOrDefault(BigInteger.ZERO);
+        if (size.equals(BigInteger.ONE)) {
             clear();
         } else {
             NodeDB oldHead = getNode(headId.getOrDefault(BigInteger.ZERO));
@@ -122,13 +127,14 @@ public class LinkedListDB {
             headId.set(newHead);
             getNode(newHead).setPrev(BigInteger.ZERO);
             oldHead.delete();
-            length.set(length.getOrDefault(BigInteger.ZERO).subtract(BigInteger.ONE));
+            length.set(size.subtract(BigInteger.ONE));
         }
 
     }
 
     public void removeTail() {
-        if (length.getOrDefault(BigInteger.ZERO).equals(BigInteger.ONE)) {
+        BigInteger size = length.getOrDefault(BigInteger.ZERO);
+        if (size.equals(BigInteger.ONE)) {
             clear();
         } else {
             NodeDB oldTail = getNode(tailId.get());
@@ -136,7 +142,7 @@ public class LinkedListDB {
             tailId.set(newTail);
             getNode(newTail).setNext(BigInteger.ZERO);
             oldTail.delete();
-            length.set(length.getOrDefault(BigInteger.ZERO).subtract(BigInteger.ONE));
+            length.set(size.subtract(BigInteger.ONE));
         }
     }
 
