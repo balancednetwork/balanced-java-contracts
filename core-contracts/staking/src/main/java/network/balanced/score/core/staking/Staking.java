@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core;
+package network.balanced.score.core.staking;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
@@ -23,9 +23,9 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-import network.balanced.score.core.db.LinkedListDB;
-import network.balanced.score.core.utils.Constant;
-import network.balanced.score.core.utils.PrepDelegations;
+import network.balanced.score.core.staking.db.LinkedListDB;
+import network.balanced.score.core.staking.utils.Constant;
+import network.balanced.score.core.staking.utils.PrepDelegations;
 import score.Address;
 import score.Context;
 import score.VarDB;
@@ -40,7 +40,7 @@ import scorex.util.HashMap;
 import scorex.util.StringTokenizer;
 
 
-import static network.balanced.score.core.utils.Checks.*;
+import static network.balanced.score.core.staking.utils.Checks.*;
 
 public class Staking {
 

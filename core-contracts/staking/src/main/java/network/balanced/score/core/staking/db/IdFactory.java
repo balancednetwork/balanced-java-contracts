@@ -14,24 +14,26 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.staking;
+package network.balanced.score.core.staking.db;
 
-import score.Address;
-import score.annotation.External;
+import score.Context;
+import score.VarDB;
 
 import java.math.BigInteger;
 
+public class IdFactory {
+    private static final String NAME = "_ID_FACTORY";
+    private final VarDB<BigInteger> uid;
 
-
-
-public class MockSicx {
-
-    public MockSicx() {
+    public IdFactory(String key) {
+        String name = key + NAME;
+        this.uid = Context.newVarDB(name + "_uid", BigInteger.class);
     }
 
-    @External
-    public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
-
+    public BigInteger getUid() {
+        BigInteger uidValue = uid.getOrDefault(BigInteger.ZERO);
+        BigInteger nextUid = uidValue.add(BigInteger.ONE);
+        uid.set(nextUid);
+        return nextUid;
     }
-
 }

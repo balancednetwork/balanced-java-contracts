@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.db;
+package network.balanced.score.core.staking.db;
 
 import score.Address;
 import score.Context;

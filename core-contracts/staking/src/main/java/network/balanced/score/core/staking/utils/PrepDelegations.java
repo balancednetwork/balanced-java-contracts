@@ -14,25 +14,13 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.utils;
+package network.balanced.score.core.staking.utils;
 
-import network.balanced.score.core.Staking;
 import score.Address;
-import score.Context;
 
-public class Checks {
+import java.math.BigInteger;
 
-    public static Address defaultAddress = new Address(new byte[Address.LENGTH]);
-
-    public static void onlyOwner() {
-        Address caller = Context.getCaller();
-        Address owner = Context.getOwner();
-        Context.require(caller.equals(owner), "SenderNotScoreOwner: Sender=" + caller + "Owner=" + owner);
-    }
-
-    public static void stakingOn() {
-        if (!Staking.stakingOn.get()) {
-            Context.revert(Constant.TAG + ": ICX Staking SCORE is not active.");
-        }
-    }
+public class PrepDelegations {
+    public Address _address;
+    public BigInteger _votes_in_per;
 }

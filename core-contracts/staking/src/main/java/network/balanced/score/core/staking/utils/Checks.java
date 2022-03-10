@@ -14,26 +14,25 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.db;
+package network.balanced.score.core.staking.utils;
 
+import network.balanced.score.core.staking.Staking;
+import score.Address;
 import score.Context;
-import score.VarDB;
 
-import java.math.BigInteger;
+public class Checks {
 
-public class IdFactory {
-    private static final String NAME = "_ID_FACTORY";
-    private final VarDB<BigInteger> uid;
+    public static Address defaultAddress = new Address(new byte[Address.LENGTH]);
 
-    public IdFactory(String key) {
-        String name = key + NAME;
-        this.uid = Context.newVarDB(name + "_uid", BigInteger.class);
+    public static void onlyOwner() {
+        Address caller = Context.getCaller();
+        Address owner = Context.getOwner();
+        Context.require(caller.equals(owner), "SenderNotScoreOwner: Sender=" + caller + "Owner=" + owner);
     }
 
-    public BigInteger getUid() {
-        BigInteger uidValue = uid.getOrDefault(BigInteger.ZERO);
-        BigInteger nextUid = uidValue.add(BigInteger.ONE);
-        uid.set(nextUid);
-        return nextUid;
+    public static void stakingOn() {
+        if (!Staking.stakingOn.get()) {
+            Context.revert(Constant.TAG + ": ICX Staking SCORE is not active.");
+        }
     }
 }
