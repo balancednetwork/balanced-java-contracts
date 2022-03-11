@@ -29,22 +29,21 @@ public class NodeDB {
     private static final BigInteger INITIALIZED = BigInteger.ONE;
 
     private final VarDB<BigInteger> value;
-    private final VarDB<BigInteger> init;
+    private final VarDB<Address> key;
     private final VarDB<BigInteger> blockHeight;
+    private final VarDB<Address> senderAddress;
     private final VarDB<BigInteger> next;
     private final VarDB<BigInteger> prev;
-    private final VarDB<Address> key;
-    private final VarDB<Address> senderAddress;
 
     public NodeDB(String key) {
         String name = key + NAME;
-        this.value = Context.newVarDB(name + "_value", BigInteger.class);
-        this.blockHeight = Context.newVarDB(name + "_block_height", BigInteger.class);
         this.init = Context.newVarDB(name + "_init", BigInteger.class);
+        this.value = Context.newVarDB(name + "_value", BigInteger.class);
+        this.key = Context.newVarDB(name + "_key", Address.class);
+        this.blockHeight = Context.newVarDB(name + "_block_height", BigInteger.class);
+        this.senderAddress = Context.newVarDB(name + "_address", Address.class);
         this.next = Context.newVarDB(name + "_next", BigInteger.class);
         this.prev = Context.newVarDB(name + "_prev", BigInteger.class);
-        this.key = Context.newVarDB(name + "_key", Address.class);
-        this.senderAddress = Context.newVarDB(name + "_address", Address.class);
     }
 
     public void delete() {
