@@ -19,7 +19,7 @@ public class RebalanceMock {
     }
 
     @External
-    public void lowerPrice(BigInteger _amount) {
-        Context.call(loans.get(), "lowerPrice", _amount);
+    public void lowerPrice(BigInteger _total_tokens_required) {
+        Context.call(loans.get(), "lowerPrice", _total_tokens_required);
     }
 }

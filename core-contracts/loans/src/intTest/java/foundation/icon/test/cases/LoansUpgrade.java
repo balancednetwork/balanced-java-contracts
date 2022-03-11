@@ -235,6 +235,7 @@ class LoansUpgrade extends TestBase {
     void rebalance(Governance gov) throws Exception {
         RebalanceMockScore rebalance = ((RebalanceMockScore) gov.getRebalance());
         rebalance.raisePrice(adminWallet, ICX.multiply(BigInteger.valueOf(1000)));
+        rebalance.lowerPrice(adminWallet, ICX.multiply(BigInteger.valueOf(100)));
      
     }
 

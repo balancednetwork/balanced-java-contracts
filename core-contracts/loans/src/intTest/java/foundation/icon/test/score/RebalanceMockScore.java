@@ -62,7 +62,7 @@ public class RebalanceMockScore extends RebalancingScore {
 
     public TransactionResult lowerPrice(Wallet fromWallet, BigInteger _total_tokens_required) throws IOException, ResultTimeoutException {
         RpcObject params = new RpcObject.Builder()
-            .put("_amount", new RpcValue(_total_tokens_required))
+            .put("_total_tokens_required", new RpcValue(_total_tokens_required))
             .build();
         return invokeAndWaitResult(fromWallet, "lowerPrice", params);
     }
