@@ -72,7 +72,7 @@ public class NodeDB {
         return senderAddress.get();
     }
 
-    public void setter(Address key, BigInteger value, BigInteger blockHeight, Address senderAddress) {
+    public void setValues(Address key, BigInteger value, BigInteger blockHeight, Address senderAddress) {
         this.value.set(value);
         this.key.set(key);
         this.blockHeight.set(blockHeight);

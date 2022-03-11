@@ -60,7 +60,7 @@ public class LinkedListDB {
                            BigInteger nodeId) {
         NodeDB node = createNodeInstance(nodeId);
         if (node.exists()) {
-            node.setter(key, value, blockHeight, senderAddress);
+            node.setValues(key, value, blockHeight, senderAddress);
 
         } else {
             Context.revert("There is no node of the provided node id.");
@@ -112,7 +112,7 @@ public class LinkedListDB {
         if (node.exists()) {
             LinkedNodeAlreadyExists(name, nodeId);
         }
-        node.setter(key, value, blockHeight, senderAddress);
+        node.setValues(key, value, blockHeight, senderAddress);
         return node;
     }
 
