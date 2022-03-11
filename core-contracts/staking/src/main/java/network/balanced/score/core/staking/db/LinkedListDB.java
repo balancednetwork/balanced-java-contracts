@@ -105,9 +105,6 @@ public class LinkedListDB {
     public NodeDB createNode(Address key, BigInteger value,
                              BigInteger blockHeight, Address senderAddress,
                              BigInteger nodeId) {
-        if (nodeId == null) {
-            nodeId = new IdFactory(name + "_nodedb").getUid();
-        }
         NodeDB node = createNodeInstance(nodeId);
         if (node.exists()) {
             LinkedNodeAlreadyExists(name, nodeId);
