@@ -25,8 +25,6 @@ import java.math.BigInteger;
 public class NodeDB {
 
     private static final String NAME = "_NODEDB";
-    private static final BigInteger UNINITIALIZED = BigInteger.ZERO;
-    private static final BigInteger INITIALIZED = BigInteger.ONE;
 
     private final VarDB<BigInteger> value;
     private final VarDB<Address> key;
@@ -37,7 +35,6 @@ public class NodeDB {
 
     public NodeDB(String key) {
         String name = key + NAME;
-        this.init = Context.newVarDB(name + "_init", BigInteger.class);
         this.value = Context.newVarDB(name + "_value", BigInteger.class);
         this.key = Context.newVarDB(name + "_key", Address.class);
         this.blockHeight = Context.newVarDB(name + "_block_height", BigInteger.class);
@@ -53,11 +50,10 @@ public class NodeDB {
         senderAddress.set(null);
         prev.set(null);
         next.set(null);
-        init.set(null);
     }
 
     public boolean exists() {
-        return (!init.getOrDefault(BigInteger.ZERO).equals(NodeDB.UNINITIALIZED));
+        return value.get() != null;
     }
 
     public BigInteger getValue() {
@@ -77,7 +73,6 @@ public class NodeDB {
     }
 
     public void setter(Address key, BigInteger value, BigInteger blockHeight, Address senderAddress) {
-        init.set(NodeDB.INITIALIZED);
         this.value.set(value);
         this.key.set(key);
         this.blockHeight.set(blockHeight);
