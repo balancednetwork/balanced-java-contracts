@@ -25,7 +25,7 @@ import network.balanced.score.core.AssetDB;
 import network.balanced.score.core.SnapshotDB;
 import network.balanced.score.core.PositionsDB;
 
-public class Loans {
+public class Loans implements LoansInterface {
     public static final String _LOANS_ON = "loans_on";
     public static final String _GOVERNANCE = "governance";
     public static final String _REBALANCE = "rebalance";
