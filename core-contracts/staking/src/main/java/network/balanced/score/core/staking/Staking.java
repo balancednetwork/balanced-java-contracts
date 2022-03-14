@@ -372,7 +372,7 @@ public class Staking {
                 Context.revert(Constant.TAG + ": You can not delegate same Prep twice in a transaction.Your " +
                         "delegation preference is" + userDelegations);
             }
-            if (votesInPer.compareTo(BigInteger.valueOf(1000000000000000L)) < 0) {
+            if (votesInPer.compareTo(MINIMUM_DELEGATION_PERCENTAGE) < 0) {
                 Context.revert(Constant.TAG + ": You should provide delegation percentage more than 0.001. Your " +
                         "delegation preference is " + userDelegations + ".");
             }
@@ -383,7 +383,6 @@ public class Staking {
         }
         this.addressDelegations.set(to.toString(), addressDelegations.toString());
         return amountToStake;
-
     }
 
     public BigInteger distributeEvenly(BigInteger amountToDistribute, BigInteger isFirstTx, Address to) {
