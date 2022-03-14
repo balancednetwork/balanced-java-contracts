@@ -45,6 +45,26 @@ import static network.balanced.score.core.staking.utils.Constant.*;
 
 public class Staking {
 
+    private final VarDB<BigInteger> sicxSupply = Context.newVarDB(SICX_SUPPLY, BigInteger.class);
+    private final VarDB<BigInteger> rate = Context.newVarDB(RATE, BigInteger.class);
+    private final VarDB<BigInteger> blockHeightWeek = Context.newVarDB(BLOCK_HEIGHT_WEEK, BigInteger.class);
+    private final VarDB<BigInteger> blockHeightDay = Context.newVarDB(BLOCK_HEIGHT_DAY, BigInteger.class);
+    private final VarDB<Address> sicxAddress = Context.newVarDB(SICX_ADDRESS, Address.class);
+    private final VarDB<BigInteger> totalStake = Context.newVarDB(TOTAL_STAKE, BigInteger.class);
+    private final VarDB<BigInteger> dailyReward = Context.newVarDB(DAILY_REWARD, BigInteger.class);
+    private final VarDB<BigInteger> totalLifetimeReward = Context.newVarDB(TOTAL_LIFETIME_REWARD, BigInteger.class);
+    private final VarDB<Boolean> distributing = Context.newVarDB(DISTRIBUTING, Boolean.class);
+    private final VarDB<BigInteger> totalUnstakeAmount = Context.newVarDB(TOTAL_UNSTAKE_AMOUNT, BigInteger.class);
+    private final ArrayDB<Address> topPreps = Context.newArrayDB(TOP_PREPS, Address.class);
+    private final ArrayDB<Address> prepList = Context.newArrayDB(PREP_LIST, Address.class);
+    private final VarDB<BigInteger> icxToClaim = Context.newVarDB(ICX_TO_CLAIM, BigInteger.class);
+    private final DictDB<String, String> addressDelegations = Context.newDictDB(ADDRESS_DELEGATIONS, String.class);
+    private final DictDB<Address, BigInteger> icxPayable = Context.newDictDB(ICX_PAYABLE, BigInteger.class);
+    private final DictDB<String, BigInteger> prepDelegations = Context.newDictDB(PREP_DELEGATIONS, BigInteger.class);
+    private final VarDB<BigInteger> unstakeBatchLimit = Context.newVarDB(UNSTAKE_BATCH_LIMIT, BigInteger.class);
+    public static final VarDB<Boolean> stakingOn = Context.newVarDB(STAKING_ON, Boolean.class);
+    private final LinkedListDB unstakeRequestList = new LinkedListDB("unstake_dict");
+
     public Staking() {
         Map<String, Object> termDetails =
                 (Map<String, Object>) Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "getIISSInfo");
