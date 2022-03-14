@@ -68,15 +68,15 @@ public class LinkedListDB {
     }
 
     public void append(Address key, BigInteger value, BigInteger blockHeight, Address senderAddress,
-                             BigInteger nodeId) {
-        NodeDB cur = createNode(key, value, blockHeight, senderAddress, nodeId);
-        if (length.getOrDefault(BigInteger.ZERO).equals(BigInteger.ZERO)) {
+                       BigInteger nodeId) {
+        NodeDB nodeToAppend = createNode(key, value, blockHeight, senderAddress, nodeId);
+        if (length.get() == null) {
             headId.set(nodeId);
         } else {
             BigInteger tailId = this.tailId.get();
             NodeDB tail = getNode(tailId);
             tail.setNext(nodeId);
-            cur.setPrev(tailId);
+            nodeToAppend.setPrev(tailId);
         }
         tailId.set(nodeId);
         length.set(length.getOrDefault(BigInteger.ZERO).add(BigInteger.ONE));
@@ -152,31 +152,31 @@ public class LinkedListDB {
         } else if (curId.equals(tailId.getOrDefault(DEFAULT_NODE_ID))) {
             removeTail();
         } else {
-            NodeDB cur = getNode(curId);
-            BigInteger curNextId = cur.getNext();
-            NodeDB curnext = getNode(curNextId);
-            BigInteger curPrevId = cur.getPrev();
-            NodeDB curprev = getNode(curPrevId);
-            curnext.setPrev(curPrevId);
-            curprev.setNext(curNextId);
-            cur.delete();
-            length.set(length.getOrDefault(BigInteger.ZERO).subtract(BigInteger.ONE));
+            NodeDB nodeToRemove = getNode(curId);
+            BigInteger nextNodeId = nodeToRemove.getNext();
+            NodeDB nextNode = getNode(nextNodeId);
+            BigInteger previousNodeId = nodeToRemove.getPrev();
+            NodeDB previousNode = getNode(previousNodeId);
+            nextNode.setPrev(previousNodeId);
+            previousNode.setNext(nextNodeId);
+            nodeToRemove.delete();
+            length.set(size.subtract(BigInteger.ONE));
         }
     }
 
     public void clear() {
-        BigInteger curId = headId.get();
-        if (curId == null) {
+        BigInteger currentId = headId.get();
+        if (currentId == null) {
             return;
         }
-        NodeDB node = getNode(curId);
-        BigInteger tailId = this.tailId.getOrDefault(BigInteger.ZERO);
-        while (!curId.equals(tailId)) {
-            curId = node.getNext();
-            node.delete();
-            node = getNode(curId);
+        NodeDB nodeToRemove = getNode(currentId);
+        BigInteger tailId = this.tailId.getOrDefault(DEFAULT_NODE_ID);
+        while (!currentId.equals(tailId)) {
+            currentId = nodeToRemove.getNext();
+            nodeToRemove.delete();
+            nodeToRemove = getNode(currentId);
         }
-        node.delete();
+        nodeToRemove.delete();
 
         this.tailId.set(null);
         headId.set(null);
