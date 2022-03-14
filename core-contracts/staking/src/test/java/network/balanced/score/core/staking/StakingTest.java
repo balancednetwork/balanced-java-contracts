@@ -340,7 +340,7 @@ class StakingTest extends TestBase {
             Score staking = sm.deploy(owner, Staking.class);
             Staking scoreSpy = (Staking) spy(staking.getInstance());
             staking.setInstance(scoreSpy);
-            doReturn(delegationPer).when(scoreSpy).delegationInPer(owner.getAddress());
+            doReturn(delegationPer).when(scoreSpy).getDelegationInPercentage(owner.getAddress());
             delegationIcx = (Map<String, BigInteger>) staking.call("getAddressDelegations", owner.getAddress());
             assertEquals(new BigInteger("50000000000000000000"), delegationPer.get(
                     "hx55814f724bbffe49bfa4555535cd9d7e0e1dff32"));
@@ -401,7 +401,7 @@ class StakingTest extends TestBase {
             Score staking = sm.deploy(owner, Staking.class);
             Staking scoreSpy = (Staking) spy(staking.getInstance());
             staking.setInstance(scoreSpy);
-            doReturn(delegationPer).when(scoreSpy).delegationInPer(owner.getAddress());
+            doReturn(delegationPer).when(scoreSpy).getDelegationInPercentage(owner.getAddress());
             staking.invoke(owner, "removePreviousDelegations", owner.getAddress());
         } catch (Exception e) {
             e.printStackTrace();
@@ -618,11 +618,11 @@ class StakingTest extends TestBase {
             Score staking = sm.deploy(owner, Staking.class);
             Staking scoreSpy = (Staking) spy(staking.getInstance());
             staking.setInstance(scoreSpy);
-            doReturn(delegationPer).when(scoreSpy).delegationInPer(Address.fromString(
+            doReturn(delegationPer).when(scoreSpy).getDelegationInPercentage(Address.fromString(
                     "hx55814f724bbffe49bfa4555535cd9d7e0e1dff31"));
             doReturn(BigInteger.ONE).when(scoreSpy).checkForWeek();
             doNothing().when(scoreSpy).stakeAndDelegate(BigInteger.ONE);
-            doReturn(receiveeDelegation).when(scoreSpy).delegationInPer(Address.fromString(
+            doReturn(receiveeDelegation).when(scoreSpy).getDelegationInPercentage(Address.fromString(
                     "hx55814f724bbffe49bfa4555535cd9d7e0e1dff32"));
             when(_prep_delegations.getOrDefault("hx0b047c751658f7ce1b2595da34d57a0e7dad357c", BigInteger.ZERO)).thenReturn(new BigInteger("1000000000000000000"));
             when(_prep_delegations.getOrDefault("hx0b047c751658f7ce1b2595da34d57a0e7dad357d", BigInteger.ZERO)).thenReturn(new BigInteger("1000000000000000000"));
@@ -766,7 +766,7 @@ class StakingTest extends TestBase {
             when(_daily_reward.getOrDefault(BigInteger.ZERO)).thenReturn(new BigInteger("0"));
             doNothing().when(scoreSpy).delegations(BigInteger.ONE);
             doNothing().when(scoreSpy).stake(new BigInteger("500000000000000000000"));
-            doReturn(delegationPer).when(scoreSpy).delegationInPer(owner.getAddress());
+            doReturn(delegationPer).when(scoreSpy).getDelegationInPercentage(owner.getAddress());
             staking.invoke(owner, "unstake", owner.getAddress(), new BigInteger("100000000000000000000"),
                     Address.fromString("hx55814f724bbffe49bfa4555535cd9d7e0e1dff32"));
             assertEquals(unstakeResponseList, staking.call("getUserUnstakeInfo", Address.fromString(
