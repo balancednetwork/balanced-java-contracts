@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static network.balanced.score.core.staking.utils.Constant.ONE_EXA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
@@ -314,7 +315,7 @@ class StakingTest extends TestBase {
             utilities.when(() -> Context.call(sicx.getAddress(), "totalSupply")).thenReturn(BigInteger.valueOf(5L));
 
             Score staking = sm.deploy(owner, Staking.class);
-            assertEquals(Constant.DENOMINATOR.multiply(BigInteger.valueOf(3L)), staking.call("getRate"));
+            assertEquals(ONE_EXA.multiply(BigInteger.valueOf(3L)), staking.call("getRate"));
 
 
         } catch (Exception e) {
@@ -393,7 +394,7 @@ class StakingTest extends TestBase {
                     .thenReturn(_prep_delegations);
             staking.invoke(owner, "setSicxAddress", sicx.getAddress());
             when(_sICX_address.get()).thenReturn(sicx.getAddress());
-            when(_rate.getOrDefault(BigInteger.ZERO)).thenReturn(Constant.DENOMINATOR);
+            when(_rate.getOrDefault(BigInteger.ZERO)).thenReturn(ONE_EXA);
             when(_prep_delegations.getOrDefault("hx55814f724bbffe49bfa4555535cd9d7e0e1dff32", BigInteger.ZERO)).thenReturn(new BigInteger("50000000000000000000"));
             when(_prep_delegations.getOrDefault("hx55814f724bbffe49bfa4555535cd9d7e0e1dff31", BigInteger.ZERO)).thenReturn(new BigInteger("50000000000000000000"));
             utilities.when(() -> Context.call(sicx.getAddress(), "balanceOf", owner.getAddress())).thenReturn(new BigInteger("100000000000000000000"));
@@ -482,7 +483,7 @@ class StakingTest extends TestBase {
             Score staking = sm.deploy(owner, Staking.class);
             Staking scoreSpy = (Staking) spy(staking.getInstance());
             staking.setInstance(scoreSpy);
-            doReturn(Constant.DENOMINATOR).when(scoreSpy).getRate();
+            doReturn(ONE_EXA).when(scoreSpy).getRate();
             doNothing().when(scoreSpy).checkForBalance();
             doNothing().when(scoreSpy).checkForIscore();
             doReturn(new BigInteger("4000000000000000000")).when(scoreSpy).getTotalStake();
@@ -613,7 +614,7 @@ class StakingTest extends TestBase {
             utilities.when(() -> Context.newDictDB("_prep_delegations", BigInteger.class))
                     .thenReturn(_prep_delegations);
             when(_sICX_address.get()).thenReturn(owner.getAddress());
-            when(_rate.getOrDefault(BigInteger.ZERO)).thenReturn(Constant.DENOMINATOR);
+            when(_rate.getOrDefault(BigInteger.ZERO)).thenReturn(ONE_EXA);
             Score staking = sm.deploy(owner, Staking.class);
             Staking scoreSpy = (Staking) spy(staking.getInstance());
             staking.setInstance(scoreSpy);
@@ -628,7 +629,7 @@ class StakingTest extends TestBase {
             staking.invoke(owner, "toggleStakingOn");
             staking.invoke(owner, "transferUpdateDelegations", Address.fromString(
                             "hx55814f724bbffe49bfa4555535cd9d7e0e1dff31"),
-                    Address.fromString("hx55814f724bbffe49bfa4555535cd9d7e0e1dff32"), Constant.DENOMINATOR);
+                    Address.fromString("hx55814f724bbffe49bfa4555535cd9d7e0e1dff32"), ONE_EXA);
             prepDict = (Map<String, BigInteger>) staking.call("getPrepDelegations");
             assertEquals(prepDict.get("hx0b047c751658f7ce1b2595da34d57a0e7dad357d"),
                     BigInteger.valueOf(1000000000000000000L));
@@ -664,8 +665,8 @@ class StakingTest extends TestBase {
             utilities.when(() -> Context.call(sicx.getAddress(), "mintTo", owner.getAddress(), new BigInteger(
                     "100000000000000000000"), new byte[12])).thenReturn(new BigInteger("0"));
             utilities.when(Context::getValue).thenReturn(new BigInteger("100000000000000000000"));
-            when(_rate.getOrDefault(BigInteger.ZERO)).thenReturn(Constant.DENOMINATOR);
-            when(_total_stake.getOrDefault(BigInteger.ZERO)).thenReturn(Constant.DENOMINATOR);
+            when(_rate.getOrDefault(BigInteger.ZERO)).thenReturn(ONE_EXA);
+            when(_total_stake.getOrDefault(BigInteger.ZERO)).thenReturn(ONE_EXA);
             Score staking = sm.deploy(owner, Staking.class);
             Staking scoreSpy = (Staking) spy(staking.getInstance());
             staking.setInstance(scoreSpy);
@@ -750,8 +751,8 @@ class StakingTest extends TestBase {
             utilities.when(() -> Context.call(sicx.getAddress(), "burn", new BigInteger("100000000000000000000"))).thenReturn(new BigInteger("0"));
             utilities.when(() -> Context.call(Constant.SYSTEM_SCORE_ADDRESS, "getStake",
                     Address.fromString("cx0000000000000000000000000000000000000004"))).thenReturn(stakedInfo);
-            when(_rate.getOrDefault(BigInteger.ZERO)).thenReturn(Constant.DENOMINATOR);
-            when(sicxSupply.getOrDefault(BigInteger.ZERO)).thenReturn(Constant.DENOMINATOR);
+            when(_rate.getOrDefault(BigInteger.ZERO)).thenReturn(ONE_EXA);
+            when(sicxSupply.getOrDefault(BigInteger.ZERO)).thenReturn(ONE_EXA);
             when(_total_stake.getOrDefault(BigInteger.ZERO)).thenReturn(new BigInteger("500000000000000000000"));
             when(_sICX_address.get()).thenReturn(sicx.getAddress());
             when(_prep_delegations.getOrDefault("hx0b047c751658f7ce1b2595da34d57a0e7dad357d", BigInteger.ZERO)).thenReturn(new BigInteger("100000000000000000000"));

@@ -32,6 +32,7 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+import static network.balanced.score.core.staking.utils.Constant.ONE_EXA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
@@ -127,8 +128,8 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
 
         for (Address prep : prepList) {
             if (contains(prep, topPreps)) {
-                userExpectedDelegations.put(prep.toString(), Constant.DENOMINATOR);
-                expectedPrepDelegations.put(prep.toString(), Constant.DENOMINATOR);
+                userExpectedDelegations.put(prep.toString(), ONE_EXA);
+                expectedPrepDelegations.put(prep.toString(), ONE_EXA);
             }
         }
 

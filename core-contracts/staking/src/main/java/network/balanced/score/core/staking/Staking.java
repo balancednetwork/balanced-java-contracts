@@ -72,7 +72,7 @@ public class Staking {
             BigInteger nextPrepTerm = (BigInteger) termDetails.get("nextPRepTerm");
             blockHeightWeek.set(nextPrepTerm);
             blockHeightDay.set(nextPrepTerm);
-            rate.set(Constant.DENOMINATOR);
+            rate.set(ONE_EXA);
             distributing.set(false);
             setTopPreps();
             unstakeBatchLimit.set(Constant.DEFAULT_UNSTAKE_BATCH_LIMIT);
@@ -146,7 +146,7 @@ public class Staking {
 
     @External(readonly = true)
     public BigInteger getUnstakeBatchLimit() {
-        return unstakeBatchLimit.getOrDefault(BigInteger.ZERO);
+        return unstakeBatchLimit.get();
     }
 
     @External(readonly = true)
@@ -203,8 +203,7 @@ public class Staking {
     }
 
     public BigInteger percentToIcx(BigInteger votingPercentage, BigInteger totalAmount) {
-        BigInteger numerator = votingPercentage.multiply(totalAmount);
-        return numerator.divide(Constant.DENOMINATOR.multiply(Constant.HUNDRED));
+        return votingPercentage.multiply(totalAmount).divide(HUNDRED_PERCENTAGE);
     }
 
     public void setAddressDelegations(Address to, Address prep, BigInteger votesInPer, BigInteger totalIcxHold) {
@@ -352,10 +351,10 @@ public class Staking {
         BigInteger totalStake = this.totalStake.getOrDefault(BigInteger.ZERO);
         BigInteger totalSupply = (BigInteger) Context.call(sicxAddress.get(), "totalSupply");
         BigInteger rate;
-        if (totalStake.compareTo(BigInteger.ZERO) == 0) {
-            rate = Constant.DENOMINATOR;
+        if (totalStake.equals(BigInteger.ZERO)) {
+            rate = ONE_EXA;
         } else {
-            rate = (totalStake.add(dailyReward.getOrDefault(BigInteger.ZERO)).multiply(Constant.DENOMINATOR)).divide(totalSupply);
+            rate = (totalStake.add(dailyReward.getOrDefault(BigInteger.ZERO)).multiply(ONE_EXA)).divide(totalSupply);
         }
         return rate;
     }
@@ -406,7 +405,7 @@ public class Staking {
             StringBuilder addressDelegation = new StringBuilder();
             BigInteger balance = (BigInteger) Context.call(sicxAddress.get(), "balanceOf", to);
             BigInteger userIcxBalance =
-                    (balance.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(Constant.DENOMINATOR);
+                    (balance.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(ONE_EXA);
             for (int i = 0; i < this.topPreps.size(); i++) {
                 Address prep = this.topPreps.get(i);
                 addressDelegation.append(prep).append(":").append(evenlyDistribution).append(".");
@@ -414,10 +413,8 @@ public class Staking {
             }
             addressDelegations.set(to.toString(), addressDelegation.toString());
         } else {
-            BigInteger evenlyDistribution =
-                    (Constant.DENOMINATOR.multiply(amountToDistribute)).divide(Constant.TOP_PREP_COUNT);
-            value = evenlyDistribution.divide(Constant.DENOMINATOR);
-
+            BigInteger evenlyDistribution = (ONE_EXA.multiply(amountToDistribute)).divide(Constant.TOP_PREP_COUNT);
+            value = evenlyDistribution.divide(ONE_EXA);
         }
         return value;
     }
@@ -445,14 +442,13 @@ public class Staking {
         Map<String, BigInteger> previousDelegations = delegationInPer(to);
         BigInteger balance = (BigInteger) Context.call(sicxAddress.get(), "balanceOf", to);
         BigInteger icxHoldPreviously =
-                (balance.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(Constant.DENOMINATOR);
+                (balance.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(ONE_EXA);
         if (!previousDelegations.isEmpty()) {
             addressDelegations.set(addressStr, "");
             for (String prep : previousDelegations.keySet()) {
                 BigInteger prepDelegations = this.prepDelegations.getOrDefault(prep, BigInteger.ZERO);
                 BigInteger votesPer = previousDelegations.get(prep);
-                BigInteger votesIcx =
-                        (votesPer.multiply(icxHoldPreviously)).divide(Constant.DENOMINATOR.multiply(Constant.HUNDRED));
+                BigInteger votesIcx = votesPer.multiply(icxHoldPreviously).divide(HUNDRED_PERCENTAGE);
                 this.prepDelegations.set(prep, prepDelegations.subtract(votesIcx));
             }
         }
@@ -480,10 +476,9 @@ public class Staking {
         performChecks();
         Map<String, BigInteger> previousDelegations = removePreviousDelegations(to);
         BigInteger balance = (BigInteger) Context.call(sicxAddress.get(), "balanceOf", to);
-        BigInteger icxHoldPreviously =
-                (balance.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(Constant.DENOMINATOR);
+        BigInteger icxHoldPreviously = (balance.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(ONE_EXA);
         BigInteger totalPer = delegateVotes(to, _user_delegations, icxHoldPreviously);
-        if (totalPer.compareTo(Constant.HUNDRED.multiply(Constant.DENOMINATOR)) != 0) {
+        if (totalPer.compareTo(HUNDRED_PERCENTAGE) != 0) {
             Context.revert(Constant.TAG + ": Total delegations should be 100%.Your delegation preference is ");
         }
         if (!previousDelegations.isEmpty()) {
@@ -514,10 +509,8 @@ public class Staking {
             this.totalStake.set(getTotalStake().add(dailyReward));
             for (Address prep : getPrepList()) {
                 BigInteger valueInIcx = prepDelegations.getOrDefault(prep.toString(), BigInteger.ZERO);
-                BigInteger weightagePer =
-                        ((valueInIcx.multiply(Constant.DENOMINATOR)).divide(totalStake)).multiply(Constant.HUNDRED);
-                BigInteger prepReward =
-                        ((weightagePer.divide(Constant.HUNDRED).multiply(dailyReward))).divide(Constant.DENOMINATOR);
+                BigInteger weightagePer = valueInIcx.multiply(HUNDRED_PERCENTAGE).divide(totalStake);
+                BigInteger prepReward = weightagePer.multiply(dailyReward).divide(HUNDRED_PERCENTAGE);
                 setPrepDelegations(prep, prepReward);
             }
             this.dailyReward.set(BigInteger.ZERO);
@@ -561,19 +554,17 @@ public class Staking {
             _to = Context.getCaller();
         }
         BigInteger balance = (BigInteger) Context.call(sicxAddress.get(), "balanceOf", _to);
-        BigInteger userOldIcx = (balance.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(Constant.DENOMINATOR);
+        BigInteger userOldIcx = (balance.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(ONE_EXA);
         performChecks();
         totalStake.set(totalStake.getOrDefault(BigInteger.ZERO).add(Context.getValue()));
-        BigInteger amount =
-                (Constant.DENOMINATOR.multiply(Context.getValue())).divide(rate.getOrDefault(BigInteger.ZERO));
+        BigInteger amount = (ONE_EXA.multiply(Context.getValue())).divide(rate.getOrDefault(BigInteger.ZERO));
         Map<String, BigInteger> previousDelegations = delegationInPer(_to);
         Context.call(sicxAddress.get(), "mintTo", _to, amount, _data);
         BigInteger newBalance = (BigInteger) Context.call(sicxAddress.get(), "balanceOf", _to);
-        BigInteger userNewIcx = (newBalance.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(Constant.DENOMINATOR);
+        BigInteger userNewIcx = (newBalance.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(ONE_EXA);
         if (previousDelegations.isEmpty()) {
             BigInteger isFirstTx = BigInteger.ONE;
-            BigInteger amountToStakeInPer = Constant.DENOMINATOR.multiply(Constant.HUNDRED);
-            distributeEvenly(amountToStakeInPer, isFirstTx, _to);
+            distributeEvenly(HUNDRED_PERCENTAGE, isFirstTx, _to);
         } else {
             BigInteger deltaIcx = userNewIcx.subtract(userOldIcx);
             for (String prep : previousDelegations.keySet()) {
@@ -582,7 +573,7 @@ public class Staking {
         }
         stakeAndDelegate(checkForWeek());
         sicxSupply.set(sicxSupply.getOrDefault(BigInteger.ZERO).add(amount));
-        TokenTransfer(_to, amount, amount.divide(Constant.DENOMINATOR) + " sICX minted to " + _to);
+        TokenTransfer(_to, amount, amount + " sICX minted to " + _to);
         return amount;
 
     }
@@ -593,7 +584,7 @@ public class Staking {
         if (!Context.getCaller().equals(sicxAddress.get())) {
             Context.revert(Constant.TAG + ": Only sicx token contract can call this function.");
         }
-        BigInteger sicxToIcx = _value.multiply(rate.getOrDefault(BigInteger.ZERO)).divide(Constant.DENOMINATOR);
+        BigInteger sicxToIcx = _value.multiply(rate.getOrDefault(BigInteger.ZERO)).divide(ONE_EXA);
         Map<String, BigInteger> senderDelegations = delegationInPer(_from);
         Map<String, BigInteger> receiverDelegations = delegationInPer(_to);
         for (String prep : senderDelegations.keySet()) {
@@ -608,14 +599,11 @@ public class Staking {
             }
 
         } else {
-            BigInteger amountToDistribute = Constant.DENOMINATOR.multiply(Constant.HUNDRED);
-            distributeEvenly(amountToDistribute, BigInteger.ONE, _to);
-            BigInteger totalIcxHold =
-                    (_value.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(Constant.DENOMINATOR);
+            distributeEvenly(HUNDRED_PERCENTAGE, BigInteger.ONE, _to);
+            BigInteger totalIcxHold = (_value.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(ONE_EXA);
             Map<String, BigInteger> newDelegation = delegationInPer(_to);
             for (String prep : newDelegation.keySet()) {
-                BigInteger addedIcx =
-                        (newDelegation.get(prep).multiply(totalIcxHold)).divide(Constant.HUNDRED.multiply(Constant.DENOMINATOR));
+                BigInteger addedIcx = (newDelegation.get(prep).multiply(totalIcxHold)).divide(HUNDRED_PERCENTAGE);
                 setPrepDelegations(Address.fromString(prep), addedIcx);
             }
         }
@@ -700,14 +688,13 @@ public class Staking {
     @SuppressWarnings("unchecked")
     public void unstake(Address to, BigInteger value, Address senderAddress) {
         Context.call(sicxAddress.get(), "burn", value);
-        BigInteger amountToUnstake = (value.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(Constant.DENOMINATOR);
+        BigInteger amountToUnstake = (value.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(ONE_EXA);
         Map<String, BigInteger> delegationPercent = delegationInPer(to);
         totalUnstakeAmount.set(totalUnstakeAmount.getOrDefault(BigInteger.ZERO).add(amountToUnstake));
         for (String key : delegationPercent.keySet()) {
             BigInteger prepPercent = delegationPercent.get(key);
             BigInteger prepDelegations = this.prepDelegations.getOrDefault(key, BigInteger.ZERO);
-            BigInteger amountToRemove =
-                    ((prepPercent.divide(Constant.HUNDRED)).multiply(amountToUnstake)).divide(Constant.DENOMINATOR);
+            BigInteger amountToRemove = prepPercent.multiply(amountToUnstake).divide(HUNDRED_PERCENTAGE);
             this.prepDelegations.set(key, prepDelegations.subtract(amountToRemove));
         }
         totalStake.set(totalStake.getOrDefault(BigInteger.ZERO).subtract(amountToUnstake));

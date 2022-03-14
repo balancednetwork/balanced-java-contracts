@@ -22,12 +22,13 @@ import java.math.BigInteger;
 
 public class Constant {
     public static final String TAG = "Staked ICX Manager";
-    public static final Address SYSTEM_SCORE_ADDRESS = Address.fromString("cx0000000000000000000000000000000000000000");
-    public static final BigInteger DENOMINATOR = BigInteger.valueOf(1000000000000000000L);
+    public static final Address SYSTEM_SCORE_ADDRESS = getSystemScoreAddress();
+    public static final BigInteger ONE_EXA = pow10(18);
     public static final BigInteger HUNDRED = BigInteger.valueOf(100L);
-    public static final BigInteger TOP_PREP_COUNT = BigInteger.valueOf(100L);
+    public static final BigInteger HUNDRED_PERCENTAGE = HUNDRED.multiply(ONE_EXA);
+    public static final BigInteger TOP_PREP_COUNT = HUNDRED;
     public static final BigInteger DEFAULT_UNSTAKE_BATCH_LIMIT = BigInteger.valueOf(200L);
-    public static final BigInteger MAX_ITERATION_LOOP = BigInteger.valueOf(100L);
+    public static final BigInteger MAX_ITERATION_LOOP = HUNDRED;
     public static final BigInteger DEFAULT_DECIMAL_VALUE = BigInteger.valueOf(18L);
 
     public static final String SICX_SUPPLY = "sICX_supply";
@@ -49,4 +50,18 @@ public class Constant {
     public static final String STAKING_ON = "staking_on";
     public static final String ICX_PAYABLE = "icx_payable";
     public static final String ICX_TO_CLAIM = "icx_to_claim";
+
+    private static BigInteger pow10(int exponent) {
+        BigInteger result = BigInteger.ONE;
+        for (int i = 0; i < exponent; i++) {
+            result = result.multiply(BigInteger.TEN);
+        }
+        return result;
+    }
+
+    private static Address getSystemScoreAddress() {
+        byte[] rawAddress = new byte[Address.LENGTH];
+        rawAddress[0] = 1;
+        return new Address(rawAddress);
+    }
 }
