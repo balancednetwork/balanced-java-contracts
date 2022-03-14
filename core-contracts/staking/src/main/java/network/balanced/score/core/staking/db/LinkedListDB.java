@@ -27,6 +27,7 @@ import java.util.List;
 
 public class LinkedListDB {
     private static final String NAME = "_LINKED_LISTDB";
+    private static final BigInteger DEFAULT_NODE_ID = BigInteger.ZERO;
 
     public final VarDB<BigInteger> headId;
     public final VarDB<BigInteger> tailId;
@@ -61,7 +62,6 @@ public class LinkedListDB {
         NodeDB node = createNodeInstance(nodeId);
         if (node.exists()) {
             node.setValues(key, value, blockHeight, senderAddress);
-
         } else {
             Context.revert("There is no node of the provided node id.");
         }
@@ -121,7 +121,7 @@ public class LinkedListDB {
             NodeDB oldHead = getNode(headId.getOrDefault(BigInteger.ZERO));
             BigInteger newHead = oldHead.getNext();
             headId.set(newHead);
-            getNode(newHead).setPrev(BigInteger.ZERO);
+            getNode(newHead).setPrev(DEFAULT_NODE_ID);
             oldHead.delete();
             length.set(size.subtract(BigInteger.ONE));
         }
@@ -136,16 +136,20 @@ public class LinkedListDB {
             NodeDB oldTail = getNode(tailId.get());
             BigInteger newTail = oldTail.getPrev();
             tailId.set(newTail);
-            getNode(newTail).setNext(BigInteger.ZERO);
+            getNode(newTail).setNext(DEFAULT_NODE_ID);
             oldTail.delete();
             length.set(size.subtract(BigInteger.ONE));
         }
     }
 
     public void remove(BigInteger curId) {
-        if (curId.equals(headId.getOrDefault(BigInteger.ZERO))) {
+        BigInteger size = length.getOrDefault(BigInteger.ZERO);
+        if (size.equals(BigInteger.ZERO)) {
+            return;
+        }
+        if (curId.equals(headId.getOrDefault(DEFAULT_NODE_ID))) {
             removeHead();
-        } else if (curId.equals(tailId.getOrDefault(BigInteger.ZERO))) {
+        } else if (curId.equals(tailId.getOrDefault(DEFAULT_NODE_ID))) {
             removeTail();
         } else {
             NodeDB cur = getNode(curId);
@@ -180,25 +184,24 @@ public class LinkedListDB {
     }
 
     public List<List<Object>> iterate() {
-        BigInteger curId = headId.getOrDefault(BigInteger.ZERO);
+        BigInteger curId = headId.getOrDefault(DEFAULT_NODE_ID);
         List<List<Object>> newList = new ArrayList<>();
 
-        if (curId.equals(BigInteger.ZERO)) {
+        if (curId.equals(DEFAULT_NODE_ID)) {
             return newList;
         }
         NodeDB node = getNode(curId);
         newList.add(List.of(curId, node.getValue(), node.getKey(), node.getBlockHeight(), node.getSenderAddress()));
 
-        BigInteger tailId = this.tailId.getOrDefault(BigInteger.ZERO);
+        BigInteger tailId = this.tailId.getOrDefault(DEFAULT_NODE_ID);
         while (!curId.equals(tailId)) {
             curId = node.getNext();
             node = getNode(curId);
             newList.add(List.of(curId, node.getValue(), node.getKey(), node.getBlockHeight(), node.getSenderAddress()));
-            tailId = this.tailId.getOrDefault(BigInteger.ZERO);
+            tailId = this.tailId.getOrDefault(DEFAULT_NODE_ID);
         }
         return newList;
     }
-
 
     private void LinkedNodeAlreadyExists(String name, BigInteger nodeId) {
         Context.revert("Linked List " + name + "already exists of nodeId." + nodeId.toString());
@@ -207,6 +210,5 @@ public class LinkedListDB {
     private void LinkedNodeNotFound(String name, BigInteger nodeId) {
         Context.revert("Linked List  " + name + " Node not found of nodeId " + nodeId.toString());
     }
-
 
 }
