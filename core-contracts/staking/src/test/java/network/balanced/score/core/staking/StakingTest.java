@@ -78,8 +78,8 @@ class StakingTest extends TestBase {
         assert (sicx.getAddress().isContract());
 
         try {
-            utilities.when(() -> Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "getIISSInfo")).thenReturn(termDetails);
-            utilities.when(() -> Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "getPReps", 1, 3)).thenReturn(getPreps);
+            utilities.when(() -> Context.call(Constant.SYSTEM_SCORE_ADDRESS, "getIISSInfo")).thenReturn(termDetails);
+            utilities.when(() -> Context.call(Constant.SYSTEM_SCORE_ADDRESS, "getPReps", 1, 3)).thenReturn(getPreps);
             staking = sm.deploy(owner, Staking.class);
 
             scoreSpy = (Staking) spy(staking.getInstance());
@@ -197,9 +197,9 @@ class StakingTest extends TestBase {
         iscore.put("iscore", "0x0");
 
         try {
-            utilities.when(() -> Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "queryIScore",
+            utilities.when(() -> Context.call(Constant.SYSTEM_SCORE_ADDRESS, "queryIScore",
                     staking.getAddress())).thenReturn(iscore);
-            utilities.when(() -> Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "claimIScore")).thenReturn(0);
+            utilities.when(() -> Context.call(Constant.SYSTEM_SCORE_ADDRESS, "claimIScore")).thenReturn(0);
             staking.invoke(owner, "checkForIscore");
             assertEquals(false, staking.call("getDistributing"));
 
@@ -213,9 +213,9 @@ class StakingTest extends TestBase {
         iscore2.put("estimatedICX", BigInteger.valueOf(5L));
         iscore2.put("iscore", "0x0");
         try {
-            utilities.when(() -> Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "queryIScore",
+            utilities.when(() -> Context.call(Constant.SYSTEM_SCORE_ADDRESS, "queryIScore",
                     staking.getAddress())).thenReturn(iscore2);
-            utilities.when(() -> Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "claimIScore")).thenReturn(0);
+            utilities.when(() -> Context.call(Constant.SYSTEM_SCORE_ADDRESS, "claimIScore")).thenReturn(0);
             staking.invoke(owner, "checkForIscore");
             assertEquals(true, staking.call("getDistributing"));
         } catch (Exception e) {
@@ -227,7 +227,7 @@ class StakingTest extends TestBase {
     @Test
     void stake() {
         try {
-            utilities.when(() -> Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "setStake",
+            utilities.when(() -> Context.call(Constant.SYSTEM_SCORE_ADDRESS, "setStake",
                     BigInteger.valueOf(5L))).thenReturn(0);
             staking.invoke(owner, "stake", BigInteger.valueOf(5L));
 
@@ -431,7 +431,7 @@ class StakingTest extends TestBase {
             Score staking = sm.deploy(owner, Staking.class);
             Staking scoreSpy = (Staking) spy(staking.getInstance());
             staking.setInstance(scoreSpy);
-            utilities.when(() -> Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "setDelegation",
+            utilities.when(() -> Context.call(Constant.SYSTEM_SCORE_ADDRESS, "setDelegation",
                     delegationList)).thenReturn(0);
             staking.invoke(owner, "delegations", new BigInteger("50000000000000000000"));
         } catch (Exception e) {
@@ -473,7 +473,7 @@ class StakingTest extends TestBase {
             when(_total_unstake_amount.getOrDefault(BigInteger.ZERO)).thenReturn(new BigInteger("1000000000000000000"));
             when(_icx_to_claim.getOrDefault(BigInteger.ZERO)).thenReturn(BigInteger.ZERO);
             when(_total_stake.getOrDefault(BigInteger.ZERO)).thenReturn(new BigInteger("4000000000000000000"));
-            utilities.when(() -> Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "getStake",
+            utilities.when(() -> Context.call(Constant.SYSTEM_SCORE_ADDRESS, "getStake",
                     Address.fromString("cx0000000000000000000000000000000000000004"))).thenReturn(stakedInfo);
             utilities.when(Context::getValue).thenReturn(BigInteger.ZERO);
             when(_prep_delegations.getOrDefault("hx0b047c751658f7ce1b2595da34d57a0e7dad357d", BigInteger.ZERO)).thenReturn(new BigInteger("2000000000000000000"));
@@ -577,7 +577,7 @@ class StakingTest extends TestBase {
         List<Address> topPreps;
         termDetails.put("nextPRepTerm", BigInteger.valueOf(304400));
         try {
-            utilities.when(() -> Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "getIISSInfo")).thenReturn(termDetails);
+            utilities.when(() -> Context.call(Constant.SYSTEM_SCORE_ADDRESS, "getIISSInfo")).thenReturn(termDetails);
             staking.invoke(owner, "checkForWeek");
 
 
@@ -748,7 +748,7 @@ class StakingTest extends TestBase {
             utilities.when(() -> Context.newVarDB("_total_stake", BigInteger.class))
                     .thenReturn(_total_stake);
             utilities.when(() -> Context.call(sicx.getAddress(), "burn", new BigInteger("100000000000000000000"))).thenReturn(new BigInteger("0"));
-            utilities.when(() -> Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "getStake",
+            utilities.when(() -> Context.call(Constant.SYSTEM_SCORE_ADDRESS, "getStake",
                     Address.fromString("cx0000000000000000000000000000000000000004"))).thenReturn(stakedInfo);
             when(_rate.getOrDefault(BigInteger.ZERO)).thenReturn(Constant.DENOMINATOR);
             when(sicxSupply.getOrDefault(BigInteger.ZERO)).thenReturn(Constant.DENOMINATOR);

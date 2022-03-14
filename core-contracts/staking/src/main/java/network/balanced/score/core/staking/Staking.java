@@ -41,6 +41,7 @@ import scorex.util.StringTokenizer;
 
 
 import static network.balanced.score.core.staking.utils.Checks.*;
+import static network.balanced.score.core.staking.utils.Constant.*;
 
 public class Staking {
 
@@ -293,18 +294,18 @@ public class Staking {
     @SuppressWarnings("unchecked")
     public void claimIscore() {
         Map<String, Object> iscoreDetails =
-                (Map<String, Object>) Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "queryIScore",
+                (Map<String, Object>) Context.call(SYSTEM_SCORE_ADDRESS, "queryIScore",
                         Context.getAddress());
         BigInteger iscoreGenerated = (BigInteger) iscoreDetails.get("estimatedICX");
         if (iscoreGenerated.compareTo(BigInteger.ZERO) > 0) {
-            Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "claimIScore");
+            Context.call(SYSTEM_SCORE_ADDRESS, "claimIScore");
             IscoreClaimed(BigInteger.valueOf(Context.getBlockHeight()), iscoreGenerated);
             distributing.set(true);
         }
     }
 
     public void stake(BigInteger stakeValue) {
-        Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "setStake", stakeValue);
+        Context.call(SYSTEM_SCORE_ADDRESS, "setStake", stakeValue);
     }
 
     @External
@@ -337,8 +338,7 @@ public class Staking {
     @SuppressWarnings("unchecked")
     public void setTopPreps() {
         Map<String, Object> prepDict =
-                (Map<String, Object>) Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "getPReps", 1,
-                        Constant.TOP_PREP_COUNT);
+                (Map<String, Object>) Context.call(SYSTEM_SCORE_ADDRESS, "getPReps", 1, Constant.TOP_PREP_COUNT);
         List<Map<String, Object>> prepDetails = (List<Map<String, Object>>) prepDict.get("preps");
         List<Address> addresses = getPrepList();
         for (Map<String, Object> preps : prepDetails) {
@@ -480,8 +480,7 @@ public class Staking {
 
     @SuppressWarnings("unchecked")
     public BigInteger checkForWeek() {
-        Map<String, Object> termDetails =
-                (Map<String, Object>) Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "getIISSInfo");
+        Map<String, Object> termDetails = (Map<String, Object>) Context.call(SYSTEM_SCORE_ADDRESS, "getIISSInfo");
         BigInteger nextPrepTerm = (BigInteger) termDetails.get("nextPRepTerm");
         if (nextPrepTerm.compareTo(blockHeightWeek.getOrDefault(BigInteger.ZERO).add(BigInteger.valueOf(302400L))) > 0) {
             blockHeightWeek.set(nextPrepTerm);
@@ -514,9 +513,8 @@ public class Staking {
     @SuppressWarnings("unchecked")
     public void performChecks() {
         if (distributing.get()) {
-            Map<String, Object> stakeInNetwork =
-                    (Map<String, Object>) Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "getStake",
-                            Context.getAddress());
+            Map<String, Object> stakeInNetwork = (Map<String, Object>) Context.call(SYSTEM_SCORE_ADDRESS, "getStake",
+                    Context.getAddress());
             BigInteger totalUnstakeInNetwork = BigInteger.ZERO;
             List<Map<String, Object>> arr = new ArrayList<>();
             List<Map<String, Object>> result = (List<Map<String, Object>>) stakeInNetwork.get("unstakes");
@@ -568,7 +566,7 @@ public class Staking {
             delegateDict.put("value", valueInIcx);
             delegationList.add(delegateDict);
         }
-        Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "setDelegation", delegationList);
+        Context.call(SYSTEM_SCORE_ADDRESS, "setDelegation", delegationList);
     }
 
     @External
@@ -735,9 +733,8 @@ public class Staking {
         totalStake.set(totalStake.getOrDefault(BigInteger.ZERO).subtract(amountToUnstake));
         delegations(resetTopPreps());
         stake(totalStake.getOrDefault(BigInteger.ZERO));
-        Map<String, Object> stakeInNetwork =
-                (Map<String, Object>) Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "getStake",
-                        Context.getAddress());
+        Map<String, Object> stakeInNetwork = (Map<String, Object>) Context.call(SYSTEM_SCORE_ADDRESS, "getStake",
+                Context.getAddress());
         Address addressToSend = to;
         if (senderAddress != null) {
             addressToSend = senderAddress;
