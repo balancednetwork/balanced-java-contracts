@@ -321,11 +321,10 @@ public class Staking {
         Map<String, Object> prepDict =
                 (Map<String, Object>) Context.call(SYSTEM_SCORE_ADDRESS, "getPReps", 1, Constant.TOP_PREP_COUNT);
         List<Map<String, Object>> prepDetails = (List<Map<String, Object>>) prepDict.get("preps");
-        List<Address> addresses = getPrepList();
+        List<Address> allPrepAddresses = getPrepList();
         for (Map<String, Object> preps : prepDetails) {
             Address prepAddress = (Address) preps.get("address");
-            if (!contains(prepAddress, addresses)) {
-                addresses.add(prepAddress);
+            if (!allPrepAddresses.contains(prepAddress)) {
                 prepList.add(prepAddress);
             }
             topPreps.add(prepAddress);
@@ -358,28 +357,18 @@ public class Staking {
         return rate;
     }
 
-    public boolean contains(Address target, List<Address> addresses) {
-        for (Address address : addresses) {
-            if (address.equals(target)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public BigInteger delegateVotes(Address to, PrepDelegations[] userDelegations, BigInteger userIcxHold) {
         BigInteger amountToStake = BigInteger.ZERO;
         List<Address> similarPrepCheck = new ArrayList<>();
         StringBuilder addressDelegations = new StringBuilder();
-        List<Address> addresses = getPrepList();
+        List<Address> allPrepAddresses = getPrepList();
         for (PrepDelegations singlePrep : userDelegations) {
             Address prepAddress = singlePrep._address;
             BigInteger votesInPer = singlePrep._votes_in_per;
-            if (!contains(prepAddress, addresses)) {
-                addresses.add(prepAddress);
+            if (!allPrepAddresses.contains(prepAddress)) {
                 prepList.add(prepAddress);
             }
-            if (similarPrepCheck.toString().contains(prepAddress.toString())) {
+            if (similarPrepCheck.contains(prepAddress)) {
                 Context.revert(Constant.TAG + ": You can not delegate same Prep twice in a transaction.Your " +
                         "delegation preference is" + userDelegations);
             }
@@ -425,10 +414,10 @@ public class Staking {
 
     public BigInteger resetTopPreps() {
         BigInteger toDistribute = BigInteger.ZERO;
-        List<Address> addresses = getTopPreps();
+        List<Address> allPrepAddresses = getTopPreps();
         for (int i = 0; i < this.prepList.size(); i++) {
             Address prep = this.prepList.get(i);
-            if (!contains(prep, addresses)) {
+            if (!allPrepAddresses.contains(prep)) {
                 BigInteger prepDelegations = this.prepDelegations.getOrDefault(prep.toString(), BigInteger.ZERO);
                 toDistribute = toDistribute.add(prepDelegations);
             }
