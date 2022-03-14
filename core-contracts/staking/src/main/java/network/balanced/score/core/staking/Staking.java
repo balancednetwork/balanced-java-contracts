@@ -80,7 +80,7 @@ public class Staking {
         }
     }
 
-
+    // Event logs
     @EventLog(indexed = 3)
     public void Transfer(Address _from, Address _to, BigInteger _value, byte[] _data) {
     }
@@ -336,8 +336,7 @@ public class Staking {
     @External(readonly = true)
     public Map<String, BigInteger> getAddressDelegations(Address _address) {
         Map<String, BigInteger> delegationIcx = new HashMap<>();
-        Map<String, BigInteger> delegationPercent = new HashMap<>();
-        delegationPercent = delegationInPer(_address);
+        Map<String, BigInteger> delegationPercent = delegationInPer(_address);
         BigInteger balance = (BigInteger) Context.call(sicxAddress.get(), "balanceOf", _address);
         BigInteger totalIcxHold = (balance.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(Constant.DENOMINATOR);
         for (String name : delegationPercent.keySet()) {
@@ -637,8 +636,7 @@ public class Staking {
             delegationString = delegationString.substring(0, delegationString.length() - 1);
             StringTokenizer st = new StringTokenizer(delegationString, "\\.");
             Map<String, BigInteger> delegationPercent = new HashMap<>();
-            List<String> splittedList = new ArrayList<>();
-            splittedList = splitResult(st);
+            List<String> splittedList = splitResult(st);
             for (String item : splittedList) {
                 st = new StringTokenizer(item, ":");
                 splittedList = splitResult(st);
@@ -681,11 +679,11 @@ public class Staking {
             BigInteger unstakeAmount = (BigInteger) unstakeInfo.get(1);
             if (unstakeAmount.compareTo(balance) <= 0) {
                 payout = unstakeAmount;
-                linkedListDb.remove(linkedListDb.headId.getOrDefault(BigInteger.ZERO));
+                unstakeRequestList.remove(unstakeRequestList.headId.getOrDefault(BigInteger.ZERO));
             } else {
                 payout = balance;
 
-                linkedListDb.updateNode((Address) unstakeInfo.get(2), unstakeAmount.subtract(payout),
+                unstakeRequestList.updateNode((Address) unstakeInfo.get(2), unstakeAmount.subtract(payout),
                         (BigInteger) unstakeInfo.get(3), (Address) unstakeInfo.get(4),
                         (BigInteger) unstakeInfo.get(0));
             }
@@ -723,10 +721,10 @@ public class Staking {
         }
         List<Map<String, Object>> result = (List<Map<String, Object>>) stakeInNetwork.get("unstakes");
         Map<String, Object> recentUnstakeInfo = result.get(result.size() - 1);
-        linkedListDb.append(to, amountToUnstake,
+        unstakeRequestList.append(to, amountToUnstake,
                 (BigInteger) recentUnstakeInfo.get("unstakeBlockHeight"),
                 addressToSend,
-                linkedListDb.tailId.getOrDefault(BigInteger.ZERO).add(BigInteger.ONE));
+                unstakeRequestList.tailId.getOrDefault(BigInteger.ZERO).add(BigInteger.ONE));
         sicxSupply.set(sicxSupply.getOrDefault(BigInteger.ZERO).subtract(value));
         UnstakeRequest(addressToSend, amountToUnstake);
     }
@@ -734,7 +732,7 @@ public class Staking {
 
     @External(readonly = true)
     public List<List<Object>> getUnstakeInfo() {
-        List<List<Object>> linked_list_iter = linkedListDb.iterate();
+        List<List<Object>> linked_list_iter = unstakeRequestList.iterate();
         List<List<Object>> unstakeList = new ArrayList<>();
         unstakeList.addAll(linked_list_iter);
         return unstakeList;
@@ -743,7 +741,7 @@ public class Staking {
 
     @External(readonly = true)
     public List<Map<String, Object>> getUserUnstakeInfo(Address _address) {
-        List<List<Object>> linkedListIter = linkedListDb.iterate();
+        List<List<Object>> linkedListIter = unstakeRequestList.iterate();
         List<Map<String, Object>> response = new ArrayList<>();
         for (List<Object> newList : linkedListIter) {
             if (newList.get(4).equals(_address)) {
