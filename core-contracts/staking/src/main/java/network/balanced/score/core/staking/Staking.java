@@ -124,7 +124,7 @@ public class Staking {
 
     @External(readonly = true)
     public BigInteger getTodayRate() {
-        return rate.getOrDefault(BigInteger.ZERO);
+        return rate.getOrDefault(ONE_EXA);
     }
 
     @External
