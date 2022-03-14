@@ -66,16 +66,18 @@ public class Staking {
     private final LinkedListDB unstakeRequestList = new LinkedListDB("unstake_dict");
 
     public Staking() {
-        Map<String, Object> termDetails =
-                (Map<String, Object>) Context.call(Address.fromString(Constant.SYSTEM_SCORE_ADDRESS), "getIISSInfo");
-        BigInteger nextPrepTerm = (BigInteger) termDetails.get("nextPRepTerm");
-        blockHeightWeek.set(nextPrepTerm);
-        blockHeightDay.set(nextPrepTerm);
-        rate.set(Constant.DENOMINATOR);
-        distributing.set(false);
-        setTopPreps();
-        unstakeBatchLimit.set(Constant.DEFAULT_UNSTAKE_BATCH_LIMIT);
-        stakingOn.set(false);
+
+        if (blockHeightDay.get() == null) {
+            Map<String, Object> termDetails = (Map<String, Object>) Context.call(SYSTEM_SCORE_ADDRESS, "getIISSInfo");
+            BigInteger nextPrepTerm = (BigInteger) termDetails.get("nextPRepTerm");
+            blockHeightWeek.set(nextPrepTerm);
+            blockHeightDay.set(nextPrepTerm);
+            rate.set(Constant.DENOMINATOR);
+            distributing.set(false);
+            setTopPreps();
+            unstakeBatchLimit.set(Constant.DEFAULT_UNSTAKE_BATCH_LIMIT);
+            stakingOn.set(false);
+        }
     }
 
 
