@@ -700,11 +700,7 @@ public class Staking {
 
     @External(readonly = true)
     public List<List<Object>> getUnstakeInfo() {
-        List<List<Object>> linked_list_iter = unstakeRequestList.iterate();
-        List<List<Object>> unstakeList = new ArrayList<>();
-        unstakeList.addAll(linked_list_iter);
-        return unstakeList;
-
+        return unstakeRequestList.iterate();
     }
 
     @External(readonly = true)
