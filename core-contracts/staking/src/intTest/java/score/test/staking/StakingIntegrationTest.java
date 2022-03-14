@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import foundation.icon.score.client.DefaultScoreClient;
 import foundation.icon.score.client.ScoreClient;
 import network.balanced.score.core.interfaces.*;
 import network.balanced.score.core.test.ScoreIntegrationTest;
-import network.balanced.score.core.utils.Constant;
+import network.balanced.score.core.staking.utils.Constant;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import score.Address;
