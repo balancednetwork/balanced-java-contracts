@@ -47,14 +47,12 @@ import network.balanced.score.core.Constants;
 
 import java.util.Random;
 
-
 @DisplayName("Loans Tests")
 class LoansTests extends LoansTestsBase {
 
     @BeforeEach
     public void setupContractsAndWallets() throws Exception {
         super.setup();
-        // sm.getBlock().increase(DAY);
     }
 
     @Test
@@ -143,14 +141,15 @@ class LoansTests extends LoansTestsBase {
         takeLoanICX(account, "bnUSD", collateral, loan);
     
         // Assert
+        int day = (int) loans.call("getDay");
         Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", account.getAddress());
         Map<String, BigInteger> assets = (Map<String, BigInteger>) position.get("assets");
         assertEquals(1, position.get("pos_id"));
         assertEquals(account.getAddress(), position.get("address"));
-        assertEquals(0, position.get("snap_id"));
+        assertEquals(day, position.get("snap_id"));
         assertEquals(1, position.get("snaps_length"));
-        assertEquals(0, position.get("last_snap"));
-        assertEquals(0, position.get("first day"));
+        assertEquals(day, position.get("last_snap"));
+        assertEquals(day, position.get("first day"));
         assertEquals(loan.add(expectedFee), position.get("total_debt"));
         assertEquals(collateral, position.get("collateral"));
         assertEquals(collateral.multiply(EXA).divide(loan.add(expectedFee)), position.get("ratio"));
@@ -158,6 +157,91 @@ class LoansTests extends LoansTestsBase {
 
         assertEquals(loan.add(expectedFee), assets.get("bnUSD"));
         assertEquals(collateral, assets.get("sICX"));
+    }
+
+    @Test
+    void getPositionStanding_Mining() {
+        // Arrange
+        Account account = accounts.get(0);
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
+
+        // Act
+        takeLoanICX(account, "bnUSD", collateral, loan);
+    
+        // Assert
+        verifyStanding(Constants.Standings.MINING, account.getAddress());
+    }
+
+    @Test
+    void getPositionStanding_NotMining_toLowDebt() {
+        // Arrange
+        Account account = accounts.get(0);
+        BigInteger minMiningDebt = (BigInteger) getParam("min mining debt");
+        BigInteger collateral = minMiningDebt.multiply(BigInteger.TEN);
+        BigInteger loan = minMiningDebt.subtract(BigInteger.ONE.multiply(EXA));
+        BigInteger expectedFee = calculateFee(loan);
+
+        // Act
+        takeLoanICX(account, "bnUSD", collateral, loan);
+    
+        // Assert
+        verifyStanding(Constants.Standings.NOT_MINING, account.getAddress());
+    }
+
+    @Test
+    void getPositionStanding_NotMining_toHighDebt() {
+        // Arrange
+        Account account = accounts.get(0);
+        BigInteger miningRatio = (BigInteger) getParam("mining ratio");
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
+
+        // Act
+        takeLoanICX(account, "bnUSD", collateral, loan);
+        BigInteger newPrice = EXA.multiply(BigInteger.valueOf(2));
+        bnusd.invoke(admin, "setPrice", newPrice);
+    
+        // Assert
+        verifyStanding(Constants.Standings.NOT_MINING, account.getAddress());
+    }
+
+    @Test
+    void getPositionStanding_Locked() {
+        // Arrange
+        Account account = accounts.get(0);
+        BigInteger lockingRatio = (BigInteger) getParam("locking ratio");
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
+
+        // Act
+        takeLoanICX(account, "bnUSD", collateral, loan);
+        BigInteger newPrice = EXA.multiply(BigInteger.valueOf(4));
+        bnusd.invoke(admin, "setPrice", newPrice);
+    
+        // Assert
+        verifyStanding(Constants.Standings.LOCKED, account.getAddress());
+    }
+
+    @Test
+    void getPositionStanding_Liquidate() {
+        // Arrange
+        Account account = accounts.get(0);
+        BigInteger lockingRatio = (BigInteger) getParam("locking ratio");
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
+
+        // Act
+        takeLoanICX(account, "bnUSD", collateral, loan);
+        BigInteger newPrice = EXA.multiply(BigInteger.valueOf(6));
+        bnusd.invoke(admin, "setPrice", newPrice);
+    
+        // Assert
+        verifyStanding(Constants.Standings.LOCKED, account.getAddress());
     }
 
     @Test
@@ -247,7 +331,6 @@ class LoansTests extends LoansTestsBase {
 
         // Act
         takeLoanICX(account, "", collateral, loan);
-        // sm.call(account, collateral, loans.getAddress(), "depositAndBorrow", "", loan, account.getAddress(), BigInteger.ZERO);
 
         // Assert
         Map<String, Object> position = (Map<String, Object>)loans.call("getAccountPositions", account.getAddress());
@@ -269,7 +352,7 @@ class LoansTests extends LoansTestsBase {
         Executable depositAndBorrow = () -> takeLoanICX(account, "sICX", collateral, loan);
         expectErrorMessage(depositAndBorrow, expectedErrorMessage);
     }
-    // //TODO unactive asset
+    // TODO unactive asset
 
     @Test
     void DepositAndBorrow_OriginateLoan_LowerThanMinimum() {
@@ -824,10 +907,10 @@ class LoansTests extends LoansTestsBase {
         BigInteger sICXDexLiquidity = (BigInteger) sicx.call("balanceOf", dex.getAddress());
         BigInteger expectedBnusdRecived = bnUSDDexLiquidity.multiply(rebalanceAmount).divide(sICXDexLiquidity.add(rebalanceAmount));
 
-        //Act
+        // Act
         loans.invoke(admin, "raisePrice", rebalanceAmount);
 
-        //Assert
+        // Assert
         BigInteger remainingBnusd = expectedBnusdRecived;
 
         BigInteger accountZeroExpectedCollateralSold = rebalanceAmount.multiply(accountZeroDebt).divide(totalDebt);
@@ -883,10 +966,10 @@ class LoansTests extends LoansTestsBase {
         BigInteger sICXDexLiquidity = (BigInteger) sicx.call("balanceOf", dex.getAddress());
         BigInteger expectedBnusdRecived = bnUSDDexLiquidity.multiply(rebalanceAmount).divide(sICXDexLiquidity.add(rebalanceAmount));
 
-        //Act
+        // Act
         loans.invoke(admin, "raisePrice", totalTokenRequired);
 
-        //Assert
+        // Assert
         BigInteger remainingBnusd = expectedBnusdRecived;
 
         BigInteger accountZeroExpectedCollateralSold = rebalanceAmount.multiply(accountZeroDebt).divide(totalDebt);
@@ -938,10 +1021,10 @@ class LoansTests extends LoansTestsBase {
         BigInteger sICXDexLiquidity = (BigInteger) sicx.call("balanceOf", dex.getAddress());
         BigInteger expectedSICXRecived = sICXDexLiquidity.multiply(rebalanceAmount).divide(bnUSDDexLiquidity.add(rebalanceAmount));
 
-        //Act
+        // Act
         loans.invoke(admin, "lowerPrice", rebalanceAmount);
 
-        //Assert
+        // Assert
         BigInteger remainingSicx = expectedSICXRecived;
 
         BigInteger accountZeroExpectedCollateralAdded = remainingSicx.multiply(accountZeroDebt).divide(totalDebt);
@@ -997,10 +1080,10 @@ class LoansTests extends LoansTestsBase {
         BigInteger sICXDexLiquidity = (BigInteger) sicx.call("balanceOf", dex.getAddress());
         BigInteger expectedSICXRecived = sICXDexLiquidity.multiply(rebalanceAmount).divide(bnUSDDexLiquidity.add(rebalanceAmount));
 
-        //Act
+        // Act
         loans.invoke(admin, "lowerPrice", totalTokenRequired);
 
-        //Assert
+        // Assert
         BigInteger remainingSicx = expectedSICXRecived;
 
         BigInteger accountZeroExpectedCollateralAdded = remainingSicx.multiply(accountZeroDebt).divide(totalDebt);
@@ -1026,7 +1109,7 @@ class LoansTests extends LoansTestsBase {
 
     @Test
     void precompute_notYetCalled() {
-        //Arrange
+        // Arrange
         BigInteger accountZeroCollateral = BigInteger.valueOf(10000).multiply(EXA);
         BigInteger accountOneCollateral = BigInteger.valueOf(20000).multiply(EXA);
         BigInteger accountZeroLoan = BigInteger.valueOf(1000).multiply(EXA);
@@ -1036,13 +1119,13 @@ class LoansTests extends LoansTestsBase {
         BigInteger accountZeroDebt = accountZeroFee.add(accountZeroLoan);
         BigInteger accountOneDebt = accountOneFee.add(accountOneLoan);
   
-        //Act
+        // Act
         takeLoanICX(accounts.get(0), "bnUSD", accountZeroCollateral, accountZeroLoan);
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
      
         int day = (int) loans.call("getDay");
 
-        //Assert
+        // Assert
         int expectedNonZeroPositiosnToAdd = 2;
         int expectedPositiosnToRemove = 0;
         int expectedCurrentPrecomputeIndex = 0;
@@ -1061,7 +1144,7 @@ class LoansTests extends LoansTestsBase {
 
     @Test
     void precompute_complete() {
-        //Arrange
+        // Arrange
         BigInteger accountZeroCollateral = BigInteger.valueOf(10000).multiply(EXA);
         BigInteger accountOneCollateral = BigInteger.valueOf(20000).multiply(EXA);
         BigInteger accountZeroLoan = BigInteger.valueOf(1000).multiply(EXA);
@@ -1071,7 +1154,7 @@ class LoansTests extends LoansTestsBase {
         BigInteger accountZeroDebt = accountZeroFee.add(accountZeroLoan);
         BigInteger accountOneDebt = accountOneFee.add(accountOneLoan);
   
-        //Act
+        // Act
         takeLoanICX(accounts.get(0), "bnUSD", accountZeroCollateral, accountZeroLoan);
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
      
@@ -1079,7 +1162,7 @@ class LoansTests extends LoansTestsBase {
         rewards.invoke(admin, "precompute", day, 0);
         rewards.invoke(admin, "precompute", day, 2);
 
-        //Assert
+        // Assert
         int expectedNonZeroPositionsToAdd = 0;
         int expectedPositionsToRemove = 0;
         int expectedCurrentPrecomputeIndex = 2;
@@ -1098,7 +1181,7 @@ class LoansTests extends LoansTestsBase {
 
     @Test
     void precompute_OnlyAddPositions() {
-        //Arrange
+        // Arrange
         BigInteger accountZeroCollateral = BigInteger.valueOf(10000).multiply(EXA);
         BigInteger accountOneCollateral = BigInteger.valueOf(20000).multiply(EXA);
         BigInteger accountZeroLoan = BigInteger.valueOf(1000).multiply(EXA);
@@ -1108,14 +1191,14 @@ class LoansTests extends LoansTestsBase {
         BigInteger accountZeroDebt = accountZeroFee.add(accountZeroLoan);
         BigInteger accountOneDebt = accountOneFee.add(accountOneLoan);
   
-        //Act
+        // Act
         takeLoanICX(accounts.get(0), "bnUSD", accountZeroCollateral, accountZeroLoan);
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
      
         int day = (int) loans.call("getDay");
         rewards.invoke(admin, "precompute", day, 0);
 
-        //Assert
+        // Assert
         int expectedNonZeroPositionsToAdd = 0;
         int expectedPositionsToRemove = 0;
         int expectedCurrentPrecomputeIndex = 0;
@@ -1134,7 +1217,7 @@ class LoansTests extends LoansTestsBase {
 
     @Test
     void precompute_OnlyRemovePositions() {
-        //Arrange
+        // Arrange
         BigInteger accountZeroCollateral = BigInteger.valueOf(10000).multiply(EXA);
         BigInteger accountOneCollateral = BigInteger.valueOf(20000).multiply(EXA);
         BigInteger accountTwoCollateral = BigInteger.valueOf(30000).multiply(EXA);
@@ -1163,7 +1246,7 @@ class LoansTests extends LoansTestsBase {
         sm.getBlock().increase(DAY);
         loans.invoke(admin, "checkForNewDay");
 
-        //Act
+        // Act
         loans.invoke(accounts.get(0), "returnAsset", "bnUSD", accountZeroDebt, true);
         loans.invoke(accounts.get(1), "returnAsset", "bnUSD", accountOneDebt, true);
      
@@ -1172,7 +1255,7 @@ class LoansTests extends LoansTestsBase {
         rewards.invoke(admin, "precompute", day, 0);
         rewards.invoke(admin, "precompute", day, 2);
 
-        //Assert
+        // Assert
         int expectedNonZeroPositionsToAdd = 0;
         int expectedPositionsToRemove = 0;
         int expectedCurrentPrecomputeIndex = 1;
@@ -1191,7 +1274,7 @@ class LoansTests extends LoansTestsBase {
 
     @Test
     void precompute_calculatePartialStandings() {
-        //Arrange
+        // Arrange
         BigInteger accountZeroCollateral = BigInteger.valueOf(10000).multiply(EXA);
         BigInteger accountOneCollateral = BigInteger.valueOf(20000).multiply(EXA);
         BigInteger accountZeroLoan = BigInteger.valueOf(1000).multiply(EXA);
@@ -1201,7 +1284,7 @@ class LoansTests extends LoansTestsBase {
         BigInteger accountZeroDebt = accountZeroFee.add(accountZeroLoan);
         BigInteger accountOneDebt = accountOneFee.add(accountOneLoan);
   
-        //Act
+        // Act
         takeLoanICX(accounts.get(0), "bnUSD", accountZeroCollateral, accountZeroLoan);
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
      
@@ -1209,7 +1292,7 @@ class LoansTests extends LoansTestsBase {
         rewards.invoke(admin, "precompute", day, 0);
         rewards.invoke(admin, "precompute", day, 1);
 
-        //Assert
+        // Assert
         int expectedNonZeroPositionsToAdd = 0;
         int expectedPositionsToRemove = 0;
         int expectedCurrentPrecomputeIndex = 1;
@@ -1228,7 +1311,7 @@ class LoansTests extends LoansTestsBase {
 
     @Test
     void precompute_completeMultipleBatches() {
-        //Arrange
+        // Arrange
         BigInteger accountZeroCollateral = BigInteger.valueOf(10000).multiply(EXA);
         BigInteger accountOneCollateral = BigInteger.valueOf(20000).multiply(EXA);
         BigInteger accountZeroLoan = BigInteger.valueOf(1000).multiply(EXA);
@@ -1238,7 +1321,7 @@ class LoansTests extends LoansTestsBase {
         BigInteger accountZeroDebt = accountZeroFee.add(accountZeroLoan);
         BigInteger accountOneDebt = accountOneFee.add(accountOneLoan);
   
-        //Act
+        // Act
         takeLoanICX(accounts.get(0), "bnUSD", accountZeroCollateral, accountZeroLoan);
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
      
@@ -1247,7 +1330,7 @@ class LoansTests extends LoansTestsBase {
         rewards.invoke(admin, "precompute", day, 1);
         rewards.invoke(admin, "precompute", day, 1);
 
-        //Assert
+        // Assert
         int expectedNonZeroPositionsToAdd = 0;
         int expectedPositionsToRemove = 0;
         int expectedCurrentPrecomputeIndex = 2;
@@ -1262,5 +1345,131 @@ class LoansTests extends LoansTestsBase {
             day,
             expectedMiningCount
         );
+    }
+
+    @Test
+    void getDataBatch_AllSnapshotsCalculated() {
+        // Arrange
+        Address accountZeroAddress = accounts.get(0).getAddress();
+        Address accountOneAddress = accounts.get(1).getAddress();
+        Address accountTwoAddress = accounts.get(2).getAddress();
+        BigInteger accountZeroCollateral = BigInteger.valueOf(10000).multiply(EXA);
+        BigInteger accountOneCollateral = BigInteger.valueOf(20000).multiply(EXA);
+        BigInteger accountTwoCollateral = BigInteger.valueOf(30000).multiply(EXA);
+        BigInteger accountZeroLoan = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger accountOneLoan = BigInteger.valueOf(2000).multiply(EXA);
+        BigInteger accountTwoLoan = BigInteger.valueOf(3000).multiply(EXA);
+        BigInteger accountZeroFee = calculateFee(accountZeroLoan);
+        BigInteger accountOneFee = calculateFee(accountOneLoan);
+        BigInteger accountTwoFee = calculateFee(accountTwoLoan);
+        BigInteger accountZeroDebt = accountZeroFee.add(accountZeroLoan);
+        BigInteger accountOneDebt = accountOneFee.add(accountOneLoan);
+        BigInteger accountTwoDebt = accountTwoFee.add(accountTwoLoan);
+    
+        // Day 1
+        takeLoanICX(accounts.get(0), "bnUSD", accountZeroCollateral, accountZeroLoan);
+        takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
+
+        int day = (int) loans.call("getDay");
+        rewards.invoke(admin, "precompute", day, 0);
+        rewards.invoke(admin, "precompute", day, 2);
+        sm.getBlock().increase(DAY);
+
+        // Day 2
+        takeLoanICX(accounts.get(2), "bnUSD", accountTwoCollateral, accountTwoLoan);
+
+        day = (int) loans.call("getDay");
+        rewards.invoke(admin, "precompute", day, 0);
+        rewards.invoke(admin, "precompute", day, 3);
+        sm.getBlock().increase(DAY);
+
+        // Day 3
+        BigInteger accountOneRepaidDebt = BigInteger.valueOf(500).multiply(EXA);
+        loans.invoke(accounts.get(1), "returnAsset", "bnUSD", accountOneRepaidDebt, true);
+
+        day = (int) loans.call("getDay");
+        rewards.invoke(admin, "precompute", day, 0);
+        rewards.invoke(admin, "precompute", day, 3);
+        sm.getBlock().increase(DAY);
+
+        // Assert
+        Map<Address, BigInteger> snapshotBatch0 = (Map<Address, BigInteger>)loans.call("getDataBatch", "loans", day-2, 3, 0);
+        Map<Address, BigInteger> snapshotBatch1 = (Map<Address, BigInteger>)loans.call("getDataBatch", "loans", day-1, 3, 0);
+        Map<Address, BigInteger> snapshotBatch2 = (Map<Address, BigInteger>)loans.call("getDataBatch", "loans", day, 3, 0);
+
+        assertEquals(2, snapshotBatch0.size());
+        assertEquals(accountZeroDebt, snapshotBatch0.get(accountZeroAddress));
+        assertEquals(accountOneDebt, snapshotBatch0.get(accountOneAddress));
+
+        assertEquals(3, snapshotBatch1.size());
+        assertEquals(accountZeroDebt, snapshotBatch1.get(accountZeroAddress));
+        assertEquals(accountOneDebt, snapshotBatch1.get(accountOneAddress));
+        assertEquals(accountTwoDebt, snapshotBatch1.get(accountTwoAddress));
+
+        assertEquals(3, snapshotBatch2.size());
+        assertEquals(accountZeroDebt, snapshotBatch2.get(accountZeroAddress));
+        assertEquals(accountOneDebt.subtract(accountOneRepaidDebt), snapshotBatch2.get(accountOneAddress));
+        assertEquals(accountTwoDebt, snapshotBatch2.get(accountTwoAddress));
+    }
+
+    @Test
+    void getDataBatch_LastSnapshotNotCalculated() {
+        // Arrange
+        Address accountZeroAddress = accounts.get(0).getAddress();
+        Address accountOneAddress = accounts.get(1).getAddress();
+        Address accountTwoAddress = accounts.get(2).getAddress();
+        BigInteger accountZeroCollateral = BigInteger.valueOf(10000).multiply(EXA);
+        BigInteger accountOneCollateral = BigInteger.valueOf(20000).multiply(EXA);
+        BigInteger accountTwoCollateral = BigInteger.valueOf(30000).multiply(EXA);
+        BigInteger accountZeroLoan = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger accountOneLoan = BigInteger.valueOf(2000).multiply(EXA);
+        BigInteger accountTwoLoan = BigInteger.valueOf(3000).multiply(EXA);
+        BigInteger accountZeroFee = calculateFee(accountZeroLoan);
+        BigInteger accountOneFee = calculateFee(accountOneLoan);
+        BigInteger accountTwoFee = calculateFee(accountTwoLoan);
+        BigInteger accountZeroDebt = accountZeroFee.add(accountZeroLoan);
+        BigInteger accountOneDebt = accountOneFee.add(accountOneLoan);
+        BigInteger accountTwoDebt = accountTwoFee.add(accountTwoLoan);
+    
+        // Day 1
+        takeLoanICX(accounts.get(0), "bnUSD", accountZeroCollateral, accountZeroLoan);
+        takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
+
+        int day = (int) loans.call("getDay");
+        rewards.invoke(admin, "precompute", day, 0);
+        rewards.invoke(admin, "precompute", day, 2);
+        sm.getBlock().increase(DAY);
+
+        // Day 2
+        takeLoanICX(accounts.get(2), "bnUSD", accountTwoCollateral, accountTwoLoan);
+
+        day = (int) loans.call("getDay");
+        rewards.invoke(admin, "precompute", day, 0);
+        rewards.invoke(admin, "precompute", day, 3);
+        sm.getBlock().increase(DAY);
+
+        // Day 3
+        BigInteger accountOneRepaidDebt = BigInteger.valueOf(500).multiply(EXA);
+        loans.invoke(accounts.get(1), "returnAsset", "bnUSD", accountOneRepaidDebt, true);
+        sm.getBlock().increase(DAY);
+
+        // Assert
+        Map<Address, BigInteger> snapshotBatch0 = (Map<Address, BigInteger>)loans.call("getDataBatch", "loans", 0, 3, 0);
+        Map<Address, BigInteger> snapshotBatch1 = (Map<Address, BigInteger>)loans.call("getDataBatch", "loans", 1, 3, 0);
+        Map<Address, BigInteger> snapshotBatch2 = (Map<Address, BigInteger>)loans.call("getDataBatch", "loans", 2, 3, 0);
+
+        assertEquals(2, snapshotBatch0.size());
+        assertEquals(accountZeroDebt, snapshotBatch0.get(accountZeroAddress));
+        assertEquals(accountOneDebt, snapshotBatch0.get(accountOneAddress));
+
+        assertEquals(3, snapshotBatch1.size());
+        assertEquals(accountZeroDebt, snapshotBatch1.get(accountZeroAddress));
+        assertEquals(accountOneDebt, snapshotBatch1.get(accountOneAddress));
+        assertEquals(accountTwoDebt, snapshotBatch1.get(accountTwoAddress));
+        
+        assertEquals(0, snapshotBatch2.size());
+        assertEquals(null, snapshotBatch2.get(accountZeroAddress));
+        assertEquals(null, snapshotBatch2.get(accountOneAddress));
+        assertEquals(null, snapshotBatch2.get(accountTwoAddress));
     }
 }

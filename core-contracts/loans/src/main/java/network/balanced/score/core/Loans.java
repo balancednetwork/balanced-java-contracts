@@ -25,7 +25,7 @@ import network.balanced.score.core.AssetDB;
 import network.balanced.score.core.SnapshotDB;
 import network.balanced.score.core.PositionsDB;
 
-public class Loans implements LoansInterface {
+public class Loans {
     public static final String _LOANS_ON = "loans_on";
     public static final String _GOVERNANCE = "governance";
     public static final String _REBALANCE = "rebalance";
@@ -175,7 +175,7 @@ public class Loans implements LoansInterface {
     }
 
     @External
-    public void delegate(byte[] prepDelegations) {
+    public void delegate(PrepDelegations[] prepDelegations) {
         onlyGovernance();
         Context.call(staking.get(), "delegate", prepDelegations);
     }
@@ -224,7 +224,7 @@ public class Loans implements LoansInterface {
             snapshot = -1;
         }
 
-        Context.require(snapshot < continuousRewardDay.get(), "The continuous rewards is already active.");
+        Context.require(SnapshotDB.getSnapshotId(snapshot) < continuousRewardDay.get(), "The continuous rewards is already active.");
         return PositionsDB.getPosition(_address).getStanding(snapshot, true).toMap();
     }
 
@@ -256,7 +256,7 @@ public class Loans implements LoansInterface {
 
     @External(readonly = true)
     public Map<String, Object> getPositionByIndex(int _index, int _day) {
-        Context.require(_day < continuousRewardDay.get(), "The continuous rewards is already active.");
+        Context.require(SnapshotDB.getSnapshotId(_day) < continuousRewardDay.get(), "The continuous rewards is already active.");
         return PositionsDB.get(_index).toMap(_day);
     }
 
@@ -320,7 +320,7 @@ public class Loans implements LoansInterface {
 
     @External(readonly = true)
     public BigInteger getTotalValue(String _name, int _snapshot_id) {
-        Context.require(_snapshot_id < continuousRewardDay.get(),  "The continuous rewards is already active.");
+        Context.require(SnapshotDB.getSnapshotId(_snapshot_id) < continuousRewardDay.get(),  "The continuous rewards is already active.");
 
         return SnapshotDB.get(_snapshot_id).totalMiningDebt.getOrDefault(BigInteger.ZERO);
     }

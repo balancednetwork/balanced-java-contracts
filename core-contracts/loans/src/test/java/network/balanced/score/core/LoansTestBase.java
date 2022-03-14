@@ -40,7 +40,6 @@ import network.balanced.score.core.bnUSDMintBurn;
 import network.balanced.score.core.Loans;
 import network.balanced.score.core.Constants;
 
-
 class LoansTestsBase extends TestBase {
     // 2 second blockTime gives 1 day 43200 block
     protected static final Long DAY = 43200L;
@@ -59,13 +58,11 @@ class LoansTestsBase extends TestBase {
     protected Score governance;
     protected Loans loansSpy;
 
-    // Loans score deployment settings.
     protected final ArrayList<Account> accounts = new ArrayList<>();
     protected final BigInteger MINT_AMOUNT = BigInteger.TEN.pow(40);
     protected final BigInteger EXA = BigInteger.TEN.pow(18);
     protected final BigInteger POINTS = BigInteger.valueOf(10000);
 
-    // Sicx score deployment settings.
     protected static final String nameSicx = "Staked icx";
     protected static final String symbolSicx = "sICX";
     protected static final String nameBnusd = "Balanced usd";
@@ -109,6 +106,11 @@ class LoansTestsBase extends TestBase {
         sm.call(account, collateral, loans.getAddress(), "depositAndBorrow", asset, loan, account.getAddress(), BigInteger.ZERO);
     }
 
+    protected void enableContinuousRewards() {
+        int day = (int) loans.call("getDay");
+        governanceCall("setContinuousRewardsDay", day);
+    }
+
     protected BigInteger calculateFee(BigInteger loan) {
         BigInteger feePercentage = (BigInteger)getParam("origination fee");
         return loan.multiply(feePercentage).divide(POINTS);
@@ -131,6 +133,11 @@ class LoansTestsBase extends TestBase {
         assertEquals(miningCount, snap.get("mining_count"));
     }
 
+    protected void verifyStanding(Constants.Standings standing, Address address) {
+        Map<String, Object> positionStanding = (Map<String, Object>) loans.call("getPositionStanding", address, -1);
+        assertEquals(Constants.StandingsMap.get(standing), positionStanding.get("standing")); 
+    }
+
     public void expectErrorMessage(Executable contractCall, String errorMessage) {
         AssertionError e = Assertions.assertThrows(AssertionError.class, contractCall);
         assertEquals(errorMessage, e.getMessage());
@@ -144,7 +151,6 @@ class LoansTestsBase extends TestBase {
         Map<String, Object> params = (Map<String, Object>)loans.call("getParameters");
         return params.get(key);
     }
-
  
     public void setup() throws Exception {
         sicx = sm.deploy(admin, sICXMintBurn.class, nameSicx, symbolSicx, tokenDecimals, initalaupplyTokens);

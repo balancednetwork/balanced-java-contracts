@@ -185,7 +185,6 @@ public class Position {
         }
 
         standing.ratio = standing.collateral.multiply(EXA).divide(standing.totalDebt);
-
         if (Loans._getDay() < Loans.continuousRewardDay.get()) {
             if (standing.ratio.compareTo(Loans.miningRatio.get().multiply(EXA).divide(POINTS)) == 1) {
                 BigInteger assetPrice = getAssetPrice("bnUSD", readOnly);
