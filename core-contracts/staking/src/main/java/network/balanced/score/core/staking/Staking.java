@@ -337,12 +337,11 @@ public class Staking {
         Map<String, BigInteger> delegationIcx = new HashMap<>();
         Map<String, BigInteger> delegationPercent = delegationInPer(_address);
         BigInteger balance = (BigInteger) Context.call(sicxAddress.get(), "balanceOf", _address);
-        BigInteger totalIcxHold = (balance.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(Constant.DENOMINATOR);
-        for (String name : delegationPercent.keySet()) {
-            BigInteger votesPer = delegationPercent.get(name);
-            BigInteger votesIcx =
-                    (votesPer.multiply(totalIcxHold)).divide(Constant.DENOMINATOR.multiply(Constant.HUNDRED));
-            delegationIcx.put(name, votesIcx);
+        BigInteger totalIcxHold = (balance.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(ONE_EXA);
+        for (String prepName : delegationPercent.keySet()) {
+            BigInteger votesPer = delegationPercent.get(prepName);
+            BigInteger votesIcx = (votesPer.multiply(totalIcxHold)).divide(HUNDRED_PERCENTAGE);
+            delegationIcx.put(prepName, votesIcx);
         }
         return delegationIcx;
     }
