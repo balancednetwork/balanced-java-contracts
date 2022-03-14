@@ -67,8 +67,8 @@ public class LinkedListDB {
         }
     }
 
-    public BigInteger append(Address key, BigInteger value, BigInteger blockHeight
-            , Address senderAddress, BigInteger nodeId) {
+    public void append(Address key, BigInteger value, BigInteger blockHeight, Address senderAddress,
+                             BigInteger nodeId) {
         NodeDB cur = createNode(key, value, blockHeight, senderAddress, nodeId);
         if (length.getOrDefault(BigInteger.ZERO).equals(BigInteger.ZERO)) {
             headId.set(nodeId);
@@ -80,7 +80,6 @@ public class LinkedListDB {
         }
         tailId.set(nodeId);
         length.set(length.getOrDefault(BigInteger.ZERO).add(BigInteger.ONE));
-        return nodeId;
     }
 
     public NodeDB getNode(BigInteger nodeId) {
