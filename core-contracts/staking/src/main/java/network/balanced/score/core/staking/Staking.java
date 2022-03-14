@@ -83,47 +83,7 @@ public class Staking {
     public void IscoreClaimed(BigInteger block_height, BigInteger rewards) {
     }
 
-    private static final String SICX_SUPPLY = "sICX_supply";
-    private static final String RATE = "_rate";
-    private static final String SICX_ADDRESS = "sICX_address";
-    private static final String BLOCK_HEIGHT_WEEK = "_block_height_week";
-    private static final String BLOCK_HEIGHT_DAY = "_block_height_day";
-    private static final String TOTAL_STAKE = "_total_stake";
-    private static final String DAILY_REWARD = "_daily_reward";
-    private static final String TOTAL_LIFETIME_REWARD = "_total_lifetime_reward";
-    private static final String DISTRIBUTING = "_distributing";
-    private static final String LINKED_LIST_VAR = "_linked_list_var";
-    private static final String TOP_PREPS = "_top_preps";
-    private static final String PREP_LIST = "_prep_list";
-    private static final String ADDRESS_DELEGATIONS = "_address_delegations";
-    private static final String PREP_DELEGATIONS = "_prep_delegations";
-    private static final String TOTAL_UNSTAKE_AMOUNT = "_total_unstake_amount";
-    private static final String UNSTAKE_BATCH_LIMIT = "_unstake_batch_limit";
-    private static final String STAKING_ON = "staking_on";
-    private static final String ICX_PAYABLE = "icx_payable";
-    private static final String ICX_TO_CLAIM = "icx_to_claim";
-
-    private final VarDB<BigInteger> sicxSupply = Context.newVarDB(SICX_SUPPLY, BigInteger.class);
-    private final VarDB<BigInteger> rate = Context.newVarDB(RATE, BigInteger.class);
-    private final VarDB<BigInteger> blockHeightWeek = Context.newVarDB(BLOCK_HEIGHT_WEEK, BigInteger.class);
-    private final VarDB<BigInteger> blockHeightDay = Context.newVarDB(BLOCK_HEIGHT_DAY, BigInteger.class);
-    private final VarDB<Address> sicxAddress = Context.newVarDB(SICX_ADDRESS, Address.class);
-    private final VarDB<BigInteger> totalStake = Context.newVarDB(TOTAL_STAKE, BigInteger.class);
-    private final VarDB<BigInteger> dailyReward = Context.newVarDB(DAILY_REWARD, BigInteger.class);
-    private final VarDB<BigInteger> totalLifetimeReward = Context.newVarDB(TOTAL_LIFETIME_REWARD, BigInteger.class);
-    private final VarDB<Boolean> distributing = Context.newVarDB(DISTRIBUTING, Boolean.class);
-    private final VarDB<BigInteger> totalUnstakeAmount = Context.newVarDB(TOTAL_UNSTAKE_AMOUNT, BigInteger.class);
-    private final ArrayDB<Address> topPreps = Context.newArrayDB(TOP_PREPS, Address.class);
-    private final ArrayDB<Address> prepList = Context.newArrayDB(PREP_LIST, Address.class);
-    private final VarDB<BigInteger> icxToClaim = Context.newVarDB(ICX_TO_CLAIM, BigInteger.class);
-    private final DictDB<String, String> addressDelegations = Context.newDictDB(ADDRESS_DELEGATIONS, String.class);
-    private final DictDB<Address, BigInteger> icxPayable = Context.newDictDB(ICX_PAYABLE, BigInteger.class);
-    private final DictDB<String, BigInteger> prepDelegations = Context.newDictDB(PREP_DELEGATIONS, BigInteger.class);
-    private final VarDB<BigInteger> unstakeBatchLimit = Context.newVarDB(UNSTAKE_BATCH_LIMIT, BigInteger.class);
-    public static final VarDB<Boolean> stakingOn = Context.newVarDB(STAKING_ON, Boolean.class);
-    private final LinkedListDB linkedListDb = new LinkedListDB("unstake_dict");
-
-
+    // Read Only methods
     @External(readonly = true)
     public String name() {
         return Constant.TAG;

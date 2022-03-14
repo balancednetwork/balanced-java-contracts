@@ -30,5 +30,23 @@ public class Constant {
     public static final BigInteger MAX_ITERATION_LOOP = BigInteger.valueOf(100L);
     public static final BigInteger DEFAULT_DECIMAL_VALUE = BigInteger.valueOf(18L);
 
-//    DEFAULT_CAP_VALUE = 2 ** 256 -1
+    public static final String SICX_SUPPLY = "sICX_supply";
+    public static final String RATE = "_rate";
+    public static final String SICX_ADDRESS = "sICX_address";
+    public static final String BLOCK_HEIGHT_WEEK = "_block_height_week";
+    public static final String BLOCK_HEIGHT_DAY = "_block_height_day";
+    public static final String TOTAL_STAKE = "_total_stake";
+    public static final String DAILY_REWARD = "_daily_reward";
+    public static final String TOTAL_LIFETIME_REWARD = "_total_lifetime_reward";
+    public static final String DISTRIBUTING = "_distributing";
+    public static final String LINKED_LIST_VAR = "_linked_list_var";
+    public static final String TOP_PREPS = "_top_preps";
+    public static final String PREP_LIST = "_prep_list";
+    public static final String ADDRESS_DELEGATIONS = "_address_delegations";
+    public static final String PREP_DELEGATIONS = "_prep_delegations";
+    public static final String TOTAL_UNSTAKE_AMOUNT = "_total_unstake_amount";
+    public static final String UNSTAKE_BATCH_LIMIT = "_unstake_batch_limit";
+    public static final String STAKING_ON = "staking_on";
+    public static final String ICX_PAYABLE = "icx_payable";
+    public static final String ICX_TO_CLAIM = "icx_to_claim";
 }
