@@ -95,9 +95,6 @@ public class LinkedListDB {
 
     public NodeDB getTailNode() {
         BigInteger tailId = this.tailId.get();
-        if (tailId == null) {
-            Context.revert("Linked List does not exists");
-        }
         return getNode(tailId);
     }
 
@@ -115,21 +112,26 @@ public class LinkedListDB {
 
     public void removeHead() {
         BigInteger size = length.getOrDefault(BigInteger.ZERO);
+        if (size.equals(BigInteger.ZERO)) {
+            return;
+        }
         if (size.equals(BigInteger.ONE)) {
             clear();
         } else {
-            NodeDB oldHead = getNode(headId.getOrDefault(BigInteger.ZERO));
+            NodeDB oldHead = getNode(headId.get());
             BigInteger newHead = oldHead.getNext();
             headId.set(newHead);
             getNode(newHead).setPrev(DEFAULT_NODE_ID);
             oldHead.delete();
             length.set(size.subtract(BigInteger.ONE));
         }
-
     }
 
     public void removeTail() {
         BigInteger size = length.getOrDefault(BigInteger.ZERO);
+        if (size.equals(BigInteger.ZERO)) {
+            return;
+        }
         if (size.equals(BigInteger.ONE)) {
             clear();
         } else {
@@ -180,7 +182,7 @@ public class LinkedListDB {
 
         this.tailId.set(null);
         headId.set(null);
-        length.set(BigInteger.ZERO);
+        length.set(null);
     }
 
     public List<List<Object>> iterate() {
