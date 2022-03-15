@@ -328,7 +328,7 @@ public class Staking {
         Map<String, BigInteger> delegationIcx = new HashMap<>();
         Map<String, BigInteger> delegationPercent = getDelegationInPercentage(_address);
         BigInteger balance = (BigInteger) Context.call(sicxAddress.get(), "balanceOf", _address);
-        BigInteger totalIcxHold = (balance.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(ONE_EXA);
+        BigInteger totalIcxHold = (balance.multiply(getTodayRate())).divide(ONE_EXA);
         for (Map.Entry<String, BigInteger> delegation : delegationPercent.entrySet()) {
             String prepName = delegation.getKey();
             BigInteger votesPercentage = delegation.getValue();
@@ -386,7 +386,7 @@ public class Staking {
         BigInteger evenlyDistribution = HUNDRED_PERCENTAGE.divide(topPrepsCount);
         StringBuilder addressDelegation = new StringBuilder();
         BigInteger balance = (BigInteger) Context.call(sicxAddress.get(), "balanceOf", to);
-        BigInteger userIcxBalance = (balance.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(ONE_EXA);
+        BigInteger userIcxBalance = balance.multiply(getTodayRate()).divide(ONE_EXA);
         for (int i = 0; i < totalPrepsToDelegate; i++) {
             Address prep = this.topPreps.get(i);
             addressDelegation.append(prep).append(":").append(evenlyDistribution).append(".");
@@ -405,8 +405,7 @@ public class Staking {
         String addressStr = to.toString();
         Map<String, BigInteger> previousDelegations = getDelegationInPercentage(to);
         BigInteger balance = (BigInteger) Context.call(sicxAddress.get(), "balanceOf", to);
-        BigInteger icxHoldPreviously =
-                (balance.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(ONE_EXA);
+        BigInteger icxHoldPreviously = balance.multiply(getTodayRate()).divide(ONE_EXA);
         if (!previousDelegations.isEmpty()) {
             addressDelegations.set(addressStr, null);
             for (String prep : previousDelegations.keySet()) {
@@ -442,7 +441,7 @@ public class Staking {
         performChecks();
         Map<String, BigInteger> previousDelegations = removePreviousDelegations(to);
         BigInteger balance = (BigInteger) Context.call(sicxAddress.get(), "balanceOf", to);
-        BigInteger icxHoldPreviously = (balance.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(ONE_EXA);
+        BigInteger icxHoldPreviously = balance.multiply(getTodayRate()).divide(ONE_EXA);
         delegateVotes(to, _user_delegations, icxHoldPreviously);
         if (balance.compareTo(BigInteger.ZERO) > 0) {
             stakeAndDelegateInNetwork();
@@ -541,11 +540,11 @@ public class Staking {
             _to = Context.getCaller();
         }
         BigInteger balance = (BigInteger) Context.call(sicxAddress.get(), "balanceOf", _to);
-        BigInteger userOldIcx = (balance.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(ONE_EXA);
+        BigInteger userOldIcx = (balance.multiply(getTodayRate())).divide(ONE_EXA);
         performChecks();
         BigInteger addedIcx = Context.getValue();
         totalStake.set(totalStake.getOrDefault(BigInteger.ZERO).add(addedIcx));
-        BigInteger sicxToMint = (ONE_EXA.multiply(addedIcx)).divide(rate.getOrDefault(BigInteger.ZERO));
+        BigInteger sicxToMint = (ONE_EXA.multiply(addedIcx)).divide(getTodayRate());
         Map<String, BigInteger> currentDelegation = getDelegationInPercentage(_to);
 
         Context.call(sicxAddress.get(), "mintTo", _to, sicxToMint, _data);
@@ -569,7 +568,7 @@ public class Staking {
         if (!Context.getCaller().equals(sicxAddress.get())) {
             Context.revert(Constant.TAG + ": Only sicx token contract can call this function.");
         }
-        BigInteger sicxToIcx = _value.multiply(rate.getOrDefault(BigInteger.ZERO)).divide(ONE_EXA);
+        BigInteger sicxToIcx = _value.multiply(getTodayRate()).divide(ONE_EXA);
         Map<String, BigInteger> senderDelegations = getDelegationInPercentage(_from);
         Map<String, BigInteger> receiverDelegations = getDelegationInPercentage(_to);
         for (String prep : senderDelegations.keySet()) {
@@ -652,7 +651,7 @@ public class Staking {
     @SuppressWarnings("unchecked")
     public void unstake(Address to, BigInteger value, Address senderAddress) {
         Context.call(sicxAddress.get(), "burn", value);
-        BigInteger amountToUnstake = (value.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(ONE_EXA);
+        BigInteger amountToUnstake = (value.multiply(getTodayRate())).divide(ONE_EXA);
         Map<String, BigInteger> delegationPercent = getDelegationInPercentage(to);
         totalUnstakeAmount.set(totalUnstakeAmount.getOrDefault(BigInteger.ZERO).add(amountToUnstake));
         for (String key : delegationPercent.keySet()) {
