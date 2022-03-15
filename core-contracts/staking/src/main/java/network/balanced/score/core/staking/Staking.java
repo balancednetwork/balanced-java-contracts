@@ -544,24 +544,25 @@ public class Staking {
         BigInteger balance = (BigInteger) Context.call(sicxAddress.get(), "balanceOf", _to);
         BigInteger userOldIcx = (balance.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(ONE_EXA);
         performChecks();
-        totalStake.set(totalStake.getOrDefault(BigInteger.ZERO).add(Context.getValue()));
-        BigInteger amount = (ONE_EXA.multiply(Context.getValue())).divide(rate.getOrDefault(BigInteger.ZERO));
-        Map<String, BigInteger> previousDelegations = getDelegationInPercentage(_to);
-        Context.call(sicxAddress.get(), "mintTo", _to, amount, _data);
-        BigInteger newBalance = (BigInteger) Context.call(sicxAddress.get(), "balanceOf", _to);
-        BigInteger userNewIcx = (newBalance.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(ONE_EXA);
-        if (previousDelegations.isEmpty()) {
+        BigInteger addedIcx = Context.getValue();
+        totalStake.set(totalStake.getOrDefault(BigInteger.ZERO).add(addedIcx));
+        BigInteger sicxToMint = (ONE_EXA.multiply(addedIcx)).divide(rate.getOrDefault(BigInteger.ZERO));
+        Map<String, BigInteger> currentDelegation = getDelegationInPercentage(_to);
+
+        Context.call(sicxAddress.get(), "mintTo", _to, sicxToMint, _data);
+        TokenTransfer(_to, sicxToMint, sicxToMint + " sICX minted to " + _to);
+
+        BigInteger userNewIcx = userOldIcx.add(addedIcx);
+        if (currentDelegation.isEmpty()) {
             setEvenAddressDelegationsInPercentage(_to);
         } else {
-            BigInteger deltaIcx = userNewIcx.subtract(userOldIcx);
-            for (String prep : previousDelegations.keySet()) {
-                setAddressDelegations(_to, Address.fromString(prep), previousDelegations.get(prep), deltaIcx);
+            for (String prep : currentDelegation.keySet()) {
+                setAddressDelegations(_to, Address.fromString(prep), currentDelegation.get(prep), addedIcx);
             }
         }
         stakeAndDelegateInNetwork();
-        sicxSupply.set(sicxSupply.getOrDefault(BigInteger.ZERO).add(amount));
-        TokenTransfer(_to, amount, amount + " sICX minted to " + _to);
-        return amount;
+        sicxSupply.set(sicxSupply.getOrDefault(BigInteger.ZERO).add(sicxToMint));
+        return sicxToMint;
     }
 
     @External
