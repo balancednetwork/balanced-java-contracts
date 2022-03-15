@@ -258,27 +258,13 @@ public class Staking {
             }
         } catch (Exception e) {
             Context.revert(Constant.TAG + ": Invalid data:." + _data);
-
         }
-    }
-
-    public void checkForIscore() {
-        if (!distributing.get()) {
-            claimIscore();
-        }
-    }
-
-    // Created only for test
-    @External(readonly = true)
-    public boolean getDistributing() {
-        return distributing.getOrDefault(false);
     }
 
     @SuppressWarnings("unchecked")
-    public void claimIscore() {
-        Map<String, Object> iscoreDetails =
-                (Map<String, Object>) Context.call(SYSTEM_SCORE_ADDRESS, "queryIScore",
-                        Context.getAddress());
+    public void checkForIscore() {
+        Map<String, Object> iscoreDetails = (Map<String, Object>) Context.call(SYSTEM_SCORE_ADDRESS, "queryIScore",
+                Context.getAddress());
         BigInteger iscoreGenerated = (BigInteger) iscoreDetails.get("estimatedICX");
         if (iscoreGenerated.compareTo(BigInteger.ZERO) > 0) {
             Context.call(SYSTEM_SCORE_ADDRESS, "claimIScore");
@@ -287,8 +273,10 @@ public class Staking {
         }
     }
 
-    public void stakeInNetwork(BigInteger stakeValue) {
-        Context.call(SYSTEM_SCORE_ADDRESS, "setStake", stakeValue);
+    // Created only for test
+    @External(readonly = true)
+    public boolean getDistributing() {
+        return distributing.getOrDefault(false);
     }
 
     @External
