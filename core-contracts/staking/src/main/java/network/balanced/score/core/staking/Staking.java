@@ -285,7 +285,7 @@ public class Staking {
         }
     }
 
-    public void stake(BigInteger stakeValue) {
+    public void stakeInNetwork(BigInteger stakeValue) {
         Context.call(SYSTEM_SCORE_ADDRESS, "setStake", stakeValue);
     }
 
@@ -317,18 +317,21 @@ public class Staking {
     }
 
     @SuppressWarnings("unchecked")
-    public void setTopPreps() {
+    public List<Address> setTopPreps() {
         Map<String, Object> prepDict = (Map<String, Object>) Context.call(SYSTEM_SCORE_ADDRESS, "getPReps", 1,
                 Constant.TOP_PREP_COUNT);
         List<Map<String, Object>> prepDetails = (List<Map<String, Object>>) prepDict.get("preps");
         List<Address> allPrepAddresses = getPrepList();
+        List<Address> topPreps = new ArrayList<>();
         for (Map<String, Object> preps : prepDetails) {
             Address prepAddress = (Address) preps.get("address");
             if (!allPrepAddresses.contains(prepAddress)) {
                 prepList.add(prepAddress);
             }
             topPreps.add(prepAddress);
+            this.topPreps.add(prepAddress);
         }
+        return topPreps;
     }
 
     @External(readonly = true)
@@ -399,28 +402,10 @@ public class Staking {
         addressDelegations.set(to.toString(), addressDelegation.toString());
     }
 
-    public BigInteger distributeEvenlyToTopPreps(BigInteger amountToDistribute) {
-        BigInteger topPrepsCount = BigInteger.valueOf(topPreps.size());
-        BigInteger evenlyDistribution = (ONE_EXA.multiply(amountToDistribute)).divide(topPrepsCount);
-        return evenlyDistribution.divide(ONE_EXA);
-    }
-
-    public void stakeAndDelegate(BigInteger evenlyDistributeValue) {
-        stake(getTotalStake());
-        delegations(evenlyDistributeValue);
-    }
-
-    public BigInteger resetTopPreps() {
-        BigInteger toDistribute = BigInteger.ZERO;
-        List<Address> allPrepAddresses = getTopPreps();
-        for (int i = 0; i < this.prepList.size(); i++) {
-            Address prep = this.prepList.get(i);
-            if (!allPrepAddresses.contains(prep)) {
-                BigInteger prepDelegations = this.prepDelegations.getOrDefault(prep.toString(), BigInteger.ZERO);
-                toDistribute = toDistribute.add(prepDelegations);
-            }
-        }
-        return distributeEvenlyToTopPreps(toDistribute);
+    public void stakeAndDelegateInNetwork() {
+        updateTopPreps();
+        stakeInNetwork(totalStake.getOrDefault(BigInteger.ZERO));
+        updateDelegationInNetwork();
     }
 
     public Map<String, BigInteger> removePreviousDelegations(Address to) {
@@ -430,7 +415,7 @@ public class Staking {
         BigInteger icxHoldPreviously =
                 (balance.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(ONE_EXA);
         if (!previousDelegations.isEmpty()) {
-            addressDelegations.set(addressStr, "");
+            addressDelegations.set(addressStr, null);
             for (String prep : previousDelegations.keySet()) {
                 BigInteger prepDelegations = this.prepDelegations.getOrDefault(prep, BigInteger.ZERO);
                 BigInteger votesPer = previousDelegations.get(prep);
@@ -442,7 +427,7 @@ public class Staking {
     }
 
     @SuppressWarnings("unchecked")
-    public BigInteger checkForWeek() {
+    public List<Address> updateTopPreps() {
         Map<String, Object> termDetails = (Map<String, Object>) Context.call(SYSTEM_SCORE_ADDRESS, "getIISSInfo");
         BigInteger nextPrepTerm = (BigInteger) termDetails.get("nextPRepTerm");
         if (nextPrepTerm.compareTo(blockHeightWeek.getOrDefault(BigInteger.ZERO).add(BigInteger.valueOf(302400L))) > 0) {
@@ -450,9 +435,10 @@ public class Staking {
             for (int i = 0; i <= this.topPreps.size(); i++) {
                 this.topPreps.pop();
             }
-            setTopPreps();
+            return setTopPreps();
+        } else {
+            return List.of();
         }
-        return resetTopPreps();
     }
 
     @External
@@ -468,7 +454,7 @@ public class Staking {
             Context.revert(Constant.TAG + ": Total delegations should be 100%.Your delegation preference is ");
         }
         if (!previousDelegations.isEmpty()) {
-            stakeAndDelegate(checkForWeek());
+            stakeAndDelegateInNetwork();
         }
     }
 
@@ -506,26 +492,49 @@ public class Staking {
         checkForBalance();
     }
 
-    public void delegations(BigInteger evenlyDistributeValue) {
-        List<Map<String, Object>> delegationList = new ArrayList<>();
-        int topPrepCount = topPreps.size();
-        BigInteger votingPowerCheck = BigInteger.ZERO;
-        for (int i = 0; i < this.topPreps.size(); i++) {
-            Map<String, Object> delegateDict = new HashMap<>();
-            Address prep = this.topPreps.get(i);
-            BigInteger valueInIcx =
-                    prepDelegations.getOrDefault(prep.toString(), BigInteger.ZERO).add(evenlyDistributeValue);
-            votingPowerCheck = votingPowerCheck.add(valueInIcx);
-            if (i == (topPrepCount - 1)) {
-                BigInteger dust = getTotalStake().subtract(votingPowerCheck);
-                valueInIcx = valueInIcx.add(dust);
-                prepDelegations.set(prep.toString(),
-                        prepDelegations.getOrDefault(prep.toString(), BigInteger.ZERO).add(dust));
+    public BigInteger calculateDelegatedICXOutOfTopPreps(List<Address> topPrepAddresses) {
+        BigInteger delegatedAmountOutOfTopPreps = BigInteger.ZERO;
+        for (int i = 0; i < this.prepList.size(); i++) {
+            Address prep = this.prepList.get(i);
+            if (!topPrepAddresses.contains(prep)) {
+                BigInteger delegation = this.prepDelegations.getOrDefault(prep.toString(), BigInteger.ZERO);
+                delegatedAmountOutOfTopPreps = delegatedAmountOutOfTopPreps.add(delegation);
             }
-            delegateDict.put("address", prep);
-            delegateDict.put("value", valueInIcx);
-            delegationList.add(delegateDict);
         }
+        return delegatedAmountOutOfTopPreps;
+    }
+
+    public void updateDelegationInNetwork() {
+
+        List<Address> topPrepAddresses = getTopPreps();
+        int totalPrepsToDelegate = topPrepAddresses.size();
+        BigInteger topPrepsCount = BigInteger.valueOf(totalPrepsToDelegate);
+        BigInteger amountToDistribute = calculateDelegatedICXOutOfTopPreps(topPrepAddresses);
+        BigInteger amountToAddToAllTopPreps = amountToDistribute.divide(topPrepsCount);
+        BigInteger amountToAddToOnePrep = amountToDistribute.remainder(topPrepsCount);
+
+        List<Map<String, Object>> delegationList = new ArrayList<>();
+        BigInteger delegatedIcxSum = BigInteger.ZERO;
+        int lastPrepIndex = totalPrepsToDelegate - 1;
+        for (int i = 0; i < lastPrepIndex; i++) {
+            Address prep = topPrepAddresses.get(i);
+            BigInteger delegatedIcx = prepDelegations.getOrDefault(prep.toString(), BigInteger.ZERO).add(amountToAddToAllTopPreps);
+            delegatedIcxSum = delegatedIcxSum.add(delegatedIcx);
+            delegationList.add(Map.of("address", prep, "value", delegatedIcx));
+        }
+
+        Address lastPrep = topPrepAddresses.get(lastPrepIndex);
+        BigInteger amountToDelegateToLastPrep = prepDelegations.getOrDefault(lastPrep.toString(), BigInteger.ZERO).
+                add(amountToAddToAllTopPreps).add(amountToAddToOnePrep);
+        delegatedIcxSum = delegatedIcxSum.add(amountToDelegateToLastPrep);
+        BigInteger freeVotingPower = BigInteger.ZERO;
+        BigInteger totalStake = this.totalStake.get();
+        if (totalStake != null) {
+            freeVotingPower = totalStake.subtract(delegatedIcxSum);
+        }
+        amountToDelegateToLastPrep = amountToDelegateToLastPrep.add(freeVotingPower);
+        delegationList.add(Map.of("address", lastPrep, "value", amountToDelegateToLastPrep));
+
         Context.call(SYSTEM_SCORE_ADDRESS, "setDelegation", delegationList);
     }
 
@@ -556,11 +565,10 @@ public class Staking {
                 setAddressDelegations(_to, Address.fromString(prep), previousDelegations.get(prep), deltaIcx);
             }
         }
-        stakeAndDelegate(checkForWeek());
+        stakeAndDelegateInNetwork();
         sicxSupply.set(sicxSupply.getOrDefault(BigInteger.ZERO).add(amount));
         TokenTransfer(_to, amount, amount + " sICX minted to " + _to);
         return amount;
-
     }
 
     @External
@@ -590,7 +598,7 @@ public class Staking {
                 setPrepDelegations(prep, addedIcx);
             }
         }
-        stakeAndDelegate(checkForWeek());
+        stakeAndDelegateInNetwork();
     }
 
     public Map<String, BigInteger> getDelegationInPercentage(Address address) {
@@ -663,8 +671,8 @@ public class Staking {
             this.prepDelegations.set(key, prepDelegations.subtract(amountToRemove));
         }
         totalStake.set(totalStake.getOrDefault(BigInteger.ZERO).subtract(amountToUnstake));
-        delegations(resetTopPreps());
-        stake(totalStake.getOrDefault(BigInteger.ZERO));
+        updateDelegationInNetwork();
+        stakeInNetwork(totalStake.getOrDefault(BigInteger.ZERO));
         Map<String, Object> stakeInNetwork = (Map<String, Object>) Context.call(SYSTEM_SCORE_ADDRESS, "getStake",
                 Context.getAddress());
         Address addressToSend = to;
