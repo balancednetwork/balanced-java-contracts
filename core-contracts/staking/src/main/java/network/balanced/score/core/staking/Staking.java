@@ -46,7 +46,6 @@ import static network.balanced.score.core.staking.utils.Constant.*;
 
 public class Staking {
 
-    private final VarDB<BigInteger> sicxSupply = Context.newVarDB(SICX_SUPPLY, BigInteger.class);
     private final VarDB<BigInteger> rate = Context.newVarDB(RATE, BigInteger.class);
     private final VarDB<BigInteger> blockHeightWeek = Context.newVarDB(BLOCK_HEIGHT_WEEK, BigInteger.class);
     private final VarDB<BigInteger> blockHeightDay = Context.newVarDB(BLOCK_HEIGHT_DAY, BigInteger.class);
@@ -561,7 +560,6 @@ public class Staking {
             }
         }
         stakeAndDelegateInNetwork();
-        sicxSupply.set(sicxSupply.getOrDefault(BigInteger.ZERO).add(sicxToMint));
         return sicxToMint;
     }
 
@@ -680,7 +678,6 @@ public class Staking {
         BigInteger unstakeHeight = BigInteger.valueOf(currentBlockHeight).add(unlockPeriod);
         unstakeRequestList.append(to, amountToUnstake, unstakeHeight, addressToSend,
                 unstakeRequestList.tailId.getOrDefault(BigInteger.ZERO).add(BigInteger.ONE));
-        sicxSupply.set(sicxSupply.getOrDefault(BigInteger.ZERO).subtract(value));
         UnstakeRequest(addressToSend, amountToUnstake);
     }
 
