@@ -210,13 +210,13 @@ public class Staking {
         int checkVal = totalIcxHold.compareTo(BigInteger.ZERO);
         if (checkVal != 0) {
             BigInteger value = percentToIcx(votesInPer, totalIcxHold);
-            setPrepDelegations(prep, value);
+            setPrepDelegations(prep.toString(), value);
         }
     }
 
-    public void setPrepDelegations(Address prep, BigInteger value) {
-        BigInteger prepDelegations = this.prepDelegations.getOrDefault(prep.toString(), BigInteger.ZERO);
-        this.prepDelegations.set(prep.toString(), prepDelegations.add(value));
+    public void setPrepDelegations(String prep, BigInteger value) {
+        BigInteger prepDelegations = this.prepDelegations.getOrDefault(prep, BigInteger.ZERO);
+        this.prepDelegations.set(prep, prepDelegations.add(value));
     }
 
     @External(readonly = true)
@@ -318,8 +318,8 @@ public class Staking {
 
     @SuppressWarnings("unchecked")
     public void setTopPreps() {
-        Map<String, Object> prepDict =
-                (Map<String, Object>) Context.call(SYSTEM_SCORE_ADDRESS, "getPReps", 1, Constant.TOP_PREP_COUNT);
+        Map<String, Object> prepDict = (Map<String, Object>) Context.call(SYSTEM_SCORE_ADDRESS, "getPReps", 1,
+                Constant.TOP_PREP_COUNT);
         List<Map<String, Object>> prepDetails = (List<Map<String, Object>>) prepDict.get("preps");
         List<Address> allPrepAddresses = getPrepList();
         for (Map<String, Object> preps : prepDetails) {
@@ -497,7 +497,7 @@ public class Staking {
                 BigInteger valueInIcx = prepDelegations.getOrDefault(prep.toString(), BigInteger.ZERO);
                 BigInteger weightagePer = valueInIcx.multiply(HUNDRED_PERCENTAGE).divide(totalStake);
                 BigInteger prepReward = weightagePer.multiply(dailyReward).divide(HUNDRED_PERCENTAGE);
-                setPrepDelegations(prep, prepReward);
+                setPrepDelegations(prep.toString(), prepReward);
             }
             this.dailyReward.set(BigInteger.ZERO);
             distributing.set(false);
@@ -587,7 +587,7 @@ public class Staking {
             Map<String, BigInteger> newDelegation = getDelegationInPercentage(_to);
             for (String prep : newDelegation.keySet()) {
                 BigInteger addedIcx = (newDelegation.get(prep).multiply(totalIcxHold)).divide(HUNDRED_PERCENTAGE);
-                setPrepDelegations(Address.fromString(prep), addedIcx);
+                setPrepDelegations(prep, addedIcx);
             }
         }
         stakeAndDelegate(checkForWeek());
