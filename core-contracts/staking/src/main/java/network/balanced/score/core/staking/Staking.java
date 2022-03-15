@@ -330,9 +330,10 @@ public class Staking {
         Map<String, BigInteger> delegationPercent = getDelegationInPercentage(_address);
         BigInteger balance = (BigInteger) Context.call(sicxAddress.get(), "balanceOf", _address);
         BigInteger totalIcxHold = (balance.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(ONE_EXA);
-        for (String prepName : delegationPercent.keySet()) {
-            BigInteger votesPer = delegationPercent.get(prepName);
-            BigInteger votesIcx = (votesPer.multiply(totalIcxHold)).divide(HUNDRED_PERCENTAGE);
+        for (Map.Entry<String, BigInteger> delegation : delegationPercent.entrySet()) {
+            String prepName = delegation.getKey();
+            BigInteger votesPercentage = delegation.getValue();
+            BigInteger votesIcx = (votesPercentage.multiply(totalIcxHold)).divide(HUNDRED_PERCENTAGE);
             delegationIcx.put(prepName, votesIcx);
         }
         return delegationIcx;
@@ -350,14 +351,14 @@ public class Staking {
         return rate;
     }
 
-    public BigInteger delegateVotes(Address to, PrepDelegations[] userDelegations, BigInteger userIcxHold) {
-        BigInteger amountToStake = BigInteger.ZERO;
+    public void delegateVotes(Address to, PrepDelegations[] userDelegations, BigInteger userIcxHold) {
+        BigInteger totalPercentage = BigInteger.ZERO;
         List<Address> similarPrepCheck = new ArrayList<>();
         StringBuilder addressDelegations = new StringBuilder();
         List<Address> allPrepAddresses = getPrepList();
         for (PrepDelegations singlePrep : userDelegations) {
             Address prepAddress = singlePrep._address;
-            BigInteger votesInPer = singlePrep._votes_in_per;
+            BigInteger votesInPercentage = singlePrep._votes_in_per;
             if (!allPrepAddresses.contains(prepAddress)) {
                 prepList.add(prepAddress);
             }
@@ -365,26 +366,29 @@ public class Staking {
                 Context.revert(Constant.TAG + ": You can not delegate same Prep twice in a transaction.Your " +
                         "delegation preference is" + userDelegations);
             }
-            if (votesInPer.compareTo(MINIMUM_DELEGATION_PERCENTAGE) < 0) {
+            if (votesInPercentage.compareTo(MINIMUM_DELEGATION_PERCENTAGE) < 0) {
                 Context.revert(Constant.TAG + ": You should provide delegation percentage more than 0.001. Your " +
                         "delegation preference is " + userDelegations + ".");
             }
             similarPrepCheck.add(prepAddress);
-            amountToStake = amountToStake.add(votesInPer);
-            addressDelegations.append(prepAddress).append(":").append(votesInPer).append(".");
-            setAddressDelegations(to, prepAddress, votesInPer, userIcxHold);
+            totalPercentage = totalPercentage.add(votesInPercentage);
+            addressDelegations.append(prepAddress).append(":").append(votesInPercentage).append(".");
+            setAddressDelegations(to, prepAddress, votesInPercentage, userIcxHold);
+        }
+        if (!totalPercentage.equals(HUNDRED_PERCENTAGE)) {
+            Context.revert(Constant.TAG + ": Total delegations should be 100%.Your delegation preference is ");
         }
         this.addressDelegations.set(to.toString(), addressDelegations.toString());
-        return amountToStake;
     }
 
     public void setEvenAddressDelegationsInPercentage(Address to) {
-        BigInteger topPrepsCount = BigInteger.valueOf(topPreps.size());
+        int totalPrepsToDelegate = topPreps.size();
+        BigInteger topPrepsCount = BigInteger.valueOf(totalPrepsToDelegate);
         BigInteger evenlyDistribution = HUNDRED_PERCENTAGE.divide(topPrepsCount);
         StringBuilder addressDelegation = new StringBuilder();
         BigInteger balance = (BigInteger) Context.call(sicxAddress.get(), "balanceOf", to);
         BigInteger userIcxBalance = (balance.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(ONE_EXA);
-        for (int i = 0; i < this.topPreps.size(); i++) {
+        for (int i = 0; i < totalPrepsToDelegate; i++) {
             Address prep = this.topPreps.get(i);
             addressDelegation.append(prep).append(":").append(evenlyDistribution).append(".");
             setAddressDelegations(to, prep, evenlyDistribution, userIcxBalance);
@@ -394,7 +398,7 @@ public class Staking {
 
     public void stakeAndDelegateInNetwork() {
         updateTopPreps();
-        stakeInNetwork(totalStake.getOrDefault(BigInteger.ZERO));
+        Context.call(SYSTEM_SCORE_ADDRESS, "setStake", totalStake.getOrDefault(BigInteger.ZERO));
         updateDelegationInNetwork();
     }
 
@@ -420,7 +424,8 @@ public class Staking {
     public List<Address> updateTopPreps() {
         Map<String, Object> termDetails = (Map<String, Object>) Context.call(SYSTEM_SCORE_ADDRESS, "getIISSInfo");
         BigInteger nextPrepTerm = (BigInteger) termDetails.get("nextPRepTerm");
-        if (nextPrepTerm.compareTo(blockHeightWeek.getOrDefault(BigInteger.ZERO).add(BigInteger.valueOf(302400L))) > 0) {
+        BigInteger destinationBlock = blockHeightWeek.getOrDefault(BigInteger.ZERO).add(BigInteger.valueOf(7 * 43200L));
+        if (nextPrepTerm.compareTo(destinationBlock) > 0) {
             blockHeightWeek.set(nextPrepTerm);
             for (int i = 0; i < this.topPreps.size(); i++) {
                 this.topPreps.pop();
@@ -439,11 +444,8 @@ public class Staking {
         Map<String, BigInteger> previousDelegations = removePreviousDelegations(to);
         BigInteger balance = (BigInteger) Context.call(sicxAddress.get(), "balanceOf", to);
         BigInteger icxHoldPreviously = (balance.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(ONE_EXA);
-        BigInteger totalPer = delegateVotes(to, _user_delegations, icxHoldPreviously);
-        if (totalPer.compareTo(HUNDRED_PERCENTAGE) != 0) {
-            Context.revert(Constant.TAG + ": Total delegations should be 100%.Your delegation preference is ");
-        }
-        if (!previousDelegations.isEmpty()) {
+        delegateVotes(to, _user_delegations, icxHoldPreviously);
+        if (balance.compareTo(BigInteger.ZERO) > 0) {
             stakeAndDelegateInNetwork();
         }
     }
@@ -508,7 +510,8 @@ public class Staking {
         int lastPrepIndex = totalPrepsToDelegate - 1;
         for (int i = 0; i < lastPrepIndex; i++) {
             Address prep = topPrepAddresses.get(i);
-            BigInteger delegatedIcx = prepDelegations.getOrDefault(prep.toString(), BigInteger.ZERO).add(amountToAddToAllTopPreps);
+            BigInteger delegatedIcx =
+                    prepDelegations.getOrDefault(prep.toString(), BigInteger.ZERO).add(amountToAddToAllTopPreps);
             delegatedIcxSum = delegatedIcxSum.add(delegatedIcx);
             delegationList.add(Map.of("address", prep, "value", delegatedIcx));
         }
@@ -581,10 +584,9 @@ public class Staking {
             }
         } else {
             setEvenAddressDelegationsInPercentage(_to);
-            BigInteger totalIcxHold = (_value.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(ONE_EXA);
             Map<String, BigInteger> newDelegation = getDelegationInPercentage(_to);
             for (String prep : newDelegation.keySet()) {
-                BigInteger addedIcx = (newDelegation.get(prep).multiply(totalIcxHold)).divide(HUNDRED_PERCENTAGE);
+                BigInteger addedIcx = (newDelegation.get(prep).multiply(sicxToIcx)).divide(HUNDRED_PERCENTAGE);
                 setPrepDelegations(prep, addedIcx);
             }
         }
@@ -660,7 +662,8 @@ public class Staking {
             BigInteger amountToRemove = prepPercent.multiply(amountToUnstake).divide(HUNDRED_PERCENTAGE);
             this.prepDelegations.set(key, prepDelegations.subtract(amountToRemove));
         }
-        totalStake.set(totalStake.getOrDefault(BigInteger.ZERO).subtract(amountToUnstake));
+        BigInteger newTotalStake = totalStake.getOrDefault(BigInteger.ZERO).subtract(amountToUnstake);
+        totalStake.set(newTotalStake);
         updateDelegationInNetwork();
         stakeInNetwork(totalStake.getOrDefault(BigInteger.ZERO));
         Map<String, Object> stakeInNetwork = (Map<String, Object>) Context.call(SYSTEM_SCORE_ADDRESS, "getStake",
