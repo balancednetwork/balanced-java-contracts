@@ -666,18 +666,19 @@ public class Staking {
         BigInteger newTotalStake = totalStake.getOrDefault(BigInteger.ZERO).subtract(amountToUnstake);
         totalStake.set(newTotalStake);
         updateDelegationInNetwork();
-        stakeInNetwork(totalStake.getOrDefault(BigInteger.ZERO));
-        Map<String, Object> stakeInNetwork = (Map<String, Object>) Context.call(SYSTEM_SCORE_ADDRESS, "getStake",
-                Context.getAddress());
+        Context.call(SYSTEM_SCORE_ADDRESS, "setStake", newTotalStake);
+
         Address addressToSend = to;
         if (senderAddress != null) {
             addressToSend = senderAddress;
         }
-        List<Map<String, Object>> result = (List<Map<String, Object>>) stakeInNetwork.get("unstakes");
-        Map<String, Object> recentUnstakeInfo = result.get(result.size() - 1);
-        unstakeRequestList.append(to, amountToUnstake,
-                (BigInteger) recentUnstakeInfo.get("unstakeBlockHeight"),
-                addressToSend,
+
+        Map<String, BigInteger> estimatedUnlockPeriod = (Map<String, BigInteger>) Context.call(SYSTEM_SCORE_ADDRESS,
+                "estimateUnstakeLockPeriod");
+        BigInteger unlockPeriod = estimatedUnlockPeriod.get("unstakeLockPeriod");
+        long currentBlockHeight = Context.getBlockHeight();
+        BigInteger unstakeHeight = BigInteger.valueOf(currentBlockHeight).add(unlockPeriod);
+        unstakeRequestList.append(to, amountToUnstake, unstakeHeight, addressToSend,
                 unstakeRequestList.tailId.getOrDefault(BigInteger.ZERO).add(BigInteger.ONE));
         sicxSupply.set(sicxSupply.getOrDefault(BigInteger.ZERO).subtract(value));
         UnstakeRequest(addressToSend, amountToUnstake);
