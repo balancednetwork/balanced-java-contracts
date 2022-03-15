@@ -338,18 +338,6 @@ public class Staking {
         return delegationIcx;
     }
 
-    public BigInteger getRate() {
-        BigInteger totalStake = this.totalStake.getOrDefault(BigInteger.ZERO);
-        BigInteger totalSupply = (BigInteger) Context.call(sicxAddress.get(), "totalSupply");
-        BigInteger rate;
-        if (totalStake.equals(BigInteger.ZERO)) {
-            rate = ONE_EXA;
-        } else {
-            rate = (totalStake.add(dailyReward.getOrDefault(BigInteger.ZERO)).multiply(ONE_EXA)).divide(totalSupply);
-        }
-        return rate;
-    }
-
     public void delegateVotes(Address to, PrepDelegations[] userDelegations, BigInteger userIcxHold) {
         BigInteger totalPercentage = BigInteger.ZERO;
         List<Address> similarPrepCheck = new ArrayList<>();
@@ -454,32 +442,42 @@ public class Staking {
             Map<String, Object> stakeInNetwork = (Map<String, Object>) Context.call(SYSTEM_SCORE_ADDRESS, "getStake",
                     Context.getAddress());
             BigInteger totalUnstakeInNetwork = BigInteger.ZERO;
-            List<Map<String, Object>> arr = new ArrayList<>();
-            List<Map<String, Object>> result = (List<Map<String, Object>>) stakeInNetwork.get("unstakes");
-            if (!result.isEmpty()) {
-                for (Map<String, Object> unstakeDetails : result) {
+            List<Map<String, Object>> unstakeList = (List<Map<String, Object>>) stakeInNetwork.get("unstakes");
+            if (!unstakeList.isEmpty()) {
+                for (Map<String, Object> unstakeDetails : unstakeList) {
                     BigInteger unstakedIcx = (BigInteger) unstakeDetails.get("unstake");
                     totalUnstakeInNetwork = totalUnstakeInNetwork.add(unstakedIcx);
                 }
             }
             BigInteger dailyReward = (totalUnstakeInNetwork.add(Context.getBalance(Context.getAddress())))
                     .subtract(totalUnstakeAmount.getOrDefault(BigInteger.ZERO).add(Context.getValue().add(icxToClaim.getOrDefault(BigInteger.ZERO))));
-            this.dailyReward.set(dailyReward);
+            if (dailyReward.compareTo(BigInteger.ZERO) <= 0) {
+                return;
+            }
             totalLifetimeReward.set(getLifetimeReward().add(dailyReward));
-            rate.set(getRate());
+
             BigInteger totalStake = this.totalStake.getOrDefault(BigInteger.ZERO);
-            this.totalStake.set(getTotalStake().add(dailyReward));
+            BigInteger newTotalStake = totalStake.add(dailyReward);
+            BigInteger newRate;
+            if (newTotalStake.equals(BigInteger.ZERO)) {
+                newRate = ONE_EXA;
+            } else {
+                BigInteger totalSupply = (BigInteger) Context.call(sicxAddress.get(), "totalSupply");
+                newRate = newTotalStake.multiply(ONE_EXA).divide(totalSupply);
+            }
+            rate.set(newRate);
+            this.totalStake.set(newTotalStake);
+
             for (Address prep : getPrepList()) {
                 BigInteger valueInIcx = prepDelegations.getOrDefault(prep.toString(), BigInteger.ZERO);
                 BigInteger weightagePer = valueInIcx.multiply(HUNDRED_PERCENTAGE).divide(totalStake);
                 BigInteger prepReward = weightagePer.multiply(dailyReward).divide(HUNDRED_PERCENTAGE);
                 setPrepDelegations(prep.toString(), prepReward);
             }
-            this.dailyReward.set(BigInteger.ZERO);
             distributing.set(false);
         }
         checkForIscore();
-        checkForBalance();
+        checkForUnstakedBalance();
     }
 
     public BigInteger calculateDelegatedICXOutOfTopPreps(List<Address> topPrepAddresses) {
@@ -610,7 +608,7 @@ public class Staking {
         return prepDelegationInPercentage;
     }
 
-    public void checkForBalance() {
+    public void checkForUnstakedBalance() {
         BigInteger balance =
                 Context.getBalance(Context.getAddress()).subtract(dailyReward.getOrDefault(BigInteger.ZERO))
                         .subtract(icxToClaim.getOrDefault(BigInteger.ZERO));
