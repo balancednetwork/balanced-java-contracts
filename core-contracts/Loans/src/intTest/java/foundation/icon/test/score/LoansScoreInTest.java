@@ -42,7 +42,7 @@ public class LoansScoreInTest extends LoansScore {
         RpcObject params = new RpcObject.Builder()
                 .put("_governance", new RpcValue(governaceAddress))
                 .build();
-        Score score = txHandler.deploy(wallet, getFilePath("loans"), scoreAddress, params, null);
+        Score score = txHandler.deploy(wallet, getFilePath("Loans"), scoreAddress, params, null);
         return new LoansScore(score);
     }
 
@@ -52,7 +52,7 @@ public class LoansScoreInTest extends LoansScore {
         RpcObject params = new RpcObject.Builder()
                 .put("_governance", new RpcValue(governaceAddress))
                 .build();
-        Score score = txHandler.deploy(wallet, getFilePath("loans"), params);
+        Score score = txHandler.deploy(wallet, getFilePath("Loans"), params);
         return new LoansScore(score);
     }
 

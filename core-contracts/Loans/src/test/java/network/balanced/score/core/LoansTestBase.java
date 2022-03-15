@@ -6,7 +6,7 @@ import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
 import com.iconloop.score.token.irc2.IRC2Mintable;
 import com.eclipsesource.json.Json;
-import org.json.JSONObject;
+import com.eclipsesource.json.JsonObject;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.function.Executable;
 
@@ -94,9 +94,9 @@ class LoansTestsBase extends TestBase {
 
     protected void takeLoanSICX(Account account, BigInteger collateral, int loan) {
         Map<String, Object> map = new HashMap<>();
-        map.put("_asset", "bnUSD");
-        map.put("_amount", loan);
-        JSONObject data = new JSONObject(map);
+        JsonObject data = new JsonObject()
+            .add("_asset", "bnUSD")
+            .add("_amount", loan);
         byte[] params = data.toString().getBytes();
 
         sicx.invoke(account, "transfer", loans.getAddress(), collateral, params);

@@ -44,7 +44,7 @@ public class RebalanceMockScore extends RebalancingScore {
         RpcObject params = new RpcObject.Builder()
                 .put("_loansAddress", new RpcValue(loansAddress))
                 .build();
-        Score score = txHandler.deploy(wallet, getFilePath("rebalanceMock"), params);
+        Score score = txHandler.deploy(wallet, getFilePath("RebalanceMock"), params);
         return new RebalanceMockScore(score);
     }
 

@@ -45,7 +45,7 @@ public class DexMockScore extends DexScore {
             .put("_sicx", new RpcValue(sicxAddress))
             .put("_bnusd", new RpcValue(bnusdAddress))
             .build();
-        Score score = txHandler.deploy(wallet, getFilePath("dexMock"), params);
+        Score score = txHandler.deploy(wallet, getFilePath("DexMock"), params);
         return new DexMockScore(score);
     }
 

@@ -51,3 +51,15 @@ project(':DAOfund').projectDir = file("core-contracts/DAOfund")
 
 include(':BalancedDollar')
 project(':BalancedDollar').projectDir = file("token-contracts/BalancedDollar")
+
+include(':Loans')
+project(':Loans').projectDir = file("core-contracts/Loans")
+
+include(':testinteg')
+project(':testinteg').projectDir = file("testinteg")
+
+include(':DexMock')
+project(':DexMock').projectDir = file("mock-contracts/DexMock")
+
+include(':RebalanceMock')
+project(':RebalanceMock').projectDir = file("mock-contracts/RebalanceMock")
