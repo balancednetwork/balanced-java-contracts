@@ -385,25 +385,24 @@ public class Staking {
         return amountToStake;
     }
 
-    public BigInteger distributeEvenly(BigInteger amountToDistribute, BigInteger isFirstTx, Address to) {
-        BigInteger value = BigInteger.ZERO;
-        if (isFirstTx.equals(BigInteger.ONE)) {
-            BigInteger evenlyDistribution = amountToDistribute.divide(Constant.TOP_PREP_COUNT);
-            StringBuilder addressDelegation = new StringBuilder();
-            BigInteger balance = (BigInteger) Context.call(sicxAddress.get(), "balanceOf", to);
-            BigInteger userIcxBalance =
-                    (balance.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(ONE_EXA);
-            for (int i = 0; i < this.topPreps.size(); i++) {
-                Address prep = this.topPreps.get(i);
-                addressDelegation.append(prep).append(":").append(evenlyDistribution).append(".");
-                setAddressDelegations(to, prep, evenlyDistribution, userIcxBalance);
-            }
-            addressDelegations.set(to.toString(), addressDelegation.toString());
-        } else {
-            BigInteger evenlyDistribution = (ONE_EXA.multiply(amountToDistribute)).divide(Constant.TOP_PREP_COUNT);
-            value = evenlyDistribution.divide(ONE_EXA);
+    public void setEvenAddressDelegationsInPercentage(Address to) {
+        BigInteger topPrepsCount = BigInteger.valueOf(topPreps.size());
+        BigInteger evenlyDistribution = HUNDRED_PERCENTAGE.divide(topPrepsCount);
+        StringBuilder addressDelegation = new StringBuilder();
+        BigInteger balance = (BigInteger) Context.call(sicxAddress.get(), "balanceOf", to);
+        BigInteger userIcxBalance = (balance.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(ONE_EXA);
+        for (int i = 0; i < this.topPreps.size(); i++) {
+            Address prep = this.topPreps.get(i);
+            addressDelegation.append(prep).append(":").append(evenlyDistribution).append(".");
+            setAddressDelegations(to, prep, evenlyDistribution, userIcxBalance);
         }
-        return value;
+        addressDelegations.set(to.toString(), addressDelegation.toString());
+    }
+
+    public BigInteger distributeEvenlyToTopPreps(BigInteger amountToDistribute) {
+        BigInteger topPrepsCount = BigInteger.valueOf(topPreps.size());
+        BigInteger evenlyDistribution = (ONE_EXA.multiply(amountToDistribute)).divide(topPrepsCount);
+        return evenlyDistribution.divide(ONE_EXA);
     }
 
     public void stakeAndDelegate(BigInteger evenlyDistributeValue) {
@@ -421,7 +420,7 @@ public class Staking {
                 toDistribute = toDistribute.add(prepDelegations);
             }
         }
-        return distributeEvenly(toDistribute, BigInteger.ZERO, null);
+        return distributeEvenlyToTopPreps(toDistribute);
     }
 
     public Map<String, BigInteger> removePreviousDelegations(Address to) {
@@ -550,8 +549,7 @@ public class Staking {
         BigInteger newBalance = (BigInteger) Context.call(sicxAddress.get(), "balanceOf", _to);
         BigInteger userNewIcx = (newBalance.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(ONE_EXA);
         if (previousDelegations.isEmpty()) {
-            BigInteger isFirstTx = BigInteger.ONE;
-            distributeEvenly(HUNDRED_PERCENTAGE, isFirstTx, _to);
+            setEvenAddressDelegationsInPercentage(_to);
         } else {
             BigInteger deltaIcx = userNewIcx.subtract(userOldIcx);
             for (String prep : previousDelegations.keySet()) {
@@ -582,11 +580,9 @@ public class Staking {
             for (String prep : receiverDelegations.keySet()) {
                 BigInteger addedIcx = percentToIcx(receiverDelegations.get(prep), sicxToIcx);
                 prepDelegations.set(prep, prepDelegations.getOrDefault(prep, BigInteger.ZERO).add(addedIcx));
-
             }
-
         } else {
-            distributeEvenly(HUNDRED_PERCENTAGE, BigInteger.ONE, _to);
+            setEvenAddressDelegationsInPercentage(_to);
             BigInteger totalIcxHold = (_value.multiply(rate.getOrDefault(BigInteger.ZERO))).divide(ONE_EXA);
             Map<String, BigInteger> newDelegation = getDelegationInPercentage(_to);
             for (String prep : newDelegation.keySet()) {
