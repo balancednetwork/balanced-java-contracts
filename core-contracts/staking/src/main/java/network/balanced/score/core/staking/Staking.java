@@ -23,6 +23,7 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+import com.eclipsesource.json.JsonValue;
 import network.balanced.score.core.staking.db.LinkedListDB;
 import network.balanced.score.core.staking.utils.Constant;
 import network.balanced.score.core.staking.utils.PrepDelegations;
@@ -75,7 +76,7 @@ public class Staking {
             rate.set(ONE_EXA);
             distributing.set(false);
             setTopPreps();
-            unstakeBatchLimit.set(Constant.DEFAULT_UNSTAKE_BATCH_LIMIT);
+            unstakeBatchLimit.set(DEFAULT_UNSTAKE_BATCH_LIMIT);
             stakingOn.set(false);
         }
     }
@@ -245,8 +246,9 @@ public class Staking {
             String unpackedData = new String(_data);
             JsonObject json = Json.parse(unpackedData).asObject();
             String method = json.get("method").asString();
-            if ((json.contains("method")) && method.equals("unstake")) {
-                if (json.contains("user")) {
+            if (method.equals("unstake")) {
+                JsonValue user = json.get("user");
+                if (user != null) {
                     unstake(_from, _value, Address.fromString(json.get("user").asString()));
                 } else {
                     unstake(_from, _value, null);
