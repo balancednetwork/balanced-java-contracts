@@ -432,7 +432,7 @@ public class Staking {
         BigInteger nextPrepTerm = (BigInteger) termDetails.get("nextPRepTerm");
         if (nextPrepTerm.compareTo(blockHeightWeek.getOrDefault(BigInteger.ZERO).add(BigInteger.valueOf(302400L))) > 0) {
             blockHeightWeek.set(nextPrepTerm);
-            for (int i = 0; i <= this.topPreps.size(); i++) {
+            for (int i = 0; i < this.topPreps.size(); i++) {
                 this.topPreps.pop();
             }
             return setTopPreps();
