@@ -288,7 +288,7 @@ public class Staking {
         if (payableIcx.compareTo(BigInteger.ZERO) > 0) {
             BigInteger unclaimedIcx = icxToClaim.getOrDefault(BigInteger.ZERO).subtract(payableIcx);
             icxToClaim.set(unclaimedIcx);
-            icxPayable.set(_to, BigInteger.ZERO);
+            icxPayable.set(_to, null);
             sendIcx(_to, payableIcx, "");
             UnstakeAmountTransfer(_to, payableIcx);
         }
