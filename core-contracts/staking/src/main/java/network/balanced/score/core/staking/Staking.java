@@ -398,8 +398,8 @@ public class Staking {
             addressDelegations.set(addressStr, null);
             for (String prep : previousDelegations.keySet()) {
                 BigInteger prepDelegations = this.prepDelegations.getOrDefault(prep, BigInteger.ZERO);
-                BigInteger votesPer = previousDelegations.get(prep);
-                BigInteger votesIcx = votesPer.multiply(icxHoldPreviously).divide(HUNDRED_PERCENTAGE);
+                BigInteger votesPercentage = previousDelegations.get(prep);
+                BigInteger votesIcx = votesPercentage.multiply(icxHoldPreviously).divide(HUNDRED_PERCENTAGE);
                 this.prepDelegations.set(prep, prepDelegations.subtract(votesIcx));
             }
         }
@@ -426,7 +426,7 @@ public class Staking {
     public void delegate(PrepDelegations[] _user_delegations) {
         stakingOn();
         Address to = Context.getCaller();
-        performChecks();
+        performChecksForIscoreAndUnstakedBalance();
         Map<String, BigInteger> previousDelegations = removePreviousDelegations(to);
         BigInteger balance = (BigInteger) Context.call(sicxAddress.get(), "balanceOf", to);
         BigInteger icxHoldPreviously = balance.multiply(getTodayRate()).divide(ONE_EXA);
@@ -437,20 +437,25 @@ public class Staking {
     }
 
     @SuppressWarnings("unchecked")
-    public void performChecks() {
-        if (distributing.get()) {
-            Map<String, Object> stakeInNetwork = (Map<String, Object>) Context.call(SYSTEM_SCORE_ADDRESS, "getStake",
-                    Context.getAddress());
-            BigInteger totalUnstakeInNetwork = BigInteger.ZERO;
-            List<Map<String, Object>> unstakeList = (List<Map<String, Object>>) stakeInNetwork.get("unstakes");
-            if (!unstakeList.isEmpty()) {
-                for (Map<String, Object> unstakeDetails : unstakeList) {
-                    BigInteger unstakedIcx = (BigInteger) unstakeDetails.get("unstake");
-                    totalUnstakeInNetwork = totalUnstakeInNetwork.add(unstakedIcx);
-                }
+    public void performChecksForIscoreAndUnstakedBalance() {
+
+        // Calculate ICX available through unstaking
+        Map<String, Object> stakeInNetwork = (Map<String, Object>) Context.call(SYSTEM_SCORE_ADDRESS, "getStake",
+                Context.getAddress());
+        BigInteger totalUnstakeInNetwork = BigInteger.ZERO;
+        List<Map<String, Object>> unstakeList = (List<Map<String, Object>>) stakeInNetwork.get("unstakes");
+        if (!unstakeList.isEmpty()) {
+            for (Map<String, Object> unstakeDetails : unstakeList) {
+                BigInteger unstakedIcx = (BigInteger) unstakeDetails.get("unstake");
+                totalUnstakeInNetwork = totalUnstakeInNetwork.add(unstakedIcx);
             }
-            BigInteger dailyReward = (totalUnstakeInNetwork.add(Context.getBalance(Context.getAddress())))
-                    .subtract(totalUnstakeAmount.getOrDefault(BigInteger.ZERO).add(Context.getValue().add(icxToClaim.getOrDefault(BigInteger.ZERO))));
+        }
+        BigInteger unstakedICX = totalUnstakeAmount.get().subtract(totalUnstakeInNetwork);
+
+        if (distributing.get()) {
+            BigInteger dailyReward = Context.getBalance(Context.getAddress()).subtract(unstakedICX)
+                    .subtract(Context.getValue())
+                    .subtract(icxToClaim.getOrDefault(BigInteger.ZERO));
             if (dailyReward.compareTo(BigInteger.ZERO) <= 0) {
                 return;
             }
@@ -470,14 +475,14 @@ public class Staking {
 
             for (Address prep : getPrepList()) {
                 BigInteger valueInIcx = prepDelegations.getOrDefault(prep.toString(), BigInteger.ZERO);
-                BigInteger weightagePer = valueInIcx.multiply(HUNDRED_PERCENTAGE).divide(totalStake);
-                BigInteger prepReward = weightagePer.multiply(dailyReward).divide(HUNDRED_PERCENTAGE);
+                BigInteger weightagePercentage = valueInIcx.multiply(HUNDRED_PERCENTAGE).divide(totalStake);
+                BigInteger prepReward = valueInIcx.multiply(dailyReward).divide(totalStake);
                 setPrepDelegations(prep.toString(), prepReward);
             }
             distributing.set(false);
         }
         checkForIscore();
-        checkForUnstakedBalance();
+        checkForUnstakedBalance(unstakedICX);
     }
 
     public BigInteger calculateDelegatedICXOutOfTopPreps(List<Address> topPrepAddresses) {
@@ -539,7 +544,7 @@ public class Staking {
         }
         BigInteger balance = (BigInteger) Context.call(sicxAddress.get(), "balanceOf", _to);
         BigInteger userOldIcx = (balance.multiply(getTodayRate())).divide(ONE_EXA);
-        performChecks();
+        performChecksForIscoreAndUnstakedBalance();
         BigInteger addedIcx = Context.getValue();
         totalStake.set(totalStake.getOrDefault(BigInteger.ZERO).add(addedIcx));
         BigInteger sicxToMint = (ONE_EXA.multiply(addedIcx)).divide(getTodayRate());
@@ -608,42 +613,43 @@ public class Staking {
         return prepDelegationInPercentage;
     }
 
-    public void checkForUnstakedBalance() {
-        BigInteger balance =
-                Context.getBalance(Context.getAddress()).subtract(dailyReward.getOrDefault(BigInteger.ZERO))
-                        .subtract(icxToClaim.getOrDefault(BigInteger.ZERO));
-        if (balance.compareTo(BigInteger.ZERO) <= 0) {
+    public void checkForUnstakedBalance(BigInteger unstakedICX) {
+
+        if (unstakedICX.compareTo(BigInteger.ZERO) <= 0) {
             return;
         }
+
+        BigInteger totalUnstakeAmount = this.totalUnstakeAmount.getOrDefault(BigInteger.ZERO);
+        BigInteger icxToClaim = this.icxToClaim.getOrDefault(BigInteger.ZERO);
         List<List<Object>> unstakingRequests = getUnstakeInfo();
         for (int i = 0; i < unstakingRequests.size(); i++) {
             if (BigInteger.valueOf(i).compareTo(unstakeBatchLimit.getOrDefault(BigInteger.ZERO)) > 0) {
                 return;
             }
-            if (balance.compareTo(BigInteger.ZERO) <= 0) {
+            if (unstakedICX.compareTo(BigInteger.ZERO) <= 0) {
                 return;
             }
             BigInteger payout;
             List<Object> unstakeInfo = unstakingRequests.get(i);
             BigInteger unstakeAmount = (BigInteger) unstakeInfo.get(1);
-            if (unstakeAmount.compareTo(balance) <= 0) {
+            if (unstakeAmount.compareTo(unstakedICX) <= 0) {
                 payout = unstakeAmount;
                 unstakeRequestList.remove(unstakeRequestList.headId.getOrDefault(BigInteger.ZERO));
             } else {
-                payout = balance;
-
+                payout = unstakedICX;
                 unstakeRequestList.updateNode((Address) unstakeInfo.get(2), unstakeAmount.subtract(payout),
                         (BigInteger) unstakeInfo.get(3), (Address) unstakeInfo.get(4),
                         (BigInteger) unstakeInfo.get(0));
             }
-            totalUnstakeAmount.set(totalUnstakeAmount.getOrDefault(BigInteger.ZERO).subtract(payout));
-            balance = balance.subtract(payout);
-            icxToClaim.set(icxToClaim.getOrDefault(BigInteger.ZERO).add(payout));
+            totalUnstakeAmount = totalUnstakeAmount.subtract(payout);
+            unstakedICX = unstakedICX.subtract(payout);
+            icxToClaim = icxToClaim.add(payout);
             icxPayable.set((Address) unstakeInfo.get(4), icxPayable.getOrDefault((Address) unstakeInfo.get(4),
                     BigInteger.ZERO).add(payout));
-
         }
 
+        this.totalUnstakeAmount.set(totalUnstakeAmount);
+        this.icxToClaim.set(icxToClaim);
     }
 
     @SuppressWarnings("unchecked")
