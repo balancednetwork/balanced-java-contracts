@@ -286,9 +286,13 @@ public class Staking {
             _to = Context.getCaller();
         }
         BigInteger payableIcx = icxPayable.getOrDefault(_to, BigInteger.ZERO);
+        BigInteger icxToClaim = this.icxToClaim.getOrDefault(BigInteger.ZERO);
+        Context.require(payableIcx.compareTo(icxToClaim) <= 0,
+                TAG + ": No sufficient icx to claim. Requested: " + payableIcx + " Available: " + icxToClaim);
+
         if (payableIcx.compareTo(BigInteger.ZERO) > 0) {
-            BigInteger unclaimedIcx = icxToClaim.getOrDefault(BigInteger.ZERO).subtract(payableIcx);
-            icxToClaim.set(unclaimedIcx);
+            BigInteger unclaimedIcx = icxToClaim.subtract(payableIcx);
+            this.icxToClaim.set(unclaimedIcx);
             icxPayable.set(_to, null);
             sendIcx(_to, payableIcx, "");
             UnstakeAmountTransfer(_to, payableIcx);
