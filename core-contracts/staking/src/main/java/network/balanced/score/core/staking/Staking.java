@@ -391,8 +391,9 @@ public class Staking {
 
     public void stakeAndDelegateInNetwork() {
         updateTopPreps();
-        Context.call(SYSTEM_SCORE_ADDRESS, "setStake", totalStake.getOrDefault(BigInteger.ZERO));
-        updateDelegationInNetwork();
+        BigInteger totalStake = this.totalStake.getOrDefault(BigInteger.ZERO);
+        Context.call(SYSTEM_SCORE_ADDRESS, "setStake", totalStake);
+        updateDelegationInNetwork(totalStake);
     }
 
     public Map<String, BigInteger> removePreviousDelegations(Address to) {
@@ -456,7 +457,8 @@ public class Staking {
                 totalUnstakeInNetwork = totalUnstakeInNetwork.add(unstakedIcx);
             }
         }
-        BigInteger unstakedICX = totalUnstakeAmount.get().subtract(totalUnstakeInNetwork);
+        BigInteger totalUnstakeAmount = this.totalUnstakeAmount.getOrDefault(BigInteger.ZERO);
+        BigInteger unstakedICX = totalUnstakeAmount.subtract(totalUnstakeInNetwork);
         BigInteger dailyReward = Context.getBalance(Context.getAddress()).subtract(unstakedICX)
                 .subtract(Context.getValue())
                 .subtract(icxToClaim.getOrDefault(BigInteger.ZERO));
@@ -484,7 +486,7 @@ public class Staking {
             }
         }
         checkForIscore();
-        checkForUnstakedBalance(unstakedICX);
+        checkForUnstakedBalance(unstakedICX, totalUnstakeAmount);
     }
 
     public BigInteger calculateDelegatedICXOutOfTopPreps(List<Address> topPrepAddresses) {
@@ -499,7 +501,7 @@ public class Staking {
         return delegatedAmountOutOfTopPreps;
     }
 
-    public void updateDelegationInNetwork() {
+    public void updateDelegationInNetwork(BigInteger totalStake) {
 
         List<Address> topPrepAddresses = getTopPreps();
         int totalPrepsToDelegate = topPrepAddresses.size();
@@ -523,11 +525,7 @@ public class Staking {
         BigInteger amountToDelegateToLastPrep = prepDelegations.getOrDefault(lastPrep.toString(), BigInteger.ZERO).
                 add(amountToAddToAllTopPreps).add(amountToAddToOnePrep);
         delegatedIcxSum = delegatedIcxSum.add(amountToDelegateToLastPrep);
-        BigInteger freeVotingPower = BigInteger.ZERO;
-        BigInteger totalStake = this.totalStake.get();
-        if (totalStake != null) {
-            freeVotingPower = totalStake.subtract(delegatedIcxSum);
-        }
+        BigInteger freeVotingPower = totalStake.subtract(delegatedIcxSum);
         amountToDelegateToLastPrep = amountToDelegateToLastPrep.add(freeVotingPower);
         delegationList.add(Map.of("address", lastPrep, "value", amountToDelegateToLastPrep));
 
@@ -544,8 +542,6 @@ public class Staking {
         if (_to == null) {
             _to = Context.getCaller();
         }
-        BigInteger balance = (BigInteger) Context.call(sicxAddress.get(), "balanceOf", _to);
-        BigInteger userOldIcx = (balance.multiply(getTodayRate())).divide(ONE_EXA);
         performChecksForIscoreAndUnstakedBalance();
         BigInteger addedIcx = Context.getValue();
         totalStake.set(totalStake.getOrDefault(BigInteger.ZERO).add(addedIcx));
@@ -555,7 +551,6 @@ public class Staking {
         Context.call(sicxAddress.get(), "mintTo", _to, sicxToMint, _data);
         TokenTransfer(_to, sicxToMint, sicxToMint + " sICX minted to " + _to);
 
-        BigInteger userNewIcx = userOldIcx.add(addedIcx);
         if (currentDelegation.isEmpty()) {
             setEvenAddressDelegationsInPercentage(_to);
         } else {
@@ -615,13 +610,12 @@ public class Staking {
         return prepDelegationInPercentage;
     }
 
-    public void checkForUnstakedBalance(BigInteger unstakedICX) {
+    public void checkForUnstakedBalance(BigInteger unstakedICX, BigInteger totalUnstakeAmount) {
 
         if (unstakedICX.compareTo(BigInteger.ZERO) <= 0) {
             return;
         }
 
-        BigInteger totalUnstakeAmount = this.totalUnstakeAmount.getOrDefault(BigInteger.ZERO);
         BigInteger icxToClaim = this.icxToClaim.getOrDefault(BigInteger.ZERO);
 
         BigInteger currentId = unstakeRequestList.headId.getOrDefault(DEFAULT_NODE_ID);
@@ -633,10 +627,6 @@ public class Staking {
         UnstakeDetails unstakeData;
         BigInteger payout;
         for (int i = 0; i < unstakeBatchLimit.getOrDefault(DEFAULT_UNSTAKE_BATCH_LIMIT).intValue(); i++) {
-            if (currentId.equals(DEFAULT_NODE_ID)) {
-                break;
-            }
-
             node = unstakeRequestList.getNode(currentId);
             unstakeData = new UnstakeDetails(currentId, node.getValue(), node.getKey(), node.getBlockHeight(),
                     node.getSenderAddress());
@@ -648,8 +638,7 @@ public class Staking {
             } else {
                 payout = unstakedICX;
                 unstakeRequestList.updateNode(unstakeData.key, unstakeAmount.subtract(payout),
-                        unstakeData.unstakeBlockHeight,
-                        unstakeData.receiverAddress, currentId);
+                        unstakeData.unstakeBlockHeight, unstakeData.receiverAddress, currentId);
             }
             totalUnstakeAmount = totalUnstakeAmount.subtract(payout);
             unstakedICX = unstakedICX.subtract(payout);
@@ -658,6 +647,10 @@ public class Staking {
                     BigInteger.ZERO).add(payout));
 
             currentId = node.getNext();
+
+            if (currentId.equals(DEFAULT_NODE_ID)) {
+                break;
+            }
 
             if (unstakedICX.compareTo(BigInteger.ZERO) <= 0) {
                 break;
@@ -682,7 +675,7 @@ public class Staking {
         }
         BigInteger newTotalStake = totalStake.getOrDefault(BigInteger.ZERO).subtract(amountToUnstake);
         totalStake.set(newTotalStake);
-        updateDelegationInNetwork();
+        updateDelegationInNetwork(newTotalStake);
         Context.call(SYSTEM_SCORE_ADDRESS, "setStake", newTotalStake);
 
         Address addressToSend = to;
