@@ -16,6 +16,7 @@
 
 package network.balanced.score.core.staking.db;
 
+import network.balanced.score.core.staking.utils.UnstakeDetails;
 import score.Address;
 import score.Context;
 import score.VarDB;
@@ -27,7 +28,7 @@ import java.util.List;
 
 public class LinkedListDB {
     private static final String NAME = "_LINKED_LISTDB";
-    private static final BigInteger DEFAULT_NODE_ID = BigInteger.ZERO;
+    public static final BigInteger DEFAULT_NODE_ID = BigInteger.ZERO;
 
     public final VarDB<BigInteger> headId;
     public final VarDB<BigInteger> tailId;
@@ -185,24 +186,23 @@ public class LinkedListDB {
         length.set(null);
     }
 
-    public List<List<Object>> iterate() {
-        BigInteger curId = headId.getOrDefault(DEFAULT_NODE_ID);
-        List<List<Object>> newList = new ArrayList<>();
+    public List<UnstakeDetails> iterate() {
+        BigInteger currentId = headId.getOrDefault(DEFAULT_NODE_ID);
+        List<UnstakeDetails> unstakeDetail = new ArrayList<>();
 
-        if (curId.equals(DEFAULT_NODE_ID)) {
-            return newList;
+        if (currentId.equals(DEFAULT_NODE_ID)) {
+            return unstakeDetail;
         }
-        NodeDB node = getNode(curId);
-        newList.add(List.of(curId, node.getValue(), node.getKey(), node.getBlockHeight(), node.getSenderAddress()));
 
+        NodeDB node;
         BigInteger tailId = this.tailId.getOrDefault(DEFAULT_NODE_ID);
-        while (!curId.equals(tailId)) {
-            curId = node.getNext();
-            node = getNode(curId);
-            newList.add(List.of(curId, node.getValue(), node.getKey(), node.getBlockHeight(), node.getSenderAddress()));
-            tailId = this.tailId.getOrDefault(DEFAULT_NODE_ID);
+        while (!currentId.equals(tailId)) {
+            node = getNode(currentId);
+            unstakeDetail.add(new UnstakeDetails(currentId, node.getValue(), node.getKey(), node.getBlockHeight(),
+                    node.getSenderAddress()));
+            currentId = node.getNext();
         }
-        return newList;
+        return unstakeDetail;
     }
 
     private void LinkedNodeAlreadyExists(String name, BigInteger nodeId) {

@@ -25,8 +25,10 @@ import java.util.Map;
 
 import com.eclipsesource.json.JsonValue;
 import network.balanced.score.core.staking.db.LinkedListDB;
+import network.balanced.score.core.staking.db.NodeDB;
 import network.balanced.score.core.staking.utils.Constant;
 import network.balanced.score.core.staking.utils.PrepDelegations;
+import network.balanced.score.core.staking.utils.UnstakeDetails;
 import score.Address;
 import score.Context;
 import score.VarDB;
@@ -41,6 +43,7 @@ import scorex.util.HashMap;
 import scorex.util.StringTokenizer;
 
 
+import static network.balanced.score.core.staking.db.LinkedListDB.*;
 import static network.balanced.score.core.staking.utils.Checks.*;
 import static network.balanced.score.core.staking.utils.Constant.*;
 
@@ -621,31 +624,45 @@ public class Staking {
 
         BigInteger totalUnstakeAmount = this.totalUnstakeAmount.getOrDefault(BigInteger.ZERO);
         BigInteger icxToClaim = this.icxToClaim.getOrDefault(BigInteger.ZERO);
-        List<List<Object>> unstakingRequests = getUnstakeInfo();
-        for (int i = 0; i < unstakingRequests.size(); i++) {
-            if (BigInteger.valueOf(i).compareTo(unstakeBatchLimit.getOrDefault(BigInteger.ZERO)) > 0) {
-                return;
+
+        BigInteger currentId = unstakeRequestList.headId.getOrDefault(DEFAULT_NODE_ID);
+        if (currentId.equals(DEFAULT_NODE_ID)) {
+            return;
+        }
+
+        NodeDB node;
+        UnstakeDetails unstakeData;
+        BigInteger payout;
+        for (int i = 0; i < unstakeBatchLimit.getOrDefault(DEFAULT_UNSTAKE_BATCH_LIMIT).intValue(); i++) {
+            if (currentId.equals(DEFAULT_NODE_ID)) {
+                break;
             }
-            if (unstakedICX.compareTo(BigInteger.ZERO) <= 0) {
-                return;
-            }
-            BigInteger payout;
-            List<Object> unstakeInfo = unstakingRequests.get(i);
-            BigInteger unstakeAmount = (BigInteger) unstakeInfo.get(1);
+
+            node = unstakeRequestList.getNode(currentId);
+            unstakeData = new UnstakeDetails(currentId, node.getValue(), node.getKey(), node.getBlockHeight(),
+                    node.getSenderAddress());
+
+            BigInteger unstakeAmount = unstakeData.unstakeAmount;
             if (unstakeAmount.compareTo(unstakedICX) <= 0) {
                 payout = unstakeAmount;
-                unstakeRequestList.remove(unstakeRequestList.headId.getOrDefault(BigInteger.ZERO));
+                unstakeRequestList.remove(currentId);
             } else {
                 payout = unstakedICX;
-                unstakeRequestList.updateNode((Address) unstakeInfo.get(2), unstakeAmount.subtract(payout),
-                        (BigInteger) unstakeInfo.get(3), (Address) unstakeInfo.get(4),
-                        (BigInteger) unstakeInfo.get(0));
+                unstakeRequestList.updateNode(unstakeData.key, unstakeAmount.subtract(payout),
+                        unstakeData.unstakeBlockHeight,
+                        unstakeData.receiverAddress, currentId);
             }
             totalUnstakeAmount = totalUnstakeAmount.subtract(payout);
             unstakedICX = unstakedICX.subtract(payout);
             icxToClaim = icxToClaim.add(payout);
-            icxPayable.set((Address) unstakeInfo.get(4), icxPayable.getOrDefault((Address) unstakeInfo.get(4),
+            icxPayable.set(unstakeData.receiverAddress, icxPayable.getOrDefault(unstakeData.receiverAddress,
                     BigInteger.ZERO).add(payout));
+
+            currentId = node.getNext();
+
+            if (unstakedICX.compareTo(BigInteger.ZERO) <= 0) {
+                break;
+            }
         }
 
         this.totalUnstakeAmount.set(totalUnstakeAmount);
@@ -686,22 +703,18 @@ public class Staking {
 
 
     @External(readonly = true)
-    public List<List<Object>> getUnstakeInfo() {
+    public List<UnstakeDetails> getUnstakeInfo() {
         return unstakeRequestList.iterate();
     }
 
     @External(readonly = true)
     public List<Map<String, Object>> getUserUnstakeInfo(Address _address) {
-        List<List<Object>> linkedListIter = unstakeRequestList.iterate();
+        List<UnstakeDetails> linkedListIter = unstakeRequestList.iterate();
         List<Map<String, Object>> response = new ArrayList<>();
-        for (List<Object> newList : linkedListIter) {
-            if (newList.get(4).equals(_address)) {
-                Map<String, Object> unstakeDict = new HashMap<>();
-                unstakeDict.put("amount", newList.get(1));
-                unstakeDict.put("from", newList.get(2));
-                unstakeDict.put("blockHeight", newList.get(3));
-                unstakeDict.put("sender", newList.get(4));
-                response.add(unstakeDict);
+        for (UnstakeDetails unstakeData : linkedListIter) {
+            if (unstakeData.key.equals(_address)) {
+                response.add(Map.of("amount", unstakeData.unstakeAmount, "from", unstakeData.key, "blockHeight",
+                        unstakeData.unstakeBlockHeight, "sender", unstakeData.receiverAddress));
             }
         }
         return response;
