@@ -271,7 +271,6 @@ public class Staking {
         if (iscoreGenerated.compareTo(BigInteger.ZERO) > 0) {
             Context.call(SYSTEM_SCORE_ADDRESS, "claimIScore");
             IscoreClaimed(BigInteger.valueOf(Context.getBlockHeight()), iscoreGenerated);
-            distributing.set(true);
         }
     }
 
@@ -454,16 +453,13 @@ public class Staking {
             }
         }
         BigInteger unstakedICX = totalUnstakeAmount.get().subtract(totalUnstakeInNetwork);
+        BigInteger dailyReward = Context.getBalance(Context.getAddress()).subtract(unstakedICX)
+                .subtract(Context.getValue())
+                .subtract(icxToClaim.getOrDefault(BigInteger.ZERO));
 
-        if (distributing.get()) {
-            BigInteger dailyReward = Context.getBalance(Context.getAddress()).subtract(unstakedICX)
-                    .subtract(Context.getValue())
-                    .subtract(icxToClaim.getOrDefault(BigInteger.ZERO));
-            if (dailyReward.compareTo(BigInteger.ZERO) <= 0) {
-                return;
-            }
+        // If there is I-Score generated then update the rate
+        if (dailyReward.compareTo(BigInteger.ZERO) > 0) {
             totalLifetimeReward.set(getLifetimeReward().add(dailyReward));
-
             BigInteger totalStake = this.totalStake.getOrDefault(BigInteger.ZERO);
             BigInteger newTotalStake = totalStake.add(dailyReward);
             BigInteger newRate;
@@ -482,7 +478,6 @@ public class Staking {
                 BigInteger prepReward = valueInIcx.multiply(dailyReward).divide(totalStake);
                 setPrepDelegations(prep.toString(), prepReward);
             }
-            distributing.set(false);
         }
         checkForIscore();
         checkForUnstakedBalance(unstakedICX);
