@@ -22,6 +22,8 @@ import score.VarDB;
 
 import java.math.BigInteger;
 
+import static network.balanced.score.core.staking.db.LinkedListDB.DEFAULT_NODE_ID;
+
 public class NodeDB {
 
     private static final String NAME = "_NODEDB";
@@ -80,7 +82,7 @@ public class NodeDB {
     }
 
     public BigInteger getNext() {
-        return next.getOrDefault(BigInteger.ZERO);
+        return next.getOrDefault(DEFAULT_NODE_ID);
     }
 
     public void setNext(BigInteger nextId) {
@@ -88,7 +90,7 @@ public class NodeDB {
     }
 
     public BigInteger getPrev() {
-        return prev.getOrDefault(BigInteger.ZERO);
+        return prev.getOrDefault(DEFAULT_NODE_ID);
     }
 
     public void setPrev(BigInteger prev_id) {
