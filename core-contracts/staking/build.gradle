@@ -22,7 +22,7 @@ dependencies {
 }
 
 optimizedJar {
-    mainClassName = 'network.balanced.score.core.Staking'
+    mainClassName = 'network.balanced.score.core.staking.Staking'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
         configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
@@ -97,6 +97,13 @@ task integrationTest(type: Test, dependsOn: optimizedJar) {
 
         systemProperty 'tester.keyStore', scoreTest.get("tester.keystoreName")
         systemProperty 'tester.keyPassword', scoreTest.get("tester.keystorePass")
+
+        systemProperty 'tester.isUpdate', "false"
+        systemProperty 'tester.address', "cx0000000000000000000000000000000000000000"
+        systemProperty 'tester.url', scoreTest.url
+        systemProperty 'tester.nid', scoreTest.nid
+        systemProperty 'tester.scoreFilePath', "../../sicx.zip"
+
 
 //
         systemProperty 'sicx.isUpdate', "false"
