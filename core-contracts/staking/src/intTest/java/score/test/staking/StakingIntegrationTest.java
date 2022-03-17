@@ -43,7 +43,6 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
 
 
     DefaultScoreClient stakingClient = DefaultScoreClient.of(System.getProperties());
-    JsonrpcClient rpcClient = new JsonrpcClient("https://berlin.net.solidwallet.io/api/v3");
 
 
     @ScoreClient
@@ -52,9 +51,11 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
     Wallet tester = DefaultScoreClient.wallet("tester.", System.getProperties());
 
 
-    DefaultScoreClient clientWithTester = new DefaultScoreClient(client.endpoint(), client._nid(), tester,
-            client._address());
+    DefaultScoreClient clientWithTester = new DefaultScoreClient(stakingClient.endpoint(), stakingClient._nid(), tester,
+            stakingClient._address());
 
+
+    @ScoreClient
     StakingInterface scoreClientWithNewUse = new StakingInterfaceScoreClient(clientWithTester);
 
     Map<String, Object> params = Map.of("_admin", stakingClient._address());
@@ -81,7 +82,7 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
 
     @Test
     void testName() {
-        assertEquals("Staked ICX Manager", stakingManagementScore.name());
+        assertEquals("Staked ICX Manager", scoreClientWithNewUse.name());
     }
 
     @Test
@@ -109,9 +110,10 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
     }
 
     @Test
-    void testStakeIcx() {
+    void testStakeIcxByNewUser() {
         Map<String, BigInteger> userExpectedDelegations = new HashMap<>();
         Map<String, BigInteger> expectedPrepDelegations = new HashMap<>();
+        Map<String, BigInteger> expectedNetworkDelegations = new HashMap<>();
         BigInteger previousTotalStake = stakingManagementScore.getTotalStake();
         BigInteger previousTotalSupply = sicxScore.totalSupply();
         BigInteger userBalance = sicxScore.balanceOf(senderAddress);
@@ -119,7 +121,7 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         List<Address> topPreps = stakingManagementScore.getTopPreps();
 
         // stakes 50 ICX by user1
-        ((StakingInterfaceScoreClient) stakingManagementScore).stakeICX(new BigInteger("100000000000000000000"), null
+        ((StakingInterfaceScoreClient) stakingManagementScore).stakeICX(new BigInteger("100").pow(18), null
                 , null);
 
         // get prep delegations
@@ -129,94 +131,68 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         for (Address prep : prepList) {
             if (contains(prep, topPreps)) {
                 userExpectedDelegations.put(prep.toString(), ONE_EXA);
+                expectedNetworkDelegations.put(prep.toString(), ONE_EXA);
                 expectedPrepDelegations.put(prep.toString(), ONE_EXA);
             }
-        }
-
-        BigInteger prepDelegationsSum = new BigInteger("0");
-        for (BigInteger value : prepDelegations.values()) {
-            prepDelegationsSum = prepDelegationsSum.add(value);
         }
         // get address delegations of a user
         Map<String, BigInteger> userDelegations = stakingManagementScore.getAddressDelegations(senderAddress);
 
-//        Assertions.assertEquals(previousTotalStake.add(new BigInteger("100000000000000000000")), prepDelegationsSum);
         assertEquals(userDelegations, userExpectedDelegations);
         assertEquals(prepDelegations, expectedPrepDelegations);
-        assertEquals(previousTotalStake.add(new BigInteger("100000000000000000000")),
+        assertEquals(previousTotalStake.add(new BigInteger("100").pow(18)),
                 stakingManagementScore.getTotalStake());
-        assertEquals(previousTotalSupply.add(new BigInteger("100000000000000000000")),
+        assertEquals(previousTotalSupply.add(new BigInteger("100").pow(18)),
                 sicxScore.totalSupply());
-        assertEquals(userBalance.add(new BigInteger("100000000000000000000")),
+        assertEquals(userBalance.add(new BigInteger("100").pow(18)),
                 sicxScore.balanceOf(senderAddress));
-        Map<String, Object> delegations = systemScore.getDelegation(stakingAddress);
-        Map<String, BigInteger> networkDelegations = new HashMap<>();
-        List<Map<String, Object>> delegationList = (List<Map<String, Object>>) delegations.get("delegations");
+        checkNetworkDelegations(expectedNetworkDelegations);
 
-        for (Map<String, Object> del : delegationList) {
-            String hexValue = del.get("value").toString();
-            hexValue = hexValue.replace("0x", "");
-            networkDelegations.put(del.get("address").toString(), new BigInteger(hexValue, 16));
-        }
-        assertEquals(prepDelegations, networkDelegations);
 
     }
 
     @Test
     void testSecondStakeIcx() {
-        BigInteger previousTotalStake = new BigInteger("100000000000000000000");
-        BigInteger previousTotalSupply = new BigInteger("100000000000000000000");
-        BigInteger userBalance = new BigInteger("100000000000000000000");
-        BigInteger secondUserBalance = new BigInteger("0");
+        BigInteger previousTotalStake = stakingManagementScore.getTotalStake();
+        BigInteger previousTotalSupply = sicxScore.totalSupply();
+        BigInteger userBalance = sicxScore.balanceOf(senderAddress);
+        BigInteger secondUserBalance = sicxScore.balanceOf(user2);
 
 
         // stakes 100 ICX to user2
-        ((StakingInterfaceScoreClient) stakingManagementScore).stakeICX(new BigInteger("200000000000000000000"),
+        ((StakingInterfaceScoreClient) stakingManagementScore).stakeICX(new BigInteger("200").pow(18),
                 user2, null);
 
         // get prep delegations
         Map<String, BigInteger> prepDelegations = stakingManagementScore.getPrepDelegations();
         Map<String, BigInteger> userExpectedDelegations = new HashMap<>();
         Map<String, BigInteger> expectedPrepDelegations = new HashMap<>();
+        Map<String, BigInteger> expectedNetworkDelegations = new HashMap<>();
         List<Address> prepList = stakingManagementScore.getPrepList();
         List<Address> topPreps = stakingManagementScore.getTopPreps();
 
         for (Address prep : prepList) {
             if (contains(prep, topPreps)) {
-                userExpectedDelegations.put(prep.toString(), new BigInteger("2000000000000000000"));
-                expectedPrepDelegations.put(prep.toString(), new BigInteger("3000000000000000000"));
+                userExpectedDelegations.put(prep.toString(), new BigInteger("2").pow(18));
+                expectedNetworkDelegations.put(prep.toString(), new BigInteger("3").pow(18));
+                expectedPrepDelegations.put(prep.toString(), new BigInteger("3").pow(18));
             }
-        }
-
-        BigInteger prepDelegationsSum = new BigInteger("0");
-        for (BigInteger value : prepDelegations.values()) {
-            prepDelegationsSum = prepDelegationsSum.add(value);
         }
         // get address delegations of a user
         Map<String, BigInteger> userDelegations = stakingManagementScore.getAddressDelegations(user2);
 
-        assertEquals(previousTotalStake.add(new BigInteger("200000000000000000000")), prepDelegationsSum);
         assertEquals(userDelegations, userExpectedDelegations);
         assertEquals(prepDelegations, expectedPrepDelegations);
-        assertEquals(previousTotalStake.add(new BigInteger("200000000000000000000")),
+        assertEquals(previousTotalStake.add(new BigInteger("200").pow(18)),
                 stakingManagementScore.getTotalStake());
-        assertEquals(previousTotalSupply.add(new BigInteger("200000000000000000000")),
+        assertEquals(previousTotalSupply.add(new BigInteger("200").pow(18)),
                 sicxScore.totalSupply());
         assertEquals(userBalance, sicxScore.balanceOf(senderAddress));
-        assertEquals(secondUserBalance.add(new BigInteger("200000000000000000000")),
+        assertEquals(secondUserBalance.add(new BigInteger("200").pow(18)),
                 sicxScore.balanceOf(user2));
-        Map<String, Object> delegations = systemScore.getDelegation(stakingAddress);
-        Map<String, BigInteger> networkDelegations = new HashMap<>();
-        List<Map<String, Object>> delegationList = (List<Map<String, Object>>) delegations.get("delegations");
+        checkNetworkDelegations(expectedNetworkDelegations);
 
-        for (Map<String, Object> del : delegationList) {
-            String hexValue = del.get("value").toString();
-            hexValue = hexValue.replace("0x", "");
-            networkDelegations.put(del.get("address").toString(), new BigInteger(hexValue, 16));
-        }
-        assertEquals(prepDelegations, networkDelegations);
     }
-
 
     public boolean contains(Address target, List<Address> addresses) {
         for (Address address : addresses) {
@@ -239,7 +215,7 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         PrepDelegations p = new PrepDelegations();
 //        PrepDelegations p2=new PrepDelegations();
         p._address = Address.fromString("hx24791b621e1f25bbac71e2bab8294ff38294a2c6");
-        p._votes_in_per = new BigInteger("100000000000000000000");
+        p._votes_in_per = new BigInteger("100").pow(18);
         PrepDelegations[] userDelegation = new PrepDelegations[]{p};
         // delegates to one address
         stakingManagementScore.delegate(userDelegation);
@@ -248,6 +224,7 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         Map<String, BigInteger> prepDelegations = stakingManagementScore.getPrepDelegations();
         Map<String, BigInteger> userExpectedDelegations = new HashMap<>();
         Map<String, BigInteger> expectedPrepDelegations = new HashMap<>();
+        Map<String, BigInteger> expectedNetworkDelegations = new HashMap<>();
         List<Address> prepList = stakingManagementScore.getPrepList();
         List<Address> topPreps = stakingManagementScore.getTopPreps();
 
@@ -255,16 +232,16 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         for (Address prep : prepList) {
             if (contains(prep, topPreps)) {
                 if (prep.toString().equals("hx24791b621e1f25bbac71e2bab8294ff38294a2c6")) {
-                    expectedPrepDelegations.put(prep.toString(), new BigInteger("102000000000000000000"));
-                } else {
-                    expectedPrepDelegations.put(prep.toString(), new BigInteger("2000000000000000000"));
-
+                    expectedPrepDelegations.put(prep.toString(), new BigInteger("102").pow(18));
+                    userExpectedDelegations.put(prep.toString(), new BigInteger("100").pow(18));
+                    expectedNetworkDelegations.put(prep.toString(), new BigInteger("102").pow(18));
+                }
+                else{
+                    expectedNetworkDelegations.put(prep.toString(), new BigInteger("2").pow(18) );
+                    expectedPrepDelegations.put(prep.toString(), new BigInteger("2").pow(18) );
                 }
             }
         }
-
-        userExpectedDelegations.put("hx24791b621e1f25bbac71e2bab8294ff38294a2c6", new BigInteger(
-                "100000000000000000000"));
 
         BigInteger prepDelegationsSum = new BigInteger("0");
         for (BigInteger value : prepDelegations.values()) {
@@ -272,23 +249,15 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         }
         // get address delegations of a user
         Map<String, BigInteger> userDelegations = stakingManagementScore.getAddressDelegations(senderAddress);
-
-        assertEquals(previousTotalStake, prepDelegationsSum);
+        BigInteger currentTotalStake = stakingManagementScore.getTotalStake();
+        assertEquals(previousTotalStake, currentTotalStake);
+        assertEquals(currentTotalStake, prepDelegationsSum);
         assertEquals(userDelegations, userExpectedDelegations);
         assertEquals(prepDelegations, expectedPrepDelegations);
-        assertEquals(previousTotalStake, stakingManagementScore.getTotalStake());
         assertEquals(previousTotalSupply, sicxScore.totalSupply());
         assertEquals(userBalance, sicxScore.balanceOf(senderAddress));
-        Map<String, Object> delegations = systemScore.getDelegation(stakingAddress);
-        Map<String, BigInteger> networkDelegations = new HashMap<>();
-        List<Map<String, Object>> delegationList = (List<Map<String, Object>>) delegations.get("delegations");
+        checkNetworkDelegations(expectedNetworkDelegations);
 
-        for (Map<String, Object> del : delegationList) {
-            String hexValue = del.get("value").toString();
-            hexValue = hexValue.replace("0x", "");
-            networkDelegations.put(del.get("address").toString(), new BigInteger(hexValue, 16));
-        }
-        assertEquals(prepDelegations, networkDelegations);
     }
 
     @Test
@@ -303,11 +272,11 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         BigInteger secondUserBalance = sicxScore.balanceOf(user2);
 
         p._address = Address.fromString("hx3c7955f918f07df3b30c45b20f829eb8b4c8f6ff");
-        p._votes_in_per = new BigInteger("50000000000000000000");
+        p._votes_in_per = new BigInteger("50").pow(18);
         p2._address = Address.fromString("hx3a0a9137344fdb552a146033401a52f27272c362");
-        p2._votes_in_per = new BigInteger("25000000000000000000");
+        p2._votes_in_per = new BigInteger("25").pow(18);
         p3._address = Address.fromString("hx38f35eff5e5516b48a713fe3c8031c94124191f0");
-        p3._votes_in_per = new BigInteger("25000000000000000000");
+        p3._votes_in_per = new BigInteger("25").pow(18);
         PrepDelegations[] userDelegation = new PrepDelegations[]{
                 p, p2, p3
         };
@@ -319,30 +288,32 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         Map<String, BigInteger> prepDelegations = stakingManagementScore.getPrepDelegations();
         Map<String, BigInteger> userExpectedDelegations = new HashMap<>();
         Map<String, BigInteger> expectedPrepDelegations = new HashMap<>();
+        Map<String, BigInteger> expectedNetworkDelegations = new HashMap<>();
         List<Address> prepList = stakingManagementScore.getPrepList();
         List<Address> topPreps = stakingManagementScore.getTopPreps();
 
         for (Address prep : prepList) {
             if (contains(prep, topPreps)) {
                 if (prep.toString().equals("hx3a0a9137344fdb552a146033401a52f27272c362")) {
-                    expectedPrepDelegations.put(prep.toString(), new BigInteger("27000000000000000000"));
+
+                    expectedPrepDelegations.put(prep.toString(), new BigInteger("25").pow(18));
+                    userExpectedDelegations.put(prep.toString(), new BigInteger("25").pow(18));
+                    expectedNetworkDelegations.put(prep.toString(), new BigInteger("27").pow(18));
                 } else if (prep.toString().equals("hx38f35eff5e5516b48a713fe3c8031c94124191f0")) {
-                    expectedPrepDelegations.put(prep.toString(), new BigInteger("27000000000000000000"));
+                    expectedPrepDelegations.put(prep.toString(), new BigInteger("25").pow(18));
+                    userExpectedDelegations.put(prep.toString(), new BigInteger("25").pow(18));
+                    expectedNetworkDelegations.put(prep.toString(), new BigInteger("27").pow(18));
                 } else if (prep.toString().equals("hx3c7955f918f07df3b30c45b20f829eb8b4c8f6ff")) {
-                    expectedPrepDelegations.put(prep.toString(), new BigInteger("52000000000000000000"));
+                    expectedPrepDelegations.put(prep.toString(), new BigInteger("50").pow(18));
+                    userExpectedDelegations.put(prep.toString(), new BigInteger("50").pow(18));
+                    expectedNetworkDelegations.put(prep.toString(), new BigInteger("52").pow(18));
                 } else {
-                    expectedPrepDelegations.put(prep.toString(), new BigInteger("2000000000000000000"));
+                    expectedPrepDelegations.put(prep.toString(), new BigInteger("2").pow(18));
+                    expectedNetworkDelegations.put(prep.toString(), new BigInteger("2").pow(18));
 
                 }
             }
         }
-
-        userExpectedDelegations.put("hx3a0a9137344fdb552a146033401a52f27272c362", new BigInteger(
-                "25000000000000000000"));
-        userExpectedDelegations.put("hx38f35eff5e5516b48a713fe3c8031c94124191f0", new BigInteger(
-                "25000000000000000000"));
-        userExpectedDelegations.put("hx3c7955f918f07df3b30c45b20f829eb8b4c8f6ff", new BigInteger(
-                "50000000000000000000"));
 
         BigInteger prepDelegationsSum = new BigInteger("0");
         for (BigInteger value : prepDelegations.values()) {
@@ -352,22 +323,13 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         Map<String, BigInteger> userDelegations = stakingManagementScore.getAddressDelegations(senderAddress);
 
 
-        assertEquals(previousTotalStake, prepDelegationsSum);
+        assertEquals(new BigInteger("100").pow(18), prepDelegationsSum);
         assertEquals(userDelegations, userExpectedDelegations);
         assertEquals(prepDelegations, expectedPrepDelegations);
         assertEquals(previousTotalStake, stakingManagementScore.getTotalStake());
         assertEquals(previousTotalSupply, sicxScore.totalSupply());
         assertEquals(userBalance, sicxScore.balanceOf(senderAddress));
-        Map<String, Object> delegations = systemScore.getDelegation(stakingAddress);
-        Map<String, BigInteger> networkDelegations = new HashMap<>();
-        List<Map<String, Object>> delegationList = (List<Map<String, Object>>) delegations.get("delegations");
-
-        for (Map<String, Object> del : delegationList) {
-            String hexValue = del.get("value").toString();
-            hexValue = hexValue.replace("0x", "");
-            networkDelegations.put(del.get("address").toString(), new BigInteger(hexValue, 16));
-        }
-        assertEquals(prepDelegations, networkDelegations);
+        checkNetworkDelegations(expectedNetworkDelegations);
 
 
     }
@@ -377,7 +339,7 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         PrepDelegations p = new PrepDelegations();
 //        PrepDelegations p2=new PrepDelegations();
         p._address = Address.fromString("hx051e14eb7d2e04fae723cd610c153742778ad5f7");
-        p._votes_in_per = new BigInteger("100000000000000000000");
+        p._votes_in_per = new BigInteger("100").pow(18);
         PrepDelegations[] userDelegation = new PrepDelegations[]{p};
         BigInteger previousTotalStake = stakingManagementScore.getTotalStake();
         BigInteger previousTotalSupply = sicxScore.totalSupply();
@@ -391,20 +353,19 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         Map<String, BigInteger> prepDelegations = stakingManagementScore.getPrepDelegations();
         Map<String, BigInteger> userExpectedDelegations = new HashMap<>();
         Map<String, BigInteger> expectedPrepDelegations = new HashMap<>();
+        Map<String, BigInteger> expectedNetworkDelegations = new HashMap<>();
         List<Address> prepList = stakingManagementScore.getPrepList();
         List<Address> topPreps = stakingManagementScore.getTopPreps();
 
         for (Address prep : prepList) {
             if (prep.toString().equals("hx051e14eb7d2e04fae723cd610c153742778ad5f7")) {
-                expectedPrepDelegations.put(prep.toString(), new BigInteger("100000000000000000000"));
+                expectedPrepDelegations.put(prep.toString(), new BigInteger("100").pow(18));
+                userExpectedDelegations.put(prep.toString(), new BigInteger("100").pow(18));
             }
             if (contains(prep, topPreps)) {
-                expectedPrepDelegations.put(prep.toString(), new BigInteger("2000000000000000000"));
+                expectedNetworkDelegations.put(prep.toString(), new BigInteger("3").pow(18));
             }
         }
-
-        userExpectedDelegations.put("hx051e14eb7d2e04fae723cd610c153742778ad5f7", new BigInteger(
-                "100000000000000000000"));
 
         BigInteger prepDelegationsSum = new BigInteger("0");
         for (BigInteger value : prepDelegations.values()) {
@@ -413,12 +374,63 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         // get address delegations of a user
         Map<String, BigInteger> userDelegations = stakingManagementScore.getAddressDelegations(senderAddress);
 
-        assertEquals(previousTotalStake, prepDelegationsSum);
+        assertEquals(new BigInteger("100").pow(18), prepDelegationsSum);
         assertEquals(userDelegations, userExpectedDelegations);
         assertEquals(prepDelegations, expectedPrepDelegations);
         assertEquals(previousTotalStake, stakingManagementScore.getTotalStake());
         assertEquals(previousTotalSupply, sicxScore.totalSupply());
         assertEquals(userBalance, sicxScore.balanceOf(senderAddress));
+        checkNetworkDelegations(expectedNetworkDelegations);
+
+    }
+
+    @Test
+    void stakeAfterDelegate() {
+        BigInteger previousTotalStake = stakingManagementScore.getTotalStake();
+        BigInteger previousTotalSupply = sicxScore.totalSupply();
+        BigInteger userBalance = sicxScore.balanceOf(senderAddress);
+        BigInteger secondUserBalance = sicxScore.balanceOf(user2);
+
+        ((StakingInterfaceScoreClient) stakingManagementScore).stakeICX(new BigInteger("100").pow(18), null
+                , null);
+
+        Map<String, BigInteger> prepDelegations = stakingManagementScore.getPrepDelegations();
+        Map<String, BigInteger> userExpectedDelegations = new HashMap<>();
+        Map<String, BigInteger> expectedPrepDelegations = new HashMap<>();
+        Map<String, BigInteger> expectedNetworkDelegations = new HashMap<>();
+        List<Address> prepList = stakingManagementScore.getPrepList();
+        List<Address> topPreps = stakingManagementScore.getTopPreps();
+
+        for (Address prep : prepList) {
+            if (prep.toString().equals("hx051e14eb7d2e04fae723cd610c153742778ad5f7")) {
+                expectedPrepDelegations.put(prep.toString(), new BigInteger("200").pow(18));
+                userExpectedDelegations.put(prep.toString(), new BigInteger("200").pow(18));
+            }
+            if (contains(prep, topPreps)) {
+                expectedNetworkDelegations.put(prep.toString(), new BigInteger("4").pow(18));
+            }
+        }
+
+        BigInteger prepDelegationsSum = new BigInteger("0");
+        for (BigInteger value : prepDelegations.values()) {
+            prepDelegationsSum = prepDelegationsSum.add(value);
+        }
+        // get address delegations of a user
+        Map<String, BigInteger> userDelegations = stakingManagementScore.getAddressDelegations(senderAddress);
+
+        assertEquals(new BigInteger("200").pow(18), prepDelegationsSum);
+        assertEquals(userDelegations, userExpectedDelegations);
+        assertEquals(prepDelegations, expectedPrepDelegations);
+        assertEquals(previousTotalStake.add(new BigInteger("100").pow(18)), stakingManagementScore.getTotalStake());
+        assertEquals(previousTotalSupply.add(new BigInteger("100").pow(18)), sicxScore.totalSupply());
+        assertEquals(userBalance.add(new BigInteger("100").pow(18)), sicxScore.balanceOf(senderAddress));
+        checkNetworkDelegations(expectedNetworkDelegations);
+
+    }
+
+    // user delegates at first, and then stakesICX so that now user preference is already defined.
+
+    void checkNetworkDelegations(Map<String, BigInteger> expected){
         Map<String, Object> delegations = systemScore.getDelegation(stakingAddress);
         Map<String, BigInteger> networkDelegations = new HashMap<>();
         List<Map<String, Object>> delegationList = (List<Map<String, Object>>) delegations.get("delegations");
@@ -428,40 +440,39 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
             hexValue = hexValue.replace("0x", "");
             networkDelegations.put(del.get("address").toString(), new BigInteger(hexValue, 16));
         }
-        prepDelegations.remove("hx051e14eb7d2e04fae723cd610c153742778ad5f7");
-        prepDelegations.replaceAll((k, v) -> prepDelegations.get(k).add(new BigInteger("1000000000000000000")));
-        assertEquals(prepDelegations, networkDelegations);
+        assertEquals(expected, networkDelegations);
+
     }
 
     @Test
-    void transferToExistingUser() {
+    void transferToUserWithNoPreference() {
         BigInteger previousTotalStake = stakingManagementScore.getTotalStake();
         BigInteger previousTotalSupply = sicxScore.totalSupply();
         BigInteger userBalance = sicxScore.balanceOf(senderAddress);
         BigInteger secondUserBalance = sicxScore.balanceOf(user2);
 
-        sicxScore.transfer(user2, new BigInteger("50000000000000000000"), null);
+        sicxScore.transfer(user2, new BigInteger("50").pow(18), null);
 
         Map<String, BigInteger> prepDelegations = stakingManagementScore.getPrepDelegations();
         Map<String, BigInteger> userExpectedDelegations = new HashMap<>();
+        Map<String, BigInteger> expectedNetworkDelegations = new HashMap<>();
         Map<String, BigInteger> user2ExpectedDelegations = new HashMap<>();
         Map<String, BigInteger> expectedPrepDelegations = new HashMap<>();
         List<Address> prepList = stakingManagementScore.getPrepList();
         List<Address> topPreps = stakingManagementScore.getTopPreps();
 
+        BigInteger newUserBalance = userBalance.subtract(new BigInteger(
+                "50").pow(18));
         for (Address prep : prepList) {
             if (prep.toString().equals("hx051e14eb7d2e04fae723cd610c153742778ad5f7")) {
-                expectedPrepDelegations.put(prep.toString(), userBalance.subtract(new BigInteger(
-                        "50000000000000000000")));
+                expectedPrepDelegations.put(prep.toString(), newUserBalance);
+                userExpectedDelegations.put(prep.toString(), newUserBalance);
             }
             if (contains(prep, topPreps)) {
-                expectedPrepDelegations.put(prep.toString(), new BigInteger("2500000000000000000"));
                 user2ExpectedDelegations.put(prep.toString(), new BigInteger("2500000000000000000"));
+                expectedNetworkDelegations.put(prep.toString(), new BigInteger("4").pow(18));
             }
         }
-
-        userExpectedDelegations.put("hx051e14eb7d2e04fae723cd610c153742778ad5f7",
-                userBalance.subtract(new BigInteger("50000000000000000000")));
 
         BigInteger prepDelegationsSum = new BigInteger("0");
         for (BigInteger value : prepDelegations.values()) {
@@ -471,20 +482,22 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         Map<String, BigInteger> userDelegations = stakingManagementScore.getAddressDelegations(senderAddress);
         Map<String, BigInteger> user2Delegations = stakingManagementScore.getAddressDelegations(user2);
 
-        assertEquals(previousTotalStake, prepDelegationsSum);
+        assertEquals(newUserBalance, prepDelegationsSum);
         assertEquals(userDelegations, userExpectedDelegations);
         assertEquals(prepDelegations, expectedPrepDelegations);
         assertEquals(user2Delegations, user2ExpectedDelegations);
         assertEquals(previousTotalStake, stakingManagementScore.getTotalStake());
         assertEquals(previousTotalSupply, sicxScore.totalSupply());
-        assertEquals(userBalance.subtract(new BigInteger("50000000000000000000")),
+        assertEquals(newUserBalance,
                 sicxScore.balanceOf(senderAddress));
-        assertEquals(secondUserBalance.add(new BigInteger("50000000000000000000")),
+        assertEquals(secondUserBalance.add(new BigInteger("50").pow(18)),
                 sicxScore.balanceOf(user2));
+        checkNetworkDelegations(expectedNetworkDelegations);
+
     }
 
     @Test
-    void transferToNewUser() {
+    void transferToUserWithPreference() {
         BigInteger previousTotalStake = stakingManagementScore.getTotalStake();
         BigInteger previousTotalSupply = sicxScore.totalSupply();
         BigInteger userBalance = sicxScore.balanceOf(senderAddress);
@@ -543,7 +556,7 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
 
 
     @Test
-    void unstakeHalf() throws Exception {
+    void unstakePartial() throws Exception {
 //        stakingManagementScore.toggleStakingOn();
         ((StakingInterfaceScoreClient) stakingManagementScore).stakeICX(new BigInteger("100000000000000000000"), null
                 , null);
