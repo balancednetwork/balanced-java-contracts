@@ -281,7 +281,7 @@ public class Staking {
     }
 
     @SuppressWarnings("unchecked")
-    public void checkForIscore() {
+    private void checkForIscore() {
         Map<String, Object> iscoreDetails = (Map<String, Object>) Context.call(SYSTEM_SCORE_ADDRESS, "queryIScore",
                 Context.getAddress());
         BigInteger iscoreGenerated = (BigInteger) iscoreDetails.get("estimatedICX");
@@ -310,7 +310,7 @@ public class Staking {
         }
     }
 
-    public void sendIcx(Address to, BigInteger amount, String msg) {
+    private void sendIcx(Address to, BigInteger amount, String msg) {
         if (msg == null) {
             msg = "";
         }
@@ -323,7 +323,7 @@ public class Staking {
     }
 
     @SuppressWarnings("unchecked")
-    public List<Address> setTopPreps() {
+    private List<Address> setTopPreps() {
         Map<String, Object> prepDict = (Map<String, Object>) Context.call(SYSTEM_SCORE_ADDRESS, "getPReps", 1,
                 Constant.TOP_PREP_COUNT);
         List<Map<String, Object>> prepDetails = (List<Map<String, Object>>) prepDict.get("preps");
@@ -366,7 +366,7 @@ public class Staking {
         return delegationIcx;
     }
 
-    public Map<String, BigInteger> verifyUserDelegation(PrepDelegations[] userDelegations) {
+    private Map<String, BigInteger> verifyUserDelegation(PrepDelegations[] userDelegations) {
         Map<String, BigInteger> prepDelegations = new HashMap<>();
         BigInteger totalPercentage = BigInteger.ZERO;
         for (PrepDelegations userDelegation : userDelegations) {
@@ -384,7 +384,7 @@ public class Staking {
     }
 
 
-    public void stakeAndDelegateInNetwork(BigInteger stakeAmount, Map<String, BigInteger> prepDelegations) {
+    private void stakeAndDelegateInNetwork(BigInteger stakeAmount, Map<String, BigInteger> prepDelegations) {
         List<Address> topPreps = updateTopPreps();
         DelegationListDBSdo prepDelegationsList = (DelegationListDBSdo) DelegationListDBSdo.fromMap(prepDelegations);
         prepDelegationInIcx.set(prepDelegationsList);
@@ -394,7 +394,7 @@ public class Staking {
     }
 
     @SuppressWarnings("unchecked")
-    public List<Address> updateTopPreps() {
+    private List<Address> updateTopPreps() {
         Map<String, Object> termDetails = (Map<String, Object>) Context.call(SYSTEM_SCORE_ADDRESS, "getIISSInfo");
         BigInteger nextPrepTerm = (BigInteger) termDetails.get("nextPRepTerm");
         BigInteger destinationBlock = blockHeightWeek.getOrDefault(BigInteger.ZERO).add(BigInteger.valueOf(7 * 43200L));
@@ -435,7 +435,7 @@ public class Staking {
     }
 
     @SuppressWarnings("unchecked")
-    public void performChecksForIscoreAndUnstakedBalance() {
+    private void performChecksForIscoreAndUnstakedBalance() {
 
         // Calculate ICX available through unstaking
         Map<String, Object> stakeInNetwork = (Map<String, Object>) Context.call(SYSTEM_SCORE_ADDRESS, "getStake",
@@ -491,7 +491,7 @@ public class Staking {
         checkForUnstakedBalance(unstakedICX, totalUnstakeAmount);
     }
 
-    public void updateDelegationInNetwork(Map<String, BigInteger> prepDelegations, List<Address> topPreps,
+    private void updateDelegationInNetwork(Map<String, BigInteger> prepDelegations, List<Address> topPreps,
                                           BigInteger totalStake) {
 
         List<Map<String, Object>> networkDelegationList = new ArrayList<>();
@@ -622,7 +622,7 @@ public class Staking {
         return prepDelegation;
     }
 
-    public void checkForUnstakedBalance(BigInteger unstakedICX, BigInteger totalUnstakeAmount) {
+    private void checkForUnstakedBalance(BigInteger unstakedICX, BigInteger totalUnstakeAmount) {
 
         if (unstakedICX.compareTo(BigInteger.ZERO) <= 0) {
             return;
@@ -674,7 +674,7 @@ public class Staking {
     }
 
     @SuppressWarnings("unchecked")
-    public void unstake(Address to, BigInteger value, Address senderAddress) {
+    private void unstake(Address to, BigInteger value, Address senderAddress) {
         Context.call(sicxAddress.get(), "burn", value);
         BigInteger amountToUnstake = (value.multiply(getTodayRate())).divide(ONE_EXA);
         totalUnstakeAmount.set(totalUnstakeAmount.getOrDefault(BigInteger.ZERO).add(amountToUnstake));
