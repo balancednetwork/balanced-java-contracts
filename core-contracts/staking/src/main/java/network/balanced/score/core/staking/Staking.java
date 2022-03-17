@@ -201,7 +201,8 @@ public class Staking {
         BigInteger topPrepsCount = BigInteger.valueOf(topPreps.size());
         Map<String, BigInteger> allPrepDelegations = new HashMap<>();
         for (Address prep : topPreps) {
-            BigInteger finalAmount = prepDelegationInIcx.getOrDefault(prep.toString(), BigInteger.ZERO);
+            BigInteger finalAmount = prepDelegationInIcx.get(prep.toString());
+            finalAmount = finalAmount == null ? BigInteger.ZERO : finalAmount;
             if (topPreps.contains(prep)) {
                 BigInteger amountToAdd = unspecifiedICX.divide(topPrepsCount);
                 finalAmount = finalAmount.add(amountToAdd);
@@ -574,7 +575,8 @@ public class Staking {
         for (Map.Entry<String, BigInteger> delegationInPercentage : userDelegationInPercentage.entrySet()) {
             BigInteger amountToAdd = delegationInPercentage.getValue().multiply(amount).divide(totalPercentage);
             String prepAddress = delegationInPercentage.getKey();
-            BigInteger currentAmount = prepDelegation.getOrDefault(prepAddress, BigInteger.ZERO);
+            BigInteger currentAmount = prepDelegation.get(prepAddress);
+            currentAmount = currentAmount == null ? BigInteger.ZERO : currentAmount;
             prepDelegation.put(prepAddress, currentAmount.add(amountToAdd));
             totalPercentage = totalPercentage.subtract(BigInteger.ONE);
             amount = amount.subtract(amountToAdd);
