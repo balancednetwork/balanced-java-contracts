@@ -401,7 +401,7 @@ public class Staking {
         if (nextPrepTerm.compareTo(destinationBlock) > 0) {
             blockHeightWeek.set(nextPrepTerm);
             for (int i = 0; i < this.topPreps.size(); i++) {
-                this.topPreps.pop();
+                this.topPreps.removeLast();
             }
             return setTopPreps();
         } else {
