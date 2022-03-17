@@ -221,6 +221,16 @@ public class Staking {
         return allPrepDelegations;
     }
 
+    @External(readonly = true)
+    public Map<String, BigInteger> getActualPrepDelegations() {
+        return prepDelegationInIcx.getOrDefault(DEFAULT_DELEGATION_LIST).toMap();
+    }
+
+    @External(readonly = true)
+    public Map<String, BigInteger> getActualUserDelegationPercentage(Address user) {
+        return userDelegationInPercentage.getOrDefault(user, DEFAULT_DELEGATION_LIST).toMap();
+    }
+
     @External
     public void setSicxAddress(Address _address) {
         onlyOwner();
