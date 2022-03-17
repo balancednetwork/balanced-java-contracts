@@ -25,9 +25,18 @@
  */
 
 rootProject.name = 'balanced-java-contracts'
-include(':core-contracts',
-        ':token-contracts')
-include ':core-contracts:staking'
+
+include(':Multicall')
+project(':Multicall').projectDir = file("core-contracts/Multicall")
+
+include(':BatchDisbursement')
+project(':BatchDisbursement').projectDir = file("core-contracts/BatchDisbursement")
+
+include(':Reserve')
+project(':Reserve').projectDir = file("core-contracts/Reserve")
+
+include(':Staking')
+project(':Staking').projectDir = file("core-contracts/Staking")
 
 include(':test-lib')
 findProject(":test-lib").projectDir = file("test-lib")
