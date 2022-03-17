@@ -69,14 +69,14 @@ public interface StakingInterface {
     @External(readonly = true)
     Map<String, BigInteger> getPrepDelegations();
 
+    @External(readonly = true)
+    Map<String, BigInteger> getActualPrepDelegations();
+
+    @External(readonly = true)
+    Map<String, BigInteger> getActualUserDelegationPercentage(Address user);
+
     @External
     void setSicxAddress(Address _address);
-
-    BigInteger percentToIcx(BigInteger votingPercentage, BigInteger totalAmount);
-
-    void setAddressDelegations(Address to, Address prep, BigInteger votesInPer, BigInteger totalIcxHold);
-
-    void setPrepDelegations(Address prep, BigInteger value);
 
     @External(readonly = true)
     BigInteger claimableICX(Address _address);
@@ -84,15 +84,8 @@ public interface StakingInterface {
     @External(readonly = true)
     BigInteger totalClaimableIcx();
 
-    @Payable
-    void fallback() throws Exception;
-
     @External
-    void tokenFallback(Address _from, BigInteger _value, byte[] _data) throws Exception;
-
-    // Created only for test
-    @External(readonly = true)
-    boolean getDistributing();
+    void tokenFallback(Address _from, BigInteger _value, byte[] _data);
 
     @External
     void claimUnstakedICX(@Optional Address _to);
@@ -101,16 +94,31 @@ public interface StakingInterface {
     Map<String, BigInteger> getAddressDelegations(Address _address);
 
     @External
-    void delegate(PrepDelegations[] _user_delegations) throws Exception;
+    void delegate(PrepDelegations[] _user_delegations);
 
     @External
     @Payable
-    BigInteger stakeICX(@Optional Address _to, @Optional byte[] _data) throws Exception;
+    BigInteger stakeICX(@Optional Address _to, @Optional byte[] _data);
+
+    @External
+    void transferUpdateDelegations(Address _from, Address _to, BigInteger _value);
 
     @External(readonly = true)
-    List<List<Object>> getUnstakeInfo() throws Exception;
+    List<UnstakeDetails> getUnstakeInfo();
 
     @External(readonly = true)
     List<Map<String, Object>> getUserUnstakeInfo(Address _address) throws Exception;
 
+    class PrepDelegations {
+        public Address _address;
+        public BigInteger _votes_in_per;
+    }
+
+    class UnstakeDetails {
+        public BigInteger nodeId;
+        public BigInteger unstakeAmount;
+        public Address key;
+        public BigInteger unstakeBlockHeight;
+        public Address receiverAddress;
+    }
 }
