@@ -211,6 +211,13 @@ public class Staking {
             }
             allPrepDelegations.put(prep.toString(), finalAmount);
         }
+
+        for (Address prep : addressInSpecification) {
+            BigInteger amountInDelegation = allPrepDelegations.get(prep.toString());
+            if (amountInDelegation == null) {
+                allPrepDelegations.put(prep.toString(), prepDelegationInIcx.get(prep.toString()));
+            }
+        }
         return allPrepDelegations;
     }
 
