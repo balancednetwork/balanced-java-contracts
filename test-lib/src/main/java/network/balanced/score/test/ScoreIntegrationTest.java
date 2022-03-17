@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.test;
+package network.balanced.score.test;
 
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.icx.Wallet;
@@ -76,7 +76,7 @@ public interface ScoreIntegrationTest {
         Predicate<TransactionResult.EventLog> predicate =
                 (el) -> el.getIndexed().get(0).equals(signature);
         if (scoreAddress != null) {
-            predicate = predicate.and((el) -> el.getScoreAddress().equals(scoreAddress));
+            predicate = predicate.and((el) -> el.getScoreAddress().equals(scoreAddress.toString()));
         }
         Stream<T> stream = txr.getEventLogs().stream()
                               .filter(predicate)

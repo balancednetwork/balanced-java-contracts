@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-package score.test.staking;
+package network.balanced.score.core.staking;
 
 import foundation.icon.icx.Wallet;
-import foundation.icon.jsonrpc.JsonrpcClient;
 import foundation.icon.score.client.DefaultScoreClient;
 import foundation.icon.score.client.ScoreClient;
-import network.balanced.score.core.interfaces.*;
-import network.balanced.score.core.test.ScoreIntegrationTest;
-import network.balanced.score.core.staking.utils.Constant;
+import network.balanced.score.interfaces.*;
+import network.balanced.score.test.ScoreIntegrationTest;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import score.Address;
@@ -33,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 import static network.balanced.score.core.staking.utils.Constant.ONE_EXA;
+import static network.balanced.score.interfaces.StakingInterface.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 

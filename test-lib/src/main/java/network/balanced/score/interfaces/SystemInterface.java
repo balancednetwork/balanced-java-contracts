@@ -14,22 +14,19 @@
  * limitations under the License.
  */
 
-apply plugin: 'java-library'
+package network.balanced.score.interfaces;
 
-optimizedJar.enabled = false
+import score.Address;
 
-dependencies {
-    implementation 'foundation.icon:icon-sdk:2.0.0'
-    annotationProcessor "foundation.icon:javaee-score-client:0.9.0"
-    implementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
-    implementation('com.fasterxml.jackson.core:jackson-databind:2.13.2')
-    implementation("com.github.javafaker:javafaker:1.0.2")
-    implementation 'foundation.icon:javaee-unittest:0.9.2'
-    implementation 'org.mockito:mockito-core:4.3.1'
+import java.util.Map;
+
+public interface SystemInterface {
+    Map<String, Object> getIISSInfo();
+
+    Map<String, Object> queryIScore(Address address);
+
+    Map<String, Object> getStake(Address address);
+
+    Map<String, Object> getDelegation(Address address);
+
 }
-
-
-
-
-
-
