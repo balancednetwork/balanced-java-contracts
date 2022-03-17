@@ -16,7 +16,6 @@
 
 package network.balanced.score.core.staking;
 
-
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
@@ -44,13 +43,11 @@ import static org.mockito.Mockito.*;
 
 class StakingTest extends TestBase {
 
-
     public static final ServiceManager sm = getServiceManager();
     public static final Account owner = sm.createAccount();
     public static final Account governanceScore = Account.newScoreAccount(1);
     private static Staking tokenVestingFactory;
     private final MockedStatic<Context> utilities = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
-
 
     private Score staking;
     private Score sicx;
@@ -89,7 +86,6 @@ class StakingTest extends TestBase {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
 
     @Test

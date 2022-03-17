@@ -40,19 +40,15 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
     private final Address user2 = Address.fromString("hx3f01840a599da07b0f620eeae7aa9c574169a4be");
     private final Address stakingAddress = Address.fromString("cx916796da1d86b9fc9d7fe1697239c2d5ca1c4cb1");
 
-
     DefaultScoreClient stakingClient = DefaultScoreClient.of(System.getProperties());
-
 
     @ScoreClient
     StakingInterface stakingManagementScore = new StakingInterfaceScoreClient(stakingClient);
 
     Wallet tester = DefaultScoreClient.wallet("tester.", System.getProperties());
 
-
     DefaultScoreClient clientWithTester = new DefaultScoreClient(stakingClient.endpoint(), stakingClient._nid(), tester,
             stakingClient._address());
-
 
     @ScoreClient
     StakingInterface scoreClientWithNewUse = new StakingInterfaceScoreClient(clientWithTester);
@@ -65,19 +61,13 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
     @ScoreClient
     SystemInterface systemScore = new SystemInterfaceScoreClient(systemClient);
 
-
     @ScoreClient
     SicxInterface sicxScore = new SicxInterfaceScoreClient(sicxClient);
-
-//    @ScoreClient(suffix = "Client")
-//    Demo scoreDemo = new DemoClient(demoClient);
-
 
 //    @BeforeEach
 //    void beforeAll() {
 //        scoreClient.setDemoAddress(demoClient._address());
 //    }
-
 
     @Test
     void testName() {
@@ -146,8 +136,6 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         assertEquals(userBalance.add(new BigInteger("100").pow(18)),
                 sicxScore.balanceOf(senderAddress));
         checkNetworkDelegations(expectedNetworkDelegations);
-
-
     }
 
     @Test
@@ -156,7 +144,6 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         BigInteger previousTotalSupply = sicxScore.totalSupply();
         BigInteger userBalance = sicxScore.balanceOf(senderAddress);
         BigInteger secondUserBalance = sicxScore.balanceOf(user2);
-
 
         // stakes 100 ICX to user2
         ((StakingInterfaceScoreClient) stakingManagementScore).stakeICX(new BigInteger("200").pow(18),
@@ -234,10 +221,9 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
                     expectedPrepDelegations.put(prep.toString(), new BigInteger("102").pow(18));
                     userExpectedDelegations.put(prep.toString(), new BigInteger("100").pow(18));
                     expectedNetworkDelegations.put(prep.toString(), new BigInteger("102").pow(18));
-                }
-                else{
-                    expectedNetworkDelegations.put(prep.toString(), new BigInteger("2").pow(18) );
-                    expectedPrepDelegations.put(prep.toString(), new BigInteger("2").pow(18) );
+                } else {
+                    expectedNetworkDelegations.put(prep.toString(), new BigInteger("2").pow(18));
+                    expectedPrepDelegations.put(prep.toString(), new BigInteger("2").pow(18));
                 }
             }
         }
@@ -429,7 +415,7 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
 
     // user delegates at first, and then stakesICX so that now user preference is already defined.
 
-    void checkNetworkDelegations(Map<String, BigInteger> expected){
+    void checkNetworkDelegations(Map<String, BigInteger> expected) {
         Map<String, Object> delegations = systemScore.getDelegation(stakingAddress);
         Map<String, BigInteger> networkDelegations = new HashMap<>();
         List<Map<String, Object>> delegationList = (List<Map<String, Object>>) delegations.get("delegations");

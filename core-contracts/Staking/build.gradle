@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,33 @@
  * limitations under the License.
  */
 
+import network.balanced.score.dependencies.Dependencies
+
+
+
 version = '0.1.0'
 
 dependencies {
-    annotationProcessor 'foundation.icon:javaee-score-data:0.9.0'
-    compileOnly 'foundation.icon:javaee-score-data:0.9.0'
+    compileOnly Dependencies.javaeeApi
+    implementation Dependencies.javaeeScorex
+    implementation Dependencies.minimalJson
+
+    annotationProcessor Dependencies.javaeeScoreData
+    compileOnly Dependencies.javaeeScoreData
+
+    testImplementation Dependencies.javaeeUnitTest
+    testImplementation Dependencies.javaeeTokens
+    testImplementation Dependencies.json
+    // Use JUnit Jupiter for testing.
+    testImplementation Dependencies.junitJupiter
+    testRuntimeOnly Dependencies.junitJupiterEngine
+    testImplementation Dependencies.mockitoInline
+    testImplementation Dependencies.mockitoCore
+
+    intTestImplementation Dependencies.javaeeScoreClient
+    intTestAnnotationProcessor Dependencies.javaeeScoreClient
+    intTestImplementation Dependencies.iconSdk
+    intTestImplementation Dependencies.jacksonDatabind
 
     implementation project(':test-lib')
 }
