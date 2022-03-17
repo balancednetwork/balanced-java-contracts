@@ -16,6 +16,7 @@
 
 package network.balanced.score.core.staking.utils;
 
+import network.balanced.score.core.staking.db.DelegationListDBSdo;
 import score.Address;
 
 import java.math.BigInteger;
@@ -51,6 +52,11 @@ public class Constant {
     public static final String STAKING_ON = "staking_on";
     public static final String ICX_PAYABLE = "icx_payable";
     public static final String ICX_TO_CLAIM = "icx_to_claim";
+    public static final String UNSTAKE_DICT = "unstake_dict";
+    public static final String USER_DELEGATION_PERCENTAGE = "user_delegation_percentage";
+    public static final String PREP_DELEGATION_ICX = "prep_delegation_icx";
+
+    public static DelegationListDBSdo DEFAULT_DELEGATION_LIST = new DelegationListDBSdo();
 
     private static BigInteger pow10(int exponent) {
         BigInteger result = BigInteger.ONE;

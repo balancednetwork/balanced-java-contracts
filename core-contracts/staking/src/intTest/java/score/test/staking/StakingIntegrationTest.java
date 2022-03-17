@@ -688,8 +688,8 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
 //        Map<String, BigInteger> userExpectedDelegations = new HashMap<>();
 //        userExpectedDelegations.put("hx051e14eb7d2e04fae723cd610c153742778ad5f7", new BigInteger
 //        ("101000000000000000000"));
-//        Map<String, BigInteger> userDelegations = stakingManagementScore.getAddressDelegations(senderAddress);
-//        Assertions.assertTrue(userDelegations.equals(userExpectedDelegations));
+//        Map<String, BigInteger> DelegationListDB = stakingManagementScore.getAddressDelegations(senderAddress);
+//        Assertions.assertTrue(DelegationListDB.equals(userExpectedDelegations));
 //
 //        // get prep delegations
 //        Map<String, BigInteger> prepDelegations = stakingManagementScore.getPrepDelegations();
