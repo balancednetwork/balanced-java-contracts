@@ -54,7 +54,7 @@ public class DelegationListDB {
         return delegationMap;
     }
 
-    public static DelegationListDB fromMap(Map<String, BigInteger> delegationMap) {
+    public static DelegationListDBSdo fromMap(Map<String, BigInteger> delegationMap) {
         List<Delegation> delegationList = new ArrayList<>();
         if (!delegationMap.isEmpty()) {
             for (Map.Entry<String, BigInteger> delegationEntry : delegationMap.entrySet()) {
@@ -65,7 +65,7 @@ public class DelegationListDB {
             }
         }
 
-        DelegationListDB delegationListDB = new DelegationListDB();
+        DelegationListDBSdo delegationListDB = new DelegationListDBSdo();
         delegationListDB.setDelegationList(delegationList);
         return delegationListDB;
     }

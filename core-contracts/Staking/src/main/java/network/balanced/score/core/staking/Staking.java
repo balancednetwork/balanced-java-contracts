@@ -374,6 +374,9 @@ public class Staking {
     private Map<String, BigInteger> verifyUserDelegation(PrepDelegations[] userDelegations) {
         Map<String, BigInteger> prepDelegations = new HashMap<>();
         BigInteger totalPercentage = BigInteger.ZERO;
+        if (userDelegations.length == 0) {
+            return prepDelegations;
+        }
         for (PrepDelegations userDelegation : userDelegations) {
             String prepAddress = userDelegation._address.toString();
             BigInteger votesInPercentage = userDelegation._votes_in_per;
@@ -391,7 +394,7 @@ public class Staking {
 
     private void stakeAndDelegateInNetwork(BigInteger stakeAmount, Map<String, BigInteger> prepDelegations) {
         List<Address> topPreps = updateTopPreps();
-        DelegationListDBSdo prepDelegationsList = (DelegationListDBSdo) DelegationListDBSdo.fromMap(prepDelegations);
+        DelegationListDBSdo prepDelegationsList = DelegationListDBSdo.fromMap(prepDelegations);
         prepDelegationInIcx.set(prepDelegationsList);
 
         Context.call(SYSTEM_SCORE_ADDRESS, "setStake", stakeAmount);
@@ -427,7 +430,7 @@ public class Staking {
         BigInteger balance = (BigInteger) Context.call(sicxAddress.get(), "balanceOf", to);
         BigInteger icxHoldPreviously = balance.multiply(getTodayRate()).divide(ONE_EXA);
 
-        DelegationListDBSdo userDelegationList = (DelegationListDBSdo) DelegationListDBSdo.fromMap(newDelegations);
+        DelegationListDBSdo userDelegationList = DelegationListDBSdo.fromMap(newDelegations);
         userDelegationInPercentage.set(to, userDelegationList);
 
         if (balance.compareTo(BigInteger.ZERO) > 0) {
@@ -572,59 +575,60 @@ public class Staking {
         BigInteger icxValue = _value.multiply(getTodayRate()).divide(ONE_EXA);
         Map<String, BigInteger> prepDelegationInIcx =
                 this.prepDelegationInIcx.getOrDefault(DEFAULT_DELEGATION_LIST).toMap();
-        Map<String, BigInteger> finalDelegation;
 
         if (senderDelegationsInPercentage.isEmpty()) {
-            finalDelegation = addUserDelegationToPrepDelegation(prepDelegationInIcx,
+            prepDelegationInIcx = addUserDelegationToPrepDelegation(prepDelegationInIcx,
                     receiverDelegationsInPercentage, icxValue);
         } else if (receiverDelegationsInPercentage.isEmpty()) {
-            finalDelegation = subtractUserDelegationFromPrepDelegation(prepDelegationInIcx,
+            prepDelegationInIcx = subtractUserDelegationFromPrepDelegation(prepDelegationInIcx,
                     senderDelegationsInPercentage, icxValue);
         } else {
-            Map<String, BigInteger> addedDelegation = addUserDelegationToPrepDelegation(prepDelegationInIcx,
-                    receiverDelegationsInPercentage,
+            prepDelegationInIcx = addUserDelegationToPrepDelegation(prepDelegationInIcx, receiverDelegationsInPercentage,
                     icxValue);
-            finalDelegation = subtractUserDelegationFromPrepDelegation(addedDelegation, senderDelegationsInPercentage
+            prepDelegationInIcx = subtractUserDelegationFromPrepDelegation(prepDelegationInIcx, senderDelegationsInPercentage
                     , icxValue);
         }
-        stakeAndDelegateInNetwork(totalStake.getOrDefault(BigInteger.ZERO), finalDelegation);
+        stakeAndDelegateInNetwork(totalStake.getOrDefault(BigInteger.ZERO), prepDelegationInIcx);
     }
 
     private Map<String, BigInteger> addUserDelegationToPrepDelegation(Map<String, BigInteger> prepDelegation,
                                                                       Map<String, BigInteger> userDelegationInPercentage, BigInteger amount) {
-
+        Map<String, BigInteger> sumDelegation = new HashMap<>();
+        sumDelegation.putAll(prepDelegation);
         BigInteger totalPercentage = HUNDRED_PERCENTAGE;
         for (Map.Entry<String, BigInteger> delegationInPercentage : userDelegationInPercentage.entrySet()) {
             BigInteger amountToAdd = delegationInPercentage.getValue().multiply(amount).divide(totalPercentage);
             String prepAddress = delegationInPercentage.getKey();
-            BigInteger currentAmount = prepDelegation.get(prepAddress);
+            BigInteger currentAmount = sumDelegation.get(prepAddress);
             currentAmount = currentAmount == null ? BigInteger.ZERO : currentAmount;
-            prepDelegation.put(prepAddress, currentAmount.add(amountToAdd));
+            sumDelegation.put(prepAddress, currentAmount.add(amountToAdd));
             totalPercentage = totalPercentage.subtract(BigInteger.ONE);
             amount = amount.subtract(amountToAdd);
         }
-        return prepDelegation;
+        return sumDelegation;
     }
 
     private Map<String, BigInteger> subtractUserDelegationFromPrepDelegation(Map<String, BigInteger> prepDelegation,
                                                                              Map<String, BigInteger> userDelegationInPercentage, BigInteger amount) {
+        Map<String, BigInteger> resultDelegation = new HashMap<>();
+        resultDelegation.putAll(prepDelegation);
         BigInteger totalPercentage = HUNDRED_PERCENTAGE;
         for (Map.Entry<String, BigInteger> delegationInPercentage : userDelegationInPercentage.entrySet()) {
             BigInteger amountToReduce = delegationInPercentage.getValue().multiply(amount).divide(totalPercentage);
             String prepAddress = delegationInPercentage.getKey();
-            BigInteger currentAmount = prepDelegation.get(prepAddress);
+            BigInteger currentAmount = resultDelegation.get(prepAddress);
             if (currentAmount != null) {
                 currentAmount = currentAmount.subtract(amountToReduce);
                 if (currentAmount.compareTo(BigInteger.ZERO) > 0) {
-                    prepDelegation.put(prepAddress, currentAmount);
+                    resultDelegation.put(prepAddress, currentAmount);
                 } else {
-                    prepDelegation.remove(prepAddress);
+                    resultDelegation.remove(prepAddress);
                 }
                 totalPercentage = totalPercentage.subtract(BigInteger.ONE);
                 amount = amount.subtract(amountToReduce);
             }
         }
-        return prepDelegation;
+        return resultDelegation;
     }
 
     private void checkForUnstakedBalance(BigInteger unstakedICX, BigInteger totalUnstakeAmount) {
@@ -699,7 +703,7 @@ public class Staking {
         BigInteger newTotalStake = totalStake.getOrDefault(BigInteger.ZERO).subtract(amountToUnstake);
         List<Address> topPreps = updateTopPreps();
         totalStake.set(newTotalStake);
-        DelegationListDBSdo prepDelegationsList = (DelegationListDBSdo) DelegationListDBSdo.fromMap(finalDelegation);
+        DelegationListDBSdo prepDelegationsList = DelegationListDBSdo.fromMap(finalDelegation);
         prepDelegationInIcx.set(prepDelegationsList);
 
         // First set the decreased delegation and stake

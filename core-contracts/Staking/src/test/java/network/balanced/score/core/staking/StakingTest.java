@@ -36,10 +36,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static network.balanced.score.core.staking.utils.Constant.ONE_EXA;
-import static network.balanced.score.core.staking.utils.Constant.SYSTEM_SCORE_ADDRESS;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static network.balanced.score.core.staking.utils.Constant.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class StakingTest extends TestBase {
@@ -48,7 +46,8 @@ class StakingTest extends TestBase {
     public static final Account owner = sm.createAccount();
     public static final Account governanceScore = Account.newScoreAccount(1);
     private static Staking tokenVestingFactory;
-    private final MockedStatic<Context> utilities = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
+    private final MockedStatic<Context> interScoreCallMock = Mockito.mockStatic(Context.class,
+            Mockito.CALLS_REAL_METHODS);
 
     private Score staking;
     private Score sicx;
@@ -65,14 +64,16 @@ class StakingTest extends TestBase {
         sicx = sm.deploy(owner, MockSicx.class);
         assert (sicx.getAddress().isContract());
 
-        utilities.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "getIISSInfo")).thenReturn(iissInfo);
-        utilities.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "getPReps", BigInteger.ONE, BigInteger.valueOf(100L))).thenReturn(prepsResponse);
+        interScoreCallMock.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "getIISSInfo")).thenReturn(iissInfo);
+        interScoreCallMock.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "getPReps", BigInteger.ONE,
+                BigInteger.valueOf(100L))).thenReturn(prepsResponse);
         staking = sm.deploy(owner, Staking.class);
 
         scoreSpy = (Staking) spy(staking.getInstance());
         staking.setInstance(scoreSpy);
 
         staking.invoke(owner, "setSicxAddress", sicx.getAddress());
+        staking.invoke(owner, "toggleStakingOn");
     }
 
     void setupGetPrepsResponse() {
@@ -102,14 +103,17 @@ class StakingTest extends TestBase {
 
     @Test
     void toggleStakingOn() {
-        assertEquals(false, staking.call("getStakingOn"));
-        staking.invoke(owner, "toggleStakingOn");
         assertEquals(true, staking.call("getStakingOn"));
+        staking.invoke(owner, "toggleStakingOn");
+        assertEquals(false, staking.call("getStakingOn"));
     }
 
     @Test
     void setAndGetSicxAddress() {
         assertEquals(sicx.getAddress(), staking.call("getSicxAddress"));
+        Account newSicx = Account.newScoreAccount(2);
+        staking.invoke(owner, "setSicxAddress", newSicx.getAddress());
+        assertEquals(newSicx.getAddress(), staking.call("getSicxAddress"));
     }
 
     @Test
@@ -123,13 +127,39 @@ class StakingTest extends TestBase {
     void getPrepList() {
         ArrayList<Address> expectedList = new ArrayList<>();
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> prepsList = (List<Map<String,Object>>) prepsResponse.get("preps");
+        List<Map<String, Object>> prepsList = (List<Map<String, Object>>) prepsResponse.get("preps");
         for (Map<String, Object> prepMap : prepsList) {
             expectedList.add((Address) prepMap.get("address"));
         }
         assertEquals(expectedList, staking.call("getPrepList"));
+        assertEquals(100, ((List<Address>)staking.call("getPrepList")).size());
 
+        interScoreCallMock.when(() -> Context.call(eq(SYSTEM_SCORE_ADDRESS), eq("getStake"), any(Address.class))).thenReturn(Map.of(
+                "unstakes", List.of()));
+        interScoreCallMock.when(() -> Context.call(eq(SYSTEM_SCORE_ADDRESS), eq("queryIScore"), any(Address.class))).thenReturn(Map.of("estimatedICX", BigInteger.ZERO));
+        interScoreCallMock.when(() -> Context.call(eq(SYSTEM_SCORE_ADDRESS), eq("setStake"), any(BigInteger.class))).thenReturn(null);
+        interScoreCallMock.when(() -> Context.call(eq(SYSTEM_SCORE_ADDRESS), eq("setDelegation"), any(List.class))).thenReturn(null);
 
+        Account newPrep = sm.createAccount();
+        PrepDelegations delegation = new PrepDelegations();
+        delegation._address = newPrep.getAddress();
+        delegation._votes_in_per = HUNDRED_PERCENTAGE;
+
+        // Providing user delegation by non sicx holder doesn't increase prep list
+        interScoreCallMock.when(() -> Context.call(eq(sicx.getAddress()), eq("balanceOf"), any(Address.class))).thenReturn(BigInteger.ZERO);
+        staking.invoke(owner, "delegate", (Object) new PrepDelegations[]{delegation});
+        assertArrayEquals(expectedList.toArray(), ((List<Address>) staking.call("getPrepList")).toArray());
+
+        // Sicx holder's delegation increase prep list
+        interScoreCallMock.when(() -> Context.call(eq(sicx.getAddress()), eq("balanceOf"), any(Address.class))).thenReturn(BigInteger.TEN);
+        expectedList.add(newPrep.getAddress());
+        staking.invoke(owner, "delegate", (Object) new PrepDelegations[]{delegation});
+        assertArrayEquals(expectedList.toArray(), ((List<Address>) staking.call("getPrepList")).toArray());
+
+        //Removing the delegation should reduce the prep list
+        expectedList.remove(newPrep.getAddress());
+        staking.invoke(owner, "delegate", (Object) new PrepDelegations[]{});
+        assertArrayEquals(expectedList.toArray(), ((List<Address>)staking.call("getPrepList")).toArray());
     }
 
     @Test
@@ -201,9 +231,9 @@ class StakingTest extends TestBase {
         iscore.put("iscore", "0x0");
 
         try {
-            utilities.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "queryIScore",
+            interScoreCallMock.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "queryIScore",
                     staking.getAddress())).thenReturn(iscore);
-            utilities.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "claimIScore")).thenReturn(0);
+            interScoreCallMock.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "claimIScore")).thenReturn(0);
             staking.invoke(owner, "checkForIscore");
             assertEquals(false, staking.call("getDistributing"));
 
@@ -217,9 +247,9 @@ class StakingTest extends TestBase {
         iscore2.put("estimatedICX", BigInteger.valueOf(5L));
         iscore2.put("iscore", "0x0");
         try {
-            utilities.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "queryIScore",
+            interScoreCallMock.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "queryIScore",
                     staking.getAddress())).thenReturn(iscore2);
-            utilities.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "claimIScore")).thenReturn(0);
+            interScoreCallMock.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "claimIScore")).thenReturn(0);
             staking.invoke(owner, "checkForIscore");
             assertEquals(true, staking.call("getDistributing"));
         } catch (Exception e) {
@@ -231,7 +261,7 @@ class StakingTest extends TestBase {
     @Test
     void stake() {
         try {
-            utilities.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "setStake",
+            interScoreCallMock.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "setStake",
                     BigInteger.valueOf(5L))).thenReturn(0);
             staking.invoke(owner, "stake", BigInteger.valueOf(5L));
 
@@ -248,9 +278,9 @@ class StakingTest extends TestBase {
         DictDB<Address, BigInteger> _icx_payable = mock(DictDB.class);
 
         try {
-            utilities.when(() -> Context.newVarDB("icx_to_claim", BigInteger.class))
+            interScoreCallMock.when(() -> Context.newVarDB("icx_to_claim", BigInteger.class))
                     .thenReturn(_icx_to_claim);
-            utilities.when(() -> Context.newDictDB("icx_payable", BigInteger.class))
+            interScoreCallMock.when(() -> Context.newDictDB("icx_payable", BigInteger.class))
                     .thenReturn(_icx_payable);
             when(_icx_to_claim.getOrDefault(BigInteger.ZERO)).thenReturn(icxToClaim);
             when(_icx_payable.getOrDefault(owner.getAddress(), BigInteger.ZERO)).thenReturn(icxPayable);
@@ -272,7 +302,7 @@ class StakingTest extends TestBase {
     void claimableICX() {
         DictDB<Address, BigInteger> _icx_payable = mock(DictDB.class);
         try {
-            utilities.when(() -> Context.newDictDB("icx_payable", BigInteger.class))
+            interScoreCallMock.when(() -> Context.newDictDB("icx_payable", BigInteger.class))
                     .thenReturn(_icx_payable);
             when(_icx_payable.getOrDefault(owner.getAddress(), BigInteger.ZERO)).thenReturn(BigInteger.valueOf(5L));
             Score staking = sm.deploy(owner, Staking.class);
@@ -287,7 +317,7 @@ class StakingTest extends TestBase {
     void totalClaimableIcx() {
         VarDB<BigInteger> _icx_to_claim = mock(VarDB.class);
         try {
-            utilities.when(() -> Context.newVarDB("icx_to_claim", BigInteger.class))
+            interScoreCallMock.when(() -> Context.newVarDB("icx_to_claim", BigInteger.class))
                     .thenReturn(_icx_to_claim);
             when(_icx_to_claim.getOrDefault(BigInteger.ZERO)).thenReturn(BigInteger.valueOf(5L));
             Score staking = sm.deploy(owner, Staking.class);
@@ -305,17 +335,17 @@ class StakingTest extends TestBase {
         VarDB<BigInteger> _daily_reward = mock(VarDB.class);
 
         try {
-            utilities.when(() -> Context.newVarDB("sICX_address", Address.class))
+            interScoreCallMock.when(() -> Context.newVarDB("sICX_address", Address.class))
                     .thenReturn(_sICX_address);
-            utilities.when(() -> Context.newVarDB("_total_stake", BigInteger.class))
+            interScoreCallMock.when(() -> Context.newVarDB("_total_stake", BigInteger.class))
                     .thenReturn(_total_stake);
-            utilities.when(() -> Context.newVarDB("_daily_reward", BigInteger.class))
+            interScoreCallMock.when(() -> Context.newVarDB("_daily_reward", BigInteger.class))
                     .thenReturn(_daily_reward);
             staking.invoke(owner, "setSicxAddress", sicx.getAddress());
             when(_sICX_address.get()).thenReturn(sicx.getAddress());
             when(_total_stake.getOrDefault(BigInteger.ZERO)).thenReturn(BigInteger.valueOf(5L));
             when(_daily_reward.getOrDefault(BigInteger.ZERO)).thenReturn(BigInteger.valueOf(10L));
-            utilities.when(() -> Context.call(sicx.getAddress(), "totalSupply")).thenReturn(BigInteger.valueOf(5L));
+            interScoreCallMock.when(() -> Context.call(sicx.getAddress(), "totalSupply")).thenReturn(BigInteger.valueOf(5L));
 
             Score staking = sm.deploy(owner, Staking.class);
             assertEquals(ONE_EXA.multiply(BigInteger.valueOf(3L)), staking.call("getRate"));
@@ -335,11 +365,11 @@ class StakingTest extends TestBase {
         delegationPer.put("hx55814f724bbffe49bfa4555535cd9d7e0e1dff32", new BigInteger("50000000000000000000"));
         delegationPer.put("hx55814f724bbffe49bfa4555535cd9d7e0e1dff31", new BigInteger("50000000000000000000"));
         try {
-            utilities.when(() -> Context.newVarDB("sICX_address", Address.class))
+            interScoreCallMock.when(() -> Context.newVarDB("sICX_address", Address.class))
                     .thenReturn(_sICX_address);
             staking.invoke(owner, "setSicxAddress", sicx.getAddress());
             when(_sICX_address.get()).thenReturn(sicx.getAddress());
-            utilities.when(() -> Context.call(sicx.getAddress(), "balanceOf", owner.getAddress())).thenReturn(new BigInteger("100000000000000000000"));
+            interScoreCallMock.when(() -> Context.call(sicx.getAddress(), "balanceOf", owner.getAddress())).thenReturn(new BigInteger("100000000000000000000"));
             Score staking = sm.deploy(owner, Staking.class);
             Staking scoreSpy = (Staking) spy(staking.getInstance());
             staking.setInstance(scoreSpy);
@@ -362,7 +392,7 @@ class StakingTest extends TestBase {
                 ".hx55814f724bbffe49bfa4555535cd9d7e0e1dff31:50000000000000000000.";
 
         try {
-            utilities.when(() -> Context.newDictDB("_address_delegations", String.class))
+            interScoreCallMock.when(() -> Context.newDictDB("_address_delegations", String.class))
                     .thenReturn(_address_delegations);
             when(_address_delegations.getOrDefault(String.valueOf(owner.getAddress()), "")).thenReturn(delegation);
 
@@ -389,18 +419,18 @@ class StakingTest extends TestBase {
         delegationPer.put("hx55814f724bbffe49bfa4555535cd9d7e0e1dff32", new BigInteger("50000000000000000000"));
         delegationPer.put("hx55814f724bbffe49bfa4555535cd9d7e0e1dff31", new BigInteger("50000000000000000000"));
         try {
-            utilities.when(() -> Context.newVarDB("sICX_address", Address.class))
+            interScoreCallMock.when(() -> Context.newVarDB("sICX_address", Address.class))
                     .thenReturn(_sICX_address);
-            utilities.when(() -> Context.newVarDB("_rate", BigInteger.class))
+            interScoreCallMock.when(() -> Context.newVarDB("_rate", BigInteger.class))
                     .thenReturn(_rate);
-            utilities.when(() -> Context.newDictDB("_prep_delegations", BigInteger.class))
+            interScoreCallMock.when(() -> Context.newDictDB("_prep_delegations", BigInteger.class))
                     .thenReturn(_prep_delegations);
             staking.invoke(owner, "setSicxAddress", sicx.getAddress());
             when(_sICX_address.get()).thenReturn(sicx.getAddress());
             when(_rate.getOrDefault(BigInteger.ZERO)).thenReturn(ONE_EXA);
             when(_prep_delegations.getOrDefault("hx55814f724bbffe49bfa4555535cd9d7e0e1dff32", BigInteger.ZERO)).thenReturn(new BigInteger("50000000000000000000"));
             when(_prep_delegations.getOrDefault("hx55814f724bbffe49bfa4555535cd9d7e0e1dff31", BigInteger.ZERO)).thenReturn(new BigInteger("50000000000000000000"));
-            utilities.when(() -> Context.call(sicx.getAddress(), "balanceOf", owner.getAddress())).thenReturn(new BigInteger("100000000000000000000"));
+            interScoreCallMock.when(() -> Context.call(sicx.getAddress(), "balanceOf", owner.getAddress())).thenReturn(new BigInteger("100000000000000000000"));
             Score staking = sm.deploy(owner, Staking.class);
             Staking scoreSpy = (Staking) spy(staking.getInstance());
             staking.setInstance(scoreSpy);
@@ -426,16 +456,16 @@ class StakingTest extends TestBase {
         VarDB<BigInteger> _total_stake = mock(VarDB.class);
 
         try {
-            utilities.when(() -> Context.newDictDB("_address_delegations", String.class))
+            interScoreCallMock.when(() -> Context.newDictDB("_address_delegations", String.class))
                     .thenReturn(_address_delegations);
-            utilities.when(() -> Context.newVarDB("_total_stake", BigInteger.class))
+            interScoreCallMock.when(() -> Context.newVarDB("_total_stake", BigInteger.class))
                     .thenReturn(_total_stake);
             when(_total_stake.getOrDefault(BigInteger.ZERO)).thenReturn(new BigInteger("100000000000000000000"));
 
             Score staking = sm.deploy(owner, Staking.class);
             Staking scoreSpy = (Staking) spy(staking.getInstance());
             staking.setInstance(scoreSpy);
-            utilities.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "setDelegation",
+            interScoreCallMock.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "setDelegation",
                     delegationList)).thenReturn(0);
             staking.invoke(owner, "delegations", new BigInteger("50000000000000000000"));
         } catch (Exception e) {
@@ -463,23 +493,23 @@ class StakingTest extends TestBase {
 
 
         try {
-            utilities.when(() -> Context.newVarDB("_distributing", Boolean.class))
+            interScoreCallMock.when(() -> Context.newVarDB("_distributing", Boolean.class))
                     .thenReturn(_distributing);
-            utilities.when(() -> Context.newVarDB("_total_unstake_amount", BigInteger.class))
+            interScoreCallMock.when(() -> Context.newVarDB("_total_unstake_amount", BigInteger.class))
                     .thenReturn(_total_unstake_amount);
-            utilities.when(() -> Context.newVarDB("icx_to_claim", BigInteger.class))
+            interScoreCallMock.when(() -> Context.newVarDB("icx_to_claim", BigInteger.class))
                     .thenReturn(_icx_to_claim);
-            utilities.when(() -> Context.newDictDB("_prep_delegations", BigInteger.class))
+            interScoreCallMock.when(() -> Context.newDictDB("_prep_delegations", BigInteger.class))
                     .thenReturn(_prep_delegations);
-            utilities.when(() -> Context.newVarDB("_total_stake", BigInteger.class))
+            interScoreCallMock.when(() -> Context.newVarDB("_total_stake", BigInteger.class))
                     .thenReturn(_total_stake);
             when(_distributing.get()).thenReturn(true);
             when(_total_unstake_amount.getOrDefault(BigInteger.ZERO)).thenReturn(new BigInteger("1000000000000000000"));
             when(_icx_to_claim.getOrDefault(BigInteger.ZERO)).thenReturn(BigInteger.ZERO);
             when(_total_stake.getOrDefault(BigInteger.ZERO)).thenReturn(new BigInteger("4000000000000000000"));
-            utilities.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "getStake",
+            interScoreCallMock.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "getStake",
                     Address.fromString("cx0000000000000000000000000000000000000004"))).thenReturn(stakedInfo);
-            utilities.when(Context::getValue).thenReturn(BigInteger.ZERO);
+            interScoreCallMock.when(Context::getValue).thenReturn(BigInteger.ZERO);
             when(_prep_delegations.getOrDefault("hx0b047c751658f7ce1b2595da34d57a0e7dad357d", BigInteger.ZERO)).thenReturn(new BigInteger("2000000000000000000"));
             when(_prep_delegations.getOrDefault("hx0b047c751658f7ce1b2595da34d57a0e7dad357c", BigInteger.ZERO)).thenReturn(new BigInteger("2000000000000000000"));
 
@@ -490,7 +520,7 @@ class StakingTest extends TestBase {
 //            doNothing().when(scoreSpy).checkForUnstakedBalance();
 //            doNothing().when(scoreSpy).checkForIscore();
             doReturn(new BigInteger("4000000000000000000")).when(scoreSpy).getTotalStake();
-            utilities.when(() -> Context.getBalance(staking.getAddress())).thenReturn(new BigInteger(
+            interScoreCallMock.when(() -> Context.getBalance(staking.getAddress())).thenReturn(new BigInteger(
                     "5000000000000000000"));
             staking.invoke(owner, "performChecks");
             assertEquals(new BigInteger("5000000000000000000"), staking.call("getLifetimeReward"));
@@ -506,7 +536,7 @@ class StakingTest extends TestBase {
         try {
             Map<String, BigInteger> delegationIcx;
             staking.invoke(owner, "setSicxAddress", sicx.getAddress());
-            utilities.when(() -> Context.call(sicx.getAddress(), "balanceOf", owner.getAddress())).thenReturn(new BigInteger("100000000000000000000"));
+            interScoreCallMock.when(() -> Context.call(sicx.getAddress(), "balanceOf", owner.getAddress())).thenReturn(new BigInteger("100000000000000000000"));
             staking.invoke(owner, "distributeEvenly", new BigInteger("100000000000000000000"), BigInteger.ONE,
                     owner.getAddress());
             delegationIcx = (Map<String, BigInteger>) staking.call("getPrepDelegations");
@@ -552,7 +582,7 @@ class StakingTest extends TestBase {
         Map<String, BigInteger> previousDelegations = new HashMap<>();
         previousDelegations.put("hx0b047c751658f7ce1b2595da34d57a0e7dad357a", new BigInteger("100000000000000000000"));
         try {
-            utilities.when(() -> Context.call(sicx.getAddress(), "balanceOf", owner.getAddress())).thenReturn(new BigInteger("100000000000000000000"));
+            interScoreCallMock.when(() -> Context.call(sicx.getAddress(), "balanceOf", owner.getAddress())).thenReturn(new BigInteger("100000000000000000000"));
             Score staking = sm.deploy(owner, Staking.class);
             Staking scoreSpy = (Staking) spy(staking.getInstance());
             staking.setInstance(scoreSpy);
@@ -581,7 +611,7 @@ class StakingTest extends TestBase {
         List<Address> topPreps;
         termDetails.put("nextPRepTerm", BigInteger.valueOf(304400));
         try {
-            utilities.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "getIISSInfo")).thenReturn(termDetails);
+            interScoreCallMock.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "getIISSInfo")).thenReturn(termDetails);
             staking.invoke(owner, "checkForWeek");
 
 
@@ -609,12 +639,12 @@ class StakingTest extends TestBase {
         Map<String, BigInteger> prepDict = new HashMap<>();
 
         try {
-            utilities.when(() -> Context.newVarDB("sICX_address", Address.class))
+            interScoreCallMock.when(() -> Context.newVarDB("sICX_address", Address.class))
                     .thenReturn(_sICX_address);
-            utilities.when(() -> Context.newVarDB("_rate", BigInteger.class))
+            interScoreCallMock.when(() -> Context.newVarDB("_rate", BigInteger.class))
                     .thenReturn(_rate);
 
-            utilities.when(() -> Context.newDictDB("_prep_delegations", BigInteger.class))
+            interScoreCallMock.when(() -> Context.newDictDB("_prep_delegations", BigInteger.class))
                     .thenReturn(_prep_delegations);
             when(_sICX_address.get()).thenReturn(owner.getAddress());
             when(_rate.getOrDefault(BigInteger.ZERO)).thenReturn(ONE_EXA);
@@ -660,14 +690,14 @@ class StakingTest extends TestBase {
         Map<String, BigInteger> prepDict;
 
         try {
-            utilities.when(() -> Context.newVarDB("_rate", BigInteger.class))
+            interScoreCallMock.when(() -> Context.newVarDB("_rate", BigInteger.class))
                     .thenReturn(_rate);
-            utilities.when(() -> Context.newVarDB("_total_stake", BigInteger.class))
+            interScoreCallMock.when(() -> Context.newVarDB("_total_stake", BigInteger.class))
                     .thenReturn(_total_stake);
-            utilities.when(() -> Context.call(sicx.getAddress(), "balanceOf", owner.getAddress())).thenReturn(new BigInteger("100000000000000000000"));
-            utilities.when(() -> Context.call(sicx.getAddress(), "mintTo", owner.getAddress(), new BigInteger(
+            interScoreCallMock.when(() -> Context.call(sicx.getAddress(), "balanceOf", owner.getAddress())).thenReturn(new BigInteger("100000000000000000000"));
+            interScoreCallMock.when(() -> Context.call(sicx.getAddress(), "mintTo", owner.getAddress(), new BigInteger(
                     "100000000000000000000"), new byte[12])).thenReturn(new BigInteger("0"));
-            utilities.when(Context::getValue).thenReturn(new BigInteger("100000000000000000000"));
+            interScoreCallMock.when(Context::getValue).thenReturn(new BigInteger("100000000000000000000"));
             when(_rate.getOrDefault(BigInteger.ZERO)).thenReturn(ONE_EXA);
             when(_total_stake.getOrDefault(BigInteger.ZERO)).thenReturn(ONE_EXA);
             Score staking = sm.deploy(owner, Staking.class);
@@ -736,23 +766,24 @@ class StakingTest extends TestBase {
         unstakeDict.put("from", Address.fromString("hx0000000000000000000000000000000000000001"));
         unstakeResponseList.add(unstakeDict);
         try {
-            utilities.when(() -> Context.newVarDB("sICX_address", Address.class))
+            interScoreCallMock.when(() -> Context.newVarDB("sICX_address", Address.class))
                     .thenReturn(_sICX_address);
-            utilities.when(() -> Context.newVarDB("sICX_supply", BigInteger.class))
+            interScoreCallMock.when(() -> Context.newVarDB("sICX_supply", BigInteger.class))
                     .thenReturn(sicxSupply);
 
-            utilities.when(() -> Context.newDictDB("_prep_delegations", BigInteger.class))
+            interScoreCallMock.when(() -> Context.newDictDB("_prep_delegations", BigInteger.class))
                     .thenReturn(_prep_delegations);
-            utilities.when(() -> Context.newVarDB("_total_unstake_amount", BigInteger.class))
+            interScoreCallMock.when(() -> Context.newVarDB("_total_unstake_amount", BigInteger.class))
                     .thenReturn(_total_unstake_amount);
-            utilities.when(() -> Context.newVarDB("icx_to_claim", BigInteger.class))
+            interScoreCallMock.when(() -> Context.newVarDB("icx_to_claim", BigInteger.class))
                     .thenReturn(_icx_to_claim);
-            utilities.when(() -> Context.newVarDB("_daily_reward", BigInteger.class))
+            interScoreCallMock.when(() -> Context.newVarDB("_daily_reward", BigInteger.class))
                     .thenReturn(_daily_reward);
-            utilities.when(() -> Context.newVarDB("_total_stake", BigInteger.class))
+            interScoreCallMock.when(() -> Context.newVarDB("_total_stake", BigInteger.class))
                     .thenReturn(_total_stake);
-            utilities.when(() -> Context.call(sicx.getAddress(), "burn", new BigInteger("100000000000000000000"))).thenReturn(new BigInteger("0"));
-            utilities.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "getStake",
+            interScoreCallMock.when(() -> Context.call(sicx.getAddress(), "burn", new BigInteger(
+                    "100000000000000000000"))).thenReturn(new BigInteger("0"));
+            interScoreCallMock.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "getStake",
                     Address.fromString("cx0000000000000000000000000000000000000004"))).thenReturn(stakedInfo);
             when(_rate.getOrDefault(BigInteger.ZERO)).thenReturn(ONE_EXA);
             when(sicxSupply.getOrDefault(BigInteger.ZERO)).thenReturn(ONE_EXA);
@@ -816,7 +847,7 @@ class StakingTest extends TestBase {
             assertEquals(unstakeDict.get("sender"), userUnstakeInfo.get(0).get("sender"));
             assertEquals(unstakeDict.get("blockHeight"), userUnstakeInfo.get(0).get("blockHeight"));
             assertEquals(unstakeDict.get("from"), userUnstakeInfo.get(0).get("from"));
-            utilities.when(() -> Context.getBalance(staking.getAddress())).thenReturn(new BigInteger(
+            interScoreCallMock.when(() -> Context.getBalance(staking.getAddress())).thenReturn(new BigInteger(
                     "104000000000000000000"));
             staking.invoke(owner, "checkForBalance");
             assertEquals(new BigInteger("100000000000000000000"), staking.call("claimableICX", Address.fromString(
@@ -836,7 +867,7 @@ class StakingTest extends TestBase {
 
 
         try {
-            utilities.when(() -> Context.newVarDB("sICX_address", Address.class))
+            interScoreCallMock.when(() -> Context.newVarDB("sICX_address", Address.class))
                     .thenReturn(_sICX_address);
             when(_sICX_address.get()).thenReturn(owner.getAddress());
             Score staking = sm.deploy(owner, Staking.class);
