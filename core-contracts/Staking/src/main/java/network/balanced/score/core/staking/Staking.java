@@ -133,6 +133,19 @@ public class Staking {
     }
 
     @External(readonly = true)
+    public boolean getStakingOn() {
+        return stakingOn.getOrDefault(false);
+    }
+
+    @External
+    public void setSicxAddress(Address _address) {
+        onlyOwner();
+        Context.require(_address.isContract(), TAG + ": Address provided is an EOA address. A contract " +
+                "address is required.");
+        sicxAddress.set(_address);
+    }
+
+    @External(readonly = true)
     public Address getSicxAddress() {
         return sicxAddress.get();
     }
@@ -231,14 +244,6 @@ public class Staking {
         return userDelegationInPercentage.getOrDefault(user, DEFAULT_DELEGATION_LIST).toMap();
     }
 
-    @External
-    public void setSicxAddress(Address _address) {
-        onlyOwner();
-        Context.require(_address.isContract(), TAG + ": Address provided is an EOA address. A contract " +
-                "address is required.");
-        sicxAddress.set(_address);
-    }
-
     @External(readonly = true)
     public BigInteger claimableICX(Address _address) {
         return icxPayable.getOrDefault(_address, BigInteger.ZERO);
@@ -324,8 +329,8 @@ public class Staking {
 
     @SuppressWarnings("unchecked")
     private List<Address> setTopPreps() {
-        Map<String, Object> prepDict = (Map<String, Object>) Context.call(SYSTEM_SCORE_ADDRESS, "getPReps", 1,
-                Constant.TOP_PREP_COUNT);
+        Map<String, Object> prepDict = (Map<String, Object>) Context.call(SYSTEM_SCORE_ADDRESS, "getPReps",
+                BigInteger.ONE, Constant.TOP_PREP_COUNT);
         List<Map<String, Object>> prepDetails = (List<Map<String, Object>>) prepDict.get("preps");
         List<Address> topPreps = new ArrayList<>();
         for (Map<String, Object> preps : prepDetails) {
@@ -492,7 +497,7 @@ public class Staking {
     }
 
     private void updateDelegationInNetwork(Map<String, BigInteger> prepDelegations, List<Address> topPreps,
-                                          BigInteger totalStake) {
+                                           BigInteger totalStake) {
 
         List<Map<String, Object>> networkDelegationList = new ArrayList<>();
         BigInteger icxPreferredToTopPreps = BigInteger.ZERO;

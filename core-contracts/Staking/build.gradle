@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 import network.balanced.score.dependencies.Dependencies
 
-
-
 version = '0.1.0'
 
 dependencies {
@@ -26,7 +24,7 @@ dependencies {
     implementation Dependencies.minimalJson
 
     annotationProcessor Dependencies.javaeeScoreData
-    compileOnly Dependencies.javaeeScoreData
+    implementation Dependencies.javaeeScoreData
 
     testImplementation Dependencies.javaeeUnitTest
     testImplementation Dependencies.javaeeTokens
@@ -107,10 +105,8 @@ task integrationTest(type: Test, dependsOn: optimizedJar) {
         systemProperty 'sicx.keyStore', scoreTest.keystoreName
         systemProperty 'sicx.keyPassword', scoreTest.keystorePass
 //
-//
         systemProperty 'sicx.scoreFilePath', "../../sicx.zip"
 //        systemProperty 'scoreFilePath', "../../staking.zip"
-
 
         systemProperty 'system.url', scoreTest.url
         systemProperty 'system.nid', scoreTest.nid
@@ -128,13 +124,10 @@ task integrationTest(type: Test, dependsOn: optimizedJar) {
         systemProperty 'tester.nid', scoreTest.nid
         systemProperty 'tester.scoreFilePath', "../../sicx.zip"
 
-
-//
         systemProperty 'sicx.isUpdate', "false"
         systemProperty 'isUpdate', "false"
         systemProperty 'address', "cx916796da1d86b9fc9d7fe1697239c2d5ca1c4cb1"
         systemProperty 'sicx.address', "cx4f1743589e0f52a443ade51679544bde79817c3b"
-
 
 //        systemProperty 'demo.params.defaultValue', '0x1'
     }

@@ -20,6 +20,7 @@ import network.balanced.score.core.staking.db.DelegationListDBSdo;
 import score.Address;
 
 import java.math.BigInteger;
+import java.util.List;
 
 public class Constant {
     public static final String TAG = "Staked ICX Manager";
@@ -56,7 +57,7 @@ public class Constant {
     public static final String USER_DELEGATION_PERCENTAGE = "user_delegation_percentage";
     public static final String PREP_DELEGATION_ICX = "prep_delegation_icx";
 
-    public static DelegationListDBSdo DEFAULT_DELEGATION_LIST = new DelegationListDBSdo();
+    public static DelegationListDBSdo DEFAULT_DELEGATION_LIST = getDelegationList();
 
     private static BigInteger pow10(int exponent) {
         BigInteger result = BigInteger.ONE;
@@ -70,5 +71,11 @@ public class Constant {
         byte[] rawAddress = new byte[Address.LENGTH];
         rawAddress[0] = 1;
         return new Address(rawAddress);
+    }
+
+    private static DelegationListDBSdo getDelegationList() {
+        DelegationListDBSdo delegationList = new DelegationListDBSdo();
+        delegationList.setDelegationList(List.of());
+        return delegationList;
     }
 }

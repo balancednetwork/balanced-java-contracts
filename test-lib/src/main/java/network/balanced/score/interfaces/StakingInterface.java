@@ -43,6 +43,9 @@ public interface StakingInterface {
     void toggleStakingOn();
 
     @External(readonly = true)
+    boolean getStakingOn();
+
+    @External(readonly = true)
     Address getSicxAddress();
 
     @External
