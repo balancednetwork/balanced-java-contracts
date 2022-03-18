@@ -23,25 +23,11 @@ public class Checks {
 
     public static final Address defaultAddress = new Address(new byte[Address.LENGTH]);
 
-    public static void onlyOwner() {
-        Address caller = Context.getCaller();
-        Address owner = Context.getOwner();
-        Context.require(caller.equals(owner),
-                "SenderNotScoreOwner: Sender=" + caller + "Owner=" + owner);
-    }
-
     public static void onlyGovernance() {
         Address governance = Loans.governance.getOrDefault(defaultAddress);
         Address sender = Context.getCaller();
         Context.require(!governance.equals(defaultAddress), "Loans: Governance address not set");
         Context.require(sender.equals(governance), "Loans: Sender not governance contract");
-    }
-
-    public static void onlyDex() {
-        Address dex = Loans.dex.getOrDefault(defaultAddress);
-        Address sender = Context.getCaller();
-        Context.require(!dex.equals(defaultAddress), "Loans: Dex address not set");
-        Context.require(sender.equals(dex), "Loans: Sender not dex contract");
     }
 
     public static void onlyRewards() {

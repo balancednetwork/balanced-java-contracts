@@ -350,7 +350,20 @@ class LoansTests extends LoansTestsBase {
         Executable depositAndBorrow = () -> takeLoanICX(account, "sICX", collateral, loan);
         expectErrorMessage(depositAndBorrow, expectedErrorMessage);
     }
-    // TODO unactive asset
+
+    @Test
+    void DepositAndBorrow_OriginateLoan_NotActive() {
+        // Arrange
+        Account account = accounts.get(0);
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);;
+        String expectedErrorMessage = "Loans of inactive assets are not allowed.";
+        loans.invoke(admin, "toggleAssetActive", "bnUSD");
+
+        // Assert & Act
+        Executable depositAndBorrow = () -> takeLoanICX(account, "bnUSD", collateral, loan);
+        expectErrorMessage(depositAndBorrow, expectedErrorMessage);
+    }
 
     @Test
     void DepositAndBorrow_OriginateLoan_LowerThanMinimum() {

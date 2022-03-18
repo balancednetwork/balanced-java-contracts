@@ -180,17 +180,6 @@ public class Loans {
         Context.call(staking.get(), "delegate", prepDelegations);
     }
 
-//     RpcObject delegation = new RpcObject.Builder()
-//     .put("_address", new RpcValue(fromWallet.getAddress()))
-//     .put("_votes_in_per", new RpcValue(BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18))))
-//     .build();
-// RpcArray delegations = new RpcArray.Builder()
-//     .add(delegation)
-//     .build();
-// RpcObject params = new RpcObject.Builder()
-//     .put("_delegations", delegations)
-//     .build();
-
     @External(readonly = true)
     public Map<String, Boolean> getDistributionsDone() {
         return Map.of (
@@ -591,7 +580,7 @@ public class Loans {
             position.set(symbol, position.get(symbol).subtract(loanShare));
             
             Map<String, Object> userMap = Map.of(
-                "_user", position.address,
+                "_user", position.address.get(),
                 "_balance", userDebt
             );
             rewardsBatchList.add(userMap);
@@ -665,7 +654,7 @@ public class Loans {
             position.set("bnUSD", position.get("bnUSD").add(loanShare));
             
             Map<String, Object> userMap = Map.of(
-                "_user", position.address,
+                "_user", position.address.get(),
                 "_balance", userDebt
             );
             rewardsBatchList.add(userMap);

@@ -53,7 +53,6 @@ public class Snapshot {
             }
         }
 
-      
         return Map.of(
             "snap_day", day.get(),
             "snap_time", time.getOrDefault(0l),
