@@ -16,12 +16,12 @@
 
 package network.balanced.score.core.staking.db;
 
+import foundation.icon.score.data.ScoreDataObject;
 import score.Address;
-import score.ObjectReader;
-import score.ObjectWriter;
 
 import java.math.BigInteger;
 
+@ScoreDataObject
 public class Delegation {
 
     private Address address;
@@ -48,25 +48,5 @@ public class Delegation {
         return "Delegation{" + "address='" + address + '\'' +
                 "delegationValue='" + delegationValue + '\'' +
                 '}';
-    }
-
-    public static Delegation readObject(ObjectReader reader) {
-        Delegation obj = new Delegation();
-        reader.beginList();
-        obj.setAddress(reader.readAddress());
-        obj.setDelegationValue(reader.readBigInteger());
-        reader.end();
-        return obj;
-    }
-
-    public void writeObject(ObjectWriter writer) {
-        writer.beginList(2);
-        writer.write(this.getAddress());
-        writer.write(this.getDelegationValue());
-        writer.end();
-    }
-
-    public static void writeObject(ObjectWriter writer, Delegation obj) {
-        obj.writeObject(writer);
     }
 }
