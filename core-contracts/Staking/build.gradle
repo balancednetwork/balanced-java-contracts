@@ -24,7 +24,7 @@ dependencies {
     implementation Dependencies.minimalJson
 
     annotationProcessor Dependencies.javaeeScoreData
-    implementation Dependencies.javaeeScoreData
+    compileOnly Dependencies.javaeeScoreData
 
     testImplementation Dependencies.javaeeUnitTest
     testImplementation Dependencies.javaeeTokens
@@ -47,8 +47,9 @@ optimizedJar {
     mainClassName = 'network.balanced.score.core.staking.Staking'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
-        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
+    enableDebug = false
 }
 
 deployJar {

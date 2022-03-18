@@ -110,7 +110,7 @@ public interface StakingInterface {
     List<UnstakeDetails> getUnstakeInfo();
 
     @External(readonly = true)
-    List<Map<String, Object>> getUserUnstakeInfo(Address _address) throws Exception;
+    List<Map<String, Object>> getUserUnstakeInfo(Address _address);
 
     class PrepDelegations {
         public Address _address;
