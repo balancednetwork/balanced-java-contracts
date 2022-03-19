@@ -465,7 +465,7 @@ public class Staking {
         // If there is I-Score generated then update the rate
         if (dailyReward.compareTo(BigInteger.ZERO) > 0) {
             totalLifetimeReward.set(getLifetimeReward().add(dailyReward));
-            BigInteger totalStake = this.totalStake.getOrDefault(BigInteger.ZERO);
+            BigInteger totalStake = getTotalStake();
             BigInteger newTotalStake = totalStake.add(dailyReward);
             BigInteger newRate;
             if (newTotalStake.equals(BigInteger.ZERO)) {

@@ -37,8 +37,9 @@ import java.util.List;
 import java.util.Map;
 
 import static network.balanced.score.core.staking.utils.Constant.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.MockedStatic.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.MockedStatic.Verification;
 import static org.mockito.Mockito.*;
 
 class StakingTest extends TestBase {
@@ -51,7 +52,7 @@ class StakingTest extends TestBase {
     private final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
 
     private Score staking;
-    private Staking scoreSpy;
+    private Staking stakingSpy;
 
     Map<String, Object> prepsResponse = new HashMap<>();
     Map<String, Object> iissInfo = new HashMap<>();
@@ -66,7 +67,9 @@ class StakingTest extends TestBase {
     Verification getStake = () -> Context.call(eq(SYSTEM_SCORE_ADDRESS), eq("getStake"), any(Address.class));
 
     BigInteger sicxBalance;
+    BigInteger sicxTotalSupply;
     Verification sicxBalanceOf = () -> Context.call(eq(sicx.getAddress()), eq("balanceOf"), any(Address.class));
+    Verification getSicxTotalSupply = () -> Context.call(sicx.getAddress(), "totalSupply");
 
     @BeforeEach
     void setUp() throws Exception {
@@ -74,9 +77,13 @@ class StakingTest extends TestBase {
         setupSystemScore();
         setupSicxScore();
 
+        setupStakingScore();
+    }
+
+    private void setupStakingScore() throws Exception {
         staking = sm.deploy(owner, Staking.class);
-        scoreSpy = (Staking) spy(staking.getInstance());
-        staking.setInstance(scoreSpy);
+        stakingSpy = (Staking) spy(staking.getInstance());
+        staking.setInstance(stakingSpy);
 
         // Configure Staking contract
         staking.invoke(owner, "setSicxAddress", sicx.getAddress());
@@ -110,6 +117,9 @@ class StakingTest extends TestBase {
 
         sicxBalance = BigInteger.ZERO;
         contextMock.when(sicxBalanceOf).thenReturn(sicxBalance);
+
+        sicxTotalSupply = BigInteger.ZERO;
+        contextMock.when(getSicxTotalSupply).thenReturn(sicxTotalSupply);
     }
 
     void setupGetPrepsResponse() {
@@ -145,6 +155,22 @@ class StakingTest extends TestBase {
     @Test
     void getTodayRate() {
         assertEquals(ICX, staking.call("getTodayRate"));
+
+        BigInteger extraICXBalance = BigInteger.valueOf(397L);
+        BigInteger stakeAmount = BigInteger.valueOf(199L);
+        contextMock.when(() -> Context.getBalance(staking.getAddress())).thenReturn(extraICXBalance.add(stakeAmount));
+
+        sicxTotalSupply = BigInteger.valueOf(719L);
+        contextMock.when(getSicxTotalSupply).thenReturn(sicxTotalSupply);
+
+        doReturn(sicxTotalSupply).when(stakingSpy).getTotalStake();
+        //noinspection ResultOfMethodCallIgnored
+        contextMock.verify(() -> Context.newVarDB(eq(TOTAL_STAKE), eq(BigInteger.class)));
+
+        sm.call(owner, stakeAmount, staking.getAddress(), "stakeICX", new Address(new byte[Address.LENGTH]), new byte[0]);
+
+        BigInteger newRate = sicxTotalSupply.add(extraICXBalance).multiply(ICX).divide(sicxTotalSupply);
+        assertEquals(newRate, staking.call("getTodayRate"));
     }
 
     @Test
