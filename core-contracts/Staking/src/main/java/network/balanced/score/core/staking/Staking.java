@@ -583,10 +583,10 @@ public class Staking {
             prepDelegationInIcx = subtractUserDelegationFromPrepDelegation(prepDelegationInIcx,
                     senderDelegationsInPercentage, icxValue);
         } else {
-            prepDelegationInIcx = addUserDelegationToPrepDelegation(prepDelegationInIcx, receiverDelegationsInPercentage,
-                    icxValue);
-            prepDelegationInIcx = subtractUserDelegationFromPrepDelegation(prepDelegationInIcx, senderDelegationsInPercentage
-                    , icxValue);
+            prepDelegationInIcx = addUserDelegationToPrepDelegation(prepDelegationInIcx,
+                    receiverDelegationsInPercentage, icxValue);
+            prepDelegationInIcx = subtractUserDelegationFromPrepDelegation(prepDelegationInIcx,
+                    senderDelegationsInPercentage, icxValue);
         }
         stakeAndDelegateInNetwork(totalStake.getOrDefault(BigInteger.ZERO), prepDelegationInIcx);
     }
@@ -602,7 +602,7 @@ public class Staking {
             BigInteger currentAmount = sumDelegation.get(prepAddress);
             currentAmount = currentAmount == null ? BigInteger.ZERO : currentAmount;
             sumDelegation.put(prepAddress, currentAmount.add(amountToAdd));
-            totalPercentage = totalPercentage.subtract(BigInteger.ONE);
+            totalPercentage = totalPercentage.subtract(delegationInPercentage.getValue());
             amount = amount.subtract(amountToAdd);
         }
         return sumDelegation;
@@ -624,7 +624,7 @@ public class Staking {
                 } else {
                     resultDelegation.remove(prepAddress);
                 }
-                totalPercentage = totalPercentage.subtract(BigInteger.ONE);
+                totalPercentage = totalPercentage.subtract(delegationInPercentage.getValue());
                 amount = amount.subtract(amountToReduce);
             }
         }
