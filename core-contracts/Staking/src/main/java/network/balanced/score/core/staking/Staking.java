@@ -405,7 +405,7 @@ public class Staking {
     private List<Address> updateTopPreps() {
         Map<String, Object> termDetails = (Map<String, Object>) Context.call(SYSTEM_SCORE_ADDRESS, "getIISSInfo");
         BigInteger nextPrepTerm = (BigInteger) termDetails.get("nextPRepTerm");
-        BigInteger destinationBlock = blockHeightWeek.getOrDefault(BigInteger.ZERO).add(BigInteger.valueOf(7 * 43200L));
+        BigInteger destinationBlock = blockHeightWeek.getOrDefault(BigInteger.ZERO).add(BLOCKS_IN_A_WEEK);
         if (nextPrepTerm.compareTo(destinationBlock) > 0) {
             blockHeightWeek.set(nextPrepTerm);
             for (int i = 0; i < this.topPreps.size(); i++) {
