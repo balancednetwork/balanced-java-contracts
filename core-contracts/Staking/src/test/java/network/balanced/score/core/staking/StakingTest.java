@@ -38,42 +38,79 @@ import java.util.Map;
 
 import static network.balanced.score.core.staking.utils.Constant.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.MockedStatic.*;
 import static org.mockito.Mockito.*;
 
 class StakingTest extends TestBase {
 
+    private static int scoreAccountCount = 1;
     public static final ServiceManager sm = getServiceManager();
     public static final Account owner = sm.createAccount();
-    public static final Account governanceScore = Account.newScoreAccount(1);
-    private static Staking tokenVestingFactory;
+    public static final Account governanceScore = Account.newScoreAccount(scoreAccountCount++);
+    public static final Account sicx = Account.newScoreAccount(scoreAccountCount++);
     private final MockedStatic<Context> interScoreCallMock = Mockito.mockStatic(Context.class,
             Mockito.CALLS_REAL_METHODS);
 
     private Score staking;
-    private Score sicx;
     private Staking scoreSpy;
 
     Map<String, Object> prepsResponse = new HashMap<>();
     Map<String, Object> iissInfo = new HashMap<>();
+    Map<String, Object> stake = new HashMap<>();
+    Map<String, Object> iScore = new HashMap<>();
+    BigInteger nextPrepTerm;
+
+    Verification getIISSInfo = () -> Context.call(SYSTEM_SCORE_ADDRESS, "getIISSInfo");
+    Verification getPreps = () -> Context.call(SYSTEM_SCORE_ADDRESS, "getPReps", BigInteger.ONE,
+            BigInteger.valueOf(100L));
+    Verification queryIscore = () -> Context.call(eq(SYSTEM_SCORE_ADDRESS), eq("queryIScore"), any(Address.class));
+    Verification getStake = () -> Context.call(eq(SYSTEM_SCORE_ADDRESS), eq("getStake"), any(Address.class));
+
+    BigInteger sicxBalance;
+    Verification sicxBalanceOf = () -> Context.call(eq(sicx.getAddress()), eq("balanceOf"), any(Address.class));
 
     @BeforeEach
     void setUp() throws Exception {
-        setupGetPrepsResponse();
-        iissInfo.put("nextPRepTerm", BigInteger.valueOf(1000L));
 
-        sicx = sm.deploy(owner, MockSicx.class);
-        assert (sicx.getAddress().isContract());
+        setupSystemScore();
+        setupSicxScore();
 
-        interScoreCallMock.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "getIISSInfo")).thenReturn(iissInfo);
-        interScoreCallMock.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "getPReps", BigInteger.ONE,
-                BigInteger.valueOf(100L))).thenReturn(prepsResponse);
         staking = sm.deploy(owner, Staking.class);
-
         scoreSpy = (Staking) spy(staking.getInstance());
         staking.setInstance(scoreSpy);
 
+        // Configure Staking contract
         staking.invoke(owner, "setSicxAddress", sicx.getAddress());
         staking.invoke(owner, "toggleStakingOn");
+    }
+
+    void setupSystemScore() {
+        // Write methods will have no effect
+        interScoreCallMock.when(() -> Context.call(eq(SYSTEM_SCORE_ADDRESS), eq("setStake"),
+                any(BigInteger.class))).thenReturn(null);
+        interScoreCallMock.when(() -> Context.call(eq(SYSTEM_SCORE_ADDRESS), eq("setDelegation"),
+                any(List.class))).thenReturn(null);
+
+        stake.put("unstakes", List.of());
+        interScoreCallMock.when(getStake).thenReturn(stake);
+
+        iScore.put("estimatedICX", BigInteger.ZERO);
+        interScoreCallMock.when(queryIscore).thenReturn(iScore);
+
+        setupGetPrepsResponse();
+        interScoreCallMock.when(getPreps).thenReturn(prepsResponse);
+
+        nextPrepTerm = BigInteger.valueOf(1000);
+        iissInfo.put("nextPRepTerm", nextPrepTerm);
+        interScoreCallMock.when(getIISSInfo).thenReturn(iissInfo);
+    }
+
+    void setupSicxScore() {
+        interScoreCallMock.when(() -> Context.call(eq(sicx.getAddress()), eq("mintTo"), any(Address.class),
+                any(BigInteger.class), any(byte[].class))).thenReturn(null);
+
+        sicxBalance = BigInteger.ZERO;
+        interScoreCallMock.when(sicxBalanceOf).thenReturn(sicxBalance);
     }
 
     void setupGetPrepsResponse() {
@@ -92,13 +129,23 @@ class StakingTest extends TestBase {
 
     @Test
     void setAndGetBlockHeightWeek() {
-        staking.invoke(owner, "setBlockHeightWeek", BigInteger.valueOf(55555));
-        assertEquals(BigInteger.valueOf(55555), staking.call("getBlockHeightWeek"));
+        assertEquals(nextPrepTerm, staking.call("getBlockHeightWeek"));
+
+        BigInteger newBlockHeight = BigInteger.valueOf(55555);
+        staking.invoke(owner, "setBlockHeightWeek", newBlockHeight);
+        assertEquals(newBlockHeight, staking.call("getBlockHeightWeek"));
+
+        nextPrepTerm = newBlockHeight.add(BigInteger.valueOf(7 * 43200 + 19L));
+        iissInfo.put("nextPRepTerm", nextPrepTerm);
+        interScoreCallMock.when(getIISSInfo).thenReturn(iissInfo);
+        sm.call(owner, ICX.multiply(BigInteger.valueOf(199L)), staking.getAddress(), "stakeICX",
+                new Address(new byte[Address.LENGTH]), new byte[0]);
+        assertEquals(nextPrepTerm, staking.call("getBlockHeightWeek"));
     }
 
     @Test
     void getTodayRate() {
-        assertEquals(BigInteger.TEN.pow(18), staking.call("getTodayRate"));
+        assertEquals(ICX, staking.call("getTodayRate"));
     }
 
     @Test
@@ -111,7 +158,8 @@ class StakingTest extends TestBase {
     @Test
     void setAndGetSicxAddress() {
         assertEquals(sicx.getAddress(), staking.call("getSicxAddress"));
-        Account newSicx = Account.newScoreAccount(2);
+
+        Account newSicx = Account.newScoreAccount(scoreAccountCount++);
         staking.invoke(owner, "setSicxAddress", newSicx.getAddress());
         assertEquals(newSicx.getAddress(), staking.call("getSicxAddress"));
     }
@@ -132,13 +180,7 @@ class StakingTest extends TestBase {
             expectedList.add((Address) prepMap.get("address"));
         }
         assertEquals(expectedList, staking.call("getPrepList"));
-        assertEquals(100, ((List<Address>)staking.call("getPrepList")).size());
-
-        interScoreCallMock.when(() -> Context.call(eq(SYSTEM_SCORE_ADDRESS), eq("getStake"), any(Address.class))).thenReturn(Map.of(
-                "unstakes", List.of()));
-        interScoreCallMock.when(() -> Context.call(eq(SYSTEM_SCORE_ADDRESS), eq("queryIScore"), any(Address.class))).thenReturn(Map.of("estimatedICX", BigInteger.ZERO));
-        interScoreCallMock.when(() -> Context.call(eq(SYSTEM_SCORE_ADDRESS), eq("setStake"), any(BigInteger.class))).thenReturn(null);
-        interScoreCallMock.when(() -> Context.call(eq(SYSTEM_SCORE_ADDRESS), eq("setDelegation"), any(List.class))).thenReturn(null);
+        assertEquals(100, ((List<Address>) staking.call("getPrepList")).size());
 
         Account newPrep = sm.createAccount();
         PrepDelegations delegation = new PrepDelegations();
@@ -146,12 +188,11 @@ class StakingTest extends TestBase {
         delegation._votes_in_per = HUNDRED_PERCENTAGE;
 
         // Providing user delegation by non sicx holder doesn't increase prep list
-        interScoreCallMock.when(() -> Context.call(eq(sicx.getAddress()), eq("balanceOf"), any(Address.class))).thenReturn(BigInteger.ZERO);
         staking.invoke(owner, "delegate", (Object) new PrepDelegations[]{delegation});
         assertArrayEquals(expectedList.toArray(), ((List<Address>) staking.call("getPrepList")).toArray());
 
         // Sicx holder's delegation increase prep list
-        interScoreCallMock.when(() -> Context.call(eq(sicx.getAddress()), eq("balanceOf"), any(Address.class))).thenReturn(BigInteger.TEN);
+        interScoreCallMock.when(sicxBalanceOf).thenReturn(BigInteger.TEN);
         expectedList.add(newPrep.getAddress());
         staking.invoke(owner, "delegate", (Object) new PrepDelegations[]{delegation});
         assertArrayEquals(expectedList.toArray(), ((List<Address>) staking.call("getPrepList")).toArray());
@@ -159,7 +200,7 @@ class StakingTest extends TestBase {
         //Removing the delegation should reduce the prep list
         expectedList.remove(newPrep.getAddress());
         staking.invoke(owner, "delegate", (Object) new PrepDelegations[]{});
-        assertArrayEquals(expectedList.toArray(), ((List<Address>)staking.call("getPrepList")).toArray());
+        assertArrayEquals(expectedList.toArray(), ((List<Address>) staking.call("getPrepList")).toArray());
     }
 
     @Test
