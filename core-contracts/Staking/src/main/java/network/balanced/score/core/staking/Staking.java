@@ -262,26 +262,20 @@ public class Staking {
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         stakingOn();
-        if (!Context.getCaller().equals(sicxAddress.get())) {
-            Context.revert(TAG + ": The Staking contract only accepts sICX tokens." + Context.getCaller() +
-                    " or " + sicxAddress.get());
-        }
-        try {
-            String unpackedData = new String(_data);
-            JsonObject json = Json.parse(unpackedData).asObject();
-            String method = json.get("method").asString();
-            if (method.equals("unstake")) {
-                JsonValue user = json.get("user");
-                if (user != null) {
-                    unstake(_from, _value, Address.fromString(json.get("user").asString()));
-                } else {
-                    unstake(_from, _value, null);
-                }
+        Context.require(Context.getCaller().equals(sicxAddress.get()), TAG + ": The Staking contract only accepts sICX tokens.: "+ sicxAddress.get());
+
+        String unpackedData = new String(_data);
+        JsonObject json = Json.parse(unpackedData).asObject();
+        String method = json.get("method").asString();
+        if (method.equals("unstake")) {
+            JsonValue user = json.get("user");
+            if (user != null) {
+                unstake(_from, _value, Address.fromString(json.get("user").asString()));
             } else {
-                Context.revert(TAG + ": Invalid Parameters.");
+                unstake(_from, _value, null);
             }
-        } catch (Exception e) {
-            Context.revert(TAG + ": Invalid data:." + new String(_data));
+        } else {
+            Context.revert(TAG + ": Invalid Parameters.");
         }
     }
 
@@ -700,7 +694,8 @@ public class Staking {
         }
 
         // Unstake in network. Reverse order of stake.
-        BigInteger newTotalStake = totalStake.getOrDefault(BigInteger.ZERO).subtract(amountToUnstake);
+        BigInteger newTotalStake = getTotalStake().subtract(amountToUnstake);
+        Context.require(newTotalStake.signum() >= 0, TAG + ": Total staked amount can't be set negative");
         List<Address> topPreps = updateTopPreps();
         totalStake.set(newTotalStake);
         DelegationListDBSdo prepDelegationsList = DelegationListDBSdo.fromMap(finalDelegation);
