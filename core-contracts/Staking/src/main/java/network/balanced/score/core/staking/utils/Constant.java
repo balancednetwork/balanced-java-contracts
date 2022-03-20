@@ -33,6 +33,7 @@ public class Constant {
     public static final BigInteger MAX_ITERATION_LOOP = HUNDRED;
     public static final BigInteger DEFAULT_DECIMAL_VALUE = BigInteger.valueOf(18L);
     public static final BigInteger MINIMUM_DELEGATION_PERCENTAGE = pow10(15);
+    public static final BigInteger BLOCKS_IN_A_WEEK = BigInteger.valueOf(7 * 43200L);
 
     public static final String SICX_SUPPLY = "sICX_supply";
     public static final String RATE = "_rate";

@@ -194,13 +194,17 @@ public class LinkedListDB {
             return unstakeDetail;
         }
 
-        NodeDB node;
+        NodeDB node = getNode(currentId);
+        unstakeDetail.add(new UnstakeDetails(currentId, node.getValue(), node.getKey(), node.getBlockHeight(),
+                node.getSenderAddress()));
+
         BigInteger tailId = this.tailId.getOrDefault(DEFAULT_NODE_ID);
+
         while (!currentId.equals(tailId)) {
+            currentId = node.getNext();
             node = getNode(currentId);
             unstakeDetail.add(new UnstakeDetails(currentId, node.getValue(), node.getKey(), node.getBlockHeight(),
                     node.getSenderAddress()));
-            currentId = node.getNext();
         }
         return unstakeDetail;
     }
