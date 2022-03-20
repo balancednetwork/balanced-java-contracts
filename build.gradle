@@ -84,11 +84,17 @@ subprojects {
         scoreTest.put('system.url', props.getOrDefault(prefix + 'url', 'http://127.0.0.1:9082/api/v3'))
         scoreTest.put('system.nid', props.getOrDefault(prefix + 'nid', 3))
 
-        scoreTest.put('tester.keystoreName', props.get(prefix + 'keystoreName'))
-        scoreTest.put('tester.keystorePass', props.get(prefix + 'keystorePass'))
+        scoreTest.put('tester.keystoreName', props.get(prefix + 'tester.keystoreName'))
+        scoreTest.put('tester.keystorePass', props.get(prefix + 'tester.keystorePass'))
         scoreTest.put('tester.url', props.getOrDefault(prefix + 'url', 'http://127.0.0.1:9082/api/v3'))
         scoreTest.put('tester.nid', props.getOrDefault(prefix + 'nid', 3))
         scoreTest.put('tester.scoreFilePath', "./sicx.zip")
+
+        scoreTest.put('tester2.keystoreName', props.get(prefix + 'tester2.keystoreName'))
+        scoreTest.put('tester2.keystorePass', props.get(prefix + 'tester2.keystorePass'))
+        scoreTest.put('tester2.url', props.getOrDefault(prefix + 'url', 'http://127.0.0.1:9082/api/v3'))
+        scoreTest.put('tester2.nid', props.getOrDefault(prefix + 'nid', 3))
+        scoreTest.put('tester2.scoreFilePath', "./sicx.zip")
 
         ext['scoreTest'] = scoreTest
     }
