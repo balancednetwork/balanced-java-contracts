@@ -344,6 +344,9 @@ public class Staking {
         BigInteger totalIcxHold = balance.multiply(getTodayRate()).divide(ONE_EXA);
 
         if (userDelegationInPercentage.isEmpty()) {
+            if (totalIcxHold.compareTo(BigInteger.ZERO) <= 0) {
+                return Map.of();
+            }
             // return amount distributed to top 100
             List<Address> topPreps = getTopPreps();
             BigInteger totalTopPreps = BigInteger.valueOf(topPreps.size());
