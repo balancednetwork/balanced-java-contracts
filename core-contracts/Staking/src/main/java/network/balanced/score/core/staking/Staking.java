@@ -294,30 +294,24 @@ public class Staking {
         if (_to == null) {
             _to = Context.getCaller();
         }
-        BigInteger payableIcx = icxPayable.getOrDefault(_to, BigInteger.ZERO);
-        BigInteger icxToClaim = this.icxToClaim.getOrDefault(BigInteger.ZERO);
+        BigInteger payableIcx = claimableICX(_to);
+        BigInteger icxToClaim = totalClaimableIcx();
         Context.require(payableIcx.compareTo(icxToClaim) <= 0,
                 TAG + ": No sufficient icx to claim. Requested: " + payableIcx + " Available: " + icxToClaim);
 
-        if (payableIcx.compareTo(BigInteger.ZERO) > 0) {
-            BigInteger unclaimedIcx = icxToClaim.subtract(payableIcx);
-            this.icxToClaim.set(unclaimedIcx);
-            icxPayable.set(_to, null);
-            sendIcx(_to, payableIcx, "");
-            UnstakeAmountTransfer(_to, payableIcx);
-        }
+        BigInteger unclaimedIcx = icxToClaim.subtract(payableIcx);
+        this.icxToClaim.set(unclaimedIcx);
+        icxPayable.set(_to, null);
+        sendIcx(_to, payableIcx, "");
+        UnstakeAmountTransfer(_to, payableIcx);
     }
 
     private void sendIcx(Address to, BigInteger amount, String msg) {
         if (msg == null) {
             msg = "";
         }
-        try {
-            Context.transfer(to, amount);
-            FundTransfer(to, amount, msg + amount + " ICX sent to " + to + ".");
-        } catch (Exception e) {
-            Context.revert(TAG + ": " + amount + " ICX not sent to " + to + ".");
-        }
+        Context.transfer(to, amount);
+        FundTransfer(to, amount, msg + amount + " ICX sent to " + to + ".");
     }
 
     @SuppressWarnings("unchecked")

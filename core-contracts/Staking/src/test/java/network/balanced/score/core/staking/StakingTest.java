@@ -69,6 +69,7 @@ class StakingTest extends TestBase {
     Verification queryIscore = () -> Context.call(eq(SYSTEM_SCORE_ADDRESS), eq("queryIScore"), any(Address.class));
     Verification getStake = () -> Context.call(eq(SYSTEM_SCORE_ADDRESS), eq("getStake"), any(Address.class));
     Verification getUnstakeLockPeriod = () -> Context.call(SYSTEM_SCORE_ADDRESS, "estimateUnstakeLockPeriod");
+    Verification claimIScore = () -> Context.call(SYSTEM_SCORE_ADDRESS, "claimIScore");
 
     BigInteger sicxBalance;
     BigInteger sicxTotalSupply;
@@ -100,6 +101,7 @@ class StakingTest extends TestBase {
                 any(BigInteger.class))).thenReturn(null);
         contextMock.when(() -> Context.call(eq(SYSTEM_SCORE_ADDRESS), eq("setDelegation"),
                 any(List.class))).thenReturn(null);
+        contextMock.when(claimIScore).thenReturn(null);
 
         stake.put("unstakes", List.of());
         contextMock.when(getStake).thenReturn(stake);
@@ -427,63 +429,44 @@ class StakingTest extends TestBase {
     }
 
     @Test
-    void claimIscore() {
-        Map<String, Object> iscore = new HashMap<>();
-        iscore.put("blockHeight", "0x0");
-        iscore.put("estimatedICX", BigInteger.valueOf(0L));
-        iscore.put("iscore", "0x0");
+    void checkForIscore() {
 
-        try {
-            contextMock.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "queryIScore",
-                    staking.getAddress())).thenReturn(iscore);
-            contextMock.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "claimIScore")).thenReturn(0);
-            staking.invoke(owner, "checkForIscore");
+        Account newPrep = sm.createAccount();
+        PrepDelegations delegation = new PrepDelegations();
+        delegation._address = newPrep.getAddress();
+        delegation._votes_in_per = HUNDRED_PERCENTAGE;
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        // If the iscore generated is more than 0
-        Map<String, Object> iscore2 = new HashMap<>();
-        iscore2.put("blockHeight", "0x0");
-        iscore2.put("estimatedICX", BigInteger.valueOf(5L));
-        iscore2.put("iscore", "0x0");
-        try {
-            contextMock.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "queryIScore",
-                    staking.getAddress())).thenReturn(iscore2);
-            contextMock.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "claimIScore")).thenReturn(0);
-            staking.invoke(owner, "checkForIscore");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        iScore.put("estimatedICX", BigInteger.ZERO);
+        contextMock.when(queryIscore).thenReturn(iScore);
+        staking.invoke(owner, "delegate", (Object) new PrepDelegations[]{delegation});
+        contextMock.verify(claimIScore, times(0));
 
+        // claim iscore is called when there is estimated ICX
+        iScore.put("estimatedICX", BigInteger.TEN);
+        contextMock.when(queryIscore).thenReturn(iScore);
+        staking.invoke(owner, "delegate", (Object) new PrepDelegations[]{delegation});
+        contextMock.verify(claimIScore, times(1));
     }
 
     @Test
     void claimUnstakedICX() {
-        BigInteger icxToClaim = BigInteger.valueOf(5L);
-        BigInteger icxPayable = BigInteger.valueOf(2L);
-        VarDB<BigInteger> _icx_to_claim = mock(VarDB.class);
-        DictDB<Address, BigInteger> _icx_payable = mock(DictDB.class);
+        BigInteger icxToClaim = BigInteger.valueOf(599L);
+        BigInteger icxPayable = BigInteger.valueOf(401L);
 
-        try {
-            contextMock.when(() -> Context.newVarDB("icx_to_claim", BigInteger.class))
-                    .thenReturn(_icx_to_claim);
-            contextMock.when(() -> Context.newDictDB("icx_payable", BigInteger.class))
-                    .thenReturn(_icx_payable);
-            when(_icx_to_claim.getOrDefault(BigInteger.ZERO)).thenReturn(icxToClaim);
-            when(_icx_payable.getOrDefault(owner.getAddress(), BigInteger.ZERO)).thenReturn(icxPayable);
-            Score staking = sm.deploy(owner, Staking.class);
-            Staking scoreSpy = (Staking) spy(staking.getInstance());
-            staking.setInstance(scoreSpy);
-//            doNothing().when(scoreSpy).sendIcx(any(Address.class), any(BigInteger.class), any(String.class));
-            staking.invoke(owner, "claimUnstakedICX", owner.getAddress());
+        doReturn(BigInteger.TEN).when(stakingSpy).claimableICX(any(Address.class));
+        doReturn(BigInteger.TWO).when(stakingSpy).totalClaimableIcx();
+        String expectedErrorMessage = TAG + ": No sufficient icx to claim. Requested: 10 Available: 2";
+        Executable claimMoreThanAvailable = () -> staking.invoke(owner, "claimUnstakedICX", owner.getAddress());
+        expectErrorMessage(claimMoreThanAvailable, expectedErrorMessage);
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        assertEquals(BigInteger.ZERO, staking.call("claimableICX", owner.getAddress()));
-        assertEquals(BigInteger.ZERO, staking.call("totalClaimableIcx"));
+        doReturn(icxPayable).when(stakingSpy).claimableICX(any(Address.class));
+        doReturn(icxToClaim).when(stakingSpy).totalClaimableIcx();
 
+        contextMock.when(()->Context.transfer(any(Address.class), any(BigInteger.class))).then(invocationOnMock -> null);
+
+        staking.invoke(owner, "claimUnstakedICX", owner.getAddress());
+        verify(stakingSpy).FundTransfer(owner.getAddress(), icxPayable, icxPayable + " ICX sent to " + owner.getAddress() + ".");
+        contextMock.verify(() -> Context.transfer(owner.getAddress(), icxPayable));
     }
 
     @Test
@@ -550,8 +533,8 @@ class StakingTest extends TestBase {
         VarDB<BigInteger> _rate = mock(VarDB.class);
         DictDB<String, BigInteger> _prep_delegations = mock(DictDB.class);
 
-        Map<String, BigInteger> delegationPer = new HashMap<String, BigInteger>();
-        Map<String, BigInteger> delegationIcx = new HashMap<String, BigInteger>();
+        Map<String, BigInteger> delegationPer = new HashMap<>();
+        Map<String, BigInteger> delegationIcx = new HashMap<>();
         delegationPer.put("hx55814f724bbffe49bfa4555535cd9d7e0e1dff32", new BigInteger("50000000000000000000"));
         delegationPer.put("hx55814f724bbffe49bfa4555535cd9d7e0e1dff31", new BigInteger("50000000000000000000"));
         try {
@@ -570,13 +553,14 @@ class StakingTest extends TestBase {
             Score staking = sm.deploy(owner, Staking.class);
             Staking scoreSpy = (Staking) spy(staking.getInstance());
             staking.setInstance(scoreSpy);
-//            doReturn(delegationPer).when(scoreSpy).getDelegationInPercentage(owner.getAddress());
+            doReturn(delegationPer).when(scoreSpy).getActualUserDelegationPercentage(owner.getAddress());
             staking.invoke(owner, "removePreviousDelegations", owner.getAddress());
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    @SuppressWarnings({"unchecked", "ResultOfMethodCallIgnored"})
     @Test
     void _delegations() {
         DictDB<String, String> _address_delegations = mock(DictDB.class);
