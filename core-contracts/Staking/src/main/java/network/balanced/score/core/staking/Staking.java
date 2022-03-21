@@ -453,8 +453,12 @@ public class Staking {
         }
         BigInteger totalUnstakeAmount = this.totalUnstakeAmount.getOrDefault(BigInteger.ZERO);
         BigInteger unstakedICX = totalUnstakeAmount.subtract(totalUnstakeInNetwork);
+        BigInteger msgValue = Context.getValue();
+        // Staking in case of ongoing unstaking cancels icx in unstaking, thus msg value is added in unstaked amount
+        BigInteger icxAdded = msgValue.min(totalUnstakeInNetwork);
+        unstakedICX = unstakedICX.add(icxAdded);
         BigInteger dailyReward = Context.getBalance(Context.getAddress()).subtract(unstakedICX)
-                .subtract(Context.getValue())
+                .subtract(msgValue.subtract(icxAdded))
                 .subtract(icxToClaim.getOrDefault(BigInteger.ZERO));
 
         // If there is I-Score generated then update the rate
