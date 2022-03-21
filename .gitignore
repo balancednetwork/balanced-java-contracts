@@ -83,3 +83,11 @@ fabric.properties
 build
 .DS_Store
 .vscode
+
+#eclipse
+.project
+.settings
+.classpath
+*/bin/
+/bin/
+bin/

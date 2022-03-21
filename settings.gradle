@@ -33,3 +33,6 @@ project(':BatchDisbursement').projectDir = file("core-contracts/BatchDisbursemen
 
 include(':Reserve')
 project(':Reserve').projectDir = file("core-contracts/Reserve")
+
+include(':BalancedToken')
+project(':BalancedToken').projectDir = file("token-contracts/BalancedToken")
