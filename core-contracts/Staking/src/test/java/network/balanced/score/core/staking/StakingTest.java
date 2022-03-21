@@ -21,7 +21,6 @@ import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
 import network.balanced.score.core.staking.utils.PrepDelegations;
-import network.balanced.score.core.staking.utils.UnstakeDetails;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -139,6 +138,12 @@ class StakingTest extends TestBase {
             prepsList.add(Map.of("address", sm.createAccount().getAddress()));
         }
         prepsResponse.put("preps", prepsList);
+    }
+
+    JSONObject getUnstakeJsonData() {
+        JSONObject unstakeData = new JSONObject();
+        unstakeData.put("method", "unstake");
+        return unstakeData;
     }
 
     @Test
@@ -263,9 +268,7 @@ class StakingTest extends TestBase {
         expectedErrorMessage = "Unexpected end of input at 1:1";
         expectErrorMessage(invalidData, expectedErrorMessage);
 
-        Map<String, Object> unstakeData = new HashMap<>();
-        unstakeData.put("method", "unstake");
-        JSONObject data = new JSONObject(unstakeData);
+        JSONObject data = getUnstakeJsonData();
 
         // Trying to unstake with no total stake fails
         BigInteger unstakedAmount = ICX.multiply(BigInteger.valueOf(919L));
@@ -298,6 +301,41 @@ class StakingTest extends TestBase {
     @Test
     void getTotalStake() {
         assertEquals(BigInteger.ZERO, staking.call("getTotalStake"));
+
+        BigInteger totalStaked;
+        // changes with iscore rewards, stake and unstake
+        BigInteger stakeAmount = BigInteger.valueOf(199L);
+        sm.call(owner, stakeAmount, staking.getAddress(), "stakeICX", new Address(new byte[Address.LENGTH]),
+                new byte[0]);
+        totalStaked = stakeAmount;
+        assertEquals(totalStaked, staking.call("getTotalStake"));
+
+        sm.call(owner, stakeAmount, staking.getAddress(), "stakeICX", new Address(new byte[Address.LENGTH]),
+                new byte[0]);
+        totalStaked = totalStaked.add(stakeAmount);
+        assertEquals(totalStaked, staking.call("getTotalStake"));
+        contextMock.verify(() -> Context.call(eq(sicx.getAddress()), eq("mintTo"), any(Address.class), eq(stakeAmount),
+                any(byte[].class)), times(2));
+
+        // Unstake same amount
+        JSONObject data = getUnstakeJsonData();
+        staking.invoke(sicx, "tokenFallback", owner.getAddress(), stakeAmount, data.toString().getBytes());
+        totalStaked = totalStaked.subtract(stakeAmount);
+        assertEquals(totalStaked, staking.call("getTotalStake"));
+
+        // I-Score generated is added in total staked amount
+        BigInteger extraICXBalance = ICX.multiply(BigInteger.valueOf(100_000L));
+        contextMock.when(() -> Context.getBalance(staking.getAddress())).thenReturn(extraICXBalance.add(stakeAmount));
+        contextMock.when(getSicxTotalSupply).thenReturn(totalStaked);
+        Map<String, Object> unstakeList = new HashMap<>();
+        unstakeList.put("unstake", stakeAmount);
+        List<Map<String, Object>> unstakes = new ArrayList<>();
+        unstakes.add(unstakeList);
+        contextMock.when(getStake).thenReturn(Map.of("unstakes", unstakes));
+        sm.call(owner, stakeAmount, staking.getAddress(), "stakeICX", new Address(new byte[Address.LENGTH]),
+                new byte[0]);
+        totalStaked = totalStaked.add(extraICXBalance).add(stakeAmount);
+        assertEquals(totalStaked, staking.call("getTotalStake"));
     }
 
     @Test
@@ -543,7 +581,6 @@ class StakingTest extends TestBase {
         unstakeList.add(getStake);
         stakedInfo.put("stake", "0x5150ae84a8cdf00000");
         stakedInfo.put("unstakes", unstakeList);
-
 
         try {
             contextMock.when(() -> Context.newVarDB("_total_unstake_amount", BigInteger.class))
