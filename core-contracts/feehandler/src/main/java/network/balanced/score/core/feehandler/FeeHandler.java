@@ -1,4 +1,4 @@
-package network.balanced.score.core;
+package network.balanced.score.core.feehandler;
 
 import com.eclipsesource.json.*;
 import score.*;
@@ -11,8 +11,7 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-import static network.balanced.score.core.Checks.onlyGovernance;
-import static network.balanced.score.core.Checks.onlyOwner;
+import static network.balanced.score.core.feehandler.Checks.*;
 
 
 public class FeeHandler {

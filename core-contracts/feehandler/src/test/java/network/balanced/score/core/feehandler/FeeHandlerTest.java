@@ -1,4 +1,4 @@
-package network.balanced.score.core;
+package network.balanced.score.core.feehandler;
 
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;

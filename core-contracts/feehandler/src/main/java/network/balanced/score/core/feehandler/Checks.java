@@ -1,4 +1,4 @@
-package network.balanced.score.core;
+package network.balanced.score.core.feehandler;
 
 import score.Address;
 import score.Context;
