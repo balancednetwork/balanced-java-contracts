@@ -12,12 +12,12 @@ import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 
 import java.math.BigInteger;
-import scorex.util.ArrayList;
 import java.util.Map;
 import java.util.List;
 
 import static java.util.Map.entry;
 import scorex.util.HashMap;
+import scorex.util.ArrayList;
 
 import static network.balanced.score.core.Checks.*;
 import static network.balanced.score.core.Constants.*;
@@ -315,9 +315,9 @@ public class Loans {
     }
 
     @External(readonly = true)
-    public Map<String, BigInteger> getBalanceAndSupply(String _name, Address __owner) {
+    public Map<String, BigInteger> getBalanceAndSupply(String _name, Address _owner) {
         Context.require(_name == "Loans",  "Unsupported data source name");
-        int id = PositionsDB.addressIds.get(__owner);
+        int id = PositionsDB.addressIds.getOrDefault(_owner, -1);
         if (id < 1) {
             return Map.of(
                 "_balance", BigInteger.ZERO,
@@ -326,7 +326,6 @@ public class Loans {
         }
 
         Position position = PositionsDB.get(id);
-
         BigInteger balance = position.get("bnUSD");
         BigInteger totalSupply = AssetDB.get("bnUSD").totalSupply();
 
@@ -378,6 +377,20 @@ public class Loans {
     
         checkDeadMarkets();
         return false;
+    }
+
+    @External
+    public ArrayList<String> checkForDeadMarkets() {
+        ArrayList<String> deadAssets = new ArrayList<String>(AssetDB.activeAssets.size());
+        for (int i = 0; i < AssetDB.activeAssets.size(); i++) {
+            String symbol = AssetDB.activeAssets.get(i);
+            Asset asset = AssetDB.get(symbol);
+            if (asset.dead.getOrDefault(false)) {
+                deadAssets.add(symbol);
+            }
+        }
+
+        return deadAssets;
     }
 
     @External
@@ -825,15 +838,6 @@ public class Loans {
         Address feeHandler = (Address)Context.call(governance.get(), "getContractAddress", "feehandler");
         asset.mint(feeHandler, fee);
         FeePaid(_symbol, fee, "origination");
-    }
-
-    
-    private void checkForDeadMarkets() {
-        for (int i = 0; i < AssetDB.activeAssets.size(); i++) {
-            String symbol = AssetDB.activeAssets.get(i);
-            Asset asset = AssetDB.get(symbol);
-            asset.isDead();
-        }
     }
 
     private void transferToken(String tokenSymbol, Address to, BigInteger amount, String msg, byte[] data) {

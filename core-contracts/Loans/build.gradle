@@ -2,7 +2,6 @@ import network.balanced.score.dependencies.Dependencies
 
 version = '0.1.0'
 
-
 sourceSets {
     intTest {}
 }
@@ -59,8 +58,7 @@ deployJar {
     }
 }
 
-
-test {    
+test {
     useJUnitPlatform()
     finalizedBy jacocoTestReport 
 }

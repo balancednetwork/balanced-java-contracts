@@ -29,9 +29,10 @@ import score.annotation.External;
 import java.math.BigInteger;
 import java.math.MathContext;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+
+import scorex.util.ArrayList;
 
 import network.balanced.score.mock.DexMock;
 import network.balanced.score.core.RewardsMock;
@@ -240,6 +241,51 @@ class LoansTests extends LoansTestsBase {
     
         // Assert
         verifyStanding(Constants.Standings.LOCKED, account.getAddress());
+    }
+
+    @Test
+    void getBalanceAndSupply() {
+        // Arrange
+        Account account = accounts.get(0);
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
+        takeLoanICX(account, "bnUSD", collateral, loan);
+
+        // Act
+        Map<String, BigInteger> balanceAndSupply = (Map<String, BigInteger>) loans.call("getBalanceAndSupply", "Loans", account.getAddress());
+    
+        // Assert
+        BigInteger totalSupply = (BigInteger) bnusd.call("totalSupply");
+        assertEquals(loan.add(expectedFee), balanceAndSupply.get("_balance"));
+        assertEquals(totalSupply, balanceAndSupply.get("_totalSupply"));
+    }
+
+    @Test
+    void getBalanceAndSupply_noPositition() {
+        // Arrange
+        Account account = accounts.get(0);
+
+        // Act
+        Map<String, BigInteger> balanceAndSupply = (Map<String, BigInteger>) loans.call("getBalanceAndSupply", "Loans", account.getAddress());
+    
+        // Assert
+        BigInteger totalSupply = (BigInteger) bnusd.call("totalSupply");
+        assertEquals(BigInteger.ZERO, balanceAndSupply.get("_balance"));
+        assertEquals(BigInteger.ZERO, balanceAndSupply.get("_totalSupply"));
+    }
+
+
+    @Test
+    void checkDeadMarkets_Empty() {
+        // Arrange
+        Account account = accounts.get(0);
+
+        // Act
+        ArrayList<String> deadMarkets = (ArrayList<String>) loans.call("checkForDeadMarkets");
+    
+        // Assert
+        assertEquals(0, deadMarkets.size());
     }
 
     @Test
