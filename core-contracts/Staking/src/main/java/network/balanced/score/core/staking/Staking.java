@@ -722,8 +722,14 @@ public class Staking {
 
 
     @External(readonly = true)
-    public List<UnstakeDetails> getUnstakeInfo() {
-        return unstakeRequestList.iterate();
+    public List<List<Object>> getUnstakeInfo() {
+        List<List<Object>> unstakeResponse = new ArrayList<>();
+        List<UnstakeDetails> unstakeDetails = unstakeRequestList.iterate();
+        for (UnstakeDetails unstakeDetail : unstakeDetails) {
+            unstakeResponse.add(List.of(unstakeDetail.nodeId, unstakeDetail.unstakeAmount, unstakeDetail.key,
+                    unstakeDetail.unstakeBlockHeight, unstakeDetail.receiverAddress));
+        }
+        return unstakeResponse;
     }
 
     @External(readonly = true)

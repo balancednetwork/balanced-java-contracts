@@ -107,7 +107,7 @@ public interface StakingInterface {
     void transferUpdateDelegations(Address _from, Address _to, BigInteger _value);
 
     @External(readonly = true)
-    List<UnstakeDetails> getUnstakeInfo();
+    List<List<Object>> getUnstakeInfo();
 
     @External(readonly = true)
     List<Map<String, Object>> getUserUnstakeInfo(Address _address);
