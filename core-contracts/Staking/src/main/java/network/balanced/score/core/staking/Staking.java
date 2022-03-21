@@ -642,7 +642,9 @@ public class Staking {
         NodeDB node;
         UnstakeDetails unstakeData;
         BigInteger payout;
-        for (int i = 0; i < unstakeBatchLimit.getOrDefault(DEFAULT_UNSTAKE_BATCH_LIMIT).intValue(); i++) {
+        int maxLoop = unstakeBatchLimit.getOrDefault(DEFAULT_UNSTAKE_BATCH_LIMIT).intValue();
+        for (int i = 0; i < maxLoop; i++) {
+
             node = unstakeRequestList.getNode(currentId);
             unstakeData = new UnstakeDetails(currentId, node.getValue(), node.getKey(), node.getBlockHeight(),
                     node.getSenderAddress());
