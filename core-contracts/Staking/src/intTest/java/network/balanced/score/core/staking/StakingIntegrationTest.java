@@ -791,10 +791,10 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         hexValue = hexValue.replace("0x", "");
         assertEquals(new BigInteger("100").multiply(ONE_EXA), new BigInteger(hexValue, 16));
 
-        List<UnstakeDetails> unstakeInfo = stakingManagementScore.getUnstakeInfo();
-        UnstakeDetails firstItem = unstakeInfo.get(0);
-        assertEquals(senderAddress.toString(), firstItem.key.toString());
-        assertEquals(senderAddress.toString(), firstItem.receiverAddress.toString());
+        List<List<Object>> unstakeInfo = stakingManagementScore.getUnstakeInfo();
+        List<Object> firstItem = unstakeInfo.get(0);
+        assertEquals(senderAddress.toString(), firstItem.get(2).toString());
+        assertEquals(senderAddress.toString(), firstItem.get(4).toString());
         assertEquals(new BigInteger("550").multiply(ONE_EXA),
                 prepDelegationsSum);
         assertEquals(userDelegations, userExpectedDelegations);
@@ -855,10 +855,10 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         String hexValue = (String) userUnstakeInfo.get(0).get("amount");
         hexValue = hexValue.replace("0x", "");
         assertEquals(new BigInteger("50000000000000000000"), new BigInteger(hexValue, 16));
-        List<UnstakeDetails> unstakeInfo = stakingManagementScore.getUnstakeInfo();
-        UnstakeDetails firstItem = unstakeInfo.get(1);
-        assertEquals(senderAddress.toString(), firstItem.key.toString());
-        assertEquals("hx8119b3eebeb9f857efb3b135275ac3775cbc6664", firstItem.receiverAddress.toString());
+        List<List<Object>> unstakeInfo = stakingManagementScore.getUnstakeInfo();
+        List<Object> firstItem = unstakeInfo.get(1);
+        assertEquals(senderAddress.toString(), firstItem.get(2).toString());
+        assertEquals("hx8119b3eebeb9f857efb3b135275ac3775cbc6664", firstItem.get(4).toString());
         assertEquals(new BigInteger("50000000000000000000"), new BigInteger(hexValue, 16));
         assertEquals(previousTotalStake.subtract(new BigInteger("50000000000000000000")),
                 prepDelegationsSum);
@@ -1039,26 +1039,26 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
     }
 
     void checkUnstakeInfo() {
-        List<UnstakeDetails> unstakeInfo = stakingManagementScore.getUnstakeInfo();
-        UnstakeDetails firstItem = unstakeInfo.get(0);
-        assertEquals(senderAddress.toString(), firstItem.key.toString());
-        assertEquals("hx8119b3eebeb9f857efb3b135275ac3775cbc6664", firstItem.receiverAddress.toString());
+        List<List<Object>> unstakeInfo = stakingManagementScore.getUnstakeInfo();
+        List<Object> firstItem = unstakeInfo.get(0);
+        assertEquals(senderAddress.toString(), firstItem.get(2).toString());
+        assertEquals("hx8119b3eebeb9f857efb3b135275ac3775cbc6664", firstItem.get(4).toString());
 
 //        String value = (String) firstItem.get(1);
 //        value = value.replace("0x", "");
-        assertEquals(new BigInteger("7000000000000000000"), firstItem.unstakeAmount);
-        UnstakeDetails secondItem = unstakeInfo.get(1);
-        assertEquals(senderAddress.toString(), secondItem.key.toString());
-        assertEquals("hx8119b3eebeb9f857efb3b135275ac3775cbc6664", secondItem.receiverAddress.toString());
+        assertEquals(new BigInteger("7000000000000000000"), firstItem.get(1));
+        List<Object> secondItem = unstakeInfo.get(1);
+        assertEquals(senderAddress.toString(), secondItem.get(2).toString());
+        assertEquals("hx8119b3eebeb9f857efb3b135275ac3775cbc6664", secondItem.get(4).toString());
 //        String hexVal = (String) ;
 //        hexVal = hexVal.replace("0x", "");
-        assertEquals(new BigInteger("10000000000000000000"), secondItem.unstakeAmount);
-        UnstakeDetails thirdtItem = unstakeInfo.get(2);
-        assertEquals(senderAddress.toString(), thirdtItem.key.toString());
-        assertEquals(senderAddress.toString(), thirdtItem.receiverAddress.toString());
+        assertEquals(new BigInteger("10000000000000000000"), secondItem.get(1));
+        List<Object> thirdtItem = unstakeInfo.get(2);
+        assertEquals(senderAddress.toString(), thirdtItem.get(2).toString());
+        assertEquals(senderAddress.toString(), thirdtItem.get(4).toString());
 //        String hexValue = (String) thirdtItem.get(1);
 //        hexValue = hexValue.replace("0x", "");
-        assertEquals(new BigInteger("10000000000000000000"), thirdtItem.unstakeAmount);
+        assertEquals(new BigInteger("10000000000000000000"), thirdtItem.get(1));
     }
 
     @Test
