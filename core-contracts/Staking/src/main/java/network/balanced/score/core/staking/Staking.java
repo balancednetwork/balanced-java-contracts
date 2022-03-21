@@ -664,7 +664,7 @@ public class Staking {
             icxPayable.set(unstakeData.receiverAddress, icxPayable.getOrDefault(unstakeData.receiverAddress,
                     BigInteger.ZERO).add(payout));
 
-            currentId = node.getNext();
+            currentId = unstakeRequestList.headId.getOrDefault(DEFAULT_NODE_ID);
 
             if (currentId.equals(DEFAULT_NODE_ID)) {
                 break;

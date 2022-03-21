@@ -560,6 +560,47 @@ class StakingTest extends TestBase {
         expectErrorMessage(totalLessThanHundred, expectedErrorMessage);
     }
 
+    @Test
+    void unstake() {
+        // stake and Unstake from two accounts
+        BigInteger totalStake = BigInteger.ZERO;
+        sm.call(owner, ICX.multiply(BigInteger.valueOf(199L)), staking.getAddress(), "stakeICX",
+                new Address(new byte[Address.LENGTH]), new byte[0]);
+        totalStake = totalStake.add(ICX.multiply(BigInteger.valueOf(199L)));
+        sm.call(alice, ICX.multiply(BigInteger.valueOf(599L)), staking.getAddress(), "stakeICX",
+                new Address(new byte[Address.LENGTH]), new byte[0]);
+        totalStake = totalStake.add(ICX.multiply(BigInteger.valueOf(599L)));
+        JSONObject data = getUnstakeJsonData();
+        staking.invoke(sicx, "tokenFallback", owner.getAddress(), BigInteger.valueOf(100L), data.toString().getBytes());
+        staking.invoke(sicx, "tokenFallback", alice.getAddress(), BigInteger.valueOf(50L), data.toString().getBytes());
+
+        BigInteger totalUnstaked = BigInteger.valueOf(150L);
+        assertEquals(totalUnstaked, staking.call("getUnstakingAmount"));
+
+        contextMock.when(() -> Context.getBalance(any(Address.class))).thenReturn(BigInteger.TEN);
+        Map<String, Object> unstakeList = new HashMap<>();
+        unstakeList.put("unstake", totalUnstaked);
+        List<Map<String, Object>> unstakes = new ArrayList<>();
+        unstakes.add(unstakeList);
+        contextMock.when(getStake).thenReturn(Map.of("unstakes", unstakes));
+
+        sm.call(sm.createAccount(), BigInteger.TEN, staking.getAddress(), "stakeICX", new Address(new byte[Address.LENGTH]), new byte[0]);
+        totalUnstaked = totalUnstaked.subtract(BigInteger.TEN);
+        assertEquals(totalUnstaked, staking.call("getUnstakingAmount"));
+        assertEquals(BigInteger.TEN, staking.call("claimableICX", owner.getAddress()));
+        assertEquals(BigInteger.ZERO, staking.call("claimableICX", alice.getAddress()));
+        assertEquals(BigInteger.TEN, staking.call("totalClaimableIcx"));
+
+        contextMock.when(() -> Context.getBalance(any(Address.class))).thenReturn(BigInteger.valueOf(200L));
+        sm.call(sm.createAccount(), BigInteger.valueOf(200L), staking.getAddress(), "stakeICX",
+                new Address(new byte[Address.LENGTH]), new byte[0]);
+        totalUnstaked = totalUnstaked.subtract(BigInteger.valueOf(200L).min(totalUnstaked));
+        assertEquals(totalUnstaked, staking.call("getUnstakingAmount"));
+        assertEquals(BigInteger.valueOf(100L), staking.call("claimableICX", owner.getAddress()));
+        assertEquals(BigInteger.valueOf(50L), staking.call("claimableICX", alice.getAddress()));
+        assertEquals(BigInteger.valueOf(150L), staking.call("totalClaimableIcx"));
+    }
+
     @SuppressWarnings({"unchecked", "ResultOfMethodCallIgnored"})
     @Test
     void _delegations() {
