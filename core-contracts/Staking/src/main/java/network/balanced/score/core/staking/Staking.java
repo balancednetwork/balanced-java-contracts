@@ -737,7 +737,7 @@ public class Staking {
         List<UnstakeDetails> linkedListIter = unstakeRequestList.iterate();
         List<Map<String, Object>> response = new ArrayList<>();
         for (UnstakeDetails unstakeData : linkedListIter) {
-            if (unstakeData.key.equals(_address)) {
+            if (unstakeData.receiverAddress.equals(_address)) {
                 response.add(Map.of("amount", unstakeData.unstakeAmount, "from", unstakeData.key, "blockHeight",
                         unstakeData.unstakeBlockHeight, "sender", unstakeData.receiverAddress));
             }
