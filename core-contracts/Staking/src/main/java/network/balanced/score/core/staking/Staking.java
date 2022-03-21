@@ -419,24 +419,22 @@ public class Staking {
         stakingOn();
         Address to = Context.getCaller();
         performChecksForIscoreAndUnstakedBalance();
-        Map<String, BigInteger> newDelegations = verifyUserDelegation(_user_delegations);
         Map<String, BigInteger> previousDelegations = userDelegationInPercentage.getOrDefault(to,
                 DEFAULT_DELEGATION_LIST).toMap();
-        Map<String, BigInteger> prepDelegations = prepDelegationInIcx.getOrDefault(DEFAULT_DELEGATION_LIST).toMap();
+        Map<String, BigInteger> newDelegations = verifyUserDelegation(_user_delegations);
+        DelegationListDBSdo userDelegationList = DelegationListDBSdo.fromMap(newDelegations);
+        userDelegationInPercentage.set(to, userDelegationList);
 
         BigInteger balance = (BigInteger) Context.call(sicxAddress.get(), "balanceOf", to);
         BigInteger icxHoldPreviously = balance.multiply(getTodayRate()).divide(ONE_EXA);
 
-        DelegationListDBSdo userDelegationList = DelegationListDBSdo.fromMap(newDelegations);
-        userDelegationInPercentage.set(to, userDelegationList);
+        Map<String, BigInteger> prepDelegations = prepDelegationInIcx.getOrDefault(DEFAULT_DELEGATION_LIST).toMap();
 
         if (balance.compareTo(BigInteger.ZERO) > 0) {
-            Map<String, BigInteger> deductedDelegation = subtractUserDelegationFromPrepDelegation(prepDelegations,
-                    previousDelegations, icxHoldPreviously);
-            Map<String, BigInteger> finalDelegation = addUserDelegationToPrepDelegation(deductedDelegation,
-                    newDelegations, icxHoldPreviously);
-            stakeAndDelegateInNetwork(totalStake.getOrDefault(BigInteger.ZERO), finalDelegation);
+            prepDelegations = subtractUserDelegationFromPrepDelegation(prepDelegations, previousDelegations, icxHoldPreviously);
+            prepDelegations = addUserDelegationToPrepDelegation(prepDelegations, newDelegations, icxHoldPreviously);
         }
+        stakeAndDelegateInNetwork(totalStake.getOrDefault(BigInteger.ZERO), prepDelegations);
     }
 
     @SuppressWarnings("unchecked")
@@ -490,7 +488,8 @@ public class Staking {
                 additionalRewardForSpecification = additionalRewardForSpecification.subtract(amountToAdd);
                 totalIcxSpecification = totalIcxSpecification.subtract(currentAmount);
             }
-            stakeAndDelegateInNetwork(newTotalStake, prepDelegations);
+            DelegationListDBSdo prepDelegationsList = DelegationListDBSdo.fromMap(prepDelegations);
+            prepDelegationInIcx.set(prepDelegationsList);
         }
         checkForIscore();
         checkForUnstakedBalance(unstakedICX, totalUnstakeAmount);
