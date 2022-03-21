@@ -217,12 +217,10 @@ public class Staking {
         for (Address prep : topPreps) {
             BigInteger finalAmount = prepDelegationInIcx.get(prep.toString());
             finalAmount = finalAmount == null ? BigInteger.ZERO : finalAmount;
-            if (topPreps.contains(prep)) {
-                BigInteger amountToAdd = unspecifiedICX.divide(topPrepsCount);
-                finalAmount = finalAmount.add(amountToAdd);
-                unspecifiedICX = unspecifiedICX.subtract(amountToAdd);
-                topPrepsCount = topPrepsCount.subtract(BigInteger.ONE);
-            }
+            BigInteger amountToAdd = unspecifiedICX.divide(topPrepsCount);
+            finalAmount = finalAmount.add(amountToAdd);
+            unspecifiedICX = unspecifiedICX.subtract(amountToAdd);
+            topPrepsCount = topPrepsCount.subtract(BigInteger.ONE);
             allPrepDelegations.put(prep.toString(), finalAmount);
         }
 
