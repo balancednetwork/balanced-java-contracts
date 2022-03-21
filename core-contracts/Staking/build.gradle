@@ -29,18 +29,18 @@ dependencies {
     testImplementation Dependencies.javaeeUnitTest
     testImplementation Dependencies.javaeeTokens
     testImplementation Dependencies.json
-    // Use JUnit Jupiter for testing.
     testImplementation Dependencies.junitJupiter
     testRuntimeOnly Dependencies.junitJupiterEngine
     testImplementation Dependencies.mockitoInline
     testImplementation Dependencies.mockitoCore
+
+    testImplementation project(':test-lib')
 
     intTestImplementation Dependencies.javaeeScoreClient
     intTestAnnotationProcessor Dependencies.javaeeScoreClient
     intTestImplementation Dependencies.iconSdk
     intTestImplementation Dependencies.jacksonDatabind
 
-    intTestImplementation project(':test-lib')
 }
 
 optimizedJar {

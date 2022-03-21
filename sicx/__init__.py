@@ -1,0 +1,1 @@
+from .sicx import StakedICX

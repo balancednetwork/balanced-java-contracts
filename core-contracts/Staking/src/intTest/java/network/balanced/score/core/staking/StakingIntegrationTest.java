@@ -801,6 +801,7 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         assertEquals(senderAddress.toString(), firstItem.get(2).toString());
         assertEquals(senderAddress.toString(), firstItem.get(2).toString());
         assertEquals(new BigInteger("450").multiply(ONE_EXA),
+
                 prepDelegationsSum);
         assertEquals(userDelegations, userExpectedDelegations);
         assertEquals(prepDelegations, expectedPrepDelegations);
@@ -868,6 +869,7 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         String hexValue = (String) userUnstakeInfo.get(1).get("amount");
         hexValue = hexValue.replace("0x", "");
         assertEquals(new BigInteger("50").multiply(ONE_EXA), new BigInteger(hexValue, 16));
+
         List<List<Object>> unstakeInfo = stakingManagementScore.getUnstakeInfo();
         List<Object> firstItem = unstakeInfo.get(1);
         assertEquals(senderAddress.toString(), firstItem.get(2).toString());

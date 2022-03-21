@@ -419,24 +419,22 @@ public class Staking {
         stakingOn();
         Address to = Context.getCaller();
         performChecksForIscoreAndUnstakedBalance();
-        Map<String, BigInteger> newDelegations = verifyUserDelegation(_user_delegations);
         Map<String, BigInteger> previousDelegations = userDelegationInPercentage.getOrDefault(to,
                 DEFAULT_DELEGATION_LIST).toMap();
-        Map<String, BigInteger> prepDelegations = prepDelegationInIcx.getOrDefault(DEFAULT_DELEGATION_LIST).toMap();
+        Map<String, BigInteger> newDelegations = verifyUserDelegation(_user_delegations);
+        DelegationListDBSdo userDelegationList = DelegationListDBSdo.fromMap(newDelegations);
+        userDelegationInPercentage.set(to, userDelegationList);
 
         BigInteger balance = (BigInteger) Context.call(sicxAddress.get(), "balanceOf", to);
         BigInteger icxHoldPreviously = balance.multiply(getTodayRate()).divide(ONE_EXA);
 
-        DelegationListDBSdo userDelegationList = DelegationListDBSdo.fromMap(newDelegations);
-        userDelegationInPercentage.set(to, userDelegationList);
+        Map<String, BigInteger> prepDelegations = prepDelegationInIcx.getOrDefault(DEFAULT_DELEGATION_LIST).toMap();
 
         if (balance.compareTo(BigInteger.ZERO) > 0) {
-            Map<String, BigInteger> deductedDelegation = subtractUserDelegationFromPrepDelegation(prepDelegations,
-                    previousDelegations, icxHoldPreviously);
-            Map<String, BigInteger> finalDelegation = addUserDelegationToPrepDelegation(deductedDelegation,
-                    newDelegations, icxHoldPreviously);
-            stakeAndDelegateInNetwork(totalStake.getOrDefault(BigInteger.ZERO), finalDelegation);
+            prepDelegations = subtractUserDelegationFromPrepDelegation(prepDelegations, previousDelegations, icxHoldPreviously);
+            prepDelegations = addUserDelegationToPrepDelegation(prepDelegations, newDelegations, icxHoldPreviously);
         }
+        stakeAndDelegateInNetwork(totalStake.getOrDefault(BigInteger.ZERO), prepDelegations);
     }
 
     @SuppressWarnings("unchecked")
@@ -455,8 +453,12 @@ public class Staking {
         }
         BigInteger totalUnstakeAmount = this.totalUnstakeAmount.getOrDefault(BigInteger.ZERO);
         BigInteger unstakedICX = totalUnstakeAmount.subtract(totalUnstakeInNetwork);
+        BigInteger msgValue = Context.getValue();
+        // Staking in case of ongoing unstaking cancels icx in unstaking, thus msg value is added in unstaked amount
+        BigInteger icxAdded = msgValue.min(totalUnstakeInNetwork);
+        unstakedICX = unstakedICX.add(icxAdded);
         BigInteger dailyReward = Context.getBalance(Context.getAddress()).subtract(unstakedICX)
-                .subtract(Context.getValue())
+                .subtract(msgValue.subtract(icxAdded))
                 .subtract(icxToClaim.getOrDefault(BigInteger.ZERO));
 
         // If there is I-Score generated then update the rate
@@ -490,7 +492,8 @@ public class Staking {
                 additionalRewardForSpecification = additionalRewardForSpecification.subtract(amountToAdd);
                 totalIcxSpecification = totalIcxSpecification.subtract(currentAmount);
             }
-            stakeAndDelegateInNetwork(newTotalStake, prepDelegations);
+            DelegationListDBSdo prepDelegationsList = DelegationListDBSdo.fromMap(prepDelegations);
+            prepDelegationInIcx.set(prepDelegationsList);
         }
         checkForIscore();
         checkForUnstakedBalance(unstakedICX, totalUnstakeAmount);
@@ -737,7 +740,7 @@ public class Staking {
         List<UnstakeDetails> linkedListIter = unstakeRequestList.iterate();
         List<Map<String, Object>> response = new ArrayList<>();
         for (UnstakeDetails unstakeData : linkedListIter) {
-            if (unstakeData.key.equals(_address)) {
+            if (unstakeData.receiverAddress.equals(_address)) {
                 response.add(Map.of("amount", unstakeData.unstakeAmount, "from", unstakeData.key, "blockHeight",
                         unstakeData.unstakeBlockHeight, "sender", unstakeData.receiverAddress));
             }

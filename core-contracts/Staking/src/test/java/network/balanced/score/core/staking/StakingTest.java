@@ -281,29 +281,18 @@ class StakingTest extends TestBase {
         assertEquals(unstakedAmount.multiply(BigInteger.TWO), staking.call("getUnstakingAmount"));
 
         BigInteger blockHeight = BigInteger.valueOf(sm.getBlock().getHeight());
-        List<UnstakeDetails> unstakeDetails = new ArrayList<>();
-        UnstakeDetails firstUnstake = new UnstakeDetails(BigInteger.ONE, unstakedAmount, owner.getAddress(),
-                blockHeight.add(unlockPeriod), owner.getAddress());
-        unstakeDetails.add(firstUnstake);
+        List<List<Object>> unstakeDetails = new ArrayList<>();
+        unstakeDetails.add(List.of(BigInteger.ONE, unstakedAmount, owner.getAddress(), blockHeight.add(unlockPeriod),
+                owner.getAddress()));
 
-        assertUnstakeDetails(unstakeDetails.get(0), ((List<UnstakeDetails>)staking.call("getUnstakeInfo")).get(0));
+        assertArrayEquals(unstakeDetails.toArray(), ((List<List<Object>>) staking.call("getUnstakeInfo")).toArray());
 
         staking.invoke(sicx, "tokenFallback", owner.getAddress(), unstakedAmount, data.toString().getBytes());
         assertEquals(unstakedAmount.multiply(BigInteger.valueOf(3L)), staking.call("getUnstakingAmount"));
-        unstakeDetails.add(new UnstakeDetails(BigInteger.TWO, unstakedAmount, owner.getAddress(),
+        unstakeDetails.add(List.of(BigInteger.TWO, unstakedAmount, owner.getAddress(),
                 blockHeight.add(unlockPeriod.add(BigInteger.ONE)), owner.getAddress()));
-        List<UnstakeDetails> actualUnstakeDetails = (List<UnstakeDetails>) staking.call("getUnstakeInfo");
-        for (int i = 0; i < unstakeDetails.size(); i++) {
-            assertUnstakeDetails(unstakeDetails.get(i), actualUnstakeDetails.get(i));
-        }
-    }
-
-    public void assertUnstakeDetails(UnstakeDetails a, UnstakeDetails b) {
-        assertEquals(a.nodeId, b.nodeId);
-        assertEquals(a.key, b.key);
-        assertEquals(a.unstakeAmount, b.unstakeAmount);
-        assertEquals(a.unstakeBlockHeight, b.unstakeBlockHeight);
-        assertEquals(a.receiverAddress, b.receiverAddress);
+        List<List<Object>> actualUnstakeDetails = (List<List<Object>>) staking.call("getUnstakeInfo");
+        assertArrayEquals(unstakeDetails.toArray(), actualUnstakeDetails.toArray());
     }
 
     @Test
@@ -331,8 +320,6 @@ class StakingTest extends TestBase {
                     staking.getAddress())).thenReturn(iscore);
             contextMock.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "claimIScore")).thenReturn(0);
             staking.invoke(owner, "checkForIscore");
-            assertEquals(false, staking.call("getDistributing"));
-
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -347,7 +334,6 @@ class StakingTest extends TestBase {
                     staking.getAddress())).thenReturn(iscore2);
             contextMock.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "claimIScore")).thenReturn(0);
             staking.invoke(owner, "checkForIscore");
-            assertEquals(true, staking.call("getDistributing"));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -543,7 +529,6 @@ class StakingTest extends TestBase {
 
     @Test
     void _perform_checks() {
-        VarDB<Boolean> _distributing = mock(VarDB.class);
         VarDB<BigInteger> _icx_to_claim = mock(VarDB.class);
         VarDB<BigInteger> _total_stake = mock(VarDB.class);
         VarDB<BigInteger> _total_unstake_amount = mock(VarDB.class);
@@ -561,8 +546,6 @@ class StakingTest extends TestBase {
 
 
         try {
-            contextMock.when(() -> Context.newVarDB("_distributing", Boolean.class))
-                    .thenReturn(_distributing);
             contextMock.when(() -> Context.newVarDB("_total_unstake_amount", BigInteger.class))
                     .thenReturn(_total_unstake_amount);
             contextMock.when(() -> Context.newVarDB("icx_to_claim", BigInteger.class))
@@ -571,7 +554,6 @@ class StakingTest extends TestBase {
                     .thenReturn(_prep_delegations);
             contextMock.when(() -> Context.newVarDB("_total_stake", BigInteger.class))
                     .thenReturn(_total_stake);
-            when(_distributing.get()).thenReturn(true);
             when(_total_unstake_amount.getOrDefault(BigInteger.ZERO)).thenReturn(new BigInteger("1000000000000000000"));
             when(_icx_to_claim.getOrDefault(BigInteger.ZERO)).thenReturn(BigInteger.ZERO);
             when(_total_stake.getOrDefault(BigInteger.ZERO)).thenReturn(new BigInteger("4000000000000000000"));
