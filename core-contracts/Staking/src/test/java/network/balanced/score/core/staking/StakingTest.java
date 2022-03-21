@@ -40,8 +40,7 @@ import java.util.Map;
 
 import static network.balanced.score.core.staking.utils.Constant.*;
 import static network.balanced.score.test.UnitTest.expectErrorMessage;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.MockedStatic.Verification;
 import static org.mockito.Mockito.*;
 
@@ -338,12 +337,35 @@ class StakingTest extends TestBase {
         assertEquals(totalStaked, staking.call("getTotalStake"));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void getTopPreps() {
-        ArrayList<Address> expectedList = new ArrayList<>();
-        expectedList.add(Address.fromString("hx0b047c751658f7ce1b2595da34d57a0e7dad357d"));
-        expectedList.add(Address.fromString("hx0b047c751658f7ce1b2595da34d57a0e7dad357c"));
-        assertEquals(expectedList, staking.call("getTopPreps"));
+        List<Address> expectedList = new ArrayList<>();
+        List<Map<String, Object>> prepsList = (List<Map<String, Object>>) prepsResponse.get("preps");
+        for (Map<String, Object> prepMap : prepsList) {
+            expectedList.add((Address) prepMap.get("address"));
+        }
+        assertArrayEquals(expectedList.toArray(), ((List<Address>) staking.call("getTopPreps")).toArray());
+
+        // Top preps changes whenever week has passed
+        setupGetPrepsResponse();
+        contextMock.when(getPreps).thenReturn(prepsResponse);
+
+        BigInteger oneWeekBlocks = BigInteger.valueOf(7 * 43200L);
+        nextPrepTerm = BigInteger.valueOf(1000).add(oneWeekBlocks).add(BigInteger.TEN);
+        iissInfo.put("nextPRepTerm", nextPrepTerm);
+        contextMock.when(getIISSInfo).thenReturn(iissInfo);
+        sm.getBlock().increase(oneWeekBlocks.intValue() + 2000);
+
+        List<Address> newTopPreps = new ArrayList<>();
+        prepsList = (List<Map<String, Object>>) prepsResponse.get("preps");
+        for (Map<String, Object> prepMap : prepsList) {
+            newTopPreps.add((Address) prepMap.get("address"));
+        }
+        assertNotSame(expectedList, newTopPreps);
+        sm.call(owner, BigInteger.TEN, staking.getAddress(), "stakeICX", new Address(new byte[Address.LENGTH]),
+                new byte[0]);
+        assertArrayEquals(newTopPreps.toArray(), ((List<Address>) staking.call("getTopPreps")).toArray());
     }
 
     @Test

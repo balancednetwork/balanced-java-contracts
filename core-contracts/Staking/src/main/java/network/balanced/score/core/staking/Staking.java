@@ -191,7 +191,8 @@ public class Staking {
     @External(readonly = true)
     public List<Address> getTopPreps() {
         List<Address> topPreps = new ArrayList<>();
-        for (int i = 0; i < this.topPreps.size(); i++) {
+        int topPrepsCount = this.topPreps.size();
+        for (int i = 0; i < topPrepsCount; i++) {
             Address prep = this.topPreps.get(i);
             topPreps.add(prep);
         }
@@ -405,7 +406,8 @@ public class Staking {
         BigInteger destinationBlock = blockHeightWeek.getOrDefault(BigInteger.ZERO).add(BLOCKS_IN_A_WEEK);
         if (nextPrepTerm.compareTo(destinationBlock) > 0) {
             blockHeightWeek.set(nextPrepTerm);
-            for (int i = 0; i < this.topPreps.size(); i++) {
+            int totalPreps = this.topPreps.size();
+            for (int i = 0; i < totalPreps; i++) {
                 this.topPreps.removeLast();
             }
             return setTopPreps();
@@ -484,15 +486,16 @@ public class Staking {
 
             BigInteger additionalRewardForSpecification =
                     totalIcxSpecification.multiply(dailyReward).divide(totalStake);
+            Map<String, BigInteger> finalPrepDelegation = new HashMap<>();
             for (Map.Entry<String, BigInteger> prepDelegation : prepDelegations.entrySet()) {
                 BigInteger currentAmount = prepDelegation.getValue();
                 BigInteger amountToAdd =
                         currentAmount.multiply(additionalRewardForSpecification).divide(totalIcxSpecification);
-                prepDelegations.put(prepDelegation.getKey(), currentAmount.add(amountToAdd));
+                finalPrepDelegation.put(prepDelegation.getKey(), currentAmount.add(amountToAdd));
                 additionalRewardForSpecification = additionalRewardForSpecification.subtract(amountToAdd);
                 totalIcxSpecification = totalIcxSpecification.subtract(currentAmount);
             }
-            DelegationListDBSdo prepDelegationsList = DelegationListDBSdo.fromMap(prepDelegations);
+            DelegationListDBSdo prepDelegationsList = DelegationListDBSdo.fromMap(finalPrepDelegation);
             prepDelegationInIcx.set(prepDelegationsList);
         }
         checkForIscore();
