@@ -40,7 +40,7 @@ dependencies {
     intTestImplementation Dependencies.iconSdk
     intTestImplementation Dependencies.jacksonDatabind
 
-    implementation project(':test-lib')
+    intTestImplementation project(':test-lib')
 }
 
 optimizedJar {
@@ -125,10 +125,20 @@ task integrationTest(type: Test, dependsOn: optimizedJar) {
         systemProperty 'tester.nid', scoreTest.nid
         systemProperty 'tester.scoreFilePath', "../../sicx.zip"
 
+        systemProperty 'tester2.keyStore', scoreTest.get("tester2.keystoreName")
+        systemProperty 'tester2.keyPassword', scoreTest.get("tester2.keystorePass")
+
+        systemProperty 'tester2.isUpdate', "false"
+        systemProperty 'tester2.address', "cx0000000000000000000000000000000000000000"
+        systemProperty 'tester2.url', scoreTest.url
+        systemProperty 'tester2.nid', scoreTest.nid
+        systemProperty 'tester2.scoreFilePath', "../../sicx.zip"
+
+
         systemProperty 'sicx.isUpdate', "false"
         systemProperty 'isUpdate', "false"
-        systemProperty 'address', "cx916796da1d86b9fc9d7fe1697239c2d5ca1c4cb1"
-        systemProperty 'sicx.address', "cx4f1743589e0f52a443ade51679544bde79817c3b"
+        systemProperty 'address', "cx6594d411e7cd4bf1c29b387450df881ed7ae6e8b"
+        systemProperty 'sicx.address', "cx853d983f752d6bf47a8e07526dcac9a4966179b8"
 
 //        systemProperty 'demo.params.defaultValue', '0x1'
     }
