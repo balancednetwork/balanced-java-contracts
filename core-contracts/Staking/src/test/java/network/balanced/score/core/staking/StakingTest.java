@@ -22,6 +22,7 @@ import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
 import network.balanced.score.core.staking.utils.PrepDelegations;
 import org.json.JSONObject;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -562,17 +563,28 @@ class StakingTest extends TestBase {
 
     @Test
     void unstake() {
-        // stake and Unstake from two accounts
-        BigInteger totalStake = BigInteger.ZERO;
+        // stake
         sm.call(owner, ICX.multiply(BigInteger.valueOf(199L)), staking.getAddress(), "stakeICX",
                 new Address(new byte[Address.LENGTH]), new byte[0]);
-        totalStake = totalStake.add(ICX.multiply(BigInteger.valueOf(199L)));
         sm.call(alice, ICX.multiply(BigInteger.valueOf(599L)), staking.getAddress(), "stakeICX",
                 new Address(new byte[Address.LENGTH]), new byte[0]);
-        totalStake = totalStake.add(ICX.multiply(BigInteger.valueOf(599L)));
+
+        // Unstake
         JSONObject data = getUnstakeJsonData();
         staking.invoke(sicx, "tokenFallback", owner.getAddress(), BigInteger.valueOf(100L), data.toString().getBytes());
+        BigInteger ownerBlockHeight = BigInteger.valueOf(sm.getBlock().getHeight());
         staking.invoke(sicx, "tokenFallback", alice.getAddress(), BigInteger.valueOf(50L), data.toString().getBytes());
+        BigInteger aliceBlockHeight = BigInteger.valueOf(sm.getBlock().getHeight());
+
+        List<Map<String, Object>> ownerUnstakedDetails = new ArrayList<>();
+        ownerUnstakedDetails.add(Map.of("amount", BigInteger.valueOf(100L), "from", owner.getAddress(), "blockHeight"
+                , ownerBlockHeight.add(unlockPeriod), "sender", owner.getAddress()));
+        assertEquals(ownerUnstakedDetails, staking.call("getUserUnstakeInfo", owner.getAddress()));
+
+        List<Map<String, Object>> aliceUnstakedDetails = new ArrayList<>();
+        aliceUnstakedDetails.add(Map.of("amount", BigInteger.valueOf(50L), "from", alice.getAddress(), "blockHeight"
+                , aliceBlockHeight.add(unlockPeriod), "sender", alice.getAddress()));
+        assertEquals(aliceUnstakedDetails, staking.call("getUserUnstakeInfo", alice.getAddress()));
 
         BigInteger totalUnstaked = BigInteger.valueOf(150L);
         assertEquals(totalUnstaked, staking.call("getUnstakingAmount"));
@@ -601,348 +613,19 @@ class StakingTest extends TestBase {
         assertEquals(BigInteger.valueOf(150L), staking.call("totalClaimableIcx"));
     }
 
-    @SuppressWarnings({"unchecked", "ResultOfMethodCallIgnored"})
-    @Test
-    void _delegations() {
-        DictDB<String, String> _address_delegations = mock(DictDB.class);
-        List<Map<String, Object>> delegationList = new scorex.util.ArrayList<>();
-        Map<String, Object> delegateDict = new HashMap<>();
-        delegateDict.put("address", "hx0b047c751658f7ce1b2595da34d57a0e7dad357d");
-        delegateDict.put("value", new BigInteger("50000000000000000000"));
-        delegationList.add(delegateDict);
-        Map<String, Object> delegateDict2 = new HashMap<>();
-        delegateDict2.put("address", "hx0b047c751658f7ce1b2595da34d57a0e7dad357c");
-        delegateDict2.put("value", new BigInteger("50000000000000000000"));
-        delegationList.add(delegateDict2);
-        VarDB<BigInteger> _total_stake = mock(VarDB.class);
-
-        try {
-            contextMock.when(() -> Context.newDictDB("_address_delegations", String.class))
-                    .thenReturn(_address_delegations);
-            contextMock.when(() -> Context.newVarDB("_total_stake", BigInteger.class))
-                    .thenReturn(_total_stake);
-            when(_total_stake.getOrDefault(BigInteger.ZERO)).thenReturn(new BigInteger("100000000000000000000"));
-
-            Score staking = sm.deploy(owner, Staking.class);
-            Staking scoreSpy = (Staking) spy(staking.getInstance());
-            staking.setInstance(scoreSpy);
-            contextMock.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "setDelegation",
-                    delegationList)).thenReturn(0);
-            staking.invoke(owner, "delegations", new BigInteger("50000000000000000000"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Test
-    void _perform_checks() {
-        VarDB<BigInteger> _icx_to_claim = mock(VarDB.class);
-        VarDB<BigInteger> _total_stake = mock(VarDB.class);
-        VarDB<BigInteger> _total_unstake_amount = mock(VarDB.class);
-        DictDB<String, BigInteger> _prep_delegations = mock(DictDB.class);
-
-        Map<String, Object> stakedInfo = new HashMap<>();
-        Map<String, Object> getStake = new HashMap<>();
-        List<Map<String, Object>> unstakeList = new scorex.util.ArrayList<>();
-        getStake.put("remainingBlocks", "0x5ae5");
-        getStake.put("unstake", new BigInteger("1000000000000000000"));
-        getStake.put("unstakeBlockHeight", "0x2c73490");
-        unstakeList.add(getStake);
-        stakedInfo.put("stake", "0x5150ae84a8cdf00000");
-        stakedInfo.put("unstakes", unstakeList);
-
-        try {
-            contextMock.when(() -> Context.newVarDB("_total_unstake_amount", BigInteger.class))
-                    .thenReturn(_total_unstake_amount);
-            contextMock.when(() -> Context.newVarDB("icx_to_claim", BigInteger.class))
-                    .thenReturn(_icx_to_claim);
-            contextMock.when(() -> Context.newDictDB("_prep_delegations", BigInteger.class))
-                    .thenReturn(_prep_delegations);
-            contextMock.when(() -> Context.newVarDB("_total_stake", BigInteger.class))
-                    .thenReturn(_total_stake);
-            when(_total_unstake_amount.getOrDefault(BigInteger.ZERO)).thenReturn(new BigInteger("1000000000000000000"));
-            when(_icx_to_claim.getOrDefault(BigInteger.ZERO)).thenReturn(BigInteger.ZERO);
-            when(_total_stake.getOrDefault(BigInteger.ZERO)).thenReturn(new BigInteger("4000000000000000000"));
-            contextMock.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "getStake",
-                    Address.fromString("cx0000000000000000000000000000000000000004"))).thenReturn(stakedInfo);
-            contextMock.when(Context::getValue).thenReturn(BigInteger.ZERO);
-            when(_prep_delegations.getOrDefault("hx0b047c751658f7ce1b2595da34d57a0e7dad357d", BigInteger.ZERO)).thenReturn(new BigInteger("2000000000000000000"));
-            when(_prep_delegations.getOrDefault("hx0b047c751658f7ce1b2595da34d57a0e7dad357c", BigInteger.ZERO)).thenReturn(new BigInteger("2000000000000000000"));
-
-            Score staking = sm.deploy(owner, Staking.class);
-            Staking scoreSpy = (Staking) spy(staking.getInstance());
-            staking.setInstance(scoreSpy);
-//            doReturn(ONE_EXA).when(scoreSpy).getRate();
-//            doNothing().when(scoreSpy).checkForUnstakedBalance();
-//            doNothing().when(scoreSpy).checkForIscore();
-            doReturn(new BigInteger("4000000000000000000")).when(scoreSpy).getTotalStake();
-            contextMock.when(() -> Context.getBalance(staking.getAddress())).thenReturn(new BigInteger(
-                    "5000000000000000000"));
-            staking.invoke(owner, "performChecks");
-            assertEquals(new BigInteger("5000000000000000000"), staking.call("getLifetimeReward"));
-
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    void delegateVotes() {
-        PrepDelegations p = new PrepDelegations();
-//        PrepDelegations p2=new PrepDelegations();
-        p._address = Address.fromString("hx0b047c751658f7ce1b2595da34d57a0e7dad357a");
-        p._votes_in_per = new BigInteger("100000000000000000000");
-//        p2._address=Address.fromString("hx0b047c751658f7ce1b2595da34d57a0e7dad357b");
-//        p2._votes_in_per=new BigInteger("100000000000000000000");
-        PrepDelegations[] userDelegation = new PrepDelegations[]{
-                p
-        };
-        staking.invoke(owner, "delegateVotes", owner.getAddress(), userDelegation, new BigInteger(
-                "100000000000000000000"));
-        HashMap<String, BigInteger> prepDelegations = (HashMap<String, BigInteger>) staking.call("getPrepDelegations");
-        assertEquals(new BigInteger("0"), prepDelegations.get("hx0b047c751658f7ce1b2595da34d57a0e7dad357c"));
-        assertEquals(new BigInteger("0"), prepDelegations.get("hx0b047c751658f7ce1b2595da34d57a0e7dad357d"));
-        assertEquals(new BigInteger("100000000000000000000"), prepDelegations.get(
-                "hx0b047c751658f7ce1b2595da34d57a0e7dad357a"));
-
-    }
-
     @Test
     void transferUpdateDelegations() {
-        VarDB<Address> _sICX_address = mock(VarDB.class);
-        VarDB<BigInteger> _rate = mock(VarDB.class);
-        DictDB<String, BigInteger> _prep_delegations = mock(DictDB.class);
-
-
-        Map<String, BigInteger> delegationPer = new HashMap<String, BigInteger>();
-        Map<String, BigInteger> receiveeDelegation = new HashMap<String, BigInteger>();
-        delegationPer.put("hx0b047c751658f7ce1b2595da34d57a0e7dad357d", new BigInteger("100000000000000000000"));
-        receiveeDelegation.put("hx0b047c751658f7ce1b2595da34d57a0e7dad357c", new BigInteger("100000000000000000000"));
-        Map<String, BigInteger> prepDict = new HashMap<>();
-
-        try {
-            contextMock.when(() -> Context.newVarDB("sICX_address", Address.class))
-                    .thenReturn(_sICX_address);
-            contextMock.when(() -> Context.newVarDB("_rate", BigInteger.class))
-                    .thenReturn(_rate);
-
-            contextMock.when(() -> Context.newDictDB("_prep_delegations", BigInteger.class))
-                    .thenReturn(_prep_delegations);
-            when(_sICX_address.get()).thenReturn(owner.getAddress());
-            when(_rate.getOrDefault(BigInteger.ZERO)).thenReturn(ONE_EXA);
-            Score staking = sm.deploy(owner, Staking.class);
-            Staking scoreSpy = (Staking) spy(staking.getInstance());
-            staking.setInstance(scoreSpy);
-//            doReturn(delegationPer).when(scoreSpy).getDelegationInPercentage(Address.fromString(
-//                    "hx55814f724bbffe49bfa4555535cd9d7e0e1dff31"));
-//            doReturn(BigInteger.ONE).when(scoreSpy).updateTopPreps();
-//            doNothing().when(scoreSpy).stakeAndDelegateInNetwork(BigInteger.ONE);
-//            doReturn(receiveeDelegation).when(scoreSpy).getDelegationInPercentage(Address.fromString(
-//                    "hx55814f724bbffe49bfa4555535cd9d7e0e1dff32"));
-            when(_prep_delegations.getOrDefault("hx0b047c751658f7ce1b2595da34d57a0e7dad357c", BigInteger.ZERO)).thenReturn(new BigInteger("1000000000000000000"));
-            when(_prep_delegations.getOrDefault("hx0b047c751658f7ce1b2595da34d57a0e7dad357d", BigInteger.ZERO)).thenReturn(new BigInteger("1000000000000000000"));
-            staking.invoke(owner, "toggleStakingOn");
-            staking.invoke(owner, "transferUpdateDelegations", Address.fromString(
-                            "hx55814f724bbffe49bfa4555535cd9d7e0e1dff31"),
-                    Address.fromString("hx55814f724bbffe49bfa4555535cd9d7e0e1dff32"), ONE_EXA);
-            prepDict = (Map<String, BigInteger>) staking.call("getPrepDelegations");
-            assertEquals(prepDict.get("hx0b047c751658f7ce1b2595da34d57a0e7dad357d"),
-                    BigInteger.valueOf(1000000000000000000L));
-            assertEquals(prepDict.get("hx0b047c751658f7ce1b2595da34d57a0e7dad357c"),
-                    BigInteger.valueOf(1000000000000000000L));
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
 
     }
 
     @Test
     void stakeICX() {
-        VarDB<Address> _sICX_address = mock(VarDB.class);
-        VarDB<BigInteger> _rate = mock(VarDB.class);
-        VarDB<BigInteger> _total_stake = mock(VarDB.class);
-        DictDB<String, BigInteger> _prep_delegations = mock(DictDB.class);
-
-
-        Map<String, BigInteger> delegationPer = new HashMap<>();
-        Map<String, BigInteger> receiveDelegation = new HashMap<>();
-        delegationPer.put("hx0b047c751658f7ce1b2595da34d57a0e7dad357d", new BigInteger("100000000000000000000"));
-        receiveDelegation.put("hx0b047c751658f7ce1b2595da34d57a0e7dad357c", new BigInteger("100000000000000000000"));
-        Map<String, BigInteger> prepDict;
-
-        try {
-            contextMock.when(() -> Context.newVarDB("_rate", BigInteger.class))
-                    .thenReturn(_rate);
-            contextMock.when(() -> Context.newVarDB("_total_stake", BigInteger.class))
-                    .thenReturn(_total_stake);
-            contextMock.when(() -> Context.call(sicx.getAddress(), "balanceOf", owner.getAddress())).thenReturn(new BigInteger("100000000000000000000"));
-            contextMock.when(() -> Context.call(sicx.getAddress(), "mintTo", owner.getAddress(), new BigInteger(
-                    "100000000000000000000"), new byte[12])).thenReturn(new BigInteger("0"));
-            contextMock.when(Context::getValue).thenReturn(new BigInteger("100000000000000000000"));
-            when(_rate.getOrDefault(BigInteger.ZERO)).thenReturn(ONE_EXA);
-            when(_total_stake.getOrDefault(BigInteger.ZERO)).thenReturn(ONE_EXA);
-            Score staking = sm.deploy(owner, Staking.class);
-            Staking scoreSpy = (Staking) spy(staking.getInstance());
-            staking.setInstance(scoreSpy);
-//            doNothing().when(scoreSpy).performChecksForIscoreAndUnstakedBalance();
-//            doReturn(BigInteger.ONE).when(scoreSpy).updateTopPreps();
-//            doNothing().when(scoreSpy).stakeAndDelegateInNetwork(BigInteger.ONE);
-            when(_prep_delegations.getOrDefault("hx0b047c751658f7ce1b2595da34d57a0e7dad357d", BigInteger.ZERO)).thenReturn(new BigInteger("1000000000000000000"));
-            staking.invoke(owner, "toggleStakingOn");
-            staking.invoke(owner, "setSicxAddress", sicx.getAddress());
-            staking.invoke(owner, "stakeICX", owner.getAddress(), new byte[12]);
-
-            prepDict = (Map<String, BigInteger>) staking.call("getPrepDelegations");
-            assertEquals(prepDict.get("hx0b047c751658f7ce1b2595da34d57a0e7dad357d"),
-                    BigInteger.valueOf(1000000000000000000L));
-            assertEquals(prepDict.get("hx0b047c751658f7ce1b2595da34d57a0e7dad357c"),
-                    BigInteger.valueOf(1000000000000000000L));
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
 
     }
 
-    @Test
-    void _unstake() {
-        VarDB<Address> _sICX_address = mock(VarDB.class);
-        VarDB<BigInteger> _rate = mock(VarDB.class);
-        VarDB<BigInteger> _total_stake = mock(VarDB.class);
-        VarDB<BigInteger> sicxSupply = mock(VarDB.class);
-        VarDB<BigInteger> _total_unstake_amount = mock(VarDB.class);
-        DictDB<String, BigInteger> _prep_delegations = mock(DictDB.class);
-
-        VarDB<BigInteger> _icx_to_claim = mock(VarDB.class);
-        VarDB<BigInteger> _daily_reward = mock(VarDB.class);
-
-
-        Map<String, BigInteger> delegationPer = new HashMap<>();
-        Map<String, BigInteger> receiveDelegation = new HashMap<>();
-        delegationPer.put("hx0b047c751658f7ce1b2595da34d57a0e7dad357d", new BigInteger("100000000000000000000"));
-        receiveDelegation.put("hx0b047c751658f7ce1b2595da34d57a0e7dad357c", new BigInteger("100000000000000000000"));
-        Map<String, Object> unstakeDict = new java.util.HashMap<>();
-        List<Map<String, Object>> unstakeResponseList = new ArrayList<>();
-        List<List<Object>> unstakeInfoList = new scorex.util.ArrayList<>();
-        List<Object> unstakeInfo = new scorex.util.ArrayList<>();
-        unstakeInfo.add(BigInteger.ONE);
-        unstakeInfo.add(new BigInteger("100000000000000000000"));
-        unstakeInfo.add(Address.fromString("hx0000000000000000000000000000000000000001"));
-        unstakeInfo.add(new BigInteger("1000000000000000000"));
-        unstakeInfo.add(Address.fromString("hx55814f724bbffe49bfa4555535cd9d7e0e1dff32"));
-        unstakeInfoList.add(unstakeInfo);
-
-        Map<String, Object> stakedInfo = new HashMap<>();
-        Map<String, Object> getStake = new HashMap<>();
-        List<Map<String, Object>> unstakeList = new scorex.util.ArrayList<>();
-        getStake.put("remainingBlocks", "0x5ae5");
-        getStake.put("unstake", new BigInteger("1000000000000000000"));
-        getStake.put("unstakeBlockHeight", new BigInteger("1000000000000000000"));
-        unstakeList.add(getStake);
-        stakedInfo.put("stake", "0x5150ae84a8cdf00000");
-        stakedInfo.put("unstakes", unstakeList);
-        unstakeDict.put("sender", Address.fromString("hx55814f724bbffe49bfa4555535cd9d7e0e1dff32"));
-        unstakeDict.put("blockHeight", new BigInteger("1000000000000000000"));
-        unstakeDict.put("amount", new BigInteger("100000000000000000000"));
-        unstakeDict.put("from", Address.fromString("hx0000000000000000000000000000000000000001"));
-        unstakeResponseList.add(unstakeDict);
-        try {
-            contextMock.when(() -> Context.newVarDB("sICX_address", Address.class))
-                    .thenReturn(_sICX_address);
-            contextMock.when(() -> Context.newVarDB("sICX_supply", BigInteger.class))
-                    .thenReturn(sicxSupply);
-
-            contextMock.when(() -> Context.newDictDB("_prep_delegations", BigInteger.class))
-                    .thenReturn(_prep_delegations);
-            contextMock.when(() -> Context.newVarDB("_total_unstake_amount", BigInteger.class))
-                    .thenReturn(_total_unstake_amount);
-            contextMock.when(() -> Context.newVarDB("icx_to_claim", BigInteger.class))
-                    .thenReturn(_icx_to_claim);
-            contextMock.when(() -> Context.newVarDB("_daily_reward", BigInteger.class))
-                    .thenReturn(_daily_reward);
-            contextMock.when(() -> Context.newVarDB("_total_stake", BigInteger.class))
-                    .thenReturn(_total_stake);
-            contextMock.when(() -> Context.call(sicx.getAddress(), "burn", new BigInteger(
-                    "100000000000000000000"))).thenReturn(new BigInteger("0"));
-            contextMock.when(() -> Context.call(SYSTEM_SCORE_ADDRESS, "getStake",
-                    Address.fromString("cx0000000000000000000000000000000000000004"))).thenReturn(stakedInfo);
-            when(_rate.getOrDefault(BigInteger.ZERO)).thenReturn(ONE_EXA);
-            when(sicxSupply.getOrDefault(BigInteger.ZERO)).thenReturn(ONE_EXA);
-            when(_total_stake.getOrDefault(BigInteger.ZERO)).thenReturn(new BigInteger("500000000000000000000"));
-            when(_sICX_address.get()).thenReturn(sicx.getAddress());
-            when(_prep_delegations.getOrDefault("hx0b047c751658f7ce1b2595da34d57a0e7dad357d", BigInteger.ZERO)).thenReturn(new BigInteger("100000000000000000000"));
-            when(_total_unstake_amount.getOrDefault(BigInteger.ZERO)).thenReturn(new BigInteger(
-                    "100000000000000000000"));
-            Score staking = sm.deploy(owner, Staking.class);
-            Staking scoreSpy = (Staking) spy(staking.getInstance());
-            staking.setInstance(scoreSpy);
-//            doReturn(BigInteger.ONE).when(scoreSpy).calculateDelegatedICXOutOfTopPreps();
-            when(_icx_to_claim.getOrDefault(BigInteger.ZERO)).thenReturn(BigInteger.ZERO);
-            when(_daily_reward.getOrDefault(BigInteger.ZERO)).thenReturn(new BigInteger("0"));
-//            doNothing().when(scoreSpy).updateDelegationInNetwork(BigInteger.ONE);
-//            doNothing().when(scoreSpy).stakeInNetwork(new BigInteger("500000000000000000000"));
-//            doReturn(delegationPer).when(scoreSpy).getDelegationInPercentage(owner.getAddress());
-            staking.invoke(owner, "unstake", owner.getAddress(), new BigInteger("100000000000000000000"),
-                    Address.fromString("hx55814f724bbffe49bfa4555535cd9d7e0e1dff32"));
-            assertEquals(unstakeResponseList, staking.call("getUserUnstakeInfo", Address.fromString(
-                    "hx55814f724bbffe49bfa4555535cd9d7e0e1dff32")));
-            assertEquals(unstakeInfoList, staking.call("getUnstakeInfo"));
-            staking.invoke(owner, "unstake", Address.fromString("hx0b047c751658f7ce1b2595da34d57a0e7dad357d"),
-                    new BigInteger("100000000000000000000"), Address.fromString(
-                            "hx0b047c751658f7ce1b2595da34d57a0e7dad357c"));
-            unstakeDict.clear();
-            unstakeDict.put("sender", Address.fromString("hx0b047c751658f7ce1b2595da34d57a0e7dad357c"));
-            unstakeDict.put("blockHeight", new BigInteger("1000000000000000000"));
-            unstakeDict.put("amount", new BigInteger("100000000000000000000"));
-            unstakeDict.put("from", Address.fromString("hx0b047c751658f7ce1b2595da34d57a0e7dad357d"));
-            unstakeResponseList.clear();
-            unstakeResponseList.add(unstakeDict);
-            List<Map<String, Object>> userUnstakeInfo;
-            userUnstakeInfo = (List<Map<String, Object>>) staking.call("getUserUnstakeInfo", Address.fromString(
-                    "hx0b047c751658f7ce1b2595da34d57a0e7dad357c"));
-            assertEquals(unstakeDict.get("amount"), userUnstakeInfo.get(0).get("amount"));
-            assertEquals(unstakeDict.get("sender"), userUnstakeInfo.get(0).get("sender"));
-            assertEquals(unstakeDict.get("blockHeight"), userUnstakeInfo.get(0).get("blockHeight"));
-            assertEquals(unstakeDict.get("from"), userUnstakeInfo.get(0).get("from"));
-            unstakeInfoList.add(List.of(BigInteger.TWO, new BigInteger("100000000000000000000"), Address.fromString(
-                            "hx0b047c751658f7ce1b2595da34d57a0e7dad357d"), new BigInteger("1000000000000000000"),
-                    Address.fromString("hx0b047c751658f7ce1b2595da34d57a0e7dad357c")));
-            staking.invoke(owner, "unstake", Address.fromString("hx0b047c751658f7ce1b2595da34d57a0e7dad357a"),
-                    new BigInteger("100000000000000000000"), Address.fromString(
-                            "hx0b047c751658f7ce1b2595da34d57a0e7dad357e"));
-            unstakeInfoList.add(List.of(BigInteger.valueOf(3L), new BigInteger("100000000000000000000"),
-                    Address.fromString("hx0b047c751658f7ce1b2595da34d57a0e7dad357a"), new BigInteger(
-                            "1000000000000000000"), Address.fromString("hx0b047c751658f7ce1b2595da34d57a0e7dad357e")));
-            assertEquals(unstakeInfoList, staking.call("getUnstakeInfo"));
-            unstakeDict.clear();
-            unstakeDict.put("sender", Address.fromString("hx0b047c751658f7ce1b2595da34d57a0e7dad357e"));
-            unstakeDict.put("blockHeight", new BigInteger("1000000000000000000"));
-            unstakeDict.put("amount", new BigInteger("100000000000000000000"));
-            unstakeDict.put("from", Address.fromString("hx0b047c751658f7ce1b2595da34d57a0e7dad357a"));
-            unstakeResponseList.clear();
-            unstakeResponseList.add(unstakeDict);
-            userUnstakeInfo.clear();
-            userUnstakeInfo = (List<Map<String, Object>>) staking.call("getUserUnstakeInfo", Address.fromString(
-                    "hx0b047c751658f7ce1b2595da34d57a0e7dad357e"));
-            assertEquals(unstakeDict.get("amount"), userUnstakeInfo.get(0).get("amount"));
-            assertEquals(unstakeDict.get("sender"), userUnstakeInfo.get(0).get("sender"));
-            assertEquals(unstakeDict.get("blockHeight"), userUnstakeInfo.get(0).get("blockHeight"));
-            assertEquals(unstakeDict.get("from"), userUnstakeInfo.get(0).get("from"));
-            contextMock.when(() -> Context.getBalance(staking.getAddress())).thenReturn(new BigInteger(
-                    "104000000000000000000"));
-            staking.invoke(owner, "checkForBalance");
-            assertEquals(new BigInteger("100000000000000000000"), staking.call("claimableICX", Address.fromString(
-                    "hx55814f724bbffe49bfa4555535cd9d7e0e1dff32")));
-            assertEquals(new BigInteger("4000000000000000000"), staking.call("claimableICX", Address.fromString(
-                    "hx0b047c751658f7ce1b2595da34d57a0e7dad357c")));
-            assertEquals(2, ((List<List<Object>>) staking.call("getUnstakeInfo")).size());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
+    @AfterEach
+    void closeMock() {
+        contextMock.close();
     }
 
 }
