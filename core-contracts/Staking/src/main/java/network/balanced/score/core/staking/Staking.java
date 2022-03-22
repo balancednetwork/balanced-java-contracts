@@ -191,7 +191,8 @@ public class Staking {
     @External(readonly = true)
     public List<Address> getTopPreps() {
         List<Address> topPreps = new ArrayList<>();
-        for (int i = 0; i < this.topPreps.size(); i++) {
+        int topPrepsCount = this.topPreps.size();
+        for (int i = 0; i < topPrepsCount; i++) {
             Address prep = this.topPreps.get(i);
             topPreps.add(prep);
         }
@@ -216,12 +217,10 @@ public class Staking {
         for (Address prep : topPreps) {
             BigInteger finalAmount = prepDelegationInIcx.get(prep.toString());
             finalAmount = finalAmount == null ? BigInteger.ZERO : finalAmount;
-            if (topPreps.contains(prep)) {
-                BigInteger amountToAdd = unspecifiedICX.divide(topPrepsCount);
-                finalAmount = finalAmount.add(amountToAdd);
-                unspecifiedICX = unspecifiedICX.subtract(amountToAdd);
-                topPrepsCount = topPrepsCount.subtract(BigInteger.ONE);
-            }
+            BigInteger amountToAdd = unspecifiedICX.divide(topPrepsCount);
+            finalAmount = finalAmount.add(amountToAdd);
+            unspecifiedICX = unspecifiedICX.subtract(amountToAdd);
+            topPrepsCount = topPrepsCount.subtract(BigInteger.ONE);
             allPrepDelegations.put(prep.toString(), finalAmount);
         }
 
@@ -295,30 +294,24 @@ public class Staking {
         if (_to == null) {
             _to = Context.getCaller();
         }
-        BigInteger payableIcx = icxPayable.getOrDefault(_to, BigInteger.ZERO);
-        BigInteger icxToClaim = this.icxToClaim.getOrDefault(BigInteger.ZERO);
+        BigInteger payableIcx = claimableICX(_to);
+        BigInteger icxToClaim = totalClaimableIcx();
         Context.require(payableIcx.compareTo(icxToClaim) <= 0,
                 TAG + ": No sufficient icx to claim. Requested: " + payableIcx + " Available: " + icxToClaim);
 
-        if (payableIcx.compareTo(BigInteger.ZERO) > 0) {
-            BigInteger unclaimedIcx = icxToClaim.subtract(payableIcx);
-            this.icxToClaim.set(unclaimedIcx);
-            icxPayable.set(_to, null);
-            sendIcx(_to, payableIcx, "");
-            UnstakeAmountTransfer(_to, payableIcx);
-        }
+        BigInteger unclaimedIcx = icxToClaim.subtract(payableIcx);
+        this.icxToClaim.set(unclaimedIcx);
+        icxPayable.set(_to, null);
+        sendIcx(_to, payableIcx, "");
+        UnstakeAmountTransfer(_to, payableIcx);
     }
 
     private void sendIcx(Address to, BigInteger amount, String msg) {
         if (msg == null) {
             msg = "";
         }
-        try {
-            Context.transfer(to, amount);
-            FundTransfer(to, amount, msg + amount + " ICX sent to " + to + ".");
-        } catch (Exception e) {
-            Context.revert(TAG + ": " + amount + " ICX not sent to " + to + ".");
-        }
+        Context.transfer(to, amount);
+        FundTransfer(to, amount, msg + amount + " ICX sent to " + to + ".");
     }
 
     @SuppressWarnings("unchecked")
@@ -405,7 +398,8 @@ public class Staking {
         BigInteger destinationBlock = blockHeightWeek.getOrDefault(BigInteger.ZERO).add(BLOCKS_IN_A_WEEK);
         if (nextPrepTerm.compareTo(destinationBlock) > 0) {
             blockHeightWeek.set(nextPrepTerm);
-            for (int i = 0; i < this.topPreps.size(); i++) {
+            int totalPreps = this.topPreps.size();
+            for (int i = 0; i < totalPreps; i++) {
                 this.topPreps.removeLast();
             }
             return setTopPreps();
@@ -484,15 +478,16 @@ public class Staking {
 
             BigInteger additionalRewardForSpecification =
                     totalIcxSpecification.multiply(dailyReward).divide(totalStake);
+            Map<String, BigInteger> finalPrepDelegation = new HashMap<>();
             for (Map.Entry<String, BigInteger> prepDelegation : prepDelegations.entrySet()) {
                 BigInteger currentAmount = prepDelegation.getValue();
                 BigInteger amountToAdd =
                         currentAmount.multiply(additionalRewardForSpecification).divide(totalIcxSpecification);
-                prepDelegations.put(prepDelegation.getKey(), currentAmount.add(amountToAdd));
+                finalPrepDelegation.put(prepDelegation.getKey(), currentAmount.add(amountToAdd));
                 additionalRewardForSpecification = additionalRewardForSpecification.subtract(amountToAdd);
                 totalIcxSpecification = totalIcxSpecification.subtract(currentAmount);
             }
-            DelegationListDBSdo prepDelegationsList = DelegationListDBSdo.fromMap(prepDelegations);
+            DelegationListDBSdo prepDelegationsList = DelegationListDBSdo.fromMap(finalPrepDelegation);
             prepDelegationInIcx.set(prepDelegationsList);
         }
         checkForIscore();
@@ -647,7 +642,9 @@ public class Staking {
         NodeDB node;
         UnstakeDetails unstakeData;
         BigInteger payout;
-        for (int i = 0; i < unstakeBatchLimit.getOrDefault(DEFAULT_UNSTAKE_BATCH_LIMIT).intValue(); i++) {
+        int maxLoop = unstakeBatchLimit.getOrDefault(DEFAULT_UNSTAKE_BATCH_LIMIT).intValue();
+        for (int i = 0; i < maxLoop; i++) {
+
             node = unstakeRequestList.getNode(currentId);
             unstakeData = new UnstakeDetails(currentId, node.getValue(), node.getKey(), node.getBlockHeight(),
                     node.getSenderAddress());
@@ -667,7 +664,7 @@ public class Staking {
             icxPayable.set(unstakeData.receiverAddress, icxPayable.getOrDefault(unstakeData.receiverAddress,
                     BigInteger.ZERO).add(payout));
 
-            currentId = node.getNext();
+            currentId = unstakeRequestList.headId.getOrDefault(DEFAULT_NODE_ID);
 
             if (currentId.equals(DEFAULT_NODE_ID)) {
                 break;
