@@ -30,8 +30,6 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import score.Address;
 import score.Context;
-import score.DictDB;
-import score.VarDB;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
