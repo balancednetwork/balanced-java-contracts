@@ -98,7 +98,7 @@ public class Multicall {
             } else if (params[i].equals("false") || params[i].equals("true")) {
                 results[i] = Boolean.parseBoolean(params[i]);
             } else if (params[i].startsWith("0x")) {
-                results[i] = Long.decode(params[i]).longValue();
+                results[i] = new BigInteger(params[i].substring(2), 16);
             } else {
                 results[i] = params[i];
             }
