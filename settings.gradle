@@ -33,3 +33,7 @@ project(':BatchDisbursement').projectDir = file("core-contracts/BatchDisbursemen
 
 include(':Reserve')
 project(':Reserve').projectDir = file("core-contracts/Reserve")
+
+include (':Dividends')
+project(':Dividends').projectDir = file("core-contracts/Dividends")
+
