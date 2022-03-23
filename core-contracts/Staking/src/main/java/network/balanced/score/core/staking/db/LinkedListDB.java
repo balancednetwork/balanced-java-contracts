@@ -71,7 +71,7 @@ public class LinkedListDB {
     public void append(Address key, BigInteger value, BigInteger blockHeight, Address senderAddress,
                        BigInteger nodeId) {
         NodeDB nodeToAppend = createNode(key, value, blockHeight, senderAddress, nodeId);
-        if (length.get() == null) {
+        if (length.getOrDefault(BigInteger.ZERO).equals(BigInteger.ZERO)) {
             headId.set(nodeId);
         } else {
             BigInteger tailId = this.tailId.get();
