@@ -27,29 +27,17 @@ import java.util.List;
 import java.util.Map;
 
 import static network.balanced.score.core.rebalancing.Checks.*;
-import static network.balanced.score.core.rebalancing.Constants.EXA;
+import static network.balanced.score.core.rebalancing.Constants.*;
 
 public class Rebalancing {
 
-    public static final String TAG = "Rebalancing";
-    
-    private final String BNUSD_ADDRESS = "bnUSD_address";
-    private final String SICX_ADDRESS = "sicx_address";
-    private final String DEX_ADDRESS = "dex_address";
-    private final String LOANS_ADDRESS = "loans_address";
-    private static final String GOVERNANCE_ADDRESS = "governance_address";
-    private static final String ADMIN = "admin";
-    private final String PRICE_THRESHOLD = "_price_threshold";
-
-    private final BigInteger SICX_BNUSD_POOL_ID = BigInteger.TWO; 
-
-    public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE_ADDRESS, Address.class);
-    public static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
     private final VarDB<Address> bnusd = Context.newVarDB(BNUSD_ADDRESS, Address.class);
     private final VarDB<Address> sicx = Context.newVarDB(SICX_ADDRESS, Address.class);
     private final VarDB<Address> dex = Context.newVarDB(DEX_ADDRESS, Address.class);
     private final VarDB<Address> loans = Context.newVarDB(LOANS_ADDRESS, Address.class);
-    private final VarDB<BigInteger> priceThreshold = Context.newVarDB(PRICE_THRESHOLD, BigInteger.class);    
+    public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE_ADDRESS, Address.class);
+    public static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
+    private final VarDB<BigInteger> priceThreshold = Context.newVarDB(PRICE_THRESHOLD, BigInteger.class);
 
     public Rebalancing(Address _governance) {
         if (governance.getOrDefault(null) == null) {
@@ -115,17 +103,22 @@ public class Rebalancing {
     }
 
     @External(readonly = true)
-    public Address getBnusd(){
+    public Address getBnusd() {
         return bnusd.get();
     }
 
     @External(readonly = true)
-    public Address getSicx(){
+    public Address getSicx() {
         return sicx.get();
     }
 
-    private BigInteger calculateTokensToSell(BigInteger _price, BigInteger _baseSupply, BigInteger _quoteSupply) {
-        return _price.multiply(_baseSupply).multiply(_quoteSupply).divide(EXA).sqrt().subtract(_baseSupply);
+    @External(readonly = true)
+    public Address getDex() {
+        return dex.get();
+    }
+
+    private BigInteger calculateTokensToSell(BigInteger price, BigInteger baseSupply, BigInteger quoteSupply) {
+        return price.multiply(baseSupply).multiply(quoteSupply).divide(EXA).sqrt().subtract(baseSupply);
     }
 
     @External
@@ -139,19 +132,19 @@ public class Rebalancing {
         return priceThreshold.get();
     }
 
-    /* 
-    * Checks the Rebalancing status of the pool i.e. whether the difference between
-        oracle price and dex pool price are more than threshold or not. If it is more
-        than the threshold then the function returns a list .
-        If the first element of the list is True then it's forward rebalancing and if the
-        last element of the list is True, it's the reverse rebalancing .
-        The second element of the list specifies the amount of tokens required to balance the pool.
-    * @return {List<Object> }   [<Positive difference>, <Tokens to sell>, <Negative differnece>]
-    */
+    /**
+     * Checks the Rebalancing status of the pool i.e. whether the difference between oracle price and dex pool price
+     * are more than threshold or not. If it is more than the threshold then the function returns a list. If the
+     * first element of the list is True then it's forward rebalancing and if the last element of the list is True,
+     * it's the reverse rebalancing. The second element of the list specifies the amount of tokens required to
+     * balance the pool.
+     *
+     * @return {List<Object> }   [<Positive difference>, <Tokens to sell>, <Negative difference>]
+     */
     @External(readonly = true)
     @SuppressWarnings("unchecked")
     public List<Object> getRebalancingStatus() {
-       
+
         List<Object> results = new ArrayList<>(3);
 
         Address bnusdScore = bnusd.get();
@@ -185,16 +178,11 @@ public class Rebalancing {
         boolean higher = (boolean) status.get(0);
         BigInteger tokenAmount = (BigInteger) status.get(1);
         boolean lower = (boolean) status.get(2);
-        if (tokenAmount.compareTo(BigInteger.ZERO) > 0) {
-            if (higher) {
-                Context.call(loansScore, "raisePrice", tokenAmount);
-            }
+        if (higher && tokenAmount.signum() > 0) {
+            Context.call(loansScore, "raisePrice", tokenAmount);
+        } else if (lower && tokenAmount.signum() < 0) {
+            Context.call(loansScore, "lowerPrice", tokenAmount.abs());
         }
-        else {
-            if (lower) {
-                Context.call(loansScore, "lowerPrice", tokenAmount.abs());
-            }
-        } 
     }
 
     @External

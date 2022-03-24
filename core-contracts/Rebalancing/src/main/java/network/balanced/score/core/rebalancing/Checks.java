@@ -19,6 +19,8 @@ package network.balanced.score.core.rebalancing;
 import score.Address;
 import score.Context;
 
+import static network.balanced.score.core.rebalancing.Constants.TAG;
+
 public class Checks {
 
     public static Address defaultAddress = new Address(new byte[Address.LENGTH]);
@@ -32,18 +34,18 @@ public class Checks {
     public static void onlyGovernance() {
         Address sender = Context.getCaller();
         Address governance = Rebalancing.governance.getOrDefault(defaultAddress);
-        Context.require(!governance.equals(defaultAddress), Rebalancing.TAG + ": Governance address not set");
-        Context.require(sender.equals(governance), Rebalancing.TAG + ": Sender not governance contract");
+        Context.require(!governance.equals(defaultAddress), TAG + ": Governance address not set");
+        Context.require(sender.equals(governance), TAG + ": Sender not governance contract");
     }
 
     public static void onlyAdmin() {
         Address admin = Rebalancing.admin.getOrDefault(defaultAddress);
         Address sender = Context.getCaller();
-        Context.require(!admin.equals(defaultAddress), Rebalancing.TAG + ": Admin address not set");
-        Context.require(sender.equals(admin), Rebalancing.TAG + ": Sender not admin");
+        Context.require(!admin.equals(defaultAddress), TAG + ": Admin address not set");
+        Context.require(sender.equals(admin), TAG + ": Sender not admin");
     }
 
     public static void isContract(Address address) {
-        Context.require(address.isContract(), Rebalancing.TAG + ": Address provided is an EOA address. A contract address is required.");
+        Context.require(address.isContract(), TAG + ": Address provided is an EOA address. A contract address is required.");
     }
 } 
