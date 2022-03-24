@@ -118,7 +118,11 @@ public class Rebalancing {
     }
 
     private BigInteger calculateTokensToSell(BigInteger price, BigInteger baseSupply, BigInteger quoteSupply) {
-        return price.multiply(baseSupply).multiply(quoteSupply).divide(EXA).sqrt().subtract(baseSupply);
+        BigInteger absolutePrice = price.abs();
+        BigInteger tokensToSell =
+                absolutePrice.multiply(baseSupply).multiply(quoteSupply).divide(EXA).sqrt().subtract(baseSupply);
+        tokensToSell = price.signum() < 0 ? tokensToSell.negate() : tokensToSell;
+        return tokensToSell;
     }
 
     @External
@@ -152,6 +156,8 @@ public class Rebalancing {
         Address sicxScore = sicx.get();
         BigInteger threshold = priceThreshold.get();
 
+        Context.require(bnusdScore != null && dexScore != null && sicxScore != null && threshold != null);
+
         BigInteger bnusdLastPrice = (BigInteger) Context.call(bnusdScore, "lastPriceInLoop");
         Map<String, Object> poolStats =  (Map<String, Object>) Context.call(dexScore, "getPoolStats", SICX_BNUSD_POOL_ID);
         BigInteger sicxLastPrice = (BigInteger) Context.call(sicxScore, "lastPriceInLoop");
@@ -174,6 +180,7 @@ public class Rebalancing {
     @External
     public void rebalance() {
         Address loansScore = loans.get();
+        Context.require(loansScore != null);
         List<Object> status = getRebalancingStatus();
         boolean higher = (boolean) status.get(0);
         BigInteger tokenAmount = (BigInteger) status.get(1);
