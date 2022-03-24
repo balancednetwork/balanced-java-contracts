@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.rebalancing;
+package network.balanced.score.core.rebalancing.mocks;
 
-import score.Address;
 import score.annotation.External;
 
 import java.math.BigInteger;
-import java.util.Map;
 
 public class LoansMock {
 

@@ -19,23 +19,23 @@ package network.balanced.score.core.rebalancing;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
-import com.iconloop.score.token.irc2.IRC2Basic;
 import com.iconloop.score.test.TestBase;
+import network.balanced.score.core.rebalancing.mocks.DexMock;
+import network.balanced.score.core.rebalancing.mocks.LoansMock;
+import network.balanced.score.core.rebalancing.mocks.bnUSD;
+import network.balanced.score.core.rebalancing.mocks.sICX;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import score.Address;
-import static network.balanced.score.core.rebalancing.Checks.*;
-import static network.balanced.score.core.rebalancing.Constants.*;
 
-import java.beans.Transient;
-import java.io.Console;
 import java.math.BigInteger;
-import java.util.Map;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static network.balanced.score.core.rebalancing.Checks.defaultAddress;
+import static network.balanced.score.core.rebalancing.Constants.EXA;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 
@@ -161,11 +161,10 @@ public class RebalancingTest extends TestBase {
     @Test
     void setAdmin_notGovernance() {
         // Arrange
-        Account account = adminAccount;
         String expectedErrorMessage = "Rebalancing: Sender not governance contract";
 
         // Act & Assert
-        Executable setAdminNotFromGovernance = () -> rebalancingScore.invoke(sm.createAccount(), "setAdmin", account.getAddress());
+        Executable setAdminNotFromGovernance = () -> rebalancingScore.invoke(sm.createAccount(), "setAdmin", adminAccount.getAddress());
         expectErrorMessage(setAdminNotFromGovernance, expectedErrorMessage);
     }
 
@@ -178,8 +177,8 @@ public class RebalancingTest extends TestBase {
         rebalancingScore.invoke(adminAccount, "setSicx", sICXScore.getAddress());
 
         // Assert
-        Address sICXAdddress = (Address) rebalancingScore.call("getSicx");
-        assertEquals(sICXScore.getAddress(), sICXAdddress);
+        Address sICXAddress = (Address) rebalancingScore.call("getSicx");
+        assertEquals(sICXScore.getAddress(), sICXAddress);
     }
 
     @Test
@@ -327,12 +326,13 @@ public class RebalancingTest extends TestBase {
         dexMock.invoke(adminAccount, "setPoolStatsQuote", poolQuote);
 
         //Act
+        @SuppressWarnings("unchecked")
         List<Object> results = (List<Object>) rebalancingScore.call("getRebalancingStatus");
         
         //Assert
-        assertEquals((boolean)results.get(0), true);
-        assertEquals(expectedTokensToSell, (BigInteger) results.get(1)); 
-        assertEquals((boolean)results.get(2), false);
+        assertTrue((boolean) results.get(0));
+        assertEquals(expectedTokensToSell, results.get(1));
+        assertFalse((boolean) results.get(2));
     }
 
     @Test
@@ -422,7 +422,7 @@ public class RebalancingTest extends TestBase {
         // 10%
         BigInteger priceDifferenceThreshold = BigInteger.valueOf(1).multiply(BigInteger.TEN.pow(17));
         BigInteger poolBase = BigInteger.valueOf(11).multiply(EXA);
-        BigInteger poolQuote = BigInteger.valueOf(10).multiply(EXA).add(BigInteger.TEN);;
+        BigInteger poolQuote = BigInteger.valueOf(10).multiply(EXA).add(BigInteger.TEN);
         BigInteger price = bnUSDPrice.multiply(EXA).divide(sICXPrice);
 
         BigInteger expectedTokensToSell = price.multiply(poolBase).multiply(poolQuote).divide(EXA).sqrt().subtract(poolBase);
@@ -444,11 +444,10 @@ public class RebalancingTest extends TestBase {
     @Test
     void tokenFallback() {
         // Arrange 
-        Account account = owner;
         BigInteger expectedTokenAmount = BigInteger.TEN.pow(18);
 
         // Act
-        sICXScore.invoke(account, "transfer", rebalancingScore.getAddress(), expectedTokenAmount, new byte[0]);
+        sICXScore.invoke(owner, "transfer", rebalancingScore.getAddress(), expectedTokenAmount, new byte[0]);
 
         // Assert
         BigInteger balance = (BigInteger) sICXScore.call("balanceOf", rebalancingScore.getAddress());

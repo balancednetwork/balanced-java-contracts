@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.rebalancing;
+package network.balanced.score.core.rebalancing.mocks;
 
-import com.iconloop.score.test.Account;
-import com.iconloop.score.test.Score;
 import com.iconloop.score.token.irc2.IRC2Mintable;
 import score.Context;
 import score.VarDB;
 import score.annotation.External;
+
 import java.math.BigInteger;
 
 public class sICX extends IRC2Mintable {
