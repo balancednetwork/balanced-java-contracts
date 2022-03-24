@@ -20,16 +20,14 @@ import score.Address;
 import score.Context;
 import score.VarDB;
 import score.annotation.External;
-import score.annotation.Optional;
-
-import java.math.BigInteger;
-import java.util.Map;
-import java.util.List;
-
 import scorex.util.ArrayList;
 
+import java.math.BigInteger;
+import java.util.List;
+import java.util.Map;
+
 import static network.balanced.score.core.rebalancing.Checks.*;
-import static network.balanced.score.core.rebalancing.Constants.*;
+import static network.balanced.score.core.rebalancing.Constants.EXA;
 
 public class Rebalancing {
 
@@ -56,7 +54,7 @@ public class Rebalancing {
     public Rebalancing(Address _governance) {
         if (governance.getOrDefault(null) == null) {
             Context.require(_governance.isContract(), TAG + ": Governance address should be a contract");
-            this.governance.set(_governance); 
+            governance.set(_governance);
         }
     }
 
@@ -154,7 +152,7 @@ public class Rebalancing {
     @SuppressWarnings("unchecked")
     public List<Object> getRebalancingStatus() {
        
-        List<Object> results = new ArrayList<Object>(3);
+        List<Object> results = new ArrayList<>(3);
 
         Address bnusdScore = bnusd.get();
         Address dexScore = dex.get();
@@ -173,9 +171,9 @@ public class Rebalancing {
         BigInteger diff = price.subtract(dexPrice).multiply(EXA).divide(price);
         BigInteger tokensToSell = calculateTokensToSell(price, poolBase, poolQuote);
         
-        results.add(diff.compareTo(threshold) == 1);
+        results.add(diff.compareTo(threshold) > 0);
         results.add(tokensToSell);
-        results.add(diff.compareTo(threshold.negate()) == -1);
+        results.add(diff.compareTo(threshold.negate()) < 0);
 
         return results;
     }
@@ -187,7 +185,7 @@ public class Rebalancing {
         boolean higher = (boolean) status.get(0);
         BigInteger tokenAmount = (BigInteger) status.get(1);
         boolean lower = (boolean) status.get(2);
-        if (tokenAmount.compareTo(BigInteger.ZERO) == 1) {
+        if (tokenAmount.compareTo(BigInteger.ZERO) > 0) {
             if (higher) {
                 Context.call(loansScore, "raisePrice", tokenAmount);
             }
