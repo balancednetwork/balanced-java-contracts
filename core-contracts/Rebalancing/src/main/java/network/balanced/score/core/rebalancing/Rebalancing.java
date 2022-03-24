@@ -24,8 +24,9 @@ import score.annotation.Optional;
 
 import java.math.BigInteger;
 import java.util.Map;
-import java.util.ArrayList;
 import java.util.List;
+
+import scorex.util.ArrayList;
 
 import static network.balanced.score.core.rebalancing.Checks.*;
 import static network.balanced.score.core.rebalancing.Constants.*;
@@ -52,45 +53,45 @@ public class Rebalancing {
     private final VarDB<Address> loans = Context.newVarDB(LOANS_ADDRESS, Address.class);
     private final VarDB<BigInteger> priceThreshold = Context.newVarDB(PRICE_THRESHOLD, BigInteger.class);    
 
-    public Rebalancing(@Optional Address governance) {
-        if (governance != null) {
-            Context.require(governance.isContract(), TAG + ": Governance address should be a contract");
-            Rebalancing.governance.set(governance); 
+    public Rebalancing(Address _governance) {
+        if (governance.getOrDefault(null) == null) {
+            Context.require(_governance.isContract(), TAG + ": Governance address should be a contract");
+            this.governance.set(_governance); 
         }
     }
 
     @External
     public void setBnusd(Address _address) {
         onlyAdmin();
-        Context.require(_address.isContract(), TAG + ": Address provided is an EOA address. A contract address is required.");
+        isContract(_address);
         bnusd.set(_address);
     }
     
     @External
     public void setLoans(Address _address) {
         onlyAdmin();
-        Context.require(_address.isContract(), TAG + ": Address provided is an EOA address. A contract address is required.");
+        isContract(_address);
         loans.set(_address);
     }
 
     @External
     public void setSicx(Address _address){
         onlyAdmin();
-        Context.require(_address.isContract(), TAG + ": Address provided is an EOA address. A contract address is required.");
+        isContract(_address);
         sicx.set(_address);
     }
     
     @External
     public void setGovernance(Address _address) {
         onlyOwner();
-        Context.require(_address.isContract(), TAG + ": Address provided is an EOA address. A contract address is required.");
+        isContract(_address);
         governance.set(_address);
     }
 
     @External
     public void setDex(Address _address) {
         onlyAdmin();
-        Context.require(_address.isContract(), TAG + ": Address provided is an EOA address. A contract address is required.");
+        isContract(_address);
         dex.set(_address);
     }
 
@@ -140,22 +141,25 @@ public class Rebalancing {
         return priceThreshold.get();
     }
 
-    @External(readonly = true)
-    @SuppressWarnings("unchecked")
-    public List<Object> getRebalancingStatus() {
-        List<Object> results = new ArrayList<Object>();
-        /* 
-         Checks the Rebalancing status of the pool i.e. whether the difference between
+    /* 
+    * Checks the Rebalancing status of the pool i.e. whether the difference between
         oracle price and dex pool price are more than threshold or not. If it is more
         than the threshold then the function returns a list .
         If the first element of the list is True then it's forward rebalancing and if the
         last element of the list is True, it's the reverse rebalancing .
         The second element of the list specifies the amount of tokens required to balance the pool.
-        */
+    * @return {List<Object> }   [<Positive difference>, <Tokens to sell>, <Negative differnece>]
+    */
+    @External(readonly = true)
+    @SuppressWarnings("unchecked")
+    public List<Object> getRebalancingStatus() {
+       
+        List<Object> results = new ArrayList<Object>(3);
+
         Address bnusdScore = bnusd.get();
         Address dexScore = dex.get();
         Address sicxScore = sicx.get();
-        BigInteger minDiff = priceThreshold.get();
+        BigInteger threshold = priceThreshold.get();
 
         BigInteger bnusdLastPrice = (BigInteger) Context.call(bnusdScore, "lastPriceInLoop");
         Map<String, Object> poolStats =  (Map<String, Object>) Context.call(dexScore, "getPoolStats", SICX_BNUSD_POOL_ID);
@@ -169,16 +173,15 @@ public class Rebalancing {
         BigInteger diff = price.subtract(dexPrice).multiply(EXA).divide(price);
         BigInteger tokensToSell = calculateTokensToSell(price, poolBase, poolQuote);
         
-        results.add(diff.compareTo(minDiff) == 1);
+        results.add(diff.compareTo(threshold) == 1);
         results.add(tokensToSell);
-        results.add(diff.compareTo(minDiff.negate()) == -1);
+        results.add(diff.compareTo(threshold.negate()) == -1);
 
         return results;
     }
 
     @External
     public void rebalance() {
-        // Calls the raise/lower price on loans to balance the sICX/bnUSD price on the DEX.
         Address loansScore = loans.get();
         List<Object> status = getRebalancingStatus();
         boolean higher = (boolean) status.get(0);
@@ -197,8 +200,6 @@ public class Rebalancing {
     }
 
     @External
-    public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
-
-    }
+    public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {}
     
 }

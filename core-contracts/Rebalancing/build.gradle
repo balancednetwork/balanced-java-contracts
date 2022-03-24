@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import network.balanced.score.dependencies.Dependencies
 
 version = '0.1.0'
 
@@ -22,16 +23,15 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'foundation.icon:javaee-api:0.9.1'
-    implementation 'foundation.icon:javaee-scorex:0.5.2'
+    compileOnly Dependencies.javaeeApi
+    implementation Dependencies.javaeeScorex
 
-    testImplementation 'foundation.icon:javaee-unittest:0.9.2'
-    testImplementation 'com.github.sink772:javaee-tokens:0.6.1'
-    
+    testImplementation Dependencies.javaeeTokens
+    testImplementation Dependencies.javaeeUnitTest
     // Use JUnit Jupiter for testing.
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
-    testImplementation 'org.mockito:mockito-core:4.1.0'
+    testImplementation Dependencies.junitJupiter
+    testRuntimeOnly Dependencies.junitJupiterEngine
+    testImplementation Dependencies.mockitoCore
 }
 
 optimizedJar {
@@ -66,4 +66,17 @@ deployJar {
 tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+    finalizedBy jacocoTestReport 
 }
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = false
+        csv.required = false
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+    }
+}
+
+
+// ./goloop rpc sendtx deploy /home/andell/ICON/Balanced/balanced-java-contracts/core-contracts/Rebalancing/build/libs/Rebalancing-0.1.0-optimized.jar    --uri http://localhost:9082/api/v3     --key_store godWallet.json --key_password gochain --nid 3 --step_limit=100000000     --content_type application/java   --estimate  --param _governance="cx66d4d90f5f113eba575bf793570135f9b10cece1"

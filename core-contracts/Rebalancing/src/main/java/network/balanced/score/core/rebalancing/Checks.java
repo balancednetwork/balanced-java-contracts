@@ -42,4 +42,8 @@ public class Checks {
         Context.require(!admin.equals(defaultAddress), Rebalancing.TAG + ": Admin address not set");
         Context.require(sender.equals(admin), Rebalancing.TAG + ": Sender not admin");
     }
+
+    public static void isContract(Address address) {
+        Context.require(address.isContract(), Rebalancing.TAG + ": Address provided is an EOA address. A contract address is required.");
+    }
 } 

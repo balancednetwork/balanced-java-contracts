@@ -24,23 +24,22 @@ import score.VarDB;
 import score.annotation.External;
 import java.math.BigInteger;
 
-public class SicxToken extends IRC2Mintable {
+public class sICX extends IRC2Mintable {
     public static final VarDB<BigInteger> lastPriceInLoop = Context.newVarDB("last_price", BigInteger.class);
 
-    public SicxToken(String _name, String _symbol, int _decimals, BigInteger _totalSupply) {
+    public sICX(String _name, String _symbol, int _decimals, BigInteger _totalSupply) {
         super(_name, _symbol, _decimals);
+        _mint(Context.getCaller(), _totalSupply);
     }
     
 
     @External
-    public void setLastPriceInLoop(BigInteger _lastPriceInLoop)
-    {
+    public void setLastPriceInLoop(BigInteger _lastPriceInLoop) {
         lastPriceInLoop.set(_lastPriceInLoop);
     }
 
     @External(readonly = true)
-    public BigInteger lastPriceInLoop()
-    {
+    public BigInteger lastPriceInLoop() {
         return lastPriceInLoop.get();
     }
 }

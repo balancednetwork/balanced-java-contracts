@@ -24,22 +24,20 @@ import score.VarDB;
 import score.annotation.External;
 import java.math.BigInteger;
 
-public class BnusdToken extends IRC2Mintable {
+public class bnUSD extends IRC2Mintable {
     public static final VarDB<BigInteger> lastPriceInLoop = Context.newVarDB("last_price", BigInteger.class);
 
-    public BnusdToken (String _name, String _symbol, int _decimals, BigInteger _totalSupply) {
+    public bnUSD (String _name, String _symbol, int _decimals, BigInteger _totalSupply) {
         super(_name, _symbol, _decimals);
     }
 
     @External
-    public void setLastPriceInLoop(BigInteger _lastPriceInLoop)
-    {
+    public void setLastPriceInLoop(BigInteger _lastPriceInLoop) {
         lastPriceInLoop.set(_lastPriceInLoop);
     }
 
     @External(readonly = true)
-    public BigInteger lastPriceInLoop()
-    {
+    public BigInteger lastPriceInLoop() {
         return lastPriceInLoop.get();
     }
 }
