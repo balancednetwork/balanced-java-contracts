@@ -19,5 +19,4 @@ public class Checks {
         Context.require(!governance.equals(defaultAddress), FeeHandler.TAG + ": Governance address not set");
         Context.require(sender.equals(governance), FeeHandler.TAG + ": Sender not governance contract");
     }
-
 }
