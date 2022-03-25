@@ -10,6 +10,8 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+import network.balanced.score.token.dex.StakedBalnTokenSnapshots;
+import network.balanced.score.token.dex.TotalStakedBalnTokenSnapshots;
 import score.Address;
 import score.ArrayDB;
 import score.BranchDB;
@@ -781,7 +783,44 @@ public class BalancedToken extends IRC2 {
         return this.stakeSnapshots.at(_account).at(low).getOrDefault(AMOUNT, ZERO);
     }
 
-    
+    @External
+    public void loadBalnStakeSnapshot(StakedBalnTokenSnapshots[] _data) {
+    	onlyOwner();
+        if ( this.timeOffset.getOrDefault(ZERO).equals(ZERO) ){
+            this.setTimeOffset();
+        }
+        for (int i = 0; i< _data.length; i++) { 
+            BigInteger currentId =  _data[i].getDay();
+            //TODO: verify if gochain allows arrays with objects as null
+            if (currentId != null && currentId.compareTo(this.getDay())  <= 0) {
+                Address  account =  _data[i].getAddress();
+                BigInteger length = this.totalSnapshots.getOrDefault(account, ZERO);
+                this.stakeSnapshots.at(account).at(length).set(IDS , currentId);
+                this.stakeSnapshots.at(account).at(length).set(AMOUNT, _data[i].getAmount());
+                this.totalSnapshots.set(account, this.totalSnapshots.getOrDefault(account, ZERO).add(ONE) );
+            }
+        }
+    }
+ 
+    @External
+    public void loadTotalStakeSnapshot(TotalStakedBalnTokenSnapshots[]  _data) {
+    	onlyOwner();
+        if (this.timeOffset.getOrDefault(ZERO).equals(ZERO) ) {
+            this.setTimeOffset();
+        }
+        for (int i = 0; i< _data.length; i++) {
+            BigInteger currentId = _data[i].getDay();
+            //TODO: verify if gochain allows arrays with objects as null
+            if (currentId != null && currentId.compareTo(this.getDay()) <= 0 ) {
+                BigInteger amount = _data[i].getAmount();
+                BigInteger length = this.totalStakedSnapshotCount.getOrDefault(ZERO);
+                this.totalStakedSnapshot.at(length).set(IDS, currentId);
+                this.totalStakedSnapshot.at(length).set(AMOUNT, amount);
+                this.totalStakedSnapshotCount.set(this.totalStakedSnapshotCount.getOrDefault(ZERO).add(ONE));
+            }
+        }
+    }
+
 	@Override
 	public Address getAdmin() {
 		return this.admin.getOrDefault(null);
