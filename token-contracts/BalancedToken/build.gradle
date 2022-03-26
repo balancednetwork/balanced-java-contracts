@@ -11,7 +11,7 @@ dependencies {
     // Use JUnit Jupiter for testing.
     testImplementation Dependencies.junitJupiter
     testRuntimeOnly Dependencies.junitJupiterEngine
-    testImplementation Dependencies.mockitoCore
+    testImplementation Dependencies.mockitoInline
 }
 
 optimizedJar {

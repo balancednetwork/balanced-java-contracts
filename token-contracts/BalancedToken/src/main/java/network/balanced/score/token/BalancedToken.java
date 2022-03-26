@@ -7,13 +7,9 @@ import static java.math.BigInteger.ZERO;
 import static network.balanced.score.token.util.Mathematics.*;
 
 import java.math.BigInteger;
-import java.util.List;
 import java.util.Map;
 
-import network.balanced.score.token.dex.StakedBalnTokenSnapshots;
-import network.balanced.score.token.dex.TotalStakedBalnTokenSnapshots;
 import score.Address;
-import score.ArrayDB;
 import score.BranchDB;
 import score.Context;
 import score.DictDB;
@@ -21,7 +17,6 @@ import score.VarDB;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
-import scorex.util.HashMap;
 
 public class BalancedToken extends IRC2 {
 
@@ -33,14 +28,6 @@ public class BalancedToken extends IRC2 {
     private static final String PRICE_UPDATE_TIME = "price_update_time";
     private static final String LAST_PRICE = "last_price";
     private static final String MIN_INTERVAL = "min_interval";
-
-    private static final String EVEN_DAY_STAKE_CHANGES = "even_day_stake_changes";
-    private static final String ODD_DAY_STAKE_CHANGES = "odd_day_stake_changes";
-
-    private static final String INDEX_STAKE_ADDRESS_CHANGES = "index_stake_address_changes";
-    private static final String INDEX_UPDATE_STAKE = "index_update_stake";
-    private static final String STAKE_UPDATE_DB = "stake_update_db";
-    private static final String STAKE_ADDRESS_UPDATE_DB = "stake_address_update_db";
 
     private static final String STAKING_ENABLED = "staking_enabled";
 
@@ -76,16 +63,6 @@ public class BalancedToken extends IRC2 {
     private VarDB<BigInteger> lastPrice = Context.newVarDB(LAST_PRICE, BigInteger.class);
     private VarDB<BigInteger> minInterval = Context.newVarDB(MIN_INTERVAL, BigInteger.class);
 
-    private ArrayDB<Address> evenDayStakeChanges = Context.newArrayDB(EVEN_DAY_STAKE_CHANGES, Address.class);
-    private ArrayDB<Address> oddDayStakeChanges = Context.newArrayDB(ODD_DAY_STAKE_CHANGES, Address.class);
-    private List<ArrayDB<Address>> stakeChanges = List.of(evenDayStakeChanges, oddDayStakeChanges);
-
-    private VarDB<BigInteger> indexUpdateStake = Context.newVarDB(INDEX_UPDATE_STAKE, BigInteger.class);
-    private VarDB<BigInteger> indexStakeAddressChanges = Context.newVarDB(INDEX_STAKE_ADDRESS_CHANGES, BigInteger.class);
-
-    private VarDB<BigInteger> stakeUpdateDb = Context.newVarDB(STAKE_UPDATE_DB, BigInteger.class);
-    private VarDB<BigInteger> stakeAddressUpdateDb = Context.newVarDB(STAKE_ADDRESS_UPDATE_DB, BigInteger.class);
-
     private VarDB<Boolean> stakingEnabled = Context.newVarDB(STAKING_ENABLED, Boolean.class);
 
     //TODO: this is the scenario where java can not handle this dynamic structure, python uses depth=2
@@ -118,13 +95,10 @@ public class BalancedToken extends IRC2 {
     		onUpdate();
     		return;
     	}
+    	Context.println("on install event");
 
 		this.governance.set(_governance);
 		this.stakingEnabled.set(false);
-		this.indexUpdateStake.set(BigInteger.ZERO);
-		this.indexStakeAddressChanges.set(ZERO);
-		this.stakeUpdateDb.set(ZERO);
-		this.stakeAddressUpdateDb.set(ZERO);
 		this.oracleName.set(DEFAULT_ORACLE_NAME);
 		this.lastPrice.set(INITIAL_PRICE_ESTIMATE);
 		this.minInterval.set(MIN_UPDATE_TIME);
@@ -134,8 +108,9 @@ public class BalancedToken extends IRC2 {
     }
 
     public void onUpdate() {
-        //self.setTimeOffset()
-        //self._enable_snapshots.set(False)    	
+    	Context.println("on update event");
+        this.setTimeOffset();
+        this.enableSnapshots.set(false);
     }
 
 	@Override
@@ -154,8 +129,6 @@ public class BalancedToken extends IRC2 {
         this.bnusdScore.set(_address);
     }
 
-    //TODO: py version is returning a dict , verify if this dict is a json (seems like it is)
-    //if it is, then it is ok to return Address, it will be returned as json object
     @External(readonly=true)
     public Address getbnUSD() { 
         return this.bnusdScore.get();
@@ -167,8 +140,6 @@ public class BalancedToken extends IRC2 {
         this.oracle.set(_address);
     }
 
-    //TODO: py version is returning a dict , verify if this dict is a json (seems like it is)
-    //if it is, then it is ok to return Address, it will be returned as json object
     @External(readonly=true)
     public Address getOracle() {
         return this.oracle.get();
@@ -180,8 +151,6 @@ public class BalancedToken extends IRC2 {
         this.dexScore.set(_address);
     }
 
-    //TODO: py version is returning a dict , verify if this dict is a json (seems like it is)
-    //if it is, then it is ok to return Address, it will be returned as json object
     @External(readonly=true)
     public Address getDex() {
         return this.dexScore.get();
@@ -193,10 +162,8 @@ public class BalancedToken extends IRC2 {
         this.oracleName.set(_name);
     }
 
-    //TODO: py version is returning a dict , verify if this dict is a json (seems like it is)
-    //but what will be the result of string to map?
     @External(readonly=true)
-    public String getOracleName() {//-> dict:
+    public String getOracleName() {
         return this.oracleName.get();
     }
 
@@ -252,7 +219,8 @@ public class BalancedToken extends IRC2 {
     /**
     Returns the latest price of the asset in loop.
     **/
-    @External(readonly=true)
+    @SuppressWarnings("unchecked")
+	@External(readonly=true)
     public BigInteger lastPriceInLoop() {
         Address dexScore = this.dexScore.get();
         Address oracleAddress = this.oracle.get();
@@ -267,15 +235,14 @@ public class BalancedToken extends IRC2 {
     Calls the oracle method for the asset and updates the asset
     value in loop.
     **/
-    public void updateAssetValue() {
+    @SuppressWarnings("unchecked")
+	public void updateAssetValue() {
         String base = "BALN";
         String quote = "bnUSD";
         Address dexScore = this.dexScore.get();
         Address oracleAddress = this.oracle.get();
 
         try {
-            //dex = self.create_interface_score(dex_score, DexInterface)
-            //oracle = self.create_interface_score(oracle_address, OracleInterface)
             BigInteger price = Context.call(BigInteger.class, dexScore, "getBalnPrice");
             Map<String, BigInteger> priceData = Context.call(Map.class, oracleAddress,"get_reference_data","USD", "ICX");
             this.lastPrice.set(priceData.getOrDefault("rate", ZERO).multiply(price).divide(EXA));
@@ -494,66 +461,6 @@ public class BalancedToken extends IRC2 {
         if ( dividensScore == null || !sender.equals(dividensScore)) {
             Context.revert(TAG +": This method can only be called by the dividends distribution contract.");
         }
-    }
-
-    @External
-    public Map<Address, BigInteger> getStakeUpdates(){
-        this.dividendsOnly();
-        this.stakingEnabledOnly();
-
-        ArrayDB<Address> stakeChanges = this.stakeChanges.get(this.stakeUpdateDb.getOrDefault(ZERO).intValue() );
-        int lengthList = stakeChanges.size();
-
-        int start = this.indexUpdateStake.get().intValue();
-        if (start == lengthList ){
-            if (! this.stakeUpdateDb.getOrDefault(ZERO).equals( this.stakeAddressUpdateDb.getOrDefault(ZERO)) ) {
-                this.stakeUpdateDb.set(this.stakeAddressUpdateDb.getOrDefault(ZERO) );
-                this.indexUpdateStake.set(this.indexStakeAddressChanges.getOrDefault(ZERO));
-            }
-            return Map.of();
-        }
-
-        int end = Math.min(start + MAX_LOOP.intValue(), lengthList);
-
-        HashMap<Address, BigInteger> detailedStakeBalances = new HashMap<>();
-        for(int i = start; i< end; i++) {
-        	detailedStakeBalances.put(stakeChanges.get(i) , this.stakedBalanceOf(stakeChanges.get(i)) );
-        }
-
-        this.indexUpdateStake.set(BigInteger.valueOf(end));
-        return detailedStakeBalances;
-    }
-
-    @External
-    public Boolean clearYesterdaysStakeChanges() {
-        this.dividendsOnly();
-        this.stakingEnabledOnly();
-
-        int yesterday = (this.stakeAddressUpdateDb.getOrDefault(ZERO).add(ONE)).mod(TWO).intValue();
-        ArrayDB<Address> yesterdaysChanges = this.stakeChanges.get(yesterday);
-        int lengthList = yesterdaysChanges.size();
-
-        if (lengthList == 0) {
-            return true;
-        }
-
-        int loopCount = Math.min(lengthList, MAX_LOOP.intValue());
-        for (int i = 0; i< loopCount; i++) {
-            yesterdaysChanges.pop();
-        }
-
-        return !(yesterdaysChanges.size() > 0);
-    }
-
-    @External
-    public void switchStakeUpdateDB() {
-        this.dividendsOnly();
-        this.stakingEnabledOnly();
-
-        BigInteger newDay = this.stakeAddressUpdateDb.getOrDefault(ZERO).add(ONE).mod(TWO);
-        this.stakeAddressUpdateDb.set(newDay);
-        ArrayDB<Address> stakeChanges = this.stakeChanges.get(newDay.intValue());
-        this.indexStakeAddressChanges.set( BigInteger.valueOf((long) stakeChanges.size()));
     }
 
     @External
@@ -781,44 +688,6 @@ public class BalancedToken extends IRC2 {
         }
 
         return this.stakeSnapshots.at(_account).at(low).getOrDefault(AMOUNT, ZERO);
-    }
-
-    @External
-    public void loadBalnStakeSnapshot(StakedBalnTokenSnapshots[] _data) {
-    	onlyOwner();
-        if ( this.timeOffset.getOrDefault(ZERO).equals(ZERO) ){
-            this.setTimeOffset();
-        }
-        for (int i = 0; i< _data.length; i++) { 
-            BigInteger currentId =  _data[i].getDay();
-            //TODO: verify if gochain allows arrays with objects as null
-            if (currentId != null && currentId.compareTo(this.getDay())  <= 0) {
-                Address  account =  _data[i].getAddress();
-                BigInteger length = this.totalSnapshots.getOrDefault(account, ZERO);
-                this.stakeSnapshots.at(account).at(length).set(IDS , currentId);
-                this.stakeSnapshots.at(account).at(length).set(AMOUNT, _data[i].getAmount());
-                this.totalSnapshots.set(account, this.totalSnapshots.getOrDefault(account, ZERO).add(ONE) );
-            }
-        }
-    }
- 
-    @External
-    public void loadTotalStakeSnapshot(TotalStakedBalnTokenSnapshots[]  _data) {
-    	onlyOwner();
-        if (this.timeOffset.getOrDefault(ZERO).equals(ZERO) ) {
-            this.setTimeOffset();
-        }
-        for (int i = 0; i< _data.length; i++) {
-            BigInteger currentId = _data[i].getDay();
-            //TODO: verify if gochain allows arrays with objects as null
-            if (currentId != null && currentId.compareTo(this.getDay()) <= 0 ) {
-                BigInteger amount = _data[i].getAmount();
-                BigInteger length = this.totalStakedSnapshotCount.getOrDefault(ZERO);
-                this.totalStakedSnapshot.at(length).set(IDS, currentId);
-                this.totalStakedSnapshot.at(length).set(AMOUNT, amount);
-                this.totalStakedSnapshotCount.set(this.totalStakedSnapshotCount.getOrDefault(ZERO).add(ONE));
-            }
-        }
     }
 
 	@Override
