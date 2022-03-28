@@ -35,12 +35,16 @@ public class Liquidity {
     public final VarDB<Address> dexAddress = Context.newVarDB("dexAddress", Address.class);
     public final VarDB<Address> daofundAddress = Context.newVarDB("daofundAddress", Address.class);
     public final VarDB<Address> governanceAddress = Context.newVarDB("governanceAddress", Address.class);
+    public final VarDB<Address> stakedLPAddress = Context.newVarDB("stakedLPAddress", Address.class);
 
     private final EnumerableSet<Address> balanceAddresses = new EnumerableSet<>("balanceAddresses", Address.class);
     private final VarDB<Boolean> withdrawingLiquidity = Context.newVarDB("withdrawingLiquidity", Boolean.class);
 
     public Liquidity() {
         // this.dexAddress.set(Address.fromString("cx648a6d9c5f231f6b86c0caa9cc9eff8bd6040999"));
+        // this.daofundAddress.set(Address.fromString("cx648a6d9c5f231f6b86c0caa9cc9eff8bd6040999"));
+        // this.governanaceAddress.set(Address.fromString("cx648a6d9c5f231f6b86c0caa9cc9eff8bd6040999"));
+        // this.stakedLPAddress.set(Address.fromString("cx648a6d9c5f231f6b86c0caa9cc9eff8bd6040999"));
     }
 
     private void onlyOwner() {
@@ -78,6 +82,18 @@ public class Liquidity {
         this.dexAddress.set(daofund);
     }
 
+    @External(readonly = true)
+    public Address getStakedLP() {
+        return stakedLPAddress.get();
+    }
+
+    @External
+    public void setStakedLP(Address stakedLP) {
+        onlyOwner();
+        Context.require(stakedLP.isContract(), this.name() + ": Daofund parameter is not contract address");
+        this.stakedLPAddress.set(stakedLP);
+    }
+
     @External
     public void supplyLiquidity(Address baseToken, Address quoteToken, BigInteger baseValue, BigInteger quoteValue) {
         this.depositToken(baseToken, baseValue);
@@ -96,8 +112,19 @@ public class Liquidity {
         this.withdrawingLiquidity.set(false);
     }
 
+    @External
+    public void stakeLPTokens(BigInteger id, BigInteger amount) {
+        Context.call(this.dexAddress.get(), "transfer", this.stakedLPAddress.get(), amount, id, this.createLPStakingData());
+    }
+
+    @External
+    public void unstakeLPTokens(BigInteger id, BigInteger amount) {
+        Context.require(Context.getCaller() == this.governanceAddress.get());
+        Context.call(this.stakedLPAddress.get(), "unstake", id, amount);
+    }
+
     private void depositToken(Address token, BigInteger amount) {
-        this.transferToken(token, this.dexAddress.get(), amount, this.createDepositData());
+        this.transferToken(token, this.dexAddress.get(), amount, this.createLiquidityDepositData());
     }
     
     // Add optional parameter to identify tokens with symbol? --> Call to symbol method as well.
@@ -147,6 +174,10 @@ public class Liquidity {
         }
     }
 
+    @External
+    public void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data) {
+    }
+
     @External(readonly = true)
     public BigInteger getTokenBalance(Address token) {
         return (BigInteger) Context.call(token, "balanceOf", Context.getAddress());
@@ -156,9 +187,15 @@ public class Liquidity {
         Context.call(token, "transfer", to, amount, data);
     }
 
-    private byte[] createDepositData() {
+    private byte[] createLiquidityDepositData() {
         JsonObject data = Json.object();
         data.add("method", "_deposit");
+        return data.toString().getBytes();
+    }
+
+    private byte[] createLPStakingData() {
+        JsonObject data = Json.object();
+        data.add("method", "stake");
         return data.toString().getBytes();
     }
 }
