@@ -20,23 +20,27 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
-import network.balanced.score.core.rebalancing.mocks.DexMock;
-import network.balanced.score.core.rebalancing.mocks.LoansMock;
-import network.balanced.score.core.rebalancing.mocks.bnUSD;
-import network.balanced.score.core.rebalancing.mocks.sICX;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.function.Executable;
-import score.Address;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import score.Context;
 
 import java.math.BigInteger;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
-import static network.balanced.score.core.rebalancing.Checks.defaultAddress;
 import static network.balanced.score.core.rebalancing.Constants.EXA;
+import static network.balanced.score.core.rebalancing.Constants.SICX_BNUSD_POOL_ID;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.MockedStatic.Verification;
+import static org.mockito.Mockito.never;
 
 
 public class RebalancingTest extends TestBase {
@@ -44,15 +48,19 @@ public class RebalancingTest extends TestBase {
     private static final ServiceManager sm = getServiceManager();
     private static final Account owner = sm.createAccount();
     private static final Account adminAccount = sm.createAccount();
-    private static final Account governanceScore = Account.newScoreAccount(0);
+
+    int scoreCount = 0;
+    private final Account governanceScore = Account.newScoreAccount(scoreCount++);
+    private final Account dexScore = Account.newScoreAccount(scoreCount++);
+    private final Account loansScore = Account.newScoreAccount(scoreCount++);
+    private final Account bnUSDScore = Account.newScoreAccount(scoreCount++);
+    private final Account sicxScore = Account.newScoreAccount(scoreCount++);
 
     private Score rebalancingScore;
-    private Score dexMock;
-    private Score loansMock;
-    private Score bnUSDScore;
-    private Score sICXScore;
+    private static final BigInteger FEE = BigInteger.valueOf(997);
+    private static final BigInteger THOUSAND = BigInteger.valueOf(1000);
 
-    private LoansMock loansSpy;
+    private final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
 
     private void expectErrorMessage(Executable _contractCall, String _expectedErrorMessage) {
         AssertionError e = Assertions.assertThrows(AssertionError.class, _contractCall);
@@ -62,395 +70,243 @@ public class RebalancingTest extends TestBase {
     @BeforeEach
     public void setup() throws Exception {
         rebalancingScore = sm.deploy(owner, Rebalancing.class, governanceScore.getAddress());
-        dexMock = sm.deploy(owner, DexMock.class);
-        loansMock = sm.deploy(owner, LoansMock.class);
+        contextMock.when(() -> Context.call(eq(loansScore.getAddress()), eq("raisePrice"), any(BigInteger.class))).thenReturn(null);
+        contextMock.when(() -> Context.call(eq(loansScore.getAddress()), eq("lowerPrice"), any(BigInteger.class))).thenReturn(null);
+    }
 
-        loansSpy = (LoansMock) spy(loansMock.getInstance());
-        loansMock.setInstance(loansSpy);
-
-        sICXScore = sm.deploy(owner, sICX.class, "Staked ICX", "sICX", 18, BigInteger.valueOf(1000000000).pow(18));
-        bnUSDScore = sm.deploy(owner, bnUSD.class, "Balanced USD", "bnUSD", 18, BigInteger.valueOf(1000000000).pow(18));
+    @Test
+    void setAndGetAdmin() {
+        String expectedErrorMessage = "Rebalancing: Sender not governance contract";
+        Executable setAdminNotFromGovernance = () -> rebalancingScore.invoke(sm.createAccount(), "setAdmin",
+                adminAccount.getAddress());
+        expectErrorMessage(setAdminNotFromGovernance, expectedErrorMessage);
 
         rebalancingScore.invoke(governanceScore, "setAdmin", adminAccount.getAddress());
-        rebalancingScore.invoke(adminAccount, "setSicx", sICXScore.getAddress());
-        rebalancingScore.invoke(adminAccount, "setBnusd", bnUSDScore.getAddress());
-        rebalancingScore.invoke(adminAccount, "setLoans", loansMock.getAddress());
-        rebalancingScore.invoke(adminAccount, "setDex", dexMock.getAddress());
+        assertEquals(adminAccount.getAddress(), rebalancingScore.call("getAdmin"));
     }
 
     @Test
-    void setDex() {
+    void setAndGetGovernance() {
+        assertEquals(governanceScore.getAddress(), rebalancingScore.call("getGovernance"));
+
+        Account newGovernance = Account.newScoreAccount(scoreCount++);
+        rebalancingScore.invoke(owner, "setGovernance", newGovernance.getAddress());
+        assertEquals(newGovernance.getAddress(), rebalancingScore.call("getGovernance"));
+
         // Arrange
         Account sender = sm.createAccount();
-
-        // Act & Assert 
-        rebalancingScore.invoke(adminAccount, "setDex", dexMock.getAddress());
-    }
-
-    @Test
-    void setDex_AdminNotSet() {
-        // Arrange
-        Account sender = sm.createAccount();
-        rebalancingScore.invoke(governanceScore, "setAdmin", defaultAddress);
-        String expectedErrorMessage = "Rebalancing: Admin address not set";
-
-        // Act & Assert
-        Executable setDexWithoutAdmin = () -> rebalancingScore.invoke(adminAccount, "setDex", dexMock.getAddress());
-        expectErrorMessage(setDexWithoutAdmin, expectedErrorMessage);
-    }
-
-    @Test
-    void setDex_NotFromAdmin() {
-        // Arrange
-        Account sender = sm.createAccount();
-        String expectedErrorMessage = "Rebalancing: Sender not admin";
-
-        // Act & Assert
-        Executable setDexNotFromAdmin = () -> rebalancingScore.invoke(sender, "setDex", dexMock.getAddress());
-        expectErrorMessage(setDexNotFromAdmin, expectedErrorMessage);
-    }
-
-    @Test
-    void setDex_NonContractAddress() {
-        // Arrange
-        Account sender = sm.createAccount();
-        String expectedErrorMessage = "Rebalancing: Address provided is an EOA address. A contract address is required.";
-
-        // Act & Assert
-        Executable setDexToInvalidAddress = () -> rebalancingScore.invoke(adminAccount, "setDex", sender.getAddress());
-        expectErrorMessage(setDexToInvalidAddress, expectedErrorMessage);
-    }
-
-    @Test
-    void setGovernance() {
-        // Arrange
-        Account sender = sm.createAccount();
-
-        // Act
-        rebalancingScore.invoke(owner, "setGovernance", governanceScore.getAddress());
-
-        // Assert
-        Address governanceAddress = (Address) rebalancingScore.call("getGovernance");
-        assertEquals(governanceScore.getAddress(), governanceAddress);
-    }
-
-    @Test
-    void setGovernance_notOwner() {
-        // Arrange
-        Account sender = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + sender.getAddress() + "Owner=" + owner.getAddress();
-        
-         // Act & Assert
-        Executable setGovernanceNotFromOwner = () -> rebalancingScore.invoke(sender, "setGovernance", governanceScore.getAddress());
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + sender.getAddress() + "Owner=" + owner.getAddress();
+        Executable setGovernanceNotFromOwner = () -> rebalancingScore.invoke(sender, "setGovernance",
+                governanceScore.getAddress());
         expectErrorMessage(setGovernanceNotFromOwner, expectedErrorMessage);
     }
 
     @Test
-    void setAdmin() {
-        // Arrange
-        Account account = adminAccount;
-
-        // Act 
-        rebalancingScore.invoke(governanceScore, "setAdmin", account.getAddress());
-        
-        //Assert
-        Address adminAddress = (Address) rebalancingScore.call("getAdmin");
-        assertEquals(account.getAddress(), adminAddress);
+    void setAndGetDex() {
+        testContractSettersAndGetters("setDex", dexScore, "getDex");
     }
 
     @Test
-    void setAdmin_notGovernance() {
-        // Arrange
-        String expectedErrorMessage = "Rebalancing: Sender not governance contract";
-
-        // Act & Assert
-        Executable setAdminNotFromGovernance = () -> rebalancingScore.invoke(sm.createAccount(), "setAdmin", adminAccount.getAddress());
-        expectErrorMessage(setAdminNotFromGovernance, expectedErrorMessage);
+    void setAndGetSICX() {
+        testContractSettersAndGetters("setSicx", sicxScore, "getSicx");
     }
 
     @Test
-    void getSICX() {
-        // Arrange
-        Account sender = sm.createAccount();
-
-        // Act
-        rebalancingScore.invoke(adminAccount, "setSicx", sICXScore.getAddress());
-
-        // Assert
-        Address sICXAddress = (Address) rebalancingScore.call("getSicx");
-        assertEquals(sICXScore.getAddress(), sICXAddress);
+    void setAndGetBnusd() {
+        testContractSettersAndGetters("setBnusd", bnUSDScore, "getBnusd");
     }
 
     @Test
-    void setSICX_AdminNotSet() {
-        // Arrange
-        Account sender = sm.createAccount();
-        rebalancingScore.invoke(governanceScore, "setAdmin", defaultAddress);
+    void setAndGetLoans() {
+        testContractSettersAndGetters("setLoans", loansScore, "getLoans");
+    }
+
+    private void testContractSettersAndGetters(String setterMethod, Account scoreAddress, String getterMethod) {
         String expectedErrorMessage = "Rebalancing: Admin address not set";
+        Executable setScoreWithoutAdmin = () -> rebalancingScore.invoke(adminAccount, setterMethod,
+                scoreAddress.getAddress());
+        expectErrorMessage(setScoreWithoutAdmin, expectedErrorMessage);
 
-        // Act & Assert
-        Executable setSICXWithoutAdmin = () -> rebalancingScore.invoke(adminAccount, "setSicx", sICXScore.getAddress());
-        expectErrorMessage(setSICXWithoutAdmin, expectedErrorMessage);
+        setAndGetAdmin();
+
+        expectedErrorMessage = "Rebalancing: Sender not admin";
+        Executable setScoreNotFromAdmin = () -> rebalancingScore.invoke(sm.createAccount(), setterMethod,
+                scoreAddress.getAddress());
+        expectErrorMessage(setScoreNotFromAdmin, expectedErrorMessage);
+
+        expectedErrorMessage = "Rebalancing: Address provided is an EOA address. A contract address is required.";
+        Executable setScoreToInvalidAddress = () -> rebalancingScore.invoke(adminAccount, setterMethod,
+                sm.createAccount().getAddress());
+        expectErrorMessage(setScoreToInvalidAddress, expectedErrorMessage);
+
+        rebalancingScore.invoke(adminAccount, setterMethod, scoreAddress.getAddress());
+        assertEquals(scoreAddress.getAddress(), rebalancingScore.call(getterMethod));
     }
 
     @Test
-    void setSICX_NotFromAdmin() {
-        // Arrange
-        Account sender = sm.createAccount();
-        String expectedErrorMessage = "Rebalancing: Sender not admin";
+    void setAndGetPriceDiffThreshold() {
+        BigInteger threshold = BigInteger.TEN;
 
-        // Act & Assert
-        Executable setSICXNotFromAdmin = () -> rebalancingScore.invoke(sender, "setSicx", sICXScore.getAddress());
-        expectErrorMessage(setSICXNotFromAdmin, expectedErrorMessage);
-    }
-
-    @Test
-    void setSICX_NonContractsAddress() {
-        // Arrange
-        Account sender = sm.createAccount();
-        String expectedErrorMessage = "Rebalancing: Address provided is an EOA address. A contract address is required.";
-
-        // Act & Assert
-        Executable setSICXToInvalidAddress = () -> rebalancingScore.invoke(adminAccount, "setSicx", sender.getAddress());
-        expectErrorMessage(setSICXToInvalidAddress, expectedErrorMessage);
-    }
-    
-    @Test
-    void getBnusd() {
-        // Arrange
-        Account sender = sm.createAccount();
-
-        // Act
-        rebalancingScore.invoke(adminAccount, "setBnusd", bnUSDScore.getAddress());
-
-        // Assert
-        Address bnUSDAddress = (Address) rebalancingScore.call("getBnusd");
-        assertEquals(bnUSDScore.getAddress(), bnUSDAddress);
-    }
-
-    @Test
-    void setBnusd_notAdmin() {
-        //Arrange
-        Account sender = sm.createAccount();
-        String expectedErrorMessage = "Rebalancing: Sender not admin";
-
-        // Act & Assert
-        Executable setBnUSDNotFromAdmin = () -> rebalancingScore.invoke(sender, "setBnusd", bnUSDScore.getAddress());
-        expectErrorMessage(setBnUSDNotFromAdmin, expectedErrorMessage);
-    }
-
-    @Test
-    void setBnusd_notContract() {
-        //Arrange
-        Account sender = sm.createAccount();
-        String expectedErrorMessage = "Rebalancing: Address provided is an EOA address. A contract address is required.";
-
-        // Act & Assert
-        Executable setBnUSDToInvalidAddress = () -> rebalancingScore.invoke(adminAccount, "setBnusd", sender.getAddress());
-        expectErrorMessage(setBnUSDToInvalidAddress, expectedErrorMessage);
-    }
-
-    @Test
-    void getLoans() {
-        // Arrange
-        Account sender = sm.createAccount();
-
-        // Act
-        rebalancingScore.invoke(adminAccount, "setLoans", loansMock.getAddress());
-       
-        // Assert
-        Address loansAddress = (Address) rebalancingScore.call("getLoans");
-        assertEquals(loansMock.getAddress(), loansAddress);
-    }
-
-    @Test
-    void setLoans_notAdmin() {
-        //Arrange
-        Account sender = sm.createAccount();
-        String expectedErrorMessage = "Rebalancing: Sender not admin";
-
-        // Act & Assert
-        Executable setLoansNotFromAdmin = () -> rebalancingScore.invoke(sender, "setLoans", loansMock.getAddress());
-        expectErrorMessage(setLoansNotFromAdmin, expectedErrorMessage);
-    }
-
-    @Test
-    void setLoans_notContract() {
-        //Arrange
-        Account sender = sm.createAccount();
-        String expectedErrorMessage = "Rebalancing: Address provided is an EOA address. A contract address is required.";
-
-        // Act & Assert
-        Executable setLoansToInvalidAddress = () -> rebalancingScore.invoke(adminAccount, "setLoans", sender.getAddress());
-        expectErrorMessage(setLoansToInvalidAddress, expectedErrorMessage);
-    }
-
-    @Test
-    void GetPriceDiffThreshold() {
-        Account sender = sm.createAccount();
-        BigInteger expectedThreshold = BigInteger.ONE;
-  
-        rebalancingScore.invoke(governanceScore, "setPriceDiffThreshold", expectedThreshold);
-        BigInteger threshold = (BigInteger) rebalancingScore.call("getPriceChangeThreshold");
-        assertEquals(expectedThreshold, threshold);
-    }
-
-    @Test
-    void setPriceDiffThreshold_notGovernance() {
-        //Arrange
-        Account sender = sm.createAccount();
-        BigInteger threshold = BigInteger.ONE;
+        // Sender not governance
         String expectedErrorMessage = "Rebalancing: Sender not governance contract";
-
-        // Act & Assert
-        Executable setThresholdNotFromGovernance = () -> rebalancingScore.invoke(sm.createAccount(), "setPriceDiffThreshold",threshold);
+        Executable setThresholdNotFromGovernance = () -> rebalancingScore.invoke(sm.createAccount(),
+                "setPriceDiffThreshold", threshold);
         expectErrorMessage(setThresholdNotFromGovernance, expectedErrorMessage);
+
+        rebalancingScore.invoke(governanceScore, "setPriceDiffThreshold", threshold);
+        assertEquals(threshold, rebalancingScore.call("getPriceChangeThreshold"));
     }
 
-    @Test
-    void checkRebalancingStatus_raisePrice() {
-        //Arrange
-        BigInteger bnUSDPrice = BigInteger.TEN.pow(12);
-        BigInteger sICXPrice = BigInteger.TEN.pow(12);
-        BigInteger priceDifferenceThreshold = BigInteger.valueOf(8).pow(18);
-        BigInteger poolBase = BigInteger.TEN.pow(11);
-        BigInteger poolQuote = BigInteger.TEN.pow(13);
-        BigInteger price = bnUSDPrice.multiply(EXA).divide(sICXPrice);
-    
-        BigInteger expectedTokensToSell = price.multiply(poolBase).multiply(poolQuote).divide(EXA).sqrt().subtract(poolBase);
-
-        sICXScore.invoke(adminAccount, "setLastPriceInLoop", bnUSDPrice);
-        bnUSDScore.invoke(adminAccount, "setLastPriceInLoop", sICXPrice);
-        rebalancingScore.invoke(governanceScore, "setPriceDiffThreshold", priceDifferenceThreshold);
-        dexMock.invoke(adminAccount, "setPoolStatsBase", poolBase);
-        dexMock.invoke(adminAccount, "setPoolStatsQuote", poolQuote);
-
-        //Act
-        @SuppressWarnings("unchecked")
-        List<Object> results = (List<Object>) rebalancingScore.call("getRebalancingStatus");
-        
-        //Assert
-        assertTrue((boolean) results.get(0));
-        assertEquals(expectedTokensToSell, results.get(1));
-        assertFalse((boolean) results.get(2));
+    public static Stream<BigInteger> provideDifferentThresholds() {
+        return Stream.of(BigInteger.TEN.pow(17), BigInteger.TEN.pow(16));
     }
 
-    @Test
-    void rebalance_raisePrice() {
-        //Arrange
-        BigInteger bnUSDPrice = EXA;
-        BigInteger sICXPrice = EXA;
-        //10%
-        BigInteger priceDifferenceThreshold = BigInteger.valueOf(1).multiply(BigInteger.TEN.pow(17));
-        BigInteger poolBase = BigInteger.valueOf(9).multiply(EXA);
-        BigInteger poolQuote = BigInteger.valueOf(10).multiply(EXA).add(BigInteger.TEN);
-        BigInteger price = bnUSDPrice.multiply(EXA).divide(sICXPrice);
+    @Nested
+    @DisplayName("Test Rebalancing in different condition with threshold")
+    class TestRebalancingStatus {
 
-        BigInteger expectedTokensToSell = price.multiply(poolBase).multiply(poolQuote).divide(EXA).sqrt().subtract(poolBase);
+        private final BigInteger sicxLiquidity = BigInteger.valueOf(300_000).multiply(EXA);
+        private final BigInteger bnusdLiquidity = BigInteger.valueOf(150_000).multiply(EXA);
+        private final BigInteger dexPriceOfBnusdInSicx = sicxLiquidity.multiply(EXA).divide(bnusdLiquidity);
+        private final BigInteger sicxPriceInIcx = EXA;
 
-        sICXScore.invoke(adminAccount, "setLastPriceInLoop", bnUSDPrice);
-        bnUSDScore.invoke(adminAccount, "setLastPriceInLoop", sICXPrice);
-        rebalancingScore.invoke(governanceScore, "setPriceDiffThreshold", priceDifferenceThreshold);
-        dexMock.invoke(adminAccount, "setPoolStatsBase", poolBase);
-        dexMock.invoke(adminAccount, "setPoolStatsQuote", poolQuote);
+        Verification getBnusdPrice = () -> Context.call(bnUSDScore.getAddress(), "lastPriceInLoop");
 
-        // Act
-        rebalancingScore.invoke(sm.createAccount(), "rebalance");
-        
-        //Assert
-        verify(loansSpy).raisePrice(expectedTokensToSell);
+        @BeforeEach
+        void configureRebalancing() {
+            setAndGetAdmin();
+            rebalancingScore.invoke(adminAccount, "setBnusd", bnUSDScore.getAddress());
+            rebalancingScore.invoke(adminAccount, "setDex", dexScore.getAddress());
+            rebalancingScore.invoke(adminAccount, "setSicx", sicxScore.getAddress());
+            rebalancingScore.invoke(adminAccount, "setLoans", loansScore.getAddress());
+
+            Map<String, Object> poolStats = new HashMap<>();
+            poolStats.put("base", sicxLiquidity);
+            poolStats.put("quote", bnusdLiquidity);
+            contextMock.when(() -> Context.call(dexScore.getAddress(), "getPoolStats", SICX_BNUSD_POOL_ID)).thenReturn(poolStats);
+
+            contextMock.when(() -> Context.call(sicxScore.getAddress(), "lastPriceInLoop")).thenReturn(sicxPriceInIcx);
+        }
+
+        @ParameterizedTest
+        @MethodSource("network.balanced.score.core.rebalancing.RebalancingTest#provideDifferentThresholds")
+        void priceWithinThreshold(BigInteger threshold) {
+            //Case 1: Dex price equal to actual price (within threshold limit)
+            // Manipulating actual price with bnusd/sicx price as icx/sicx price is 1:1
+            // Increase price within threshold range
+            rebalancingScore.invoke(governanceScore, "setPriceDiffThreshold", threshold);
+            BigInteger additionalPrice = threshold.multiply(dexPriceOfBnusdInSicx).divide(EXA).divide(BigInteger.TEN);
+            BigInteger bnUSDPriceInIcx = dexPriceOfBnusdInSicx.add(additionalPrice);
+            contextMock.when(getBnusdPrice).thenReturn(bnUSDPriceInIcx);
+            BigInteger expectedBnusdPriceInSicx = bnUSDPriceInIcx.multiply(EXA).divide(sicxPriceInIcx);
+            assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
+
+            rebalancingScore.invoke(sm.createAccount(), "rebalance");
+            contextMock.verify(() -> Context.call(eq(loansScore.getAddress()), any(String.class),
+                    any(BigInteger.class)), never());
+
+            // Decrease price within threshold range
+            bnUSDPriceInIcx = dexPriceOfBnusdInSicx.subtract(additionalPrice);
+            contextMock.when(getBnusdPrice).thenReturn(bnUSDPriceInIcx);
+            expectedBnusdPriceInSicx = bnUSDPriceInIcx.multiply(EXA).divide(sicxPriceInIcx);
+            assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
+
+            rebalancingScore.invoke(sm.createAccount(), "rebalance");
+            contextMock.verify(() -> Context.call(eq(loansScore.getAddress()), any(String.class),
+                    any(BigInteger.class)), never());
+
+            // Exactly equal price
+            bnUSDPriceInIcx = dexPriceOfBnusdInSicx;
+            contextMock.when(getBnusdPrice).thenReturn(bnUSDPriceInIcx);
+            expectedBnusdPriceInSicx = bnUSDPriceInIcx.multiply(EXA).divide(sicxPriceInIcx);
+            assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
+
+            rebalancingScore.invoke(sm.createAccount(), "rebalance");
+            contextMock.verify(() -> Context.call(eq(loansScore.getAddress()), any(String.class),
+                    any(BigInteger.class)), never());
+        }
+
+        @ParameterizedTest
+        @MethodSource("network.balanced.score.core.rebalancing.RebalancingTest#provideDifferentThresholds")
+        void priceGreaterThanThreshold(BigInteger threshold) {
+            // Case 2: Dex price more than actual price.
+            rebalancingScore.invoke(governanceScore, "setPriceDiffThreshold", threshold);
+            BigInteger additionalPrice = threshold.multiply(BigInteger.TWO).multiply(dexPriceOfBnusdInSicx).divide(EXA);
+            BigInteger bnUSDPriceInIcx = dexPriceOfBnusdInSicx.add(additionalPrice);
+            contextMock.when(getBnusdPrice).thenReturn(bnUSDPriceInIcx);
+            BigInteger expectedBnusdPriceInSicx = bnUSDPriceInIcx.multiply(EXA).divide(sicxPriceInIcx);
+            assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
+
+            rebalancingScore.invoke(sm.createAccount(), "rebalance");
+            contextMock.verify(() -> Context.call(eq(loansScore.getAddress()), eq("raisePrice"),
+                    any(BigInteger.class)));
+            contextMock.verify(() -> Context.call(eq(loansScore.getAddress()), eq("lowerPrice"),
+                    any(BigInteger.class)), never());
+        }
+
+        @ParameterizedTest
+        @MethodSource("network.balanced.score.core.rebalancing.RebalancingTest#provideDifferentThresholds")
+        void priceLessThanThreshold(BigInteger threshold) {
+            // Case 3: Dex price less than actual price.
+            rebalancingScore.invoke(governanceScore, "setPriceDiffThreshold", threshold);
+            BigInteger additionalPrice = threshold.multiply(BigInteger.TWO).multiply(dexPriceOfBnusdInSicx).divide(EXA);
+            BigInteger bnUSDPriceInIcx = dexPriceOfBnusdInSicx.subtract(additionalPrice);
+            contextMock.when(getBnusdPrice).thenReturn(bnUSDPriceInIcx);
+            BigInteger expectedBnusdPriceInSicx = bnUSDPriceInIcx.multiply(EXA).divide(sicxPriceInIcx);
+            assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
+
+            rebalancingScore.invoke(sm.createAccount(), "rebalance");
+            contextMock.verify(() -> Context.call(eq(loansScore.getAddress()), eq("raisePrice"),
+                    any(BigInteger.class)), never());
+            contextMock.verify(() -> Context.call(eq(loansScore.getAddress()), eq("lowerPrice"),
+                    any(BigInteger.class)));
+        }
+
+        private BigInteger calculateOutputAmount(BigInteger fromTokenLiquidity, BigInteger toTokenLiquidity,
+                                                 BigInteger tokensToSell) {
+            return FEE.multiply(toTokenLiquidity).multiply(tokensToSell).divide(THOUSAND).divide(fromTokenLiquidity.add(FEE.multiply(tokensToSell).divide(THOUSAND)));
+        }
+
+        private void assertRebalancingStatus(BigInteger expectedBnusdPriceInSicx, BigInteger sicxLiquidity,
+                                             BigInteger bnusdLiquidity, BigInteger threshold) {
+            @SuppressWarnings("unchecked")
+            List<Object> results = (List<Object>) rebalancingScore.call("getRebalancingStatus");
+
+            boolean forward = (boolean) results.get(0);
+            boolean reverse = (boolean) results.get(2);
+            BigInteger tokenAmount = (BigInteger) results.get(1);
+
+            BigInteger newSicxLiquidity;
+            BigInteger newBnusdLiquidity;
+
+            assertFalse(forward && reverse);
+
+            if (forward) {
+                assertTrue(tokenAmount.compareTo(BigInteger.ZERO) > 0);
+                newSicxLiquidity = sicxLiquidity.add(tokenAmount);
+                BigInteger bnUsdReceivedAfterTrade = calculateOutputAmount(sicxLiquidity, bnusdLiquidity, tokenAmount);
+                newBnusdLiquidity = bnusdLiquidity.subtract(bnUsdReceivedAfterTrade);
+            } else if (reverse) {
+                assertTrue(tokenAmount.compareTo(BigInteger.ZERO) > 0);
+                newBnusdLiquidity = bnusdLiquidity.add(tokenAmount);
+                BigInteger sicxReceivedAfterTrade = calculateOutputAmount(bnusdLiquidity, sicxLiquidity, tokenAmount);
+                newSicxLiquidity = sicxLiquidity.subtract(sicxReceivedAfterTrade);
+            } else {
+                newSicxLiquidity = sicxLiquidity;
+                newBnusdLiquidity = bnusdLiquidity;
+                assertEquals(BigInteger.ZERO, tokenAmount);
+            }
+            BigInteger newBnusdPriceInSicx = newSicxLiquidity.multiply(EXA).divide(newBnusdLiquidity);
+            BigInteger priceDifferencePercentage =
+                    expectedBnusdPriceInSicx.subtract(newBnusdPriceInSicx).multiply(EXA).divide(expectedBnusdPriceInSicx);
+
+            assertTrue(priceDifferencePercentage.abs().compareTo(threshold) <= 0);
+        }
     }
 
-    @Test
-    void rebalance_raisePrice_lowerThanThreshold() {
-        //Arrange
-        BigInteger bnUSDPrice = EXA;
-        BigInteger sICXPrice = EXA;
-        // 10%
-        BigInteger priceDifferenceThreshold = BigInteger.valueOf(1).multiply(BigInteger.TEN.pow(17));
-        BigInteger poolBase = BigInteger.valueOf(9).multiply(EXA);
-        BigInteger poolQuote = BigInteger.valueOf(10).multiply(EXA).subtract(BigInteger.TEN);
-        BigInteger price = bnUSDPrice.multiply(EXA).divide(sICXPrice);
-
-        BigInteger expectedTokensToSell = price.multiply(poolBase).multiply(poolQuote).divide(EXA).sqrt().subtract(poolBase);
-
-        sICXScore.invoke(adminAccount, "setLastPriceInLoop", bnUSDPrice);
-        bnUSDScore.invoke(adminAccount, "setLastPriceInLoop", sICXPrice);
-        rebalancingScore.invoke(governanceScore, "setPriceDiffThreshold", priceDifferenceThreshold);
-        dexMock.invoke(adminAccount, "setPoolStatsBase", poolBase);
-        dexMock.invoke(adminAccount, "setPoolStatsQuote", poolQuote);
-
-        // Act
-        rebalancingScore.invoke(sm.createAccount(), "rebalance");
-        
-        //Assert
-        verify(loansSpy, never()).raisePrice(any());
-        verify(loansSpy, never()).lowerPrice(any());
-    }
-
-    @Test
-    void rebalance_lowerPrice() {
-        //Arrange
-        BigInteger bnUSDPrice = EXA;
-        BigInteger sICXPrice = EXA;
-        // 10%
-        BigInteger priceDifferenceThreshold = BigInteger.valueOf(1).multiply(BigInteger.TEN.pow(17));
-        BigInteger poolBase = BigInteger.valueOf(11).multiply(EXA);
-        BigInteger poolQuote = BigInteger.valueOf(10).multiply(EXA).subtract(BigInteger.TEN);
-        BigInteger price = bnUSDPrice.multiply(EXA).divide(sICXPrice);
-
-        BigInteger expectedTokensToSell = price.multiply(poolBase).multiply(poolQuote).divide(EXA).sqrt().subtract(poolBase);
-
-        sICXScore.invoke(adminAccount, "setLastPriceInLoop", bnUSDPrice);
-        bnUSDScore.invoke(adminAccount, "setLastPriceInLoop", sICXPrice);
-        rebalancingScore.invoke(governanceScore, "setPriceDiffThreshold", priceDifferenceThreshold);
-        dexMock.invoke(adminAccount, "setPoolStatsBase", poolBase);
-        dexMock.invoke(adminAccount, "setPoolStatsQuote", poolQuote);
-
-        // Act
-        rebalancingScore.invoke(sm.createAccount(), "rebalance");
-        
-        //Assert
-        verify(loansSpy).lowerPrice(expectedTokensToSell.abs());
-    }
-
-    @Test
-    void rebalance_lowerPrice_lowerThanThreshold() {
-        //Arrange
-        BigInteger bnUSDPrice = EXA;
-        BigInteger sICXPrice = EXA;
-        // 10%
-        BigInteger priceDifferenceThreshold = BigInteger.valueOf(1).multiply(BigInteger.TEN.pow(17));
-        BigInteger poolBase = BigInteger.valueOf(11).multiply(EXA);
-        BigInteger poolQuote = BigInteger.valueOf(10).multiply(EXA).add(BigInteger.TEN);
-        BigInteger price = bnUSDPrice.multiply(EXA).divide(sICXPrice);
-
-        BigInteger expectedTokensToSell = price.multiply(poolBase).multiply(poolQuote).divide(EXA).sqrt().subtract(poolBase);
-
-        sICXScore.invoke(adminAccount, "setLastPriceInLoop", bnUSDPrice);
-        bnUSDScore.invoke(adminAccount, "setLastPriceInLoop", sICXPrice);
-        rebalancingScore.invoke(governanceScore, "setPriceDiffThreshold", priceDifferenceThreshold);
-        dexMock.invoke(adminAccount, "setPoolStatsBase", poolBase);
-        dexMock.invoke(adminAccount, "setPoolStatsQuote", poolQuote);
-
-        // Act
-        rebalancingScore.invoke(sm.createAccount(), "rebalance");
-        
-        //Assert
-        verify(loansSpy, never()).lowerPrice(any());
-        verify(loansSpy, never()).raisePrice(any());
-    }
-
-    @Test
-    void tokenFallback() {
-        // Arrange 
-        BigInteger expectedTokenAmount = BigInteger.TEN.pow(18);
-
-        // Act
-        sICXScore.invoke(owner, "transfer", rebalancingScore.getAddress(), expectedTokenAmount, new byte[0]);
-
-        // Assert
-        BigInteger balance = (BigInteger) sICXScore.call("balanceOf", rebalancingScore.getAddress());
-        assertEquals(expectedTokenAmount, balance);
+    @AfterEach
+    void closeMock() {
+        contextMock.close();
     }
 }

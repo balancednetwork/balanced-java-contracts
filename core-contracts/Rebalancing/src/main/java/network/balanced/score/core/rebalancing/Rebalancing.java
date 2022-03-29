@@ -117,12 +117,9 @@ public class Rebalancing {
         return dex.get();
     }
 
-    private BigInteger calculateTokensToSell(BigInteger price, BigInteger baseSupply, BigInteger quoteSupply) {
-        BigInteger absolutePrice = price.abs();
-        BigInteger tokensToSell =
-                absolutePrice.multiply(baseSupply).multiply(quoteSupply).divide(EXA).sqrt().subtract(baseSupply);
-        tokensToSell = price.signum() < 0 ? tokensToSell.negate() : tokensToSell;
-        return tokensToSell;
+    private BigInteger calculateTokensToSell(BigInteger price, BigInteger fromTokenLiquidity,
+                                             BigInteger toTokenLiquidity) {
+        return price.multiply(fromTokenLiquidity).multiply(toTokenLiquidity).divide(EXA).sqrt().subtract(fromTokenLiquidity);
     }
 
     @External
@@ -158,22 +155,47 @@ public class Rebalancing {
 
         Context.require(bnusdScore != null && dexScore != null && sicxScore != null && threshold != null);
 
-        BigInteger bnusdLastPrice = (BigInteger) Context.call(bnusdScore, "lastPriceInLoop");
-        Map<String, Object> poolStats =  (Map<String, Object>) Context.call(dexScore, "getPoolStats", SICX_BNUSD_POOL_ID);
-        BigInteger sicxLastPrice = (BigInteger) Context.call(sicxScore, "lastPriceInLoop");
-        
-        BigInteger price = bnusdLastPrice.multiply(EXA).divide(sicxLastPrice);
-        BigInteger poolBase = (BigInteger) poolStats.get("base");
-        BigInteger poolQuote = (BigInteger) poolStats.get("quote");
-        BigInteger dexPrice = poolBase.multiply(EXA).divide(poolQuote);
-        
-        BigInteger diff = price.subtract(dexPrice).multiply(EXA).divide(price);
-        BigInteger tokensToSell = calculateTokensToSell(price, poolBase, poolQuote);
-        
-        results.add(diff.compareTo(threshold) > 0);
-        results.add(tokensToSell);
-        results.add(diff.compareTo(threshold.negate()) < 0);
+        BigInteger bnusdPriceInIcx = (BigInteger) Context.call(bnusdScore, "lastPriceInLoop");
+        Map<String, Object> poolStats = (Map<String, Object>) Context.call(dexScore, "getPoolStats",
+                SICX_BNUSD_POOL_ID);
+        BigInteger sicxPriceInIcx = (BigInteger) Context.call(sicxScore, "lastPriceInLoop");
+        BigInteger sicxLiquidity = (BigInteger) poolStats.get("base");
+        BigInteger bnusdLiquidity = (BigInteger) poolStats.get("quote");
 
+        BigInteger actualBnusdPriceInSicx = bnusdPriceInIcx.multiply(EXA).divide(sicxPriceInIcx);
+        BigInteger bnusdPriceInSicx = sicxLiquidity.multiply(EXA).divide(bnusdLiquidity);
+
+        BigInteger priceDifferencePercentage =
+                actualBnusdPriceInSicx.subtract(bnusdPriceInSicx).multiply(EXA).divide(actualBnusdPriceInSicx);
+
+        // We can get three conditions with price difference.
+        // a. priceDifference > threshold (dex price of bnusd is low),
+        // b. priceDifference < -threshold, (dex price of bnusd is high)
+        // c. priceDifference within [-threshold, threshold] (dex price is within range)
+
+        // If bnUSD price is less in dex, to increase we would need to add sicx in the pool and get back bnUSD
+        // Buy bnUSD from the pool --> Sell sicx.
+
+        // If bnUSD price is more in dex, to reduce we would need to add bnusd in the pool, and get back sicx
+        // Sell bnUSD to the pool --> buy sicx.
+        BigInteger tokensToSell;
+        boolean forward = priceDifferencePercentage.compareTo(threshold) > 0;
+        assert threshold != null;
+        boolean reverse = priceDifferencePercentage.compareTo(threshold.negate()) < 0;
+        if (forward) {
+            //Add sicx in the pool i.e. buy bnusd from the pool and sell icx. pair: sicx/bnusd
+            tokensToSell = calculateTokensToSell(actualBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity);
+        } else if (reverse) {
+            // Add bnusd in the pool i.e. buy sicx from the pool and sell bnusd. pair bnusd/sicx
+            BigInteger actualSicxPriceInBnusd = sicxPriceInIcx.multiply(EXA).divide(bnusdPriceInIcx);
+            tokensToSell = calculateTokensToSell(actualSicxPriceInBnusd, bnusdLiquidity, sicxLiquidity);
+        } else {
+            tokensToSell = BigInteger.ZERO;
+        }
+
+        results.add(forward);
+        results.add(tokensToSell);
+        results.add(reverse);
         return results;
     }
 
@@ -182,12 +204,12 @@ public class Rebalancing {
         Address loansScore = loans.get();
         Context.require(loansScore != null);
         List<Object> status = getRebalancingStatus();
-        boolean higher = (boolean) status.get(0);
+        boolean forward = (boolean) status.get(0);
         BigInteger tokenAmount = (BigInteger) status.get(1);
-        boolean lower = (boolean) status.get(2);
-        if (higher && tokenAmount.signum() > 0) {
+        boolean reverse = (boolean) status.get(2);
+        if (forward && tokenAmount.signum() > 0) {
             Context.call(loansScore, "raisePrice", tokenAmount);
-        } else if (lower && tokenAmount.signum() < 0) {
+        } else if (reverse && tokenAmount.signum() > 0) {
             Context.call(loansScore, "lowerPrice", tokenAmount.abs());
         }
     }

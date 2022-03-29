@@ -32,6 +32,7 @@ dependencies {
     testImplementation Dependencies.junitJupiter
     testRuntimeOnly Dependencies.junitJupiterEngine
     testImplementation Dependencies.mockitoCore
+    testImplementation Dependencies.mockitoInline
 }
 
 optimizedJar {
@@ -77,6 +78,3 @@ jacocoTestReport {
         html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
     }
 }
-
-
-// ./goloop rpc sendtx deploy /home/andell/ICON/Balanced/balanced-java-contracts/core-contracts/Rebalancing/build/libs/Rebalancing-0.1.0-optimized.jar    --uri http://localhost:9082/api/v3     --key_store godWallet.json --key_password gochain --nid 3 --step_limit=100000000     --content_type application/java   --estimate  --param _governance="cx66d4d90f5f113eba575bf793570135f9b10cece1"
