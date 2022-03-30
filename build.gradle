@@ -14,12 +14,16 @@
  * limitations under the License.
  */
 
+import network.balanced.score.dependencies.Dependencies
+
+
+
 buildscript {
     repositories {
         mavenCentral()
     }
     dependencies {
-        classpath 'foundation.icon:gradle-javaee-plugin:0.8.0'
+        classpath Dependencies.javaeePlugin
     }
 }
 
@@ -30,10 +34,6 @@ subprojects {
 
     apply plugin: 'java'
     apply plugin: 'foundation.icon.javaee'
-
-    dependencies {
-        testImplementation group: 'org.json', name: 'json', version: '20211205'
-    }
 
     java {
         sourceCompatibility = JavaVersion.VERSION_11

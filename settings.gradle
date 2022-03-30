@@ -24,10 +24,15 @@
  * This project uses @Incubating APIs which are subject to change.
  */
 
-include(':core-contracts:Multicall',
-        ':token-contracts',
-        'token-contracts:bwt',
-        ':core-contracts:BatchDisbursement',
-        ':core-contracts:Reserve',
-        ':token-contracts')
+rootProject.name = 'balanced-java-contracts'
+include(':Multicall')
+project(':Multicall').projectDir = file("core-contracts/Multicall")
 
+include(':BatchDisbursement')
+project(':BatchDisbursement').projectDir = file("core-contracts/BatchDisbursement")
+
+include(':Reserve')
+project(':Reserve').projectDir = file("core-contracts/Reserve")
+
+include(':BalancedWorkerToken')
+project(':BalancedWorkerToken').projectDir = file("token-contracts/bwt")
