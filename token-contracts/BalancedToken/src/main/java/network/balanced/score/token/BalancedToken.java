@@ -5,7 +5,7 @@ import static java.math.BigInteger.TWO;
 import static java.math.BigInteger.TEN;
 import static java.math.BigInteger.ZERO;
 import static network.balanced.score.token.util.Mathematics.*;
-
+import static network.balanced.score.token.util.Collections.getEntryOrDefault;
 import java.math.BigInteger;
 import java.util.Map;
 
@@ -228,7 +228,7 @@ public class BalancedToken extends IRC2 {
         BigInteger price = Context.call(BigInteger.class, dexScore, "getBalnPrice");
         Map<String, BigInteger> priceData = Context.call(Map.class, oracleAddress, "get_reference_data", "USD", "ICX");
 
-        return priceData.getOrDefault("rate", ZERO).multiply(price).divide(EXA);
+        return getEntryOrDefault("rate", ZERO, priceData).multiply(price).divide(EXA);
     }
 
     /**
@@ -245,7 +245,9 @@ public class BalancedToken extends IRC2 {
         try {
             BigInteger price = Context.call(BigInteger.class, dexScore, "getBalnPrice");
             Map<String, BigInteger> priceData = Context.call(Map.class, oracleAddress,"get_reference_data","USD", "ICX");
-            this.lastPrice.set(priceData.getOrDefault("rate", ZERO).multiply(price).divide(EXA));
+            BigInteger rate =  getEntryOrDefault("rate", ZERO, priceData);
+
+            this.lastPrice.set(rate.multiply(price).divide(EXA));
             this.priceUpdateTime.set(BigInteger.valueOf(Context.getBlockTimestamp()));
             this.OraclePrice(base + quote, this.oracleName.get(), dexScore, price);
         }catch(Exception e) {
@@ -317,7 +319,7 @@ public class BalancedToken extends IRC2 {
     }
 
     @External(readonly=true)
-    public Boolean getStakingEnabled() {
+    public boolean getStakingEnabled() {
         return this.stakingEnabled.getOrDefault(false);
     }
 
@@ -358,7 +360,7 @@ public class BalancedToken extends IRC2 {
     }
 
     @External(readonly=true)
-    public Boolean getSnapshotEnabled() {
+    public boolean getSnapshotEnabled() {
         return this.enableSnapshots.getOrDefault(false);
     }
 
@@ -689,11 +691,6 @@ public class BalancedToken extends IRC2 {
 
         return this.stakeSnapshots.at(_account).at(low).getOrDefault(AMOUNT, ZERO);
     }
-
-	@Override
-	public Address getAdmin() {
-		return this.admin.getOrDefault(null);
-	}
 
     // --------------------------------------------------------------------------
     // EVENTS
