@@ -29,8 +29,7 @@ public abstract class IRC2 implements TokenStandard {
     // public because need to use this in onlyAdmin check
     public static VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
 
-    static String zero = "0";
-    final protected static Address EOA_ZERO = Address.fromString("hx" + zero.repeat(40));
+    final protected static Address EOA_ZERO = Address.fromString("hx0000000000000000000000000000000000000000");
 
     public static BigInteger pow(BigInteger base, int exponent) {
         BigInteger res = BigInteger.ONE;
