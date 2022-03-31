@@ -32,10 +32,10 @@ public class WorkerTokenTest extends TestBase {
     private static final ServiceManager sm = getServiceManager();
     private static final Account owner = sm.createAccount();
     private static final Account admin = sm.createAccount();
-    private static Address governance = owner.getAddress();
+    private static final Address governance = owner.getAddress();
     private static Score tokenScore;
-    private static Account governanceScore = Account.newScoreAccount(1);
-    private static Account balnScoreAccount = Account.newScoreAccount(9);
+    private static final Account governanceScore = Account.newScoreAccount(1);
+    private static final Account balnScoreAccount = Account.newScoreAccount(9);
 
 
     @BeforeAll
@@ -60,7 +60,7 @@ public class WorkerTokenTest extends TestBase {
                 );
         assertEquals(
                 tokenScore.call("balanceOf", governanceScore.getAddress()),
-                (BigInteger) governanceScore.getBalance("BALW")
+                governanceScore.getBalance("BALW")
         );
     }
 
@@ -117,7 +117,7 @@ public class WorkerTokenTest extends TestBase {
 
         BigInteger baln_token_balance = (BigInteger) tokenScore.call(
                 "balanceOf",
-                (Address ) tokenScore.call("getBaln")
+                tokenScore.call("getBaln")
                 );
 
         ownerBalance = (BigInteger) tokenScore.call("balanceOf", owner.getAddress());

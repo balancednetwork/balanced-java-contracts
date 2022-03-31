@@ -30,23 +30,24 @@ import static network.balanced.score.tokens.workertoken.utils.Checks.onlyAdmin;
 import static network.balanced.score.tokens.workertoken.utils.Checks.onlyGovernance;
 
 public class WorkerToken extends IRC2 {
-    private static String TOKEN_NAME = "Balanced Worker Token";
-    private static String SYMBOL_NAME = "BALW";
-    private static BigInteger INITIAL_SUPPLY = BigInteger.valueOf(100);
-    private static BigInteger DECIMALS = BigInteger.valueOf(6);
     public static String TAG = "BALW";
-    private static String ACCOUNTS = "accounts";
-    private static String GOVERNANCE = "governance";
-    private static String BALN_TOKEN = "baln_token";
-    private static String BALN = "baln";
-    
-    public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
-    private VarDB<Address> balnToken = Context.newVarDB(BALN_TOKEN, Address.class);
-    private VarDB<BigInteger> baln = Context.newVarDB(BALN, BigInteger.class);
 
-    public WorkerToken(@Optional Address _governance){
+    private static final String TOKEN_NAME = "Balanced Worker Token";
+    private static final String SYMBOL_NAME = "BALW";
+    private static final BigInteger INITIAL_SUPPLY = BigInteger.valueOf(100);
+    private static final BigInteger DECIMALS = BigInteger.valueOf(6);
+    private static final String ACCOUNTS = "accounts";
+    private static final String GOVERNANCE = "governance";
+    private static final String BALN_TOKEN = "baln_token";
+    private static final String BALN = "baln";
+
+    public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
+    private final VarDB<Address> balnToken = Context.newVarDB(BALN_TOKEN, Address.class);
+    private final VarDB<BigInteger> baln = Context.newVarDB(BALN, BigInteger.class);
+
+    public WorkerToken(@Optional Address _governance) {
         super(TOKEN_NAME, SYMBOL_NAME, INITIAL_SUPPLY, DECIMALS);
-        if(governance != null){
+        if (governance != null) {
             WorkerToken.governance.set(_governance);
         }
     }
@@ -110,6 +111,7 @@ public class WorkerToken extends IRC2 {
 
         // dist = balance of worker token contract
         BigInteger dist = (BigInteger) Context.call(balnToken.get(), "balanceOf", Context.getAddress());
+        Address balnToken = this.balnToken.get();
         for(int i = 0; i < size; i++){
             Address address = addresses.get(i);
             BigInteger balance = balances.getOrDefault(address, BigInteger.ZERO);
@@ -118,8 +120,7 @@ public class WorkerToken extends IRC2 {
                 BigInteger amount = dist.multiply(balance).divide(totalTokens);
                 dist = dist.subtract(amount);
                 totalTokens = totalTokens.subtract(balance);
-                byte[] data = new byte[0];
-                Context.call(balnToken.get(), "transfer", address, amount, data);
+                Context.call(balnToken, "transfer", address, amount, new byte[0]);
             }
         }
     }

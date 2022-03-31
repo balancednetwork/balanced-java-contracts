@@ -62,7 +62,7 @@ public abstract class IRC2 implements TokenStandard {
      *
      * @param _tokenName: The name of the token.
      * @param _symbolName: The symbol of the token.
-     * @param _initialSupply :The total number of tokens to initialize with.
+     * @param _initialSupply: The total number of tokens to initialize with.
      * 					It is set to total supply in the beginning, 0 by default.
      * @param _decimals The number of decimals. Set to 18 by default.
      */

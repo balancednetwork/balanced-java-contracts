@@ -21,15 +21,15 @@ import score.Address;
 import java.math.BigInteger;
 
 public interface TokenStandard {
-    public String name();
+    String name();
 
-    public String symbol();
+    String symbol();
 
-    public BigInteger decimals();
+    BigInteger decimals();
 
-    public BigInteger totalSupply();
+    BigInteger totalSupply();
 
-    public BigInteger balanceOf(Address _owner);
+    BigInteger balanceOf(Address _owner);
 
-    public void transfer(Address _to, BigInteger _value, byte[] _data);
+    void transfer(Address _to, BigInteger _value, byte[] _data);
 }
