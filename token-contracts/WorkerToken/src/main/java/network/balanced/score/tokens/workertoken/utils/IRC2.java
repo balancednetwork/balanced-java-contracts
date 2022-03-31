@@ -23,28 +23,18 @@ import score.annotation.Optional;
 
 import java.math.BigInteger;
 
-public abstract class IRC2 implements TokenStandard {
+public class IRC2 implements TokenStandard {
     final private static String NAME = "name";
     final private static String SYMBOL = "symbol";
     final private static String DECIMALS = "decimals";
     final private static String TOTAL_SUPPLY = "total_supply";
     final private static String BALANCES = "balances";
-    final private static String ADMIN = "admin";
-    final private static String ACCOUNTS = "account";
-
 
     protected VarDB<String> name = Context.newVarDB(NAME, String.class);
     protected VarDB<String> symbol = Context.newVarDB(SYMBOL, String.class);
     protected VarDB<BigInteger> decimals = Context.newVarDB(DECIMALS, BigInteger.class);
     protected VarDB<BigInteger> totalSupply = Context.newVarDB(TOTAL_SUPPLY, BigInteger.class);
-
-    public ArrayDB<Address> addresses = Context.newArrayDB(ACCOUNTS, Address.class);
     protected DictDB<Address, BigInteger> balances = Context.newDictDB(BALANCES, BigInteger.class);
-    // public because need to use this in onlyAdmin check
-    public static VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
-
-    private final BigInteger MAX_HOLDER_COUNT = BigInteger.valueOf(400);
-
 
     public static BigInteger pow(BigInteger base, int exponent){
         BigInteger res = BigInteger.ONE;
@@ -56,54 +46,47 @@ public abstract class IRC2 implements TokenStandard {
         return res;
     }
 
-
-
     /**
-     *
-     * @param _tokenName: The name of the token.
-     * @param _symbolName: The symbol of the token.
-     * @param _initialSupply: The total number of tokens to initialize with.
-     * 					It is set to total supply in the beginning, 0 by default.
-     * @param _decimals The number of decimals. Set to 18 by default.
+     * @param _tokenName     The name of the token.
+     * @param _symbolName    The symbol of the token.
+     * @param _initialSupply The total number of tokens to initialize with. It is set to total supply in the
+     *                       beginning, 0 by default.
+     * @param _decimals      The number of decimals. Set to 18 by default.
      */
-    public IRC2(@Optional String _tokenName, @Optional String _symbolName, @Optional BigInteger _initialSupply, @Optional BigInteger _decimals){
-        BigInteger DEFAULT_INITIAL_SUPPLY = BigInteger.valueOf(0);
-        BigInteger DEFAULT_DECIMAL_VALUE = BigInteger.valueOf(18L);
+    public IRC2(String _tokenName, String _symbolName, @Optional BigInteger _initialSupply,
+                @Optional BigInteger _decimals) {
+        if (this.name.get() == null) {
+            BigInteger initialSupply = (_initialSupply == null) ? BigInteger.ZERO : _initialSupply;
+            BigInteger decimals = (_decimals == null) ? BigInteger.valueOf(18L) : _decimals;
 
-        if(_initialSupply == null){
-            _initialSupply = DEFAULT_INITIAL_SUPPLY;
-        }
-        if(_decimals == null){
-            _decimals = DEFAULT_DECIMAL_VALUE;
-        }
+            Context.require(decimals.compareTo(BigInteger.ZERO) >= 0, "Decimals cannot be less than zero");
+            Context.require(initialSupply.compareTo(BigInteger.ZERO) >= 0, "Decimals cannot be less than zero");
 
-        Context.require(_decimals.compareTo(BigInteger.valueOf(0)) >= 0, "Decimals cannot be less than zero");
-        Context.require(_initialSupply.compareTo(BigInteger.valueOf(0)) >= 0, "Decimals cannot be less than zero");
+            // set the total supply to the context variable
+            BigInteger totalSupply = initialSupply.multiply(pow(BigInteger.TEN, decimals.intValue()));
+            // set other values
+            final Address caller = Context.getCaller();
 
-        // set the total supply to the context variable
-        BigInteger supply = _initialSupply.multiply(pow(BigInteger.TEN, _decimals.intValue()));
-        totalSupply.set(supply);
-        this.decimals.set(_decimals);
+            this.name.set(ensureNotEmpty(_tokenName));
+            this.symbol.set(ensureNotEmpty(_symbolName));
+            this.decimals.set(decimals);
+            this.totalSupply.set(totalSupply);
+            balances.set(caller, totalSupply);
+        }
+    }
 
-        // set other values
-        final Address caller = Context.getCaller();
-        if(_tokenName != null){
-            name.set(_tokenName);
-        }
-        if(_symbolName != null){
-            this.symbol.set(_symbolName);
-        }
-        addresses.add(caller);
-        balances.set(caller, supply);
+    private String ensureNotEmpty(String str) {
+        Context.require(str != null && !str.trim().isEmpty(), "str is null or empty");
+        assert str != null;
+        return str.trim();
     }
 
     /**
-     *
      * @return Name of the token
      */
     @External(readonly = true)
     public String name() {
-        return name.getOrDefault("");
+        return name.get();
     }
 
     /**
@@ -115,7 +98,6 @@ public abstract class IRC2 implements TokenStandard {
     }
 
     /**
-     *
      * @return Number of decimals
      */
     @External(readonly = true)
@@ -124,119 +106,49 @@ public abstract class IRC2 implements TokenStandard {
     }
 
     /**
-     *
      * @return total number of tokens in existence.
      */
     @External(readonly = true)
     public BigInteger totalSupply() {
-        return totalSupply.get();
+        return totalSupply.getOrDefault(BigInteger.ZERO);
     }
 
     /**
-     *
      * @param _owner: The account whose balance is to be checked.
      * @return Amount of tokens owned by the `account` with the given address.
      */
     @External(readonly = true)
     public BigInteger balanceOf(Address _owner) {
-        return balances.getOrDefault(_owner, BigInteger.valueOf(0));
-    }
-
-    @External(readonly = true)
-    public Address getAdmin(){
-        return admin.get();
+        return balances.getOrDefault(_owner, BigInteger.ZERO);
     }
 
     @External
-    public void setAdmin(Address _admin){
-        Checks.onlyOwner();
-        IRC2.admin.set(_admin);
-    }
-
-
-    @External
-    public void transfer(Address _to, BigInteger _value, byte[] _data) {
-        if(_data == null){
-            _data = new byte[0];
-        }
+    public void transfer(Address _to, BigInteger _value, @Optional byte[] _data) {
         transfer(Context.getCaller(), _to, _value, _data);
     }
 
     /**
-     * Checks if the address is in the arraydb
-     * @param arrayDB: ArrayDB of address
-     * @param address: Address that we need to check
-     * @return: a boolean
-     */
-    public boolean arrayDbContains(ArrayDB<Address> arrayDB, Address address){
-        final int size =  arrayDB.size();
-        for (int i = 0; i < size; i++){
-            if (arrayDB.get(i).equals(address)){
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    protected static boolean remove_from_arraydb(Address _item, ArrayDB<Address> _array){
-        final int size = _array.size();
-        if(size < 1){
-            return false;
-        }
-        var top = _array.get(size - 1);
-        for(int i = 0; i < size; i++){
-            if(_array.get(i).equals(_item)){
-                _array.set(i, top);
-                _array.pop();
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
      *
-     * @param _to: The account to which the token is to be transferred
-     * @param _value: The no. of tokens to be transferred
-     * @param _data: Any information or message
+     * @param _to The account to which the token is to be transferred
+     * @param _value The no. of tokens to be transferred
+     * @param _data Any information or message
      */
     protected void transfer(Address _from, Address _to, BigInteger _value, byte[] _data) {
-        Context.require(_value.compareTo(BigInteger.valueOf(0)) > 0, ": Transfer value cannot be zero or less than zero");
-        Context.require(
-                balanceOf(_from).compareTo(_value) >= 0,
-                ": Source address must have token greater than transfer amount"
-        );
-
-        if(!arrayDbContains(addresses, _to)) {
-            addresses.add(_to);
-        }
+        Context.require(_value.compareTo(BigInteger.ZERO) >= 0, this.name.get() + ": _value needs to be positive");
+        Context.require(balanceOf(_from).compareTo(_value) >= 0, this.name.get() + ": Insufficient balance");
 
         this.balances.set(_from, balanceOf(_from).subtract(_value));
         this.balances.set(_to, balanceOf(_to).add(_value));
-        if (balances.getOrDefault(_from, BigInteger.ZERO).equals(BigInteger.ZERO)){
-            remove_from_arraydb(_from, addresses);
-        }
 
-        Transfer(_from, _to, _value, _data);
+        byte[] dataBytes = (_data == null) ? new byte[0] : _data;
+        Transfer(_from, _to, _value, dataBytes);
 
-        Context.require(
-                addresses.size() < MAX_HOLDER_COUNT.intValue(),
-                "The maximum holder count of {MAX_HOLDER_COUNT} has been reached." +
-                        "Only transfers of whole balances or moves between current" +
-                        "holders is allowed until the total holder count is reduced."
-        );
-
-        if(_to.isContract()) {
-            Context.call(_to, "tokenFallback", _from, _value, _data);
+        if (_to.isContract()) {
+            Context.call(_to, "tokenFallback", _from, _value, dataBytes);
         }
     }
 
-
-
     @EventLog(indexed = 3)
-    void Transfer(Address _from, Address _to, BigInteger _value, byte[] _data){
-
+    void Transfer(Address _from, Address _to, BigInteger _value, byte[] _data) {
     }
 }
