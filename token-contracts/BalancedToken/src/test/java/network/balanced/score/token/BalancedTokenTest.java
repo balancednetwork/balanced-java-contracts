@@ -1,9 +1,11 @@
 package network.balanced.score.token;
 
 import static java.math.BigInteger.TWO;
+import static java.math.BigInteger.ZERO;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import java.lang.reflect.Field;
 import java.math.BigInteger;
 import java.util.Map;
 
@@ -17,6 +19,7 @@ import org.mockito.Mockito;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
+import com.iconloop.score.test.ServiceManager.Block;
 import com.iconloop.score.test.TestBase;
 
 import network.balanced.score.token.util.Mathematics;
@@ -31,6 +34,7 @@ public class BalancedTokenTest extends TestBase {
 	private static BigInteger totalSupply = BigInteger.valueOf(50000000000L);
 
 	private Score balancedToken;
+	private Score mockDexScore;
 	private Account accountAddressProvider = sm.createAccount();
 	private Account accountGovernance = sm.createAccount();
 	private Account adminAccount = sm.createAccount();
@@ -46,6 +50,7 @@ public class BalancedTokenTest extends TestBase {
 	@BeforeEach
 	public void setup() throws Exception {
 		balancedToken = sm.deploy(owner, BalancedToken.class, accountGovernance.getAddress(), false);
+		mockDexScore = sm.deploy(owner, MockDexScore.class);
 	}
 
 	@Test
@@ -135,12 +140,27 @@ public class BalancedTokenTest extends TestBase {
 
 	@SuppressWarnings("unchecked")
 	@Test
-	void ShoultMint() {
+	void ShouldMint() {
 		balancedToken.invoke(accountGovernance, "setAdmin", adminAccount.getAddress());
 		BigInteger amount = BigInteger.valueOf(10000l);
 		balancedToken.invoke(adminAccount, "mint", amount, "init gold".getBytes());
 		Map<String, BigInteger>  balanceDetails = (Map<String, BigInteger>)balancedToken.call("detailsBalanceOf", adminAccount.getAddress());
 
+		assertNotNull(balanceDetails);
+		assertEquals(amount , balanceDetails.get("Total balance"));
+		assertEquals(amount , balanceDetails.get("Available balance"));
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	void ShouldMintToSomeone() {
+		Account accountToMint = sm.createAccount();
+		balancedToken.invoke(accountGovernance, "setAdmin", adminAccount.getAddress());
+
+		BigInteger amount = BigInteger.valueOf(10000l);
+		balancedToken.invoke(adminAccount, "mintTo", accountToMint.getAddress(), amount, "init gold".getBytes());
+
+		Map<String, BigInteger>  balanceDetails = (Map<String, BigInteger>)balancedToken.call("detailsBalanceOf", accountToMint.getAddress());
 		assertNotNull(balanceDetails);
 		assertEquals(amount , balanceDetails.get("Total balance"));
 		assertEquals(amount , balanceDetails.get("Available balance"));
@@ -172,7 +192,7 @@ public class BalancedTokenTest extends TestBase {
 
 	@SuppressWarnings("unchecked")
 	@Test
-	void testTransfer() {
+	void ShouldTransfer() {
 		//set admin
 		balancedToken.invoke(accountGovernance, "setAdmin", adminAccount.getAddress());
 
@@ -197,6 +217,101 @@ public class BalancedTokenTest extends TestBase {
 		assertEquals(amountToTransfer , balanceDetails.get("Total balance"));
 		assertEquals(amountToTransfer , balanceDetails.get("Available balance"));
 
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	void ShouldBurn() {
+		balancedToken.invoke(accountGovernance, "setAdmin", adminAccount.getAddress());
+		BigInteger amount = BigInteger.valueOf(10000l);
+		balancedToken.invoke(adminAccount, "mint", amount, "init gold".getBytes());
+		Map<String, BigInteger>  balanceDetails = (Map<String, BigInteger>)balancedToken.call("detailsBalanceOf", adminAccount.getAddress());
+
+		assertNotNull(balanceDetails);
+		assertEquals(amount , balanceDetails.get("Total balance"));
+		assertEquals(amount , balanceDetails.get("Available balance"));
+
+		BigInteger balanceToBurn = amount.divide(TWO);
+		balancedToken.invoke(adminAccount, "burn", balanceToBurn);
+
+		balanceDetails = (Map<String, BigInteger>)balancedToken.call("detailsBalanceOf", adminAccount.getAddress());
+
+		assertNotNull(balanceDetails);
+		assertEquals(balanceToBurn , balanceDetails.get("Total balance"));
+		assertEquals(balanceToBurn , balanceDetails.get("Available balance"));
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	void ShouldBurnFrom() {
+		Account accountToMint = sm.createAccount();
+		balancedToken.invoke(accountGovernance, "setAdmin", adminAccount.getAddress());
+		BigInteger amount = BigInteger.valueOf(10000l);
+		balancedToken.invoke(adminAccount, "mintTo", accountToMint.getAddress(), amount, "init gold".getBytes());
+		Map<String, BigInteger>  balanceDetails = (Map<String, BigInteger>)balancedToken.call("detailsBalanceOf", accountToMint.getAddress());
+
+		assertNotNull(balanceDetails);
+		assertEquals(amount , balanceDetails.get("Total balance"));
+		assertEquals(amount , balanceDetails.get("Available balance"));
+
+		BigInteger balanceToBurn = amount.divide(TWO);
+		balancedToken.invoke(adminAccount, "burnFrom", accountToMint.getAddress(), balanceToBurn);
+
+		balanceDetails = (Map<String, BigInteger>)balancedToken.call("detailsBalanceOf", accountToMint.getAddress());
+
+		assertNotNull(balanceDetails);
+		assertEquals(balanceToBurn , balanceDetails.get("Total balance"));
+		assertEquals(balanceToBurn , balanceDetails.get("Available balance"));
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	void ShouldGetStakedBalanceOfAt() {
+		boolean snapshotEnabled = (boolean)balancedToken.call("getSnapshotEnabled");
+		if(!snapshotEnabled) {
+			//enable snapshot of staked balances
+			balancedToken.invoke(owner, "toggleEnableSnapshot");
+		}
+
+		//set admin
+		balancedToken.invoke(accountGovernance, "setAdmin", adminAccount.getAddress());
+
+		//mint some tokens
+		BigInteger amountToMint =  BigInteger.valueOf(10000l).multiply(Mathematics.pow(BigInteger.TEN, 18));
+		balancedToken.invoke(adminAccount, "mintTo", owner.getAddress(), amountToMint, "init gold".getBytes());
+
+		//enable staking
+		balancedToken.invoke(accountGovernance, "toggleStakingEnabled");
+
+		balancedToken.invoke(accountGovernance, "setDex", mockDexScore.getAddress());
+		BigInteger stakedAmount = amountToMint.divide(TWO);
+
+		//stake
+		balancedToken.invoke(owner, "stake", stakedAmount);
+
+		balancedToken.invoke(owner, "setTimeOffset");
+
+		//move the day, so there are 2 snapshots
+		sm.getBlock().increase(100000000000l);
+
+		//stake twice
+		balancedToken.invoke(owner, "stake", stakedAmount.divide(TWO));
+
+		//improve this day calculation
+		BigInteger day = BigInteger.valueOf(Context.getBlockTimestamp()).subtract(BigInteger.valueOf(2000000214314191l)).divide(Constants.DAY_TO_MICROSECOND);
+		//ask for staked balance of snapshot 1
+		BigInteger stakedBalance = (BigInteger)balancedToken.call("stakedBalanceOfAt", owner.getAddress(), day);
+
+		assertNotNull(stakedBalance);
+		assertEquals(stakedAmount, stakedBalance);
+
+		Map<String, BigInteger> balanceDetails = (Map<String, BigInteger>)balancedToken.call("detailsBalanceOf", owner.getAddress());
+		assertNotNull(balanceDetails);
+
+		assertEquals(amountToMint , balanceDetails.get("Total balance"));
+		assertEquals(amountToMint.divide(TWO), balanceDetails.get("Available balance"));
+		assertEquals(stakedAmount.divide(TWO), balanceDetails.get("Staked balance"));
+		assertEquals(stakedAmount.divide(TWO), balanceDetails.get("Unstaking balance"));
 	}
 
 }

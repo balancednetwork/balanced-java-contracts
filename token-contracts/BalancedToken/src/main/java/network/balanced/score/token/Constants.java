@@ -8,7 +8,7 @@ public interface Constants {
 
 	final BigInteger DEFAULT_DECIMAL_VALUE = new BigInteger("18");
 	final BigInteger DEFAULT_INITIAL_SUPPLY = BigInteger.ZERO;
-	final BigInteger DAY_TO_MICROSECOND = Mathematics.pow(new BigInteger("86400").multiply(BigInteger.TEN), 6);
+	final BigInteger DAY_TO_MICROSECOND = new BigInteger("86400").multiply(Mathematics.pow(BigInteger.TEN, 6));
 	final BigInteger EXA = Mathematics.pow(BigInteger.TEN, 18);
 
 	final BigInteger MAX_LOOP = new BigInteger("100");

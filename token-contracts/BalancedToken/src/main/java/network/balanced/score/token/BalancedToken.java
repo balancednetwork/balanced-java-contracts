@@ -432,7 +432,7 @@ public class BalancedToken extends IRC2 {
             Context.revert(TAG + ": Amount cannot be less than zero.");
         }
 
-        BigInteger totalAmount = pow( _amount.multiply(TEN), this.decimals.getOrDefault(ZERO).intValue() );
+        BigInteger totalAmount = _amount.multiply(pow( TEN, this.decimals.getOrDefault(ZERO).intValue() ));
         this.minimumStake.set(totalAmount);
     }
 
@@ -607,7 +607,7 @@ public class BalancedToken extends IRC2 {
     // ----------------------------------------------------------
 
     protected void updateSnapshotForAddress(Address account, BigInteger amount) {
-        if (this.timeOffset.getOrDefault(ZERO).equals(ZERO)) {
+    	if (this.timeOffset.getOrDefault(ZERO).equals(ZERO)) {
             this.setTimeOffset();
         }
         BigInteger currentId = this.getDay();
@@ -689,7 +689,7 @@ public class BalancedToken extends IRC2 {
             }
         }
 
-        return this.stakeSnapshots.at(_account).at(low).getOrDefault(AMOUNT, ZERO);
+        return  this.stakeSnapshots.at(_account).at(low).getOrDefault(AMOUNT, ZERO);
     }
 
     // --------------------------------------------------------------------------
