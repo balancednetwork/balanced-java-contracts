@@ -26,8 +26,9 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-import static network.balanced.score.core.rebalancing.Checks.*;
+import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.core.rebalancing.Constants.*;
+import static network.balanced.score.lib.utils.Constants.EXA;
 
 public class Rebalancing {
 
@@ -48,21 +49,21 @@ public class Rebalancing {
 
     @External
     public void setBnusd(Address _address) {
-        onlyAdmin();
+        only(admin);
         isContract(_address);
         bnusd.set(_address);
     }
     
     @External
     public void setLoans(Address _address) {
-        onlyAdmin();
+        only(admin);
         isContract(_address);
         loans.set(_address);
     }
 
     @External
     public void setSicx(Address _address){
-        onlyAdmin();
+        only(admin);
         isContract(_address);
         sicx.set(_address);
     }
@@ -76,14 +77,14 @@ public class Rebalancing {
 
     @External
     public void setDex(Address _address) {
-        onlyAdmin();
+        only(admin);
         isContract(_address);
         dex.set(_address);
     }
 
     @External
     public void setAdmin(Address _address) {
-        onlyGovernance();
+        only(governance);
         admin.set(_address);
     }
 
@@ -124,7 +125,7 @@ public class Rebalancing {
 
     @External
     public void setPriceDiffThreshold(BigInteger _value) {
-        onlyGovernance();
+        only(governance);
         priceThreshold.set(_value);
     }
 

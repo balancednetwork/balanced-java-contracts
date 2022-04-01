@@ -25,6 +25,7 @@ repositories {
 dependencies {
     compileOnly Dependencies.javaeeApi
     implementation Dependencies.javaeeScorex
+    implementation project(':score-lib')
 
     testImplementation Dependencies.javaeeTokens
     testImplementation Dependencies.javaeeUnitTest

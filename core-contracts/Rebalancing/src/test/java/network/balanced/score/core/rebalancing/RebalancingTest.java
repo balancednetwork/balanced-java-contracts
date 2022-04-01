@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static network.balanced.score.core.rebalancing.Constants.EXA;
 import static network.balanced.score.core.rebalancing.Constants.SICX_BNUSD_POOL_ID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -76,8 +75,11 @@ public class RebalancingTest extends TestBase {
 
     @Test
     void setAndGetAdmin() {
-        String expectedErrorMessage = "Rebalancing: Sender not governance contract";
-        Executable setAdminNotFromGovernance = () -> rebalancingScore.invoke(sm.createAccount(), "setAdmin",
+        Account nonGovernance = sm.createAccount();
+        String expectedErrorMessage =
+                "Authorization Check: Authorization failed. Caller: " + nonGovernance.getAddress() +
+                        " Authorized Caller: " + governanceScore.getAddress();
+        Executable setAdminNotFromGovernance = () -> rebalancingScore.invoke(nonGovernance, "setAdmin",
                 adminAccount.getAddress());
         expectErrorMessage(setAdminNotFromGovernance, expectedErrorMessage);
 
@@ -123,19 +125,21 @@ public class RebalancingTest extends TestBase {
     }
 
     private void testContractSettersAndGetters(String setterMethod, Account scoreAddress, String getterMethod) {
-        String expectedErrorMessage = "Rebalancing: Admin address not set";
+        String expectedErrorMessage = "Authorization Check: Address not set";
         Executable setScoreWithoutAdmin = () -> rebalancingScore.invoke(adminAccount, setterMethod,
                 scoreAddress.getAddress());
         expectErrorMessage(setScoreWithoutAdmin, expectedErrorMessage);
 
         setAndGetAdmin();
 
-        expectedErrorMessage = "Rebalancing: Sender not admin";
-        Executable setScoreNotFromAdmin = () -> rebalancingScore.invoke(sm.createAccount(), setterMethod,
+        Account nonAdmin = sm.createAccount();
+        expectedErrorMessage = "Authorization Check: Authorization failed. Caller: " + nonAdmin.getAddress() +
+                " Authorized Caller: " + adminAccount.getAddress();
+        Executable setScoreNotFromAdmin = () -> rebalancingScore.invoke(nonAdmin, setterMethod,
                 scoreAddress.getAddress());
         expectErrorMessage(setScoreNotFromAdmin, expectedErrorMessage);
 
-        expectedErrorMessage = "Rebalancing: Address provided is an EOA address. A contract address is required.";
+        expectedErrorMessage = "Address Check: Address provided is an EOA address. A contract address is required.";
         Executable setScoreToInvalidAddress = () -> rebalancingScore.invoke(adminAccount, setterMethod,
                 sm.createAccount().getAddress());
         expectErrorMessage(setScoreToInvalidAddress, expectedErrorMessage);
@@ -149,8 +153,11 @@ public class RebalancingTest extends TestBase {
         BigInteger threshold = BigInteger.TEN;
 
         // Sender not governance
-        String expectedErrorMessage = "Rebalancing: Sender not governance contract";
-        Executable setThresholdNotFromGovernance = () -> rebalancingScore.invoke(sm.createAccount(),
+        Account nonGovernance = sm.createAccount();
+        String expectedErrorMessage =
+                "Authorization Check: Authorization failed. Caller: " + nonGovernance.getAddress() + " Authorized " +
+                        "Caller: " + governanceScore.getAddress();
+        Executable setThresholdNotFromGovernance = () -> rebalancingScore.invoke(nonGovernance,
                 "setPriceDiffThreshold", threshold);
         expectErrorMessage(setThresholdNotFromGovernance, expectedErrorMessage);
 
@@ -166,10 +173,10 @@ public class RebalancingTest extends TestBase {
     @DisplayName("Test Rebalancing in different condition with threshold")
     class TestRebalancingStatus {
 
-        private final BigInteger sicxLiquidity = BigInteger.valueOf(300_000).multiply(EXA);
-        private final BigInteger bnusdLiquidity = BigInteger.valueOf(150_000).multiply(EXA);
-        private final BigInteger dexPriceOfBnusdInSicx = sicxLiquidity.multiply(EXA).divide(bnusdLiquidity);
-        private final BigInteger sicxPriceInIcx = EXA;
+        private final BigInteger sicxLiquidity = BigInteger.valueOf(300_000).multiply(ICX);
+        private final BigInteger bnusdLiquidity = BigInteger.valueOf(150_000).multiply(ICX);
+        private final BigInteger dexPriceOfBnusdInSicx = sicxLiquidity.multiply(ICX).divide(bnusdLiquidity);
+        private final BigInteger sicxPriceInIcx = ICX;
 
         Verification getBnusdPrice = () -> Context.call(bnUSDScore.getAddress(), "lastPriceInLoop");
 
@@ -196,10 +203,10 @@ public class RebalancingTest extends TestBase {
             // Manipulating actual price with bnusd/sicx price as icx/sicx price is 1:1
             // Increase price within threshold range
             rebalancingScore.invoke(governanceScore, "setPriceDiffThreshold", threshold);
-            BigInteger additionalPrice = threshold.multiply(dexPriceOfBnusdInSicx).divide(EXA).divide(BigInteger.TEN);
+            BigInteger additionalPrice = threshold.multiply(dexPriceOfBnusdInSicx).divide(ICX).divide(BigInteger.TEN);
             BigInteger bnUSDPriceInIcx = dexPriceOfBnusdInSicx.add(additionalPrice);
             contextMock.when(getBnusdPrice).thenReturn(bnUSDPriceInIcx);
-            BigInteger expectedBnusdPriceInSicx = bnUSDPriceInIcx.multiply(EXA).divide(sicxPriceInIcx);
+            BigInteger expectedBnusdPriceInSicx = bnUSDPriceInIcx.multiply(ICX).divide(sicxPriceInIcx);
             assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
 
             rebalancingScore.invoke(sm.createAccount(), "rebalance");
@@ -209,7 +216,7 @@ public class RebalancingTest extends TestBase {
             // Decrease price within threshold range
             bnUSDPriceInIcx = dexPriceOfBnusdInSicx.subtract(additionalPrice);
             contextMock.when(getBnusdPrice).thenReturn(bnUSDPriceInIcx);
-            expectedBnusdPriceInSicx = bnUSDPriceInIcx.multiply(EXA).divide(sicxPriceInIcx);
+            expectedBnusdPriceInSicx = bnUSDPriceInIcx.multiply(ICX).divide(sicxPriceInIcx);
             assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
 
             rebalancingScore.invoke(sm.createAccount(), "rebalance");
@@ -219,7 +226,7 @@ public class RebalancingTest extends TestBase {
             // Exactly equal price
             bnUSDPriceInIcx = dexPriceOfBnusdInSicx;
             contextMock.when(getBnusdPrice).thenReturn(bnUSDPriceInIcx);
-            expectedBnusdPriceInSicx = bnUSDPriceInIcx.multiply(EXA).divide(sicxPriceInIcx);
+            expectedBnusdPriceInSicx = bnUSDPriceInIcx.multiply(ICX).divide(sicxPriceInIcx);
             assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
 
             rebalancingScore.invoke(sm.createAccount(), "rebalance");
@@ -232,10 +239,10 @@ public class RebalancingTest extends TestBase {
         void priceGreaterThanThreshold(BigInteger threshold) {
             // Case 2: Dex price more than actual price.
             rebalancingScore.invoke(governanceScore, "setPriceDiffThreshold", threshold);
-            BigInteger additionalPrice = threshold.multiply(BigInteger.TWO).multiply(dexPriceOfBnusdInSicx).divide(EXA);
+            BigInteger additionalPrice = threshold.multiply(BigInteger.TWO).multiply(dexPriceOfBnusdInSicx).divide(ICX);
             BigInteger bnUSDPriceInIcx = dexPriceOfBnusdInSicx.add(additionalPrice);
             contextMock.when(getBnusdPrice).thenReturn(bnUSDPriceInIcx);
-            BigInteger expectedBnusdPriceInSicx = bnUSDPriceInIcx.multiply(EXA).divide(sicxPriceInIcx);
+            BigInteger expectedBnusdPriceInSicx = bnUSDPriceInIcx.multiply(ICX).divide(sicxPriceInIcx);
             assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
 
             rebalancingScore.invoke(sm.createAccount(), "rebalance");
@@ -250,10 +257,10 @@ public class RebalancingTest extends TestBase {
         void priceLessThanThreshold(BigInteger threshold) {
             // Case 3: Dex price less than actual price.
             rebalancingScore.invoke(governanceScore, "setPriceDiffThreshold", threshold);
-            BigInteger additionalPrice = threshold.multiply(BigInteger.TWO).multiply(dexPriceOfBnusdInSicx).divide(EXA);
+            BigInteger additionalPrice = threshold.multiply(BigInteger.TWO).multiply(dexPriceOfBnusdInSicx).divide(ICX);
             BigInteger bnUSDPriceInIcx = dexPriceOfBnusdInSicx.subtract(additionalPrice);
             contextMock.when(getBnusdPrice).thenReturn(bnUSDPriceInIcx);
-            BigInteger expectedBnusdPriceInSicx = bnUSDPriceInIcx.multiply(EXA).divide(sicxPriceInIcx);
+            BigInteger expectedBnusdPriceInSicx = bnUSDPriceInIcx.multiply(ICX).divide(sicxPriceInIcx);
             assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
 
             rebalancingScore.invoke(sm.createAccount(), "rebalance");
@@ -297,9 +304,9 @@ public class RebalancingTest extends TestBase {
                 newBnusdLiquidity = bnusdLiquidity;
                 assertEquals(BigInteger.ZERO, tokenAmount);
             }
-            BigInteger newBnusdPriceInSicx = newSicxLiquidity.multiply(EXA).divide(newBnusdLiquidity);
+            BigInteger newBnusdPriceInSicx = newSicxLiquidity.multiply(ICX).divide(newBnusdLiquidity);
             BigInteger priceDifferencePercentage =
-                    expectedBnusdPriceInSicx.subtract(newBnusdPriceInSicx).multiply(EXA).divide(expectedBnusdPriceInSicx);
+                    expectedBnusdPriceInSicx.subtract(newBnusdPriceInSicx).multiply(ICX).divide(expectedBnusdPriceInSicx);
 
             assertTrue(priceDifferencePercentage.abs().compareTo(threshold) <= 0);
         }

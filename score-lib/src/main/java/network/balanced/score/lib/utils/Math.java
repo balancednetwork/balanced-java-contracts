@@ -14,20 +14,16 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.rebalancing;
+package network.balanced.score.lib.utils;
 
 import java.math.BigInteger;
 
-public class Constants {
-    public static final String TAG = "Rebalancing";
-
-    public static final String BNUSD_ADDRESS = "bnUSD_address";
-    public static final String SICX_ADDRESS = "sicx_address";
-    public static final String DEX_ADDRESS = "dex_address";
-    public static final String LOANS_ADDRESS = "loans_address";
-    public static final String GOVERNANCE_ADDRESS = "governance_address";
-    public static final String ADMIN = "admin";
-    public static final String PRICE_THRESHOLD = "_price_threshold";
-
-    public static final BigInteger SICX_BNUSD_POOL_ID = BigInteger.TWO;
+public class Math {
+    public static BigInteger pow(BigInteger base, int exponent) {
+        BigInteger res = BigInteger.ONE;
+        for (int i = 1; i <= exponent; i++) {
+            res = res.multiply(base);
+        }
+        return res;
+    }
 }
