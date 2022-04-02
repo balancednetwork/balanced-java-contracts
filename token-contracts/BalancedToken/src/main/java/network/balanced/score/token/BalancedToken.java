@@ -336,6 +336,9 @@ public class BalancedToken extends IRC2 {
     @External(readonly=true)
     public BigInteger getUnstakingPeriod() {
         BigInteger timeInMicroseconds = this.unstakingPeriod.getOrDefault(ZERO);
+        if( timeInMicroseconds.equals(ZERO)) {
+        	return ZERO;
+        }
         BigInteger timeInDays = timeInMicroseconds.divide(DAY_TO_MICROSECOND);
         return timeInDays;
     }
@@ -457,7 +460,7 @@ public class BalancedToken extends IRC2 {
         return this.dividendsScore.get();
     }
 
-    protected void dividendsOnly() {
+    public void dividendsOnly() {
     	Address dividensScore = this.dividendsScore.get();
     	Address sender = Context.getCaller();
         if ( dividensScore == null || !sender.equals(dividensScore)) {

@@ -1,11 +1,12 @@
 package network.balanced.score.token;
 
+import static java.math.BigInteger.ONE;
+import static java.math.BigInteger.TEN;
 import static java.math.BigInteger.TWO;
 import static java.math.BigInteger.ZERO;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import java.lang.reflect.Field;
 import java.math.BigInteger;
 import java.util.Map;
 
@@ -19,10 +20,10 @@ import org.mockito.Mockito;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
-import com.iconloop.score.test.ServiceManager.Block;
 import com.iconloop.score.test.TestBase;
 
 import network.balanced.score.token.util.Mathematics;
+import score.Address;
 import score.Context;
 
 public class BalancedTokenTest extends TestBase {
@@ -168,7 +169,7 @@ public class BalancedTokenTest extends TestBase {
 
 	@SuppressWarnings("unchecked")
 	@Test
-	void ShouldStake() {
+	void ShouldMintAndStake() {
 		//set admin
 		balancedToken.invoke(accountGovernance, "setAdmin", adminAccount.getAddress());
 
@@ -188,6 +189,38 @@ public class BalancedTokenTest extends TestBase {
 		assertEquals(amountToMint , balanceDetails.get("Total balance"));
 		assertEquals(amountToMint.divide(TWO) , balanceDetails.get("Available balance"));
 		assertEquals(amountToMint.divide(TWO) , balanceDetails.get("Staked balance"));
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	void ShouldGetATransferAndStake() {
+		//set admin
+		balancedToken.invoke(accountGovernance, "setAdmin", adminAccount.getAddress());
+
+		//mint some tokens
+		BigInteger amountToMint =  BigInteger.valueOf(10000l).multiply(Mathematics.pow(BigInteger.TEN, 18));
+		balancedToken.invoke(adminAccount, "mint", amountToMint, "init gold".getBytes());
+
+		//transfer
+		Account user = sm.createAccount();
+		BigInteger amountToTransfer = amountToMint.divide(TWO).divide(TWO);
+		balancedToken.invoke(adminAccount, "transfer", user.getAddress(), amountToTransfer, "quezadillas".getBytes());
+
+		//enable staking
+		balancedToken.invoke(accountGovernance, "toggleStakingEnabled");
+		BigInteger stakedAmount = amountToTransfer.divide(TWO);
+		//stake
+		balancedToken.invoke(user, "stake", stakedAmount);
+
+		Map<String, BigInteger>  balanceDetails = (Map<String, BigInteger>)balancedToken.call("detailsBalanceOf", user.getAddress());
+
+		assertNotNull(balanceDetails);
+		assertEquals(amountToTransfer , balanceDetails.get("Total balance"));
+
+		assertEquals(amountToTransfer.divide(TWO), balancedToken.call("availableBalanceOf", user.getAddress()));
+		assertEquals(amountToTransfer.divide(TWO), balancedToken.call("stakedBalanceOf", user.getAddress()));
+		assertEquals(ZERO, balancedToken.call("unstakedBalanceOf", user.getAddress()));
+
 	}
 
 	@SuppressWarnings("unchecked")
@@ -281,26 +314,49 @@ public class BalancedTokenTest extends TestBase {
 		balancedToken.invoke(adminAccount, "mintTo", owner.getAddress(), amountToMint, "init gold".getBytes());
 
 		//enable staking
-		balancedToken.invoke(accountGovernance, "toggleStakingEnabled");
+		if( !(boolean)balancedToken.call("getStakingEnabled")) {
+			balancedToken.invoke(accountGovernance, "toggleStakingEnabled");
+		}
 
 		balancedToken.invoke(accountGovernance, "setDex", mockDexScore.getAddress());
 		BigInteger stakedAmount = amountToMint.divide(TWO);
 
+		//staked balance when there is not stake for this address 
+		BigInteger day = BigInteger.valueOf(Context.getBlockTimestamp()).divide(Constants.DAY_TO_MICROSECOND);
+		BigInteger stakedBalance = (BigInteger)balancedToken.call("stakedBalanceOfAt", owner.getAddress(), day);
+
+		assertNotNull(stakedBalance);
+		assertEquals(ZERO, stakedBalance);
+
 		//stake
 		balancedToken.invoke(owner, "stake", stakedAmount);
+
+		day = BigInteger.valueOf(Context.getBlockTimestamp()).divide(Constants.DAY_TO_MICROSECOND);
+		stakedBalance = (BigInteger)balancedToken.call("stakedBalanceOfAt", owner.getAddress(), day);
+
+		assertNotNull(stakedBalance);
+		assertEquals(stakedAmount, stakedBalance);
 
 		balancedToken.invoke(owner, "setTimeOffset");
 
 		//move the day, so there are 2 snapshots
 		sm.getBlock().increase(100000000000l);
 
-		//stake twice
-		balancedToken.invoke(owner, "stake", stakedAmount.divide(TWO));
+		//stake at next day
+		BigInteger stakedAmountAtSecondDay = stakedAmount.divide(TWO);
+		balancedToken.invoke(owner, "stake", stakedAmountAtSecondDay);
 
-		//improve this day calculation
-		BigInteger day = BigInteger.valueOf(Context.getBlockTimestamp()).subtract(BigInteger.valueOf(2000000214314191l)).divide(Constants.DAY_TO_MICROSECOND);
+		day = BigInteger.valueOf(Context.getBlockTimestamp()).divide(Constants.DAY_TO_MICROSECOND);
 		//ask for staked balance of snapshot 1
-		BigInteger stakedBalance = (BigInteger)balancedToken.call("stakedBalanceOfAt", owner.getAddress(), day);
+		stakedBalance = (BigInteger)balancedToken.call("stakedBalanceOfAt", owner.getAddress(), day);
+
+		assertNotNull(stakedBalance);
+		assertEquals(stakedAmountAtSecondDay, stakedBalance);
+
+		//get stake amount of 1st snapshot at 2nd day
+		day = BigInteger.valueOf(Context.getBlockTimestamp()).subtract(Constants.DAY_TO_MICROSECOND).divide(Constants.DAY_TO_MICROSECOND);
+		//ask for staked balance of snapshot 1
+		stakedBalance = (BigInteger)balancedToken.call("stakedBalanceOfAt", owner.getAddress(), day);
 
 		assertNotNull(stakedBalance);
 		assertEquals(stakedAmount, stakedBalance);
@@ -309,9 +365,73 @@ public class BalancedTokenTest extends TestBase {
 		assertNotNull(balanceDetails);
 
 		assertEquals(amountToMint , balanceDetails.get("Total balance"));
-		assertEquals(amountToMint.divide(TWO), balanceDetails.get("Available balance"));
-		assertEquals(stakedAmount.divide(TWO), balanceDetails.get("Staked balance"));
-		assertEquals(stakedAmount.divide(TWO), balanceDetails.get("Unstaking balance"));
+		assertEquals(stakedAmount, balanceDetails.get("Available balance"));
+		assertEquals(stakedAmountAtSecondDay, balanceDetails.get("Staked balance"));
+		assertEquals(stakedAmountAtSecondDay, balanceDetails.get("Unstaking balance"));
+	}
+
+
+	@Test
+	void ShouldGetUnstakingPeriod() {
+		BigInteger unstakingPeriod = (BigInteger) balancedToken.call("getUnstakingPeriod");
+
+		assertNotNull(unstakingPeriod);
+		assertEquals(TWO.add(ONE), unstakingPeriod);
+	}
+
+	@Test
+	void ShouldSetUnstakingPeriod() {
+		balancedToken.invoke(accountGovernance, "setUnstakingPeriod", TEN);
+
+		BigInteger unstakingPeriod = (BigInteger) balancedToken.call("getUnstakingPeriod");
+
+		assertNotNull(unstakingPeriod);
+		assertEquals( TEN, unstakingPeriod);
+
+		balancedToken.invoke(accountGovernance, "setUnstakingPeriod", ZERO);
+
+		unstakingPeriod = (BigInteger) balancedToken.call("getUnstakingPeriod");
+
+		assertNotNull(unstakingPeriod);
+		assertEquals( ZERO, unstakingPeriod);
+	}
+
+	@Test
+	void ShouldSetMinimumStake() {
+		BigInteger minStake = (BigInteger) balancedToken.call("getMinimumStake");
+
+		assertNotNull(minStake);
+		assertEquals(BigInteger.valueOf(1000000000000000000l), minStake);
+
+		BigInteger newMinStake = TEN.add(TWO).add(ONE);
+		balancedToken.invoke(accountGovernance, "setMinimumStake", newMinStake);
+
+		minStake = (BigInteger) balancedToken.call("getMinimumStake");
+
+		assertNotNull(minStake);
+		assertEquals(new BigInteger("13000000000000000000"), minStake);
+
+	}
+
+	@Test
+	void ShouldSetDividends() {
+		Account dividendsAccount = sm.createAccount();
+		balancedToken.invoke(accountGovernance, "setDividends", dividendsAccount.getAddress());
+
+		Address dividendsAddress = (Address) balancedToken.call("getDividends");
+
+		assertNotNull(dividendsAddress);
+		assertEquals(dividendsAccount.getAddress(), dividendsAddress);
+	}
+
+	@Test
+	void ShouldRevertWhenNoDividends() {
+		try {
+			balancedToken.invoke(owner, "dividendsOnly");
+		}catch (Error e) {
+			assertEquals("Reverted(0): BALN: This method can only be called by the dividends distribution contract.",
+					e.getMessage());
+		}
 	}
 
 }
