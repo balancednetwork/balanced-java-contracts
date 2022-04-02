@@ -22,5 +22,6 @@ import static network.balanced.score.lib.utils.Math.pow;
 
 public class Constants {
     public final static BigInteger EXA = pow(BigInteger.TEN, 18);
-    public final static BigInteger POINTS = BigInteger.valueOf(10000);
+    public final static long SECOND = 1000000L;
+    public final static long U_SECONDS_DAY = 86400L * SECOND;
 }

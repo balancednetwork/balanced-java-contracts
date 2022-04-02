@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.interfaces.addresses;
+package network.balanced.score.lib.utils;
 
-import foundation.icon.score.client.ScoreClient;
-import score.Address;
-import score.annotation.External;
+import score.ArrayDB;
 
-public interface ReserveAddress {
+public class DBHelpers {
+    public static <T>Boolean contains(ArrayDB<T> db, T item) {
+        for (int i = 0; i < db.size(); i++) {
+            if (db.get(i).equals(item)) {
+                return true;
+            }
+        }
 
-    @External
-    void setReserve(Address _address);
-
-    @External(readonly = true)
-    Address getReserve();
+        return false;
+    }
 }
