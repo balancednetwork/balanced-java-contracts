@@ -16,12 +16,16 @@
 
 package network.balanced.score.lib.utils;
 
-import java.math.BigInteger;
+import score.ArrayDB;
 
-import static network.balanced.score.lib.utils.Math.pow;
+public class DBHelpers {
+    public static <T>Boolean contains(ArrayDB<T> db, T item) {
+        for (int i = 0; i < db.size(); i++) {
+            if (db.get(i).equals(item)) {
+                return true;
+            }
+        }
 
-public class Constants {
-    public final static BigInteger EXA = pow(BigInteger.TEN, 18);
-    public final static long SECOND = 1000000L;
-    public final static long U_SECONDS_DAY = 86400L * SECOND;
+        return false;
+    }
 }

@@ -37,6 +37,9 @@ project(':Reserve').projectDir = file("core-contracts/Reserve")
 include(':Rebalancing')
 project(':Rebalancing').projectDir = file("core-contracts/Rebalancing")
 
+include(':Rewards')
+project(':Rewards').projectDir = file("core-contracts/Rewards")
+
 include 'score-lib'
 include 'test-lib'
 

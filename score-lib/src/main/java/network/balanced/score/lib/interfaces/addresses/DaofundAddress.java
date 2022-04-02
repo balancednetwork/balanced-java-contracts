@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.utils;
+package network.balanced.score.lib.interfaces.addresses;
 
-import java.math.BigInteger;
+import foundation.icon.score.client.ScoreClient;
+import score.Address;
+import score.annotation.External;
 
-import static network.balanced.score.lib.utils.Math.pow;
+@ScoreClient
+public interface DaofundAddress {
 
-public class Constants {
-    public final static BigInteger EXA = pow(BigInteger.TEN, 18);
-    public final static long SECOND = 1000000L;
-    public final static long U_SECONDS_DAY = 86400L * SECOND;
+    @External
+    void setDaofund(Address _address);
+
+    @External(readonly = true)
+    Address getDaofund();
 }
