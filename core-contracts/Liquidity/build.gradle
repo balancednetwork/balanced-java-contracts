@@ -25,6 +25,7 @@ repositories {
 dependencies {
     compileOnly 'foundation.icon:javaee-api:0.9.1'
 
+    implementation project(':score-lib')
     implementation 'com.github.sink772:javaee-tokens:0.6.1'
     implementation 'foundation.icon:javaee-scorex:0.5.2'
     implementation 'com.github.sink772:minimal-json:0.9.6'

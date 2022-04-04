@@ -30,4 +30,4 @@ include(':core-contracts:Multicall',
         ':core-contracts:Reserve',
         ':core-contracts:Liquidity',
         ':token-contracts',
-        'score-lib')
+        ':score-lib')

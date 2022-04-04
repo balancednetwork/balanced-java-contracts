@@ -25,6 +25,7 @@ import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 
 import com.iconloop.score.util.EnumerableSet;
+import static network.balanced.score.lib.utils.Check.*;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -46,12 +47,6 @@ public class Liquidity {
         // this.daofundAddress.set(Address.fromString("cx648a6d9c5f231f6b86c0caa9cc9eff8bd6040999"));
         // this.governanaceAddress.set(Address.fromString("cx648a6d9c5f231f6b86c0caa9cc9eff8bd6040999"));
         // this.stakedLPAddress.set(Address.fromString("cx648a6d9c5f231f6b86c0caa9cc9eff8bd6040999"));
-    }
-
-    private void onlyOwner() {
-        Address caller = Context.getCaller();
-        Address owner = Context.getOwner();
-        Context.require(caller.equals(owner), this.name() + ": Caller is not the owner");
     }
 
     @External(readonly = true)
