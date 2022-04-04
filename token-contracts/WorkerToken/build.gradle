@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import network.balanced.score.dependencies.Dependencies
+
 plugins {
     id 'java'
 }
@@ -25,11 +27,12 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'foundation.icon:javaee-api:0.9.1'
-    testImplementation 'foundation.icon:javaee-unittest:0.9.2'
+    compileOnly Dependencies.javaeeApi
+    implementation project(':score-lib')
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+    testImplementation Dependencies.javaeeUnitTest
+    testImplementation Dependencies.junitJupiter
+    testRuntimeOnly Dependencies.junitJupiterEngine
 }
 
 test {

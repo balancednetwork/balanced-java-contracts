@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package network.balanced.score.tokens.workertoken.utils;
+package network.balanced.score.lib.interfaces;
 
 import score.Address;
 
 import java.math.BigInteger;
 
-public interface TokenStandard {
+public interface IRC2 {
     String name();
 
     String symbol();
@@ -32,4 +32,6 @@ public interface TokenStandard {
     BigInteger balanceOf(Address _owner);
 
     void transfer(Address _to, BigInteger _value, byte[] _data);
+
+    void Transfer(Address _from, Address _to, BigInteger _value, byte[] _data);
 }

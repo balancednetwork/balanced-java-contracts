@@ -16,7 +16,7 @@
 
 package network.balanced.score.tokens.workertoken;
 
-import network.balanced.score.tokens.workertoken.utils.IRC2;
+import network.balanced.score.lib.tokens.IRC2PresetFixedSupply;
 import score.Address;
 import score.ArrayDB;
 import score.Context;
@@ -26,9 +26,9 @@ import score.annotation.Optional;
 
 import java.math.BigInteger;
 
-import static network.balanced.score.tokens.workertoken.utils.Checks.*;
+import static network.balanced.score.lib.utils.Check.*;
 
-public class WorkerToken extends IRC2 {
+public class WorkerToken extends IRC2PresetFixedSupply {
     public static String TAG = "BALW";
 
     private static final String TOKEN_NAME = "Balanced Worker Token";
@@ -36,20 +36,20 @@ public class WorkerToken extends IRC2 {
     private static final BigInteger INITIAL_SUPPLY = BigInteger.valueOf(100);
     private static final BigInteger DECIMALS = BigInteger.valueOf(6);
 
-    final private static String ACCOUNTS = "accounts";
+    private static final String ACCOUNTS = "accounts";
     private static final String GOVERNANCE = "governance";
     private static final String BALN_TOKEN = "baln_token";
-    final private static String ADMIN = "admin";
+    private static final String ADMIN = "admin";
 
-    public ArrayDB<Address> addresses = Context.newArrayDB(ACCOUNTS, Address.class);
-    public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
+    private final ArrayDB<Address> addresses = Context.newArrayDB(ACCOUNTS, Address.class);
+    private final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
     private final VarDB<Address> balnToken = Context.newVarDB(BALN_TOKEN, Address.class);
-    public static VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
+    private final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
 
     public WorkerToken(Address _governance) {
         super(TOKEN_NAME, SYMBOL_NAME, INITIAL_SUPPLY, DECIMALS);
         if (governance.get() == null) {
-            WorkerToken.governance.set(_governance);
+            this.governance.set(_governance);
             addresses.add(Context.getCaller());
         }
     }
@@ -60,8 +60,7 @@ public class WorkerToken extends IRC2 {
     @External
     public void setGovernance(Address _address) {
         onlyOwner();
-        Context.require(_address.isContract(), TAG + ": Address provided is an EOA address. A contract address is " +
-                "required.");
+        isContract(_address);
         governance.set(_address);
     }
 
@@ -78,8 +77,8 @@ public class WorkerToken extends IRC2 {
      */
     @External
     public void setAdmin(Address _admin) {
-        onlyGovernance();
-        WorkerToken.admin.set(_admin);
+        only(governance);
+        this.admin.set(_admin);
     }
 
     @External(readonly = true)
@@ -89,7 +88,8 @@ public class WorkerToken extends IRC2 {
 
     @External
     public void setBaln(Address _address) {
-        onlyAdmin();
+        only(admin);
+        isContract(_address);
         balnToken.set(_address);
     }
 
@@ -100,7 +100,7 @@ public class WorkerToken extends IRC2 {
 
     @External
     public void adminTransfer(Address _from, Address _to, BigInteger _value, @Optional byte[] _data) {
-        onlyAdmin();
+        only(admin);
         transferAndUpdateAddressList(_from, _to, _value, _data);
     }
 

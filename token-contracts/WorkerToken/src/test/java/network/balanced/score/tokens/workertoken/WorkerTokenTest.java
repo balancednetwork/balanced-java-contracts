@@ -20,9 +20,9 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import score.Address;
-import score.ArrayDB;
 
 import java.math.BigInteger;
 
@@ -72,11 +72,11 @@ public class WorkerTokenTest extends TestBase {
     @Test
     void transferTest(){
         Account testAccount = sm.createAccount();
-        var ownerBalance = BigInteger.valueOf(100).multiply(WorkerToken.pow(BigInteger.TEN, 6));
-        var testBalance = BigInteger.valueOf(0);
+        var ownerBalance = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(6));
+        var testBalance = BigInteger.ZERO;
         testAccount.addBalance("BALW", testBalance);
 
-        var transferAmount = BigInteger.valueOf(50).multiply(WorkerToken.pow(BigInteger.TEN, 6));
+        var transferAmount = BigInteger.valueOf(50).multiply(BigInteger.TEN.pow(6));
         // test 1
         String info = "Hello there";
         tokenScore.invoke(admin, "adminTransfer", owner.getAddress(), testAccount.getAddress(), transferAmount, info.getBytes());
@@ -87,21 +87,10 @@ public class WorkerTokenTest extends TestBase {
         testBalance = (BigInteger) tokenScore.call("balanceOf", testAccount.getAddress());
         var test_balance_2 = (BigInteger) tokenScore.call("balanceOf", tokenScore.getAddress());
         byte[] bytes = new byte[10];
-        transferAmount = BigInteger.valueOf(25).multiply(WorkerToken.pow(BigInteger.TEN, 6));
+        transferAmount = BigInteger.valueOf(25).multiply(BigInteger.TEN.pow(6));
         tokenScore.invoke(admin, "adminTransfer", testAccount.getAddress(), tokenScore.getAddress(), transferAmount, info.getBytes());
         assertEquals(testBalance.subtract(transferAmount), tokenScore.call("balanceOf", testAccount.getAddress()));
         assertEquals(test_balance_2.add(transferAmount), tokenScore.call("balanceOf", tokenScore.getAddress()));
-    }
-
-    public static boolean arrayDbContains(ArrayDB<Address> arrayDB, Address address){
-        final int size =  arrayDB.size();
-        for (int i = 0; i < size; i++){
-            if (arrayDB.get(i).equals(address)){
-                return true;
-            }
-        }
-
-        return false;
     }
 
     @Test
@@ -111,7 +100,7 @@ public class WorkerTokenTest extends TestBase {
 
 
         BigInteger tokenScoreBalance = (BigInteger) tokenScore.call("balanceOf", tokenScore.getAddress());
-        var transferAmount = BigInteger.valueOf(90).multiply(WorkerToken.pow(BigInteger.TEN, 6));
+        var transferAmount = BigInteger.valueOf(90).multiply(BigInteger.TEN.pow(6));
         String info = "Hello there";
         tokenScore.invoke(admin, "adminTransfer", owner.getAddress(), tokenScore.getAddress(), transferAmount, info.getBytes());
 

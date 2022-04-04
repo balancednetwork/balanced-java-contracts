@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package network.balanced.score.tokens.workertoken.utils;
+package network.balanced.score.lib.tokens;
 
+import network.balanced.score.lib.interfaces.IRC2;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -23,7 +24,9 @@ import score.annotation.Optional;
 
 import java.math.BigInteger;
 
-public class IRC2 implements TokenStandard {
+import static network.balanced.score.lib.utils.Math.pow;
+
+public class IRC2PresetFixedSupply implements IRC2 {
     final private static String NAME = "name";
     final private static String SYMBOL = "symbol";
     final private static String DECIMALS = "decimals";
@@ -36,16 +39,6 @@ public class IRC2 implements TokenStandard {
     protected VarDB<BigInteger> totalSupply = Context.newVarDB(TOTAL_SUPPLY, BigInteger.class);
     protected DictDB<Address, BigInteger> balances = Context.newDictDB(BALANCES, BigInteger.class);
 
-    public static BigInteger pow(BigInteger base, int exponent){
-        BigInteger res = BigInteger.ONE;
-
-        for(int i = 1; i <= exponent; i++){
-            res = res.multiply(base);
-        }
-
-        return res;
-    }
-
     /**
      * @param _tokenName     The name of the token.
      * @param _symbolName    The symbol of the token.
@@ -53,14 +46,15 @@ public class IRC2 implements TokenStandard {
      *                       beginning, 0 by default.
      * @param _decimals      The number of decimals. Set to 18 by default.
      */
-    public IRC2(String _tokenName, String _symbolName, @Optional BigInteger _initialSupply,
-                @Optional BigInteger _decimals) {
+    public IRC2PresetFixedSupply(String _tokenName, String _symbolName, @Optional BigInteger _initialSupply,
+                                 @Optional BigInteger _decimals) {
         if (this.name.get() == null) {
             BigInteger initialSupply = (_initialSupply == null) ? BigInteger.ZERO : _initialSupply;
             BigInteger decimals = (_decimals == null) ? BigInteger.valueOf(18L) : _decimals;
 
             Context.require(decimals.compareTo(BigInteger.ZERO) >= 0, "Decimals cannot be less than zero");
-            Context.require(initialSupply.compareTo(BigInteger.ZERO) >= 0, "Decimals cannot be less than zero");
+            Context.require(initialSupply.compareTo(BigInteger.ZERO) > 0, "Initial Supply cannot be less than or " +
+                    "equal to than zero");
 
             // set the total supply to the context variable
             BigInteger totalSupply = initialSupply.multiply(pow(BigInteger.TEN, decimals.intValue()));
@@ -149,6 +143,6 @@ public class IRC2 implements TokenStandard {
     }
 
     @EventLog(indexed = 3)
-    void Transfer(Address _from, Address _to, BigInteger _value, byte[] _data) {
+    public void Transfer(Address _from, Address _to, BigInteger _value, byte[] _data) {
     }
 }
