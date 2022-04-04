@@ -29,4 +29,5 @@ include(':core-contracts:Multicall',
         ':core-contracts:BatchDisbursement',
         ':core-contracts:Reserve',
         ':core-contracts:Liquidity',
-        ':token-contracts')
+        ':token-contracts',
+        'score-lib')
