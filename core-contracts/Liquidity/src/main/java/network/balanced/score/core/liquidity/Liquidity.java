@@ -33,8 +33,8 @@ import java.util.Map;
 import scorex.util.HashMap;
 
 public class Liquidity {
-    private final VarDB<Address> governance = Context.newVarDB("governanceAddress", Address.class);
-    private final VarDB<Address> admin = Context.newVarDB("adminAddress", Address.class);
+    private final VarDB<Address> governanceAddress = Context.newVarDB("governanceAddress", Address.class);
+    private final VarDB<Address> adminAddress = Context.newVarDB("adminAddress", Address.class);
     private final VarDB<Address> dexAddress = Context.newVarDB("dexAddress", Address.class);
     private final VarDB<Address> daofundAddress = Context.newVarDB("daofundAddress", Address.class);
     private final VarDB<Address> stakedLPAddress = Context.newVarDB("stakedLPAddress", Address.class);
@@ -54,15 +54,26 @@ public class Liquidity {
         return "Balanced Liquidity";
     }
 
+    @External
+    public void setAdmin(Address admin) {
+        only(this.governanceAddress);
+        this.adminAddress.set(admin);
+    }
+
+    @External(readonly = true)
+    public Address getAdmin() {
+        return this.adminAddress.get();
+    }
+
     @External(readonly = true)
     public Address getDex() {
-        return dexAddress.get();
+        return this.dexAddress.get();
     }
 
     @External
     public void setDex(Address dex) {
-        onlyOwner();
-        Context.require(dex.isContract(), this.name() + ": Dex parameter is not contract address");
+        only(this.adminAddress);
+        isContract(dex);
         this.dexAddress.set(dex);
     }
 
@@ -73,8 +84,8 @@ public class Liquidity {
 
     @External
     public void setDaofund(Address daofund) {
-        onlyOwner();
-        Context.require(daofund.isContract(), this.name() + ": Daofund parameter is not contract address");
+        only(this.adminAddress);
+        isContract(daofund);
         this.dexAddress.set(daofund);
     }
 
@@ -85,8 +96,8 @@ public class Liquidity {
 
     @External
     public void setStakedLP(Address stakedLP) {
-        onlyOwner();
-        Context.require(stakedLP.isContract(), this.name() + ": Daofund parameter is not contract address");
+        only(this.adminAddress);
+        isContract(stakedLP);
         this.stakedLPAddress.set(stakedLP);
     }
 
@@ -99,7 +110,7 @@ public class Liquidity {
 
     @External
     public void withdrawLiquidity(Integer poolID, BigInteger lptokens) {
-        Context.require(Context.getCaller() == this.governanceAddress.get());
+        only(this.governanceAddress);
 
         // Let the contract know that tokenFallback method should treat the
         // incomming tokens as withdrawn liquidity.
@@ -115,7 +126,7 @@ public class Liquidity {
 
     @External
     public void unstakeLPTokens(BigInteger id, BigInteger amount) {
-        Context.require(Context.getCaller() == this.governanceAddress.get());
+        only(this.governanceAddress);
         Context.call(this.stakedLPAddress.get(), "unstake", id, amount);
     }
 
