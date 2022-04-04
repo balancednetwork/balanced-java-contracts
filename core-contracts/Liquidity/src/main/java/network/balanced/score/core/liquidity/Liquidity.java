@@ -42,7 +42,10 @@ public class Liquidity {
     private final EnumerableSet<Address> balanceAddresses = new EnumerableSet<>("balanceAddresses", Address.class);
     private final VarDB<Boolean> withdrawingLiquidity = Context.newVarDB("withdrawingLiquidity", Boolean.class);
 
-    public Liquidity() {
+    public Liquidity(Address governance, Address admin) {
+        this.governanceAddress.set(governance);
+        this.adminAddress.set(admin);
+        
         // this.dexAddress.set(Address.fromString("cx648a6d9c5f231f6b86c0caa9cc9eff8bd6040999"));
         // this.daofundAddress.set(Address.fromString("cx648a6d9c5f231f6b86c0caa9cc9eff8bd6040999"));
         // this.governanaceAddress.set(Address.fromString("cx648a6d9c5f231f6b86c0caa9cc9eff8bd6040999"));

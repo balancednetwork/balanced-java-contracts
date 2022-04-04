@@ -39,6 +39,8 @@ import java.math.BigInteger;
 public class LiquidityTest extends TestBase {
     public static final ServiceManager sm = getServiceManager(); 
     public static final Account owner = sm.createAccount();
+    public static final Account governance = sm.createAccount();
+    public static final Account admin = sm.createAccount();
 
     private Score liquidity;
     private static Score sicx;
@@ -53,7 +55,7 @@ public class LiquidityTest extends TestBase {
 
     @BeforeEach
     public void setup() throws Exception {
-        liquidity = sm.deploy(owner, Liquidity.class);
+        liquidity = sm.deploy(owner, Liquidity.class, governance.getAddress(), admin.getAddress());
         sicx = deployIRC2Basic(owner, "Staked icx", "sicx", 18, BigInteger.valueOf(1000));
         bnusd = deployIRC2Basic(owner, "Balanced usd", "bnusd", 18, BigInteger.valueOf(1000));
     }
@@ -66,37 +68,25 @@ public class LiquidityTest extends TestBase {
 
     @Test
     void setGetDex() {
-        assertNull(liquidity.call("getDex"));
         Account dex = Account.newScoreAccount(1);
-
-        liquidity.invoke(owner, "setDex", dex.getAddress());
-
+        liquidity.invoke(admin, "setDex", dex.getAddress());
         assertEquals(dex.getAddress(), liquidity.call("getDex"));
     }
     
     @Test
     void setGetDaofund() {
-        assertNull(liquidity.call("getDaofund"));
         Account daofund = Account.newScoreAccount(1);
-
-        liquidity.invoke(owner, "setDaofund", daofund.getAddress());
-
+        liquidity.invoke(admin, "setDaofund", daofund.getAddress());
         assertEquals(daofund.getAddress(), liquidity.call("getDaofund"));
     }
-
     @Test
     void setGetStakedLP() {
-        assertNull(liquidity.call("getStakedLP"));
         Account stakedLP = Account.newScoreAccount(1);
-
-        liquidity.invoke(owner, "setStakedLP", stakedLP.getAddress());
-
+        liquidity.invoke(admin, "setStakedLP", stakedLP.getAddress());
         assertEquals(stakedLP.getAddress(), liquidity.call("getStakedLP"));
     }
-
     @Test
     void getLiquidityContractBalance() {
-
         // Set mock balances for liquidity contract.
         Account liquidityAccount = liquidity.getAccount();
         liquidityAccount.addBalance("sicx", BigInteger.valueOf(67));
@@ -111,7 +101,6 @@ public class LiquidityTest extends TestBase {
         
         BigInteger sicxBalance = (BigInteger) sicx.call("balanceOf", liquidity.getAddress());
         System.out.println(sicxBalance);
-
         BigInteger bnusdBalance = (BigInteger) bnusd.call("balanceOf", liquidity.getAddress());
         System.out.println(bnusdBalance);
 
@@ -119,7 +108,6 @@ public class LiquidityTest extends TestBase {
         Map<Address, BigInteger> balances = (Map<Address, BigInteger>) liquidity.call("getTokenBalances");
         System.out.println(balances);
         System.out.flush();
-
         //// Assert.
         //assertEquals(liquidityAccount.getBalance("sicx"), balances.get(sicx.getAddress()));
         //assertEquals(liquidityAccount.getBalance("bnusd"), balances.get(bnusd.getAddress()));
@@ -127,5 +115,5 @@ public class LiquidityTest extends TestBase {
 
     private Score deployIRC2Basic(Account owner, String name, String symbol, int decimals, BigInteger initialSupply) throws Exception {
         return sm.deploy(owner, IRC2BasicToken.class, name, symbol, decimals, initialSupply);
-   }
+    }
 }
