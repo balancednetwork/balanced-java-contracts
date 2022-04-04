@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-//import network.balanced.score.dependencies.Dependencies
+import network.balanced.score.dependencies.Dependencies
 
 plugins {
     id 'java'
