@@ -32,10 +32,11 @@ import java.util.Map;
 import scorex.util.HashMap;
 
 public class Liquidity {
-    public final VarDB<Address> dexAddress = Context.newVarDB("dexAddress", Address.class);
-    public final VarDB<Address> daofundAddress = Context.newVarDB("daofundAddress", Address.class);
-    public final VarDB<Address> governanceAddress = Context.newVarDB("governanceAddress", Address.class);
-    public final VarDB<Address> stakedLPAddress = Context.newVarDB("stakedLPAddress", Address.class);
+    private final VarDB<Address> governance = Context.newVarDB("governanceAddress", Address.class);
+    private final VarDB<Address> admin = Context.newVarDB("adminAddress", Address.class);
+    private final VarDB<Address> dexAddress = Context.newVarDB("dexAddress", Address.class);
+    private final VarDB<Address> daofundAddress = Context.newVarDB("daofundAddress", Address.class);
+    private final VarDB<Address> stakedLPAddress = Context.newVarDB("stakedLPAddress", Address.class);
 
     private final EnumerableSet<Address> balanceAddresses = new EnumerableSet<>("balanceAddresses", Address.class);
     private final VarDB<Boolean> withdrawingLiquidity = Context.newVarDB("withdrawingLiquidity", Boolean.class);
@@ -131,6 +132,7 @@ public class Liquidity {
     @External(readonly = true)
     public Map<Address, BigInteger> getTokenBalances() {
         Integer tokenAddressNumber = this.balanceAddresses.length();
+        System.out.println(tokenAddressNumber);
 
         Map<Address, BigInteger> tokenBalances = new HashMap<>();
         for (Integer i = 0; i < tokenAddressNumber; i++) {
@@ -166,12 +168,13 @@ public class Liquidity {
         // Add token address to set if it is not already there.
         // Used for tracking contract balance.
         Address caller = Context.getCaller();
+        System.out.println("Caller_1: " + caller);
         this.balanceAddresses.add(caller);
 
         // Send incomming tokens to daofund if withdrawing LP tokens.
-        if (this.withdrawingLiquidity.get()) {
-            this.transferToken(caller, this.daofundAddress.get(), _value, new byte[0]);
-        }
+        //if (this.withdrawingLiquidity.get()) {
+        //    this.transferToken(caller, this.daofundAddress.get(), _value, new byte[0]);
+        //}
     }
 
     @External
