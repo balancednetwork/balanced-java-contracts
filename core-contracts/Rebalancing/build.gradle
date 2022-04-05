@@ -24,6 +24,10 @@ repositories {
 
 dependencies {
     compileOnly Dependencies.javaeeApi
+
+    annotationProcessor Dependencies.javaeeScoreClient
+    compileOnly Dependencies.javaeeScoreClient
+
     implementation Dependencies.javaeeScorex
     implementation project(':score-lib')
 
@@ -42,7 +46,10 @@ optimizedJar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
         configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
+    }{
+        exclude "score/*"
     }
+
     enableDebug = false
 }
 

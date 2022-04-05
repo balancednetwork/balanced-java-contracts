@@ -30,7 +30,7 @@ import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.core.rebalancing.Constants.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 
-public class Rebalancing {
+public class Rebalancing implements RebalancingInterface {
 
     private final VarDB<Address> bnusd = Context.newVarDB(BNUSD_ADDRESS, Address.class);
     private final VarDB<Address> sicx = Context.newVarDB(SICX_ADDRESS, Address.class);
@@ -216,6 +216,5 @@ public class Rebalancing {
     }
 
     @External
-    public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {}
-    
+    public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {}   
 }
