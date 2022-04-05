@@ -43,7 +43,7 @@ test {
 }
 
 optimizedJar {
-    mainClassName = 'network.balanced.score.tokens.WorkerToken'
+    mainClassName = 'network.balanced.score.tokens.workertoken.WorkerToken'
     from {
         configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
     }
