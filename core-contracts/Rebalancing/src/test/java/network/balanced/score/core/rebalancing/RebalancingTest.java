@@ -64,7 +64,7 @@ public class RebalancingTest extends TestBase {
 
     @BeforeEach
     public void setup() throws Exception {
-        rebalancingScore = sm.deploy(owner, Rebalancing.class, governanceScore.getAddress());
+        rebalancingScore = sm.deploy(owner, RebalancingImpl.class, governanceScore.getAddress());
         contextMock.when(() -> Context.call(eq(loansScore.getAddress()), eq("raisePrice"), any(BigInteger.class))).thenReturn(null);
         contextMock.when(() -> Context.call(eq(loansScore.getAddress()), eq("lowerPrice"), any(BigInteger.class))).thenReturn(null);
     }
