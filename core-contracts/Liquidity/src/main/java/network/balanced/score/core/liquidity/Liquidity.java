@@ -45,11 +45,6 @@ public class Liquidity {
     public Liquidity(Address governance, Address admin) {
         this.governanceAddress.set(governance);
         this.adminAddress.set(admin);
-        
-        // this.dexAddress.set(Address.fromString("cx648a6d9c5f231f6b86c0caa9cc9eff8bd6040999"));
-        // this.daofundAddress.set(Address.fromString("cx648a6d9c5f231f6b86c0caa9cc9eff8bd6040999"));
-        // this.governanaceAddress.set(Address.fromString("cx648a6d9c5f231f6b86c0caa9cc9eff8bd6040999"));
-        // this.stakedLPAddress.set(Address.fromString("cx648a6d9c5f231f6b86c0caa9cc9eff8bd6040999"));
     }
 
     @External(readonly = true)
