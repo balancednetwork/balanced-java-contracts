@@ -1,7 +1,6 @@
 package network.balanced.score.token;
 
-import static java.math.BigInteger.TEN;
-import static java.math.BigInteger.ZERO;
+import static network.balanced.score.token.Constants.*;
 
 import java.math.BigInteger;
 
@@ -17,7 +16,7 @@ import score.annotation.Optional;
 /**
 Implementation of IRC2
 **/
-public abstract class IRC2 extends BaseScore implements com.iconloop.score.token.irc2.IRC2, Constants{
+public abstract class IRC2 extends BaseScore implements com.iconloop.score.token.irc2.IRC2{
 
 	private static final String TAG = "IRC_2";
 	private static final Address EOA_ZERO = Address.fromString("hx0000000000000000000000000000000000000000");
@@ -58,26 +57,28 @@ public abstract class IRC2 extends BaseScore implements com.iconloop.score.token
 			   String _symbolName,
 			   @Optional BigInteger _initialSupply,
 			   @Optional BigInteger _decimals,
-			   @Optional Boolean update) {
+			   @Optional boolean update) {
 		if(update) {
 			onUpdate();
 			return;
 		}
 		if(_initialSupply == null) {
-			_initialSupply = DEFAULT_INITIAL_SUPPLY;
+			_initialSupply = Constants.DEFAULT_INITIAL_SUPPLY;
 		}
 
 		if(_decimals == null) {
-			_decimals = DEFAULT_DECIMAL_VALUE;
+			_decimals = Constants.DEFAULT_DECIMAL_VALUE;
 		}
 
 		if (_symbolName.length() <= 0) {
 			//TODO: verify if we throw an exception, the transaction is rollbacked
 			Context.revert("InvalidNameError(Invalid Symbol name)");
 		}
+
 		if (_tokenName.length() <= 0) {
 			Context.revert("InvalidNameError(Invalid Token Name)");
 		}
+
 		if (_initialSupply.compareTo(ZERO) < 0) {
 			Context.revert("ZeroValueError(Initial Supply cannot be less than zero)");
 		}

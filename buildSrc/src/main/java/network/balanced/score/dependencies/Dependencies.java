@@ -28,4 +28,13 @@ public class Dependencies {
     public static final String junitJupiterEngine = "org.junit.jupiter:junit-jupiter-engine:5.8.2";
     public static final String mockitoCore = "org.mockito:mockito-core:4.3.1";
     public static final String mockitoInline = "org.mockito:mockito-inline:4.3.1";
+
+    //prone to merge conflicts
+    public static final String junitJupiterApi = "org.junit.jupiter:junit-jupiter-api:5.8.2";
+    public static final String jacksonDatabind = "com.fasterxml.jackson.core:jackson-databind:2.9.6";
+    public static final String javaFaker = "com.github.javafaker:javafaker:1.0.2";
+
+    public static final String javaeeScoreClient = "foundation.icon:javaee-score-client:0.9.0";
+    public static final String javaeeScoreData = "foundation.icon:javaee-score-data:0.9.0";
+    public static final String iconSdk = "foundation.icon:icon-sdk:2.0.0";
 }

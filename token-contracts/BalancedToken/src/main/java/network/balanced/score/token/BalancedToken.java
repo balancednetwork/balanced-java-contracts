@@ -1,9 +1,6 @@
 package network.balanced.score.token;
 
-import static java.math.BigInteger.ONE;
-import static java.math.BigInteger.TWO;
-import static java.math.BigInteger.TEN;
-import static java.math.BigInteger.ZERO;
+import static network.balanced.score.token.Constants.*;
 import static network.balanced.score.token.util.Mathematics.*;
 import static network.balanced.score.token.util.Collections.getEntryOrDefault;
 import java.math.BigInteger;
@@ -53,6 +50,11 @@ public class BalancedToken extends IRC2 {
 
     private static final String ENABLE_SNAPSHOTS = "enable_snapshots";
 
+    private static final BigInteger ONE = BigInteger.valueOf(1l);
+    private static final BigInteger TWO = BigInteger.valueOf(2l);
+    private static final BigInteger TEN = BigInteger.valueOf(10l);
+    private static final BigInteger ZERO = BigInteger.valueOf(0);
+
     private VarDB<Address> dexScore = Context.newVarDB(DEX_SCORE, Address.class);
     private VarDB<Address> bnusdScore = Context.newVarDB(BNUSD_SCORE, Address.class);
     private VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
@@ -88,7 +90,7 @@ public class BalancedToken extends IRC2 {
 
     private VarDB<Boolean> enableSnapshots = Context.newVarDB(ENABLE_SNAPSHOTS, Boolean.class);
 
-    public BalancedToken( Address _governance, @Optional Boolean update) {
+    public BalancedToken( Address _governance, @Optional boolean update) {
     	super(TOKEN_NAME, SYMBOL_NAME, null, null, update);
 
     	if(update) {

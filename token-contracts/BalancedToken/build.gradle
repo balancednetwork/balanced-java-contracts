@@ -2,6 +2,21 @@ import network.balanced.score.dependencies.Dependencies
 
 version = '0.1.0'
 
+
+sourceSets {
+    intTest {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+
+configurations {
+    intTestImplementation.extendsFrom testImplementation
+    intTestAnnotationProcessor.extendsFrom testAnnotationProcessor
+    intTestRuntimeOnly.extendsFrom testRuntimeOnly
+
+}
+
 dependencies {
     compileOnly Dependencies.javaeeApi
     implementation Dependencies.javaeeScorex
@@ -12,6 +27,13 @@ dependencies {
     testImplementation Dependencies.junitJupiter
     testRuntimeOnly Dependencies.junitJupiterEngine
     testImplementation Dependencies.mockitoInline
+
+    intTestImplementation Dependencies.javaeeScoreClient
+    intTestAnnotationProcessor Dependencies.javaeeScoreClient
+    intTestImplementation Dependencies.iconSdk
+    intTestImplementation Dependencies.jacksonDatabind
+    intTestImplementation 'com.squareup.okhttp3:okhttp:3.11.0'
+
 }
 
 optimizedJar {
@@ -32,12 +54,72 @@ deployJar {
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
 	parameters {
-		arg('_initialSupply', '5000')
-		arg('_decimals', '10')
+		arg('_governance', 'cxe460cb87f451ea235e5be8894920f6436aab63f9')
+		arg('update', '0x0')
 	}
 }
 
 test {
     useJUnitPlatform()
     finalizedBy jacocoTestReport // report is always generated after tests run
+}
+
+def loadProperties = {
+    def prefix = 'score-test.'
+    def props = project.getProperties()
+    def scoreTest = new HashMap<String, Object>()
+
+    scoreTest.put('keystoreName',  props.getOrDefault(prefix + 'keystoreName', ''))
+    scoreTest.put('keystorePass', props.getOrDefault(prefix + 'keystorePass', ''))
+    scoreTest.put('url', props.getOrDefault(prefix + 'url', 'http://localhost:9082/api/v3'))
+    scoreTest.put('nid', props.getOrDefault(prefix + 'nid', 3))
+
+    scoreTest.put('governance.keystoreName', props.get(prefix + 'governance.keystoreName'))
+    scoreTest.put('governance.keystorePass', props.get(prefix + 'governance.keystorePass'))
+    scoreTest.put('governance.url', props.getOrDefault(prefix + 'url', 'http://127.0.0.1:9082/api/v3'))
+    scoreTest.put('governance.nid', props.getOrDefault(prefix + 'nid', 3))
+
+    scoreTest.put('user.provisioning.keystoreName', props.get(prefix + 'user.provisioning.keystoreName'))
+    scoreTest.put('user.provisioning.keystorePass', props.get(prefix + 'user.provisioning.keystorePass'))
+    scoreTest.put('user.provisioning.url', props.getOrDefault(prefix + 'url', 'http://127.0.0.1:9082/api/v3'))
+    scoreTest.put('user.provisioning.nid', props.getOrDefault(prefix + 'nid', 3))
+
+    scoreTest.put('user.receiver.keystoreName', props.get(prefix + 'user.receiver.keystoreName'))
+    scoreTest.put('user.receiver.keystorePass', props.get(prefix + 'user.receiver.keystorePass'))
+    scoreTest.put('user.receiver.url', props.getOrDefault(prefix + 'url', 'http://127.0.0.1:9082/api/v3'))
+    scoreTest.put('user.receiver.nid', props.getOrDefault(prefix + 'nid', 3))
+
+    ext['scoreTest'] = scoreTest
+}
+loadProperties()
+
+task intTest(type: Test, dependsOn: optimizedJar) {
+    useJUnitPlatform()
+    options {
+        testLogging.showStandardStreams = true
+        description = 'Runs integration tests.'
+        group = 'verification'
+        testClassesDirs = sourceSets.intTest.output.classesDirs
+        classpath = sourceSets.intTest.runtimeClasspath
+
+        systemProperty 'url', scoreTest.url
+        systemProperty 'nid', scoreTest.nid
+
+        systemProperty 'keyStore', scoreTest.keystoreName
+        systemProperty 'keyPassword', scoreTest.keystorePass
+
+        systemProperty 'scoreFilePath', project.tasks.optimizedJar.outputJarName
+        project.extensions.deployJar.arguments.each { arg -> systemProperty 'params.' + arg.name, arg.value
+        }
+
+        systemProperty 'governance.keyStore', scoreTest['governance.keystoreName']
+        systemProperty 'governance.keyPassword', scoreTest['governance.keystorePass']
+
+        systemProperty 'user.provisioning.keyStore', scoreTest['user.provisioning.keystoreName']
+        systemProperty 'user.provisioning.keyPassword', scoreTest['user.provisioning.keystorePass']
+
+        systemProperty 'user.receiver.keyStore', scoreTest['user.receiver.keystoreName']
+        systemProperty 'user.receiver.keyPassword', scoreTest['user.receiver.keystorePass']
+
+    }
 }
