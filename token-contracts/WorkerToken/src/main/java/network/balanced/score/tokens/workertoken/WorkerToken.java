@@ -114,15 +114,16 @@ public class WorkerToken extends IRC2PresetFixedSupply {
     private void transferAndUpdateAddressList(Address _from, Address _to, BigInteger _value, @Optional byte[] _data) {
         transfer(_from, _to, _value, _data);
 
-        if (!arrayDbContains(addresses, _to)) {
-            addresses.add(_to);
-        }
         if (balances.getOrDefault(_from, BigInteger.ZERO).equals(BigInteger.ZERO)) {
             removeFromArraydb(_from, addresses);
         }
 
+        if (!arrayDbContains(addresses, _to)) {
+            addresses.add(_to);
+        }
+
         int MAX_HOLDER_COUNT = 400;
-        Context.require(addresses.size() < MAX_HOLDER_COUNT,
+        Context.require(addresses.size() <= MAX_HOLDER_COUNT,
                 TAG + ": The maximum holder count of " + MAX_HOLDER_COUNT + " has been reached. Only transfers of " +
                         "whole balances or moves between current holders is allowed until the total holder count is " +
                         "reduced."

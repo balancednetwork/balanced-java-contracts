@@ -20,13 +20,27 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
-import org.junit.jupiter.api.BeforeAll;
+import network.balanced.score.lib.test.VarargAnyMatcher;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
+import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import score.Address;
+import score.Context;
 
 import java.math.BigInteger;
+import java.util.List;
 
 import static network.balanced.score.lib.test.UnitTest.*;
+import static network.balanced.score.tokens.workertoken.WorkerToken.TAG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 public class WorkerTokenTest extends TestBase {
 
@@ -38,12 +52,17 @@ public class WorkerTokenTest extends TestBase {
     private static final Account governanceScore = Account.newScoreAccount(scoreCount++);
     private static final Account balnScore = Account.newScoreAccount(scoreCount++);
 
+    private final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
 
-    @BeforeAll
-    static void setup() throws Exception {
+    @BeforeEach
+    void setup() throws Exception {
         workerToken = sm.deploy(owner, WorkerToken.class, governanceScore.getAddress());
-//        workerToken.invoke(governanceScore,"setAdmin", admin.getAddress());
-//        workerToken.invoke(admin, "setBaln", workerToken.getAddress());
+    }
+
+    @Test
+    void totalSupply() {
+        BigInteger totalSupply = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(6));
+        assertEquals(totalSupply, workerToken.call("totalSupply"));
     }
 
     @Test
@@ -63,61 +82,132 @@ public class WorkerTokenTest extends TestBase {
     }
 
     @Test
-    void transferTest() {
-        Account testAccount = sm.createAccount();
-        var ownerBalance = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(6));
-        var testBalance = BigInteger.ZERO;
-        testAccount.addBalance("BALW", testBalance);
+    void adminTransfer() {
+        workerToken.invoke(governanceScore, "setAdmin", admin.getAddress());
 
-        var transferAmount = BigInteger.valueOf(50).multiply(BigInteger.TEN.pow(6));
-        // test 1
-        String info = "Hello there";
-        workerToken.invoke(admin, "adminTransfer", owner.getAddress(), testAccount.getAddress(), transferAmount,
-                info.getBytes());
-        assertEquals(ownerBalance.subtract(transferAmount), workerToken.call("balanceOf", owner.getAddress()));
-        assertEquals(testBalance.add(transferAmount), workerToken.call("balanceOf", testAccount.getAddress()));
+        Account nonAdmin = sm.createAccount();
+        Account receiver = sm.createAccount();
+        BigInteger transferValue = BigInteger.TEN.pow(6);
 
-        // test 2
-        testBalance = (BigInteger) workerToken.call("balanceOf", testAccount.getAddress());
-        var test_balance_2 = (BigInteger) workerToken.call("balanceOf", workerToken.getAddress());
-        byte[] bytes = new byte[10];
-        transferAmount = BigInteger.valueOf(25).multiply(BigInteger.TEN.pow(6));
-        workerToken.invoke(admin, "adminTransfer", testAccount.getAddress(), workerToken.getAddress(), transferAmount
-                , info.getBytes());
-        assertEquals(testBalance.subtract(transferAmount), workerToken.call("balanceOf", testAccount.getAddress()));
-        assertEquals(test_balance_2.add(transferAmount), workerToken.call("balanceOf", workerToken.getAddress()));
+        Executable nonAdminTransfer = () -> workerToken.invoke(nonAdmin, "adminTransfer", owner.getAddress(),
+                receiver.getAddress(), transferValue, new byte[0]);
+        String expectedErrorMessage =
+                "Authorization Check: Authorization failed. Caller: " + nonAdmin.getAddress() + " Authorized Caller: "
+                        + admin.getAddress();
+        expectErrorMessage(nonAdminTransfer, expectedErrorMessage);
+
+        BigInteger ownerBalance = (BigInteger) workerToken.call("balanceOf", owner.getAddress());
+        workerToken.invoke(admin, "adminTransfer", owner.getAddress(), receiver.getAddress(), transferValue,
+                new byte[0]);
+        assertEquals(ownerBalance.subtract(transferValue), workerToken.call("balanceOf", owner.getAddress()));
+        assertEquals(transferValue, workerToken.call("balanceOf", receiver.getAddress()));
     }
 
     @Test
-    void distributeTest(){
-        Account testAccount = sm.createAccount();
-        var ownerBalance = (BigInteger) workerToken.call("balanceOf", owner.getAddress());
+    void transfer() {
+        int maxHolderCount = 400;
+        Account[] receivers = new Account[maxHolderCount];
 
+        for (int i = 0; i < maxHolderCount; i++) {
+            receivers[i] = sm.createAccount();
+        }
 
-        BigInteger tokenScoreBalance = (BigInteger) workerToken.call("balanceOf", workerToken.getAddress());
-        var transferAmount = BigInteger.valueOf(90).multiply(BigInteger.TEN.pow(6));
-        String info = "Hello there";
-        workerToken.invoke(admin, "adminTransfer", owner.getAddress(), workerToken.getAddress(), transferAmount,
-                info.getBytes());
+        BigInteger transferValue = BigInteger.TEN;
+        for (int i = 0; i < maxHolderCount - 1; i++) {
+            workerToken.invoke(owner, "transfer", receivers[i].getAddress(), transferValue, new byte[0]);
+        }
 
-        BigInteger baln_token_balance = (BigInteger) workerToken.call(
-                "balanceOf",
-                workerToken.call("getBaln")
-        );
+        //working between existing owners
+        workerToken.invoke(owner, "transfer", receivers[1].getAddress(), transferValue, new byte[0]);
 
-        ownerBalance = (BigInteger) workerToken.call("balanceOf", owner.getAddress());
-        tokenScoreBalance = (BigInteger) workerToken.call("balanceOf", workerToken.getAddress());
-        BigInteger totalSupply = (BigInteger) workerToken.call("totalSupply");
-        BigInteger ownerBalanceNew = (BigInteger) workerToken.call("balanceOf", owner.getAddress());
+        // Fails for new user
+        // Even this fails, the address is already added in the db. This is due to limitation in unit test framework
+        Executable maxHoldersReached = () -> workerToken.invoke(owner, "transfer",
+                receivers[maxHolderCount - 1].getAddress(), transferValue, new byte[0]);
+        String expectedErrorMessage = TAG + ": The maximum holder count of " + maxHolderCount + " has been reached. " +
+                "Only transfers of whole balances or moves between current holders is allowed until the total holder " +
+                "count is reduced.";
+        expectErrorMessage(maxHoldersReached, expectedErrorMessage);
 
-        workerToken.call("distribute");
-
-        BigInteger amount = ownerBalanceNew.multiply(baln_token_balance).divide(totalSupply);
-        assertEquals(
-                ownerBalanceNew.add(amount),
-                workerToken.call("balanceOf", owner.getAddress())
-        );
-
+        //Reduce the holders count by sending the received amount back to owner
+        workerToken.invoke(receivers[0], "transfer", owner.getAddress(), transferValue, new byte[0]);
+        workerToken.invoke(owner, "transfer", receivers[maxHolderCount - 1].getAddress(), transferValue, new byte[0]);
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @Test
+    void distribute() {
+        workerToken.invoke(governanceScore, "setAdmin", admin.getAddress());
+        workerToken.invoke(admin, "setBaln", balnScore.getAddress());
+
+        int holdersCount = 13;
+        Account[] holders = new Account[holdersCount];
+        holders[0] = owner;
+
+        for (int i = 1; i < holdersCount; i++) {
+            holders[i] = sm.createAccount();
+        }
+        BigInteger transferValue = BigInteger.valueOf(997L);
+        for (int i = 1; i < holdersCount; i++) {
+            BigInteger transferAmount = transferValue.multiply(BigInteger.valueOf(i));
+            workerToken.invoke(owner, "transfer", holders[i].getAddress(), transferAmount, new byte[0]);
+            holders[i].addBalance("BALW", transferAmount);
+        }
+        holders[0].addBalance("BALW", (BigInteger) workerToken.call("balanceOf", owner.getAddress()));
+
+        contextMock.reset();
+        BigInteger totalBalnToDistribute = BigInteger.valueOf(6833L).multiply(ICX);
+        contextMock.when(() -> Context.call(balnScore.getAddress(), "balanceOf", workerToken.getAddress())).thenReturn(totalBalnToDistribute);
+        contextMock.when(() -> Context.call(eq(balnScore.getAddress()), eq("transfer"),
+                ArgumentMatchers.argThat(new VarargAnyMatcher()))).thenReturn(null);
+
+        ArgumentCaptor<Address> receiver = ArgumentCaptor.forClass(Address.class);
+        ArgumentCaptor<BigInteger> receivableAmount = ArgumentCaptor.forClass(BigInteger.class);
+
+        workerToken.invoke(owner, "distribute");
+        contextMock.verify(() -> Context.call(balnScore.getAddress(), "balanceOf", workerToken.getAddress()));
+        contextMock.verify(() -> Context.call(eq(balnScore.getAddress()), eq("transfer"), receiver.capture(),
+                receivableAmount.capture(), any(byte[].class)), times(holdersCount));
+
+        List<BigInteger> amountsReceived = receivableAmount.getAllValues();
+        List<Address> distributionReceivers = receiver.getAllValues();
+
+        BigInteger totalDistributedAmount = BigInteger.ZERO;
+        for (BigInteger amount : amountsReceived) {
+            totalDistributedAmount = totalDistributedAmount.add(amount);
+        }
+        assertEquals(totalBalnToDistribute, totalDistributedAmount);
+
+        BigInteger totalTokenBalance = (BigInteger) workerToken.call("totalSupply");
+        for (int i = 0; i < amountsReceived.size(); i++) {
+            BigInteger amount = amountsReceived.get(i);
+            Address distributionReceiver = distributionReceivers.get(i);
+
+            BigInteger myTokenBalance = Account.getAccount(distributionReceiver).getBalance("BALW");
+            BigInteger expectedAmountToReceive =
+                    myTokenBalance.multiply(totalBalnToDistribute).divide(totalTokenBalance);
+            assertEquals(expectedAmountToReceive, amount);
+            totalTokenBalance = totalTokenBalance.subtract(myTokenBalance);
+            totalBalnToDistribute = totalBalnToDistribute.subtract(expectedAmountToReceive);
+        }
+    }
+
+    @Test
+    void tokenFallback() {
+        workerToken.invoke(governanceScore, "setAdmin", admin.getAddress());
+        workerToken.invoke(admin, "setBaln", balnScore.getAddress());
+
+        BigInteger totalBalnToDistribute = BigInteger.valueOf(6833L).multiply(ICX);
+        Account nonBalnScore = Account.newScoreAccount(scoreCount++);
+        Executable nonBalnTransfer = () -> workerToken.invoke(nonBalnScore, "tokenFallback", owner.getAddress(),
+                totalBalnToDistribute, new byte[0]);
+        String expectedErrorMessage = TAG + ": The Worker Token contract can only accept BALN tokens. Deposit not " +
+                "accepted from" + nonBalnScore.getAddress() + "Only accepted from BALN = " + balnScore.getAddress();
+        expectErrorMessage(nonBalnTransfer, expectedErrorMessage);
+    }
+
+    @AfterEach
+    void closeMock() {
+        contextMock.close();
+    }
 }
