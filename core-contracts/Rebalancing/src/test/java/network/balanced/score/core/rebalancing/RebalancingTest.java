@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static network.balanced.score.core.rebalancing.Constants.SICX_BNUSD_POOL_ID;
+import static network.balanced.score.lib.test.UnitTest.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -61,11 +62,6 @@ public class RebalancingTest extends TestBase {
 
     private final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
 
-    private void expectErrorMessage(Executable _contractCall, String _expectedErrorMessage) {
-        AssertionError e = Assertions.assertThrows(AssertionError.class, _contractCall);
-        assertEquals(_expectedErrorMessage, e.getMessage());
-    }
-
     @BeforeEach
     public void setup() throws Exception {
         rebalancingScore = sm.deploy(owner, Rebalancing.class, governanceScore.getAddress());
@@ -75,77 +71,36 @@ public class RebalancingTest extends TestBase {
 
     @Test
     void setAndGetAdmin() {
-        Account nonGovernance = sm.createAccount();
-        String expectedErrorMessage =
-                "Authorization Check: Authorization failed. Caller: " + nonGovernance.getAddress() +
-                        " Authorized Caller: " + governanceScore.getAddress();
-        Executable setAdminNotFromGovernance = () -> rebalancingScore.invoke(nonGovernance, "setAdmin",
-                adminAccount.getAddress());
-        expectErrorMessage(setAdminNotFromGovernance, expectedErrorMessage);
-
-        rebalancingScore.invoke(governanceScore, "setAdmin", adminAccount.getAddress());
-        assertEquals(adminAccount.getAddress(), rebalancingScore.call("getAdmin"));
+        testAdmin(rebalancingScore, governanceScore, adminAccount);
     }
 
     @Test
     void setAndGetGovernance() {
-        assertEquals(governanceScore.getAddress(), rebalancingScore.call("getGovernance"));
-
-        Account newGovernance = Account.newScoreAccount(scoreCount++);
-        rebalancingScore.invoke(owner, "setGovernance", newGovernance.getAddress());
-        assertEquals(newGovernance.getAddress(), rebalancingScore.call("getGovernance"));
-
-        // Arrange
-        Account sender = sm.createAccount();
-        String expectedErrorMessage =
-                "SenderNotScoreOwner: Sender=" + sender.getAddress() + "Owner=" + owner.getAddress();
-        Executable setGovernanceNotFromOwner = () -> rebalancingScore.invoke(sender, "setGovernance",
-                governanceScore.getAddress());
-        expectErrorMessage(setGovernanceNotFromOwner, expectedErrorMessage);
+        testGovernance(rebalancingScore, governanceScore, owner);
     }
 
     @Test
     void setAndGetDex() {
-        testContractSettersAndGetters("setDex", dexScore, "getDex");
+        testContractSettersAndGetters(rebalancingScore, governanceScore, adminAccount, "setDex",
+                dexScore.getAddress(), "getDex");
     }
 
     @Test
     void setAndGetSICX() {
-        testContractSettersAndGetters("setSicx", sicxScore, "getSicx");
+        testContractSettersAndGetters(rebalancingScore, governanceScore, adminAccount, "setSicx",
+                sicxScore.getAddress(), "getSicx");
     }
 
     @Test
     void setAndGetBnusd() {
-        testContractSettersAndGetters("setBnusd", bnUSDScore, "getBnusd");
+        testContractSettersAndGetters(rebalancingScore, governanceScore, adminAccount, "setBnusd",
+                bnUSDScore.getAddress(), "getBnusd");
     }
 
     @Test
     void setAndGetLoans() {
-        testContractSettersAndGetters("setLoans", loansScore, "getLoans");
-    }
-
-    private void testContractSettersAndGetters(String setterMethod, Account scoreAddress, String getterMethod) {
-        String expectedErrorMessage = "Authorization Check: Address not set";
-        Executable setScoreWithoutAdmin = () -> rebalancingScore.invoke(adminAccount, setterMethod,
-                scoreAddress.getAddress());
-        expectErrorMessage(setScoreWithoutAdmin, expectedErrorMessage);
-
-        setAndGetAdmin();
-
-        Account nonAdmin = sm.createAccount();
-        expectedErrorMessage = "Authorization Check: Authorization failed. Caller: " + nonAdmin.getAddress() +
-                " Authorized Caller: " + adminAccount.getAddress();
-        Executable setScoreNotFromAdmin = () -> rebalancingScore.invoke(nonAdmin, setterMethod,
-                scoreAddress.getAddress());
-        expectErrorMessage(setScoreNotFromAdmin, expectedErrorMessage);
-
-        expectedErrorMessage = "Address Check: Address provided is an EOA address. A contract address is required.";
-        Executable setScoreToInvalidAddress = () -> rebalancingScore.invoke(adminAccount, setterMethod,
-                sm.createAccount().getAddress());
-        expectErrorMessage(setScoreToInvalidAddress, expectedErrorMessage);
-
-        rebalancingScore.invoke(adminAccount, setterMethod, scoreAddress.getAddress());
-        assertEquals(scoreAddress.getAddress(), rebalancingScore.call(getterMethod));
+        testContractSettersAndGetters(rebalancingScore, governanceScore, adminAccount, "setLoans",
+                loansScore.getAddress(), "getLoans");
     }
 
     @Test
