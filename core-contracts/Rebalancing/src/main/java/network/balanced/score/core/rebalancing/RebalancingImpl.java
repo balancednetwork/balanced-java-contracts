@@ -16,6 +16,7 @@
 
 package network.balanced.score.core.rebalancing;
 
+import network.balanced.score.lib.interfaces.Rebalancing;
 import score.Address;
 import score.Context;
 import score.VarDB;
@@ -26,8 +27,8 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.core.rebalancing.Constants.*;
+import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 
 public class RebalancingImpl implements Rebalancing {
@@ -47,13 +48,18 @@ public class RebalancingImpl implements Rebalancing {
         }
     }
 
+    @External(readonly = true)
+    public String name() {
+        return "Balanced " + TAG;
+    }
+
     @External
     public void setBnusd(Address _address) {
         only(admin);
         isContract(_address);
         bnusd.set(_address);
     }
-    
+
     @External
     public void setLoans(Address _address) {
         only(admin);
@@ -214,7 +220,4 @@ public class RebalancingImpl implements Rebalancing {
             Context.call(loansScore, "lowerPrice", tokenAmount.abs());
         }
     }
-
-    @External
-    public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {}   
 }

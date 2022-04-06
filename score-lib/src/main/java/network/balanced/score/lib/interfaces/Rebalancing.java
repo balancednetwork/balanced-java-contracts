@@ -14,54 +14,19 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.rebalancing;
-
-import score.Address;
-import score.annotation.External;
+package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreInterface;
+import network.balanced.score.lib.interfaces.addresses.*;
+import network.balanced.score.lib.interfaces.base.Name;
+import score.annotation.External;
 
 import java.math.BigInteger;
 import java.util.List;
 
-//TODO should be moved to a balanced interface folder where all interfaces are kept
 @ScoreInterface
-public interface Rebalancing {
-    @External
-    void setBnusd(Address _address);
-    
-    @External
-    void setLoans(Address _address);
-
-    @External
-    void setSicx(Address _address);
-    
-    @External
-    void setGovernance(Address _address);
-
-    @External
-    void setDex(Address _address);
-
-    @External
-    void setAdmin(Address _address);
-
-    @External(readonly = true)
-    Address getGovernance();
-
-    @External(readonly = true)
-    Address getAdmin();
-
-    @External(readonly = true)
-    Address getLoans();
-
-    @External(readonly = true)
-    Address getBnusd();
-
-    @External(readonly = true)
-    Address getSicx();
-
-    @External(readonly = true)
-    Address getDex();
+public interface Rebalancing extends AdminAddress, BnusdAddress, DexAddress, GovernanceAddress, LoansAddress,
+        Name, SicxAddress {
 
     @External
     void setPriceDiffThreshold(BigInteger _value);
@@ -74,7 +39,4 @@ public interface Rebalancing {
 
     @External
     void rebalance();
-
-    @External
-    void tokenFallback(Address _from, BigInteger _value, byte[] _data);
 }
