@@ -20,18 +20,11 @@ import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.Account;
-import com.iconloop.score.token.irc2.IRC2Basic;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-
-import score.Context;
-
-import java.util.Map;
-
-import java.math.BigInteger;
 
 
 public class LiquidityTest extends TestBase {
@@ -41,21 +34,10 @@ public class LiquidityTest extends TestBase {
     public static final Account admin = sm.createAccount();
 
     private Score liquidity;
-    private static Score sicx;
-    private static Score bnusd;
-
-    public static class IRC2BasicToken extends IRC2Basic {
-        public IRC2BasicToken(String _name, String _symbol, int _decimals, BigInteger _totalSupply) {
-            super(_name, _symbol, _decimals);
-            _mint(Context.getCaller(), _totalSupply);
-        }
-    }
 
     @BeforeEach
     public void setup() throws Exception {
         liquidity = sm.deploy(owner, Liquidity.class, governance.getAddress(), admin.getAddress());
-        sicx = deployIRC2Basic(owner, "Staked icx", "sicx", 18, BigInteger.valueOf(1000));
-        bnusd = deployIRC2Basic(owner, "Balanced usd", "bnusd", 18, BigInteger.valueOf(1000));
     }
 
     @Test
@@ -83,37 +65,5 @@ public class LiquidityTest extends TestBase {
         Account stakedLP = Account.newScoreAccount(1);
         liquidity.invoke(admin, "setStakedLP", stakedLP.getAddress());
         assertEquals(stakedLP.getAddress(), liquidity.call("getStakedLP"));
-    }
-    
-    @Test
-    void getLiquidityContractBalance() {
-        // Set mock balances for liquidity contract.
-        Account liquidityAccount = liquidity.getAccount();
-        liquidityAccount.addBalance("sicx", BigInteger.valueOf(67));
-        liquidityAccount.addBalance("bnusd", BigInteger.valueOf(65));
-
-        System.out.println("sicx address: " + sicx.getAddress());
-        System.out.println("bnusd address: " + bnusd.getAddress());
-
-        // Transfer sicx and bnusd to liquidity contract.
-        sicx.invoke(owner, "transfer", liquidity.getAddress(), liquidityAccount.getBalance("sicx"), new byte[0]);
-        bnusd.invoke(owner, "transfer", liquidity.getAddress(), liquidityAccount.getBalance("bnusd"), new byte[0]);
-        
-        BigInteger sicxBalance = (BigInteger) sicx.call("balanceOf", liquidity.getAddress());
-        System.out.println(sicxBalance);
-        BigInteger bnusdBalance = (BigInteger) bnusd.call("balanceOf", liquidity.getAddress());
-        System.out.println(bnusdBalance);
-        
-        // Act.
-        Map<String, BigInteger> balances = (Map<String, BigInteger>) liquidity.call("getTokenBalances", false);
-        System.out.println(balances);
-        System.out.flush();
-        //// Assert.
-        //assertEquals(liquidityAccount.getBalance("sicx"), balances.get(sicx.getAddress()));
-        //assertEquals(liquidityAccount.getBalance("bnusd"), balances.get(bnusd.getAddress()));
-    }
-
-    private Score deployIRC2Basic(Account owner, String name, String symbol, int decimals, BigInteger initialSupply) throws Exception {
-        return sm.deploy(owner, IRC2BasicToken.class, name, symbol, decimals, initialSupply);
     }
 }
