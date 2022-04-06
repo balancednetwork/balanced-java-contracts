@@ -33,18 +33,23 @@ import java.util.Map;
 import scorex.util.HashMap;
 
 public class Liquidity {
-    private final VarDB<Address> governanceAddress = Context.newVarDB("governanceAddress", Address.class);
-    private final VarDB<Address> adminAddress = Context.newVarDB("adminAddress", Address.class);
-    private final VarDB<Address> dexAddress = Context.newVarDB("dexAddress", Address.class);
-    private final VarDB<Address> daofundAddress = Context.newVarDB("daofundAddress", Address.class);
-    private final VarDB<Address> stakedLPAddress = Context.newVarDB("stakedLPAddress", Address.class);
+    private final VarDB<Address> governance = Context.newVarDB("governance", Address.class);
+    private final VarDB<Address> admin = Context.newVarDB("admin", Address.class);
+    private final VarDB<Address> dex = Context.newVarDB("dex", Address.class);
+    private final VarDB<Address> daofund = Context.newVarDB("daofund", Address.class);
+    private final VarDB<Address> stakedLP = Context.newVarDB("stakedLP", Address.class);
 
     private final EnumerableSet<Address> balanceAddresses = new EnumerableSet<>("balanceAddresses", Address.class);
-    private final VarDB<Boolean> withdrawingLiquidity = Context.newVarDB("withdrawingLiquidity", Boolean.class);
+    private final VarDB<Boolean> withdrawToDaofund = Context.newVarDB("withdrawToDaofund", Boolean.class);
 
     public Liquidity(Address governance, Address admin) {
-        this.governanceAddress.set(governance);
-        this.adminAddress.set(admin);
+        this.governance.set(governance);
+        this.admin.set(admin);
+        this.withdrawToDaofund.set(false);
+        // this.dex.set(Address.fromString("cx648a6d9c5f231f6b86c0caa9cc9eff8bd6040999"));
+        // sicx cx70806fdfa274fe12ab61f1f98c5a7a1409a0c108
+        // bnusd cx5838cb516d6156a060f90e9a3de92381331ff024
+        // dex cx648a6d9c5f231f6b86c0caa9cc9eff8bd6040999
     }
 
     @External(readonly = true)
@@ -54,109 +59,129 @@ public class Liquidity {
 
     @External
     public void setAdmin(Address admin) {
-        only(this.governanceAddress);
-        this.adminAddress.set(admin);
+        only(this.governance);
+        this.admin.set(admin);
     }
 
     @External(readonly = true)
     public Address getAdmin() {
-        return this.adminAddress.get();
-    }
-
-    @External(readonly = true)
-    public Address getDex() {
-        return this.dexAddress.get();
+        return this.admin.get();
     }
 
     @External
     public void setDex(Address dex) {
-        only(this.adminAddress);
+        only(this.admin);
         isContract(dex);
-        this.dexAddress.set(dex);
+        this.dex.set(dex);
     }
 
     @External(readonly = true)
-    public Address getDaofund() {
-        return dexAddress.get();
+    public Address getDex() {
+        return this.dex.get();
     }
 
     @External
     public void setDaofund(Address daofund) {
-        only(this.adminAddress);
+        only(this.admin);
         isContract(daofund);
-        this.dexAddress.set(daofund);
+        this.daofund.set(daofund);
     }
 
     @External(readonly = true)
-    public Address getStakedLP() {
-        return stakedLPAddress.get();
+    public Address getDaofund() {
+        return daofund.get();
     }
 
     @External
     public void setStakedLP(Address stakedLP) {
-        only(this.adminAddress);
+        only(this.admin);
         isContract(stakedLP);
-        this.stakedLPAddress.set(stakedLP);
+        this.stakedLP.set(stakedLP);
+    }
+
+    @External(readonly = true)
+    public Address getStakedLP() {
+        return stakedLP.get();
     }
 
     @External
     public void supplyLiquidity(Address baseToken, Address quoteToken, BigInteger baseValue, BigInteger quoteValue) {
         this.depositToken(baseToken, baseValue);
         this.depositToken(quoteToken, quoteValue);
-        Context.call(this.dexAddress.get(), "add", baseToken, quoteToken, baseValue, quoteValue);
+        Context.call(this.dex.get(), "add", baseToken, quoteToken, baseValue, quoteValue);
     }
 
     @External
-    public void withdrawLiquidity(Integer poolID, BigInteger lptokens) {
-        only(this.governanceAddress);
-
-        // Let the contract know that tokenFallback method should treat the
-        // incomming tokens as withdrawn liquidity.
-        this.withdrawingLiquidity.set(true);
-        Context.call(this.dexAddress.get(), "remove", poolID, lptokens, true);
-        this.withdrawingLiquidity.set(false);
+    public void withdrawLiquidity(BigInteger poolID, BigInteger lptokens, boolean withdrawToDaofund) {
+        only(this.governance);
+        if (withdrawToDaofund) {
+            this.withdrawToDaofund.set(true);
+            Context.call(this.dex.get(), "remove", poolID, lptokens, true);
+            this.withdrawToDaofund.set(false);
+        }
+        else {
+            Context.call(this.dex.get(), "remove", poolID, lptokens, true);
+        }     
     }
 
     @External
     public void stakeLPTokens(BigInteger id, BigInteger amount) {
-        Context.call(this.dexAddress.get(), "transfer", this.stakedLPAddress.get(), amount, id, this.createLPStakingData());
+        Context.call(this.dex.get(), "transfer", this.stakedLP.get(), amount, id, this.createLPStakingData());
     }
 
     @External
     public void unstakeLPTokens(BigInteger id, BigInteger amount) {
-        only(this.governanceAddress);
-        Context.call(this.stakedLPAddress.get(), "unstake", id, amount);
+        only(this.governance);
+        Context.call(this.stakedLP.get(), "unstake", id, amount);
     }
 
     private void depositToken(Address token, BigInteger amount) {
-        this.transferToken(token, this.dexAddress.get(), amount, this.createLiquidityDepositData());
+        this.transferToken(token, this.dex.get(), amount, this.createLiquidityDepositData());
     }
     
-    // Add optional parameter to identify tokens with symbol? --> Call to symbol method as well.
     @External(readonly = true)
-    public Map<Address, BigInteger> getTokenBalances() {
+    public Map<String, BigInteger> getTokenBalances(boolean symbolsAsKeys) {
         Integer tokenAddressNumber = this.balanceAddresses.length();
-        System.out.println(tokenAddressNumber);
 
-        Map<Address, BigInteger> tokenBalances = new HashMap<>();
+        Map<String, BigInteger> tokenBalances = new HashMap<>();
         for (Integer i = 0; i < tokenAddressNumber; i++) {
             Address tokenAddress = this.balanceAddresses.at(i);
-            BigInteger tokenBalance = getTokenBalance(tokenAddress);
-            tokenBalances.put(tokenAddress, tokenBalance);
+            BigInteger tokenBalance = this.getTokenBalance(tokenAddress);
+
+            if (symbolsAsKeys) {
+                String symbol = (String) Context.call(tokenAddress, "symbol");
+                tokenBalances.put(symbol, tokenBalance);
+            }
+            else {
+                tokenBalances.put(tokenAddress.toString(), tokenBalance);
+            }
         }
 
         return tokenBalances;
     }
 
     @External(readonly = true) 
-    public Map<Integer, BigInteger> getLPTokenBalances() {
-        Address dexAddress =this.dexAddress.get();
-        Integer numberOfPools = (Integer) Context.call(dexAddress, "getNonce");
+    public Map<String, BigInteger> getLPTokenBalances() {
+        Address dex =this.dex.get();
+        Integer numberOfPools = ((BigInteger) Context.call(dex, "getNonce")).intValue();
 
-        Map<Integer, BigInteger> tokenBalances = new HashMap<>();
+        Map<String, BigInteger> tokenBalances = new HashMap<>();
         for (Integer i = 1; i <= numberOfPools; i++) {
-            BigInteger lpTokenBalance = (BigInteger) Context.call(dexAddress, "balanceOf", Context.getAddress(), i);
-            tokenBalances.put(i, lpTokenBalance);
+            BigInteger lpTokenBalance = (BigInteger) Context.call(dex, "balanceOf", Context.getAddress(), i);
+            tokenBalances.put(i.toString(), lpTokenBalance);
+        }
+
+        return tokenBalances;
+    }
+
+    @External(readonly = true) 
+    public Map<String, BigInteger> getStakedLPTokenBalances() {
+        Integer numberOfPools = ((BigInteger) Context.call(this.dex.get(), "getNonce")).intValue();
+
+        Map<String, BigInteger> tokenBalances = new HashMap<>();
+        for (Integer i = 1; i <= numberOfPools; i++) {
+            BigInteger lpTokenBalance = (BigInteger) Context.call(this.stakedLP.get(), "balanceOf", Context.getAddress(), i);
+            tokenBalances.put(i.toString(), lpTokenBalance);
         }
 
         return tokenBalances;
@@ -164,21 +189,25 @@ public class Liquidity {
 
     @External
     public void claimFunding() {
-        Context.call(this.daofundAddress.get(), "claim");
+        Context.call(this.daofund.get(), "claim");
+    }
+
+    @External 
+    public void transferToDaofund(Address token, BigInteger amount) {
+        this.transferToken(token, this.daofund.get(), amount, new byte[0]);
     }
 
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
-        // Add token address to set if it is not already there.
-        // Used for tracking contract balance.
+        // Used for tracking contract balances.
         Address caller = Context.getCaller();
-        System.out.println("Caller_1: " + caller);
         this.balanceAddresses.add(caller);
 
-        // Send incomming tokens to daofund if withdrawing LP tokens.
-        //if (this.withdrawingLiquidity.get()) {
-        //    this.transferToken(caller, this.daofundAddress.get(), _value, new byte[0]);
-        //}
+        // Send incomming tokens to daofund to daofund if flag is true.
+        // Used as an option when withdrawing liquidity from a liquidity pool.
+        if (this.withdrawToDaofund.get()) {
+            this.transferToken(caller, this.daofund.get(), _value, new byte[0]);
+        }
     }
 
     @External

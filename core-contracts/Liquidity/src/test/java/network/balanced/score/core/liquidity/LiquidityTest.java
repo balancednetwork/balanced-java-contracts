@@ -26,9 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
-import score.Address;
 import score.Context;
 
 import java.util.Map;
@@ -79,12 +77,14 @@ public class LiquidityTest extends TestBase {
         liquidity.invoke(admin, "setDaofund", daofund.getAddress());
         assertEquals(daofund.getAddress(), liquidity.call("getDaofund"));
     }
+
     @Test
     void setGetStakedLP() {
         Account stakedLP = Account.newScoreAccount(1);
         liquidity.invoke(admin, "setStakedLP", stakedLP.getAddress());
         assertEquals(stakedLP.getAddress(), liquidity.call("getStakedLP"));
     }
+    
     @Test
     void getLiquidityContractBalance() {
         // Set mock balances for liquidity contract.
@@ -103,9 +103,9 @@ public class LiquidityTest extends TestBase {
         System.out.println(sicxBalance);
         BigInteger bnusdBalance = (BigInteger) bnusd.call("balanceOf", liquidity.getAddress());
         System.out.println(bnusdBalance);
-
+        
         // Act.
-        Map<Address, BigInteger> balances = (Map<Address, BigInteger>) liquidity.call("getTokenBalances");
+        Map<String, BigInteger> balances = (Map<String, BigInteger>) liquidity.call("getTokenBalances", false);
         System.out.println(balances);
         System.out.flush();
         //// Assert.
