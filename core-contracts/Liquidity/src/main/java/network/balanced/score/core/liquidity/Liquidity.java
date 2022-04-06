@@ -160,33 +160,6 @@ public class Liquidity {
         return tokenBalances;
     }
 
-    @External(readonly = true) 
-    public Map<String, BigInteger> getLPTokenBalances() {
-        Address dex =this.dex.get();
-        Integer numberOfPools = ((BigInteger) Context.call(dex, "getNonce")).intValue();
-
-        Map<String, BigInteger> tokenBalances = new HashMap<>();
-        for (Integer i = 1; i <= numberOfPools; i++) {
-            BigInteger lpTokenBalance = (BigInteger) Context.call(dex, "balanceOf", Context.getAddress(), i);
-            tokenBalances.put(i.toString(), lpTokenBalance);
-        }
-
-        return tokenBalances;
-    }
-
-    @External(readonly = true) 
-    public Map<String, BigInteger> getStakedLPTokenBalances() {
-        Integer numberOfPools = ((BigInteger) Context.call(this.dex.get(), "getNonce")).intValue();
-
-        Map<String, BigInteger> tokenBalances = new HashMap<>();
-        for (Integer i = 1; i <= numberOfPools; i++) {
-            BigInteger lpTokenBalance = (BigInteger) Context.call(this.stakedLP.get(), "balanceOf", Context.getAddress(), i);
-            tokenBalances.put(i.toString(), lpTokenBalance);
-        }
-
-        return tokenBalances;
-    }
-
     @External
     public void claimFunding() {
         Context.call(this.daofund.get(), "claim");
