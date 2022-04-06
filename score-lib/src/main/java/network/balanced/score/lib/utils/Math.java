@@ -14,35 +14,16 @@
  * limitations under the License.
  */
 
-import network.balanced.score.dependencies.Dependencies
+package network.balanced.score.lib.utils;
 
+import java.math.BigInteger;
 
-
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath Dependencies.javaeePlugin
-    }
-}
-
-subprojects {
-    repositories {
-        mavenCentral()
-    }
-
-    apply plugin: 'java'
-    apply plugin: 'jacoco'
-    apply plugin: 'foundation.icon.javaee'
-
-    java {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-
-    // need to add this option to retrieve formal parameter names
-    compileJava {
-        options.compilerArgs += ['-parameters']
+public class Math {
+    public static BigInteger pow(BigInteger base, int exponent) {
+        BigInteger res = BigInteger.ONE;
+        for (int i = 1; i <= exponent; i++) {
+            res = res.multiply(base);
+        }
+        return res;
     }
 }
