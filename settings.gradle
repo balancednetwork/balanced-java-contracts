@@ -25,11 +25,14 @@
  */
 
 rootProject.name = 'balanced-java-contracts'
-include(':core-contracts:Multicall',
-        ':core-contracts:router',
-        ':core-contracts:BatchDisbursement',
-        ':core-contracts:Reserve',
-        ':token-contracts')
-//include 'core-contracts:router'
-//findProject(':core-contracts:router')?.name = 'router'
+include(':Multicall')
+project(':Multicall').projectDir = file("core-contracts/Multicall")
 
+include(':BatchDisbursement')
+project(':BatchDisbursement').projectDir = file("core-contracts/BatchDisbursement")
+
+include(':Reserve')
+project(':Reserve').projectDir = file("core-contracts/Reserve")
+
+include(':Router')
+project(':Router').projectDir = file("core-contracts/Router")
