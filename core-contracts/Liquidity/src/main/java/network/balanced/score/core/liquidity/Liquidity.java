@@ -177,7 +177,7 @@ public class Liquidity {
         Address caller = Context.getCaller();
         this.balanceAddresses.add(caller);
 
-        // Send incomming tokens to daofund to daofund if flag is true.
+        // Send incomming tokens to daofund if flag is true.
         // Used as an option when withdrawing liquidity from a liquidity pool.
         if (this.withdrawToDaofund.get()) {
             this.transferToken(caller, this.daofund.get(), _value, new byte[0]);
