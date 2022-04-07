@@ -153,7 +153,7 @@ public class Liquidity {
         Map<String, BigInteger> tokenBalances = new HashMap<>();
         for (Integer i = 0; i < tokenAddressNumber; i++) {
             Address tokenAddress = this.balanceAddresses.at(i);
-            BigInteger tokenBalance = this.getTokenBalance(tokenAddress);
+            BigInteger tokenBalance = (BigInteger) Context.call(tokenAddress, "balanceOf", Context.getAddress());
 
             if (symbolsAsKeys) {
                 String symbol = (String) Context.call(tokenAddress, "symbol");
@@ -192,11 +192,6 @@ public class Liquidity {
 
     @External
     public void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data) {
-    }
-
-    @External(readonly = true)
-    public BigInteger getTokenBalance(Address token) {
-        return (BigInteger) Context.call(token, "balanceOf", Context.getAddress());
     }
 
     private void transferToken(Address token, Address to, BigInteger amount, byte[] data) {
