@@ -33,11 +33,12 @@ dependencies {
     implementation project(':score-lib')
 
     testImplementation Dependencies.javaeeUnitTest
-    testImplementation Dependencies.javaeeTokens
     // Use JUnit Jupiter for testing.
     testImplementation Dependencies.junitJupiter
     testRuntimeOnly Dependencies.junitJupiterEngine
     testImplementation project(':test-lib')
+    testImplementation Dependencies.mockitoCore
+    testImplementation Dependencies.mockitoInline
 }
 
 
