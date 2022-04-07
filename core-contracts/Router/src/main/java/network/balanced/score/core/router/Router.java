@@ -229,6 +229,6 @@ public class Router {
         }
 
         Address fromToken = Context.getCaller();
-        route(receiver, fromToken, path.toArray(new Address[0]), minimumReceive);
+        route(receiver, fromToken, (Address[]) path.toArray(), minimumReceive);
     }
 }
