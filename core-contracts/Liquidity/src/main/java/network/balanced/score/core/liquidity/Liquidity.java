@@ -42,9 +42,8 @@ public class Liquidity {
     private final EnumerableSet<Address> balanceAddresses = new EnumerableSet<>("balanceAddresses", Address.class);
     private final VarDB<Boolean> withdrawToDaofund = Context.newVarDB("withdrawToDaofund", Boolean.class);
 
-    public Liquidity(Address governance, Address admin) {
+    public Liquidity(Address governance) {
         this.governance.set(governance);
-        this.admin.set(admin);
         this.withdrawToDaofund.set(false);
     }
 
@@ -56,6 +55,13 @@ public class Liquidity {
     @External(readonly = true)
     public Address getGovernance() {
         return this.governance.get();
+    }
+
+    @External
+    public void setGovernance(Address _address) {
+        onlyOwner();
+        isContract(_address);
+        governance.set(_address);
     }
 
     @External

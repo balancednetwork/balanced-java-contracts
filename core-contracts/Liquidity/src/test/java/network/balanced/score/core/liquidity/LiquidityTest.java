@@ -26,56 +26,57 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import static network.balanced.score.lib.test.UnitTest.*;
+
 
 public class LiquidityTest extends TestBase {
     public static final ServiceManager sm = getServiceManager(); 
-    public static final Account owner = sm.createAccount();
-    public static final Account governance = sm.createAccount();
-    public static final Account admin = sm.createAccount();
+    public static final Account ownerAccount = sm.createAccount();
+    public static final Account adminAccount = sm.createAccount();
 
-    private Score liquidity;
+    int scoreCount = 0;
+    private final Account governanceScore = Account.newScoreAccount(scoreCount++);
+    private final Account dexScore = Account.newScoreAccount(scoreCount++);
+    private final Account daofundScore = Account.newScoreAccount(scoreCount++);
 
+    private Score liquidityScore;
+    
     @BeforeEach
     public void setup() throws Exception {
-        liquidity = sm.deploy(owner, Liquidity.class, governance.getAddress(), admin.getAddress());
+        liquidityScore = sm.deploy(ownerAccount, Liquidity.class, governanceScore.getAddress());
     }
 
     @Test
     void name() {
         String contractName = "Balanced Liquidity";
-        assertEquals(contractName, liquidity.call("name"));
+        assertEquals(contractName, liquidityScore.call("name"));
     }
 
     @Test
-    void getGovernance() {
-        assertEquals(governance.getAddress(), liquidity.call("getGovernance"));
+    void setGetGovernance() {
+        testGovernance(liquidityScore, governanceScore, ownerAccount);
     }
     
     @Test
     void setGetAdmin() {
-        Account admin = Account.newScoreAccount(1);
-        liquidity.invoke(governance, "setAdmin", admin.getAddress());
-        assertEquals(admin.getAddress(), liquidity.call("getAdmin"));
+        testAdmin(liquidityScore, governanceScore, adminAccount);
     }
 
     @Test
     void setGetDex() {
-        Account dex = Account.newScoreAccount(1);
-        liquidity.invoke(governance, "setDex", dex.getAddress());
-        assertEquals(dex.getAddress(), liquidity.call("getDex"));
+        testContractSettersAndGetters(liquidityScore, governanceScore, adminAccount,
+                 "setDex", dexScore.getAddress(), "getDex");
     }
     
     @Test
     void setGetDaofund() {
-        Account daofund = Account.newScoreAccount(1);
-        liquidity.invoke(admin, "setDaofund", daofund.getAddress());
-        assertEquals(daofund.getAddress(), liquidity.call("getDaofund"));
+        testContractSettersAndGetters(liquidityScore, governanceScore, adminAccount,
+                "setDaofund", daofundScore.getAddress(), "getDaofund");
     }
 
     @Test
     void setGetStakedLP() {
-        Account stakedLP = Account.newScoreAccount(1);
-        liquidity.invoke(admin, "setStakedLP", stakedLP.getAddress());
-        assertEquals(stakedLP.getAddress(), liquidity.call("getStakedLP"));
+        testContractSettersAndGetters(liquidityScore, governanceScore, adminAccount,
+                "setStakedLP", daofundScore.getAddress(), "getStakedLP");
     }
 }

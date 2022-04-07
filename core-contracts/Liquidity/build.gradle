@@ -28,6 +28,7 @@ dependencies {
     compileOnly Dependencies.javaeeApi
 
     implementation project(':score-lib')
+    implementation project(':test-lib')
     implementation Dependencies.javaeeTokens
     implementation Dependencies.javaeeScorex
     implementation Dependencies.minimalJson
