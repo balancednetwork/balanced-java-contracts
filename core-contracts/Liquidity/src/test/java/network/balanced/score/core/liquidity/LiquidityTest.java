@@ -47,6 +47,18 @@ public class LiquidityTest extends TestBase {
     }
 
     @Test
+    void getGovernance() {
+        assertEquals(governance.getAddress(), liquidity.call("getGovernance"));
+    }
+    
+    @Test
+    void setGetAdmin() {
+        Account admin = Account.newScoreAccount(1);
+        liquidity.invoke(governance, "setAdmin", admin.getAddress());
+        assertEquals(admin.getAddress(), liquidity.call("getAdmin"));
+    }
+
+    @Test
     void setGetDex() {
         Account dex = Account.newScoreAccount(1);
         liquidity.invoke(admin, "setDex", dex.getAddress());
