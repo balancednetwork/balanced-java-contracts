@@ -53,6 +53,11 @@ public class Liquidity {
         return "Balanced Liquidity";
     }
 
+    @External(readonly = true)
+    public Address getGovernance() {
+        return this.governance.get();
+    }
+
     @External
     public void setAdmin(Address admin) {
         only(this.governance);
