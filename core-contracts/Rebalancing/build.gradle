@@ -24,6 +24,7 @@ repositories {
 
 dependencies {
     compileOnly Dependencies.javaeeApi
+
     implementation Dependencies.javaeeScorex
     implementation project(':score-lib')
 
@@ -34,14 +35,16 @@ dependencies {
     testRuntimeOnly Dependencies.junitJupiterEngine
     testImplementation Dependencies.mockitoCore
     testImplementation Dependencies.mockitoInline
+    testImplementation project(':test-lib')
 }
 
 optimizedJar {
-    mainClassName = 'network.balanced.score.core.rebalancing.Rebalancing'
+    mainClassName = 'network.balanced.score.core.rebalancing.RebalancingImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
         configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
     }
+
     enableDebug = false
 }
 

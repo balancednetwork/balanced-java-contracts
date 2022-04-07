@@ -14,28 +14,12 @@
  * limitations under the License.
  */
 
-import network.balanced.score.dependencies.Dependencies
+package network.balanced.score.lib.interfaces.base;
 
-plugins {
-    id 'java'
-}
+import score.annotation.External;
 
-version '0.1.0'
+public interface Name {
 
-repositories {
-    mavenCentral()
-}
-
-optimizedJar.enabled = false
-
-dependencies {
-    compileOnly Dependencies.javaeeApi
-    compileOnly Dependencies.javaeeScoreClient
-
-    testImplementation Dependencies.junitJupiter
-    testRuntimeOnly Dependencies.junitJupiterEngine
-}
-
-test {
-    useJUnitPlatform()
+    @External(readonly = true)
+    String name();
 }

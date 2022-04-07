@@ -23,6 +23,7 @@ public class Dependencies {
     public static final String javaeeScorex = "foundation.icon:javaee-scorex:0.5.2";
     public static final String javaeeTokens = "com.github.sink772:javaee-tokens:0.6.1";
     public static final String javaeeUnitTest = "foundation.icon:javaee-unittest:0.9.2";
+    public static final String javaeeScoreClient = "foundation.icon:javaee-score-client:0.9.0";
 
     public static final String minimalJson = "com.github.sink772:minimal-json:0.9.6";
 

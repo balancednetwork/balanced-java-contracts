@@ -16,6 +16,7 @@
 
 package network.balanced.score.core.rebalancing;
 
+import network.balanced.score.lib.interfaces.Rebalancing;
 import score.Address;
 import score.Context;
 import score.VarDB;
@@ -26,11 +27,11 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.core.rebalancing.Constants.*;
+import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 
-public class Rebalancing {
+public class RebalancingImpl implements Rebalancing {
 
     private final VarDB<Address> bnusd = Context.newVarDB(BNUSD_ADDRESS, Address.class);
     private final VarDB<Address> sicx = Context.newVarDB(SICX_ADDRESS, Address.class);
@@ -40,11 +41,16 @@ public class Rebalancing {
     public static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
     private final VarDB<BigInteger> priceThreshold = Context.newVarDB(PRICE_THRESHOLD, BigInteger.class);
 
-    public Rebalancing(Address _governance) {
+    public RebalancingImpl(Address _governance) {
         if (governance.getOrDefault(null) == null) {
             Context.require(_governance.isContract(), TAG + ": Governance address should be a contract");
             governance.set(_governance);
         }
+    }
+
+    @External(readonly = true)
+    public String name() {
+        return "Balanced " + TAG;
     }
 
     @External
@@ -53,7 +59,7 @@ public class Rebalancing {
         isContract(_address);
         bnusd.set(_address);
     }
-    
+
     @External
     public void setLoans(Address _address) {
         only(admin);
@@ -214,8 +220,4 @@ public class Rebalancing {
             Context.call(loansScore, "lowerPrice", tokenAmount.abs());
         }
     }
-
-    @External
-    public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {}
-    
 }

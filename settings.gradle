@@ -41,3 +41,4 @@ include(':Liquidity')
 project(':Liquidity').projectDir = file("core-contracts/Liquidity")
 
 include 'score-lib'
+include 'test-lib'

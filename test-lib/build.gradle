@@ -29,11 +29,9 @@ repositories {
 optimizedJar.enabled = false
 
 dependencies {
-    compileOnly Dependencies.javaeeApi
-    compileOnly Dependencies.javaeeScoreClient
-
-    testImplementation Dependencies.junitJupiter
-    testRuntimeOnly Dependencies.junitJupiterEngine
+    implementation Dependencies.javaeeUnitTest
+    implementation Dependencies.junitJupiter
+    runtimeOnly Dependencies.junitJupiterEngine
 }
 
 test {
