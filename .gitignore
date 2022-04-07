@@ -11,6 +11,9 @@
 # Deployments folder
 deployments
 
+# Testnet Addresses
+testnet_addresses.txt
+
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
 

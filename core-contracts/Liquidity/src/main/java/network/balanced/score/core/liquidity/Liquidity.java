@@ -46,10 +46,6 @@ public class Liquidity {
         this.governance.set(governance);
         this.admin.set(admin);
         this.withdrawToDaofund.set(false);
-        // this.dex.set(Address.fromString("cx648a6d9c5f231f6b86c0caa9cc9eff8bd6040999"));
-        // sicx cx70806fdfa274fe12ab61f1f98c5a7a1409a0c108
-        // bnusd cx5838cb516d6156a060f90e9a3de92381331ff024
-        // dex cx648a6d9c5f231f6b86c0caa9cc9eff8bd6040999
     }
 
     @External(readonly = true)
