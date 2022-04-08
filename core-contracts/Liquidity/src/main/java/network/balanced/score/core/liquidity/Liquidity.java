@@ -127,7 +127,7 @@ public class Liquidity {
             this.withdrawToDaofund.set(false);
         }
         else {
-            Context.call(this.dex.get(), "remove", poolID, lptokens, true);
+            Context.call(this.dex.get(), "remove", poolID, lptokens, false);
         }     
     }
 
