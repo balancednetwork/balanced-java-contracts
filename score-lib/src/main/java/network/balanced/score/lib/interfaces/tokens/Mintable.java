@@ -14,34 +14,23 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.interfaces;
-
-import foundation.icon.score.client.ScoreInterface;
-import foundation.icon.score.client.ScoreClient;
-
+package network.balanced.score.lib.interfaces.tokens;
 import score.Address;
+import score.annotation.Optional;
 import score.annotation.External;
 
 import java.math.BigInteger;
-import java.util.Map;
+
+import foundation.icon.score.client.ScoreInterface;
 
 @ScoreInterface
-public interface DataSource {
+public interface Mintable extends IRC2 {
     @External
-    boolean precompute(int _snapshot_id, int batch_size);
+    public void mint(BigInteger _amount); 
 
     @External
-    BigInteger getTotalValue(String _name, int _snapshot_id);
+    public void mintTo(Address _account, BigInteger _amount);
 
     @External
-    BigInteger getBnusdValue(String _name);
-
-    @External
-    Map<Address, BigInteger> getDataBatch(String _name, int _snapshot_id, int _limit, int _offset);
-
-    @External
-    BigInteger getBalnPrice();
-
-    @External
-    Map<String, BigInteger> getBalanceAndSupply(String _name, Address _owner);
+    public void setMinter(Address _minter);
 }

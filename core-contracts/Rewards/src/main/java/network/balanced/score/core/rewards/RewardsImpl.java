@@ -24,6 +24,8 @@ import network.balanced.score.lib.interfaces.Rewards;
 import static network.balanced.score.lib.utils.Math.*;
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.DBHelpers.*;
+import network.balanced.score.lib.interfaces.tokens.MintableScoreInterface;
+
 
 import java.math.BigInteger;
 import java.util.List;
@@ -103,6 +105,8 @@ public class RewardsImpl implements Rewards {
         recipientSplit.set("DAOfund", BigInteger.ZERO);
         recipients.add("DAOfund");
         continuousRewardsDay.set(BigInteger.ZERO);
+
+        startTimestamp.set(0);
     }
 
     @External
@@ -146,14 +150,14 @@ public class RewardsImpl implements Rewards {
    
     @External(readonly = true)
     public BigInteger getBalnHolding(Address _holder) {
-        BigInteger accruedRewards = balnHoldings.get(_holder.toString());
+        BigInteger accruedRewards = balnHoldings.getOrDefault(_holder.toString(), BigInteger.ZERO);
 
         for (int i = 0; i < DataSourceDB.size(); i++ ) {
             String name = DataSourceDB.names.get(i);
             DataSourceImpl dataSource = DataSourceDB.get(name);
 
             Map<String, BigInteger> data = dataSource.loadCurrentSupply(_holder);
-
+            System.out.println(data);
             BigInteger currentTime = BigInteger.valueOf(Context.getBlockTimestamp());
             BigInteger sourceRewards = dataSource.computeSingelUserData(currentTime,
                                                                         data.get("_totalSupply"),
@@ -203,7 +207,8 @@ public class RewardsImpl implements Rewards {
             BigInteger percentage = (BigInteger) recipient.dist_percent;
             updateRecipientSnapshot(name, percentage);
             DataSourceImpl dataSource = DataSourceDB.get(name);
-            if (dataSource.getData().get("dist_percent").equals(BigInteger.ZERO)) {
+            BigInteger dataSourceDay = dataSource.day.getOrDefault(BigInteger.ZERO);
+            if (dataSource.totalDist.getOrDefault(dataSourceDay, BigInteger.ZERO).equals(BigInteger.ZERO)) {
                 dataSource.setDay(day);
             }
 
@@ -212,7 +217,6 @@ public class RewardsImpl implements Rewards {
         }
 
         Context.require(totalPercentange.equals(EXA), TAG + ": Total percentage does not sum up to 100.");
-
     }
 
     @External(readonly = true)
@@ -323,10 +327,12 @@ public class RewardsImpl implements Rewards {
         }
 
         if (distributionRequired) {
-            if (totalDist.get().equals(BigInteger.ZERO) || continuousRewardsActive) {
+            if (totalDist.getOrDefault(BigInteger.ZERO).equals(BigInteger.ZERO) || continuousRewardsActive) {
+                MintableScoreInterface baln = new MintableScoreInterface(balnAddress.get());
+                
                 BigInteger distribution = dailyDistribution(platformDay);
-                // TODO use irc2 interface
-                Context.call(balnAddress.get(), "mint", distribution);
+                
+                baln.mint(distribution);
                 totalDist.set(distribution);
 
                 BigInteger shares = EXA;
@@ -339,8 +345,7 @@ public class RewardsImpl implements Rewards {
                     if (contains(DataSourceDB.names, name)) {
                         DataSourceDB.get(name).totalDist.set(platformDay, share);
                     } else {
-                        // TODO use irc2 interface
-                        Context.call(balnAddress.get(), "transfer", platformRecipients.get(name).get(), share);
+                        baln.transfer(platformRecipients.get(name).get(), share, new byte[0]);
                     }
 
                     remaning = remaning.subtract(share);
@@ -425,24 +430,26 @@ public class RewardsImpl implements Rewards {
             String name = DataSourceDB.names.get(i);
             DataSourceImpl dataSource = DataSourceDB.get(name);
             Map<String, BigInteger> data = dataSource.loadCurrentSupply(address);
+            System.out.println("data:" + data) ;
             BigInteger totalSupply = data.get("_totalSupply");
             BigInteger balance = data.get("_balance");
+
             currentTime = BigInteger.valueOf(Context.getBlockTimestamp());
             BigInteger accuredRewards = dataSource.updateSingleUserData(currentTime, totalSupply, address, balance);
 
             if (accuredRewards.compareTo(BigInteger.ZERO) == 1) {
-                BigInteger newHoldings = balnHoldings.get(address.toString()).add(accuredRewards);
+                BigInteger newHoldings = balnHoldings.getOrDefault(address.toString(), BigInteger.ZERO).add(accuredRewards);
                 balnHoldings.set(address.toString(), newHoldings);
                 RewardsAccrued(address, name, accuredRewards);
             }
         }
     
-        if (balnHoldings.get(address.toString()).compareTo(BigInteger.ZERO) == 1) {
+        if (balnHoldings.getOrDefault(address.toString(), BigInteger.ZERO).compareTo(BigInteger.ZERO) == 1) {
             BigInteger accuredRewards = balnHoldings.get(address.toString());
             balnHoldings.set(address.toString(), BigInteger.ZERO);
 
-            // TODO use irc2 interface
-            Context.call(balnAddress.get(), "transfer", address, accuredRewards);
+            MintableScoreInterface baln = new MintableScoreInterface(balnAddress.get());
+            baln.transfer(address, accuredRewards, new byte[0]);
             RewardsClaimed(address, accuredRewards);
         }
     }
@@ -539,7 +546,8 @@ public class RewardsImpl implements Rewards {
    
     @External 
     public void setBaln(Address _address) {
-
+        only(admin);
+        isContract(_address);
         balnAddress.set(_address);
     }
     
@@ -651,8 +659,8 @@ public class RewardsImpl implements Rewards {
 
     public void updateRecipientSnapshot(String recipient, BigInteger percentage) {
         BigInteger currentDay = getDay();
-        BigInteger totalSnapshotsTaken = totalSnapshots.get(recipient); 
-        BigInteger recipientDay = snapshotRecipient.at(recipient).at(totalSnapshotsTaken.subtract(BigInteger.ONE)).get("ids");
+        BigInteger totalSnapshotsTaken = totalSnapshots.getOrDefault(recipient, BigInteger.ZERO); 
+        BigInteger recipientDay = snapshotRecipient.at(recipient).at(totalSnapshotsTaken.subtract(BigInteger.ONE)).getOrDefault("ids", BigInteger.ZERO);
         if (totalSnapshotsTaken.compareTo(BigInteger.ZERO) == 1 && recipientDay.equals(currentDay)) {
             snapshotRecipient.at(recipient).at(totalSnapshotsTaken.subtract(BigInteger.ONE)).set("amount", percentage);
         } else {

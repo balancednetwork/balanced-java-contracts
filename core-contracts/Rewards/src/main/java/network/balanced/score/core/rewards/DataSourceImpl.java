@@ -64,19 +64,20 @@ public class DataSourceImpl {
     }
 
     public BigInteger computeSingelUserData(BigInteger currentTime, BigInteger prevTotalSupply, Address user, BigInteger prevBalance) {
-        BigInteger currentUserWeight = userWeight.get(user.toString());
-        BigInteger totalWeight = computeTotalWeight(this.totalWeight.get(),
-                                                    totalDist.get(RewardsImpl.getDay()),
+        BigInteger currentUserWeight = userWeight.getOrDefault(user.toString(), BigInteger.ZERO);
+        BigInteger totalWeight = computeTotalWeight(this.totalWeight.getOrDefault(BigInteger.ZERO),
+                                                    totalDist.getOrDefault(RewardsImpl.getDay(), BigInteger.ZERO),
                                                     prevTotalSupply,
-                                                    lastUpdateTimeUs.get(), 
+                                                    lastUpdateTimeUs.getOrDefault(BigInteger.ZERO), 
                                                     currentTime);
-
+        System.out.println("totalWeight: " + totalWeight);
         BigInteger accruedRewards = BigInteger.ZERO;
 
         //  If the user" +s current weight is less than the total, update their weight and issue rewards
         if (currentUserWeight.compareTo(totalWeight) == -1) {
             if (prevBalance.compareTo(BigInteger.ZERO) == 1) {
                 accruedRewards = computeUserRewards(prevBalance, totalWeight, currentUserWeight);
+                System.out.println("rewards: " + accruedRewards);
                 accruedRewards = accruedRewards.divide(EXA);
             }
         }
@@ -85,15 +86,13 @@ public class DataSourceImpl {
     }
 
     public BigInteger updateSingleUserData(BigInteger currentTime, BigInteger prevTotalSupply, Address user, BigInteger prevBalance) {
-        BigInteger currentUserWeight = userWeight.get(user.toString());
-        BigInteger totalWeight = computeTotalWeight(this.totalWeight.get(),
-                                                    totalDist.get(RewardsImpl.getDay()),
-                                                    prevTotalSupply,
-                                                    lastUpdateTimeUs.get(), 
-                                                    currentTime);
+        BigInteger currentUserWeight = userWeight.getOrDefault(user.toString(), BigInteger.ZERO);
+        BigInteger totalWeight = updateTotalWeight(currentTime, prevTotalSupply);
 
         BigInteger accruedRewards = BigInteger.ZERO;
-
+        System.out.println("currentUserWeight:" + currentUserWeight);
+        System.out.println("prevBalance:" + prevBalance);
+        System.out.println("totalWeight:" + totalWeight);
         //  If the user" +s current weight is less than the total, update their weight and issue rewards
         if (currentUserWeight.compareTo(totalWeight) == -1) {
             if (prevBalance.compareTo(BigInteger.ZERO) == 1) {
@@ -123,11 +122,11 @@ public class DataSourceImpl {
         return Map.of(
             "day", day,
             "contract_address", contractAddress.get(),
-            "dist_percent", distPercent.get(),
-            "precomp", precomp.get(),
-            "offset", offset.get(),
-            "total_value", totalValue.get(day),
-            "total_dist", totalDist.get(day)
+            "dist_percent", distPercent.getOrDefault(BigInteger.ZERO),
+            "precomp", precomp.getOrDefault(false),
+            "offset", offset.getOrDefault(0),
+            "total_value", totalValue.getOrDefault(day, BigInteger.ZERO),
+            "total_dist", totalDist.getOrDefault(day, BigInteger.ZERO)
         );
     }
 
@@ -203,10 +202,14 @@ public class DataSourceImpl {
                                BigInteger lastUpdateTime,
                                BigInteger currentTime) {
         if (emission.equals(BigInteger.ZERO) || totalSupply.equals(BigInteger.ZERO)) {
+            System.out.println("emission" + emission);
+            System.out.println("totalSupply" + totalSupply);
+
             return previousTotalWeight;
         }
 
         BigInteger timeDelta = currentTime.subtract(lastUpdateTime);
+        System.out.println("here");
         if (timeDelta.equals(BigInteger.ZERO)) {
             return previousTotalWeight;
         }
@@ -219,7 +222,7 @@ public class DataSourceImpl {
     }
 
     private BigInteger updateTotalWeight(BigInteger currentTime, BigInteger totalSupply) {
-        BigInteger previousRunningTotal = totalWeight.get();
+        BigInteger previousRunningTotal = totalWeight.getOrDefault(BigInteger.ZERO);
         BigInteger originalTotalWeight = previousRunningTotal;
         BigInteger lastUpdateTimestamp = lastUpdateTimeUs.getOrDefault(BigInteger.ZERO);
         BigInteger originalLastUpdateTimestamp = lastUpdateTimestamp;
@@ -227,9 +230,11 @@ public class DataSourceImpl {
         if (lastUpdateTimestamp.equals(BigInteger.ZERO)) {
             lastUpdateTimestamp = currentTime;
             lastUpdateTimeUs.set(currentTime);
+            return previousRunningTotal;
         }
 
         if (currentTime.equals(lastUpdateTimestamp)) {
+            System.out.println("time is same");
             return previousRunningTotal;
         }
 
@@ -246,12 +251,15 @@ public class DataSourceImpl {
             previousDayEndUs = startTimestampUs.add(dayInMicroseconds.multiply(previousRewardsDay.add(BigInteger.ONE)));
             BigInteger endComputeTimestampUs = previousDayEndUs.min(currentTime);
 
-            BigInteger emission = totalDist.get(previousRewardsDay);
+            BigInteger emission = totalDist.getOrDefault(previousRewardsDay, BigInteger.ZERO);
             newTotal = computeTotalWeight(previousRunningTotal,
                                                      emission,
                                                      totalSupply,
                                                      lastUpdateTimestamp,
                                                      endComputeTimestampUs);
+        
+            previousRunningTotal = newTotal;
+            lastUpdateTimestamp = endComputeTimestampUs;
         }
         
         if (newTotal.compareTo(originalTotalWeight) != -1) {
