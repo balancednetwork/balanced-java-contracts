@@ -14,34 +14,35 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.interfaces;
-
-import foundation.icon.score.client.ScoreInterface;
-import foundation.icon.score.client.ScoreClient;
-
+package network.balanced.score.lib.interfaces.tokens;
 import score.Address;
+import score.annotation.Optional;
 import score.annotation.External;
 
 import java.math.BigInteger;
-import java.util.Map;
+
+import foundation.icon.score.client.ScoreInterface;
 
 @ScoreInterface
-public interface DataSource {
+public interface IRC2 {
     @External
-    boolean precompute(int _snapshot_id, int batch_size);
+    String name();
 
     @External
-    BigInteger getTotalValue(String _name, int _snapshot_id);
+    String symbol();
 
     @External
-    BigInteger getBnusdValue(String _name);
+    BigInteger decimals();
 
     @External
-    Map<Address, BigInteger> getDataBatch(String _name, int _snapshot_id, int _limit, int _offset);
+    BigInteger totalSupply();
 
     @External
-    BigInteger getBalnPrice();
+    BigInteger balanceOf(Address _owner);
 
     @External
-    Map<String, BigInteger> getBalanceAndSupply(String _name, Address _owner);
+    void transfer(Address _to, BigInteger _value, @Optional byte[] _data);
+    
+    @External
+    void Transfer(Address _from, Address _to, BigInteger _value, byte[] _data);
 }

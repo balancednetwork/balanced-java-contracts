@@ -28,7 +28,7 @@ dependencies {
     implementation project(':score-lib')
 
     annotationProcessor Dependencies.javaeeScoreClient
-    compileOnly Dependencies.javaeeScoreClient
+    compileOnly Dependencies.javaeeScoreClient  
 
     implementation Dependencies.javaeeScorex
 
@@ -38,6 +38,7 @@ dependencies {
     testRuntimeOnly Dependencies.junitJupiterEngine
     testImplementation Dependencies.mockitoCore
     testImplementation project(':test-lib')
+    testImplementation 'org.mockito:mockito-inline:2.13.0'
 }
 
 optimizedJar {

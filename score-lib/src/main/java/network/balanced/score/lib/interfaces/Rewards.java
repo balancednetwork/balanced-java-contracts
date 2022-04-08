@@ -105,30 +105,6 @@ public interface Rewards extends
     @External
     void updateBatchRewardsData(String _name, BigInteger _totalSupply, RewardsDataEntry[] _data);
 
-    @External
-    void setBwt(Address _address );
-    
-    @External(readonly = true)
-    Address getBwt();
-    
-    @External 
-    void setReserve(Address _address );
-   
-    @External(readonly = true)
-    Address getReserve();
-   
-    @External 
-    void setDaofund(Address _address );
-   
-    @External(readonly = true)
-    Address getDaofund();
-   
-    @External
-    void setStakedLp(Address _address );
-   
-    @External(readonly = true)
-    Address getStakedLp();
-    
     @External    
     void setBatchSize(int _batch_size);
 
