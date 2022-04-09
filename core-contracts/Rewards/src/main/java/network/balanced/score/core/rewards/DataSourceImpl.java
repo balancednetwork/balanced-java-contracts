@@ -16,17 +16,17 @@
 
 package network.balanced.score.core.rewards;
 
-import score.Address;
-import score.Context;
-import score.VarDB;
-import score.DictDB;
+import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Constants.U_SECONDS_DAY;
 
 import java.math.BigInteger;
 import java.util.Map;
 
-import static network.balanced.score.core.rewards.utils.RewardsConstants.*;
-
 import network.balanced.score.lib.interfaces.DataSourceScoreInterface;
+import score.Address;
+import score.Context;
+import score.DictDB;
+import score.VarDB;
 
 public class DataSourceImpl {
         public VarDB<Address> contractAddress;
@@ -70,14 +70,13 @@ public class DataSourceImpl {
                                                     prevTotalSupply,
                                                     lastUpdateTimeUs.getOrDefault(BigInteger.ZERO), 
                                                     currentTime);
-        System.out.println("totalWeight: " + totalWeight);
+
         BigInteger accruedRewards = BigInteger.ZERO;
 
         //  If the user" +s current weight is less than the total, update their weight and issue rewards
         if (currentUserWeight.compareTo(totalWeight) == -1) {
             if (prevBalance.compareTo(BigInteger.ZERO) == 1) {
                 accruedRewards = computeUserRewards(prevBalance, totalWeight, currentUserWeight);
-                System.out.println("rewards: " + accruedRewards);
                 accruedRewards = accruedRewards.divide(EXA);
             }
         }
@@ -88,11 +87,7 @@ public class DataSourceImpl {
     public BigInteger updateSingleUserData(BigInteger currentTime, BigInteger prevTotalSupply, Address user, BigInteger prevBalance) {
         BigInteger currentUserWeight = userWeight.getOrDefault(user.toString(), BigInteger.ZERO);
         BigInteger totalWeight = updateTotalWeight(currentTime, prevTotalSupply);
-
         BigInteger accruedRewards = BigInteger.ZERO;
-        System.out.println("currentUserWeight:" + currentUserWeight);
-        System.out.println("prevBalance:" + prevBalance);
-        System.out.println("totalWeight:" + totalWeight);
         //  If the user" +s current weight is less than the total, update their weight and issue rewards
         if (currentUserWeight.compareTo(totalWeight) == -1) {
             if (prevBalance.compareTo(BigInteger.ZERO) == 1) {
@@ -114,8 +109,9 @@ public class DataSourceImpl {
     }
 
     public BigInteger getValue() {
+        //TODO use scoreInterface when new javee unittest version is live
         DataSourceScoreInterface datasource = new DataSourceScoreInterface(contractAddress.get());
-        return datasource.getBnusdValue(name.get());
+        return (BigInteger) Context.call(contractAddress.get(), "getBnusdValue", name.get());//datasource.getBnusdValue(name.get());
     }
 
     public Map<String, Object> getDataAt(BigInteger day) {
@@ -141,11 +137,12 @@ public class DataSourceImpl {
         BigInteger day = this.day.get();
         String name = this.name.get();
 
-        boolean precomputeDone = datasource.precompute(day.intValue(), batchSize);
+        boolean precomputeDone = (boolean) RewardsImpl.call(contractAddress.get(), "precompute", day.intValue(), batchSize);//datasource.precompute(day.intValue(), batchSize);
 
-        if (!precomp.get() && precomputeDone) {
+        if (!precomp.getOrDefault(false) && precomputeDone) {
             precomp.set(true);
-            BigInteger sourceTotalValue = datasource.getTotalValue(name, day.intValue());
+            BigInteger sourceTotalValue = (BigInteger) RewardsImpl.call(contractAddress.get(), "getTotalValue", name, day.intValue());
+
             totalValue.set(day, sourceTotalValue);
         } 
 
@@ -153,9 +150,8 @@ public class DataSourceImpl {
             return;
         }
 
-        int offset = this.offset.get();
-        Map<Address, BigInteger> dataBatch = datasource.getDataBatch( name, day.intValue(), batchSize, offset);
-
+        int offset = this.offset.getOrDefault(0);
+        Map<Address, BigInteger> dataBatch = (Map<Address, BigInteger>) RewardsImpl.call(contractAddress.get(), "getDataBatch", name, day.intValue(), batchSize, offset);
         this.offset.set(offset + batchSize);
         if (dataBatch.isEmpty()) {
             this.day.set(day.add(BigInteger.ONE));
@@ -163,7 +159,7 @@ public class DataSourceImpl {
             this.precomp.set(false);
         }
 
-        BigInteger remaning = totalDist.get(day);
+        BigInteger remaining = totalDist.get(day);
         BigInteger shares = totalValue.get(day);
         BigInteger originalShares = shares;
 
@@ -172,10 +168,9 @@ public class DataSourceImpl {
             batchSum = batchSum.add(value);
         }
 
-        BigInteger tokenShare= BigInteger.ZERO;
-        BigInteger remaining = BigInteger.ZERO;
+        BigInteger tokenShare = BigInteger.ZERO;
         for (Address address : dataBatch.keySet()) {
-            tokenShare = remaning.multiply(dataBatch.get(address)).divide(shares);
+            tokenShare = remaining.multiply(dataBatch.get(address)).divide(shares);
             Context.require(shares.compareTo(BigInteger.ZERO) == 1,  
                         RewardsImpl.TAG + ": zero or negative divisor for " + name + ", " +
                         "sum: " + batchSum + ", " +
@@ -186,7 +181,7 @@ public class DataSourceImpl {
             
             remaining = remaining.subtract(tokenShare);
             shares = shares.subtract(dataBatch.get(address));
-            BigInteger prevHoldings = RewardsImpl.balnHoldings.get(address.toString());
+            BigInteger prevHoldings = RewardsImpl.balnHoldings.getOrDefault(address.toString(), BigInteger.ZERO);
             RewardsImpl.balnHoldings.set(address.toString(), prevHoldings.add(tokenShare));
         }
     
@@ -202,14 +197,10 @@ public class DataSourceImpl {
                                BigInteger lastUpdateTime,
                                BigInteger currentTime) {
         if (emission.equals(BigInteger.ZERO) || totalSupply.equals(BigInteger.ZERO)) {
-            System.out.println("emission" + emission);
-            System.out.println("totalSupply" + totalSupply);
-
             return previousTotalWeight;
         }
 
         BigInteger timeDelta = currentTime.subtract(lastUpdateTime);
-        System.out.println("here");
         if (timeDelta.equals(BigInteger.ZERO)) {
             return previousTotalWeight;
         }
@@ -230,11 +221,9 @@ public class DataSourceImpl {
         if (lastUpdateTimestamp.equals(BigInteger.ZERO)) {
             lastUpdateTimestamp = currentTime;
             lastUpdateTimeUs.set(currentTime);
-            return previousRunningTotal;
         }
 
         if (currentTime.equals(lastUpdateTimestamp)) {
-            System.out.println("time is same");
             return previousRunningTotal;
         }
 

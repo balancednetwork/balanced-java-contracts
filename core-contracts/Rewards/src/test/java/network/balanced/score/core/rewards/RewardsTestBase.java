@@ -5,27 +5,33 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
+
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+
 import score.Address;
+import score.Context;
 
 import java.math.BigInteger;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.mockito.Mockito.*;
 
-import network.balanced.score.lib.interfaces.DataSourceScoreInterface;
+import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.interfaces.tokens.MintableScoreInterface;
 import network.balanced.score.lib.structs.DistributionPercentage;
+import network.balanced.score.lib.test.UnitTest;
 
 import network.balanced.score.lib.test.mock.MockContract;
 
-public class RewardsTestBase extends TestBase {
+public class RewardsTestBase extends UnitTest {
     protected static final Long DAY = 43200L;
+    protected static final BigInteger EXA = BigInteger.TEN.pow(18);
 
     protected static final ServiceManager sm = getServiceManager();
     protected static final Account owner = sm.createAccount();
@@ -40,8 +46,8 @@ public class RewardsTestBase extends TestBase {
     int scoreCount = 0;
     protected final Account governance = Account.newScoreAccount(scoreCount++);
 
-    public MockContract<DataSourceScoreInterface> loans;
     public MockContract<DataSourceScoreInterface> dex;
+    public MockContract<DataSourceScoreInterface> loans;
     public MockContract<MintableScoreInterface> baln;
     public MockContract<MintableScoreInterface> bwt;
     public Score rewardsScore;
@@ -51,17 +57,31 @@ public class RewardsTestBase extends TestBase {
         loans = new MockContract<DataSourceScoreInterface>(DataSourceScoreInterface.class, sm, admin);
         baln = new MockContract<MintableScoreInterface>(MintableScoreInterface.class, sm, admin);
         bwt = new MockContract<MintableScoreInterface>(MintableScoreInterface.class, sm, admin);
-                
+        
         rewardsScore = sm.deploy(owner, RewardsImpl.class, governance.getAddress());
-        rewardsScore.invoke(owner, "setAdmin", admin.getAddress());
+
+        rewardsScore.invoke(governance, "setAdmin", admin.getAddress());
+        sm.getBlock().increase(DAY);
 
         rewardsScore.invoke(governance, "addNewDataSource", "sICX/ICX", dex.getAddress());
         rewardsScore.invoke(governance, "addNewDataSource", "Loans", loans.getAddress());
 
+        Map<String, BigInteger> emptyDataSource = Map.of(
+            "_balance", BigInteger.ZERO,
+            "_totalSupply", BigInteger.ZERO
+        );
+        when(loans.mock.getBalanceAndSupply(any(String.class), any(Address.class))).thenReturn(emptyDataSource);
+        when(dex.mock.getBalanceAndSupply(any(String.class), any(Address.class))).thenReturn(emptyDataSource);
+        when(loans.mock.precompute(any(Integer.class), any(Integer.class))).thenReturn(true);
+        when(dex.mock.precompute(any(Integer.class), any(Integer.class))).thenReturn(true);
+        
         rewardsScore.invoke(admin, "setBaln", baln.getAddress());
         rewardsScore.invoke(admin, "setBwt", bwt.getAddress());
+
         setupDistributions();
-    } 
+        
+        syncDistributions();
+    }
 
     private void setupDistributions() {
         loansDist.recipient_name = "Loans";
@@ -84,6 +104,12 @@ public class RewardsTestBase extends TestBase {
         rewardsScore.invoke(governance, "updateBalTokenDistPercentage", (Object) distributionPercentages);
     }
 
+    private void syncDistributions() {
+        for (long i = 0; i < sm.getBlock().getHeight()/(DAY); i++) {
+            rewardsScore.invoke(admin, "distribute");
+            rewardsScore.invoke(admin, "distribute");
+        }
+    }
 
     public void mockBalanceAndSupply(MockContract<DataSourceScoreInterface> dataSource, String name, Address address, BigInteger balance, BigInteger supply) {
         Map<String, BigInteger> balanceAndSupply = Map.of(
@@ -92,5 +118,12 @@ public class RewardsTestBase extends TestBase {
         );
 
         when(dataSource.mock.getBalanceAndSupply(name, address)).thenReturn(balanceAndSupply);
+    }
+
+    public void verifyBalnReward(Address address, BigInteger expectedReward) {
+        verify(baln.mock).transfer(eq(address), argThat(reward -> {
+            assertEquals(expectedReward.divide(EXA), reward.divide(EXA));
+            return true;
+        }), eq(new byte[0]));
     }
 }

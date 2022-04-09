@@ -16,21 +16,24 @@
 
 package network.balanced.score.core.rewards;
 
-import static network.balanced.score.core.rewards.utils.RewardsConstants.*;
-
-import network.balanced.score.lib.structs.DistributionPercentage;
-import network.balanced.score.lib.structs.RewardsDataEntry;
-import network.balanced.score.lib.interfaces.Rewards;
-import static network.balanced.score.lib.utils.Math.*;
-import static network.balanced.score.lib.utils.Check.*;
-import static network.balanced.score.lib.utils.DBHelpers.*;
-import network.balanced.score.lib.interfaces.tokens.MintableScoreInterface;
-
+import static network.balanced.score.core.rewards.utils.RewardsConstants.DEFAULT_BATCH_SIZE;
+import static network.balanced.score.lib.utils.Check.isContract;
+import static network.balanced.score.lib.utils.Check.only;
+import static network.balanced.score.lib.utils.Check.onlyOwner;
+import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Constants.U_SECONDS_DAY;
+import static network.balanced.score.lib.utils.DBHelpers.contains;
+import static network.balanced.score.lib.utils.Math.pow;
 
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+import network.balanced.score.lib.interfaces.DataSourceScoreInterface;
+import network.balanced.score.lib.interfaces.Rewards;
+import network.balanced.score.lib.interfaces.tokens.MintableScoreInterface;
+import network.balanced.score.lib.structs.DistributionPercentage;
+import network.balanced.score.lib.structs.RewardsDataEntry;
 import score.Address;
 import score.ArrayDB;
 import score.BranchDB;
@@ -157,7 +160,6 @@ public class RewardsImpl implements Rewards {
             DataSourceImpl dataSource = DataSourceDB.get(name);
 
             Map<String, BigInteger> data = dataSource.loadCurrentSupply(_holder);
-            System.out.println(data);
             BigInteger currentTime = BigInteger.valueOf(Context.getBlockTimestamp());
             BigInteger sourceRewards = dataSource.computeSingelUserData(currentTime,
                                                                         data.get("_totalSupply"),
@@ -320,7 +322,7 @@ public class RewardsImpl implements Rewards {
         boolean continuousRewardsActive = day.compareTo(continuousRewardsDay) != -1;
         boolean dayOfContinuousRewards = day.equals(continuousRewardsDay);
 
-        if (platformDay.compareTo(day) == -1 && continuousRewardsActive) {
+        if (platformDay.compareTo(day) == -1 && !continuousRewardsActive) {
             distributionRequired = true;
         } else if (platformDay.compareTo(day.add(BigInteger.ONE)) == -1 && continuousRewardsActive) {
             distributionRequired = true;
@@ -357,20 +359,20 @@ public class RewardsImpl implements Rewards {
                 }
 
                 totalDist.set(remaning);
-                RewardsImpl.platformDay.set(platformDay);
+                RewardsImpl.platformDay.set(platformDay.add(BigInteger.ONE));
                 return false;
             }
+        }
 
-            if (dayOfContinuousRewards || !continuousRewardsActive) {
-                for (int i = 0; i < DataSourceDB.size(); i++ ) {
-                    String name = DataSourceDB.names.get(i);
-                    DataSourceImpl dataSource = DataSourceDB.get(name);
-                    if (dataSource.day.get().compareTo(day) == -1) {
-                        dataSource.distribute(batchSize.get());
-                        return false;
-                    }
-            
+        if (dayOfContinuousRewards || !continuousRewardsActive) {
+            for (int i = 0; i < DataSourceDB.size(); i++ ) {
+                String name = DataSourceDB.names.get(i);
+                DataSourceImpl dataSource = DataSourceDB.get(name);
+                if (dataSource.day.get().compareTo(day) == -1) {
+                    dataSource.distribute(batchSize.get());
+                    return false;
                 }
+        
             }
         }
 
@@ -416,7 +418,7 @@ public class RewardsImpl implements Rewards {
 
             distributions.put(recipient, snapshotRecipient.at(recipient).at(low).get("amount"));
         }
-        //TIODO remove zero values;
+        //TODO remove zero values;
         return distributions;
     }
 
@@ -430,26 +432,26 @@ public class RewardsImpl implements Rewards {
             String name = DataSourceDB.names.get(i);
             DataSourceImpl dataSource = DataSourceDB.get(name);
             Map<String, BigInteger> data = dataSource.loadCurrentSupply(address);
-            System.out.println("data:" + data) ;
             BigInteger totalSupply = data.get("_totalSupply");
             BigInteger balance = data.get("_balance");
 
             currentTime = BigInteger.valueOf(Context.getBlockTimestamp());
             BigInteger accuredRewards = dataSource.updateSingleUserData(currentTime, totalSupply, address, balance);
-
+            
             if (accuredRewards.compareTo(BigInteger.ZERO) == 1) {
                 BigInteger newHoldings = balnHoldings.getOrDefault(address.toString(), BigInteger.ZERO).add(accuredRewards);
                 balnHoldings.set(address.toString(), newHoldings);
                 RewardsAccrued(address, name, accuredRewards);
             }
         }
-    
+
         if (balnHoldings.getOrDefault(address.toString(), BigInteger.ZERO).compareTo(BigInteger.ZERO) == 1) {
             BigInteger accuredRewards = balnHoldings.get(address.toString());
             balnHoldings.set(address.toString(), BigInteger.ZERO);
-
+            
             MintableScoreInterface baln = new MintableScoreInterface(balnAddress.get());
             baln.transfer(address, accuredRewards, new byte[0]);
+            // Context.call(balnAddress.get(), "transfer", address, accuredRewards, new byte[0]);
             RewardsClaimed(address, accuredRewards);
         }
     }
@@ -460,10 +462,12 @@ public class RewardsImpl implements Rewards {
         DataSourceImpl dataSource = DataSourceDB.get(_name);
         BigInteger emission = this.getEmission(BigInteger.valueOf(-1));
 
-        // TODO use dex interface
-        BigInteger balnPrice = (BigInteger) Context.call(dexDataSource.contractAddress.get(), "getBalnPrice");
+        //TODO use scoreInterface when new javee unittest version is live
+        // DataSourceScoreInterface dex = new DataSourceScoreInterface(dexDataSource.contractAddress.get());
+        BigInteger balnPrice = (BigInteger) Context.call(dexDataSource.contractAddress.get(), "getBalnPrice"); // dex.getBalnPrice(); // 
         BigInteger percentage = dataSource.distPercent.get();
-        BigInteger sourceValue = dataSource.getValue();
+        //TODO use scoreInterface when new javee unittest version is live
+        BigInteger sourceValue = (BigInteger) Context.call(dataSource.contractAddress.get(), "getBnusdValue", dataSource.name.get());//dataSource.getValue();
         BigInteger year = BigInteger.valueOf(365);
 
         BigInteger sourceAmount = year.multiply(emission).multiply(percentage);
@@ -496,7 +500,7 @@ public class RewardsImpl implements Rewards {
         BigInteger accuredRewards = DataSourceDB.get(_name).updateSingleUserData(currentTime, _totalSupply, _user, _balance);
 
         if (accuredRewards.compareTo(BigInteger.ZERO) == 1) {
-            BigInteger newHoldings = balnHoldings.get(_user.toString()).add(accuredRewards);
+            BigInteger newHoldings = balnHoldings.getOrDefault(_user.toString(), BigInteger.ZERO).add(accuredRewards);
             balnHoldings.set(_user.toString(), newHoldings);
             RewardsAccrued(_user, _name, accuredRewards);
         }
@@ -513,7 +517,7 @@ public class RewardsImpl implements Rewards {
             BigInteger accuredRewards = DataSourceDB.get(_name).updateSingleUserData(currentTime, _totalSupply, user, previousBalance);
 
             if (accuredRewards.compareTo(BigInteger.ZERO) == 1) {
-                BigInteger newHoldings = balnHoldings.get(user.toString()).add(accuredRewards);
+                BigInteger newHoldings = balnHoldings.getOrDefault(user.toString(), BigInteger.ZERO).add(accuredRewards);
                 balnHoldings.set(user.toString(), newHoldings);
                 RewardsAccrued(user, _name, accuredRewards);
             }
@@ -535,7 +539,7 @@ public class RewardsImpl implements Rewards {
    
     @External
     public void setAdmin(Address _address) {
-        onlyOwner();
+        only(governance);
         admin.set(_address);
     }
    
@@ -668,6 +672,11 @@ public class RewardsImpl implements Rewards {
             snapshotRecipient.at(recipient).at(totalSnapshotsTaken).set("amount", percentage);
             totalSnapshots.set(recipient, totalSnapshotsTaken.add(BigInteger.ONE));
         }
+    }
+
+    //TODO can be removed when new javee unittest version is live
+    public static Object call(Address targetAddress, String method, Object... params) {
+        return Context.call(targetAddress, method, params);
     }
 
     @EventLog(indexed=1)
