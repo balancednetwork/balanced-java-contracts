@@ -15,7 +15,7 @@ public class Helpers {
         for (int i = 0; i < length; i++) {
             if (_array.get(i).equals(item)) {
                 _array.set(i, top);
-                _array.pop();
+                _array.removeLast();
                 return true;
             }
         }
