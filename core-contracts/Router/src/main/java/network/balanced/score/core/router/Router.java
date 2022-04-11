@@ -22,16 +22,16 @@ import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import score.Address;
 import score.Context;
+import score.UserRevertException;
 import score.VarDB;
 import score.annotation.External;
 import score.annotation.Optional;
 import score.annotation.Payable;
-import scorex.util.ArrayList;
 
 import java.math.BigInteger;
-import java.util.List;
 
 import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.StringUtils.convertStringToBigInteger;
 
 public class Router {
     private static final String DEX_ADDRESS = "dex_address";
@@ -124,22 +124,23 @@ public class Router {
 
     private void swap(Address fromToken, Address toToken) {
         if (fromToken == null) {
-            Context.require(toToken == sicx.get(), TAG + ": ICX can only be traded for sICX");
+            Context.require(toToken.equals(sicx.get()), TAG + ": ICX can only be traded for sICX");
             BigInteger balance = Context.getBalance(Context.getAddress());
             Context.transfer(staking.get(), balance);
-        } else if (fromToken == sicx.get() && toToken == null) {
+        } else if (toToken == null) {
+            Context.require(fromToken.equals(sicx.get()), TAG + ": ICX can only be traded with sICX token");
             JsonObject data = new JsonObject();
             data.add("method", "_swap_icx");
-            BigInteger balance = (BigInteger) Context.call(fromToken, "balanceOf");
-            Context.call(fromToken, "transfer", balance, data.toString().getBytes());
+            BigInteger balance = (BigInteger) Context.call(fromToken, "balanceOf", Context.getAddress());
+            Context.call(fromToken, "transfer", dex.get(), balance, data.toString().getBytes());
         } else {
             JsonObject params = new JsonObject();
             params.add("toToken", toToken.toString());
             JsonObject data = new JsonObject();
             data.add("method", "_swap");
             data.add("params", params);
-            BigInteger balance = (BigInteger) Context.call(fromToken, "balanceOf");
-            Context.call(fromToken, "transfer", balance, data.toString().getBytes());
+            BigInteger balance = (BigInteger) Context.call(fromToken, "balanceOf", Context.getAddress());
+            Context.call(fromToken, "transfer", dex.get(), balance, data.toString().getBytes());
         }
     }
 
@@ -154,12 +155,12 @@ public class Router {
         if (currentToken == null) {
             BigInteger balance = Context.getBalance(Context.getAddress());
             Context.require(balance.compareTo(_minReceive) >= 0,
-                    TAG + ": Below minimum receive amount of" + _minReceive);
+                    TAG + ": Below minimum receive amount of " + _minReceive);
             Context.transfer(from, balance);
         } else {
             BigInteger balance = (BigInteger) Context.call(currentToken, "balanceOf", Context.getAddress());
             Context.require(balance.compareTo(_minReceive) >= 0,
-                    TAG + ": Below minimum receive amount of" + _minReceive);
+                    TAG + ": Below minimum receive amount of " + _minReceive);
             Context.call(currentToken, "transfer", from, balance, new byte[0]);
         }
     }
@@ -170,6 +171,8 @@ public class Router {
         if (_minReceive == null) {
             _minReceive = BigInteger.ZERO;
         }
+
+        Context.require(_minReceive.signum() >= 0, TAG + ": Must specify a positive number for minimum to receive");
 
         Context.require(_path.length <= MAX_NUMBER_OF_ITERATIONS,
                 TAG + ": Passed max swaps of " + MAX_NUMBER_OF_ITERATIONS);
@@ -203,7 +206,14 @@ public class Router {
 
         BigInteger minimumReceive = BigInteger.ZERO;
         if (params.contains("minimumReceive")) {
-            minimumReceive = new BigInteger(params.get("minimumReceive").asString());
+            JsonValue minimumReceiveValue = params.get("minimumReceive");
+            if (minimumReceiveValue.isString()) {
+                minimumReceive = convertStringToBigInteger(minimumReceiveValue.asString());
+            } else if (minimumReceiveValue.isNumber()) {
+                minimumReceive = new BigInteger(minimumReceiveValue.toString());
+            } else {
+                throw new UserRevertException(TAG + ": Invalid value format for minimum receive amount");
+            }
             Context.require(minimumReceive.signum() >= 0, TAG + ": Must specify a positive number for minimum to " +
                     "receive");
         }
@@ -218,17 +228,18 @@ public class Router {
         Context.require(pathArray.size() <= MAX_NUMBER_OF_ITERATIONS,
                 TAG + ": Passed max swaps of " + MAX_NUMBER_OF_ITERATIONS);
 
-        List<Address> path = new ArrayList<>();
+        Address[] path = new Address[pathArray.size()];
 
-        for (JsonValue addressJsonValue : pathArray) {
-            if (addressJsonValue == null) {
-                path.add(null);
+        for (int i = 0; i < pathArray.size(); i++) {
+            JsonValue addressJsonValue = pathArray.get(i);
+            if (addressJsonValue == null || addressJsonValue.toString().equals("null")) {
+                path[i] = null;
             } else {
-                path.add(Address.fromString(addressJsonValue.asString()));
+                path[i] = Address.fromString(addressJsonValue.asString());
             }
         }
 
         Address fromToken = Context.getCaller();
-        route(receiver, fromToken, (Address[]) path.toArray(), minimumReceive);
+        route(receiver, fromToken, path, minimumReceive);
     }
 }

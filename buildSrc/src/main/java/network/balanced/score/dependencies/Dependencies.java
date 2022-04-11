@@ -31,4 +31,6 @@ public class Dependencies {
     public static final String junitJupiterEngine = "org.junit.jupiter:junit-jupiter-engine:5.8.2";
     public static final String mockitoCore = "org.mockito:mockito-core:4.3.1";
     public static final String mockitoInline = "org.mockito:mockito-inline:4.3.1";
+
+    public static final String json = "org.json:json:20211205";
 }
