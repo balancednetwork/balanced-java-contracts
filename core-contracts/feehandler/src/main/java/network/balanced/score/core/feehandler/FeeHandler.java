@@ -8,6 +8,7 @@ import scorex.util.ArrayList;
 import scorex.util.HashMap;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -47,6 +48,11 @@ public class FeeHandler {
     public void disable() {
         onlyGovernance();
         enabled.set(false);
+    }
+
+    @External(readonly = true)
+    public boolean isEnabled() {
+        return enabled.getOrDefault(false);
     }
 
     @External
@@ -102,9 +108,10 @@ public class FeeHandler {
         }
 
         JsonArray pathJson = Json.parse(path).asArray();
-        String[] routePathArray = new String[pathJson.size()];
-        for (int i = 0; i < routePathArray.length; i++) {
-            routePathArray[i] = pathJson.get(i).asString();
+        List<String> routePathArray = new ArrayList<>();
+
+        for (JsonValue address : pathJson) {
+            routePathArray.add(address.asString());
         }
 
         return Map.of("fromToken", _fromToken,
@@ -126,7 +133,7 @@ public class FeeHandler {
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         Address sender = Context.getCaller();
-        if (last_txhash.getOrDefault(new byte[0]) == (Context.getTransactionHash())) {
+        if (Arrays.equals(last_txhash.getOrDefault(new byte[0]), Context.getTransactionHash())) {
             return;
         } else if (!timeForFeeProcessing(sender)) {
             return;
@@ -151,9 +158,8 @@ public class FeeHandler {
 
     @External(readonly = true)
     public List<Address> get_allowed_address(int offset) {
-        if (offset < 0){
-            Context.revert("Negative value not allowed.");
-        }
+        Context.require(offset >= 0, "Negative value not allowed.");
+
         int end = Math.min(allowed_address.size(), offset + 20) - 1;
         List<Address> address_list = new ArrayList<>();
         for (int i = offset; i < end + 1; i++) {
@@ -183,10 +189,9 @@ public class FeeHandler {
 
             if (balance.compareTo(BigInteger.ZERO) > 0) {
                 break;
-            } else if (loop_flag && (starting_index.equals(current_index))) {
-                Context.revert("No fees on the contract.");
             }
 
+            Context.require(!(loop_flag && (starting_index.equals(current_index))), "No fees on the contract.");
             current_index = current_index.add(BigInteger.ONE);
             if (!loop_flag) {
                 loop_flag = true;
@@ -197,9 +202,9 @@ public class FeeHandler {
 
         JsonArray path;
         String route = routes.at(address).getOrDefault(getContractAddress("baln"), "");
-        if (route.isEmpty()){
+        if (route.isEmpty()) {
             path = new JsonArray();
-        }else {
+        } else {
             path = Json.parse(route).asArray();
         }
 

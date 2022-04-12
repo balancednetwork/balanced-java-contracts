@@ -32,6 +32,8 @@ dependencies {
 
     testImplementation Dependencies.javaeeUnitTest
     testImplementation Dependencies.javaeeTokens
+    testImplementation Dependencies.mockitoCore
+    testImplementation Dependencies.mockitoInline
     // Use JUnit Jupiter for testing.
     testImplementation Dependencies.junitJupiter
     testRuntimeOnly Dependencies.junitJupiterEngine
