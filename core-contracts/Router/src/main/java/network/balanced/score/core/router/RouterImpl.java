@@ -20,6 +20,7 @@ import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
+import network.balanced.score.lib.interfaces.Router;
 import score.Address;
 import score.Context;
 import score.UserRevertException;
@@ -33,7 +34,7 @@ import java.math.BigInteger;
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.StringUtils.convertStringToBigInteger;
 
-public class Router {
+public class RouterImpl implements Router {
     private static final String DEX_ADDRESS = "dex_address";
     private static final String SICX_ADDRESS = "sicx_address";
     private static final String STAKING_ADDRESS = "staking_address";
@@ -50,7 +51,7 @@ public class Router {
     private final VarDB<Address> staking = Context.newVarDB(STAKING_ADDRESS, Address.class);
     private final VarDB<Address> dex = Context.newVarDB(DEX_ADDRESS, Address.class);
 
-    public Router(Address _governance) {
+    public RouterImpl(Address _governance) {
         if (governance.get() == null) {
             isContract(_governance);
             governance.set(_governance);

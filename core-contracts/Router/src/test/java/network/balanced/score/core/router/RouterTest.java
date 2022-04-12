@@ -32,8 +32,8 @@ import score.Context;
 import java.math.BigInteger;
 import java.util.Map;
 
-import static network.balanced.score.core.router.Router.MAX_NUMBER_OF_ITERATIONS;
-import static network.balanced.score.core.router.Router.TAG;
+import static network.balanced.score.core.router.RouterImpl.MAX_NUMBER_OF_ITERATIONS;
+import static network.balanced.score.core.router.RouterImpl.TAG;
 import static network.balanced.score.lib.test.UnitTest.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -55,7 +55,7 @@ class RouterTest extends TestBase {
 
     @BeforeEach
     void deploy() throws Exception {
-        routerScore = sm.deploy(owner, Router.class, governanceScore.getAddress());
+        routerScore = sm.deploy(owner, RouterImpl.class, governanceScore.getAddress());
     }
 
     private void setup() {
