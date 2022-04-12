@@ -194,7 +194,7 @@ public class RouterImpl implements Router {
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         // Receive token transfers from Balanced DEX and staking while in mid-route
-        if (_from == dex.get() || _from == MINT_ADDRESS) {
+        if (_from.equals(dex.get()) || _from.equals(MINT_ADDRESS)) {
             return;
         }
 
