@@ -14,29 +14,18 @@
  * limitations under the License.
  */
 
-import network.balanced.score.dependencies.Dependencies
+package network.balanced.score.lib.interfaces.addresses;
 
-plugins {
-    id 'java'
-}
+import foundation.icon.score.client.ScoreClient;
+import score.Address;
+import score.annotation.External;
 
-version '0.1.0'
+@ScoreClient
+public interface BnusdAddress {
 
-repositories {
-    mavenCentral()
-}
+    @External
+    void setBnusd(Address _address);
 
-optimizedJar.enabled = false
-
-dependencies {
-    compileOnly Dependencies.javaeeApi
-    compileOnly Dependencies.javaeeScoreClient
-
-    testImplementation Dependencies.javaeeUnitTest
-    testImplementation Dependencies.junitJupiter
-    testRuntimeOnly Dependencies.junitJupiterEngine
-}
-
-test {
-    useJUnitPlatform()
+    @External(readonly = true)
+    Address getBnusd();
 }

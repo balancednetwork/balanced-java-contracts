@@ -14,29 +14,15 @@
  * limitations under the License.
  */
 
-import network.balanced.score.dependencies.Dependencies
+package network.balanced.score.lib.interfaces.base;
 
-plugins {
-    id 'java'
-}
+import score.Address;
+import score.annotation.External;
 
-version '0.1.0'
+import java.math.BigInteger;
 
-repositories {
-    mavenCentral()
-}
+public interface TokenFallback {
 
-optimizedJar.enabled = false
-
-dependencies {
-    compileOnly Dependencies.javaeeApi
-    compileOnly Dependencies.javaeeScoreClient
-
-    testImplementation Dependencies.javaeeUnitTest
-    testImplementation Dependencies.junitJupiter
-    testRuntimeOnly Dependencies.junitJupiterEngine
-}
-
-test {
-    useJUnitPlatform()
+    @External
+    void tokenFallback(Address _from, BigInteger _value, byte[] _data);
 }
