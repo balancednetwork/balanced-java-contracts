@@ -43,7 +43,7 @@ dependencies {
 
 
 optimizedJar {
-    mainClassName = 'network.balanced.score.core.router.Router'
+    mainClassName = 'network.balanced.score.core.router.RouterImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
         configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
