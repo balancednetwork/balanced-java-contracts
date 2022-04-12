@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.daofund.utils;
+package network.balanced.score.lib.utils;
 
 import score.ArrayDB;
 import score.Context;

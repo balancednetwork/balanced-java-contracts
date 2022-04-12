@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.daofund.utils;
+package network.balanced.score.lib.structs;
 
-public class Constants {
-    public static final String GOVERNANCE = "governance";
-    public static final String ADMIN = "admin";
-    public static final String LOANS_SCORE = "loans_score";
-    public static final String ADDRESS = "address";
-    public static final String FUND = "fund";
-    public static final String AWARDS = "awards";
+import score.Address;
+
+import java.math.BigInteger;
+
+public class Disbursement {
+    public Address address;
+    public BigInteger amount;
 }

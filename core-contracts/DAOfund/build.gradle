@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,9 +28,7 @@ dependencies {
     compileOnly Dependencies.javaeeApi
     implementation Dependencies.javaeeScorex
     implementation Dependencies.minimalJson
-
-    annotationProcessor Dependencies.javaeeScoreClient
-    compileOnly Dependencies.javaeeScoreClient
+    implementation project(':score-lib')
 
     testImplementation Dependencies.javaeeUnitTest
     testImplementation Dependencies.javaeeTokens
@@ -39,6 +37,8 @@ dependencies {
     testRuntimeOnly Dependencies.junitJupiterEngine
     testImplementation Dependencies.mockitoCore
     testImplementation Dependencies.mockitoInline
+
+    testImplementation project(':test-lib')
 }
 
 optimizedJar {

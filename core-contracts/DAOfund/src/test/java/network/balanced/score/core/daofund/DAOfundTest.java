@@ -20,7 +20,7 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
-import org.junit.jupiter.api.Assertions;
+import network.balanced.score.lib.structs.Disbursement;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,8 +33,8 @@ import score.Context;
 import java.math.BigInteger;
 import java.util.Map;
 
-import static network.balanced.score.core.daofund.DAOfund.Disbursement;
 import static network.balanced.score.core.daofund.DAOfund.TAG;
+import static network.balanced.score.lib.test.UnitTest.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -42,30 +42,25 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
 class DAOfundTest extends TestBase {
-    public static final ServiceManager sm = getServiceManager();
+    private static final ServiceManager sm = getServiceManager();
 
-    public static final Account owner = sm.createAccount();
-    public static final Account admin = sm.createAccount();
-    public static final Account receiver = sm.createAccount();
+    private static final Account owner = sm.createAccount();
+    private static final Account admin = sm.createAccount();
+    private static final Account receiver = sm.createAccount();
 
-    public static final Account governanceScore = Account.newScoreAccount(1);
-    public static final Account loansScore = Account.newScoreAccount(2);
-    public static final Account sicxScore = Account.newScoreAccount(3);
-    public static final Account balnScore = Account.newScoreAccount(4);
-    public static final Account bnUSDScore = Account.newScoreAccount(5);
+    private static final Account governanceScore = Account.newScoreAccount(scoreCount++);
+    private static final Account loansScore = Account.newScoreAccount(scoreCount++);
+    private static final Account sicxScore = Account.newScoreAccount(scoreCount++);
+    private static final Account balnScore = Account.newScoreAccount(scoreCount++);
+    private static final Account bnUSDScore = Account.newScoreAccount(scoreCount++);
 
     private Score daofundScore;
     private DAOfund daofundSpy;
 
     private final BigInteger amount = new BigInteger("54321");
 
-    private void expectErrorMessage(Executable contractCall, String expectedErrorMessage) {
-        AssertionError e = Assertions.assertThrows(AssertionError.class, contractCall);
-        assertEquals(expectedErrorMessage, e.getMessage());
-    }
-
     @BeforeEach
-    public void setup() throws Exception {
+    void setup() throws Exception {
         daofundScore = sm.deploy(owner, DAOfund.class, governanceScore.getAddress());
         assert (daofundScore.getAddress().isContract());
 
@@ -80,37 +75,18 @@ class DAOfundTest extends TestBase {
 
     @Test
     void setAndGetGovernance() {
-        assertEquals(governanceScore.getAddress(), daofundScore.call("getGovernance"));
-
-        Account newGovernance = Account.newScoreAccount(100);
-        daofundScore.invoke(owner, "setGovernance", newGovernance.getAddress());
-        assertEquals(newGovernance.getAddress(), daofundScore.call("getGovernance"));
-
-        Account nonScore = sm.createAccount();
-        Executable setGovernanceWithNonContract = () -> daofundScore.invoke(owner, "setGovernance",
-                nonScore.getAddress());
-        expectErrorMessage(setGovernanceWithNonContract, TAG + ": Address provided is an EOA address. A contract " +
-                "address is required.");
+        testGovernance(daofundScore, governanceScore, owner);
     }
 
     @Test
     void setAndGetAdmin() {
-        Executable notGovernanceInvoke = () -> daofundScore.invoke(owner, "setAdmin", admin.getAddress());
-        expectErrorMessage(notGovernanceInvoke, TAG + ": Sender not governance contract");
-
-        daofundScore.invoke(governanceScore, "setAdmin", admin.getAddress());
-        assertEquals(admin.getAddress(), daofundScore.call("getAdmin"));
+        testAdmin(daofundScore, governanceScore, admin);
     }
 
     @Test
     void setAndGetLoans() {
-        setAndGetAdmin();
-
-        Executable nonAdminCall = () -> daofundScore.invoke(owner, "setLoans", loansScore.getAddress());
-        expectErrorMessage(nonAdminCall, TAG + ": Sender not admin");
-
-        daofundScore.invoke(admin, "setLoans", loansScore.getAddress());
-        assertEquals(loansScore.getAddress(), daofundScore.call("getLoans"));
+        testContractSettersAndGetters(daofundScore, governanceScore, admin, "setLoans", loansScore.getAddress(),
+                "getLoans");
     }
 
     @Test
