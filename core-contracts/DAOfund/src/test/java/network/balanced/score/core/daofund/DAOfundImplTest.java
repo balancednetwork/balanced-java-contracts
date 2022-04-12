@@ -33,7 +33,7 @@ import score.Context;
 import java.math.BigInteger;
 import java.util.Map;
 
-import static network.balanced.score.core.daofund.DAOfund.TAG;
+import static network.balanced.score.core.daofund.DAOfundImpl.TAG;
 import static network.balanced.score.lib.test.UnitTest.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -41,7 +41,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
-class DAOfundTest extends TestBase {
+class DAOfundImplTest extends TestBase {
     private static final ServiceManager sm = getServiceManager();
 
     private static final Account owner = sm.createAccount();
@@ -55,16 +55,16 @@ class DAOfundTest extends TestBase {
     private static final Account bnUSDScore = Account.newScoreAccount(scoreCount++);
 
     private Score daofundScore;
-    private DAOfund daofundSpy;
+    private DAOfundImpl daofundSpy;
 
     private final BigInteger amount = new BigInteger("54321");
 
     @BeforeEach
     void setup() throws Exception {
-        daofundScore = sm.deploy(owner, DAOfund.class, governanceScore.getAddress());
+        daofundScore = sm.deploy(owner, DAOfundImpl.class, governanceScore.getAddress());
         assert (daofundScore.getAddress().isContract());
 
-        daofundSpy = (DAOfund) spy(daofundScore.getInstance());
+        daofundSpy = (DAOfundImpl) spy(daofundScore.getInstance());
         daofundScore.setInstance(daofundSpy);
     }
 

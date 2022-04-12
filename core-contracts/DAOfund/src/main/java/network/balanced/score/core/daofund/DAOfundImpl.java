@@ -16,6 +16,7 @@
 
 package network.balanced.score.core.daofund;
 
+import network.balanced.score.lib.interfaces.DAOfund;
 import network.balanced.score.lib.interfaces.LoansScoreInterface;
 import network.balanced.score.lib.structs.Disbursement;
 import network.balanced.score.lib.utils.EnumerableSetDB;
@@ -30,7 +31,7 @@ import java.util.Map;
 
 import static network.balanced.score.lib.utils.Check.*;
 
-public class DAOfund {
+public class DAOfundImpl implements DAOfund {
 
     @EventLog(indexed = 2)
     public void TokenTransfer(Address recipient, BigInteger amount, String note) {
@@ -54,7 +55,7 @@ public class DAOfund {
 
     public static final String TAG = "Balanced DAOfund";
 
-    public DAOfund(Address _governance) {
+    public DAOfundImpl(Address _governance) {
         if (governance.get() == null) {
             isContract(_governance);
             governance.set(_governance);
