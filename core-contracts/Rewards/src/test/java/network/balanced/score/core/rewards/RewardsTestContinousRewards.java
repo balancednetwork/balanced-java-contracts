@@ -20,7 +20,7 @@ import static network.balanced.score.lib.utils.Constants.U_SECONDS_DAY;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.times;;
+import static org.mockito.Mockito.times;
 
 import java.math.BigInteger;
 import java.util.Map;

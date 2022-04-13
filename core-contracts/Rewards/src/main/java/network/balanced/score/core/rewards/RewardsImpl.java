@@ -275,7 +275,7 @@ public class RewardsImpl implements Rewards {
 
         BigInteger day = getDay();
         Map<String, BigInteger>  recipientDistribution = recipientAt(day);
-        Context.require(recipientDistribution.getOrDefault(_name, BigInteger.ZERO).equals(BigInteger.ZERO), TAG + ": Data source rewards percentage must be set to 0 before removing.");
+        Context.require(!recipientDistribution.containsKey(_name), TAG + ": Data source rewards percentage must be set to 0 before removing.");
         String topRecipient = recipients.pop();
         if (topRecipient != _name) {
             for(int i = 0; i < recipients.size(); i++) {
