@@ -40,5 +40,5 @@ project(':Rebalancing').projectDir = file("core-contracts/Rebalancing")
 include 'score-lib'
 include 'test-lib'
 
-include(':bnUSD')
-project(':bnUSD').projectDir = file("token-contracts/bnUSD")
+include(':BalancedDollar')
+project(':BalancedDollar').projectDir = file("token-contracts/BalancedDollar")
