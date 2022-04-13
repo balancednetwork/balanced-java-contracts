@@ -14,16 +14,25 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.interfaces.addresses;
+package network.balanced.score.lib.interfaces;
 
+import network.balanced.score.lib.interfaces.addresses.AdminAddress;
+import network.balanced.score.lib.interfaces.addresses.BalnAddress;
+import network.balanced.score.lib.interfaces.addresses.GovernanceAddress;
+import network.balanced.score.lib.interfaces.base.IRC2;
+import network.balanced.score.lib.interfaces.base.TokenFallback;
 import score.Address;
 import score.annotation.External;
+import score.annotation.Optional;
 
-public interface BnusdAddress {
+import java.math.BigInteger;
+
+public interface WorkerToken extends GovernanceAddress, AdminAddress, BalnAddress, TokenFallback, IRC2 {
 
     @External
-    void setBnusd(Address _address);
+    void adminTransfer(Address _from, Address _to, BigInteger _value, @Optional byte[] _data);
 
-    @External(readonly = true)
-    Address getBnusd();
+    @External
+    void distribute();
+
 }

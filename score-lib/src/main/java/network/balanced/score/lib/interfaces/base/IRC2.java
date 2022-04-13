@@ -14,16 +14,24 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.interfaces.addresses;
+package network.balanced.score.lib.interfaces.base;
 
 import score.Address;
-import score.annotation.External;
 
-public interface BnusdAddress {
+import java.math.BigInteger;
 
-    @External
-    void setBnusd(Address _address);
+public interface IRC2 {
+    String name();
 
-    @External(readonly = true)
-    Address getBnusd();
+    String symbol();
+
+    BigInteger decimals();
+
+    BigInteger totalSupply();
+
+    BigInteger balanceOf(Address _owner);
+
+    void transfer(Address _to, BigInteger _value, byte[] _data);
+
+    void Transfer(Address _from, Address _to, BigInteger _value, byte[] _data);
 }

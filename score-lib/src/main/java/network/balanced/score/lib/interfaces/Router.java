@@ -14,16 +14,21 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.interfaces.addresses;
+package network.balanced.score.lib.interfaces;
 
+import network.balanced.score.lib.interfaces.addresses.*;
+import network.balanced.score.lib.interfaces.base.Name;
+import network.balanced.score.lib.interfaces.base.TokenFallback;
 import score.Address;
 import score.annotation.External;
+import score.annotation.Optional;
+import score.annotation.Payable;
 
-public interface BnusdAddress {
+import java.math.BigInteger;
 
+public interface Router extends Name, GovernanceAddress, AdminAddress, DexAddress, SicxAddress, StakingAddress, TokenFallback {
+
+    @Payable
     @External
-    void setBnusd(Address _address);
-
-    @External(readonly = true)
-    Address getBnusd();
+    void route(Address[] path, @Optional BigInteger _minReceive);
 }
