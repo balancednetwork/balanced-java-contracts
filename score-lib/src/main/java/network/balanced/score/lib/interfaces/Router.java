@@ -14,28 +14,21 @@
  * limitations under the License.
  */
 
-import network.balanced.score.dependencies.Dependencies
+package network.balanced.score.lib.interfaces;
 
-plugins {
-    id 'java'
-}
+import network.balanced.score.lib.interfaces.addresses.*;
+import network.balanced.score.lib.interfaces.base.Name;
+import network.balanced.score.lib.interfaces.base.TokenFallback;
+import score.Address;
+import score.annotation.External;
+import score.annotation.Optional;
+import score.annotation.Payable;
 
-version '0.1.0'
+import java.math.BigInteger;
 
-repositories {
-    mavenCentral()
-}
+public interface Router extends Name, GovernanceAddress, AdminAddress, DexAddress, SicxAddress, StakingAddress, TokenFallback {
 
-optimizedJar.enabled = false
-
-dependencies {
-    implementation Dependencies.javaeeUnitTest
-    implementation Dependencies.junitJupiter
-    runtimeOnly Dependencies.junitJupiterEngine
-    implementation Dependencies.mockitoCore
-    implementation Dependencies.json
-}
-
-test {
-    useJUnitPlatform()
+    @Payable
+    @External
+    void route(Address[] path, @Optional BigInteger _minReceive);
 }

@@ -14,28 +14,22 @@
  * limitations under the License.
  */
 
-import network.balanced.score.dependencies.Dependencies
+package network.balanced.score.lib.utils;
 
-plugins {
-    id 'java'
-}
+import score.UserRevertException;
 
-version '0.1.0'
+import java.math.BigInteger;
 
-repositories {
-    mavenCentral()
-}
-
-optimizedJar.enabled = false
-
-dependencies {
-    implementation Dependencies.javaeeUnitTest
-    implementation Dependencies.junitJupiter
-    runtimeOnly Dependencies.junitJupiterEngine
-    implementation Dependencies.mockitoCore
-    implementation Dependencies.json
-}
-
-test {
-    useJUnitPlatform()
+public class StringUtils {
+    public static BigInteger convertStringToBigInteger(String number) {
+        try {
+            if (number.startsWith("0x") || number.startsWith("-0x")) {
+                return new BigInteger(number.replace("0x", ""), 16);
+            } else {
+                return new BigInteger(number);
+            }
+        } catch (NumberFormatException e) {
+            throw new UserRevertException("Invalid numeric value: " + number);
+        }
+    }
 }
