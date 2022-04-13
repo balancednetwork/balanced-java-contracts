@@ -14,31 +14,15 @@
  * limitations under the License.
  */
 
-import network.balanced.score.dependencies.Dependencies
+package network.balanced.score.lib.test;
 
-plugins {
-    id 'java'
-}
+import org.mockito.ArgumentMatcher;
+import org.mockito.internal.matchers.VarargMatcher;
 
-version '0.1.0'
+public class VarargAnyMatcher<T> implements ArgumentMatcher<T>, VarargMatcher {
 
-repositories {
-    mavenCentral()
-}
-
-optimizedJar.enabled = false
-
-dependencies {
-    compileOnly Dependencies.javaeeApi
-
-    compileOnly Dependencies.javaeeScoreClient
-    annotationProcessor Dependencies.javaeeScoreClient
-
-    testImplementation Dependencies.javaeeUnitTest
-    testImplementation Dependencies.junitJupiter
-    testRuntimeOnly Dependencies.junitJupiterEngine
-}
-
-test {
-    useJUnitPlatform()
+    @Override
+    public boolean matches(T t) {
+        return true;
+    }
 }

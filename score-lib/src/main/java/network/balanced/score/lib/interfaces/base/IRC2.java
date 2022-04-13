@@ -14,31 +14,24 @@
  * limitations under the License.
  */
 
-import network.balanced.score.dependencies.Dependencies
+package network.balanced.score.lib.interfaces.base;
 
-plugins {
-    id 'java'
-}
+import score.Address;
 
-version '0.1.0'
+import java.math.BigInteger;
 
-repositories {
-    mavenCentral()
-}
+public interface IRC2 {
+    String name();
 
-optimizedJar.enabled = false
+    String symbol();
 
-dependencies {
-    compileOnly Dependencies.javaeeApi
+    BigInteger decimals();
 
-    compileOnly Dependencies.javaeeScoreClient
-    annotationProcessor Dependencies.javaeeScoreClient
+    BigInteger totalSupply();
 
-    testImplementation Dependencies.javaeeUnitTest
-    testImplementation Dependencies.junitJupiter
-    testRuntimeOnly Dependencies.junitJupiterEngine
-}
+    BigInteger balanceOf(Address _owner);
 
-test {
-    useJUnitPlatform()
+    void transfer(Address _to, BigInteger _value, byte[] _data);
+
+    void Transfer(Address _from, Address _to, BigInteger _value, byte[] _data);
 }

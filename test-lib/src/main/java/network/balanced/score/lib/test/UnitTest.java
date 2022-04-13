@@ -20,9 +20,13 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
+import org.json.JSONObject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.function.Executable;
 import score.Address;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -85,5 +89,13 @@ public class UnitTest extends TestBase {
 
         contractUnderTest.invoke(adminAccount, setterMethod, addressToSet);
         assertEquals(addressToSet, contractUnderTest.call(getterMethod));
+    }
+
+    public static byte[] tokenData(String method, Map<String, Object> params) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("method", method);
+        map.put("params", params);
+        JSONObject data = new JSONObject(map);
+        return data.toString().getBytes();
     }
 }
