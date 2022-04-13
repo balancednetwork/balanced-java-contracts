@@ -27,6 +27,7 @@ import score.Address;
 import score.Context;
 import score.DictDB;
 import score.VarDB;
+import score.annotation.EventLog;
 
 public class DataSourceImpl {
         public VarDB<Address> contractAddress;
@@ -109,9 +110,8 @@ public class DataSourceImpl {
     }
 
     public BigInteger getValue() {
-        //TODO use scoreInterface when new javee unittest version is live
         DataSourceScoreInterface datasource = new DataSourceScoreInterface(contractAddress.get());
-        return (BigInteger) Context.call(contractAddress.get(), "getBnusdValue", name.get());//datasource.getBnusdValue(name.get());
+        return datasource.getBnusdValue(name.get());
     }
 
     public Map<String, Object> getDataAt(BigInteger day) {
@@ -137,11 +137,11 @@ public class DataSourceImpl {
         BigInteger day = this.day.get();
         String name = this.name.get();
 
-        boolean precomputeDone = (boolean) RewardsImpl.call(contractAddress.get(), "precompute", day.intValue(), batchSize);//datasource.precompute(day.intValue(), batchSize);
+        boolean precomputeDone = datasource.precompute(day.intValue(), batchSize);
 
         if (!precomp.getOrDefault(false) && precomputeDone) {
             precomp.set(true);
-            BigInteger sourceTotalValue = (BigInteger) RewardsImpl.call(contractAddress.get(), "getTotalValue", name, day.intValue());
+            BigInteger sourceTotalValue = datasource.getTotalValue(name, day.intValue());
 
             totalValue.set(day, sourceTotalValue);
         } 
@@ -151,7 +151,7 @@ public class DataSourceImpl {
         }
 
         int offset = this.offset.getOrDefault(0);
-        Map<Address, BigInteger> dataBatch = (Map<Address, BigInteger>) RewardsImpl.call(contractAddress.get(), "getDataBatch", name, day.intValue(), batchSize, offset);
+        Map<Address, BigInteger> dataBatch = datasource.getDataBatch(name, day.intValue(), batchSize, offset);
         this.offset.set(offset + batchSize);
         if (dataBatch.isEmpty()) {
             this.day.set(day.add(BigInteger.ONE));
@@ -187,8 +187,7 @@ public class DataSourceImpl {
     
         totalDist.set(day, remaining);
         totalValue.set(day, shares);
-        //TODO
-        // Rewards.Report(day, name, remaining, shares);
+        Report(day, name, remaining, shares);
     }
 
     private BigInteger computeTotalWeight(BigInteger previousTotalWeight,
@@ -266,4 +265,7 @@ public class DataSourceImpl {
         BigInteger detlaWeight = totalWeight.subtract(userWeight);
         return detlaWeight.multiply(prevUserBalance);
     }
+
+    @EventLog(indexed=2)
+    public void Report(BigInteger _day, String _name, BigInteger _dist, BigInteger _value) {}
 }
