@@ -108,7 +108,7 @@ public class RewardsTestBase extends UnitTest {
         rewardsScore.invoke(governance, "updateBalTokenDistPercentage", (Object) distributionPercentages);
     }
 
-    private void syncDistributions() {
+    public void syncDistributions() {
         for (long i = 0; i < sm.getBlock().getHeight()/(DAY); i++) {
             rewardsScore.invoke(admin, "distribute");
             rewardsScore.invoke(admin, "distribute");

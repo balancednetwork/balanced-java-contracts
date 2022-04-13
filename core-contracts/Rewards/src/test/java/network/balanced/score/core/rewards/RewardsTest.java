@@ -47,21 +47,6 @@ public class RewardsTest extends RewardsTestBase {
     }
 
     @Test
-    void name() {
-        assertEquals("Balanced Rewards", rewardsScore.call("name"));
-    }
-
-    @Test
-    void setAndGetAdmin() {
-        testAdmin(rewardsScore, governance, admin);
-    }
-
-    @Test
-    void setAndGetGovernance() {
-        testGovernance(rewardsScore, governance, owner);
-    }
-
-    @Test
     void getDataSources() {
         // Act 
         Map<String, Map<String, Object>> dataSources = (Map<String, Map<String, Object>>) rewardsScore.call("getDataSources");
@@ -317,11 +302,7 @@ public class RewardsTest extends RewardsTestBase {
         when(dex.mock.getDataBatch(eq("sICX/ICX"), eq(day), any(Integer.class), eq(0))).thenReturn(dataBatchSwap);
 
         // Act
-        //twice per datasource
-        rewardsScore.invoke(admin, "distribute");
-        rewardsScore.invoke(admin, "distribute");
-        rewardsScore.invoke(admin, "distribute");
-        rewardsScore.invoke(admin, "distribute");
+        syncDistributions();
 
         // Assert
         Object users = new Address[] {account.getAddress()};
@@ -369,11 +350,7 @@ public class RewardsTest extends RewardsTestBase {
         when(dex.mock.getDataBatch(eq("sICX/ICX"), eq(day), any(Integer.class), eq(0))).thenReturn(dataBatchSwap);
 
         // Act
-        //twice per datasource
-        rewardsScore.invoke(admin, "distribute");
-        rewardsScore.invoke(admin, "distribute");
-        rewardsScore.invoke(admin, "distribute");
-        rewardsScore.invoke(admin, "distribute");
+        syncDistributions();
 
         // Assert
         rewardsScore.invoke(account, "claimRewards");
