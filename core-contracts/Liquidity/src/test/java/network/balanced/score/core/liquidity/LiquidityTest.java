@@ -93,9 +93,9 @@ public class LiquidityTest extends TestBase {
     }
 
     @Test
-    void setGetStakedLP() {
+    void setGetStaking() {
         testContractSettersAndGetters(liquidityScore, governanceScore, adminAccount,
-                "setStakedLP", daofundScore.getAddress(), "getStakedLP");
+                "setStaking", daofundScore.getAddress(), "getStaking");
     }
 
     //@Test

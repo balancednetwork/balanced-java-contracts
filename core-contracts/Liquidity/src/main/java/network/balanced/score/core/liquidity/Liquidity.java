@@ -37,7 +37,7 @@ public class Liquidity {
     private final VarDB<Address> admin = Context.newVarDB("admin", Address.class);
     private final VarDB<Address> dex = Context.newVarDB("dex", Address.class);
     private final VarDB<Address> daofund = Context.newVarDB("daofund", Address.class);
-    private final VarDB<Address> stakedLP = Context.newVarDB("stakedLP", Address.class);
+    private final VarDB<Address> staking = Context.newVarDB("staking", Address.class);
 
     private final EnumerableSet<Address> balanceAddresses = new EnumerableSet<>("balanceAddresses", Address.class);
     private final VarDB<Boolean> withdrawToDaofund = Context.newVarDB("withdrawToDaofund", Boolean.class);
@@ -100,15 +100,15 @@ public class Liquidity {
     }
 
     @External
-    public void setStakedLP(Address stakedLP) {
+    public void setStaking(Address staking) {
         only(this.admin);
-        isContract(stakedLP);
-        this.stakedLP.set(stakedLP);
+        isContract(staking);
+        this.staking.set(staking);
     }
 
     @External(readonly = true)
-    public Address getStakedLP() {
-        return stakedLP.get();
+    public Address getStaking() {
+        return staking.get();
     }
 
     @External
@@ -133,13 +133,13 @@ public class Liquidity {
 
     @External
     public void stakeLPTokens(BigInteger id, BigInteger amount) {
-        Context.call(this.dex.get(), "transfer", this.stakedLP.get(), amount, id, this.createLPStakingData());
+        Context.call(this.dex.get(), "transfer", this.staking.get(), amount, id, this.createLPStakingData());
     }
 
     @External
     public void unstakeLPTokens(BigInteger id, BigInteger amount) {
         only(this.governance);
-        Context.call(this.stakedLP.get(), "unstake", id, amount);
+        Context.call(this.staking.get(), "unstake", id, amount);
     }
 
     private void depositToken(Address token, BigInteger amount) {
