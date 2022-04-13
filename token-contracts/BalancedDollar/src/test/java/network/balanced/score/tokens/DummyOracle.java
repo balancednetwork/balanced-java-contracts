@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,19 @@
 package network.balanced.score.tokens;
 
 import score.annotation.External;
+import scorex.util.HashMap;
 
 import java.math.BigInteger;
-import java.util.HashMap;
+import java.util.Map;
 
 public class DummyOracle {
-    public DummyOracle() {
 
+    public DummyOracle() {
     }
 
-
     @External
-    public HashMap<String, BigInteger> get_reference_data(String _base, String _quote) {
-        HashMap <String, BigInteger> result = new HashMap<>();
+    public Map<String, BigInteger> get_reference_data(String _base, String _quote) {
+        Map<String, BigInteger> result = new HashMap<>();
         if (_base.equals("USD") && _quote.equals("ICX")) {
             result.put("rate", BigInteger.valueOf(597955725813433531L));
             result.put("last_update_base", BigInteger.valueOf(1602202275702605L));

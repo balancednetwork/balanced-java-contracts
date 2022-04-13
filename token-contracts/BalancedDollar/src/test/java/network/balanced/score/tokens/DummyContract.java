@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package network.balanced.score.tokens;
 
-import network.balanced.score.tokens.tokens.IRC2;
 import network.balanced.score.tokens.tokens.IRC2Mintable;
 import score.Address;
 import score.Context;
@@ -32,7 +31,6 @@ public class DummyContract extends IRC2Mintable {
 
     @External
     public BigInteger testPriceInLoop(Address address) {
-        BigInteger result = (BigInteger) Context.call(address, "priceInLoop");
-        return result;
+        return (BigInteger) Context.call(address, "priceInLoop");
     }
 }

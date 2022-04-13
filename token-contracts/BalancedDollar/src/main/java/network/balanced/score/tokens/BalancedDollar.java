@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,30 +16,25 @@
 
 package network.balanced.score.tokens;
 
-
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-
 import network.balanced.score.tokens.tokens.IRC2Mintable;
 import score.Address;
 import score.Context;
-import score.DictDB;
 import score.VarDB;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
 
+import java.math.BigInteger;
+import java.util.Map;
 
 public class BalancedDollar extends IRC2Mintable {
     public static final String TAG = "bnUSD";
-    private static String TOKEN_NAME = "Balanced Dollar";
-    private static String SYMBOL_NAME = "bnUSD";
-    public String DEFAULT_PEG = "USD";
-    public String DEFAULT_ORACLE_NAME = "BandChain";
-    BigInteger INITIAL_PRICE_ESTIMATE = BigInteger.valueOf(125).multiply(pow(BigInteger.TEN, 16));
-    BigInteger MIN_UPDATE_TIME = BigInteger.valueOf(30_000_000); // 30 seconds
-
+    private static final String TOKEN_NAME = "Balanced Dollar";
+    private static final String SYMBOL_NAME = "bnUSD";
+    private final String DEFAULT_PEG = "USD";
+    private final String DEFAULT_ORACLE_NAME = "BandChain";
+    private final BigInteger INITIAL_PRICE_ESTIMATE = BigInteger.valueOf(125).multiply(pow(BigInteger.TEN, 16));
+    private final BigInteger MIN_UPDATE_TIME = BigInteger.valueOf(30_000_000); // 30 seconds
 
 
     private static final String PEG = "peg";
@@ -50,13 +45,13 @@ public class BalancedDollar extends IRC2Mintable {
     private static final String LAST_PRICE = "last_price";
     private static final String MIN_INTERVAL = "min_interval";
 
-    public VarDB<String> peg = Context.newVarDB(PEG, String.class);
+    private final VarDB<String> peg = Context.newVarDB(PEG, String.class);
     public static VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
-    public VarDB<Address> oracleAddress = Context.newVarDB(ORACLE_ADDRESS, Address.class);
-    public VarDB<String> oracleName = Context.newVarDB(ORACLE_NAME, String.class);
-    public VarDB<BigInteger> priceUpdateTime = Context.newVarDB(PRICE_UPDATE_TIME, BigInteger.class);
-    public VarDB<BigInteger> lastPrice = Context.newVarDB(LAST_PRICE, BigInteger.class);
-    public VarDB<BigInteger> minInterval = Context.newVarDB(MIN_INTERVAL, BigInteger.class);
+    private final VarDB<Address> oracleAddress = Context.newVarDB(ORACLE_ADDRESS, Address.class);
+    private final VarDB<String> oracleName = Context.newVarDB(ORACLE_NAME, String.class);
+    private final VarDB<BigInteger> priceUpdateTime = Context.newVarDB(PRICE_UPDATE_TIME, BigInteger.class);
+    private final VarDB<BigInteger> lastPrice = Context.newVarDB(LAST_PRICE, BigInteger.class);
+    private final VarDB<BigInteger> minInterval = Context.newVarDB(MIN_INTERVAL, BigInteger.class);
 
 
     public BalancedDollar(@Optional Address _governance) {
@@ -172,12 +167,14 @@ public class BalancedDollar extends IRC2Mintable {
     /**
      * @return  Returns the latest price of the asset in loop.
      */
+    @SuppressWarnings("unchecked")
     @External
     public BigInteger lastPriceInLoop() {
         String base = peg.get();
         String quote = "ICX";
         Address oracleAddress = this.oracleAddress.get();
-        HashMap<String, BigInteger> priceData = (HashMap<String, BigInteger>) Context.call(oracleAddress, "get_reference_data", base, quote);
+        Map<String, BigInteger> priceData = (Map<String, java.math.BigInteger>) Context.call(oracleAddress,
+                "get_reference_data", base, quote);
         return priceData.getOrDefault("rate", BigInteger.ZERO);
     }
 
@@ -196,16 +193,17 @@ public class BalancedDollar extends IRC2Mintable {
 
     /**
      * Calls the oracle method for the asset and updates the asset
-     *         value in loop.
+     * value in loop.
      */
-    void updateAssetValue() {
+    @SuppressWarnings("unchecked")
+    private void updateAssetValue() {
         var base = peg.get();
         String quote = "ICX";
         Address oracleAddress = this.oracleAddress.get();
 
         try {
-            HashMap<String, BigInteger> priceData;
-            priceData = (HashMap<String, BigInteger>) Context.call(oracleAddress, "get_reference_data", base, quote);
+            Map<String, BigInteger> priceData;
+            priceData = (Map<String, BigInteger>) Context.call(oracleAddress, "get_reference_data", base, quote);
             lastPrice.set(priceData.getOrDefault("rate", BigInteger.ZERO));
             priceUpdateTime.set(BigInteger.valueOf(Context.getBlockTimestamp()));
             OraclePrice(base + quote, oracleName.get(), oracleAddress, priceData.getOrDefault("rate", BigInteger.ZERO));
@@ -215,7 +213,7 @@ public class BalancedDollar extends IRC2Mintable {
     }
 
     @EventLog(indexed = 3)
-    void OraclePrice(String market, String oracle_name, Address oracle_address, BigInteger price) {
+    public void OraclePrice(String market, String oracle_name, Address oracle_address, BigInteger price) {
 
     }
 }

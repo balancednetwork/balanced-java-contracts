@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@
 package network.balanced.score.tokens.tokens;
 
 import score.Address;
-import score.Context;
-import score.VarDB;
 import score.annotation.External;
 import score.annotation.Optional;
 
@@ -41,7 +39,6 @@ public class IRC2Mintable extends IRC2Burnable{
      * Creates `_amount` number of tokens, and assigns to caller account.
      * Increases the balance of that account and total supply.
      * @param _amount  Number of tokens to be created at the account.
-     * @param _data
      */
     @External
     public void mint(BigInteger _amount, @Optional byte[] _data) {
@@ -56,7 +53,6 @@ public class IRC2Mintable extends IRC2Burnable{
      * 		Increases the balance of that account and total supply.
      * @param _account The account at which token is to be created.
      * @param _amount Number of tokens to be created at the account.
-     * @param _data
      */
     @External
     public void mintTo(Address _account, BigInteger _amount, @Optional byte[] _data) {

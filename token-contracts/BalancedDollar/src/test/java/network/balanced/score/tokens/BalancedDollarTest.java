@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,22 +21,18 @@ import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
 import org.junit.jupiter.api.BeforeAll;
-import com.iconloop.score.test.TestBase;
-import org.junit.jupiter.api.*;
-import score.Address;
+import org.junit.jupiter.api.Test;
 import score.Context;
 
 import java.math.BigInteger;
-import java.util.Stack;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class TestBNUSD extends TestBase {
-    public static ServiceManager sm = getServiceManager();
-    public static final Account owner = sm.createAccount();
-    public static final Account admin = sm.createAccount();
-    public static final Account governance = sm.createAccount();
-    public static Score bnUSDScore;
+class BalancedDollarTest extends TestBase {
+    private static final ServiceManager sm = getServiceManager();
+    private static final Account owner = sm.createAccount();
+    private static final Account governance = sm.createAccount();
+    private static Score bnUSDScore;
 
 
     @BeforeAll
@@ -50,7 +46,7 @@ public class TestBNUSD extends TestBase {
         // test initial governance setup
         assertEquals(
                 governance.getAddress(),
-                (Address) bnUSDScore.call("getGovernance")
+                bnUSDScore.call("getGovernance")
         );
 
         Account account = Account.newScoreAccount(0);
@@ -66,7 +62,7 @@ public class TestBNUSD extends TestBase {
         // test initial admin setup
         assertEquals(
                 owner.getAddress(),
-                (Address) bnUSDScore.call("getAdmin")
+                bnUSDScore.call("getAdmin")
         );
 
         Account account = Account.newScoreAccount(0);
@@ -97,21 +93,11 @@ public class TestBNUSD extends TestBase {
         );
     }
 
-    public static BigInteger pow(BigInteger base, int exponent){
-        BigInteger res = BigInteger.ONE;
-
-        for(int i = 1; i <= exponent; i++){
-            res = res.multiply(base);
-        }
-
-        return res;
-    }
-
 
     @Test
     void testMint() {
         // Mint test
-        BigInteger mintAmount = BigInteger.TEN.multiply(pow(BigInteger.TEN, 18));
+        BigInteger mintAmount = BigInteger.TEN.multiply(ICX);
         String data = "";
         bnUSDScore.invoke(owner, "mint", mintAmount, data.getBytes());
         assertEquals(
@@ -127,7 +113,7 @@ public class TestBNUSD extends TestBase {
     @Test
     void testBurn() {
         // Mint test
-        BigInteger burnAmount = BigInteger.TEN.multiply(pow(BigInteger.TEN, 18));
+        BigInteger burnAmount = BigInteger.TEN.multiply(ICX);
         String data = "";
         bnUSDScore.invoke(owner, "mint", burnAmount, data.getBytes());
         bnUSDScore.invoke(owner, "burn", burnAmount);
@@ -144,7 +130,7 @@ public class TestBNUSD extends TestBase {
     @Test
     void testGovTransfer() {
         // Mint test
-        BigInteger mintAmount = BigInteger.TEN.multiply(pow(BigInteger.TEN, 18));
+        BigInteger mintAmount = BigInteger.TEN.multiply(ICX);
         String data = "";
         bnUSDScore.invoke(owner, "mint", mintAmount, data.getBytes());
         Account acc = sm.createAccount();
@@ -169,7 +155,6 @@ public class TestBNUSD extends TestBase {
     @Test
     void testPriceInLoop() throws Exception {
         Score oracle = sm.deploy(owner, DummyOracle.class);
-        String oracleName = "Hello there!";
         bnUSDScore.invoke(governance, "setOracle", oracle.getAddress());
         BigInteger result = (BigInteger) bnUSDScore.call("lastPriceInLoop");
         assertEquals(
@@ -181,7 +166,6 @@ public class TestBNUSD extends TestBase {
     @Test
     void testPrice() throws Exception {
         Score oracle = sm.deploy(owner, DummyOracle.class);
-        String oracleName = "Hello there!";
         bnUSDScore.invoke(governance, "setOracle", oracle.getAddress());
         BigInteger result;
         Score testContract = sm.deploy(owner, DummyContract.class);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package network.balanced.score.tokens.tokens;
 
-import java.math.BigInteger;
-
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
+
+import java.math.BigInteger;
 
 public abstract class IRC2 implements TokenStandard {
     final private static String NAME = "name";
@@ -32,40 +32,38 @@ public abstract class IRC2 implements TokenStandard {
     final private static String ADMIN = "admin";
     final private static String ACCOUNTS = "account";
 
-    static String zero = "0";
-    final protected static Address EOA_ZERO = Address.fromString("hx" + zero.repeat(40));
+    private static final String zero = "0";
+    private final static Address EOA_ZERO = Address.fromString("hx" + zero.repeat(40));
 
 
-    protected VarDB<String> name = Context.newVarDB(NAME, String.class);
-    protected VarDB<String> symbol = Context.newVarDB(SYMBOL, String.class);
-    protected VarDB<BigInteger> decimals = Context.newVarDB(DECIMALS, BigInteger.class);
-    protected VarDB<BigInteger> total_supply = Context.newVarDB(TOTAL_SUPPLY, BigInteger.class);
+    private final VarDB<String> name = Context.newVarDB(NAME, String.class);
+    private final VarDB<String> symbol = Context.newVarDB(SYMBOL, String.class);
+    private final VarDB<BigInteger> decimals = Context.newVarDB(DECIMALS, BigInteger.class);
+    private final VarDB<BigInteger> total_supply = Context.newVarDB(TOTAL_SUPPLY, BigInteger.class);
 
-    public ArrayDB<Address> addresses = Context.newArrayDB(ACCOUNTS, Address.class);
-    protected DictDB<Address, BigInteger> balances = Context.newDictDB(BALANCES, BigInteger.class);
+    private final ArrayDB<Address> addresses = Context.newArrayDB(ACCOUNTS, Address.class);
+    private final DictDB<Address, BigInteger> balances = Context.newDictDB(BALANCES, BigInteger.class);
     // public because need to use this in onlyAdmin check
     public static VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
 
     private final BigInteger MAX_HOLDER_COUNT = BigInteger.valueOf(400);
 
 
-    public static BigInteger pow(BigInteger base, int exponent){
+    protected static BigInteger pow(BigInteger base, int exponent) {
         BigInteger res = BigInteger.ONE;
 
-        for(int i = 1; i <= exponent; i++){
+        for (int i = 1; i <= exponent; i++) {
             res = res.multiply(base);
         }
 
         return res;
     }
 
-
-
     /**
      *
      * @param _tokenName: The name of the token.
      * @param _symbolName: The symbol of the token.
-     * @param _initialSupply :The total number of tokens to initialize with.
+     * @param _initialSupply The total number of tokens to initialize with.
      * 					It is set to total supply in the beginning, 0 by default.
      * @param _decimals The number of decimals. Set to 18 by default.
      */
@@ -167,14 +165,15 @@ public abstract class IRC2 implements TokenStandard {
 
     /**
      * Checks if the address is in the arraydb
+     *
      * @param arrayDB: ArrayDB of address
      * @param address: Address that we need to check
      * @return: a boolean
      */
-    public boolean arrayDbContains(ArrayDB<Address> arrayDB, Address address){
-        final int size =  arrayDB.size();
-        for (int i = 0; i < size; i++){
-            if (arrayDB.get(i).equals(address)){
+    private boolean arrayDbContains(ArrayDB<Address> arrayDB, Address address) {
+        final int size = arrayDB.size();
+        for (int i = 0; i < size; i++) {
+            if (arrayDB.get(i).equals(address)) {
                 return true;
             }
         }
@@ -182,14 +181,14 @@ public abstract class IRC2 implements TokenStandard {
         return false;
     }
 
-    protected static boolean remove_from_arraydb(Address _item, ArrayDB<Address> _array){
+    private static boolean remove_from_arraydb(Address _item, ArrayDB<Address> _array) {
         final int size = _array.size();
-        if(size < 1){
+        if (size < 1) {
             return false;
         }
         var top = _array.get(size - 1);
-        for(int i = 0; i < size; i++){
-            if(_array.get(i).equals(_item)){
+        for (int i = 0; i < size; i++) {
+            if (_array.get(i).equals(_item)) {
                 _array.set(i, top);
                 _array.pop();
                 return true;
@@ -202,7 +201,7 @@ public abstract class IRC2 implements TokenStandard {
     /**
      *
      * @param _to: The account to which the token is to be transferred
-     * @param _value: The no. of tokens to be transferred
+     * @param _value The no. of tokens to be transferred
      * @param _data: Any information or message
      */
     protected void transfer(Address _from, Address _to, BigInteger _value, byte[] _data) {
@@ -239,13 +238,14 @@ public abstract class IRC2 implements TokenStandard {
 
     /**
      * Creates amount number of tokens, and assigns to account
-     * 		Increases the balance of that account and total supply.
-     * 		This is an internal function
+     * Increases the balance of that account and total supply.
+     * This is an internal function
+     *
      * @param account The account at which token is to be created.
-     * @param amount Number of tokens to be created at the `account`.
-     * @param _data Number of tokens to be created at the `account`.
+     * @param amount  Number of tokens to be created at the `account`.
+     * @param _data   Number of tokens to be created at the `account`.
      */
-    protected void mint(Address account, BigInteger amount, @Optional byte[] _data) {
+    void mint(Address account, BigInteger amount, @Optional byte[] _data) {
         Checks.onlyAdmin();
         if (amount.signum() < 0) {
             Context.revert("Invalid Value");
@@ -265,12 +265,13 @@ public abstract class IRC2 implements TokenStandard {
 
     /**
      * Destroys `amount` number of tokens from `account`
-     * 		Decreases the balance of that `account` and total supply.
-     * 		This is an internal function
+     * Decreases the balance of that `account` and total supply.
+     * This is an internal function
+     *
      * @param account The account at which token is to be destroyed.
-     * @param amount The `amount` of tokens of `account` to be destroyed.
+     * @param amount  The `amount` of tokens of `account` to be destroyed.
      */
-    protected void burn(Address account, BigInteger amount) {
+    void burn(Address account, BigInteger amount) {
         Checks.onlyAdmin();
         if (amount.signum() < 0) {
             Context.revert("Invalid Amount Value");
@@ -278,7 +279,7 @@ public abstract class IRC2 implements TokenStandard {
 
         BigInteger balance = balanceOf(account);
         if (amount.compareTo(balance) < 0) {
-            Context.revert("Burn amount { " + amount+ " } larger than available balance.");
+            Context.revert("Burn amount { " + amount + " } larger than available balance.");
         }
         total_supply.set(total_supply.get().subtract(amount));
         balances.set(account, balanceOf(account).subtract(amount));
@@ -290,18 +291,18 @@ public abstract class IRC2 implements TokenStandard {
     }
 
 
-
     @EventLog(indexed = 3)
-    void Transfer(Address _from, Address _to, BigInteger _value, byte[] _data){
+    public void Transfer(Address _from, Address _to, BigInteger _value, byte[] _data) {
 
     }
 
     @EventLog(indexed = 1)
-    void Mint(Address account, BigInteger amount, byte[] _data){
+    public void Mint(Address account, BigInteger amount, byte[] _data) {
 
     }
+
     @EventLog(indexed = 1)
-    void Burn(Address account, BigInteger amount){
+    public void Burn(Address account, BigInteger amount){
 
     }
 }

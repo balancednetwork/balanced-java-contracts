@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,9 @@ import score.Context;
 
 public class Checks {
 
-    public static Address defaultAddress = new Address(new byte[Address.LENGTH]);
+    private static final Address defaultAddress = new Address(new byte[Address.LENGTH]);
 
-    public static void onlyOwner() {
+    static void onlyOwner() {
         Address caller = Context.getCaller();
         Address owner = Context.getOwner();
         Context.require(caller.equals(owner), "SenderNotScoreOwner: Sender=" + caller + "Owner=" + owner);
@@ -37,7 +37,7 @@ public class Checks {
         Context.require(sender.equals(governance), BalancedDollar.TAG + ": Sender not governance contract");
     }
 
-    public static void onlyAdmin() {
+    static void onlyAdmin() {
         Address admin = BalancedDollar.admin.getOrDefault(defaultAddress);
         Address sender = Context.getCaller();
         Context.require(!admin.equals(defaultAddress), BalancedDollar.TAG + ": Admin address not set");
