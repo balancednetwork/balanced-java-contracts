@@ -25,10 +25,20 @@
  */
 
 rootProject.name = 'balanced-java-contracts'
-include(':core-contracts:Multicall',
-        ':core-contracts:BatchDisbursement',
-        ':core-contracts:Reserve',
-        ':token-contracts')
-include 'token-contracts:bnUSD'
-findProject(':token-contracts:bnUSD')?.name = 'bnUSD'
+include(':Multicall')
+project(':Multicall').projectDir = file("core-contracts/Multicall")
 
+include(':BatchDisbursement')
+project(':BatchDisbursement').projectDir = file("core-contracts/BatchDisbursement")
+
+include(':Reserve')
+project(':Reserve').projectDir = file("core-contracts/Reserve")
+
+include(':Rebalancing')
+project(':Rebalancing').projectDir = file("core-contracts/Rebalancing")
+
+include 'score-lib'
+include 'test-lib'
+
+include(':bnUSD')
+project(':bnUSD').projectDir = file("token-contracts/bnUSD")
