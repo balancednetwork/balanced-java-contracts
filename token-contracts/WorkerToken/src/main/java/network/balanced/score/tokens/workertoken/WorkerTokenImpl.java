@@ -16,6 +16,7 @@
 
 package network.balanced.score.tokens.workertoken;
 
+import network.balanced.score.lib.interfaces.WorkerToken;
 import network.balanced.score.lib.tokens.IRC2PresetFixedSupply;
 import score.Address;
 import score.ArrayDB;
@@ -26,9 +27,11 @@ import score.annotation.Optional;
 
 import java.math.BigInteger;
 
+import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
+import static network.balanced.score.lib.utils.ArrayDBUtils.removeFromArraydb;
 import static network.balanced.score.lib.utils.Check.*;
 
-public class WorkerToken extends IRC2PresetFixedSupply {
+public class WorkerTokenImpl extends IRC2PresetFixedSupply implements WorkerToken {
     public static String TAG = "BALW";
 
     private static final String TOKEN_NAME = "Balanced Worker Token";
@@ -46,7 +49,7 @@ public class WorkerToken extends IRC2PresetFixedSupply {
     private final VarDB<Address> balnToken = Context.newVarDB(BALN_TOKEN, Address.class);
     private final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
 
-    public WorkerToken(Address _governance) {
+    public WorkerTokenImpl(Address _governance) {
         super(TOKEN_NAME, SYMBOL_NAME, INITIAL_SUPPLY, DECIMALS);
         if (governance.get() == null) {
             this.governance.set(_governance);
@@ -161,39 +164,4 @@ public class WorkerToken extends IRC2PresetFixedSupply {
         Context.require(Context.getCaller().equals(balnToken.get()), TAG + ": The Worker Token contract can only " +
                 "accept BALN tokens. Deposit not accepted from" + Context.getCaller() + "Only accepted from BALN = " + balnToken.get());
     }
-
-    /**
-     * Checks if the address is in the array db
-     *
-     * @param arrayDB: ArrayDB of address
-     * @param address: Address that we need to check
-     * @return: a boolean
-     */
-    public boolean arrayDbContains(ArrayDB<Address> arrayDB, Address address) {
-        final int size = arrayDB.size();
-        for (int i = 0; i < size; i++) {
-            if (arrayDB.get(i).equals(address)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    protected static boolean removeFromArraydb(Address _item, ArrayDB<Address> _array) {
-        final int size = _array.size();
-        if (size < 1) {
-            return false;
-        }
-        Address top = _array.get(size - 1);
-        for (int i = 0; i < size; i++) {
-            if (_array.get(i).equals(_item)) {
-                _array.set(i, top);
-                _array.pop();
-                return true;
-            }
-        }
-
-        return false;
-    }
-
 }

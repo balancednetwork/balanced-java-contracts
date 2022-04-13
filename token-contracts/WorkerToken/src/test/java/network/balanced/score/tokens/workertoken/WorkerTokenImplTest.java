@@ -36,13 +36,13 @@ import java.math.BigInteger;
 import java.util.List;
 
 import static network.balanced.score.lib.test.UnitTest.*;
-import static network.balanced.score.tokens.workertoken.WorkerToken.TAG;
+import static network.balanced.score.tokens.workertoken.WorkerTokenImpl.TAG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
-public class WorkerTokenTest extends TestBase {
+class WorkerTokenImplTest extends TestBase {
 
     private static final ServiceManager sm = getServiceManager();
     private static final Account owner = sm.createAccount();
@@ -56,7 +56,7 @@ public class WorkerTokenTest extends TestBase {
 
     @BeforeEach
     void setup() throws Exception {
-        workerToken = sm.deploy(owner, WorkerToken.class, governanceScore.getAddress());
+        workerToken = sm.deploy(owner, WorkerTokenImpl.class, governanceScore.getAddress());
     }
 
     @Test

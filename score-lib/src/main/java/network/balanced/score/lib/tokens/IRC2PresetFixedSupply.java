@@ -16,7 +16,7 @@
 
 package network.balanced.score.lib.tokens;
 
-import network.balanced.score.lib.interfaces.IRC2;
+import network.balanced.score.lib.interfaces.base.IRC2;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -33,10 +33,10 @@ public class IRC2PresetFixedSupply implements IRC2 {
     final private static String TOTAL_SUPPLY = "total_supply";
     final private static String BALANCES = "balances";
 
-    protected VarDB<String> name = Context.newVarDB(NAME, String.class);
-    protected VarDB<String> symbol = Context.newVarDB(SYMBOL, String.class);
-    protected VarDB<BigInteger> decimals = Context.newVarDB(DECIMALS, BigInteger.class);
-    protected VarDB<BigInteger> totalSupply = Context.newVarDB(TOTAL_SUPPLY, BigInteger.class);
+    private final VarDB<String> name = Context.newVarDB(NAME, String.class);
+    private final VarDB<String> symbol = Context.newVarDB(SYMBOL, String.class);
+    private final VarDB<BigInteger> decimals = Context.newVarDB(DECIMALS, BigInteger.class);
+    private final VarDB<BigInteger> totalSupply = Context.newVarDB(TOTAL_SUPPLY, BigInteger.class);
     protected DictDB<Address, BigInteger> balances = Context.newDictDB(BALANCES, BigInteger.class);
 
     /**

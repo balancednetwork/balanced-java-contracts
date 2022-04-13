@@ -16,22 +16,23 @@
 
 package network.balanced.score.lib.interfaces;
 
+import network.balanced.score.lib.interfaces.addresses.AdminAddress;
+import network.balanced.score.lib.interfaces.addresses.BalnAddress;
+import network.balanced.score.lib.interfaces.addresses.GovernanceAddress;
+import network.balanced.score.lib.interfaces.base.IRC2;
+import network.balanced.score.lib.interfaces.base.TokenFallback;
 import score.Address;
+import score.annotation.External;
+import score.annotation.Optional;
 
 import java.math.BigInteger;
 
-public interface IRC2 {
-    String name();
+public interface WorkerToken extends GovernanceAddress, AdminAddress, BalnAddress, TokenFallback, IRC2 {
 
-    String symbol();
+    @External
+    void adminTransfer(Address _from, Address _to, BigInteger _value, @Optional byte[] _data);
 
-    BigInteger decimals();
+    @External
+    void distribute();
 
-    BigInteger totalSupply();
-
-    BigInteger balanceOf(Address _owner);
-
-    void transfer(Address _to, BigInteger _value, byte[] _data);
-
-    void Transfer(Address _from, Address _to, BigInteger _value, byte[] _data);
 }
