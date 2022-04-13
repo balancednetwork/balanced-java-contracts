@@ -42,3 +42,9 @@ project(':Liquidity').projectDir = file("core-contracts/Liquidity")
 
 include 'score-lib'
 include 'test-lib'
+
+include(':WorkerToken')
+project(':WorkerToken').projectDir = file("token-contracts/WorkerToken")
+
+include(':Router')
+project(':Router').projectDir = file("core-contracts/Router")

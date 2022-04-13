@@ -16,28 +16,34 @@
 
 import network.balanced.score.dependencies.Dependencies
 
+plugins {
+    id 'java'
+}
 
-
-version = '0.1.0'
+version '0.1.0'
 
 repositories {
-    // Use Maven Central for resolving dependencies.
     mavenCentral()
 }
 
 dependencies {
     compileOnly Dependencies.javaeeApi
     implementation Dependencies.javaeeScorex
+    implementation Dependencies.minimalJson
+    implementation project(':score-lib')
 
     testImplementation Dependencies.javaeeUnitTest
-    testImplementation Dependencies.javaeeTokens
     // Use JUnit Jupiter for testing.
     testImplementation Dependencies.junitJupiter
     testRuntimeOnly Dependencies.junitJupiterEngine
+    testImplementation project(':test-lib')
+    testImplementation Dependencies.mockitoCore
+    testImplementation Dependencies.mockitoInline
 }
 
+
 optimizedJar {
-    mainClassName = 'network.balanced.score.core.reserve.ReserveFund'
+    mainClassName = 'network.balanced.score.core.router.RouterImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
@@ -57,7 +63,6 @@ deployJar {
         mainnet {
             uri = 'https://ctz.solidwallet.io/api/v3'
             nid = 0x1
-            to = "cxf58b9a1898998a31be7f1d99276204a3333ac9b3"
         }
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
@@ -65,7 +70,6 @@ deployJar {
     parameters {}
 }
 
-tasks.named('test') {
-    // Use JUnit Platform for unit tests.
+test {
     useJUnitPlatform()
 }

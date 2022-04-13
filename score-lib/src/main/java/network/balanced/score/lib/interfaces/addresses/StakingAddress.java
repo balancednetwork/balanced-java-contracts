@@ -19,11 +19,11 @@ package network.balanced.score.lib.interfaces.addresses;
 import score.Address;
 import score.annotation.External;
 
-public interface BnusdAddress {
+public interface StakingAddress {
 
     @External
-    void setBnusd(Address _address);
+    void setStaking(Address _address);
 
     @External(readonly = true)
-    Address getBnusd();
+    Address getStaking();
 }

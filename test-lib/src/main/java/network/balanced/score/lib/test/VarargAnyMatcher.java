@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.interfaces.addresses;
+package network.balanced.score.lib.test;
 
-import score.Address;
-import score.annotation.External;
+import org.mockito.ArgumentMatcher;
+import org.mockito.internal.matchers.VarargMatcher;
 
-public interface BnusdAddress {
+public class VarargAnyMatcher<T> implements ArgumentMatcher<T>, VarargMatcher {
 
-    @External
-    void setBnusd(Address _address);
-
-    @External(readonly = true)
-    Address getBnusd();
+    @Override
+    public boolean matches(T t) {
+        return true;
+    }
 }
