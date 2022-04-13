@@ -108,7 +108,7 @@ public class Multicall {
 
     @External(readonly = true)
     public Map<String, Object> aggregate(Call[] calls) {
-        long blocklNumber = Context.getBlockHeight();
+        long blockNumber = Context.getBlockHeight();
         Object[] returnData = new Object[calls.length];
 
         for (int i = 0; i < calls.length; i++) {
@@ -127,7 +127,7 @@ public class Multicall {
                 Context.revert(e + ": Multicall aggregate: call failed " + contractAddress + " method: " + method);
             }
         }
-        return Map.of("blockNumber", blocklNumber, "returnData", returnData);
+        return Map.of("blockNumber", blockNumber, "returnData", returnData);
 
     }
 
@@ -163,12 +163,12 @@ public class Multicall {
     @External(readonly = true)
     public Map<String, Object> tryBlockAndAggregate(boolean requireSuccess,
             Call[] calls) {
-        long blocklNumber = getBlockNumber();
+        long blockNumber = getBlockNumber();
         byte[] blockHash = getLastBlockHash();
         Map<String, Object> returnData = tryAggregate(requireSuccess, calls);
 
         return Map.of(
-                "blockNumber", blocklNumber,
+                "blockNumber", blockNumber,
                 "blockHash", blockHash,
                 "returnData", returnData.get("returnData"));
     }
