@@ -42,10 +42,6 @@ public class IRC2Mintable extends IRC2Burnable{
      */
     @External
     public void mint(BigInteger _amount, @Optional byte[] _data) {
-        if (_data == null) {
-            String data = "None";
-            _data = data.getBytes();
-        }
     }
 
     /**

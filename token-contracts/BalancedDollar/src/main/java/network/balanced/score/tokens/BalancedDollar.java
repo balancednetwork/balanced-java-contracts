@@ -36,7 +36,6 @@ public class BalancedDollar extends IRC2Mintable {
     private final BigInteger INITIAL_PRICE_ESTIMATE = BigInteger.valueOf(125).multiply(pow(BigInteger.TEN, 16));
     private final BigInteger MIN_UPDATE_TIME = BigInteger.valueOf(30_000_000); // 30 seconds
 
-
     private static final String PEG = "peg";
     private static final String GOVERNANCE = "governance";
     private static final String ORACLE_ADDRESS = "oracle_address";
@@ -52,7 +51,6 @@ public class BalancedDollar extends IRC2Mintable {
     private final VarDB<BigInteger> priceUpdateTime = Context.newVarDB(PRICE_UPDATE_TIME, BigInteger.class);
     private final VarDB<BigInteger> lastPrice = Context.newVarDB(LAST_PRICE, BigInteger.class);
     private final VarDB<BigInteger> minInterval = Context.newVarDB(MIN_INTERVAL, BigInteger.class);
-
 
     public BalancedDollar(@Optional Address _governance) {
         // null to emulate no args supplied
@@ -86,12 +84,6 @@ public class BalancedDollar extends IRC2Mintable {
         return admin.get();
     }
 
-    /**
-     *
-     * @param _admin  The new admin address to set.
-     *         Can make calls with the `@only_admin` decorator.
-     *         Should be called before DEX use.
-     */
     @External
     public void setAdmin(Address _admin) {
         Context.require(
@@ -114,7 +106,6 @@ public class BalancedDollar extends IRC2Mintable {
         );
         oracleAddress.set(_address);
     }
-
 
     @External(readonly = true)
     public String getOracleName() {
@@ -160,7 +151,6 @@ public class BalancedDollar extends IRC2Mintable {
         if (blockTimeStamp.subtract(priceUpdate).compareTo(minInterval.get()) > 0){
             updateAssetValue();
         }
-
         return lastPrice.get();
     }
 
@@ -214,6 +204,5 @@ public class BalancedDollar extends IRC2Mintable {
 
     @EventLog(indexed = 3)
     public void OraclePrice(String market, String oracle_name, Address oracle_address, BigInteger price) {
-
     }
 }

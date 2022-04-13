@@ -34,7 +34,6 @@ class BalancedDollarTest extends TestBase {
     private static final Account governance = sm.createAccount();
     private static Score bnUSDScore;
 
-
     @BeforeAll
     static void setup() throws Exception {
         bnUSDScore = sm.deploy(owner, BalancedDollar.class, governance.getAddress());
@@ -93,7 +92,6 @@ class BalancedDollarTest extends TestBase {
         );
     }
 
-
     @Test
     void testMint() {
         // Mint test
@@ -140,7 +138,6 @@ class BalancedDollarTest extends TestBase {
                 bnUSDScore.call("balanceOf", acc.getAddress())
         );
     }
-
 
     @Test
     void testMinInterval() {

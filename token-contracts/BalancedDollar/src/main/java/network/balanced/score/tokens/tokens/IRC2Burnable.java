@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package network.balanced.score.tokens.tokens;
 import score.Address;
 import score.Context;
 import score.annotation.External;
-import score.annotation.Optional;
 
 import java.math.BigInteger;
 

@@ -35,7 +35,6 @@ public abstract class IRC2 implements TokenStandard {
     private static final String zero = "0";
     private final static Address EOA_ZERO = Address.fromString("hx" + zero.repeat(40));
 
-
     private final VarDB<String> name = Context.newVarDB(NAME, String.class);
     private final VarDB<String> symbol = Context.newVarDB(SYMBOL, String.class);
     private final VarDB<BigInteger> decimals = Context.newVarDB(DECIMALS, BigInteger.class);
@@ -48,19 +47,15 @@ public abstract class IRC2 implements TokenStandard {
 
     private final BigInteger MAX_HOLDER_COUNT = BigInteger.valueOf(400);
 
-
     protected static BigInteger pow(BigInteger base, int exponent) {
         BigInteger res = BigInteger.ONE;
-
         for (int i = 1; i <= exponent; i++) {
             res = res.multiply(base);
         }
-
         return res;
     }
 
     /**
-     *
      * @param _tokenName: The name of the token.
      * @param _symbolName: The symbol of the token.
      * @param _initialSupply The total number of tokens to initialize with.
@@ -289,7 +284,6 @@ public abstract class IRC2 implements TokenStandard {
         String data = "None";
         Transfer(EOA_ZERO, account, amount, data.getBytes());
     }
-
 
     @EventLog(indexed = 3)
     public void Transfer(Address _from, Address _to, BigInteger _value, byte[] _data) {
