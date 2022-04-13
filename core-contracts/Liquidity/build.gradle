@@ -38,6 +38,7 @@ dependencies {
     
     testRuntimeOnly Dependencies.junitJupiterEngine
     testImplementation Dependencies.mockitoCore
+    testImplementation Dependencies.mockitoInline
 }
 
 optimizedJar {

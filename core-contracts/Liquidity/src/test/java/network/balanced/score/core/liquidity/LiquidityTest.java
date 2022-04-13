@@ -22,11 +22,24 @@ import com.iconloop.score.test.Score;
 import com.iconloop.score.test.Account;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import static network.balanced.score.lib.test.UnitTest.*;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import static org.mockito.MockedStatic.Verification;
+import static org.mockito.Mockito.never;
+
+import java.math.BigInteger;
+
+import score.Context;
 
 
 public class LiquidityTest extends TestBase {
@@ -36,14 +49,19 @@ public class LiquidityTest extends TestBase {
 
     int scoreCount = 0;
     private final Account governanceScore = Account.newScoreAccount(scoreCount++);
+    private final Account nonGovernanceScore = Account.newScoreAccount(scoreCount++);
     private final Account dexScore = Account.newScoreAccount(scoreCount++);
     private final Account daofundScore = Account.newScoreAccount(scoreCount++);
 
     private Score liquidityScore;
+
+    private final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
     
     @BeforeEach
     public void setup() throws Exception {
         liquidityScore = sm.deploy(ownerAccount, Liquidity.class, governanceScore.getAddress());
+        contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("remove"),
+                any(BigInteger.class), any(BigInteger.class), any(boolean.class))).thenReturn(null);
     }
 
     @Test
@@ -78,5 +96,21 @@ public class LiquidityTest extends TestBase {
     void setGetStakedLP() {
         testContractSettersAndGetters(liquidityScore, governanceScore, adminAccount,
                 "setStakedLP", daofundScore.getAddress(), "getStakedLP");
+    }
+
+    //@Test
+    //void testAccessToWithdrawLiquidity() {
+    //    BigInteger poolID = BigInteger.valueOf(1);
+    //    BigInteger lptokens = BigInteger.valueOf(100);
+    //    boolean withdrawToDaofund = false;
+//
+    //    liquidityScore.invoke(governanceScore, "withdrawLiquidity", poolID, lptokens, withdrawToDaofund);
+    //    contextMock.verify(() -> Context.call(eq(dexScore.getAddress()), eq("remove"),
+    //    any(BigInteger.class), any(BigInteger.class), any(boolean.class)), never());
+    //}
+
+    @AfterEach
+    void closeMock() {
+        contextMock.close();
     }
 }
