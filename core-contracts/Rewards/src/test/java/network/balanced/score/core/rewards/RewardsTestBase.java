@@ -45,6 +45,8 @@ public class RewardsTestBase extends UnitTest {
 
     int scoreCount = 0;
     protected final Account governance = Account.newScoreAccount(scoreCount++);
+    protected final Account daoFund = Account.newScoreAccount(scoreCount++);
+    protected final Account reserve = Account.newScoreAccount(scoreCount++);
 
     public MockContract<DataSourceScoreInterface> dex;
     public MockContract<DataSourceScoreInterface> loans;
@@ -77,6 +79,8 @@ public class RewardsTestBase extends UnitTest {
         
         rewardsScore.invoke(admin, "setBaln", baln.getAddress());
         rewardsScore.invoke(admin, "setBwt", bwt.getAddress());
+        rewardsScore.invoke(admin, "setDaofund", daoFund.getAddress());
+        rewardsScore.invoke(admin, "setReserve", reserve.getAddress());
 
         setupDistributions();
         
@@ -108,6 +112,7 @@ public class RewardsTestBase extends UnitTest {
         for (long i = 0; i < sm.getBlock().getHeight()/(DAY); i++) {
             rewardsScore.invoke(admin, "distribute");
             rewardsScore.invoke(admin, "distribute");
+            BigInteger emission = (BigInteger) rewardsScore.call("getEmission", BigInteger.valueOf(-1));
         }
     }
 
@@ -121,9 +126,16 @@ public class RewardsTestBase extends UnitTest {
     }
 
     public void verifyBalnReward(Address address, BigInteger expectedReward) {
-        verify(baln.mock).transfer(eq(address), argThat(reward -> {
+        verify(baln.mock, times(1)).transfer(eq(address), argThat(reward -> {
             assertEquals(expectedReward.divide(EXA), reward.divide(EXA));
             return true;
         }), eq(new byte[0]));
+    }
+
+    public void snapshotDistributionPercentage() {
+        Object distributionPercentages = new DistributionPercentage[]{loansDist, icxPoolDist, bwtDist, reserveDist, daoDist};
+
+        rewardsScore.invoke(governance, "updateBalTokenDistPercentage", distributionPercentages);
+        sm.getBlock().increase(DAY);
     }
 }

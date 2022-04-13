@@ -26,6 +26,7 @@ import static network.balanced.score.lib.utils.DBHelpers.contains;
 import static network.balanced.score.lib.utils.Math.pow;
 
 import java.math.BigInteger;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -102,11 +103,16 @@ public class RewardsImpl implements Rewards {
         platformDay.set(BigInteger.ONE);
         batchSize.set(DEFAULT_BATCH_SIZE);
         recipientSplit.set("Worker Tokens", BigInteger.ZERO);
-        recipients.add("Worker Tokens");
         recipientSplit.set("Reserve Fund", BigInteger.ZERO);
-        recipients.add("Reserve Fund");
         recipientSplit.set("DAOfund", BigInteger.ZERO);
+
+        recipients.add("Worker Tokens");
+        recipients.add("Reserve Fund");
         recipients.add("DAOfund");
+        completeRecipient.add("Worker Tokens");
+        completeRecipient.add("Reserve Fund");
+        completeRecipient.add("DAOfund");
+        
         continuousRewardsDay.set(BigInteger.ZERO);
 
         startTimestamp.set(0);
@@ -263,13 +269,13 @@ public class RewardsImpl implements Rewards {
     @External
     public void removeDataSource(String _name) {
         only(governance);
-        if (contains(recipients, _name)) {
+        if (!contains(recipients, _name)) {
             return;
         }
 
         BigInteger day = getDay();
         Map<String, BigInteger>  recipientDistribution = recipientAt(day);
-        Context.require(!recipientDistribution.get(_name).equals(BigInteger.ZERO), TAG + ": Data source rewards percentage must be set to 0 before removing.");
+        Context.require(recipientDistribution.getOrDefault(_name, BigInteger.ZERO).equals(BigInteger.ZERO), TAG + ": Data source rewards percentage must be set to 0 before removing.");
         String topRecipient = recipients.pop();
         if (topRecipient != _name) {
             for(int i = 0; i < recipients.size(); i++) {
@@ -387,7 +393,6 @@ public class RewardsImpl implements Rewards {
         for (int i = 0; i < completeRecipient.size(); i++) {
             String recipient = completeRecipient.get(i);
             BigInteger totalSnapshotsTaken = totalSnapshots.get(recipient);
-            
             if (totalSnapshotsTaken.equals(BigInteger.ZERO)) {
                 distributions.put(recipient, recipientSplit.get(recipient));
                 continue;
@@ -395,7 +400,7 @@ public class RewardsImpl implements Rewards {
                 distributions.put(recipient, snapshotRecipient.at(recipient).at(totalSnapshotsTaken.subtract(BigInteger.ONE)).get("amount"));
                 continue;
             } else if (snapshotRecipient.at(recipient).at(BigInteger.ZERO).get("ids").compareTo(_day) == 1) {
-                distributions.put(recipient, recipientSplit.get(recipient));
+                distributions.put(recipient, recipientSplit.getOrDefault(recipient, BigInteger.ZERO));
                 continue;
             }
 
@@ -408,7 +413,7 @@ public class RewardsImpl implements Rewards {
                 midValue = snapshotRecipient.at(recipient).at(mid);
                 if (midValue.get("ids").equals(_day)) {
                     distributions.put(recipient, midValue.get("amount"));
-                    continue;
+                    break;
                 } else if (midValue.get("ids").compareTo(_day) == -1) {
                     low = mid;
                 } else {
@@ -418,7 +423,14 @@ public class RewardsImpl implements Rewards {
 
             distributions.put(recipient, snapshotRecipient.at(recipient).at(low).get("amount"));
         }
-        //TODO remove zero values;
+
+        for(Iterator<Map.Entry<String, BigInteger>> it = distributions.entrySet().iterator(); it.hasNext(); ) {
+            Map.Entry<String, BigInteger> entry = it.next();
+            if(entry.getValue().equals(BigInteger.ZERO)) {
+                it.remove();
+            }
+        }
+
         return distributions;
     }
 
@@ -451,7 +463,6 @@ public class RewardsImpl implements Rewards {
             
             MintableScoreInterface baln = new MintableScoreInterface(balnAddress.get());
             baln.transfer(address, accuredRewards, new byte[0]);
-            // Context.call(balnAddress.get(), "transfer", address, accuredRewards, new byte[0]);
             RewardsClaimed(address, accuredRewards);
         }
     }
@@ -462,12 +473,11 @@ public class RewardsImpl implements Rewards {
         DataSourceImpl dataSource = DataSourceDB.get(_name);
         BigInteger emission = this.getEmission(BigInteger.valueOf(-1));
 
-        //TODO use scoreInterface when new javee unittest version is live
-        // DataSourceScoreInterface dex = new DataSourceScoreInterface(dexDataSource.contractAddress.get());
-        BigInteger balnPrice = (BigInteger) Context.call(dexDataSource.contractAddress.get(), "getBalnPrice"); // dex.getBalnPrice(); // 
+        DataSourceScoreInterface dex = new DataSourceScoreInterface(dexDataSource.contractAddress.get());
+
+        BigInteger balnPrice = dex.getBalnPrice();
         BigInteger percentage = dataSource.distPercent.get();
-        //TODO use scoreInterface when new javee unittest version is live
-        BigInteger sourceValue = (BigInteger) Context.call(dataSource.contractAddress.get(), "getBnusdValue", dataSource.name.get());//dataSource.getValue();
+        BigInteger sourceValue = dataSource.getValue();
         BigInteger year = BigInteger.valueOf(365);
 
         BigInteger sourceAmount = year.multiply(emission).multiply(percentage);
@@ -665,6 +675,7 @@ public class RewardsImpl implements Rewards {
         BigInteger currentDay = getDay();
         BigInteger totalSnapshotsTaken = totalSnapshots.getOrDefault(recipient, BigInteger.ZERO); 
         BigInteger recipientDay = snapshotRecipient.at(recipient).at(totalSnapshotsTaken.subtract(BigInteger.ONE)).getOrDefault("ids", BigInteger.ZERO);
+
         if (totalSnapshotsTaken.compareTo(BigInteger.ZERO) == 1 && recipientDay.equals(currentDay)) {
             snapshotRecipient.at(recipient).at(totalSnapshotsTaken.subtract(BigInteger.ONE)).set("amount", percentage);
         } else {
@@ -672,11 +683,6 @@ public class RewardsImpl implements Rewards {
             snapshotRecipient.at(recipient).at(totalSnapshotsTaken).set("amount", percentage);
             totalSnapshots.set(recipient, totalSnapshotsTaken.add(BigInteger.ONE));
         }
-    }
-
-    //TODO can be removed when new javee unittest version is live
-    public static Object call(Address targetAddress, String method, Object... params) {
-        return Context.call(targetAddress, method, params);
     }
 
     @EventLog(indexed=1)

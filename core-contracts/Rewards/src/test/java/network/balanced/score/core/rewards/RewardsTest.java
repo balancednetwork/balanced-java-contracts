@@ -21,6 +21,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.mockito.Mockito;
+
 import score.Address;
 
 import java.math.BigInteger;
@@ -29,10 +31,12 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
+import network.balanced.score.lib.structs.DistributionPercentage;
 
 public class RewardsTest extends RewardsTestBase {
 
@@ -40,7 +44,6 @@ public class RewardsTest extends RewardsTestBase {
     void setup() throws Exception{
         super.setup();
         rewardsScore.invoke(admin, "setContinuousRewardsDay", BigInteger.valueOf(10000));
-
     }
 
     @Test
@@ -56,6 +59,17 @@ public class RewardsTest extends RewardsTestBase {
     @Test
     void setAndGetGovernance() {
         testGovernance(rewardsScore, governance, owner);
+    }
+
+    @Test
+    void getDataSources() {
+        // Act 
+        Map<String, Map<String, Object>> dataSources = (Map<String, Map<String, Object>>) rewardsScore.call("getDataSources");
+
+        // Assert
+        assertEquals(2, dataSources.size());
+        assertTrue(dataSources.keySet().contains("Loans"));
+        assertTrue(dataSources.keySet().contains("sICX/ICX"));
     }
 
     @Test
@@ -83,6 +97,119 @@ public class RewardsTest extends RewardsTestBase {
         assertTrue(names.contains("DAOfund"));
     }
 
+    @Test
+    void removeDataSource() {
+        // Arrange
+        icxPoolDist.dist_percent = BigInteger.ZERO; //0%
+        loansDist.dist_percent = loansDist.dist_percent.multiply(BigInteger.TWO); //40%
+
+        DistributionPercentage[] distributionPercentages = new DistributionPercentage[]{loansDist, icxPoolDist, bwtDist, reserveDist, daoDist};
+        rewardsScore.invoke(governance, "updateBalTokenDistPercentage", (Object) distributionPercentages);
+        rewardsScore.invoke(admin, "distribute");
+
+        // Act 
+        rewardsScore.invoke(governance, "removeDataSource", "sICX/ICX");
+
+        // Assert
+        List<String> names = (List<String>) rewardsScore.call("getDataSourceNames");
+
+        assertEquals(1, names.size());
+        assertTrue(names.contains("Loans"));
+    }
+
+    @Test
+    void removeDataSource_nonEmptyDistribution() {
+        // Arrange 
+        String expectedErrorMessage = RewardsImpl.TAG + ": Data source rewards percentage must be set to 0 before removing.";
+
+        // Act 
+        Executable removeNonEmpty = () -> rewardsScore.invoke(governance, "removeDataSource", "sICX/ICX");
+
+        // Assert
+        expectErrorMessage(removeNonEmpty, expectedErrorMessage);
+    }
+
+    @Test
+    void removeDataSource_nonExisting() {
+        // Act 
+        rewardsScore.invoke(governance, "removeDataSource", "test");
+
+        // Assert
+        List<String> names = (List<String>) rewardsScore.call("getDataSourceNames");
+
+        assertEquals(2, names.size());
+        assertTrue(names.contains("Loans"));
+        assertTrue(names.contains("sICX/ICX"));
+    }
+
+    @Test
+    void removeDataSource_notGovernance() {
+        // Arrange 
+        String expectedErrorMessage = "Authorization Check: Authorization failed. Caller: " + admin.getAddress() + " Authorized Caller: " + governance.getAddress();
+
+        // Act 
+        Executable removeAsAdmin = () ->rewardsScore.invoke(admin, "removeDataSource", "sICX/ICX");
+
+        // Assert
+        expectErrorMessage(removeAsAdmin, expectedErrorMessage);
+    }
+
+    @Test
+    void updateBalTokenDistPercentage_nonExistingName() {
+        // Arrange
+        DistributionPercentage testDist = new DistributionPercentage();
+        testDist.recipient_name = "test";
+        testDist.dist_percent = BigInteger.TEN; 
+        String expectedErrorMessage = RewardsImpl.TAG + ": Recipient test does not exist.";
+
+        // Act
+        DistributionPercentage[] distributionPercentages = new DistributionPercentage[]{testDist, icxPoolDist, bwtDist, reserveDist, daoDist};
+        Executable updateWithWrongName = () -> rewardsScore.invoke(governance, "updateBalTokenDistPercentage", (Object) distributionPercentages);
+
+        // Assert
+        expectErrorMessage(updateWithWrongName, expectedErrorMessage);
+    }
+
+    @Test
+    void updateBalTokenDistPercentage_wrongSum() {
+        // Arrange 
+        icxPoolDist.dist_percent = BigInteger.ZERO; //0%
+        String expectedErrorMessage = RewardsImpl.TAG + ": Total percentage does not sum up to 100.";
+
+        // Act 
+        DistributionPercentage[] distributionPercentages = new DistributionPercentage[]{loansDist, icxPoolDist, bwtDist, reserveDist, daoDist};
+        Executable updateWithWrongSum = () -> rewardsScore.invoke(governance, "updateBalTokenDistPercentage", (Object) distributionPercentages);
+
+        // Assert
+        expectErrorMessage(updateWithWrongSum, expectedErrorMessage);
+    }
+
+    @Test
+    void updateBalTokenDistPercentage_wrongLength() {
+        // Arrange 
+        String expectedErrorMessage = RewardsImpl.TAG + ": Recipient lists lengths mismatched!";
+
+        // Act 
+        DistributionPercentage[] distributionPercentages = new DistributionPercentage[]{loansDist, bwtDist, reserveDist, daoDist};
+        Executable updateWithWrongLength = () -> rewardsScore.invoke(governance, "updateBalTokenDistPercentage", (Object) distributionPercentages);
+
+        // Assert
+        expectErrorMessage(updateWithWrongLength, expectedErrorMessage);
+    }
+
+    @Test
+    void updateBalTokenDistPercentage_notGovernance() {
+        // Arrange 
+        String expectedErrorMessage = "Authorization Check: Authorization failed. Caller: " + admin.getAddress() + " Authorized Caller: " + governance.getAddress();
+
+        // Act 
+        DistributionPercentage[] distributionPercentages = new DistributionPercentage[]{loansDist, icxPoolDist, bwtDist, reserveDist, daoDist};
+        Executable updateAsAdmin = () -> rewardsScore.invoke(admin, "updateBalTokenDistPercentage", (Object) distributionPercentages);
+
+        // Assert
+        expectErrorMessage(updateAsAdmin, expectedErrorMessage);
+    }
+    
     @Test
     void getEmission_first60Days() {
         // Arrange
@@ -208,7 +335,10 @@ public class RewardsTest extends RewardsTestBase {
         BigInteger userSwapDistribution = swapDistribution.multiply(swapBalance).divide(swapTotalSupply);
         BigInteger userDistribution = userSwapDistribution.add(userLoansDistribution);
 
-        assertEquals(userDistribution, rewards.get(account.getAddress()));           
+        assertEquals(userDistribution, rewards.get(account.getAddress()));
+        verify(baln.mock, times(day)).transfer(bwt.getAddress(), bwtDist.dist_percent.multiply(emission).divide(EXA), new byte[0]);
+        verify(baln.mock, times(day)).transfer(daoFund.getAddress(), daoDist.dist_percent.multiply(emission).divide(EXA), new byte[0]);
+        verify(baln.mock, times(day)).transfer(reserve.getAddress(), reserveDist.dist_percent.multiply(emission).divide(EXA), new byte[0]);
     }
 
     @Test
@@ -261,7 +391,6 @@ public class RewardsTest extends RewardsTestBase {
         verifyBalnReward(account.getAddress(), userDistribution);        
     }
 
-
     @Test
     void distStatus() {
         // Arrange        
@@ -279,6 +408,78 @@ public class RewardsTest extends RewardsTestBase {
 
         assertEquals(day, platformDay);
         assertEquals(platformDay.multiply(BigInteger.TWO).subtract(BigInteger.ONE), daysSum);
+    }
+
+    @Test
+    void recipientAt_multipleSnapshots() {
+        // Arrange 
+        BigInteger expectedLoansDist = loansDist.dist_percent.add(ICX.divide(BigInteger.TEN));//30%
+        BigInteger expectedSwapDist = icxPoolDist.dist_percent.divide(BigInteger.TWO);//10%
+        BigInteger originalLoansDist = loansDist.dist_percent;
+        BigInteger originalSwapDist = icxPoolDist.dist_percent;
+        //create a set of snapshot to be able to search for recipients
+        snapshotDistributionPercentage();
+        snapshotDistributionPercentage();
+        snapshotDistributionPercentage();
+        snapshotDistributionPercentage();
+        
+        loansDist.dist_percent = expectedLoansDist; 
+        icxPoolDist.dist_percent = expectedSwapDist; 
+        snapshotDistributionPercentage();
+
+        // capture day where the specific change took place
+        BigInteger day = BigInteger.valueOf((sm.getBlock().getHeight()/DAY));
+        // reset distribution percentages
+        loansDist.dist_percent = originalLoansDist;
+        icxPoolDist.dist_percent = originalSwapDist;
+
+        snapshotDistributionPercentage();
+        snapshotDistributionPercentage();
+        snapshotDistributionPercentage();
+
+        // Act
+        Map<String, BigInteger> distributions = (Map<String, BigInteger>) rewardsScore.call("recipientAt", day);
+
+        // Assert
+        assertEquals(expectedLoansDist, distributions.get("Loans"));
+        assertEquals(expectedSwapDist, distributions.get("sICX/ICX"));
+    }
+
+    @Test
+    void recipientAt_withNewDataSourceInTheFuture() {
+        // Arrange 
+        sm.getBlock().increase(DAY);
+        sm.getBlock().increase(DAY);
+        DistributionPercentage testDist = new DistributionPercentage();
+        testDist.recipient_name = "test";
+        testDist.dist_percent = loansDist.dist_percent.divide(BigInteger.TWO);
+        loansDist.dist_percent =  loansDist.dist_percent.divide(BigInteger.TWO);
+
+        rewardsScore.invoke(governance, "addNewDataSource", testDist.recipient_name, loans.getAddress());
+
+        // Act
+        Object distributionPercentages = new DistributionPercentage[]{testDist, loansDist, icxPoolDist, bwtDist, reserveDist, daoDist};
+        BigInteger day = BigInteger.valueOf((sm.getBlock().getHeight()/DAY));
+
+        rewardsScore.invoke(governance, "updateBalTokenDistPercentage", distributionPercentages);
+        Map<String, BigInteger> distributionsYesterDay = (Map<String, BigInteger>) rewardsScore.call("recipientAt", day.subtract(BigInteger.ONE));
+        Map<String, BigInteger> distributionsToday = (Map<String, BigInteger>) rewardsScore.call("recipientAt", day);
+
+        // Assert
+        assertFalse(distributionsYesterDay.containsKey("test"));
+        assertEquals(testDist.dist_percent, distributionsToday.get("test"));
+    }
+
+    @Test
+    void recipientAt_dayLessThanZero() {
+        // Arrange 
+        String expectedErrorMessage = RewardsImpl.TAG + ": day:-1 must be equal to or greater then Zero";
+
+        // Act
+        Executable atDayLessThanZero = () ->  rewardsScore.invoke(admin, "recipientAt", BigInteger.valueOf(-1));
+
+        // Assert
+        expectErrorMessage(atDayLessThanZero, expectedErrorMessage);
     }
 }
 

@@ -20,6 +20,7 @@ import static network.balanced.score.lib.utils.Constants.U_SECONDS_DAY;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -28,6 +29,8 @@ import com.iconloop.score.test.Account;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import network.balanced.score.lib.structs.RewardsDataEntry;
@@ -55,6 +58,26 @@ public class RewardsTestContinousRewards extends RewardsTestBase {
         assertEquals(loansDist.dist_percent.multiply(emission).divide(EXA), data.get("Loans").get("total_dist"));
         assertEquals(icxPoolDist.dist_percent.multiply(emission).divide(EXA), data.get("sICX/ICX").get("total_dist"));
 
+    }
+
+    @Test
+    void distribute() {
+        // Arrange
+        rewardsScore.invoke(admin, "distribute");
+        BigInteger startTimeInUS = BigInteger.valueOf(sm.getBlock().getTimestamp());
+
+        // Act
+        sm.getBlock().increase(DAY);
+        rewardsScore.invoke(admin, "distribute");
+        int day = (int) (sm.getBlock().getHeight()/DAY);
+
+        // Assert
+        BigInteger emission = (BigInteger)rewardsScore.call("getEmission", BigInteger.valueOf(-1));
+        BigInteger timeInUS = BigInteger.valueOf(sm.getBlock().getTimestamp());
+        BigInteger diffInUS = timeInUS.subtract(startTimeInUS);
+        verify(baln.mock, times(day)).transfer(bwt.getAddress(), bwtDist.dist_percent.multiply(emission).divide(EXA), new byte[0]);
+        verify(baln.mock, times(day)).transfer(daoFund.getAddress(), daoDist.dist_percent.multiply(emission).divide(EXA), new byte[0]);
+        verify(baln.mock, times(day)).transfer(reserve.getAddress(), reserveDist.dist_percent.multiply(emission).divide(EXA), new byte[0]);
     }
 
     @Test
@@ -92,7 +115,7 @@ public class RewardsTestContinousRewards extends RewardsTestBase {
         BigInteger expectedRewards = userLoansDistribution.multiply(diffInUSLoans).divide(BigInteger.valueOf(U_SECONDS_DAY));
         expectedRewards = expectedRewards.add(userSwapDistribution.multiply(diffInUSSwap).divide(BigInteger.valueOf(U_SECONDS_DAY)));
 
-        verifyBalnReward(account.getAddress(), expectedRewards);
+        verifyBalnReward(account.getAddress(), expectedRewards);          
     }
 
     @Test
