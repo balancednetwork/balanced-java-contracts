@@ -29,7 +29,9 @@ import static network.balanced.score.lib.utils.Check.*;
 
 import java.math.BigInteger;
 import java.util.Map;
+import java.util.List;
 
+import scorex.util.ArrayList;
 import scorex.util.HashMap;
 
 public class Liquidity {
@@ -39,12 +41,21 @@ public class Liquidity {
     private final VarDB<Address> daofund = Context.newVarDB("daofund", Address.class);
     private final VarDB<Address> staking = Context.newVarDB("staking", Address.class);
 
+    private final EnumerableSet<BigInteger> whitelistedPoolIds = new EnumerableSet<>("whitelistedPoolIds", BigInteger.class);
     private final EnumerableSet<Address> balanceAddresses = new EnumerableSet<>("balanceAddresses", Address.class);
     private final VarDB<Boolean> withdrawToDaofund = Context.newVarDB("withdrawToDaofund", Boolean.class);
 
     public Liquidity(Address governance) {
         this.governance.set(governance);
         this.withdrawToDaofund.set(false);
+
+        // Set initial whitelisted poolids.
+        // sicx/bnusd: 2, baln/bnusd: 3, baln/sicx: 4, usds/bnusd: 10, iusdc/bnusd: 5.
+        this.whitelistedPoolIds.add(BigInteger.valueOf(2));
+        this.whitelistedPoolIds.add(BigInteger.valueOf(3));
+        this.whitelistedPoolIds.add(BigInteger.valueOf(4));
+        this.whitelistedPoolIds.add(BigInteger.valueOf(10));
+        this.whitelistedPoolIds.add(BigInteger.valueOf(5));
     }
 
     @External(readonly = true)
@@ -112,6 +123,31 @@ public class Liquidity {
     }
 
     @External
+    public void addPoolsToWhitelist(BigInteger[] ids) {
+        only(this.governance);
+        for (BigInteger id : ids) {
+            this.whitelistedPoolIds.add(id);
+        }
+    }
+
+    @External
+    public void removePoolsFromWhitelist(BigInteger[] ids) {
+        for (BigInteger id : ids) {
+            this.whitelistedPoolIds.remove(id);
+        }
+    }
+
+    @External(readonly = true)
+    public BigInteger[] getWhitelistedPoolIds() {
+        Integer numberOfIds = this.whitelistedPoolIds.length();
+        BigInteger[] poolIds = new BigInteger[numberOfIds];
+        for (Integer i = 0; i < numberOfIds; i++) {
+            poolIds[i] = this.whitelistedPoolIds.at(i);
+        }
+        return poolIds;
+    }
+
+    @External
     public void supplyLiquidity(Address baseToken, Address quoteToken, BigInteger baseValue, BigInteger quoteValue) {
         this.depositToken(baseToken, baseValue);
         this.depositToken(quoteToken, quoteValue);
@@ -127,7 +163,7 @@ public class Liquidity {
             this.withdrawToDaofund.set(false);
         }
         else {
-            Context.call(this.dex.get(), "remove", poolID, lptokens, false);
+            Context.call(this.dex.get(), "remove", poolID, lptokens, true);
         }     
     }
 
