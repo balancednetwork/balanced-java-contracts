@@ -108,23 +108,23 @@ public class LiquidityTest extends TestBase {
                 "setStaking", stakingScore.getAddress(), "getStaking");
     }
 
-    //@Test
-    //void addAndRemoveWhitelistedPoolIds() {
-    //    // Arrange.
-    //    BigInteger[] initialIds = (BigInteger[]) liquidityScore.call("getWhitelistedPoolIds");
-    //    liquidityScore.invoke(governanceScore, "removePoolsFromWhitelist", initialIds);
-    //    BigInteger[] idsToAdd = {BigInteger.valueOf(1), BigInteger.valueOf(2)};
-    //    BigInteger[] retrievedIds;
-    //    //liquidityScore.invoke(from, method, params);
-    //    // Act and assert.
-    //    liquidityScore.invoke(governanceScore, "addPoolsToWhitelist", (Object) idsToAdd);
-    //    retrievedIds = (BigInteger[]) liquidityScore.call("getWhitelistedPoolIds");
-    //    System.out.println(retrievedIds);
-    //    System.out.println("HEJSAN");
-    //    System.out.flush();
-    //    assertEquals(idsToAdd, idsToAdd);
-    //    //liquidityScore.invoke(governanceScore, "removePoolsFromWhitelist", Arrays.asList(a));
-    //}
+    @Test
+    void addAndRemoveWhitelistedPoolIds() {
+        // Arrange.
+        BigInteger[] initialIds = (BigInteger[]) liquidityScore.call("getWhitelistedPoolIds");
+        liquidityScore.invoke(governanceScore, "removePoolsFromWhitelist", initialIds);
+        BigInteger[] idsToAdd = {BigInteger.valueOf(1), BigInteger.valueOf(2)};
+        BigInteger[] retrievedIds;
+        //liquidityScore.invoke(from, method, params);
+        // Act and assert.
+        liquidityScore.invoke(governanceScore, "addPoolsToWhitelist", (Object) idsToAdd);
+        retrievedIds = (BigInteger[]) liquidityScore.call("getWhitelistedPoolIds");
+        System.out.println(retrievedIds);
+        System.out.println("HEJSAN");
+        System.out.flush();
+        assertEquals(idsToAdd, idsToAdd);
+        //liquidityScore.invoke(governanceScore, "removePoolsFromWhitelist", Arrays.asList(a));
+    }
 
     @Test
     void withdrawLiquidityCallerNotGovernance() {
