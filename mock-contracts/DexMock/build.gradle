@@ -8,7 +8,7 @@ dependencies {
     implementation Dependencies.javaeeScorex
     implementation Dependencies.javaeeTokens
 
-    implementation Dependencies.minimalJSON
+    implementation Dependencies.minimalJson
 }
 
 optimizedJar {
@@ -20,7 +20,6 @@ optimizedJar {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
 }
-
 
 test {    
     useJUnitPlatform()

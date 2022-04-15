@@ -1,15 +1,16 @@
-package network.balanced.score.core;
+package network.balanced.score.core.loans;
 
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
 import com.iconloop.score.token.irc2.IRC2Mintable;
-import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.function.Executable;
-
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -31,16 +32,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import network.balanced.score.mock.DexMock;
-import network.balanced.score.core.RewardsMock;
-import network.balanced.score.core.StakingMock;
-import network.balanced.score.core.ReserveMock;
-import network.balanced.score.core.sICXMintBurn;
-import network.balanced.score.core.bnUSDMintBurn;
-import network.balanced.score.core.Loans;
-import network.balanced.score.core.Constants;
+import network.balanced.score.core.loans.sICXMintBurn;
+import network.balanced.score.core.loans.LoansImpl;
+import network.balanced.score.core.loans.bnUSDMintBurn;
+import static network.balanced.score.core.loans.utils.Constants.*;
 
-class LoansTestsBase extends TestBase {
+import network.balanced.score.lib.interfaces.*;
+import network.balanced.score.lib.structs.RewardsDataEntry;
+import network.balanced.score.lib.test.mock.MockContract;
+import network.balanced.score.lib.test.UnitTest;
+
+class LoansTestsBase extends UnitTest {
     // 2 second blockTime gives 1 day 43200 block
     protected static final Long DAY = 43200L;
     protected static final Long WEEK = 7 * DAY;
@@ -48,15 +50,17 @@ class LoansTestsBase extends TestBase {
     protected static final ServiceManager sm = getServiceManager();
 
     protected final Account admin = sm.createAccount();
+    protected final Account feehandler = Account.newScoreAccount(scoreCount++);
     protected Score loans;
     protected Score sicx;
     protected Score bnusd;
-    protected Score dex;
-    protected Score rewards;
-    protected Score reserve;
-    protected Score staking;
-    protected Score governance;
-    protected Loans loansSpy;
+
+    protected MockContract<DexScoreInterface> dex;
+    protected MockContract<StakingScoreInterface> staking;
+    protected MockContract<GovernanceScoreInterface> governance;
+    protected MockContract<RewardsScoreInterface> rewards;
+    protected MockContract<ReserveScoreInterface> reserve;
+    protected LoansImpl loansSpy;
 
     protected final ArrayList<Account> accounts = new ArrayList<>();
     protected final BigInteger MINT_AMOUNT = BigInteger.TEN.pow(40);
@@ -71,9 +75,6 @@ class LoansTestsBase extends TestBase {
     protected static final int tokenDecimals = 18;
     protected static final BigInteger initalaupplyTokens = BigInteger.TEN.pow(50);
 
-    protected static final BigInteger initalsICXDexLiquidity = BigInteger.TEN.pow(24);
-    protected static final BigInteger initalbnUSDDexLiquidity = BigInteger.TEN.pow(24).multiply(BigInteger.valueOf(2));
-
     protected void setupAccounts() {
         int numberOfAccounts = 10;
         for (int accountNumber = 0; accountNumber < numberOfAccounts; accountNumber++) {
@@ -83,13 +84,67 @@ class LoansTestsBase extends TestBase {
         }
     }
 
-    protected void setupDex() throws Exception{
-        Account account = sm.createAccount();
-        sicx.invoke(admin, "mintTo", account.getAddress(), initalsICXDexLiquidity);
-        bnusd.invoke(admin, "mintTo", account.getAddress(), initalbnUSDDexLiquidity);  
-        dex = sm.deploy(admin, DexMock.class, sicx.getAddress(), bnusd.getAddress());
-        sicx.invoke(account, "transfer", dex.getAddress(), initalsICXDexLiquidity, new byte[0]);
-        bnusd.invoke(account, "transfer", dex.getAddress(), initalbnUSDDexLiquidity, new byte[0]);
+    private void setupDex() throws Exception {
+        BigInteger dexICXBalance = BigInteger.TEN.pow(24);
+        BigInteger dexbnUSDBalance = BigInteger.TEN.pow(24);
+
+        dex = new MockContract<DexScoreInterface>(DexScoreInterface.class, sm, admin);
+        sicx.invoke(admin, "mintTo", dex.getAddress(), dexICXBalance);
+        bnusd.invoke(admin, "mintTo", dex.getAddress(), dexbnUSDBalance);  
+    }
+
+
+    protected void mockSicxBnusdPrice(BigInteger rate) {
+        when(dex.mock.getSicxBnusdPrice()).thenReturn(rate);
+    }
+
+    protected void mockSwap(Score tokenRecived, BigInteger in, BigInteger out) {
+        Mockito.doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation) throws Throwable {
+                final Object[] args = invocation.getArguments();
+                tokenRecived.invoke(dex.account, "transfer", loans.getAddress(), out, new byte[0]);
+                return null;
+            }
+        }).when(dex.mock).tokenFallback(Mockito.eq(loans.getAddress()), Mockito.eq(in), Mockito.any(byte[].class));
+    }
+
+    private void setupGovernance() throws Exception {
+        governance = new MockContract<GovernanceScoreInterface>(GovernanceScoreInterface.class, sm, admin);
+        when(governance.mock.getContractAddress("feehandler")).thenReturn(feehandler.getAddress());
+    }
+
+    private void setupStaking() throws Exception {
+        staking = new MockContract<StakingScoreInterface>(StakingScoreInterface.class, sm, admin);
+    }
+
+    protected void mockStakeICX(BigInteger amount) {
+        Mockito.doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation) throws Throwable {
+                final Object[] args = invocation.getArguments();
+                sicx.invoke(staking.account, "mintTo", args[0], amount);
+                return null;
+            }
+        }).when(staking.mock).stakeICX(Mockito.any(Address.class));
+    }
+
+    private void setupReserve() throws Exception {
+        reserve = new MockContract<ReserveScoreInterface>(ReserveScoreInterface.class, sm, admin);
+    }
+
+    private void setupRewards() throws Exception {
+        rewards = new MockContract<RewardsScoreInterface>(RewardsScoreInterface.class, sm, admin);
+    }
+    
+    protected void mockRedeemFromReserve(Address address, BigInteger amount, BigInteger icxPrice) {
+        Mockito.doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation) throws Throwable {
+                sicx.invoke(reserve.account, "transfer", loans.getAddress(), amount, new byte[0]);
+                return null;
+            }
+        }).when(reserve.mock).redeem(address, amount, icxPrice);
     }
 
     protected void takeLoanSICX(Account account, BigInteger collateral, int loan) {
@@ -103,6 +158,7 @@ class LoansTestsBase extends TestBase {
     }
     
     protected void takeLoanICX(Account account, String asset, BigInteger collateral, BigInteger loan) {
+        mockStakeICX(collateral);
         sm.call(account, collateral, loans.getAddress(), "depositAndBorrow", asset, loan, account.getAddress(), BigInteger.ZERO);
     }
 
@@ -122,6 +178,26 @@ class LoansTestsBase extends TestBase {
         assertEquals(collateral, position.get("collateral"));
     }
 
+    protected boolean compareRewardsData(RewardsDataEntry[] expectedDataEntires, RewardsDataEntry[] dataEntires) {
+        for (RewardsDataEntry entry : expectedDataEntires) {
+            if (!containsRewardsData(entry, dataEntires)) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
+    private boolean containsRewardsData(RewardsDataEntry expectedData, RewardsDataEntry[] dataEntires) {
+        for (RewardsDataEntry data : dataEntires) {
+            if (data._user.equals(expectedData._user) && data._balance.equals(expectedData._balance)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
     protected void verifySnapshot(int addNonZero, int removeFromNonzero, int preComputeIndex, BigInteger totalMiningDebt, int day, int miningCount) {
         Map<String, Object> snap = (Map<String, Object>) loans.call("getSnapshot", day);
         System.out.println(snap);
@@ -133,18 +209,13 @@ class LoansTestsBase extends TestBase {
         assertEquals(miningCount, snap.get("mining_count"));
     }
 
-    protected void verifyStanding(Constants.Standings standing, Address address) {
+    protected void verifyStanding(Standings standing, Address address) {
         Map<String, Object> positionStanding = (Map<String, Object>) loans.call("getPositionStanding", address, -1);
-        assertEquals(Constants.StandingsMap.get(standing), positionStanding.get("standing")); 
-    }
-
-    public void expectErrorMessage(Executable contractCall, String errorMessage) {
-        AssertionError e = Assertions.assertThrows(AssertionError.class, contractCall);
-        assertEquals(errorMessage, e.getMessage());
+        assertEquals(StandingsMap.get(standing), positionStanding.get("standing")); 
     }
 
     public void governanceCall(String method, Object... params) {
-        governance.invoke(admin, "call", loans.getAddress(), method, params);
+        loans.invoke(governance.account, method, params);
     }
 
     public Object getParam(String key) {
@@ -156,17 +227,16 @@ class LoansTestsBase extends TestBase {
         sicx = sm.deploy(admin, sICXMintBurn.class, nameSicx, symbolSicx, tokenDecimals, initalaupplyTokens);
         bnusd = sm.deploy(admin, bnUSDMintBurn.class, nameBnusd, symbolBnusd, tokenDecimals, initalaupplyTokens);
 
-        governance = sm.deploy(admin, GovernanceMock.class);
-        loans = sm.deploy(admin, Loans.class, governance.getAddress());
-        loansSpy = (Loans) spy(loans.getInstance());
+        setupGovernance();
+
+        loans = sm.deploy(admin, LoansImpl.class, governance.getAddress());
+        loansSpy = (LoansImpl) spy(loans.getInstance());
         loans.setInstance(loansSpy);
 
         setupAccounts();
-
-        rewards = sm.deploy(admin, RewardsMock.class, loans.getAddress());
-        staking = sm.deploy(admin, StakingMock.class, sicx.getAddress());
-        reserve = sm.deploy(admin, ReserveMock.class, sicx.getAddress());
-
+        setupStaking();
+        setupRewards();
+        setupReserve();
         setupDex();
 
         loans.invoke(admin, "setDex", dex.getAddress());

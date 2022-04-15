@@ -1,50 +1,25 @@
-package network.balanced.score.core;
+package network.balanced.score.core.loans;
 
-import com.iconloop.score.test.Account;
-import com.iconloop.score.test.Score;
-import com.iconloop.score.test.ServiceManager;
-import com.iconloop.score.test.TestBase;
-import com.iconloop.score.token.irc2.IRC2Mintable;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.function.Executable;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
+import static network.balanced.score.core.loans.utils.Constants.StandingsMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doNothing;
-
-import score.Context;
-import score.Address;
-import score.annotation.External;
+import static org.mockito.Mockito.verify;
 
 import java.math.BigInteger;
-import java.math.MathContext;
-import java.math.BigDecimal;
-import java.util.HashMap;
 import java.util.Map;
 
+import com.iconloop.score.test.Account;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
+
+import network.balanced.score.core.loans.sICX;
+import network.balanced.score.core.loans.utils.Constants.Standings;
+import score.Address;
 import scorex.util.ArrayList;
-
-import network.balanced.score.mock.DexMock;
-import network.balanced.score.core.RewardsMock;
-import network.balanced.score.core.StakingMock;
-import network.balanced.score.core.ReserveMock;
-
-import network.balanced.score.core.sICXMintBurn;
-import network.balanced.score.core.bnUSDMintBurn;
-import network.balanced.score.core.Loans;
-import network.balanced.score.core.Constants;
-
-import java.util.Random;
 
 @DisplayName("Loans Tests")
 class LoansTests extends LoansTestsBase {
@@ -152,7 +127,7 @@ class LoansTests extends LoansTestsBase {
         assertEquals(loan.add(expectedFee), position.get("total_debt"));
         assertEquals(collateral, position.get("collateral"));
         assertEquals(collateral.multiply(EXA).divide(loan.add(expectedFee)), position.get("ratio"));
-        assertEquals(Constants.StandingsMap.get(Constants.Standings.MINING), position.get("standing"));
+        assertEquals(StandingsMap.get(Standings.MINING), position.get("standing"));
 
         assertEquals(loan.add(expectedFee), assets.get("bnUSD"));
         assertEquals(collateral, assets.get("sICX"));
@@ -170,7 +145,7 @@ class LoansTests extends LoansTestsBase {
         takeLoanICX(account, "bnUSD", collateral, loan);
     
         // Assert
-        verifyStanding(Constants.Standings.MINING, account.getAddress());
+        verifyStanding(Standings.MINING, account.getAddress());
     }
 
     @Test
@@ -186,7 +161,7 @@ class LoansTests extends LoansTestsBase {
         takeLoanICX(account, "bnUSD", collateral, loan);
     
         // Assert
-        verifyStanding(Constants.Standings.NOT_MINING, account.getAddress());
+        verifyStanding(Standings.NOT_MINING, account.getAddress());
     }
 
     @Test
@@ -204,7 +179,7 @@ class LoansTests extends LoansTestsBase {
         bnusd.invoke(admin, "setPrice", newPrice);
     
         // Assert
-        verifyStanding(Constants.Standings.NOT_MINING, account.getAddress());
+        verifyStanding(Standings.NOT_MINING, account.getAddress());
     }
 
     @Test
@@ -222,7 +197,7 @@ class LoansTests extends LoansTestsBase {
         bnusd.invoke(admin, "setPrice", newPrice);
     
         // Assert
-        verifyStanding(Constants.Standings.LOCKED, account.getAddress());
+        verifyStanding(Standings.LOCKED, account.getAddress());
     }
 
     @Test
@@ -240,7 +215,7 @@ class LoansTests extends LoansTestsBase {
         bnusd.invoke(admin, "setPrice", newPrice);
     
         // Assert
-        verifyStanding(Constants.Standings.LOCKED, account.getAddress());
+        verifyStanding(Standings.LOCKED, account.getAddress());
     }
 
     @Test
@@ -805,8 +780,10 @@ class LoansTests extends LoansTestsBase {
         BigInteger bnUSDBalancePre = (BigInteger) bnusd.call("balanceOf", badDebtReedemer.getAddress());
         BigInteger sICXBalancePre = (BigInteger) sicx.call("balanceOf", badDebtReedemer.getAddress());
 
+        BigInteger amountRedeemed = debtInsICX.subtract(liquidationPool);
+        mockRedeemFromReserve(badDebtReedemer.getAddress(), amountRedeemed, icxPrice);
         loans.invoke(badDebtReedemer, "retireBadDebt", "bnUSD", badDebtRedeemed);
-     
+
         // Assert
         BigInteger bnUSDBalancePost = (BigInteger) bnusd.call("balanceOf", badDebtReedemer.getAddress());
         BigInteger sICXBalancePost = (BigInteger) sicx.call("balanceOf", badDebtReedemer.getAddress());
@@ -960,9 +937,10 @@ class LoansTests extends LoansTestsBase {
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
         takeLoanICX(accounts.get(2), "bnUSD", accountTwoCollateral, accountTwoLoan);
 
-        BigInteger bnUSDDexLiquidity = (BigInteger) bnusd.call("balanceOf", dex.getAddress());
-        BigInteger sICXDexLiquidity = (BigInteger) sicx.call("balanceOf", dex.getAddress());
-        BigInteger expectedBnusdRecived = bnUSDDexLiquidity.multiply(rebalanceAmount).divide(sICXDexLiquidity.add(rebalanceAmount));
+        BigInteger rate = EXA.divide(BigInteger.TWO);
+        BigInteger expectedBnusdRecived = rebalanceAmount.multiply(BigInteger.TWO);
+        mockSicxBnusdPrice(rate);
+        mockSwap(bnusd, rebalanceAmount, expectedBnusdRecived);
 
         // Act
         loans.invoke(admin, "raisePrice", rebalanceAmount);
@@ -1012,16 +990,16 @@ class LoansTests extends LoansTestsBase {
 
         BigInteger totalTokenRequired = BigInteger.valueOf(10000).multiply(EXA);
         BigInteger maxRetirePercent = (BigInteger) getParam("retire percent max");
-        BigInteger rate = (BigInteger) dex.call("getSicxBnusdPrice");
+        BigInteger rate = EXA; 
+        mockSicxBnusdPrice(rate);
         BigInteger rebalanceAmount = maxRetirePercent.multiply(totalDebt).multiply(EXA).divide(POINTS.multiply(rate));
 
         takeLoanICX(accounts.get(0), "bnUSD", accountZeroCollateral, accountZeroLoan);
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
         takeLoanICX(accounts.get(2), "bnUSD", accountTwoCollateral, accountTwoLoan);
 
-        BigInteger bnUSDDexLiquidity = (BigInteger) bnusd.call("balanceOf", dex.getAddress());
-        BigInteger sICXDexLiquidity = (BigInteger) sicx.call("balanceOf", dex.getAddress());
-        BigInteger expectedBnusdRecived = bnUSDDexLiquidity.multiply(rebalanceAmount).divide(sICXDexLiquidity.add(rebalanceAmount));
+        BigInteger expectedBnusdRecived = rebalanceAmount;
+        mockSwap(bnusd, rebalanceAmount, rebalanceAmount);
 
         // Act
         loans.invoke(admin, "raisePrice", totalTokenRequired);
@@ -1074,9 +1052,10 @@ class LoansTests extends LoansTestsBase {
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
         takeLoanICX(accounts.get(2), "bnUSD", accountTwoCollateral, accountTwoLoan);
 
-        BigInteger bnUSDDexLiquidity = (BigInteger) bnusd.call("balanceOf", dex.getAddress());
-        BigInteger sICXDexLiquidity = (BigInteger) sicx.call("balanceOf", dex.getAddress());
-        BigInteger expectedSICXRecived = sICXDexLiquidity.multiply(rebalanceAmount).divide(bnUSDDexLiquidity.add(rebalanceAmount));
+        BigInteger rate = EXA;
+        BigInteger expectedSICXRecived = rebalanceAmount;
+        mockSicxBnusdPrice(rate);
+        mockSwap(sicx, rebalanceAmount, rebalanceAmount);
 
         // Act
         loans.invoke(admin, "lowerPrice", rebalanceAmount);
@@ -1133,9 +1112,10 @@ class LoansTests extends LoansTestsBase {
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
         takeLoanICX(accounts.get(2), "bnUSD", accountTwoCollateral, accountTwoLoan);
 
-        BigInteger bnUSDDexLiquidity = (BigInteger) bnusd.call("balanceOf", dex.getAddress());
-        BigInteger sICXDexLiquidity = (BigInteger) sicx.call("balanceOf", dex.getAddress());
-        BigInteger expectedSICXRecived = sICXDexLiquidity.multiply(rebalanceAmount).divide(bnUSDDexLiquidity.add(rebalanceAmount));
+        BigInteger rate = EXA;
+        BigInteger expectedSICXRecived = rebalanceAmount;
+        mockSicxBnusdPrice(rate);
+        mockSwap(sicx, rebalanceAmount, rebalanceAmount);
 
         // Act
         loans.invoke(admin, "lowerPrice", totalTokenRequired);
@@ -1216,8 +1196,8 @@ class LoansTests extends LoansTestsBase {
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
      
         int day = (int) loans.call("getDay");
-        rewards.invoke(admin, "precompute", day, 0);
-        rewards.invoke(admin, "precompute", day, 2);
+        loans.invoke(rewards.account, "precompute", day, 0);
+        loans.invoke(rewards.account, "precompute", day, 2);
 
         // Assert
         int expectedNonZeroPositionsToAdd = 0;
@@ -1253,7 +1233,7 @@ class LoansTests extends LoansTestsBase {
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
      
         int day = (int) loans.call("getDay");
-        rewards.invoke(admin, "precompute", day, 0);
+        loans.invoke(rewards.account, "precompute", day, 0);
 
         // Assert
         int expectedNonZeroPositionsToAdd = 0;
@@ -1297,8 +1277,8 @@ class LoansTests extends LoansTestsBase {
         
         int day = (int) loans.call("getDay");
         
-        rewards.invoke(admin, "precompute", day, 0);
-        rewards.invoke(admin, "precompute", day, 3);
+        loans.invoke(rewards.account, "precompute", day, 0);
+        loans.invoke(rewards.account, "precompute", day, 3);
      
         sm.getBlock().increase(DAY);
         loans.invoke(admin, "checkForNewDay");
@@ -1309,8 +1289,8 @@ class LoansTests extends LoansTestsBase {
      
         day = (int) loans.call("getDay");
 
-        rewards.invoke(admin, "precompute", day, 0);
-        rewards.invoke(admin, "precompute", day, 2);
+        loans.invoke(rewards.account, "precompute", day, 0);
+        loans.invoke(rewards.account, "precompute", day, 2);
 
         // Assert
         int expectedNonZeroPositionsToAdd = 0;
@@ -1346,8 +1326,8 @@ class LoansTests extends LoansTestsBase {
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
      
         int day = (int) loans.call("getDay");
-        rewards.invoke(admin, "precompute", day, 0);
-        rewards.invoke(admin, "precompute", day, 1);
+        loans.invoke(rewards.account, "precompute", day, 0);
+        loans.invoke(rewards.account, "precompute", day, 1);
 
         // Assert
         int expectedNonZeroPositionsToAdd = 0;
@@ -1383,9 +1363,9 @@ class LoansTests extends LoansTestsBase {
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
      
         int day = (int) loans.call("getDay");
-        rewards.invoke(admin, "precompute", day, 0);
-        rewards.invoke(admin, "precompute", day, 1);
-        rewards.invoke(admin, "precompute", day, 1);
+        loans.invoke(rewards.account, "precompute", day, 0);
+        loans.invoke(rewards.account, "precompute", day, 1);
+        loans.invoke(rewards.account, "precompute", day, 1);
 
         // Assert
         int expectedNonZeroPositionsToAdd = 0;
@@ -1428,16 +1408,16 @@ class LoansTests extends LoansTestsBase {
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
 
         int day = (int) loans.call("getDay");
-        rewards.invoke(admin, "precompute", day, 0);
-        rewards.invoke(admin, "precompute", day, 2);
+        loans.invoke(rewards.account, "precompute", day, 0);
+        loans.invoke(rewards.account, "precompute", day, 2);
         sm.getBlock().increase(DAY);
 
         // Day 2
         takeLoanICX(accounts.get(2), "bnUSD", accountTwoCollateral, accountTwoLoan);
 
         day = (int) loans.call("getDay");
-        rewards.invoke(admin, "precompute", day, 0);
-        rewards.invoke(admin, "precompute", day, 3);
+        loans.invoke(rewards.account, "precompute", day, 0);
+        loans.invoke(rewards.account, "precompute", day, 3);
         sm.getBlock().increase(DAY);
 
         // Day 3
@@ -1445,8 +1425,8 @@ class LoansTests extends LoansTestsBase {
         loans.invoke(accounts.get(1), "returnAsset", "bnUSD", accountOneRepaidDebt, true);
 
         day = (int) loans.call("getDay");
-        rewards.invoke(admin, "precompute", day, 0);
-        rewards.invoke(admin, "precompute", day, 3);
+        loans.invoke(rewards.account, "precompute", day, 0);
+        loans.invoke(rewards.account, "precompute", day, 3);
         sm.getBlock().increase(DAY);
 
         // Assert
@@ -1493,16 +1473,16 @@ class LoansTests extends LoansTestsBase {
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
 
         int day = (int) loans.call("getDay");
-        rewards.invoke(admin, "precompute", day, 0);
-        rewards.invoke(admin, "precompute", day, 2);
+        loans.invoke(rewards.account, "precompute", day, 0);
+        loans.invoke(rewards.account, "precompute", day, 2);
         sm.getBlock().increase(DAY);
 
         // Day 2
         takeLoanICX(accounts.get(2), "bnUSD", accountTwoCollateral, accountTwoLoan);
 
         day = (int) loans.call("getDay");
-        rewards.invoke(admin, "precompute", day, 0);
-        rewards.invoke(admin, "precompute", day, 3);
+        loans.invoke(rewards.account, "precompute", day, 0);
+        loans.invoke(rewards.account, "precompute", day, 3);
         sm.getBlock().increase(DAY);
 
         // Day 3

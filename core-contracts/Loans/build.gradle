@@ -2,6 +2,10 @@ import network.balanced.score.dependencies.Dependencies
 
 version = '0.1.0'
 
+repositories {
+    mavenCentral()
+}
+
 sourceSets {
     intTest {}
 }
@@ -13,31 +17,38 @@ configurations {
 
 dependencies {
     compileOnly Dependencies.javaeeApi
-    
+    implementation project(':score-lib')
+
     implementation Dependencies.javaeeScorex
-    implementation Dependencies.javaeeTokens
-    implementation Dependencies.minimalJSON
+    implementation Dependencies.minimalJson
 
     testImplementation Dependencies.javaeeUnitTest
-    testImplementation Dependencies.junitJupiter//'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testImplementation Dependencies.junitJupiter
     testImplementation Dependencies.mockitoCore
-    testImplementation project(':DexMock')
-    
-    testRuntimeOnly Dependencies.junitJupiterEngine//org.junit.jupiter:junit-jupiter-engine:5.8.1'
+    testImplementation Dependencies.javaeeTokens
+    testImplementation project(':test-lib')
+    testImplementation 'org.mockito:mockito-inline:2.13.0'
 
+    testRuntimeOnly Dependencies.junitJupiterEngine
+
+    intTestImplementation project(':DexMock')
     intTestImplementation project(':testinteg')
     intTestImplementation project(':RebalanceMock')
     intTestImplementation 'foundation.icon:icon-sdk:2.0.0'
 }
 
 optimizedJar {
-    mainClassName = 'network.balanced.score.core.Loans'
-    archivesBaseName = 'Loans'
+    mainClassName = 'network.balanced.score.core.loans.LoansImpl'
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
-        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
+    } { 
+        exclude "score/*"
+        
     }
+
+    enableDebug = false
 }
 
 deployJar {

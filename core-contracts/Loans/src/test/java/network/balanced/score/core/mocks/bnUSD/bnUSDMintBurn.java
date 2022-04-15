@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package network.balanced.score.core;
+package network.balanced.score.core.loans;
 
 import score.Address;
 import score.Context;
@@ -21,7 +21,7 @@ import score.VarDB;
 import score.annotation.External;
 
 import java.math.BigInteger;
-import network.balanced.score.core.bnUSD;
+import network.balanced.score.core.loans.bnUSD;
 
 public class bnUSDMintBurn extends bnUSD {
 
