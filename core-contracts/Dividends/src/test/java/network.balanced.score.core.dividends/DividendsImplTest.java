@@ -5,11 +5,11 @@ import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
 import network.balanced.score.core.dividends.utils.bnUSD;
+import network.balanced.score.lib.structs.DistPercentDict;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.stubbing.Answer;
 import score.Address;
 import score.Context;
 
@@ -24,12 +24,11 @@ import static network.balanced.score.core.dividends.Helpers.pow10;
 
 import static org.mockito.Mockito.*;
 
-public class DividendsTest extends TestBase {
+public class DividendsImplTest extends TestBase {
     public static final ServiceManager sm = getServiceManager();
     private static final Object MINT_AMOUNT = BigInteger.TEN.pow(22);
     protected static final long DAY = 43200L;
 
-    private Dividends dividendsSpy;
     public static Score bnUSDScore;
     public static final Account owner = sm.createAccount();
     Account admin = sm.createAccount();
@@ -49,19 +48,19 @@ public class DividendsTest extends TestBase {
 
     @BeforeEach
     public void setup() throws Exception {
-        dividendScore = sm.deploy(owner, Dividends.class, governanceScore.getAddress());
+        dividendScore = sm.deploy(owner, DividendsImpl.class, governanceScore.getAddress());
         assert (dividendScore.getAddress().isContract());
 
         bnUSDScore = sm.deploy(owner, bnUSD.class, "bnUSD Token", "bnUSD", 18);
         bnUSDScore.invoke(owner, "mint", MINT_AMOUNT);
         bnUSDScore.invoke(owner, "transfer", dividendScore.getAddress(), BigInteger.TEN.pow(20), new byte[0]);
 
-        dividendsSpy = (Dividends) spy(dividendScore.getInstance());
+        DividendsImpl dividendsSpy = (DividendsImpl) spy(dividendScore.getInstance());
         dividendScore.setInstance(dividendsSpy);
     }
 
     @Test
-    public void name() {
+    void name() {
         String contractName = "Balanced Dividends";
         assertEquals(contractName, dividendScore.call("name"));
     }
@@ -212,7 +211,7 @@ public class DividendsTest extends TestBase {
 
 //        add category
         dividendScore.invoke(admin, "addDividendsCategory", "loans");
-        Dividends.DistPercentDict[] dist = new Dividends.DistPercentDict[]{new Dividends.DistPercentDict(), new Dividends.DistPercentDict(), new Dividends.DistPercentDict()};
+        DistPercentDict[] dist = new DistPercentDict[]{new DistPercentDict(), new DistPercentDict(), new DistPercentDict()};
         dist[0].category = "daofund";
         dist[1].category = "baln_holders";
         dist[2].category = "loans";
@@ -255,7 +254,7 @@ public class DividendsTest extends TestBase {
     @Test
     public void getDividendsOnlyToStakedBalnDay(){
         setAdmin();
-        dividendScore.invoke(admin, "setDividendsOnlyToStakedBalnDay", BigInteger.valueOf(1));
+        dividendScore.invoke(admin, "setDividendsOnlyToStakedBalnDay", BigInteger.ONE);
         assertEquals(BigInteger.ONE, dividendScore.call("getDividendsOnlyToStakedBalnDay"));
     }
 

@@ -27,6 +27,7 @@ repositories {
 dependencies {
     compileOnly Dependencies.javaeeApi
     implementation Dependencies.javaeeScorex
+    implementation project(':score-lib')
 
     testImplementation Dependencies.javaeeUnitTest
     testImplementation Dependencies.javaeeTokens
@@ -35,10 +36,11 @@ dependencies {
     testImplementation Dependencies.mockitoInline
     testImplementation Dependencies.mockitoCore
     testRuntimeOnly Dependencies.junitJupiterEngine
+    testImplementation project(':test-lib')
 }
 
 optimizedJar {
-    mainClassName = 'network.balanced.score.core.dividends.Dividends'
+    mainClassName = 'network.balanced.score.core.dividends.DividendsImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }

@@ -1,66 +1,27 @@
 package network.balanced.score.core.dividends;
 
+import network.balanced.score.lib.interfaces.Dividends;
+
+import network.balanced.score.lib.structs.DistPercentDict;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
-import score.annotation.Payable;
+import scorex.util.HashMap;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static network.balanced.score.core.dividends.Checks.*;
-import static network.balanced.score.core.dividends.Consts.*;
-import static network.balanced.score.core.dividends.Helpers.*;
+import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.Constants.*;
 
-public class Dividends {
-    public static final String TAG = "Balanced Dividends";
-    public static final BigInteger UNITS_PER_TOKEN = BigInteger.TEN.multiply(pow10(18));
+import static network.balanced.score.core.dividends.Constants.*;
+import static network.balanced.score.core.dividends.Helpers.removeFromArrarDb;
+import static network.balanced.score.lib.utils.Math.pow;
 
-    private static final String GOVERNANCE = "governance";
-    private static final String ADMIN = "admin";
-    private static final String LOANS_SCORE = "loans_score";
-    private static final String DAOFUND = "daofund";
-    private static final String BALN_SCORE = "baln_score";
-    private static final String DEX_SCORE = "dex_score";
-
-    private static final String ACCEPTED_TOKENS = "accepted_tokens";
-    private static final String AMOUNT_TO_DISTRIBUTE = "amount_to_distribute";
-    private static final String AMOUNT_BEING_DISTRIBUTED = "amount_being_distributed";
-    private static final String BALN_DIST_INDEX = "baln_dist_index";
-
-    private static final String STAKED_BALN_HOLDERS = "staked_baln_holders";
-    private static final String STAKED_DIST_INDEX = "staked_dist_index";
-
-    private static final String BALN_IN_DEX = "baln_in_dex";
-    private static final String TOTAL_LP_TOKENS = "total_lp_tokens";
-    private static final String LP_HOLDERS_INDEX = "lp_holders_index";
-    private static final String USERS_BALANCE = "users_balance";
-
-    private static final String DIVIDENDS_DISTRIBUTION_STATUS = "dividends_distribution_status";
-    private static final String SNAPSHOT_ID = "snapshot_id";
-    private static final String AMOUNT_RECEIVED_STATUS = "amount_received_status";
-    private static final String DAILY_FEES = "daily_fees";
-
-    private static final String MAX_LOOP_COUNT = "max_loop_count";
-    private static final String MIN_ELIGIBLE_DEBT = "minimum_eligible_debt";
-    private static final String DIVIDENDS_CATEGORIES = "dividends_categories";
-    private static final String DIVIDENDS_PERCENTAGE = "dividends_percentage";
-
-    private static final String DISTRIBUTION_ACTIVATE = "distribution_activate";
-    private static final String DIVIDENDS_BATCH_SIZE = "dividends_batch_size";
-
-    private static final String CLAIMED_BIT_MAP = "claimed_bit_map_";
-    private static final String TIME_OFFSET = "time_offset";
-
-    private static final String DIVIDENDS_ENABLED_TO_STAKED_BALN_ONLY_DAY = "dividends_enabled_to_staked_baln_only_day";
-
-    private static final String SNAPSHOT_DIVIDENDS = "snapshot_dividends";
-    private static final String TOTAL_SNAPSHOT = "total_snapshots";
-    private static final String COMPLETE_DIVIDENDS_CATEGORIES = "complete_dividends_categories";
+public class DividendsImpl implements Dividends {
 
     public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
     public static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
@@ -105,15 +66,10 @@ public class Dividends {
     public static final VarDB<BigInteger> timeOffset = Context.newVarDB(TIME_OFFSET, BigInteger.class);
     public static final VarDB<BigInteger> dividends_enabled_to_staked_baln_day = Context.newVarDB(DIVIDENDS_ENABLED_TO_STAKED_BALN_ONLY_DAY, BigInteger.class);
 
-    public static class DistPercentDict {
-        public String category;
-        public BigInteger dist_percent;
-    }
-
-    public Dividends(@Optional Address governance) {
+    public DividendsImpl(@Optional Address governance) {
         if (governance != null) {
             Context.require(governance.isContract(), "Dividends: Governance address should be a contract");
-            Dividends.governance.set(governance);
+            DividendsImpl.governance.set(governance);
             snapshotId.set(BigInteger.ONE);
             maxLoopCount.set(MAX_LOOP);
             minimumEligibleDebt.set(MINIMUM_ELIGIBLE_DEBT);
@@ -123,7 +79,7 @@ public class Dividends {
     }
 
     public void setTimeOffset() {
-        BigInteger offsetTime = (BigInteger) Context.call(dexScore.getOrDefault(defaultAddress), "getTimeOffset");
+        BigInteger offsetTime = (BigInteger) Context.call(dexScore.get(), "getTimeOffset");
         timeOffset.set(offsetTime);
 
     }
@@ -131,8 +87,8 @@ public class Dividends {
     private void addInitialCategories() {
         completeDividendsCategories.add(DAO_FUND);
         completeDividendsCategories.add(BALN_HOLDERS);
-        dividendsPercentage.set(DAO_FUND, BigInteger.valueOf(4).multiply(pow10(17)));
-        dividendsPercentage.set(BALN_HOLDERS, BigInteger.valueOf(6).multiply(pow10(17)));
+        dividendsPercentage.set(DAO_FUND, BigInteger.valueOf(4).multiply(pow(BigInteger.TEN, 17)));
+        dividendsPercentage.set(BALN_HOLDERS, BigInteger.valueOf(6).multiply(pow(BigInteger.TEN, 17)));
     }
 
 
@@ -148,13 +104,14 @@ public class Dividends {
 
     @External
     public void setDistributionActivationStatus(boolean _status) {
-        onlyGovernance();
+        only(governance);
         distributionActivate.set(_status);
     }
 
     @External
     public void setGovernance(Address _address) {
         onlyOwner();
+        isContract(_address);
         governance.set(_address);
     }
 
@@ -165,66 +122,66 @@ public class Dividends {
 
     @External
     public void setAdmin(Address _address) {
-        onlyGovernance();
+        only(governance);
         admin.set(_address);
     }
 
     @External(readonly = true)
     public Address getAdmin() {
-        return admin.getOrDefault(defaultAddress);
+        return admin.get();
     }
 
     @External
     public void setLoans(Address _address) {
-        onlyAdmin();
-        Context.require(_address.isContract(), TAG + ": Address provided is EOA address. Should be a contract address.");
+        only(admin);
+        isContract(_address);
         loanScore.set(_address);
     }
 
     @External(readonly = true)
     public Address getLoans() {
-        return loanScore.getOrDefault(defaultAddress);
+        return loanScore.get();
     }
 
     @External
     public void setDaofund(Address _address) {
-        onlyAdmin();
-        Context.require(_address.isContract(), TAG + ": Address provided is EOA address. Should be a contract address.");
+        only(admin);
+        isContract(_address);
         daoFund.set(_address);
     }
 
     @External(readonly = true)
     public Address getDaofund() {
-        return daoFund.getOrDefault(defaultAddress);
+        return daoFund.get();
     }
 
     @External
     public void setBaln(Address _address) {
-        onlyAdmin();
-        Context.require(_address.isContract(), TAG + ": Address provided is EOA address. Should be a contract address.");
+        only(admin);
+        isContract(_address);
         balnScore.set(_address);
     }
 
     @External(readonly = true)
     public Address getBaln() {
-        return balnScore.getOrDefault(defaultAddress);
+        return balnScore.get();
     }
 
     @External
     public void setDex(Address _address) {
-        onlyAdmin();
-        Context.require(_address.isContract(), TAG + ": Address provided is EOA address. Should be a contract address.");
+        only(admin);
+        isContract(_address);
         dexScore.set(_address);
     }
 
     @External(readonly = true)
     public Address getDex() {
-        return dexScore.getOrDefault(defaultAddress);
+        return dexScore.get();
     }
 
     @External
     public void setDividendsOnlyToStakedBalnDay(BigInteger day) {
-        onlyAdmin();
+        only(admin);
         Context.require(day.compareTo(snapshotId.getOrDefault(BigInteger.ZERO)) < 1, TAG + "Day should be greater than the current snapshot ID.");
         dividends_enabled_to_staked_baln_day.set(day);
     }
@@ -238,7 +195,7 @@ public class Dividends {
     @SuppressWarnings("unchecked")
     public Map<String, BigInteger> getBalances() {
         Address address = Context.getAddress();
-        Map<String, String> assets = (Map<String, String>) Context.call(loanScore.getOrDefault(defaultAddress), "getAssetTokens");
+        Map<String, String> assets = (Map<String, String>) Context.call(loanScore.get(), "getAssetTokens");
         Map<String, BigInteger> balances = new HashMap<>();
         for (String symbol : assets.keySet()) {
             BigInteger balance = (BigInteger) Context.call(Address.fromString(assets.get(symbol)), "balanceOf",
@@ -277,8 +234,8 @@ public class Dividends {
 
     @External
     public void addAcceptedTokens(Address _token) {
-        onlyGovernance();
-        Context.require(_token.isContract(), TAG + ": " + _token + "is not a contract address");
+        only(governance);
+        isContract(_token);
 
         if (!check(String.valueOf(_token))) {
             acceptedTokens.add(_token);
@@ -307,7 +264,7 @@ public class Dividends {
 
     @External
     public void addDividendsCategory(String _category) {
-        onlyAdmin();
+        only(admin);
         for (int i = 0; i < completeDividendsCategories.size(); i++) {
             if (_category.equals(completeDividendsCategories.get(i))) {
                 Context.revert(TAG + ": " + _category + "is already added.");
@@ -319,7 +276,7 @@ public class Dividends {
 
     @External
     public void removeDividendsCategory(String _category) {
-        onlyAdmin();
+        only(admin);
         BigInteger currentDay = getDay();
         for (int i = 0; i < completeDividendsCategories.size(); i++) {
             if (isExists(_category)) {
@@ -337,13 +294,13 @@ public class Dividends {
 
     @External(readonly = true)
     public Map<String, BigInteger> getDividendsPercentage() {
-        BigInteger currentDay = (BigInteger) Context.call(loanScore.getOrDefault(defaultAddress), "getDay");
+        BigInteger currentDay = (BigInteger) Context.call(loanScore.get(), "getDay");
         return dividendsAt(currentDay);
     }
 
     @External
     public void setDividendsCategoryPercentage(DistPercentDict[] _dist_list) {
-        onlyAdmin();
+        only(admin);
         BigInteger total_percentage = BigInteger.ZERO;
         if (_dist_list.length != completeDividendsCategories.size()) {
             Context.revert(TAG + ": Categories count mismatched!");
@@ -360,7 +317,7 @@ public class Dividends {
             }
         }
 
-        if (!total_percentage.equals((pow10(18)))) {
+        if (!total_percentage.equals(pow(BigInteger.TEN, 18))) {
             Context.revert(TAG + ": Total percentage doesn't sum up to 100 i.e. 10**18.");
         }
     }
@@ -382,7 +339,7 @@ public class Dividends {
 
     @External
     public void setDividendsBatchSize(BigInteger _size) {
-        onlyAdmin();
+        only(admin);
         Context.require(_size.signum() > 0, TAG + ": Size can't be negative or zero.");
         dividendsBatchSize.set(_size);
     }
@@ -410,8 +367,8 @@ public class Dividends {
         return true;
     }
 
-    public void checkForNewDay() {
-        if (timeOffset.getOrDefault(BigInteger.ZERO).equals(BigInteger.ZERO)) {
+    private void checkForNewDay() {
+        if (timeOffset.get() == null) {
             setTimeOffset();
         }
         BigInteger current_snapshot_id = getDay();
@@ -422,7 +379,7 @@ public class Dividends {
 
     @External
     public void transferDaofundDividends(BigInteger _start, BigInteger _end) {
-        Address daofund = daoFund.getOrDefault(defaultAddress);
+        Address daofund = daoFund.get();
         Context.require(distributionActivate.getOrDefault(false).equals(true), TAG + ": Distribution is not activated. Can't transfer.");
 
         int[] value = checkStartEnd(_start.intValue(), _end.intValue());
@@ -490,7 +447,7 @@ public class Dividends {
 
         for (int i = 0; i < acceptedTokens.size(); i++) {
             if (!sender.equals(acceptedTokens.get(i))) {
-                available_tokens = (Map<String, ?>) Context.call(loanScore.getOrDefault(defaultAddress), "getAssetTokens");
+                available_tokens = (Map<String, ?>) Context.call(loanScore.get(), "getAssetTokens");
                 for (String value : available_tokens.keySet()) {
                     if (String.valueOf(sender).equals(value)) {
                         acceptedTokens.add(sender);
@@ -499,8 +456,8 @@ public class Dividends {
             }
         }
         checkForNewDay();
-        BigInteger val = dailyFees.at(snap_id).getOrDefault(String.valueOf(sender), BigInteger.ZERO);
-        dailyFees.at(snap_id).set(String.valueOf(sender), val.add(_value));
+        BigInteger val = dailyFees.at(snap_id).getOrDefault(sender.toString(), BigInteger.ZERO);
+        dailyFees.at(snap_id).set(sender.toString(), val.add(_value));
 
         DividendsReceivedV2(_value, snap_id, _value + "tokens received as dividends token: " + sender);
         amountReceivedStatus.set(true);
@@ -574,8 +531,8 @@ public class Dividends {
             return new HashMap<>();
         }
 
-        Address baln = balnScore.getOrDefault(defaultAddress);
-        Address dex = dexScore.getOrDefault(defaultAddress);
+        Address baln = balnScore.get();
+        Address dex = dexScore.get();
         BigInteger staked_baln = (BigInteger) Context.call(baln, "stakedBalanceOfAt", _account, _day);
         BigInteger total_staked_baln = (BigInteger) Context.call(baln, "totalStakedBalanceOfAt", _day);
 
@@ -613,7 +570,7 @@ public class Dividends {
                 Address token = acceptedTokens.get(i);
                 BigInteger numerator = my_total_baln_token.multiply(dividends_distribution.get(BALN_HOLDERS)).
                         multiply(dailyFees.at(_day).getOrDefault(String.valueOf(token), BigInteger.ZERO));
-                BigInteger denominator = total_baln_token.multiply(pow10(18));
+                BigInteger denominator = total_baln_token.multiply(pow(BigInteger.TEN, 18));
                 my_dividends.put(String.valueOf(token), numerator.divide(denominator));
             }
         }
@@ -622,7 +579,7 @@ public class Dividends {
     }
 
     private Map<String, BigInteger> getDividendsForDaoFund(BigInteger _day) {
-        Address dao = daoFund.getOrDefault(defaultAddress);
+        Address dao = daoFund.get();
         Boolean claim = isClaimed(dao, _day);
         if (claim.equals(true)) {
             return new HashMap<>();
@@ -632,9 +589,9 @@ public class Dividends {
         for (int i = 0; i < acceptedTokens.size(); i++) {
             Address token = acceptedTokens.get(i);
             Map<String, BigInteger> dividends_dist = dividendsAt(_day);
-            BigInteger numerator = dividends_dist.get(DAOFUND).multiply(dailyFees.at(_day).getOrDefault(String.valueOf(token), BigInteger.ZERO));
-            BigInteger denominator = pow10(18);
-            daoFund_dividends.put(String.valueOf(token), numerator.divide(denominator));
+            BigInteger numerator = dividends_dist.get(DAOFUND).multiply(dailyFees.at(_day).getOrDefault(token.toString(), BigInteger.ZERO));
+            BigInteger denominator = pow(BigInteger.TEN, 18);
+            daoFund_dividends.put(token.toString(), numerator.divide(denominator));
         }
 
         return daoFund_dividends;
