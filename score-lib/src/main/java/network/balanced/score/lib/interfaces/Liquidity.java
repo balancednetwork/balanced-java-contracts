@@ -16,7 +16,6 @@
 
 package network.balanced.score.lib.interfaces;
 
-import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.*;
 import network.balanced.score.lib.interfaces.base.Name;
 import score.annotation.External;
@@ -25,7 +24,6 @@ import score.Address;
 import java.math.BigInteger;
 import java.util.Map;
 
-@ScoreInterface
 public interface Liquidity extends AdminAddress, DexAddress, GovernanceAddress, DaofundAddress,
          StakedLpAddress, Name {
 
