@@ -30,7 +30,7 @@ public class ArrayDBUtils {
         return false;
     }
 
-    public static <T>Boolean removeFromArraydb(T _item, ArrayDB<T> _array) {
+    public static <T> Boolean removeFromArraydb(T _item, ArrayDB<T> _array) {
         final int size = _array.size();
         if (size < 1) {
             return false;

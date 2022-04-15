@@ -23,30 +23,30 @@ import static network.balanced.score.lib.utils.Math.pow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
-public class DividendsImplTest extends TestBase {
-    public static final ServiceManager sm = getServiceManager();
+class DividendsImplTest extends TestBase {
+    private static final ServiceManager sm = getServiceManager();
     private static final Object MINT_AMOUNT = BigInteger.TEN.pow(22);
-    protected static final long DAY = 43200L;
+    private static final long DAY = 43200L;
 
-    public static Score bnUSDScore;
-    public static final Account owner = sm.createAccount();
-    Account admin = sm.createAccount();
-    public static final Account governanceScore = Account.newScoreAccount(1);
-    public static final Account loansScore = Account.newScoreAccount(2);
-    public static final Account daoScore = Account.newScoreAccount(3);
-    public static final Account balnScore = Account.newScoreAccount(4);
-    public static final Account dexScore = Account.newScoreAccount(6);
+    private static Score bnUSDScore;
+    private static final Account owner = sm.createAccount();
+    private final Account admin = sm.createAccount();
+    private static final Account governanceScore = Account.newScoreAccount(1);
+    private static final Account loansScore = Account.newScoreAccount(2);
+    private static final Account daoScore = Account.newScoreAccount(3);
+    private static final Account balnScore = Account.newScoreAccount(4);
+    private static final Account dexScore = Account.newScoreAccount(6);
 
     private static final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
 
     private Score dividendScore;
 
-    MockedStatic.Verification getAssetTokens = () -> Context.call(eq(loansScore.getAddress()), eq("getAssetTokens"));
-    MockedStatic.Verification balanceOf = () -> Context.call(eq(balnScore.getAddress()), eq("balanceOf"), any(Address.class));
+    private final MockedStatic.Verification getAssetTokens = () -> Context.call(eq(loansScore.getAddress()), eq("getAssetTokens"));
+    private final MockedStatic.Verification balanceOf = () -> Context.call(eq(balnScore.getAddress()), eq("balanceOf"), any(Address.class));
 
 
     @BeforeEach
-    public void setup() throws Exception {
+    void setup() throws Exception {
         dividendScore = sm.deploy(owner, DividendsImpl.class, governanceScore.getAddress());
         assert (dividendScore.getAddress().isContract());
 
@@ -65,53 +65,53 @@ public class DividendsImplTest extends TestBase {
     }
 
     @Test
-    public void setDistributionActivationStatus() {
+    void setDistributionActivationStatus() {
         dividendScore.invoke(governanceScore, "setDistributionActivationStatus", true);
         assertEquals(true, dividendScore.call("getDistributionActivationStatus"));
     }
 
     @Test
-    public void setGovernance() {
+    void setGovernance() {
         dividendScore.invoke(owner, "setGovernance", governanceScore.getAddress());
         assertEquals(governanceScore.getAddress(), dividendScore.call("getGovernance"));
     }
 
     @Test
-    public void setAdmin() {
+    void setAdmin() {
         dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
         assertEquals(admin.getAddress(), dividendScore.call("getAdmin"));
     }
 
     @Test
-    public void setLoan() {
+    void setLoan() {
         setAdmin();
         dividendScore.invoke(admin, "setLoans", loansScore.getAddress());
         assertEquals(loansScore.getAddress(), dividendScore.call("getLoans"));
     }
 
     @Test
-    public void setDao() {
+    void setDao() {
         setAdmin();
         dividendScore.invoke(admin, "setDaofund", daoScore.getAddress());
         assertEquals(daoScore.getAddress(), dividendScore.call("getDaofund"));
     }
 
     @Test
-    public void setBaln() {
+    void setBaln() {
         setAdmin();
         dividendScore.invoke(admin, "setBaln", balnScore.getAddress());
         assertEquals(balnScore.getAddress(), dividendScore.call("getBaln"));
     }
 
     @Test
-    public void setDex() {
+    void setDex() {
         setAdmin();
         dividendScore.invoke(admin, "setDex", dexScore.getAddress());
         assertEquals(dexScore.getAddress(), dividendScore.call("getDex"));
     }
 
     @Test
-    public void checkStartEndDay(){
+    void checkStartEndDay() {
         contractSetup();
 
         try {
@@ -152,7 +152,7 @@ public class DividendsImplTest extends TestBase {
     }
 
     @Test
-    public void getBalance() {
+    void getBalance() {
         setLoan();
         Map<String, String> asset = new HashMap<>();
         asset.put("baln", String.valueOf(balnScore.getAddress()));
@@ -167,7 +167,7 @@ public class DividendsImplTest extends TestBase {
     }
 
     @Test
-    public void getAcceptedTokens() {
+    void getAcceptedTokens() {
         List<Address> expected_list = new ArrayList<>();
         expected_list.add(balnScore.getAddress());
 
@@ -178,7 +178,7 @@ public class DividendsImplTest extends TestBase {
     }
 
     @Test
-    public void getDailyFees(){
+    void getDailyFees() {
         contractSetup();
 
         Map<String, BigInteger> expectedResult = new HashMap<>();
@@ -188,7 +188,7 @@ public class DividendsImplTest extends TestBase {
     }
 
     @Test
-    public void getDividendsCategories() {
+    void getDividendsCategories() {
         setAdmin();
         List<String> expected_list = new ArrayList<>();
         expected_list.add("daofund");
@@ -201,7 +201,7 @@ public class DividendsImplTest extends TestBase {
     }
 
     @Test
-    public void removeDividendsCategory() {
+    void removeDividendsCategory() {
         setAdmin();
         List<String> expected_list = new ArrayList<>();
         expected_list.add("daofund");
@@ -238,35 +238,35 @@ public class DividendsImplTest extends TestBase {
     }
 
     @Test
-    public void set_getDividendsBatchSize() {
+    void set_getDividendsBatchSize() {
         setAdmin();
-       dividendScore.invoke(admin, "setDividendsBatchSize", BigInteger.valueOf(2));
+        dividendScore.invoke(admin, "setDividendsBatchSize", BigInteger.valueOf(2));
 
-       assertEquals(BigInteger.valueOf(2), dividendScore.call("getDividendsBatchSize"));
+        assertEquals(BigInteger.valueOf(2), dividendScore.call("getDividendsBatchSize"));
     }
 
     @Test
-    public void getSnapshotId(){
+    void getSnapshotId() {
         assertEquals(BigInteger.ONE, dividendScore.call("getSnapshotId"));
     }
 
     @Test
-    public void getDividendsOnlyToStakedBalnDay(){
+    void getDividendsOnlyToStakedBalnDay() {
         setAdmin();
         dividendScore.invoke(admin, "setDividendsOnlyToStakedBalnDay", BigInteger.ONE);
         assertEquals(BigInteger.ONE, dividendScore.call("getDividendsOnlyToStakedBalnDay"));
     }
 
     @Test
-    public void getTimeOffset(){
+    void getTimeOffset() {
         contractSetup();
         dividendScore.invoke(owner, "distribute");
 
-        assertEquals(BigInteger.valueOf(2*DAY), dividendScore.call("getTimeOffset"));
+        assertEquals(BigInteger.valueOf(2 * DAY), dividendScore.call("getTimeOffset"));
     }
 
     @Test
-    public void getDividendsPercentage(){
+    void getDividendsPercentage() {
         setLoan();
         contextMock.when(() -> Context.call(eq(loansScore.getAddress()), eq("getDay"))).thenReturn(BigInteger.valueOf(1));
 
@@ -278,7 +278,7 @@ public class DividendsImplTest extends TestBase {
     }
 
     @Test
-    public void getDay(){
+    void getDay() {
         setDex();
         BigInteger currentDay = (BigInteger) dividendScore.call("getDay");
         sm.getBlock().increase(4 * DAY);
@@ -287,7 +287,7 @@ public class DividendsImplTest extends TestBase {
     }
 
     @Test
-    public void tokenFallback(){
+    void tokenFallback() {
         setLoan();
         dividendScore.invoke(governanceScore, "addAcceptedTokens", bnUSDScore.getAddress());
 
@@ -298,7 +298,7 @@ public class DividendsImplTest extends TestBase {
         asset.put("bnUSD", String.valueOf(bnUSDScore.getAddress()));
 
         contextMock.when(getAssetTokens).thenReturn(asset);
-        contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("getTimeOffset"))).thenReturn(BigInteger.valueOf(2*DAY));
+        contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("getTimeOffset"))).thenReturn(BigInteger.valueOf(2 * DAY));
 
 //        from accepted token
         dividendScore.invoke(bnUSDScore.getAccount(), "tokenFallback", bnUSDScore.getAddress(), BigInteger.TWO.multiply(pow(BigInteger.TEN, 20)), new byte[0]);
@@ -308,32 +308,32 @@ public class DividendsImplTest extends TestBase {
     }
 
     @Test
-    public void transferDaofundDividends(){
+    void transferDaofundDividends() {
         contractSetup();
 
-        contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class), any(BigInteger.class))).thenReturn( "Token Transferred");
+        contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class), any(BigInteger.class))).thenReturn("Token Transferred");
 
         dividendScore.invoke(owner, "transferDaofundDividends", BigInteger.valueOf(0), BigInteger.valueOf(2));
     }
 
     @Test
-    public void claim(){
+    void claim() {
         contractSetup();
-        contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class), any(BigInteger.class))).thenReturn( "Token Transferred");
+        contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class), any(BigInteger.class))).thenReturn("Token Transferred");
 
         dividendScore.invoke(owner, "claim", BigInteger.valueOf(1), BigInteger.valueOf(2));
     }
 
     @Test
-    public void getUserDividends(){
+    void getUserDividends() {
         contractSetup();
         contextMock.when(() -> Context.call(eq(balnScore.getAddress()), eq("stakedBalanceOfAt"), any(Address.class), any(BigInteger.class))).thenReturn(BigInteger.valueOf(200));
         contextMock.when(() -> Context.call(eq(balnScore.getAddress()), eq("totalStakedBalanceOfAt"), any(BigInteger.class))).thenReturn(BigInteger.valueOf(300));
 
         contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("balanceOfAt"), any(Address.class), any(BigInteger.class), any(BigInteger.class))).thenReturn(BigInteger.valueOf(30));
         contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("totalSupplyAt"), any(BigInteger.class), any(BigInteger.class))).thenReturn(BigInteger.valueOf(50));
-        contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("totalBalnAt"), any(BigInteger.class),any(BigInteger.class))).thenReturn(BigInteger.valueOf(80));
-        
+        contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("totalBalnAt"), any(BigInteger.class), any(BigInteger.class))).thenReturn(BigInteger.valueOf(80));
+
 //        non-continuous rewards
         dividendScore.call("getUserDividends", owner.getAddress(), BigInteger.ONE, BigInteger.valueOf(2));
 
@@ -346,7 +346,7 @@ public class DividendsImplTest extends TestBase {
     }
 
     @Test
-    public void getDaoFundDividends(){
+    void getDaoFundDividends() {
         contractSetup();
 
         Map<String, BigInteger> result = new HashMap<>();
@@ -356,7 +356,7 @@ public class DividendsImplTest extends TestBase {
     }
 
     @Test
-    public void dividendsAt(){
+    void dividendsAt() {
         contractSetup();
 
         Map<String, BigInteger> expected_output = new HashMap<>();
@@ -366,7 +366,7 @@ public class DividendsImplTest extends TestBase {
         assertEquals(expected_output, dividendScore.call("dividendsAt", BigInteger.valueOf(1)));
     }
 
-    private void contractSetup(){
+    private void contractSetup() {
         setDao();
         setBaln();
         setDistributionActivationStatus();

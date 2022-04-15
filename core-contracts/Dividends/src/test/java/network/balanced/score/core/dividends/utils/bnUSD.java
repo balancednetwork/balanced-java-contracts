@@ -16,19 +16,16 @@
 
 package network.balanced.score.core.dividends.utils;
 
+import com.iconloop.score.token.irc2.IRC2Mintable;
 import score.Address;
-import score.Context;
-import score.VarDB;
-import score.annotation.External;
 
 import java.math.BigInteger;
-
-import com.iconloop.score.token.irc2.IRC2Mintable;
 
 public class bnUSD extends IRC2Mintable {
     public bnUSD(String _name, String _symbol, int _decimals) {
         super(_name, _symbol, _decimals);
     }
-    public void transfer(Address _to, BigInteger _amount, byte[] data){
+
+    public void transfer(Address _to, BigInteger _amount, byte[] data) {
     }
 }

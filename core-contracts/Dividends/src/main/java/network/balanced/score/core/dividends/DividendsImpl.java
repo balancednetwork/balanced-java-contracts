@@ -1,7 +1,6 @@
 package network.balanced.score.core.dividends;
 
 import network.balanced.score.lib.interfaces.Dividends;
-
 import network.balanced.score.lib.structs.DistPercentDict;
 import score.*;
 import score.annotation.EventLog;
@@ -14,58 +13,40 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static network.balanced.score.core.dividends.Constants.*;
 import static network.balanced.score.lib.utils.ArrayDBUtils.removeFromArraydb;
 import static network.balanced.score.lib.utils.Check.*;
-import static network.balanced.score.lib.utils.Constants.*;
-
-import static network.balanced.score.core.dividends.Constants.*;
-//import static network.balanced.score.core.dividends.Helpers.removeFromArrarDb;
 import static network.balanced.score.lib.utils.Math.pow;
 
 public class DividendsImpl implements Dividends {
 
-    public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
-    public static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
-    public static final VarDB<Address> loanScore = Context.newVarDB(LOANS_SCORE, Address.class);
-    public static final VarDB<Address> daoFund = Context.newVarDB(DAOFUND, Address.class);
-    public static final VarDB<Address> balnScore = Context.newVarDB(BALN_SCORE, Address.class);
-    public static final VarDB<Address> dexScore = Context.newVarDB(DEX_SCORE, Address.class);
+    private static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
+    private static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
+    private static final VarDB<Address> loanScore = Context.newVarDB(LOANS_SCORE, Address.class);
+    private static final VarDB<Address> daoFund = Context.newVarDB(DAOFUND, Address.class);
+    private static final VarDB<Address> balnScore = Context.newVarDB(BALN_SCORE, Address.class);
+    private static final VarDB<Address> dexScore = Context.newVarDB(DEX_SCORE, Address.class);
 
-    public static final ArrayDB<Address> acceptedTokens = Context.newArrayDB(ACCEPTED_TOKENS, Address.class);
+    private static final ArrayDB<Address> acceptedTokens = Context.newArrayDB(ACCEPTED_TOKENS, Address.class);
 
-    public static final DictDB<Address, BigInteger> amountToDistribute = Context.newDictDB(AMOUNT_TO_DISTRIBUTE, BigInteger.class);
+    private static final VarDB<BigInteger> snapshotId = Context.newVarDB(SNAPSHOT_ID, BigInteger.class);
 
-    public static final DictDB<Address, BigInteger> amountBeingDistributed = Context.newDictDB(AMOUNT_BEING_DISTRIBUTED, BigInteger.class);
+    private static final VarDB<Boolean> amountReceivedStatus = Context.newVarDB(AMOUNT_RECEIVED_STATUS, Boolean.class);
+    private static final BranchDB<BigInteger, DictDB<String, BigInteger>> dailyFees = Context.newBranchDB(DAILY_FEES, BigInteger.class);
 
-    public static final VarDB<String> balnDistIndex = Context.newVarDB(BALN_DIST_INDEX, String.class);
-    public static final VarDB<String> stakedDistIndex = Context.newVarDB(STAKED_DIST_INDEX, String.class);
+    private static final VarDB<BigInteger> maxLoopCount = Context.newVarDB(MAX_LOOP_COUNT, BigInteger.class);
+    private static final VarDB<BigInteger> minimumEligibleDebt = Context.newVarDB(MIN_ELIGIBLE_DEBT, BigInteger.class);
 
-    public static final VarDB<BigInteger> balnInDex = Context.newVarDB(BALN_IN_DEX, BigInteger.class);
-    public static final VarDB<BigInteger> totalLpTokens = Context.newVarDB(TOTAL_LP_TOKENS, BigInteger.class);
-    public static final VarDB<BigInteger> lpHoldersIndex = Context.newVarDB(LP_HOLDERS_INDEX, BigInteger.class);
+    private static final DictDB<String, BigInteger> dividendsPercentage = Context.newDictDB(DIVIDENDS_PERCENTAGE, BigInteger.class);
 
-    public static final BranchDB<Address, DictDB<Address, BigInteger>> userBalance = Context.newBranchDB(USERS_BALANCE, BigInteger.class);
+    private static final BranchDB<String, BranchDB<BigInteger, DictDB<String, BigInteger>>> snapshotDividends = Context.newBranchDB(SNAPSHOT_DIVIDENDS, BigInteger.class);
+    private static final DictDB<String, BigInteger> totalSnapshots = Context.newDictDB(TOTAL_SNAPSHOT, BigInteger.class);
+    private static final ArrayDB<String> completeDividendsCategories = Context.newArrayDB(COMPLETE_DIVIDENDS_CATEGORIES, String.class);
 
-    public static final VarDB<BigInteger> dividendsDistributionStatus = Context.newVarDB(DIVIDENDS_DISTRIBUTION_STATUS, BigInteger.class);
-
-    public static final VarDB<BigInteger> snapshotId = Context.newVarDB(SNAPSHOT_ID, BigInteger.class);
-
-    public static final VarDB<Boolean> amountReceivedStatus = Context.newVarDB(AMOUNT_RECEIVED_STATUS, Boolean.class);
-    public static final BranchDB<BigInteger, DictDB<String, BigInteger>> dailyFees = Context.newBranchDB(DAILY_FEES, BigInteger.class);
-
-    public static final VarDB<BigInteger> maxLoopCount = Context.newVarDB(MAX_LOOP_COUNT, BigInteger.class);
-    public static final VarDB<BigInteger> minimumEligibleDebt = Context.newVarDB(MIN_ELIGIBLE_DEBT, BigInteger.class);
-
-    public static final DictDB<String, BigInteger> dividendsPercentage = Context.newDictDB(DIVIDENDS_PERCENTAGE, BigInteger.class);
-
-    public static final BranchDB<String, BranchDB<BigInteger, DictDB<String, BigInteger>>> snapshotDividends = Context.newBranchDB(SNAPSHOT_DIVIDENDS, BigInteger.class);
-    public static final DictDB<String, BigInteger> totalSnapshots = Context.newDictDB(TOTAL_SNAPSHOT, BigInteger.class);
-    public static final ArrayDB<String> completeDividendsCategories = Context.newArrayDB(COMPLETE_DIVIDENDS_CATEGORIES, String.class);
-
-    public static final VarDB<Boolean> distributionActivate = Context.newVarDB(DISTRIBUTION_ACTIVATE, Boolean.class);
-    public static final VarDB<BigInteger> dividendsBatchSize = Context.newVarDB(DIVIDENDS_BATCH_SIZE, BigInteger.class);
-    public static final VarDB<BigInteger> timeOffset = Context.newVarDB(TIME_OFFSET, BigInteger.class);
-    public static final VarDB<BigInteger> dividends_enabled_to_staked_baln_day = Context.newVarDB(DIVIDENDS_ENABLED_TO_STAKED_BALN_ONLY_DAY, BigInteger.class);
+    private static final VarDB<Boolean> distributionActivate = Context.newVarDB(DISTRIBUTION_ACTIVATE, Boolean.class);
+    private static final VarDB<BigInteger> dividendsBatchSize = Context.newVarDB(DIVIDENDS_BATCH_SIZE, BigInteger.class);
+    private static final VarDB<BigInteger> timeOffset = Context.newVarDB(TIME_OFFSET, BigInteger.class);
+    private static final VarDB<BigInteger> dividends_enabled_to_staked_baln_day = Context.newVarDB(DIVIDENDS_ENABLED_TO_STAKED_BALN_ONLY_DAY, BigInteger.class);
 
     public DividendsImpl(@Optional Address governance) {
         if (governance != null) {
@@ -79,7 +60,7 @@ public class DividendsImpl implements Dividends {
         }
     }
 
-    public void setTimeOffset() {
+    private void setTimeOffset() {
         BigInteger offsetTime = (BigInteger) Context.call(dexScore.get(), "getTimeOffset");
         timeOffset.set(offsetTime);
 
