@@ -26,17 +26,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import org.junit.jupiter.api.function.Executable;
 
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-
 import java.math.BigInteger;
 
 import static network.balanced.score.lib.test.UnitTest.*;
-
-import score.Context;
-
 
 
 public class LiquidityTest extends TestBase {
@@ -53,8 +45,6 @@ public class LiquidityTest extends TestBase {
 
     private Score liquidityScore;
 
-    private final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
-    
     @BeforeEach
     public void setup() throws Exception {
         liquidityScore = sm.deploy(ownerAccount, Liquidity.class, governanceScore.getAddress());
@@ -144,7 +134,7 @@ public class LiquidityTest extends TestBase {
         retrievedIds = (BigInteger[]) liquidityScore.call("getWhitelistedPoolIds");
         assertArrayEquals(idsToAdd, retrievedIds);
         
-        // Act ¥ Assert: Test remove ids.
+        // Act ¥ Assert:Test remove ids.
         liquidityScore.invoke(governanceScore, "removePoolsFromWhitelist", (Object) idsToRemove);
         retrievedIds = (BigInteger[]) liquidityScore.call("getWhitelistedPoolIds");
         assertArrayEquals(idsAfterRemoveal, retrievedIds);
@@ -160,8 +150,6 @@ public class LiquidityTest extends TestBase {
 
         liquidityScore.invoke(governanceScore, "setAdmin", adminAccount.getAddress());
         liquidityScore.invoke(adminAccount, "setDex", dexScore.getAddress());
-        contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("remove"),
-                any(BigInteger.class), any(BigInteger.class), eq(true))).thenReturn(null);
 
         // Act & assert.
         String expectedErrorMessage = "Authorization Check: Authorization failed. Caller: " + caller.getAddress() + " Authorized Caller: " + governanceScore.getAddress();
@@ -178,8 +166,6 @@ public class LiquidityTest extends TestBase {
 
         liquidityScore.invoke(governanceScore, "setAdmin", adminAccount.getAddress());
         liquidityScore.invoke(adminAccount, "setStakedLP", stakedLPScore.getAddress());
-        contextMock.when(() -> Context.call(eq(stakedLPScore.getAddress()), eq("unstake"),
-                               any(BigInteger.class), any(BigInteger.class))).thenReturn(null);
     
         // Act.
         Executable withdrawLiquidityNotFromGovernance = () -> liquidityScore.invoke(nonGovernanceScore, "unstakeLPTokens", lptokenId, lptokens);
@@ -187,10 +173,5 @@ public class LiquidityTest extends TestBase {
 
         // Assert.
         expectErrorMessage(withdrawLiquidityNotFromGovernance, expectedErrorMessage);
-    }
-
-    @AfterEach
-    void closeMock() {
-        contextMock.close();
     }
 }
