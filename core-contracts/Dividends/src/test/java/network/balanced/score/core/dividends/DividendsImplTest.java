@@ -21,7 +21,6 @@ import java.util.Map;
 
 import static network.balanced.score.lib.utils.Math.pow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import static org.mockito.Mockito.*;
 
 public class DividendsImplTest extends TestBase {
