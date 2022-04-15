@@ -29,9 +29,7 @@ import static network.balanced.score.lib.utils.Check.*;
 
 import java.math.BigInteger;
 import java.util.Map;
-import java.util.List;
 
-import scorex.util.ArrayList;
 import scorex.util.HashMap;
 
 public class Liquidity {
@@ -39,8 +37,9 @@ public class Liquidity {
     private final VarDB<Address> admin = Context.newVarDB("admin", Address.class);
     private final VarDB<Address> dex = Context.newVarDB("dex", Address.class);
     private final VarDB<Address> daofund = Context.newVarDB("daofund", Address.class);
-    private final VarDB<Address> staking = Context.newVarDB("staking", Address.class);
+    private final VarDB<Address> stakedLP = Context.newVarDB("stakedLP", Address.class);
 
+    private final VarDB<Boolean> initialWhitelistedPoolIdsSet = Context.newVarDB("initialWhitelistedPoolIdsSet", Boolean.class);
     private final EnumerableSet<BigInteger> whitelistedPoolIds = new EnumerableSet<>("whitelistedPoolIds", BigInteger.class);
     private final EnumerableSet<Address> balanceAddresses = new EnumerableSet<>("balanceAddresses", Address.class);
     private final VarDB<Boolean> withdrawToDaofund = Context.newVarDB("withdrawToDaofund", Boolean.class);
@@ -49,13 +48,11 @@ public class Liquidity {
         this.governance.set(governance);
         this.withdrawToDaofund.set(false);
 
-        // Set initial whitelisted poolids.
-        // sicx/bnusd: 2, baln/bnusd: 3, baln/sicx: 4, usds/bnusd: 10, iusdc/bnusd: 5.
-        this.whitelistedPoolIds.add(BigInteger.valueOf(2));
-        this.whitelistedPoolIds.add(BigInteger.valueOf(3));
-        this.whitelistedPoolIds.add(BigInteger.valueOf(4));
-        this.whitelistedPoolIds.add(BigInteger.valueOf(10));
-        this.whitelistedPoolIds.add(BigInteger.valueOf(5));
+        // Initial whitelisted pools are set with the function "setInitialWhitelistedPoolIds".
+        // It's only callable once. Setting it with a function after deployment keeps some of the 
+        // tests cleaner. "InitialWhiteListedPoolIdsSet" and "setInitialWhitelistedPoolIds"
+        // should be removed when the if the contract ever is updated.
+        this.initialWhitelistedPoolIdsSet.set(false);
     }
 
     @External(readonly = true)
@@ -111,15 +108,15 @@ public class Liquidity {
     }
 
     @External
-    public void setStaking(Address staking) {
+    public void setStakedLP(Address stakedLP) {
         only(this.admin);
-        isContract(staking);
-        this.staking.set(staking);
+        isContract(stakedLP);
+        this.stakedLP.set(stakedLP);
     }
 
     @External(readonly = true)
-    public Address getStaking() {
-        return staking.get();
+    public Address getStakedLP() {
+        return stakedLP.get();
     }
 
     @External
@@ -169,13 +166,13 @@ public class Liquidity {
 
     @External
     public void stakeLPTokens(BigInteger id, BigInteger amount) {
-        Context.call(this.dex.get(), "transfer", this.staking.get(), amount, id, this.createLPStakingData());
+        Context.call(this.dex.get(), "transfer", this.stakedLP.get(), amount, id, this.createLPStakingData());
     }
 
     @External
     public void unstakeLPTokens(BigInteger id, BigInteger amount) {
         only(this.governance);
-        Context.call(this.staking.get(), "unstake", id, amount);
+        Context.call(this.stakedLP.get(), "unstake", id, amount);
     }
 
     private void depositToken(Address token, BigInteger amount) {
@@ -199,7 +196,6 @@ public class Liquidity {
                 tokenBalances.put(tokenAddress.toString(), tokenBalance);
             }
         }
-
         return tokenBalances;
     }
 
@@ -245,5 +241,21 @@ public class Liquidity {
         data.add("method", "stake");
         return data.toString().getBytes();
     }
+
+    @External
+    public void setInitialWhitelistedPoolIds() {
+        if(initialWhitelistedPoolIdsSet.get()) {
+            Context.revert("Initial poolids have already been set.");
+        }
+        else {
+            // sicx/bnusd: 2, baln/bnusd: 3, baln/sicx: 4, usds/bnusd: 10, iusdc/bnusd: 5.
+            this.whitelistedPoolIds.add(BigInteger.valueOf(2));
+            this.whitelistedPoolIds.add(BigInteger.valueOf(3));
+            this.whitelistedPoolIds.add(BigInteger.valueOf(4));
+            this.whitelistedPoolIds.add(BigInteger.valueOf(10));
+            this.whitelistedPoolIds.add(BigInteger.valueOf(5));
+            this.initialWhitelistedPoolIdsSet.set(true);
+        }
+    }  
 }
 
