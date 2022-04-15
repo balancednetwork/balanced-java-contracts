@@ -220,6 +220,21 @@ class RouterTest extends TestBase {
         contextMock.verify(() -> Context.transfer(newReceiver, BigInteger.TEN));
     }
 
+    @Test
+    void fallback() {
+        setup();
+
+        Account nonDex = sm.createAccount();
+        nonDex.addBalance("ICX", BigInteger.TEN);
+        Executable nonDexCall = () -> sm.transfer(nonDex, routerScore.getAddress(), BigInteger.TEN);
+        String expectedErrorMessage = "Authorization Check: Authorization failed. Caller: " + nonDex.getAddress() +
+                " Authorized Caller: " + dexScore.getAddress();
+        expectErrorMessage(nonDexCall, expectedErrorMessage);
+
+        dexScore.addBalance("ICX", BigInteger.TEN);
+        sm.transfer(dexScore, routerScore.getAddress(), BigInteger.TEN);
+    }
+
     @AfterEach
     void contextClose() {
         contextMock.close();
