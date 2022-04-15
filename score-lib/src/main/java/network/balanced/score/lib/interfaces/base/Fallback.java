@@ -14,16 +14,12 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.interfaces.addresses;
+package network.balanced.score.lib.interfaces.base;
 
-import score.Address;
-import score.annotation.External;
+import score.annotation.Payable;
 
-public interface BnusdAddress {
+public interface Fallback {
 
-    @External
-    void setBnusd(Address _address);
-
-    @External(readonly = true)
-    Address getBnusd();
+    @Payable
+    void fallback();
 }

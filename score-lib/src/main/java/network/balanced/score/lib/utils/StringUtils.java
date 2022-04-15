@@ -14,16 +14,22 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.interfaces.addresses;
+package network.balanced.score.lib.utils;
 
-import score.Address;
-import score.annotation.External;
+import score.UserRevertException;
 
-public interface BnusdAddress {
+import java.math.BigInteger;
 
-    @External
-    void setBnusd(Address _address);
-
-    @External(readonly = true)
-    Address getBnusd();
+public class StringUtils {
+    public static BigInteger convertStringToBigInteger(String number) {
+        try {
+            if (number.startsWith("0x") || number.startsWith("-0x")) {
+                return new BigInteger(number.replace("0x", ""), 16);
+            } else {
+                return new BigInteger(number);
+            }
+        } catch (NumberFormatException e) {
+            throw new UserRevertException("Invalid numeric value: " + number);
+        }
+    }
 }

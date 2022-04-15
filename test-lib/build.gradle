@@ -32,6 +32,8 @@ dependencies {
     implementation Dependencies.javaeeUnitTest
     implementation Dependencies.junitJupiter
     runtimeOnly Dependencies.junitJupiterEngine
+    implementation Dependencies.mockitoCore
+    implementation Dependencies.json
 }
 
 test {

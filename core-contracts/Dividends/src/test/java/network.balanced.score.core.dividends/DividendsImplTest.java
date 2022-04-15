@@ -19,8 +19,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static network.balanced.score.lib.utils.Math.pow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static network.balanced.score.core.dividends.Helpers.pow10;
 
 import static org.mockito.Mockito.*;
 
@@ -183,7 +183,7 @@ public class DividendsImplTest extends TestBase {
         contractSetup();
 
         Map<String, BigInteger> expectedResult = new HashMap<>();
-        expectedResult.put(String.valueOf(bnUSDScore.getAddress()), BigInteger.TWO.multiply(pow10(20)));
+        expectedResult.put(String.valueOf(bnUSDScore.getAddress()), BigInteger.TWO.multiply(pow(BigInteger.TEN, 20)));
 
         assertEquals(expectedResult, dividendScore.call("getDailyFees", BigInteger.valueOf(1)));
     }
@@ -215,9 +215,9 @@ public class DividendsImplTest extends TestBase {
         dist[0].category = "daofund";
         dist[1].category = "baln_holders";
         dist[2].category = "loans";
-        dist[0].dist_percent = BigInteger.valueOf(4).multiply(pow10(17));
-        dist[1].dist_percent = BigInteger.valueOf(4).multiply(pow10(17));
-        dist[2].dist_percent = BigInteger.valueOf(2).multiply(pow10(17));
+        dist[0].dist_percent = BigInteger.valueOf(4).multiply(pow(BigInteger.TEN, 17));
+        dist[1].dist_percent = BigInteger.valueOf(4).multiply(pow(BigInteger.TEN, 17));
+        dist[2].dist_percent = BigInteger.valueOf(2).multiply(pow(BigInteger.TEN, 17));
 
         dividendScore.invoke(admin, "setDividendsCategoryPercentage", (Object) dist);
 
@@ -227,8 +227,8 @@ public class DividendsImplTest extends TestBase {
         dist[0].category = "daofund";
         dist[1].category = "baln_holders";
         dist[2].category = "loans";
-        dist[0].dist_percent = BigInteger.valueOf(4).multiply(pow10(17));
-        dist[1].dist_percent = BigInteger.valueOf(6).multiply(pow10(17));
+        dist[0].dist_percent = BigInteger.valueOf(4).multiply(pow(BigInteger.TEN, 17));
+        dist[1].dist_percent = BigInteger.valueOf(6).multiply(pow(BigInteger.TEN, 17));
         dist[2].dist_percent = BigInteger.ZERO;
 
         dividendScore.invoke(admin, "setDividendsCategoryPercentage", (Object) dist);
@@ -302,10 +302,10 @@ public class DividendsImplTest extends TestBase {
         contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("getTimeOffset"))).thenReturn(BigInteger.valueOf(2*DAY));
 
 //        from accepted token
-        dividendScore.invoke(bnUSDScore.getAccount(), "tokenFallback", bnUSDScore.getAddress(), BigInteger.TWO.multiply(pow10(20)), new byte[0]);
+        dividendScore.invoke(bnUSDScore.getAccount(), "tokenFallback", bnUSDScore.getAddress(), BigInteger.TWO.multiply(pow(BigInteger.TEN, 20)), new byte[0]);
 
 //        from non accepted token
-        dividendScore.invoke(balnScore, "tokenFallback", balnScore.getAddress(), BigInteger.TWO.multiply(pow10(30)), new byte[0]);
+        dividendScore.invoke(balnScore, "tokenFallback", balnScore.getAddress(), BigInteger.TWO.multiply(pow(BigInteger.TEN, 30)), new byte[0]);
     }
 
     @Test
@@ -340,7 +340,7 @@ public class DividendsImplTest extends TestBase {
 
 //        continuous rewards
         Map<String, BigInteger> expected_result = new HashMap<>();
-        expected_result.put(String.valueOf(bnUSDScore.getAddress()), BigInteger.valueOf(8).multiply(pow10(19)));
+        expected_result.put(String.valueOf(bnUSDScore.getAddress()), BigInteger.valueOf(8).multiply(pow(BigInteger.TEN, 19)));
 
         getDividendsOnlyToStakedBalnDay();
         assertEquals(expected_result, dividendScore.call("getUserDividends", owner.getAddress(), BigInteger.ONE, BigInteger.valueOf(2)));
@@ -351,7 +351,7 @@ public class DividendsImplTest extends TestBase {
         contractSetup();
 
         Map<String, BigInteger> result = new HashMap<>();
-        result.put(String.valueOf(bnUSDScore.getAddress()), BigInteger.valueOf(8).multiply(pow10(19)));
+        result.put(String.valueOf(bnUSDScore.getAddress()), BigInteger.valueOf(8).multiply(pow(BigInteger.TEN, 19)));
 
         assertEquals(result, dividendScore.call("getDaoFundDividends", BigInteger.valueOf(1), BigInteger.valueOf(2)));
     }
