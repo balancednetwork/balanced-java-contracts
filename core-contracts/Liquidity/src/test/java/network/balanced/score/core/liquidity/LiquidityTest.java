@@ -47,7 +47,7 @@ public class LiquidityTest extends TestBase {
 
     @BeforeEach
     public void setup() throws Exception {
-        liquidityScore = sm.deploy(ownerAccount, Liquidity.class, governanceScore.getAddress());
+        liquidityScore = sm.deploy(ownerAccount, LiquidityImpl.class, governanceScore.getAddress());
     }
 
     @Test

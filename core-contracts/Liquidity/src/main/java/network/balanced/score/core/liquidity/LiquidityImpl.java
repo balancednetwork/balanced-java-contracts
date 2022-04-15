@@ -32,7 +32,7 @@ import java.util.Map;
 
 import scorex.util.HashMap;
 
-public class Liquidity {
+public class LiquidityImpl {
     private final VarDB<Address> governance = Context.newVarDB("governance", Address.class);
     private final VarDB<Address> admin = Context.newVarDB("admin", Address.class);
     private final VarDB<Address> dex = Context.newVarDB("dex", Address.class);
@@ -44,7 +44,7 @@ public class Liquidity {
     private final EnumerableSet<Address> balanceAddresses = new EnumerableSet<>("balanceAddresses", Address.class);
     private final VarDB<Boolean> withdrawToDaofund = Context.newVarDB("withdrawToDaofund", Boolean.class);
 
-    public Liquidity(Address governance) {
+    public LiquidityImpl(Address governance) {
         this.governance.set(governance);
         this.withdrawToDaofund.set(false);
 

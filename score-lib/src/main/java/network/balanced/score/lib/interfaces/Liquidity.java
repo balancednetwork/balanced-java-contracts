@@ -25,7 +25,7 @@ import java.math.BigInteger;
 
 @ScoreInterface
 public interface Liquidity extends AdminAddress, DexAddress, GovernanceAddress,
-     StakingAddress, DaofundAddress, Name {
+     StakingAddress, Name {
 
     @External
     void unstakeLPTokens(BigInteger id, BigInteger amount);
