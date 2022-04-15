@@ -23,33 +23,20 @@ import com.iconloop.score.test.Account;
 
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.mockito.internal.util.reflection.ReflectionMemberAccessor;
-
-import net.bytebuddy.implementation.bytecode.collection.ArrayAccess;
-import network.balanced.score.lib.interfaces.addresses.GovernanceAddress;
-
-import java.lang.reflect.Array;
-import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.List;
-
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import org.junit.jupiter.api.function.Executable;
 
-import static network.balanced.score.lib.test.UnitTest.*;
-import static org.junit.jupiter.api.Assertions.*;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.MockedStatic.Verification;
-import static org.mockito.Mockito.never;
 
+import java.math.BigInteger;
 
+import static network.balanced.score.lib.test.UnitTest.*;
 
 import score.Context;
+
 
 
 public class LiquidityTest extends TestBase {
@@ -62,12 +49,11 @@ public class LiquidityTest extends TestBase {
     private final Account nonGovernanceScore = Account.newScoreAccount(scoreCount++);
     private final Account dexScore = Account.newScoreAccount(scoreCount++);
     private final Account daofundScore = Account.newScoreAccount(scoreCount++);
-    private final Account stakingScore = Account.newScoreAccount(scoreCount++);
+    private final Account stakedLPScore = Account.newScoreAccount(scoreCount++);
 
     private Score liquidityScore;
 
     private final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
-    private final MockedStatic<Liquidity> liquidityMock = Mockito.mockStatic(Liquidity.class, Mockito.CALLS_REAL_METHODS);
     
     @BeforeEach
     public void setup() throws Exception {
@@ -103,27 +89,65 @@ public class LiquidityTest extends TestBase {
     }
 
     @Test
-    void setGetStaking() {
+    void setGetStakedLP() {
         testContractSettersAndGetters(liquidityScore, governanceScore, adminAccount,
-                "setStaking", stakingScore.getAddress(), "getStaking");
+                "setStakedLP", stakedLPScore.getAddress(), "getStakedLP");
     }
 
     @Test
-    void addAndRemoveWhitelistedPoolIds() {
+    void setInitialWhitelistePoolIds() {
         // Arrange.
-        BigInteger[] initialIds = (BigInteger[]) liquidityScore.call("getWhitelistedPoolIds");
-        liquidityScore.invoke(governanceScore, "removePoolsFromWhitelist", initialIds);
-        BigInteger[] idsToAdd = {BigInteger.valueOf(1), BigInteger.valueOf(2)};
+        BigInteger[] initialPoolIds = {
+            BigInteger.valueOf(2), 
+            BigInteger.valueOf(3), 
+            BigInteger.valueOf(4), 
+            BigInteger.valueOf(10), 
+            BigInteger.valueOf(5)
+        };
         BigInteger[] retrievedIds;
-        //liquidityScore.invoke(from, method, params);
-        // Act and assert.
+        String expectedErrorMessage = "Reverted(0): Initial poolids have already been set.";
+
+        // Act & Assert: set initial pool ids.
+        liquidityScore.invoke(ownerAccount, "setInitialWhitelistedPoolIds");
+        retrievedIds = (BigInteger[]) liquidityScore.call("getWhitelistedPoolIds");
+        assertArrayEquals(initialPoolIds, retrievedIds);
+
+        // Act & Assert: Set initial pool ids again.
+        Executable setInitialPoolIds = () -> liquidityScore.invoke(ownerAccount, "setInitialWhitelistedPoolIds");
+        expectErrorMessage(setInitialPoolIds, expectedErrorMessage);
+    }
+
+    @Test
+    void addWhitelistedPoolIdsCallerNotGovernance() {
+        // Arrange.
+        BigInteger[] idsToAdd = {BigInteger.valueOf(1), BigInteger.valueOf(2), BigInteger.valueOf(3)};
+        Account caller = nonGovernanceScore;
+
+        // Act.
+        String expectedErrorMessage = "Authorization Check: Authorization failed. Caller: " + caller.getAddress() + " Authorized Caller: " + governanceScore.getAddress();
+        Executable addWhitelistedPoolIdsCallerNotGovernance = () -> liquidityScore.invoke(nonGovernanceScore, "addPoolsToWhitelist", (Object) idsToAdd);
+        
+        // Assert.
+        expectErrorMessage(addWhitelistedPoolIdsCallerNotGovernance, expectedErrorMessage);
+    }
+
+    @Test
+    void addRemoveAndGetWhitelistedPoolIds() {
+        // Arrange.
+        BigInteger[] idsToAdd = {BigInteger.valueOf(1), BigInteger.valueOf(2), BigInteger.valueOf(3)};
+        BigInteger[] idsToRemove = {BigInteger.valueOf(1), BigInteger.valueOf(2)};
+        BigInteger[] idsAfterRemoveal = {BigInteger.valueOf(3)};
+        BigInteger[] retrievedIds;
+
+        // Act & Assert: Test add ids.
         liquidityScore.invoke(governanceScore, "addPoolsToWhitelist", (Object) idsToAdd);
         retrievedIds = (BigInteger[]) liquidityScore.call("getWhitelistedPoolIds");
-        System.out.println(retrievedIds);
-        System.out.println("HEJSAN");
-        System.out.flush();
-        assertEquals(idsToAdd, idsToAdd);
-        //liquidityScore.invoke(governanceScore, "removePoolsFromWhitelist", Arrays.asList(a));
+        assertArrayEquals(idsToAdd, retrievedIds);
+        
+        // Act ¥ Assert: Test remove ids.
+        liquidityScore.invoke(governanceScore, "removePoolsFromWhitelist", (Object) idsToRemove);
+        retrievedIds = (BigInteger[]) liquidityScore.call("getWhitelistedPoolIds");
+        assertArrayEquals(idsAfterRemoveal, retrievedIds);
     }
 
     @Test
@@ -139,7 +163,6 @@ public class LiquidityTest extends TestBase {
         contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("remove"),
                 any(BigInteger.class), any(BigInteger.class), eq(true))).thenReturn(null);
 
-        
         // Act & assert.
         String expectedErrorMessage = "Authorization Check: Authorization failed. Caller: " + caller.getAddress() + " Authorized Caller: " + governanceScore.getAddress();
         Executable withdrawLiquidityNotFromGovernance = () -> liquidityScore.invoke(nonGovernanceScore, "withdrawLiquidity", poolID, lptokens, withdrawToDaofund);
@@ -149,29 +172,25 @@ public class LiquidityTest extends TestBase {
     @Test
     void unstakeLPCallerNotGovernance() {
         // Arrange.
-        BigInteger poolID = BigInteger.valueOf(1);
+        BigInteger lptokenId = BigInteger.valueOf(1);
         BigInteger lptokens = BigInteger.valueOf(100);
-        boolean withdrawToDaofund = true;
         Account caller = nonGovernanceScore;
-        contextMock.when(() -> Context.call(eq(stakingScore.getAddress()), eq("stake"),
-                any(BigInteger.class), any(BigInteger.class), eq(true))).thenReturn(null);
-        liquidityScore.invoke(governanceScore, "setAdmin", adminAccount.getAddress());
-        liquidityScore.invoke(adminAccount, "setStaking", stakingScore.getAddress());
-        contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("remove"),
-                any(BigInteger.class), any(BigInteger.class), eq(true))).thenReturn(null);
 
-        
-        // Act & assert.
+        liquidityScore.invoke(governanceScore, "setAdmin", adminAccount.getAddress());
+        liquidityScore.invoke(adminAccount, "setStakedLP", stakedLPScore.getAddress());
+        contextMock.when(() -> Context.call(eq(stakedLPScore.getAddress()), eq("unstake"),
+                               any(BigInteger.class), any(BigInteger.class))).thenReturn(null);
+    
+        // Act.
+        Executable withdrawLiquidityNotFromGovernance = () -> liquidityScore.invoke(nonGovernanceScore, "unstakeLPTokens", lptokenId, lptokens);
         String expectedErrorMessage = "Authorization Check: Authorization failed. Caller: " + caller.getAddress() + " Authorized Caller: " + governanceScore.getAddress();
-        Executable withdrawLiquidityNotFromGovernance = () -> liquidityScore.invoke(nonGovernanceScore, "withdrawLiquidity", poolID, lptokens, withdrawToDaofund);
+
+        // Assert.
         expectErrorMessage(withdrawLiquidityNotFromGovernance, expectedErrorMessage);
     }
-
-
 
     @AfterEach
     void closeMock() {
         contextMock.close();
-        liquidityMock.close();
     }
 }

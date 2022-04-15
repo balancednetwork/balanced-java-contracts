@@ -25,17 +25,17 @@
  */
 
 rootProject.name = 'balanced-java-contracts'
-//include(':Multicall')
-//project(':Multicall').projectDir = file("core-contracts/Multicall")
-//
-//include(':BatchDisbursement')
-//project(':BatchDisbursement').projectDir = file("core-contracts/BatchDisbursement")
-//
-//include(':Reserve')
-//project(':Reserve').projectDir = file("core-contracts/Reserve")
-//
-//include(':Rebalancing')
-//project(':Rebalancing').projectDir = file("core-contracts/Rebalancing")
+include(':Multicall')
+project(':Multicall').projectDir = file("core-contracts/Multicall")
+
+include(':BatchDisbursement')
+project(':BatchDisbursement').projectDir = file("core-contracts/BatchDisbursement")
+
+include(':Reserve')
+project(':Reserve').projectDir = file("core-contracts/Reserve")
+
+include(':Rebalancing')
+project(':Rebalancing').projectDir = file("core-contracts/Rebalancing")
 
 include(':Liquidity')
 project(':Liquidity').projectDir = file("core-contracts/Liquidity")
@@ -43,8 +43,8 @@ project(':Liquidity').projectDir = file("core-contracts/Liquidity")
 include 'score-lib'
 include 'test-lib'
 
-//include(':WorkerToken')
-//project(':WorkerToken').projectDir = file("token-contracts/WorkerToken")
-//
-//include(':Router')
-//project(':Router').projectDir = file("core-contracts/Router")
+include(':WorkerToken')
+project(':WorkerToken').projectDir = file("token-contracts/WorkerToken")
+
+include(':Router')
+project(':Router').projectDir = file("core-contracts/Router")
