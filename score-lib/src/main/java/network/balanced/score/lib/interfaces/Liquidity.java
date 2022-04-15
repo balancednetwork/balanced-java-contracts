@@ -20,16 +20,48 @@ import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.*;
 import network.balanced.score.lib.interfaces.base.Name;
 import score.annotation.External;
+import score.Address;
 
 import java.math.BigInteger;
+import java.util.Map;
 
 @ScoreInterface
-public interface Liquidity extends AdminAddress, DexAddress, GovernanceAddress,
-     StakingAddress, Name {
+public interface Liquidity extends AdminAddress, DexAddress, GovernanceAddress, DaofundAddress,
+         StakedLpAddress, Name {
+
+    @External
+    void addPoolsToWhitelist(BigInteger[] ids);
+
+    @External
+    void removePoolsFromWhitelist(BigInteger[] ids);
+
+    @External(readonly = true)
+    BigInteger[] getWhitelistedPoolIds();
+
+    @External
+    void supplyLiquidity(Address baseToken, Address quoteToken, BigInteger baseValue, BigInteger quoteValue);
+    
+    @External
+    void withdrawLiquidity(BigInteger poolID, BigInteger lptokens, boolean withdrawToDaofund);
+
+    @External
+    void stakeLPTokens(BigInteger id, BigInteger amount);
 
     @External
     void unstakeLPTokens(BigInteger id, BigInteger amount);
 
+    @External(readonly = true)
+    Map<String, BigInteger> getTokenBalances(boolean symbolsAsKeys);
+
     @External
-    void withdrawLiquidity(BigInteger poolID, BigInteger lptokens, boolean withdrawToDaofund);
+    void claimFunding();
+
+    @External 
+    void transferToDaofund(Address token, BigInteger amount);
+
+    @External
+    void tokenFallback(Address _from, BigInteger _value, byte[] _data);
+
+    @External
+    void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data);
 }
