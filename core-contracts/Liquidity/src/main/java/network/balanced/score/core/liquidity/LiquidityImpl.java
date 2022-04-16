@@ -41,7 +41,7 @@ public class LiquidityImpl {
 
     private final VarDB<Boolean> initialWhitelistedPoolIdsSet = Context.newVarDB("initialWhitelistedPoolIdsSet", Boolean.class);
     private final EnumerableSet<BigInteger> whitelistedPoolIds = new EnumerableSet<>("whitelistedPoolIds", BigInteger.class);
-    private final EnumerableSet<Address> balanceAddresses = new EnumerableSet<>("balanceAddresses", Address.class);
+    private final EnumerableSet<Address> tokenAddresses = new EnumerableSet<>("tokenAddresses", Address.class);
     private final VarDB<Boolean> withdrawToDaofund = Context.newVarDB("withdrawToDaofund", Boolean.class);
 
     public LiquidityImpl(Address governance) {
@@ -181,11 +181,11 @@ public class LiquidityImpl {
     
     @External(readonly = true)
     public Map<String, BigInteger> getTokenBalances(boolean symbolsAsKeys) {
-        Integer tokenAddressNumber = this.balanceAddresses.length();
+        Integer tokenAddressNumber = this.tokenAddresses.length();
 
         Map<String, BigInteger> tokenBalances = new HashMap<>();
         for (Integer i = 0; i < tokenAddressNumber; i++) {
-            Address tokenAddress = this.balanceAddresses.at(i);
+            Address tokenAddress = this.tokenAddresses.at(i);
             BigInteger tokenBalance = (BigInteger) Context.call(tokenAddress, "balanceOf", Context.getAddress());
 
             if (symbolsAsKeys) {
@@ -213,7 +213,7 @@ public class LiquidityImpl {
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         // Used for tracking contract balances.
         Address caller = Context.getCaller();
-        this.balanceAddresses.add(caller);
+        this.tokenAddresses.add(caller);
 
         // Send incomming tokens to daofund if flag is true.
         // Used as an option when withdrawing liquidity from a liquidity pool.
