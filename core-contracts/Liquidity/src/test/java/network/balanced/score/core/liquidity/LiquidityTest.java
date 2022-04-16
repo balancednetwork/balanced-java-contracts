@@ -85,7 +85,7 @@ public class LiquidityTest extends TestBase {
     }
 
     @Test
-    void setInitialWhitelistePoolIds() {
+    void setInitialWhitelistedPoolIds() {
         // Arrange.
         BigInteger[] initialPoolIds = {
             BigInteger.valueOf(2), 
@@ -97,12 +97,12 @@ public class LiquidityTest extends TestBase {
         BigInteger[] retrievedIds;
         String expectedErrorMessage = "Reverted(0): Initial poolids have already been set.";
 
-        // Act & Assert: set initial pool ids.
+        // Act & Assert: set initial poolids.
         liquidityScore.invoke(ownerAccount, "setInitialWhitelistedPoolIds");
         retrievedIds = (BigInteger[]) liquidityScore.call("getWhitelistedPoolIds");
         assertArrayEquals(initialPoolIds, retrievedIds);
 
-        // Act & Assert: Set initial pool ids again.
+        // Act & Assert: Set initial poolids again.
         Executable setInitialPoolIds = () -> liquidityScore.invoke(ownerAccount, "setInitialWhitelistedPoolIds");
         expectErrorMessage(setInitialPoolIds, expectedErrorMessage);
     }
@@ -134,7 +134,7 @@ public class LiquidityTest extends TestBase {
         retrievedIds = (BigInteger[]) liquidityScore.call("getWhitelistedPoolIds");
         assertArrayEquals(idsToAdd, retrievedIds);
         
-        // Act ¥ Assert:Test remove ids.
+        // Act & Assert: Test remove ids.
         liquidityScore.invoke(governanceScore, "removePoolIdsFromWhitelist", (Object) idsToRemove);
         retrievedIds = (BigInteger[]) liquidityScore.call("getWhitelistedPoolIds");
         assertArrayEquals(idsAfterRemoveal, retrievedIds);
