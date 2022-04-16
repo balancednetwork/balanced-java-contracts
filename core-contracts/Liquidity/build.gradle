@@ -28,17 +28,17 @@ dependencies {
     compileOnly Dependencies.javaeeApi
 
     implementation project(':score-lib')
-    testImplementation project(':test-lib')
     implementation Dependencies.javaeeTokens
     implementation Dependencies.javaeeScorex
     implementation Dependencies.minimalJson
 
     testImplementation Dependencies.javaeeUnitTest
     testImplementation Dependencies.junitJupiterEngine
-    
-    testRuntimeOnly Dependencies.junitJupiterEngine
     testImplementation Dependencies.mockitoCore
     testImplementation Dependencies.mockitoInline
+    testImplementation project(':test-lib')
+    testRuntimeOnly Dependencies.junitJupiterEngine
+
 }
 
 optimizedJar {
