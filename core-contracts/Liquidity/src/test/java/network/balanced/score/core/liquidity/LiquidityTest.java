@@ -115,7 +115,7 @@ public class LiquidityTest extends TestBase {
 
         // Act.
         String expectedErrorMessage = "Authorization Check: Authorization failed. Caller: " + caller.getAddress() + " Authorized Caller: " + governanceScore.getAddress();
-        Executable addWhitelistedPoolIdsCallerNotGovernance = () -> liquidityScore.invoke(nonGovernanceScore, "addPoolsToWhitelist", (Object) idsToAdd);
+        Executable addWhitelistedPoolIdsCallerNotGovernance = () -> liquidityScore.invoke(nonGovernanceScore, "addPoolIdsToWhitelist", (Object) idsToAdd);
         
         // Assert.
         expectErrorMessage(addWhitelistedPoolIdsCallerNotGovernance, expectedErrorMessage);
@@ -130,12 +130,12 @@ public class LiquidityTest extends TestBase {
         BigInteger[] retrievedIds;
 
         // Act & Assert: Test add ids.
-        liquidityScore.invoke(governanceScore, "addPoolsToWhitelist", (Object) idsToAdd);
+        liquidityScore.invoke(governanceScore, "addPoolIdsToWhitelist", (Object) idsToAdd);
         retrievedIds = (BigInteger[]) liquidityScore.call("getWhitelistedPoolIds");
         assertArrayEquals(idsToAdd, retrievedIds);
         
         // Act ¥ Assert:Test remove ids.
-        liquidityScore.invoke(governanceScore, "removePoolsFromWhitelist", (Object) idsToRemove);
+        liquidityScore.invoke(governanceScore, "removePoolIdsFromWhitelist", (Object) idsToRemove);
         retrievedIds = (BigInteger[]) liquidityScore.call("getWhitelistedPoolIds");
         assertArrayEquals(idsAfterRemoveal, retrievedIds);
     }

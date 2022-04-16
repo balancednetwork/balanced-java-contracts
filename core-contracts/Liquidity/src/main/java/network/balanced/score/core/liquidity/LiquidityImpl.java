@@ -48,10 +48,12 @@ public class LiquidityImpl {
         this.governance.set(governance);
         this.withdrawToDaofund.set(false);
 
-        // Initial whitelisted pools are set with the function "setInitialWhitelistedPoolIds".
-        // It's only callable once. Setting it with a function after deployment keeps some of the 
-        // tests cleaner. "InitialWhiteListedPoolIdsSet" and "setInitialWhitelistedPoolIds"
-        // should be removed when the if the contract ever is updated.
+        /* 
+        Initial whitelisted pools are set with the function "setInitialWhitelistedPoolIds".
+        It's only callable once. Setting it with a function after deployment keeps some of the 
+        tests cleaner. The field "InitialWhitelistedPoolIdsSet" and function "setInitialWhitelistedPoolIds"
+        should be removed if the contract ever is updated.
+        */
         this.initialWhitelistedPoolIdsSet.set(false);
     }
 
@@ -66,10 +68,10 @@ public class LiquidityImpl {
     }
 
     @External
-    public void setGovernance(Address _address) {
+    public void setGovernance(Address address) {
         onlyOwner();
-        isContract(_address);
-        governance.set(_address);
+        isContract(address);
+        governance.set(address);
     }
 
     @External
@@ -120,7 +122,7 @@ public class LiquidityImpl {
     }
 
     @External
-    public void addPoolsToWhitelist(BigInteger[] ids) {
+    public void addPoolIdsToWhitelist(BigInteger[] ids) {
         only(this.governance);
         for (BigInteger id : ids) {
             this.whitelistedPoolIds.add(id);
@@ -128,7 +130,7 @@ public class LiquidityImpl {
     }
 
     @External
-    public void removePoolsFromWhitelist(BigInteger[] ids) {
+    public void removePoolIdsFromWhitelist(BigInteger[] ids) {
         for (BigInteger id : ids) {
             this.whitelistedPoolIds.remove(id);
         }
@@ -146,37 +148,40 @@ public class LiquidityImpl {
 
     @External
     public void supplyLiquidity(Address baseToken, Address quoteToken, BigInteger baseValue, BigInteger quoteValue) {
-        this.depositToken(baseToken, baseValue);
-        this.depositToken(quoteToken, quoteValue);
-        Context.call(this.dex.get(), "add", baseToken, quoteToken, baseValue, quoteValue);
+        Address dex = this.dex.get();
+        BigInteger poolId = (BigInteger) Context.call(dex, "getPoolId", quoteToken, baseToken);
+        if (!this.whitelistedPoolIds.contains(poolId)) {
+            Context.revert("Poolid is not whitelisted.");
+        }
+
+        // Deposit tokens and add them to the liquidity pool.
+        this.transferToken(baseToken, dex, baseValue, createLiquidityDepositData());
+        this.transferToken(quoteToken, dex, quoteValue, createLiquidityDepositData());
+        Context.call(dex, "add", baseToken, quoteToken, baseValue, quoteValue);
     }
 
     @External
-    public void withdrawLiquidity(BigInteger poolID, BigInteger lptokens, boolean withdrawToDaofund) {
+    public void withdrawLiquidity(BigInteger poolId, BigInteger lptokens, boolean withdrawToDaofund) {
         only(this.governance);
         if (withdrawToDaofund) {
             this.withdrawToDaofund.set(true);
-            Context.call(this.dex.get(), "remove", poolID, lptokens, true);
+            Context.call(this.dex.get(), "remove", poolId, lptokens, true);
             this.withdrawToDaofund.set(false);
         }
         else {
-            Context.call(this.dex.get(), "remove", poolID, lptokens, true);
+            Context.call(this.dex.get(), "remove", poolId, lptokens, true);
         }     
     }
 
     @External
-    public void stakeLPTokens(BigInteger id, BigInteger amount) {
-        Context.call(this.dex.get(), "transfer", this.stakedLP.get(), amount, id, this.createLPStakingData());
+    public void stakeLPTokens(BigInteger tokenId, BigInteger lptokens) {
+        Context.call(this.dex.get(), "transfer", this.stakedLP.get(), lptokens, tokenId, this.createLPStakingData());
     }
 
     @External
-    public void unstakeLPTokens(BigInteger id, BigInteger amount) {
+    public void unstakeLPTokens(BigInteger tokenId, BigInteger lptokens) {
         only(this.governance);
-        Context.call(this.stakedLP.get(), "unstake", id, amount);
-    }
-
-    private void depositToken(Address token, BigInteger amount) {
-        this.transferToken(token, this.dex.get(), amount, this.createLiquidityDepositData());
+        Context.call(this.stakedLP.get(), "unstake", tokenId, lptokens);
     }
     
     @External(readonly = true)
@@ -210,6 +215,22 @@ public class LiquidityImpl {
     }
 
     @External
+    public void setInitialWhitelistedPoolIds() {
+        if(initialWhitelistedPoolIdsSet.get()) {
+            Context.revert("Initial poolids have already been set.");
+        }
+        else {
+            // sicx/bnusd: 2, baln/bnusd: 3, baln/sicx: 4, usds/bnusd: 10, iusdc/bnusd: 5.
+            this.whitelistedPoolIds.add(BigInteger.valueOf(2));
+            this.whitelistedPoolIds.add(BigInteger.valueOf(3));
+            this.whitelistedPoolIds.add(BigInteger.valueOf(4));
+            this.whitelistedPoolIds.add(BigInteger.valueOf(10));
+            this.whitelistedPoolIds.add(BigInteger.valueOf(5));
+            this.initialWhitelistedPoolIdsSet.set(true);
+        }
+    } 
+
+    @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         // Used for tracking contract balances.
         Address caller = Context.getCaller();
@@ -240,22 +261,6 @@ public class LiquidityImpl {
         JsonObject data = Json.object();
         data.add("method", "stake");
         return data.toString().getBytes();
-    }
-
-    @External
-    public void setInitialWhitelistedPoolIds() {
-        if(initialWhitelistedPoolIdsSet.get()) {
-            Context.revert("Initial poolids have already been set.");
-        }
-        else {
-            // sicx/bnusd: 2, baln/bnusd: 3, baln/sicx: 4, usds/bnusd: 10, iusdc/bnusd: 5.
-            this.whitelistedPoolIds.add(BigInteger.valueOf(2));
-            this.whitelistedPoolIds.add(BigInteger.valueOf(3));
-            this.whitelistedPoolIds.add(BigInteger.valueOf(4));
-            this.whitelistedPoolIds.add(BigInteger.valueOf(10));
-            this.whitelistedPoolIds.add(BigInteger.valueOf(5));
-            this.initialWhitelistedPoolIdsSet.set(true);
-        }
-    }  
+    } 
 }
 
