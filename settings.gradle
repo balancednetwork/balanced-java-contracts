@@ -37,3 +37,14 @@ project(':Reserve').projectDir = file("core-contracts/Reserve")
 include(':sicx')
 project(':sicx').projectDir = file("token-contracts/sicx")
 
+include(':Rebalancing')
+project(':Rebalancing').projectDir = file("core-contracts/Rebalancing")
+
+include 'score-lib'
+include 'test-lib'
+
+include(':WorkerToken')
+project(':WorkerToken').projectDir = file("token-contracts/WorkerToken")
+
+include(':Router')
+project(':Router').projectDir = file("core-contracts/Router")
