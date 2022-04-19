@@ -16,10 +16,14 @@
 
 package network.balanced.score.lib.utils;
 
+import score.Address;
+
 import java.math.BigInteger;
 
 import static network.balanced.score.lib.utils.Math.pow;
 
 public class Constants {
     public final static BigInteger EXA = pow(BigInteger.TEN, 18);
+    public final static Address EOA_ZERO = Address.fromString("hx0000000000000000000000000000000000000000");
+
 }
