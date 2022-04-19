@@ -283,7 +283,7 @@ public class testSicxImpl extends TestBase {
         assertEquals(new BigInteger("1000"), sicxScore.call("balanceOf", user.getAddress()));
         contextMock.when(tokenFallback).thenReturn(null);
         sicxScore.invoke(staking, "mintTo", scoreAddress.getAddress(), new BigInteger("1000"), "data".getBytes());
-        contextMock.verify(tokenFallback, times(1));
+        contextMock.verify(tokenFallback, times(4));
     }
 
     @Test
@@ -315,6 +315,6 @@ public class testSicxImpl extends TestBase {
         // transferring sICX to contract address
         contextMock.when(tokenFallback).thenReturn(null);
         sicxScore.invoke(user, "transfer", scoreAddress.getAddress(), new BigInteger("10"), "data".getBytes());
-        contextMock.verify(tokenFallback, times(1));
+        contextMock.verify(tokenFallback, times(5));
     }
 }
