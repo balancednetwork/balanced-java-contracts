@@ -24,6 +24,8 @@ import score.annotation.Optional;
 
 import java.math.BigInteger;
 
+import static network.balanced.score.lib.utils.Check.only;
+import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.Math.pow;
 
 public class IRC2PresetFixedSupply implements IRC2 {
@@ -36,7 +38,7 @@ public class IRC2PresetFixedSupply implements IRC2 {
     private final VarDB<String> name = Context.newVarDB(NAME, String.class);
     private final VarDB<String> symbol = Context.newVarDB(SYMBOL, String.class);
     private final VarDB<BigInteger> decimals = Context.newVarDB(DECIMALS, BigInteger.class);
-    private final VarDB<BigInteger> totalSupply = Context.newVarDB(TOTAL_SUPPLY, BigInteger.class);
+    protected final VarDB<BigInteger> totalSupply = Context.newVarDB(TOTAL_SUPPLY, BigInteger.class);
     protected DictDB<Address, BigInteger> balances = Context.newDictDB(BALANCES, BigInteger.class);
 
     /**
@@ -53,7 +55,7 @@ public class IRC2PresetFixedSupply implements IRC2 {
             BigInteger decimals = (_decimals == null) ? BigInteger.valueOf(18L) : _decimals;
 
             Context.require(decimals.compareTo(BigInteger.ZERO) >= 0, "Decimals cannot be less than zero");
-            Context.require(initialSupply.compareTo(BigInteger.ZERO) > 0, "Initial Supply cannot be less than or " +
+            Context.require(initialSupply.compareTo(BigInteger.ZERO) >= 0, "Initial Supply cannot be less than or " +
                     "equal to than zero");
 
             // set the total supply to the context variable
@@ -121,14 +123,14 @@ public class IRC2PresetFixedSupply implements IRC2 {
         transfer(Context.getCaller(), _to, _value, _data);
     }
 
-    /**
-     *
-     * @param _to The account to which the token is to be transferred
-     * @param _value The no. of tokens to be transferred
-     * @param _data Any information or message
-     */
+        /**
+         *
+         * @param _to The account to which the token is to be transferred
+         * @param _value The no. of tokens to be transferred
+         * @param _data Any information or message
+         */
     protected void transfer(Address _from, Address _to, BigInteger _value, byte[] _data) {
-        Context.require(_value.compareTo(BigInteger.ZERO) >= 0, this.name.get() + ": _value needs to be positive");
+        Context.require(_value.compareTo(BigInteger.ZERO) > 0, this.name.get() + ": _value needs to be positive");
         Context.require(balanceOf(_from).compareTo(_value) >= 0, this.name.get() + ": Insufficient balance");
 
         this.balances.set(_from, balanceOf(_from).subtract(_value));
@@ -142,7 +144,56 @@ public class IRC2PresetFixedSupply implements IRC2 {
         }
     }
 
+    protected void burn(Address account, BigInteger amount) {
+        if (amount.compareTo(BigInteger.ZERO) <= 0) {
+            Context.revert("Invalid Value");
+        }
+
+        BigInteger newTotalSupply = totalSupply.getOrDefault(BigInteger.ZERO).subtract(amount);
+        BigInteger newUserBalance = balances.getOrDefault(account, BigInteger.ZERO).subtract(amount);
+        if (newTotalSupply.compareTo(BigInteger.ZERO) < 0) {
+            Context.revert("Total Supply can not be set to negative");
+        }
+        if (newUserBalance.compareTo(BigInteger.ZERO) <= 0) {
+            Context.revert("User Balance can not be set to negative");
+        }
+
+        totalSupply.set(newTotalSupply);
+        balances.set(account, newUserBalance);
+
+        Burn(account, amount);
+
+        String data = "None";
+        Transfer(account, EOA_ZERO, amount, data.getBytes());
+    }
+
+    protected void mint(Address account, BigInteger amount, @Optional byte[] _data) {
+        if (amount.compareTo(BigInteger.ZERO) <= 0) {
+            Context.revert("Invalid Value");
+        }
+        totalSupply.set(totalSupply.getOrDefault(BigInteger.ZERO).add(amount));
+        balances.set(account, balances.getOrDefault(account, BigInteger.ZERO).add(amount));
+
+        Mint(account, amount, _data);
+
+        Transfer(EOA_ZERO, account, amount, _data);
+        if (account.isContract()) {
+            // If the recipient is SCORE, then calls `tokenFallback` to hand over control.
+            Context.call(account, "tokenFallback", EOA_ZERO, amount, _data);
+        }
+    }
+
     @EventLog(indexed = 3)
     public void Transfer(Address _from, Address _to, BigInteger _value, byte[] _data) {
+    }
+
+    @EventLog(indexed = 1)
+    public void Mint(Address account, BigInteger amount, byte[] _data) {
+
+    }
+
+    @EventLog(indexed = 1)
+    public void Burn(Address account, BigInteger amount) {
+
     }
 }
