@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.utils;
+package network.balanced.score.core.governance;
 
-import java.math.BigInteger;
+import network.balanced.score.lib.test.UnitTest;
 
-import static network.balanced.score.lib.utils.Math.pow;
+public class GovernanceTest extends UnitTest {
 
-public class Constants {
-    public final static BigInteger EXA = pow(BigInteger.TEN, 18);
-    public final static BigInteger POINTS = BigInteger.valueOf(10000);
+   
 }
