@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.tokens;
+package network.balanced.score.lib.test;
 
 import score.annotation.External;
 import scorex.util.HashMap;
