@@ -34,5 +34,5 @@ project(':BatchDisbursement').projectDir = file("core-contracts/BatchDisbursemen
 include(':Reserve')
 project(':Reserve').projectDir = file("core-contracts/Reserve")
 
-include(':feehandler')
-project(':feehandler').projectDir = file("core-contracts/feehandler")
+include(':Feehandler')
+project(':Feehandler').projectDir = file("core-contracts/Feehandler")
