@@ -14,23 +14,16 @@
  * limitations under the License.
  */
 
-package network.balanced.score.tokens;
+package network.balanced.score.lib.interfaces.addresses;
 
-import network.balanced.score.tokens.tokens.IRC2Mintable;
 import score.Address;
-import score.Context;
 import score.annotation.External;
 
-import java.math.BigInteger;
-
-public class DummyContract extends IRC2Mintable {
-
-    public DummyContract() {
-        super("Dummy", "Dummy", BigInteger.valueOf(30), BigInteger.valueOf(18));
-    }
+public interface MinterAddress {
 
     @External
-    public BigInteger testPriceInLoop(Address address) {
-        return (BigInteger) Context.call(address, "priceInLoop");
-    }
+    void setMinter(Address _address);
+
+    @External(readonly = true)
+    Address getMinter();
 }

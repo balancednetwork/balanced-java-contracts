@@ -37,6 +37,9 @@ dependencies {
     testImplementation Dependencies.javaeeUnitTest
     testImplementation Dependencies.junitJupiter
     testRuntimeOnly Dependencies.junitJupiterEngine
+    testImplementation project(':test-lib')
+    testImplementation Dependencies.mockitoCore
+    testRuntimeOnly Dependencies.mockitoInline
 }
 
 test {

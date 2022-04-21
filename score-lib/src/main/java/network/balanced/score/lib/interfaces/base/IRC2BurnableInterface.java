@@ -14,22 +14,18 @@
  * limitations under the License.
  */
 
-package network.balanced.score.tokens.tokens;
+package network.balanced.score.lib.interfaces.base;
 
 import score.Address;
+import score.annotation.External;
 
 import java.math.BigInteger;
 
-public interface TokenStandard {
-    String name();
+public interface IRC2BurnableInterface {
 
-    String symbol();
+    @External
+    void burn(BigInteger _amount);
 
-    BigInteger decimals();
-
-    BigInteger totalSupply();
-
-    BigInteger balanceOf(Address _owner);
-
-    void transfer(Address _to, BigInteger _value, byte[] _data);
+    @External
+    void burnFrom(Address _account, BigInteger _amount);
 }
