@@ -14,35 +14,12 @@
  * limitations under the License.
  */
 
-import network.balanced.score.dependencies.Dependencies
+package network.balanced.score.lib.utils;
 
+import java.math.BigInteger;
 
+import static network.balanced.score.lib.utils.Math.pow;
 
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath Dependencies.javaeePlugin
-    }
-}
-
-subprojects {
-    repositories {
-        mavenCentral()
-    }
-
-    apply plugin: 'java'
-    apply plugin: 'jacoco'
-    apply plugin: 'foundation.icon.javaee'
-
-    java {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-
-    // need to add this option to retrieve formal parameter names
-    compileJava {
-        options.compilerArgs += ['-parameters']
-    }
+public class Constants {
+    public final static BigInteger EXA = pow(BigInteger.TEN, 18);
 }

@@ -16,33 +16,29 @@
 
 import network.balanced.score.dependencies.Dependencies
 
-
-
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath Dependencies.javaeePlugin
-    }
+plugins {
+    id 'java'
 }
 
-subprojects {
-    repositories {
-        mavenCentral()
-    }
+version '0.1.0'
 
-    apply plugin: 'java'
-    apply plugin: 'jacoco'
-    apply plugin: 'foundation.icon.javaee'
+repositories {
+    mavenCentral()
+}
 
-    java {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
+optimizedJar.enabled = false
 
-    // need to add this option to retrieve formal parameter names
-    compileJava {
-        options.compilerArgs += ['-parameters']
-    }
+dependencies {
+    compileOnly Dependencies.javaeeApi
+
+    compileOnly Dependencies.javaeeScoreClient
+    annotationProcessor Dependencies.javaeeScoreClient
+
+    testImplementation Dependencies.javaeeUnitTest
+    testImplementation Dependencies.junitJupiter
+    testRuntimeOnly Dependencies.junitJupiterEngine
+}
+
+test {
+    useJUnitPlatform()
 }
