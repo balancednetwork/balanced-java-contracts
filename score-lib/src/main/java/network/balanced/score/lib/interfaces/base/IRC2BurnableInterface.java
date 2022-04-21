@@ -14,29 +14,18 @@
  * limitations under the License.
  */
 
-import network.balanced.score.dependencies.Dependencies
+package network.balanced.score.lib.interfaces.base;
 
-plugins {
-    id 'java'
-}
+import score.Address;
+import score.annotation.External;
 
-version '0.1.0'
+import java.math.BigInteger;
 
-repositories {
-    mavenCentral()
-}
+public interface IRC2BurnableInterface {
 
-optimizedJar.enabled = false
+    @External
+    void burn(BigInteger _amount);
 
-dependencies {
-    implementation Dependencies.javaeeUnitTest
-    implementation Dependencies.junitJupiter
-    runtimeOnly Dependencies.junitJupiterEngine
-    implementation Dependencies.mockitoCore
-    implementation Dependencies.json
-    implementation Dependencies.javaeeScorex
-}
-
-test {
-    useJUnitPlatform()
+    @External
+    void burnFrom(Address _account, BigInteger _amount);
 }

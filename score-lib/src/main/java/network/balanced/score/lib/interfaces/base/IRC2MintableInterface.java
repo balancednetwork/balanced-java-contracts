@@ -14,29 +14,19 @@
  * limitations under the License.
  */
 
-import network.balanced.score.dependencies.Dependencies
+package network.balanced.score.lib.interfaces.base;
 
-plugins {
-    id 'java'
-}
+import score.Address;
+import score.annotation.External;
+import score.annotation.Optional;
 
-version '0.1.0'
+import java.math.BigInteger;
 
-repositories {
-    mavenCentral()
-}
+public interface IRC2MintableInterface {
 
-optimizedJar.enabled = false
+    @External
+    void mint(BigInteger _amount, @Optional byte[] _data);
 
-dependencies {
-    implementation Dependencies.javaeeUnitTest
-    implementation Dependencies.junitJupiter
-    runtimeOnly Dependencies.junitJupiterEngine
-    implementation Dependencies.mockitoCore
-    implementation Dependencies.json
-    implementation Dependencies.javaeeScorex
-}
-
-test {
-    useJUnitPlatform()
+    @External
+    void mintTo(Address _account, BigInteger _amount, @Optional byte[] _data);
 }
