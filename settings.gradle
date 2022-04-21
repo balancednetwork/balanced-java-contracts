@@ -48,3 +48,6 @@ project(':WorkerToken').projectDir = file("token-contracts/WorkerToken")
 
 include(':Router')
 project(':Router').projectDir = file("core-contracts/Router")
+
+include(':Dex')
+project(':Dex').projectDir = file("core-contracts/Dex")
