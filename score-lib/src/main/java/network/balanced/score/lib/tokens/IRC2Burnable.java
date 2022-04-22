@@ -34,7 +34,7 @@ public class IRC2Burnable extends IRC2Mintable implements IRC2BurnableInterface 
 
     @External
     public void burn(BigInteger _amount) {
-        super.burn(Context.getCaller(), _amount);
+        burnFrom(Context.getCaller(), _amount);
     }
 
     @External
