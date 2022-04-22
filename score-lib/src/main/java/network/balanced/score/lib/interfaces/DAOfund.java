@@ -16,21 +16,33 @@
 
 package network.balanced.score.lib.interfaces;
 
-import network.balanced.score.lib.interfaces.addresses.*;
+import network.balanced.score.lib.interfaces.addresses.AdminAddress;
+import network.balanced.score.lib.interfaces.addresses.GovernanceAddress;
+import network.balanced.score.lib.interfaces.addresses.LoansAddress;
 import network.balanced.score.lib.interfaces.base.Fallback;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
+import network.balanced.score.lib.structs.Disbursement;
 import score.Address;
 import score.annotation.External;
-import score.annotation.Optional;
-import score.annotation.Payable;
 
 import java.math.BigInteger;
+import java.util.Map;
 
-public interface Router extends Name, GovernanceAddress, AdminAddress, DexAddress, SicxAddress, StakingAddress,
-        TokenFallback, Fallback {
+public interface DAOfund extends Name, GovernanceAddress, AdminAddress, LoansAddress, TokenFallback, Fallback {
 
-    @Payable
     @External
-    void route(Address[] path, @Optional BigInteger _minReceive);
+    void addAddressToSetdb();
+
+    @External(readonly = true)
+    Map<String, BigInteger> getBalances();
+
+    @External(readonly = true)
+    Map<String, Object> getDisbursementDetail(Address _user);
+
+    @External(readonly = true)
+    boolean disburse(Address _recipient, Disbursement[] _amounts);
+
+    @External
+    void claim();
 }

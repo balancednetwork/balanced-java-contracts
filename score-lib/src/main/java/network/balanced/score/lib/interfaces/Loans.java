@@ -16,21 +16,15 @@
 
 package network.balanced.score.lib.interfaces;
 
-import network.balanced.score.lib.interfaces.addresses.*;
-import network.balanced.score.lib.interfaces.base.Fallback;
-import network.balanced.score.lib.interfaces.base.Name;
-import network.balanced.score.lib.interfaces.base.TokenFallback;
-import score.Address;
+import foundation.icon.score.client.ScoreInterface;
 import score.annotation.External;
-import score.annotation.Optional;
-import score.annotation.Payable;
 
-import java.math.BigInteger;
+import java.util.Map;
 
-public interface Router extends Name, GovernanceAddress, AdminAddress, DexAddress, SicxAddress, StakingAddress,
-        TokenFallback, Fallback {
+@ScoreInterface
+public interface Loans {
 
-    @Payable
-    @External
-    void route(Address[] path, @Optional BigInteger _minReceive);
+    @External(readonly = true)
+    Map<String, String> getAssetTokens();
+
 }

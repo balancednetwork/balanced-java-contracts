@@ -243,4 +243,9 @@ public class RouterImpl implements Router {
         Address fromToken = Context.getCaller();
         route(receiver, fromToken, path, minimumReceive);
     }
+
+    @Payable
+    public void fallback() {
+        only(dex);
+    }
 }
