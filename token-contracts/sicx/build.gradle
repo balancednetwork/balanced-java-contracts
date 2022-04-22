@@ -37,11 +37,11 @@ dependencies {
 
     testImplementation Dependencies.mockitoCore
     testImplementation Dependencies.mockitoInline
-
+    testImplementation project(':test-lib')
 }
 
 optimizedJar {
-    mainClassName = 'network.balanced.score.tokens.sicx.Sicx'
+    mainClassName = 'network.balanced.score.tokens.sicx.SicxImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
         configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
