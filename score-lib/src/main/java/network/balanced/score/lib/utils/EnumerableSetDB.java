@@ -28,7 +28,7 @@ public class EnumerableSetDB<V> {
         // array of valueClass
         this.entries = Context.newArrayDB(varKey + "_es_entries", valueClass);
         // value => array index
-        this.indexes = Context.newDictDB(varKey + "_es_index", Integer.class);
+        this.indexes = Context.newDictDB(varKey + "_es_indexes", Integer.class);
     }
 
     public int length() {
