@@ -1,6 +1,5 @@
 package network.balanced.score.core.governance;
 
-
 import score.Address;
 import score.Context;
 import score.VarDB;
@@ -96,6 +95,8 @@ public class ProposalDB {
         newProposal.active.set(true);
         newProposal.fee.set(fee);
         newProposal.feeRefunded.set(false);
+        newProposal.forVotersCount.set(BigInteger.ZERO);
+        newProposal.againstVotersCount.set(BigInteger.ZERO);
 
         return newProposal;
     }
