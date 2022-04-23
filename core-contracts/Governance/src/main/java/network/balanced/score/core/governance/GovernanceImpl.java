@@ -27,6 +27,7 @@ import scorex.util.ArrayList;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -38,13 +39,28 @@ import static network.balanced.score.core.governance.GovernanceConstants.*;
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Math.pow;
 
-import network.balanced.score.lib.interfaces.Governance;
+import network.balanced.score.core.governance.interfaces.LoansScoreInterface;
+import network.balanced.score.core.governance.interfaces.DexScoreInterface;
+import network.balanced.score.core.governance.interfaces.RewardsScoreInterface;
+import network.balanced.score.core.governance.interfaces.DividendsScoreInterface;
+import network.balanced.score.core.governance.interfaces.DaofundScoreInterface;
+import network.balanced.score.core.governance.interfaces.AssetScoreInterface;
+import network.balanced.score.core.governance.interfaces.AssetScoreInterface;
+import network.balanced.score.core.governance.interfaces.StakingScoreInterface;
+import network.balanced.score.core.governance.interfaces.BnUSDScoreInterface;
+import network.balanced.score.core.governance.interfaces.BalnScoreInterface;
+import network.balanced.score.core.governance.interfaces.BwtScoreInterface;
+import network.balanced.score.core.governance.interfaces.RebalancingScoreInterface;
+import network.balanced.score.core.governance.interfaces.FeehandlerScoreInterface;
+import network.balanced.score.core.governance.interfaces.StakedLpScoreInterface;
+
 
 import network.balanced.score.lib.structs.BalancedAddresses;
+import network.balanced.score.lib.structs.Disbursement;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.PrepDelegations;
 
-public class GovernanceImpl implements Governance {
+public class GovernanceImpl {
     public final VarDB<BigInteger> launchDay = Context.newVarDB(LAUNCH_DAY, BigInteger.class);
     public final VarDB<BigInteger> launchTime = Context.newVarDB(LAUNCH_TIME, BigInteger.class);
     public final VarDB<Boolean> launched = Context.newVarDB(LAUNCHED, Boolean.class);
@@ -106,34 +122,43 @@ public class GovernanceImpl implements Governance {
     @External
     public void setContinuousRewardsDay(BigInteger _day) {
         onlyOwner();
-        Context.call(Addresses.get("loans"), "setContinuousRewardsDay", _day);
-        Context.call(Addresses.get("dex"), "setContinuousRewardsDay", _day);
-        Context.call(Addresses.get("rewards"), "setContinuousRewardsDay", _day);
-        Context.call(Addresses.get("dividends"), "setContinuousRewardsDay", _day);
+        LoansScoreInterface loans = new LoansScoreInterface(Addresses.get("loans"));
+        DexScoreInterface dex = new DexScoreInterface(Addresses.get("dex"));
+        RewardsScoreInterface rewards = new RewardsScoreInterface(Addresses.get("rewards"));
+        DividendsScoreInterface dividends = new DividendsScoreInterface(Addresses.get("dividends"));
+
+        loans.setContinuousRewardsDay(_day);
+        dex.setContinuousRewardsDay(_day);
+        rewards.setContinuousRewardsDay(_day);
+        dividends.setContinuousRewardsDay(_day);
     }
 
     @External
     public void setFeeProcessingInterval(BigInteger _interval) {
         onlyOwner();
-        Context.call(Addresses.get("feehandler"), "setFeeProcessingInterval", _interval);
+        FeehandlerScoreInterface feehandler = new FeehandlerScoreInterface(Addresses.get("feehandler"));
+        feehandler.setFeeProcessingInterval(_interval);
     }
 
     @External
     public void deleteRoute(Address _fromToken, Address _toToken) {
         onlyOwner();
-        Context.call(Addresses.get("feehandler"), "deleteRoute", _fromToken, _toToken);
+        FeehandlerScoreInterface feehandler = new FeehandlerScoreInterface(Addresses.get("feehandler"));
+        feehandler.deleteRoute(_fromToken, _toToken);
     }
 
     @External
     public void setAcceptedDividendTokens(Address[] _tokens) {
         onlyOwner();
-        Context.call(Addresses.get("feehandler"), "setAcceptedDividendTokens", (Object) _tokens);
+        FeehandlerScoreInterface feehandler = new FeehandlerScoreInterface(Addresses.get("feehandler"));
+        feehandler.setAcceptedDividendTokens(_tokens);
     }
 
     @External
     public void setRoute(Address _fromToken, Address _toToken, Address[] _path) {
         onlyOwner();
-        Context.call(Addresses.get("feehandler"), "setRoute", _fromToken, _toToken, (Object) _path);
+        FeehandlerScoreInterface feehandler = new FeehandlerScoreInterface(Addresses.get("feehandler"));
+        feehandler.setRoute(_fromToken, _toToken, _path);
     }
 
     @External
@@ -164,8 +189,8 @@ public class GovernanceImpl implements Governance {
     @External
     public void setBalnVoteDefinitionCriterion(BigInteger percentage) {
         onlyOwner();
-        Context.require(balnVoteDefinitionCriterion.get().compareTo(BigInteger.ZERO) >= 0, "Basis point must be between 0 and 10000.");
-        Context.require(balnVoteDefinitionCriterion.get().compareTo(BigInteger.valueOf(10000)) <= 0, "Basis point must be between 0 and 10000.");
+        Context.require(percentage.compareTo(BigInteger.ZERO) >= 0, "Basis point must be between 0 and 10000.");
+        Context.require(percentage.compareTo(BigInteger.valueOf(10000)) <= 0, "Basis point must be between 0 and 10000.");
    
         balnVoteDefinitionCriterion.set(percentage);
     }
@@ -180,7 +205,7 @@ public class GovernanceImpl implements Governance {
         ProposalDB proposal = new ProposalDB(vote_index);
         Context.require(vote_index.compareTo(BigInteger.ONE) >= 0, "There is no proposal with index " + vote_index);
         Context.require(vote_index.compareTo(proposal.proposalsCount.get()) <= 0, "There is no proposal with index " + vote_index);
-        Context.require(proposal.status.get() != ProposalStatus.STATUS[ProposalStatus.ACTIVE], "Proposal can be cancelled only from active status.");
+        Context.require(proposal.status.get() == ProposalStatus.STATUS[ProposalStatus.ACTIVE], "Proposal can be cancelled only from active status.");
         Context.require(Context.getCaller() == proposal.proposer.get() || 
                         Context.getCaller() == Context.getOwner(), 
                         "Only owner or proposer may call this method.");
@@ -198,7 +223,6 @@ public class GovernanceImpl implements Governance {
     public void defineVote(String name, String description, BigInteger vote_start, BigInteger snapshot, String actions) {
         Context.require(description.length() <= 500, "Description must be less than or equal to 500 characters.");
         Context.require(vote_start.compareTo(getDay()) > 0, "Vote cannot start at or before the current day.");
-        Context.require(vote_start.compareTo(getDay()) <= 0, "");
         Context.require(getDay().compareTo(snapshot) <= 0 && 
                         snapshot.compareTo(vote_start) < 0, 
                         "The reference snapshot must be in the range: [current_day (" + getDay() + "), " +
@@ -208,7 +232,8 @@ public class GovernanceImpl implements Governance {
         Context.require(checkBalnVoteCriterion(Context.getCaller()), "User needs at least " + balnVoteDefinitionCriterion.get().divide(BigInteger.valueOf(100)) + "% of total baln supply staked to define a vote.");
     
   
-        Context.call(Addresses.get("bnUSD"), "govTransfer",Addresses.get("daofund"), bnusdVoteDefinitionFee.get());
+        BnUSDScoreInterface bnUSD = new BnUSDScoreInterface(Addresses.get("bnUSD"));
+        bnUSD.govTransfer(Context.getCaller(), Addresses.get("daofund"), bnusdVoteDefinitionFee.get(), new byte[0]);
         JsonArray actionsParsed = Json.parse(actions).asArray();
         Context.require(actionsParsed.size() <= maxActions(), TAG + ": Only " + maxActions() + " actions are allowed");
         ProposalDB.createProposal(
@@ -224,7 +249,6 @@ public class GovernanceImpl implements Governance {
                 bnusdVoteDefinitionFee.get()
         );
     }
-
 
     @External(readonly = true)
     public int maxActions() {
@@ -258,18 +282,19 @@ public class GovernanceImpl implements Governance {
 
         Address from = Context.getCaller();
         BigInteger snapshot = proposal.voteSnapshot.get();
-        Address baln = Addresses.get("baln");
-        BigInteger userStaked = (BigInteger) Context.call(baln, "stakedBalanceOfAt", from, snapshot);
+
+        BalnScoreInterface baln = new BalnScoreInterface(Addresses.get("baln"));
+        BigInteger userStaked = baln.stakedBalanceOfAt(from, snapshot);
         BigInteger totalVote = userStaked;
 
         Context.require(!totalVote.equals(BigInteger.ZERO), TAG + "Balanced tokens need to be staked to cast the vote.");
 
         BigInteger userForVotes = proposal.forVotesOfUser.getOrDefault(from, BigInteger.ZERO);
         BigInteger userAgainstVotes = proposal.againstVotesOfUser.getOrDefault(from, BigInteger.ZERO);
-        BigInteger totalForVotes = proposal.totalForVotes.get();
-        BigInteger totalAgainstVotes = proposal.totalAgainstVotes.get();
-        BigInteger totalForVotersCount = proposal.forVotersCount.get();
-        BigInteger totalForAgainstVotersCount = proposal.againstVotersCount.get();
+        BigInteger totalForVotes = proposal.totalForVotes.getOrDefault(BigInteger.ZERO);
+        BigInteger totalAgainstVotes = proposal.totalAgainstVotes.getOrDefault(BigInteger.ZERO);
+        BigInteger totalForVotersCount = proposal.forVotersCount.getOrDefault(BigInteger.ZERO);
+        BigInteger totalForAgainstVotersCount = proposal.againstVotersCount.getOrDefault(BigInteger.ZERO);
         BigInteger totalFor;
         BigInteger totalAgainst;
         boolean isFirstTimeVote = userForVotes.signum() == 0 && userAgainstVotes.signum() == 0;
@@ -303,6 +328,7 @@ public class GovernanceImpl implements Governance {
                 proposal.forVotersCount.set(totalForVotersCount.subtract(BigInteger.ONE));
             }
         }
+
         proposal.totalForVotes.set(totalFor);
         proposal.totalAgainstVotes.set(totalAgainstVotes);
 
@@ -311,12 +337,13 @@ public class GovernanceImpl implements Governance {
 
     @External(readonly = true)
     public BigInteger totalBaln(BigInteger _day) {
-        BigInteger stakedBaln = Context.call(BigInteger.class, Addresses.get("baln"), "totalStakedBalanceOfAt", _day);
-      
+        BalnScoreInterface baln = new BalnScoreInterface(Addresses.get("baln"));
+        BigInteger stakedBaln = baln.totalStakedBalanceOfAt(_day);
+        
         //TODD should be remove before continiuos?
-        Address dexAddress = Addresses.get("dex");
-        BigInteger balnFromBnusdPool = Context.call(BigInteger.class, dexAddress, "totalBalnAt", BALNBNUSD_ID, _day);
-        BigInteger balnFromSICXPool = Context.call(BigInteger.class, dexAddress, "totalBalnAt", BALNSICX_ID, _day);
+        DexScoreInterface dex = new DexScoreInterface(Addresses.get("dex"));
+        BigInteger balnFromBnusdPool = dex.totalBalnAt(BALNBNUSD_ID, _day, false);
+        BigInteger balnFromSICXPool = dex.totalBalnAt(BALNSICX_ID, _day, false);
 
         return stakedBaln.add(balnFromBnusdPool).add(balnFromSICXPool);
     }
@@ -324,7 +351,7 @@ public class GovernanceImpl implements Governance {
     @External
     public void evaluateVote(BigInteger vote_index) {
         Context.require(vote_index.compareTo(BigInteger.ONE) > 0 || 
-                        vote_index.compareTo(ProposalDB.getProposalCount()) < 0,
+                        vote_index.compareTo(ProposalDB.getProposalCount()) <= 0,
                         TAG + " :There is no proposal with index " + vote_index);
 
         ProposalDB proposal = new ProposalDB(vote_index);
@@ -365,8 +392,7 @@ public class GovernanceImpl implements Governance {
             proposal.status.set(ProposalStatus.STATUS[ProposalStatus.FAILED_EXECUTION]);
         }
 
-        _refundVoteDefinitionFee(proposal);
-                
+        _refundVoteDefinitionFee(proposal);    
     }
 
     @External(readonly = true)
@@ -380,33 +406,34 @@ public class GovernanceImpl implements Governance {
             _vote_index.compareTo(ProposalDB.getProposalCount()) > 0) {
             return Map.of();
         }
+
         ProposalDB proposal = new ProposalDB(_vote_index);
         BigInteger totalBaln = totalBaln(proposal.voteSnapshot.get());
-
 
         BigInteger nrForVotes = BigInteger.ZERO;
         BigInteger nrAgainstVotes = BigInteger.ZERO;
         if (!totalBaln.equals(BigInteger.ZERO)) {
-            nrForVotes = proposal.forVotersCount.get().divide(totalBaln).multiply(EXA);
-            nrAgainstVotes = proposal.againstVotersCount.get().divide(totalBaln).multiply(EXA);
+            nrForVotes = proposal.forVotersCount.get().multiply(EXA).divide(totalBaln);
+            nrAgainstVotes = proposal.againstVotersCount.get().multiply(EXA).divide(totalBaln);
         }
 
         return Map.ofEntries(
-            entry("id ", _vote_index),
-            entry("name ", proposal.name.get()),
-            entry("proposer ", proposal.proposer.get()),
-            entry("description ", proposal.description.get()),
-            entry("majority ", proposal.majority.get()),
-            entry("vote snapshot ", proposal.voteSnapshot.get()),
-            entry("start day ", proposal.startSnapshot.get()),
-            entry("end day ", proposal.endSnapshot.get()),
-            entry("actions ", proposal.actions.get()),
-            entry("quorum ", proposal.quorum.get()),
-            entry("for ", nrForVotes),
-            entry("against ", nrAgainstVotes),
-            entry("for_voter_count ", proposal.forVotersCount.get()),
-            entry("against_voter_count ", proposal.againstVotersCount.get()),
-            entry("fee_refund_status ", proposal.feeRefunded.get())
+            entry("id", _vote_index),
+            entry("name", proposal.name.get()),
+            entry("proposer", proposal.proposer.get()),
+            entry("description", proposal.description.get()),
+            entry("majority", proposal.majority.get()),
+            entry("status", proposal.status.get()),
+            entry("vote snapshot", proposal.voteSnapshot.get()),
+            entry("start day", proposal.startSnapshot.get()),
+            entry("end day", proposal.endSnapshot.get()),
+            entry("actions", proposal.actions.get()),
+            entry("quorum", proposal.quorum.get()),
+            entry("for", nrForVotes),
+            entry("against", nrAgainstVotes),
+            entry("for_voter_count", proposal.forVotersCount.get()),
+            entry("against_voter_count", proposal.againstVotersCount.get()),
+            entry("fee_refund_status", proposal.feeRefunded.get())
 
         );
     }
@@ -422,19 +449,19 @@ public class GovernanceImpl implements Governance {
 
     @External(readonly = true)
     public BigInteger myVotingWeight(Address _address, BigInteger _day) {
-        BigInteger stake = Context.call(BigInteger.class, Addresses.get("baln"), "stakedBalanceOfAt", _address, _day);
-        return stake;
+        BalnScoreInterface baln = new BalnScoreInterface(Addresses.get("baln"));
+        return baln.stakedBalanceOfAt(_address, _day);
     }
 
     @External
     public void configureBalanced() {
         onlyOwner();
-        Address loansAddress = Addresses.get("loans");
+        LoansScoreInterface loans = new LoansScoreInterface(Addresses.get("loans"));
         for(Map<String, Object> asset : ASSETS) {
-            Context.call(loansAddress, "addAsset",
-                        ADDRESSES.get(asset.get("address")),
-                        asset.get("active"),
-                        asset.get("collateral")
+            loans.addAsset(
+                Addresses.get((String) asset.get("address")),
+                (boolean) asset.get("active"),
+                (boolean) asset.get("collateral")
             );
         }
     }
@@ -442,34 +469,34 @@ public class GovernanceImpl implements Governance {
     @External
     public void launchBalanced() {
         onlyOwner();
-
         if (launched.get() ) {
             return;
         }
 
         launched.set(true);
-        Address loans = Addresses.get("loans");
-        Address dex = Addresses.get("dex");
-        Address rewards = Addresses.get("rewards");
+        LoansScoreInterface loans = new LoansScoreInterface(Addresses.get("loans"));
+        DexScoreInterface dex = new DexScoreInterface(Addresses.get("dex"));
+        RewardsScoreInterface rewards = new RewardsScoreInterface(Addresses.get("rewards"));
+
         BigInteger offset = DAY_ZERO.add(launchDay.getOrDefault(BigInteger.ZERO));
         BigInteger day = BigInteger.valueOf(Context.getBlockTimestamp()).subtract(DAY_START).divide(U_SECONDS_DAY).subtract(offset);
         launchDay.set(day);
         launchTime.set(BigInteger.valueOf(Context.getBlockTimestamp()));
 
-        BigInteger time_delta = DAY_START.add(U_SECONDS_DAY).multiply(DAY_ZERO.add(launchDay.get()).subtract(BigInteger.ONE));
-        Context.call(loans, "setTimeOffset", time_delta);
-        Context.call(dex, "setTimeOffset", time_delta);
-        Context.call(rewards, "setTimeOffset", time_delta);
+        BigInteger timeDelta = DAY_START.add(U_SECONDS_DAY).multiply(DAY_ZERO.add(launchDay.get()).subtract(BigInteger.ONE));
+        loans.setTimeOffset(timeDelta);
+        dex.setTimeOffset(timeDelta);
+        rewards.setTimeOffset(timeDelta);
 
         for (Map<String, String> source : DATA_SOURCES) {
-            Context.call(rewards, "addNewDataSource", source.get("name"), Addresses.get(source.get("address")));
+           rewards.addNewDataSource(source.get("name"), Addresses.get(source.get("address")));
         }
 
-        Context.call(rewards, "updateBalTokenDistPercentage", (Object) RECIPIENTS);
+        rewards.updateBalTokenDistPercentage(RECIPIENTS);
         
         balanceToggleStakingEnabled();
-        Context.call(loans, "turnLoansOn");
-        Context.call(dex, "turnDexOn");
+        loans.turnLoansOn();
+        dex.turnDexOn();
     }
 
     @External
@@ -488,26 +515,34 @@ public class GovernanceImpl implements Governance {
         Address rewardsAddress = Addresses.get("rewards");
         Address loansAddress = Addresses.get("loans");
 
-        BigInteger price = Context.call(BigInteger.class, bnUSDAddress, "priceInLoop");
+        AssetScoreInterface bnsud = new AssetScoreInterface(bnUSDAddress);
+        AssetScoreInterface sicx = new AssetScoreInterface(sICXAddress);
+        StakingScoreInterface staking = new StakingScoreInterface(stakingAddress);
+        LoansScoreInterface loans = new LoansScoreInterface(loansAddress);
+        DexScoreInterface dex = new DexScoreInterface(dexAddress);
+        StakedLpScoreInterface stakedLp = new StakedLpScoreInterface(stakedLpAddress);
+        RewardsScoreInterface rewards = new RewardsScoreInterface(rewardsAddress);
+
+        BigInteger price = bnsud.priceInLoop();
         BigInteger amount = EXA.multiply(value).divide(price.multiply(BigInteger.valueOf(7)));
-        Context.call(value.divide(BigInteger.valueOf(7)), stakingAddress, "stakeICX", Context.getAddress());
-        Context.call(Context.getBalance(Context.getAddress()), loansAddress, "depositAndBorrow", "bnUSD", amount);
-        
-        BigInteger bnUSDValue =  Context.call(BigInteger.class, bnUSDAddress, "balanceOf", Context.getAddress());
-        BigInteger sICXValue =  Context.call(BigInteger.class, sICXAddress, "balanceOf", Context.getAddress());
+        staking.stakeICX(value.divide(BigInteger.valueOf(7)));
+        loans.depositAndBorrow(Context.getBalance(Context.getAddress()), "bnUSD", amount, null, BigInteger.ZERO);
+
+        BigInteger bnUSDValue = bnsud.balanceOf(Context.getAddress());
+        BigInteger sICXValue = sicx.balanceOf(Context.getAddress());
 
         JsonObject depositData = Json.object();
         depositData.add("method", "_deposit");
-        Context.call(bnUSDAddress, "transfer", bnUSDValue, depositData.toString().getBytes());
-        Context.call(sICXAddress, "transfer", sICXValue, depositData.toString().getBytes());
+        bnsud.transfer(dexAddress, bnUSDValue, depositData.toString().getBytes());
+        sicx.transfer(dexAddress, sICXValue, depositData.toString().getBytes());
 
-        Context.call(dexAddress, "add", sICXAddress, bnUSDAddress, sICXValue, bnUSDValue);
+        dex.add(sICXAddress, bnUSDAddress, sICXValue, bnUSDValue, false);
         String name = "sICX/bnUSD";
-        BigInteger pid = Context.call(BigInteger.class, dexAddress, "getPoolId", sICXAddress, bnUSDAddress);
-        Context.call(dexAddress , "setMarketName", pid, name);
+        BigInteger pid = dex.getPoolId(sICXAddress, bnUSDAddress);
+        dex.setMarketName(pid, name);
 
-        Context.call(rewardsAddress, "addNewDataSource", name, dexAddress);
-        Context.call(stakedLpAddress, "addPool", pid);
+        rewards.addNewDataSource(name, dexAddress);
+        stakedLp.addPool(pid);
         DistributionPercentage[] recipients = new DistributionPercentage[] {
             createDistributionPercentage("Loans",  BigInteger.valueOf(25).multiply(pow(BigInteger.TEN,16))),
             createDistributionPercentage("sICX/ICX",  BigInteger.TEN.multiply(pow(BigInteger.TEN,16))),
@@ -517,7 +552,7 @@ public class GovernanceImpl implements Governance {
             createDistributionPercentage("sICX/bnUSD",  BigInteger.valueOf(175).multiply(pow(BigInteger.TEN,15)))
         };
 
-        Context.call(rewardsAddress, "updateBalTokenDistPercentage", (Object) recipients);
+        rewards.updateBalTokenDistPercentage(recipients);
     }
 
     @External
@@ -531,21 +566,28 @@ public class GovernanceImpl implements Governance {
         Address rewardsAddress = Addresses.get("rewards");
         Address loansAddress = Addresses.get("loans");
 
-        Context.call(rewardsAddress, "claimRewards");
-        Context.call(loansAddress, "depositAndBorrow", "bnUSD", _bnUSD_amount);
+        AssetScoreInterface bnsud = new AssetScoreInterface(bnUSDAddress);
+        AssetScoreInterface baln = new AssetScoreInterface(balnAddress);
+        LoansScoreInterface loans = new LoansScoreInterface(loansAddress);
+        DexScoreInterface dex = new DexScoreInterface(dexAddress);
+        StakedLpScoreInterface stakedLp = new StakedLpScoreInterface(stakedLpAddress);
+        RewardsScoreInterface rewards = new RewardsScoreInterface(rewardsAddress);
+
+        rewards.claimRewards();
+        loans.depositAndBorrow("bnUSD", _bnUSD_amount, null, BigInteger.ZERO);
 
         JsonObject depositData = Json.object();
         depositData.add("method", "_deposit");
-        Context.call(bnUSDAddress, "transfer", _bnUSD_amount, depositData.toString().getBytes());
-        Context.call(balnAddress, "transfer", _baln_amount, depositData.toString().getBytes());
+        bnsud.transfer(dexAddress, _bnUSD_amount, depositData.toString().getBytes());
+        baln.transfer(dexAddress, _baln_amount, depositData.toString().getBytes());
 
-        Context.call(dexAddress, "add", balnAddress, bnUSDAddress, _baln_amount, _bnUSD_amount);
+        dex.add(balnAddress, bnUSDAddress, _baln_amount, _bnUSD_amount, false);
         String name = "BALN/bnUSD";
-        BigInteger pid = Context.call(BigInteger.class, dexAddress, "getPoolId", balnAddress, bnUSDAddress);
-        Context.call(dexAddress , "setMarketName", pid, name);
+        BigInteger pid = dex.getPoolId(balnAddress, bnUSDAddress);
+        dex.setMarketName(pid, name);
 
-        Context.call(rewardsAddress, "addNewDataSource", name, dexAddress);
-        Context.call(stakedLpAddress, "addPool", pid);
+        rewards.addNewDataSource(name, dexAddress);
+        stakedLp.addPool(pid);
 
         DistributionPercentage[] recipients = new DistributionPercentage[] {
             createDistributionPercentage("Loans",  BigInteger.valueOf(25).multiply(pow(BigInteger.TEN,16))),
@@ -557,7 +599,7 @@ public class GovernanceImpl implements Governance {
             createDistributionPercentage("BALN/bnUSD",  BigInteger.valueOf(175).multiply(pow(BigInteger.TEN,15)))
         };
 
-        Context.call(rewardsAddress, "updateBalTokenDistPercentage", (Object) recipients);
+        rewards.updateBalTokenDistPercentage(recipients);
     }
 
     @External
@@ -570,22 +612,27 @@ public class GovernanceImpl implements Governance {
         Address stakedLpAddress = Addresses.get("stakedLp");
         Address rewardsAddress = Addresses.get("rewards");
 
-        Context.call(rewardsAddress, "claimRewards");
+        AssetScoreInterface sicx = new AssetScoreInterface(sICXAddress);
+        AssetScoreInterface baln = new AssetScoreInterface(balnAddress);
+        DexScoreInterface dex = new DexScoreInterface(dexAddress);
+        StakedLpScoreInterface stakedLp = new StakedLpScoreInterface(stakedLpAddress);
+        RewardsScoreInterface rewards = new RewardsScoreInterface(rewardsAddress);
+
+        rewards.claimRewards();
 
         JsonObject depositData = Json.object();
         depositData.add("method", "_deposit");
-        Context.call(sICXAddress, "transfer", _sicx_amount, depositData.toString().getBytes());
-        Context.call(balnAddress, "transfer", _baln_amount, depositData.toString().getBytes());
+        sicx.transfer(dexAddress, _sicx_amount, depositData.toString().getBytes());
+        baln.transfer(dexAddress, _baln_amount, depositData.toString().getBytes());
 
-        
-        Context.call(dexAddress, "add", balnAddress, sICXAddress, _baln_amount, _sicx_amount);
+        dex.add(balnAddress, sICXAddress, _baln_amount, _sicx_amount, false);
         String name = "BALN/sICX";
-        BigInteger pid = Context.call(BigInteger.class, dexAddress, "getPoolId", balnAddress, sICXAddress);
-        Context.call(dexAddress , "setMarketName", pid, name);
+        BigInteger pid = dex.getPoolId(balnAddress, sICXAddress);
+        dex.setMarketName(pid, name);
 
-        Context.call(rewardsAddress, "addNewDataSource", name, dexAddress);
-        Context.call(stakedLpAddress, "addPool", pid);
-
+        rewards.addNewDataSource(name, dex._address());
+        stakedLp.addPool(pid);
+ 
         DistributionPercentage[] recipients = new DistributionPercentage[] {
             createDistributionPercentage("Loans",  BigInteger.valueOf(25).multiply(pow(BigInteger.TEN,16))),
             createDistributionPercentage("sICX/ICX",  BigInteger.TEN.multiply(pow(BigInteger.TEN,16))),
@@ -597,43 +644,49 @@ public class GovernanceImpl implements Governance {
             createDistributionPercentage("BALN/sICX",  BigInteger.valueOf(10).multiply(pow(BigInteger.TEN,16)))
         };
 
-        Context.call(rewardsAddress, "updateBalTokenDistPercentage", (Object) recipients);
+       rewards.updateBalTokenDistPercentage(recipients);
     }
 
     @External
     public void rebalancingSetBnusd(Address _address) {
         onlyOwner();
-        Context.call(rebalancing.get(), "setBnusd", _address);
+        RebalancingScoreInterface rebalance = new RebalancingScoreInterface(rebalancing.get());
+        rebalance.setBnusd(_address);
     }
 
     @External
     public void rebalancingSetSicx(Address _address) {
         onlyOwner();
-        Context.call(rebalancing.get(), "setSicx", _address);
+        RebalancingScoreInterface rebalance = new RebalancingScoreInterface(rebalancing.get());
+        rebalance.setSicx(_address);
     }
 
     @External
     public void rebalancingSetDex(Address _address) {
         onlyOwner();
-        Context.call(rebalancing.get(), "setDex", _address);
+        RebalancingScoreInterface rebalance = new RebalancingScoreInterface(rebalancing.get());
+        rebalance.setDex(_address);
     }
 
     @External
     public void rebalancingSetLoans(Address _address) {
         onlyOwner();
-        Context.call(rebalancing.get(), "setLoans", _address);
+        RebalancingScoreInterface rebalance = new RebalancingScoreInterface(rebalancing.get());
+        rebalance.setLoans(_address);
     }
 
     @External
     public void setLoansRebalance(Address _address) {
         onlyOwner();
-        Context.call(Addresses.get("loans"), "setRebalance", _address);
+        LoansScoreInterface loans = new LoansScoreInterface(Addresses.get("loans"));
+        loans.setRebalancing(_address);
     }
 
     @External
     public void setLoansDex(Address _address) {
         onlyOwner();
-        Context.call(Addresses.get("loans"), "setDex", _address);
+        LoansScoreInterface loans = new LoansScoreInterface(Addresses.get("loans"));
+        loans.setDex(_address);
     }
 
     @External
@@ -645,8 +698,8 @@ public class GovernanceImpl implements Governance {
     @External
     public void setRebalancingThreshold(BigInteger _value) {
         onlyOwner();
-        Context.call(rebalancing.get(), "setPriceDiffThreshold", _value);
-
+        RebalancingScoreInterface rebalance = new RebalancingScoreInterface(rebalancing.get());
+        rebalance.setPriceDiffThreshold(_value);
     }
 
     @External
@@ -676,7 +729,8 @@ public class GovernanceImpl implements Governance {
     @External
     public void toggleBalancedOn() {
         onlyOwner();
-        Context.call(Addresses.get("loans"), "toggleLoansOn");
+        LoansScoreInterface loans = new LoansScoreInterface(Addresses.get("loans"));
+        loans.toggleLoansOn();
     }
 
     @External(readonly = true)
@@ -692,207 +746,244 @@ public class GovernanceImpl implements Governance {
     @External
     public void addAsset(Address _token_address, boolean _active, boolean _collateral) {
         onlyOwner();
-        Address loans = Addresses.get("loans");
-        Context.call(loans, "addAsset", _token_address, _active, _collateral);
-        Context.call(_token_address, "setAdmin", loans);
+        Address loansAddress = Addresses.get("loans");
+        LoansScoreInterface loans = new LoansScoreInterface(loansAddress);
+        AssetScoreInterface asset = new AssetScoreInterface(_token_address);
+        loans.addAsset(_token_address, _active, _collateral);
+        asset.setAdmin(loansAddress);
     }
 
     @External
     public void toggleAssetActive(String _symbol) {
         onlyOwner();
-        Context.call(Addresses.get("loans"), "toggleAssetActive", _symbol);
+        LoansScoreInterface loans = new LoansScoreInterface(Addresses.get("loans"));
+        loans.toggleAssetActive(_symbol);
     }
 
     @External
     public void addNewDataSource(String _data_source_name, String _contract_address) {
         onlyOwner();
-        Context.call(Addresses.get("rewards"), "addNewDataSource", _data_source_name, _contract_address);
+        RewardsScoreInterface rewards = new RewardsScoreInterface(Addresses.get("rewards"));
+        rewards.addNewDataSource(_data_source_name, Address.fromString(_contract_address));
     }
 
     @External
     public void removeDataSource(String _data_source_name) {
         onlyOwner();
-        Context.call(Addresses.get("rewards"), "removeDataSource", _data_source_name);
+        RewardsScoreInterface rewards = new RewardsScoreInterface(Addresses.get("rewards"));
+        rewards.removeDataSource(_data_source_name);
     }
 
     @External
     public void updateBalTokenDistPercentage(DistributionPercentage[] _recipient_list) {
         onlyOwner();
-        Context.call(Addresses.get("rewards"), "updateBalTokenDistPercentage", (Object) _recipient_list);
+        RewardsScoreInterface rewards = new RewardsScoreInterface(Addresses.get("rewards"));
+        Object test = (Object)_recipient_list;
+        rewards.updateBalTokenDistPercentage((DistributionPercentage[])test);
     }
 
     @External
     public void bonusDist(Address[] _addresses, BigInteger[] _amounts) {
         onlyOwner();
-        Context.call(Addresses.get("rewards"), "bonusDist", (Object) _addresses, (Object) _amounts);
+        RewardsScoreInterface rewards = new RewardsScoreInterface(Addresses.get("rewards"));
+        rewards.bonusDist(_addresses, _amounts);
     }
 
     @External
     public void setDay(BigInteger _day) {
         onlyOwner();
-        Context.call(Addresses.get("rewards"), "setDay", _day);
+        RewardsScoreInterface rewards = new RewardsScoreInterface(Addresses.get("rewards"));
+        rewards.setDay(_day);
     }
 
     @External
     public void dexPermit(BigInteger _id, boolean _permission) {
         onlyOwner();
-        Context.call(Addresses.get("dex"), "permit", _id, _permission);
+        DexScoreInterface dex = new DexScoreInterface(Addresses.get("dex"));
+        dex.permit(_id, _permission);
     }
 
     @External
     public void dexAddQuoteCoin(Address _address) {
         onlyOwner();
-        Context.call(Addresses.get("dex"), "addQuoteCoin", _address);
+        DexScoreInterface dex = new DexScoreInterface(Addresses.get("dex"));
+        dex.addQuoteCoin(_address);
     }
 
     @External
     public void setMarketName(BigInteger _id, String _name) {
         onlyOwner();
-        Context.call(Addresses.get("dex"), "setMarketName", _id, _name);
+        DexScoreInterface dex = new DexScoreInterface(Addresses.get("dex"));
+        dex.setMarketName(_id, _name);
     }
 
     @External
     public void delegate(PrepDelegations[] _delegations) {
         onlyOwner();
-        Context.call(Addresses.get("loans"), "setMarketName", (Object) _delegations);
+        LoansScoreInterface loans = new LoansScoreInterface(Addresses.get("loans"));
+        loans.delegate(_delegations);
     }
 
     @External
     public void balwAdminTransfer(Address _from , Address _to , BigInteger _value, byte[] _data) {
         onlyOwner();
-        Context.call(Addresses.get("bwt"), "adminTransfer", _from, _to, _value, _data);
+        BwtScoreInterface bwt = new BwtScoreInterface(Addresses.get("bwt"));
+        bwt.adminTransfer(_from, _to, _value, _data);
     }
 
     @External
     public void setbnUSD(Address _address) {
         onlyOwner();
-        Context.call(Addresses.get("baln"), "setbnUSD", _address);        
+        BalnScoreInterface baln = new BalnScoreInterface(Addresses.get("baln"));
+        baln.setBnusd(_address);        
     }
 
     @External
     public void setDividends(Address _score) {
         onlyOwner();
-        Context.call(Addresses.get("baln"), "setDividends", _score);
+        BalnScoreInterface baln = new BalnScoreInterface(Addresses.get("baln"));
+        baln.setDividends(_score);
     }
 
     @External
     public void balanceSetDex(Address _address) {
         onlyOwner();
-        Context.call(Addresses.get("baln"), "setDex", _address);
+        BalnScoreInterface baln = new BalnScoreInterface(Addresses.get("baln"));
+        baln.setDex(_address);
     }
 
     @External
     public void balanceSetOracleName(String _name) {
         onlyOwner();
-        Context.call(Addresses.get("baln"), "setOracleName", _name);
+        BalnScoreInterface baln = new BalnScoreInterface(Addresses.get("baln"));
+        baln.setOracleName(_name);
     }
 
     @External
     public void balanceSetMinInterval(BigInteger _interval) {
         onlyOwner();
-        Context.call(Addresses.get("baln"), "setMinInterval", _interval);
+        BalnScoreInterface baln = new BalnScoreInterface(Addresses.get("baln"));
+        baln.setMinInterval(_interval);
     }
 
     @External
     public void balanceToggleStakingEnabled() {
         onlyOwner();
-        Context.call(Addresses.get("baln"), "toggleStakingEnabled");
+        BalnScoreInterface baln = new BalnScoreInterface(Addresses.get("baln"));
+        baln.toggleStakingEnabled();
     }
 
     @External
     public void balanceSetMinimumStake(BigInteger _amount) {
         onlyOwner();
-        Context.call(Addresses.get("baln"), "setMinimumStake", _amount);
+        BalnScoreInterface baln = new BalnScoreInterface(Addresses.get("baln"));
+        baln.setMinimumStake(_amount);
     }
 
     @External
     public void balanceSetUnstakingPeriod(BigInteger _time) {
         onlyOwner();
-        Context.call(Addresses.get("baln"), "setUnstakingPeriod", _time);
+        BalnScoreInterface baln = new BalnScoreInterface(Addresses.get("baln"));
+        baln.setUnstakingPeriod(_time);
     }
 
     @External
     public void addAcceptedTokens(String _token) {
         onlyOwner();
         Address token = Address.fromString(_token);
-        Context.call(Addresses.get("dividends"), "addAcceptedTokens", token);
+        DividendsScoreInterface dividends = new DividendsScoreInterface(Addresses.get("dividends"));
+        dividends.addAcceptedTokens(token);
     }
     @External
     public void setAssetOracle(String _symbol, Address _address) {
         onlyOwner();
-        Map<String, Address> assetAddresses = (Map<String, Address>) Context.call(Addresses.get("loans"), "getAssetTokens");
+        LoansScoreInterface loans = new LoansScoreInterface(Addresses.get("loans"));
+        Map<String, Address> assetAddresses = loans.getAssetTokens();
         Context.require(assetAddresses.containsKey(_symbol), TAG + ": " + _symbol + " is not a supported asset in Balanced.");
 
         Address token = assetAddresses.get(_symbol);
-        Context.call(token, "setOracle", _address);
+        AssetScoreInterface asset = new AssetScoreInterface(token);
+        asset.setOracle(_address);
     }
 
     @External
     public void setAssetOracleName(String _symbol, String _name) {
         onlyOwner();
-        Map<String, Address> assetAddresses = (Map<String, Address>) Context.call(Addresses.get("loans"), "getAssetTokens");
+        LoansScoreInterface loans = new LoansScoreInterface(Addresses.get("loans"));
+        Map<String, Address> assetAddresses = loans.getAssetTokens();       
         Context.require(assetAddresses.containsKey(_symbol), TAG + ": " + _symbol + " is not a supported asset in Balanced.");
 
         Address token = assetAddresses.get(_symbol);
-        Context.call(token, "setOracleName", _name);
+        AssetScoreInterface asset = new AssetScoreInterface(token);
+        asset.setOracleName(_name);
     }
 
     @External
     public void setAssetMinInterval(String _symbol, BigInteger _interval) {
         onlyOwner();
-        Map<String, Address> assetAddresses = (Map<String, Address>) Context.call(Addresses.get("loans"), "getAssetTokens");
+        LoansScoreInterface loans = new LoansScoreInterface(Addresses.get("loans"));
+        Map<String, Address> assetAddresses = loans.getAssetTokens();
         Context.require(assetAddresses.containsKey(_symbol), TAG + ": " + _symbol + " is not a supported asset in Balanced.");
 
         Address token = assetAddresses.get(_symbol);
-        Context.call(token, "setMinInterval", _interval);
+        AssetScoreInterface asset = new AssetScoreInterface(token);
+        asset.setMinInterval(_interval);
     }
 
     @External
     public void bnUSDSetOracle(Address _address) {
         onlyOwner();
-        Context.call(Addresses.get("bnUSD"), "setOracle", _address);
+        BnUSDScoreInterface bnUSD = new BnUSDScoreInterface(Addresses.get("bnUSD"));
+        bnUSD.setOracle(_address);
     }
 
     @External
     public void bnUSDSetOracleName(String _name) {
         onlyOwner();
-        Context.call(Addresses.get("bnUSD"), "setOracleName", _name);
+        BnUSDScoreInterface bnUSD = new BnUSDScoreInterface(Addresses.get("bnUSD"));
+        bnUSD.setOracleName(_name);
     }
 
     @External
     public void bnUSDSetMinInterval(BigInteger _interval) {
         onlyOwner();
-        Context.call(Addresses.get("bnUSD"), "setMinInterval", _interval);
+        BnUSDScoreInterface bnUSD = new BnUSDScoreInterface(Addresses.get("bnUSD"));
+        bnUSD.setMinInterval(_interval);
     }
 
     @External
     public void addUsersToActiveAddresses(BigInteger _poolId, Address[] _addressList) {
         onlyOwner();
-        Context.call(Addresses.get("dex"), "addLpAddresses", _poolId, (Object) _addressList);
+        DexScoreInterface dex = new DexScoreInterface(Addresses.get("dex"));
+        dex.addLpAddresses(_poolId, _addressList);
     }
 
     @External
     public void setRedemptionFee(BigInteger _fee) {
         onlyOwner();
-        Context.call(Addresses.get("loans"), "setRedemptionFee", _fee);
+        LoansScoreInterface loans = new LoansScoreInterface(Addresses.get("loans"));
+        loans.setRedemptionFee(_fee);
     }
 
     @External
     public void setMaxRetirePercent(BigInteger _value) {
         onlyOwner();
-        Context.call(Addresses.get("loans"), "setMaxRetirePercent", _value);
+        LoansScoreInterface loans = new LoansScoreInterface(Addresses.get("loans"));
+        loans.setMaxRetirePercent(_value);
     }
 
     @External
     public void setRedeemBatchSize(BigInteger _value) {
         onlyOwner();
-        Context.call(Addresses.get("loans"), "setRedeemBatchSize", _value);
+        LoansScoreInterface loans = new LoansScoreInterface(Addresses.get("loans"));
+        loans.setRedeemBatchSize(_value);
     }
 
     @External
     public void addPoolOnStakedLp(BigInteger _id) {
         onlyOwner();
-        Context.call(Addresses.get("stakedLp"), "addPool", _id);
+        StakedLpScoreInterface stakedLp = new StakedLpScoreInterface(Addresses.get("stakedLp"));
+        stakedLp.addPool(_id);
     }
 
     @External
@@ -910,13 +1001,15 @@ public class GovernanceImpl implements Governance {
     @External
     public void enable_fee_handler() {
         onlyOwner();
-        Context.call(Addresses.get("feehandler"), "enable");
+        FeehandlerScoreInterface feehandler = new FeehandlerScoreInterface(Addresses.get("feehandler"));
+        feehandler.enable();
     }
 
     @External
     public void disable_fee_handler() {
         onlyOwner();
-        Context.call(Addresses.get("feehandler"), "disable");
+        FeehandlerScoreInterface feehandler = new FeehandlerScoreInterface(Addresses.get("feehandler"));
+        feehandler.disable();
     }
 
     @External
@@ -930,76 +1023,106 @@ public class GovernanceImpl implements Governance {
             return;
         }
         
-        Context.call(Addresses.get("bnUSD"), "govTransfer", Addresses.get("daofund"), proposal.proposer.get(), proposal.fee.get());
+        BnUSDScoreInterface bnusd = new BnUSDScoreInterface(Addresses.get("bnUSD"));
+        bnusd.govTransfer(Addresses.get("daofund"), proposal.proposer.get(), proposal.fee.get(), new byte[0]);
         proposal.feeRefunded.set(true);
     }
 
     private boolean checkBalnVoteCriterion(Address address) {
-        Address baln = Addresses.get("baln");
-        BigInteger balnTotal = Context.call(BigInteger.class, baln, "totalSupply");
-        BigInteger userStaked = Context.call(BigInteger.class, baln, "stakedBalanceOf", address);
+        BalnScoreInterface baln = new BalnScoreInterface(Addresses.get("baln"));
+
+        BigInteger balnTotal = baln.totalSupply();
+        BigInteger userStaked = baln.stakedBalanceOf(address);
         BigInteger limit = balnVoteDefinitionCriterion.get();
         BigInteger userPercentage = POINTS.multiply(userStaked).divide(balnTotal);
         return userPercentage.compareTo(limit) >= 0;
     }
 
     private void _refundVoteDefinitionFee(ProposalDB proposal) {
-        Address bnusd = Addresses.get("bnUSD");
+        BnUSDScoreInterface bnusd = new BnUSDScoreInterface(Addresses.get("bnUSD"));
+        
         Address daoFund = Addresses.get("daofund");
-        Context.call(bnusd, "govTransfer", daoFund, Context.getCaller(), proposal.fee.get());
+        bnusd.govTransfer(daoFund, Context.getCaller(), proposal.fee.get(), new byte[0]);
         proposal.feeRefunded.set(true);
     }
 
     private void _executeVoteActions(ProposalDB proposal) {
-        // JsonArray actionsParsed = Json.parse(proposal.actions.get()).asArray();
+        
+        JsonArray actionsList = Json.parse(proposal.actions.get()).asArray();
+        for (int i = 0; i < actionsList.size(); i++){
+            JsonValue action = actionsList.get(i);
+            JsonArray parsedAction = action.asArray();
+            String method = parsedAction.get(0).asString();
+            JsonObject parameters = parsedAction.get(1).asObject();
+            VoteActions.execute(this, method, parameters);
+        }
+    }
+
+    public void daoDisburse(String _recipient,  Disbursement[] _amounts ) {
+        Context.require(_amounts.length <=  3, "Cannot disburse more than 3 assets at a time.");
+        Address recipient = Address.fromString(_recipient);
+        DaofundScoreInterface dao = new DaofundScoreInterface(Addresses.get("daofund"));
+        dao.disburse(recipient, _amounts);
     }
 
     public void enableDividends() {
-        Context.call(Addresses.get("dividends"), "setDistributionActivationStatus", true);
+        DividendsScoreInterface dividends = new DividendsScoreInterface(Addresses.get("dividends"));
+        dividends.setDistributionActivationStatus(true);
     }
 
     public void setMiningRatio(BigInteger _value) {
-        Context.call(Addresses.get("loans"), "setMiningRatio", _value);
+        LoansScoreInterface loans = new LoansScoreInterface(Addresses.get("loans"));
+        loans.setMiningRatio(_value);
     }
 
     public void setLockingRatio(BigInteger _value) {
-        Context.call(Addresses.get("loans"), "setLockingRatio", _value);
+        LoansScoreInterface loans = new LoansScoreInterface(Addresses.get("loans"));
+        loans.setLockingRatio(_value);
     }
 
     public void setOriginationFee(BigInteger _fee) {
-        Context.call(Addresses.get("loans"), "setOriginationFee", _fee);
+        LoansScoreInterface loans = new LoansScoreInterface(Addresses.get("loans"));
+        loans.setOriginationFee(_fee);
     }
 
     public void setLiquidationRatio(BigInteger _ratio) {
-        Context.call(Addresses.get("loans"), "setLiquidationRatio", _ratio);
+        LoansScoreInterface loans = new LoansScoreInterface(Addresses.get("loans"));
+        loans.setLiquidationRatio(_ratio);
     }
 
     public void setRetirementBonus(BigInteger _points) {
-        Context.call(Addresses.get("loans"), "setRetirementBonus", _points);
+        LoansScoreInterface loans = new LoansScoreInterface(Addresses.get("loans"));
+        loans.setRetirementBonus(_points);
     }
 
     public void setLiquidationReward(BigInteger _points) {
-        Context.call(Addresses.get("loans"), "setLiquidationReward", _points);
+        LoansScoreInterface loans = new LoansScoreInterface(Addresses.get("loans"));
+        loans.setLiquidationReward(_points);
     }
 
     public void setDividendsCategoryPercentage(DistributionPercentage[] _dist_list) {
-        Context.call(Addresses.get("dividends"), "setDividendsCategoryPercentage", (Object) _dist_list);
+        DividendsScoreInterface dividends = new DividendsScoreInterface(Addresses.get("dividends"));
+        dividends.setDividendsCategoryPercentage(_dist_list);
     }
 
     public void setPoolLpFee(BigInteger _value) {
-        Context.call(Addresses.get("dex"), "setPoolLpFee", _value);
+        DexScoreInterface dex = new DexScoreInterface(Addresses.get("dex"));
+        dex.setPoolLpFee(_value);
     }
 
     public void setPoolBalnFee(BigInteger _value) {
-        Context.call(Addresses.get("dex"), "setPoolBalnFee", _value);       
+        DexScoreInterface dex = new DexScoreInterface(Addresses.get("dex"));
+        dex.setPoolBalnFee(_value);       
     }
 
     public void setIcxConversionFee(BigInteger _value) {
-        Context.call(Addresses.get("dex"), "setIcxConversionFee", _value);
+        DexScoreInterface dex = new DexScoreInterface(Addresses.get("dex"));
+        dex.setIcxConversionFee(_value);
     }
 
     public void setIcxBalnFee(BigInteger _value) {
-         Context.call(Addresses.get("dex"), "setIcxBalnFee", _value);
+         DexScoreInterface dex = new DexScoreInterface(Addresses.get("dex"));
+         dex.setIcxBalnFee(_value);
     }
 
     @EventLog(indexed = 2)

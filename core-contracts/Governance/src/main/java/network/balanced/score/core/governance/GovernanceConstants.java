@@ -20,7 +20,6 @@ import static java.util.Map.entry;
 import static network.balanced.score.lib.utils.Math.pow;
 
 import java.math.BigInteger;
-import java.util.List;
 import java.util.Map;
 
 import network.balanced.score.lib.structs.DistributionPercentage;
@@ -33,8 +32,8 @@ public class GovernanceConstants extends Constants {
     public static final BigInteger MAJORITY = new BigInteger("666666666666666667", 10);
     public static final BigInteger DAY_ZERO = BigInteger.valueOf(18647);
     public static final BigInteger DAY_START = BigInteger.valueOf(61200).multiply(pow(BigInteger.TEN, 6));// 17:00 UTC
-    public static final int BALNBNUSD_ID = 3;
-    public static final int BALNSICX_ID = 4;
+    public static final BigInteger BALNBNUSD_ID = BigInteger.valueOf(3);
+    public static final BigInteger BALNSICX_ID =  BigInteger.valueOf(4);
 
     public static final String LAUNCH_DAY = "launch_day";
     public static final String LAUNCH_TIME = "launch_time";
@@ -49,20 +48,6 @@ public class GovernanceConstants extends Constants {
 
     public static String[] CONTRACTS = {"loans", "dex", "staking", "rewards", "dividends", "daofund",
             "reserve", "sicx", "bnUSD", "baln", "bwt", "router", "feehandler", "stakedLp"};
-
-    public static Map<String, List<String>> ADDRESSES = Map.ofEntries(
-        entry("loans", List.of("rewards", "dividends", "staking", "reserve")),
-        entry("dex", List.of("rewards", "dividends", "staking", "sicx", "bnUSD", "baln", "feehandler", "stakedLp")),
-        entry("rewards", List.of("reserve", "baln", "bwt", "daofund", "stakedLp")),
-        entry("dividends", List.of("loans", "daofund", "dex", "baln")),
-        entry("daofund", List.of("loans")),
-        entry("reserve", List.of("loans", "baln", "sicx")),
-        entry("bnUSD", List.of("oracle")),
-        entry("baln", List.of("dividends", "oracle", "dex", "bnUSD")),
-        entry("bwt", List.of("baln")),
-        entry("router", List.of("dex", "sicx", "staking")),
-        entry("stakedLp", List.of("dex", "rewards"))
-    );
 
     public static Map<String, String> ADMIN_ADDRESSES = Map.ofEntries(
         entry("loans", "governance"),
