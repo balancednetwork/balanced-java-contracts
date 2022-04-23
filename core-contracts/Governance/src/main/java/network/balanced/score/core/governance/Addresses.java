@@ -1,14 +1,32 @@
 package network.balanced.score.core.governance;
 
+import static java.util.Map.entry;
+import static network.balanced.score.core.governance.GovernanceConstants.CONTRACTS;;
+import static network.balanced.score.core.governance.GovernanceConstants.ADMIN_ADDRESSES;
+
+import java.util.Map;
+
+import network.balanced.score.core.governance.interfaces.SetterScoreInterface;
+import network.balanced.score.core.governance.interfaces.LoansScoreInterface;
+import network.balanced.score.core.governance.interfaces.DexScoreInterface;
+import network.balanced.score.core.governance.interfaces.RewardsScoreInterface;
+import network.balanced.score.core.governance.interfaces.DividendsScoreInterface;
+import network.balanced.score.core.governance.interfaces.DaofundScoreInterface;
+import network.balanced.score.core.governance.interfaces.AssetScoreInterface;
+import network.balanced.score.core.governance.interfaces.AssetScoreInterface;
+import network.balanced.score.core.governance.interfaces.StakingScoreInterface;
+import network.balanced.score.core.governance.interfaces.ReserveScoreInterface;
+import network.balanced.score.core.governance.interfaces.BnUSDScoreInterface;
+import network.balanced.score.core.governance.interfaces.BalnScoreInterface;
+import network.balanced.score.core.governance.interfaces.BwtScoreInterface;
+import network.balanced.score.core.governance.interfaces.RebalancingScoreInterface;
+import network.balanced.score.core.governance.interfaces.RouterScoreInterface;
+import network.balanced.score.core.governance.interfaces.FeehandlerScoreInterface;
+import network.balanced.score.core.governance.interfaces.StakedLpScoreInterface;
 import network.balanced.score.lib.structs.BalancedAddresses;
 import score.Address;
 import score.Context;
 import score.VarDB;
-
-import static java.util.Map.entry;
-import java.util.Map;
-
-import static network.balanced.score.core.governance.GovernanceConstants.*;
 
 public class Addresses {
     public static final VarDB<Address> loans = Context.newVarDB("loans", Address.class);
@@ -36,6 +54,47 @@ public class Addresses {
         }
 
         return Context.newVarDB(key, Address.class).get();
+    }
+    // ./goloop rpc sendtx deploy /home/andell/ICON/balanced-java-contracts/core-contracts/Governance/build/libs/Governance-0.1.0-optimized.jar --uri http://localhost:9082/api/v3     --key_store data/godWallet.json --key_password gochain --nid 3 --step_limit=100000000     --content_type application/java   --estimate
+
+
+    public static Object getInterface(String key) {
+        switch (key) {
+            case "loans":
+                return new LoansScoreInterface(get(key));
+            case "dex":
+                return new DexScoreInterface(get(key));
+            case "staking":
+                return new StakingScoreInterface(get(key));
+            case "rewards":
+                return new RewardsScoreInterface(get(key));
+            case "reserve":
+                return new ReserveScoreInterface(get(key));
+            case "dividends":
+                return new DividendsScoreInterface(get(key));
+            case "daofund":
+                return new DaofundScoreInterface(get(key));
+            case "oracle":
+                return new AssetScoreInterface(get(key));
+            case "sicx":
+                return new AssetScoreInterface(get(key));
+            case "bnUSD":
+                return new BnUSDScoreInterface(get(key));
+            case "baln":
+                return new BalnScoreInterface(get(key));
+            case "bwt":
+                return new BwtScoreInterface(get(key));
+            case "rebalancing":
+                return new RebalancingScoreInterface(get(key));
+            case "router":
+                return new RouterScoreInterface(get(key));
+            case "feehandler":
+                return new FeehandlerScoreInterface(get(key));
+            case "stakedLp":
+                return new StakedLpScoreInterface(get(key));
+        }
+
+    return null;
     }
 
     public static void setAddresses(BalancedAddresses addresses) {
@@ -79,20 +138,20 @@ public class Addresses {
     }
 
     public static void setAddress(String contract) {
-        Context.require(ADDRESSES.containsKey(contract), contract + " is not defined in the address list");
-        String setMethod = "set" + contract.substring(0, 1).toUpperCase() + contract.substring(1);
-        for (String targetContract : ADDRESSES.keySet()) {
-            if (ADDRESSES.get(targetContract).contains(contract)) {
-                 Context.call(get(targetContract), setMethod, get(contract));
-            }
+        Context.require(get(contract) != null, contract + " is not defined in the address list");
+        for (String targetContract : CONTRACTS) {
+            try {
+                setAddress(targetContract, contract);
+            } catch (Exception e) {}
         }
     }
 
     public static void setContractAddresses() {
-        for (String targetContract : ADDRESSES.keySet()) {
-            for (String contract : ADDRESSES.get(targetContract)) {
-                String setMethod = "set" + contract.substring(0, 1).toUpperCase() + contract.substring(1);
-                Context.call(get(targetContract), setMethod, get(contract));
+        for (String targetContract : CONTRACTS) {
+            for (String contract : CONTRACTS) {
+                try {
+                    setAddress(targetContract, contract);
+                } catch (Exception e) {}
             }
             
         }
@@ -102,6 +161,44 @@ public class Addresses {
         for (String targetContract : ADMIN_ADDRESSES.keySet()) {
             String contract = ADMIN_ADDRESSES.get(targetContract);
             Context.call(get(targetContract), "setAdmin", get(contract));        
+        }
+    }
+
+    public static void setAddress(String target, String contractToBeSet) {
+        SetterScoreInterface setterInterface = (SetterScoreInterface) getInterface(target);
+        switch(target) {
+            case "loans":
+                setterInterface.setLoans(Addresses.get(contractToBeSet));
+            case "dex":
+                setterInterface.setDex(Addresses.get(contractToBeSet));
+            case "staking":
+                setterInterface.setStaking(Addresses.get(contractToBeSet));
+            case "rewards":
+                setterInterface.setRewards(Addresses.get(contractToBeSet));
+            case "reserve":
+                setterInterface.setReserve(Addresses.get(contractToBeSet));
+            case "dividends":
+                setterInterface.setDividends(Addresses.get(contractToBeSet));
+            case "daofund":
+                setterInterface.setDaofund(Addresses.get(contractToBeSet));
+            case "oracle":
+                setterInterface.setOracle(Addresses.get(contractToBeSet));
+            case "sicx":
+                setterInterface.setSicx(Addresses.get(contractToBeSet));
+            case "bnUSD":
+                setterInterface.setBnusd(Addresses.get(contractToBeSet));
+            case "baln":
+                setterInterface.setBaln(Addresses.get(contractToBeSet));
+            case "bwt":
+                setterInterface.setBwt(Addresses.get(contractToBeSet));
+            case "router":
+                setterInterface.setRouter(Addresses.get(contractToBeSet));
+            case "rebalancing":
+                setterInterface.setRebalancing(Addresses.get(contractToBeSet));
+            case "feehandler":
+                setterInterface.setFeehandler(Addresses.get(contractToBeSet));
+            case "stakedLp":
+                setterInterface.setStakedLp(Addresses.get(contractToBeSet));
         }
     }
 }
