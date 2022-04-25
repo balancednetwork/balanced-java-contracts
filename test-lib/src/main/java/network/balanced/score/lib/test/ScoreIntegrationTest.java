@@ -160,6 +160,14 @@ public interface ScoreIntegrationTest {
         return wallet == null ? generateWallet() : wallet;
     }
 
+    static Wallet getOrGenerateWallet(Properties properties) {
+        if (properties == null) {
+            return generateWallet();
+        }
+        Wallet wallet = DefaultScoreClient.wallet(properties);
+        return wallet == null ? generateWallet() : wallet;
+    }
+
     static KeyWallet generateWallet() {
         try {
             return KeyWallet.create();
