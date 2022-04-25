@@ -126,6 +126,8 @@ class RouterTest extends TestBase {
         contextMock.when(() -> Context.call(sicxScore.getAddress(), "balanceOf", routerScore.getAddress())).thenReturn(icxToTrade);
         contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class),
                 any(BigInteger.class), any(byte[].class))).thenReturn(null);
+        contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class),
+                any(BigInteger.class))).thenReturn(null);
         Address[] path = new Address[]{sicxScore.getAddress()};
 
         Executable lessThanMinimumReceivable = () -> sm.call(owner, icxToTrade, routerScore.getAddress(), "route",
@@ -134,8 +136,7 @@ class RouterTest extends TestBase {
         expectErrorMessage(lessThanMinimumReceivable, expectedErrorMessage);
 
         sm.call(owner, icxToTrade, routerScore.getAddress(), "route", path, BigInteger.ZERO);
-        contextMock.verify(() -> Context.call(sicxScore.getAddress(), "transfer", owner.getAddress(), icxToTrade,
-                new byte[0]));
+        contextMock.verify(() -> Context.call(sicxScore.getAddress(), "transfer", owner.getAddress(), icxToTrade));
 
         Executable negativeMinimumBalance = () -> sm.call(owner, icxToTrade, routerScore.getAddress(),
                 "route", path, icxToTrade.negate());
@@ -201,6 +202,8 @@ class RouterTest extends TestBase {
         contextMock.reset();
         contextMock.when(() -> Context.transfer(any(Address.class), any(BigInteger.class))).then(invocationOnMock -> null);
         contextMock.when(() -> Context.call(any(Address.class), eq("balanceOf"), eq(routerScore.getAddress()))).thenReturn(BigInteger.TEN);
+        contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class),
+                any(BigInteger.class))).thenReturn(null);
         contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class),
                 any(BigInteger.class), any(byte[].class))).thenReturn(null);
         contextMock.when(() -> Context.getBalance(routerScore.getAddress())).thenReturn(BigInteger.TEN);
