@@ -16,13 +16,11 @@
 
 import network.balanced.score.dependencies.Dependencies
 
-plugins {
-    id 'java'
-}
 
-version '0.1.1'
+version = '0.1.0'
 
 repositories {
+    // Use Maven Central for resolving dependencies.
     mavenCentral()
 }
 
@@ -33,20 +31,21 @@ dependencies {
     implementation project(':score-lib')
 
     testImplementation Dependencies.javaeeUnitTest
+    testImplementation Dependencies.javaeeTokens
     // Use JUnit Jupiter for testing.
     testImplementation Dependencies.junitJupiter
     testRuntimeOnly Dependencies.junitJupiterEngine
-    testImplementation project(':test-lib')
     testImplementation Dependencies.mockitoCore
     testImplementation Dependencies.mockitoInline
+
+    testImplementation project(':test-lib')
 }
 
-
 optimizedJar {
-    mainClassName = 'network.balanced.score.core.router.RouterImpl'
+    mainClassName = 'network.balanced.score.core.daofund.DAOfundImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
-        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
     }
 }
 
@@ -70,6 +69,7 @@ deployJar {
     parameters {}
 }
 
-test {
+tasks.named('test') {
+    // Use JUnit Platform for unit tests.
     useJUnitPlatform()
 }

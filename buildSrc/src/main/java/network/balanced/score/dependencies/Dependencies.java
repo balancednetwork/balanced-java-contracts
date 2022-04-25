@@ -21,14 +21,15 @@ public class Dependencies {
     public static final String javaeePlugin = "foundation.icon:gradle-javaee-plugin:0.8.0";
     public static final String javaeeApi = "foundation.icon:javaee-api:0.9.1";
     public static final String javaeeScorex = "foundation.icon:javaee-scorex:0.5.2";
-    public static final String javaeeTokens = "com.github.sink772:javaee-tokens:0.6.1";
-    public static final String javaeeUnitTest = "foundation.icon:javaee-unittest:0.9.2";
+    public static final String javaeeUnitTest = "foundation.icon:javaee-unittest:0.9.3";
     public static final String javaeeScoreClient = "foundation.icon:javaee-score-client:0.9.0";
 
+    public static final String javaeeTokens = "com.github.sink772:javaee-tokens:0.6.1";
     public static final String minimalJson = "com.github.sink772:minimal-json:0.9.7";
 
     public static final String junitJupiter = "org.junit.jupiter:junit-jupiter:5.8.2";
     public static final String junitJupiterEngine = "org.junit.jupiter:junit-jupiter-engine:5.8.2";
+
     public static final String mockitoCore = "org.mockito:mockito-core:4.3.1";
     public static final String mockitoInline = "org.mockito:mockito-inline:4.3.1";
 

@@ -14,29 +14,13 @@
  * limitations under the License.
  */
 
-import network.balanced.score.dependencies.Dependencies
+package network.balanced.score.lib.structs;
 
-plugins {
-    id 'java'
-}
+import score.Address;
 
-version '0.1.0'
+import java.math.BigInteger;
 
-repositories {
-    mavenCentral()
-}
-
-optimizedJar.enabled = false
-
-dependencies {
-    implementation Dependencies.javaeeUnitTest
-    implementation Dependencies.junitJupiter
-    runtimeOnly Dependencies.junitJupiterEngine
-    implementation Dependencies.mockitoCore
-    implementation Dependencies.json
-    implementation Dependencies.javaeeScorex
-}
-
-test {
-    useJUnitPlatform()
+public class Disbursement {
+    public Address address;
+    public BigInteger amount;
 }

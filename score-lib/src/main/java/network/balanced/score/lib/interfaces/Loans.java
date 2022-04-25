@@ -14,29 +14,17 @@
  * limitations under the License.
  */
 
-import network.balanced.score.dependencies.Dependencies
+package network.balanced.score.lib.interfaces;
 
-plugins {
-    id 'java'
-}
+import foundation.icon.score.client.ScoreInterface;
+import score.annotation.External;
 
-version '0.1.0'
+import java.util.Map;
 
-repositories {
-    mavenCentral()
-}
+@ScoreInterface
+public interface Loans {
 
-optimizedJar.enabled = false
+    @External(readonly = true)
+    Map<String, String> getAssetTokens();
 
-dependencies {
-    implementation Dependencies.javaeeUnitTest
-    implementation Dependencies.junitJupiter
-    runtimeOnly Dependencies.junitJupiterEngine
-    implementation Dependencies.mockitoCore
-    implementation Dependencies.json
-    implementation Dependencies.javaeeScorex
-}
-
-test {
-    useJUnitPlatform()
 }
