@@ -35,21 +35,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static network.balanced.score.lib.test.UnitTest.expectErrorMessage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
-class FeeHandlerTest extends TestBase {
-    public static final ServiceManager sm = getServiceManager();
-    public static final Account owner = sm.createAccount();
+class FeeHandlerImplTest extends TestBase {
+    private static final ServiceManager sm = getServiceManager();
+    private static final Account owner = sm.createAccount();
 
-    public static final Account baln = Account.newScoreAccount(2);
-    public static final Account router = Account.newScoreAccount(22);
-    public static final Account dividends = Account.newScoreAccount(23);
-    public static final Account dex = Account.newScoreAccount(24);
-    public static final Account sicxScore = Account.newScoreAccount(25);
-    public static final Account bnusd = Account.newScoreAccount(26);
-    public static final Account governance = Account.newScoreAccount(26);
+    private static final Account baln = Account.newScoreAccount(2);
+    private static final Account router = Account.newScoreAccount(22);
+    private static final Account dividends = Account.newScoreAccount(23);
+    private static final Account dex = Account.newScoreAccount(24);
+    private static final Account sicxScore = Account.newScoreAccount(25);
+    private static final Account bnusd = Account.newScoreAccount(26);
+    private static final Account governance = Account.newScoreAccount(26);
 
     private Score feehandler;
 
@@ -59,13 +60,8 @@ class FeeHandlerTest extends TestBase {
 
     @BeforeEach
     void setUp() throws Exception {
-        feehandler = sm.deploy(owner, FeeHandler.class, governance.getAddress());
+        feehandler = sm.deploy(owner, FeeHandlerImpl.class, governance.getAddress());
         assert (feehandler.getAddress().isContract());
-    }
-
-    public void expectErrorMessage(Executable contractCall, String errorMessage) {
-        AssertionError e = Assertions.assertThrows(AssertionError.class, contractCall);
-        assertEquals(errorMessage, e.getMessage());
     }
 
     private void get_allowed_address(int i) {

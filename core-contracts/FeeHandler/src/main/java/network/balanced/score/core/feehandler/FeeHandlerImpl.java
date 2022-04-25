@@ -19,6 +19,7 @@ package network.balanced.score.core.feehandler;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonValue;
+import network.balanced.score.lib.interfaces.FeeHandler;
 import score.*;
 import score.annotation.External;
 import scorex.util.ArrayList;
@@ -31,7 +32,7 @@ import java.util.Map;
 
 import static network.balanced.score.lib.utils.Check.*;
 
-public class FeeHandler {
+public class FeeHandlerImpl implements FeeHandler {
     private static final String TAG = "FeeHandler";
 
     private final String DIVIDEND_TOKENS = "dividend_tokens";
@@ -57,7 +58,7 @@ public class FeeHandler {
             BigInteger.class);
     private final VarDB<Address> admin = Context.newVarDB(ADMIN_ADDRESS, Address.class);
 
-    public FeeHandler(Address _governance) {
+    public FeeHandlerImpl(Address _governance) {
         if (governance.get() == null) {
             isContract(_governance);
             this.governance.set(_governance);

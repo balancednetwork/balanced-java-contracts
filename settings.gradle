@@ -46,5 +46,5 @@ project(':WorkerToken').projectDir = file("token-contracts/WorkerToken")
 include(':Router')
 project(':Router').projectDir = file("core-contracts/Router")
 
-include(':Feehandler')
-project(':Feehandler').projectDir = file("core-contracts/Feehandler")
+include(':FeeHandler')
+project(':FeeHandler').projectDir = file("core-contracts/FeeHandler")
