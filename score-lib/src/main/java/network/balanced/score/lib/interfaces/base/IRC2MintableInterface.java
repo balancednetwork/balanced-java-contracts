@@ -22,10 +22,16 @@ import score.annotation.Optional;
 
 import java.math.BigInteger;
 
-public interface IRC2MintableInterface {
+public interface IRC2MintableInterface extends IRC2{
 
     @External
     void mint(BigInteger _amount, @Optional byte[] _data);
+
+    @External
+    void setMinter(Address _address);
+
+    @External(readonly = true)
+    Address getMinter();
 
     @External
     void mintTo(Address _account, BigInteger _amount, @Optional byte[] _data);
