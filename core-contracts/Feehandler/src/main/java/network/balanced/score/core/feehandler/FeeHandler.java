@@ -21,7 +21,6 @@ import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonValue;
 import score.*;
 import score.annotation.External;
-import score.annotation.Optional;
 import scorex.util.ArrayList;
 import scorex.util.HashMap;
 
@@ -30,25 +29,38 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static network.balanced.score.core.feehandler.Checks.onlyGovernance;
-import static network.balanced.score.core.feehandler.Checks.onlyOwner;
+import static network.balanced.score.lib.utils.Check.*;
 
 public class FeeHandler {
-    public static final String TAG = "FeeHandler";
-    public static final ArrayDB<Address> accepted_dividends_tokens = Context.newArrayDB("dividend_tokens", Address.class);
-    public static final DictDB<Address, BigInteger> last_fee_processing_block = Context.newDictDB("last_block", BigInteger.class);
-    public static final VarDB<BigInteger> fee_processing_interval = Context.newVarDB("block_interval", BigInteger.class);
-    public static final VarDB<byte[]> last_txhash = Context.newVarDB("last_txhash", byte[].class);
-    public static final BranchDB<Address, DictDB<Address, String>> routes = Context.newBranchDB("routes", String.class);
-    public static final VarDB<Address> governance = Context.newVarDB("governance", Address.class);
-    public static final VarDB<Boolean> enabled = Context.newVarDB("enabled", Boolean.class);
-    public static final ArrayDB<Address> allowed_address = Context.newArrayDB("allowed_address", Address.class);
-    public static final VarDB<BigInteger> next_allowed_addresses_index = Context.newVarDB("_next_allowed_addresses_index", BigInteger.class);
+    private static final String TAG = "FeeHandler";
 
-    public FeeHandler(@Optional Address governance) {
-        if (governance != null) {
-            Context.require(governance.isContract(), "FeeHandler: Governance address should be a contract");
-            FeeHandler.governance.set(governance);
+    private final String DIVIDEND_TOKENS = "dividend_tokens";
+    private final String LAST_BLOCK = "last_block";
+    private final String BLOCK_INTERVAL = "block_interval";
+    private final String LAST_TXHASH = "last_txhash";
+    private final String ROUTES = "routes";
+    private final String GOVERNANCE = "governance";
+    private final String ENABLED = "enabled";
+    private final String ALLOWED_ADDRESS = "allowed_address";
+    private final String NEXT_ALLOWED_ADDRESS_INDEX = "_next_allowed_addresses_index";
+    private final String ADMIN_ADDRESS = "admin_address";
+
+    private final ArrayDB<Address> acceptedDividendsTokens = Context.newArrayDB(DIVIDEND_TOKENS, Address.class);
+    private final DictDB<Address, BigInteger> lastFeeProcessingBlock = Context.newDictDB(LAST_BLOCK, BigInteger.class);
+    private final VarDB<BigInteger> feeProcessingInterval = Context.newVarDB(BLOCK_INTERVAL, BigInteger.class);
+    private final VarDB<byte[]> lastTxhash = Context.newVarDB(LAST_TXHASH, byte[].class);
+    private final BranchDB<Address, DictDB<Address, String>> routes = Context.newBranchDB(ROUTES, String.class);
+    private final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
+    private final VarDB<Boolean> enabled = Context.newVarDB(ENABLED, Boolean.class);
+    private final ArrayDB<Address> allowedAddress = Context.newArrayDB(ALLOWED_ADDRESS, Address.class);
+    private final VarDB<BigInteger> nextAllowedAddressesIndex = Context.newVarDB(NEXT_ALLOWED_ADDRESS_INDEX,
+            BigInteger.class);
+    private final VarDB<Address> admin = Context.newVarDB(ADMIN_ADDRESS, Address.class);
+
+    public FeeHandler(Address _governance) {
+        if (governance.get() == null) {
+            isContract(_governance);
+            this.governance.set(_governance);
         }
     }
 
@@ -58,14 +70,37 @@ public class FeeHandler {
     }
 
     @External
+    public void setGovernance(Address _address) {
+        onlyOwner();
+        isContract(_address);
+        governance.set(_address);
+    }
+
+    @External(readonly = true)
+    public Address getGovernance() {
+        return governance.get();
+    }
+
+    @External
+    public void setAdmin(Address _address) {
+        only(governance);
+        admin.set(_address);
+    }
+
+    @External(readonly = true)
+    public Address getAdmin() {
+        return admin.get();
+    }
+
+    @External
     public void enable() {
-        onlyGovernance();
+        only(admin);
         enabled.set(true);
     }
 
     @External
     public void disable() {
-        onlyGovernance();
+        only(admin);
         enabled.set(false);
     }
 
@@ -76,26 +111,27 @@ public class FeeHandler {
 
     @External
     public void setAcceptedDividendTokens(Address[] _tokens) {
-        onlyGovernance();
-        Context.require(_tokens.length <= 10, "There can be a maximum of 10 accepted dividend tokens.");
+        only(admin);
+        Context.require(_tokens.length <= 10, TAG + ": There can be a maximum of 10 accepted dividend tokens.");
         for (Address address : _tokens) {
-            Context.require(address.isContract(), TAG + " :Address provided is an EOA address. Only contract addresses are allowed.");
+            isContract(address);
         }
 
-        while (accepted_dividends_tokens.size() != 0) {
-            accepted_dividends_tokens.removeLast();
+        final int currentTokensCount = acceptedDividendsTokens.size();
+        for (int i = 0; i < currentTokensCount; i++) {
+            acceptedDividendsTokens.removeLast();
         }
 
         for (Address token : _tokens) {
-            accepted_dividends_tokens.add(token);
+            acceptedDividendsTokens.add(token);
         }
     }
 
     @External(readonly = true)
     public List<Address> getAcceptedDividendTokens() {
         List<Address> tokens = new ArrayList<>();
-        for (int i = 0; i < accepted_dividends_tokens.size(); i++) {
-            tokens.add(accepted_dividends_tokens.get(i));
+        for (int i = 0; i < acceptedDividendsTokens.size(); i++) {
+            tokens.add(acceptedDividendsTokens.get(i));
         }
 
         return tokens;
@@ -103,10 +139,10 @@ public class FeeHandler {
 
     @External
     public void setRoute(Address _fromToken, Address _toToken, Address[] _path) {
-        onlyGovernance();
+        only(admin);
         JsonArray path = new JsonArray();
         for (Address address : _path) {
-            Context.require(address.isContract(), TAG + " :Address provided is an EOA address. Only contract addresses are allowed.");
+            isContract(address);
             path.add(address.toString());
         }
 
@@ -115,7 +151,7 @@ public class FeeHandler {
 
     @External
     public void deleteRoute(Address _fromToken, Address _toToken) {
-        onlyGovernance();
+        only(admin);
         routes.at(_fromToken).set(_toToken, null);
     }
 
@@ -140,99 +176,102 @@ public class FeeHandler {
 
     @External
     public void setFeeProcessingInterval(BigInteger _interval) {
-        onlyGovernance();
-        fee_processing_interval.set(_interval);
+        only(admin);
+        feeProcessingInterval.set(_interval);
     }
 
     @External(readonly = true)
     public BigInteger getFeeProcessingInterval() {
-        return fee_processing_interval.get();
+        return feeProcessingInterval.get();
     }
 
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         Address sender = Context.getCaller();
-        if (Arrays.equals(last_txhash.getOrDefault(new byte[0]), Context.getTransactionHash())) {
+        if (Arrays.equals(lastTxhash.getOrDefault(new byte[0]), Context.getTransactionHash())) {
             return;
         } else if (!timeForFeeProcessing(sender)) {
             return;
         }
 
-        last_txhash.set(Context.getTransactionHash());
-        for (int i = 0; i < accepted_dividends_tokens.size(); i++) {
-            if (accepted_dividends_tokens.get(i) == sender) {
+        lastTxhash.set(Context.getTransactionHash());
+        for (int i = 0; i < acceptedDividendsTokens.size(); i++) {
+            if (acceptedDividendsTokens.get(i) == sender) {
                 transferToken(sender, getContractAddress("dividends"), getTokenBalance(sender), new byte[0]);
             }
         }
 
-        last_fee_processing_block.set(sender, BigInteger.valueOf(Context.getBlockHeight()));
+        lastFeeProcessingBlock.set(sender, BigInteger.valueOf(Context.getBlockHeight()));
     }
 
     @External
     public void add_allowed_address(Address address) {
         onlyOwner();
-        Context.require(address.isContract(), TAG + " :Address provided is an EOA address. A contract address is required.");
-        allowed_address.add(address);
+        isContract(address);
+        allowedAddress.add(address);
     }
 
     @External(readonly = true)
     public List<Address> get_allowed_address(int offset) {
         Context.require(offset >= 0, "Negative value not allowed.");
 
-        int end = Math.min(allowed_address.size(), offset + 20) - 1;
-        List<Address> address_list = new ArrayList<>();
-        for (int i = offset; i < end + 1; i++) {
-            address_list.add(allowed_address.get(i));
+        int end = Math.min(allowedAddress.size(), offset + 20);
+        List<Address> addressList = new ArrayList<>();
+        for (int i = offset; i < end; i++) {
+            addressList.add(allowedAddress.get(i));
         }
-
-        return address_list;
+        return addressList;
     }
 
     @External
     public void route_contract_balances() {
-        BigInteger starting_index = next_allowed_addresses_index.getOrDefault(BigInteger.ZERO);
-        BigInteger current_index = starting_index;
-        boolean loop_flag = false;
+        BigInteger startingIndex = nextAllowedAddressesIndex.getOrDefault(BigInteger.ZERO);
+        BigInteger currentIndex = startingIndex;
+        boolean loopFlag = false;
         Address address;
         BigInteger balance;
 
-        BigInteger allowed_address_length = BigInteger.valueOf(allowed_address.size());
-        Context.require(allowed_address_length.signum() > 0, TAG + ": No allowed addresses.");
+        BigInteger allowedAddressLength = BigInteger.valueOf(allowedAddress.size());
+        Context.require(allowedAddressLength.signum() > 0, TAG + ": No allowed addresses.");
         while (true) {
-            if (current_index.compareTo(allowed_address_length) > -1) {
-                current_index = BigInteger.ZERO;
+            if (currentIndex.compareTo(allowedAddressLength) >= 0) {
+                currentIndex = BigInteger.ZERO;
             }
 
-            address = allowed_address.get(current_index.intValue());
+            address = allowedAddress.get(currentIndex.intValue());
             balance = getTokenBalance(address);
 
             if (balance.compareTo(BigInteger.ZERO) > 0) {
                 break;
             }
 
-            Context.require(!(loop_flag && (starting_index.equals(current_index))), "No fees on the contract.");
-            current_index = current_index.add(BigInteger.ONE);
-            if (!loop_flag) {
-                loop_flag = true;
+            Context.require(!(loopFlag && (startingIndex.equals(currentIndex))), "No fees on the contract.");
+            currentIndex = currentIndex.add(BigInteger.ONE);
+            if (!loopFlag) {
+                loopFlag = true;
             }
         }
 
-        next_allowed_addresses_index.set(current_index.add(BigInteger.ONE));
+        nextAllowedAddressesIndex.set(currentIndex.add(BigInteger.ONE));
 
         JsonArray path;
-        String route = routes.at(address).getOrDefault(getContractAddress("baln"), "");
-        if (route.isEmpty()) {
+        String BALN_CONTRACT = "baln";
+        String route = routes.at(address).get(getContractAddress(BALN_CONTRACT));
+        if (route == null) {
             path = new JsonArray();
         } else {
             path = Json.parse(route).asArray();
         }
 
+        String ROUTER_CONTRACT = "router";
+        String DIVIDENDS_CONTRACT = "dividends";
+        String DEX_CONTRACT = "dex";
         if (path.size() > 0) {
-            transferToken(address, getContractAddress("router"), balance, createDataFieldRouter(
-                    getContractAddress("dividends"), path));
+            transferToken(address, getContractAddress(ROUTER_CONTRACT), balance,
+                    createDataFieldRouter(getContractAddress(DIVIDENDS_CONTRACT), path));
         } else {
-            transferToken(address, getContractAddress("dex"), balance, createDataFieldDex(
-                    getContractAddress("baln"), getContractAddress("dividends")));
+            transferToken(address, getContractAddress(DEX_CONTRACT), balance,
+                    createDataFieldDex(getContractAddress(BALN_CONTRACT), getContractAddress(DIVIDENDS_CONTRACT)));
         }
     }
 
@@ -253,7 +292,7 @@ public class FeeHandler {
     }
 
     private Address getContractAddress(String _contract) {
-        return (Address) Context.call(governance.getOrDefault(Checks.defaultAddress), "getContractAddress", _contract);
+        return (Address) Context.call(governance.get(), "getContractAddress", _contract);
     }
 
     private boolean timeForFeeProcessing(Address _token) {
@@ -262,11 +301,11 @@ public class FeeHandler {
         }
 
         BigInteger blockHeight = BigInteger.valueOf(Context.getBlockHeight());
-        BigInteger last_conversion = last_fee_processing_block.getOrDefault(_token, BigInteger.ZERO);
-        BigInteger target_block = last_conversion.add(fee_processing_interval.getOrDefault(BigInteger.ZERO));
-        if (last_conversion.signum() < 0) {
+        BigInteger lastConversion = lastFeeProcessingBlock.getOrDefault(_token, BigInteger.ZERO);
+        BigInteger targetBlock = lastConversion.add(feeProcessingInterval.getOrDefault(BigInteger.ZERO));
+        if (lastConversion.signum() < 0) {
             return true;
-        } else return blockHeight.compareTo(target_block) >= 0;
+        } else return blockHeight.compareTo(targetBlock) >= 0;
     }
 
     private BigInteger getTokenBalance(Address _token) {
