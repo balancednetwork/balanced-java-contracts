@@ -17,7 +17,6 @@
 import network.balanced.score.dependencies.Dependencies
 
 
-
 buildscript {
     repositories {
         mavenCentral()
@@ -50,4 +49,39 @@ subprojects {
         // Use JUnit Platform for unit tests.
         useJUnitPlatform()
     }
+
+    sourceSets {
+        intTest {
+            compileClasspath += sourceSets.main.output
+            runtimeClasspath += sourceSets.main.output
+            java {
+            }
+        }
+    }
+
+    configurations {
+        intTestImplementation.extendsFrom testImplementation
+        intTestAnnotationProcessor.extendsFrom testAnnotationProcessor
+        intTestRuntimeOnly.extendsFrom testRuntimeOnly
+    }
+
+    def loadProperties = {
+        def prefix = 'score-test.'
+        def props = project.getProperties()
+        def scoreTest = new HashMap<String, Object>()
+
+        scoreTest.put('keystoreName', props.get(prefix + 'keystoreName'))
+        scoreTest.put('keystorePass', props.get(prefix + 'keystorePass'))
+        scoreTest.put('url', props.get(prefix + 'url'))
+        scoreTest.put('nid', props.get(prefix + 'nid'))
+
+        scoreTest.put('staking.keystoreName', props.get(prefix + 'keystoreName'))
+        scoreTest.put('staking.keystorePass', props.get(prefix + 'keystorePass'))
+        scoreTest.put('staking.url', props.getOrDefault(prefix + 'url', 'http://127.0.0.1:9082/api/v3'))
+        scoreTest.put('staking.nid', props.getOrDefault(prefix + 'nid', 3))
+        scoreTest.put('staking.scoreFilePath', "./staking.zip")
+
+        ext['scoreTest'] = scoreTest
+    }
+    loadProperties()
 }

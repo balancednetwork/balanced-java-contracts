@@ -17,7 +17,6 @@
 import network.balanced.score.dependencies.Dependencies
 
 
-
 version = '0.1.0'
 
 repositories {
@@ -37,14 +36,44 @@ dependencies {
 
     testImplementation Dependencies.mockitoCore
     testImplementation Dependencies.mockitoInline
+
     testImplementation project(':test-lib')
+
+
+    intTestImplementation Dependencies.javaeeScoreClient
+
+    intTestAnnotationProcessor Dependencies.javaeeScoreClient
+    intTestImplementation Dependencies.iconSdk
+    intTestImplementation Dependencies.jacksonDatabind
+
+
+    compileOnly Dependencies.javaeeApi
+    implementation Dependencies.javaeeScorex
+    implementation Dependencies.minimalJson
+
+    annotationProcessor Dependencies.javaeeScoreData
+    compileOnly Dependencies.javaeeScoreData
+
+    testImplementation Dependencies.javaeeUnitTest
+    testImplementation Dependencies.javaeeTokens
+    testImplementation Dependencies.json
+    testImplementation Dependencies.junitJupiter
+    testRuntimeOnly Dependencies.junitJupiterEngine
+    testImplementation Dependencies.mockitoInline
+    testImplementation Dependencies.mockitoCore
+
+
+    intTestImplementation Dependencies.javaeeScoreClient
+    intTestAnnotationProcessor Dependencies.javaeeScoreClient
+    intTestImplementation Dependencies.iconSdk
+    intTestImplementation Dependencies.jacksonDatabind
 }
 
 optimizedJar {
     mainClassName = 'network.balanced.score.tokens.sicx.SicxImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
-        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
     enableDebug = false
 }
@@ -54,7 +83,6 @@ deployJar {
         sejong {
             uri = 'https://sejong.net.solidwallet.io/api/v3'
             nid = 0x53
-            to = "cx75256fadf232ad1124d9c6cd70c9b1ec122a0f47"
         }
         local {
             uri = 'http://localhost:9082/api/v3'
@@ -63,7 +91,10 @@ deployJar {
         mainnet {
             uri = 'https://ctz.solidwallet.io/api/v3'
             nid = 0x1
-            to = "cx793970c9ec84eb0dcb6164965c74fe678474d7c7"
+        }
+        berlin {
+            uri = 'https://berlin.net.solidwallet.io/api/v3'
+            nid = 0x7
         }
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
@@ -74,4 +105,36 @@ deployJar {
 tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+}
+
+task integrationTest(type: Test, dependsOn: optimizedJar) {
+    useJUnitPlatform()
+    options {
+        testLogging.showStandardStreams = true
+        description = 'Runs integration tests.'
+        group = 'verification'
+        testClassesDirs = sourceSets.intTest.output.classesDirs
+        classpath = sourceSets.intTest.runtimeClasspath
+
+        systemProperty 'scoreFilePath', "../../sicx.zip"
+        project.extensions.deployJar.arguments.each { arg -> systemProperty 'params.' + arg.name, arg.value
+        }
+
+
+        systemProperty 'url', scoreTest.url
+        systemProperty 'nid', scoreTest.nid
+        systemProperty 'keyStore', scoreTest.keystoreName
+        systemProperty 'keyPassword', scoreTest.keystorePass
+//        systemProperty 'isUpdate', "false"
+//        systemProperty 'address', "cx2ad810776298b1946c6b57f7109d3a5602ae44f6"
+
+        systemProperty 'staking.url', scoreTest.url
+        systemProperty 'staking.nid', scoreTest.nid
+        systemProperty 'staking.keyStore', scoreTest.keystoreName
+        systemProperty 'staking.keyPassword', scoreTest.keystorePass
+        systemProperty 'staking.scoreFilePath', "../../staking.zip"
+//        systemProperty 'staking.isUpdate', "false"
+//        systemProperty 'staking.address', "cxb205adfafde0a9e76539e2a405b9ce82ae8c4ee2"
+
+    }
 }
