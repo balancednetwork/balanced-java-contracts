@@ -1,8 +1,9 @@
 package network.balanced.score.tokens.sicx;
 
+import foundation.icon.icx.Wallet;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Order;
-import score.Address;
+import foundation.icon.jsonrpc.Address;
 import network.balanced.score.lib.test.ScoreIntegrationTest;
 import foundation.icon.score.client.DefaultScoreClient;
 import foundation.icon.score.client.ScoreClient;
@@ -15,8 +16,11 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class SicxIntegrationTest implements ScoreIntegrationTest {
-    private static final Address testerAddress = Address.fromString("hx2d47d4fb841322917b3f01b9460eff1bfdad499c");
-    private static final Address ownerAddress = Address.fromString("hxad251415b0cf93633e75fc7dfe3cb25043fdb291");
+    static Wallet tester = ScoreIntegrationTest.getOrGenerateWallet(null);
+    private static final Address testerAddress = Address.of(tester);
+
+    static Wallet owner = ScoreIntegrationTest.getOrGenerateWallet(System.getProperties());
+    private static final foundation.icon.jsonrpc.Address ownerAddress = foundation.icon.jsonrpc.Address.of(owner);
 
     static DefaultScoreClient sicxClient = DefaultScoreClient.of(System.getProperties(), Map.of("_admin", ownerAddress));
 
