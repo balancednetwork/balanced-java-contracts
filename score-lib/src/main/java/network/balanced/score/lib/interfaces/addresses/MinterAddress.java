@@ -14,29 +14,16 @@
  * limitations under the License.
  */
 
-import network.balanced.score.dependencies.Dependencies
+package network.balanced.score.lib.interfaces.addresses;
 
-plugins {
-    id 'java'
-}
+import score.Address;
+import score.annotation.External;
 
-version '0.1.0'
+public interface MinterAddress {
 
-repositories {
-    mavenCentral()
-}
+    @External
+    void setMinter(Address _address);
 
-optimizedJar.enabled = false
-
-dependencies {
-    implementation Dependencies.javaeeUnitTest
-    implementation Dependencies.junitJupiter
-    runtimeOnly Dependencies.junitJupiterEngine
-    implementation Dependencies.mockitoCore
-    implementation Dependencies.json
-    implementation Dependencies.javaeeScorex
-}
-
-test {
-    useJUnitPlatform()
+    @External(readonly = true)
+    Address getMinter();
 }

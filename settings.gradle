@@ -48,3 +48,6 @@ project(':Router').projectDir = file("core-contracts/Router")
 
 include(':DAOfund')
 project(':DAOfund').projectDir = file("core-contracts/DAOfund")
+
+include(':BalancedDollar')
+project(':BalancedDollar').projectDir = file("token-contracts/BalancedDollar")
