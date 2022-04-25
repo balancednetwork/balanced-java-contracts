@@ -33,7 +33,7 @@ import java.util.Map;
 import static network.balanced.score.lib.utils.Check.*;
 
 public class FeeHandlerImpl implements FeeHandler {
-    private static final String TAG = "FeeHandler";
+    public static final String TAG = "FeeHandler";
 
     private final String DIVIDEND_TOKENS = "dividend_tokens";
     private final String LAST_BLOCK = "last_block";
@@ -306,7 +306,9 @@ public class FeeHandlerImpl implements FeeHandler {
         BigInteger targetBlock = lastConversion.add(feeProcessingInterval.getOrDefault(BigInteger.ZERO));
         if (lastConversion.signum() < 0) {
             return true;
-        } else return blockHeight.compareTo(targetBlock) >= 0;
+        } else {
+            return blockHeight.compareTo(targetBlock) >= 0;
+        }
     }
 
     private BigInteger getTokenBalance(Address _token) {

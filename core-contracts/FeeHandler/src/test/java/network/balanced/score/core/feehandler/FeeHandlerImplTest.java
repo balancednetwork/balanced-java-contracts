@@ -20,7 +20,6 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -35,7 +34,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static network.balanced.score.lib.test.UnitTest.expectErrorMessage;
+import static network.balanced.score.core.feehandler.FeeHandlerImpl.TAG;
+import static network.balanced.score.lib.test.UnitTest.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -43,20 +43,20 @@ import static org.mockito.ArgumentMatchers.eq;
 class FeeHandlerImplTest extends TestBase {
     private static final ServiceManager sm = getServiceManager();
     private static final Account owner = sm.createAccount();
+    private final Account admin = sm.createAccount();
 
-    private static final Account baln = Account.newScoreAccount(2);
-    private static final Account router = Account.newScoreAccount(22);
-    private static final Account dividends = Account.newScoreAccount(23);
-    private static final Account dex = Account.newScoreAccount(24);
-    private static final Account sicxScore = Account.newScoreAccount(25);
-    private static final Account bnusd = Account.newScoreAccount(26);
-    private static final Account governance = Account.newScoreAccount(26);
+    private static final Account baln = Account.newScoreAccount(scoreCount++);
+    private static final Account router = Account.newScoreAccount(scoreCount++);
+    private static final Account dividends = Account.newScoreAccount(scoreCount++);
+    private static final Account dex = Account.newScoreAccount(scoreCount++);
+    private static final Account sicxScore = Account.newScoreAccount(scoreCount++);
+    private static final Account bnusd = Account.newScoreAccount(scoreCount++);
+    private static final Account governance = Account.newScoreAccount(scoreCount++);
 
     private Score feehandler;
 
-    private static final BigInteger MINT_AMOUNT = BigInteger.TEN.pow(22);
-
-    private static final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
+    private static final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class,
+            Mockito.CALLS_REAL_METHODS);
 
     @BeforeEach
     void setUp() throws Exception {
@@ -72,6 +72,10 @@ class FeeHandlerImplTest extends TestBase {
         feehandler.invoke(owner, "route_contract_balances");
     }
 
+    void configureFeeHandler() {
+        feehandler.invoke(governance, "setAdmin", admin.getAddress());
+    }
+
     @Test
     void name() {
         String contractName = "Balanced FeeHandler";
@@ -79,74 +83,119 @@ class FeeHandlerImplTest extends TestBase {
     }
 
     @Test
-    void enableAndDisable() {
-        feehandler.invoke(governance, "enable");
-        assertEquals(true, feehandler.call("isEnabled"));
+    void setAndGetGovernance() {
+        testGovernance(feehandler, governance, owner);
+    }
 
-        feehandler.invoke(governance, "disable");
-        assertEquals(false, feehandler.call("isEnabled"));
+    @Test
+    void setAndGetAdmin() {
+        testAdmin(feehandler, governance, admin);
+    }
+
+    @Test
+    void enable() {
+        testEnableAndDisable("enable", true);
+    }
+
+    @Test
+    void disable() {
+        testEnableAndDisable("disable", false);
+    }
+
+    private void testEnableAndDisable(String setterMethod, boolean expectedValue) {
+        String expectedErrorMessage = "Authorization Check: Address not set";
+        Executable actWithoutAdmin = () -> feehandler.invoke(admin, setterMethod);
+        expectErrorMessage(actWithoutAdmin, expectedErrorMessage);
+
+        testAdmin(feehandler, governance, admin);
+
+        Account nonAdmin = sm.createAccount();
+        expectedErrorMessage = "Authorization Check: Authorization failed. Caller: " + nonAdmin.getAddress() +
+                " Authorized Caller: " + admin.getAddress();
+        Executable enableNotFromAdmin = () -> feehandler.invoke(nonAdmin, setterMethod);
+        expectErrorMessage(enableNotFromAdmin, expectedErrorMessage);
+
+        feehandler.invoke(admin, setterMethod);
+        assertEquals(expectedValue, feehandler.call("isEnabled"));
     }
 
     @Test
     void setAcceptedDividendTokens_NoPreviousTokens() {
+        configureFeeHandler();
         List<Address> expectedTokens = new ArrayList<>();
         expectedTokens.add(sicxScore.getAddress());
         expectedTokens.add(baln.getAddress());
         Object addAcceptedTokens = expectedTokens.toArray(new Address[0]);
 
-        feehandler.invoke(governance, "setAcceptedDividendTokens", addAcceptedTokens);
-
+        feehandler.invoke(admin, "setAcceptedDividendTokens", addAcceptedTokens);
         assertEquals(expectedTokens, feehandler.call("getAcceptedDividendTokens"));
     }
 
     @Test
     void setAcceptedDividendTokens_PreviousTokens() {
-        Object token = new Address[]{bnusd.getAddress()};
-        feehandler.invoke(governance, "setAcceptedDividendTokens", token);
+        configureFeeHandler();
+
+        Object token = new Address[]{bnusd.getAddress(), bnusd.getAddress(), bnusd.getAddress()};
+        feehandler.invoke(admin, "setAcceptedDividendTokens", token);
 
         List<Address> expectedTokens = new ArrayList<>();
         expectedTokens.add(sicxScore.getAddress());
         expectedTokens.add(baln.getAddress());
         Object addAcceptedTokens = expectedTokens.toArray(new Address[0]);
 
-        feehandler.invoke(governance, "setAcceptedDividendTokens", addAcceptedTokens);
-
+        feehandler.invoke(admin, "setAcceptedDividendTokens", addAcceptedTokens);
         assertEquals(expectedTokens, feehandler.call("getAcceptedDividendTokens"));
     }
 
     @Test
+    void setAcceptedDividendTokens_GreaterThanMaxSize() {
+        configureFeeHandler();
+        int tokensCount = 11;
+        List<Address> tokens = new ArrayList<>();
+        for (int i = 0; i < tokensCount; i++) {
+            tokens.add(Account.newScoreAccount(scoreCount++).getAddress());
+        }
+        Executable maxAcceptedTokens = () -> feehandler.invoke(admin, "setAcceptedDividendTokens",
+                (Object) tokens.toArray(new Address[0]));
+        String expectedErrorMessage = TAG + ": There can be a maximum of 10 accepted dividend tokens.";
+        expectErrorMessage(maxAcceptedTokens, expectedErrorMessage);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
     void setGetRoute() {
-        feehandler.invoke(governance, "setRoute", sicxScore.getAddress(), baln.getAddress(), new Address[]{bnusd.getAddress()});
+        configureFeeHandler();
+        feehandler.invoke(admin, "setRoute", sicxScore.getAddress(), baln.getAddress(),
+                new Address[]{bnusd.getAddress()});
         Map<String, Object> expectedResult = new HashMap<>();
         expectedResult.put("fromToken", sicxScore.getAddress());
         expectedResult.put("toToken", baln.getAddress());
         expectedResult.put("path", List.of(bnusd.getAddress().toString()));
 
-        Map<String, Object> actualResult = (Map<String, Object>) feehandler.call("getRoute", sicxScore.getAddress(), baln.getAddress());
-
+        Map<String, Object> actualResult = (Map<String, Object>) feehandler.call("getRoute", sicxScore.getAddress(),
+                baln.getAddress());
         assertEquals(expectedResult, actualResult);
     }
 
     @Test
     void getEmptyRoute() {
-        feehandler.invoke(governance, "setRoute", sicxScore.getAddress(), baln.getAddress(), new Address[]{bnusd.getAddress()});
-
+        configureFeeHandler();
+        feehandler.invoke(admin, "setRoute", sicxScore.getAddress(), baln.getAddress(), new Address[]{bnusd.getAddress()});
         assertEquals(Map.of(), feehandler.call("getRoute", bnusd.getAddress(), baln.getAddress()));
     }
 
     @Test
     void deleteRoute() {
-        feehandler.invoke(governance, "setRoute", sicxScore.getAddress(), baln.getAddress(), new Address[]{bnusd.getAddress()});
-
-        feehandler.invoke(governance, "deleteRoute", sicxScore.getAddress(), baln.getAddress());
-
+        configureFeeHandler();
+        feehandler.invoke(admin, "setRoute", sicxScore.getAddress(), baln.getAddress(), new Address[]{bnusd.getAddress()});
+        feehandler.invoke(admin, "deleteRoute", sicxScore.getAddress(), baln.getAddress());
         assertEquals(Map.of(), feehandler.call("getRoute", sicxScore.getAddress(), baln.getAddress()));
     }
 
     @Test
     void setFeeProcessingInterval() {
-        feehandler.invoke(governance, "setFeeProcessingInterval", BigInteger.TEN);
-
+        configureFeeHandler();
+        feehandler.invoke(admin, "setFeeProcessingInterval", BigInteger.TEN);
         assertEquals(BigInteger.TEN, feehandler.call("getFeeProcessingInterval"));
     }
 
@@ -155,14 +204,14 @@ class FeeHandlerImplTest extends TestBase {
         setAcceptedDividendTokens_NoPreviousTokens();
         setFeeProcessingInterval();
 
-        feehandler.invoke(governance, "enable");
+        feehandler.invoke(admin, "enable");
         contextMock.when(() -> Context.call(any(Address.class), eq("balanceOf"), any(Address.class))).thenReturn(BigInteger.TEN);
         contextMock.when(() -> Context.call(any(Address.class), eq("getContractAddress"), eq("dividends"))).thenReturn(dividends.getAddress());
         contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class), any(BigInteger.class), any(byte[].class))).thenReturn("done");
 
         feehandler.invoke(sicxScore, "tokenFallback", baln.getAddress(), BigInteger.TEN.pow(2), new byte[0]);
-
-        contextMock.verify(() -> Context.call(any(Address.class), eq("transfer"), eq(dividends.getAddress()), any(BigInteger.class), any(byte[].class)));
+        contextMock.verify(() -> Context.call(sicxScore.getAddress(), "transfer", dividends.getAddress(),
+                BigInteger.TEN, new byte[0]));
     }
 
     @Test
@@ -171,7 +220,6 @@ class FeeHandlerImplTest extends TestBase {
         expected.add(sicxScore.getAddress());
 
         feehandler.invoke(owner, "add_allowed_address", sicxScore.getAddress());
-
         assertEquals(expected, feehandler.call("get_allowed_address", 0));
     }
 
