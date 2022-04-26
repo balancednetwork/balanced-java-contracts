@@ -39,6 +39,7 @@ import static network.balanced.score.lib.test.UnitTest.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
 
 class FeeHandlerImplTest extends TestBase {
     private static final ServiceManager sm = getServiceManager();
@@ -206,22 +207,33 @@ class FeeHandlerImplTest extends TestBase {
         setAcceptedDividendTokens_NoPreviousTokens();
         setFeeProcessingInterval();
 
-        feeHandler.invoke(admin, "enable");
         contextMock.when(() -> Context.call(any(Address.class), eq("balanceOf"), any(Address.class))).thenReturn(BigInteger.TEN);
         contextMock.when(() -> Context.call(any(Address.class), eq("getContractAddress"), eq("dividends"))).thenReturn(dividends.getAddress());
         contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class), any(BigInteger.class), any(byte[].class))).thenReturn("done");
 
         feeHandler.invoke(sicxScore, "tokenFallback", baln.getAddress(), BigInteger.TEN.pow(2), new byte[0]);
         contextMock.verify(() -> Context.call(sicxScore.getAddress(), "transfer", dividends.getAddress(),
+                BigInteger.TEN, new byte[0]), times(0));
+
+        feeHandler.invoke(admin, "enable");
+        feeHandler.invoke(sicxScore, "tokenFallback", baln.getAddress(), BigInteger.TEN.pow(2), new byte[0]);
+        contextMock.verify(() -> Context.call(sicxScore.getAddress(), "transfer", dividends.getAddress(),
                 BigInteger.TEN, new byte[0]));
+
+        contextMock.clearInvocations();
+        feeHandler.invoke(sicxScore, "tokenFallback", baln.getAddress(), BigInteger.TEN.pow(2), new byte[0]);
+        contextMock.verify(() -> Context.call(sicxScore.getAddress(), "transfer", dividends.getAddress(),
+                BigInteger.TEN, new byte[0]), times(0));
     }
 
     @Test
     void addAndGetAllowedAddress() {
         List<Address> expected = new ArrayList<>();
         expected.add(sicxScore.getAddress());
+        expected.add(bnusd.getAddress());
 
         feeHandler.invoke(owner, "addAllowedAddress", sicxScore.getAddress());
+        feeHandler.invoke(owner, "addAllowedAddress", bnusd.getAddress());
         assertEquals(expected, feeHandler.call("get_allowed_address", 0));
     }
 
@@ -235,45 +247,40 @@ class FeeHandlerImplTest extends TestBase {
     }
 
     @Test
-    void route_contract_balances_with_path() {
-        addAndGetAllowedAddress();
-        setGetRoute();
-
+    void routeContractBalances_withPath() {
         contextMock.when(() -> Context.call(any(Address.class), eq("balanceOf"), any(Address.class))).thenReturn(BigInteger.TEN);
         contextMock.when(() -> Context.call(any(Address.class), eq("getContractAddress"), eq("baln"))).thenReturn(baln.getAddress());
         contextMock.when(() -> Context.call(any(Address.class), eq("getContractAddress"), eq("dividends"))).thenReturn(dividends.getAddress());
         contextMock.when(() -> Context.call(any(Address.class), eq("getContractAddress"), eq("router"))).thenReturn(router.getAddress());
-        contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class), any(BigInteger.class), any(byte[].class))).thenReturn("done");
+        contextMock.when(() -> Context.call(governance.getAddress(), "getContractAddress", "dex")).thenReturn(dex.getAddress());
+        contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class),
+                any(BigInteger.class), any(byte[].class))).thenReturn("done");
+
+        Executable noAllowedAddressSet = () -> feeHandler.invoke(owner, "route_contract_balances");
+        String expectedErrorMessage = TAG + ": No allowed addresses.";
+        expectErrorMessage(noAllowedAddressSet, expectedErrorMessage);
+
+        addAndGetAllowedAddress();
+        setGetRoute();
 
         feeHandler.invoke(owner, "route_contract_balances");
+        contextMock.verify(() -> Context.call(eq(sicxScore.getAddress()), eq("transfer"), eq(router.getAddress()),
+                any(BigInteger.class), any(byte[].class)));
+        assertEquals(1, feeHandler.call("getNextAllowedAddressIndex"));
 
-        contextMock.verify(() -> Context.call(any(Address.class), eq("transfer"), eq(router.getAddress()), any(BigInteger.class), any(byte[].class)));
+        feeHandler.invoke(owner, "route_contract_balances");
+        contextMock.verify(() -> Context.call(eq(bnusd.getAddress()), eq("transfer"), eq(dex.getAddress()),
+                any(BigInteger.class), any(byte[].class)));
+        assertEquals(0, feeHandler.call("getNextAllowedAddressIndex"));
     }
 
     @Test
-    void route_contract_balances_with_empty_path() {
-        feeHandler.invoke(owner, "addAllowedAddress", bnusd.getAddress());
+    void routeContractBalances_withNoFee() {
+        addAndGetAllowedAddress();
         setGetRoute();
 
-        contextMock.when(() -> Context.call(any(Address.class), eq("balanceOf"), any(Address.class))).thenReturn(BigInteger.TEN);
-        contextMock.when(() -> Context.call(any(Address.class), eq("getContractAddress"), eq("baln"))).thenReturn(baln.getAddress());
-        contextMock.when(() -> Context.call(any(Address.class), eq("getContractAddress"), eq("dividends"))).thenReturn(dividends.getAddress());
-        contextMock.when(() -> Context.call(any(Address.class), eq("getContractAddress"), eq("dex"))).thenReturn(dex.getAddress());
-        contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class), any(BigInteger.class), any(byte[].class))).thenReturn("done");
-
-        feeHandler.invoke(owner, "route_contract_balances");
-
-        contextMock.verify(() -> Context.call(any(Address.class), eq("transfer"), eq(dex.getAddress()), any(BigInteger.class), any(byte[].class)));
-    }
-
-    @Test
-    void route_contract_balances_with_no_fee() {
-        feeHandler.invoke(owner, "addAllowedAddress", bnusd.getAddress());
-        setGetRoute();
         contextMock.when(() -> Context.call(any(Address.class), eq("balanceOf"), any(Address.class))).thenReturn(BigInteger.ZERO);
-
         Executable contractCall = this::routeContractBalances;
-
         String expectedErrorMessage = TAG + ": No fees on the contract.";
         expectErrorMessage(contractCall, expectedErrorMessage);
     }
