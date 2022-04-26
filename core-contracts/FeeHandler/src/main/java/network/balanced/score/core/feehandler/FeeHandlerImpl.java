@@ -54,8 +54,8 @@ public class FeeHandlerImpl implements FeeHandler {
     private final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
     private final VarDB<Boolean> enabled = Context.newVarDB(ENABLED, Boolean.class);
     private final ArrayDB<Address> allowedAddress = Context.newArrayDB(ALLOWED_ADDRESS, Address.class);
-    private final VarDB<BigInteger> nextAllowedAddressesIndex = Context.newVarDB(NEXT_ALLOWED_ADDRESS_INDEX,
-            BigInteger.class);
+    private final VarDB<Integer> nextAllowedAddressesIndex = Context.newVarDB(NEXT_ALLOWED_ADDRESS_INDEX,
+            Integer.class);
     private final VarDB<Address> admin = Context.newVarDB(ADMIN_ADDRESS, Address.class);
 
     public FeeHandlerImpl(Address _governance) {
@@ -191,22 +191,22 @@ public class FeeHandlerImpl implements FeeHandler {
         Address sender = Context.getCaller();
         if (Arrays.equals(lastTxhash.getOrDefault(new byte[0]), Context.getTransactionHash())) {
             return;
-        } else if (!timeForFeeProcessing(sender)) {
+        } else if (!isTimeForFeeProcessing(sender)) {
             return;
         }
 
         lastTxhash.set(Context.getTransactionHash());
+        lastFeeProcessingBlock.set(sender, BigInteger.valueOf(Context.getBlockHeight()));
+
         for (int i = 0; i < acceptedDividendsTokens.size(); i++) {
-            if (acceptedDividendsTokens.get(i) == sender) {
+            if (acceptedDividendsTokens.get(i).equals(sender)) {
                 transferToken(sender, getContractAddress("dividends"), getTokenBalance(sender), new byte[0]);
             }
         }
-
-        lastFeeProcessingBlock.set(sender, BigInteger.valueOf(Context.getBlockHeight()));
     }
 
     @External
-    public void add_allowed_address(Address address) {
+    public void addAllowedAddress(Address address) {
         onlyOwner();
         isContract(address);
         allowedAddress.add(address);
@@ -224,40 +224,38 @@ public class FeeHandlerImpl implements FeeHandler {
         return addressList;
     }
 
+    @External(readonly = true)
+    public int getNextAllowedAddressIndex() {
+        return nextAllowedAddressesIndex.get();
+    }
+
     @External
     public void route_contract_balances() {
-        BigInteger startingIndex = nextAllowedAddressesIndex.getOrDefault(BigInteger.ZERO);
-        BigInteger currentIndex = startingIndex;
-        boolean loopFlag = false;
-        Address address;
-        BigInteger balance;
+        int cursor = nextAllowedAddressesIndex.getOrDefault(0);
 
-        BigInteger allowedAddressLength = BigInteger.valueOf(allowedAddress.size());
-        Context.require(allowedAddressLength.signum() > 0, TAG + ": No allowed addresses.");
-        while (true) {
-            if (currentIndex.compareTo(allowedAddressLength) >= 0) {
-                currentIndex = BigInteger.ZERO;
-            }
+        Address tokenToRoute = null;
+        BigInteger feeCollectedInFeeHandler = null;
 
-            address = allowedAddress.get(currentIndex.intValue());
-            balance = getTokenBalance(address);
+        int totalAllowedAddress = allowedAddress.size();
+        Context.require(totalAllowedAddress > 0, TAG + ": No allowed addresses.");
 
-            if (balance.compareTo(BigInteger.ZERO) > 0) {
+        // Search for allowed token with balance > 0
+        for (int i = 0; i < totalAllowedAddress; i++) {
+            int actualIndex = (i + cursor) % totalAllowedAddress;
+            tokenToRoute = allowedAddress.get(actualIndex);
+            feeCollectedInFeeHandler = getTokenBalance(tokenToRoute);
+            if (feeCollectedInFeeHandler.compareTo(BigInteger.ZERO) > 0) {
+                nextAllowedAddressesIndex.set((actualIndex + 1) % totalAllowedAddress);
                 break;
             }
-
-            Context.require(!(loopFlag && (startingIndex.equals(currentIndex))), "No fees on the contract.");
-            currentIndex = currentIndex.add(BigInteger.ONE);
-            if (!loopFlag) {
-                loopFlag = true;
+            if (i == totalAllowedAddress - 1) {
+                throw new UserRevertException(TAG + ": No fees on the contract.");
             }
         }
 
-        nextAllowedAddressesIndex.set(currentIndex.add(BigInteger.ONE));
-
         JsonArray path;
         String BALN_CONTRACT = "baln";
-        String route = routes.at(address).get(getContractAddress(BALN_CONTRACT));
+        String route = routes.at(tokenToRoute).get(getContractAddress(BALN_CONTRACT));
         if (route == null) {
             path = new JsonArray();
         } else {
@@ -268,10 +266,10 @@ public class FeeHandlerImpl implements FeeHandler {
         String DIVIDENDS_CONTRACT = "dividends";
         String DEX_CONTRACT = "dex";
         if (path.size() > 0) {
-            transferToken(address, getContractAddress(ROUTER_CONTRACT), balance,
+            transferToken(tokenToRoute, getContractAddress(ROUTER_CONTRACT), feeCollectedInFeeHandler,
                     createDataFieldRouter(getContractAddress(DIVIDENDS_CONTRACT), path));
         } else {
-            transferToken(address, getContractAddress(DEX_CONTRACT), balance,
+            transferToken(tokenToRoute, getContractAddress(DEX_CONTRACT), feeCollectedInFeeHandler,
                     createDataFieldDex(getContractAddress(BALN_CONTRACT), getContractAddress(DIVIDENDS_CONTRACT)));
         }
     }
@@ -296,7 +294,7 @@ public class FeeHandlerImpl implements FeeHandler {
         return (Address) Context.call(governance.get(), "getContractAddress", _contract);
     }
 
-    private boolean timeForFeeProcessing(Address _token) {
+    private boolean isTimeForFeeProcessing(Address _token) {
         if (enabled.getOrDefault(Boolean.FALSE).equals(false)) {
             return false;
         }
@@ -304,11 +302,8 @@ public class FeeHandlerImpl implements FeeHandler {
         BigInteger blockHeight = BigInteger.valueOf(Context.getBlockHeight());
         BigInteger lastConversion = lastFeeProcessingBlock.getOrDefault(_token, BigInteger.ZERO);
         BigInteger targetBlock = lastConversion.add(feeProcessingInterval.getOrDefault(BigInteger.ZERO));
-        if (lastConversion.signum() < 0) {
-            return true;
-        } else {
-            return blockHeight.compareTo(targetBlock) >= 0;
-        }
+
+        return blockHeight.compareTo(targetBlock) >= 0;
     }
 
     private BigInteger getTokenBalance(Address _token) {

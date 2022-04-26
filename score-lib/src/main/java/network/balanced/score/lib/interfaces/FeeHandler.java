@@ -60,10 +60,13 @@ public interface FeeHandler extends Name, GovernanceAddress, AdminAddress, Token
     BigInteger getFeeProcessingInterval();
 
     @External
-    void add_allowed_address(Address address);
+    void addAllowedAddress(Address address);
 
     @External(readonly = true)
     List<Address> get_allowed_address(int offset);
+
+    @External(readonly = true)
+    int getNextAllowedAddressIndex();
 
     @External
     void route_contract_balances();
