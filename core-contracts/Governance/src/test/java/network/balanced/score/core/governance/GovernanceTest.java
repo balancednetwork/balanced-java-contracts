@@ -232,8 +232,8 @@ public class GovernanceTest extends GovernanceTestBase {
             .add(enableDividends);
 
         executeVoteWithActions(actions.toString());
-        // verify(dividends.mock).setDistributionActivationStatus(true);
-        // verify(rewards.mock).addNewDataSource("test", Address.fromString("cx66d4d90f5f113eba575bf793570135f9b10cece1"));
+        verify(dividends.mock).setDistributionActivationStatus(true);
+        verify(rewards.mock).addNewDataSource("test", Address.fromString("cx66d4d90f5f113eba575bf793570135f9b10cece1"));
 
     }
 

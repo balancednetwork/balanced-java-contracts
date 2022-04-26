@@ -14,40 +14,58 @@ public class VoteActions {
           switch (method) {
                case "enableDividends":
                     gov.enableDividends();
+                    break;
                case "addNewDataSource":
                     gov.addNewDataSource(params.get("_data_source_name").asString(), params.get("_contract_address").asString());
+                    break;
                case "updateBalTokenDistPercentage":
                     gov.updateBalTokenDistPercentage(parseDistPercentage(params.get("_recipient_list").asArray()));
+                    break;
                case "setMiningRatio":
                     gov.setMiningRatio(BigInteger.valueOf(params.get("_value").asInt()));
+                    break;
                case "setLockingRatio":
                     gov.setLockingRatio(BigInteger.valueOf(params.get("_value").asInt()));
+                    break;
                case "setOriginationFee":
                     gov.setOriginationFee(BigInteger.valueOf(params.get("_fee").asInt()));
+                    break;
                case "setLiquidationRatio":
                     gov.setLiquidationRatio(BigInteger.valueOf(params.get("_ratio").asInt()));
+                    break;
                case "setRetirementBonus":
                     gov.setRetirementBonus(BigInteger.valueOf(params.get("_points").asInt()));
+                    break;
                case "setLiquidationReward":
                     gov.setLiquidationReward(BigInteger.valueOf(params.get("_points").asInt()));
+                    break;
                case "setMaxRetirePercent":
                     gov.setMaxRetirePercent(BigInteger.valueOf(params.get("_value").asInt()));
+                    break;
                case "setRebalancingThreshold":
                     gov.setRebalancingThreshold(BigInteger.valueOf(params.get("_value").asInt()));
+                    break;
                case "setVoteDuration":
                     gov.setVoteDuration(BigInteger.valueOf(params.get("_duration").asInt()));
+                    break;
                case "setQuorum":
                     gov.setQuorum(BigInteger.valueOf(params.get("quorum").asInt()));
+                    break;
                case "setVoteDefinitionFee":
                     gov.setVoteDefinitionFee(BigInteger.valueOf(params.get("fee").asInt()));
+                    break;
                case "setBalnVoteDefinitionCriterion":
                     gov.setBalnVoteDefinitionCriterion(BigInteger.valueOf(params.get("percentage").asInt()));
+                    break;
                case "setDividendsCategoryPercentage":
                     gov.setDividendsCategoryPercentage(parseDistPercentage(params.get("_dist_list").asArray()));
+                    break;
                case "daoDisburse":
                     gov.daoDisburse(params.get("_recipient").asString(), parseDisbursement(params.get("_amounts").asArray()));
+                    break;
                case "addAcceptedTokens":
                     gov.addAcceptedTokens(params.get("_token").asString());
+                    break;
         }
     }
 
