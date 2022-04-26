@@ -386,7 +386,7 @@ public class GovernanceImpl {
             return;
         }
         try {
-            _executeVoteActions(proposal);
+            executeVoteActions(proposal);
             proposal.status.set(ProposalStatus.STATUS[ProposalStatus.EXECUTED]);
         } catch (Exception e) {
             proposal.status.set(ProposalStatus.STATUS[ProposalStatus.FAILED_EXECUTION]);
@@ -1046,8 +1046,7 @@ public class GovernanceImpl {
         proposal.feeRefunded.set(true);
     }
 
-    private void _executeVoteActions(ProposalDB proposal) {
-        
+    private void executeVoteActions(ProposalDB proposal) {
         JsonArray actionsList = Json.parse(proposal.actions.get()).asArray();
         for (int i = 0; i < actionsList.size(); i++){
             JsonValue action = actionsList.get(i);
