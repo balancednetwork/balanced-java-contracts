@@ -72,16 +72,18 @@ class IRC2BurnableTest extends TestBase {
         expectErrorMessage(negativeAmountBurn, expectedErrorMessage);
 
         expectedErrorMessage = name + ": Insufficient Balance";
-        Executable burnMoreThanBalance = () -> tokenScore.invoke(owner, "burnFrom", alice.getAddress(), ICX.add(BigInteger.ONE));
+        Executable burnMoreThanBalance = () -> tokenScore.invoke(owner, "burnFrom", alice.getAddress(),
+                ICX.add(BigInteger.ONE));
         expectErrorMessage(burnMoreThanBalance, expectedErrorMessage);
 
         BigInteger beforeTotalSupply = (BigInteger) tokenScore.call("totalSupply");
-        tokenScore.invoke(alice, "burn", burnAmount);
+        tokenScore.invoke(owner, "burnFrom", alice.getAddress(), burnAmount);
         assertEquals(beforeBalance.subtract(burnAmount), tokenScore.call("balanceOf", alice.getAddress()));
         assertEquals(beforeTotalSupply.subtract(burnAmount), tokenScore.call("totalSupply"));
         verify(tokenSpy).Transfer(alice.getAddress(), IRC2Base.ZERO_ADDRESS, burnAmount, "burn".getBytes());
 
-        tokenScore.invoke(owner, "burnFrom", alice.getAddress(), burnAmount);
-        assertEquals(beforeBalance.subtract(burnAmount.multiply(BigInteger.TWO)), tokenScore.call("balanceOf", alice.getAddress()));
+        beforeBalance = (BigInteger) tokenScore.call("balanceOf", owner.getAddress());
+        tokenScore.invoke(owner, "burn", burnAmount);
+        assertEquals(beforeBalance.subtract(burnAmount), tokenScore.call("balanceOf", owner.getAddress()));
     }
 }
