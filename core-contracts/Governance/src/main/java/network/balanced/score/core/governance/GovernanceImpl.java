@@ -18,6 +18,7 @@ package network.balanced.score.core.governance;
 
 import score.Address;
 import score.Context;
+import score.UserRevertException;
 import score.VarDB;
 import score.annotation.External;
 import score.annotation.Payable;
@@ -39,20 +40,7 @@ import static network.balanced.score.core.governance.GovernanceConstants.*;
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Math.pow;
 
-import network.balanced.score.core.governance.interfaces.LoansScoreInterface;
-import network.balanced.score.core.governance.interfaces.DexScoreInterface;
-import network.balanced.score.core.governance.interfaces.RewardsScoreInterface;
-import network.balanced.score.core.governance.interfaces.DividendsScoreInterface;
-import network.balanced.score.core.governance.interfaces.DaofundScoreInterface;
-import network.balanced.score.core.governance.interfaces.AssetScoreInterface;
-import network.balanced.score.core.governance.interfaces.AssetScoreInterface;
-import network.balanced.score.core.governance.interfaces.StakingScoreInterface;
-import network.balanced.score.core.governance.interfaces.BnUSDScoreInterface;
-import network.balanced.score.core.governance.interfaces.BalnScoreInterface;
-import network.balanced.score.core.governance.interfaces.BwtScoreInterface;
-import network.balanced.score.core.governance.interfaces.RebalancingScoreInterface;
-import network.balanced.score.core.governance.interfaces.FeehandlerScoreInterface;
-import network.balanced.score.core.governance.interfaces.StakedLpScoreInterface;
+import network.balanced.score.core.governance.interfaces.*;
 
 
 import network.balanced.score.lib.structs.BalancedAddresses;
@@ -105,18 +93,12 @@ public class GovernanceImpl {
     @External
     public void setVoteDuration(BigInteger duration) {
         onlyOwner();
-        voteDuration.set(duration);
+        _setVoteDuration(duration);
     }
 
     @External(readonly = true)
     public BigInteger getVoteDuration() {
         return voteDuration.get();
-    }
-
-    @External
-    public void set_zero_hour_dev(BigInteger _hour) {
-        Context.require(false);
-        onlyOwner();
     }
 
     @External
@@ -164,10 +146,7 @@ public class GovernanceImpl {
     @External
     public void setQuorum(BigInteger quorum) {
         onlyOwner();
-        Context.require(quorum.compareTo(BigInteger.ZERO) > 0,"Quorum must be between 0 and 100.");
-        Context.require(quorum.compareTo(BigInteger.valueOf(100)) < 0,"Quorum must be between 0 and 100.");
-
-        this.quorum.set(quorum);
+        _setQuorum(quorum);
     }
 
     @External(readonly = true)
@@ -178,7 +157,7 @@ public class GovernanceImpl {
     @External
     public void setVoteDefinitionFee(BigInteger fee) {
         onlyOwner();
-        bnusdVoteDefinitionFee.set(fee);
+        _setVoteDefinitionFee(fee);
     }
 
     @External(readonly = true)
@@ -189,10 +168,7 @@ public class GovernanceImpl {
     @External
     public void setBalnVoteDefinitionCriterion(BigInteger percentage) {
         onlyOwner();
-        Context.require(percentage.compareTo(BigInteger.ZERO) >= 0, "Basis point must be between 0 and 10000.");
-        Context.require(percentage.compareTo(BigInteger.valueOf(10000)) <= 0, "Basis point must be between 0 and 10000.");
-   
-        balnVoteDefinitionCriterion.set(percentage);
+        _setBalnVoteDefinitionCriterion(percentage);
     }
 
     @External(readonly = true)
@@ -230,12 +206,12 @@ public class GovernanceImpl {
         BigInteger voteIndex = ProposalDB.getProposalId(name);
         Context.require(voteIndex.equals(BigInteger.ZERO), "Poll name " + name + " has already been used.");
         Context.require(checkBalnVoteCriterion(Context.getCaller()), "User needs at least " + balnVoteDefinitionCriterion.get().divide(BigInteger.valueOf(100)) + "% of total baln supply staked to define a vote.");
-    
+        verifyActions(actions);
   
         BnUSDScoreInterface bnUSD = new BnUSDScoreInterface(Addresses.get("bnUSD"));
         bnUSD.govTransfer(Context.getCaller(), Addresses.get("daofund"), bnusdVoteDefinitionFee.get(), new byte[0]);
-        JsonArray actionsParsed = Json.parse(actions).asArray();
-        Context.require(actionsParsed.size() <= maxActions(), TAG + ": Only " + maxActions() + " actions are allowed");
+        
+
         ProposalDB.createProposal(
                 name,
                 description,
@@ -248,6 +224,18 @@ public class GovernanceImpl {
                 actions,
                 bnusdVoteDefinitionFee.get()
         );
+    }
+
+    @External
+    public void tryExecuteActions(String actions) {
+        try {
+            JsonArray actionsParsed = Json.parse(actions).asArray();
+            Context.require(actionsParsed.size() <= maxActions(), TAG + ": Only " + maxActions() + " actions are allowed");
+            executeVoteActions(actions);
+            throw new SuccsesfulVoteExecution();
+        } catch (SuccsesfulVoteExecution e) {
+            throw new UserRevertException();
+        }
     }
 
     @External(readonly = true)
@@ -275,9 +263,10 @@ public class GovernanceImpl {
     @External
     public void castVote(BigInteger vote_index, boolean vote) {
         ProposalDB proposal = new ProposalDB(vote_index);
-        Context.require(getDay().compareTo(proposal.startSnapshot.get()) < 0 ||
-                        getDay().compareTo(proposal.endSnapshot.get()) >= 0 || 
-                        !proposal.active.get(),
+        Context.require((vote_index.compareTo(BigInteger.ZERO)  > 0 &&
+                        getDay().compareTo(proposal.startSnapshot.getOrDefault(BigInteger.ZERO)) >= 0 &&
+                        getDay().compareTo(proposal.endSnapshot.getOrDefault(BigInteger.ZERO)) < 0) && 
+                        proposal.active.getOrDefault(false),
                         TAG + " :This is not an active poll.");
 
         Address from = Context.getCaller();
@@ -330,7 +319,7 @@ public class GovernanceImpl {
         }
 
         proposal.totalForVotes.set(totalFor);
-        proposal.totalAgainstVotes.set(totalAgainstVotes);
+        proposal.totalAgainstVotes.set(totalAgainst);
 
         VoteCast(proposal.name.get(), vote, from, totalVote, totalFor, totalAgainst);
     }
@@ -350,17 +339,17 @@ public class GovernanceImpl {
 
     @External
     public void evaluateVote(BigInteger vote_index) {
-        Context.require(vote_index.compareTo(BigInteger.ONE) > 0 || 
+        Context.require(vote_index.compareTo(BigInteger.ZERO) > 0 && 
                         vote_index.compareTo(ProposalDB.getProposalCount()) <= 0,
-                        TAG + " :There is no proposal with index " + vote_index);
+                        TAG + ": There is no proposal with index " + vote_index);
 
         ProposalDB proposal = new ProposalDB(vote_index);
         BigInteger endSnap = proposal.endSnapshot.get();
         String actions = proposal.actions.get();
         BigInteger majority = proposal.majority.get();
 
-        Context.require(getDay().compareTo(endSnap) >= 0, TAG + " :Voting period has not ended.");
-        Context.require(proposal.active.get(), TAG + " :This proposal is not active");
+        Context.require(getDay().compareTo(endSnap) >= 0, TAG + ": Voting period has not ended.");
+        Context.require(proposal.active.get(), TAG + ": This proposal is not active");
        
        
         Map<String, Object> result = checkVote(vote_index);
@@ -379,14 +368,14 @@ public class GovernanceImpl {
         if (percentageFor.compareTo(percentageAgainst) <= 0) {
             proposal.status.set(ProposalStatus.STATUS[ProposalStatus.DEFEATED]);
             return;
-        }
-        if (actions.equals("[]")){
+        } else if (actions.equals("[]")){
             proposal.status.set(ProposalStatus.STATUS[ProposalStatus.SUCCEEDED]);
             _refundVoteDefinitionFee(proposal);
             return;
         }
+
         try {
-            executeVoteActions(proposal);
+            executeVoteActions(proposal.actions.get());
             proposal.status.set(ProposalStatus.STATUS[ProposalStatus.EXECUTED]);
         } catch (Exception e) {
             proposal.status.set(ProposalStatus.STATUS[ProposalStatus.FAILED_EXECUTION]);
@@ -413,8 +402,8 @@ public class GovernanceImpl {
         BigInteger nrForVotes = BigInteger.ZERO;
         BigInteger nrAgainstVotes = BigInteger.ZERO;
         if (!totalBaln.equals(BigInteger.ZERO)) {
-            nrForVotes = proposal.forVotersCount.get().multiply(EXA).divide(totalBaln);
-            nrAgainstVotes = proposal.againstVotersCount.get().multiply(EXA).divide(totalBaln);
+            nrForVotes = proposal.totalForVotes.getOrDefault(BigInteger.ZERO).multiply(EXA).divide(totalBaln);
+            nrAgainstVotes = proposal.totalAgainstVotes.getOrDefault(BigInteger.ZERO).multiply(EXA).divide(totalBaln);
         }
 
         return Map.ofEntries(
@@ -515,8 +504,8 @@ public class GovernanceImpl {
         Address rewardsAddress = Addresses.get("rewards");
         Address loansAddress = Addresses.get("loans");
 
-        AssetScoreInterface bnsud = new AssetScoreInterface(bnUSDAddress);
-        AssetScoreInterface sicx = new AssetScoreInterface(sICXAddress);
+        BnUSDScoreInterface bnsud = new BnUSDScoreInterface(bnUSDAddress);
+        SicxScoreInterface sicx = new SicxScoreInterface(sICXAddress);
         StakingScoreInterface staking = new StakingScoreInterface(stakingAddress);
         LoansScoreInterface loans = new LoansScoreInterface(loansAddress);
         DexScoreInterface dex = new DexScoreInterface(dexAddress);
@@ -698,8 +687,7 @@ public class GovernanceImpl {
     @External
     public void setRebalancingThreshold(BigInteger _value) {
         onlyOwner();
-        RebalancingScoreInterface rebalance = new RebalancingScoreInterface(rebalancing.get());
-        rebalance.setPriceDiffThreshold(_value);
+        _setRebalancingThreshold(_value);
     }
 
     @External
@@ -748,9 +736,8 @@ public class GovernanceImpl {
         onlyOwner();
         Address loansAddress = Addresses.get("loans");
         LoansScoreInterface loans = new LoansScoreInterface(loansAddress);
-        AssetScoreInterface asset = new AssetScoreInterface(_token_address);
         loans.addAsset(_token_address, _active, _collateral);
-        asset.setAdmin(loansAddress);
+        Context.call(_token_address, "setAdmin", loansAddress);
     }
 
     @External
@@ -763,8 +750,7 @@ public class GovernanceImpl {
     @External
     public void addNewDataSource(String _data_source_name, String _contract_address) {
         onlyOwner();
-        RewardsScoreInterface rewards = new RewardsScoreInterface(Addresses.get("rewards"));
-        rewards.addNewDataSource(_data_source_name, Address.fromString(_contract_address));
+        _addNewDataSource(_data_source_name, _contract_address);
     }
 
     @External
@@ -890,10 +876,9 @@ public class GovernanceImpl {
     @External
     public void addAcceptedTokens(String _token) {
         onlyOwner();
-        Address token = Address.fromString(_token);
-        DividendsScoreInterface dividends = new DividendsScoreInterface(Addresses.get("dividends"));
-        dividends.addAcceptedTokens(token);
+        _addAcceptedTokens(_token);
     }
+
     @External
     public void setAssetOracle(String _symbol, Address _address) {
         onlyOwner();
@@ -902,7 +887,7 @@ public class GovernanceImpl {
         Context.require(assetAddresses.containsKey(_symbol), TAG + ": " + _symbol + " is not a supported asset in Balanced.");
 
         Address token = assetAddresses.get(_symbol);
-        AssetScoreInterface asset = new AssetScoreInterface(token);
+        Setter asset = (Setter)  Addresses.getInterface(_symbol);
         asset.setOracle(_address);
     }
 
@@ -914,7 +899,7 @@ public class GovernanceImpl {
         Context.require(assetAddresses.containsKey(_symbol), TAG + ": " + _symbol + " is not a supported asset in Balanced.");
 
         Address token = assetAddresses.get(_symbol);
-        AssetScoreInterface asset = new AssetScoreInterface(token);
+        Asset asset = (Asset)  Addresses.getInterface(_symbol);
         asset.setOracleName(_name);
     }
 
@@ -926,7 +911,7 @@ public class GovernanceImpl {
         Context.require(assetAddresses.containsKey(_symbol), TAG + ": " + _symbol + " is not a supported asset in Balanced.");
 
         Address token = assetAddresses.get(_symbol);
-        AssetScoreInterface asset = new AssetScoreInterface(token);
+        Asset asset = (Asset) Addresses.getInterface(_symbol);
         asset.setMinInterval(_interval);
     }
 
@@ -968,8 +953,7 @@ public class GovernanceImpl {
     @External
     public void setMaxRetirePercent(BigInteger _value) {
         onlyOwner();
-        LoansScoreInterface loans = new LoansScoreInterface(Addresses.get("loans"));
-        loans.setMaxRetirePercent(_value);
+        _setMaxRetirePercent(_value);
     }
 
     @External
@@ -1046,13 +1030,23 @@ public class GovernanceImpl {
         proposal.feeRefunded.set(true);
     }
 
-    private void executeVoteActions(ProposalDB proposal) {
-        JsonArray actionsList = Json.parse(proposal.actions.get()).asArray();
+    private void verifyActions(String actions) {
+        try {
+            Context.call(Context.getAddress(), "tryExecuteActions", actions);
+        } catch (UserRevertException e) {
+            // success
+        }
+    }
+
+    private void executeVoteActions(String actions){
+        JsonArray actionsList = Json.parse(actions).asArray();
         for (int i = 0; i < actionsList.size(); i++){
             JsonValue action = actionsList.get(i);
             JsonArray parsedAction = action.asArray();
+
             String method = parsedAction.get(0).asString();
             JsonObject parameters = parsedAction.get(1).asObject();
+
             VoteActions.execute(this, method, parameters);
         }
     }
@@ -1124,6 +1118,50 @@ public class GovernanceImpl {
          dex.setIcxBalnFee(_value);
     }
 
+    public void _setVoteDuration(BigInteger duration) {
+        voteDuration.set(duration);
+    }
+
+    public void _setVoteDefinitionFee(BigInteger fee) {
+        bnusdVoteDefinitionFee.set(fee);
+    }
+
+    public void _setQuorum(BigInteger quorum) {
+        Context.require(quorum.compareTo(BigInteger.ZERO) > 0,"Quorum must be between 0 and 100.");
+        Context.require(quorum.compareTo(BigInteger.valueOf(100)) < 0,"Quorum must be between 0 and 100.");
+
+        this.quorum.set(quorum);
+    }
+
+    public void _setBalnVoteDefinitionCriterion(BigInteger percentage) {
+        Context.require(percentage.compareTo(BigInteger.ZERO) >= 0, "Basis point must be between 0 and 10000.");
+        Context.require(percentage.compareTo(BigInteger.valueOf(10000)) <= 0, "Basis point must be between 0 and 10000.");
+   
+        balnVoteDefinitionCriterion.set(percentage);
+    }
+
+    public void _addNewDataSource(String _data_source_name, String _contract_address) {
+        RewardsScoreInterface rewards = new RewardsScoreInterface(Addresses.get("rewards"));
+        rewards.addNewDataSource(_data_source_name, Address.fromString(_contract_address));
+    }
+
+    public void _addAcceptedTokens(String _token) {
+        Address token = Address.fromString(_token);
+        DividendsScoreInterface dividends = new DividendsScoreInterface(Addresses.get("dividends"));
+        dividends.addAcceptedTokens(token);
+    }
+
+    public void _setMaxRetirePercent(BigInteger _value) {
+        LoansScoreInterface loans = new LoansScoreInterface(Addresses.get("loans"));
+        loans.setMaxRetirePercent(_value);
+    }
+
+
+    public void _setRebalancingThreshold(BigInteger _value) {
+        RebalancingScoreInterface rebalance = new RebalancingScoreInterface(rebalancing.get());
+        rebalance.setPriceDiffThreshold(_value);
+    }
+    
     @EventLog(indexed = 2)
     void VoteCast(String vote_name, boolean vote, Address voter, BigInteger stake, BigInteger total_for, BigInteger total_against){}
 }

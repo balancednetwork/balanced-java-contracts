@@ -41,6 +41,7 @@ include(':StakedLP')
 project(':StakedLP').projectDir = file("core-contracts/StakedLP")
 
 include 'score-lib'
+include 'unittest'
 include 'test-lib'
 
 include(':WorkerToken')

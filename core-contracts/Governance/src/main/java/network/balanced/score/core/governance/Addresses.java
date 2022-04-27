@@ -57,9 +57,9 @@ public class Addresses {
             case "daofund":
                 return new DaofundScoreInterface(get(key));
             case "oracle":
-                return new AssetScoreInterface(get(key));
+                return new OracleScoreInterface(get(key));
             case "sicx":
-                return new AssetScoreInterface(get(key));
+                return new SicxScoreInterface(get(key));
             case "bnUSD":
                 return new BnUSDScoreInterface(get(key));
             case "baln":
@@ -76,7 +76,7 @@ public class Addresses {
                 return new StakedLpScoreInterface(get(key));
         }
 
-    return null;
+        return null;
     }
 
     public static void setAddresses(BalancedAddresses addresses) {
@@ -121,36 +121,32 @@ public class Addresses {
 
     public static void setAddress(String contract) {
         Context.require(ADDRESSES.containsKey(contract), contract + " is not defined in the address list");
-        for (String targetContract : ADDRESSES.keySet()) {
-            if (ADDRESSES.get(targetContract).contains(contract)) {
-                try {
-                    setAddress(targetContract, contract);
-                } catch (Exception e) {}
-            }
+        for (String contractToBeSet : ADDRESSES.get(contract)) {
+                setAddress(contract, contractToBeSet);
         }
     }
 
     public static void setContractAddresses() {
         for (String targetContract : ADDRESSES.keySet()) {
             for (String contract : ADDRESSES.get(targetContract)) {
-                try {
-                    setAddress(targetContract, contract);
-                } catch (Exception e) {}
+                setAddress(targetContract, contract);
             }
-            
         }
     }
 
     public static void setAdmins() {
+        Admin adminInterface;
         for (String targetContract : ADMIN_ADDRESSES.keySet()) {
             String contract = ADMIN_ADDRESSES.get(targetContract);
-            Context.call(get(targetContract), "setAdmin", get(contract));        
+            adminInterface = (Admin) getInterface(targetContract);
+            adminInterface.setAdmin(get(contract));
         }
     }
 
     public static void setAddress(String target, String contractToBeSet) {
-        SetterScoreInterface setterInterface = (SetterScoreInterface) getInterface(target);
-        switch(target) {
+        Setter setterInterface = (Setter) getInterface(target);
+        //score-lib/src/main/java/network/balanced/score/lib/interfaces/addresses for each switch to set addresses when available
+        switch(contractToBeSet) {
             case "loans":
                 setterInterface.setLoans(Addresses.get(contractToBeSet));
                 break;

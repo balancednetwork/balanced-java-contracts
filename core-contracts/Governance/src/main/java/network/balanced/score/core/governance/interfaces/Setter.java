@@ -5,9 +5,7 @@ import score.Address;
 import foundation.icon.score.client.ScoreInterface;
 
 @ScoreInterface
-public interface Setter {
-    void setAdmin(Address _address);
-
+public interface Setter extends Admin {
     void setLoans(Address _address);
 
     void setDex(Address _address);
