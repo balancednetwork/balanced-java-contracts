@@ -21,8 +21,6 @@ import score.Context;
 
 import java.math.BigInteger;
 
-import static network.balanced.score.lib.utils.Check.only;
-import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.Math.pow;
 
 public class IRC2PresetFixedSupply extends IRC2Base {
@@ -39,5 +37,4 @@ public class IRC2PresetFixedSupply extends IRC2Base {
             mint(caller, totalSupply);
         }
     }
-
 }
