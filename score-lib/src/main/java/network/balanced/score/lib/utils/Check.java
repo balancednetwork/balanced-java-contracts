@@ -40,4 +40,8 @@ public class Check {
         Context.require(address.isContract(), "Address Check: Address provided is an EOA address. A contract address " +
                 "is required.");
     }
+
+    public static void isOn(VarDB<Boolean> scoreAddressOn){
+        Context.require(scoreAddressOn.get().equals(true), "NotLaunched: Function cannot be called before the DEX is turned on");
+    }
 } 

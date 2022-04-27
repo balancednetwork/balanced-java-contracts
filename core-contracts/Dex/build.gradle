@@ -18,11 +18,14 @@ dependencies {
     // Use JUnit Jupiter for testing.
     testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+    testImplementation project(':test-lib')
+    implementation project(':score-lib')
+
 }
 
 
 optimizedJar {
-    mainClassName = 'network.balanced.score.core.Dex.Dex'
+    mainClassName = 'network.balanced.score.core.dex.DexImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
         configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
