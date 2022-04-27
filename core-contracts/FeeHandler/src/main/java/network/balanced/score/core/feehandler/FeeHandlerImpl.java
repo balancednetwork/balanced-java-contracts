@@ -226,7 +226,7 @@ public class FeeHandlerImpl implements FeeHandler {
 
     @External(readonly = true)
     public int getNextAllowedAddressIndex() {
-        return nextAllowedAddressesIndex.get();
+        return nextAllowedAddressesIndex.getOrDefault(0);
     }
 
     @External
