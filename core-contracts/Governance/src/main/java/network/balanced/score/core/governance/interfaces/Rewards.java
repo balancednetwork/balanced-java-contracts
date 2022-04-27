@@ -9,7 +9,7 @@ import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.structs.DistributionPercentage;
 
 @ScoreInterface
-interface Rewards extends Setter {
+public interface Rewards extends Setter {
     void setDay(BigInteger _day);;
 
     void updateBalTokenDistPercentage(DistributionPercentage[] _recipient_list);

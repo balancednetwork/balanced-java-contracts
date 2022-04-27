@@ -64,11 +64,11 @@ public class GovernanceTestBase extends UnitTest {
     protected MockContract<DexScoreInterface> dex;
     protected MockContract<StakingScoreInterface> staking;
     protected MockContract<RewardsScoreInterface> rewards;
-    protected final Account reserve = Account.newScoreAccount(scoreCount++);
+    protected MockContract<ReserveScoreInterface> reserve;
     protected MockContract<DividendsScoreInterface> dividends; 
-    protected final Account daofund = Account.newScoreAccount(scoreCount++);
-    protected final Account oracle = Account.newScoreAccount(scoreCount++);
-    protected MockContract<AssetScoreInterface> sicx;
+    protected MockContract<DaofundScoreInterface> daofund;
+    protected MockContract<OracleScoreInterface> oracle;
+    protected MockContract<SicxScoreInterface> sicx;
     protected MockContract<BnUSDScoreInterface> bnUSD; 
     protected MockContract<BalnScoreInterface> baln;
     protected MockContract<BwtScoreInterface> bwt;
@@ -77,7 +77,7 @@ public class GovernanceTestBase extends UnitTest {
     protected MockContract<FeehandlerScoreInterface> feehandler;
     protected MockContract<StakedLpScoreInterface> stakedLp;
 
-    private BalancedAddresses balancedAddresses = new BalancedAddresses();
+    protected BalancedAddresses balancedAddresses = new BalancedAddresses();
 
     protected Score governance;
 
@@ -89,6 +89,13 @@ public class GovernanceTestBase extends UnitTest {
         return distribution;
     }
     
+    protected JsonObject createJsonDisbusment(String token, BigInteger amount) {
+        JsonObject distribution = new JsonObject()
+            .add("address", token)
+            .add("amount", amount.intValue());
+            
+        return distribution;
+    }
     private void setupAddresses() {
         balancedAddresses.loans = loans.getAddress();
         balancedAddresses.dex = dex.getAddress();
@@ -109,48 +116,150 @@ public class GovernanceTestBase extends UnitTest {
 
         governance.invoke(owner, "setAddresses", balancedAddresses);
         governance.invoke(owner, "setContractAddresses");
+
+        verify(loans.mock).setRewards(rewards.getAddress());
+        verify(loans.mock).setDividends(dividends.getAddress());
+        verify(loans.mock).setStaking(staking.getAddress());
+        verify(loans.mock).setReserve(reserve.getAddress());
+
+        verify(dex.mock).setRewards(rewards.getAddress());
+        verify(dex.mock).setDividends(dividends.getAddress());
+        verify(dex.mock).setStaking(staking.getAddress());
+        verify(dex.mock).setSicx(sicx.getAddress());
+        verify(dex.mock).setBnusd(bnUSD.getAddress());
+        verify(dex.mock).setBaln(baln.getAddress());
+        verify(dex.mock).setFeehandler(feehandler.getAddress());
+        verify(dex.mock).setStakedLp(stakedLp.getAddress());
+
+        verify(rewards.mock).setReserve(reserve.getAddress());
+        verify(rewards.mock).setBwt(bwt.getAddress());
+        verify(rewards.mock).setBaln(baln.getAddress());
+        verify(rewards.mock).setDaofund(daofund.getAddress());
+        verify(rewards.mock).setStakedLp(stakedLp.getAddress());
+       
+        verify(dividends.mock).setDex(dex.getAddress());
+        verify(dividends.mock).setLoans(loans.getAddress());
+        verify(dividends.mock).setDaofund(daofund.getAddress());
+        verify(dividends.mock).setBaln(baln.getAddress());
+
+        verify(daofund.mock).setLoans(loans.getAddress());
+
+        verify(reserve.mock).setLoans(loans.getAddress());
+        verify(reserve.mock).setBaln(baln.getAddress());
+        verify(reserve.mock).setSicx(sicx.getAddress());
+
+        verify(bnUSD.mock).setOracle(oracle.getAddress());
+
+        verify(baln.mock).setDividends(dividends.getAddress());
+        verify(baln.mock).setOracle(oracle.getAddress());
+        verify(baln.mock).setDex(dex.getAddress());
+        verify(baln.mock).setBnusd(bnUSD.getAddress());
+
+        verify(bwt.mock).setBaln(baln.getAddress());
+
+        verify(router.mock).setDex(dex.getAddress());
+        verify(router.mock).setSicx(sicx.getAddress());
+        verify(router.mock).setStaking(staking.getAddress());
+
+        verify(stakedLp.mock).setDex(dex.getAddress());
+        verify(stakedLp.mock).setRewards(rewards.getAddress());
     }
 
-    protected void executeVoteWithActions(String actions) {
+    protected BigInteger executeVoteWithActions(String actions) {
         sm.getBlock().increase(DAY);
         BigInteger day = (BigInteger) governance.call("getDay");
         String name = "test";
         String description = "test vote";
         BigInteger voteStart = day.add(BigInteger.TWO);
         BigInteger snapshot = day.add(BigInteger.ONE);
-        
-        when(baln.mock.totalSupply()).thenReturn(BigInteger.TEN);
-        when(baln.mock.stakedBalanceOf(owner.getAddress())).thenReturn(BigInteger.TEN);
 
-        when(baln.mock.totalSupply()).thenReturn(BigInteger.TEN);
-        when(baln.mock.stakedBalanceOf(owner.getAddress())).thenReturn(BigInteger.ONE);
+        when(baln.mock.totalSupply()).thenReturn(BigInteger.valueOf(20).multiply(ICX));
+        when(baln.mock.stakedBalanceOf(owner.getAddress())).thenReturn(BigInteger.TEN.multiply(ICX));
+        
+        governance.invoke(owner, "defineVote", name, description, voteStart, snapshot, actions);
+        BigInteger id = (BigInteger) governance.call("getVoteIndex", name);
+
+        when(baln.mock.totalStakedBalanceOfAt(snapshot)).thenReturn(BigInteger.valueOf(6).multiply(ICX));
+        when(dex.mock.totalBalnAt(BALNBNUSD_ID, snapshot, false)).thenReturn(BigInteger.TWO.multiply(ICX));
+        when(dex.mock.totalBalnAt(BALNSICX_ID, snapshot, false)).thenReturn(BigInteger.TWO.multiply(ICX));
+
+        Map<String, Object> vote = getVote(id);
+        goToDay((BigInteger)vote.get("start day"));
+
+        when(baln.mock.stakedBalanceOfAt(owner.getAddress(), snapshot)).thenReturn(BigInteger.valueOf(8).multiply(ICX));
+        governance.invoke(owner, "castVote", id, true);
+
+        goToDay((BigInteger)vote.get("end day"));
+        governance.invoke(owner, "evaluateVote", id);
+        
+        return id;
+    }
+
+    protected BigInteger createVoteWith(String name, BigInteger totalSupply, BigInteger forVotes, BigInteger againstVotes) {
+        Account forVoter = sm.createAccount();
+        Account aginstVoter = sm.createAccount();
+
+        BigInteger id = defineTestVoteWithName(name);
+        Map<String, Object> vote = getVote(id);
+
+        when(baln.mock.totalSupply()).thenReturn(totalSupply);
+        when(baln.mock.stakedBalanceOfAt(eq(forVoter.getAddress()), any(BigInteger.class))).thenReturn(forVotes);
+        when(baln.mock.stakedBalanceOfAt(eq(aginstVoter.getAddress()), any(BigInteger.class))).thenReturn(againstVotes);
+   
+        goToDay((BigInteger)vote.get("start day"));
+      
+        //Act
+        governance.invoke(forVoter, "castVote", id, true);
+        governance.invoke(aginstVoter, "castVote", id, false);
+
+        return id;
+    }
+
+    protected BigInteger defineTestVote() {
+        return defineTestVoteWithName("test");
+    }
+
+    protected BigInteger defineTestVoteWithName(String name) {
+        sm.getBlock().increase(DAY);
+        BigInteger day = (BigInteger) governance.call("getDay");
+        String description = "test vote";
+        String actions = "[]";
+        BigInteger voteStart = day.add(BigInteger.TWO);
+        BigInteger snapshot = day.add(BigInteger.ONE);
+
+        when(baln.mock.totalSupply()).thenReturn(BigInteger.TEN.multiply(ICX));
+        when(baln.mock.stakedBalanceOf(owner.getAddress())).thenReturn(BigInteger.ONE.multiply(ICX));
         
         governance.invoke(owner, "defineVote", name, description, voteStart, snapshot, actions);
 
         BigInteger id = (BigInteger) governance.call("getVoteIndex", name);
 
-        when(baln.mock.totalStakedBalanceOfAt(snapshot)).thenReturn(BigInteger.TEN);
-        when(dex.mock.totalBalnAt(BALNBNUSD_ID, snapshot, false)).thenReturn(BigInteger.TEN);
-        when(dex.mock.totalBalnAt(BALNSICX_ID, snapshot, false)).thenReturn(BigInteger.TEN);
-
-        sm.getBlock().increase(DAY);
-
-        when(baln.mock.stakedBalanceOfAt(owner.getAddress(), snapshot)).thenReturn(BigInteger.valueOf(8));
-        governance.invoke(owner, "castVote", id, true);
-
-        sm.getBlock().increase(DAY);
-        sm.getBlock().increase(DAY);
-
-        governance.invoke(owner, "evaluateVote", id);
+        when(baln.mock.totalStakedBalanceOfAt(snapshot)).thenReturn(BigInteger.valueOf(6).multiply(ICX));
+        when(dex.mock.totalBalnAt(BALNBNUSD_ID, snapshot, false)).thenReturn(BigInteger.TWO.multiply(ICX));
+        when(dex.mock.totalBalnAt(BALNSICX_ID, snapshot, false)).thenReturn(BigInteger.TWO.multiply(ICX));
+        return id;
     }
 
-    public void setup() throws Exception {
+    protected Map<String, Object> getVote(BigInteger id) {
+        return (Map<String, Object>) governance.call("checkVote" , id);
+    }
+
+    protected void goToDay(BigInteger targetDay) {
+        BigInteger day = (BigInteger) governance.call("getDay");
+        BigInteger diff = targetDay.subtract(day);
+        sm.getBlock().increase(DAY*diff.intValue());
+    }
+
+    protected void setup() throws Exception {
         loans = new MockContract<LoansScoreInterface>(LoansScoreInterface.class, sm, owner);
         dex = new MockContract<DexScoreInterface>(DexScoreInterface.class, sm, owner);
         staking = new MockContract<StakingScoreInterface>(StakingScoreInterface.class, sm, owner);
         rewards = new MockContract<RewardsScoreInterface>(RewardsScoreInterface.class, sm, owner);
+        reserve = new MockContract<ReserveScoreInterface>(ReserveScoreInterface.class, sm, owner);
         dividends = new MockContract<DividendsScoreInterface>(DividendsScoreInterface.class, sm, owner); 
-        sicx = new MockContract<AssetScoreInterface>(AssetScoreInterface.class, sm, owner);
+        daofund = new MockContract<DaofundScoreInterface>(DaofundScoreInterface.class, sm, owner); 
+        oracle = new MockContract<OracleScoreInterface>(OracleScoreInterface.class, sm, owner); 
+        sicx = new MockContract<SicxScoreInterface>(SicxScoreInterface.class, sm, owner);
         bnUSD  = new MockContract<BnUSDScoreInterface>(BnUSDScoreInterface.class, sm, owner); 
         baln = new MockContract<BalnScoreInterface>(BalnScoreInterface.class, sm, owner);
         bwt = new MockContract<BwtScoreInterface>(BwtScoreInterface.class, sm, owner);
@@ -164,7 +273,8 @@ public class GovernanceTestBase extends UnitTest {
         governance.invoke(owner, "setBalnVoteDefinitionCriterion", BigInteger.valueOf(100)); //1%
         governance.invoke(owner, "setVoteDefinitionFee", ICX); //1% 
         governance.invoke(owner, "setQuorum", BigInteger.ONE);
-        governance.invoke(owner, "setVoteDuration", BigInteger.ONE);
+        governance.invoke(owner, "setVoteDuration", BigInteger.TWO);
+        governance.invoke(owner, "setVoteDuration", BigInteger.TWO);
     }
 
 

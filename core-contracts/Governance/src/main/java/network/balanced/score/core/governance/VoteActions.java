@@ -8,6 +8,7 @@ import com.eclipsesource.json.JsonObject;
 import network.balanced.score.lib.structs.Disbursement;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import score.Address;
+import score.Context;
 
 public class VoteActions {
      public static void execute(GovernanceImpl gov, String method, JsonObject params) {
@@ -16,7 +17,7 @@ public class VoteActions {
                     gov.enableDividends();
                     break;
                case "addNewDataSource":
-                    gov.addNewDataSource(params.get("_data_source_name").asString(), params.get("_contract_address").asString());
+                    gov._addNewDataSource(params.get("_data_source_name").asString(), params.get("_contract_address").asString());
                     break;
                case "updateBalTokenDistPercentage":
                     gov.updateBalTokenDistPercentage(parseDistPercentage(params.get("_recipient_list").asArray()));
@@ -40,22 +41,22 @@ public class VoteActions {
                     gov.setLiquidationReward(BigInteger.valueOf(params.get("_points").asInt()));
                     break;
                case "setMaxRetirePercent":
-                    gov.setMaxRetirePercent(BigInteger.valueOf(params.get("_value").asInt()));
+                    gov._setMaxRetirePercent(BigInteger.valueOf(params.get("_value").asInt()));
                     break;
                case "setRebalancingThreshold":
-                    gov.setRebalancingThreshold(BigInteger.valueOf(params.get("_value").asInt()));
+                    gov._setRebalancingThreshold(BigInteger.valueOf(params.get("_value").asInt()));
                     break;
                case "setVoteDuration":
-                    gov.setVoteDuration(BigInteger.valueOf(params.get("_duration").asInt()));
+                    gov._setVoteDuration(BigInteger.valueOf(params.get("_duration").asInt()));
                     break;
                case "setQuorum":
-                    gov.setQuorum(BigInteger.valueOf(params.get("quorum").asInt()));
+                    gov._setQuorum(BigInteger.valueOf(params.get("quorum").asInt()));
                     break;
                case "setVoteDefinitionFee":
-                    gov.setVoteDefinitionFee(BigInteger.valueOf(params.get("fee").asInt()));
+                    gov._setVoteDefinitionFee(BigInteger.valueOf(params.get("fee").asInt()));
                     break;
                case "setBalnVoteDefinitionCriterion":
-                    gov.setBalnVoteDefinitionCriterion(BigInteger.valueOf(params.get("percentage").asInt()));
+                    gov._setBalnVoteDefinitionCriterion(BigInteger.valueOf(params.get("percentage").asInt()));
                     break;
                case "setDividendsCategoryPercentage":
                     gov.setDividendsCategoryPercentage(parseDistPercentage(params.get("_dist_list").asArray()));
@@ -64,8 +65,10 @@ public class VoteActions {
                     gov.daoDisburse(params.get("_recipient").asString(), parseDisbursement(params.get("_amounts").asArray()));
                     break;
                case "addAcceptedTokens":
-                    gov.addAcceptedTokens(params.get("_token").asString());
+                    gov._addAcceptedTokens(params.get("_token").asString());
                     break;
+               default:
+                    Context.require(false, "Method "+ method + " does not exist.");
         }
     }
 

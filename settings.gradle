@@ -38,6 +38,7 @@ include(':Rebalancing')
 project(':Rebalancing').projectDir = file("core-contracts/Rebalancing")
 
 include 'score-lib'
+include 'unittest'
 include 'test-lib'
 
 include(':WorkerToken')
