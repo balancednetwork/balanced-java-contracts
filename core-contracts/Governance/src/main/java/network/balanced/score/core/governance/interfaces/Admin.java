@@ -1,7 +1,8 @@
 package network.balanced.score.core.governance.interfaces;
-
 import foundation.icon.score.client.ScoreInterface;
+import score.Address;
 
 @ScoreInterface
-public interface Sicx extends Asset, Setter {
+public interface Admin {
+    void setAdmin(Address _admin);
 }

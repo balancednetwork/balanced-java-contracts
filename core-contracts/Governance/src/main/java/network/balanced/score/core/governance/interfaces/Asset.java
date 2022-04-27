@@ -13,12 +13,8 @@ public interface Asset {
     void transfer(Address _to, BigInteger value, byte[] _data);
         
     void setOracleName(String _name);
-
-    void setOracle(Address _address);
         
     void setMinInterval(BigInteger _interval);
 
-    void setAdmin(Address _admin);
-        
     BigInteger priceInLoop();
 }
