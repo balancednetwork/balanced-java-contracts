@@ -5,6 +5,9 @@
 # Log file
 *.log
 
+# Deployments
+deployments
+
 # BlueJ files
 *.ctxt
 
