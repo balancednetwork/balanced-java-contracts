@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import score.Context;
 
 import java.math.BigInteger;
+import java.util.Map;
 
 import static network.balanced.score.lib.test.UnitTest.*;
 
@@ -22,6 +23,7 @@ public class DexImplTest extends TestBase {
 
     int scoreCount = 0;
     private final Account governanceScore = Account.newScoreAccount(scoreCount++);
+    private final Account nonGovernanceScore = Account.newScoreAccount(scoreCount++);
     private final Account dividendsScore = Account.newScoreAccount(scoreCount++);
     private final Account stakingScore = Account.newScoreAccount(scoreCount++);
     private final Account rewardsScore = Account.newScoreAccount(scoreCount++);
@@ -100,5 +102,21 @@ public class DexImplTest extends TestBase {
     void setGetStakedLP() {
         testContractSettersAndGetters(dexScore, governanceScore, adminAccount,
                 "setStakedLp", stakedLPScore.getAddress(), "getStakedLp");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void setPoolLPFee() {
+        // Arrange.
+        BigInteger fee = BigInteger.valueOf(100);
+        BigInteger returnedFee;
+
+        // Act.
+        assertOnlyCallableByGovernance(dexScore, "setPoolLpFee", fee);
+        dexScore.invoke(governanceScore, "setPoolLpFee", fee);
+        returnedFee =  ((Map<String, BigInteger>) dexScore.call("getFees")).get("pool_lp_fee");
+
+        // Assert.
+        assertEquals(fee, returnedFee);
     }
 }
