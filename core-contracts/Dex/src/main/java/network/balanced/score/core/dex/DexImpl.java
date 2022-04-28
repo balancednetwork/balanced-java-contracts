@@ -1,6 +1,6 @@
 package network.balanced.score.core.dex;
 
-import network.balanced.score.core.router.LPMetadataDB;
+import network.balanced.score.core.dex.LPMetadataDB;
 import score.Address;
 import score.Context;
 import score.VarDB;
@@ -202,7 +202,7 @@ public class DexImpl {
     public DexImpl(@Optional Address _governance) {
         if (_governance != null) {
             governance.set(_governance);
-            admin.set(_governance);
+
             // Set Default Fee Rates
             poolLpFee.set(BigInteger.valueOf(15L));
             poolBalnFee.set(BigInteger.valueOf(15L));

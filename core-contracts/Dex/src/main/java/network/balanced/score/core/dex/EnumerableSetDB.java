@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.router;
+package network.balanced.score.core.dex;
 
 import score.ArrayDB;
 import score.Context;

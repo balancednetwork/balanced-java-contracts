@@ -1,8 +1,8 @@
-package network.balanced.score.core.router;
+package network.balanced.score.core.dex;
 
 import com.eclipsesource.json.JsonValue;
 
-import network.balanced.score.core.router.LPMetadataDB;
+import network.balanced.score.core.dex.LPMetadataDB;
 import score.Address;
 import score.Context;
 import score.VarDB;
