@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.interfaces.base;
+package network.balanced.score.token.balancedtoken;
 
-import score.Address;
-import score.annotation.External;
-import score.annotation.Optional;
+public enum Status {
+    AVAILABLE(0),
 
-import java.math.BigInteger;
+    STAKED(1),
 
-public interface IRC2MintableInterface extends IRC2 {
+    UNSTAKING(2),
 
-    @External
-    void mint(BigInteger _amount, @Optional byte[] _data);
+    UNSTAKING_PERIOD(3);
 
-    @External
-    void mintTo(Address _account, BigInteger _amount, @Optional byte[] _data);
+    public int code;
+
+    Status(int code) {
+        this.code = code;
+    }
 }

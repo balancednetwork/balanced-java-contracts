@@ -1,56 +1,68 @@
-package network.balanced.score.token;
+/*
+ * Copyright (c) 2022-2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import static java.math.BigInteger.ONE;
-import static java.math.BigInteger.TEN;
-import static java.math.BigInteger.TWO;
-import static java.math.BigInteger.ZERO;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+package network.balanced.score.token.balancedtoken;
 
-import java.math.BigInteger;
-import java.util.Map;
-
+import com.iconloop.score.test.Account;
+import com.iconloop.score.test.Score;
+import com.iconloop.score.test.ServiceManager;
+import com.iconloop.score.test.TestBase;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-
-import com.iconloop.score.test.Account;
-import com.iconloop.score.test.Score;
-import com.iconloop.score.test.ServiceManager;
-import com.iconloop.score.test.TestBase;
-
-import network.balanced.score.token.util.Mathematics;
 import score.Address;
 import score.Context;
 
-public class BalancedTokenTest extends TestBase {
+import java.math.BigInteger;
+import java.util.Map;
 
-	private static ServiceManager sm = getServiceManager();
-	private static Account owner = sm.createAccount();
+import static java.math.BigInteger.*;
+import static network.balanced.score.token.balancedtoken.Constants.DEFAULT_ORACLE_NAME;
+import static network.balanced.score.token.balancedtoken.Constants.SYMBOL_NAME;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+class BalancedTokenImplTest extends TestBase {
+
+	private static final ServiceManager sm = getServiceManager();
+	private static final Account owner = sm.createAccount();
 
 	//private BigInteger decimals = BigInteger.TEN;
-	private static BigInteger totalSupply = BigInteger.valueOf(50000000000L);
+	private static final BigInteger totalSupply = BigInteger.valueOf(50000000000L);
 
 	private Score balancedToken;
 	private Score mockDexScore;
-	private Account accountAddressProvider = sm.createAccount();
-	private Account accountGovernance = sm.createAccount();
-	private Account adminAccount = sm.createAccount();
+	private final Account accountAddressProvider = sm.createAccount();
+	private final Account accountGovernance = sm.createAccount();
+	private final Account adminAccount = sm.createAccount();
 
-	private Account dexAccount = sm.createAccount();
-	private Account oracleAccount = sm.createAccount();
+	private final Account dexAccount = sm.createAccount();
+	private final Account oracleAccount = sm.createAccount();
 
 	@BeforeAll
-	public static void init() {
-		owner.addBalance(BalancedToken.SYMBOL_NAME, totalSupply);
+	static void init() {
+		owner.addBalance(SYMBOL_NAME, totalSupply);
 	}
 
 	@BeforeEach
-	public void setup() throws Exception {
-		balancedToken = sm.deploy(owner, BalancedToken.class, accountGovernance.getAddress(), false);
+	void setup() throws Exception {
+		balancedToken = sm.deploy(owner, BalancedTokenImpl.class, accountGovernance.getAddress());
 		mockDexScore = sm.deploy(owner, MockDexScore.class);
 	}
 
@@ -60,7 +72,7 @@ public class BalancedTokenTest extends TestBase {
 		String oracleName = (String)balancedToken.call("getOracleName");
 		
 		assertNotNull(oracleName);
-		assertEquals(BalancedToken.DEFAULT_ORACLE_NAME, oracleName);
+		assertEquals(DEFAULT_ORACLE_NAME, oracleName);
 
 		balancedToken.invoke(accountGovernance, "setOracleName", newOracleName);
 
@@ -86,27 +98,27 @@ public class BalancedTokenTest extends TestBase {
 			balancedToken.invoke(accountGovernance, "setOracle", oracleAccount.getAddress());
 
 			theMock
-			.when(() -> Context.getBlockTimestamp())
-			.thenReturn(34834316634l);
+			.when(Context::getBlockTimestamp)
+			.thenReturn(34834316634L);
 
 			BigInteger balnPrice = BigInteger.TEN.subtract(BigInteger.ONE);
 			theMock
 			.when(() -> Context.call(BigInteger.class, dexAccount.getAddress(), "getBalnPrice"))
 			.thenReturn(balnPrice);
 
-			BigInteger rate = BigInteger.valueOf(3500000000000000000l);
+			BigInteger rate = BigInteger.valueOf(3500000000000000000L);
 			theMock
 			.when(() -> Context.call(Map.class, oracleAccount.getAddress(),"get_reference_data","USD", "ICX"))
 			.thenReturn(Map.of("rate", rate));
 
-			//the icon test fwk has an issue where it does not allow to return
-			//values from write method if they actually writes any value.
+			//the icon test fwk has an issue where it does not allow returning
+			//values from write method if they actually write any value.
 			//first call, it will update last price
 			balancedToken.invoke(accountAddressProvider, "priceInLoop");
 			//second call it will return the last price only
 			BigInteger price = (BigInteger) balancedToken.call("priceInLoop");
 			assertNotNull(price);
-			BigInteger expectedPrice = rate.multiply(balnPrice).divide(Constants.EXA);
+			BigInteger expectedPrice = rate.multiply(balnPrice).divide(ICX);
 			assertEquals(expectedPrice, price);
 		}
 	}
@@ -119,22 +131,22 @@ public class BalancedTokenTest extends TestBase {
 			balancedToken.invoke(accountGovernance, "setOracle", oracleAccount.getAddress());
 
 			theMock
-			.when(() -> Context.getBlockTimestamp())
-			.thenReturn(34834316634l);
+			.when(Context::getBlockTimestamp)
+			.thenReturn(34834316634L);
 
 			BigInteger balnPrice = BigInteger.TEN.subtract(BigInteger.ONE);
 			theMock
 			.when(() -> Context.call(BigInteger.class, dexAccount.getAddress(), "getBalnPrice"))
 			.thenReturn(balnPrice);
 
-			BigInteger rate = BigInteger.valueOf(3500000000000000000l);
+			BigInteger rate = BigInteger.valueOf(3500000000000000000L);
 			theMock
 			.when(() -> Context.call(Map.class, oracleAccount.getAddress(),"get_reference_data","USD", "ICX"))
 			.thenReturn(Map.of("rate", rate));
 
 			BigInteger price = (BigInteger) balancedToken.call("lastPriceInLoop");
 			assertNotNull(price);
-			BigInteger expectedPrice = rate.multiply(balnPrice).divide(Constants.EXA);
+			BigInteger expectedPrice = rate.multiply(balnPrice).divide(ICX);
 			assertEquals(expectedPrice, price);
 		}
 	}
@@ -143,7 +155,7 @@ public class BalancedTokenTest extends TestBase {
 	@Test
 	void ShouldMint() {
 		balancedToken.invoke(accountGovernance, "setAdmin", adminAccount.getAddress());
-		BigInteger amount = BigInteger.valueOf(10000l);
+		BigInteger amount = BigInteger.valueOf(10000L);
 		balancedToken.invoke(adminAccount, "mint", amount, "init gold".getBytes());
 		Map<String, BigInteger>  balanceDetails = (Map<String, BigInteger>)balancedToken.call("detailsBalanceOf", adminAccount.getAddress());
 
@@ -158,7 +170,7 @@ public class BalancedTokenTest extends TestBase {
 		Account accountToMint = sm.createAccount();
 		balancedToken.invoke(accountGovernance, "setAdmin", adminAccount.getAddress());
 
-		BigInteger amount = BigInteger.valueOf(10000l);
+		BigInteger amount = BigInteger.valueOf(10000L);
 		balancedToken.invoke(adminAccount, "mintTo", accountToMint.getAddress(), amount, "init gold".getBytes());
 
 		Map<String, BigInteger>  balanceDetails = (Map<String, BigInteger>)balancedToken.call("detailsBalanceOf", accountToMint.getAddress());
@@ -174,7 +186,7 @@ public class BalancedTokenTest extends TestBase {
 		balancedToken.invoke(accountGovernance, "setAdmin", adminAccount.getAddress());
 
 		//mint some tokens
-		BigInteger amountToMint =  BigInteger.valueOf(10000l).multiply(Mathematics.pow(BigInteger.TEN, 18));
+		BigInteger amountToMint = BigInteger.valueOf(10000L).multiply(ICX);
 		balancedToken.invoke(adminAccount, "mint", amountToMint, "init gold".getBytes());
 
 		//enable staking
@@ -183,7 +195,8 @@ public class BalancedTokenTest extends TestBase {
 		//stake
 		balancedToken.invoke(adminAccount, "stake", stakedAmount);
 
-		Map<String, BigInteger>  balanceDetails = (Map<String, BigInteger>)balancedToken.call("detailsBalanceOf", adminAccount.getAddress());
+		Map<String, BigInteger> balanceDetails = (Map<String, BigInteger>) balancedToken.call("detailsBalanceOf",
+				adminAccount.getAddress());
 
 		assertNotNull(balanceDetails);
 		assertEquals(amountToMint , balanceDetails.get("Total balance"));
@@ -198,7 +211,7 @@ public class BalancedTokenTest extends TestBase {
 		balancedToken.invoke(accountGovernance, "setAdmin", adminAccount.getAddress());
 
 		//mint some tokens
-		BigInteger amountToMint =  BigInteger.valueOf(10000l).multiply(Mathematics.pow(BigInteger.TEN, 18));
+		BigInteger amountToMint =  BigInteger.valueOf(10000L).multiply(ICX);
 		balancedToken.invoke(adminAccount, "mint", amountToMint, "init gold".getBytes());
 
 		//transfer
@@ -230,7 +243,7 @@ public class BalancedTokenTest extends TestBase {
 		balancedToken.invoke(accountGovernance, "setAdmin", adminAccount.getAddress());
 
 		//mint some tokens
-		BigInteger amountToMint =  BigInteger.valueOf(10000l).multiply(Mathematics.pow(BigInteger.TEN, 18));
+		BigInteger amountToMint =  BigInteger.valueOf(10000L).multiply(ICX);
 		balancedToken.invoke(adminAccount, "mint", amountToMint, "init gold".getBytes());
 
 		//enable staking
@@ -256,7 +269,7 @@ public class BalancedTokenTest extends TestBase {
 	@Test
 	void ShouldBurn() {
 		balancedToken.invoke(accountGovernance, "setAdmin", adminAccount.getAddress());
-		BigInteger amount = BigInteger.valueOf(10000l);
+		BigInteger amount = BigInteger.valueOf(10000L);
 		balancedToken.invoke(adminAccount, "mint", amount, "init gold".getBytes());
 		Map<String, BigInteger>  balanceDetails = (Map<String, BigInteger>)balancedToken.call("detailsBalanceOf", adminAccount.getAddress());
 
@@ -279,7 +292,7 @@ public class BalancedTokenTest extends TestBase {
 	void ShouldBurnFrom() {
 		Account accountToMint = sm.createAccount();
 		balancedToken.invoke(accountGovernance, "setAdmin", adminAccount.getAddress());
-		BigInteger amount = BigInteger.valueOf(10000l);
+		BigInteger amount = BigInteger.valueOf(10000L);
 		balancedToken.invoke(adminAccount, "mintTo", accountToMint.getAddress(), amount, "init gold".getBytes());
 		Map<String, BigInteger>  balanceDetails = (Map<String, BigInteger>)balancedToken.call("detailsBalanceOf", accountToMint.getAddress());
 
@@ -310,7 +323,7 @@ public class BalancedTokenTest extends TestBase {
 		balancedToken.invoke(accountGovernance, "setAdmin", adminAccount.getAddress());
 
 		//mint some tokens
-		BigInteger amountToMint =  BigInteger.valueOf(10000l).multiply(Mathematics.pow(BigInteger.TEN, 18));
+		BigInteger amountToMint =  BigInteger.valueOf(10000L).multiply(ICX);
 		balancedToken.invoke(adminAccount, "mintTo", owner.getAddress(), amountToMint, "init gold".getBytes());
 
 		//enable staking
@@ -321,7 +334,7 @@ public class BalancedTokenTest extends TestBase {
 		balancedToken.invoke(accountGovernance, "setDex", mockDexScore.getAddress());
 		BigInteger stakedAmount = amountToMint.divide(TWO);
 
-		//staked balance when there is not stake for this address 
+		//staked balance when there is no stake for this address
 		BigInteger day = BigInteger.valueOf(Context.getBlockTimestamp()).divide(Constants.DAY_TO_MICROSECOND);
 		BigInteger stakedBalance = (BigInteger)balancedToken.call("stakedBalanceOfAt", owner.getAddress(), day);
 
@@ -340,7 +353,7 @@ public class BalancedTokenTest extends TestBase {
 		balancedToken.invoke(owner, "setTimeOffset");
 
 		//move the day, so there are 2 snapshots
-		sm.getBlock().increase(100000000000l);
+		sm.getBlock().increase(100_000_000_000L);
 
 		//stake at next day
 		BigInteger stakedAmountAtSecondDay = stakedAmount.divide(TWO);
@@ -401,7 +414,7 @@ public class BalancedTokenTest extends TestBase {
 		BigInteger minStake = (BigInteger) balancedToken.call("getMinimumStake");
 
 		assertNotNull(minStake);
-		assertEquals(BigInteger.valueOf(1000000000000000000l), minStake);
+		assertEquals(BigInteger.valueOf(1000000000000000000L), minStake);
 
 		BigInteger newMinStake = TEN.add(TWO).add(ONE);
 		balancedToken.invoke(accountGovernance, "setMinimumStake", newMinStake);

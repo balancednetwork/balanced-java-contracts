@@ -14,19 +14,37 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.interfaces.base;
+package network.balanced.score.token.balancedtoken;
 
 import score.Address;
+import score.Context;
+import score.VarDB;
 import score.annotation.External;
-import score.annotation.Optional;
 
 import java.math.BigInteger;
 
-public interface IRC2MintableInterface extends IRC2 {
+public class MockDexScore {
+
+    private final VarDB<Boolean> firstCall = Context.newVarDB("first_call_dex", Boolean.class);
+
+    @External(readonly = true)
+    private String name() {
+        return "DEX Token";
+    }
 
     @External
-    void mint(BigInteger _amount, @Optional byte[] _data);
+    public void transfer(Address _to, BigInteger _value) {
+        Context.println(name() + "| transferred: " + _value + " to: " + _to);
+    }
 
     @External
-    void mintTo(Address _account, BigInteger _amount, @Optional byte[] _data);
+    public BigInteger getTimeOffset() {
+        if (firstCall.getOrDefault(true)) {
+            firstCall.set(false);
+            return BigInteger.valueOf(30 * 60 * 1000);
+        } else {
+            return BigInteger.valueOf(60 * 60 * 1000);
+        }
+
+    }
 }

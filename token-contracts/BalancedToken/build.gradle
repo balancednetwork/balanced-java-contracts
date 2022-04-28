@@ -1,7 +1,22 @@
+/*
+ * Copyright (c) 2022-2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import network.balanced.score.dependencies.Dependencies
 
 version = '0.1.0'
-
 
 sourceSets {
     intTest {
@@ -19,25 +34,27 @@ configurations {
 
 dependencies {
     compileOnly Dependencies.javaeeApi
-    implementation Dependencies.javaeeScorex
-    implementation Dependencies.javaeeTokens
+    implementation project(':score-lib')
 
     testImplementation Dependencies.javaeeUnitTest
     // Use JUnit Jupiter for testing.
     testImplementation Dependencies.junitJupiter
     testRuntimeOnly Dependencies.junitJupiterEngine
-    testImplementation Dependencies.mockitoInline
+
+    testImplementation Dependencies.mockitoCore
+    testRuntimeOnly Dependencies.mockitoInline
+    testImplementation project(':test-lib')
 
     intTestImplementation Dependencies.javaeeScoreClient
     intTestAnnotationProcessor Dependencies.javaeeScoreClient
     intTestImplementation Dependencies.iconSdk
     intTestImplementation Dependencies.jacksonDatabind
-    intTestImplementation 'com.squareup.okhttp3:okhttp:3.11.0'
+    intTestImplementation Dependencies.okhttp
 
 }
 
 optimizedJar {
-    mainClassName = 'network.balanced.score.token.BalancedToken'
+    mainClassName = 'network.balanced.score.token.balancedtoken.BalancedTokenImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
@@ -53,10 +70,7 @@ deployJar {
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
-	parameters {
-		arg('_governance', 'cxe460cb87f451ea235e5be8894920f6436aab63f9')
-		arg('update', '0x0')
-	}
+    parameters { arg('_governance', 'cxe460cb87f451ea235e5be8894920f6436aab63f9') }
 }
 
 test {
