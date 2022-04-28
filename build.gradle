@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 
 import network.balanced.score.dependencies.Dependencies
-
 
 
 buildscript {
@@ -34,7 +33,24 @@ subprojects {
 
     apply plugin: 'jacoco'
     apply plugin: 'java'
+    apply plugin: 'jacoco'
     apply plugin: 'foundation.icon.javaee'
+
+    sourceSets {
+        intTest {
+            compileClasspath += sourceSets.main.output
+            runtimeClasspath += sourceSets.main.output
+            java {
+            }
+        }
+
+    }
+
+    configurations {
+        intTestImplementation.extendsFrom testImplementation
+        intTestAnnotationProcessor.extendsFrom testAnnotationProcessor
+        intTestRuntimeOnly.extendsFrom testRuntimeOnly
+    }
 
     java {
         sourceCompatibility = JavaVersion.VERSION_11
