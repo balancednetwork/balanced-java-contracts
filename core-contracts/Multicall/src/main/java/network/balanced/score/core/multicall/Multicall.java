@@ -20,6 +20,7 @@ import score.Address;
 import score.Context;
 import score.VarDB;
 import score.annotation.External;
+import score.annotation.Keep;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -132,6 +133,7 @@ public class Multicall {
     }
 
     @External(readonly = true)
+    @Keep
     public Map<String, Object> tryAggregate(boolean requireSuccess, Call[] calls) {
         Result[] returnData = new Result[calls.length];
         for (int i = 0; i < calls.length; i++) {
@@ -161,6 +163,7 @@ public class Multicall {
     }
 
     @External(readonly = true)
+    @Keep
     public Map<String, Object> tryBlockAndAggregate(boolean requireSuccess,
             Call[] calls) {
         long blockNumber = getBlockNumber();
