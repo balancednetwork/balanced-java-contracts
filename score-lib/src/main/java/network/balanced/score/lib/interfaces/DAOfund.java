@@ -22,8 +22,9 @@ import network.balanced.score.lib.interfaces.addresses.LoansAddress;
 import network.balanced.score.lib.interfaces.base.Fallback;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
-import network.balanced.score.lib.structs.Disbursement;
+import network.balanced.score.lib.structs.DisbursementString;
 import score.Address;
+import score.annotation.EventLog;
 import score.annotation.External;
 
 import java.math.BigInteger;
@@ -44,7 +45,7 @@ public interface DAOfund extends Name, GovernanceAddress, AdminAddress, LoansAdd
     Map<String, Object> getDisbursementDetail(Address _user);
 
     @External(readonly = true)
-    boolean disburse(Address _recipient, Disbursement[] _amounts);
+    boolean disburse(Address _recipient, DisbursementString[] _amounts);
 
     @External
     void claim();
