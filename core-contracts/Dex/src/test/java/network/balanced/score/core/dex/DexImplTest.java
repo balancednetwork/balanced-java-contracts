@@ -14,6 +14,7 @@ import java.util.Map;
 import static network.balanced.score.lib.test.UnitTest.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 public class DexImplTest extends TestBase {
@@ -23,7 +24,6 @@ public class DexImplTest extends TestBase {
 
     int scoreCount = 0;
     private final Account governanceScore = Account.newScoreAccount(scoreCount++);
-    private final Account nonGovernanceScore = Account.newScoreAccount(scoreCount++);
     private final Account dividendsScore = Account.newScoreAccount(scoreCount++);
     private final Account stakingScore = Account.newScoreAccount(scoreCount++);
     private final Account rewardsScore = Account.newScoreAccount(scoreCount++);
@@ -106,17 +106,40 @@ public class DexImplTest extends TestBase {
 
     @Test
     @SuppressWarnings("unchecked")
-    void setPoolLPFee() {
-        // Arrange.
-        BigInteger fee = BigInteger.valueOf(100);
-        BigInteger returnedFee;
+    void setGetFees() {
+        // Arrange - fees to be set.
+        BigInteger poolLpFee = BigInteger.valueOf(100);
+        BigInteger poolBalnFee = BigInteger.valueOf(200);
+        BigInteger icxConversionFee = BigInteger.valueOf(300);
+        BigInteger icxBalnFee = BigInteger.valueOf(400);
 
-        // Act.
-        assertOnlyCallableByGovernance(dexScore, "setPoolLpFee", fee);
-        dexScore.invoke(governanceScore, "setPoolLpFee", fee);
-        returnedFee =  ((Map<String, BigInteger>) dexScore.call("getFees")).get("pool_lp_fee");
+        // Arrange - methods to be called with and set specified fee.
+        Map<String, BigInteger> fees = Map.of(
+            "setPoolLpFee", poolLpFee,
+            "setPoolBalnFee", poolBalnFee,
+            "setIcxConversionFee", icxConversionFee,
+            "setIcxBalnFee", icxBalnFee
+        );
 
-        // Assert.
-        assertEquals(fee, returnedFee);
+        // Arrange - expected result when calling retrieving fees".
+        Map<String, BigInteger> expectedResult = Map.of(
+            "icx_total", icxBalnFee.add(icxConversionFee),
+            "pool_total", poolBalnFee.add(poolLpFee),
+            "pool_lp_fee", poolLpFee,
+            "pool_baln_fee", poolBalnFee,
+            "icx_conversion_fees", icxConversionFee,
+            "icx_baln_fee", icxBalnFee
+        );
+        Map<String, BigInteger> returnedFees;
+
+        // Act & assert - set all fees and assert that all fee methods are only settable by governance.
+        for (Map.Entry<String, BigInteger> fee : fees.entrySet()) {
+            dexScore.invoke(governanceScore, fee.getKey(), fee.getValue());
+            assertOnlyCallableByGovernance(dexScore, fee.getKey(), fee.getValue());
+        }
+
+        // Act & assert - retrieve all fees and assert they are equal to their expected value.
+        returnedFees =  (Map<String, BigInteger>) dexScore.call("getFees");
+        assertTrue(expectedResult.equals(returnedFees));
     }
 }
