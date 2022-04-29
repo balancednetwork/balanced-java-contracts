@@ -113,7 +113,7 @@ public class DexImplTest extends TestBase {
         BigInteger icxConversionFee = BigInteger.valueOf(300);
         BigInteger icxBalnFee = BigInteger.valueOf(400);
 
-        // Arrange - methods to be called with and set specified fee.
+        // Arrange - methods to be called and set specified fee.
         Map<String, BigInteger> fees = Map.of(
             "setPoolLpFee", poolLpFee,
             "setPoolBalnFee", poolBalnFee,
@@ -121,7 +121,7 @@ public class DexImplTest extends TestBase {
             "setIcxBalnFee", icxBalnFee
         );
 
-        // Arrange - expected result when calling retrieving fees".
+        // Arrange - expected result when retrieving fees".
         Map<String, BigInteger> expectedResult = Map.of(
             "icx_total", icxBalnFee.add(icxConversionFee),
             "pool_total", poolBalnFee.add(poolLpFee),
