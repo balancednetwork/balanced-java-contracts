@@ -47,8 +47,10 @@ public class Multicall {
             this.success = b;
             this.returnData = result;
         }
-
+        @Keep
         public boolean success;
+
+        @Keep
         public Object returnData;
     }
 
@@ -133,7 +135,6 @@ public class Multicall {
     }
 
     @External(readonly = true)
-    @Keep
     public Map<String, Object> tryAggregate(boolean requireSuccess, Call[] calls) {
         Result[] returnData = new Result[calls.length];
         for (int i = 0; i < calls.length; i++) {
@@ -163,7 +164,7 @@ public class Multicall {
     }
 
     @External(readonly = true)
-    @Keep
+
     public Map<String, Object> tryBlockAndAggregate(boolean requireSuccess,
             Call[] calls) {
         long blockNumber = getBlockNumber();
