@@ -142,4 +142,60 @@ public class DexImplTest extends TestBase {
         returnedFees =  (Map<String, BigInteger>) dexScore.call("getFees");
         assertTrue(expectedResult.equals(returnedFees));
     }
+
+    // setMarketName - no isolated getter.
+    
+    @Test
+    void turnDexOnAndGetDexOn() {
+        dexScore.invoke(governanceScore, "turnDexOn");
+        assertEquals(true, dexScore.call("getDexOn"));
+        assertOnlyCallableByGovernance(dexScore, "turnDexOn");
+    }
+
+    // addQuoteqoin - not implemented yet
+
+    // isQuoteCoinAllowed - not implemented yet.
+
+    // getDay.
+
+    @Test
+    void setGetTimeOffSet() {
+        // Arrange.
+        BigInteger timeOffset = BigInteger.valueOf(100);
+        BigInteger retrievedTimeOffset;
+
+        // Act.
+        dexScore.invoke(governanceScore, "setTimeOffset", timeOffset);
+        retrievedTimeOffset = (BigInteger) dexScore.call("getTimeOffset");
+
+        // Assert.
+        assertEquals(timeOffset, retrievedTimeOffset);
+        assertOnlyCallableByGovernance(dexScore, "setTimeOffset", timeOffset);
+    }
+
+    // isLookingPool.
+
+    @Test
+    void setGetContinuousRewardsDay() {
+        // Arrange.
+        BigInteger continuousRewardsDay = BigInteger.valueOf(2);
+        BigInteger retrievedContinuousRewardsDay;
+
+        // Act.
+        dexScore.invoke(governanceScore, "setContinuousRewardsDay", continuousRewardsDay);
+        retrievedContinuousRewardsDay = (BigInteger) dexScore.call("getContinuousRewardsDay");
+
+        // Assert.
+        assertEquals(continuousRewardsDay, retrievedContinuousRewardsDay);
+        assertOnlyCallableByGovernance(dexScore, "setContinuousRewardsDay", continuousRewardsDay);
+    }
+
+
+    // TODO: Set up a pool and test various sets and gets for that pool since they can't be tested in isolation?
+
+    @Test
+    void createNewPool() {
+        
+    }
+
 }
