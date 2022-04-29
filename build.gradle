@@ -31,7 +31,6 @@ subprojects {
         mavenCentral()
     }
 
-    apply plugin: 'jacoco'
     apply plugin: 'java'
     apply plugin: 'jacoco'
     apply plugin: 'foundation.icon.javaee'
