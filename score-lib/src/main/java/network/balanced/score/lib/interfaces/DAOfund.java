@@ -31,6 +31,9 @@ import java.util.Map;
 
 public interface DAOfund extends Name, GovernanceAddress, AdminAddress, LoansAddress, TokenFallback, Fallback {
 
+    @EventLog(indexed = 2)
+    void TokenTransfer(Address recipient, BigInteger amount, String note);
+
     @External
     void addAddressToSetdb();
 
