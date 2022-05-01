@@ -13,6 +13,9 @@ import com.eclipsesource.json.JsonObject;
 
 import java.math.BigInteger;
 import java.util.Map;
+
+import javax.swing.plaf.basic.BasicGraphicsUtils;
+
 import java.util.List;
 
 import static java.util.Map.entry;
@@ -87,9 +90,9 @@ public class LoansImpl  implements Loans {
 
     public static final VarDB<Boolean> rewardsDone = Context.newVarDB(_REWARDS_DONE, Boolean.class);
     public static final VarDB<Boolean> dividendsDone = Context.newVarDB(_DIVIDENDS_DONE, Boolean.class);
-    public static final VarDB<Integer> continuousRewardDay = Context.newVarDB(_CONTINUOUS_REWARD_DAY, Integer.class);
-    public static final VarDB<Integer> currentDay = Context.newVarDB(_CURRENT_DAY, Integer.class);
-    public static final VarDB<Long> timeOffset = Context.newVarDB(_TIME_OFFSET, Long.class);
+    public static final VarDB<BigInteger> continuousRewardDay = Context.newVarDB(_CONTINUOUS_REWARD_DAY, BigInteger.class);
+    public static final VarDB<BigInteger> currentDay = Context.newVarDB(_CURRENT_DAY, BigInteger.class);
+    public static final VarDB<BigInteger> timeOffset = Context.newVarDB(_TIME_OFFSET, BigInteger.class);
     public static final VarDB<BigInteger> miningRatio = Context.newVarDB(_MINING_RATIO, BigInteger.class);
     public static final VarDB<BigInteger> lockingRatio  = Context.newVarDB(_LOCKING_RATIO, BigInteger.class);
 
@@ -109,8 +112,8 @@ public class LoansImpl  implements Loans {
 
     public LoansImpl(Address _governance) {
         //TODO: tmp should be set by governance?
-        if (continuousRewardDay.getOrDefault(0) == 0) {
-            continuousRewardDay.set(_getDay() + (int)U_SECONDS_DAY*10);
+        if (continuousRewardDay.getOrDefault(BigInteger.ZERO).equals(BigInteger.ZERO)) {
+            continuousRewardDay.set(_getDay().add(U_SECONDS_DAY.multiply(BigInteger.TEN)));
         }
 
         if (governance.getOrDefault(null) != null) {
@@ -164,25 +167,26 @@ public class LoansImpl  implements Loans {
     }
 
     @External
-    public void setContinuousRewardsDay(int _day) {
+    public void setContinuousRewardsDay(BigInteger _day) {
         onlyGovernance();
         continuousRewardDay.set(_day);
     }
 
     @External(readonly = true)
-    public int getContinuousRewardsDay() {
+    public BigInteger getContinuousRewardsDay() {
         return continuousRewardDay.get();
     }
 
     @External(readonly = true)
-    public int getDay() {
+    public BigInteger getDay() {
         return _getDay();
     }
 
 
-    public static int _getDay() {
-        long blockTime = (Context.getBlockTimestamp() - timeOffset.getOrDefault(0l));
-        return (int) (blockTime / (U_SECONDS_DAY));
+    public static BigInteger _getDay() {
+        BigInteger blockTime = BigInteger.valueOf(Context.getBlockTimestamp());
+        BigInteger timeDelta = blockTime.subtract(timeOffset.getOrDefault(BigInteger.ZERO));
+        return timeDelta.divide(U_SECONDS_DAY);
     }
 
     @External
@@ -206,11 +210,11 @@ public class LoansImpl  implements Loans {
 
     @External(readonly = true)
     public int getNonzeroPositionCount() {
-        Snapshot snap = SnapshotDB.get(-1);
+        Snapshot snap = SnapshotDB.get(BigInteger.valueOf(-1));
         int count = PositionsDB.getNonZero().size() + snap.getAddNonzero().size() - snap.getRemoveNonzero().size();
 
-        if (snap.day.get() > 1) {
-            Snapshot lastSnap = SnapshotDB.get(-2);
+        if (snap.day.get().compareTo(BigInteger.ONE) > 0) {
+            Snapshot lastSnap = SnapshotDB.get(BigInteger.valueOf(-2));
             count = count + lastSnap.getAddNonzero().size() - lastSnap.getRemoveNonzero().size();
         }
         
@@ -218,13 +222,13 @@ public class LoansImpl  implements Loans {
     }
 
     @External(readonly = true)
-    public Map<String, Object> getPositionStanding(Address _address, @Optional int snapshot) {
-        if (snapshot == 0) {
+    public Map<String, Object> getPositionStanding(Address _address, @Optional BigInteger snapshot) {
+        if (snapshot.equals(BigInteger.ZERO)) {
             //TOOD no longer possible to fetch snap 0
-            snapshot = -1;
+            snapshot = BigInteger.valueOf(-1);
         }
 
-        Context.require(SnapshotDB.getSnapshotId(snapshot) < continuousRewardDay.get(), "The continuous rewards is already active.");
+        Context.require(SnapshotDB.getSnapshotId(snapshot).compareTo(continuousRewardDay.get()) < 0, "The continuous rewards is already active.");
         return PositionsDB.getPosition(_address).getStanding(snapshot, true).toMap();
     }
 
@@ -234,12 +238,12 @@ public class LoansImpl  implements Loans {
     }
 
     @External(readonly = true)
-    public Map<String, Address> getAssetTokens() {
+    public Map<String, String> getAssetTokens() {
         return AssetDB.getAssetTokens();
     }
 
     @External(readonly = true)
-    public Map<String, Address> getCollateralTokens() {
+    public Map<String, String> getCollateralTokens() {
         return AssetDB.getCollateral();
     }
 
@@ -255,8 +259,8 @@ public class LoansImpl  implements Loans {
     }
 
     @External(readonly = true)
-    public Map<String, Object> getPositionByIndex(int _index, int _day) {
-        Context.require(SnapshotDB.getSnapshotId(_day) < continuousRewardDay.get(), "The continuous rewards is already active.");
+    public Map<String, Object> getPositionByIndex(int _index, BigInteger _day) {
+        Context.require(SnapshotDB.getSnapshotId(_day).compareTo(continuousRewardDay.get()) < 0, "The continuous rewards is already active.");
         return PositionsDB.get(_index).toMap(_day);
     }
 
@@ -277,15 +281,16 @@ public class LoansImpl  implements Loans {
 
     @External(readonly = true)
     public boolean hasDebt(Address _owner) {
-        return PositionsDB.getPosition(_owner).hasDebt(-1);
+        return PositionsDB.getPosition(_owner).hasDebt(BigInteger.valueOf(-1));
     }
 
     @External(readonly = true)
-    public Map<String, Object> getSnapshot(@Optional int _snap_id) {
-        if (_snap_id == 0) {
-            _snap_id = -1;
+    public Map<String, Object> getSnapshot(@Optional BigInteger _snap_id) {
+        if (_snap_id.equals(BigInteger.ZERO)) {
+            _snap_id = BigInteger.valueOf(-1);
         }
-        if (_snap_id > SnapshotDB.getLastSnapshotIndex() || _snap_id + SnapshotDB.size() < 0) {
+
+        if (_snap_id.compareTo(SnapshotDB.getLastSnapshotIndex()) > 0 || _snap_id.add(SnapshotDB.size()).compareTo(BigInteger.ZERO) < 0) {
             Map.of();
         }
         
@@ -311,7 +316,7 @@ public class LoansImpl  implements Loans {
     }
 
     @External
-    public boolean precompute(int _snapshot_id, int batch_size) {
+    public boolean precompute(BigInteger _snapshot_id, int batch_size) {
         onlyRewards();
         checkForNewDay();
         return PositionsDB.calculateSnapshot(_snapshot_id, batch_size);
@@ -319,8 +324,8 @@ public class LoansImpl  implements Loans {
 
 
     @External(readonly = true)
-    public BigInteger getTotalValue(String _name, int _snapshot_id) {
-        Context.require(SnapshotDB.getSnapshotId(_snapshot_id) < continuousRewardDay.get(),  "The continuous rewards is already active.");
+    public BigInteger getTotalValue(String _name, BigInteger _snapshot_id) {
+        Context.require(SnapshotDB.getSnapshotId(_snapshot_id).compareTo(continuousRewardDay.get()) < 0,  "The continuous rewards is already active.");
 
         return SnapshotDB.get(_snapshot_id).totalMiningDebt.getOrDefault(BigInteger.ZERO);
     }
@@ -355,8 +360,8 @@ public class LoansImpl  implements Loans {
     }
 
     @External(readonly = true)
-    public Map<Address, BigInteger> getDataBatch(String _name, int _snapshot_id, int _limit, @Optional int _offset) {
-        Context.require(_snapshot_id <= continuousRewardDay.get(),  "The continuous rewards is already active.");
+    public Map<Address, BigInteger> getDataBatch(String _name, BigInteger _snapshot_id, int _limit, @Optional int _offset) {
+        Context.require(_snapshot_id.compareTo(continuousRewardDay.get()) <= 0,  "The continuous rewards is already active.");
 
         Snapshot snapshot = SnapshotDB.get(_snapshot_id);
         int totalMiners = snapshot.mining.size();
@@ -376,9 +381,9 @@ public class LoansImpl  implements Loans {
     @External
     public boolean checkForNewDay() {
         loansOn();
-        int day = _getDay();
+        BigInteger day = _getDay();
 
-        if (currentDay.get() < day && day <= continuousRewardDay.get()) {
+        if (currentDay.get().compareTo(day) < 0 && day.compareTo(continuousRewardDay.get()) <= 0) {
             currentDay.set(day);
             PositionsDB.takeSnapshot();
             Snapshot(_getDay());
@@ -405,7 +410,7 @@ public class LoansImpl  implements Loans {
     }
 
     @External
-    public void checkDistributions(int _day, boolean _new_day) {
+    public void checkDistributions(BigInteger _day, boolean _new_day) {
         loansOn();
         Boolean _rewardsDone = rewardsDone.get();
         Boolean _dividendsDone = dividendsDone.get();
@@ -464,7 +469,7 @@ public class LoansImpl  implements Loans {
         }
 
         Boolean newDay = checkForNewDay();
-        int day = _getDay();
+        BigInteger day = _getDay();
         checkDistributions(day, newDay);
         Position position = PositionsDB.getPosition(_from);
         if (_value.compareTo(BigInteger.ZERO) == 1) {
@@ -492,7 +497,7 @@ public class LoansImpl  implements Loans {
         Context.require(badDebt.compareTo(_value) != -1, "No bad debt for " + _symbol);
 
         Boolean newDay = checkForNewDay();
-        int day = _getDay();
+        BigInteger day = _getDay();
         checkDistributions(day, newDay);
 
         BigInteger badDebtValue = badDebt.min(_value);
@@ -517,7 +522,7 @@ public class LoansImpl  implements Loans {
         Context.require(_repay, "No debt repaid because, repay=false");
 
         Boolean newDay = checkForNewDay();
-        int day = _getDay();
+        BigInteger day = _getDay();
         checkDistributions(day, newDay);
 
         BigInteger oldSupply = asset.totalSupply();
@@ -540,8 +545,8 @@ public class LoansImpl  implements Loans {
         }
 
         asset.burnFrom(from, repaid);
-        if (day < continuousRewardDay.get()) {
-            if (!position.hasDebt(-1)) {
+        if (day.compareTo(continuousRewardDay.get()) < 0) {
+            if (!position.hasDebt(BigInteger.valueOf(-1))) {
                 PositionsDB.removeNonZero(position.id.get());
             }
         } else {
@@ -624,7 +629,7 @@ public class LoansImpl  implements Loans {
             ));
         }
 
-        if (_getDay() >= continuousRewardDay.get()) {
+        if (_getDay().compareTo(continuousRewardDay.get()) >= 0) {
             RewardsScoreInterface rewardsScore = new RewardsScoreInterface(rewards.get());
             rewardsScore.updateBatchRewardsData("Loans",  asset.totalSupply(), rewardsBatchList);
         }
@@ -699,7 +704,7 @@ public class LoansImpl  implements Loans {
             ));
         }
 
-        if (_getDay() >= continuousRewardDay.get()) {
+        if (_getDay().compareTo(continuousRewardDay.get()) >= 0) {
             RewardsScoreInterface rewardsScore = new RewardsScoreInterface(rewards.get());
             rewardsScore.updateBatchRewardsData("Loans",   AssetDB.get("bnUSD").totalSupply(), rewardsBatchList);
         }
@@ -714,12 +719,12 @@ public class LoansImpl  implements Loans {
         Context.require(PositionsDB.hasPosition(from), "This address does not have a position on Balanced.");
 
         Boolean newDay = checkForNewDay();
-        int day = _getDay();
+        BigInteger day = _getDay();
         checkDistributions(day, newDay);
         Position position = PositionsDB.getPosition(from);
 
         Context.require(position.get("sICX").compareTo(_value) != -1,  "Position holds less collateral than the requested withdrawal.");
-        BigInteger assetValue = position.totalDebt(-1, false);
+        BigInteger assetValue = position.totalDebt(BigInteger.valueOf(-1), false);
         BigInteger remaningSicx = position.get("sICX").subtract(_value);
         BigInteger remaningCollateral = remaningSicx.multiply(AssetDB.get("sICX").priceInLoop()).divide(EXA);
 
@@ -740,7 +745,7 @@ public class LoansImpl  implements Loans {
         loansOn();
         Context.require(PositionsDB.hasPosition(_owner), "This address does not have a position on Balanced.");
         Position position = PositionsDB.getPosition(_owner);
-        Standings standing = position.updateStanding(-1);
+        Standings standing = position.updateStanding(BigInteger.valueOf(-1));
         if (standing  != Standings.LIQUIDATE) {
             return;
         }
@@ -748,14 +753,14 @@ public class LoansImpl  implements Loans {
         BigInteger collateral = position.get("sICX");
         BigInteger reward = collateral.multiply(liquidationReward.get()).divide(POINTS);
         BigInteger forPool = collateral.subtract(reward);
-        BigInteger totalDebt = position.totalDebt(-1, false);
+        BigInteger totalDebt = position.totalDebt(BigInteger.valueOf(-1), false);
 
         for (int i = 0; i < AssetDB.assetSymbols.size(); i++) {
             String symbol = AssetDB.assetSymbols.get(i);
             Asset asset = AssetDB.get(symbol);
             BigInteger debt = position.get(symbol);
             if (!asset.isCollateral.getOrDefault(false) && asset.active.getOrDefault(false) && debt.compareTo(BigInteger.ZERO) == 1) {
-                if (_getDay() >= continuousRewardDay.get()) {
+                if (_getDay().compareTo(continuousRewardDay.get()) >= 0) {
                     Context.call(rewards.get(), "updateRewardsData", "Loans", asset.totalSupply(), _owner, debt);
                 }
 
@@ -772,7 +777,7 @@ public class LoansImpl  implements Loans {
 
         position.set("sICX", BigInteger.ZERO);
         transferToken("sICX", Context.getCaller(), reward, "Liquidation reward of", new byte[0]);
-        if (_getDay() < continuousRewardDay.get()) {
+        if (_getDay().compareTo(continuousRewardDay.get()) < 0) {
             PositionsDB.removeNonZero(position.id.get());
         }
 
@@ -818,7 +823,7 @@ public class LoansImpl  implements Loans {
 
         Position position = PositionsDB.getPosition(from);
 
-        BigInteger collateral = position.totalCollateral(-1);
+        BigInteger collateral = position.totalCollateral(BigInteger.valueOf(-1));
         BigInteger maxDebtValue = POINTS.multiply(collateral).divide(lockingRatio.get());
         BigInteger fee = originationFee.get().multiply(amount).divide(POINTS);
         BigInteger newDebtValue = asset.priceInLoop().multiply(amount.add(fee)).divide(EXA);
@@ -830,7 +835,7 @@ public class LoansImpl  implements Loans {
                                                                                 "of "+ newLoanMinimum.get().divide(EXA) +" dollars.");
         }
 
-        BigInteger totalDebt = position.totalDebt(-1, false);
+        BigInteger totalDebt = position.totalDebt(BigInteger.valueOf(-1), false);
         Context.require(totalDebt.add(newDebtValue).compareTo(maxDebtValue) != 1, 
             collateral + " collateral is insufficient" +
             " to originate a loan of " + amount.divide(EXA) + " " +_symbol +
@@ -839,9 +844,9 @@ public class LoansImpl  implements Loans {
             " which includes a fee of " + fee.divide(EXA) + " " + _symbol + "," +
             " given an existing loan value of " + totalDebt+ ".");
 
-        if (_getDay() < continuousRewardDay.get()) {
+        if (_getDay().compareTo(continuousRewardDay.get()) < 0) {
             if (totalDebt.equals(BigInteger.ZERO)) {
-                Snapshot snap = SnapshotDB.get(-1);
+                Snapshot snap = SnapshotDB.get(BigInteger.valueOf(-1));
                 PositionsDB.addNonZero(position.id.get());
             }
         } else {
@@ -1023,7 +1028,7 @@ public class LoansImpl  implements Loans {
     }
 
     @External
-    public void setTimeOffset(long deltaTime) {
+    public void setTimeOffset(BigInteger deltaTime) {
         onlyGovernance();
         timeOffset.set(deltaTime);
     }
@@ -1061,7 +1066,7 @@ public class LoansImpl  implements Loans {
             entry("new loan minimum", newLoanMinimum.get()),
             entry("min mining debt", minMiningDebt.get()),
             entry("max div debt length", maxDebtsListLength.get()),
-            entry("time offset", timeOffset.getOrDefault(0l)),
+            entry("time offset", timeOffset.getOrDefault(BigInteger.ZERO)),
             entry("redeem batch size", redeemBatch.get()),
             entry("retire percent max", maxRetirePercent.get())
         );
@@ -1105,6 +1110,6 @@ public class LoansImpl  implements Loans {
     public void PositionStanding(Address address, String standing, BigInteger total_collateral, BigInteger total_debt) {}
 
     @EventLog(indexed = 1)
-    public void Snapshot(int _id) {}
+    public void Snapshot(BigInteger _id) {}
         
 }

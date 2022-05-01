@@ -57,11 +57,11 @@ public class AssetDB {
         return deadAssets;
     }
 
-    public static Map<String, Address> getAssetTokens() {
-        HashMap<String, Address> assets = new HashMap<String, Address>(assetSymbols.size());
+    public static Map<String, String> getAssetTokens() {
+        HashMap<String, String> assets = new HashMap<String, String>(assetSymbols.size());
         for (int i = 0; i < assetSymbols.size(); i++) {
             String symbol = assetSymbols.get(i);
-            assets.put(symbol, get(symbol).getAddress());
+            assets.put(symbol, symbolMap.get(symbol));
         }
 
         return assets;
@@ -78,12 +78,11 @@ public class AssetDB {
         return assets;
     }
 
-    public static Map<String, Address> getCollateral() {
-        HashMap<String, Address> collateral = new HashMap<String, Address>(collateralList.size());
+    public static Map<String, String> getCollateral() {
+        HashMap<String, String> collateral = new HashMap<String, String>(collateralList.size());
         for (int i = 0; i < collateralList.size(); i++) {
             String symbol = collateralList.get(i);
-            collateral.put(symbol, get(symbol).getAddress());
-           
+            collateral.put(symbol, symbolMap.get(symbol));
         }
 
         return collateral;
@@ -107,7 +106,7 @@ public class AssetDB {
         
         Asset asset = getAsset(stringAddress);
 
-        asset.added.set(Context.getBlockTimestamp());
+        asset.added.set(BigInteger.valueOf(Context.getBlockTimestamp()));
         asset.address.set(address);
         asset.dead.set(false);
         asset.active.set(active);

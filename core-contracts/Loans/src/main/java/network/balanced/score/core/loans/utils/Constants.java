@@ -6,8 +6,8 @@ import java.util.Map;
 public class Constants   {
     public static final BigInteger EXA =  BigInteger.valueOf(1000000).multiply(BigInteger.valueOf(1000000)).multiply(BigInteger.valueOf(1000000));
 
-    public static final long SECOND = 1000000L;
-    public static final long U_SECONDS_DAY = 86400L * SECOND;
+    public static final BigInteger SECOND = BigInteger.valueOf(1000000);
+    public static final BigInteger U_SECONDS_DAY = BigInteger.valueOf(86400).multiply(SECOND);
     
     //All percentages expressed in terms of points.
     public static final BigInteger POINTS = BigInteger.valueOf(10000);

@@ -22,17 +22,17 @@ import static network.balanced.score.core.loans.utils.Constants.*;
 
 public class Position {
     public VarDB<Integer> id; 
-    public VarDB<Long> created;
+    public VarDB<BigInteger> created;
     public VarDB<Address> address;
-    public ArrayDB<Integer> snaps;
-    public BranchDB<Integer, DictDB<String, BigInteger>> assets;
+    public ArrayDB<BigInteger> snaps;
+    public BranchDB<BigInteger, DictDB<String, BigInteger>> assets;
 
     public Position(String dbKey) {
         id = (VarDB<Integer>)Context.newBranchDB("id", Integer.class).at(dbKey);
-        created = (VarDB<Long>)Context.newBranchDB("created", Long.class).at(dbKey);
+        created = (VarDB<BigInteger>)Context.newBranchDB("created", BigInteger.class).at(dbKey);
         address = (VarDB<Address>)Context.newBranchDB("address", Address.class).at(dbKey);
-        snaps = (ArrayDB<Integer>)Context.newBranchDB("snaps", Integer.class).at(dbKey);
-        assets = (BranchDB<Integer, DictDB<String, BigInteger>>)Context.newBranchDB("assets", BigInteger.class).at(dbKey);
+        snaps = (ArrayDB<BigInteger>)Context.newBranchDB("snaps", BigInteger.class).at(dbKey);
+        assets = (BranchDB<BigInteger, DictDB<String, BigInteger>>)Context.newBranchDB("assets", BigInteger.class).at(dbKey);
     }
 
     public BigInteger get(String symbol) {
@@ -41,8 +41,8 @@ public class Position {
     }
     
     public void set(String symbol, BigInteger value) {
-        if (LoansImpl._getDay() < LoansImpl.continuousRewardDay.get()) {
-            int day = checkSnap();
+        if (LoansImpl._getDay().compareTo(LoansImpl.continuousRewardDay.get()) < 0) {
+            BigInteger day = checkSnap();
             assets.at(day).set(symbol, value);
         } else {
             assets.at(lastSnap()).set(symbol, value);
@@ -53,14 +53,14 @@ public class Position {
         }
     }
 
-    private int lastSnap() {
+    private BigInteger lastSnap() {
         return snaps.get(snaps.size() - 1);
     }
 
-    public int checkSnap() {
-        int day = LoansImpl._getDay();
-        int lastDay = lastSnap();
-        if (day <= lastDay) {
+    public BigInteger checkSnap() {
+        BigInteger day = LoansImpl._getDay();
+        BigInteger lastDay = lastSnap();
+        if (day.compareTo(lastDay) <= 0) {
             return day;
         }
 
@@ -76,38 +76,38 @@ public class Position {
         return day;
     }
 
-    public int getSnapshotId(int day) {
-        if (day < 0) {
-            int index = day + snaps.size();
+    public BigInteger getSnapshotId(BigInteger day) {
+        if (day.compareTo(BigInteger.ZERO) < 0) {
+            int index = day.intValue() + snaps.size();
             Context.require(index >= 0, "Snapshot index " + day + " out of range.");
             return snaps.get(index);
         }
 
-        int low = 0;
-        int high = snaps.size();
-        int middle;
-        while (low < high) {
-            middle = (low + high) / 2;
-            if (snaps.get(middle) > day) {
+        BigInteger low = BigInteger.ZERO;
+        BigInteger high = BigInteger.valueOf(snaps.size());
+        BigInteger middle;
+        while (low.compareTo(high) < 0) {
+            middle = low.add(high).divide(BigInteger.TWO);
+            if (snaps.get(middle.intValue()).compareTo(day) > 0) {
                 high = middle;
             } else {
-                low = middle + 1;
+                low = middle.add(BigInteger.ONE);
             }
         }
 
-        if (snaps.get(0) == day) {
+        if (snaps.get(0).equals(day)) {
             return day;
-        } else if (low == 0) {
-            return -1;
+        } else if (low.equals(BigInteger.ZERO)) {
+            return BigInteger.valueOf(-1);
         }
 
-        return snaps.get(low - 1);    
+        return snaps.get(low.subtract(BigInteger.ONE).intValue());    
     }
     
 
-    public boolean hasDebt(int day) {
-        int id = getSnapshotId(day);
-        if (id == -1) {
+    public boolean hasDebt(BigInteger day) {
+        BigInteger id = getSnapshotId(day);
+        if (id.compareTo(BigInteger.ZERO) < 0) {
             return false;
         }
 
@@ -122,10 +122,10 @@ public class Position {
         return false;
     }
 
-    public BigInteger totalCollateral(int day) {
-        int id = getSnapshotId(day);
+    public BigInteger totalCollateral(BigInteger day) {
+        BigInteger id = getSnapshotId(day);
         BigInteger value = BigInteger.ZERO;
-        if (id == -1) {
+        if (id.compareTo(BigInteger.ZERO) < 0) {
             return value;
         }
         
@@ -134,7 +134,7 @@ public class Position {
             Asset asset = AssetDB.get(symbol);
             BigInteger amount = assets.at(id).get(symbol);
             BigInteger price;
-            if (day == -1 || day == LoansImpl._getDay()) {
+            if (day.equals(BigInteger.valueOf(-1)) || day.equals(LoansImpl._getDay())) {
                 price = asset.priceInLoop();
             } else {
                 price = SnapshotDB.get(day).prices.get(symbol);
@@ -146,10 +146,10 @@ public class Position {
         return value;
     }
 
-    public BigInteger totalDebt(int day, boolean readOnly) {
-        int id = getSnapshotId(day);
+    public BigInteger totalDebt(BigInteger day, boolean readOnly) {
+        BigInteger id = getSnapshotId(day);
         BigInteger value = BigInteger.ZERO;
-        if (id == -1) {
+        if (id.compareTo(BigInteger.ZERO) < 0) {
             return value;
         }
         
@@ -158,7 +158,7 @@ public class Position {
             BigInteger amount = assets.at(id).getOrDefault(symbol, BigInteger.ZERO);
             BigInteger price = BigInteger.ZERO;
             if (amount.compareTo(BigInteger.ZERO) == 1) {
-                if (day == -1 || day == LoansImpl._getDay()) {
+                if (day.equals(BigInteger.valueOf(-1)) || day.equals(LoansImpl._getDay())) {
                     price = getAssetPrice(symbol, readOnly);
                 } else {
                     price = SnapshotDB.get(day).prices.get(symbol);
@@ -172,7 +172,7 @@ public class Position {
     }
 
 
-    public Standing getStanding(int day, Boolean readOnly) {
+    public Standing getStanding(BigInteger day, Boolean readOnly) {
         Standing standing = new Standing();
         standing.totalDebt = totalDebt(day, readOnly);
         standing.collateral = totalCollateral(day);
@@ -189,7 +189,7 @@ public class Position {
         }
 
         standing.ratio = standing.collateral.multiply(EXA).divide(standing.totalDebt);
-        if (LoansImpl._getDay() < LoansImpl.continuousRewardDay.get()) {
+        if (LoansImpl._getDay().compareTo(LoansImpl.continuousRewardDay.get()) < 0) {
             if (standing.ratio.compareTo(LoansImpl.miningRatio.get().multiply(EXA).divide(POINTS)) == 1) {
                 BigInteger assetPrice = getAssetPrice("bnUSD", readOnly);
                 BigInteger bnusdDebt = standing.totalDebt.multiply(EXA).divide(assetPrice);
@@ -216,7 +216,7 @@ public class Position {
         return standing;
     }
 
-    public Standings updateStanding(int day) {
+    public Standings updateStanding(BigInteger day) {
         Standing standing = getStanding(day, false);
         DictDB<String, BigInteger> state = SnapshotDB.get(day).positionStates.at(id.get());
         state.set("total_debt", standing.totalDebt);
@@ -225,9 +225,9 @@ public class Position {
         return standing.standing;
     }
 
-    public Map<String, Object> toMap(int day) {
-        int index = SnapshotDB.getSnapshotId(day);
-        if (index == -1 || day > LoansImpl._getDay()) {
+    public Map<String, Object> toMap(BigInteger day) {
+        BigInteger index = SnapshotDB.getSnapshotId(day);
+        if (index.equals(BigInteger.valueOf(-1)) || day.compareTo(LoansImpl._getDay()) > 0) {
             return Map.of();
         }
 

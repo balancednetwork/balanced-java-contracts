@@ -50,7 +50,7 @@ class LoansTests extends LoansTestsBase {
     void getSetParameters() {
         loans.invoke(admin, "setRedeemBatchSize", 1);
         loans.invoke(admin, "setMaxRetirePercent", BigInteger.valueOf(2));
-        governanceCall("setTimeOffset", 3L);
+        governanceCall("setTimeOffset", BigInteger.valueOf(3));
         loans.invoke(admin, "setMinMiningDebt", BigInteger.valueOf(4));
         loans.invoke(admin, "setNewLoanMinimum", BigInteger.valueOf(5));
         loans.invoke(admin, "setLiquidationReward", BigInteger.valueOf(6));
@@ -75,7 +75,7 @@ class LoansTests extends LoansTestsBase {
 
         assertEquals(1, params.get("redeem batch size"));
         assertEquals(BigInteger.valueOf(2), params.get("retire percent max"));
-        assertEquals(3L, params.get("time offset"));
+        assertEquals(BigInteger.valueOf(3), params.get("time offset"));
         assertEquals(BigInteger.valueOf(4), params.get("min mining debt"));
         assertEquals(BigInteger.valueOf(5), params.get("new loan minimum"));
         assertEquals(BigInteger.valueOf(6), params.get("liquidation reward"));
@@ -115,7 +115,7 @@ class LoansTests extends LoansTestsBase {
         takeLoanICX(account, "bnUSD", collateral, loan);
     
         // Assert
-        int day = (int) loans.call("getDay");
+        BigInteger day = (BigInteger) loans.call("getDay");
         Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", account.getAddress());
         Map<String, BigInteger> assets = (Map<String, BigInteger>) position.get("assets");
         assertEquals(1, position.get("pos_id"));
@@ -265,12 +265,10 @@ class LoansTests extends LoansTestsBase {
 
     @Test
     void getDay() {
-        int currentDay = (int) loans.call("getDay");
+        BigInteger currentDay = (BigInteger) loans.call("getDay");
         sm.getBlock().increase(DAY);
 
-        assertEquals(currentDay + 1, (int) loans.call("getDay"));
-        sm.getBlock().increase(-DAY);
-
+        assertEquals(currentDay.add(BigInteger.ONE), loans.call("getDay"));
     }
 
     @Test
@@ -1160,7 +1158,7 @@ class LoansTests extends LoansTestsBase {
         takeLoanICX(accounts.get(0), "bnUSD", accountZeroCollateral, accountZeroLoan);
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
      
-        int day = (int) loans.call("getDay");
+        BigInteger day = (BigInteger) loans.call("getDay");
 
         // Assert
         int expectedNonZeroPositiosnToAdd = 2;
@@ -1195,7 +1193,7 @@ class LoansTests extends LoansTestsBase {
         takeLoanICX(accounts.get(0), "bnUSD", accountZeroCollateral, accountZeroLoan);
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
      
-        int day = (int) loans.call("getDay");
+        BigInteger day = (BigInteger) loans.call("getDay");
         loans.invoke(rewards.account, "precompute", day, 0);
         loans.invoke(rewards.account, "precompute", day, 2);
 
@@ -1232,7 +1230,7 @@ class LoansTests extends LoansTestsBase {
         takeLoanICX(accounts.get(0), "bnUSD", accountZeroCollateral, accountZeroLoan);
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
      
-        int day = (int) loans.call("getDay");
+        BigInteger day = (BigInteger) loans.call("getDay");
         loans.invoke(rewards.account, "precompute", day, 0);
 
         // Assert
@@ -1275,7 +1273,7 @@ class LoansTests extends LoansTestsBase {
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
         takeLoanICX(accounts.get(2), "bnUSD", accountTwoCollateral, accountTwoLoan);
         
-        int day = (int) loans.call("getDay");
+        BigInteger day = (BigInteger) loans.call("getDay");
         
         loans.invoke(rewards.account, "precompute", day, 0);
         loans.invoke(rewards.account, "precompute", day, 3);
@@ -1287,7 +1285,7 @@ class LoansTests extends LoansTestsBase {
         loans.invoke(accounts.get(0), "returnAsset", "bnUSD", accountZeroDebt, true);
         loans.invoke(accounts.get(1), "returnAsset", "bnUSD", accountOneDebt, true);
      
-        day = (int) loans.call("getDay");
+        day = (BigInteger) loans.call("getDay");
 
         loans.invoke(rewards.account, "precompute", day, 0);
         loans.invoke(rewards.account, "precompute", day, 2);
@@ -1325,7 +1323,7 @@ class LoansTests extends LoansTestsBase {
         takeLoanICX(accounts.get(0), "bnUSD", accountZeroCollateral, accountZeroLoan);
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
      
-        int day = (int) loans.call("getDay");
+        BigInteger day = (BigInteger) loans.call("getDay");
         loans.invoke(rewards.account, "precompute", day, 0);
         loans.invoke(rewards.account, "precompute", day, 1);
 
@@ -1362,7 +1360,7 @@ class LoansTests extends LoansTestsBase {
         takeLoanICX(accounts.get(0), "bnUSD", accountZeroCollateral, accountZeroLoan);
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
      
-        int day = (int) loans.call("getDay");
+        BigInteger day = (BigInteger) loans.call("getDay");
         loans.invoke(rewards.account, "precompute", day, 0);
         loans.invoke(rewards.account, "precompute", day, 1);
         loans.invoke(rewards.account, "precompute", day, 1);
@@ -1407,7 +1405,7 @@ class LoansTests extends LoansTestsBase {
         takeLoanICX(accounts.get(0), "bnUSD", accountZeroCollateral, accountZeroLoan);
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
 
-        int day = (int) loans.call("getDay");
+        BigInteger day = (BigInteger) loans.call("getDay");
         loans.invoke(rewards.account, "precompute", day, 0);
         loans.invoke(rewards.account, "precompute", day, 2);
         sm.getBlock().increase(DAY);
@@ -1415,7 +1413,7 @@ class LoansTests extends LoansTestsBase {
         // Day 2
         takeLoanICX(accounts.get(2), "bnUSD", accountTwoCollateral, accountTwoLoan);
 
-        day = (int) loans.call("getDay");
+        day = (BigInteger) loans.call("getDay");
         loans.invoke(rewards.account, "precompute", day, 0);
         loans.invoke(rewards.account, "precompute", day, 3);
         sm.getBlock().increase(DAY);
@@ -1424,14 +1422,14 @@ class LoansTests extends LoansTestsBase {
         BigInteger accountOneRepaidDebt = BigInteger.valueOf(500).multiply(EXA);
         loans.invoke(accounts.get(1), "returnAsset", "bnUSD", accountOneRepaidDebt, true);
 
-        day = (int) loans.call("getDay");
+        day = (BigInteger) loans.call("getDay");
         loans.invoke(rewards.account, "precompute", day, 0);
         loans.invoke(rewards.account, "precompute", day, 3);
         sm.getBlock().increase(DAY);
 
         // Assert
-        Map<Address, BigInteger> snapshotBatch0 = (Map<Address, BigInteger>)loans.call("getDataBatch", "loans", day-2, 3, 0);
-        Map<Address, BigInteger> snapshotBatch1 = (Map<Address, BigInteger>)loans.call("getDataBatch", "loans", day-1, 3, 0);
+        Map<Address, BigInteger> snapshotBatch0 = (Map<Address, BigInteger>)loans.call("getDataBatch", "loans", day.subtract(BigInteger.TWO), 3, 0);
+        Map<Address, BigInteger> snapshotBatch1 = (Map<Address, BigInteger>)loans.call("getDataBatch", "loans", day.subtract(BigInteger.ONE), 3, 0);
         Map<Address, BigInteger> snapshotBatch2 = (Map<Address, BigInteger>)loans.call("getDataBatch", "loans", day, 3, 0);
 
         assertEquals(2, snapshotBatch0.size());
@@ -1472,7 +1470,7 @@ class LoansTests extends LoansTestsBase {
         takeLoanICX(accounts.get(0), "bnUSD", accountZeroCollateral, accountZeroLoan);
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
 
-        int day = (int) loans.call("getDay");
+        BigInteger day = (BigInteger) loans.call("getDay");
         loans.invoke(rewards.account, "precompute", day, 0);
         loans.invoke(rewards.account, "precompute", day, 2);
         sm.getBlock().increase(DAY);
@@ -1480,7 +1478,7 @@ class LoansTests extends LoansTestsBase {
         // Day 2
         takeLoanICX(accounts.get(2), "bnUSD", accountTwoCollateral, accountTwoLoan);
 
-        day = (int) loans.call("getDay");
+        day = (BigInteger) loans.call("getDay");
         loans.invoke(rewards.account, "precompute", day, 0);
         loans.invoke(rewards.account, "precompute", day, 3);
         sm.getBlock().increase(DAY);
@@ -1491,9 +1489,9 @@ class LoansTests extends LoansTestsBase {
         sm.getBlock().increase(DAY);
 
         // Assert
-        Map<Address, BigInteger> snapshotBatch0 = (Map<Address, BigInteger>)loans.call("getDataBatch", "loans", 0, 3, 0);
-        Map<Address, BigInteger> snapshotBatch1 = (Map<Address, BigInteger>)loans.call("getDataBatch", "loans", 1, 3, 0);
-        Map<Address, BigInteger> snapshotBatch2 = (Map<Address, BigInteger>)loans.call("getDataBatch", "loans", 2, 3, 0);
+        Map<Address, BigInteger> snapshotBatch0 = (Map<Address, BigInteger>)loans.call("getDataBatch", "loans", BigInteger.ZERO, 3, 0);
+        Map<Address, BigInteger> snapshotBatch1 = (Map<Address, BigInteger>)loans.call("getDataBatch", "loans", BigInteger.ONE, 3, 0);
+        Map<Address, BigInteger> snapshotBatch2 = (Map<Address, BigInteger>)loans.call("getDataBatch", "loans", BigInteger.TWO, 3, 0);
 
         assertEquals(2, snapshotBatch0.size());
         assertEquals(accountZeroDebt, snapshotBatch0.get(accountZeroAddress));

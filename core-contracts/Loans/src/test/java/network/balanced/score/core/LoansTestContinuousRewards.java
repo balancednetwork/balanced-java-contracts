@@ -58,7 +58,7 @@ class LoansTestContinuousRewards extends LoansTestsBase {
     @Test
     void getPositonStanding() {
         Account account = accounts.get(0);
-        int lastDay = -1;
+        BigInteger lastDay = BigInteger.valueOf(-1);
         Executable getPositionStanding = () -> loans.call("getPositionStanding", account.getAddress(), lastDay);
         expectErrorMessage(getPositionStanding, continuousRewardsErrorMessage);
     }
@@ -66,28 +66,28 @@ class LoansTestContinuousRewards extends LoansTestsBase {
     @Test
     void getPositionByIndex() {
         int index = 1;
-        int lastDay = -1;
+        BigInteger lastDay = BigInteger.valueOf(-1);
         Executable getPositionByIndex = () -> loans.call("getPositionByIndex", index, lastDay);
         expectErrorMessage(getPositionByIndex, continuousRewardsErrorMessage);
     }
     
     @Test
     void getTotalValue() {
-        int lastDay = -1;
+        BigInteger lastDay = BigInteger.valueOf(-1);
         Executable getTotalValue = () -> loans.call("getTotalValue", "loans", lastDay);
         expectErrorMessage(getTotalValue, continuousRewardsErrorMessage);
     }
 
     @Test
     void getDataBatch_SameDay() {
-        int lastDay = -1;
+        BigInteger lastDay = BigInteger.valueOf(-1);
         //Does not throw error
         loans.call("getDataBatch", "loans", lastDay, 0, 0);
     }
 
     @Test
     void getDataBatch_DayAfter() {
-        int day = (int)loans.call("getDay") + 1;
+        BigInteger day = ((BigInteger)loans.call("getDay")).add(BigInteger.ONE);
 
         Executable getDataBatch = () -> loans.call("getDataBatch", "loans", day, 0, 0);
         expectErrorMessage(getDataBatch, continuousRewardsErrorMessage);

@@ -56,7 +56,7 @@ public class PositionsDB {
     }
 
     public static void addNonZero(int id) {
-        Snapshot currentSnapshot = SnapshotDB.get(-1);
+        Snapshot currentSnapshot = SnapshotDB.get(BigInteger.valueOf(-1));
         LinkedListDB addToNonZero = currentSnapshot.getAddNonzero();
         LinkedListDB removeFromNonZero = currentSnapshot.getRemoveNonzero();
         if (removeFromNonZero.contains(id)) {
@@ -67,7 +67,7 @@ public class PositionsDB {
     }
 
     public static void removeNonZero(int id) {
-        Snapshot currentSnapshot = SnapshotDB.get(-1);
+        Snapshot currentSnapshot = SnapshotDB.get(BigInteger.valueOf(-1));
         LinkedListDB addToNonZero = currentSnapshot.getAddNonzero();
         LinkedListDB removeFromNonZero = currentSnapshot.getRemoveNonzero();
         if (addToNonZero.contains(id)) {
@@ -90,17 +90,17 @@ public class PositionsDB {
         if (id == 0) {
             return Map.of("message", "That address has no outstanding loans or deposited collateral.");
         }
-        return get(id).toMap(-1);
+        return get(id).toMap(BigInteger.valueOf(-1));
     }
 
     private static Position newPosition(Address address) {
         int id = idFactory.getUid();
         addressIds.set(address, id);
         Position position = get(id);
-        int snapshotIndex = LoansImpl._getDay();
+        BigInteger snapshotIndex = LoansImpl._getDay();
         position.snaps.add(snapshotIndex);
         position.id.set(id);
-        position.created.set(Context.getBlockTimestamp());
+        position.created.set(BigInteger.valueOf(Context.getBlockTimestamp()));
         position.address.set(address);
         position.assets.at(snapshotIndex).set("sICX", BigInteger.ZERO);
 
@@ -109,7 +109,7 @@ public class PositionsDB {
     }
 
     public static void takeSnapshot() {
-        Snapshot snapshot = SnapshotDB.get(-1);
+        Snapshot snapshot = SnapshotDB.get(BigInteger.valueOf(-1));
         for (int i = 0; i < AssetDB.assetSymbols.size(); i++) {
             String symbol = AssetDB.assetSymbols.get(i);
             Asset asset = AssetDB.get(symbol);
@@ -118,17 +118,17 @@ public class PositionsDB {
             }
         }
 
-        snapshot.time.set(Context.getBlockTimestamp());
+        snapshot.time.set(BigInteger.valueOf(Context.getBlockTimestamp()));
         if (LoansImpl._getDay() != LoansImpl.continuousRewardDay.get()) {
             SnapshotDB.startNewSnapshot();
         }
     }
 
-    public static Boolean calculateSnapshot(int day, int batchSize) {
-        Context.require(day < LoansImpl.continuousRewardDay.get(), "The continuous rewards is already active.");
+    public static Boolean calculateSnapshot(BigInteger day, int batchSize) {
+        Context.require(day.compareTo(LoansImpl.continuousRewardDay.get()) < 0, "The continuous rewards is already active.");
         Snapshot snapshot = SnapshotDB.get(day);
-        int snapshotId = snapshot.day.get();
-        if (snapshotId < day) {
+        BigInteger snapshotId = snapshot.day.get();
+        if (snapshotId.compareTo(day) < 0) {
             return true;
         }
         
@@ -185,7 +185,7 @@ public class PositionsDB {
         for (int i = 0; i < loops; i++) {
             int accountId = nextNode;
             Position position = get(accountId);
-            if (snapshotId >= position.snaps.get(0)) {
+            if (snapshotId.compareTo(position.snaps.get(0)) >= 0) {
                 Standings standing = position.updateStanding(snapshotId);
                 if (standing == Standings.MINING) {
                     snapshot.mining.add(accountId);

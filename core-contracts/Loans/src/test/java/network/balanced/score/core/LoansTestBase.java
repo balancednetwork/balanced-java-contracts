@@ -163,7 +163,7 @@ class LoansTestsBase extends UnitTest {
     }
 
     protected void enableContinuousRewards() {
-        int day = (int) loans.call("getDay");
+        BigInteger day = (BigInteger) loans.call("getDay");
         governanceCall("setContinuousRewardsDay", day);
     }
 
@@ -198,9 +198,8 @@ class LoansTestsBase extends UnitTest {
         return false;
     }
 
-    protected void verifySnapshot(int addNonZero, int removeFromNonzero, int preComputeIndex, BigInteger totalMiningDebt, int day, int miningCount) {
+    protected void verifySnapshot(int addNonZero, int removeFromNonzero, int preComputeIndex, BigInteger totalMiningDebt, BigInteger day, int miningCount) {
         Map<String, Object> snap = (Map<String, Object>) loans.call("getSnapshot", day);
-        System.out.println(snap);
         assertEquals(addNonZero, snap.get("add_to_nonzero_count"));
         assertEquals(removeFromNonzero, snap.get("remove_from_nonzero_count"));
         assertEquals(preComputeIndex, snap.get("precompute_index"));
@@ -210,7 +209,7 @@ class LoansTestsBase extends UnitTest {
     }
 
     protected void verifyStanding(Standings standing, Address address) {
-        Map<String, Object> positionStanding = (Map<String, Object>) loans.call("getPositionStanding", address, -1);
+        Map<String, Object> positionStanding = (Map<String, Object>) loans.call("getPositionStanding", address, BigInteger.valueOf(-1));
         assertEquals(StandingsMap.get(standing), positionStanding.get("standing")); 
     }
 
@@ -249,7 +248,7 @@ class LoansTestsBase extends UnitTest {
         loans.invoke(admin, "setRewards", rewards.getAddress());
         loans.invoke(admin, "setDividends", rewards.getAddress());
         loans.invoke(admin, "setReserve", reserve.getAddress());
-        governanceCall("setContinuousRewardsDay", Integer.MAX_VALUE);
+        governanceCall("setContinuousRewardsDay", BigInteger.valueOf(100000));
         sicx.invoke(admin, "setMinter", staking.getAddress());
         bnusd.invoke(admin, "setMinter", loans.getAddress());
         loans.invoke(admin, "addAsset", bnusd.getAddress(), true, false);

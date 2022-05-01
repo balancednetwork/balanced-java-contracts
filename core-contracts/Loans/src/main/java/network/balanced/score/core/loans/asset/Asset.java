@@ -14,7 +14,7 @@ import network.balanced.score.core.loans.linkedlist.*;
 
 public class Asset {
     public VarDB<Address> address;
-    public VarDB<Long> added;
+    public VarDB<BigInteger> added;
 
     public VarDB<Boolean> active;
     public VarDB<Boolean> isCollateral;
@@ -29,7 +29,7 @@ public class Asset {
         dbKey = key;
 
         address = (VarDB<Address>)Context.newBranchDB("address", Address.class).at(dbKey);
-        added = (VarDB<Long>)Context.newBranchDB("added", Long.class).at(dbKey);
+        added = (VarDB<BigInteger>)Context.newBranchDB("added", BigInteger.class).at(dbKey);
 
         active = (VarDB<Boolean>)Context.newBranchDB("active", Boolean.class).at(dbKey);
         isCollateral = (VarDB<Boolean>)Context.newBranchDB("is_collateral", Boolean.class).at(dbKey);
