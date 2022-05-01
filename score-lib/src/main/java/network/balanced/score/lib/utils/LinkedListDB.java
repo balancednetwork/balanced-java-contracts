@@ -14,20 +14,17 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.dex;
+package network.balanced.score.lib.utils;
 
 import score.Address;
 import score.Context;
 import score.VarDB;
-import scorex.util.ArrayList;
-
-import network.balanced.score.core.dex.NodeDB;
-
 
 import java.math.BigInteger;
-import java.util.List;
+
 
 public class LinkedListDB {
+
     private static final String NAME = "_LINKED_LISTDB";
     public static final BigInteger DEFAULT_NODE_ID = BigInteger.ZERO;
 
@@ -76,6 +73,7 @@ public class LinkedListDB {
         NodeDB nodeToAppend = createNode(size, user, nodeId);
         if (length.getOrDefault(BigInteger.ZERO).equals(BigInteger.ZERO)) {
             headId.set(nodeId);
+            tailId.set(nodeId);
         } else {
             BigInteger tailId = this.tailId.get();
             NodeDB tail = getNode(tailId);
@@ -100,8 +98,20 @@ public class LinkedListDB {
 
     public NodeDB getTailNode() {
         BigInteger tailId = this.tailId.get();
+        if (tailId == null) {
+            Context.revert("Empty Linked list");
+        }
         return getNode(tailId);
     }
+
+    public NodeDB getHeadNode() {
+        BigInteger headId = this.headId.get();
+        if (headId == null) {
+            Context.revert("Empty Linked list");
+        }
+        return getNode(headId);
+    }
+
 
     public NodeDB createNode(BigInteger size, Address user,
                              BigInteger nodeId) {
@@ -198,3 +208,4 @@ public class LinkedListDB {
     }
 
 }
+

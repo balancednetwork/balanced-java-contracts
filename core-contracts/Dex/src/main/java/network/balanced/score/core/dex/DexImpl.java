@@ -1,7 +1,7 @@
 package network.balanced.score.core.dex;
 
 
-import network.balanced.score.lib.utils.ItearableDictDB;
+import network.balanced.score.lib.utils.IterableDictDB;
 import network.balanced.score.lib.utils.LinkedListDB;
 import network.balanced.score.lib.utils.NodeDB;
 import network.balanced.score.lib.utils.SetDB;
@@ -105,7 +105,7 @@ public class DexImpl {
     VarDB<BigInteger> icxQueueTotal = Context.newVarDB(ICX_QUEUE_TOTAL, BigInteger.class);
 
 
-    private final ItearableDictDB<String, BigInteger> namedMarkets = new ItearableDictDB<>(NAMED_MARKETS, BigInteger.class, String.class, true);
+    private final IterableDictDB<String, BigInteger> namedMarkets = new IterableDictDB<>(NAMED_MARKETS, BigInteger.class, String.class, true);
 
     DictDB<BigInteger, String> marketsToNames = Context.newDictDB("marketsToNames", String.class);
 
