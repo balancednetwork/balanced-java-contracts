@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2022-2022 Balanced.network.
  *
@@ -14,11 +15,18 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.dex;
+
+package network.balanced.score.lib.utils;
+
 
 import score.ArrayDB;
 import score.Context;
 import score.DictDB;
+
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class EnumerableSetDB<V> {
     private final ArrayDB<V> entries;
@@ -28,7 +36,7 @@ public class EnumerableSetDB<V> {
         // array of valueClass
         this.entries = Context.newArrayDB(varKey + "_es_entries", valueClass);
         // value => array index
-        this.indexes = Context.newDictDB(varKey + "_es_index", Integer.class);
+        this.indexes = Context.newDictDB(varKey + "_es_indexes", Integer.class);
     }
 
     public int length() {
@@ -75,4 +83,17 @@ public class EnumerableSetDB<V> {
         }
         return null;
     }
+
+    public List<V> range(BigInteger start, BigInteger stop) {
+        List<V> data = new ArrayList<>();
+        BigInteger size = BigInteger.valueOf(entries.size());
+        if (((BigInteger.ZERO.compareTo(start) <= 0) && (start.compareTo(size) < 0)) && (start.compareTo(stop) < 0)) {
+            BigInteger end = (stop.compareTo(size) <= 0) ? stop : size;
+            for (int i = start.intValue(); i < end.intValue(); i++) {
+                data.add(entries.get(i));
+            }
+        }
+        return data;
+    }
 }
+
