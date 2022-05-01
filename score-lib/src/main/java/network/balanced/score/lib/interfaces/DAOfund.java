@@ -22,18 +22,14 @@ import network.balanced.score.lib.interfaces.addresses.LoansAddress;
 import network.balanced.score.lib.interfaces.base.Fallback;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
-import network.balanced.score.lib.structs.DisbursementString;
+import network.balanced.score.lib.structs.Disbursement;
 import score.Address;
-import score.annotation.EventLog;
 import score.annotation.External;
 
 import java.math.BigInteger;
 import java.util.Map;
 
 public interface DAOfund extends Name, GovernanceAddress, AdminAddress, LoansAddress, TokenFallback, Fallback {
-
-    @EventLog(indexed = 2)
-    void TokenTransfer(Address recipient, BigInteger amount, String note);
 
     @External
     void addAddressToSetdb();
@@ -45,7 +41,7 @@ public interface DAOfund extends Name, GovernanceAddress, AdminAddress, LoansAdd
     Map<String, Object> getDisbursementDetail(Address _user);
 
     @External(readonly = true)
-    boolean disburse(Address _recipient, DisbursementString[] _amounts);
+    boolean disburse(Address _recipient, Disbursement[] _amounts);
 
     @External
     void claim();
