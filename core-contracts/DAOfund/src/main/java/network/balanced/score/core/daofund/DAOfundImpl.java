@@ -18,7 +18,7 @@ package network.balanced.score.core.daofund;
 
 import network.balanced.score.lib.interfaces.DAOfund;
 import network.balanced.score.lib.interfaces.LoansScoreInterface;
-import network.balanced.score.lib.structs.Disbursement;
+import network.balanced.score.lib.structs.DisbursementString;
 import network.balanced.score.lib.utils.EnumerableSetDB;
 import score.*;
 import score.annotation.EventLog;
@@ -154,19 +154,20 @@ public class DAOfundImpl implements DAOfund {
      * @param _amounts   Amounts of each asset type to disburse
      */
     @External
-    public boolean disburse(Address _recipient, Disbursement[] _amounts) {
+    public boolean disburse(Address _recipient, DisbursementString[] _amounts) {
         only(governance);
-        for (Disbursement asset : _amounts) {
+        for (DisbursementString asset : _amounts) {
             BigInteger amountInDaofund = fund.getOrDefault(asset.address.toString(), BigInteger.ZERO);
             BigInteger amountToBeClaimedByRecipient = awards.at(_recipient).getOrDefault(asset.address,
                     BigInteger.ZERO);
 
-            boolean requiredCondition = amountInDaofund.compareTo(asset.amount) >= 0;
+            BigInteger amount = new BigInteger(asset.amount);
+            boolean requiredCondition = amountInDaofund.compareTo(amount) >= 0;
             Context.require(requiredCondition, TAG + ": Insufficient balance of asset " + asset.address.toString() +
                     " in DAOfund");
 
-            awards.at(_recipient).set(asset.address, amountToBeClaimedByRecipient.add(asset.amount));
-            fund.set(asset.address.toString(), amountInDaofund.subtract(asset.amount));
+            awards.at(_recipient).set(asset.address, amountToBeClaimedByRecipient.add(amount));
+            fund.set(asset.address.toString(), amountInDaofund.subtract(amount));
         }
         return Boolean.TRUE;
     }
