@@ -63,6 +63,16 @@ public class GovernanceTest extends GovernanceTestBase {
     }
 
     @Test
+    void name() {
+        assertEquals("Balanced Governance", governance.call("name"));
+    }
+
+    @Test
+    void getContractAddress() {
+        assertEquals(loans.getAddress(), governance.call("getContractAddress", "loans"));
+    }
+
+    @Test
     void getVotingWeight() {
         // Arrange
         Account user = sm.createAccount();
@@ -76,6 +86,27 @@ public class GovernanceTest extends GovernanceTestBase {
 
         // Assert
         assertEquals(expectedWeight, votingWeight);
+    }
+
+    @Test
+    void setContinuousRewardsDay() {
+        // Arrange
+        BigInteger day = BigInteger.TEN;
+        Account notOwner = sm.createAccount();
+        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+        
+        // Act & Assert
+        Executable withNotOwner = () -> governance.invoke(notOwner, "setContinuousRewardsDay", day);
+        expectErrorMessage(withNotOwner, expectedErrorMessage);
+
+        // Act
+        governance.invoke(owner, "setContinuousRewardsDay", day);
+
+        // Assert
+        verify(loans.mock).setContinuousRewardsDay(day);
+        verify(dex.mock).setContinuousRewardsDay(day);
+        verify(rewards.mock).setContinuousRewardsDay(day);
+        verify(dividends.mock).setContinuousRewardsDay(day);
     }
 
     @Test
@@ -907,6 +938,44 @@ public class GovernanceTest extends GovernanceTestBase {
         // Assert
         Map<String, Address> addresses =  (Map<String, Address>) governance.call("getAddresses");
         assertEquals(_router, addresses.get("router"));
+    }
+
+    @Test
+    void setFeeProcessingInterval() {
+        // Arrange
+        BigInteger interval = BigInteger.TEN;
+        Account notOwner = sm.createAccount();
+        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+        
+        // Act & Assert
+        Executable withNotOwner = () -> governance.invoke(notOwner, "setFeeProcessingInterval", interval);
+        expectErrorMessage(withNotOwner, expectedErrorMessage);
+
+        // Act
+        governance.invoke(owner, "setFeeProcessingInterval", interval);
+
+        // Assert
+        verify(feehandler.mock).setFeeProcessingInterval(interval);
+  
+    }
+
+    @Test
+    void deleteRoute() {
+        // Arrange
+        Address from = Account.newScoreAccount(scoreCount++).getAddress();
+        Address to = Account.newScoreAccount(scoreCount++).getAddress();
+        Account notOwner = sm.createAccount();
+        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+        
+        // Act & Assert
+        Executable withNotOwner = () -> governance.invoke(notOwner, "deleteRoute", from, to);
+        expectErrorMessage(withNotOwner, expectedErrorMessage);
+
+        // Act
+        governance.invoke(owner, "deleteRoute", from, to);
+
+        // Assert
+        verify(feehandler.mock).deleteRoute(from, to);
     }
 
     @Test
