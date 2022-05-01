@@ -20,7 +20,7 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
-import network.balanced.score.lib.structs.DisbursementString;
+import network.balanced.score.lib.structs.Disbursement;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -126,10 +126,10 @@ class DAOfundImplTest extends TestBase {
     void disburseTokens() {
         receiveTokens();
 
-        DisbursementString disbursement = new DisbursementString();
+        Disbursement disbursement = new Disbursement();
         disbursement.address = sicxScore.getAddress();
-        disbursement.amount = amount.toString();
-        DisbursementString[] amounts = new DisbursementString[]{disbursement};
+        disbursement.amount = amount;
+        Disbursement[] amounts = new Disbursement[]{disbursement};
         daofundScore.invoke(governanceScore, "disburse", receiver.getAddress(), amounts);
 
         Map<String, Object> expectedDisbursement = Map.of("user", receiver.getAddress(),
@@ -140,7 +140,7 @@ class DAOfundImplTest extends TestBase {
 
         disbursement.address = balnScore.getAddress();
         Executable disburseInsufficientFund = () -> daofundScore.invoke(governanceScore, "disburse",
-                receiver.getAddress(), new DisbursementString[]{disbursement});
+                receiver.getAddress(), new Disbursement[]{disbursement});
         expectErrorMessage(disburseInsufficientFund,
                 TAG + ": Insufficient balance of asset " + balnScore.getAddress().toString() + " in DAOfund");
     }
