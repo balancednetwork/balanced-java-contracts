@@ -281,11 +281,18 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         assertEquals(BigInteger.valueOf(3), voterCount.get("for_voters"));
         assertEquals(BigInteger.TWO, voterCount.get("against_voters"));
 
-
         BigInteger forVotes = forVoter1Balance.add(forVoter2Balance).add(swayedForVoterBalance).multiply(EXA).divide(totalSupply);
         BigInteger againstvotes = aginstVoterBalance.add(swayedAgainstVoterBalance).multiply(EXA).divide(totalSupply);
         assertEquals(forVotes, vote.get("for"));
         assertEquals(againstvotes, vote.get("against"));
+
+        Map<String, BigInteger> swayedAgainstVoterVotes = (Map<String, BigInteger>) governance.call("getVotesOfUser", id, swayedAgainstVoter.getAddress());
+        Map<String, BigInteger> swayedForVoterVotes = (Map<String, BigInteger>) governance.call("getVotesOfUser", id, swayedForVoter.getAddress());
+
+        assertEquals(BigInteger.ZERO, swayedAgainstVoterVotes.get("for"));
+        assertEquals(swayedAgainstVoterBalance, swayedAgainstVoterVotes.get("against"));
+        assertEquals(swayedForVoterBalance, swayedForVoterVotes.get("for"));
+        assertEquals(BigInteger.ZERO, swayedForVoterVotes.get("against"));
     }
 
     @Test
@@ -404,6 +411,47 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         verify(bnUSD.mock, never()).govTransfer(daofund.getAddress(), owner.getAddress(), voteDefinitionFee, new byte[0]);
         assertEquals(ProposalStatus.STATUS[ProposalStatus.NO_QUORUM], vote.get("status"));
         assertEquals(false, vote.get("fee_refund_status"));
+    }
+
+    @Test
+    void getProposals() {
+        // Arrange
+        String voteName1 = "test1";
+        String voteName2 = "test2";
+        String voteName3 = "test3";
+        String voteName4 = "test4";
+        defineTestVoteWithName(voteName1);
+        
+        defineTestVoteWithName(voteName2);
+        createVoteWith(voteName3, BigInteger.TEN.multiply(EXA), BigInteger.valueOf(7).multiply(EXA), BigInteger.valueOf(3).multiply(EXA));
+        defineTestVoteWithName(voteName4);
+    
+
+        // Act
+        List<Map<String, Object>> votes = (List<Map<String, Object>>) governance.call("getProposals", 5, 0);
+
+        // Assert
+        assertEquals(4, votes.size());
+        assertEquals(voteName1, votes.get(0).get("name"));
+        assertEquals(voteName2, votes.get(1).get("name"));
+        assertEquals(voteName3, votes.get(2).get("name"));
+        assertEquals(voteName4, votes.get(3).get("name"));
+
+        // Act
+        votes = (List<Map<String, Object>>) governance.call("getProposals", 2, 0);
+
+        // Assert
+        assertEquals(2, votes.size());
+        assertEquals(voteName1, votes.get(0).get("name"));
+        assertEquals(voteName2, votes.get(1).get("name"));
+
+        // Act
+        votes = (List<Map<String, Object>>) governance.call("getProposals", 2, 2);
+
+        // Assert
+        assertEquals(2, votes.size());
+        assertEquals(voteName2, votes.get(0).get("name"));
+        assertEquals(voteName3, votes.get(1).get("name"));
     }
 
     @Test

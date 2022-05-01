@@ -251,7 +251,7 @@ public class GovernanceImpl {
     @External(readonly = true)
     public List<Object> getProposals(int batch_size, int offset) {
         int start = Math.max(1, offset);
-        int end = Math.min(batch_size + start, getProposalCount().intValue());
+        int end = Math.min(batch_size + start -1, getProposalCount().intValue());
         List<Object> proposals = new ArrayList<>();
         for (int i = start; i <= end; i++) {
             proposals.add(checkVote(BigInteger.valueOf(i)));
@@ -1098,25 +1098,26 @@ public class GovernanceImpl {
         dividends.setDividendsCategoryPercentage(_dist_list);
     }
 
-    public void setPoolLpFee(BigInteger _value) {
-        DexScoreInterface dex = new DexScoreInterface(Addresses.get("dex"));
-        dex.setPoolLpFee(_value);
-    }
+    // Unreacable in current version
+    // public void setPoolLpFee(BigInteger _value) {
+    //     DexScoreInterface dex = new DexScoreInterface(Addresses.get("dex"));
+    //     dex.setPoolLpFee(_value);
+    // }
 
-    public void setPoolBalnFee(BigInteger _value) {
-        DexScoreInterface dex = new DexScoreInterface(Addresses.get("dex"));
-        dex.setPoolBalnFee(_value);       
-    }
+    // public void setPoolBalnFee(BigInteger _value) {
+    //     DexScoreInterface dex = new DexScoreInterface(Addresses.get("dex"));
+    //     dex.setPoolBalnFee(_value);       
+    // }
 
-    public void setIcxConversionFee(BigInteger _value) {
-        DexScoreInterface dex = new DexScoreInterface(Addresses.get("dex"));
-        dex.setIcxConversionFee(_value);
-    }
+    // public void setIcxConversionFee(BigInteger _value) {
+    //     DexScoreInterface dex = new DexScoreInterface(Addresses.get("dex"));
+    //     dex.setIcxConversionFee(_value);
+    // }
 
-    public void setIcxBalnFee(BigInteger _value) {
-         DexScoreInterface dex = new DexScoreInterface(Addresses.get("dex"));
-         dex.setIcxBalnFee(_value);
-    }
+    // public void setIcxBalnFee(BigInteger _value) {
+    //      DexScoreInterface dex = new DexScoreInterface(Addresses.get("dex"));
+    //      dex.setIcxBalnFee(_value);
+    // }
 
     public void _setVoteDuration(BigInteger duration) {
         voteDuration.set(duration);
