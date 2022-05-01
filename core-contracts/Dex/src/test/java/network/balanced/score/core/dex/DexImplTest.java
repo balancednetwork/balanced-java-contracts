@@ -6,6 +6,8 @@ import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import score.Address;
 import score.Context;
 
 import java.math.BigInteger;
@@ -39,7 +41,6 @@ public class DexImplTest extends TestBase {
         dexScore = sm.deploy(ownerAccount, DexImpl.class, governanceScore.getAddress());
         dexScore.invoke(governanceScore, "setTimeOffset", BigInteger.valueOf(Context.getBlockTimestamp()));
     }
-
 
     @Test
     void testName(){
@@ -127,7 +128,7 @@ public class DexImplTest extends TestBase {
             "pool_total", poolBalnFee.add(poolLpFee),
             "pool_lp_fee", poolLpFee,
             "pool_baln_fee", poolBalnFee,
-            "icx_conversion_fees", icxConversionFee,
+            "icx_conversion_fee", icxConversionFee,
             "icx_baln_fee", icxBalnFee
         );
         Map<String, BigInteger> returnedFees;
@@ -152,11 +153,20 @@ public class DexImplTest extends TestBase {
         assertOnlyCallableByGovernance(dexScore, "turnDexOn");
     }
 
-    // addQuoteqoin - not implemented yet
+    @Test
+    void addQuoteCoinAndCheckIfAllowed() {
+        // Arrange.
+        Address quoteCoin = Account.newScoreAccount(1).getAddress();
+        Boolean quoteCoinAllowed;
 
-    // isQuoteCoinAllowed - not implemented yet.
+        // Act.
+        dexScore.invoke(governanceScore, "addQuoteCoin", quoteCoin);
+        quoteCoinAllowed = (Boolean) dexScore.call("isQuoteCoinAllowed", quoteCoin);
 
-    // getDay.
+        // Assert.
+        assertEquals(true, quoteCoinAllowed);
+        assertOnlyCallableByGovernance(dexScore, "addQuoteCoin", quoteCoin);
+    }
 
     @Test
     void setGetTimeOffSet() {
@@ -198,4 +208,50 @@ public class DexImplTest extends TestBase {
         
     }
 
+
+    /*
+    fallback
+    tokenFallback
+    cancelSicxIcxOrder
+    transfer
+    onIRC31Received
+    precompute (??)
+    getDeposit
+    getSicxEarnings
+    getWithdrawLock
+    getPoolId
+    getNonce
+    getNamedPools
+    lookupPid
+    getPoolTotal
+    totalSupply
+    balanceOf
+    getPoolBase
+    getPoolQuote
+    getQuotePriceInBase
+    getBasePriceInQuote
+    getPrice
+    getBalnPrice
+    getSicxBnusdPrice
+    getBnusdValue
+    getPriceByName
+    getICXBalance
+    getPoolName
+    getPoolStats
+    totalDexAddresses
+    getBalanceAndSupply
+    balanceOfAt
+    totalSupplyAt
+    totalBalnAt
+    getTotalValue
+    getBalnSnapshot
+    loadBalancesAtSnapshot
+    getDataBatch
+    permit
+    withdraw
+    remove
+    add
+    withdrawSicxEarnings
+    addLpAddresses
+    */
 }
