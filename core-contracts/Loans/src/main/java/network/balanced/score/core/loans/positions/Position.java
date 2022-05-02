@@ -17,8 +17,8 @@ import network.balanced.score.core.loans.LoansImpl;
 import network.balanced.score.core.loans.snapshot.*;
 import network.balanced.score.core.loans.utils.Standing;
 
-import static network.balanced.score.core.loans.utils.DBHelpers.*;
-import static network.balanced.score.core.loans.utils.Constants.*;
+import static network.balanced.score.lib.utils.ArrayDBUtils.*;
+import static network.balanced.score.core.loans.utils.LoansConstants.*;
 
 public class Position {
     public VarDB<Integer> id; 
@@ -36,7 +36,7 @@ public class Position {
     }
 
     public BigInteger get(String symbol) {
-        Context.require(contains(AssetDB.assetSymbols, symbol), symbol + "is not a supported asset on Balanced.");
+        Context.require(arrayDbContains(AssetDB.assetSymbols, symbol), symbol + "is not a supported asset on Balanced.");
         return assets.at(lastSnap()).getOrDefault(symbol, BigInteger.ZERO);
     }
     
@@ -48,7 +48,7 @@ public class Position {
             assets.at(lastSnap()).set(symbol, value);
         }
 
-        if (contains(AssetDB.activeAssets, symbol)) {
+        if (arrayDbContains(AssetDB.activeAssets, symbol)) {
             AssetDB.get(symbol).getBorrowers().set(id.get(), value);
         }
     }

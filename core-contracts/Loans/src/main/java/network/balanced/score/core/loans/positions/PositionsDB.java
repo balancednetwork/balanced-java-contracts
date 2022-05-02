@@ -9,7 +9,7 @@ import java.math.BigInteger;
 import java.util.Map;
 
 import network.balanced.score.core.loans.utils.*;
-import static network.balanced.score.core.loans.utils.Constants.*;
+import static network.balanced.score.core.loans.utils.LoansConstants.*;
 import network.balanced.score.core.loans.LoansImpl;
 import network.balanced.score.core.loans.linkedlist.*;
 import network.balanced.score.core.loans.snapshot.*;

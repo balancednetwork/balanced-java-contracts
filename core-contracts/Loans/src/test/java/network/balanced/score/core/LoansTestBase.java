@@ -35,7 +35,7 @@ import java.util.Map;
 import network.balanced.score.core.loans.sICXMintBurn;
 import network.balanced.score.core.loans.LoansImpl;
 import network.balanced.score.core.loans.bnUSDMintBurn;
-import static network.balanced.score.core.loans.utils.Constants.*;
+import static network.balanced.score.core.loans.utils.LoansConstants.*;
 
 import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.structs.RewardsDataEntry;
@@ -59,6 +59,7 @@ class LoansTestsBase extends UnitTest {
     protected MockContract<StakingScoreInterface> staking;
     protected MockContract<GovernanceScoreInterface> governance;
     protected MockContract<RewardsScoreInterface> rewards;
+    protected MockContract<DividendsScoreInterface> dividends;
     protected MockContract<ReserveScoreInterface> reserve;
     protected LoansImpl loansSpy;
 
@@ -135,6 +136,13 @@ class LoansTestsBase extends UnitTest {
 
     private void setupRewards() throws Exception {
         rewards = new MockContract<RewardsScoreInterface>(RewardsScoreInterface.class, sm, admin);
+        when(rewards.mock.distribute()).thenReturn(true);
+    }
+    
+    private void setupDividends() throws Exception {
+        dividends = new MockContract<DividendsScoreInterface>(DividendsScoreInterface.class, sm, admin);
+        when(dividends.mock.distribute()).thenReturn(true);
+
     }
     
     protected void mockRedeemFromReserve(Address address, BigInteger amount, BigInteger icxPrice) {
@@ -235,11 +243,12 @@ class LoansTestsBase extends UnitTest {
         setupAccounts();
         setupStaking();
         setupRewards();
+        setupDividends();
         setupReserve();
         setupDex();
 
         loans.invoke(admin, "setDex", dex.getAddress());
-        loans.invoke(admin, "setDividends", admin.getAddress());
+        loans.invoke(admin, "setDividends", dividends.getAddress());
         loans.invoke(admin, "setReserve", admin.getAddress());
         loans.invoke(admin, "setRebalance", admin.getAddress());
         loans.invoke(admin, "setStaking", staking.getAddress());

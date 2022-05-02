@@ -29,7 +29,7 @@ import network.balanced.score.lib.structs.RewardsDataEntry;
 public interface Rewards {
 
     @External
-    public boolean distribute();
+    public Boolean distribute();
     
     @External
     void updateRewardsData(String _name, BigInteger _totalSupply, Address _user, BigInteger _balance);

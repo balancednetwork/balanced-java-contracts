@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2022-2022 Balanced.network.
  *
@@ -14,19 +15,18 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.loans.utils;
+package network.balanced.score.lib.interfaces;
 
-import score.ArrayDB;
+import score.Address;
+import score.annotation.External;
 
-public class DBHelpers {
-    public static <T>Boolean contains(ArrayDB<T> db, T item) {
-        for (int i = 0; i < db.size(); i++) {
-            if (db.get(i).equals(item)) {
-                return true;
-            }
+import java.math.BigInteger;
 
-        }
+import foundation.icon.score.client.ScoreInterface;
 
-        return false;
-    }
+@ScoreInterface
+public interface Dividends {
+
+    public Boolean distribute();
 }
+

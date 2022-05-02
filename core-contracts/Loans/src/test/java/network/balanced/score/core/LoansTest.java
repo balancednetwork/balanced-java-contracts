@@ -1,6 +1,6 @@
 package network.balanced.score.core.loans;
 
-import static network.balanced.score.core.loans.utils.Constants.StandingsMap;
+import static network.balanced.score.core.loans.utils.LoansConstants.StandingsMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doNothing;
@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
 import network.balanced.score.core.loans.sICX;
-import network.balanced.score.core.loans.utils.Constants.Standings;
+import network.balanced.score.core.loans.utils.LoansConstants.Standings;
 import score.Address;
 import scorex.util.ArrayList;
 

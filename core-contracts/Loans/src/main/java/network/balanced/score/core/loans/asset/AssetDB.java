@@ -10,7 +10,7 @@ import scorex.util.HashMap;
 import scorex.util.ArrayList;
 import java.util.Map;
 
-import static network.balanced.score.core.loans.utils.DBHelpers.*;
+import static network.balanced.score.lib.utils.ArrayDBUtils.*;
 
 public class AssetDB {
     private static final String ASSET_DB_PREFIX = "asset";
@@ -25,7 +25,7 @@ public class AssetDB {
     // private static HashMap<String, Asset> items = new HashMap<String, Asset>(10);
 
     public static Asset get(String symbol) {
-        Context.require(contains(assetSymbols, symbol), symbol + "is not a supported asset.");
+        Context.require(arrayDbContains(assetSymbols, symbol), symbol + "is not a supported asset.");
         // if (!items.containsKey(symbol)) {
         //     items.put(symbol, getAsset(symbolMap.get(symbol)));
         // }
@@ -102,7 +102,7 @@ public class AssetDB {
 
     public static void addAsset(Address address, Boolean active, Boolean collateral) {
         String stringAddress = address.toString();
-        Context.require(!contains(assetAddresses, address), stringAddress + " already exists in the database.");
+        Context.require(!arrayDbContains(assetAddresses, address), stringAddress + " already exists in the database.");
         
         Asset asset = getAsset(stringAddress);
 

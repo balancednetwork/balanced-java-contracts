@@ -3,13 +3,12 @@ package network.balanced.score.core.loans.utils;
 import java.math.BigInteger;
 import java.util.Map;
 
-public class Constants   {
-    public static final BigInteger EXA =  BigInteger.valueOf(1000000).multiply(BigInteger.valueOf(1000000)).multiply(BigInteger.valueOf(1000000));
+import network.balanced.score.lib.utils.Constants;
 
+public class LoansConstants extends Constants {
     public static final BigInteger SECOND = BigInteger.valueOf(1000000);
     public static final BigInteger U_SECONDS_DAY = BigInteger.valueOf(86400).multiply(SECOND);
-    
-    //All percentages expressed in terms of points.
+
     public static final BigInteger POINTS = BigInteger.valueOf(10000);
     public static final BigInteger MINING_RATIO = BigInteger.valueOf(50000);
     public static final BigInteger LOCKING_RATIO = BigInteger.valueOf(40000);

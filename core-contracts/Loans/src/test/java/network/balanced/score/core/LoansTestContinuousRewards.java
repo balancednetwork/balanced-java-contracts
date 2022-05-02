@@ -39,7 +39,7 @@ import java.util.Arrays;
 
 import network.balanced.score.core.loans.sICXMintBurn;
 import network.balanced.score.core.loans.bnUSDMintBurn;
-import static network.balanced.score.core.loans.utils.Constants.*;
+import static network.balanced.score.core.loans.utils.LoansConstants.*;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 
 import java.util.Random;

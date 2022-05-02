@@ -20,10 +20,10 @@ import score.Address;
 import score.ArrayDB;
 
 public class ArrayDBUtils {
-    public static boolean arrayDbContains(ArrayDB<Address> arrayDB, Address address) {
+    public static <T>boolean arrayDbContains(ArrayDB<T> arrayDB, T item) {
         final int size = arrayDB.size();
         for (int i = 0; i < size; i++) {
-            if (arrayDB.get(i).equals(address)) {
+            if (arrayDB.get(i).equals(item)) {
                 return true;
             }
         }

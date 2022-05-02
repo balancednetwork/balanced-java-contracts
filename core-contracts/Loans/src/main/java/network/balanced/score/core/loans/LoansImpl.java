@@ -14,8 +14,6 @@ import com.eclipsesource.json.JsonObject;
 import java.math.BigInteger;
 import java.util.Map;
 
-import javax.swing.plaf.basic.BasicGraphicsUtils;
-
 import java.util.List;
 
 import static java.util.Map.entry;
@@ -27,15 +25,10 @@ import network.balanced.score.core.loans.linkedlist.*;
 import network.balanced.score.core.loans.snapshot.*;
 import network.balanced.score.core.loans.positions.*;
 
-import static network.balanced.score.core.loans.utils.Constants.*;
-import static network.balanced.score.core.loans.utils.Checks.*;
+import static network.balanced.score.core.loans.utils.LoansConstants.*;
+import static network.balanced.score.lib.utils.Check.*;
 
-import network.balanced.score.lib.interfaces.Loans;
-import network.balanced.score.lib.interfaces.StakingScoreInterface;
-import network.balanced.score.lib.interfaces.RewardsScoreInterface;
-import network.balanced.score.lib.interfaces.DexScoreInterface;
-import network.balanced.score.lib.interfaces.GovernanceScoreInterface;
-import network.balanced.score.lib.interfaces.ReserveScoreInterface;
+import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 
@@ -147,7 +140,7 @@ public class LoansImpl  implements Loans {
 
     @External
     public void turnLoansOn() {
-        onlyGovernance();
+        only(governance);
         loansOn.set(true);
         ContractActive("Loans", "Active");
         currentDay.set(_getDay());
@@ -156,7 +149,7 @@ public class LoansImpl  implements Loans {
 
     @External
     public void toggleLoansOn() {
-        onlyGovernance();
+        only(governance);
         loansOn.set(!loansOn.get());
         ContractActive("Loans", loansOn.get() ? "Active" : "Inactive");
     }
@@ -168,7 +161,7 @@ public class LoansImpl  implements Loans {
 
     @External
     public void setContinuousRewardsDay(BigInteger _day) {
-        onlyGovernance();
+        only(governance);
         continuousRewardDay.set(_day);
     }
 
@@ -191,8 +184,9 @@ public class LoansImpl  implements Loans {
 
     @External
     public void delegate(PrepDelegations[] prepDelegations) {
-        onlyGovernance();
-        Context.call(staking.get(), "delegate", (Object) prepDelegations);
+        only(governance);
+        Staking stakingInterface = new StakingScoreInterface(staking.get());
+        stakingInterface.delegate(prepDelegations);
     }
 
     @External(readonly = true)
@@ -299,7 +293,7 @@ public class LoansImpl  implements Loans {
 
     @External
     public void addAsset(Address _token_address, boolean _active, boolean _collateral) {
-        onlyAdmin();
+        only(admin);
         AssetDB.addAsset(_token_address, _active, _collateral);
         Asset asset = AssetDB.getAsset(_token_address.toString());
         AssetAdded(_token_address, asset.symbol(), _collateral);
@@ -308,7 +302,7 @@ public class LoansImpl  implements Loans {
 
     @External
     public void toggleAssetActive(String _symbol) {
-        onlyAdmin();
+        only(admin);
         Asset asset = AssetDB.get(_symbol);
         Boolean active = asset.isActive();
         asset.active.set(!active);
@@ -317,7 +311,7 @@ public class LoansImpl  implements Loans {
 
     @External
     public boolean precompute(BigInteger _snapshot_id, int batch_size) {
-        onlyRewards();
+        only(rewards);
         checkForNewDay();
         return PositionsDB.calculateSnapshot(_snapshot_id, batch_size);
     }
@@ -380,7 +374,7 @@ public class LoansImpl  implements Loans {
 
     @External
     public boolean checkForNewDay() {
-        loansOn();
+        Context.require(LoansImpl.loansOn.get(), "Balanced Loans SCORE is not active.");
         BigInteger day = _getDay();
 
         if (currentDay.get().compareTo(day) < 0 && day.compareTo(continuousRewardDay.get()) <= 0) {
@@ -411,7 +405,7 @@ public class LoansImpl  implements Loans {
 
     @External
     public void checkDistributions(BigInteger _day, boolean _new_day) {
-        loansOn();
+        Context.require(LoansImpl.loansOn.get(), "Balanced Loans SCORE is not active.");
         Boolean _rewardsDone = rewardsDone.get();
         Boolean _dividendsDone = dividendsDone.get();
 
@@ -419,10 +413,11 @@ public class LoansImpl  implements Loans {
             rewardsDone.set(false);
             dividendsDone.set(false);
         } else if (!_dividendsDone) {
-            dividendsDone.set((Boolean )Context.call(dividends.get(), "distribute"));
+            Dividends dividendsInterface = new DividendsScoreInterface(dividends.get());
+            dividendsDone.set(dividendsInterface.distribute());
         } else if (!_rewardsDone) {
-            RewardsScoreInterface rewardsScore = new RewardsScoreInterface(rewards.get());
-            rewardsScore.distribute();
+            Rewards rewardsInterface = new RewardsScoreInterface(rewards.get());
+            rewardsDone.set(rewardsInterface.distribute());
         }
     }
 
@@ -451,7 +446,7 @@ public class LoansImpl  implements Loans {
     @External
     @Payable
     public void depositAndBorrow(@Optional String _asset, @Optional BigInteger _amount, @Optional Address _from, @Optional BigInteger _value) {
-        loansOn();
+        Context.require(LoansImpl.loansOn.get(), "Balanced Loans SCORE is not active.");
         BigInteger deposit = Context.getValue();
         Address sender = Context.getCaller();
         if (!sender.equals(AssetDB.get("sICX").getAddress())) {
@@ -485,7 +480,7 @@ public class LoansImpl  implements Loans {
 
     @External
     public void retireBadDebt(String _symbol, BigInteger _value) {
-        loansOn();
+        Context.require(LoansImpl.loansOn.get(), "Balanced Loans SCORE is not active.");
         Context.require(_value.compareTo(BigInteger.ZERO) == 1, "Amount retired must be greater than zero.");
         Address from = Context.getCaller();
         Asset asset = AssetDB.get(_symbol);
@@ -510,7 +505,7 @@ public class LoansImpl  implements Loans {
 
     @External
     public void returnAsset(String _symbol, BigInteger _value, boolean _repay) {
-        loansOn();
+        Context.require(LoansImpl.loansOn.get(), "Balanced Loans SCORE is not active.");
         Context.require(_value.compareTo(BigInteger.ZERO) == 1, "Amount retired must be greater than zero.");
         Address from = Context.getCaller();
         Asset asset = AssetDB.get(_symbol);
@@ -561,8 +556,8 @@ public class LoansImpl  implements Loans {
 
     @External
     public void raisePrice(BigInteger _total_tokens_required) {
-        loansOn();
-        onlyRebalance();
+        Context.require(LoansImpl.loansOn.get(), "Balanced Loans SCORE is not active.");
+        only(rebalancing);
         String symbol = "bnUSD";
         Asset asset = AssetDB.get(symbol);
         DexScoreInterface dexScore = new DexScoreInterface(dex.get());
@@ -638,8 +633,8 @@ public class LoansImpl  implements Loans {
 
     @External
     public void lowerPrice(BigInteger _total_tokens_required) {
-        loansOn();
-        onlyRebalance();
+        Context.require(LoansImpl.loansOn.get(), "Balanced Loans SCORE is not active.");
+        only(rebalancing);
         String symbol = "sICX";
         Asset asset = AssetDB.get(symbol);
 
@@ -713,7 +708,7 @@ public class LoansImpl  implements Loans {
 
     @External
     public void withdrawCollateral(BigInteger _value) {
-        loansOn();
+        Context.require(LoansImpl.loansOn.get(), "Balanced Loans SCORE is not active.");
         Context.require(_value.compareTo(BigInteger.ZERO) == 1, "Withdraw amount must be more than zero.");
         Address from = Context.getCaller();
         Context.require(PositionsDB.hasPosition(from), "This address does not have a position on Balanced.");
@@ -742,7 +737,7 @@ public class LoansImpl  implements Loans {
 
     @External
     public void liquidate(Address _owner) {
-        loansOn();
+        Context.require(LoansImpl.loansOn.get(), "Balanced Loans SCORE is not active.");
         Context.require(PositionsDB.hasPosition(_owner), "This address does not have a position on Balanced.");
         Position position = PositionsDB.getPosition(_owner);
         Standings standing = position.updateStanding(BigInteger.valueOf(-1));
@@ -761,7 +756,8 @@ public class LoansImpl  implements Loans {
             BigInteger debt = position.get(symbol);
             if (!asset.isCollateral.getOrDefault(false) && asset.active.getOrDefault(false) && debt.compareTo(BigInteger.ZERO) == 1) {
                 if (_getDay().compareTo(continuousRewardDay.get()) >= 0) {
-                    Context.call(rewards.get(), "updateRewardsData", "Loans", asset.totalSupply(), _owner, debt);
+                    Rewards rewardsInterface = new RewardsScoreInterface(rewards.get());
+                    rewardsInterface.updateRewardsData( "Loans", asset.totalSupply(), _owner, debt);
                 }
 
                 BigInteger badDebt = asset.badDebt.get();
@@ -850,7 +846,8 @@ public class LoansImpl  implements Loans {
                 PositionsDB.addNonZero(position.id.get());
             }
         } else {
-            Context.call(rewards.get(), "updateRewardsData", "Loans", asset.totalSupply(), from, holdings);
+            Rewards rewardsInterface = new RewardsScoreInterface(rewards.get());
+            rewardsInterface.updateRewardsData("Loans", asset.totalSupply(), from, holdings);
         }
 
         BigInteger newDebt = amount.add(fee);
@@ -886,7 +883,7 @@ public class LoansImpl  implements Loans {
 
     @External
     public void setAdmin(Address _address) {
-        onlyGovernance();
+        only(governance);
         admin.set(_address);
     }
 
@@ -897,7 +894,7 @@ public class LoansImpl  implements Loans {
 
     @External
     public void setGovernance(Address _address) {
-        onlyAdmin();
+        only(admin);
         Context.require(_address.isContract(), "Loans: Governance address should be a contract");
         governance.set(_address);
     }
@@ -909,7 +906,7 @@ public class LoansImpl  implements Loans {
 
     @External
     public void setDex(Address _address) {
-        onlyAdmin();
+        only(admin);
         dex.set(_address);
     }
 
@@ -920,7 +917,7 @@ public class LoansImpl  implements Loans {
     
     @External
     public void setRebalance(Address _address) {
-        onlyAdmin();
+        only(admin);
         rebalancing.set(_address);
     }
 
@@ -931,7 +928,7 @@ public class LoansImpl  implements Loans {
 
     @External
     public void setDividends(Address _address) {
-        onlyAdmin();
+        only(admin);
         dividends.set(_address);
     }
 
@@ -942,7 +939,7 @@ public class LoansImpl  implements Loans {
 
     @External
     public void setReserve(Address _address) {
-        onlyAdmin();
+        only(admin);
         reserve.set(_address);
     }
 
@@ -953,7 +950,7 @@ public class LoansImpl  implements Loans {
 
     @External
     public void setRewards(Address _address) {
-        onlyAdmin();
+        only(admin);
         rewards.set(_address);
     }
 
@@ -964,7 +961,7 @@ public class LoansImpl  implements Loans {
 
     @External
     public void setStaking(Address _address) {
-        onlyAdmin();
+        only(admin);
         staking.set(_address);
     }
 
@@ -975,67 +972,67 @@ public class LoansImpl  implements Loans {
 
     @External
     public void setMiningRatio(BigInteger _ratio) {
-        onlyAdmin();
+        only(admin);
         miningRatio.set(_ratio);
     }
 
     @External
     public void setLockingRatio(BigInteger _ratio) {
-        onlyAdmin();
+        only(admin);
         lockingRatio.set(_ratio);
     }
 
     @External
     public void setLiquidationRatio(BigInteger _ratio) {
-        onlyAdmin();
+        only(admin);
         liquidationRatio.set(_ratio); 
     }
 
     @External
     public void setOriginationFee(BigInteger _fee) {
-        onlyAdmin();
+        only(admin);
         originationFee.set(_fee);
     } 
 
     @External
     public void setRedemptionFee(BigInteger _fee) {
-        onlyAdmin();
+        only(admin);
         redemptionFee.set(_fee);
     }
 
     @External
     public void setRetirementBonus(BigInteger _points) {
-        onlyAdmin();
+        only(admin);
         retirementBonus.set(_points);
     }
 
     @External
     public void setLiquidationReward(BigInteger _points) {
-        onlyAdmin();
+        only(admin);
         liquidationReward.set(_points);
     }
 
     @External
     public void setNewLoanMinimum(BigInteger _minimum) {
-        onlyAdmin();
+        only(admin);
         newLoanMinimum.set(_minimum);
     }
 
     @External
     public void setMinMiningDebt(BigInteger _minimum) {
-        onlyAdmin();
+        only(admin);
         minMiningDebt.set(_minimum);
     }
 
     @External
     public void setTimeOffset(BigInteger deltaTime) {
-        onlyGovernance();
+        only(governance);
         timeOffset.set(deltaTime);
     }
 
     @External
     public void setMaxRetirePercent(BigInteger _value) {
-        onlyAdmin();
+        only(admin);
         Context.require(_value.compareTo(BigInteger.ZERO) != -1 && 
                     _value.compareTo(BigInteger.valueOf(10000)) != 1, 
                     "Input parameter must be in the range 0 to 10000 points.");
@@ -1044,7 +1041,7 @@ public class LoansImpl  implements Loans {
 
     @External
     public void setRedeemBatchSize(int _value) {
-        onlyAdmin();
+        only(admin);
         redeemBatch.set(_value);
     }
 
