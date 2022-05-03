@@ -6,11 +6,13 @@ import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import score.Address;
 import score.Context;
 
 import java.math.BigInteger;
+import java.util.HashMap;
 import java.util.Map;
 
 import static network.balanced.score.lib.test.UnitTest.*;
@@ -35,6 +37,9 @@ public class DexImplTest extends TestBase {
     private final Account stakedLPScore = Account.newScoreAccount(scoreCount++);
 
     private static Score dexScore;
+
+    protected MockContract<RewardsScoreInterface> rewards;
+    protected MockContract<DividendsScoreInterface> dividends;
 
     @BeforeEach
     public void setup() throws Exception {
@@ -205,7 +210,30 @@ public class DexImplTest extends TestBase {
 
     @Test
     void createNewPool() {
+        // Arrange.
+        Account supplier = sm.createAccount();
+        Address baseToken = balnScore.getAddress();
+        Address quoteToken = bnusdScore.getAddress();
+        BigInteger baseValue = BigInteger.valueOf(1000000000);
+        BigInteger quoteValue = BigInteger.valueOf(1000000000);
+        Boolean withdrawUnused = false;
         
+        DexImpl dexMock = Mockito.mock(DexImpl.class);
+        Mockito.when(dexMock.rewardsDone.get()).thenReturn(true);
+        Mockito.when(dexMock.dividendsDone.get()).thenReturn(true);
+
+        dexScore.invoke(governanceScore, "setAdmin", adminAccount.getAddress());
+        dexScore.invoke(adminAccount, "setBaln", balnScore.getAddress());
+        dexScore.invoke(governanceScore, "turnDexOn");
+        dexScore.invoke(governanceScore, "addQuoteCoin", bnusdScore.getAddress());
+        dexScore.invoke(balnScore, "tokenFallback", supplier.getAddress(), baseValue, tokenData("_deposit", new HashMap<>()));
+        dexScore.invoke(bnusdScore, "tokenFallback", supplier.getAddress(), quoteValue, tokenData("_deposit", new HashMap<>()));
+//
+        //
+//
+        //// Act.
+        //dexScore.invoke(supplier, "add", baseToken, quoteToken, baseValue, quoteValue, withdrawUnused);
+
     }
 
 
