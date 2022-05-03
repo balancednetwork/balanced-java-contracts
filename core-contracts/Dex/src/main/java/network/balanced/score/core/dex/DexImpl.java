@@ -1078,17 +1078,16 @@ public class DexImpl {
         }
 
         if (!rewardsDone.getOrDefault(false)) {
-            Context.call(rewards.get(), "distribute");
+            rewardsDone.set((Boolean) Context.call(rewards.get(), "distribute"));
         } else if (!dividendsDone.getOrDefault(false)) {
-            Context.call(dividends.get(), "distribute");
-
+            dividendsDone.set((Boolean) Context.call(dividends.get(), "distribute"));
         }
     }
 
     private void updateAccountSnapshot(Address account, BigInteger id) {
         BigInteger currentId = currentDay.get();
         BigInteger currentValue = balanceOf(account, id);
-        BigInteger length = accountBalanceSnapshot.at(id).at(account).at("length").get(BigInteger.ZERO);
+        BigInteger length = accountBalanceSnapshot.at(id).at(account).at("length").getOrDefault(BigInteger.ZERO, BigInteger.ZERO);
         BigInteger lastSnapshotId = BigInteger.ZERO;
         if (length.equals(BigInteger.ZERO)) {
             accountBalanceSnapshot.at(id).at(account).at("ids").set(length, currentId);
@@ -1112,7 +1111,7 @@ public class DexImpl {
     private void updateBalnSnapshot(BigInteger id) {
         BigInteger currentId = currentDay.get();
         BigInteger currentValue = poolTotal.at(id).get(baln.get());
-        BigInteger length = balnSnapshot.at(id).at("length").get(BigInteger.ZERO);
+        BigInteger length = balnSnapshot.at(id).at("length").getOrDefault(BigInteger.ZERO, BigInteger.ZERO);
         BigInteger lastSnapshotId = BigInteger.ZERO;
 
         if (length.equals(BigInteger.ZERO)) {
@@ -1138,7 +1137,7 @@ public class DexImpl {
     private void updateTotalSupplySnapshot(BigInteger id) {
         BigInteger currentId = currentDay.get();
         BigInteger currentValue = totalSupply(id);
-        BigInteger length = totalSupplySnapshot.at(id).at("length").get(BigInteger.ZERO);
+        BigInteger length = totalSupplySnapshot.at(id).at("length").getOrDefault(BigInteger.ZERO, BigInteger.ZERO);
         BigInteger lastSnapshotId = BigInteger.ZERO;
 
         if (length.equals(BigInteger.ZERO)) {
@@ -1431,16 +1430,13 @@ public class DexImpl {
             id = nextPoolNonce;
 
             nonce.set(nextPoolNonce.add(BigInteger.ONE));
-
             //TODO(galen): Discuss with scott whether we should even use active pools, and activate here if so.
             active.set(id, true);
             poolBase.set(id, _baseToken);
             poolQuote.set(id, _quoteToken);
 
             liquidity = (_baseValue.multiply(_quoteValue)).sqrt();
-
             Context.require(liquidity.compareTo(MIN_LIQUIDITY) >= 0, TAG + ": Initial LP tokens must exceed " + MIN_LIQUIDITY.toString(10));
-
             MarketAdded(id, _baseToken, _quoteToken, _baseValue, _quoteValue);
         } else {
             // Pool already exists, supply in the permitted order.
@@ -1517,15 +1513,13 @@ public class DexImpl {
         }
 
         if (_withdraw_unused) {
-
             if (userDepositedBase.compareTo(BigInteger.ZERO) > 0) {
                 withdraw(_baseToken, userDepositedBase);
             }
-
+            
             if (userDepositedQuote.compareTo(BigInteger.ZERO) > 0) {
-                withdraw(_quoteToken, userDepositedQuote);
+                withdraw(_quoteToken, userDepositedQuote);         
             }
-
         }
     }
 
