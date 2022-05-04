@@ -163,38 +163,10 @@ public class Multicall {
         return Map.of("returnData", returnData);
     }
 
-    @External(readonly = true)
-
-    public Map<String, Object> tryBlockAndAggregate(boolean requireSuccess,
-            Call[] calls) {
-        long blockNumber = getBlockNumber();
-        byte[] blockHash = getLastBlockHash();
-        Map<String, Object> returnData = tryAggregate(requireSuccess, calls);
-
-        return Map.of(
-                "blockNumber", blockNumber,
-                "blockHash", blockHash,
-                "returnData", returnData.get("returnData"));
-    }
-
-    @External(readonly = true)
-    public Map<String, Object> blockAndAggregate(Call[] calls) {
-        return tryBlockAndAggregate(Boolean.TRUE, calls);
-    }
 
     @External(readonly = true)
     public BigInteger getBalance(Address addr) {
         return Context.getBalance(addr);
-    }
-
-    @External(readonly = true)
-    public byte[] getBlockHash(long blockNumber) {
-        return Context.hash("sha3-256", BigInteger.valueOf(blockNumber).toByteArray());
-    }
-
-    @External(readonly = true)
-    public byte[] getLastBlockHash() {
-        return Context.hash("sha3-256", BigInteger.valueOf(Context.getBlockHeight() - 1).toByteArray());
     }
 
     @External(readonly = true)
