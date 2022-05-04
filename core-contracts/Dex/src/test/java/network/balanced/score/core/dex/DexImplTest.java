@@ -43,6 +43,7 @@ public class DexImplTest extends TestBase {
     private final Account rewardsScore = Account.newScoreAccount(scoreCount++);
     private final Account bnusdScore = Account.newScoreAccount(scoreCount++);
     private final Account balnScore = Account.newScoreAccount(scoreCount++);
+    private final Account sicxScore = Account.newScoreAccount(scoreCount++);
     private final Account feehandlerScore = Account.newScoreAccount(scoreCount++);
     private final Account stakedLPScore = Account.newScoreAccount(scoreCount++);
 
@@ -362,6 +363,172 @@ public class DexImplTest extends TestBase {
         assertEquals(expectedPrice, price);
     }
 
+    @Test
+    void getPrice() {
+        // Arrange.
+        BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
+        BigInteger balnValue = BigInteger.valueOf(350).multiply(EXA);
+        BigInteger expectedPrice = computePrice(balnValue, bnusdValue);
+        setupAddresses();
+
+        // Act.
+        supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+
+        // Assert.
+        BigInteger price = (BigInteger) dexScore.call( "getPrice", BigInteger.TWO);
+        assertEquals(expectedPrice, price);
+    }
+
+    @Test
+    void getBalnPrice() {
+        // Arrange.
+        BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
+        BigInteger balnValue = BigInteger.valueOf(350).multiply(EXA);
+        BigInteger expectedPrice = computePrice(balnValue, bnusdValue);
+        setupAddresses();
+
+        // Act.
+        supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+
+        // Assert.
+        BigInteger price = (BigInteger) dexScore.call( "getBalnPrice");
+        assertEquals(expectedPrice, price);
+    }
+
+    @Test
+    void getSicxBnusdPrice() {
+        // Arrange.
+        BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
+        BigInteger sicxValue = BigInteger.valueOf(350).multiply(EXA);
+        BigInteger expectedPrice = computePrice(bnusdValue, sicxValue);
+        setupAddresses();
+
+        // Act.
+        supplyLiquidity(ownerAccount, sicxScore, bnusdScore, sicxValue, bnusdValue, false);
+
+        // Assert.
+        BigInteger price = (BigInteger) dexScore.call( "getSicxBnusdPrice");
+        assertEquals(expectedPrice, price);
+    }
+
+    @Test
+    void getBnusdValue_sicxIsQuote() {
+        BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
+        BigInteger sicxValue = BigInteger.valueOf(350).multiply(EXA);
+        BigInteger expectedPrice = computePrice(bnusdValue, sicxValue);
+        setupAddresses();
+
+        // Act. Why does this fail?
+        //supplyLiquidity(ownerAccount, bnusdScore, sicxScore, bnusdValue, sicxValue, false);
+    }
+    
+    @Test
+    void getBnusdValue_bnusdIsQuote() {
+        // Arrange.
+        BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
+        BigInteger balnValue = BigInteger.valueOf(350).multiply(EXA);
+        BigInteger expectedValue = BigInteger.valueOf(195).multiply(EXA).multiply(BigInteger.TWO);
+        String poolName = "bnUSD/BALN";
+        BigInteger poolId = BigInteger.valueOf(2);
+        setupAddresses();
+      
+        // Act.
+        dexScore.invoke(governanceScore, "setMarketName", poolId, poolName);
+        supplyLiquidity(ownerAccount, balnScore, bnusdScore, balnValue, bnusdValue, false);
+
+        // Assert.
+        BigInteger poolValue = (BigInteger) dexScore.call( "getBnusdValue", poolName);
+        assertEquals(expectedValue, poolValue);
+    }
+
+    @Test
+    void getBnusdValue_QuoteNotSupported() {
+        // Arrange.
+        BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
+        BigInteger balnValue = BigInteger.valueOf(350).multiply(EXA);
+        String poolName = "bnUSD/BALN";
+        BigInteger poolId = BigInteger.valueOf(2);
+        setupAddresses();
+
+         // Act.
+        dexScore.invoke(governanceScore, "setMarketName", poolId, poolName);
+        supplyLiquidity(ownerAccount, bnusdScore, balnScore, balnValue, bnusdValue, false);
+
+         // Assert
+        BigInteger poolValue = (BigInteger) dexScore.call( "getBnusdValue", "bnUSD/BALN");
+        assertEquals(BigInteger.ZERO, poolValue);
+    }
+
+    @Test
+    void getPriceByName() {
+         // Arrange.
+         BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
+         BigInteger balnValue = BigInteger.valueOf(350).multiply(EXA);
+         String poolName = "bnUSD/BALN";
+         BigInteger poolId = BigInteger.valueOf(2);
+         BigInteger expectedPrice = computePrice(balnValue, bnusdValue);
+         setupAddresses();
+ 
+          // Act.
+         dexScore.invoke(governanceScore, "setMarketName", poolId, poolName);
+         supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+ 
+          // Assert
+         BigInteger price = (BigInteger) dexScore.call( "getPriceByName", "bnUSD/BALN");
+         assertEquals(expectedPrice, price);
+    }
+
+    @Test
+    void getPoolName() {
+        // Arrange.
+        String poolName = "bnUSD/BALN";
+        BigInteger poolId = BigInteger.valueOf(2);
+
+        // Act.
+        dexScore.invoke(governanceScore, "setMarketName", poolId, poolName);
+
+        // Assert.
+        String retrievedPoolName = (String) dexScore.call("getPoolName", poolId);
+        assertEquals(poolName, retrievedPoolName);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void getPoolStats_notSicxIcxPool() {
+        // Arrange.
+        BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
+        BigInteger balnValue = BigInteger.valueOf(350).multiply(EXA);
+        BigInteger expectedPrice = computePrice(balnValue, bnusdValue);
+        String poolName = "bnUSD/BALN";
+        BigInteger poolId = BigInteger.valueOf(2);
+        BigInteger tokenDecimals = BigInteger.valueOf(18);
+        BigInteger minQuote = BigInteger.ZERO;
+        BigInteger totalLpTokens = new BigInteger("261247009552262626468"); // Check how this is derived.
+
+        Map<String, Object> expectedPoolStats = Map.of(
+            "base", bnusdValue,
+            "quote", balnValue,
+            "base_token", bnusdScore.getAddress(),
+            "quote_token", balnScore.getAddress(),
+            "total_supply", totalLpTokens,
+            "price", expectedPrice,
+            "name", poolName,
+            "base_decimals", tokenDecimals,
+            "quote_decimals", tokenDecimals,
+            "min_quote", minQuote
+        );
+        setupAddresses();
+        
+        // Act.
+        dexScore.invoke(governanceScore, "setMarketName", poolId, poolName);
+        supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+
+        // Assert.
+        Map<String, Object> poolStats = (Map<String, Object>) dexScore.call( "getPoolStats", poolId);
+        assertEquals(expectedPoolStats, poolStats);
+    }
+
+
     //private void depositToken(Account depositor, Account tokenScore, BigInteger value) {
     //    dexScore.invoke(tokenScore, "tokenFallback", depositor.getAddress(), value, tokenData("_deposit", new HashMap<>()));
     //}
@@ -375,6 +542,7 @@ public class DexImplTest extends TestBase {
             "setRewards", rewardsScore.getAddress(),
             "setbnUSD", bnusdScore.getAddress(),
             "setBaln", balnScore.getAddress(),
+            "setSicx", sicxScore.getAddress(),
             "setFeehandler", feehandlerScore.getAddress(),
             "setStakedLp", stakedLPScore.getAddress()
         );
