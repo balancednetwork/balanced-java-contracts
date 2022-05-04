@@ -14,15 +14,18 @@ import org.mockito.Mockito;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.any;
 
-
 import score.Address;
 import score.Context;
+import score.annotation.Optional;
 
 import java.math.BigInteger;
 import java.util.Map;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 import static network.balanced.score.lib.test.UnitTest.*;
+import static network.balanced.score.lib.utils.Constants.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -150,12 +153,10 @@ public class DexImplTest extends TestBase {
             assertOnlyCallableByGovernance(dexScore, fee.getKey(), fee.getValue());
         }
 
-        // Act & assert - retrieve all fees and assert they are equal to their expected value.
+        // Assert - retrieve all fees and check validity.
         returnedFees =  (Map<String, BigInteger>) dexScore.call("getFees");
         assertTrue(expectedResult.equals(returnedFees));
     }
-
-    // setMarketName - no isolated getter.
     
     @Test
     void turnDexOnAndGetDexOn() {
@@ -168,13 +169,12 @@ public class DexImplTest extends TestBase {
     void addQuoteCoinAndCheckIfAllowed() {
         // Arrange.
         Address quoteCoin = Account.newScoreAccount(1).getAddress();
-        Boolean quoteCoinAllowed;
 
         // Act.
         dexScore.invoke(governanceScore, "addQuoteCoin", quoteCoin);
-        quoteCoinAllowed = (Boolean) dexScore.call("isQuoteCoinAllowed", quoteCoin);
 
         // Assert.
+        Boolean quoteCoinAllowed = (Boolean) dexScore.call("isQuoteCoinAllowed", quoteCoin);
         assertEquals(true, quoteCoinAllowed);
         assertOnlyCallableByGovernance(dexScore, "addQuoteCoin", quoteCoin);
     }
@@ -183,13 +183,12 @@ public class DexImplTest extends TestBase {
     void setGetTimeOffSet() {
         // Arrange.
         BigInteger timeOffset = BigInteger.valueOf(100);
-        BigInteger retrievedTimeOffset;
 
         // Act.
         dexScore.invoke(governanceScore, "setTimeOffset", timeOffset);
-        retrievedTimeOffset = (BigInteger) dexScore.call("getTimeOffset");
 
         // Assert.
+        BigInteger retrievedTimeOffset = (BigInteger) dexScore.call("getTimeOffset");
         assertEquals(timeOffset, retrievedTimeOffset);
         assertOnlyCallableByGovernance(dexScore, "setTimeOffset", timeOffset);
     }
@@ -200,67 +199,43 @@ public class DexImplTest extends TestBase {
     void setGetContinuousRewardsDay() {
         // Arrange.
         BigInteger continuousRewardsDay = BigInteger.valueOf(2);
-        BigInteger retrievedContinuousRewardsDay;
 
         // Act.
         dexScore.invoke(governanceScore, "setContinuousRewardsDay", continuousRewardsDay);
-        retrievedContinuousRewardsDay = (BigInteger) dexScore.call("getContinuousRewardsDay");
 
         // Assert.
+        BigInteger retrievedContinuousRewardsDay = (BigInteger) dexScore.call("getContinuousRewardsDay");
         assertEquals(continuousRewardsDay, retrievedContinuousRewardsDay);
         assertOnlyCallableByGovernance(dexScore, "setContinuousRewardsDay", continuousRewardsDay);
     }
 
-    // TODO: Set up a pool and test various sets and gets for that pool since they can't be tested in isolation.
-
-
-    @Test
-    void supplyLiquidity_newPoolCreated() {
-        // Arrange - Tokenssupply information.
-        Account supplier = sm.createAccount();
-        Address baseToken = balnScore.getAddress();
-        Address quoteToken = bnusdScore.getAddress();
-        BigInteger baseValue = BigInteger.valueOf(10).pow(20);
-        BigInteger quoteValue = BigInteger.valueOf(10).pow(20);
-        Boolean withdrawUnused = false;
-        
-        // Arrange - configure dex settings.
-        this.setupAddresses();
-        dexScore.invoke(governanceScore, "turnDexOn");
-        dexScore.invoke(governanceScore, "addQuoteCoin", bnusdScore.getAddress());
-
-        // Arrange - Mock these cross-contract calls.
-        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
-        contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
-        contextMock.when(() -> Context.call(any(Address.class), eq("decimals"))).thenReturn(BigInteger.valueOf(18));
-
-        // Act - deposit tokens and supply liquidity.
-        dexScore.invoke(balnScore, "tokenFallback", supplier.getAddress(), baseValue, tokenData("_deposit", new HashMap<>()));
-        dexScore.invoke(bnusdScore, "tokenFallback", supplier.getAddress(), quoteValue, tokenData("_deposit", new HashMap<>()));
-        dexScore.invoke(supplier, "add", baseToken, quoteToken, baseValue, quoteValue, withdrawUnused);
+    //@Test
+    //void supplyLiquidity_newPoolCreated() {
+    //    // Arrange - Tokenssupply information.
+    //    Account supplier = sm.createAccount();
+    //    Address baseToken = balnScore.getAddress();
+    //    Address quoteToken = bnusdScore.getAddress();
+    //    BigInteger baseValue = BigInteger.valueOf(10).pow(20);
+    //    BigInteger quoteValue = BigInteger.valueOf(10).pow(20);
+    //    Boolean withdrawUnused = false;
+    //    
+    //    // Arrange - configure dex settings.
+    //    this.setupAddresses();
+    //    dexScore.invoke(governanceScore, "turnDexOn");
+    //    dexScore.invoke(governanceScore, "addQuoteCoin", bnusdScore.getAddress());
+//
+    //    // Arrange - Mock these cross-contract calls.
+    //    contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
+    //    contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
+    //    contextMock.when(() -> Context.call(any(Address.class), eq("decimals"))).thenReturn(BigInteger.valueOf(18));
+//
+    //    // Act - deposit tokens and supply liquidity.
+    //    dexScore.invoke(balnScore, "tokenFallback", supplier.getAddress(), baseValue, tokenData("_deposit", new HashMap<>()));
+    //    dexScore.invoke(bnusdScore, "tokenFallback", supplier.getAddress(), quoteValue, tokenData("_deposit", new HashMap<>()));
+    //    dexScore.invoke(supplier, "add", baseToken, quoteToken, baseValue, quoteValue, withdrawUnused);
 
         // Assert.
-        // TODO. Test all getters for pools.
-
-    }
-
-    private void setupAddresses() {
-        dexScore.invoke(governanceScore, "setAdmin", adminAccount.getAddress());
-
-        Map<String, Address> addresses = Map.of(
-            "setDividends", dividendsScore.getAddress(),
-            "setStaking", stakingScore.getAddress(),
-            "setRewards", rewardsScore.getAddress(),
-            "setbnUSD", bnusdScore.getAddress(),
-            "setBaln", balnScore.getAddress(),
-            "setFeehandler", feehandlerScore.getAddress(),
-            "setStakedLp", stakedLPScore.getAddress()
-        );
-        
-        for (Map.Entry<String, Address> address : addresses.entrySet()) {
-            dexScore.invoke(adminAccount, address.getKey(), address.getValue());
-        }
-    }
+    //}
 
     @Test
     void tokenFallback_deposit() {
@@ -282,13 +257,166 @@ public class DexImplTest extends TestBase {
 
         // Assert.
         assertEquals(value, retrievedValue);
-
-
     }
 
-    private void depositToken(Account depositor, Account tokenScore, BigInteger value) {
-        dexScore.invoke(tokenScore, "tokenFallback", depositor.getAddress(), value, tokenData("_deposit", new HashMap<>()));
+    @Test
+    void getNonce() {
+        // Arrange.
+        setupAddresses();
+
+        // Act.
+        supplyLiquidity(ownerAccount, bnusdScore, balnScore, BigInteger.valueOf(10).pow(19), BigInteger.valueOf(10).pow(19), false);
+
+        // Assert.
+        BigInteger nonce = (BigInteger) dexScore.call( "getNonce");
+        assertEquals(BigInteger.valueOf(3), nonce);
     }
+
+    @Test
+    void getPoolId() {
+        // Arrange.
+        setupAddresses();
+
+        // Act.
+        supplyLiquidity(ownerAccount, bnusdScore, balnScore, BigInteger.valueOf(10).pow(19), BigInteger.valueOf(10).pow(19), false);
+
+        // Assert.
+        BigInteger poolId = (BigInteger) dexScore.call( "getPoolId", bnusdScore.getAddress(), balnScore.getAddress());
+        assertEquals(BigInteger.TWO, poolId);
+    }
+
+    @Test
+    void lookupId() {
+        // Arrange.
+        String namedMarket = "sICX/ICX";
+        BigInteger expectedId = BigInteger.valueOf(1);
+
+        // Assert.
+        BigInteger id = (BigInteger) dexScore.call("lookupPid", namedMarket);
+        assertEquals(expectedId, id);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void setGetMarketNames() {
+        // Arrange.
+        String poolName = "bnUSD/BALN";
+        BigInteger poolId = BigInteger.valueOf(2);
+        List<String> expectedMarketNames = Arrays.asList("sICX/ICX", poolName);
+
+        // Act.
+        dexScore.invoke(governanceScore, "setMarketName", poolId, poolName);
+
+        // Assert.
+        List<String> namedPools = (List<String>) dexScore.call("getNamedPools");
+        assertEquals(expectedMarketNames, namedPools);
+        assertOnlyCallableByGovernance(dexScore, "setMarketName", poolId, poolName);
+    }
+    
+    @Test
+    void getPoolBaseAndGetPoolQuote() {
+        // Arrange.
+        BigInteger bnusdValue = BigInteger.valueOf(10).pow(19);
+        BigInteger balnValue = BigInteger.valueOf(10).pow(19);
+        setupAddresses();
+
+        // Act.
+        supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+
+        // Assert.
+        Address poolBase = (Address) dexScore.call( "getPoolBase", BigInteger.TWO);
+        Address poolQuote = (Address) dexScore.call( "getPoolQuote", BigInteger.TWO);
+        assertEquals(poolBase, bnusdScore.getAddress());
+        assertEquals(poolQuote, balnScore.getAddress());
+    }
+
+    @Test
+    void getQuotePriceInBase() {
+        // Arrange.
+        BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
+        BigInteger balnValue = BigInteger.valueOf(350).multiply(EXA);
+        BigInteger expectedPrice = computePrice(bnusdValue, balnValue);
+        setupAddresses();
+
+        // Act.
+        supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+
+        // Assert.
+        BigInteger price = (BigInteger) dexScore.call( "getQuotePriceInBase", BigInteger.TWO);
+        assertEquals(expectedPrice, price);
+    }
+
+    @Test
+    void getBasePriceInQuote() {
+        // Arrange.
+        BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
+        BigInteger balnValue = BigInteger.valueOf(350).multiply(EXA);
+        BigInteger expectedPrice = computePrice(balnValue, bnusdValue);
+        setupAddresses();
+
+        // Act.
+        supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+
+        // Assert.
+        BigInteger price = (BigInteger) dexScore.call( "getBasePriceInQuote", BigInteger.TWO);
+        assertEquals(expectedPrice, price);
+    }
+
+    //private void depositToken(Account depositor, Account tokenScore, BigInteger value) {
+    //    dexScore.invoke(tokenScore, "tokenFallback", depositor.getAddress(), value, tokenData("_deposit", new HashMap<>()));
+    //}
+
+    private void setupAddresses() {
+        dexScore.invoke(governanceScore, "setAdmin", adminAccount.getAddress());
+
+        Map<String, Address> addresses = Map.of(
+            "setDividends", dividendsScore.getAddress(),
+            "setStaking", stakingScore.getAddress(),
+            "setRewards", rewardsScore.getAddress(),
+            "setbnUSD", bnusdScore.getAddress(),
+            "setBaln", balnScore.getAddress(),
+            "setFeehandler", feehandlerScore.getAddress(),
+            "setStakedLp", stakedLPScore.getAddress()
+        );
+        
+        for (Map.Entry<String, Address> address : addresses.entrySet()) {
+            dexScore.invoke(adminAccount, address.getKey(), address.getValue());
+        }
+    }
+
+    private void supplyLiquidity(Account supplier, Account baseTokenScore, Account quoteTokenScore, 
+                                 BigInteger baseValue, BigInteger quoteValue, @Optional boolean withdrawUnused) {
+        // Configure dex.
+        dexScore.invoke(governanceScore, "turnDexOn");
+        dexScore.invoke(governanceScore, "addQuoteCoin", quoteTokenScore.getAddress());
+
+        // Mock these cross-contract calls.
+        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
+        contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
+        contextMock.when(() -> Context.call(any(Address.class), eq("decimals"))).thenReturn(BigInteger.valueOf(18));
+
+        // Deposit tokens and supply liquidity.
+        dexScore.invoke(baseTokenScore, "tokenFallback", supplier.getAddress(), baseValue, tokenData("_deposit", new HashMap<>()));
+        dexScore.invoke(quoteTokenScore, "tokenFallback", supplier.getAddress(), quoteValue, tokenData("_deposit", new HashMap<>()));
+        dexScore.invoke(supplier, "add", baseTokenScore.getAddress(), quoteTokenScore.getAddress(), baseValue, quoteValue, withdrawUnused);
+    }
+
+    private BigInteger computePrice(BigInteger tokenAValue, BigInteger tokenBValue) {
+        return (tokenAValue.multiply(EXA)).divide(tokenBValue);
+    }
+
+    /*
+    Strategy:
+
+    private methods to:
+      - Deposit token.
+      - Withdraw token.
+      - Create pool / supply liquidity.
+
+
+      Then use those methods to set up conditions for the other tests such as all getters for pools, swaps etc.
+    */
+
 
     /*
     fallback
