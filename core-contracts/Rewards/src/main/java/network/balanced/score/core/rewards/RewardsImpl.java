@@ -263,7 +263,6 @@ public class RewardsImpl implements Rewards {
         recipients.add(_name);
         completeRecipient.add(_name);
         DataSourceDB.newSource(_name, _address);
-        return;
     }
 
     @External
@@ -539,7 +538,6 @@ public class RewardsImpl implements Rewards {
         onlyOwner();
         isContract(_address);
         governance.set(_address);
-        return;
     }
    
     @External(readonly = true)
@@ -611,7 +609,6 @@ public class RewardsImpl implements Rewards {
         only(admin);
         isContract(_address);
         stakedLp.set(_address);
-        return;
     }
    
     @External(readonly = true)
