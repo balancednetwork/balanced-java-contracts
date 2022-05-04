@@ -47,6 +47,7 @@ public class Multicall {
             this.success = b;
             this.returnData = result;
         }
+
         @Keep
         public boolean success;
 
@@ -115,11 +116,11 @@ public class Multicall {
         Object[] returnData = new Object[calls.length];
 
         for (int i = 0; i < calls.length; i++) {
-            Object[] params = convertToType(calls[i].params);
             Address contractAddress = calls[i].target;
             String method = calls[i].method;
-
             try {
+                Object[] params = convertToType(calls[i].params);
+
                 if (calls[i].params.length == 0) {
                     returnData[i] = Context.call(contractAddress, method);
                 } else {
@@ -138,11 +139,10 @@ public class Multicall {
     public Map<String, Object> tryAggregate(boolean requireSuccess, Call[] calls) {
         Result[] returnData = new Result[calls.length];
         for (int i = 0; i < calls.length; i++) {
-            Object[] params = convertToType(calls[i].params);
             Address contractAddress = calls[i].target;
             String method = calls[i].method;
-
             try {
+                Object[] params = convertToType(calls[i].params);
                 Object result = new Object();
                 if (calls[i].params.length == 0) {
                     result = Context.call(contractAddress, method);
