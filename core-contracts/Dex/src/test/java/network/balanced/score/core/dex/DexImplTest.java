@@ -8,6 +8,7 @@ import com.iconloop.score.test.TestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -20,6 +21,9 @@ import score.annotation.Optional;
 
 import java.math.BigInteger;
 import java.util.Map;
+
+import javax.swing.BoundedRangeModel;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -297,6 +301,72 @@ public class DexImplTest extends TestBase {
         assertEquals(expectedId, id);
     }
 
+
+    @Test
+    void getPoolTotal() {
+        // Arrange.
+        BigInteger bnusdValue = BigInteger.valueOf(10).pow(19);
+        BigInteger balnValue = BigInteger.valueOf(10).pow(19);
+        BigInteger poolId = BigInteger.valueOf(2);
+        setupAddresses();
+
+        // Act.
+        supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+
+        // Assert.
+        BigInteger retrievedBnusdValue = (BigInteger) dexScore.call("getPoolTotal", poolId, bnusdScore.getAddress());
+        BigInteger retrievedBalnValue = (BigInteger) dexScore.call("getPoolTotal", poolId, balnScore.getAddress());
+        assertEquals(bnusdValue, retrievedBnusdValue);
+        assertEquals(balnValue, retrievedBalnValue);
+    }
+
+    @Test
+    void balanceOf() {
+        // Arrange.
+        BigInteger bnusdValue = BigInteger.valueOf(10).pow(19);
+        BigInteger balnValue = BigInteger.valueOf(10).pow(19);
+        BigInteger userLpTokenValue = (bnusdValue.multiply(balnValue)).sqrt();
+        BigInteger poolId = BigInteger.valueOf(2);
+        setupAddresses();
+
+        // Act.
+        supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+
+        // Assert.
+        BigInteger retrievedUserLpTokenValue = (BigInteger) dexScore.call("balanceOf", ownerAccount.getAddress(), poolId);
+        assertEquals(userLpTokenValue, retrievedUserLpTokenValue);
+    }
+
+    @Test
+    void totalSupply_SicxIcxPool() {
+        // TODO after custom method to supply liquidity to this pool.
+
+       // Arrange.
+       //BigInteger poolId = BigInteger.valueOf(1);
+       //BigInteger totalLpTokens;
+
+       //// Assert.
+       //BigInteger retrievedTotalLpTokens = (BigInteger) dexScore.call("totalSupply", poolId);
+       //assertEquals(totalLpTokens, retrievedTotalLpTokens);
+    }
+
+    @Test
+    void totalSupply_normalPool() {
+        // Arrange.
+        BigInteger bnusdValue = BigInteger.valueOf(10).pow(19);
+        BigInteger balnValue = BigInteger.valueOf(10).pow(19);
+        BigInteger totalLpTokens = (bnusdValue.multiply(balnValue)).sqrt();
+        BigInteger poolId = BigInteger.valueOf(2);
+        setupAddresses();
+
+        // Act.
+        supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+
+        // Assert.
+        BigInteger retrievedTotalLpTokens = (BigInteger) dexScore.call("totalSupply", poolId);
+        assertEquals(totalLpTokens, retrievedTotalLpTokens);
+    }
+
     @Test
     @SuppressWarnings("unchecked")
     void setGetMarketNames() {
@@ -528,6 +598,107 @@ public class DexImplTest extends TestBase {
         assertEquals(expectedPoolStats, poolStats);
     }
 
+    @Test
+    void getTotalDexAddresses() {
+         // Arrange.
+         BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
+         BigInteger balnValue = BigInteger.valueOf(350).multiply(EXA);
+         BigInteger poolId = BigInteger.TWO;
+         setupAddresses();
+ 
+          // Act.
+         supplyLiquidity(adminAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+         supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+ 
+          // Assert
+         Integer totalDexAddresses = (int) dexScore.call( "totalDexAddresses", poolId);
+         assertEquals(2, totalDexAddresses);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void getBalanceAndSupply_normalPool() {
+        // Arrange - Variables.
+        String poolName = "bnUSD/BALN";
+        BigInteger poolId = BigInteger.TWO;
+        BigInteger mockBalance = BigInteger.valueOf(100);
+        BigInteger mockTotalSupply = BigInteger.valueOf(200);
+        Map<String, BigInteger> expectedData = Map.of(
+            "_balance", mockBalance,
+            "_totalSupply", mockTotalSupply
+        );
+
+        // Arrange - Setup dex contract.
+        dexScore.invoke(governanceScore, "setMarketName", poolId, poolName);
+        setupAddresses();
+
+        // Arrange - Mock these calls to stakedLP contract.
+        contextMock.when(() -> Context.call(eq(stakedLPScore.getAddress()), eq("balanceOf"), eq(ownerAccount.getAddress()), eq(poolId))).thenReturn(mockBalance);
+        contextMock.when(() -> Context.call(eq(stakedLPScore.getAddress()), eq("totalSupply"), eq(poolId))).thenReturn(mockTotalSupply);
+        
+        // Assert.
+        Map<String, BigInteger> returnedData = (Map<String, BigInteger>) dexScore.call( "getBalanceAndSupply", poolName, ownerAccount.getAddress());
+        assertEquals(expectedData, returnedData);
+    }
+
+    @Test
+    void removeLiquidity_withdrawalLockActive() {
+        // Arrange - remove liquidity arguments.
+        BigInteger poolId = BigInteger.TWO;
+        BigInteger lpTokensToRemove = BigInteger.valueOf(1000);
+        Boolean withdrawTokensOnRemoval = false;
+        
+        // Arrange - supply liquidity settings.
+        BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
+        BigInteger balnValue = BigInteger.valueOf(350).multiply(EXA);
+        setupAddresses();
+        supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+
+        // Act & Assert.
+        Executable fundsLocked = () -> dexScore.invoke(ownerAccount, "remove", poolId, lpTokensToRemove, withdrawTokensOnRemoval);
+        expectErrorMessage(fundsLocked, "Reverted(0): Balanced DEX:  Assets must remain in the pool for 24 hours, please try again later.");
+    }
+
+    @Test
+    void removeLiquidity() {
+        // Arrange - remove liquidity arguments.
+        BigInteger poolId = BigInteger.TWO;
+        BigInteger lpTokensToRemove = BigInteger.valueOf(1000);
+        Boolean withdrawTokensOnRemoval = false;
+        
+        // Arrange - supply liquidity settings.
+        BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
+        BigInteger balnValue = BigInteger.valueOf(350).multiply(EXA);
+        setupAddresses();
+        supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+        sm.getBlock().increase(100000000);
+
+         // Act & Assert.
+         dexScore.invoke(ownerAccount, "remove", poolId, lpTokensToRemove, withdrawTokensOnRemoval);
+         // Check current_lp_tokens = orignal_lp_tokens - lpTokensToRemove.
+         // Check other setters?
+    }
+
+    @Test
+    void getWithdrawLock() {
+        // Arrange - supply liquidity settings.
+        BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
+        BigInteger balnValue = BigInteger.valueOf(350).multiply(EXA);
+        BigInteger timestamp = BigInteger.valueOf(sm.getBlock().getTimestamp());
+        BigInteger poolId = BigInteger.TWO;
+        setupAddresses();
+
+        // Act.
+        supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+        
+        // Assert.
+        BigInteger withdrawalLock = (BigInteger) dexScore.call("getWithdrawLock", poolId, ownerAccount.getAddress());
+        //assertEquals(timestamp, withdrawalLock);
+
+        // sm.getBlock().getTimestamp =! Context.getBlockTimestamp().
+        // Bug in unittesting framework?
+    }
+
 
     //private void depositToken(Account depositor, Account tokenScore, BigInteger value) {
     //    dexScore.invoke(tokenScore, "tokenFallback", depositor.getAddress(), value, tokenData("_deposit", new HashMap<>()));
@@ -585,7 +756,6 @@ public class DexImplTest extends TestBase {
       Then use those methods to set up conditions for the other tests such as all getters for pools, swaps etc.
     */
 
-
     /*
     fallback
     tokenFallback
@@ -595,28 +765,10 @@ public class DexImplTest extends TestBase {
     precompute (??)
     getDeposit
     getSicxEarnings
-    getWithdrawLock
-    getPoolId
-    getNonce
-    getNamedPools
-    lookupPid
-    getPoolTotal
-    totalSupply
-    balanceOf
-    getPoolBase
-    getPoolQuote
-    getQuotePriceInBase
-    getBasePriceInQuote
-    getPrice
-    getBalnPrice
-    getSicxBnusdPrice
-    getBnusdValue
-    getPriceByName
+    getWithdrawLock Bug in testing framework?
+    getBnusdValue  // Not done yet. Multiple conditionals
     getICXBalance
-    getPoolName
-    getPoolStats
-    totalDexAddresses
-    getBalanceAndSupply
+    getBalanceAndSupply  // sicx/icx pool left.
     balanceOfAt
     totalSupplyAt
     totalBalnAt
