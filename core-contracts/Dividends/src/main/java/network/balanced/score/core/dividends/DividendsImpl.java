@@ -7,9 +7,9 @@ import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
 import scorex.util.HashMap;
+import scorex.util.ArrayList;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -48,10 +48,10 @@ public class DividendsImpl implements Dividends {
     private static final VarDB<BigInteger> timeOffset = Context.newVarDB(TIME_OFFSET, BigInteger.class);
     private static final VarDB<BigInteger> dividendsEnabledToStakedBalnDay = Context.newVarDB(DIVIDENDS_ENABLED_TO_STAKED_BALN_ONLY_DAY, BigInteger.class);
 
-    public DividendsImpl(@Optional Address governance) {
-        if (governance != null) {
-            Context.require(governance.isContract(), "Dividends: Governance address should be a contract");
-            DividendsImpl.governance.set(governance);
+    public DividendsImpl(@Optional Address _governance) {
+        if (_governance != null) {
+            Context.require(_governance.isContract(), "Dividends: Governance address should be a contract");
+            DividendsImpl.governance.set(_governance);
             snapshotId.set(BigInteger.ONE);
             maxLoopCount.set(MAX_LOOP);
             minimumEligibleDebt.set(MINIMUM_ELIGIBLE_DEBT);
