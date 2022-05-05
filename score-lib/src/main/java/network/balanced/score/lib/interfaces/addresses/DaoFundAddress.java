@@ -3,10 +3,11 @@ package network.balanced.score.lib.interfaces.addresses;
 import score.Address;
 import score.annotation.External;
 
-public interface BalnAddress {
+public interface DaoFundAddress {
+
     @External
-    void setBaln(Address _address);
+    void setDaofund(Address _address);
 
     @External(readonly = true)
-    Address getBaln();
+    Address getDaofund();
 }
