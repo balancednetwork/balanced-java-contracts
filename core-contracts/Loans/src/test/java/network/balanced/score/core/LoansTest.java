@@ -60,18 +60,18 @@ class LoansTests extends LoansTestsBase {
         loans.invoke(admin, "setLockingRatio", BigInteger.valueOf(10));
         loans.invoke(admin, "setMiningRatio", BigInteger.valueOf(11));
 
-        loans.invoke(admin, "setStaking", accounts.get(0).getAddress());
-        loans.invoke(admin, "setRewards", accounts.get(1).getAddress());
-        loans.invoke(admin, "setReserve", accounts.get(2).getAddress());
-        loans.invoke(admin, "setDividends", accounts.get(3).getAddress());
+        loans.invoke(admin, "setStaking", staking.getAddress());
+        loans.invoke(admin, "setRewards", rewards.getAddress());
+        loans.invoke(admin, "setReserve", reserve.getAddress());
+        loans.invoke(admin, "setDividends", dividends.getAddress());
 
         Map<String, Object> params = (Map<String, Object>)loans.call("getParameters");
         assertEquals(admin.getAddress(), params.get("admin"));
         assertEquals(governance.getAddress(), params.get("governance"));
-        assertEquals(accounts.get(0).getAddress(), params.get("staking"));
-        assertEquals(accounts.get(1).getAddress(), params.get("rewards"));
-        assertEquals(accounts.get(2).getAddress(), params.get("reserve_fund"));
-        assertEquals(accounts.get(3).getAddress(), params.get("dividends"));
+        assertEquals(staking.getAddress(), params.get("staking"));
+        assertEquals(rewards.getAddress(), params.get("rewards"));
+        assertEquals(reserve.getAddress(), params.get("reserve_fund"));
+        assertEquals(dividends.getAddress(), params.get("dividends"));
 
         assertEquals(1, params.get("redeem batch size"));
         assertEquals(BigInteger.valueOf(2), params.get("retire percent max"));
@@ -247,7 +247,7 @@ class LoansTests extends LoansTestsBase {
         // Assert
         BigInteger totalSupply = (BigInteger) bnusd.call("totalSupply");
         assertEquals(BigInteger.ZERO, balanceAndSupply.get("_balance"));
-        assertEquals(BigInteger.ZERO, balanceAndSupply.get("_totalSupply"));
+        assertEquals(totalSupply, balanceAndSupply.get("_totalSupply"));
     }
 
 
@@ -941,7 +941,7 @@ class LoansTests extends LoansTestsBase {
         mockSwap(bnusd, rebalanceAmount, expectedBnusdRecived);
 
         // Act
-        loans.invoke(admin, "raisePrice", rebalanceAmount);
+        loans.invoke(rebalancing, "raisePrice", rebalanceAmount);
 
         // Assert
         BigInteger remainingBnusd = expectedBnusdRecived;
@@ -1000,7 +1000,7 @@ class LoansTests extends LoansTestsBase {
         mockSwap(bnusd, rebalanceAmount, rebalanceAmount);
 
         // Act
-        loans.invoke(admin, "raisePrice", totalTokenRequired);
+        loans.invoke(rebalancing, "raisePrice", totalTokenRequired);
 
         // Assert
         BigInteger remainingBnusd = expectedBnusdRecived;
@@ -1056,7 +1056,7 @@ class LoansTests extends LoansTestsBase {
         mockSwap(sicx, rebalanceAmount, rebalanceAmount);
 
         // Act
-        loans.invoke(admin, "lowerPrice", rebalanceAmount);
+        loans.invoke(rebalancing, "lowerPrice", rebalanceAmount);
 
         // Assert
         BigInteger remainingSicx = expectedSICXRecived;
@@ -1116,7 +1116,7 @@ class LoansTests extends LoansTestsBase {
         mockSwap(sicx, rebalanceAmount, rebalanceAmount);
 
         // Act
-        loans.invoke(admin, "lowerPrice", totalTokenRequired);
+        loans.invoke(rebalancing, "lowerPrice", totalTokenRequired);
 
         // Assert
         BigInteger remainingSicx = expectedSICXRecived;

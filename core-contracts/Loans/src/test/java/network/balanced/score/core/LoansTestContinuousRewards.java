@@ -30,6 +30,7 @@ import score.annotation.External;
 
 import java.math.BigInteger;
 import java.math.MathContext;
+import java.security.acl.Owner;
 import java.math.BigDecimal;
 import scorex.util.ArrayList;
 import java.util.HashMap;
@@ -92,6 +93,71 @@ class LoansTestContinuousRewards extends LoansTestsBase {
         Executable getDataBatch = () -> loans.call("getDataBatch", "loans", day, 0, 0);
         expectErrorMessage(getDataBatch, continuousRewardsErrorMessage);
     }
+
+    @Test
+    void migrateUserData_UserWithPosition() {
+        // Arrange
+        governanceCall("setContinuousRewardsDay", BigInteger.valueOf(100000));
+        Account account = accounts.get(0);
+        BigInteger totalSupply = (BigInteger) bnusd.call("totalSupply");
+        BigInteger intialDebt = BigInteger.ZERO;
+
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
+
+        // Act
+        takeLoanICX(account, "bnUSD", collateral, loan);
+    
+        // Assert
+        verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
+        assertTrue((boolean) loans.call("hasDebt", account.getAddress()));
+
+        // Act
+        enableContinuousRewards();
+        loans.invoke(account, "migrateUserData", account.getAddress());
+
+        // Assert
+        verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
+        assertTrue((boolean) loans.call("hasDebt", account.getAddress()));
+    }
+
+    @Test
+    void migrateUserData_ChangePosition_beforeMigration() {
+        // Arrange
+        governanceCall("setContinuousRewardsDay", BigInteger.valueOf(100000));
+        Account account = accounts.get(0);
+        BigInteger totalSupply = (BigInteger) bnusd.call("totalSupply");
+        BigInteger intialDebt = BigInteger.ZERO;
+
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
+
+        // Act
+        takeLoanICX(account, "bnUSD", collateral, loan);
+    
+        // Assert
+        verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
+        assertTrue((boolean) loans.call("hasDebt", account.getAddress()));
+    
+        // Act
+        enableContinuousRewards();
+        BigInteger addedCollateral = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger addedLoan = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger expectedAddedFee = calculateFee(addedLoan);
+        BigInteger expectedCollateral = addedCollateral.add(collateral);
+        BigInteger expectedLoan = addedLoan.add(loan).add(expectedAddedFee).add(expectedFee);
+
+        takeLoanICX(account, "bnUSD", addedCollateral, addedLoan);
+
+        // Assert
+        verifyPosition(account.getAddress(), expectedCollateral, expectedLoan);
+        assertTrue((boolean) loans.call("hasDebt", account.getAddress()));
+        loans.invoke(account, "migrateUserData", account.getAddress());
+        verifyPosition(account.getAddress(), expectedCollateral, expectedLoan);
+        assertTrue((boolean) loans.call("hasDebt", account.getAddress()));
+    }    
 
     @Test
     void DepositAndBorrow_rewardsUpdate_noInitalLoan() {
@@ -188,7 +254,7 @@ class LoansTestContinuousRewards extends LoansTestsBase {
         mockSwap(bnusd, rebalanceAmount, expectedBnusdRecived);
 
         // Act
-        loans.invoke(admin, "raisePrice", rebalanceAmount);
+        loans.invoke(rebalancing, "raisePrice", rebalanceAmount);
 
         // Assert
         BigInteger remainingBnusd = expectedBnusdRecived;
@@ -264,7 +330,7 @@ class LoansTestContinuousRewards extends LoansTestsBase {
         mockSwap(sicx, rebalanceAmount, expectedSICXRecived);
 
         // Act
-        loans.invoke(admin, "lowerPrice", rebalanceAmount);
+        loans.invoke(rebalancing, "lowerPrice", rebalanceAmount);
 
         // Assert
         BigInteger remainingSicx = expectedSICXRecived;

@@ -52,6 +52,9 @@ public interface Loans extends
     @External(readonly = true)
     boolean getLoansOn();
 
+    @External(readonly = true)
+    void migrateUserData(Address address);
+
     @External
     void setContinuousRewardsDay(BigInteger _day);
 
@@ -125,6 +128,9 @@ public interface Loans extends
 
     @External(readonly = true)
     BigInteger getBnusdValue(String _name);
+
+    @External(readonly = true)
+    BigInteger getDataCount(BigInteger _snapshot_id);
 
     @External(readonly = true)
     Map<Address, BigInteger> getDataBatch(String _name, BigInteger _snapshot_id, int _limit, @Optional int _offset);

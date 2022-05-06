@@ -102,7 +102,15 @@ public class PositionsDB {
         position.id.set(id);
         position.created.set(BigInteger.valueOf(Context.getBlockTimestamp()));
         position.address.set(address);
-        position.assets.at(snapshotIndex).set("sICX", BigInteger.ZERO);
+
+        Boolean checkDay = snapshotIndex.compareTo(LoansImpl.continuousRewardDay.get()) < 0;
+
+        if (checkDay) {
+            position.assets.at(snapshotIndex).set("sICX", BigInteger.ZERO);
+        } else {
+            position.collateral.set("sICX", BigInteger.ZERO);
+            position.dataMigrationStatus.set("sICX", true);
+        }
 
         // items.put(id, position);
         return position;
@@ -125,7 +133,7 @@ public class PositionsDB {
     }
 
     public static Boolean calculateSnapshot(BigInteger day, int batchSize) {
-        Context.require(day.compareTo(LoansImpl.continuousRewardDay.get()) < 0, "The continuous rewards is already active.");
+        Context.require(day.compareTo(LoansImpl.continuousRewardDay.get()) < 0, continuousRewardsErrorMessage);
         Snapshot snapshot = SnapshotDB.get(day);
         BigInteger snapshotId = snapshot.day.get();
         if (snapshotId.compareTo(day) < 0) {

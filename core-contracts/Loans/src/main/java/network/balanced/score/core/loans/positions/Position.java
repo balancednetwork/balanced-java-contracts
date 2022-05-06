@@ -26,6 +26,9 @@ public class Position {
     public VarDB<Address> address;
     public ArrayDB<BigInteger> snaps;
     public BranchDB<BigInteger, DictDB<String, BigInteger>> assets;
+    public DictDB<String, Boolean> dataMigrationStatus;
+    public DictDB<String, BigInteger> collateral;
+    public BranchDB<String,  DictDB<String, BigInteger>> loans;
 
     public Position(String dbKey) {
         id = (VarDB<Integer>)Context.newBranchDB("id", Integer.class).at(dbKey);
@@ -33,11 +36,25 @@ public class Position {
         address = (VarDB<Address>)Context.newBranchDB("address", Address.class).at(dbKey);
         snaps = (ArrayDB<BigInteger>)Context.newBranchDB("snaps", BigInteger.class).at(dbKey);
         assets = (BranchDB<BigInteger, DictDB<String, BigInteger>>)Context.newBranchDB("assets", BigInteger.class).at(dbKey);
+        dataMigrationStatus = (DictDB<String, Boolean>)Context.newBranchDB("data_migration _status", Boolean.class).at(dbKey);
+        collateral = (DictDB<String, BigInteger>)Context.newBranchDB("loan_balance", BigInteger.class).at(dbKey);
+        loans = (BranchDB<String,  DictDB<String, BigInteger>>)Context.newBranchDB("collateral_balance", BigInteger.class).at(dbKey);
+        
     }
 
     public BigInteger get(String symbol) {
         Context.require(arrayDbContains(AssetDB.assetSymbols, symbol), symbol + "is not a supported asset on Balanced.");
-        return assets.at(lastSnap()).getOrDefault(symbol, BigInteger.ZERO);
+        
+        if (LoansImpl._getDay().compareTo(LoansImpl.continuousRewardDay.get()) < 0 || !dataMigrationStatus.getOrDefault(symbol, false) ) {
+            return assets.at(lastSnap()).getOrDefault(symbol, BigInteger.ZERO);
+        }
+
+        if (AssetDB.get(symbol).isCollateral()) {
+            return collateral.get(symbol);
+        };
+
+        return loans.at("sICX").get(symbol);
+
     }
     
     public void set(String symbol, BigInteger value) {
@@ -45,7 +62,13 @@ public class Position {
             BigInteger day = checkSnap();
             assets.at(day).set(symbol, value);
         } else {
-            assets.at(lastSnap()).set(symbol, value);
+            if (symbol == "sICX") {
+                collateral.set("sICX", value);
+            } else {
+                loans.at("sICX").set(symbol, value);
+            }
+
+            dataMigrationStatus.set(symbol, true);
         }
 
         if (arrayDbContains(AssetDB.activeAssets, symbol)) {
@@ -58,6 +81,7 @@ public class Position {
     }
 
     public BigInteger checkSnap() {
+        Context.require(LoansImpl._getDay().compareTo(LoansImpl.continuousRewardDay.get()) < 0, continuousRewardsErrorMessage);
         BigInteger day = LoansImpl._getDay();
         BigInteger lastDay = lastSnap();
         if (day.compareTo(lastDay) <= 0) {
@@ -106,33 +130,70 @@ public class Position {
     
 
     public boolean hasDebt(BigInteger day) {
-        BigInteger id = getSnapshotId(day);
-        if (id.compareTo(BigInteger.ZERO) < 0) {
+        if (LoansImpl._getDay().compareTo(LoansImpl.continuousRewardDay.get()) < 0 ) {
+            BigInteger id = getSnapshotId(day);
+            if (id.compareTo(BigInteger.ZERO) < 0) {
+                return false;
+            }
+    
+            for (int i = 0; i < AssetDB.activeAssets.size(); i++) {
+                String symbol = AssetDB.activeAssets.get(i);
+                BigInteger debt = assets.at(id).getOrDefault(symbol, BigInteger.ZERO);
+                if (!debt.equals(BigInteger.ZERO)) {
+                   return true;
+                }
+            }
+    
             return false;
         }
 
         for (int i = 0; i < AssetDB.activeAssets.size(); i++) {
-            String symbol =  AssetDB.activeAssets.get(i);
-            BigInteger debt = assets.at(id).getOrDefault(symbol, BigInteger.ZERO);
-            if (!debt.equals(BigInteger.ZERO)) {
-               return true;
+            String symbol = AssetDB.activeAssets.get(i);
+            if (!dataMigrationStatus.get(symbol)) {
+                if (!assets.at(lastSnap()).getOrDefault(symbol, BigInteger.ZERO).equals(BigInteger.ZERO)) {
+                    return true;
+                }
+            } else {
+                if(!loans.at("sICX").getOrDefault(symbol, BigInteger.ZERO).equals(BigInteger.ZERO)) {
+                    return true;
+                }
             }
         }
-
+        
         return false;
     }
 
     public BigInteger totalCollateral(BigInteger day) {
-        BigInteger id = getSnapshotId(day);
         BigInteger value = BigInteger.ZERO;
-        if (id.compareTo(BigInteger.ZERO) < 0) {
+
+        if (LoansImpl._getDay().compareTo(LoansImpl.continuousRewardDay.get()) < 0 ) {
+            BigInteger id = getSnapshotId(day);
+            if (id.compareTo(BigInteger.ZERO) < 0) {
+                return value;
+            }
+            
+            for (int i = 0; i < AssetDB.activeCollateral.size(); i++) {
+                String symbol =  AssetDB.activeCollateral.get(i);
+                Asset asset = AssetDB.get(symbol);
+                BigInteger amount = assets.at(id).get(symbol);
+                BigInteger price;
+                if (day.equals(BigInteger.valueOf(-1)) || day.equals(LoansImpl._getDay())) {
+                    price = asset.priceInLoop();
+                } else {
+                    price = SnapshotDB.get(day).prices.get(symbol);
+                }
+
+                value = value.add(amount.multiply(price).divide(EXA));
+            }
+
             return value;
         }
-        
+
         for (int i = 0; i < AssetDB.activeCollateral.size(); i++) {
             String symbol =  AssetDB.activeCollateral.get(i);
             Asset asset = AssetDB.get(symbol);
-            BigInteger amount = assets.at(id).get(symbol);
+            
+            BigInteger amount = get(symbol);
             BigInteger price;
             if (day.equals(BigInteger.valueOf(-1)) || day.equals(LoansImpl._getDay())) {
                 price = asset.priceInLoop();
@@ -144,18 +205,38 @@ public class Position {
         }
 
         return value;
+
     }
 
     public BigInteger totalDebt(BigInteger day, boolean readOnly) {
-        BigInteger id = getSnapshotId(day);
         BigInteger value = BigInteger.ZERO;
-        if (id.compareTo(BigInteger.ZERO) < 0) {
+
+        if (LoansImpl._getDay().compareTo(LoansImpl.continuousRewardDay.get()) < 0 ) {
+            BigInteger id = getSnapshotId(day);
+            if (id.compareTo(BigInteger.ZERO) < 0) {
+                return value;
+            }
+            
+            for (int i = 0; i < AssetDB.activeAssets.size(); i++) {
+                String symbol =  AssetDB.activeAssets.get(i);
+                BigInteger amount = assets.at(id).getOrDefault(symbol, BigInteger.ZERO);
+                BigInteger price = BigInteger.ZERO;
+                if (amount.compareTo(BigInteger.ZERO) == 1) {
+                    if (day.equals(BigInteger.valueOf(-1)) || day.equals(LoansImpl._getDay())) {
+                        price = getAssetPrice(symbol, readOnly);
+                    } else {
+                        price = SnapshotDB.get(day).prices.get(symbol);
+                    }
+                }
+
+                value = value.add(amount.multiply(price).divide(EXA));
+            }
+
             return value;
         }
-        
         for (int i = 0; i < AssetDB.activeAssets.size(); i++) {
             String symbol =  AssetDB.activeAssets.get(i);
-            BigInteger amount = assets.at(id).getOrDefault(symbol, BigInteger.ZERO);
+            BigInteger amount = get(symbol);
             BigInteger price = BigInteger.ZERO;
             if (amount.compareTo(BigInteger.ZERO) == 1) {
                 if (day.equals(BigInteger.valueOf(-1)) || day.equals(LoansImpl._getDay())) {
@@ -217,6 +298,8 @@ public class Position {
     }
 
     public Standings updateStanding(BigInteger day) {
+        Context.require(LoansImpl._getDay().compareTo(LoansImpl.continuousRewardDay.get()) < 0, continuousRewardsErrorMessage);
+
         Standing standing = getStanding(day, false);
         DictDB<String, BigInteger> state = SnapshotDB.get(day).positionStates.at(id.get());
         state.set("total_debt", standing.totalDebt);
@@ -234,9 +317,19 @@ public class Position {
         HashMap<String, BigInteger> assetAmounts = new HashMap<String, BigInteger>(AssetDB.assetSymbols.size());
         for (int i = 0; i < AssetDB.assetSymbols.size(); i++) {
             String symbol = AssetDB.assetSymbols.get(i);
-            
-            BigInteger amount = assets.at(index).getOrDefault(symbol, null);
-            if (amount != null) {
+            Asset asset = AssetDB.get(symbol);
+            if (!asset.isActive()) {
+                continue;
+            }
+
+            BigInteger amount = BigInteger.ZERO;
+            if (day.equals(BigInteger.valueOf(-1))) {
+                amount = get(symbol);
+            } else {
+                amount = assets.at(index).getOrDefault(symbol, BigInteger.ZERO);
+            }
+        
+             if (!amount.equals(BigInteger.ZERO)) {
                 assetAmounts.put(symbol, amount);
             }
         }

@@ -51,6 +51,7 @@ class LoansTestsBase extends UnitTest {
 
     protected final Account admin = sm.createAccount();
     protected final Account feehandler = Account.newScoreAccount(scoreCount++);
+    protected final Account rebalancing = Account.newScoreAccount(scoreCount++);
     protected Score loans;
     protected Score sicx;
     protected Score bnusd;
@@ -249,8 +250,8 @@ class LoansTestsBase extends UnitTest {
 
         loans.invoke(admin, "setDex", dex.getAddress());
         loans.invoke(admin, "setDividends", dividends.getAddress());
-        loans.invoke(admin, "setReserve", admin.getAddress());
-        loans.invoke(admin, "setRebalance", admin.getAddress());
+        loans.invoke(admin, "setReserve", reserve.getAddress());
+        loans.invoke(admin, "setRebalance", rebalancing.getAddress());
         loans.invoke(admin, "setStaking", staking.getAddress());
 
         governanceCall("turnLoansOn");
