@@ -28,21 +28,10 @@ import network.balanced.score.core.loans.positions.*;
 import static network.balanced.score.core.loans.utils.LoansConstants.*;
 import static network.balanced.score.lib.utils.Check.*;
 
-import network.balanced.score.lib.interfaces.StakingScoreInterface;
-import network.balanced.score.lib.interfaces.Staking;
-import network.balanced.score.lib.interfaces.DividendsScoreInterface;
-import network.balanced.score.lib.interfaces.Dividends;
-import network.balanced.score.lib.interfaces.RewardsScoreInterface;
-import network.balanced.score.lib.interfaces.Rewards;
-import network.balanced.score.lib.interfaces.DexScoreInterface;
-import network.balanced.score.lib.interfaces.GovernanceScoreInterface;
-import network.balanced.score.lib.interfaces.ReserveScoreInterface;
-import network.balanced.score.lib.interfaces.Loans;
-
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 
-public class LoansImpl implements Loans {
+public class LoansImpl {
     public static final String _LOANS_ON = "loans_on";
     public static final String _GOVERNANCE = "governance";
     public static final String _REBALANCE = "rebalance";
@@ -217,8 +206,7 @@ public class LoansImpl implements Loans {
     @External
     public void delegate(PrepDelegations[] prepDelegations) {
         only(governance);
-        Staking stakingInterface = new StakingScoreInterface(staking.get());
-        stakingInterface.delegate(prepDelegations);
+        Context.call(staking.get(), "delegate", (Object) prepDelegations);
     }
 
     @External(readonly = true)
@@ -450,11 +438,9 @@ public class LoansImpl implements Loans {
             rewardsDone.set(false);
             dividendsDone.set(false);
         } else if (!_dividendsDone) {
-            Dividends dividendsInterface = new DividendsScoreInterface(dividends.get());
-            dividendsDone.set(dividendsInterface.distribute());
+            dividendsDone.set(Context.call(Boolean.class, dividends.get(), "distribute"));
         } else if (!_rewardsDone) {
-            Rewards rewardsInterface = new RewardsScoreInterface(rewards.get());
-            rewardsDone.set(rewardsInterface.distribute());
+            rewardsDone.set(Context.call(Boolean.class, rewards.get(), "distribute"));
         }
     }
 
@@ -490,8 +476,7 @@ public class LoansImpl implements Loans {
             _from = sender;
             if (deposit.compareTo(BigInteger.ZERO) == 1) {
                 expectedToken.set(AssetDB.get("sICX").getAddress());
-                StakingScoreInterface stakingScore = new StakingScoreInterface(staking.get());
-                stakingScore.stakeICX(deposit, Context.getAddress());
+                Context.call(deposit, staking.get(), "stakeICX", Context.getAddress());
                 
                 BigInteger received = amountReceived.get();
                 Context.require(!received.equals(BigInteger.ZERO), "Expected sICX not received.");
@@ -583,8 +568,7 @@ public class LoansImpl implements Loans {
                 PositionsDB.removeNonZero(position.id.get());
             }
         } else {
-            RewardsScoreInterface rewardsScore = new RewardsScoreInterface(rewards.get());
-            rewardsScore.updateRewardsData("Loans", oldSupply, from, borrowed);
+            Context.call(rewards.get(), "updateRewardsData", "Loans", oldSupply, from, borrowed);
         }
 
         asset.isDead();
@@ -598,8 +582,7 @@ public class LoansImpl implements Loans {
         only(rebalancing);
         String symbol = "bnUSD";
         Asset asset = AssetDB.get(symbol);
-        DexScoreInterface dexScore = new DexScoreInterface(dex.get());
-        BigInteger rate = dexScore.getSicxBnusdPrice();
+        BigInteger rate = Context.call(BigInteger.class, dex.get(), "getSicxBnusdPrice");
         int batchSize = redeemBatch.get();
         LinkedListDB borrowers = asset.getBorrowers();
 
@@ -663,9 +646,9 @@ public class LoansImpl implements Loans {
         }
 
         if (_getDay().compareTo(continuousRewardDay.get()) >= 0) {
-            RewardsScoreInterface rewardsScore = new RewardsScoreInterface(rewards.get());
-            rewardsScore.updateBatchRewardsData("Loans",  asset.totalSupply(), rewardsBatchList);
+            Context.call(rewards.get(), "updateBatchRewardsData", "Loans", asset.totalSupply(), rewardsBatchList);
         }
+
         Rebalance(Context.getCaller(), symbol, changeLog.toString(), totalBatchDebt);
     }
 
@@ -738,8 +721,7 @@ public class LoansImpl implements Loans {
         }
 
         if (_getDay().compareTo(continuousRewardDay.get()) >= 0) {
-            RewardsScoreInterface rewardsScore = new RewardsScoreInterface(rewards.get());
-            rewardsScore.updateBatchRewardsData("Loans",   AssetDB.get("bnUSD").totalSupply(), rewardsBatchList);
+            Context.call(rewards.get(), "updateBatchRewardsData", "Loans", AssetDB.get("bnUSD").totalSupply(), rewardsBatchList);
         }
         Rebalance(Context.getCaller(), "bnUSD", changeLog.toString(), totalBatchDebt);
     }
@@ -801,8 +783,7 @@ public class LoansImpl implements Loans {
             BigInteger debt = position.get(symbol);
             if (!asset.isCollateral.getOrDefault(false) && asset.active.getOrDefault(false) && debt.compareTo(BigInteger.ZERO) == 1) {
                 if (_getDay().compareTo(continuousRewardDay.get()) >= 0) {
-                    Rewards rewardsInterface = new RewardsScoreInterface(rewards.get());
-                    rewardsInterface.updateRewardsData( "Loans", asset.totalSupply(), _owner, debt);
+                    Context.call(rewards.get(), "updateRewardsData", "Loans", asset.totalSupply(), _owner, debt);
                 }
 
                 BigInteger badDebt = asset.badDebt.get();
@@ -847,8 +828,7 @@ public class LoansImpl implements Loans {
         asset.liquidationPool.set(BigInteger.ZERO);
         expectedToken.set(sicx.getAddress());
 
-        ReserveScoreInterface rewardsScore = new ReserveScoreInterface(reserve.get());
-        rewardsScore.redeem(from, badDebtSicx.subtract(inPool), sicxRate);
+        Context.call(reserve.get(), "redeem", from, badDebtSicx.subtract(inPool), sicxRate);
 
         BigInteger received = amountReceived.get();
         Context.require(received.equals(badDebtSicx.subtract(inPool)), "Got unexpected sICX from reserve.");
@@ -891,8 +871,7 @@ public class LoansImpl implements Loans {
                 PositionsDB.addNonZero(position.id.get());
             }
         } else {
-            Rewards rewardsInterface = new RewardsScoreInterface(rewards.get());
-            rewardsInterface.updateRewardsData("Loans", asset.totalSupply(), from, holdings);
+            Context.call(rewards.get(), "updateRewardsData", "Loans", asset.totalSupply(), from, holdings);
         }
 
         BigInteger newDebt = amount.add(fee);
@@ -902,9 +881,7 @@ public class LoansImpl implements Loans {
         String logMessage = "Loan of " + amount + " " + _symbol + " from Balanced.";
         OriginateLoan(from, _symbol, amount, logMessage);
 
-        GovernanceScoreInterface governanceScore = new GovernanceScoreInterface(governance.get());
-        Address feeHandler = governanceScore.getContractAddress("feehandler");
-
+        Address feeHandler = Context.call(Address.class, governance.get(), "getContractAddress", "feehandler");
         asset.mint(feeHandler, fee);
         FeePaid(_symbol, fee, "origination");
     }

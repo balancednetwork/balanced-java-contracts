@@ -30,7 +30,6 @@ import score.annotation.External;
 
 import java.math.BigInteger;
 import java.math.MathContext;
-import java.security.acl.Owner;
 import java.math.BigDecimal;
 import scorex.util.ArrayList;
 import java.util.HashMap;
@@ -82,7 +81,6 @@ class LoansTestContinuousRewards extends LoansTestsBase {
     @Test
     void getDataBatch_SameDay() {
         BigInteger lastDay = BigInteger.valueOf(-1);
-        //Does not throw error
         loans.call("getDataBatch", "loans", lastDay, 0, 0);
     }
 
