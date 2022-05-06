@@ -339,7 +339,13 @@ public class DividendsImpl implements Dividends {
     }
 
     @External
-    public void transferDaofundDividends(BigInteger _start, BigInteger _end) {
+    public void transferDaofundDividends(@Optional BigInteger _start, @Optional BigInteger _end) {
+        if (_start == null) {
+            _start = BigInteger.ZERO;
+        }
+        if (_end == null) {
+            _end = BigInteger.ZERO;
+        }
         Address daofund = daoFund.get();
         Context.require(distributionActivate.getOrDefault(false), TAG + ": Distribution is not activated. Can't transfer.");
 
