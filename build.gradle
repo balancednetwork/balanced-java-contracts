@@ -60,4 +60,30 @@ subprojects {
     compileJava {
         options.compilerArgs += ['-parameters']
     }
+
+    def loadProperties = {
+        def scoreIntegrationTest = new HashMap<String, Object>()
+        scoreIntegrationTest.put('env.props', new File(project(':integrationtest-lib').projectDir, 'conf/env.props'));
+        
+        def scorePrefix = 'score.path.'
+        scoreIntegrationTest.put(scorePrefix + 'governance', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/governance.zip'));
+        scoreIntegrationTest.put(scorePrefix + 'baln', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/baln.zip'));
+        scoreIntegrationTest.put(scorePrefix + 'bwt', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/bwt.zip'));
+        scoreIntegrationTest.put(scorePrefix + 'dex', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/dex.zip'));
+        scoreIntegrationTest.put(scorePrefix + 'feehandler', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/feehandler.zip'));
+        scoreIntegrationTest.put(scorePrefix + 'loans', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/loans.zip'));
+        scoreIntegrationTest.put(scorePrefix + 'rebalancing', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/rebalancing.zip'));
+        scoreIntegrationTest.put(scorePrefix + 'rewards', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/rewards.zip'));
+        scoreIntegrationTest.put(scorePrefix + 'sicx', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/sicx.zip'));
+        scoreIntegrationTest.put(scorePrefix + 'bnusd', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/bnusd.zip'));
+        scoreIntegrationTest.put(scorePrefix + 'daofund', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/daofund.zip'));
+        scoreIntegrationTest.put(scorePrefix + 'dividends', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/dividends.zip'));
+        scoreIntegrationTest.put(scorePrefix + 'oracle', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/oracle.zip'));
+        scoreIntegrationTest.put(scorePrefix + 'reserve', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/reserve.zip'));
+        scoreIntegrationTest.put(scorePrefix + 'router', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/router.zip'));
+        scoreIntegrationTest.put(scorePrefix + 'staking', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/staking.zip'));
+        ext['scoreIntegrationTest'] = scoreIntegrationTest
+
+    }
+    loadProperties()
 }

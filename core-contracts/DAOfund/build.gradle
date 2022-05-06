@@ -33,10 +33,18 @@ dependencies {
     testImplementation Dependencies.javaeeUnitTest
     testImplementation Dependencies.javaeeTokens
     // Use JUnit Jupiter for testing.
+
+    testImplementation project(':integrationtest-lib')
+
     testImplementation Dependencies.junitJupiter
     testRuntimeOnly Dependencies.junitJupiterEngine
     testImplementation Dependencies.mockitoCore
     testImplementation Dependencies.mockitoInline
+
+    intTestImplementation Dependencies.javaeeScoreClient
+    intTestAnnotationProcessor Dependencies.javaeeScoreClient
+    intTestImplementation Dependencies.iconSdk
+    intTestImplementation Dependencies.jacksonDatabind
 
     testImplementation project(':test-lib')
 }
@@ -72,4 +80,22 @@ deployJar {
 tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+}
+
+
+task integrationTest(type: Test, dependsOn: optimizedJar) {
+    useJUnitPlatform()
+    options {
+        testLogging.showStandardStreams = true
+        description = 'Runs integration tests.'
+        group = 'verification'
+        testClassesDirs = sourceSets.intTest.output.classesDirs
+        classpath = sourceSets.intTest.runtimeClasspath
+      
+        project.extensions.deployJar.arguments.each { arg -> systemProperty 'params.' + arg.name, arg.value
+        }
+
+        scoreIntegrationTest.each { key, val -> systemProperty key, val}
+    }
+
 }
