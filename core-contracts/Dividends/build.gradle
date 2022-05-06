@@ -37,6 +37,16 @@ dependencies {
     testImplementation Dependencies.mockitoCore
     testRuntimeOnly Dependencies.junitJupiterEngine
     testImplementation project(':test-lib')
+
+    intTestImplementation Dependencies.javaeeScoreClient
+    intTestAnnotationProcessor Dependencies.javaeeScoreClient
+    intTestImplementation Dependencies.json
+
+
+
+    intTestImplementation Dependencies.iconSdk
+    intTestImplementation Dependencies.jacksonDatabind
+    intTestImplementation Dependencies.json
 }
 
 optimizedJar {
@@ -71,4 +81,35 @@ deployJar {
 tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+}
+
+task integrationTest(type: Test, dependsOn: optimizedJar) {
+    useJUnitPlatform()
+    options {
+        testLogging.showStandardStreams = true
+        description = 'Runs integration tests.'
+        group = 'verification'
+        testClassesDirs = sourceSets.intTest.output.classesDirs
+        classpath = sourceSets.intTest.runtimeClasspath
+
+        systemProperty 'scoreFilePath', project.tasks.optimizedJar.outputJarName
+        project.extensions.deployJar.arguments.each { arg -> systemProperty 'params.' + arg.name, arg.value
+        }
+
+        systemProperty 'url', scoreTest.url
+        systemProperty 'nid', scoreTest.nid
+        systemProperty 'keyStore', scoreTest.keystoreName
+        systemProperty 'keyPassword', scoreTest.keystorePass
+//        systemProperty 'isUpdate', "false"
+//        systemProperty 'address', "cx2ad810776298b1946c6b57f7109d3a5602ae44f6"
+
+//        systemProperty 'balanced.url', scoreTest.url
+//        systemProperty 'balanced.nid', scoreTest.nid
+//        systemProperty 'balanced.keyStore', scoreTest.keystoreName
+//        systemProperty 'balanced.keyPassword', scoreTest.keystorePass
+        systemProperty 'balanced.scoreFilePath', "../../zip/governance.zip"
+//        systemProperty 'staking.isUpdate', "false"
+//        systemProperty 'staking.address', "cxb205adfafde0a9e76539e2a405b9ce82ae8c4ee2"
+
+    }
 }

@@ -34,4 +34,8 @@ public class Dependencies {
     public static final String mockitoInline = "org.mockito:mockito-inline:4.3.1";
 
     public static final String json = "org.json:json:20211205";
+
+    public static final String iconSdk = "foundation.icon:icon-sdk:2.0.0";
+    public static final String jacksonDatabind = "com.fasterxml.jackson.core:jackson-databind:2.9.6";
+    public static final String javaFaker = "com.github.javafaker:javafaker:1.0.2";
 }

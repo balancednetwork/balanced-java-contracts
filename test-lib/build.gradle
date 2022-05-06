@@ -35,6 +35,14 @@ dependencies {
     implementation Dependencies.mockitoCore
     implementation Dependencies.json
     implementation Dependencies.javaeeScorex
+
+    implementation Dependencies.iconSdk
+
+    implementation Dependencies.javaeeScoreClient
+
+    implementation Dependencies.jacksonDatabind
+    implementation Dependencies.javaFaker
+
 }
 
 test {

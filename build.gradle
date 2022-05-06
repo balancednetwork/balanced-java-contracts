@@ -60,4 +60,19 @@ subprojects {
     compileJava {
         options.compilerArgs += ['-parameters']
     }
+
+    def loadProperties = {
+        def prefix = 'score-test.'
+        def props = project.getProperties()
+        def scoreTest = new HashMap<String, Object>()
+
+        scoreTest.put('keystoreName', props.get(prefix + 'keystoreName'))
+        scoreTest.put('keystorePass', props.get(prefix + 'keystorePass'))
+        scoreTest.put('url', props.get(prefix + 'url'))
+        scoreTest.put('nid', props.get(prefix + 'nid'))
+
+        ext['scoreTest'] = scoreTest
+
+    }
+    loadProperties()
 }
