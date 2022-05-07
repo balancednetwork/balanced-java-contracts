@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.integration;
+package network.balanced.score.test.integration;
 
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.icx.Wallet;
@@ -22,6 +22,8 @@ import foundation.icon.icx.data.TransactionResult;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
 import foundation.icon.score.client.RevertedException;
+import foundation.icon.score.client.ScoreClient;
+
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -41,9 +43,11 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.xml.crypto.dsig.TransformException;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static network.balanced.score.integration.Env.*;
-import network.balanced.score.interfaces.*;
+import static network.balanced.score.test.integration.Env.*;
+import network.balanced.score.lib.interfaces.*;
 
 
 @Tag("integration")
@@ -57,15 +61,22 @@ public interface ScoreIntegrationTest {
         chain.godWallet,
         DefaultScoreClient.ZERO_ADDRESS
         );
-    
-    static SystemInterfaceScoreClient systemScore = new SystemInterfaceScoreClient(godClient);
+
+    @ScoreClient
+    static SystemInterface _systemScore = new SystemInterfaceScoreClient(godClient);
+    static SystemInterfaceScoreClient systemScore = (SystemInterfaceScoreClient)_systemScore;
 
     public static KeyWallet createWalletWithBalance(BigInteger amount) throws Exception  {
         KeyWallet wallet = KeyWallet.create();
         
         Address address = DefaultScoreClient.address(wallet.getAddress().toString());
-        godClient._transfer(address, amount, null);
+        transfer(address, amount);
+
         return wallet;
+    }
+
+    public static void transfer(Address address, BigInteger amount) {
+        godClient._transfer(address, amount, null);
     }
 
     public static DefaultScoreClient deploy(Wallet wallet, String name, Map<String, Object> params) {
@@ -73,8 +84,7 @@ public interface ScoreIntegrationTest {
         return  DefaultScoreClient._deploy(chain.getEndpointURL(), chain.networkId, wallet, path, params);
     }
 
-    public static String getFilePath(String pkgName) {
-        String key = "score.path." + pkgName;
+    public static String getFilePath(String key) {
         String path = System.getProperty(key);
         if (path == null) {
             throw new IllegalArgumentException("No such property: " + key);

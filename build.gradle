@@ -26,6 +26,8 @@ buildscript {
     }
 }
 
+def scoreIntegrationTest = new HashMap<String, String>()
+
 subprojects {
     repositories {
         mavenCentral()
@@ -60,30 +62,36 @@ subprojects {
     compileJava {
         options.compilerArgs += ['-parameters']
     }
+    
+    scoreIntegrationTest.put('env.props', new File(project(':test-lib').projectDir, 'conf/env.props'));
 
-    def loadProperties = {
-        def scoreIntegrationTest = new HashMap<String, Object>()
-        scoreIntegrationTest.put('env.props', new File(project(':integrationtest-lib').projectDir, 'conf/env.props'));
-        
-        def scorePrefix = 'score.path.'
-        scoreIntegrationTest.put(scorePrefix + 'governance', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/governance.zip'));
-        scoreIntegrationTest.put(scorePrefix + 'baln', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/baln.zip'));
-        scoreIntegrationTest.put(scorePrefix + 'bwt', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/bwt.zip'));
-        scoreIntegrationTest.put(scorePrefix + 'dex', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/dex.zip'));
-        scoreIntegrationTest.put(scorePrefix + 'feehandler', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/feehandler.zip'));
-        scoreIntegrationTest.put(scorePrefix + 'loans', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/loans.zip'));
-        scoreIntegrationTest.put(scorePrefix + 'rebalancing', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/rebalancing.zip'));
-        scoreIntegrationTest.put(scorePrefix + 'rewards', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/rewards.zip'));
-        scoreIntegrationTest.put(scorePrefix + 'sicx', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/sicx.zip'));
-        scoreIntegrationTest.put(scorePrefix + 'bnusd', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/bnusd.zip'));
-        scoreIntegrationTest.put(scorePrefix + 'daofund', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/daofund.zip'));
-        scoreIntegrationTest.put(scorePrefix + 'dividends', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/dividends.zip'));
-        scoreIntegrationTest.put(scorePrefix + 'oracle', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/oracle.zip'));
-        scoreIntegrationTest.put(scorePrefix + 'reserve', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/reserve.zip'));
-        scoreIntegrationTest.put(scorePrefix + 'router', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/router.zip'));
-        scoreIntegrationTest.put(scorePrefix + 'staking', new File(project(':integrationtest-lib').projectDir, 'src/main/java/network/balanced/score/pythonContracts/staking.zip'));
-        ext['scoreIntegrationTest'] = scoreIntegrationTest
+    //remove as more contracts are added to master
+    scoreIntegrationTest.put('Governance', new File(project(':test-lib').projectDir, 'python-contracts/governance.zip'));
+    scoreIntegrationTest.put('Baln', new File(project(':test-lib').projectDir, 'python-contracts/baln.zip'));
+    scoreIntegrationTest.put('Bwt', new File(project(':test-lib').projectDir, 'python-contracts/bwt.zip'));
+    scoreIntegrationTest.put('Dex', new File(project(':test-lib').projectDir, 'python-contracts/dex.zip'));
+    scoreIntegrationTest.put('Feehandler', new File(project(':test-lib').projectDir, 'python-contracts/feehandler.zip'));
+    scoreIntegrationTest.put('Loans', new File(project(':test-lib').projectDir, 'python-contracts/loans.zip'));
+    // scoreIntegrationTest.put('rebalancing', new File(project(':test-lib').projectDir, 'python-contracts/rebalancing.zip'));
+    scoreIntegrationTest.put('Rewards', new File(project(':test-lib').projectDir, 'python-contracts/rewards.zip'));
+    scoreIntegrationTest.put('Sicx', new File(project(':test-lib').projectDir, 'python-contracts/sicx.zip'));
+    scoreIntegrationTest.put('Bnusd', new File(project(':test-lib').projectDir, 'python-contracts/bnusd.zip'));
+    // scoreIntegrationTest.put('daofund', new File(project(':test-lib').projectDir, 'python-contracts/daofund.zip'));
+    scoreIntegrationTest.put('Dividends', new File(project(':test-lib').projectDir, 'python-contracts/dividends.zip'));
+    scoreIntegrationTest.put('Oracle', new File(project(':test-lib').projectDir, 'python-contracts/oracle.zip'));
+    scoreIntegrationTest.put('Reserve', new File(project(':test-lib').projectDir, 'python-contracts/reserve.zip'));
+    scoreIntegrationTest.put('Router', new File(project(':test-lib').projectDir, 'python-contracts/router.zip'));
+    scoreIntegrationTest.put('Staking', new File(project(':test-lib').projectDir, 'python-contracts/staking.zip'));
 
+    afterEvaluate { project ->
+        scoreIntegrationTest.put(project.name, project.getTasks().getByName("optimizedJar").outputJarName)
     }
-    loadProperties()
+}
+
+gradle.taskGraph.whenReady { taskGraph ->
+    taskGraph.getAllTasks().any { task ->
+        if (task.name == "integrationTest") {   
+            scoreIntegrationTest.each { key, val -> task.systemProperty key, val }  
+        }
+    }
 }

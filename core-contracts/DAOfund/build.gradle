@@ -16,7 +16,6 @@
 
 import network.balanced.score.dependencies.Dependencies
 
-
 version = '0.1.0'
 
 repositories {
@@ -33,8 +32,6 @@ dependencies {
     testImplementation Dependencies.javaeeUnitTest
     testImplementation Dependencies.javaeeTokens
     // Use JUnit Jupiter for testing.
-
-    testImplementation project(':integrationtest-lib')
 
     testImplementation Dependencies.junitJupiter
     testRuntimeOnly Dependencies.junitJupiterEngine
@@ -82,20 +79,25 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
-
-task integrationTest(type: Test, dependsOn: optimizedJar) {
+task integrationTest(type: Test) {
     useJUnitPlatform()
+
+    rootProject.allprojects {
+        if(it.getTasks().findByName('optimizedJar')) {
+            dependsOn(it.getTasks().getByName('optimizedJar'))
+        }
+    }
+
     options {
         testLogging.showStandardStreams = true
         description = 'Runs integration tests.'
         group = 'verification'
+
         testClassesDirs = sourceSets.intTest.output.classesDirs
         classpath = sourceSets.intTest.runtimeClasspath
-      
-        project.extensions.deployJar.arguments.each { arg -> systemProperty 'params.' + arg.name, arg.value
-        }
 
-        scoreIntegrationTest.each { key, val -> systemProperty key, val}
+        systemProperty "python", new File(project(':test-lib').projectDir, 'python-contracts/daofund.zip')
+        systemProperty "java", optimizedJar.outputJarName        
     }
 
 }

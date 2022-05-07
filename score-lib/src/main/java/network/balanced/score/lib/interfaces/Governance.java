@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package network.balanced.score.interfaces;
+package network.balanced.score.lib.interfaces;
 
 import score.Address;
 import score.annotation.External;
@@ -22,6 +22,8 @@ import score.annotation.Payable;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
+
+import network.balanced.score.lib.structs.BalancedAddresses;
 
 public interface Governance {
     @External(readonly = true)
@@ -137,13 +139,7 @@ public interface Governance {
     void rebalancingSetSicx(Address _address);
 
     @External
-    void rebalancingSetDex(Address _address);
-
-    @External
-    void rebalancingSetLoans(Address _address);
-
-    @External
-    void setLoansRebalance(Address _address);
+    void rebalancingSetDex(Address _implementationaddress);
 
     @External
     void setLoansDex(Address _address);

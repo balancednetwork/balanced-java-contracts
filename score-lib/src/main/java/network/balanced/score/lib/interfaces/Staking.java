@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package network.balanced.score.interfaces;
+package network.balanced.score.lib.interfaces;
+
 
 import score.*;
 import score.annotation.External;
@@ -25,7 +26,7 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-public interface StakingInterface {
+public interface Staking {
 
     @External(readonly = true)
     String name();

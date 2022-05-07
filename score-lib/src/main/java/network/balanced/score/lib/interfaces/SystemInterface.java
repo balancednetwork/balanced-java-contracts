@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,30 +14,22 @@
  * limitations under the License.
  */
 
-import network.balanced.score.dependencies.Dependencies
+package network.balanced.score.lib.interfaces;
 
+import score.Address;
+import score.annotation.Payable;
 
+import java.util.Map;
 
-apply plugin: 'java-library'
+public interface SystemInterface {
+    Map<String, Object> getIISSInfo();
 
-optimizedJar.enabled = false
+    Map<String, Object> queryIScore(Address address);
 
-dependencies {
-    implementation Dependencies.iconSdk
-    annotationProcessor Dependencies.javaeeScoreClient
-    implementation Dependencies.javaeeScoreClient
-    implementation Dependencies.junitJupiterApi
-    implementation Dependencies.jacksonDatabind
-    implementation Dependencies.javaFaker
-    implementation Dependencies.javaeeUnitTest
-    implementation Dependencies.mockitoCore
+    Map<String, Object> getStake(Address address);
+
+    Map<String, Object> getDelegation(Address address);
+    
+    @Payable
+    void registerPRep(String name, String email, String country, String city, String website, String details, String p2pEndpoint);
 }
-
-
-
-
-
-
-
-
-

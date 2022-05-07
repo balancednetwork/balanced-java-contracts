@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.integration;
+package network.balanced.score.test.integration;
 
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.icx.Wallet;
@@ -96,8 +96,7 @@ public class Env {
         }
 
         public String getEndpointURL() {
-            return this.nodeUrl + "/api/v" + "3";
-            
+            return this.nodeUrl + "/api/v" + networkId; 
         }
     }
 }

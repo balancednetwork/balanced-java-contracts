@@ -14,25 +14,24 @@
  * limitations under the License.
  */
 
-package network.balanced.score.interfaces;
-
+package network.balanced.score.lib.structs;
 import score.Address;
-import score.annotation.Payable;
 
-import java.util.Map;
-
-import foundation.icon.score.client.ScoreClient;
-
-@ScoreClient
-public interface SystemInterface {
-    Map<String, Object> getIISSInfo();
-
-    Map<String, Object> queryIScore(Address address);
-
-    Map<String, Object> getStake(Address address);
-
-    Map<String, Object> getDelegation(Address address);
-    
-    @Payable
-    void registerPRep(String name, String email, String country, String city, String website, String details, String p2pEndpoint);
+public class BalancedAddresses {
+    public Address loans;
+    public Address dex;
+    public Address staking;
+    public Address rewards;
+    public Address reserve;
+    public Address dividends;
+    public Address daofund;
+    public Address oracle;
+    public Address sicx;
+    public Address bnUSD;
+    public Address baln;
+    public Address bwt;
+    public Address router;
+    public Address rebalancing;
+    public Address feehandler;
+    public Address stakedLp;
 }
