@@ -415,29 +415,29 @@ public class DexImpl {
         }
     }
 
-    private void exchange(Address _fromToken, Address _toToken, Address _sender,
-                          Address _receiver, BigInteger _value, BigInteger _minimum_receive) {
+    private void exchange(Address fromToken, Address toToken, Address sender,
+                          Address receiver, BigInteger value, BigInteger minimumReceive) {
 
-        if (_minimum_receive == null) {
-            _minimum_receive = BigInteger.ZERO;
+        if (minimumReceive == null) {
+            minimumReceive = BigInteger.ZERO;
         }
-        BigInteger lpFees = _value.multiply(poolLpFee.get()).divide(FEE_SCALE);
-        BigInteger balnFees = _value.multiply(poolBalnFee.get()).divide(FEE_SCALE);
+        BigInteger lpFees = value.multiply(poolLpFee.get()).divide(FEE_SCALE);
+        BigInteger balnFees = value.multiply(poolBalnFee.get()).divide(FEE_SCALE);
         BigInteger fees = lpFees.add(balnFees);
 
-        BigInteger originalValue = _value;
-        BigInteger value = _value.subtract(fees);
+        BigInteger originalValue = value;
+        BigInteger newValue = value.subtract(fees);
 
         boolean isSell = false;
 
 
-        BigInteger id = poolId.at(_fromToken).getOrDefault(_toToken, BigInteger.ZERO);
+        BigInteger id = poolId.at(fromToken).getOrDefault(toToken, BigInteger.ZERO);
 
         Context.require(id.compareTo(BigInteger.ZERO) > 0, TAG + ": Invalid Pool ID");
 
         Context.require(! id.equals(SICXICX_POOL_ID), TAG + ":  Not supported on this API, use the ICX swap API.");
 
-        if (_fromToken == getPoolBase(id)) {
+        if (fromToken == getPoolBase(id)) {
             isSell = true;
         }
 
@@ -448,12 +448,12 @@ public class DexImpl {
         // fromToken (token we are trading away) in the pool. It must obey the xy=k
         // constant product formula.
 
-        BigInteger oldFromToken = poolTotal.at(id).get(_fromToken);
-        BigInteger oldToToken = poolTotal.at(id).get(_toToken);
+        BigInteger oldFromToken = poolTotal.at(id).get(fromToken);
+        BigInteger oldToToken = poolTotal.at(id).get(toToken);
 
         // We perturb the pool by the asset we are trading in, less fees.
         // Fees are credited to LPs at the end of the process.
-        BigInteger newFromToken = oldFromToken.add(value);
+        BigInteger newFromToken = oldFromToken.add(newValue);
 
         // Compute the new fromToken according to the constant product formula
         BigInteger newToToken = (oldFromToken.multiply(oldToToken)).divide(newFromToken);
@@ -463,42 +463,42 @@ public class DexImpl {
         BigInteger sendAmount = oldToToken.subtract(newToToken);
 
         // Revert the transaction if the below slippage, as specified in _minimum_receive
-        Context.require(sendAmount.compareTo(_minimum_receive) >= 0, TAG + ": MinimumReceiveError: Receive amount " + sendAmount + " below supplied minimum");
+        Context.require(sendAmount.compareTo(minimumReceive) >= 0, TAG + ": MinimumReceiveError: Receive amount " + sendAmount + " below supplied minimum");
 
         // Apply fees to fromToken after computing constant product. lpFees
         // are credited to the LPs, the rest are sent to BALN holders.
         newFromToken = newFromToken.add(lpFees);
 
         // Save updated pool totals
-        poolTotal.at(id).set(_fromToken, newFromToken);
-        poolTotal.at(id).set(_toToken, newToToken);
+        poolTotal.at(id).set(fromToken, newFromToken);
+        poolTotal.at(id).set(toToken, newToToken);
 
         // Capture details for eventlogs
         BigInteger totalBase = isSell ? newFromToken : newToToken;
         BigInteger totalQuote = isSell ? newToToken : newFromToken;
 
-        BigInteger sendPrice = (EXA.multiply(_value)).divide(sendAmount);
+        BigInteger sendPrice = (EXA.multiply(value)).divide(sendAmount);
 
         // Send the trader their funds
-        Context.call(_toToken, "transfer", Context.getAddress(), sendAmount, null);
+        Context.call(toToken, "transfer", Context.getAddress(), sendAmount, null);
 
         // Send the platform fees to the feehandler SCORE
-        Context.call(_fromToken, "transfer", feehandler.get(), balnFees, null);
+        Context.call(fromToken, "transfer", feehandler.get(), balnFees, null);
 
         // Broadcast pool ending price
         BigInteger endingPrice = this.getPrice(id);
         BigInteger effectiveFillPrice = sendPrice;
 
         if (!isSell) {
-            effectiveFillPrice = (EXA.multiply(sendAmount)).divide(value);
+            effectiveFillPrice = (EXA.multiply(sendAmount)).divide(newValue);
         }
 
-        if ((_fromToken == baln.get()) || (_toToken == baln.get())) {
+        if ((fromToken == baln.get()) || (toToken == baln.get())) {
             updateBalnSnapshot(id);
         }
 
-        Swap(id, poolBase.get(id), _fromToken, _toToken,
-                _sender, _receiver, originalValue,
+        Swap(id, poolBase.get(id), fromToken, toToken,
+                sender, receiver, originalValue,
                 sendAmount, BigInteger.valueOf(Context.getBlockTimestamp()),
                 lpFees, balnFees.intValue(), totalBase, totalQuote, endingPrice, effectiveFillPrice);
     }
