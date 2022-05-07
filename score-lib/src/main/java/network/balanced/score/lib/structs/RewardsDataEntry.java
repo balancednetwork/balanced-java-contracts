@@ -1,6 +1,7 @@
 package network.balanced.score.lib.structs;
 
 import score.Address;
+
 import java.math.BigInteger;
 
 public class RewardsDataEntry {
