@@ -62,11 +62,8 @@ public class LinkedListDB {
 
     public void updateNode(BigInteger size, Address user, BigInteger nodeId) {
         NodeDB node = createNodeInstance(nodeId);
-        if (node.exists()) {
-            node.setValues(size, user);
-        } else {
-            Context.revert("There is no node of the provided node id.");
-        }
+        Context.require(node.exists() ,"There is no node of the provided node id.");
+        node.setValues(size, user);
     }
 
     public BigInteger append(BigInteger size, Address user, BigInteger nodeId) {
@@ -131,14 +128,15 @@ public class LinkedListDB {
         }
         if (size.equals(BigInteger.ONE)) {
             clear();
-        } else {
-            NodeDB oldHead = getNode(headId.get());
-            BigInteger newHead = oldHead.getNext();
-            headId.set(newHead);
-            getNode(newHead).setPrev(DEFAULT_NODE_ID);
-            oldHead.delete();
-            length.set(size.subtract(BigInteger.ONE));
+            return;
         }
+
+        NodeDB oldHead = getNode(headId.get());
+        BigInteger newHead = oldHead.getNext();
+        headId.set(newHead);
+        getNode(newHead).setPrev(DEFAULT_NODE_ID);
+        oldHead.delete();
+        length.set(size.subtract(BigInteger.ONE));
     }
 
     public void removeTail() {
@@ -148,14 +146,15 @@ public class LinkedListDB {
         }
         if (size.equals(BigInteger.ONE)) {
             clear();
-        } else {
-            NodeDB oldTail = getNode(tailId.get());
-            BigInteger newTail = oldTail.getPrev();
-            tailId.set(newTail);
-            getNode(newTail).setNext(DEFAULT_NODE_ID);
-            oldTail.delete();
-            length.set(size.subtract(BigInteger.ONE));
+            return;
         }
+
+        NodeDB oldTail = getNode(tailId.get());
+        BigInteger newTail = oldTail.getPrev();
+        tailId.set(newTail);
+        getNode(newTail).setNext(DEFAULT_NODE_ID);
+        oldTail.delete();
+        length.set(size.subtract(BigInteger.ONE));
     }
 
     public void remove(BigInteger curId) {
