@@ -3,6 +3,7 @@ package network.balanced.score.core.dex;
 
 import network.balanced.score.lib.utils.IterableDictDB;
 import network.balanced.score.lib.utils.LinkedListDB;
+import network.balanced.score.lib.structs.RewardsDataEntry;
 import network.balanced.score.lib.utils.NodeDB;
 import network.balanced.score.lib.utils.SetDB;
 import score.Address;
@@ -21,6 +22,7 @@ import scorex.util.HashMap;
 
 import static network.balanced.score.core.dex.Const.*;
 import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.core.dex.Check.*;
 import static network.balanced.score.lib.utils.Math.pow;
 
 import java.math.BigInteger;
@@ -29,95 +31,92 @@ import java.util.Map;
 
 public class DexImpl {
 
-    VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
-    VarDB<Address> sicx = Context.newVarDB(SICX_ADDRESS, Address.class);
-    VarDB<Address> staking = Context.newVarDB(STAKING_ADDRESS, Address.class);
-    VarDB<Address> dividends = Context.newVarDB(DIVIDENDS_ADDRESS, Address.class);
-    VarDB<Address> governance = Context.newVarDB(GOVERNANCE_ADDRESS, Address.class);
-    VarDB<Address> rewards = Context.newVarDB(REWARDS_ADDRESS, Address.class);
-    VarDB<Address> bnUSD = Context.newVarDB(bnUSD_ADDRESS, Address.class);
-    VarDB<Address> baln = Context.newVarDB(BALN_ADDRESS, Address.class);
-    VarDB<Address> feehandler = Context.newVarDB(FEEHANDLER_ADDRESS, Address.class);
-    VarDB<Address> stakedlp = Context.newVarDB(STAKEDLP_ADDRESS, Address.class);
-    VarDB<Boolean> dexOn = Context.newVarDB(DEX_ON, Boolean.class);
+    public final static VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
+    public final static VarDB<Address> sicx = Context.newVarDB(SICX_ADDRESS, Address.class);
+    public final static VarDB<Address> staking = Context.newVarDB(STAKING_ADDRESS, Address.class);
+    public final static VarDB<Address> dividends = Context.newVarDB(DIVIDENDS_ADDRESS, Address.class);
+    public final static VarDB<Address> governance = Context.newVarDB(GOVERNANCE_ADDRESS, Address.class);
+    public final static VarDB<Address> rewards = Context.newVarDB(REWARDS_ADDRESS, Address.class);
+    public final static VarDB<Address> bnUSD = Context.newVarDB(bnUSD_ADDRESS, Address.class);
+    public final static VarDB<Address> baln = Context.newVarDB(BALN_ADDRESS, Address.class);
+    public final static VarDB<Address> feehandler = Context.newVarDB(FEEHANDLER_ADDRESS, Address.class);
+    public final static VarDB<Address> stakedlp = Context.newVarDB(STAKEDLP_ADDRESS, Address.class);
+    public final static VarDB<Boolean> dexOn = Context.newVarDB(DEX_ON, Boolean.class);
 
     // Deposits - Map: token_address -> user_address -> value
-    BranchDB<Address, DictDB<Address, BigInteger>> deposit = Context.newBranchDB("deposit", BigInteger.class);
+    public final static BranchDB<Address, DictDB<Address, BigInteger>> deposit = Context.newBranchDB(DEPOSIT, BigInteger.class);
     // Pool IDs - Map: token address -> opposite token_address -> id
-    // New pools should write both addresses, and value is a nonce monotonically increasing from 1
-    BranchDB<Address, DictDB<Address, BigInteger>> poolId = Context.newBranchDB("poolId", BigInteger.class);
+    public final static BranchDB<Address, DictDB<Address, BigInteger>> poolId = Context.newBranchDB(POOL_ID, BigInteger.class);
 
-    // Nonce for poolId
-    VarDB<BigInteger> nonce = Context.newVarDB("nonce", BigInteger.class);
+    public final static VarDB<BigInteger> nonce = Context.newVarDB(NONCE, BigInteger.class);
 
     // Total amount of each type of token in a pool
     // Map: pool_id -> token_address -> value
-    BranchDB<BigInteger, DictDB<Address, BigInteger>> poolTotal = Context.newBranchDB("poolTotal", BigInteger.class);
+    public final static BranchDB<BigInteger, DictDB<Address, BigInteger>> poolTotal = Context.newBranchDB(POOL_TOTAL, BigInteger.class);
 
     // Total LP Tokens in pool
     // Map: pool_id -> total LP tokens
-    DictDB<BigInteger, BigInteger> total = Context.newDictDB("poolLPTotal", BigInteger.class);
+    public final static DictDB<BigInteger, BigInteger> total = Context.newDictDB(TOTAL, BigInteger.class);
 
     // User Balances
     // Map: pool_id -> user address -> lp token balance
-    BranchDB<BigInteger, DictDB<Address, BigInteger>> balance = Context.newBranchDB("balances", BigInteger.class);
-    BranchDB<BigInteger, DictDB<Address, BigInteger>> withdrawLock = Context.newBranchDB("withdrawLock", BigInteger.class);
+    public final static BranchDB<BigInteger, DictDB<Address, BigInteger>> balance = Context.newBranchDB(BALANCE, BigInteger.class);
+    public final static BranchDB<BigInteger, DictDB<Address, BigInteger>> withdrawLock = Context.newBranchDB(WITHDRAW_LOCK, BigInteger.class);
 
-    BranchDB<BigInteger, BranchDB<Address, BranchDB<String, DictDB<BigInteger, BigInteger>>>> accountBalanceSnapshot = Context.newBranchDB(ACCOUNT_BALANCE_SNAPSHOT, BigInteger.class);
+    public final static BranchDB<BigInteger, BranchDB<Address, BranchDB<String, DictDB<BigInteger, BigInteger>>>> accountBalanceSnapshot = Context.newBranchDB(ACCOUNT_BALANCE_SNAPSHOT, BigInteger.class);
 
-    BranchDB<BigInteger, BranchDB<String, DictDB<BigInteger, BigInteger>>> totalSupplySnapshot = Context.newBranchDB(TOTAL_SUPPLY_SNAPSHOT, BigInteger.class);
+    public final static BranchDB<BigInteger, BranchDB<String, DictDB<BigInteger, BigInteger>>> totalSupplySnapshot = Context.newBranchDB(TOTAL_SUPPLY_SNAPSHOT, BigInteger.class);
 
 
-    BranchDB<BigInteger, BranchDB<String, DictDB<BigInteger, BigInteger>>> balnSnapshot = Context.newBranchDB("balnSnapshot", BigInteger.class);
+    public final static BranchDB<BigInteger, BranchDB<String, DictDB<BigInteger, BigInteger>>> balnSnapshot = Context.newBranchDB(BALN_SNAPSHOT, BigInteger.class);
 
     // Rewards/timekeeping logic
-    VarDB<BigInteger> currentDay = Context.newVarDB(CURRENT_DAY, BigInteger.class);
-    VarDB<BigInteger> timeOffset = Context.newVarDB(TIME_OFFSET, BigInteger.class);
-    VarDB<Boolean> rewardsDone = Context.newVarDB(REWARDS_DONE, Boolean.class);
-    VarDB<Boolean> dividendsDone = Context.newVarDB(DIVIDENDS_DONE, Boolean.class);
+    public final static VarDB<BigInteger> currentDay = Context.newVarDB(CURRENT_DAY, BigInteger.class);
+    public final static VarDB<BigInteger> timeOffset = Context.newVarDB(TIME_OFFSET, BigInteger.class);
+    public final static VarDB<Boolean> rewardsDone = Context.newVarDB(REWARDS_DONE, Boolean.class);
+    public final static VarDB<Boolean> dividendsDone = Context.newVarDB(DIVIDENDS_DONE, Boolean.class);
 
-    LPMetadataDB activeAddresses = new LPMetadataDB();
+    public final static LPMetadataDB activeAddresses = new LPMetadataDB();
 
-    private final SetDB<Address> quoteCoins = new SetDB<>(QUOTE_COINS, Address.class, null);
+    public final static SetDB<Address> quoteCoins = new SetDB<>(QUOTE_COINS, Address.class, null);
 
 
     //     # All fees are divided by `FEE_SCALE` in consts
-    VarDB<BigInteger> poolLpFee = Context.newVarDB("pool_lp_fee", BigInteger.class);
-    VarDB<BigInteger> poolBalnFee = Context.newVarDB("pool_baln_fee", BigInteger.class);
-    VarDB<BigInteger> icxConversionFee = Context.newVarDB("icx_conversion_fee", BigInteger.class);
-    VarDB<BigInteger> icxBalnFee = Context.newVarDB("icx_baln_fee", BigInteger.class);
+    public final static VarDB<BigInteger> poolLpFee = Context.newVarDB(POOL_LP_FEE, BigInteger.class);
+    public final static VarDB<BigInteger> poolBalnFee = Context.newVarDB(POOL_BALN_FEE, BigInteger.class);
+    public final static VarDB<BigInteger> icxConversionFee = Context.newVarDB(ICX_CONVERSION_FEE, BigInteger.class);
+    public final static VarDB<BigInteger> icxBalnFee = Context.newVarDB(ICX_BALN_FEE, BigInteger.class);
 
 
     // Map: pool_id -> base token address
-    DictDB<BigInteger, Address> poolBase = Context.newDictDB("baseToken", Address.class);
+    public final static DictDB<BigInteger, Address> poolBase = Context.newDictDB(BASE_TOKEN, Address.class);
     // Map: pool_id -> quote token address
-    DictDB<BigInteger, Address> poolQuote = Context.newDictDB("quoteToken", Address.class);
-    DictDB<BigInteger, Boolean> active = Context.newDictDB("activePool", Boolean.class);
+    public final static DictDB<BigInteger, Address> poolQuote = Context.newDictDB(QUOTE_TOKEN, Address.class);
+    public final static DictDB<BigInteger, Boolean> active = Context.newDictDB(ACTIVE_POOL, Boolean.class);
 
-    LinkedListDB icxQueue = new LinkedListDB("icxQueue");
+    public final static LinkedListDB icxQueue = new LinkedListDB(ICX_QUEUE);
 
 
     // Map: user_address -> order id
-    DictDB<Address, BigInteger> icxQueueOrderId = Context.newDictDB("icxQueueOrderId", BigInteger.class);
+    public final static DictDB<Address, BigInteger> icxQueueOrderId = Context.newDictDB(ICX_QUEUE_ORDER_ID, BigInteger.class);
 
     // Map: user_address -> integer of unclaimed earnings
-    DictDB<Address, BigInteger> sicxEarnings = Context.newDictDB("sicxEarnings", BigInteger.class);
-    VarDB<BigInteger> icxQueueTotal = Context.newVarDB(ICX_QUEUE_TOTAL, BigInteger.class);
+    public final static DictDB<Address, BigInteger> sicxEarnings = Context.newDictDB(SICX_EARNINGS, BigInteger.class);
+    public final static VarDB<BigInteger> icxQueueTotal = Context.newVarDB(ICX_QUEUE_TOTAL, BigInteger.class);
 
 
-    private final IterableDictDB<String, BigInteger> namedMarkets = new IterableDictDB<>(NAMED_MARKETS, BigInteger.class, String.class, true);
+    public final static IterableDictDB<String, BigInteger> namedMarkets = new IterableDictDB<>(NAMED_MARKETS, BigInteger.class, String.class, true);
 
-    DictDB<BigInteger, String> marketsToNames = Context.newDictDB("marketsToNames", String.class);
+    public final static DictDB<BigInteger, String> marketsToNames = Context.newDictDB(MARKETS_NAMES, String.class);
 
-    DictDB<Address, BigInteger> tokenPrecisions = Context.newDictDB("token_precisions", BigInteger.class);
+    public final static DictDB<Address, BigInteger> tokenPrecisions = Context.newDictDB(TOKEN_PRECISIONS, BigInteger.class);
 
     // VarDB used to track the current sent transaction. This helps bound iterations.
-    VarDB<byte[]> currentTx = Context.newVarDB("current_tx", byte[].class);
+    public final static VarDB<byte[]> currentTx = Context.newVarDB(CURRENT_TX, byte[].class);
 
     // Activation of continuous rewards day
-    VarDB<BigInteger> continuousRewardsDay = Context.newVarDB("continuous_rewards_day", BigInteger.class);
+    public final static VarDB<BigInteger> continuousRewardsDay = Context.newVarDB(CONTINUOUS_REWARDS_DAY, BigInteger.class);
 
-    // Events
     @EventLog(indexed = 2)
     public void Swap(BigInteger _id, Address _baseToken, Address _fromToken, Address _toToken,
                      Address _sender, Address _receiver, BigInteger _fromValue, BigInteger _toValue,
@@ -373,13 +372,6 @@ public class DexImpl {
         return timeOffset.get();
     }
 
-    public boolean isLockingPool(BigInteger _id) {
-        boolean continuousRewardsLaunched = continuousRewardsDay.get().compareTo(currentDay.get()) <= 0;
-        boolean restrictedPoolId = (_id.compareTo(FIRST_NON_BALANCED_POOL) < 0 || _id.equals(USDS_BNUSD_ID) || _id.equals(IUSDT_BNUSD_ID));
-
-        return restrictedPoolId && continuousRewardsLaunched;
-    }
-
     @External
     public void setContinuousRewardsDay(BigInteger _continuous_rewards_day) {
         only(governance);
@@ -389,6 +381,329 @@ public class DexImpl {
     @External(readonly = true)
     public BigInteger getContinuousRewardsDay() {
         return continuousRewardsDay.get();
+    }
+
+    private boolean isLockingPool(BigInteger id) {
+        boolean continuousRewardsLaunched = continuousRewardsDay.get().compareTo(currentDay.get()) <= 0;
+        boolean restrictedPoolId = (id.compareTo(FIRST_NON_BALANCED_POOL) < 0 || id.equals(USDS_BNUSD_ID) || id.equals(IUSDT_BNUSD_ID));
+
+        return restrictedPoolId && continuousRewardsLaunched;
+    }
+
+    private Boolean isReentrantTx() {
+        boolean reentrancyStatus = false;
+        byte[] txHash = Context.getTransactionHash();
+        if (txHash == currentTx.getOrDefault(new byte[0])) {
+            reentrancyStatus = true;
+        } else {
+            currentTx.set(txHash);
+        }
+
+        return reentrancyStatus;
+    }
+
+    private void revertOnIncompleteRewards() {
+        if (!rewardsDone.get()) {
+            Context.revert(TAG + " Rewards distribution in progress, please try again shortly");
+        }
+    }
+
+    private void revertOnWithdrawalLock(Address user, BigInteger id) {
+        BigInteger depositTime = withdrawLock.at(id).get(user);
+        if (depositTime.add(WITHDRAW_LOCK_TIMEOUT).compareTo(BigInteger.valueOf(Context.getBlockTimestamp())) > 0) {
+            Context.revert(TAG + ":  Assets must remain in the pool for 24 hours, please try again later.");
+        }
+    }
+
+    private void exchange(Address _fromToken, Address _toToken, Address _sender,
+                          Address _receiver, BigInteger _value, BigInteger _minimum_receive) {
+
+        if (_minimum_receive == null) {
+            _minimum_receive = BigInteger.ZERO;
+        }
+        BigInteger lpFees = _value.multiply(poolLpFee.get()).divide(FEE_SCALE);
+        BigInteger balnFees = _value.multiply(poolBalnFee.get()).divide(FEE_SCALE);
+        BigInteger fees = lpFees.add(balnFees);
+
+        BigInteger originalValue = _value;
+        BigInteger value = _value.subtract(fees);
+
+        boolean isSell = false;
+
+
+        BigInteger id = poolId.at(_fromToken).getOrDefault(_toToken, BigInteger.ZERO);
+
+        Context.require(id.compareTo(BigInteger.ZERO) > 0, TAG + ": Invalid Pool ID");
+
+        Context.require(! id.equals(SICXICX_POOL_ID), TAG + ":  Not supported on this API, use the ICX swap API.");
+
+        if (_fromToken == getPoolBase(id)) {
+            isSell = true;
+        }
+
+        //TODO(galen): Check with scott if we should even still implement active pools.
+
+        Context.require(active.getOrDefault(id, false), TAG + " Pool is not active");
+        // We consider the trade in terms of toToken (token we are trading to), and
+        // fromToken (token we are trading away) in the pool. It must obey the xy=k
+        // constant product formula.
+
+        BigInteger oldFromToken = poolTotal.at(id).get(_fromToken);
+        BigInteger oldToToken = poolTotal.at(id).get(_toToken);
+
+        // We perturb the pool by the asset we are trading in, less fees.
+        // Fees are credited to LPs at the end of the process.
+        BigInteger newFromToken = oldFromToken.add(value);
+
+        // Compute the new fromToken according to the constant product formula
+        BigInteger newToToken = (oldFromToken.multiply(oldToToken)).divide(newFromToken);
+
+        // Send the trader the amount of toToken removed from the pool by the constant
+        // product formula
+        BigInteger sendAmount = oldToToken.subtract(newToToken);
+
+        // Revert the transaction if the below slippage, as specified in _minimum_receive
+        Context.require(sendAmount.compareTo(_minimum_receive) >= 0, TAG + ": MinimumReceiveError: Receive amount " + sendAmount + " below supplied minimum");
+
+        // Apply fees to fromToken after computing constant product. lpFees
+        // are credited to the LPs, the rest are sent to BALN holders.
+        newFromToken = newFromToken.add(lpFees);
+
+        // Save updated pool totals
+        poolTotal.at(id).set(_fromToken, newFromToken);
+        poolTotal.at(id).set(_toToken, newToToken);
+
+        // Capture details for eventlogs
+        BigInteger totalBase = isSell ? newFromToken : newToToken;
+        BigInteger totalQuote = isSell ? newToToken : newFromToken;
+
+        BigInteger sendPrice = (EXA.multiply(_value)).divide(sendAmount);
+
+        // Send the trader their funds
+        Context.call(_toToken, "transfer", Context.getAddress(), sendAmount, null);
+
+        // Send the platform fees to the feehandler SCORE
+        Context.call(_fromToken, "transfer", feehandler.get(), balnFees, null);
+
+        // Broadcast pool ending price
+        BigInteger endingPrice = this.getPrice(id);
+        BigInteger effectiveFillPrice = sendPrice;
+
+        if (!isSell) {
+            effectiveFillPrice = (EXA.multiply(sendAmount)).divide(value);
+        }
+
+        if ((_fromToken == baln.get()) || (_toToken == baln.get())) {
+            updateBalnSnapshot(id);
+        }
+
+        Swap(id, poolBase.get(id), _fromToken, _toToken,
+                _sender, _receiver, originalValue,
+                sendAmount, BigInteger.valueOf(Context.getBlockTimestamp()),
+                lpFees, balnFees.intValue(), totalBase, totalQuote, endingPrice, effectiveFillPrice);
+    }
+
+    protected BigInteger getSicxRate() {
+        return (BigInteger) Context.call(staking.get(), "getTodayRate()");
+    }
+
+    protected BigInteger getRewardableAmount(Address tokenAddress) {
+        if (tokenAddress == null) {
+            return BigInteger.TEN.multiply(EXA);
+        } else if (sicx.get() == tokenAddress) {
+            return (BigInteger.TEN.multiply(EXA.multiply(EXA))).divide(getSicxRate());
+        } else if (bnUSD.get() == tokenAddress) {
+            return BigInteger.TEN.multiply(EXA);
+        }
+
+        return BigInteger.ZERO;
+
+    }
+
+    private void swapIcx(Address sender, BigInteger value) {
+        revertOnIncompleteRewards();
+        BigInteger sicxIcxPrice = getSicxRate();
+
+        BigInteger oldIcxTotal = icxQueueTotal.get();
+        List<RewardsDataEntry> oldData = new ArrayList<>();
+
+        BigInteger balnFees = (value.multiply(icxBalnFee.get())).divide(FEE_SCALE);
+        BigInteger conversionFees = value.multiply(icxConversionFee.get()).divide(FEE_SCALE);
+
+        BigInteger orderSize = value.subtract(balnFees.add(conversionFees));
+        BigInteger orderIcxValue = (orderSize.multiply(sicxIcxPrice)).divide(EXA);
+
+        BigInteger lpSicxSize = orderSize.add(conversionFees);
+
+        Context.require(orderIcxValue.compareTo(icxQueueTotal.get()) <= 0, TAG + ": InsufficientLiquidityError: Not enough ICX suppliers.");
+        boolean filled = false;
+        BigInteger orderRemainingIcx = orderIcxValue;
+        int iterations = 0;
+        while (!filled) {
+            iterations += 1;
+            if ((icxQueue.size().equals(BigInteger.ZERO)) || (iterations > ICX_QUEUE_FILL_DEPTH)) {
+                Context.revert(TAG + ": InsufficientLiquidityError: Unable to fill " + orderRemainingIcx + "ICX.");
+            }
+            NodeDB counterpartyOrder = icxQueue.getHeadNode();
+            Address counterpartyAddress = counterpartyOrder.getUser();
+            BigInteger counterpartyIcx = counterpartyOrder.getSize();
+            boolean counterpartyFilled = false;
+
+            RewardsDataEntry rewardsEntry = new RewardsDataEntry();
+            rewardsEntry._user = counterpartyAddress;
+            rewardsEntry._balance = counterpartyIcx;
+
+            oldData.add( rewardsEntry);
+            BigInteger matchedIcx = counterpartyIcx.min(orderRemainingIcx);
+            orderRemainingIcx = orderRemainingIcx.subtract(matchedIcx);
+
+            if (matchedIcx.equals(counterpartyIcx)) {
+                counterpartyFilled = true;
+            }
+
+            BigInteger lpSicxEarnings = (lpSicxSize.multiply(matchedIcx)).divide(orderIcxValue);
+            sicxEarnings.set(counterpartyAddress, sicxEarnings.getOrDefault(counterpartyAddress, BigInteger.ZERO).add(lpSicxEarnings));
+
+            if (counterpartyFilled) {
+                icxQueue.removeHead();
+                icxQueueOrderId.set(counterpartyAddress, null);
+                activeAddresses.get(SICXICX_POOL_ID).remove(counterpartyAddress);
+            } else {
+                BigInteger newCounterpartyValue = counterpartyOrder.getSize();
+                counterpartyOrder.setSize(newCounterpartyValue);
+            }
+
+            updateAccountSnapshot(counterpartyAddress, SICXICX_POOL_ID);
+
+            if (orderRemainingIcx.compareTo(BigInteger.ZERO) != 0) {
+                filled = true;
+            }
+
+
+        }
+        icxQueueTotal.set(oldIcxTotal.subtract(orderIcxValue));
+        updateTotalSupplySnapshot(SICXICX_POOL_ID);
+
+        BigInteger effectiveFillPrice = (EXA.multiply(orderIcxValue)).divide(value);
+
+        Swap(SICXICX_POOL_ID, sicx.get(), sicx.get(), null, sender,
+                sender, value, orderIcxValue, BigInteger.valueOf(Context.getBlockTimestamp()), conversionFees,
+                balnFees.intValue(), icxQueueTotal.get(), BigInteger.ZERO, getSicxRate(), effectiveFillPrice);
+        Context.call(rewards.get(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal, List.of(oldData));
+        Context.call(sicx.get(), "transfer", feehandler.get(), balnFees);
+        Context.transfer(sender, orderIcxValue);
+    }
+
+
+    private BigInteger getUnitValue(Address tokenAddress) {
+        if (tokenAddress == null) {
+            return EXA;
+        } else {
+            return pow(BigInteger.TEN,tokenPrecisions.get(tokenAddress).intValue());
+        }
+    }
+
+    private void revertBelowMinimum(BigInteger value, Address quoteToken) {
+        BigInteger minAmount = getRewardableAmount(quoteToken);
+        if (value.compareTo(minAmount) < 0) {
+            BigInteger readableMin = minAmount.divide(getUnitValue(quoteToken));
+            Context.revert(TAG + ": Total liquidity provided must be above " + readableMin + " quote currency");
+        }
+    }
+
+
+    // Day Change Functions
+    private void takeNewDaySnapshot() {
+        BigInteger day = this.getDay();
+        if (day.compareTo(currentDay.get()) > 0) {
+            currentDay.set(day);
+            Snapshot(day);
+            rewardsDone.set(false);
+            if (day.mod(BigInteger.valueOf(7)).compareTo(BigInteger.valueOf(0)) == 0) {
+                dividendsDone.set(false);
+            }
+        }
+    }
+
+    private void checkDistributions() {
+        if (this.isReentrantTx()) {
+            return;
+        }
+
+        if (!rewardsDone.getOrDefault(false)) {
+            rewardsDone.set((Boolean) Context.call(rewards.get(), "distribute"));
+        } else if (!dividendsDone.getOrDefault(false)) {
+            dividendsDone.set((Boolean) Context.call(dividends.get(), "distribute"));
+        }
+    }
+
+    private void updateAccountSnapshot(Address account, BigInteger id) {
+        BigInteger currentId = currentDay.get();
+        BigInteger currentValue = balanceOf(account, id);
+        BigInteger length = accountBalanceSnapshot.at(id).at(account).at("length").getOrDefault(BigInteger.ZERO, BigInteger.ZERO);
+        BigInteger lastSnapshotId = BigInteger.ZERO;
+        if (length.equals(BigInteger.ZERO)) {
+            accountBalanceSnapshot.at(id).at(account).at("ids").set(length, currentId);
+            accountBalanceSnapshot.at(id).at(account).at("values").set(length, currentValue);
+            accountBalanceSnapshot.at(id).at(account).at("length").set(BigInteger.ZERO, length.add(BigInteger.ONE));
+            return;
+        }
+        lastSnapshotId = accountBalanceSnapshot.at(id).at(account).at("ids").get(length.subtract(BigInteger.ONE));
+        if (lastSnapshotId.compareTo(currentId) < 0) {
+            accountBalanceSnapshot.at(id).at(account).at("ids").set(length, currentId);
+            accountBalanceSnapshot.at(id).at(account).at("values").set(length, currentValue);
+            accountBalanceSnapshot.at(id).at(account).at("length").set(BigInteger.ZERO, length.add(BigInteger.ONE));
+        } else {
+            accountBalanceSnapshot.at(id).at(account).at("values").set(length.subtract(BigInteger.ONE), currentValue);
+
+        }
+    }
+
+    private void updateBalnSnapshot(BigInteger id) {
+        BigInteger currentId = currentDay.get();
+        BigInteger currentValue = poolTotal.at(id).get(baln.get());
+        BigInteger length = balnSnapshot.at(id).at("length").getOrDefault(BigInteger.ZERO, BigInteger.ZERO);
+        BigInteger lastSnapshotId = BigInteger.ZERO;
+
+        if (length.equals(BigInteger.ZERO)) {
+            balnSnapshot.at(id).at("ids").set(length, currentId);
+            balnSnapshot.at(id).at("values").set(length, currentValue);
+            balnSnapshot.at(id).at("length").set(BigInteger.ZERO, length.add(BigInteger.ONE));
+            return;
+        }
+        lastSnapshotId = balnSnapshot.at(id).at("ids").get(length.subtract(BigInteger.ONE));
+        if (lastSnapshotId.compareTo(currentId) < 0) {
+            balnSnapshot.at(id).at("ids").set(length, currentId);
+            balnSnapshot.at(id).at("values").set(length, currentValue);
+            balnSnapshot.at(id).at("length").set(BigInteger.ZERO, length.add(BigInteger.ONE));
+
+        } else {
+            balnSnapshot.at(id).at("values").set(length.subtract(BigInteger.ONE), currentValue);
+        }
+    }
+
+    private void updateTotalSupplySnapshot(BigInteger id) {
+        BigInteger currentId = currentDay.get();
+        BigInteger currentValue = totalSupply(id);
+        BigInteger length = totalSupplySnapshot.at(id).at("length").getOrDefault(BigInteger.ZERO, BigInteger.ZERO);
+        BigInteger lastSnapshotId = BigInteger.ZERO;
+
+        if (length.equals(BigInteger.ZERO)) {
+            totalSupplySnapshot.at(id).at("ids").set(length, currentId);
+            totalSupplySnapshot.at(id).at("values").set(length, currentValue);
+            totalSupplySnapshot.at(id).at("length").set(BigInteger.ZERO, length.add(BigInteger.ONE));
+            return;
+        }
+        lastSnapshotId = totalSupplySnapshot.at(id).at("ids").get(length.subtract(BigInteger.ONE));
+        if (lastSnapshotId.compareTo(currentId) < 0) {
+            totalSupplySnapshot.at(id).at("ids").set(length, currentId);
+            totalSupplySnapshot.at(id).at("values").set(length, currentValue);
+            totalSupplySnapshot.at(id).at("length").set(BigInteger.ZERO, length.add(BigInteger.ONE));
+
+        } else {
+            totalSupplySnapshot.at(id).at("values").set(length.subtract(BigInteger.ONE), currentValue);
+        }
+
     }
 
     @Payable
@@ -432,12 +747,11 @@ public class DexImpl {
         updateAccountSnapshot(user, SICXICX_POOL_ID);
         updateTotalSupplySnapshot(SICXICX_POOL_ID);
 
-
-        Map<String, Object> rewardsEntry = new HashMap<>();
-        rewardsEntry.put("_user", user);
-        rewardsEntry.put("_balance", oldOrderValue);
-        List<Map<String, Object>> rewardsList = new ArrayList<>();
-        rewardsList.add(rewardsEntry);
+        List<RewardsDataEntry> rewardsList = new ArrayList<>();
+        RewardsDataEntry rewardsEntry = new RewardsDataEntry();
+        rewardsEntry._user = user;
+        rewardsEntry._balance = oldOrderValue;
+        rewardsList.add( rewardsEntry);
         Context.call(rewards.get(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal, rewardsList);
     }
 
@@ -469,25 +783,13 @@ public class DexImpl {
         updateAccountSnapshot(user, SICXICX_POOL_ID);
         updateTotalSupplySnapshot(SICXICX_POOL_ID);
 
-        Map<String, Object> rewardsEntry = new HashMap<>();
-        rewardsEntry.put("_user", user);
-        rewardsEntry.put("_balance", withdrawAmount);
-        List<Map<String, Object>> rewardsList = new ArrayList<>();
-        rewardsList.add(rewardsEntry);
+        List<RewardsDataEntry> rewardsList = new ArrayList<>();
+        RewardsDataEntry rewardsEntry = new RewardsDataEntry();
+        rewardsEntry._user = user;
+        rewardsEntry._balance = withdrawAmount;
+        rewardsList.add( rewardsEntry);
 
         Context.call(rewards.get(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal, rewardsList);
-    }
-
-    private Boolean isReentrantTx() {
-        boolean reentrancyStatus = false;
-        byte[] txHash = Context.getTransactionHash();
-        if (txHash == currentTx.getOrDefault(new byte[0])) {
-            reentrancyStatus = true;
-        } else {
-            currentTx.set(txHash);
-        }
-
-        return reentrancyStatus;
     }
 
     @External
@@ -522,13 +824,8 @@ public class DexImpl {
                 tokenPrecisions.set(fromToken, decimalValue);
             }
         } else if (method.equals("_swap_icx")) {
-            if (fromToken.equals(sicx.get())) {
-                swapIcx(_from, _value);
-            } else {
-                Context.revert(
-                        TAG + ": InvalidAsset: _swap_icx can only be called with sICX"
-                );
-            }
+            Context.require(fromToken.equals(sicx.get()), TAG + ": InvalidAsset: _swap_icx can only be called with sICX");
+                    swapIcx(_from, _value);
 
         } else if (method.equals("_swap")) {
 
@@ -642,9 +939,9 @@ public class DexImpl {
 
     @External(readonly = true)
     public List<String> getNamedPools() {
-        List<String> rv = new ArrayList<>();
-        rv.addAll(namedMarkets.keys());
-        return rv;
+        List<String> namedPools = new ArrayList<>();
+        namedPools.addAll(namedMarkets.keys());
+        return namedPools;
     }
 
     @External(readonly = true)
@@ -706,7 +1003,7 @@ public class DexImpl {
 
     @External(readonly = true)
     public BigInteger getQuotePriceInBase(BigInteger _id) {
-        Context.require((_id.compareTo(nonce.get()) < 0) && (_id.compareTo(BigInteger.ZERO) > 0), TAG + ": Invalid pool ID");
+        Context.require((_id.compareTo(nonce.get()) <= 0) && (_id.compareTo(BigInteger.ZERO) > 0), TAG + ": Invalid pool ID");
 
         if (_id.equals(SICXICX_POOL_ID)) {
             return ((EXA.multiply(EXA)).divide(getSicxRate()));
@@ -722,7 +1019,7 @@ public class DexImpl {
 
     @External(readonly = true)
     public BigInteger getBasePriceInQuote(BigInteger _id) {
-        Context.require((_id.compareTo(nonce.get()) < 0) && (_id.compareTo(BigInteger.ZERO) > 0), TAG + ": Invalid pool ID");
+        Context.require((_id.compareTo(nonce.get()) <= 0) && (_id.compareTo(BigInteger.ZERO) > 0), TAG + ": Invalid pool ID");
 
         if (_id.equals(SICXICX_POOL_ID)) {
             return getSicxRate();
@@ -762,9 +1059,10 @@ public class DexImpl {
             return (getSicxBnusdPrice().multiply(sicxTotal)).divide(EXA);
         } else if (poolQuote.get(_id) == bnUSD.get()) {
             return (poolTotal.at(_id).get(bnUSD.get())).multiply(BigInteger.TWO);
-        } else {
-            return BigInteger.ZERO;
         }
+
+        return BigInteger.ZERO;
+
     }
 
     @External(readonly = true)
@@ -783,12 +1081,12 @@ public class DexImpl {
 
     @External(readonly = true)
     public String getPoolName(BigInteger _id) {
-        return marketsToNames.get(_id) != null ? marketsToNames.get(_id) : null;
+        return marketsToNames.get(_id) ;
     }
 
     @External(readonly = true)
     public Map<String, Object> getPoolStats(BigInteger _id) {
-        Context.require((_id.compareTo(nonce.get()) < 0) && (_id.compareTo(BigInteger.ZERO) > 0), TAG + ": Invalid pool ID");
+        Context.require((_id.compareTo(nonce.get()) <= 0) && (_id.compareTo(BigInteger.ZERO) > 0), TAG + ": Invalid pool ID");
         Map<String, Object> poolStats = new HashMap<>();
         if (_id.equals(SICXICX_POOL_ID)) {
             poolStats.put("base_token", sicx.get());
@@ -804,7 +1102,7 @@ public class DexImpl {
         } else {
             Address baseToken = poolBase.get(_id);
             Address quoteToken = poolQuote.get(_id);
-            String name = marketsToNames.get(_id) != null ? marketsToNames.get(_id) : null;
+            String name = marketsToNames.get(_id);
 
             poolStats.put("base", poolTotal.at(_id).get(baseToken));
             poolStats.put("quote", poolTotal.at(_id).get(quoteToken));
@@ -823,19 +1121,6 @@ public class DexImpl {
     @External(readonly = true)
     public int totalDexAddresses(BigInteger _id) {
         return activeAddresses.get(_id).length();
-    }
-
-    private void revertOnIncompleteRewards() {
-        if (!rewardsDone.get()) {
-            Context.revert(TAG + " Rewards distribution in progress, please try again shortly");
-        }
-    }
-
-    private void revertOnWithdrawalLock(Address user, BigInteger id) {
-        BigInteger depositTime = withdrawLock.at(id).get(user);
-        if (depositTime.add(WITHDRAW_LOCK_TIMEOUT).compareTo(BigInteger.valueOf(Context.getBlockTimestamp())) > 0) {
-            Context.revert(TAG + ":  Assets must remain in the pool for 24 hours, please try again later.");
-        }
     }
 
     @External(readonly = true)
@@ -858,306 +1143,6 @@ public class DexImpl {
             Context.revert(TAG + ": Unsupported data source name");
         }
         return null;
-    }
-
-    private void exchange(Address _fromToken, Address _toToken, Address _sender,
-                          Address _receiver, BigInteger _value, BigInteger _minimum_receive) {
-
-        if (_minimum_receive == null) {
-            _minimum_receive = BigInteger.ZERO;
-        }
-        BigInteger lpFees = _value.multiply(poolLpFee.get()).divide(FEE_SCALE);
-        BigInteger balnFees = _value.multiply(poolBalnFee.get()).divide(FEE_SCALE);
-        BigInteger fees = lpFees.add(balnFees);
-
-        BigInteger originalValue = _value;
-        BigInteger value = _value.subtract(fees);
-
-        boolean isSell = false;
-
-
-        BigInteger id = poolId.at(_fromToken).getOrDefault(_toToken, BigInteger.ZERO);
-
-        Context.require(id.compareTo(BigInteger.ZERO) > 0, TAG + ": Invalid Pool ID");
-
-        if (id.equals(SICXICX_POOL_ID)) {
-            Context.revert(TAG + ":  Not supported on this API, use the ICX swap API.");
-        }
-
-        if (_fromToken == getPoolBase(id)) {
-            isSell = true;
-        }
-
-        //TODO(galen): Check with scott if we should even still implement active pools.
-        if (!active.getOrDefault(id, false)) {
-            Context.revert(TAG + " Pool is not active");
-        }
-        // We consider the trade in terms of toToken (token we are trading to), and
-        // fromToken (token we are trading away) in the pool. It must obey the xy=k
-        // constant product formula.
-
-        BigInteger oldFromToken = poolTotal.at(id).get(_fromToken);
-        BigInteger oldToToken = poolTotal.at(id).get(_toToken);
-
-        // We perturb the pool by the asset we are trading in, less fees.
-        // Fees are credited to LPs at the end of the process.
-        BigInteger newFromToken = oldFromToken.add(value);
-
-        // Compute the new fromToken according to the constant product formula
-        BigInteger newToToken = (oldFromToken.multiply(oldToToken)).divide(newFromToken);
-
-        // Send the trader the amount of toToken removed from the pool by the constant
-        // product formula
-        BigInteger sendAmount = oldToToken.subtract(newToToken);
-
-        // Revert the transaction if the below slippage, as specified in _minimum_receive
-        Context.require(sendAmount.compareTo(_minimum_receive) >= 0, TAG + ": MinimumReceiveError: Receive amount " + sendAmount + " below supplied minimum");
-
-        // Apply fees to fromToken after computing constant product. lpFees
-        // are credited to the LPs, the rest are sent to BALN holders.
-        newFromToken = newFromToken.add(lpFees);
-
-        // Save updated pool totals
-        poolTotal.at(id).set(_fromToken, newFromToken);
-        poolTotal.at(id).set(_toToken, newToToken);
-
-        // Capture details for eventlogs
-        BigInteger totalBase = isSell ? newFromToken : newToToken;
-        BigInteger totalQuote = isSell ? newToToken : newFromToken;
-
-        BigInteger sendPrice = (EXA.multiply(_value)).divide(sendAmount);
-
-        // Send the trader their funds
-        Context.call(_toToken, "transfer", Context.getAddress(), sendAmount, null);
-
-        // Send the platform fees to the feehandler SCORE
-        Context.call(_fromToken, "transfer", feehandler.get(), balnFees, null);
-
-        // Broadcast pool ending price
-        BigInteger endingPrice = this.getPrice(id);
-        BigInteger effectiveFillPrice = sendPrice;
-
-        if (!isSell) {
-            effectiveFillPrice = (EXA.multiply(sendAmount)).divide(value);
-        }
-
-        if ((_fromToken == baln.get()) || (_toToken == baln.get())) {
-            updateBalnSnapshot(id);
-        }
-
-        Swap(id, poolBase.get(id), _fromToken, _toToken,
-                _sender, _receiver, originalValue,
-                sendAmount, BigInteger.valueOf(Context.getBlockTimestamp()),
-                lpFees, balnFees.intValue(), totalBase, totalQuote, endingPrice, effectiveFillPrice);
-    }
-
-    protected BigInteger getSicxRate() {
-        return (BigInteger) Context.call(staking.get(), "getTodayRate()");
-    }
-
-    protected BigInteger getRewardableAmount(Address tokenAddress) {
-        if (tokenAddress == null) {
-            return BigInteger.TEN.multiply(EXA);
-        } else if (sicx.get() == tokenAddress) {
-            return (BigInteger.TEN.multiply(EXA.multiply(EXA))).divide(getSicxRate());
-        } else if (bnUSD.get() == tokenAddress) {
-            return BigInteger.TEN.multiply(EXA);
-        } else {
-            return BigInteger.ZERO;
-        }
-    }
-
-    private void swapIcx(Address sender, BigInteger value) {
-        revertOnIncompleteRewards();
-        BigInteger sicxIcxPrice = getSicxRate();
-
-        BigInteger oldIcxTotal = icxQueueTotal.get();
-        List<Map<String, Object>> oldData = new ArrayList<>();
-
-        BigInteger balnFees = (value.multiply(icxBalnFee.get())).divide(FEE_SCALE);
-        BigInteger conversionFees = value.multiply(icxConversionFee.get()).divide(FEE_SCALE);
-
-        BigInteger orderSize = (value.subtract(balnFees.add(conversionFees)));
-        BigInteger orderIcxValue = (orderSize.multiply(sicxIcxPrice)).divide(EXA);
-
-        BigInteger lpSicxSize = orderSize.add(conversionFees);
-
-        Context.require(orderIcxValue.compareTo(icxQueueTotal.get()) <= 0, TAG + ": InsufficientLiquidityError: Not enough ICX suppliers.");
-        boolean filled = false;
-        BigInteger orderRemainingIcx = orderIcxValue;
-        int iterations = 0;
-        while (!filled) {
-            iterations += 1;
-            if ((icxQueue.size().equals(BigInteger.ZERO)) || (iterations > ICX_QUEUE_FILL_DEPTH)) {
-                Context.revert(TAG + ": InsufficientLiquidityError: Unable to fill " + orderRemainingIcx + "ICX.");
-            }
-            NodeDB counterpartyOrder = icxQueue.getHeadNode();
-            Address counterpartyAddress = counterpartyOrder.getUser();
-            BigInteger counterpartyIcx = counterpartyOrder.getSize();
-            boolean counterpartyFilled = false;
-
-            Map<String, Object> data = new HashMap<>();
-            data.put("_user", counterpartyAddress);
-            data.put("_balance", counterpartyIcx);
-
-            oldData.add(data);
-            BigInteger matchedIcx = counterpartyIcx.min(orderRemainingIcx);
-            orderRemainingIcx = orderRemainingIcx.subtract(matchedIcx);
-
-            if (matchedIcx.equals(counterpartyIcx)) {
-                counterpartyFilled = true;
-            }
-
-            BigInteger lpSicxEarnings = (lpSicxSize.multiply(matchedIcx)).divide(orderIcxValue);
-            sicxEarnings.set(counterpartyAddress, sicxEarnings.getOrDefault(counterpartyAddress, BigInteger.ZERO).add(lpSicxEarnings));
-
-            if (counterpartyFilled) {
-                icxQueue.removeHead();
-                icxQueueOrderId.set(counterpartyAddress, null);
-                activeAddresses.get(SICXICX_POOL_ID).remove(counterpartyAddress);
-            } else {
-                BigInteger newCounterpartyValue = counterpartyOrder.getSize();
-                counterpartyOrder.setSize(newCounterpartyValue);
-            }
-
-            updateAccountSnapshot(counterpartyAddress, SICXICX_POOL_ID);
-
-            if (orderRemainingIcx.compareTo(BigInteger.ZERO) != 0) {
-                filled = true;
-            }
-
-
-        }
-        icxQueueTotal.set(oldIcxTotal.subtract(orderIcxValue));
-        updateTotalSupplySnapshot(SICXICX_POOL_ID);
-
-        BigInteger effectiveFillPrice = (EXA.multiply(orderIcxValue)).divide(value);
-
-        Swap(SICXICX_POOL_ID, sicx.get(), sicx.get(), null, sender,
-                sender, value, orderIcxValue, BigInteger.valueOf(Context.getBlockTimestamp()), conversionFees,
-                balnFees.intValue(), icxQueueTotal.get(), BigInteger.ZERO, getSicxRate(), effectiveFillPrice);
-        Context.call(rewards.get(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal, List.of(oldData));
-        Context.call(sicx.get(), "transfer", feehandler.get(), balnFees);
-        Context.transfer(sender, orderIcxValue);
-    }
-
-
-    private BigInteger getUnitValue(Address tokenAddress) {
-        if (tokenAddress == null) {
-            return EXA;
-        } else {
-            return pow(BigInteger.TEN,tokenPrecisions.get(tokenAddress).intValue());
-        }
-    }
-
-    private void revertBelowMinimum(BigInteger value, Address quoteToken) {
-        BigInteger minAmount = getRewardableAmount(quoteToken);
-        if (value.compareTo(minAmount) < 0) {
-            BigInteger readableMin = minAmount.divide(getUnitValue(quoteToken));
-            Context.revert(TAG + ": Total liquidity provided must be above " + readableMin + " quote currency");
-        }
-    }
-
-
-    // Day Change Functions
-    private void takeNewDaySnapshot() {
-        BigInteger day = this.getDay();
-        if (day.compareTo(currentDay.get()) > 0) {
-            currentDay.set(day);
-            Snapshot(day);
-            rewardsDone.set(false);
-            if (day.mod(BigInteger.valueOf(7)).compareTo(BigInteger.valueOf(0)) == 0) {
-                dividendsDone.set(false);
-            }
-        }
-    }
-
-    private void checkDistributions() {
-        if (this.isReentrantTx()) {
-            return;
-        }
-
-        if (!rewardsDone.getOrDefault(false)) {
-            rewardsDone.set((Boolean) Context.call(rewards.get(), "distribute"));
-        } else if (!dividendsDone.getOrDefault(false)) {
-            dividendsDone.set((Boolean) Context.call(dividends.get(), "distribute"));
-        }
-    }
-
-    private void updateAccountSnapshot(Address account, BigInteger id) {
-        BigInteger currentId = currentDay.get();
-        BigInteger currentValue = balanceOf(account, id);
-        BigInteger length = accountBalanceSnapshot.at(id).at(account).at("length").getOrDefault(BigInteger.ZERO, BigInteger.ZERO);
-        BigInteger lastSnapshotId = BigInteger.ZERO;
-        if (length.equals(BigInteger.ZERO)) {
-            accountBalanceSnapshot.at(id).at(account).at("ids").set(length, currentId);
-            accountBalanceSnapshot.at(id).at(account).at("values").set(length, currentValue);
-            accountBalanceSnapshot.at(id).at(account).at("length").set(BigInteger.ZERO, length.add(BigInteger.ONE));
-            return;
-        } else {
-            lastSnapshotId = accountBalanceSnapshot.at(id).at(account).at("ids").get(length.subtract(BigInteger.ONE));
-
-        }
-        if (lastSnapshotId.compareTo(currentId) < 0) {
-            accountBalanceSnapshot.at(id).at(account).at("ids").set(length, currentId);
-            accountBalanceSnapshot.at(id).at(account).at("values").set(length, currentValue);
-            accountBalanceSnapshot.at(id).at(account).at("length").set(BigInteger.ZERO, length.add(BigInteger.ONE));
-        } else {
-            accountBalanceSnapshot.at(id).at(account).at("values").set(length.subtract(BigInteger.ONE), currentValue);
-
-        }
-    }
-
-    private void updateBalnSnapshot(BigInteger id) {
-        BigInteger currentId = currentDay.get();
-        BigInteger currentValue = poolTotal.at(id).get(baln.get());
-        BigInteger length = balnSnapshot.at(id).at("length").getOrDefault(BigInteger.ZERO, BigInteger.ZERO);
-        BigInteger lastSnapshotId = BigInteger.ZERO;
-
-        if (length.equals(BigInteger.ZERO)) {
-            balnSnapshot.at(id).at("ids").set(length, currentId);
-            balnSnapshot.at(id).at("values").set(length, currentValue);
-            balnSnapshot.at(id).at("length").set(BigInteger.ZERO, length.add(BigInteger.ONE));
-            return;
-        } else {
-
-            lastSnapshotId = balnSnapshot.at(id).at("ids").get(length.subtract(BigInteger.ONE));
-
-        }
-        if (lastSnapshotId.compareTo(currentId) < 0) {
-            balnSnapshot.at(id).at("ids").set(length, currentId);
-            balnSnapshot.at(id).at("values").set(length, currentValue);
-            balnSnapshot.at(id).at("length").set(BigInteger.ZERO, length.add(BigInteger.ONE));
-
-        } else {
-            balnSnapshot.at(id).at("values").set(length.subtract(BigInteger.ONE), currentValue);
-        }
-    }
-
-    private void updateTotalSupplySnapshot(BigInteger id) {
-        BigInteger currentId = currentDay.get();
-        BigInteger currentValue = totalSupply(id);
-        BigInteger length = totalSupplySnapshot.at(id).at("length").getOrDefault(BigInteger.ZERO, BigInteger.ZERO);
-        BigInteger lastSnapshotId = BigInteger.ZERO;
-
-        if (length.equals(BigInteger.ZERO)) {
-            totalSupplySnapshot.at(id).at("ids").set(length, currentId);
-            totalSupplySnapshot.at(id).at("values").set(length, currentValue);
-            totalSupplySnapshot.at(id).at("length").set(BigInteger.ZERO, length.add(BigInteger.ONE));
-            return;
-        } else {
-            lastSnapshotId = totalSupplySnapshot.at(id).at("ids").get(length.subtract(BigInteger.ONE));
-
-        }
-        if (lastSnapshotId.compareTo(currentId) < 0) {
-            totalSupplySnapshot.at(id).at("ids").set(length, currentId);
-            totalSupplySnapshot.at(id).at("values").set(length, currentValue);
-            totalSupplySnapshot.at(id).at("length").set(BigInteger.ZERO, length.add(BigInteger.ONE));
-
-        } else {
-            totalSupplySnapshot.at(id).at("values").set(length.subtract(BigInteger.ONE), currentValue);
-        }
-
     }
 
     @External(readonly = true)
@@ -1183,9 +1168,10 @@ public class DexImpl {
             return accountBalanceSnapshot.at(_id).at(_account).at("values").get(BigInteger.ZERO);
         } else if (low.equals(BigInteger.ZERO)) {
             return BigInteger.ZERO;
-        } else {
-            matchedIndex = low.subtract(BigInteger.ONE);
         }
+
+        matchedIndex = low.subtract(BigInteger.ONE);
+
         return accountBalanceSnapshot.at(_id).at(_account).at("values").get(matchedIndex);
     }
 
@@ -1209,9 +1195,10 @@ public class DexImpl {
             return totalSupplySnapshot.at(_id).at("values").get(BigInteger.ZERO);
         } else if (low.equals(BigInteger.ZERO)) {
             return BigInteger.ZERO;
-        } else {
-            matchedIndex = low.subtract(BigInteger.ONE);
         }
+
+        matchedIndex = low.subtract(BigInteger.ONE);
+
         return totalSupplySnapshot.at(_id).at("values").get(matchedIndex);
     }
 
@@ -1235,9 +1222,10 @@ public class DexImpl {
             return balnSnapshot.at(_id).at("values").get(BigInteger.ZERO);
         } else if (low.equals(BigInteger.ZERO)) {
             return BigInteger.ZERO;
-        } else {
-            matchedIndex = low.subtract(BigInteger.ONE);
         }
+
+        matchedIndex = low.subtract(BigInteger.ONE);
+
         return balnSnapshot.at(_id).at("values").get(matchedIndex);
     }
 
@@ -1259,15 +1247,15 @@ public class DexImpl {
         Context.require(_snapshot_id.compareTo(BigInteger.ZERO) >= 0, TAG + ":  Snapshot id is equal to or greater then Zero.");
         Context.require(_id.compareTo(BigInteger.ZERO) >= 0, TAG + ":  Pool id is equal to or greater then Zero.");
         Context.require(_offset.compareTo(BigInteger.ZERO) >= 0, TAG + ":  Offset is equal to or greater then Zero.");
-        Map<String, Object> rv = new HashMap<>();
+        Map<String, Object> snapshotData = new HashMap<>();
 
         for (Address addr : activeAddresses.get(_id).range(_offset, _offset.add(_limit))) {
             BigInteger snapshotBalance = balanceOf(addr, _id);
             if (!snapshotBalance.equals(BigInteger.ZERO)) {
-                rv.put(addr.toString(), snapshotBalance);
+                snapshotData.put(addr.toString(), snapshotBalance);
             }
         }
-        return rv;
+        return snapshotData;
     }
 
     @External(readonly = true)
