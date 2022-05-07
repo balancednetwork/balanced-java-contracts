@@ -62,7 +62,7 @@ public class LinkedListDB {
 
     public void updateNode(BigInteger size, Address user, BigInteger nodeId) {
         NodeDB node = createNodeInstance(nodeId);
-        Context.require(node.exists() ,"There is no node of the provided node id.");
+        Context.require(node.exists(), "There is no node of the provided node id.");
         node.setValues(size, user);
     }
 

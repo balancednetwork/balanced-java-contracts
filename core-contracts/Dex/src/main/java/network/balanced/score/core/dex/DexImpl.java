@@ -435,7 +435,7 @@ public class DexImpl {
 
         Context.require(id.compareTo(BigInteger.ZERO) > 0, TAG + ": Invalid Pool ID");
 
-        Context.require(! id.equals(SICXICX_POOL_ID), TAG + ":  Not supported on this API, use the ICX swap API.");
+        Context.require(!id.equals(SICXICX_POOL_ID), TAG + ":  Not supported on this API, use the ICX swap API.");
 
         if (fromToken == getPoolBase(id)) {
             isSell = true;
@@ -553,7 +553,7 @@ public class DexImpl {
             rewardsEntry._user = counterpartyAddress;
             rewardsEntry._balance = counterpartyIcx;
 
-            oldData.add( rewardsEntry);
+            oldData.add(rewardsEntry);
             BigInteger matchedIcx = counterpartyIcx.min(orderRemainingIcx);
             orderRemainingIcx = orderRemainingIcx.subtract(matchedIcx);
 
@@ -599,7 +599,7 @@ public class DexImpl {
         if (tokenAddress == null) {
             return EXA;
         } else {
-            return pow(BigInteger.TEN,tokenPrecisions.get(tokenAddress).intValue());
+            return pow(BigInteger.TEN, tokenPrecisions.get(tokenAddress).intValue());
         }
     }
 
@@ -751,7 +751,7 @@ public class DexImpl {
         RewardsDataEntry rewardsEntry = new RewardsDataEntry();
         rewardsEntry._user = user;
         rewardsEntry._balance = oldOrderValue;
-        rewardsList.add( rewardsEntry);
+        rewardsList.add(rewardsEntry);
         Context.call(rewards.get(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal, rewardsList);
     }
 
@@ -787,7 +787,7 @@ public class DexImpl {
         RewardsDataEntry rewardsEntry = new RewardsDataEntry();
         rewardsEntry._user = user;
         rewardsEntry._balance = withdrawAmount;
-        rewardsList.add( rewardsEntry);
+        rewardsList.add(rewardsEntry);
 
         Context.call(rewards.get(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal, rewardsList);
     }
@@ -825,7 +825,7 @@ public class DexImpl {
             }
         } else if (method.equals("_swap_icx")) {
             Context.require(fromToken.equals(sicx.get()), TAG + ": InvalidAsset: _swap_icx can only be called with sICX");
-                    swapIcx(_from, _value);
+            swapIcx(_from, _value);
 
         } else if (method.equals("_swap")) {
 
@@ -1081,7 +1081,7 @@ public class DexImpl {
 
     @External(readonly = true)
     public String getPoolName(BigInteger _id) {
-        return marketsToNames.get(_id) ;
+        return marketsToNames.get(_id);
     }
 
     @External(readonly = true)
@@ -1504,9 +1504,9 @@ public class DexImpl {
             if (userDepositedBase.compareTo(BigInteger.ZERO) > 0) {
                 withdraw(_baseToken, userDepositedBase);
             }
-            
+
             if (userDepositedQuote.compareTo(BigInteger.ZERO) > 0) {
-                withdraw(_quoteToken, userDepositedQuote);         
+                withdraw(_quoteToken, userDepositedQuote);
             }
         }
     }
