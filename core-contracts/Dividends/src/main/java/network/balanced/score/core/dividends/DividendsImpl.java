@@ -339,17 +339,11 @@ public class DividendsImpl implements Dividends {
     }
 
     @External
-    public void transferDaofundDividends(@Optional BigInteger _start, @Optional BigInteger _end) {
-        if (_start == null) {
-            _start = BigInteger.ZERO;
-        }
-        if (_end == null) {
-            _end = BigInteger.ZERO;
-        }
+    public void transferDaofundDividends(@Optional int _start, @Optional int _end) {
         Address daofund = daoFund.get();
         Context.require(distributionActivate.getOrDefault(false), TAG + ": Distribution is not activated. Can't transfer.");
 
-        int[] value = checkStartEnd(_start.intValue(), _end.intValue());
+        int[] value = checkStartEnd(_start, _end);
         int start = value[0];
         int end = value[1];
         Map<String, BigInteger> totalDividends = new HashMap<>();
@@ -372,10 +366,10 @@ public class DividendsImpl implements Dividends {
     }
 
     @External
-    public void claim(BigInteger _start, BigInteger _end) {
+    public void claim(@Optional int _start, @Optional int _end) {
         Context.require(distributionActivate.getOrDefault(false), TAG + ": Distribution is not activated. Can't transfer.");
 
-        int[] value = checkStartEnd(_start.intValue(), _end.intValue());
+        int[] value = checkStartEnd(_start, _end);
         int start = value[0];
         int end = value[1];
         Address account = Context.getCaller();
@@ -431,8 +425,8 @@ public class DividendsImpl implements Dividends {
     }
 
     @External(readonly = true)
-    public Map<String, BigInteger> getUserDividends(Address _account, BigInteger _start, BigInteger _end) {
-        int[] value = checkStartEnd(_start.intValue(), _end.intValue());
+    public Map<String, BigInteger> getUserDividends(Address _account, int _start, int _end) {
+        int[] value = checkStartEnd(_start, _end);
         int start = value[0];
         int end = value[1];
 
@@ -446,8 +440,8 @@ public class DividendsImpl implements Dividends {
     }
 
     @External(readonly = true)
-    public Map<String, BigInteger> getDaoFundDividends(BigInteger _start, BigInteger _end) {
-        int[] value = checkStartEnd(_start.intValue(), _end.intValue());
+    public Map<String, BigInteger> getDaoFundDividends(int _start, int _end) {
+        int[] value = checkStartEnd(_start, _end);
         int start = value[0];
         int end = value[1];
 

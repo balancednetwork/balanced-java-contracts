@@ -7,6 +7,7 @@ import network.balanced.score.lib.interfaces.base.TokenFallback;
 import network.balanced.score.lib.structs.DistPercentDict;
 import score.Address;
 import score.annotation.External;
+import score.annotation.Optional;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -74,16 +75,16 @@ public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress
     boolean distribute();
 
     @External
-    void transferDaofundDividends(BigInteger _start, BigInteger _end);
+    void transferDaofundDividends(@Optional int _start, @Optional int _end);
 
     @External
-    void claim(BigInteger _start, BigInteger _end);
+    void claim(@Optional  int _start,@Optional int _end);
 
     @External(readonly = true)
-    Map<String, BigInteger> getUserDividends(Address _account, BigInteger _start, BigInteger _end);
+    Map<String, BigInteger> getUserDividends(Address _account, int _start, int _end);
 
     @External(readonly = true)
-    Map<String, BigInteger> getDaoFundDividends(BigInteger _start, BigInteger _end);
+    Map<String, BigInteger> getDaoFundDividends(int _start, int _end);
 
     @External(readonly = true)
     Map<String, BigInteger> dividendsAt(BigInteger _day);
