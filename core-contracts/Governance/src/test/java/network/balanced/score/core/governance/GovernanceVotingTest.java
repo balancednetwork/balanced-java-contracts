@@ -428,7 +428,7 @@ public class GovernanceVotingTest extends GovernanceTestBase {
     
 
         // Act
-        List<Map<String, Object>> votes = (List<Map<String, Object>>) governance.call("getProposals", 5, 0);
+        List<Map<String, Object>> votes = (List<Map<String, Object>>) governance.call("getProposals", BigInteger.valueOf(5), BigInteger.ZERO);
 
         // Assert
         assertEquals(4, votes.size());
@@ -438,7 +438,7 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         assertEquals(voteName4, votes.get(3).get("name"));
 
         // Act
-        votes = (List<Map<String, Object>>) governance.call("getProposals", 2, 0);
+        votes = (List<Map<String, Object>>) governance.call("getProposals", BigInteger.valueOf(2), BigInteger.ZERO);
 
         // Assert
         assertEquals(2, votes.size());
@@ -446,7 +446,7 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         assertEquals(voteName2, votes.get(1).get("name"));
 
         // Act
-        votes = (List<Map<String, Object>>) governance.call("getProposals", 2, 2);
+        votes = (List<Map<String, Object>>) governance.call("getProposals", BigInteger.valueOf(2), BigInteger.valueOf(2));
 
         // Assert
         assertEquals(2, votes.size());

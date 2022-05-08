@@ -145,7 +145,6 @@ public class Addresses {
 
     public static void setAddress(String target, String contractToBeSet) {
         Setter setterInterface = (Setter) getInterface(target);
-        //score-lib/src/main/java/network/balanced/score/lib/interfaces/addresses for each switch to set addresses when available
         switch(contractToBeSet) {
             case "loans":
                 setterInterface.setLoans(Addresses.get(contractToBeSet));
