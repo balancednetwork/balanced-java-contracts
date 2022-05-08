@@ -21,6 +21,7 @@ import score.Context;
 import score.UserRevertException;
 import score.VarDB;
 import score.annotation.External;
+import score.annotation.Optional;
 import score.annotation.Payable;
 import score.annotation.EventLog;
 import scorex.util.ArrayList;
@@ -196,13 +197,15 @@ public class GovernanceImpl {
     }
 
     @External
-    public void defineVote(String name, String description, BigInteger vote_start, BigInteger snapshot, String actions) {
+    public void defineVote(String name, String description, BigInteger vote_start, BigInteger snapshot, @Optional String actions) {
         Context.require(description.length() <= 500, "Description must be less than or equal to 500 characters.");
         Context.require(vote_start.compareTo(getDay()) > 0, "Vote cannot start at or before the current day.");
         Context.require(getDay().compareTo(snapshot) <= 0 && 
                         snapshot.compareTo(vote_start) < 0, 
                         "The reference snapshot must be in the range: [current_day (" + getDay() + "), " +
                         "start_day - 1 (" + vote_start.subtract(BigInteger.ONE)+ ")].");
+
+        actions = optionalDefault(actions, "[]");
         BigInteger voteIndex = ProposalDB.getProposalId(name);
         Context.require(voteIndex.equals(BigInteger.ZERO), "Poll name " + name + " has already been used.");
         Context.require(checkBalnVoteCriterion(Context.getCaller()), "User needs at least " + balnVoteDefinitionCriterion.get().divide(BigInteger.valueOf(100)) + "% of total baln supply staked to define a vote.");
@@ -249,12 +252,15 @@ public class GovernanceImpl {
     }
 
     @External(readonly = true)
-    public List<Object> getProposals(int batch_size, int offset) {
-        int start = Math.max(1, offset);
-        int end = Math.min(batch_size + start -1, getProposalCount().intValue());
+    public List<Object> getProposals(@Optional BigInteger batch_size, @Optional BigInteger offset) {
+        batch_size = optionalDefault(batch_size, BigInteger.valueOf(20));
+        offset = optionalDefault(offset, BigInteger.ONE);
+
+        BigInteger start = BigInteger.ONE.max(offset);
+        BigInteger end =  batch_size.add(start).subtract(BigInteger.ONE).min(getProposalCount());
         List<Object> proposals = new ArrayList<>();
-        for (int i = start; i <= end; i++) {
-            proposals.add(checkVote(BigInteger.valueOf(i)));
+        for (BigInteger i = start; i.compareTo(end) <= 0; i = i.add(BigInteger.ONE)) {
+            proposals.add(checkVote(i));
         }
 
         return proposals;
@@ -887,8 +893,7 @@ public class GovernanceImpl {
         Context.require(assetAddresses.containsKey(_symbol), TAG + ": " + _symbol + " is not a supported asset in Balanced.");
 
         Address token = assetAddresses.get(_symbol);
-        Setter asset = (Setter)  Addresses.getInterface(_symbol);
-        asset.setOracle(_address);
+        Context.call(token, "setOracle", _address);
     }
 
     @External
@@ -899,8 +904,7 @@ public class GovernanceImpl {
         Context.require(assetAddresses.containsKey(_symbol), TAG + ": " + _symbol + " is not a supported asset in Balanced.");
 
         Address token = assetAddresses.get(_symbol);
-        Asset asset = (Asset)  Addresses.getInterface(_symbol);
-        asset.setOracleName(_name);
+        Context.call(token, "setOracleName", _name);
     }
 
     @External
@@ -911,8 +915,7 @@ public class GovernanceImpl {
         Context.require(assetAddresses.containsKey(_symbol), TAG + ": " + _symbol + " is not a supported asset in Balanced.");
 
         Address token = assetAddresses.get(_symbol);
-        Asset asset = (Asset) Addresses.getInterface(_symbol);
-        asset.setMinInterval(_interval);
+        Context.call(token, "setMinInterval", _interval);
     }
 
     @External
