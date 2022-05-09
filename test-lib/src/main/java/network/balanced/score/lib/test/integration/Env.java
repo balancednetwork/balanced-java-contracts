@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ICON Foundation
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.test.integration;
+package network.balanced.score.lib.test.integration;
 
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.icx.Wallet;
@@ -27,7 +27,7 @@ import java.math.BigInteger;
 import java.nio.file.Path;
 import java.util.Properties;
 
-public class Env {
+class Env {
     private static Chain chain;
 
     static {

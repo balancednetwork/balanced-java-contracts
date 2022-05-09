@@ -17,34 +17,26 @@
 package network.balanced.score.core.daofund;
 
 import foundation.icon.icx.Wallet;
-import foundation.icon.score.client.DefaultScoreClient;
 import foundation.icon.score.client.ScoreClient;
-import network.balanced.score.test.integration.Balanced;
-import network.balanced.score.test.integration.ScoreIntegrationTest;
-import org.junit.jupiter.api.Assertions;
+import network.balanced.score.lib.interfaces.DAOfund;
+import network.balanced.score.lib.interfaces.DAOfundScoreClient;
+import network.balanced.score.lib.test.integration.Balanced;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import score.Address;
-import score.Context;
-import scorex.util.HashMap;
 
 import java.math.BigInteger;
-import java.util.List;
 import java.util.Map;
 
-
-import static network.balanced.score.test.integration.ScoreIntegrationTest.*;
-import network.balanced.score.lib.interfaces.*;
+import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
-public class DaofundIntegrationTest { 
-    static Wallet tester;
-    static Balanced balanced;
+class DaofundIntegrationTest {
+    private static Wallet tester;
+    private static Balanced balanced;
 
     @ScoreClient
-    static DAOfund daofund;
+    private static DAOfund daofund;
 
     @BeforeAll
     static void setup() throws Exception {
@@ -54,10 +46,10 @@ public class DaofundIntegrationTest {
         balanced.deployBalanced();
 
         daofund = new DAOfundScoreClient(balanced.daofund);
-    };
+    }
   
     @Test
-    void testName() throws Exception{
+    void testName() {
         assertEquals("Balanced DAOfund", daofund.name());
 
         balanced.daofund._update(System.getProperty("java"), Map.of("_governance", balanced.governance._address()));
