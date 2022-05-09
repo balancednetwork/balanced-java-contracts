@@ -16,7 +16,6 @@
 
 import network.balanced.score.dependencies.Dependencies
 
-
 version = '0.1.0'
 
 repositories {
@@ -27,33 +26,31 @@ repositories {
 dependencies {
     compileOnly Dependencies.javaeeApi
     implementation Dependencies.javaeeScorex
+    implementation Dependencies.minimalJson
     implementation project(':score-lib')
 
     testImplementation Dependencies.javaeeUnitTest
     testImplementation Dependencies.javaeeTokens
     // Use JUnit Jupiter for testing.
+
     testImplementation Dependencies.junitJupiter
-    testImplementation Dependencies.mockitoInline
-    testImplementation Dependencies.mockitoCore
     testRuntimeOnly Dependencies.junitJupiterEngine
-    testImplementation project(':test-lib')
+    testImplementation Dependencies.mockitoCore
+    testImplementation Dependencies.mockitoInline
 
     intTestImplementation Dependencies.javaeeScoreClient
     intTestAnnotationProcessor Dependencies.javaeeScoreClient
-    intTestImplementation Dependencies.json
-
-
-
     intTestImplementation Dependencies.iconSdk
     intTestImplementation Dependencies.jacksonDatabind
-    intTestImplementation Dependencies.json
+
+    testImplementation project(':test-lib')
 }
 
 optimizedJar {
     mainClassName = 'network.balanced.score.core.dividends.DividendsImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
-        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
     }
 }
 
@@ -70,7 +67,6 @@ deployJar {
         mainnet {
             uri = 'https://ctz.solidwallet.io/api/v3'
             nid = 0x1
-            to = "cxf58b9a1898998a31be7f1d99276204a3333ac9b3"
         }
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
@@ -83,33 +79,25 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
-task integrationTest(type: Test, dependsOn: optimizedJar) {
+task integrationTest(type: Test) {
     useJUnitPlatform()
+
+    rootProject.allprojects {
+        if(it.getTasks().findByName('optimizedJar')) {
+            dependsOn(it.getTasks().getByName('optimizedJar'))
+        }
+    }
+
     options {
         testLogging.showStandardStreams = true
         description = 'Runs integration tests.'
         group = 'verification'
+
         testClassesDirs = sourceSets.intTest.output.classesDirs
         classpath = sourceSets.intTest.runtimeClasspath
 
-        systemProperty 'scoreFilePath', project.tasks.optimizedJar.outputJarName
-        project.extensions.deployJar.arguments.each { arg -> systemProperty 'params.' + arg.name, arg.value
-        }
-
-        systemProperty 'url', scoreTest.url
-        systemProperty 'nid', scoreTest.nid
-        systemProperty 'keyStore', scoreTest.keystoreName
-        systemProperty 'keyPassword', scoreTest.keystorePass
-//        systemProperty 'isUpdate', "false"
-//        systemProperty 'address', "cx2ad810776298b1946c6b57f7109d3a5602ae44f6"
-
-//        systemProperty 'balanced.url', scoreTest.url
-//        systemProperty 'balanced.nid', scoreTest.nid
-//        systemProperty 'balanced.keyStore', scoreTest.keystoreName
-//        systemProperty 'balanced.keyPassword', scoreTest.keystorePass
-        systemProperty 'balanced.scoreFilePath', "../../zip/governance.zip"
-//        systemProperty 'staking.isUpdate', "false"
-//        systemProperty 'staking.address', "cxb205adfafde0a9e76539e2a405b9ce82ae8c4ee2"
-
+        systemProperty "python", new File(project(':test-lib').projectDir, 'python-contracts/dividends.zip')
+        systemProperty "java", optimizedJar.outputJarName
     }
+
 }

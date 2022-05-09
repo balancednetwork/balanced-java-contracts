@@ -1,6 +1,3 @@
-package network.balanced.score.lib.test;
-
-
 /*
  * Copyright (c) 2022-2022 Balanced.network.
  *
@@ -17,6 +14,7 @@ package network.balanced.score.lib.test;
  * limitations under the License.
  */
 
+package network.balanced.score.test.integration;
 
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.icx.Wallet;
@@ -24,6 +22,8 @@ import foundation.icon.icx.data.TransactionResult;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
 import foundation.icon.score.client.RevertedException;
+import foundation.icon.score.client.ScoreClient;
+
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -43,11 +43,54 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.xml.crypto.dsig.TransformException;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import network.balanced.score.lib.interfaces.*;
+import static network.balanced.score.test.integration.Env.*;
+
 
 @Tag("integration")
 @TestMethodOrder(value = MethodOrderer.OrderAnnotation.class)
 public interface ScoreIntegrationTest {
+
+    static Chain chain = getDefaultChain();
+    static DefaultScoreClient godClient  = new DefaultScoreClient(
+        chain.getEndpointURL(),
+        chain.networkId,
+        chain.godWallet,
+        DefaultScoreClient.ZERO_ADDRESS
+        );
+
+    @ScoreClient
+    static SystemInterface _systemScore = new SystemInterfaceScoreClient(godClient);
+    static SystemInterfaceScoreClient systemScore = (SystemInterfaceScoreClient)_systemScore;
+
+    public static KeyWallet createWalletWithBalance(BigInteger amount) throws Exception  {
+        KeyWallet wallet = KeyWallet.create();
+
+        Address address = DefaultScoreClient.address(wallet.getAddress().toString());
+        transfer(address, amount);
+
+        return wallet;
+    }
+
+    public static void transfer(Address address, BigInteger amount) {
+        godClient._transfer(address, amount, null);
+    }
+
+    public static DefaultScoreClient deploy(Wallet wallet, String name, Map<String, Object> params) {
+        String path = getFilePath(name);
+        return  DefaultScoreClient._deploy(chain.getEndpointURL(), chain.networkId, wallet, path, params);
+    }
+
+    public static String getFilePath(String key) {
+        String path = System.getProperty(key);
+        if (path == null) {
+            throw new IllegalArgumentException("No such property: " + key);
+        }
+        return path;
+    }
 
     static <T> int indexOf(T[] array, T value) {
         return indexOf(array, value::equals);
@@ -81,17 +124,17 @@ public interface ScoreIntegrationTest {
             predicate = predicate.and((el) -> el.getScoreAddress().equals(scoreAddress.toString()));
         }
         Stream<T> stream = txr.getEventLogs().stream()
-                .filter(predicate)
-                .map(mapperFunc);
+                              .filter(predicate)
+                              .map(mapperFunc);
         if (filter != null) {
             stream = stream.filter(filter);
         }
         return stream.collect(Collectors.toList());
     }
 
-    DefaultScoreClient client = new DefaultScoreClient(
-            DefaultScoreClient.url(System.getProperties()),
-            DefaultScoreClient.nid(System.getProperties()),
+    static DefaultScoreClient client = new DefaultScoreClient(
+            network.balanced.score.test.integration.Env.getDefaultChain().getEndpointURL(),
+            network.balanced.score.test.integration.Env.getDefaultChain().networkId,
             null,
             null
     );
@@ -154,29 +197,4 @@ public interface ScoreIntegrationTest {
             }
         };
     }
-
-
-    static Wallet getOrGenerateWallet(String prefix, Properties properties) {
-        Wallet wallet = DefaultScoreClient.wallet(prefix, properties);
-        return wallet == null ? generateWallet() : wallet;
-    }
-
-    static Wallet getOrGenerateWallet(Properties properties) {
-        if (properties == null) {
-            return generateWallet();
-        }
-        Wallet wallet = DefaultScoreClient.wallet(properties);
-        return wallet == null ? generateWallet() : wallet;
-    }
-
-    static KeyWallet generateWallet() {
-        try {
-            return KeyWallet.create();
-        } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException | NoSuchProviderException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-
-
 }

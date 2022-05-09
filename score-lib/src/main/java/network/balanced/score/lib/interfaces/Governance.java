@@ -15,10 +15,6 @@
  */
 package network.balanced.score.lib.interfaces;
 
-import foundation.icon.score.client.ScoreInterface;
-import network.balanced.score.lib.structs.BalancedAddresses;
-import network.balanced.score.lib.structs.DistributionPercentage;
-import network.balanced.score.lib.structs.PrepDelegations;
 import score.Address;
 import score.annotation.External;
 import score.annotation.Payable;
@@ -27,9 +23,9 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-@ScoreInterface
-public interface Governance {
+import network.balanced.score.lib.structs.BalancedAddresses;
 
+public interface Governance {
     @External(readonly = true)
     String name();
 
@@ -143,13 +139,7 @@ public interface Governance {
     void rebalancingSetSicx(Address _address);
 
     @External
-    void rebalancingSetDex(Address _address);
-
-    @External
-    void rebalancingSetLoans(Address _address);
-
-    @External
-    void setLoansRebalance(Address _address);
+    void rebalancingSetDex(Address _implementationaddress);
 
     @External
     void setLoansDex(Address _address);
@@ -193,8 +183,6 @@ public interface Governance {
     @External
     void removeDataSource(String _data_source_name);
 
-    @External
-    void updateBalTokenDistPercentage(DistributionPercentage[] _recipient_list);
 
     @External
     void bonusDist(Address[] _addresses, BigInteger[] _amounts);
@@ -210,9 +198,6 @@ public interface Governance {
 
     @External
     void setMarketName(BigInteger _id, String _name);
-
-    @External
-    void delegate(PrepDelegations[] _delegations);
 
     @External
     void balwAdminTransfer(Address _from , Address _to , BigInteger _value, byte[] _data);
@@ -282,7 +267,7 @@ public interface Governance {
 
     @External
     void setRouter(Address _router);
-
+    
     @External
     void enable_fee_handler();
 
