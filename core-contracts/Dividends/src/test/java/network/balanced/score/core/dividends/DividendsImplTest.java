@@ -112,7 +112,7 @@ class DividendsImplTest extends TestBase {
                 dexScore.getAddress(), "getDex");
     }
 
-    private void transferDaofundDiv(BigInteger start, BigInteger end) {
+    private void transferDaofundDiv(int start, int end) {
         dividendScore.invoke(owner, "transferDaofundDividends", start, end);
 
     }
@@ -123,27 +123,27 @@ class DividendsImplTest extends TestBase {
         sm.getBlock().increase(4 * DAY);
         dividendScore.invoke(owner, "distribute");
 
-        Executable contractCallCase1 = () -> transferDaofundDiv(BigInteger.valueOf(-1), BigInteger.valueOf(2));
+        Executable contractCallCase1 = () -> transferDaofundDiv(-1, 2);
         String expectedErrorMessageCase1 = "Reverted(0): Invalid value of start provided.";
         expectErrorMessage(contractCallCase1, expectedErrorMessageCase1);
 
-        Executable contractCallCase2 = () -> transferDaofundDiv(BigInteger.valueOf(4), BigInteger.valueOf(5));
+        Executable contractCallCase2 = () -> transferDaofundDiv(4, 5);
         String expectedErrorMessageCase2 = "Reverted(0): Invalid value of start provided.";
         expectErrorMessage(contractCallCase2, expectedErrorMessageCase2);
 
-        Executable contractCallCase3 = () -> transferDaofundDiv(BigInteger.valueOf(3), BigInteger.valueOf(2));
+        Executable contractCallCase3 = () -> transferDaofundDiv(3, 2);
         String expectedErrorMessageCase3 = "Reverted(0): Start must not be greater than or equal to end.";
         expectErrorMessage(contractCallCase3, expectedErrorMessageCase3);
 
-        Executable contractCallCase4 = () -> transferDaofundDiv(BigInteger.valueOf(2), BigInteger.valueOf(2));
+        Executable contractCallCase4 = () -> transferDaofundDiv(2, 2);
         String expectedErrorMessageCase4 = "Reverted(0): Start must not be greater than or equal to end.";
         expectErrorMessage(contractCallCase4, expectedErrorMessageCase4);
 
-        Executable contractCallCase5 = () -> transferDaofundDiv(BigInteger.valueOf(1), BigInteger.valueOf(-2));
+        Executable contractCallCase5 = () -> transferDaofundDiv(1, -2);
         String expectedErrorMessageCase5 = "Reverted(0): Invalid value of end provided.";
         expectErrorMessage(contractCallCase5, expectedErrorMessageCase5);
 
-        Executable contractCallCase6 = () -> transferDaofundDiv(BigInteger.valueOf(1), BigInteger.valueOf(4));
+        Executable contractCallCase6 = () -> transferDaofundDiv(1, 4);
         String expectedErrorMessageCase6 = "Reverted(0): Maximum allowed range is 2";
         expectErrorMessage(contractCallCase6, expectedErrorMessageCase6);
 
@@ -323,7 +323,7 @@ class DividendsImplTest extends TestBase {
 
         contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class), any(BigInteger.class))).thenReturn("Token Transferred");
 
-        dividendScore.invoke(owner, "transferDaofundDividends", BigInteger.valueOf(0), BigInteger.valueOf(2));
+        dividendScore.invoke(owner, "transferDaofundDividends", 0, 2);
     }
 
     @Test
@@ -331,7 +331,7 @@ class DividendsImplTest extends TestBase {
         contractSetup();
         contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class), any(BigInteger.class))).thenReturn("Token Transferred");
 
-        dividendScore.invoke(owner, "claim", BigInteger.valueOf(1), BigInteger.valueOf(2));
+        dividendScore.invoke(owner, "claim", 1, 2);
     }
 
     @Test
@@ -351,7 +351,7 @@ class DividendsImplTest extends TestBase {
         Map<String, BigInteger> expected_result = new HashMap<>();
         expected_result.put(String.valueOf(bnUSDScore.getAddress()), new BigInteger("9866666666666666666"));
 
-        assertEquals(expected_result, dividendScore.call("getUserDividends", owner.getAddress(), BigInteger.valueOf(2), BigInteger.valueOf(3)));
+        assertEquals(expected_result, dividendScore.call("getUserDividends", owner.getAddress(), 2, 3));
         sm.getBlock().increase(-4 * DAY);
     }
 
@@ -373,7 +373,7 @@ class DividendsImplTest extends TestBase {
         Map<String, BigInteger> expected_result = new HashMap<>();
         expected_result.put(String.valueOf(bnUSDScore.getAddress()), BigInteger.valueOf(12).multiply(pow(BigInteger.TEN, 18)));
 
-        assertEquals(expected_result, dividendScore.call("getUserDividends", owner.getAddress(), BigInteger.valueOf(2), BigInteger.valueOf(3)));
+        assertEquals(expected_result, dividendScore.call("getUserDividends", owner.getAddress(), 2, 3));
         sm.getBlock().increase(-4 * DAY);
     }
 
@@ -386,7 +386,7 @@ class DividendsImplTest extends TestBase {
         Map<String, BigInteger> result = new HashMap<>();
         result.put(String.valueOf(bnUSDScore.getAddress()), BigInteger.valueOf(8).multiply(pow(BigInteger.TEN, 18)));
 
-        assertEquals(result, dividendScore.call("getDaoFundDividends", BigInteger.valueOf(2), BigInteger.valueOf(3)));
+        assertEquals(result, dividendScore.call("getDaoFundDividends", 2, 3));
         sm.getBlock().increase(-4 * DAY);
         dividendScore.invoke(owner, "distribute");
     }
