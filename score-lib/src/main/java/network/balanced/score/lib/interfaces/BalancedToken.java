@@ -40,6 +40,9 @@ public interface BalancedToken extends IRC2BurnableInterface, GovernanceAddress,
     @External(readonly = true)
     BigInteger getMinInterval();
 
+    @External(readonly = true)
+    BigInteger getPriceUpdateTime();
+
     @External
     BigInteger priceInLoop();
 

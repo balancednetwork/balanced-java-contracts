@@ -71,6 +71,10 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
     public BalancedTokenImpl(Address _governance) {
         super(TOKEN_NAME, SYMBOL_NAME, null);
 
+        if (governance.get() != null && admin.get() == null) {
+            admin.set(_governance);
+        }
+
         if (governance.get() == null) {
             this.governance.set(_governance);
             this.stakingEnabled.set(false);
@@ -79,18 +83,9 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
             this.minInterval.set(MIN_UPDATE_TIME);
             this.minimumStake.set(MINIMUM_STAKE_AMOUNT);
             this.unstakingPeriod.set(DEFAULT_UNSTAKING_PERIOD);
-            setTimeOffset();
             this.enableSnapshots.set(true);
         }
-
-        if (governance.get() != null && admin.get() == null) {
-            admin.set(_governance);
-        }
     }
-
-    // --------------------------------------------------------------------------
-    // EVENTS
-    // --------------------------------------------------------------------------
 
     @EventLog(indexed = 3)
     public void OraclePrice(String market, String oracle_name, Address oracle_address, BigInteger price) {
@@ -160,17 +155,6 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
     }
 
     @External
-    public void setOracleName(String _name) {
-        only(admin);
-        this.oracleName.set(_name);
-    }
-
-    @External(readonly = true)
-    public String getOracleName() {
-        return this.oracleName.get();
-    }
-
-    @External
     public void setDividends(Address _address) {
         only(admin);
         isContract(_address);
@@ -183,6 +167,17 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
     }
 
     @External
+    public void setOracleName(String _name) {
+        only(admin);
+        this.oracleName.set(_name);
+    }
+
+    @External(readonly = true)
+    public String getOracleName() {
+        return this.oracleName.get();
+    }
+
+    @External
     public void setMinInterval(BigInteger _interval) {
         only(admin);
         this.minInterval.set(_interval);
@@ -191,6 +186,11 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
     @External(readonly = true)
     public BigInteger getMinInterval() {
         return this.minInterval.get();
+    }
+
+    @External(readonly = true)
+    public BigInteger getPriceUpdateTime() {
+        return priceUpdateTime.getOrDefault(BigInteger.ZERO);
     }
 
     /**
@@ -217,11 +217,11 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
         Address dexScore = this.dexScore.get();
         Address oracleAddress = this.oracle.get();
 
-        BigInteger balnPriceInIcx = Context.call(BigInteger.class, dexScore, "getBalnPrice");
+        BigInteger balnPriceInUsd = Context.call(BigInteger.class, dexScore, "getBalnPrice");
         Map<String, BigInteger> priceData = (Map<String, BigInteger>) Context.call(oracleAddress, "get_reference_data"
                 , "USD", "ICX");
 
-        return balnPriceInIcx.multiply(priceData.get("rate")).divide(EXA);
+        return balnPriceInUsd.multiply(priceData.get("rate")).divide(EXA);
     }
 
     /**
@@ -229,13 +229,88 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
      **/
     private void updateAssetValue() {
         String base = "BALN";
-        String quote = "bnUSD";
+        String quote = "ICX";
 
         BigInteger newPrice = lastPriceInLoop();
 
         this.lastPrice.set(newPrice);
         this.priceUpdateTime.set(BigInteger.valueOf(Context.getBlockTimestamp()));
         this.OraclePrice(base + quote, this.oracleName.get(), dexScore.get(), newPrice);
+    }
+
+    @External
+    public void setMinimumStake(BigInteger _amount) {
+        only(admin);
+        Context.require(_amount.compareTo(BigInteger.ZERO) >= 0, TAG + ": Amount cannot be less than zero.");
+
+        BigInteger totalAmount = _amount.multiply(pow(BigInteger.TEN, decimals().intValue()));
+        this.minimumStake.set(totalAmount);
+    }
+
+    @External(readonly = true)
+    public BigInteger getMinimumStake() {
+        return this.minimumStake.getOrDefault(BigInteger.ZERO);
+    }
+
+    @External
+    public void setUnstakingPeriod(BigInteger _time) {
+        only(admin);
+        Context.require(_time.compareTo(BigInteger.ZERO) >= 0, TAG + ": Time cannot be negative.");
+
+        BigInteger totalTime = _time.multiply(DAY_TO_MICROSECOND);
+        this.unstakingPeriod.set(totalTime);
+    }
+
+    @External(readonly = true)
+    public BigInteger getUnstakingPeriod() {
+        BigInteger timeInMicroseconds = this.unstakingPeriod.getOrDefault(BigInteger.ZERO);
+        return timeInMicroseconds.divide(DAY_TO_MICROSECOND);
+    }
+
+    @External
+    public void toggleStakingEnabled() {
+        only(admin);
+        this.stakingEnabled.set(!this.stakingEnabled.getOrDefault(false));
+    }
+
+    @External(readonly = true)
+    public boolean getStakingEnabled() {
+        return this.stakingEnabled.getOrDefault(false);
+    }
+
+    @External
+    public void toggleEnableSnapshot() {
+        onlyOwner();
+        this.enableSnapshots.set(!this.enableSnapshots.getOrDefault(false));
+    }
+
+    @External(readonly = true)
+    public boolean getSnapshotEnabled() {
+        return this.enableSnapshots.getOrDefault(false);
+    }
+
+    @External
+    public void setTimeOffset() {
+        onlyOwner();
+
+        Address dexScore = this.dexScore.get();
+        Context.require(dexScore != null, TAG + ": Dex score address must be set first");
+
+        BigInteger deltaTime = Context.call(BigInteger.class, dexScore, "getTimeOffset");
+        this.timeOffset.set(deltaTime);
+    }
+
+    @External(readonly = true)
+    public BigInteger getTimeOffset() {
+        return this.timeOffset.getOrDefault(BigInteger.ZERO);
+    }
+
+    /**
+     * Returns the current day (floored). Used for snapshotting, paying rewards, and paying dividends.
+     **/
+    @External(readonly = true)
+    public BigInteger getDay() {
+        return BigInteger.valueOf(Context.getBlockTimestamp()).subtract(this.timeOffset.getOrDefault(BigInteger.ZERO)).divide(DAY_TO_MICROSECOND);
     }
 
     @External(readonly = true)
@@ -294,24 +369,8 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
     }
 
     @External(readonly = true)
-    public boolean getStakingEnabled() {
-        return this.stakingEnabled.getOrDefault(false);
-    }
-
-    @External(readonly = true)
     public BigInteger totalStakedBalance() {
         return this.totalStakedBalance.getOrDefault(BigInteger.ZERO);
-    }
-
-    @External(readonly = true)
-    public BigInteger getMinimumStake() {
-        return this.minimumStake.getOrDefault(BigInteger.ZERO);
-    }
-
-    @External(readonly = true)
-    public BigInteger getUnstakingPeriod() {
-        BigInteger timeInMicroseconds = this.unstakingPeriod.getOrDefault(BigInteger.ZERO);
-        return timeInMicroseconds.divide(DAY_TO_MICROSECOND);
     }
 
     private void checkFirstTime(Address from) {
@@ -323,23 +382,6 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
 
     private void stakingEnabledOnly() {
         Context.require(stakingEnabled.getOrDefault(false), TAG + ": Staking must first be enabled.");
-    }
-
-    @External
-    public void toggleEnableSnapshot() {
-        onlyOwner();
-        this.enableSnapshots.set(!this.enableSnapshots.getOrDefault(false));
-    }
-
-    @External(readonly = true)
-    public boolean getSnapshotEnabled() {
-        return this.enableSnapshots.getOrDefault(false);
-    }
-
-    @External
-    public void toggleStakingEnabled() {
-        only(admin);
-        this.stakingEnabled.set(!this.stakingEnabled.getOrDefault(false));
     }
 
     private void makeAvailable(Address from) {
@@ -394,24 +436,6 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
             this.updateTotalStakedSnapshot(this.totalStakedBalance.getOrDefault(BigInteger.ZERO));
         }
 
-    }
-
-    @External
-    public void setMinimumStake(BigInteger _amount) {
-        only(admin);
-        Context.require(_amount.compareTo(BigInteger.ZERO) >= 0, TAG + ": Amount cannot be less than zero.");
-
-        BigInteger totalAmount = _amount.multiply(pow(BigInteger.TEN, decimals().intValue()));
-        this.minimumStake.set(totalAmount);
-    }
-
-    @External
-    public void setUnstakingPeriod(BigInteger _time) {
-        only(admin);
-        Context.require(_time.compareTo(BigInteger.ZERO) >= 0, TAG + ": Time cannot be negative.");
-
-        BigInteger totalTime = _time.multiply(DAY_TO_MICROSECOND);
-        this.unstakingPeriod.set(totalTime);
     }
 
     @Override
@@ -479,30 +503,6 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
         stakingDetail.set(Status.AVAILABLE.code, availableBalance.subtract(_amount));
 
         super.burnFrom(_account, _amount);
-    }
-
-    @External
-    public void setTimeOffset() {
-        onlyOwner();
-
-        Address dexScore = this.dexScore.get();
-        Context.require(dexScore != null, TAG + ": Dex score address must be set first");
-
-        BigInteger deltaTime = Context.call(BigInteger.class, dexScore, "getTimeOffset");
-        this.timeOffset.set(deltaTime);
-    }
-
-    @External(readonly = true)
-    public BigInteger getTimeOffset() {
-        return this.timeOffset.getOrDefault(BigInteger.ZERO);
-    }
-
-    /**
-     * Returns the current day (floored). Used for snapshotting, paying rewards, and paying dividends.
-     **/
-    @External(readonly = true)
-    public BigInteger getDay() {
-        return BigInteger.valueOf(Context.getBlockTimestamp()).subtract(this.timeOffset.getOrDefault(BigInteger.ZERO)).divide(DAY_TO_MICROSECOND);
     }
 
     // ----------------------------------------------------------
