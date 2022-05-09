@@ -90,14 +90,14 @@ public class Balanced {
         loans = deploy(owner, "Loans", Map.of("_governance", governance._address()));
         rebalancing = deploy(owner, "Rebalancing", Map.of("_governance", governance._address()));
         rewards = deploy(owner, "Rewards", Map.of("_governance", governance._address()));
-        sicx = deploy(owner, "Sicx", Map.of("_admin", governance._address()));
+        staking = deploy(owner, "Staking", null);
+        sicx = deploy(owner, "Sicx", Map.of("_admin", staking._address()));
         bnusd = deploy(owner, "Bnusd", Map.of("_governance", governance._address()));
         daofund = deploy(owner, "DAOfund", Map.of("_governance", governance._address()));
         dividends = deploy(owner, "Dividends", Map.of("_governance", governance._address()));
         oracle = deploy(owner, "Oracle",null);
         reserve = deploy(owner, "Reserve", Map.of("governance", governance._address()));
         router = deploy(owner, "Router", Map.of("_governance", governance._address()));
-        staking = deploy(owner, "Staking", null);
     }
 
     protected void setupAddresses() {

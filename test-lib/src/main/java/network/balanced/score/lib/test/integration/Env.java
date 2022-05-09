@@ -64,7 +64,12 @@ class Env {
         if (url == null) {
             throw new IllegalArgumentException("node url not found");
         }
-        chain = new Chain(BigInteger.valueOf(Integer.parseInt(nid.substring(2), 16)), godWallet, url);
+
+        String apiVersion = props.getProperty(nodeName + ".apiVersion");
+        if (apiVersion == null) {
+            throw new IllegalArgumentException("apiVersion not found");
+        }
+        chain = new Chain(BigInteger.valueOf(Integer.parseInt(nid.substring(2), 16)), godWallet, url, apiVersion);
     }
 
     private static KeyWallet readWalletFromFile(String path, String password) throws IOException {
@@ -89,7 +94,7 @@ class Env {
         public final Wallet godWallet;
         private final String nodeUrl;
 
-        public Chain(BigInteger networkId, Wallet godWallet, String url) {
+        public Chain(BigInteger networkId, Wallet godWallet, String url, String apiVersion) {
             this.networkId = networkId;
             this.godWallet = godWallet;
             this.nodeUrl = url;
