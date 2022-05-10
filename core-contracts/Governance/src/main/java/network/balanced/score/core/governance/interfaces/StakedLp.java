@@ -5,6 +5,6 @@ import java.math.BigInteger;
 import foundation.icon.score.client.ScoreInterface;
 
 @ScoreInterface
-public interface StakedLp extends Setter {    
+public interface StakedLp extends Setter{    
     void addPool(BigInteger _id);
 }

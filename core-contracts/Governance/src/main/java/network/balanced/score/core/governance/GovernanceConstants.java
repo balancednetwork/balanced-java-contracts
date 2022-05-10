@@ -77,7 +77,24 @@ public class GovernanceConstants extends Constants {
         entry("router", "governance"),
         entry("stakedLp", "governance")
     );
-
+    public static Map<String, String> SETTERS = Map.ofEntries(
+        entry("loans", "setLoans"),
+        entry("dex", "setDex"),
+        entry("staking", "setStaking"),
+        entry("rewards", "setRewards"),
+        entry("reserve", "setReserve"),
+        entry("dividends", "setDividends"),
+        entry("daofund", "setDaofund"),
+        entry("oracle", "setOracle"),
+        entry("sicx", "setSicx"),
+        entry("bnUSD", "setBnusd"),
+        entry("baln", "setBaln"),
+        entry("bwt", "setBwt"),
+        entry("rebalancing", "setRebalancing"),
+        entry("router", "setRouter"),
+        entry("feehandler", "setFeehandler"),
+        entry("stakedLp", "setStakedLp")
+    );
 // #-------------------------------------------------------------------------------
 // # REWARDS LAUNCH CONFIG
 // #-------------------------------------------------------------------------------

@@ -7,7 +7,7 @@ import java.math.BigInteger;
 import foundation.icon.score.client.ScoreInterface;
 
 @ScoreInterface
-public interface Baln extends Setter {
+public interface Baln extends Setter{
     BigInteger totalSupply();
         
     BigInteger totalStakedBalance();

@@ -915,10 +915,11 @@ public class GovernanceTest extends GovernanceTestBase {
         governance.invoke(owner, "setAddressesOnContract", _contract);
 
         // Assert
-        verify(loans.mock, times(2)).setRewards(rewards.getAddress());
         verify(loans.mock, times(2)).setDividends(dividends.getAddress());
         verify(loans.mock, times(2)).setStaking(staking.getAddress());
         verify(loans.mock, times(2)).setReserve(reserve.getAddress());
+        verify(loans.mock, times(2)).setRewards(rewards.getAddress());
+
     }
 
     @Test

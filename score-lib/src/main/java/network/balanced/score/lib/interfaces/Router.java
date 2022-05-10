@@ -27,6 +27,9 @@ import score.annotation.Payable;
 
 import java.math.BigInteger;
 
+import foundation.icon.score.client.ScoreInterface;
+
+@ScoreInterface
 public interface Router extends Name, GovernanceAddress, AdminAddress, DexAddress, SicxAddress, StakingAddress,
         TokenFallback, Fallback {
 
