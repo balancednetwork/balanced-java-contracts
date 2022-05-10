@@ -8,7 +8,7 @@ import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.structs.DistributionPercentage;
 
 @ScoreInterface
-public interface Dividends extends Setter{
+public interface Dividends extends Setter {
     void setDistributionActivationStatus(boolean _status);
 
     void addAcceptedTokens(Address _token);

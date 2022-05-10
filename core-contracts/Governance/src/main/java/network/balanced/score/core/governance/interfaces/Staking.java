@@ -6,7 +6,7 @@ import score.annotation.Payable;
 import foundation.icon.score.client.ScoreInterface;
 
 @ScoreInterface
-public interface Staking extends Setter {
+public interface Staking {
     @External
     @Payable
     void stakeICX();

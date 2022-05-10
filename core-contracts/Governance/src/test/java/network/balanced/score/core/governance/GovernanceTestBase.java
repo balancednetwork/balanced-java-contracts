@@ -49,6 +49,8 @@ import network.balanced.score.lib.structs.BalancedAddresses;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockContract;
 import network.balanced.score.core.governance.interfaces.*;
+import network.balanced.score.lib.interfaces.*;
+
 
 import static network.balanced.score.core.governance.GovernanceConstants.*;
 
@@ -60,18 +62,20 @@ public class GovernanceTestBase extends UnitTest {
     protected static final Account owner = sm.createAccount();
     protected static final Account adminAccount = sm.createAccount();
 
+
+    protected static final Account oracle = Account.newScoreAccount(scoreCount);
+
     protected MockContract<LoansScoreInterface> loans;
     protected MockContract<DexScoreInterface> dex;
     protected MockContract<StakingScoreInterface> staking;
     protected MockContract<RewardsScoreInterface> rewards;
     protected MockContract<ReserveScoreInterface> reserve;
     protected MockContract<DividendsScoreInterface> dividends; 
-    protected MockContract<DaofundScoreInterface> daofund;
-    protected MockContract<OracleScoreInterface> oracle;
+    protected MockContract<DAOfundScoreInterface> daofund;
     protected MockContract<SicxScoreInterface> sicx;
-    protected MockContract<BnUSDScoreInterface> bnUSD; 
+    protected MockContract<BalancedDollarScoreInterface> bnUSD; 
     protected MockContract<BalnScoreInterface> baln;
-    protected MockContract<BwtScoreInterface> bwt;
+    protected MockContract<WorkerTokenScoreInterface> bwt;
     protected MockContract<RouterScoreInterface> router; 
     protected MockContract<RebalancingScoreInterface> rebalancing;
     protected MockContract<FeehandlerScoreInterface> feehandler;
@@ -257,12 +261,11 @@ public class GovernanceTestBase extends UnitTest {
         rewards = new MockContract<RewardsScoreInterface>(RewardsScoreInterface.class, sm, owner);
         reserve = new MockContract<ReserveScoreInterface>(ReserveScoreInterface.class, sm, owner);
         dividends = new MockContract<DividendsScoreInterface>(DividendsScoreInterface.class, sm, owner); 
-        daofund = new MockContract<DaofundScoreInterface>(DaofundScoreInterface.class, sm, owner); 
-        oracle = new MockContract<OracleScoreInterface>(OracleScoreInterface.class, sm, owner); 
+        daofund = new MockContract<DAOfundScoreInterface>(DAOfundScoreInterface.class, sm, owner); 
         sicx = new MockContract<SicxScoreInterface>(SicxScoreInterface.class, sm, owner);
-        bnUSD  = new MockContract<BnUSDScoreInterface>(BnUSDScoreInterface.class, sm, owner); 
+        bnUSD  = new MockContract<BalancedDollarScoreInterface>(BalancedDollarScoreInterface.class, sm, owner); 
         baln = new MockContract<BalnScoreInterface>(BalnScoreInterface.class, sm, owner);
-        bwt = new MockContract<BwtScoreInterface>(BwtScoreInterface.class, sm, owner);
+        bwt = new MockContract<WorkerTokenScoreInterface>(WorkerTokenScoreInterface.class, sm, owner);
         router = new MockContract<RouterScoreInterface>(RouterScoreInterface.class, sm, owner); 
         rebalancing = new MockContract<RebalancingScoreInterface>(RebalancingScoreInterface.class, sm, owner);
         feehandler = new MockContract<FeehandlerScoreInterface>(FeehandlerScoreInterface.class, sm, owner);
