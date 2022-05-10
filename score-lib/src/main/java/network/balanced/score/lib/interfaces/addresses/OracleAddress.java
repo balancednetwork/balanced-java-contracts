@@ -20,7 +20,6 @@ import score.Address;
 import score.annotation.External;
 
 public interface OracleAddress {
-
     @External
     void setOracle(Address _address);
 

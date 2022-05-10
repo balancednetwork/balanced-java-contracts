@@ -7,7 +7,7 @@ import java.math.BigInteger;
 import foundation.icon.score.client.ScoreInterface;
 
 @ScoreInterface
-public interface Dex extends Setter {
+public interface Dex extends Setter{
     void add(Address _baseToken, Address _quoteToken, BigInteger _baseValue, BigInteger _quoteValue ,boolean _withdraw_unused);
         
     void setPoolLpFee(BigInteger _value);

@@ -7,7 +7,7 @@ import java.math.BigInteger;
 import foundation.icon.score.client.ScoreInterface;
 
 @ScoreInterface
-public interface Feehandler extends Setter{
+public interface Feehandler {
     void setAcceptedDividendTokens(Address[] _tokens);
         
     void setRoute(Address _fromToken, Address _toToken, Address[] _path);
