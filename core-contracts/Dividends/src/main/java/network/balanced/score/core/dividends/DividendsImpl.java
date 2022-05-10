@@ -395,7 +395,7 @@ public class DividendsImpl implements Dividends {
 
 
     private void sendToken(Address to, BigInteger amount, Address token, String msg) {
-        Context.call(token, "transfer", token, amount);
+        Context.call(token, "transfer", to, amount);
         FundTransfer(to, amount, msg + amount + " token sent to" + to);
     }
 
