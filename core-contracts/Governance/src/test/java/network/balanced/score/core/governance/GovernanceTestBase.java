@@ -46,6 +46,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import network.balanced.score.lib.structs.BalancedAddresses;
+import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockContract;
 import network.balanced.score.core.governance.interfaces.*;
@@ -100,6 +101,7 @@ public class GovernanceTestBase extends UnitTest {
             
         return distribution;
     }
+
     private void setupAddresses() {
         balancedAddresses.loans = loans.getAddress();
         balancedAddresses.dex = dex.getAddress();

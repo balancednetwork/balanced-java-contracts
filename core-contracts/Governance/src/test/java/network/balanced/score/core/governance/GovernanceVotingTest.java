@@ -49,6 +49,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import network.balanced.score.lib.structs.BalancedAddresses;
+import network.balanced.score.lib.structs.Disbursement;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockContract;
@@ -478,29 +479,29 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         verify(rewards.mock, times(2)).addNewDataSource("test", Address.fromString("cx66d4d90f5f113eba575bf793570135f9b10cece1"));
     }
 
-    // @Test
-    // void executeVote_updateBalTokenDistPercentage() {
-    //     DistributionPercentage[] distPercentages = GovernanceConstants.RECIPIENTS;
-    //     JsonArray distribution = new JsonArray()
-    //         .add(createJsonDistribtion("Loans",  BigInteger.valueOf(25).multiply(BigInteger.TEN.pow(16))))
-    //         .add(createJsonDistribtion("sICX/ICX",  BigInteger.TEN.multiply(BigInteger.TEN.pow(16))))
-    //         .add(createJsonDistribtion("Worker Tokens",  BigInteger.valueOf(20).multiply(BigInteger.TEN.pow(16))))
-    //         .add(createJsonDistribtion("Reserve Fund",  BigInteger.valueOf(5).multiply(BigInteger.TEN.pow(16))))
-    //         .add(createJsonDistribtion("DAOfund",  BigInteger.valueOf(40).multiply(BigInteger.TEN.pow(16))));
+    @Test
+    void executeVote_updateBalTokenDistPercentage() {
+        DistributionPercentage[] distPercentages = GovernanceConstants.RECIPIENTS;
+        JsonArray distribution = new JsonArray()
+            .add(createJsonDistribtion("Loans",  BigInteger.valueOf(25).multiply(BigInteger.TEN.pow(16))))
+            .add(createJsonDistribtion("sICX/ICX",  BigInteger.TEN.multiply(BigInteger.TEN.pow(16))))
+            .add(createJsonDistribtion("Worker Tokens",  BigInteger.valueOf(20).multiply(BigInteger.TEN.pow(16))))
+            .add(createJsonDistribtion("Reserve Fund",  BigInteger.valueOf(5).multiply(BigInteger.TEN.pow(16))))
+            .add(createJsonDistribtion("DAOfund",  BigInteger.valueOf(40).multiply(BigInteger.TEN.pow(16))));
 
-    //     JsonObject updateBalTokenDistPercentageParameter = new JsonObject()
-    //         .add("_recipient_list", distribution);
+        JsonObject updateBalTokenDistPercentageParameter = new JsonObject()
+            .add("_recipient_list", distribution);
 
-    //     JsonArray updateBalTokenDistPercentage = new JsonArray()
-    //         .add("updateBalTokenDistPercentage")
-    //         .add(updateBalTokenDistPercentageParameter);
+        JsonArray updateBalTokenDistPercentage = new JsonArray()
+            .add("updateBalTokenDistPercentage")
+            .add(updateBalTokenDistPercentageParameter);
 
-    //     JsonArray actions = new JsonArray()
-    //         .add(updateBalTokenDistPercentage);
+        JsonArray actions = new JsonArray()
+            .add(updateBalTokenDistPercentage);
 
-    //     executeVoteWithActions(actions.toString());
-    //     verify(rewards.mock).updateBalTokenDistPercentage(distPercentages);
-    // }
+        executeVoteWithActions(actions.toString());
+        verify(rewards.mock, times(2)).updateBalTokenDistPercentage(any(DistributionPercentage[].class));
+    }
 
     @Test
     void executeVote_setMiningRatio() {
@@ -766,29 +767,29 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         assertEquals(balnVoteDefinitionCriterion, newBalnVoteDefinitionCriterion);
     }
 
-    // @Test
-    // void executeVote_setDividendsCategoryPercentage() {
-    //     DistributionPercentage[] distPercentages = GovernanceConstants.RECIPIENTS;
-    //     JsonArray distribution = new JsonArray()
-    //         .add(createJsonDistribtion("Loans",  BigInteger.valueOf(25).multiply(BigInteger.TEN.pow(16))))
-    //         .add(createJsonDistribtion("sICX/ICX",  BigInteger.TEN.multiply(BigInteger.TEN.pow(16))))
-    //         .add(createJsonDistribtion("Worker Tokens",  BigInteger.valueOf(20).multiply(BigInteger.TEN.pow(16))))
-    //         .add(createJsonDistribtion("Reserve Fund",  BigInteger.valueOf(5).multiply(BigInteger.TEN.pow(16))))
-    //         .add(createJsonDistribtion("DAOfund",  BigInteger.valueOf(40).multiply(BigInteger.TEN.pow(16))));
+    @Test
+    void executeVote_setDividendsCategoryPercentage() {
+        DistributionPercentage[] distPercentages = GovernanceConstants.RECIPIENTS;
+        JsonArray distribution = new JsonArray()
+            .add(createJsonDistribtion("Loans",  BigInteger.valueOf(25).multiply(BigInteger.TEN.pow(16))))
+            .add(createJsonDistribtion("sICX/ICX",  BigInteger.TEN.multiply(BigInteger.TEN.pow(16))))
+            .add(createJsonDistribtion("Worker Tokens",  BigInteger.valueOf(20).multiply(BigInteger.TEN.pow(16))))
+            .add(createJsonDistribtion("Reserve Fund",  BigInteger.valueOf(5).multiply(BigInteger.TEN.pow(16))))
+            .add(createJsonDistribtion("DAOfund",  BigInteger.valueOf(40).multiply(BigInteger.TEN.pow(16))));
 
-    //     JsonObject setDividendsCategoryPercentageParameter = new JsonObject()
-    //         .add("_recipient_list", distribution);
+        JsonObject setDividendsCategoryPercentageParameter = new JsonObject()
+            .add("_dist_list", distribution);
 
-    //     JsonArray setDividendsCategoryPercentage = new JsonArray()
-    //         .add("setDividendsCategoryPercentage")
-    //         .add(setDividendsCategoryPercentageParameter);
+        JsonArray setDividendsCategoryPercentage = new JsonArray()
+            .add("setDividendsCategoryPercentage")
+            .add(setDividendsCategoryPercentageParameter);
 
-    //     JsonArray actions = new JsonArray()
-    //         .add(setDividendsCategoryPercentage);
+        JsonArray actions = new JsonArray()
+            .add(setDividendsCategoryPercentage);
 
-    //     executeVoteWithActions(actions.toString());
-    //     verify(dividends.mock).setDividendsCategoryPercentage(distPercentages);
-    // }
+        executeVoteWithActions(actions.toString());
+        verify(dividends.mock, times(2)).setDividendsCategoryPercentage(any(DistributionPercentage[].class));
+    }
 
     @Test
     void executeVote_daoDisburse_toManyTokens() {
@@ -816,29 +817,31 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         expectErrorMessage(voteDaoDisburseWithToManyTokens, expectedErrorMessage);
     }
 
-    // @Test
-    // void executeVote_daoDisburse() {
-    //     // Arrange
-    //     String expectedErrorMessage = "Cannot disburse more than 3 assets at a time.";
-    //     JsonArray disbursement = new JsonArray()
-    //         .add(createJsonDisbusment("cx1111d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
-    //         .add(createJsonDisbusment("cx2222d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
-    //         .add(createJsonDisbusment("cx3333d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN));
+    @Test
+    void executeVote_daoDisburse() {
+        // Arrange
+        Address address = Address.fromString("hx0000d90f5f113eba575bf793570135f9b10cece1");
+        String expectedErrorMessage = "Cannot disburse more than 3 assets at a time.";
+        JsonArray disbursement = new JsonArray()
+            .add(createJsonDisbusment("cx1111d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
+            .add(createJsonDisbusment("cx2222d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
+            .add(createJsonDisbusment("cx3333d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN));
         
-    //     JsonObject setDividendsCategoryPercentageParameter = new JsonObject()
-    //         .add("_recipient", "hx0000d90f5f113eba575bf793570135f9b10cece1")
-    //         .add("_amounts", disbursement);
+        JsonObject setDividendsCategoryPercentageParameter = new JsonObject()
+            .add("_recipient", address.toString())
+            .add("_amounts", disbursement);
 
-    //     JsonArray daoDisburse = new JsonArray()
-    //         .add("daoDisburse")
-    //         .add(setDividendsCategoryPercentageParameter);
+        JsonArray daoDisburse = new JsonArray()
+            .add("daoDisburse")
+            .add(setDividendsCategoryPercentageParameter);
 
-    //     JsonArray actions = new JsonArray()
-    //         .add(daoDisburse);
-    //     // Act & Assert
-    //     Executable voteDaoDisburseWithToManyTokens = () -> executeVoteWithActions(actions.toString());
-    //     expectErrorMessage(voteDaoDisburseWithToManyTokens, expectedErrorMessage);
-    // }
+        JsonArray actions = new JsonArray()
+            .add(daoDisburse);
+
+        // Act & Assert
+        executeVoteWithActions(actions.toString());
+        verify(daofund.mock, times(2)).disburse(eq(address), any(Disbursement[].class));
+    }
 
     @Test
     void executeVote_addAcceptedTokens() {
