@@ -18,7 +18,7 @@ package network.balanced.score.core.governance;
 
 import score.Address;
 import score.Context;
-import score.UserRevertException;
+import score.UserRevertedException;
 import score.VarDB;
 import score.annotation.External;
 import score.annotation.Optional;
@@ -224,7 +224,7 @@ public class GovernanceImpl {
             executeVoteActions(actions);
             throw new SuccsesfulVoteExecution();
         } catch (SuccsesfulVoteExecution e) {
-            throw new UserRevertException();
+            throw new UserRevertedException("Vote execution successful");
         }
     }
 
@@ -727,7 +727,7 @@ public class GovernanceImpl {
     @External
     public void updateBalTokenDistPercentage(DistributionPercentage[] _recipient_list) {
         onlyOwner();
-        Context.call(Addresses.get("rewards"), "updateBalTokenDistPercentage", (Object) _recipient_list);
+        _updateBalTokenDistPercentage(_recipient_list);
     }
 
     @External
@@ -960,8 +960,8 @@ public class GovernanceImpl {
     private void verifyActions(String actions) {
         try {
             Context.call(Context.getAddress(), "tryExecuteActions", actions);
-        } catch (UserRevertException e) {
-            // success
+        } catch (UserRevertedException e) {
+            Context.require(e.getMessage().equals("Vote execution successful"), e.getMessage());
         }
     }
 
@@ -986,7 +986,7 @@ public class GovernanceImpl {
     public void daoDisburse(String _recipient,  Disbursement[] _amounts ) {
         Context.require(_amounts.length <=  3, "Cannot disburse more than 3 assets at a time.");
         Address recipient = Address.fromString(_recipient);
-        Context.call(Addresses.get("daofund"), "disburse", (Object) _amounts);
+        Context.call(Addresses.get("daofund"), "disburse", recipient,  (Object) _amounts);
     }
 
     public void enableDividends() {
@@ -1076,6 +1076,10 @@ public class GovernanceImpl {
 
     public void _setRebalancingThreshold(BigInteger _value) {
         Context.call(rebalancing.get(), "setPriceDiffThreshold",  _value);
+    }
+
+    public void _updateBalTokenDistPercentage(DistributionPercentage[] _recipient_list) {
+        Context.call(Addresses.get("rewards"), "updateBalTokenDistPercentage", (Object) _recipient_list);
     }
     
     @EventLog(indexed = 2)

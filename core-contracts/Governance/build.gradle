@@ -33,7 +33,7 @@ dependencies {
     implementation Dependencies.minimalJson
 
     testImplementation Dependencies.javaeeTokens
-    testImplementation project(':unittest')
+    testImplementation Dependencies.javaeeUnitTest
     // Use JUnit Jupiter for testing.
     testImplementation Dependencies.junitJupiter
     testRuntimeOnly Dependencies.junitJupiterEngine
