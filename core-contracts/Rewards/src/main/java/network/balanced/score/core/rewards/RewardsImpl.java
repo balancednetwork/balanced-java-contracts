@@ -77,7 +77,7 @@ public class RewardsImpl implements Rewards {
     public static final VarDB<Address> reserveFund = Context.newVarDB(RESERVE_FUND, Address.class);
     public static final VarDB<Address> daofund = Context.newVarDB(DAO_FUND, Address.class);
     public static final VarDB<Address> stakedLp = Context.newVarDB(STAKEDLP, Address.class);
-    public static final VarDB<Integer> startTimestamp = Context.newVarDB(START_TIMESTAMP, Integer.class);
+    public static final VarDB<BigInteger> startTimestamp = Context.newVarDB(START_TIMESTAMP, BigInteger.class);
     public static final VarDB<Integer> batchSize = Context.newVarDB(BATCH_SIZE, Integer.class);
     public static final DictDB<String, BigInteger> balnHoldings = Context.newDictDB(BALN_HOLDINGS, BigInteger.class);
     public static final DictDB<String, BigInteger> recipientSplit = Context.newDictDB(RECIPIENT_SPLIT, BigInteger.class);
@@ -115,7 +115,7 @@ public class RewardsImpl implements Rewards {
         
         continuousRewardsDay.set(BigInteger.ZERO);
 
-        startTimestamp.set(0);
+        startTimestamp.set(BigInteger.ZERO);
     }
 
     @External
@@ -628,14 +628,14 @@ public class RewardsImpl implements Rewards {
     }
 
     @External
-    public void setTimeOffset(int _timestamp) {
+    public void setTimeOffset(BigInteger _timestamp) {
         only(admin);
         startTimestamp.set(_timestamp);
     }
 
     @External(readonly = true)
-    public int getTimeOffset() {
-        return startTimestamp.get();
+    public BigInteger getTimeOffset() {
+        return startTimestamp.getOrDefault(BigInteger.ZERO);
     }
 
     @External
@@ -650,8 +650,8 @@ public class RewardsImpl implements Rewards {
     }
 
     public static BigInteger getDay() {
-        long blockTime = (Context.getBlockTimestamp() - startTimestamp.getOrDefault(0));
-        return BigInteger.valueOf((int) (blockTime / (U_SECONDS_DAY)));
+        BigInteger blockTime = BigInteger.valueOf(Context.getBlockTimestamp()).subtract(startTimestamp.getOrDefault(BigInteger.ZERO));
+        return blockTime.divide(U_SECONDS_DAY);
     }
 
     public BigInteger dailyDistribution(BigInteger day) {

@@ -204,8 +204,7 @@ public class DataSourceImpl {
             return previousTotalWeight;
         }
 
-        BigInteger dayInMicroseconds = BigInteger.valueOf(U_SECONDS_DAY);
-        BigInteger weightDelta = emission.multiply(timeDelta).multiply(EXA).divide(dayInMicroseconds.multiply(totalSupply));
+        BigInteger weightDelta = emission.multiply(timeDelta).multiply(EXA).divide(U_SECONDS_DAY.multiply(totalSupply));
 
         BigInteger newTotalWeight = previousTotalWeight.add(weightDelta);
         return newTotalWeight;
@@ -225,18 +224,16 @@ public class DataSourceImpl {
         if (currentTime.equals(lastUpdateTimestamp)) {
             return previousRunningTotal;
         }
-
-        BigInteger dayInMicroseconds = BigInteger.valueOf(U_SECONDS_DAY);
         
         // Emit rewards based on the time delta * reward rate
-        BigInteger startTimestampUs = BigInteger.valueOf(RewardsImpl.startTimestamp.get());
+        BigInteger startTimestampUs = RewardsImpl.startTimestamp.getOrDefault(BigInteger.ZERO);
         BigInteger previousRewardsDay = BigInteger.ZERO;
         BigInteger previousDayEndUs = BigInteger.ZERO;
 
         BigInteger newTotal = BigInteger.ZERO;
         while (lastUpdateTimestamp.compareTo(currentTime) == -1) {
-            previousRewardsDay = lastUpdateTimestamp.subtract(startTimestampUs).divide(dayInMicroseconds);
-            previousDayEndUs = startTimestampUs.add(dayInMicroseconds.multiply(previousRewardsDay.add(BigInteger.ONE)));
+            previousRewardsDay = lastUpdateTimestamp.subtract(startTimestampUs).divide(U_SECONDS_DAY);
+            previousDayEndUs = startTimestampUs.add(U_SECONDS_DAY.multiply(previousRewardsDay.add(BigInteger.ONE)));
             BigInteger endComputeTimestampUs = previousDayEndUs.min(currentTime);
 
             BigInteger emission = totalDist.getOrDefault(previousRewardsDay, BigInteger.ZERO);
