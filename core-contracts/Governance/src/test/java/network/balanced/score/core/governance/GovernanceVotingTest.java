@@ -887,27 +887,4 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         verify(dividends.mock, times(2)).setDistributionActivationStatus(true);
         verify(rewards.mock, times(2)).addNewDataSource("test", Address.fromString("cx66d4d90f5f113eba575bf793570135f9b10cece1"));
     }
-
-
-    // @Test
-    // void setupBalanced() {
-    //     // Act
-    //     governance.invoke(owner, "configureBalanced");
-
-    //     // Assert
-    //     verify(loans.mock).addAsset(sicx.getAddress(), true, true);
-    //     verify(loans.mock).addAsset(bnUSD.getAddress(), true, false);
-    //     verify(loans.mock).addAsset(baln.getAddress(), false, true);
-
-    //     // Act
-    //     governance.invoke(owner, "launchBalanced");
-
-    //     // Assert
-    //     verify(loans.mock).addAsset(sicx.getAddress(), true, true);
-    //     verify(loans.mock).addAsset(bnUSD.getAddress(), true, false);
-    //     verify(loans.mock).addAsset(baln.getAddress(), false, true);
-    // }
-
-
-
 }
