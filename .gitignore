@@ -83,3 +83,5 @@ fabric.properties
 build
 .DS_Store
 .vscode
+.keystores
+.deployment

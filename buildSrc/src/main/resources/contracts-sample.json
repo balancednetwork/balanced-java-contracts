@@ -1,0 +1,145 @@
+[
+  {
+    "name": "governance",
+    "path": "https://main.tracker.solidwallet.io/score/cx44250a12074799e26fdeee75648ae47e2cc84219_23.zip",
+    "params": {
+    },
+    "order": 1.0
+  },
+  {
+    "name": "baln",
+    "path": "https://main.tracker.solidwallet.io/score/cxf61cd5a45dc9f91c15aa65831a30a90d59a09619_6.zip",
+    "params": {},
+    "addressParams": {
+      "_governance": "governance"
+    },
+    "order": 2.0
+  },
+  {
+    "name": "bnUSD",
+    "path": "https://main.tracker.solidwallet.io/score/cx88fd7df7ddff82f7cc735c871dc519838cb235bb_4.zip",
+    "params": {},
+    "addressParams": {
+      "_governance": "governance"
+    },
+    "order": 2.0
+  },
+  {
+    "name": "worker_token",
+    "path": "https://main.tracker.solidwallet.io/score/cxcfe9d1f83fa871e903008471cca786662437e58d_2.zip",
+    "params": {},
+    "addressParams": {
+      "_governance": "governance"
+    },
+    "contentType": "application/java",
+    "order": 2.0
+  },
+  {
+    "name": "daofund",
+    "path": "https://main.tracker.solidwallet.io/score/cx835b300dcfe01f0bdb794e134a0c5628384f4367_9.zip",
+    "params": {},
+    "addressParams": {
+      "_governance": "governance"
+    },
+    "contentType": "application/java",
+    "order": 2.0
+  },
+  {
+    "name": "dex",
+    "path": "https://main.tracker.solidwallet.io/score/cxa0af3165c08318e988cb30993b3048335b94af6c_16.zip",
+    "params": {},
+    "addressParams": {
+      "_governance": "governance"
+    },
+    "order": 2.0
+  },
+  {
+    "name": "disbursement",
+    "path": "https://main.tracker.solidwallet.io/score/cxe3905591929d17fc8496ae28ee3b9c144579228e_1.zip",
+    "params": {},
+    "addressParams": {
+      "_governance": "governance"
+    },
+    "contentType": "application/java",
+    "order": 2.0
+  },
+  {
+    "name": "dividends",
+    "path": "https://main.tracker.solidwallet.io/score/cx203d9cd2a669be67177e997b8948ce2c35caffae_3.zip",
+    "params": {},
+    "addressParams": {
+      "_governance": "governance"
+    },
+    "order": 2.0
+  },
+  {
+    "name": "feehandler",
+    "path": "https://main.tracker.solidwallet.io/score/cx5faae53c4dbd1fbe4a2eb4aab6565030f10da5c6_5.zip",
+    "params": {},
+    "addressParams": {
+      "_governance": "governance"
+    },
+    "order": 2.0
+  },
+  {
+    "name": "loans",
+    "path": "https://main.tracker.solidwallet.io/score/cx66d4d90f5f113eba575bf793570135f9b10cece1_12.zip",
+    "params": {},
+    "addressParams": {
+      "_governance": "governance"
+    },
+    "order": 2.0
+  },
+  {
+    "name": "rebalancing",
+    "path": "https://main.tracker.solidwallet.io/score/cx40d59439571299bca40362db2a7d8cae5b0b30b0_3.zip",
+    "params": {},
+    "addressParams": {
+      "_governance": "governance"
+    },
+    "contentType": "application/java",
+    "order": 2.0
+  },
+  {
+    "name": "reserve",
+    "path": "https://main.tracker.solidwallet.io/score/cxf58b9a1898998a31be7f1d99276204a3333ac9b3_2.zip",
+    "params": {},
+    "contentType": "application/java",
+    "order": 2.0
+  },
+  {
+    "name": "rewards",
+    "path": "https://main.tracker.solidwallet.io/score/cx10d59e8103ab44635190bd4139dbfd682fa2d07e_10.zip",
+    "params": {},
+    "addressParams": {
+      "_governance": "governance"
+    },
+    "order": 2.0
+  },
+  {
+    "name": "router",
+    "path": "https://main.tracker.solidwallet.io/score/cx21e94c08c03daee80c25d8ee3ea22a20786ec231_4.zip",
+    "params": {},
+    "addressParams": {
+      "_governance": "governance"
+    },
+    "contentType": "application/java",
+    "order": 2.0
+  },
+  {
+    "name": "staking",
+    "path": "https://main.tracker.solidwallet.io/score/cx43e2eec79eb76293c298f2b17aec06097be606e0_6.zip",
+    "params": {},
+    "contentType": "application/java",
+    "order": 3.0
+  },
+  {
+    "name": "sicx",
+    "path": "https://main.tracker.solidwallet.io/score/cx2609b924e33ef00b648a409245c7ea394c467824_3.zip",
+    "params": {},
+    "addressParams": {
+      "_admin": "staking"
+    },
+    "order": 4.0
+  }
+]
