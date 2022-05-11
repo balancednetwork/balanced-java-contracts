@@ -1076,4 +1076,38 @@ public class GovernanceTest extends GovernanceTestBase {
         // Assert
         verify(feehandler.mock).disable();
     }
+
+    @Test
+    void configureBalanced() {
+        // Act
+        governance.invoke(owner, "configureBalanced");
+
+        // Assert
+        verify(loans.mock).addAsset(sicx.getAddress(), true, true);
+        verify(loans.mock).addAsset(bnUSD.getAddress(), true, false);
+        verify(loans.mock).addAsset(baln.getAddress(), false, true);
+    }
+
+    @Test
+    void launchBalanced() {
+        // Arrange
+        configureBalanced();
+
+        // Act
+        governance.invoke(owner, "launchBalanced");
+
+        // Assert
+        verify(loans.mock).setTimeOffset(any(BigInteger.class));
+        verify(rewards.mock).setTimeOffset(any(BigInteger.class));
+        verify(dex.mock).setTimeOffset(any(BigInteger.class));
+
+        verify(rewards.mock).addNewDataSource("Loans", loans.getAddress());
+        verify(rewards.mock).addNewDataSource("sICX/ICX", dex.getAddress());
+
+        verify(rewards.mock).updateBalTokenDistPercentage(any(DistributionPercentage[].class));
+        
+        verify(baln.mock).toggleStakingEnabled();
+        verify(loans.mock).turnLoansOn();
+        verify(dex.mock).turnDexOn();
+    }
 }

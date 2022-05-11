@@ -465,10 +465,10 @@ public class GovernanceImpl {
         Context.call(Addresses.get("dex"), "setTimeOffset",  timeDelta);
 
         for (Map<String, String> source : DATA_SOURCES) {
-           Context.call(Addresses.get("rewards"), "addNewDataSource", source.get("name"), Addresses.get(source.get("Address")));
+            Context.call(Addresses.get("rewards"), "addNewDataSource", source.get("name"), Addresses.get(source.get("address")));
         }
 
-        Context.call(Addresses.get("rewards"), "updateBalTokenDistPercentage",  (Object) RECIPIENTS);
+        Context.call(Addresses.get("rewards"), "updateBalTokenDistPercentage", (Object) RECIPIENTS);
         
         balanceToggleStakingEnabled();
         Context.call(Addresses.get("loans"), "turnLoansOn");
