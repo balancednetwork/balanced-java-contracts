@@ -114,7 +114,7 @@ public class RewardsTestSetup extends RewardsTestBase {
 
     @Test
     void setAndGetTimeOffset() {
-        int timeOffset = 1;
+        BigInteger timeOffset = BigInteger.ONE;
         String expectedErrorMessage = "Authorization Check: Address not set";
 
         Executable setWithoutAdmin = () -> rewardsScore.invoke(admin, "setTimeOffset", timeOffset);

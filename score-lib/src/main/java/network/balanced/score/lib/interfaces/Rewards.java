@@ -112,10 +112,10 @@ public interface Rewards extends
     int getBatchSize();
 
     @External
-    void setTimeOffset(int _timestamp);
+    void setTimeOffset(BigInteger _timestamp);
 
     @External(readonly = true)
-    int getTimeOffset();
+    BigInteger getTimeOffset();
 
     @External
     void setContinuousRewardsDay(BigInteger _continuous_rewards_day);
