@@ -113,7 +113,6 @@ public class LoansImpl {
         }
 
         governance.set(_governance);
-        admin.set(Context.getCaller());
         loansOn.set(false);
         rewardsDone.set(true);
         dividendsDone.set(true);
@@ -162,7 +161,7 @@ public class LoansImpl {
     public void migrateUserData(Address address) {
         Context.require(getDay().compareTo(
             continuousRewardDay.get()) >= 0,
-    "This method can be called only after continuous rewards day is active.");
+            "This method can be called only after continuous rewards day is active.");
         Position position = PositionsDB.getPosition(address);
         BigInteger id = position.getSnapshotId(BigInteger.valueOf(-1));
         for (int i = 0; i < AssetDB.assetSymbols.size(); i++) {
@@ -916,7 +915,7 @@ public class LoansImpl {
 
     @External
     public void setGovernance(Address _address) {
-        only(admin);
+        onlyOwner();
         isContract(_address);
         Context.require(_address.isContract(), "Loans: Governance address should be a contract");
         governance.set(_address);

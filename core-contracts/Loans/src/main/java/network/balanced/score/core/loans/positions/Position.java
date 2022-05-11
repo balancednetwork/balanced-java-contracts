@@ -180,7 +180,7 @@ public class Position {
                 if (day.equals(BigInteger.valueOf(-1)) || day.equals(LoansImpl._getDay())) {
                     price = asset.priceInLoop();
                 } else {
-                    price = SnapshotDB.get(day).prices.get(symbol);
+                    price = SnapshotDB.get(day).prices.getOrDefault(symbol, BigInteger.ZERO);
                 }
 
                 value = value.add(amount.multiply(price).divide(EXA));
@@ -198,7 +198,7 @@ public class Position {
             if (day.equals(BigInteger.valueOf(-1)) || day.equals(LoansImpl._getDay())) {
                 price = asset.priceInLoop();
             } else {
-                price = SnapshotDB.get(day).prices.get(symbol);
+                price = SnapshotDB.get(day).prices.getOrDefault(symbol, BigInteger.ZERO);
             }
 
             value = value.add(amount.multiply(price).divide(EXA));
@@ -225,7 +225,7 @@ public class Position {
                     if (day.equals(BigInteger.valueOf(-1)) || day.equals(LoansImpl._getDay())) {
                         price = getAssetPrice(symbol, readOnly);
                     } else {
-                        price = SnapshotDB.get(day).prices.get(symbol);
+                        price = SnapshotDB.get(day).prices.getOrDefault(symbol, BigInteger.ZERO);
                     }
                 }
 
@@ -242,7 +242,7 @@ public class Position {
                 if (day.equals(BigInteger.valueOf(-1)) || day.equals(LoansImpl._getDay())) {
                     price = getAssetPrice(symbol, readOnly);
                 } else {
-                    price = SnapshotDB.get(day).prices.get(symbol);
+                    price = SnapshotDB.get(day).prices.getOrDefault(symbol, BigInteger.ZERO);
                 }
             }
 

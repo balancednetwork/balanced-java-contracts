@@ -1489,9 +1489,9 @@ class LoansTests extends LoansTestsBase {
         sm.getBlock().increase(DAY);
 
         // Assert
-        Map<Address, BigInteger> snapshotBatch0 = (Map<Address, BigInteger>)loans.call("getDataBatch", "loans", BigInteger.ZERO, 3, 0);
-        Map<Address, BigInteger> snapshotBatch1 = (Map<Address, BigInteger>)loans.call("getDataBatch", "loans", BigInteger.ONE, 3, 0);
-        Map<Address, BigInteger> snapshotBatch2 = (Map<Address, BigInteger>)loans.call("getDataBatch", "loans", BigInteger.TWO, 3, 0);
+        Map<Address, BigInteger> snapshotBatch0 = (Map<Address, BigInteger>)loans.call("getDataBatch", "loans", day.subtract(BigInteger.ONE), 3, 0);
+        Map<Address, BigInteger> snapshotBatch1 = (Map<Address, BigInteger>)loans.call("getDataBatch", "loans", day, 3, 0);
+        Map<Address, BigInteger> snapshotBatch2 = (Map<Address, BigInteger>)loans.call("getDataBatch", "loans", day.add(BigInteger.ONE), 3, 0);
 
         assertEquals(2, snapshotBatch0.size());
         assertEquals(accountZeroDebt, snapshotBatch0.get(accountZeroAddress));

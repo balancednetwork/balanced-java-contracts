@@ -234,7 +234,7 @@ class LoansTestsBase extends UnitTest {
     public void setup() throws Exception {
         sicx = sm.deploy(admin, sICXMintBurn.class, nameSicx, symbolSicx, tokenDecimals, initalaupplyTokens);
         bnusd = sm.deploy(admin, bnUSDMintBurn.class, nameBnusd, symbolBnusd, tokenDecimals, initalaupplyTokens);
-
+        
         setupGovernance();
 
         loans = sm.deploy(admin, LoansImpl.class, governance.getAddress());
@@ -248,6 +248,7 @@ class LoansTestsBase extends UnitTest {
         setupReserve();
         setupDex();
 
+        loans.invoke(governance.account, "setAdmin", admin.getAddress());
         loans.invoke(admin, "setDex", dex.getAddress());
         loans.invoke(admin, "setDividends", dividends.getAddress());
         loans.invoke(admin, "setReserve", reserve.getAddress());
