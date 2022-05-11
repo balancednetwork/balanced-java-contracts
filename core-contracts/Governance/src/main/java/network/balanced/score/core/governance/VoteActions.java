@@ -20,7 +20,7 @@ public class VoteActions {
                     gov._addNewDataSource(params.get("_data_source_name").asString(), params.get("_contract_address").asString());
                     break;
                case "updateBalTokenDistPercentage":
-                    gov.updateBalTokenDistPercentage(parseDistPercentage(params.get("_recipient_list").asArray()));
+                    gov._updateBalTokenDistPercentage(parseDistPercentage(params.get("_recipient_list").asArray()));
                     break;
                case "setMiningRatio":
                     gov.setMiningRatio(BigInteger.valueOf(params.get("_value").asInt()));
