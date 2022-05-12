@@ -68,7 +68,7 @@ public class Stability {
         feeHandler.set(_address);
     }
 
-    @External
+    @External(readonly = true)
     public Address getFeeHandler() {
         return feeHandler.get();
     }
