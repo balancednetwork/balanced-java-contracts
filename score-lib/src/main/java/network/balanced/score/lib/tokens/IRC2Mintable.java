@@ -28,12 +28,16 @@ import java.math.BigInteger;
 
 import static network.balanced.score.lib.utils.Check.only;
 import static network.balanced.score.lib.utils.Check.onlyOwner;
+import static network.balanced.score.lib.utils.Check.onlyEither;
+import static network.balanced.score.lib.utils.Check.isContract;
 
 public class IRC2Mintable extends IRC2Base implements IRC2MintableInterface, MinterAddress {
 
     private final String MINTER = "admin";
+    private final String MINTER2 = "ExtraMinter";
 
     protected final VarDB<Address> minter = Context.newVarDB(MINTER, Address.class);
+    protected final VarDB<Address> minter2 = Context.newVarDB(MINTER2, Address.class);
 
     public IRC2Mintable(String _tokenName, String _symbolName, BigInteger _decimals) {
         super(_tokenName, _symbolName, _decimals);
@@ -51,13 +55,25 @@ public class IRC2Mintable extends IRC2Base implements IRC2MintableInterface, Min
     }
 
     @External
+    public void setMinter2(Address _address) {
+        onlyOwner();
+        isContract(_address);
+        minter2.set(_address);
+    }
+
+    @External(readonly = true)
+    public Address getMinter2() {
+        return minter2.get();
+    }
+
+    @External
     public void mint(BigInteger _amount, @Optional byte[] _data) {
         mintTo(Context.getCaller(), _amount, _data);
     }
 
     @External
     public void mintTo(Address _account, BigInteger _amount, @Optional byte[] _data) {
-        only(minter);
+        onlyEither(minter, minter2);
         mintWithTokenFallback(_account, _amount, _data);
     }
 

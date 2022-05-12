@@ -24,7 +24,7 @@ import score.annotation.Optional;
 
 import java.math.BigInteger;
 
-import static network.balanced.score.lib.utils.Check.only;
+import static network.balanced.score.lib.utils.Check.onlyEither;
 
 public class IRC2Burnable extends IRC2Mintable implements IRC2BurnableInterface {
 
@@ -39,7 +39,7 @@ public class IRC2Burnable extends IRC2Mintable implements IRC2BurnableInterface 
 
     @External
     public void burnFrom(Address _account, BigInteger _amount) {
-        only(minter);
+        onlyEither(minter, minter2);
         super.burn(_account, _amount);
     }
 }
