@@ -24,7 +24,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
-import network.balanced.score.lib.test.UnitTest;
 import score.Address;
 
 import java.math.BigInteger;
@@ -34,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
-class IRC2MintableTest extends UnitTest {
+class IRC2MintableTest extends TestBase {
     static final String name = "Test IRC2 Token";
     static final String symbol = "TEST";
     static final BigInteger decimals = BigInteger.valueOf(18);
@@ -131,64 +130,6 @@ class IRC2MintableTest extends UnitTest {
 
         BigInteger beforeTotalSupply = (BigInteger) tokenScore.call("totalSupply");
         tokenScore.invoke(owner, "mintTo", newReceiver.getAddress(), mintAmount, new byte[0]);
-        assertEquals(mintAmount, tokenScore.call("balanceOf", newReceiver.getAddress()));
-        assertEquals(beforeTotalSupply.add(mintAmount), tokenScore.call("totalSupply"));
-        verify(tokenSpy).Transfer(IRC2Base.ZERO_ADDRESS, newReceiver.getAddress(), mintAmount, "mint".getBytes());
-    }
-
-    @Test
-    void getSetMinter2() {
-        Account nonContractMinter = sm.createAccount();
-        Account minter2 = Account.newScoreAccount(scoreCount++);
-        
-        String expectedErrorMessage = "Address Check: Address provided is an EOA address. A contract address is required.";
-        Executable nonContractSet = () ->  tokenScore.invoke(owner, "setMinter2", nonContractMinter.getAddress());
-        expectErrorMessage(nonContractSet, expectedErrorMessage);
-
-    
-        tokenScore.invoke(owner, "setMinter2", minter2.getAddress());
-        assertEquals(minter2.getAddress(), tokenScore.call("getMinter2"));
-    }
-
-    @Test
-    void mintTo_withTwoMinters() {
-        Account newReceiver = sm.createAccount();
-        Account minter2 = Account.newScoreAccount(scoreCount++);
-        Account minter3 = Account.newScoreAccount(scoreCount++);
-        
-        mintTests(owner);
-        tokenScore.invoke(owner, "setMinter2", minter2.getAddress());
-        mintTests(owner);
-        mintTests(minter2);
-    }
-
-    public void mintTests(Account minter) {
-        Account newReceiver = sm.createAccount();
-        BigInteger mintAmount = BigInteger.valueOf(193).multiply(ICX);
-
-        Account nonMinter = sm.createAccount();
-        String expectedErrorMessage =
-                "Authorization Check: Authorization failed. Caller: " + nonMinter.getAddress() + " Authorized Caller:" +
-                        " " + owner.getAddress();
-        Executable nonMinterCall = () -> tokenScore.invoke(nonMinter, "mint", mintAmount, new byte[0]);
-        expectErrorMessage(nonMinterCall, expectedErrorMessage);
-
-        Executable nonMinterMintToCall = () -> tokenScore.invoke(nonMinter, "mintTo", sm.createAccount().getAddress()
-                , mintAmount, new byte[0]);
-        expectErrorMessage(nonMinterMintToCall, expectedErrorMessage);
-
-        expectedErrorMessage = name + ": Owner address cannot be zero address";
-        Executable zeroAddressMint = () -> tokenScore.invoke(minter, "mintTo", new Address(new byte[Address.LENGTH]),
-                mintAmount, new byte[0]);
-        expectErrorMessage(zeroAddressMint, expectedErrorMessage);
-
-        expectedErrorMessage = name + ": Amount needs to be positive";
-        Executable negativeAmountMint = () -> tokenScore.invoke(minter, "mintTo", newReceiver.getAddress(),
-                ICX.negate(), new byte[0]);
-        expectErrorMessage(negativeAmountMint, expectedErrorMessage);
-
-        BigInteger beforeTotalSupply = (BigInteger) tokenScore.call("totalSupply");
-        tokenScore.invoke(minter, "mintTo", newReceiver.getAddress(), mintAmount, new byte[0]);
         assertEquals(mintAmount, tokenScore.call("balanceOf", newReceiver.getAddress()));
         assertEquals(beforeTotalSupply.add(mintAmount), tokenScore.call("totalSupply"));
         verify(tokenSpy).Transfer(IRC2Base.ZERO_ADDRESS, newReceiver.getAddress(), mintAmount, "mint".getBytes());

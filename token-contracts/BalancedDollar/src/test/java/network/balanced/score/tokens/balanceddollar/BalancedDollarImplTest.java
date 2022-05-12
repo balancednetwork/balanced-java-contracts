@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+
 import score.Address;
 import score.Context;
 
@@ -49,6 +50,8 @@ class BalancedDollarImplTest extends TestBase {
 
     private static Score bnUSDScore;
     private BalancedDollarImpl bnUSDSpy;
+
+    private String name = "Balanced Dollar";;
 
     private final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
 
@@ -140,6 +143,66 @@ class BalancedDollarImplTest extends TestBase {
                 new byte[0]);
         assertEquals(ICX, bnUSDScore.call("balanceOf", receiverAccount.getAddress()));
     }
+
+
+    @Test
+    void getSetMinter2() {
+        Account nonContractMinter = sm.createAccount();
+        Account minter2 = Account.newScoreAccount(scoreCount++);
+        
+        String expectedErrorMessage = "Address Check: Address provided is an EOA address. A contract address is required.";
+        Executable nonContractSet = () ->  bnUSDScore.invoke(owner, "setMinter2", nonContractMinter.getAddress());
+        expectErrorMessage(nonContractSet, expectedErrorMessage);
+
+        bnUSDScore.invoke(owner, "setMinter2", minter2.getAddress());
+        assertEquals(minter2.getAddress(), bnUSDScore.call("getMinter2"));
+    }
+
+    @Test
+    void mintTo_withTwoMinters() {
+        bnUSDScore.invoke(owner, "setMinter", owner.getAddress());
+        Account newReceiver = sm.createAccount();
+        Account minter2 = Account.newScoreAccount(scoreCount++);
+        mintTests(owner);
+        bnUSDScore.invoke(owner, "setMinter2", minter2.getAddress());
+        mintTests(owner);
+        mintTests(minter2);
+
+    }
+
+    public void mintTests(Account minter) {
+        Account newReceiver = sm.createAccount();
+        BigInteger mintAmount = BigInteger.valueOf(193).multiply(ICX);
+        Address minter2 = (Address) bnUSDScore.call("getMinter2");
+
+        Account nonMinter = sm.createAccount();
+        String expectedErrorMessage =
+                "Authorization Check: Authorization failed. Caller: " + nonMinter.getAddress() + " Authorized Caller:" +
+                        " " + owner.getAddress() + " or " + minter2;
+        Executable nonMinterCall = () -> bnUSDScore.invoke(nonMinter, "mint", mintAmount, new byte[0]);
+        expectErrorMessage(nonMinterCall, expectedErrorMessage);
+
+        Executable nonMinterMintToCall = () -> bnUSDScore.invoke(nonMinter, "mintTo", sm.createAccount().getAddress()
+                , mintAmount, new byte[0]);
+        expectErrorMessage(nonMinterMintToCall, expectedErrorMessage);
+
+        expectedErrorMessage = name+ ": Owner address cannot be zero address";
+        Executable zeroAddressMint = () -> bnUSDScore.invoke(minter, "mintTo", new Address(new byte[Address.LENGTH]),
+                mintAmount, new byte[0]);
+        expectErrorMessage(zeroAddressMint, expectedErrorMessage);
+
+        expectedErrorMessage = name + ": Amount needs to be positive";
+        Executable negativeAmountMint = () -> bnUSDScore.invoke(minter, "mintTo", newReceiver.getAddress(),
+                ICX.negate(), new byte[0]);
+        expectErrorMessage(negativeAmountMint, expectedErrorMessage);
+
+        BigInteger beforeTotalSupply = (BigInteger) bnUSDScore.call("totalSupply");
+        bnUSDScore.invoke(minter, "mintTo", newReceiver.getAddress(), mintAmount, new byte[0]);
+        assertEquals(mintAmount, bnUSDScore.call("balanceOf", newReceiver.getAddress()));
+        assertEquals(beforeTotalSupply.add(mintAmount), bnUSDScore.call("totalSupply"));
+        verify(bnUSDSpy).Transfer(new Address(new byte[Address.LENGTH]), newReceiver.getAddress(), mintAmount, "mint".getBytes());
+    }
+
 
     @AfterEach
     void contextClose() {

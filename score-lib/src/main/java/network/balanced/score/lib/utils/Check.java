@@ -45,7 +45,7 @@ public class Check {
                         "Authorization Check: Address not set");
         Context.require(caller.equals(authorizedCallerAddress) ||
                         caller.equals(authorizedCaller2Address),
-                "Authorization Check: Authorization failed. Caller: " + caller + " Authorized Caller: " + authorizedCallerAddress);
+                "Authorization Check: Authorization failed. Caller: " + caller + " Authorized Caller: " + authorizedCallerAddress + " or " + authorizedCaller2Address);
     }
 
     public static void isContract(Address address) {
