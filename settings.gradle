@@ -51,3 +51,6 @@ project(':DAOfund').projectDir = file("core-contracts/DAOfund")
 
 include(':BalancedDollar')
 project(':BalancedDollar').projectDir = file("token-contracts/BalancedDollar")
+
+include(':Stability')
+project(':Stability').projectDir = file("util-contracts/Stability")
