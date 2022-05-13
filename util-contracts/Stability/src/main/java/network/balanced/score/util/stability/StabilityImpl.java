@@ -130,7 +130,7 @@ public class StabilityImpl implements Stability {
         Context.require(_limit.compareTo(BigInteger.ZERO) >= 0, TAG + ": Limit can't be set negative");
         Context.require(tokenLimits.get(_address) == null, TAG + ": Already whitelisted");
 
-        int tokenDecimal = (int) Context.call(_address, "decimals");
+        int tokenDecimal = ((BigInteger) Context.call(_address, "decimals")).intValue();
         decimals.set(_address, tokenDecimal);
         BigInteger actualLimit = _limit.multiply(pow(BigInteger.TEN, tokenDecimal));
         tokenLimits.set(_address, actualLimit);
