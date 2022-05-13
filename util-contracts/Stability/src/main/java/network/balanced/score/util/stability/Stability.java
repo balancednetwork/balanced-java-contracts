@@ -18,8 +18,10 @@ package network.balanced.score.util.stability;
 
 import score.*;
 import score.annotation.External;
+import scorex.util.ArrayList;
 
 import java.math.BigInteger;
+import java.util.List;
 
 import static network.balanced.score.lib.utils.Check.isContract;
 import static network.balanced.score.lib.utils.Check.onlyOwner;
@@ -28,7 +30,7 @@ import static network.balanced.score.lib.utils.Math.pow;
 
 public class Stability {
 
-    private static final String TAG = "Balanced Peg Stability";
+    public static final String TAG = "Balanced Peg Stability";
     private static final Address EOA_ZERO_ADDRESS = new Address(new byte[Address.LENGTH]);
     private static final BigInteger HUNDRED_PERCENTAGE = BigInteger.valueOf(100).multiply(EXA);
     private static final BigInteger ONE_BNUSD = EXA;
@@ -39,6 +41,7 @@ public class Stability {
     private static final String BNUSD_ADDRESS = "bnusd_address";
     private static final String FEE_IN = "fee_in";
     private static final String FEE_OUT = "fee_out";
+    private static final String ACCEPTED_TOKENS = "accepted_tokens";
 
     private final VarDB<Address> feeHandler = Context.newVarDB(FEE_HANDLER_ADDRESS, Address.class);
     private final DictDB<Address, BigInteger> tokenLimits = Context.newDictDB(TOKEN_LIMIT, BigInteger.class);
@@ -47,6 +50,8 @@ public class Stability {
 
     private final VarDB<BigInteger> feeIn = Context.newVarDB(FEE_IN, BigInteger.class);
     private final VarDB<BigInteger> feeOut = Context.newVarDB(FEE_OUT, BigInteger.class);
+
+    private final ArrayDB<Address> acceptedTokens = Context.newArrayDB(ACCEPTED_TOKENS, Address.class);
 
     public Stability(Address _feeHandler, Address _bnusd, BigInteger _feeIn, BigInteger _feeOut) {
 
@@ -121,19 +126,33 @@ public class Stability {
         decimals.set(_address, tokenDecimal);
         BigInteger actualLimit = _limit.multiply(pow(BigInteger.TEN, tokenDecimal));
         tokenLimits.set(_address, actualLimit);
+        acceptedTokens.add(_address);
     }
 
     @External
-    public void updateLimit(Address address, BigInteger limit) {
+    public void updateLimit(Address _address, BigInteger _limit) {
         onlyOwner();
-        Context.require(limit.compareTo(BigInteger.ZERO) >= 0, TAG + ": Limit can't be set negative");
-        Context.require(tokenLimits.get(address) != null, TAG + ": Address not white listed previously");
-        tokenLimits.set(address, limit);
+        Context.require(_limit.compareTo(BigInteger.ZERO) >= 0, TAG + ": Limit can't be set negative");
+        Context.require(tokenLimits.get(_address) != null, TAG + ": Address not white listed previously");
+
+        int tokenDecimal = decimals.get(_address);
+        BigInteger actualLimit = _limit.multiply(pow(BigInteger.TEN, tokenDecimal));
+        tokenLimits.set(_address, actualLimit);
     }
 
     @External(readonly = true)
     public BigInteger getLimit(Address address) {
         return tokenLimits.get(address);
+    }
+
+    @External(readonly = true)
+    public List<Address> getAcceptedTokens() {
+        List<Address> acceptedTokens = new ArrayList<>();
+        int totalTokens = this.acceptedTokens.size();
+        for (int i = 0; i < totalTokens; i++) {
+            acceptedTokens.add(this.acceptedTokens.get(i));
+        }
+        return acceptedTokens;
     }
 
     private void mintBnusd(BigInteger _amount, Address _asset, Address _user, Address bnusdAddress) {
@@ -142,6 +161,7 @@ public class Stability {
         Context.require(equivalentBnusd.compareTo(BigInteger.ZERO) > 0, TAG + ": Bnusd amount must be greater than " +
                 "zero");
         BigInteger fee = (feeIn.get().multiply(equivalentBnusd)).divide(HUNDRED_PERCENTAGE);
+        Context.require(fee.compareTo(BigInteger.ZERO) > 0, TAG + ": Fee must be greater than zero");
 
         Context.call(bnusdAddress, "mint", equivalentBnusd);
         Context.call(bnusdAddress, "transfer", feeHandler.get(), fee);
@@ -156,6 +176,8 @@ public class Stability {
 
         int assetOutDecimals = decimals.get(assetToReturn);
         BigInteger fee = (feeOut.get().multiply(_amount)).divide(HUNDRED_PERCENTAGE);
+        Context.require(fee.compareTo(BigInteger.ZERO) > 0, TAG + ": Fee must be greater than zero");
+
         BigInteger bnusdToConvert = _amount.subtract(fee);
         BigInteger equivalentAssetAmount =
                 (bnusdToConvert.multiply(pow(BigInteger.TEN, assetOutDecimals))).divide(ONE_BNUSD);
