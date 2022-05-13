@@ -15,47 +15,30 @@ package network.balanced.score.core.governance;
  * limitations under the License.
  */
 
-import com.eclipsesource.json.Json;
-import com.eclipsesource.json.JsonArray;
-import com.eclipsesource.json.JsonObject;
-import com.iconloop.score.test.Account;
-import com.iconloop.score.test.Score;
-import com.iconloop.score.test.ServiceManager;
-import com.iconloop.score.test.TestBase;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.function.Executable;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import score.Context;
-import score.Address;
-
-import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
-
-import static network.balanced.score.lib.test.UnitTest.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static network.balanced.score.core.governance.GovernanceConstants.TAG;
+import static network.balanced.score.lib.utils.Constants.EXA;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.booleanThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.MockedStatic.Verification;
-import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import network.balanced.score.lib.structs.BalancedAddresses;
+import java.math.BigInteger;
+import java.util.Map;
+
+import com.eclipsesource.json.Json;
+import com.eclipsesource.json.JsonObject;
+import com.iconloop.score.test.Account;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
+
+import network.balanced.score.lib.interfaces.addresses.DexAddress;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.PrepDelegations;
-import network.balanced.score.lib.test.UnitTest;
-import network.balanced.score.lib.test.mock.MockContract;
-import network.balanced.score.core.governance.interfaces.*;
-
-import static network.balanced.score.core.governance.GovernanceConstants.*;
+import score.Address;
 
 public class GovernanceTest extends GovernanceTestBase {
     @BeforeEach
@@ -1109,5 +1092,110 @@ public class GovernanceTest extends GovernanceTestBase {
         verify(baln.mock).toggleStakingEnabled();
         verify(loans.mock).turnLoansOn();
         verify(dex.mock).turnDexOn();
+    }
+
+    @Test
+    void createBnusdMarket() {
+        // Arrange
+        launchBalanced();
+        BigInteger intitalICX = BigInteger.TEN.pow(23);
+        BigInteger bnusdPrice = BigInteger.ONE.pow(18);
+
+        BigInteger bnUSDValue = BigInteger.TEN.pow(23);
+        BigInteger sICXValue = BigInteger.TEN.pow(23);
+
+        BigInteger sicxBnusdPid = BigInteger.TWO;
+        BigInteger stakeAmount = intitalICX.divide(BigInteger.valueOf(7));
+
+        when(bnUSD.mock.priceInLoop()).thenReturn(bnusdPrice);
+
+        when(bnUSD.mock.balanceOf(governance.getAddress())).thenReturn(bnUSDValue);
+        when(sicx.mock.balanceOf(governance.getAddress())).thenReturn(sICXValue);
+        when(dex.mock.getPoolId(sicx.getAddress(), bnUSD.getAddress())).thenReturn(sicxBnusdPid);
+        
+        // Act 
+        sm.call(owner, intitalICX, governance.getAddress(), "createBnusdMarket");
+
+        // Assert
+        verify(staking.mock).stakeICX();
+
+        BigInteger amount = EXA.multiply(intitalICX).divide(bnusdPrice.multiply(BigInteger.valueOf(7)));
+        verify(loans.mock).depositAndBorrow("bnUSD", amount, new Address(new byte[21]), BigInteger.ZERO);
+
+        JsonObject depositData = Json.object();
+        depositData.add("method", "_deposit");
+        verify(bnUSD.mock).transfer(dex.getAddress(), bnUSDValue, depositData.toString().getBytes());
+        verify(sicx.mock).transfer(dex.getAddress(), sICXValue, depositData.toString().getBytes());
+        
+        verify(dex.mock).add(sicx.getAddress(), bnUSD.getAddress(), sICXValue, bnUSDValue, false);
+        verify(dex.mock).setMarketName(sicxBnusdPid, "sICX/bnUSD");
+        
+        verify(rewards.mock).addNewDataSource("sICX/bnUSD", dex.getAddress());
+        verify(stakedLp.mock).addPool(sicxBnusdPid);
+        verify(rewards.mock, times(2)).updateBalTokenDistPercentage(any(DistributionPercentage[].class));
+    }
+
+    @Test
+    void createBalnMarket() {
+        // Arrange
+        createBnusdMarket();
+        BigInteger bnUSDValue = BigInteger.TEN.pow(23);
+        BigInteger balnValue = BigInteger.TEN.pow(23);
+
+        BigInteger balnBnusdPid = BigInteger.valueOf(3);
+
+        when(dex.mock.getPoolId(baln.getAddress(), bnUSD.getAddress())).thenReturn(balnBnusdPid);
+        
+        // Act 
+        governance.invoke(owner, "createBalnMarket", bnUSDValue, balnValue);
+
+        // Assert
+        verify(rewards.mock).claimRewards();
+        verify(loans.mock).depositAndBorrow("bnUSD", bnUSDValue, new Address(new byte[21]), BigInteger.ZERO);
+
+        JsonObject depositData = Json.object();
+        depositData.add("method", "_deposit");
+        verify(bnUSD.mock, times(2)).transfer(dex.getAddress(), bnUSDValue, depositData.toString().getBytes());
+        verify(baln.mock).transfer(dex.getAddress(), balnValue, depositData.toString().getBytes());
+        
+        verify(dex.mock).add(baln.getAddress(), bnUSD.getAddress(), balnValue, bnUSDValue, false);
+        verify(dex.mock).setMarketName(balnBnusdPid, "BALN/bnUSD");
+        
+        verify(rewards.mock).addNewDataSource("BALN/bnUSD", dex.getAddress());
+        verify(stakedLp.mock).addPool(balnBnusdPid);
+        verify(rewards.mock, times(3)).updateBalTokenDistPercentage(any(DistributionPercentage[].class));
+    }
+
+    @Test
+    void createBalnSicxMarket() {
+        // Arrange
+        createBalnMarket();
+        BigInteger intitalICX = BigInteger.TEN.pow(23);
+        BigInteger bnusdPrice = BigInteger.ONE.pow(18);
+
+        BigInteger sicxValue = BigInteger.TEN.pow(23);
+        BigInteger balnValue = BigInteger.TEN.pow(23);
+
+        BigInteger balnSicxPid = BigInteger.valueOf(4);
+
+        when(dex.mock.getPoolId(baln.getAddress(), sicx.getAddress())).thenReturn(balnSicxPid);
+        
+        // Act 
+        governance.invoke(owner, "createBalnSicxMarket", sicxValue, balnValue);
+
+        // Assert
+        verify(rewards.mock, times(2)).claimRewards();
+
+        JsonObject depositData = Json.object();
+        depositData.add("method", "_deposit");
+        verify(sicx.mock, times(2)).transfer(dex.getAddress(), sicxValue, depositData.toString().getBytes());
+        verify(baln.mock, times(2)).transfer(dex.getAddress(), balnValue, depositData.toString().getBytes());
+        
+        verify(dex.mock).add(baln.getAddress(), sicx.getAddress(), balnValue, sicxValue, false);
+        verify(dex.mock).setMarketName(balnSicxPid, "BALN/sICX");
+        
+        verify(rewards.mock).addNewDataSource("BALN/sICX", dex.getAddress());
+        verify(stakedLp.mock).addPool(balnSicxPid);
+        verify(rewards.mock, times(4)).updateBalTokenDistPercentage(any(DistributionPercentage[].class));
     }
 }
