@@ -12,6 +12,11 @@ import org.junit.jupiter.api.function.Executable;
 
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.internal.matchers.Null;
+
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.never;
+
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.any;
 
@@ -22,15 +27,13 @@ import score.annotation.Optional;
 import java.math.BigInteger;
 import java.util.Map;
 
-import javax.swing.BoundedRangeModel;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
 import static network.balanced.score.lib.test.UnitTest.*;
 import static network.balanced.score.lib.utils.Constants.*;
-
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -51,7 +54,8 @@ public class DexImplTest extends TestBase {
     private final Account feehandlerScore = Account.newScoreAccount(scoreCount++);
     private final Account stakedLPScore = Account.newScoreAccount(scoreCount++);
 
-    private static Score dexScore;
+    public static Score dexScore;
+    public static DexImpl dexScoreSpy;
 
     private final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
 
@@ -59,6 +63,8 @@ public class DexImplTest extends TestBase {
     public void setup() throws Exception {
         dexScore = sm.deploy(ownerAccount, DexImpl.class, governanceScore.getAddress());
         dexScore.invoke(governanceScore, "setTimeOffset", BigInteger.valueOf(Context.getBlockTimestamp()));
+        dexScoreSpy = (DexImpl) spy(dexScore.getInstance());
+        dexScore.setInstance(dexScoreSpy);
     }
 
     @Test
@@ -242,11 +248,83 @@ public class DexImplTest extends TestBase {
         // Assert.
     //}
 
+
+    //@Test
+    //void tokenFallback_rewardsNotFinished() {
+    //    // Arrange.
+    //    BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
+    //    setupAddresses();
+    //    dexScoreSpy.rewardsDone.set(false);
+    //    contextMock.verify(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute")));
+    //    contextMock.verify(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute")));
+    //    
+
+    //    // Move checks to the start of the funciton to test it properly.
+    //    // Act.
+    //    dexScore.invoke(bnusdScore, "tokenFallback", adminAccount.getAddress(), bnusdValue, new byte[0]);
+    //}
+
+
+    @Test
+    void fallback() {
+        BigInteger icxValue = BigInteger.valueOf(100).multiply(EXA);
+        setupAddresses();
+        contextMock.when(() -> Context.getValue()).thenReturn(icxValue);
+        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
+        contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
+
+        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("updateBatchRewardsData"), any(String.class), any(BigInteger.class), any())).thenReturn(null);
+        // This does not work. Why? Going with when in the meantime.
+        //contextMock.verify(() -> Context.call(eq(rewardsScore.getAddress()), eq("updateBatchRewardsData"), any(String.class), any(BigInteger.class), any()));
+
+
+        dexScore.invoke(ownerAccount, "fallback");
+    }
+
+    @Test
+    void getIcxBalance() {
+        // Arrange.
+        Account supplier = sm.createAccount();
+        BigInteger value = BigInteger.valueOf(1000).multiply(EXA);
+        setupAddresses();
+
+        // Act.
+        supplyIcxLiquidity(supplier, value);
+
+        // Assert.
+        BigInteger IcxBalance = (BigInteger) dexScore.call("getICXBalance", supplier.getAddress());
+        assertEquals(IcxBalance, value);
+    }
+
+    @Test
+    void cancelIcxOrder() {
+        // Arrange.
+        Account supplier = sm.createAccount();
+        BigInteger value = BigInteger.valueOf(1000).multiply(EXA);
+        setupAddresses();
+        supplyIcxLiquidity(supplier, value);
+        supplyIcxLiquidity(ownerAccount, value);
+        sm.getBlock().increase(100000);
+        turnDexOn();
+
+        // Mock these.
+        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
+        contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
+        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("updateBatchRewardsData"), any(String.class), any(BigInteger.class), any())).thenReturn(null);
+        
+        // This one should verify.
+        contextMock.when(() -> Context.transfer(eq(supplier.getAddress()), eq(value))).thenReturn(null);
+
+        // Act.
+        dexScore.invoke(supplier, "cancelSicxicxOrder"); 
+    }
+
+
     @Test
     void tokenFallback_deposit() {
         // Arrange.
         Account tokenScoreCaller = balnScore;
-        Account supplier = sm.createAccount();
+        Account tokenSender = sm.createAccount();
         BigInteger value = BigInteger.valueOf(1000000000);
         BigInteger retrievedValue;
         
@@ -257,12 +335,102 @@ public class DexImplTest extends TestBase {
         contextMock.when(() -> Context.call(any(Address.class), eq("decimals"))).thenReturn(BigInteger.valueOf(18));
 
         // Act.
-        dexScore.invoke(tokenScoreCaller, "tokenFallback", supplier.getAddress(), value, tokenData("_deposit", new HashMap<>()));
-        retrievedValue = (BigInteger) dexScore.call("getDeposit", tokenScoreCaller.getAddress(), supplier.getAddress());
+        dexScore.invoke(tokenScoreCaller, "tokenFallback", tokenSender.getAddress(), value, tokenData("_deposit", new HashMap<>()));
+        retrievedValue = (BigInteger) dexScore.call("getDeposit", tokenScoreCaller.getAddress(), tokenSender.getAddress());
 
         // Assert.
         assertEquals(value, retrievedValue);
     }
+
+    @Test
+    void transfer() {
+
+    }
+
+    @Test
+    void withdrawTokens_insufficientBalance() {
+        // Arrange.
+        Account depositor = sm.createAccount();
+        BigInteger depositValue = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger withdrawValue = BigInteger.valueOf(1000).multiply(EXA);
+        String expectedErrorMessage = "Balanced DEX: Insufficient Balance";
+        turnDexOn();
+        depositTokens(depositor, balnScore, depositValue);
+        
+        // Act & assert.
+        Executable withdrawalInvocation = () -> dexScore.invoke(depositor, "withdraw", balnScore.getAddress(), withdrawValue);
+        expectErrorMessage(withdrawalInvocation, expectedErrorMessage);
+    }
+
+    @Test
+    void withdrawTokens_negativeAmount() {
+        // Arrange.
+        Account depositor = sm.createAccount();
+        BigInteger depositValue = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger withdrawValue = BigInteger.valueOf(-1000).multiply(EXA);
+        String expectedErrorMessage = "Balanced DEX: Must specify a posititve amount";
+        turnDexOn();
+        depositTokens(depositor, balnScore, depositValue);
+        
+        // Act & assert.
+        Executable withdrawalInvocation = () -> dexScore.invoke(depositor, "withdraw", balnScore.getAddress(), withdrawValue);
+        expectErrorMessage(withdrawalInvocation, expectedErrorMessage);
+    }
+
+    @Test
+    void withdrawTokens() {
+        // Arrange.
+        Account depositor = sm.createAccount();
+        BigInteger depositValue = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger withdrawValue = BigInteger.valueOf(10).multiply(EXA);
+        turnDexOn();
+        depositTokens(depositor, balnScore, depositValue);
+
+        // Cant get verify to work so using when to continue testing.
+        //contextMock.verify(() -> Context.call(eq(balnScore.getAddress()), eq("transfer"), eq(depositor.getAddress()), eq(withdrawValue)));
+        contextMock.when(() -> Context.call(eq(balnScore.getAddress()), eq("transfer"), eq(depositor.getAddress()), eq(withdrawValue))).thenReturn(null);
+        // Act.
+        dexScore.invoke(depositor, "withdraw", balnScore.getAddress(), withdrawValue);
+
+        // Assert. 
+        BigInteger currentDepositValue = (BigInteger) dexScore.call("getDeposit", balnScore.getAddress(), depositor.getAddress());
+        assertEquals(depositValue.subtract(withdrawValue), currentDepositValue);
+    }
+
+    @Test
+    void tokenFallback_swapIcx_revertOnIncompleteRewards() {
+        // Arrange.
+        Account tokenScoreCaller = sicxScore;
+        Account tokenSender = sm.createAccount();
+        BigInteger value = BigInteger.valueOf(1000000000);
+        
+        setupAddresses();
+
+        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(false);
+        contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(false);
+        contextMock.when(() -> Context.call(any(Address.class), eq("decimals"))).thenReturn(BigInteger.valueOf(18));
+
+        // Act & assert.
+        Executable incompleteRewards = () -> dexScore.invoke(tokenScoreCaller, "tokenFallback", tokenSender.getAddress(), value, tokenData("_swap_icx", new HashMap<>()));
+        expectErrorMessage(incompleteRewards, "Reverted(0): Balanced DEX Rewards distribution in progress, please try again shortly");
+    }
+
+    //@Test
+    //void tokenFallback_swapIcx() {
+    //    // Arrange.
+    //    Account tokenScoreCaller = sicxScore;
+    //    Account tokenSender = sm.createAccount();
+    //    BigInteger value = BigInteger.valueOf(1000000000);
+    //    
+    //    setupAddresses();
+//
+    //    contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
+    //    contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
+    //    contextMock.when(() -> Context.call(any(Address.class), eq("decimals"))).thenReturn(BigInteger.valueOf(18));
+//
+    //    dexScore.invoke(tokenScoreCaller, "tokenFallback", tokenSender.getAddress(), value, tokenData("_swap_icx", new HashMap<>()));
+    //}
+
 
     @Test
     void getNonce() {
@@ -699,10 +867,27 @@ public class DexImplTest extends TestBase {
         // Bug in unittesting framework?
     }
 
+    @Test
+    void permit_OnlyGovernance() {
+        // Arrange.
+        BigInteger poolId = BigInteger.ONE;
+        Boolean permission = true;
 
-    //private void depositToken(Account depositor, Account tokenScore, BigInteger value) {
-    //    dexScore.invoke(tokenScore, "tokenFallback", depositor.getAddress(), value, tokenData("_deposit", new HashMap<>()));
-    //}
+        // Assert.
+        assertOnlyCallableByGovernance(dexScore, "permit", poolId, permission);
+    }
+
+    private void turnDexOn() {
+        dexScore.invoke(governanceScore, "turnDexOn");
+    }
+
+    private void depositTokens(Account depositor, Account tokenScore, BigInteger value) {
+        setupAddresses();
+        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
+        contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
+        contextMock.when(() -> Context.call(any(Address.class), eq("decimals"))).thenReturn(BigInteger.valueOf(18));
+        dexScore.invoke(tokenScore, "tokenFallback", depositor.getAddress(), value, tokenData("_deposit", new HashMap<>()));
+    }
 
     private void setupAddresses() {
         dexScore.invoke(governanceScore, "setAdmin", adminAccount.getAddress());
@@ -744,6 +929,16 @@ public class DexImplTest extends TestBase {
         return (tokenAValue.multiply(EXA)).divide(tokenBValue);
     }
 
+    
+    private void supplyIcxLiquidity(Account supplier, BigInteger value) {
+        contextMock.when(() -> Context.getValue()).thenReturn(value);
+        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
+        contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
+        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("updateBatchRewardsData"), any(String.class), any(BigInteger.class), any())).thenReturn(null);
+        supplier.addBalance("ICX", value);
+        sm.transfer(supplier, dexScore.getAddress(), value);
+    }
+
     /*
     Strategy:
 
@@ -757,13 +952,30 @@ public class DexImplTest extends TestBase {
     */
 
     /*
+    Icx/sicx pool:
+    methods:
+    cancelSicxIcxOrder
+    getSicxEarnings
+    withdrawSicxEarnings
+    fallback
+    getICXBalance
+
+    */
+
+    /*
+    Code organization:
+    - ICX pool related methods.
+    - Liquidity pool methods.
+    */
+
+    /*
     fallback
     tokenFallback
     cancelSicxIcxOrder
     transfer
     onIRC31Received
     precompute (??)
-    getDeposit
+    getDeposit  // Tested in tokenfallback_Deposit
     getSicxEarnings
     getWithdrawLock Bug in testing framework?
     getBnusdValue  // Not done yet. Multiple conditionals
@@ -776,8 +988,6 @@ public class DexImplTest extends TestBase {
     getBalnSnapshot
     loadBalancesAtSnapshot
     getDataBatch
-    permit
-    withdraw
     remove
     add
     withdrawSicxEarnings
