@@ -494,12 +494,12 @@ public class GovernanceImpl {
         BigInteger price = Context.call(BigInteger.class, bnUSDAddress, "priceInLoop");
         BigInteger amount = EXA.multiply(value).divide(price.multiply(BigInteger.valueOf(7)));
         Context.call(value.divide(BigInteger.valueOf(7)), stakingAddress, "stakeICX");
-        Context.call(Context.getBalance(Context.getAddress()), loansAddress, "bnUSD", amount, null, BigInteger.ZERO);
+        Context.call(Context.getBalance(Context.getAddress()), loansAddress, "depositAndBorrow","bnUSD", amount, new Address(new byte[21]), BigInteger.ZERO);
 
         BigInteger bnUSDValue = Context.call(BigInteger.class, bnUSDAddress, "balanceOf", Context.getAddress());
         BigInteger sICXValue = Context.call(BigInteger.class, sICXAddress, "balanceOf", Context.getAddress());
 
-
+        
         JsonObject depositData = Json.object();
         depositData.add("method", "_deposit");
         Context.call(bnUSDAddress, "transfer", dexAddress, bnUSDValue, depositData.toString().getBytes());
@@ -536,8 +536,7 @@ public class GovernanceImpl {
         Address loansAddress = Addresses.get("loans");
 
         Context.call(rewardsAddress, "claimRewards");
-        //TODO verify with pytohn
-        Context.call(loansAddress, "bnUSD", _bnUSD_amount, null, BigInteger.ZERO);
+        Context.call(loansAddress,"depositAndBorrow", "bnUSD", _bnUSD_amount, new Address(new byte[21]), BigInteger.ZERO);
 
         JsonObject depositData = Json.object();
         depositData.add("method", "_deposit");
@@ -562,7 +561,7 @@ public class GovernanceImpl {
             createDistributionPercentage("BALN/bnUSD",  BigInteger.valueOf(175).multiply(pow(BigInteger.TEN,15)))
         };
 
-        Context.call(rewardsAddress, "updateBalTokenDistPercentage",  recipients);
+        Context.call(rewardsAddress, "updateBalTokenDistPercentage", (Object) recipients);
     }
 
     @External
