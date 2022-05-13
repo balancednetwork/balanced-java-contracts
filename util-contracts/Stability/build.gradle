@@ -42,7 +42,7 @@ dependencies {
 
 
 optimizedJar {
-    mainClassName = 'network.balanced.score.util.stability.Stability'
+    mainClassName = 'network.balanced.score.util.stability.StabilityImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
@@ -66,7 +66,12 @@ deployJar {
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
-    parameters {}
+    parameters {
+        arg("_feeHandler", "cx6c8f668de7ec23fffc1afc14f130e244cee773f5")
+        arg("_bnusd", "cx5838cb516d6156a060f90e9a3de92381331ff024")
+        arg("_feeIn", "500000000000000000")
+        arg("_feeOut", "500000000000000000")
+    }
 }
 
 test {

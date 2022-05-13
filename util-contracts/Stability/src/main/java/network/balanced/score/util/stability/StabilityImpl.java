@@ -16,6 +16,7 @@
 
 package network.balanced.score.util.stability;
 
+import network.balanced.score.lib.interfaces.Stability;
 import score.*;
 import score.annotation.External;
 import scorex.util.ArrayList;
@@ -28,7 +29,7 @@ import static network.balanced.score.lib.utils.Check.onlyOwner;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Math.pow;
 
-public class Stability {
+public class StabilityImpl implements Stability {
 
     public static final String TAG = "Balanced Peg Stability";
     private static final Address EOA_ZERO_ADDRESS = new Address(new byte[Address.LENGTH]);
@@ -53,14 +54,19 @@ public class Stability {
 
     private final ArrayDB<Address> acceptedTokens = Context.newArrayDB(ACCEPTED_TOKENS, Address.class);
 
-    public Stability(Address _feeHandler, Address _bnusd, BigInteger _feeIn, BigInteger _feeOut) {
+    public StabilityImpl(Address _feeHandler, Address _bnusd, BigInteger _feeIn, BigInteger _feeOut) {
 
         if (bnusdAddress.get() == null) {
             setFeeHandler(_feeHandler);
-            setBnusdAddress(_bnusd);
+            setBnusd(_bnusd);
             setFeeIn(_feeIn);
             setFeeOut(_feeOut);
         }
+    }
+
+    @External(readonly = true)
+    public String name() {
+        return TAG;
     }
 
     @External
@@ -76,14 +82,14 @@ public class Stability {
     }
 
     @External
-    public void setBnusdAddress(Address _address) {
+    public void setBnusd(Address _address) {
         onlyOwner();
         isContract(_address);
         bnusdAddress.set(_address);
     }
 
     @External(readonly = true)
-    public Address getBnusdAddress() {
+    public Address getBnusd() {
         return bnusdAddress.get();
     }
 
@@ -122,6 +128,8 @@ public class Stability {
         onlyOwner();
         isContract(_address);
         Context.require(_limit.compareTo(BigInteger.ZERO) >= 0, TAG + ": Limit can't be set negative");
+        Context.require(tokenLimits.get(_address) == null, TAG + ": Already whitelisted");
+
         int tokenDecimal = (int) Context.call(_address, "decimals");
         decimals.set(_address, tokenDecimal);
         BigInteger actualLimit = _limit.multiply(pow(BigInteger.TEN, tokenDecimal));
@@ -141,8 +149,8 @@ public class Stability {
     }
 
     @External(readonly = true)
-    public BigInteger getLimit(Address address) {
-        return tokenLimits.get(address);
+    public BigInteger getLimit(Address _address) {
+        return tokenLimits.get(_address);
     }
 
     @External(readonly = true)

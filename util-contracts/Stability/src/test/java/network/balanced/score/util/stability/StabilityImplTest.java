@@ -32,12 +32,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static network.balanced.score.lib.test.UnitTest.*;
-import static network.balanced.score.util.stability.Stability.TAG;
+import static network.balanced.score.util.stability.StabilityImpl.TAG;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
-class StabilityTest extends TestBase {
+class StabilityImplTest extends TestBase {
 
     private static final ServiceManager sm = getServiceManager();
     private static final Account owner = sm.createAccount();
@@ -57,7 +57,12 @@ class StabilityTest extends TestBase {
 
     @BeforeEach
     void setUp() throws Exception {
-        stabilityScore = sm.deploy(owner, Stability.class, feeHandler.getAddress(), bnusd.getAddress(), feeIn, feeOut);
+        stabilityScore = sm.deploy(owner, StabilityImpl.class, feeHandler.getAddress(), bnusd.getAddress(), feeIn, feeOut);
+    }
+
+    @Test
+    void name() {
+        assertEquals("Balanced Peg Stability", stabilityScore.call("name"));
     }
 
     @Test
@@ -68,8 +73,8 @@ class StabilityTest extends TestBase {
 
     @Test
     void setAndGetBnusdAddress() {
-        testOwnerControlMethods(stabilityScore, "setBnusdAddress", "getBnusdAddress", bnusd.getAddress());
-        testIsContract(owner, stabilityScore, "setBnusdAddress", bnusd.getAddress(), "getBnusdAddress");
+        testOwnerControlMethods(stabilityScore, "setBnusd", "getBnusd", bnusd.getAddress());
+        testIsContract(owner, stabilityScore, "setBnusd", bnusd.getAddress(), "getBnusd");
     }
 
     private void testIsValidPercentage(String setterMethod, String getterMethod, BigInteger percentageToSet) {
@@ -132,6 +137,10 @@ class StabilityTest extends TestBase {
         List<Address> tokens = new ArrayList<>();
         tokens.add(iusdc.getAddress());
         assertArrayEquals(tokens.toArray(), ((List<Address>) stabilityScore.call("getAcceptedTokens")).toArray());
+
+        expectedErrorMessage = TAG + ": Already whitelisted";
+        Executable doubleListing = () -> stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit);
+        expectErrorMessage(doubleListing, expectedErrorMessage);
     }
 
     @Test
