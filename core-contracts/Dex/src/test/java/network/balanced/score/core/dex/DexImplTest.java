@@ -546,15 +546,17 @@ public class DexImplTest extends TestBase {
 
     @Test
     void totalSupply_SicxIcxPool() {
-        // TODO after custom method to supply liquidity to this pool.
+        // Arrange.
+        BigInteger value = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger poolId = BigInteger.valueOf(1);
+        setupAddresses();
 
-       // Arrange.
-       //BigInteger poolId = BigInteger.valueOf(1);
-       //BigInteger totalLpTokens;
+        // Act.
+        supplyIcxLiquidity(ownerAccount, value);
 
-       //// Assert.
-       //BigInteger retrievedTotalLpTokens = (BigInteger) dexScore.call("totalSupply", poolId);
-       //assertEquals(totalLpTokens, retrievedTotalLpTokens);
+        // Assert.
+        BigInteger totalIcxSupply = (BigInteger) dexScore.call("totalSupply", poolId);
+        assertEquals(value, totalIcxSupply);
     }
 
     @Test
@@ -1012,8 +1014,7 @@ public class DexImplTest extends TestBase {
     */
 
     /*
-    Icx/sicx pool:
-    methods:
+    Icx/sicx pool methods:
     cancelSicxIcxOrder
     getSicxEarnings
     withdrawSicxEarnings
@@ -1030,8 +1031,14 @@ public class DexImplTest extends TestBase {
     */
 
      /*
-    Snapshot methods.
+    Snapshot methods:
 
+    getBalnSnapshot
+    loadBalancesAtSnapshot
+    getDataBatch
+    totalSupplyAt
+    totalBalnAt
+    balanceOfAt
     */
 
     /*
@@ -1042,13 +1049,9 @@ public class DexImplTest extends TestBase {
     getDeposit  // Tested in tokenfallback_Deposit
     getWithdrawLock Bug in testing framework?
     getBnusdValue  // Not done yet. Multiple conditionals
-    balanceOfAt
-    totalSupplyAt
-    totalBalnAt
+    
+    
     getTotalValue
-    getBalnSnapshot
-    loadBalancesAtSnapshot
-    getDataBatch
     remove
     add
     addLpAddresses
