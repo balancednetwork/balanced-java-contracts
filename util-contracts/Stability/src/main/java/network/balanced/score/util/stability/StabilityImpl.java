@@ -186,7 +186,12 @@ public class StabilityImpl implements Stability {
         BigInteger fee = (feeOut.get().multiply(_amount)).divide(HUNDRED_PERCENTAGE);
         Context.require(fee.compareTo(BigInteger.ZERO) > 0, TAG + ": Fee must be greater than zero");
 
-        BigInteger bnusdToConvert = _amount.subtract(fee);
+        BigInteger bnusdAfterFee = _amount.subtract(fee);
+        BigInteger dustAmount = (bnusdAfterFee).remainder(pow(BigInteger.TEN, 18 - assetOutDecimals));
+
+        BigInteger feeWithDustAmount = fee.add(dustAmount);
+
+        BigInteger bnusdToConvert = _amount.subtract(feeWithDustAmount);
         BigInteger equivalentAssetAmount =
                 (bnusdToConvert.multiply(pow(BigInteger.TEN, assetOutDecimals))).divide(ONE_BNUSD);
         Context.require(equivalentAssetAmount.compareTo(BigInteger.ZERO) > 0, TAG + ": Asset to return can't be zero " +
@@ -197,7 +202,7 @@ public class StabilityImpl implements Stability {
                 "balance in the contract");
 
         Context.call(bnusdAddress, "burn", bnusdToConvert);
-        Context.call(bnusdAddress, "transfer", feeHandler.get(), fee);
+        Context.call(bnusdAddress, "transfer", feeHandler.get(), feeWithDustAmount);
         Context.call(assetToReturn, "transfer", _user, equivalentAssetAmount);
     }
 
