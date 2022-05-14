@@ -12,10 +12,15 @@ import org.junit.jupiter.api.function.Executable;
 
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.stubbing.Answer;
 import org.mockito.internal.matchers.Null;
+import org.mockito.plugins.MemberAccessor.OnConstruction;
 
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
+
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.any;
@@ -301,22 +306,41 @@ public class DexImplTest extends TestBase {
         // Arrange.
         Account supplier = sm.createAccount();
         BigInteger value = BigInteger.valueOf(1000).multiply(EXA);
+
         setupAddresses();
+        turnDexOn();
         supplyIcxLiquidity(supplier, value);
         supplyIcxLiquidity(ownerAccount, value);
         sm.getBlock().increase(100000);
-        turnDexOn();
 
         // Mock these.
         contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
         contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
         contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("updateBatchRewardsData"), any(String.class), any(BigInteger.class), any())).thenReturn(null);
+        contextMock.when(() -> Context.transfer(eq(supplier.getAddress()), eq(value))).thenAnswer((Answer<Void>) invocation -> null);
         
-        // This one should verify.
-        contextMock.when(() -> Context.transfer(eq(supplier.getAddress()), eq(value))).thenReturn(null);
-
         // Act.
-        dexScore.invoke(supplier, "cancelSicxicxOrder"); 
+        dexScore.invoke(supplier, "cancelSicxicxOrder");
+
+        // Assert.
+        BigInteger IcxBalance = (BigInteger) dexScore.call("getICXBalance", supplier.getAddress());
+        assertEquals(BigInteger.ZERO, IcxBalance);
+    }
+
+    @Test
+    void getSicxEarnings() {
+        // Supply liquidity to sicx/icx pool.
+        // Swap some sicx to icx.
+        // Get and verify earnings.
+    }
+
+    @Test
+    void withdrawSicxEarnings() {
+        // Supply liquidity to sicx/icx pool.
+        // Swap some sicx to icx.
+        // Withdraw earnings.
+        // Check that earnings transferred to withdrawer.
+        // Assert that getSicxEarnings returns 0.
     }
 
 
@@ -340,6 +364,22 @@ public class DexImplTest extends TestBase {
 
         // Assert.
         assertEquals(value, retrievedValue);
+    }
+
+    @Test
+    void onIRC31Received() {
+        // Arrange.
+        Account irc31Contract = Account.newScoreAccount(1);
+        Address operator = sm.createAccount().getAddress();
+        Address from = sm.createAccount().getAddress();
+        BigInteger id = BigInteger.ONE;
+        BigInteger value = BigInteger.valueOf(100).multiply(EXA);
+        byte[] data = new byte[0];
+        String expectedErrorMessage = "Reverted(0): Balanced DEX: IRC31 Tokens not accepted";
+
+        // Act and assert.
+        Executable onIRC31Received = () -> dexScore.invoke(irc31Contract, "onIRC31Received", operator, from, id, value, data);
+        expectErrorMessage(onIRC31Received, expectedErrorMessage);
     }
 
     @Test
@@ -386,12 +426,11 @@ public class DexImplTest extends TestBase {
         turnDexOn();
         depositTokens(depositor, balnScore, depositValue);
 
-        // Cant get verify to work so using when to continue testing.
-        //contextMock.verify(() -> Context.call(eq(balnScore.getAddress()), eq("transfer"), eq(depositor.getAddress()), eq(withdrawValue)));
         contextMock.when(() -> Context.call(eq(balnScore.getAddress()), eq("transfer"), eq(depositor.getAddress()), eq(withdrawValue))).thenReturn(null);
+        
         // Act.
         dexScore.invoke(depositor, "withdraw", balnScore.getAddress(), withdrawValue);
-
+    
         // Assert. 
         BigInteger currentDepositValue = (BigInteger) dexScore.call("getDeposit", balnScore.getAddress(), depositor.getAddress());
         assertEquals(depositValue.subtract(withdrawValue), currentDepositValue);
@@ -810,6 +849,27 @@ public class DexImplTest extends TestBase {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    void getBalanceAndSupply_sicxIcxPool() {
+        // Arrange - Variables.
+        Account supplier = sm.createAccount();
+        BigInteger icxValue = BigInteger.valueOf(100).multiply(EXA);
+        String poolName = "sICX/ICX";
+        
+        Map<String, BigInteger> expectedData = Map.of(
+            "_balance", icxValue,
+            "_totalSupply", icxValue
+        );
+
+        setupAddresses();
+        supplyIcxLiquidity(supplier, icxValue);
+        
+        // Assert.
+        Map<String, BigInteger> returnedData = (Map<String, BigInteger>) dexScore.call( "getBalanceAndSupply", poolName, supplier.getAddress());
+        assertEquals(expectedData, returnedData);
+    }
+
+    @Test
     void removeLiquidity_withdrawalLockActive() {
         // Arrange - remove liquidity arguments.
         BigInteger poolId = BigInteger.TWO;
@@ -966,21 +1026,22 @@ public class DexImplTest extends TestBase {
     Code organization:
     - ICX pool related methods.
     - Liquidity pool methods.
+    - Snapshot methods.
+    */
+
+     /*
+    Snapshot methods.
+
     */
 
     /*
     fallback
     tokenFallback
-    cancelSicxIcxOrder
     transfer
-    onIRC31Received
     precompute (??)
     getDeposit  // Tested in tokenfallback_Deposit
-    getSicxEarnings
     getWithdrawLock Bug in testing framework?
     getBnusdValue  // Not done yet. Multiple conditionals
-    getICXBalance
-    getBalanceAndSupply  // sicx/icx pool left.
     balanceOfAt
     totalSupplyAt
     totalBalnAt
@@ -990,7 +1051,6 @@ public class DexImplTest extends TestBase {
     getDataBatch
     remove
     add
-    withdrawSicxEarnings
     addLpAddresses
     */
 
