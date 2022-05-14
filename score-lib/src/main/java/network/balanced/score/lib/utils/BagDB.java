@@ -4,6 +4,7 @@ import score.ArrayDB;
 import score.Context;
 
 import java.util.List;
+import java.util.Objects;
 
 import scorex.util.ArrayList;
 
@@ -11,14 +12,12 @@ import scorex.util.ArrayList;
 public class BagDB<V> {
     private static final String NAME = "_BAGDB";
 
-    private final String name;
     private final ArrayDB<V> items;
-    private Boolean order;
+    private final Boolean order;
 
     public BagDB(String key, Class<V> valueType, Boolean order) {
-        name = key + NAME;
-        items = Context.newArrayDB(name + "_items", valueType);
-        this.order = order;
+        this.items = Context.newArrayDB(key + NAME + "_items", valueType);
+        this.order = order != null && order;
     }
 
     public int size() {
@@ -36,47 +35,38 @@ public class BagDB<V> {
     public boolean contains(V item) {
         int itemsSize = this.items.size();
         for (int i = 0; i < itemsSize; i++) {
-            if (items.get(i) == item) {
+            if (Objects.equals(items.get(i), item)) {
                 return true;
             }
         }
         return false;
     }
 
-
     public void remove(V item) {
-        if (order == null) {
-            order = false;
-        }
         List<V> tmp = new ArrayList<>();
         int itemsSize = this.items.size();
-        if (order) {
-            for (int i = 0; i < itemsSize; i++) {
-                if (items.get(i) == null) {
-                    break;
-                }
-                V cur = items.pop();
-                if (cur != item) {
+        if (this.order) {
+            for (int i = itemsSize-1; i >= 0; i--) {
+                V cur = this.items.pop();
+                if (!Objects.equals(cur, item)) {
                     tmp.add(cur);
-                } else {
+                }else{
                     break;
                 }
             }
 
-            for (int i = 0; i < tmp.size(); i++) {
-                if (tmp.get(i) == null) {
-                    break;
-                }
+            int tmpSize = tmp.size();
+            for (int i = 0; i < tmpSize; i++) {
                 V cur = tmp.remove(tmp.size() - 1);
-                items.add(cur);
+                this.items.add(cur);
             }
         } else {
             for (int i = 0; i < itemsSize; i++) {
-                if (items.get(i) == item) {
-                    if (i == itemsSize - 1) {
-                        items.pop();
-                    } else {
-                        items.set(i, items.pop());
+                if (Objects.equals(items.get(i), item)) {
+                    V lastItem = items.pop();
+                    if (i != itemsSize - 1) {
+                        items.set(i, lastItem);
+                        break;
                     }
                 }
             }

@@ -31,13 +31,11 @@ public class IterableDictDB<K, V> {
 
     public final DictDB<K, V> values;
     public final SetDB<K> keys;
-    private final String name;
 
 
     public IterableDictDB(String key, Class<V> valueType, Class<K> keyType, Boolean order) {
-        this.name = key + NAME;
-        this.keys = new SetDB<K>(this.name + "_keys", keyType, order);
-        this.values = Context.newDictDB(this.name + "_values", valueType);
+        this.keys = new SetDB<K>(key + NAME + "_keys", keyType, order);
+        this.values = Context.newDictDB(key + NAME + "_values", valueType);
     }
 
 

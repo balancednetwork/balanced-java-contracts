@@ -19,8 +19,8 @@ public class NodeDB {
 
     public NodeDB(String key) {
         String name = key + NAME;
-        this.size = Context.newVarDB(name + "_value1", BigInteger.class);
-        this.user = Context.newVarDB(name + "_value2", Address.class);
+        this.size = Context.newVarDB(name + "_size", BigInteger.class);
+        this.user = Context.newVarDB(name + "_user", Address.class);
         this.next = Context.newVarDB(name + "_next", BigInteger.class);
         this.prev = Context.newVarDB(name + "_prev", BigInteger.class);
     }
@@ -46,6 +46,9 @@ public class NodeDB {
 
     public Address getUser() {
         return user.get();
+    }
+    public void setUser(Address user) {
+         this.user.set(user);
     }
 
     public void setValues(BigInteger size, Address user) {
