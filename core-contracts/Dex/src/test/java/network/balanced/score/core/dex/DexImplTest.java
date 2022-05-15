@@ -19,6 +19,8 @@ import org.mockito.plugins.MemberAccessor.OnConstruction;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.never;
 
 
@@ -302,7 +304,7 @@ public class DexImplTest extends TestBase {
     }
 
     @Test
-    void cancelIcxOrder() {
+    void cancelSicxIcxOrder() {
         // Arrange.
         Account supplier = sm.createAccount();
         BigInteger value = BigInteger.valueOf(1000).multiply(EXA);
@@ -528,7 +530,7 @@ public class DexImplTest extends TestBase {
     }
 
     @Test
-    void balanceOf() {
+    void balanceOf_normalPool() {
         // Arrange.
         BigInteger bnusdValue = BigInteger.valueOf(10).pow(19);
         BigInteger balnValue = BigInteger.valueOf(10).pow(19);
@@ -542,6 +544,21 @@ public class DexImplTest extends TestBase {
         // Assert.
         BigInteger retrievedUserLpTokenValue = (BigInteger) dexScore.call("balanceOf", ownerAccount.getAddress(), poolId);
         assertEquals(userLpTokenValue, retrievedUserLpTokenValue);
+    }
+
+    @Test
+    void balanceOf_icxSicxPool() {
+        // Arrange.
+        BigInteger value = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger poolId = BigInteger.valueOf(1);
+        setupAddresses();
+
+        // Act.
+        supplyIcxLiquidity(ownerAccount, value);
+
+        // Assert.
+        BigInteger retrievedBalance = (BigInteger) dexScore.call("balanceOf", ownerAccount.getAddress(), poolId);
+        assertEquals(value, retrievedBalance);
     }
 
     @Test
@@ -691,14 +708,46 @@ public class DexImplTest extends TestBase {
     }
 
     @Test
-    void getBnusdValue_sicxIsQuote() {
+    void getBnusdValue_sicxIcxPool() {
+        // Arrange.
         BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
         BigInteger sicxValue = BigInteger.valueOf(350).multiply(EXA);
-        BigInteger expectedPrice = computePrice(bnusdValue, sicxValue);
+        BigInteger sicxIcxConversionRate = BigInteger.valueOf(10).multiply(EXA); 
+        BigInteger icxValue = BigInteger.valueOf(10).multiply(EXA);
+        String poolName = "sICX/ICX";
+        BigInteger expectedPoolValue = (computePrice(bnusdValue, sicxValue).multiply(icxValue)).divide(sicxIcxConversionRate);
+        setupAddresses();
+        doReturn(sicxIcxConversionRate).when(dexScoreSpy).getSicxRate();
+        
+        
+        // Act.
+        supplyLiquidity(ownerAccount, sicxScore, bnusdScore, sicxValue, bnusdValue, false);
+        supplyIcxLiquidity(ownerAccount, icxValue);     
+        
+        // Assert.
+        BigInteger poolValue = (BigInteger) dexScore.call( "getBnusdValue", poolName);
+        assertEquals(expectedPoolValue, poolValue);
+    }
+
+    @Test
+    void getBnusdValue_sicxIsQuote() {
+        // Arrange.
+        BigInteger balnValue = BigInteger.valueOf(195).multiply(EXA);
+        BigInteger sicxValue = BigInteger.valueOf(350).multiply(EXA);
+        String poolName = "bnUSD/sICX";
+        BigInteger poolId = BigInteger.valueOf(2);
+        BigInteger sicxBnusdPrice = BigInteger.valueOf(10).multiply(EXA);
+        BigInteger expectedValue = (sicxValue.multiply(BigInteger.TWO).multiply(sicxBnusdPrice)).divide(EXA);
+        doReturn(sicxBnusdPrice).when(dexScoreSpy).getSicxBnusdPrice();
         setupAddresses();
 
-        // Act. Why does this fail?
-        //supplyLiquidity(ownerAccount, bnusdScore, sicxScore, bnusdValue, sicxValue, false);
+        // Act. Why can I not supply with sicx as quote currency? Fails.
+        dexScore.invoke(governanceScore, "setMarketName", poolId, poolName);
+        supplyLiquidity(ownerAccount, bnusdScore, sicxScore, balnValue, sicxValue, false);
+
+        // Assert.
+        //BigInteger poolValue = (BigInteger) dexScore.call( "getBnusdValue", poolName);
+        //assertEquals(expectedValue, poolValue);
     }
     
     @Test
@@ -911,7 +960,7 @@ public class DexImplTest extends TestBase {
 
     @Test
     void getWithdrawLock() {
-        // Arrange - supply liquidity settings.
+        // Arrange.
         BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
         BigInteger balnValue = BigInteger.valueOf(350).multiply(EXA);
         BigInteger timestamp = BigInteger.valueOf(sm.getBlock().getTimestamp());
@@ -925,7 +974,7 @@ public class DexImplTest extends TestBase {
         BigInteger withdrawalLock = (BigInteger) dexScore.call("getWithdrawLock", poolId, ownerAccount.getAddress());
         //assertEquals(timestamp, withdrawalLock);
 
-        // sm.getBlock().getTimestamp =! Context.getBlockTimestamp().
+        // sm.getBlock().getTimestamp =! Context.getBlockTimestamp().These should be equal.
         // Bug in unittesting framework?
     }
 
@@ -991,7 +1040,6 @@ public class DexImplTest extends TestBase {
         return (tokenAValue.multiply(EXA)).divide(tokenBValue);
     }
 
-    
     private void supplyIcxLiquidity(Account supplier, BigInteger value) {
         contextMock.when(() -> Context.getValue()).thenReturn(value);
         contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
@@ -1001,61 +1049,44 @@ public class DexImplTest extends TestBase {
         sm.transfer(supplier, dexScore.getAddress(), value);
     }
 
-    /*
-    Strategy:
 
-    private methods to:
-      - Deposit token.
-      - Withdraw token.
-      - Create pool / supply liquidity.
-
-
-      Then use those methods to set up conditions for the other tests such as all getters for pools, swaps etc.
-    */
-
-    /*
-    Icx/sicx pool methods:
-    cancelSicxIcxOrder
-    getSicxEarnings
-    withdrawSicxEarnings
-    fallback
-    getICXBalance
-
-    */
 
     /*
     Code organization:
     - ICX pool related methods.
-    - Liquidity pool methods.
+    - Normal liquidity pool methods.
     - Snapshot methods.
-    */
+    
+    
+    == Icx/sicx pool methods == 
+    getSicxEarnings
+    withdrawSicxEarnings
+    fallback
+    
 
-     /*
-    Snapshot methods:
-
+    == Snapshot methods ==
     getBalnSnapshot
     loadBalancesAtSnapshot
     getDataBatch
     totalSupplyAt
     totalBalnAt
     balanceOfAt
-    */
-
-    /*
-    fallback
-    tokenFallback
-    transfer
-    precompute (??)
-    getDeposit  // Tested in tokenfallback_Deposit
-    getWithdrawLock Bug in testing framework?
-    getBnusdValue  // Not done yet. Multiple conditionals
-    
-    
     getTotalValue
+    
+
+    == Normal liquidity pool methods ==
+    tokenFallback
+    getDeposit  // Tested in tokenfallback_Deposit
     remove
     add
-    addLpAddresses
+    addLpAddresses -> No getter.
+
+
+    == Others ==
+    transfer  -> IRC31 transfer method.
     */
+
+
 
     @AfterEach
     void closeMock() {
