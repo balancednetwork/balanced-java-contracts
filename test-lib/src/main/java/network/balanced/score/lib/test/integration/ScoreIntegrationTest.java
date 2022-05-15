@@ -18,7 +18,7 @@ package network.balanced.score.lib.test.integration;
 
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.icx.Wallet;
-import foundation.icon.icx.data.TransactionResult;
+import foundation.icon.jsonrpc.model.TransactionResult;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
 import foundation.icon.score.client.RevertedException;
@@ -190,6 +190,12 @@ public interface ScoreIntegrationTest {
             if (consumer != null) {
                 consumer.accept(eventLogs);
             }
+        };
+    }
+
+    static  Consumer<TransactionResult> dummyConsumer() {
+        return (txr) -> {
+            
         };
     }
 }

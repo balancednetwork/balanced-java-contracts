@@ -17,6 +17,7 @@
 package network.balanced.score.lib.test.integration;
 
 import foundation.icon.icx.KeyWallet;
+import foundation.icon.jsonrpc.model.TransactionResult;
 import foundation.icon.score.client.DefaultScoreClient;
 import foundation.icon.score.client.ScoreClient;
 import network.balanced.score.lib.interfaces.*;
@@ -24,6 +25,7 @@ import network.balanced.score.lib.structs.BalancedAddresses;
 
 import java.math.BigInteger;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
 
@@ -48,17 +50,17 @@ public class Balanced {
     public DefaultScoreClient staking;
 
     @ScoreClient
-    Governance governanceScore;
+    public Governance governanceScore;
 
     @ScoreClient
-    Staking stakingScore;
+    public Staking stakingScore;
 
     @ScoreClient
-    BalancedDollar bnUSD;
-    
-    @ScoreClient
-    DAOfund daofundScore;
+    public DAOfund daofundScore;
 
+    @ScoreClient
+    public Rewards rewardsScore;
+  
     public Balanced() {
        
     }
@@ -79,6 +81,18 @@ public class Balanced {
         ownerClient.governance.createBnusdMarket(BigInteger.valueOf(210).multiply(BigInteger.TEN.pow(18)));
     }
 
+    public void setDefaultAcceptedTokensToDaofund() {
+        daofundScore = new DAOfundScoreClient(daofund);
+        daofundScore.addAddressToSetdb();
+    }
+
+    public void distributeRewards() {
+        RewardsScoreClient RewardsScoreClient = new RewardsScoreClient(rewards);
+
+        RewardsScoreClient.distribute(dummyConsumer());
+        RewardsScoreClient.distribute(dummyConsumer());        
+    }
+    
     protected void deployPrep() {
         try {
             systemScore.registerPRep(BigInteger.valueOf(2000).multiply(BigInteger.TEN.pow(18)), "test", "kokoa@example.com", "USA", "New York", "https://icon.kokoa.com", "https://icon.kokoa.com/json/details.json", "localhost:9082");
