@@ -139,7 +139,11 @@ public class RewardsImpl implements Rewards {
    
     @External(readonly = true)
     public BigInteger getEmission(@Optional BigInteger _day) {
-        if (_day.compareTo(BigInteger.ONE) == -1) {
+        if (_day == null) {
+            _day = BigInteger.valueOf(-1);
+        }
+
+        if (_day.compareTo(BigInteger.ONE) < 0) {
             _day = getDay().add(BigInteger.ONE);
         }
 
@@ -327,9 +331,9 @@ public class RewardsImpl implements Rewards {
         boolean continuousRewardsActive = day.compareTo(continuousRewardsDay) != -1;
         boolean dayOfContinuousRewards = day.equals(continuousRewardsDay);
 
-        if (platformDay.compareTo(day) == -1 && !continuousRewardsActive) {
+        if (platformDay.compareTo(day) < 0 && !continuousRewardsActive) {
             distributionRequired = true;
-        } else if (platformDay.compareTo(day.add(BigInteger.ONE)) == -1 && continuousRewardsActive) {
+        } else if (platformDay.compareTo(day.add(BigInteger.ONE)) < 0 && continuousRewardsActive) {
             distributionRequired = true;
         }
 

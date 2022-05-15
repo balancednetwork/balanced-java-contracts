@@ -66,10 +66,16 @@ public class DataSourceImpl {
 
     public BigInteger computeSingelUserData(BigInteger currentTime, BigInteger prevTotalSupply, Address user, BigInteger prevBalance) {
         BigInteger currentUserWeight = userWeight.getOrDefault(user.toString(), BigInteger.ZERO);
+        BigInteger lastUpdateTimestamp = lastUpdateTimeUs.getOrDefault(BigInteger.ZERO);
+    
+        if (lastUpdateTimeUs.getOrDefault(BigInteger.ZERO).compareTo(RewardsImpl.continuousRewardsDay.get().multiply(U_SECONDS_DAY)) < 0) {
+            lastUpdateTimestamp = RewardsImpl.continuousRewardsDay.get().multiply(U_SECONDS_DAY);
+        }
+        
         BigInteger totalWeight = computeTotalWeight(this.totalWeight.getOrDefault(BigInteger.ZERO),
                                                     totalDist.getOrDefault(RewardsImpl.getDay(), BigInteger.ZERO),
                                                     prevTotalSupply,
-                                                    lastUpdateTimeUs.getOrDefault(BigInteger.ZERO), 
+                                                    lastUpdateTimestamp, 
                                                     currentTime);
 
         BigInteger accruedRewards = BigInteger.ZERO;
@@ -95,6 +101,11 @@ public class DataSourceImpl {
                 accruedRewards = computeUserRewards(prevBalance, totalWeight, currentUserWeight);
                 accruedRewards = accruedRewards.divide(EXA);
             }
+
+            if (RewardsImpl.continuousRewardsDay.get().compareTo(RewardsImpl.getDay()) > 0) {
+                return BigInteger.ZERO;
+            }
+        
             userWeight.set(user.toString(), totalWeight);
         }
 
@@ -216,9 +227,9 @@ public class DataSourceImpl {
         BigInteger lastUpdateTimestamp = lastUpdateTimeUs.getOrDefault(BigInteger.ZERO);
         BigInteger originalLastUpdateTimestamp = lastUpdateTimestamp;
 
-        if (lastUpdateTimestamp.equals(BigInteger.ZERO)) {
-            lastUpdateTimestamp = currentTime;
-            lastUpdateTimeUs.set(currentTime);
+        if (lastUpdateTimestamp.compareTo(RewardsImpl.continuousRewardsDay.get()) < 0) {
+            lastUpdateTimestamp = RewardsImpl.continuousRewardsDay.get().multiply(U_SECONDS_DAY);
+            lastUpdateTimeUs.set(lastUpdateTimestamp);
         }
 
         if (currentTime.equals(lastUpdateTimestamp)) {
@@ -248,6 +259,10 @@ public class DataSourceImpl {
         }
         
         if (newTotal.compareTo(originalTotalWeight) != -1) {
+            if (RewardsImpl.continuousRewardsDay.get().compareTo(RewardsImpl.getDay()) > 0) {
+                return originalTotalWeight;
+            }
+
             totalWeight.set(newTotal);
         }
 
@@ -259,8 +274,8 @@ public class DataSourceImpl {
     }
 
     private BigInteger computeUserRewards(BigInteger prevUserBalance, BigInteger totalWeight, BigInteger userWeight) {
-        BigInteger detlaWeight = totalWeight.subtract(userWeight);
-        return detlaWeight.multiply(prevUserBalance);
+        BigInteger deltaWeight = totalWeight.subtract(userWeight);
+        return deltaWeight.multiply(prevUserBalance);
     }
 
     @EventLog(indexed=2)

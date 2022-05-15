@@ -112,7 +112,6 @@ public class RewardsTestBase extends UnitTest {
         for (long i = 0; i < sm.getBlock().getHeight()/(DAY); i++) {
             rewardsScore.invoke(admin, "distribute");
             rewardsScore.invoke(admin, "distribute");
-            BigInteger emission = (BigInteger) rewardsScore.call("getEmission", BigInteger.valueOf(-1));
         }
     }
 
@@ -127,7 +126,7 @@ public class RewardsTestBase extends UnitTest {
 
     public void verifyBalnReward(Address address, BigInteger expectedReward) {
         verify(baln.mock, times(1)).transfer(eq(address), argThat(reward -> {
-            assertEquals(expectedReward.divide(EXA), reward.divide(EXA));
+            assertEquals(expectedReward.divide(BigInteger.TEN), reward.divide(BigInteger.TEN));
             return true;
         }), eq(new byte[0]));
     }
