@@ -30,7 +30,7 @@ import java.util.function.Consumer;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
 
 public class Balanced {
-    private KeyWallet owner;
+    public KeyWallet owner;
 
     public DefaultScoreClient governance;
     public DefaultScoreClient baln;
@@ -66,7 +66,7 @@ public class Balanced {
     }
 
     public void deployBalanced() throws Exception {
-        owner = createWalletWithBalance(BigInteger.valueOf(1000).multiply(BigInteger.TEN.pow(18)));
+        owner = createWalletWithBalance(BigInteger.TEN.pow(24));
         deployPrep();
 
         governance = deploy(owner, "Governance", null);

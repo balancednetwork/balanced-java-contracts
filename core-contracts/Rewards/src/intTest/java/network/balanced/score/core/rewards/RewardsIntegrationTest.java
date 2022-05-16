@@ -44,6 +44,12 @@ class RewardsIntegrationTest {
     private static Loans loans;
 
     
+    @ScoreClient
+    private static BalancedDollar bnUSD;
+
+    @ScoreClient
+    private static Baln baln;
+
     @BeforeAll
     static void setup() throws Exception {
         balanced = new Balanced();
@@ -52,6 +58,8 @@ class RewardsIntegrationTest {
         governance = new GovernanceScoreClient(balanced.governance);
         rewards = new RewardsScoreClient(balanced.rewards);
         loans = new LoansScoreClient(balanced.loans);
+        bnUSD = new BalancedDollarScoreClient(balanced.bnusd);
+        baln = new BalnScoreClient(balanced.baln);
     }
 
     @Test
@@ -71,9 +79,13 @@ class RewardsIntegrationTest {
 
     @Test
     void testClaimAndDistribute() {        
+        ((LoansScoreClient)loans).depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(20), null, null);   
         
         balanced.distributeRewards();
-   
+        balanced.distributeRewards();
+        balanced.distributeRewards();
+
+
         rewards.claimRewards();
     
     }

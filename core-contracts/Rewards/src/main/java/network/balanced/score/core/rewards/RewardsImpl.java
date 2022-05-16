@@ -507,10 +507,13 @@ public class RewardsImpl implements Rewards {
 
     @External
     public void updateRewardsData(String _name, BigInteger _totalSupply, Address _user, BigInteger _balance) {
+        DataSourceImpl dataSource = DataSourceDB.get(_name);
+        only(dataSource.contractAddress);
+
         BigInteger currentTime = BigInteger.valueOf(Context.getBlockTimestamp());
 
         distribute();
-        BigInteger accuredRewards = DataSourceDB.get(_name).updateSingleUserData(currentTime, _totalSupply, _user, _balance);
+        BigInteger accuredRewards = dataSource.updateSingleUserData(currentTime, _totalSupply, _user, _balance);
 
         if (accuredRewards.compareTo(BigInteger.ZERO) == 1) {
             BigInteger newHoldings = balnHoldings.getOrDefault(_user.toString(), BigInteger.ZERO).add(accuredRewards);
@@ -521,13 +524,17 @@ public class RewardsImpl implements Rewards {
 
     @External
     public void updateBatchRewardsData(String _name, BigInteger _totalSupply, RewardsDataEntry[] _data) {
+        DataSourceImpl dataSource = DataSourceDB.get(_name);
+        only(dataSource.contractAddress);
+
         BigInteger currentTime = BigInteger.valueOf(Context.getBlockTimestamp());
+
         distribute();
         
         for (RewardsDataEntry entry : _data) {
             Address user = (Address) entry._user;
             BigInteger previousBalance = (BigInteger) entry._balance;
-            BigInteger accuredRewards = DataSourceDB.get(_name).updateSingleUserData(currentTime, _totalSupply, user, previousBalance);
+            BigInteger accuredRewards = dataSource.updateSingleUserData(currentTime, _totalSupply, user, previousBalance);
 
             if (accuredRewards.compareTo(BigInteger.ZERO) == 1) {
                 BigInteger newHoldings = balnHoldings.getOrDefault(user.toString(), BigInteger.ZERO).add(accuredRewards);

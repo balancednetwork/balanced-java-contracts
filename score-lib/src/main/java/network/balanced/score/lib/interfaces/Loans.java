@@ -17,8 +17,12 @@
 package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreInterface;
+import score.Address;
 import score.annotation.External;
+import score.annotation.Optional;
+import score.annotation.Payable;
 
+import java.math.BigInteger;
 import java.util.Map;
 
 @ScoreInterface
@@ -26,5 +30,10 @@ public interface Loans {
 
     @External(readonly = true)
     Map<String, String> getAssetTokens();
+
+    @Payable
+    @External
+    void depositAndBorrow(@Optional String _asset, @Optional BigInteger _amount, @Optional Address _from, @Optional BigInteger _value);
+
 
 }
