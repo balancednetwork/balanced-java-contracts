@@ -66,7 +66,7 @@ public class Balanced {
     }
 
     public void deployBalanced() throws Exception {
-        owner = createWalletWithBalance(BigInteger.TEN.multiply(BigInteger.TEN.pow(24)));
+        owner = createWalletWithBalance(BigInteger.TEN.pow(24));
         deployPrep();
 
         governance = deploy(owner, "Governance", null);
