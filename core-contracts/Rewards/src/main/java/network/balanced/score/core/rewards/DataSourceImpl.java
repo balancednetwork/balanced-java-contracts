@@ -60,8 +60,14 @@ public class DataSourceImpl {
     }
 
     public Map<String, BigInteger> loadCurrentSupply(Address owner) {
-        DataSourceScoreInterface datasource = new DataSourceScoreInterface(contractAddress.get());
-        return datasource.getBalanceAndSupply(name.get(), owner);
+        try {
+            DataSourceScoreInterface datasource = new DataSourceScoreInterface(contractAddress.get());
+            return datasource.getBalanceAndSupply(name.get(), owner);
+        } catch (Exception e ) {
+            return Map.of("_totalSupply", BigInteger.ZERO,
+                          "_balance", BigInteger.ZERO
+            );
+        }
     }
 
     public BigInteger computeSingelUserData(BigInteger currentTime, BigInteger prevTotalSupply, Address user, BigInteger prevBalance) {

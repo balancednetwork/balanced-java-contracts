@@ -18,8 +18,7 @@ package network.balanced.score.core.rewards;
 
 import foundation.icon.icx.Wallet;
 import foundation.icon.score.client.ScoreClient;
-import network.balanced.score.lib.interfaces.Rewards;
-import network.balanced.score.lib.interfaces.RewardsScoreClient;
+import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.test.integration.Balanced;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -33,22 +32,28 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 class RewardsIntegrationTest {
-    private static Wallet tester;
     private static Balanced balanced;
+
+    @ScoreClient
+    private static Governance governance;
 
     @ScoreClient
     private static Rewards rewards;
 
+    @ScoreClient
+    private static Loans loans;
+
+    
     @BeforeAll
     static void setup() throws Exception {
-        // System.setProperty("Rewards", System.getProperty("python"));
-        tester = createWalletWithBalance(BigInteger.TEN.pow(24));
         balanced = new Balanced();
         balanced.deployBalanced();
 
+        governance = new GovernanceScoreClient(balanced.governance);
         rewards = new RewardsScoreClient(balanced.rewards);
+        loans = new LoansScoreClient(balanced.loans);
     }
-  
+
     @Test
     void testName() {
         assertEquals("Balanced Rewards", rewards.name());
@@ -64,28 +69,12 @@ class RewardsIntegrationTest {
         assertTrue(BigInteger.TEN.pow(23).compareTo(emissionAfterDecay) > 0);
     }
 
-    // @Test 
-    // void syncDistributions() {
-    //     Map<String, Object> distStatus;
-    //     while (true) {
-    //         distStatus = rewards.distStatus();
-
-    //         BigInteger platform_day = new BigInteger(((String)distStatus.get("platform_day")).substring(2), 16);
-    //         Map<String, String> sourceDays = (Map<String, String>)distStatus.get("source_days");
-    //         boolean allSourcesUpToDate = true;
-    //         for(String hexDay : sourceDays.values()) {
-    //             BigInteger day = new BigInteger(hexDay.substring(2), 16);
-    //             if (day.compareTo(platform_day) < 0) {
-    //                 balanced.distributeRewards();
-    //                 allSourcesUpToDate = false;
-    //             }
-    //         }
-
-    //         if (allSourcesUpToDate) {
-    //             break;
-    //         }
-    //     }
-
-    // }
-
+    @Test
+    void testClaimAndDistribute() {        
+        
+        balanced.distributeRewards();
+   
+        rewards.claimRewards();
+    
+    }
 }
