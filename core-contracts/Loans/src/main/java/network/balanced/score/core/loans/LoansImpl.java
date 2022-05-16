@@ -236,7 +236,7 @@ public class LoansImpl {
 
     @External(readonly = true)
     public Map<String, Object> getPositionStanding(Address _address, @Optional BigInteger snapshot) {
-        if (snapshot == null) {
+        if (snapshot == null || snapshot.equals(BigInteger.ZERO)) {
             snapshot = BigInteger.valueOf(-1);
         }
 
@@ -298,7 +298,7 @@ public class LoansImpl {
 
     @External(readonly = true)
     public Map<String, Object> getSnapshot(@Optional BigInteger _snap_id) {
-        if (_snap_id == null) {
+        if (_snap_id == null || _snap_id == BigInteger.ZERO) {
             _snap_id = BigInteger.valueOf(-1);
         }
 

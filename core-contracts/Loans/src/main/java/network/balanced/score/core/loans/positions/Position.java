@@ -215,13 +215,12 @@ public class Position {
             BigInteger id = getSnapshotId(day);
             if (id.compareTo(BigInteger.ZERO) < 0) {
                 return value;
-            }
-            
+            }   
             for (int i = 0; i < AssetDB.activeAssets.size(); i++) {
                 String symbol =  AssetDB.activeAssets.get(i);
                 BigInteger amount = assets.at(id).getOrDefault(symbol, BigInteger.ZERO);
                 BigInteger price = BigInteger.ZERO;
-                if (amount.compareTo(BigInteger.ZERO) == 1) {
+                if (amount.compareTo(BigInteger.ZERO) > 0) {
                     if (day.equals(BigInteger.valueOf(-1)) || day.equals(LoansImpl._getDay())) {
                         price = getAssetPrice(symbol, readOnly);
                     } else {
@@ -238,7 +237,7 @@ public class Position {
             String symbol =  AssetDB.activeAssets.get(i);
             BigInteger amount = get(symbol);
             BigInteger price = BigInteger.ZERO;
-            if (amount.compareTo(BigInteger.ZERO) == 1) {
+            if (amount.compareTo(BigInteger.ZERO) > 1) {
                 if (day.equals(BigInteger.valueOf(-1)) || day.equals(LoansImpl._getDay())) {
                     price = getAssetPrice(symbol, readOnly);
                 } else {
@@ -358,5 +357,5 @@ public class Position {
         } else {
             return asset.priceInLoop();
         }
-    }
+    } 
 }
