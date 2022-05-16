@@ -1,124 +1,105 @@
+/*
+ * Copyright (c) 2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package network.balanced.score.core.loans.asset;
 
-import score.Context;
-import score.ArrayDB;
-import score.DictDB;
+import network.balanced.score.core.loans.utils.Token;
 import score.Address;
+import score.ArrayDB;
+import score.Context;
+import score.DictDB;
+import scorex.util.ArrayList;
+import scorex.util.HashMap;
 
 import java.math.BigInteger;
-import scorex.util.HashMap;
-import scorex.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
-import static network.balanced.score.lib.utils.ArrayDBUtils.*;
+import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
+import static network.balanced.score.lib.utils.Constants.EXA;
 
 public class AssetDB {
+    private static final String TAG = "BalancedLoansAssets";
     private static final String ASSET_DB_PREFIX = "asset";
 
     public static ArrayDB<Address> assetAddresses = Context.newArrayDB("address_list", Address.class);
     public static ArrayDB<String> assetSymbols = Context.newArrayDB("symbol_list", String.class);
     public static ArrayDB<String> activeAssets = Context.newArrayDB("active_assets_list", String.class);
     public static ArrayDB<String> activeCollateral = Context.newArrayDB("active_collateral_list", String.class);
-    public static ArrayDB<String> collateralList = Context.newArrayDB("collateral", String.class);
-    public static DictDB<String, String> symbolMap = Context.newDictDB("symbol|address", String.class);
-
-    // private static HashMap<String, Asset> items = new HashMap<String, Asset>(10);
-
-    public static Asset get(String symbol) {
-        Context.require(arrayDbContains(assetSymbols, symbol), symbol + "is not a supported asset.");
-        // if (!items.containsKey(symbol)) {
-        //     items.put(symbol, getAsset(symbolMap.get(symbol)));
-        // }
-
-        // return items.get(symbol);
-        return getAsset(symbolMap.get(symbol));
-    }
-
+    private static final ArrayDB<String> collateralList = Context.newArrayDB("collateral", String.class);
+    public static final DictDB<String, String> symbolMap = Context.newDictDB("symbol|address", String.class);
 
     public static int size() {
         return assetAddresses.size();
     }
 
-    public static Asset getAsset(String address) {
-        return new Asset(ASSET_DB_PREFIX + "|" + address);
+    public static Asset getAsset(String symbol) {
+        Context.require(arrayDbContains(assetSymbols, symbol), symbol + "is not a supported asset.");
+        String assetAddress = symbolMap.get(symbol);
+        return new Asset(ASSET_DB_PREFIX + "|" + assetAddress);
     }
 
-    public static  ArrayList<String> getDeadMarkets() {
-        ArrayList<String> deadAssets = new ArrayList<String>(activeAssets.size());
-
-        for (int i = 0; i < activeAssets.size(); i++) {
-            String symbol = activeAssets.get(i);
-            Asset asset = get(symbol);
-            if (asset.dead.getOrDefault(false)) {
-                deadAssets.add(symbol);
-            }
-        }
-
-        return deadAssets;
-    }
-
-    public static Map<String, String> getAssetTokens() {
-        HashMap<String, String> assets = new HashMap<String, String>(assetSymbols.size());
-        for (int i = 0; i < assetSymbols.size(); i++) {
+    public static Map<String, String> getAssetSymbolsAndAddress() {
+        int totalSymbolsCount = assetSymbols.size();
+        Map<String, String> assets = new HashMap<>();
+        for (int i = 0; i < totalSymbolsCount; i++) {
             String symbol = assetSymbols.get(i);
             assets.put(symbol, symbolMap.get(symbol));
         }
-
         return assets;
     }
 
-    public static Map<String, Map<String, Object>> getAvailableAssets() {
-        HashMap<String, Map<String, Object>> assets = new HashMap<String, Map<String, Object>>(activeAssets.size());
-        for (int i = 0; i < activeAssets.size(); i++) {
+    public static Map<String, Map<String, Object>> getActiveAssets() {
+        int totalActiveAssetsCount = activeAssets.size();
+        Map<String, Map<String, Object>> assets = new HashMap<>();
+        for (int i = 0; i < totalActiveAssetsCount; i++) {
             String symbol = activeAssets.get(i);
-            assets.put(symbol, get(symbol).toMap());
-
+            assets.put(symbol, getAsset(symbol).toMap());
         }
-
         return assets;
     }
 
-    public static Map<String, String> getCollateral() {
-        HashMap<String, String> collateral = new HashMap<String, String>(collateralList.size());
-        for (int i = 0; i < collateralList.size(); i++) {
-            String symbol = collateralList.get(i);
-            collateral.put(symbol, symbolMap.get(symbol));
+    public static Map<String, BigInteger> getAssetPrices() {
+        Map<String, BigInteger> assets = new HashMap<>();
+        int totalActiveAssetsCount = activeAssets.size();
+        for (int i = 0; i < totalActiveAssetsCount; i++) {
+            String symbol = activeAssets.get(i);
+            Address assetAddress = getAsset(symbol).getAssetAddress();
+            Token assetContract = new Token(assetAddress);
+            BigInteger lastPrice = assetContract.lastPriceInLoop();
+            assets.put(symbol, lastPrice);
         }
-
-        return collateral;
-    }
-
-    public static BigInteger getTotalCollateral() {
-        BigInteger collateral = BigInteger.ZERO;
-        for (int i = 0; i < activeCollateral.size(); i++) {
-            String symbol = activeCollateral.get(i);
-            Asset asset = get(symbol);
-            BigInteger value = asset.balanceOf(Context.getAddress()).multiply(asset.lastPriceInLoop());
-            collateral = collateral.add(value);
-        }
-
-        return collateral;
+        return assets;
     }
 
     public static void addAsset(Address address, Boolean active, Boolean collateral) {
-        String stringAddress = address.toString();
-        Context.require(!arrayDbContains(assetAddresses, address), stringAddress + " already exists in the database.");
-        
-        Asset asset = getAsset(stringAddress);
+        String assetToAdd = address.toString();
+        Context.require(!arrayDbContains(assetAddresses, address), TAG + ": " + assetToAdd + " already exists in " +
+                "the database.");
 
-        asset.added.set(BigInteger.valueOf(Context.getBlockTimestamp()));
-        asset.address.set(address);
-        asset.dead.set(false);
-        asset.active.set(active);
-        asset.isCollateral.set(collateral);
-        asset.badDebt.set(BigInteger.ZERO);
-        asset.liquidationPool.set(BigInteger.ZERO);
-
-        String symbol = asset.symbol();
-
-        symbolMap.set(symbol, stringAddress);
         assetAddresses.add(address);
+
+        Asset asset = new Asset(assetToAdd);
+        asset.setAsset(address, BigInteger.valueOf(Context.getBlockTimestamp()), active, collateral);
+
+        Token assetContract = new Token(address);
+        String symbol = assetContract.symbol();
+
         assetSymbols.add(symbol);
+        symbolMap.set(symbol, assetToAdd);
 
         if (active) {
             if (collateral) {
@@ -131,8 +112,45 @@ public class AssetDB {
         if (collateral) {
             collateralList.add(symbol);
         }
+    }
 
-        // items.put(symbol, assset);
+    public static List<String> getDeadMarkets() {
+        List<String> deadAssets = new ArrayList<>();
+
+        int activeAssetsCount = activeAssets.size();
+        for (int i = 0; i < activeAssetsCount; i++) {
+            String symbol = activeAssets.get(i);
+            Asset asset = getAsset(symbol);
+            if (asset.isDeadMarket()) {
+                deadAssets.add(symbol);
+            }
+        }
+        return deadAssets;
+    }
+
+    public static Map<String, String> getCollateral() {
+        Map<String, String> collateral = new HashMap<>();
+        int collateralListCount = collateralList.size();
+        for (int i = 0; i < collateralListCount; i++) {
+            String symbol = collateralList.get(i);
+            collateral.put(symbol, symbolMap.get(symbol));
+        }
+        return collateral;
+    }
+
+    public static BigInteger getTotalCollateral() {
+        BigInteger totalCollateral = BigInteger.ZERO;
+        int activeCollateralCount = activeCollateral.size();
+        for (int i = 0; i < activeCollateralCount; i++) {
+            String symbol = activeCollateral.get(i);
+            Asset asset = getAsset(symbol);
+            Address assetAddress = asset.getAssetAddress();
+            Token assetContract = new Token(assetAddress);
+            BigInteger value = assetContract.balanceOf(Context.getAddress()).multiply(assetContract.lastPriceInLoop());
+            totalCollateral = totalCollateral.add(value);
+        }
+
+        return totalCollateral.divide(EXA);
     }
 
 
