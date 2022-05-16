@@ -39,9 +39,9 @@ public class DataSourceDB {
     public static void newSource(String name, Address address) {
         names.add(name);
         DataSourceImpl dataSource = get(name);
-        dataSource.name.set(name);
-        dataSource.day.set(RewardsImpl.getDay());
-        dataSource.contractAddress.set(address);
+        dataSource.setName(name);
+        dataSource.setDay(RewardsImpl.getDay());
+        dataSource.setContractAddress(address);
     }
 
     public static void removeSource(String name) {
@@ -49,9 +49,9 @@ public class DataSourceDB {
             return;
         }
         DataSourceImpl dataSource = get(name);
-        dataSource.name.set(null);
-        dataSource.day.set(null);
-        dataSource.contractAddress.set(null);
+        dataSource.setName(null);
+        dataSource.setDay(null);
+        dataSource.setContractAddress(null);
 
         String topSourceName = names.pop();
         if (topSourceName == name) {

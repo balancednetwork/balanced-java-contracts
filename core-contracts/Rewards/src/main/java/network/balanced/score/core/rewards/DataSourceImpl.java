@@ -24,45 +24,105 @@ import java.util.Map;
 
 import network.balanced.score.lib.interfaces.DataSourceScoreInterface;
 import score.Address;
+import score.BranchDB;
 import score.Context;
 import score.DictDB;
 import score.VarDB;
 import score.annotation.EventLog;
 
 public class DataSourceImpl {
-        public VarDB<Address> contractAddress;
-        public VarDB<String> name;
-        public VarDB<BigInteger> day;
-        public VarDB<Boolean> precomp; 
-        public VarDB<Integer> offset; 
-        public DictDB<BigInteger, BigInteger> totalValue;
-        public DictDB<BigInteger, BigInteger> totalDist;
-        public VarDB<BigInteger> distPercent;
+        public final BranchDB<String, VarDB<Address>> contractAddress = Context.newBranchDB("contract_address", Address.class);
+        public final BranchDB<String, VarDB<String>> name = Context.newBranchDB("name", String.class);
+        public final BranchDB<String, VarDB<BigInteger>> day = Context.newBranchDB("day", BigInteger.class);
+        public final BranchDB<String, VarDB<Boolean>> precomp = Context.newBranchDB("precomp", Boolean.class); 
+        public final BranchDB<String, VarDB<Integer>> offset = Context.newBranchDB("offset", Integer.class); 
+        public final BranchDB<String, DictDB<BigInteger, BigInteger>> totalValue = Context.newBranchDB("total_value", BigInteger.class);
+        public final BranchDB<String, DictDB<BigInteger, BigInteger>> totalDist = Context.newBranchDB("total_dist", BigInteger.class);
+        public final BranchDB<String, VarDB<BigInteger>> distPercent = Context.newBranchDB("dist_percent", BigInteger.class);
+        public final BranchDB<String, DictDB<String, BigInteger>> userWeight = Context.newBranchDB("user_weight", BigInteger.class);
+        public final BranchDB<String, VarDB<BigInteger>> lastUpdateTimeUs = Context.newBranchDB("last_update_us", BigInteger.class);
+        public final BranchDB<String, VarDB<BigInteger>> totalWeight = Context.newBranchDB("running_total", BigInteger.class);
+        public final BranchDB<String, VarDB<BigInteger>> totalSupply = Context.newBranchDB("total_supply", BigInteger.class);
 
-        public DictDB<String, BigInteger> userWeight;
-        public VarDB<BigInteger> lastUpdateTimeUs;
-        public VarDB<BigInteger> totalWeight;
-        public VarDB<BigInteger> totalSupply;
+        private final String dbKey;
 
     public DataSourceImpl(String key) {
-        contractAddress = (VarDB<Address>) Context.newBranchDB("contract_address", Address.class).at(key);
-        name = (VarDB<String>) Context.newBranchDB("name", String.class).at(key);
-        day = (VarDB<BigInteger>) Context.newBranchDB("day", BigInteger.class).at(key);
-        precomp = (VarDB<Boolean>) Context.newBranchDB("precomp", Boolean.class).at(key); 
-        offset = (VarDB<Integer>) Context.newBranchDB("offset", Integer.class).at(key); 
-        totalValue = (DictDB<BigInteger, BigInteger>) Context.newBranchDB("total_value", BigInteger.class).at(key);
-        totalDist = (DictDB<BigInteger, BigInteger>) Context.newBranchDB("total_dist", BigInteger.class).at(key);
-        distPercent = (VarDB<BigInteger>) Context.newBranchDB("dist_percent", BigInteger.class).at(key);
-        userWeight = (DictDB<String, BigInteger>) Context.newBranchDB("user_weight", BigInteger.class).at(key);
-        lastUpdateTimeUs = (VarDB<BigInteger>) Context.newBranchDB("last_update_us", BigInteger.class).at(key);
-        totalWeight = (VarDB<BigInteger>) Context.newBranchDB("running_total", BigInteger.class).at(key);
-        totalSupply = (VarDB<BigInteger>) Context.newBranchDB("total_supply", BigInteger.class).at(key);
+        dbKey = key;
     }
+
+    public Address getContractAddress() {
+        return contractAddress.at(dbKey).get();
+    }
+
+    public void setContractAddress(Address address){
+        this.contractAddress.at(dbKey).set(address);
+    }
+
+    public String getName() {
+        return name.at(dbKey).get();
+    }
+
+    public void setName(String name){
+        this.name.at(dbKey).set(name);
+    }
+
+    public BigInteger getDay() {
+        return day.at(dbKey).getOrDefault(BigInteger.ZERO);
+    }
+
+    public void setDay(BigInteger day){
+        this.day.at(dbKey).set(day);
+    }
+
+    public Boolean getPrecomp() {
+        return precomp.at(dbKey).getOrDefault(false);
+    }
+
+    public Integer getOffset() {
+        return offset.at(dbKey).getOrDefault(0);
+    }
+
+    public BigInteger getTotalValue(BigInteger day) {
+        return totalValue.at(dbKey).getOrDefault(day, BigInteger.ZERO);
+    }
+
+    public BigInteger getTotalDist(BigInteger day) {
+        return totalDist.at(dbKey).getOrDefault(day, BigInteger.ZERO);
+    }
+
+    public void  setTotalDist(BigInteger day, BigInteger value) {
+        totalDist.at(dbKey).set(day, value);
+    }
+    
+    public BigInteger getDistPercent() {
+        return distPercent.at(dbKey).getOrDefault(BigInteger.ZERO);
+    }
+
+    public void setDistPercent(BigInteger distPercent) {
+        this.distPercent.at(dbKey).set(distPercent);
+    }
+
+    public BigInteger getUserWeight(String user) {
+        return userWeight.at(dbKey).getOrDefault(user, BigInteger.ZERO);
+    }
+
+    public BigInteger getLastUpdateTimeUs() {
+        return lastUpdateTimeUs.at(dbKey).getOrDefault(BigInteger.ZERO);
+    }
+
+    public BigInteger getTotalWeight() {
+        return totalWeight.at(dbKey).getOrDefault(BigInteger.ZERO);
+    }
+
+    public BigInteger getTotalSupply() {
+        return totalSupply.at(dbKey).getOrDefault(BigInteger.ZERO);
+    }
+
 
     public Map<String, BigInteger> loadCurrentSupply(Address owner) {
         try {
-            DataSourceScoreInterface datasource = new DataSourceScoreInterface(contractAddress.get());
-            return datasource.getBalanceAndSupply(name.get(), owner);
+            DataSourceScoreInterface datasource = new DataSourceScoreInterface(getContractAddress());
+            return datasource.getBalanceAndSupply(getName(), owner);
         } catch (Exception e ) {
             return Map.of("_totalSupply", BigInteger.ZERO,
                           "_balance", BigInteger.ZERO
@@ -71,15 +131,15 @@ public class DataSourceImpl {
     }
 
     public BigInteger computeSingelUserData(BigInteger currentTime, BigInteger prevTotalSupply, Address user, BigInteger prevBalance) {
-        BigInteger currentUserWeight = userWeight.getOrDefault(user.toString(), BigInteger.ZERO);
-        BigInteger lastUpdateTimestamp = lastUpdateTimeUs.getOrDefault(BigInteger.ZERO);
+        BigInteger currentUserWeight = getUserWeight(user.toString());
+        BigInteger lastUpdateTimestamp = getLastUpdateTimeUs();
     
-        if (lastUpdateTimeUs.getOrDefault(BigInteger.ZERO).compareTo(RewardsImpl.continuousRewardsDay.get().multiply(U_SECONDS_DAY)) < 0) {
+        if (getLastUpdateTimeUs().compareTo(RewardsImpl.continuousRewardsDay.get().multiply(U_SECONDS_DAY)) < 0) {
             lastUpdateTimestamp = RewardsImpl.continuousRewardsDay.get().multiply(U_SECONDS_DAY);
         }
         
-        BigInteger totalWeight = computeTotalWeight(this.totalWeight.getOrDefault(BigInteger.ZERO),
-                                                    totalDist.getOrDefault(RewardsImpl.getDay(), BigInteger.ZERO),
+        BigInteger totalWeight = computeTotalWeight(getTotalWeight(),
+                                                    getTotalDist(RewardsImpl.getDay()),
                                                     prevTotalSupply,
                                                     lastUpdateTimestamp, 
                                                     currentTime);
@@ -98,7 +158,7 @@ public class DataSourceImpl {
     }
 
     public BigInteger updateSingleUserData(BigInteger currentTime, BigInteger prevTotalSupply, Address user, BigInteger prevBalance) {
-        BigInteger currentUserWeight = userWeight.getOrDefault(user.toString(), BigInteger.ZERO);
+        BigInteger currentUserWeight = getUserWeight(user.toString());
         BigInteger totalWeight = updateTotalWeight(currentTime, prevTotalSupply);
         BigInteger accruedRewards = BigInteger.ZERO;
         //  If the user" +s current weight is less than the total, update their weight and issue rewards
@@ -112,72 +172,64 @@ public class DataSourceImpl {
                 return BigInteger.ZERO;
             }
         
-            userWeight.set(user.toString(), totalWeight);
+            userWeight.at(dbKey).set(user.toString(), totalWeight);
         }
 
         return accruedRewards;
     }
 
-    public void setDay(BigInteger day){
-        this.day.set(day);
-    }
-
-    public void setDistPercent(BigInteger distPercent) {
-        this.distPercent.set(distPercent);
-    }
-
     public BigInteger getValue() {
-        DataSourceScoreInterface datasource = new DataSourceScoreInterface(contractAddress.get());
-        return datasource.getBnusdValue(name.get());
+        DataSourceScoreInterface datasource = new DataSourceScoreInterface(getContractAddress());
+        return datasource.getBnusdValue(getName());
     }
 
     public Map<String, Object> getDataAt(BigInteger day) {
         return Map.of(
             "day", day,
-            "contract_address", contractAddress.get(),
-            "dist_percent", distPercent.getOrDefault(BigInteger.ZERO),
-            "precomp", precomp.getOrDefault(false),
-            "offset", offset.getOrDefault(0),
-            "total_value", totalValue.getOrDefault(day, BigInteger.ZERO),
-            "total_dist", totalDist.getOrDefault(day, BigInteger.ZERO)
+            "contract_address", getContractAddress(),
+            "dist_percent", getDistPercent(),
+            "precomp", getPrecomp(),
+            "offset", getOffset(),
+            "total_value", getTotalValue(day),
+            "total_dist", getTotalDist(day)
         );
     }
 
     public Map<String, Object> getData() {
-        BigInteger day = this.day.get();
+        BigInteger day = this.getDay();
         return getDataAt(day);
     }
 
     public void distribute(int batchSize) {
-        DataSourceScoreInterface datasource = new DataSourceScoreInterface(contractAddress.get());
+        DataSourceScoreInterface datasource = new DataSourceScoreInterface(getContractAddress());
 
-        BigInteger day = this.day.get();
-        String name = this.name.get();
+        BigInteger day = this.getDay();
+        String name = this.getName();
 
         boolean precomputeDone = datasource.precompute(day.intValue(), batchSize);
 
-        if (!precomp.getOrDefault(false) && precomputeDone) {
-            precomp.set(true);
+        if (!getPrecomp() && precomputeDone) {
+            precomp.at(dbKey).set(true);
             BigInteger sourceTotalValue = datasource.getTotalValue(name, day.intValue());
 
-            totalValue.set(day, sourceTotalValue);
+            totalValue.at(dbKey).set(day, sourceTotalValue);
         } 
 
-        if (!precomp.get()) {
+        if (!getPrecomp()) {
             return;
         }
 
-        int offset = this.offset.getOrDefault(0);
+        int offset = this.getOffset();
         Map<Address, BigInteger> dataBatch = datasource.getDataBatch(name, day.intValue(), batchSize, offset);
-        this.offset.set(offset + batchSize);
+        this.offset.at(dbKey).set(offset + batchSize);
         if (dataBatch.isEmpty()) {
-            this.day.set(day.add(BigInteger.ONE));
-            this.offset.set(0);
-            this.precomp.set(false);
+            this.day.at(dbKey).set(day.add(BigInteger.ONE));
+            this.offset.at(dbKey).set(0);
+            this.precomp.at(dbKey).set(false);
         }
 
-        BigInteger remaining = totalDist.get(day);
-        BigInteger shares = totalValue.get(day);
+        BigInteger remaining = getTotalDist(day);
+        BigInteger shares = getTotalValue(day);
         BigInteger originalShares = shares;
 
         BigInteger batchSum = BigInteger.ZERO;
@@ -202,8 +254,8 @@ public class DataSourceImpl {
             RewardsImpl.balnHoldings.set(address.toString(), prevHoldings.add(tokenShare));
         }
     
-        totalDist.set(day, remaining);
-        totalValue.set(day, shares);
+        totalDist.at(dbKey).set(day, remaining);
+        totalValue.at(dbKey).set(day, shares);
         Report(day, name, remaining, shares);
     }
 
@@ -228,14 +280,14 @@ public class DataSourceImpl {
     }
 
     private BigInteger updateTotalWeight(BigInteger currentTime, BigInteger totalSupply) {
-        BigInteger previousRunningTotal = totalWeight.getOrDefault(BigInteger.ZERO);
+        BigInteger previousRunningTotal = getTotalWeight();
         BigInteger originalTotalWeight = previousRunningTotal;
-        BigInteger lastUpdateTimestamp = lastUpdateTimeUs.getOrDefault(BigInteger.ZERO);
+        BigInteger lastUpdateTimestamp = getLastUpdateTimeUs();
         BigInteger originalLastUpdateTimestamp = lastUpdateTimestamp;
 
         if (lastUpdateTimestamp.compareTo(RewardsImpl.continuousRewardsDay.get()) < 0) {
             lastUpdateTimestamp = RewardsImpl.continuousRewardsDay.get().multiply(U_SECONDS_DAY);
-            lastUpdateTimeUs.set(lastUpdateTimestamp);
+            lastUpdateTimeUs.at(dbKey).set(lastUpdateTimestamp);
         }
 
         if (currentTime.equals(lastUpdateTimestamp)) {
@@ -253,7 +305,7 @@ public class DataSourceImpl {
             previousDayEndUs = startTimestampUs.add(U_SECONDS_DAY.multiply(previousRewardsDay.add(BigInteger.ONE)));
             BigInteger endComputeTimestampUs = previousDayEndUs.min(currentTime);
 
-            BigInteger emission = totalDist.getOrDefault(previousRewardsDay, BigInteger.ZERO);
+            BigInteger emission = getTotalDist(previousRewardsDay);
             newTotal = computeTotalWeight(previousRunningTotal,
                                                      emission,
                                                      totalSupply,
@@ -269,11 +321,11 @@ public class DataSourceImpl {
                 return originalTotalWeight;
             }
 
-            totalWeight.set(newTotal);
+            totalWeight.at(dbKey).set(newTotal);
         }
 
         if (currentTime.compareTo(originalLastUpdateTimestamp) == 1) {
-            lastUpdateTimeUs.set(currentTime);
+            lastUpdateTimeUs.at(dbKey).set(currentTime);
         } 
 
         return newTotal;
