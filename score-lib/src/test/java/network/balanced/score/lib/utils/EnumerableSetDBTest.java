@@ -7,7 +7,6 @@ import com.iconloop.score.test.TestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import score.Address;
-import score.annotation.External;
 import scorex.util.ArrayList;
 
 import java.math.BigInteger;
@@ -17,7 +16,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class EnumerableSetDBTest extends TestBase {
 
-    public static final BigInteger ZERO_ADDRESS = BigInteger.ZERO;
     private static final ServiceManager sm = getServiceManager();
     private static final Account owner = sm.createAccount();
     //address
@@ -29,44 +27,45 @@ public class EnumerableSetDBTest extends TestBase {
 
     private static Score dummyScore;
 
-    public static class DummyScore  {
+    public static class DummyScore {
 
         EnumerableSetDB<Address> enumerableSet = new EnumerableSetDB<>("enumerable_set", Address.class);
+
         public DummyScore() {
 
         }
-        public void   setAddresses(ArrayList<Address > addresses){
-            for (Address address: addresses) {
+
+        public void setAddresses(ArrayList<Address> addresses) {
+            for (Address address : addresses) {
                 enumerableSet.add(address);
             }
         }
 
-        public int indexOf(Address address){
+        public int indexOf(Address address) {
             return enumerableSet.indexOf(address);
         }
 
-        public int length(){
+        public int length() {
             return enumerableSet.length();
         }
 
-        public List<Address> getInRange(BigInteger from, BigInteger to){
+        public List<Address> getInRange(BigInteger from, BigInteger to) {
             return enumerableSet.range(from, to);
         }
 
-        public Boolean contains(Address address){
+        public Boolean contains(Address address) {
             return enumerableSet.contains(address);
         }
 
-        public Address remove(Address address){
+        public Address remove(Address address) {
             return enumerableSet.remove(address);
         }
 
-        public Address at(int pos){
+        public Address at(int pos) {
             return enumerableSet.at(pos);
         }
 
     }
-
 
     @BeforeAll
     public static void setup() throws Exception {
@@ -74,7 +73,7 @@ public class EnumerableSetDBTest extends TestBase {
     }
 
     @Test
-    public void testSetGetIterableDictDB(){
+    public void testSetGetIterableDictDB() {
 
         List<Address> addresses = new ArrayList<>();
         addresses.add(address1);
@@ -86,11 +85,11 @@ public class EnumerableSetDBTest extends TestBase {
 
         dummyScore.invoke(owner, "setAddresses", addresses);
 
-        Integer length =  (Integer) dummyScore.call("length");
+        Integer length = (Integer) dummyScore.call("length");
 
         assertEquals(5, length);
 
-        List<Address> addressList =  (List<Address>) dummyScore.call("getInRange", BigInteger.ZERO, BigInteger.valueOf(length));
+        List<Address> addressList = (List<Address>) dummyScore.call("getInRange", BigInteger.ZERO, BigInteger.valueOf(length));
 
         assertTrue(addressList.contains(address1));
         assertTrue(addressList.contains(address2));
@@ -103,7 +102,7 @@ public class EnumerableSetDBTest extends TestBase {
 
         dummyScore.invoke(owner, "remove", address3);
 
-        assertFalse((Boolean)dummyScore.call("contains", address3));
+        assertFalse((Boolean) dummyScore.call("contains", address3));
 
     }
 

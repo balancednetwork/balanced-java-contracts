@@ -7,7 +7,6 @@ import com.iconloop.score.test.TestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
-import score.Address;
 import scorex.util.ArrayList;
 
 import java.math.BigInteger;
@@ -29,12 +28,15 @@ public class SetDBTest extends TestBase {
     private static Score dummyScore;
 
     public static class DummyScore  {
+
         public static final BigInteger ZERO_ADDRESS = BigInteger.ZERO;
         SetDB<BigInteger> addressBagDBUnordered = new SetDB<>("address_bag_unordered", BigInteger.class, null);
         SetDB<BigInteger> addressBagDBOrdered = new SetDB<>("address_bag_unordered", BigInteger.class, true);
+
         public DummyScore() {
 
         }
+
         public void   addUnorderedAddressItems(ArrayList<BigInteger > addresses){
             for (BigInteger address: addresses) {
                 addressBagDBUnordered.add(address);
@@ -92,7 +94,6 @@ public class SetDBTest extends TestBase {
         }
 
     }
-
 
     @BeforeAll
     public static void setup() throws Exception {

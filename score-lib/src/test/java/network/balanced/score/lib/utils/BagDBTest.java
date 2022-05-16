@@ -27,12 +27,15 @@ public class BagDBTest extends TestBase {
     private static Score dummyScore;
 
     public static class DummyScore  {
+
         public static final Address ZERO_ADDRESS = new Address(new byte[Address.LENGTH]);
         BagDB<Address> addressBagDBUnordered = new BagDB<>("address_bag_unordered", Address.class, null);
         BagDB<Address> addressBagDBOrdered = new BagDB<>("address_bag_unordered", Address.class, true);
+
         public DummyScore() {
 
         }
+
         public void   addUnorderedAddressItems(ArrayList<Address> addresses){
             for (Address address: addresses) {
                 addressBagDBUnordered.add(address);
@@ -90,7 +93,6 @@ public class BagDBTest extends TestBase {
         }
 
     }
-
 
     @BeforeAll
     public static void setup() throws Exception {
