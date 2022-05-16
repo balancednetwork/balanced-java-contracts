@@ -410,4 +410,23 @@ class DividendsImplTest extends TestBase {
         tokenFallback();
         setGetDividendsBatchSize();
     }
+    @Test
+    void testSetClaimed() {
+        BigInteger index = BigInteger.valueOf(10);
+        dividendScore.invoke(governanceScore, "setClaimed", governanceScore.getAddress(), index);
+        assertEquals(dividendScore.call("isClaimed", governanceScore.getAddress(), index), true);
+
+        index = BigInteger.valueOf(106);
+        dividendScore.invoke(governanceScore, "setClaimed", governanceScore.getAddress(), index);
+        assertEquals(dividendScore.call("isClaimed", governanceScore.getAddress(), index), true);
+
+        index = BigInteger.valueOf(206);
+        dividendScore.invoke(governanceScore, "setClaimed", governanceScore.getAddress(), index);
+        assertEquals(dividendScore.call("isClaimed", governanceScore.getAddress(), index), true);
+
+        index = BigInteger.valueOf(96);
+        dividendScore.invoke(governanceScore, "setClaimed", governanceScore.getAddress(), index);
+        assertEquals(dividendScore.call("isClaimed", governanceScore.getAddress(), index), true);
+    }
+
 }

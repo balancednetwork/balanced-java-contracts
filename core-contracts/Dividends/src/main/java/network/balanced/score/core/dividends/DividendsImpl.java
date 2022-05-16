@@ -47,6 +47,7 @@ public class DividendsImpl implements Dividends {
     private static final VarDB<BigInteger> dividendsBatchSize = Context.newVarDB(DIVIDENDS_BATCH_SIZE, BigInteger.class);
     private static final VarDB<BigInteger> timeOffset = Context.newVarDB(TIME_OFFSET, BigInteger.class);
     private static final VarDB<BigInteger> dividendsEnabledToStakedBalnDay = Context.newVarDB(DIVIDENDS_ENABLED_TO_STAKED_BALN_ONLY_DAY, BigInteger.class);
+    final BigInteger TWO_FIFTY_SIX = BigInteger.valueOf(256);
 
     public DividendsImpl(@Optional Address _governance) {
         if (_governance != null) {
@@ -579,23 +580,22 @@ public class DividendsImpl implements Dividends {
     }
 
     private void setClaimed(Address account, BigInteger day) {
-        DictDB<String, BigInteger> claimedBitMap = Context.newDictDB(CLAIMED_BIT_MAP + account, BigInteger.class);
-        String claimedWordIndex = day.divide(BigInteger.valueOf(256)).toString();
-        BigInteger claimedBitIndex = BigInteger.valueOf(day.intValue() % 256);
+        DictDB<BigInteger, BigInteger> claimedBitMap = Context.newDictDB(CLAIMED_BIT_MAP + account, BigInteger.class);
+        BigInteger claimedWordIndex = day.divide(TWO_FIFTY_SIX);
+        BigInteger claimedBitIndex = day.remainder(TWO_FIFTY_SIX);
         int bitShift = claimedBitIndex.intValue();
 
-        BigInteger value = claimedBitMap.getOrDefault(claimedWordIndex, BigInteger.ZERO).or(BigInteger.valueOf(1L << bitShift));
-        claimedBitMap.set(claimedWordIndex, value);
+        claimedBitMap.set(claimedWordIndex, claimedBitMap.getOrDefault(claimedWordIndex, BigInteger.ZERO).setBit(bitShift));
     }
 
     private boolean isClaimed(Address account, BigInteger day) {
-        DictDB<String, BigInteger> claimedBitMap = Context.newDictDB(CLAIMED_BIT_MAP + account, BigInteger.class);
-        String claimedWordIndex = day.divide(BigInteger.valueOf(256)).toString();
-        BigInteger claimedBitIndex = BigInteger.valueOf(day.intValue() % 256);
+        DictDB<BigInteger, BigInteger> claimedBitMap = Context.newDictDB(CLAIMED_BIT_MAP + account, BigInteger.class);
+        BigInteger claimedWordIndex = day.divide(TWO_FIFTY_SIX);
+        BigInteger claimedBitIndex = day.remainder(TWO_FIFTY_SIX);
 
         BigInteger claimedWord = claimedBitMap.getOrDefault(claimedWordIndex, BigInteger.ZERO);
         int bitShift = claimedBitIndex.intValue();
-        BigInteger mask = BigInteger.valueOf(1L << bitShift);
+        BigInteger mask = BigInteger.ONE.shiftLeft(bitShift);
 
         return (claimedWord.and(mask).equals(mask));
     }
