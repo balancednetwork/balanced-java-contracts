@@ -10,13 +10,12 @@ import scorex.util.ArrayList;
 
 
 public class BagDB<V> {
-    private static final String NAME = "_BAGDB";
 
     private final ArrayDB<V> items;
     private final Boolean order;
 
     public BagDB(String key, Class<V> valueType, Boolean order) {
-        this.items = Context.newArrayDB(key + NAME + "_items", valueType);
+        this.items = Context.newArrayDB(key + "_BAGDB" + "_items", valueType);
         this.order = order != null && order;
     }
 
@@ -35,7 +34,7 @@ public class BagDB<V> {
     public boolean contains(V item) {
         int itemsSize = this.items.size();
         for (int i = 0; i < itemsSize; i++) {
-            if (Objects.equals(items.get(i), item)) {
+            if (objectsEquals(items.get(i), item)) {
                 return true;
             }
         }
@@ -48,7 +47,7 @@ public class BagDB<V> {
         if (this.order) {
             for (int i = itemsSize-1; i >= 0; i--) {
                 V cur = this.items.pop();
-                if (!Objects.equals(cur, item)) {
+                if (!objectsEquals(cur, item)) {
                     tmp.add(cur);
                 }else{
                     break;
@@ -62,7 +61,7 @@ public class BagDB<V> {
             }
         } else {
             for (int i = 0; i < itemsSize; i++) {
-                if (Objects.equals(items.get(i), item)) {
+                if (objectsEquals(items.get(i), item)) {
                     V lastItem = items.pop();
                     if (i != itemsSize - 1) {
                         items.set(i, lastItem);
@@ -71,6 +70,10 @@ public class BagDB<V> {
                 }
             }
         }
+    }
+
+    public static boolean objectsEquals(Object a, Object b) {
+        return (a == b) || (a != null && a.equals(b));
     }
 
 }
