@@ -125,8 +125,8 @@ public class RewardsImpl implements Rewards {
             String name = DataSourceDB.names.get(i);
             DataSourceImpl dataSource = DataSourceDB.get(name);
 
-            BigInteger totatDistribution = dataSource.totalDist.get(_day.subtract(BigInteger.ONE));
-            BigInteger totalValue = dataSource.totalValue.get(_day.subtract(BigInteger.ONE));
+            BigInteger totatDistribution = dataSource.getTotalDist(_day.subtract(BigInteger.ONE));
+            BigInteger totalValue = dataSource.getTotalValue(_day.subtract(BigInteger.ONE));
             Report(_day.subtract(BigInteger.ONE), name, totatDistribution, totalValue);
             dataSource.setDay(_day);
         }
@@ -188,7 +188,7 @@ public class RewardsImpl implements Rewards {
             String name = DataSourceDB.names.get(i);
             DataSourceImpl dataSource = DataSourceDB.get(name);
 
-            sourceDays.put(name, dataSource.day.get());
+            sourceDays.put(name, dataSource.getDay());
         }
         return Map.of(
             "platform_day", platformDay.get(),
@@ -219,8 +219,8 @@ public class RewardsImpl implements Rewards {
             BigInteger percentage = (BigInteger) recipient.dist_percent;
             updateRecipientSnapshot(name, percentage);
             DataSourceImpl dataSource = DataSourceDB.get(name);
-            BigInteger dataSourceDay = dataSource.day.getOrDefault(BigInteger.ZERO);
-            if (dataSource.totalDist.getOrDefault(dataSourceDay, BigInteger.ZERO).equals(BigInteger.ZERO)) {
+            BigInteger dataSourceDay = dataSource.getDay();
+            if (dataSource.getTotalDist(dataSourceDay).equals(BigInteger.ZERO)) {
                 dataSource.setDay(day);
             }
 
@@ -354,7 +354,7 @@ public class RewardsImpl implements Rewards {
                     BigInteger share = remaning.multiply(split).divide(shares);
 
                     if (contains(DataSourceDB.names, name)) {
-                        DataSourceDB.get(name).totalDist.set(platformDay, share);
+                        DataSourceDB.get(name).setTotalDist(platformDay, share);
                     } else {
                         baln.transfer(platformRecipients.get(name).get(), share, new byte[0]);
                     }
@@ -377,7 +377,7 @@ public class RewardsImpl implements Rewards {
             for (int i = 0; i < DataSourceDB.size(); i++ ) {
                 String name = DataSourceDB.names.get(i);
                 DataSourceImpl dataSource = DataSourceDB.get(name);
-                if (dataSource.day.get().compareTo(day) == -1) {
+                if (dataSource.getDay().compareTo(day) == -1) {
                     dataSource.distribute(batchSize.get());
                     return false;
                 }
@@ -476,10 +476,10 @@ public class RewardsImpl implements Rewards {
         DataSourceImpl dataSource = DataSourceDB.get(_name);
         BigInteger emission = this.getEmission(BigInteger.valueOf(-1));
 
-        DataSourceScoreInterface dex = new DataSourceScoreInterface(dexDataSource.contractAddress.get());
+        DataSourceScoreInterface dex = new DataSourceScoreInterface(dexDataSource.getContractAddress());
 
         BigInteger balnPrice = dex.getBalnPrice();
-        BigInteger percentage = dataSource.distPercent.get();
+        BigInteger percentage = dataSource.getDistPercent();
         BigInteger sourceValue = dataSource.getValue();
         BigInteger year = BigInteger.valueOf(365);
 
@@ -508,7 +508,7 @@ public class RewardsImpl implements Rewards {
     @External
     public void updateRewardsData(String _name, BigInteger _totalSupply, Address _user, BigInteger _balance) {
         DataSourceImpl dataSource = DataSourceDB.get(_name);
-        only(dataSource.contractAddress);
+        Context.require(dataSource.getContractAddress().equals(Context.getCaller()), "Only datasources are allowed to update rewards data");
 
         BigInteger currentTime = BigInteger.valueOf(Context.getBlockTimestamp());
 
@@ -525,7 +525,7 @@ public class RewardsImpl implements Rewards {
     @External
     public void updateBatchRewardsData(String _name, BigInteger _totalSupply, RewardsDataEntry[] _data) {
         DataSourceImpl dataSource = DataSourceDB.get(_name);
-        only(dataSource.contractAddress);
+        Context.require(dataSource.getContractAddress().equals(Context.getCaller()), "Only datasources are allowed to update rewards data");
 
         BigInteger currentTime = BigInteger.valueOf(Context.getBlockTimestamp());
 
