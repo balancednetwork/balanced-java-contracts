@@ -21,6 +21,7 @@ public class ArrayDBUtilsTest extends TestBase {
     private static Score dummyScore;
 
     public static class DummyScore {
+
         ArrayDB<String> arrayDB = newArrayDB("array_db", String.class);
 
         public DummyScore() {

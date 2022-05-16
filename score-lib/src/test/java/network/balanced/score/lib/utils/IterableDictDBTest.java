@@ -18,9 +18,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class IterableDictDBTest extends TestBase {
 
-    public static final BigInteger ZERO_ADDRESS = BigInteger.ZERO;
     private static final ServiceManager sm = getServiceManager();
     private static final Account owner = sm.createAccount();
+
     //address
     private final static Address address1 = sm.createAccount().getAddress();
     private final static Address address2 = sm.createAccount().getAddress();
@@ -36,30 +36,32 @@ public class IterableDictDBTest extends TestBase {
     private final static BigInteger value5 = BigInteger.valueOf(5);
     private static Score dummyScore;
 
-    public static class DummyScore  {
+    public static class DummyScore {
 
         IterableDictDB<Address, BigInteger> iterabledd = new IterableDictDB<>("iterabledd", BigInteger.class, Address.class, false);
+
         public DummyScore() {
 
         }
-        public void   setAddressesValues(ArrayList<Address > addresses, ArrayList<BigInteger > values ){
-            for (Address address: addresses) {
+
+        public void setAddressesValues(ArrayList<Address> addresses, ArrayList<BigInteger> values) {
+            for (Address address : addresses) {
                 iterabledd.set(address, values.get(addresses.indexOf(address)));
             }
         }
 
-        public BigInteger valueOf(Address address){
+        public BigInteger valueOf(Address address) {
             return iterabledd.get(address);
         }
 
-        public List<Address> getAddresses(){
+        public List<Address> getAddresses() {
             return iterabledd.keys();
         }
 
-        public List<BigInteger> getValues(){
+        public List<BigInteger> getValues() {
             List<Address> keys = iterabledd.keys();
             List<BigInteger> valueList = new ArrayList<>();
-            for (Address key: keys) {
+            for (Address key : keys) {
                 valueList.add(iterabledd.get(key));
             }
             return valueList;
@@ -67,14 +69,13 @@ public class IterableDictDBTest extends TestBase {
 
     }
 
-
     @BeforeAll
     public static void setup() throws Exception {
         dummyScore = sm.deploy(owner, DummyScore.class);
     }
 
     @Test
-    public void testSetGetIterableDictDB(){
+    public void testSetGetIterableDictDB() {
         List<BigInteger> values = new ArrayList<>();
         values.add(value1);
         values.add(value2);
@@ -92,7 +93,7 @@ public class IterableDictDBTest extends TestBase {
 
         dummyScore.invoke(owner, "setAddressesValues", addresses, values);
 
-        List<Address> keys =  (List<Address>) dummyScore.call("getAddresses");
+        List<Address> keys = (List<Address>) dummyScore.call("getAddresses");
 
         assertEquals(5, keys.size());
 
@@ -105,7 +106,7 @@ public class IterableDictDBTest extends TestBase {
         assertEquals(value3, dummyScore.call("valueOf", address3));
 
 
-        List<BigInteger> amounts =  (List<BigInteger>) dummyScore.call("getValues");
+        List<BigInteger> amounts = (List<BigInteger>) dummyScore.call("getValues");
 
         assertEquals(5, amounts.size());
 

@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class LinkedListDBTest extends TestBase {
 
-    public static final BigInteger ZERO_ADDRESS = BigInteger.ZERO;
     private static final ServiceManager sm = getServiceManager();
     private static final Account owner = sm.createAccount();
     private static final Address user1 = sm.createAccount().getAddress();
@@ -35,11 +34,13 @@ public class LinkedListDBTest extends TestBase {
     private static Score dummyScore;
 
     public static class DummyScore  {
-        public static final BigInteger ZERO_ADDRESS = BigInteger.ZERO;
+
         LinkedListDB linkedListDB = new LinkedListDB("linked_list_db");
+
         public DummyScore() {
 
         }
+
         public void appendUsers(ArrayList<Address > addresses){
             int id = 1;
             for (Address address: addresses) {
@@ -91,7 +92,6 @@ public class LinkedListDBTest extends TestBase {
         }
 
     }
-
 
     @BeforeAll
     public static void setup() throws Exception {
