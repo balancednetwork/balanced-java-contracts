@@ -14,33 +14,21 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.utils;
+package network.balanced.score.core.stakedlp.utils;
 
-import com.iconloop.score.token.irc31.IRC31MintBurn;
 import score.Address;
-import score.Context;
 import score.annotation.External;
 
 import java.math.BigInteger;
-import java.util.Map;
 
-public class Dex extends IRC31MintBurn {
+public class Rewards {
 
-    public static final Map<BigInteger, String> poolNames = Map.of(BigInteger.ONE, "sICX/bnUSD", BigInteger.TWO,
-            "BALN/bnUSD");
+    public Rewards() {
 
-    public Dex() {
-
-    }
-
-    @External(readonly = true)
-    public String getPoolName(BigInteger id) {
-        return poolNames.getOrDefault(id, "");
     }
 
     @External
-    public void transfer(Address _to,BigInteger _value,BigInteger _id,byte[] _data) {
-        this.transferFrom(Context.getCaller(), _to, _id, _value, _data);
-    }
+    public void updateRewardsData(String poolName, BigInteger previousTotal, Address user, BigInteger previousBalance) {
 
+    }
 }

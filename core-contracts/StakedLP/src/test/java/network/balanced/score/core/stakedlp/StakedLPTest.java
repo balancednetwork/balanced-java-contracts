@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core;
+package network.balanced.score.core.stakedlp;
 
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
-import network.balanced.score.core.utils.Dex;
-import network.balanced.score.core.utils.Rewards;
+import network.balanced.score.core.stakedlp.utils.Dex;
+import network.balanced.score.core.stakedlp.utils.Rewards;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;

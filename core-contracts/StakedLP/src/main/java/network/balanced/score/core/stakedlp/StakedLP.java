@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core;
+package network.balanced.score.core.stakedlp;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
@@ -24,7 +24,7 @@ import score.annotation.External;
 
 import java.math.BigInteger;
 
-import static network.balanced.score.core.Checks.*;
+import static network.balanced.score.core.stakedlp.Checks.*;
 
 public class StakedLP {
 
