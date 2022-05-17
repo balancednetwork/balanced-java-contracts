@@ -5,13 +5,10 @@ import score.Context;
 
 public class SetDB<T> extends BagDB<T> {
 
-    private static final String NAME = "_SETDB";
-
-    private final String name;
+    //private static final String NAME = "_SETDB";
 
     public SetDB(String key, Class<T> valueType, Boolean order) {
-        super(key, valueType, order);
-        name = key + NAME;
+        super(key + "_SETDB", valueType, order);
     }
 
     public void add(T item) {

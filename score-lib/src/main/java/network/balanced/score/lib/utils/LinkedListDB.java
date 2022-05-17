@@ -41,13 +41,6 @@ public class LinkedListDB {
         this.length = Context.newVarDB(this.name + "_length", BigInteger.class);
     }
 
-    public void delete() {
-        clear();
-        headId.set(null);
-        tailId.set(null);
-        length.set(null);
-    }
-
     public BigInteger getTailId() {
         return tailId.getOrDefault(BigInteger.ZERO);
     }
@@ -60,7 +53,7 @@ public class LinkedListDB {
         return new NodeDB(nodeId.toString() + name);
     }
 
-    public void updateNode(BigInteger size, Address user, BigInteger nodeId) {
+    public void updateNode(BigInteger nodeId, BigInteger size, Address user) {
         NodeDB node = createNodeInstance(nodeId);
         Context.require(node.exists(), "There is no node of the provided node id.");
         node.setValues(size, user);
@@ -70,7 +63,6 @@ public class LinkedListDB {
         NodeDB nodeToAppend = createNode(size, user, nodeId);
         if (length.getOrDefault(BigInteger.ZERO).equals(BigInteger.ZERO)) {
             headId.set(nodeId);
-            tailId.set(nodeId);
         } else {
             BigInteger tailId = this.tailId.get();
             NodeDB tail = getNode(tailId);
@@ -191,19 +183,17 @@ public class LinkedListDB {
             nodeToRemove.delete();
             nodeToRemove = getNode(currentId);
         }
-        nodeToRemove.delete();
-
         this.tailId.set(null);
-        headId.set(null);
-        length.set(null);
+        this.headId.set(null);
+        this.length.set(null);
     }
 
     private void LinkedNodeAlreadyExists(String name, BigInteger nodeId) {
-        Context.revert("Linked List " + name + "already exists of nodeId." + nodeId.toString());
+        Context.revert("Linked List " + name + " already exists of nodeId." + nodeId.toString());
     }
 
     private void LinkedNodeNotFound(String name, BigInteger nodeId) {
-        Context.revert("Linked List  " + name + " Node not found of nodeId " + nodeId.toString());
+        Context.revert("Linked List " + name + " Node not found of nodeId " + nodeId.toString());
     }
 
 }
