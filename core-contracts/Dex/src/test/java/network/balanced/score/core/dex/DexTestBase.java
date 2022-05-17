@@ -8,18 +8,19 @@ import score.Context;
 import score.Address;
 import score.annotation.Optional;
 
+import org.mockito.stubbing.Answer;
 import org.mockito.Mockito;
 import org.mockito.MockedStatic;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
-import org.mockito.stubbing.Answer;
 
-import java.awt.List;
 import java.math.BigInteger;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
+
 
 import static network.balanced.score.lib.utils.Constants.*;
 import network.balanced.score.lib.test.UnitTest;
@@ -113,8 +114,7 @@ class DexTestBase extends UnitTest {
         sm.transfer(supplier, dexScore.getAddress(), value);
     }
 
-
-    // Not done yet.
+    // Not done yet. Fails for some reason.
     protected void swapSicxToIcx(Account sender, BigInteger value, BigInteger sicxIcxConversionRate) {
         turnDexOn();
         contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
@@ -125,13 +125,4 @@ class DexTestBase extends UnitTest {
         contextMock.when(() -> Context.transfer(eq(sender.getAddress()), any(BigInteger.class))).thenAnswer((Answer<Void>) invocation -> null);
         dexScore.invoke(sicxScore, "tokenFallback", sender.getAddress(), value, tokenData("_swap_icx", new HashMap<>()));  
     }
-
-    protected void mockCall(Account score, String method, Object returnValue, Object... params) {
-        contextMock.when(() -> Context.call(eq(score.getAddress()), eq(method), params)).thenReturn(returnValue);
-    }
-
-    protected void verifyCall(Account score, String method, Object... params) {
-        contextMock.verify(() -> Context.call(eq(score.getAddress()), eq(method), params));
-    }
-
 }

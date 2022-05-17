@@ -78,7 +78,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
     @Test
     @SuppressWarnings("unchecked")
     void getBalanceAndSupply_normalPool() {
-        // Arrange - Variables.
+        // Arrange - variables.
         String poolName = "bnUSD/BALN";
         BigInteger poolId = BigInteger.TWO;
         BigInteger mockBalance = BigInteger.valueOf(100);
@@ -103,7 +103,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
     @Test
     @SuppressWarnings("unchecked")
     void getBalanceAndSupply_sicxIcxPool() {
-        // Arrange - Variables.
+        // Arrange.
         Account supplier = sm.createAccount();
         BigInteger icxValue = BigInteger.valueOf(100).multiply(EXA);
         String poolName = "sICX/ICX";
@@ -113,6 +113,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
             "_totalSupply", icxValue
         );
 
+        // Act.
         supplyIcxLiquidity(supplier, icxValue);
         
         // Assert.
@@ -226,33 +227,43 @@ public class DexTestSettersAndGetters extends DexTestBase {
 
     @Test
     void getNonce() {
+        // Arrange.
+        BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
+        BigInteger balnValue = BigInteger.valueOf(350).multiply(EXA);
+        BigInteger expectedNonce = BigInteger.valueOf(3);
+
         // Act.
-        supplyLiquidity(ownerAccount, bnusdScore, balnScore, BigInteger.valueOf(10).pow(19), BigInteger.valueOf(10).pow(19), false);
+        supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
 
         // Assert.
-        BigInteger nonce = (BigInteger) dexScore.call( "getNonce");
-        assertEquals(BigInteger.valueOf(3), nonce);
+        BigInteger retrievedNonce = (BigInteger) dexScore.call( "getNonce");
+        assertEquals(expectedNonce, retrievedNonce);
     }
 
     @Test
     void getPoolId() {
+        // Arrange.
+        BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
+        BigInteger balnValue = BigInteger.valueOf(350).multiply(EXA);
+        BigInteger expectedPoolValue = BigInteger.TWO;
+
         // Act.
-        supplyLiquidity(ownerAccount, bnusdScore, balnScore, BigInteger.valueOf(10).pow(19), BigInteger.valueOf(10).pow(19), false);
+        supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
 
         // Assert.
-        BigInteger poolId = (BigInteger) dexScore.call( "getPoolId", bnusdScore.getAddress(), balnScore.getAddress());
-        assertEquals(BigInteger.TWO, poolId);
+        BigInteger retrievedPoolId = (BigInteger) dexScore.call( "getPoolId", bnusdScore.getAddress(), balnScore.getAddress());
+        assertEquals(expectedPoolValue, retrievedPoolId);
     }
 
     @Test
     void lookupId() {
         // Arrange.
         String namedMarket = "sICX/ICX";
-        BigInteger expectedId = BigInteger.valueOf(1);
+        BigInteger expectedId = BigInteger.ONE;
 
         // Assert.
-        BigInteger id = (BigInteger) dexScore.call("lookupPid", namedMarket);
-        assertEquals(expectedId, id);
+        BigInteger retrievedId = (BigInteger) dexScore.call("lookupPid", namedMarket);
+        assertEquals(expectedId, retrievedId);
     }
 
     @Test
@@ -260,7 +271,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
         // Arrange.
         BigInteger bnusdValue = BigInteger.valueOf(10).pow(19);
         BigInteger balnValue = BigInteger.valueOf(10).pow(19);
-        BigInteger poolId = BigInteger.valueOf(2);
+        BigInteger poolId = BigInteger.TWO;
 
         // Act.
         supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
@@ -278,7 +289,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
         BigInteger bnusdValue = BigInteger.valueOf(10).pow(19);
         BigInteger balnValue = BigInteger.valueOf(10).pow(19);
         BigInteger userLpTokenValue = (bnusdValue.multiply(balnValue)).sqrt();
-        BigInteger poolId = BigInteger.valueOf(2);
+        BigInteger poolId = BigInteger.TWO;
 
         // Act.
         supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
@@ -292,7 +303,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
     void balanceOf_icxSicxPool() {
         // Arrange.
         BigInteger value = BigInteger.valueOf(100).multiply(EXA);
-        BigInteger poolId = BigInteger.valueOf(1);
+        BigInteger poolId = BigInteger.ONE;
 
         // Act.
         supplyIcxLiquidity(ownerAccount, value);
@@ -306,7 +317,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
     void totalSupply_SicxIcxPool() {
         // Arrange.
         BigInteger value = BigInteger.valueOf(100).multiply(EXA);
-        BigInteger poolId = BigInteger.valueOf(1);
+        BigInteger poolId = BigInteger.ONE;
 
         // Act.
         supplyIcxLiquidity(ownerAccount, value);
@@ -322,7 +333,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
         BigInteger bnusdValue = BigInteger.valueOf(10).pow(19);
         BigInteger balnValue = BigInteger.valueOf(10).pow(19);
         BigInteger totalLpTokens = (bnusdValue.multiply(balnValue)).sqrt();
-        BigInteger poolId = BigInteger.valueOf(2);
+        BigInteger poolId = BigInteger.TWO;
 
         // Act.
         supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
@@ -337,7 +348,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
     void setGetMarketNames() {
         // Arrange.
         String poolName = "bnUSD/BALN";
-        BigInteger poolId = BigInteger.valueOf(2);
+        BigInteger poolId = BigInteger.TWO;
         List<String> expectedMarketNames = Arrays.asList("sICX/ICX", poolName);
 
         // Act.
@@ -371,12 +382,13 @@ public class DexTestSettersAndGetters extends DexTestBase {
         BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
         BigInteger balnValue = BigInteger.valueOf(350).multiply(EXA);
         BigInteger expectedPrice = computePrice(bnusdValue, balnValue);
+        BigInteger poolId = BigInteger.TWO;
 
         // Act.
         supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
 
         // Assert.
-        BigInteger price = (BigInteger) dexScore.call( "getQuotePriceInBase", BigInteger.TWO);
+        BigInteger price = (BigInteger) dexScore.call( "getQuotePriceInBase", poolId);
         assertEquals(expectedPrice, price);
     }
 
@@ -386,12 +398,13 @@ public class DexTestSettersAndGetters extends DexTestBase {
         BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
         BigInteger balnValue = BigInteger.valueOf(350).multiply(EXA);
         BigInteger expectedPrice = computePrice(balnValue, bnusdValue);
+        BigInteger poolId = BigInteger.TWO;
 
         // Act.
         supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
 
         // Assert.
-        BigInteger price = (BigInteger) dexScore.call( "getBasePriceInQuote", BigInteger.TWO);
+        BigInteger price = (BigInteger) dexScore.call( "getBasePriceInQuote", poolId);
         assertEquals(expectedPrice, price);
     }
 
@@ -401,12 +414,13 @@ public class DexTestSettersAndGetters extends DexTestBase {
         BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
         BigInteger balnValue = BigInteger.valueOf(350).multiply(EXA);
         BigInteger expectedPrice = computePrice(balnValue, bnusdValue);
+        BigInteger poolId = BigInteger.TWO;
 
         // Act.
         supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
 
         // Assert.
-        BigInteger price = (BigInteger) dexScore.call( "getPrice", BigInteger.TWO);
+        BigInteger price = (BigInteger) dexScore.call( "getPrice", poolId);
         assertEquals(expectedPrice, price);
     }
 
@@ -445,12 +459,11 @@ public class DexTestSettersAndGetters extends DexTestBase {
         // Arrange.
         BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
         BigInteger sicxValue = BigInteger.valueOf(350).multiply(EXA);
-        BigInteger sicxIcxConversionRate = BigInteger.valueOf(10).multiply(EXA); 
         BigInteger icxValue = BigInteger.valueOf(10).multiply(EXA);
+        BigInteger sicxIcxConversionRate = BigInteger.valueOf(10).multiply(EXA); 
         String poolName = "sICX/ICX";
         BigInteger expectedPoolValue = (computePrice(bnusdValue, sicxValue).multiply(icxValue)).divide(sicxIcxConversionRate);
         doReturn(sicxIcxConversionRate).when(dexScoreSpy).getSicxRate();
-        
         
         // Act.
         supplyLiquidity(ownerAccount, sicxScore, bnusdScore, sicxValue, bnusdValue, false);
@@ -467,7 +480,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
         BigInteger balnValue = BigInteger.valueOf(195).multiply(EXA);
         BigInteger sicxValue = BigInteger.valueOf(350).multiply(EXA);
         String poolName = "bnUSD/sICX";
-        BigInteger poolId = BigInteger.valueOf(2);
+        BigInteger poolId = BigInteger.TWO;
         BigInteger sicxBnusdPrice = BigInteger.valueOf(10).multiply(EXA);
         BigInteger expectedValue = (sicxValue.multiply(BigInteger.TWO).multiply(sicxBnusdPrice)).divide(EXA);
         doReturn(sicxBnusdPrice).when(dexScoreSpy).getSicxBnusdPrice();
@@ -488,7 +501,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
         BigInteger balnValue = BigInteger.valueOf(350).multiply(EXA);
         BigInteger expectedValue = BigInteger.valueOf(195).multiply(EXA).multiply(BigInteger.TWO);
         String poolName = "bnUSD/BALN";
-        BigInteger poolId = BigInteger.valueOf(2);
+        BigInteger poolId = BigInteger.TWO;
 
         // Act.
         dexScore.invoke(governanceScore, "setMarketName", poolId, poolName);
@@ -505,7 +518,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
         BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
         BigInteger balnValue = BigInteger.valueOf(350).multiply(EXA);
         String poolName = "bnUSD/BALN";
-        BigInteger poolId = BigInteger.valueOf(2);
+        BigInteger poolId = BigInteger.TWO;
 
          // Act.
         dexScore.invoke(governanceScore, "setMarketName", poolId, poolName);
@@ -522,7 +535,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
          BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
          BigInteger balnValue = BigInteger.valueOf(350).multiply(EXA);
          String poolName = "bnUSD/BALN";
-         BigInteger poolId = BigInteger.valueOf(2);
+         BigInteger poolId = BigInteger.TWO;
          BigInteger expectedPrice = computePrice(balnValue, bnusdValue);
  
           // Act.
@@ -538,7 +551,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
     void getPoolName() {
         // Arrange.
         String poolName = "bnUSD/BALN";
-        BigInteger poolId = BigInteger.valueOf(2);
+        BigInteger poolId = BigInteger.TWO;
 
         // Act.
         dexScore.invoke(governanceScore, "setMarketName", poolId, poolName);
@@ -556,10 +569,10 @@ public class DexTestSettersAndGetters extends DexTestBase {
         BigInteger balnValue = BigInteger.valueOf(350).multiply(EXA);
         BigInteger expectedPrice = computePrice(balnValue, bnusdValue);
         String poolName = "bnUSD/BALN";
-        BigInteger poolId = BigInteger.valueOf(2);
+        BigInteger poolId = BigInteger.TWO;
         BigInteger tokenDecimals = BigInteger.valueOf(18);
         BigInteger minQuote = BigInteger.ZERO;
-        BigInteger totalLpTokens = new BigInteger("261247009552262626468"); // Check how this is derived.
+        BigInteger totalLpTokens = new BigInteger("261247009552262626468");
 
         Map<String, Object> expectedPoolStats = Map.of(
             "base", bnusdValue,
