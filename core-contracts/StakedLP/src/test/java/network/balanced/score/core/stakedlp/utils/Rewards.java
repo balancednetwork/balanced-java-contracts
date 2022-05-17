@@ -14,15 +14,21 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.interfaces.addresses;
+package network.balanced.score.core.stakedlp.utils;
 
 import score.Address;
 import score.annotation.External;
 
-public interface ReserveAddress {
-    @External
-    void setReserve(Address _address);
+import java.math.BigInteger;
 
-    @External(readonly = true)
-    Address getReserve();
+public class Rewards {
+
+    public Rewards() {
+
+    }
+
+    @External
+    public void updateRewardsData(String poolName, BigInteger previousTotal, Address user, BigInteger previousBalance) {
+
+    }
 }

@@ -50,16 +50,14 @@ public class Balanced {
     public DefaultScoreClient reserve;
     public DefaultScoreClient router;
     public DefaultScoreClient staking;
-  
+    public DefaultScoreClient stakedLp;
+
     public Balanced() {
-       
     }
 
     public void deployBalanced() throws Exception {
         owner = createWalletWithBalance(BigInteger.TEN.pow(24));
-        deployPrep();
-
-        governance = deploy(owner, "Governance", null);
+        StakedLP      governance = deploy(owner, "Governance", null);
         deployContracts();
         ownerClient = new BalancedClient(this, owner);
     
@@ -93,6 +91,7 @@ public class Balanced {
         Hash oracleTx = deployAsync(owner, "Oracle",null);
         Hash reserveTx = deployAsync(owner, "Reserve", Map.of("governance", governance._address()));
         Hash routerTx = deployAsync(owner, "Router", Map.of("_governance", governance._address()));
+        Hash stakedLpTx = deployAsync(owner, "StakedLP", Map.of("governance", governance._address()));
         staking = getDeploymentResult(owner, stakingTx);
         Hash sicxTx = deployAsync(owner, "Sicx", Map.of("_admin", staking._address()));
 
@@ -109,8 +108,8 @@ public class Balanced {
         oracle = getDeploymentResult(owner, oracleTx);
         reserve = getDeploymentResult(owner, reserveTx);
         router = getDeploymentResult(owner, routerTx);
+        stakedLp = getDeploymentResult(owner, stakedLpTx);
         sicx = getDeploymentResult(owner, sicxTx);
-
     }
 
     protected void setupAddresses() {
@@ -130,13 +129,11 @@ public class Balanced {
         balancedAddresses.router = router._address();
         balancedAddresses.rebalancing = rebalancing._address();
         balancedAddresses.feehandler = feehandler._address();
-        //tmp
-        balancedAddresses.stakedLp = router._address();
+        balancedAddresses.stakedLp = stakedLp._address();
 
         ownerClient.governance.setAddresses(balancedAddresses);
         ownerClient.governance.setAdmins();
         ownerClient.governance.setContractAddresses();
-
     }
 
     protected void setupContracts() {

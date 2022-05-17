@@ -722,7 +722,7 @@ public class GovernanceTest extends GovernanceTestBase {
         String _symbol = "sicx";
         Address oracleAddress = oracle.getAddress();
         Account notOwner = sm.createAccount();
-        Map<String, Address> tokens = Map.of(_symbol, sicx.getAddress());
+        Map<String, String> tokens = Map.of(_symbol, sicx.getAddress().toString());
         when(loans.mock.getAssetTokens()).thenReturn(tokens);
 
         // Act & Assert
@@ -748,7 +748,7 @@ public class GovernanceTest extends GovernanceTestBase {
         String _symbol = "sicx";
         String oracleName = "oracleName";
         Account notOwner = sm.createAccount();
-        Map<String, Address> tokens = Map.of(_symbol, sicx.getAddress());
+        Map<String, String> tokens = Map.of(_symbol, sicx.getAddress().toString());
         when(loans.mock.getAssetTokens()).thenReturn(tokens);
 
         // Act & Assert
@@ -774,7 +774,7 @@ public class GovernanceTest extends GovernanceTestBase {
         String _symbol = "sicx";
         BigInteger minInterval = BigInteger.TEN;
         Account notOwner = sm.createAccount();
-        Map<String, Address> tokens = Map.of(_symbol, sicx.getAddress());
+        Map<String, String> tokens = Map.of(_symbol, sicx.getAddress().toString());
         when(loans.mock.getAssetTokens()).thenReturn(tokens);
 
         // Act & Assert
@@ -927,24 +927,24 @@ public class GovernanceTest extends GovernanceTestBase {
 
     }
 
-    // @Test
-    // void addPoolOnStakedLp() {
-    //     // Arrange
-    //     BigInteger _id = BigInteger.TEN;
-    //     Account notOwner = sm.createAccount();
-    //     String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+    @Test
+    void addPoolOnStakedLp() {
+        // Arrange
+        BigInteger _id = BigInteger.TEN;
+        Account notOwner = sm.createAccount();
+        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
         
-    //     // Act & Assert
-    //     Executable withNotOwner = () -> governance.invoke(notOwner, "addPoolOnStakedLp", _id);
-    //     expectErrorMessage(withNotOwner, expectedErrorMessage);
+        // Act & Assert
+        Executable withNotOwner = () -> governance.invoke(notOwner, "addPoolOnStakedLp", _id);
+        expectErrorMessage(withNotOwner, expectedErrorMessage);
 
-    //     // Act
-    //     governance.invoke(owner, "addPoolOnStakedLp", _id);
+        // Act
+        governance.invoke(owner, "addPoolOnStakedLp", _id);
 
-    //     // Assert
-    //     verify(stakedLp.mock).addPool(_id);
+        // Assert
+        verify(stakedLp.mock).addPool(_id);
 
-    // }
+    }
 
     @Test
     void setAddressesOnContract() {
@@ -1131,7 +1131,7 @@ public class GovernanceTest extends GovernanceTestBase {
         verify(dex.mock).setMarketName(sicxBnusdPid, "sICX/bnUSD");
         
         verify(rewards.mock).addNewDataSource("sICX/bnUSD", dex.getAddress());
-        // verify(stakedLp.mock).addPool(sicxBnusdPid);
+        verify(stakedLp.mock).addPool(sicxBnusdPid);
         verify(rewards.mock, times(2)).updateBalTokenDistPercentage(any(DistributionPercentage[].class));
     }
 
@@ -1162,7 +1162,7 @@ public class GovernanceTest extends GovernanceTestBase {
         verify(dex.mock).setMarketName(balnBnusdPid, "BALN/bnUSD");
         
         verify(rewards.mock).addNewDataSource("BALN/bnUSD", dex.getAddress());
-        // verify(stakedLp.mock).addPool(balnBnusdPid);
+        verify(stakedLp.mock).addPool(balnBnusdPid);
         verify(rewards.mock, times(3)).updateBalTokenDistPercentage(any(DistributionPercentage[].class));
     }
 
@@ -1195,7 +1195,7 @@ public class GovernanceTest extends GovernanceTestBase {
         verify(dex.mock).setMarketName(balnSicxPid, "BALN/sICX");
         
         verify(rewards.mock).addNewDataSource("BALN/sICX", dex.getAddress());
-        // verify(stakedLp.mock).addPool(balnSicxPid);
+        verify(stakedLp.mock).addPool(balnSicxPid);
         verify(rewards.mock, times(4)).updateBalTokenDistPercentage(any(DistributionPercentage[].class));
     }
 }
