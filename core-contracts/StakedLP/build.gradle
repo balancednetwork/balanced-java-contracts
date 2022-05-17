@@ -35,7 +35,7 @@ dependencies {
 }
 
 optimizedJar {
-    mainClassName = 'network.balanced.score.core.StakedLP'
+    mainClassName = 'network.balanced.score.core.stakedlp.StakedLP'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
         configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}

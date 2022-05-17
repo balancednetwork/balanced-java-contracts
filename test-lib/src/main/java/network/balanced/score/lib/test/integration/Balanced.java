@@ -46,6 +46,7 @@ public class Balanced {
     public DefaultScoreClient reserve;
     public DefaultScoreClient router;
     public DefaultScoreClient staking;
+    public DefaultScoreClient stakedLp;
 
     @ScoreClient
     Governance governanceScore;
@@ -103,6 +104,7 @@ public class Balanced {
         oracle = deploy(owner, "Oracle",null);
         reserve = deploy(owner, "Reserve", Map.of("governance", governance._address()));
         router = deploy(owner, "Router", Map.of("_governance", governance._address()));
+        stakedLp = deploy(owner, "StakedLP", Map.of("governance", governance._address()));
     }
 
     protected void setupAddresses() {
@@ -122,8 +124,7 @@ public class Balanced {
         balancedAddresses.router = router._address();
         balancedAddresses.rebalancing = rebalancing._address();
         balancedAddresses.feehandler = feehandler._address();
-        //tmp
-        balancedAddresses.stakedLp = router._address();
+        balancedAddresses.stakedLp = stakedLp._address();
 
         ownerClient.governance.setAddresses(balancedAddresses);
         ownerClient.governance.setAdmins();

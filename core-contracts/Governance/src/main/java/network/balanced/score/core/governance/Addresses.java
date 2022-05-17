@@ -84,7 +84,19 @@ public class Addresses {
         Context.require(ADDRESSES.containsKey(contract), contract + " is not defined in the address list");
         for (String contractToBeSet : ADDRESSES.get(contract)) {
             String setMethod = SETTERS.get(contractToBeSet);
-            GovernanceImpl.call(get(contract), setMethod, get(contractToBeSet));
+            try {
+                GovernanceImpl.call(get(contract), setMethod, get(contractToBeSet));  
+            } catch (Exception e) {
+                // to make migration/testing easier
+
+                if (contractToBeSet.equals("bnUSD")) {
+                    try {
+                        GovernanceImpl.call(get(contract), "setbnUSD", get(contractToBeSet));  
+                    } catch (Exception e2) {
+                    
+                    }
+                }
+            }
         }
     }
 
@@ -92,7 +104,18 @@ public class Addresses {
         for (String targetContract : ADDRESSES.keySet()) {
             for (String contract : ADDRESSES.get(targetContract)) {
                 String setMethod = SETTERS.get(contract);
-                GovernanceImpl.call(get(targetContract), setMethod, get(contract));
+                try {
+                    GovernanceImpl.call(get(targetContract), setMethod, get(contract));
+                } catch (Exception e) {
+                    // to make migration/testing easier
+                    if (contract.equals("bnUSD")) {
+                        try {
+                            GovernanceImpl.call(get(targetContract), "setbnUSD", get(contract));  
+                        } catch (Exception e2) {
+                        
+                        }
+                    }
+                }
             }
 
         }

@@ -520,7 +520,7 @@ public class GovernanceImpl {
         Context.call(dexAddress, "setMarketName",  pid, name);
 
         Context.call(rewardsAddress, "addNewDataSource",  name, dexAddress);
-        // Context.call(stakedLpAddress, "addPool", pid);
+        Context.call(stakedLpAddress, "addPool", pid);
         DistributionPercentage[] recipients = new DistributionPercentage[] {
             createDistributionPercentage("Loans",  BigInteger.valueOf(25).multiply(pow(BigInteger.TEN,16))),
             createDistributionPercentage("sICX/ICX",  BigInteger.TEN.multiply(pow(BigInteger.TEN,16))),
