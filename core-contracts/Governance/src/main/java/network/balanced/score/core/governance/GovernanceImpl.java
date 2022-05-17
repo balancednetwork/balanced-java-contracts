@@ -18,7 +18,9 @@ package network.balanced.score.core.governance;
 
 import score.Address;
 import score.Context;
+import score.UserRevertException;
 import score.UserRevertedException;
+import score.RevertedException;
 import score.VarDB;
 import score.annotation.External;
 import score.annotation.Optional;
@@ -97,6 +99,20 @@ public class GovernanceImpl {
     @External(readonly = true)
     public BigInteger getVoteDuration() {
         return voteDuration.get();
+    }
+
+    @External
+    public void setTimeOffset(BigInteger offset) {
+        onlyOwner();
+        timeOffset.set(offset);
+        Context.call(Addresses.get("loans"), "setTimeOffset",  offset);
+        Context.call(Addresses.get("rewards"), "setTimeOffset",  offset);
+        Context.call(Addresses.get("dex"), "setTimeOffset",  offset);
+    }
+
+    @External(readonly = true)
+    public BigInteger getTimeOffset() {
+        return timeOffset.getOrDefault(BigInteger.ZERO);
     }
 
     @External
@@ -198,10 +214,9 @@ public class GovernanceImpl {
         Context.require(voteIndex.equals(BigInteger.ZERO), "Poll name " + name + " has already been used.");
         Context.require(checkBalnVoteCriterion(Context.getCaller()), "User needs at least " + balnVoteDefinitionCriterion.get().divide(BigInteger.valueOf(100)) + "% of total baln supply staked to define a vote.");
         verifyActions(actions);
-  
-        Context.call(Addresses.get("bnUSD"), "govTransfer", Context.getCaller(), Addresses.get("daofund"), bnusdVoteDefinitionFee.get(), new byte[0]);
-        
 
+        Context.call(Addresses.get("bnUSD"), "govTransfer", Context.getCaller(), Addresses.get("daofund"), bnusdVoteDefinitionFee.getOrDefault(BigInteger.ONE), new byte[0]);
+        
         ProposalDB.createProposal(
                 name,
                 description,
@@ -218,14 +233,10 @@ public class GovernanceImpl {
 
     @External
     public void tryExecuteActions(String actions) {
-        try {
-            JsonArray actionsParsed = Json.parse(actions).asArray();
-            Context.require(actionsParsed.size() <= maxActions(), TAG + ": Only " + maxActions() + " actions are allowed");
-            executeVoteActions(actions);
-            throw new SuccsesfulVoteExecution();
-        } catch (SuccsesfulVoteExecution e) {
-            throw new UserRevertedException("Vote execution successful");
-        }
+        JsonArray actionsParsed = Json.parse(actions).asArray();
+        Context.require(actionsParsed.size() <= maxActions(), TAG + ": Only " + maxActions() + " actions are allowed");
+        executeVoteActions(actions);
+        Context.revert(succsesfulVoteExecutionRevertID);
     }
 
     @External(readonly = true)
@@ -454,15 +465,13 @@ public class GovernanceImpl {
 
         launched.set(true);
 
-        BigInteger offset = DAY_ZERO.add(launchDay.getOrDefault(BigInteger.ZERO));
-        BigInteger day = BigInteger.valueOf(Context.getBlockTimestamp()).subtract(DAY_START).divide(U_SECONDS_DAY).subtract(offset);
+        BigInteger day = getDay();
         launchDay.set(day);
         launchTime.set(BigInteger.valueOf(Context.getBlockTimestamp()));
 
-        BigInteger timeDelta = DAY_START.add(U_SECONDS_DAY).multiply(DAY_ZERO.add(launchDay.get()).subtract(BigInteger.ONE));
-        Context.call(Addresses.get("loans"), "setTimeOffset",  timeDelta);
-        Context.call(Addresses.get("rewards"), "setTimeOffset",  timeDelta);
-        Context.call(Addresses.get("dex"), "setTimeOffset",  timeDelta);
+        BigInteger timeDelta = BigInteger.valueOf(Context.getBlockTimestamp());
+        setTimeOffset(timeDelta);
+
 
         for (Map<String, String> source : DATA_SOURCES) {
             Context.call(Addresses.get("rewards"), "addNewDataSource", source.get("name"), Addresses.get(source.get("address")));
@@ -511,7 +520,7 @@ public class GovernanceImpl {
         Context.call(dexAddress, "setMarketName",  pid, name);
 
         Context.call(rewardsAddress, "addNewDataSource",  name, dexAddress);
-        Context.call(stakedLpAddress, "addPool", pid);
+        // Context.call(stakedLpAddress, "addPool", pid);
         DistributionPercentage[] recipients = new DistributionPercentage[] {
             createDistributionPercentage("Loans",  BigInteger.valueOf(25).multiply(pow(BigInteger.TEN,16))),
             createDistributionPercentage("sICX/ICX",  BigInteger.TEN.multiply(pow(BigInteger.TEN,16))),
@@ -959,8 +968,8 @@ public class GovernanceImpl {
     private void verifyActions(String actions) {
         try {
             Context.call(Context.getAddress(), "tryExecuteActions", actions);
-        } catch (UserRevertedException e) {
-            Context.require(e.getMessage().equals("Vote execution successful"), e.getMessage());
+        } catch (score.UserRevertedException e) {
+            Context.require(e.getCode() == succsesfulVoteExecutionRevertID, "Vote execution failed");
         }
     }
 
@@ -980,7 +989,6 @@ public class GovernanceImpl {
     public static void call(Address targetAddress, String method, Object... params) {
         Context.call(targetAddress, method, params);
     }
-
 
     public void daoDisburse(String _recipient,  Disbursement[] _amounts ) {
         Context.require(_amounts.length <=  3, "Cannot disburse more than 3 assets at a time.");

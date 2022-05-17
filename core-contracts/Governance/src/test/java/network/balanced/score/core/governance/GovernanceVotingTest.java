@@ -111,7 +111,7 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         expectErrorMessage(withToFewStakedBaln, expectedErrorMessage);
 
         String invalidActions = "[[\"invalidAction\", {}]]";
-        expectedErrorMessage  = "Method invalidAction does not exist.";
+        expectedErrorMessage  = "Vote execution failed";
         Executable withInvalidActions = () -> governance.invoke(owner, "defineVote", name, description, voteStart, snapshot, invalidActions);
         expectErrorMessage(withInvalidActions, expectedErrorMessage);
 
@@ -794,7 +794,7 @@ public class GovernanceVotingTest extends GovernanceTestBase {
     @Test
     void executeVote_daoDisburse_toManyTokens() {
         // Arrange
-        String expectedErrorMessage = "Cannot disburse more than 3 assets at a time.";
+        String expectedErrorMessage = "Vote execution failed";
         JsonArray disbursement = new JsonArray()
             .add(createJsonDisbusment("cx1111d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
             .add(createJsonDisbusment("cx2222d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))

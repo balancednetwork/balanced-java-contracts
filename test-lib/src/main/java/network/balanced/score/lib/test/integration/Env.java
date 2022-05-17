@@ -27,7 +27,7 @@ import java.math.BigInteger;
 import java.nio.file.Path;
 import java.util.Properties;
 
-class Env {
+public class Env {
     private static Chain chain;
 
     static {

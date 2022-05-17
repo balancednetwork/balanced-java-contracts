@@ -135,13 +135,13 @@ public class GovernanceTestBase extends UnitTest {
         verify(dex.mock).setBnusd(bnUSD.getAddress());
         verify(dex.mock).setBaln(baln.getAddress());
         verify(dex.mock).setFeehandler(feehandler.getAddress());
-        verify(dex.mock).setStakedLp(stakedLp.getAddress());
+        // verify(dex.mock).setStakedLp(stakedLp.getAddress());
 
         verify(rewards.mock).setReserve(reserve.getAddress());
         verify(rewards.mock).setBwt(bwt.getAddress());
         verify(rewards.mock).setBaln(baln.getAddress());
         verify(rewards.mock).setDaofund(daofund.getAddress());
-        verify(rewards.mock).setStakedLp(stakedLp.getAddress());
+        // verify(rewards.mock).setStakedLp(stakedLp.getAddress());
        
         verify(dividends.mock).setDex(dex.getAddress());
         verify(dividends.mock).setLoans(loans.getAddress());
@@ -167,8 +167,8 @@ public class GovernanceTestBase extends UnitTest {
         verify(router.mock).setSicx(sicx.getAddress());
         verify(router.mock).setStaking(staking.getAddress());
 
-        verify(stakedLp.mock).setDex(dex.getAddress());
-        verify(stakedLp.mock).setRewards(rewards.getAddress());
+        // verify(stakedLp.mock).setDex(dex.getAddress());
+        // verify(stakedLp.mock).setRewards(rewards.getAddress());
     }
 
     protected BigInteger executeVoteWithActions(String actions) {
