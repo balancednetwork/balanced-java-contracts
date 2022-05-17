@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.mockito.stubbing.Answer;
 
@@ -19,10 +20,9 @@ import java.math.BigInteger;
 import java.util.HashMap;
 
 import static network.balanced.score.lib.utils.Constants.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
-public class DexTest extends DexTestBase {
+public class DexTestCore extends DexTestBase {
     
     @BeforeEach
     public void configureContract() throws Exception {
@@ -36,12 +36,7 @@ public class DexTest extends DexTestBase {
         contextMock.when(() -> Context.getValue()).thenReturn(icxValue);
         contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
         contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
-
         contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("updateBatchRewardsData"), any(String.class), any(BigInteger.class), any())).thenReturn(null);
-        // This does not work. Why? Going with when in the meantime.
-        //contextMock.verify(() -> Context.call(eq(rewardsScore.getAddress()), eq("updateBatchRewardsData"), any(String.class), any(BigInteger.class), any()));
-
-
         dexScore.invoke(ownerAccount, "fallback");
     }
 
@@ -53,7 +48,6 @@ public class DexTest extends DexTestBase {
 
         turnDexOn();
         supplyIcxLiquidity(supplier, value);
-        supplyIcxLiquidity(ownerAccount, value);
         sm.getBlock().increase(100000);
 
         // Mock these.
@@ -75,7 +69,7 @@ public class DexTest extends DexTestBase {
         // Supply liquidity to sicx/icx pool.
         // Swap some sicx to icx.
         // Withdraw earnings.
-        // Check that earnings transferred to withdrawer.
+        // Verify transfer called with correct arguments.
         // Assert that getSicxEarnings returns 0.
     }
 
@@ -84,19 +78,18 @@ public class DexTest extends DexTestBase {
         // Arrange.
         Account tokenScoreCaller = balnScore;
         Account tokenSender = sm.createAccount();
-        BigInteger value = BigInteger.valueOf(1000000000);
-        BigInteger retrievedValue;
+        BigInteger depositValue = BigInteger.valueOf(1000000000);
 
         contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
         contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
         contextMock.when(() -> Context.call(any(Address.class), eq("decimals"))).thenReturn(BigInteger.valueOf(18));
 
         // Act.
-        dexScore.invoke(tokenScoreCaller, "tokenFallback", tokenSender.getAddress(), value, tokenData("_deposit", new HashMap<>()));
-        retrievedValue = (BigInteger) dexScore.call("getDeposit", tokenScoreCaller.getAddress(), tokenSender.getAddress());
+        dexScore.invoke(tokenScoreCaller, "tokenFallback", tokenSender.getAddress(), depositValue, tokenData("_deposit", new HashMap<>()));
+        BigInteger retrievedDepositValue = (BigInteger) dexScore.call("getDeposit", tokenScoreCaller.getAddress(), tokenSender.getAddress());
 
         // Assert.
-        assertEquals(value, retrievedValue);
+        assertEquals(depositValue, retrievedDepositValue);
     }
 
     @Test
@@ -160,7 +153,7 @@ public class DexTest extends DexTestBase {
         BigInteger lpTokensToRemove = BigInteger.valueOf(1000);
         Boolean withdrawTokensOnRemoval = false;
         
-        // Arrange - supply liquidity settings.
+        // Arrange - supply liquidity.
         BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
         BigInteger balnValue = BigInteger.valueOf(350).multiply(EXA);
         supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
@@ -177,21 +170,25 @@ public class DexTest extends DexTestBase {
         BigInteger lpTokensToRemove = BigInteger.valueOf(1000);
         Boolean withdrawTokensOnRemoval = false;
         
-        // Arrange - supply liquidity settings.
+        // Arrange - supply liquidity.
         BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
         BigInteger balnValue = BigInteger.valueOf(350).multiply(EXA);
         supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+        BigInteger usersLpTokens = (BigInteger) dexScore.call("balanceOf", ownerAccount.getAddress(), poolId);
+
+        // Arrange - increase blocks past withdrawal lock.
         sm.getBlock().increase(100000000);
 
          // Act & Assert.
          dexScore.invoke(ownerAccount, "remove", poolId, lpTokensToRemove, withdrawTokensOnRemoval);
-         // Check current_lp_tokens = orignal_lp_tokens - lpTokensToRemove.
-         // Check other setters?
+         BigInteger usersLpTokensAfterRemoval = (BigInteger) dexScore.call("balanceOf", ownerAccount.getAddress(), poolId);
+         assertEquals(usersLpTokens.subtract(lpTokensToRemove), usersLpTokensAfterRemoval);
     }
 
     @Test
     void tokenFallback_swap() {
         // Todo.
+
     }
 
     @Test
@@ -259,7 +256,6 @@ public class DexTest extends DexTestBase {
 
 
     /*
-
     == Tests left == 
 
     == Icx/sicx pool methods == 
