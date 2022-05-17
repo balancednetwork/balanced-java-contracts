@@ -93,7 +93,7 @@ public class RebalancingTest extends TestBase {
 
     @Test
     void setAndGetBnusd() {
-        testContractSettersAndGetters(rebalancingScore, governanceScore, adminAccount, "setBnusd",
+        testContractSettersAndGetters(rebalancingScore, governanceScore, adminAccount, "setbnUSD",
                 bnUSDScore.getAddress(), "getBnusd");
     }
 
