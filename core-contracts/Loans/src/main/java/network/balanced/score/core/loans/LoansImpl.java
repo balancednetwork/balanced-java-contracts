@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,75 +47,75 @@ import static network.balanced.score.core.loans.utils.LoansConstants.*;
 import static network.balanced.score.lib.utils.Check.*;
 
 public class LoansImpl {
-    public static final String _LOANS_ON = "loans_on";
-    public static final String _GOVERNANCE = "governance";
-    public static final String _REBALANCE = "rebalance";
-    public static final String _DEX = "dex";
-    public static final String _DIVIDENDS = "dividends";
-    public static final String _RESERVE = "reserve";
-    public static final String _REWARDS = "rewards";
-    public static final String _STAKING = "staking";
-    public static final String _ADMIN = "admin";
-    public static final String _SNAP_BATCH_SIZE = "snap_batch_size";
-    public static final String _GLOBAL_INDEX = "global_index";
-    public static final String _GLOBAL_BATCH_INDEX = "global_batch_index";
+    private static final String _LOANS_ON = "loans_on";
+    private static final String _GOVERNANCE = "governance";
+    private static final String _REBALANCE = "rebalance";
+    private static final String _DEX = "dex";
+    private static final String _DIVIDENDS = "dividends";
+    private static final String _RESERVE = "reserve";
+    private static final String _REWARDS = "rewards";
+    private static final String _STAKING = "staking";
+    private static final String _ADMIN = "admin";
+    private static final String _SNAP_BATCH_SIZE = "snap_batch_size";
+    private static final String _GLOBAL_INDEX = "global_index";
+    private static final String _GLOBAL_BATCH_INDEX = "global_batch_index";
 
-    public static final String _REWARDS_DONE = "rewards_done";
-    public static final String _DIVIDENDS_DONE = "dividends_done";
-    public static final String _CURRENT_DAY = "current_day";
-    public static final String _TIME_OFFSET = "time_offset";
+    private static final String _REWARDS_DONE = "rewards_done";
+    private static final String _DIVIDENDS_DONE = "dividends_done";
+    private static final String _CURRENT_DAY = "current_day";
+    private static final String _TIME_OFFSET = "time_offset";
 
-    public static final String _MINING_RATIO = "mining_ratio";
-    public static final String _LOCKING_RATIO = "locking_ratio";
-    public static final String _LIQUIDATION_RATIO = "liquidation_ratio";
-    public static final String _ORIGINATION_FEE = "origination_fee";
-    public static final String _REDEMPTION_FEE = "redemption_fee";
-    public static final String _RETIREMENT_BONUS = "retirement_bonus";
-    public static final String _LIQUIDATION_REWARD = "liquidation_reward";
-    public static final String _NEW_LOAN_MINIMUM = "new_loan_minimum";
-    public static final String _MIN_MINING_DEBT = "min_mining_debt";
-    public static final String _MAX_DEBTS_LIST_LENGTH = "max_debts_list_length";
+    private static final String _MINING_RATIO = "mining_ratio";
+    private static final String _LOCKING_RATIO = "locking_ratio";
+    private static final String _LIQUIDATION_RATIO = "liquidation_ratio";
+    private static final String _ORIGINATION_FEE = "origination_fee";
+    private static final String _REDEMPTION_FEE = "redemption_fee";
+    private static final String _RETIREMENT_BONUS = "retirement_bonus";
+    private static final String _LIQUIDATION_REWARD = "liquidation_reward";
+    private static final String _NEW_LOAN_MINIMUM = "new_loan_minimum";
+    private static final String _MIN_MINING_DEBT = "min_mining_debt";
+    private static final String _MAX_DEBTS_LIST_LENGTH = "max_debts_list_length";
 
-    public static final String _REDEEM_BATCH_SIZE = "redeem_batch_size";
-    public static final String _MAX_RETIRE_PERCENT = "max_retire_percent";
-    public static final String _CONTINUOUS_REWARD_DAY = "continuous_reward_day";
+    private static final String _REDEEM_BATCH_SIZE = "redeem_batch_size";
+    private static final String _MAX_RETIRE_PERCENT = "max_retire_percent";
+    private static final String _CONTINUOUS_REWARD_DAY = "continuous_reward_day";
 
-    public static final VarDB<Boolean> loansOn = Context.newVarDB(_LOANS_ON, Boolean.class);
+    private static final VarDB<Boolean> loansOn = Context.newVarDB(_LOANS_ON, Boolean.class);
 
-    public static final VarDB<Address> admin = Context.newVarDB(_ADMIN, Address.class);
-    public static final VarDB<Address> governance = Context.newVarDB(_GOVERNANCE, Address.class);
-    public static final VarDB<Address> dex = Context.newVarDB(_DEX, Address.class);
-    public static final VarDB<Address> rebalancing = Context.newVarDB(_REBALANCE, Address.class);
-    public static final VarDB<Address> dividends = Context.newVarDB(_DIVIDENDS, Address.class);
-    public static final VarDB<Address> reserve = Context.newVarDB(_RESERVE, Address.class);
-    public static final VarDB<Address> rewards = Context.newVarDB(_REWARDS, Address.class);
-    public static final VarDB<Address> staking = Context.newVarDB(_STAKING, Address.class);
+    private static final VarDB<Address> admin = Context.newVarDB(_ADMIN, Address.class);
+    private static final VarDB<Address> governance = Context.newVarDB(_GOVERNANCE, Address.class);
+    private static final VarDB<Address> dex = Context.newVarDB(_DEX, Address.class);
+    private static final VarDB<Address> rebalancing = Context.newVarDB(_REBALANCE, Address.class);
+    private static final VarDB<Address> dividends = Context.newVarDB(_DIVIDENDS, Address.class);
+    private static final VarDB<Address> reserve = Context.newVarDB(_RESERVE, Address.class);
+    private static final VarDB<Address> rewards = Context.newVarDB(_REWARDS, Address.class);
+    private static final VarDB<Address> staking = Context.newVarDB(_STAKING, Address.class);
 
     public static final VarDB<Integer> snapBatchSize = Context.newVarDB(_SNAP_BATCH_SIZE, Integer.class);
     public static final VarDB<BigInteger> globalIndex = Context.newVarDB(_GLOBAL_INDEX, BigInteger.class);
     public static final VarDB<BigInteger> globalBatchIndex = Context.newVarDB(_GLOBAL_BATCH_INDEX, BigInteger.class);
 
-    public static final VarDB<Boolean> rewardsDone = Context.newVarDB(_REWARDS_DONE, Boolean.class);
-    public static final VarDB<Boolean> dividendsDone = Context.newVarDB(_DIVIDENDS_DONE, Boolean.class);
+    private static final VarDB<Boolean> rewardsDone = Context.newVarDB(_REWARDS_DONE, Boolean.class);
+    private static final VarDB<Boolean> dividendsDone = Context.newVarDB(_DIVIDENDS_DONE, Boolean.class);
     public static final VarDB<BigInteger> continuousRewardDay = Context.newVarDB(_CONTINUOUS_REWARD_DAY, BigInteger.class);
-    public static final VarDB<BigInteger> currentDay = Context.newVarDB(_CURRENT_DAY, BigInteger.class);
-    public static final VarDB<BigInteger> timeOffset = Context.newVarDB(_TIME_OFFSET, BigInteger.class);
+    private static final VarDB<BigInteger> currentDay = Context.newVarDB(_CURRENT_DAY, BigInteger.class);
+    private static final VarDB<BigInteger> timeOffset = Context.newVarDB(_TIME_OFFSET, BigInteger.class);
     public static final VarDB<BigInteger> miningRatio = Context.newVarDB(_MINING_RATIO, BigInteger.class);
     public static final VarDB<BigInteger> lockingRatio  = Context.newVarDB(_LOCKING_RATIO, BigInteger.class);
 
     public static final VarDB<BigInteger> liquidationRatio = Context.newVarDB(_LIQUIDATION_RATIO, BigInteger.class);
-    public static final VarDB<BigInteger> originationFee = Context.newVarDB(_ORIGINATION_FEE, BigInteger.class);
-    public static final VarDB<BigInteger> redemptionFee = Context.newVarDB(_REDEMPTION_FEE, BigInteger.class);
-    public static final VarDB<BigInteger> retirementBonus = Context.newVarDB(_RETIREMENT_BONUS, BigInteger.class);
-    public static final VarDB<BigInteger> liquidationReward = Context.newVarDB(_LIQUIDATION_REWARD, BigInteger.class);
-    public static final VarDB<BigInteger> newLoanMinimum = Context.newVarDB(_NEW_LOAN_MINIMUM, BigInteger.class);
+    private static final VarDB<BigInteger> originationFee = Context.newVarDB(_ORIGINATION_FEE, BigInteger.class);
+    private static final VarDB<BigInteger> redemptionFee = Context.newVarDB(_REDEMPTION_FEE, BigInteger.class);
+    private static final VarDB<BigInteger> retirementBonus = Context.newVarDB(_RETIREMENT_BONUS, BigInteger.class);
+    private static final VarDB<BigInteger> liquidationReward = Context.newVarDB(_LIQUIDATION_REWARD, BigInteger.class);
+    private static final VarDB<BigInteger> newLoanMinimum = Context.newVarDB(_NEW_LOAN_MINIMUM, BigInteger.class);
     public static final VarDB<BigInteger> minMiningDebt = Context.newVarDB(_MIN_MINING_DEBT, BigInteger.class);
-    public static final VarDB<Integer> maxDebtsListLength = Context.newVarDB(_MAX_DEBTS_LIST_LENGTH, Integer.class);
-    public static final VarDB<Integer> redeemBatch = Context.newVarDB(_REDEEM_BATCH_SIZE, Integer.class);
-    public static final VarDB<BigInteger> maxRetirePercent = Context.newVarDB(_MAX_RETIRE_PERCENT, BigInteger.class);
+    private static final VarDB<Integer> maxDebtsListLength = Context.newVarDB(_MAX_DEBTS_LIST_LENGTH, Integer.class);
+    private static final VarDB<Integer> redeemBatch = Context.newVarDB(_REDEEM_BATCH_SIZE, Integer.class);
+    private static final VarDB<BigInteger> maxRetirePercent = Context.newVarDB(_MAX_RETIRE_PERCENT, BigInteger.class);
 
-    public static final VarDB<Address> expectedToken = Context.newVarDB("expectedToken", Address.class);
-    public static final VarDB<BigInteger> amountReceived = Context.newVarDB("amountReceived", BigInteger.class);
+    private static final VarDB<Address> expectedToken = Context.newVarDB("expectedToken", Address.class);
+    private static final VarDB<BigInteger> amountReceived = Context.newVarDB("amountReceived", BigInteger.class);
 
     public LoansImpl(Address _governance) {
         //TODO: tmp should be set by governance?
@@ -313,12 +313,12 @@ public class LoansImpl {
 
     @External(readonly = true)
     public Map<String, Object> getSnapshot(@Optional BigInteger _snap_id) {
-        if (_snap_id == null || _snap_id == BigInteger.ZERO) {
+        if (_snap_id == null || _snap_id.equals(BigInteger.ZERO)) {
             _snap_id = BigInteger.valueOf(-1);
         }
 
         if (_snap_id.compareTo(SnapshotDB.getLastSnapshotIndex()) > 0 || _snap_id.add(SnapshotDB.size()).compareTo(BigInteger.ZERO) < 0) {
-            Map.of();
+            return Map.of();
         }
         
         return SnapshotDB.get(_snap_id).toMap();
@@ -407,7 +407,7 @@ public class LoansImpl {
         int start = Math.max(0, Math.min(_offset, totalMiners));
         int end = Math.min(_offset + _limit, totalMiners);
 
-        HashMap<Address, BigInteger> batch = new HashMap<Address, BigInteger>(end-start);
+        Map<Address, BigInteger> batch = new HashMap<>();
         for (int i = start; i < end; i++) {
             int id = snapshot.mining.get(i);
             Position position = PositionsDB.get(id);
@@ -435,8 +435,8 @@ public class LoansImpl {
     }
 
     @External
-    public ArrayList<String> checkForDeadMarkets() {
-        ArrayList<String> deadAssets = new ArrayList<String>(AssetDB.activeAssets.size());
+    public List<String> checkForDeadMarkets() {
+        List<String> deadAssets = new ArrayList<>();
         for (int i = 0; i < AssetDB.activeAssets.size(); i++) {
             String symbol = AssetDB.activeAssets.get(i);
             Asset asset = AssetDB.getAsset(symbol);
@@ -495,7 +495,7 @@ public class LoansImpl {
         Address sender = Context.getCaller();
         if (!sender.equals(AssetDB.getAsset("sICX").getAssetAddress())) {
             _from = sender;
-            if (deposit.compareTo(BigInteger.ZERO) == 1) {
+            if (deposit.compareTo(BigInteger.ZERO) > 0) {
                 expectedToken.set(AssetDB.getAsset("sICX").getAssetAddress());
                 Context.call(deposit, staking.get(), "stakeICX", Context.getAddress());
 
@@ -515,7 +515,7 @@ public class LoansImpl {
             CollateralReceived(_from, "sICX", _value);
         }
 
-        if (_asset == "" || _amount.compareTo(BigInteger.ZERO) != 1 || _amount == null) {
+        if (_asset.equals("") || _amount == null || _amount.compareTo(BigInteger.ZERO) != 1) {
             return;
         }
 
@@ -553,7 +553,7 @@ public class LoansImpl {
     @External
     public void returnAsset(String _symbol, BigInteger _value, boolean _repay) {
         Context.require(LoansImpl.loansOn.get(), "Balanced Loans SCORE is not active.");
-        Context.require(_value.compareTo(BigInteger.ZERO) == 1, "Amount retired must be greater than zero.");
+        Context.require(_value.compareTo(BigInteger.ZERO) > 0, "Amount retired must be greater than zero.");
         Address from = Context.getCaller();
         Asset asset = AssetDB.getAsset(_symbol);
 
@@ -600,7 +600,7 @@ public class LoansImpl {
         }
 
         asset.checkForDeadMarket();
-        String logMessage = "Loan of " + repaid.toString()  + " " + _symbol +" repaid to Balanced.";
+        String logMessage = "Loan of " + repaid + " " + _symbol +" repaid to Balanced.";
         LoanRepaid(from, _symbol, repaid, logMessage);
     }
 
@@ -619,7 +619,7 @@ public class LoansImpl {
 
         int nodeId = borrowers.getHeadId();
         BigInteger totalBatchDebt = BigInteger.ZERO;
-        HashMap<Integer, BigInteger> postionsMap = new HashMap<Integer, BigInteger>(batchSize);
+        Map<Integer, BigInteger> postionsMap = new HashMap<>();
 
         int iterations = Math.min(batchSize, borrowers.size());
         for (int i = 0; i < iterations; i++) {
@@ -648,7 +648,7 @@ public class LoansImpl {
         BigInteger remaningSupply = totalBatchDebt;
         BigInteger remainingBnusd = bnUSDReceived;
 
-        Map<Integer, Map<String, BigInteger>> changeLog = new HashMap<Integer, Map<String, BigInteger>>(iterations);
+        Map<Integer, Map<String, BigInteger>> changeLog = new HashMap<>();
         RewardsDataEntry[] rewardsBatchList = new RewardsDataEntry[iterations];
         int dataEntryIndex = 0;
         for (Map.Entry<Integer, BigInteger> entry : postionsMap.entrySet()) {
@@ -696,7 +696,7 @@ public class LoansImpl {
         int nodeId = borrowers.getHeadId();
 
         BigInteger totalBatchDebt = BigInteger.ZERO;
-        HashMap<Integer, BigInteger> postionsMap = new HashMap<Integer, BigInteger>(batchSize);
+        Map<Integer, BigInteger> postionsMap = new HashMap<>();
         
         int iterations = Math.min(batchSize, borrowers.size());
         for (int i = 0; i < iterations; i++) {
@@ -727,7 +727,7 @@ public class LoansImpl {
         BigInteger remainingSupply = totalBatchDebt;
         BigInteger remainingBnusd = bnusdToSell;
 
-        Map<Integer, Map<String, BigInteger>> changeLog = new HashMap<Integer, Map<String, BigInteger>>(iterations);
+        Map<Integer, Map<String, BigInteger>> changeLog = new HashMap<>();
         RewardsDataEntry[] rewardsBatchList = new RewardsDataEntry[iterations];
         int dataEntryIndex = 0;
         for (Map.Entry<Integer, BigInteger> entry : postionsMap.entrySet()) {
@@ -765,7 +765,7 @@ public class LoansImpl {
     @External
     public void withdrawCollateral(BigInteger _value) {
         Context.require(LoansImpl.loansOn.get(), "Balanced Loans SCORE is not active.");
-        Context.require(_value.compareTo(BigInteger.ZERO) == 1, "Withdraw amount must be more than zero.");
+        Context.require(_value.compareTo(BigInteger.ZERO) > 0, "Withdraw amount must be more than zero.");
         Address from = Context.getCaller();
         Context.require(PositionsDB.hasPosition(from), "This address does not have a position on Balanced.");
 
@@ -801,7 +801,7 @@ public class LoansImpl {
         Context.require(LoansImpl.loansOn.get(), "Balanced Loans SCORE is not active.");
         Context.require(PositionsDB.hasPosition(_owner), "This address does not have a position on Balanced.");
         Position position = PositionsDB.getPosition(_owner);
-        Boolean checkDay = getDay().compareTo(LoansImpl.continuousRewardDay.get()) < 0;
+        boolean checkDay = getDay().compareTo(LoansImpl.continuousRewardDay.get()) < 0;
         Standings standing;
         if (checkDay) {
             standing = position.updateStanding(BigInteger.valueOf(-1));
@@ -847,7 +847,7 @@ public class LoansImpl {
             PositionsDB.removeNonZero(position.id.get());
         }
 
-        String logMessage = collateral.toString() +" liquidated from " + _owner;
+        String logMessage = collateral +" liquidated from " + _owner;
         Liquidate(_owner, collateral, logMessage);
     }
 

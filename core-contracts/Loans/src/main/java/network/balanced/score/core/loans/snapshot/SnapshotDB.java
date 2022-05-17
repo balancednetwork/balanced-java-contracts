@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2022-2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package network.balanced.score.core.loans.snapshot;
 
 import score.Context;
@@ -9,7 +25,7 @@ import network.balanced.score.core.loans.LoansImpl;
 
 public class SnapshotDB {
     private static final String SNAP_DB_PREFIX = "snaps";
-    public static ArrayDB<BigInteger> indexes = Context.newArrayDB("indexes", BigInteger.class);
+    private static final ArrayDB<BigInteger> indexes = Context.newArrayDB("indexes", BigInteger.class);
     // private static HashMap<Integer, Snapshot> items = new HashMap<Integer, Snapshot>(10);
 
     public static Snapshot get(BigInteger day) {
@@ -34,10 +50,9 @@ public class SnapshotDB {
     }
 
     private static Snapshot getSnapshot(BigInteger day, BigInteger index) {
-        Snapshot snapshot = new Snapshot(SNAP_DB_PREFIX + "|" + index);
- 
+
         // items.put(day, snapshot);
-        return snapshot;
+        return new Snapshot(SNAP_DB_PREFIX + "|" + index);
     }
 
     public static BigInteger getLastSnapshotIndex() {
@@ -63,7 +78,7 @@ public class SnapshotDB {
             }
         }
 
-        if (indexes.get(0) == day) {
+        if (indexes.get(0).equals(day)) {
             return day;
         } else if (low == 0) {
             return BigInteger.valueOf(-1);
