@@ -17,7 +17,6 @@
 import network.balanced.score.dependencies.Dependencies
 
 
-
 buildscript {
     repositories {
         mavenCentral()
@@ -27,6 +26,8 @@ buildscript {
     }
 }
 
+def scoreIntegrationTest = new HashMap<String, String>()
+
 subprojects {
     repositories {
         mavenCentral()
@@ -35,6 +36,22 @@ subprojects {
     apply plugin: 'java'
     apply plugin: 'jacoco'
     apply plugin: 'foundation.icon.javaee'
+
+    sourceSets {
+        intTest {
+            compileClasspath += sourceSets.main.output
+            runtimeClasspath += sourceSets.main.output
+            java {
+            }
+        }
+
+    }
+
+    configurations {
+        intTestImplementation.extendsFrom testImplementation
+        intTestAnnotationProcessor.extendsFrom testAnnotationProcessor
+        intTestRuntimeOnly.extendsFrom testRuntimeOnly
+    }
 
     java {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -49,5 +66,37 @@ subprojects {
     tasks.named('test') {
         // Use JUnit Platform for unit tests.
         useJUnitPlatform()
+    }
+
+    scoreIntegrationTest.put('env.props', new File(project(':test-lib').projectDir, 'conf/env.props'));
+
+    //remove as more contracts are added to master
+    scoreIntegrationTest.put('Governance', new File(project(':test-lib').projectDir, 'python-contracts/governance.zip'));
+    scoreIntegrationTest.put('Baln', new File(project(':test-lib').projectDir, 'python-contracts/baln.zip'));
+    scoreIntegrationTest.put('Bwt', new File(project(':test-lib').projectDir, 'python-contracts/bwt.zip'));
+    scoreIntegrationTest.put('Dex', new File(project(':test-lib').projectDir, 'python-contracts/dex.zip'));
+    scoreIntegrationTest.put('Feehandler', new File(project(':test-lib').projectDir, 'python-contracts/feehandler.zip'));
+    scoreIntegrationTest.put('Loans', new File(project(':test-lib').projectDir, 'python-contracts/loans.zip'));
+    // scoreIntegrationTest.put('rebalancing', new File(project(':test-lib').projectDir, 'python-contracts/rebalancing.zip'));
+    scoreIntegrationTest.put('Rewards', new File(project(':test-lib').projectDir, 'python-contracts/rewards.zip'));
+    scoreIntegrationTest.put('Sicx', new File(project(':test-lib').projectDir, 'python-contracts/sicx.zip'));
+    scoreIntegrationTest.put('Bnusd', new File(project(':test-lib').projectDir, 'python-contracts/bnusd.zip'));
+    // scoreIntegrationTest.put('daofund', new File(project(':test-lib').projectDir, 'python-contracts/daofund.zip'));
+    scoreIntegrationTest.put('Dividends', new File(project(':test-lib').projectDir, 'python-contracts/dividends.zip'));
+    scoreIntegrationTest.put('Oracle', new File(project(':test-lib').projectDir, 'python-contracts/oracle.zip'));
+    scoreIntegrationTest.put('Reserve', new File(project(':test-lib').projectDir, 'python-contracts/reserve.zip'));
+    scoreIntegrationTest.put('Router', new File(project(':test-lib').projectDir, 'python-contracts/router.zip'));
+    scoreIntegrationTest.put('Staking', new File(project(':test-lib').projectDir, 'python-contracts/staking.zip'));
+
+    afterEvaluate { project ->
+        scoreIntegrationTest.put(project.name, project.getTasks().getByName("optimizedJar").outputJarName)
+    }
+}
+
+gradle.taskGraph.whenReady { taskGraph ->
+    taskGraph.getAllTasks().any { task ->
+        if (task.name == "integrationTest") {
+            scoreIntegrationTest.each { key, val -> task.systemProperty key, val }
+        }
     }
 }

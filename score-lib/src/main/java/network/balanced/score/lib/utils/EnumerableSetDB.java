@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2022-2022 Balanced.network.
  *
@@ -15,20 +14,15 @@
  * limitations under the License.
  */
 
-
 package network.balanced.score.lib.utils;
-
 
 import score.ArrayDB;
 import score.Context;
 import score.DictDB;
-
-import java.math.BigInteger;
-
 import scorex.util.ArrayList;
 
+import java.math.BigInteger;
 import java.util.List;
-
 
 public class EnumerableSetDB<V> {
     private final ArrayDB<V> entries;
@@ -54,6 +48,7 @@ public class EnumerableSetDB<V> {
     }
 
     public Integer indexOf(V value) {
+        // returns null if value doesn't exist
         Integer result = indexes.get(value);
         if (result != null) {
             return result - 1;
@@ -63,6 +58,7 @@ public class EnumerableSetDB<V> {
 
     public void add(V value) {
         if (!contains(value)) {
+            //add new value
             entries.add(value);
             indexes.set(value, entries.size());
         }
@@ -96,4 +92,3 @@ public class EnumerableSetDB<V> {
         return data;
     }
 }
-

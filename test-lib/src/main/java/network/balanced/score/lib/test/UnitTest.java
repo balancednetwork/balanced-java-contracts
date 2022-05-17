@@ -71,8 +71,20 @@ public class UnitTest extends TestBase {
     public static void testContractSettersAndGetters(Score contractUnderTest, Account governanceScore,
                                                      Account adminAccount, String setterMethod, Address addressToSet,
                                                      String getterMethod) {
+        testAdminControlMethods(contractUnderTest, governanceScore, adminAccount, setterMethod, addressToSet,
+                getterMethod);
+        String expectedErrorMessage = "Address Check: Address provided is an EOA address. A contract address is " +
+                "required.";
+        Executable setScoreToInvalidAddress = () -> contractUnderTest.invoke(adminAccount, setterMethod,
+                sm.createAccount().getAddress());
+        expectErrorMessage(setScoreToInvalidAddress, expectedErrorMessage);
+    }
+
+    public static <T> void testAdminControlMethods(Score contractUnderTest, Account governanceScore,
+                                                   Account adminAccount, String setterMethod, T parameterToSet,
+                                                   String getterMethod) {
         String expectedErrorMessage = "Authorization Check: Address not set";
-        Executable setScoreWithoutAdmin = () -> contractUnderTest.invoke(adminAccount, setterMethod, addressToSet);
+        Executable setScoreWithoutAdmin = () -> contractUnderTest.invoke(adminAccount, setterMethod, parameterToSet);
         expectErrorMessage(setScoreWithoutAdmin, expectedErrorMessage);
 
         testAdmin(contractUnderTest, governanceScore, adminAccount);
@@ -80,16 +92,36 @@ public class UnitTest extends TestBase {
         Account nonAdmin = sm.createAccount();
         expectedErrorMessage = "Authorization Check: Authorization failed. Caller: " + nonAdmin.getAddress() +
                 " Authorized Caller: " + adminAccount.getAddress();
-        Executable setScoreNotFromAdmin = () -> contractUnderTest.invoke(nonAdmin, setterMethod, addressToSet);
+        Executable setScoreNotFromAdmin = () -> contractUnderTest.invoke(nonAdmin, setterMethod, parameterToSet);
         expectErrorMessage(setScoreNotFromAdmin, expectedErrorMessage);
 
-        expectedErrorMessage = "Address Check: Address provided is an EOA address. A contract address is required.";
-        Executable setScoreToInvalidAddress = () -> contractUnderTest.invoke(adminAccount, setterMethod,
-                sm.createAccount().getAddress());
-        expectErrorMessage(setScoreToInvalidAddress, expectedErrorMessage);
+        contractUnderTest.invoke(adminAccount, setterMethod, parameterToSet);
+        assertEquals(parameterToSet, contractUnderTest.call(getterMethod));
+    }
 
-        contractUnderTest.invoke(adminAccount, setterMethod, addressToSet);
-        assertEquals(addressToSet, contractUnderTest.call(getterMethod));
+    public static <T> void testOwnerControlMethods(Score contractUnderTest, String setterMethod,
+                                                   String getterMethod, T parameterToSet) {
+        Account nonOwner = sm.createAccount();
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + nonOwner.getAddress() + "Owner=" + contractUnderTest.getOwner().getAddress();
+        Executable notOwnerCall = () -> contractUnderTest.invoke(nonOwner, setterMethod, parameterToSet);
+        expectErrorMessage(notOwnerCall, expectedErrorMessage);
+
+        contractUnderTest.invoke(contractUnderTest.getOwner(), setterMethod, parameterToSet);
+        assertEquals(parameterToSet, contractUnderTest.call(getterMethod));
+    }
+
+    public static void testIsContract(Account caller, Score contractUnderTest, String setterMethod,
+                                      Address parameterToSet, String getterMethod) {
+        Account nonContractAddress = sm.createAccount();
+        String expectedErrorMessage = "Address Check: Address provided is an EOA address. A contract address is " +
+                "required.";
+        Executable nonContractParameter = () -> contractUnderTest.invoke(caller, setterMethod,
+                nonContractAddress.getAddress());
+        expectErrorMessage(nonContractParameter, expectedErrorMessage);
+
+        contractUnderTest.invoke(contractUnderTest.getOwner(), setterMethod, parameterToSet);
+        assertEquals(parameterToSet, contractUnderTest.call(getterMethod));
     }
 
     public static byte[] tokenData(String method, Map<String, Object> params) {

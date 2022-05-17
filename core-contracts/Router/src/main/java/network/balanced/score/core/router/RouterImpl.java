@@ -162,7 +162,7 @@ public class RouterImpl implements Router {
             BigInteger balance = (BigInteger) Context.call(currentToken, "balanceOf", Context.getAddress());
             Context.require(balance.compareTo(_minReceive) >= 0,
                     TAG + ": Below minimum receive amount of " + _minReceive);
-            Context.call(currentToken, "transfer", from, balance, new byte[0]);
+            Context.call(currentToken, "transfer", from, balance);
         }
     }
 

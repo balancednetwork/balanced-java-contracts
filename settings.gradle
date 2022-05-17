@@ -49,5 +49,14 @@ project(':WorkerToken').projectDir = file("token-contracts/WorkerToken")
 include(':Router')
 project(':Router').projectDir = file("core-contracts/Router")
 
+include(':DAOfund')
+project(':DAOfund').projectDir = file("core-contracts/DAOfund")
+
+include(':BalancedDollar')
+project(':BalancedDollar').projectDir = file("token-contracts/BalancedDollar")
+
+include(':Stability')
+project(':Stability').projectDir = file("util-contracts/Stability")
+
 include(':Dex')
 project(':Dex').projectDir = file("core-contracts/Dex")
