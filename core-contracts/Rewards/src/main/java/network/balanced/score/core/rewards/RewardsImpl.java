@@ -324,7 +324,6 @@ public class RewardsImpl implements Rewards {
 
     @External
     public boolean distribute() {
-        Context.println("################################################################## distribute " );
         BigInteger platformDay = RewardsImpl.platformDay.get();
         BigInteger day = getDay();
         BigInteger continuousRewardsDay = RewardsImpl.continuousRewardsDay.getOrDefault(null);
@@ -381,13 +380,15 @@ public class RewardsImpl implements Rewards {
 
         if (dayOfContinuousRewards || !continuousRewardsActive) {
             for (int i = 0; i < DataSourceDB.size(); i++ ) {
+
                 String name = DataSourceDB.names.get(i);
                 DataSourceImpl dataSource = DataSourceDB.get(name);
-                if (dataSource.getDay().compareTo(day) == -1) {
+
+                if (dataSource.getDay().compareTo(day) < 0) {
+
                     dataSource.distribute(batchSize.get());
                     return false;
                 }
-        
             }
         }
 

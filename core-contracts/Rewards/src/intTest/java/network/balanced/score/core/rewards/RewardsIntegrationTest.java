@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
@@ -45,16 +46,20 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-
 class RewardsIntegrationTest implements ScoreIntegrationTest {
     private static Balanced balanced;
     private static BalancedClient owner;
     private static BalancedClient tester1;
     private static BalancedClient tester2;
 
+    private static String dexJavaPath;
+
     @BeforeAll    
     static void setup() throws Exception {
         System.setProperty("Rewards", System.getProperty("python"));
+        dexJavaPath = System.getProperty("Dex");
+        System.setProperty("Dex", System.getProperty("dexPython"));
+        
         balanced = new Balanced();
         balanced.deployBalanced();
         owner = balanced.ownerClient;
@@ -74,10 +79,21 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
     @Test
     void update() {
         // Add postions that generate baln
+        balanced.dex._update(dexJavaPath, Map.of("_governance", balanced.governance._address()));
+
         BigInteger tester1Loan = BigInteger.TEN.pow(21);
         BigInteger tester2Loan = BigInteger.TEN.pow(21);
         tester1.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", tester1Loan, null, null);        
-        tester2.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", tester2Loan, null, null);        
+        tester2.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", tester2Loan, null, null);
+        
+        JsonObject depositData = Json.object();
+        depositData.add("method", "_deposit");
+        tester1.bnUSD.transfer(balanced.dex._address(), tester1Loan, depositData.toString().getBytes());
+        tester1.staking.stakeICX(BigInteger.TEN.pow(22), null, null);
+        BigInteger tester1SicxDeposit = tester1.sicx.balanceOf(tester1.getAddress());
+
+        tester1.sicx.transfer(balanced.dex._address(), tester1SicxDeposit, depositData.toString().getBytes());
+        tester1.dex.add(balanced.sicx._address(), balanced.bnusd._address(), tester1SicxDeposit, tester1Loan, false);
 
         // Do one distribtion
         balanced.increaseDay(1);
@@ -98,8 +114,8 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         assertEquals(BigInteger.ZERO, tester2.baln.balanceOf(tester2.getAddress()));
         tester2.rewards.claimRewards();
 
-        // both have the same rewards
-        assertEquals(tester1.baln.balanceOf(tester1.getAddress()), tester2.baln.balanceOf(tester1.getAddress()));
+        // assert tester 1 has more rewards from LP and loan
+        // assertTrue(tester1.baln.balanceOf(tester1.getAddress()).compareTo(tester2.baln.balanceOf(tester2.getAddress())) > 0);
 
         // Do one distribtion
         balanced.increaseDay(1);
@@ -112,18 +128,14 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         assertTrue(tester1Balance.compareTo(tester1.baln.balanceOf(tester1.getAddress())) < 0);
         assertTrue(tester2Balance.compareTo(tester2.baln.balanceOf(tester2.getAddress())) < 0);
         
+        System.out.println("balnance1 " + tester1.baln.balanceOf(tester1.getAddress()));
+        System.out.println("balnance1 " + tester2.baln.balanceOf(tester2.getAddress()));
         //verify dao/reserver/bwt
 
         // upgrade to continous
         // BigInteger day = owner.governance.getDay();
 
         // owner.governance.setContinuousRewardsDay(day.add(BigInteger.ONE));
-
-
-
-
-
-
     }
 
 

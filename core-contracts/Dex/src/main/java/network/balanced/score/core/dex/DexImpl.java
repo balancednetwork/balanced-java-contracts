@@ -158,7 +158,7 @@ public class DexImpl {
     }
 
     public DexImpl(@Optional Address _governance) {
-        if (_governance != null) {
+        if (governance.getOrDefault(null) != null) {
             governance.set(_governance);
 
             // Set Default Fee Rates
@@ -172,7 +172,7 @@ public class DexImpl {
             namedMarkets.set(SICXICX_MARKET_NAME, SICXICX_POOL_ID);
             marketsToNames.set(SICXICX_POOL_ID, SICXICX_MARKET_NAME);
         }
-        continuousRewardsDay.set(BigInteger.ZERO);
+        continuousRewardsDay.set(BigInteger.valueOf(10000000));
     }
 
     @External(readonly = true)
@@ -794,7 +794,6 @@ public class DexImpl {
 
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
-
         // Take new day snapshot and check distributions as necessary
         this.takeNewDaySnapshot();
         this.checkDistributions();
@@ -802,11 +801,9 @@ public class DexImpl {
         // Parse the transaction data submitted by the user
         String unpackedData = new String(_data);
         Context.require(!unpackedData.equals(""), "Token Fallback: Data can't be empty");
-
         JsonObject json = Json.parse(unpackedData).asObject();
 
         String method = json.get("method").asString();
-        JsonObject params = json.get("params").asObject();
         Address fromToken = Context.getCaller();
 
         Context.require(_value.compareTo(BigInteger.valueOf(0)) > -1, "Invalid token transfer value");
@@ -816,6 +813,7 @@ public class DexImpl {
 
             BigInteger userBalance = deposit.at(fromToken).getOrDefault(_from, BigInteger.valueOf(0));
             userBalance = userBalance.add(_value);
+
             deposit.at(fromToken).set(_from, userBalance);
             Deposit(fromToken, _from, _value);
 
@@ -828,6 +826,7 @@ public class DexImpl {
             swapIcx(_from, _value);
 
         } else if (method.equals("_swap")) {
+            JsonObject params = json.get("params").asObject();
 
             // Parse the slippage sent by the user in minimumReceive.
             // If none is sent, use the maximum.
@@ -1431,7 +1430,7 @@ public class DexImpl {
             Address poolBaseAddress = poolBase.get(id);
             Address poolQuoteAddress = poolQuote.get(id);
 
-            Context.require((poolBaseAddress == _baseToken) && (poolQuoteAddress == _quoteToken), TAG + ": Must supply " + _baseToken.toString() + " as base and " + _quoteToken.toString() + " as quote");
+            Context.require((poolBaseAddress.equals(_baseToken)) && (poolQuoteAddress.equals(_quoteToken)), TAG + ": Must supply " + _baseToken.toString() + " as base and " + _quoteToken.toString() + " as quote");
 
             // We can only commit in the ratio of the pool. We determine this as:
             // Min(ratio of quote from base, ratio of base from quote)

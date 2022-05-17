@@ -499,7 +499,7 @@ public class GovernanceImpl {
         Address stakingAddress = Addresses.get("staking");
         Address rewardsAddress = Addresses.get("rewards");
         Address loansAddress = Addresses.get("loans");
-
+        
         BigInteger price = Context.call(BigInteger.class, bnUSDAddress, "priceInLoop");
         BigInteger amount = EXA.multiply(value).divide(price.multiply(BigInteger.valueOf(7)));
         Context.call(value.divide(BigInteger.valueOf(7)), stakingAddress, "stakeICX");
@@ -508,7 +508,6 @@ public class GovernanceImpl {
         BigInteger bnUSDValue = Context.call(BigInteger.class, bnUSDAddress, "balanceOf", Context.getAddress());
         BigInteger sICXValue = Context.call(BigInteger.class, sICXAddress, "balanceOf", Context.getAddress());
 
-        
         JsonObject depositData = Json.object();
         depositData.add("method", "_deposit");
         Context.call(bnUSDAddress, "transfer", dexAddress, bnUSDValue, depositData.toString().getBytes());
@@ -521,6 +520,7 @@ public class GovernanceImpl {
 
         Context.call(rewardsAddress, "addNewDataSource",  name, dexAddress);
         Context.call(stakedLpAddress, "addPool", pid);
+
         DistributionPercentage[] recipients = new DistributionPercentage[] {
             createDistributionPercentage("Loans",  BigInteger.valueOf(25).multiply(pow(BigInteger.TEN,16))),
             createDistributionPercentage("sICX/ICX",  BigInteger.TEN.multiply(pow(BigInteger.TEN,16))),

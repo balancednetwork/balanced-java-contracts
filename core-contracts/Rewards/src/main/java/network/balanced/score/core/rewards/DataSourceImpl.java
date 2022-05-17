@@ -201,10 +201,11 @@ public class DataSourceImpl {
     }
 
     public void distribute(int batchSize) {
+        Context.println("####################################################" + getName());
         DataSourceScoreInterface datasource = new DataSourceScoreInterface(getContractAddress());
 
-        BigInteger day = this.getDay();
-        String name = this.getName();
+        BigInteger day = getDay();
+        String name = getName();
 
         Object precomputeDoneObj = Context.call(getContractAddress(), "precompute", day.intValue(), batchSize);// datasource.precompute(day.intValue(), batchSize);
 

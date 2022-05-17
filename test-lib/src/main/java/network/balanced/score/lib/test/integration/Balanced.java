@@ -57,7 +57,9 @@ public class Balanced {
 
     public void deployBalanced() throws Exception {
         owner = createWalletWithBalance(BigInteger.TEN.pow(24));
-        StakedLP      governance = deploy(owner, "Governance", null);
+        deployPrep();
+
+        governance = deploy(owner, "Governance", null);
         deployContracts();
         ownerClient = new BalancedClient(this, owner);
     

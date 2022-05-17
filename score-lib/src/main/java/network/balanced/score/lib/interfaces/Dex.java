@@ -3,7 +3,9 @@ package network.balanced.score.lib.interfaces;
 import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.*;
 import network.balanced.score.lib.interfaces.base.Name;
+import score.Address;
 import score.annotation.External;
+import score.annotation.Optional;
 
 import java.math.BigInteger;
 
@@ -31,5 +33,9 @@ public interface Dex extends AdminAddress, BnusdAddress, DexAddress, GovernanceA
 
     @External(readonly = true)
     BigInteger getPrice(BigInteger _id);
+
+    @External
+    public void add(Address _baseToken, Address _quoteToken, BigInteger _baseValue, BigInteger _quoteValue,
+                    @Optional boolean _withdraw_unused);
 }
 
