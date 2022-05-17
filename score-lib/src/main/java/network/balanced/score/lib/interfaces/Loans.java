@@ -86,6 +86,6 @@ public interface Loans extends
     Map<String, Object> getParameters();
 
     @External(readonly = true)
-    Map<String, Address> getAssetTokens();
+    Map<String, String> getAssetTokens();
 
 }

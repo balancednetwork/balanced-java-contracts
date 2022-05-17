@@ -52,7 +52,7 @@ public class GovernanceConstants extends Constants {
             "reserve", "sicx", "bnUSD", "baln", "bwt", "router", "feehandler", "stakedLp"};
 
     public static Map<String, List<String>> ADDRESSES = Map.ofEntries(
-        entry("loans", List.of("rewards", "dividends", "staking", "reserve")),
+        entry("loans", List.of("rewards", "dividends", "staking", "reserve", "dex")),
         entry("dex", List.of("rewards", "dividends", "staking", "sicx", "bnUSD", "baln", "feehandler", "stakedLp")),
         entry("rewards", List.of("reserve", "baln", "bwt", "daofund")),// "stakedLp")),
         entry("dividends", List.of("loans", "daofund", "dex", "baln")),
