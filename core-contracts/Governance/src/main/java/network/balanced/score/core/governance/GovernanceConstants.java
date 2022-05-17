@@ -28,6 +28,7 @@ import network.balanced.score.lib.utils.Constants;
 
 public class GovernanceConstants extends Constants {
     public static final String TAG = "Governance";
+    public static final int succsesfulVoteExecutionRevertID = 20;
 
     public static final BigInteger U_SECONDS_DAY = BigInteger.valueOf(86400).multiply(pow(BigInteger.TEN,6));
     public static final BigInteger MAJORITY = new BigInteger("666666666666666667", 10);
@@ -53,15 +54,15 @@ public class GovernanceConstants extends Constants {
     public static Map<String, List<String>> ADDRESSES = Map.ofEntries(
         entry("loans", List.of("rewards", "dividends", "staking", "reserve")),
         entry("dex", List.of("rewards", "dividends", "staking", "sicx", "bnUSD", "baln", "feehandler", "stakedLp")),
-        entry("rewards", List.of("reserve", "baln", "bwt", "daofund", "stakedLp")),
+        entry("rewards", List.of("reserve", "baln", "bwt", "daofund")),// "stakedLp")),
         entry("dividends", List.of("loans", "daofund", "dex", "baln")),
         entry("daofund", List.of("loans")),
         entry("reserve", List.of("loans", "baln", "sicx")),
         entry("bnUSD", List.of("oracle")),
         entry("baln", List.of("dividends", "oracle", "dex", "bnUSD")),
         entry("bwt", List.of("baln")),
-        entry("router", List.of("dex", "sicx", "staking")),
-        entry("stakedLp", List.of("dex", "rewards"))
+        entry("router", List.of("dex", "sicx", "staking"))
+        // entry("stakedLp", List.of("dex", "rewards"))
     );
 
     public static Map<String, String> ADMIN_ADDRESSES = Map.ofEntries(

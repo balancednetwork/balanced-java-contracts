@@ -49,6 +49,12 @@ public interface Governance extends
     void setVoteDuration(BigInteger duration);
 
     @External
+    void setTimeOffset(BigInteger offset);
+    
+    @External(readonly = true)
+    BigInteger getTimeOffset();
+
+    @External
     void setContinuousRewardsDay(BigInteger _day);
 
     @External(readonly = true)
