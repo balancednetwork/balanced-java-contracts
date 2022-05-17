@@ -16,34 +16,23 @@
 
 package network.balanced.score.lib.utils;
 
-import score.Address;
 import score.ArrayDB;
 
 public class ArrayDBUtils {
-    public static boolean arrayDbContains(ArrayDB<Address> arrayDB, Address address) {
-        final int size = arrayDB.size();
-        for (int i = 0; i < size; i++) {
-            if (arrayDB.get(i).equals(address)) {
+    public static <T> boolean arrayDBContains(ArrayDB<T> arrayDB, T ele) {
+        for (int i = 0; i < arrayDB.size(); i++) {
+            if (arrayDB.get(i).equals(ele)) {
                 return true;
             }
         }
         return false;
     }
 
-    public static boolean removeFromArraydb(Address _item, ArrayDB<Address> _array) {
-        final int size = _array.size();
-        if (size < 1) {
-            return false;
-        }
-        Address top = _array.get(size - 1);
-        for (int i = 0; i < size; i++) {
-            if (_array.get(i).equals(_item)) {
-                _array.set(i, top);
-                _array.pop();
-                return true;
+    public static <T> void removeFromArrayDB(T ele, ArrayDB<T> arrayDB) {
+        for (int i = 0; i < arrayDB.size(); i++) {
+            if (arrayDB.get(i).equals(ele)) {
+                arrayDB.set(i, arrayDB.pop());
             }
         }
-
-        return false;
     }
 }

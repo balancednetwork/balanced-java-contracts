@@ -16,6 +16,8 @@
 
 package network.balanced.score.lib.utils;
 
+import score.Address;
+
 import java.math.BigInteger;
 
 import static network.balanced.score.lib.utils.Math.pow;
@@ -25,4 +27,6 @@ public class Constants {
     public final static BigInteger POINTS = BigInteger.valueOf(10000);
     public final static BigInteger SECOND = pow(BigInteger.TEN,6);
     public final static BigInteger U_SECONDS_DAY = BigInteger.valueOf(86400).multiply(SECOND);
+    public final static Address EOA_ZERO = Address.fromString("hx0000000000000000000000000000000000000000");
+
 }

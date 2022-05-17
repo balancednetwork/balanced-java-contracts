@@ -29,6 +29,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 public class UnitTest extends TestBase {
     public static int scoreCount = 1;
@@ -129,5 +130,16 @@ public class UnitTest extends TestBase {
         map.put("params", params);
         JSONObject data = new JSONObject(map);
         return data.toString().getBytes();
+    }
+
+    public static void assertOnlyCallableByGovernance(Score contractUnderTest, String method, Object... params) {
+        Account caller = sm.createAccount();
+        Address governance = (Address) contractUnderTest.call("getGovernance");
+        assertNotEquals(caller.getAddress(), governance);
+
+        String expectedErrorMessage = "Authorization Check: Authorization failed. Caller: " + caller.getAddress() + " Authorized Caller: " + governance;
+        Executable executable = () -> contractUnderTest.invoke(caller, method, params);
+        
+        expectErrorMessage(executable, expectedErrorMessage);;
     }
 }

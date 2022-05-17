@@ -33,7 +33,7 @@ public class Dependencies {
     public static final String junitJupiterApi = "org.junit.jupiter:junit-jupiter-api:5.8.2";
 
     public static final String mockitoCore = "org.mockito:mockito-core:4.3.1";
-    public static final String mockitoInline = "org.mockito:mockito-inline:4.3.1";
+    public static final String mockitoInline = "org.mockito:mockito-inline:4.4.0";
 
     public static final String json = "org.json:json:20211205";
     public static final String javaFaker = "com.github.javafaker:javafaker:1.0.2";

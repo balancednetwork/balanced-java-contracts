@@ -27,8 +27,8 @@ import score.annotation.Optional;
 
 import java.math.BigInteger;
 
-import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
-import static network.balanced.score.lib.utils.ArrayDBUtils.removeFromArraydb;
+import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDBContains;
+import static network.balanced.score.lib.utils.ArrayDBUtils.removeFromArrayDB;
 import static network.balanced.score.lib.utils.Check.*;
 
 public class WorkerTokenImpl extends IRC2PresetFixedSupply implements WorkerToken {
@@ -118,10 +118,10 @@ public class WorkerTokenImpl extends IRC2PresetFixedSupply implements WorkerToke
         transfer(_from, _to, _value, _data);
 
         if (balances.getOrDefault(_from, BigInteger.ZERO).equals(BigInteger.ZERO)) {
-            removeFromArraydb(_from, addresses);
+            removeFromArrayDB(_from, addresses);
         }
 
-        if (!arrayDbContains(addresses, _to)) {
+        if (!arrayDBContains(addresses, _to)) {
             addresses.add(_to);
         }
 
