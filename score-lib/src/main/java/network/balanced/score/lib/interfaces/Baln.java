@@ -1,14 +1,23 @@
-package network.balanced.score.core.governance.interfaces;
+package network.balanced.score.lib.interfaces;
 
 import score.Address;
 
 import java.math.BigInteger;
 
+import network.balanced.score.lib.interfaces.addresses.*;
+
 import foundation.icon.score.client.ScoreInterface;
 
 @ScoreInterface
-public interface Baln extends Setter{
+public interface Baln extends
+        AdminAddress,
+        DividendsAddress,
+        BnusdAddress,
+        DexAddress {
+
     BigInteger totalSupply();
+
+    void stake(BigInteger _value);
         
     BigInteger totalStakedBalance();
         
@@ -25,13 +34,16 @@ public interface Baln extends Setter{
     void setOracle(Address _address); 
         
     void setOracleName(String _name); 
+
+    void setTimeOffset();
         
     void toggleStakingEnabled(); 
         
+    void toggleEnableSnapshot();
+
     void setMinimumStake(BigInteger _amount); 
         
     void setUnstakingPeriod(BigInteger _time); 
         
-    void setMinInterval(BigInteger _interval); 
-                
+    void setMinInterval(BigInteger _interval);           
 }

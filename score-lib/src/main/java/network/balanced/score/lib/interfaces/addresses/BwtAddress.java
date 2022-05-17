@@ -14,25 +14,16 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.interfaces.base;
+package network.balanced.score.lib.interfaces.addresses;
 
 import score.Address;
 import score.annotation.External;
-import score.annotation.Optional;
 
-import java.math.BigInteger;
-
-public interface IRC2MintableInterface {
+public interface BwtAddress {
 
     @External
-    void setMinter(Address _address);
+    void setBwt(Address _address);
 
     @External(readonly = true)
-    Address getMinter();
-
-    @External
-    void mint(BigInteger _amount, @Optional byte[] _data);
-
-    @External
-    void mintTo(Address _account, BigInteger _amount, @Optional byte[] _data);
+    Address getBwt();
 }
