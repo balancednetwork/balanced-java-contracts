@@ -1,0 +1,26 @@
+import network.balanced.score.dependencies.Dependencies
+
+version = ''
+
+dependencies {
+    compileOnly Dependencies.javaeeApi
+    
+    implementation Dependencies.javaeeScorex
+    implementation Dependencies.javaeeTokens
+
+    implementation Dependencies.minimalJson
+}
+
+optimizedJar {
+    mainClassName = 'network.balanced.score.mock.DexMock'
+    archivesBaseName = 'DexMock'
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+test {    
+    useJUnitPlatform()
+}

@@ -7,6 +7,11 @@
 
 # Deployments
 deployments
+# Vscore
+.vscode
+
+# Keystore
+keystore.json
 
 # BlueJ files
 *.ctxt
@@ -18,7 +23,6 @@ deployments
 *.war
 *.nar
 *.ear
-*.zip
 *.tar.gz
 *.rar
 !test-lib/python-contracts/*.zip

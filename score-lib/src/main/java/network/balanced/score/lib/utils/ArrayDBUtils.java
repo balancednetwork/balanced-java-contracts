@@ -19,9 +19,10 @@ package network.balanced.score.lib.utils;
 import score.ArrayDB;
 
 public class ArrayDBUtils {
-    public static <T> boolean arrayDBContains(ArrayDB<T> arrayDB, T ele) {
-        for (int i = 0; i < arrayDB.size(); i++) {
-            if (arrayDB.get(i).equals(ele)) {
+    public static <T>boolean arrayDbContains(ArrayDB<T> arrayDB, T item) {
+        final int size = arrayDB.size();
+        for (int i = 0; i < size; i++) {
+            if (arrayDB.get(i).equals(item)) {
                 return true;
             }
         }

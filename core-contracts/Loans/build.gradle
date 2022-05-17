@@ -1,0 +1,107 @@
+import network.balanced.score.dependencies.Dependencies
+
+version = '0.1.0'
+
+repositories {
+    mavenCentral()
+}
+
+sourceSets {
+    intTest {}
+}
+
+configurations {
+    intTestImplementation.extendsFrom testImplementation
+    intTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
+dependencies {
+    compileOnly Dependencies.javaeeApi
+    implementation project(':score-lib')
+
+    implementation Dependencies.javaeeScorex
+    implementation Dependencies.minimalJson
+
+    testImplementation Dependencies.javaeeUnitTest
+    testImplementation Dependencies.junitJupiter
+    testImplementation Dependencies.mockitoCore
+    testImplementation Dependencies.javaeeTokens
+    testImplementation project(':test-lib')
+    testImplementation 'org.mockito:mockito-inline:2.13.0'
+
+    testRuntimeOnly Dependencies.junitJupiterEngine
+
+    intTestImplementation project(':DexMock')
+    intTestImplementation project(':testinteg')
+    intTestImplementation project(':RebalanceMock')
+    intTestImplementation 'foundation.icon:icon-sdk:2.0.0'
+}
+
+optimizedJar {
+    mainClassName = 'network.balanced.score.core.loans.LoansImpl'
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from {
+        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
+    } { 
+        exclude "score/*"
+        
+    }
+
+    enableDebug = false
+}
+
+deployJar {
+    endpoints {
+        sejong {
+            uri = 'https://sejong.net.solidwallet.io/api/v3'
+            nid = 0x53
+        }
+        local {
+            uri = 'http://localhost:9082/api/v3'
+            nid = 0x3
+        }
+    }
+    keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
+    password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
+    parameters {
+        arg('_governance', 'hxe5679f118e093657b71967b0dfddb4d00cbd80b4')
+    }
+}
+
+test {
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport 
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = false
+        csv.required = false
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+    }
+}
+
+def dexJar = project(':DexMock').getTasks().getByName('optimizedJar')
+def rebalanceJar = project(':RebalanceMock').getTasks().getByName('optimizedJar')
+
+task integrationTest(type: Test, dependsOn: optimizedJar) {
+    useJUnitPlatform()
+    description = 'Runs integration tests.'
+    group = 'verification'
+
+    testClassesDirs = sourceSets.intTest.output.classesDirs
+    classpath = sourceSets.intTest.runtimeClasspath
+    testLogging.showStandardStreams = true
+
+    // use the common config files
+    systemProperty('env.props', new File(project(':testinteg').projectDir, 'conf/env.props'))
+
+    def prefix = 'score.path.'
+    systemProperty(prefix + project.name, optimizedJar.outputJarName)
+    systemProperty(prefix + 'RebalanceMock', rebalanceJar.outputJarName)
+    systemProperty(prefix + 'DexMock', dexJar.outputJarName)
+}
+integrationTest.dependsOn(rebalanceJar)
+integrationTest.dependsOn(dexJar)

@@ -27,6 +27,10 @@ import score.annotation.Payable;
 import java.math.BigInteger;
 import java.util.Map;
 
+import network.balanced.score.lib.interfaces.addresses.AdminAddress;
+import network.balanced.score.lib.interfaces.addresses.DexAddress;
+import network.balanced.score.lib.interfaces.addresses.StakingAddress;
+
 @ScoreInterface
 public interface Loans extends
         RewardsAddress, 

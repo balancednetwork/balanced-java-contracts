@@ -67,3 +67,19 @@ project(':Governance').projectDir = file("core-contracts/Governance")
 
 include(':Dex')
 project(':Dex').projectDir = file("core-contracts/Dex")
+
+include(':Loans')
+project(':Loans').projectDir = file("core-contracts/Loans")
+
+include(':testinteg')
+project(':testinteg').projectDir = file("testinteg")
+
+include(':DexMock')
+project(':DexMock').projectDir = file("mock-contracts/DexMock")
+
+include(':RebalanceMock')
+project(':RebalanceMock').projectDir = file("mock-contracts/RebalanceMock")
+
+
+include 'score-lib'
+include 'test-lib'
