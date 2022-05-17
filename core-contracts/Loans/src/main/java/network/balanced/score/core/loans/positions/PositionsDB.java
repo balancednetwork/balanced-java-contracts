@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2022-2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package network.balanced.score.core.loans.positions;
 
 import score.Context;
@@ -16,15 +32,15 @@ import network.balanced.score.core.loans.snapshot.*;
 import network.balanced.score.core.loans.asset.*;
 
 public class PositionsDB {
-    public static final String POSITION_DB_PREFIX  = "position";
-    public static final String IDFACTORY = "idfactory";
-    public static final String ADDRESSID = "addressid";
-    public static final String NONZERO = "nonzero";
-    public static final String NEXT_NODE = "next_node";
+    private static final String POSITION_DB_PREFIX  = "position";
+    private static final String IDFACTORY = "idfactory";
+    private static final String ADDRESSID = "addressid";
+    private static final String NONZERO = "nonzero";
+    private static final String NEXT_NODE = "next_node";
 
-    public static final IdFactory idFactory = new IdFactory(IDFACTORY);
+    private static final IdFactory idFactory = new IdFactory(IDFACTORY);
     public static final DictDB<Address, Integer> addressIds = Context.newDictDB(ADDRESSID, Integer.class);
-    public static final VarDB<Integer> nextPositionNode = Context.newVarDB(NEXT_NODE, Integer.class);
+    private static final VarDB<Integer> nextPositionNode = Context.newVarDB(NEXT_NODE, Integer.class);
 
     // private static HashMap<Integer, Position> items = new HashMap<Integer, Position>(10);
 
@@ -103,7 +119,7 @@ public class PositionsDB {
         position.created.set(BigInteger.valueOf(Context.getBlockTimestamp()));
         position.address.set(address);
 
-        Boolean checkDay = snapshotIndex.compareTo(LoansImpl.continuousRewardDay.get()) < 0;
+        boolean checkDay = snapshotIndex.compareTo(LoansImpl.continuousRewardDay.get()) < 0;
 
         if (checkDay) {
             position.assets.at(snapshotIndex).set("sICX", BigInteger.ZERO);
@@ -120,14 +136,16 @@ public class PositionsDB {
         Snapshot snapshot = SnapshotDB.get(BigInteger.valueOf(-1));
         for (int i = 0; i < AssetDB.assetSymbols.size(); i++) {
             String symbol = AssetDB.assetSymbols.get(i);
-            Asset asset = AssetDB.get(symbol);
+            Asset asset = AssetDB.getAsset(symbol);
+            Address assetAddress = asset.getAssetAddress();
+            Token assetContract = new Token(assetAddress);
             if (asset.isActive()) {
-                snapshot.prices.set(symbol, asset.priceInLoop());
+                snapshot.prices.set(symbol, assetContract.priceInLoop());
             }
         }
 
         snapshot.time.set(BigInteger.valueOf(Context.getBlockTimestamp()));
-        if (LoansImpl._getDay() != LoansImpl.continuousRewardDay.get()) {
+        if (!LoansImpl._getDay().equals(LoansImpl.continuousRewardDay.get())) {
             SnapshotDB.startNewSnapshot();
         }
     }
@@ -202,9 +220,10 @@ public class PositionsDB {
             }
             index++;
             if (accountId == nonZero.getTailId()) {
+                //TODO Start again with head id.
                 nextNode = 0;
             } else {
-                nextNode = nonZero.next(nextNode);
+                nextNode = nonZero.getNextId(nextNode);
             }
         }
 
@@ -212,10 +231,6 @@ public class PositionsDB {
         snapshot.preComputeIndex.set(index);
         nextPositionNode.set(nextNode);
 
-        if (totalNonZero == index) {
-            return true;
-        }
-
-        return false;
+        return totalNonZero == index;
     }
 }

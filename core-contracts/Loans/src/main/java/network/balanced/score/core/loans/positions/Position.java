@@ -1,5 +1,22 @@
+/*
+ * Copyright (c) 2022-2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package network.balanced.score.core.loans.positions;
 
+import network.balanced.score.core.loans.utils.Token;
 import score.Context;
 import score.VarDB;
 import score.ArrayDB;
@@ -49,7 +66,7 @@ public class Position {
             return assets.at(lastSnap()).getOrDefault(symbol, BigInteger.ZERO);
         }
 
-        if (AssetDB.get(symbol).isCollateral()) {
+        if (AssetDB.getAsset(symbol).isCollateral()) {
             return collateral.get(symbol);
         };
 
@@ -72,7 +89,7 @@ public class Position {
         }
 
         if (arrayDbContains(AssetDB.activeAssets, symbol)) {
-            AssetDB.get(symbol).getBorrowers().set(id.get(), value);
+            AssetDB.getAsset(symbol).getBorrowers().set(id.get(), value);
         }
     }
 
@@ -174,11 +191,13 @@ public class Position {
             
             for (int i = 0; i < AssetDB.activeCollateral.size(); i++) {
                 String symbol =  AssetDB.activeCollateral.get(i);
-                Asset asset = AssetDB.get(symbol);
+                Asset asset = AssetDB.getAsset(symbol);
+                Address assetAddress = asset.getAssetAddress();
+                Token assetContract = new Token(assetAddress);
                 BigInteger amount = assets.at(id).get(symbol);
                 BigInteger price;
                 if (day.equals(BigInteger.valueOf(-1)) || day.equals(LoansImpl._getDay())) {
-                    price = asset.priceInLoop();
+                    price = assetContract.priceInLoop();
                 } else {
                     price = SnapshotDB.get(day).prices.getOrDefault(symbol, BigInteger.ZERO);
                 }
@@ -191,12 +210,13 @@ public class Position {
 
         for (int i = 0; i < AssetDB.activeCollateral.size(); i++) {
             String symbol =  AssetDB.activeCollateral.get(i);
-            Asset asset = AssetDB.get(symbol);
-            
+            Asset asset = AssetDB.getAsset(symbol);
+            Address assetAddress = asset.getAssetAddress();
+            Token assetContract = new Token(assetAddress);
             BigInteger amount = get(symbol);
             BigInteger price;
             if (day.equals(BigInteger.valueOf(-1)) || day.equals(LoansImpl._getDay())) {
-                price = asset.priceInLoop();
+                price = assetContract.priceInLoop();
             } else {
                 price = SnapshotDB.get(day).prices.getOrDefault(symbol, BigInteger.ZERO);
             }
@@ -316,7 +336,7 @@ public class Position {
         HashMap<String, BigInteger> assetAmounts = new HashMap<String, BigInteger>(AssetDB.assetSymbols.size());
         for (int i = 0; i < AssetDB.assetSymbols.size(); i++) {
             String symbol = AssetDB.assetSymbols.get(i);
-            Asset asset = AssetDB.get(symbol);
+            Asset asset = AssetDB.getAsset(symbol);
             if (!asset.isActive()) {
                 continue;
             }
@@ -351,11 +371,13 @@ public class Position {
     }
 
     private BigInteger getAssetPrice(String symbol, Boolean readOnly) {
-        Asset asset = AssetDB.get(symbol);
+        Asset asset = AssetDB.getAsset(symbol);
+        Address assetAddress = asset.getAssetAddress();
+        Token assetContract = new Token(assetAddress);
         if (readOnly) {
-            return asset.lastPriceInLoop();
+            return assetContract.lastPriceInLoop();
         } else {
-            return asset.priceInLoop();
+            return assetContract.priceInLoop();
         }
     } 
 }

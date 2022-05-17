@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2022-2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package network.balanced.score.core.loans.snapshot;
 
 import score.Context;
@@ -21,9 +37,9 @@ public class Snapshot {
     public VarDB<Integer> preComputeIndex;
     public BranchDB<Integer, DictDB<String, BigInteger>> positionStates;
     public ArrayDB<Integer> mining;
-    private String dbKey;
+    private final String dbKey;
 
-    public Snapshot(String key) {
+    Snapshot(String key) {
         dbKey = key;
         day = (VarDB<BigInteger>)Context.newBranchDB("snap_day", BigInteger.class).at(dbKey);
         time = (VarDB<BigInteger>)Context.newBranchDB("snap_time", BigInteger.class).at(dbKey);
@@ -43,10 +59,10 @@ public class Snapshot {
     }
 
     public Map<String, Object> toMap() {
-        HashMap<String, BigInteger> prices = new HashMap<String, BigInteger>(AssetDB.assetSymbols.size());
+        Map<String, BigInteger> prices = new HashMap<>();
         for(int i = 0; i < AssetDB.assetSymbols.size(); i++) {
             String symbol = AssetDB.assetSymbols.get(i);
-            if (AssetDB.get(symbol).added.get().compareTo(time.getOrDefault(BigInteger.ZERO)) < 0 && AssetDB.get(symbol).isActive()) {
+            if (AssetDB.getAsset(symbol).getAssetAddedTime().compareTo(time.getOrDefault(BigInteger.ZERO)) < 0 && AssetDB.getAsset(symbol).isActive()) {
                 prices.put(symbol, this.prices.get(symbol));
             }
         }
