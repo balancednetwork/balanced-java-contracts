@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core;
+package network.balanced.score.core.stakedlp;
 
 import score.Address;
 import score.Context;
