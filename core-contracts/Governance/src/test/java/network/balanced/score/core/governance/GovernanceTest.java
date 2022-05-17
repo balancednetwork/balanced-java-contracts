@@ -722,7 +722,7 @@ public class GovernanceTest extends GovernanceTestBase {
         String _symbol = "sicx";
         Address oracleAddress = oracle.getAddress();
         Account notOwner = sm.createAccount();
-        Map<String, Address> tokens = Map.of(_symbol, sicx.getAddress());
+        Map<String, String> tokens = Map.of(_symbol, sicx.getAddress().toString());
         when(loans.mock.getAssetTokens()).thenReturn(tokens);
 
         // Act & Assert
@@ -748,7 +748,7 @@ public class GovernanceTest extends GovernanceTestBase {
         String _symbol = "sicx";
         String oracleName = "oracleName";
         Account notOwner = sm.createAccount();
-        Map<String, Address> tokens = Map.of(_symbol, sicx.getAddress());
+        Map<String, String> tokens = Map.of(_symbol, sicx.getAddress().toString());
         when(loans.mock.getAssetTokens()).thenReturn(tokens);
 
         // Act & Assert
@@ -774,7 +774,7 @@ public class GovernanceTest extends GovernanceTestBase {
         String _symbol = "sicx";
         BigInteger minInterval = BigInteger.TEN;
         Account notOwner = sm.createAccount();
-        Map<String, Address> tokens = Map.of(_symbol, sicx.getAddress());
+        Map<String, String> tokens = Map.of(_symbol, sicx.getAddress().toString());
         when(loans.mock.getAssetTokens()).thenReturn(tokens);
 
         // Act & Assert

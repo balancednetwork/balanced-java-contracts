@@ -837,30 +837,30 @@ public class GovernanceImpl {
     @External
     public void setAssetOracle(String _symbol, Address _address) {
         onlyOwner();
-        Map<String, Address> assetAddresses = (Map<String, Address>) Context.call(Addresses.get("loans"), "getAssetTokens");
+        Map<String, String> assetAddresses = (Map<String, String>) Context.call(Addresses.get("loans"), "getAssetTokens");
         Context.require(assetAddresses.containsKey(_symbol), TAG + ": " + _symbol + " is not a supported asset in Balanced.");
 
-        Address token = assetAddresses.get(_symbol);
+        Address token = Address.fromString(assetAddresses.get(_symbol));
         Context.call(token, "setOracle", _address);
     }
 
     @External
     public void setAssetOracleName(String _symbol, String _name) {
         onlyOwner();
-        Map<String, Address> assetAddresses = (Map<String, Address>) Context.call(Addresses.get("loans"), "getAssetTokens");  
+        Map<String, String> assetAddresses = (Map<String, String>) Context.call(Addresses.get("loans"), "getAssetTokens");  
         Context.require(assetAddresses.containsKey(_symbol), TAG + ": " + _symbol + " is not a supported asset in Balanced.");
 
-        Address token = assetAddresses.get(_symbol);
+        Address token = Address.fromString(assetAddresses.get(_symbol));
         Context.call(token, "setOracleName", _name);
     }
 
     @External
     public void setAssetMinInterval(String _symbol, BigInteger _interval) {
         onlyOwner();
-        Map<String, Address> assetAddresses = (Map<String, Address>) Context.call(Addresses.get("loans"), "getAssetTokens");
+        Map<String, String> assetAddresses = (Map<String, String>) Context.call(Addresses.get("loans"), "getAssetTokens");
         Context.require(assetAddresses.containsKey(_symbol), TAG + ": " + _symbol + " is not a supported asset in Balanced.");
 
-        Address token = assetAddresses.get(_symbol);
+        Address token = Address.fromString(assetAddresses.get(_symbol));
         Context.call(token, "setMinInterval", _interval);
     }
 
