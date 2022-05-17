@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2022-2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package network.balanced.score.core.loans.linkedlist;
 
 import score.Context;
@@ -6,82 +22,85 @@ import score.VarDB;
 import java.math.BigInteger;
 
 public class Node {
-    
-    public final String _NAME = "_Node";
-    public String name;
-    public VarDB<String> nodeData;
-    public String dataString;
-    public BigInteger value;
-    public int next;
-    public int prev;
 
-    public Node(String dbName) {
+    private final String _NAME = "_Node";
+    private final String name;
+    private final VarDB<String> nodeData;
+    private String dataString;
+    private BigInteger value;
+    private int next;
+    private int prev;
+
+    Node(String dbName) {
         name = dbName + _NAME;
         nodeData = Context.newVarDB(name + "_node_data", String.class);
-        setup();
+        initialize();
     }
 
-    public Node(String dbName, String key) {
+    @SuppressWarnings("unchecked")
+    Node(String dbName, String key) {
         name = dbName + _NAME;
         nodeData = (VarDB<String>) Context.newBranchDB(name + "_node_data", String.class).at(key);
-        setup();
+        initialize();
     }
 
-    private void setup() {
-        dataString = "";
-        value = BigInteger.ZERO;
-        next = 0;
-        prev = 0;
-        unpack();
-    }
-
-    public void unpack() {
-        dataString = nodeData.getOrDefault("");
-        if (dataString.equals("")) {
+    private void initialize() {
+        dataString = nodeData.get();
+        if (dataString == null || dataString.isEmpty()) {
+            value = BigInteger.ZERO;
+            next = 0;
+            prev = 0;
             return;
         }
 
         int delimiter1 = dataString.indexOf("|");
         int delimiter2 = dataString.lastIndexOf("|");
         value = new BigInteger(dataString.substring(0, delimiter1));
-        next = Integer.parseInt(dataString.substring(delimiter1+1, delimiter2));
-        prev = Integer.parseInt(dataString.substring(delimiter2+1, dataString.length()));
+        next = Integer.parseInt(dataString.substring(delimiter1 + 1, delimiter2));
+        prev = Integer.parseInt(dataString.substring(delimiter2 + 1));
     }
 
-    public void repack() {
-        String data = value.toString() + "|" + next +  "|" + prev;
-        nodeData.set(data);
+    void repack() {
+        String newData = value.toString() + "|" + next + "|" + prev;
+        if (!newData.equals(dataString)) {
+            dataString = newData;
+            nodeData.set(newData);
+        }
     }
 
-    public void delete() {
-        nodeData.set("");   
+    void delete() {
+        value = BigInteger.ZERO;
+        next = 0;
+        prev = 0;
+        dataString = null;
+        nodeData.set(null);
     }
 
-    public boolean exists() {
-        return !dataString.equals("");
+    boolean exists() {
+        return dataString != null && !dataString.isEmpty();
     }
 
-    public BigInteger getValue() {
+    BigInteger getValue() {
         return value;
     }
 
-    public void setValue(BigInteger value){
+    void setValue(BigInteger value) {
         this.value = value;
     }
 
-    public int getNext(){
+    int getNext() {
         return next;
     }
 
-    public void setNext(int nextId){
+    void setNext(int nextId) {
         next = nextId;
     }
 
-    public int getPrev(){
+    int getPrev() {
         return prev;
     }
 
-    public void setPrev(int prevId){
+    void setPrev(int prevId) {
         prev = prevId;
     }
 }
