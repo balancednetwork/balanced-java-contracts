@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ICONLOOP Inc.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.loans;
+package network.balanced.score.core.loans.mocks.sICX;
 
 import score.Address;
 import score.Context;
@@ -25,7 +25,7 @@ import score.annotation.External;
 import score.annotation.Optional;
 
 import java.math.BigInteger;
-public abstract class bnUSD {
+public abstract class sICX {
     protected static final Address ZERO_ADDRESS = new Address(new byte[Address.LENGTH]);
     private final VarDB<String> name = Context.newVarDB("token_name", String.class);
     private final VarDB<String> symbol = Context.newVarDB("token_symbol", String.class);
@@ -33,7 +33,7 @@ public abstract class bnUSD {
     private final VarDB<BigInteger> totalSupply = Context.newVarDB("total_supply", BigInteger.class);
     private final DictDB<Address, BigInteger> balances = Context.newDictDB("balances", BigInteger.class);
 
-    public bnUSD(String _name, String _symbol, int _decimals) {
+    public sICX(String _name, String _symbol, int _decimals) {
         // initialize values only at first deployment
         if (this.name.get() == null) {
             this.name.set(ensureNotEmpty(_name));
@@ -108,6 +108,9 @@ public abstract class bnUSD {
 
         totalSupply.set(totalSupply.getOrDefault(BigInteger.ZERO).add(amount));
         safeSetBalance(owner, safeGetBalance(owner).add(amount));
+        if (owner.isContract()) {
+            Context.call(owner, "tokenFallback", ZERO_ADDRESS, amount, new byte[0]);
+        }
         Transfer(ZERO_ADDRESS, owner, amount, "mint".getBytes());
     }
 

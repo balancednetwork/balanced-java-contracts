@@ -1,53 +1,41 @@
+/*
+ * Copyright (c) 2022-2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package network.balanced.score.core.loans;
 
 import com.iconloop.score.test.Account;
-import com.iconloop.score.test.Score;
-import com.iconloop.score.test.ServiceManager;
-import com.iconloop.score.test.TestBase;
-import com.iconloop.score.token.irc2.IRC2Mintable;
-import org.junit.jupiter.api.*;
+import network.balanced.score.lib.structs.RewardsDataEntry;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import java.math.BigInteger;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-
-import static org.mockito.Mockito.spy;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.ArgumentMatchers.argThat;
-
-import score.Context;
-import score.Address;
-import score.annotation.External;
-
-import java.math.BigInteger;
-import java.math.MathContext;
-import java.math.BigDecimal;
-import scorex.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
-import java.util.Arrays;
-
-import network.balanced.score.core.loans.sICXMintBurn;
-import network.balanced.score.core.loans.bnUSDMintBurn;
-import static network.balanced.score.core.loans.utils.LoansConstants.*;
-import network.balanced.score.lib.structs.RewardsDataEntry;
-
-import java.util.Random;
 
 @DisplayName("Loans Tests")
-class LoansTestContinuousRewards extends LoansTestsBase {
+class LoansTestContinuousRewards extends LoansTestBase {
 
-    static final String continuousRewardsErrorMessage = "The continuous rewards is already active.";   
+    static final String continuousRewardsErrorMessage = "The continuous rewards is already active.";
 
     @BeforeEach
     public void setupContractsAndWallets() throws Exception {
@@ -70,7 +58,7 @@ class LoansTestContinuousRewards extends LoansTestsBase {
         Executable getPositionByIndex = () -> loans.call("getPositionByIndex", index, lastDay);
         expectErrorMessage(getPositionByIndex, continuousRewardsErrorMessage);
     }
-    
+
     @Test
     void getTotalValue() {
         BigInteger lastDay = BigInteger.valueOf(-1);
@@ -106,7 +94,7 @@ class LoansTestContinuousRewards extends LoansTestsBase {
 
         // Act
         takeLoanICX(account, "bnUSD", collateral, loan);
-    
+
         // Assert
         verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
         assertTrue((boolean) loans.call("hasDebt", account.getAddress()));
@@ -134,11 +122,11 @@ class LoansTestContinuousRewards extends LoansTestsBase {
 
         // Act
         takeLoanICX(account, "bnUSD", collateral, loan);
-    
+
         // Assert
         verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
         assertTrue((boolean) loans.call("hasDebt", account.getAddress()));
-    
+
         // Act
         enableContinuousRewards();
         BigInteger addedCollateral = BigInteger.valueOf(100).multiply(EXA);
@@ -155,7 +143,7 @@ class LoansTestContinuousRewards extends LoansTestsBase {
         loans.invoke(account, "migrateUserData", account.getAddress());
         verifyPosition(account.getAddress(), expectedCollateral, expectedLoan);
         assertTrue((boolean) loans.call("hasDebt", account.getAddress()));
-    }    
+    }
 
     @Test
     void DepositAndBorrow_rewardsUpdate_noInitalLoan() {
@@ -170,7 +158,7 @@ class LoansTestContinuousRewards extends LoansTestsBase {
 
         // Act
         takeLoanICX(account, "bnUSD", collateral, loan);
-    
+
         // Assert
         verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
         verify(rewards.mock).updateRewardsData("Loans", totalSupply, account.getAddress(), intialDebt);
@@ -194,7 +182,7 @@ class LoansTestContinuousRewards extends LoansTestsBase {
 
         // Act
         takeLoanICX(account, "bnUSD", collateral, loan);
-    
+
         // Assert
         verifyPosition(account.getAddress(), collateral.add(initalCollateral), exceptedDebt);
     }
@@ -207,11 +195,11 @@ class LoansTestContinuousRewards extends LoansTestsBase {
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
         BigInteger expectedFee = calculateFee(loan);
         BigInteger loanToRepay = BigInteger.valueOf(100).multiply(EXA);
-        
+
         takeLoanICX(account, "bnUSD", collateral, loan);
         BigInteger balancePre = (BigInteger) bnusd.call("balanceOf", account.getAddress());
         BigInteger totalSupply = (BigInteger) bnusd.call("totalSupply");
-    
+
         // Act 
         loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, true);
 
@@ -245,7 +233,7 @@ class LoansTestContinuousRewards extends LoansTestsBase {
         takeLoanICX(accounts.get(0), "bnUSD", accountZeroCollateral, accountZeroLoan);
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
         takeLoanICX(accounts.get(2), "bnUSD", accountTwoCollateral, accountTwoLoan);
-        
+
         BigInteger rate = EXA.divide(BigInteger.TWO);
         mockSicxBnusdPrice(rate);
         BigInteger expectedBnusdRecived = rebalanceAmount.multiply(BigInteger.TWO);
@@ -260,15 +248,16 @@ class LoansTestContinuousRewards extends LoansTestsBase {
         BigInteger accountZeroExpectedCollateralSold = rebalanceAmount.multiply(accountZeroDebt).divide(totalDebt);
         BigInteger accountZeroExpectedDebtRepaid = remainingBnusd.multiply(accountZeroDebt).divide(totalDebt);
         verifyPosition(accounts.get(0).getAddress(), accountZeroCollateral.subtract(accountZeroExpectedCollateralSold),  accountZeroDebt.subtract(accountZeroExpectedDebtRepaid));
-        
+
         totalDebt = totalDebt.subtract(accountZeroDebt);
         rebalanceAmount = rebalanceAmount.subtract(accountZeroExpectedCollateralSold);
         remainingBnusd = remainingBnusd.subtract(accountZeroExpectedDebtRepaid);
 
         BigInteger accountOneExpectedCollateralSold = rebalanceAmount.multiply(accountOneDebt).divide(totalDebt);
         BigInteger accountOneExpectedDebtRepaid = remainingBnusd.multiply(accountOneDebt).divide(totalDebt);
-        verifyPosition(accounts.get(1).getAddress(), accountOneCollateral.subtract(accountOneExpectedCollateralSold),  accountOneDebt.subtract(accountOneExpectedDebtRepaid));
-        
+        verifyPosition(accounts.get(1).getAddress(), accountOneCollateral.subtract(accountOneExpectedCollateralSold),
+                accountOneDebt.subtract(accountOneExpectedDebtRepaid));
+
         totalDebt = totalDebt.subtract(accountOneDebt);
         rebalanceAmount = rebalanceAmount.subtract(accountOneExpectedCollateralSold);
         remainingBnusd = remainingBnusd.subtract(accountOneExpectedDebtRepaid);
@@ -277,11 +266,11 @@ class LoansTestContinuousRewards extends LoansTestsBase {
         BigInteger accountTwoExpectedDebtRepaid = remainingBnusd.multiply(accountTwoDebt).divide(totalDebt);
         verifyPosition(accounts.get(2).getAddress(), accountTwoCollateral.subtract(accountTwoExpectedCollateralSold), accountTwoDebt.subtract(accountTwoExpectedDebtRepaid));
 
-  
+
         RewardsDataEntry accountZeroUpdate = new RewardsDataEntry();
         accountZeroUpdate._user = accounts.get(0).getAddress();
         accountZeroUpdate._balance = accountZeroDebt;
-        
+
         RewardsDataEntry accountOneUpdate = new RewardsDataEntry();
         accountOneUpdate._user = accounts.get(1).getAddress();
         accountOneUpdate._balance = accountOneDebt;
@@ -292,7 +281,7 @@ class LoansTestContinuousRewards extends LoansTestsBase {
 
 
         RewardsDataEntry[] rewardsBatchList = new RewardsDataEntry[] {accountZeroUpdate, accountOneUpdate, accountTwoUpdate};
-  
+
         BigInteger totalSupply = (BigInteger) bnusd.call("totalSupply");
         verify(rewards.mock).updateBatchRewardsData(eq("Loans"), eq(totalSupply), argThat(arg -> compareRewardsData(rewardsBatchList, arg)));
     }
@@ -321,7 +310,7 @@ class LoansTestContinuousRewards extends LoansTestsBase {
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
         takeLoanICX(accounts.get(2), "bnUSD", accountTwoCollateral, accountTwoLoan);
 
-   
+
         BigInteger rate = EXA.divide(BigInteger.TWO);
         mockSicxBnusdPrice(rate);
         BigInteger expectedSICXRecived = rebalanceAmount.divide(BigInteger.TWO);
@@ -336,7 +325,7 @@ class LoansTestContinuousRewards extends LoansTestsBase {
         BigInteger accountZeroExpectedCollateralAdded = remainingSicx.multiply(accountZeroDebt).divide(totalDebt);
         BigInteger accountZeroExpectedDebtAdded = rebalanceAmount.multiply(accountZeroDebt).divide(totalDebt);
         verifyPosition(accounts.get(0).getAddress(), accountZeroCollateral.add(accountZeroExpectedCollateralAdded),  accountZeroDebt.add(accountZeroExpectedDebtAdded));
-        
+
         totalDebt = totalDebt.subtract(accountZeroDebt);
         rebalanceAmount = rebalanceAmount.subtract(accountZeroExpectedDebtAdded);
         remainingSicx = remainingSicx.subtract(accountZeroExpectedCollateralAdded);
@@ -344,7 +333,7 @@ class LoansTestContinuousRewards extends LoansTestsBase {
         BigInteger accountOneExpectedCollateralAdded = remainingSicx.multiply(accountOneDebt).divide(totalDebt);
         BigInteger accountOneExpectedDebtAdded = rebalanceAmount.multiply(accountOneDebt).divide(totalDebt);
         verifyPosition(accounts.get(1).getAddress(), accountOneCollateral.add(accountOneExpectedCollateralAdded),  accountOneDebt.add(accountOneExpectedDebtAdded));
-        
+
         totalDebt = totalDebt.subtract(accountOneDebt);
         rebalanceAmount = rebalanceAmount.subtract(accountOneExpectedDebtAdded);
         remainingSicx = remainingSicx.subtract(accountOneExpectedCollateralAdded);
@@ -367,7 +356,7 @@ class LoansTestContinuousRewards extends LoansTestsBase {
 
 
         RewardsDataEntry[] rewardsBatchList = new RewardsDataEntry[] {accountZeroUpdate, accountOneUpdate, accountTwoUpdate};
-  
+
         BigInteger totalSupply = (BigInteger) bnusd.call("totalSupply");
         verify(rewards.mock).updateBatchRewardsData(eq("Loans"), eq(totalSupply), argThat(arg -> compareRewardsData(rewardsBatchList, arg)));
     }

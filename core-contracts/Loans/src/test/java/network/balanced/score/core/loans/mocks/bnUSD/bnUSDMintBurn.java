@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 ICONLOOP Inc.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package network.balanced.score.core.loans;
+package network.balanced.score.core.loans.mocks.bnUSD;
 
 import score.Address;
 import score.Context;
@@ -21,13 +21,14 @@ import score.VarDB;
 import score.annotation.External;
 
 import java.math.BigInteger;
-import network.balanced.score.core.loans.sICX;
 
-public class sICXMintBurn extends sICX {
+public class bnUSDMintBurn extends bnUSD {
 
     private final VarDB<Address> minter = Context.newVarDB("minter", Address.class);
+    private final VarDB<BigInteger> price = Context.newVarDB("priceInLoop", BigInteger.class);
+    private final VarDB<BigInteger> lastPrice = Context.newVarDB("lastPriceInLoop", BigInteger.class);
 
-    public sICXMintBurn(String _name, String _symbol, int _decimals, BigInteger _totalSupply) {
+    public bnUSDMintBurn(String _name, String _symbol, int _decimals, BigInteger _totalSupply) {
         super(_name, _symbol, _decimals);
         // By default, set the minter role to the owner
         if (minter.get() == null) {
@@ -35,23 +36,31 @@ public class sICXMintBurn extends sICX {
         }
 
         mintTo(Context.getCaller(), _totalSupply);
+        setPrice(BigInteger.valueOf(1).multiply(BigInteger.TEN.pow(18)));
+    }
+
+    @External
+    public void setPrice(BigInteger price) {
+        this.price.set(price);
+        lastPrice.set(this.price.get());
     }
 
     @External
     public String getPeg() {
-        return BigInteger.valueOf(1).toString();
+        return "";
 
     }
 
     @External
     public BigInteger priceInLoop() {
-        return BigInteger.valueOf(1).multiply(BigInteger.TEN.pow(18));
+        lastPrice.set(price.get());
+        return price.get();
 
     }
 
     @External(readonly=true)
     public BigInteger lastPriceInLoop() {
-        return BigInteger.valueOf(1).multiply(BigInteger.TEN.pow(18));
+        return lastPrice.get();
     }
 
     /**

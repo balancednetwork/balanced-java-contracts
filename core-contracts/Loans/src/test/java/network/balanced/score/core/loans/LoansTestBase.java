@@ -1,48 +1,48 @@
+/*
+ * Copyright (c) 2022-2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package network.balanced.score.core.loans;
 
+import com.eclipsesource.json.JsonObject;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
-import com.iconloop.score.test.TestBase;
-import com.iconloop.score.token.irc2.IRC2Mintable;
-import com.eclipsesource.json.JsonObject;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.function.Executable;
+import network.balanced.score.core.loans.mocks.bnUSD.bnUSDMintBurn;
+import network.balanced.score.core.loans.mocks.sICX.sICXMintBurn;
+import network.balanced.score.lib.interfaces.*;
+import network.balanced.score.lib.structs.RewardsDataEntry;
+import network.balanced.score.lib.test.UnitTest;
+import network.balanced.score.lib.test.mock.MockContract;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.doNothing;
-
-import score.Context;
 import score.Address;
+
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import network.balanced.score.core.loans.sICXMintBurn;
-import network.balanced.score.core.loans.LoansImpl;
-import network.balanced.score.core.loans.bnUSDMintBurn;
-import static network.balanced.score.core.loans.utils.LoansConstants.*;
+import static network.balanced.score.core.loans.utils.LoansConstants.Standings;
+import static network.balanced.score.core.loans.utils.LoansConstants.StandingsMap;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
-import network.balanced.score.lib.interfaces.*;
-import network.balanced.score.lib.structs.RewardsDataEntry;
-import network.balanced.score.lib.test.mock.MockContract;
-import network.balanced.score.lib.test.UnitTest;
-
-class LoansTestsBase extends UnitTest {
+class LoansTestBase extends UnitTest {
     // 2 second blockTime gives 1 day 43200 block
     protected static final Long DAY = 43200L;
     protected static final Long WEEK = 7 * DAY;
@@ -92,7 +92,7 @@ class LoansTestsBase extends UnitTest {
 
         dex = new MockContract<DexScoreInterface>(DexScoreInterface.class, sm, admin);
         sicx.invoke(admin, "mintTo", dex.getAddress(), dexICXBalance);
-        bnusd.invoke(admin, "mintTo", dex.getAddress(), dexbnUSDBalance);  
+        bnusd.invoke(admin, "mintTo", dex.getAddress(), dexbnUSDBalance);
     }
 
 
@@ -139,13 +139,13 @@ class LoansTestsBase extends UnitTest {
         rewards = new MockContract<RewardsScoreInterface>(RewardsScoreInterface.class, sm, admin);
         when(rewards.mock.distribute()).thenReturn(true);
     }
-    
+
     private void setupDividends() throws Exception {
         dividends = new MockContract<DividendsScoreInterface>(DividendsScoreInterface.class, sm, admin);
         when(dividends.mock.distribute()).thenReturn(true);
 
     }
-    
+
     protected void mockRedeemFromReserve(Address address, BigInteger amount, BigInteger icxPrice) {
         Mockito.doAnswer(new Answer<Void>() {
             @Override
@@ -159,13 +159,13 @@ class LoansTestsBase extends UnitTest {
     protected void takeLoanSICX(Account account, BigInteger collateral, int loan) {
         Map<String, Object> map = new HashMap<>();
         JsonObject data = new JsonObject()
-            .add("_asset", "bnUSD")
-            .add("_amount", loan);
+                .add("_asset", "bnUSD")
+                .add("_amount", loan);
         byte[] params = data.toString().getBytes();
 
         sicx.invoke(account, "transfer", loans.getAddress(), collateral, params);
     }
-    
+
     protected void takeLoanICX(Account account, String asset, BigInteger collateral, BigInteger loan) {
         mockStakeICX(collateral);
         sm.call(account, collateral, loans.getAddress(), "depositAndBorrow", asset, loan, account.getAddress(), BigInteger.ZERO);
@@ -193,7 +193,7 @@ class LoansTestsBase extends UnitTest {
                 return false;
             }
         }
-        
+
         return true;
     }
 
@@ -203,7 +203,7 @@ class LoansTestsBase extends UnitTest {
                 return true;
             }
         }
-        
+
         return false;
     }
 
@@ -219,7 +219,7 @@ class LoansTestsBase extends UnitTest {
 
     protected void verifyStanding(Standings standing, Address address) {
         Map<String, Object> positionStanding = (Map<String, Object>) loans.call("getPositionStanding", address, BigInteger.valueOf(-1));
-        assertEquals(StandingsMap.get(standing), positionStanding.get("standing")); 
+        assertEquals(StandingsMap.get(standing), positionStanding.get("standing"));
     }
 
     public void governanceCall(String method, Object... params) {
@@ -230,11 +230,11 @@ class LoansTestsBase extends UnitTest {
         Map<String, Object> params = (Map<String, Object>)loans.call("getParameters");
         return params.get(key);
     }
- 
+
     public void setup() throws Exception {
         sicx = sm.deploy(admin, sICXMintBurn.class, nameSicx, symbolSicx, tokenDecimals, initalaupplyTokens);
         bnusd = sm.deploy(admin, bnUSDMintBurn.class, nameBnusd, symbolBnusd, tokenDecimals, initalaupplyTokens);
-        
+
         setupGovernance();
 
         loans = sm.deploy(admin, LoansImpl.class, governance.getAddress());
