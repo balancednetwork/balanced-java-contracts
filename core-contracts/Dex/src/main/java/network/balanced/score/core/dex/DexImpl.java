@@ -733,7 +733,7 @@ public class DexImpl {
         orderId = icxQueue.append(orderValue, user, nextTailId);
         icxQueueOrderId.set(user, orderId);
 
-        BigInteger oldIcxTotal = icxQueueTotal.get();
+        BigInteger oldIcxTotal = icxQueueTotal.getOrDefault(BigInteger.ZERO);
 
         // Update total ICX queue size
         BigInteger currentIcxTotal = oldIcxTotal.add(orderValue);
