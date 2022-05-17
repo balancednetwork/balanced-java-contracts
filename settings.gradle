@@ -41,6 +41,7 @@ include(':Rewards')
 project(':Rewards').projectDir = file("core-contracts/Rewards")
 
 include 'score-lib'
+include 'score-client'
 include 'test-lib'
 
 include(':WorkerToken')

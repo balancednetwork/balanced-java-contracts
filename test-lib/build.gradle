@@ -31,8 +31,8 @@ optimizedJar.enabled = false
 dependencies {
     implementation Dependencies.iconSdk
     implementation project(':score-lib')
-    annotationProcessor Dependencies.javaeeScoreClient
-    implementation Dependencies.javaeeScoreClient
+    annotationProcessor project(':score-client')
+    implementation project(':score-client')
     implementation Dependencies.junitJupiterApi
     implementation Dependencies.jacksonDatabind
     implementation Dependencies.javaFaker

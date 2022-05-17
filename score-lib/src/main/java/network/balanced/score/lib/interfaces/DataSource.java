@@ -28,7 +28,7 @@ import java.util.Map;
 @ScoreInterface
 public interface DataSource {
     @External
-    Boolean precompute(int _snapshot_id, int batch_size);
+    Object precompute(int _snapshot_id, int batch_size);
 
     @External
     BigInteger getTotalValue(String _name, int _snapshot_id);

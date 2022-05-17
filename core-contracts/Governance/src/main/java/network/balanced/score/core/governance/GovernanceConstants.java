@@ -88,7 +88,7 @@ public class GovernanceConstants extends Constants {
         entry("daofund", "setDaofund"),
         entry("oracle", "setOracle"),
         entry("sicx", "setSicx"),
-        entry("bnUSD", "setBnusd"),
+        entry("bnUSD", "setbnUSD"),
         entry("baln", "setBaln"),
         entry("bwt", "setBwt"),
         entry("rebalancing", "setRebalancing"),

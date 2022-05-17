@@ -16,77 +16,115 @@
 
 package network.balanced.score.core.rewards;
 
+
+import foundation.icon.icx.KeyWallet;
 import foundation.icon.icx.Wallet;
+import foundation.icon.jsonrpc.Address;
+import foundation.icon.jsonrpc.model.TransactionResult;
+import foundation.icon.score.client.DefaultScoreClient;
 import foundation.icon.score.client.ScoreClient;
 import network.balanced.score.lib.interfaces.*;
+import network.balanced.score.lib.test.integration.Env;
+import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
 import network.balanced.score.lib.test.integration.Balanced;
+import network.balanced.score.lib.test.integration.BalancedClient;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
+
+import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.JsonObject;
 
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
-class RewardsIntegrationTest {
+class RewardsIntegrationTest implements ScoreIntegrationTest {
     private static Balanced balanced;
+    private static BalancedClient owner;
+    private static BalancedClient tester1;
+    private static BalancedClient tester2;
 
-    @ScoreClient
-    private static Governance governance;
-
-    @ScoreClient
-    private static Rewards rewards;
-
-    @ScoreClient
-    private static Loans loans;
-
-    
-    @ScoreClient
-    private static BalancedDollar bnUSD;
-
-    @ScoreClient
-    private static Baln baln;
-
-    @BeforeAll
+    @BeforeAll    
     static void setup() throws Exception {
+        System.setProperty("Rewards", System.getProperty("python"));
         balanced = new Balanced();
         balanced.deployBalanced();
+        owner = balanced.ownerClient;
 
-        governance = new GovernanceScoreClient(balanced.governance);
-        rewards = new RewardsScoreClient(balanced.rewards);
-        loans = new LoansScoreClient(balanced.loans);
-        bnUSD = new BalancedDollarScoreClient(balanced.bnusd);
-        baln = new BalnScoreClient(balanced.baln);
+        KeyWallet tester1Wallet = createWalletWithBalance(BigInteger.TEN.pow(24));
+        KeyWallet tester2Wallet = createWalletWithBalance(BigInteger.TEN.pow(24));
+        tester1 = new BalancedClient(balanced, tester1Wallet);
+        tester2 = new BalancedClient(balanced, tester2Wallet);
+
+        owner.governance.setVoteDuration(BigInteger.TWO);
+        owner.governance.setBalnVoteDefinitionCriterion(BigInteger.ZERO);
+        owner.governance.setVoteDefinitionFee(BigInteger.TEN.pow(10));
+        owner.governance.setQuorum(BigInteger.ONE);
+        owner.baln.toggleEnableSnapshot();
     }
 
     @Test
-    void testName() {
-        assertEquals("Balanced Rewards", rewards.name());
-    }
+    void update() {
+        // Add postions that generate baln
+        BigInteger tester1Loan = BigInteger.TEN.pow(21);
+        BigInteger tester2Loan = BigInteger.TEN.pow(21);
+        tester1.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", tester1Loan, null, null);        
+        tester2.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", tester2Loan, null, null);        
 
-    @Test
-    void getEmission() {
-        BigInteger dayAfterRewardsDecay = BigInteger.valueOf(70);
-        BigInteger emission = rewards.getEmission(BigInteger.ONE);
-        BigInteger emissionAfterDecay = rewards.getEmission(dayAfterRewardsDecay);
-
-        assertEquals(BigInteger.TEN.pow(23), emission);
-        assertTrue(BigInteger.TEN.pow(23).compareTo(emissionAfterDecay) > 0);
-    }
-
-    @Test
-    void testClaimAndDistribute() {        
-        ((LoansScoreClient)loans).depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(20), null, null);   
+        // Do one distribtion
+        balanced.increaseDay(1);
+        balanced.syncDistributions();
         
-        balanced.distributeRewards();
-        balanced.distributeRewards();
-        balanced.distributeRewards();
+        //verify dao/reserver/bwt
+
+        tester1.rewards.claimRewards();
+        BigInteger balance = tester1.baln.balanceOf(tester1.getAddress());
+
+        balanced.rewards._update(System.getProperty("java"), Map.of("_governance", balanced.governance._address()));
+        
+        // try reclaim after upgrade
+        tester1.rewards.claimRewards();
+        assertEquals(balance, tester1.baln.balanceOf(tester1.getAddress()));
+
+        // claim unclaimed
+        assertEquals(BigInteger.ZERO, tester2.baln.balanceOf(tester2.getAddress()));
+        tester2.rewards.claimRewards();
+
+        // both have the same rewards
+        assertEquals(tester1.baln.balanceOf(tester1.getAddress()), tester2.baln.balanceOf(tester1.getAddress()));
+
+        // Do one distribtion
+        balanced.increaseDay(1);
+        balanced.syncDistributions();
+
+        BigInteger tester1Balance = tester1.baln.balanceOf(tester1.getAddress());
+        BigInteger tester2Balance = tester2.baln.balanceOf(tester2.getAddress());
+        tester1.rewards.claimRewards();
+        tester2.rewards.claimRewards();
+        assertTrue(tester1Balance.compareTo(tester1.baln.balanceOf(tester1.getAddress())) < 0);
+        assertTrue(tester2Balance.compareTo(tester2.baln.balanceOf(tester2.getAddress())) < 0);
+        
+        //verify dao/reserver/bwt
+
+        // upgrade to continous
+        // BigInteger day = owner.governance.getDay();
+
+        // owner.governance.setContinuousRewardsDay(day.add(BigInteger.ONE));
 
 
-        rewards.claimRewards();
-    
+
+
+
+
     }
+
+
 }

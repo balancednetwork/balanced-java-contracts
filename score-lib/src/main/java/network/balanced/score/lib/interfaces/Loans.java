@@ -86,11 +86,5 @@ public interface Loans extends
     Map<String, Object> getParameters();
 
     @External(readonly = true)
-    Map<String, Address> getAssetTokens();
-
-    @Payable
-    @External
-    void depositAndBorrow(@Optional String _asset, @Optional BigInteger _amount, @Optional Address _from, @Optional BigInteger _value);
-
-
+    Map<String, String> getAssetTokens();
 }

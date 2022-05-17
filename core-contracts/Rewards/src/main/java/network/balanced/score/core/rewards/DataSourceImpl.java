@@ -206,7 +206,15 @@ public class DataSourceImpl {
         BigInteger day = this.getDay();
         String name = this.getName();
 
-        boolean precomputeDone = datasource.precompute(day.intValue(), batchSize);
+        Object precomputeDoneObj = Context.call(getContractAddress(), "precompute", day.intValue(), batchSize);// datasource.precompute(day.intValue(), batchSize);
+
+        boolean precomputeDone;
+        try {
+            precomputeDone = (boolean)precomputeDoneObj;
+        } catch (Exception e) {
+            precomputeDone = !((BigInteger)precomputeDoneObj).equals(BigInteger.ZERO);
+        }
+
 
         if (!getPrecomp() && precomputeDone) {
             precomp.at(dbKey).set(true);
@@ -220,7 +228,7 @@ public class DataSourceImpl {
         }
 
         int offset = this.getOffset();
-        Map<Address, BigInteger> dataBatch = datasource.getDataBatch(name, day.intValue(), batchSize, offset);
+        Map<String, BigInteger> dataBatch = (Map<String, BigInteger>) Context.call(getContractAddress(), "getDataBatch", name, day.intValue(), batchSize, offset);
         this.offset.at(dbKey).set(offset + batchSize);
         if (dataBatch.isEmpty()) {
             this.day.at(dbKey).set(day.add(BigInteger.ONE));
@@ -233,13 +241,15 @@ public class DataSourceImpl {
         BigInteger originalShares = shares;
 
         BigInteger batchSum = BigInteger.ZERO;
-        for(BigInteger value : dataBatch.values()) {
-            batchSum = batchSum.add(value);
+        for (Map.Entry<String, BigInteger> entry : dataBatch.entrySet()) {
+            batchSum = batchSum.add(entry.getValue());
         }
 
         BigInteger tokenShare = BigInteger.ZERO;
-        for (Address address : dataBatch.keySet()) {
-            tokenShare = remaining.multiply(dataBatch.get(address)).divide(shares);
+        for (Map.Entry<String,BigInteger> entry : dataBatch.entrySet()) {
+            BigInteger value = entry.getValue();
+            Address address = Address.fromString(entry.getKey());
+            tokenShare = remaining.multiply(value).divide(shares);
             Context.require(shares.compareTo(BigInteger.ZERO) == 1,  
                         RewardsImpl.TAG + ": zero or negative divisor for " + name + ", " +
                         "sum: " + batchSum + ", " +
@@ -249,7 +259,7 @@ public class DataSourceImpl {
                         "starting: " + originalShares );
             
             remaining = remaining.subtract(tokenShare);
-            shares = shares.subtract(dataBatch.get(address));
+            shares = shares.subtract(value);
             BigInteger prevHoldings = RewardsImpl.balnHoldings.getOrDefault(address.toString(), BigInteger.ZERO);
             RewardsImpl.balnHoldings.set(address.toString(), prevHoldings.add(tokenShare));
         }

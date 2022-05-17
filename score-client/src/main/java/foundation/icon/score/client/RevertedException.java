@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright 2021 ICON Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.utils;
+package foundation.icon.score.client;
 
-import java.math.BigInteger;
+public class RevertedException extends score.RevertedException {
+    private int code;
+    public RevertedException(int code, String message) {
+        super(message);
+        this.code = code;
+    }
 
-import static network.balanced.score.lib.utils.Math.pow;
-
-public class Constants {
-    public final static BigInteger EXA = pow(BigInteger.TEN, 18);
-    public final static BigInteger POINTS = BigInteger.valueOf(10000);
-    public final static BigInteger SECOND = pow(BigInteger.TEN,6);
-    public final static BigInteger U_SECONDS_DAY = BigInteger.valueOf(86400).multiply(SECOND);
+    public int getCode() {
+        return code;
+    }
 }

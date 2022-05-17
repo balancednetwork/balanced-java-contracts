@@ -96,6 +96,8 @@ public class RewardsImpl implements Rewards {
                         
     public RewardsImpl(Address _governance) {
         if (governance.getOrDefault(null) != null) {
+            continuousRewardsDay.set(BigInteger.valueOf(100000000));
+
             return;
         }
 
@@ -105,7 +107,7 @@ public class RewardsImpl implements Rewards {
         recipientSplit.set("Worker Tokens", BigInteger.ZERO);
         recipientSplit.set("Reserve Fund", BigInteger.ZERO);
         recipientSplit.set("DAOfund", BigInteger.ZERO);
-
+        continuousRewardsDay.set(BigInteger.valueOf(100000000));
         recipients.add("Worker Tokens");
         recipients.add("Reserve Fund");
         recipients.add("DAOfund");
@@ -113,7 +115,6 @@ public class RewardsImpl implements Rewards {
         completeRecipient.add("Reserve Fund");
         completeRecipient.add("DAOfund");
         
-        continuousRewardsDay.set(BigInteger.ZERO);
 
         startTimestamp.set(BigInteger.ZERO);
     }
@@ -323,13 +324,18 @@ public class RewardsImpl implements Rewards {
 
     @External
     public boolean distribute() {
+        Context.println("################################################################## distribute " );
         BigInteger platformDay = RewardsImpl.platformDay.get();
         BigInteger day = getDay();
-        BigInteger continuousRewardsDay = RewardsImpl.continuousRewardsDay.get();
-
+        BigInteger continuousRewardsDay = RewardsImpl.continuousRewardsDay.getOrDefault(null);
         boolean distributionRequired = false;
-        boolean continuousRewardsActive = day.compareTo(continuousRewardsDay) != -1;
-        boolean dayOfContinuousRewards = day.equals(continuousRewardsDay);
+        boolean continuousRewardsActive = false;
+        boolean dayOfContinuousRewards = false;
+
+        if (continuousRewardsDay != null) {
+            continuousRewardsActive = day.compareTo(continuousRewardsDay) >= 0;
+            dayOfContinuousRewards = day.equals(continuousRewardsDay);
+        }
 
         if (platformDay.compareTo(day) < 0 && !continuousRewardsActive) {
             distributionRequired = true;
