@@ -13,7 +13,6 @@ import scorex.util.ArrayList;
 import java.math.BigInteger;
 import java.util.List;
 
-import static network.balanced.score.lib.TestHelper.expectErrorMessage;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class IterableDictDBTest extends TestBase {
