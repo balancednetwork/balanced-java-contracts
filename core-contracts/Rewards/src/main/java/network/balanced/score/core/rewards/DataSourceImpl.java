@@ -134,7 +134,7 @@ public class DataSourceImpl {
         BigInteger currentUserWeight = getUserWeight(user.toString());
         BigInteger lastUpdateTimestamp = getLastUpdateTimeUs();
     
-        if (getLastUpdateTimeUs().compareTo(RewardsImpl.continuousRewardsDay.get().multiply(U_SECONDS_DAY)) < 0) {
+        if (RewardsImpl.getDay().compareTo(RewardsImpl.continuousRewardsDay.get()) < 0) {
             lastUpdateTimestamp = RewardsImpl.continuousRewardsDay.get().multiply(U_SECONDS_DAY);
         }
         
@@ -162,8 +162,8 @@ public class DataSourceImpl {
         BigInteger totalWeight = updateTotalWeight(currentTime, prevTotalSupply);
         BigInteger accruedRewards = BigInteger.ZERO;
         //  If the user" +s current weight is less than the total, update their weight and issue rewards
-        if (currentUserWeight.compareTo(totalWeight) == -1) {
-            if (prevBalance.compareTo(BigInteger.ZERO) == 1) {
+        if (currentUserWeight.compareTo(totalWeight) < 0) {
+            if (prevBalance.compareTo(BigInteger.ZERO) > 0) {
                 accruedRewards = computeUserRewards(prevBalance, totalWeight, currentUserWeight);
                 accruedRewards = accruedRewards.divide(EXA);
             }
@@ -201,7 +201,6 @@ public class DataSourceImpl {
     }
 
     public void distribute(int batchSize) {
-        Context.println("####################################################" + getName());
         DataSourceScoreInterface datasource = new DataSourceScoreInterface(getContractAddress());
 
         BigInteger day = getDay();
@@ -295,8 +294,7 @@ public class DataSourceImpl {
         BigInteger originalTotalWeight = previousRunningTotal;
         BigInteger lastUpdateTimestamp = getLastUpdateTimeUs();
         BigInteger originalLastUpdateTimestamp = lastUpdateTimestamp;
-
-        if (lastUpdateTimestamp.compareTo(RewardsImpl.continuousRewardsDay.get()) < 0) {
+        if (RewardsImpl.getDay().compareTo(RewardsImpl.continuousRewardsDay.get()) < 0){
             lastUpdateTimestamp = RewardsImpl.continuousRewardsDay.get().multiply(U_SECONDS_DAY);
             lastUpdateTimeUs.at(dbKey).set(lastUpdateTimestamp);
         }
@@ -311,9 +309,9 @@ public class DataSourceImpl {
         BigInteger previousDayEndUs = BigInteger.ZERO;
 
         BigInteger newTotal = BigInteger.ZERO;
-        while (lastUpdateTimestamp.compareTo(currentTime) == -1) {
-            previousRewardsDay = lastUpdateTimestamp.subtract(startTimestampUs).divide(U_SECONDS_DAY);
-            previousDayEndUs = startTimestampUs.add(U_SECONDS_DAY.multiply(previousRewardsDay.add(BigInteger.ONE)));
+        while (lastUpdateTimestamp.compareTo(currentTime) < 0) {
+            previousRewardsDay = lastUpdateTimestamp.divide(U_SECONDS_DAY);
+            previousDayEndUs = U_SECONDS_DAY.multiply(previousRewardsDay.add(BigInteger.ONE));
             BigInteger endComputeTimestampUs = previousDayEndUs.min(currentTime);
 
             BigInteger emission = getTotalDist(previousRewardsDay);

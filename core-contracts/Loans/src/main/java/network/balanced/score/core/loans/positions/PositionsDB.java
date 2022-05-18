@@ -133,7 +133,7 @@ public class PositionsDB {
     }
 
     public static Boolean calculateSnapshot(BigInteger day, int batchSize) {
-        Context.require(day.compareTo(LoansImpl.continuousRewardDay.get()) < 0, continuousRewardsErrorMessage);
+        Context.require(day.compareTo(LoansImpl.continuousRewardDay.get()) <= 0, continuousRewardsErrorMessage);
         Snapshot snapshot = SnapshotDB.get(day);
         BigInteger snapshotId = snapshot.day.get();
         if (snapshotId.compareTo(day) < 0) {

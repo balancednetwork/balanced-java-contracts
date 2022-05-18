@@ -7,6 +7,8 @@ import network.balanced.score.lib.structs.BalancedAddresses;
 
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
 
+import java.math.BigInteger;
+
 public class BalancedClient {
     private Balanced balanced;
     private KeyWallet wallet;

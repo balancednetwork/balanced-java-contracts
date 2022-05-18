@@ -115,6 +115,8 @@ task integrationTest(type: Test) {
         systemProperty "java", optimizedJar.outputJarName        
 
         systemProperty "dexPython", new File(project(':test-lib').projectDir, 'python-contracts/dex.zip')
+        systemProperty "loansPython", new File(project(':test-lib').projectDir, 'python-contracts/loans.zip')
+        
     }
 
 }

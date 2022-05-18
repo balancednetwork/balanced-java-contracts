@@ -27,7 +27,7 @@ import score.annotation.Optional;
 
 import java.math.BigInteger;
 
-import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDBContains;
+import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
 import static network.balanced.score.lib.utils.ArrayDBUtils.removeFromArrayDB;
 import static network.balanced.score.lib.utils.Check.*;
 
@@ -121,7 +121,7 @@ public class WorkerTokenImpl extends IRC2PresetFixedSupply implements WorkerToke
             removeFromArrayDB(_from, addresses);
         }
 
-        if (!arrayDBContains(addresses, _to)) {
+        if (!arrayDbContains(addresses, _to)) {
             addresses.add(_to);
         }
 

@@ -337,14 +337,14 @@ public class LoansImpl {
 
     @External(readonly = true)
     public BigInteger getTotalValue(String _name, BigInteger _snapshot_id) {
-        Context.require(SnapshotDB.getSnapshotId(_snapshot_id).compareTo(continuousRewardDay.get()) < 0,  continuousRewardsErrorMessage);
+        Context.require(SnapshotDB.getSnapshotId(_snapshot_id).compareTo(continuousRewardDay.get()) <= 0,  continuousRewardsErrorMessage);
 
         return SnapshotDB.get(_snapshot_id).totalMiningDebt.getOrDefault(BigInteger.ZERO);
     }
 
     @External(readonly = true)
     public Map<String, BigInteger> getBalanceAndSupply(String _name, Address _owner) {
-        Context.require(_name == "Loans",  "Unsupported data source name");
+        Context.require(_name.equals("Loans"),  "Unsupported data source name");
         int id = PositionsDB.addressIds.getOrDefault(_owner, -1);
         if (id < 1) {
             return Map.of(
@@ -378,7 +378,7 @@ public class LoansImpl {
     }
 
     @External(readonly = true)
-    public Map<Address, BigInteger> getDataBatch(String _name, BigInteger _snapshot_id, int _limit, @Optional int _offset) {
+    public Map<String, BigInteger> getDataBatch(String _name, BigInteger _snapshot_id, int _limit, @Optional int _offset) {
         Context.require(_snapshot_id.compareTo(continuousRewardDay.get()) <= 0,  continuousRewardsErrorMessage);
 
         Snapshot snapshot = SnapshotDB.get(_snapshot_id);
@@ -386,11 +386,11 @@ public class LoansImpl {
         int start = Math.max(0, Math.min(_offset, totalMiners));
         int end = Math.min(_offset + _limit, totalMiners);
 
-        HashMap<Address, BigInteger> batch = new HashMap<Address, BigInteger>(end-start);
+        HashMap<String, BigInteger> batch = new HashMap<String, BigInteger>(end-start);
         for (int i = start; i < end; i++) {
             int id = snapshot.mining.get(i);
             Position position = PositionsDB.get(id);
-            batch.put(position.address.get(), snapshot.positionStates.at(id).get("total_debt"));
+            batch.put(position.address.get().toString(), snapshot.positionStates.at(id).get("total_debt"));
         }
 
         return batch;
@@ -566,9 +566,9 @@ public class LoansImpl {
             if (!position.hasDebt(BigInteger.valueOf(-1))) {
                 PositionsDB.removeNonZero(position.id.get());
             }
-        } else {
-            Context.call(rewards.get(), "updateRewardsData", "Loans", oldSupply, from, borrowed);
-        }
+        } 
+
+        Context.call(rewards.get(), "updateRewardsData", "Loans", oldSupply, from, borrowed);
 
         asset.isDead();
         String logMessage = "Loan of " + repaid.toString()  + " " + _symbol +" repaid to Balanced.";
@@ -644,9 +644,7 @@ public class LoansImpl {
             ));
         }
 
-        if (_getDay().compareTo(continuousRewardDay.get()) >= 0) {
-            Context.call(rewards.get(), "updateBatchRewardsData", "Loans", asset.totalSupply(), rewardsBatchList);
-        }
+        Context.call(rewards.get(), "updateBatchRewardsData", "Loans", asset.totalSupply(), rewardsBatchList);
 
         Rebalance(Context.getCaller(), symbol, changeLog.toString(), totalBatchDebt);
     }
@@ -719,9 +717,7 @@ public class LoansImpl {
             ));
         }
 
-        if (_getDay().compareTo(continuousRewardDay.get()) >= 0) {
-            Context.call(rewards.get(), "updateBatchRewardsData", "Loans", AssetDB.get("bnUSD").totalSupply(), rewardsBatchList);
-        }
+        Context.call(rewards.get(), "updateBatchRewardsData", "Loans", AssetDB.get("bnUSD").totalSupply(), rewardsBatchList);
         Rebalance(Context.getCaller(), "bnUSD", changeLog.toString(), totalBatchDebt);
     }
 
@@ -781,9 +777,7 @@ public class LoansImpl {
             Asset asset = AssetDB.get(symbol);
             BigInteger debt = position.get(symbol);
             if (!asset.isCollateral.getOrDefault(false) && asset.active.getOrDefault(false) && debt.compareTo(BigInteger.ZERO) == 1) {
-                if (_getDay().compareTo(continuousRewardDay.get()) >= 0) {
-                    Context.call(rewards.get(), "updateRewardsData", "Loans", asset.totalSupply(), _owner, debt);
-                }
+                Context.call(rewards.get(), "updateRewardsData", "Loans", asset.totalSupply(), _owner, debt);
 
                 BigInteger badDebt = asset.badDebt.get();
                 asset.badDebt.set(badDebt.add(debt));
@@ -837,7 +831,7 @@ public class LoansImpl {
 
     private void originateLoan(String _symbol, BigInteger amount, Address from) {
         Asset asset = AssetDB.get(_symbol);
-        Context.require(!asset.dead.get(), "No new loans of " + _symbol + " can be originated since it is in a dead market state.");
+        Context.require(!asset.dead.getOrDefault(false), "No new loans of " + _symbol + " can be originated since it is in a dead market state.");
         Context.require(!asset.isCollateral(), "Loans of collateral assets are not allowed.");
         Context.require(asset.active.getOrDefault(false), "Loans of inactive assets are not allowed.");
 
@@ -869,9 +863,8 @@ public class LoansImpl {
                 Snapshot snap = SnapshotDB.get(BigInteger.valueOf(-1));
                 PositionsDB.addNonZero(position.id.get());
             }
-        } else {
-            Context.call(rewards.get(), "updateRewardsData", "Loans", asset.totalSupply(), from, holdings);
         }
+        Context.call(rewards.get(), "updateRewardsData", "Loans", asset.totalSupply(), from, holdings);
 
         BigInteger newDebt = amount.add(fee);
         position.set(_symbol,  holdings.add(newDebt));

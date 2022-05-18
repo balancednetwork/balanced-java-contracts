@@ -197,18 +197,18 @@ public class StakedLP {
     public void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data) {
         onlyDex();
         Context.require(_value.signum() > 0, "StakedLP: Token value should be a positive number");
-        String unpackedData = new String(_data);
-        Context.require(!unpackedData.equals(""), "StakedLP: Data can't be empty");
+        // String unpackedData = new String(_data);
+        // Context.require(!unpackedData.equals(""), "StakedLP: Data can't be empty");
 
-        JsonObject json = Json.parse(unpackedData).asObject();
-        String method = json.get("method").asString();
-        JsonObject params = json.get("params").asObject();
+        // JsonObject json = Json.parse(unpackedData).asObject();
+        // String method = json.get("method").asString();
+        // JsonObject params = json.get("params").asObject();
 
-        if ("stake".equals(method)) {
-            this.stake(_from, _id, _value);
-        } else {
-            Context.revert("StakedLP: No valid method called");
-        }
+        // if ("stake".equals(method)) {
+        this.stake(_from, _id, _value);
+        // } else {
+        //     Context.revert("StakedLP: No valid method called");
+        // }
     }
 
 }

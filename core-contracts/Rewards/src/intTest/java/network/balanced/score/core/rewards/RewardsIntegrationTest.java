@@ -49,93 +49,185 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class RewardsIntegrationTest implements ScoreIntegrationTest {
     private static Balanced balanced;
     private static BalancedClient owner;
-    private static BalancedClient tester1;
-    private static BalancedClient tester2;
-
     private static String dexJavaPath;
+    private static String loansJavaPath;
 
     @BeforeAll    
     static void setup() throws Exception {
-        System.setProperty("Rewards", System.getProperty("python"));
         dexJavaPath = System.getProperty("Dex");
+        loansJavaPath = System.getProperty("Loans");
+
+        // System.setProperty("Rewards", System.getProperty("python"));
         System.setProperty("Dex", System.getProperty("dexPython"));
+        System.setProperty("Loans", System.getProperty("loansPython"));
         
         balanced = new Balanced();
         balanced.deployBalanced();
         owner = balanced.ownerClient;
-
-        KeyWallet tester1Wallet = createWalletWithBalance(BigInteger.TEN.pow(24));
-        KeyWallet tester2Wallet = createWalletWithBalance(BigInteger.TEN.pow(24));
-        tester1 = new BalancedClient(balanced, tester1Wallet);
-        tester2 = new BalancedClient(balanced, tester2Wallet);
+        //day 1
+        balanced.increaseDay(1);
 
         owner.governance.setVoteDuration(BigInteger.TWO);
         owner.governance.setBalnVoteDefinitionCriterion(BigInteger.ZERO);
         owner.governance.setVoteDefinitionFee(BigInteger.TEN.pow(10));
         owner.governance.setQuorum(BigInteger.ONE);
         owner.baln.toggleEnableSnapshot();
+
     }
 
     @Test
-    void update() {
-        // Add postions that generate baln
-        balanced.dex._update(dexJavaPath, Map.of("_governance", balanced.governance._address()));
+    void update() throws Exception {
 
+        BalancedClient tester1 = balanced.newClient();
+        BalancedClient tester2 = balanced.newClient();
+        
         BigInteger tester1Loan = BigInteger.TEN.pow(21);
         BigInteger tester2Loan = BigInteger.TEN.pow(21);
         tester1.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", tester1Loan, null, null);        
         tester2.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", tester2Loan, null, null);
         
-        JsonObject depositData = Json.object();
-        depositData.add("method", "_deposit");
-        tester1.bnUSD.transfer(balanced.dex._address(), tester1Loan, depositData.toString().getBytes());
-        tester1.staking.stakeICX(BigInteger.TEN.pow(22), null, null);
-        BigInteger tester1SicxDeposit = tester1.sicx.balanceOf(tester1.getAddress());
-
-        tester1.sicx.transfer(balanced.dex._address(), tester1SicxDeposit, depositData.toString().getBytes());
-        tester1.dex.add(balanced.sicx._address(), balanced.bnusd._address(), tester1SicxDeposit, tester1Loan, false);
+        BigInteger tester1IcxDeposit = BigInteger.TEN.pow(22);
+        joinsICXBnusdLP(tester1, tester1IcxDeposit, tester1Loan);
 
         // Do one distribtion
+        // day 2
         balanced.increaseDay(1);
         balanced.syncDistributions();
+       
         
         //verify dao/reserver/bwt
+        verifyRewards(tester1);
 
-        tester1.rewards.claimRewards();
-        BigInteger balance = tester1.baln.balanceOf(tester1.getAddress());
+        //updateRewards
+        // balanced.rewards._update(System.getProperty("java"), Map.of("_governance", balanced.governance._address()));
 
-        balanced.rewards._update(System.getProperty("java"), Map.of("_governance", balanced.governance._address()));
-        
         // try reclaim after upgrade
-        tester1.rewards.claimRewards();
-        assertEquals(balance, tester1.baln.balanceOf(tester1.getAddress()));
+        verifyNoRewards(tester1);
 
         // claim unclaimed
-        assertEquals(BigInteger.ZERO, tester2.baln.balanceOf(tester2.getAddress()));
-        tester2.rewards.claimRewards();
+        verifyRewards(tester2);
 
-        // assert tester 1 has more rewards from LP and loan
-        // assertTrue(tester1.baln.balanceOf(tester1.getAddress()).compareTo(tester2.baln.balanceOf(tester2.getAddress())) > 0);
+        //take loans and lp and verify rewards
+        BalancedClient tester3 = balanced.newClient();
+        BigInteger tester3Loan = BigInteger.TEN.pow(21);
+        BigInteger tester3IcxDeposit = BigInteger.TEN.pow(22);
 
-        // Do one distribtion
+        tester3.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", tester3Loan, null, null);        
+        joinsICXBnusdLP(tester3, tester3IcxDeposit, tester3Loan);
+
         balanced.increaseDay(1);
         balanced.syncDistributions();
 
-        BigInteger tester1Balance = tester1.baln.balanceOf(tester1.getAddress());
-        BigInteger tester2Balance = tester2.baln.balanceOf(tester2.getAddress());
-        tester1.rewards.claimRewards();
-        tester2.rewards.claimRewards();
-        assertTrue(tester1Balance.compareTo(tester1.baln.balanceOf(tester1.getAddress())) < 0);
-        assertTrue(tester2Balance.compareTo(tester2.baln.balanceOf(tester2.getAddress())) < 0);
+        verifyRewards(tester1);
+        verifyRewards(tester2);
+        verifyRewards(tester3);
+
+        balanced.dex._update(dexJavaPath, Map.of("_governance", balanced.governance._address()));
+        balanced.loans._update(loansJavaPath, Map.of("_governance", balanced.governance._address()));
         
-        System.out.println("balnance1 " + tester1.baln.balanceOf(tester1.getAddress()));
-        System.out.println("balnance1 " + tester2.baln.balanceOf(tester2.getAddress()));
-        //verify dao/reserver/bwt
+        owner.governance.setContinuousRewardsDay(owner.governance.getDay().add(BigInteger.valueOf(3)));
+        System.out.println("setContinuousRewardsDay: " + owner.governance.getDay().add(BigInteger.valueOf(3)));
+        balanced.increaseDay(1);
+        balanced.syncDistributions();
 
-        // upgrade to continous
-        // BigInteger day = owner.governance.getDay();
+        verifyRewards(tester1);
+        verifyRewards(tester2);
+        verifyRewards(tester3);
 
-        // owner.governance.setContinuousRewardsDay(day.add(BigInteger.ONE));
+        BalancedClient tester4 = balanced.newClient();
+        BigInteger tester4Loan = BigInteger.TEN.pow(21).multiply(BigInteger.valueOf(3));
+        BigInteger tester4BnusdDeposit = BigInteger.TEN.pow(21);
+        BigInteger tester4IcxDeposit = BigInteger.TEN.pow(22);
+        tester4.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", tester4Loan, null, null);        
+        joinsICXBnusdLP(tester4, tester4IcxDeposit, tester4BnusdDeposit);
+
+        BalancedClient clientWithStakedLp = balanced.newClient();
+        BalancedClient clientWithoutStakedLp = balanced.newClient();
+        
+        BigInteger bnusdDeposit = BigInteger.TEN.pow(21);
+        tester4.bnUSD.transfer(clientWithStakedLp.getAddress(), bnusdDeposit, null); 
+        tester4.bnUSD.transfer(clientWithoutStakedLp.getAddress(), bnusdDeposit, null); 
+        BigInteger icxDeposit = BigInteger.TEN.pow(22);
+        joinsICXBnusdLP(clientWithStakedLp, icxDeposit, bnusdDeposit);
+        stakeICXBnusdLP(clientWithStakedLp);
+
+        joinsICXBnusdLP(clientWithoutStakedLp, icxDeposit, bnusdDeposit);
+
+        //day before ContinuousRewards
+        balanced.increaseDay(1);
+        balanced.syncDistributions();
+
+        verifyRewards(tester1);
+        verifyRewards(tester2);
+        verifyRewards(tester3);
+        verifyRewards(tester4);
+        verifyRewards(clientWithStakedLp);
+        verifyRewards(clientWithoutStakedLp);
+
+        // day of migration 
+        balanced.increaseDay(1);
+        balanced.syncDistributions();
+
+        verifyRewards(tester1);
+        verifyRewards(tester2);
+        verifyRewards(tester3);
+        verifyRewards(tester4);
+        verifyRewards(clientWithStakedLp);
+        verifyRewards(clientWithoutStakedLp);
+
+        Thread.sleep(1000);
+
+        verifyRewards(tester1);
+        verifyRewards(tester2);
+        verifyRewards(tester3);
+        verifyRewards(tester4);
+        verifyRewards(clientWithStakedLp);
+        verifyNoRewards(clientWithoutStakedLp);
+        
+        stakeICXBnusdLP(clientWithoutStakedLp);
+
+        Thread.sleep(1000);
+        verifyRewards(clientWithoutStakedLp);
+    }
+
+
+    private void joinsICXBnusdLP(BalancedClient client, BigInteger icxAmount, BigInteger bnusdAmount) {
+        JsonObject depositData = Json.object();
+        depositData.add("method", "_deposit");
+        client.bnUSD.transfer(balanced.dex._address(), bnusdAmount, depositData.toString().getBytes());
+        client.staking.stakeICX(icxAmount, null, null);
+
+        BigInteger sicxDeposit = client.sicx.balanceOf(client.getAddress());
+        client.sicx.transfer(balanced.dex._address(), sicxDeposit, depositData.toString().getBytes());
+        client.dex.add(balanced.sicx._address(), balanced.bnusd._address(), sicxDeposit, bnusdAmount, false);
+
+    }
+
+    private void stakeICXBnusdLP(BalancedClient client) {
+        BigInteger icxBnusdPoolId = owner.dex.getPoolId(balanced.sicx._address(), balanced.bnusd._address());
+        BigInteger poolBalance = client.dex.balanceOf(client.getAddress(),icxBnusdPoolId);
+        client.dex.transfer(balanced.stakedLp._address(), poolBalance, icxBnusdPoolId, null);
+    }
+    
+    private void verifyRewards(BalancedClient client) {
+        BigInteger balancePreClaim = client.baln.balanceOf(client.getAddress());
+        client.rewards.claimRewards();
+        BigInteger balancePostClaim = client.baln.balanceOf(client.getAddress());
+        assertTrue(balancePostClaim.compareTo(balancePreClaim) > 0);
+    }
+
+    private void verifyContinousRewards(BalancedClient client, BigInteger time) {
+        BigInteger balancePreClaim = client.baln.balanceOf(client.getAddress());
+        client.rewards.claimRewards();
+        BigInteger balancePostClaim = client.baln.balanceOf(client.getAddress());
+        assertTrue(balancePostClaim.compareTo(balancePreClaim) > 0);
+    }
+
+    private void verifyNoRewards(BalancedClient client) {
+        BigInteger balancePreClaim = client.baln.balanceOf(client.getAddress());
+        client.rewards.claimRewards();
+        BigInteger balancePostClaim = client.baln.balanceOf(client.getAddress());
+        assertTrue(balancePostClaim.equals(balancePreClaim));
     }
 
 

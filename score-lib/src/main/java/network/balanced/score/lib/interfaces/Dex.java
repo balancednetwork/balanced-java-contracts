@@ -8,6 +8,7 @@ import score.annotation.External;
 import score.annotation.Optional;
 
 import java.math.BigInteger;
+import java.util.Map;
 
 @ScoreInterface
 public interface Dex extends AdminAddress, BnusdAddress, DexAddress, GovernanceAddress, LoansAddress,
@@ -34,8 +35,20 @@ public interface Dex extends AdminAddress, BnusdAddress, DexAddress, GovernanceA
     @External(readonly = true)
     BigInteger getPrice(BigInteger _id);
 
+    @External(readonly = true)
+    Map<String, BigInteger> getBalanceAndSupply(String _name, Address _owner);
+
     @External
-    public void add(Address _baseToken, Address _quoteToken, BigInteger _baseValue, BigInteger _quoteValue,
+    void transfer(Address _to, BigInteger _value, BigInteger _id, @Optional byte[] _data);
+
+    @External(readonly = true)
+    BigInteger balanceOf(Address _owner, BigInteger _id);
+
+    @External(readonly = true)
+    BigInteger getPoolId(Address _token1Address, Address _token2Address);
+
+    @External
+    void add(Address _baseToken, Address _quoteToken, BigInteger _baseValue, BigInteger _quoteValue,
                     @Optional boolean _withdraw_unused);
 }
 

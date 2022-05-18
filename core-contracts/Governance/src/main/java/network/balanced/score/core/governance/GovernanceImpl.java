@@ -121,7 +121,7 @@ public class GovernanceImpl {
         Context.call(Addresses.get("loans"), "setContinuousRewardsDay",  _day);
         Context.call(Addresses.get("rewards"), "setContinuousRewardsDay",  _day);
         Context.call(Addresses.get("dex"), "setContinuousRewardsDay",  _day);
-        Context.call(Addresses.get("dividends"), "setContinuousRewardsDay",  _day);
+        // Context.call(Addresses.get("dividends"), "setContinuousRewardsDay",  _day);
     }
 
     @External
@@ -529,7 +529,7 @@ public class GovernanceImpl {
             createDistributionPercentage("DAOfund",  BigInteger.valueOf(225).multiply(pow(BigInteger.TEN,15))),
             createDistributionPercentage("sICX/bnUSD",  BigInteger.valueOf(175).multiply(pow(BigInteger.TEN,15)))
         };
-
+        
         Context.call(Addresses.get("rewards"), "updateBalTokenDistPercentage",  (Object) recipients);
     }
 
