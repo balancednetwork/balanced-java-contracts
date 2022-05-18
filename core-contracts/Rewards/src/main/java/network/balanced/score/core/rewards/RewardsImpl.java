@@ -68,7 +68,6 @@ public class RewardsImpl implements Rewards {
     public static final String TOTAL_DIST = "total_dist";
     public static final String PLATFORM_DAY = "platform_day";
     public static final String CONTINUOUS_REWARDS_DAY = "continuous_rewards_day";
-    public static final String MIGRATING_TO_CONTINUOUS = "migrating_to_continuous";
 
     public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
     public static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
@@ -88,7 +87,6 @@ public class RewardsImpl implements Rewards {
     public static final VarDB<BigInteger> totalDist = Context.newVarDB(TOTAL_DIST, BigInteger.class);
     public static final VarDB<BigInteger> platformDay = Context.newVarDB(PLATFORM_DAY, BigInteger.class);
     public static final VarDB<BigInteger> continuousRewardsDay = Context.newVarDB(CONTINUOUS_REWARDS_DAY, BigInteger.class);
-    public static final VarDB<Boolean> migratingToContinuous = Context.newVarDB(MIGRATING_TO_CONTINUOUS, boolean.class);
 
     public static final Map<String, VarDB<Address>> platformRecipients = Map.of("Worker Tokens", bwtAddress,
                             "Reserve Fund", reserveFund,
@@ -96,6 +94,7 @@ public class RewardsImpl implements Rewards {
                         
     public RewardsImpl(Address _governance) {
         if (governance.getOrDefault(null) != null) {
+            continuousRewardsDay.set(BigInteger.valueOf(100000000));
             return;
         }
 
@@ -105,7 +104,7 @@ public class RewardsImpl implements Rewards {
         recipientSplit.set("Worker Tokens", BigInteger.ZERO);
         recipientSplit.set("Reserve Fund", BigInteger.ZERO);
         recipientSplit.set("DAOfund", BigInteger.ZERO);
-
+        continuousRewardsDay.set(BigInteger.valueOf(100000000));
         recipients.add("Worker Tokens");
         recipients.add("Reserve Fund");
         recipients.add("DAOfund");
@@ -113,7 +112,6 @@ public class RewardsImpl implements Rewards {
         completeRecipient.add("Reserve Fund");
         completeRecipient.add("DAOfund");
         
-        continuousRewardsDay.set(BigInteger.ZERO);
 
         startTimestamp.set(BigInteger.ZERO);
     }
@@ -170,7 +168,8 @@ public class RewardsImpl implements Rewards {
             DataSourceImpl dataSource = DataSourceDB.get(name);
 
             Map<String, BigInteger> data = dataSource.loadCurrentSupply(_holder);
-            BigInteger currentTime = BigInteger.valueOf(Context.getBlockTimestamp());
+
+            BigInteger currentTime = getTime();
             BigInteger sourceRewards = dataSource.computeSingelUserData(currentTime,
                                                                         data.get("_totalSupply"),
                                                                         _holder,
@@ -190,6 +189,7 @@ public class RewardsImpl implements Rewards {
 
             sourceDays.put(name, dataSource.getDay());
         }
+        
         return Map.of(
             "platform_day", platformDay.get(),
             "source_days", sourceDays
@@ -325,18 +325,21 @@ public class RewardsImpl implements Rewards {
     public boolean distribute() {
         BigInteger platformDay = RewardsImpl.platformDay.get();
         BigInteger day = getDay();
-        BigInteger continuousRewardsDay = RewardsImpl.continuousRewardsDay.get();
-
+        BigInteger continuousRewardsDay = RewardsImpl.continuousRewardsDay.getOrDefault(null);
         boolean distributionRequired = false;
-        boolean continuousRewardsActive = day.compareTo(continuousRewardsDay) != -1;
-        boolean dayOfContinuousRewards = day.equals(continuousRewardsDay);
+        boolean continuousRewardsActive = false;
+        boolean dayOfContinuousRewards = false;
+
+        if (continuousRewardsDay != null) {
+            continuousRewardsActive = day.compareTo(continuousRewardsDay) >= 0;
+            dayOfContinuousRewards = day.equals(continuousRewardsDay);
+        }
 
         if (platformDay.compareTo(day) < 0 && !continuousRewardsActive) {
             distributionRequired = true;
         } else if (platformDay.compareTo(day.add(BigInteger.ONE)) < 0 && continuousRewardsActive) {
             distributionRequired = true;
         }
-
         if (distributionRequired) {
             if (totalDist.getOrDefault(BigInteger.ZERO).equals(BigInteger.ZERO) || continuousRewardsActive) {
                 MintableScoreInterface baln = new MintableScoreInterface(balnAddress.get());
@@ -377,11 +380,10 @@ public class RewardsImpl implements Rewards {
             for (int i = 0; i < DataSourceDB.size(); i++ ) {
                 String name = DataSourceDB.names.get(i);
                 DataSourceImpl dataSource = DataSourceDB.get(name);
-                if (dataSource.getDay().compareTo(day) == -1) {
+                if (dataSource.getDay().compareTo(day) < 0) {
                     dataSource.distribute(batchSize.get());
                     return false;
                 }
-        
             }
         }
 
@@ -440,17 +442,18 @@ public class RewardsImpl implements Rewards {
     @External
     public void claimRewards() {
         Address address = Context.getCaller();
-        BigInteger currentTime = BigInteger.valueOf(Context.getBlockTimestamp());
+        BigInteger currentTime = getTime();
         distribute();
 
         for (int i = 0; i < DataSourceDB.size(); i++ ) {
             String name = DataSourceDB.names.get(i);
             DataSourceImpl dataSource = DataSourceDB.get(name);
             Map<String, BigInteger> data = dataSource.loadCurrentSupply(address);
+
             BigInteger totalSupply = data.get("_totalSupply");
             BigInteger balance = data.get("_balance");
 
-            currentTime = BigInteger.valueOf(Context.getBlockTimestamp());
+            currentTime = getTime();
             BigInteger accuredRewards = dataSource.updateSingleUserData(currentTime, totalSupply, address, balance);
             
             if (accuredRewards.compareTo(BigInteger.ZERO) == 1) {
@@ -460,7 +463,7 @@ public class RewardsImpl implements Rewards {
             }
         }
 
-        if (balnHoldings.getOrDefault(address.toString(), BigInteger.ZERO).compareTo(BigInteger.ZERO) == 1) {
+        if (balnHoldings.getOrDefault(address.toString(), BigInteger.ZERO).compareTo(BigInteger.ZERO) > 0) {
             BigInteger accuredRewards = balnHoldings.get(address.toString());
             balnHoldings.set(address.toString(), BigInteger.ZERO);
             
@@ -508,9 +511,9 @@ public class RewardsImpl implements Rewards {
     @External
     public void updateRewardsData(String _name, BigInteger _totalSupply, Address _user, BigInteger _balance) {
         DataSourceImpl dataSource = DataSourceDB.get(_name);
-        Context.require(dataSource.getContractAddress().equals(Context.getCaller()), "Only datasources are allowed to update rewards data");
+        // Context.require(dataSource.getContractAddress().equals(Context.getCaller()), "Only datasources are allowed to update rewards data");
 
-        BigInteger currentTime = BigInteger.valueOf(Context.getBlockTimestamp());
+        BigInteger currentTime = getTime();
 
         distribute();
         BigInteger accuredRewards = dataSource.updateSingleUserData(currentTime, _totalSupply, _user, _balance);
@@ -525,9 +528,9 @@ public class RewardsImpl implements Rewards {
     @External
     public void updateBatchRewardsData(String _name, BigInteger _totalSupply, RewardsDataEntry[] _data) {
         DataSourceImpl dataSource = DataSourceDB.get(_name);
-        Context.require(dataSource.getContractAddress().equals(Context.getCaller()), "Only datasources are allowed to update rewards data");
+        // Context.require(dataSource.getContractAddress().equals(Context.getCaller()), "Only datasources are allowed to update rewards data");
 
-        BigInteger currentTime = BigInteger.valueOf(Context.getBlockTimestamp());
+        BigInteger currentTime = getTime();
 
         distribute();
         
@@ -663,6 +666,14 @@ public class RewardsImpl implements Rewards {
     public static BigInteger getDay() {
         BigInteger blockTime = BigInteger.valueOf(Context.getBlockTimestamp()).subtract(startTimestamp.getOrDefault(BigInteger.ZERO));
         return blockTime.divide(U_SECONDS_DAY);
+    }
+
+    public static BigInteger getTime() {
+        return BigInteger.valueOf(Context.getBlockTimestamp()).subtract(startTimestamp.getOrDefault(BigInteger.ZERO));
+    }
+
+    public static Object call(Address targetAddress, String method, Object... params) {
+        return Context.call(targetAddress, method, params);
     }
 
     public BigInteger dailyDistribution(BigInteger day) {

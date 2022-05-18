@@ -37,7 +37,7 @@ public interface DataSource {
     BigInteger getBnusdValue(String _name);
 
     @External
-    Map<Address, BigInteger> getDataBatch(String _name, int _snapshot_id, int _limit, int _offset);
+    Map<String, BigInteger> getDataBatch(String _name, int _snapshot_id, int _limit, int _offset);
 
     @External
     BigInteger getBalnPrice();

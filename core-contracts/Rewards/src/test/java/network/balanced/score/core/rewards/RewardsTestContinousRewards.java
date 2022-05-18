@@ -80,8 +80,9 @@ public class RewardsTestContinousRewards extends RewardsTestBase {
 
         // Act
         sm.getBlock().increase(DAY);
-        rewardsScore.invoke(admin, "distribute");
+        syncDistributions();
         int day = (int) (sm.getBlock().getHeight()/DAY);
+
         // Assert
         BigInteger emission = (BigInteger)rewardsScore.call("getEmission", BigInteger.valueOf(-1));
         BigInteger timeInUS = BigInteger.valueOf(sm.getBlock().getTimestamp());

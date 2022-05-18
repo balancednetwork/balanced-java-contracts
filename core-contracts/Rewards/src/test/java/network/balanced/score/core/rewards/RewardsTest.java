@@ -284,12 +284,12 @@ public class RewardsTest extends RewardsTestBase {
         BigInteger swapBalance = BigInteger.TWO.multiply(EXA);
         BigInteger swapTotalSupply = BigInteger.TEN.multiply(EXA);
         
-        Map<Address, BigInteger> dataBatchLoans = Map.of(
-            account.getAddress(), loansBalance
+        Map<String, BigInteger> dataBatchLoans = Map.of(
+            account.getAddress().toString(), loansBalance
         );
 
-        Map<Address, BigInteger> dataBatchSwap = Map.of(
-            account.getAddress(), swapBalance
+        Map<String, BigInteger> dataBatchSwap = Map.of(
+            account.getAddress().toString(), swapBalance
         );
 
         sm.getBlock().increase(DAY);
@@ -332,12 +332,12 @@ public class RewardsTest extends RewardsTestBase {
         BigInteger swapBalance = BigInteger.TWO.multiply(EXA);
         BigInteger swapTotalSupply = BigInteger.TEN.multiply(EXA);
         
-        Map<Address, BigInteger> dataBatchLoans = Map.of(
-            account.getAddress(), loansBalance
+        Map<String, BigInteger> dataBatchLoans = Map.of(
+            account.getAddress().toString(), loansBalance
         );
 
-        Map<Address, BigInteger> dataBatchSwap = Map.of(
-            account.getAddress(), swapBalance
+        Map<String, BigInteger> dataBatchSwap = Map.of(
+            account.getAddress().toString(), swapBalance
         );
 
         sm.getBlock().increase(DAY);
@@ -375,16 +375,16 @@ public class RewardsTest extends RewardsTestBase {
         BigInteger day = BigInteger.valueOf((sm.getBlock().getHeight()/DAY));
 
         // Act
-        rewardsScore.invoke(admin, "distribute");
+        syncDistributions();
 
         // Assert
-        Map<String, Object> distStatus  = (Map<String, Object>) rewardsScore.call("distStatus");
+        Map<String, Object> distStatus = (Map<String, Object>) rewardsScore.call("distStatus");
         Map<String, BigInteger> sourceDays = (Map<String, BigInteger>)distStatus.get("source_days");
         BigInteger platformDay = (BigInteger) distStatus.get("platform_day");
         BigInteger daysSum = sourceDays.get("sICX/ICX").add(sourceDays.get("Loans"));
 
         assertEquals(day, platformDay);
-        assertEquals(platformDay.multiply(BigInteger.TWO).subtract(BigInteger.ONE), daysSum);
+        assertEquals(platformDay.multiply(BigInteger.TWO), daysSum);
     }
 
     @Test

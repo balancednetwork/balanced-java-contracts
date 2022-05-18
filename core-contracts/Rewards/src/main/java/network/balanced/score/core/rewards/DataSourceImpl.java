@@ -134,7 +134,7 @@ public class DataSourceImpl {
         BigInteger currentUserWeight = getUserWeight(user.toString());
         BigInteger lastUpdateTimestamp = getLastUpdateTimeUs();
     
-        if (getLastUpdateTimeUs().compareTo(RewardsImpl.continuousRewardsDay.get().multiply(U_SECONDS_DAY)) < 0) {
+        if (RewardsImpl.getDay().compareTo(RewardsImpl.continuousRewardsDay.get()) < 0) {
             lastUpdateTimestamp = RewardsImpl.continuousRewardsDay.get().multiply(U_SECONDS_DAY);
         }
         
@@ -162,8 +162,8 @@ public class DataSourceImpl {
         BigInteger totalWeight = updateTotalWeight(currentTime, prevTotalSupply);
         BigInteger accruedRewards = BigInteger.ZERO;
         //  If the user" +s current weight is less than the total, update their weight and issue rewards
-        if (currentUserWeight.compareTo(totalWeight) == -1) {
-            if (prevBalance.compareTo(BigInteger.ZERO) == 1) {
+        if (currentUserWeight.compareTo(totalWeight) < 0) {
+            if (prevBalance.compareTo(BigInteger.ZERO) > 0) {
                 accruedRewards = computeUserRewards(prevBalance, totalWeight, currentUserWeight);
                 accruedRewards = accruedRewards.divide(EXA);
             }
@@ -203,10 +203,18 @@ public class DataSourceImpl {
     public void distribute(int batchSize) {
         DataSourceScoreInterface datasource = new DataSourceScoreInterface(getContractAddress());
 
-        BigInteger day = this.getDay();
-        String name = this.getName();
+        BigInteger day = getDay();
+        String name = getName();
 
-        boolean precomputeDone = datasource.precompute(day.intValue(), batchSize);
+        Object precomputeDoneObj = RewardsImpl.call(getContractAddress(), "precompute", day.intValue(), batchSize);
+
+        boolean precomputeDone;
+        try {
+            precomputeDone = (boolean)precomputeDoneObj;
+        } catch (Exception e) {
+            precomputeDone = !((BigInteger)precomputeDoneObj).equals(BigInteger.ZERO);
+        }
+
 
         if (!getPrecomp() && precomputeDone) {
             precomp.at(dbKey).set(true);
@@ -220,7 +228,7 @@ public class DataSourceImpl {
         }
 
         int offset = this.getOffset();
-        Map<Address, BigInteger> dataBatch = datasource.getDataBatch(name, day.intValue(), batchSize, offset);
+        Map<String, BigInteger> dataBatch = (Map<String, BigInteger>) RewardsImpl.call(getContractAddress(), "getDataBatch", name, day.intValue(), batchSize, offset);
         this.offset.at(dbKey).set(offset + batchSize);
         if (dataBatch.isEmpty()) {
             this.day.at(dbKey).set(day.add(BigInteger.ONE));
@@ -233,13 +241,15 @@ public class DataSourceImpl {
         BigInteger originalShares = shares;
 
         BigInteger batchSum = BigInteger.ZERO;
-        for(BigInteger value : dataBatch.values()) {
-            batchSum = batchSum.add(value);
+        for (Map.Entry<String, BigInteger> entry : dataBatch.entrySet()) {
+            batchSum = batchSum.add(entry.getValue());
         }
 
         BigInteger tokenShare = BigInteger.ZERO;
-        for (Address address : dataBatch.keySet()) {
-            tokenShare = remaining.multiply(dataBatch.get(address)).divide(shares);
+        for (Map.Entry<String,BigInteger> entry : dataBatch.entrySet()) {
+            BigInteger value = entry.getValue();
+            Address address = Address.fromString(entry.getKey());
+            tokenShare = remaining.multiply(value).divide(shares);
             Context.require(shares.compareTo(BigInteger.ZERO) == 1,  
                         RewardsImpl.TAG + ": zero or negative divisor for " + name + ", " +
                         "sum: " + batchSum + ", " +
@@ -249,7 +259,7 @@ public class DataSourceImpl {
                         "starting: " + originalShares );
             
             remaining = remaining.subtract(tokenShare);
-            shares = shares.subtract(dataBatch.get(address));
+            shares = shares.subtract(value);
             BigInteger prevHoldings = RewardsImpl.balnHoldings.getOrDefault(address.toString(), BigInteger.ZERO);
             RewardsImpl.balnHoldings.set(address.toString(), prevHoldings.add(tokenShare));
         }
@@ -284,8 +294,7 @@ public class DataSourceImpl {
         BigInteger originalTotalWeight = previousRunningTotal;
         BigInteger lastUpdateTimestamp = getLastUpdateTimeUs();
         BigInteger originalLastUpdateTimestamp = lastUpdateTimestamp;
-
-        if (lastUpdateTimestamp.compareTo(RewardsImpl.continuousRewardsDay.get()) < 0) {
+        if (RewardsImpl.getDay().compareTo(RewardsImpl.continuousRewardsDay.get()) < 0){
             lastUpdateTimestamp = RewardsImpl.continuousRewardsDay.get().multiply(U_SECONDS_DAY);
             lastUpdateTimeUs.at(dbKey).set(lastUpdateTimestamp);
         }
@@ -300,9 +309,9 @@ public class DataSourceImpl {
         BigInteger previousDayEndUs = BigInteger.ZERO;
 
         BigInteger newTotal = BigInteger.ZERO;
-        while (lastUpdateTimestamp.compareTo(currentTime) == -1) {
-            previousRewardsDay = lastUpdateTimestamp.subtract(startTimestampUs).divide(U_SECONDS_DAY);
-            previousDayEndUs = startTimestampUs.add(U_SECONDS_DAY.multiply(previousRewardsDay.add(BigInteger.ONE)));
+        while (lastUpdateTimestamp.compareTo(currentTime) < 0) {
+            previousRewardsDay = lastUpdateTimestamp.divide(U_SECONDS_DAY);
+            previousDayEndUs = U_SECONDS_DAY.multiply(previousRewardsDay.add(BigInteger.ONE));
             BigInteger endComputeTimestampUs = previousDayEndUs.min(currentTime);
 
             BigInteger emission = getTotalDist(previousRewardsDay);
