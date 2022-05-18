@@ -58,7 +58,7 @@ public class Position {
     }
     
     public void set(String symbol, BigInteger value) {
-        if (LoansImpl._getDay().compareTo(LoansImpl.continuousRewardDay.get()) <= 0) {
+        if (LoansImpl._getDay().compareTo(LoansImpl.continuousRewardDay.get()) < 0) {
             BigInteger day = checkSnap();
             assets.at(day).set(symbol, value);
         } else {
@@ -297,7 +297,7 @@ public class Position {
     }
 
     public Standings updateStanding(BigInteger day) {
-        Context.require(LoansImpl._getDay().compareTo(LoansImpl.continuousRewardDay.get()) <= 0, continuousRewardsErrorMessage);
+        Context.require(day.compareTo(LoansImpl.continuousRewardDay.get()) < 0, continuousRewardsErrorMessage);
 
         Standing standing = getStanding(day, false);
         DictDB<String, BigInteger> state = SnapshotDB.get(day).positionStates.at(id.get());

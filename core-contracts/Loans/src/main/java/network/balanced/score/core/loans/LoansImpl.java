@@ -337,7 +337,7 @@ public class LoansImpl {
 
     @External(readonly = true)
     public BigInteger getTotalValue(String _name, BigInteger _snapshot_id) {
-        Context.require(SnapshotDB.getSnapshotId(_snapshot_id).compareTo(continuousRewardDay.get()) <= 0,  continuousRewardsErrorMessage);
+        Context.require(SnapshotDB.getSnapshotId(_snapshot_id).compareTo(continuousRewardDay.get()) < 0,  continuousRewardsErrorMessage);
 
         return SnapshotDB.get(_snapshot_id).totalMiningDebt.getOrDefault(BigInteger.ZERO);
     }
@@ -373,13 +373,13 @@ public class LoansImpl {
 
     @External(readonly = true)
     public BigInteger getDataCount(BigInteger _snapshot_id) {
-        Context.require(_snapshot_id.compareTo(continuousRewardDay.get()) <= 0,  continuousRewardsErrorMessage);
+        Context.require(_snapshot_id.compareTo(continuousRewardDay.get()) < 0,  continuousRewardsErrorMessage);
         return BigInteger.valueOf(SnapshotDB.get(_snapshot_id).mining.size());
     }
 
     @External(readonly = true)
     public Map<String, BigInteger> getDataBatch(String _name, BigInteger _snapshot_id, int _limit, @Optional int _offset) {
-        Context.require(_snapshot_id.compareTo(continuousRewardDay.get()) <= 0,  continuousRewardsErrorMessage);
+        Context.require(_snapshot_id.compareTo(continuousRewardDay.get()) < 0,  continuousRewardsErrorMessage);
 
         Snapshot snapshot = SnapshotDB.get(_snapshot_id);
         int totalMiners = snapshot.mining.size();
@@ -401,7 +401,7 @@ public class LoansImpl {
         Context.require(LoansImpl.loansOn.get(), "Balanced Loans SCORE is not active.");
         BigInteger day = _getDay();
 
-        if (currentDay.get().compareTo(day) < 0 && day.compareTo(continuousRewardDay.get()) <= 0) {
+        if (currentDay.get().compareTo(day) < 0 && day.compareTo(continuousRewardDay.get()) < 0) {
             currentDay.set(day);
             PositionsDB.takeSnapshot();
             Snapshot(_getDay());

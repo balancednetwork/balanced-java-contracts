@@ -94,7 +94,6 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         balanced.increaseDay(1);
         balanced.syncDistributions();
        
-        
         //verify dao/reserver/bwt
         verifyRewards(tester1);
 
@@ -126,7 +125,6 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         balanced.loans._update(loansJavaPath, Map.of("_governance", balanced.governance._address()));
         
         owner.governance.setContinuousRewardsDay(owner.governance.getDay().add(BigInteger.valueOf(3)));
-        System.out.println("setContinuousRewardsDay: " + owner.governance.getDay().add(BigInteger.valueOf(3)));
         balanced.increaseDay(1);
         balanced.syncDistributions();
 
