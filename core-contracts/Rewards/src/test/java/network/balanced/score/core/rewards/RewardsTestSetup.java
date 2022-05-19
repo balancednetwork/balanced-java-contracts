@@ -151,6 +151,33 @@ public class RewardsTestSetup extends RewardsTestBase {
         rewardsScore.invoke(admin, "setContinuousRewardsDay", continuousRewardsDay);
         assertEquals(continuousRewardsDay, rewardsScore.call("getContinuousRewardsDay"));
     }
+
+    @Test
+    void addAndRemoveDataProviders() {
+        Address dataProvider1 = Account.newScoreAccount(scoreCount++).getAddress();
+        Address dataProvider2 = Account.newScoreAccount(scoreCount++).getAddress();
+        
+        Account nonOwner = sm.createAccount();
+        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + nonOwner.getAddress() + "Owner=" + owner.getAddress();
+        Executable addFromNotOwner= () -> rewardsScore.invoke(nonOwner, "addDataProvider", dataProvider1);
+        expectErrorMessage(addFromNotOwner, expectedErrorMessage);
+
+        rewardsScore.invoke(owner, "addDataProvider", dataProvider1);
+        rewardsScore.invoke(owner, "addDataProvider", dataProvider2);
+
+        List<Address> dataProviders = (List<Address>) rewardsScore.call("getDataProviders");
+        assertTrue(dataProviders.contains(dataProvider1));
+        assertTrue(dataProviders.contains(dataProvider2));
+
+        Executable removeFromNotOwner= () -> rewardsScore.invoke(nonOwner, "removeDataProvider", dataProvider1);
+        expectErrorMessage(removeFromNotOwner, expectedErrorMessage);
+
+        rewardsScore.invoke(owner, "removeDataProvider", dataProvider1);
+
+        dataProviders = (List<Address>) rewardsScore.call("getDataProviders");
+        assertFalse(dataProviders.contains(dataProvider1));
+        assertTrue(dataProviders.contains(dataProvider2));
+    }
 }
 
 
