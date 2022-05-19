@@ -85,7 +85,7 @@ public class PositionsDB {
     }
 
     public static void addNonZero(int id) {
-        Snapshot currentSnapshot = SnapshotDB.get(BigInteger.valueOf(-1));
+        Snapshot currentSnapshot = SnapshotDB.get(-1);
         LinkedListDB addToNonZero = currentSnapshot.getAddNonzero();
         LinkedListDB removeFromNonZero = currentSnapshot.getRemoveNonzero();
         if (removeFromNonZero.contains(id)) {
@@ -96,7 +96,7 @@ public class PositionsDB {
     }
 
     public static void removeNonZero(int id) {
-        Snapshot currentSnapshot = SnapshotDB.get(BigInteger.valueOf(-1));
+        Snapshot currentSnapshot = SnapshotDB.get(-1);
         LinkedListDB addToNonZero = currentSnapshot.getAddNonzero();
         LinkedListDB removeFromNonZero = currentSnapshot.getRemoveNonzero();
         if (addToNonZero.contains(id)) {
@@ -141,7 +141,7 @@ public class PositionsDB {
      * new snapshot.
      */
     public static void takeSnapshot() {
-        Snapshot snapshot = SnapshotDB.get(BigInteger.valueOf(-1));
+        Snapshot snapshot = SnapshotDB.get(-1);
 
         int assetSymbolsCount = AssetDB.assetSymbols.size();
         for (int i = 0; i < assetSymbolsCount; i++) {
@@ -152,11 +152,11 @@ public class PositionsDB {
             Token assetContract = new Token(assetAddress);
 
             if (asset.isActive()) {
-                snapshot.prices.set(symbol, assetContract.priceInLoop());
+                snapshot.setPrices(symbol, assetContract.priceInLoop());
             }
         }
 
-        snapshot.time.set(BigInteger.valueOf(Context.getBlockTimestamp()));
+        snapshot.setSnapshotTime(BigInteger.valueOf(Context.getBlockTimestamp()));
         // TODO Previously we used to emit snapshot log here, we can't currently
         if (!isContinuousRewardsActivated()) {
             SnapshotDB.startNewSnapshot();
@@ -172,9 +172,9 @@ public class PositionsDB {
      */
     public static Boolean calculateSnapshot(BigInteger day, int batchSize) {
         Context.require(day.compareTo(continuousRewardDay.get()) < 0, continuousRewardsErrorMessage);
-        Snapshot snapshot = SnapshotDB.get(day);
-        BigInteger snapshotId = snapshot.day.get();
-        if (snapshotId.compareTo(day) < 0) {
+        Snapshot snapshot = SnapshotDB.get(day.intValue());
+        int snapshotId = snapshot.getDay();
+        if (snapshotId < day.intValue()) {
             return true;
         }
         
@@ -217,7 +217,7 @@ public class PositionsDB {
             return false;
         }
 
-        int index = snapshot.preComputeIndex.getOrDefault(0);
+        int index = snapshot.getPreComputeIndex();
         int totalNonZero = nonZero.size();
         nextNode = nextPositionNode.getOrDefault(0);
         if (nextNode == 0) {
@@ -231,11 +231,11 @@ public class PositionsDB {
         for (int i = 0; i < loops; i++) {
             int accountId = nextNode;
             Position position = get(accountId);
-            if (snapshotId.compareTo(BigInteger.valueOf(position.getSnaps(0))) >= 0) {
-                Standings standing = position.updateStanding(snapshotId.intValue());
+            if (snapshotId >= position.getSnaps(0)) {
+                Standings standing = position.updateStanding(snapshotId);
                 if (standing == Standings.MINING) {
-                    snapshot.mining.add(accountId);
-                    batchMiningDebt = batchMiningDebt.add(snapshot.positionStates.at(accountId).get("total_debt"));
+                    snapshot.addMining(accountId);
+                    batchMiningDebt = batchMiningDebt.add(snapshot.getPositionStates(accountId, "total_debt"));
                 }
             }
             index++;
@@ -247,8 +247,8 @@ public class PositionsDB {
             }
         }
 
-        snapshot.totalMiningDebt.set(snapshot.totalMiningDebt.getOrDefault(BigInteger.ZERO).add(batchMiningDebt));
-        snapshot.preComputeIndex.set(index);
+        snapshot.setTotalMiningDebt(snapshot.getTotalMiningDebt().add(batchMiningDebt));
+        snapshot.setPreComputeIndex(index);
         nextPositionNode.set(nextNode);
 
         return totalNonZero == index;

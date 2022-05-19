@@ -16,53 +16,43 @@
 
 package network.balanced.score.core.loans.snapshot;
 
-import score.Context;
-import score.ArrayDB;
-
-import java.math.BigInteger;
-
 import network.balanced.score.core.loans.LoansImpl;
+import score.ArrayDB;
+import score.Context;
 
 public class SnapshotDB {
-    private static final String SNAP_DB_PREFIX = "snaps";
-    private static final ArrayDB<BigInteger> indexes = Context.newArrayDB("indexes", BigInteger.class);
-    // private static HashMap<Integer, Snapshot> items = new HashMap<Integer, Snapshot>(10);
 
-    public static Snapshot get(BigInteger day) {
-        BigInteger inputDay = day;
-        BigInteger index = getSnapshotId(day);
-        if (day.compareTo(BigInteger.ZERO) < 0) {
+    private static final String TAG = "BalancedLoansSnapshots";
+    private static final String SNAP_DB_PREFIX = "snaps";
+    private static final ArrayDB<Integer> indexes = Context.newArrayDB("indexes", Integer.class);
+
+    public static Snapshot get(Integer day) {
+        int inputDay = day;
+        int index = getSnapshotId(day);
+        if (day < 0) {
             day = index;
         }
-        Context.require(index.compareTo(indexes.get(0)) >= 0 && 
-                                        index.compareTo(indexes.get(indexes.size() -1).add(BigInteger.ONE)) < 0, 
-                                        "no snapshot exists for " + day + ", input_day: " + inputDay + ".");
-
-        // if (!items.containsKey(day)) {
-        //     return getSnapshot(day, index);
-        // }
-        // return items.get(day);
-        return getSnapshot(day, index);
+        Context.require(index >= indexes.get(0) && index <= indexes.get(indexes.size() - 1),
+                TAG + ": No snapshot exists for " + day + ", input_day: " + inputDay + ".");
+        return getSnapshot(index);
     }
 
-    public static BigInteger size() {
-        return indexes.get(indexes.size() -1).subtract(indexes.get(0));
+    public static Integer size() {
+        return indexes.get(indexes.size() - 1) - (indexes.get(0));
     }
 
-    private static Snapshot getSnapshot(BigInteger day, BigInteger index) {
-
-        // items.put(day, snapshot);
+    private static Snapshot getSnapshot(Integer index) {
         return new Snapshot(SNAP_DB_PREFIX + "|" + index);
     }
 
-    public static BigInteger getLastSnapshotIndex() {
-        return indexes.get(indexes.size() -1);
+    public static Integer getLastSnapshotIndex() {
+        return indexes.get(indexes.size() - 1);
     }
 
-    public static BigInteger getSnapshotId(BigInteger day) {
-        if (day.compareTo(BigInteger.ZERO) < 0) {
-            int index = day.intValue() + indexes.size();
-            Context.require(index >= 0, "Snapshot index " + day + " out of range.");
+    public static Integer getSnapshotId(Integer day) {
+        if (day < 0) {
+            int index = day + indexes.size();
+            Context.require(index >= 0, TAG + ": Snapshot index " + day + " out of range.");
             return indexes.get(index);
         }
 
@@ -71,7 +61,7 @@ public class SnapshotDB {
         int middle;
         while (low < high) {
             middle = (low + high) / 2;
-            if (indexes.get(middle).compareTo(day) > 0) {
+            if (indexes.get(middle) > day) {
                 high = middle;
             } else {
                 low = middle + 1;
@@ -81,18 +71,19 @@ public class SnapshotDB {
         if (indexes.get(0).equals(day)) {
             return day;
         } else if (low == 0) {
-            return BigInteger.valueOf(-1);
+            return -1;
         }
 
         return indexes.get(low - 1);    
     }
 
     public static void startNewSnapshot() {
-        BigInteger day = LoansImpl._getDay();
+        int day = LoansImpl._getDay().intValue();
 
-        Context.require(indexes.size() == 0 || day.compareTo(getLastSnapshotIndex()) > 0, "New snapshot called for a day less than the previous snapshot.");
+        Context.require(indexes.size() == 0 || day > getLastSnapshotIndex(), TAG + ": New snapshot called for a day " +
+                "less than the previous snapshot.");
         indexes.add(day);
-        Snapshot snapshot = getSnapshot(day, day);
-        snapshot.day.set(day);
+        Snapshot snapshot = getSnapshot(day);
+        snapshot.setDay(day);
     }
 }

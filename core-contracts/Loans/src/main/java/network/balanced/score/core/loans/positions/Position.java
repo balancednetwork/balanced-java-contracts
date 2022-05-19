@@ -281,7 +281,7 @@ public class Position {
                 if (day == -1 || day == LoansImpl._getDay().intValue()) {
                     price = assetContract.priceInLoop();
                 } else {
-                    price = SnapshotDB.get(BigInteger.valueOf(day)).prices.getOrDefault(symbol, BigInteger.ZERO);
+                    price = SnapshotDB.get(day).getPrices(symbol);
                 }
 
                 totalCollateral = totalCollateral.add(amount.multiply(price).divide(EXA));
@@ -308,7 +308,7 @@ public class Position {
             if (day == -1 || day == LoansImpl._getDay().intValue()) {
                 price = assetContract.priceInLoop();
             } else {
-                price = SnapshotDB.get(BigInteger.valueOf(day)).prices.getOrDefault(symbol, BigInteger.ZERO);
+                price = SnapshotDB.get(day).getPrices(symbol);
             }
 
             totalCollateral = totalCollateral.add(amount.multiply(price).divide(EXA));
@@ -343,7 +343,7 @@ public class Position {
                     if (day == -1 || day == LoansImpl._getDay().intValue()) {
                         price = getAssetPrice(symbol, readOnly);
                     } else {
-                        price = SnapshotDB.get(BigInteger.valueOf(day)).prices.getOrDefault(symbol, BigInteger.ZERO);
+                        price = SnapshotDB.get(day).getPrices(symbol);
                     }
                 }
 
@@ -369,7 +369,7 @@ public class Position {
                 if (day == -1 || day == LoansImpl._getDay().intValue()) {
                     price = getAssetPrice(symbol, readOnly);
                 } else {
-                    price = SnapshotDB.get(BigInteger.valueOf(day)).prices.getOrDefault(symbol, BigInteger.ZERO);
+                    price = SnapshotDB.get(day).getPrices(symbol);
                 }
             }
             totalDebt = totalDebt.add(amount.multiply(price).divide(EXA));
@@ -410,7 +410,7 @@ public class Position {
                 if (day == -1 || day == LoansImpl._getDay().intValue()) {
                     assetPrice = getAssetPrice(BNUSD_SYMBOL, readOnly);
                 } else {
-                    assetPrice = SnapshotDB.get(BigInteger.valueOf(day)).prices.get(BNUSD_SYMBOL);
+                    assetPrice = SnapshotDB.get(day).getPrices(BNUSD_SYMBOL);
                 }
 
                 BigInteger bnusdDebt = standing.totalDebt.multiply(EXA).divide(assetPrice);
@@ -440,7 +440,7 @@ public class Position {
     public Standings updateStanding(Integer day) {
         Context.require(!isContinuousRewardsActivated(), continuousRewardsErrorMessage);
 
-        DictDB<String, BigInteger> state = SnapshotDB.get(BigInteger.valueOf(day)).positionStates.at(getId());
+        DictDB<String, BigInteger> state = SnapshotDB.get(day).getAllPositionStates(getId());
         Standing standing = getStanding(day, false);
         state.set("total_debt", standing.totalDebt);
         state.set("ratio", standing.ratio);
@@ -449,8 +449,8 @@ public class Position {
     }
 
     public Map<String, Object> toMap(Integer day) {
-        BigInteger index = SnapshotDB.getSnapshotId(BigInteger.valueOf(day));
-        if (index.equals(BigInteger.valueOf(-1)) || day > LoansImpl._getDay().intValue()) {
+        int index = SnapshotDB.getSnapshotId(day);
+        if (index == -1 || day > LoansImpl._getDay().intValue()) {
             return Map.of();
         }
 
@@ -471,7 +471,7 @@ public class Position {
                     amount = getLoansPosition(SICX_SYMBOL, symbol);
                 }
             } else {
-                amount = getAssets(index.intValue(), symbol);
+                amount = getAssets(index, symbol);
             }
 
             if (amount.compareTo(BigInteger.ZERO) > 0) {
@@ -479,7 +479,7 @@ public class Position {
             }
         }
 
-        Standing standing = getStanding(index.intValue(), true);
+        Standing standing = getStanding(index, true);
         return Map.ofEntries(
                 entry("pos_id", getId()),
                 entry("created", getCreated()),

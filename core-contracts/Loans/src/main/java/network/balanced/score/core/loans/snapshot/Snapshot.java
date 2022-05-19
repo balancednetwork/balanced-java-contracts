@@ -30,24 +30,79 @@ import network.balanced.score.core.loans.asset.*;
 import network.balanced.score.core.loans.linkedlist.*;
 
 public class Snapshot {
-    public VarDB<BigInteger> day;
-    public VarDB<BigInteger> time;
-    public VarDB<BigInteger> totalMiningDebt;
-    public DictDB<String, BigInteger> prices;
-    public VarDB<Integer> preComputeIndex;
-    public BranchDB<Integer, DictDB<String, BigInteger>> positionStates;
-    public ArrayDB<Integer> mining;
+    private final BranchDB<String, VarDB<Integer>> day = Context.newBranchDB("snap_day", Integer.class);
+    private final BranchDB<String, VarDB<BigInteger>> snapshotTime = Context.newBranchDB("snap_time", BigInteger.class);
+    private final BranchDB<String, VarDB<BigInteger>> totalMiningDebt = Context.newBranchDB("total_mining_debt", BigInteger.class);
+    private final BranchDB<String, DictDB<String, BigInteger>> prices = Context.newBranchDB("prices", BigInteger.class);
+    private final BranchDB<String, VarDB<Integer>> preComputeIndex = Context.newBranchDB("precompute_index", Integer.class);
+    private final BranchDB<String, BranchDB<Integer, DictDB<String, BigInteger>>> positionStates = Context.newBranchDB(
+            "pos_state", BigInteger.class);
+    private final BranchDB<String, ArrayDB<Integer>> mining = Context.newBranchDB("mining", Integer.class);
+
     private final String dbKey;
 
     Snapshot(String key) {
         dbKey = key;
-        day = (VarDB<BigInteger>)Context.newBranchDB("snap_day", BigInteger.class).at(dbKey);
-        time = (VarDB<BigInteger>)Context.newBranchDB("snap_time", BigInteger.class).at(dbKey);
-        totalMiningDebt = (VarDB<BigInteger>)Context.newBranchDB("total_mining_debt", BigInteger.class).at(dbKey);
-        prices = (DictDB<String, BigInteger>)Context.newBranchDB("prices", BigInteger.class).at(dbKey);
-        preComputeIndex = (VarDB<Integer>)Context.newBranchDB("precompute_index", Integer.class).at(dbKey);
-        positionStates = (BranchDB<Integer, DictDB<String, BigInteger>>)Context.newBranchDB("pos_state", BigInteger.class).at(dbKey);
-        mining = (ArrayDB<Integer>) Context.newBranchDB("mining", Integer.class).at(dbKey);
+    }
+
+    public void setDay(Integer day) {
+        this.day.at(dbKey).set(day);
+    }
+
+    public Integer getDay() {
+        return day.at(dbKey).get();
+    }
+
+    public void setSnapshotTime(BigInteger time) {
+        snapshotTime.at(dbKey).set(time);
+    }
+
+    public BigInteger getSnapshotTime() {
+        return snapshotTime.at(dbKey).getOrDefault(BigInteger.ZERO);
+    }
+
+    public void setTotalMiningDebt(BigInteger debt) {
+        totalMiningDebt.at(dbKey).set(debt);
+    }
+
+    public BigInteger getTotalMiningDebt() {
+        return totalMiningDebt.at(dbKey).getOrDefault(BigInteger.ZERO);
+    }
+
+    public void setPrices(String symbol, BigInteger price) {
+        prices.at(dbKey).set(symbol, price);
+    }
+
+    public BigInteger getPrices(String symbol) {
+        return prices.at(dbKey).get(symbol);
+    }
+
+    public void setPreComputeIndex(Integer index) {
+        preComputeIndex.at(dbKey).set(index);
+    }
+
+    public Integer getPreComputeIndex() {
+        return preComputeIndex.at(dbKey).getOrDefault(0);
+    }
+
+    public BigInteger getPositionStates(Integer day, String state) {
+        return positionStates.at(dbKey).at(day).getOrDefault(state, BigInteger.ZERO);
+    }
+
+    public DictDB<String, BigInteger> getAllPositionStates(Integer day) {
+        return positionStates.at(dbKey).at(day);
+    }
+
+    public void addMining(Integer value) {
+        mining.at(dbKey).add(value);
+    }
+
+    public Integer getMining(Integer index) {
+        return mining.at(dbKey).get(index);
+    }
+
+    public Integer getMiningSize() {
+        return mining.at(dbKey).size();
     }
 
     public LinkedListDB getAddNonzero() {
@@ -60,20 +115,22 @@ public class Snapshot {
 
     public Map<String, Object> toMap() {
         Map<String, BigInteger> prices = new HashMap<>();
-        for(int i = 0; i < AssetDB.assetSymbols.size(); i++) {
+
+        int assetSymbolsCount = AssetDB.assetSymbols.size();
+        for(int i = 0; i < assetSymbolsCount; i++) {
             String symbol = AssetDB.assetSymbols.get(i);
-            if (AssetDB.getAsset(symbol).getAssetAddedTime().compareTo(time.getOrDefault(BigInteger.ZERO)) < 0 && AssetDB.getAsset(symbol).isActive()) {
-                prices.put(symbol, this.prices.get(symbol));
+            if (AssetDB.getAsset(symbol).getAssetAddedTime().compareTo(getSnapshotTime()) < 0 && AssetDB.getAsset(symbol).isActive()) {
+                prices.put(symbol, this.getPrices(symbol));
             }
         }
 
         return Map.of(
-            "snap_day", day.get(),
-            "snap_time", time.getOrDefault(BigInteger.ZERO),
-            "total_mining_debt", totalMiningDebt.getOrDefault(BigInteger.ZERO),
+            "snap_day", getDay(),
+            "snap_time", getSnapshotTime(),
+            "total_mining_debt", getTotalMiningDebt(),
             "prices", prices,
-            "mining_count", mining.size(),
-            "precompute_index", preComputeIndex.getOrDefault(0),
+            "mining_count", getMiningSize(),
+            "precompute_index", getPreComputeIndex(),
             "add_to_nonzero_count", getAddNonzero().size(),
             "remove_from_nonzero_count", getRemoveNonzero().size()
         );

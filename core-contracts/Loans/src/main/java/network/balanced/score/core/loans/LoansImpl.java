@@ -170,14 +170,14 @@ public class LoansImpl {
 
     @External(readonly = true)
     public int getNonzeroPositionCount() {
-        Snapshot snap = SnapshotDB.get(BigInteger.valueOf(-1));
+        Snapshot snap = SnapshotDB.get(-1);
         int count = PositionsDB.getNonZero().size() + snap.getAddNonzero().size() - snap.getRemoveNonzero().size();
 
-        if (snap.day.get().compareTo(BigInteger.ONE) > 0) {
-            Snapshot lastSnap = SnapshotDB.get(BigInteger.valueOf(-2));
+        if (snap.getDay() > 1) {
+            Snapshot lastSnap = SnapshotDB.get(-2);
             count = count + lastSnap.getAddNonzero().size() - lastSnap.getRemoveNonzero().size();
         }
-        
+
         return count;
     }
 
@@ -187,7 +187,8 @@ public class LoansImpl {
             snapshot = BigInteger.valueOf(-1);
         }
 
-        Context.require(SnapshotDB.getSnapshotId(snapshot).compareTo(continuousRewardDay.get()) < 0, continuousRewardsErrorMessage);
+        Context.require(SnapshotDB.getSnapshotId(snapshot.intValue()) < continuousRewardDay.get().intValue(),
+                continuousRewardsErrorMessage);
         return PositionsDB.getPosition(_address).getStanding(snapshot.intValue(), true).toMap();
     }
 
@@ -219,7 +220,8 @@ public class LoansImpl {
 
     @External(readonly = true)
     public Map<String, Object> getPositionByIndex(int _index, BigInteger _day) {
-        Context.require(SnapshotDB.getSnapshotId(_day).compareTo(continuousRewardDay.get()) < 0, continuousRewardsErrorMessage);
+        Context.require(SnapshotDB.getSnapshotId(_day.intValue()) < continuousRewardDay.get().intValue(),
+                continuousRewardsErrorMessage);
         return PositionsDB.get(_index).toMap(_day.intValue());
     }
 
@@ -249,11 +251,11 @@ public class LoansImpl {
             _snap_id = BigInteger.valueOf(-1);
         }
 
-        if (_snap_id.compareTo(SnapshotDB.getLastSnapshotIndex()) > 0 || _snap_id.add(SnapshotDB.size()).compareTo(BigInteger.ZERO) < 0) {
+        if (_snap_id.intValue() > SnapshotDB.getLastSnapshotIndex() || (_snap_id.intValue() + SnapshotDB.size()) < 0) {
             return Map.of();
         }
-        
-        return SnapshotDB.get(_snap_id).toMap();
+
+        return SnapshotDB.get(_snap_id.intValue()).toMap();
     }
 
     @External
@@ -285,9 +287,10 @@ public class LoansImpl {
 
     @External(readonly = true)
     public BigInteger getTotalValue(String _name, BigInteger _snapshot_id) {
-        Context.require(SnapshotDB.getSnapshotId(_snapshot_id).compareTo(continuousRewardDay.get()) < 0,  continuousRewardsErrorMessage);
+        Context.require(SnapshotDB.getSnapshotId(_snapshot_id.intValue()) < continuousRewardDay.get().intValue(),
+                continuousRewardsErrorMessage);
 
-        return SnapshotDB.get(_snapshot_id).totalMiningDebt.getOrDefault(BigInteger.ZERO);
+        return SnapshotDB.get(_snapshot_id.intValue()).getTotalMiningDebt();
     }
 
     @External(readonly = true)
@@ -327,23 +330,23 @@ public class LoansImpl {
     @External(readonly = true)
     public BigInteger getDataCount(BigInteger _snapshot_id) {
         Context.require(_snapshot_id.compareTo(continuousRewardDay.get()) <= 0,  continuousRewardsErrorMessage);
-        return BigInteger.valueOf(SnapshotDB.get(_snapshot_id).mining.size());
+        return BigInteger.valueOf(SnapshotDB.get(_snapshot_id.intValue()).getMiningSize());
     }
 
     @External(readonly = true)
     public Map<Address, BigInteger> getDataBatch(String _name, BigInteger _snapshot_id, int _limit, @Optional int _offset) {
-        Context.require(_snapshot_id.compareTo(continuousRewardDay.get()) <= 0,  continuousRewardsErrorMessage);
+        Context.require(_snapshot_id.compareTo(continuousRewardDay.get()) <= 0, continuousRewardsErrorMessage);
 
-        Snapshot snapshot = SnapshotDB.get(_snapshot_id);
-        int totalMiners = snapshot.mining.size();
+        Snapshot snapshot = SnapshotDB.get(_snapshot_id.intValue());
+        int totalMiners = snapshot.getMiningSize();
         int start = Math.max(0, Math.min(_offset, totalMiners));
         int end = Math.min(_offset + _limit, totalMiners);
 
         Map<Address, BigInteger> batch = new HashMap<>();
         for (int i = start; i < end; i++) {
-            int id = snapshot.mining.get(i);
+            int id = snapshot.getMining(i);
             Position position = PositionsDB.get(id);
-            batch.put(position.getAddress(), snapshot.positionStates.at(id).get("total_debt"));
+            batch.put(position.getAddress(), snapshot.getPositionStates(id, "total_debt"));
         }
 
         return batch;
@@ -846,17 +849,17 @@ public class LoansImpl {
         }
 
         BigInteger totalDebt = position.totalDebt(-1, false);
-        Context.require(totalDebt.add(newDebtValue).compareTo(maxDebtValue) != 1, 
-            collateral + " collateral is insufficient" +
-            " to originate a loan of " + amount.divide(EXA) + " " +_symbol +
-            " when max_debt_value = " + maxDebtValue + "," +
-            " new_debt_value = " + newDebtValue + "," +
-            " which includes a fee of " + fee.divide(EXA) + " " + _symbol + "," +
-            " given an existing loan value of " + totalDebt+ ".");
+        Context.require(totalDebt.add(newDebtValue).compareTo(maxDebtValue) != 1,
+                collateral + " collateral is insufficient" +
+                        " to originate a loan of " + amount.divide(EXA) + " " + _symbol +
+                        " when max_debt_value = " + maxDebtValue + "," +
+                        " new_debt_value = " + newDebtValue + "," +
+                        " which includes a fee of " + fee.divide(EXA) + " " + _symbol + "," +
+                        " given an existing loan value of " + totalDebt + ".");
 
         if (_getDay().compareTo(continuousRewardDay.get()) < 0) {
             if (totalDebt.equals(BigInteger.ZERO)) {
-                Snapshot snap = SnapshotDB.get(BigInteger.valueOf(-1));
+                Snapshot snap = SnapshotDB.get(-1);
                 PositionsDB.addNonZero(position.getId());
             }
         } else {
