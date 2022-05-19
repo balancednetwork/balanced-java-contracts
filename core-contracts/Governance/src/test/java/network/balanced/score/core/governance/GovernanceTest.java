@@ -564,7 +564,6 @@ public class GovernanceTest extends GovernanceTestBase {
 
         // Assert
         verify(baln.mock).setBnusd(_address);
-        
     }
 
     @Test
