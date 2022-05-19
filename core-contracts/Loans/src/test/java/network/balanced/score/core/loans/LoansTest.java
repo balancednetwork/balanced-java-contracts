@@ -132,11 +132,11 @@ class LoansTest extends LoansTestBase {
         Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", account.getAddress());
         Map<String, BigInteger> assets = (Map<String, BigInteger>) position.get("assets");
         assertEquals(1, position.get("pos_id"));
-        assertEquals(account.getAddress(), position.get("address"));
-        assertEquals(day, position.get("snap_id"));
+        assertEquals(account.getAddress().toString(), position.get("address"));
+        assertEquals(day.intValue(), position.get("snap_id"));
         assertEquals(1, position.get("snaps_length"));
-        assertEquals(day, position.get("last_snap"));
-        assertEquals(day, position.get("first day"));
+        assertEquals(day.intValue(), position.get("last_snap"));
+        assertEquals(day.intValue(), position.get("first day"));
         assertEquals(loan.add(expectedFee), position.get("total_debt"));
         assertEquals(collateral, position.get("collateral"));
         assertEquals(collateral.multiply(EXA).divide(loan.add(expectedFee)), position.get("ratio"));
@@ -244,23 +244,26 @@ class LoansTest extends LoansTestBase {
         Map<String, BigInteger> balanceAndSupply = (Map<String, BigInteger>) loans.call("getBalanceAndSupply", "Loans", account.getAddress());
 
         // Assert
-        BigInteger totalSupply = (BigInteger) bnusd.call("totalSupply");
         assertEquals(loan.add(expectedFee), balanceAndSupply.get("_balance"));
-        assertEquals(totalSupply, balanceAndSupply.get("_totalSupply"));
+        assertEquals(loan.add(expectedFee), balanceAndSupply.get("_totalSupply"));
     }
 
     @Test
     void getBalanceAndSupply_noPositition() {
         // Arrange
-        Account account = accounts.get(0);
+        Account loanTaker = accounts.get(0);
+        Account zeroAccount = accounts.get(1);
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
+        takeLoanICX(loanTaker, "bnUSD", collateral, loan);
 
         // Act
-        Map<String, BigInteger> balanceAndSupply = (Map<String, BigInteger>) loans.call("getBalanceAndSupply", "Loans", account.getAddress());
+        Map<String, BigInteger> balanceAndSupply = (Map<String, BigInteger>) loans.call("getBalanceAndSupply", "Loans", zeroAccount.getAddress());
 
         // Assert
-        BigInteger totalSupply = (BigInteger) bnusd.call("totalSupply");
         assertEquals(BigInteger.ZERO, balanceAndSupply.get("_balance"));
-        assertEquals(totalSupply, balanceAndSupply.get("_totalSupply"));
+        assertEquals(loan.add(expectedFee), balanceAndSupply.get("_totalSupply"));
     }
 
 
@@ -349,6 +352,7 @@ class LoansTest extends LoansTestBase {
         takeLoanICX(account, "bnUSD", collateral, loan);
 
         // Assert
+        verifyTotalDebt(loan.add(expectedFee));
         verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
     }
 
@@ -368,6 +372,7 @@ class LoansTest extends LoansTestBase {
 
         assertEquals(collateral, assetHoldings.get("sICX"));
         assertEquals(false, assetHoldings.containsKey("bnUSD"));
+        verifyTotalDebt(BigInteger.ZERO);
     }
 
     @Test
@@ -1203,6 +1208,7 @@ class LoansTest extends LoansTestBase {
         BigInteger accountOneFee = calculateFee(accountOneLoan);
         BigInteger accountZeroDebt = accountZeroFee.add(accountZeroLoan);
         BigInteger accountOneDebt = accountOneFee.add(accountOneLoan);
+        sm.getBlock().increase(DAY);
 
         // Act
         takeLoanICX(accounts.get(0), "bnUSD", accountZeroCollateral, accountZeroLoan);
@@ -1400,9 +1406,9 @@ class LoansTest extends LoansTestBase {
     @Test
     void getDataBatch_AllSnapshotsCalculated() {
         // Arrange
-        Address accountZeroAddress = accounts.get(0).getAddress();
-        Address accountOneAddress = accounts.get(1).getAddress();
-        Address accountTwoAddress = accounts.get(2).getAddress();
+        String accountZeroAddress = accounts.get(0).getAddress().toString();
+        String accountOneAddress = accounts.get(1).getAddress().toString();
+        String accountTwoAddress = accounts.get(2).getAddress().toString();
         BigInteger accountZeroCollateral = BigInteger.valueOf(10000).multiply(EXA);
         BigInteger accountOneCollateral = BigInteger.valueOf(20000).multiply(EXA);
         BigInteger accountTwoCollateral = BigInteger.valueOf(30000).multiply(EXA);
@@ -1465,9 +1471,9 @@ class LoansTest extends LoansTestBase {
     @Test
     void getDataBatch_LastSnapshotNotCalculated() {
         // Arrange
-        Address accountZeroAddress = accounts.get(0).getAddress();
-        Address accountOneAddress = accounts.get(1).getAddress();
-        Address accountTwoAddress = accounts.get(2).getAddress();
+        String accountZeroAddress = accounts.get(0).getAddress().toString();
+        String accountOneAddress = accounts.get(1).getAddress().toString();
+        String accountTwoAddress = accounts.get(2).getAddress().toString();
         BigInteger accountZeroCollateral = BigInteger.valueOf(10000).multiply(EXA);
         BigInteger accountOneCollateral = BigInteger.valueOf(20000).multiply(EXA);
         BigInteger accountTwoCollateral = BigInteger.valueOf(30000).multiply(EXA);

@@ -213,8 +213,15 @@ class LoansTestBase extends UnitTest {
         assertEquals(removeFromNonzero, snap.get("remove_from_nonzero_count"));
         assertEquals(preComputeIndex, snap.get("precompute_index"));
         assertEquals(totalMiningDebt, snap.get("total_mining_debt"));
-        assertEquals(day, snap.get("snap_day"));
+        assertEquals(day.intValue(), snap.get("snap_day"));
         assertEquals(miningCount, snap.get("mining_count"));
+    }
+
+    protected void verifyTotalDebt(BigInteger expectedDebt) {
+        Map<String, BigInteger> balanceAndSupply = (Map<String, BigInteger>) loans.call("getBalanceAndSupply", "Loans", admin.getAddress());
+        BigInteger totalDebt = balanceAndSupply.get("_totalSupply");
+
+        assertEquals(expectedDebt, totalDebt);
     }
 
     protected void verifyStanding(Standings standing, Address address) {

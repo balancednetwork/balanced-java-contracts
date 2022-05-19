@@ -19,6 +19,7 @@ import score.Address;
 import score.Context;
 import score.VarDB;
 import score.annotation.External;
+import score.annotation.Optional;
 
 import java.math.BigInteger;
 
@@ -68,6 +69,13 @@ public class bnUSDMintBurn extends bnUSD {
      * Increases the balance of that account and the total supply.
      */
     @External
+    public void mint(BigInteger _amount, @Optional byte[] _data) {
+        // simple access control - only the minter can mint new token
+        Context.require(Context.getCaller().equals(minter.get()));
+        _mint(Context.getCaller(), _amount);
+    }
+
+    @External
     public void mint(BigInteger _amount) {
         // simple access control - only the minter can mint new token
         Context.require(Context.getCaller().equals(minter.get()));
@@ -78,6 +86,13 @@ public class bnUSDMintBurn extends bnUSD {
      * Creates _amount number of tokens, and assigns to _account.
      * Increases the balance of that account and the total supply.
      */
+    @External
+    public void mintTo(Address _account, BigInteger _amount, @Optional byte[] _data) {
+        // simple access control - only the minter can mint new token
+        Context.require(Context.getCaller().equals(minter.get()));
+        _mint(_account, _amount);
+    }
+
     @External
     public void mintTo(Address _account, BigInteger _amount) {
         // simple access control - only the minter can mint new token

@@ -17,6 +17,7 @@
 package network.balanced.score.core.loans.positions;
 
 import network.balanced.score.core.loans.LoansImpl;
+import network.balanced.score.core.loans.LoansVariables;
 import network.balanced.score.core.loans.asset.Asset;
 import network.balanced.score.core.loans.asset.AssetDB;
 import network.balanced.score.core.loans.linkedlist.LinkedListDB;
@@ -125,7 +126,7 @@ public class PositionsDB {
         newPosition.setCreated(BigInteger.valueOf(Context.getBlockTimestamp()));
         newPosition.setAddress(owner);
 
-        if (isBeforeContinuousRewardDay(snapshotIndex.intValue())) {
+        if (!isContinuousRewardsActivated()) {
             newPosition.setAssets(snapshotIndex.intValue(), SICX_SYMBOL, BigInteger.ZERO);
         } else {
             newPosition.setCollateralPosition(SICX_SYMBOL, BigInteger.ZERO);
@@ -168,7 +169,7 @@ public class PositionsDB {
      * @return True if complete
      */
     public static Boolean calculateSnapshot(BigInteger day, int batchSize) {
-        Context.require(isBeforeContinuousRewardDay(day.intValue()), continuousRewardsErrorMessage);
+        Context.require(!isContinuousRewardsActivated(day), continuousRewardsErrorMessage);
         Snapshot snapshot = SnapshotDB.get(day.intValue());
         int snapshotId = snapshot.getDay();
         if (snapshotId < day.intValue()) {
@@ -230,6 +231,14 @@ public class PositionsDB {
             Position position = get(accountId);
             if (snapshotId >= position.getSnaps(0)) {
                 Standings standing = position.updateStanding(snapshotId);
+                if (!position.getDataMigrationStatus(BNUSD_SYMBOL)) {
+                    BigInteger previousTotalDebt = LoansVariables.totalDebts.getOrDefault(BNUSD_SYMBOL, BigInteger.ZERO);
+                    BigInteger debtAmount = position.getAssets(position.getSnapshotId(day.intValue()), BNUSD_SYMBOL);
+                    LoansVariables.totalDebts.set(BNUSD_SYMBOL, previousTotalDebt.add(debtAmount));
+                    position.setLoansPosition(SICX_SYMBOL, BNUSD_SYMBOL, debtAmount);
+                    position.setDataMigrationStatus(BNUSD_SYMBOL, true);
+                }
+
                 if (standing == Standings.MINING) {
                     snapshot.addMining(accountId);
                     batchMiningDebt = batchMiningDebt.add(snapshot.getPositionStates(accountId, "total_debt"));
