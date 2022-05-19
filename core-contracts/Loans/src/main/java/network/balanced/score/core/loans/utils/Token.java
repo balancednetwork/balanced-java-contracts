@@ -16,8 +16,8 @@
 
 package network.balanced.score.core.loans.utils;
 
-import network.balanced.score.core.loans.LoansImpl;
 import score.Address;
+import score.Context;
 
 import java.math.BigInteger;
 
@@ -30,30 +30,30 @@ public class Token {
     }
 
     public String symbol() {
-        return (String) LoansImpl.call(tokenAddress, "symbol");
+        return (String) Context.call(tokenAddress, "symbol");
     }
 
     public BigInteger totalSupply() {
-        return (BigInteger) LoansImpl.call(tokenAddress, "totalSupply");
+        return (BigInteger) Context.call(tokenAddress, "totalSupply");
     }
 
     public BigInteger balanceOf(Address address) {
-        return (BigInteger) LoansImpl.call(tokenAddress, "balanceOf", address);
+        return (BigInteger) Context.call(tokenAddress, "balanceOf", address);
     }
 
     public String getPeg() {
-        return (String) LoansImpl.call(tokenAddress, "getPeg");
+        return (String) Context.call(tokenAddress, "getPeg");
     }
 
     public BigInteger priceInLoop() {
-        return (BigInteger) LoansImpl.call(tokenAddress, "priceInLoop");
+        return (BigInteger) Context.call(tokenAddress, "priceInLoop");
     }
 
     public BigInteger lastPriceInLoop() {
-        return (BigInteger) LoansImpl.call(tokenAddress, "lastPriceInLoop");
+        return (BigInteger) Context.call(tokenAddress, "lastPriceInLoop");
     }
 
     public void mint(Address to, BigInteger amount) {
-        LoansImpl.call(tokenAddress, "mintTo", to, amount, new byte[0]);
+        Context.call(tokenAddress, "mintTo", to, amount, new byte[0]);
     }
 }

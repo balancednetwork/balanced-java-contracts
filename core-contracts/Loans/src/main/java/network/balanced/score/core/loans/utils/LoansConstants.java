@@ -43,7 +43,10 @@ public class LoansConstants extends Constants {
     public static final int SNAP_BATCH_SIZE = 50;
     public static final int REDEEM_BATCH_SIZE = 50;
 
-    public static final String continuousRewardsErrorMessage = "The continuous rewards is already active."; 
+    public static final String continuousRewardsErrorMessage = "BalancedLoansPosition: The continuous rewards is " +
+            "already active.";
+    public static final String SICX_SYMBOL = "sICX";
+    public static final String BNUSD_SYMBOL = "bnUSD";
 
     public enum Standings {
         INDETERMINATE,
