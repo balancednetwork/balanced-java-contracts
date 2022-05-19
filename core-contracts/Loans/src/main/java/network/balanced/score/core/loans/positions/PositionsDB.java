@@ -195,6 +195,12 @@ public class PositionsDB {
             Position position = get(accountId);
             if (snapshotId.compareTo(position.snaps.get(0)) >= 0) {
                 Standings standing = position.updateStanding(snapshotId);
+                if (!position.dataMigrationStatus.getOrDefault("bnUSD", false)) {
+                    BigInteger previousTotalDebt = LoansImpl.totalDebts.getOrDefault("bnUSD", BigInteger.ZERO);
+                    BigInteger debtAmount = position.assets.at(snapshotId).getOrDefault("bnUSD", BigInteger.ZERO);
+                    LoansImpl.totalDebts.set("bnUSD", previousTotalDebt.add(debtAmount));
+                }
+
                 if (standing == Standings.MINING) {
                     snapshot.mining.add(accountId);
                     batchMiningDebt = batchMiningDebt.add(snapshot.positionStates.at(accountId).get("total_debt"));

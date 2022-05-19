@@ -3,6 +3,7 @@ package network.balanced.score.core.loans;
 import score.VarDB;
 import score.Address;
 import score.Context;
+import score.DictDB;
 import score.annotation.Optional;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -60,6 +61,7 @@ public class LoansImpl {
     public static final String _NEW_LOAN_MINIMUM = "new_loan_minimum";
     public static final String _MIN_MINING_DEBT = "min_mining_debt";
     public static final String _MAX_DEBTS_LIST_LENGTH = "max_debts_list_length";
+    public static final String _TOTAL_DEBT = "totalDebts";
 
     public static final String _REDEEM_BATCH_SIZE = "redeem_batch_size";
     public static final String _MAX_RETIRE_PERCENT = "max_retire_percent";
@@ -98,6 +100,7 @@ public class LoansImpl {
     public static final VarDB<Integer> maxDebtsListLength = Context.newVarDB(_MAX_DEBTS_LIST_LENGTH, Integer.class);
     public static final VarDB<Integer> redeemBatch = Context.newVarDB(_REDEEM_BATCH_SIZE, Integer.class);
     public static final VarDB<BigInteger> maxRetirePercent = Context.newVarDB(_MAX_RETIRE_PERCENT, BigInteger.class);
+    public static final DictDB<String, BigInteger> totalDebts = Context.newDictDB(_TOTAL_DEBT, BigInteger.class);
 
     public static final VarDB<Address> expectedToken = Context.newVarDB("expectedToken", Address.class);
     public static final VarDB<BigInteger> amountReceived = Context.newVarDB("amountReceived", BigInteger.class);
@@ -349,17 +352,16 @@ public class LoansImpl {
         if (id < 1) {
             return Map.of(
                 "_balance", BigInteger.ZERO,
-                "_totalSupply", AssetDB.get("bnUSD").totalSupply()
+                "_totalSupply", totalDebts.getOrDefault("bnUSD", BigInteger.ZERO)
             );
         }
 
         Position position = PositionsDB.get(id);
         BigInteger balance = position.get("bnUSD");
-        BigInteger totalSupply = AssetDB.get("bnUSD").totalSupply();
 
         return Map.of(
             "_balance", balance,
-            "_totalSupply", totalSupply
+            "_totalSupply", totalDebts.getOrDefault("bnUSD", BigInteger.ZERO)
         );
     }
 
@@ -542,7 +544,7 @@ public class LoansImpl {
         BigInteger day = _getDay();
         checkDistributions(day, newDay);
 
-        BigInteger oldSupply = asset.totalSupply();
+        BigInteger oldSupply = totalDebts.getOrDefault("bnUSD", BigInteger.ZERO);
         Position position = PositionsDB.getPosition(from);
         BigInteger borrowed = position.get(_symbol);
 
@@ -644,7 +646,7 @@ public class LoansImpl {
             ));
         }
 
-        Context.call(rewards.get(), "updateBatchRewardsData", "Loans", asset.totalSupply(), rewardsBatchList);
+        Context.call(rewards.get(), "updateBatchRewardsData", "Loans", totalDebts.getOrDefault("bnUSD", BigInteger.ZERO), rewardsBatchList);
 
         Rebalance(Context.getCaller(), symbol, changeLog.toString(), totalBatchDebt);
     }
@@ -717,7 +719,7 @@ public class LoansImpl {
             ));
         }
 
-        Context.call(rewards.get(), "updateBatchRewardsData", "Loans", AssetDB.get("bnUSD").totalSupply(), rewardsBatchList);
+        Context.call(rewards.get(), "updateBatchRewardsData", "Loans", totalDebts.getOrDefault("bnUSD", BigInteger.ZERO), rewardsBatchList);
         Rebalance(Context.getCaller(), "bnUSD", changeLog.toString(), totalBatchDebt);
     }
 
@@ -777,7 +779,7 @@ public class LoansImpl {
             Asset asset = AssetDB.get(symbol);
             BigInteger debt = position.get(symbol);
             if (!asset.isCollateral.getOrDefault(false) && asset.active.getOrDefault(false) && debt.compareTo(BigInteger.ZERO) == 1) {
-                Context.call(rewards.get(), "updateRewardsData", "Loans", asset.totalSupply(), _owner, debt);
+                Context.call(rewards.get(), "updateRewardsData", "Loans", totalDebts.getOrDefault("bnUSD", BigInteger.ZERO), _owner, debt);
 
                 BigInteger badDebt = asset.badDebt.get();
                 asset.badDebt.set(badDebt.add(debt));
@@ -864,7 +866,7 @@ public class LoansImpl {
                 PositionsDB.addNonZero(position.id.get());
             }
         }
-        Context.call(rewards.get(), "updateRewardsData", "Loans", asset.totalSupply(), from, holdings);
+        Context.call(rewards.get(), "updateRewardsData", "Loans", totalDebts.getOrDefault("bnUSD", BigInteger.ZERO), from, holdings);
 
         BigInteger newDebt = amount.add(fee);
         position.set(_symbol,  holdings.add(newDebt));

@@ -142,12 +142,13 @@ public class StakedLP {
     }
 
     private void stake(Address user, BigInteger id, BigInteger value) {
-
         // Validate inputs
-        Context.require(isSupportedPool(id), "StakedLP: Pool with " + id + " is not supported");
         Context.require(value.compareTo(BigInteger.ZERO) > 0,
-                "StakedLP: Cannot stake less than zero, value to stake " + value);
-
+            "StakedLP: Cannot stake less than zero, value to stake " + value);
+        if (!isSupportedPool(id)) {
+            addPool(id);
+        }
+       
         // Compute and store changes
         BigInteger previousBalance = poolStakedDetails.at(user).getOrDefault(id, BigInteger.ZERO);
         BigInteger previousTotal = totalStaked(id);

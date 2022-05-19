@@ -100,6 +100,15 @@ public interface Rewards extends
     void bonusDist(Address[] _addresses,  BigInteger[] _amounts);
 
     @External
+    void addDataProvider(Address _source);
+
+    @External
+    List<Address> getDataProviders();
+
+    @External
+    void removeDataProvider(Address _source);
+
+    @External
     void updateRewardsData(String _name, BigInteger _totalSupply, Address _user, BigInteger _balance);
 
     @External

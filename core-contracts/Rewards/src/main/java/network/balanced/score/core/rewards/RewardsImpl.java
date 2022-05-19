@@ -35,6 +35,7 @@ import network.balanced.score.lib.interfaces.Rewards;
 import network.balanced.score.lib.interfaces.tokens.MintableScoreInterface;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.RewardsDataEntry;
+import network.balanced.score.lib.utils.SetDB;
 import score.Address;
 import score.ArrayDB;
 import score.BranchDB;
@@ -68,6 +69,7 @@ public class RewardsImpl implements Rewards {
     public static final String TOTAL_DIST = "total_dist";
     public static final String PLATFORM_DAY = "platform_day";
     public static final String CONTINUOUS_REWARDS_DAY = "continuous_rewards_day";
+    public static final String DATA_PROVIDERS = "data_providers";
 
     public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
     public static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
@@ -87,6 +89,7 @@ public class RewardsImpl implements Rewards {
     public static final VarDB<BigInteger> totalDist = Context.newVarDB(TOTAL_DIST, BigInteger.class);
     public static final VarDB<BigInteger> platformDay = Context.newVarDB(PLATFORM_DAY, BigInteger.class);
     public static final VarDB<BigInteger> continuousRewardsDay = Context.newVarDB(CONTINUOUS_REWARDS_DAY, BigInteger.class);
+    public final static SetDB<Address> dataProviders = new SetDB<>(DATA_PROVIDERS, Address.class, null);
 
     public static final Map<String, VarDB<Address>> platformRecipients = Map.of("Worker Tokens", bwtAddress,
                             "Reserve Fund", reserveFund,
@@ -354,7 +357,6 @@ public class RewardsImpl implements Rewards {
                 for (String name : recipientDistribution.keySet()) {
                     BigInteger split = recipientDistribution.get(name);
                     BigInteger share = remaning.multiply(split).divide(shares);
-
                     if (contains(DataSourceDB.names, name)) {
                         DataSourceDB.get(name).setTotalDist(platformDay, share);
                     } else {
@@ -508,13 +510,37 @@ public class RewardsImpl implements Rewards {
     }
 
     @External
+    public void addDataProvider(Address _source) {
+        onlyOwner();
+        dataProviders.add(_source);
+    }
+
+    @External
+    public List<Address> getDataProviders() {
+        int dataProvidersSize = dataProviders.size();
+        List<Address> dataProvidersList = new ArrayList<>();
+        for (int i = 0; i < dataProvidersSize; i++) {
+            dataProvidersList.add(dataProviders.get(i));
+        }
+
+        return dataProvidersList;
+    }
+
+    @External
+    public void removeDataProvider(Address _source) {
+        onlyOwner();
+        dataProviders.remove(_source);
+    }
+
+    @External
     public void updateRewardsData(String _name, BigInteger _totalSupply, Address _user, BigInteger _balance) {
-        DataSourceImpl dataSource = DataSourceDB.get(_name);
-        // Context.require(dataSource.getContractAddress().equals(Context.getCaller()), "Only datasources are allowed to update rewards data");
+        Context.require(dataProviders.contains(Context.getCaller()), "Only datasources are allowed to update rewards data");
 
         BigInteger currentTime = getTime();
 
         distribute();
+        
+        DataSourceImpl dataSource = DataSourceDB.get(_name);
         BigInteger accuredRewards = dataSource.updateSingleUserData(currentTime, _totalSupply, _user, _balance);
 
         if (accuredRewards.compareTo(BigInteger.ZERO) == 1) {
@@ -526,13 +552,13 @@ public class RewardsImpl implements Rewards {
 
     @External
     public void updateBatchRewardsData(String _name, BigInteger _totalSupply, RewardsDataEntry[] _data) {
-        DataSourceImpl dataSource = DataSourceDB.get(_name);
-        // Context.require(dataSource.getContractAddress().equals(Context.getCaller()), "Only datasources are allowed to update rewards data");
+        Context.require(dataProviders.contains(Context.getCaller()), "Only datasources are allowed to update rewards data");
 
         BigInteger currentTime = getTime();
 
         distribute();
         
+        DataSourceImpl dataSource = DataSourceDB.get(_name);
         for (RewardsDataEntry entry : _data) {
             Address user = (Address) entry._user;
             BigInteger previousBalance = (BigInteger) entry._balance;

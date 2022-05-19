@@ -30,7 +30,7 @@ public interface DataSource {
     @External
     Object precompute(int _snapshot_id, int batch_size);
 
-    @External
+    @External(readonly = true)
     BigInteger getTotalValue(String _name, int _snapshot_id);
 
     @External

@@ -21,7 +21,7 @@ import score.annotation.External;
 
 import java.math.BigInteger;
 
-interface StakedLP {
+public interface StakedLP {
       @External(readonly = true)
       Address getDex();
   

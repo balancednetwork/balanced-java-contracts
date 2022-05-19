@@ -58,20 +58,30 @@ public class Position {
     }
     
     public void set(String symbol, BigInteger value) {
+        BigInteger previousDebt;
         if (LoansImpl._getDay().compareTo(LoansImpl.continuousRewardDay.get()) < 0) {
             BigInteger day = checkSnap();
+            previousDebt = assets.at(day).getOrDefault(symbol, BigInteger.ZERO);
             assets.at(day).set(symbol, value);
         } else {
-            if (symbol == "sICX") {
-                collateral.set("sICX", value);
-            } else {
-                loans.at("sICX").set(symbol, value);
-            }
+            previousDebt = loans.at("sICX").getOrDefault(symbol, BigInteger.ZERO);
+        }
 
+        if (symbol == "sICX") {
+            collateral.set("sICX", value);
+        } else {
+            loans.at("sICX").set(symbol, value);
+        }
+     
+        if (!dataMigrationStatus.getOrDefault(symbol, false)) {
             dataMigrationStatus.set(symbol, true);
         }
 
         if (arrayDbContains(AssetDB.activeAssets, symbol)) {
+            BigInteger previousTotalDebt = LoansImpl.totalDebts.getOrDefault(symbol, BigInteger.ZERO);
+            BigInteger newTotalDebt = previousTotalDebt.subtract(previousDebt).add(value);
+            LoansImpl.totalDebts.set(symbol, newTotalDebt);
+            
             AssetDB.get(symbol).getBorrowers().set(id.get(), value);
         }
     }

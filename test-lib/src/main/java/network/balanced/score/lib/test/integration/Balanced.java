@@ -51,6 +51,7 @@ public class Balanced {
     public DefaultScoreClient router;
     public DefaultScoreClient staking;
     public DefaultScoreClient stakedLp;
+    public DefaultScoreClient stability;
 
     public Balanced() {
     }
@@ -95,16 +96,24 @@ public class Balanced {
         Hash routerTx = deployAsync(owner, "Router", Map.of("_governance", governance._address()));
         Hash stakedLpTx = deployAsync(owner, "StakedLP", Map.of("governance", governance._address()));
         staking = getDeploymentResult(owner, stakingTx);
+        feehandler = getDeploymentResult(owner, feehandlerTx);
+        bnusd = getDeploymentResult(owner, bnusdTx);
+
+        Hash stabilityTx = deployAsync(owner, "Stability", Map.of(
+                "_feeHandler", feehandler._address(),
+                "_bnusd", bnusd._address(),
+                "_feeIn", BigInteger.TEN.pow(18),
+                "_feeOut", BigInteger.TEN.pow(18)
+        ));
+
         Hash sicxTx = deployAsync(owner, "Sicx", Map.of("_admin", staking._address()));
 
         baln = getDeploymentResult(owner, balnTx);
         bwt = getDeploymentResult(owner, bwtTx);
         dex = getDeploymentResult(owner, dexTx);
-        feehandler = getDeploymentResult(owner, feehandlerTx);
         loans = getDeploymentResult(owner, loansTx);
         rebalancing = getDeploymentResult(owner, rebalancingTx);
         rewards = getDeploymentResult(owner, rewardsTx);
-        bnusd = getDeploymentResult(owner, bnusdTx);
         daofund = getDeploymentResult(owner, daofundTx);
         dividends = getDeploymentResult(owner, dividendsTx);
         oracle = getDeploymentResult(owner, oracleTx);
@@ -112,6 +121,7 @@ public class Balanced {
         router = getDeploymentResult(owner, routerTx);
         stakedLp = getDeploymentResult(owner, stakedLpTx);
         sicx = getDeploymentResult(owner, sicxTx);
+        stability = getDeploymentResult(owner, stabilityTx);
     }
 
     protected void setupAddresses() {
@@ -147,6 +157,8 @@ public class Balanced {
         ownerClient.staking.toggleStakingOn();
 
         ownerClient.daofund.addAddressToSetdb();
+
+        ownerClient.bnUSD.setMinter2(stability._address());
     }
 
     public BalancedClient newClient(BigInteger clientBalanace) throws Exception {
@@ -158,8 +170,8 @@ public class Balanced {
     }
 
     public void syncDistributions() {
+        Consumer<TransactionResult> distributeConsumer = result -> {};
         while (!checkDistributionsDone()) {
-            Consumer<TransactionResult> distributeConsumer = result -> {};
             ownerClient.rewards.distribute(distributeConsumer);
         }
     }
@@ -167,28 +179,32 @@ public class Balanced {
     public boolean checkDistributionsDone() {
         BigInteger day = ownerClient.governance.getDay();
         Map<String, Object> status = ownerClient.rewards.distStatus();
-        System.out.println("platform: " +hexObjectToInt(status.get("platform_day")) + "  <  " + day.intValue());
-        if (hexObjectToInt(status.get("platform_day")) < day.intValue()) {
+        if (hexObjectToInt(status.get("platform_day")).intValue() < day.intValue()) {
             return false;
         }
 
         Map<String, String> dataSourceStatus = (Map<String, String>) status.get("source_days");
         for (String sourceDay : dataSourceStatus.values()) {
-            System.out.println("source: " +hexObjectToInt(sourceDay) + "  <  " + day.intValue());
-            if (hexObjectToInt(sourceDay) < day.intValue()) {
+            if (hexObjectToInt(sourceDay).intValue() < day.intValue()) {
                 return false;
             }
         }
 
         return true;
     }
-
-    public int hexObjectToInt(Object hexNumber) {
-        return Integer.parseInt(((String)hexNumber).substring(2), 16);
-    }
     
     public void increaseDay(int nrOfDays) {
         ownerClient.governance.setTimeOffset(ownerClient.governance.getTimeOffset().subtract(U_SECONDS_DAY.multiply(BigInteger.valueOf(nrOfDays))));
         ownerClient.baln.setTimeOffset();
+    }
+
+
+    public static BigInteger hexObjectToInt(Object hexNumber) {
+        String hexString = (String) hexNumber;
+        if (hexString.startsWith("0x")) {
+            return new BigInteger(hexString.substring(2), 16);
+        }
+        return new BigInteger(hexString, 16);
+
     }
 }

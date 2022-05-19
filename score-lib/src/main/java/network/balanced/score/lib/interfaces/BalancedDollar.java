@@ -64,6 +64,12 @@ public interface BalancedDollar extends IRC2, IRC2BurnableInterface, IRC2Mintabl
     @External
     void govTransfer(Address _from, Address _to, BigInteger _value, @Optional byte[] _data);
 
+    @External
+    public void setMinter2(Address _address);
+
+    @External(readonly = true)
+    public Address getMinter2();
+
     @EventLog(indexed = 3)
     void OraclePrice(String market, String oracle_name, Address oracle_address, BigInteger price);
 }

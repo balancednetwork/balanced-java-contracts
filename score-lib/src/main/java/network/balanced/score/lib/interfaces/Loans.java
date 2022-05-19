@@ -39,7 +39,8 @@ public interface Loans extends
         ReserveAddress,
         RebalancingAddress,
         DexAddress,
-        AdminAddress {
+        AdminAddress,
+        DataSource {
 
     void turnLoansOn();
 
@@ -50,6 +51,9 @@ public interface Loans extends
     void delegate(PrepDelegations[] prepDelegations);
 
     Map<String, Boolean> getDistributionsDone();
+
+    @External(readonly = true)
+    Map<String, Object> getAccountPositions(Address _owner);
 
     void addAsset(Address _token_address, boolean _active, boolean _collateral);
 

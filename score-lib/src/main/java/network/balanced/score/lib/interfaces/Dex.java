@@ -12,7 +12,7 @@ import java.util.Map;
 
 @ScoreInterface
 public interface Dex extends AdminAddress, BnusdAddress, DexAddress, GovernanceAddress, LoansAddress,
-        Name, SicxAddress {
+        Name, SicxAddress, DataSource {
 
     @External
     String name();
