@@ -1133,7 +1133,7 @@ public class DexImpl {
         }
         BigInteger poolId = lookupPid(_name);
         if (poolId != null) {
-            BigInteger totalSupply = (BigInteger) Context.call(stakedlp.get(), "totalSupply", poolId);
+            BigInteger totalSupply = (BigInteger) Context.call(stakedlp.get(), "totalStaked", poolId);
             BigInteger balance = (BigInteger) Context.call(stakedlp.get(), "balanceOf", _owner, poolId);
             Map<String, BigInteger> rewardsData = new HashMap<>();
             rewardsData.put("_balance", balance);
