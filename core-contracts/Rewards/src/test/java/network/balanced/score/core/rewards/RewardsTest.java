@@ -43,7 +43,6 @@ public class RewardsTest extends RewardsTestBase {
     @BeforeEach
     void setup() throws Exception{
         super.setup();
-        rewardsScore.invoke(admin, "setContinuousRewardsDay", BigInteger.valueOf(10000));
     }
 
     @Test

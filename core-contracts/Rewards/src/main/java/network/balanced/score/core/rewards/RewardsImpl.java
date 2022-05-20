@@ -20,6 +20,7 @@ import static network.balanced.score.core.rewards.utils.RewardsConstants.DEFAULT
 import static network.balanced.score.lib.utils.Check.isContract;
 import static network.balanced.score.lib.utils.Check.only;
 import static network.balanced.score.lib.utils.Check.onlyOwner;
+import static network.balanced.score.core.rewards.utils.Check.continuousRewardsActive;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.U_SECONDS_DAY;
 import static network.balanced.score.lib.utils.DBHelpers.contains;
@@ -97,7 +98,6 @@ public class RewardsImpl implements Rewards {
                         
     public RewardsImpl(Address _governance) {
         if (governance.getOrDefault(null) != null) {
-            continuousRewardsDay.set(BigInteger.valueOf(100000000));
             return;
         }
 
@@ -107,7 +107,6 @@ public class RewardsImpl implements Rewards {
         recipientSplit.set("Worker Tokens", BigInteger.ZERO);
         recipientSplit.set("Reserve Fund", BigInteger.ZERO);
         recipientSplit.set("DAOfund", BigInteger.ZERO);
-        continuousRewardsDay.set(BigInteger.valueOf(100000000));
         recipients.add("Worker Tokens");
         recipients.add("Reserve Fund");
         recipients.add("DAOfund");
@@ -328,23 +327,20 @@ public class RewardsImpl implements Rewards {
     public boolean distribute() {
         BigInteger platformDay = RewardsImpl.platformDay.get();
         BigInteger day = getDay();
-        BigInteger continuousRewardsDay = RewardsImpl.continuousRewardsDay.getOrDefault(null);
         boolean distributionRequired = false;
-        boolean continuousRewardsActive = false;
+        boolean continuousRewardsIsActive = false;
         boolean dayOfContinuousRewards = false;
 
-        if (continuousRewardsDay != null) {
-            continuousRewardsActive = day.compareTo(continuousRewardsDay) >= 0;
-            dayOfContinuousRewards = day.equals(continuousRewardsDay);
-        }
+        continuousRewardsIsActive =  continuousRewardsActive();
+        dayOfContinuousRewards = day.equals(continuousRewardsDay.getOrDefault(BigInteger.valueOf(-1)));
 
-        if (platformDay.compareTo(day) < 0 && !continuousRewardsActive) {
+        if (platformDay.compareTo(day) < 0 && !continuousRewardsIsActive) {
             distributionRequired = true;
-        } else if (platformDay.compareTo(day.add(BigInteger.ONE)) < 0 && continuousRewardsActive) {
+        } else if (platformDay.compareTo(day.add(BigInteger.ONE)) < 0 && continuousRewardsIsActive) {
             distributionRequired = true;
         }
         if (distributionRequired) {
-            if (totalDist.getOrDefault(BigInteger.ZERO).equals(BigInteger.ZERO) || continuousRewardsActive) {
+            if (totalDist.getOrDefault(BigInteger.ZERO).equals(BigInteger.ZERO) || continuousRewardsIsActive) {
                 MintableScoreInterface baln = new MintableScoreInterface(balnAddress.get());
                 
                 BigInteger distribution = dailyDistribution(platformDay);
@@ -379,7 +375,7 @@ public class RewardsImpl implements Rewards {
             }
         }
 
-        if (dayOfContinuousRewards || !continuousRewardsActive) {
+        if (dayOfContinuousRewards || !continuousRewardsIsActive) {
             for (int i = 0; i < DataSourceDB.size(); i++ ) {
                 String name = DataSourceDB.names.get(i);
                 DataSourceImpl dataSource = DataSourceDB.get(name);

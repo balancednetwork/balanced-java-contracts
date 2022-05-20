@@ -18,6 +18,7 @@ package network.balanced.score.core.rewards;
 
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.U_SECONDS_DAY;
+import static network.balanced.score.core.rewards.utils.Check.continuousRewardsActive;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -134,7 +135,7 @@ public class DataSourceImpl {
         BigInteger currentUserWeight = getUserWeight(user.toString());
         BigInteger lastUpdateTimestamp = getLastUpdateTimeUs();
     
-        if (RewardsImpl.getDay().compareTo(RewardsImpl.continuousRewardsDay.get()) < 0) {
+        if (!continuousRewardsActive() && RewardsImpl.continuousRewardsDay.get() != null) {
             lastUpdateTimestamp = RewardsImpl.continuousRewardsDay.get().multiply(U_SECONDS_DAY);
         }
         
@@ -168,7 +169,7 @@ public class DataSourceImpl {
                 accruedRewards = accruedRewards.divide(EXA);
             }
 
-            if (RewardsImpl.continuousRewardsDay.get().compareTo(RewardsImpl.getDay()) > 0) {
+            if (!continuousRewardsActive()) {
                 return BigInteger.ZERO;
             }
         
@@ -294,7 +295,7 @@ public class DataSourceImpl {
         BigInteger originalTotalWeight = previousRunningTotal;
         BigInteger lastUpdateTimestamp = getLastUpdateTimeUs();
         BigInteger originalLastUpdateTimestamp = lastUpdateTimestamp;
-        if (RewardsImpl.getDay().compareTo(RewardsImpl.continuousRewardsDay.get()) < 0){
+        if (!continuousRewardsActive() && RewardsImpl.continuousRewardsDay.get() != null) {
             lastUpdateTimestamp = RewardsImpl.continuousRewardsDay.get().multiply(U_SECONDS_DAY);
             lastUpdateTimeUs.at(dbKey).set(lastUpdateTimestamp);
         }
@@ -326,7 +327,7 @@ public class DataSourceImpl {
         }
         
         if (newTotal.compareTo(originalTotalWeight) != -1) {
-            if (RewardsImpl.continuousRewardsDay.get().compareTo(RewardsImpl.getDay()) > 0) {
+            if (!continuousRewardsActive()) {
                 return originalTotalWeight;
             }
 
