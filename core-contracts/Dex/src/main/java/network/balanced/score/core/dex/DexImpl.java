@@ -965,19 +965,19 @@ public class DexImpl {
 
     @External(readonly = true)
     public BigInteger balanceOf(Address _owner, BigInteger _id) {
-        BigInteger stakedBalance = BigInteger.ZERO;
-        if (getDay().compareTo(continuousRewardsDay.get()) <= 0) {
-            stakedBalance = (BigInteger) Context.call(stakedlp.get(), "balanceOf", _owner, _id);
-        }
         if (_id.equals(SICXICX_POOL_ID)) {
             BigInteger orderId = icxQueueOrderId.get(_owner);
             if (orderId == null) {
-                return stakedBalance.add(BigInteger.ZERO);
+                return BigInteger.ZERO;
             }
-            return stakedBalance.add(icxQueue.getNode(orderId).getSize());
+            return icxQueue.getNode(orderId).getSize();
         } else {
-            BigInteger lpBalance = balance.at(_id).getOrDefault(_owner, BigInteger.ZERO);
-            return stakedBalance.add(lpBalance);
+            BigInteger balance = this.balance.at(_id).getOrDefault(_owner, BigInteger.ZERO);
+            if (getDay().compareTo(continuousRewardsDay.get()) <= 0) {
+                BigInteger stakedBalance = (BigInteger) Context.call(stakedlp.get(), "balanceOf", _owner, _id);
+                balance = balance.add(stakedBalance);
+            }
+            return balance;
         }
     }
 
