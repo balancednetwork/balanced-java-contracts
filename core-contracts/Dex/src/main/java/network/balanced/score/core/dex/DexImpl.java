@@ -806,7 +806,6 @@ public class DexImpl {
         JsonObject json = Json.parse(unpackedData).asObject();
 
         String method = json.get("method").asString();
-        JsonObject params = json.get("params").asObject();
         Address fromToken = Context.getCaller();
 
         Context.require(_value.compareTo(BigInteger.valueOf(0)) > -1, "Invalid token transfer value");
@@ -831,6 +830,7 @@ public class DexImpl {
 
             // Parse the slippage sent by the user in minimumReceive.
             // If none is sent, use the maximum.
+            JsonObject params = json.get("params").asObject();
             BigInteger minimumReceive = BigInteger.ZERO;
             if (params.contains("minimumReceive")) {
                 minimumReceive = BigInteger.valueOf(params.get("minimumReceive").asInt());
