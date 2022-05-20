@@ -959,19 +959,25 @@ public class DexImpl {
         if (_id.equals(SICXICX_POOL_ID)) {
             return icxQueueTotal.getOrDefault(BigInteger.ZERO);
         }
+
         return total.getOrDefault(_id, BigInteger.ZERO);
     }
 
     @External(readonly = true)
     public BigInteger balanceOf(Address _owner, BigInteger _id) {
+        BigInteger stakedBalance = BigInteger.ZERO;
+        if (getDay().compareTo(continuousRewardsDay.get()) <= 0) {
+            stakedBalance = (BigInteger) Context.call(stakedlp.get(), "balanceOf", _owner, _id);
+        }
         if (_id.equals(SICXICX_POOL_ID)) {
             BigInteger orderId = icxQueueOrderId.get(_owner);
             if (orderId == null) {
-                return BigInteger.ZERO;
+                return stakedBalance.add(BigInteger.ZERO);
             }
-            return icxQueue.getNode(orderId).getSize();
+            return stakedBalance.add(icxQueue.getNode(orderId).getSize());
         } else {
-            return balance.at(_id).get(_owner);
+            BigInteger lpBalance = balance.at(_id).getOrDefault(_owner, BigInteger.ZERO);
+            return stakedBalance.add(lpBalance);
         }
     }
 
