@@ -158,7 +158,7 @@ public class DexImpl {
     }
 
     public DexImpl(@Optional Address _governance) {
-        if (_governance != null) {
+        if (governance.get() == null) {
             governance.set(_governance);
 
             // Set Default Fee Rates
@@ -1431,7 +1431,7 @@ public class DexImpl {
             Address poolBaseAddress = poolBase.get(id);
             Address poolQuoteAddress = poolQuote.get(id);
 
-            Context.require((poolBaseAddress == _baseToken) && (poolQuoteAddress == _quoteToken), TAG + ": Must supply " + _baseToken.toString() + " as base and " + _quoteToken.toString() + " as quote");
+            Context.require((poolBaseAddress.equals(_baseToken)) && (poolQuoteAddress.equals(_quoteToken)), TAG + ": Must supply " + _baseToken.toString() + " as base and " + _quoteToken.toString() + " as quote");
 
             // We can only commit in the ratio of the pool. We determine this as:
             // Min(ratio of quote from base, ratio of base from quote)
