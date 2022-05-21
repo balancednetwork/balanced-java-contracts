@@ -882,19 +882,21 @@ public class DexImpl {
         BigInteger toBalance = balance.at(id).getOrDefault(to, BigInteger.ZERO);
         balance.at(id).set(from, fromBalance.subtract(value));
         balance.at(id).set(to, toBalance.add(value));
+        if (! to.equals(stakedlp.get())) {
+            if (value.compareTo(BigInteger.ZERO) > 0) {
+                    activeAddresses.get(id).add(to);
+                }
 
-        if (value.compareTo(BigInteger.ZERO) > 0) {
-            activeAddresses.get(id).add(to);
-        }
-        if (balance.at(id).getOrDefault(from, BigInteger.ZERO).compareTo(BigInteger.ZERO) == 0) {
-            activeAddresses.get(id).remove(from);
+            if (balance.at(id).getOrDefault(from, BigInteger.ZERO).compareTo(BigInteger.ZERO) == 0) {
+                    activeAddresses.get(id).remove(from);
+            }
         }
         TransferSingle(from, from, to, id, value);
 
         updateAccountSnapshot(from, id);
         updateAccountSnapshot(to, id);
 
-        if (to.isContract()) {
+        if ((to.isContract()) && (to.equals(stakedlp.get()))) {
             Context.call(to, "onIRC31Received", from, from, id, value, data);
         }
     }
@@ -1254,12 +1256,14 @@ public class DexImpl {
         Context.require(_id.compareTo(BigInteger.ZERO) >= 0, TAG + ":  Pool id is equal to or greater then Zero.");
         Context.require(_offset.compareTo(BigInteger.ZERO) >= 0, TAG + ":  Offset is equal to or greater then Zero.");
         Map<String, Object> snapshotData = new HashMap<>();
-
         for (Address addr : activeAddresses.get(_id).range(_offset, _offset.add(_limit))) {
             BigInteger snapshotBalance = balanceOf(addr, _id);
+            BigInteger stakedBalance = (BigInteger) Context.call(stakedlp.get(), "balanceOf", addr, _id);
+            snapshotBalance = snapshotBalance.add(stakedBalance);
             if (!snapshotBalance.equals(BigInteger.ZERO)) {
                 snapshotData.put(addr.toString(), snapshotBalance);
             }
+
         }
         return snapshotData;
     }
