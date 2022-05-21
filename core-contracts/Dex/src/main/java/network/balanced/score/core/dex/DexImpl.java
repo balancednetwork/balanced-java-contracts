@@ -882,13 +882,13 @@ public class DexImpl {
         BigInteger toBalance = balance.at(id).getOrDefault(to, BigInteger.ZERO);
         balance.at(id).set(from, fromBalance.subtract(value));
         balance.at(id).set(to, toBalance.add(value));
-        if (! to.equals(stakedlp.get())) {
+        if (!to.equals(stakedlp.get())) {
             if (value.compareTo(BigInteger.ZERO) > 0) {
-                    activeAddresses.get(id).add(to);
-                }
+                activeAddresses.get(id).add(to);
+            }
 
             if (balance.at(id).getOrDefault(from, BigInteger.ZERO).compareTo(BigInteger.ZERO) == 0) {
-                    activeAddresses.get(id).remove(from);
+                activeAddresses.get(id).remove(from);
             }
         }
         TransferSingle(from, from, to, id, value);
@@ -1160,11 +1160,11 @@ public class DexImpl {
             Context.revert(TAG + ": Snapshot id is equal to or greater then Zero.");
         }
         BigInteger low = BigInteger.ZERO;
-        BigInteger high = accountBalanceSnapshot.at(_id).at(_account).at("length").get(BigInteger.ZERO);
+        BigInteger high = accountBalanceSnapshot.at(_id).at(_account).at("length").getOrDefault(BigInteger.ZERO, BigInteger.ZERO);
 
         while (low.compareTo(high) < 0) {
             BigInteger mid = (low.add(high)).divide(BigInteger.TWO);
-            if (accountBalanceSnapshot.at(_id).at(_account).at("ids").get(mid).compareTo(_snapshot_id) > 0) {
+            if (accountBalanceSnapshot.at(_id).at(_account).at("ids").getOrDefault(mid, BigInteger.ZERO).compareTo(_snapshot_id) > 0) {
                 high = mid;
             } else {
                 low = mid.add(BigInteger.ONE);
@@ -1172,15 +1172,15 @@ public class DexImpl {
 
         }
 
-        if (accountBalanceSnapshot.at(_id).at(_account).at("ids").get(BigInteger.ZERO).equals(_snapshot_id)) {
-            return accountBalanceSnapshot.at(_id).at(_account).at("values").get(BigInteger.ZERO);
+        if (accountBalanceSnapshot.at(_id).at(_account).at("ids").getOrDefault(BigInteger.ZERO, BigInteger.ZERO).equals(_snapshot_id)) {
+            return accountBalanceSnapshot.at(_id).at(_account).at("values").getOrDefault(BigInteger.ZERO, BigInteger.ZERO);
         } else if (low.equals(BigInteger.ZERO)) {
             return BigInteger.ZERO;
         }
 
         matchedIndex = low.subtract(BigInteger.ONE);
 
-        return accountBalanceSnapshot.at(_id).at(_account).at("values").get(matchedIndex);
+        return accountBalanceSnapshot.at(_id).at(_account).at("values").getOrDefault(matchedIndex, BigInteger.ZERO);
     }
 
     @External(readonly = true)
@@ -1190,24 +1190,24 @@ public class DexImpl {
             Context.revert("Snapshot id is equal to or greater then Zero");
         }
         BigInteger low = BigInteger.ZERO;
-        BigInteger high = totalSupplySnapshot.at(_id).at("length").get(BigInteger.ZERO);
+        BigInteger high = totalSupplySnapshot.at(_id).at("length").getOrDefault(BigInteger.ZERO, BigInteger.ZERO);
         while (low.compareTo(high) < 0) {
             BigInteger mid = (low.add(high)).divide(BigInteger.TWO);
-            if (totalSupplySnapshot.at(_id).at("ids").get(mid).compareTo(_snapshot_id) > 0) {
+            if (totalSupplySnapshot.at(_id).at("ids").getOrDefault(mid, BigInteger.ZERO).compareTo(_snapshot_id) > 0) {
                 high = mid;
             } else {
                 low = mid.add(BigInteger.ONE);
             }
         }
-        if (totalSupplySnapshot.at(_id).at("ids").get(BigInteger.ZERO).equals(_snapshot_id)) {
-            return totalSupplySnapshot.at(_id).at("values").get(BigInteger.ZERO);
+        if (totalSupplySnapshot.at(_id).at("ids").getOrDefault(BigInteger.ZERO, BigInteger.ZERO).equals(_snapshot_id)) {
+            return totalSupplySnapshot.at(_id).at("values").getOrDefault(BigInteger.ZERO, BigInteger.ZERO);
         } else if (low.equals(BigInteger.ZERO)) {
             return BigInteger.ZERO;
         }
 
         matchedIndex = low.subtract(BigInteger.ONE);
 
-        return totalSupplySnapshot.at(_id).at("values").get(matchedIndex);
+        return totalSupplySnapshot.at(_id).at("values").getOrDefault(matchedIndex, BigInteger.ZERO);
     }
 
     @External(readonly = true)
@@ -1217,24 +1217,24 @@ public class DexImpl {
             Context.revert("Snapshot id is equal to or greater then Zero");
         }
         BigInteger low = BigInteger.ZERO;
-        BigInteger high = balnSnapshot.at(_id).at("length").get(BigInteger.ZERO);
+        BigInteger high = balnSnapshot.at(_id).at("length").getOrDefault(BigInteger.ZERO, BigInteger.ZERO);
         while (low.compareTo(high) < 0) {
             BigInteger mid = (low.add(high)).divide(BigInteger.TWO);
-            if (balnSnapshot.at(_id).at("ids").get(mid).compareTo(_snapshot_id) > 0) {
+            if (balnSnapshot.at(_id).at("ids").getOrDefault(mid, BigInteger.ZERO).compareTo(_snapshot_id) > 0) {
                 high = mid;
             } else {
                 low = mid.add(BigInteger.ONE);
             }
         }
-        if (balnSnapshot.at(_id).at("ids").get(BigInteger.ZERO).equals(_snapshot_id)) {
-            return balnSnapshot.at(_id).at("values").get(BigInteger.ZERO);
+        if (balnSnapshot.at(_id).at("ids").getOrDefault(BigInteger.ZERO, BigInteger.ZERO).equals(_snapshot_id)) {
+            return balnSnapshot.at(_id).at("values").getOrDefault(BigInteger.ZERO, BigInteger.ZERO);
         } else if (low.equals(BigInteger.ZERO)) {
             return BigInteger.ZERO;
         }
 
         matchedIndex = low.subtract(BigInteger.ONE);
 
-        return balnSnapshot.at(_id).at("values").get(matchedIndex);
+        return balnSnapshot.at(_id).at("values").getOrDefault(matchedIndex, BigInteger.ZERO);
     }
 
     @External(readonly = true)
