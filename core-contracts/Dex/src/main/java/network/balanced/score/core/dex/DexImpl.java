@@ -384,10 +384,10 @@ public class DexImpl {
     }
 
     private boolean isLockingPool(BigInteger id) {
-        boolean continuousRewardsLaunched = continuousRewardsDay.get().compareTo(currentDay.get()) <= 0;
+        boolean stakedLpLaunched = stakedlp.get() != null;
         boolean restrictedPoolId = (id.compareTo(FIRST_NON_BALANCED_POOL) < 0 || id.equals(USDS_BNUSD_ID) || id.equals(IUSDT_BNUSD_ID));
 
-        return restrictedPoolId && continuousRewardsLaunched;
+        return restrictedPoolId && !stakedLpLaunched;
     }
 
     private Boolean isReentrantTx() {

@@ -44,23 +44,18 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         dexJavaPath = System.getProperty("Dex");
         loansJavaPath = System.getProperty("Loans");
 
-        // System.setProperty("Rewards", System.getProperty("python"));
+        System.setProperty("Rewards", System.getProperty("python"));
         System.setProperty("Dex", System.getProperty("dexPython"));
         System.setProperty("Loans", System.getProperty("loansPython"));
         
         balanced = new Balanced();
         balanced.deployBalanced();
         owner = balanced.ownerClient;
-        //day 1
+        
         balanced.increaseDay(1);
         owner.baln.toggleEnableSnapshot();
 
         owner.stability.whitelistTokens(balanced.sicx._address(), BigInteger.TEN.pow(10));
-
-        owner.rewards.addDataProvider(balanced.stakedLp._address());
-        owner.rewards.addDataProvider(balanced.dex._address());
-        owner.rewards.addDataProvider(balanced.loans._address());
-
     }
 
     @Test
@@ -78,22 +73,24 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         joinsICXBnusdLP(tester1, tester1SicxDeposit, tester1Loan);
 
         // Do one distribtion
-        // day 2
         balanced.increaseDay(1);
         balanced.syncDistributions();
 
         //verify dao/reserve/bwt
         verifyRewards(tester1);
 
-        // updateRewards
-        // balanced.rewards._update(System.getProperty("java"), Map.of("_governance", balanced.governance._address()));
+        // update Rewards contract
+        balanced.rewards._update(System.getProperty("java"), Map.of("_governance", balanced.governance._address()));
+        owner.rewards.addDataProvider(balanced.stakedLp._address());
+        owner.rewards.addDataProvider(balanced.dex._address());
+        owner.rewards.addDataProvider(balanced.loans._address());
 
         // try reclaim after upgrade
-        verifyNoRewards(testerWithTooSmallLoan);
+        verifyNoRewards(tester1);
 
         // claim unclaimed
-        verifyRewards(tester2);
-        verifyNoRewards(tester2);
+        verifyRewards(tester2);        
+        verifyNoRewards(testerWithTooSmallLoan);
 
         //take loans and lp and verify rewards
         BalancedClient tester3 = balanced.newClient();
@@ -162,7 +159,6 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         verifyNoRewards(testerWithTooSmallLoan);
         verifyRewards(clientWithStakedLp);
         verifyRewards(clientWithoutStakedLp);
-        
 
         // day of migration 
         balanced.increaseDay(1);
@@ -186,18 +182,55 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         verifyNoRewards(clientWithoutStakedLp);
         
         testLpStakingAfterMigration(clientWithoutStakedLp);
-
-        //test stability Contract Impact
-        tester2.rewards.claimRewards();
+        verifyStabilityContractHasNoEffectOnLoansRewards(tester2);
+        closeLoansPostionAndVerifyNoRewards(tester2);
+        openNewPostionsAndVerifyRewards();
+    }
+    
+    private void verifyStabilityContractHasNoEffectOnLoansRewards(BalancedClient client) throws Exception {
+        client.rewards.claimRewards();
         Thread.sleep(1000);
-        tester2Rewards = verifyContinousRewards(tester2);
+        BigInteger rewards = verifyContinousRewards(client);
 
-        //Mint a lot of bnusd
         BigInteger totalBnusdSupply = owner.bnUSD.totalSupply();
-        depositToStabilityContract(tester2, totalBnusdSupply);
-        tester2.rewards.claimRewards();
-        Thread.sleep(1500);
-        assertTrue(tester2Rewards.compareTo(verifyContinousRewards(tester2)) < 0);
+        depositToStabilityContract(client, totalBnusdSupply);
+        client.rewards.claimRewards();
+        Thread.sleep(1400);
+        //would be false if we used total supply
+        assertTrue(rewards.compareTo(verifyContinousRewards(client)) < 0);
+    }
+    
+    private void closeLoansPostionAndVerifyNoRewards(BalancedClient client) throws Exception {
+        Map<String, String> assets = (Map<String, String>) client.loans.getAccountPositions(client.getAddress()).get("assets");
+        BigInteger debt = Balanced.hexObjectToInt(assets.get("bnUSD"));
+        BigInteger balance = client.bnUSD.balanceOf(client.getAddress());
+        BigInteger bnusdNeeded = debt.subtract(balance);
+        if (bnusdNeeded.compareTo(BigInteger.ZERO) > 0) {
+            client.staking.stakeICX(bnusdNeeded.multiply(BigInteger.TWO), null, null);
+            client.sicx.transfer(balanced.stability._address(), client.sicx.balanceOf(client.getAddress()), null);
+        }
+
+        client.loans.returnAsset("bnUSD", debt, true);
+        client.rewards.claimRewards();
+        Thread.sleep(100);
+        verifyNoRewards(client);
+    }
+
+    private void openNewPostionsAndVerifyRewards() throws Exception {
+        BalancedClient LoanTaker = balanced.newClient();
+        BigInteger Loan = BigInteger.TEN.pow(21).multiply(BigInteger.valueOf(2));
+        LoanTaker.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", Loan, null, null);        
+        
+        BalancedClient liquidityProvider = balanced.newClient();
+        BigInteger bnusdDeposit = BigInteger.TEN.pow(21);
+        BigInteger icxDeposit = BigInteger.TEN.pow(22);
+        LoanTaker.bnUSD.transfer(liquidityProvider.getAddress(), bnusdDeposit, null); 
+        joinsICXBnusdLP(liquidityProvider, icxDeposit, bnusdDeposit);
+        stakeICXBnusdLP(liquidityProvider);
+
+        Thread.sleep(100);
+        verifyContinousRewards(LoanTaker);
+        verifyContinousRewards(liquidityProvider);
     }
 
     private void testLpStakingAfterMigration(BalancedClient client) throws Exception {
@@ -213,7 +246,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         BigInteger stakedBalance = client.stakedLp.balanceOf(client.getAddress(), icxBnusdPoolId);
         client.stakedLp.unstake(icxBnusdPoolId, stakedBalance);
         unstakedBalance = client.dex.balanceOf(client.getAddress(), icxBnusdPoolId);
-        
+
         client.rewards.claimRewards();
         Thread.sleep(100);
         verifyNoRewards(client);

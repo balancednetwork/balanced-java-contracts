@@ -215,7 +215,6 @@ public class DataSourceImpl {
             precomputeDone = !((BigInteger)precomputeDoneObj).equals(BigInteger.ZERO);
         }
 
-
         if (!getPrecomp() && precomputeDone) {
             precomp.at(dbKey).set(true);
             BigInteger sourceTotalValue = datasource.getTotalValue(name, day.intValue());

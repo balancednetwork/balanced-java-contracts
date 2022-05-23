@@ -31,21 +31,21 @@ public class Checks {
     }
 
     public static void onlyGovernance() {
-        Address governance = StakedLP.governance.getOrDefault(defaultAddress);
+        Address governance = StakedLPImpl.governance.getOrDefault(defaultAddress);
         Address sender = Context.getCaller();
         Context.require(!governance.equals(defaultAddress), "StakedLP: Governance address not set");
         Context.require(sender.equals(governance), "StakedLP: Sender not governance contract");
     }
 
     public static void onlyDex() {
-        Address dex = StakedLP.dex.getOrDefault(defaultAddress);
+        Address dex = StakedLPImpl.dex.getOrDefault(defaultAddress);
         Address sender = Context.getCaller();
         Context.require(!dex.equals(defaultAddress), "StakedLP: Dex address not set");
         Context.require(sender.equals(dex), "StakedLP: Sender not dex contract");
     }
 
     public static void onlyAdmin() {
-        Address admin = StakedLP.admin.getOrDefault(defaultAddress);
+        Address admin = StakedLPImpl.admin.getOrDefault(defaultAddress);
         Address sender = Context.getCaller();
         Context.require(!admin.equals(defaultAddress), "StakedLP: Admin address not set");
         Context.require(sender.equals(admin), "StakedLP: Sender not admin");

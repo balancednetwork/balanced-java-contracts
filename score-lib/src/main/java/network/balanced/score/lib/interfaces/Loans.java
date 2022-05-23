@@ -63,6 +63,9 @@ public interface Loans extends
     @External
     void depositAndBorrow(@Optional String _asset, @Optional BigInteger _amount, @Optional Address _from, @Optional BigInteger _value);
 
+    @External
+    void returnAsset(String _symbol, BigInteger _value, boolean _repay);
+
     @External(readonly = true)
     Map<String, Object> getPositionStanding(Address _address, BigInteger _snapshot);
 

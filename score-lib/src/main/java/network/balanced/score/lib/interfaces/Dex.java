@@ -15,9 +15,6 @@ public interface Dex extends AdminAddress, BnusdAddress, DexAddress, GovernanceA
         Name, SicxAddress, DataSource {
 
     @External
-    String name();
-
-    @External
     void setTimeOffset(BigInteger _delta_time);
 
     @External(readonly = true)
@@ -34,9 +31,6 @@ public interface Dex extends AdminAddress, BnusdAddress, DexAddress, GovernanceA
 
     @External(readonly = true)
     BigInteger getPrice(BigInteger _id);
-
-    @External(readonly = true)
-    Map<String, BigInteger> getBalanceAndSupply(String _name, Address _owner);
 
     @External
     void transfer(Address _to, BigInteger _value, BigInteger _id, @Optional byte[] _data);

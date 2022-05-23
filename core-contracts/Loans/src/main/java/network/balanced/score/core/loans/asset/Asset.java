@@ -94,10 +94,11 @@ public class Asset {
         if (!active.getOrDefault(false) || isCollateral.getOrDefault(false)) {
             return false;
         }
-
-        BigInteger outStanding = totalSupply().subtract(badDebt.get());
-        BigInteger poolValue = liquidationPool.get().multiply(priceInLoop()).divide(AssetDB.get("sICX").priceInLoop());
-        BigInteger netBadDebt = badDebt.get().subtract(poolValue);
+        BigInteger badDebt = this.badDebt.getOrDefault(BigInteger.ZERO);
+        BigInteger liquidationPool = this.liquidationPool.getOrDefault(BigInteger.ZERO);
+        BigInteger outStanding = totalSupply().subtract(badDebt);
+        BigInteger poolValue = liquidationPool.multiply(priceInLoop()).divide(AssetDB.get("sICX").priceInLoop());
+        BigInteger netBadDebt = badDebt.subtract(poolValue);
         Boolean isDead = netBadDebt.compareTo(outStanding.divide(BigInteger.valueOf(2))) == 1;
 
         if (dead.getOrDefault(false) != isDead) {

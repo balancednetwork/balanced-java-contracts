@@ -23,10 +23,12 @@ import score.annotation.EventLog;
 import score.annotation.External;
 
 import java.math.BigInteger;
+import java.util.Map;
 
+import network.balanced.score.lib.interfaces.StakedLP;
 import static network.balanced.score.core.stakedlp.Checks.*;
 
-public class StakedLP {
+public class StakedLPImpl implements StakedLP {
 
     // Business Logic
     private static final DictDB<BigInteger, Boolean> supportedPools = Context.newDictDB("supportedPools",
@@ -42,9 +44,9 @@ public class StakedLP {
     public static final VarDB<Address> rewards = Context.newVarDB("rewardsAddress", Address.class);
     public static final VarDB<Address> admin = Context.newVarDB("adminAddress", Address.class);
 
-    public StakedLP(Address governance) {
+    public StakedLPImpl(Address governance) {
         Context.require(governance.isContract(), "StakedLP: Governance address should be a contract");
-        StakedLP.governance.set(governance);
+        StakedLPImpl.governance.set(governance);
     }
 
     /*
@@ -72,7 +74,7 @@ public class StakedLP {
     public void setDex(Address dex) {
         onlyGovernance();
         Context.require(dex.isContract(), "StakedLP: Dex address should be a contract");
-        StakedLP.dex.set(dex);
+        StakedLPImpl.dex.set(dex);
     }
 
     @External(readonly = true)
@@ -84,7 +86,7 @@ public class StakedLP {
     public void setGovernance(Address governance) {
         onlyAdmin();
         Context.require(governance.isContract(), "StakedLP: Governance address should be a contract");
-        StakedLP.governance.set(governance);
+        StakedLPImpl.governance.set(governance);
     }
 
     @External(readonly = true)
@@ -95,7 +97,7 @@ public class StakedLP {
     @External
     public void setAdmin(Address admin) {
         onlyGovernance();
-        StakedLP.admin.set(admin);
+        StakedLPImpl.admin.set(admin);
     }
 
     @External(readonly = true)
@@ -107,7 +109,7 @@ public class StakedLP {
     public void setRewards(Address rewards) {
         onlyAdmin();
         Context.require(rewards.isContract(), "StakedLP: Rewards address should be a contract");
-        StakedLP.rewards.set(rewards);
+        StakedLPImpl.rewards.set(rewards);
     }
 
     @External(readonly = true)
@@ -139,28 +141,6 @@ public class StakedLP {
     @External(readonly = true)
     public boolean isSupportedPool(BigInteger id) {
         return supportedPools.getOrDefault(id, Boolean.FALSE);
-    }
-
-    private void stake(Address user, BigInteger id, BigInteger value) {
-        // Validate inputs
-        Context.require(value.compareTo(BigInteger.ZERO) > 0,
-            "StakedLP: Cannot stake less than zero, value to stake " + value);
-        if (!isSupportedPool(id)) {
-            addPool(id);
-        }
-       
-        // Compute and store changes
-        BigInteger previousBalance = poolStakedDetails.at(user).getOrDefault(id, BigInteger.ZERO);
-        BigInteger previousTotal = totalStaked(id);
-        BigInteger newBalance = previousBalance.add(value);
-        BigInteger newTotal = previousTotal.add(value);
-        poolStakedDetails.at(user).set(id, newBalance);
-        totalStakedAmount.set(id, newTotal);
-
-        Stake(user, id, value);
-
-        String poolName = (String) Context.call(dex.get(), "getPoolName", id);
-        Context.call(rewards.get(), "updateRewardsData", poolName, previousTotal, user, previousBalance);
     }
 
     @External
@@ -198,6 +178,8 @@ public class StakedLP {
     public void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data) {
         onlyDex();
         Context.require(_value.signum() > 0, "StakedLP: Token value should be a positive number");
+        this.stake(_from, _id, _value);
+
         // String unpackedData = new String(_data);
         // Context.require(!unpackedData.equals(""), "StakedLP: Data can't be empty");
 
@@ -206,10 +188,48 @@ public class StakedLP {
         // JsonObject params = json.get("params").asObject();
 
         // if ("stake".equals(method)) {
-        this.stake(_from, _id, _value);
+        //     this.stake(_from, _id, _value);
         // } else {
         //     Context.revert("StakedLP: No valid method called");
         // }
     }
 
+    private void stake(Address user, BigInteger id, BigInteger value) {
+
+        // Validate inputs
+        Context.require(isSupportedPool(id) || isNamedPool(id), "StakedLP: Pool with " + id + " is not supported");
+        Context.require(value.compareTo(BigInteger.ZERO) > 0,
+                "StakedLP: Cannot stake less than zero, value to stake " + value);
+
+        // Compute and store changes
+        BigInteger previousBalance = poolStakedDetails.at(user).getOrDefault(id, BigInteger.ZERO);
+        BigInteger previousTotal = totalStaked(id);
+        BigInteger newBalance = previousBalance.add(value);
+        BigInteger newTotal = previousTotal.add(value);
+        poolStakedDetails.at(user).set(id, newBalance);
+        totalStakedAmount.set(id, newTotal);
+
+        Stake(user, id, value);
+
+        String poolName = (String) Context.call(dex.get(), "getPoolName", id);
+        Context.call(rewards.get(), "updateRewardsData", poolName, previousTotal, user, previousBalance);
+    }
+
+    private boolean isNamedPool(BigInteger id) {
+        if (!supportedPools.getOrDefault(id, Boolean.FALSE)) {
+            String poolName = (String) Context.call(dex.get(), "getPoolName", id);
+            if (poolName == null) {
+                return false;
+            }
+            
+            Map<String, Object> dataSource = (Map<String, Object>) Context.call(rewards.get(), "getSourceData", poolName);
+            if (dataSource.isEmpty() || !dex.get().equals(dataSource.get("contract_address"))) {
+                return false;
+            }
+
+            supportedPools.set(id, Boolean.TRUE);
+        }
+        
+        return true;
+    }
 }
