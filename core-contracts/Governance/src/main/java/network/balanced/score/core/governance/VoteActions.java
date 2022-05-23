@@ -7,6 +7,7 @@ import com.eclipsesource.json.JsonObject;
 
 import network.balanced.score.lib.structs.Disbursement;
 import network.balanced.score.lib.structs.DistributionPercentage;
+import static network.balanced.score.lib.utils.Math.convertToNumber;
 import score.Address;
 import score.Context;
 
@@ -23,40 +24,40 @@ public class VoteActions {
                     gov._updateBalTokenDistPercentage(parseDistPercentage(params.get("_recipient_list").asArray()));
                     break;
                case "setMiningRatio":
-                    gov.setMiningRatio(BigInteger.valueOf(params.get("_value").asInt()));
+                    gov.setMiningRatio(convertToNumber(params.get("_value")));
                     break;
                case "setLockingRatio":
-                    gov.setLockingRatio(BigInteger.valueOf(params.get("_value").asInt()));
+                    gov.setLockingRatio(convertToNumber(params.get("_value")));
                     break;
                case "setOriginationFee":
-                    gov.setOriginationFee(BigInteger.valueOf(params.get("_fee").asInt()));
+                    gov.setOriginationFee(convertToNumber(params.get("_fee")));
                     break;
                case "setLiquidationRatio":
-                    gov.setLiquidationRatio(BigInteger.valueOf(params.get("_ratio").asInt()));
+                    gov.setLiquidationRatio(convertToNumber(params.get("_ratio")));
                     break;
                case "setRetirementBonus":
-                    gov.setRetirementBonus(BigInteger.valueOf(params.get("_points").asInt()));
+                    gov.setRetirementBonus(convertToNumber(params.get("_points")));
                     break;
                case "setLiquidationReward":
-                    gov.setLiquidationReward(BigInteger.valueOf(params.get("_points").asInt()));
+                    gov.setLiquidationReward(convertToNumber(params.get("_points")));
                     break;
                case "setMaxRetirePercent":
-                    gov._setMaxRetirePercent(BigInteger.valueOf(params.get("_value").asInt()));
+                    gov._setMaxRetirePercent(convertToNumber(params.get("_value")));
                     break;
                case "setRebalancingThreshold":
-                    gov._setRebalancingThreshold(BigInteger.valueOf(params.get("_value").asInt()));
+                    gov._setRebalancingThreshold(convertToNumber(params.get("_value")));
                     break;
                case "setVoteDuration":
-                    gov._setVoteDuration(BigInteger.valueOf(params.get("_duration").asInt()));
+                    gov._setVoteDuration(convertToNumber(params.get("_duration")));
                     break;
                case "setQuorum":
-                    gov._setQuorum(BigInteger.valueOf(params.get("quorum").asInt()));
+                    gov._setQuorum(convertToNumber(params.get("quorum")));
                     break;
                case "setVoteDefinitionFee":
-                    gov._setVoteDefinitionFee(BigInteger.valueOf(params.get("fee").asInt()));
+                    gov._setVoteDefinitionFee(convertToNumber(params.get("fee")));
                     break;
                case "setBalnVoteDefinitionCriterion":
-                    gov._setBalnVoteDefinitionCriterion(BigInteger.valueOf(params.get("percentage").asInt()));
+                    gov._setBalnVoteDefinitionCriterion(convertToNumber(params.get("percentage")));
                     break;
                case "setDividendsCategoryPercentage":
                     gov.setDividendsCategoryPercentage(parseDistPercentage(params.get("_dist_list").asArray()));
@@ -78,7 +79,7 @@ public class VoteActions {
                JsonObject jsonDist = jsonDistributions.get(i).asObject();
                DistributionPercentage dist = new DistributionPercentage();
                dist.recipient_name = jsonDist.get("recipient_name").asString();
-               dist.dist_percent = new BigInteger(jsonDist.get("dist_percent").asString(), 10);
+               dist.dist_percent = convertToNumber(jsonDist.get("dist_percent"));
                distPercentages[i] = dist;
           }
 
@@ -91,7 +92,7 @@ public class VoteActions {
                JsonObject jsonDisb = jsonDisbursement.get(i).asObject();
                Disbursement disb = new Disbursement();
                disb.address = Address.fromString(jsonDisb.get("address").asString());
-               disb.amount = BigInteger.valueOf(jsonDisb.get("amount").asInt());
+               disb.amount = convertToNumber(jsonDisb.get("amount"));
                disbursements[i] = disb;
           }
 
