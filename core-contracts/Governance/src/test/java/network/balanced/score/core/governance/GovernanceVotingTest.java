@@ -862,7 +862,46 @@ public class GovernanceVotingTest extends GovernanceTestBase {
 
         // Assert
         verify(dividends.mock, times(2)).addAcceptedTokens(Address.fromString(token));
+    }
+
+    @Test
+    void executeVote_call() {
+        // Arrange
+        JsonArray addAcceptedTokensParameters = new JsonArray()
+            .add(createParameter("Address", sicx.getAddress().toString()));
+
+        JsonObject addAcceptedTokensList = new JsonObject()
+            .add("contract_address", dividends.getAddress().toString())
+            .add("method", "addAcceptedTokens")
+            .add("parameters", addAcceptedTokensParameters);
+      
+        JsonArray addAcceptedTokens = new JsonArray()
+            .add("call")
+            .add(addAcceptedTokensList);
+
+        JsonArray permitParameters = new JsonArray()
+            .add(createParameter("Number", BigInteger.ONE))
+            .add(createParameter("Boolean", true));
+
+        JsonObject permitList = new JsonObject()
+            .add("contract_address", dex.getAddress().toString())
+            .add("method", "permit")
+            .add("parameters", permitParameters);
         
+        JsonArray permit = new JsonArray()
+            .add("call")
+            .add(permitList);
+
+        JsonArray actions = new JsonArray()
+            .add(addAcceptedTokens)
+            .add(permit);
+
+        // Act
+        executeVoteWithActions(actions.toString());
+
+        // Assert
+        verify(dividends.mock, times(2)).addAcceptedTokens(sicx.getAddress());
+        verify(dex.mock, times(2)).permit(BigInteger.ONE, true);
     }
 
     @Test

@@ -1,15 +1,18 @@
 package network.balanced.score.core.governance;
 
-import java.math.BigInteger;
+import java.util.List;
 
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
 
 import network.balanced.score.lib.structs.Disbursement;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import static network.balanced.score.lib.utils.Math.convertToNumber;
 import score.Address;
 import score.Context;
+
+import scorex.util.ArrayList;
 
 public class VoteActions {
      public static void execute(GovernanceImpl gov, String method, JsonObject params) {
@@ -68,10 +71,40 @@ public class VoteActions {
                case "addAcceptedTokens":
                     gov._addAcceptedTokens(params.get("_token").asString());
                     break;
+               case "call":
+                    Address address = Address.fromString(params.get("contract_address").asString());
+                    GovernanceImpl.call(address, params.get("method").asString(), parseVarArgs(params.get("parameters").asArray()));
+                    break;
+
                default:
                     Context.require(false, "Method "+ method + " does not exist.");
         }
-    }
+     }
+
+     private static Object[] parseVarArgs(JsonArray parameters) {
+          List<Object> varArgs = new ArrayList<>(parameters.size());
+          for (int i = 0; i < parameters.size(); i++) {
+               JsonObject jsonParameter = parameters.get(i).asObject();
+               String type = jsonParameter.get("type").asString();
+               JsonValue value = jsonParameter.get("value");
+               switch (type) {
+                    case "String":
+                         varArgs.add(value.asString());
+                         break;
+                    case "Address":
+                         varArgs.add(Address.fromString(value.asString()));
+                         break;
+                    case "Number":
+                         varArgs.add(convertToNumber(value));
+                         break;
+                    case "Boolean":
+                         varArgs.add(value.asBoolean());
+                         break;
+               }
+          }
+
+          return varArgs.toArray();
+     }
 
     private static DistributionPercentage[] parseDistPercentage(JsonArray jsonDistributions) {
           DistributionPercentage[] distPercentages = new DistributionPercentage[jsonDistributions.size()];  

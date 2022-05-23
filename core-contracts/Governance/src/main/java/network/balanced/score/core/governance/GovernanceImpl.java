@@ -895,6 +895,24 @@ public class GovernanceImpl {
     }
 
     @External
+    public void setNewLoanMinimum(BigInteger _minimum) {
+        onlyOwner();
+        _setNewLoanMinimum(_minimum);
+    }
+
+    @External
+    public void setMinMiningDebt(BigInteger _value) {
+        onlyOwner();
+        _setMinMiningDebt(_value);
+    }
+
+    @External
+    public void setBatchSize(BigInteger _batch_size) {
+        onlyOwner();
+        _setBatchSize(_batch_size);
+    }
+
+    @External
     public void setMaxRetirePercent(BigInteger _value) {
         onlyOwner();
         _setMaxRetirePercent(_value);
@@ -1080,11 +1098,24 @@ public class GovernanceImpl {
         Context.call(Addresses.get("loans"), "setMaxRetirePercent",  _value);
     }
 
-
     public void _setRebalancingThreshold(BigInteger _value) {
         Context.call(rebalancing.get(), "setPriceDiffThreshold",  _value);
     }
 
+    public void _setNewLoanMinimum(BigInteger _minimum) {
+        Context.call(Addresses.get("loans"), "setNewLoanMinimum",  _minimum);
+    }
+
+
+    public void _setMinMiningDebt(BigInteger _minimum) {
+        Context.call(Addresses.get("loans"), "setMinMiningDebt",  _minimum);
+    }
+
+
+    public void _setBatchSize(BigInteger _batch_size) {
+        Context.call(Addresses.get("rewards"), "setBatchSize",  _batch_size);
+    }
+    
     public void _updateBalTokenDistPercentage(DistributionPercentage[] _recipient_list) {
         Context.call(Addresses.get("rewards"), "updateBalTokenDistPercentage", (Object) _recipient_list);
     }
