@@ -30,6 +30,8 @@ optimizedJar.enabled = false
 
 dependencies {
     compileOnly Dependencies.javaeeApi
+    implementation Dependencies.javaeeScorex
+    implementation Dependencies.minimalJson
 
     compileOnly Dependencies.javaeeScoreClient
     annotationProcessor Dependencies.javaeeScoreClient
