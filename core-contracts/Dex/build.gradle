@@ -14,13 +14,30 @@
  * limitations under the License.
  */
 
-import network.balanced.score.dependencies.Dependencies
+import network.balanced.score.dependencies.*
 
 version = '0.1.0'
 
 repositories {
     // Use Maven Central for resolving dependencies.
     mavenCentral()
+}
+
+sourceSets {
+    intTest {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+        java {
+            srcDirs("src/intTest")
+        }
+    }
+}
+
+// for integration tests
+configurations {
+    intTestImplementation.extendsFrom testImplementation
+    intTestAnnotationProcessor.extendsFrom testAnnotationProcessor
+    intTestRuntimeOnly.extendsFrom testRuntimeOnly
 }
 
 dependencies {
@@ -39,6 +56,11 @@ dependencies {
     testImplementation project(':test-lib')
     testImplementation Dependencies.junitJupiter
     testRuntimeOnly Dependencies.junitJupiterEngine
+
+    intTestImplementation Dependencies.javaeeScoreClient
+    intTestAnnotationProcessor Dependencies.javaeeScoreClient
+    intTestImplementation Dependencies.iconSdk
+    intTestImplementation Dependencies.jacksonDatabind
 
 }
 
@@ -84,4 +106,26 @@ jacocoTestReport {
         csv.required = false
         html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
     }
+}
+
+task integrationTest(type: Test, dependsOn: optimizedJar) {
+    useJUnitPlatform()
+    options {
+        testLogging.showStandardStreams = true
+        description = 'Runs integration tests.'
+        group = 'verification'
+        testClassesDirs = sourceSets.intTest.output.classesDirs
+        classpath = sourceSets.intTest.runtimeClasspath
+        /*systemProperty 'address', "cx06cc605a70b03982a31d6dd9451a73193cebc951"
+        systemProperty 'governanceAddress', "cxa24fbd23a2452cf83393cfd1f602109ca6f16596"
+        systemProperty 'stakingAddress', "cx8e86ef3b2e2fa33e3580c3a5092c390bfdbfe5bc"
+        systemProperty 'sIcxAddress', "cxc85179bc51f0d5ca9cab6ce7dbb920ce7cb3aa76"
+        systemProperty 'dividendAddress', "cx457606d270f785e9873bc8ee1a2b9b329885202e"
+        */systemProperty 'Dex', project.tasks.optimizedJar.outputJarName
+        project.extensions.deployJar.arguments.each {
+            arg -> systemProperty arg.name, arg.value
+        }
+
+    }
+
 }
