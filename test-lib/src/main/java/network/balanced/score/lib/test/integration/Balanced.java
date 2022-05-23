@@ -31,7 +31,7 @@ import java.util.Map;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
 
 public class Balanced {
-    private KeyWallet owner;
+    public KeyWallet owner;
 
     public DefaultScoreClient governance;
     public DefaultScoreClient baln;
@@ -61,7 +61,7 @@ public class Balanced {
     }
 
     public void deployBalanced() throws Exception {
-        owner = createWalletWithBalance(BigInteger.valueOf(1000).multiply(BigInteger.TEN.pow(18)));
+        owner = createWalletWithBalance(BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18)));
         deployPrep();
 
         governance = deploy(owner, "Governance", null);
@@ -76,7 +76,7 @@ public class Balanced {
 
     protected void deployPrep() {
         try {
-            systemScore.registerPRep(BigInteger.valueOf(2000).multiply(BigInteger.TEN.pow(18)), "test", "kokoa@example.com", "USA", "New York", "https://icon.kokoa.com", "https://icon.kokoa.com/json/details.json", "localhost:9082");
+            systemScore.registerPRep(BigInteger.valueOf(2000).multiply(BigInteger.TEN.pow(18)), "test", "kokoa@example.com", "USA", "New York", "https://icon.kokoa.com", "https://icon.kokoa.com/json/details.json", "https://sejong.net.solidwallet.io");
         } catch (Exception e) {
             //Already registerd
         }
