@@ -91,7 +91,7 @@ public class GovernanceConstants extends Constants {
         entry("bnUSD", "setBnusd"),
         entry("baln", "setBaln"),
         entry("bwt", "setBwt"),
-        entry("rebalancing", "setRebalancing"),
+        entry("rebalancing", "setRebalance"),
         entry("router", "setRouter"),
         entry("feehandler", "setFeehandler"),
         entry("stakedLp", "setStakedLp")

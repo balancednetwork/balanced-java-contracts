@@ -637,8 +637,6 @@ public class GovernanceImpl {
     public void rebalancingSetLoans(Address _address) {
         onlyOwner();
         Context.call(rebalancing.get(), SETTERS.get("loans"), _address);
-
-        
     }
 
     @External
