@@ -480,7 +480,7 @@ public class DexImpl {
         BigInteger sendPrice = (EXA.multiply(value)).divide(sendAmount);
 
         // Send the trader their funds
-        Context.call(toToken, "transfer", Context.getAddress(), sendAmount, null);
+        Context.call(toToken, "transfer", receiver, sendAmount, null);
 
         // Send the platform fees to the feehandler SCORE
         Context.call(fromToken, "transfer", feehandler.get(), balnFees, null);
@@ -896,7 +896,7 @@ public class DexImpl {
         updateAccountSnapshot(from, id);
         updateAccountSnapshot(to, id);
 
-        if ((to.isContract()) && (to.equals(stakedlp.get()))) {
+        if (to.isContract()) {
             Context.call(to, "onIRC31Received", from, from, id, value, data);
         }
     }
