@@ -882,7 +882,7 @@ public class DexImpl {
         BigInteger toBalance = balance.at(id).getOrDefault(to, BigInteger.ZERO);
         balance.at(id).set(from, fromBalance.subtract(value));
         balance.at(id).set(to, toBalance.add(value));
-        if (!to.equals(stakedlp.get())) {
+        if (!to.equals(stakedlp.get()) || !from.equals(stakedlp.get())) {
             if (value.compareTo(BigInteger.ZERO) > 0) {
                 activeAddresses.get(id).add(to);
             }
