@@ -975,7 +975,7 @@ public class DexImpl {
             return icxQueue.getNode(orderId).getSize();
         } else {
             BigInteger balance = this.balance.at(_id).getOrDefault(_owner, BigInteger.ZERO);
-            if (continuousRewardsDay.get() == null || getDay().compareTo(continuousRewardsDay.get()) < 0) {
+            if (stakedlp.get() != null && (continuousRewardsDay.get() == null || getDay().compareTo(continuousRewardsDay.get()) < 0)) {
                 BigInteger stakedBalance = (BigInteger) Context.call(stakedlp.get(), "balanceOf", _owner, _id);
                 balance = balance.add(stakedBalance);
             }
