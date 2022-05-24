@@ -17,14 +17,27 @@
 package network.balanced.score.core.loans.utils;
 
 import network.balanced.score.core.loans.LoansImpl;
+import score.Context;
 
 import java.math.BigInteger;
 
+import static network.balanced.score.core.loans.LoansImpl.TAG;
 import static network.balanced.score.core.loans.LoansVariables.continuousRewardDay;
+import static network.balanced.score.core.loans.LoansVariables.loansOn;
+
 
 public class Checks {
     public static boolean isContinuousRewardsActivated() {
         BigInteger continuousActivationDay = continuousRewardDay.get();
         return continuousActivationDay != null && LoansImpl._getDay().compareTo(continuousActivationDay) >= 0;
+    }
+
+    public static void loansOn() {
+        Context.require(loansOn.get(), TAG + ": Balanced Loans SCORE is not active.");
+    }
+
+    public static boolean isBeforeContinuousRewardDay(Integer day) {
+        BigInteger continuousActivationDay = continuousRewardDay.get();
+        return continuousActivationDay == null || BigInteger.valueOf(day).compareTo(continuousActivationDay) < 0;
     }
 }

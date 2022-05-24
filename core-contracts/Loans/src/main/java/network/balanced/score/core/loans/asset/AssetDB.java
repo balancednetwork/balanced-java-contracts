@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -153,5 +153,13 @@ public class AssetDB {
         return totalCollateral.divide(EXA);
     }
 
+    public static void updateDeadMarkets() {
+        int activeAssetsCount = activeAssets.size();
+        for (int i = 0; i < activeAssetsCount; i++) {
+            String symbol = activeAssets.get(i);
+            Asset asset = getAsset(symbol);
+            asset.checkForDeadMarket();
+        }
+    }
 
 }

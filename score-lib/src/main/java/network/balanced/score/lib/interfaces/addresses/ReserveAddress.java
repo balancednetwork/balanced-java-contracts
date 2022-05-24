@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.structs;
+package network.balanced.score.lib.interfaces.addresses;
 
-import java.math.BigInteger;
 import score.Address;
-import score.annotation.Keep;
+import score.annotation.External;
 
-public class RewardsDataEntry {
-    @Keep
-    public Address _user;
-    @Keep
-    public BigInteger _balance;
+public interface ReserveAddress {
+
+    @External
+    void setReserve(Address _address);
+
+    @External(readonly = true)
+    Address getReserve();
 }

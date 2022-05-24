@@ -22,17 +22,17 @@ import java.util.Map;
 import network.balanced.score.lib.utils.Constants;
 
 public class LoansConstants extends Constants {
-    private static final BigInteger SECOND = BigInteger.valueOf(1000000);
+    private static final BigInteger SECOND = BigInteger.valueOf(1_000_000);
     public static final BigInteger U_SECONDS_DAY = BigInteger.valueOf(86400).multiply(SECOND);
 
-    public static final BigInteger POINTS = BigInteger.valueOf(10000);
-    public static final BigInteger MINING_RATIO = BigInteger.valueOf(50000);
-    public static final BigInteger LOCKING_RATIO = BigInteger.valueOf(40000);
-    public static final BigInteger LIQUIDATION_RATIO = BigInteger.valueOf(15000);
+    public static final BigInteger POINTS = BigInteger.valueOf(10_000);
+    public static final BigInteger MINING_RATIO = BigInteger.valueOf(50_000);
+    public static final BigInteger LOCKING_RATIO = BigInteger.valueOf(40_000);
+    public static final BigInteger LIQUIDATION_RATIO = BigInteger.valueOf(15_000);
     public static final BigInteger LIQUIDATION_REWARD = BigInteger.valueOf(67);
     public static final BigInteger ORIGINATION_FEE = BigInteger.valueOf(100);
     public static final BigInteger REDEMPTION_FEE = BigInteger.valueOf(50);
-    public static final BigInteger BAD_DEBT_RETIREMENT_BONUS = BigInteger.valueOf(1000);
+    public static final BigInteger BAD_DEBT_RETIREMENT_BONUS = BigInteger.valueOf(1_000);
     public static final BigInteger MAX_RETIRE_PERCENT = BigInteger.valueOf(100);
     
      //In USD

@@ -47,7 +47,7 @@ public class Position {
             "_status", Boolean.class);
     private final BranchDB<String, BranchDB<String, DictDB<String, BigInteger>>> loansPosition = Context.newBranchDB(
             "loan_balance", BigInteger.class);
-    public BranchDB<String, DictDB<String, BigInteger>> collateralPosition = Context.newBranchDB("collateral_balance"
+    private final BranchDB<String, DictDB<String, BigInteger>> collateralPosition = Context.newBranchDB("collateral_balance"
             , BigInteger.class);
 
     private final String dbKey;
@@ -108,11 +108,11 @@ public class Position {
         return dataMigrationStatus.at(dbKey).getOrDefault(symbol, false);
     }
 
-    private void setLoansPosition(String collateral, String symbol, BigInteger value) {
+    public void setLoansPosition(String collateral, String symbol, BigInteger value) {
         loansPosition.at(dbKey).at(collateral).set(symbol, value);
     }
 
-    private BigInteger getLoansPosition(String collateral, String symbol) {
+    public BigInteger getLoansPosition(String collateral, String symbol) {
         return loansPosition.at(dbKey).at(collateral).getOrDefault(symbol, BigInteger.ZERO);
     }
 
@@ -120,7 +120,7 @@ public class Position {
         collateralPosition.at(dbKey).set(symbol, value);
     }
 
-    private BigInteger getCollateralPosition(String symbol) {
+    public BigInteger getCollateralPosition(String symbol) {
         return collateralPosition.at(dbKey).getOrDefault(symbol, BigInteger.ZERO);
     }
 
@@ -155,7 +155,6 @@ public class Position {
             setDataMigrationStatus(symbol, true);
         }
 
-        // TODO Separate out the logic for collateral and loans
         if (arrayDbContains(AssetDB.activeAssets, symbol)) {
             AssetDB.getAsset(symbol).getBorrowers().set(getId(), value);
         }

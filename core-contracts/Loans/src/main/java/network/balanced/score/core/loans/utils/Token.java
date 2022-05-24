@@ -53,7 +53,7 @@ public class Token {
         return (BigInteger) Context.call(tokenAddress, "lastPriceInLoop");
     }
 
-    public void mint(Address to, BigInteger amount) {
+    public void mintTo(Address to, BigInteger amount) {
         Context.call(tokenAddress, "mintTo", to, amount, new byte[0]);
     }
 }

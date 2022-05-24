@@ -32,9 +32,9 @@ import score.VarDB;
 import java.math.BigInteger;
 import java.util.Map;
 
-import static network.balanced.score.core.loans.LoansVariables.continuousRewardDay;
 import static network.balanced.score.core.loans.LoansVariables.snapBatchSize;
 import static network.balanced.score.core.loans.positions.Position.TAG;
+import static network.balanced.score.core.loans.utils.Checks.isBeforeContinuousRewardDay;
 import static network.balanced.score.core.loans.utils.Checks.isContinuousRewardsActivated;
 import static network.balanced.score.core.loans.utils.LoansConstants.*;
 
@@ -125,9 +125,7 @@ public class PositionsDB {
         newPosition.setCreated(BigInteger.valueOf(Context.getBlockTimestamp()));
         newPosition.setAddress(owner);
 
-        boolean checkDay = snapshotIndex.compareTo(continuousRewardDay.get()) < 0;
-
-        if (checkDay) {
+        if (isBeforeContinuousRewardDay(snapshotIndex.intValue())) {
             newPosition.setAssets(snapshotIndex.intValue(), SICX_SYMBOL, BigInteger.ZERO);
         } else {
             newPosition.setCollateralPosition(SICX_SYMBOL, BigInteger.ZERO);
@@ -157,7 +155,6 @@ public class PositionsDB {
         }
 
         snapshot.setSnapshotTime(BigInteger.valueOf(Context.getBlockTimestamp()));
-        // TODO Previously we used to emit snapshot log here, we can't currently
         if (!isContinuousRewardsActivated()) {
             SnapshotDB.startNewSnapshot();
         }
@@ -171,7 +168,7 @@ public class PositionsDB {
      * @return True if complete
      */
     public static Boolean calculateSnapshot(BigInteger day, int batchSize) {
-        Context.require(day.compareTo(continuousRewardDay.get()) < 0, continuousRewardsErrorMessage);
+        Context.require(isBeforeContinuousRewardDay(day.intValue()), continuousRewardsErrorMessage);
         Snapshot snapshot = SnapshotDB.get(day.intValue());
         int snapshotId = snapshot.getDay();
         if (snapshotId < day.intValue()) {
@@ -240,7 +237,6 @@ public class PositionsDB {
             }
             index++;
             if (accountId == nonZero.getTailId()) {
-                //TODO Start again with head id.
                 nextNode = 0;
             } else {
                 nextNode = nonZero.getNextId(nextNode);

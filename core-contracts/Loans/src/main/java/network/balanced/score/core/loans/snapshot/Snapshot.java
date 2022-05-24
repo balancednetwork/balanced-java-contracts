@@ -57,7 +57,7 @@ public class Snapshot {
         snapshotTime.at(dbKey).set(time);
     }
 
-    public BigInteger getSnapshotTime() {
+    private BigInteger getSnapshotTime() {
         return snapshotTime.at(dbKey).getOrDefault(BigInteger.ZERO);
     }
 

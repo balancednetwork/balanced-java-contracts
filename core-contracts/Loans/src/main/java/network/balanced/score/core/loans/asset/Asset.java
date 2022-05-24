@@ -16,7 +16,6 @@
 
 package network.balanced.score.core.loans.asset;
 
-import network.balanced.score.core.loans.LoansImpl;
 import network.balanced.score.core.loans.linkedlist.LinkedListDB;
 import network.balanced.score.core.loans.utils.Token;
 import score.Address;
@@ -28,6 +27,7 @@ import java.math.BigInteger;
 import java.util.Map;
 
 import static java.util.Map.entry;
+import static network.balanced.score.core.loans.utils.LoansConstants.SICX_SYMBOL;
 
 public class Asset {
 
@@ -49,13 +49,13 @@ public class Asset {
     }
 
     public void burn(BigInteger amount) {
-        LoansImpl.call(assetAddress.at(dbKey).get(), "burn", amount);
+        Context.call(assetAddress.at(dbKey).get(), "burn", amount);
         VarDB<BigInteger> totalBurnedTokens = this.totalBurnedTokens.at(dbKey);
         totalBurnedTokens.set(totalBurnedTokens.getOrDefault(BigInteger.ZERO).add(amount));
     }
 
     public void burnFrom(Address from, BigInteger amount) {
-        LoansImpl.call(assetAddress.at(dbKey).get(), "burnFrom", from, amount);
+        Context.call(assetAddress.at(dbKey).get(), "burnFrom", from, amount);
         VarDB<BigInteger> totalBurnedTokens = this.totalBurnedTokens.at(dbKey);
         totalBurnedTokens.set(totalBurnedTokens.getOrDefault(BigInteger.ZERO).add(amount));
     }
@@ -84,7 +84,7 @@ public class Asset {
         return liquidationPool.at(dbKey).getOrDefault(BigInteger.ZERO);
     }
 
-    public BigInteger getTotalBurnedTokens() {
+    private BigInteger getTotalBurnedTokens() {
         return totalBurnedTokens.at(dbKey).getOrDefault(BigInteger.ZERO);
     }
 
@@ -100,7 +100,7 @@ public class Asset {
         return active.at(dbKey).getOrDefault(false);
     }
 
-    public boolean isDeadMarket() {
+    boolean isDeadMarket() {
         return deadMarket.at(dbKey).getOrDefault(false);
     }
 
@@ -108,9 +108,9 @@ public class Asset {
      * Calculates whether the market is dead and sets the dead market flag. A dead market is defined as being below
      * the point at which total debt equals the minimum value of collateral that could be backing it.
      */
-    public void checkForDeadMarket() {
+    public boolean checkForDeadMarket() {
         if (isCollateral() || !isActive()) {
-            return;
+            return false;
         }
 
         BigInteger badDebt = getBadDebt();
@@ -120,7 +120,7 @@ public class Asset {
 
         BigInteger outStanding = assetContract.totalSupply().subtract(badDebt);
 
-        Address sicxAddress = AssetDB.getAsset("sICX").getAssetAddress();
+        Address sicxAddress = AssetDB.getAsset(SICX_SYMBOL).getAssetAddress();
         Token sicxContract = new Token(sicxAddress);
 
         // [Multi-collateral] Here it assumes every token should be denominated in terms of sicx.
@@ -133,6 +133,7 @@ public class Asset {
         if (deadMarket.getOrDefault(false) != isDead) {
             deadMarket.set(isDead);
         }
+        return isDead;
     }
 
     public LinkedListDB getBorrowers() {
@@ -143,14 +144,14 @@ public class Asset {
         getBorrowers().remove(positionId);
     }
 
-    public void setAsset(Address assetAddress, BigInteger assetAddedTime, Boolean active, Boolean collateral) {
+    void setAsset(Address assetAddress, BigInteger assetAddedTime, Boolean active, Boolean collateral) {
         this.assetAddress.at(dbKey).set(assetAddress);
         this.assetAddedTime.at(dbKey).set(assetAddedTime);
         this.active.at(dbKey).set(active);
         this.isCollateral.at(dbKey).set(collateral);
     }
 
-    public Map<String, Object> toMap() {
+    Map<String, Object> toMap() {
         Address assetAddress = this.assetAddress.at(dbKey).get();
         Token tokenContract = new Token(assetAddress);
 
