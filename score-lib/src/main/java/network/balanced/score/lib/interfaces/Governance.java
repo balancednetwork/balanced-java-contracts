@@ -23,10 +23,12 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.base.*;
 
 import network.balanced.score.lib.structs.BalancedAddresses;
 
+@ScoreInterface
 public interface Governance extends
         Name,
         TokenFallback,

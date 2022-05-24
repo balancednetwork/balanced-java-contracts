@@ -46,7 +46,7 @@ class LoansTestBase extends UnitTest {
     // 2 second blockTime gives 1 day 43200 block
     protected static final Long DAY = 43200L;
     protected static final Long WEEK = 7 * DAY;
-
+    protected static final String TAG = LoansImpl.TAG + ": ";
     protected static final ServiceManager sm = getServiceManager();
 
     protected final Account admin = sm.createAccount();
@@ -128,7 +128,7 @@ class LoansTestBase extends UnitTest {
                 sicx.invoke(staking.account, "mintTo", args[0], amount);
                 return null;
             }
-        }).when(staking.mock).stakeICX(Mockito.any(Address.class));
+        }).when(staking.mock).stakeICX(Mockito.any(Address.class), Mockito.any(byte[].class));
     }
 
     private void setupReserve() throws Exception {

@@ -27,29 +27,24 @@ import static network.balanced.score.core.loans.LoansVariables.loansOn;
 
 
 public class Checks {
-    public static boolean isContinuousRewardsActivated() {
-        return isContinuousRewardsActivated(LoansImpl._getDay());
+    public static boolean isBeforeContinuousRewardDay() {
+        return isBeforeContinuousRewardDay(LoansImpl._getDay());
     }
 
-    public static boolean isContinuousRewardsActivated(Integer day) {
-        return isContinuousRewardsActivated(BigInteger.valueOf(day));
+    public static boolean isBeforeContinuousRewardDay(Integer day) {
+        return isBeforeContinuousRewardDay(BigInteger.valueOf(day));
     }
 
-    public static boolean isContinuousRewardsActivated(BigInteger day) {
+    public static boolean isBeforeContinuousRewardDay(BigInteger day) {
         if (day.equals(BigInteger.valueOf(-1))){
             day = LoansImpl._getDay();
         }
         
         BigInteger continuousActivationDay = continuousRewardDay.getOrDefault(null);
-        return continuousActivationDay != null && day.compareTo(continuousActivationDay) >= 0;
+        return continuousActivationDay == null || day.compareTo(continuousActivationDay) < 0;
     }
 
     public static void loansOn() {
         Context.require(loansOn.get(), TAG + ": Balanced Loans SCORE is not active.");
-    }
-
-    public static boolean isBeforeContinuousRewardDay(Integer day) {
-        BigInteger continuousActivationDay = continuousRewardDay.get();
-        return continuousActivationDay == null || BigInteger.valueOf(day).compareTo(continuousActivationDay) < 0;
     }
 }

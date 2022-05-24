@@ -266,19 +266,6 @@ class LoansTest extends LoansTestBase {
         assertEquals(loan.add(expectedFee), balanceAndSupply.get("_totalSupply"));
     }
 
-
-    @Test
-    void checkDeadMarkets_Empty() {
-        // Arrange
-        Account account = accounts.get(0);
-
-        // Act
-        ArrayList<String> deadMarkets = (ArrayList<String>) loans.call("checkForDeadMarkets");
-
-        // Assert
-        assertEquals(0, deadMarkets.size());
-    }
-
     @Test
     void getDay() {
         BigInteger currentDay = (BigInteger) loans.call("getDay");
@@ -308,7 +295,7 @@ class LoansTest extends LoansTestBase {
         // Arrange
         Account account = accounts.get(0);
         BigInteger value = BigInteger.valueOf(0);
-        String expectedErrorMessage = "Token Fallback: Token value should be a positive number";
+        String expectedErrorMessage = TAG +  "Token value should be a positive number";
 
         // Assert & Act
         Executable transferToken = () -> sicx.invoke(account, "transfer", loans.getAddress(), value, new byte[0]);
@@ -320,7 +307,7 @@ class LoansTest extends LoansTestBase {
         // Arrange
         Account account = admin;
         BigInteger value = BigInteger.valueOf(100).multiply(EXA);
-        String expectedErrorMessage = "The Balanced Loans contract does not accept that token type.";
+        String expectedErrorMessage = TAG + "The Balanced Loans contract does not accept that token type.";
 
         // Assert & Act
         Executable transferToken = () -> bnusd.invoke(account, "transfer", loans.getAddress(), value, new byte[0]);
@@ -332,7 +319,7 @@ class LoansTest extends LoansTestBase {
         // Arrange
         Account account = accounts.get(0);
         BigInteger value = BigInteger.valueOf(100).multiply(EXA);
-        String expectedErrorMessage = "Token Fallback: Data can't be empty";
+        String expectedErrorMessage = TAG + "Token Fallback: Data can't be empty";
         byte[] data = new byte[0];
 
         // Assert & Act
@@ -381,7 +368,7 @@ class LoansTest extends LoansTestBase {
         Account account = accounts.get(0);
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(100).multiply(EXA);;
-        String expectedErrorMessage = "Loans of collateral assets are not allowed.";
+        String expectedErrorMessage = TAG + "Loans of collateral assets are not allowed.";
 
         // Assert & Act
         Executable depositAndBorrow = () -> takeLoanICX(account, "sICX", collateral, loan);
@@ -394,7 +381,7 @@ class LoansTest extends LoansTestBase {
         Account account = accounts.get(0);
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(100).multiply(EXA);;
-        String expectedErrorMessage = "Loans of inactive assets are not allowed.";
+        String expectedErrorMessage = TAG + "Loans of inactive assets are not allowed.";
         loans.invoke(admin, "toggleAssetActive", "bnUSD");
 
         // Assert & Act
@@ -410,8 +397,8 @@ class LoansTest extends LoansTestBase {
 
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger toSmallLoan = newLoanMinimum.subtract(BigInteger.ONE.multiply(EXA));
-        String expectedErrorMessage = "The initial loan of any" +
-                "asset must have a minimum value" +
+        String expectedErrorMessage = TAG + "The initial loan of any " +
+                "asset must have a minimum value " +
                 "of "+ newLoanMinimum.divide(EXA) +" dollars.";
 
         // Assert & Act
@@ -428,10 +415,9 @@ class LoansTest extends LoansTestBase {
         BigInteger expectedFee = calculateFee(loan);
         BigInteger lockingRatio = ((BigInteger)getParam("locking ratio")).divide(POINTS);
 
-        String expectedErrorMessage = collateral + " collateral is insufficient to originate a loan of " + loan.divide(EXA) + " bnUSD " +
+        String expectedErrorMessage = TAG + collateral + " collateral is insufficient to originate a loan of " + loan + " bnUSD " +
                 "when max_debt_value = "+ collateral.divide(lockingRatio) + ", new_debt_value = " + loan.add(expectedFee) + ", " +
-                "which includes a fee of " + expectedFee.divide(EXA) +" bnUSD, given an existing loan value of 0.";
-
+                "which includes a fee of " + expectedFee +" bnUSD, given an existing loan value of 0.";
         // Assert & Act
         Executable depositAndBorrow = () -> takeLoanICX(account, "bnUSD", collateral, loan);
         expectErrorMessage(depositAndBorrow, expectedErrorMessage);
@@ -466,7 +452,7 @@ class LoansTest extends LoansTestBase {
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
         BigInteger expectedFee = calculateFee(loan);
         BigInteger loanToRepay = loan.add(expectedFee).add(BigInteger.ONE);
-        String expectedErrorMessage = "Repaid amount is greater than the amount in the position of " + account.getAddress();
+        String expectedErrorMessage = TAG + "Repaid amount is greater than the amount in the position of " + account.getAddress();
 
         bnusd.invoke(admin, "transfer", account.getAddress(), loanToRepay, new byte[0]);
         takeLoanICX(account, "bnUSD", collateral, loan);
@@ -483,7 +469,7 @@ class LoansTest extends LoansTestBase {
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
         BigInteger collateralToRepay = BigInteger.valueOf(100).multiply(EXA);
-        String expectedErrorMessage = "sICX is not an active, borrowable asset on Balanced.";
+        String expectedErrorMessage = TAG + "sICX is not an active, borrowable asset on Balanced.";
 
         takeLoanICX(account, "bnUSD", collateral, loan);
 
@@ -499,7 +485,7 @@ class LoansTest extends LoansTestBase {
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
         BigInteger loanToRepay = BigInteger.valueOf(100).multiply(EXA);
-        String expectedErrorMessage = "bnUSD is not an active, borrowable asset on Balanced.";
+        String expectedErrorMessage = TAG + "bnUSD is not an active, borrowable asset on Balanced.";
 
         takeLoanICX(account, "bnUSD", collateral, loan);
         loans.invoke(admin, "toggleAssetActive", "bnUSD");
@@ -517,7 +503,7 @@ class LoansTest extends LoansTestBase {
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
         BigInteger loanToRepay = BigInteger.valueOf(100).multiply(EXA);
 
-        String expectedErrorMessage = "Insufficient balance.";
+        String expectedErrorMessage = TAG + "Insufficient balance.";
 
         takeLoanICX(account, "bnUSD", collateral, loan);
         bnusd.invoke(account, "transfer", admin.getAddress(), loan, new byte[0]);
@@ -534,7 +520,7 @@ class LoansTest extends LoansTestBase {
         BigInteger loanToRepay = BigInteger.valueOf(100).multiply(EXA);
         bnusd.invoke(admin, "transfer", account.getAddress(), loanToRepay, new byte[0]);
 
-        String expectedErrorMessage = "No debt repaid because, " + account.getAddress() + " does not have a position " +
+        String expectedErrorMessage = TAG + "No debt repaid because, " + account.getAddress() + " does not have a position " +
                 "in Balanced";
 
         // Assert & Act
@@ -551,7 +537,7 @@ class LoansTest extends LoansTestBase {
         BigInteger loanToRepay = BigInteger.valueOf(100).multiply(EXA);
 
         takeLoanICX(account, "bnUSD", collateral, loan);
-        String expectedErrorMessage = "No debt repaid because, repay=false";
+        String expectedErrorMessage = TAG + "No debt repaid because, repay=false";
 
         // Assert & Act
         Executable returnWithNoPosition = () ->  loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, false);
@@ -586,7 +572,7 @@ class LoansTest extends LoansTestBase {
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
         BigInteger collateralToWithdraw = BigInteger.valueOf(0);
-        String expectedErrorMessage = "Withdraw amount must be more than zero.";
+        String expectedErrorMessage = TAG + "Withdraw amount must be more than zero.";
 
         takeLoanICX(account, "bnUSD", collateral, loan);
 
@@ -599,10 +585,8 @@ class LoansTest extends LoansTestBase {
     void withdrawCollateral_NoPosition() {
         // Arrange
         Account account = accounts.get(0);
-        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
-        BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
         BigInteger collateralToWithdraw = BigInteger.valueOf(200).multiply(EXA);
-        String expectedErrorMessage = "This address does not have a position on Balanced.";
+        String expectedErrorMessage = TAG +  "This address does not have a position on Balanced.";
 
         // Assert & Act
         Executable withdrawWithNoPosition = () -> loans.invoke(account, "withdrawCollateral", collateralToWithdraw);
@@ -616,7 +600,7 @@ class LoansTest extends LoansTestBase {
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
         BigInteger collateralToWithdraw = BigInteger.valueOf(1100).multiply(EXA);
-        String expectedErrorMessage = "Position holds less collateral than the requested withdrawal.";
+        String expectedErrorMessage = TAG + "Position holds less collateral than the requested withdrawal.";
 
         takeLoanICX(account, "bnUSD", collateral, loan);
 
@@ -635,7 +619,7 @@ class LoansTest extends LoansTestBase {
         BigInteger expectedFee = calculateFee(loan);
 
         BigInteger lockingRatio = ((BigInteger)getParam("locking ratio")).divide(POINTS);
-        String expectedErrorMessage = "Requested withdrawal is more than available collateral. " +
+        String expectedErrorMessage = TAG + "Requested withdrawal is more than available collateral. " +
                 "total debt value: " + loan.add(expectedFee) + " ICX " +
                 "remaining collateral value: " + collateral.subtract(collateralToWithdraw) + " ICX " +
                 "locking value (max debt): " + lockingRatio.multiply(loan.add(expectedFee)) + " ICX";
@@ -706,7 +690,7 @@ class LoansTest extends LoansTestBase {
         // Arrange
         Account account = accounts.get(0);
         Account liquidater = accounts.get(1);
-        String expectedErrorMessage = "This address does not have a position on Balanced.";
+        String expectedErrorMessage = TAG + "This address does not have a position on Balanced.";
 
         // Assert & Act
         Executable liquidateAccountWithNoPosition = () ->  loans.invoke(liquidater, "liquidate", account.getAddress());
@@ -823,7 +807,7 @@ class LoansTest extends LoansTestBase {
         Account account = accounts.get(0);
         Account liquidater = accounts.get(1);
         Account badDebtReedemer =  accounts.get(2);
-        String expectedErrorMessage = "Amount retired must be greater than zero.";
+        String expectedErrorMessage = TAG + "Amount retired must be greater than zero.";
 
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
@@ -847,7 +831,7 @@ class LoansTest extends LoansTestBase {
         Account account = accounts.get(0);
         Account liquidater = accounts.get(1);
         Account badDebtReedemer =  accounts.get(2);
-        String expectedErrorMessage = "sICX is not an active, borrowable asset on Balanced.";
+        String expectedErrorMessage = TAG + "sICX is not an active, borrowable asset on Balanced.";
 
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
@@ -872,7 +856,7 @@ class LoansTest extends LoansTestBase {
         Account account = accounts.get(0);
         Account liquidater = accounts.get(1);
         Account badDebtReedemer =  accounts.get(2);
-        String expectedErrorMessage = "bnUSD is not an active, borrowable asset on Balanced.";
+        String expectedErrorMessage = TAG + "bnUSD is not an active, borrowable asset on Balanced.";
 
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
@@ -898,7 +882,7 @@ class LoansTest extends LoansTestBase {
         Account account = accounts.get(0);
         Account liquidater = accounts.get(1);
         Account badDebtReedemer =  accounts.get(2);
-        String expectedErrorMessage = "Insufficient balance.";
+        String expectedErrorMessage = TAG + "Insufficient balance.";
 
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
@@ -923,7 +907,7 @@ class LoansTest extends LoansTestBase {
         BigInteger badDebt = BigInteger.valueOf(200).multiply(EXA);
         bnusd.invoke(admin, "transfer", badDebtReedemer.getAddress(), badDebt, new byte[0]);
 
-        String expectedErrorMessage = "No bad debt for bnUSD";
+        String expectedErrorMessage = TAG + "No bad debt for bnUSD";
 
         // Assert & Act
         Executable retireBadDebtZeroAmount = () ->  loans.invoke(badDebtReedemer, "retireBadDebt", "bnUSD", badDebt);

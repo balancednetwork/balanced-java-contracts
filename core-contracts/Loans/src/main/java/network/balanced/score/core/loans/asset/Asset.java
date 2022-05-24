@@ -28,6 +28,7 @@ import java.util.Map;
 
 import static java.util.Map.entry;
 import static network.balanced.score.core.loans.utils.LoansConstants.SICX_SYMBOL;
+import static network.balanced.score.core.loans.LoansImpl.call;
 
 public class Asset {
 
@@ -49,13 +50,13 @@ public class Asset {
     }
 
     public void burn(BigInteger amount) {
-        Context.call(assetAddress.at(dbKey).get(), "burn", amount);
+        call(assetAddress.at(dbKey).get(), "burn", amount);
         VarDB<BigInteger> totalBurnedTokens = this.totalBurnedTokens.at(dbKey);
         totalBurnedTokens.set(totalBurnedTokens.getOrDefault(BigInteger.ZERO).add(amount));
     }
 
     public void burnFrom(Address from, BigInteger amount) {
-        Context.call(assetAddress.at(dbKey).get(), "burnFrom", from, amount);
+        call(assetAddress.at(dbKey).get(), "burnFrom", from, amount);
         VarDB<BigInteger> totalBurnedTokens = this.totalBurnedTokens.at(dbKey);
         totalBurnedTokens.set(totalBurnedTokens.getOrDefault(BigInteger.ZERO).add(amount));
     }
