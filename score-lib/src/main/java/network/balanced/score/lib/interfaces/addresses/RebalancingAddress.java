@@ -5,8 +5,8 @@ import score.annotation.External;
 
 public interface RebalancingAddress {
     @External
-    void setRebalancing(Address _address);
+    void setRebalance(Address _address);
 
     @External(readonly = true)
-    Address getRebalancing();
+    Address getRebalance();
 }

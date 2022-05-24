@@ -180,7 +180,7 @@ public class GovernanceTest extends GovernanceTestBase {
         governance.invoke(owner, "setLoansRebalance", _address);
 
         // Assert
-        verify(loans.mock).setRebalancing(_address);
+        verify(loans.mock).setRebalance(_address);
     }
 
     @Test
