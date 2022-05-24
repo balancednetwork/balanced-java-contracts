@@ -16,8 +16,11 @@
 
 package network.balanced.score.lib.tokens;
 
-import score.Address;
-import score.Context;
+import network.balanced.score.lib.interfaces.base.IRC2;
+import score.*;
+import score.annotation.EventLog;
+import score.annotation.External;
+import score.annotation.Optional;
 
 import java.math.BigInteger;
 
@@ -25,7 +28,12 @@ import static network.balanced.score.lib.utils.Check.only;
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.Math.pow;
 
-public class IRC2PresetFixedSupply extends IRC2Base {
+public class IRC2PresetFixedSupply implements IRC2 {
+    final private static String NAME = "name";
+    final private static String SYMBOL = "symbol";
+    final private static String DECIMALS = "decimals";
+    final private static String TOTAL_SUPPLY = "total_supply";
+    final private static String BALANCES = "balances";
 
     private final VarDB<String> name = Context.newVarDB(NAME, String.class);
     private final VarDB<String> symbol = Context.newVarDB(SYMBOL, String.class);
@@ -50,9 +58,14 @@ public class IRC2PresetFixedSupply extends IRC2Base {
             Context.require(initialSupply.compareTo(BigInteger.ZERO) >= 0, "Initial Supply cannot be less than or " +
                     "equal to than zero");
 
-            BigInteger totalSupply = _initialSupply.multiply(pow(BigInteger.TEN, _decimals.intValue()));
+            BigInteger totalSupply = initialSupply.multiply(pow(BigInteger.TEN, decimals.intValue()));
             final Address caller = Context.getCaller();
-            mint(caller, totalSupply);
+
+            this.name.set(ensureNotEmpty(_tokenName));
+            this.symbol.set(ensureNotEmpty(_symbolName));
+            this.decimals.set(decimals);
+            this.totalSupply.set(totalSupply);
+            balances.set(caller, totalSupply);
         }
     }
 

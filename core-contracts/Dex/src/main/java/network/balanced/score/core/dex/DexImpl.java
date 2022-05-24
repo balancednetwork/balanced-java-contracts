@@ -24,6 +24,7 @@ import static network.balanced.score.core.dex.Const.*;
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.core.dex.Check.*;
 import static network.balanced.score.lib.utils.Math.pow;
+import static network.balanced.score.lib.utils.Math.convertToNumber;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -832,7 +833,7 @@ public class DexImpl {
             JsonObject params = json.get("params").asObject();
             BigInteger minimumReceive = BigInteger.ZERO;
             if (params.contains("minimumReceive")) {
-                minimumReceive = BigInteger.valueOf(params.get("minimumReceive").asInt());
+                minimumReceive = convertToNumber(params.get("minimumReceive"));
                 Context.require(
                         minimumReceive.signum() >= 0,
                         TAG + "Must specify a positive number for minimum to receive"

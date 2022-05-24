@@ -37,6 +37,12 @@ project(':Reserve').projectDir = file("core-contracts/Reserve")
 include(':Rebalancing')
 project(':Rebalancing').projectDir = file("core-contracts/Rebalancing")
 
+include(':Dex')
+project(':Dex').projectDir = file("core-contracts/Dex")
+
+include(':sicx')
+project(':sicx').projectDir = file("token-contracts/sicx")
+
 include 'score-lib'
 include 'test-lib'
 
