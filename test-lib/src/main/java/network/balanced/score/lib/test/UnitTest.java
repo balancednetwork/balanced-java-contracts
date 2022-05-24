@@ -98,6 +98,31 @@ public class UnitTest extends TestBase {
         assertEquals(parameterToSet, contractUnderTest.call(getterMethod));
     }
 
+    public static <T> void testOwnerControlMethods(Score contractUnderTest, String setterMethod,
+                                                   String getterMethod, T parameterToSet) {
+        Account nonOwner = sm.createAccount();
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + nonOwner.getAddress() + "Owner=" + contractUnderTest.getOwner().getAddress();
+        Executable notOwnerCall = () -> contractUnderTest.invoke(nonOwner, setterMethod, parameterToSet);
+        expectErrorMessage(notOwnerCall, expectedErrorMessage);
+
+        contractUnderTest.invoke(contractUnderTest.getOwner(), setterMethod, parameterToSet);
+        assertEquals(parameterToSet, contractUnderTest.call(getterMethod));
+    }
+
+    public static void testIsContract(Account caller, Score contractUnderTest, String setterMethod,
+                                      Address parameterToSet, String getterMethod) {
+        Account nonContractAddress = sm.createAccount();
+        String expectedErrorMessage = "Address Check: Address provided is an EOA address. A contract address is " +
+                "required.";
+        Executable nonContractParameter = () -> contractUnderTest.invoke(caller, setterMethod,
+                nonContractAddress.getAddress());
+        expectErrorMessage(nonContractParameter, expectedErrorMessage);
+
+        contractUnderTest.invoke(contractUnderTest.getOwner(), setterMethod, parameterToSet);
+        assertEquals(parameterToSet, contractUnderTest.call(getterMethod));
+    }
+
     public static byte[] tokenData(String method, Map<String, Object> params) {
         Map<String, Object> map = new HashMap<>();
         map.put("method", method);

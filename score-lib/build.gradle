@@ -32,8 +32,7 @@ dependencies {
     compileOnly Dependencies.javaeeApi
     implementation Dependencies.javaeeScorex
     implementation Dependencies.minimalJson
-    
-    compileOnly Dependencies.javaeeScorex
+
     compileOnly Dependencies.javaeeScoreClient
     annotationProcessor Dependencies.javaeeScoreClient
 
