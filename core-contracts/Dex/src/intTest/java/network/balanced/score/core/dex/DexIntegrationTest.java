@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 public class DexIntegrationTest {
     static Wallet ownerWallet = KeyWallet.load(new Bytes("0x2dfe2c49672a84eab72ce6419f71e8e8e9f9c1ca8ce8284ab677aa957f819f7f"));
     static Wallet testOwnerWallet = KeyWallet.load(new Bytes("fc4e5330eed9a4a4ed4d940d49dd4fa6f3daaf5e9a9a2c3406827312b7195467"));
-    static String scoreAddress = "cx3e4b3a2b34d17b92e45bf644fc58c5d0c2034a3b";
+    static String scoreAddress = null;//"cx3e4b3a2b34d17b92e45bf644fc58c5d0c2034a3b";
     static String governScoreAddress = "cxcbb8e2d96bc93e2897d7414949652caa36996c5f";
     static String stakingScoreAddress = "cx2359675be5505c05f53a33d14ba1d8567a70334a";
     static String sIcxScoreAddress = "cx724b2c91d909d72519c1d2130fd766830613ae31";
@@ -45,7 +45,7 @@ public class DexIntegrationTest {
     static {
         try {
             if(scoreAddress==null) {
-                userWallet = ScoreIntegrationTest.createWalletWithBalance(BigInteger.valueOf(1000).multiply(EXA));
+                userWallet = ScoreIntegrationTest.createWalletWithBalance(BigInteger.valueOf(500).multiply(EXA));
             }
             if(scoreAddress!=null){
                 dexScoreClient = new DefaultScoreClient(chain.getEndpointURL(), chain.networkId, ownerWallet, DefaultScoreClient.address(scoreAddress));
@@ -116,6 +116,12 @@ public class DexIntegrationTest {
     @ScoreClient
     static UserDexTest userDexTestBaseScoreClient = new UserDexTestScoreClient(dexTestBaseUserScoreClient);
 
+    @ScoreClient
+    static OwnerDexTest ownerDexTestScoreClient = new OwnerDexTestScoreClient(dexTestScoreClient);
+
+    @ScoreClient
+    static OwnerDexTest ownerDexTestBaseScoreClient = new OwnerDexTestScoreClient(dexTestBaseScoreClient);
+
 
     @Test
     void testGovernanceAddress(){
@@ -131,27 +137,22 @@ public class DexIntegrationTest {
     }
 
     @Test
-    void testCreateICXPool(){
-        byte[] data = "test".getBytes();
-        byte[] sicxData = "{\"method\":\"_deposit\",\"params\":{\"none\":\"none\"}}".getBytes();
-        ((UserStakeScoreClient) userStakeScoreClient).stakeICX(BigInteger.valueOf(100).multiply(EXA), userAddress, data);
-        userSicxScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(50).multiply(EXA), sicxData);
-        assertEquals(BigInteger.valueOf(50).multiply(EXA), dexReadOnlyScoreClient.getDeposit(sIcxScoreClient._address(), userAddress));
-        assertEquals(SICXICX_MARKET_NAME, dexReadOnlyScoreClient.getPoolName(BigInteger.ONE));
-        assertEquals(BigInteger.ONE, dexReadOnlyScoreClient.lookupPid(SICXICX_MARKET_NAME));
-    }
-
-    @Test
-    void testCreateTestTokenSIcxPool(){
+    void testDex(){
         byte[] data = "test".getBytes();
         byte[] tokenDeposit = "{\"method\":\"_deposit\",\"params\":{\"none\":\"none\"}}".getBytes();
-        //stake icx to get sicx
-        ((UserStakeScoreClient) userStakeScoreClient).stakeICX(BigInteger.valueOf(200).multiply(EXA), userAddress, data);
-        //deposit sicx
-        userSicxScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(50).multiply(EXA), tokenDeposit);
+        ((UserStakeScoreClient) userStakeScoreClient).stakeICX(BigInteger.valueOf(100).multiply(EXA), userAddress, data);
+        userSicxScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(30).multiply(EXA), tokenDeposit);
+        assertEquals(BigInteger.valueOf(30).multiply(EXA), dexReadOnlyScoreClient.getDeposit(sIcxScoreClient._address(), userAddress));
+        assertEquals(SICXICX_MARKET_NAME, dexReadOnlyScoreClient.getPoolName(BigInteger.ONE));
+        assertEquals(BigInteger.ONE, dexReadOnlyScoreClient.lookupPid(SICXICX_MARKET_NAME));
 
+        //stake icx to get sicx
+        ownerDexTestScoreClient.mintTo(userAddress, BigInteger.valueOf(1000).multiply(EXA));
+       /* //deposit sicx
+        userSicxScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(30).multiply(EXA), tokenDeposit);
+*/
         //deposit test token
-        userDexTestScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(50).multiply(EXA), tokenDeposit);
+        userDexTestScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(30).multiply(EXA), tokenDeposit);
 
         //check isQuoteCoinAllowed for test token if not added
         if(!dexReadOnlyScoreClient.isQuoteCoinAllowed(Address.fromString(dexTestScoreAddress))) {
@@ -159,20 +160,20 @@ public class DexIntegrationTest {
         }
 
         //add the pool of test token and sicx
-        dexUserScoreClient.add(Address.fromString(sIcxScoreAddress), Address.fromString(dexTestScoreAddress), BigInteger.valueOf(50).multiply(EXA), BigInteger.valueOf(50).multiply(EXA), true);
+        dexUserScoreClient.add(sIcxScoreClient._address(), Address.fromString(dexTestScoreAddress), BigInteger.valueOf(30).multiply(EXA), BigInteger.valueOf(30).multiply(EXA), true);
 
         //test values
-        assertEquals(BigInteger.TWO, dexReadOnlyScoreClient.getPoolId(Address.fromString(sIcxScoreAddress), Address.fromString(dexTestScoreAddress)));
-        assertEquals(BigInteger.valueOf(50).multiply(EXA), dexReadOnlyScoreClient.totalSupply(BigInteger.TWO));
-        assertEquals(Address.fromString(sIcxScoreAddress), dexReadOnlyScoreClient.getPoolBase(BigInteger.TWO));
+        assertEquals(BigInteger.TWO, dexReadOnlyScoreClient.getPoolId(sIcxScoreClient._address(), Address.fromString(dexTestScoreAddress)));
+        assertEquals(BigInteger.valueOf(30).multiply(EXA), dexReadOnlyScoreClient.totalSupply(BigInteger.TWO));
+        assertEquals(sIcxScoreClient._address(), dexReadOnlyScoreClient.getPoolBase(BigInteger.TWO));
         assertEquals(Address.fromString(dexTestScoreAddress), dexReadOnlyScoreClient.getPoolQuote(BigInteger.TWO));
         Map<String, Object> poolStats = dexReadOnlyScoreClient.getPoolStats(BigInteger.TWO);
         assertNull(poolStats.get("name"));
-        assertEquals(poolStats.get("base_token").toString(), sIcxScoreAddress);
+        assertEquals(poolStats.get("base_token").toString(), sIcxScoreClient._address().toString());
         assertEquals(poolStats.get("quote_token").toString(), dexTestScoreAddress);
-        assertEquals(hexToBigInteger(poolStats.get("base").toString()), BigInteger.valueOf(50).multiply(EXA));
-        assertEquals(hexToBigInteger(poolStats.get("quote").toString()), BigInteger.valueOf(50).multiply(EXA));
-        assertEquals(hexToBigInteger(poolStats.get("total_supply").toString()), BigInteger.valueOf(50).multiply(EXA));
+        assertEquals(hexToBigInteger(poolStats.get("base").toString()), BigInteger.valueOf(30).multiply(EXA));
+        assertEquals(hexToBigInteger(poolStats.get("quote").toString()), BigInteger.valueOf(30).multiply(EXA));
+        assertEquals(hexToBigInteger(poolStats.get("total_supply").toString()), BigInteger.valueOf(30).multiply(EXA));
         assertEquals(hexToBigInteger(poolStats.get("price").toString()), BigInteger.ONE.multiply(EXA));
         assertEquals(hexToBigInteger(poolStats.get("base_decimals").toString()), BigInteger.valueOf(18));
         assertEquals(hexToBigInteger(poolStats.get("quote_decimals").toString()), BigInteger.valueOf(18));
@@ -182,16 +183,15 @@ public class DexIntegrationTest {
         governanceDexScoreClient.setMarketName(BigInteger.TWO, "DTT/SIcx");
         Map<String, Object> updatedPoolStats = dexReadOnlyScoreClient.getPoolStats(BigInteger.TWO);
         assertEquals(updatedPoolStats.get("name").toString(), "DTT/SIcx");
-    }
 
-    @Test
-    void testMultipleAdd(){
-        byte[] tokenDeposit = "{\"method\":\"_deposit\",\"params\":{\"none\":\"none\"}}".getBytes();
+        //testMultipleAdd
+        ownerDexTestScoreClient.mintTo(userAddress, BigInteger.valueOf(1000).multiply(EXA));
+        ownerDexTestBaseScoreClient.mintTo(userAddress, BigInteger.valueOf(1000).multiply(EXA));
+
         //deposit sicx
-        userDexTestBaseScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(300).multiply(EXA), tokenDeposit);
-
+        userDexTestBaseScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(100).multiply(EXA), tokenDeposit);
         //deposit test token
-        userDexTestScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(300).multiply(EXA), tokenDeposit);
+        userDexTestScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(100).multiply(EXA), tokenDeposit);
 
         //check isQuoteCoinAllowed for test token if not added
         if(!dexReadOnlyScoreClient.isQuoteCoinAllowed(Address.fromString(dexTestScoreAddress))) {
@@ -204,9 +204,9 @@ public class DexIntegrationTest {
         //add the pool of test token and sicx
         dexUserScoreClient.add(Address.fromString(dexTestBaseScoreAddress), Address.fromString(dexTestScoreAddress), BigInteger.valueOf(50).multiply(EXA), BigInteger.valueOf(50).multiply(EXA), true);
         BigInteger poolId = dexReadOnlyScoreClient.getPoolId(Address.fromString(dexTestBaseScoreAddress), Address.fromString(dexTestScoreAddress));
-        Map<String, Object> poolStats = dexReadOnlyScoreClient.getPoolStats(poolId);
+        poolStats = dexReadOnlyScoreClient.getPoolStats(poolId);
         assertNull(poolStats.get("name"));
-        assertEquals(poolStats.get("base_token").toString(), sIcxScoreAddress);
+        assertEquals(poolStats.get("base_token").toString(), dexTestBaseScoreAddress);
         assertEquals(poolStats.get("quote_token").toString(), dexTestScoreAddress);
         assertEquals(hexToBigInteger(poolStats.get("base").toString()), BigInteger.valueOf(50).multiply(EXA));
         assertEquals(hexToBigInteger(poolStats.get("quote").toString()), BigInteger.valueOf(50).multiply(EXA));
@@ -216,6 +216,43 @@ public class DexIntegrationTest {
         assertEquals(hexToBigInteger(poolStats.get("quote_decimals").toString()), BigInteger.valueOf(18));
         assertEquals(hexToBigInteger(poolStats.get("min_quote").toString()), BigInteger.ZERO);
 
+        //deposit sicx
+        userDexTestBaseScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(100).multiply(EXA), tokenDeposit);
+        //deposit test token
+        userDexTestScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(100).multiply(EXA), tokenDeposit);
+
+        dexUserScoreClient.add(Address.fromString(dexTestBaseScoreAddress), Address.fromString(dexTestScoreAddress), BigInteger.valueOf(80).multiply(EXA), BigInteger.valueOf(60).multiply(EXA), true);
+        poolId = dexReadOnlyScoreClient.getPoolId(Address.fromString(dexTestBaseScoreAddress), Address.fromString(dexTestScoreAddress));
+        poolStats = dexReadOnlyScoreClient.getPoolStats(poolId);
+        assertNull(poolStats.get("name"));
+        assertEquals(poolStats.get("base_token").toString(), dexTestBaseScoreAddress);
+        assertEquals(poolStats.get("quote_token").toString(), dexTestScoreAddress);
+        //assertEquals(hexToBigInteger(poolStats.get("base").toString()), BigInteger.valueOf(130).multiply(EXA));
+        //assertEquals(hexToBigInteger(poolStats.get("quote").toString()), BigInteger.valueOf(130).multiply(EXA));
+        //assertEquals(hexToBigInteger(poolStats.get("total_supply").toString()), BigInteger.valueOf(50).multiply(EXA));
+        //assertEquals(hexToBigInteger(poolStats.get("price").toString()), BigInteger.ONE.multiply(EXA));
+        assertEquals(hexToBigInteger(poolStats.get("base_decimals").toString()), BigInteger.valueOf(18));
+        assertEquals(hexToBigInteger(poolStats.get("quote_decimals").toString()), BigInteger.valueOf(18));
+        assertEquals(hexToBigInteger(poolStats.get("min_quote").toString()), BigInteger.ZERO);
+
+        /*BigInteger continuousRewardsDay = dexReadOnlyScoreClient.getContinuousRewardsDay();
+        governanceDexScoreClient.setContinuousRewardsDay(continuousRewardsDay.add(BigInteger.ONE));
+*/
+        byte[] swapIcx = "{\"method\":\"_swap_icx\",\"params\":{\"none\":\"none\"}}".getBytes();
+        try {
+            userSicxScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(30).multiply(EXA), swapIcx);
+        } catch (Exception e){
+            assertEquals(e.getMessage(), "Balanced DEX Rewards distribution in progress, please try again shortly");
+        }
+        dexUserScoreClient.cancelSicxicxOrder();
+        userSicxScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(30).multiply(EXA), tokenDeposit);
+
+        String swapString = "{\"method\":\"_swap\",\"params\":{\"toToken\":\""+dexTestBaseScoreAddress+"\"}}";
+        userDexTestScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(100).multiply(EXA), swapString.getBytes());
+
+        dexUserScoreClient.withdrawSicxEarnings(BigInteger.valueOf(5));
+
+        dexUserScoreClient.remove(BigInteger.valueOf(3), BigInteger.valueOf(5), true);
 
 
     }
