@@ -35,6 +35,7 @@ dependencies {
     compileOnly Dependencies.javaeeScoreClient
     annotationProcessor Dependencies.javaeeScoreClient
     implementation Dependencies.iconSdk
+    implementation Dependencies.minimalJson
 
     testImplementation Dependencies.javaeeUnitTest
     testImplementation Dependencies.junitJupiter

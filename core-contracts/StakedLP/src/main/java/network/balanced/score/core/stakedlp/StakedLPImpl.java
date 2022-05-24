@@ -179,19 +179,6 @@ public class StakedLPImpl implements StakedLP {
         onlyDex();
         Context.require(_value.signum() > 0, "StakedLP: Token value should be a positive number");
         this.stake(_from, _id, _value);
-
-        // String unpackedData = new String(_data);
-        // Context.require(!unpackedData.equals(""), "StakedLP: Data can't be empty");
-
-        // JsonObject json = Json.parse(unpackedData).asObject();
-        // String method = json.get("method").asString();
-        // JsonObject params = json.get("params").asObject();
-
-        // if ("stake".equals(method)) {
-        //     this.stake(_from, _id, _value);
-        // } else {
-        //     Context.revert("StakedLP: No valid method called");
-        // }
     }
 
     private void stake(Address user, BigInteger id, BigInteger value) {

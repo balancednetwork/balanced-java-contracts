@@ -82,6 +82,9 @@ public class RewardsTestBase extends UnitTest {
         rewardsScore.invoke(admin, "setDaofund", daoFund.getAddress());
         rewardsScore.invoke(admin, "setReserve", reserve.getAddress());
 
+        rewardsScore.invoke(owner, "addDataProvider", loans.getAddress());
+        rewardsScore.invoke(owner, "addDataProvider", dex.getAddress());
+
         setupDistributions();
         
         syncDistributions();

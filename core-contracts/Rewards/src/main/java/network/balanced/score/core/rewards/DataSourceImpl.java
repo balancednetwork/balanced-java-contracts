@@ -18,6 +18,7 @@ package network.balanced.score.core.rewards;
 
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.U_SECONDS_DAY;
+import static network.balanced.score.core.rewards.utils.Check.continuousRewardsActive;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -134,7 +135,7 @@ public class DataSourceImpl {
         BigInteger currentUserWeight = getUserWeight(user.toString());
         BigInteger lastUpdateTimestamp = getLastUpdateTimeUs();
     
-        if (RewardsImpl.getDay().compareTo(RewardsImpl.continuousRewardsDay.get()) < 0) {
+        if (!continuousRewardsActive() && RewardsImpl.continuousRewardsDay.get() != null) {
             lastUpdateTimestamp = RewardsImpl.continuousRewardsDay.get().multiply(U_SECONDS_DAY);
         }
         
@@ -168,7 +169,7 @@ public class DataSourceImpl {
                 accruedRewards = accruedRewards.divide(EXA);
             }
 
-            if (RewardsImpl.continuousRewardsDay.get().compareTo(RewardsImpl.getDay()) > 0) {
+            if (!continuousRewardsActive()) {
                 return BigInteger.ZERO;
             }
         
@@ -206,7 +207,7 @@ public class DataSourceImpl {
         BigInteger day = getDay();
         String name = getName();
 
-        Object precomputeDoneObj = Context.call(getContractAddress(), "precompute", day.intValue(), batchSize);// datasource.precompute(day.intValue(), batchSize);
+        Object precomputeDoneObj = RewardsImpl.call(getContractAddress(), "precompute", day.intValue(), batchSize);
 
         boolean precomputeDone;
         try {
@@ -214,6 +215,7 @@ public class DataSourceImpl {
         } catch (Exception e) {
             precomputeDone = !((BigInteger)precomputeDoneObj).equals(BigInteger.ZERO);
         }
+
 
         if (!getPrecomp() && precomputeDone) {
             precomp.at(dbKey).set(true);
@@ -227,7 +229,7 @@ public class DataSourceImpl {
         }
 
         int offset = this.getOffset();
-        Map<String, BigInteger> dataBatch = (Map<String, BigInteger>) Context.call(getContractAddress(), "getDataBatch", name, day.intValue(), batchSize, offset);
+        Map<String, BigInteger> dataBatch = (Map<String, BigInteger>) RewardsImpl.call(getContractAddress(), "getDataBatch", name, day.intValue(), batchSize, offset);
         this.offset.at(dbKey).set(offset + batchSize);
         if (dataBatch.isEmpty()) {
             this.day.at(dbKey).set(day.add(BigInteger.ONE));
@@ -293,7 +295,7 @@ public class DataSourceImpl {
         BigInteger originalTotalWeight = previousRunningTotal;
         BigInteger lastUpdateTimestamp = getLastUpdateTimeUs();
         BigInteger originalLastUpdateTimestamp = lastUpdateTimestamp;
-        if (RewardsImpl.getDay().compareTo(RewardsImpl.continuousRewardsDay.get()) < 0){
+        if (!continuousRewardsActive() && RewardsImpl.continuousRewardsDay.get() != null) {
             lastUpdateTimestamp = RewardsImpl.continuousRewardsDay.get().multiply(U_SECONDS_DAY);
             lastUpdateTimeUs.at(dbKey).set(lastUpdateTimestamp);
         }
@@ -325,7 +327,7 @@ public class DataSourceImpl {
         }
         
         if (newTotal.compareTo(originalTotalWeight) != -1) {
-            if (RewardsImpl.continuousRewardsDay.get().compareTo(RewardsImpl.getDay()) > 0) {
+            if (!continuousRewardsActive()) {
                 return originalTotalWeight;
             }
 

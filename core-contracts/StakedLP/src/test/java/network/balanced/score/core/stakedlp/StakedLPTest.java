@@ -139,8 +139,8 @@ public class StakedLPTest extends UnitTest {
         assertEquals(Boolean.FALSE, stakedLpScore.call("isSupportedPool", poolId));
     }
 
-    private void stakeLpTokens(Account from, BigInteger poolId, BigInteger value, byte[] data) {
-        stakedLpScore.invoke(dex.account, "onIRC31Received",  from.getAddress(), from.getAddress(), poolId, value, data);
+    private void stakeLpTokens(Account from, BigInteger poolId, BigInteger value) {
+        stakedLpScore.invoke(dex.account, "onIRC31Received",  from.getAddress(), from.getAddress(), poolId, value, new byte[0]);
     }
 
     @Test
@@ -153,27 +153,13 @@ public class StakedLPTest extends UnitTest {
         when(dex.mock.balanceOf(eq(alice.getAddress()), Mockito.any(BigInteger.class))).thenReturn(initalLpTokenBalance);
         when(dex.mock.balanceOf(eq(bob.getAddress()), Mockito.any(BigInteger.class))).thenReturn(initalLpTokenBalance);
 
-        byte[] stakeLpData = tokenData("stake", Map.of());
-
         // Stake Zero tokens
-        Executable zeroStakeValue = () -> stakeLpTokens(alice, BigInteger.ONE, BigInteger.ZERO, stakeLpData);
+        Executable zeroStakeValue = () -> stakeLpTokens(alice, BigInteger.ONE, BigInteger.ZERO);
         String expectedErrorMessage = "StakedLP: Token value should be a positive number";
         expectErrorMessage(zeroStakeValue, expectedErrorMessage);
 
-        // Stake without any data
-        Executable emptyDataStake = () -> stakeLpTokens(alice, BigInteger.ONE, BigInteger.TEN, new byte[0]);
-        expectedErrorMessage = "StakedLP: Data can't be empty";
-        expectErrorMessage(emptyDataStake, expectedErrorMessage);
-
-        // Stake with wrong method name in data
-        byte[] unsupportedMethod = tokenData("hello", Map.of());
-        Executable unsupportedMethodName = () -> stakeLpTokens(alice, BigInteger.ONE, BigInteger.TEN,
-                unsupportedMethod);
-        expectedErrorMessage = "Reverted(0): StakedLP: No valid method called";
-        expectErrorMessage(unsupportedMethodName, expectedErrorMessage);
-
         // Stake for unsupported pool
-        Executable unsupportedPoolStake = () -> stakeLpTokens(alice, BigInteger.valueOf(3), BigInteger.TEN, stakeLpData);
+        Executable unsupportedPoolStake = () -> stakeLpTokens(alice, BigInteger.valueOf(3), BigInteger.TEN);
         expectedErrorMessage = "StakedLP: Pool with " + BigInteger.valueOf(3) + " is not supported";
         expectErrorMessage(unsupportedPoolStake, expectedErrorMessage);
 
@@ -183,17 +169,17 @@ public class StakedLPTest extends UnitTest {
 
         // Pool 1 related tests
         // Stake 10 LP tokens from alice account
-        stakeLpTokens(alice, BigInteger.ONE, BigInteger.TEN, stakeLpData);
+        stakeLpTokens(alice, BigInteger.ONE, BigInteger.TEN);
         assertEquals(BigInteger.TEN, stakedLpScore.call("balanceOf", alice.getAddress(), BigInteger.ONE));
         assertEquals(BigInteger.TEN, stakedLpScore.call("totalStaked", BigInteger.ONE));
 
         // Stake 100 more LP tokens from alice account
-        stakeLpTokens(alice, BigInteger.ONE, BigInteger.valueOf(100L), stakeLpData);
+        stakeLpTokens(alice, BigInteger.ONE, BigInteger.valueOf(100L));
         assertEquals(BigInteger.valueOf(110L), stakedLpScore.call("balanceOf", alice.getAddress(), BigInteger.ONE));
         assertEquals(BigInteger.valueOf(110L), stakedLpScore.call("totalStaked", BigInteger.ONE));
 
         // Stake 20 LP tokens from bob account
-        stakeLpTokens(bob, BigInteger.ONE, BigInteger.valueOf(20L), stakeLpData);
+        stakeLpTokens(bob, BigInteger.ONE, BigInteger.valueOf(20L));
         assertEquals(BigInteger.valueOf(20L), stakedLpScore.call("balanceOf", bob.getAddress(), BigInteger.ONE));
         assertEquals(BigInteger.valueOf(130L), stakedLpScore.call("totalStaked", BigInteger.ONE));
 
@@ -204,18 +190,16 @@ public class StakedLPTest extends UnitTest {
         assertEquals(Boolean.FALSE, stakedLpScore.call("isSupportedPool", BigInteger.TWO));
 
         // Stake 20 LP tokens from alice and bob account
-        stakeLpTokens(alice, BigInteger.TWO, BigInteger.valueOf(20L), stakeLpData);
+        stakeLpTokens(alice, BigInteger.TWO, BigInteger.valueOf(20L));
         assertEquals(BigInteger.valueOf(20L), stakedLpScore.call("totalStaked", BigInteger.TWO));
 
-        stakeLpTokens(bob, BigInteger.TWO, BigInteger.valueOf(20L), stakeLpData);
+        stakeLpTokens(bob, BigInteger.TWO, BigInteger.valueOf(20L));
         verify(rewards.mock).updateRewardsData((String) poolTwoName,
                 BigInteger.valueOf(20L), bob.getAddress(), BigInteger.ZERO);
         assertEquals(BigInteger.valueOf(40L), stakedLpScore.call("totalStaked", BigInteger.TWO));
         assertEquals(BigInteger.valueOf(20L), stakedLpScore.call("balanceOf", alice.getAddress(), BigInteger.TWO));
         assertEquals(BigInteger.valueOf(20L), stakedLpScore.call("balanceOf", bob.getAddress(), BigInteger.TWO));
         assertEquals(Boolean.TRUE, stakedLpScore.call("isSupportedPool", BigInteger.TWO));
-
-        
     }
 
     @Test

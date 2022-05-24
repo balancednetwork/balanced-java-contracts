@@ -56,6 +56,9 @@ project(':Router').projectDir = file("core-contracts/Router")
 include(':DAOfund')
 project(':DAOfund').projectDir = file("core-contracts/DAOfund")
 
+include(':Dividends')
+project(':Dividends').projectDir = file("core-contracts/Dividends")
+
 include(':BalancedDollar')
 project(':BalancedDollar').projectDir = file("token-contracts/BalancedDollar")
 
@@ -80,6 +83,6 @@ project(':DexMock').projectDir = file("mock-contracts/DexMock")
 include(':RebalanceMock')
 project(':RebalanceMock').projectDir = file("mock-contracts/RebalanceMock")
 
-
+include 'Systemtest'
 include 'score-lib'
 include 'test-lib'

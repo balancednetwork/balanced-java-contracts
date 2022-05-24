@@ -39,8 +39,7 @@ dependencies {
     testImplementation project(':test-lib')
     testImplementation 'org.mockito:mockito-inline:2.13.0'
 
-    intTestImplementation project(':score-client')
-    intTestImplementation Dependencies.minimalJson
+    intTestImplementation Dependencies.javaeeScoreClient
     intTestAnnotationProcessor Dependencies.javaeeScoreClient
     intTestImplementation Dependencies.iconSdk
     intTestImplementation Dependencies.jacksonDatabind
@@ -113,10 +112,6 @@ task integrationTest(type: Test) {
 
         systemProperty "python", new File(project(':test-lib').projectDir, 'python-contracts/rewards.zip')
         systemProperty "java", optimizedJar.outputJarName        
-
-        systemProperty "dexPython", new File(project(':test-lib').projectDir, 'python-contracts/dex.zip')
-        systemProperty "loansPython", new File(project(':test-lib').projectDir, 'python-contracts/loans.zip')
-        
     }
 
 }

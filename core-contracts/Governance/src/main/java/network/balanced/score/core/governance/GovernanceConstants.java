@@ -52,7 +52,7 @@ public class GovernanceConstants extends Constants {
             "reserve", "sicx", "bnUSD", "baln", "bwt", "router", "feehandler", "stakedLp"};
 
     public static Map<String, List<String>> ADDRESSES = Map.ofEntries(
-        entry("loans", List.of("rewards", "dividends", "staking", "reserve", "dex")),
+        entry("loans", List.of("rewards", "dividends", "staking", "reserve", "dex", "rebalancing")),
         entry("dex", List.of("rewards", "dividends", "staking", "sicx", "bnUSD", "baln", "feehandler", "stakedLp")),
         entry("rewards", List.of("reserve", "baln", "bwt", "daofund", "stakedLp")),
         entry("dividends", List.of("loans", "daofund", "dex", "baln")),
@@ -91,40 +91,40 @@ public class GovernanceConstants extends Constants {
         entry("bnUSD", "setBnusd"),
         entry("baln", "setBaln"),
         entry("bwt", "setBwt"),
-        entry("rebalancing", "setRebalancing"),
+        entry("rebalancing", "setRebalance"),
         entry("router", "setRouter"),
         entry("feehandler", "setFeehandler"),
         entry("stakedLp", "setStakedLp")
     );
-// #-------------------------------------------------------------------------------
-// # REWARDS LAUNCH CONFIG
-// #-------------------------------------------------------------------------------
+    // #-------------------------------------------------------------------------------
+    // # REWARDS LAUNCH CONFIG
+    // #-------------------------------------------------------------------------------
 
     public static Map<String, String>[] DATA_SOURCES = (Map<String, String>[]) new Map[] {
         Map.of("name", "Loans", "address", "loans"),
         Map.of("name", "sICX/ICX", "address", "dex")
     };
 
-public static DistributionPercentage createDistributionPercentage(String name, BigInteger percentage) {
-    DistributionPercentage recipient = new DistributionPercentage();
-    recipient.recipient_name = name;
-    recipient.dist_percent = percentage;
-    return recipient;
-}
+    public static DistributionPercentage createDistributionPercentage(String name, BigInteger percentage) {
+        DistributionPercentage recipient = new DistributionPercentage();
+        recipient.recipient_name = name;
+        recipient.dist_percent = percentage;
+        return recipient;
+    }
 
-// # First day rewards recipients split
-public static DistributionPercentage[] RECIPIENTS = new DistributionPercentage[] {
-        createDistributionPercentage("Loans",  BigInteger.valueOf(25).multiply(pow(BigInteger.TEN,16))),
-        createDistributionPercentage("sICX/ICX",  BigInteger.TEN.multiply(pow(BigInteger.TEN,16))),
-        createDistributionPercentage("Worker Tokens",  BigInteger.valueOf(20).multiply(pow(BigInteger.TEN,16))),
-        createDistributionPercentage("Reserve Fund",  BigInteger.valueOf(5).multiply(pow(BigInteger.TEN,16))),
-        createDistributionPercentage("DAOfund",  BigInteger.valueOf(40).multiply(pow(BigInteger.TEN,16)))
+    // # First day rewards recipients split
+    public static DistributionPercentage[] RECIPIENTS = new DistributionPercentage[] {
+            createDistributionPercentage("Loans",  BigInteger.valueOf(25).multiply(pow(BigInteger.TEN,16))),
+            createDistributionPercentage("sICX/ICX",  BigInteger.TEN.multiply(pow(BigInteger.TEN,16))),
+            createDistributionPercentage("Worker Tokens",  BigInteger.valueOf(20).multiply(pow(BigInteger.TEN,16))),
+            createDistributionPercentage("Reserve Fund",  BigInteger.valueOf(5).multiply(pow(BigInteger.TEN,16))),
+            createDistributionPercentage("DAOfund",  BigInteger.valueOf(40).multiply(pow(BigInteger.TEN,16)))
     };
 
 
-// #-------------------------------------------------------------------------------
-// # LOANS LAUNCH CONFIG
-// #-------------------------------------------------------------------------------
+    // #-------------------------------------------------------------------------------
+    // # LOANS LAUNCH CONFIG
+    // #-------------------------------------------------------------------------------
     public static Map<String, Object>[] ASSETS =  (Map<String, Object>[]) new Map[] {
         Map.of("address", "sicx", "active", true, "collateral", true),
         Map.of("address", "bnUSD", "active", true, "collateral", false),

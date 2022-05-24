@@ -23,8 +23,10 @@ import foundation.icon.score.client.DefaultScoreClient;
 import foundation.icon.score.client.ScoreClient;
 import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.structs.BalancedAddresses;
+import score.Address;
 
 import java.math.BigInteger;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -67,8 +69,7 @@ public class Balanced {
         setupAddresses();
         setupContracts();
         // delegate(adminWallet);
-        ownerClient = new BalancedClient(this, owner);
-        ownerClient.governance.createBnusdMarket(BigInteger.valueOf(210).multiply(BigInteger.TEN.pow(18)));
+        setupMarkets();
     }
     
     protected void deployPrep() {
@@ -159,6 +160,20 @@ public class Balanced {
         ownerClient.daofund.addAddressToSetdb();
 
         ownerClient.bnUSD.setMinter2(stability._address());
+        ownerClient.governance.enable_fee_handler();
+    }
+
+    public void setupMarkets() {
+        ownerClient.governance.createBnusdMarket(BigInteger.valueOf(400000).multiply(BigInteger.TEN.pow(18)));
+        increaseDay(2);
+        syncDistributions();
+
+        BigInteger balnBalance = ownerClient.rewards.getBalnHolding(governance._address());
+        BigInteger initalPoolDepths = balnBalance.divide(BigInteger.TWO);
+        ownerClient.governance.createBalnMarket(initalPoolDepths, initalPoolDepths);
+        ownerClient.staking.stakeICX(initalPoolDepths.multiply(BigInteger.TWO), null, null);
+        ownerClient.sicx.transfer(governance._address(), initalPoolDepths, null);
+        ownerClient.governance.createBalnSicxMarket(initalPoolDepths, initalPoolDepths);
     }
 
     public BalancedClient newClient(BigInteger clientBalanace) throws Exception {
@@ -173,18 +188,21 @@ public class Balanced {
         Consumer<TransactionResult> distributeConsumer = result -> {};
         while (!checkDistributionsDone()) {
             ownerClient.rewards.distribute(distributeConsumer);
+            ownerClient.dividends.distribute(distributeConsumer);
         }
     }
     
     public boolean checkDistributionsDone() {
         BigInteger day = ownerClient.governance.getDay();
         Map<String, Object> status = ownerClient.rewards.distStatus();
+        System.out.println("platform_day: " + hexObjectToInt(status.get("platform_day")).intValue() + " < " + day.intValue());
         if (hexObjectToInt(status.get("platform_day")).intValue() < day.intValue()) {
             return false;
         }
 
         Map<String, String> dataSourceStatus = (Map<String, String>) status.get("source_days");
         for (String sourceDay : dataSourceStatus.values()) {
+            System.out.println("sourceDay: " + hexObjectToInt(sourceDay).intValue() + " < " + day.intValue());
             if (hexObjectToInt(sourceDay).intValue() < day.intValue()) {
                 return false;
             }

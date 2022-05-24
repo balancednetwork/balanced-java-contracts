@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package network.balanced.score.core.dex;
 
 
@@ -24,6 +40,7 @@ import static network.balanced.score.core.dex.Const.*;
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.core.dex.Check.*;
 import static network.balanced.score.lib.utils.Math.pow;
+import static network.balanced.score.lib.utils.Math.convertToNumber;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -158,7 +175,7 @@ public class DexImpl {
     }
 
     public DexImpl(@Optional Address _governance) {
-        if (governance.getOrDefault(null) == null) {
+        if (governance.get() == null) {
             governance.set(_governance);
 
             // Set Default Fee Rates
@@ -172,7 +189,6 @@ public class DexImpl {
             namedMarkets.set(SICXICX_MARKET_NAME, SICXICX_POOL_ID);
             marketsToNames.set(SICXICX_POOL_ID, SICXICX_MARKET_NAME);
         }
-        continuousRewardsDay.set(BigInteger.valueOf(10000000));
     }
 
     @External(readonly = true)
@@ -387,7 +403,7 @@ public class DexImpl {
         boolean stakedLpLaunched = stakedlp.get() != null;
         boolean restrictedPoolId = (id.compareTo(FIRST_NON_BALANCED_POOL) < 0 || id.equals(USDS_BNUSD_ID) || id.equals(IUSDT_BNUSD_ID));
 
-        return restrictedPoolId && !stakedLpLaunched;
+        return (restrictedPoolId && !stakedLpLaunched) || id.equals(SICXICX_POOL_ID);
     }
 
     private Boolean isReentrantTx() {
@@ -480,7 +496,7 @@ public class DexImpl {
         BigInteger sendPrice = (EXA.multiply(value)).divide(sendAmount);
 
         // Send the trader their funds
-        Context.call(toToken, "transfer", Context.getAddress(), sendAmount, null);
+        Context.call(toToken, "transfer", receiver, sendAmount, null);
 
         // Send the platform fees to the feehandler SCORE
         Context.call(fromToken, "transfer", feehandler.get(), balnFees, null);
@@ -794,6 +810,7 @@ public class DexImpl {
 
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
+
         // Take new day snapshot and check distributions as necessary
         this.takeNewDaySnapshot();
         this.checkDistributions();
@@ -801,6 +818,7 @@ public class DexImpl {
         // Parse the transaction data submitted by the user
         String unpackedData = new String(_data);
         Context.require(!unpackedData.equals(""), "Token Fallback: Data can't be empty");
+
         JsonObject json = Json.parse(unpackedData).asObject();
 
         String method = json.get("method").asString();
@@ -813,7 +831,6 @@ public class DexImpl {
 
             BigInteger userBalance = deposit.at(fromToken).getOrDefault(_from, BigInteger.valueOf(0));
             userBalance = userBalance.add(_value);
-
             deposit.at(fromToken).set(_from, userBalance);
             Deposit(fromToken, _from, _value);
 
@@ -826,13 +843,13 @@ public class DexImpl {
             swapIcx(_from, _value);
 
         } else if (method.equals("_swap")) {
-            JsonObject params = json.get("params").asObject();
 
             // Parse the slippage sent by the user in minimumReceive.
             // If none is sent, use the maximum.
+            JsonObject params = json.get("params").asObject();
             BigInteger minimumReceive = BigInteger.ZERO;
             if (params.contains("minimumReceive")) {
-                minimumReceive = BigInteger.valueOf(params.get("minimumReceive").asInt());
+                minimumReceive = convertToNumber(params.get("minimumReceive"));
                 Context.require(
                         minimumReceive.signum() >= 0,
                         TAG + "Must specify a positive number for minimum to receive"
@@ -881,12 +898,14 @@ public class DexImpl {
         BigInteger toBalance = balance.at(id).getOrDefault(to, BigInteger.ZERO);
         balance.at(id).set(from, fromBalance.subtract(value));
         balance.at(id).set(to, toBalance.add(value));
+        if (!to.equals(stakedlp.get()) && !from.equals(stakedlp.get())) {
+            if (value.compareTo(BigInteger.ZERO) > 0) {
+                activeAddresses.get(id).add(to);
+            }
 
-        if (value.compareTo(BigInteger.ZERO) > 0) {
-            activeAddresses.get(id).add(to);
-        }
-        if (balance.at(id).getOrDefault(from, BigInteger.ZERO).compareTo(BigInteger.ZERO) == 0) {
-            activeAddresses.get(id).remove(from);
+            if (balance.at(id).getOrDefault(from, BigInteger.ZERO).compareTo(BigInteger.ZERO) == 0) {
+                activeAddresses.get(id).remove(from);
+            }
         }
         TransferSingle(from, from, to, id, value);
 
@@ -958,6 +977,7 @@ public class DexImpl {
         if (_id.equals(SICXICX_POOL_ID)) {
             return icxQueueTotal.getOrDefault(BigInteger.ZERO);
         }
+
         return total.getOrDefault(_id, BigInteger.ZERO);
     }
 
@@ -971,11 +991,6 @@ public class DexImpl {
             return icxQueue.getNode(orderId).getSize();
         } else {
             BigInteger balance = this.balance.at(_id).getOrDefault(_owner, BigInteger.ZERO);
-            if (getDay().compareTo(continuousRewardsDay.get()) < 0) { 
-                BigInteger stakedBalance = (BigInteger) Context.call(stakedlp.get(), "balanceOf", _owner, _id);
-                balance = balance.add(stakedBalance);
-            }
-            
             return balance;
         }
     }
@@ -1157,11 +1172,11 @@ public class DexImpl {
             Context.revert(TAG + ": Snapshot id is equal to or greater then Zero.");
         }
         BigInteger low = BigInteger.ZERO;
-        BigInteger high = accountBalanceSnapshot.at(_id).at(_account).at("length").get(BigInteger.ZERO);
+        BigInteger high = accountBalanceSnapshot.at(_id).at(_account).at("length").getOrDefault(BigInteger.ZERO, BigInteger.ZERO);
 
         while (low.compareTo(high) < 0) {
             BigInteger mid = (low.add(high)).divide(BigInteger.TWO);
-            if (accountBalanceSnapshot.at(_id).at(_account).at("ids").get(mid).compareTo(_snapshot_id) > 0) {
+            if (accountBalanceSnapshot.at(_id).at(_account).at("ids").getOrDefault(mid, BigInteger.ZERO).compareTo(_snapshot_id) > 0) {
                 high = mid;
             } else {
                 low = mid.add(BigInteger.ONE);
@@ -1169,15 +1184,15 @@ public class DexImpl {
 
         }
 
-        if (accountBalanceSnapshot.at(_id).at(_account).at("ids").get(BigInteger.ZERO).equals(_snapshot_id)) {
-            return accountBalanceSnapshot.at(_id).at(_account).at("values").get(BigInteger.ZERO);
+        if (accountBalanceSnapshot.at(_id).at(_account).at("ids").getOrDefault(BigInteger.ZERO, BigInteger.ZERO).equals(_snapshot_id)) {
+            return accountBalanceSnapshot.at(_id).at(_account).at("values").getOrDefault(BigInteger.ZERO, BigInteger.ZERO);
         } else if (low.equals(BigInteger.ZERO)) {
             return BigInteger.ZERO;
         }
 
         matchedIndex = low.subtract(BigInteger.ONE);
 
-        return accountBalanceSnapshot.at(_id).at(_account).at("values").get(matchedIndex);
+        return accountBalanceSnapshot.at(_id).at(_account).at("values").getOrDefault(matchedIndex, BigInteger.ZERO);
     }
 
     @External(readonly = true)
@@ -1187,24 +1202,24 @@ public class DexImpl {
             Context.revert("Snapshot id is equal to or greater then Zero");
         }
         BigInteger low = BigInteger.ZERO;
-        BigInteger high = totalSupplySnapshot.at(_id).at("length").get(BigInteger.ZERO);
+        BigInteger high = totalSupplySnapshot.at(_id).at("length").getOrDefault(BigInteger.ZERO, BigInteger.ZERO);
         while (low.compareTo(high) < 0) {
             BigInteger mid = (low.add(high)).divide(BigInteger.TWO);
-            if (totalSupplySnapshot.at(_id).at("ids").get(mid).compareTo(_snapshot_id) > 0) {
+            if (totalSupplySnapshot.at(_id).at("ids").getOrDefault(mid, BigInteger.ZERO).compareTo(_snapshot_id) > 0) {
                 high = mid;
             } else {
                 low = mid.add(BigInteger.ONE);
             }
         }
-        if (totalSupplySnapshot.at(_id).at("ids").get(BigInteger.ZERO).equals(_snapshot_id)) {
-            return totalSupplySnapshot.at(_id).at("values").get(BigInteger.ZERO);
+        if (totalSupplySnapshot.at(_id).at("ids").getOrDefault(BigInteger.ZERO, BigInteger.ZERO).equals(_snapshot_id)) {
+            return totalSupplySnapshot.at(_id).at("values").getOrDefault(BigInteger.ZERO, BigInteger.ZERO);
         } else if (low.equals(BigInteger.ZERO)) {
             return BigInteger.ZERO;
         }
 
         matchedIndex = low.subtract(BigInteger.ONE);
 
-        return totalSupplySnapshot.at(_id).at("values").get(matchedIndex);
+        return totalSupplySnapshot.at(_id).at("values").getOrDefault(matchedIndex, BigInteger.ZERO);
     }
 
     @External(readonly = true)
@@ -1214,24 +1229,24 @@ public class DexImpl {
             Context.revert("Snapshot id is equal to or greater then Zero");
         }
         BigInteger low = BigInteger.ZERO;
-        BigInteger high = balnSnapshot.at(_id).at("length").get(BigInteger.ZERO);
+        BigInteger high = balnSnapshot.at(_id).at("length").getOrDefault(BigInteger.ZERO, BigInteger.ZERO);
         while (low.compareTo(high) < 0) {
             BigInteger mid = (low.add(high)).divide(BigInteger.TWO);
-            if (balnSnapshot.at(_id).at("ids").get(mid).compareTo(_snapshot_id) > 0) {
+            if (balnSnapshot.at(_id).at("ids").getOrDefault(mid, BigInteger.ZERO).compareTo(_snapshot_id) > 0) {
                 high = mid;
             } else {
                 low = mid.add(BigInteger.ONE);
             }
         }
-        if (balnSnapshot.at(_id).at("ids").get(BigInteger.ZERO).equals(_snapshot_id)) {
-            return balnSnapshot.at(_id).at("values").get(BigInteger.ZERO);
+        if (balnSnapshot.at(_id).at("ids").getOrDefault(BigInteger.ZERO, BigInteger.ZERO).equals(_snapshot_id)) {
+            return balnSnapshot.at(_id).at("values").getOrDefault(BigInteger.ZERO, BigInteger.ZERO);
         } else if (low.equals(BigInteger.ZERO)) {
             return BigInteger.ZERO;
         }
 
         matchedIndex = low.subtract(BigInteger.ONE);
 
-        return balnSnapshot.at(_id).at("values").get(matchedIndex);
+        return balnSnapshot.at(_id).at("values").getOrDefault(matchedIndex, BigInteger.ZERO);
     }
 
     @External(readonly = true)
@@ -1253,12 +1268,17 @@ public class DexImpl {
         Context.require(_id.compareTo(BigInteger.ZERO) >= 0, TAG + ":  Pool id is equal to or greater then Zero.");
         Context.require(_offset.compareTo(BigInteger.ZERO) >= 0, TAG + ":  Offset is equal to or greater then Zero.");
         Map<String, Object> snapshotData = new HashMap<>();
-
         for (Address addr : activeAddresses.get(_id).range(_offset, _offset.add(_limit))) {
             BigInteger snapshotBalance = balanceOf(addr, _id);
+            if (stakedlp.get() != null) {
+                BigInteger stakedBalance = (BigInteger) Context.call(stakedlp.get(), "balanceOf", addr, _id);
+                snapshotBalance = snapshotBalance.add(stakedBalance);
+            }
+
             if (!snapshotBalance.equals(BigInteger.ZERO)) {
                 snapshotData.put(addr.toString(), snapshotBalance);
             }
+
         }
         return snapshotData;
     }

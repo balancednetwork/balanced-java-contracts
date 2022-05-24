@@ -42,6 +42,6 @@ public interface DataSource {
     @External
     BigInteger getBalnPrice();
 
-    @External
+    @External(readonly = true)
     Map<String, BigInteger> getBalanceAndSupply(String _name, Address _owner);
 }

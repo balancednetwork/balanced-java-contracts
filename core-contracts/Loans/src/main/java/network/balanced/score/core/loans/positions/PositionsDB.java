@@ -1,54 +1,83 @@
+/*
+ * Copyright (c) 2022-2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package network.balanced.score.core.loans.positions;
 
-import score.Context;
-import score.VarDB;
-import score.DictDB;
+import network.balanced.score.core.loans.LoansImpl;
+import network.balanced.score.core.loans.LoansVariables;
+import network.balanced.score.core.loans.asset.Asset;
+import network.balanced.score.core.loans.asset.AssetDB;
+import network.balanced.score.core.loans.linkedlist.LinkedListDB;
+import network.balanced.score.core.loans.snapshot.Snapshot;
+import network.balanced.score.core.loans.snapshot.SnapshotDB;
+import network.balanced.score.core.loans.utils.IdFactory;
+import network.balanced.score.core.loans.utils.Token;
 import score.Address;
+import score.Context;
+import score.DictDB;
+import score.VarDB;
 
 import java.math.BigInteger;
 import java.util.Map;
 
-import network.balanced.score.core.loans.utils.*;
+import static network.balanced.score.core.loans.LoansVariables.snapBatchSize;
+import static network.balanced.score.core.loans.positions.Position.TAG;
+import static network.balanced.score.core.loans.utils.Checks.isBeforeContinuousRewardDay;
 import static network.balanced.score.core.loans.utils.LoansConstants.*;
-import network.balanced.score.core.loans.LoansImpl;
-import network.balanced.score.core.loans.linkedlist.*;
-import network.balanced.score.core.loans.snapshot.*;
-import network.balanced.score.core.loans.asset.*;
 
 public class PositionsDB {
-    public static final String POSITION_DB_PREFIX  = "position";
-    public static final String IDFACTORY = "idfactory";
-    public static final String ADDRESSID = "addressid";
-    public static final String NONZERO = "nonzero";
-    public static final String NEXT_NODE = "next_node";
+    private static final String POSITION_DB_PREFIX = "position";
 
-    public static final IdFactory idFactory = new IdFactory(IDFACTORY);
-    public static final DictDB<Address, Integer> addressIds = Context.newDictDB(ADDRESSID, Integer.class);
-    public static final VarDB<Integer> nextPositionNode = Context.newVarDB(NEXT_NODE, Integer.class);
+    private static final String ID_FACTORY = "idfactory";
+    private static final String ADDRESS_ID = "addressid";
+    private static final String NONZERO = "nonzero";
+    private static final String NEXT_NODE = "next_node";
 
-    // private static HashMap<Integer, Position> items = new HashMap<Integer, Position>(10);
+    private static final IdFactory idFactory = new IdFactory(ID_FACTORY);
+    private static final DictDB<Address, Integer> addressIds = Context.newDictDB(ADDRESS_ID, Integer.class);
+    private static final VarDB<Integer> nextPositionNode = Context.newVarDB(NEXT_NODE, Integer.class);
 
-    public static Position get(int id) {
-        Context.require(id != 0,  "That is not a valid key.");
-        if (id < 0) {
-            id = idFactory.getLastUid() + id + 1;
-        }
-    
-        // if (!items.containsKey(id)) {
-        //     Context.require(id <=  idFactory.getLastUid(),  "That is not a valid key.");
-        //     items.put(id, new Position(POSITION_DB_PREFIX + "|" + id));
-        // }
-
-        // return items.get(id);
-        return new Position(POSITION_DB_PREFIX + "|" + id);
+    public static Integer getAddressIds(Address _owner) {
+        return addressIds.getOrDefault(_owner, 0);
     }
 
-    public static Boolean hasPosition(Address address) {
-        return addressIds.getOrDefault(address, null) != null;
+    public static Position get(Integer id) {
+        int lastUid = idFactory.getLastUid();
+        if (id < 0) {
+            id = lastUid + id + 1;
+        }
+        Context.require(id >= 1, TAG + ": That is not a valid key.");
+        Context.require(id <= lastUid, TAG + ": That key does not exist yet.");
+        return new Position(POSITION_DB_PREFIX + "|" + id);
     }
 
     public static int size() {
         return idFactory.getLastUid();
+    }
+
+    public static Boolean hasPosition(Address address) {
+        return getAddressIds(address) != 0;
+    }
+
+    public static Map<String, Object> listPosition(Address _owner) {
+        int id = getAddressIds(_owner);
+        if (id == 0) {
+            return Map.of("message", "That address has no outstanding loans or deposited collateral.");
+        }
+        return get(id).toMap(-1);
     }
 
     public static LinkedListDB getNonZero() {
@@ -56,7 +85,7 @@ public class PositionsDB {
     }
 
     public static void addNonZero(int id) {
-        Snapshot currentSnapshot = SnapshotDB.get(BigInteger.valueOf(-1));
+        Snapshot currentSnapshot = SnapshotDB.get(-1);
         LinkedListDB addToNonZero = currentSnapshot.getAddNonzero();
         LinkedListDB removeFromNonZero = currentSnapshot.getRemoveNonzero();
         if (removeFromNonZero.contains(id)) {
@@ -67,7 +96,7 @@ public class PositionsDB {
     }
 
     public static void removeNonZero(int id) {
-        Snapshot currentSnapshot = SnapshotDB.get(BigInteger.valueOf(-1));
+        Snapshot currentSnapshot = SnapshotDB.get(-1);
         LinkedListDB addToNonZero = currentSnapshot.getAddNonzero();
         LinkedListDB removeFromNonZero = currentSnapshot.getRemoveNonzero();
         if (addToNonZero.contains(id)) {
@@ -77,66 +106,72 @@ public class PositionsDB {
         }
     }
 
-    public static Position getPosition(Address address) {
-        int id = addressIds.getOrDefault(address, 0);
+    public static Position getPosition(Address owner) {
+        int id = getAddressIds(owner);
         if (id == 0) {
-            return newPosition(address);
+            return newPosition(owner);
         }
         return get(id);
     }
 
-    public static Map<String, Object> listPosition(Address address) {
-        int id = addressIds.getOrDefault(address, 0);
-        if (id == 0) {
-            return Map.of("message", "That address has no outstanding loans or deposited collateral.");
-        }
-        return get(id).toMap(BigInteger.valueOf(-1));
-    }
-
-    private static Position newPosition(Address address) {
+    private static Position newPosition(Address owner) {
+        Context.require(getAddressIds(owner) == 0, TAG + ": A position already exists for that address");
         int id = idFactory.getUid();
-        addressIds.set(address, id);
-        Position position = get(id);
+        addressIds.set(owner, id);
+        Position newPosition = get(id);
         BigInteger snapshotIndex = LoansImpl._getDay();
-        position.snaps.add(snapshotIndex);
-        position.id.set(id);
-        position.created.set(BigInteger.valueOf(Context.getBlockTimestamp()));
-        position.address.set(address);
+        newPosition.addSnaps(snapshotIndex.intValue());
+        newPosition.setId(id);
+        newPosition.setCreated(BigInteger.valueOf(Context.getBlockTimestamp()));
+        newPosition.setAddress(owner);
 
-        Boolean checkDay = snapshotIndex.compareTo(LoansImpl.continuousRewardDay.get()) < 0;
-
-        if (checkDay) {
-            position.assets.at(snapshotIndex).set("sICX", BigInteger.ZERO);
+        if (isBeforeContinuousRewardDay(snapshotIndex)) {
+            newPosition.setAssets(snapshotIndex.intValue(), SICX_SYMBOL, BigInteger.ZERO);
         } else {
-            position.collateral.set("sICX", BigInteger.ZERO);
-            position.dataMigrationStatus.set("sICX", true);
+            newPosition.setCollateralPosition(SICX_SYMBOL, BigInteger.ZERO);
+            newPosition.setDataMigrationStatus(SICX_SYMBOL, true);
         }
-
-        // items.put(id, position);
-        return position;
+        return newPosition;
     }
 
+    /**
+     * Captures necessary data for the current snapshot in the SnapshotDB, issues a snapshot eventlog, and starts a
+     * new snapshot.
+     */
     public static void takeSnapshot() {
-        Snapshot snapshot = SnapshotDB.get(BigInteger.valueOf(-1));
-        for (int i = 0; i < AssetDB.assetSymbols.size(); i++) {
+        Snapshot snapshot = SnapshotDB.get(-1);
+
+        int assetSymbolsCount = AssetDB.assetSymbols.size();
+        for (int i = 0; i < assetSymbolsCount; i++) {
             String symbol = AssetDB.assetSymbols.get(i);
-            Asset asset = AssetDB.get(symbol);
+            Asset asset = AssetDB.getAsset(symbol);
+
+            Address assetAddress = asset.getAssetAddress();
+            Token assetContract = new Token(assetAddress);
+
             if (asset.isActive()) {
-                snapshot.prices.set(symbol, asset.priceInLoop());
+                snapshot.setPrices(symbol, assetContract.priceInLoop());
             }
         }
 
-        snapshot.time.set(BigInteger.valueOf(Context.getBlockTimestamp()));
-        if (LoansImpl._getDay() != LoansImpl.continuousRewardDay.get()) {
+        snapshot.setSnapshotTime(BigInteger.valueOf(Context.getBlockTimestamp()));
+        if (isBeforeContinuousRewardDay()) {
             SnapshotDB.startNewSnapshot();
         }
     }
 
+    /**
+     * Iterates once over all positions to calculate their ratios at the end of the snapshot period.
+     *
+     * @param day Operating day of the snapshot as passed from rewards via the precompute method
+     * @param batchSize Number of positions to bring up to date
+     * @return True if complete
+     */
     public static Boolean calculateSnapshot(BigInteger day, int batchSize) {
-        Context.require(day.compareTo(LoansImpl.continuousRewardDay.get()) < 0, continuousRewardsErrorMessage);
-        Snapshot snapshot = SnapshotDB.get(day);
-        BigInteger snapshotId = snapshot.day.get();
-        if (snapshotId.compareTo(day) < 0) {
+        Context.require(isBeforeContinuousRewardDay(day), continuousRewardsErrorMessage);
+        Snapshot snapshot = SnapshotDB.get(day.intValue());
+        int snapshotId = snapshot.getDay();
+        if (snapshotId < day.intValue()) {
             return true;
         }
         
@@ -150,7 +185,7 @@ public class PositionsDB {
         int nonZeroDeltas = add + remove;
         LinkedListDB nonZero = getNonZero();
         if (nonZeroDeltas > 0) {
-            int iterations = LoansImpl.snapBatchSize.get();
+            int iterations = snapBatchSize.get();
             int loops = Math.min(iterations, remove);
             
             if (remove > 0) {
@@ -179,49 +214,47 @@ public class PositionsDB {
             return false;
         }
 
-        int index = snapshot.preComputeIndex.getOrDefault(0);
+        int index = snapshot.getPreComputeIndex();
         int totalNonZero = nonZero.size();
         nextNode = nextPositionNode.getOrDefault(0);
         if (nextNode == 0) {
             nextNode = nonZero.getHeadId();
         }
 
-        int remaning = totalNonZero - index;
+        int remaining = totalNonZero - index;
         BigInteger batchMiningDebt = BigInteger.ZERO;
-        int loops = Math.min(remaning, batchSize);
+        int loops = Math.min(remaining, batchSize);
 
         for (int i = 0; i < loops; i++) {
             int accountId = nextNode;
             Position position = get(accountId);
-            if (snapshotId.compareTo(position.snaps.get(0)) >= 0) {
+            if (snapshotId >= position.getSnaps(0)) {
                 Standings standing = position.updateStanding(snapshotId);
-                if (!position.dataMigrationStatus.getOrDefault("bnUSD", false)) {
-                    BigInteger previousTotalDebt = LoansImpl.totalDebts.getOrDefault("bnUSD", BigInteger.ZERO);
-                    BigInteger debtAmount = position.assets.at(snapshotId).getOrDefault("bnUSD", BigInteger.ZERO);
-                    LoansImpl.totalDebts.set("bnUSD", previousTotalDebt.add(debtAmount));
+                if (!position.getDataMigrationStatus(BNUSD_SYMBOL)) {
+                    BigInteger previousTotalDebt = LoansVariables.totalDebts.getOrDefault(BNUSD_SYMBOL, BigInteger.ZERO);
+                    BigInteger debtAmount = position.getAssets(position.getSnapshotId(day.intValue()), BNUSD_SYMBOL);
+                    LoansVariables.totalDebts.set(BNUSD_SYMBOL, previousTotalDebt.add(debtAmount));
+                    position.setLoansPosition(SICX_SYMBOL, BNUSD_SYMBOL, debtAmount);
+                    position.setDataMigrationStatus(BNUSD_SYMBOL, true);
                 }
 
                 if (standing == Standings.MINING) {
-                    snapshot.mining.add(accountId);
-                    batchMiningDebt = batchMiningDebt.add(snapshot.positionStates.at(accountId).get("total_debt"));
+                    snapshot.addMining(accountId);
+                    batchMiningDebt = batchMiningDebt.add(snapshot.getPositionStates(accountId, "total_debt"));
                 }
             }
             index++;
             if (accountId == nonZero.getTailId()) {
                 nextNode = 0;
             } else {
-                nextNode = nonZero.next(nextNode);
+                nextNode = nonZero.getNextId(nextNode);
             }
         }
 
-        snapshot.totalMiningDebt.set(snapshot.totalMiningDebt.getOrDefault(BigInteger.ZERO).add(batchMiningDebt));
-        snapshot.preComputeIndex.set(index);
+        snapshot.setTotalMiningDebt(snapshot.getTotalMiningDebt().add(batchMiningDebt));
+        snapshot.setPreComputeIndex(index);
         nextPositionNode.set(nextNode);
 
-        if (totalNonZero == index) {
-            return true;
-        }
-
-        return false;
+        return totalNonZero == index;
     }
 }

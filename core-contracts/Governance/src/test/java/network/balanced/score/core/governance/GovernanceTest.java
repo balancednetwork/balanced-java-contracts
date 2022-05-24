@@ -90,7 +90,6 @@ public class GovernanceTest extends GovernanceTestBase {
         verify(loans.mock).setContinuousRewardsDay(day);
         verify(dex.mock).setContinuousRewardsDay(day);
         verify(rewards.mock).setContinuousRewardsDay(day);
-        verify(dividends.mock).setContinuousRewardsDay(day);
     }
 
     @Test
@@ -180,7 +179,7 @@ public class GovernanceTest extends GovernanceTestBase {
         governance.invoke(owner, "setLoansRebalance", _address);
 
         // Assert
-        verify(loans.mock).setRebalancing(_address);
+        verify(loans.mock).setRebalance(_address);
     }
 
     @Test
@@ -564,7 +563,6 @@ public class GovernanceTest extends GovernanceTestBase {
 
         // Assert
         verify(baln.mock).setBnusd(_address);
-        
     }
 
     @Test

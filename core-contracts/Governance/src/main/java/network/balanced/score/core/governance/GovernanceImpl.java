@@ -108,6 +108,7 @@ public class GovernanceImpl {
         Context.call(Addresses.get("loans"), "setTimeOffset",  offset);
         Context.call(Addresses.get("rewards"), "setTimeOffset",  offset);
         Context.call(Addresses.get("dex"), "setTimeOffset",  offset);
+        Context.call(Addresses.get("dividends"), "setTimeOffset",  offset);
     }
 
     @External(readonly = true)
@@ -121,7 +122,12 @@ public class GovernanceImpl {
         Context.call(Addresses.get("loans"), "setContinuousRewardsDay",  _day);
         Context.call(Addresses.get("rewards"), "setContinuousRewardsDay",  _day);
         Context.call(Addresses.get("dex"), "setContinuousRewardsDay",  _day);
-        // Context.call(Addresses.get("dividends"), "setContinuousRewardsDay",  _day);
+    }
+
+    @External
+    public void setDividendsOnlyToStakedBalnDay(BigInteger _day) {
+        onlyOwner();
+        Context.call(Addresses.get("dividends"), "setDividendsOnlyToStakedBalnDay",  _day);
     }
 
     @External
@@ -469,7 +475,7 @@ public class GovernanceImpl {
         launchDay.set(day);
         launchTime.set(BigInteger.valueOf(Context.getBlockTimestamp()));
 
-        BigInteger timeDelta = BigInteger.valueOf(Context.getBlockTimestamp()).subtract(timeOffset.getOrDefault(BigInteger.ZERO));
+        BigInteger timeDelta = BigInteger.valueOf(Context.getBlockTimestamp());
         setTimeOffset(timeDelta);
 
 
@@ -482,6 +488,7 @@ public class GovernanceImpl {
         balanceToggleStakingEnabled();
         Context.call(Addresses.get("loans"), "turnLoansOn");
         Context.call(Addresses.get("dex"), "turnDexOn");
+        enableDividends();
     }
 
     @External
@@ -499,7 +506,7 @@ public class GovernanceImpl {
         Address stakingAddress = Addresses.get("staking");
         Address rewardsAddress = Addresses.get("rewards");
         Address loansAddress = Addresses.get("loans");
-        
+
         BigInteger price = Context.call(BigInteger.class, bnUSDAddress, "priceInLoop");
         BigInteger amount = EXA.multiply(value).divide(price.multiply(BigInteger.valueOf(7)));
         Context.call(value.divide(BigInteger.valueOf(7)), stakingAddress, "stakeICX");
@@ -508,6 +515,7 @@ public class GovernanceImpl {
         BigInteger bnUSDValue = Context.call(BigInteger.class, bnUSDAddress, "balanceOf", Context.getAddress());
         BigInteger sICXValue = Context.call(BigInteger.class, sICXAddress, "balanceOf", Context.getAddress());
 
+        
         JsonObject depositData = Json.object();
         depositData.add("method", "_deposit");
         Context.call(bnUSDAddress, "transfer", dexAddress, bnUSDValue, depositData.toString().getBytes());
@@ -520,7 +528,6 @@ public class GovernanceImpl {
 
         Context.call(rewardsAddress, "addNewDataSource",  name, dexAddress);
         Context.call(stakedLpAddress, "addPool", pid);
-
         DistributionPercentage[] recipients = new DistributionPercentage[] {
             createDistributionPercentage("Loans",  BigInteger.valueOf(25).multiply(pow(BigInteger.TEN,16))),
             createDistributionPercentage("sICX/ICX",  BigInteger.TEN.multiply(pow(BigInteger.TEN,16))),
@@ -529,7 +536,7 @@ public class GovernanceImpl {
             createDistributionPercentage("DAOfund",  BigInteger.valueOf(225).multiply(pow(BigInteger.TEN,15))),
             createDistributionPercentage("sICX/bnUSD",  BigInteger.valueOf(175).multiply(pow(BigInteger.TEN,15)))
         };
-        
+
         Context.call(Addresses.get("rewards"), "updateBalTokenDistPercentage",  (Object) recipients);
     }
 
@@ -599,7 +606,7 @@ public class GovernanceImpl {
         Context.call(stakedLpAddress, "addPool", pid);
  
         DistributionPercentage[] recipients = new DistributionPercentage[] {
-            createDistributionPercentage("Loans",  BigInteger.valueOf(25).multiply(pow(BigInteger.TEN,16))),
+            createDistributionPercentage("Loans",  BigInteger.valueOf(20).multiply(pow(BigInteger.TEN,16))),
             createDistributionPercentage("sICX/ICX",  BigInteger.TEN.multiply(pow(BigInteger.TEN,16))),
             createDistributionPercentage("Worker Tokens",  BigInteger.valueOf(20).multiply(pow(BigInteger.TEN,16))),
             createDistributionPercentage("Reserve Fund",  BigInteger.valueOf(5).multiply(pow(BigInteger.TEN,16))),
@@ -637,8 +644,6 @@ public class GovernanceImpl {
     public void rebalancingSetLoans(Address _address) {
         onlyOwner();
         Context.call(rebalancing.get(), SETTERS.get("loans"), _address);
-
-        
     }
 
     @External
@@ -895,6 +900,24 @@ public class GovernanceImpl {
     }
 
     @External
+    public void setNewLoanMinimum(BigInteger _minimum) {
+        onlyOwner();
+        _setNewLoanMinimum(_minimum);
+    }
+
+    @External
+    public void setMinMiningDebt(BigInteger _value) {
+        onlyOwner();
+        _setMinMiningDebt(_value);
+    }
+
+    @External
+    public void setBatchSize(BigInteger _batch_size) {
+        onlyOwner();
+        _setBatchSize(_batch_size);
+    }
+
+    @External
     public void setMaxRetirePercent(BigInteger _value) {
         onlyOwner();
         _setMaxRetirePercent(_value);
@@ -1080,11 +1103,24 @@ public class GovernanceImpl {
         Context.call(Addresses.get("loans"), "setMaxRetirePercent",  _value);
     }
 
-
     public void _setRebalancingThreshold(BigInteger _value) {
         Context.call(rebalancing.get(), "setPriceDiffThreshold",  _value);
     }
 
+    public void _setNewLoanMinimum(BigInteger _minimum) {
+        Context.call(Addresses.get("loans"), "setNewLoanMinimum",  _minimum);
+    }
+
+
+    public void _setMinMiningDebt(BigInteger _minimum) {
+        Context.call(Addresses.get("loans"), "setMinMiningDebt",  _minimum);
+    }
+
+
+    public void _setBatchSize(BigInteger _batch_size) {
+        Context.call(Addresses.get("rewards"), "setBatchSize",  _batch_size);
+    }
+    
     public void _updateBalTokenDistPercentage(DistributionPercentage[] _recipient_list) {
         Context.call(Addresses.get("rewards"), "updateBalTokenDistPercentage", (Object) _recipient_list);
     }

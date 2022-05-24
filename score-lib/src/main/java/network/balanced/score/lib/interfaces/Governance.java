@@ -57,6 +57,9 @@ public interface Governance extends
     @External
     void setContinuousRewardsDay(BigInteger _day);
 
+    @External
+    void setDividendsOnlyToStakedBalnDay(BigInteger _day);
+
     @External(readonly = true)
     BigInteger getVoteDuration();
 

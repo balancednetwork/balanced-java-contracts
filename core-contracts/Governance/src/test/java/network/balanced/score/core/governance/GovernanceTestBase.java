@@ -102,6 +102,30 @@ public class GovernanceTestBase extends UnitTest {
         return distribution;
     }
 
+    protected JsonObject createParameter(String type, String value) {
+        JsonObject parameter = new JsonObject()
+            .add("type", type)
+            .add("value", value);
+
+        return parameter;
+    }
+
+    protected JsonObject createParameter(String type, BigInteger value) {
+        JsonObject parameter = new JsonObject()
+            .add("type", type)
+            .add("value", value.intValue());
+
+        return parameter;
+    }
+
+    protected JsonObject createParameter(String type, Boolean value) {
+        JsonObject parameter = new JsonObject()
+            .add("type", type)
+            .add("value", value);
+
+        return parameter;
+    }
+
     private void setupAddresses() {
         balancedAddresses.loans = loans.getAddress();
         balancedAddresses.dex = dex.getAddress();
