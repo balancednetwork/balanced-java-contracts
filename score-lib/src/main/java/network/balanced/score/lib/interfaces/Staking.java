@@ -25,8 +25,10 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.structs.PrepDelegations;
 
+@ScoreInterface
 public interface Staking {
 
     @External(readonly = true)

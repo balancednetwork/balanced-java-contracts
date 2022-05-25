@@ -17,6 +17,7 @@
 package network.balanced.score.core.loans.positions;
 
 import network.balanced.score.core.loans.LoansImpl;
+import network.balanced.score.core.loans.LoansVariables;
 import network.balanced.score.core.loans.asset.Asset;
 import network.balanced.score.core.loans.asset.AssetDB;
 import network.balanced.score.core.loans.snapshot.SnapshotDB;
@@ -30,7 +31,7 @@ import java.util.Map;
 
 import static java.util.Map.entry;
 import static network.balanced.score.core.loans.LoansVariables.*;
-import static network.balanced.score.core.loans.utils.Checks.isContinuousRewardsActivated;
+import static network.balanced.score.core.loans.utils.Checks.isBeforeContinuousRewardDay;
 import static network.balanced.score.core.loans.utils.LoansConstants.*;
 import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
 
@@ -128,7 +129,7 @@ public class Position {
         Context.require(arrayDbContains(AssetDB.assetSymbols, symbol), TAG + ": " + symbol + " is not a supported " +
                 "asset on Balanced.");
 
-        if (!isContinuousRewardsActivated() || !getDataMigrationStatus(symbol)) {
+        if (isBeforeContinuousRewardDay() || !getDataMigrationStatus(symbol)) {
             return getAssets(lastSnap(), symbol);
         }
 
@@ -143,20 +144,34 @@ public class Position {
     }
 
     public void setAssetPosition(String symbol, BigInteger value) {
-        if (!isContinuousRewardsActivated()) {
+        BigInteger previousDebt = BigInteger.ZERO;
+        if (isBeforeContinuousRewardDay()) {
             BigInteger day = checkSnap();
             setAssets(day.intValue(), symbol, value);
-        } else {
-            if (symbol.equals(SICX_SYMBOL)) {
-                setCollateralPosition(SICX_SYMBOL, value);
-            } else {
-                setLoansPosition(SICX_SYMBOL, symbol, value);
-            }
+        }
+
+        if (!getDataMigrationStatus(symbol)) {
             setDataMigrationStatus(symbol, true);
+        } else {
+            previousDebt = getLoansPosition(SICX_SYMBOL, symbol);
+        }
+
+        if (symbol.equals(SICX_SYMBOL)) {
+            setCollateralPosition(SICX_SYMBOL, value);
+        } else {
+            setLoansPosition(SICX_SYMBOL, symbol, value);
         }
 
         if (arrayDbContains(AssetDB.activeAssets, symbol)) {
-            AssetDB.getAsset(symbol).getBorrowers().set(getId(), value);
+            BigInteger previousTotalDebt = LoansVariables.totalDebts.getOrDefault(symbol, BigInteger.ZERO);
+            BigInteger currentValue = BigInteger.ZERO;
+            if (value != null) {
+                currentValue = value;
+            }
+
+            BigInteger newTotalDebt = previousTotalDebt.add(currentValue).subtract(previousDebt);
+            LoansVariables.totalDebts.set(symbol, newTotalDebt);   
+            AssetDB.getAsset(symbol).getBorrowers().set(getId(), currentValue);
         }
     }
 
@@ -165,7 +180,7 @@ public class Position {
     }
 
     private BigInteger checkSnap() {
-        Context.require(!isContinuousRewardsActivated(), continuousRewardsErrorMessage);
+        Context.require(isBeforeContinuousRewardDay(), continuousRewardsErrorMessage);
         BigInteger day = LoansImpl._getDay();
         int lastDay = lastSnap();
         if (day.intValue() <= lastDay) {
@@ -217,7 +232,7 @@ public class Position {
 
 
     public boolean hasDebt(Integer day) {
-        if (!isContinuousRewardsActivated()) {
+        if (isBeforeContinuousRewardDay()) {
             int id = getSnapshotId(day);
             if (id == -1) {
                 return false;
@@ -261,7 +276,7 @@ public class Position {
     public BigInteger totalCollateral(Integer day) {
         BigInteger totalCollateral = BigInteger.ZERO;
 
-        if (!isContinuousRewardsActivated()) {
+        if (isBeforeContinuousRewardDay(day)) {
             int id = getSnapshotId(day);
             if (id == -1) {
                 return totalCollateral;
@@ -327,7 +342,7 @@ public class Position {
     public BigInteger totalDebt(Integer day, boolean readOnly) {
         BigInteger totalDebt = BigInteger.ZERO;
 
-        if (!isContinuousRewardsActivated()) {
+        if (isBeforeContinuousRewardDay(day)) {
             int id = getSnapshotId(day);
             if (id == -1) {
                 return totalDebt;
@@ -403,7 +418,7 @@ public class Position {
 
         standing.ratio = standing.collateral.multiply(EXA).divide(standing.totalDebt);
 
-        if (!isContinuousRewardsActivated()) {
+        if (isBeforeContinuousRewardDay(day)) {
             if (standing.ratio.compareTo(miningRatio.get().multiply(EXA).divide(POINTS)) > 0) {
                 BigInteger assetPrice;
                 if (day == -1 || day == LoansImpl._getDay().intValue()) {
@@ -437,7 +452,7 @@ public class Position {
     }
 
     public Standings updateStanding(Integer day) {
-        Context.require(!isContinuousRewardsActivated(), continuousRewardsErrorMessage);
+        Context.require(isBeforeContinuousRewardDay(day), continuousRewardsErrorMessage);
 
         DictDB<String, BigInteger> state = SnapshotDB.get(day).getAllPositionStates(getId());
         Standing standing = getStanding(day, false);
@@ -478,7 +493,7 @@ public class Position {
             }
         }
 
-        Standing standing = getStanding(index, true);
+        Standing standing = getStanding(day, true);
         return Map.ofEntries(
                 entry("pos_id", getId()),
                 entry("created", getCreated()),

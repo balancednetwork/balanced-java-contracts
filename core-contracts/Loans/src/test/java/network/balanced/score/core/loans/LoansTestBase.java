@@ -46,7 +46,7 @@ class LoansTestBase extends UnitTest {
     // 2 second blockTime gives 1 day 43200 block
     protected static final Long DAY = 43200L;
     protected static final Long WEEK = 7 * DAY;
-
+    protected static final String TAG = LoansImpl.TAG + ": ";
     protected static final ServiceManager sm = getServiceManager();
 
     protected final Account admin = sm.createAccount();
@@ -128,7 +128,7 @@ class LoansTestBase extends UnitTest {
                 sicx.invoke(staking.account, "mintTo", args[0], amount);
                 return null;
             }
-        }).when(staking.mock).stakeICX(Mockito.any(Address.class));
+        }).when(staking.mock).stakeICX(Mockito.any(Address.class), Mockito.any(byte[].class));
     }
 
     private void setupReserve() throws Exception {
@@ -213,8 +213,15 @@ class LoansTestBase extends UnitTest {
         assertEquals(removeFromNonzero, snap.get("remove_from_nonzero_count"));
         assertEquals(preComputeIndex, snap.get("precompute_index"));
         assertEquals(totalMiningDebt, snap.get("total_mining_debt"));
-        assertEquals(day, snap.get("snap_day"));
+        assertEquals(day.intValue(), snap.get("snap_day"));
         assertEquals(miningCount, snap.get("mining_count"));
+    }
+
+    protected void verifyTotalDebt(BigInteger expectedDebt) {
+        Map<String, BigInteger> balanceAndSupply = (Map<String, BigInteger>) loans.call("getBalanceAndSupply", "Loans", admin.getAddress());
+        BigInteger totalDebt = balanceAndSupply.get("_totalSupply");
+
+        assertEquals(expectedDebt, totalDebt);
     }
 
     protected void verifyStanding(Standings standing, Address address) {

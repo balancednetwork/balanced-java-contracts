@@ -92,7 +92,7 @@ public class AssetDB {
 
         assetAddresses.add(address);
 
-        Asset asset = new Asset(assetToAdd);
+        Asset asset = new Asset(ASSET_DB_PREFIX + "|" + assetToAdd);
         asset.setAsset(address, BigInteger.valueOf(Context.getBlockTimestamp()), active, collateral);
 
         Token assetContract = new Token(address);
