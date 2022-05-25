@@ -498,7 +498,7 @@ public class LoansImpl implements Loans {
                 "Balanced.");
         Context.require(asset.isActive(), TAG + ": " + _symbol + " is not an active, borrowable asset on Balanced.");
         Context.require(assetContract.balanceOf(from).compareTo(_value) >= 0, TAG + ": Insufficient balance.");
-        Context.require(badDebt.compareTo(_value) >= 0, TAG + ": No bad debt for " + _symbol);
+        Context.require(badDebt.compareTo(BigInteger.ZERO) > 0, TAG + ": No bad debt for " + _symbol);
 
         boolean newDay = checkForNewDay();
         BigInteger day = _getDay();

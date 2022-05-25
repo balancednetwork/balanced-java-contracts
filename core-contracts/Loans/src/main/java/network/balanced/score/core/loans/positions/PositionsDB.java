@@ -125,7 +125,7 @@ public class PositionsDB {
         newPosition.setCreated(BigInteger.valueOf(Context.getBlockTimestamp()));
         newPosition.setAddress(owner);
 
-        if (isBeforeContinuousRewardDay()) {
+        if (isBeforeContinuousRewardDay(snapshotIndex)) {
             newPosition.setAssets(snapshotIndex.intValue(), SICX_SYMBOL, BigInteger.ZERO);
         } else {
             newPosition.setCollateralPosition(SICX_SYMBOL, BigInteger.ZERO);
