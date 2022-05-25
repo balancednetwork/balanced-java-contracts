@@ -44,5 +44,11 @@ public interface Dex extends AdminAddress, BnusdAddress, DexAddress, GovernanceA
     @External
     void add(Address _baseToken, Address _quoteToken, BigInteger _baseValue, BigInteger _quoteValue,
                     @Optional boolean _withdraw_unused);
+
+    @External
+    public void setStakedLp(Address _address);
+
+    @External(readonly = true)
+    public Address getStakedLp();
 }
 

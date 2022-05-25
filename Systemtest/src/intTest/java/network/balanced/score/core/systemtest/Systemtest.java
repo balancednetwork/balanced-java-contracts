@@ -28,6 +28,7 @@ import com.eclipsesource.json.JsonObject;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Order;
 
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
@@ -70,176 +71,261 @@ class Systemtest implements ScoreIntegrationTest {
         owner.governance.setFeeProcessingInterval(BigInteger.ZERO);
     }
 
+
     @Test
-    void update() throws Exception {
-        //open diffrent kinds of postions
-        BalancedClient tester1 = balanced.newClient();
-        BalancedClient tester2 = balanced.newClient();
-        BalancedClient testerWithTooSmallLoan = balanced.newClient();
-        BigInteger tester1Loan = BigInteger.TEN.pow(21);
-        BigInteger tester2Loan = BigInteger.TEN.pow(21);
+    @Order(1)
+    void dividendsMigration() throws Exception {
+        BalancedClient stakingClient = balanced.newClient();
+        BalancedClient lpClient = balanced.newClient();
+        BalancedClient feeGenerator = balanced.newClient();
+        stakingClient.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);        
+        lpClient.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);
 
-        tester1.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", tester1Loan, null, null);        
-        tester2.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", tester2Loan, null, null);
-        testerWithTooSmallLoan.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(19), null, null);
-
-        // Do one distribtion
-        balanced.increaseDay(1);
-        balanced.syncDistributions();
+        nextDay();
         
-        //verify dao/reserve/bwt
-        verifyRewards(tester1);
-        stakeBaln(tester1);
+        verifyRewards(stakingClient);
+        stakeBaln(stakingClient);
 
-        // update Rewards contract
+        BigInteger lpClientRewards = verifyRewards(lpClient);
+        joinsICXBalnLP(lpClient, lpClientRewards, lpClientRewards);
+        
+        feeGenerator.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);
+        owner.governance.setDividendsOnlyToStakedBalnDay(owner.dividends.getSnapshotId().add(BigInteger.ONE));
+
+        nextDay();
+
+        verifyBnusdFees(stakingClient);
+        verifyBnusdFees(lpClient);
+        
+        feeGenerator.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);
+        
+        nextDay();
+        
+        verifyBnusdFees(stakingClient);
+        verifyNoBnusdFees(lpClient);
+    }
+
+    @Test
+    @Order(2)
+    void stabilityFundEffect_beforeContinuous() throws Exception {
+        //open diffrent kinds of postions
+        BalancedClient client = balanced.newClient();
+        BalancedClient stabilityClient = balanced.newClient();
+        client.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);
+        
+        nextDay();
+
+        BigInteger rewardsAmount = verifyRewards(client);
+        depositToStabilityContract(stabilityClient, BigInteger.TEN.pow(22));
+        
+        nextDay();
+
+        assertEquals(rewardsAmount, verifyRewards(client));
+    }
+
+    @Test
+    @Order(3)
+    void rewardsUpdate() throws Exception {
+        BalancedClient loansClient = balanced.newClient();
+        BalancedClient lpClient = balanced.newClient();
+        BalancedClient loansAndlpClient = balanced.newClient();
+        BigInteger loanAmount = BigInteger.TEN.pow(21);
+        
+        loansClient.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loanAmount, null, null);
+        loansAndlpClient.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loanAmount, null, null);
+        loansClient.bnUSD.transfer(lpClient.getAddress(), loanAmount, null);
+
+        joinsICXBnusdLP(lpClient, loanAmount, loanAmount);
+        joinsICXBnusdLP(loansAndlpClient, loanAmount, loanAmount);
+
+        nextDay();
+
+        // verify rewards can be claimed before or after update
+        verifyRewards(loansClient);
+        verifyRewards(lpClient);
+
+        updateRewards();
+
+        verifyNoRewards(loansClient);
+        verifyNoRewards(lpClient);
+        verifyRewards(loansAndlpClient);
+        BigInteger bwtBalancePreDist = owner.baln.balanceOf(balanced.bwt._address());
+        BigInteger daoFundBalancePreDist = owner.baln.balanceOf(balanced.daofund._address());
+        BigInteger reserveBalancePreDist = owner.baln.balanceOf(balanced.reserve._address());
+
+        // verify rewards still work
+        nextDay();
+
+        verifyRewards(loansClient);
+        verifyRewards(lpClient);
+        verifyRewards(loansAndlpClient);
+
+        BigInteger bwtBalancePostDist = owner.baln.balanceOf(balanced.bwt._address());
+        BigInteger daoFundBalancePostDist = owner.baln.balanceOf(balanced.daofund._address());
+        BigInteger reserveBalancePostDist = owner.baln.balanceOf(balanced.reserve._address());
+
+        assertTrue(bwtBalancePostDist.compareTo(bwtBalancePreDist) > 0);
+        assertTrue(daoFundBalancePostDist.compareTo(daoFundBalancePreDist) > 0);
+        assertTrue(reserveBalancePostDist.compareTo(reserveBalancePreDist) > 0);
+    }
+
+    @Test
+    @Order(4)
+    void updateLoansAndDex() throws Exception {
+        BalancedClient loansClient = balanced.newClient();
+        BalancedClient lpClient = balanced.newClient();
+        BalancedClient loansAndlpClient = balanced.newClient();
+        BigInteger loanAmount = BigInteger.TEN.pow(21);
+        
+        loansClient.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loanAmount, null, null);
+        loansAndlpClient.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loanAmount, null, null);
+        loansClient.bnUSD.transfer(lpClient.getAddress(), loanAmount, null);
+
+        joinsICXBnusdLP(lpClient, loanAmount, loanAmount);
+        joinsICXBnusdLP(loansAndlpClient, loanAmount, loanAmount);
+
+        nextDay();
+
+        verifyRewards(loansClient);
+        verifyRewards(lpClient);
+        verifyRewards(loansAndlpClient);
+
+        balanced.dex._update(dexJavaPath, Map.of("_governance", balanced.governance._address()));
+        balanced.loans._update(loansJavaPath, Map.of("_governance", balanced.governance._address()));
+        assertEquals(balanced.stakedLp._address().toString(), owner.dex.getStakedLp().toString());
+
+        nextDay();
+
+        verifyRewards(loansClient);
+        verifyRewards(lpClient);
+        verifyRewards(loansAndlpClient);
+    }
+
+    @Test
+    @Order(5)
+    void stakingLp() throws Exception {
+        BalancedClient loansClient = balanced.newClient();
+        BalancedClient stakedLPClient = balanced.newClient();
+        BalancedClient unstakedLPClient = balanced.newClient();
+        BigInteger lpAmount = BigInteger.TEN.pow(22);
+        
+        loansClient.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", lpAmount.multiply(BigInteger.TWO), null, null);
+        loansClient.bnUSD.transfer(stakedLPClient.getAddress(), lpAmount, null);
+        loansClient.bnUSD.transfer(unstakedLPClient.getAddress(), lpAmount, null);
+
+        joinsICXBnusdLP(stakedLPClient, lpAmount, lpAmount);
+        stakeICXBnusdLP(stakedLPClient);
+        joinsICXBnusdLP(unstakedLPClient, lpAmount, lpAmount);
+
+        nextDay();
+
+        verifyRewards(loansClient);
+        verifyRewards(unstakedLPClient);
+        verifyRewards(stakedLPClient);
+    }
+
+    @Test
+    @Order(6)
+    void migrateToContinuousRewards() throws Exception {
+        BigInteger daysToMigration = BigInteger.TWO;
+        owner.governance.setContinuousRewardsDay(owner.governance.getDay().add(daysToMigration));
+
+        BalancedClient loansClient = balanced.newClient();
+        BalancedClient stakedLPClient = balanced.newClient();
+        BalancedClient unstakedLPClient = balanced.newClient();
+        BalancedClient testerWithTooSmallLoan = balanced.newClient();
+        BigInteger lpAmount = BigInteger.TEN.pow(22);
+        BigInteger toSmallLoan = BigInteger.TEN.pow(19);
+        
+        loansClient.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", lpAmount.multiply(BigInteger.TWO), null, null);
+        testerWithTooSmallLoan.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", toSmallLoan, null, null);
+
+        loansClient.bnUSD.transfer(stakedLPClient.getAddress(), lpAmount, null);
+        loansClient.bnUSD.transfer(unstakedLPClient.getAddress(), lpAmount, null);
+
+        joinsICXBnusdLP(stakedLPClient, lpAmount, lpAmount);
+        stakeICXBnusdLP(stakedLPClient);
+        joinsICXBnusdLP(unstakedLPClient, lpAmount, lpAmount);
+
+        //migrate
+        nextDay();
+        
+        verifyNoRewards(testerWithTooSmallLoan);
+
+        nextDay();
+
+        verifyRewards(loansClient);
+        verifyRewards(stakedLPClient);
+        verifyRewards(unstakedLPClient);
+
+        Thread.sleep(100);
+
+        verifyRewards(loansClient);
+        verifyRewards(testerWithTooSmallLoan);
+        verifyRewards(stakedLPClient);
+        verifyNoRewards(unstakedLPClient);
+
+        stakeICXBnusdLP(unstakedLPClient);
+        Thread.sleep(100);
+        verifyRewards(unstakedLPClient);
+
+        closeLoansPostionAndVerifyNoRewards(loansClient);
+        verifyContractRewards();
+    }
+    
+    @Test
+    @Order(7)
+    void openNewPostionsAndVerifyRewards() throws Exception {
+        BalancedClient loanTaker = balanced.newClient();
+        BigInteger loan = BigInteger.TEN.pow(21).multiply(BigInteger.valueOf(2));
+        loanTaker.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loan, null, null);        
+
+        BalancedClient liquidityProvider = balanced.newClient();
+        BigInteger bnusdDeposit = BigInteger.TEN.pow(21);
+        BigInteger icxDeposit = BigInteger.TEN.pow(22);
+        loanTaker.bnUSD.transfer(liquidityProvider.getAddress(), bnusdDeposit, null); 
+        joinsICXBnusdLP(liquidityProvider, icxDeposit, bnusdDeposit);
+
+        Thread.sleep(100);
+        verifyRewards(loanTaker);
+        verifyNoRewards(liquidityProvider);
+
+        stakeICXBnusdLP(liquidityProvider);
+        Thread.sleep(100);
+        verifyRewards(liquidityProvider);
+    }
+
+    @Test
+    @Order(8)
+    void verifyStabilityContractHasNoEffectOnLoansRewards() throws Exception {
+        BalancedClient loanTaker = balanced.newClient();
+        BigInteger loan = BigInteger.TEN.pow(21).multiply(BigInteger.valueOf(2));
+        loanTaker.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loan, null, null);
+
+        BigInteger totalLoansSupplyPre = owner.loans.getBalanceAndSupply("Loans", owner.getAddress()).get("_totalSupply");
+
+        loanTaker.rewards.claimRewards();
+        Thread.sleep(100);
+        BigInteger rewards = verifyRewards(loanTaker);
+  
+        BigInteger totalBnusdSupply = owner.bnUSD.totalSupply();
+        depositToStabilityContract(owner, totalBnusdSupply);
+        loanTaker.rewards.claimRewards();
+        Thread.sleep(120);
+
+        //would be false if we used total supply
+        assertTrue(rewards.compareTo(verifyRewards(loanTaker)) < 0);
+
+        BigInteger totalLoansSupplyPost = owner.loans.getBalanceAndSupply("Loans", owner.getAddress()).get("_totalSupply");
+        assertEquals(totalLoansSupplyPre, totalLoansSupplyPost);
+    }
+
+
+    private void updateRewards() {
         balanced.rewards._update(rewardsJavaPath, Map.of("_governance", balanced.governance._address()));
         owner.rewards.addDataProvider(balanced.stakedLp._address());
         owner.rewards.addDataProvider(balanced.dex._address());
         owner.rewards.addDataProvider(balanced.loans._address());
-
-        // try reclaim after upgrade
-        verifyNoRewards(tester1);
-
-        // claim unclaimed
-        verifyRewards(tester2);        
-        verifyNoRewards(testerWithTooSmallLoan);
-
-        BalancedClient balnLpClient = balanced.newClient();
-        BigInteger balnLpAmount =  tester2.baln.balanceOf(tester2.getAddress());
-        tester2.baln.transfer(balnLpClient.getAddress(), balnLpAmount, null);
-        joinsICXBalnLP(balnLpClient, balnLpAmount, balnLpAmount);
-
-        //take loans and lp and verify rewards
-        // should generate some fees
-        BalancedClient tester3 = balanced.newClient();
-        BigInteger tester3Loan = BigInteger.TEN.pow(21);
-
-        tester3.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", tester3Loan, null, null);
-
-        owner.governance.setDividendsOnlyToStakedBalnDay(owner.dividends.getSnapshotId().add(BigInteger.ONE));
-
-        balanced.increaseDay(1);
-        balanced.syncDistributions();
-
-        // Verify rewards after stability fund
-        BigInteger tester1Rewards = verifyRewards(tester1);
-        BigInteger tester2Rewards = verifyRewards(tester2);
-        verifyBnusdFees(tester1);
-        verifyNoBnusdFees(tester2);
-        verifyBnusdFees(balnLpClient);
-        verifyRewards(tester3);
-
-        depositToStabilityContract(tester2, BigInteger.TEN.pow(22));
-        
-        balanced.increaseDay(1);
-        balanced.syncDistributions();
-
-        // loans rewards stay the same
-        assertEquals(tester1Rewards, verifyRewards(tester1));
-        assertEquals(tester2Rewards, verifyRewards(tester2));
-        verifyRewards(tester3);
-        //after only stake fees
-        verifyBnusdFees(tester1); 
-        verifyNoBnusdFees(balnLpClient);
-        
-        balanced.dex._update(dexJavaPath, Map.of("_governance", balanced.governance._address()));
-        balanced.loans._update(loansJavaPath, Map.of("_governance", balanced.governance._address()));
-        
-        //possible to join pools after upgrade
-        BigInteger tester3IcxDeposit = BigInteger.TEN.pow(22);
-        BigInteger tester1SicxDeposit = BigInteger.TEN.pow(22);
-        BalancedClient testerInIcxSicxPool =  balanced.newClient();
-        joinsICXBnusdLP(tester3, tester3IcxDeposit, tester3Loan);
-        joinsICXBnusdLP(tester1, tester1SicxDeposit, tester1Loan);
-        testerInIcxSicxPool.dex._transfer(balanced.dex._address(), BigInteger.TEN.pow(23), null);
-
-        owner.governance.setContinuousRewardsDay(owner.governance.getDay().add(BigInteger.valueOf(3)));
-        balanced.increaseDay(1);
-        balanced.syncDistributions();
-
-        verifyRewards(tester1);
-        verifyRewards(tester2);
-        verifyRewards(tester3);
-        verifyRewards(testerInIcxSicxPool);
-        // verifyBnusdFees(balnLpClient); // has stakedLp
-
-        BalancedClient tester4 = balanced.newClient();
-        BigInteger tester4Loan = BigInteger.TEN.pow(21).multiply(BigInteger.valueOf(3));
-        BigInteger tester4BnusdDeposit = BigInteger.TEN.pow(21);
-        BigInteger tester4IcxDeposit = BigInteger.TEN.pow(22);
-        tester4.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", tester4Loan, null, null);        
-        joinsICXBnusdLP(tester4, tester4IcxDeposit, tester4BnusdDeposit);
-
-        BalancedClient clientWithStakedLp = balanced.newClient();
-        BalancedClient clientWithoutStakedLp = balanced.newClient();
-        
-        BigInteger bnusdDeposit = BigInteger.TEN.pow(21);
-        tester4.bnUSD.transfer(clientWithStakedLp.getAddress(), bnusdDeposit, null); 
-        tester4.bnUSD.transfer(clientWithoutStakedLp.getAddress(), bnusdDeposit, null); 
-        BigInteger icxDeposit = BigInteger.TEN.pow(22);
-        joinsICXBnusdLP(clientWithStakedLp, icxDeposit, bnusdDeposit);
-        stakeICXBnusdLP(clientWithStakedLp);
-
-        joinsICXBnusdLP(clientWithoutStakedLp, icxDeposit, bnusdDeposit);
-
-        //day before ContinuousRewards
-        balanced.increaseDay(1);
-        balanced.syncDistributions();
-
-        verifyRewards(tester1);
-        verifyRewards(tester2);
-        verifyRewards(tester3);
-        verifyRewards(tester4);
-        verifyNoRewards(testerWithTooSmallLoan);
-        verifyRewards(clientWithStakedLp);
-        verifyRewards(clientWithoutStakedLp);
-
-        // day of migration 
-        balanced.increaseDay(1);
-        balanced.syncDistributions();
-
-        verifyRewards(tester1);
-        verifyRewards(tester2);
-        verifyRewards(tester3);
-        verifyRewards(tester4);
-        verifyRewards(clientWithStakedLp);
-        verifyRewards(clientWithoutStakedLp);
-        verifyRewards(testerInIcxSicxPool);
-
-        Thread.sleep(1000);
-
-        verifyContinousRewards(tester1);
-        verifyContinousRewards(tester2);
-        verifyContinousRewards(tester3);
-        verifyContinousRewards(tester4);
-        verifyContinousRewards(testerWithTooSmallLoan);
-        verifyContinousRewards(clientWithStakedLp);
-        verifyNoRewards(clientWithoutStakedLp);
-        verifyRewards(testerInIcxSicxPool);
-        
-        testLpStakingAfterMigration(clientWithoutStakedLp);
-        verifyStabilityContractHasNoEffectOnLoansRewards(tester2);
-        closeLoansPostionAndVerifyNoRewards(tester2);
-        openNewPostionsAndVerifyRewards();
-        verifyContractRewards();
-
-        // owner.governance.setLoansRebalance(owner.getAddress());
-        // owner.loans.raisePrice(BigInteger.TEN.pow(19));
-        // owner.loans.lowerPrice(BigInteger.TEN.pow(19));
-
-    }
-
-    private void verifyStabilityContractHasNoEffectOnLoansRewards(BalancedClient client) throws Exception {
-        client.rewards.claimRewards();
-        Thread.sleep(1000);
-        BigInteger rewards = verifyContinousRewards(client);
-
-        BigInteger totalBnusdSupply = owner.bnUSD.totalSupply();
-        depositToStabilityContract(client, totalBnusdSupply);
-        client.rewards.claimRewards();
-        Thread.sleep(1400);
-        //would be false if we used total supply
-        assertTrue(rewards.compareTo(verifyContinousRewards(client)) < 0);
     }
     
     private void closeLoansPostionAndVerifyNoRewards(BalancedClient client) throws Exception {
@@ -253,42 +339,6 @@ class Systemtest implements ScoreIntegrationTest {
         }
 
         client.loans.returnAsset("bnUSD", debt, true);
-        client.rewards.claimRewards();
-        Thread.sleep(100);
-        verifyNoRewards(client);
-    }
-
-    private void openNewPostionsAndVerifyRewards() throws Exception {
-        BalancedClient LoanTaker = balanced.newClient();
-        BigInteger loan = BigInteger.TEN.pow(21).multiply(BigInteger.valueOf(2));
-        LoanTaker.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loan, null, null);        
-
-        BalancedClient liquidityProvider = balanced.newClient();
-        BigInteger bnusdDeposit = BigInteger.TEN.pow(21);
-        BigInteger icxDeposit = BigInteger.TEN.pow(22);
-        LoanTaker.bnUSD.transfer(liquidityProvider.getAddress(), bnusdDeposit, null); 
-        joinsICXBnusdLP(liquidityProvider, icxDeposit, bnusdDeposit);
-        stakeICXBnusdLP(liquidityProvider);
-
-        Thread.sleep(100);
-        verifyContinousRewards(LoanTaker);
-        verifyContinousRewards(liquidityProvider);
-    }
-
-    private void testLpStakingAfterMigration(BalancedClient client) throws Exception {
-        BigInteger icxBnusdPoolId = owner.dex.getPoolId(balanced.sicx._address(), balanced.bnusd._address());
-        stakeICXBnusdLP(client);
-
-        BigInteger unstakedBalance = client.dex.balanceOf(client.getAddress(), icxBnusdPoolId);
-        assertEquals(BigInteger.ZERO, unstakedBalance);
-        
-        Thread.sleep(100);
-        verifyContinousRewards(client);
-
-        BigInteger stakedBalance = client.stakedLp.balanceOf(client.getAddress(), icxBnusdPoolId);
-        client.stakedLp.unstake(icxBnusdPoolId, stakedBalance);
-        unstakedBalance = client.dex.balanceOf(client.getAddress(), icxBnusdPoolId);
-
         client.rewards.claimRewards();
         Thread.sleep(100);
         verifyNoRewards(client);
@@ -363,14 +413,6 @@ class Systemtest implements ScoreIntegrationTest {
         return balancePostClaim.subtract(balancePreClaim);
     }
 
-    private BigInteger verifyContinousRewards(BalancedClient client) {
-        BigInteger balancePreClaim = client.baln.balanceOf(client.getAddress());
-        client.rewards.claimRewards();
-        BigInteger balancePostClaim = client.baln.balanceOf(client.getAddress());
-        assertTrue(balancePostClaim.compareTo(balancePreClaim) > 0);
-        return balancePostClaim.subtract(balancePreClaim);
-    }
-
     private void verifyNoRewards(BalancedClient client) {
         BigInteger balancePreClaim = client.baln.balanceOf(client.getAddress());
         client.rewards.claimRewards();
@@ -381,8 +423,6 @@ class Systemtest implements ScoreIntegrationTest {
     private void verifyBnusdFees(BalancedClient client) {
         BigInteger balancePreClaim = client.bnUSD.balanceOf(client.getAddress());
         client.dividends.claim(0, 0);
-        System.out.println( client.dividends.getAcceptedTokens());
-        System.out.println( client.dividends.getDailyFees(client.dividends.getSnapshotId()));
         BigInteger balancePostClaim = client.bnUSD.balanceOf(client.getAddress());
         assertTrue(balancePostClaim.compareTo(balancePreClaim) > 0);
     }
@@ -392,5 +432,10 @@ class Systemtest implements ScoreIntegrationTest {
         client.dividends.claim(0, 0);
         BigInteger balancePostClaim = client.bnUSD.balanceOf(client.getAddress());
         assertTrue(balancePostClaim.equals(balancePreClaim));
+    }
+
+    private void nextDay() {
+        balanced.increaseDay(1);
+        balanced.syncDistributions();
     }
 }
