@@ -991,10 +991,6 @@ public class DexImpl {
             return icxQueue.getNode(orderId).getSize();
         } else {
             BigInteger balance = this.balance.at(_id).getOrDefault(_owner, BigInteger.ZERO);
-            if (stakedlp.get() != null && (continuousRewardsDay.get() == null || getDay().compareTo(continuousRewardsDay.get()) < 0)) {
-                BigInteger stakedBalance = (BigInteger) Context.call(stakedlp.get(), "balanceOf", _owner, _id);
-                balance = balance.add(stakedBalance);
-            }
             return balance;
         }
     }
@@ -1274,6 +1270,11 @@ public class DexImpl {
         Map<String, Object> snapshotData = new HashMap<>();
         for (Address addr : activeAddresses.get(_id).range(_offset, _offset.add(_limit))) {
             BigInteger snapshotBalance = balanceOf(addr, _id);
+            if (stakedlp.get() != null) {
+                BigInteger stakedBalance = (BigInteger) Context.call(stakedlp.get(), "balanceOf", addr, _id);
+                snapshotBalance = snapshotBalance.add(stakedBalance);
+            }
+
             if (!snapshotBalance.equals(BigInteger.ZERO)) {
                 snapshotData.put(addr.toString(), snapshotBalance);
             }
