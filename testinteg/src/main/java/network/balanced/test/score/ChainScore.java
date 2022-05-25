@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ICONLOOP Inc.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,12 @@ package network.balanced.test.score;
 
 
 import foundation.icon.icx.Wallet;
-import network.balanced.test.Constants;
-import network.balanced.test.TransactionHandler;
-import network.balanced.test.ResultTimeoutException;
-
 import foundation.icon.icx.data.TransactionResult;
-import foundation.icon.icx.transport.jsonrpc.RpcItem;
 import foundation.icon.icx.transport.jsonrpc.RpcObject;
 import foundation.icon.icx.transport.jsonrpc.RpcValue;
+import network.balanced.test.Constants;
+import network.balanced.test.ResultTimeoutException;
+import network.balanced.test.TransactionHandler;
 
 import java.io.IOException;
 import java.math.BigInteger;

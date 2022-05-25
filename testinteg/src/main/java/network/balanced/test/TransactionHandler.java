@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ICON Foundation
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,13 @@
 
 package network.balanced.test;
 
-import foundation.icon.icx.Call;
-import foundation.icon.icx.IconService;
-import foundation.icon.icx.SignedTransaction;
-import foundation.icon.icx.Transaction;
-import foundation.icon.icx.TransactionBuilder;
-import foundation.icon.icx.Wallet;
-import foundation.icon.icx.data.Address;
-import foundation.icon.icx.data.Bytes;
-import foundation.icon.icx.data.ConfirmedTransaction;
-import foundation.icon.icx.data.ScoreApi;
-import foundation.icon.icx.data.TransactionResult;
+import foundation.icon.icx.*;
+import foundation.icon.icx.data.*;
 import foundation.icon.icx.transport.jsonrpc.RpcError;
 import foundation.icon.icx.transport.jsonrpc.RpcItem;
 import foundation.icon.icx.transport.jsonrpc.RpcObject;
 import network.balanced.test.score.ChainScore;
 import network.balanced.test.score.Score;
-import network.balanced.test.util.ZipFile;
 
 import java.io.IOException;
 import java.math.BigInteger;

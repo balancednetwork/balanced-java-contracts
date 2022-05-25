@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ICON Foundation
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ public class ZipFile {
         recursiveZip(new File(path), null, zos);
         zos.close();
         outputStream.close();
-        System.out.println(outputStream.toString());
+        System.out.println(outputStream);
         return outputStream.toByteArray();
     }
 
