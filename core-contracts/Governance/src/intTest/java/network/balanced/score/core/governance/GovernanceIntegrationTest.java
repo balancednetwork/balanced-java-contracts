@@ -44,6 +44,7 @@ import com.eclipsesource.json.JsonObject;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 
 class GovernanceIntegrationTest implements ScoreIntegrationTest{
@@ -101,6 +102,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest{
         BigInteger voteStart = day.add(BigInteger.valueOf(4));
         BigInteger snapshot = day.add(BigInteger.TWO);
         tester.governance.defineVote(name, "test", voteStart, snapshot, actions.toString());
+        assertNotEquals(rebalancingThreshold, owner.rebalancing.getPriceChangeThreshold());
 
         increaseDay(4);
         BigInteger id = tester.governance.getVoteIndex(name);
