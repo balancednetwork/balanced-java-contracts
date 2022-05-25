@@ -49,7 +49,8 @@ public class DividendsImpl implements Dividends {
         if (_governance != null) {
             Context.require(_governance.isContract(), "Dividends: Governance address should be a contract");
             DividendsImpl.governance.set(_governance);
-            snapshotId.set(BigInteger.ONE);
+            snapshotId.set(BigInteger.ZERO);
+            dividendsBatchSize.set(BigInteger.valueOf(50));
             distributionActivate.set(false);
             addInitialCategories();
         }
@@ -380,7 +381,7 @@ public class DividendsImpl implements Dividends {
 
         for (int i = 0; i < acceptedTokens.size(); i++) {
             Address token = acceptedTokens.get(i);
-            if (totalDividends.get(token.toString()).signum() > 0) {
+            if (totalDividends.containsKey(token.toString()) && totalDividends.get(token.toString()).signum() > 0) {
                 sendToken(account, totalDividends.get(token.toString()), token, "User dividends");
             }
         }
