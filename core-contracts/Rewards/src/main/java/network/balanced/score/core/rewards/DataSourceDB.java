@@ -54,12 +54,12 @@ public class DataSourceDB {
         dataSource.setContractAddress(null);
 
         String topSourceName = names.pop();
-        if (topSourceName == name) {
+        if (topSourceName.equals(name)) {
             return;
         }
 
         for(int i = 0; i < names.size(); i++) {
-            if (names.get(i) == name) {
+            if (names.get(i).equals(name)) {
                 names.set(i, topSourceName);
             }
         }
