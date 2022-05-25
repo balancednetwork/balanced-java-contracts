@@ -90,7 +90,6 @@ public class GovernanceTest extends GovernanceTestBase {
         verify(loans.mock).setContinuousRewardsDay(day);
         verify(dex.mock).setContinuousRewardsDay(day);
         verify(rewards.mock).setContinuousRewardsDay(day);
-        verify(dividends.mock).setContinuousRewardsDay(day);
     }
 
     @Test
