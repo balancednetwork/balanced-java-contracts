@@ -24,6 +24,7 @@ import static network.balanced.score.core.dex.Const.*;
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.core.dex.Check.*;
 import static network.balanced.score.lib.utils.Math.pow;
+import static network.balanced.score.lib.utils.Math.convertToNumber;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -172,7 +173,6 @@ public class DexImpl {
             namedMarkets.set(SICXICX_MARKET_NAME, SICXICX_POOL_ID);
             marketsToNames.set(SICXICX_POOL_ID, SICXICX_MARKET_NAME);
         }
-        continuousRewardsDay.set(BigInteger.ZERO);
     }
 
     @External(readonly = true)
@@ -384,10 +384,10 @@ public class DexImpl {
     }
 
     private boolean isLockingPool(BigInteger id) {
-        boolean continuousRewardsLaunched = continuousRewardsDay.get().compareTo(currentDay.get()) <= 0;
+        boolean stakedLpLaunched = stakedlp.get() != null;
         boolean restrictedPoolId = (id.compareTo(FIRST_NON_BALANCED_POOL) < 0 || id.equals(USDS_BNUSD_ID) || id.equals(IUSDT_BNUSD_ID));
 
-        return restrictedPoolId && continuousRewardsLaunched;
+        return (restrictedPoolId && !stakedLpLaunched) || id.equals(SICXICX_POOL_ID);
     }
 
     private Boolean isReentrantTx() {
@@ -833,7 +833,7 @@ public class DexImpl {
             JsonObject params = json.get("params").asObject();
             BigInteger minimumReceive = BigInteger.ZERO;
             if (params.contains("minimumReceive")) {
-                minimumReceive = BigInteger.valueOf(params.get("minimumReceive").asInt());
+                minimumReceive = convertToNumber(params.get("minimumReceive"));
                 Context.require(
                         minimumReceive.signum() >= 0,
                         TAG + "Must specify a positive number for minimum to receive"
@@ -882,7 +882,7 @@ public class DexImpl {
         BigInteger toBalance = balance.at(id).getOrDefault(to, BigInteger.ZERO);
         balance.at(id).set(from, fromBalance.subtract(value));
         balance.at(id).set(to, toBalance.add(value));
-        if (!to.equals(stakedlp.get()) || !from.equals(stakedlp.get())) {
+        if (!to.equals(stakedlp.get()) && !from.equals(stakedlp.get())) {
             if (value.compareTo(BigInteger.ZERO) > 0) {
                 activeAddresses.get(id).add(to);
             }
@@ -975,7 +975,7 @@ public class DexImpl {
             return icxQueue.getNode(orderId).getSize();
         } else {
             BigInteger balance = this.balance.at(_id).getOrDefault(_owner, BigInteger.ZERO);
-            if (getDay().compareTo(continuousRewardsDay.get()) <= 0) {
+            if (stakedlp.get() != null && (continuousRewardsDay.get() == null || getDay().compareTo(continuousRewardsDay.get()) < 0)) {
                 BigInteger stakedBalance = (BigInteger) Context.call(stakedlp.get(), "balanceOf", _owner, _id);
                 balance = balance.add(stakedBalance);
             }
