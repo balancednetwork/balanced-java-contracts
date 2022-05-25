@@ -487,6 +487,7 @@ public class GovernanceImpl {
         balanceToggleStakingEnabled();
         Context.call(Addresses.get("loans"), "turnLoansOn");
         Context.call(Addresses.get("dex"), "turnDexOn");
+        enableDividends();
     }
 
     @External
