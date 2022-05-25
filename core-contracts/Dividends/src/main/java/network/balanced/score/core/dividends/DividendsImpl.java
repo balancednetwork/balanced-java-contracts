@@ -31,11 +31,7 @@ public class DividendsImpl implements Dividends {
 
     private static final VarDB<BigInteger> snapshotId = Context.newVarDB(SNAPSHOT_ID, BigInteger.class);
 
-    private static final VarDB<Boolean> amountReceivedStatus = Context.newVarDB(AMOUNT_RECEIVED_STATUS, Boolean.class);
     private static final BranchDB<BigInteger, DictDB<String, BigInteger>> dailyFees = Context.newBranchDB(DAILY_FEES, BigInteger.class);
-
-    private static final VarDB<BigInteger> maxLoopCount = Context.newVarDB(MAX_LOOP_COUNT, BigInteger.class);
-    private static final VarDB<BigInteger> minimumEligibleDebt = Context.newVarDB(MIN_ELIGIBLE_DEBT, BigInteger.class);
 
     private static final DictDB<String, BigInteger> dividendsPercentage = Context.newDictDB(DIVIDENDS_PERCENTAGE, BigInteger.class);
 
@@ -54,8 +50,6 @@ public class DividendsImpl implements Dividends {
             Context.require(_governance.isContract(), "Dividends: Governance address should be a contract");
             DividendsImpl.governance.set(_governance);
             snapshotId.set(BigInteger.ONE);
-            maxLoopCount.set(MAX_LOOP);
-            minimumEligibleDebt.set(MINIMUM_ELIGIBLE_DEBT);
             distributionActivate.set(false);
             addInitialCategories();
         }
@@ -358,7 +352,7 @@ public class DividendsImpl implements Dividends {
 
         for (int i = 0; i < acceptedTokens.size(); i++) {
             Address token = acceptedTokens.get(i);
-            if (totalDividends.get(token.toString()).signum() > 0) {
+            if (totalDividends.containsKey(token.toString()) && totalDividends.get(token.toString()).signum() > 0) {
                 sendToken(daofund, totalDividends.get(token.toString()), token, "Daofund dividends");
             }
         }
@@ -422,7 +416,6 @@ public class DividendsImpl implements Dividends {
         dailyFees.at(snapId).set(sender.toString(), val.add(_value));
 
         DividendsReceivedV2(_value, snapId, _value + "tokens received as dividends token: " + sender);
-        amountReceivedStatus.set(true);
     }
 
     @External(readonly = true)
