@@ -150,7 +150,7 @@ public class LoansImpl implements Loans {
             } else {
                 int activeCollateralCount = AssetDB.activeCollateral.size();
                 for (int j = 0; j < activeCollateralCount; j++) {
-                    String collateral = AssetDB.activeCollateral.get(i);
+                    String collateral = AssetDB.activeCollateral.get(j);
                     amount = p.getLoansPosition(collateral, symbol);
                     migrationDetails.put(symbol, Map.of(collateral, amount));
                 }
