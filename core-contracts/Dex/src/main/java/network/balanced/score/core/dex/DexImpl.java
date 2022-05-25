@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,122 +17,50 @@
 package network.balanced.score.core.dex;
 
 
-import network.balanced.score.lib.utils.IterableDictDB;
-import network.balanced.score.lib.utils.LinkedListDB;
-import network.balanced.score.lib.structs.RewardsDataEntry;
-import network.balanced.score.lib.utils.NodeDB;
-import network.balanced.score.lib.utils.SetDB;
-import score.Address;
-import score.Context;
-import score.VarDB;
-import score.DictDB;
-import score.BranchDB;
-import score.annotation.External;
-import score.annotation.EventLog;
-import score.annotation.Optional;
-import score.annotation.Payable;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
+import network.balanced.score.lib.structs.RewardsDataEntry;
+import network.balanced.score.lib.utils.NodeDB;
+import score.Address;
+import score.Context;
+import score.annotation.EventLog;
+import score.annotation.External;
+import score.annotation.Optional;
+import score.annotation.Payable;
 import scorex.util.ArrayList;
 import scorex.util.HashMap;
-
-import static network.balanced.score.core.dex.Const.*;
-import static network.balanced.score.lib.utils.Check.*;
-import static network.balanced.score.core.dex.Check.*;
-import static network.balanced.score.lib.utils.Math.pow;
-import static network.balanced.score.lib.utils.Math.convertToNumber;
 
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+import static network.balanced.score.core.dex.Check.isOn;
+import static network.balanced.score.core.dex.Const.*;
+import static network.balanced.score.core.dex.DexDBVariables.*;
+import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Math.convertToNumber;
+import static network.balanced.score.lib.utils.Math.pow;
+
 public class DexImpl {
 
-    public final static VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
-    public final static VarDB<Address> sicx = Context.newVarDB(SICX_ADDRESS, Address.class);
-    public final static VarDB<Address> staking = Context.newVarDB(STAKING_ADDRESS, Address.class);
-    public final static VarDB<Address> dividends = Context.newVarDB(DIVIDENDS_ADDRESS, Address.class);
-    public final static VarDB<Address> governance = Context.newVarDB(GOVERNANCE_ADDRESS, Address.class);
-    public final static VarDB<Address> rewards = Context.newVarDB(REWARDS_ADDRESS, Address.class);
-    public final static VarDB<Address> bnUSD = Context.newVarDB(bnUSD_ADDRESS, Address.class);
-    public final static VarDB<Address> baln = Context.newVarDB(BALN_ADDRESS, Address.class);
-    public final static VarDB<Address> feehandler = Context.newVarDB(FEEHANDLER_ADDRESS, Address.class);
-    public final static VarDB<Address> stakedlp = Context.newVarDB(STAKEDLP_ADDRESS, Address.class);
-    public final static VarDB<Boolean> dexOn = Context.newVarDB(DEX_ON, Boolean.class);
+    public DexImpl(@Optional Address _governance) {
+        if (governance.get() == null) {
+            governance.set(_governance);
 
-    // Deposits - Map: token_address -> user_address -> value
-    public final static BranchDB<Address, DictDB<Address, BigInteger>> deposit = Context.newBranchDB(DEPOSIT, BigInteger.class);
-    // Pool IDs - Map: token address -> opposite token_address -> id
-    public final static BranchDB<Address, DictDB<Address, BigInteger>> poolId = Context.newBranchDB(POOL_ID, BigInteger.class);
+            // Set Default Fee Rates
+            poolLpFee.set(BigInteger.valueOf(15L));
+            poolBalnFee.set(BigInteger.valueOf(15L));
+            icxConversionFee.set(BigInteger.valueOf(70L));
+            icxBalnFee.set(BigInteger.valueOf(30L));
 
-    public final static VarDB<BigInteger> nonce = Context.newVarDB(NONCE, BigInteger.class);
+            nonce.set(BigInteger.valueOf(2L));
+            currentDay.set(BigInteger.valueOf(1L));
+            namedMarkets.set(SICXICX_MARKET_NAME, SICXICX_POOL_ID);
+            marketsToNames.set(SICXICX_POOL_ID, SICXICX_MARKET_NAME);
+        }
+    }
 
-    // Total amount of each type of token in a pool
-    // Map: pool_id -> token_address -> value
-    public final static BranchDB<BigInteger, DictDB<Address, BigInteger>> poolTotal = Context.newBranchDB(POOL_TOTAL, BigInteger.class);
-
-    // Total LP Tokens in pool
-    // Map: pool_id -> total LP tokens
-    public final static DictDB<BigInteger, BigInteger> total = Context.newDictDB(TOTAL, BigInteger.class);
-
-    // User Balances
-    // Map: pool_id -> user address -> lp token balance
-    public final static BranchDB<BigInteger, DictDB<Address, BigInteger>> balance = Context.newBranchDB(BALANCE, BigInteger.class);
-    public final static BranchDB<BigInteger, DictDB<Address, BigInteger>> withdrawLock = Context.newBranchDB(WITHDRAW_LOCK, BigInteger.class);
-
-    public final static BranchDB<BigInteger, BranchDB<Address, BranchDB<String, DictDB<BigInteger, BigInteger>>>> accountBalanceSnapshot = Context.newBranchDB(ACCOUNT_BALANCE_SNAPSHOT, BigInteger.class);
-
-    public final static BranchDB<BigInteger, BranchDB<String, DictDB<BigInteger, BigInteger>>> totalSupplySnapshot = Context.newBranchDB(TOTAL_SUPPLY_SNAPSHOT, BigInteger.class);
-
-
-    public final static BranchDB<BigInteger, BranchDB<String, DictDB<BigInteger, BigInteger>>> balnSnapshot = Context.newBranchDB(BALN_SNAPSHOT, BigInteger.class);
-
-    // Rewards/timekeeping logic
-    public final static VarDB<BigInteger> currentDay = Context.newVarDB(CURRENT_DAY, BigInteger.class);
-    public final static VarDB<BigInteger> timeOffset = Context.newVarDB(TIME_OFFSET, BigInteger.class);
-    public final static VarDB<Boolean> rewardsDone = Context.newVarDB(REWARDS_DONE, Boolean.class);
-    public final static VarDB<Boolean> dividendsDone = Context.newVarDB(DIVIDENDS_DONE, Boolean.class);
-
-    public final static LPMetadataDB activeAddresses = new LPMetadataDB();
-
-    public final static SetDB<Address> quoteCoins = new SetDB<>(QUOTE_COINS, Address.class, null);
-
-
-    //     # All fees are divided by `FEE_SCALE` in consts
-    public final static VarDB<BigInteger> poolLpFee = Context.newVarDB(POOL_LP_FEE, BigInteger.class);
-    public final static VarDB<BigInteger> poolBalnFee = Context.newVarDB(POOL_BALN_FEE, BigInteger.class);
-    public final static VarDB<BigInteger> icxConversionFee = Context.newVarDB(ICX_CONVERSION_FEE, BigInteger.class);
-    public final static VarDB<BigInteger> icxBalnFee = Context.newVarDB(ICX_BALN_FEE, BigInteger.class);
-
-
-    // Map: pool_id -> base token address
-    public final static DictDB<BigInteger, Address> poolBase = Context.newDictDB(BASE_TOKEN, Address.class);
-    // Map: pool_id -> quote token address
-    public final static DictDB<BigInteger, Address> poolQuote = Context.newDictDB(QUOTE_TOKEN, Address.class);
-    public final static DictDB<BigInteger, Boolean> active = Context.newDictDB(ACTIVE_POOL, Boolean.class);
-
-    public final static LinkedListDB icxQueue = new LinkedListDB(ICX_QUEUE);
-
-
-    // Map: user_address -> order id
-    public final static DictDB<Address, BigInteger> icxQueueOrderId = Context.newDictDB(ICX_QUEUE_ORDER_ID, BigInteger.class);
-
-    // Map: user_address -> integer of unclaimed earnings
-    public final static DictDB<Address, BigInteger> sicxEarnings = Context.newDictDB(SICX_EARNINGS, BigInteger.class);
-    public final static VarDB<BigInteger> icxQueueTotal = Context.newVarDB(ICX_QUEUE_TOTAL, BigInteger.class);
-
-
-    public final static IterableDictDB<String, BigInteger> namedMarkets = new IterableDictDB<>(NAMED_MARKETS, BigInteger.class, String.class, true);
-
-    public final static DictDB<BigInteger, String> marketsToNames = Context.newDictDB(MARKETS_NAMES, String.class);
-
-    public final static DictDB<Address, BigInteger> tokenPrecisions = Context.newDictDB(TOKEN_PRECISIONS, BigInteger.class);
-
-    // VarDB used to track the current sent transaction. This helps bound iterations.
-    public final static VarDB<byte[]> currentTx = Context.newVarDB(CURRENT_TX, byte[].class);
-
-    // Activation of continuous rewards day
-    public final static VarDB<BigInteger> continuousRewardsDay = Context.newVarDB(CONTINUOUS_REWARDS_DAY, BigInteger.class);
 
     @EventLog(indexed = 2)
     public void Swap(BigInteger _id, Address _baseToken, Address _fromToken, Address _toToken,
@@ -172,23 +100,6 @@ public class DexImpl {
 
     @EventLog(indexed = 1)
     public void Snapshot(BigInteger _id) {
-    }
-
-    public DexImpl(@Optional Address _governance) {
-        if (governance.get() == null) {
-            governance.set(_governance);
-
-            // Set Default Fee Rates
-            poolLpFee.set(BigInteger.valueOf(15L));
-            poolBalnFee.set(BigInteger.valueOf(15L));
-            icxConversionFee.set(BigInteger.valueOf(70L));
-            icxBalnFee.set(BigInteger.valueOf(30L));
-
-            nonce.set(BigInteger.valueOf(2L));
-            currentDay.set(BigInteger.valueOf(1L));
-            namedMarkets.set(SICXICX_MARKET_NAME, SICXICX_POOL_ID);
-            marketsToNames.set(SICXICX_POOL_ID, SICXICX_MARKET_NAME);
-        }
     }
 
     @External(readonly = true)
@@ -729,7 +640,8 @@ public class DexImpl {
         revertOnIncompleteRewards();
 
         BigInteger orderValue = Context.getValue();
-        Context.require(orderValue.compareTo(EXA.multiply(BigInteger.TEN)) >= 0, TAG + ": Minimum pool contribution is 10 ICX");
+        Context.require(orderValue.compareTo(EXA.multiply(BigInteger.TEN)) >= 0, TAG + ": Minimum pool contribution " +
+                "is 10 ICX");
         Address user = Context.getCaller();
         BigInteger oldOrderValue = BigInteger.ZERO;
         BigInteger orderId = icxQueueOrderId.getOrDefault(user, BigInteger.ZERO);
@@ -779,7 +691,8 @@ public class DexImpl {
         revertOnIncompleteRewards();
 
         Address user = Context.getCaller();
-        Context.require(icxQueueOrderId.getOrDefault(user, BigInteger.ZERO).compareTo(BigInteger.ZERO) > 0, TAG + ": No open order in sICX/ICX queue.");
+        Context.require(icxQueueOrderId.getOrDefault(user, BigInteger.ZERO).compareTo(BigInteger.ZERO) > 0, TAG +
+                ": No open order in sICX/ICX queue.");
         revertOnWithdrawalLock(user, SICXICX_POOL_ID);
 
         BigInteger orderId = icxQueueOrderId.get(user);
@@ -990,7 +903,7 @@ public class DexImpl {
             }
             return icxQueue.getNode(orderId).getSize();
         } else {
-            BigInteger balance = this.balance.at(_id).getOrDefault(_owner, BigInteger.ZERO);
+            BigInteger balance = DexDBVariables.balance.at(_id).getOrDefault(_owner, BigInteger.ZERO);
             if (stakedlp.get() != null && (continuousRewardsDay.get() == null || getDay().compareTo(continuousRewardsDay.get()) < 0)) {
                 BigInteger stakedBalance = (BigInteger) Context.call(stakedlp.get(), "balanceOf", _owner, _id);
                 balance = balance.add(stakedBalance);
@@ -1268,7 +1181,8 @@ public class DexImpl {
         if (_offset == null) {
             _offset = BigInteger.ZERO;
         }
-        Context.require(_snapshot_id.compareTo(BigInteger.ZERO) >= 0, TAG + ":  Snapshot id is equal to or greater then Zero.");
+        Context.require(_snapshot_id.compareTo(BigInteger.ZERO) >= 0, TAG +
+                ":  Snapshot id is equal to or greater then Zero.");
         Context.require(_id.compareTo(BigInteger.ZERO) >= 0, TAG + ":  Pool id is equal to or greater then Zero.");
         Context.require(_offset.compareTo(BigInteger.ZERO) >= 0, TAG + ":  Offset is equal to or greater then Zero.");
         Map<String, Object> snapshotData = new HashMap<>();
@@ -1455,7 +1369,8 @@ public class DexImpl {
             Address poolBaseAddress = poolBase.get(id);
             Address poolQuoteAddress = poolQuote.get(id);
 
-            Context.require((poolBaseAddress.equals(_baseToken)) && (poolQuoteAddress.equals(_quoteToken)), TAG + ": Must supply " + _baseToken.toString() + " as base and " + _quoteToken.toString() + " as quote");
+            Context.require((poolBaseAddress.equals(_baseToken)) && (poolQuoteAddress.equals(_quoteToken)), TAG + ": " +
+                    "Must supply " + _baseToken.toString() + " as base and " + _quoteToken.toString() + " as quote");
 
             // We can only commit in the ratio of the pool. We determine this as:
             // Min(ratio of quote from base, ratio of base from quote)
