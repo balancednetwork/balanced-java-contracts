@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 ICON Foundation
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,18 @@
  * limitations under the License.
  */
 
-package network.balanced.test.score;
+package network.balanced.score.core.loans.test.score;
 
 import foundation.icon.icx.Wallet;
 import foundation.icon.icx.data.Address;
-import foundation.icon.icx.data.IconAmount;
 import foundation.icon.icx.data.TransactionResult;
-import foundation.icon.icx.transport.jsonrpc.RpcItem;
 import foundation.icon.icx.transport.jsonrpc.RpcObject;
 import foundation.icon.icx.transport.jsonrpc.RpcValue;
-import network.balanced.test.Constants;
 import network.balanced.test.ResultTimeoutException;
 import network.balanced.test.TransactionFailureException;
 import network.balanced.test.TransactionHandler;
-import network.balanced.test.score.Score;
-
 import network.balanced.test.contracts.base.RebalancingScore;
+import network.balanced.test.score.Score;
 
 import java.io.IOException;
 import java.math.BigInteger;
