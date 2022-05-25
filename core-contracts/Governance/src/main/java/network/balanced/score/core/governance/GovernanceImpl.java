@@ -124,6 +124,13 @@ public class GovernanceImpl {
     }
 
     @External
+    public void setDividendsOnlyToStakedBalnDay(BigInteger _day) {
+        onlyOwner();
+        Context.call(Addresses.get("dividends"), "setDividendsOnlyToStakedBalnDay",  _day);
+    }
+    
+
+    @External
     public void setFeeProcessingInterval(BigInteger _interval) {
         onlyOwner();
         Context.call(Addresses.get("feehandler"), "setFeeProcessingInterval", _interval);
