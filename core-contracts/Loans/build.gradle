@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,15 +22,6 @@ repositories {
     mavenCentral()
 }
 
-sourceSets {
-    intTest {}
-}
-
-configurations {
-    intTestImplementation.extendsFrom testImplementation
-    intTestRuntimeOnly.extendsFrom testRuntimeOnly
-}
-
 dependencies {
     compileOnly Dependencies.javaeeApi
     implementation project(':score-lib')
@@ -49,7 +40,7 @@ dependencies {
     intTestImplementation project(':DexMock')
     intTestImplementation project(':testinteg')
     intTestImplementation project(':RebalanceMock')
-    intTestImplementation 'foundation.icon:icon-sdk:2.0.0'
+    intTestImplementation Dependencies.iconSdk
 }
 
 optimizedJar {
