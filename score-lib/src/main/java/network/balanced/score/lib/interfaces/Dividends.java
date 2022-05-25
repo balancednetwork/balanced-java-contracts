@@ -4,7 +4,7 @@ import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.*;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
-import network.balanced.score.lib.structs.DistPercentDict;
+import network.balanced.score.lib.structs.DistributionPercentage;
 import score.Address;
 import score.annotation.External;
 import score.annotation.Optional;
@@ -54,7 +54,7 @@ public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress
     Map<String, BigInteger> getDividendsPercentage();
 
     @External
-    void setDividendsCategoryPercentage(DistPercentDict[] _dist_list);
+    void setDividendsCategoryPercentage(DistributionPercentage[] _dist_list);
 
     @External(readonly = true)
     BigInteger getDividendsBatchSize();

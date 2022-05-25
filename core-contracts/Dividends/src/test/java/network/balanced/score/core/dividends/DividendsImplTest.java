@@ -5,7 +5,7 @@ import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
 import network.balanced.score.core.dividends.utils.bnUSD;
-import network.balanced.score.lib.structs.DistPercentDict;
+import network.balanced.score.lib.structs.DistributionPercentage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -212,10 +212,10 @@ class DividendsImplTest extends TestBase {
 
 //        add category
         dividendScore.invoke(admin, "addDividendsCategory", "loans");
-        DistPercentDict[] dist = new DistPercentDict[]{new DistPercentDict(), new DistPercentDict(), new DistPercentDict()};
-        dist[0].category = "daofund";
-        dist[1].category = "baln_holders";
-        dist[2].category = "loans";
+        DistributionPercentage[] dist = new DistributionPercentage[]{new DistributionPercentage(), new DistributionPercentage(), new DistributionPercentage()};
+        dist[0].recipient_name = "daofund";
+        dist[1].recipient_name = "baln_holders";
+        dist[2].recipient_name = "loans";
         dist[0].dist_percent = BigInteger.valueOf(4).multiply(pow(BigInteger.TEN, 17));
         dist[1].dist_percent = BigInteger.valueOf(4).multiply(pow(BigInteger.TEN, 17));
         dist[2].dist_percent = BigInteger.valueOf(2).multiply(pow(BigInteger.TEN, 17));
@@ -225,9 +225,9 @@ class DividendsImplTest extends TestBase {
         assertEquals(expected_list, dividendScore.call("getDividendsCategories"));
 
 //        remove category
-        dist[0].category = "daofund";
-        dist[1].category = "baln_holders";
-        dist[2].category = "loans";
+        dist[0].recipient_name = "daofund";
+        dist[1].recipient_name = "baln_holders";
+        dist[2].recipient_name = "loans";
         dist[0].dist_percent = BigInteger.valueOf(4).multiply(pow(BigInteger.TEN, 17));
         dist[1].dist_percent = BigInteger.valueOf(6).multiply(pow(BigInteger.TEN, 17));
         dist[2].dist_percent = BigInteger.ZERO;
@@ -410,23 +410,24 @@ class DividendsImplTest extends TestBase {
         tokenFallback();
         setGetDividendsBatchSize();
     }
-    @Test
-    void testSetClaimed() {
-        BigInteger index = BigInteger.valueOf(10);
-        dividendScore.invoke(governanceScore, "setClaimed", governanceScore.getAddress(), index);
-        assertEquals(dividendScore.call("isClaimed", governanceScore.getAddress(), index), true);
 
-        index = BigInteger.valueOf(106);
-        dividendScore.invoke(governanceScore, "setClaimed", governanceScore.getAddress(), index);
-        assertEquals(dividendScore.call("isClaimed", governanceScore.getAddress(), index), true);
+    // @Test
+    // void testSetClaimed() {
+    //     BigInteger index = BigInteger.valueOf(10);
+    //     dividendScore.invoke(governanceScore, "setClaimed", governanceScore.getAddress(), index);
+    //     assertEquals(dividendScore.call("isClaimed", governanceScore.getAddress(), index), true);
 
-        index = BigInteger.valueOf(206);
-        dividendScore.invoke(governanceScore, "setClaimed", governanceScore.getAddress(), index);
-        assertEquals(dividendScore.call("isClaimed", governanceScore.getAddress(), index), true);
+    //     index = BigInteger.valueOf(106);
+    //     dividendScore.invoke(governanceScore, "setClaimed", governanceScore.getAddress(), index);
+    //     assertEquals(dividendScore.call("isClaimed", governanceScore.getAddress(), index), true);
 
-        index = BigInteger.valueOf(96);
-        dividendScore.invoke(governanceScore, "setClaimed", governanceScore.getAddress(), index);
-        assertEquals(dividendScore.call("isClaimed", governanceScore.getAddress(), index), true);
-    }
+    //     index = BigInteger.valueOf(206);
+    //     dividendScore.invoke(governanceScore, "setClaimed", governanceScore.getAddress(), index);
+    //     assertEquals(dividendScore.call("isClaimed", governanceScore.getAddress(), index), true);
+
+    //     index = BigInteger.valueOf(96);
+    //     dividendScore.invoke(governanceScore, "setClaimed", governanceScore.getAddress(), index);
+    //     assertEquals(dividendScore.call("isClaimed", governanceScore.getAddress(), index), true);
+    // }
 
 }

@@ -1,7 +1,7 @@
 package network.balanced.score.core.dividends;
 
 import network.balanced.score.lib.interfaces.Dividends;
-import network.balanced.score.lib.structs.DistPercentDict;
+import network.balanced.score.lib.structs.DistributionPercentage;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -261,15 +261,15 @@ public class DividendsImpl implements Dividends {
     }
 
     @External
-    public void setDividendsCategoryPercentage(DistPercentDict[] _dist_list) {
+    public void setDividendsCategoryPercentage(DistributionPercentage[] _dist_list) {
         only(admin);
         BigInteger totalPercentage = BigInteger.ZERO;
         if (_dist_list.length != completeDividendsCategories.size()) {
             Context.revert(TAG + ": Categories count mismatched!");
         }
 
-        for (DistPercentDict id : _dist_list) {
-            String category = id.category;
+        for (DistributionPercentage id : _dist_list) {
+            String category = id.recipient_name;
             BigInteger percent = id.dist_percent;
             if (isExists(category)) {
                 updateDividendsSnapshot(category, percent);
