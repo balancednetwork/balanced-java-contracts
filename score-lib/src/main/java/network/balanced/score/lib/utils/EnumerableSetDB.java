@@ -64,12 +64,12 @@ public class EnumerableSetDB<V> {
         Integer valueIndex = indexOf(value);
 
         if (valueIndex != null) {
-            int lastIndex = entries.size();
+            int lastIndex = entries.size() - 1;
             V lastValue = entries.pop();
             indexes.set(value, null);
             if (lastIndex != valueIndex) {
-                entries.set(valueIndex - 1, lastValue);
-                indexes.set(lastValue, valueIndex);
+                entries.set(valueIndex, lastValue);
+                indexes.set(lastValue, valueIndex + 1);
                 return lastValue;
             }
         }
