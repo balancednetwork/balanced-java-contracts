@@ -40,6 +40,7 @@ class Systemtest implements ScoreIntegrationTest {
     private static String dexJavaPath;
     private static String loansJavaPath;
     private static String rewardsJavaPath;
+    private static BigInteger EXA = BigInteger.TEN.pow(18);
 
     @BeforeAll    
     static void setup() throws Exception {
@@ -69,8 +70,8 @@ class Systemtest implements ScoreIntegrationTest {
                 balanced.bnusd._address()
             });
         owner.governance.setFeeProcessingInterval(BigInteger.ZERO);
+        owner.governance.setRebalancingThreshold(BigInteger.TEN.pow(17));
     }
-
 
     @Test
     @Order(1)
@@ -311,13 +312,45 @@ class Systemtest implements ScoreIntegrationTest {
         BigInteger totalBnusdSupply = owner.bnUSD.totalSupply();
         depositToStabilityContract(owner, totalBnusdSupply);
         loanTaker.rewards.claimRewards();
-        Thread.sleep(120);
+        Thread.sleep(150);
 
         //would be false if we used total supply
         assertTrue(rewards.compareTo(verifyRewards(loanTaker)) < 0);
 
         BigInteger totalLoansSupplyPost = owner.loans.getBalanceAndSupply("Loans", owner.getAddress()).get("_totalSupply");
         assertEquals(totalLoansSupplyPre, totalLoansSupplyPost);
+    }
+
+    @Test
+    @Order(9)
+    void rebalancingRaisePrice() throws Exception {
+        BalancedClient loanTaker = balanced.newClient();
+        BigInteger loan = BigInteger.TEN.pow(22);
+        loanTaker.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loan, null, null);
+        Map<String, BigInteger> originalBalanceAndSupply = loanTaker.loans.getBalanceAndSupply("Loans", loanTaker.getAddress());
+
+        reducePriceBelowThreshold();
+        rebalance();
+
+        Map<String, BigInteger> balanceAndSupply = loanTaker.loans.getBalanceAndSupply("Loans", loanTaker.getAddress());
+        assertTrue(originalBalanceAndSupply.get("_totalSupply").compareTo(balanceAndSupply.get("_totalSupply")) > 0);
+        assertTrue(originalBalanceAndSupply.get("_balance").compareTo(balanceAndSupply.get("_balance")) > 0);
+    }
+
+    @Test
+    @Order(10)
+    void rebalancingLowerPrice() throws Exception {
+        BalancedClient loanTaker = balanced.newClient();
+        BigInteger loan = BigInteger.TEN.pow(22);
+        loanTaker.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loan, null, null);
+        Map<String, BigInteger> originalBalanceAndSupply = loanTaker.loans.getBalanceAndSupply("Loans", loanTaker.getAddress());
+
+        raisePriceAboveThreshold();
+        rebalance();
+
+        Map<String, BigInteger> balanceAndSupply = loanTaker.loans.getBalanceAndSupply("Loans", loanTaker.getAddress());
+        assertTrue(originalBalanceAndSupply.get("_totalSupply").compareTo(balanceAndSupply.get("_totalSupply")) < 0);
+        assertTrue(originalBalanceAndSupply.get("_balance").compareTo(balanceAndSupply.get("_balance")) < 0);
     }
 
 
@@ -437,5 +470,75 @@ class Systemtest implements ScoreIntegrationTest {
     private void nextDay() {
         balanced.increaseDay(1);
         balanced.syncDistributions();
+    }
+
+    private void rebalance() throws Exception {
+        BalancedClient rebalancer = balanced.newClient();
+        while (true) {
+            BigInteger threshold = calculateThreshold();
+            owner.rebalancing.rebalance();
+            if (threshold.equals(calculateThreshold())) {
+                return;
+            }
+
+            System.out.println("rebalanced");
+        }
+   
+    }
+
+    private void reducePriceBelowThreshold() throws Exception {
+        BigInteger threshold = owner.rebalancing.getPriceChangeThreshold();
+        while (calculateThreshold().multiply(BigInteger.valueOf(100)).compareTo(threshold.multiply(BigInteger.valueOf(105))) < 0) {
+            reduceBnusdPrice();
+        }
+    }
+
+    private void raisePriceAboveThreshold() throws Exception {
+        BigInteger threshold = owner.rebalancing.getPriceChangeThreshold();
+        while (calculateThreshold().multiply(BigInteger.valueOf(100)).compareTo(threshold.negate().multiply(BigInteger.valueOf(105))) > 0) {
+            raiseBnusdPrice();
+        }
+    }
+
+    private BigInteger calculateThreshold() {
+        BigInteger bnusdPriceInIcx = owner.bnUSD.lastPriceInLoop();
+        BigInteger sicxPriceInIcx = owner.sicx.lastPriceInLoop();
+
+        BigInteger icxBnusdPoolId = owner.dex.getPoolId(balanced.sicx._address(), balanced.bnusd._address());
+        Map<String, Object> poolStats = owner.dex.getPoolStats(icxBnusdPoolId);
+        BigInteger sicxLiquidity = Balanced.hexObjectToInt(poolStats.get("base"));
+        BigInteger bnusdLiquidity = Balanced.hexObjectToInt(poolStats.get("quote"));
+
+        BigInteger actualBnusdPriceInSicx = bnusdPriceInIcx.multiply(EXA).divide(sicxPriceInIcx);
+        BigInteger bnusdPriceInSicx = sicxLiquidity.multiply(EXA).divide(bnusdLiquidity);
+        BigInteger priceDifferencePercentage = (actualBnusdPriceInSicx.subtract(bnusdPriceInSicx)).multiply(EXA).divide(actualBnusdPriceInSicx);
+
+        return priceDifferencePercentage;
+    }
+
+    private void reduceBnusdPrice() throws Exception {
+        BalancedClient sellerClient = balanced.newClient();
+        BigInteger amountToSell = BigInteger.TEN.pow(21);
+        depositToStabilityContract(sellerClient, BigInteger.TEN.pow(22));
+        JsonObject swapData = Json.object();
+        JsonObject swapParams = Json.object();
+        swapParams.add("toToken", balanced.sicx._address().toString());
+        swapData.add("method", "_swap");
+        swapData.add("params", swapParams);
+
+        sellerClient.bnUSD.transfer(balanced.dex._address(), amountToSell, swapData.toString().getBytes());
+    }
+
+    private void raiseBnusdPrice() throws Exception {
+        BalancedClient sellerClient = balanced.newClient();
+        BigInteger amountToSell = BigInteger.TEN.pow(21);
+        sellerClient.staking.stakeICX(amountToSell.multiply(BigInteger.TWO), null, null);
+        JsonObject swapData = Json.object();
+        JsonObject swapParams = Json.object();
+        swapParams.add("toToken", balanced.bnusd._address().toString());
+        swapData.add("method", "_swap");
+        swapData.add("params", swapParams);
+
+        sellerClient.sicx.transfer(balanced.dex._address(), amountToSell, swapData.toString().getBytes());
     }
 }

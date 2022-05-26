@@ -38,7 +38,7 @@ public class BalancedClient {
     private static Rebalancing _rebalancing;
 
     @ScoreClient
-    private static IRC2 _sicx;
+    private static SICX _sicx;
 
     @ScoreClient
     private static Dex _dex;
@@ -60,7 +60,7 @@ public class BalancedClient {
     public LoansScoreClient loans;
     public BalnScoreClient baln;
     public RebalancingScoreClient rebalancing;
-    public IRC2ScoreClient sicx;
+    public SICXScoreClient sicx;
     public DexScoreClient dex;
     public StabilityScoreClient stability;
     public StakedLPScoreClient stakedLp;
@@ -77,7 +77,7 @@ public class BalancedClient {
         loans = new LoansScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.loans._address());
         baln = new BalnScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.baln._address());
         rebalancing = new RebalancingScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.rebalancing._address());
-        sicx = new IRC2ScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.sicx._address());
+        sicx = new SICXScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.sicx._address());
         dex = new DexScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.dex._address());
         stability = new StabilityScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.stability._address());
         stakedLp = new StakedLPScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.stakedLp._address());

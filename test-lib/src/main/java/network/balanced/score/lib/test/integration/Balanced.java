@@ -195,14 +195,12 @@ public class Balanced {
     public boolean checkDistributionsDone() {
         BigInteger day = ownerClient.governance.getDay();
         Map<String, Object> status = ownerClient.rewards.distStatus();
-        System.out.println("platform_day: " + hexObjectToInt(status.get("platform_day")).intValue() + " < " + day.intValue());
         if (hexObjectToInt(status.get("platform_day")).intValue() < day.intValue()) {
             return false;
         }
 
         Map<String, String> dataSourceStatus = (Map<String, String>) status.get("source_days");
         for (String sourceDay : dataSourceStatus.values()) {
-            System.out.println("sourceDay: " + hexObjectToInt(sourceDay).intValue() + " < " + day.intValue());
             if (hexObjectToInt(sourceDay).intValue() < day.intValue()) {
                 return false;
             }

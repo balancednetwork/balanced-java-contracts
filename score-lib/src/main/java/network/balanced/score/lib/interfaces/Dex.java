@@ -41,6 +41,9 @@ public interface Dex extends AdminAddress, BnusdAddress, DexAddress, GovernanceA
     @External(readonly = true)
     BigInteger getPoolId(Address _token1Address, Address _token2Address);
 
+    @External(readonly = true)
+    public Map<String, Object> getPoolStats(BigInteger _id);
+
     @External
     void add(Address _baseToken, Address _quoteToken, BigInteger _baseValue, BigInteger _quoteValue,
                     @Optional boolean _withdraw_unused);
