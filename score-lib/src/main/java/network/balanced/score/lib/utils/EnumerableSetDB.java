@@ -24,12 +24,6 @@ import scorex.util.ArrayList;
 import java.math.BigInteger;
 import java.util.List;
 
-import java.math.BigInteger;
-
-import scorex.util.ArrayList;
-
-import java.util.List;
-
 
 public class EnumerableSetDB<V> {
     private final ArrayDB<V> entries;
@@ -88,7 +82,7 @@ public class EnumerableSetDB<V> {
     public List<V> range(BigInteger start, BigInteger stop) {
         List<V> data = new ArrayList<>();
         BigInteger size = BigInteger.valueOf(entries.size());
-        if (((BigInteger.ZERO.compareTo(start) <= 0) && (start.compareTo(size) < 0)) && (start.compareTo(stop) < 0)) {
+        if (start.compareTo(BigInteger.ZERO) >= 0 && start.compareTo(size) < 0 && start.compareTo(stop) < 0) {
             BigInteger end = (stop.compareTo(size) <= 0) ? stop : size;
             for (int i = start.intValue(); i < end.intValue(); i++) {
                 data.add(entries.get(i));

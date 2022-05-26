@@ -1,7 +1,3 @@
-package network.balanced.score.lib.utils;
-
-
-
 /*
  * Copyright (c) 2022-2022 Balanced.network.
  *
@@ -18,12 +14,15 @@ package network.balanced.score.lib.utils;
  * limitations under the License.
  */
 
+package network.balanced.score.lib.utils;
+
+
+
 import score.Context;
 import score.DictDB;
 import scorex.util.ArrayList;
 
 import java.util.List;
-
 
 public class IterableDictDB<K, V> {
 
@@ -34,14 +33,13 @@ public class IterableDictDB<K, V> {
 
 
     public IterableDictDB(String key, Class<V> valueType, Class<K> keyType, Boolean order) {
-        this.keys = new SetDB<K>(key + NAME + "_keys", keyType, order);
+        this.keys = new SetDB<>(key + NAME + "_keys", keyType, order);
         this.values = Context.newDictDB(key + NAME + "_values", valueType);
     }
 
-
     public List<K> keys() {
         int size = this.keys.size();
-        List<K> keyList = new ArrayList<K>();
+        List<K> keyList = new ArrayList<>();
         for (int i = 0; i < size; i++) {
             keyList.add(this.keys.get(i));
         }

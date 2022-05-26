@@ -18,6 +18,7 @@ package network.balanced.score.lib.utils;
 
 import score.Address;
 import score.Context;
+import score.UserRevertedException;
 import score.VarDB;
 
 import java.math.BigInteger;
@@ -28,8 +29,8 @@ public class LinkedListDB {
     private static final String NAME = "_LINKED_LISTDB";
     public static final BigInteger DEFAULT_NODE_ID = BigInteger.ZERO;
 
-    public final VarDB<BigInteger> headId;
-    public final VarDB<BigInteger> tailId;
+    private final VarDB<BigInteger> headId;
+    private final VarDB<BigInteger> tailId;
     private final VarDB<BigInteger> length;
     private final String name;
 
@@ -75,8 +76,8 @@ public class LinkedListDB {
     }
 
     public NodeDB getNode(BigInteger nodeId) {
-        if (nodeId == null) {
-            Context.revert("Invalid Node Id");
+        if (nodeId == null || nodeId.equals(DEFAULT_NODE_ID)) {
+            throw new UserRevertedException("Invalid Node Id");
         }
         NodeDB node = createNodeInstance(nodeId);
         if (!node.exists()) {
@@ -87,7 +88,7 @@ public class LinkedListDB {
 
     public NodeDB getTailNode() {
         BigInteger tailId = this.tailId.get();
-        if (tailId == null) {
+        if (tailId == null || tailId.equals(DEFAULT_NODE_ID)) {
             Context.revert("Empty Linked list");
         }
         return getNode(tailId);
@@ -95,7 +96,7 @@ public class LinkedListDB {
 
     public NodeDB getHeadNode() {
         BigInteger headId = this.headId.get();
-        if (headId == null) {
+        if (headId == null || headId.equals(DEFAULT_NODE_ID)) {
             Context.revert("Empty Linked list");
         }
         return getNode(headId);
@@ -173,7 +174,7 @@ public class LinkedListDB {
 
     public void clear() {
         BigInteger currentId = headId.get();
-        if (currentId == null) {
+        if (currentId == null || currentId.equals(DEFAULT_NODE_ID)) {
             return;
         }
         NodeDB nodeToRemove = getNode(currentId);
@@ -183,6 +184,8 @@ public class LinkedListDB {
             nodeToRemove.delete();
             nodeToRemove = getNode(currentId);
         }
+        nodeToRemove.delete();
+
         this.tailId.set(null);
         this.headId.set(null);
         this.length.set(null);
@@ -197,4 +200,3 @@ public class LinkedListDB {
     }
 
 }
-

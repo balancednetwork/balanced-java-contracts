@@ -32,6 +32,8 @@ public class Const {
     protected static final BigInteger FEE_SCALE = BigInteger.valueOf(10_000);
     protected static final BigInteger FIRST_NON_BALANCED_POOL = BigInteger.valueOf(6L);
     protected static final Integer ICX_QUEUE_FILL_DEPTH = 50;
+    // TODO Hardcoding some poolIDs should not be done, it should be dynamic. creates issues in testnet as they have
+    //  different environment
     protected static final BigInteger USDS_BNUSD_ID = BigInteger.valueOf(10L);
     protected static final BigInteger IUSDT_BNUSD_ID = BigInteger.valueOf(15L);
     protected static final BigInteger WITHDRAW_LOCK_TIMEOUT = U_SECONDS_DAY;
