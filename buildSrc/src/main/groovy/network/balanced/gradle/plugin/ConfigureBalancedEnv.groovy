@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import foundation.icon.icx.Wallet
 import foundation.icon.jsonrpc.Address
+import foundation.icon.jsonrpc.model.Hash
 import foundation.icon.score.client.DefaultScoreClient
 import network.balanced.gradle.plugin.utils.Action
 import network.balanced.gradle.plugin.utils.Network
@@ -37,10 +38,10 @@ class ConfigureBalancedEnv extends DefaultTask {
 
     private Map<String, Object> properties = new HashMap<>()
 
-    private final Property<String> keystore
-    private final Property<String> password
-    private final Property<String> actionsFilePath
-    private final Property<String> addressesFilePath
+    private Property<String> keystore
+    private Property<String> password
+    private Property<String> actionsFilePath
+    private Property<String> addressesFilePath
     private final Property<String> propertiesFile
 
     private DefaultICONClient client
@@ -242,7 +243,34 @@ class ConfigureBalancedEnv extends DefaultTask {
         if (is == null) {
             throw new RuntimeException(this.propertiesFile.get() + " file not found")
         }
-        _properties.load(is)
-        this.network = Network.getNetwork(_properties.getProperty("NETWORK"))
+        this._properties.load(is)
+        this.network = Network.getNetwork(_properties.getProperty("NETWORK"));
+
+        String address = this._properties.getProperty("ORACLE_ADDRESS");
+        Address ORACLE_ADDRESS = new Address(address);
+        properties.put("ORACLE_ADDRESS", ORACLE_ADDRESS);
+
+        address = this._properties.getProperty("STAKEDLP_ADDRESS")
+        Address stakedlp = new Address(address)
+        properties.put("STAKEDLP_ADDRESS", stakedlp);
+
+        address = this._properties.getProperty("RESERVE_ADDRESS")
+        Address reserveAddress = new Address(address)
+        properties.put("RESERVE_ADDRESS", reserveAddress);
+
+        // delegate methods
+        List<String> prepsAddress = _properties.getProperty("PREP_LIST").split("--;--").toList()
+        List<String> vote = _properties.getProperty("VOTES_IN_PER").split("--;--").toList()
+        assert (prepsAddress.size() == vote.size())
+        List<HashMap<String, Object>> delegationParam = new ArrayList<Map>()
+        for (int i = 0; i < vote.size(); i++) {
+            HashMap<String, Object> hashMap = new Properties();
+            address = new Address(prepsAddress[i])
+            hashMap["_address"] = new Address(address);
+            hashMap["_votes_in_per"] = vote[i].toBigInteger() * BigInteger.TEN.pow(18);
+            delegationParam.add(hashMap)
+        }
+
+        properties.put("DELEGATE_PARAM", delegationParam)
     }
 }

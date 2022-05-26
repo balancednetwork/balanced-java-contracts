@@ -41,6 +41,12 @@ deployBalancedContracts  {
             keystore = rootProject.findProperty('keystoreName') ?: ''
             password = rootProject.findProperty('keystorePass') ?: ''
         }
+        sejong {
+            env = "sejong"
+            configFile = "contracts-sample.json"
+            keystore = rootProject.findProperty('keystoreName') ?: ''
+            password = rootProject.findProperty('keystorePass') ?: ''
+        }
     }
 }
 
