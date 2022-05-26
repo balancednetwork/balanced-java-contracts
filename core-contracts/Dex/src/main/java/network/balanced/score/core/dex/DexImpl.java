@@ -19,8 +19,8 @@ package network.balanced.score.core.dex;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
+import network.balanced.score.core.dex.db.NodeDB;
 import network.balanced.score.lib.structs.RewardsDataEntry;
-import network.balanced.score.lib.utils.NodeDB;
 import score.Address;
 import score.Context;
 import score.annotation.EventLog;

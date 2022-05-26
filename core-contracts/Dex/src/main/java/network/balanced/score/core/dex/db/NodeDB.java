@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.utils;
+package network.balanced.score.core.dex.db;
 
 import score.Address;
 import score.Context;
@@ -22,7 +22,7 @@ import score.VarDB;
 
 import java.math.BigInteger;
 
-import static network.balanced.score.lib.utils.LinkedListDB.DEFAULT_NODE_ID;
+import static network.balanced.score.core.dex.db.LinkedListDB.DEFAULT_NODE_ID;
 
 public class NodeDB {
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.utils;
+package network.balanced.score.core.dex.db;
 
 import score.Address;
 import score.Context;
