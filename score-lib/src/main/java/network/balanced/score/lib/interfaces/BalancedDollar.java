@@ -19,6 +19,7 @@ package network.balanced.score.lib.interfaces;
 import network.balanced.score.lib.interfaces.addresses.AdminAddress;
 import network.balanced.score.lib.interfaces.addresses.GovernanceAddress;
 import network.balanced.score.lib.interfaces.addresses.OracleAddress;
+import network.balanced.score.lib.interfaces.base.IRC2;
 import score.Address;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -26,7 +27,7 @@ import score.annotation.Optional;
 
 import java.math.BigInteger;
 
-public interface BalancedDollar extends GovernanceAddress, AdminAddress, OracleAddress {
+public interface BalancedDollar extends GovernanceAddress, AdminAddress, OracleAddress, IRC2 {
 
     @External(readonly = true)
     String getPeg();

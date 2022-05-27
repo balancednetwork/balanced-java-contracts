@@ -13,10 +13,11 @@ import foundation.icon.score.client.DefaultScoreClient;
 import foundation.icon.score.client.ScoreClient;
 import network.balanced.score.lib.structs.BalancedAddresses;
 import network.balanced.score.lib.interfaces.*;
+//import network.balanced.score.lib.test.integration.BalancedClient;
+import score.Address;
 
 public class Balanced {
     KeyWallet owner;
-
     public DefaultScoreClient governance;
     public DefaultScoreClient baln;
     public DefaultScoreClient bwt;
@@ -44,8 +45,8 @@ public class Balanced {
        
     }
 
-    public void deployBalanced() throws Exception {
-        owner = createWalletWithBalance(BigInteger.valueOf(1000).multiply(BigInteger.TEN.pow(18)));
+    public KeyWallet deployBalanced() throws Exception {
+        owner = createWalletWithBalance(BigInteger.valueOf(10000).multiply(BigInteger.TEN.pow(18)));
         deployPrep();
 
         governance = deploy(owner, "Governance", null);
@@ -53,10 +54,16 @@ public class Balanced {
         deployContracts();
         setupAddresses();
         setupContracts();
-        // delegate(adminWallet);
-        // transfer(governance._address(), BigInteger.valueOf(10000).multiply(BigInteger.TEN.pow(18)));
-        // ((GovernanceScoreClient)governanceScore).createBnusdMarket(BigInteger.valueOf(210).multiply(BigInteger.TEN.pow(18)));
-    }
+        return owner;
+        }
+
+//    public BalancedClient newClient(BigInteger clientBalanace) throws Exception {
+//        return new BalancedClient(this, createWalletWithBalance(clientBalanace));
+//    }
+//
+//    public BalancedClient newClient() throws Exception {
+//        return newClient(BigInteger.TEN.pow(24));
+//    }
 
     protected void deployPrep() {
         try {
@@ -74,7 +81,6 @@ public class Balanced {
         loans = deploy(owner, "Loans", Map.of("_governance", governance._address()));
         rebalancing = deploy(owner, "Rebalancing", Map.of("_governance", governance._address()));
         rewards = deploy(owner, "Rewards", Map.of("_governance", governance._address()));
-        sicx = deploy(owner, "Sicx", Map.of("_admin", governance._address()));
         bnusd = deploy(owner, "Bnusd", Map.of("_governance", governance._address()));
         daofund = deploy(owner, "DAOfund", Map.of("_governance", governance._address()));
         dividends = deploy(owner, "Dividends", Map.of("_governance", governance._address()));
@@ -82,6 +88,8 @@ public class Balanced {
         reserve = deploy(owner, "Reserve", Map.of("governance", governance._address()));
         router = deploy(owner, "Router", Map.of("_governance", governance._address()));
         staking = deploy(owner, "Staking", null);
+        sicx = deploy(owner, "Sicx", Map.of("_admin", staking._address()));
+
     }
 
     protected void setupAddresses() {
@@ -112,5 +120,16 @@ public class Balanced {
         governanceScore.configureBalanced();
         governanceScore.launchBalanced();
         stakingScore.toggleStakingOn();
+        governanceScore.enable_fee_handler();
+        governanceScore.setFeeProcessingInterval(BigInteger.ONE);
+
+        Address[] acceptedAddress=new Address[]{
+                bnusd._address(), sicx._address(),baln._address()
+        };
+        governanceScore.setAcceptedDividendTokens(acceptedAddress);
+        governanceScore.addAcceptedTokens(String.valueOf(bnusd._address()));
+        governanceScore.addAcceptedTokens(String.valueOf(sicx._address()));
+        governanceScore.addAcceptedTokens(String.valueOf(baln._address()));
+
     }
 }

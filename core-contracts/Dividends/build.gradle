@@ -31,6 +31,8 @@ dependencies {
 
     testImplementation Dependencies.javaeeUnitTest
     testImplementation Dependencies.javaeeTokens
+    testImplementation Dependencies.json
+
     // Use JUnit Jupiter for testing.
 
     testImplementation Dependencies.junitJupiter
@@ -98,6 +100,7 @@ task integrationTest(type: Test) {
 
         systemProperty "python", new File(project(':test-lib').projectDir, 'python-contracts/dividends.zip')
         systemProperty "java", optimizedJar.outputJarName
+
     }
 
 }
