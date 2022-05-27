@@ -24,6 +24,13 @@ import scorex.util.ArrayList;
 import java.math.BigInteger;
 import java.util.List;
 
+import java.math.BigInteger;
+
+import scorex.util.ArrayList;
+
+import java.util.List;
+
+
 public class EnumerableSetDB<V> {
     private final ArrayDB<V> entries;
     private final DictDB<V, Integer> indexes;
@@ -48,7 +55,6 @@ public class EnumerableSetDB<V> {
     }
 
     public Integer indexOf(V value) {
-        // returns null if value doesn't exist
         Integer result = indexes.get(value);
         if (result != null) {
             return result - 1;
@@ -58,7 +64,6 @@ public class EnumerableSetDB<V> {
 
     public void add(V value) {
         if (!contains(value)) {
-            //add new value
             entries.add(value);
             indexes.set(value, entries.size());
         }
@@ -91,3 +96,4 @@ public class EnumerableSetDB<V> {
         return data;
     }
 }
+

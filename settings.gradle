@@ -34,9 +34,6 @@ project(':BatchDisbursement').projectDir = file("core-contracts/BatchDisbursemen
 include(':Reserve')
 project(':Reserve').projectDir = file("core-contracts/Reserve")
 
-include(':sicx')
-project(':sicx').projectDir = file("token-contracts/sicx")
-
 include(':Rebalancing')
 project(':Rebalancing').projectDir = file("core-contracts/Rebalancing")
 
