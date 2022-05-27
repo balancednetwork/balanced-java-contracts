@@ -504,7 +504,7 @@ public class DexImpl {
     }
 
     protected BigInteger getSicxRate() {
-        return (BigInteger) Context.call(staking.get(), "getTodayRate()");
+        return (BigInteger) Context.call(staking.get(), "getTodayRate");
     }
 
     protected BigInteger getRewardableAmount(Address tokenAddress) {
@@ -526,18 +526,16 @@ public class DexImpl {
 
         BigInteger oldIcxTotal = icxQueueTotal.get();
         List<RewardsDataEntry> oldData = new ArrayList<>();
-
         BigInteger balnFees = (value.multiply(icxBalnFee.get())).divide(FEE_SCALE);
         BigInteger conversionFees = value.multiply(icxConversionFee.get()).divide(FEE_SCALE);
-
         BigInteger orderSize = value.subtract(balnFees.add(conversionFees));
         BigInteger orderIcxValue = (orderSize.multiply(sicxIcxPrice)).divide(EXA);
-
         BigInteger lpSicxSize = orderSize.add(conversionFees);
 
-        Context.require(orderIcxValue.compareTo(icxQueueTotal.get()) <= 0, TAG + ": InsufficientLiquidityError: Not enough ICX suppliers.");
+        Context.require(orderIcxValue.compareTo(oldIcxTotal) <= 0, TAG + ": InsufficientLiquidityError: Not enough ICX suppliers.");
         boolean filled = false;
         BigInteger orderRemainingIcx = orderIcxValue;
+
         int iterations = 0;
         while (!filled) {
             iterations += 1;
@@ -717,8 +715,6 @@ public class DexImpl {
         Address user = Context.getCaller();
         BigInteger oldOrderValue = BigInteger.ZERO;
         BigInteger orderId = icxQueueOrderId.getOrDefault(user, BigInteger.ZERO);
-
-
         withdrawLock.at(SICXICX_POOL_ID).set(user, BigInteger.valueOf(Context.getBlockTimestamp()));
         // Upsert Order so we can bump to the back of the queue
         if (orderId.compareTo(BigInteger.ZERO) > 0) {
@@ -734,7 +730,6 @@ public class DexImpl {
         icxQueueOrderId.set(user, orderId);
 
         BigInteger oldIcxTotal = icxQueueTotal.getOrDefault(BigInteger.ZERO);
-
         // Update total ICX queue size
         BigInteger currentIcxTotal = oldIcxTotal.add(orderValue);
 
@@ -776,19 +771,15 @@ public class DexImpl {
         icxQueueTotal.set(currentIcxTotal);
         icxQueue.remove(orderId);
         icxQueueOrderId.set(user, null);
-
         Context.transfer(user, withdrawAmount);
         activeAddresses.get(SICXICX_POOL_ID).remove(user);
-
         updateAccountSnapshot(user, SICXICX_POOL_ID);
         updateTotalSupplySnapshot(SICXICX_POOL_ID);
-
         List<RewardsDataEntry> rewardsList = new ArrayList<>();
         RewardsDataEntry rewardsEntry = new RewardsDataEntry();
         rewardsEntry._user = user;
         rewardsEntry._balance = withdrawAmount;
         rewardsList.add(rewardsEntry);
-
         Context.call(rewards.get(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal, rewardsList);
     }
 
