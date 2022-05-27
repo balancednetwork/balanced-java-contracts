@@ -249,7 +249,7 @@ class DividendsImplTest extends TestBase {
 
     @Test
     void getSnapshotId() {
-        assertEquals(BigInteger.ONE, dividendScore.call("getSnapshotId"));
+        assertEquals(BigInteger.ZERO, dividendScore.call("getSnapshotId"));
     }
 
     @Test

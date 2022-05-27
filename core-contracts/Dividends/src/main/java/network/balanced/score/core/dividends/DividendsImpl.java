@@ -85,6 +85,12 @@ public class DividendsImpl implements Dividends {
         only(governance);
         distributionActivate.set(_status);
     }
+            
+    @External
+    public void setTimeOffset(BigInteger deltaTime) {
+        only(governance);
+        timeOffset.set(deltaTime);
+    }
 
     @External
     public void setGovernance(Address _address) {
