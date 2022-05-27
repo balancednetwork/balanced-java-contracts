@@ -105,6 +105,12 @@ public interface Rewards extends
     @External
     void updateBatchRewardsData(String _name, BigInteger _totalSupply, RewardsDataEntry[] _data);
 
+    @External
+    void addDataProvider(Address _source);
+
+    @External(readonly = true)
+    List<Address> getDataProviders();
+
     @External    
     void setBatchSize(int _batch_size);
 

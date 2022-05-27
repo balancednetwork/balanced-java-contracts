@@ -513,7 +513,7 @@ public class RewardsImpl implements Rewards {
         dataProviders.add(_source);
     }
 
-    @External
+    @External(readonly = true)
     public List<Address> getDataProviders() {
         int dataProvidersSize = dataProviders.size();
         List<Address> dataProvidersList = new ArrayList<>();
