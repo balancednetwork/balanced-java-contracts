@@ -14,24 +14,31 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.rewards;
+package network.balanced.score.core.systemtest;
 
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Answers.valueOf;
 
 import java.math.BigInteger;
 import java.util.Map;
 
 import com.eclipsesource.json.Json;
+import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import javafx.scene.effect.Light.Point;
+
 import org.junit.jupiter.api.Order;
 
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
+import static network.balanced.score.lib.test.integration.BalancedUtils.*;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
 
 class Systemtest implements ScoreIntegrationTest {
@@ -71,6 +78,10 @@ class Systemtest implements ScoreIntegrationTest {
             });
         owner.governance.setFeeProcessingInterval(BigInteger.ZERO);
         owner.governance.setRebalancingThreshold(BigInteger.TEN.pow(17));
+        owner.governance.setVoteDuration(BigInteger.TWO);
+        owner.governance.setVoteDefinitionFee(BigInteger.TEN.pow(10));
+        owner.governance.setBalnVoteDefinitionCriterion(BigInteger.ZERO);
+        owner.governance.setQuorum(BigInteger.ONE);
     }
 
     @Test
@@ -321,8 +332,39 @@ class Systemtest implements ScoreIntegrationTest {
         assertEquals(totalLoansSupplyPre, totalLoansSupplyPost);
     }
 
+
     @Test
     @Order(9)
+    void stakingAndUntstakingLp() throws Exception {
+        BalancedClient lpClient = balanced.newClient();
+        BalancedClient lpBuyer = balanced.newClient();
+        
+        BigInteger lpAmount = BigInteger.TEN.pow(22);
+        depositToStabilityContract(lpClient, lpAmount.multiply(BigInteger.TWO));
+        
+        joinsICXBnusdLP(lpClient, lpAmount, lpAmount);
+        stakeICXBnusdLP(lpClient);
+        Thread.sleep(100);
+        
+        unstakeICXBnusdLP(lpClient);
+        verifyRewards(lpClient);
+        Thread.sleep(100);
+
+        verifyNoRewards(lpClient);
+        verifyNoRewards(lpBuyer);
+
+        BigInteger icxBnusdPoolId = owner.dex.getPoolId(balanced.sicx._address(), balanced.bnusd._address());
+        BigInteger poolBalance = lpClient.dex.balanceOf(lpClient.getAddress(), icxBnusdPoolId);
+        lpClient.dex.transfer(lpBuyer.getAddress(), poolBalance, icxBnusdPoolId, null);
+        stakeICXBnusdLP(lpBuyer);
+        Thread.sleep(100);
+
+        verifyNoRewards(lpClient);
+        verifyRewards(lpBuyer);
+    }
+
+    @Test
+    @Order(10)
     void rebalancingRaisePrice() throws Exception {
         BalancedClient loanTaker = balanced.newClient();
         BigInteger loan = BigInteger.TEN.pow(22);
@@ -338,7 +380,7 @@ class Systemtest implements ScoreIntegrationTest {
     }
 
     @Test
-    @Order(10)
+    @Order(11)
     void rebalancingLowerPrice() throws Exception {
         BalancedClient loanTaker = balanced.newClient();
         BigInteger loan = BigInteger.TEN.pow(22);
@@ -353,6 +395,53 @@ class Systemtest implements ScoreIntegrationTest {
         assertTrue(originalBalanceAndSupply.get("_balance").compareTo(balanceAndSupply.get("_balance")) < 0);
     }
 
+    @Test
+    @Order(12)
+    void LiquidateAndRetirebadDebt() throws Exception {
+         BalancedClient voter = balanced.newClient();
+        BigInteger POINTS = BigInteger.valueOf(10_000);
+
+        depositToStabilityContract(voter, BigInteger.TEN.pow(18));
+        
+        BigInteger lockingRatio = BigInteger.valueOf(8500);
+        JsonObject setLockingRatioParameters = new JsonObject()
+        .add("_value", lockingRatio.intValue());
+        
+        JsonArray setLockingRatioCall = new JsonArray()
+            .add("setLockingRatio")
+            .add(setLockingRatioParameters);
+
+        JsonArray actions = new JsonArray()
+            .add(setLockingRatioCall);
+        executeVoteActions(balanced, voter, "setLockingRatio", actions);
+
+        BalancedClient loanTaker = balanced.newClient();
+        BalancedClient liquidator = balanced.newClient();
+        
+        BigInteger collateral = BigInteger.TEN.pow(23);
+        BigInteger collateralValue = collateral.multiply(owner.sicx.lastPriceInLoop()).divide(EXA);
+        // BigInteger dollarValue = collateralValue.multiply(EXA).divide(owner.bnUSD.lastPriceInLoop());
+        BigInteger feePercent = Balanced.hexObjectToInt(owner.loans.getParameters().get("origination fee"));
+        BigInteger loan = POINTS.multiply(collateralValue).divide(lockingRatio);
+        BigInteger fee = loan.multiply(feePercent).divide(POINTS);
+        loanTaker.loans.depositAndBorrow(collateral, "bnUSD", loan, null, null);
+        
+        BigInteger balancePreLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
+        liquidator.loans.liquidate(loanTaker.getAddress());
+        BigInteger balancePostLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
+        assertTrue(balancePreLiquidation.compareTo(balancePostLiquidation) < 0);
+
+        depositToStabilityContract(liquidator, loan.multiply(BigInteger.TWO));
+
+        BigInteger balancePreRetire = liquidator.bnUSD.balanceOf(liquidator.getAddress());
+        BigInteger sICXBalancePreRetire = liquidator.sicx.balanceOf(liquidator.getAddress());
+        liquidator.loans.retireBadDebt("bnUSD", loan.add(fee));
+        BigInteger balancePostRetire = liquidator.bnUSD.balanceOf(liquidator.getAddress());
+        BigInteger sICXBalancePostRetire = liquidator.sicx.balanceOf(liquidator.getAddress());
+
+        assertTrue(balancePreRetire.compareTo(balancePostRetire) > 0);
+        assertTrue(sICXBalancePreRetire.compareTo(sICXBalancePostRetire) < 0);
+    }
 
     private void updateRewards() {
         balanced.rewards._update(rewardsJavaPath, Map.of("_governance", balanced.governance._address()));
@@ -418,6 +507,12 @@ class Systemtest implements ScoreIntegrationTest {
         BigInteger icxBnusdPoolId = owner.dex.getPoolId(balanced.sicx._address(), balanced.bnusd._address());
         BigInteger poolBalance = client.dex.balanceOf(client.getAddress(), icxBnusdPoolId);
         client.dex.transfer(balanced.stakedLp._address(), poolBalance, icxBnusdPoolId, null);
+    }
+
+    private void unstakeICXBnusdLP(BalancedClient client) {
+        BigInteger icxBnusdPoolId = owner.dex.getPoolId(balanced.sicx._address(), balanced.bnusd._address());
+        BigInteger poolBalance = client.stakedLp.balanceOf(client.getAddress(), icxBnusdPoolId);
+        client.stakedLp.unstake(icxBnusdPoolId, poolBalance);
     }
 
     private void stakeICXBalnLP(BalancedClient client) {

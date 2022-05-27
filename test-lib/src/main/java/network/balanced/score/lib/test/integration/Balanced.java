@@ -26,6 +26,7 @@ import network.balanced.score.lib.structs.BalancedAddresses;
 import score.Address;
 
 import java.math.BigInteger;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -55,7 +56,10 @@ public class Balanced {
     public DefaultScoreClient stakedLp;
     public DefaultScoreClient stability;
 
+    HashMap<Address, BalancedClient> balancedClients;
+
     public Balanced() {
+        balancedClients = new HashMap<>();
     }
 
     public void deployBalanced() throws Exception {
@@ -177,11 +181,17 @@ public class Balanced {
     }
 
     public BalancedClient newClient(BigInteger clientBalanace) throws Exception {
-        return new BalancedClient(this, createWalletWithBalance(clientBalanace));
+        BalancedClient client = new BalancedClient(this, createWalletWithBalance(clientBalanace));
+        balancedClients.put(client.getAddress(), client);
+        return client;
     }
 
     public BalancedClient newClient() throws Exception {
         return newClient(BigInteger.TEN.pow(24));
+    }
+
+    public BalancedClient getClient(Address address) throws Exception {
+        return balancedClients.get(address);
     }
 
     public void syncDistributions() {
