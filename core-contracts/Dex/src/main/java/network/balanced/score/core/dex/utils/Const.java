@@ -37,7 +37,6 @@ public class Const {
     public static final int IUSDT_BNUSD_ID = 15;
     public static final BigInteger WITHDRAW_LOCK_TIMEOUT = U_SECONDS_DAY;
     public static final Address MINT_ADDRESS = EOA_ZERO;
-    public static final Address DEX_ZERO_SCORE_ADDRESS = Address.fromString("cxf000000000000000000000000000000000000000");
     public static final String TAG = "Balanced DEX";
 
     public static final String IDS = "ids";
