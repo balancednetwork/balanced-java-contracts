@@ -72,7 +72,7 @@ public class MulticallTest extends TestBase {
     void setAndGetDex() {
         Executable setDexNotFromOwner = () -> multicallScore.invoke(sm.createAccount(), "setDexAddress",
                 dexMock.getAddress());
-        String expectedErrorMessage = "Multicall: Caller is not the owner";
+        String expectedErrorMessage = "Reverted(0): Multicall: Caller is not the owner";
         expectErrorMessage(setDexNotFromOwner, expectedErrorMessage);
 
         multicallScore.invoke(owner, "setDexAddress", dexMock.getAddress());

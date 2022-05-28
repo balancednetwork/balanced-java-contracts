@@ -112,7 +112,7 @@ class DAOfundImplTest extends TestBase {
 
         Executable depositFromNonAllowedToken = () -> daofundScore.invoke(owner, "tokenFallback", owner.getAddress(),
                 BigInteger.TEN.pow(20), new byte[0]);
-        expectErrorMessage(depositFromNonAllowedToken, TAG + ": Daofund can't receive this token");
+        expectErrorMessage(depositFromNonAllowedToken, "Reverted(0): " + TAG + ": Daofund can't receive this token");
 
         daofundScore.invoke(sicxScore, "tokenFallback", owner.getAddress(), BigInteger.TEN.pow(20), new byte[0]);
         Map<String, BigInteger> expectedBalances = Map.of(sicxScore.getAddress().toString(), BigInteger.TEN.pow(20),
@@ -142,7 +142,7 @@ class DAOfundImplTest extends TestBase {
         Executable disburseInsufficientFund = () -> daofundScore.invoke(governanceScore, "disburse",
                 receiver.getAddress(), new Disbursement[]{disbursement});
         expectErrorMessage(disburseInsufficientFund,
-                TAG + ": Insufficient balance of asset " + balnScore.getAddress().toString() + " in DAOfund");
+                "Reverted(0): " + TAG + ": Insufficient balance of asset " + balnScore.getAddress().toString() + " in DAOfund");
     }
 
     @Test

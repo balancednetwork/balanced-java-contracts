@@ -110,7 +110,7 @@ public class RebalancingTest extends TestBase {
         // Sender not governance
         Account nonGovernance = sm.createAccount();
         String expectedErrorMessage =
-                "Authorization Check: Authorization failed. Caller: " + nonGovernance.getAddress() + " Authorized " +
+                "Reverted(0): Authorization Check: Authorization failed. Caller: " + nonGovernance.getAddress() + " Authorized " +
                         "Caller: " + governanceScore.getAddress();
         Executable setThresholdNotFromGovernance = () -> rebalancingScore.invoke(nonGovernance,
                 "setPriceDiffThreshold", threshold);

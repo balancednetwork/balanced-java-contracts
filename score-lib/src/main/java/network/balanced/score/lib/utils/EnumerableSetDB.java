@@ -49,6 +49,7 @@ public class EnumerableSetDB<V> {
     }
 
     public Integer indexOf(V value) {
+        // returns null if value doesn't exist
         Integer result = indexes.get(value);
         if (result != null) {
             return result - 1;
@@ -58,6 +59,7 @@ public class EnumerableSetDB<V> {
 
     public void add(V value) {
         if (!contains(value)) {
+            //add new value
             entries.add(value);
             indexes.set(value, entries.size());
         }
@@ -65,13 +67,14 @@ public class EnumerableSetDB<V> {
 
     public V remove(V value) {
         Integer valueIndex = indexOf(value);
+
         if (valueIndex != null) {
             int lastIndex = entries.size() - 1;
             V lastValue = entries.pop();
             indexes.set(value, null);
             if (lastIndex != valueIndex) {
                 entries.set(valueIndex, lastValue);
-                indexes.set(lastValue, valueIndex+1);
+                indexes.set(lastValue, valueIndex + 1);
                 return lastValue;
             }
         }
@@ -90,4 +93,3 @@ public class EnumerableSetDB<V> {
         return data;
     }
 }
-
