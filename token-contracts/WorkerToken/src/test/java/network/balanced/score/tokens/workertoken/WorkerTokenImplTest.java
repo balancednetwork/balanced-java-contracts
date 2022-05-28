@@ -92,7 +92,7 @@ class WorkerTokenImplTest extends TestBase {
         Executable nonAdminTransfer = () -> workerToken.invoke(nonAdmin, "adminTransfer", owner.getAddress(),
                 receiver.getAddress(), transferValue, new byte[0]);
         String expectedErrorMessage =
-                "Authorization Check: Authorization failed. Caller: " + nonAdmin.getAddress() + " Authorized Caller: "
+                "Reverted(0): Authorization Check: Authorization failed. Caller: " + nonAdmin.getAddress() + " Authorized Caller: "
                         + admin.getAddress();
         expectErrorMessage(nonAdminTransfer, expectedErrorMessage);
 
@@ -124,7 +124,7 @@ class WorkerTokenImplTest extends TestBase {
         // Even this fails, the address is already added in the db. This is due to limitation in unit test framework
         Executable maxHoldersReached = () -> workerToken.invoke(owner, "transfer",
                 receivers[maxHolderCount - 1].getAddress(), transferValue, new byte[0]);
-        String expectedErrorMessage = TAG + ": The maximum holder count of " + maxHolderCount + " has been reached. " +
+        String expectedErrorMessage = "Reverted(0): " + TAG + ": The maximum holder count of " + maxHolderCount + " has been reached. " +
                 "Only transfers of whole balances or moves between current holders is allowed until the total holder " +
                 "count is reduced.";
         expectErrorMessage(maxHoldersReached, expectedErrorMessage);
@@ -201,7 +201,7 @@ class WorkerTokenImplTest extends TestBase {
         Account nonBalnScore = Account.newScoreAccount(scoreCount++);
         Executable nonBalnTransfer = () -> workerToken.invoke(nonBalnScore, "tokenFallback", owner.getAddress(),
                 totalBalnToDistribute, new byte[0]);
-        String expectedErrorMessage = TAG + ": The Worker Token contract can only accept BALN tokens. Deposit not " +
+        String expectedErrorMessage = "Reverted(0): " + TAG + ": The Worker Token contract can only accept BALN tokens. Deposit not " +
                 "accepted from" + nonBalnScore.getAddress() + "Only accepted from BALN = " + balnScore.getAddress();
         expectErrorMessage(nonBalnTransfer, expectedErrorMessage);
     }
