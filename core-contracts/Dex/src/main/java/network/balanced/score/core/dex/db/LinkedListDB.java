@@ -65,7 +65,7 @@ public class LinkedListDB {
         if (length.getOrDefault(BigInteger.ZERO).equals(BigInteger.ZERO)) {
             headId.set(nodeId);
         } else {
-            BigInteger tailId = this.tailId.get();
+            BigInteger tailId = this.tailId.getOrDefault(DEFAULT_NODE_ID);
             NodeDB tail = getNode(tailId);
             tail.setNext(nodeId);
             nodeToAppend.setPrev(tailId);
@@ -87,7 +87,7 @@ public class LinkedListDB {
     }
 
     public NodeDB getTailNode() {
-        BigInteger tailId = this.tailId.get();
+        BigInteger tailId = this.tailId.getOrDefault(DEFAULT_NODE_ID);
         if (tailId == null || tailId.equals(DEFAULT_NODE_ID)) {
             Context.revert("Empty Linked list");
         }
@@ -95,7 +95,7 @@ public class LinkedListDB {
     }
 
     public NodeDB getHeadNode() {
-        BigInteger headId = this.headId.get();
+        BigInteger headId = this.headId.getOrDefault(DEFAULT_NODE_ID);
         if (headId == null || headId.equals(DEFAULT_NODE_ID)) {
             Context.revert("Empty Linked list");
         }
@@ -124,7 +124,7 @@ public class LinkedListDB {
             return;
         }
 
-        NodeDB oldHead = getNode(headId.get());
+        NodeDB oldHead = getNode(headId.getOrDefault(DEFAULT_NODE_ID));
         BigInteger newHead = oldHead.getNext();
         headId.set(newHead);
         getNode(newHead).setPrev(DEFAULT_NODE_ID);
@@ -142,7 +142,7 @@ public class LinkedListDB {
             return;
         }
 
-        NodeDB oldTail = getNode(tailId.get());
+        NodeDB oldTail = getNode(tailId.getOrDefault(DEFAULT_NODE_ID));
         BigInteger newTail = oldTail.getPrev();
         tailId.set(newTail);
         getNode(newTail).setNext(DEFAULT_NODE_ID);
@@ -173,7 +173,7 @@ public class LinkedListDB {
     }
 
     public void clear() {
-        BigInteger currentId = headId.get();
+        BigInteger currentId = headId.getOrDefault(DEFAULT_NODE_ID);
         if (currentId == null || currentId.equals(DEFAULT_NODE_ID)) {
             return;
         }

@@ -422,7 +422,7 @@ public abstract class AbstractDex implements Dex {
     public BigInteger getBnusdValue(String _name) {
         Integer _id = namedMarkets.get(_name);
         if (_id.equals(SICXICX_POOL_ID)) {
-            BigInteger icxTotal = icxQueueTotal.get();
+            BigInteger icxTotal = icxQueueTotal.getOrDefault(BigInteger.ZERO);
             return (icxTotal.multiply(getSicxBnusdPrice())).divide(getSicxRate());
         }
 
@@ -466,8 +466,8 @@ public abstract class AbstractDex implements Dex {
             poolStats.put("base_token", sicx.get());
             poolStats.put("quote_token", null);
             poolStats.put("base", BigInteger.ZERO);
-            poolStats.put("quote", icxQueueTotal.get());
-            poolStats.put("total_supply", icxQueueTotal.get());
+            poolStats.put("quote", icxQueueTotal.getOrDefault(BigInteger.ZERO));
+            poolStats.put("total_supply", icxQueueTotal.getOrDefault(BigInteger.ZERO));
             poolStats.put("price", getPrice(_id));
             poolStats.put("name", SICXICX_MARKET_NAME);
             poolStats.put("base_decimals", 18);
@@ -509,8 +509,9 @@ public abstract class AbstractDex implements Dex {
         BigInteger poolId = lookupPid(_name);
         Context.require(poolId != null, TAG + ": Unsupported data source name");
 
-        BigInteger totalSupply = (BigInteger) Context.call(stakedLp.get(), "totalStaked", poolId);
-        BigInteger balance = (BigInteger) Context.call(stakedLp.get(), "balanceOf", _owner, poolId);
+        Address stakedLpAddress = stakedLp.get();
+        BigInteger totalSupply = (BigInteger) Context.call(stakedLpAddress, "totalStaked", poolId);
+        BigInteger balance = (BigInteger) Context.call(stakedLpAddress, "balanceOf", _owner, poolId);
         Map<String, BigInteger> rewardsData = new HashMap<>();
         rewardsData.put("_balance", balance);
         rewardsData.put("_totalSupply", totalSupply);
