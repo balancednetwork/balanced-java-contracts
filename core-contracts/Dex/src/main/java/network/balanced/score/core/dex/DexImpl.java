@@ -125,7 +125,8 @@ public class DexImpl extends AbstractDex {
         rewardsEntry._user = user;
         rewardsEntry._balance = amount;
         rewardsList.add(rewardsEntry);
-        Context.call(rewards.get(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal, rewardsList);
+        Context.call(rewards.get(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal,
+                rewardsList.toArray(new Object[]{}));
     }
 
     @External

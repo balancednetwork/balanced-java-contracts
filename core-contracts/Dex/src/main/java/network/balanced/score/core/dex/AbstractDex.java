@@ -774,7 +774,8 @@ public abstract class AbstractDex implements Dex {
                 orderIcxValue, BigInteger.valueOf(Context.getBlockTimestamp()), conversionFees, balnFees, newIcxTotal
                 , BigInteger.ZERO, sicxIcxPrice, effectiveFillPrice);
 
-        Context.call(rewards.get(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal, List.of(oldData));
+        Context.call(rewards.get(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal,
+                oldData.toArray(new Object[]{}));
         Context.call(sicxAddress, "transfer", feeHandler.get(), balnFees);
         Context.transfer(sender, orderIcxValue);
     }
