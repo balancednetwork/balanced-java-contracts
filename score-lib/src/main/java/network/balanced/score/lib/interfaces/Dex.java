@@ -156,7 +156,7 @@ public interface Dex extends AdminAddress, BnusdAddress, GovernanceAddress, Name
     Map<String, Object> getPoolStats(BigInteger _id);
 
     @External(readonly = true)
-    int totalDexAddresses(BigInteger _id);
+    BigInteger totalDexAddresses(BigInteger _id);
 
     @External(readonly = true)
     Map<String, BigInteger> getBalanceAndSupply(String _name, Address _owner);
