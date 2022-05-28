@@ -14,15 +14,19 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.dex;
+package network.balanced.score.lib.interfaces.addresses;
 
-import score.Context;
-import score.VarDB;
+import foundation.icon.score.client.ScoreInterface;
+import score.Address;
+import score.annotation.External;
 
-public class Check {
+@ScoreInterface
+public interface DividendsAddress {
 
-    public static void isOn(VarDB<Boolean> scoreAddressOn) {
-        Context.require(scoreAddressOn.get().equals(true), "NotLaunched: Function cannot be called before the DEX is " +
-                "turned on");
-    }
+    @External
+    void setDividends(Address _address);
+
+    @External(readonly = true)
+    Address getDividends();
+
 }
