@@ -103,6 +103,26 @@ public class EnumerableSetDBTest extends TestBase {
         dummyScore.invoke(owner, "remove", address3);
 
         assertFalse((Boolean) dummyScore.call("contains", address3));
+        assertTrue((Boolean) dummyScore.call("contains", address1));
+        assertTrue((Boolean) dummyScore.call("contains", address2));
+        assertTrue((Boolean) dummyScore.call("contains", address4));
+        assertTrue((Boolean) dummyScore.call("contains", address5));
+
+        dummyScore.invoke(owner, "remove", address5);
+
+        assertFalse((Boolean) dummyScore.call("contains", address3));
+        assertTrue((Boolean) dummyScore.call("contains", address1));
+        assertTrue((Boolean) dummyScore.call("contains", address2));
+        assertTrue((Boolean) dummyScore.call("contains", address4));
+        assertFalse((Boolean) dummyScore.call("contains", address5));
+
+        dummyScore.invoke(owner, "remove", address1);
+
+        assertFalse((Boolean) dummyScore.call("contains", address3));
+        assertFalse((Boolean) dummyScore.call("contains", address1));
+        assertTrue((Boolean) dummyScore.call("contains", address2));
+        assertTrue((Boolean) dummyScore.call("contains", address4));
+        assertFalse((Boolean) dummyScore.call("contains", address5));
 
     }
 
