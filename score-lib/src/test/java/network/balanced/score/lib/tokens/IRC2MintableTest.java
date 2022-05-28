@@ -109,7 +109,7 @@ class IRC2MintableTest extends TestBase {
 
         Account nonMinter = sm.createAccount();
         String expectedErrorMessage =
-                "Authorization Check: Authorization failed. Caller: " + nonMinter.getAddress() + " Authorized Caller:" +
+                "Reverted(0): Authorization Check: Authorization failed. Caller: " + nonMinter.getAddress() + " Authorized Caller:" +
                         " " + owner.getAddress();
         Executable nonMinterCall = () -> tokenScore.invoke(nonMinter, "mint", mintAmount, new byte[0]);
         expectErrorMessage(nonMinterCall, expectedErrorMessage);
@@ -118,12 +118,12 @@ class IRC2MintableTest extends TestBase {
                 , mintAmount, new byte[0]);
         expectErrorMessage(nonMinterMintToCall, expectedErrorMessage);
 
-        expectedErrorMessage = name + ": Owner address cannot be zero address";
+        expectedErrorMessage = "Reverted(0): " + name + ": Owner address cannot be zero address";
         Executable zeroAddressMint = () -> tokenScore.invoke(owner, "mintTo", new Address(new byte[Address.LENGTH]),
                 mintAmount, new byte[0]);
         expectErrorMessage(zeroAddressMint, expectedErrorMessage);
 
-        expectedErrorMessage = name + ": Amount needs to be positive";
+        expectedErrorMessage = "Reverted(0): " + name + ": Amount needs to be positive";
         Executable negativeAmountMint = () -> tokenScore.invoke(owner, "mintTo", newReceiver.getAddress(),
                 ICX.negate(), new byte[0]);
         expectErrorMessage(negativeAmountMint, expectedErrorMessage);

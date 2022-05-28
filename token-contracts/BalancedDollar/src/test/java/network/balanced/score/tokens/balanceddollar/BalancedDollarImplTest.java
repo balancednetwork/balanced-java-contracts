@@ -129,7 +129,7 @@ class BalancedDollarImplTest extends TestBase {
 
         Account nonGovernance = Account.newScoreAccount(scoreCount++);
         String expectedErrorMessage =
-                "Authorization Check: Authorization failed. Caller: " + nonGovernance.getAddress() + " Authorized " +
+                "Reverted(0): Authorization Check: Authorization failed. Caller: " + nonGovernance.getAddress() + " Authorized " +
                         "Caller: " + governanceScore.getAddress();
         Executable nonGovernanceTransfer = () -> bnUSDScore.invoke(nonGovernance, "govTransfer", owner.getAddress(),
                 sm.createAccount().getAddress(), ICX, new byte[0]);
@@ -150,7 +150,7 @@ class BalancedDollarImplTest extends TestBase {
         Account nonContractMinter = sm.createAccount();
         Account minter2 = Account.newScoreAccount(scoreCount++);
         
-        String expectedErrorMessage = "Address Check: Address provided is an EOA address. A contract address is required.";
+        String expectedErrorMessage = "Reverted(0): Address Check: Address provided is an EOA address. A contract address is required.";
         Executable nonContractSet = () ->  bnUSDScore.invoke(owner, "setMinter2", nonContractMinter.getAddress());
         expectErrorMessage(nonContractSet, expectedErrorMessage);
 
@@ -177,7 +177,7 @@ class BalancedDollarImplTest extends TestBase {
 
         Account nonMinter = sm.createAccount();
         String expectedErrorMessage =
-                "Authorization Check: Authorization failed. Caller: " + nonMinter.getAddress() + " Authorized Caller:" +
+                "Reverted(0): Authorization Check: Authorization failed. Caller: " + nonMinter.getAddress() + " Authorized Caller:" +
                         " " + owner.getAddress() + " or " + minter2;
         Executable nonMinterCall = () -> bnUSDScore.invoke(nonMinter, "mint", mintAmount, new byte[0]);
         expectErrorMessage(nonMinterCall, expectedErrorMessage);
@@ -186,12 +186,12 @@ class BalancedDollarImplTest extends TestBase {
                 , mintAmount, new byte[0]);
         expectErrorMessage(nonMinterMintToCall, expectedErrorMessage);
 
-        expectedErrorMessage = name+ ": Owner address cannot be zero address";
+        expectedErrorMessage = "Reverted(0): " + name+ ": Owner address cannot be zero address";
         Executable zeroAddressMint = () -> bnUSDScore.invoke(minter, "mintTo", new Address(new byte[Address.LENGTH]),
                 mintAmount, new byte[0]);
         expectErrorMessage(zeroAddressMint, expectedErrorMessage);
 
-        expectedErrorMessage = name + ": Amount needs to be positive";
+        expectedErrorMessage ="Reverted(0): " + name + ": Amount needs to be positive";
         Executable negativeAmountMint = () -> bnUSDScore.invoke(minter, "mintTo", newReceiver.getAddress(),
                 ICX.negate(), new byte[0]);
         expectErrorMessage(negativeAmountMint, expectedErrorMessage);
