@@ -17,17 +17,17 @@
 package network.balanced.score.core.dex.utils;
 
 import score.Context;
-import score.VarDB;
 
 import java.math.BigInteger;
 
+import static network.balanced.score.core.dex.DexDBVariables.dexOn;
 import static network.balanced.score.core.dex.DexDBVariables.nonce;
 import static network.balanced.score.core.dex.utils.Const.TAG;
 
 public class Check {
 
-    public static void isOn(VarDB<Boolean> scoreAddressOn) {
-        Context.require(scoreAddressOn.getOrDefault(false), "NotLaunched: Function cannot be called " +
+    public static void isDexOn() {
+        Context.require(dexOn.getOrDefault(false), "NotLaunched: Function cannot be called " +
                 "before the DEX is turned on");
     }
 

@@ -42,7 +42,7 @@ import static network.balanced.score.lib.utils.Math.pow;
 
 public abstract class AbstractDex implements Dex {
 
-    public AbstractDex(Address _governance) {
+    AbstractDex(Address _governance) {
         if (governance.get() == null) {
             governance.set(_governance);
 
@@ -583,9 +583,8 @@ public abstract class AbstractDex implements Dex {
         return (BigInteger) Context.call(staking.get(), "getTodayRate");
     }
 
-    protected boolean isLockingPool(Integer id) {
+    boolean isLockingPool(Integer id) {
         boolean stakedLpLaunched = stakedLp.get() != null;
-        // TODO Introduce a variable to track for each pool if the tokens are transferable
         boolean restrictedPoolId = (id < FIRST_NON_BALANCED_POOL || id == USDS_BNUSD_ID || id == IUSDT_BNUSD_ID);
 
         return (restrictedPoolId && !stakedLpLaunched) || id.equals(SICXICX_POOL_ID);
@@ -603,18 +602,18 @@ public abstract class AbstractDex implements Dex {
         return reentrancyStatus;
     }
 
-    protected void revertOnIncompleteRewards() {
+    void revertOnIncompleteRewards() {
         Context.require(rewardsDone.getOrDefault(false), TAG + ": Rewards distribution in progress, " +
                 "please try again shortly");
     }
 
-    protected void revertOnWithdrawalLock(Address user, Integer id) {
+    void revertOnWithdrawalLock(Address user, Integer id) {
         BigInteger depositTime = withdrawLock.at(id).get(user);
         Context.require(depositTime.add(WITHDRAW_LOCK_TIMEOUT).compareTo(BigInteger.valueOf(Context.getBlockTimestamp())) <= 0,
                 TAG + ":  Assets must remain in the pool for 24 hours, please try again later.");
     }
 
-    protected BigInteger getRewardableAmount(Address tokenAddress) {
+    BigInteger getRewardableAmount(Address tokenAddress) {
         if (tokenAddress == null) {
             return BigInteger.TEN.multiply(EXA);
         } else if (sicx.get().equals(tokenAddress)) {
@@ -625,8 +624,8 @@ public abstract class AbstractDex implements Dex {
         return BigInteger.ZERO;
     }
 
-    protected void exchange(Address fromToken, Address toToken, Address sender,
-                            Address receiver, BigInteger value, BigInteger minimumReceive) {
+    void exchange(Address fromToken, Address toToken, Address sender,
+                  Address receiver, BigInteger value, BigInteger minimumReceive) {
 
         if (minimumReceive == null) {
             minimumReceive = BigInteger.ZERO;
@@ -705,7 +704,7 @@ public abstract class AbstractDex implements Dex {
                 , effectiveFillPrice);
     }
 
-    protected void swapIcx(Address sender, BigInteger value) {
+    void swapIcx(Address sender, BigInteger value) {
         revertOnIncompleteRewards();
         BigInteger sicxIcxPrice = getSicxRate();
 
@@ -720,8 +719,9 @@ public abstract class AbstractDex implements Dex {
 
         BigInteger lpSicxSize = orderSize.add(conversionFees);
 
-        Context.require(orderIcxValue.compareTo(icxQueueTotal.get()) <= 0, TAG + ": InsufficientLiquidityError: Not " +
-                "enough ICX suppliers.");
+        Context.require(orderIcxValue.compareTo(oldIcxTotal) <= 0,
+                TAG + ": InsufficientLiquidityError: Not enough ICX suppliers.");
+
         boolean filled = false;
         BigInteger orderRemainingIcx = orderIcxValue;
         int iterations = 0;
@@ -779,7 +779,7 @@ public abstract class AbstractDex implements Dex {
     }
 
 
-    protected BigInteger getUnitValue(Address tokenAddress) {
+    private BigInteger getUnitValue(Address tokenAddress) {
         if (tokenAddress == null) {
             return EXA;
         } else {
@@ -787,7 +787,7 @@ public abstract class AbstractDex implements Dex {
         }
     }
 
-    protected void revertBelowMinimum(BigInteger value, Address quoteToken) {
+    void revertBelowMinimum(BigInteger value, Address quoteToken) {
         BigInteger minAmount = getRewardableAmount(quoteToken);
         if (value.compareTo(minAmount) < 0) {
             BigInteger readableMin = minAmount.divide(getUnitValue(quoteToken));
@@ -796,7 +796,7 @@ public abstract class AbstractDex implements Dex {
     }
 
     // Day Change Functions
-    protected void takeNewDaySnapshot() {
+    void takeNewDaySnapshot() {
         BigInteger day = this.getDay();
         if (day.compareTo(currentDay.get()) > 0) {
             currentDay.set(day);
@@ -806,7 +806,7 @@ public abstract class AbstractDex implements Dex {
         }
     }
 
-    protected void checkDistributions() {
+    void checkDistributions() {
         if (this.isReentrantTx()) {
             return;
         }
@@ -818,17 +818,17 @@ public abstract class AbstractDex implements Dex {
         }
     }
 
-    protected void updateAccountSnapshot(Address account, Integer id, BigInteger newValueToUpdate) {
+    void updateAccountSnapshot(Address account, Integer id, BigInteger newValueToUpdate) {
         BranchDB<String, DictDB<BigInteger, BigInteger>> snapshot = accountBalanceSnapshot.at(id).at(account);
         updateSnapshotWithNewValue(newValueToUpdate, snapshot);
     }
 
-    protected void updateBalnSnapshot(Integer id, BigInteger newValueToUpdate) {
+    void updateBalnSnapshot(Integer id, BigInteger newValueToUpdate) {
         BranchDB<String, DictDB<BigInteger, BigInteger>> snapshot = balnSnapshot.at(id);
         updateSnapshotWithNewValue(newValueToUpdate, snapshot);
     }
 
-    protected void updateTotalSupplySnapshot(Integer id, BigInteger newValueToUpdate) {
+    void updateTotalSupplySnapshot(Integer id, BigInteger newValueToUpdate) {
         BranchDB<String, DictDB<BigInteger, BigInteger>> snapshot = totalSupplySnapshot.at(id);
         updateSnapshotWithNewValue(newValueToUpdate, snapshot);
     }
@@ -855,7 +855,33 @@ public abstract class AbstractDex implements Dex {
         }
     }
 
-    protected void _transfer(Address from, Address to, BigInteger value, Integer id, byte[] data) {
+    BigInteger snapshotValueAt(BigInteger _snapshot_id,
+                               BranchDB<String, DictDB<BigInteger, BigInteger>> snapshot) {
+        Context.require(_snapshot_id.compareTo(BigInteger.ZERO) >= 0,
+                TAG + ": Snapshot id is equal to or greater then Zero.");
+        BigInteger low = BigInteger.ZERO;
+        BigInteger high = snapshot.at(LENGTH).getOrDefault(BigInteger.ZERO, BigInteger.ZERO);
+
+        while (low.compareTo(high) < 0) {
+            BigInteger mid = (low.add(high)).divide(BigInteger.TWO);
+            if (snapshot.at(IDS).getOrDefault(mid, BigInteger.ZERO).compareTo(_snapshot_id) > 0) {
+                high = mid;
+            } else {
+                low = mid.add(BigInteger.ONE);
+            }
+        }
+
+        if (snapshot.at(IDS).getOrDefault(BigInteger.ZERO, BigInteger.ZERO).equals(_snapshot_id)) {
+            return snapshot.at(VALUES).getOrDefault(BigInteger.ZERO, BigInteger.ZERO);
+        } else if (low.equals(BigInteger.ZERO)) {
+            return BigInteger.ZERO;
+        }
+
+        BigInteger matchedIndex = low.subtract(BigInteger.ONE);
+        return snapshot.at(VALUES).getOrDefault(matchedIndex, BigInteger.ZERO);
+    }
+
+    void _transfer(Address from, Address to, BigInteger value, Integer id, byte[] data) {
 
         Context.require(value.compareTo(BigInteger.ZERO) >= 0,
                 TAG + ": Transferring value cannot be less than 0.");
@@ -871,19 +897,23 @@ public abstract class AbstractDex implements Dex {
         poolLpBalanceOfUser.set(to, toBalance.add(value));
         Address stakedLpAddress = stakedLp.get();
 
-        if (!to.equals(stakedLpAddress) && !from.equals(stakedLpAddress)) {
+        if (!from.equals(stakedLpAddress) && !to.equals(stakedLpAddress)) {
             if (value.compareTo(BigInteger.ZERO) > 0) {
                 activeAddresses.get(id).add(to);
             }
 
-            if (balance.at(id).getOrDefault(from, BigInteger.ZERO).equals(BigInteger.ZERO)) {
+            if ((fromBalance.subtract(value)).equals(BigInteger.ZERO)) {
                 activeAddresses.get(id).remove(from);
             }
         }
         TransferSingle(from, from, to, BigInteger.valueOf(id), value);
 
-        updateAccountSnapshot(from, id, fromBalance.subtract(value));
-        updateAccountSnapshot(to, id, toBalance.add(value));
+        if (!from.equals(stakedLpAddress)) {
+            updateAccountSnapshot(from, id, fromBalance.subtract(value));
+        }
+        if (!to.equals(stakedLpAddress)) {
+            updateAccountSnapshot(to, id, toBalance.add(value));
+        }
 
         if (to.isContract()) {
             Context.call(to, "onIRC31Received", from, from, id, value, data);

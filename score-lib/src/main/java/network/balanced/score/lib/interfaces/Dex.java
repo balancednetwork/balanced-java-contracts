@@ -191,7 +191,7 @@ public interface Dex extends AdminAddress, BnusdAddress, GovernanceAddress, Name
     void withdraw(Address _token, BigInteger _value);
 
     @External
-    void remove(BigInteger _id, BigInteger _value, boolean _withdraw);
+    void remove(BigInteger _id, BigInteger _value, @Optional boolean _withdraw);
 
     @External
     void add(Address _baseToken, Address _quoteToken, BigInteger _baseValue, BigInteger _quoteValue,
