@@ -28,8 +28,8 @@ public class IterableDictDB<K, V> {
 
     private static final String NAME = "_ITERABLE_DICTDB";
 
-    public final DictDB<K, V> values;
-    public final SetDB<K> keys;
+    private final DictDB<K, V> values;
+    private final SetDB<K> keys;
 
 
     public IterableDictDB(String key, Class<V> valueType, Class<K> keyType, Boolean order) {

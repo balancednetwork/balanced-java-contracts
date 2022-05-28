@@ -34,10 +34,11 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-import static network.balanced.score.core.dex.Check.isOn;
-import static network.balanced.score.core.dex.Const.*;
 import static network.balanced.score.core.dex.DexDBVariables.*;
-import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.core.dex.utils.Check.isOn;
+import static network.balanced.score.core.dex.utils.Check.isValidPoolId;
+import static network.balanced.score.core.dex.utils.Const.*;
+import static network.balanced.score.lib.utils.Check.only;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Math.convertToNumber;
 import static network.balanced.score.lib.utils.Math.pow;
