@@ -115,6 +115,7 @@ class Systemtest implements ScoreIntegrationTest {
         
         verifyBnusdFees(stakingClient);
         verifyNoBnusdFees(lpClient);
+        verifyDaofundDividends();
     }
 
     @Test
@@ -480,6 +481,15 @@ class Systemtest implements ScoreIntegrationTest {
         assertTrue(daoFundBalancePostDist.compareTo(daoFundBalancePreDist) > 0);
         assertTrue(reserveBalancePostDist.compareTo(reserveBalancePreDist) > 0);
     }
+
+    private void verifyDaofundDividends() throws Exception {
+        BigInteger daoFundBalancePreDist = owner.bnUSD.balanceOf(balanced.daofund._address());
+        owner.dividends.transferDaofundDividends(0, 0);
+        BigInteger daoFundBalancePostDist = owner.bnUSD.balanceOf(balanced.daofund._address());
+
+        assertTrue(daoFundBalancePostDist.compareTo(daoFundBalancePreDist) > 0);
+    }
+
 
     private void joinsICXBnusdLP(BalancedClient client, BigInteger icxAmount, BigInteger bnusdAmount) {
         JsonObject depositData = Json.object();
