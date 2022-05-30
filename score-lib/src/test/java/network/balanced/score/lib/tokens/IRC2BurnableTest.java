@@ -57,21 +57,21 @@ class IRC2BurnableTest extends TestBase {
 
         Account nonMinter = sm.createAccount();
         String expectedErrorMessage =
-                "Authorization Check: Authorization failed. Caller: " + nonMinter.getAddress() + " Authorized Caller:" +
+                "Reverted(0): Authorization Check: Authorization failed. Caller: " + nonMinter.getAddress() + " Authorized Caller:" +
                         " " + owner.getAddress();
         Executable nonMinterCall = () -> tokenScore.invoke(nonMinter, "burnFrom", alice.getAddress(), burnAmount);
         expectErrorMessage(nonMinterCall, expectedErrorMessage);
 
-        expectedErrorMessage = name + ": Owner address cannot be zero address";
+        expectedErrorMessage = "Reverted(0): " + name + ": Owner address cannot be zero address";
         Executable zeroAddressBurn = () -> tokenScore.invoke(owner, "burnFrom", new Address(new byte[Address.LENGTH])
                 , burnAmount);
         expectErrorMessage(zeroAddressBurn, expectedErrorMessage);
 
-        expectedErrorMessage = name + ": Amount needs to be positive";
+        expectedErrorMessage = "Reverted(0): " + name + ": Amount needs to be positive";
         Executable negativeAmountBurn = () -> tokenScore.invoke(owner, "burnFrom", alice.getAddress(), burnAmount.negate());
         expectErrorMessage(negativeAmountBurn, expectedErrorMessage);
 
-        expectedErrorMessage = name + ": Insufficient Balance";
+        expectedErrorMessage = "Reverted(0): " + name + ": Insufficient Balance";
         Executable burnMoreThanBalance = () -> tokenScore.invoke(owner, "burnFrom", alice.getAddress(),
                 ICX.add(BigInteger.ONE));
         expectErrorMessage(burnMoreThanBalance, expectedErrorMessage);
