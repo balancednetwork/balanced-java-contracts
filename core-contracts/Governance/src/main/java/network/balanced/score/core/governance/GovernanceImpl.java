@@ -377,7 +377,7 @@ public class GovernanceImpl {
         }
 
         try {
-            executeVoteActions(proposal.actions.get());
+            executeVoteActions(actions);
             proposal.status.set(ProposalStatus.STATUS[ProposalStatus.EXECUTED]);
         } catch (Exception e) {
             proposal.status.set(ProposalStatus.STATUS[ProposalStatus.FAILED_EXECUTION]);
@@ -468,11 +468,10 @@ public class GovernanceImpl {
 
         BigInteger day = getDay();
         launchDay.set(day);
-        launchTime.set(BigInteger.valueOf(Context.getBlockTimestamp()));
-
         BigInteger timeDelta = BigInteger.valueOf(Context.getBlockTimestamp());
-        setTimeOffset(timeDelta);
 
+        launchTime.set(timeDelta);
+        setTimeOffset(timeDelta);
 
         for (Map<String, String> source : DATA_SOURCES) {
             Context.call(Addresses.get("rewards"), "addNewDataSource", source.get("name"), Addresses.get(source.get("address")));
@@ -710,7 +709,7 @@ public class GovernanceImpl {
     public void addAsset(Address _token_address, boolean _active, boolean _collateral) {
         onlyOwner();
         Address loansAddress = Addresses.get("loans");
-        Context.call(Addresses.get("loans"), "addAsset",  _token_address, _active, _collateral);
+        Context.call(loansAddress, "addAsset",  _token_address, _active, _collateral);
         Context.call(_token_address, "setAdmin", loansAddress);
     }
 
@@ -775,7 +774,7 @@ public class GovernanceImpl {
     }
 
     @External
-    public void balwAdminTransfer(Address _from , Address _to , BigInteger _value, byte[] _data) {
+    public void balwAdminTransfer(Address _from , Address _to , BigInteger _value, @Optional byte[] _data) {
         onlyOwner();
         Context.call(Addresses.get("bwt"), "adminTransfer",  _from, _to, _value, _data);
     }
