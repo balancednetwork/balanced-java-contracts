@@ -130,7 +130,7 @@ public class GovernanceVotingTest extends GovernanceTestBase {
     }
 
     @Test
-    void cancelVote() {
+    void cancelVote_Owner() {
         // Arrange
         sm.getBlock().increase(DAY);
         Account proposer = sm.createAccount();
@@ -176,6 +176,38 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         expectedErrorMessage  = "Proposal can be cancelled only from active status.";
         Executable withNonActiveStatus = () -> governance.invoke(owner, "cancelVote", id);
         expectErrorMessage(withNonActiveStatus, expectedErrorMessage);
+
+        Map<String, Object> vote = getVote(id);
+        
+        BigInteger voteDefinitionFee = (BigInteger)governance.call("getVoteDefinitionFee");
+        verify(bnUSD.mock).govTransfer(daofund.getAddress(), proposer.getAddress(), voteDefinitionFee, new byte[0]);
+        assertEquals(ProposalStatus.STATUS[ProposalStatus.CANCELLED], vote.get("status"));
+        assertEquals(true, vote.get("fee_refund_status"));
+    }
+
+    @Test
+    void cancelVote_Proposer() {
+        // Arrange
+        sm.getBlock().increase(DAY);
+        Account proposer = sm.createAccount();
+        Account nonProposer = sm.createAccount();
+        BigInteger day = (BigInteger) governance.call("getDay");
+        String name = "test";
+        String description = "test vote";
+        BigInteger voteStart = day.add(BigInteger.TWO);
+        BigInteger snapshot = day.add(BigInteger.ONE);
+        String actions = "[]";
+        String expectedErrorMessage;
+
+        when(baln.mock.totalSupply()).thenReturn(BigInteger.TEN);
+        when(baln.mock.stakedBalanceOf(proposer.getAddress())).thenReturn(BigInteger.TEN);
+        when(baln.mock.totalStakedBalanceOfAt(snapshot)).thenReturn(BigInteger.valueOf(6).multiply(EXA));
+
+        governance.invoke(proposer, "defineVote", name, description, voteStart, snapshot, actions);
+        BigInteger id = (BigInteger) governance.call("getVoteIndex", name);
+
+        // Act & Assert
+        governance.invoke(proposer, "cancelVote", id);
 
         Map<String, Object> vote = getVote(id);
         

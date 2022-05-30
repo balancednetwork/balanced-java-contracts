@@ -195,10 +195,10 @@ public class GovernanceImpl {
         Context.require(Context.getCaller() == proposal.proposer.get() || 
                         Context.getCaller() == Context.getOwner(), 
                         "Only owner or proposer may call this method.");
-
-        Context.require(proposal.startSnapshot.get().compareTo(getDay()) <= 0 &&
-                        Context.getCaller() == Context.getOwner(), 
-                        "Only owner can cancel a vote that has started.");
+        if (proposal.startSnapshot.get().compareTo(getDay()) <= 0 ) {
+            Context.require(Context.getCaller() == Context.getOwner(), 
+                    "Only owner can cancel a vote that has started.");
+        }
 
         refundVoteDefinitionFee(proposal);
         proposal.active.set(false);
