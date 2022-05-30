@@ -48,6 +48,9 @@ public class Constants {
     static final String SNAPSHOT_DIVIDENDS = "snapshot_dividends";
     static final String TOTAL_SNAPSHOT = "total_snapshots";
     static final String COMPLETE_DIVIDENDS_CATEGORIES = "complete_dividends_categories";
+    
+    static final BigInteger TWO_FIFTY_SIX = BigInteger.valueOf(256);
+    
 
     static BigInteger MAX_LOOP = BigInteger.valueOf(50);
     static BigInteger MINIMUM_ELIGIBLE_DEBT = BigInteger.valueOf(50).multiply(pow(BigInteger.TEN, 18));
