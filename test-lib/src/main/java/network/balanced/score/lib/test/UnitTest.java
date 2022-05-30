@@ -98,6 +98,20 @@ public class UnitTest extends TestBase {
         assertEquals(parameterToSet, contractUnderTest.call(getterMethod));
     }
 
+     public static <T> void testGovernanceControlMethods(Score contractUnderTest, Account governanceScore,
+                                                   Account owner, String setterMethod, T parameterToSet,
+                                                   String getterMethod) {
+        Account nonGovernance = sm.createAccount();
+        String expectedErrorMessage = "Reverted(0): Authorization Check: Authorization failed. Caller: " + nonGovernance.getAddress() +
+                " Authorized Caller: " + governanceScore.getAddress();
+        System.out.println(expectedErrorMessage);
+        Executable setScoreNotFromGovernance = () -> contractUnderTest.invoke(nonGovernance, setterMethod, parameterToSet);
+        expectErrorMessage(setScoreNotFromGovernance, expectedErrorMessage);
+
+        contractUnderTest.invoke(governanceScore, setterMethod, parameterToSet);
+        assertEquals(parameterToSet, contractUnderTest.call(getterMethod));
+    }
+
     public static <T> void testOwnerControlMethods(Score contractUnderTest, String setterMethod,
                                                    String getterMethod, T parameterToSet) {
         Account nonOwner = sm.createAccount();
