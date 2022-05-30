@@ -33,7 +33,7 @@ public class Addresses {
     private Addresses() {}
 
     public static Address get(String key) {
-        if (key == "governance") {
+        if (key.equals("governance")) {
             return Context.getAddress();
         }
 

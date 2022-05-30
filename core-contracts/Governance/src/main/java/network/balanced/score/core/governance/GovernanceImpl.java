@@ -191,12 +191,12 @@ public class GovernanceImpl {
         ProposalDB proposal = new ProposalDB(vote_index);
         Context.require(vote_index.compareTo(BigInteger.ONE) >= 0, "There is no proposal with index " + vote_index);
         Context.require(vote_index.compareTo(proposal.proposalsCount.get()) <= 0, "There is no proposal with index " + vote_index);
-        Context.require(proposal.status.get() == ProposalStatus.STATUS[ProposalStatus.ACTIVE], "Proposal can be cancelled only from active status.");
-        Context.require(Context.getCaller() == proposal.proposer.get() || 
-                        Context.getCaller() == Context.getOwner(), 
+        Context.require(proposal.status.get().equals(ProposalStatus.STATUS[ProposalStatus.ACTIVE]), "Proposal can be cancelled only from active status.");
+        Context.require(Context.getCaller().equals(proposal.proposer.get()) || 
+                        Context.getCaller().equals(Context.getOwner()), 
                         "Only owner or proposer may call this method.");
         if (proposal.startSnapshot.get().compareTo(getDay()) <= 0 ) {
-            Context.require(Context.getCaller() == Context.getOwner(), 
+            Context.require(Context.getCaller().equals(Context.getOwner()), 
                     "Only owner can cancel a vote that has started.");
         }
 
