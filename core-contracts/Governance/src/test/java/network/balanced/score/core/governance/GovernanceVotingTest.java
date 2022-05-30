@@ -81,8 +81,6 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         when(baln.mock.stakedBalanceOf(owner.getAddress())).thenReturn(BigInteger.TEN.multiply(EXA));
         when(baln.mock.stakedBalanceOf(accountWithLowBalance.getAddress())).thenReturn(BigInteger.ZERO);
         when(baln.mock.totalStakedBalanceOfAt(snapshot)).thenReturn(BigInteger.valueOf(6).multiply(EXA));
-        when(dex.mock.totalBalnAt(BALNBNUSD_ID, snapshot, false)).thenReturn(BigInteger.TWO.multiply(EXA));
-        when(dex.mock.totalBalnAt(BALNSICX_ID, snapshot, false)).thenReturn(BigInteger.TWO.multiply(EXA));
         
         // Act & Assert
         String tooLongDescription = "T".repeat(501);
@@ -148,8 +146,6 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         when(baln.mock.totalSupply()).thenReturn(BigInteger.TEN);
         when(baln.mock.stakedBalanceOf(proposer.getAddress())).thenReturn(BigInteger.TEN);
         when(baln.mock.totalStakedBalanceOfAt(snapshot)).thenReturn(BigInteger.valueOf(6).multiply(EXA));
-        when(dex.mock.totalBalnAt(BALNBNUSD_ID, snapshot, false)).thenReturn(BigInteger.TWO.multiply(EXA));
-        when(dex.mock.totalBalnAt(BALNSICX_ID, snapshot, false)).thenReturn(BigInteger.TWO.multiply(EXA));
 
         governance.invoke(proposer, "defineVote", name, description, voteStart, snapshot, actions);
         BigInteger id = (BigInteger) governance.call("getVoteIndex", name);
@@ -255,6 +251,7 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         Map<String, Object> vote = getVote(id);
 
         when(baln.mock.totalSupply()).thenReturn(totalSupply);
+        when(baln.mock.totalStakedBalanceOfAt( any(BigInteger.class))).thenReturn(totalSupply);
         when(baln.mock.stakedBalanceOfAt(eq(forVoter1.getAddress()), any(BigInteger.class))).thenReturn(forVoter1Balance);
         when(baln.mock.stakedBalanceOfAt(eq(forVoter2.getAddress()), any(BigInteger.class))).thenReturn(forVoter2Balance);
         when(baln.mock.stakedBalanceOfAt(eq(aginstVoter.getAddress()), any(BigInteger.class))).thenReturn(aginstVoterBalance);

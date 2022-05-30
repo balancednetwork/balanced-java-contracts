@@ -336,11 +336,7 @@ public class GovernanceImpl {
     public BigInteger totalBaln(BigInteger _day) {
         BigInteger stakedBaln = Context.call(BigInteger.class, Addresses.get("baln"), "totalStakedBalanceOfAt", _day);
         
-        //TODD should be remove before continiuos?
-        BigInteger balnFromBnusdPool = Context.call(BigInteger.class, Addresses.get("dex"), "totalBalnAt",  BALNBNUSD_ID, _day, false);
-        BigInteger balnFromSICXPool = Context.call(BigInteger.class, Addresses.get("dex"), "totalBalnAt",  BALNSICX_ID, _day, false);
-
-        return stakedBaln.add(balnFromBnusdPool).add(balnFromSICXPool);
+        return stakedBaln;
     }
 
     @External
