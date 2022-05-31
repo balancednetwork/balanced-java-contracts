@@ -294,18 +294,18 @@ public class DataSourceImpl {
         BigInteger previousRunningTotal = getTotalWeight();
         BigInteger originalTotalWeight = previousRunningTotal;
         BigInteger lastUpdateTimestamp = getLastUpdateTimeUs();
-        BigInteger originalLastUpdateTimestamp = lastUpdateTimestamp;
         if (!continuousRewardsActive() && RewardsImpl.continuousRewardsDay.get() != null) {
             lastUpdateTimestamp = RewardsImpl.continuousRewardsDay.get().multiply(U_SECONDS_DAY);
             lastUpdateTimeUs.at(dbKey).set(lastUpdateTimestamp);
         }
+
+        BigInteger originalLastUpdateTimestamp = lastUpdateTimestamp;
 
         if (currentTime.equals(lastUpdateTimestamp)) {
             return previousRunningTotal;
         }
         
         // Emit rewards based on the time delta * reward rate
-        BigInteger startTimestampUs = RewardsImpl.startTimestamp.getOrDefault(BigInteger.ZERO);
         BigInteger previousRewardsDay = BigInteger.ZERO;
         BigInteger previousDayEndUs = BigInteger.ZERO;
 
@@ -326,15 +326,15 @@ public class DataSourceImpl {
             lastUpdateTimestamp = endComputeTimestampUs;
         }
         
-        if (newTotal.compareTo(originalTotalWeight) != -1) {
-            if (!continuousRewardsActive()) {
-                return originalTotalWeight;
-            }
-
+        if (!continuousRewardsActive()) {
+            return originalTotalWeight;
+        }
+        
+        if (newTotal.compareTo(originalTotalWeight) >= 0) {
             totalWeight.at(dbKey).set(newTotal);
         }
 
-        if (currentTime.compareTo(originalLastUpdateTimestamp) == 1) {
+        if (currentTime.compareTo(originalLastUpdateTimestamp) > 0) {
             lastUpdateTimeUs.at(dbKey).set(currentTime);
         } 
 
