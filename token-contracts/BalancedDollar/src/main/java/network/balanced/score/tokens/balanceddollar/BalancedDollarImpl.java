@@ -43,6 +43,7 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
     private static final String LAST_PRICE = "last_price";
     private static final String MIN_INTERVAL = "min_interval";
     private static final String ADMIN_ADDRESS = "admin_address";
+    private final String MINTER2 = "ExtraMinter";
 
     private final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
     private final VarDB<Address> oracleAddress = Context.newVarDB(ORACLE_ADDRESS, Address.class);
@@ -51,6 +52,7 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
     private final VarDB<BigInteger> lastPrice = Context.newVarDB(LAST_PRICE, BigInteger.class);
     private final VarDB<BigInteger> minInterval = Context.newVarDB(MIN_INTERVAL, BigInteger.class);
     private final VarDB<Address> admin = Context.newVarDB(ADMIN_ADDRESS, Address.class);
+    protected final VarDB<Address> minter2 = Context.newVarDB(MINTER2, Address.class);
 
     public BalancedDollarImpl(Address _governance) {
         super(TOKEN_NAME, SYMBOL_NAME, null);
@@ -161,6 +163,40 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
     public void govTransfer(Address _from, Address _to, BigInteger _value, @Optional byte[] _data) {
         only(governance);
         transfer(_from, _to, _value, _data);
+    }
+
+    @External
+    public void setMinter2(Address _address) {
+        onlyOwner();
+        isContract(_address);
+        minter2.set(_address);
+    }
+
+    @External(readonly = true)
+    public Address getMinter2() {
+        return minter2.get();
+    }
+
+    @External
+    public void burn(BigInteger _amount) {
+        burnFrom(Context.getCaller(), _amount);
+    }
+    
+    @External
+    public void burnFrom(Address _account, BigInteger _amount) {
+        onlyEither(minter, minter2);
+        super.burn(_account, _amount);
+    }
+
+    @External
+    public void mint(BigInteger _amount, @Optional byte[] _data) {
+        mintTo(Context.getCaller(), _amount, _data);
+    }
+
+    @External
+    public void mintTo(Address _account, BigInteger _amount, @Optional byte[] _data) {
+        onlyEither(minter, minter2);
+        mintWithTokenFallback(_account, _amount, _data);
     }
 
     /**

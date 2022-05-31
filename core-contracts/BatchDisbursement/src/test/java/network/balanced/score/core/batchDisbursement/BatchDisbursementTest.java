@@ -89,7 +89,7 @@ class BatchDisbursementTest extends TestBase {
         Executable deploymentWithNonContract = () -> sm.deploy(owner, BatchDisbursement.class,
                 notContract.getAddress());
 
-        String expectedErrorMessage = "BatchDisbursement: Governance address should be a contract";
+        String expectedErrorMessage = "Reverted(0): BatchDisbursement: Governance address should be a contract";
         InvocationTargetException e = Assertions.assertThrows(InvocationTargetException.class,
                 deploymentWithNonContract);
         assertEquals(expectedErrorMessage, e.getCause().getMessage());
@@ -115,7 +115,7 @@ class BatchDisbursementTest extends TestBase {
 
         Executable nonOwnerCall = () -> batchDisbursement.invoke(nonOwner, "setDaofund", daofundScore.getAddress());
         String expectedErrorMessage =
-                "SenderNotScoreOwner: Sender=" + nonOwner.getAddress() + "Owner=" + owner.getAddress();
+                "Reverted(0): SenderNotScoreOwner: Sender=" + nonOwner.getAddress() + "Owner=" + owner.getAddress();
         expectErrorMessage(nonOwnerCall, expectedErrorMessage);
 
         batchDisbursement.invoke(owner, "setDaofund", daofundScore.getAddress());
@@ -201,7 +201,7 @@ class BatchDisbursementTest extends TestBase {
         balnTokenScore.invoke(owner, "mint", BigInteger.TEN.pow(25));
         Executable transferFromInvalidAddress = () -> balnTokenScore.invoke(owner, "transfer",
                 batchDisbursement.getAddress(), BigInteger.TEN.pow(21), new byte[0]);
-        String expectedErrorMessage = "BatchDisbursement: Only receivable from daofund or reserve contract";
+        String expectedErrorMessage = "Reverted(0): BatchDisbursement: Only receivable from daofund or reserve contract";
         expectErrorMessage(transferFromInvalidAddress, expectedErrorMessage);
     }
 }

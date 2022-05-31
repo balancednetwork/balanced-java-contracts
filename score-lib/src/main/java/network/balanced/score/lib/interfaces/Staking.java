@@ -16,7 +16,6 @@
 
 package network.balanced.score.lib.interfaces;
 
-
 import score.*;
 import score.annotation.External;
 import score.annotation.Optional;
@@ -25,6 +24,8 @@ import score.annotation.Payable;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
+
+import network.balanced.score.lib.structs.PrepDelegations;
 
 public interface Staking {
 
@@ -112,17 +113,4 @@ public interface Staking {
 
     @External(readonly = true)
     List<Map<String, Object>> getUserUnstakeInfo(Address _address);
-
-    class PrepDelegations {
-        public Address _address;
-        public BigInteger _votes_in_per;
-    }
-
-    class UnstakeDetails {
-        public BigInteger nodeId;
-        public BigInteger unstakeAmount;
-        public Address key;
-        public BigInteger unstakeBlockHeight;
-        public Address receiverAddress;
-    }
 }

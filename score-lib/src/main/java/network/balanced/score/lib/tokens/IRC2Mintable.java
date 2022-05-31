@@ -61,7 +61,7 @@ public class IRC2Mintable extends IRC2Base implements IRC2MintableInterface, Min
         mintWithTokenFallback(_account, _amount, _data);
     }
 
-    private void mintWithTokenFallback(Address _to, BigInteger _amount, byte[] _data) {
+    protected void mintWithTokenFallback(Address _to, BigInteger _amount, byte[] _data) {
         mint(_to, _amount);
         byte[] data = (_data == null) ? new byte[0] : _data;
         if (_to.isContract()) {

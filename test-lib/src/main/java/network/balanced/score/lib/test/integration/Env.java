@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ICON Foundation
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.test.integration;
+package network.balanced.score.lib.test.integration;
 
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.icx.Wallet;
@@ -27,7 +27,7 @@ import java.math.BigInteger;
 import java.nio.file.Path;
 import java.util.Properties;
 
-public class Env {
+class Env {
     private static Chain chain;
 
     static {
@@ -64,7 +64,12 @@ public class Env {
         if (url == null) {
             throw new IllegalArgumentException("node url not found");
         }
-        chain = new Chain(BigInteger.valueOf(Integer.parseInt(nid.substring(2), 16)), godWallet, url);
+
+        String apiVersion = props.getProperty(nodeName + ".apiVersion");
+        if (apiVersion == null) {
+            throw new IllegalArgumentException("apiVersion not found");
+        }
+        chain = new Chain(BigInteger.valueOf(Integer.parseInt(nid.substring(2), 16)), godWallet, url, apiVersion);
     }
 
     private static KeyWallet readWalletFromFile(String path, String password) throws IOException {
@@ -89,7 +94,7 @@ public class Env {
         public final Wallet godWallet;
         private final String nodeUrl;
 
-        public Chain(BigInteger networkId, Wallet godWallet, String url) {
+        public Chain(BigInteger networkId, Wallet godWallet, String url, String apiVersion) {
             this.networkId = networkId;
             this.godWallet = godWallet;
             this.nodeUrl = url;

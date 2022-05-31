@@ -101,7 +101,7 @@ public class IRC2Base implements IRC2 {
         this.balances.set(_from, balanceOf(_from).subtract(_value));
         this.balances.set(_to, balanceOf(_to).add(_value));
 
-        byte[] dataBytes = (_data == null) ? new byte[0] : _data;
+        byte[] dataBytes = (_data == null) ? "None".getBytes() : _data;
         Transfer(_from, _to, _value, dataBytes);
 
         if (_to.isContract()) {

@@ -1,8 +1,8 @@
 package network.balanced.score.lib.structs;
 
-import score.Address;
-
 import java.math.BigInteger;
+
+import score.Address;
 
 public class PrepDelegations {
     public Address _address;

@@ -23,12 +23,15 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+import network.balanced.score.lib.interfaces.base.*;
+
 import network.balanced.score.lib.structs.BalancedAddresses;
 
-public interface Governance {
-    @External(readonly = true)
-    String name();
-
+public interface Governance extends
+        Name,
+        TokenFallback,
+        Fallback {
+    
     @External(readonly = true)
     BigInteger getDay();
 
@@ -183,7 +186,6 @@ public interface Governance {
     @External
     void removeDataSource(String _data_source_name);
 
-
     @External
     void bonusDist(Address[] _addresses, BigInteger[] _amounts);
 
@@ -273,10 +275,4 @@ public interface Governance {
 
     @External
     void disable_fee_handler();
-
-    @External
-    void tokenFallback(Address _from, BigInteger _value, byte[] _data);
-
-    @Payable
-    void fallback();
 }

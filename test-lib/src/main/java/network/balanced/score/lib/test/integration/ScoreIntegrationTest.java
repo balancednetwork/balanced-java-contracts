@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.test.integration;
+package network.balanced.score.lib.test.integration;
 
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.icx.Wallet;
@@ -23,7 +23,8 @@ import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
 import foundation.icon.score.client.RevertedException;
 import foundation.icon.score.client.ScoreClient;
-
+import network.balanced.score.lib.interfaces.SystemInterface;
+import network.balanced.score.lib.interfaces.SystemInterfaceScoreClient;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -31,20 +32,16 @@ import org.junit.jupiter.api.function.Executable;
 import score.UserRevertedException;
 
 import java.math.BigInteger;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.xml.crypto.dsig.TransformException;
-
+import static network.balanced.score.lib.test.integration.Env.Chain;
+import static network.balanced.score.lib.test.integration.Env.getDefaultChain;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import network.balanced.score.lib.interfaces.*;
 import static network.balanced.score.test.integration.Env.*;
@@ -54,8 +51,8 @@ import static network.balanced.score.test.integration.Env.*;
 @TestMethodOrder(value = MethodOrderer.OrderAnnotation.class)
 public interface ScoreIntegrationTest {
 
-    static Chain chain = getDefaultChain();
-    static DefaultScoreClient godClient  = new DefaultScoreClient(
+    Chain chain = getDefaultChain();
+    DefaultScoreClient godClient  = new DefaultScoreClient(
         chain.getEndpointURL(),
         chain.networkId,
         chain.godWallet,
@@ -63,10 +60,10 @@ public interface ScoreIntegrationTest {
         );
 
     @ScoreClient
-    static SystemInterface _systemScore = new SystemInterfaceScoreClient(godClient);
-    static SystemInterfaceScoreClient systemScore = (SystemInterfaceScoreClient)_systemScore;
+    SystemInterface _systemScore = new SystemInterfaceScoreClient(godClient);
+    SystemInterfaceScoreClient systemScore = (SystemInterfaceScoreClient)_systemScore;
 
-    public static KeyWallet createWalletWithBalance(BigInteger amount) throws Exception  {
+    static KeyWallet createWalletWithBalance(BigInteger amount) throws Exception  {
         KeyWallet wallet = KeyWallet.create();
 
         Address address = DefaultScoreClient.address(wallet.getAddress().toString());
@@ -75,16 +72,16 @@ public interface ScoreIntegrationTest {
         return wallet;
     }
 
-    public static void transfer(Address address, BigInteger amount) {
+    static void transfer(Address address, BigInteger amount) {
         godClient._transfer(address, amount, null);
     }
 
-    public static DefaultScoreClient deploy(Wallet wallet, String name, Map<String, Object> params) {
+    static DefaultScoreClient deploy(Wallet wallet, String name, Map<String, Object> params) {
         String path = getFilePath(name);
         return  DefaultScoreClient._deploy(chain.getEndpointURL(), chain.networkId, wallet, path, params);
     }
 
-    public static String getFilePath(String key) {
+    static String getFilePath(String key) {
         String path = System.getProperty(key);
         if (path == null) {
             throw new IllegalArgumentException("No such property: " + key);
@@ -132,9 +129,9 @@ public interface ScoreIntegrationTest {
         return stream.collect(Collectors.toList());
     }
 
-    static DefaultScoreClient client = new DefaultScoreClient(
-            network.balanced.score.test.integration.Env.getDefaultChain().getEndpointURL(),
-            network.balanced.score.test.integration.Env.getDefaultChain().networkId,
+    DefaultScoreClient client = new DefaultScoreClient(
+            Env.getDefaultChain().getEndpointURL(),
+            Env.getDefaultChain().networkId,
             null,
             null
     );

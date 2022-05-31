@@ -1,23 +1,41 @@
-package network.balanced.score.test.integration;
+/*
+ * Copyright (c) 2022-2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import static network.balanced.score.test.integration.ScoreIntegrationTest.createWalletWithBalance;
-import static network.balanced.score.test.integration.ScoreIntegrationTest.deploy;
-import static network.balanced.score.test.integration.ScoreIntegrationTest.systemScore;
-import static network.balanced.score.test.integration.ScoreIntegrationTest.*;
-
-import java.math.BigInteger;
-import java.util.Map;
+package network.balanced.score.lib.test.integration;
 
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.score.client.DefaultScoreClient;
 import foundation.icon.score.client.ScoreClient;
+import network.balanced.score.lib.interfaces.Governance;
+import network.balanced.score.lib.interfaces.GovernanceScoreClient;
+import network.balanced.score.lib.interfaces.Staking;
+import network.balanced.score.lib.interfaces.StakingScoreClient;
 import network.balanced.score.lib.structs.BalancedAddresses;
+
+import java.math.BigInteger;
+import java.util.Map;
+
+import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
 import network.balanced.score.lib.interfaces.*;
 //import network.balanced.score.lib.test.integration.BalancedClient;
 import score.Address;
 
 public class Balanced {
-    KeyWallet owner;
+    private KeyWallet owner;
+
     public DefaultScoreClient governance;
     public DefaultScoreClient baln;
     public DefaultScoreClient bwt;
@@ -81,15 +99,14 @@ public class Balanced {
         loans = deploy(owner, "Loans", Map.of("_governance", governance._address()));
         rebalancing = deploy(owner, "Rebalancing", Map.of("_governance", governance._address()));
         rewards = deploy(owner, "Rewards", Map.of("_governance", governance._address()));
+        staking = deploy(owner, "Staking", null);
+        sicx = deploy(owner, "Sicx", Map.of("_admin", staking._address()));
         bnusd = deploy(owner, "Bnusd", Map.of("_governance", governance._address()));
         daofund = deploy(owner, "DAOfund", Map.of("_governance", governance._address()));
         dividends = deploy(owner, "Dividends", Map.of("_governance", governance._address()));
         oracle = deploy(owner, "Oracle",null);
         reserve = deploy(owner, "Reserve", Map.of("governance", governance._address()));
         router = deploy(owner, "Router", Map.of("_governance", governance._address()));
-        staking = deploy(owner, "Staking", null);
-        sicx = deploy(owner, "Sicx", Map.of("_admin", staking._address()));
-
     }
 
     protected void setupAddresses() {
