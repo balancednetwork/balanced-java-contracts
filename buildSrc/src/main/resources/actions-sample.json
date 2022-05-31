@@ -18,12 +18,12 @@
           "router": "router",
           "rebalancing": "rebalancing",
           "feehandler": "feehandler",
-          "stakedLp": "stakedLp"
+          "stakedLp": "stakedLp",
+          "reserve": "reserve"
         },
         "__property_args__": {
           "stakedLp": "STAKEDLP_ADDRESS",
-          "oracle": "ORACLE_ADDRESS",
-          "reserve": "RESERVE_ADDRESS"
+          "oracle": "ORACLE_ADDRESS"
         }
       }
     },
@@ -71,16 +71,6 @@
 
     },
     "order": 5.0
-  },
-  {
-    "contract": "loans",
-    "method": "setStaking",
-    "__args__": {
-      "__address_args__": {
-        "_address": "staking"
-      }
-    },
-    "order": 5.9
   },
   {
     "contract": "governance",

@@ -254,10 +254,6 @@ class ConfigureBalancedEnv extends DefaultTask {
         Address stakedlp = new Address(address)
         properties.put("STAKEDLP_ADDRESS", stakedlp);
 
-        address = this._properties.getProperty("RESERVE_ADDRESS")
-        Address reserveAddress = new Address(address)
-        properties.put("RESERVE_ADDRESS", reserveAddress);
-
         // delegate methods
         List<String> prepsAddress = _properties.getProperty("PREP_LIST").split("--;--").toList()
         List<String> vote = _properties.getProperty("VOTES_IN_PER").split("--;--").toList()
