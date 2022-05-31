@@ -29,13 +29,16 @@ import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import foundation.icon.score.client.RevertedException;
 import javafx.scene.effect.Light.Point;
 
 import org.junit.jupiter.api.Order;
 
+import network.balanced.score.lib.interfaces.Governance;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import static network.balanced.score.lib.test.integration.BalancedUtils.*;
@@ -205,6 +208,7 @@ class Systemtest implements ScoreIntegrationTest {
 
         balanced.dex._update(dexJavaPath, Map.of("_governance", balanced.governance._address()));
         balanced.loans._update(loansJavaPath, Map.of("_governance", balanced.governance._address()));
+        owner.governance.setContractAddresses();
         assertEquals(balanced.stakedLp._address().toString(), owner.dex.getStakedLp().toString());
 
         nextDay();
@@ -229,6 +233,7 @@ class Systemtest implements ScoreIntegrationTest {
         joinsICXBnusdLP(stakedLPClient, lpAmount, lpAmount);
         stakeICXBnusdLP(stakedLPClient);
         joinsICXBnusdLP(unstakedLPClient, lpAmount, lpAmount);
+        Assertions.assertThrows(RevertedException.class, () -> leaveICXBnusdLP(unstakedLPClient));
 
         nextDay();
 
@@ -336,7 +341,7 @@ class Systemtest implements ScoreIntegrationTest {
 
     @Test
     @Order(9)
-    void stakingAndUntstakingLp() throws Exception {
+    void stakingAndUnstakingLp() throws Exception {
         BalancedClient lpClient = balanced.newClient();
         BalancedClient lpBuyer = balanced.newClient();
         
@@ -362,6 +367,9 @@ class Systemtest implements ScoreIntegrationTest {
 
         verifyNoRewards(lpClient);
         verifyRewards(lpBuyer);
+
+        unstakeICXBnusdLP(lpBuyer);
+        leaveICXBnusdLP(lpBuyer);
     }
 
     @Test
@@ -500,6 +508,12 @@ class Systemtest implements ScoreIntegrationTest {
         BigInteger sicxDeposit = client.sicx.balanceOf(client.getAddress());
         client.sicx.transfer(balanced.dex._address(), sicxDeposit, depositData.toString().getBytes());
         client.dex.add(balanced.sicx._address(), balanced.bnusd._address(), sicxDeposit, bnusdAmount, false);
+    }
+
+    private void leaveICXBnusdLP(BalancedClient client) {
+        BigInteger icxBnusdPoolId = owner.dex.getPoolId(balanced.sicx._address(), balanced.bnusd._address());
+        BigInteger poolBalance = client.dex.balanceOf(client.getAddress(), icxBnusdPoolId);
+        client.dex.remove(icxBnusdPoolId, poolBalance, true);
     }
 
     private void joinsICXBalnLP(BalancedClient client, BigInteger icxAmount, BigInteger balnAmount) {
