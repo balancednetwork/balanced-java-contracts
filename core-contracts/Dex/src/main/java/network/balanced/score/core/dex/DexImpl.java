@@ -512,7 +512,12 @@ public class DexImpl extends AbstractDex {
                 TAG + ":  Offset is equal to or greater then Zero.");
         Map<String, Object> snapshotData = new HashMap<>();
         for (Address user : activeAddresses.get(_id.intValue()).range(_offset, _offset.add(_limit))) {
-            BigInteger snapshotBalance = balanceOfAt(user, _id, _snapshot_id, false);
+            BigInteger snapshotBalance = balanceOf(user, _id);
+            if (stakedLp.get() != null) {
+                BigInteger stakedBalance = (BigInteger) Context.call(stakedLp.get(), "balanceOf", user, _id);
+                snapshotBalance = snapshotBalance.add(stakedBalance);
+            }
+
             if (!snapshotBalance.equals(BigInteger.ZERO)) {
                 snapshotData.put(user.toString(), snapshotBalance);
             }

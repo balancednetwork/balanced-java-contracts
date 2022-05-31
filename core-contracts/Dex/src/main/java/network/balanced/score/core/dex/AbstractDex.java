@@ -563,10 +563,6 @@ public abstract class AbstractDex implements Dex {
             return getICXBalance(_owner);
         } else {
             BigInteger balance = DexDBVariables.balance.at(_id.intValue()).getOrDefault(_owner, BigInteger.ZERO);
-            if (stakedLp.get() != null && (continuousRewardsDay.get() == null || getDay().compareTo(continuousRewardsDay.get()) < 0)) {
-                BigInteger stakedBalance = (BigInteger) Context.call(stakedLp.get(), "balanceOf", _owner, _id);
-                balance = balance.add(stakedBalance);
-            }
             return balance;
         }
     }
@@ -609,6 +605,10 @@ public abstract class AbstractDex implements Dex {
     }
 
     void revertOnWithdrawalLock(Address user, Integer id) {
+        if (continuousRewardsDay.get() != null && getDay().compareTo(continuousRewardsDay.get()) > 0) {
+            return;
+        }
+
         BigInteger depositTime = withdrawLock.at(id).get(user);
         Context.require(depositTime.add(WITHDRAW_LOCK_TIMEOUT).compareTo(BigInteger.valueOf(Context.getBlockTimestamp())) <= 0,
                 TAG + ":  Assets must remain in the pool for 24 hours, please try again later.");
