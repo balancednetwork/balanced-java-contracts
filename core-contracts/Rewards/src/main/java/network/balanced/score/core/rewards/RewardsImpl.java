@@ -31,6 +31,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Map.entry;
+
 import network.balanced.score.lib.interfaces.DataSourceScoreInterface;
 import network.balanced.score.lib.interfaces.Rewards;
 import network.balanced.score.lib.interfaces.tokens.MintableScoreInterface;
@@ -546,6 +548,43 @@ public class RewardsImpl implements Rewards {
             balnHoldings.set(_user.toString(), newHoldings);
             RewardsAccrued(_user, _name, accuredRewards);
         }
+    }
+
+    @External(readonly = true)
+    public Map<String, Object> dumpDataSource(String _name, BigInteger day, Address address) {
+
+        
+        DataSourceImpl dataSource = DataSourceDB.get(_name);
+
+        Map<String, BigInteger> data = dataSource.loadCurrentSupply(address);
+
+        BigInteger currentTime = getTime();
+        BigInteger sourceRewards = dataSource.computeSingelUserData(currentTime,
+                                                                    data.get("_totalSupply"),
+                                                                    address,
+                                                                    data.get("_balance"));
+        return Map.ofEntries(
+            entry("contractAddress", dataSource.getContractAddress()),
+            entry("name", dataSource.getName()),
+            entry("day", dataSource.getDay() ),
+            entry("precomp", dataSource.getPrecomp()),
+            entry("offset", dataSource.getOffset()),
+            entry("totalValue", dataSource.getTotalValue(day)),
+            entry("totalDist", dataSource.getTotalDist(day)),
+            entry("userWeight", dataSource.getUserWeight(address.toString())),
+            entry("getLastUpdateTimeUs", dataSource.getLastUpdateTimeUs()),
+            entry("continuousRewardsDay", continuousRewardsDay.get()),
+            entry("continuousRewardsDayTimeStamp", continuousRewardsDay.get().multiply(U_SECONDS_DAY)),
+            entry("getTotalWeight", dataSource.getTotalWeight()),
+            entry("getTotalSupply", dataSource.getTotalSupply()),
+            entry("loadCurrentSupply", data),
+            entry("computeSingelUserData", sourceRewards),
+            entry("currentTime", currentTime),
+            entry("realTime", Context.getBlockTimestamp()),
+            entry("startTimestamp", startTimestamp.get()),
+            entry("rewardsDay", getDay()),
+            entry("platformDat", platformDay.get())
+        );
     }
 
     @External
