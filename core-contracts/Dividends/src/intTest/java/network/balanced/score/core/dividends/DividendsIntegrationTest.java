@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package network.balanced.score.core.dividends;
 
 
@@ -8,11 +24,12 @@ import foundation.icon.score.client.ScoreClient;
 import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.interfaces.base.BalancedToken;
 import network.balanced.score.lib.interfaces.base.BalancedTokenScoreClient;
-
 import network.balanced.score.lib.structs.DistributionPercentage;
+import network.balanced.score.lib.test.integration.Balanced;
+import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
+import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.json.JSONObject;
 import score.Address;
 import scorex.util.ArrayList;
 import scorex.util.HashMap;
@@ -21,13 +38,13 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-import static network.balanced.score.test.integration.ScoreIntegrationTest.createWalletWithBalance;
+import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class DividendsIntegrationTest {
     static Wallet tester;
     static KeyWallet owner;
-    static network.balanced.score.test.integration.Balanced balanced;
+    static Balanced balanced;
 
     @ScoreClient
     static Dividends dividends;
@@ -76,7 +93,7 @@ public class DividendsIntegrationTest {
 //        System.setProperty("Dividends", System.getProperty("python"));
 
         tester = createWalletWithBalance(BigInteger.TEN.pow(24));
-        balanced = new network.balanced.score.test.integration.Balanced();
+        balanced = new Balanced();
         owner = balanced.deployBalanced();
 
         dividends = new DividendsScoreClient(balanced.dividends);
@@ -221,7 +238,7 @@ public class DividendsIntegrationTest {
         ((LoansScoreClient) loans).depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
 
         BigInteger amount = collateral;
-        network.balanced.score.test.integration.ScoreIntegrationTest.transfer(balanced.dex._address(), amount);
+        ScoreIntegrationTest.transfer(balanced.dex._address(), amount);
 
         ((StakingScoreClient) staking).stakeICX(BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18)), null
                 , null);
