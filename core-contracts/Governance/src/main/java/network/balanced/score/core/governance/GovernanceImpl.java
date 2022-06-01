@@ -105,9 +105,13 @@ public class GovernanceImpl {
     public void setTimeOffset(BigInteger offset) {
         onlyOwner();
         timeOffset.set(offset);
+        Context.println("############################################## 3");
         Context.call(Addresses.get("loans"), "setTimeOffset",  offset);
+        Context.println("############################################## 4");
         Context.call(Addresses.get("rewards"), "setTimeOffset",  offset);
+        Context.println("############################################## 5");
         Context.call(Addresses.get("dex"), "setTimeOffset",  offset);
+        Context.println("############################################## 6");
         Context.call(Addresses.get("dividends"), "setTimeOffset",  offset);
     }
 
@@ -476,7 +480,9 @@ public class GovernanceImpl {
         launchTime.set(BigInteger.valueOf(Context.getBlockTimestamp()));
 
         BigInteger timeDelta = BigInteger.valueOf(Context.getBlockTimestamp());
+        Context.println("############################################## 1");
         setTimeOffset(timeDelta);
+        Context.println("############################################## 2");
 
 
         for (Map<String, String> source : DATA_SOURCES) {

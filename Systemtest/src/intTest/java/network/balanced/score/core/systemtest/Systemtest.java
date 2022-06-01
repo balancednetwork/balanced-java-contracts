@@ -50,6 +50,7 @@ class Systemtest implements ScoreIntegrationTest {
     private static String dexJavaPath;
     private static String loansJavaPath;
     private static String rewardsJavaPath;
+    private static String dividendsJavaPath;
     private static BigInteger EXA = BigInteger.TEN.pow(18);
 
     @BeforeAll    
@@ -57,10 +58,12 @@ class Systemtest implements ScoreIntegrationTest {
         dexJavaPath = System.getProperty("Dex");
         loansJavaPath = System.getProperty("Loans");
         rewardsJavaPath = System.getProperty("Rewards");
+        dividendsJavaPath = System.getProperty("Dividends");
 
         System.setProperty("Rewards", System.getProperty("rewardsPython"));
         System.setProperty("Dex", System.getProperty("dexPython"));
         System.setProperty("Loans", System.getProperty("loansPython"));
+        System.setProperty("Dividends", System.getProperty("dividendsPython"));
         
         balanced = new Balanced();
         balanced.deployBalanced();
@@ -92,9 +95,11 @@ class Systemtest implements ScoreIntegrationTest {
     void dividendsMigration() throws Exception {
         BalancedClient stakingClient = balanced.newClient();
         BalancedClient lpClient = balanced.newClient();
+        BalancedClient lpClient2 = balanced.newClient();
         BalancedClient feeGenerator = balanced.newClient();
         stakingClient.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);        
         lpClient.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);
+        lpClient2.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);
 
         nextDay();
         
@@ -102,24 +107,47 @@ class Systemtest implements ScoreIntegrationTest {
         stakeBaln(stakingClient);
 
         BigInteger lpClientRewards = verifyRewards(lpClient);
+        BigInteger lpClient2Rewards = verifyRewards(lpClient2);
         joinsICXBalnLP(lpClient, lpClientRewards, lpClientRewards);
+        joinsICXBalnLP(lpClient2, lpClient2Rewards, lpClient2Rewards);
         
         feeGenerator.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);
-        owner.governance.setDividendsOnlyToStakedBalnDay(owner.dividends.getSnapshotId().add(BigInteger.ONE));
-
         nextDay();
 
         verifyBnusdFees(stakingClient);
         verifyBnusdFees(lpClient);
+        verifyDaofundBnusdDividends();
+
+        balanced.dividends._update(dividendsJavaPath, Map.of("_governance", balanced.governance._address()));
+        owner.governance.setDividendsOnlyToStakedBalnDay(owner.dividends.getSnapshotId().add(BigInteger.ONE));
+        
+        verifyBnusdFees(lpClient2);
         
         feeGenerator.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);
-        
         nextDay();
         
         verifyBnusdFees(stakingClient);
+        verifyBnusdFees(lpClient);
+        verifyDaofundBnusdDividends();
+
+        feeGenerator.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);
+        nextDay();
+
+        verifyBnusdFees(stakingClient);
+        verifyBnusdFees(lpClient2);
+        verifyNoBnusdFees(lpClient2);
         verifyNoBnusdFees(lpClient);
-        verifyDaofundDividends();
+        verifyDaofundBnusdDividends();
+
+        feeGenerator.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);
+        nextDay();
+
+        verifyBnusdFees(stakingClient);
+        verifyNoBnusdFees(lpClient2);
+        verifyNoBnusdFees(lpClient);
+        verifyDaofundBnusdDividends();
     }
+    
 
     @Test
     @Order(2)
@@ -452,6 +480,58 @@ class Systemtest implements ScoreIntegrationTest {
         assertTrue(sICXBalancePreRetire.compareTo(sICXBalancePostRetire) < 0);
     }
 
+    @Test
+    @Order(13)
+    void dividendsAfterUpdate() throws Exception {
+        BalancedClient stakingClient = balanced.newClient();
+        BalancedClient lpClient = balanced.newClient();
+        BalancedClient feeGenerator = balanced.newClient();
+        stakingClient.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);        
+        lpClient.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);
+
+        balanced.increaseDay(1);
+        owner.dividends.distribute((tx) -> {});
+        
+        verifyRewards(stakingClient);
+        stakeBaln(stakingClient);
+
+        BigInteger lpClientRewards = verifyRewards(lpClient);
+        joinsICXBalnLP(lpClient, lpClientRewards, lpClientRewards);
+        
+        feeGenerator.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);
+
+        balanced.increaseDay(1);
+        owner.dividends.distribute((tx) -> {});
+
+        verifyBnusdFees(stakingClient);
+        verifyNoBnusdFees(lpClient);
+        verifyDaofundBnusdDividends();
+
+        feeGenerator.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);
+        feeGenerator.staking.stakeICX(BigInteger.TEN.pow(22), null, null);
+        
+        JsonObject swapData = Json.object();
+        JsonObject swapParams = Json.object();
+        swapParams.add("toToken", balanced.baln._address().toString());
+        swapData.add("method", "_swap");
+        swapData.add("params", swapParams);
+        feeGenerator.sicx.transfer(balanced.dex._address(), feeGenerator.sicx.balanceOf(feeGenerator.getAddress()), swapData.toString().getBytes());
+
+        swapData = Json.object();
+        swapParams = Json.object();
+        swapParams.add("toToken", balanced.bnusd._address().toString());
+        swapData.add("method", "_swap");
+        swapData.add("params", swapParams);
+        feeGenerator.baln.transfer(balanced.dex._address(), feeGenerator.baln.balanceOf(feeGenerator.getAddress()), swapData.toString().getBytes());
+
+        balanced.increaseDay(1);
+        owner.dividends.distribute((tx) -> {});
+
+        verifyDaofundAllDivTypes();
+        verifyAllFees(stakingClient);
+        verifyNoBnusdFees(lpClient);
+    }
+
     private void updateRewards() {
         balanced.rewards._update(rewardsJavaPath, Map.of("_governance", balanced.governance._address()));
         owner.rewards.addDataProvider(balanced.stakedLp._address());
@@ -490,7 +570,7 @@ class Systemtest implements ScoreIntegrationTest {
         assertTrue(reserveBalancePostDist.compareTo(reserveBalancePreDist) > 0);
     }
 
-    private void verifyDaofundDividends() throws Exception {
+    private void verifyDaofundBnusdDividends() throws Exception {
         BigInteger daoFundBalancePreDist = owner.bnUSD.balanceOf(balanced.daofund._address());
         owner.dividends.transferDaofundDividends(0, 0);
         BigInteger daoFundBalancePostDist = owner.bnUSD.balanceOf(balanced.daofund._address());
@@ -498,6 +578,19 @@ class Systemtest implements ScoreIntegrationTest {
         assertTrue(daoFundBalancePostDist.compareTo(daoFundBalancePreDist) > 0);
     }
 
+    private void verifyDaofundAllDivTypes() throws Exception {
+        BigInteger daoFundBnusdBalancePreDist = owner.bnUSD.balanceOf(balanced.daofund._address());
+        BigInteger daoFundBalnBalancePreDist = owner.baln.balanceOf(balanced.daofund._address());
+        BigInteger daoFundSicxBalancePreDist = owner.sicx.balanceOf(balanced.daofund._address());
+        owner.dividends.transferDaofundDividends(0, 0);
+        BigInteger daoFundBnusdBalancePostDist = owner.bnUSD.balanceOf(balanced.daofund._address());
+        BigInteger daoFundBalnBalancePostDist = owner.baln.balanceOf(balanced.daofund._address());
+        BigInteger daoFundSicxBalancePostDist = owner.sicx.balanceOf(balanced.daofund._address());
+
+        assertTrue(daoFundBnusdBalancePostDist.compareTo(daoFundBnusdBalancePreDist) > 0);
+        assertTrue(daoFundBalnBalancePostDist.compareTo(daoFundBalnBalancePreDist) > 0);
+        assertTrue(daoFundSicxBalancePostDist.compareTo(daoFundSicxBalancePreDist) > 0);
+    }
 
     private void joinsICXBnusdLP(BalancedClient client, BigInteger icxAmount, BigInteger bnusdAmount) {
         JsonObject depositData = Json.object();
@@ -586,6 +679,20 @@ class Systemtest implements ScoreIntegrationTest {
         assertTrue(balancePostClaim.equals(balancePreClaim));
     }
 
+    private void verifyAllFees(BalancedClient client) {
+        BigInteger bnusdBalancePreDist = owner.bnUSD.balanceOf(client.getAddress());
+        BigInteger balnBalancePreDist = owner.baln.balanceOf(client.getAddress());
+        BigInteger sicxBalancePreDist = owner.sicx.balanceOf(client.getAddress());
+        client.dividends.claim(0, 0);
+        BigInteger bnusdBalancePostDist = owner.bnUSD.balanceOf(client.getAddress());
+        BigInteger balnBalancePostDist = owner.baln.balanceOf(client.getAddress());
+        BigInteger sicxBalancePostDist = owner.sicx.balanceOf(client.getAddress());
+    
+        assertTrue(bnusdBalancePostDist.compareTo(bnusdBalancePreDist) > 0);
+        assertTrue(balnBalancePostDist.compareTo(balnBalancePreDist) > 0);
+        assertTrue(sicxBalancePostDist.compareTo(sicxBalancePreDist) > 0);
+    }
+   
     private void nextDay() {
         balanced.increaseDay(1);
         balanced.syncDistributions();

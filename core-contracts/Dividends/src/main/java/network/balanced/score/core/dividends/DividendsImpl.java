@@ -495,6 +495,9 @@ public class DividendsImpl implements Dividends {
         if (start == 0 && end == 0) {
             end = snap;
             start = Math.max(1, end - batch);
+            Context.println("####################################### end " + end);
+            Context.println("####################################### start " + start);
+            Context.println("####################################### batch " + batch);
         } else if (end == 0) {
             end = Math.min(snap, start + batch);
         } else if (start == 0) {
