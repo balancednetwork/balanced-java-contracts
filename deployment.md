@@ -30,7 +30,7 @@ deployBalancedContracts  {
 
 Every network configuration contains `env`, `configFile`, `keystore`, `password`. 
 * `configFile` is the name of the file for the deployment configuration. The file should be present in ``buildSrc/src/main/resources/`. The contracts specified in `configFile` are deployed. The JSON file contains array of objects and each object deploys a contract. 
-Here, `name` parameter specifies the name of the contract, `path` specifies what to be deployed. `path` can be linked to any zip file present in any network. `params` is an object that contains the parameter required for the deployment of the contract. `order` specifies the order at which the contract is to be deployed. If two contracts have the same order then they can be deployed in any sequence and if the order is not specified the value of the order is assumed to be `0`.
+Here, `name` parameter specifies the name of the contract, `path` specifies what to be deployed. `path` can be linked to any zip file present in main network or else it uses the jar file locally. To use the jar file, `params` paramter needs to be removed.  `params` is an object that contains the parameter required for the deployment of the contract. `order` specifies the order at which the contract is to be deployed. If two contracts have the same order then they can be deployed in any sequence and if the order is not specified the value of the order is assumed to be `0`.
 ```json
 {
     "name": "governance",
