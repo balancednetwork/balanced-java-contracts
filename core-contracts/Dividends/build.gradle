@@ -31,6 +31,8 @@ dependencies {
 
     testImplementation Dependencies.javaeeUnitTest
     testImplementation Dependencies.javaeeTokens
+    testImplementation Dependencies.json
+
     // Use JUnit Jupiter for testing.
 
     testImplementation Dependencies.junitJupiter
@@ -77,6 +79,16 @@ deployJar {
 tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+    finalizedBy jacocoTestReport 
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = false
+        csv.required = false
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+    }
 }
 
 task integrationTest(type: Test) {
@@ -98,6 +110,7 @@ task integrationTest(type: Test) {
 
         systemProperty "python", new File(project(':test-lib').projectDir, 'python-contracts/dividends.zip')
         systemProperty "java", optimizedJar.outputJarName
+
     }
 
 }

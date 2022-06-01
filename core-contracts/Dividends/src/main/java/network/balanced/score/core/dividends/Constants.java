@@ -1,8 +1,22 @@
+/*
+ * Copyright (c) 2022-2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package network.balanced.score.core.dividends;
 
 import java.math.BigInteger;
-
-import static network.balanced.score.lib.utils.Math.pow;
 
 public class Constants {
     static final String TAG = "Balanced Dividends";
@@ -49,13 +63,17 @@ public class Constants {
     static final String TOTAL_SNAPSHOT = "total_snapshots";
     static final String COMPLETE_DIVIDENDS_CATEGORIES = "complete_dividends_categories";
 
+    static final BigInteger TWO_FIFTY_SIX = BigInteger.valueOf(256);
+
+
     static BigInteger MAX_LOOP = BigInteger.valueOf(50);
-    static BigInteger MINIMUM_ELIGIBLE_DEBT = BigInteger.valueOf(50).multiply(pow(BigInteger.TEN, 18));
-    static String BALNBNUSD = "BALN/bnUSD";
     static String BALN_HOLDERS = "baln_holders";
     static String DAO_FUND = "daofund";
 
     static BigInteger BALNBNUSD_ID = BigInteger.valueOf(3);
     static BigInteger BALNSICX_ID = BigInteger.valueOf(4);
-    static BigInteger U_SECONDS_DAY = BigInteger.valueOf(86400).multiply(pow(BigInteger.TEN, 6));
+    static BigInteger U_SECONDS_DAY = BigInteger.valueOf(86_400_000_000L);
+
+    static final String IDS = "ids";
+    static final String AMOUNT = "amount";
 }
