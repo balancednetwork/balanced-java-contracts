@@ -1,12 +1,46 @@
 ## Deploment Steps
-You need to pull add-deployment-plugin branch and then open the folder in IntelliJ IDEA IDE. 
-Once it is opened, you need to create a file named gradle.properties.
-The gradle.properties file consists of keystore and password. The keystoreName can either be absolute path or relative to root of the project directory.
-
+The gradle.properties file consists of keystore and password. The keystoreName can either be absolute path or relative to root of the project directory. Keystore should be kept in `.keystores` directory and acessed from that directory. 
 ```properties
-keystoreName=keystore_file_location.json
+keystoreName=.keystores/keystore.json
 keystorePass=keystore_password
 ```
+
+The configuration for the deployement is present in `build.gradle`.
+```gradle
+deployBalancedContracts  {
+    envs {
+        local {
+            env = "local"
+        }
+        berlin {
+            env = "berlin"
+            configFile = "contracts-sample.json"
+            keystore = rootProject.findProperty('keystoreName') ?: ''
+            password = rootProject.findProperty('keystorePass') ?: ''
+        }
+        sejong {
+            env = "sejong"
+            configFile = "contracts-sample.json"
+            keystore = rootProject.findProperty('keystoreName') ?: ''
+            password = rootProject.findProperty('keystorePass') ?: ''
+        }
+    }
+}
+```
+
+Every network configuration contains `env`, `configFile`, `keystore`, `password`. 
+* `configFile` is the name of file for the deployemnt configuration. The fle should be present in ``buildSrc/src/main/resources/`. The contracts specified in `configFile` are deployed. The json file contains array of object and each object deploys a contract. 
+Here, `name` parameter specifies the name of the contract, `path` specifies what to be deployed. `path` can be link to any zip file present in any network. `params` is object that contains the parameter required for the deployment of the contract. `order` specifies the order at which the contract is to be deployed. If two contracts have the same order then they can be deployed in any sequence and if order is not specified the value of order is assumed to be `0`.
+```json
+{
+    "name": "governance",
+    "path": "https://main.tracker.solidwallet.io/score/cx44250a12074799e26fdeee75648ae47e2cc84219_23.zip",
+    "params": {
+    },
+    "order": 1.0
+}
+```
+
 Once we are done with the process, we can simply deploy the contract to the network we wish for through the gradle menu. 
 ![image](https://user-images.githubusercontent.com/98825512/171312243-d43abffa-216f-4737-9a43-0dc2ef319599.png)
 
