@@ -29,6 +29,9 @@ import java.math.BigInteger;
 import java.util.Map;
 
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
+import network.balanced.score.lib.interfaces.*;
+//import network.balanced.score.lib.test.integration.BalancedClient;
+import score.Address;
 
 public class Balanced {
     private KeyWallet owner;
@@ -60,8 +63,8 @@ public class Balanced {
        
     }
 
-    public void deployBalanced() throws Exception {
-        owner = createWalletWithBalance(BigInteger.valueOf(1000).multiply(BigInteger.TEN.pow(18)));
+    public KeyWallet deployBalanced() throws Exception {
+        owner = createWalletWithBalance(BigInteger.valueOf(10000).multiply(BigInteger.TEN.pow(18)));
         deployPrep();
 
         governance = deploy(owner, "Governance", null);
@@ -69,10 +72,16 @@ public class Balanced {
         deployContracts();
         setupAddresses();
         setupContracts();
-        // delegate(adminWallet);
-        // transfer(governance._address(), BigInteger.valueOf(10000).multiply(BigInteger.TEN.pow(18)));
-        // ((GovernanceScoreClient)governanceScore).createBnusdMarket(BigInteger.valueOf(210).multiply(BigInteger.TEN.pow(18)));
-    }
+        return owner;
+        }
+
+//    public BalancedClient newClient(BigInteger clientBalanace) throws Exception {
+//        return new BalancedClient(this, createWalletWithBalance(clientBalanace));
+//    }
+//
+//    public BalancedClient newClient() throws Exception {
+//        return newClient(BigInteger.TEN.pow(24));
+//    }
 
     protected void deployPrep() {
         try {
@@ -128,5 +137,16 @@ public class Balanced {
         governanceScore.configureBalanced();
         governanceScore.launchBalanced();
         stakingScore.toggleStakingOn();
+        governanceScore.enable_fee_handler();
+        governanceScore.setFeeProcessingInterval(BigInteger.ONE);
+
+        Address[] acceptedAddress=new Address[]{
+                bnusd._address(), sicx._address(),baln._address()
+        };
+        governanceScore.setAcceptedDividendTokens(acceptedAddress);
+        governanceScore.addAcceptedTokens(String.valueOf(bnusd._address()));
+        governanceScore.addAcceptedTokens(String.valueOf(sicx._address()));
+        governanceScore.addAcceptedTokens(String.valueOf(baln._address()));
+
     }
 }
