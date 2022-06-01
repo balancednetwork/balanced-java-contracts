@@ -65,7 +65,7 @@ class BalancedDollarImplTest extends TestBase {
 
     private void setup() {
         bnUSDScore.invoke(governanceScore, "setAdmin", admin.getAddress());
-        bnUSDScore.invoke(admin, "setOracle", oracleScore.getAddress());
+        bnUSDScore.invoke(governanceScore, "setOracle", oracleScore.getAddress());
     }
 
     @Test
@@ -85,7 +85,7 @@ class BalancedDollarImplTest extends TestBase {
 
     @Test
     void setAndGetOracle() {
-        testContractSettersAndGetters(bnUSDScore, governanceScore, admin, "setOracle", oracleScore.getAddress(),
+        testGovernanceControlMethods(bnUSDScore, governanceScore, owner, "setOracle", oracleScore.getAddress(),
                 "getOracle");
     }
 

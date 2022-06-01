@@ -15,7 +15,6 @@
  */
 
 package network.balanced.score.lib.test;
-
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
@@ -29,6 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class UnitTest extends TestBase {
     public static int scoreCount = 1;
@@ -36,7 +36,7 @@ public class UnitTest extends TestBase {
 
     public static void expectErrorMessage(Executable contractCall, String expectedErrorMessage) {
         AssertionError e = Assertions.assertThrows(AssertionError.class, contractCall);
-        assertEquals(expectedErrorMessage, e.getMessage());
+        assertTrue(e.getMessage().contains(expectedErrorMessage));
     }
 
     public static void testGovernance(Score contractUnderTest, Account governanceScore, Account owner) {
@@ -95,6 +95,20 @@ public class UnitTest extends TestBase {
         expectErrorMessage(setScoreNotFromAdmin, expectedErrorMessage);
 
         contractUnderTest.invoke(adminAccount, setterMethod, parameterToSet);
+        assertEquals(parameterToSet, contractUnderTest.call(getterMethod));
+    }
+
+     public static <T> void testGovernanceControlMethods(Score contractUnderTest, Account governanceScore,
+                                                   Account owner, String setterMethod, T parameterToSet,
+                                                   String getterMethod) {
+        Account nonGovernance = sm.createAccount();
+        String expectedErrorMessage = "Reverted(0): Authorization Check: Authorization failed. Caller: " + nonGovernance.getAddress() +
+                " Authorized Caller: " + governanceScore.getAddress();
+        System.out.println(expectedErrorMessage);
+        Executable setScoreNotFromGovernance = () -> contractUnderTest.invoke(nonGovernance, setterMethod, parameterToSet);
+        expectErrorMessage(setScoreNotFromGovernance, expectedErrorMessage);
+
+        contractUnderTest.invoke(governanceScore, setterMethod, parameterToSet);
         assertEquals(parameterToSet, contractUnderTest.call(getterMethod));
     }
 

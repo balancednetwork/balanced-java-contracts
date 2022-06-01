@@ -17,6 +17,7 @@
 package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreInterface;
+import network.balanced.score.lib.interfaces.addresses.*;
 import network.balanced.score.lib.structs.PrepDelegations;
 import score.Address;
 import score.annotation.External;
@@ -28,7 +29,14 @@ import java.util.List;
 import java.util.Map;
 
 @ScoreInterface
-public interface Loans {
+public interface Loans extends
+        RewardsAddress, 
+        DividendsAddress,
+        StakingAddress,
+        ReserveAddress,
+        RebalancingAddress,
+        DexAddress,
+        AdminAddress {
 
     @External
     void turnLoansOn();
