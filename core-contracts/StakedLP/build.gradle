@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2021-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,36 @@
 
 import network.balanced.score.dependencies.Dependencies
 
-plugins {
-    id 'java'
-}
-
-version '1.0.0'
+version = '0.0.1'
 
 repositories {
+    // Use Maven Central for resolving dependencies.
     mavenCentral()
 }
 
 dependencies {
     compileOnly Dependencies.javaeeApi
+    implementation Dependencies.javaeeScorex
+    implementation Dependencies.minimalJson
     implementation project(':score-lib')
 
+    testImplementation project(':test-lib')
     testImplementation Dependencies.javaeeUnitTest
+    testImplementation Dependencies.javaeeTokens
+    testImplementation Dependencies.json
+
     testImplementation Dependencies.junitJupiter
     testRuntimeOnly Dependencies.junitJupiterEngine
-    testImplementation project(':test-lib')
     testImplementation Dependencies.mockitoCore
     testImplementation Dependencies.mockitoInline
+}
+
+optimizedJar {
+    mainClassName = 'network.balanced.score.core.stakedlp.StakedLPImpl'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from {
+        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
+    }
 }
 
 deployJar {
@@ -55,18 +65,12 @@ deployJar {
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
-    parameters {}
-}
-
-test {
-    useJUnitPlatform()
-}
-
-optimizedJar {
-    mainClassName = 'network.balanced.score.tokens.workertoken.WorkerTokenImpl'
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-
-    from {
-        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    parameters {
+        arg('governance', 'cx83c7f9dc24fead0ea3a895ed66d984f319ef7800')
     }
+}
+
+tasks.named('test') {
+    // Use JUnit Platform for unit tests.
+    useJUnitPlatform()
 }
