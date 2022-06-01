@@ -19,10 +19,7 @@ package network.balanced.score.lib.test.integration;
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.score.client.DefaultScoreClient;
 import foundation.icon.score.client.ScoreClient;
-import network.balanced.score.lib.interfaces.Governance;
-import network.balanced.score.lib.interfaces.GovernanceScoreClient;
-import network.balanced.score.lib.interfaces.Staking;
-import network.balanced.score.lib.interfaces.StakingScoreClient;
+import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.structs.BalancedAddresses;
 
 import java.math.BigInteger;
@@ -49,6 +46,7 @@ public class Balanced {
     public DefaultScoreClient reserve;
     public DefaultScoreClient router;
     public DefaultScoreClient staking;
+    public DefaultScoreClient stakedLP;
 
     @ScoreClient
     Governance governanceScore;
@@ -56,12 +54,15 @@ public class Balanced {
     @ScoreClient
     Staking stakingScore;
 
+    @ScoreClient
+    DAOfund daofundScore;
+
     public Balanced() {
        
     }
 
     public void deployBalanced() throws Exception {
-        owner = createWalletWithBalance(BigInteger.valueOf(400).multiply(BigInteger.TEN.pow(18)));
+        owner = createWalletWithBalance(BigInteger.valueOf(600).multiply(BigInteger.TEN.pow(18)));
         deployPrep();
 
         governance = deploy(owner, "Governance", null);
@@ -69,6 +70,9 @@ public class Balanced {
         deployContracts();
         setupAddresses();
         setupContracts();
+        rewards._update(getFilePath("Rewards"), null);
+        daofundScore = new DAOfundScoreClient(daofund);
+        daofundScore.addAddressToSetdb();
         // delegate(adminWallet);
         // transfer(governance._address(), BigInteger.valueOf(10000).multiply(BigInteger.TEN.pow(18)));
         // ((GovernanceScoreClient)governanceScore).createBnusdMarket(BigInteger.valueOf(210).multiply(BigInteger.TEN.pow(18)));
@@ -76,7 +80,7 @@ public class Balanced {
 
     protected void deployPrep() {
         try {
-            systemScore.registerPRep(BigInteger.valueOf(2000).multiply(BigInteger.TEN.pow(18)), "test", "kokoa@example.com", "USA", "New York", "https://icon.kokoa.com", "https://icon.kokoa.com/json/details.json", "https://sejong.net.solidwallet.io");
+            systemScore.registerPRep(BigInteger.valueOf(2000).multiply(BigInteger.TEN.pow(18)), "test", "kokoa@example.com", "USA", "New York", "https://icon.kokoa.com", "https://icon.kokoa.com/json/details.json", "localhost:9082");
         } catch (Exception e) {
             //Already registerd
         }
@@ -98,6 +102,7 @@ public class Balanced {
         oracle = deploy(owner, "Oracle",null);
         reserve = deploy(owner, "Reserve", Map.of("governance", governance._address()));
         router = deploy(owner, "Router", Map.of("_governance", governance._address()));
+        stakedLP = deploy(owner, "Staked LP", Map.of("_governance", governance._address()));
     }
 
     protected void setupAddresses() {
@@ -117,7 +122,7 @@ public class Balanced {
         balancedAddresses.router = router._address();
         balancedAddresses.rebalancing = rebalancing._address();
         balancedAddresses.feehandler = feehandler._address();
-
+        balancedAddresses.stakedLp = stakedLP._address();
         governanceScore.setAddresses(balancedAddresses);
     }
 

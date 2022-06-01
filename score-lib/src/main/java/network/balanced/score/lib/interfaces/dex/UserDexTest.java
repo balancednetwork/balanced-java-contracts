@@ -10,4 +10,7 @@ public interface UserDexTest {
     @External
     void transfer(Address _to, BigInteger _value, byte[] _data);
 
+    @External(readonly = true)
+    BigInteger balanceOf(Address _owner);
+
 }

@@ -27,7 +27,7 @@ public class Const {
     public static final String SICXICX_MARKET_NAME = "sICX/ICX";
 
     public static final int SICXICX_POOL_ID = 1;
-    public static final BigInteger U_SECONDS_DAY = BigInteger.valueOf(86_400_000_000L);
+    public static final BigInteger U_SECONDS_DAY = BigInteger.valueOf(60_000_000L);
     public static final BigInteger MIN_LIQUIDITY = BigInteger.valueOf(1_000);
     public static final BigInteger FEE_SCALE = BigInteger.valueOf(10_000);
     public static final int FIRST_NON_BALANCED_POOL = 6;
