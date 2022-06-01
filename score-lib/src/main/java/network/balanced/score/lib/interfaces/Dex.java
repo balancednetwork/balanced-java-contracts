@@ -43,10 +43,6 @@ public interface Dex extends AdminAddress, BnusdAddress, DexAddress, GovernanceA
     Map<String, BigInteger> getFees();
 
     @External
-    void add(Address _baseToken, Address _quoteToken, BigInteger _baseValue, BigInteger _quoteValue,
-             @Optional boolean _withdraw_unused);
-
-    @External
     void transfer(Address _to, BigInteger _value, BigInteger _id, @Optional byte[] _data);
 
     @External(readonly = true)
@@ -57,7 +53,9 @@ public interface Dex extends AdminAddress, BnusdAddress, DexAddress, GovernanceA
 
     @External(readonly = true)
     String getPoolName(BigInteger _id);
+
+    @External
+    void add(Address _baseToken, Address _quoteToken, BigInteger _baseValue, BigInteger _quoteValue,
+                    @Optional boolean _withdraw_unused);
 }
-
-
 
