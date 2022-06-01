@@ -19,11 +19,11 @@
           "rebalancing": "rebalancing",
           "feehandler": "feehandler",
           "stakedLp": "stakedLp",
-          "reserve": "reserve"
+          "reserve": "reserve",
+          "oracle": "oracle"
         },
         "__property_args__": {
-          "stakedLp": "STAKEDLP_ADDRESS",
-          "oracle": "ORACLE_ADDRESS"
+          "stakedLp": "STAKEDLP_ADDRESS"
         }
       }
     },

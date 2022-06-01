@@ -24,7 +24,8 @@ public enum NameMapping {
     workerToken("WorkerToken"),
     router("Router"),
     daofund("DAOfund"),
-    bnusd("BalancedDollar");
+    bnusd("BalancedDollar"),
+    oracle("test-lib");
 
     private final String module;
 

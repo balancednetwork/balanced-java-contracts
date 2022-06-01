@@ -26,7 +26,6 @@ repositories {
     mavenCentral()
 }
 
-optimizedJar.enabled = false
 
 dependencies {
     implementation Dependencies.javaeeUnitTest
@@ -36,6 +35,15 @@ dependencies {
     implementation Dependencies.json
     implementation Dependencies.javaeeScorex
 }
+
+optimizedJar {
+    mainClassName = 'network.balanced.score.lib.test.DummyOracle'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
 
 test {
     useJUnitPlatform()

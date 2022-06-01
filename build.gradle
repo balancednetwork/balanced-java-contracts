@@ -28,8 +28,13 @@ buildscript {
     }
 }
 
-apply plugin: 'deploy-contracts'
+task buildContracts(type: Exec) {
+    workingDir "$projectDir/"
+    commandLine './gradlew', 'optimizedJar'
+}
 
+
+apply plugin: 'deploy-contracts'
 deployBalancedContracts  {
     envs {
         local {
@@ -49,6 +54,11 @@ deployBalancedContracts  {
         }
     }
 }
+
+project.tasks.getByName("deployContractsToBerlin").dependsOn(project.tasks.getByName("buildContracts"))
+project.tasks.getByName("deployContractsToSejong").dependsOn(project.tasks.getByName("buildContracts"))
+project.tasks.getByName("deployContractsToLocal").dependsOn(project.tasks.getByName("buildContracts"))
+
 
 executeBalancedActions {
     contractAddressFile = "sample.json"

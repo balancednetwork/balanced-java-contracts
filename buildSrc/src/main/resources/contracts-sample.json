@@ -141,5 +141,11 @@
       "_admin": "staking"
     },
     "order": 4.0
+  },
+  {
+    "name": "oracle",
+    "params": {
+
+    }
   }
 ]
