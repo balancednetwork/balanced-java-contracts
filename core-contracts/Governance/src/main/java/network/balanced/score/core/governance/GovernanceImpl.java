@@ -27,6 +27,7 @@ import score.annotation.Optional;
 import score.annotation.Payable;
 import score.annotation.EventLog;
 import scorex.util.ArrayList;
+import scorex.util.HashMap;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
@@ -408,25 +409,26 @@ public class GovernanceImpl {
             nrAgainstVotes = proposal.totalAgainstVotes.getOrDefault(BigInteger.ZERO).multiply(EXA).divide(totalBaln);
         }
 
-        return Map.ofEntries(
-            entry("id", _vote_index),
-            entry("name", proposal.name.get()),
-            entry("proposer", proposal.proposer.get()),
-            entry("description", proposal.description.get()),
-            entry("majority", proposal.majority.get()),
-            entry("status", proposal.status.get()),
-            entry("vote snapshot", proposal.voteSnapshot.get()),
-            entry("start day", proposal.startSnapshot.get()),
-            entry("end day", proposal.endSnapshot.get()),
-            entry("actions", proposal.actions.get()),
-            entry("quorum", proposal.quorum.get()),
-            entry("for", nrForVotes),
-            entry("against", nrAgainstVotes),
-            entry("for_voter_count", proposal.forVotersCount.get()),
-            entry("against_voter_count", proposal.againstVotersCount.get()),
-            entry("fee_refund_status", proposal.feeRefunded.get())
+        Map<String, Object> voteData = new HashMap<>(16);
 
-        );
+        voteData.put("id", _vote_index);
+        voteData.put("name", proposal.name.get());
+        voteData.put("proposer", proposal.proposer.get());
+        voteData.put("description", proposal.description.get());
+        voteData.put("majority", proposal.majority.get());
+        voteData.put("status", proposal.status.get());
+        voteData.put("vote snapshot", proposal.voteSnapshot.get());
+        voteData.put("start day", proposal.startSnapshot.get());
+        voteData.put("end day", proposal.endSnapshot.get());
+        voteData.put("actions", proposal.actions.get());
+        voteData.put("quorum", proposal.quorum.get());
+        voteData.put("for", nrForVotes);
+        voteData.put("against", nrAgainstVotes);
+        voteData.put("for_voter_count", proposal.forVotersCount.get());
+        voteData.put("against_voter_count", proposal.againstVotersCount.get());
+        voteData.put("fee_refund_status", proposal.feeRefunded.get());
+
+        return voteData;
     }
 
     @External(readonly = true)
