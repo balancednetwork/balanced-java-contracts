@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreInterface;
@@ -14,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 @ScoreInterface
-public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress, DaofundAddress, BalnAddress,
+public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress, DaoFundAddress, BalnAddress,
         Name, DexAddress, TokenFallback {
 
     @External(readonly = true)
@@ -22,6 +38,9 @@ public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress
 
     @External
     void setDistributionActivationStatus(boolean _status);
+
+    @External
+    void setTimeOffset(BigInteger deltaTime);
 
     @External
     void setDividendsOnlyToStakedBalnDay(BigInteger day);
@@ -81,10 +100,10 @@ public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress
     void claim(@Optional  int _start,@Optional int _end);
 
     @External(readonly = true)
-    Map<String, BigInteger> getUserDividends(Address _account, int _start, int _end);
+    Map<String, BigInteger> getUserDividends(Address _account, @Optional int _start, @Optional int _end);
 
     @External(readonly = true)
-    Map<String, BigInteger> getDaoFundDividends(int _start, int _end);
+    Map<String, BigInteger> getDaoFundDividends(@Optional int _start, @Optional int _end);
 
     @External(readonly = true)
     Map<String, BigInteger> dividendsAt(BigInteger _day);

@@ -920,7 +920,7 @@ public class GovernanceImpl {
     @External
     public void setRedeemBatchSize(BigInteger _value) {
         onlyOwner();
-        Context.call(Addresses.get("loans"), "setRedeemBatchSize",  _value);
+        Context.call(Addresses.get("loans"), "setRedeemBatchSize",  _value.intValue());
     }
 
     @External

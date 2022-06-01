@@ -25,6 +25,7 @@ import score.annotation.Optional;
 import score.annotation.Payable;
 
 import java.math.BigInteger;
+import java.util.List;
 import java.util.Map;
 
 @ScoreInterface
@@ -37,55 +38,187 @@ public interface Loans extends
         DexAddress,
         AdminAddress {
 
+    @External
     void turnLoansOn();
 
+    @External
     void toggleLoansOn();
 
-    void setContinuousRewardsDay(BigInteger _day);
-
-    void delegate(PrepDelegations[] prepDelegations);
-
-    Map<String, Boolean> getDistributionsDone();
-
-    void addAsset(Address _token_address, boolean _active, boolean _collateral);
-
-    void toggleAssetActive(String _symbol);
-
-    @Payable
-    @External
-    void depositAndBorrow(@Optional String _asset, @Optional BigInteger _amount, @Optional Address _from, @Optional BigInteger _value);
+    @External(readonly = true)
+    boolean getLoansOn();
 
     @External(readonly = true)
-    Map<String, Object> getPositionStanding(Address _address, BigInteger _snapshot);
+    void migrateUserData(Address address);
 
-    void setMiningRatio(BigInteger _ratio);
+    @External
+    void setContinuousRewardsDay(BigInteger _day);
 
-    void setLockingRatio(BigInteger _ratio);
+    @External(readonly = true)
+    BigInteger getContinuousRewardsDay();
 
-    void setLiquidationRatio(BigInteger _ratio);
+    @External(readonly = true)
+    BigInteger getDay();
 
-    void setOriginationFee(BigInteger _fee);
+    @External
+    void delegate(PrepDelegations[] prepDelegations);
 
-    void setRedemptionFee(BigInteger _fee);
+    @External(readonly = true)
+    Map<String, Boolean> getDistributionsDone();
 
-    void setRetirementBonus(BigInteger _points);
+    @External(readonly = true)
+    List<String> checkDeadMarkets();
 
-    void setLiquidationReward(BigInteger _points);  
+    @External(readonly = true)
+    int getNonzeroPositionCount();
 
-    void setNewLoanMinimum(BigInteger _minimum);
+    @External(readonly = true)
+    Map<String, Object> getPositionStanding(Address _address, @Optional BigInteger snapshot);
 
-    void setMinMiningDebt(BigInteger _minimum);
-
-    void setTimeOffset(BigInteger deltaTime);
-
-    void setMaxRetirePercent(BigInteger _value);
-
-    void setRedeemBatchSize(BigInteger _value);
-
-    @External(readonly= true)
-    Map<String, Object> getParameters();
+    @External(readonly = true)
+    Address getPositionAddress(int _index);
 
     @External(readonly = true)
     Map<String, String> getAssetTokens();
+
+    @External(readonly = true)
+    Map<String, String> getCollateralTokens();
+
+    @External(readonly = true)
+    BigInteger getTotalCollateral();
+
+    @External(readonly = true)
+    Map<String, Object> getAccountPositions(Address _owner);
+
+    @External(readonly = true)
+    Map<String, Object> getPositionByIndex(int _index, BigInteger _day);
+
+    @External(readonly = true)
+    Map<String, Map<String, Object>> getAvailableAssets();
+
+    @External(readonly = true)
+    int assetCount();
+
+    @External(readonly = true)
+    int borrowerCount();
+
+    @External(readonly = true)
+    boolean hasDebt(Address _owner);
+
+    @External(readonly = true)
+    Map<String, Object> getSnapshot(@Optional BigInteger _snap_id);
+
+    @External
+    void addAsset(Address _token_address, boolean _active, boolean _collateral);
+    @External
+    void toggleAssetActive(String _symbol);
+
+    @External
+    boolean precompute(BigInteger _snapshot_id, int batch_size);
+
+    @External(readonly = true)
+    BigInteger getTotalValue(String _name, BigInteger _snapshot_id);
+
+    @External(readonly = true)
+    Map<String, BigInteger> getBalanceAndSupply(String _name, Address __owner);
+
+    @External(readonly = true)
+    BigInteger getBnusdValue(String _name);
+
+    @External(readonly = true)
+    BigInteger getDataCount(BigInteger _snapshot_id);
+
+    @External(readonly = true)
+    Map<Address, BigInteger> getDataBatch(String _name, BigInteger _snapshot_id, int _limit, @Optional int _offset);
+
+    @External
+    boolean checkForNewDay();
+
+    @External
+    void checkDistributions(BigInteger _day, boolean _new_day);
+
+    @External
+    @Payable
+    void depositAndBorrow(@Optional String _asset, @Optional BigInteger _amount, @Optional Address _from, @Optional BigInteger _value);
+
+    @External
+    void retireBadDebt(String _symbol, BigInteger _value);
+
+    @External
+    void returnAsset(String _symbol, BigInteger _value, boolean _repay);
+
+    @External
+    void raisePrice(BigInteger _total_tokens_required);
+
+    @External
+    void lowerPrice(BigInteger _total_tokens_required);
+
+    @External
+    void withdrawCollateral(BigInteger _value);
+
+    @External
+    void liquidate(Address _owner);
+
+    @External
+    void setAdmin(Address _address);
+
+    @External
+    void setGovernance(Address _address);
+
+    @External
+    void setDex(Address _address);
+
+    @External
+    void setRebalance(Address _address);
+
+    @External
+    void setDividends(Address _address);
+
+    @External
+    void setReserve(Address _address);
+
+    @External
+    void setRewards(Address _address);
+
+    @External
+    void setStaking(Address _address);
+
+    @External
+    void setMiningRatio(BigInteger _ratio);
+
+    @External
+    void setLockingRatio(BigInteger _ratio);
+
+    @External
+    void setLiquidationRatio(BigInteger _ratio);
+
+    @External
+    void setOriginationFee(BigInteger _fee);
+
+    @External
+    void setRedemptionFee(BigInteger _fee);
+
+    @External
+    void setRetirementBonus(BigInteger _points);
+
+    @External
+    void setLiquidationReward(BigInteger _points);
+
+    @External
+    void setNewLoanMinimum(BigInteger _minimum);
+
+    @External
+    void setMinMiningDebt(BigInteger _minimum);
+
+    @External
+    void setTimeOffset(BigInteger deltaTime);
+
+    @External
+    void setMaxRetirePercent(BigInteger _value);
+
+    @External
+    void setRedeemBatchSize(int _value);
+
+    @External(readonly= true)
+    Map<String, Object> getParameters();
 
 }

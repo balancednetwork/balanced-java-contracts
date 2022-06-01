@@ -64,6 +64,8 @@ test {
 
 optimizedJar {
     mainClassName = 'network.balanced.score.tokens.workertoken.WorkerTokenImpl'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
