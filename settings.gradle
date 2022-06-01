@@ -37,6 +37,9 @@ project(':Reserve').projectDir = file("core-contracts/Reserve")
 include(':Rebalancing')
 project(':Rebalancing').projectDir = file("core-contracts/Rebalancing")
 
+include(':StakedLP')
+project(':StakedLP').projectDir = file("core-contracts/StakedLP")
+
 include 'score-lib'
 include 'test-lib'
 
@@ -54,3 +57,5 @@ project(':BalancedDollar').projectDir = file("token-contracts/BalancedDollar")
 
 include(':Stability')
 project(':Stability').projectDir = file("util-contracts/Stability")
+
+

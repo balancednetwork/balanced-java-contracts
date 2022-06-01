@@ -14,15 +14,34 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.interfaces.addresses;
+package network.balanced.score.lib.interfaces;
+
+import foundation.icon.score.client.ScoreInterface;
+import foundation.icon.score.client.ScoreClient;
 
 import score.Address;
 import score.annotation.External;
 
-public interface OracleAddress {
+import java.math.BigInteger;
+import java.util.Map;
+
+@ScoreInterface
+public interface DataSource {
     @External
-    void setOracle(Address _address);
+    Object precompute(int _snapshot_id, int batch_size);
 
     @External(readonly = true)
-    Address getOracle();
+    BigInteger getTotalValue(String _name, int _snapshot_id);
+
+    @External
+    BigInteger getBnusdValue(String _name);
+
+    @External
+    Map<Address, BigInteger> getDataBatch(String _name, int _snapshot_id, int _limit, int _offset);
+
+    @External
+    BigInteger getBalnPrice();
+
+    @External
+    Map<String, BigInteger> getBalanceAndSupply(String _name, Address _owner);
 }

@@ -19,10 +19,11 @@ package network.balanced.score.lib.interfaces.addresses;
 import score.Address;
 import score.annotation.External;
 
-public interface OracleAddress {
+public interface StakedLpAddress {
+
     @External
-    void setOracle(Address _address);
+    void setStakedLp(Address _address);
 
     @External(readonly = true)
-    Address getOracle();
+    Address getStakedLp();
 }
