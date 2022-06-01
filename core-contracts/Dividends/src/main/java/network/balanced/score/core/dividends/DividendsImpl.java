@@ -271,7 +271,7 @@ public class DividendsImpl implements Dividends {
 
     @External(readonly = true)
     public Map<String, BigInteger> getDividendsPercentage() {
-        BigInteger currentDay = (BigInteger) Context.call(loanScore.get(), "getDay");
+        BigInteger currentDay = getDay();
         return dividendsAt(currentDay);
     }
 
@@ -395,19 +395,19 @@ public class DividendsImpl implements Dividends {
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         Address token = Context.getCaller();
         BigInteger snapId = snapshotId.getOrDefault(BigInteger.ZERO);
-        Map<String, ?> availableTokens;
-
+        Map<String, String> availableTokens;
         int acceptedTokensCount = acceptedTokens.size();
         for (int i = 0; i < acceptedTokensCount; i++) {
             if (!token.equals(acceptedTokens.get(i))) {
-                availableTokens = (Map<String, ?>) Context.call(loanScore.get(), "getAssetTokens");
-                for (String value : availableTokens.keySet()) {
+                availableTokens = (Map<String, String>) Context.call(loanScore.get(), "getAssetTokens");
+                for (String value : availableTokens.values()) {
                     if (token.toString().equals(value)) {
                         acceptedTokens.add(token);
                     }
                 }
             }
         }
+
         checkForNewDay();
         DictDB<String, BigInteger> feesOnSnapId = dailyFees.at(snapId);
         BigInteger previousFees = feesOnSnapId.getOrDefault(token.toString(), BigInteger.ZERO);
@@ -501,10 +501,10 @@ public class DividendsImpl implements Dividends {
             start = Math.max(1, end - batch);
         }
 
-        Context.require(start >= 1 && start < snap, "Invalid value of start provided.");
-        Context.require(end > 1 && end <= snap, "Invalid value of end provided.");
-        Context.require(start < end, "Start must not be greater than or equal to end.");
-        Context.require((end - start) <= batch, "Maximum allowed range is " + batch);
+        Context.require(start >= 1 && start < snap, TAG + ": " +  "Invalid value of start provided.");
+        Context.require(end > 1 && end <= snap, TAG + ": " + "Invalid value of end provided.");
+        Context.require(start < end, TAG + ": " + "Start must not be greater than or equal to end.");
+        Context.require((end - start) <= batch, TAG + ": " + "Maximum allowed range is " + batch);
 
         return new int[]{start, end};
     }
