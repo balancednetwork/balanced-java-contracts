@@ -174,10 +174,14 @@ class DividendsImplTest extends DividendsImplTestBase {
 
         // Assert
         contextMock.verify(() -> Context.call(bnUSDScore.getAddress(), "transfer", daoScore.getAddress(), expectedDaofundFees));
+        Map<String, BigInteger> zeroDivsMap = new HashMap<>();
+        assertEquals(zeroDivsMap, dividendScore.call("getDaoFundDividends", day, day+1));
+
     }
 
     @Test
     void claim() {
+        // Arrange
         sm.getBlock().increase(DAY);
         dividendScore.invoke(owner, "distribute");
 
@@ -196,10 +200,15 @@ class DividendsImplTest extends DividendsImplTestBase {
         contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("totalSupplyAt"), any(BigInteger.class), any(BigInteger.class))).thenReturn(BigInteger.valueOf(50).multiply(pow(BigInteger.TEN, 18)));
         contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("totalBalnAt"), any(BigInteger.class), any(BigInteger.class))).thenReturn(BigInteger.valueOf(80).multiply(pow(BigInteger.TEN, 18)));
 
-        
         contextMock.when(() -> Context.call(eq(bnUSDScore.getAddress()), eq("transfer"), eq(owner.getAddress()), any(BigInteger.class))).thenReturn("Token Transferred");
+
+        // Act
         dividendScore.invoke(owner, "claim", day, day+1);
+
+        // Assert
         contextMock.verify(() -> Context.call(eq(bnUSDScore.getAddress()), eq("transfer"), eq(owner.getAddress()), any(BigInteger.class)));
+        Map<String, BigInteger> zeroDivsMap = new HashMap<>();
+        assertEquals(zeroDivsMap, dividendScore.call("getUserDividends", owner.getAddress(), day, day+1));
     }
 
     @Test
@@ -223,7 +232,6 @@ class DividendsImplTest extends DividendsImplTestBase {
         contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("totalSupplyAt"), any(BigInteger.class), any(BigInteger.class))).thenReturn(BigInteger.valueOf(50).multiply(pow(BigInteger.TEN, 18)));
         contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("totalBalnAt"), any(BigInteger.class), any(BigInteger.class))).thenReturn(BigInteger.valueOf(80).multiply(pow(BigInteger.TEN, 18)));
 
-//        non-continuous rewards
         Map<String, BigInteger> expected_result = new HashMap<>();
         expected_result.put(String.valueOf(bnUSDScore.getAddress()), expectedStakingFees);
 
