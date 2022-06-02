@@ -93,7 +93,6 @@ public class GovernanceImpl {
 
     @External
     public void setVoteDuration(BigInteger duration) {
-        onlyOwner();
         _setVoteDuration(duration);
     }
 
