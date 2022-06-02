@@ -125,7 +125,7 @@ public class LoansImpl implements Loans {
                 BigInteger previousTotalDebt = LoansVariables.totalDebts.getOrDefault(symbol, BigInteger.ZERO);
                 BigInteger newTotalDebt = previousTotalDebt.add(debt);
 
-                LoansVariables.totalDebts.set(symbol, newTotalDebt);   
+                LoansVariables.totalDebts.set(symbol, newTotalDebt);
                 position.setLoansPosition(SICX_SYMBOL, symbol, debt);
             }
             position.setDataMigrationStatus(symbol, true);
@@ -190,9 +190,9 @@ public class LoansImpl implements Loans {
 
     @External(readonly = true)
     public Map<String, Boolean> getDistributionsDone() {
-        return Map.of (
-            "Rewards", rewardsDone.get(),
-            "Dividends",  dividendsDone.get()
+        return Map.of(
+                "Rewards", rewardsDone.get(),
+                "Dividends", dividendsDone.get()
         );
     }
 
@@ -257,9 +257,9 @@ public class LoansImpl implements Loans {
         return PositionsDB.get(_index).toMap(_day.intValue());
     }
 
-     @External(readonly = true)
+    @External(readonly = true)
     public Map<String, Map<String, Object>> getAvailableAssets() {
-         return AssetDB.getActiveAssets();
+        return AssetDB.getActiveAssets();
     }
 
     @External(readonly = true)
@@ -342,8 +342,8 @@ public class LoansImpl implements Loans {
         BigInteger balance = position.getAssetPosition(BNUSD_SYMBOL);
 
         return Map.of(
-            "_balance", balance,
-            "_totalSupply", totalSupply
+                "_balance", balance,
+                "_totalSupply", totalSupply
         );
     }
 
@@ -358,13 +358,13 @@ public class LoansImpl implements Loans {
 
     @External(readonly = true)
     public BigInteger getDataCount(BigInteger _snapshot_id) {
-        Context.require(isBeforeContinuousRewardDay(_snapshot_id),  continuousRewardsErrorMessage);
+        Context.require(isBeforeContinuousRewardDay(_snapshot_id), continuousRewardsErrorMessage);
         return BigInteger.valueOf(SnapshotDB.get(_snapshot_id.intValue()).getMiningSize());
     }
 
     @External(readonly = true)
     public Map<String, BigInteger> getDataBatch(String _name, BigInteger _snapshot_id, int _limit, @Optional int _offset) {
-        Context.require(isBeforeContinuousRewardDay(_snapshot_id),  continuousRewardsErrorMessage);
+        Context.require(isBeforeContinuousRewardDay(_snapshot_id), continuousRewardsErrorMessage);
 
         Snapshot snapshot = SnapshotDB.get(_snapshot_id.intValue());
         int totalMiners = snapshot.getMiningSize();
@@ -386,7 +386,7 @@ public class LoansImpl implements Loans {
         loansOn();
         BigInteger day = _getDay();
 
-        if (currentDay.get().compareTo(day) < 0 && isBeforeContinuousRewardDay(day.subtract(BigInteger.ONE)) ) {
+        if (currentDay.get().compareTo(day) < 0 && isBeforeContinuousRewardDay(day.subtract(BigInteger.ONE))) {
             currentDay.set(day);
             PositionsDB.takeSnapshot();
             Snapshot(_getDay());
@@ -566,7 +566,7 @@ public class LoansImpl implements Loans {
         Context.call(rewards.get(), "updateRewardsData", "Loans", oldSupply, from, borrowed);
 
         asset.checkForDeadMarket();
-        String logMessage = "Loan of " + repaid + " " + _symbol +" repaid to Balanced.";
+        String logMessage = "Loan of " + repaid + " " + _symbol + " repaid to Balanced.";
         LoanRepaid(from, _symbol, repaid, logMessage);
     }
 
@@ -891,7 +891,7 @@ public class LoansImpl implements Loans {
                 PositionsDB.addNonZero(position.getId());
             }
         }
-        
+
         Context.call(rewards.get(), "updateRewardsData", "Loans", oldTotalDebt, from, holdings);
 
         position.setAssetPosition(assetToBorrow, holdings.add(newDebt));
@@ -907,7 +907,7 @@ public class LoansImpl implements Loans {
 
     private void transferToken(String tokenSymbol, Address to, BigInteger amount, String msg, byte[] data) {
         Context.call(AssetDB.getAsset(tokenSymbol).getAssetAddress(), "transfer", to, amount, data);
-        String logMessage = msg + " " + amount.toString()  + " " + tokenSymbol + " sent to " + to;
+        String logMessage = msg + " " + amount.toString() + " " + tokenSymbol + " sent to " + to;
         TokenTransfer(to, amount, logMessage);
     }
 
@@ -956,7 +956,7 @@ public class LoansImpl implements Loans {
     public Address getDex() {
         return dex.get();
     }
-    
+
     @External
     public void setRebalance(Address _address) {
         only(admin);
@@ -1032,14 +1032,14 @@ public class LoansImpl implements Loans {
     @External
     public void setLiquidationRatio(BigInteger _ratio) {
         only(admin);
-        liquidationRatio.set(_ratio); 
+        liquidationRatio.set(_ratio);
     }
 
     @External
     public void setOriginationFee(BigInteger _fee) {
         only(admin);
         originationFee.set(_fee);
-    } 
+    }
 
     @External
     public void setRedemptionFee(BigInteger _fee) {
@@ -1092,28 +1092,30 @@ public class LoansImpl implements Loans {
         redeemBatch.set(_value);
     }
 
-    @External(readonly= true)
+    @External(readonly = true)
     public Map<String, Object> getParameters() {
-        return Map.ofEntries(
-            entry("admin", admin.get()),
-            entry("governance", governance.get()),
-            entry("dividends", dividends.get()),
-            entry("reserve_fund", reserve.get()),
-            entry("rewards", rewards.get()),
-            entry("staking", staking.get()),
-            entry("mining ratio", miningRatio.get()),
-            entry("locking ratio", lockingRatio.get()),
-            entry("liquidation ratio", liquidationRatio.get()),
-            entry("origination fee", originationFee.get()),
-            entry("redemption fee", redemptionFee.get()),
-            entry("liquidation reward", liquidationReward.get()),
-            entry("new loan minimum", newLoanMinimum.get()),
-            entry("min mining debt", minMiningDebt.get()),
-            entry("max div debt length", maxDebtsListLength.get()),
-            entry("time offset", timeOffset.getOrDefault(BigInteger.ZERO)),
-            entry("redeem batch size", redeemBatch.get()),
-            entry("retire percent max", maxRetirePercent.get())
-        );
+        Map<String, Object> parameters = new HashMap<>();
+
+        parameters.put("admin", admin.get());
+        parameters.put("governance", governance.get());
+        parameters.put("dividends", dividends.get());
+        parameters.put("reserve_fund", reserve.get());
+        parameters.put("rewards", rewards.get());
+        parameters.put("staking", staking.get());
+        parameters.put("mining ratio", miningRatio.get());
+        parameters.put("locking ratio", lockingRatio.get());
+        parameters.put("liquidation ratio", liquidationRatio.get());
+        parameters.put("origination fee", originationFee.get());
+        parameters.put("redemption fee", redemptionFee.get());
+        parameters.put("liquidation reward", liquidationReward.get());
+        parameters.put("new loan minimum", newLoanMinimum.get());
+        parameters.put("min mining debt", minMiningDebt.get());
+        parameters.put("max div debt length", maxDebtsListLength.get());
+        parameters.put("time offset", timeOffset.getOrDefault(BigInteger.ZERO));
+        parameters.put("redeem batch size", redeemBatch.get());
+        parameters.put("retire percent max", maxRetirePercent.get());
+
+        return parameters;
     }
 
 
@@ -1122,39 +1124,51 @@ public class LoansImpl implements Loans {
     }
 
     @EventLog(indexed = 1)
-    public void AssetActive(String _asset, String _state) {}
+    public void AssetActive(String _asset, String _state) {
+    }
 
     @EventLog(indexed = 2)
-    public void TokenTransfer(Address recipient, BigInteger amount, String note) {}
+    public void TokenTransfer(Address recipient, BigInteger amount, String note) {
+    }
 
     @EventLog(indexed = 3)
-    public void AssetAdded(Address account, String symbol, boolean is_collateral) {}
+    public void AssetAdded(Address account, String symbol, boolean is_collateral) {
+    }
 
     @EventLog(indexed = 2)
-    public void CollateralReceived(Address account, String symbol, BigInteger value) {}
+    public void CollateralReceived(Address account, String symbol, BigInteger value) {
+    }
 
     @EventLog(indexed = 3)
-    public void OriginateLoan(Address recipient, String symbol, BigInteger amount, String note) {}
+    public void OriginateLoan(Address recipient, String symbol, BigInteger amount, String note) {
+    }
 
     @EventLog(indexed = 3)
-    public void LoanRepaid(Address account, String symbol, BigInteger amount, String note) {}
+    public void LoanRepaid(Address account, String symbol, BigInteger amount, String note) {
+    }
 
     @EventLog(indexed = 3)
-    public void BadDebtRetired(Address account, String symbol, BigInteger amount, BigInteger sicx_received) {}
+    public void BadDebtRetired(Address account, String symbol, BigInteger amount, BigInteger sicx_received) {
+    }
 
     @EventLog(indexed = 2)
-    public void Liquidate(Address account, BigInteger amount, String note) {}
+    public void Liquidate(Address account, BigInteger amount, String note) {
+    }
 
     @EventLog(indexed = 3)
-    public void FeePaid(String symbol, BigInteger amount, String type) {}
+    public void FeePaid(String symbol, BigInteger amount, String type) {
+    }
 
     @EventLog(indexed = 2)
-    public void Rebalance(Address account, String symbol, String change_in_pos, BigInteger total_batch_debt) {}
+    public void Rebalance(Address account, String symbol, String change_in_pos, BigInteger total_batch_debt) {
+    }
 
     @EventLog(indexed = 2)
-    public void PositionStanding(Address address, String standing, BigInteger total_collateral, BigInteger total_debt) {}
+    public void PositionStanding(Address address, String standing, BigInteger total_collateral, BigInteger total_debt) {
+    }
 
     @EventLog(indexed = 1)
-    public void Snapshot(BigInteger _id) {}
-        
+    public void Snapshot(BigInteger _id) {
+    }
+
 }

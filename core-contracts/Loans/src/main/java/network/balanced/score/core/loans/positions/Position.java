@@ -170,7 +170,7 @@ public class Position {
             }
 
             BigInteger newTotalDebt = previousTotalDebt.add(currentValue).subtract(previousDebt);
-            LoansVariables.totalDebts.set(symbol, newTotalDebt);   
+            LoansVariables.totalDebts.set(symbol, newTotalDebt);
             AssetDB.getAsset(symbol).getBorrowers().set(getId(), currentValue);
         }
     }
@@ -494,20 +494,22 @@ public class Position {
         }
 
         Standing standing = getStanding(day, true);
-        return Map.ofEntries(
-                entry("pos_id", getId()),
-                entry("created", getCreated()),
-                entry("address", getAddress().toString()),
-                entry("snap_id", index),
-                entry("snaps_length", getSnapsSize()),
-                entry("last_snap", lastSnap()),
-                entry("first day", getSnaps(0)),
-                entry("assets", assetAmounts),
-                entry("total_debt", standing.totalDebt),
-                entry("collateral", standing.collateral),
-                entry("ratio", standing.ratio),
-                entry("standing", StandingsMap.get(standing.standing))
-        );
+        Map<String, Object> positionDetails = new HashMap<>();
+
+        positionDetails.put("pos_id", getId());
+        positionDetails.put("created", getCreated());
+        positionDetails.put("address", getAddress().toString());
+        positionDetails.put("snap_id", index);
+        positionDetails.put("snaps_length", getSnapsSize());
+        positionDetails.put("last_snap", lastSnap());
+        positionDetails.put("first day", getSnaps(0));
+        positionDetails.put("assets", assetAmounts);
+        positionDetails.put("total_debt", standing.totalDebt);
+        positionDetails.put("collateral", standing.collateral);
+        positionDetails.put("ratio", standing.ratio);
+        positionDetails.put("standing", StandingsMap.get(standing.standing));
+
+        return positionDetails;
     }
 
     private BigInteger getAssetPrice(String symbol, Boolean readOnly) {
@@ -519,5 +521,5 @@ public class Position {
         } else {
             return assetContract.priceInLoop();
         }
-    } 
+    }
 }
