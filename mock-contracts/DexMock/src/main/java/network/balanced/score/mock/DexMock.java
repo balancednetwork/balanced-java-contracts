@@ -47,10 +47,10 @@ public class DexMock {
         if (method.equals("_swap")) {
             BigInteger sicxLiquidity = (BigInteger) Context.call(sicx.get(), "balanceOf", Context.getAddress());
             BigInteger bnusdLiquidity  = (BigInteger) Context.call(bnusd.get(), "balanceOf", Context.getAddress());
-            if (token == bnusd.get()) {
+            if (token.equals(bnusd.get())) {
                 BigInteger tokensReceived = sicxLiquidity.multiply(_value).divide(bnusdLiquidity);
                 Context.call(sicx.get(), "transfer", _from, tokensReceived, new byte[0]);
-            } else if (token == sicx.get()){
+            } else if (token.equals(sicx.get())){
                 BigInteger tokensReceived = bnusdLiquidity.multiply(_value).divide(sicxLiquidity);
                 Context.call(bnusd.get(), "transfer", _from, tokensReceived, new byte[0]);
             }

@@ -177,11 +177,11 @@ class LoansUpgrade extends TestBase {
         validateData(governance, referenceGovernance);
         LOG.infoExiting();
 
-        // LOG.infoEntering("Rebalance");
-        // rebalance(governance);
-        // rebalance(referenceGovernance);
-        // validateData(governance, referenceGovernance);
-        // LOG.infoExiting();
+        LOG.infoEntering("Rebalance");
+        rebalance(governance);
+        rebalance(referenceGovernance);
+        validateData(governance, referenceGovernance);
+        LOG.infoExiting();
 
         LOG.infoEntering("Upgrade Contract");
         testUpgradeContract(referenceGovernance);

@@ -18,6 +18,7 @@ package network.balanced.test.contracts.base;
 
 import foundation.icon.icx.Wallet;
 import foundation.icon.icx.data.Address;
+import foundation.icon.icx.data.TransactionResult;
 import foundation.icon.icx.transport.jsonrpc.RpcObject;
 import foundation.icon.icx.transport.jsonrpc.RpcValue;
 import network.balanced.test.ResultTimeoutException;
@@ -31,7 +32,6 @@ import static network.balanced.test.Env.LOG;
 
 public class RewardsScore extends Score {
     private static final String PYTHON_PATH = "../../testinteg/src/main/java/network/balanced/test/contracts/base/pythonContracts/rewards.zip";
-
     public static RewardsScore deploy(TransactionHandler txHandler, Wallet wallet, Address admin) 
         throws ResultTimeoutException, TransactionFailureException, IOException {
         LOG.info("Deploy Rewards");
@@ -45,4 +45,13 @@ public class RewardsScore extends Score {
     public RewardsScore(Score other) {
         super(other);
     }
+
+    public TransactionResult distribute(Wallet fromWallet) throws IOException, ResultTimeoutException {
+        LOG.info("distribute rewards");
+
+        RpcObject params = new RpcObject.Builder()
+            .build();
+        return invokeAndWaitResult(fromWallet, "distribute", params);
+    }
+
 }

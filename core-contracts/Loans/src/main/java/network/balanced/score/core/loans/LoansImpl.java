@@ -36,20 +36,17 @@ import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
 import score.annotation.Payable;
-import scorex.util.ArrayList;
 import scorex.util.HashMap;
 
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Map.entry;
 import static network.balanced.score.core.loans.LoansVariables.loansOn;
 import static network.balanced.score.core.loans.LoansVariables.*;
 import static network.balanced.score.core.loans.utils.Checks.loansOn;
 import static network.balanced.score.core.loans.utils.Checks.*;
 import static network.balanced.score.core.loans.utils.LoansConstants.*;
-import static network.balanced.score.core.loans.utils.Checks.*;
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Math.convertToNumber;
 
@@ -612,7 +609,7 @@ public class LoansImpl implements Loans {
         BigInteger remainingSupply = totalBatchDebt;
         BigInteger remainingBnusd = bnUSDReceived;
 
-        Map<Integer, Map<String, BigInteger>> changeLog = new HashMap<>();
+        StringBuilder changeLog = new StringBuilder("{");
         RewardsDataEntry[] rewardsBatchList = new RewardsDataEntry[iterations];
         int dataEntryIndex = 0;
         for (Map.Entry<Integer, BigInteger> entry : positionsMap.entrySet()) {
@@ -635,12 +632,15 @@ public class LoansImpl implements Loans {
             position.setAssetPosition(SICX_SYMBOL, position.getAssetPosition(SICX_SYMBOL).subtract(sicxShare));
 
             remainingSupply = remainingSupply.subtract(userDebt);
-            changeLog.put(id, Map.of(
-                    "d", loanShare.negate(),
-                    "c", sicxShare.negate()
-            ));
+            changeLog.append("'" + id + "': {" +
+            "'d': " + loanShare.negate() +", " + 
+            "'c': " + sicxShare.negate() + "}, ");
         }
+
         Context.call(rewards.get(), "updateBatchRewardsData", "Loans", oldTotalDebt, rewardsBatchList);
+
+        changeLog.delete(changeLog.length()-2, changeLog.length()).append("}");
+
         Rebalance(Context.getCaller(), BNUSD_SYMBOL, changeLog.toString(), totalBatchDebt);
     }
 
@@ -689,10 +689,9 @@ public class LoansImpl implements Loans {
         BigInteger remainingSupply = totalBatchDebt;
         BigInteger remainingBnusd = bnusdToSell;
 
-        Map<Integer, Map<String, BigInteger>> changeLog = new HashMap<>();
+        StringBuilder changeLog = new StringBuilder("{");
         RewardsDataEntry[] rewardsBatchList = new RewardsDataEntry[iterations];
         int dataEntryIndex = 0;
-
         for (Map.Entry<Integer, BigInteger> entry : positionsMap.entrySet()) {
             int id = entry.getKey();
             BigInteger userDebt = entry.getValue();
@@ -712,12 +711,14 @@ public class LoansImpl implements Loans {
             position.setAssetPosition(SICX_SYMBOL, position.getAssetPosition(SICX_SYMBOL).add(sicxShare));
 
             remainingSupply = remainingSupply.subtract(userDebt);
-            changeLog.put(id, Map.of(
-                    "d", loanShare,
-                    "c", sicxShare
-            ));
+            changeLog.append("'" + id + "': {" +
+                "'d': " + loanShare +", " + 
+                "'c': " + sicxShare + "}, ");
         }
+
         Context.call(rewards.get(), "updateBatchRewardsData", "Loans", oldTotalDebt, rewardsBatchList);
+
+        changeLog.delete(changeLog.length()-2, changeLog.length()).append("}");
         Rebalance(Context.getCaller(), BNUSD_SYMBOL, changeLog.toString(), totalBatchDebt);
     }
 

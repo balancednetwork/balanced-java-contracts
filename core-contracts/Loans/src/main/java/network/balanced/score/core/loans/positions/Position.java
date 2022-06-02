@@ -29,7 +29,6 @@ import scorex.util.HashMap;
 import java.math.BigInteger;
 import java.util.Map;
 
-import static java.util.Map.entry;
 import static network.balanced.score.core.loans.LoansVariables.*;
 import static network.balanced.score.core.loans.utils.Checks.isBeforeContinuousRewardDay;
 import static network.balanced.score.core.loans.utils.LoansConstants.*;

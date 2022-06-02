@@ -27,7 +27,6 @@ import scorex.util.HashMap;
 import java.math.BigInteger;
 import java.util.Map;
 
-import static java.util.Map.entry;
 import static network.balanced.score.core.loans.utils.LoansConstants.SICX_SYMBOL;
 import static network.balanced.score.core.loans.LoansImpl.call;
 
