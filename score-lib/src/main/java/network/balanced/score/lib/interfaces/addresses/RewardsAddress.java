@@ -20,7 +20,6 @@ import score.Address;
 import score.annotation.External;
 
 public interface RewardsAddress {
-
     @External
     void setRewards(Address _address);
 

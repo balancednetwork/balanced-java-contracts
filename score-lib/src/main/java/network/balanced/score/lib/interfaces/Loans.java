@@ -177,7 +177,7 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
     void setRetirementBonus(BigInteger _points);
 
     @External
-    void setLiquidationReward(BigInteger _points);  
+    void setLiquidationReward(BigInteger _points);
 
     @External
     void setNewLoanMinimum(BigInteger _minimum);

@@ -72,7 +72,7 @@ public class Governance extends Score {
         launchBalanced(adminWallet);
         staking.toggleStakingOn(adminWallet);
         delegate(adminWallet);
-        createBnusdMarket(adminWallet, BigInteger.valueOf(210).multiply(BigInteger.TEN.pow(18)));
+        // createBnusdMarket(adminWallet, BigInteger.valueOf(210).multiply(BigInteger.TEN.pow(18)));
     }
 
     public void deployContracts(TransactionHandler txHandler, Wallet adminWallet) throws Exception {

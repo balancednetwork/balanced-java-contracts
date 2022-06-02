@@ -63,7 +63,7 @@ public interface ScoreIntegrationTest {
 
     static KeyWallet createWalletWithBalance(BigInteger amount) throws Exception  {
         KeyWallet wallet = KeyWallet.create();
-        
+
         Address address = DefaultScoreClient.address(wallet.getAddress().toString());
         transfer(address, amount);
 

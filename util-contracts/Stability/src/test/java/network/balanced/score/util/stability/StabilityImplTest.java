@@ -78,12 +78,12 @@ class StabilityImplTest extends TestBase {
 
     private void testIsValidPercentage(String setterMethod, String getterMethod, BigInteger percentageToSet) {
         BigInteger negativePercentage = BigInteger.TEN.negate();
-        String expectedErrorMessage = TAG + ": Percentage can't be negative";
+        String expectedErrorMessage = "Reverted(0): " + TAG + ": Percentage can't be negative";
         Executable negativeCall = () -> stabilityScore.invoke(owner, setterMethod, negativePercentage);
         expectErrorMessage(negativeCall, expectedErrorMessage);
 
         BigInteger greaterThanHundred = BigInteger.valueOf(100).multiply(ICX).add(BigInteger.ONE);
-        expectedErrorMessage = TAG + ": Percentage can't be greater than hundred percentage.";
+        expectedErrorMessage = "Reverted(0): " + TAG + ": Percentage can't be greater than hundred percentage.";
         Executable outOfLimitCall = () -> stabilityScore.invoke(owner, setterMethod, greaterThanHundred);
         expectErrorMessage(outOfLimitCall, expectedErrorMessage);
 
@@ -111,18 +111,18 @@ class StabilityImplTest extends TestBase {
 
         Account nonOwner = sm.createAccount();
         String expectedErrorMessage =
-                "SenderNotScoreOwner: Sender=" + nonOwner.getAddress() + "Owner=" + owner.getAddress();
+                "Reverted(0): SenderNotScoreOwner: Sender=" + nonOwner.getAddress() + "Owner=" + owner.getAddress();
         Executable notOwnerCall = () -> stabilityScore.invoke(nonOwner, "whitelistTokens", iusdc.getAddress(), limit);
         expectErrorMessage(notOwnerCall, expectedErrorMessage);
 
         Account nonContractAddress = sm.createAccount();
-        expectedErrorMessage = "Address Check: Address provided is an EOA address. A contract address is required.";
+        expectedErrorMessage = "Reverted(0): Address Check: Address provided is an EOA address. A contract address is required.";
         Executable nonContractParameter = () -> stabilityScore.invoke(owner, "whitelistTokens",
                 nonContractAddress.getAddress(), limit);
         expectErrorMessage(nonContractParameter, expectedErrorMessage);
 
         BigInteger negativeLimit = limit.negate();
-        expectedErrorMessage = TAG + ": Limit can't be set negative";
+        expectedErrorMessage = "Reverted(0): " + TAG + ": Limit can't be set negative";
         Executable negativeLimitCall = () -> stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(),
                 negativeLimit);
         expectErrorMessage(negativeLimitCall, expectedErrorMessage);
@@ -137,7 +137,7 @@ class StabilityImplTest extends TestBase {
         tokens.add(iusdc.getAddress());
         assertArrayEquals(tokens.toArray(), ((List<Address>) stabilityScore.call("getAcceptedTokens")).toArray());
 
-        expectedErrorMessage = TAG + ": Already whitelisted";
+        expectedErrorMessage = "Reverted(0): " + TAG + ": Already whitelisted";
         Executable doubleListing = () -> stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit);
         expectErrorMessage(doubleListing, expectedErrorMessage);
     }
@@ -148,17 +148,17 @@ class StabilityImplTest extends TestBase {
 
         Account nonOwner = sm.createAccount();
         String expectedErrorMessage =
-                "SenderNotScoreOwner: Sender=" + nonOwner.getAddress() + "Owner=" + owner.getAddress();
+                "Reverted(0): SenderNotScoreOwner: Sender=" + nonOwner.getAddress() + "Owner=" + owner.getAddress();
         Executable notOwnerCall = () -> stabilityScore.invoke(nonOwner, "updateLimit", iusdc.getAddress(), newLimit);
         expectErrorMessage(notOwnerCall, expectedErrorMessage);
 
         BigInteger negativeLimit = newLimit.negate();
-        expectedErrorMessage = TAG + ": Limit can't be set negative";
+        expectedErrorMessage = "Reverted(0): " + TAG + ": Limit can't be set negative";
         Executable negativeLimitCall = () -> stabilityScore.invoke(owner, "updateLimit", iusdc.getAddress(),
                 negativeLimit);
         expectErrorMessage(negativeLimitCall, expectedErrorMessage);
 
-        expectedErrorMessage = TAG + ": Address not white listed previously";
+        expectedErrorMessage = "Reverted(0): " + TAG + ": Address not white listed previously";
         Executable nonWhiteListed = () -> stabilityScore.invoke(owner, "updateLimit", iusdc.getAddress(), newLimit);
         expectErrorMessage(nonWhiteListed, expectedErrorMessage);
 
@@ -192,7 +192,7 @@ class StabilityImplTest extends TestBase {
 
         @Test
         void zeroOrNegativeAmount() {
-            String expectedErrorMessage = TAG + ": Transfer amount must be greater than zero";
+            String expectedErrorMessage = "Reverted(0): " + TAG + ": Transfer amount must be greater than zero";
             Executable negativeAmount = () -> stabilityScore.invoke(iusdc, "tokenFallback", user.getAddress(),
                     usdcAmount.negate(), new byte[0]);
             expectErrorMessage(negativeAmount, expectedErrorMessage);
@@ -220,20 +220,20 @@ class StabilityImplTest extends TestBase {
             // Error from exceeding limit
             contextMock.when(() -> Context.call(iusdc.getAddress(), "balanceOf", stabilityScore.getAddress())).
                     thenReturn(limit.multiply(BigInteger.TEN.pow(iusdcDecimals.intValue())));
-            String expectedErrorMessage = TAG + ": Asset to exchange with bnusd limit crossed.";
+            String expectedErrorMessage = "Reverted(0): " + TAG + ": Asset to exchange with bnusd limit crossed.";
             Executable exceedLimit = () -> stabilityScore.invoke(iusdc, "tokenFallback", user.getAddress(), usdcAmount,
                     new byte[0]);
             expectErrorMessage(exceedLimit, expectedErrorMessage);
 
             // Error from zero bnusd to mint
             contextMock.when(() -> Context.call(iusdc.getAddress(), "balanceOf", stabilityScore.getAddress())).thenReturn(BigInteger.ZERO);
-            expectedErrorMessage = TAG + ": Bnusd amount must be greater than zero";
+            expectedErrorMessage = "Reverted(0): " + TAG + ": Bnusd amount must be greater than zero";
             Executable mintZeroAmount = () -> stabilityScore.invoke(iusdc, "tokenFallback", user.getAddress(),
                     BigInteger.TEN, new byte[0]);
             expectErrorMessage(mintZeroAmount, expectedErrorMessage);
 
             // Error from zero fee
-            expectedErrorMessage = TAG + ": Fee must be greater than zero";
+            expectedErrorMessage = "Reverted(0): " + TAG + ": Fee must be greater than zero";
             Executable zeroFee = () -> stabilityScore.invoke(iusdc, "tokenFallback", user.getAddress(),
                     BigInteger.valueOf(100), new byte[0]);
             expectErrorMessage(zeroFee, expectedErrorMessage);
@@ -260,7 +260,7 @@ class StabilityImplTest extends TestBase {
 
         @Test
         void nonWhitelistedReturn() {
-            String expectedErrorMessage = TAG + ": Whitelisted tokens can only be sent";
+            String expectedErrorMessage = "Reverted(0): " + TAG + ": Whitelisted tokens can only be sent";
             Executable nonWhitelistedAsset = () -> stabilityScore.invoke(bnusd, "tokenFallback", user.getAddress(),
                     bnusdAmount, iusdcData);
             expectErrorMessage(nonWhitelistedAsset, expectedErrorMessage);
@@ -271,18 +271,18 @@ class StabilityImplTest extends TestBase {
             contextMock.when(() -> Context.call(iusdc.getAddress(), "decimals")).thenReturn(iusdcDecimals);
             stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit);
 
-            String expectedErrorMessage = TAG + ": Fee must be greater than zero";
+            String expectedErrorMessage = "Reverted(0): " + TAG + ": Fee must be greater than zero";
             Executable zeroFee = () -> stabilityScore.invoke(bnusd, "tokenFallback", user.getAddress(),
                     BigInteger.ONE, iusdcData);
             expectErrorMessage(zeroFee, expectedErrorMessage);
 
-            expectedErrorMessage = TAG + ": Asset to return can't be zero or less";
+            expectedErrorMessage = "Reverted(0): " + TAG + ": Asset to return can't be zero or less";
             Executable zeroAssetOut = () -> stabilityScore.invoke(bnusd, "tokenFallback", user.getAddress(),
                     BigInteger.TEN.pow(11), iusdcData);
             expectErrorMessage(zeroAssetOut, expectedErrorMessage);
 
             contextMock.when(() -> Context.call(iusdc.getAddress(), "balanceOf", stabilityScore.getAddress())).thenReturn(BigInteger.ZERO);
-            expectedErrorMessage = TAG + ": Insufficient asset out balance in the contract";
+            expectedErrorMessage = "Reverted(0): " + TAG + ": Insufficient asset out balance in the contract";
             Executable noBalanceToTransfer = () -> stabilityScore.invoke(bnusd, "tokenFallback", user.getAddress(),
                     bnusdAmount, iusdcData);
             expectErrorMessage(noBalanceToTransfer, expectedErrorMessage);

@@ -20,7 +20,6 @@ import score.Address;
 import score.annotation.External;
 
 public interface DividendsAddress {
-
     @External
     void setDividends(Address _address);
 
