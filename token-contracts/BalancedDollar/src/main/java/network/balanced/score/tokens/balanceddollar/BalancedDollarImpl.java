@@ -98,7 +98,7 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
 
     @External
     public void setOracle(Address _address) {
-        only(admin);
+        only(governance);
         isContract(_address);
         oracleAddress.set(_address);
     }

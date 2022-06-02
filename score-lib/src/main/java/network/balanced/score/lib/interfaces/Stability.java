@@ -26,7 +26,13 @@ import score.annotation.External;
 import java.math.BigInteger;
 import java.util.List;
 
-public interface Stability extends Name, TokenFallback, FeeHandlerAddress, BnusdAddress {
+public interface Stability extends Name, TokenFallback, BnusdAddress {
+
+    @External
+    void setFeeHandler(Address _address);
+
+    @External(readonly = true)
+    Address getFeeHandler();
 
     @External
     void setFeeIn(BigInteger _feeIn);

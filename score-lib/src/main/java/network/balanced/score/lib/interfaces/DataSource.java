@@ -17,7 +17,6 @@
 package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreInterface;
-import foundation.icon.score.client.ScoreClient;
 
 import score.Address;
 import score.annotation.External;
@@ -28,9 +27,9 @@ import java.util.Map;
 @ScoreInterface
 public interface DataSource {
     @External
-    Boolean precompute(int _snapshot_id, int batch_size);
+    Object precompute(int _snapshot_id, int batch_size);
 
-    @External
+    @External(readonly = true)
     BigInteger getTotalValue(String _name, int _snapshot_id);
 
     @External

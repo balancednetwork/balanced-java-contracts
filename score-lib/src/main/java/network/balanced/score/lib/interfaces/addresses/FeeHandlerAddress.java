@@ -22,8 +22,8 @@ import score.annotation.External;
 public interface FeeHandlerAddress {
 
     @External
-    void setFeeHandler(Address _address);
+    void setFeehandler(Address _address);
 
     @External(readonly = true)
-    Address getFeeHandler();
+    Address getFeehandler();
 }

@@ -76,8 +76,8 @@ subprojects {
     scoreIntegrationTest.put('Rewards', new File(project(':test-lib').projectDir, 'python-contracts/rewards.zip'));
     scoreIntegrationTest.put('Sicx', new File(project(':test-lib').projectDir, 'python-contracts/sicx.zip'));
     scoreIntegrationTest.put('Bnusd', new File(project(':test-lib').projectDir, 'python-contracts/bnusd.zip'));
-    // scoreIntegrationTest.put('daofund', new File(project(':test-lib').projectDir, 'python-contracts/daofund.zip'));
-    scoreIntegrationTest.put('Dividends', new File(project(':test-lib').projectDir, 'python-contracts/dividends.zip'));
+    scoreIntegrationTest.put('daofund', new File(project(':test-lib').projectDir, 'python-contracts/daofund.zip'));
+//    scoreIntegrationTest.put('Dividends', new File(project(':test-lib').projectDir, 'python-contracts/dividends.zip'));
     scoreIntegrationTest.put('Oracle', new File(project(':test-lib').projectDir, 'python-contracts/oracle.zip'));
     scoreIntegrationTest.put('Reserve', new File(project(':test-lib').projectDir, 'python-contracts/reserve.zip'));
     scoreIntegrationTest.put('Router', new File(project(':test-lib').projectDir, 'python-contracts/router.zip'));

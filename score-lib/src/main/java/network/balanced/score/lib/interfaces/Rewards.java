@@ -38,7 +38,7 @@ public interface Rewards extends
         AdminAddress,
         BalnAddress,
         BwtAddress,
-        DaofundAddress,
+        DaoFundAddress,
         ReserveAddress,
         StakedLpAddress {
 
