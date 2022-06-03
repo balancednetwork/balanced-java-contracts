@@ -30,6 +30,7 @@ import score.Context;
 import score.DictDB;
 import score.VarDB;
 import score.annotation.EventLog;
+import scorex.util.HashMap;
 
 public class DataSourceImpl {
         public final BranchDB<String, VarDB<Address>> contractAddress = Context.newBranchDB("contract_address", Address.class);
@@ -185,15 +186,16 @@ public class DataSourceImpl {
     }
 
     public Map<String, Object> getDataAt(BigInteger day) {
-        return Map.of(
-            "day", day,
-            "contract_address", getContractAddress(),
-            "dist_percent", getDistPercent(),
-            "precomp", getPrecomp(),
-            "offset", getOffset(),
-            "total_value", getTotalValue(day),
-            "total_dist", getTotalDist(day)
-        );
+        Map<String, Object> sourceData = new HashMap<>();
+        sourceData.put("day", day);
+        sourceData.put("contract_address", getContractAddress());
+        sourceData.put("dist_percent", getDistPercent());
+        sourceData.put("precomp", getPrecomp());
+        sourceData.put("offset", getOffset());
+        sourceData.put("total_value", getTotalValue(day));
+        sourceData.put("total_dist", getTotalDist(day));
+
+        return sourceData;
     }
 
     public Map<String, Object> getData() {
