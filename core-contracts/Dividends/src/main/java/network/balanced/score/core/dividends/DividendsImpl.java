@@ -349,13 +349,20 @@ public class DividendsImpl implements Dividends {
         }
 
         int numberOfAcceptedTokens = acceptedTokens.size();
+        boolean doesEventLog = false;
+
+
+        Map<String, BigInteger> nonZeroTokens = new HashMap<>();
         for (int i = 0; i < numberOfAcceptedTokens; i++) {
             Address token = acceptedTokens.get(i);
 
             if (totalDividends.containsKey(token.toString()) && totalDividends.get(token.toString()).signum() > 0) {
-                Claimed(daofund, BigInteger.valueOf(start), BigInteger.valueOf(end), dividendsMapToJson(totalDividends));
+                nonZeroTokens.put(token.toString(), totalDividends.get(token.toString()));
                 sendToken(daofund, totalDividends.get(token.toString()), token, "Daofund dividends");
             }
+        }
+        if (nonZeroTokens.size() > 0) {
+            Claimed(daofund, BigInteger.valueOf(start), BigInteger.valueOf(end), dividendsMapToJson(nonZeroTokens));
         }
     }
 
@@ -380,12 +387,16 @@ public class DividendsImpl implements Dividends {
         }
 
         int numberOfAcceptedTokens = acceptedTokens.size();
+        Map<String, BigInteger> nonZeroTokens = new HashMap<>();
         for (int i = 0; i < numberOfAcceptedTokens; i++) {
             Address token = acceptedTokens.get(i);
             if (totalDividends.containsKey(token.toString()) && totalDividends.get(token.toString()).signum() > 0) {
-                Claimed(account, BigInteger.valueOf(start), BigInteger.valueOf(end), dividendsMapToJson(totalDividends));
+                nonZeroTokens.put(token.toString(), totalDividends.get(token.toString()));
                 sendToken(account, totalDividends.get(token.toString()), token, "User dividends");
             }
+        }
+        if (nonZeroTokens.size() > 0) {
+            Claimed(account, BigInteger.valueOf(start), BigInteger.valueOf(end), dividendsMapToJson(nonZeroTokens));
         }
     }
 
