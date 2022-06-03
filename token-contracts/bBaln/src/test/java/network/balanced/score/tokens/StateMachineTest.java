@@ -215,11 +215,13 @@ public class StateMachineTest extends TestBase {
         @DisplayName("Less than minimum amount test")
         @Test
         void lessThanMinimumAmount() {
-            //Minimum amount to lock is MAX_TIME. If less than minimum amount is provided, balance is zero but the
-            // transaction is not reverted.
+            //Minimum amount to lock is ICX. If less than minimum amount is provided,the transaction should be reverted
+            //with insufficient locking amount
             Account account = accounts.get(1);
-            BigInteger valueLessThanMinimum = BigInteger.valueOf(MAX_TIME - 1);
-            createLock(account, valueLessThanMinimum, unlockTime);
+            Executable createLockCall = () -> createLock(account, ICX.subtract(BigInteger.ONE), unlockTime);
+
+            String expectedErrorMessage = "insufficient locking amount. minimum amount is: "+ICX;
+            expectErrorMessage(createLockCall, expectedErrorMessage);
 
             BigInteger balance = (BigInteger) bBalnScore.call("balanceOf", account.getAddress(), BigInteger.ZERO);
             assertEquals(BigInteger.ZERO, balance);
@@ -229,8 +231,7 @@ public class StateMachineTest extends TestBase {
         @Test
         void minimumAmount() {
             Account account = accounts.get(2);
-            BigInteger valueMinimum = BigInteger.valueOf(MAX_TIME);
-            createLock(account,  valueMinimum, unlockTime);
+            createLock(account,  ICX.add(BigInteger.ONE), unlockTime);
 
             assert (((BigInteger) bBalnScore.call("balanceOf", account.getAddress(), BigInteger.ZERO)).compareTo(BigInteger.ZERO) > 0);
         }
@@ -292,7 +293,7 @@ public class StateMachineTest extends TestBase {
             Executable increaseAmount = () ->
                 increaseAmount(accounts.get(0), value);
  
-            String expectedErrorMessage = "Increase amount: Cannot add to expired lock. Withdraw";
+            String expectedErrorMessage = "Increase amount: Cannot add to expired lock.";
             expectErrorMessage(increaseAmount, expectedErrorMessage);
         }
 
