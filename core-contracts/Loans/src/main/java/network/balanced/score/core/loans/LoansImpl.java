@@ -929,7 +929,7 @@ public class LoansImpl implements Loans {
         admin.set(_address);
     }
 
-    @External
+    @External(readonly = true)
     public Address getAdmin() {
         return admin.get();
     }
@@ -941,7 +941,7 @@ public class LoansImpl implements Loans {
         governance.set(_address);
     }
 
-    @External
+    @External(readonly = true)
     public Address getGovernance() {
         return governance.get();
     }
@@ -953,7 +953,7 @@ public class LoansImpl implements Loans {
         dex.set(_address);
     }
 
-    @External
+    @External(readonly = true)
     public Address getDex() {
         return dex.get();
     }
@@ -965,7 +965,7 @@ public class LoansImpl implements Loans {
         rebalancing.set(_address);
     }
 
-    @External
+    @External(readonly = true)
     public Address getRebalance() {
         return rebalancing.get();
     }
@@ -977,7 +977,7 @@ public class LoansImpl implements Loans {
         dividends.set(_address);
     }
 
-    @External
+    @External(readonly = true)
     public Address getDividends() {
         return dividends.get();
     }
@@ -989,7 +989,7 @@ public class LoansImpl implements Loans {
         reserve.set(_address);
     }
 
-    @External
+    @External(readonly = true)
     public Address getReserve() {
         return reserve.get();
     }
@@ -1001,7 +1001,7 @@ public class LoansImpl implements Loans {
         rewards.set(_address);
     }
 
-    @External
+    @External(readonly = true)
     public Address getRewards() {
         return rewards.get();
     }
@@ -1013,7 +1013,7 @@ public class LoansImpl implements Loans {
         staking.set(_address);
     }
 
-    @External
+    @External(readonly = true)
     public Address getStaking() {
         return staking.get();
     }
