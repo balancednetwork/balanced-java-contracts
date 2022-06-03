@@ -36,11 +36,6 @@ dependencies {
     testImplementation Dependencies.mockitoInline
     testImplementation Dependencies.javaeeTokens
     testImplementation project(':test-lib')
-
-    intTestImplementation project(':DexMock')
-    intTestImplementation project(':testinteg')
-    intTestImplementation project(':RebalanceMock')
-    intTestImplementation Dependencies.iconSdk
 }
 
 optimizedJar {
@@ -85,26 +80,3 @@ jacocoTestReport {
         html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
     }
 }
-
-def dexJar = project(':DexMock').getTasks().getByName('optimizedJar')
-def rebalanceJar = project(':RebalanceMock').getTasks().getByName('optimizedJar')
-
-task integrationTest(type: Test, dependsOn: optimizedJar) {
-    useJUnitPlatform()
-    description = 'Runs integration tests.'
-    group = 'verification'
-
-    testClassesDirs = sourceSets.intTest.output.classesDirs
-    classpath = sourceSets.intTest.runtimeClasspath
-    testLogging.showStandardStreams = true
-
-    // use the common config files
-    systemProperty('env.props', new File(project(':testinteg').projectDir, 'conf/env.props'))
-
-    def prefix = 'score.path.'
-    systemProperty(prefix + project.name, optimizedJar.outputJarName)
-    systemProperty(prefix + 'RebalanceMock', rebalanceJar.outputJarName)
-    systemProperty(prefix + 'DexMock', dexJar.outputJarName)
-}
-integrationTest.dependsOn(rebalanceJar)
-integrationTest.dependsOn(dexJar)
