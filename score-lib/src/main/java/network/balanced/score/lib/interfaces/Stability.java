@@ -17,7 +17,7 @@
 package network.balanced.score.lib.interfaces;
 
 import network.balanced.score.lib.interfaces.addresses.BnusdAddress;
-import network.balanced.score.lib.interfaces.addresses.FeeHandlerAddress;
+import network.balanced.score.lib.interfaces.addresses.FeehandlerAddress;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
 import score.Address;
@@ -26,7 +26,13 @@ import score.annotation.External;
 import java.math.BigInteger;
 import java.util.List;
 
-public interface Stability extends Name, TokenFallback, FeeHandlerAddress, BnusdAddress {
+public interface Stability extends Name, TokenFallback, BnusdAddress {
+
+    @External
+    void setFeehandler(Address _address);
+
+    @External(readonly = true)
+    Address getFeehandler();
 
     @External
     void setFeeIn(BigInteger _feeIn);

@@ -33,6 +33,9 @@ import java.util.function.Consumer;
 
 import static network.balanced.score.lib.utils.Constants.*;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
+import network.balanced.score.lib.interfaces.*;
+//import network.balanced.score.lib.test.integration.BalancedClient;
+import score.Address;
 
 public class Balanced {
     public KeyWallet owner;
@@ -57,6 +60,12 @@ public class Balanced {
     public DefaultScoreClient stability;
 
     HashMap<Address, BalancedClient> balancedClients;
+
+    @ScoreClient
+    BalancedDollar bnUSD;
+    
+    @ScoreClient
+    DAOfund daofundScore;
 
     public Balanced() {
         balancedClients = new HashMap<>();

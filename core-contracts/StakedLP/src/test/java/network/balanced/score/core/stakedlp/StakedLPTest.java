@@ -79,7 +79,7 @@ public class StakedLPTest extends UnitTest {
         Account notContract = sm.createAccount();
         Executable deploymentWithNonContract = () -> sm.deploy(owner, StakedLPImpl.class, notContract.getAddress());
 
-        String expectedErrorMessage = "StakedLP: Governance address should be a contract";
+        String expectedErrorMessage = "Reverted(0): StakedLP: Governance address should be a contract";
         InvocationTargetException e = Assertions.assertThrows(InvocationTargetException.class,
                 deploymentWithNonContract);
         assertEquals(expectedErrorMessage, e.getCause().getMessage());
@@ -94,7 +94,7 @@ public class StakedLPTest extends UnitTest {
     @Test
     void setAndGetDex() {
         Executable setDexNotFromGovernance = () -> stakedLpScore.invoke(owner, "setDex", dex.getAddress());
-        String expectedErrorMessage = "StakedLP: Sender not governance contract";
+        String expectedErrorMessage = "Reverted(0): StakedLP: Sender not governance contract";
         expectErrorMessage(setDexNotFromGovernance, expectedErrorMessage);
 
         stakedLpScore.invoke(Account.getAccount(governanceScore.getAddress()), "setDex", dex.getAddress());
@@ -155,12 +155,12 @@ public class StakedLPTest extends UnitTest {
 
         // Stake Zero tokens
         Executable zeroStakeValue = () -> stakeLpTokens(alice, BigInteger.ONE, BigInteger.ZERO);
-        String expectedErrorMessage = "StakedLP: Token value should be a positive number";
+        String expectedErrorMessage = "Reverted(0): StakedLP: Token value should be a positive number";
         expectErrorMessage(zeroStakeValue, expectedErrorMessage);
 
         // Stake for unsupported pool
         Executable unsupportedPoolStake = () -> stakeLpTokens(alice, BigInteger.valueOf(3), BigInteger.TEN);
-        expectedErrorMessage = "StakedLP: Pool with " + BigInteger.valueOf(3) + " is not supported";
+        expectedErrorMessage = "Reverted(0): StakedLP: Pool with " + BigInteger.valueOf(3) + " is not supported";
         expectErrorMessage(unsupportedPoolStake, expectedErrorMessage);
 
         //Add  pool 1 and let pool 2 be added on first stake
@@ -218,14 +218,14 @@ public class StakedLPTest extends UnitTest {
         //Unstake value less than zero
         Executable unstakeLessThanZero = () -> stakedLpScore.invoke(alice, "unstake", BigInteger.ONE,
                 BigInteger.valueOf(-100L));
-        String expectedErrorMessage = "StakedLP: Cannot unstake less than zero value";
+        String expectedErrorMessage = "Reverted(0): StakedLP: Cannot unstake less than zero value";
         expectErrorMessage(unstakeLessThanZero, expectedErrorMessage);
 
         // Unstake more than the staked amount
         BigInteger finalAliceStakedBalance = aliceStakedBalance;
         Executable unstakeMoreThanStakedAmount = () -> stakedLpScore.invoke(alice, "unstake", BigInteger.ONE,
                 finalAliceStakedBalance.add(BigInteger.ONE));
-        expectedErrorMessage = "StakedLP: Cannot unstake, user don't have enough staked balance, Amount to unstake: " +
+        expectedErrorMessage = "Reverted(0): StakedLP: Cannot unstake, user don't have enough staked balance, Amount to unstake: " +
                 aliceStakedBalance.add(BigInteger.ONE) + " Staked balance of user: " + alice.getAddress() + " is: " +
                 aliceStakedBalance;
         expectErrorMessage(unstakeMoreThanStakedAmount, expectedErrorMessage);

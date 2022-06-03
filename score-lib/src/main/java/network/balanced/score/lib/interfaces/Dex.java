@@ -32,7 +32,7 @@ import java.util.Map;
 
 @ScoreInterface
 public interface Dex extends AdminAddress, BnusdAddress, GovernanceAddress, Name, SicxAddress, StakingAddress,
-        DividendsAddress, RewardsAddress, BalnAddress, FeeHandlerAddress, StakedLpAddress, Fallback, TokenFallback,
+        DividendsAddress, RewardsAddress, BalnAddress, FeehandlerAddress, StakedLpAddress, Fallback, TokenFallback,
         IRC31Base {
 
     @External

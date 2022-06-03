@@ -31,7 +31,7 @@ import java.util.Map;
 
 import static network.balanced.score.core.dividends.Constants.*;
 import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
-import static network.balanced.score.lib.utils.ArrayDBUtils.removeFromArrayDB;
+import static network.balanced.score.lib.utils.ArrayDBUtils.removeFromArraydb;
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Math.pow;
@@ -266,7 +266,7 @@ public class DividendsImpl implements Dividends {
         Context.require(dividendsDist.get(_category).equals(BigInteger.ZERO),
                 TAG + ": Please make the category percentage to 0 before removing.");
 
-        removeFromArrayDB(_category, completeDividendsCategories);
+        removeFromArraydb(_category, completeDividendsCategories);
     }
 
     @External(readonly = true)

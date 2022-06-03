@@ -19,11 +19,11 @@ package network.balanced.score.lib.interfaces.addresses;
 import score.Address;
 import score.annotation.External;
 
-public interface FeeHandlerAddress {
+public interface DaoFundAddress {
 
     @External
-    void setFeeHandler(Address _address);
+    void setDaofund(Address _address);
 
     @External(readonly = true)
-    Address getFeeHandler();
+    Address getDaofund();
 }

@@ -34,20 +34,20 @@ import java.math.BigInteger;
 
 import static network.balanced.test.Env.LOG;
 
-public class FeeHandlerScore extends Score {
+public class FeehandlerScore extends Score {
     private static final String PYTHON_PATH = "../../testinteg/src/main/java/network/balanced/test/contracts/base/pythonContracts/feehandler.zip";
     
-    public static FeeHandlerScore deploy(TransactionHandler txHandler, Wallet wallet, Address governaceAddress)
+    public static FeehandlerScore deploy(TransactionHandler txHandler, Wallet wallet, Address governaceAddress)
         throws ResultTimeoutException, TransactionFailureException, IOException {
         LOG.info("Deploy dummy oracle");
         RpcObject params = new RpcObject.Builder()
             .put("_governance", new RpcValue(governaceAddress))
             .build();
         Score score = txHandler.deploy(wallet, PYTHON_PATH, params);
-        return new FeeHandlerScore(score);
+        return new FeehandlerScore(score);
     }
 
-    public FeeHandlerScore(Score other) {
+    public FeehandlerScore(Score other) {
         super(other);
     }
 }

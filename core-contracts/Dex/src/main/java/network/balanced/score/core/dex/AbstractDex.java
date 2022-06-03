@@ -203,14 +203,14 @@ public abstract class AbstractDex implements Dex {
     }
 
     @External
-    public void setFeeHandler(Address _address) {
+    public void setFeehandler(Address _address) {
         only(admin);
         isContract(_address);
         feeHandler.set(_address);
     }
 
     @External(readonly = true)
-    public Address getFeeHandler() {
+    public Address getFeehandler() {
         return feeHandler.get();
     }
 

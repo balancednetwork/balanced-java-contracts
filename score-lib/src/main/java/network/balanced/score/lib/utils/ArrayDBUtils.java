@@ -29,11 +29,20 @@ public class ArrayDBUtils {
         return false;
     }
 
-    public static <T> void removeFromArrayDB(T ele, ArrayDB<T> arrayDB) {
-        for (int i = 0; i < arrayDB.size(); i++) {
-            if (arrayDB.get(i).equals(ele)) {
-                arrayDB.set(i, arrayDB.pop());
+    public static <T> boolean removeFromArraydb(T _item, ArrayDB<T> _array) {
+        final int size = _array.size();
+        if (size < 1) {
+            return false;
+        }
+        T top = _array.get(size - 1);
+        for (int i = 0; i < size; i++) {
+            if (_array.get(i).equals(_item)) {
+                _array.set(i, top);
+                _array.pop();
+                return true;
             }
         }
+
+        return false;
     }
 }

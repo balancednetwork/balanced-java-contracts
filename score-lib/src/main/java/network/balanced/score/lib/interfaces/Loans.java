@@ -31,8 +31,14 @@ import java.util.List;
 import java.util.Map;
 
 @ScoreInterface
-public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, GovernanceAddress, StakingAddress,
-        RebalancingAddress, DividendsAddress, ReserveAddress, RewardsAddress {
+public interface Loans extends
+        RewardsAddress, 
+        DividendsAddress,
+        StakingAddress,
+        ReserveAddress,
+        RebalancingAddress,
+        DexAddress,
+        AdminAddress {
 
     @External
     void turnLoansOn();
@@ -43,7 +49,7 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
     @External(readonly = true)
     boolean getLoansOn();
 
-    @External
+    @External(readonly = true)
     void migrateUserData(Address address);
 
     @External(readonly = true)
@@ -108,7 +114,6 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
 
     @External
     void addAsset(Address _token_address, boolean _active, boolean _collateral);
-
     @External
     void toggleAssetActive(String _symbol);
 

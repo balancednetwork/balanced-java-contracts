@@ -35,7 +35,6 @@ dependencies {
     implementation project(':score-client')
     implementation Dependencies.junitJupiterApi
     implementation Dependencies.jacksonDatabind
-    implementation Dependencies.javaFaker
     implementation Dependencies.javaeeUnitTest
     implementation Dependencies.junitJupiter
     implementation Dependencies.mockitoCore
@@ -44,6 +43,12 @@ dependencies {
     implementation Dependencies.mockitoCore
     implementation Dependencies.json
     implementation Dependencies.javaeeScorex
+
+    implementation Dependencies.iconSdk
+
+
+    implementation Dependencies.javaFaker
+
 }
 
 test {

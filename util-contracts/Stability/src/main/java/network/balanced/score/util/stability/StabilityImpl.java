@@ -57,7 +57,7 @@ public class StabilityImpl implements Stability {
     public StabilityImpl(Address _feeHandler, Address _bnusd, BigInteger _feeIn, BigInteger _feeOut) {
 
         if (bnusdAddress.get() == null) {
-            setFeeHandler(_feeHandler);
+            setFeehandler(_feeHandler);
             setBnusd(_bnusd);
             setFeeIn(_feeIn);
             setFeeOut(_feeOut);
@@ -70,14 +70,14 @@ public class StabilityImpl implements Stability {
     }
 
     @External
-    public void setFeeHandler(Address _address) {
+    public void setFeehandler(Address _address) {
         onlyOwner();
         isContract(_address);
         feeHandler.set(_address);
     }
 
     @External(readonly = true)
-    public Address getFeeHandler() {
+    public Address getFeehandler() {
         return feeHandler.get();
     }
 

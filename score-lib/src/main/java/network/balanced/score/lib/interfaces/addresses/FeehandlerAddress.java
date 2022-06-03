@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.structs;
+package network.balanced.score.lib.interfaces.addresses;
 
 import score.Address;
-import score.annotation.Keep;
+import score.annotation.External;
 
-import java.math.BigInteger;
+public interface FeehandlerAddress {
 
-public class Disbursement {
-    @Keep
-    public Address address;
-    @Keep
-    public BigInteger amount;
+    @External
+    void setFeehandler(Address _address);
+
+    @External(readonly = true)
+    Address getFeehandler();
 }

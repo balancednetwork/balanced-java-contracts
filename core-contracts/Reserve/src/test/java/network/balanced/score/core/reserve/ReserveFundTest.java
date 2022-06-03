@@ -71,7 +71,7 @@ public class ReserveFundTest extends TestBase {
         Account notContract = sm.createAccount();
         Executable deploymentWithNonContract = () -> sm.deploy(owner, ReserveFund.class, notContract.getAddress());
 
-        String expectedErrorMessage = "ReserveFund: Governance address should be a contract";
+        String expectedErrorMessage = "Reverted(0): ReserveFund: Governance address should be a contract";
         InvocationTargetException e = Assertions.assertThrows(InvocationTargetException.class,
                 deploymentWithNonContract);
         assertEquals(expectedErrorMessage, e.getCause().getMessage());

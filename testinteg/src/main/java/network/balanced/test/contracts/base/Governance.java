@@ -53,7 +53,7 @@ public class Governance extends Score {
     public BwtScore bwt;
     public RebalancingScore rebalancing;
     public RouterScore router;
-    public FeeHandlerScore feehandler;
+    public FeehandlerScore feehandler;
 
     public static Governance deploy(TransactionHandler txHandler, Wallet wallet)
         throws ResultTimeoutException, TransactionFailureException, IOException {
@@ -95,7 +95,7 @@ public class Governance extends Score {
        deployBwt(txHandler, adminWallet);
        deployRebalancing(txHandler, adminWallet);
        deployRouter(txHandler, adminWallet);
-       deployFeeHandler(txHandler, adminWallet);
+       deployFeehandler(txHandler, adminWallet);
     }
 
     protected void deployLoans(TransactionHandler txHandler, Wallet adminWallet) throws Exception {
@@ -154,8 +154,8 @@ public class Governance extends Score {
         router = RouterScore.deploy(txHandler, adminWallet,getAddress());
     }
 
-    protected void deployFeeHandler(TransactionHandler txHandler, Wallet adminWallet) throws Exception {
-        feehandler = FeeHandlerScore.deploy(txHandler, adminWallet,getAddress());
+    protected void deployFeehandler(TransactionHandler txHandler, Wallet adminWallet) throws Exception {
+        feehandler = FeehandlerScore.deploy(txHandler, adminWallet,getAddress());
     }
 
     public TransactionResult setAddresses(Wallet fromWallet) throws IOException, ResultTimeoutException {
@@ -293,7 +293,7 @@ public class Governance extends Score {
         return rebalancing;
     }
     
-    public FeeHandlerScore getFeehandler() {
+    public FeehandlerScore getFeehandler() {
         return feehandler;
     }
 
