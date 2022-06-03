@@ -266,7 +266,6 @@ class LoansTestBase extends UnitTest {
         loans.invoke(admin, "setRewards", rewards.getAddress());
         loans.invoke(admin, "setDividends", rewards.getAddress());
         loans.invoke(admin, "setReserve", reserve.getAddress());
-        governanceCall("setContinuousRewardsDay", BigInteger.valueOf(100000));
         sicx.invoke(admin, "setMinter", staking.getAddress());
         bnusd.invoke(admin, "setMinter", loans.getAddress());
         loans.invoke(admin, "addAsset", bnusd.getAddress(), true, false);

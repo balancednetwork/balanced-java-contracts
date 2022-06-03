@@ -16,7 +16,9 @@
 
 package network.balanced.score.core.loans.asset;
 
+import network.balanced.score.core.loans.collateral.CollateralDB;
 import network.balanced.score.core.loans.linkedlist.LinkedListDB;
+import network.balanced.score.core.loans.utils.PositionBatch;
 import network.balanced.score.core.loans.utils.Token;
 import score.Address;
 import score.BranchDB;
@@ -31,7 +33,7 @@ import static network.balanced.score.core.loans.utils.LoansConstants.SICX_SYMBOL
 import static network.balanced.score.core.loans.LoansImpl.call;
 
 public class Asset {
-
+    private static final String BORROWER_DB_PREFIX = "borrowers";
     private final BranchDB<String, VarDB<BigInteger>> assetAddedTime = Context.newBranchDB("added", BigInteger.class);
     private final BranchDB<String, VarDB<Address>> assetAddress = Context.newBranchDB("address", Address.class);
     private final BranchDB<String, VarDB<BigInteger>> badDebt = Context.newBranchDB("bad_debt", BigInteger.class);
@@ -90,7 +92,7 @@ public class Asset {
     }
 
     public boolean isCollateral() {
-        return isCollateral.at(dbKey).getOrDefault(false);
+        return isCollateral.at(dbKey).getOrDefault(true);
     }
 
     public void setActive(Boolean active) {
@@ -121,7 +123,7 @@ public class Asset {
 
         BigInteger outStanding = assetContract.totalSupply().subtract(badDebt);
 
-        Address sicxAddress = AssetDB.getAsset(SICX_SYMBOL).getAssetAddress();
+        Address sicxAddress = CollateralDB.getCollateral(SICX_SYMBOL).getAssetAddress();
         Token sicxContract = new Token(sicxAddress);
 
         // [Multi-collateral] Here it assumes every token should be denominated in terms of sicx.
@@ -137,40 +139,66 @@ public class Asset {
         return isDead;
     }
 
-    public LinkedListDB getBorrowers() {
-        return new LinkedListDB("borrowers", dbKey);
+    public LinkedListDB getBorrowers(String collateralSymbol) {
+        if (collateralSymbol == SICX_SYMBOL) {
+            return new LinkedListDB(BORROWER_DB_PREFIX, dbKey);
+        } else {
+            return new LinkedListDB(collateralSymbol + "|" + BORROWER_DB_PREFIX, dbKey);
+        }
+    }
+
+    public PositionBatch getBorrowersBatch(String collateralSymbol, int batchSize) {
+       LinkedListDB borrowers = getBorrowers(collateralSymbol);
+
+       int nodeId = borrowers.getHeadId();
+       PositionBatch batch = new PositionBatch();
+       batch.totalDebt = BigInteger.ZERO;
+       Map<Integer, BigInteger> positionsMap = new HashMap<>();
+
+       int iterations = Math.min(batchSize, borrowers.size());
+       for (int i = 0; i < iterations; i++) {
+           BigInteger debt = borrowers.nodeValue(nodeId);
+           positionsMap.put(nodeId, debt);
+           batch.totalDebt = batch.totalDebt.add(debt);
+           borrowers.headToTail();
+           nodeId = borrowers.getHeadId();
+       }
+
+       borrowers.serialize();
+       batch.positions = positionsMap;
+       batch.size = iterations;
+       
+       return batch;
     }
 
     public void removeBorrowers(int positionId) {
-        getBorrowers().remove(positionId);
+        getBorrowers(SICX_SYMBOL).remove(positionId);
     }
 
-    void setAsset(Address assetAddress, BigInteger assetAddedTime, Boolean active, Boolean collateral) {
+    void setAsset(Address assetAddress, Boolean active) {
         this.assetAddress.at(dbKey).set(assetAddress);
-        this.assetAddedTime.at(dbKey).set(assetAddedTime);
         this.active.at(dbKey).set(active);
-        this.isCollateral.at(dbKey).set(collateral);
+        this.isCollateral.at(dbKey).set(false);
     }
 
     Map<String, Object> toMap() {
         Address assetAddress = this.assetAddress.at(dbKey).get();
         Token tokenContract = new Token(assetAddress);
 
-        Map<String, Object> assetDetails = new HashMap<>();
+        Map<String, Object> AssetDetails = new HashMap<>();
 
-        assetDetails.put("symbol", tokenContract.symbol());
-        assetDetails.put("address", assetAddress);
-        assetDetails.put("peg", tokenContract.getPeg());
-        assetDetails.put("added", getAssetAddedTime());
-        assetDetails.put("is_collateral", isCollateral());
-        assetDetails.put("active", isActive());
-        assetDetails.put("borrowers", getBorrowers().size());
-        assetDetails.put("total_supply", tokenContract.totalSupply());
-        assetDetails.put("total_burned", getTotalBurnedTokens());
-        assetDetails.put("bad_debt", getBadDebt());
-        assetDetails.put("liquidation_pool", getLiquidationPool());
-        assetDetails.put("dead_market", isDeadMarket());
+        AssetDetails.put("symbol", tokenContract.symbol());
+        AssetDetails.put("address", assetAddress);
+        AssetDetails.put("peg", tokenContract.getPeg());
+        AssetDetails.put("added", getAssetAddedTime());
+        AssetDetails.put("active", isActive());
+        AssetDetails.put("borrowers", getBorrowers(SICX_SYMBOL).size());
+        AssetDetails.put("total_supply", tokenContract.totalSupply());
+        AssetDetails.put("total_burned", getTotalBurnedTokens());
+        AssetDetails.put("bad_debt", getBadDebt());
+        AssetDetails.put("liquidation_pool", getLiquidationPool());
+        AssetDetails.put("dead_market", isDeadMarket());
 
-        return assetDetails;
+        return AssetDetails;
     }
 }
