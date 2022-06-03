@@ -96,7 +96,7 @@ public class RewardsImpl implements Rewards {
                             "Reserve Fund", reserveFund,
                             "DAOfund", daofund);
                         
-    public RewardsImpl(Address _governance) {
+    public RewardsImpl(@Optional Address _governance) {
         if (governance.getOrDefault(null) != null) {
             return;
         }
@@ -114,7 +114,6 @@ public class RewardsImpl implements Rewards {
         completeRecipient.add("Reserve Fund");
         completeRecipient.add("DAOfund");
         
-
         startTimestamp.set(BigInteger.ZERO);
     }
 
@@ -139,7 +138,7 @@ public class RewardsImpl implements Rewards {
    
     @External(readonly = true)
     public BigInteger getEmission(@Optional BigInteger _day) {
-        if (_day == null) {
+        if (_day == null || _day.equals(BigInteger.ZERO)) {
             _day = BigInteger.valueOf(-1);
         }
 
