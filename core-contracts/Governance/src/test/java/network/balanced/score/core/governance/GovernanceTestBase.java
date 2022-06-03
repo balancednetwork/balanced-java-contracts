@@ -210,8 +210,7 @@ public class GovernanceTestBase extends UnitTest {
         BigInteger id = (BigInteger) governance.call("getVoteIndex", name);
 
         when(baln.mock.totalStakedBalanceOfAt(snapshot)).thenReturn(BigInteger.valueOf(6).multiply(ICX));
-        when(dex.mock.totalBalnAt(BALNBNUSD_ID, snapshot, false)).thenReturn(BigInteger.TWO.multiply(ICX));
-        when(dex.mock.totalBalnAt(BALNSICX_ID, snapshot, false)).thenReturn(BigInteger.TWO.multiply(ICX));
+    
 
         Map<String, Object> vote = getVote(id);
         goToDay((BigInteger)vote.get("start day"));
@@ -265,8 +264,6 @@ public class GovernanceTestBase extends UnitTest {
         BigInteger id = (BigInteger) governance.call("getVoteIndex", name);
 
         when(baln.mock.totalStakedBalanceOfAt(snapshot)).thenReturn(BigInteger.valueOf(6).multiply(ICX));
-        when(dex.mock.totalBalnAt(BALNBNUSD_ID, snapshot, false)).thenReturn(BigInteger.TWO.multiply(ICX));
-        when(dex.mock.totalBalnAt(BALNSICX_ID, snapshot, false)).thenReturn(BigInteger.TWO.multiply(ICX));
         return id;
     }
 

@@ -27,6 +27,7 @@ import score.annotation.Optional;
 import score.annotation.Payable;
 import score.annotation.EventLog;
 import scorex.util.ArrayList;
+import scorex.util.HashMap;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
@@ -105,13 +106,9 @@ public class GovernanceImpl {
     public void setTimeOffset(BigInteger offset) {
         onlyOwner();
         timeOffset.set(offset);
-        Context.println("############################################## 3");
         Context.call(Addresses.get("loans"), "setTimeOffset",  offset);
-        Context.println("############################################## 4");
         Context.call(Addresses.get("rewards"), "setTimeOffset",  offset);
-        Context.println("############################################## 5");
         Context.call(Addresses.get("dex"), "setTimeOffset",  offset);
-        Context.println("############################################## 6");
         Context.call(Addresses.get("dividends"), "setTimeOffset",  offset);
     }
 
@@ -196,14 +193,14 @@ public class GovernanceImpl {
         ProposalDB proposal = new ProposalDB(vote_index);
         Context.require(vote_index.compareTo(BigInteger.ONE) >= 0, "There is no proposal with index " + vote_index);
         Context.require(vote_index.compareTo(proposal.proposalsCount.get()) <= 0, "There is no proposal with index " + vote_index);
-        Context.require(proposal.status.get() == ProposalStatus.STATUS[ProposalStatus.ACTIVE], "Proposal can be cancelled only from active status.");
-        Context.require(Context.getCaller() == proposal.proposer.get() || 
-                        Context.getCaller() == Context.getOwner(), 
+        Context.require(proposal.status.get().equals(ProposalStatus.STATUS[ProposalStatus.ACTIVE]), "Proposal can be cancelled only from active status.");
+        Context.require(Context.getCaller().equals(proposal.proposer.get()) || 
+                        Context.getCaller().equals(Context.getOwner()), 
                         "Only owner or proposer may call this method.");
-
-        Context.require(proposal.startSnapshot.get().compareTo(getDay()) <= 0 &&
-                        Context.getCaller() == Context.getOwner(), 
-                        "Only owner can cancel a vote that has started.");
+        if (proposal.startSnapshot.get().compareTo(getDay()) <= 0 ) {
+            Context.require(Context.getCaller().equals(Context.getOwner()), 
+                    "Only owner can cancel a vote that has started.");
+        }
 
         refundVoteDefinitionFee(proposal);
         proposal.active.set(false);
@@ -341,11 +338,7 @@ public class GovernanceImpl {
     public BigInteger totalBaln(BigInteger _day) {
         BigInteger stakedBaln = Context.call(BigInteger.class, Addresses.get("baln"), "totalStakedBalanceOfAt", _day);
         
-        //TODD should be remove before continiuos?
-        BigInteger balnFromBnusdPool = Context.call(BigInteger.class, Addresses.get("dex"), "totalBalnAt",  BALNBNUSD_ID, _day, false);
-        BigInteger balnFromSICXPool = Context.call(BigInteger.class, Addresses.get("dex"), "totalBalnAt",  BALNSICX_ID, _day, false);
-
-        return stakedBaln.add(balnFromBnusdPool).add(balnFromSICXPool);
+        return stakedBaln;
     }
 
     @External
@@ -386,7 +379,7 @@ public class GovernanceImpl {
         }
 
         try {
-            executeVoteActions(proposal.actions.get());
+            executeVoteActions(actions);
             proposal.status.set(ProposalStatus.STATUS[ProposalStatus.EXECUTED]);
         } catch (Exception e) {
             proposal.status.set(ProposalStatus.STATUS[ProposalStatus.FAILED_EXECUTION]);
@@ -417,25 +410,26 @@ public class GovernanceImpl {
             nrAgainstVotes = proposal.totalAgainstVotes.getOrDefault(BigInteger.ZERO).multiply(EXA).divide(totalBaln);
         }
 
-        return Map.ofEntries(
-            entry("id", _vote_index),
-            entry("name", proposal.name.get()),
-            entry("proposer", proposal.proposer.get()),
-            entry("description", proposal.description.get()),
-            entry("majority", proposal.majority.get()),
-            entry("status", proposal.status.get()),
-            entry("vote snapshot", proposal.voteSnapshot.get()),
-            entry("start day", proposal.startSnapshot.get()),
-            entry("end day", proposal.endSnapshot.get()),
-            entry("actions", proposal.actions.get()),
-            entry("quorum", proposal.quorum.get()),
-            entry("for", nrForVotes),
-            entry("against", nrAgainstVotes),
-            entry("for_voter_count", proposal.forVotersCount.get()),
-            entry("against_voter_count", proposal.againstVotersCount.get()),
-            entry("fee_refund_status", proposal.feeRefunded.get())
+        Map<String, Object> voteData = new HashMap<>(16);
 
-        );
+        voteData.put("id", _vote_index);
+        voteData.put("name", proposal.name.get());
+        voteData.put("proposer", proposal.proposer.get());
+        voteData.put("description", proposal.description.get());
+        voteData.put("majority", proposal.majority.get());
+        voteData.put("status", proposal.status.get());
+        voteData.put("vote snapshot", proposal.voteSnapshot.get());
+        voteData.put("start day", proposal.startSnapshot.get());
+        voteData.put("end day", proposal.endSnapshot.get());
+        voteData.put("actions", proposal.actions.get());
+        voteData.put("quorum", proposal.quorum.get());
+        voteData.put("for", nrForVotes);
+        voteData.put("against", nrAgainstVotes);
+        voteData.put("for_voter_count", proposal.forVotersCount.get());
+        voteData.put("against_voter_count", proposal.againstVotersCount.get());
+        voteData.put("fee_refund_status", proposal.feeRefunded.get());
+
+        return voteData;
     }
 
     @External(readonly = true)
@@ -477,13 +471,10 @@ public class GovernanceImpl {
 
         BigInteger day = getDay();
         launchDay.set(day);
-        launchTime.set(BigInteger.valueOf(Context.getBlockTimestamp()));
-
         BigInteger timeDelta = BigInteger.valueOf(Context.getBlockTimestamp());
-        Context.println("############################################## 1");
-        setTimeOffset(timeDelta);
-        Context.println("############################################## 2");
 
+        launchTime.set(timeDelta);
+        setTimeOffset(timeDelta);
 
         for (Map<String, String> source : DATA_SOURCES) {
             Context.call(Addresses.get("rewards"), "addNewDataSource", source.get("name"), Addresses.get(source.get("address")));
@@ -721,7 +712,7 @@ public class GovernanceImpl {
     public void addAsset(Address _token_address, boolean _active, boolean _collateral) {
         onlyOwner();
         Address loansAddress = Addresses.get("loans");
-        Context.call(Addresses.get("loans"), "addAsset",  _token_address, _active, _collateral);
+        Context.call(loansAddress, "addAsset",  _token_address, _active, _collateral);
         Context.call(_token_address, "setAdmin", loansAddress);
     }
 
@@ -786,7 +777,7 @@ public class GovernanceImpl {
     }
 
     @External
-    public void balwAdminTransfer(Address _from , Address _to , BigInteger _value, byte[] _data) {
+    public void balwAdminTransfer(Address _from , Address _to , BigInteger _value, @Optional byte[] _data) {
         onlyOwner();
         Context.call(Addresses.get("bwt"), "adminTransfer",  _from, _to, _value, _data);
     }
@@ -932,7 +923,7 @@ public class GovernanceImpl {
     @External
     public void setRedeemBatchSize(BigInteger _value) {
         onlyOwner();
-        Context.call(Addresses.get("loans"), "setRedeemBatchSize",  _value);
+        Context.call(Addresses.get("loans"), "setRedeemBatchSize",  _value.intValue());
     }
 
     @External

@@ -921,7 +921,7 @@ public class GovernanceTest extends GovernanceTestBase {
         governance.invoke(owner, "setRedeemBatchSize", _value);
 
         // Assert
-        verify(loans.mock).setRedeemBatchSize(_value);
+        verify(loans.mock).setRedeemBatchSize(_value.intValue());
 
     }
 
