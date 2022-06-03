@@ -23,10 +23,14 @@ import score.Address;
 import java.math.BigInteger;
 
 import foundation.icon.score.client.ScoreInterface;
+import network.balanced.score.lib.interfaces.addresses.AdminAddress;
+import network.balanced.score.lib.interfaces.addresses.BalnAddress;
+import network.balanced.score.lib.interfaces.addresses.LoansAddress;
+import network.balanced.score.lib.interfaces.addresses.SicxAddress;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
 
 @ScoreInterface
-public interface Reserve extends TokenFallback {
+public interface Reserve extends TokenFallback, AdminAddress, BalnAddress, SicxAddress, LoansAddress {
     @External
     public void redeem(Address to, BigInteger amount, BigInteger icxRate);
 }

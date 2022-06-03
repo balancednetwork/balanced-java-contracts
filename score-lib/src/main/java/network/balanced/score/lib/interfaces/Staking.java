@@ -105,7 +105,7 @@ public interface Staking {
 
     @External
     @Payable
-    BigInteger stakeICX(@Optional Address _to, @Optional byte[] _data);
+    void stakeICX(@Optional Address _to, @Optional byte[] _data);
 
     @External
     void transferUpdateDelegations(Address _from, Address _to, BigInteger _value);
