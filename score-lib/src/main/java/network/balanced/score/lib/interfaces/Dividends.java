@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 @ScoreInterface
-public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress, DaofundAddress, BalnAddress,
+public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress, DaoFundAddress, BalnAddress,
         Name, DexAddress, TokenFallback {
 
     @External(readonly = true)
