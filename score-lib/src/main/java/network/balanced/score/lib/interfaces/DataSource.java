@@ -27,10 +27,10 @@ import java.util.Map;
 @ScoreInterface
 public interface DataSource {
     @External
-    Object precompute(int _snapshot_id, int batch_size);
+    Object precompute(BigInteger _snapshot_id, BigInteger batch_size);
 
     @External(readonly = true)
-    BigInteger getTotalValue(String _name, int _snapshot_id);
+    BigInteger getTotalValue(String _name, BigInteger _snapshot_id);
 
     @External
     BigInteger getBnusdValue(String _name);

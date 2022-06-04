@@ -17,34 +17,27 @@
 package network.balanced.score.core.rewards;
 
 import com.iconloop.score.test.Account;
-import org.junit.jupiter.api.Assertions;
+import network.balanced.score.lib.structs.DistributionPercentage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
-import org.mockito.Mockito;
-
 import score.Address;
 
 import java.math.BigInteger;
-import java.security.AccessControlContext;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import network.balanced.score.lib.structs.DistributionPercentage;
-
-public class RewardsTest extends RewardsTestBase {
+class RewardsTest extends RewardsTestBase {
 
     @BeforeEach
     void setup() throws Exception{
         super.setup();
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void getDataSources() {
         // Act 
@@ -52,10 +45,11 @@ public class RewardsTest extends RewardsTestBase {
 
         // Assert
         assertEquals(2, dataSources.size());
-        assertTrue(dataSources.keySet().contains("Loans"));
-        assertTrue(dataSources.keySet().contains("sICX/ICX"));
+        assertTrue(dataSources.containsKey("Loans"));
+        assertTrue(dataSources.containsKey("sICX/ICX"));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void getDataSourceNames() {
         // Act 
@@ -67,6 +61,7 @@ public class RewardsTest extends RewardsTestBase {
         assertTrue(names.contains("sICX/ICX"));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void getRecipients() {
         // Act 
@@ -81,6 +76,7 @@ public class RewardsTest extends RewardsTestBase {
         assertTrue(names.contains("DAOfund"));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void removeDataSource() {
         // Arrange
@@ -113,6 +109,7 @@ public class RewardsTest extends RewardsTestBase {
         expectErrorMessage(removeNonEmpty, expectedErrorMessage);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void removeDataSource_nonExisting() {
         // Act 
@@ -207,12 +204,12 @@ public class RewardsTest extends RewardsTestBase {
     @Test
     void getEmission_after60Days() {
         // Arrange
-        BigInteger baseEmssion = BigInteger.TEN.pow(23);
+        BigInteger baseEmission = BigInteger.TEN.pow(23);
         BigInteger percent = BigInteger.valueOf(10);
         BigInteger percent100 = percent.multiply(BigInteger.valueOf(100));
         BigInteger decay = percent100.subtract(BigInteger.valueOf(5));
 
-        BigInteger expectedEmission = baseEmssion.multiply(decay).divide(percent100);
+        BigInteger expectedEmission = baseEmission.multiply(decay).divide(percent100);
         BigInteger expectedEmissionDayAfter = expectedEmission.multiply(decay).divide(percent100);
 
          // Act & Assert 
@@ -224,11 +221,11 @@ public class RewardsTest extends RewardsTestBase {
     void getEmission_after935Days() {
         // Arrange
         int day = 935;
-        BigInteger minEmssion = BigInteger.valueOf(1250).multiply(ICX);
+        BigInteger minEmission = BigInteger.valueOf(1250).multiply(ICX);
 
          // Act & Assert 
-         assertNotEquals(minEmssion, rewardsScore.call("getEmission", BigInteger.valueOf(day-1)));
-         assertEquals(minEmssion, rewardsScore.call("getEmission", BigInteger.valueOf(day)));
+         assertNotEquals(minEmission, rewardsScore.call("getEmission", BigInteger.valueOf(day-1)));
+         assertEquals(minEmission, rewardsScore.call("getEmission", BigInteger.valueOf(day)));
     }
 
     @Test
@@ -274,6 +271,7 @@ public class RewardsTest extends RewardsTestBase {
         assertEquals(expectedAPY, apy);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void distribute() {
         // Arrange
@@ -284,19 +282,19 @@ public class RewardsTest extends RewardsTestBase {
         BigInteger swapTotalSupply = BigInteger.TEN.multiply(EXA);
         
         Map<String, BigInteger> dataBatchLoans = Map.of(
-            account.getAddress().toString(), loansBalance
+                account.getAddress().toString(), loansBalance
         );
 
         Map<String, BigInteger> dataBatchSwap = Map.of(
-            account.getAddress().toString(), swapBalance
+                account.getAddress().toString(), swapBalance
         );
 
+        int day = ((BigInteger) rewardsScore.call("getDay")).intValue();
         sm.getBlock().increase(DAY);
-        int day = (int) (sm.getBlock().getHeight()/DAY) - 1;
 
-        when(loans.mock.getTotalValue(eq("Loans"), any(Integer.class))).thenReturn(loansTotalSupply);
-        when(dex.mock.getTotalValue(eq("sICX/ICX"), any(Integer.class))).thenReturn(swapTotalSupply);
-        
+        when(loans.mock.getTotalValue(eq("Loans"), any(BigInteger.class))).thenReturn(loansTotalSupply);
+        when(dex.mock.getTotalValue(eq("sICX/ICX"), any(BigInteger.class))).thenReturn(swapTotalSupply);
+
         when(loans.mock.getDataBatch(eq("Loans"), eq(day), any(Integer.class), eq(0))).thenReturn(dataBatchLoans);
         when(dex.mock.getDataBatch(eq("sICX/ICX"), eq(day), any(Integer.class), eq(0))).thenReturn(dataBatchSwap);
 
@@ -304,8 +302,8 @@ public class RewardsTest extends RewardsTestBase {
         syncDistributions();
 
         // Assert
-        Object users = new Address[] {account.getAddress()};
-        Map<Address, BigInteger> rewards  = (Map<Address, BigInteger>) rewardsScore.call("getBalnHoldings", users);
+        Object users = new Address[]{account.getAddress()};
+        Map<Address, BigInteger> rewards = (Map<Address, BigInteger>) rewardsScore.call("getBalnHoldings", users);
 
         BigInteger emission = (BigInteger) rewardsScore.call("getEmission", BigInteger.valueOf(-1));
         BigInteger loansDistribution = loansDist.dist_percent.multiply(emission).divide(EXA);
@@ -332,19 +330,19 @@ public class RewardsTest extends RewardsTestBase {
         BigInteger swapTotalSupply = BigInteger.TEN.multiply(EXA);
         
         Map<String, BigInteger> dataBatchLoans = Map.of(
-            account.getAddress().toString(), loansBalance
+                account.getAddress().toString(), loansBalance
         );
 
         Map<String, BigInteger> dataBatchSwap = Map.of(
-            account.getAddress().toString(), swapBalance
+                account.getAddress().toString(), swapBalance
         );
 
         sm.getBlock().increase(DAY);
-        int day = (int) (sm.getBlock().getHeight()/DAY) - 1;
+        int day = ((BigInteger)rewardsScore.call("getDay")).intValue() - 1;
 
-        when(loans.mock.getTotalValue(eq("Loans"), any(Integer.class))).thenReturn(loansTotalSupply);
-        when(dex.mock.getTotalValue(eq("sICX/ICX"), any(Integer.class))).thenReturn(swapTotalSupply);
-        
+        when(loans.mock.getTotalValue(eq("Loans"), any(BigInteger.class))).thenReturn(loansTotalSupply);
+        when(dex.mock.getTotalValue(eq("sICX/ICX"), any(BigInteger.class))).thenReturn(swapTotalSupply);
+
         when(loans.mock.getDataBatch(eq("Loans"), eq(day), any(Integer.class), eq(0))).thenReturn(dataBatchLoans);
         when(dex.mock.getDataBatch(eq("sICX/ICX"), eq(day), any(Integer.class), eq(0))).thenReturn(dataBatchSwap);
 
@@ -367,11 +365,12 @@ public class RewardsTest extends RewardsTestBase {
         verifyBalnReward(account.getAddress(), userDistribution);        
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void distStatus() {
         // Arrange        
         sm.getBlock().increase(DAY);
-        BigInteger day = BigInteger.valueOf((sm.getBlock().getHeight()/DAY));
+        BigInteger day = (BigInteger) rewardsScore.call("getDay");
 
         // Act
         syncDistributions();
@@ -386,6 +385,7 @@ public class RewardsTest extends RewardsTestBase {
         assertEquals(platformDay.multiply(BigInteger.TWO), daysSum);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void recipientAt_multipleSnapshots() {
         // Arrange 
@@ -400,11 +400,11 @@ public class RewardsTest extends RewardsTestBase {
         snapshotDistributionPercentage();
         
         loansDist.dist_percent = expectedLoansDist; 
-        icxPoolDist.dist_percent = expectedSwapDist; 
+        icxPoolDist.dist_percent = expectedSwapDist;
+        // capture day, where the specific change took place
+        BigInteger day = (BigInteger) rewardsScore.call("getDay");
         snapshotDistributionPercentage();
 
-        // capture day where the specific change took place
-        BigInteger day = BigInteger.valueOf((sm.getBlock().getHeight()/DAY));
         // reset distribution percentages
         loansDist.dist_percent = originalLoansDist;
         icxPoolDist.dist_percent = originalSwapDist;
@@ -421,6 +421,7 @@ public class RewardsTest extends RewardsTestBase {
         assertEquals(expectedSwapDist, distributions.get("sICX/ICX"));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void recipientAt_withNewDataSourceInTheFuture() {
         // Arrange 
@@ -435,14 +436,14 @@ public class RewardsTest extends RewardsTestBase {
 
         // Act
         Object distributionPercentages = new DistributionPercentage[]{testDist, loansDist, icxPoolDist, bwtDist, reserveDist, daoDist};
-        BigInteger day = BigInteger.valueOf((sm.getBlock().getHeight()/DAY));
+        BigInteger day = (BigInteger) rewardsScore.call("getDay");
 
         rewardsScore.invoke(governance, "updateBalTokenDistPercentage", distributionPercentages);
-        Map<String, BigInteger> distributionsYesterDay = (Map<String, BigInteger>) rewardsScore.call("recipientAt", day.subtract(BigInteger.ONE));
+        Map<String, BigInteger> distributionsYesterday = (Map<String, BigInteger>) rewardsScore.call("recipientAt", day.subtract(BigInteger.ONE));
         Map<String, BigInteger> distributionsToday = (Map<String, BigInteger>) rewardsScore.call("recipientAt", day);
 
         // Assert
-        assertFalse(distributionsYesterDay.containsKey("test"));
+        assertFalse(distributionsYesterday.containsKey("test"));
         assertEquals(testDist.dist_percent, distributionsToday.get("test"));
     }
 

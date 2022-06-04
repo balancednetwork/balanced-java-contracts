@@ -56,9 +56,6 @@ public interface BalancedDollar extends IRC2, IRC2BurnableInterface, IRC2Mintabl
     BigInteger priceInLoop();
 
     @External(readonly = true)
-    BigInteger balanceOf(Address _owner);
-
-    @External(readonly = true)
     BigInteger lastPriceInLoop();
 
     @External

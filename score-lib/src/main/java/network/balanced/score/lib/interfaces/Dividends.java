@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 @ScoreInterface
-public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress, DaoFundAddress, BalnAddress,
+public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress, DaofundAddress, BalnAddress,
         Name, DexAddress, TokenFallback {
 
     @External(readonly = true)

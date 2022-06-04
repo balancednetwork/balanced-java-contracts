@@ -159,28 +159,10 @@ public interface Loans extends
     void liquidate(Address _owner);
 
     @External
-    void setAdmin(Address _address);
-
-    @External
     void setGovernance(Address _address);
 
     @External
-    void setDex(Address _address);
-
-    @External
     void setRebalance(Address _address);
-
-    @External
-    void setDividends(Address _address);
-
-    @External
-    void setReserve(Address _address);
-
-    @External
-    void setRewards(Address _address);
-
-    @External
-    void setStaking(Address _address);
 
     @External
     void setMiningRatio(BigInteger _ratio);

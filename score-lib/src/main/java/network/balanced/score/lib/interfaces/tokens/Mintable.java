@@ -15,22 +15,22 @@
  */
 
 package network.balanced.score.lib.interfaces.tokens;
+
+import foundation.icon.score.client.ScoreInterface;
 import score.Address;
-import score.annotation.Optional;
 import score.annotation.External;
 
 import java.math.BigInteger;
 
-import foundation.icon.score.client.ScoreInterface;
-
 @ScoreInterface
 public interface Mintable extends IRC2 {
-    @External
-    public void mint(BigInteger _amount); 
 
     @External
-    public void mintTo(Address _account, BigInteger _amount);
+    void mint(BigInteger _amount);
 
     @External
-    public void setMinter(Address _minter);
+    void mintTo(Address _account, BigInteger _amount);
+
+    @External
+    void setMinter(Address _minter);
 }
