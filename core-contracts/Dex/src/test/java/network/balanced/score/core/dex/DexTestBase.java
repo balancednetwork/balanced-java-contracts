@@ -48,9 +48,11 @@ class DexTestBase extends UnitTest {
 
     public void setup() throws Exception {
         dexScore = sm.deploy(ownerAccount, DexImpl.class, governanceScore.getAddress());
+        dexScore.invoke(governanceScore, "setAdmin", governanceScore.getAddress());
         dexScore.invoke(governanceScore, "setTimeOffset", BigInteger.valueOf(Context.getBlockTimestamp()));
         dexScoreSpy = (DexImpl) spy(dexScore.getInstance());
         dexScore.setInstance(dexScoreSpy);
+        dexScore.invoke(governanceScore, "turnDexOn");
     }
 
     protected void turnDexOn() {
@@ -58,21 +60,21 @@ class DexTestBase extends UnitTest {
     }
 
     protected void setupAddresses() {
-        dexScore.invoke(governanceScore, "setAdmin", adminAccount.getAddress());
+        dexScore.invoke(governanceScore, "setAdmin", governanceScore.getAddress());
 
         Map<String, Address> addresses = Map.of(
             "setDividends", dividendsScore.getAddress(),
             "setStaking", stakingScore.getAddress(),
             "setRewards", rewardsScore.getAddress(),
-            "setbnUSD", bnusdScore.getAddress(),
+            "setBnusd", bnusdScore.getAddress(),
             "setBaln", balnScore.getAddress(),
             "setSicx", sicxScore.getAddress(),
-            "setFeehandler", feehandlerScore.getAddress(),
+            "setFeeHandler", feehandlerScore.getAddress(),
             "setStakedLp", stakedLPScore.getAddress()
         );
         
         for (Map.Entry<String, Address> address : addresses.entrySet()) {
-            dexScore.invoke(adminAccount, address.getKey(), address.getValue());
+            dexScore.invoke(governanceScore, address.getKey(), address.getValue());
         }
     }
 

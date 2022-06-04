@@ -137,9 +137,18 @@ public class UnitTest extends TestBase {
         Address governance = (Address) contractUnderTest.call("getGovernance");
         assertNotEquals(caller.getAddress(), governance);
 
-        String expectedErrorMessage = "Authorization Check: Authorization failed. Caller: " + caller.getAddress() + " Authorized Caller: " + governance;
+        String expectedErrorMessage = "Reverted(0):Authorization Check: Authorization failed. Caller: " + caller.getAddress() + " Authorized Caller: " + governance;
         Executable executable = () -> contractUnderTest.invoke(caller, method, params);
         
+        expectErrorMessage(executable, expectedErrorMessage);;
+    }
+    public static void assertOnlyCallableByAdmin(Score contractUnderTest, String method, Object... params) {
+        Account caller = sm.createAccount();
+        Address admin = (Address) contractUnderTest.call("getAdmin");
+        assertNotEquals(caller.getAddress(), admin);
+        String expectedErrorMessage = "Reverted(0): Authorization Check: Authorization failed. Caller: " + caller.getAddress() + " Authorized Caller: " + admin;
+        Executable executable = () -> contractUnderTest.invoke(caller, method, params);
+
         expectErrorMessage(executable, expectedErrorMessage);;
     }
 }

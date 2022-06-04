@@ -357,7 +357,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
         // Assert.
         List<String> namedPools = (List<String>) dexScore.call("getNamedPools");
         assertEquals(expectedMarketNames, namedPools);
-        assertOnlyCallableByGovernance(dexScore, "setMarketName", poolId, poolName);
+        assertOnlyCallableByAdmin(dexScore, "setMarketName", poolId, poolName);
     }
     
     @Test
@@ -604,8 +604,8 @@ public class DexTestSettersAndGetters extends DexTestBase {
          BigInteger poolId = BigInteger.TWO;
  
           // Act.
-         supplyLiquidity(adminAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
-         supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+         supplyLiquidity(governanceScore, bnusdScore, balnScore, bnusdValue, balnValue, false);
+         supplyLiquidity(governanceScore, bnusdScore, balnScore, bnusdValue, balnValue, false);
  
           // Assert
          Integer totalDexAddresses = (int) dexScore.call( "totalDexAddresses", poolId);
