@@ -353,11 +353,10 @@ public class DividendsImpl implements Dividends {
             Address token = acceptedTokens.get(i);
 
             if (totalDividends.containsKey(token.toString()) && totalDividends.get(token.toString()).signum() > 0) {
-                Claimed(daofund, BigInteger.valueOf(start), BigInteger.valueOf(end), totalDividends.toString());
+                Claimed(daofund, BigInteger.valueOf(start), BigInteger.valueOf(end), dividendsMapToJson(totalDividends));
                 sendToken(daofund, totalDividends.get(token.toString()), token, "Daofund dividends");
             }
         }
-
     }
 
     @External
@@ -384,7 +383,7 @@ public class DividendsImpl implements Dividends {
         for (int i = 0; i < numberOfAcceptedTokens; i++) {
             Address token = acceptedTokens.get(i);
             if (totalDividends.containsKey(token.toString()) && totalDividends.get(token.toString()).signum() > 0) {
-                Claimed(account, BigInteger.valueOf(start), BigInteger.valueOf(end), totalDividends.toString());
+                Claimed(account, BigInteger.valueOf(start), BigInteger.valueOf(end), dividendsMapToJson(totalDividends));
                 sendToken(account, totalDividends.get(token.toString()), token, "User dividends");
             }
         }
@@ -669,6 +668,15 @@ public class DividendsImpl implements Dividends {
         completeDividendsCategories.add(BALN_HOLDERS);
         dividendsPercentage.set(DAO_FUND, BigInteger.valueOf(4).multiply(pow(BigInteger.TEN, 17)));
         dividendsPercentage.set(BALN_HOLDERS, BigInteger.valueOf(6).multiply(pow(BigInteger.TEN, 17)));
+    }
+
+    private String dividendsMapToJson(Map<String, BigInteger> map) {
+        StringBuilder mapAsJson = new StringBuilder("{");
+        for (String key : map.keySet()) {
+            mapAsJson.append("'" + key + "': " + map.get(key) + ", ");
+        }
+        mapAsJson.delete(mapAsJson.length()-2, mapAsJson.length()).append("}");
+        return mapAsJson.toString();
     }
 
     @EventLog(indexed = 3)
