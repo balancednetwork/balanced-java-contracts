@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -479,7 +479,7 @@ public class DividendsImpl implements Dividends {
             BigInteger low = BigInteger.ZERO;
             BigInteger high = totalSnapshotsTaken.subtract(BigInteger.ONE);
             while (high.compareTo(low) > 0) {
-                BigInteger mid = (low.add(high)).divide(BigInteger.TWO);
+                BigInteger mid = high.subtract((high.subtract(low)).divide(BigInteger.TWO));
                 DictDB<String, BigInteger> midValue = snapshot.at(mid);
                 BigInteger index = midValue.getOrDefault(IDS, BigInteger.ZERO);
                 if (index.equals(_day)) {
@@ -682,7 +682,7 @@ public class DividendsImpl implements Dividends {
     private String dividendsMapToJson(Map<String, BigInteger> map) {
         StringBuilder mapAsJson = new StringBuilder("{");
         for (String key : map.keySet()) {
-            mapAsJson.append("'" + key + "': " + map.get(key) + ", ");
+            mapAsJson.append("'").append(key).append("': ").append(map.get(key)).append(", ");
         }
         mapAsJson.delete(mapAsJson.length()-2, mapAsJson.length()).append("}");
         return mapAsJson.toString();
