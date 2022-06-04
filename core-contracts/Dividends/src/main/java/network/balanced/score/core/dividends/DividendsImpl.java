@@ -349,8 +349,6 @@ public class DividendsImpl implements Dividends {
         }
 
         int numberOfAcceptedTokens = acceptedTokens.size();
-        boolean doesEventLog = false;
-
 
         Map<String, BigInteger> nonZeroTokens = new HashMap<>();
         for (int i = 0; i < numberOfAcceptedTokens; i++) {
