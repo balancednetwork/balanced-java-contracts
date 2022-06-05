@@ -31,9 +31,9 @@ import scorex.util.ArrayList;
 import scorex.util.HashMap;
 
 import java.math.BigInteger;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import static network.balanced.score.core.rewards.utils.Check.continuousRewardsActive;
 import static network.balanced.score.core.rewards.utils.RewardsConstants.*;
@@ -272,9 +272,9 @@ public class RewardsImpl implements Rewards {
                 "set to 0 before removing.");
         // TODO this doesn't allow user to claim rewards from previous data source
         String topRecipient = recipients.pop();
-        if (!Objects.equals(topRecipient, _name)) {
+        if (!topRecipient.equals(_name)) {
             for (int i = 0; i < recipients.size(); i++) {
-                if (Objects.equals(recipients.get(i), _name)) {
+                if (recipients.get(i).equals(_name)) {
                     recipients.set(i, topRecipient);
                 }
             }
@@ -431,7 +431,13 @@ public class RewardsImpl implements Rewards {
             distributions.put(recipient, snapshot.at(low).get(AMOUNT));
         }
 
-        distributions.entrySet().removeIf(entry -> entry.getValue().equals(BigInteger.ZERO));
+        Iterator<Map.Entry<String, BigInteger>> it;
+        for (it = distributions.entrySet().iterator(); it.hasNext(); ) {
+            Map.Entry<String, BigInteger> entry = it.next();
+            if (entry.getValue().equals(BigInteger.ZERO)) {
+                it.remove();
+            }
+        }
 
         return distributions;
     }
