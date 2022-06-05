@@ -137,7 +137,7 @@ public class UnitTest extends TestBase {
         Address governance = (Address) contractUnderTest.call("getGovernance");
         assertNotEquals(caller.getAddress(), governance);
 
-        String expectedErrorMessage = "Reverted(0):Authorization Check: Authorization failed. Caller: " + caller.getAddress() + " Authorized Caller: " + governance;
+        String expectedErrorMessage = "Reverted(0): Authorization Check: Authorization failed. Caller: " + caller.getAddress() + " Authorized Caller: " + governance;
         Executable executable = () -> contractUnderTest.invoke(caller, method, params);
         
         expectErrorMessage(executable, expectedErrorMessage);;

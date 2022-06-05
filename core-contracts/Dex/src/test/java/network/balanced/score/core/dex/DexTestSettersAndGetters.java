@@ -27,8 +27,9 @@ public class DexTestSettersAndGetters extends DexTestBase {
     
     @BeforeEach
     public void configureContract() throws Exception {
-        super.setup();
+        dexScore = sm.deploy(ownerAccount, DexImpl.class, governanceScore.getAddress());
         setupAddresses();
+        super.setup();
     }
 
     @Test
@@ -608,8 +609,8 @@ public class DexTestSettersAndGetters extends DexTestBase {
          supplyLiquidity(governanceScore, bnusdScore, balnScore, bnusdValue, balnValue, false);
  
           // Assert
-         Integer totalDexAddresses = (int) dexScore.call( "totalDexAddresses", poolId);
-         assertEquals(2, totalDexAddresses);
+         BigInteger totalDexAddresses = (BigInteger) dexScore.call("totalDexAddresses", BigInteger.TWO);
+         assertEquals(BigInteger.TWO, totalDexAddresses);
     }
 
     @Test

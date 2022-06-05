@@ -496,7 +496,8 @@ public abstract class AbstractDex implements Dex {
 
     @External(readonly = true)
     public BigInteger totalDexAddresses(BigInteger _id) {
-        return BigInteger.valueOf(activeAddresses.get(_id.intValue()).length());
+        BigInteger value = BigInteger.valueOf(activeAddresses.get(_id.intValue()).length());
+        return value;
     }
 
     @External(readonly = true)

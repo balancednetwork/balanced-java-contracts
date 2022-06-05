@@ -47,8 +47,6 @@ class DexTestBase extends UnitTest {
     protected final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
 
     public void setup() throws Exception {
-        dexScore = sm.deploy(ownerAccount, DexImpl.class, governanceScore.getAddress());
-        dexScore.invoke(governanceScore, "setAdmin", governanceScore.getAddress());
         dexScore.invoke(governanceScore, "setTimeOffset", BigInteger.valueOf(Context.getBlockTimestamp()));
         dexScoreSpy = (DexImpl) spy(dexScore.getInstance());
         dexScore.setInstance(dexScoreSpy);
