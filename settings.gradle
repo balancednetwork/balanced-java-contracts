@@ -64,5 +64,8 @@ project(':BalancedDollar').projectDir = file("token-contracts/BalancedDollar")
 include(':Stability')
 project(':Stability').projectDir = file("util-contracts/Stability")
 
+include(':Loans')
+project(':Loans').projectDir = file("core-contracts/Loans")
+
 include(':Governance')
 project(':Governance').projectDir = file("core-contracts/Governance")

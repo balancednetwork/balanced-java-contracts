@@ -16,8 +16,7 @@
 
 package network.balanced.score.core.stakedlp;
 
-import com.eclipsesource.json.Json;
-import com.eclipsesource.json.JsonObject;
+import network.balanced.score.lib.interfaces.StakedLP;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -25,7 +24,6 @@ import score.annotation.External;
 import java.math.BigInteger;
 import java.util.Map;
 
-import network.balanced.score.lib.interfaces.StakedLP;
 import static network.balanced.score.core.stakedlp.Checks.*;
 
 public class StakedLPImpl implements StakedLP {
@@ -33,16 +31,16 @@ public class StakedLPImpl implements StakedLP {
     // Business Logic
     private static final DictDB<BigInteger, Boolean> supportedPools = Context.newDictDB("supportedPools",
             Boolean.class);
-    public static final BranchDB<Address, DictDB<BigInteger, BigInteger>> poolStakedDetails =
+    private static final BranchDB<Address, DictDB<BigInteger, BigInteger>> poolStakedDetails =
             Context.newBranchDB("poolStakeDetails", BigInteger.class);
-    public static final DictDB<BigInteger, BigInteger> totalStakedAmount = Context.newDictDB("totalStaked",
+    private static final DictDB<BigInteger, BigInteger> totalStakedAmount = Context.newDictDB("totalStaked",
             BigInteger.class);
 
     // Linked Contracts
-    public static final VarDB<Address> governance = Context.newVarDB("governanceAddress", Address.class);
-    public static final VarDB<Address> dex = Context.newVarDB("dexAddress", Address.class);
-    public static final VarDB<Address> rewards = Context.newVarDB("rewardsAddress", Address.class);
-    public static final VarDB<Address> admin = Context.newVarDB("adminAddress", Address.class);
+    static final VarDB<Address> governance = Context.newVarDB("governanceAddress", Address.class);
+    static final VarDB<Address> dex = Context.newVarDB("dexAddress", Address.class);
+    private static final VarDB<Address> rewards = Context.newVarDB("rewardsAddress", Address.class);
+    static final VarDB<Address> admin = Context.newVarDB("adminAddress", Address.class);
 
     public StakedLPImpl(Address governance) {
         Context.require(governance.isContract(), "StakedLP: Governance address should be a contract");
@@ -54,17 +52,16 @@ public class StakedLPImpl implements StakedLP {
      */
 
     @EventLog(indexed = 1)
-    protected void Stake(Address _owner, BigInteger _id, BigInteger _value) {}
+    public void Stake(Address _owner, BigInteger _id, BigInteger _value) {}
 
     @EventLog(indexed = 1)
-    protected void Unstake(Address _owner, BigInteger _id, BigInteger _value) {}
+    public void Unstake(Address _owner, BigInteger _id, BigInteger _value) {}
 
     @External(readonly = true)
     public String name() {
         return "Balanced StakedLP";
     }
 
-    // Contracts getters and setters
     @External(readonly = true)
     public Address getDex() {
         return dex.get();
@@ -84,7 +81,7 @@ public class StakedLPImpl implements StakedLP {
 
     @External
     public void setGovernance(Address governance) {
-        onlyAdmin();
+        onlyOwner();
         Context.require(governance.isContract(), "StakedLP: Governance address should be a contract");
         StakedLPImpl.governance.set(governance);
     }
@@ -107,7 +104,7 @@ public class StakedLPImpl implements StakedLP {
 
     @External
     public void setRewards(Address rewards) {
-        onlyAdmin();
+        onlyGovernance();
         Context.require(rewards.isContract(), "StakedLP: Rewards address should be a contract");
         StakedLPImpl.rewards.set(rewards);
     }
@@ -145,7 +142,6 @@ public class StakedLPImpl implements StakedLP {
 
     @External
     public void unstake(BigInteger id, BigInteger value) {
-
         Address caller = Context.getCaller();
         Context.require(value.compareTo(BigInteger.ZERO) > 0, "StakedLP: Cannot unstake less than zero value");
 
@@ -202,6 +198,7 @@ public class StakedLPImpl implements StakedLP {
         Context.call(rewards.get(), "updateRewardsData", poolName, previousTotal, user, previousBalance);
     }
 
+    @SuppressWarnings("unchecked")
     private boolean isNamedPool(BigInteger id) {
         if (!supportedPools.getOrDefault(id, Boolean.FALSE)) {
             String poolName = (String) Context.call(dex.get(), "getPoolName", id);

@@ -14,16 +14,26 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.interfaces.addresses;
+package network.balanced.score.core.loans.utils;
 
-import score.Address;
-import score.annotation.External;
+import score.Context;
+import score.VarDB;
 
-public interface RebalancingAddress {
+public class IdFactory {
+    private static final String _NAME = "_ID_FACTORY";
+    private static VarDB<Integer> uid;
+    
+    public IdFactory (String varKey) {
+        uid = Context.newVarDB(varKey + _NAME + "_uid", Integer.class);
+    }
 
-    @External
-    void setRebalance(Address _address);
+    public int getUid() {
+        int newUid = uid.getOrDefault(0) + 1;
+        uid.set(newUid);
+        return newUid;
+    }
 
-    @External(readonly = true)
-    Address getRebalance();
+    public int getLastUid() {
+        return uid.getOrDefault(0);
+    }
 }

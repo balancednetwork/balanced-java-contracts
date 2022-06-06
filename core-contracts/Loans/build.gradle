@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,9 @@
 
 import network.balanced.score.dependencies.Dependencies
 
-version = '0.0.1'
+version = '0.1.0'
 
 repositories {
-    // Use Maven Central for resolving dependencies.
     mavenCentral()
 }
 
@@ -27,23 +26,27 @@ dependencies {
     compileOnly Dependencies.javaeeApi
     implementation project(':score-lib')
 
-    testImplementation project(':test-lib')
-    testImplementation Dependencies.javaeeUnitTest
-    testImplementation Dependencies.javaeeTokens
-    testImplementation Dependencies.json
+    implementation Dependencies.javaeeScorex
+    implementation Dependencies.minimalJson
 
+    testImplementation Dependencies.javaeeUnitTest
     testImplementation Dependencies.junitJupiter
     testRuntimeOnly Dependencies.junitJupiterEngine
     testImplementation Dependencies.mockitoCore
     testImplementation Dependencies.mockitoInline
+    testImplementation Dependencies.javaeeTokens
+    testImplementation project(':test-lib')
 }
 
 optimizedJar {
-    mainClassName = 'network.balanced.score.core.stakedlp.StakedLPImpl'
+    mainClassName = 'network.balanced.score.core.loans.LoansImpl'
+
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
         configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
     }
+
+    enableDebug = false
 }
 
 deployJar {
@@ -56,19 +59,24 @@ deployJar {
             uri = 'http://localhost:9082/api/v3'
             nid = 0x3
         }
-        mainnet {
-            uri = 'https://ctz.solidwallet.io/api/v3'
-            nid = 0x1
-        }
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
     parameters {
-        arg('governance', 'cx83c7f9dc24fead0ea3a895ed66d984f319ef7800')
+        arg('_governance', 'hxe5679f118e093657b71967b0dfddb4d00cbd80b4')
     }
 }
 
-tasks.named('test') {
-    // Use JUnit Platform for unit tests.
+test {
     useJUnitPlatform()
+    finalizedBy jacocoTestReport 
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = false
+        csv.required = false
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+    }
 }

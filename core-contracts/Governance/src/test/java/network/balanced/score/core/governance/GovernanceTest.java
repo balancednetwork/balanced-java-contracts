@@ -20,6 +20,7 @@ import static network.balanced.score.core.governance.GovernanceConstants.TAG;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -1078,7 +1079,7 @@ public class GovernanceTest extends GovernanceTestBase {
         sm.call(owner, intitalICX, governance.getAddress(), "createBnusdMarket");
 
         // Assert
-        verify(staking.mock).stakeICX();
+        verify(staking.mock).stakeICX(eq(governance.getAddress()), any(byte[].class));
 
         BigInteger amount = EXA.multiply(intitalICX).divide(bnusdPrice.multiply(BigInteger.valueOf(7)));
         verify(loans.mock).depositAndBorrow("bnUSD", amount, new Address(new byte[21]), BigInteger.ZERO);
