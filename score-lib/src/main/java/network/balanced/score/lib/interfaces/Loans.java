@@ -18,6 +18,8 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.*;
+import network.balanced.score.lib.interfaces.base.Name;
+import network.balanced.score.lib.interfaces.base.TokenFallback;
 import network.balanced.score.lib.structs.PrepDelegations;
 import score.Address;
 import score.annotation.External;
@@ -29,14 +31,8 @@ import java.util.List;
 import java.util.Map;
 
 @ScoreInterface
-public interface Loans extends
-        RewardsAddress, 
-        DividendsAddress,
-        StakingAddress,
-        ReserveAddress,
-        RebalancingAddress,
-        DexAddress,
-        AdminAddress {
+public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, GovernanceAddress, StakingAddress,
+        RebalancingAddress, DividendsAddress, ReserveAddress, RewardsAddress {
 
     @External
     void turnLoansOn();
@@ -49,6 +45,9 @@ public interface Loans extends
 
     @External(readonly = true)
     void migrateUserData(Address address);
+
+    @External(readonly = true)
+    Map<String, Object> userMigrationDetails(Address _address);
 
     @External
     void setContinuousRewardsDay(BigInteger _day);
@@ -91,7 +90,7 @@ public interface Loans extends
 
     @External(readonly = true)
     Map<String, Object> getPositionByIndex(int _index, BigInteger _day);
-
+ 
     @External(readonly = true)
     Map<String, Map<String, Object>> getAvailableAssets();
 
@@ -109,11 +108,12 @@ public interface Loans extends
 
     @External
     void addAsset(Address _token_address, boolean _active, boolean _collateral);
+
     @External
     void toggleAssetActive(String _symbol);
 
     @External
-    boolean precompute(BigInteger _snapshot_id, int batch_size);
+    boolean precompute(BigInteger _snapshot_id, BigInteger batch_size);
 
     @External(readonly = true)
     BigInteger getTotalValue(String _name, BigInteger _snapshot_id);
@@ -128,10 +128,10 @@ public interface Loans extends
     BigInteger getDataCount(BigInteger _snapshot_id);
 
     @External(readonly = true)
-    Map<Address, BigInteger> getDataBatch(String _name, BigInteger _snapshot_id, int _limit, @Optional int _offset);
+    Map<String, BigInteger> getDataBatch(String _name, BigInteger _snapshot_id, int _limit, @Optional int _offset);
 
     @External
-    boolean checkForNewDay();
+    boolean checkForNewDay();    
 
     @External
     void checkDistributions(BigInteger _day, boolean _new_day);
@@ -157,30 +157,6 @@ public interface Loans extends
 
     @External
     void liquidate(Address _owner);
-
-    @External
-    void setAdmin(Address _address);
-
-    @External
-    void setGovernance(Address _address);
-
-    @External
-    void setDex(Address _address);
-
-    @External
-    void setRebalance(Address _address);
-
-    @External
-    void setDividends(Address _address);
-
-    @External
-    void setReserve(Address _address);
-
-    @External
-    void setRewards(Address _address);
-
-    @External
-    void setStaking(Address _address);
 
     @External
     void setMiningRatio(BigInteger _ratio);
@@ -220,5 +196,4 @@ public interface Loans extends
 
     @External(readonly= true)
     Map<String, Object> getParameters();
-
 }

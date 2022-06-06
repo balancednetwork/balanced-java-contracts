@@ -496,7 +496,8 @@ public class GovernanceImpl {
 
         BigInteger price = Context.call(BigInteger.class, bnUSDAddress, "priceInLoop");
         BigInteger amount = EXA.multiply(value).divide(price.multiply(BigInteger.valueOf(7)));
-        Context.call(value.divide(BigInteger.valueOf(7)), stakingAddress, "stakeICX");
+        Context.call(value.divide(BigInteger.valueOf(7)), stakingAddress, "stakeICX", Context.getAddress(),
+                new byte[0]);
         Context.call(Context.getBalance(Context.getAddress()), loansAddress, "depositAndBorrow", "bnUSD", amount, new Address(new byte[21]), BigInteger.ZERO);
 
         BigInteger bnUSDValue = Context.call(BigInteger.class, bnUSDAddress, "balanceOf", Context.getAddress());
