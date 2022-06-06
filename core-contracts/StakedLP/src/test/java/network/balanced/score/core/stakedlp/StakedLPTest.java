@@ -19,31 +19,25 @@ package network.balanced.score.core.stakedlp;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
-import com.iconloop.score.test.TestBase;
+import network.balanced.score.lib.interfaces.DexScoreInterface;
+import network.balanced.score.lib.interfaces.RewardsScoreInterface;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockContract;
-import network.balanced.score.lib.interfaces.*;
-import org.json.JSONObject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.mockito.Mockito;
-
 import score.Address;
 
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
-import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.*;
 
 public class StakedLPTest extends UnitTest {
 
@@ -64,8 +58,8 @@ public class StakedLPTest extends UnitTest {
     @BeforeEach
     public void setup() throws Exception {
         stakedLpScore = sm.deploy(owner, StakedLPImpl.class, governanceScore.getAddress());
-        dex = new MockContract<DexScoreInterface>(DexScoreInterface.class, sm, owner);
-        rewards = new MockContract<RewardsScoreInterface>(RewardsScoreInterface.class, sm, owner);
+        dex = new MockContract<>(DexScoreInterface.class, sm, owner);
+        rewards = new MockContract<>(RewardsScoreInterface.class, sm, owner);
 
         when(dex.mock.getPoolName(BigInteger.ONE)).thenReturn(poolOneName);
         when(dex.mock.getPoolName(BigInteger.TWO)).thenReturn(poolTwoName);
@@ -116,7 +110,7 @@ public class StakedLPTest extends UnitTest {
         assertEquals(governanceScore.getAddress(), stakedLpScore.call("getGovernance"));
         Address admin = setAndGetAdmin();
         Address newGovernance = Account.newScoreAccount(2).getAddress();
-        stakedLpScore.invoke(Account.getAccount(admin), "setGovernance", newGovernance);
+        stakedLpScore.invoke(owner, "setGovernance", newGovernance);
         assertEquals(newGovernance, stakedLpScore.call("getGovernance"));
     }
 
@@ -194,8 +188,7 @@ public class StakedLPTest extends UnitTest {
         assertEquals(BigInteger.valueOf(20L), stakedLpScore.call("totalStaked", BigInteger.TWO));
 
         stakeLpTokens(bob, BigInteger.TWO, BigInteger.valueOf(20L));
-        verify(rewards.mock).updateRewardsData((String) poolTwoName,
-                BigInteger.valueOf(20L), bob.getAddress(), BigInteger.ZERO);
+        verify(rewards.mock).updateRewardsData(poolTwoName, BigInteger.valueOf(20L), bob.getAddress(), BigInteger.ZERO);
         assertEquals(BigInteger.valueOf(40L), stakedLpScore.call("totalStaked", BigInteger.TWO));
         assertEquals(BigInteger.valueOf(20L), stakedLpScore.call("balanceOf", alice.getAddress(), BigInteger.TWO));
         assertEquals(BigInteger.valueOf(20L), stakedLpScore.call("balanceOf", bob.getAddress(), BigInteger.TWO));
