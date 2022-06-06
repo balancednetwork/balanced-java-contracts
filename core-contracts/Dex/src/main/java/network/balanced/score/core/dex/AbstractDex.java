@@ -582,9 +582,13 @@ public abstract class AbstractDex implements Dex {
         return (BigInteger) Context.call(staking.get(), "getTodayRate");
     }
 
+    boolean isRestrictedPoolId(Integer id) {
+        return (id < FIRST_NON_BALANCED_POOL || id == USDS_BNUSD_ID || id == IUSDT_BNUSD_ID);
+    }
+
     boolean isLockingPool(Integer id) {
         boolean stakedLpLaunched = stakedLp.get() != null;
-        boolean restrictedPoolId = (id < FIRST_NON_BALANCED_POOL || id == USDS_BNUSD_ID || id == IUSDT_BNUSD_ID);
+        boolean restrictedPoolId = isRestrictedPoolId(id);
         return (restrictedPoolId && !stakedLpLaunched) || id.equals(SICXICX_POOL_ID);
     }
 
