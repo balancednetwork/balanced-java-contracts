@@ -19,7 +19,7 @@ package network.balanced.score.lib.interfaces.addresses;
 import score.Address;
 import score.annotation.External;
 
-public interface DaofundAddress {
+public interface DaoFundAddress {
 
     @External
     void setDaofund(Address _address);
