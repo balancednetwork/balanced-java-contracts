@@ -16,38 +16,32 @@
 
 package network.balanced.score.core.governance;
 
-import score.Address;
-import score.Context;
-import score.UserRevertException;
-import score.UserRevertedException;
-import score.RevertedException;
-import score.VarDB;
-import score.annotation.External;
-import score.annotation.Optional;
-import score.annotation.Payable;
-import score.annotation.EventLog;
-import scorex.util.ArrayList;
-import scorex.util.HashMap;
-
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
+import network.balanced.score.lib.structs.BalancedAddresses;
+import network.balanced.score.lib.structs.Disbursement;
+import network.balanced.score.lib.structs.DistributionPercentage;
+import network.balanced.score.lib.structs.PrepDelegations;
+import score.Address;
+import score.Context;
+import score.VarDB;
+import score.annotation.EventLog;
+import score.annotation.External;
+import score.annotation.Optional;
+import score.annotation.Payable;
+import scorex.util.ArrayList;
+import scorex.util.HashMap;
 
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Map.entry;
-
 import static network.balanced.score.core.governance.GovernanceConstants.*;
-import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.Check.onlyOwner;
+import static network.balanced.score.lib.utils.Check.optionalDefault;
 import static network.balanced.score.lib.utils.Math.pow;
-
-import network.balanced.score.lib.structs.BalancedAddresses;
-import network.balanced.score.lib.structs.Disbursement;
-import network.balanced.score.lib.structs.DistributionPercentage;
-import network.balanced.score.lib.structs.PrepDelegations;
 
 public class GovernanceImpl {
     public final VarDB<BigInteger> launchDay = Context.newVarDB(LAUNCH_DAY, BigInteger.class);
@@ -282,8 +276,7 @@ public class GovernanceImpl {
         Address from = Context.getCaller();
         BigInteger snapshot = proposal.voteSnapshot.get();
 
-        BigInteger userStaked = Context.call(BigInteger.class, Addresses.get("baln"), "stakedBalanceOfAt", from, snapshot);
-        BigInteger totalVote = userStaked;
+        BigInteger totalVote = Context.call(BigInteger.class, Addresses.get("baln"), "stakedBalanceOfAt", from, snapshot);
 
         Context.require(!totalVote.equals(BigInteger.ZERO), TAG + "Balanced tokens need to be staked to cast the vote.");
 
@@ -335,9 +328,7 @@ public class GovernanceImpl {
 
     @External(readonly = true)
     public BigInteger totalBaln(BigInteger _day) {
-        BigInteger stakedBaln = Context.call(BigInteger.class, Addresses.get("baln"), "totalStakedBalanceOfAt", _day);
-
-        return stakedBaln;
+        return Context.call(BigInteger.class, Addresses.get("baln"), "totalStakedBalanceOfAt", _day);
     }
 
     @External
@@ -453,8 +444,8 @@ public class GovernanceImpl {
                     Addresses.get("loans"),
                     "addAsset",
                     Addresses.get((String) asset.get("address")),
-                    (boolean) asset.get("active"),
-                    (boolean) asset.get("collateral")
+                    asset.get("active"),
+                    asset.get("collateral")
             );
         }
     }
@@ -835,6 +826,7 @@ public class GovernanceImpl {
         _addAcceptedTokens(_token);
     }
 
+    @SuppressWarnings("unchecked")
     @External
     public void setAssetOracle(String _symbol, Address _address) {
         onlyOwner();
@@ -845,6 +837,7 @@ public class GovernanceImpl {
         Context.call(token, "setOracle", _address);
     }
 
+    @SuppressWarnings("unchecked")
     @External
     public void setAssetOracleName(String _symbol, String _name) {
         onlyOwner();
@@ -855,6 +848,7 @@ public class GovernanceImpl {
         Context.call(token, "setOracleName", _name);
     }
 
+    @SuppressWarnings("unchecked")
     @External
     public void setAssetMinInterval(String _symbol, BigInteger _interval) {
         onlyOwner();
@@ -1049,7 +1043,7 @@ public class GovernanceImpl {
         Context.call(Addresses.get("dividends"), "setDividendsCategoryPercentage", (Object) _dist_list);
     }
 
-    // Unreacable in current version
+    // Unreachable in current version
     // public void setPoolLpFee(BigInteger _value) {
     //     Context.call(Addresses.get("dex"), "setPoolLpFee",  _value);
     // }
@@ -1124,6 +1118,7 @@ public class GovernanceImpl {
     }
 
     @EventLog(indexed = 2)
-    void VoteCast(String vote_name, boolean vote, Address voter, BigInteger stake, BigInteger total_for, BigInteger total_against) {
+    public void VoteCast(String vote_name, boolean vote, Address voter, BigInteger stake, BigInteger total_for,
+                   BigInteger total_against) {
     }
 }
