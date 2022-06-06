@@ -1,16 +1,30 @@
+/*
+ * Copyright (c) 2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package network.balanced.score.core.governance;
-
-import static java.util.Map.entry;
-import static network.balanced.score.core.governance.GovernanceConstants.ADDRESSES;
-import static network.balanced.score.core.governance.GovernanceConstants.ADMIN_ADDRESSES;
-import static network.balanced.score.core.governance.GovernanceConstants.SETTERS;
-
-import java.util.Map;
 
 import network.balanced.score.lib.structs.BalancedAddresses;
 import score.Address;
 import score.Context;
 import score.VarDB;
+import scorex.util.HashMap;
+
+import java.util.Map;
+
+import static network.balanced.score.core.governance.GovernanceConstants.*;
 
 public class Addresses {
     public static final VarDB<Address> loans = Context.newVarDB("loans", Address.class);
@@ -60,24 +74,24 @@ public class Addresses {
     }
 
     public static Map<String, Address> getAddresses() {
-        return Map.ofEntries(
-            entry("loans", loans.get()),
-            entry("dex", dex.get()),
-            entry("staking", staking.get()),
-            entry("rewards", rewards.get()),
-            entry("reserve", reserve.get()),
-            entry("dividends", dividends.get()),
-            entry("daofund", daofund.get()),
-            entry("oracle", oracle.get()),
-            entry("sicx", sicx.get()),
-            entry("bnUSD", bnUSD.get()),
-            entry("baln", baln.get()),
-            entry("bwt", bwt.get()),
-            entry("rebalancing", rebalancing.get()),
-            entry("router", router.get()),
-            entry("feehandler", feehandler.get()),
-            entry("stakedLp", stakedLp.get())
-        );
+        Map<String, Address> addressData = new HashMap<>();
+        addressData.put("loans", loans.get());
+        addressData.put("dex", dex.get());
+        addressData.put("staking", staking.get());
+        addressData.put("rewards", rewards.get());
+        addressData.put("reserve", reserve.get());
+        addressData.put("dividends", dividends.get());
+        addressData.put("daofund", daofund.get());
+        addressData.put("oracle", oracle.get());
+        addressData.put("sicx", sicx.get());
+        addressData.put("bnUSD", bnUSD.get());
+        addressData.put("baln", baln.get());
+        addressData.put("bwt", bwt.get());
+        addressData.put("rebalancing", rebalancing.get());
+        addressData.put("router", router.get());
+        addressData.put("feehandler", feehandler.get());
+        addressData.put("stakedLp", stakedLp.get());
+        return addressData;
     }
 
     public static void setAddress(String contract) {
