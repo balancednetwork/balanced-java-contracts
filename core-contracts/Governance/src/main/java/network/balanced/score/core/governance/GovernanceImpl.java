@@ -413,7 +413,7 @@ public class GovernanceImpl {
 
         voteData.put("id", _vote_index);
         voteData.put("name", proposal.name.getOrDefault(""));
-        voteData.put("proposer", proposal.proposer.getOrDefault(Address.fromString("")));
+        voteData.put("proposer", proposal.proposer.getOrDefault(EOA_ZERO));
         voteData.put("description", proposal.description.getOrDefault(""));
         voteData.put("majority", proposal.majority.getOrDefault(BigInteger.ZERO));
         voteData.put("status", proposal.status.getOrDefault(""));
