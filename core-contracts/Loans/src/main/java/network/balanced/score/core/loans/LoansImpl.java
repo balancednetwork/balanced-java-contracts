@@ -306,10 +306,10 @@ public class LoansImpl implements Loans {
     }
 
     @External
-    public boolean precompute(BigInteger _snapshot_id, int batch_size) {
+    public boolean precompute(BigInteger _snapshot_id, BigInteger batch_size) {
         only(rewards);
         checkForNewDay();
-        return PositionsDB.calculateSnapshot(_snapshot_id, batch_size);
+        return PositionsDB.calculateSnapshot(_snapshot_id, batch_size.intValue());
     }
 
 

@@ -1199,8 +1199,8 @@ class LoansTest extends LoansTestBase {
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
 
         BigInteger day = (BigInteger) loans.call("getDay");
-        loans.invoke(rewards.account, "precompute", day, 0);
-        loans.invoke(rewards.account, "precompute", day, 2);
+        loans.invoke(rewards.account, "precompute", day, BigInteger.valueOf(0));
+        loans.invoke(rewards.account, "precompute", day, BigInteger.valueOf(2));
 
         // Assert
         int expectedNonZeroPositionsToAdd = 0;
@@ -1236,7 +1236,7 @@ class LoansTest extends LoansTestBase {
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
 
         BigInteger day = (BigInteger) loans.call("getDay");
-        loans.invoke(rewards.account, "precompute", day, 0);
+        loans.invoke(rewards.account, "precompute", day, BigInteger.valueOf(0));
 
         // Assert
         int expectedNonZeroPositionsToAdd = 0;
@@ -1280,8 +1280,8 @@ class LoansTest extends LoansTestBase {
 
         BigInteger day = (BigInteger) loans.call("getDay");
 
-        loans.invoke(rewards.account, "precompute", day, 0);
-        loans.invoke(rewards.account, "precompute", day, 3);
+        loans.invoke(rewards.account, "precompute", day, BigInteger.valueOf(0));
+        loans.invoke(rewards.account, "precompute", day, BigInteger.valueOf(3));
 
         sm.getBlock().increase(DAY);
         loans.invoke(admin, "checkForNewDay");
@@ -1292,8 +1292,8 @@ class LoansTest extends LoansTestBase {
 
         day = (BigInteger) loans.call("getDay");
 
-        loans.invoke(rewards.account, "precompute", day, 0);
-        loans.invoke(rewards.account, "precompute", day, 2);
+        loans.invoke(rewards.account, "precompute", day, BigInteger.valueOf(0));
+        loans.invoke(rewards.account, "precompute", day, BigInteger.valueOf(2));
 
         // Assert
         int expectedNonZeroPositionsToAdd = 0;
@@ -1329,8 +1329,8 @@ class LoansTest extends LoansTestBase {
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
 
         BigInteger day = (BigInteger) loans.call("getDay");
-        loans.invoke(rewards.account, "precompute", day, 0);
-        loans.invoke(rewards.account, "precompute", day, 1);
+        loans.invoke(rewards.account, "precompute", day, BigInteger.valueOf(0));
+        loans.invoke(rewards.account, "precompute", day, BigInteger.valueOf(1));
 
         // Assert
         int expectedNonZeroPositionsToAdd = 0;
@@ -1366,9 +1366,9 @@ class LoansTest extends LoansTestBase {
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
 
         BigInteger day = (BigInteger) loans.call("getDay");
-        loans.invoke(rewards.account, "precompute", day, 0);
-        loans.invoke(rewards.account, "precompute", day, 1);
-        loans.invoke(rewards.account, "precompute", day, 1);
+        loans.invoke(rewards.account, "precompute", day, BigInteger.valueOf(0));
+        loans.invoke(rewards.account, "precompute", day, BigInteger.valueOf(1));
+        loans.invoke(rewards.account, "precompute", day, BigInteger.valueOf(1));
 
         // Assert
         int expectedNonZeroPositionsToAdd = 0;
@@ -1411,16 +1411,16 @@ class LoansTest extends LoansTestBase {
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
 
         BigInteger day = (BigInteger) loans.call("getDay");
-        loans.invoke(rewards.account, "precompute", day, 0);
-        loans.invoke(rewards.account, "precompute", day, 2);
+        loans.invoke(rewards.account, "precompute", day, BigInteger.valueOf(0));
+        loans.invoke(rewards.account, "precompute", day, BigInteger.valueOf(2));
         sm.getBlock().increase(DAY);
 
         // Day 2
         takeLoanICX(accounts.get(2), "bnUSD", accountTwoCollateral, accountTwoLoan);
 
         day = (BigInteger) loans.call("getDay");
-        loans.invoke(rewards.account, "precompute", day, 0);
-        loans.invoke(rewards.account, "precompute", day, 3);
+        loans.invoke(rewards.account, "precompute", day, BigInteger.valueOf(0));
+        loans.invoke(rewards.account, "precompute", day, BigInteger.valueOf(3));
         sm.getBlock().increase(DAY);
 
         // Day 3
@@ -1428,8 +1428,8 @@ class LoansTest extends LoansTestBase {
         loans.invoke(accounts.get(1), "returnAsset", "bnUSD", accountOneRepaidDebt, true);
 
         day = (BigInteger) loans.call("getDay");
-        loans.invoke(rewards.account, "precompute", day, 0);
-        loans.invoke(rewards.account, "precompute", day, 3);
+        loans.invoke(rewards.account, "precompute", day, BigInteger.valueOf(0));
+        loans.invoke(rewards.account, "precompute", day, BigInteger.valueOf(3));
         sm.getBlock().increase(DAY);
 
         // Assert
@@ -1476,16 +1476,16 @@ class LoansTest extends LoansTestBase {
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
 
         BigInteger day = (BigInteger) loans.call("getDay");
-        loans.invoke(rewards.account, "precompute", day, 0);
-        loans.invoke(rewards.account, "precompute", day, 2);
+        loans.invoke(rewards.account, "precompute", day, BigInteger.valueOf(0));
+        loans.invoke(rewards.account, "precompute", day, BigInteger.valueOf(2));
         sm.getBlock().increase(DAY);
 
         // Day 2
         takeLoanICX(accounts.get(2), "bnUSD", accountTwoCollateral, accountTwoLoan);
 
         day = (BigInteger) loans.call("getDay");
-        loans.invoke(rewards.account, "precompute", day, 0);
-        loans.invoke(rewards.account, "precompute", day, 3);
+        loans.invoke(rewards.account, "precompute", day, BigInteger.valueOf(0));
+        loans.invoke(rewards.account, "precompute", day, BigInteger.valueOf(3));
         sm.getBlock().increase(DAY);
 
         // Day 3
