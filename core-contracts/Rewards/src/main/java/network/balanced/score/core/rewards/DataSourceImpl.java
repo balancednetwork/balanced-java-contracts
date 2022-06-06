@@ -125,8 +125,14 @@ public class DataSourceImpl {
 
 
     public Map<String, BigInteger> loadCurrentSupply(Address owner) {
-        DataSourceScoreInterface datasource = new DataSourceScoreInterface(getContractAddress());
-        return datasource.getBalanceAndSupply(getName(), owner);
+        try {
+            DataSourceScoreInterface datasource = new DataSourceScoreInterface(getContractAddress());
+            return datasource.getBalanceAndSupply(getName(), owner);
+        } catch (Exception e ) {
+            return Map.of("_totalSupply", BigInteger.ZERO,
+                          "_balance", BigInteger.ZERO
+            );
+        }
     }
 
     public BigInteger updateSingleUserData(BigInteger currentTime, BigInteger prevTotalSupply, Address user,
@@ -243,8 +249,14 @@ public class DataSourceImpl {
         BigInteger day = getDay();
         String name = getName();
 
-        Boolean precomputeDone = (Boolean) RewardsImpl.call(getContractAddress(), "precompute", day,
+        Object precomputeDoneObj = RewardsImpl.call(getContractAddress(), "precompute", day,
                 BigInteger.valueOf(batchSize));
+        boolean precomputeDone;
+        try {
+            precomputeDone = (boolean)precomputeDoneObj;
+        } catch (Exception e) {
+            precomputeDone = !((BigInteger)precomputeDoneObj).equals(BigInteger.ZERO);
+        }
 
         boolean localPreCompute = getPrecomp();
         if (!localPreCompute && precomputeDone) {
