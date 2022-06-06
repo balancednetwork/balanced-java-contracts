@@ -28,12 +28,24 @@ repositories {
 
 
 dependencies {
+    implementation Dependencies.iconSdk
+    implementation project(':score-lib')
+    annotationProcessor Dependencies.javaeeScoreClient
+    implementation Dependencies.javaeeScoreClient
+    implementation Dependencies.junitJupiterApi
+    implementation Dependencies.jacksonDatabind
     implementation Dependencies.javaeeUnitTest
     implementation Dependencies.junitJupiter
     runtimeOnly Dependencies.junitJupiterEngine
     implementation Dependencies.mockitoCore
     implementation Dependencies.json
     implementation Dependencies.javaeeScorex
+
+    implementation Dependencies.iconSdk
+
+
+    implementation Dependencies.javaFaker
+
 }
 
 optimizedJar {

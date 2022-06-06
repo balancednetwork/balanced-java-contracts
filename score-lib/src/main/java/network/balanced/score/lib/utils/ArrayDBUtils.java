@@ -20,22 +20,22 @@ import score.Address;
 import score.ArrayDB;
 
 public class ArrayDBUtils {
-    public static boolean arrayDbContains(ArrayDB<Address> arrayDB, Address address) {
+    public static <T> Boolean arrayDbContains(ArrayDB<T> arrayDB, T item) {
         final int size = arrayDB.size();
         for (int i = 0; i < size; i++) {
-            if (arrayDB.get(i).equals(address)) {
+            if (arrayDB.get(i).equals(item)) {
                 return true;
             }
         }
         return false;
     }
 
-    public static boolean removeFromArraydb(Address _item, ArrayDB<Address> _array) {
+    public static <T> Boolean removeFromArraydb(T _item, ArrayDB<T> _array) {
         final int size = _array.size();
         if (size < 1) {
             return false;
         }
-        Address top = _array.get(size - 1);
+        T top = _array.get(size - 1);
         for (int i = 0; i < size; i++) {
             if (_array.get(i).equals(_item)) {
                 _array.set(i, top);

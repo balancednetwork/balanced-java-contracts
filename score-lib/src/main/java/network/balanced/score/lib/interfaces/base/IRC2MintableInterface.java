@@ -25,6 +25,12 @@ import java.math.BigInteger;
 public interface IRC2MintableInterface {
 
     @External
+    void setMinter(Address _address);
+
+    @External(readonly = true)
+    Address getMinter();
+
+    @External
     void mint(BigInteger _amount, @Optional byte[] _data);
 
     @External

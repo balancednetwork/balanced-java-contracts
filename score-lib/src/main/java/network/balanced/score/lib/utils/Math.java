@@ -16,6 +16,9 @@
 
 package network.balanced.score.lib.utils;
 
+import com.eclipsesource.json.JsonValue;
+import score.UserRevertedException;
+
 import java.math.BigInteger;
 
 public class Math {
@@ -25,5 +28,26 @@ public class Math {
             res = res.multiply(base);
         }
         return res;
+    }
+
+    public static BigInteger convertToNumber(JsonValue value) {
+        if (value == null) {
+            return null;
+        }
+        if (value.isString()) {
+            String number = value.asString();
+            try {
+                if (number.startsWith("0x") || number.startsWith("-0x")) {
+                    return new BigInteger(number.replace("0x", ""), 16);
+                } else {
+                    return new BigInteger(number);
+                }
+            } catch (NumberFormatException e) {
+                throw new UserRevertedException("Invalid numeric value: " + number);
+            }
+        } else if (value.isNumber()) {
+            return new BigInteger(value.toString());
+        }
+        throw new UserRevertedException("Invalid value format for number in json: " + value);
     }
 }

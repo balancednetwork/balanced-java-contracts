@@ -27,6 +27,9 @@ import score.annotation.Optional;
 
 import java.math.BigInteger;
 
+import foundation.icon.score.client.ScoreInterface;
+
+@ScoreInterface
 public interface WorkerToken extends GovernanceAddress, AdminAddress, BalnAddress, TokenFallback, IRC2 {
 
     @External
