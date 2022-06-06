@@ -81,8 +81,8 @@ public class GovernanceImpl {
     public Map<String, BigInteger> getVotersCount(BigInteger vote_index) {
         ProposalDB proposal = new ProposalDB(vote_index);
         return Map.of(
-            "for_voters", proposal.forVotersCount.getOrDefault(BigInteger.ZERO),
-            "against_voters", proposal.againstVotersCount.getOrDefault(BigInteger.ZERO)
+                "for_voters", proposal.forVotersCount.getOrDefault(BigInteger.ZERO),
+                "against_voters", proposal.againstVotersCount.getOrDefault(BigInteger.ZERO)
         );
     }
 
@@ -99,16 +99,16 @@ public class GovernanceImpl {
 
     @External(readonly = true)
     public BigInteger getVoteDuration() {
-        return voteDuration.get();
+        return voteDuration.getOrDefault(BigInteger.ZERO);
     }
 
     @External
     public void setTimeOffset(BigInteger offset) {
         onlyOwner();
         timeOffset.set(offset);
-        Context.call(Addresses.get("loans"), "setTimeOffset",  offset);
-        Context.call(Addresses.get("rewards"), "setTimeOffset",  offset);
-        Context.call(Addresses.get("dex"), "setTimeOffset",  offset);
+        Context.call(Addresses.get("loans"), "setTimeOffset", offset);
+        Context.call(Addresses.get("rewards"), "setTimeOffset", offset);
+        Context.call(Addresses.get("dex"), "setTimeOffset", offset);
     }
 
     @External(readonly = true)
@@ -119,15 +119,15 @@ public class GovernanceImpl {
     @External
     public void setContinuousRewardsDay(BigInteger _day) {
         onlyOwner();
-        Context.call(Addresses.get("loans"), "setContinuousRewardsDay",  _day);
-        Context.call(Addresses.get("rewards"), "setContinuousRewardsDay",  _day);
-        Context.call(Addresses.get("dex"), "setContinuousRewardsDay",  _day);
+        Context.call(Addresses.get("loans"), "setContinuousRewardsDay", _day);
+        Context.call(Addresses.get("rewards"), "setContinuousRewardsDay", _day);
+        Context.call(Addresses.get("dex"), "setContinuousRewardsDay", _day);
     }
 
     @External
     public void setDividendsOnlyToStakedBalnDay(BigInteger _day) {
         onlyOwner();
-        Context.call(Addresses.get("dividends"), "setDividendsOnlyToStakedBalnDay",  _day);
+        Context.call(Addresses.get("dividends"), "setDividendsOnlyToStakedBalnDay", _day);
     }
 
     @External
@@ -162,7 +162,7 @@ public class GovernanceImpl {
 
     @External(readonly = true)
     public BigInteger getQuorum() {
-        return quorum.get();
+        return quorum.getOrDefault(BigInteger.ZERO);
     }
 
     @External
@@ -173,7 +173,7 @@ public class GovernanceImpl {
 
     @External(readonly = true)
     public BigInteger getVoteDefinitionFee() {
-        return bnusdVoteDefinitionFee.get();
+        return bnusdVoteDefinitionFee.getOrDefault(BigInteger.ZERO);
     }
 
     @External
@@ -184,7 +184,7 @@ public class GovernanceImpl {
 
     @External(readonly = true)
     public BigInteger getBalnVoteDefinitionCriterion() {
-        return balnVoteDefinitionCriterion.get();
+        return balnVoteDefinitionCriterion.getOrDefault(BigInteger.ZERO);
     }
 
     @External
@@ -193,11 +193,11 @@ public class GovernanceImpl {
         Context.require(vote_index.compareTo(BigInteger.ONE) >= 0, "There is no proposal with index " + vote_index);
         Context.require(vote_index.compareTo(proposal.proposalsCount.get()) <= 0, "There is no proposal with index " + vote_index);
         Context.require(proposal.status.get().equals(ProposalStatus.STATUS[ProposalStatus.ACTIVE]), "Proposal can be cancelled only from active status.");
-        Context.require(Context.getCaller().equals(proposal.proposer.get()) || 
-                        Context.getCaller().equals(Context.getOwner()), 
-                        "Only owner or proposer may call this method.");
-        if (proposal.startSnapshot.get().compareTo(getDay()) <= 0 ) {
-            Context.require(Context.getCaller().equals(Context.getOwner()), 
+        Context.require(Context.getCaller().equals(proposal.proposer.get()) ||
+                        Context.getCaller().equals(Context.getOwner()),
+                "Only owner or proposer may call this method.");
+        if (proposal.startSnapshot.get().compareTo(getDay()) <= 0) {
+            Context.require(Context.getCaller().equals(Context.getOwner()),
                     "Only owner can cancel a vote that has started.");
         }
 
@@ -210,10 +210,10 @@ public class GovernanceImpl {
     public void defineVote(String name, String description, BigInteger vote_start, BigInteger snapshot, @Optional String actions) {
         Context.require(description.length() <= 500, "Description must be less than or equal to 500 characters.");
         Context.require(vote_start.compareTo(getDay()) > 0, "Vote cannot start at or before the current day.");
-        Context.require(getDay().compareTo(snapshot) <= 0 && 
-                        snapshot.compareTo(vote_start) < 0, 
-                        "The reference snapshot must be in the range: [current_day (" + getDay() + "), " +
-                        "start_day - 1 (" + vote_start.subtract(BigInteger.ONE)+ ")].");
+        Context.require(getDay().compareTo(snapshot) <= 0 &&
+                        snapshot.compareTo(vote_start) < 0,
+                "The reference snapshot must be in the range: [current_day (" + getDay() + "), " +
+                        "start_day - 1 (" + vote_start.subtract(BigInteger.ONE) + ")].");
 
         actions = optionalDefault(actions, "[]");
         BigInteger voteIndex = ProposalDB.getProposalId(name);
@@ -222,7 +222,7 @@ public class GovernanceImpl {
         verifyActions(actions);
 
         Context.call(Addresses.get("bnUSD"), "govTransfer", Context.getCaller(), Addresses.get("daofund"), bnusdVoteDefinitionFee.getOrDefault(BigInteger.ONE), new byte[0]);
-        
+
         ProposalDB.createProposal(
                 name,
                 description,
@@ -261,7 +261,7 @@ public class GovernanceImpl {
         offset = optionalDefault(offset, BigInteger.ONE);
 
         BigInteger start = BigInteger.ONE.max(offset);
-        BigInteger end =  batch_size.add(start).subtract(BigInteger.ONE).min(getProposalCount());
+        BigInteger end = batch_size.add(start).subtract(BigInteger.ONE).min(getProposalCount());
         List<Object> proposals = new ArrayList<>();
         for (BigInteger i = start; i.compareTo(end) <= 0; i = i.add(BigInteger.ONE)) {
             proposals.add(checkVote(i));
@@ -273,11 +273,11 @@ public class GovernanceImpl {
     @External
     public void castVote(BigInteger vote_index, boolean vote) {
         ProposalDB proposal = new ProposalDB(vote_index);
-        Context.require((vote_index.compareTo(BigInteger.ZERO)  > 0 &&
+        Context.require((vote_index.compareTo(BigInteger.ZERO) > 0 &&
                         getDay().compareTo(proposal.startSnapshot.getOrDefault(BigInteger.ZERO)) >= 0 &&
-                        getDay().compareTo(proposal.endSnapshot.getOrDefault(BigInteger.ZERO)) < 0) && 
+                        getDay().compareTo(proposal.endSnapshot.getOrDefault(BigInteger.ZERO)) < 0) &&
                         proposal.active.getOrDefault(false),
-                        TAG + " :This is not an active poll.");
+                TAG + " :This is not an active poll.");
 
         Address from = Context.getCaller();
         BigInteger snapshot = proposal.voteSnapshot.get();
@@ -336,15 +336,15 @@ public class GovernanceImpl {
     @External(readonly = true)
     public BigInteger totalBaln(BigInteger _day) {
         BigInteger stakedBaln = Context.call(BigInteger.class, Addresses.get("baln"), "totalStakedBalanceOfAt", _day);
-        
+
         return stakedBaln;
     }
 
     @External
     public void evaluateVote(BigInteger vote_index) {
-        Context.require(vote_index.compareTo(BigInteger.ZERO) > 0 && 
+        Context.require(vote_index.compareTo(BigInteger.ZERO) > 0 &&
                         vote_index.compareTo(ProposalDB.getProposalCount()) <= 0,
-                        TAG + ": There is no proposal with index " + vote_index);
+                TAG + ": There is no proposal with index " + vote_index);
 
         ProposalDB proposal = new ProposalDB(vote_index);
         BigInteger endSnap = proposal.endSnapshot.get();
@@ -353,11 +353,11 @@ public class GovernanceImpl {
 
         Context.require(getDay().compareTo(endSnap) >= 0, TAG + ": Voting period has not ended.");
         Context.require(proposal.active.get(), TAG + ": This proposal is not active");
-       
-       
+
+
         Map<String, Object> result = checkVote(vote_index);
         proposal.active.set(false);
-   
+
         BigInteger forVotes = (BigInteger) result.get("for");
         BigInteger againstVotes = (BigInteger) result.get("against");
         if (forVotes.add(againstVotes).compareTo(proposal.quorum.get()) < 0) {
@@ -371,7 +371,7 @@ public class GovernanceImpl {
         if (percentageFor.compareTo(percentageAgainst) <= 0) {
             proposal.status.set(ProposalStatus.STATUS[ProposalStatus.DEFEATED]);
             return;
-        } else if (actions.equals("[]")){
+        } else if (actions.equals("[]")) {
             proposal.status.set(ProposalStatus.STATUS[ProposalStatus.SUCCEEDED]);
             _refundVoteDefinitionFee(proposal);
             return;
@@ -384,7 +384,7 @@ public class GovernanceImpl {
             proposal.status.set(ProposalStatus.STATUS[ProposalStatus.FAILED_EXECUTION]);
         }
 
-        _refundVoteDefinitionFee(proposal);    
+        _refundVoteDefinitionFee(proposal);
     }
 
     @External(readonly = true)
@@ -394,13 +394,13 @@ public class GovernanceImpl {
 
     @External(readonly = true)
     public Map<String, Object> checkVote(BigInteger _vote_index) {
-        if (_vote_index.compareTo( BigInteger.ONE) < 0 ||
-            _vote_index.compareTo(ProposalDB.getProposalCount()) > 0) {
+        if (_vote_index.compareTo(BigInteger.ONE) < 0 ||
+                _vote_index.compareTo(ProposalDB.getProposalCount()) > 0) {
             return Map.of();
         }
 
         ProposalDB proposal = new ProposalDB(_vote_index);
-        BigInteger totalBaln = totalBaln(proposal.voteSnapshot.get());
+        BigInteger totalBaln = totalBaln(proposal.voteSnapshot.getOrDefault(BigInteger.ZERO));
 
         BigInteger nrForVotes = BigInteger.ZERO;
         BigInteger nrAgainstVotes = BigInteger.ZERO;
@@ -412,31 +412,31 @@ public class GovernanceImpl {
         Map<String, Object> voteData = new HashMap<>(16);
 
         voteData.put("id", _vote_index);
-        voteData.put("name", proposal.name.get());
-        voteData.put("proposer", proposal.proposer.get());
-        voteData.put("description", proposal.description.get());
-        voteData.put("majority", proposal.majority.get());
-        voteData.put("status", proposal.status.get());
-        voteData.put("vote snapshot", proposal.voteSnapshot.get());
-        voteData.put("start day", proposal.startSnapshot.get());
-        voteData.put("end day", proposal.endSnapshot.get());
-        voteData.put("actions", proposal.actions.get());
-        voteData.put("quorum", proposal.quorum.get());
+        voteData.put("name", proposal.name.getOrDefault(""));
+        voteData.put("proposer", proposal.proposer.getOrDefault(Address.fromString("")));
+        voteData.put("description", proposal.description.getOrDefault(""));
+        voteData.put("majority", proposal.majority.getOrDefault(BigInteger.ZERO));
+        voteData.put("status", proposal.status.getOrDefault(""));
+        voteData.put("vote snapshot", proposal.voteSnapshot.getOrDefault(BigInteger.ZERO));
+        voteData.put("start day", proposal.startSnapshot.getOrDefault(BigInteger.ZERO));
+        voteData.put("end day", proposal.endSnapshot.getOrDefault(BigInteger.ZERO));
+        voteData.put("actions", proposal.actions.getOrDefault(""));
+        voteData.put("quorum", proposal.quorum.getOrDefault(BigInteger.ZERO));
         voteData.put("for", nrForVotes);
         voteData.put("against", nrAgainstVotes);
-        voteData.put("for_voter_count", proposal.forVotersCount.get());
-        voteData.put("against_voter_count", proposal.againstVotersCount.get());
-        voteData.put("fee_refund_status", proposal.feeRefunded.get());
+        voteData.put("for_voter_count", proposal.forVotersCount.getOrDefault(BigInteger.ZERO));
+        voteData.put("against_voter_count", proposal.againstVotersCount.getOrDefault(BigInteger.ZERO));
+        voteData.put("fee_refund_status", proposal.feeRefunded.getOrDefault(false));
 
         return voteData;
     }
 
     @External(readonly = true)
-    public Map<String, BigInteger> getVotesOfUser(BigInteger vote_index, Address user ) {
+    public Map<String, BigInteger> getVotesOfUser(BigInteger vote_index, Address user) {
         ProposalDB proposal = new ProposalDB(vote_index);
         return Map.of(
-            "for", proposal.forVotesOfUser.get(user),
-            "against", proposal.againstVotesOfUser.get(user)
+                "for", proposal.forVotesOfUser.getOrDefault(user, BigInteger.ZERO),
+                "against", proposal.againstVotesOfUser.getOrDefault(user, BigInteger.ZERO)
         );
     }
 
@@ -448,13 +448,13 @@ public class GovernanceImpl {
     @External
     public void configureBalanced() {
         onlyOwner();
-        for(Map<String, Object> asset : ASSETS) {
+        for (Map<String, Object> asset : ASSETS) {
             Context.call(
-                Addresses.get("loans"),
-                "addAsset",
-                Addresses.get((String) asset.get("address")),
-                (boolean) asset.get("active"),
-                (boolean) asset.get("collateral")
+                    Addresses.get("loans"),
+                    "addAsset",
+                    Addresses.get((String) asset.get("address")),
+                    (boolean) asset.get("active"),
+                    (boolean) asset.get("collateral")
             );
         }
     }
@@ -462,7 +462,7 @@ public class GovernanceImpl {
     @External
     public void launchBalanced() {
         onlyOwner();
-        if (launched.get() ) {
+        if (launched.get()) {
             return;
         }
 
@@ -480,7 +480,7 @@ public class GovernanceImpl {
         }
 
         Context.call(Addresses.get("rewards"), "updateBalTokenDistPercentage", (Object) RECIPIENTS);
-        
+
         balanceToggleStakingEnabled();
         Context.call(Addresses.get("loans"), "turnLoansOn");
         Context.call(Addresses.get("dex"), "turnDexOn");
@@ -506,34 +506,34 @@ public class GovernanceImpl {
         BigInteger price = Context.call(BigInteger.class, bnUSDAddress, "priceInLoop");
         BigInteger amount = EXA.multiply(value).divide(price.multiply(BigInteger.valueOf(7)));
         Context.call(value.divide(BigInteger.valueOf(7)), stakingAddress, "stakeICX");
-        Context.call(Context.getBalance(Context.getAddress()), loansAddress, "depositAndBorrow","bnUSD", amount, new Address(new byte[21]), BigInteger.ZERO);
+        Context.call(Context.getBalance(Context.getAddress()), loansAddress, "depositAndBorrow", "bnUSD", amount, new Address(new byte[21]), BigInteger.ZERO);
 
         BigInteger bnUSDValue = Context.call(BigInteger.class, bnUSDAddress, "balanceOf", Context.getAddress());
         BigInteger sICXValue = Context.call(BigInteger.class, sICXAddress, "balanceOf", Context.getAddress());
 
-        
+
         JsonObject depositData = Json.object();
         depositData.add("method", "_deposit");
         Context.call(bnUSDAddress, "transfer", dexAddress, bnUSDValue, depositData.toString().getBytes());
         Context.call(sICXAddress, "transfer", dexAddress, sICXValue, depositData.toString().getBytes());
 
-        Context.call(dexAddress, "add",  sICXAddress, bnUSDAddress, sICXValue, bnUSDValue, false);
+        Context.call(dexAddress, "add", sICXAddress, bnUSDAddress, sICXValue, bnUSDValue, false);
         String name = "sICX/bnUSD";
-        BigInteger pid = Context.call(BigInteger.class, dexAddress, "getPoolId",  sICXAddress, bnUSDAddress);
-        Context.call(dexAddress, "setMarketName",  pid, name);
+        BigInteger pid = Context.call(BigInteger.class, dexAddress, "getPoolId", sICXAddress, bnUSDAddress);
+        Context.call(dexAddress, "setMarketName", pid, name);
 
-        Context.call(rewardsAddress, "addNewDataSource",  name, dexAddress);
+        Context.call(rewardsAddress, "addNewDataSource", name, dexAddress);
         Context.call(stakedLpAddress, "addPool", pid);
-        DistributionPercentage[] recipients = new DistributionPercentage[] {
-            createDistributionPercentage("Loans",  BigInteger.valueOf(25).multiply(pow(BigInteger.TEN,16))),
-            createDistributionPercentage("sICX/ICX",  BigInteger.TEN.multiply(pow(BigInteger.TEN,16))),
-            createDistributionPercentage("Worker Tokens",  BigInteger.valueOf(20).multiply(pow(BigInteger.TEN,16))),
-            createDistributionPercentage("Reserve Fund",  BigInteger.valueOf(5).multiply(pow(BigInteger.TEN,16))),
-            createDistributionPercentage("DAOfund",  BigInteger.valueOf(225).multiply(pow(BigInteger.TEN,15))),
-            createDistributionPercentage("sICX/bnUSD",  BigInteger.valueOf(175).multiply(pow(BigInteger.TEN,15)))
+        DistributionPercentage[] recipients = new DistributionPercentage[]{
+                createDistributionPercentage("Loans", BigInteger.valueOf(25).multiply(pow(BigInteger.TEN, 16))),
+                createDistributionPercentage("sICX/ICX", BigInteger.TEN.multiply(pow(BigInteger.TEN, 16))),
+                createDistributionPercentage("Worker Tokens", BigInteger.valueOf(20).multiply(pow(BigInteger.TEN, 16))),
+                createDistributionPercentage("Reserve Fund", BigInteger.valueOf(5).multiply(pow(BigInteger.TEN, 16))),
+                createDistributionPercentage("DAOfund", BigInteger.valueOf(225).multiply(pow(BigInteger.TEN, 15))),
+                createDistributionPercentage("sICX/bnUSD", BigInteger.valueOf(175).multiply(pow(BigInteger.TEN, 15)))
         };
 
-        Context.call(Addresses.get("rewards"), "updateBalTokenDistPercentage",  (Object) recipients);
+        Context.call(Addresses.get("rewards"), "updateBalTokenDistPercentage", (Object) recipients);
     }
 
     @External
@@ -548,36 +548,36 @@ public class GovernanceImpl {
         Address loansAddress = Addresses.get("loans");
 
         Context.call(rewardsAddress, "claimRewards");
-        Context.call(loansAddress,"depositAndBorrow", "bnUSD", _bnUSD_amount, new Address(new byte[21]), BigInteger.ZERO);
+        Context.call(loansAddress, "depositAndBorrow", "bnUSD", _bnUSD_amount, new Address(new byte[21]), BigInteger.ZERO);
 
         JsonObject depositData = Json.object();
         depositData.add("method", "_deposit");
         Context.call(bnUSDAddress, "transfer", dexAddress, _bnUSD_amount, depositData.toString().getBytes());
         Context.call(balnAddress, "transfer", dexAddress, _baln_amount, depositData.toString().getBytes());
 
-        Context.call(dexAddress, "add",  balnAddress, bnUSDAddress, _baln_amount, _bnUSD_amount, false);
+        Context.call(dexAddress, "add", balnAddress, bnUSDAddress, _baln_amount, _bnUSD_amount, false);
         String name = "BALN/bnUSD";
-        BigInteger pid = Context.call(BigInteger.class, dexAddress, "getPoolId",  balnAddress, bnUSDAddress);
-        Context.call(dexAddress, "setMarketName",  pid, name);
+        BigInteger pid = Context.call(BigInteger.class, dexAddress, "getPoolId", balnAddress, bnUSDAddress);
+        Context.call(dexAddress, "setMarketName", pid, name);
 
-        Context.call(rewardsAddress, "addNewDataSource",  name, dexAddress);
+        Context.call(rewardsAddress, "addNewDataSource", name, dexAddress);
         Context.call(stakedLpAddress, "addPool", pid);
 
-        DistributionPercentage[] recipients = new DistributionPercentage[] {
-            createDistributionPercentage("Loans",  BigInteger.valueOf(25).multiply(pow(BigInteger.TEN,16))),
-            createDistributionPercentage("sICX/ICX",  BigInteger.TEN.multiply(pow(BigInteger.TEN,16))),
-            createDistributionPercentage("Worker Tokens",  BigInteger.valueOf(20).multiply(pow(BigInteger.TEN,16))),
-            createDistributionPercentage("Reserve Fund",  BigInteger.valueOf(5).multiply(pow(BigInteger.TEN,16))),
-            createDistributionPercentage("DAOfund",  BigInteger.valueOf(5).multiply(pow(BigInteger.TEN,16))),
-            createDistributionPercentage("sICX/bnUSD",  BigInteger.valueOf(175).multiply(pow(BigInteger.TEN,15))),
-            createDistributionPercentage("BALN/bnUSD",  BigInteger.valueOf(175).multiply(pow(BigInteger.TEN,15)))
+        DistributionPercentage[] recipients = new DistributionPercentage[]{
+                createDistributionPercentage("Loans", BigInteger.valueOf(25).multiply(pow(BigInteger.TEN, 16))),
+                createDistributionPercentage("sICX/ICX", BigInteger.TEN.multiply(pow(BigInteger.TEN, 16))),
+                createDistributionPercentage("Worker Tokens", BigInteger.valueOf(20).multiply(pow(BigInteger.TEN, 16))),
+                createDistributionPercentage("Reserve Fund", BigInteger.valueOf(5).multiply(pow(BigInteger.TEN, 16))),
+                createDistributionPercentage("DAOfund", BigInteger.valueOf(5).multiply(pow(BigInteger.TEN, 16))),
+                createDistributionPercentage("sICX/bnUSD", BigInteger.valueOf(175).multiply(pow(BigInteger.TEN, 15))),
+                createDistributionPercentage("BALN/bnUSD", BigInteger.valueOf(175).multiply(pow(BigInteger.TEN, 15)))
         };
 
         Context.call(rewardsAddress, "updateBalTokenDistPercentage", (Object) recipients);
     }
 
     @External
-    public void createBalnSicxMarket(BigInteger  _sicx_amount, BigInteger _baln_amount) {
+    public void createBalnSicxMarket(BigInteger _sicx_amount, BigInteger _baln_amount) {
         onlyOwner();
 
         Address dexAddress = Addresses.get("dex");
@@ -593,26 +593,26 @@ public class GovernanceImpl {
         Context.call(sICXAddress, "transfer", dexAddress, _sicx_amount, depositData.toString().getBytes());
         Context.call(balnAddress, "transfer", dexAddress, _baln_amount, depositData.toString().getBytes());
 
-        Context.call(dexAddress, "add",  balnAddress, sICXAddress, _baln_amount, _sicx_amount, false);
+        Context.call(dexAddress, "add", balnAddress, sICXAddress, _baln_amount, _sicx_amount, false);
         String name = "BALN/sICX";
-        BigInteger pid = Context.call(BigInteger.class, dexAddress, "getPoolId",  balnAddress, sICXAddress);
-        Context.call(dexAddress, "setMarketName",  pid, name);
+        BigInteger pid = Context.call(BigInteger.class, dexAddress, "getPoolId", balnAddress, sICXAddress);
+        Context.call(dexAddress, "setMarketName", pid, name);
 
         Context.call(rewardsAddress, "addNewDataSource", name, dexAddress);
         Context.call(stakedLpAddress, "addPool", pid);
- 
-        DistributionPercentage[] recipients = new DistributionPercentage[] {
-            createDistributionPercentage("Loans",  BigInteger.valueOf(20).multiply(pow(BigInteger.TEN,16))),
-            createDistributionPercentage("sICX/ICX",  BigInteger.TEN.multiply(pow(BigInteger.TEN,16))),
-            createDistributionPercentage("Worker Tokens",  BigInteger.valueOf(20).multiply(pow(BigInteger.TEN,16))),
-            createDistributionPercentage("Reserve Fund",  BigInteger.valueOf(5).multiply(pow(BigInteger.TEN,16))),
-            createDistributionPercentage("DAOfund",  BigInteger.valueOf(5).multiply(pow(BigInteger.TEN,16))),
-            createDistributionPercentage("sICX/bnUSD",  BigInteger.valueOf(15).multiply(pow(BigInteger.TEN,16))),
-            createDistributionPercentage("BALN/bnUSD",  BigInteger.valueOf(15).multiply(pow(BigInteger.TEN,16))),
-            createDistributionPercentage("BALN/sICX",  BigInteger.valueOf(10).multiply(pow(BigInteger.TEN,16)))
+
+        DistributionPercentage[] recipients = new DistributionPercentage[]{
+                createDistributionPercentage("Loans", BigInteger.valueOf(20).multiply(pow(BigInteger.TEN, 16))),
+                createDistributionPercentage("sICX/ICX", BigInteger.TEN.multiply(pow(BigInteger.TEN, 16))),
+                createDistributionPercentage("Worker Tokens", BigInteger.valueOf(20).multiply(pow(BigInteger.TEN, 16))),
+                createDistributionPercentage("Reserve Fund", BigInteger.valueOf(5).multiply(pow(BigInteger.TEN, 16))),
+                createDistributionPercentage("DAOfund", BigInteger.valueOf(5).multiply(pow(BigInteger.TEN, 16))),
+                createDistributionPercentage("sICX/bnUSD", BigInteger.valueOf(15).multiply(pow(BigInteger.TEN, 16))),
+                createDistributionPercentage("BALN/bnUSD", BigInteger.valueOf(15).multiply(pow(BigInteger.TEN, 16))),
+                createDistributionPercentage("BALN/sICX", BigInteger.valueOf(10).multiply(pow(BigInteger.TEN, 16)))
         };
 
-       Context.call(Addresses.get("rewards"), "updateBalTokenDistPercentage", (Object) recipients);
+        Context.call(Addresses.get("rewards"), "updateBalTokenDistPercentage", (Object) recipients);
     }
 
     @External
@@ -646,13 +646,13 @@ public class GovernanceImpl {
     public void setLoansRebalance(Address _address) {
         onlyOwner();
         Context.call(Addresses.get("loans"), SETTERS.get("rebalancing"), _address);
-        
+
     }
 
     @External
     public void setLoansDex(Address _address) {
         onlyOwner();
-        Context.call(Addresses.get("loans"), SETTERS.get("dex"), _address);  
+        Context.call(Addresses.get("loans"), SETTERS.get("dex"), _address);
     }
 
     @External
@@ -674,7 +674,7 @@ public class GovernanceImpl {
     }
 
     @External(readonly = true)
-    public Map<String, Address>  getAddresses() {
+    public Map<String, Address> getAddresses() {
         return Addresses.getAddresses();
     }
 
@@ -711,14 +711,14 @@ public class GovernanceImpl {
     public void addAsset(Address _token_address, boolean _active, boolean _collateral) {
         onlyOwner();
         Address loansAddress = Addresses.get("loans");
-        Context.call(loansAddress, "addAsset",  _token_address, _active, _collateral);
+        Context.call(loansAddress, "addAsset", _token_address, _active, _collateral);
         Context.call(_token_address, "setAdmin", loansAddress);
     }
 
     @External
     public void toggleAssetActive(String _symbol) {
         onlyOwner();
-        Context.call(Addresses.get("loans"), "toggleAssetActive",  _symbol);
+        Context.call(Addresses.get("loans"), "toggleAssetActive", _symbol);
     }
 
     @External
@@ -730,7 +730,7 @@ public class GovernanceImpl {
     @External
     public void removeDataSource(String _data_source_name) {
         onlyOwner();
-        Context.call(Addresses.get("rewards"), "removeDataSource",  _data_source_name);
+        Context.call(Addresses.get("rewards"), "removeDataSource", _data_source_name);
     }
 
     @External
@@ -748,43 +748,43 @@ public class GovernanceImpl {
     @External
     public void setDay(BigInteger _day) {
         onlyOwner();
-        Context.call(Addresses.get("rewards"), "setDay",  _day);
+        Context.call(Addresses.get("rewards"), "setDay", _day);
     }
 
     @External
     public void dexPermit(BigInteger _id, boolean _permission) {
         onlyOwner();
-        Context.call(Addresses.get("dex"), "permit",  _id, _permission);
+        Context.call(Addresses.get("dex"), "permit", _id, _permission);
     }
 
     @External
     public void dexAddQuoteCoin(Address _address) {
         onlyOwner();
-        Context.call(Addresses.get("dex"), "addQuoteCoin",  _address);
+        Context.call(Addresses.get("dex"), "addQuoteCoin", _address);
     }
 
     @External
     public void setMarketName(BigInteger _id, String _name) {
         onlyOwner();
-        Context.call(Addresses.get("dex"), "setMarketName",  _id, _name);
+        Context.call(Addresses.get("dex"), "setMarketName", _id, _name);
     }
 
     @External
     public void delegate(PrepDelegations[] _delegations) {
         onlyOwner();
-        Context.call(Addresses.get("loans"), "delegate", (Object) _delegations) ;
+        Context.call(Addresses.get("loans"), "delegate", (Object) _delegations);
     }
 
     @External
-    public void balwAdminTransfer(Address _from , Address _to , BigInteger _value, @Optional byte[] _data) {
+    public void balwAdminTransfer(Address _from, Address _to, BigInteger _value, @Optional byte[] _data) {
         onlyOwner();
-        Context.call(Addresses.get("bwt"), "adminTransfer",  _from, _to, _value, _data);
+        Context.call(Addresses.get("bwt"), "adminTransfer", _from, _to, _value, _data);
     }
 
     @External
     public void setbnUSD(Address _address) {
         onlyOwner();
-        Context.call(Addresses.get("baln"), SETTERS.get("bnUSD"), _address);  
+        Context.call(Addresses.get("baln"), SETTERS.get("bnUSD"), _address);
     }
 
     @External
@@ -796,7 +796,7 @@ public class GovernanceImpl {
     @External
     public void balanceSetDex(Address _address) {
         onlyOwner();
-        Context.call(Addresses.get("baln"), SETTERS.get("dex"), _address);  
+        Context.call(Addresses.get("baln"), SETTERS.get("dex"), _address);
     }
 
     @External
@@ -848,7 +848,7 @@ public class GovernanceImpl {
     @External
     public void setAssetOracleName(String _symbol, String _name) {
         onlyOwner();
-        Map<String, String> assetAddresses = (Map<String, String>) Context.call(Addresses.get("loans"), "getAssetTokens");  
+        Map<String, String> assetAddresses = (Map<String, String>) Context.call(Addresses.get("loans"), "getAssetTokens");
         Context.require(assetAddresses.containsKey(_symbol), TAG + ": " + _symbol + " is not a supported asset in Balanced.");
 
         Address token = Address.fromString(assetAddresses.get(_symbol));
@@ -886,13 +886,13 @@ public class GovernanceImpl {
     @External
     public void addUsersToActiveAddresses(BigInteger _poolId, Address[] _addressList) {
         onlyOwner();
-        Context.call(Addresses.get("dex"), "addLpAddresses",  _poolId, _addressList);
+        Context.call(Addresses.get("dex"), "addLpAddresses", _poolId, _addressList);
     }
 
     @External
     public void setRedemptionFee(BigInteger _fee) {
         onlyOwner();
-        Context.call(Addresses.get("loans"), "setRedemptionFee",  _fee);
+        Context.call(Addresses.get("loans"), "setRedemptionFee", _fee);
     }
 
     @External
@@ -922,7 +922,7 @@ public class GovernanceImpl {
     @External
     public void setRedeemBatchSize(BigInteger _value) {
         onlyOwner();
-        Context.call(Addresses.get("loans"), "setRedeemBatchSize",  _value.intValue());
+        Context.call(Addresses.get("loans"), "setRedeemBatchSize", _value.intValue());
     }
 
     @External
@@ -956,16 +956,18 @@ public class GovernanceImpl {
     }
 
     @External
-    public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {}
+    public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
+    }
 
     @Payable
-    public void fallback() {}
+    public void fallback() {
+    }
 
     private void refundVoteDefinitionFee(ProposalDB proposal) {
         if (proposal.feeRefunded.getOrDefault(false)) {
             return;
         }
-        
+
         Context.call(Addresses.get("bnUSD"), "govTransfer", Addresses.get("daofund"), proposal.proposer.get(), proposal.fee.get(), new byte[0]);
         proposal.feeRefunded.set(true);
     }
@@ -978,7 +980,7 @@ public class GovernanceImpl {
         return userPercentage.compareTo(limit) >= 0;
     }
 
-    private void _refundVoteDefinitionFee(ProposalDB proposal) {        
+    private void _refundVoteDefinitionFee(ProposalDB proposal) {
         Address daoFund = Addresses.get("daofund");
         Context.call(Addresses.get("bnUSD"), "govTransfer", daoFund, Context.getCaller(), proposal.fee.get(), new byte[0]);
         proposal.feeRefunded.set(true);
@@ -992,9 +994,9 @@ public class GovernanceImpl {
         }
     }
 
-    private void executeVoteActions(String actions){
+    private void executeVoteActions(String actions) {
         JsonArray actionsList = Json.parse(actions).asArray();
-        for (int i = 0; i < actionsList.size(); i++){
+        for (int i = 0; i < actionsList.size(); i++) {
             JsonValue action = actionsList.get(i);
             JsonArray parsedAction = action.asArray();
 
@@ -1009,10 +1011,10 @@ public class GovernanceImpl {
         Context.call(targetAddress, method, params);
     }
 
-    public void daoDisburse(String _recipient,  Disbursement[] _amounts ) {
-        Context.require(_amounts.length <=  3, "Cannot disburse more than 3 assets at a time.");
+    public void daoDisburse(String _recipient, Disbursement[] _amounts) {
+        Context.require(_amounts.length <= 3, "Cannot disburse more than 3 assets at a time.");
         Address recipient = Address.fromString(_recipient);
-        Context.call(Addresses.get("daofund"), "disburse", recipient,  (Object) _amounts);
+        Context.call(Addresses.get("daofund"), "disburse", recipient, (Object) _amounts);
     }
 
     public void enableDividends() {
@@ -1020,27 +1022,27 @@ public class GovernanceImpl {
     }
 
     public void setMiningRatio(BigInteger _value) {
-        Context.call(Addresses.get("loans"), "setMiningRatio",  _value);
+        Context.call(Addresses.get("loans"), "setMiningRatio", _value);
     }
 
     public void setLockingRatio(BigInteger _value) {
-        Context.call(Addresses.get("loans"), "setLockingRatio",  _value);
+        Context.call(Addresses.get("loans"), "setLockingRatio", _value);
     }
 
     public void setOriginationFee(BigInteger _fee) {
-        Context.call(Addresses.get("loans"), "setOriginationFee",  _fee);
+        Context.call(Addresses.get("loans"), "setOriginationFee", _fee);
     }
 
     public void setLiquidationRatio(BigInteger _ratio) {
-        Context.call(Addresses.get("loans"), "setLiquidationRatio",  _ratio);
+        Context.call(Addresses.get("loans"), "setLiquidationRatio", _ratio);
     }
 
     public void setRetirementBonus(BigInteger _points) {
-        Context.call(Addresses.get("loans"), "setRetirementBonus",  _points);
+        Context.call(Addresses.get("loans"), "setRetirementBonus", _points);
     }
 
     public void setLiquidationReward(BigInteger _points) {
-        Context.call(Addresses.get("loans"), "setLiquidationReward",  _points);
+        Context.call(Addresses.get("loans"), "setLiquidationReward", _points);
     }
 
     public void setDividendsCategoryPercentage(DistributionPercentage[] _dist_list) {
@@ -1073,8 +1075,8 @@ public class GovernanceImpl {
     }
 
     public void _setQuorum(BigInteger quorum) {
-        Context.require(quorum.compareTo(BigInteger.ZERO) > 0,"Quorum must be between 0 and 100.");
-        Context.require(quorum.compareTo(BigInteger.valueOf(100)) < 0,"Quorum must be between 0 and 100.");
+        Context.require(quorum.compareTo(BigInteger.ZERO) > 0, "Quorum must be between 0 and 100.");
+        Context.require(quorum.compareTo(BigInteger.valueOf(100)) < 0, "Quorum must be between 0 and 100.");
 
         this.quorum.set(quorum);
     }
@@ -1082,7 +1084,7 @@ public class GovernanceImpl {
     public void _setBalnVoteDefinitionCriterion(BigInteger percentage) {
         Context.require(percentage.compareTo(BigInteger.ZERO) >= 0, "Basis point must be between 0 and 10000.");
         Context.require(percentage.compareTo(BigInteger.valueOf(10000)) <= 0, "Basis point must be between 0 and 10000.");
-   
+
         balnVoteDefinitionCriterion.set(percentage);
     }
 
@@ -1096,31 +1098,32 @@ public class GovernanceImpl {
     }
 
     public void _setMaxRetirePercent(BigInteger _value) {
-        Context.call(Addresses.get("loans"), "setMaxRetirePercent",  _value);
+        Context.call(Addresses.get("loans"), "setMaxRetirePercent", _value);
     }
 
     public void _setRebalancingThreshold(BigInteger _value) {
-        Context.call(rebalancing.get(), "setPriceDiffThreshold",  _value);
+        Context.call(rebalancing.get(), "setPriceDiffThreshold", _value);
     }
 
     public void _setNewLoanMinimum(BigInteger _minimum) {
-        Context.call(Addresses.get("loans"), "setNewLoanMinimum",  _minimum);
+        Context.call(Addresses.get("loans"), "setNewLoanMinimum", _minimum);
     }
 
 
     public void _setMinMiningDebt(BigInteger _minimum) {
-        Context.call(Addresses.get("loans"), "setMinMiningDebt",  _minimum);
+        Context.call(Addresses.get("loans"), "setMinMiningDebt", _minimum);
     }
 
 
     public void _setBatchSize(BigInteger _batch_size) {
-        Context.call(Addresses.get("rewards"), "setBatchSize",  _batch_size);
+        Context.call(Addresses.get("rewards"), "setBatchSize", _batch_size);
     }
-    
+
     public void _updateBalTokenDistPercentage(DistributionPercentage[] _recipient_list) {
         Context.call(Addresses.get("rewards"), "updateBalTokenDistPercentage", (Object) _recipient_list);
     }
-    
+
     @EventLog(indexed = 2)
-    void VoteCast(String vote_name, boolean vote, Address voter, BigInteger stake, BigInteger total_for, BigInteger total_against){}
+    void VoteCast(String vote_name, boolean vote, Address voter, BigInteger stake, BigInteger total_for, BigInteger total_against) {
+    }
 }
