@@ -26,6 +26,7 @@ public class DexTestCore extends DexTestBase {
     
     @BeforeEach
     public void configureContract() throws Exception {
+        dexScore = sm.deploy(ownerAccount, DexImpl.class, governanceScore.getAddress());
         setupAddresses();
         super.setup();
     }
@@ -99,7 +100,7 @@ public class DexTestCore extends DexTestBase {
         Account depositor = sm.createAccount();
         BigInteger depositValue = BigInteger.valueOf(100).multiply(EXA);
         BigInteger withdrawValue = BigInteger.valueOf(-1000).multiply(EXA);
-        String expectedErrorMessage = "Balanced DEX: Must specify a posititve amount";
+        String expectedErrorMessage = "Reverted(0): Balanced DEX: Must specify a positive amount";
         turnDexOn();
         depositToken(depositor, balnScore, depositValue);
         
@@ -114,7 +115,7 @@ public class DexTestCore extends DexTestBase {
         Account depositor = sm.createAccount();
         BigInteger depositValue = BigInteger.valueOf(100).multiply(EXA);
         BigInteger withdrawValue = BigInteger.valueOf(1000).multiply(EXA);
-        String expectedErrorMessage = "Balanced DEX: Insufficient Balance";
+        String expectedErrorMessage = "Reverted(0): Balanced DEX: Insufficient Balance";
         turnDexOn();
         depositToken(depositor, balnScore, depositValue);
         
@@ -231,7 +232,7 @@ public class DexTestCore extends DexTestBase {
 
         // Act & assert.
         Executable incompleteRewards = () -> dexScore.invoke(tokenScoreCaller, "tokenFallback", tokenSender.getAddress(), value, tokenData("_swap_icx", new HashMap<>()));
-        expectErrorMessage(incompleteRewards, "Reverted(0): Balanced DEX Rewards distribution in progress, please try again shortly");
+        expectErrorMessage(incompleteRewards, "Reverted(0): Balanced DEX: Rewards distribution in progress, please try again shortly");
     }
 
     // In the process of going through this.
