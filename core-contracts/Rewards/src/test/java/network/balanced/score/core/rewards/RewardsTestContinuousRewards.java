@@ -33,6 +33,7 @@ import static org.mockito.Mockito.verify;
 class RewardsTestContinuousRewards extends RewardsTestBase {
 
     private final BigInteger continuousRewardsDay = BigInteger.valueOf(5);
+
     @BeforeEach
     void setup() throws Exception {
         super.setup();
@@ -70,8 +71,6 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
 
     @Test
     void distribute() {
-        // Arrange
-        BigInteger startTimeInUS = BigInteger.valueOf(sm.getBlock().getTimestamp());
 
         // Act
         sm.getBlock().increase(DAY);
@@ -80,8 +79,7 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
 
         // Assert
         BigInteger emission = (BigInteger)rewardsScore.call("getEmission", BigInteger.valueOf(-1));
-        BigInteger timeInUS = BigInteger.valueOf(sm.getBlock().getTimestamp());
-        BigInteger diffInUS = timeInUS.subtract(startTimeInUS);
+
         verify(baln.mock, times(day)).transfer(bwt.getAddress(), bwtDist.dist_percent.multiply(emission).divide(EXA), new byte[0]);
         verify(baln.mock, times(day)).transfer(daoFund.getAddress(), daoDist.dist_percent.multiply(emission).divide(EXA), new byte[0]);
         verify(baln.mock, times(day)).transfer(reserve.getAddress(), reserveDist.dist_percent.multiply(emission).divide(EXA), new byte[0]);
@@ -202,7 +200,6 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
         BigInteger userDistribution = loansDistribution.multiply(currentBalance).divide(currentTotalSupply);
 
         BigInteger rewards = (BigInteger) rewardsScore.call("getBalnHolding", account.getAddress());
-
     
         BigInteger diffInUS = timeInUS.subtract(startTimeInUS);
         BigInteger expectedRewards = userDistribution.multiply(diffInUS).divide(U_SECONDS_DAY);

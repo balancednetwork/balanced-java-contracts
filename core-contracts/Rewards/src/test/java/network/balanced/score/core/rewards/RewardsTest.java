@@ -304,6 +304,8 @@ class RewardsTest extends RewardsTestBase {
         // Assert
         Object users = new Address[]{account.getAddress()};
         Map<Address, BigInteger> rewards = (Map<Address, BigInteger>) rewardsScore.call("getBalnHoldings", users);
+        BigInteger userReward = (BigInteger) rewardsScore.call("getBalnHolding", account.getAddress());
+        assertEquals(rewards.get(account.getAddress()), userReward);
 
         BigInteger emission = (BigInteger) rewardsScore.call("getEmission", BigInteger.valueOf(-1));
         BigInteger loansDistribution = loansDist.dist_percent.multiply(emission).divide(EXA);
@@ -372,6 +374,8 @@ class RewardsTest extends RewardsTestBase {
         sm.getBlock().increase(DAY);
         BigInteger day = (BigInteger) rewardsScore.call("getDay");
 
+        // TODO Distribute once and check the platform day is increased but not the source days and calling
+        //  distribute again would bring all the days in sync
         // Act
         syncDistributions();
 
@@ -379,10 +383,10 @@ class RewardsTest extends RewardsTestBase {
         Map<String, Object> distStatus = (Map<String, Object>) rewardsScore.call("distStatus");
         Map<String, BigInteger> sourceDays = (Map<String, BigInteger>)distStatus.get("source_days");
         BigInteger platformDay = (BigInteger) distStatus.get("platform_day");
-        BigInteger daysSum = sourceDays.get("sICX/ICX").add(sourceDays.get("Loans"));
 
         assertEquals(day, platformDay);
-        assertEquals(platformDay.multiply(BigInteger.TWO), daysSum);
+        assertEquals(sourceDays.get("sICX/ICX"), platformDay);
+        assertEquals(sourceDays.get("Loans"), platformDay);
     }
 
     @SuppressWarnings("unchecked")
@@ -419,6 +423,7 @@ class RewardsTest extends RewardsTestBase {
         // Assert
         assertEquals(expectedLoansDist, distributions.get("Loans"));
         assertEquals(expectedSwapDist, distributions.get("sICX/ICX"));
+        // TODO Check if the distribution percentages are back to original values
     }
 
     @SuppressWarnings("unchecked")

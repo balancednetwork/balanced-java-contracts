@@ -16,7 +16,6 @@
 
 package network.balanced.score.core.rewards;
 
-import foundation.icon.icx.Wallet;
 import foundation.icon.score.client.ScoreClient;
 import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.test.integration.Balanced;
@@ -24,9 +23,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
-import java.util.Map;
 
-import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -43,7 +40,6 @@ class RewardsIntegrationTest {
     @ScoreClient
     private static Loans loans;
 
-    
     @ScoreClient
     private static BalancedDollar bnUSD;
 
