@@ -16,9 +16,10 @@
 
 package network.balanced.score.lib.structs;
 
-import java.math.BigInteger;
 import score.Address;
 import score.annotation.Keep;
+
+import java.math.BigInteger;
 
 public class RewardsDataEntry {
     @Keep
