@@ -37,6 +37,7 @@ import static network.balanced.score.core.dex.DexDBVariables.*;
 import static network.balanced.score.core.dex.utils.Check.isValidPoolId;
 import static network.balanced.score.core.dex.utils.Const.*;
 import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Math.pow;
 
@@ -495,7 +496,8 @@ public abstract class AbstractDex implements Dex {
 
     @External(readonly = true)
     public BigInteger totalDexAddresses(BigInteger _id) {
-        return BigInteger.valueOf(activeAddresses.get(_id.intValue()).length());
+        BigInteger value = BigInteger.valueOf(activeAddresses.get(_id.intValue()).length());
+        return value;
     }
 
     @External(readonly = true)
@@ -580,10 +582,13 @@ public abstract class AbstractDex implements Dex {
         return (BigInteger) Context.call(staking.get(), "getTodayRate");
     }
 
+    boolean isRestrictedPoolId(Integer id) {
+        return (id < FIRST_NON_BALANCED_POOL || id == USDS_BNUSD_ID || id == IUSDT_BNUSD_ID);
+    }
+
     boolean isLockingPool(Integer id) {
         boolean stakedLpLaunched = stakedLp.get() != null;
-        boolean restrictedPoolId = (id < FIRST_NON_BALANCED_POOL || id == USDS_BNUSD_ID || id == IUSDT_BNUSD_ID);
-
+        boolean restrictedPoolId = isRestrictedPoolId(id);
         return (restrictedPoolId && !stakedLpLaunched) || id.equals(SICXICX_POOL_ID);
     }
 
@@ -608,8 +613,7 @@ public abstract class AbstractDex implements Dex {
         if (continuousRewardsDay.get() != null && getDay().compareTo(continuousRewardsDay.get()) > 0) {
             return;
         }
-
-        BigInteger depositTime = withdrawLock.at(id).get(user);
+        BigInteger depositTime = withdrawLock.at(id).getOrDefault(user, BigInteger.ZERO);
         Context.require(depositTime.add(WITHDRAW_LOCK_TIMEOUT).compareTo(BigInteger.valueOf(Context.getBlockTimestamp())) <= 0,
                 TAG + ":  Assets must remain in the pool for 24 hours, please try again later.");
     }
@@ -714,10 +718,8 @@ public abstract class AbstractDex implements Dex {
 
         BigInteger balnFees = (value.multiply(icxBalnFee.get())).divide(FEE_SCALE);
         BigInteger conversionFees = value.multiply(icxConversionFee.get()).divide(FEE_SCALE);
-
         BigInteger orderSize = value.subtract(balnFees.add(conversionFees));
         BigInteger orderIcxValue = (orderSize.multiply(sicxIcxPrice)).divide(EXA);
-
         BigInteger lpSicxSize = orderSize.add(conversionFees);
 
         Context.require(orderIcxValue.compareTo(oldIcxTotal) <= 0,
@@ -759,23 +761,20 @@ public abstract class AbstractDex implements Dex {
             BigInteger newSicxEarnings = getSicxEarnings(counterpartyAddress).add(lpSicxEarnings);
             sicxEarnings.set(counterpartyAddress, newSicxEarnings);
 
-            if (orderRemainingIcx.compareTo(BigInteger.ZERO) != 0) {
+            if (orderRemainingIcx.compareTo(BigInteger.ZERO) == 0) {
                 filled = true;
             }
         }
         BigInteger newIcxTotal = oldIcxTotal.subtract(orderIcxValue);
         icxQueueTotal.set(newIcxTotal);
         updateTotalSupplySnapshot(SICXICX_POOL_ID, newIcxTotal);
-
         BigInteger effectiveFillPrice = (orderIcxValue.multiply(EXA)).divide(value);
-
         Address sicxAddress = sicx.get();
-        Swap(BigInteger.valueOf(SICXICX_POOL_ID), sicxAddress, sicxAddress, null, sender, sender, value,
+        Swap(BigInteger.valueOf(SICXICX_POOL_ID), sicxAddress, sicxAddress, EOA_ZERO, sender, sender, value,
                 orderIcxValue, BigInteger.valueOf(Context.getBlockTimestamp()), conversionFees, balnFees, newIcxTotal
                 , BigInteger.ZERO, sicxIcxPrice, effectiveFillPrice);
-
         Context.call(rewards.get(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal,
-                new Object[]{oldData});
+                oldData);
         Context.call(sicxAddress, "transfer", feeHandler.get(), balnFees);
         Context.transfer(sender, orderIcxValue);
     }

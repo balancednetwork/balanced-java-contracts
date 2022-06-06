@@ -64,7 +64,6 @@ public class StakedLPImpl implements StakedLP {
         return "Balanced StakedLP";
     }
 
-    // Contracts getters and setters
     @External(readonly = true)
     public Address getDex() {
         return dex.get();
@@ -107,7 +106,7 @@ public class StakedLPImpl implements StakedLP {
 
     @External
     public void setRewards(Address rewards) {
-        onlyAdmin();
+        onlyGovernance();
         Context.require(rewards.isContract(), "StakedLP: Rewards address should be a contract");
         StakedLPImpl.rewards.set(rewards);
     }
@@ -145,7 +144,6 @@ public class StakedLPImpl implements StakedLP {
 
     @External
     public void unstake(BigInteger id, BigInteger value) {
-
         Address caller = Context.getCaller();
         Context.require(value.compareTo(BigInteger.ZERO) > 0, "StakedLP: Cannot unstake less than zero value");
 

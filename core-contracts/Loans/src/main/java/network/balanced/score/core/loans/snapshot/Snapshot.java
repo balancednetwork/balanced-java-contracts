@@ -124,15 +124,16 @@ public class Snapshot {
             }
         }
 
-        return Map.of(
-            "snap_day", getDay(),
-            "snap_time", getSnapshotTime(),
-            "total_mining_debt", getTotalMiningDebt(),
-            "prices", prices,
-            "mining_count", getMiningSize(),
-            "precompute_index", getPreComputeIndex(),
-            "add_to_nonzero_count", getAddNonzero().size(),
-            "remove_from_nonzero_count", getRemoveNonzero().size()
-        );
+        Map<String, Object> snapData = new HashMap<>();
+        snapData.put("snap_day", getDay());
+        snapData.put("snap_time", getSnapshotTime());
+        snapData.put("total_mining_debt", getTotalMiningDebt());
+        snapData.put("prices", prices);
+        snapData.put("mining_count", getMiningSize());
+        snapData.put("precompute_index", getPreComputeIndex());
+        snapData.put("add_to_nonzero_count", getAddNonzero().size());
+        snapData.put("remove_from_nonzero_count", getRemoveNonzero().size());
+
+        return snapData;
     }
 }

@@ -17,11 +17,12 @@
 package network.balanced.score.core.rewards;
 
 import score.Address;
-import score.Context;
 import score.ArrayDB;
+import score.Context;
 
-import static network.balanced.score.core.rewards.utils.RewardsConstants.*;
-import static network.balanced.score.lib.utils.DBHelpers.*;
+import static network.balanced.score.core.rewards.RewardsImpl.TAG;
+import static network.balanced.score.core.rewards.utils.RewardsConstants.DATASOURCE_DB_PREFIX;
+import static network.balanced.score.lib.utils.DBHelpers.contains;
 
 public class DataSourceDB {
     public static final ArrayDB<String> names = Context.newArrayDB("names", String.class);
@@ -37,6 +38,8 @@ public class DataSourceDB {
     }
 
     public static void newSource(String name, Address address) {
+        Context.require(!contains(names, name), TAG + ": Data source already exists");
+
         names.add(name);
         DataSourceImpl dataSource = get(name);
         dataSource.setName(name);
@@ -45,6 +48,9 @@ public class DataSourceDB {
     }
 
     public static void removeSource(String name) {
+        // TODO Shouldn't be removed (Also add test cases)
+        //  Avoid removing data source, must be disabled instead
+        // TODO Double check, remove one, return boolean
         if (!contains(names, name)) {
             return;
         }
@@ -53,6 +59,7 @@ public class DataSourceDB {
         dataSource.setDay(null);
         dataSource.setContractAddress(null);
 
+        // TODO Use helper method to remove from array db
         String topSourceName = names.pop();
         if (topSourceName.equals(name)) {
             return;

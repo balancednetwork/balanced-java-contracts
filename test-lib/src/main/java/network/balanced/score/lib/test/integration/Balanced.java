@@ -78,6 +78,7 @@ public class Balanced {
         governance = deploy(owner, "Governance", null);
         deployContracts();
         ownerClient = new BalancedClient(this, owner);
+        
     
         setupAddresses();
         setupContracts();
@@ -89,7 +90,6 @@ public class Balanced {
         try {
             systemScore.registerPRep(BigInteger.valueOf(2000).multiply(BigInteger.TEN.pow(18)), "test", "kokoa@example.com", "USA", "New York", "https://icon.kokoa.com", "https://icon.kokoa.com/json/details.json", "localhost:9082");
         } catch (Exception e) {
-            //Already registerd
         }
     }
 

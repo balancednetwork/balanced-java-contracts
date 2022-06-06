@@ -22,11 +22,11 @@ import score.Address;
 import score.BranchDB;
 import score.Context;
 import score.VarDB;
+import scorex.util.HashMap;
 
 import java.math.BigInteger;
 import java.util.Map;
 
-import static java.util.Map.entry;
 import static network.balanced.score.core.loans.utils.LoansConstants.SICX_SYMBOL;
 import static network.balanced.score.core.loans.LoansImpl.call;
 
@@ -156,19 +156,21 @@ public class Asset {
         Address assetAddress = this.assetAddress.at(dbKey).get();
         Token tokenContract = new Token(assetAddress);
 
-        return Map.ofEntries(
-                entry("symbol", tokenContract.symbol()),
-                entry("address", assetAddress),
-                entry("peg", tokenContract.getPeg()),
-                entry("added", getAssetAddedTime()),
-                entry("is_collateral", isCollateral()),
-                entry("active", isActive()),
-                entry("borrowers", getBorrowers().size()),
-                entry("total_supply", tokenContract.totalSupply()),
-                entry("total_burned", getTotalBurnedTokens()),
-                entry("bad_debt", getBadDebt()),
-                entry("liquidation_pool", getLiquidationPool()),
-                entry("dead_market", isDeadMarket())
-        );
+        Map<String, Object> AssetDetails = new HashMap<>();
+
+        AssetDetails.put("symbol", tokenContract.symbol());
+        AssetDetails.put("address", assetAddress);
+        AssetDetails.put("peg", tokenContract.getPeg());
+        AssetDetails.put("added", getAssetAddedTime());
+        AssetDetails.put("is_collateral", isCollateral());
+        AssetDetails.put("active", isActive());
+        AssetDetails.put("borrowers", getBorrowers().size());
+        AssetDetails.put("total_supply", tokenContract.totalSupply());
+        AssetDetails.put("total_burned", getTotalBurnedTokens());
+        AssetDetails.put("bad_debt", getBadDebt());
+        AssetDetails.put("liquidation_pool", getLiquidationPool());
+        AssetDetails.put("dead_market", isDeadMarket());
+
+        return AssetDetails;
     }
 }

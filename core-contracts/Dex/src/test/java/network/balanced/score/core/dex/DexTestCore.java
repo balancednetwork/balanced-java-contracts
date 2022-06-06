@@ -26,8 +26,8 @@ public class DexTestCore extends DexTestBase {
     
     @BeforeEach
     public void configureContract() throws Exception {
-        super.setup();
         setupAddresses();
+        super.setup();
     }
 
     @Test

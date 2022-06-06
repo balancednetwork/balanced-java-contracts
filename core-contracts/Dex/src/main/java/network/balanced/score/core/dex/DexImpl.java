@@ -126,7 +126,7 @@ public class DexImpl extends AbstractDex {
         rewardsEntry._balance = amount;
         rewardsList.add(rewardsEntry);
         Context.call(rewards.get(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal,
-                new Object[]{rewardsList});
+                rewardsList);
     }
 
     @External
@@ -236,8 +236,9 @@ public class DexImpl extends AbstractDex {
         takeNewDaySnapshot();
         checkDistributions();
         revertOnIncompleteRewards();
-
         Address user = Context.getCaller();
+        Address baseToken = poolBase.get(_id.intValue());
+        Context.require(baseToken!=null, TAG + ": invalid pool id");
         DictDB<Address, BigInteger> userLPBalance = balance.at(_id.intValue());
         BigInteger userBalance = userLPBalance.getOrDefault(user, BigInteger.ZERO);
 
@@ -246,9 +247,8 @@ public class DexImpl extends AbstractDex {
         Context.require(_value.compareTo(BigInteger.ZERO) > 0, TAG + " Cannot withdraw a negative or zero balance");
         Context.require(_value.compareTo(userBalance) <= 0, TAG + ": Insufficient balance");
 
-        Address baseToken = poolBase.get(_id.intValue());
-        Address quoteToken = poolQuote.get(_id.intValue());
 
+        Address quoteToken = poolQuote.get(_id.intValue());
         DictDB<Address, BigInteger> totalTokensInPool = poolTotal.at(_id.intValue());
         BigInteger totalBase = totalTokensInPool.get(baseToken);
         BigInteger totalQuote = totalTokensInPool.get(quoteToken);
@@ -293,7 +293,6 @@ public class DexImpl extends AbstractDex {
         if (baseToken.equals(baln.get())) {
             updateBalnSnapshot(_id.intValue(), newBase);
         }
-
         if (_withdraw) {
             withdraw(baseToken, baseToWithdraw);
             withdraw(quoteToken, quoteToWithdraw);
@@ -426,7 +425,7 @@ public class DexImpl extends AbstractDex {
         TransferSingle(user, MINT_ADDRESS, user, BigInteger.valueOf(id), liquidity);
 
         BigInteger userQuoteHoldings = (userLpAmount.multiply(poolQuoteAmount)).divide(poolLpAmount);
-        if (isLockingPool(id)) {
+        if (isRestrictedPoolId(id)) {
             withdrawLock.at(id).set(user, BigInteger.valueOf(Context.getBlockTimestamp()));
             revertBelowMinimum(userQuoteHoldings, _quoteToken);
         }

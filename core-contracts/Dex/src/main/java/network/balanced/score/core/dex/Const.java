@@ -50,7 +50,6 @@ public class Const {
     protected static final String CONTINUOUS_REWARDS_DAY = "continuous_rewards_day";
 
     protected static final BigInteger SICXICX_POOL_ID = BigInteger.valueOf(1L);
-    protected static final BigInteger U_SECONDS_DAY = BigInteger.valueOf(86400000000L);
     protected static final BigInteger MIN_LIQUIDITY = BigInteger.valueOf(1000);
     protected static final BigInteger FEE_SCALE = BigInteger.valueOf(10000);
     protected static final BigInteger EXA = BigInteger.valueOf(1000000000000000000L);

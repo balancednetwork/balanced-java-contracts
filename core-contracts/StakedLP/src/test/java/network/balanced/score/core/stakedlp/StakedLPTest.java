@@ -97,7 +97,7 @@ public class StakedLPTest extends UnitTest {
         String expectedErrorMessage = "Reverted(0): StakedLP: Sender not governance contract";
         expectErrorMessage(setDexNotFromGovernance, expectedErrorMessage);
 
-        stakedLpScore.invoke(Account.getAccount(governanceScore.getAddress()), "setDex", dex.getAddress());
+        stakedLpScore.invoke(governanceScore, "setDex", dex.getAddress());
         Address actualDex = (Address) stakedLpScore.call("getDex");
         assertEquals(dex.getAddress(), actualDex);
     }
@@ -123,7 +123,7 @@ public class StakedLPTest extends UnitTest {
     @Test
     void setAndGetRewards() {
         Address admin = setAndGetAdmin();
-        stakedLpScore.invoke(Account.getAccount(admin), "setRewards", rewards.getAddress());
+        stakedLpScore.invoke(governanceScore, "setRewards", rewards.getAddress());
         assertEquals(rewards.getAddress(), stakedLpScore.call("getRewards"));
     }
 

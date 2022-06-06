@@ -118,7 +118,7 @@ public interface Loans extends
     void toggleAssetActive(String _symbol);
 
     @External
-    boolean precompute(BigInteger _snapshot_id, int batch_size);
+    boolean precompute(BigInteger _snapshot_id, BigInteger batch_size);
 
     @External(readonly = true)
     BigInteger getTotalValue(String _name, BigInteger _snapshot_id);

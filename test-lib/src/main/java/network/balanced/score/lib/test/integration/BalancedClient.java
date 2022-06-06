@@ -52,6 +52,9 @@ public class BalancedClient {
     @ScoreClient
     private static Dividends _dividends;
 
+    @ScoreClient
+    private static SystemInterface _systemScore;
+
     public GovernanceScoreClient governance;
     public StakingScoreClient staking;
     public BalancedDollarScoreClient bnUSD;
@@ -65,6 +68,7 @@ public class BalancedClient {
     public StabilityScoreClient stability;
     public StakedLPScoreClient stakedLp;
     public DividendsScoreClient dividends;
+    public SystemInterfaceScoreClient systemScore;
 
     public BalancedClient(Balanced balanced, KeyWallet wallet) {
         this.balanced = balanced;
@@ -82,6 +86,7 @@ public class BalancedClient {
         stability = new StabilityScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.stability._address());
         stakedLp = new StakedLPScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.stakedLp._address());
         dividends = new DividendsScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.dividends._address());
+        systemScore = new SystemInterfaceScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.dividends._address());
     }
     
     public score.Address getAddress() {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import network.balanced.score.dependencies.Dependencies
+import network.balanced.score.dependencies.*
 
 version = '0.1.0'
 
@@ -23,31 +23,53 @@ repositories {
     mavenCentral()
 }
 
+sourceSets {
+    intTest {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+        java {
+            srcDirs("src/intTest")
+        }
+    }
+}
+
+// for integration tests
+configurations {
+    intTestImplementation.extendsFrom testImplementation
+    intTestAnnotationProcessor.extendsFrom testAnnotationProcessor
+    intTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
 dependencies {
     compileOnly Dependencies.javaeeApi
+
+    implementation Dependencies.javaeeTokens
     implementation Dependencies.javaeeScorex
+    implementation Dependencies.minimalJson
     implementation project(':score-lib')
 
     testImplementation Dependencies.javaeeUnitTest
-    testImplementation Dependencies.junitJupiter
-    testRuntimeOnly Dependencies.junitJupiterEngine
     testImplementation Dependencies.mockitoCore
     testImplementation Dependencies.mockitoInline
+
+
     testImplementation project(':test-lib')
+    testImplementation Dependencies.junitJupiter
+    testRuntimeOnly Dependencies.junitJupiterEngine
 
     intTestImplementation Dependencies.javaeeScoreClient
     intTestAnnotationProcessor Dependencies.javaeeScoreClient
     intTestImplementation Dependencies.iconSdk
     intTestImplementation Dependencies.jacksonDatabind
+
 }
 
 optimizedJar {
-    mainClassName = 'network.balanced.score.core.rewards.RewardsImpl'
+    mainClassName = 'network.balanced.score.core.dex.DexImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
         configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
     }
-
     enableDebug = false
 }
 
@@ -56,7 +78,6 @@ deployJar {
         sejong {
             uri = 'https://sejong.net.solidwallet.io/api/v3'
             nid = 0x53
-            to = "cx75256fadf232ad1124d9c6cd70c9b1ec122a0f47"
         }
         local {
             uri = 'http://localhost:9082/api/v3'
@@ -65,7 +86,6 @@ deployJar {
         mainnet {
             uri = 'https://ctz.solidwallet.io/api/v3'
             nid = 0x1
-            to = "cx793970c9ec84eb0dcb6164965c74fe678474d7c7"
         }
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
@@ -76,7 +96,7 @@ deployJar {
 tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
-    finalizedBy jacocoTestReport 
+    finalizedBy jacocoTestReport
 }
 
 jacocoTestReport {
@@ -88,26 +108,24 @@ jacocoTestReport {
     }
 }
 
-
-task integrationTest(type: Test) {
+task integrationTest(type: Test, dependsOn: optimizedJar) {
     useJUnitPlatform()
-
-    rootProject.allprojects {
-        if(it.getTasks().findByName('optimizedJar')) {
-            dependsOn(it.getTasks().getByName('optimizedJar'))
-        }
-    }
-
     options {
         testLogging.showStandardStreams = true
         description = 'Runs integration tests.'
         group = 'verification'
-
         testClassesDirs = sourceSets.intTest.output.classesDirs
         classpath = sourceSets.intTest.runtimeClasspath
+        /*systemProperty 'address', "cx06cc605a70b03982a31d6dd9451a73193cebc951"
+        systemProperty 'governanceAddress', "cxa24fbd23a2452cf83393cfd1f602109ca6f16596"
+        systemProperty 'stakingAddress', "cx8e86ef3b2e2fa33e3580c3a5092c390bfdbfe5bc"
+        systemProperty 'sIcxAddress', "cxc85179bc51f0d5ca9cab6ce7dbb920ce7cb3aa76"
+        systemProperty 'dividendAddress', "cx457606d270f785e9873bc8ee1a2b9b329885202e"
+        */systemProperty 'Dex', project.tasks.optimizedJar.outputJarName
+        project.extensions.deployJar.arguments.each {
+            arg -> systemProperty arg.name, arg.value
+        }
 
-        systemProperty "python", new File(project(':test-lib').projectDir, 'python-contracts/rewards.zip')
-        systemProperty "java", optimizedJar.outputJarName        
     }
 
 }

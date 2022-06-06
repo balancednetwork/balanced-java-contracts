@@ -43,6 +43,7 @@ import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import static network.balanced.score.lib.test.integration.BalancedUtils.*;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
+import score.UserRevertedException;
 
 class Systemtest implements ScoreIntegrationTest {
     private static Balanced balanced;
@@ -261,7 +262,7 @@ class Systemtest implements ScoreIntegrationTest {
         joinsICXBnusdLP(stakedLPClient, lpAmount, lpAmount);
         stakeICXBnusdLP(stakedLPClient);
         joinsICXBnusdLP(unstakedLPClient, lpAmount, lpAmount);
-        Assertions.assertThrows(RevertedException.class, () -> leaveICXBnusdLP(unstakedLPClient));
+        Assertions.assertThrows(UserRevertedException.class, () -> leaveICXBnusdLP(unstakedLPClient));
 
         nextDay();
 

@@ -110,6 +110,7 @@ public class GovernanceImpl {
         Context.call(Addresses.get("rewards"), "setTimeOffset",  offset);
         Context.call(Addresses.get("dex"), "setTimeOffset",  offset);
         Context.call(Addresses.get("dividends"), "setTimeOffset",  offset);
+
     }
 
     @External(readonly = true)
