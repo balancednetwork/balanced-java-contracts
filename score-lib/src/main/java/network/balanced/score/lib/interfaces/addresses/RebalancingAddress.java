@@ -14,24 +14,16 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.interfaces.base;
+package network.balanced.score.lib.interfaces.addresses;
 
 import score.Address;
+import score.annotation.External;
 
-import java.math.BigInteger;
+public interface RebalancingAddress {
 
-public interface IRC2 {
-    String name();
+    @External
+    void setRebalance(Address _address);
 
-    String symbol();
-
-    BigInteger decimals();
-
-    BigInteger totalSupply();
-
-    BigInteger balanceOf(Address _owner);
-
-    void transfer(Address _to, BigInteger _value, byte[] _data);
-
-    void Transfer(Address _from, Address _to, BigInteger _value, byte[] _data);
+    @External(readonly = true)
+    Address getRebalance();
 }

@@ -17,10 +17,13 @@
 package network.balanced.score.lib.structs;
 
 import score.Address;
+import score.annotation.Keep;
 
 import java.math.BigInteger;
 
 public class Disbursement {
+    @Keep
     public Address address;
+    @Keep
     public BigInteger amount;
 }

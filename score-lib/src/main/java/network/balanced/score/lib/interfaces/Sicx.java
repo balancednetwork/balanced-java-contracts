@@ -14,18 +14,31 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.interfaces.base;
+package network.balanced.score.lib.interfaces;
 
+import network.balanced.score.lib.interfaces.addresses.SicxAddress;
+import network.balanced.score.lib.interfaces.tokens.IRC2;
 import score.Address;
 import score.annotation.External;
 
 import java.math.BigInteger;
 
-public interface IRC2BurnableInterface {
+public interface Sicx extends SicxAddress, IRC2 {
 
-    @External
-    void burn(BigInteger _amount);
 
-    @External
-    void burnFrom(Address _account, BigInteger _amount);
+    @External(readonly = true)
+    String getPeg();
+
+    @External(readonly = true)
+    BigInteger priceInLoop();
+
+    @External(readonly = true)
+    BigInteger lastPriceInLoop();
+
+    @External(readonly = true)
+    Address getStakingAddress();
+
+    @External(readonly = true)
+    Address getAdmin();
+
 }

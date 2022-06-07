@@ -16,7 +16,7 @@
 
 package network.balanced.score.lib.tokens;
 
-import network.balanced.score.lib.interfaces.base.IRC2;
+import network.balanced.score.lib.interfaces.tokens.IRC2;
 import score.Address;
 import score.Context;
 import score.DictDB;

@@ -25,8 +25,10 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.structs.PrepDelegations;
 
+@ScoreInterface
 public interface Staking {
 
     @External(readonly = true)
@@ -103,7 +105,7 @@ public interface Staking {
 
     @External
     @Payable
-    BigInteger stakeICX(@Optional Address _to, @Optional byte[] _data);
+    void stakeICX(@Optional Address _to, @Optional byte[] _data);
 
     @External
     void transferUpdateDelegations(Address _from, Address _to, BigInteger _value);

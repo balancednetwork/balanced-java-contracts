@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.interfaces.base;
+package network.balanced.score.core.dividends.utils;
 
+import com.iconloop.score.token.irc2.IRC2Mintable;
 import score.Address;
-import score.annotation.External;
-import score.annotation.Optional;
 
 import java.math.BigInteger;
 
-public interface IRC2MintableInterface {
+public class bnUSD extends IRC2Mintable {
+    public bnUSD(String _name, String _symbol, int _decimals) {
+        super(_name, _symbol, _decimals);
+    }
 
-    @External
-    void mint(BigInteger _amount, @Optional byte[] _data);
-
-    @External
-    void mintTo(Address _account, BigInteger _amount, @Optional byte[] _data);
+    public void transfer(Address _to, BigInteger _amount, byte[] data) {
+    }
 }

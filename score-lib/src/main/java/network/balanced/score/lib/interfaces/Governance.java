@@ -15,23 +15,28 @@
  */
 package network.balanced.score.lib.interfaces;
 
+import foundation.icon.score.client.ScoreInterface;
+import network.balanced.score.lib.structs.BalancedAddresses;
+import network.balanced.score.lib.structs.DistributionPercentage;
+import network.balanced.score.lib.structs.PrepDelegations;
 import score.Address;
 import score.annotation.External;
 import score.annotation.Payable;
+
 
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.base.*;
 
-import network.balanced.score.lib.structs.BalancedAddresses;
-
+@ScoreInterface
 public interface Governance extends
         Name,
         TokenFallback,
         Fallback {
-    
+
     @External(readonly = true)
     BigInteger getDay();
 
@@ -45,7 +50,16 @@ public interface Governance extends
     void setVoteDuration(BigInteger duration);
 
     @External
+    void setTimeOffset(BigInteger offset);
+    
+    @External(readonly = true)
+    BigInteger getTimeOffset();
+
+    @External
     void setContinuousRewardsDay(BigInteger _day);
+
+    @External
+    void setDividendsOnlyToStakedBalnDay(BigInteger _day);
 
     @External(readonly = true)
     BigInteger getVoteDuration();
@@ -142,7 +156,13 @@ public interface Governance extends
     void rebalancingSetSicx(Address _address);
 
     @External
-    void rebalancingSetDex(Address _implementationaddress);
+    void rebalancingSetDex(Address _address);
+
+    @External
+    void rebalancingSetLoans(Address _address);
+
+    @External
+    void setLoansRebalance(Address _address);
 
     @External
     void setLoansDex(Address _address);
@@ -187,6 +207,9 @@ public interface Governance extends
     void removeDataSource(String _data_source_name);
 
     @External
+    void updateBalTokenDistPercentage(DistributionPercentage[] _recipient_list);
+
+    @External
     void bonusDist(Address[] _addresses, BigInteger[] _amounts);
 
     @External
@@ -200,6 +223,9 @@ public interface Governance extends
 
     @External
     void setMarketName(BigInteger _id, String _name);
+
+    @External
+    void delegate(PrepDelegations[] _delegations);
 
     @External
     void balwAdminTransfer(Address _from , Address _to , BigInteger _value, byte[] _data);
@@ -269,7 +295,7 @@ public interface Governance extends
 
     @External
     void setRouter(Address _router);
-    
+
     @External
     void enable_fee_handler();
 

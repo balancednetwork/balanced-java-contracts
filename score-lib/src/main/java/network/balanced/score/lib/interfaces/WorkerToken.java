@@ -19,14 +19,17 @@ package network.balanced.score.lib.interfaces;
 import network.balanced.score.lib.interfaces.addresses.AdminAddress;
 import network.balanced.score.lib.interfaces.addresses.BalnAddress;
 import network.balanced.score.lib.interfaces.addresses.GovernanceAddress;
-import network.balanced.score.lib.interfaces.base.IRC2;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
+import network.balanced.score.lib.interfaces.tokens.IRC2;
 import score.Address;
 import score.annotation.External;
 import score.annotation.Optional;
 
 import java.math.BigInteger;
 
+import foundation.icon.score.client.ScoreInterface;
+
+@ScoreInterface
 public interface WorkerToken extends GovernanceAddress, AdminAddress, BalnAddress, TokenFallback, IRC2 {
 
     @External
