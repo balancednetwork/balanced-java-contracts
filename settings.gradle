@@ -40,6 +40,9 @@ project(':Dividends').projectDir = file("core-contracts/Dividends")
 include(':Rebalancing')
 project(':Rebalancing').projectDir = file("core-contracts/Rebalancing")
 
+include(':Rewards')
+project(':Rewards').projectDir = file("core-contracts/Rewards")
+
 include(':StakedLP')
 project(':StakedLP').projectDir = file("core-contracts/StakedLP")
 

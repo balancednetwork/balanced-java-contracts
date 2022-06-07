@@ -14,28 +14,27 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.interfaces;
+package network.balanced.score.lib.interfaces.tokens;
 
-import network.balanced.score.lib.interfaces.addresses.AdminAddress;
-import network.balanced.score.lib.interfaces.addresses.BalnAddress;
-import network.balanced.score.lib.interfaces.addresses.GovernanceAddress;
-import network.balanced.score.lib.interfaces.base.TokenFallback;
-import network.balanced.score.lib.interfaces.tokens.IRC2;
+import foundation.icon.score.client.ScoreInterface;
 import score.Address;
 import score.annotation.External;
 import score.annotation.Optional;
 
 import java.math.BigInteger;
 
-import foundation.icon.score.client.ScoreInterface;
-
 @ScoreInterface
-public interface WorkerToken extends GovernanceAddress, AdminAddress, BalnAddress, TokenFallback, IRC2 {
+public interface IRC2Mintable extends IRC2{
 
     @External
-    void adminTransfer(Address _from, Address _to, BigInteger _value, @Optional byte[] _data);
+    void setMinter(Address _address);
+
+    @External(readonly = true)
+    Address getMinter();
 
     @External
-    void distribute();
+    void mint(BigInteger _amount, @Optional byte[] _data);
 
+    @External
+    void mintTo(Address _account, BigInteger _amount, @Optional byte[] _data);
 }

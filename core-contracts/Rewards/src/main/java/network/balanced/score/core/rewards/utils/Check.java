@@ -14,24 +14,16 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.interfaces.base;
+package network.balanced.score.core.rewards.utils;
 
-import score.Address;
+import network.balanced.score.core.rewards.RewardsImpl;
 
 import java.math.BigInteger;
 
-public interface IRC2 {
-    String name();
+public class Check {
 
-    String symbol();
-
-    BigInteger decimals();
-
-    BigInteger totalSupply();
-
-    BigInteger balanceOf(Address _owner);
-
-    void transfer(Address _to, BigInteger _value, byte[] _data);
-
-    void Transfer(Address _from, Address _to, BigInteger _value, byte[] _data);
+    public static boolean continuousRewardsActive() {
+        BigInteger continuousRewardDay = RewardsImpl.continuousRewardsDay.get();
+        return continuousRewardDay != null && continuousRewardDay.compareTo(RewardsImpl.getDay()) <= 0;
+    }
 }

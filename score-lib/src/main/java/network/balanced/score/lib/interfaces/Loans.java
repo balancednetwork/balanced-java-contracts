@@ -90,7 +90,7 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
 
     @External(readonly = true)
     Map<String, Object> getPositionByIndex(int _index, BigInteger _day);
- 
+
     @External(readonly = true)
     Map<String, Map<String, Object>> getAvailableAssets();
 
@@ -131,7 +131,7 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
     Map<String, BigInteger> getDataBatch(String _name, BigInteger _snapshot_id, int _limit, @Optional int _offset);
 
     @External
-    boolean checkForNewDay();    
+    boolean checkForNewDay();
 
     @External
     void checkDistributions(BigInteger _day, boolean _new_day);

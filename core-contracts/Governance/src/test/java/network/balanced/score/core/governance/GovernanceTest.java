@@ -1,6 +1,5 @@
-package network.balanced.score.core.governance;
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +13,8 @@ package network.balanced.score.core.governance;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package network.balanced.score.core.governance;
 
 import static network.balanced.score.core.governance.GovernanceConstants.TAG;
 import static network.balanced.score.lib.utils.Constants.EXA;
@@ -361,44 +362,6 @@ public class GovernanceTest extends GovernanceTestBase {
 
         // Assert
         verify(rewards.mock).updateBalTokenDistPercentage(distributionPercentage);
-    }
-
-    @Test
-    void bonusDist() {
-        // Arrange
-        Address[] _addresses = new Address[] {Account.newScoreAccount(scoreCount).getAddress(), Account.newScoreAccount(scoreCount).getAddress()};
-        BigInteger[] _amounts = new BigInteger[] {BigInteger.TEN, BigInteger.ONE};
-        Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
-        // Act & Assert
-        Executable withNotOwner = () -> governance.invoke(notOwner, "bonusDist", _addresses, _amounts);
-        expectErrorMessage(withNotOwner, expectedErrorMessage);
-
-        // Act
-        governance.invoke(owner, "bonusDist", _addresses, _amounts);
-
-        // Assert
-        verify(rewards.mock).bonusDist(_addresses, _amounts);
-    }
-
-    @Test
-    void setDay() {
-        // Arrange
-        BigInteger _day = BigInteger.TEN;
-        Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
-        // Act & Assert
-        Executable withNotOwner = () -> governance.invoke(notOwner, "setDay", _day);
-        expectErrorMessage(withNotOwner, expectedErrorMessage);
-
-        // Act
-        governance.invoke(owner, "setDay", _day);
-
-        // Assert
-        verify(rewards.mock).setDay(_day);
-
     }
 
     @Test

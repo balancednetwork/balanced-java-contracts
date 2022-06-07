@@ -14,25 +14,19 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.interfaces.base;
+package network.balanced.score.lib.utils;
 
-import score.Address;
-import score.annotation.External;
-import score.annotation.Optional;
+import score.ArrayDB;
 
-import java.math.BigInteger;
+public class DBHelpers {
+    public static <T>Boolean contains(ArrayDB<T> db, T item) {
+        int itemsCount = db.size();
+        for (int i = 0; i < itemsCount; i++) {
+            if (db.get(i).equals(item)) {
+                return true;
+            }
+        }
 
-public interface IRC2MintableInterface {
-
-    @External
-    void setMinter(Address _address);
-
-    @External(readonly = true)
-    Address getMinter();
-
-    @External
-    void mint(BigInteger _amount, @Optional byte[] _data);
-
-    @External
-    void mintTo(Address _account, BigInteger _amount, @Optional byte[] _data);
+        return false;
+    }
 }

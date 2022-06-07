@@ -43,10 +43,7 @@ dependencies {
     implementation Dependencies.javaeeScorex
 
     implementation Dependencies.iconSdk
-
-
     implementation Dependencies.javaFaker
-
 }
 
 test {

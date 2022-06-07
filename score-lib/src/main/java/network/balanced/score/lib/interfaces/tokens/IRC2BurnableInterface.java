@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.interfaces.base;
+package network.balanced.score.lib.interfaces.tokens;
 
 import score.Address;
 import score.annotation.External;

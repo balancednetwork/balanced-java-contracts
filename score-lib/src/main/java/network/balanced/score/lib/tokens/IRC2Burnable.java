@@ -16,7 +16,7 @@
 
 package network.balanced.score.lib.tokens;
 
-import network.balanced.score.lib.interfaces.base.IRC2BurnableInterface;
+import network.balanced.score.lib.interfaces.tokens.IRC2BurnableInterface;
 import score.Address;
 import score.Context;
 import score.annotation.External;

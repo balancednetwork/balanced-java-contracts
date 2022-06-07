@@ -14,28 +14,36 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.interfaces;
+package network.balanced.score.lib.interfaces.tokens;
 
-import network.balanced.score.lib.interfaces.addresses.AdminAddress;
-import network.balanced.score.lib.interfaces.addresses.BalnAddress;
-import network.balanced.score.lib.interfaces.addresses.GovernanceAddress;
-import network.balanced.score.lib.interfaces.base.TokenFallback;
-import network.balanced.score.lib.interfaces.tokens.IRC2;
+import foundation.icon.score.client.ScoreInterface;
 import score.Address;
+import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
 
 import java.math.BigInteger;
 
-import foundation.icon.score.client.ScoreInterface;
-
 @ScoreInterface
-public interface WorkerToken extends GovernanceAddress, AdminAddress, BalnAddress, TokenFallback, IRC2 {
+public interface IRC2 {
+    @External
+    String name();
 
     @External
-    void adminTransfer(Address _from, Address _to, BigInteger _value, @Optional byte[] _data);
+    String symbol();
 
     @External
-    void distribute();
+    BigInteger decimals();
 
+    @External
+    BigInteger totalSupply();
+
+    @External
+    BigInteger balanceOf(Address _owner);
+
+    @External
+    void transfer(Address _to, BigInteger _value, @Optional byte[] _data);
+
+    @EventLog
+    void Transfer(Address _from, Address _to, BigInteger _value, byte[] _data);
 }
