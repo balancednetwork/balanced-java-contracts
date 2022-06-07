@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2022-2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package network.balanced.score.core.dex;
 
 import com.iconloop.score.test.Account;
@@ -46,7 +62,7 @@ class DexTestBase extends UnitTest {
 
     protected final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
 
-    public void setup() throws Exception {
+    public void setup() {
         dexScore.invoke(governanceScore, "setTimeOffset", BigInteger.valueOf(Context.getBlockTimestamp()));
         dexScoreSpy = (DexImpl) spy(dexScore.getInstance());
         dexScore.setInstance(dexScoreSpy);
@@ -67,7 +83,7 @@ class DexTestBase extends UnitTest {
             "setBnusd", bnusdScore.getAddress(),
             "setBaln", balnScore.getAddress(),
             "setSicx", sicxScore.getAddress(),
-            "setFeeHandler", feehandlerScore.getAddress(),
+            "setFeehandler", feehandlerScore.getAddress(),
             "setStakedLp", stakedLPScore.getAddress()
         );
         
@@ -106,7 +122,7 @@ class DexTestBase extends UnitTest {
     }
 
     protected void supplyIcxLiquidity(Account supplier, BigInteger value) {
-        contextMock.when(() -> Context.getValue()).thenReturn(value);
+        contextMock.when(Context::getValue).thenReturn(value);
         contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
         contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
         contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("updateBatchRewardsData"), any(String.class), any(BigInteger.class), any())).thenReturn(null);
