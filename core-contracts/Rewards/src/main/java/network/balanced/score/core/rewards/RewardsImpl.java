@@ -140,10 +140,10 @@ public class RewardsImpl implements Rewards {
     }
 
     @External(readonly = true)
-    public Map<Address, BigInteger> getBalnHoldings(Address[] _holders) {
-        Map<Address, BigInteger> holdings = new HashMap<>();
+    public Map<String, BigInteger> getBalnHoldings(Address[] _holders) {
+        Map<String, BigInteger> holdings = new HashMap<>();
         for(Address address : _holders) {
-            holdings.put(address, balnHoldings.getOrDefault(address.toString(), BigInteger.ZERO));
+            holdings.put(address.toString(), balnHoldings.getOrDefault(address.toString(), BigInteger.ZERO));
         }
 
         return holdings;
