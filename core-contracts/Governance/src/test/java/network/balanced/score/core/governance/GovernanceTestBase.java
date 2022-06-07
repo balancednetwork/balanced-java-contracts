@@ -20,40 +20,21 @@ import com.eclipsesource.json.JsonObject;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
-import com.iconloop.score.test.TestBase;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.function.Executable;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import score.Context;
-import score.Address;
-
-import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
-
-import static network.balanced.score.lib.test.UnitTest.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.MockedStatic.Verification;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
+import network.balanced.score.core.governance.interfaces.FeehandlerScoreInterface;
+import network.balanced.score.core.governance.interfaces.SicxScoreInterface;
+import network.balanced.score.core.governance.interfaces.StakedLpScoreInterface;
+import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.structs.BalancedAddresses;
-import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockContract;
-import network.balanced.score.core.governance.interfaces.*;
-import network.balanced.score.lib.interfaces.*;
 
+import java.math.BigInteger;
+import java.util.Map;
 
-import static network.balanced.score.core.governance.GovernanceConstants.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class GovernanceTestBase extends UnitTest {
     protected static final Long DAY = 43200L;
@@ -87,43 +68,38 @@ public class GovernanceTestBase extends UnitTest {
     protected Score governance;
 
     protected JsonObject createJsonDistribtion(String name, BigInteger dist) {
-        JsonObject distribution = new JsonObject()
+
+        return new JsonObject()
             .add("recipient_name", name)
             .add("dist_percent", dist.toString());
-            
-        return distribution;
     }
     
     protected JsonObject createJsonDisbusment(String token, BigInteger amount) {
-        JsonObject distribution = new JsonObject()
+
+        return new JsonObject()
             .add("address", token)
             .add("amount", amount.intValue());
-            
-        return distribution;
     }
 
     protected JsonObject createParameter(String type, String value) {
-        JsonObject parameter = new JsonObject()
+
+        return new JsonObject()
             .add("type", type)
             .add("value", value);
-
-        return parameter;
     }
 
     protected JsonObject createParameter(String type, BigInteger value) {
-        JsonObject parameter = new JsonObject()
+
+        return new JsonObject()
             .add("type", type)
             .add("value", value.intValue());
-
-        return parameter;
     }
 
     protected JsonObject createParameter(String type, Boolean value) {
-        JsonObject parameter = new JsonObject()
+
+        return new JsonObject()
             .add("type", type)
             .add("value", value);
-
-        return parameter;
     }
 
     private void setupAddresses() {
@@ -267,6 +243,7 @@ public class GovernanceTestBase extends UnitTest {
         return id;
     }
 
+    @SuppressWarnings("unchecked")
     protected Map<String, Object> getVote(BigInteger id) {
         return (Map<String, Object>) governance.call("checkVote" , id);
     }
@@ -278,21 +255,21 @@ public class GovernanceTestBase extends UnitTest {
     }
 
     protected void setup() throws Exception {
-        loans = new MockContract<LoansScoreInterface>(LoansScoreInterface.class, sm, owner);
-        dex = new MockContract<DexScoreInterface>(DexScoreInterface.class, sm, owner);
-        staking = new MockContract<StakingScoreInterface>(StakingScoreInterface.class, sm, owner);
-        rewards = new MockContract<RewardsScoreInterface>(RewardsScoreInterface.class, sm, owner);
-        reserve = new MockContract<ReserveScoreInterface>(ReserveScoreInterface.class, sm, owner);
-        dividends = new MockContract<DividendsScoreInterface>(DividendsScoreInterface.class, sm, owner); 
-        daofund = new MockContract<DAOfundScoreInterface>(DAOfundScoreInterface.class, sm, owner); 
-        sicx = new MockContract<SicxScoreInterface>(SicxScoreInterface.class, sm, owner);
-        bnUSD  = new MockContract<BalancedDollarScoreInterface>(BalancedDollarScoreInterface.class, sm, owner); 
-        baln = new MockContract<BalnScoreInterface>(BalnScoreInterface.class, sm, owner);
-        bwt = new MockContract<WorkerTokenScoreInterface>(WorkerTokenScoreInterface.class, sm, owner);
-        router = new MockContract<RouterScoreInterface>(RouterScoreInterface.class, sm, owner); 
-        rebalancing = new MockContract<RebalancingScoreInterface>(RebalancingScoreInterface.class, sm, owner);
-        feehandler = new MockContract<FeehandlerScoreInterface>(FeehandlerScoreInterface.class, sm, owner);
-        stakedLp = new MockContract<StakedLpScoreInterface>(StakedLpScoreInterface.class, sm, owner);
+        loans = new MockContract<>(LoansScoreInterface.class, sm, owner);
+        dex = new MockContract<>(DexScoreInterface.class, sm, owner);
+        staking = new MockContract<>(StakingScoreInterface.class, sm, owner);
+        rewards = new MockContract<>(RewardsScoreInterface.class, sm, owner);
+        reserve = new MockContract<>(ReserveScoreInterface.class, sm, owner);
+        dividends = new MockContract<>(DividendsScoreInterface.class, sm, owner);
+        daofund = new MockContract<>(DAOfundScoreInterface.class, sm, owner);
+        sicx = new MockContract<>(SicxScoreInterface.class, sm, owner);
+        bnUSD = new MockContract<>(BalancedDollarScoreInterface.class, sm, owner);
+        baln = new MockContract<>(BalnScoreInterface.class, sm, owner);
+        bwt = new MockContract<>(WorkerTokenScoreInterface.class, sm, owner);
+        router = new MockContract<>(RouterScoreInterface.class, sm, owner);
+        rebalancing = new MockContract<>(RebalancingScoreInterface.class, sm, owner);
+        feehandler = new MockContract<>(FeehandlerScoreInterface.class, sm, owner);
+        stakedLp = new MockContract<>(StakedLpScoreInterface.class, sm, owner);
         governance = sm.deploy(owner, GovernanceImpl.class);
 
         setupAddresses();

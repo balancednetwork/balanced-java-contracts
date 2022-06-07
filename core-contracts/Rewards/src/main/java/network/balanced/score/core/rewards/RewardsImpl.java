@@ -19,7 +19,7 @@ package network.balanced.score.core.rewards;
 import network.balanced.score.core.rewards.utils.RewardsConstants;
 import network.balanced.score.lib.interfaces.DataSourceScoreInterface;
 import network.balanced.score.lib.interfaces.Rewards;
-import network.balanced.score.lib.interfaces.tokens.MintableScoreInterface;
+import network.balanced.score.lib.interfaces.tokens.IRC2MintableScoreInterface;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import network.balanced.score.lib.utils.SetDB;
@@ -360,8 +360,8 @@ public class RewardsImpl implements Rewards {
     private boolean mintAndAllocateBalnReward(BigInteger platformDay) {
         BigInteger distribution = dailyDistribution(platformDay);
 
-        MintableScoreInterface baln = new MintableScoreInterface(balnAddress.get());
-        baln.mint(distribution);
+        IRC2MintableScoreInterface baln = new IRC2MintableScoreInterface(balnAddress.get());
+        baln.mint(distribution, new byte[0]);
 
         BigInteger shares = HUNDRED_PERCENTAGE;
         BigInteger remaining = distribution;
@@ -464,7 +464,7 @@ public class RewardsImpl implements Rewards {
         BigInteger userClaimableRewards = balnHoldings.getOrDefault(address.toString(), BigInteger.ZERO);
         if (userClaimableRewards.compareTo(BigInteger.ZERO) > 0) {
             balnHoldings.set(address.toString(), null);
-            MintableScoreInterface baln = new MintableScoreInterface(balnAddress.get());
+            IRC2MintableScoreInterface baln = new IRC2MintableScoreInterface(balnAddress.get());
             baln.transfer(address, userClaimableRewards, new byte[0]);
             RewardsClaimed(address, userClaimableRewards);
         }

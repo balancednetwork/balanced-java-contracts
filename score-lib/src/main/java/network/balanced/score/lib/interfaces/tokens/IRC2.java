@@ -15,13 +15,14 @@
  */
 
 package network.balanced.score.lib.interfaces.tokens;
-import score.Address;
-import score.annotation.Optional;
-import score.annotation.External;
-
-import java.math.BigInteger;
 
 import foundation.icon.score.client.ScoreInterface;
+import score.Address;
+import score.annotation.EventLog;
+import score.annotation.External;
+import score.annotation.Optional;
+
+import java.math.BigInteger;
 
 @ScoreInterface
 public interface IRC2 {
@@ -42,7 +43,7 @@ public interface IRC2 {
 
     @External
     void transfer(Address _to, BigInteger _value, @Optional byte[] _data);
-    
-    @External
+
+    @EventLog
     void Transfer(Address _from, Address _to, BigInteger _value, byte[] _data);
 }

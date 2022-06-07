@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import network.balanced.score.lib.interfaces.DataSourceScoreInterface;
-import network.balanced.score.lib.interfaces.tokens.MintableScoreInterface;
+import network.balanced.score.lib.interfaces.tokens.IRC2MintableScoreInterface;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockContract;
@@ -54,15 +54,15 @@ class RewardsTestBase extends UnitTest {
 
     MockContract<DataSourceScoreInterface> dex;
     MockContract<DataSourceScoreInterface> loans;
-    MockContract<MintableScoreInterface> baln;
-    MockContract<MintableScoreInterface> bwt;
+    MockContract<IRC2MintableScoreInterface> baln;
+    MockContract<IRC2MintableScoreInterface> bwt;
     Score rewardsScore;
 
     void setup() throws Exception {
         dex = new MockContract<>(DataSourceScoreInterface.class, sm, admin);
         loans = new MockContract<>(DataSourceScoreInterface.class, sm, admin);
-        baln = new MockContract<>(MintableScoreInterface.class, sm, admin);
-        bwt = new MockContract<>(MintableScoreInterface.class, sm, admin);
+        baln = new MockContract<>(IRC2MintableScoreInterface.class, sm, admin);
+        bwt = new MockContract<>(IRC2MintableScoreInterface.class, sm, admin);
 
         BigInteger startTime = BigInteger.valueOf(sm.getBlock().getTimestamp());
         sm.getBlock().increase(DAY);

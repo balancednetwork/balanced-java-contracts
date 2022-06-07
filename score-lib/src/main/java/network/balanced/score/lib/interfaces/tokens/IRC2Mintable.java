@@ -14,24 +14,27 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.interfaces.base;
+package network.balanced.score.lib.interfaces.tokens;
 
+import foundation.icon.score.client.ScoreInterface;
 import score.Address;
+import score.annotation.External;
+import score.annotation.Optional;
 
 import java.math.BigInteger;
 
-public interface IRC2 {
-    String name();
+@ScoreInterface
+public interface IRC2Mintable extends IRC2{
 
-    String symbol();
+    @External
+    void setMinter(Address _address);
 
-    BigInteger decimals();
+    @External(readonly = true)
+    Address getMinter();
 
-    BigInteger totalSupply();
+    @External
+    void mint(BigInteger _amount, @Optional byte[] _data);
 
-    BigInteger balanceOf(Address _owner);
-
-    void transfer(Address _to, BigInteger _value, byte[] _data);
-
-    void Transfer(Address _from, Address _to, BigInteger _value, byte[] _data);
+    @External
+    void mintTo(Address _account, BigInteger _amount, @Optional byte[] _data);
 }
