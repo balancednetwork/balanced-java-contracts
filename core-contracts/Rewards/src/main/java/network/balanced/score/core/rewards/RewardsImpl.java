@@ -140,10 +140,10 @@ public class RewardsImpl implements Rewards {
     }
 
     @External(readonly = true)
-    public Map<Address, BigInteger> getBalnHoldings(Address[] _holders) {
-        Map<Address, BigInteger> holdings = new HashMap<>();
+    public Map<String, BigInteger> getBalnHoldings(Address[] _holders) {
+        Map<String, BigInteger> holdings = new HashMap<>();
         for(Address address : _holders) {
-            holdings.put(address, balnHoldings.getOrDefault(address.toString(), BigInteger.ZERO));
+            holdings.put(address.toString(), balnHoldings.getOrDefault(address.toString(), BigInteger.ZERO));
         }
 
         return holdings;
@@ -688,14 +688,35 @@ public class RewardsImpl implements Rewards {
 
     private BigInteger dailyDistribution(BigInteger day) {
         BigInteger baseDistribution = pow(BigInteger.TEN, 23);
+        int offset = 5;
         if (day.compareTo(BigInteger.valueOf(60)) <= 0) {
             return baseDistribution;
-        } else {
+        } else if (day.compareTo(BigInteger.valueOf(66)) <= 0) { 
             BigInteger index = day.subtract(BigInteger.valueOf(60));
             BigInteger decay = pow(BigInteger.valueOf(995), index.intValue());
             BigInteger decayOffset = pow(BigInteger.valueOf(1000), index.intValue());
             BigInteger minDistribution = BigInteger.valueOf(1250).multiply(EXA);
             BigInteger distribution = decay.multiply(baseDistribution).divide(decayOffset);
+            return minDistribution.max(distribution);
+
+        } else {
+            Integer index = day.subtract(BigInteger.valueOf(60)).intValue();
+            BigInteger distribution = baseDistribution;
+            
+            for (int i = 0; i < offset; i++) {
+                distribution = distribution.multiply(BigInteger.valueOf(995));
+            }
+
+            int exponent = index - offset;
+            for (int i = 0; i < exponent; i++) {
+                distribution = distribution.multiply(BigInteger.valueOf(995)).divide(BigInteger.valueOf(1000));
+            }
+
+            for (int i = 0; i < offset; i++) {
+                distribution = distribution.divide(BigInteger.valueOf(1000));
+            }
+
+            BigInteger minDistribution = BigInteger.valueOf(1250).multiply(EXA);
             return minDistribution.max(distribution);
         }
     }

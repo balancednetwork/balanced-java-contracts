@@ -45,7 +45,7 @@ public interface Rewards extends
     BigInteger getEmission(BigInteger _day);
    
     @External(readonly = true)
-    Map<Address, BigInteger> getBalnHoldings(Address[] _holders);
+    Map<String, BigInteger> getBalnHoldings(Address[] _holders);
    
     @External(readonly = true)
     BigInteger getBalnHolding(Address _holder);

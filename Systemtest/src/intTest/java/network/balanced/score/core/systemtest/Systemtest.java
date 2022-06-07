@@ -23,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Answers.valueOf;
 
 import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.eclipsesource.json.Json;
@@ -189,7 +191,7 @@ class Systemtest implements ScoreIntegrationTest {
         verifyRewards(loansClient);
         verifyRewards(lpClient);
 
-        updateRewards();
+        verifyExternalAndUpdateRewards(loansAndlpClient);
 
         verifyNoRewards(loansClient);
         verifyNoRewards(lpClient);
@@ -235,8 +237,8 @@ class Systemtest implements ScoreIntegrationTest {
         verifyRewards(lpClient);
         verifyRewards(loansAndlpClient);
 
+        verifyExternalAndUpdateLoans(loansAndlpClient);
         balanced.dex._update(dexJavaPath, Map.of("_governance", balanced.governance._address()));
-        balanced.loans._update(loansJavaPath, Map.of("_governance", balanced.governance._address()));
         owner.governance.setAddressesOnContract("dex");
         assertEquals(balanced.stakedLp._address().toString(), owner.dex.getStakedLp().toString());
 
@@ -324,8 +326,10 @@ class Systemtest implements ScoreIntegrationTest {
     @Order(7)
     void openNewPostionsAndVerifyRewards() throws Exception {
         BalancedClient loanTaker = balanced.newClient();
+        BalancedClient loanTaker2 = balanced.newClient();
         BigInteger loan = BigInteger.TEN.pow(21).multiply(BigInteger.valueOf(2));
         loanTaker.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loan, null, null);        
+        sICXDepositAndBorrow(loanTaker2, BigInteger.TEN.pow(23), loan);
 
         BalancedClient liquidityProvider = balanced.newClient();
         BigInteger bnusdDeposit = BigInteger.TEN.pow(21);
@@ -335,6 +339,7 @@ class Systemtest implements ScoreIntegrationTest {
 
         Thread.sleep(100);
         verifyRewards(loanTaker);
+        verifyRewards(loanTaker2);
         verifyNoRewards(liquidityProvider);
 
         stakeICXBnusdLP(liquidityProvider);
@@ -422,7 +427,7 @@ class Systemtest implements ScoreIntegrationTest {
     void rebalancingLowerPrice() throws Exception {
         BalancedClient loanTaker = balanced.newClient();
         BigInteger loan = BigInteger.TEN.pow(22);
-        loanTaker.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loan, null, null);
+        sICXDepositAndBorrow(loanTaker, BigInteger.TEN.pow(23), loan);
         Map<String, BigInteger> originalBalanceAndSupply = loanTaker.loans.getBalanceAndSupply("Loans", loanTaker.getAddress());
 
         raisePriceAboveThreshold();
@@ -490,7 +495,7 @@ class Systemtest implements ScoreIntegrationTest {
         BalancedClient stakingClient = balanced.newClient();
         BalancedClient lpClient = balanced.newClient();
         BalancedClient feeGenerator = balanced.newClient();
-        stakingClient.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);        
+        sICXDepositAndBorrow(stakingClient, BigInteger.TEN.pow(23), BigInteger.TEN.pow(21));
         lpClient.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);
 
         balanced.increaseDay(1);
@@ -536,8 +541,129 @@ class Systemtest implements ScoreIntegrationTest {
         verifyNoBnusdFees(lpClient);
     }
 
-    private void updateRewards() {
+
+    
+    private void verifyExternalAndUpdateLoans(BalancedClient clientInFocus) throws Exception {
+        Map<String, Object> positionPre = removeZeroAssets(owner.loans.getAccountPositions(clientInFocus.getAddress()));
+        int id =  balanced.hexObjectToInt(positionPre.get("pos_id")).intValue();
+        Map<String, Object> postitionByIndexPre = removeZeroAssets(owner.loans.getPositionByIndex(id, BigInteger.valueOf(-1)));
+        Map<String, Object> postitionByIndexLastDayPre = removeZeroAssets(owner.loans.getPositionByIndex(id, BigInteger.valueOf(-2)));
+        Map<String, Object> snapshotPre = owner.loans.getSnapshot(BigInteger.valueOf(-1));
+        Map<String, Object> snapshotPreLastDay = owner.loans.getSnapshot(BigInteger.valueOf(-2));
+        Map<String, Map<String, Object>> assetsPre = owner.loans.getAvailableAssets();
+        int borrowerCountPre = owner.loans.borrowerCount();
+        Map<String, String> collateralTokensPre = owner.loans.getCollateralTokens();
+        BigInteger totalCollateralPre = owner.loans.getTotalCollateral();
+        Map<String, Map<String, Object>> availableAssetsPre = owner.loans.getAvailableAssets();
+        
+        balanced.loans._update(loansJavaPath, Map.of("_governance", balanced.governance._address()));
+
+        Map<String, Object> positionPost = owner.loans.getAccountPositions(clientInFocus.getAddress());
+        Map<String, Object> postitionByIndexPost = owner.loans.getPositionByIndex(id, BigInteger.valueOf(-1));
+        Map<String, Object> postitionByIndexLastDayPost = owner.loans.getPositionByIndex(id, BigInteger.valueOf(-2));
+        Map<String, Object> snapshotPost = owner.loans.getSnapshot(BigInteger.valueOf(-1));
+        Map<String, Object> snapshotPostLastDay = owner.loans.getSnapshot(BigInteger.valueOf(-2));
+        Map<String, Map<String, Object>> assetsPost = owner.loans.getAvailableAssets();
+        int borrowerCountPost = owner.loans.borrowerCount();
+        Map<String, String> collateralTokensPost = owner.loans.getCollateralTokens();
+        BigInteger totalCollateralPost = owner.loans.getTotalCollateral();
+        Map<String, Map<String, Object>> availableAssetsPost = owner.loans.getAvailableAssets();
+
+        assertEquals(positionPre.toString(), positionPost.toString());
+        assertEquals(postitionByIndexPre.toString(), postitionByIndexPost.toString());
+        assertEquals(postitionByIndexLastDayPre.toString(), postitionByIndexLastDayPost.toString());
+        assertEquals(snapshotPre.toString(), snapshotPost.toString());
+        assertEquals(snapshotPreLastDay.toString(), snapshotPostLastDay.toString());
+        assertEquals(assetsPre.toString(), assetsPost.toString());
+        assertEquals(borrowerCountPre, borrowerCountPost);
+        assertEquals(collateralTokensPre.toString(), collateralTokensPost.toString());
+        assertEquals(totalCollateralPre, totalCollateralPost);
+        assertEquals(availableAssetsPre.toString(), availableAssetsPost.toString());
+    }
+
+    private Map<String, Object> removeZeroAssets(Map<String, Object> position) {
+        if (position.isEmpty()){
+            return position;
+        }
+        Map<String, Object> assets = (Map<String,Object>) position.get("assets");
+        Map<String, Object> newAssets = new HashMap<>();
+        for (Map.Entry<String, Object> entry : assets.entrySet()) {
+            if (!balanced.hexObjectToInt(entry.getValue()).equals(BigInteger.ZERO)) {
+                newAssets.put(entry.getKey(), entry.getValue());
+            }
+        }
+
+        Map<String, Object> newPosition = new HashMap<String, Object>(position);
+        position.put("assets", newAssets);
+
+        return position;
+    }
+
+    private void verifyExternalAndUpdateRewards(BalancedClient clientInFocus) {
+        BigInteger day = owner.governance.getDay();
+        BigInteger emissionPre = owner.rewards.getEmission(day);
+        BigInteger emission1Pre = owner.rewards.getEmission(BigInteger.valueOf(59));
+        BigInteger emission2Pre = owner.rewards.getEmission(BigInteger.valueOf(60));
+        BigInteger emission3Pre = owner.rewards.getEmission(BigInteger.valueOf(61));
+        BigInteger emission4Pre = owner.rewards.getEmission(BigInteger.valueOf(423));
+        BigInteger emission5Pre = owner.rewards.getEmission(BigInteger.valueOf(853));
+        BigInteger emission6Pre = owner.rewards.getEmission(BigInteger.valueOf(923));
+        BigInteger emission7Pre = owner.rewards.getEmission(BigInteger.valueOf(1192));
+        BigInteger emission8Pre = owner.rewards.getEmission(BigInteger.valueOf(1251));
+        Map<String, BigInteger> balnHoldingsPre = owner.rewards.getBalnHoldings(new score.Address[] {clientInFocus.getAddress()});
+        BigInteger balnHoldingPre = owner.rewards.getBalnHolding(clientInFocus.getAddress());
+        Map<String, Object> distStatusPre = owner.rewards.distStatus();
+        List<String> dataSourceNamesPre = owner.rewards.getDataSourceNames();
+        List<String> recipientsPre = owner.rewards.getRecipients();
+        Map<String, BigInteger> recipientsSplitPre = owner.rewards.getRecipientsSplit();
+        Map<String, Map<String, Object>> dataSourcesPre = owner.rewards.getDataSources();
+        Map<String, Object> sourceDataPre = owner.rewards.getSourceData("Loans");
+        Map<String, BigInteger> recipientAtPre = owner.rewards.recipientAt(day);
+        Map<String, BigInteger> recipientAtLastDayPre = owner.rewards.recipientAt(day.subtract(BigInteger.ONE));
+       
         balanced.rewards._update(rewardsJavaPath, Map.of("_governance", balanced.governance._address()));
+       
+        BigInteger emissionPost = owner.rewards.getEmission(day);
+        BigInteger emission1Post = owner.rewards.getEmission(BigInteger.valueOf(59));
+        BigInteger emission2Post = owner.rewards.getEmission(BigInteger.valueOf(60));
+        BigInteger emission3Post = owner.rewards.getEmission(BigInteger.valueOf(61));
+        BigInteger emission4Post = owner.rewards.getEmission(BigInteger.valueOf(423));
+        BigInteger emission5Post = owner.rewards.getEmission(BigInteger.valueOf(853));
+        BigInteger emission6Post = owner.rewards.getEmission(BigInteger.valueOf(923));
+        BigInteger emission7Post = owner.rewards.getEmission(BigInteger.valueOf(1192));
+        BigInteger emission8Post = owner.rewards.getEmission(BigInteger.valueOf(1251));
+
+        Map<String, BigInteger> balnHoldingsPost = owner.rewards.getBalnHoldings(new score.Address[] {clientInFocus.getAddress()});
+        BigInteger balnHoldingPost = owner.rewards.getBalnHolding(clientInFocus.getAddress());
+        Map<String, Object> distStatusPost = owner.rewards.distStatus();
+        List<String> dataSourceNamesPost = owner.rewards.getDataSourceNames();
+        List<String> recipientsPost = owner.rewards.getRecipients();
+        Map<String, BigInteger> recipientsSplitPost = owner.rewards.getRecipientsSplit();
+        Map<String, Map<String, Object>> dataSourcesPost = owner.rewards.getDataSources();
+        Map<String, Object> sourceDataPost = owner.rewards.getSourceData("Loans");
+        Map<String, BigInteger> recipientAtPost = owner.rewards.recipientAt(day);
+        Map<String, BigInteger> recipientAtLastDayPost = owner.rewards.recipientAt(day.subtract(BigInteger.ONE));
+
+        assertEquals(emissionPre, emissionPost);
+        assertEquals(emission1Pre, emission1Post);
+        assertEquals(emission2Pre, emission2Post);
+        assertEquals(emission3Pre, emission3Post);
+        assertEquals(emission4Pre, emission4Post);
+        assertEquals(emission5Pre, emission5Post);
+        assertEquals(emission6Pre, emission6Post);
+        assertEquals(emission7Pre, emission7Post);
+        assertEquals(emission8Pre, emission8Post);
+        assertEquals(balnHoldingsPre.toString(), balnHoldingsPost.toString());
+        assertEquals(balnHoldingPre, balnHoldingPost);
+        assertEquals(distStatusPre.toString(), distStatusPost.toString());
+        assertEquals(dataSourceNamesPre.toString(), dataSourceNamesPost.toString());
+        assertEquals(recipientsPre.toString(), recipientsPost.toString());
+        assertEquals(recipientsSplitPre.toString(), recipientsSplitPost.toString());
+        assertEquals(dataSourcesPre.toString(), dataSourcesPost.toString());
+        assertEquals(sourceDataPre.toString(), sourceDataPost.toString());
+        assertEquals(recipientAtPre.toString(), recipientAtPost.toString());
+        assertEquals(recipientAtLastDayPre.toString(), recipientAtLastDayPost.toString());
+
         owner.rewards.addDataProvider(balanced.stakedLp._address());
         owner.rewards.addDataProvider(balanced.dex._address());
         owner.rewards.addDataProvider(balanced.loans._address());
@@ -594,6 +720,20 @@ class Systemtest implements ScoreIntegrationTest {
         assertTrue(daoFundBnusdBalancePostDist.compareTo(daoFundBnusdBalancePreDist) > 0);
         assertTrue(daoFundBalnBalancePostDist.compareTo(daoFundBalnBalancePreDist) > 0);
         assertTrue(daoFundSicxBalancePostDist.compareTo(daoFundSicxBalancePreDist) > 0);
+    }
+
+    private byte[] createBorrowData(BigInteger amount) {
+        JsonObject data = new JsonObject()
+            .add("_asset", "bnUSD")
+            .add("_amount", amount.toString());
+
+        return data.toString().getBytes();
+    }
+
+    private void sICXDepositAndBorrow(BalancedClient client, BigInteger collateral, BigInteger amount) {
+        client.staking.stakeICX(collateral.multiply(BigInteger.TWO), null, null);
+        byte[] params = createBorrowData(amount);
+        client.sicx.transfer(balanced.loans._address(), collateral, params);
     }
 
     private void joinsICXBnusdLP(BalancedClient client, BigInteger icxAmount, BigInteger bnusdAmount) {

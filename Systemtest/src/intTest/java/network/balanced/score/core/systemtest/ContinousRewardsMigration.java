@@ -246,7 +246,6 @@ class ContinousRewardsMigration implements ScoreIntegrationTest {
             owner.rewards.getBalnHolding(loansClientCollecting.getAddress()).divide(BigInteger.valueOf(100))
         );
 
-
         Map<String,BigInteger> recipientSplit = owner.rewards.getRecipientsSplit();
         BigInteger contractRewardsPercentage = recipientSplit.get("DAOfund").add(recipientSplit.get("Reserve Fund")).add(recipientSplit.get("Worker Tokens"));
         DistributionPercentage[] distPercentages = new DistributionPercentage[recipientSplit.size()];
@@ -279,6 +278,7 @@ class ContinousRewardsMigration implements ScoreIntegrationTest {
 
         assertTrue(loansRewardsPostChange.compareTo(loansRewardsPreChange) < 0);
         assertTrue(lpRewardsPostChange.compareTo(lpRewardsPreChange) > 0);
+
         // 5 days
         for (int i = 0; i < 5; i++) {
             nextDay();

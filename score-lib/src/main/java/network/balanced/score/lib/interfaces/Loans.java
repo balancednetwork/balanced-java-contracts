@@ -38,7 +38,8 @@ public interface Loans extends
         ReserveAddress,
         RebalancingAddress,
         DexAddress,
-        AdminAddress {
+        AdminAddress,
+        TokenFallback {
 
     @External
     void turnLoansOn();
