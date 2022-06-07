@@ -37,17 +37,13 @@ dependencies {
     implementation Dependencies.jacksonDatabind
     implementation Dependencies.javaeeUnitTest
     implementation Dependencies.junitJupiter
-    implementation Dependencies.mockitoCore
     runtimeOnly Dependencies.junitJupiterEngine
     implementation Dependencies.mockitoCore
     implementation Dependencies.json
     implementation Dependencies.javaeeScorex
 
     implementation Dependencies.iconSdk
-
-
     implementation Dependencies.javaFaker
-
 }
 
 test {
