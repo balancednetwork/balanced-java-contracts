@@ -462,7 +462,7 @@ public class Position {
     }
 
     public Map<String, Object> toMap(Integer day) {
-        int index = SnapshotDB.getSnapshotId(day);
+        int index = getSnapshotId(day);
         if (index == -1 || day > LoansImpl._getDay().intValue()) {
             return Map.of();
         }
@@ -475,9 +475,9 @@ public class Position {
             if (!asset.isActive()) {
                 continue;
             }
-
             BigInteger amount;
             if (getDataMigrationStatus(symbol) && day == -1) {
+
                 if (symbol.equals(SICX_SYMBOL)) {
                     amount = getCollateralPosition(symbol);
                 } else {

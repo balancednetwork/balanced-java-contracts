@@ -237,7 +237,7 @@ class Systemtest implements ScoreIntegrationTest {
 
         balanced.dex._update(dexJavaPath, Map.of("_governance", balanced.governance._address()));
         balanced.loans._update(loansJavaPath, Map.of("_governance", balanced.governance._address()));
-        owner.governance.setContractAddresses();
+        owner.governance.setAddressesOnContract("dex");
         assertEquals(balanced.stakedLp._address().toString(), owner.dex.getStakedLp().toString());
 
         nextDay();
@@ -458,7 +458,6 @@ class Systemtest implements ScoreIntegrationTest {
         
         BigInteger collateral = BigInteger.TEN.pow(23);
         BigInteger collateralValue = collateral.multiply(owner.sicx.lastPriceInLoop()).divide(EXA);
-        // BigInteger dollarValue = collateralValue.multiply(EXA).divide(owner.bnUSD.lastPriceInLoop());
         BigInteger feePercent = Balanced.hexObjectToInt(owner.loans.getParameters().get("origination fee"));
         BigInteger loan = POINTS.multiply(collateralValue).divide(lockingRatio);
         BigInteger fee = loan.multiply(feePercent).divide(POINTS);
@@ -479,6 +478,10 @@ class Systemtest implements ScoreIntegrationTest {
 
         assertTrue(balancePreRetire.compareTo(balancePostRetire) > 0);
         assertTrue(sICXBalancePreRetire.compareTo(sICXBalancePostRetire) < 0);
+
+        Map<String, Object> position = owner.loans.getAccountPositions(loanTaker.getAddress());
+
+        assertTrue(((Map<String,Object>)position.get("assets")).isEmpty());
     }
 
     @Test

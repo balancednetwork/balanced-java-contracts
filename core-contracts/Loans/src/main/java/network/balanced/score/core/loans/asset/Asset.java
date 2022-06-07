@@ -156,21 +156,21 @@ public class Asset {
         Address assetAddress = this.assetAddress.at(dbKey).get();
         Token tokenContract = new Token(assetAddress);
 
-        Map<String, Object> AssetDetails = new HashMap<>();
+        Map<String, Object> assetDetails = new HashMap<>();
 
-        AssetDetails.put("symbol", tokenContract.symbol());
-        AssetDetails.put("address", assetAddress);
-        AssetDetails.put("peg", tokenContract.getPeg());
-        AssetDetails.put("added", getAssetAddedTime());
-        AssetDetails.put("is_collateral", isCollateral());
-        AssetDetails.put("active", isActive());
-        AssetDetails.put("borrowers", getBorrowers().size());
-        AssetDetails.put("total_supply", tokenContract.totalSupply());
-        AssetDetails.put("total_burned", getTotalBurnedTokens());
-        AssetDetails.put("bad_debt", getBadDebt());
-        AssetDetails.put("liquidation_pool", getLiquidationPool());
-        AssetDetails.put("dead_market", isDeadMarket());
+        assetDetails.put("symbol", tokenContract.symbol());
+        assetDetails.put("address", assetAddress);
+        assetDetails.put("peg", tokenContract.getPeg());
+        assetDetails.put("added", getAssetAddedTime());
+        assetDetails.put("is_collateral", isCollateral());
+        assetDetails.put("active", isActive());
+        assetDetails.put("borrowers", getBorrowers().size());
+        assetDetails.put("total_supply", tokenContract.totalSupply());
+        assetDetails.put("total_burned", getTotalBurnedTokens());
+        assetDetails.put("bad_debt", getBadDebt());
+        assetDetails.put("liquidation_pool", getLiquidationPool());
+        assetDetails.put("dead_market", isDeadMarket());
 
-        return AssetDetails;
+        return assetDetails;
     }
 }
