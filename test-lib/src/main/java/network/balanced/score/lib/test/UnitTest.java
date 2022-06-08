@@ -155,7 +155,7 @@ public class UnitTest extends TestBase {
         String expectedErrorMessage = "Reverted(0): Authorization Check: Authorization failed. Caller: " + caller.getAddress() + " Authorized Caller: " + governance;
         Executable executable = () -> contractUnderTest.invoke(caller, method, params);
 
-        expectErrorMessage(executable, expectedErrorMessage);;
+        expectErrorMessage(executable, expectedErrorMessage);
     }
     public static void assertOnlyCallableByAdmin(Score contractUnderTest, String method, Object... params) {
         Account caller = sm.createAccount();
@@ -164,6 +164,6 @@ public class UnitTest extends TestBase {
         String expectedErrorMessage = "Reverted(0): Authorization Check: Authorization failed. Caller: " + caller.getAddress() + " Authorized Caller: " + admin;
         Executable executable = () -> contractUnderTest.invoke(caller, method, params);
 
-        expectErrorMessage(executable, expectedErrorMessage);;
+        expectErrorMessage(executable, expectedErrorMessage);
     }
 }
