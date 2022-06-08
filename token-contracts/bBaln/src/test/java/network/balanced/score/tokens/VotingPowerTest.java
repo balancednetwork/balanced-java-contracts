@@ -16,6 +16,9 @@ import java.math.BigInteger;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.spy;
 
 /**
  * Test voting power in the following scenario.
@@ -59,6 +62,7 @@ public class VotingPowerTest extends TestBase {
     public static BigInteger YEAR = DAY.multiply(BigInteger.valueOf(365L));
     public static BigInteger MAX_TIME = YEAR.multiply(BigInteger.valueOf(4L));
 
+    private BoostedBaln scoreSpy;
 
     @BeforeEach
     public void setup() throws Exception {
@@ -67,6 +71,11 @@ public class VotingPowerTest extends TestBase {
         tokenScore.invoke(owner, "mintTo", alice.getAddress(), ICX.multiply(BigInteger.valueOf(100L)));
         tokenScore.invoke(owner, "mintTo", bob.getAddress(), ICX.multiply(BigInteger.valueOf(100L)));
 
+
+        scoreSpy = (BoostedBaln) spy(bBALNScore.getInstance());
+        bBALNScore.setInstance(scoreSpy);
+
+        bBALNScore.invoke(owner, "setMinimumLockingAmount", ICX);
 
         ServiceManager.Block currentBlock = sm.getBlock();
         currentBlock.increase(1_000_000);
@@ -400,6 +409,7 @@ public class VotingPowerTest extends TestBase {
         map.put("params", Map.of("unlockTime", lockUntil));
         JSONObject json = new JSONObject(map);
         byte[] lockBytes = json.toString().getBytes();
+        doNothing().when(scoreSpy).updateRewardData(any());
         tokenScore.invoke(account, "transfer", bBALNScore.getAddress(), amount, lockBytes);
     }
 

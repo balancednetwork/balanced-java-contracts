@@ -31,6 +31,7 @@ import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
 import scorex.util.ArrayList;
+import scorex.util.HashMap;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -43,7 +44,6 @@ import static score.Context.require;
 public class BoostedBaln implements BoostedToken {
     public static final BigInteger MAX_TIME = BigInteger.valueOf(4L).multiply(YEAR_IN_MICRO_SECONDS);
     public static BigInteger ICX = MathUtils.pow(BigInteger.TEN,18);
-    public static final BigInteger MAXTIME = BigInteger.valueOf(4L).multiply(YEAR);
     private static final UnsignedBigInteger MULTIPLIER = pow10(18);
 
     private static final int DEPOSIT_FOR_TYPE = 0;
@@ -93,7 +93,6 @@ public class BoostedBaln implements BoostedToken {
     }
 
     public BoostedBaln(Address tokenAddress, String name, String symbol) {
-        //super(addressProvider, false);
         this.admin.set(Context.getCaller());
         this.tokenAddress = tokenAddress;
 
@@ -102,20 +101,14 @@ public class BoostedBaln implements BoostedToken {
         point.timestamp = UnsignedBigInteger.valueOf(Context.getBlockTimestamp());
         this.pointHistory.set(BigInteger.ZERO, point);
 
-        this.decimals = ((BigInteger) Context.call(tokenAddress, "decimals", new Object[0])).intValue();
+        this.decimals = ((BigInteger) Context.call(tokenAddress, "decimals")).intValue();
         this.name = name;
         this.symbol = symbol;
         require(this.decimals <= 72, "Decimals should be less than 72");
 
         if (this.supply.get() == null) {
             this.supply.set(BigInteger.ZERO);
-        }
-
-        if (this.epoch.get() == null) {
             this.epoch.set(BigInteger.ZERO);
-        }
-
-        if (this.minimumLockingAmount.get() == null) {
             this.minimumLockingAmount.set(ICX);
         }
     }
@@ -123,7 +116,7 @@ public class BoostedBaln implements BoostedToken {
     @External
     public void setMinimumLockingAmount(BigInteger value) {
         ownerRequired();
-        require (value.signum() < 0, "invalid value for minimum locking amount");
+        require (value.signum() >= 0, "invalid value for minimum locking amount");
 
         this.minimumLockingAmount.set(value);
     }
@@ -158,10 +151,8 @@ public class BoostedBaln implements BoostedToken {
 
     @External(readonly = true)
     public BigInteger getTotalLocked() {
-        BigInteger contractBalance = Context.call(BigInteger.class, this.tokenAddress, "balanceOf",
+        return Context.call(BigInteger.class, this.tokenAddress, "balanceOf",
                 Context.getAddress());
-        return contractBalance;
-
     }
 
     @External(readonly = true)
@@ -225,7 +216,7 @@ public class BoostedBaln implements BoostedToken {
             //          oldLocked.end can be in the past and in the future
             //          newLocked.end can ONLY be in the FUTURE unless everything expired: than zeros
             oldDSlope = this.slopeChanges.getOrDefault(oldLocked.getEnd(), BigInteger.ZERO);
-            if (!newLocked.end.equals(BigInteger.ZERO)) {
+            if (!newLocked.getEnd().equals(BigInteger.ZERO)) {
                 if (newLocked.end.equals(oldLocked.end)) {
                     newDSlope = oldDSlope;
                 } else {
@@ -349,9 +340,6 @@ public class BoostedBaln implements BoostedToken {
         Deposit(address, value, locked.getEnd(), type, blockTimestamp);
         Supply(supplyBefore, supplyBefore.add(value));
 
-        //I think, we don't have delegation contract and not sure if rewards contract will use userDetails data so commented for now!
-        //calling update delegation
-        /*scoreCall(Contracts.DELEGATION, "updateDelegations", null, address);
         // calling handle action for rewards
         Map<String, Object> userDetails = new HashMap<>();
         userDetails.put("_user", address);
@@ -359,7 +347,12 @@ public class BoostedBaln implements BoostedToken {
         userDetails.put("_totalSupply", totalSupply(BigInteger.ZERO));
         userDetails.put("_decimals", BigInteger.valueOf(decimals()));
 
-        scoreCall(Contracts.REWARDS, "handleAction", userDetails);*/
+        //assuming token address is reward address
+        updateRewardData(userDetails);
+    }
+
+    void updateRewardData(Map<String, Object> userDetails){
+        Context.call(this.tokenAddress, "updateRewardsData", userDetails);
     }
 
     @External
@@ -499,7 +492,7 @@ public class BoostedBaln implements BoostedToken {
         BigInteger blockTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());
 
         LockedBalance locked = getLockedBalance(sender);
-        require(blockTimestamp.compareTo(locked.getEnd()) >= 0, "Withdraw: The lock didn't expire");
+        require(blockTimestamp.compareTo(locked.getEnd()) >= 0, "Withdraw: The lock haven't expire");
         BigInteger value = locked.amount;
 
         LockedBalance oldLocked = locked.newLockedBalance();
@@ -682,9 +675,7 @@ public class BoostedBaln implements BoostedToken {
         response.decimals = BigInteger.valueOf(decimals());
         response.principalUserBalance = balanceOf(_user, BigInteger.ZERO);
         response.principalTotalSupply = totalSupply(BigInteger.ZERO);
-
         return response;
-
     }
 
     @External(readonly = true)
@@ -729,13 +720,5 @@ public class BoostedBaln implements BoostedToken {
         return this.userPointHistory.at(user).getOrDefault(epoch, new Point());
     }
 
-
-    /*public void scoreCall(Contracts contract, String method, Object... params) {
-        Context.call(getAddress(contract.getKey()), method, params);
-    }
-
-    public <K> K scoreCall(Class<K> kClass, Contracts contract, String method, Object... params) {
-        return Context.call(kClass, getAddress(contract.getKey()), method, params);
-    }*/
 }
 

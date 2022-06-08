@@ -29,16 +29,22 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import score.Context;
 
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.spy;
 
 
 public class BoostedBALNUnlockTest extends TestBase {
@@ -47,17 +53,22 @@ public class BoostedBALNUnlockTest extends TestBase {
     private static final Account owner = sm.createAccount();
     private Score bBALNScore;
     private Score tokenScore;
+    private BoostedBaln scoreSpy;
 
     public static BigInteger WEEK = BigInteger.TEN.pow(6).multiply(BigInteger.valueOf(86400L).multiply(BigInteger.valueOf(7L)));
     private static final BigInteger INITIAL_SUPPLY = BigInteger.TEN.multiply(ICX);
     private static final String BOOSTED_BALANCE = "Boosted Balance";
     private static final String B_BALANCED_SYMBOL = "bBALN";
 
-
     @BeforeEach
     public void setup() throws Exception {
         tokenScore = sm.deploy(owner, IRC2Token.class, INITIAL_SUPPLY);
         bBALNScore = sm.deploy(owner, BoostedBaln.class, tokenScore.getAddress(), BOOSTED_BALANCE, B_BALANCED_SYMBOL);
+
+        scoreSpy = (BoostedBaln) spy(bBALNScore.getInstance());
+        bBALNScore.setInstance(scoreSpy);
+
+        bBALNScore.invoke(owner, "setMinimumLockingAmount", ICX);
     }
 
     @ParameterizedTest
@@ -72,7 +83,8 @@ public class BoostedBALNUnlockTest extends TestBase {
         map.put("params", Map.of("unlockTime", expectedUnlock));
         JSONObject json = new JSONObject(map);
         byte[] lockBytes = json.toString().getBytes();
-        tokenScore.invoke(owner, "transfer", bBALNScore.getAddress(), ICX.multiply(BigInteger.ONE), lockBytes);
+        doNothing().when(scoreSpy).updateRewardData(any());
+        tokenScore.invoke(owner, "transfer", bBALNScore.getAddress(), ICX, lockBytes);
 
         Map<String, BigInteger> balance = (Map<String, BigInteger>) bBALNScore.call("getLocked", owner.getAddress());
         long actual_unlock = balance.get("end").longValue();
@@ -100,7 +112,7 @@ public class BoostedBALNUnlockTest extends TestBase {
         map.put("params", Map.of("unlockTime", expectedUnlock));
         JSONObject json = new JSONObject(map);
         byte[] lockBytes = json.toString().getBytes();
-
+        doNothing().when(scoreSpy).updateRewardData(any());
         tokenScore.invoke(owner, "transfer", bBALNScore.getAddress(), ICX.multiply(BigInteger.ONE), lockBytes);
 
         Map<String, BigInteger> balance = (Map<String, BigInteger>) bBALNScore.call("getLocked", owner.getAddress());

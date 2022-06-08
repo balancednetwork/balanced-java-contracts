@@ -32,6 +32,7 @@ import java.math.BigInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.Mockito.spy;
 
 class BoostedBalnTest extends TestBase {
     private static final ServiceManager sm = getServiceManager();
@@ -46,6 +47,7 @@ class BoostedBalnTest extends TestBase {
 
     private static final String bBalnName = "Boosted Balance";
     private static final String bBalnSymbol = "bBALN";
+    private BoostedBaln scoreSpy;
 
     public static class IRC2BasicToken extends IRC2Basic {
         public IRC2BasicToken(String _name, String _symbol, int _decimals, BigInteger _totalSupply) {
@@ -58,6 +60,10 @@ class BoostedBalnTest extends TestBase {
     public void setup() throws Exception {
         tokenScore = sm.deploy(owner, IRC2BasicToken.class, name, symbol, decimals, initialSupply);
         bBalnScore = sm.deploy(owner, BoostedBaln.class, tokenScore.getAddress(), bBalnName, bBalnSymbol);
+        scoreSpy = (BoostedBaln) spy(bBalnScore.getInstance());
+        bBalnScore.setInstance(scoreSpy);
+
+        bBalnScore.invoke(owner, "setMinimumLockingAmount", ICX);
     }
 
     @Test

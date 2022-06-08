@@ -21,6 +21,7 @@ import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
 import com.iconloop.score.token.irc2.IRC2Mintable;
+import network.balanced.score.tokens.utils.IRC2Token;
 import org.json.JSONObject;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.function.Executable;
@@ -31,6 +32,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.spy;
 
 @DisplayName("Statemachine Tests")
 public class StateMachineTest extends TestBase {
@@ -43,15 +47,17 @@ public class StateMachineTest extends TestBase {
     private final ArrayList<Account> accounts = new ArrayList<>();
     private final long MAXIMUM_LOCK_WEEKS = 208;
     private final long BLOCK_TIME = 2 * 1000000;
+    private static final BigInteger INITIAL_SUPPLY = BigInteger.TEN.multiply(ICX);
 
     private Score bBalnScore;
     private Score tokenScore;
+    private BoostedBaln scoreSpy;
 
-    public static class BalnToken extends IRC2Mintable {
+    /*public static class BalnToken extends IRC2Mintable {
         public BalnToken(String _name, String _symbol, int _decimals) {
             super(_name, _symbol, _decimals);
         }
-    }
+    }*/
 
     private static class VotingBalance {
         public BigInteger value;
@@ -84,9 +90,15 @@ public class StateMachineTest extends TestBase {
 
     @BeforeEach
     public void setup() throws Exception {
-        tokenScore = sm.deploy(owner, BalnToken.class, "Balance Token", "BALN", 18);
+        tokenScore = sm.deploy(owner, IRC2Token.class, INITIAL_SUPPLY);
         bBalnScore = sm.deploy(owner, BoostedBaln.class, tokenScore.getAddress(), "Boosted Baln", "bBALN");
-        setupAccounts();        
+
+        scoreSpy = (BoostedBaln) spy(bBalnScore.getInstance());
+        bBalnScore.setInstance(scoreSpy);
+
+        bBalnScore.invoke(owner, "setMinimumLockingAmount", ICX);
+
+        setupAccounts();
     }
 
     public byte[] tokenData(String method, Map<String, Object> params) {
@@ -111,6 +123,7 @@ public class StateMachineTest extends TestBase {
 
         VotingBalance vote = votingBalances.getOrDefault(account, new VotingBalance());
         vote.value = vote.value.add(value);
+        doNothing().when(scoreSpy).updateRewardData(any());
         try {
             tokenScore.invoke(account,
                             "transfer", 
@@ -413,7 +426,7 @@ public class StateMachineTest extends TestBase {
                 bBalnScore.invoke(accounts.get(0),
                                 "withdraw");
 
-            String expectedErrorMessage = "Withdraw: The lock didn't expire";
+            String expectedErrorMessage = "Withdraw: The lock haven't expire";
             expectErrorMessage(withdraw, expectedErrorMessage);
         }
 
