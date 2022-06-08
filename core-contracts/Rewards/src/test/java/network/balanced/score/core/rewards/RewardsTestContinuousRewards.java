@@ -234,9 +234,9 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
         BigInteger expectedRewards = distribution.multiply(timeDiffInUS).divide(U_SECONDS_DAY);
 
         Object users = new Address[] {account.getAddress()};
-        Map<Address, BigInteger> rewards  = (Map<Address, BigInteger>) rewardsScore.call("getBalnHoldings", users);
+        Map<String, BigInteger> rewards  = (Map<String, BigInteger>) rewardsScore.call("getBalnHoldings", users);
         
-        BigInteger reward = rewards.get(account.getAddress()).divide(BigInteger.TEN);
+        BigInteger reward = rewards.get(account.getAddress().toString()).divide(BigInteger.TEN);
         assertEquals(expectedRewards.divide(BigInteger.TEN), reward);
     }
 
@@ -290,10 +290,10 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
         BigInteger user2ExpectedRewards = user2Distribution.multiply(timeDiffInUS).divide(U_SECONDS_DAY);
 
         Object users = new Address[] {account1.getAddress(), account2.getAddress()};
-        Map<Address, BigInteger> rewards  = (Map<Address, BigInteger>) rewardsScore.call("getBalnHoldings", users);
+        Map<String, BigInteger> rewards  = (Map<String, BigInteger>) rewardsScore.call("getBalnHoldings", users);
         
-        BigInteger user1Rewards = rewards.get(account1.getAddress()).divide(BigInteger.TEN);
-        BigInteger user2Rewards = rewards.get(account2.getAddress()).divide(BigInteger.TEN);
+        BigInteger user1Rewards = rewards.get(account1.getAddress().toString()).divide(BigInteger.TEN);
+        BigInteger user2Rewards = rewards.get(account2.getAddress().toString()).divide(BigInteger.TEN);
         assertEquals(user1ExpectedRewards.divide(BigInteger.TEN), user1Rewards);
         assertEquals(user2ExpectedRewards.divide(BigInteger.TEN), user2Rewards);
     }
