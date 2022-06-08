@@ -700,7 +700,7 @@ public class RewardsImpl implements Rewards {
             return minDistribution.max(distribution);
 
         } else {
-            Integer index = day.subtract(BigInteger.valueOf(60)).intValue();
+            int index = day.subtract(BigInteger.valueOf(60)).intValue();
             BigInteger distribution = baseDistribution;
             
             for (int i = 0; i < offset; i++) {
