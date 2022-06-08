@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -149,12 +150,10 @@ class RewardsUpdate implements ScoreIntegrationTest {
         verifyRewards(lpClient);
         verifyRewards(loansAndlpClient);
 
-
         assertEquals(
             owner.rewards.getBalnHolding(loansClientCollecting.getAddress()).divide(BigInteger.TEN), 
             owner.baln.balanceOf(loansClientClaimsAfter.getAddress()).divide(BigInteger.TEN)
         );
-
 
         BigInteger bwtBalancePostDist = owner.baln.balanceOf(balanced.bwt._address());
         BigInteger daoFundBalancePostDist = owner.baln.balanceOf(balanced.daofund._address());
@@ -181,7 +180,6 @@ class RewardsUpdate implements ScoreIntegrationTest {
 
         joinsICXBnusdLP(lpClientCollecting, lpAmount, lpAmount);
         joinsICXBnusdLP(lpClientClaiming, lpAmount, lpAmount);
-        // stakeICXBnusdLP(stakedLPClient);
 
         assertEquals(BigInteger.ZERO, owner.rewards.getBalnHolding(loansClientCollecting.getAddress()));
         assertEquals(BigInteger.ZERO, owner.rewards.getBalnHolding(loansClientClaiming.getAddress()));
@@ -202,7 +200,6 @@ class RewardsUpdate implements ScoreIntegrationTest {
             owner.baln.balanceOf(loansClientClaiming.getAddress()).divide(BigInteger.valueOf(100)), 
             owner.rewards.getBalnHolding(loansClientCollecting.getAddress()).divide(BigInteger.valueOf(100))
         );
-
 
         Map<String,BigInteger> recipientSplit = owner.rewards.getRecipientsSplit();
         BigInteger contractRewardsPercentage = recipientSplit.get("DAOfund").add(recipientSplit.get("Reserve Fund")).add(recipientSplit.get("Worker Tokens"));
@@ -296,15 +293,12 @@ class RewardsUpdate implements ScoreIntegrationTest {
     private void verifyExternalAndUpdateRewards(BalancedClient clientInFocus) {
         BigInteger day = owner.governance.getDay();
         BigInteger emissionPre = owner.rewards.getEmission(day);
-        BigInteger emission1Pre = owner.rewards.getEmission(BigInteger.valueOf(59));
-        BigInteger emission2Pre = owner.rewards.getEmission(BigInteger.valueOf(60));
-        BigInteger emission3Pre = owner.rewards.getEmission(BigInteger.valueOf(61));
-        BigInteger emission4Pre = owner.rewards.getEmission(BigInteger.valueOf(423));
-        BigInteger emission5Pre = owner.rewards.getEmission(BigInteger.valueOf(853));
-        BigInteger emission6Pre = owner.rewards.getEmission(BigInteger.valueOf(923));
-        BigInteger emission7Pre = owner.rewards.getEmission(BigInteger.valueOf(1192));
-        BigInteger emission8Pre = owner.rewards.getEmission(BigInteger.valueOf(1251));
-        Map<String, BigInteger> balnHoldingsPre = owner.rewards.getBalnHoldings(new Address[] {clientInFocus.getAddress()});
+        List<BigInteger> emissionsPre = new ArrayList<>();
+        for (int i = 0; i < 1200; i++) {
+            emissionsPre.add(owner.rewards.getEmission(BigInteger.valueOf(i)));
+        }
+
+        Map<String, BigInteger> balnHoldingsPre = owner.rewards.getBalnHoldings(balanced.balancedClients.keySet().toArray(new Address[0]));
         BigInteger balnHoldingPre = owner.rewards.getBalnHolding(clientInFocus.getAddress());
         Map<String, Object> distStatusPre = owner.rewards.distStatus();
         List<String> dataSourceNamesPre = owner.rewards.getDataSourceNames();
@@ -318,16 +312,12 @@ class RewardsUpdate implements ScoreIntegrationTest {
         balanced.rewards._update(rewardsJavaPath, Map.of("_governance", balanced.governance._address()));
        
         BigInteger emissionPost = owner.rewards.getEmission(day);
-        BigInteger emission1Post = owner.rewards.getEmission(BigInteger.valueOf(59));
-        BigInteger emission2Post = owner.rewards.getEmission(BigInteger.valueOf(60));
-        BigInteger emission3Post = owner.rewards.getEmission(BigInteger.valueOf(61));
-        BigInteger emission4Post = owner.rewards.getEmission(BigInteger.valueOf(423));
-        BigInteger emission5Post = owner.rewards.getEmission(BigInteger.valueOf(853));
-        BigInteger emission6Post = owner.rewards.getEmission(BigInteger.valueOf(923));
-        BigInteger emission7Post = owner.rewards.getEmission(BigInteger.valueOf(1192));
-        BigInteger emission8Post = owner.rewards.getEmission(BigInteger.valueOf(1251));
-
-        Map<String, BigInteger> balnHoldingsPost = owner.rewards.getBalnHoldings(new Address[] {clientInFocus.getAddress()});
+        List<BigInteger> emissionsPost = new ArrayList<>();
+        for (int i = 0; i < 1200; i++) {
+            emissionsPost.add(owner.rewards.getEmission(BigInteger.valueOf(i)));
+        }
+ 
+        Map<String, BigInteger> balnHoldingsPost = owner.rewards.getBalnHoldings(balanced.balancedClients.keySet().toArray(new Address[0]));
         BigInteger balnHoldingPost = owner.rewards.getBalnHolding(clientInFocus.getAddress());
         Map<String, Object> distStatusPost = owner.rewards.distStatus();
         List<String> dataSourceNamesPost = owner.rewards.getDataSourceNames();
@@ -339,14 +329,8 @@ class RewardsUpdate implements ScoreIntegrationTest {
         Map<String, BigInteger> recipientAtLastDayPost = owner.rewards.recipientAt(day.subtract(BigInteger.ONE));
 
         assertEquals(emissionPre, emissionPost);
-        assertEquals(emission1Pre, emission1Post);
-        assertEquals(emission2Pre, emission2Post);
-        assertEquals(emission3Pre, emission3Post);
-        assertEquals(emission4Pre, emission4Post);
-        assertEquals(emission5Pre, emission5Post);
-        assertEquals(emission6Pre, emission6Post);
-        assertEquals(emission7Pre, emission7Post);
-        assertEquals(emission8Pre, emission8Post);
+
+        assertEquals(emissionsPre.toString(), emissionsPost.toString());
         assertEquals(balnHoldingsPre.toString(), balnHoldingsPost.toString());
         assertEquals(balnHoldingPre, balnHoldingPost);
         assertEquals(distStatusPre.toString(), distStatusPost.toString());

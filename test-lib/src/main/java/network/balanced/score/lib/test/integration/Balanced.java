@@ -59,7 +59,7 @@ public class Balanced {
     public DefaultScoreClient stakedLp;
     public DefaultScoreClient stability;
 
-    HashMap<Address, BalancedClient> balancedClients;
+    public HashMap<Address, BalancedClient> balancedClients;
 
     @ScoreClient
     BalancedDollar bnUSD;
