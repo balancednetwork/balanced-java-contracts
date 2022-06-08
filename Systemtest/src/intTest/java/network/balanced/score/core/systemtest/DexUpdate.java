@@ -33,6 +33,7 @@ import com.eclipsesource.json.JsonObject;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import foundation.icon.score.client.RevertedException;
@@ -48,7 +49,7 @@ import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
 import score.Address;
 import score.UserRevertedException;
 
-class Systemtest implements ScoreIntegrationTest {
+class DexUpdate implements ScoreIntegrationTest {
     private static Balanced balanced;
     private static BalancedClient owner;
     private static String dexJavaPath;
@@ -57,8 +58,8 @@ class Systemtest implements ScoreIntegrationTest {
     private static String dividendsJavaPath;
     private static BigInteger EXA = BigInteger.TEN.pow(18);
 
-    @BeforeAll    
-    static void setup() throws Exception {
+    @BeforeEach    
+    void setup() throws Exception {
         dexJavaPath = System.getProperty("Dex");
         loansJavaPath = System.getProperty("Loans");
         rewardsJavaPath = System.getProperty("Rewards");
@@ -72,7 +73,7 @@ class Systemtest implements ScoreIntegrationTest {
         balanced = new Balanced();
         balanced.deployBalanced();
         owner = balanced.ownerClient;
-        
+
         System.setProperty("Rewards", rewardsJavaPath);
         System.setProperty("Dex", dexJavaPath);
         System.setProperty("Loans", loansJavaPath);
@@ -97,88 +98,19 @@ class Systemtest implements ScoreIntegrationTest {
         owner.governance.setVoteDefinitionFee(BigInteger.TEN.pow(10));
         owner.governance.setBalnVoteDefinitionCriterion(BigInteger.ZERO);
         owner.governance.setQuorum(BigInteger.ONE);
-    }
-
-    @Test
-    @Order(1)
-    void dividendsMigration() throws Exception {
-        BalancedClient stakingClient = balanced.newClient();
-        BalancedClient lpClient = balanced.newClient();
-        BalancedClient lpClient2 = balanced.newClient();
-        BalancedClient feeGenerator = balanced.newClient();
-        stakingClient.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);        
-        lpClient.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);
-        lpClient2.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);
 
         nextDay();
-        
-        verifyRewards(stakingClient);
-        stakeBaln(stakingClient);
-
-        BigInteger lpClientRewards = verifyRewards(lpClient);
-        BigInteger lpClient2Rewards = verifyRewards(lpClient2);
-        joinsICXBalnLP(lpClient, lpClientRewards, lpClientRewards);
-        joinsICXBalnLP(lpClient2, lpClient2Rewards, lpClient2Rewards);
-        
-        feeGenerator.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);
-        nextDay();
-
-        verifyBnusdFees(stakingClient);
-        verifyBnusdFees(lpClient);
-        verifyDaofundBnusdDividends();
-
         balanced.dividends._update(dividendsJavaPath, Map.of("_governance", balanced.governance._address()));
         owner.governance.setDividendsOnlyToStakedBalnDay(owner.dividends.getSnapshotId().add(BigInteger.ONE));
-        
-        verifyBnusdFees(lpClient2);
-        
-        feeGenerator.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);
-        nextDay();
-        
-        verifyBnusdFees(stakingClient);
-        verifyBnusdFees(lpClient);
-        verifyDaofundBnusdDividends();
-
-        feeGenerator.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);
-        nextDay();
-
-        verifyBnusdFees(stakingClient);
-        verifyBnusdFees(lpClient2);
-        verifyNoBnusdFees(lpClient2);
-        verifyNoBnusdFees(lpClient);
-        verifyDaofundBnusdDividends();
-
-        feeGenerator.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);
-        nextDay();
-
-        verifyBnusdFees(stakingClient);
-        verifyNoBnusdFees(lpClient2);
-        verifyNoBnusdFees(lpClient);
-        verifyDaofundBnusdDividends();
-    }
-    
-
-    @Test
-    @Order(2)
-    void stabilityFundEffect_beforeContinuous() throws Exception {
-        //open diffrent kinds of postions
-        BalancedClient client = balanced.newClient();
-        BalancedClient stabilityClient = balanced.newClient();
-        client.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);
-        
-        nextDay();
-
-        BigInteger rewardsAmount = verifyRewards(client);
-        depositToStabilityContract(stabilityClient, BigInteger.TEN.pow(22));
-        
-        nextDay();
-
-        assertEquals(rewardsAmount, verifyRewards(client));
+        balanced.rewards._update(rewardsJavaPath, Map.of("_governance", balanced.governance._address()));
+        owner.rewards.addDataProvider(balanced.stakedLp._address());
+        owner.rewards.addDataProvider(balanced.dex._address());
+        owner.rewards.addDataProvider(balanced.loans._address());
+        balanced.loans._update(loansJavaPath, Map.of("_governance", balanced.governance._address()));
     }
 
     @Test
-    @Order(3)
-    void rewardsUpdate() throws Exception {
+    void updateDex() throws Exception {
         BalancedClient loansClient = balanced.newClient();
         BalancedClient lpClient = balanced.newClient();
         BalancedClient loansAndlpClient = balanced.newClient();
@@ -187,66 +119,24 @@ class Systemtest implements ScoreIntegrationTest {
         loansClient.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loanAmount, null, null);
         loansAndlpClient.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loanAmount, null, null);
         loansClient.bnUSD.transfer(lpClient.getAddress(), loanAmount, null);
-
         joinsICXBnusdLP(lpClient, loanAmount, loanAmount);
         joinsICXBnusdLP(loansAndlpClient, loanAmount, loanAmount);
-
+        loansAndlpClient.dex._transfer(balanced.dex._address(), BigInteger.TEN.pow(22), null);
         nextDay();
 
-        // verify rewards can be claimed before or after update
-        verifyRewards(loansClient);
-        verifyRewards(lpClient);
-
-        verifyExternalAndUpdateRewards(loansAndlpClient);
-
-        verifyNoRewards(loansClient);
-        verifyNoRewards(lpClient);
-        verifyRewards(loansAndlpClient);
-        BigInteger bwtBalancePreDist = owner.baln.balanceOf(balanced.bwt._address());
-        BigInteger daoFundBalancePreDist = owner.baln.balanceOf(balanced.daofund._address());
-        BigInteger reserveBalancePreDist = owner.baln.balanceOf(balanced.reserve._address());
-
-        // verify rewards still work
-        nextDay();
+        byte[] swapIcx = "{\"method\":\"_swap_icx\",\"params\":{\"none\":\"none\"}}".getBytes();
+        loansClient.staking.stakeICX(BigInteger.TEN.pow(21), null, null);
+        loansClient.sicx.transfer(balanced.dex._address(), loansClient.sicx.balanceOf(loansClient.getAddress()), swapIcx);
 
         verifyRewards(loansClient);
         verifyRewards(lpClient);
-        verifyRewards(loansAndlpClient);
+        BigInteger rewards = verifyRewards(loansAndlpClient);
 
-        BigInteger bwtBalancePostDist = owner.baln.balanceOf(balanced.bwt._address());
-        BigInteger daoFundBalancePostDist = owner.baln.balanceOf(balanced.daofund._address());
-        BigInteger reserveBalancePostDist = owner.baln.balanceOf(balanced.reserve._address());
-
-        assertTrue(bwtBalancePostDist.compareTo(bwtBalancePreDist) > 0);
-        assertTrue(daoFundBalancePostDist.compareTo(daoFundBalancePreDist) > 0);
-        assertTrue(reserveBalancePostDist.compareTo(reserveBalancePreDist) > 0);
-    }
-
-    @Test
-    @Order(4)
-    void updateLoansAndDex() throws Exception {
-        BalancedClient loansClient = balanced.newClient();
-        BalancedClient lpClient = balanced.newClient();
-        BalancedClient loansAndlpClient = balanced.newClient();
-        BigInteger loanAmount = BigInteger.TEN.pow(21);
-        
-        loansClient.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loanAmount, null, null);
-        loansAndlpClient.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loanAmount, null, null);
-        loansClient.bnUSD.transfer(lpClient.getAddress(), loanAmount, null);
-
-        joinsICXBnusdLP(lpClient, loanAmount, loanAmount);
-        joinsICXBnusdLP(loansAndlpClient, loanAmount, loanAmount);
+        joinsICXBalnLP(loansAndlpClient, rewards, rewards);
 
         nextDay();
 
-        verifyRewards(loansClient);
-        verifyRewards(lpClient);
-        verifyRewards(loansAndlpClient);
-
-        verifyExternalAndUpdateLoans(loansAndlpClient);
         verifyExternalAndUpdateDex(loansAndlpClient);
-        // balanced.dex._update(dexJavaPath, Map.of("_governance", balanced.governance._address()));
-        // owner.governance.setAddressesOnContract("dex");
         assertEquals(balanced.stakedLp._address().toString(), owner.dex.getStakedLp().toString());
 
         nextDay();
@@ -254,356 +144,6 @@ class Systemtest implements ScoreIntegrationTest {
         verifyRewards(loansClient);
         verifyRewards(lpClient);
         verifyRewards(loansAndlpClient);
-    }
-
-    @Test
-    @Order(5)
-    void stakingLp() throws Exception {
-        BalancedClient loansClient = balanced.newClient();
-        BalancedClient stakedLPClient = balanced.newClient();
-        BalancedClient unstakedLPClient = balanced.newClient();
-        BigInteger lpAmount = BigInteger.TEN.pow(22);
-        
-        loansClient.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", lpAmount.multiply(BigInteger.TWO), null, null);
-        loansClient.bnUSD.transfer(stakedLPClient.getAddress(), lpAmount, null);
-        loansClient.bnUSD.transfer(unstakedLPClient.getAddress(), lpAmount, null);
-
-        joinsICXBnusdLP(stakedLPClient, lpAmount, lpAmount);
-        stakeICXBnusdLP(stakedLPClient);
-        joinsICXBnusdLP(unstakedLPClient, lpAmount, lpAmount);
-        Assertions.assertThrows(UserRevertedException.class, () -> leaveICXBnusdLP(unstakedLPClient));
-
-        nextDay();
-
-        verifyRewards(loansClient);
-        verifyRewards(unstakedLPClient);
-        verifyRewards(stakedLPClient);
-    }
-
-    @Test
-    @Order(6)
-    void migrateToContinuousRewards() throws Exception {
-        BigInteger daysToMigration = BigInteger.TWO;
-        owner.governance.setContinuousRewardsDay(owner.governance.getDay().add(daysToMigration));
-
-        BalancedClient loansClient = balanced.newClient();
-        BalancedClient stakedLPClient = balanced.newClient();
-        BalancedClient unstakedLPClient = balanced.newClient();
-        BalancedClient testerWithTooSmallLoan = balanced.newClient();
-        BigInteger lpAmount = BigInteger.TEN.pow(22);
-        BigInteger toSmallLoan = BigInteger.TEN.pow(19);
-        
-        loansClient.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", lpAmount.multiply(BigInteger.TWO), null, null);
-        testerWithTooSmallLoan.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", toSmallLoan, null, null);
-
-        loansClient.bnUSD.transfer(stakedLPClient.getAddress(), lpAmount, null);
-        loansClient.bnUSD.transfer(unstakedLPClient.getAddress(), lpAmount, null);
-
-        joinsICXBnusdLP(stakedLPClient, lpAmount, lpAmount);
-        stakeICXBnusdLP(stakedLPClient);
-        joinsICXBnusdLP(unstakedLPClient, lpAmount, lpAmount);
-
-        //migrate
-        nextDay();
-        
-        verifyNoRewards(testerWithTooSmallLoan);
-
-        nextDay();
-
-        verifyRewards(loansClient);
-        verifyRewards(stakedLPClient);
-        verifyRewards(unstakedLPClient);
-
-        Thread.sleep(100);
-
-        verifyRewards(loansClient);
-        verifyRewards(testerWithTooSmallLoan);
-        verifyRewards(stakedLPClient);
-        verifyNoRewards(unstakedLPClient);
-
-        stakeICXBnusdLP(unstakedLPClient);
-        Thread.sleep(100);
-        verifyRewards(unstakedLPClient);
-
-        closeLoansPostionAndVerifyNoRewards(loansClient);
-        verifyContractRewards();
-    }
-    
-    @Test
-    @Order(7)
-    void openNewPostionsAndVerifyRewards() throws Exception {
-        BalancedClient loanTaker = balanced.newClient();
-        BalancedClient loanTaker2 = balanced.newClient();
-        BigInteger loan = BigInteger.TEN.pow(21).multiply(BigInteger.valueOf(2));
-        loanTaker.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loan, null, null);        
-        sICXDepositAndBorrow(loanTaker2, BigInteger.TEN.pow(23), loan);
-
-        BalancedClient liquidityProvider = balanced.newClient();
-        BigInteger bnusdDeposit = BigInteger.TEN.pow(21);
-        BigInteger icxDeposit = BigInteger.TEN.pow(22);
-        loanTaker.bnUSD.transfer(liquidityProvider.getAddress(), bnusdDeposit, null); 
-        joinsICXBnusdLP(liquidityProvider, icxDeposit, bnusdDeposit);
-
-        Thread.sleep(100);
-        verifyRewards(loanTaker);
-        verifyRewards(loanTaker2);
-        verifyNoRewards(liquidityProvider);
-
-        stakeICXBnusdLP(liquidityProvider);
-        Thread.sleep(100);
-        verifyRewards(liquidityProvider);
-    }
-
-    @Test
-    @Order(8)
-    void verifyStabilityContractHasNoEffectOnLoansRewards() throws Exception {
-        BalancedClient loanTaker = balanced.newClient();
-        BigInteger loan = BigInteger.TEN.pow(21).multiply(BigInteger.valueOf(2));
-        loanTaker.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loan, null, null);
-
-        BigInteger totalLoansSupplyPre = owner.loans.getBalanceAndSupply("Loans", owner.getAddress()).get("_totalSupply");
-
-        loanTaker.rewards.claimRewards();
-        Thread.sleep(100);
-        BigInteger rewards = verifyRewards(loanTaker);
-  
-        BigInteger totalBnusdSupply = owner.bnUSD.totalSupply();
-        depositToStabilityContract(owner, totalBnusdSupply);
-        loanTaker.rewards.claimRewards();
-        Thread.sleep(150);
-
-        //would be false if we used total supply
-        assertTrue(rewards.compareTo(verifyRewards(loanTaker)) < 0);
-
-        BigInteger totalLoansSupplyPost = owner.loans.getBalanceAndSupply("Loans", owner.getAddress()).get("_totalSupply");
-        assertEquals(totalLoansSupplyPre, totalLoansSupplyPost);
-    }
-
-
-    @Test
-    @Order(9)
-    void stakingAndUnstakingLp() throws Exception {
-        BalancedClient lpClient = balanced.newClient();
-        BalancedClient lpBuyer = balanced.newClient();
-        
-        BigInteger lpAmount = BigInteger.TEN.pow(22);
-        depositToStabilityContract(lpClient, lpAmount.multiply(BigInteger.TWO));
-        
-        joinsICXBnusdLP(lpClient, lpAmount, lpAmount);
-        stakeICXBnusdLP(lpClient);
-        Thread.sleep(100);
-        
-        unstakeICXBnusdLP(lpClient);
-        verifyRewards(lpClient);
-        Thread.sleep(100);
-
-        verifyNoRewards(lpClient);
-        verifyNoRewards(lpBuyer);
-
-        BigInteger icxBnusdPoolId = owner.dex.getPoolId(balanced.sicx._address(), balanced.bnusd._address());
-        BigInteger poolBalance = lpClient.dex.balanceOf(lpClient.getAddress(), icxBnusdPoolId);
-        lpClient.dex.transfer(lpBuyer.getAddress(), poolBalance, icxBnusdPoolId, null);
-        stakeICXBnusdLP(lpBuyer);
-        Thread.sleep(100);
-
-        verifyNoRewards(lpClient);
-        verifyRewards(lpBuyer);
-
-        unstakeICXBnusdLP(lpBuyer);
-        leaveICXBnusdLP(lpBuyer);
-    }
-
-    @Test
-    @Order(10)
-    void rebalancingRaisePrice() throws Exception {
-        BalancedClient loanTaker = balanced.newClient();
-        BigInteger loan = BigInteger.TEN.pow(22);
-        loanTaker.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loan, null, null);
-        Map<String, BigInteger> originalBalanceAndSupply = loanTaker.loans.getBalanceAndSupply("Loans", loanTaker.getAddress());
-
-        reducePriceBelowThreshold();
-        rebalance();
-
-        Map<String, BigInteger> balanceAndSupply = loanTaker.loans.getBalanceAndSupply("Loans", loanTaker.getAddress());
-        assertTrue(originalBalanceAndSupply.get("_totalSupply").compareTo(balanceAndSupply.get("_totalSupply")) > 0);
-        assertTrue(originalBalanceAndSupply.get("_balance").compareTo(balanceAndSupply.get("_balance")) > 0);
-    }
-
-    @Test
-    @Order(11)
-    void rebalancingLowerPrice() throws Exception {
-        BalancedClient loanTaker = balanced.newClient();
-        BigInteger loan = BigInteger.TEN.pow(22);
-        sICXDepositAndBorrow(loanTaker, BigInteger.TEN.pow(23), loan);
-        Map<String, BigInteger> originalBalanceAndSupply = loanTaker.loans.getBalanceAndSupply("Loans", loanTaker.getAddress());
-
-        raisePriceAboveThreshold();
-        rebalance();
-
-        Map<String, BigInteger> balanceAndSupply = loanTaker.loans.getBalanceAndSupply("Loans", loanTaker.getAddress());
-        assertTrue(originalBalanceAndSupply.get("_totalSupply").compareTo(balanceAndSupply.get("_totalSupply")) < 0);
-        assertTrue(originalBalanceAndSupply.get("_balance").compareTo(balanceAndSupply.get("_balance")) < 0);
-    }
-
-    @Test
-    @Order(12)
-    void LiquidateAndRetirebadDebt() throws Exception {
-         BalancedClient voter = balanced.newClient();
-        BigInteger POINTS = BigInteger.valueOf(10_000);
-
-        depositToStabilityContract(voter, BigInteger.TEN.pow(18));
-        
-        BigInteger lockingRatio = BigInteger.valueOf(8500);
-        JsonObject setLockingRatioParameters = new JsonObject()
-        .add("_value", lockingRatio.intValue());
-        
-        JsonArray setLockingRatioCall = new JsonArray()
-            .add("setLockingRatio")
-            .add(setLockingRatioParameters);
-
-        JsonArray actions = new JsonArray()
-            .add(setLockingRatioCall);
-        executeVoteActions(balanced, voter, "setLockingRatio", actions);
-
-        BalancedClient loanTaker = balanced.newClient();
-        BalancedClient liquidator = balanced.newClient();
-        
-        BigInteger collateral = BigInteger.TEN.pow(23);
-        BigInteger collateralValue = collateral.multiply(owner.sicx.lastPriceInLoop()).divide(EXA);
-        BigInteger feePercent = Balanced.hexObjectToInt(owner.loans.getParameters().get("origination fee"));
-        BigInteger loan = POINTS.multiply(collateralValue).divide(lockingRatio);
-        BigInteger fee = loan.multiply(feePercent).divide(POINTS);
-        loanTaker.loans.depositAndBorrow(collateral, "bnUSD", loan, null, null);
-        
-        BigInteger balancePreLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
-        liquidator.loans.liquidate(loanTaker.getAddress());
-        BigInteger balancePostLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
-        assertTrue(balancePreLiquidation.compareTo(balancePostLiquidation) < 0);
-
-        depositToStabilityContract(liquidator, loan.multiply(BigInteger.TWO));
-
-        BigInteger balancePreRetire = liquidator.bnUSD.balanceOf(liquidator.getAddress());
-        BigInteger sICXBalancePreRetire = liquidator.sicx.balanceOf(liquidator.getAddress());
-        liquidator.loans.retireBadDebt("bnUSD", loan.add(fee));
-        BigInteger balancePostRetire = liquidator.bnUSD.balanceOf(liquidator.getAddress());
-        BigInteger sICXBalancePostRetire = liquidator.sicx.balanceOf(liquidator.getAddress());
-
-        assertTrue(balancePreRetire.compareTo(balancePostRetire) > 0);
-        assertTrue(sICXBalancePreRetire.compareTo(sICXBalancePostRetire) < 0);
-
-        Map<String, Object> position = owner.loans.getAccountPositions(loanTaker.getAddress());
-
-        assertTrue(((Map<String,Object>)position.get("assets")).isEmpty());
-    }
-
-    @Test
-    @Order(13)
-    void dividendsAfterUpdate() throws Exception {
-        BalancedClient stakingClient = balanced.newClient();
-        BalancedClient lpClient = balanced.newClient();
-        BalancedClient feeGenerator = balanced.newClient();
-        sICXDepositAndBorrow(stakingClient, BigInteger.TEN.pow(23), BigInteger.TEN.pow(21));
-        lpClient.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);
-
-        balanced.increaseDay(1);
-        owner.dividends.distribute((tx) -> {});
-        
-        verifyRewards(stakingClient);
-        stakeBaln(stakingClient);
-
-        BigInteger lpClientRewards = verifyRewards(lpClient);
-        joinsICXBalnLP(lpClient, lpClientRewards, lpClientRewards);
-        
-        feeGenerator.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);
-
-        balanced.increaseDay(1);
-        owner.dividends.distribute((tx) -> {});
-
-        verifyBnusdFees(stakingClient);
-        verifyNoBnusdFees(lpClient);
-        verifyDaofundBnusdDividends();
-
-        feeGenerator.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);
-        feeGenerator.staking.stakeICX(BigInteger.TEN.pow(22), null, null);
-        
-        JsonObject swapData = Json.object();
-        JsonObject swapParams = Json.object();
-        swapParams.add("toToken", balanced.baln._address().toString());
-        swapData.add("method", "_swap");
-        swapData.add("params", swapParams);
-        feeGenerator.sicx.transfer(balanced.dex._address(), feeGenerator.sicx.balanceOf(feeGenerator.getAddress()), swapData.toString().getBytes());
-
-        swapData = Json.object();
-        swapParams = Json.object();
-        swapParams.add("toToken", balanced.bnusd._address().toString());
-        swapData.add("method", "_swap");
-        swapData.add("params", swapParams);
-        feeGenerator.baln.transfer(balanced.dex._address(), feeGenerator.baln.balanceOf(feeGenerator.getAddress()), swapData.toString().getBytes());
-
-        balanced.increaseDay(1);
-        owner.dividends.distribute((tx) -> {});
-
-        verifyDaofundAllDivTypes();
-        verifyAllFees(stakingClient);
-        verifyNoBnusdFees(lpClient);
-    }
-
-
-    
-    private void verifyExternalAndUpdateLoans(BalancedClient clientInFocus) throws Exception {
-        Map<String, Object> positionPre = removeZeroAssets(owner.loans.getAccountPositions(clientInFocus.getAddress()));
-        int id =  balanced.hexObjectToInt(positionPre.get("pos_id")).intValue();
-        Map<String, Object> postitionByIndexPre = removeZeroAssets(owner.loans.getPositionByIndex(id, BigInteger.valueOf(-1)));
-        Map<String, Object> postitionByIndexLastDayPre = removeZeroAssets(owner.loans.getPositionByIndex(id, BigInteger.valueOf(-2)));
-        Map<String, Object> snapshotPre = owner.loans.getSnapshot(BigInteger.valueOf(-1));
-        Map<String, Object> snapshotPreLastDay = owner.loans.getSnapshot(BigInteger.valueOf(-2));
-        Map<String, Map<String, Object>> assetsPre = owner.loans.getAvailableAssets();
-        int borrowerCountPre = owner.loans.borrowerCount();
-        Map<String, String> collateralTokensPre = owner.loans.getCollateralTokens();
-        BigInteger totalCollateralPre = owner.loans.getTotalCollateral();
-        Map<String, Map<String, Object>> availableAssetsPre = owner.loans.getAvailableAssets();
-        
-        balanced.loans._update(loansJavaPath, Map.of("_governance", balanced.governance._address()));
-
-        Map<String, Object> positionPost = owner.loans.getAccountPositions(clientInFocus.getAddress());
-        Map<String, Object> postitionByIndexPost = owner.loans.getPositionByIndex(id, BigInteger.valueOf(-1));
-        Map<String, Object> postitionByIndexLastDayPost = owner.loans.getPositionByIndex(id, BigInteger.valueOf(-2));
-        Map<String, Object> snapshotPost = owner.loans.getSnapshot(BigInteger.valueOf(-1));
-        Map<String, Object> snapshotPostLastDay = owner.loans.getSnapshot(BigInteger.valueOf(-2));
-        Map<String, Map<String, Object>> assetsPost = owner.loans.getAvailableAssets();
-        int borrowerCountPost = owner.loans.borrowerCount();
-        Map<String, String> collateralTokensPost = owner.loans.getCollateralTokens();
-        BigInteger totalCollateralPost = owner.loans.getTotalCollateral();
-        Map<String, Map<String, Object>> availableAssetsPost = owner.loans.getAvailableAssets();
-
-        assertEquals(positionPre.toString(), positionPost.toString());
-        assertEquals(postitionByIndexPre.toString(), postitionByIndexPost.toString());
-        assertEquals(postitionByIndexLastDayPre.toString(), postitionByIndexLastDayPost.toString());
-        assertEquals(snapshotPre.toString(), snapshotPost.toString());
-        assertEquals(snapshotPreLastDay.toString(), snapshotPostLastDay.toString());
-        assertEquals(assetsPre.toString(), assetsPost.toString());
-        assertEquals(borrowerCountPre, borrowerCountPost);
-        assertEquals(collateralTokensPre.toString(), collateralTokensPost.toString());
-        assertEquals(totalCollateralPre, totalCollateralPost);
-        assertEquals(availableAssetsPre.toString(), availableAssetsPost.toString());
-    }
-
-    private Map<String, Object> removeZeroAssets(Map<String, Object> position) {
-        if (position.isEmpty()){
-            return position;
-        }
-        Map<String, Object> assets = (Map<String,Object>) position.get("assets");
-        Map<String, Object> newAssets = new HashMap<>();
-        for (Map.Entry<String, Object> entry : assets.entrySet()) {
-            if (!balanced.hexObjectToInt(entry.getValue()).equals(BigInteger.ZERO)) {
-                newAssets.put(entry.getKey(), entry.getValue());
-            }
-        }
-
-        Map<String, Object> newPosition = new HashMap<String, Object>(position);
-        position.put("assets", newAssets);
-
-        return position;
     }
 
     private void verifyExternalAndUpdateDex(BalancedClient clientInFocus) throws Exception {
@@ -769,7 +309,7 @@ class Systemtest implements ScoreIntegrationTest {
         assertEquals(totalDexAddresses2Pre, totalDexAddresses2Post);
         // assertEquals(balanceOfAt1Pre, balanceOfAt1Post);
         // assertEquals(balanceOfAt2Pre, balanceOfAt2Post); 
-        // assertEquals(balanceOfAt3Pre, balanceOfAt3Post);// todo: evaluate if this should be correct 
+        // assertEquals(balanceOfAt3Pre, balanceOfAt3Post);
         // assertEquals(balanceOfAt4Pre, balanceOfAt4Post);
         assertEquals(totalSupplyAt1Pre, totalSupplyAt1Post);
         assertEquals(totalSupplyAt2Pre, totalSupplyAt2Post);
@@ -789,77 +329,6 @@ class Systemtest implements ScoreIntegrationTest {
         assertEquals(balnSnapshot4Pre, balnSnapshot4Post);
     }
 
-
-    private void verifyExternalAndUpdateRewards(BalancedClient clientInFocus) {
-        BigInteger day = owner.governance.getDay();
-        BigInteger emissionPre = owner.rewards.getEmission(day);
-        BigInteger emission1Pre = owner.rewards.getEmission(BigInteger.valueOf(59));
-        BigInteger emission2Pre = owner.rewards.getEmission(BigInteger.valueOf(60));
-        BigInteger emission3Pre = owner.rewards.getEmission(BigInteger.valueOf(61));
-        BigInteger emission4Pre = owner.rewards.getEmission(BigInteger.valueOf(423));
-        BigInteger emission5Pre = owner.rewards.getEmission(BigInteger.valueOf(853));
-        BigInteger emission6Pre = owner.rewards.getEmission(BigInteger.valueOf(923));
-        BigInteger emission7Pre = owner.rewards.getEmission(BigInteger.valueOf(1192));
-        BigInteger emission8Pre = owner.rewards.getEmission(BigInteger.valueOf(1251));
-        Map<String, BigInteger> balnHoldingsPre = owner.rewards.getBalnHoldings(new score.Address[] {clientInFocus.getAddress()});
-        BigInteger balnHoldingPre = owner.rewards.getBalnHolding(clientInFocus.getAddress());
-        Map<String, Object> distStatusPre = owner.rewards.distStatus();
-        List<String> dataSourceNamesPre = owner.rewards.getDataSourceNames();
-        List<String> recipientsPre = owner.rewards.getRecipients();
-        Map<String, BigInteger> recipientsSplitPre = owner.rewards.getRecipientsSplit();
-        Map<String, Map<String, Object>> dataSourcesPre = owner.rewards.getDataSources();
-        Map<String, Object> sourceDataPre = owner.rewards.getSourceData("Loans");
-        Map<String, BigInteger> recipientAtPre = owner.rewards.recipientAt(day);
-        Map<String, BigInteger> recipientAtLastDayPre = owner.rewards.recipientAt(day.subtract(BigInteger.ONE));
-       
-        balanced.rewards._update(rewardsJavaPath, Map.of("_governance", balanced.governance._address()));
-       
-        BigInteger emissionPost = owner.rewards.getEmission(day);
-        BigInteger emission1Post = owner.rewards.getEmission(BigInteger.valueOf(59));
-        BigInteger emission2Post = owner.rewards.getEmission(BigInteger.valueOf(60));
-        BigInteger emission3Post = owner.rewards.getEmission(BigInteger.valueOf(61));
-        BigInteger emission4Post = owner.rewards.getEmission(BigInteger.valueOf(423));
-        BigInteger emission5Post = owner.rewards.getEmission(BigInteger.valueOf(853));
-        BigInteger emission6Post = owner.rewards.getEmission(BigInteger.valueOf(923));
-        BigInteger emission7Post = owner.rewards.getEmission(BigInteger.valueOf(1192));
-        BigInteger emission8Post = owner.rewards.getEmission(BigInteger.valueOf(1251));
-
-        Map<String, BigInteger> balnHoldingsPost = owner.rewards.getBalnHoldings(new score.Address[] {clientInFocus.getAddress()});
-        BigInteger balnHoldingPost = owner.rewards.getBalnHolding(clientInFocus.getAddress());
-        Map<String, Object> distStatusPost = owner.rewards.distStatus();
-        List<String> dataSourceNamesPost = owner.rewards.getDataSourceNames();
-        List<String> recipientsPost = owner.rewards.getRecipients();
-        Map<String, BigInteger> recipientsSplitPost = owner.rewards.getRecipientsSplit();
-        Map<String, Map<String, Object>> dataSourcesPost = owner.rewards.getDataSources();
-        Map<String, Object> sourceDataPost = owner.rewards.getSourceData("Loans");
-        Map<String, BigInteger> recipientAtPost = owner.rewards.recipientAt(day);
-        Map<String, BigInteger> recipientAtLastDayPost = owner.rewards.recipientAt(day.subtract(BigInteger.ONE));
-
-        assertEquals(emissionPre, emissionPost);
-        assertEquals(emission1Pre, emission1Post);
-        assertEquals(emission2Pre, emission2Post);
-        assertEquals(emission3Pre, emission3Post);
-        assertEquals(emission4Pre, emission4Post);
-        assertEquals(emission5Pre, emission5Post);
-        assertEquals(emission6Pre, emission6Post);
-        assertEquals(emission7Pre, emission7Post);
-        assertEquals(emission8Pre, emission8Post);
-        assertEquals(balnHoldingsPre.toString(), balnHoldingsPost.toString());
-        assertEquals(balnHoldingPre, balnHoldingPost);
-        assertEquals(distStatusPre.toString(), distStatusPost.toString());
-        assertEquals(dataSourceNamesPre.toString(), dataSourceNamesPost.toString());
-        assertEquals(recipientsPre.toString(), recipientsPost.toString());
-        assertEquals(recipientsSplitPre.toString(), recipientsSplitPost.toString());
-        assertEquals(dataSourcesPre.toString(), dataSourcesPost.toString());
-        assertEquals(sourceDataPre.toString(), sourceDataPost.toString());
-        assertEquals(recipientAtPre.toString(), recipientAtPost.toString());
-        assertEquals(recipientAtLastDayPre.toString(), recipientAtLastDayPost.toString());
-
-        owner.rewards.addDataProvider(balanced.stakedLp._address());
-        owner.rewards.addDataProvider(balanced.dex._address());
-        owner.rewards.addDataProvider(balanced.loans._address());
-    }
-    
     private void closeLoansPostionAndVerifyNoRewards(BalancedClient client) throws Exception {
         Map<String, String> assets = (Map<String, String>) client.loans.getAccountPositions(client.getAddress()).get("assets");
         BigInteger debt = Balanced.hexObjectToInt(assets.get("bnUSD"));

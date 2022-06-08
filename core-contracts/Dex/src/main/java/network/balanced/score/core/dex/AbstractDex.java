@@ -496,8 +496,7 @@ public abstract class AbstractDex implements Dex {
 
     @External(readonly = true)
     public BigInteger totalDexAddresses(BigInteger _id) {
-        BigInteger value = BigInteger.valueOf(activeAddresses.get(_id.intValue()).length());
-        return value;
+        return BigInteger.valueOf(activeAddresses.get(_id.intValue()).length());
     }
 
     @External(readonly = true)
@@ -564,8 +563,7 @@ public abstract class AbstractDex implements Dex {
         if (_id.intValue() == SICXICX_POOL_ID) {
             return getICXBalance(_owner);
         } else {
-            BigInteger balance = DexDBVariables.balance.at(_id.intValue()).getOrDefault(_owner, BigInteger.ZERO);
-            return balance;
+            return DexDBVariables.balance.at(_id.intValue()).getOrDefault(_owner, BigInteger.ZERO);
         }
     }
 
