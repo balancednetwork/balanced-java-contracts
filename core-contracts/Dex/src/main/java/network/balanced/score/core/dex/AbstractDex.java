@@ -336,7 +336,7 @@ public abstract class AbstractDex implements Dex {
 
     @External(readonly = true)
     public BigInteger getWithdrawLock(BigInteger _id, Address _owner) {
-        return withdrawLock.at(_id.intValue()).get(_owner);
+        return withdrawLock.at(_id.intValue()).getOrDefault(_owner, BigInteger.ZERO);
     }
 
     @External(readonly = true)
@@ -363,7 +363,7 @@ public abstract class AbstractDex implements Dex {
 
     @External(readonly = true)
     public BigInteger getPoolTotal(BigInteger _id, Address _token) {
-        return poolTotal.at(_id.intValue()).get(_token);
+        return poolTotal.at(_id.intValue()).getOrDefault(_token, BigInteger.ZERO);
     }
 
     @External(readonly = true)
