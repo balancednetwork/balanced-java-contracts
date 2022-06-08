@@ -340,12 +340,13 @@ public class DividendsImpl implements Dividends {
         int end = value[1];
         Map<String, BigInteger> totalDividends = new HashMap<>();
         int size = acceptedTokens.size();
-        ArrayList <Address> acceptedTokenslist = new ArrayList<>(size);
+        List <Address> acceptedTokenslist = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             acceptedTokenslist.add(acceptedTokens.get(i));
         }
+        Address dao = daoFund.get();
         for (int i = start; i < end; i++) {
-            Map<String, BigInteger> dividends = getDividendsForDaoFund(BigInteger.valueOf(i), acceptedTokenslist);
+            Map<String, BigInteger> dividends = getDividendsForDaoFund(BigInteger.valueOf(i), acceptedTokenslist, dao);
             if (dividends.size() != 0) {
                 setClaimed(daofund, BigInteger.valueOf(i));
             }
@@ -384,7 +385,7 @@ public class DividendsImpl implements Dividends {
         Address dex = dexScore.get();
         BigInteger dividendsSwitchingDay = dividendsEnabledToStakedBalnDay.getOrDefault(BigInteger.ZERO);
         int size = acceptedTokens.size();
-        ArrayList <Address> acceptedTokenslist = new ArrayList<>(size);
+        List <Address> acceptedTokenslist = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             acceptedTokenslist.add(acceptedTokens.get(i));
         }
@@ -448,7 +449,7 @@ public class DividendsImpl implements Dividends {
         Address dex = dexScore.get();
         BigInteger dividendsSwitchingDay = dividendsEnabledToStakedBalnDay.getOrDefault(BigInteger.ZERO);
         int size = acceptedTokens.size();
-        ArrayList <Address> acceptedTokenslist = new ArrayList<>(size);
+        List <Address> acceptedTokenslist = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             acceptedTokenslist.add(acceptedTokens.get(i));
         }
@@ -472,12 +473,13 @@ public class DividendsImpl implements Dividends {
 
         Map<String, BigInteger> totalDividends = new HashMap<>();
         int size = acceptedTokens.size();
-        ArrayList <Address> acceptedTokenslist = new ArrayList<>(size);
+        List <Address> acceptedTokenslist = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             acceptedTokenslist.add(acceptedTokens.get(i));
         }
+        Address dao = daoFund.get();
         for (int i = start; i < end; i++) {
-            Map<String, BigInteger> dividends = getDividendsForDaoFund(BigInteger.valueOf(i), acceptedTokenslist);
+            Map<String, BigInteger> dividends = getDividendsForDaoFund(BigInteger.valueOf(i), acceptedTokenslist, dao);
             totalDividends = addDividends(totalDividends, dividends, acceptedTokenslist);
         }
 
@@ -547,7 +549,7 @@ public class DividendsImpl implements Dividends {
         return new int[]{start, end};
     }
 
-    private Map<String, BigInteger> getDividendsForDay(Address account, BigInteger day, Address baln, Address dex, BigInteger dividendsSwitchingDay, ArrayList<Address> acceptedTokensList) {
+    private Map<String, BigInteger> getDividendsForDay(Address account, BigInteger day, Address baln, Address dex, BigInteger dividendsSwitchingDay, List<Address> acceptedTokensList) {
         boolean claim = isClaimed(account, day);
         if (claim) {
             return Map.of();
@@ -559,7 +561,7 @@ public class DividendsImpl implements Dividends {
         BigInteger myBalnFromPools = BigInteger.ZERO;
         BigInteger totalBalnFromPools = BigInteger.ZERO;
 
-        ArrayList<BigInteger> poolList = new ArrayList<>();
+        List<BigInteger> poolList = new ArrayList<>();
         poolList.add(BALNBNUSD_ID);
         poolList.add(BALNSICX_ID);
 
@@ -597,8 +599,7 @@ public class DividendsImpl implements Dividends {
         return myDividends;
     }
 
-    private Map<String, BigInteger> getDividendsForDaoFund(BigInteger day, ArrayList<Address> acceptedTokensList) {
-        Address dao = daoFund.get();
+    private Map<String, BigInteger> getDividendsForDaoFund(BigInteger day, List<Address> acceptedTokensList, Address dao) {
         boolean claim = isClaimed(dao, day);
         if (claim) {
             return Map.of();
@@ -618,7 +619,7 @@ public class DividendsImpl implements Dividends {
         return daoFundDividends;
     }
 
-    private Map<String, BigInteger> addDividends(Map<String, BigInteger> totalDividends, Map<String, BigInteger> currentDividends, ArrayList<Address> acceptedTokensList) {
+    private Map<String, BigInteger> addDividends(Map<String, BigInteger> totalDividends, Map<String, BigInteger> currentDividends, List<Address> acceptedTokensList) {
         if (totalDividends.size() > 0 && currentDividends.size() > 0) {
             Map<String, BigInteger> response = new HashMap<>();
             for (Address token : acceptedTokensList) {
