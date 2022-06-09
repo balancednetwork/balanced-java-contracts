@@ -35,11 +35,12 @@ dependencies {
 }
 
 optimizedJar {
-    mainClassName = 'network.balanced.score.util.DummyOracle'
+    mainClassName = 'network.balanced.score.util.dummyoracle.DummyOracle'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
+    enableDebug = false
 }
 
 deployJar {
