@@ -72,7 +72,6 @@ public class Constants {
 
     static BigInteger BALNBNUSD_ID = BigInteger.valueOf(3);
     static BigInteger BALNSICX_ID = BigInteger.valueOf(4);
-    static BigInteger U_SECONDS_DAY = BigInteger.valueOf(86_400_000_000L);
 
     static final String IDS = "ids";
     static final String AMOUNT = "amount";
