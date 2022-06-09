@@ -18,7 +18,28 @@ import network.balanced.score.dependencies.Dependencies
 
 version = '0.1.0'
 
+repositories {
+    // Use Maven Central for resolving dependencies.
+    mavenCentral()
+}
+
 dependencies {
+    compileOnly Dependencies.javaeeApi
+    implementation Dependencies.javaeeScorex
+    implementation project(':score-lib')
+
+    testImplementation Dependencies.javaeeUnitTest
+    testImplementation Dependencies.junitJupiter
+    testRuntimeOnly Dependencies.junitJupiterEngine
+    testImplementation Dependencies.mockitoCore
+    testImplementation Dependencies.mockitoInline
+    testImplementation project(':test-lib')
+
+    intTestImplementation Dependencies.javaeeScoreClient
+    intTestAnnotationProcessor Dependencies.javaeeScoreClient
+    intTestImplementation Dependencies.iconSdk
+    intTestImplementation Dependencies.jacksonDatabind
+
     compileOnly Dependencies.javaeeApi
     implementation Dependencies.javaeeScorex
     implementation Dependencies.minimalJson
@@ -26,20 +47,9 @@ dependencies {
     annotationProcessor Dependencies.javaeeScoreData
     compileOnly Dependencies.javaeeScoreData
 
-    testImplementation Dependencies.javaeeUnitTest
     testImplementation Dependencies.javaeeTokens
     testImplementation Dependencies.json
-    testImplementation Dependencies.junitJupiter
-    testRuntimeOnly Dependencies.junitJupiterEngine
-    testImplementation Dependencies.mockitoInline
-    testImplementation Dependencies.mockitoCore
 
-    testImplementation project(':test-lib')
-
-    intTestImplementation Dependencies.javaeeScoreClient
-    intTestAnnotationProcessor Dependencies.javaeeScoreClient
-    intTestImplementation Dependencies.iconSdk
-    intTestImplementation Dependencies.jacksonDatabind
 
 }
 
@@ -49,6 +59,7 @@ optimizedJar {
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
+
     enableDebug = false
 }
 
@@ -57,6 +68,7 @@ deployJar {
         sejong {
             uri = 'https://sejong.net.solidwallet.io/api/v3'
             nid = 0x53
+            to = "cx75256fadf232ad1124d9c6cd70c9b1ec122a0f47"
         }
         local {
             uri = 'http://localhost:9082/api/v3'
@@ -65,10 +77,7 @@ deployJar {
         mainnet {
             uri = 'https://ctz.solidwallet.io/api/v3'
             nid = 0x1
-        }
-        berlin {
-            uri = 'https://berlin.net.solidwallet.io/api/v3'
-            nid = 0x7
+            to = "cx793970c9ec84eb0dcb6164965c74fe678474d7c7"
         }
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
@@ -79,69 +88,38 @@ deployJar {
 tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+    finalizedBy jacocoTestReport
 }
 
-task integrationTest(type: Test, dependsOn: optimizedJar) {
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = false
+        csv.required = false
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+    }
+}
+
+
+task integrationTest(type: Test) {
     useJUnitPlatform()
+
+    rootProject.allprojects {
+        if (it.getTasks().findByName('optimizedJar')) {
+            dependsOn(it.getTasks().getByName('optimizedJar'))
+        }
+    }
+
     options {
         testLogging.showStandardStreams = true
         description = 'Runs integration tests.'
         group = 'verification'
+
         testClassesDirs = sourceSets.intTest.output.classesDirs
         classpath = sourceSets.intTest.runtimeClasspath
 
-        systemProperty 'url', scoreTest.url
-        systemProperty 'nid', scoreTest.nid
-
-        systemProperty 'keyStore', scoreTest.keystoreName
-        systemProperty 'keyPassword', scoreTest.keystorePass
-
-        systemProperty 'scoreFilePath', project.tasks.optimizedJar.outputJarName
-        project.extensions.deployJar.arguments.each { arg -> systemProperty 'params.' + arg.name, arg.value
-        }
-
-//        dependsOn ":DemoContract:optimizedJar"
-        systemProperty 'sicx.url', scoreTest.url
-        systemProperty 'sicx.nid', scoreTest.nid
-        systemProperty 'sicx.keyStore', scoreTest.keystoreName
-        systemProperty 'sicx.keyPassword', scoreTest.keystorePass
-//
-        systemProperty 'sicx.scoreFilePath', "../../sicx.zip"
-//        systemProperty 'scoreFilePath', "../../staking.zip"
-
-        systemProperty 'system.url', scoreTest.url
-        systemProperty 'system.nid', scoreTest.nid
-        systemProperty 'system.keyStore', scoreTest.keystoreName
-        systemProperty 'system.keyPassword', scoreTest.keystorePass
-        systemProperty 'system.isUpdate', "false"
-        systemProperty 'system.address', "cx0000000000000000000000000000000000000000"
-
-        systemProperty 'tester.keyStore', scoreTest.get("tester.keystoreName")
-        systemProperty 'tester.keyPassword', scoreTest.get("tester.keystorePass")
-
-        systemProperty 'tester.isUpdate', "false"
-        systemProperty 'tester.address', "cx0000000000000000000000000000000000000000"
-        systemProperty 'tester.url', scoreTest.url
-        systemProperty 'tester.nid', scoreTest.nid
-        systemProperty 'tester.scoreFilePath', "../../sicx.zip"
-
-        systemProperty 'tester2.keyStore', scoreTest.get("tester2.keystoreName")
-        systemProperty 'tester2.keyPassword', scoreTest.get("tester2.keystorePass")
-
-        systemProperty 'tester2.isUpdate', "false"
-        systemProperty 'tester2.address', "cx0000000000000000000000000000000000000000"
-        systemProperty 'tester2.url', scoreTest.url
-        systemProperty 'tester2.nid', scoreTest.nid
-        systemProperty 'tester2.scoreFilePath', "../../sicx.zip"
-
-
-        systemProperty 'sicx.isUpdate', "false"
-        systemProperty 'isUpdate', "false"
-        systemProperty 'address', "cx6594d411e7cd4bf1c29b387450df881ed7ae6e8b"
-        systemProperty 'sicx.address', "cx853d983f752d6bf47a8e07526dcac9a4966179b8"
-
-//        systemProperty 'demo.params.defaultValue', '0x1'
+        systemProperty "python", new File(project(':test-lib').projectDir, 'python-contracts/staking.zip')
+        systemProperty "java", optimizedJar.outputJarName
     }
 
 }
-

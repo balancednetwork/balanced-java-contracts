@@ -16,6 +16,7 @@
 
 import network.balanced.score.dependencies.Dependencies
 
+
 buildscript {
     repositories {
         mavenCentral()
@@ -25,13 +26,32 @@ buildscript {
     }
 }
 
+def scoreIntegrationTest = new HashMap<String, String>()
+
 subprojects {
     repositories {
         mavenCentral()
     }
 
     apply plugin: 'java'
+    apply plugin: 'jacoco'
     apply plugin: 'foundation.icon.javaee'
+
+    sourceSets {
+        intTest {
+            compileClasspath += sourceSets.main.output
+            runtimeClasspath += sourceSets.main.output
+            java {
+            }
+        }
+
+    }
+
+    configurations {
+        intTestImplementation.extendsFrom testImplementation
+        intTestAnnotationProcessor.extendsFrom testAnnotationProcessor
+        intTestRuntimeOnly.extendsFrom testRuntimeOnly
+    }
 
     java {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -43,60 +63,35 @@ subprojects {
         options.compilerArgs += ['-parameters']
     }
 
-    tasks.named('test') {
-        // Use JUnit Platform for unit tests.
-        useJUnitPlatform()
-    }
+    scoreIntegrationTest.put('env.props', new File(project(':test-lib').projectDir, 'conf/env.props'));
 
-    sourceSets {
-        intTest {
-            compileClasspath += sourceSets.main.output
-            runtimeClasspath += sourceSets.main.output
-            java {
-            }
+    //remove as more contracts are added to master
+    scoreIntegrationTest.put('Governance', new File(project(':test-lib').projectDir, 'python-contracts/governance.zip'));
+    scoreIntegrationTest.put('Baln', new File(project(':test-lib').projectDir, 'python-contracts/baln.zip'));
+    scoreIntegrationTest.put('Bwt', new File(project(':test-lib').projectDir, 'python-contracts/bwt.zip'));
+    scoreIntegrationTest.put('Dex', new File(project(':test-lib').projectDir, 'python-contracts/dex.zip'));
+    scoreIntegrationTest.put('Feehandler', new File(project(':test-lib').projectDir, 'python-contracts/feehandler.zip'));
+    scoreIntegrationTest.put('Loans', new File(project(':test-lib').projectDir, 'python-contracts/loans.zip'));
+    // scoreIntegrationTest.put('rebalancing', new File(project(':test-lib').projectDir, 'python-contracts/rebalancing.zip'));
+    scoreIntegrationTest.put('Rewards', new File(project(':test-lib').projectDir, 'python-contracts/rewards.zip'));
+    scoreIntegrationTest.put('Sicx', new File(project(':test-lib').projectDir, 'python-contracts/sicx.zip'));
+    scoreIntegrationTest.put('Bnusd', new File(project(':test-lib').projectDir, 'python-contracts/bnusd.zip'));
+    scoreIntegrationTest.put('daofund', new File(project(':test-lib').projectDir, 'python-contracts/daofund.zip'));
+    scoreIntegrationTest.put('Dividends', new File(project(':test-lib').projectDir, 'python-contracts/dividends.zip'));
+    scoreIntegrationTest.put('Oracle', new File(project(':test-lib').projectDir, 'python-contracts/oracle.zip'));
+    scoreIntegrationTest.put('Reserve', new File(project(':test-lib').projectDir, 'python-contracts/reserve.zip'));
+    scoreIntegrationTest.put('Router', new File(project(':test-lib').projectDir, 'python-contracts/router.zip'));
+//    scoreIntegrationTest.put('Staking', new File(project(':test-lib').projectDir, 'python-contracts/staking.zip'));
+
+    afterEvaluate { project ->
+        scoreIntegrationTest.put(project.name, project.getTasks().getByName("optimizedJar").outputJarName)
+    }
+}
+
+gradle.taskGraph.whenReady { taskGraph ->
+    taskGraph.getAllTasks().any { task ->
+        if (task.name == "integrationTest") {
+            scoreIntegrationTest.each { key, val -> task.systemProperty key, val }
         }
     }
-
-    configurations {
-        intTestImplementation.extendsFrom testImplementation
-        intTestAnnotationProcessor.extendsFrom testAnnotationProcessor
-        intTestRuntimeOnly.extendsFrom testRuntimeOnly
-    }
-
-    def loadProperties = {
-        def prefix = 'score-test.'
-        def props = project.getProperties()
-        def scoreTest = new HashMap<String, Object>()
-
-        scoreTest.put('keystoreName', props.get(prefix + 'keystoreName'))
-        scoreTest.put('keystorePass', props.get(prefix + 'keystorePass'))
-        scoreTest.put('url', props.getOrDefault(prefix + 'url', 'http://127.0.0.1:9082/api/v3'))
-        scoreTest.put('nid', props.getOrDefault(prefix + 'nid', 3))
-
-        scoreTest.put('sicx.keystoreName', props.get(prefix + 'keystoreName'))
-        scoreTest.put('sicx.keystorePass', props.get(prefix + 'keystorePass'))
-        scoreTest.put('sicx.url', props.getOrDefault(prefix + 'url', 'http://127.0.0.1:9082/api/v3'))
-        scoreTest.put('sicx.nid', props.getOrDefault(prefix + 'nid', 3))
-        scoreTest.put('sicx.scoreFilePath', "./sicx.zip")
-
-        scoreTest.put('system.keystoreName', props.get(prefix + 'keystoreName'))
-        scoreTest.put('system.keystorePass', props.get(prefix + 'keystorePass'))
-        scoreTest.put('system.url', props.getOrDefault(prefix + 'url', 'http://127.0.0.1:9082/api/v3'))
-        scoreTest.put('system.nid', props.getOrDefault(prefix + 'nid', 3))
-
-        scoreTest.put('tester.keystoreName', props.get(prefix + 'tester.keystoreName'))
-        scoreTest.put('tester.keystorePass', props.get(prefix + 'tester.keystorePass'))
-        scoreTest.put('tester.url', props.getOrDefault(prefix + 'url', 'http://127.0.0.1:9082/api/v3'))
-        scoreTest.put('tester.nid', props.getOrDefault(prefix + 'nid', 3))
-        scoreTest.put('tester.scoreFilePath', "./sicx.zip")
-
-        scoreTest.put('tester2.keystoreName', props.get(prefix + 'tester2.keystoreName'))
-        scoreTest.put('tester2.keystorePass', props.get(prefix + 'tester2.keystorePass'))
-        scoreTest.put('tester2.url', props.getOrDefault(prefix + 'url', 'http://127.0.0.1:9082/api/v3'))
-        scoreTest.put('tester2.nid', props.getOrDefault(prefix + 'nid', 3))
-        scoreTest.put('tester2.scoreFilePath', "./sicx.zip")
-
-        ext['scoreTest'] = scoreTest
-    }
-    loadProperties()
 }
