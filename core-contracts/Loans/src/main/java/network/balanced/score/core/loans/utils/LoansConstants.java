@@ -23,7 +23,6 @@ import network.balanced.score.lib.utils.Constants;
 
 public class LoansConstants extends Constants {
     private static final BigInteger SECOND = BigInteger.valueOf(1_000_000);
-    public static final BigInteger U_SECONDS_DAY = BigInteger.valueOf(86400).multiply(SECOND);
 
     public static final BigInteger POINTS = BigInteger.valueOf(10_000);
     public static final BigInteger MINING_RATIO = BigInteger.valueOf(50_000);
