@@ -46,6 +46,7 @@ project(':Rewards').projectDir = file("core-contracts/Rewards")
 include(':StakedLP')
 project(':StakedLP').projectDir = file("core-contracts/StakedLP")
 
+include 'score-client'
 include 'score-lib'
 include 'test-lib'
 

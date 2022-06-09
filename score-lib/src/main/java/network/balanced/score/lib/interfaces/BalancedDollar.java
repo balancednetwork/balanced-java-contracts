@@ -58,6 +58,12 @@ public interface BalancedDollar extends IRC2BurnableInterface, IRC2Mintable, Gov
     BigInteger lastPriceInLoop();
 
     @External
+    void setMinter2(Address _address);
+
+    @External(readonly = true)
+    Address getMinter2();
+
+    @External
     void govTransfer(Address _from, Address _to, BigInteger _value, @Optional byte[] _data);
 
     @EventLog(indexed = 3)

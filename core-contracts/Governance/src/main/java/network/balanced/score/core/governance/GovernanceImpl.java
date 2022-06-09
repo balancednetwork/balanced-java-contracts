@@ -461,7 +461,7 @@ public class GovernanceImpl {
 
         BigInteger day = getDay();
         launchDay.set(day);
-        BigInteger timeDelta = BigInteger.valueOf(Context.getBlockTimestamp());
+        BigInteger timeDelta = BigInteger.valueOf(Context.getBlockTimestamp()).add(getTimeOffset());
 
         launchTime.set(timeDelta);
         setTimeOffset(timeDelta);

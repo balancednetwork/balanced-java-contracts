@@ -18,6 +18,7 @@ package network.balanced.score.lib.test.integration;
 
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.icx.Wallet;
+import foundation.icon.jsonrpc.model.Hash;
 import foundation.icon.jsonrpc.model.TransactionResult;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
@@ -77,6 +78,15 @@ public interface ScoreIntegrationTest {
     static DefaultScoreClient deploy(Wallet wallet, String name, Map<String, Object> params) {
         String path = getFilePath(name);
         return  DefaultScoreClient._deploy(chain.getEndpointURL(), chain.networkId, wallet, path, params);
+    }
+
+    static Hash deployAsync(Wallet wallet, String name, Map<String, Object> params) {
+        String path = getFilePath(name);
+        return DefaultScoreClient._deployAsync(chain.getEndpointURL(), chain.networkId, wallet, path, params);
+    }
+
+    static DefaultScoreClient getDeploymentResult(Wallet wallet, Hash hash) {
+        return  DefaultScoreClient.getDeploymentResult(chain.getEndpointURL(), chain.networkId, wallet, hash);
     }
 
     static String getFilePath(String key) {
@@ -193,7 +203,7 @@ public interface ScoreIntegrationTest {
         };
     }
 
-    static  Consumer<TransactionResult> dummyConsumer() {
+    public static Consumer<TransactionResult> dummyConsumer() {
         return (txr) -> {
             
         };
