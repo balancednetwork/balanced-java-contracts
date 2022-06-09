@@ -244,7 +244,7 @@ public class LoansImpl implements Loans {
 
     @External(readonly = true)
     public Map<String, Object> getAccountPositions(Address _owner) {
-        Context.require(PositionsDB.hasPosition(_owner), _owner + " does not have a position in Balanced");
+        // Context.require(PositionsDB.hasPosition(_owner), _owner + " does not have a position in Balanced");
         return PositionsDB.listPosition(_owner);
     }
 

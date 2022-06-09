@@ -448,7 +448,7 @@ class Systemtest implements ScoreIntegrationTest {
     @Test
     @Order(12)
     void LiquidateAndRetirebadDebt() throws Exception {
-         BalancedClient voter = balanced.newClient();
+        BalancedClient voter = balanced.newClient();
         BigInteger POINTS = BigInteger.valueOf(10_000);
 
         depositToStabilityContract(voter, BigInteger.TEN.pow(18));
@@ -474,6 +474,7 @@ class Systemtest implements ScoreIntegrationTest {
         BigInteger loan = POINTS.multiply(collateralValue).divide(lockingRatio);
         BigInteger fee = loan.multiply(feePercent).divide(POINTS);
         loanTaker.loans.depositAndBorrow(collateral, "bnUSD", loan, null, null);
+        BigInteger totalDebt = owner.loans.getBalanceAndSupply("Loans", owner.getAddress()).get("_totalSupply");
         
         BigInteger balancePreLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
         liquidator.loans.liquidate(loanTaker.getAddress());
@@ -494,6 +495,9 @@ class Systemtest implements ScoreIntegrationTest {
         Map<String, Object> position = owner.loans.getAccountPositions(loanTaker.getAddress());
 
         assertTrue(((Map<String,Object>)position.get("assets")).isEmpty());
+        BigInteger newTotalDebt = owner.loans.getBalanceAndSupply("Loans", owner.getAddress()).get("_totalSupply");
+
+        assertEquals(newTotalDebt, totalDebt.subtract(loan.add(fee)));
     }
 
     @Test
