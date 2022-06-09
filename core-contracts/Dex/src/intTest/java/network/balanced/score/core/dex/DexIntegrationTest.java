@@ -84,10 +84,7 @@ public class DexIntegrationTest {
 
     @ScoreClient
     static OwnerDexTest ownerDexTestScoreClient = new OwnerDexTestScoreClient(chain.getEndpointURL(), chain.networkId, testOwnerWallet, DefaultScoreClient.address(dexTestScoreAddress));;
-    @ScoreClient
     static OwnerDexTest ownerDexTestBaseScoreClient = new OwnerDexTestScoreClient(chain.getEndpointURL(), chain.networkId, testOwnerWallet, DefaultScoreClient.address(dexTestBaseScoreAddress));;
-
-    @ScoreClient
     static OwnerDexTest ownerDexTestThirdScoreClient = new OwnerDexTestScoreClient(chain.getEndpointURL(), chain.networkId, testOwnerWallet, DefaultScoreClient.address(dexTestThirdScoreAddress));;
     @ScoreClient
     static DexUser dexUserScoreClient = new DexUserScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet,
@@ -104,10 +101,8 @@ public class DexIntegrationTest {
     @ScoreClient
     static UserDexTest userDexTestScoreClient = new UserDexTestScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet,
             DefaultScoreClient.address(dexTestScoreAddress));
-    @ScoreClient
     static UserDexTest userDexTestBaseScoreClient = new UserDexTestScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet,
             DefaultScoreClient.address(dexTestBaseScoreAddress));
-    @ScoreClient
     static UserDexTest userDexTestThirdScoreClient = new UserDexTestScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet,
             DefaultScoreClient.address(dexTestThirdScoreAddress));
     @ScoreClient
@@ -209,6 +204,7 @@ public class DexIntegrationTest {
 
         //cancel order
         BigInteger sicxEarnings = dexReadOnlyScoreClient.getSicxEarnings(userAddress);
+        //todo: comare earning after wihtdraw
         System.out.println("sicx earnings is: "+sicxEarnings);
         dexUserScoreClient.cancelSicxicxOrder();
     }
@@ -306,6 +302,7 @@ public class DexIntegrationTest {
         byte[] tokenDeposit = "{\"method\":\"_deposit\",\"params\":{\"none\":\"none\"}}".getBytes();
         this.mintAndTransferTestTokens(tokenDeposit);
 
+        //todo: verify amount before and after withdraw
         //withdraw test token
         dexUserScoreClient.withdraw(DefaultScoreClient.address(dexTestScoreAddress), BigInteger.valueOf(90));
     }
@@ -369,7 +366,7 @@ public class DexIntegrationTest {
        assert balnHolding.compareTo(updatedBalnHolding)<0;
             BigInteger beforeSleepDay = dexReadOnlyScoreClient.getDay();
         try {
-            Thread.sleep(5000); //day change
+            Thread.sleep(5000); //wait some time
         }catch (Exception e){
             System.out.println(e.getMessage());
         }
