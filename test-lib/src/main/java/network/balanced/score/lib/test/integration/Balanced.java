@@ -33,9 +33,7 @@ import java.util.function.Consumer;
 
 import static network.balanced.score.lib.utils.Constants.*;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
-import network.balanced.score.lib.interfaces.*;
-//import network.balanced.score.lib.test.integration.BalancedClient;
-import score.Address;
+import static network.balanced.score.lib.test.integration.BalancedUtils.hexObjectToBigInteger;
 
 public class Balanced {
     public KeyWallet owner;
@@ -61,18 +59,14 @@ public class Balanced {
 
     public HashMap<Address, BalancedClient> balancedClients;
 
-    public Balanced() {
+    public Balanced() throws Exception {
         balancedClients = new HashMap<>();
+        owner = createWalletWithBalance(BigInteger.TEN.pow(24));
     }
 
-    public void deployBalanced() throws Exception {
-        owner = createWalletWithBalance(BigInteger.TEN.pow(24));
+    public void setupBalanced() throws Exception {
         deployPrep();
-
-        governance = deploy(owner, "Governance", null);
         deployContracts();
-        ownerClient = new BalancedClient(this, owner);
-    
         setupAddresses();
         increaseDay(1);
         setupContracts();
@@ -80,14 +74,16 @@ public class Balanced {
         setupMarkets();
     }
     
-    protected void deployPrep() {
+    public void deployPrep() {
         try {
             systemScore.registerPRep(BigInteger.valueOf(2000).multiply(BigInteger.TEN.pow(18)), "test", "kokoa@example.com", "USA", "New York", "https://icon.kokoa.com", "https://icon.kokoa.com/json/details.json", "localhost:9082");
         } catch (Exception e) {
         }
     }
 
-    protected void deployContracts() {
+    public void deployContracts() {
+        governance = deploy(owner, "Governance", null);
+
         Hash balnTx = deployAsync(owner, "Baln", Map.of("_governance", governance._address()));
         Hash bwtTx = deployAsync(owner, "Bwt", Map.of("_governance", governance._address()));
         Hash dexTx = deployAsync(owner, "Dex", Map.of("_governance", governance._address()));
@@ -121,8 +117,7 @@ public class Balanced {
         dex = getDeploymentResult(owner, dexTx);
         loans = getDeploymentResult(owner, loansTx);
         rebalancing = getDeploymentResult(owner, rebalancingTx);
-
-
+        rewards = getDeploymentResult(owner, rewardsTx);
         daofund = getDeploymentResult(owner, daofundTx);
         dividends = getDeploymentResult(owner, dividendsTx);
         oracle = getDeploymentResult(owner, oracleTx);
@@ -132,11 +127,10 @@ public class Balanced {
         sicx = getDeploymentResult(owner, sicxTx);
         stability = getDeploymentResult(owner, stabilityTx);
 
-        rewards = getDeploymentResult(owner, rewardsTx);
-
+        ownerClient = new BalancedClient(this, owner);
     }
 
-    protected void setupAddresses() {
+    public void setupAddresses() {
         BalancedAddresses balancedAddresses = new BalancedAddresses();
         balancedAddresses.loans = loans._address();
         balancedAddresses.dex = dex._address();
@@ -160,7 +154,7 @@ public class Balanced {
         ownerClient.governance.setContractAddresses();
     }
 
-    protected void setupContracts() {
+    public void setupContracts() {
         ownerClient.staking.setSicxAddress(sicx._address());
 
         ownerClient.bnUSD.setMinter(loans._address());
@@ -205,6 +199,7 @@ public class Balanced {
         return balancedClients.get(address);
     }
 
+    // deprecated after continous migration
     public void syncDistributions() {
         Consumer<TransactionResult> distributeConsumer = result -> {};
         while (!checkDistributionsDone()) {
@@ -216,13 +211,13 @@ public class Balanced {
     public boolean checkDistributionsDone() {
         BigInteger day = ownerClient.governance.getDay();
         Map<String, Object> status = ownerClient.rewards.distStatus();
-        if (hexObjectToInt(status.get("platform_day")).intValue() < day.intValue()) {
+        if (hexObjectToBigInteger(status.get("platform_day")).intValue() < day.intValue()) {
             return false;
         }
 
         Map<String, String> dataSourceStatus = (Map<String, String>) status.get("source_days");
         for (String sourceDay : dataSourceStatus.values()) {
-            if (hexObjectToInt(sourceDay).intValue() < day.intValue()) {
+            if (hexObjectToBigInteger(sourceDay).intValue() < day.intValue()) {
                 return false;
             }
         }
@@ -233,15 +228,5 @@ public class Balanced {
     public void increaseDay(int nrOfDays) {
         ownerClient.governance.setTimeOffset(ownerClient.governance.getTimeOffset().subtract(U_SECONDS_DAY.multiply(BigInteger.valueOf(nrOfDays))));
         ownerClient.baln.setTimeOffset();
-    }
-
-
-    public static BigInteger hexObjectToInt(Object hexNumber) {
-        String hexString = (String) hexNumber;
-        if (hexString.startsWith("0x")) {
-            return new BigInteger(hexString.substring(2), 16);
-        }
-        return new BigInteger(hexString, 16);
-
     }
 }

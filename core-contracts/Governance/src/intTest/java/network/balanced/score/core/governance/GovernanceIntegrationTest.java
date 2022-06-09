@@ -55,7 +55,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest{
     @BeforeAll
     static void setup() throws Exception {
         balanced = new Balanced();
-        balanced.deployBalanced();
+        balanced.setupBalanced();
         owner = balanced.ownerClient;
 
         KeyWallet testerWallet = createWalletWithBalance(BigInteger.TEN.pow(24));
@@ -65,13 +65,13 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest{
         owner.governance.setBalnVoteDefinitionCriterion(BigInteger.ZERO);
         owner.governance.setVoteDefinitionFee(BigInteger.TEN.pow(10));
         owner.governance.setQuorum(BigInteger.ONE);
-        increaseDay(1);
+        balanced.increaseDay(1);
         owner.baln.toggleEnableSnapshot();
 
         tester.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(20), null, null);        
 
-        increaseDay(1);
-        syncDistributions();
+        balanced.increaseDay(1);
+        balanced.syncDistributions();
         
         tester.rewards.claimRewards();
 
@@ -104,11 +104,11 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest{
         tester.governance.defineVote(name, "test", voteStart, snapshot, actions.toString());
         assertNotEquals(rebalancingThreshold, owner.rebalancing.getPriceChangeThreshold());
 
-        increaseDay(4);
+        balanced.increaseDay(4);
         BigInteger id = tester.governance.getVoteIndex(name);
         tester.governance.castVote(id, true);
 
-        increaseDay(2);
+        balanced.increaseDay(2);
 
         tester.governance.evaluateVote(id);
 
@@ -138,37 +138,5 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest{
         } catch (Exception e) {
             //success
         }
-    }
-    
-    protected static void syncDistributions() {
-        while (!checkDistributionsDone()) {
-            Consumer<TransactionResult> distributeConsumer = result -> {};
-            owner.rewards.distribute(distributeConsumer);
-        }
-    }
-    
-    protected static boolean checkDistributionsDone() {
-        BigInteger day = owner.governance.getDay();
-        Map<String, Object> status = owner.rewards.distStatus();
-        if (hexObjectToInt(status.get("platform_day")) < day.intValue()) {
-            return false;
-        }
-
-        Map<String, String> dataSourceStatus = (Map<String, String>) status.get("source_days");
-        for (String sourceDay : dataSourceStatus.values()) {
-            if (hexObjectToInt(sourceDay) < day.intValue()) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private static int hexObjectToInt(Object hexNumber) {
-        return Integer.parseInt(((String)hexNumber).substring(2), 16);
-    }
-    private static void increaseDay(int nrOfDays) {
-        owner.governance.setTimeOffset(owner.governance.getTimeOffset().subtract(U_SECONDS_DAY.multiply(BigInteger.valueOf(nrOfDays))));
-        owner.baln.setTimeOffset();
     }
 }

@@ -27,4 +27,13 @@ public class BalancedUtils {
 
         voter.governance.evaluateVote(id);
     }
+
+    public static BigInteger hexObjectToBigInteger(Object hexNumber) {
+        String hexString = (String) hexNumber;
+        if (hexString.startsWith("0x")) {
+            return new BigInteger(hexString.substring(2), 16);
+        }
+        return new BigInteger(hexString, 16);
+
+    }
 }

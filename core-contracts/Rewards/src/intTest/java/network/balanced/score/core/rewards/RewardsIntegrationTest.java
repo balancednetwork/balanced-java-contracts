@@ -38,7 +38,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
     @BeforeAll
     static void setup() throws Exception {
         balanced = new Balanced();
-        balanced.deployBalanced();
+        balanced.setupBalanced();
 
         owner = balanced.ownerClient;
 
