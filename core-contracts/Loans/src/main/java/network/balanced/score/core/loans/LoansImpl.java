@@ -176,7 +176,7 @@ public class LoansImpl implements Loans {
     public static BigInteger _getDay() {
         BigInteger blockTime = BigInteger.valueOf(Context.getBlockTimestamp());
         BigInteger timeDelta = blockTime.subtract(timeOffset.getOrDefault(BigInteger.ZERO));
-        return timeDelta.divide(U_SECONDS_DAY);
+        return timeDelta.divide(MICRO_SECONDS_IN_A_DAY);
     }
 
     @External
