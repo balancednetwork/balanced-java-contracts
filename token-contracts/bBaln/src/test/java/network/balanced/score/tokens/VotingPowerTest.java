@@ -404,12 +404,12 @@ public class VotingPowerTest extends TestBase {
     }
 
     private void createLock(Account account, BigInteger lockUntil, BigInteger amount) {
+        doNothing().when(scoreSpy).updateRewardData(any());
         Map<String, Object> map = new HashMap<>();
         map.put("method", "createLock");
         map.put("params", Map.of("unlockTime", lockUntil));
         JSONObject json = new JSONObject(map);
         byte[] lockBytes = json.toString().getBytes();
-        doNothing().when(scoreSpy).updateRewardData(any());
         tokenScore.invoke(account, "transfer", bBALNScore.getAddress(), amount, lockBytes);
     }
 
@@ -453,6 +453,7 @@ public class VotingPowerTest extends TestBase {
             this.timestamp = timestamp;
         }
     }
+
 
 
 }

@@ -38,7 +38,6 @@ class BoostedBalnTest extends TestBase {
     private static final ServiceManager sm = getServiceManager();
     private static final Account owner = sm.createAccount();
     private Score bBalnScore;
-    private Score tokenScore;
 
     private static final String name = "Balance Token";
     private static final String symbol = "BALN";
@@ -47,7 +46,6 @@ class BoostedBalnTest extends TestBase {
 
     private static final String bBalnName = "Boosted Balance";
     private static final String bBalnSymbol = "bBALN";
-    private BoostedBaln scoreSpy;
 
     public static class IRC2BasicToken extends IRC2Basic {
         public IRC2BasicToken(String _name, String _symbol, int _decimals, BigInteger _totalSupply) {
@@ -58,9 +56,9 @@ class BoostedBalnTest extends TestBase {
 
     @BeforeEach
     public void setup() throws Exception {
-        tokenScore = sm.deploy(owner, IRC2BasicToken.class, name, symbol, decimals, initialSupply);
+        Score tokenScore = sm.deploy(owner, IRC2BasicToken.class, name, symbol, decimals, initialSupply);
         bBalnScore = sm.deploy(owner, BoostedBaln.class, tokenScore.getAddress(), bBalnName, bBalnSymbol);
-        scoreSpy = (BoostedBaln) spy(bBalnScore.getInstance());
+        BoostedBaln scoreSpy = (BoostedBaln) spy(bBalnScore.getInstance());
         bBalnScore.setInstance(scoreSpy);
 
         bBalnScore.invoke(owner, "setMinimumLockingAmount", ICX);
