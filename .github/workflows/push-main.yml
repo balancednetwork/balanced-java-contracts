@@ -13,15 +13,9 @@ jobs:
         uses: actions/checkout@v3
         with:
           submodules: true
-    
-      - name: Install docker & docker-compose
-        run: sudo curl -sSL https://get.docker.com/ | sh && sudo apt install docker-compose -y 
-
-      - name: Start docker
-        run: sudo systemctl start docker
 
       - name: Start local Blockchain
-        run: sudo docker-compose up -d
+        run: docker-compose up -d
 
       - name: Run unit tests
         run: ./gradlew clean build
