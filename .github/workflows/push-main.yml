@@ -12,15 +12,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
     
-      - name: install docker & docker-compose
+      - name: Install docker & docker-compose
         run: sudo curl -sSL https://get.docker.com/ | sh && sudo apt install docker-compose -y 
 
-      - name: start docker
+      - name: Start docker
         run: sudo systemctl start docker
 
-      - name: run docker-compose
+      - name: Start local Blockchain
         run: sudo docker-compose up -d
 
-      - name: Build optimized jar
-        run: ./gradlew clean build optimizedJar integrationTest
-#test
+      - name: Run unit tests
+        run: ./gradlew clean build
+
+      - name: Optimize Jar
+        run: ./gradlew optimizedJar
+
+      - name: Run integration tests
+        run: ./gradlew integrationTest
