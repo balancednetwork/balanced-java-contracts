@@ -13,7 +13,7 @@ jobs:
         uses: actions/checkout@v2
     
       - name: install docker & docker-compose
-        run: sudo apt install docker docker-compose
+        run: sudo apt install docker docker-compose -y && sudo systemctl start docker
 
       - name: run docker-compose
         run: sudo docker-compose up -d
