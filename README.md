@@ -6,13 +6,46 @@
 This repository contains the smart contracts for Balanced in Java. For python contracts check [balanced-contracts](
 https://github.com/balancednetwork/balanced-contracts). 
 
+## Setting up Local Environment
+
+- Clone this repo with submodules
+
+```shell
+  $ git clone --recursive git@github.com:balancednetwork/balanced-java-contracts.git
+```
+
+- Clone only submodules if you have already cloned the repo
+
+```shell
+$ git submodule update --init
+```
+
+- Run unit tests
+
+```shell
+./gradlew clean build optimizedJar
+```
+
+## Running integration tests
+
+- Install [docker](https://docs.docker.com/engine/install/) and [docker-compose](https://docs.docker.com/compose/install/)
+- Start local blockchain
+```shell
+$ docker-conpose up -d
+```
+- Run integration test
+```shell
+$ ./gradlew integrationTest
+```
+
 ## Local Deployment
 
-Use goloop local node to deploy the contracts.
+After installing docker and docker-compose, start the local blockchain.
 
-## Installation
-
-You need JDK 11+ installed. Use goloop CLI tool to interact with blockchain.
+- Run deployment task
+```shell
+$ ./gradlew deployToLocal
+```
 
 ## Discussion
 
