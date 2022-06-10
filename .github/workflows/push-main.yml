@@ -16,7 +16,7 @@ jobs:
         run: sudo apt install docker docker-compose -y 
 
       - name: start docker
-        run: sudo systemctl unmask docker && sudo systemctl start docker
+        run: sudo systemctl unmask docker && sudo systemctl list-units --type=service && sudo systemctl start docker
 
       - name: run docker-compose
         run: sudo docker-compose up -d
