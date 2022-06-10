@@ -20,3 +20,4 @@ jobs:
 
       - name: Build optimized jar
         run: ./gradlew clean build optimizedJar integrationTest
+#test
