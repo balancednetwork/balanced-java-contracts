@@ -21,7 +21,6 @@ import foundation.icon.icx.Wallet;
 import foundation.icon.jsonrpc.model.Hash;
 import foundation.icon.jsonrpc.model.TransactionResult;
 import foundation.icon.jsonrpc.Address;
-import foundation.icon.jsonrpc.model.TransactionResult;
 import foundation.icon.score.client.DefaultScoreClient;
 import foundation.icon.score.client.RevertedException;
 import foundation.icon.score.client.ScoreClient;

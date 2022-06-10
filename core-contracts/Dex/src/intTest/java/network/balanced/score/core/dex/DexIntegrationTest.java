@@ -29,7 +29,7 @@ public class DexIntegrationTest {
 
     static Env.Chain chain = Env.getDefaultChain();
 
-    static Balanced balanced = new Balanced();
+    static Balanced balanced;
 
     static Wallet userWallet;
     static Wallet tUserWallet;
@@ -43,15 +43,24 @@ public class DexIntegrationTest {
     static DefaultScoreClient balnScoreClient;
     static DefaultScoreClient rewardsScoreClient;
     static DefaultScoreClient feeHandlerScoreClient;
+    static DefaultScoreClient dexIntTestScoreClient;
+    static DefaultScoreClient dexTestBaseScoreClient;
+    static DefaultScoreClient dexTestThirdScoreClient;
+
 
     static DefaultScoreClient daoFund;
-    static Wallet ownerWallet = balanced.owner;
-
+    static Wallet ownerWallet;
+    static File jarfile = new File("src/intTest/java/network/balanced/score/core/dex/testtokens/DexIntTestToken.jar");
     static {
         try {
+            balanced = new Balanced();
+            ownerWallet = balanced.owner;
             userWallet = ScoreIntegrationTest.createWalletWithBalance(BigInteger.valueOf(800).multiply(EXA));
             tUserWallet = ScoreIntegrationTest.createWalletWithBalance(BigInteger.valueOf(500).multiply(EXA));
-            balanced.deployBalanced();
+            dexIntTestScoreClient =  _deploy(chain.getEndpointURL(), chain.networkId, testOwnerWallet, jarfile.getPath(), Map.of("name", "Test Token", "symbol", "TT") );
+            dexTestBaseScoreClient =  _deploy(chain.getEndpointURL(), chain.networkId, testOwnerWallet, jarfile.getPath(), Map.of("name", "Test Base Token", "symbol", "TB") );
+            dexTestThirdScoreClient =  _deploy(chain.getEndpointURL(), chain.networkId, testOwnerWallet, jarfile.getPath(), Map.of("name", "Test Third Token", "symbol", "TTD") );
+            balanced.setupBalanced();
             dexScoreClient = balanced.dex;
             governanceScoreClient = balanced.governance;
             stakingScoreClient = balanced.staking;
@@ -63,18 +72,12 @@ public class DexIntegrationTest {
             daoFund = balanced.daofund;
             ownerWallet = balanced.owner;
         } catch (Exception e) {
+            e.printStackTrace();
             System.out.println("Error on init test: "+e.getMessage());
         }
 
     }
 
-    static File testToken = new File("src/intTest/java/network/balanced/score/core/dex/testtokens/DexIntTestToken-0.1-optimized.jar");
-    static File testBaseToken = new File("src/intTest/java/network/balanced/score/core/dex/testtokens/DexBaseTestToken-0.1-optimized.jar");
-    static File testThirdToken = new File("src/intTest/java/network/balanced/score/core/dex/testtokens/DexIntTestThirdToken-0.1-optimized.jar");
-
-    static DefaultScoreClient dexIntTestScoreClient =  _deploy(chain.getEndpointURL(), chain.networkId, testOwnerWallet, testToken.getPath(), null);
-    static DefaultScoreClient dexTestBaseScoreClient =  _deploy(chain.getEndpointURL(), chain.networkId, testOwnerWallet, testBaseToken.getPath(), null);
-    static DefaultScoreClient dexTestThirdScoreClient =  _deploy(chain.getEndpointURL(), chain.networkId, testOwnerWallet, testThirdToken.getPath(), null);
     static String dexTestScoreAddress = dexIntTestScoreClient._address().toString();
     static String dexTestBaseScoreAddress = dexTestBaseScoreClient._address().toString();
     static String dexTestThirdScoreAddress = dexTestThirdScoreClient._address().toString();
@@ -116,10 +119,6 @@ public class DexIntegrationTest {
     @ScoreClient
     static DAOfund userDaoFundScoreClient = new DAOfundScoreClient(daoFund);
 
-    /*@BeforeEach
-    void addTokenAddressesInDaoFund(){
-        userDaoFundScoreClient.addAddressToSetdb();
-    }*/
 
     @Test
     void testGovernanceAddress(){
@@ -162,9 +161,7 @@ public class DexIntegrationTest {
         assertEquals(hexToBigInteger(poolStats.get("total_supply").toString()), BigInteger.ZERO);
 
         //test icx transfer and verify stats
-        userRewardScoreClient.distribute();
-        userRewardScoreClient.distribute();
-        userRewardScoreClient.distribute();
+        balanced.syncDistributions();
         userClient._transfer(dexScoreClient._address(), BigInteger.valueOf(200).multiply(EXA), null);
         poolStats = dexReadOnlyScoreClient.getPoolStats(defaultPoolId);
 
@@ -193,18 +190,16 @@ public class DexIntegrationTest {
         waitForADay();
 
         //release lock by distributing rewards
-        userRewardScoreClient.distribute();
-        userRewardScoreClient.distribute();
-        userRewardScoreClient.distribute();
+        balanced.syncDistributions();
 
         //verify sicx earning and make withdraw
         BigInteger sicxEarning = dexReadOnlyScoreClient.getSicxEarnings(userAddress);
         assertNotNull(sicxEarning);
-        dexUserScoreClient.withdrawSicxEarnings(BigInteger.ONE);
+        dexUserScoreClient.withdrawSicxEarnings(sicxEarning);
 
         //cancel order
         BigInteger sicxEarnings = dexReadOnlyScoreClient.getSicxEarnings(userAddress);
-        //todo: comare earning after wihtdraw
+        //todo: compare earning after wihtdraw
         System.out.println("sicx earnings is: "+sicxEarnings);
         dexUserScoreClient.cancelSicxicxOrder();
     }
@@ -290,9 +285,7 @@ public class DexIntegrationTest {
         waitForADay();
 
         //release lock by distributing rewards
-        userRewardScoreClient.distribute();
-        userRewardScoreClient.distribute();
-        userRewardScoreClient.distribute();
+        balanced.syncDistributions();
 
         dexUserScoreClient.remove(poolId, BigInteger.valueOf(5), true);
     }
@@ -341,9 +334,7 @@ public class DexIntegrationTest {
     @Test
     void testNonContinuousAndContinuousReward(){
         userDaoFundScoreClient.addAddressToSetdb();
-        userRewardScoreClient.distribute();
-        userRewardScoreClient.distribute();
-        userRewardScoreClient.distribute();
+        balanced.syncDistributions();
         BigInteger balnHolding = userRewardScoreClient.getBalnHolding(tUserAddress.toString());
         tUserClient._transfer(dexScoreClient._address(), BigInteger.valueOf(200).multiply(EXA), null);
         if(dexReadOnlyScoreClient.getContinuousRewardsDay()==null) {
@@ -352,13 +343,7 @@ public class DexIntegrationTest {
         System.out.println("Baln total supply is: "+userBalnScoreClient.totalSupply());
         waitForADay();
 
-       userRewardScoreClient.distribute();
-       userRewardScoreClient.distribute();
-       userRewardScoreClient.distribute();
-       userRewardScoreClient.distribute();
-       userRewardScoreClient.distribute();
-       userRewardScoreClient.distribute();
-       userRewardScoreClient.distribute();
+       balanced.syncDistributions();
        System.out.println("Baln total supply is: "+userBalnScoreClient.totalSupply());
        BigInteger updatedBalnHolding = userRewardScoreClient.getBalnHolding(tUserAddress.toString());
        System.out.println("baln holding: "+balnHolding);
@@ -413,11 +398,7 @@ public class DexIntegrationTest {
     }
 
     void waitForADay(){
-        try {
-            Thread.sleep(65000); //day change
-        }catch (Exception e){
-            System.out.println(e.getMessage());
-        }
+        balanced.increaseDay(1);
     }
 
     BigInteger hexToBigInteger(String hex){
