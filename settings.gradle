@@ -70,3 +70,6 @@ project(':Loans').projectDir = file("core-contracts/Loans")
 
 include(':Governance')
 project(':Governance').projectDir = file("core-contracts/Governance")
+
+include(':bBaln')
+project(':bBaln').projectDir = file("token-contracts/bBaln")
