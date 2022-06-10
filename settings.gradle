@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2021 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,53 @@
  * The settings file is used to specify which projects to include in your build.
  *
  * Detailed information about configuring a multi-project build in Gradle can be found
- * in the user manual at https://docs.gradle.org/7.2/userguide/multi_project_builds.html
+ * in the user manual at https://docs.gradle.org/7.3.3/userguide/multi_project_builds.html
+ * This project uses @Incubating APIs which are subject to change.
  */
 
 rootProject.name = 'balanced-java-contracts'
-include(':token-contracts:bBaln')
+include(':Multicall')
+project(':Multicall').projectDir = file("core-contracts/Multicall")
+
+include(':BatchDisbursement')
+project(':BatchDisbursement').projectDir = file("core-contracts/BatchDisbursement")
+
+include(':Reserve')
+project(':Reserve').projectDir = file("core-contracts/Reserve")
+
+include (':Dividends')
+project(':Dividends').projectDir = file("core-contracts/Dividends")
+
+include(':Rebalancing')
+project(':Rebalancing').projectDir = file("core-contracts/Rebalancing")
+
+include(':Rewards')
+project(':Rewards').projectDir = file("core-contracts/Rewards")
+
+include(':StakedLP')
+project(':StakedLP').projectDir = file("core-contracts/StakedLP")
+
+include 'score-client'
+include 'score-lib'
+include 'test-lib'
+
+include(':WorkerToken')
+project(':WorkerToken').projectDir = file("token-contracts/WorkerToken")
+
+include(':Router')
+project(':Router').projectDir = file("core-contracts/Router")
+
+include(':DAOfund')
+project(':DAOfund').projectDir = file("core-contracts/DAOfund")
+
+include(':BalancedDollar')
+project(':BalancedDollar').projectDir = file("token-contracts/BalancedDollar")
+
+include(':Stability')
+project(':Stability').projectDir = file("util-contracts/Stability")
+
+include(':Loans')
+project(':Loans').projectDir = file("core-contracts/Loans")
+
+include(':Governance')
+project(':Governance').projectDir = file("core-contracts/Governance")

@@ -5,6 +5,12 @@
 # Log file
 *.log
 
+# Vscore
+.vscode
+
+# Keystore
+keystore.json
+
 # BlueJ files
 *.ctxt
 
@@ -18,7 +24,7 @@
 *.zip
 *.tar.gz
 *.rar
-
+!test-lib/python-contracts/*.zip
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 
@@ -82,3 +88,4 @@ fabric.properties
 # Ignore Gradle build output directory
 build
 .idea
+.DS_Store
