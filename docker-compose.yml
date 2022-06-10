@@ -4,9 +4,9 @@ services:
         container_name: gochain-iconee
         image: public.ecr.aws/f5d2t1f5/goloop-gochain-icon:latest
         env_file:
-            - ./data/dockerenv/iconee
+            - ./gochain-local/data/dockerenv/iconee
         volumes:
-            - ./data:/testsuite/data
-            - ./chain:/testsuite/chain
+            - ./gochain-local/data:/testsuite/data
+            - ./gochain-local/chain:/testsuite/chain
         ports:
             - "9082:9082"
