@@ -1,0 +1,9 @@
+GOCHAIN_CONFIG=/testsuite/data/config/icon.json
+GOCHAIN_GENESIS=/testsuite/data/config/genesis.json
+GOCHAIN_DATA=/testsuite/chain/iconee
+GOCHAIN_LOGFILE=/testsuite/chain/iconee.log
+GOCHAIN_DB_TYPE=rocksdb
+GOCHAIN_CLEAN_DATA=true
+JAVAEE_BIN=/goloop/execman/bin/execman
+PYEE_VERIFY_PACKAGE=true
+ICON_CONFIG=/testsuite/data/config/icon_config.json

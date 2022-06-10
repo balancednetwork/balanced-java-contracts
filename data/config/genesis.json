@@ -1,0 +1,53 @@
+{
+  "accounts": [
+    {
+      "address": "hxb6b5791be0b5ef67063b3c10b840fb81514db2fd",
+      "balance": "0x2961fff8ca4a62327800000",
+      "name": "god"
+    },
+    {
+      "address": "hx1000000000000000000000000000000000000000",
+      "balance": "0x0",
+      "name": "treasury"
+    },
+    {
+      "address": "cx0000000000000000000000000000000000000001",
+      "name": "governance",
+      "score": {
+        "contentId": "hash:{{ziphash:governance}}",
+        "contentType": "application/zip",
+        "owner": "hxb6b5791be0b5ef67063b3c10b840fb81514db2fd"
+      }
+    }
+  ],
+  "chain": {
+    "revision": "0xf",
+    "fee": {
+      "stepPrice": "0x2e90edd00",
+      "stepLimit": {
+        "invoke": "0x9502f900",
+        "query": "0x2faf080"
+      },
+      "stepCosts": {
+        "default": "0x186a0",
+        "contractCall": "0x61a8",
+        "contractCreate": "0x3b9aca00",
+        "contractUpdate": "0x5f5e1000",
+        "contractDestruct": "-0x11170",
+        "contractSet": "0x7530",
+        "get": "0x0",
+        "set": "0x140",
+        "replace": "0x50",
+        "delete": "-0xf0",
+        "input": "0xc8",
+        "eventLog": "0x64",
+        "apiCall": "0x2710"
+      }
+    },
+    "validatorList": [
+      "hxb6b5791be0b5ef67063b3c10b840fb81514db2fd"
+    ]
+  },
+  "message": "genesis for local node",
+  "nid": "0x3"
+}
