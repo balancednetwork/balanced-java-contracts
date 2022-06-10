@@ -1,12 +1,15 @@
-name: pr-test
+name: build-test
 
 on:
   pull_request:
     branches:
       - '*'
+  push:
+    branches:
+      - main
 
 jobs:
-  docker:
+  unit-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -14,14 +17,15 @@ jobs:
         with:
           submodules: true
 
+      - name: Run unit tests
+        run: ./gradlew clean build optimizedJar
+
+  integration-test:
+    needs: unit-test
+    runs-on: ubuntu-latest
+    steps:
       - name: Start local Blockchain
         run: docker-compose up -d
-
-      - name: Run unit tests
-        run: ./gradlew clean build
-
-      - name: Optimize Jar
-        run: ./gradlew optimizedJar
 
       - name: Run integration tests
         run: ./gradlew integrationTest
