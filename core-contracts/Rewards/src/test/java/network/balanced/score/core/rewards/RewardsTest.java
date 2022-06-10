@@ -303,9 +303,9 @@ class RewardsTest extends RewardsTestBase {
 
         // Assert
         Object users = new Address[]{account.getAddress()};
-        Map<Address, BigInteger> rewards = (Map<Address, BigInteger>) rewardsScore.call("getBalnHoldings", users);
+        Map<String, BigInteger> rewards = (Map<String, BigInteger>) rewardsScore.call("getBalnHoldings", users);
         BigInteger userReward = (BigInteger) rewardsScore.call("getBalnHolding", account.getAddress());
-        assertEquals(rewards.get(account.getAddress()), userReward);
+        assertEquals(rewards.get(account.getAddress().toString()), userReward);
 
         BigInteger emission = (BigInteger) rewardsScore.call("getEmission", BigInteger.valueOf(-1));
         BigInteger loansDistribution = loansDist.dist_percent.multiply(emission).divide(EXA);
@@ -315,7 +315,7 @@ class RewardsTest extends RewardsTestBase {
         BigInteger userSwapDistribution = swapDistribution.multiply(swapBalance).divide(swapTotalSupply);
         BigInteger userDistribution = userSwapDistribution.add(userLoansDistribution);
 
-        assertEquals(userDistribution, rewards.get(account.getAddress()));
+        assertEquals(userDistribution, rewards.get(account.getAddress().toString()));
         verify(baln.mock, times(day)).transfer(bwt.getAddress(), bwtDist.dist_percent.multiply(emission).divide(EXA), new byte[0]);
         verify(baln.mock, times(day)).transfer(daoFund.getAddress(), daoDist.dist_percent.multiply(emission).divide(EXA), new byte[0]);
         verify(baln.mock, times(day)).transfer(reserve.getAddress(), reserveDist.dist_percent.multiply(emission).divide(EXA), new byte[0]);

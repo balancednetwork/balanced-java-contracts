@@ -43,7 +43,7 @@ class DaofundIntegrationTest {
         System.setProperty("DAOfund", System.getProperty("python"));
         tester = createWalletWithBalance(BigInteger.TEN.pow(24));
         balanced = new Balanced();
-        balanced.deployBalanced();
+        balanced.setupBalanced();
 
         daofund = new DAOfundScoreClient(balanced.daofund);
     }

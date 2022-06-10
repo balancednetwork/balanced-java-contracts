@@ -160,7 +160,7 @@ class LoansTestBase extends UnitTest {
         Map<String, Object> map = new HashMap<>();
         JsonObject data = new JsonObject()
                 .add("_asset", "bnUSD")
-                .add("_amount", loan);
+                .add("_amount", BigInteger.valueOf(loan).multiply(EXA).toString());
         byte[] params = data.toString().getBytes();
 
         sicx.invoke(account, "transfer", loans.getAddress(), collateral, params);

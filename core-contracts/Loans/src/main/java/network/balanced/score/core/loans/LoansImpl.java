@@ -435,7 +435,7 @@ public class LoansImpl implements Loans {
 
         String requestedAsset = json.get("_asset").asString();
         JsonValue amount = json.get("_amount");
-        BigInteger requestedAmount = amount == null ? null : convertToNumber(amount).multiply(EXA);
+        BigInteger requestedAmount = amount == null ? null : convertToNumber(amount);
         depositAndBorrow(requestedAsset, requestedAmount, _from, _value);
     }
 

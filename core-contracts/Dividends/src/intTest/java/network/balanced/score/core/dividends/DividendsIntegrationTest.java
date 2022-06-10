@@ -94,7 +94,7 @@ public class DividendsIntegrationTest {
 
         tester = createWalletWithBalance(BigInteger.TEN.pow(24));
         balanced = new Balanced();
-        balanced.deployBalanced();
+        balanced.setupBalanced();
 
         dividends = new DividendsScoreClient(balanced.dividends);
         dividendsCopy = new DividendsCopyScoreClient(balanced.dividends);

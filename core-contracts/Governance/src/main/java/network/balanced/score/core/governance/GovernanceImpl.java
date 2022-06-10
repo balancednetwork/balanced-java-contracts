@@ -103,6 +103,7 @@ public class GovernanceImpl {
         Context.call(Addresses.get("loans"), "setTimeOffset", offset);
         Context.call(Addresses.get("rewards"), "setTimeOffset", offset);
         Context.call(Addresses.get("dex"), "setTimeOffset", offset);
+        Context.call(Addresses.get("dividends"), "setTimeOffset", offset);
     }
 
     @External(readonly = true)
@@ -461,7 +462,7 @@ public class GovernanceImpl {
 
         BigInteger day = getDay();
         launchDay.set(day);
-        BigInteger timeDelta = BigInteger.valueOf(Context.getBlockTimestamp());
+        BigInteger timeDelta = BigInteger.valueOf(Context.getBlockTimestamp()).add(getTimeOffset());
 
         launchTime.set(timeDelta);
         setTimeOffset(timeDelta);
