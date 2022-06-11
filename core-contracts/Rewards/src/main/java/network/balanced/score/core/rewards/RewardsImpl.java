@@ -39,7 +39,7 @@ import static network.balanced.score.core.rewards.utils.Check.continuousRewardsA
 import static network.balanced.score.core.rewards.utils.RewardsConstants.*;
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
-import static network.balanced.score.lib.utils.Constants.U_SECONDS_DAY;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static network.balanced.score.lib.utils.DBHelpers.contains;
 import static network.balanced.score.lib.utils.Math.pow;
 
@@ -676,7 +676,7 @@ public class RewardsImpl implements Rewards {
 
     public static BigInteger getDay() {
         BigInteger blockTime = BigInteger.valueOf(Context.getBlockTimestamp()).subtract(startTimestamp.get());
-        return blockTime.divide(U_SECONDS_DAY);
+        return blockTime.divide(MICRO_SECONDS_IN_A_DAY);
     }
 
     private static BigInteger getTime() {

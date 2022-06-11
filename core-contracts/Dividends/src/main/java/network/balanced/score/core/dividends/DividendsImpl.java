@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 import static network.balanced.score.core.dividends.Constants.*;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
 import static network.balanced.score.lib.utils.ArrayDBUtils.removeFromArraydb;
 import static network.balanced.score.lib.utils.Check.*;
@@ -92,7 +93,7 @@ public class DividendsImpl implements Dividends {
         only(admin);
         distributionActivate.set(_status);
     }
-            
+
     @External
     public void setTimeOffset(BigInteger deltaTime) {
         only(admin);
@@ -315,7 +316,7 @@ public class DividendsImpl implements Dividends {
     public BigInteger getDay() {
         BigInteger time = BigInteger.valueOf(Context.getBlockTimestamp());
         BigInteger offset = timeOffset.getOrDefault(BigInteger.ZERO);
-        return time.subtract(offset).divide(U_SECONDS_DAY);
+        return time.subtract(offset).divide(MICRO_SECONDS_IN_A_DAY);
     }
 
     @External(readonly = true)
@@ -542,7 +543,7 @@ public class DividendsImpl implements Dividends {
             start = Math.max(1, end - batch);
         }
 
-        Context.require(start >= 1 && start < snap, TAG + ": " +  "Invalid value of start provided.");
+        Context.require(start >= 1 && start < snap, TAG + ": " + "Invalid value of start provided.");
         Context.require(end > 1 && end <= snap, TAG + ": " + "Invalid value of end provided.");
         Context.require(start < end, TAG + ": " + "Start must not be greater than or equal to end.");
         Context.require((end - start) <= batch, TAG + ": " + "Maximum allowed range is " + batch);
@@ -709,7 +710,7 @@ public class DividendsImpl implements Dividends {
         for (String key : map.keySet()) {
             mapAsJson.append("'").append(key).append("': ").append(map.get(key)).append(", ");
         }
-        mapAsJson.delete(mapAsJson.length()-2, mapAsJson.length()).append("}");
+        mapAsJson.delete(mapAsJson.length() - 2, mapAsJson.length()).append("}");
         return mapAsJson.toString();
     }
 

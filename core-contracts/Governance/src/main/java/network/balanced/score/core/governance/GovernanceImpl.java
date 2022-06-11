@@ -68,7 +68,7 @@ public class GovernanceImpl {
     @External(readonly = true)
     public BigInteger getDay() {
         BigInteger blockTime = BigInteger.valueOf(Context.getBlockTimestamp()).subtract(timeOffset.getOrDefault(BigInteger.ZERO));
-        return blockTime.divide(U_SECONDS_DAY);
+        return blockTime.divide(MICRO_SECONDS_IN_A_DAY);
     }
 
     @External(readonly = true)
