@@ -35,8 +35,8 @@ dependencies {
     testImplementation Dependencies.mockitoInline
     testImplementation project(':test-lib')
 
-    intTestImplementation Dependencies.javaeeScoreClient
-    intTestAnnotationProcessor Dependencies.javaeeScoreClient
+    intTestAnnotationProcessor project(':score-client')
+    intTestImplementation project(':score-client')
     intTestImplementation Dependencies.iconSdk
     intTestImplementation Dependencies.jacksonDatabind
 }
@@ -105,9 +105,6 @@ task integrationTest(type: Test) {
 
         testClassesDirs = sourceSets.intTest.output.classesDirs
         classpath = sourceSets.intTest.runtimeClasspath
-
-        systemProperty "python", new File(project(':test-lib').projectDir, 'python-contracts/rewards.zip')
-        systemProperty "java", optimizedJar.outputJarName        
     }
 
 }
