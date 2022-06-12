@@ -183,6 +183,13 @@ public class GovernanceImpl {
     }
 
     @External
+    public void setAdmin(Address contractAddress, Address admin){
+        onlyOwner();
+        Context.call(contractAddress, "setAdmin", admin);
+
+    }
+
+    @External
     public void cancelVote(BigInteger vote_index) {
         ProposalDB proposal = new ProposalDB(vote_index);
         Context.require(vote_index.compareTo(BigInteger.ONE) >= 0, "There is no proposal with index " + vote_index);
