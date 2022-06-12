@@ -103,6 +103,15 @@ public class LoansImpl implements Loans {
         return loansOn.get();
     }
 
+
+    @External
+    public void removeZeroPosition(int id) {
+        onlyOwner();
+        if (AssetDB.getAsset(BNUSD_SYMBOL).getBorrowers().nodeValue(id).equals(BigInteger.ZERO)){
+            AssetDB.getAsset(BNUSD_SYMBOL).getBorrowers().remove(id);
+        }
+    }
+
     @External
     public void migrateUserData(Address address) {
         Position position = PositionsDB.getPosition(address);
