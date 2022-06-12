@@ -61,7 +61,7 @@ subprojects {
     compileJava {
         options.compilerArgs += ['-parameters']
     }
-    
+
     scoreIntegrationTest.put('env.props', new File(project(':test-lib').projectDir, 'conf/env.props'));
 
     //remove as more contracts are added to master
@@ -89,8 +89,8 @@ subprojects {
 
 gradle.taskGraph.whenReady { taskGraph ->
     taskGraph.getAllTasks().any { task ->
-        if (task.name == "integrationTest") {   
-            scoreIntegrationTest.each { key, val -> task.systemProperty key, val }  
+        if (task.name == "integrationTest") {
+            scoreIntegrationTest.each { key, val -> task.systemProperty key, val }
         }
     }
 }
