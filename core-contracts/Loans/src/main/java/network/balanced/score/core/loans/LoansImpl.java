@@ -527,7 +527,6 @@ public class LoansImpl implements Loans {
         Context.require(assetContract.balanceOf(from).compareTo(_value) >= 0, TAG + ": Insufficient balance.");
         Context.require(PositionsDB.hasPosition(from), TAG + ": No debt repaid because, " + from + " does not have a " +
                 "position in Balanced");
-        Context.require(_repay, TAG + ": No debt repaid because, repay=false");
 
         boolean newDay = checkForNewDay();
         BigInteger day = _getDay();
