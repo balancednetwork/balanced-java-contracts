@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 import static network.balanced.score.core.dividends.Constants.*;
-import static network.balanced.score.lib.utils.Constants.U_SECONDS_DAY;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
 import static network.balanced.score.lib.utils.ArrayDBUtils.removeFromArraydb;
 import static network.balanced.score.lib.utils.Check.*;
@@ -93,7 +93,7 @@ public class DividendsImpl implements Dividends {
         only(admin);
         distributionActivate.set(_status);
     }
-
+            
     @External
     public void setTimeOffset(BigInteger deltaTime) {
         only(admin);
@@ -316,7 +316,7 @@ public class DividendsImpl implements Dividends {
     public BigInteger getDay() {
         BigInteger time = BigInteger.valueOf(Context.getBlockTimestamp());
         BigInteger offset = timeOffset.getOrDefault(BigInteger.ZERO);
-        return time.subtract(offset).divide(U_SECONDS_DAY);
+        return time.subtract(offset).divide(MICRO_SECONDS_IN_A_DAY);
     }
 
     @External(readonly = true)

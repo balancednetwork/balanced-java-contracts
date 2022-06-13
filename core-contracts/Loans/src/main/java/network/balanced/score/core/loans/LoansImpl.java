@@ -176,7 +176,7 @@ public class LoansImpl implements Loans {
     public static BigInteger _getDay() {
         BigInteger blockTime = BigInteger.valueOf(Context.getBlockTimestamp());
         BigInteger timeDelta = blockTime.subtract(timeOffset.getOrDefault(BigInteger.ZERO));
-        return timeDelta.divide(U_SECONDS_DAY);
+        return timeDelta.divide(MICRO_SECONDS_IN_A_DAY);
     }
 
     @External
@@ -527,7 +527,6 @@ public class LoansImpl implements Loans {
         Context.require(assetContract.balanceOf(from).compareTo(_value) >= 0, TAG + ": Insufficient balance.");
         Context.require(PositionsDB.hasPosition(from), TAG + ": No debt repaid because, " + from + " does not have a " +
                 "position in Balanced");
-        Context.require(_repay, TAG + ": No debt repaid because, repay=false");
 
         boolean newDay = checkForNewDay();
         BigInteger day = _getDay();

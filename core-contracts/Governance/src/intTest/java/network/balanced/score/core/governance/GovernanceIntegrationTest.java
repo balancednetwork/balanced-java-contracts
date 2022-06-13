@@ -16,35 +16,23 @@
 
 package network.balanced.score.core.governance;
 
+import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.JsonObject;
 import foundation.icon.icx.KeyWallet;
-import foundation.icon.icx.Wallet;
-import foundation.icon.jsonrpc.Address;
 import foundation.icon.jsonrpc.model.TransactionResult;
-import foundation.icon.score.client.DefaultScoreClient;
-import foundation.icon.score.client.ScoreClient;
-import static network.balanced.score.core.governance.GovernanceConstants.*;
-import network.balanced.score.lib.interfaces.*;
-import network.balanced.score.core.governance.interfaces.*;
-import network.balanced.score.lib.test.integration.Env;
-import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
-
+import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import com.eclipsesource.json.JsonArray;
-import com.eclipsesource.json.JsonObject;
-
+import static network.balanced.score.core.governance.GovernanceConstants.MICRO_SECONDS_IN_A_DAY;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 class GovernanceIntegrationTest implements ScoreIntegrationTest{
@@ -134,7 +122,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest{
         BigInteger snapshot = day.add(BigInteger.TWO);
         try {
             tester.governance.defineVote(name, "test", voteStart, snapshot, actions.toString());
-            assertTrue(false);
+            fail();
         } catch (Exception e) {
             //success
         }
