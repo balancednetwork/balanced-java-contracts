@@ -65,7 +65,6 @@ public class LoansVariables {
     static final VarDB<Address> reserve = Context.newVarDB(RESERVE, Address.class);
     static final VarDB<Address> rewards = Context.newVarDB(REWARDS, Address.class);
     static final VarDB<Address> staking = Context.newVarDB(STAKING, Address.class);
-    static final VarDB<Address> feehandler = Context.newVarDB(FEEHANDLER, Address.class);
 
     static final VarDB<BigInteger> timeOffset = Context.newVarDB(TIME_OFFSET, BigInteger.class);
     public static final VarDB<BigInteger> miningRatio = Context.newVarDB(MINING_RATIO, BigInteger.class);

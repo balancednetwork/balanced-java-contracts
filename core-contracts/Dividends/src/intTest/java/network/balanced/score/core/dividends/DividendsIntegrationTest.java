@@ -643,7 +643,6 @@ public class DividendsIntegrationTest {
         baln.setTimeOffset();
         dividendsCopy.distribute();
         // set continuous rewards day
-        governance.setContinuousRewardsDay(dividends.getDay().add(BigInteger.ONE));
 
         BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
         // take loans

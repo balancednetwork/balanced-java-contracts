@@ -115,10 +115,4 @@ public interface Rewards extends
 
     @External(readonly = true)
     BigInteger getTimeOffset();
-
-    @External
-    void setContinuousRewardsDay(BigInteger _continuous_rewards_day);
-
-    @External(readonly = true)
-    BigInteger getContinuousRewardsDay();
 }

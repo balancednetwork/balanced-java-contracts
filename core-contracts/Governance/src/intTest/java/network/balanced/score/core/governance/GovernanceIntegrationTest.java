@@ -35,7 +35,7 @@ import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.c
 import static org.junit.jupiter.api.Assertions.*;
 
 
-class GovernanceIntegrationTest implements ScoreIntegrationTest{
+class GovernanceIntegrationTest implements ScoreIntegrationTest {
     private static Balanced balanced;
     private static BalancedClient owner;
     private static BalancedClient tester;

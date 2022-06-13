@@ -89,7 +89,7 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
     void toggleAssetActive(String _symbol);
 
     @External(readonly = true)
-    Map<String, BigInteger> getBalanceAndSupply(String _name, Address __owner);
+    Map<String, BigInteger> getBalanceAndSupply(String _name, Address _owner);
 
     @External(readonly = true)
     BigInteger getBnusdValue(String _name);

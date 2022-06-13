@@ -35,7 +35,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import static network.balanced.score.core.rewards.utils.Check.continuousRewardsActive;
 import static network.balanced.score.core.rewards.utils.RewardsConstants.*;
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
@@ -67,9 +66,7 @@ public class RewardsImpl implements Rewards {
     private static final String RECIPIENTS = "recipients";
     private static final String TOTAL_DIST = "total_dist";
     private static final String PLATFORM_DAY = "platform_day";
-    private static final String CONTINUOUS_REWARDS_DAY = "continuous_rewards_day";
     private static final String DATA_PROVIDERS = "data_providers";
-    private static final String NON_CONTINUOUS_REWARDS_DAY_COUNT = "non_continuous_rewards_day_count";
 
     private static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
     private static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
@@ -91,11 +88,7 @@ public class RewardsImpl implements Rewards {
     private static final ArrayDB<String> recipients = Context.newArrayDB(RECIPIENTS, String.class);
     public static final VarDB<BigInteger> totalDist = Context.newVarDB(TOTAL_DIST, BigInteger.class);
     private static final VarDB<BigInteger> platformDay = Context.newVarDB(PLATFORM_DAY, BigInteger.class);
-    public static final VarDB<BigInteger> continuousRewardsDay = Context.newVarDB(CONTINUOUS_REWARDS_DAY,
-            BigInteger.class);
     private final static SetDB<Address> dataProviders = new SetDB<>(DATA_PROVIDERS, Address.class, null);
-    private static final VarDB<BigInteger> nonContinuousRewardsDayCount =
-            Context.newVarDB(NON_CONTINUOUS_REWARDS_DAY_COUNT, BigInteger.class);
 
     private static final Map<String, VarDB<Address>> platformRecipients = Map.of(WORKER_TOKENS, bwtAddress,
             RewardsConstants.RESERVE_FUND, reserveFund,
@@ -322,38 +315,11 @@ public class RewardsImpl implements Rewards {
     public boolean distribute() {
         BigInteger platformDay = RewardsImpl.platformDay.get();
         BigInteger day = getDay();
-        boolean continuousRewardsIsActive = continuousRewardsActive();
 
-        boolean distributionRequired =
-                platformDay.compareTo(day) < 0 || (platformDay.equals(day) && continuousRewardsIsActive);
-
-        BigInteger continuousRewardsDay = getContinuousRewardsDay();
-        if (platformDay.compareTo(day) < 0 && (continuousRewardsDay == null || platformDay.compareTo(continuousRewardsDay) <= 0)) {
-            BigInteger previousCount = nonContinuousRewardsDayCount.getOrDefault(BigInteger.ZERO);
-            nonContinuousRewardsDayCount.set(previousCount.add(BigInteger.ONE));
-        }
-
-        if (distributionRequired) {
+        if (platformDay.compareTo(day) <= 0) {
             return mintAndAllocateBalnReward(platformDay);
         }
 
-        BigInteger nonContinuousDistributionCount = nonContinuousRewardsDayCount.getOrDefault(BigInteger.ZERO);
-        if (nonContinuousDistributionCount.compareTo(BigInteger.ZERO) > 0) {
-            for (int i = 0; i < DataSourceDB.size(); i++) {
-                String name = DataSourceDB.names.get(i);
-                DataSourceImpl dataSource = DataSourceDB.get(name);
-                BigInteger sourceDay = dataSource.getDay();
-
-                if (sourceDay.compareTo(day) < 0) {
-                    dataSource.distribute(batchSize.get());
-                    BigInteger remaining = dataSource.getTotalDist(sourceDay);
-                    BigInteger shares = dataSource.getTotalValue(sourceDay);
-                    Report(day, name, remaining, shares);
-                    return false;
-                }
-            }
-            nonContinuousRewardsDayCount.set(nonContinuousDistributionCount.subtract(BigInteger.ONE));
-        }
         return true;
     }
 
@@ -386,6 +352,7 @@ public class RewardsImpl implements Rewards {
         }
 
         RewardsImpl.platformDay.set(platformDay.add(BigInteger.ONE));
+
         return false;
     }
 
@@ -661,17 +628,6 @@ public class RewardsImpl implements Rewards {
     @External(readonly = true)
     public BigInteger getTimeOffset() {
         return startTimestamp.get();
-    }
-
-    @External
-    public void setContinuousRewardsDay(BigInteger _continuous_rewards_day) {
-        only(admin);
-        continuousRewardsDay.set(_continuous_rewards_day);
-    }
-
-    @External(readonly = true)
-    public BigInteger getContinuousRewardsDay() {
-        return continuousRewardsDay.get();
     }
 
     public static BigInteger getDay() {

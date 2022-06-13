@@ -170,15 +170,23 @@ public class Balanced {
         ownerClient.rewards.addDataProvider(stakedLp._address());
         ownerClient.rewards.addDataProvider(dex._address());
         ownerClient.rewards.addDataProvider(loans._address());
+
+        ownerClient.governance.addAcceptedTokens(sicx._address().toString());
+        ownerClient.governance.addAcceptedTokens(baln._address().toString());
+        ownerClient.governance.addAcceptedTokens(bnusd._address().toString());
+        ownerClient.governance.setAcceptedDividendTokens(new score.Address[] {
+            sicx._address(),
+            baln._address(),
+            bnusd._address()
+        });
     }
 
     public void setupMarkets() {
-        ownerClient.governance.createBnusdMarket(BigInteger.valueOf(400000).multiply(BigInteger.TEN.pow(18)));
-        increaseDay(2);
-        syncDistributions();
+        ownerClient.governance.createBnusdMarket(BigInteger.valueOf(40000).multiply(BigInteger.TEN.pow(18)));
+        increaseDay(1);
 
         BigInteger balnBalance = ownerClient.rewards.getBalnHolding(governance._address());
-        BigInteger initalPoolDepths = balnBalance.divide(BigInteger.TWO);
+        BigInteger initalPoolDepths = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
         ownerClient.governance.createBalnMarket(initalPoolDepths, initalPoolDepths);
         ownerClient.staking.stakeICX(initalPoolDepths.multiply(BigInteger.TWO), null, null);
         ownerClient.sicx.transfer(governance._address(), initalPoolDepths, null);
@@ -199,30 +207,10 @@ public class Balanced {
         return balancedClients.get(address);
     }
 
-    // deprecated after continous migration
     public void syncDistributions() {
         Consumer<TransactionResult> distributeConsumer = result -> {};
-        while (!checkDistributionsDone()) {
-            ownerClient.rewards.distribute(distributeConsumer);
-            ownerClient.dividends.distribute(distributeConsumer);
-        }
-    }
-    
-    public boolean checkDistributionsDone() {
-        BigInteger day = ownerClient.governance.getDay();
-        Map<String, Object> status = ownerClient.rewards.distStatus();
-        if (hexObjectToBigInteger(status.get("platform_day")).intValue() < day.intValue()) {
-            return false;
-        }
-
-        Map<String, String> dataSourceStatus = (Map<String, String>) status.get("source_days");
-        for (String sourceDay : dataSourceStatus.values()) {
-            if (hexObjectToBigInteger(sourceDay).intValue() < day.intValue()) {
-                return false;
-            }
-        }
-
-        return true;
+        ownerClient.rewards.distribute(distributeConsumer);
+        ownerClient.dividends.distribute(distributeConsumer);
     }
     
     public void increaseDay(int nrOfDays) {

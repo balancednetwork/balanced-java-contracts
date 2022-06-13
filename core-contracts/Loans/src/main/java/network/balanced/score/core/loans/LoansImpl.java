@@ -74,7 +74,6 @@ public class LoansImpl implements Loans {
 
         CollateralDB.migrateToNewDBs();
         AssetDB.migrateToNewDBs();
-        feehandler.set(Context.call(Address.class, governance.get(), "getContractAddress", "feehandler"));
     }
 
     @External(readonly = true)
@@ -135,7 +134,11 @@ public class LoansImpl implements Loans {
 
     @External(readonly = true)
     public Map<String, String> getAssetTokens() {
-        return AssetDB.getAssets();
+        Map<String, String> assestAndCollateral = new HashMap<>();
+        assestAndCollateral.putAll(AssetDB.getAssets());
+        assestAndCollateral.putAll(CollateralDB.getCollateral());
+
+        return assestAndCollateral;
     }
 
     @External(readonly = true)
@@ -269,13 +272,11 @@ public class LoansImpl implements Loans {
     public void depositAndBorrow(@Optional String _asset, @Optional BigInteger _amount, @Optional Address _from, @Optional BigInteger _value) {
         loansOn();
         BigInteger deposit = Context.getValue();
-        Address sender = Context.getCaller();
 
-        Address depositor = _from;
+        Address depositor = optionalDefault(_from, Context.getCaller());
         BigInteger sicxDeposited = _value;
 
         if (!deposit.equals(BigInteger.ZERO)) {
-            depositor = sender;
             sicxDeposited = stakeICX(deposit);
         }
 
@@ -662,8 +663,7 @@ public class LoansImpl implements Loans {
         borrowAsset.mintTo(from, amount);
         String logMessage = "Loan of " + amount + " " + assetToBorrow + " from Balanced.";
         OriginateLoan(from, assetToBorrow, amount, logMessage);
-
-        borrowAsset.mintTo(feehandler.get(), fee);
+        borrowAsset.mintTo(Context.call(Address.class, governance.get(), "getContractAddress", "feehandler"), fee);
         FeePaid(assetToBorrow, fee, "origination");
     }
 
@@ -799,17 +799,6 @@ public class LoansImpl implements Loans {
     @External(readonly = true)
     public Address getStaking() {
         return staking.get();
-    }
-
-    @External
-    public void setFeeHandler() {
-        only(admin);
-        feehandler.set(Context.call(Address.class, governance.get(), "getContractAddress", "feehandler"));
-    }
-
-    @External(readonly = true)
-    public Address getFeeHandler() {
-        return feehandler.get();
     }
 
     @External

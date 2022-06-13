@@ -112,14 +112,6 @@ public class GovernanceImpl {
     }
 
     @External
-    public void setContinuousRewardsDay(BigInteger _day) {
-        onlyOwner();
-        Context.call(Addresses.get("loans"), "setContinuousRewardsDay", _day);
-        Context.call(Addresses.get("rewards"), "setContinuousRewardsDay", _day);
-        Context.call(Addresses.get("dex"), "setContinuousRewardsDay", _day);
-    }
-
-    @External
     public void setDividendsOnlyToStakedBalnDay(BigInteger _day) {
         onlyOwner();
         Context.call(Addresses.get("dividends"), "setDividendsOnlyToStakedBalnDay", _day);
@@ -499,7 +491,7 @@ public class GovernanceImpl {
         BigInteger amount = EXA.multiply(value).divide(price.multiply(BigInteger.valueOf(7)));
         Context.call(value.divide(BigInteger.valueOf(7)), stakingAddress, "stakeICX", Context.getAddress(),
                 new byte[0]);
-        Context.call(Context.getBalance(Context.getAddress()), loansAddress, "depositAndBorrow", "bnUSD", amount, new Address(new byte[21]), BigInteger.ZERO);
+        Context.call(Context.getBalance(Context.getAddress()), loansAddress, "depositAndBorrow", "bnUSD", amount);
 
         BigInteger bnUSDValue = Context.call(BigInteger.class, bnUSDAddress, "balanceOf", Context.getAddress());
         BigInteger sICXValue = Context.call(BigInteger.class, sICXAddress, "balanceOf", Context.getAddress());
@@ -541,7 +533,7 @@ public class GovernanceImpl {
         Address loansAddress = Addresses.get("loans");
 
         Context.call(rewardsAddress, "claimRewards");
-        Context.call(loansAddress, "depositAndBorrow", "bnUSD", _bnUSD_amount, new Address(new byte[21]), BigInteger.ZERO);
+        Context.call(loansAddress, "depositAndBorrow", "bnUSD", _bnUSD_amount);
 
         JsonObject depositData = Json.object();
         depositData.add("method", "_deposit");
