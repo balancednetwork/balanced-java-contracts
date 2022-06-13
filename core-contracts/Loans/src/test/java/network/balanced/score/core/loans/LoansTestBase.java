@@ -161,11 +161,6 @@ class LoansTestBase extends UnitTest {
         sm.call(account, collateral, loans.getAddress(), "depositAndBorrow", asset, loan, account.getAddress(), BigInteger.ZERO);
     }
 
-    protected void enableContinuousRewards() {
-        BigInteger day = (BigInteger) loans.call("getDay");
-        governanceCall("setContinuousRewardsDay", day);
-    }
-
     protected BigInteger calculateFee(BigInteger loan) {
         BigInteger feePercentage = (BigInteger)getParam("origination fee");
         return loan.multiply(feePercentage).divide(POINTS);

@@ -20,6 +20,16 @@ import foundation.icon.score.client.DefaultScoreClient;
 import network.balanced.score.lib.interfaces.*;
 
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.chain;
+import network.balanced.score.lib.interfaces.base.*;
+import network.balanced.score.lib.structs.BalancedAddresses;
+
+import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
+import static network.balanced.score.lib.test.integration.BalancedUtils.*;
+
+import java.math.BigInteger;
+import java.util.Map;
+
+import com.eclipsesource.json.JsonObject;
 
 public class BalancedClient {
     private final KeyWallet wallet;
@@ -61,5 +71,31 @@ public class BalancedClient {
 
     public score.Address getAddress() {
         return score.Address.fromString(wallet.getAddress().toString());
+    }
+
+
+    public byte[] createBorrowData(BigInteger amount) {
+        JsonObject data = new JsonObject()
+            .add("_asset", "bnUSD")
+            .add("_amount", amount.toString());
+
+        return data.toString().getBytes();
+    }
+
+    public void sICXDepositAndBorrow(BigInteger collateral, BigInteger amount) {
+        if (!collateral.equals(BigInteger.ZERO)) {
+            staking.stakeICX(collateral, null, null);
+        }
+
+        byte[] params = createBorrowData(amount);
+        sicx.transfer(balanced.loans._address(), collateral, params);
+    }
+
+    public BigInteger getLoansAssetPosition(String symbol) {
+        Map<String, String> assets = (Map<String, String>) loans.getAccountPositions(getAddress()).get("assets");
+        if (!assets.containsKey(symbol)) {
+            return BigInteger.ZERO;
+        }
+        return hexObjectToBigInteger(assets.get(symbol));
     }
 }

@@ -650,7 +650,6 @@ public class DividendsIntegrationTest {
 
         balanced.increaseDay(1);
         // set continuous rewards day
-        governance.setDividendsOnlyToStakedBalnDay(dividends.getDay().add(BigInteger.ONE));
 
         BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
         // take loans

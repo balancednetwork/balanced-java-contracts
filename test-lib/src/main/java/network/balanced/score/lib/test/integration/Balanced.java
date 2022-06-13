@@ -182,28 +182,26 @@ public class Balanced {
         ownerClient.rewards.addDataProvider(dex._address());
         ownerClient.rewards.addDataProvider(loans._address());
 
-        ownerClient.governance.enable_fee_handler();
-        ownerClient.governance.setFeeProcessingInterval(BigInteger.ONE);
-
-        Address[] acceptedAddress=new Address[]{
-                bnusd._address(), sicx._address(),baln._address()
-        };
-        ownerClient.governance.setAcceptedDividendTokens(acceptedAddress);
-        ownerClient.governance.addAcceptedTokens(String.valueOf(bnusd._address()));
-        ownerClient.governance.addAcceptedTokens(String.valueOf(sicx._address()));
-        ownerClient.governance.addAcceptedTokens(String.valueOf(baln._address()));
+        ownerClient.governance.addAcceptedTokens(sicx._address().toString());
+        ownerClient.governance.addAcceptedTokens(baln._address().toString());
+        ownerClient.governance.addAcceptedTokens(bnusd._address().toString());
+        ownerClient.governance.setAcceptedDividendTokens(new score.Address[] {
+            sicx._address(),
+            baln._address(),
+            bnusd._address()
+        });
     }
 
     public void setupMarkets() {
-        ownerClient.governance.createBnusdMarket(BigInteger.valueOf(400000).multiply(BigInteger.TEN.pow(18)));
-        increaseDay(2);
-        syncDistributions();
+        ownerClient.governance.createBnusdMarket(BigInteger.valueOf(40000).multiply(BigInteger.TEN.pow(18)));
+        increaseDay(1);
+
         BigInteger balnBalance = ownerClient.rewards.getBalnHolding(governance._address());
-        BigInteger initialPoolDepths = balnBalance.divide(BigInteger.TWO);
-        ownerClient.governance.createBalnMarket(initialPoolDepths, initialPoolDepths);
-        ownerClient.staking.stakeICX(initialPoolDepths.multiply(BigInteger.TWO), null, null);
-        ownerClient.sicx.transfer(governance._address(), initialPoolDepths, null);
-        ownerClient.governance.createBalnSicxMarket(initialPoolDepths, initialPoolDepths);
+        BigInteger initalPoolDepths = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
+        ownerClient.governance.createBalnMarket(initalPoolDepths, initalPoolDepths);
+        ownerClient.staking.stakeICX(initalPoolDepths.multiply(BigInteger.TWO), null, null);
+        ownerClient.sicx.transfer(governance._address(), initalPoolDepths, null);
+        ownerClient.governance.createBalnSicxMarket(initalPoolDepths, initalPoolDepths);
     }
 
     private BalancedClient newClient(BigInteger clientBalance) throws Exception {
@@ -220,31 +218,10 @@ public class Balanced {
         return balancedClients.get(address);
     }
 
-    // deprecated after continuous migration
     public void syncDistributions() {
         Consumer<TransactionResult> distributeConsumer = result -> {};
-        while (!checkDistributionsDone()) {
-            ownerClient.rewards.distribute(distributeConsumer);
-            ownerClient.dividends.distribute(distributeConsumer);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    public boolean checkDistributionsDone() {
-        BigInteger day = ownerClient.governance.getDay();
-        Map<String, Object> status = ownerClient.rewards.distStatus();
-        if (hexObjectToBigInteger(status.get("platform_day")).intValue() < day.intValue()) {
-            return false;
-        }
-
-        Map<String, String> dataSourceStatus = (Map<String, String>) status.get("source_days");
-        for (String sourceDay : dataSourceStatus.values()) {
-            if (hexObjectToBigInteger(sourceDay).intValue() < day.intValue()) {
-                return false;
-            }
-        }
-
-        return true;
+        ownerClient.rewards.distribute(distributeConsumer);
+        ownerClient.dividends.distribute(distributeConsumer);
     }
 
     public void increaseDay(int nrOfDays) {
