@@ -42,12 +42,15 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class LoansIntegrationTestBase extends LoansIntegrationTest {
     @BeforeAll
-    public static void setup() throws Exception {
+    public static void ContractcSetup() throws Exception {
         balanced = new Balanced();
         balanced.setupBalanced();
         owner = balanced.ownerClient;
         reader = balanced.newClient(BigInteger.ZERO);
         governanceDebt = reader.loans.getBalanceAndSupply("Loans", balanced.governance._address()).get("_balance");
+        
+        LoansIntegrationTest.setup();
+        
     }
    
 }

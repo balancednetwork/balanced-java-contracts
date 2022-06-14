@@ -1056,7 +1056,7 @@ public class GovernanceTest extends GovernanceTestBase {
         verify(staking.mock).stakeICX(eq(governance.getAddress()), any(byte[].class));
 
         BigInteger amount = EXA.multiply(intitalICX).divide(bnusdPrice.multiply(BigInteger.valueOf(7)));
-        verify(loans.mock).depositAndBorrow("bnUSD", amount);
+        verify(loans.mock).depositAndBorrow("bnUSD", amount, governance.getAddress(), BigInteger.ZERO);
 
         JsonObject depositData = Json.object();
         depositData.add("method", "_deposit");
@@ -1087,7 +1087,7 @@ public class GovernanceTest extends GovernanceTestBase {
 
         // Assert
         verify(rewards.mock).claimRewards();
-        verify(loans.mock).depositAndBorrow("bnUSD", bnUSDValue);
+        verify(loans.mock).depositAndBorrow("bnUSD", bnUSDValue, governance.getAddress(), BigInteger.ZERO);
 
         JsonObject depositData = Json.object();
         depositData.add("method", "_deposit");

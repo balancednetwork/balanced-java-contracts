@@ -32,6 +32,7 @@ import java.util.Map;
 import com.eclipsesource.json.JsonObject;
 
 public class BalancedClient {
+    private Balanced balanced;
     private final KeyWallet wallet;
 
     public GovernanceScoreClient governance;
@@ -47,10 +48,12 @@ public class BalancedClient {
     public StabilityScoreClient stability;
     public StakedLPScoreClient stakedLp;
     public DividendsScoreClient dividends;
+    public ReserveScoreClient reserve;
     public SystemInterfaceScoreClient systemScore;
 
     public BalancedClient(Balanced balanced, KeyWallet wallet) {
         this.wallet = wallet;
+        this.balanced = balanced;
         governance = new GovernanceScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
                 balanced.governance._address());
         staking = new StakingScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.staking._address());
@@ -66,6 +69,8 @@ public class BalancedClient {
         stability = new StabilityScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.stability._address());
         stakedLp = new StakedLPScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.stakedLp._address());
         dividends = new DividendsScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.dividends._address());
+        reserve = new ReserveScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.reserve._address());
+
         systemScore = new SystemInterfaceScoreClient(chain.getEndpointURL(), chain.networkId, wallet, DefaultScoreClient.ZERO_ADDRESS);
     }
 

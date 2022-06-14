@@ -498,7 +498,7 @@ public class GovernanceImpl {
         BigInteger amount = EXA.multiply(value).divide(price.multiply(BigInteger.valueOf(7)));
         Context.call(value.divide(BigInteger.valueOf(7)), stakingAddress, "stakeICX", Context.getAddress(),
                 new byte[0]);
-        Context.call(Context.getBalance(Context.getAddress()), loansAddress, "depositAndBorrow", "bnUSD", amount);
+        Context.call(Context.getBalance(Context.getAddress()), loansAddress, "depositAndBorrow", "bnUSD", amount, Context.getAddress(), BigInteger.ZERO);
 
         BigInteger bnUSDValue = Context.call(BigInteger.class, bnUSDAddress, "balanceOf", Context.getAddress());
         BigInteger sICXValue = Context.call(BigInteger.class, sICXAddress, "balanceOf", Context.getAddress());
@@ -540,7 +540,7 @@ public class GovernanceImpl {
         Address loansAddress = Addresses.get("loans");
 
         Context.call(rewardsAddress, "claimRewards");
-        Context.call(loansAddress, "depositAndBorrow", "bnUSD", _bnUSD_amount);
+        Context.call(loansAddress, "depositAndBorrow", "bnUSD", _bnUSD_amount, Context.getAddress(), BigInteger.ZERO);
 
         JsonObject depositData = Json.object();
         depositData.add("method", "_deposit");
