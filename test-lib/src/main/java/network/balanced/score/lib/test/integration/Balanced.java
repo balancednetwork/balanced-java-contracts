@@ -226,7 +226,7 @@ public class Balanced {
     }
     
     public void increaseDay(int nrOfDays) {
-        ownerClient.governance.setTimeOffset(ownerClient.governance.getTimeOffset().subtract(U_SECONDS_DAY.multiply(BigInteger.valueOf(nrOfDays))));
+        ownerClient.governance.setTimeOffset(ownerClient.governance.getTimeOffset().subtract(MICRO_SECONDS_IN_A_DAY.multiply(BigInteger.valueOf(nrOfDays))));
         ownerClient.baln.setTimeOffset();
     }
 }
