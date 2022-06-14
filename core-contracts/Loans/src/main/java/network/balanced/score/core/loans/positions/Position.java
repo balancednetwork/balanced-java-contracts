@@ -103,7 +103,11 @@ public class Position {
 
         BigInteger newTotalDebt = previousTotalDebt.add(currentValue).subtract(previousDebt);
         LoansVariables.totalDebts.set(symbol, newTotalDebt);
-        AssetDB.getAsset(symbol).getBorrowers(SICX_SYMBOL).set(getId(), currentValue);
+        if ( value == null) {
+            AssetDB.getAsset(symbol).getBorrowers(SICX_SYMBOL).remove(getId());
+        } else {
+            AssetDB.getAsset(symbol).getBorrowers(SICX_SYMBOL).set(getId(), currentValue);
+        }
     }
 
     public boolean hasDebt(Integer day) {
