@@ -445,6 +445,28 @@ class LoansTest extends LoansTestBase {
     }
 
     @Test
+    void returnAssetAndReopenPosition() {
+        // Arrange
+        Account account = accounts.get(0);
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
+
+        takeLoanICX(account, "bnUSD", collateral, loan);
+        bnusd.invoke(admin, "transfer", account.getAddress(), expectedFee, new byte[0]);
+        loans.invoke(account, "returnAsset", "bnUSD", loan.add(expectedFee), true);
+
+        // Assert
+        verifyPosition(account.getAddress(), collateral, BigInteger.ZERO);
+
+        // Act 
+        takeLoanICX(account, "bnUSD", BigInteger.ZERO, loan);
+
+        // Assert
+        verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
+    }
+
+    @Test
     void returnAsset_MoreThanHoldings() {
         // Arrange
         Account account = accounts.get(0);
