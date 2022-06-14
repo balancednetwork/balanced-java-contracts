@@ -38,7 +38,7 @@ public interface IRC2 {
     @External
     BigInteger totalSupply();
 
-    @External
+    @External(readonly = true)
     BigInteger balanceOf(Address _owner);
 
     @External

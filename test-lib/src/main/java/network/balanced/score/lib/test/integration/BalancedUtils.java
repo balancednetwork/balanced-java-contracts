@@ -1,5 +1,7 @@
 package network.balanced.score.lib.test.integration;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.math.BigInteger;
 
 import com.eclipsesource.json.JsonArray;
@@ -26,6 +28,7 @@ public class BalancedUtils {
         balanced.increaseDay(2);
 
         voter.governance.evaluateVote(id);
+        assertEquals(voter.governance.checkVote(id).get("status"), "Executed");
     }
 
     public static BigInteger hexObjectToBigInteger(Object hexNumber) {

@@ -21,6 +21,7 @@ import score.annotation.External;
 import score.Address;
 
 import java.math.BigInteger;
+import java.util.Map;
 
 import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.AdminAddress;
@@ -33,5 +34,9 @@ import network.balanced.score.lib.interfaces.base.TokenFallback;
 public interface Reserve extends TokenFallback, AdminAddress, BalnAddress, SicxAddress, LoansAddress {
     @External
     public void redeem(Address to, BigInteger amount, BigInteger icxRate);
+
+    @External(readonly = true)
+    public Map<String, BigInteger> getBalances();
+    
 }
 

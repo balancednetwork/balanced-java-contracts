@@ -620,7 +620,6 @@ public class RewardsImpl implements Rewards {
     public void setTimeOffset(BigInteger _timestamp) {
         only(admin);
         startTimestamp.set(_timestamp);
-        Context.println("########################" +  getDay());
         Context.require(getDay().compareTo(BigInteger.ZERO) > 0,
                 TAG + ": Day should begin from 1. Please set earlier time offset");
     }
