@@ -335,7 +335,7 @@ public class LoansImpl implements Loans {
         Context.require(PositionsDB.hasPosition(from), TAG + ": No debt repaid because, " + from + " does not have a " +
                 "position in Balanced");
 
-        BigInteger oldSupply = totalDebts.getOrDefault(BNUSD_SYMBOL, BigInteger.ZERO);
+        BigInteger oldSupply = totalDebts.getOrDefault(_symbol, BigInteger.ZERO);
         Position position = PositionsDB.getPosition(from);
         BigInteger borrowed = position.getDebt(SICX_SYMBOL, _symbol);
 
