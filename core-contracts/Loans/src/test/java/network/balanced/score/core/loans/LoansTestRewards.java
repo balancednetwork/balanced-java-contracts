@@ -33,7 +33,7 @@ import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.verify;
 
 @DisplayName("Loans Tests")
-class LoansTestContinuousRewards extends LoansTestBase {
+class LoansTestRewards extends LoansTestBase {
 
     @BeforeEach
     public void setupContractsAndWallets() throws Exception {
