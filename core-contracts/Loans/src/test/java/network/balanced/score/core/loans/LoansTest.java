@@ -537,11 +537,6 @@ class LoansTest extends LoansTestBase {
         BigInteger loanToRepay = BigInteger.valueOf(100).multiply(EXA);
 
         takeLoanICX(account, "bnUSD", collateral, loan);
-        String expectedErrorMessage = "Reverted(0): " + TAG + "No debt repaid because, repay=false";
-
-        // Assert & Act
-        Executable returnWithNoPosition = () ->  loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, false);
-        expectErrorMessage(returnWithNoPosition, expectedErrorMessage);
     }
 
     @Test
