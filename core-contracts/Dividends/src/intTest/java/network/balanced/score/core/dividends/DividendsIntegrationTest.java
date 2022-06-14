@@ -105,8 +105,6 @@ public class DividendsIntegrationTest {
     void setup() throws Exception {
         System.setProperty("Dividends", System.getProperty("java"));
 
-        System.setProperty("DAOfund", System.getProperty("daofund"));
-
         tester = createWalletWithBalance(BigInteger.TEN.pow(24));
         tester2 = createWalletWithBalance(BigInteger.TEN.pow(24));
         balanced = new Balanced();

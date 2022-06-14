@@ -34,7 +34,7 @@ import java.util.function.Consumer;
 import static network.balanced.score.lib.utils.Constants.*;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
 import static network.balanced.score.lib.test.integration.BalancedUtils.hexObjectToBigInteger;
-import static network.balanced.score.lib.utils.Constants.U_SECONDS_DAY;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
 public class Balanced {
     public KeyWallet owner;
@@ -237,7 +237,7 @@ public class Balanced {
     }
 
     public void increaseDay(int nrOfDays) {
-        ownerClient.governance.setTimeOffset(ownerClient.governance.getTimeOffset().subtract(U_SECONDS_DAY.multiply(BigInteger.valueOf(nrOfDays))));
+        ownerClient.governance.setTimeOffset(ownerClient.governance.getTimeOffset().subtract(MICRO_SECONDS_IN_A_DAY.multiply(BigInteger.valueOf(nrOfDays))));
         ownerClient.baln.setTimeOffset();
     }
 }
