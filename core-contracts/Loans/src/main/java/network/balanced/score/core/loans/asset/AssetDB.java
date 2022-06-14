@@ -53,6 +53,8 @@ public class AssetDB {
                 continue;
             }
             
+            asset.migrateLiquidationPool();
+            asset.migrateBadDebt();
             assetAddresses.add(asset.getAssetAddress());
             assetList.add(symbol);
         }
