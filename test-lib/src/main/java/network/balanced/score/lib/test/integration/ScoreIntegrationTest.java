@@ -126,7 +126,7 @@ public interface ScoreIntegrationTest {
         Predicate<TransactionResult.EventLog> predicate =
                 (el) -> el.getIndexed().get(0).equals(signature);
         if (scoreAddress != null) {
-            predicate = predicate.and((el) -> el.getScoreAddress().equals(scoreAddress.toString()));
+            predicate = predicate.and((el) -> el.getScoreAddress().toString().equals(scoreAddress.toString()));
         }
         Stream<T> stream = txr.getEventLogs().stream()
                               .filter(predicate)
@@ -203,7 +203,7 @@ public interface ScoreIntegrationTest {
         };
     }
 
-    public static Consumer<TransactionResult> dummyConsumer() {
+    static Consumer<TransactionResult> dummyConsumer() {
         return (txr) -> {
             
         };
