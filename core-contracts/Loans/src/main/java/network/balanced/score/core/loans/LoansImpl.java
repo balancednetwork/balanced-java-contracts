@@ -28,6 +28,7 @@ import network.balanced.score.core.loans.positions.PositionsDB;
 import network.balanced.score.core.loans.utils.PositionBatch;
 import network.balanced.score.core.loans.utils.Token;
 import network.balanced.score.lib.interfaces.Loans;
+import network.balanced.score.lib.interfaces.Sicx;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import score.Address;
@@ -236,7 +237,7 @@ public class LoansImpl implements Loans {
         Token assetContract = new Token(asset.getAssetAddress());
         BigInteger totalSupply = assetContract.totalSupply();
 
-        return totalSupply.subtract(asset.getBadDebt());
+        return totalSupply.subtract(asset.getBadDebt(SICX_SYMBOL));
     }
 
     @External
@@ -290,7 +291,7 @@ public class LoansImpl implements Loans {
             return;
         }
 
-        originateLoan(_asset, _amount, depositor);
+        originateLoan(SICX_SYMBOL, _asset, _amount, depositor);
     }
 
     @External
@@ -300,7 +301,7 @@ public class LoansImpl implements Loans {
 
         Address from = Context.getCaller();
         Asset asset = AssetDB.getAsset(_symbol);
-        BigInteger badDebt = asset.getBadDebt();
+        BigInteger badDebt = asset.getBadDebt(SICX_SYMBOL);
 
         Address assetAddress = asset.getAssetAddress();
         Token assetContract = new Token(assetAddress);
@@ -312,6 +313,7 @@ public class LoansImpl implements Loans {
         BigInteger badDebtValue = badDebt.min(_value);
         asset.burnFrom(from, badDebtValue);
 
+        //TODO should be able return any type of collateral 
         BigInteger sicxCollateralToRedeem = badDebtRedeem(from, asset, badDebtValue);
         transferCollateral(SICX_SYMBOL, from, sicxCollateralToRedeem, "Bad Debt redeemed.", new byte[0]);
         asset.checkForDeadMarket();
@@ -321,6 +323,7 @@ public class LoansImpl implements Loans {
     @External
     public void returnAsset(String _symbol, BigInteger _value, @Optional boolean _repay) {
         loansOn();
+        String collateralSymbol = SICX_SYMBOL;
         Context.require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Amount retired must be greater than zero.");
 
         Address from = Context.getCaller();
@@ -337,7 +340,7 @@ public class LoansImpl implements Loans {
 
         BigInteger oldSupply = totalDebts.getOrDefault(_symbol, BigInteger.ZERO);
         Position position = PositionsDB.getPosition(from);
-        BigInteger borrowed = position.getDebt(SICX_SYMBOL, _symbol);
+        BigInteger borrowed = position.getDebt(collateralSymbol, _symbol);
 
         Context.require(_value.compareTo(borrowed) <= 0, TAG + ": Repaid amount is greater than the amount in the " +
                 "position of " + from);
@@ -348,7 +351,7 @@ public class LoansImpl implements Loans {
         BigInteger remaining = borrowed.subtract(_value);
         BigInteger repaid;
         if (remaining.compareTo(BigInteger.ZERO) > 0) {
-            position.setDebt(_symbol, position.getDebt(SICX_SYMBOL, _symbol).subtract(_value));
+            position.setDebt(_symbol, position.getDebt(collateralSymbol, _symbol).subtract(_value));
             repaid = _value;
         } else {
             position.setDebt(_symbol, null);
@@ -533,7 +536,7 @@ public class LoansImpl implements Loans {
     @External
     public void liquidate(Address _owner) {
         loansOn();
-
+        String collateralSymbol = SICX_SYMBOL;
         Context.require(PositionsDB.hasPosition(_owner), TAG + ": This address does not have a position on Balanced.");
         Position position = PositionsDB.getPosition(_owner);
         Standings standing;
@@ -544,36 +547,37 @@ public class LoansImpl implements Loans {
             return;
         }
 
-        BigInteger collateral = position.getCollateral(SICX_SYMBOL);
+        BigInteger collateral = position.getCollateral(collateralSymbol);
         BigInteger reward = collateral.multiply(liquidationReward.get()).divide(POINTS);
         BigInteger forPool = collateral.subtract(reward);
         BigInteger totalDebt = position.totalDebt(-1, false);
         BigInteger oldTotalDebt = totalDebts.getOrDefault(BNUSD_SYMBOL, BigInteger.ZERO);
 
         int assetSymbolsCount = AssetDB.assetList.size();
+
         for (int i = 0; i < assetSymbolsCount; i++) {
             String symbol = AssetDB.assetList.get(i);
             Asset asset  = AssetDB.getAsset(symbol);
                 
             Address assetAddress = asset.getAssetAddress();
             Token assetContract = new Token(assetAddress);
-            BigInteger debt = position.getDebt(SICX_SYMBOL, symbol);
+            BigInteger debt = position.getDebt(collateralSymbol, symbol);
             if (asset.isActive() && debt.compareTo(BigInteger.ZERO) > 0) {
                 Context.call(rewards.get(), "updateRewardsData", "Loans", oldTotalDebt, _owner, debt);
 
-                BigInteger badDebt = asset.getBadDebt();
-                asset.setBadDebt(badDebt.add(debt));
+                BigInteger badDebt = asset.getBadDebt(SICX_SYMBOL);
+                asset.setBadDebt(SICX_SYMBOL, badDebt.add(debt));
                 BigInteger symbolDebt = debt.multiply(assetContract.priceInLoop()).divide(EXA);
                 BigInteger share = forPool.multiply(symbolDebt.divide(totalDebt));
                 totalDebt = totalDebt.subtract(symbolDebt);
                 forPool = forPool.subtract(share);
-                asset.setLiquidationPool(asset.getLiquidationPool().add(share));
+                asset.setLiquidationPool(SICX_SYMBOL, asset.getLiquidationPool(SICX_SYMBOL).add(share));
                 position.setDebt(symbol, null);
             }
         }
 
-        position.setCollateral(SICX_SYMBOL, null);
-        transferCollateral(SICX_SYMBOL, Context.getCaller(), reward, "Liquidation reward of", new byte[0]);
+        position.setCollateral(collateralSymbol, null);
+        transferCollateral(collateralSymbol, Context.getCaller(), reward, "Liquidation reward of", new byte[0]);
         AssetDB.updateDeadMarkets();
 
         String logMessage = collateral + " liquidated from " + _owner;
@@ -590,15 +594,15 @@ public class LoansImpl implements Loans {
         Token sicxContract = new Token(sicxAddress);
 
         BigInteger sicxRate = sicxContract.priceInLoop();
-        BigInteger inPool = asset.getLiquidationPool();
-        BigInteger badDebt = asset.getBadDebt().subtract(badDebtValue);
+        BigInteger inPool = asset.getLiquidationPool(SICX_SYMBOL);
+        BigInteger badDebt = asset.getBadDebt(SICX_SYMBOL).subtract(badDebtValue);
 
         BigInteger bonus = POINTS.add(retirementBonus.get());
         BigInteger badDebtSicx = bonus.multiply(badDebtValue).multiply(price).divide(sicxRate.multiply(POINTS));
 
-        asset.setBadDebt(badDebt);
+        asset.setBadDebt(SICX_SYMBOL, badDebt);
         if (inPool.compareTo(badDebtSicx) >= 0) {
-            asset.setLiquidationPool(inPool.subtract(badDebtSicx));
+            asset.setLiquidationPool(SICX_SYMBOL, inPool.subtract(badDebtSicx));
             if (badDebt.equals(BigInteger.ZERO)) {
                 transferCollateral(SICX_SYMBOL, reserve.get(), inPool.subtract(badDebtSicx), "Sweep to ReserveFund:",
                         new byte[0]);
@@ -607,7 +611,7 @@ public class LoansImpl implements Loans {
             return badDebtSicx;
         }
 
-        asset.setLiquidationPool(null);
+        asset.setLiquidationPool(SICX_SYMBOL, null);
         expectedToken.set(sicx.getAssetAddress());
 
         Context.call(reserve.get(), "redeem", from, badDebtSicx.subtract(inPool), sicxRate);
@@ -619,14 +623,14 @@ public class LoansImpl implements Loans {
         return inPool.add(received);
     }
 
-    private void originateLoan(String assetToBorrow, BigInteger amount, Address from) {
+    private void originateLoan(String backingCollateral, String assetToBorrow, BigInteger amount, Address from) {
         Asset asset = AssetDB.getAsset(assetToBorrow);
         Context.require(!asset.checkForDeadMarket(), TAG + ": No new loans of " + assetToBorrow + " can be originated" +
                 " since it is in a dead market state.");
         Context.require(asset.isActive(), TAG + ": Loans of inactive assets are not allowed.");
 
         Position position = PositionsDB.getPosition(from);
-        BigInteger oldTotalDebt = totalDebts.getOrDefault(BNUSD_SYMBOL, BigInteger.ZERO);
+        BigInteger oldTotalDebt = totalDebts.getOrDefault(assetToBorrow, BigInteger.ZERO);
 
         BigInteger collateral = position.totalCollateral(-1);
         BigInteger maxDebtValue = POINTS.multiply(collateral).divide(lockingRatio.get());
@@ -637,14 +641,14 @@ public class LoansImpl implements Loans {
 
         BigInteger newDebt = amount.add(fee);
         BigInteger newDebtValue = borrowAsset.priceInLoop().multiply(newDebt).divide(EXA);
-        BigInteger holdings = position.getDebt(SICX_SYMBOL, assetToBorrow);
+        BigInteger holdings = position.getDebt(backingCollateral, assetToBorrow);
         if (holdings.equals(BigInteger.ZERO)) {
             Token bnusd = new Token(AssetDB.getAsset(BNUSD_SYMBOL).getAssetAddress());
             BigInteger dollarValue = newDebtValue.multiply(EXA).divide(bnusd.priceInLoop());
             Context.require(dollarValue.compareTo(newLoanMinimum.get()) >= 0, TAG + ": The initial loan of any " +
                     "asset must have a minimum value of " + newLoanMinimum.get().divide(EXA) + " dollars.");
-            if (!AssetDB.getAsset(assetToBorrow).getBorrowers(SICX_SYMBOL).contains(position.getId())) {
-                AssetDB.getAsset(assetToBorrow).getBorrowers(SICX_SYMBOL).append(newDebt, position.getId());
+            if (!AssetDB.getAsset(assetToBorrow).getBorrowers(backingCollateral).contains(position.getId())) {
+                AssetDB.getAsset(assetToBorrow).getBorrowers(backingCollateral).append(newDebt, position.getId());
             }
         }
 
