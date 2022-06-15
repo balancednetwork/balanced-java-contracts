@@ -38,8 +38,7 @@ public interface Rewards extends
         BalnAddress,
         BwtAddress,
         DaoFundAddress,
-        ReserveAddress,
-        StakedLpAddress {
+        ReserveAddress {
    
     @External(readonly = true)
     BigInteger getEmission(BigInteger _day);

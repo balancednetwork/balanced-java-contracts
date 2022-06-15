@@ -65,7 +65,7 @@ public class PositionsDB {
         if (id == 0) {
             return Map.of("message", "That address has no outstanding loans or deposited collateral.");
         }
-        return get(id).toMap(-1);
+        return get(id).toMap();
     }
 
     public static Position getPosition(Address owner) {
