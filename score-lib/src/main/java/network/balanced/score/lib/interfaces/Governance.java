@@ -55,9 +55,6 @@ public interface Governance extends
     @External(readonly = true)
     BigInteger getTimeOffset();
 
-    @External
-    void setDividendsOnlyToStakedBalnDay(BigInteger _day);
-
     @External(readonly = true)
     BigInteger getVoteDuration();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 ICON Foundation
+ * Copyright (c) 2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import java.util.Properties;
 
 public class DefaultScoreClient extends JsonrpcClient {
     public static final Address ZERO_ADDRESS = new Address("cx0000000000000000000000000000000000000000");
-    public static final BigInteger DEFAULT_STEP_LIMIT = new BigInteger("10502f900", 16);
+    public static final BigInteger DEFAULT_STEP_LIMIT = new BigInteger("9502f900", 16);
     public static final long BLOCK_INTERVAL = 1;
     public static final long DEFAULT_RESULT_RETRY_WAIT = 0;
     public static final long DEFAULT_RESULT_TIMEOUT = 10000;
