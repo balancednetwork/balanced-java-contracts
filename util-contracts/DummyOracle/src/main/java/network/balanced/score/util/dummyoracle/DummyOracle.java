@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.test;
+package network.balanced.score.util.dummyoracle;
 
 import score.annotation.External;
 import scorex.util.HashMap;
@@ -27,7 +27,7 @@ public class DummyOracle {
     public DummyOracle() {
     }
 
-    @External
+    @External(readonly = true)
     public Map<String, BigInteger> get_reference_data(String _base, String _quote) {
         Map<String, BigInteger> result = new HashMap<>();
         if (_base.equals("USD") && _quote.equals("ICX")) {

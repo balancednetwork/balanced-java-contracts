@@ -89,3 +89,5 @@ build
 .keystores
 .deployment
 gradle.properties
+
+bin/

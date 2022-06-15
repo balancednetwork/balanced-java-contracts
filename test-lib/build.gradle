@@ -26,6 +26,7 @@ repositories {
     mavenCentral()
 }
 
+optimizedJar.enabled = false
 
 dependencies {
     implementation Dependencies.iconSdk
@@ -45,15 +46,6 @@ dependencies {
     implementation Dependencies.iconSdk
     implementation Dependencies.javaFaker
 }
-
-optimizedJar {
-    mainClassName = 'network.balanced.score.lib.test.DummyOracle'
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    from {
-        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
-    }
-}
-
 
 test {
     useJUnitPlatform()
