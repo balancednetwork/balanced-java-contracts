@@ -254,18 +254,30 @@ public class LoansImpl implements Loans {
         }
 
         Token collateralToken = new Token(token);
-        Context.require(CollateralDB.getCollateral(collateralToken.symbol()).isActive(), TAG + ": The Balanced Loans " +
-                "contract does not accept that token type.");
+        String collateralSymbol = collateralToken.symbol();
+        // Allow active assets for mutli collateral
+        Context.require(CollateralDB.getCollateral("sICX").getAssetAddress().equals(token), TAG + ": The Balanced Loans " +
+            "contract does not accept that token type.");
 
         String unpackedData = new String(_data);
         Context.require(!unpackedData.equals(""), TAG + ": Token Fallback: Data can't be empty");
 
         JsonObject json = Json.parse(unpackedData).asObject();
 
-        String requestedAsset = json.get("_asset").asString();
+        String assetToBorrow = json.get("_asset").asString();
         JsonValue amount = json.get("_amount");
         BigInteger requestedAmount = amount == null ? null : convertToNumber(amount);
-        depositAndBorrow(requestedAsset, requestedAmount, _from, _value);
+
+        depositCollateral(collateralSymbol, _value, _from);
+        if (requestedAmount.compareTo(BigInteger.ZERO) > 0) {
+            borrow(collateralSymbol, assetToBorrow, requestedAmount, _from);
+        }
+    }
+
+    // make external when mutli collateral is released
+    private void borrow(String _collateralToBorrowAgainst, String _assetToBorrow, BigInteger _amountToBorrowm, Address _from) {
+        loansOn();
+        originateLoan(_collateralToBorrowAgainst, _assetToBorrow, _amountToBorrowm, _from);
     }
 
     @External
@@ -273,16 +285,11 @@ public class LoansImpl implements Loans {
     public void depositAndBorrow(@Optional String _asset, @Optional BigInteger _amount, @Optional Address _from, @Optional BigInteger _value) {
         loansOn();
         BigInteger deposit = Context.getValue();
-
         Address depositor = optionalDefault(_from, Context.getCaller());
-        BigInteger sicxDeposited = _value;
 
         if (!deposit.equals(BigInteger.ZERO)) {
-            sicxDeposited = stakeICX(deposit);
-        }
-
-        Position position = PositionsDB.getPosition(depositor);
-        if (sicxDeposited.compareTo(BigInteger.ZERO) > 0) {
+            Position position = PositionsDB.getPosition(depositor);
+            BigInteger sicxDeposited = stakeICX(deposit);
             position.setCollateral(SICX_SYMBOL, position.getCollateral(SICX_SYMBOL).add(sicxDeposited));
             CollateralReceived(depositor, SICX_SYMBOL, sicxDeposited);
         }
@@ -624,6 +631,12 @@ public class LoansImpl implements Loans {
         amountReceived.set(null);
 
         return inPool.add(received);
+    }
+
+    private void depositCollateral(String _symbol, BigInteger _amount, Address _from) {
+        Position position = PositionsDB.getPosition(_from);
+        position.setCollateral(_symbol, position.getCollateral(_symbol).add(_amount));
+        CollateralReceived(_from, _symbol, _amount);
     }
 
     private void originateLoan(String collateralSymbol, String assetToBorrow, BigInteger amount, Address from) {

@@ -20,13 +20,11 @@ import network.balanced.score.core.loans.utils.IdFactory;
 import score.Address;
 import score.Context;
 import score.DictDB;
-import score.VarDB;
 
 import java.math.BigInteger;
 import java.util.Map;
 
 import static network.balanced.score.core.loans.positions.Position.TAG;
-import static network.balanced.score.core.loans.utils.LoansConstants.*;
 
 public class PositionsDB {
     private static final String POSITION_DB_PREFIX = "position";
@@ -92,8 +90,6 @@ public class PositionsDB {
         newPosition.setId(id);
         newPosition.setCreated(BigInteger.valueOf(Context.getBlockTimestamp()));
         newPosition.setAddress(owner);
-
-        newPosition.setCollateral(SICX_SYMBOL, BigInteger.ZERO);
 
         return newPosition;
     }
