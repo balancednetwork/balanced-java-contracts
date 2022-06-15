@@ -16,7 +16,6 @@
 
 package network.balanced.score.lib.utils;
 
-import score.Address;
 import score.ArrayDB;
 
 public class ArrayDBUtils {

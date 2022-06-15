@@ -5,6 +5,9 @@
 # Log file
 *.log
 
+# Keystore
+keystore.json
+
 # BlueJ files
 *.ctxt
 

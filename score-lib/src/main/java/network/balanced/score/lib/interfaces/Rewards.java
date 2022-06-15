@@ -16,19 +16,18 @@
 
 package network.balanced.score.lib.interfaces;
 
+import foundation.icon.score.client.ScoreInterface;
+import network.balanced.score.lib.interfaces.addresses.*;
+import network.balanced.score.lib.interfaces.base.Name;
+import network.balanced.score.lib.interfaces.base.TokenFallback;
+import network.balanced.score.lib.structs.DistributionPercentage;
+import network.balanced.score.lib.structs.RewardsDataEntry;
 import score.Address;
 import score.annotation.External;
 
 import java.math.BigInteger;
-import java.util.Map;
 import java.util.List;
-
-import foundation.icon.score.client.ScoreInterface;
-
-import network.balanced.score.lib.interfaces.addresses.*;
-import network.balanced.score.lib.interfaces.base.*;
-import network.balanced.score.lib.structs.DistributionPercentage;
-import network.balanced.score.lib.structs.RewardsDataEntry;
+import java.util.Map;
 
 @ScoreInterface
 public interface Rewards extends 
@@ -41,15 +40,12 @@ public interface Rewards extends
         DaoFundAddress,
         ReserveAddress,
         StakedLpAddress {
-
-    @External
-    void setDay(BigInteger _day);
    
     @External(readonly = true)
     BigInteger getEmission(BigInteger _day);
    
     @External(readonly = true)
-    Map<Address, BigInteger> getBalnHoldings(Address[] _holders);
+    Map<String, BigInteger> getBalnHoldings(Address[] _holders);
    
     @External(readonly = true)
     BigInteger getBalnHolding(Address _holder);
@@ -97,22 +93,16 @@ public interface Rewards extends
     BigInteger getAPY(String _name);
 
     @External
-    void bonusDist(Address[] _addresses,  BigInteger[] _amounts);
-
-    @External
-    void addDataProvider(Address _source);
-
-    @External
-    List<Address> getDataProviders();
-
-    @External
-    void removeDataProvider(Address _source);
-
-    @External
     void updateRewardsData(String _name, BigInteger _totalSupply, Address _user, BigInteger _balance);
 
     @External
     void updateBatchRewardsData(String _name, BigInteger _totalSupply, RewardsDataEntry[] _data);
+
+    @External
+    void addDataProvider(Address _source);
+
+    @External(readonly = true)
+    List<Address> getDataProviders();
 
     @External    
     void setBatchSize(int _batch_size);

@@ -16,35 +16,23 @@
 
 package network.balanced.score.core.governance;
 
+import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.JsonObject;
 import foundation.icon.icx.KeyWallet;
-import foundation.icon.icx.Wallet;
-import foundation.icon.jsonrpc.Address;
 import foundation.icon.jsonrpc.model.TransactionResult;
-import foundation.icon.score.client.DefaultScoreClient;
-import foundation.icon.score.client.ScoreClient;
-import static network.balanced.score.core.governance.GovernanceConstants.*;
-import network.balanced.score.lib.interfaces.*;
-import network.balanced.score.core.governance.interfaces.*;
-import network.balanced.score.lib.test.integration.Env;
-import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
-
+import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import com.eclipsesource.json.JsonArray;
-import com.eclipsesource.json.JsonObject;
-
+import static network.balanced.score.core.governance.GovernanceConstants.MICRO_SECONDS_IN_A_DAY;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 class GovernanceIntegrationTest implements ScoreIntegrationTest{
@@ -55,7 +43,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest{
     @BeforeAll
     static void setup() throws Exception {
         balanced = new Balanced();
-        balanced.deployBalanced();
+        balanced.setupBalanced();
         owner = balanced.ownerClient;
 
         KeyWallet testerWallet = createWalletWithBalance(BigInteger.TEN.pow(24));
@@ -65,13 +53,13 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest{
         owner.governance.setBalnVoteDefinitionCriterion(BigInteger.ZERO);
         owner.governance.setVoteDefinitionFee(BigInteger.TEN.pow(10));
         owner.governance.setQuorum(BigInteger.ONE);
-        increaseDay(1);
+        balanced.increaseDay(1);
         owner.baln.toggleEnableSnapshot();
 
         tester.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(20), null, null);        
 
-        increaseDay(1);
-        syncDistributions();
+        balanced.increaseDay(1);
+        balanced.syncDistributions();
         
         tester.rewards.claimRewards();
 
@@ -104,11 +92,11 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest{
         tester.governance.defineVote(name, "test", voteStart, snapshot, actions.toString());
         assertNotEquals(rebalancingThreshold, owner.rebalancing.getPriceChangeThreshold());
 
-        increaseDay(4);
+        balanced.increaseDay(4);
         BigInteger id = tester.governance.getVoteIndex(name);
         tester.governance.castVote(id, true);
 
-        increaseDay(2);
+        balanced.increaseDay(2);
 
         tester.governance.evaluateVote(id);
 
@@ -134,41 +122,9 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest{
         BigInteger snapshot = day.add(BigInteger.TWO);
         try {
             tester.governance.defineVote(name, "test", voteStart, snapshot, actions.toString());
-            assertTrue(false);
+            fail();
         } catch (Exception e) {
             //success
         }
-    }
-    
-    protected static void syncDistributions() {
-        while (!checkDistributionsDone()) {
-            Consumer<TransactionResult> distributeConsumer = result -> {};
-            owner.rewards.distribute(distributeConsumer);
-        }
-    }
-    
-    protected static boolean checkDistributionsDone() {
-        BigInteger day = owner.governance.getDay();
-        Map<String, Object> status = owner.rewards.distStatus();
-        if (hexObjectToInt(status.get("platform_day")) < day.intValue()) {
-            return false;
-        }
-
-        Map<String, String> dataSourceStatus = (Map<String, String>) status.get("source_days");
-        for (String sourceDay : dataSourceStatus.values()) {
-            if (hexObjectToInt(sourceDay) < day.intValue()) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private static int hexObjectToInt(Object hexNumber) {
-        return Integer.parseInt(((String)hexNumber).substring(2), 16);
-    }
-    private static void increaseDay(int nrOfDays) {
-        owner.governance.setTimeOffset(owner.governance.getTimeOffset().subtract(U_SECONDS_DAY.multiply(BigInteger.valueOf(nrOfDays))));
-        owner.baln.setTimeOffset();
     }
 }

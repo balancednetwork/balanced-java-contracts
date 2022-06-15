@@ -28,6 +28,7 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.base.*;
 
 @ScoreInterface
@@ -56,6 +57,9 @@ public interface Governance extends
 
     @External
     void setContinuousRewardsDay(BigInteger _day);
+
+    @External
+    void setAdmin(Address contractAddress, Address admin);
 
     @External
     void setDividendsOnlyToStakedBalnDay(BigInteger _day);
@@ -294,7 +298,7 @@ public interface Governance extends
 
     @External
     void setRouter(Address _router);
-    
+
     @External
     void enable_fee_handler();
 
