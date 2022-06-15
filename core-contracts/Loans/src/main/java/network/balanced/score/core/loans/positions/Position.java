@@ -106,7 +106,7 @@ public class Position {
         AssetDB.getAsset(symbol).getBorrowers(SICX_SYMBOL).set(getId(), currentValue);
     }
 
-    public boolean hasDebt(Integer day) {
+    public boolean hasDebt() {
         int assetsCount = AssetDB.assetList.size();
         for (int i = 0; i < assetsCount; i++) {
             String symbol = AssetDB.assetList.get(i);
@@ -118,55 +118,32 @@ public class Position {
         return false;
     }
 
-    /**
-     * Returns the total value of the total collateral in loop
-     *
-     * @param day Day for which the total collateral sum has to be read
-     * @return Total collateral value
-     */
-    public BigInteger totalCollateral(Integer day) {
-        BigInteger totalCollateral = BigInteger.ZERO;
-        int collateralCount = CollateralDB.collateralList.size();
-        for (int i = 0; i < collateralCount; i++) {
-            String symbol = CollateralDB.collateralList.get(i);
-            Collateral collateral = CollateralDB.getCollateral(symbol);
-            if (!collateral.isActive()) {
-                continue;
-            }
+    public BigInteger totalCollateralInLoop(String collateralSymbol) {
+        Collateral collateral = CollateralDB.getCollateral(collateralSymbol);
 
-            Address collateralAddress = collateral.getAssetAddress();
-            Token collateralContract = new Token(collateralAddress);
+        Address collateralAddress = collateral.getAssetAddress();
+        Token collateralContract = new Token(collateralAddress);
 
-            BigInteger amount = getCollateral(symbol);
-            BigInteger price = collateralContract.priceInLoop();
+        BigInteger amount = getCollateral(collateralSymbol);
+        BigInteger price = collateralContract.priceInLoop();
 
-            totalCollateral = totalCollateral.add(amount.multiply(price).divide(EXA));
-        }
-
-        return totalCollateral;
+        return amount.multiply(price).divide(EXA);
     }
 
-    /**
-     * Returns the total value of all outstanding debt in loop. Only valid for updated positions.
-     *
-     * @param day      Day for which total debt required
-     * @param readOnly True if the price has to be updated in token contract
-     * @return Total debt in loop
-     */
-    public BigInteger totalDebt(Integer day, boolean readOnly) {
+    public BigInteger totalDebtInLoop(String collateralSymbol, boolean readOnly) {
         BigInteger totalDebt = BigInteger.ZERO;
         int assetsCount = AssetDB.assetList.size();
         for (int i = 0; i < assetsCount; i++) {
-            String symbol = AssetDB.assetList.get(i);
-            if (!AssetDB.getAsset(symbol).isActive()) {
+            String assetSymbol = AssetDB.assetList.get(i);
+            if (!AssetDB.getAsset(assetSymbol).isActive()) {
                 continue;
             }
 
-            BigInteger amount = getDebt(SICX_SYMBOL, symbol);
+            BigInteger amount = getDebt(collateralSymbol, assetSymbol);
 
             BigInteger price = BigInteger.ZERO;
             if (amount.compareTo(BigInteger.ZERO) > 0) {
-                price = getAssetPrice(symbol, readOnly);
+                price = getAssetPrice(assetSymbol, readOnly);
             }
 
             totalDebt = totalDebt.add(amount.multiply(price).divide(EXA));
@@ -175,18 +152,10 @@ public class Position {
         return totalDebt;
     }
 
-
-    /**
-     * Calculates the standing for a position. Uses the readonly method for asset prices if the _readonly flag is True.
-     *
-     * @param day      Day for which the standing has to be calculated
-     * @param readOnly True if the price is not to be updated
-     * @return Total standing for a day
-     */
-    public Standing getStanding(Integer day, Boolean readOnly) {
+    public Standing getStanding(String collateralSymbol, Boolean readOnly) {
         Standing standing = new Standing();
-        standing.totalDebt = totalDebt(day, readOnly);
-        standing.collateral = totalCollateral(day);
+        standing.totalDebt = totalDebtInLoop(collateralSymbol, readOnly);
+        standing.collateral = totalCollateralInLoop(collateralSymbol);
 
         if (standing.totalDebt.equals(BigInteger.ZERO)) {
             standing.ratio = BigInteger.ZERO;
@@ -210,8 +179,18 @@ public class Position {
         return standing;
     }
 
-    public Map<String, Object> toMap(Integer day) {
-         //TODO: cleanup
+    public Map<String, Object> toMap() {
+        //TODO: cleanup asset holdings
+        // change to Map<String,Map<String, BigInteger>> ex:
+        //{"SICX":
+        //     "bnUSD" : 1000,
+        //     "bnBTC" : 1000,
+        //     "SICX" : 4000,
+        // "BALN":
+        //     "bnUSD" : 1000,
+        //     "bnBTC" : 1000,
+        //     "BALN" : 4000,
+        // }
         Map<String, BigInteger> assetAmounts = new HashMap<>();
         int assetSymbolsCount = AssetDB.assetList.size();
         for (int i = 0; i < assetSymbolsCount; i++) {
@@ -245,7 +224,7 @@ public class Position {
             }
         }
 
-        Standing standing = getStanding(day, true);
+        Standing standing = getStanding(SICX_SYMBOL, true);
         Map<String, Object> positionDetails = new HashMap<>();
 
         positionDetails.put("pos_id", getId());

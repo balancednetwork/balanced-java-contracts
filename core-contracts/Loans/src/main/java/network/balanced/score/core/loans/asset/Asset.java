@@ -169,30 +169,6 @@ public class Asset {
         }
     }
 
-    public PositionBatch getBorrowersBatch(String collateralSymbol, int batchSize) {
-       LinkedListDB borrowers = getBorrowers(collateralSymbol);
-
-       int nodeId = borrowers.getHeadId();
-       PositionBatch batch = new PositionBatch();
-       batch.totalDebt = BigInteger.ZERO;
-       Map<Integer, BigInteger> positionsMap = new HashMap<>();
-
-       int iterations = Math.min(batchSize, borrowers.size());
-       for (int i = 0; i < iterations; i++) {
-           BigInteger debt = borrowers.nodeValue(nodeId);
-           positionsMap.put(nodeId, debt);
-           batch.totalDebt = batch.totalDebt.add(debt);
-           borrowers.headToTail();
-           nodeId = borrowers.getHeadId();
-       }
-
-       borrowers.serialize();
-       batch.positions = positionsMap;
-       batch.size = iterations;
-       
-       return batch;
-    }
-
     public void removeBorrowers(int positionId) {
         getBorrowers(SICX_SYMBOL).remove(positionId);
     }

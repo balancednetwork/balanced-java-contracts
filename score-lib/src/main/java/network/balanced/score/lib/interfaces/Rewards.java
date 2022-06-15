@@ -32,9 +32,16 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface Rewards extends Name, TokenFallback, GovernanceAddress, AdminAddress, BalnAddress, BwtAddress,
-        DaoFundAddress, ReserveAddress, StakedLpAddress {
-
+public interface Rewards extends 
+        Name, 
+        TokenFallback,
+        GovernanceAddress,
+        AdminAddress,
+        BalnAddress,
+        BwtAddress,
+        DaoFundAddress,
+        ReserveAddress {
+   
     @External(readonly = true)
     BigInteger getEmission(BigInteger _day);
 

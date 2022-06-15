@@ -594,18 +594,6 @@ public class RewardsImpl implements Rewards {
     }
 
     @External
-    public void setStakedLp(Address _address) {
-        only(admin);
-        isContract(_address);
-        stakedLp.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getStakedLp() {
-        return stakedLp.get();
-    }
-
-    @External
     public void setBatchSize(int _batch_size) {
         only(admin);
         batchSize.set(_batch_size);
