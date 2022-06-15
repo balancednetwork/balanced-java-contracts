@@ -57,6 +57,10 @@ class Systemtest implements ScoreIntegrationTest {
     private static String dividendsJavaPath;
     private static BigInteger EXA = BigInteger.TEN.pow(18);
 
+    private static BalancedClient closer1;
+    private static BalancedClient closer2;
+    private static BalancedClient closer3;
+
     @BeforeAll    
     static void setup() throws Exception {
         dexJavaPath = System.getProperty("Dex");
@@ -228,9 +232,15 @@ class Systemtest implements ScoreIntegrationTest {
         BalancedClient loansClient = balanced.newClient();
         BalancedClient lpClient = balanced.newClient();
         BalancedClient loansAndlpClient = balanced.newClient();
+        closer1 = balanced.newClient();
+        closer2 = balanced.newClient();
+        closer3 = balanced.newClient();
         BigInteger loanAmount = BigInteger.TEN.pow(21);
         
         loansClient.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loanAmount, null, null);
+        closer1.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loanAmount, null, null);
+        closer2.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loanAmount, null, null);
+        closer3.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loanAmount, null, null);
         loansAndlpClient.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loanAmount, null, null);
         loansClient.bnUSD.transfer(lpClient.getAddress(), loanAmount, null);
 
@@ -245,10 +255,8 @@ class Systemtest implements ScoreIntegrationTest {
 
         verifyExternalAndUpdateLoans(loansAndlpClient);
         verifyExternalAndUpdateDex(loansAndlpClient);
-        // balanced.dex._update(dexJavaPath, Map.of("_governance", balanced.governance._address()));
-        // owner.governance.setAddressesOnContract("dex");
+ 
         assertEquals(balanced.stakedLp._address().toString(), owner.dex.getStakedLp().toString());
-
         nextDay();
 
         verifyRewards(loansClient);
@@ -352,6 +360,12 @@ class Systemtest implements ScoreIntegrationTest {
         stakeICXBnusdLP(liquidityProvider);
         Thread.sleep(100);
         verifyRewards(liquidityProvider);
+
+        closeLoansPostionAndVerifyNoRewards(loanTaker);
+        closeLoansPostionAndVerifyNoRewards(loanTaker2);
+        loanTaker.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loan, null, null);        
+        loanTaker2.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loan, null, null);        
+        
     }
 
     @Test
@@ -411,6 +425,18 @@ class Systemtest implements ScoreIntegrationTest {
 
         unstakeICXBnusdLP(lpBuyer);
         leaveICXBnusdLP(lpBuyer);
+
+        depositToStabilityContract(lpClient, lpAmount.multiply(BigInteger.TWO));
+        
+        joinsICXBnusdLP(lpClient, lpAmount, lpAmount);
+        stakeICXBnusdLP(lpClient);
+        unstakeICXBnusdLP(lpClient);
+        leaveICXBnusdLP(lpClient);
+        joinsICXBnusdLP(lpClient, lpAmount, lpAmount);
+        leaveICXBnusdLP(lpClient);
+
+
+
     }
 
     @Test
@@ -427,11 +453,26 @@ class Systemtest implements ScoreIntegrationTest {
         Map<String, BigInteger> balanceAndSupply = loanTaker.loans.getBalanceAndSupply("Loans", loanTaker.getAddress());
         assertTrue(originalBalanceAndSupply.get("_totalSupply").compareTo(balanceAndSupply.get("_totalSupply")) > 0);
         assertTrue(originalBalanceAndSupply.get("_balance").compareTo(balanceAndSupply.get("_balance")) > 0);
+
+        reducePriceBelowThreshold();
+        rebalance();
+
+        reducePriceBelowThreshold();
+        rebalance();
+
+        reducePriceBelowThreshold();
+        rebalance();
+
+        reducePriceBelowThreshold();
+        rebalance();
     }
 
     @Test
     @Order(11)
     void rebalancingLowerPrice() throws Exception {
+        closeLoansPostionAndVerifyNoRewards(closer1);
+        closeLoansPostionAndVerifyNoRewards(closer2);
+        closeLoansPostionAndVerifyNoRewards(closer3);
         BalancedClient loanTaker = balanced.newClient();
         BigInteger loan = BigInteger.TEN.pow(22);
         sICXDepositAndBorrow(loanTaker, BigInteger.TEN.pow(23), loan);
@@ -443,11 +484,18 @@ class Systemtest implements ScoreIntegrationTest {
         Map<String, BigInteger> balanceAndSupply = loanTaker.loans.getBalanceAndSupply("Loans", loanTaker.getAddress());
         assertTrue(originalBalanceAndSupply.get("_totalSupply").compareTo(balanceAndSupply.get("_totalSupply")) < 0);
         assertTrue(originalBalanceAndSupply.get("_balance").compareTo(balanceAndSupply.get("_balance")) < 0);
+
+        raisePriceAboveThreshold();
+        rebalance();
+
     }
 
     @Test
     @Order(12)
     void LiquidateAndRetirebadDebt() throws Exception {
+        closer1.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);
+        closer2.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);
+        closer3.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(21), null, null);
         BalancedClient voter = balanced.newClient();
         BigInteger POINTS = BigInteger.valueOf(10_000);
 
@@ -875,9 +923,9 @@ class Systemtest implements ScoreIntegrationTest {
         }
 
         client.loans.returnAsset("bnUSD", debt, true);
-        client.rewards.claimRewards();
-        Thread.sleep(100);
-        verifyNoRewards(client);
+        // client.rewards.claimRewards();
+        // Thread.sleep(100);
+        // verifyNoRewards(client);
     }
 
     private void verifyContractRewards() throws Exception {

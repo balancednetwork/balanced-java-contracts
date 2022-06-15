@@ -510,8 +510,6 @@ class DexUpdate implements ScoreIntegrationTest {
             if (threshold.equals(calculateThreshold())) {
                 return;
             }
-
-            System.out.println("rebalanced");
         }
    
     }

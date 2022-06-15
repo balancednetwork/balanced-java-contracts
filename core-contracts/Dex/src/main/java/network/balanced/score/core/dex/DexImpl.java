@@ -437,12 +437,14 @@ public class DexImpl extends AbstractDex {
             updateBalnSnapshot(id, poolBaseAmount);
         }
 
-        if (userDepositedBase.compareTo(BigInteger.ZERO) > 0) {
-            withdraw(_baseToken, userDepositedBase);
-        }
-
-        if (userDepositedQuote.compareTo(BigInteger.ZERO) > 0) {
-            withdraw(_quoteToken, userDepositedQuote);
+        if(_withdraw_unused) {
+            if (userDepositedBase.compareTo(BigInteger.ZERO) > 0) {
+                withdraw(_baseToken, userDepositedBase);
+            }
+    
+            if (userDepositedQuote.compareTo(BigInteger.ZERO) > 0) {
+                withdraw(_quoteToken, userDepositedQuote);
+            }
         }
     }
 
