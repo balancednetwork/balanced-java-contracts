@@ -134,7 +134,7 @@ public class Asset {
      * the point at which total debt equals the minimum value of collateral that could be backing it.
      */
     public boolean checkForDeadMarket() {
-        if (isCollateral() || !isActive()) {
+        if (!isActive()) {
             return false;
         }
 
@@ -158,6 +158,7 @@ public class Asset {
         if (deadMarket.getOrDefault(false) != isDead) {
             deadMarket.set(isDead);
         }
+
         return isDead;
     }
 
@@ -167,10 +168,6 @@ public class Asset {
         } else {
             return new LinkedListDB(collateralSymbol + "|" + BORROWER_DB_PREFIX, dbKey);
         }
-    }
-
-    public void removeBorrowers(int positionId) {
-        getBorrowers(SICX_SYMBOL).remove(positionId);
     }
 
     void setAsset(Address assetAddress, Boolean active) {

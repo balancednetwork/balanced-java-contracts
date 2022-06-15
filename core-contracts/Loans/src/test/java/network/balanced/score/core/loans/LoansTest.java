@@ -180,13 +180,14 @@ class LoansTest extends LoansTestBase {
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         int loan = 100;
         BigInteger bigLoan = BigInteger.valueOf(loan).multiply(EXA);
-
-        // Assert
-        doNothing().when(loansSpy).depositAndBorrow("bnUSD", bigLoan, account.getAddress(), collateral);
+        BigInteger expectedFee = calculateFee(bigLoan);
 
         // Act
         takeLoanSICX(account, collateral, loan);
-        verify(loansSpy).depositAndBorrow("bnUSD", bigLoan, account.getAddress(), collateral);
+
+        // Assert
+        verifyTotalDebt(bigLoan.add(expectedFee));
+        verifyPosition(account.getAddress(), collateral, bigLoan.add(expectedFee));
     }
 
     @Test
@@ -206,7 +207,8 @@ class LoansTest extends LoansTestBase {
         // Arrange
         Account account = admin;
         BigInteger value = BigInteger.valueOf(100).multiply(EXA);
-        String expectedErrorMessage = "Reverted(0): " + bnusd.call("symbol") + " is not a supported collateral type.";
+        String expectedErrorMessage = "Reverted(0): " + TAG + "The Balanced Loans " +
+        "contract does not accept that token type.";
 
         // Assert & Act
         Executable transferToken = () -> bnusd.invoke(account, "transfer", loans.getAddress(), value, new byte[0]);

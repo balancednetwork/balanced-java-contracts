@@ -73,7 +73,7 @@ public class Position {
         return address.at(dbKey).get();
     }
 
-    public void setLoansPosition(String collateral, String symbol, BigInteger value) {
+    private void setLoansPosition(String collateral, String symbol, BigInteger value) {
         debt.at(dbKey).at(collateral).set(symbol, value);
     }
 
