@@ -394,6 +394,7 @@ public class DefaultScoreClient extends JsonrpcClient {
         SendTransactionParam tx = new SendTransactionParam(nid, address, valueForPayable, "call", callData(method, params));
         Hash txh = sendTransaction(client, wallet, tx);
         waitBlockInterval();
+        System.out.println("tx hash is: "+txh);
         return result(client, txh, timeout);
     }
 

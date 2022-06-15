@@ -196,7 +196,7 @@ public class BoostedBaln implements BoostedToken {
 
         UnsignedBigInteger blockTimestamp = UnsignedBigInteger.valueOf(Context.getBlockTimestamp());
         UnsignedBigInteger blockHeight = UnsignedBigInteger.valueOf(Context.getBlockHeight());
-
+        Context.println("address is: "+address);
         if (!address.equals(ZERO_ADDRESS)) {
             //            Calculate slopes and biases
             //            Kept at zero when they have to
@@ -231,7 +231,7 @@ public class BoostedBaln implements BoostedToken {
             lastPoint = this.pointHistory.getOrDefault(epoch, new Point());
         }
         UnsignedBigInteger lastCheckPoint = lastPoint.timestamp;
-
+        Context.println("last check point is: "+lastCheckPoint);
         //      initialLastPoint is used for extrapolation to calculate block number
         //      (approximately, for *At methods) and save them
         //      as we cannot figure that out exactly from inside the contract
@@ -268,7 +268,7 @@ public class BoostedBaln implements BoostedToken {
             if (lastPoint.slope.compareTo(BigInteger.ZERO) < 0) {
                 lastPoint.slope = BigInteger.ZERO;
             }
-
+            Context.println("time iterator is: "+timeIterator);
             lastCheckPoint = timeIterator;
             lastPoint.timestamp = timeIterator;
             UnsignedBigInteger dtime = timeIterator.subtract(initialLastPoint.timestamp);
@@ -297,7 +297,7 @@ public class BoostedBaln implements BoostedToken {
         }
 
         this.pointHistory.set(epoch, lastPoint);
-
+        Context.println("again address: "+address);
         if (!address.equals(ZERO_ADDRESS)) {
             if (oldLocked.end.compareTo(blockTimestamp) > 0) {
                 oldDSlope = oldDSlope.add(uOld.slope);
@@ -334,6 +334,7 @@ public class BoostedBaln implements BoostedToken {
             locked.end = new UnsignedBigInteger(unlockTime);
         }
 
+        Context.println("unlock time before checktime: "+unlockTime);
         this.locked.set(address, locked);
         this.checkpoint(address, oldLocked, locked);
 
@@ -369,7 +370,7 @@ public class BoostedBaln implements BoostedToken {
         require(locked.amount.compareTo(BigInteger.ZERO) > 0, "Deposit for: No existing lock found");
         require(locked.getEnd()
                 .compareTo(blockTimestamp) > 0, "Deposit for: Cannot add to expired lock. Withdraw");
-
+        Context.println("value inside deposit for: "+value);
         this.depositFor(address, value, BigInteger.ZERO, locked, DEPOSIT_FOR_TYPE);
         this.nonReentrant.updateLock(false);
     }
@@ -389,6 +390,8 @@ public class BoostedBaln implements BoostedToken {
 
         require(value.compareTo(BigInteger.ZERO) > 0, "Create Lock: Need non zero value");
         require(locked.amount.equals(BigInteger.ZERO), "Create Lock: Withdraw old tokens first");
+        Context.println("unlock time is: "+ unlockTime);
+        Context.println("block time is: "+ blockTimestamp);
         require(unlockTime.compareTo(blockTimestamp) > 0, "Create Lock: Can only lock until time in the " +
                 "future");
         require(unlockTime.compareTo(blockTimestamp.add(MAX_TIME)) <= 0,
@@ -427,7 +430,7 @@ public class BoostedBaln implements BoostedToken {
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         Address token = Context.getCaller();
         require(token.equals(this.tokenAddress), "Token Fallback: Only Baln deposits are allowed");
-
+        Context.println("value is: "+_value);
         require(_value.signum() > 0, "Token Fallback: Token value should be a positive number");
         String unpackedData = new String(_data);
         require(!unpackedData.equals(""), "Token Fallback: Data can't be empty");
@@ -442,6 +445,7 @@ public class BoostedBaln implements BoostedToken {
             case "increaseAmount":
                 try {
                     unlockTime = BigInteger.valueOf(params.asObject().get("unlockTime").asLong());
+                    Context.println("unlock time is: "+unlockTime);
                 } catch (NullPointerException ignored) {
 
                 }

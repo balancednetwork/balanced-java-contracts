@@ -3,6 +3,7 @@ package network.balanced.score.lib.interfaces;
 import score.Address;
 
 import java.math.BigInteger;
+import java.util.Map;
 
 import network.balanced.score.lib.interfaces.addresses.*;
 
@@ -45,5 +46,8 @@ public interface Baln extends
         
     void setUnstakingPeriod(BigInteger _time); 
         
-    void setMinInterval(BigInteger _interval);           
+    void setMinInterval(BigInteger _interval);
+
+    BigInteger availableBalanceOf(Address _owner);
+    Map<String, BigInteger> detailsBalanceOf(Address _owner);
 }
