@@ -34,11 +34,14 @@ dependencies {
     testImplementation Dependencies.junitJupiter
     testRuntimeOnly Dependencies.junitJupiterEngine
     testImplementation Dependencies.mockitoCore
+    testImplementation Dependencies.iconSdk
+    testImplementation Dependencies.jacksonDatabind
 
     testImplementation group: 'org.json', name: 'json', version: '20211205'
 
     intTestAnnotationProcessor project(':score-client')
     intTestImplementation project(':score-client')
+    intTestImplementation project(':test-lib')
 }
 
 optimizedJar {

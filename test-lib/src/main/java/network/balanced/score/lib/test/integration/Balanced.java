@@ -57,6 +57,8 @@ public class Balanced {
     public DefaultScoreClient stakedLp;
     public DefaultScoreClient stability;
 
+    public DefaultScoreClient bBaln;
+
     public HashMap<Address, BalancedClient> balancedClients;
 
     public Balanced() throws Exception {
@@ -113,6 +115,8 @@ public class Balanced {
         Hash sicxTx = deployAsync(owner, "Sicx", Map.of("_admin", staking._address()));
 
         baln = getDeploymentResult(owner, balnTx);
+        Hash bBalnTx = deployAsync(owner, "bBaln", Map.of("tokenAddress", baln._address(), "name", "Boosted Baln", "symbol", "bBaln"));
+
         bwt = getDeploymentResult(owner, bwtTx);
         dex = getDeploymentResult(owner, dexTx);
         loans = getDeploymentResult(owner, loansTx);
@@ -126,6 +130,7 @@ public class Balanced {
         stakedLp = getDeploymentResult(owner, stakedLpTx);
         sicx = getDeploymentResult(owner, sicxTx);
         stability = getDeploymentResult(owner, stabilityTx);
+        bBaln = getDeploymentResult(owner, bBalnTx);
 
         ownerClient = new BalancedClient(this, owner);
     }
