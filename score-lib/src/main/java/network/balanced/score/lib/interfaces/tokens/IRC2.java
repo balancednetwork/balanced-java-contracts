@@ -32,13 +32,13 @@ public interface IRC2 {
     @External
     String symbol();
 
-    @External
+    @External(readonly = true)
     BigInteger decimals();
 
-    @External
+    @External(readonly = true)
     BigInteger totalSupply();
 
-    @External
+    @External(readonly = true)
     BigInteger balanceOf(Address _owner);
 
     @External
