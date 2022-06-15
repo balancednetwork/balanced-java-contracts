@@ -882,6 +882,7 @@ public abstract class AbstractDex implements Dex {
 
     void _transfer(Address from, Address to, BigInteger value, Integer id, byte[] data) {
 
+        Context.require(!isLockingPool(id), TAG + ": Nontransferable token id");
         Context.require(value.compareTo(BigInteger.ZERO) >= 0,
                 TAG + ": Transferring value cannot be less than 0.");
 
@@ -889,7 +890,6 @@ public abstract class AbstractDex implements Dex {
         BigInteger fromBalance = poolLpBalanceOfUser.getOrDefault(from, BigInteger.ZERO);
 
         Context.require(fromBalance.compareTo(value) >= 0, TAG + ": Out of balance");
-        Context.require(!isLockingPool(id), TAG + ": Nontransferable token id");
 
         BigInteger toBalance = poolLpBalanceOfUser.getOrDefault(to, BigInteger.ZERO);
         poolLpBalanceOfUser.set(from, fromBalance.subtract(value));
