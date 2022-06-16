@@ -231,7 +231,7 @@ public class DexImpl extends AbstractDex {
     }
 
     @External(readonly = true)
-    public BigInteger balanceOfToken(Address _owner, Address _token) {
+    public BigInteger depositOfUser(Address _owner, Address _token) {
         DictDB<Address, BigInteger> depositDetails = deposit.at(_token);
         return depositDetails.getOrDefault(_owner, BigInteger.ZERO);
     }

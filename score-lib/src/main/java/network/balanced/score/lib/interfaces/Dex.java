@@ -204,6 +204,6 @@ public interface Dex extends AdminAddress, BnusdAddress, GovernanceAddress, Name
     void addLpAddresses(BigInteger _poolId, Address[] _addresses);
 
     @External(readonly = true)
-    BigInteger balanceOfToken(Address _owner, Address _token);
+    BigInteger depositOfUser(Address _owner, Address _token);
 }
 
