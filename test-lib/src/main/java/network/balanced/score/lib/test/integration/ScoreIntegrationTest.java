@@ -84,23 +84,26 @@ public interface ScoreIntegrationTest {
     }
 
     public static void registerPreps() throws Exception {
-        try {
-            Map<String, Object> getPreps = systemScore.getPReps(BigInteger.ONE, BigInteger.valueOf(100));
-        } catch (Exception e) {
-            for (int i = 0; i < 105; i++) {
-                KeyWallet owner = createWalletWithBalance(BigInteger.TEN.pow(24));
-                DefaultScoreClient godClient = new DefaultScoreClient(
-                        chain.getEndpointURL(),
-                        chain.networkId,
-                        owner,
-                        DefaultScoreClient.ZERO_ADDRESS
-                );
-                SystemInterface _systemScore = new SystemInterfaceScoreClient(godClient);
-                SystemInterfaceScoreClient systemScore = (SystemInterfaceScoreClient) _systemScore;
-                systemScore.registerPRep(BigInteger.valueOf(2000).multiply(BigInteger.TEN.pow(18)), "test", "kokoa@example.com", "USA", "New York", "https://icon.kokoa.com", "https://icon.kokoa.com/json/details.json", "localhost:9082");
 
+            Map<String, Object> getPreps = systemScore.getPReps(BigInteger.ONE, BigInteger.valueOf(100));
+            ArrayList<Map<String, Object>> prepArray = (ArrayList<Map<String, Object>>) getPreps.get("preps");
+            int prepCount = prepArray.size();
+            if (prepCount < 100){
+                for (int i = 0; i < 105; i++) {
+                    KeyWallet owner = createWalletWithBalance(BigInteger.TEN.pow(24));
+                    DefaultScoreClient godClient = new DefaultScoreClient(
+                            chain.getEndpointURL(),
+                            chain.networkId,
+                            owner,
+                            DefaultScoreClient.ZERO_ADDRESS
+                    );
+                    SystemInterface _systemScore = new SystemInterfaceScoreClient(godClient);
+                    SystemInterfaceScoreClient systemScore = (SystemInterfaceScoreClient) _systemScore;
+                    systemScore.registerPRep(BigInteger.valueOf(2000).multiply(BigInteger.TEN.pow(18)), "test", "kokoa@example.com", "USA", "New York", "https://icon.kokoa.com", "https://icon.kokoa.com/json/details.json", "localhost:9082");
+
+                }
             }
-        }
+
     }
 
     static KeyWallet createWalletWithBalance(BigInteger amount) throws Exception {
