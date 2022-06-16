@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import network.balanced.score.dependencies.*
+import network.balanced.score.dependencies.Dependencies
 
 version = '0.1.0'
 
@@ -43,7 +43,6 @@ configurations {
 dependencies {
     compileOnly Dependencies.javaeeApi
 
-    implementation Dependencies.javaeeTokens
     implementation Dependencies.javaeeScorex
     implementation Dependencies.minimalJson
     implementation project(':score-lib')

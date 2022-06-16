@@ -41,7 +41,6 @@ import static network.balanced.score.core.dex.utils.Const.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Math.convertToNumber;
 import static score.Context.require;
-import static score.Context.revert;
 
 public class DexImpl extends AbstractDex {
 

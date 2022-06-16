@@ -28,9 +28,7 @@ import score.Address;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class UnitTest extends TestBase {
     public static int scoreCount = 1;
@@ -89,12 +87,7 @@ public class UnitTest extends TestBase {
         expectErrorMessage(setScoreWithoutAdmin, expectedErrorMessage);
 
         testAdmin(contractUnderTest, governanceScore, adminAccount);
-
-        Account nonAdmin = sm.createAccount();
-        expectedErrorMessage = "Reverted(0): Authorization Check: Authorization failed. Caller: " + nonAdmin.getAddress() +
-                " Authorized Caller: " + adminAccount.getAddress();
-        Executable setScoreNotFromAdmin = () -> contractUnderTest.invoke(nonAdmin, setterMethod, parameterToSet);
-        expectErrorMessage(setScoreNotFromAdmin, expectedErrorMessage);
+        assertOnlyCallableByAdmin(contractUnderTest, setterMethod, parameterToSet);
 
         contractUnderTest.invoke(adminAccount, setterMethod, parameterToSet);
         assertEquals(parameterToSet, contractUnderTest.call(getterMethod));
@@ -103,16 +96,11 @@ public class UnitTest extends TestBase {
      public static <T> void testGovernanceControlMethods(Score contractUnderTest, Account governanceScore,
                                                    Account owner, String setterMethod, T parameterToSet,
                                                    String getterMethod) {
-        Account nonGovernance = sm.createAccount();
-        String expectedErrorMessage = "Reverted(0): Authorization Check: Authorization failed. Caller: " + nonGovernance.getAddress() +
-                " Authorized Caller: " + governanceScore.getAddress();
-        System.out.println(expectedErrorMessage);
-        Executable setScoreNotFromGovernance = () -> contractUnderTest.invoke(nonGovernance, setterMethod, parameterToSet);
-        expectErrorMessage(setScoreNotFromGovernance, expectedErrorMessage);
 
-        contractUnderTest.invoke(governanceScore, setterMethod, parameterToSet);
-        assertEquals(parameterToSet, contractUnderTest.call(getterMethod));
-    }
+         assertOnlyCallableByGovernance(contractUnderTest, setterMethod, parameterToSet);
+         contractUnderTest.invoke(governanceScore, setterMethod, parameterToSet);
+         assertEquals(parameterToSet, contractUnderTest.call(getterMethod));
+     }
 
     public static <T> void testOwnerControlMethods(Score contractUnderTest, String setterMethod,
                                                    String getterMethod, T parameterToSet) {
@@ -148,22 +136,25 @@ public class UnitTest extends TestBase {
     }
 
     public static void assertOnlyCallableByGovernance(Score contractUnderTest, String method, Object... params) {
-        Account caller = sm.createAccount();
         Address governance = (Address) contractUnderTest.call("getGovernance");
-        assertNotEquals(caller.getAddress(), governance);
-
-        String expectedErrorMessage = "Reverted(0): Authorization Check: Authorization failed. Caller: " + caller.getAddress() + " Authorized Caller: " + governance;
-        Executable executable = () -> contractUnderTest.invoke(caller, method, params);
-
-        expectErrorMessage(executable, expectedErrorMessage);
+        Account nonGovernance = sm.createAccount();
+        String expectedErrorMessage =
+                "Reverted(0): Authorization Check: Authorization failed. Caller: " + nonGovernance.getAddress() +
+                        " Authorized Caller: " + governance;
+        System.out.println(expectedErrorMessage);
+        Executable setScoreNotFromGovernance = () -> contractUnderTest.invoke(nonGovernance, method, params);
+        expectErrorMessage(setScoreNotFromGovernance, expectedErrorMessage);
     }
-    public static void assertOnlyCallableByAdmin(Score contractUnderTest, String method, Object... params) {
-        Account caller = sm.createAccount();
-        Address admin = (Address) contractUnderTest.call("getAdmin");
-        assertNotEquals(caller.getAddress(), admin);
-        String expectedErrorMessage = "Reverted(0): Authorization Check: Authorization failed. Caller: " + caller.getAddress() + " Authorized Caller: " + admin;
-        Executable executable = () -> contractUnderTest.invoke(caller, method, params);
 
-        expectErrorMessage(executable, expectedErrorMessage);
+    public static void assertOnlyCallableByAdmin(Score contractUnderTest, String method, Object... params) {
+        Address admin = (Address) contractUnderTest.call("getAdmin");
+
+        Account nonAdmin = sm.createAccount();
+        assertNotEquals(nonAdmin.getAddress(), admin);
+        String expectedErrorMessage =
+                "Reverted(0): Authorization Check: Authorization failed. Caller: " + nonAdmin.getAddress() +
+                        " Authorized Caller: " + admin;
+        Executable setScoreNotFromAdmin = () -> contractUnderTest.invoke(nonAdmin, method, params);
+        expectErrorMessage(setScoreNotFromAdmin, expectedErrorMessage);
     }
 }
