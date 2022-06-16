@@ -259,7 +259,7 @@ class StakingTest extends TestBase {
         // Calling from contracts other than sicx fails
         Executable callNotFromSicx = () -> staking.invoke(owner, "tokenFallback", owner.getAddress(),
                 ICX.multiply(BigInteger.ONE), new byte[0]);
-        String expectedErrorMessage = TAG + ": The Staking contract only accepts sICX tokens.: " +
+        String expectedErrorMessage =  "Reverted(0): Staked ICX Manager: The Staking contract only accepts sICX tokens.: " +
                 sicx.getAddress().toString();
         expectErrorMessage(callNotFromSicx, expectedErrorMessage);
 
@@ -275,7 +275,7 @@ class StakingTest extends TestBase {
         BigInteger unstakedAmount = ICX.multiply(BigInteger.valueOf(919L));
         Executable negativeTotalStake = () -> staking.invoke(sicx, "tokenFallback", owner.getAddress(), unstakedAmount,
                 data.toString().getBytes());
-        expectedErrorMessage = TAG + ": Total staked amount can't be set negative";
+        expectedErrorMessage = "Reverted(0): Staked ICX Manager: Total staked amount can't be set negative";
         expectErrorMessage(negativeTotalStake, expectedErrorMessage);
 
         //Successful unstake
@@ -520,7 +520,7 @@ class StakingTest extends TestBase {
 
         doReturn(BigInteger.TEN).when(stakingSpy).claimableICX(any(Address.class));
         doReturn(BigInteger.TWO).when(stakingSpy).totalClaimableIcx();
-        String expectedErrorMessage = TAG + ": No sufficient icx to claim. Requested: 10 Available: 2";
+        String expectedErrorMessage ="Reverted(0): Staked ICX Manager: No sufficient icx to claim. Requested: 10 Available: 2";
         Executable claimMoreThanAvailable = () -> staking.invoke(owner, "claimUnstakedICX", owner.getAddress());
         expectErrorMessage(claimMoreThanAvailable, expectedErrorMessage);
 
@@ -543,19 +543,19 @@ class StakingTest extends TestBase {
 
         Executable duplicatePrep = () -> staking.invoke(owner, "delegate", (Object) new PrepDelegations[]{delegation,
                 delegation});
-        String expectedErrorMessage = TAG + ": You can not delegate same P-Rep twice in a transaction.";
+        String expectedErrorMessage = "Reverted(0): Staked ICX Manager: You can not delegate same P-Rep twice in a transaction.";
         expectErrorMessage(duplicatePrep, expectedErrorMessage);
 
         delegation._votes_in_per = BigInteger.TEN;
         Executable voteLessThanMinimum = () -> staking.invoke(owner, "delegate",
                 (Object) new PrepDelegations[]{delegation});
-        expectedErrorMessage = TAG + ": You should provide delegation percentage more than 0.001%.";
+        expectedErrorMessage = "Reverted(0): Staked ICX Manager: You should provide delegation percentage more than 0.001%.";
         expectErrorMessage(voteLessThanMinimum, expectedErrorMessage);
 
         delegation._votes_in_per = HUNDRED_PERCENTAGE.subtract(BigInteger.ONE);
         Executable totalLessThanHundred = () -> staking.invoke(owner, "delegate",
                 (Object) new PrepDelegations[]{delegation});
-        expectedErrorMessage = TAG + ": Total delegations should be 100%.";
+        expectedErrorMessage ="Reverted(0): Staked ICX Manager: Total delegations should be 100%.";
         expectErrorMessage(totalLessThanHundred, expectedErrorMessage);
     }
 
