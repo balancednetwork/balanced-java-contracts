@@ -163,7 +163,7 @@ public class Asset {
     }
 
     public LinkedListDB getBorrowers(String collateralSymbol) {
-        if (collateralSymbol == SICX_SYMBOL) {
+        if (collateralSymbol.equals(SICX_SYMBOL)) {
             return new LinkedListDB(BORROWER_DB_PREFIX, dbKey);
         } else {
             return new LinkedListDB(collateralSymbol + "|" + BORROWER_DB_PREFIX, dbKey);
