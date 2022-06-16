@@ -89,24 +89,24 @@ public class Position {
         return collateral.at(dbKey).getOrDefault(symbol, BigInteger.ZERO);
     }
 
-    public void setDebt(String symbol, BigInteger value) {
+    public void setDebt(String collateralSymbol, String assetSymbol, BigInteger value) {
         BigInteger previousDebt = BigInteger.ZERO;
-        previousDebt = getDebt(SICX_SYMBOL, symbol);
+        previousDebt = getDebt(collateralSymbol, assetSymbol);
     
-        setLoansPosition(SICX_SYMBOL, symbol, value);
+        setLoansPosition(collateralSymbol, assetSymbol, value);
 
-        BigInteger previousTotalDebt = LoansVariables.totalDebts.getOrDefault(symbol, BigInteger.ZERO);
+        BigInteger previousTotalDebt = LoansVariables.totalDebts.getOrDefault(assetSymbol, BigInteger.ZERO);
         BigInteger currentValue = BigInteger.ZERO;
         if (value != null) {
             currentValue = value;
         }
 
         BigInteger newTotalDebt = previousTotalDebt.add(currentValue).subtract(previousDebt);
-        LoansVariables.totalDebts.set(symbol, newTotalDebt);
+        LoansVariables.totalDebts.set(assetSymbol, newTotalDebt);
         if ( value == null) {
-            AssetDB.getAsset(symbol).getBorrowers(SICX_SYMBOL).remove(getId());
+            AssetDB.getAsset(assetSymbol).getBorrowers(collateralSymbol).remove(getId());
         } else {
-            AssetDB.getAsset(symbol).getBorrowers(SICX_SYMBOL).set(getId(), currentValue);
+            AssetDB.getAsset(assetSymbol).getBorrowers(collateralSymbol).set(getId(), currentValue);
         }
     }
 

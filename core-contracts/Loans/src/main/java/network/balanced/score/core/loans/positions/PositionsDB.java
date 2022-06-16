@@ -50,6 +50,10 @@ public class PositionsDB {
         return new Position(POSITION_DB_PREFIX + "|" + id);
     }
 
+    public static Position uncheckedGet(Integer id) {
+        return new Position(POSITION_DB_PREFIX + "|" + id);
+    }
+
     public static int size() {
         return idFactory.getLastUid();
     }
