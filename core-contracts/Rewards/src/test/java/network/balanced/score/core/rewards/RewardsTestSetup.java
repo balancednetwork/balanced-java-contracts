@@ -17,31 +17,20 @@
 package network.balanced.score.core.rewards;
 
 import com.iconloop.score.test.Account;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
-import org.mockito.Mockito;
-
 import score.Address;
 
 import java.math.BigInteger;
-import java.security.AccessControlContext;
 import java.util.List;
-import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-import network.balanced.score.lib.structs.DistributionPercentage;
+class RewardsTestSetup extends RewardsTestBase {
 
-public class RewardsTestSetup extends RewardsTestBase {
+    private final Account testAccount = Account.newScoreAccount(scoreCount++);
 
-    protected final Account testAccount = Account.newScoreAccount(scoreCount++);
-    
     @BeforeEach
     void setup() throws Exception {
         rewardsScore = sm.deploy(owner, RewardsImpl.class, governance.getAddress());
@@ -152,6 +141,7 @@ public class RewardsTestSetup extends RewardsTestBase {
         assertEquals(continuousRewardsDay, rewardsScore.call("getContinuousRewardsDay"));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void addAndRemoveDataProviders() {
         Address dataProvider1 = Account.newScoreAccount(scoreCount++).getAddress();

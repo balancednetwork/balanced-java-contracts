@@ -18,6 +18,7 @@ package network.balanced.score.lib.test.integration;
 
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.icx.Wallet;
+import foundation.icon.jsonrpc.model.Hash;
 import foundation.icon.jsonrpc.model.TransactionResult;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
@@ -124,6 +125,15 @@ public interface ScoreIntegrationTest {
         return DefaultScoreClient._deploy(chain.getEndpointURL(), chain.networkId, wallet, path, params);
     }
 
+    static Hash deployAsync(Wallet wallet, String name, Map<String, Object> params) {
+        String path = getFilePath(name);
+        return DefaultScoreClient._deployAsync(chain.getEndpointURL(), chain.networkId, wallet, path, params);
+    }
+
+    static DefaultScoreClient getDeploymentResult(Wallet wallet, Hash hash) {
+        return  DefaultScoreClient.getDeploymentResult(chain.getEndpointURL(), chain.networkId, wallet, hash);
+    }
+
     static String getFilePath(String key) {
         String path = System.getProperty(key);
         if (path == null) {
@@ -161,7 +171,7 @@ public interface ScoreIntegrationTest {
         Predicate<TransactionResult.EventLog> predicate =
                 (el) -> el.getIndexed().get(0).equals(signature);
         if (scoreAddress != null) {
-            predicate = predicate.and((el) -> el.getScoreAddress().equals(scoreAddress.toString()));
+            predicate = predicate.and((el) -> el.getScoreAddress().toString().equals(scoreAddress.toString()));
         }
         Stream<T> stream = txr.getEventLogs().stream()
                 .filter(predicate)

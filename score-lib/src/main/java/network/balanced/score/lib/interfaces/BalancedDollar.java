@@ -16,9 +16,12 @@
 
 package network.balanced.score.lib.interfaces;
 
+import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.AdminAddress;
 import network.balanced.score.lib.interfaces.addresses.GovernanceAddress;
 import network.balanced.score.lib.interfaces.addresses.OracleAddress;
+import network.balanced.score.lib.interfaces.tokens.IRC2BurnableInterface;
+import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
 import score.Address;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -26,7 +29,9 @@ import score.annotation.Optional;
 
 import java.math.BigInteger;
 
-public interface BalancedDollar extends GovernanceAddress, AdminAddress, OracleAddress {
+@ScoreInterface
+public interface BalancedDollar extends IRC2BurnableInterface, IRC2Mintable, GovernanceAddress, AdminAddress,
+        OracleAddress {
 
     @External(readonly = true)
     String getPeg();
@@ -51,6 +56,12 @@ public interface BalancedDollar extends GovernanceAddress, AdminAddress, OracleA
 
     @External(readonly = true)
     BigInteger lastPriceInLoop();
+
+    @External
+    void setMinter2(Address _address);
+
+    @External(readonly = true)
+    Address getMinter2();
 
     @External
     void govTransfer(Address _from, Address _to, BigInteger _value, @Optional byte[] _data);

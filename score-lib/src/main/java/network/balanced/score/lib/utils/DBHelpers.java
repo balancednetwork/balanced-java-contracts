@@ -20,7 +20,8 @@ import score.ArrayDB;
 
 public class DBHelpers {
     public static <T>Boolean contains(ArrayDB<T> db, T item) {
-        for (int i = 0; i < db.size(); i++) {
+        int itemsCount = db.size();
+        for (int i = 0; i < itemsCount; i++) {
             if (db.get(i).equals(item)) {
                 return true;
             }
