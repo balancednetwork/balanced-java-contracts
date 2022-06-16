@@ -5,9 +5,6 @@
 # Log file
 *.log
 
-# Vscore
-.vscode
-
 # Keystore
 keystore.json
 
@@ -88,3 +85,9 @@ fabric.properties
 # Ignore Gradle build output directory
 build
 .DS_Store
+.vscode
+.keystores
+.deployment
+gradle.properties
+
+bin/
