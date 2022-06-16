@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package network.balanced.score.lib.utils;
 
 import com.iconloop.score.test.Account;
@@ -31,7 +47,7 @@ public class SetDBTest extends TestBase {
 
         public static final BigInteger ZERO_ADDRESS = BigInteger.ZERO;
         SetDB<BigInteger> addressBagDBUnordered = new SetDB<>("address_bag_unordered", BigInteger.class, null);
-        SetDB<BigInteger> addressBagDBOrdered = new SetDB<>("address_bag_unordered", BigInteger.class, true);
+        SetDB<BigInteger> addressBagDBOrdered = new SetDB<>("address_bag_ordered", BigInteger.class, true);
 
         public DummyScore() {
 
@@ -100,6 +116,7 @@ public class SetDBTest extends TestBase {
         dummyScore = sm.deploy(owner, DummyScore.class);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testUnorderedAddressBag(){
         List<BigInteger> addressBagDBUnordered = new ArrayList<>();
@@ -133,6 +150,7 @@ public class SetDBTest extends TestBase {
         expectErrorMessage(call, "Reverted(0): Item not found " + address5);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testOrderedAddressBag(){
         List<BigInteger> addressBagDBOrdered = new ArrayList<>();
@@ -140,7 +158,6 @@ public class SetDBTest extends TestBase {
         addressBagDBOrdered.add(address2);
         addressBagDBOrdered.add(null);
         addressBagDBOrdered.add(address3);
-        addressBagDBOrdered.add(address4);
         dummyScore.invoke(owner, "addOrderedAddressItems", addressBagDBOrdered);
         List<BigInteger> retAddressBagDBUnordered = (List<BigInteger>) dummyScore.call("getOrderedAddressItems");
         assertEquals(addressBagDBOrdered.size(), retAddressBagDBUnordered.size());
@@ -159,7 +176,6 @@ public class SetDBTest extends TestBase {
 
         dummyScore.invoke(owner, "itemOrderedRemove", ZERO_ADDRESS);
         assertFalse((Boolean) dummyScore.call("itemOrderedContains", ZERO_ADDRESS));
-        assertTrue((Boolean) dummyScore.call("itemOrderedContains", address4));
         Executable call = () -> dummyScore.invoke(owner, "itemUnorderedRemove", address5);
         expectErrorMessage(call, "Reverted(0): Item not found " + address5);
     }
