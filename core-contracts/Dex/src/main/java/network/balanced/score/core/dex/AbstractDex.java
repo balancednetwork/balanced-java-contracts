@@ -37,8 +37,7 @@ import static network.balanced.score.core.dex.DexDBVariables.*;
 import static network.balanced.score.core.dex.utils.Check.isValidPoolId;
 import static network.balanced.score.core.dex.utils.Const.*;
 import static network.balanced.score.lib.utils.Check.*;
-import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
-import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Constants.*;
 import static network.balanced.score.lib.utils.Math.pow;
 
 public abstract class AbstractDex implements Dex {
@@ -305,7 +304,7 @@ public abstract class AbstractDex implements Dex {
     public BigInteger getDay() {
         BigInteger blockTime = BigInteger.valueOf(Context.getBlockTimestamp());
         BigInteger timeDelta = blockTime.subtract(timeOffset.get());
-        return timeDelta.divide(U_SECONDS_DAY);
+        return timeDelta.divide(MICRO_SECONDS_IN_A_DAY);
     }
 
     @External

@@ -21,14 +21,12 @@ import score.Address;
 import java.math.BigInteger;
 
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
-import static network.balanced.score.lib.utils.Math.pow;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 public class Const {
 
     public static final String SICXICX_MARKET_NAME = "sICX/ICX";
 
     public static final int SICXICX_POOL_ID = 1;
-    public final static BigInteger SECOND = pow(BigInteger.TEN,6);
-    public final static BigInteger U_SECONDS_DAY = BigInteger.valueOf(86_400).multiply(SECOND);
     public static final BigInteger MIN_LIQUIDITY = BigInteger.valueOf(1_000);
     public static final BigInteger FEE_SCALE = BigInteger.valueOf(10_000);
     public static final int FIRST_NON_BALANCED_POOL = 6;
@@ -36,7 +34,7 @@ public class Const {
 
     public static final int USDS_BNUSD_ID = 10;
     public static final int IUSDT_BNUSD_ID = 15;
-    public static final BigInteger WITHDRAW_LOCK_TIMEOUT = U_SECONDS_DAY;
+    public static final BigInteger WITHDRAW_LOCK_TIMEOUT = MICRO_SECONDS_IN_A_DAY;
     public static final Address MINT_ADDRESS = EOA_ZERO;
     public static final String TAG = "Balanced DEX";
 
