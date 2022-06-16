@@ -26,10 +26,11 @@ import java.math.BigInteger;
 
 @ScoreInterface
 public interface IRC2 {
-    @External
+
+    @External(readonly = true)
     String name();
 
-    @External
+    @External(readonly = true)
     String symbol();
 
     @External(readonly = true)

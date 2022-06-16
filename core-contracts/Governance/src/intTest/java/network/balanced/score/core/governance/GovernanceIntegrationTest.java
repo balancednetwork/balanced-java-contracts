@@ -127,36 +127,4 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest{
             //success
         }
     }
-    
-    protected static void syncDistributions() {
-        while (!checkDistributionsDone()) {
-            Consumer<TransactionResult> distributeConsumer = result -> {};
-            owner.rewards.distribute(distributeConsumer);
-        }
-    }
-    
-    protected static boolean checkDistributionsDone() {
-        BigInteger day = owner.governance.getDay();
-        Map<String, Object> status = owner.rewards.distStatus();
-        if (hexObjectToInt(status.get("platform_day")) < day.intValue()) {
-            return false;
-        }
-
-        Map<String, String> dataSourceStatus = (Map<String, String>) status.get("source_days");
-        for (String sourceDay : dataSourceStatus.values()) {
-            if (hexObjectToInt(sourceDay) < day.intValue()) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private static int hexObjectToInt(Object hexNumber) {
-        return Integer.parseInt(((String)hexNumber).substring(2), 16);
-    }
-    private static void increaseDay(int nrOfDays) {
-        owner.governance.setTimeOffset(owner.governance.getTimeOffset().subtract(MICRO_SECONDS_IN_A_DAY.multiply(BigInteger.valueOf(nrOfDays))));
-        owner.baln.setTimeOffset();
-    }
 }

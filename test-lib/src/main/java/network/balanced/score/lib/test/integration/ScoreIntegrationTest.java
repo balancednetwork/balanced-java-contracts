@@ -203,7 +203,7 @@ public interface ScoreIntegrationTest {
         };
     }
 
-    public static Consumer<TransactionResult> dummyConsumer() {
+    static Consumer<TransactionResult> dummyConsumer() {
         return (txr) -> {
             
         };

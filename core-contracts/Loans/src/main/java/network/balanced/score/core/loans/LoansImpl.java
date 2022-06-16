@@ -103,6 +103,15 @@ public class LoansImpl implements Loans {
         return loansOn.get();
     }
 
+
+    @External
+    public void removeZeroPosition(int id) {
+        onlyOwner();
+        if (AssetDB.getAsset(BNUSD_SYMBOL).getBorrowers().nodeValue(id).equals(BigInteger.ZERO)){
+            AssetDB.getAsset(BNUSD_SYMBOL).getBorrowers().remove(id);
+        }
+    }
+
     @External
     public void migrateUserData(Address address) {
         Position position = PositionsDB.getPosition(address);
@@ -527,7 +536,6 @@ public class LoansImpl implements Loans {
         Context.require(assetContract.balanceOf(from).compareTo(_value) >= 0, TAG + ": Insufficient balance.");
         Context.require(PositionsDB.hasPosition(from), TAG + ": No debt repaid because, " + from + " does not have a " +
                 "position in Balanced");
-        Context.require(_repay, TAG + ": No debt repaid because, repay=false");
 
         boolean newDay = checkForNewDay();
         BigInteger day = _getDay();
@@ -875,7 +883,9 @@ public class LoansImpl implements Loans {
             BigInteger dollarValue = newDebtValue.multiply(EXA).divide(bnusd.priceInLoop());
             Context.require(dollarValue.compareTo(newLoanMinimum.get()) >= 0, TAG + ": The initial loan of any " +
                     "asset must have a minimum value of " + newLoanMinimum.get().divide(EXA) + " dollars.");
-            AssetDB.getAsset(assetToBorrow).getBorrowers().append(newDebt, position.getId());
+            if (!AssetDB.getAsset(assetToBorrow).getBorrowers().contains(position.getId())) {
+                AssetDB.getAsset(assetToBorrow).getBorrowers().append(newDebt, position.getId());
+            }
         }
 
         BigInteger totalDebt = position.totalDebt(-1, false);

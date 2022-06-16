@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.test;
+package network.balanced.score.util.dummyoracle;
 
 import score.annotation.External;
 import scorex.util.HashMap;

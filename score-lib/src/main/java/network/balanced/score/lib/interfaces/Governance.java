@@ -59,6 +59,9 @@ public interface Governance extends
     void setContinuousRewardsDay(BigInteger _day);
 
     @External
+    void setAdmin(Address contractAddress, Address admin);
+
+    @External
     void setDividendsOnlyToStakedBalnDay(BigInteger _day);
 
     @External(readonly = true)

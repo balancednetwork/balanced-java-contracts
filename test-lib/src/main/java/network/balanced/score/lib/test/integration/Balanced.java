@@ -28,9 +28,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import static network.balanced.score.lib.utils.Constants.*;
-import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
 import static network.balanced.score.lib.test.integration.BalancedUtils.hexObjectToBigInteger;
+import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
 public class Balanced {
     public KeyWallet owner;
@@ -67,7 +67,7 @@ public class Balanced {
         setupAddresses();
         increaseDay(1);
         setupContracts();
-        // delegate(adminWallet);
+//         delegate(adminWallet);
         setupMarkets();
     }
 
@@ -167,13 +167,23 @@ public class Balanced {
         ownerClient.rewards.addDataProvider(stakedLp._address());
         ownerClient.rewards.addDataProvider(dex._address());
         ownerClient.rewards.addDataProvider(loans._address());
+
+        ownerClient.governance.enable_fee_handler();
+        ownerClient.governance.setFeeProcessingInterval(BigInteger.ONE);
+
+        Address[] acceptedAddress=new Address[]{
+                bnusd._address(), sicx._address(),baln._address()
+        };
+        ownerClient.governance.setAcceptedDividendTokens(acceptedAddress);
+        ownerClient.governance.addAcceptedTokens(String.valueOf(bnusd._address()));
+        ownerClient.governance.addAcceptedTokens(String.valueOf(sicx._address()));
+        ownerClient.governance.addAcceptedTokens(String.valueOf(baln._address()));
     }
 
     public void setupMarkets() {
         ownerClient.governance.createBnusdMarket(BigInteger.valueOf(400000).multiply(BigInteger.TEN.pow(18)));
         increaseDay(2);
         syncDistributions();
-
         BigInteger balnBalance = ownerClient.rewards.getBalnHolding(governance._address());
         BigInteger initalPoolDepths = balnBalance.divide(BigInteger.TWO);
         ownerClient.governance.createBalnMarket(initalPoolDepths, initalPoolDepths);
@@ -192,7 +202,7 @@ public class Balanced {
         return newClient(BigInteger.TEN.pow(24));
     }
 
-    public BalancedClient getClient(Address address) throws Exception {
+    public BalancedClient getClient(Address address) {
         return balancedClients.get(address);
     }
 
@@ -223,7 +233,7 @@ public class Balanced {
     }
 
     public void increaseDay(int nrOfDays) {
-        ownerClient.governance.setTimeOffset(ownerClient.governance.getTimeOffset().subtract(U_SECONDS_DAY.multiply(BigInteger.valueOf(nrOfDays))));
+        ownerClient.governance.setTimeOffset(ownerClient.governance.getTimeOffset().subtract(MICRO_SECONDS_IN_A_DAY.multiply(BigInteger.valueOf(nrOfDays))));
         ownerClient.baln.setTimeOffset();
     }
 }

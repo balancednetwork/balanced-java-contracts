@@ -71,5 +71,8 @@ project(':Loans').projectDir = file("core-contracts/Loans")
 include(':Governance')
 project(':Governance').projectDir = file("core-contracts/Governance")
 
+include(':DummyOracle')
+project(':DummyOracle').projectDir = file("util-contracts/DummyOracle")
+
 include(':Dex')
 project(':Dex').projectDir = file("core-contracts/Dex")
