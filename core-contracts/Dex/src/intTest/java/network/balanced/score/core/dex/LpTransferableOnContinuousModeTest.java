@@ -1,11 +1,28 @@
+/*
+ * Copyright (c) 2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package network.balanced.score.core.dex;
 
-import foundation.icon.icx.KeyWallet;
 import foundation.icon.icx.Wallet;
-import foundation.icon.icx.data.Bytes;
 import foundation.icon.score.client.DefaultScoreClient;
 import foundation.icon.score.client.ScoreClient;
-import network.balanced.score.lib.interfaces.*;
+import network.balanced.score.lib.interfaces.Dex;
+import network.balanced.score.lib.interfaces.DexScoreClient;
+import network.balanced.score.lib.interfaces.Governance;
+import network.balanced.score.lib.interfaces.GovernanceScoreClient;
 import network.balanced.score.lib.interfaces.dex.DexTest;
 import network.balanced.score.lib.interfaces.dex.DexTestScoreClient;
 import network.balanced.score.lib.test.integration.Balanced;
@@ -13,7 +30,7 @@ import network.balanced.score.lib.test.integration.Env;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import score.Address;
+import foundation.icon.jsonrpc.Address;
 
 import java.io.File;
 import java.math.BigInteger;
@@ -25,59 +42,66 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class LpTransferableOnContinuousModeTest {
 
-    static Env.Chain chain = Env.getDefaultChain();
-    static Balanced balanced;
-    static Wallet userWallet;
-    static Wallet tUserWallet;
-    static Wallet testOwnerWallet = KeyWallet.load(new Bytes("573b555367d6734ea0fecd0653ba02659fa19f7dc6ee5b93ec781350bda27376"));
-    static DefaultScoreClient dexScoreClient ;
-    static DefaultScoreClient governanceScoreClient;
-    static DefaultScoreClient dexTestBaseScoreClient;
-    static DefaultScoreClient dexTestFourthScoreClient;
+    private static final Env.Chain chain = Env.getDefaultChain();
+    private static Balanced balanced;
+    private static Wallet userWallet;
+    private static Wallet tUserWallet;
+    private static Wallet testOwnerWallet;
+    private static DefaultScoreClient dexScoreClient;
+    private static DefaultScoreClient governanceScoreClient;
+    private static DefaultScoreClient dexTestBaseScoreClient;
+    private static DefaultScoreClient dexTestFourthScoreClient;
 
 
     static DefaultScoreClient daoFund;
-    static Wallet ownerWallet;
-    static File jarfile = new File("src/intTest/java/network/balanced/score/core/dex/testtokens/DexIntTestToken.jar");
+    private static final File jarfile = new File("src/intTest/java/network/balanced/score/core/dex/testtokens" +
+            "/DexIntTestToken.jar");
+
     static {
         try {
             balanced = new Balanced();
-            ownerWallet = balanced.owner;
+            testOwnerWallet = balanced.owner;
             userWallet = ScoreIntegrationTest.createWalletWithBalance(BigInteger.valueOf(800).multiply(EXA));
             tUserWallet = ScoreIntegrationTest.createWalletWithBalance(BigInteger.valueOf(500).multiply(EXA));
-            dexTestBaseScoreClient =  _deploy(chain.getEndpointURL(), chain.networkId, testOwnerWallet, jarfile.getPath(), Map.of("name", "Test Base Token", "symbol", "TB") );
-            dexTestFourthScoreClient =  _deploy(chain.getEndpointURL(), chain.networkId, testOwnerWallet, jarfile.getPath(), Map.of("name", "Test Fourth Token", "symbol", "TFD") );
+            dexTestBaseScoreClient = _deploy(chain.getEndpointURL(), chain.networkId, testOwnerWallet,
+                    jarfile.getPath(), Map.of("name", "Test Base Token", "symbol", "TB"));
+            dexTestFourthScoreClient = _deploy(chain.getEndpointURL(), chain.networkId, testOwnerWallet,
+                    jarfile.getPath(), Map.of("name", "Test Fourth Token", "symbol", "TFD"));
             balanced.setupBalanced();
             dexScoreClient = balanced.dex;
             governanceScoreClient = balanced.governance;
-            ownerWallet = balanced.owner;
 
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println("Error on init test: "+e.getMessage());
+            System.out.println("Error on init test: " + e.getMessage());
         }
 
     }
 
-    static String dexTestBaseScoreAddress = dexTestBaseScoreClient._address().toString();
-    static String dexTestFourthScoreAddress = dexTestFourthScoreClient._address().toString();
+    private static final String dexTestBaseScoreAddress = dexTestBaseScoreClient._address().toString();
+    private static final String dexTestFourthScoreAddress = dexTestFourthScoreClient._address().toString();
 
-    static foundation.icon.jsonrpc.Address userAddress = DefaultScoreClient.address(userWallet.getAddress().toString());
-    static foundation.icon.jsonrpc.Address tUserAddress = DefaultScoreClient.address(tUserWallet.getAddress().toString());
+    private static final Address userAddress = Address.of(userWallet);
+    private static final Address tUserAddress = Address.of(tUserWallet);
 
     @ScoreClient
-    static DexTest ownerDexTestBaseScoreClient = new DexTestScoreClient(chain.getEndpointURL(), chain.networkId, testOwnerWallet, DefaultScoreClient.address(dexTestBaseScoreAddress));;
-    static DexTest ownerDexTestFourthScoreClient = new DexTestScoreClient(chain.getEndpointURL(), chain.networkId, testOwnerWallet, DefaultScoreClient.address(dexTestFourthScoreAddress));;
+    private static final DexTest ownerDexTestBaseScoreClient = new DexTestScoreClient(chain.getEndpointURL(),
+            chain.networkId, testOwnerWallet, DefaultScoreClient.address(dexTestBaseScoreAddress));
+    private static final DexTest ownerDexTestFourthScoreClient = new DexTestScoreClient(chain.getEndpointURL(),
+            chain.networkId, testOwnerWallet, DefaultScoreClient.address(dexTestFourthScoreAddress));
     @ScoreClient
-    static Dex dexUserScoreClient = new DexScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet,
+    private static final Dex dexUserScoreClient = new DexScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid()
+            , userWallet,
             dexScoreClient._address());
 
-    static DexTest userDexTestBaseScoreClient = new DexTestScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet,
+    private static final DexTest userDexTestBaseScoreClient = new DexTestScoreClient(dexScoreClient.endpoint(),
+            dexScoreClient._nid(), userWallet,
             DefaultScoreClient.address(dexTestBaseScoreAddress));
-    static DexTest userDexTestFourthScoreClient = new DexTestScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet,
+    private static final DexTest userDexTestFourthScoreClient = new DexTestScoreClient(dexScoreClient.endpoint(),
+            dexScoreClient._nid(), userWallet,
             DefaultScoreClient.address(dexTestFourthScoreAddress));
     @ScoreClient
-    static Governance governanceDexScoreClient = new GovernanceScoreClient(governanceScoreClient);
+    private static final Governance governanceDexScoreClient = new GovernanceScoreClient(governanceScoreClient);
 
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,17 @@
 
 package network.balanced.score.core.dex;
 
-import foundation.icon.icx.KeyWallet;
 import foundation.icon.icx.Wallet;
-import foundation.icon.icx.data.Bytes;
+import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
 import foundation.icon.score.client.ScoreClient;
 import network.balanced.score.lib.interfaces.*;
-import network.balanced.score.lib.interfaces.dex.*;
+import network.balanced.score.lib.interfaces.dex.DexTest;
+import network.balanced.score.lib.interfaces.dex.DexTestScoreClient;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.Env;
-import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import score.Address;
 import score.UserRevertedException;
 
 import java.io.File;
@@ -37,161 +35,136 @@ import java.util.Map;
 
 import static foundation.icon.score.client.DefaultScoreClient._deploy;
 import static network.balanced.score.core.dex.utils.Const.SICXICX_MARKET_NAME;
+import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class DexIntegrationTest {
+class DexIntegrationTest {
 
-    @ScoreClient
-    static Staking staking;
+    private static final Env.Chain chain = Env.getDefaultChain();
+    private static Balanced balanced;
+    private static Wallet userWallet;
+    private static Wallet tUserWallet;
+    private static Wallet testOwnerWallet;
 
-    @ScoreClient
-    static Loans loans;
+    private static DefaultScoreClient dexScoreClient;
+    private static DefaultScoreClient governanceScoreClient;
+    private static DefaultScoreClient stakingScoreClient;
+    private static DefaultScoreClient sIcxScoreClient;
+    private static DefaultScoreClient balnScoreClient;
+    private static DefaultScoreClient rewardsScoreClient;
+    private static DefaultScoreClient tokenAClient;
+    private static DefaultScoreClient tokenBClient;
+    private static DefaultScoreClient tokenCClient;
+    private static DefaultScoreClient tokenDClient;
+    private static DefaultScoreClient daoFundScoreClient;
 
-    @ScoreClient
-    static Rewards rewards;
+    private static final File jarfile = new File("src/intTest/java/network/balanced/score/core/dex/testtokens" +
+            "/DexIntTestToken.jar");
 
-    @ScoreClient
-    static Sicx sicx;
-
-    @ScoreClient
-    static StakedLP stakedLp;
-
-
-    @ScoreClient
-    static Baln baln;
-
-    static Env.Chain chain = Env.getDefaultChain();
-    static Balanced balanced;
-    static Wallet userWallet;
-    static Wallet tUserWallet;
-    static Wallet testOwnerWallet = KeyWallet.load(new Bytes("573b555367d6734ea0fecd0653ba02659fa19f7dc6ee5b93ec781350bda27376"));
-    static DefaultScoreClient dexScoreClient ;
-    static DefaultScoreClient governanceScoreClient;
-    static DefaultScoreClient stakingScoreClient;
-    static DefaultScoreClient sIcxScoreClient;
-    static DefaultScoreClient dividendScoreClient;
-    static DefaultScoreClient balnScoreClient;
-    static DefaultScoreClient rewardsScoreClient;
-    static DefaultScoreClient feeHandlerScoreClient;
-    static DefaultScoreClient dexIntTestScoreClient;
-    static DefaultScoreClient dexTestBaseScoreClient;
-    static DefaultScoreClient dexTestThirdScoreClient;
-    static DefaultScoreClient dexTestFourthScoreClient;
-
-
-    static DefaultScoreClient daoFund;
-    static Wallet ownerWallet;
-    static File jarfile = new File("src/intTest/java/network/balanced/score/core/dex/testtokens/DexIntTestToken.jar");
     static {
         try {
+            tUserWallet = createWalletWithBalance(BigInteger.valueOf(500).multiply(EXA));
+            userWallet = createWalletWithBalance(BigInteger.valueOf(800).multiply(EXA));
+
             balanced = new Balanced();
-            ownerWallet = balanced.owner;
-            userWallet = ScoreIntegrationTest.createWalletWithBalance(BigInteger.valueOf(800).multiply(EXA));
-            tUserWallet = ScoreIntegrationTest.createWalletWithBalance(BigInteger.valueOf(500).multiply(EXA));
-            dexIntTestScoreClient =  _deploy(chain.getEndpointURL(), chain.networkId, testOwnerWallet, jarfile.getPath(), Map.of("name", "Test Token", "symbol", "TT") );
-            dexTestBaseScoreClient =  _deploy(chain.getEndpointURL(), chain.networkId, testOwnerWallet, jarfile.getPath(), Map.of("name", "Test Base Token", "symbol", "TB") );
-            dexTestThirdScoreClient =  _deploy(chain.getEndpointURL(), chain.networkId, testOwnerWallet, jarfile.getPath(), Map.of("name", "Test Third Token", "symbol", "TTD") );
-            dexTestFourthScoreClient =  _deploy(chain.getEndpointURL(), chain.networkId, testOwnerWallet, jarfile.getPath(), Map.of("name", "Test Fourth Token", "symbol", "TFD") );
+            testOwnerWallet = balanced.owner;
+
+            tokenAClient = _deploy(chain.getEndpointURL(), chain.networkId, testOwnerWallet, jarfile.getPath(),
+                    Map.of("name", "Test Token", "symbol", "TT"));
+            tokenBClient = _deploy(chain.getEndpointURL(), chain.networkId, testOwnerWallet, jarfile.getPath(),
+                    Map.of("name", "Test Base Token", "symbol", "TB"));
+            tokenCClient = _deploy(chain.getEndpointURL(), chain.networkId, testOwnerWallet, jarfile.getPath(),
+                    Map.of("name", "Test Third Token", "symbol", "TTD"));
+            tokenDClient = _deploy(chain.getEndpointURL(), chain.networkId, testOwnerWallet, jarfile.getPath(),
+                    Map.of("name", "Test Fourth Token", "symbol", "TFD"));
+
             balanced.setupBalanced();
             dexScoreClient = balanced.dex;
             governanceScoreClient = balanced.governance;
             stakingScoreClient = balanced.staking;
             sIcxScoreClient = balanced.sicx;
-            dividendScoreClient = balanced.dividends;
             balnScoreClient = balanced.baln;
             rewardsScoreClient = balanced.rewards;
-            feeHandlerScoreClient = balanced.feehandler;
-            daoFund = balanced.daofund;
-            ownerWallet = balanced.owner;
-            staking = new StakingScoreClient(stakingScoreClient);
-            rewards = new RewardsScoreClient(rewardsScoreClient);
-            loans = new LoansScoreClient(balanced.loans);
-            baln = new BalnScoreClient(balnScoreClient);
-            sicx = new SicxScoreClient(sIcxScoreClient);
-            stakedLp = new StakedLPScoreClient(balanced.stakedLp);
+            daoFundScoreClient = balanced.daofund;
+
+            Rewards rewards = new RewardsScoreClient(balanced.rewards);
+            Loans loans = new LoansScoreClient(balanced.loans);
+            Baln baln = new BalnScoreClient(balanced.baln);
+            Sicx sicx = new SicxScoreClient(balanced.sicx);
+            StakedLP stakedLp = new StakedLPScoreClient(balanced.stakedLp);
 
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println("Error on init test: "+e.getMessage());
+            System.out.println("Error on init test: " + e.getMessage());
         }
 
     }
 
-    static String dexTestScoreAddress = dexIntTestScoreClient._address().toString();
-    static String dexTestBaseScoreAddress = dexTestBaseScoreClient._address().toString();
-    static String dexTestThirdScoreAddress = dexTestThirdScoreClient._address().toString();
-    static String dexTestFourthScoreAddress = dexTestFourthScoreClient._address().toString();
+    private static final Address tokenAAddress = tokenAClient._address();
+    private static final Address tokenBAddress = tokenBClient._address();
+    private static final Address tokenCAddress = tokenCClient._address();
+    private static final Address tokenDAddress = tokenDClient._address();
 
-    static foundation.icon.jsonrpc.Address userAddress = DefaultScoreClient.address(userWallet.getAddress().toString());
-    static foundation.icon.jsonrpc.Address tUserAddress = DefaultScoreClient.address(tUserWallet.getAddress().toString());
-
-    @ScoreClient
-    static DexTest ownerDexTestScoreClient = new DexTestScoreClient(chain.getEndpointURL(), chain.networkId, testOwnerWallet, DefaultScoreClient.address(dexTestScoreAddress));;
-    static DexTest ownerDexTestBaseScoreClient = new DexTestScoreClient(chain.getEndpointURL(), chain.networkId, testOwnerWallet, DefaultScoreClient.address(dexTestBaseScoreAddress));;
-    static DexTest ownerDexTestThirdScoreClient = new DexTestScoreClient(chain.getEndpointURL(), chain.networkId, testOwnerWallet, DefaultScoreClient.address(dexTestThirdScoreAddress));;
-    static DexTest ownerDexTestFourthScoreClient = new DexTestScoreClient(chain.getEndpointURL(), chain.networkId, testOwnerWallet, DefaultScoreClient.address(dexTestFourthScoreAddress));;
-    @ScoreClient
-    static Dex dexUserScoreClient = new DexScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet,
-            dexScoreClient._address());
-    @ScoreClient
-    static Staking userStakeScoreClient = new StakingScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet,
-            stakingScoreClient._address());
-    @ScoreClient
-    static Sicx userSicxScoreClient = new SicxScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet,
-            sIcxScoreClient._address());
-    @ScoreClient
-    static Rewards userWalletRewardsClient = new RewardsScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet,
-            rewardsScoreClient._address());
-    @ScoreClient
-    static Baln userBalnScoreClient = new BalnScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet,
-            balnScoreClient._address());
-    static DexTest userDexTestScoreClient = new DexTestScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet,
-            DefaultScoreClient.address(dexTestScoreAddress));
-    static DexTest userDexTestBaseScoreClient = new DexTestScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet,
-            DefaultScoreClient.address(dexTestBaseScoreAddress));
-    static DexTest userDexTestThirdScoreClient = new DexTestScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet,
-            DefaultScoreClient.address(dexTestThirdScoreAddress));
-    static DexTest userDexTestFourthScoreClient = new DexTestScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet,
-            DefaultScoreClient.address(dexTestFourthScoreAddress));
-    @ScoreClient
-    static Governance governanceDexScoreClient = new GovernanceScoreClient(governanceScoreClient);
+    private static final Address userAddress = Address.of(userWallet);
+    private static final Address tUserAddress = Address.of(tUserWallet);
 
     @ScoreClient
-    static Rewards userRewardScoreClient = new RewardsScoreClient(rewardsScoreClient);
+    private static final DexTest ownerDexTestScoreClient = new DexTestScoreClient(chain.getEndpointURL(),
+            chain.networkId, testOwnerWallet, tokenAAddress);
+    private static final DexTest ownerDexTestBaseScoreClient = new DexTestScoreClient(chain.getEndpointURL(),
+            chain.networkId, testOwnerWallet, tokenBAddress);
+    private static final DexTest ownerDexTestThirdScoreClient = new DexTestScoreClient(chain.getEndpointURL(),
+            chain.networkId, testOwnerWallet, tokenCAddress);
+    private static final DexTest ownerDexTestFourthScoreClient = new DexTestScoreClient(chain.getEndpointURL(),
+            chain.networkId, testOwnerWallet, tokenDAddress);
+    @ScoreClient
+    private static final Dex dexUserScoreClient = new DexScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid()
+            , userWallet, dexScoreClient._address());
+    private static final Staking userStakeScoreClient = new StakingScoreClient(dexScoreClient.endpoint(),
+            dexScoreClient._nid(), userWallet, stakingScoreClient._address());
+    private static final Sicx userSicxScoreClient = new SicxScoreClient(dexScoreClient.endpoint(),
+            dexScoreClient._nid(), userWallet, sIcxScoreClient._address());
+    static Rewards userWalletRewardsClient = new RewardsScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(),
+            userWallet, rewardsScoreClient._address());
+    private static final Baln userBalnScoreClient = new BalnScoreClient(dexScoreClient.endpoint(),
+            dexScoreClient._nid(), userWallet, balnScoreClient._address());
+    private static final DexTest userDexTestScoreClient = new DexTestScoreClient(dexScoreClient.endpoint(),
+            dexScoreClient._nid(), userWallet, tokenAAddress);
+    private static final DexTest userDexTestBaseScoreClient = new DexTestScoreClient(dexScoreClient.endpoint(),
+            dexScoreClient._nid(), userWallet, tokenBAddress);
+    private static final DexTest userDexTestThirdScoreClient = new DexTestScoreClient(dexScoreClient.endpoint(),
+            dexScoreClient._nid(), userWallet, tokenCAddress);
+    private static final DexTest userDexTestFourthScoreClient = new DexTestScoreClient(dexScoreClient.endpoint(),
+            dexScoreClient._nid(), userWallet, tokenDAddress);
 
     @ScoreClient
-    static DAOfund userDaoFundScoreClient = new DAOfundScoreClient(daoFund);
+    private static final Governance governanceDexScoreClient = new GovernanceScoreClient(governanceScoreClient);
+    private static final Rewards userRewardScoreClient = new RewardsScoreClient(rewardsScoreClient);
+    @ScoreClient
+    private static final DAOfund userDaoFundScoreClient = new DAOfundScoreClient(daoFundScoreClient);
+
+    private static final DefaultScoreClient userClient = new DefaultScoreClient(chain.getEndpointURL(),
+            chain.networkId, userWallet, DefaultScoreClient.ZERO_ADDRESS);
+
+    private static final DefaultScoreClient tUserClient = new DefaultScoreClient(chain.getEndpointURL(),
+            chain.networkId, tUserWallet, DefaultScoreClient.ZERO_ADDRESS);
 
 
     @Test
     @Order(1)
-    void testGovernanceAddress(){
+    void testGovernanceAddress() {
         assertEquals("Balanced DEX", dexUserScoreClient.name());
-        Address governanceAddress = dexUserScoreClient.getGovernance();
+        score.Address governanceAddress = dexUserScoreClient.getGovernance();
         assertEquals(governanceAddress, governanceScoreClient._address());
     }
 
     @Test
     @Order(2)
     void testAdminAddress() {
-        Address adminAddress = dexUserScoreClient.getGovernance();
+        score.Address adminAddress = dexUserScoreClient.getGovernance();
         assertEquals(adminAddress, governanceScoreClient._address());
     }
-
-   static DefaultScoreClient userClient  = new DefaultScoreClient(
-            chain.getEndpointURL(),
-            chain.networkId,
-            userWallet,
-            DefaultScoreClient.ZERO_ADDRESS
-    );
-
-    static DefaultScoreClient tUserClient  = new DefaultScoreClient(
-            chain.getEndpointURL(),
-            chain.networkId,
-            tUserWallet,
-            DefaultScoreClient.ZERO_ADDRESS
-    );
 
     @Test
     @Order(3)
@@ -240,7 +213,7 @@ public class DexIntegrationTest {
         assertEquals(hexToBigInteger(poolStats.get("quote").toString()).divide(EXA), BigInteger.valueOf(150));
         assertEquals(hexToBigInteger(poolStats.get("total_supply").toString()).divide(EXA), BigInteger.valueOf(150));
 
-        System.out.println(" day is: "+ dexUserScoreClient.getDay());
+        System.out.println(" day is: " + dexUserScoreClient.getDay());
         waitForADay();
         //release lock by distributing rewards
         balanced.syncDistributions();
@@ -249,12 +222,11 @@ public class DexIntegrationTest {
         assertNotNull(sicxEarning);
         dexUserScoreClient.withdrawSicxEarnings(sicxEarning);
 
-        UserRevertedException exception = assertThrows(UserRevertedException.class, () -> {
-            dexUserScoreClient.cancelSicxicxOrder();
-        });
+        UserRevertedException exception = assertThrows(UserRevertedException.class,
+                dexUserScoreClient::cancelSicxicxOrder);
         assertEquals(exception.getMessage(), "Reverted(0)");  //locked
         //cancel order
-        // this cal was working on 1 min day, but not working for offset manipulation.
+        // this cal was working on 1-min day, but not working for offset manipulation.
         //waitForADay();
         //balanced.syncDistributions();
         //dexUserScoreClient.cancelSicxicxOrder();
@@ -292,11 +264,11 @@ public class DexIntegrationTest {
         byte[] tokenDeposit = "{\"method\":\"_deposit\",\"params\":{\"none\":\"none\"}}".getBytes();
         this.mintAndTransferTestTokens(tokenDeposit);
         BigInteger withdrawAMount = BigInteger.valueOf(50);
-        BigInteger balanceBeforeWithdraw = dexUserScoreClient.depositOfUser(userAddress, DefaultScoreClient.address(dexTestScoreAddress));
+        BigInteger balanceBeforeWithdraw = dexUserScoreClient.depositOfUser(userAddress, tokenAAddress);
         //withdraw test token
-        dexUserScoreClient.withdraw(DefaultScoreClient.address(dexTestScoreAddress), withdrawAMount);
+        dexUserScoreClient.withdraw(tokenAAddress, withdrawAMount);
 
-        BigInteger balanceAfterWithdraw = dexUserScoreClient.depositOfUser(userAddress, DefaultScoreClient.address(dexTestScoreAddress));
+        BigInteger balanceAfterWithdraw = dexUserScoreClient.depositOfUser(userAddress, tokenAAddress);
 
         assert balanceBeforeWithdraw.equals(balanceAfterWithdraw.add(withdrawAMount));
     }
@@ -307,28 +279,34 @@ public class DexIntegrationTest {
         byte[] tokenDeposit = "{\"method\":\"_deposit\",\"params\":{\"none\":\"none\"}}".getBytes();
         mintAndTransferTestTokens(tokenDeposit);
         transferSicxToken();
-        dexUserScoreClient.add(Address.fromString(dexTestBaseScoreAddress), Address.fromString(sIcxScoreClient._address().toString()), BigInteger.valueOf(50).multiply(EXA), BigInteger.valueOf(25).multiply(EXA), false);
+        dexUserScoreClient.add(tokenBAddress, Address.fromString(sIcxScoreClient._address().toString()),
+                BigInteger.valueOf(50).multiply(EXA), BigInteger.valueOf(25).multiply(EXA), false);
         mintAndTransferTestTokens(tokenDeposit);
         transferSicxToken();
-        dexUserScoreClient.add(Address.fromString(sIcxScoreClient._address().toString()), Address.fromString(dexTestScoreAddress), BigInteger.valueOf(50).multiply(EXA), BigInteger.valueOf(25).multiply(EXA), false);
+        dexUserScoreClient.add(Address.fromString(sIcxScoreClient._address().toString()), tokenAAddress,
+                BigInteger.valueOf(50).multiply(EXA), BigInteger.valueOf(25).multiply(EXA), false);
         mintAndTransferTestTokens(tokenDeposit);
         transferSicxToken();
-        dexUserScoreClient.add(Address.fromString(dexTestBaseScoreAddress), Address.fromString(dexTestScoreAddress), BigInteger.valueOf(50).multiply(EXA), BigInteger.valueOf(25).multiply(EXA), false);
+        dexUserScoreClient.add(tokenBAddress, tokenAAddress, BigInteger.valueOf(50).multiply(EXA),
+                BigInteger.valueOf(25).multiply(EXA), false);
         mintAndTransferTestTokens(tokenDeposit);
         transferSicxToken();
-        dexUserScoreClient.add(Address.fromString(sIcxScoreClient._address().toString()), Address.fromString(dexTestThirdScoreAddress), BigInteger.valueOf(50).multiply(EXA), BigInteger.valueOf(25).multiply(EXA), false);
+        dexUserScoreClient.add(Address.fromString(sIcxScoreClient._address().toString()), tokenCAddress,
+                BigInteger.valueOf(50).multiply(EXA), BigInteger.valueOf(25).multiply(EXA), false);
         mintAndTransferTestTokens(tokenDeposit);
         transferSicxToken();
-        dexUserScoreClient.add(Address.fromString(dexTestBaseScoreAddress), Address.fromString(dexTestThirdScoreAddress), BigInteger.valueOf(50).multiply(EXA), BigInteger.valueOf(25).multiply(EXA), false);
+        dexUserScoreClient.add(tokenBAddress, tokenCAddress, BigInteger.valueOf(50).multiply(EXA),
+                BigInteger.valueOf(25).multiply(EXA), false);
 
         waitForADay();
 
         //take pool id > 5 so that it can be transferred
-        BigInteger poolId = dexUserScoreClient.getPoolId(Address.fromString(dexTestBaseScoreAddress), Address.fromString(dexTestThirdScoreAddress));
+        BigInteger poolId = dexUserScoreClient.getPoolId(tokenBAddress, tokenCAddress);
         System.out.println(poolId);
         BigInteger balance = dexUserScoreClient.balanceOf(userAddress, poolId);
         assertNotEquals(balance, BigInteger.ZERO);
-        dexUserScoreClient.transfer(Address.fromString(tUserAddress.toString()), BigInteger.valueOf(5).multiply(EXA), poolId, new byte[0]);
+        dexUserScoreClient.transfer(Address.fromString(tUserAddress.toString()), BigInteger.valueOf(5).multiply(EXA),
+                poolId, new byte[0]);
         BigInteger tUsersBalance = dexUserScoreClient.balanceOf(Address.fromString(tUserAddress.toString()), poolId);
         assert BigInteger.ZERO.compareTo(tUsersBalance) < 0;
 
@@ -378,7 +356,7 @@ public class DexIntegrationTest {
         userSicxScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(60).multiply(EXA), tokenDeposit);
     }
 
-    void mintAndTransferTestTokens(byte[] tokenDeposit){
+    void mintAndTransferTestTokens(byte[] tokenDeposit) {
 
         ownerDexTestScoreClient.mintTo(userAddress, BigInteger.valueOf(200).multiply(EXA));
         ownerDexTestBaseScoreClient.mintTo(userAddress, BigInteger.valueOf(200).multiply(EXA));
@@ -387,24 +365,27 @@ public class DexIntegrationTest {
 
 
         //deposit base token
-        userDexTestBaseScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(190).multiply(EXA), tokenDeposit);
+        userDexTestBaseScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(190).multiply(EXA),
+                tokenDeposit);
         //deposit quote token
         userDexTestScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(190).multiply(EXA), tokenDeposit);
-        userDexTestThirdScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(190).multiply(EXA), tokenDeposit);
-        userDexTestFourthScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(190).multiply(EXA), tokenDeposit);
+        userDexTestThirdScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(190).multiply(EXA),
+                tokenDeposit);
+        userDexTestFourthScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(190).multiply(EXA),
+                tokenDeposit);
 
         //check isQuoteCoinAllowed for test token if not added
-        if(!dexUserScoreClient.isQuoteCoinAllowed(Address.fromString(dexTestScoreAddress))) {
-            governanceDexScoreClient.dexAddQuoteCoin(Address.fromString(dexTestScoreAddress));
+        if (!dexUserScoreClient.isQuoteCoinAllowed(tokenAAddress)) {
+            governanceDexScoreClient.dexAddQuoteCoin(tokenAAddress);
         }
-        if(!dexUserScoreClient.isQuoteCoinAllowed(Address.fromString(dexTestBaseScoreAddress))) {
-            governanceDexScoreClient.dexAddQuoteCoin(Address.fromString(dexTestBaseScoreAddress));
+        if (!dexUserScoreClient.isQuoteCoinAllowed(tokenBAddress)) {
+            governanceDexScoreClient.dexAddQuoteCoin(tokenBAddress);
         }
-        if(!dexUserScoreClient.isQuoteCoinAllowed(Address.fromString(dexTestThirdScoreAddress))) {
-            governanceDexScoreClient.dexAddQuoteCoin(Address.fromString(dexTestThirdScoreAddress));
+        if (!dexUserScoreClient.isQuoteCoinAllowed(tokenCAddress)) {
+            governanceDexScoreClient.dexAddQuoteCoin(tokenCAddress);
         }
-        if(!dexUserScoreClient.isQuoteCoinAllowed(Address.fromString(dexTestFourthScoreAddress))) {
-            governanceDexScoreClient.dexAddQuoteCoin(Address.fromString(dexTestFourthScoreAddress));
+        if (!dexUserScoreClient.isQuoteCoinAllowed(tokenDAddress)) {
+            governanceDexScoreClient.dexAddQuoteCoin(tokenDAddress);
         }
     }
 
@@ -415,6 +396,5 @@ public class DexIntegrationTest {
     BigInteger hexToBigInteger(String hex){
         return new BigInteger(hex.replace("0x", ""), 16);
     }
-
 
 }
