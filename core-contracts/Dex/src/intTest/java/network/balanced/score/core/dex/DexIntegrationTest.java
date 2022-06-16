@@ -238,11 +238,37 @@ public class DexIntegrationTest {
         });
         assertEquals(exception.getMessage(), "Reverted(0)");  //locked
         //cancel order
-        waitForADay();
-        balanced.syncDistributions();
         // this cal was working on 1 min day, but not working for offset manipulation.
+        //waitForADay();
+        //balanced.syncDistributions();
         //dexUserScoreClient.cancelSicxicxOrder();
     }
+
+    /*@Test
+    @Order(4)
+    void testBalnPoolTokenTransferableOnContinuousRewards(){
+
+        if(dexUserScoreClient.getContinuousRewardsDay()==null) {
+            governanceDexScoreClient.setContinuousRewardsDay(dexUserScoreClient.getDay().add(BigInteger.ONE));
+        }
+        waitForADay();
+        balanced.syncDistributions();
+        //continuous starts
+        byte[] tokenDeposit = "{\"method\":\"_deposit\",\"params\":{\"none\":\"none\"}}".getBytes();
+        mintAndTransferTestTokens(tokenDeposit);
+        dexUserScoreClient.add(Address.fromString(dexTestBaseScoreAddress), Address.fromString(dexTestFourthScoreClient._address().toString()), BigInteger.valueOf(50).multiply(EXA), BigInteger.valueOf(50).multiply(EXA), false);
+        BigInteger poolId = dexUserScoreClient.getPoolId(Address.fromString(dexTestBaseScoreAddress), Address.fromString(dexTestFourthScoreAddress));
+        //assert pool id is less than 5
+        assert poolId.compareTo(BigInteger.valueOf(6)) < 0;
+        BigInteger liquidity = (BigInteger.valueOf(50).multiply(EXA).multiply(BigInteger.valueOf(50).multiply(EXA))).sqrt();
+        BigInteger balance = dexUserScoreClient.balanceOf(userAddress, poolId);
+        BigInteger tUsersPrevBalance = dexUserScoreClient.balanceOf(tUserAddress, poolId);
+
+        assertEquals(balance, liquidity);
+        dexUserScoreClient.transfer(tUserAddress, BigInteger.valueOf(5).multiply(EXA), poolId, new byte[0]);
+        BigInteger tUsersBalance = dexUserScoreClient.balanceOf(tUserAddress, poolId);
+        assertEquals(tUsersPrevBalance.add(BigInteger.valueOf(5).multiply(EXA)), tUsersBalance);
+    }*/
 
     @Test
     @Order(6)
@@ -326,32 +352,6 @@ public class DexIntegrationTest {
         System.out.println("next updated baln holding: "+nextUpdatedBalnHolding);
         assert updatedBalnHolding.compareTo(nextUpdatedBalnHolding)<0;
 
-    }
-
-    @Test
-    @Order(9)
-    void testBalnPoolTokenTransferableOnContinuousRewards(){
-
-        if(dexUserScoreClient.getContinuousRewardsDay()==null) {
-            governanceDexScoreClient.setContinuousRewardsDay(dexUserScoreClient.getDay().add(BigInteger.ONE));
-        }
-        waitForADay();
-        balanced.syncDistributions();
-        //continuous starts
-        byte[] tokenDeposit = "{\"method\":\"_deposit\",\"params\":{\"none\":\"none\"}}".getBytes();
-        mintAndTransferTestTokens(tokenDeposit);
-        dexUserScoreClient.add(Address.fromString(dexTestBaseScoreAddress), Address.fromString(dexTestFourthScoreClient._address().toString()), BigInteger.valueOf(50).multiply(EXA), BigInteger.valueOf(50).multiply(EXA), false);
-        BigInteger poolId = dexUserScoreClient.getPoolId(Address.fromString(dexTestBaseScoreAddress), Address.fromString(dexTestFourthScoreAddress));
-        //assert pool id is less than 5
-        assert poolId.compareTo(BigInteger.valueOf(6)) < 0;
-        BigInteger liquidity = (BigInteger.valueOf(50).multiply(EXA).multiply(BigInteger.valueOf(50).multiply(EXA))).sqrt();
-        BigInteger balance = dexUserScoreClient.balanceOf(userAddress, poolId);
-        BigInteger tUsersPrevBalance = dexUserScoreClient.balanceOf(tUserAddress, poolId);
-
-        assertEquals(balance, liquidity);
-        dexUserScoreClient.transfer(tUserAddress, BigInteger.valueOf(5).multiply(EXA), poolId, new byte[0]);
-        BigInteger tUsersBalance = dexUserScoreClient.balanceOf(tUserAddress, poolId);
-        assertEquals(tUsersPrevBalance.add(BigInteger.valueOf(5).multiply(EXA)), tUsersBalance);
     }
 
     void transferSicxToken(){
