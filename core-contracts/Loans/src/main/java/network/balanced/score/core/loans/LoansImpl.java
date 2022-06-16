@@ -824,6 +824,19 @@ public class LoansImpl implements Loans {
         return staking.get();
     }
 
+
+    @External
+    public void setOracle(Address _address) {
+        only(admin);
+        isContract(_address);
+        oracle.set(_address);
+    }
+
+    @External(readonly = true)
+    public Address getOracle() {
+        return oracle.get();
+    }
+
     @External
     public void setMiningRatio(BigInteger _ratio) {
         only(admin);
