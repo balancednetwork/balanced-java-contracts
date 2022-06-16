@@ -153,7 +153,7 @@ public class DexImpl extends AbstractDex {
             case "_deposit":
                 DictDB<Address, BigInteger> depositDetails = deposit.at(fromToken);
                 BigInteger userBalance = depositDetails.getOrDefault(_from, BigInteger.ZERO);
-                    userBalance = userBalance.add(_value);
+                userBalance = userBalance.add(_value);
                 depositDetails.set(_from, userBalance);
                 Deposit(fromToken, _from, _value);
 
@@ -227,7 +227,7 @@ public class DexImpl extends AbstractDex {
         depositDetails.set(sender, deposit_amount.subtract(_value));
 
         Withdraw(_token, sender, _value);
-            Context.call(_token, "transfer", sender, _value);
+        Context.call(_token, "transfer", sender, _value);
     }
 
     @External
