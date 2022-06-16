@@ -352,7 +352,6 @@ public class DexIntegrationTest {
         dexUserScoreClient.transfer(tUserAddress, BigInteger.valueOf(5).multiply(EXA), poolId, new byte[0]);
         BigInteger tUsersBalance = dexUserScoreClient.balanceOf(tUserAddress, poolId);
         assertEquals(tUsersPrevBalance.add(BigInteger.valueOf(5).multiply(EXA)), tUsersBalance);
-        //assert tUsersPrevBalance.compareTo(tUsersBalance) < 0;
     }
 
     void transferSicxToken(){
