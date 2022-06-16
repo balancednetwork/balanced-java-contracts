@@ -81,5 +81,163 @@
       }
     },
     "order": 6.0
+  },
+  {
+    "contract": "daofund",
+    "method": "addAddressToSetdb",
+    "__args__": {
+
+    },
+    "order": 7.0
+  },
+  {
+    "contract": "rewards",
+    "method": "addDataProvider",
+    "__args__": {
+      "__property_args__": {
+        "_source": "dex"
+      }
+    },
+    "order": 8.0
+  },
+  {
+    "contract": "rewards",
+    "method": "addDataProvider",
+    "__args__": {
+      "__property_args__": {
+        "_source": "loans"
+      }
+    },
+    "order": 9.0
+  },
+  {
+    "contract": "rewards",
+    "method": "addDataProvider",
+    "__args__": {
+      "__property_args__": {
+        "_source": "stakedLp"
+      }
+    },
+    "order": 10.0
+  },
+  {
+    "contract": "governance",
+    "method": "addAcceptedTokens",
+    "__args__": {
+      "__property_args__": {
+        "_token": "sicx"
+      }
+    },
+    "order": 11.0
+  },
+  {
+    "contract": "governance",
+    "method": "addAcceptedTokens",
+    "__args__": {
+      "__property_args__": {
+        "_token": "bnUSD"
+      }
+    },
+    "order": 12.0
+  },
+  {
+    "contract": "governance",
+    "method": "addAcceptedTokens",
+    "__args__": {
+      "__property_args__": {
+        "_token": "baln"
+      }
+    },
+    "order": 13.0
+  },
+  {
+    "contract": "governance",
+    "method": "setAdmin",
+    "__args__": {
+      "__property_args__": {
+        "contractAddress": "dividends",
+        "admin": "owner"
+      }
+    },
+    "order": 14.0
+  },
+  {
+    "contract": "dividends",
+    "method": "setDistributionActivationStatus",
+    "__args__": {
+      "__property_args__": {
+        "_status": 1
+      }
+    },
+    "order": 15.0
+  },
+  {
+    "contract": "governance",
+    "method": "setAdmin",
+    "__args__": {
+      "__property_args__": {
+        "contractAddress": "dividends",
+        "admin": "governance"
+      }
+    },
+    "order": 16.0
+  },
+  {
+    "contract": "governance",
+    "method": "setAcceptedDividendTokens",
+    "__args__": {
+      "__property_args__": {
+        "_tokens": ["sicx", "bnUSD", "baln"]
+      }
+    },
+    "order": 17.0
+  },
+  {
+    "contract": "governance",
+    "method": "enable_fee_handler",
+    "__args__": {
+
+    },
+    "order": 18.0
+  },
+  {
+    "contract": "governance",
+    "method": "setFeeProcessingInterval",
+    "__args__": {
+      "__property_args__": {
+        "_interval": 100
+      }
+    },
+    "order": 19.0
+  },
+  {
+    "contract": "multicall",
+    "method": "setDexAddress",
+    "__args__": {
+      "__property_args__": {
+        "dex": "dex"
+      }
+    },
+    "order": 20.0
+  },
+  {
+    "contract": "governance",
+    "method": "setContinuousRewardsDay",
+    "__args__": {
+      "__property_args__": {
+        "_day": 1
+      }
+    },
+    "order": 21.0
+  },
+  {
+    "contract": "governance",
+    "method": "setDividendsOnlyToStakedBalnDay",
+    "__args__": {
+      "__property_args__": {
+        "_day": 2
+      }
+    },
+    "order": 22.0
   }
 ]
