@@ -105,6 +105,11 @@ subprojects {
         options.compilerArgs += ['-parameters']
     }
 
+    tasks.named('test') {
+        // Use JUnit Platform for unit tests.
+        useJUnitPlatform()
+    }
+
     scoreIntegrationTest.put('env.props', new File(project(':test-lib').projectDir, 'conf/env.props'));
 
     //remove as more contracts are added to master
@@ -114,16 +119,17 @@ subprojects {
     scoreIntegrationTest.put('Dex', new File(project(':test-lib').projectDir, 'python-contracts/dex.zip'));
     scoreIntegrationTest.put('Feehandler', new File(project(':test-lib').projectDir, 'python-contracts/feehandler.zip'));
     scoreIntegrationTest.put('Loans', new File(project(':test-lib').projectDir, 'python-contracts/loans.zip'));
-//     scoreIntegrationTest.put('Rebalancing', new File(project(':test-lib').projectDir, 'python-contracts/rebalancing.zip'));
-     scoreIntegrationTest.put('Rewards', new File(project(':test-lib').projectDir, 'python-contracts/rewards.zip'));
+    scoreIntegrationTest.put('Rebalancing', new File(project(':test-lib').projectDir, 'python-contracts/rebalancing.zip'));
+    scoreIntegrationTest.put('Rewards', new File(project(':test-lib').projectDir, 'python-contracts/rewards.zip'));
     scoreIntegrationTest.put('Sicx', new File(project(':test-lib').projectDir, 'python-contracts/sicx.zip'));
     scoreIntegrationTest.put('Bnusd', new File(project(':test-lib').projectDir, 'python-contracts/bnusd.zip'));
-    scoreIntegrationTest.put('daofund', new File(project(':test-lib').projectDir, 'python-contracts/daofund.zip'));
-//    scoreIntegrationTest.put('Dividends', new File(project(':test-lib').projectDir, 'python-contracts/dividends.zip'));
+    scoreIntegrationTest.put('DAOfund', new File(project(':test-lib').projectDir, 'python-contracts/daofund.zip'));
+    scoreIntegrationTest.put('Dividends', new File(project(':test-lib').projectDir, 'python-contracts/dividends.zip'));
     scoreIntegrationTest.put('Oracle', new File(project(':test-lib').projectDir, 'python-contracts/oracle.zip'));
     scoreIntegrationTest.put('Reserve', new File(project(':test-lib').projectDir, 'python-contracts/reserve.zip'));
     scoreIntegrationTest.put('Router', new File(project(':test-lib').projectDir, 'python-contracts/router.zip'));
     scoreIntegrationTest.put('Staking', new File(project(':test-lib').projectDir, 'python-contracts/staking.zip'));
+    scoreIntegrationTest.put('Staked LP', new File(project(':test-lib').projectDir, 'python-contracts/stakedLp.zip'));
 
     afterEvaluate { project ->
         scoreIntegrationTest.put(project.name, project.getTasks().getByName("optimizedJar").outputJarName)
