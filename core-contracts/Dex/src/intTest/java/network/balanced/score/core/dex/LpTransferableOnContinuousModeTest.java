@@ -108,13 +108,6 @@ public class LpTransferableOnContinuousModeTest {
     @Test
     @Order(4)
     void testBalnPoolTokenTransferableOnContinuousRewards(){
-
-        if(dexUserScoreClient.getContinuousRewardsDay()==null) {
-            governanceDexScoreClient.setContinuousRewardsDay(dexUserScoreClient.getDay().add(BigInteger.ONE));
-        }
-        waitForADay();
-        balanced.syncDistributions();
-        //continuous starts
         byte[] tokenDeposit = "{\"method\":\"_deposit\",\"params\":{\"none\":\"none\"}}".getBytes();
         mintAndTransferTestTokens(tokenDeposit);
         dexUserScoreClient.add(Address.fromString(dexTestBaseScoreAddress), Address.fromString(dexTestFourthScoreClient._address().toString()), BigInteger.valueOf(50).multiply(EXA), BigInteger.valueOf(50).multiply(EXA), false);

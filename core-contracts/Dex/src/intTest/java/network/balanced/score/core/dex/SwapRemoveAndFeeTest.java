@@ -139,17 +139,13 @@ public class SwapRemoveAndFeeTest {
         assert updatedFeeBalanceOfTestToken.compareTo(feeBalanceOfTestToken)>0;
         assertEquals( BigInteger.valueOf(150).multiply(EXA).divide(BigInteger.valueOf(1000)),updatedFeeBalanceOfTestToken);
 
-        UserRevertedException exception = assertThrows(UserRevertedException.class, () -> dexUserScoreClient.remove(poolId, BigInteger.valueOf(5), true));
-        assertEquals(exception.getMessage(), "Reverted(0)");  //locked
-
         waitForADay();
         balanced.syncDistributions();
         BigInteger withdrawAmount = BigInteger.valueOf(5);
         BigInteger balanceBefore = dexUserScoreClient.balanceOf(userAddress, poolId);
-        // this cal was working on 1-min day, but not working for offset manipulation.
-        //dexUserScoreClient.remove(poolId, BigInteger.valueOf(5), true);
+        dexUserScoreClient.remove(poolId, BigInteger.valueOf(5), true);
         BigInteger balanceAfter = dexUserScoreClient.balanceOf(userAddress, poolId);
-        //assert balanceAfter.equals(balanceBefore.subtract(withdrawAmount));
+        assert balanceAfter.equals(balanceBefore.subtract(withdrawAmount));
     }
 
     void mintAndTransferTestTokens(byte[] tokenDeposit){

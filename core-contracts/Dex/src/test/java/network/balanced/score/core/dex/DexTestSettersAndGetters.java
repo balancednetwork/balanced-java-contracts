@@ -158,20 +158,6 @@ public class DexTestSettersAndGetters extends DexTestBase {
     }
 
     @Test
-    void setGetContinuousRewardsDay() {
-        // Arrange.
-        BigInteger continuousRewardsDay = BigInteger.valueOf(2);
-
-        // Act.
-        dexScore.invoke(governanceScore, "setContinuousRewardsDay", continuousRewardsDay);
-
-        // Assert.
-        BigInteger retrievedContinuousRewardsDay = (BigInteger) dexScore.call("getContinuousRewardsDay");
-        assertEquals(continuousRewardsDay, retrievedContinuousRewardsDay);
-        assertOnlyCallableByGovernance(dexScore, "setContinuousRewardsDay", continuousRewardsDay);
-    }
-
-    @Test
     void getIcxBalance() {
         // Arrange.
         Account supplier = sm.createAccount();
@@ -205,25 +191,6 @@ public class DexTestSettersAndGetters extends DexTestBase {
          BigInteger retrievedValue = (BigInteger) dexScore.call("getDeposit", bnusdScore.getAddress(), depositor.getAddress());
          assertEquals(value, retrievedValue);
 
-    }
-
-    @Test
-    void getWithdrawLock() {
-        // Arrange.
-        BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
-        BigInteger balnValue = BigInteger.valueOf(350).multiply(EXA);
-        BigInteger timestamp = BigInteger.valueOf(sm.getBlock().getTimestamp());
-        BigInteger poolId = BigInteger.TWO;
-
-        // Act.
-        supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
-        
-        // Assert.
-        BigInteger withdrawalLock = (BigInteger) dexScore.call("getWithdrawLock", poolId, ownerAccount.getAddress());
-        //assertEquals(timestamp, withdrawalLock);
-
-        // sm.getBlock().getTimestamp =! Context.getBlockTimestamp().These should be equal.
-        // Bug in unittesting framework?
     }
 
     @Test
