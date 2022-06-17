@@ -20,7 +20,7 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
-import network.balanced.score.core.staking.utils.PrepDelegations;
+import network.balanced.score.lib.structs.PrepDelegations;
 import org.json.JSONObject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,7 +54,7 @@ class StakingTest extends TestBase {
     private final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
 
     private Score staking;
-    private Staking stakingSpy;
+    private StakingImpl stakingSpy;
 
     Map<String, Object> prepsResponse = new HashMap<>();
     Map<String, Object> iissInfo = new HashMap<>();
@@ -86,8 +86,8 @@ class StakingTest extends TestBase {
     }
 
     private void setupStakingScore() throws Exception {
-        staking = sm.deploy(owner, Staking.class);
-        stakingSpy = (Staking) spy(staking.getInstance());
+        staking = sm.deploy(owner, StakingImpl.class);
+        stakingSpy = (StakingImpl) spy(staking.getInstance());
         staking.setInstance(stakingSpy);
 
         // Configure Staking contract

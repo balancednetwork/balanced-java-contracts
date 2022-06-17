@@ -23,8 +23,9 @@ import network.balanced.score.core.staking.db.DelegationListDBSdo;
 import network.balanced.score.core.staking.db.LinkedListDB;
 import network.balanced.score.core.staking.db.NodeDB;
 import network.balanced.score.core.staking.utils.Constant;
-import network.balanced.score.core.staking.utils.PrepDelegations;
 import network.balanced.score.core.staking.utils.UnstakeDetails;
+import network.balanced.score.lib.interfaces.Staking;
+import network.balanced.score.lib.structs.PrepDelegations;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -42,7 +43,7 @@ import static network.balanced.score.core.staking.utils.Checks.onlyOwner;
 import static network.balanced.score.core.staking.utils.Checks.stakingOn;
 import static network.balanced.score.core.staking.utils.Constant.*;
 
-public class Staking {
+public class StakingImpl implements Staking {
 
     private final VarDB<BigInteger> rate = Context.newVarDB(RATE, BigInteger.class);
     private final VarDB<BigInteger> blockHeightWeek = Context.newVarDB(BLOCK_HEIGHT_WEEK, BigInteger.class);
@@ -61,7 +62,7 @@ public class Staking {
     private final VarDB<DelegationListDBSdo> prepDelegationInIcx = Context.newVarDB(PREP_DELEGATION_ICX,
             DelegationListDBSdo.class);
 
-    public Staking() {
+    public StakingImpl() {
 
         if (blockHeightWeek.get() == null) {
             @SuppressWarnings("unchecked")

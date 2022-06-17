@@ -16,7 +16,7 @@
 
 package network.balanced.score.core.staking.utils;
 
-import network.balanced.score.core.staking.Staking;
+import network.balanced.score.core.staking.StakingImpl;
 import score.Address;
 import score.Context;
 
@@ -31,7 +31,7 @@ public class Checks {
     }
 
     public static void stakingOn() {
-        if (!Staking.stakingOn.get()) {
+        if (!StakingImpl.stakingOn.get()) {
             Context.revert(Constant.TAG + ": ICX Staking SCORE is not active.");
         }
     }
