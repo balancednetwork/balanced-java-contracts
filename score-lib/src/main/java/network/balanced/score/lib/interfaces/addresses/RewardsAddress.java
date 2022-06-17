@@ -16,10 +16,13 @@
 
 package network.balanced.score.lib.interfaces.addresses;
 
+import foundation.icon.score.client.ScoreInterface;
 import score.Address;
 import score.annotation.External;
 
+@ScoreInterface
 public interface RewardsAddress {
+
     @External
     void setRewards(Address _address);
 

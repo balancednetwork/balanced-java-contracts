@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+
+import groovy.swing.SwingBuilder
 import network.balanced.score.dependencies.Dependencies
 
 
@@ -27,6 +29,46 @@ buildscript {
 }
 
 def scoreIntegrationTest = new HashMap<String, String>()
+
+task buildContracts(type: Exec) {
+    workingDir "$projectDir/"
+    commandLine './gradlew', 'optimizedJar'
+}
+
+
+apply plugin: 'deploy-contracts'
+deployBalancedContracts  {
+    envs {
+        local {
+            env = "local"
+        }
+        berlin {
+            env = "berlin"
+            configFile = "contracts-sample.json"
+            keystore = rootProject.findProperty('keystoreName') ?: ''
+            password = rootProject.findProperty('keystorePass') ?: ''
+        }
+        sejong {
+            env = "sejong"
+            configFile = "contracts-sample.json"
+            keystore = rootProject.findProperty('keystoreName') ?: ''
+            password = rootProject.findProperty('keystorePass') ?: ''
+        }
+    }
+}
+
+project.tasks.getByName("deployContractsToBerlin").dependsOn(project.tasks.getByName("buildContracts"))
+project.tasks.getByName("deployContractsToSejong").dependsOn(project.tasks.getByName("buildContracts"))
+project.tasks.getByName("deployContractsToLocal").dependsOn(project.tasks.getByName("buildContracts"))
+
+
+executeBalancedActions {
+    contractAddressFile = "sample.json"
+    propertiesFile = "sample.properties"
+    actionsFile = "actions-sample.json"
+    keystore = rootProject.findProperty('keystoreName') ?: ''
+    password = rootProject.findProperty('keystorePass') ?: ''
+}
 
 subprojects {
     repositories {
@@ -57,9 +99,15 @@ subprojects {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
     // need to add this option to retrieve formal parameter names
     compileJava {
         options.compilerArgs += ['-parameters']
+    }
+
+    tasks.named('test') {
+        // Use JUnit Platform for unit tests.
+        useJUnitPlatform()
     }
 
     scoreIntegrationTest.put('env.props', new File(project(':test-lib').projectDir, 'conf/env.props'));
@@ -71,16 +119,17 @@ subprojects {
     scoreIntegrationTest.put('Dex', new File(project(':test-lib').projectDir, 'python-contracts/dex.zip'));
     scoreIntegrationTest.put('Feehandler', new File(project(':test-lib').projectDir, 'python-contracts/feehandler.zip'));
     scoreIntegrationTest.put('Loans', new File(project(':test-lib').projectDir, 'python-contracts/loans.zip'));
-//     scoreIntegrationTest.put('Rebalancing', new File(project(':test-lib').projectDir, 'python-contracts/rebalancing.zip'));
-     scoreIntegrationTest.put('Rewards', new File(project(':test-lib').projectDir, 'python-contracts/rewards.zip'));
+    scoreIntegrationTest.put('Rebalancing', new File(project(':test-lib').projectDir, 'python-contracts/rebalancing.zip'));
+    scoreIntegrationTest.put('Rewards', new File(project(':test-lib').projectDir, 'python-contracts/rewards.zip'));
     scoreIntegrationTest.put('Sicx', new File(project(':test-lib').projectDir, 'python-contracts/sicx.zip'));
     scoreIntegrationTest.put('Bnusd', new File(project(':test-lib').projectDir, 'python-contracts/bnusd.zip'));
-    scoreIntegrationTest.put('daofund', new File(project(':test-lib').projectDir, 'python-contracts/daofund.zip'));
-//    scoreIntegrationTest.put('Dividends', new File(project(':test-lib').projectDir, 'python-contracts/dividends.zip'));
+    scoreIntegrationTest.put('DAOfund', new File(project(':test-lib').projectDir, 'python-contracts/daofund.zip'));
+    scoreIntegrationTest.put('Dividends', new File(project(':test-lib').projectDir, 'python-contracts/dividends.zip'));
     scoreIntegrationTest.put('Oracle', new File(project(':test-lib').projectDir, 'python-contracts/oracle.zip'));
     scoreIntegrationTest.put('Reserve', new File(project(':test-lib').projectDir, 'python-contracts/reserve.zip'));
     scoreIntegrationTest.put('Router', new File(project(':test-lib').projectDir, 'python-contracts/router.zip'));
     scoreIntegrationTest.put('Staking', new File(project(':test-lib').projectDir, 'python-contracts/staking.zip'));
+    scoreIntegrationTest.put('Staked LP', new File(project(':test-lib').projectDir, 'python-contracts/stakedLp.zip'));
 
     afterEvaluate { project ->
         scoreIntegrationTest.put(project.name, project.getTasks().getByName("optimizedJar").outputJarName)
@@ -90,5 +139,54 @@ subprojects {
 gradle.taskGraph.beforeTask { Task task ->
     if(task.name=='integrationTest') {
         scoreIntegrationTest.each { key, val -> task.systemProperty key, val }
+    }
+}
+
+gradle.taskGraph.whenReady { taskGraph ->
+    if (rootProject.hasProperty('keystorePass')) {
+        return
+    }
+    def hasDeployTask = taskGraph.getAllTasks().any { it ->
+        return it.name == "deployToMainnet"
+    }
+
+    if (hasDeployTask) {
+        def pass = ''
+        if (System.console() == null) {
+            new SwingBuilder().edt {
+                dialog(modal: true,
+                        title: 'Keystore password',
+                        alwaysOnTop: true,
+                        resizable: false,
+                        locationRelativeTo: null,
+                        pack: true,
+                        show: true
+                ) {
+                    vbox {
+                        hbox {
+                            label(text: 'Please enter key passphrase: ')
+                        }
+                        hbox {
+                            input = passwordField(columns: 20, id: 'password')
+                        }
+                        hbox {
+                            button(defaultButton: true, text: 'OK', actionPerformed: {
+                                pass = input.password
+                                dispose()
+                            })
+                        }
+                    }
+                }
+            }
+        } else {
+            pass = System.console().readPassword("\nPlease enter key passphrase: ")
+            pass = new String(pass)
+        }
+
+        if (pass.size() <= 0) {
+            throw new InvalidUserDataException("You must enter a password to proceed.")
+        }
+        rootProject.setProperty('keystorePass', pass)
+
     }
 }
