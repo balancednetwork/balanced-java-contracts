@@ -1,122 +1,99 @@
 package network.balanced.score.tokens;
 
 
-import foundation.icon.icx.Wallet;
 import foundation.icon.score.client.DefaultScoreClient;
-import foundation.icon.score.client.ScoreClient;
-import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.test.integration.Balanced;
+import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
-import network.balanced.score.tokens.interfaces.BoostedToken;
-import network.balanced.score.tokens.interfaces.BoostedTokenScoreClient;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import score.UserRevertedException;
 
 import java.math.BigInteger;
-import java.util.Map;
 
-import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.chain;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class BoostedBalnIntegrationTest {
-    static Balanced balanced;
-    static Wallet userWallet;
-    static DefaultScoreClient balnScoreClient;
-    static DefaultScoreClient bBalnScoreClient;
-    static DefaultScoreClient rewardsScoreClient;
-    static DefaultScoreClient dexScoreClient ;
-    static DefaultScoreClient governanceScoreClient;
-    static DefaultScoreClient daoFund;
-    static Wallet ownerWallet;
+public class BoostedBalnIntegrationTest implements ScoreIntegrationTest {
+    private static Balanced balanced;
+    private static BalancedClient owner;
 
-    static {
-        try {
-            balanced = new Balanced();
-            ownerWallet = balanced.owner;
-            userWallet = ScoreIntegrationTest.createWalletWithBalance(BigInteger.valueOf(2000).multiply(EXA));
-            balanced.setupBalanced();
-            balnScoreClient = balanced.baln;
-            bBalnScoreClient = balanced.bBaln;
-            rewardsScoreClient = balanced.rewards;
-            dexScoreClient = balanced.dex;
-            governanceScoreClient = balanced.governance;
-            daoFund = balanced.daofund;
-            ownerWallet = balanced.owner;
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("Error on init test: "+e.getMessage());
-        }
-
+    @BeforeAll
+    static void setup() throws Exception {
+        balanced = new Balanced();
+        balanced.setupBalanced();
+        owner = balanced.ownerClient;
     }
 
-    static foundation.icon.jsonrpc.Address userAddress = DefaultScoreClient.address(userWallet.getAddress().toString());
-    static DefaultScoreClient userClient  = new DefaultScoreClient(
-            chain.getEndpointURL(),
-            chain.networkId,
-            userWallet,
-            DefaultScoreClient.ZERO_ADDRESS
-    );
-    @ScoreClient
-    static Baln userBalnScoreClient = new BalnScoreClient(balnScoreClient.endpoint(), balnScoreClient._nid(), userWallet,
-            balnScoreClient._address());
-
-    @ScoreClient
-    static BoostedToken userBoostedBalnScoreClient = new BoostedTokenScoreClient(balnScoreClient.endpoint(), balnScoreClient._nid(), userWallet,
-            bBalnScoreClient._address());
-    @ScoreClient
-    static Dex dexUserScoreClient = new DexScoreClient(balnScoreClient.endpoint(), balnScoreClient._nid(), userWallet,
-            dexScoreClient._address());
-    @ScoreClient
-    static Rewards userRewardScoreClient = new RewardsScoreClient(balnScoreClient.endpoint(), balnScoreClient._nid(), userWallet,
-            rewardsScoreClient._address());
-
-    @ScoreClient
-    static Governance bBalnGovernanceScoreClient = new GovernanceScoreClient(governanceScoreClient);
-
-    @ScoreClient
-    static DAOfund userDaoFundScoreClient = new DAOfundScoreClient(daoFund);
+    DefaultScoreClient getOwnerClient(){
+        return new DefaultScoreClient(
+                owner.baln.endpoint(),
+                owner.baln._nid(),
+                balanced.owner,
+                DefaultScoreClient.ZERO_ADDRESS
+        );
+    }
 
     @Test
-    void testDepositFor(){
-        userDaoFundScoreClient.addAddressToSetdb();
+    void testCreateLockIncreaseTimeAndDeposit(){
+        DefaultScoreClient ownerClient  = getOwnerClient();
+        owner.daofund.addAddressToSetdb();
         balanced.syncDistributions();
-        userClient._transfer(dexScoreClient._address(), BigInteger.valueOf(1000).multiply(EXA), null);
-        bBalnGovernanceScoreClient.setContinuousRewardsDay(dexUserScoreClient.getDay().add(BigInteger.ONE));
+        ownerClient._transfer(owner.dex._address(), BigInteger.valueOf(1000).multiply(EXA), null);
+        owner.governance.setContinuousRewardsDay(owner.dex.getDay().add(BigInteger.ONE));
         waitForADay();
         balanced.syncDistributions();
-        BigInteger updatedBalnHolding = userRewardScoreClient.getBalnHolding(userAddress);
+        score.Address userAddress = score.Address.fromString(balanced.owner.getAddress().toString());
+        BigInteger updatedBalnHolding = owner.rewards.getBalnHolding(userAddress);
         System.out.println("baln holding from reward: "+updatedBalnHolding);
-        userRewardScoreClient.claimRewards();
-        BigInteger availableBalnBalance = userBalnScoreClient.availableBalanceOf(userAddress);
+        owner.rewards.claimRewards();
+        BigInteger availableBalnBalance = owner.baln.availableBalanceOf(userAddress);
         System.out.println("available balance of baln: "+availableBalnBalance);
-        System.out.println("total balance of baln: "+userBalnScoreClient.balanceOf(userAddress));
+        System.out.println("total balance of baln: "+owner.baln.balanceOf(userAddress));
 
         UserRevertedException exception = assertThrows(UserRevertedException.class, () -> {
             String data = "{\"method\":\"depositFor\",\"params\":{\"address\":\"" + userAddress + "\"}}";
-            userBalnScoreClient.transfer(bBalnScoreClient._address(), availableBalnBalance, data.getBytes());
+            owner.baln.transfer(owner.boostedBaln._address(), availableBalnBalance, data.getBytes());
         });
         assert exception.getMessage().equals("Reverted(0)"); //"Deposit for: No existing lock found");
 
         exception = assertThrows(UserRevertedException.class, () -> {
            String data = "{\"method\":\"increaseAmount\",\"params\":{\"unlockTime\":" + System.currentTimeMillis()*1000 + "}}";
-            userBalnScoreClient.transfer(bBalnScoreClient._address(), availableBalnBalance, data.getBytes());
+            owner.baln.transfer(owner.boostedBaln._address(), availableBalnBalance, data.getBytes());
         });
         assert exception.getMessage().equals("Reverted(0)");//"Increase amount: No existing lock found");
 
         exception = assertThrows(UserRevertedException.class, () -> {
             String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + System.currentTimeMillis() + "}}";
-            userBalnScoreClient.transfer(bBalnScoreClient._address(), availableBalnBalance, data.getBytes());
+            owner.baln.transfer(owner.boostedBaln._address(), availableBalnBalance, data.getBytes());
         });
         assert exception.getMessage().equals("Reverted(0)");//"Increase amount: No existing lock found");
 
-        String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + (System.currentTimeMillis()+(30*84600000))*1000 + "}}";
-        System.out.println("transfer amount: "+availableBalnBalance.subtract(availableBalnBalance.divide(BigInteger.TWO)));
-        userBalnScoreClient.transfer(bBalnScoreClient._address(), availableBalnBalance.subtract(availableBalnBalance.divide(BigInteger.TWO)), data.getBytes());
+        long microSecondsInADay = 84_600_000_000L;
+        long unlockTIme = (System.currentTimeMillis()*1000)+(30*microSecondsInADay);
+        System.out.println("unlock time is: "+unlockTIme);
+        String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTIme + "}}";
+        System.out.println("transfer amount: "+availableBalnBalance.divide(BigInteger.TWO));
+        owner.baln.transfer(owner.boostedBaln._address(), availableBalnBalance.divide(BigInteger.TWO), data.getBytes());
 
-        /*data = "{\"method\":\"increaseAmount\",\"params\":{\"unlockTime\":\"" + (System.currentTimeMillis()+60*84600)*1000 + "\"}}";
-        userBalnScoreClient.transfer(bBalnScoreClient._address(), updatedBalnHolding, data.getBytes());*/
+        BigInteger balance = owner.boostedBaln.balanceOf(userAddress, BigInteger.ZERO);
+        System.out.println("balance is: "+balance);
+        System.out.println("expected balance is: "+availableBalnBalance.divide(BigInteger.TWO));
 
+        //assertEquals(balance, availableBalnBalance.divide(BigInteger.TWO));
+
+        data = "{\"method\":\"increaseAmount\",\"params\":{\"unlockTime\":" + unlockTIme + "}}";
+        owner.baln.transfer(owner.boostedBaln._address(), availableBalnBalance.divide(BigInteger.valueOf(4)), data.getBytes());
+        BigInteger newBalance = owner.boostedBaln.balanceOf(userAddress, BigInteger.ZERO);
+        System.out.println("new balance is: "+newBalance);
+        System.out.println(" exoected new balance is: "+availableBalnBalance.multiply(BigInteger.valueOf(3)).multiply(BigInteger.valueOf(4)));
+        //assertEquals(newBalance, availableBalnBalance.multiply(BigInteger.valueOf(3)).multiply(BigInteger.valueOf(4)));
+
+        data = "{\"method\":\"increaseAmount\",\"params\":{\"address\":\"" + userAddress + "\"}}";
+        owner.baln.transfer(owner.boostedBaln._address(), availableBalnBalance.divide(BigInteger.valueOf(4)), data.getBytes());
+        BigInteger balanceAfterDeposit = owner.boostedBaln.balanceOf(userAddress, BigInteger.ZERO);
+        System.out.println("balance after deposit: "+balanceAfterDeposit);
     }
 
 

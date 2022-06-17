@@ -1,4 +1,4 @@
-package network.balanced.score.tokens.interfaces;
+package network.balanced.score.lib.interfaces;
 
 import score.Address;
 import score.annotation.Optional;
@@ -7,7 +7,7 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-public interface BoostedToken {
+public interface BoostedBaln {
 
     void setMinimumLockingAmount(BigInteger value);
 

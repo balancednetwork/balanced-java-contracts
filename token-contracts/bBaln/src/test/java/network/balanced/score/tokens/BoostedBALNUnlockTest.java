@@ -23,6 +23,7 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
+import network.balanced.score.tokens.utils.DummyContract;
 import network.balanced.score.tokens.utils.IRC2Token;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,7 +50,8 @@ public class BoostedBALNUnlockTest extends TestBase {
     private static final Account owner = sm.createAccount();
     private Score bBALNScore;
     private Score tokenScore;
-    private BoostedBaln scoreSpy;
+
+    private BoostedBalnImpl scoreSpy;
 
     public static BigInteger WEEK = BigInteger.TEN.pow(6).multiply(BigInteger.valueOf(86400L).multiply(BigInteger.valueOf(7L)));
     private static final BigInteger INITIAL_SUPPLY = BigInteger.TEN.multiply(ICX);
@@ -59,9 +61,10 @@ public class BoostedBALNUnlockTest extends TestBase {
     @BeforeEach
     public void setup() throws Exception {
         tokenScore = sm.deploy(owner, IRC2Token.class, INITIAL_SUPPLY);
-        bBALNScore = sm.deploy(owner, BoostedBaln.class, tokenScore.getAddress(), BOOSTED_BALANCE, B_BALANCED_SYMBOL);
+        Score rewardScore = sm.deploy(owner, DummyContract.class);
+        bBALNScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(), BOOSTED_BALANCE, B_BALANCED_SYMBOL);
 
-        scoreSpy = (BoostedBaln) spy(bBALNScore.getInstance());
+        scoreSpy = (BoostedBalnImpl) spy(bBALNScore.getInstance());
         bBALNScore.setInstance(scoreSpy);
 
         bBALNScore.invoke(owner, "setMinimumLockingAmount", ICX);

@@ -3,12 +3,8 @@ import foundation.icon.icx.KeyWallet;
 import foundation.icon.score.client.DefaultScoreClient;
 import foundation.icon.score.client.ScoreClient;
 import network.balanced.score.lib.interfaces.*;
-import network.balanced.score.lib.interfaces.base.*;
-import network.balanced.score.lib.structs.BalancedAddresses;
 
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
-
-import java.math.BigInteger;
 
 public class BalancedClient {
     private Balanced balanced;
@@ -34,6 +30,9 @@ public class BalancedClient {
 
     @ScoreClient
     private static Baln _baln;
+
+    @ScoreClient
+    private static BoostedBaln _boostedBaln;
     
     @ScoreClient
     private static Rebalancing _rebalancing;
@@ -63,6 +62,7 @@ public class BalancedClient {
     public RewardsScoreClient rewards;
     public LoansScoreClient loans;
     public BalnScoreClient baln;
+    public BoostedBalnScoreClient boostedBaln;
     public RebalancingScoreClient rebalancing;
     public SicxScoreClient sicx;
     public DexScoreClient dex;
@@ -81,6 +81,7 @@ public class BalancedClient {
         rewards = new RewardsScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.rewards._address());
         loans = new LoansScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.loans._address());
         baln = new BalnScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.baln._address());
+        boostedBaln = new BoostedBalnScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.bBaln._address());
         rebalancing = new RebalancingScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.rebalancing._address());
         sicx = new SicxScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.sicx._address());
         dex = new DexScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.dex._address());

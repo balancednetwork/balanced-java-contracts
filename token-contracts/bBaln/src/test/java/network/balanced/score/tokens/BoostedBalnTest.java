@@ -23,6 +23,7 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.token.irc2.IRC2Basic;
+import network.balanced.score.tokens.utils.DummyContract;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import com.iconloop.score.test.TestBase;
@@ -57,8 +58,9 @@ class BoostedBalnTest extends TestBase {
     @BeforeEach
     public void setup() throws Exception {
         Score tokenScore = sm.deploy(owner, IRC2BasicToken.class, name, symbol, decimals, initialSupply);
-        bBalnScore = sm.deploy(owner, BoostedBaln.class, tokenScore.getAddress(), bBalnName, bBalnSymbol);
-        BoostedBaln scoreSpy = (BoostedBaln) spy(bBalnScore.getInstance());
+        Score rewardScore = sm.deploy(owner, DummyContract.class);
+        bBalnScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(), bBalnName, bBalnSymbol);
+        BoostedBalnImpl scoreSpy = (BoostedBalnImpl) spy(bBalnScore.getInstance());
         bBalnScore.setInstance(scoreSpy);
 
         bBalnScore.invoke(owner, "setMinimumLockingAmount", ICX);

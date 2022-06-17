@@ -4,6 +4,7 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
+import network.balanced.score.tokens.utils.DummyContract;
 import network.balanced.score.tokens.utils.IRC2Token;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Assertions;
@@ -62,17 +63,18 @@ public class VotingPowerTest extends TestBase {
     public static BigInteger YEAR = DAY.multiply(BigInteger.valueOf(365L));
     public static BigInteger MAX_TIME = YEAR.multiply(BigInteger.valueOf(4L));
 
-    private BoostedBaln scoreSpy;
+    private BoostedBalnImpl scoreSpy;
 
     @BeforeEach
     public void setup() throws Exception {
         tokenScore = sm.deploy(owner, IRC2Token.class, INITIAL_SUPPLY);
-        bBALNScore = sm.deploy(owner, BoostedBaln.class, tokenScore.getAddress(), BOOSTED_BALANCE, B_BALANCED_SYMBOL);
+        Score rewardScore = sm.deploy(owner, DummyContract.class);
+        bBALNScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(), BOOSTED_BALANCE, B_BALANCED_SYMBOL);
         tokenScore.invoke(owner, "mintTo", alice.getAddress(), ICX.multiply(BigInteger.valueOf(100L)));
         tokenScore.invoke(owner, "mintTo", bob.getAddress(), ICX.multiply(BigInteger.valueOf(100L)));
 
 
-        scoreSpy = (BoostedBaln) spy(bBALNScore.getInstance());
+        scoreSpy = (BoostedBalnImpl) spy(bBALNScore.getInstance());
         bBALNScore.setInstance(scoreSpy);
 
         bBALNScore.invoke(owner, "setMinimumLockingAmount", ICX);

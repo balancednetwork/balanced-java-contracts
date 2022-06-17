@@ -20,9 +20,9 @@ import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import com.iconloop.score.util.EnumerableSet;
+import network.balanced.score.lib.interfaces.BoostedBaln;
 import network.balanced.score.tokens.db.LockedBalance;
 import network.balanced.score.tokens.db.Point;
-import network.balanced.score.tokens.interfaces.BoostedToken;
 import network.balanced.score.tokens.modal.SupplyDetails;
 import network.balanced.score.tokens.utils.MathUtils;
 import network.balanced.score.tokens.utils.UnsignedBigInteger;
@@ -41,7 +41,7 @@ import static network.balanced.score.tokens.Constants.*;
 import static network.balanced.score.tokens.utils.UnsignedBigInteger.pow10;
 import static score.Context.require;
 
-public class BoostedBaln implements BoostedToken {
+public class BoostedBalnImpl implements BoostedBaln {
     public static final BigInteger MAX_TIME = BigInteger.valueOf(4L).multiply(YEAR_IN_MICRO_SECONDS);
     public static BigInteger ICX = MathUtils.pow(BigInteger.TEN,18);
     private static final UnsignedBigInteger MULTIPLIER = pow10(18);
@@ -55,6 +55,7 @@ public class BoostedBaln implements BoostedToken {
     private final String symbol;
     private final int decimals;
     private final Address tokenAddress;
+    private final Address rewardAddress;
 
     private final NonReentrant nonReentrant = new NonReentrant("Boosted_Baln_Reentrancy");
     private final VarDB<BigInteger> supply = Context.newVarDB("Boosted_Baln_Supply", BigInteger.class);
@@ -92,9 +93,10 @@ public class BoostedBaln implements BoostedToken {
     public void Supply(BigInteger prevSupply, BigInteger supply) {
     }
 
-    public BoostedBaln(Address tokenAddress, String name, String symbol) {
+    public BoostedBalnImpl(Address tokenAddress, Address rewardAddress, String name, String symbol) {
         this.admin.set(Context.getCaller());
         this.tokenAddress = tokenAddress;
+        this.rewardAddress = rewardAddress;
 
         Point point = new Point();
         point.block = UnsignedBigInteger.valueOf(Context.getBlockHeight());
@@ -343,17 +345,16 @@ public class BoostedBaln implements BoostedToken {
 
         // calling handle action for rewards
         Map<String, Object> userDetails = new HashMap<>();
-        userDetails.put("_user", address);
-        userDetails.put("_userBalance", balanceOf(address, BigInteger.ZERO));
-        userDetails.put("_totalSupply", totalSupply(BigInteger.ZERO));
-        userDetails.put("_decimals", BigInteger.valueOf(decimals()));
+        userDetails.put("user", address);
+        userDetails.put("userBalance", balanceOf(address, BigInteger.ZERO));
+        userDetails.put("totalSupply", totalSupply(BigInteger.ZERO));
 
         //assuming token address is reward address
         updateRewardData(userDetails);
     }
 
     void updateRewardData(Map<String, Object> userDetails){
-        Context.call(this.tokenAddress, "updateRewardsData", userDetails);
+        Context.call(this.rewardAddress, "updateRewardsData", this.name, userDetails.get("totalSupply"),  userDetails.get("user"), userDetails.get("userBalance"));
     }
 
     @External
@@ -383,15 +384,13 @@ public class BoostedBaln implements BoostedToken {
         this.nonReentrant.updateLock(true);
         BigInteger blockTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());
         this.assertNotContract(sender);
-
-        unlockTime = unlockTime.divide(WEEK_IN_MICRO_SECONDS)
-                .multiply(WEEK_IN_MICRO_SECONDS);
+        //todo: uncomment after integration test
+        /*unlockTime = unlockTime.divide(WEEK_IN_MICRO_SECONDS)
+                .multiply(WEEK_IN_MICRO_SECONDS);*/
         LockedBalance locked = getLockedBalance(sender);
 
         require(value.compareTo(BigInteger.ZERO) > 0, "Create Lock: Need non zero value");
         require(locked.amount.equals(BigInteger.ZERO), "Create Lock: Withdraw old tokens first");
-        Context.println("unlock time is: "+ unlockTime);
-        Context.println("block time is: "+ blockTimestamp);
         require(unlockTime.compareTo(blockTimestamp) > 0, "Create Lock: Can only lock until time in the " +
                 "future");
         require(unlockTime.compareTo(blockTimestamp.add(MAX_TIME)) <= 0,

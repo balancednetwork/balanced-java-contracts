@@ -115,13 +115,13 @@ public class Balanced {
         Hash sicxTx = deployAsync(owner, "Sicx", Map.of("_admin", staking._address()));
 
         baln = getDeploymentResult(owner, balnTx);
-        Hash bBalnTx = deployAsync(owner, "bBaln", Map.of("tokenAddress", baln._address(), "name", "Boosted Baln", "symbol", "bBaln"));
+        rewards = getDeploymentResult(owner, rewardsTx);
+        Hash bBalnTx = deployAsync(owner, "bBaln", Map.of("tokenAddress", baln._address(), "rewardAddress", rewards._address(), "name", "Boosted Baln", "symbol", "bBaln"));
 
         bwt = getDeploymentResult(owner, bwtTx);
         dex = getDeploymentResult(owner, dexTx);
         loans = getDeploymentResult(owner, loansTx);
         rebalancing = getDeploymentResult(owner, rebalancingTx);
-        rewards = getDeploymentResult(owner, rewardsTx);
         daofund = getDeploymentResult(owner, daofundTx);
         dividends = getDeploymentResult(owner, dividendsTx);
         oracle = getDeploymentResult(owner, oracleTx);
@@ -175,6 +175,7 @@ public class Balanced {
         ownerClient.rewards.addDataProvider(stakedLp._address());
         ownerClient.rewards.addDataProvider(dex._address());
         ownerClient.rewards.addDataProvider(loans._address());
+        ownerClient.rewards.addDataProvider(bBaln._address());
     }
 
     public void setupMarkets() {
