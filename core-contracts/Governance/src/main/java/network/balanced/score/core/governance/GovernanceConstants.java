@@ -48,10 +48,10 @@ public class GovernanceConstants extends Constants {
 
 
     public static String[] CONTRACTS = {"loans", "dex", "staking", "rewards", "dividends", "daofund",
-            "reserve", "sicx", "bnUSD", "baln", "bwt", "router", "feehandler", "stakedLp", "rebalancing"};
+            "reserve", "sicx", "bnUSD", "baln", "bwt", "router", "feehandler", "stakedLp", "rebalancing", "balancedOracle"};
 
     public static Map<String, List<String>> ADDRESSES = Map.ofEntries(
-            entry("loans", List.of("rewards", "dividends", "staking", "reserve", "dex", "rebalancing")),
+            entry("loans", List.of("rewards", "dividends", "staking", "reserve", "dex", "rebalancing", "balancedOracle")),
             entry("dex", List.of("rewards", "dividends", "staking", "sicx", "bnUSD", "baln", "feehandler", "stakedLp")),
             entry("rewards", List.of("reserve", "baln", "bwt", "daofund", "stakedLp")),
             entry("dividends", List.of("loans", "daofund", "dex", "baln")),
@@ -62,8 +62,9 @@ public class GovernanceConstants extends Constants {
             entry("bwt", List.of("baln")),
             entry("router", List.of("dex", "sicx", "staking")),
             entry("stakedLp", List.of("dex", "rewards")),
-            entry("rebalancing", List.of("loans", "dex", "bnUSD", "sicx"))
-    );
+            entry("rebalancing", List.of("loans", "dex", "bnUSD", "sicx", "balancedOracle")),
+            entry("balancedOracle", List.of("dex", "sicx", "staking", "oracle"))
+   );
 
     public static Map<String, String> ADMIN_ADDRESSES = Map.ofEntries(
             entry("loans", "governance"),
@@ -77,7 +78,9 @@ public class GovernanceConstants extends Constants {
             entry("bwt", "governance"),
             entry("router", "governance"),
             entry("stakedLp", "governance"),
-            entry("rebalancing", "governance")
+            entry("rebalancing", "governance"),
+            entry("balancedOracle", "governance")
+
     );
     public static Map<String, String> SETTERS = Map.ofEntries(
             entry("loans", "setLoans"),
@@ -95,7 +98,9 @@ public class GovernanceConstants extends Constants {
             entry("rebalancing", "setRebalance"),
             entry("router", "setRouter"),
             entry("feehandler", "setFeehandler"),
-            entry("stakedLp", "setStakedLp")
+            entry("stakedLp", "setStakedLp"),
+            entry("balancedOracle", "setOracle")
+
     );
     // #-------------------------------------------------------------------------------
     // # REWARDS LAUNCH CONFIG

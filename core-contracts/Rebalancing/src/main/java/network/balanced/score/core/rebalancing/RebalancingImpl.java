@@ -309,8 +309,7 @@ public class RebalancingImpl implements Rebalancing {
     public void rebalance() {
         Address loansScore = loans.get();
         Context.require(loansScore != null);
-        List<Object> status = getRebalancingStatus();
-        // List<Object> status = getRebalancingStatusFor(sicx.get());
+        List<Object> status = getRebalancingStatusFor(sicx.get());
         boolean forward = (boolean) status.get(0);
         BigInteger tokenAmount = (BigInteger) status.get(1);
         boolean reverse = (boolean) status.get(2);
