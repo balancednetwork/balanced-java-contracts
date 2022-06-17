@@ -19,10 +19,7 @@ package network.balanced.score.core.staking;
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.score.client.DefaultScoreClient;
 import foundation.icon.score.client.ScoreClient;
-import network.balanced.score.lib.interfaces.SicxInterface;
-import network.balanced.score.lib.interfaces.SicxInterfaceScoreClient;
-import network.balanced.score.lib.interfaces.Staking;
-import network.balanced.score.lib.interfaces.StakingScoreClient;
+import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
@@ -56,7 +53,7 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
     private static Staking staking;
 
     @ScoreClient
-    private static SicxInterface sicxScore;
+    private static Sicx sicxScore;
 
     // address generated
     private final Address senderAddress = Address.fromString(balanced.owner.getAddress().toString());
@@ -85,7 +82,7 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         balanced.setupBalanced();
 
         staking = new StakingScoreClient(balanced.staking);
-        sicxScore = new SicxInterfaceScoreClient(balanced.sicx);
+        sicxScore = new SicxScoreClient(balanced.sicx);
 
     }
 
@@ -96,7 +93,7 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
     Staking testerScore2 = new StakingScoreClient(clientWithTester2);
 
     @ScoreClient
-    SicxInterface sicxScore2 = new SicxInterfaceScoreClient(clientWithTester3);
+    Sicx sicxScore2 = new SicxScoreClient(clientWithTester3);
 
     @Test
     @Order(1)
