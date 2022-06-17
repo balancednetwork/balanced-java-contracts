@@ -16,36 +16,40 @@
 
 package network.balanced.score.core.rewards;
 
-import static network.balanced.score.lib.utils.Constants.EXA;
-import static network.balanced.score.lib.utils.Constants.U_SECONDS_DAY;
-import static network.balanced.score.core.rewards.utils.Check.continuousRewardsActive;
+import network.balanced.score.lib.interfaces.DataSourceScoreInterface;
+import score.*;
+import scorex.util.HashMap;
 
 import java.math.BigInteger;
 import java.util.Map;
 
-import network.balanced.score.lib.interfaces.DataSourceScoreInterface;
-import score.Address;
-import score.BranchDB;
-import score.Context;
-import score.DictDB;
-import score.VarDB;
-import score.annotation.EventLog;
+import static network.balanced.score.core.rewards.utils.Check.continuousRewardsActive;
+import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
 public class DataSourceImpl {
-        public final BranchDB<String, VarDB<Address>> contractAddress = Context.newBranchDB("contract_address", Address.class);
-        public final BranchDB<String, VarDB<String>> name = Context.newBranchDB("name", String.class);
-        public final BranchDB<String, VarDB<BigInteger>> day = Context.newBranchDB("day", BigInteger.class);
-        public final BranchDB<String, VarDB<Boolean>> precomp = Context.newBranchDB("precomp", Boolean.class); 
-        public final BranchDB<String, VarDB<Integer>> offset = Context.newBranchDB("offset", Integer.class); 
-        public final BranchDB<String, DictDB<BigInteger, BigInteger>> totalValue = Context.newBranchDB("total_value", BigInteger.class);
-        public final BranchDB<String, DictDB<BigInteger, BigInteger>> totalDist = Context.newBranchDB("total_dist", BigInteger.class);
-        public final BranchDB<String, VarDB<BigInteger>> distPercent = Context.newBranchDB("dist_percent", BigInteger.class);
-        public final BranchDB<String, DictDB<String, BigInteger>> userWeight = Context.newBranchDB("user_weight", BigInteger.class);
-        public final BranchDB<String, VarDB<BigInteger>> lastUpdateTimeUs = Context.newBranchDB("last_update_us", BigInteger.class);
-        public final BranchDB<String, VarDB<BigInteger>> totalWeight = Context.newBranchDB("running_total", BigInteger.class);
-        public final BranchDB<String, VarDB<BigInteger>> totalSupply = Context.newBranchDB("total_supply", BigInteger.class);
+    private final BranchDB<String, VarDB<Address>> contractAddress = Context.newBranchDB("contract_address",
+            Address.class);
+    private final BranchDB<String, VarDB<String>> name = Context.newBranchDB("name", String.class);
+    private final BranchDB<String, VarDB<BigInteger>> day = Context.newBranchDB("day", BigInteger.class);
+    private final BranchDB<String, VarDB<Boolean>> precomp = Context.newBranchDB("precomp", Boolean.class);
+    private final BranchDB<String, VarDB<Integer>> offset = Context.newBranchDB("offset", Integer.class);
+    private final BranchDB<String, DictDB<BigInteger, BigInteger>> totalValue = Context.newBranchDB("total_value",
+            BigInteger.class);
+    private final BranchDB<String, DictDB<BigInteger, BigInteger>> totalDist = Context.newBranchDB("total_dist",
+            BigInteger.class);
+    private final BranchDB<String, VarDB<BigInteger>> distPercent = Context.newBranchDB("dist_percent",
+            BigInteger.class);
+    private final BranchDB<String, DictDB<Address, BigInteger>> userWeight = Context.newBranchDB("user_weight",
+            BigInteger.class);
+    private final BranchDB<String, VarDB<BigInteger>> lastUpdateTimeUs = Context.newBranchDB("last_update_us",
+            BigInteger.class);
+    private final BranchDB<String, VarDB<BigInteger>> totalWeight = Context.newBranchDB("running_total",
+            BigInteger.class);
+    private final BranchDB<String, VarDB<BigInteger>> totalSupply = Context.newBranchDB("total_supply",
+            BigInteger.class);
 
-        private final String dbKey;
+    private final String dbKey;
 
     public DataSourceImpl(String key) {
         dbKey = key;
@@ -103,7 +107,7 @@ public class DataSourceImpl {
         this.distPercent.at(dbKey).set(distPercent);
     }
 
-    public BigInteger getUserWeight(String user) {
+    public BigInteger getUserWeight(Address user) {
         return userWeight.at(dbKey).getOrDefault(user, BigInteger.ZERO);
     }
 
@@ -131,52 +135,88 @@ public class DataSourceImpl {
         }
     }
 
-    public BigInteger computeSingelUserData(BigInteger currentTime, BigInteger prevTotalSupply, Address user, BigInteger prevBalance) {
-        BigInteger currentUserWeight = getUserWeight(user.toString());
-        BigInteger lastUpdateTimestamp = getLastUpdateTimeUs();
-    
-        if (!continuousRewardsActive() && RewardsImpl.continuousRewardsDay.get() != null) {
-            lastUpdateTimestamp = RewardsImpl.continuousRewardsDay.get().multiply(U_SECONDS_DAY);
+    public BigInteger updateSingleUserData(BigInteger currentTime, BigInteger prevTotalSupply, Address user,
+                                           BigInteger prevBalance, boolean readOnlyContext) {
+        if (!continuousRewardsActive()) {
+            return BigInteger.ZERO;
         }
-        
-        BigInteger totalWeight = computeTotalWeight(getTotalWeight(),
-                                                    getTotalDist(RewardsImpl.getDay()),
-                                                    prevTotalSupply,
-                                                    lastUpdateTimestamp, 
-                                                    currentTime);
+
+        BigInteger currentUserWeight = getUserWeight(user);
+        BigInteger lastUpdateTimestamp = getLastUpdateTimeUs();
+
+        if (lastUpdateTimestamp.equals(BigInteger.ZERO)) {
+            lastUpdateTimestamp = RewardsImpl.continuousRewardsDay.get().multiply(MICRO_SECONDS_IN_A_DAY);
+        }
+
+        BigInteger totalWeight = updateTotalWeight(lastUpdateTimestamp, currentTime, prevTotalSupply, readOnlyContext);
+
+        if (currentUserWeight.equals(totalWeight)) {
+            return BigInteger.ZERO;
+        }
 
         BigInteger accruedRewards = BigInteger.ZERO;
-
-        //  If the user" +s current weight is less than the total, update their weight and issue rewards
-        if (currentUserWeight.compareTo(totalWeight) == -1) {
-            if (prevBalance.compareTo(BigInteger.ZERO) == 1) {
-                accruedRewards = computeUserRewards(prevBalance, totalWeight, currentUserWeight);
-                accruedRewards = accruedRewards.divide(EXA);
-            }
+        //  If the user's current weight is less than the total, update their weight and issue rewards
+        if (prevBalance.compareTo(BigInteger.ZERO) > 0) {
+            accruedRewards = computeUserRewards(prevBalance, totalWeight, currentUserWeight);
         }
 
+        if (!readOnlyContext) {
+            userWeight.at(dbKey).set(user, totalWeight);
+        }
         return accruedRewards;
     }
 
-    public BigInteger updateSingleUserData(BigInteger currentTime, BigInteger prevTotalSupply, Address user, BigInteger prevBalance) {
-        BigInteger currentUserWeight = getUserWeight(user.toString());
-        BigInteger totalWeight = updateTotalWeight(currentTime, prevTotalSupply);
-        BigInteger accruedRewards = BigInteger.ZERO;
-        //  If the user" +s current weight is less than the total, update their weight and issue rewards
-        if (currentUserWeight.compareTo(totalWeight) < 0) {
-            if (prevBalance.compareTo(BigInteger.ZERO) > 0) {
-                accruedRewards = computeUserRewards(prevBalance, totalWeight, currentUserWeight);
-                accruedRewards = accruedRewards.divide(EXA);
-            }
-
-            if (!continuousRewardsActive()) {
-                return BigInteger.ZERO;
-            }
-        
-            userWeight.at(dbKey).set(user.toString(), totalWeight);
+    private BigInteger computeTotalWeight(BigInteger previousTotalWeight,
+                                          BigInteger emission,
+                                          BigInteger totalSupply,
+                                          BigInteger lastUpdateTime,
+                                          BigInteger currentTime) {
+        if (emission.equals(BigInteger.ZERO) || totalSupply.equals(BigInteger.ZERO)) {
+            return previousTotalWeight;
         }
 
-        return accruedRewards;
+        BigInteger timeDelta = currentTime.subtract(lastUpdateTime);
+        if (timeDelta.equals(BigInteger.ZERO)) {
+            return previousTotalWeight;
+        }
+
+        BigInteger weightDelta = emission.multiply(timeDelta).multiply(EXA).divide(MICRO_SECONDS_IN_A_DAY).divide(totalSupply);
+
+        return previousTotalWeight.add(weightDelta);
+    }
+
+    private BigInteger updateTotalWeight(BigInteger lastUpdateTimestamp, BigInteger currentTime,
+                                         BigInteger totalSupply, boolean readOnlyContext) {
+
+        BigInteger runningTotal = getTotalWeight();
+
+        BigInteger originalLastUpdateTimestamp = lastUpdateTimestamp;
+
+        if (currentTime.equals(lastUpdateTimestamp)) {
+            return runningTotal;
+        }
+
+        // Emit rewards based on the time delta * reward rate
+        BigInteger previousRewardsDay;
+        BigInteger previousDayEndUs;
+
+        while (lastUpdateTimestamp.compareTo(currentTime) < 0) {
+            previousRewardsDay = lastUpdateTimestamp.divide(MICRO_SECONDS_IN_A_DAY);
+            previousDayEndUs = previousRewardsDay.add(BigInteger.ONE).multiply(MICRO_SECONDS_IN_A_DAY);
+            BigInteger endComputeTimestampUs = previousDayEndUs.min(currentTime);
+
+            BigInteger emission = getTotalDist(previousRewardsDay);
+            runningTotal = computeTotalWeight(runningTotal, emission, totalSupply, lastUpdateTimestamp,
+                    endComputeTimestampUs);
+            lastUpdateTimestamp = endComputeTimestampUs;
+        }
+
+        if (!readOnlyContext) {
+            totalWeight.at(dbKey).set(runningTotal);
+            lastUpdateTimeUs.at(dbKey).set(currentTime);
+        }
+
+        return runningTotal;
     }
 
     public BigInteger getValue() {
@@ -185,15 +225,16 @@ public class DataSourceImpl {
     }
 
     public Map<String, Object> getDataAt(BigInteger day) {
-        return Map.of(
-            "day", day,
-            "contract_address", getContractAddress(),
-            "dist_percent", getDistPercent(),
-            "precomp", getPrecomp(),
-            "offset", getOffset(),
-            "total_value", getTotalValue(day),
-            "total_dist", getTotalDist(day)
-        );
+        Map<String, Object> sourceData = new HashMap<>();
+        sourceData.put("day", day);
+        sourceData.put("contract_address", getContractAddress());
+        sourceData.put("dist_percent", getDistPercent());
+        sourceData.put("precomp", getPrecomp());
+        sourceData.put("offset", getOffset());
+        sourceData.put("total_value", getTotalValue(day));
+        sourceData.put("total_dist", getTotalDist(day));
+
+        return sourceData;
     }
 
     public Map<String, Object> getData() {
@@ -201,14 +242,15 @@ public class DataSourceImpl {
         return getDataAt(day);
     }
 
+    @SuppressWarnings("unchecked")
     public void distribute(int batchSize) {
         DataSourceScoreInterface datasource = new DataSourceScoreInterface(getContractAddress());
 
         BigInteger day = getDay();
         String name = getName();
 
-        Object precomputeDoneObj = RewardsImpl.call(getContractAddress(), "precompute", day.intValue(), batchSize);
-
+        Object precomputeDoneObj = RewardsImpl.call(getContractAddress(), "precompute", day,
+                BigInteger.valueOf(batchSize));
         boolean precomputeDone;
         try {
             precomputeDone = (boolean)precomputeDoneObj;
@@ -216,25 +258,27 @@ public class DataSourceImpl {
             precomputeDone = !((BigInteger)precomputeDoneObj).equals(BigInteger.ZERO);
         }
 
-
-        if (!getPrecomp() && precomputeDone) {
+        boolean localPreCompute = getPrecomp();
+        if (!localPreCompute && precomputeDone) {
             precomp.at(dbKey).set(true);
-            BigInteger sourceTotalValue = datasource.getTotalValue(name, day.intValue());
-
+            localPreCompute = true;
+            BigInteger sourceTotalValue = datasource.getTotalValue(name, day);
             totalValue.at(dbKey).set(day, sourceTotalValue);
-        } 
+        }
 
-        if (!getPrecomp()) {
+        if (!localPreCompute) {
             return;
         }
 
         int offset = this.getOffset();
-        Map<String, BigInteger> dataBatch = (Map<String, BigInteger>) RewardsImpl.call(getContractAddress(), "getDataBatch", name, day.intValue(), batchSize, offset);
+        Map<String, BigInteger> dataBatch = (Map<String, BigInteger>) RewardsImpl.call(getContractAddress(), "getDataBatch",
+                name, day.intValue(), batchSize, offset);
         this.offset.at(dbKey).set(offset + batchSize);
         if (dataBatch.isEmpty()) {
             this.day.at(dbKey).set(day.add(BigInteger.ONE));
             this.offset.at(dbKey).set(0);
             this.precomp.at(dbKey).set(false);
+            return;
         }
 
         BigInteger remaining = getTotalDist(day);
@@ -246,106 +290,31 @@ public class DataSourceImpl {
             batchSum = batchSum.add(entry.getValue());
         }
 
-        BigInteger tokenShare = BigInteger.ZERO;
+        BigInteger tokenShare;
         for (Map.Entry<String,BigInteger> entry : dataBatch.entrySet()) {
             BigInteger value = entry.getValue();
-            Address address = Address.fromString(entry.getKey());
+            String address = entry.getKey();
             tokenShare = remaining.multiply(value).divide(shares);
-            Context.require(shares.compareTo(BigInteger.ZERO) == 1,  
-                        RewardsImpl.TAG + ": zero or negative divisor for " + name + ", " +
-                        "sum: " + batchSum + ", " +
-                        "total: " + shares + ", " +
-                        "remaining: " + remaining + ", " +
-                        "token_share: " + tokenShare + ", " +
-                        "starting: " + originalShares );
-            
+            Context.require(shares.compareTo(BigInteger.ZERO) > 0,
+                    RewardsImpl.TAG + ": zero or negative divisor for " + name + ", " +
+                            "sum: " + batchSum + ", " +
+                            "total: " + shares + ", " +
+                            "remaining: " + remaining + ", " +
+                            "token_share: " + tokenShare + ", " +
+                            "starting: " + originalShares);
+
             remaining = remaining.subtract(tokenShare);
             shares = shares.subtract(value);
-            BigInteger prevHoldings = RewardsImpl.balnHoldings.getOrDefault(address.toString(), BigInteger.ZERO);
-            RewardsImpl.balnHoldings.set(address.toString(), prevHoldings.add(tokenShare));
+            BigInteger prevHoldings = RewardsImpl.balnHoldings.getOrDefault(address, BigInteger.ZERO);
+            RewardsImpl.balnHoldings.set(address, prevHoldings.add(tokenShare));
         }
-    
+
         totalDist.at(dbKey).set(day, remaining);
         totalValue.at(dbKey).set(day, shares);
-        Report(day, name, remaining, shares);
-    }
-
-    private BigInteger computeTotalWeight(BigInteger previousTotalWeight,
-                               BigInteger emission,
-                               BigInteger totalSupply,
-                               BigInteger lastUpdateTime,
-                               BigInteger currentTime) {
-        if (emission.equals(BigInteger.ZERO) || totalSupply.equals(BigInteger.ZERO)) {
-            return previousTotalWeight;
-        }
-
-        BigInteger timeDelta = currentTime.subtract(lastUpdateTime);
-        if (timeDelta.equals(BigInteger.ZERO)) {
-            return previousTotalWeight;
-        }
-
-        BigInteger weightDelta = emission.multiply(timeDelta).multiply(EXA).divide(U_SECONDS_DAY.multiply(totalSupply));
-
-        BigInteger newTotalWeight = previousTotalWeight.add(weightDelta);
-        return newTotalWeight;
-    }
-
-    private BigInteger updateTotalWeight(BigInteger currentTime, BigInteger totalSupply) {
-        BigInteger previousRunningTotal = getTotalWeight();
-        BigInteger originalTotalWeight = previousRunningTotal;
-        BigInteger lastUpdateTimestamp = getLastUpdateTimeUs();
-        if (!continuousRewardsActive() && RewardsImpl.continuousRewardsDay.get() != null) {
-            lastUpdateTimestamp = RewardsImpl.continuousRewardsDay.get().multiply(U_SECONDS_DAY);
-            lastUpdateTimeUs.at(dbKey).set(lastUpdateTimestamp);
-        }
-
-        BigInteger originalLastUpdateTimestamp = lastUpdateTimestamp;
-
-        if (currentTime.equals(lastUpdateTimestamp)) {
-            return previousRunningTotal;
-        }
-        
-        // Emit rewards based on the time delta * reward rate
-        BigInteger previousRewardsDay = BigInteger.ZERO;
-        BigInteger previousDayEndUs = BigInteger.ZERO;
-
-        BigInteger newTotal = BigInteger.ZERO;
-        while (lastUpdateTimestamp.compareTo(currentTime) < 0) {
-            previousRewardsDay = lastUpdateTimestamp.divide(U_SECONDS_DAY);
-            previousDayEndUs = U_SECONDS_DAY.multiply(previousRewardsDay.add(BigInteger.ONE));
-            BigInteger endComputeTimestampUs = previousDayEndUs.min(currentTime);
-
-            BigInteger emission = getTotalDist(previousRewardsDay);
-            newTotal = computeTotalWeight(previousRunningTotal,
-                                                     emission,
-                                                     totalSupply,
-                                                     lastUpdateTimestamp,
-                                                     endComputeTimestampUs);
-        
-            previousRunningTotal = newTotal;
-            lastUpdateTimestamp = endComputeTimestampUs;
-        }
-        
-        if (!continuousRewardsActive()) {
-            return originalTotalWeight;
-        }
-        
-        if (newTotal.compareTo(originalTotalWeight) >= 0) {
-            totalWeight.at(dbKey).set(newTotal);
-        }
-
-        if (currentTime.compareTo(originalLastUpdateTimestamp) > 0) {
-            lastUpdateTimeUs.at(dbKey).set(currentTime);
-        } 
-
-        return newTotal;
     }
 
     private BigInteger computeUserRewards(BigInteger prevUserBalance, BigInteger totalWeight, BigInteger userWeight) {
         BigInteger deltaWeight = totalWeight.subtract(userWeight);
-        return deltaWeight.multiply(prevUserBalance);
+        return deltaWeight.multiply(prevUserBalance).divide(EXA);
     }
-
-    @EventLog(indexed=2)
-    public void Report(BigInteger _day, String _name, BigInteger _dist, BigInteger _value) {}
 }

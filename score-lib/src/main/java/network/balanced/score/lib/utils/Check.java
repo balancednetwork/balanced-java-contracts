@@ -52,4 +52,12 @@ public class Check {
         Context.require(address.isContract(), "Address Check: Address provided is an EOA address. A contract address " +
                 "is required.");
     }
-} 
+
+    public static <T> T optionalDefault(T value, T base) {
+        if (value == null) {
+            return base;
+        }
+
+        return value;
+    }
+}

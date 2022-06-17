@@ -15,34 +15,36 @@
  */
 
 package network.balanced.score.lib.interfaces.tokens;
+
+import foundation.icon.score.client.ScoreInterface;
 import score.Address;
-import score.annotation.Optional;
+import score.annotation.EventLog;
 import score.annotation.External;
+import score.annotation.Optional;
 
 import java.math.BigInteger;
 
-import foundation.icon.score.client.ScoreInterface;
-
 @ScoreInterface
 public interface IRC2 {
-    @External
+
+    @External(readonly = true)
     String name();
 
-    @External
+    @External(readonly = true)
     String symbol();
 
-    @External
+    @External(readonly = true)
     BigInteger decimals();
 
-    @External
+    @External(readonly = true)
     BigInteger totalSupply();
 
-    @External
+    @External(readonly = true)
     BigInteger balanceOf(Address _owner);
 
     @External
     void transfer(Address _to, BigInteger _value, @Optional byte[] _data);
-    
-    @External
+
+    @EventLog
     void Transfer(Address _from, Address _to, BigInteger _value, byte[] _data);
 }

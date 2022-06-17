@@ -16,12 +16,16 @@
 
 package network.balanced.score.lib.utils;
 
+import score.Address;
+
 import java.math.BigInteger;
 
 import static network.balanced.score.lib.utils.Math.pow;
 
 public class Constants {
     public final static BigInteger EXA = pow(BigInteger.TEN, 18);
-    public static final BigInteger SECOND = BigInteger.valueOf(1000000);
-    public static final BigInteger U_SECONDS_DAY = BigInteger.valueOf(86400).multiply(SECOND);
+    public final static BigInteger POINTS = BigInteger.valueOf(10000);
+    public static final BigInteger MICRO_SECONDS_IN_A_SECOND = BigInteger.valueOf(1_000_000);
+    public static final BigInteger MICRO_SECONDS_IN_A_DAY = BigInteger.valueOf(86400).multiply(MICRO_SECONDS_IN_A_SECOND);
+    public final static Address EOA_ZERO = new Address(new byte[Address.LENGTH]);
 }

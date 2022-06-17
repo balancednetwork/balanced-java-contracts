@@ -16,77 +16,58 @@
 
 package network.balanced.score.core.rewards;
 
-import foundation.icon.icx.Wallet;
 import foundation.icon.score.client.ScoreClient;
 import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.test.integration.Balanced;
+import network.balanced.score.lib.test.integration.BalancedClient;
+import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.Map;
 
-import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
-class RewardsIntegrationTest {
+class RewardsIntegrationTest implements ScoreIntegrationTest {
     private static Balanced balanced;
-
-    @ScoreClient
-    private static Governance governance;
-
-    @ScoreClient
-    private static Rewards rewards;
-
-    @ScoreClient
-    private static Loans loans;
-
-    
-    @ScoreClient
-    private static BalancedDollar bnUSD;
-
-    @ScoreClient
-    private static Baln baln;
+    private static BalancedClient owner;
 
     @BeforeAll
     static void setup() throws Exception {
         balanced = new Balanced();
-        balanced.deployBalanced();
+        balanced.setupBalanced();
 
-        governance = new GovernanceScoreClient(balanced.governance);
-        rewards = new RewardsScoreClient(balanced.rewards);
-        loans = new LoansScoreClient(balanced.loans);
-        bnUSD = new BalancedDollarScoreClient(balanced.bnusd);
-        baln = new BalnScoreClient(balanced.baln);
+        owner = balanced.ownerClient;
+
     }
 
     @Test
     void testName() {
-        assertEquals("Balanced Rewards", rewards.name());
+        assertEquals("Balanced Rewards", owner.rewards.name());
     }
 
     @Test
     void getEmission() {
         BigInteger dayAfterRewardsDecay = BigInteger.valueOf(70);
-        BigInteger emission = rewards.getEmission(BigInteger.ONE);
-        BigInteger emissionAfterDecay = rewards.getEmission(dayAfterRewardsDecay);
+        BigInteger emission = owner.rewards.getEmission(BigInteger.ONE);
+        BigInteger emissionAfterDecay = owner.rewards.getEmission(dayAfterRewardsDecay);
 
         assertEquals(BigInteger.TEN.pow(23), emission);
         assertTrue(BigInteger.TEN.pow(23).compareTo(emissionAfterDecay) > 0);
     }
 
     @Test
-    void testClaimAndDistribute() {        
-        ((LoansScoreClient)loans).depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(20), null, null);   
+    void testClaimAndDistribute() throws Exception { 
+        BalancedClient loanTaker = balanced.newClient();   
+        loanTaker.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(20), null, null);   
         
-        balanced.distributeRewards();
-        balanced.distributeRewards();
-        balanced.distributeRewards();
+        balanced.syncDistributions();
 
-
-        rewards.claimRewards();
+        loanTaker.rewards.claimRewards();
+        assertEquals(loanTaker.baln.balanceOf(loanTaker.getAddress()), BigInteger.ZERO);
     
     }
 }

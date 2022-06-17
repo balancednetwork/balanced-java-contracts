@@ -79,7 +79,7 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         balanced = new Balanced();
         // Uncomment below line before running migration test
 //         System.setProperty("Staking", System.getProperty("python"));
-        balanced.deployBalanced();
+        balanced.setupBalanced();
 
         staking = new StakingScoreClient(balanced.staking);
         sicxScore = new SicxInterfaceScoreClient(balanced.sicx);
