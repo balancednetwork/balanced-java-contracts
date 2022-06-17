@@ -283,23 +283,6 @@ public class DexTestCore extends DexTestBase {
     }
 
     @Test
-    void removeLiquidity_withdrawalLockActive() {
-        // Arrange - remove liquidity arguments.
-        BigInteger poolId = BigInteger.TWO;
-        BigInteger lpTokensToRemove = BigInteger.valueOf(1000);
-        Boolean withdrawTokensOnRemoval = false;
-        
-        // Arrange - supply liquidity.
-        BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
-        BigInteger balnValue = BigInteger.valueOf(350).multiply(EXA);
-        supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
-
-        // Act & Assert.
-        Executable fundsLocked = () -> dexScore.invoke(ownerAccount, "remove", poolId, lpTokensToRemove, withdrawTokensOnRemoval);
-        expectErrorMessage(fundsLocked, "Reverted(0): Balanced DEX:  Assets must remain in the pool for 24 hours, please try again later.");
-    }
-
-    @Test
     void removeLiquidity() {
         // Arrange - remove liquidity arguments.
         BigInteger poolId = BigInteger.TWO;
@@ -438,22 +421,6 @@ public class DexTestCore extends DexTestBase {
         assertEquals(value, initialValue.subtract(transferValue));
         value = (BigInteger) dexScore.call("balanceOf", account1.getAddress(), poolId);
         assertEquals(value, transferValue);
-    }
-
-    @Test
-    void tokenFallback_swapIcx_revertOnIncompleteRewards() {
-        // Arrange.
-        Account tokenScoreCaller = sicxScore;
-        Account tokenSender = sm.createAccount();
-        BigInteger value = BigInteger.valueOf(1000000000);
-
-        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(false);
-        contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(false);
-        contextMock.when(() -> Context.call(any(Address.class), eq("decimals"))).thenReturn(BigInteger.valueOf(18));
-
-        // Act & assert.
-        Executable incompleteRewards = () -> dexScore.invoke(tokenScoreCaller, "tokenFallback", tokenSender.getAddress(), value, tokenData("_swap_icx", new HashMap<>()));
-        expectErrorMessage(incompleteRewards, "Reverted(0): Balanced DEX: Rewards distribution in progress, please try again shortly");
     }
 
     // In the process of going through this.
