@@ -8,6 +8,9 @@
 # Keystore
 keystore.json
 
+# Deployments
+deployments
+
 # BlueJ files
 *.ctxt
 

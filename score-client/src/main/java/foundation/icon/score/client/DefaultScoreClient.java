@@ -395,6 +395,7 @@ public class DefaultScoreClient extends JsonrpcClient {
         Hash txh = sendTransaction(client, wallet, tx);
         System.out.println(txh);
         waitBlockInterval();
+        System.out.println("tx has is: "+txh);
         return result(client, txh, timeout);
     }
 
