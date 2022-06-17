@@ -122,14 +122,20 @@ public class Position {
         return false;
     }
 
-    public BigInteger totalCollateralInLoop(String collateralSymbol) {
+    public BigInteger totalCollateralInLoop(String collateralSymbol,  boolean readOnly) {
         Collateral collateral = CollateralDB.getCollateral(collateralSymbol);
 
         Address collateralAddress = collateral.getAssetAddress();
         Token collateralContract = new Token(collateralAddress);
 
         BigInteger amount = getCollateral(collateralSymbol);
-        BigInteger price = collateralContract.priceInLoop();
+        BigInteger price;
+        if (readOnly) {
+            price  = collateralContract.lastPriceInLoop();
+        } else {
+            price  = collateralContract.priceInLoop();
+        }
+        
 
         return amount.multiply(price).divide(EXA);
     }
@@ -159,7 +165,7 @@ public class Position {
     public Standing getStanding(String collateralSymbol, Boolean readOnly) {
         Standing standing = new Standing();
         standing.totalDebt = totalDebtInLoop(collateralSymbol, readOnly);
-        standing.collateral = totalCollateralInLoop(collateralSymbol);
+        standing.collateral = totalCollateralInLoop(collateralSymbol, readOnly);
 
         if (standing.totalDebt.equals(BigInteger.ZERO)) {
             standing.ratio = BigInteger.ZERO;

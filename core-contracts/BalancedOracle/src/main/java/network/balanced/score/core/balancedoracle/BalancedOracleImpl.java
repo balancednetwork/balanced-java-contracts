@@ -16,21 +16,27 @@
 
 package network.balanced.score.core.balancedoracle;
 
-import score.Address;
-import score.Context;
-import score.annotation.External;
-import score.annotation.Optional;
+import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.admin;
+import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.assetSymbolMap;
+import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.dex;
+import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.dexPricedAssets;
+import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.governance;
+import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.lastPriceInLoop;
+import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.oracle;
+import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.sicx;
+import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.staking;
+import static network.balanced.score.lib.utils.Check.only;
+import static network.balanced.score.lib.utils.Check.onlyOwner;
+import static network.balanced.score.lib.utils.Constants.EXA;
 
 import java.math.BigInteger;
 import java.util.Map;
 
-import javax.swing.text.AbstractDocument.Content;
-
-import network.balanced.score.lib.interfaces.*;
-import static network.balanced.score.lib.utils.Check.*;
-import static network.balanced.score.lib.utils.Constants.*;
-import static network.balanced.score.lib.utils.ArrayDBUtils.*;
-import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.*;
+import network.balanced.score.lib.interfaces.BalancedOracle;
+import score.Address;
+import score.Context;
+import score.annotation.External;
+import score.annotation.Optional;
 
 public class BalancedOracleImpl implements BalancedOracle {
     public static final String TAG = "Balanced Oracle";

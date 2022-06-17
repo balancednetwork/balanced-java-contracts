@@ -650,7 +650,7 @@ public class LoansImpl implements Loans {
         Position position = PositionsDB.getPosition(from);
         BigInteger oldTotalDebt = totalDebts.getOrDefault(assetToBorrow, BigInteger.ZERO);
 
-        BigInteger collateral = position.totalCollateralInLoop(collateralSymbol);
+        BigInteger collateral = position.totalCollateralInLoop(collateralSymbol, false);
         BigInteger maxDebtValue = POINTS.multiply(collateral).divide(lockingRatio.get());
         BigInteger fee = originationFee.get().multiply(amount).divide(POINTS);
 
