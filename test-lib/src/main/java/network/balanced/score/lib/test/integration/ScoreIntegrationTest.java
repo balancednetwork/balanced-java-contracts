@@ -63,44 +63,37 @@ public interface ScoreIntegrationTest {
     SystemInterface _systemScore = new SystemInterfaceScoreClient(godClient);
     SystemInterfaceScoreClient systemScore = (SystemInterfaceScoreClient) _systemScore;
 
+    @SuppressWarnings("unchecked")
+    static void registerPreps() throws Exception {
 
-    public static StakingScoreClient newScoreClient() throws Exception {
-        KeyWallet owner = createWalletWithBalance(BigInteger.TEN.pow(24));
-        DefaultScoreClient godClient = new DefaultScoreClient(
-                chain.getEndpointURL(),
-                chain.networkId,
-                owner,
-                DefaultScoreClient.ZERO_ADDRESS
-        );
-//        return godClient;
-        Staking _staking = new StakingScoreClient(godClient);
-        StakingScoreClient stakingScore = (StakingScoreClient) _staking;
+        Map<String, Object> getPreps;
 
-        Staking _stakingScore2 = new StakingScoreClient(godClient);
-        return (StakingScoreClient) _stakingScore2;
+        try {
+            getPreps = systemScore.getPReps(BigInteger.ONE, BigInteger.valueOf(100));
+        } catch (Exception e) {
+            registerPrep();
+            getPreps = systemScore.getPReps(BigInteger.ONE, BigInteger.valueOf(100));
+        }
+
+        List<Map<String, Object>> prepList = (List<Map<String, Object>>) getPreps.get("preps");
+        int prepCount = prepList.size();
+        if (prepCount >= 100) {
+            return;
+        }
+        int remainingPrepsToRegister = 100 - prepCount;
+        for (int i = 0; i < remainingPrepsToRegister; i++) {
+            registerPrep();
+        }
     }
 
-    public static void registerPreps() throws Exception {
-
-            Map<String, Object> getPreps = systemScore.getPReps(BigInteger.ONE, BigInteger.valueOf(100));
-            ArrayList<Map<String, Object>> prepArray = (ArrayList<Map<String, Object>>) getPreps.get("preps");
-            int prepCount = prepArray.size();
-            if (prepCount < 100){
-                for (int i = 0; i < 105; i++) {
-                    KeyWallet owner = createWalletWithBalance(BigInteger.TEN.pow(24));
-                    DefaultScoreClient godClient = new DefaultScoreClient(
-                            chain.getEndpointURL(),
-                            chain.networkId,
-                            owner,
-                            DefaultScoreClient.ZERO_ADDRESS
-                    );
-                    SystemInterface _systemScore = new SystemInterfaceScoreClient(godClient);
-                    SystemInterfaceScoreClient systemScore = (SystemInterfaceScoreClient) _systemScore;
-                    systemScore.registerPRep(BigInteger.valueOf(2000).multiply(BigInteger.TEN.pow(18)), "test", "kokoa@example.com", "USA", "New York", "https://icon.kokoa.com", "https://icon.kokoa.com/json/details.json", "localhost:9082");
-
-                }
-            }
-
+    private static void registerPrep() throws Exception {
+        KeyWallet owner = createWalletWithBalance(BigInteger.TEN.pow(24));
+        DefaultScoreClient godClient = new DefaultScoreClient(chain.getEndpointURL(), chain.networkId, owner,
+                DefaultScoreClient.ZERO_ADDRESS);
+        SystemInterfaceScoreClient systemScore = new SystemInterfaceScoreClient(godClient);
+        systemScore.registerPRep(BigInteger.valueOf(2000).multiply(BigInteger.TEN.pow(18)), "test",
+                "kokoa@example.com", "USA", "New York", "https://icon.kokoa.com",
+                "https://icon.kokoa.com/json/details.json", "localhost:9082");
     }
 
     static KeyWallet createWalletWithBalance(BigInteger amount) throws Exception {
