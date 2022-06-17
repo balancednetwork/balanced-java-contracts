@@ -1,18 +1,31 @@
+/*
+ * Copyright (c) 2022-2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package network.balanced.score.lib.test.integration;
+
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.score.client.DefaultScoreClient;
 import foundation.icon.score.client.ScoreClient;
 import network.balanced.score.lib.interfaces.*;
-import network.balanced.score.lib.interfaces.base.*;
-import network.balanced.score.lib.structs.BalancedAddresses;
 
-import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
-
-import java.math.BigInteger;
+import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.chain;
 
 public class BalancedClient {
-    private Balanced balanced;
-    private KeyWallet wallet;
+
+    private final KeyWallet wallet;
 
     @ScoreClient
     private Governance _governance;
@@ -72,7 +85,6 @@ public class BalancedClient {
     public SystemInterfaceScoreClient systemScore;
 
     public BalancedClient(Balanced balanced, KeyWallet wallet) {
-        this.balanced = balanced;
         this.wallet = wallet;
         governance = new GovernanceScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.governance._address());
         staking = new StakingScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.staking._address());

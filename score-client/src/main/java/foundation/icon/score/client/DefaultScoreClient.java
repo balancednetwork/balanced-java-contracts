@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -393,9 +393,8 @@ public class DefaultScoreClient extends JsonrpcClient {
             long timeout) {
         SendTransactionParam tx = new SendTransactionParam(nid, address, valueForPayable, "call", callData(method, params));
         Hash txh = sendTransaction(client, wallet, tx);
-        System.out.println(txh);
         waitBlockInterval();
-        System.out.println("tx has is: "+txh);
+        System.out.println("tx hash is: "+txh);
         return result(client, txh, timeout);
     }
 

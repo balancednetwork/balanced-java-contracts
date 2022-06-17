@@ -234,7 +234,7 @@ public class Balanced {
         return balancedClients.get(address);
     }
 
-    // deprecated after continous migration
+    // deprecated after continuous migration
     public void syncDistributions() {
         Consumer<TransactionResult> distributeConsumer = result -> {};
         while (!checkDistributionsDone()) {

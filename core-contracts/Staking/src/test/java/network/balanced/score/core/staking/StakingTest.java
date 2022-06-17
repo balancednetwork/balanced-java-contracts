@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Map;
 
 import static network.balanced.score.core.staking.utils.Constant.*;
-import static network.balanced.score.test.UnitTest.expectErrorMessage;
+import static network.balanced.score.lib.test.UnitTest.expectErrorMessage;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.MockedStatic.Verification;
 import static org.mockito.Mockito.*;

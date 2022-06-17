@@ -19,14 +19,18 @@ package network.balanced.score.core.staking;
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.score.client.DefaultScoreClient;
 import foundation.icon.score.client.ScoreClient;
-import network.balanced.score.interfaces.*;
-import network.balanced.score.lib.interfaces.*;
+import network.balanced.score.lib.interfaces.SicxInterface;
+import network.balanced.score.lib.interfaces.SicxInterfaceScoreClient;
 import network.balanced.score.lib.interfaces.Staking;
+import network.balanced.score.lib.interfaces.StakingScoreClient;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.test.integration.Balanced;
-import network.balanced.score.test.ScoreIntegrationTest;
+import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
 import org.json.JSONObject;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
 import score.Address;
 import scorex.util.HashMap;
 
@@ -36,7 +40,6 @@ import java.util.Map;
 
 import static network.balanced.score.core.staking.utils.Constant.HUNDRED;
 import static network.balanced.score.core.staking.utils.Constant.ONE_EXA;
-import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class StakingIntegrationTest implements ScoreIntegrationTest {
@@ -87,10 +90,10 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
     }
 
     @ScoreClient
-    StakingInterface testerScore = new StakingInterfaceScoreClient(clientWithTester);
+    Staking testerScore = new StakingScoreClient(clientWithTester);
 
     @ScoreClient
-    StakingInterface testerScore2 = new StakingInterfaceScoreClient(clientWithTester2);
+    Staking testerScore2 = new StakingScoreClient(clientWithTester2);
 
     @ScoreClient
     SicxInterface sicxScore2 = new SicxInterfaceScoreClient(clientWithTester3);
@@ -516,14 +519,14 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
 
     @Test
     @Order(11)
-    void delegateFirstThenStake() throws Exception {
-        StakingInterface.PrepDelegations p = new StakingInterface.PrepDelegations();
+    void delegateFirstThenStake() {
+        PrepDelegations p = new PrepDelegations();
         Address delegatedAddress = staking.getTopPreps().get(33);
 
         p._address = delegatedAddress;
         p._votes_in_per = new BigInteger("100").multiply(ONE_EXA);
 
-        StakingInterface.PrepDelegations[] userDelegation = new StakingInterface.PrepDelegations[]{p};
+        PrepDelegations[] userDelegation = new PrepDelegations[]{p};
         BigInteger previousTotalStake = staking.getTotalStake();
         BigInteger previousTotalSupply = sicxScore.totalSupply();
         BigInteger userBalance = sicxScore.balanceOf(senderAddress);
@@ -535,8 +538,7 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         Map<String, BigInteger> userExpectedDelegations = new HashMap<>();
         userExpectedDelegations.put(delegatedAddress.toString(), BigInteger.ZERO);
         assertEquals(userDelegations, userExpectedDelegations);
-        ((StakingInterfaceScoreClient) testerScore).stakeICX(new BigInteger("50").multiply(ONE_EXA), null
-                , null);
+        ((StakingScoreClient) testerScore).stakeICX(new BigInteger("50").multiply(ONE_EXA), null, null);
         // get prep delegations
         Map<String, BigInteger> prepDelegations = staking.getPrepDelegations();
         Map<String, BigInteger> expectedPrepDelegations = new HashMap<>();
@@ -638,7 +640,7 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         Address receiverAddress = staking.getTopPreps().get(43);
 
 
-        ((StakingInterfaceScoreClient) testerScore2).stakeICX(new BigInteger("100").multiply(ONE_EXA), null
+        ((StakingScoreClient) testerScore2).stakeICX(new BigInteger("100").multiply(ONE_EXA), null
                 , null);
 
         sicxScore2.transfer(receiverAddress, new BigInteger("50").multiply(ONE_EXA), null);

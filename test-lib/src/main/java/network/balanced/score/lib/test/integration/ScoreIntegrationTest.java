@@ -18,15 +18,12 @@ package network.balanced.score.lib.test.integration;
 
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.icx.Wallet;
+import foundation.icon.jsonrpc.Address;
 import foundation.icon.jsonrpc.model.Hash;
 import foundation.icon.jsonrpc.model.TransactionResult;
-import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
 import foundation.icon.score.client.RevertedException;
 import foundation.icon.score.client.ScoreClient;
-import network.balanced.score.interfaces.StakingInterface;
-import network.balanced.score.lib.interfaces.Staking;
-import network.balanced.score.lib.interfaces.StakingScoreClient;
 import network.balanced.score.lib.interfaces.SystemInterface;
 import network.balanced.score.lib.interfaces.SystemInterfaceScoreClient;
 import org.junit.jupiter.api.MethodOrderer;
@@ -36,9 +33,12 @@ import org.junit.jupiter.api.function.Executable;
 import score.UserRevertedException;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -49,19 +49,15 @@ import static network.balanced.score.lib.test.integration.Env.Chain;
 import static network.balanced.score.lib.test.integration.Env.getDefaultChain;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-
 @Tag("integration")
 @TestMethodOrder(value = MethodOrderer.OrderAnnotation.class)
 public interface ScoreIntegrationTest {
 
 
     Chain chain = getDefaultChain();
-    DefaultScoreClient godClient = new DefaultScoreClient(
-            chain.getEndpointURL(),
-            chain.networkId,
-            chain.godWallet,
-            DefaultScoreClient.ZERO_ADDRESS
-    );
+    DefaultScoreClient godClient = new DefaultScoreClient(chain.getEndpointURL(), chain.networkId, chain.godWallet,
+            DefaultScoreClient.ZERO_ADDRESS);
+    DefaultScoreClient client = new DefaultScoreClient(chain.getEndpointURL(), chain.networkId, null, null);
 
     @ScoreClient
     SystemInterface _systemScore = new SystemInterfaceScoreClient(godClient);
@@ -109,10 +105,8 @@ public interface ScoreIntegrationTest {
 
     static KeyWallet createWalletWithBalance(BigInteger amount) throws Exception {
         KeyWallet wallet = KeyWallet.create();
-
         Address address = DefaultScoreClient.address(wallet.getAddress().toString());
         transfer(address, amount);
-
         return wallet;
     }
 
@@ -163,31 +157,18 @@ public interface ScoreIntegrationTest {
         return map.containsKey(key) && predicate.test(map.get(key));
     }
 
-    static <T> List<T> eventLogs(TransactionResult txr,
-                                 String signature,
-                                 Address scoreAddress,
-                                 Function<TransactionResult.EventLog, T> mapperFunc,
-                                 Predicate<T> filter) {
-        Predicate<TransactionResult.EventLog> predicate =
-                (el) -> el.getIndexed().get(0).equals(signature);
+    static <T> List<T> eventLogs(TransactionResult txr, String signature, Address scoreAddress,
+                                 Function<TransactionResult.EventLog, T> mapperFunc, Predicate<T> filter) {
+        Predicate<TransactionResult.EventLog> predicate = (el) -> el.getIndexed().get(0).equals(signature);
         if (scoreAddress != null) {
             predicate = predicate.and((el) -> el.getScoreAddress().toString().equals(scoreAddress.toString()));
         }
-        Stream<T> stream = txr.getEventLogs().stream()
-                .filter(predicate)
-                .map(mapperFunc);
+        Stream<T> stream = txr.getEventLogs().stream().filter(predicate).map(mapperFunc);
         if (filter != null) {
             stream = stream.filter(filter);
         }
         return stream.collect(Collectors.toList());
     }
-
-    DefaultScoreClient client = new DefaultScoreClient(
-            Env.getDefaultChain().getEndpointURL(),
-            Env.getDefaultChain().networkId,
-            null,
-            null
-    );
 
     static void waitByNumOfBlock(long numOfBlock) {
         waitByHeight(client._lastBlockHeight().add(BigInteger.valueOf(numOfBlock)));
@@ -238,8 +219,8 @@ public interface ScoreIntegrationTest {
         };
     }
 
-    static <T> Consumer<TransactionResult> eventLogsChecker(
-            Address address, EventLogsSupplier<T> supplier, Consumer<List<T>> consumer) {
+    static <T> Consumer<TransactionResult> eventLogsChecker(Address address, EventLogsSupplier<T> supplier,
+                                                            Consumer<List<T>> consumer) {
         return (txr) -> {
             List<T> eventLogs = supplier.apply(txr, address, null);
             if (consumer != null) {
@@ -252,5 +233,18 @@ public interface ScoreIntegrationTest {
         return (txr) -> {
 
         };
+    }
+
+    static Wallet getOrGenerateWallet(String prefix, Properties properties) {
+        Wallet wallet = DefaultScoreClient.wallet(prefix, properties);
+        return wallet == null ? generateWallet() : wallet;
+    }
+
+    static KeyWallet generateWallet() {
+        try {
+            return KeyWallet.create();
+        } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException | NoSuchProviderException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

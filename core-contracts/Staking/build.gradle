@@ -26,8 +26,15 @@ repositories {
 dependencies {
     compileOnly Dependencies.javaeeApi
     implementation Dependencies.javaeeScorex
+    implementation Dependencies.minimalJson
+
+    annotationProcessor Dependencies.javaeeScoreData
+    compileOnly Dependencies.javaeeScoreData
+
     implementation project(':score-lib')
 
+    testImplementation Dependencies.javaeeTokens
+    testImplementation Dependencies.json
     testImplementation Dependencies.javaeeUnitTest
     testImplementation Dependencies.junitJupiter
     testRuntimeOnly Dependencies.junitJupiterEngine
@@ -39,18 +46,6 @@ dependencies {
     intTestImplementation project(':score-client')
     intTestImplementation Dependencies.iconSdk
     intTestImplementation Dependencies.jacksonDatabind
-
-    compileOnly Dependencies.javaeeApi
-    implementation Dependencies.javaeeScorex
-    implementation Dependencies.minimalJson
-
-    annotationProcessor Dependencies.javaeeScoreData
-    compileOnly Dependencies.javaeeScoreData
-
-    testImplementation Dependencies.javaeeTokens
-    testImplementation Dependencies.json
-
-
 }
 
 optimizedJar {
