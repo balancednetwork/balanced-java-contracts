@@ -175,7 +175,7 @@ public class GovernanceImpl {
     }
 
     @External
-    public void setAdmin(Address contractAddress, Address admin){
+    public void setAdmin(Address contractAddress, Address admin) {
         onlyOwner();
         Context.call(contractAddress, "setAdmin", admin);
 

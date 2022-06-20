@@ -181,6 +181,9 @@ public interface Governance extends
     void setAdmins();
 
     @External
+    void setAdmin(Address contractAddress, Address admin);
+
+    @External
     void setContractAddresses();
 
     @External
