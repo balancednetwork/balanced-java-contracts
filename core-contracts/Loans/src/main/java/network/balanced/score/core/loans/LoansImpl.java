@@ -276,9 +276,9 @@ public class LoansImpl implements Loans {
     }
 
     // make external when mutli collateral is released
-    private void borrow(String _collateralToBorrowAgainst, String _assetToBorrow, BigInteger _amountToBorrowm, Address _from) {
+    private void borrow(String _collateralToBorrowAgainst, String _assetToBorrow, BigInteger _amountToBorrow, Address _from) {
         loansOn();
-        originateLoan(_collateralToBorrowAgainst, _assetToBorrow, _amountToBorrowm, _from);
+        originateLoan(_collateralToBorrowAgainst, _assetToBorrow, _amountToBorrow, _from);
     }
 
     @External

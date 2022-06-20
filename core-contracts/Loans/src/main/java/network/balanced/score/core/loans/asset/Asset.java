@@ -24,9 +24,7 @@ import java.util.Map;
 
 import network.balanced.score.core.loans.collateral.CollateralDB;
 import network.balanced.score.core.loans.linkedlist.LinkedListDB;
-import network.balanced.score.core.loans.utils.PositionBatch;
 import network.balanced.score.core.loans.utils.Token;
-import network.balanced.score.lib.interfaces.Sicx;
 import score.Address;
 import score.BranchDB;
 import score.Context;
@@ -61,7 +59,6 @@ public class Asset {
         BigInteger liquidationPoolBalance = liquidationPool.at(dbKey).get();
         if (liquidationPoolBalance != null && liquidationPoolBalance.compareTo(BigInteger.ZERO) > 0 ) {
             setLiquidationPool("sICX", liquidationPool.at(dbKey).getOrDefault(BigInteger.ZERO));
-            // liquidationPool.at(dbKey).set(null);
         }
     }
 
@@ -69,7 +66,6 @@ public class Asset {
         BigInteger badDebtBalance = badDebt.at(dbKey).get();
         if (badDebtBalance != null && badDebtBalance.compareTo(BigInteger.ZERO) > 0 ) {
             setBadDebt("sICX", liquidationPool.at(dbKey).getOrDefault(BigInteger.ZERO));
-            // badDebt.at(dbKey).set(null);
         }
     }
 
@@ -114,7 +110,7 @@ public class Asset {
     }
 
     public boolean isCollateral() {
-        return isCollateral.at(dbKey).getOrDefault(true);
+        return isCollateral.at(dbKey).getOrDefault(false);
     }
 
     public void setActive(Boolean active) {

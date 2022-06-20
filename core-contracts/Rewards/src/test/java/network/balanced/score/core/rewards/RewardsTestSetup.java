@@ -25,6 +25,8 @@ import score.Address;
 import java.math.BigInteger;
 import java.util.List;
 
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class RewardsTestSetup extends RewardsTestBase {
@@ -76,12 +78,6 @@ class RewardsTestSetup extends RewardsTestBase {
     }
 
     @Test
-    void setAndGetStakedLp() {
-        testContractSettersAndGetters(rewardsScore, governance, admin, "setStakedLp",
-        testAccount.getAddress(), "getStakedLp");
-    }
-
-    @Test
     void setAndGetBatchSize() {
         int batchSize = 1;
         String expectedErrorMessage = "Authorization Check: Address not set";
@@ -103,7 +99,7 @@ class RewardsTestSetup extends RewardsTestBase {
 
     @Test
     void setAndGetTimeOffset() {
-        BigInteger timeOffset = BigInteger.ONE;
+        BigInteger timeOffset = BigInteger.ONE.multiply(MICRO_SECONDS_IN_A_DAY).negate();
         String expectedErrorMessage = "Authorization Check: Address not set";
 
         Executable setWithoutAdmin = () -> rewardsScore.invoke(admin, "setTimeOffset", timeOffset);
