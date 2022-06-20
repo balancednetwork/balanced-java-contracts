@@ -27,7 +27,7 @@ public class BalancedUtils {
         BigInteger voteStart = day.add(BigInteger.TWO);
         BigInteger snapshot = day.add(BigInteger.ONE);
         
-        voter.governance.defineVote(name, "test", voteStart, snapshot, actions.toString());
+        voter.governance.defineVote(name, "test", voteStart, snapshot, BigInteger.ONE, actions.toString());
         BigInteger id = voter.governance.getVoteIndex(name);
         balanced.increaseDay(2);
 
