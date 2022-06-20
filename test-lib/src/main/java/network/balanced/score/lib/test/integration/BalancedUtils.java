@@ -28,7 +28,7 @@ public class BalancedUtils {
         balanced.increaseDay(2);
 
         voter.governance.evaluateVote(id);
-        assertEquals(voter.governance.checkVote(id).get("status"), "Executed");
+        assertEquals("Executed", voter.governance.checkVote(id).get("status"));
     }
 
     public static BigInteger hexObjectToBigInteger(Object hexNumber) {

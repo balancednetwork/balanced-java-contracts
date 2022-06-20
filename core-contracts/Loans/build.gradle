@@ -100,7 +100,7 @@ task integrationTest(type: Test) {
         testLogging.showStandardStreams = true
         description = 'Runs integration tests.'
         group = 'verification'
-
+        systemProperty "mainnet", new File(project(':test-lib').projectDir, 'mainnet-contracts/Loans-0.1.0-optimized.jar')
         testClassesDirs = sourceSets.intTest.output.classesDirs
         classpath = sourceSets.intTest.runtimeClasspath
     }
