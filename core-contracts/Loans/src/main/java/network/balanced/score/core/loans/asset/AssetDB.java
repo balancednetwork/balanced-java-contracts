@@ -48,7 +48,8 @@ public class AssetDB {
 
         for (int i = 0; i < totalSymbolsCount; i++) {
             String symbol = assetSymbols.get(i);
-            Asset asset = getAsset(symbol);
+            String assetAddress = symbolMap.get(symbol);
+            Asset asset = new Asset(ASSET_DB_PREFIX + "|" + assetAddress);
             if (asset.isCollateral()) {
                 continue;
             }

@@ -33,6 +33,9 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
@@ -40,40 +43,88 @@ import java.util.zip.ZipEntry;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
 import static org.junit.jupiter.api.Assertions.*;
 
-class LoansIntegrationTestBase extends LoansIntegrationTest {
+class LoansIntegrationTestMigration extends LoansIntegrationTest {
+    static String loansPath;
     @BeforeAll
     public static void contractSetup() throws Exception {
+        loansPath = System.getProperty("Loans");
+        System.setProperty("Loans", System.getProperty("mainnet"));
+
         balanced = new Balanced();
         balanced.setupBalanced();
         owner = balanced.ownerClient;
         reader = balanced.newClient(BigInteger.ZERO);
         
         LoansIntegrationTest.setup();
-        
     }
-   
+
     @Test
-    @Order(32)
-    void liquidate_throughGovernanceVote_useReserve() throws Exception {
+    @Order(-1)
+    void updateLoans() throws Exception {
+       takeLoans();
+       reOpenPosition();
+       repyDebt();
+       rebalancing_lowerPrice();
+       rebalancing_raisePrice();
+       liquidateUser();
+
+       Map<String, Object> availableAssetsPreUpdate = reader.loans.getAvailableAssets().get("bnUSD");
+       Map<String, Object> availableAssetsEdited = new HashMap<String, Object>(availableAssetsPreUpdate);
+       availableAssetsEdited.remove("is_collateral");
+       Map<String, String> collateralTokensPre = reader.loans.getCollateralTokens();
+       BigInteger totalCollateralPre = reader.loans.getTotalCollateral();
+
+       List<Object> positionsPre = new ArrayList<>();
+       for (BalancedClient client :  balanced.balancedClients.values()) {    
+            try {
+                Map<String, Object> positionEdited = new HashMap<String, Object>(reader.loans.getAccountPositions(client.getAddress()));
+                positionEdited.remove("first day");
+                positionEdited.remove("last_snap");
+                positionEdited.remove("snap_id");
+                positionEdited.remove("snaps_length");
+                positionsPre.add(positionEdited);
+            } catch (Exception e) {
+            }
+       }
+
+       balanced.loans._update(loansPath, Map.of("_governance", balanced.governance._address()));
+
+       Map<String, Object>  availableAssetsPostUpdate = reader.loans.getAvailableAssets().get("bnUSD");;
+       Map<String, String> collateralTokensPost = reader.loans.getCollateralTokens();
+       BigInteger totalCollateralPost = reader.loans.getTotalCollateral();
+
+       List<Object> positionsPost = new ArrayList<>();
+       for (BalancedClient client :  balanced.balancedClients.values()) {
+            try {
+                positionsPost.add(reader.loans.getAccountPositions(client.getAddress()));
+            } catch (Exception e) {
+            }
+       }
+
+       assertEquals(availableAssetsEdited, availableAssetsPostUpdate);
+       assertEquals(collateralTokensPre, collateralTokensPost);
+       assertEquals(totalCollateralPre, totalCollateralPost);
+       assertEquals(positionsPre, positionsPost);
+    }
+
+    private void liquidateUser() throws Exception {
         // Arrange
+        balanced.increaseDay(1);
+        claimAllRewards();
+
         BalancedClient voter = balanced.newClient();
         BigInteger expectedTotalDebt = getTotalDebt();
         depositToStabilityContract(voter, voteDefinitionFee.multiply(BigInteger.TWO));
 
         BigInteger initalLockingRatio = hexObjectToBigInteger(owner.loans.getParameters().get("locking ratio"));
-        BigInteger lockingRatio = BigInteger.valueOf(8500);
+        BigInteger lockingRatio = BigInteger.valueOf(13000);
 
         BalancedClient loanTaker = balanced.newClient();
         BalancedClient liquidator = balanced.newClient();
         
-        setLockingRatio(voter, lockingRatio, "Liquidation setup with reserve");
+        setLockingRatio(voter, lockingRatio, "Liquidation setup for asset migration");
 
-        BigInteger collateral = BigInteger.TEN.pow(23);
-        owner.staking.stakeICX(collateral, null, null);
-        owner.sicx.transfer(balanced.reserve._address(), owner.sicx.balanceOf(owner.getAddress()), null);
-        BigInteger reserveSICXBalance = reader.reserve.getBalances().get("sICX");
-        assertTrue(reserveSICXBalance.compareTo(BigInteger.ZERO) > 0);
-
+        BigInteger collateral = BigInteger.TEN.pow(22);
         BigInteger collateralValue = collateral.multiply(owner.sicx.lastPriceInLoop()).divide(EXA);
         BigInteger feePercent = hexObjectToBigInteger(owner.loans.getParameters().get("origination fee"));
         BigInteger maxDebt = POINTS.multiply(collateralValue).divide(lockingRatio);
@@ -83,33 +134,9 @@ class LoansIntegrationTestBase extends LoansIntegrationTest {
 
         loanTaker.loans.depositAndBorrow(collateral, "bnUSD", loan,  null, null);
 
-        setLockingRatio(voter, initalLockingRatio, "restore Lockign ratio 32");
+        setLockingRatio(voter, initalLockingRatio, "restore Lockign ratio -1");
 
         // Act
-        BigInteger balancePreLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
         liquidator.loans.liquidate(loanTaker.getAddress());
-        BigInteger balancePostLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
-        assertTrue(balancePreLiquidation.compareTo(balancePostLiquidation) < 0);
-
-        depositToStabilityContract(liquidator, loan.multiply(BigInteger.TWO));
-
-        BigInteger bnUSDBalancePreRetire = liquidator.bnUSD.balanceOf(liquidator.getAddress());
-        BigInteger sICXBalancePreRetire = liquidator.sicx.balanceOf(liquidator.getAddress());
-        liquidator.loans.retireBadDebt("bnUSD", loan.add(fee));
-        BigInteger bnUSDBalancePostRetire = liquidator.bnUSD.balanceOf(liquidator.getAddress());
-        BigInteger sICXBalancePostRetire = liquidator.sicx.balanceOf(liquidator.getAddress());
-
-        // Assert
-        assertTrue(bnUSDBalancePreRetire.compareTo(bnUSDBalancePostRetire) > 0);
-        assertTrue(sICXBalancePreRetire.compareTo(sICXBalancePostRetire) < 0);
-
-        Map<String, BigInteger> LiquidatedUserBaS = reader.loans.getBalanceAndSupply("Loans", loanTaker.getAddress());
-        assertEquals(expectedTotalDebt, getTotalDebt());
-        assertEquals(BigInteger.ZERO, loanTaker.getLoansAssetPosition("sICX"));
-        assertEquals(BigInteger.ZERO, loanTaker.getLoansAssetPosition("bnUSD"));
-        assertEquals(BigInteger.ZERO, LiquidatedUserBaS.get("_balance"));
-
-        BigInteger reserveSICXBalanceAfterRedeem = reader.reserve.getBalances().get("sICX");
-        assertTrue(reserveSICXBalanceAfterRedeem.compareTo(reserveSICXBalance) < 0);
     }
 }

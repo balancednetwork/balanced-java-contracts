@@ -36,11 +36,11 @@ public class Asset {
     private static final String BORROWER_DB_PREFIX = "borrowers";
     private final BranchDB<String, VarDB<BigInteger>> assetAddedTime = Context.newBranchDB("added", BigInteger.class);
     private final BranchDB<String, VarDB<Address>> assetAddress = Context.newBranchDB("address", Address.class);
-    private final BranchDB<String, VarDB<BigInteger>> badDebt = Context.newBranchDB("bad_debt", BigInteger.class);
+    private final BranchDB<String, VarDB<BigInteger>> badDebt = Context.newBranchDB("bad_debt", BigInteger.class); // depreacted
     private final BranchDB<String, DictDB<String, BigInteger>> badDebts = Context.newBranchDB("multi_collateral_bad_debts",
     BigInteger.class);
     private final BranchDB<String, VarDB<BigInteger>> liquidationPool = Context.newBranchDB("liquidation_pool",
-            BigInteger.class);
+            BigInteger.class); // depreacted
             private final BranchDB<String, DictDB<String, BigInteger>> liquidationPools = Context.newBranchDB("multi_collateral_liquidation_pools",
             BigInteger.class);
     private final BranchDB<String, VarDB<BigInteger>> totalBurnedTokens = Context.newBranchDB("burned",
@@ -65,7 +65,7 @@ public class Asset {
     public void migrateBadDebt() {
         BigInteger badDebtBalance = badDebt.at(dbKey).get();
         if (badDebtBalance != null && badDebtBalance.compareTo(BigInteger.ZERO) > 0 ) {
-            setBadDebt("sICX", liquidationPool.at(dbKey).getOrDefault(BigInteger.ZERO));
+            setBadDebt("sICX", badDebt.at(dbKey).getOrDefault(BigInteger.ZERO));
         }
     }
 
