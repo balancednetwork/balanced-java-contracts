@@ -33,7 +33,6 @@ public class LoansVariables {
     private static final String RESERVE = "reserve";
     private static final String REWARDS = "rewards";
     private static final String STAKING = "staking";
-    private static final String FEEHANDLER = "feehandler";
     private static final String ADMIN = "admin";
 
     private static final String TIME_OFFSET = "time_offset";
