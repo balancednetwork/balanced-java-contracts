@@ -158,13 +158,13 @@ public class NonStakedLPRewardsTest {
         // next day starts
         Consumer<TransactionResult> distributeConsumer = result -> {};
         for(int i =0; i<10; i++){
-            balanced.ownerClient.rewards.distribute(distributeConsumer);
+            ((RewardsScoreClient)balanced.ownerClient.rewards).distribute(distributeConsumer);
         }
         waitForADay();
 
         // next day starts
         for(int i =0; i<10; i++){
-            balanced.ownerClient.rewards.distribute(distributeConsumer);
+            ((RewardsScoreClient)balanced.ownerClient.rewards).distribute(distributeConsumer);
         }
         // users without staking LP tokens will get 0 rewards
         assertEquals(BigInteger.ZERO, rewards.getBalnHolding(userAddress));

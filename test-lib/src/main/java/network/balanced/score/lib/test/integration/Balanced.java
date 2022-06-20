@@ -21,10 +21,7 @@ import foundation.icon.jsonrpc.model.Hash;
 import foundation.icon.jsonrpc.model.TransactionResult;
 import foundation.icon.score.client.DefaultScoreClient;
 import foundation.icon.score.client.ScoreClient;
-import network.balanced.score.lib.interfaces.DAOfund;
-import network.balanced.score.lib.interfaces.Governance;
-import network.balanced.score.lib.interfaces.Rewards;
-import network.balanced.score.lib.interfaces.Staking;
+import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.structs.BalancedAddresses;
 import score.Address;
 
@@ -200,13 +197,13 @@ public class Balanced {
     }
 
     public void setupMarkets() {
-        ownerClient.governance.createBnusdMarket(BigInteger.valueOf(400000).multiply(BigInteger.TEN.pow(18)));
+        ((GovernanceScoreClient)ownerClient.governance).createBnusdMarket(BigInteger.valueOf(400000).multiply(BigInteger.TEN.pow(18)));
         increaseDay(2);
         syncDistributions();
         BigInteger balnBalance = ownerClient.rewards.getBalnHolding(governance._address());
         BigInteger initialPoolDepths = balnBalance.divide(BigInteger.TWO);
         ownerClient.governance.createBalnMarket(initialPoolDepths, initialPoolDepths);
-        ownerClient.staking.stakeICX(initialPoolDepths.multiply(BigInteger.TWO), null, null);
+        ((StakingScoreClient)ownerClient.staking).stakeICX(initialPoolDepths.multiply(BigInteger.TWO), null, null);
         ownerClient.sicx.transfer(governance._address(), initialPoolDepths, null);
         ownerClient.governance.createBalnSicxMarket(initialPoolDepths, initialPoolDepths);
     }
@@ -229,8 +226,8 @@ public class Balanced {
     public void syncDistributions() {
         Consumer<TransactionResult> distributeConsumer = result -> {};
         while (!checkDistributionsDone()) {
-            ownerClient.rewards.distribute(distributeConsumer);
-            ownerClient.dividends.distribute(distributeConsumer);
+            ((RewardsScoreClient)ownerClient.rewards).distribute(distributeConsumer);
+            ((DividendsScoreClient)ownerClient.dividends).distribute(distributeConsumer);
         }
     }
 

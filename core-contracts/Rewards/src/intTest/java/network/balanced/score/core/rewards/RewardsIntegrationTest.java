@@ -61,8 +61,8 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
 
     @Test
     void testClaimAndDistribute() throws Exception { 
-        BalancedClient loanTaker = balanced.newClient();   
-        loanTaker.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(20), null, null);   
+        BalancedClient loanTaker = balanced.newClient();
+        ((LoansScoreClient)loanTaker.loans).depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(20), null, null);
         
         balanced.syncDistributions();
 

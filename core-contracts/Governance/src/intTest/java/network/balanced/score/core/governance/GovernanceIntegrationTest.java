@@ -20,6 +20,7 @@ import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.jsonrpc.model.TransactionResult;
+import network.balanced.score.lib.interfaces.LoansScoreClient;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
@@ -56,7 +57,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest{
         balanced.increaseDay(1);
         owner.baln.toggleEnableSnapshot();
 
-        tester.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(20), null, null);        
+        ((LoansScoreClient)tester.loans).depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(20), null, null);
 
         balanced.increaseDay(1);
         balanced.syncDistributions();
