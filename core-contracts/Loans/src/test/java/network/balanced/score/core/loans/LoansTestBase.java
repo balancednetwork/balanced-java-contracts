@@ -62,6 +62,7 @@ class LoansTestBase extends UnitTest {
     protected MockContract<RewardsScoreInterface> rewards;
     protected MockContract<DividendsScoreInterface> dividends;
     protected MockContract<ReserveScoreInterface> reserve;
+    protected MockContract<BalancedOracleScoreInterface> balancedOracle;
     protected LoansImpl loansSpy;
 
     protected final ArrayList<Account> accounts = new ArrayList<>();
@@ -143,6 +144,19 @@ class LoansTestBase extends UnitTest {
     private void setupDividends() throws Exception {
         dividends = new MockContract<DividendsScoreInterface>(DividendsScoreInterface.class, sm, admin);
         when(dividends.mock.distribute()).thenReturn(true);
+
+    }
+
+    private void setupOracle() throws Exception {
+        balancedOracle = new MockContract<BalancedOracleScoreInterface>(BalancedOracleScoreInterface.class, sm, admin);
+        when(balancedOracle.mock.getPriceInLoop(Mockito.any(String.class))).thenReturn(EXA);
+        when(balancedOracle.mock.getLastPriceInLoop(Mockito.any(String.class))).thenReturn(EXA);
+
+    }
+
+    public void mockOraclePrice(String symbol, BigInteger rate) {
+        when(balancedOracle.mock.getPriceInLoop(symbol)).thenReturn(rate);
+        when(balancedOracle.mock.getLastPriceInLoop(symbol)).thenReturn(rate);
 
     }
 
@@ -249,6 +263,7 @@ class LoansTestBase extends UnitTest {
         setupDividends();
         setupReserve();
         setupDex();
+        setupOracle();
 
         loans.invoke(governance.account, "setAdmin", admin.getAddress());
         loans.invoke(admin, "setDex", dex.getAddress());
@@ -256,6 +271,7 @@ class LoansTestBase extends UnitTest {
         loans.invoke(admin, "setReserve", reserve.getAddress());
         loans.invoke(admin, "setRebalance", rebalancing.getAddress());
         loans.invoke(admin, "setStaking", staking.getAddress());
+        loans.invoke(admin, "setOracle", balancedOracle.getAddress());
 
         governanceCall("turnLoansOn");
         loans.invoke(admin, "setRewards", rewards.getAddress());

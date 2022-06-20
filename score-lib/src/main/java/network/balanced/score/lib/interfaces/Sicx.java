@@ -23,9 +23,9 @@ import score.annotation.External;
 
 import java.math.BigInteger;
 
+import foundation.icon.score.client.ScoreInterface;
+@ScoreInterface
 public interface Sicx extends SicxAddress, IRC2 {
-
-
     @External(readonly = true)
     String getPeg();
 
