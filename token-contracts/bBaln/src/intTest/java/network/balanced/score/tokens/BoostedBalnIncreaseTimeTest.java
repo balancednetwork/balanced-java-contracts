@@ -5,16 +5,16 @@ import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import score.UserRevertedException;
 
 import java.math.BigInteger;
-import java.util.Map;
 
 import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.tokens.Constants.WEEK_IN_MICRO_SECONDS;
+import static network.balanced.score.tokens.Constants.ZERO_ADDRESS;
+import static network.balanced.score.tokens.TestHelper.getExpectedBalance;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class IncreaseTimeTest {
+public class BoostedBalnIncreaseTimeTest {
 
     private static Balanced balanced;
     private static BalancedClient owner;
@@ -34,7 +34,7 @@ public class IncreaseTimeTest {
         balanced.syncDistributions();
         ownerClient._transfer(owner.dex._address(), BigInteger.valueOf(1000).multiply(EXA), null);
         owner.governance.setContinuousRewardsDay(owner.dex.getDay().add(BigInteger.ONE));
-        waitForADay();
+        waitDays(1);
         balanced.syncDistributions();
         BigInteger updatedBalnHolding = owner.rewards.getBalnHolding(userAddress);
         System.out.println("baln holding from reward: "+updatedBalnHolding);
@@ -43,44 +43,34 @@ public class IncreaseTimeTest {
         System.out.println("available balance of baln: "+availableBalnBalance);
         System.out.println("total balance of baln: "+owner.baln.balanceOf(userAddress));
 
-        long microSecondsInADay = 84_600_000_000L;
-        long unlockTIme = (System.currentTimeMillis()*1000)+(30*microSecondsInADay);
-        System.out.println("unlock time is: "+unlockTIme);
-        String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTIme + "}}";
+        long unlockTime = (System.currentTimeMillis()*1000)+(BigInteger.valueOf(4).multiply(WEEK_IN_MICRO_SECONDS)).longValue();
+        System.out.println("unlock time is: "+unlockTime);
+        String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
         System.out.println("transfer amount: "+availableBalnBalance.divide(BigInteger.TWO));
         owner.baln.transfer(owner.boostedBaln._address(), availableBalnBalance.divide(BigInteger.TWO), data.getBytes());
 
         BigInteger balance = owner.boostedBaln.balanceOf(userAddress, BigInteger.ZERO);
         System.out.println("balance is: "+balance);
-        System.out.println("expected balance is: "+availableBalnBalance.divide(BigInteger.TWO));
+        assertEquals(balance.divide(EXA), getExpectedBalance(availableBalnBalance.divide(BigInteger.TWO), unlockTime).divide(EXA));
 
-        BigInteger updateUnlockTIme = BigInteger.valueOf ((System.currentTimeMillis()*1000)+(60*microSecondsInADay));
-        System.out.println("unlock time is: "+updateUnlockTIme);
-        owner.boostedBaln.increaseUnlockTime( updateUnlockTIme );
+        BigInteger updateUnlockTime = BigInteger.valueOf(unlockTime).add(BigInteger.TWO.multiply(WEEK_IN_MICRO_SECONDS));
+        System.out.println("unlock time is: "+updateUnlockTime);
+        owner.boostedBaln.increaseUnlockTime( updateUnlockTime );
+        balance = owner.boostedBaln.balanceOf(userAddress, BigInteger.ZERO);
+        assertEquals(balance.divide(EXA), getExpectedBalance(availableBalnBalance.divide(BigInteger.TWO), updateUnlockTime.longValue()).divide(EXA));
 
-        //test withdraw failed
-        UserRevertedException exception = assertThrows(UserRevertedException.class, ()->{
-            owner.boostedBaln.withdraw();
-        });
-
-        assertEquals(exception.getMessage(), "Reverted(0)");
-        BigInteger balanceAfterWithdraw = owner.boostedBaln.balanceOf(userAddress, BigInteger.ZERO);
-        System.out.println("balance after withdraw: "+balanceAfterWithdraw);
-
-        Map<String, BigInteger> lockedAmountAndTime = owner.boostedBaln.getLocked(userAddress);
-        System.out.println("locked amount: "+lockedAmountAndTime.get("amount"));
-        System.out.println("locked end: "+lockedAmountAndTime.get("end"));
 
     }
 
     @Test
     void withdrawTest(){
+        owner.boostedBaln.setPenaltyAddress(ZERO_ADDRESS);
         DefaultScoreClient ownerClient  = getOwnerClient();
         score.Address userAddress = score.Address.fromString(balanced.owner.getAddress().toString());
         owner.daofund.addAddressToSetdb();
         ownerClient._transfer(owner.dex._address(), BigInteger.valueOf(1000).multiply(EXA), null);
         owner.governance.setContinuousRewardsDay(owner.dex.getDay().add(BigInteger.ONE));
-        waitForADay();
+        waitDays(1);
         balanced.syncDistributions();
         BigInteger updatedBalnHolding = owner.rewards.getBalnHolding(userAddress);
         System.out.println("baln holding from reward: "+updatedBalnHolding);
@@ -89,8 +79,7 @@ public class IncreaseTimeTest {
         System.out.println("available balance of baln: "+availableBalnBalance);
         System.out.println("total balance of baln: "+owner.baln.balanceOf(userAddress));
 
-        long sec20MicroSeconds = 20_000_000L;
-        long unlockTIme = (System.currentTimeMillis()*1000)+sec20MicroSeconds;
+        long unlockTIme = (System.currentTimeMillis()*1000)+(BigInteger.valueOf(7).multiply(WEEK_IN_MICRO_SECONDS)).longValue();
         System.out.println("unlock time is: "+unlockTIme);
         String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTIme + "}}";
         System.out.println("transfer amount: "+availableBalnBalance.divide(BigInteger.TWO));
@@ -99,15 +88,20 @@ public class IncreaseTimeTest {
         BigInteger balance = owner.boostedBaln.balanceOf(userAddress, BigInteger.ZERO);
         System.out.println("balance is: "+balance);
         System.out.println("expected balance is: "+availableBalnBalance.divide(BigInteger.TWO));
-        try {
-            Thread.sleep(sec20MicroSeconds / 1000);
-        }catch (Exception ignored){}
 
         owner.boostedBaln.withdraw();
+
+        BigInteger balanceAfterWithdraw = owner.boostedBaln.balanceOf(userAddress, BigInteger.ZERO);
+        assertEquals(balanceAfterWithdraw, BigInteger.ZERO);
+
+        BigInteger newBalnBalance = owner.baln.availableBalanceOf(userAddress);
+        System.out.println("new baln balance is: "+newBalnBalance);
+        System.out.println("available baln balance is: "+availableBalnBalance);
+        assert  newBalnBalance.compareTo(availableBalnBalance)<0;
     }
 
-    void waitForADay(){
-        balanced.increaseDay(1);
+    void waitDays(int days){
+        balanced.increaseDay(days);
     }
 
     DefaultScoreClient getOwnerClient(){

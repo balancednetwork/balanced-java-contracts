@@ -13,6 +13,8 @@ public interface BoostedBaln {
 
     BigInteger getMinimumLockingAmount();
 
+    void setPenaltyAddress(Address penaltyAddress);
+
     void commitTransferOwnership(Address address);
 
     void applyTransferOwnership();

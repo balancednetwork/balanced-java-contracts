@@ -67,6 +67,7 @@ public class BoostedBalnImpl implements BoostedBaln {
     private final DictDB<BigInteger, BigInteger> slopeChanges = Context.newDictDB("Boosted_Baln_slope_changes", BigInteger.class);
     private final VarDB<Address> admin = Context.newVarDB("Boosted_Baln_admin", Address.class);
     private final VarDB<Address> futureAdmin = Context.newVarDB("Boosted_baln_future_admin", Address.class);
+    private final VarDB<Address> penaltyAddress = Context.newVarDB("Boosted_baln_penalty_address", Address.class);
 
     private final EnumerableSet<Address> users = new EnumerableSet<>("users_list", Address.class);
 
@@ -118,7 +119,7 @@ public class BoostedBalnImpl implements BoostedBaln {
     @External
     public void setMinimumLockingAmount(BigInteger value) {
         ownerRequired();
-        require (value.signum() >= 0, "invalid value for minimum locking amount");
+        require (value.signum() > 0, "invalid value for minimum locking amount");
 
         this.minimumLockingAmount.set(value);
     }
@@ -126,6 +127,17 @@ public class BoostedBalnImpl implements BoostedBaln {
     @External(readonly = true)
     public BigInteger getMinimumLockingAmount() {
         return this.minimumLockingAmount.get();
+    }
+
+    @External
+    public void setPenaltyAddress(Address penaltyAddress) {
+        ownerRequired();
+        this.penaltyAddress.set(penaltyAddress);
+    }
+
+    @External(readonly = true)
+    public Address getPenaltyAddress() {
+        return this.penaltyAddress.get();
     }
 
     @External
@@ -198,7 +210,6 @@ public class BoostedBalnImpl implements BoostedBaln {
 
         UnsignedBigInteger blockTimestamp = UnsignedBigInteger.valueOf(Context.getBlockTimestamp());
         UnsignedBigInteger blockHeight = UnsignedBigInteger.valueOf(Context.getBlockHeight());
-        Context.println("address is: "+address);
         if (!address.equals(ZERO_ADDRESS)) {
             //            Calculate slopes and biases
             //            Kept at zero when they have to
@@ -233,7 +244,6 @@ public class BoostedBalnImpl implements BoostedBaln {
             lastPoint = this.pointHistory.getOrDefault(epoch, new Point());
         }
         UnsignedBigInteger lastCheckPoint = lastPoint.timestamp;
-        Context.println("last check point is: "+lastCheckPoint);
         //      initialLastPoint is used for extrapolation to calculate block number
         //      (approximately, for *At methods) and save them
         //      as we cannot figure that out exactly from inside the contract
@@ -246,7 +256,7 @@ public class BoostedBalnImpl implements BoostedBaln {
             //          But that's ok because we know the block in such case
         }
 
-        //      Go over week's to fill history and calculate what the current point is
+        //Go over week's to fill history and calculate what the current point is
         UnsignedBigInteger timeIterator = lastCheckPoint.divide(U_WEEK_IN_MICRO_SECONDS)
                 .multiply(U_WEEK_IN_MICRO_SECONDS);
 
@@ -270,7 +280,6 @@ public class BoostedBalnImpl implements BoostedBaln {
             if (lastPoint.slope.compareTo(BigInteger.ZERO) < 0) {
                 lastPoint.slope = BigInteger.ZERO;
             }
-            Context.println("time iterator is: "+timeIterator);
             lastCheckPoint = timeIterator;
             lastPoint.timestamp = timeIterator;
             UnsignedBigInteger dtime = timeIterator.subtract(initialLastPoint.timestamp);
@@ -299,7 +308,6 @@ public class BoostedBalnImpl implements BoostedBaln {
         }
 
         this.pointHistory.set(epoch, lastPoint);
-        Context.println("again address: "+address);
         if (!address.equals(ZERO_ADDRESS)) {
             if (oldLocked.end.compareTo(blockTimestamp) > 0) {
                 oldDSlope = oldDSlope.add(uOld.slope);
@@ -384,9 +392,8 @@ public class BoostedBalnImpl implements BoostedBaln {
         this.nonReentrant.updateLock(true);
         BigInteger blockTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());
         this.assertNotContract(sender);
-        //todo: uncomment after integration test
-        /*unlockTime = unlockTime.divide(WEEK_IN_MICRO_SECONDS)
-                .multiply(WEEK_IN_MICRO_SECONDS);*/
+        unlockTime = unlockTime.divide(WEEK_IN_MICRO_SECONDS)
+                .multiply(WEEK_IN_MICRO_SECONDS);
         LockedBalance locked = getLockedBalance(sender);
 
         require(value.compareTo(BigInteger.ZERO) > 0, "Create Lock: Need non zero value");
@@ -495,7 +502,8 @@ public class BoostedBalnImpl implements BoostedBaln {
         BigInteger blockTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());
 
         LockedBalance locked = getLockedBalance(sender);
-        require(blockTimestamp.compareTo(locked.getEnd()) >= 0, "Withdraw: The lock haven't expire");
+        //require(blockTimestamp.compareTo(locked.getEnd()) >= 0, "Withdraw: The lock haven't expire");
+
         BigInteger value = locked.amount;
 
         LockedBalance oldLocked = locked.newLockedBalance();
@@ -506,6 +514,18 @@ public class BoostedBalnImpl implements BoostedBaln {
         this.supply.set(supplyBefore.subtract(value));
 
         this.checkpoint(sender, oldLocked, locked);
+        Context.println("block timestamp is: "+blockTimestamp);
+        Context.println("locked end is"+locked.getEnd());
+        if(blockTimestamp.compareTo(oldLocked.getEnd()) < 0){
+            Context.println("modulus is: "+value.mod(BigInteger.TWO));
+            if(value.mod(BigInteger.TWO).equals(BigInteger.ZERO)){
+                value = value.divide(BigInteger.TWO);
+            }else{
+                value = value.divide(BigInteger.TWO).add(BigInteger.ONE);
+            }
+            Context.call(this.tokenAddress, "transfer", this.penaltyAddress.get(), value.subtract(BigInteger.ONE), "withdraw".getBytes());
+        }
+        Context.println("value is: "+value);
         Context.call(this.tokenAddress, "transfer", sender, value, "withdraw".getBytes());
         users.remove(sender);
         Withdraw(sender, value, blockTimestamp);
@@ -621,7 +641,6 @@ public class BoostedBalnImpl implements BoostedBaln {
             if (timestampIterator.equals(uTime)) {
                 break;
             }
-
             lastPoint.slope = lastPoint.slope.add(dSlope);
             lastPoint.timestamp = timestampIterator;
         }

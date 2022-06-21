@@ -29,19 +29,10 @@ public class Constants {
 
     //time constants
     public static final BigInteger SECOND = BigInteger.valueOf(1000000L);
-    public static final BigInteger MINUTE = BigInteger.valueOf(60L).multiply(SECOND);
-    public static final BigInteger HOUR = BigInteger.valueOf(60L).multiply(MINUTE);
-    public static final BigInteger DAY = BigInteger.valueOf(24L).multiply(HOUR);
-    public static final BigInteger WEEK = BigInteger.valueOf(7L).multiply(DAY);
-    public static final BigInteger MONTH = BigInteger.valueOf(30L).multiply(DAY);
-    public static final BigInteger YEAR = BigInteger.valueOf(365L).multiply(DAY);
     public static final BigInteger MINUTE_IN_MICRO_SECONDS = BigInteger.valueOf(60L).multiply(SECOND);
     public static final BigInteger HOUR_IN_MICRO_SECONDS = BigInteger.valueOf(60L).multiply(MINUTE_IN_MICRO_SECONDS);
     public static final BigInteger DAY_IN_MICRO_SECONDS = BigInteger.valueOf(24L).multiply(HOUR_IN_MICRO_SECONDS);
-    public static final BigInteger DAY_IN_SECONDS = BigInteger.valueOf(60 * 60 * 24);
     public static final BigInteger WEEK_IN_MICRO_SECONDS = BigInteger.valueOf(7L).multiply(DAY_IN_MICRO_SECONDS);
-    public static final BigInteger MONTH_IN_MICRO_SECONDS = BigInteger.valueOf(30L).multiply(DAY_IN_MICRO_SECONDS);
-
     public static final BigInteger DAYS_PER_YEAR = BigInteger.valueOf(365L);
     public static final BigInteger YEAR_IN_MICRO_SECONDS = DAYS_PER_YEAR.multiply(DAY_IN_MICRO_SECONDS);
 
