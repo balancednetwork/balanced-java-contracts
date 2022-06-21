@@ -7,8 +7,12 @@ import network.balanced.score.lib.interfaces.base.*;
 import network.balanced.score.lib.structs.BalancedAddresses;
 
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
+import static network.balanced.score.lib.test.integration.BalancedUtils.*;
 
 import java.math.BigInteger;
+import java.util.Map;
+
+import com.eclipsesource.json.JsonObject;
 
 public class BalancedClient {
     private Balanced balanced;
@@ -54,6 +58,9 @@ public class BalancedClient {
     private static Dividends _dividends;
 
     @ScoreClient
+    private static Reserve _reserve;
+
+    @ScoreClient
     private static SystemInterface _systemScore;
 
     public GovernanceScoreClient governance;
@@ -69,6 +76,7 @@ public class BalancedClient {
     public StabilityScoreClient stability;
     public StakedLPScoreClient stakedLp;
     public DividendsScoreClient dividends;
+    public ReserveScoreClient reserve;
     public SystemInterfaceScoreClient systemScore;
 
     public BalancedClient(Balanced balanced, KeyWallet wallet) {
@@ -87,10 +95,38 @@ public class BalancedClient {
         stability = new StabilityScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.stability._address());
         stakedLp = new StakedLPScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.stakedLp._address());
         dividends = new DividendsScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.dividends._address());
+        reserve = new ReserveScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.reserve._address());
+
         systemScore = new SystemInterfaceScoreClient(chain.getEndpointURL(), chain.networkId, wallet, DefaultScoreClient.ZERO_ADDRESS);
     }
     
     public score.Address getAddress() {
         return score.Address.fromString(wallet.getAddress().toString());
+    }
+
+
+    public byte[] createBorrowData(BigInteger amount) {
+        JsonObject data = new JsonObject()
+            .add("_asset", "bnUSD")
+            .add("_amount", amount.toString());
+
+        return data.toString().getBytes();
+    }
+
+    public void sICXDepositAndBorrow(BigInteger collateral, BigInteger amount) {
+        if (!collateral.equals(BigInteger.ZERO)) {
+            staking.stakeICX(collateral, null, null);
+        }
+
+        byte[] params = createBorrowData(amount);
+        sicx.transfer(balanced.loans._address(), collateral, params);
+    }
+
+    public BigInteger getLoansAssetPosition(String symbol) {
+        Map<String, String> assets = (Map<String, String>) loans.getAccountPositions(getAddress()).get("assets");
+        if (!assets.containsKey(symbol)) {
+            return BigInteger.ZERO;
+        }
+        return hexObjectToBigInteger(assets.get(symbol));
     }
 }

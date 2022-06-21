@@ -51,9 +51,6 @@ public class DexImpl extends AbstractDex {
     @Payable
     public void fallback() {
         isDexOn();
-        takeNewDaySnapshot();
-        checkDistributions();
-        revertOnIncompleteRewards();
 
         BigInteger orderValue = Context.getValue();
         require(orderValue.compareTo(BigInteger.TEN.multiply(EXA)) >= 0,
@@ -63,7 +60,6 @@ public class DexImpl extends AbstractDex {
         BigInteger oldOrderValue = BigInteger.ZERO;
         BigInteger orderId = icxQueueOrderId.getOrDefault(user, BigInteger.ZERO);
 
-        withdrawLock.at(SICXICX_POOL_ID).set(user, BigInteger.valueOf(Context.getBlockTimestamp()));
         // Upsert Order, so we can bump to the back of the queue
         if (orderId.compareTo(BigInteger.ZERO) > 0) {
             NodeDB node = icxQueue.getNode(orderId);
@@ -84,24 +80,17 @@ public class DexImpl extends AbstractDex {
 
         activeAddresses.get(SICXICX_POOL_ID).add(user);
 
-        updateAccountSnapshot(user, SICXICX_POOL_ID, orderValue);
-        updateTotalSupplySnapshot(SICXICX_POOL_ID, currentIcxTotal);
-
         sendRewardsData(user, oldOrderValue, oldIcxTotal);
     }
 
     @External
     public void cancelSicxicxOrder() {
         isDexOn();
-        takeNewDaySnapshot();
-        checkDistributions();
-        revertOnIncompleteRewards();
 
         Address user = Context.getCaller();
         BigInteger orderId = icxQueueOrderId.getOrDefault(user, BigInteger.ZERO);
 
         require(orderId.compareTo(BigInteger.ZERO) > 0, TAG + ": No open order in sICX/ICX queue.");
-        revertOnWithdrawalLock(user, SICXICX_POOL_ID);
 
         NodeDB order = icxQueue.getNode(orderId);
         BigInteger withdrawAmount = order.getSize();
@@ -112,9 +101,6 @@ public class DexImpl extends AbstractDex {
         icxQueue.remove(orderId);
         icxQueueOrderId.set(user, null);
         activeAddresses.get(SICXICX_POOL_ID).remove(user);
-
-        updateAccountSnapshot(user, SICXICX_POOL_ID, null);
-        updateTotalSupplySnapshot(SICXICX_POOL_ID, currentIcxTotal);
 
         sendRewardsData(user, withdrawAmount, oldIcxTotal);
         Context.transfer(user, withdrawAmount);
@@ -134,9 +120,6 @@ public class DexImpl extends AbstractDex {
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
 
         isDexOn();
-        // Take new day snapshot and check distributions as necessary
-        takeNewDaySnapshot();
-        checkDistributions();
 
         // Parse the transaction data submitted by the user
         String unpackedData = new String(_data);
@@ -239,16 +222,12 @@ public class DexImpl extends AbstractDex {
     @External
     public void remove(BigInteger _id, BigInteger _value, @Optional boolean _withdraw) {
         isDexOn();
-        takeNewDaySnapshot();
-        checkDistributions();
-        revertOnIncompleteRewards();
         Address user = Context.getCaller();
         Address baseToken = poolBase.get(_id.intValue());
         require(baseToken!=null, TAG + ": invalid pool id");
         DictDB<Address, BigInteger> userLPBalance = balance.at(_id.intValue());
         BigInteger userBalance = userLPBalance.getOrDefault(user, BigInteger.ZERO);
 
-        revertOnWithdrawalLock(user, _id.intValue());
         require(active.getOrDefault(_id.intValue(), false), TAG + ": Pool is not active");
         require(_value.compareTo(BigInteger.ZERO) > 0, TAG + " Cannot withdraw a negative or zero balance");
         require(_value.compareTo(userBalance) <= 0, TAG + ": Insufficient balance");
@@ -294,11 +273,6 @@ public class DexImpl extends AbstractDex {
         BigInteger depositedQuote = userQuoteDeposit.getOrDefault(user, BigInteger.ZERO);
         userQuoteDeposit.set(user, depositedQuote.add(quoteToWithdraw));
 
-        updateAccountSnapshot(user, _id.intValue(), newUserBalance);
-        updateTotalSupplySnapshot(_id.intValue(), newTotal);
-        if (baseToken.equals(baln.get())) {
-            updateBalnSnapshot(_id.intValue(), newBase);
-        }
         if (_withdraw) {
             withdraw(baseToken, baseToWithdraw);
             withdraw(quoteToken, quoteToWithdraw);
@@ -310,9 +284,6 @@ public class DexImpl extends AbstractDex {
     public void add(Address _baseToken, Address _quoteToken, BigInteger _baseValue, BigInteger _quoteValue,
                     @Optional boolean _withdraw_unused) {
         isDexOn();
-        takeNewDaySnapshot();
-        checkDistributions();
-        revertOnIncompleteRewards();
 
         Address user = Context.getCaller();
 
@@ -431,17 +402,10 @@ public class DexImpl extends AbstractDex {
         TransferSingle(user, MINT_ADDRESS, user, BigInteger.valueOf(id), liquidity);
 
         BigInteger userQuoteHoldings = (userLpAmount.multiply(poolQuoteAmount)).divide(poolLpAmount);
-        if (isRestrictedPoolId(id)) {
-            withdrawLock.at(id).set(user, BigInteger.valueOf(Context.getBlockTimestamp()));
-            revertBelowMinimum(userQuoteHoldings, _quoteToken);
-        }
+        // TODO: do we want to keep this?
+        //revertBelowMinimum(userQuoteHoldings, _quoteToken);
 
         activeAddresses.get(id).add(user);
-        updateAccountSnapshot(user, id, userLpAmount);
-        updateTotalSupplySnapshot(id, poolLpAmount);
-        if (_baseToken.equals(baln.get())) {
-            updateBalnSnapshot(id, poolBaseAmount);
-        }
 
         if (userDepositedBase.compareTo(BigInteger.ZERO) > 0) {
             withdraw(_baseToken, userDepositedBase);
@@ -478,6 +442,8 @@ public class DexImpl extends AbstractDex {
         Context.revert(TAG + ": IRC31 Tokens not accepted");
     }
 
+
+    // TODO remove when dividends no longer use this
     @External(readonly = true)
     public BigInteger balanceOfAt(Address _account, BigInteger _id, BigInteger _snapshot_id, @Optional boolean _twa) {
 
@@ -503,43 +469,4 @@ public class DexImpl extends AbstractDex {
         return snapshotValueAt(_snapshot_id, snapshot);
     }
 
-    @External(readonly = true)
-    public Map<String, Object> loadBalancesAtSnapshot(BigInteger _id, BigInteger _snapshot_id, BigInteger _limit,
-                                                      @Optional BigInteger _offset) {
-        if (_offset == null) {
-            _offset = BigInteger.ZERO;
-        }
-        require(_snapshot_id.compareTo(BigInteger.ZERO) >= 0,
-                TAG + ":  Snapshot id is equal to or greater then Zero.");
-        require(_id.compareTo(BigInteger.ZERO) > 0,
-                TAG + ":  Pool id is greater then Zero.");
-        require(_offset.compareTo(BigInteger.ZERO) >= 0,
-                TAG + ":  Offset is equal to or greater then Zero.");
-        Map<String, Object> snapshotData = new HashMap<>();
-        for (Address user : activeAddresses.get(_id.intValue()).range(_offset, _offset.add(_limit))) {
-            BigInteger snapshotBalance = balanceOf(user, _id);
-            if (stakedLp.get() != null) {
-                BigInteger stakedBalance = (BigInteger) Context.call(stakedLp.get(), "balanceOf", user, _id);
-                snapshotBalance = snapshotBalance.add(stakedBalance);
-            }
-
-            if (!snapshotBalance.equals(BigInteger.ZERO)) {
-                snapshotData.put(user.toString(), snapshotBalance);
-            }
-        }
-        return snapshotData;
-    }
-
-    @External(readonly = true)
-    public Map<String, Object> getDataBatch(String _name, BigInteger _snapshot_id, BigInteger _limit,
-                                            @Optional BigInteger _offset) {
-        if (_offset == null) {
-            _offset = BigInteger.ZERO;
-        }
-        BigInteger pid = BigInteger.valueOf(namedMarkets.get(_name));
-        BigInteger total = totalDexAddresses(pid);
-        BigInteger clampedOffset = _offset.min(total);
-        BigInteger clamped_limit = _limit.min(total.subtract(clampedOffset));
-        return loadBalancesAtSnapshot(pid, _snapshot_id, clamped_limit, clampedOffset);
-    }
 }

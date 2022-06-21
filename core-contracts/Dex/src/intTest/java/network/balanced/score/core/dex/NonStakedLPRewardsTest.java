@@ -145,11 +145,8 @@ public class NonStakedLPRewardsTest {
         waitForADay();
         balanced.syncDistributions();
         userWalletRewardsClient.claimRewards();
-        if(dexUserScoreClient.getContinuousRewardsDay()==null) {
-            governanceDexScoreClient.setContinuousRewardsDay(dexUserScoreClient.getDay().add(BigInteger.ONE));
-        }
-        waitForADay();
 
+        
         // continuous rewards starts here
         balanced.syncDistributions();
         userWalletRewardsClient.claimRewards();

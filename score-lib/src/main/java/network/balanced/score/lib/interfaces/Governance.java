@@ -55,15 +55,6 @@ public interface Governance extends
     @External(readonly = true)
     BigInteger getTimeOffset();
 
-    @External
-    void setContinuousRewardsDay(BigInteger _day);
-
-    @External
-    void setAdmin(Address contractAddress, Address admin);
-
-    @External
-    void setDividendsOnlyToStakedBalnDay(BigInteger _day);
-
     @External(readonly = true)
     BigInteger getVoteDuration();
 
@@ -184,6 +175,9 @@ public interface Governance extends
 
     @External
     void setAdmins();
+
+    @External
+    void setAdmin(Address contractAddress, Address admin);
 
     @External
     void setContractAddresses();

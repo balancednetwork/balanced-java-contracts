@@ -27,7 +27,6 @@ repositories {
 }
 
 optimizedJar.enabled = false
-
 dependencies {
     implementation Dependencies.iconSdk
     implementation project(':score-lib')
