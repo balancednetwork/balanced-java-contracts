@@ -250,10 +250,6 @@ class ConfigureBalancedEnv extends DefaultTask {
         Address ORACLE_ADDRESS = new Address(address);
         properties.put("ORACLE_ADDRESS", ORACLE_ADDRESS);
 
-        address = this._properties.getProperty("STAKEDLP_ADDRESS")
-        Address stakedlp = new Address(address)
-        properties.put("STAKEDLP_ADDRESS", stakedlp);
-
         // delegate methods
         List<String> prepsAddress = _properties.getProperty("PREP_LIST").split("--;--").toList()
         List<String> vote = _properties.getProperty("VOTES_IN_PER").split("--;--").toList()
@@ -268,5 +264,17 @@ class ConfigureBalancedEnv extends DefaultTask {
         }
 
         properties.put("DELEGATE_PARAM", delegationParam)
+        boolean status_param = this._properties.getProperty("STATUS")
+        properties.put("STATUS_PARAM", status_param)
+
+        Address[] acceptedTokens = new Address[3];
+        acceptedTokens[0] = addresses.get("sicx")
+        acceptedTokens[1] = addresses.get("bnUSD")
+        acceptedTokens[2] = addresses.get("baln")
+        properties.put("ACCEPTED_TOKENS", acceptedTokens)
+
+        properties.put("FEE_INTERVAL_IN_BLOCKS", this._properties.getProperty("FEE_INTERVAL_IN_BLOCKS"))
+        properties.put("CONTINUOUS_REWARDS_DAY", this._properties.getProperty("CONTINUOUS_REWARDS_DAY"))
+        properties.put("DIVIDENDS_TO_STAKED_BALN_DAY", this._properties.getProperty("DIVIDENDS_TO_STAKED_BALN_DAY"))
     }
 }
