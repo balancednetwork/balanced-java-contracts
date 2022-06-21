@@ -26,7 +26,6 @@ import java.math.BigInteger;
 public class BalancedOracleConstants {
    private static final String GOVERNANCE = "governance";
    private static final String ADMIN = "admin";
-   private static final String SICX = "sicx";
    private static final String DEX = "dex";
    private static final String ORACLE = "oracle";
    private static final String STAKING = "staking";
@@ -37,7 +36,6 @@ public class BalancedOracleConstants {
 
    public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
    public static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
-   public static final VarDB<Address> sicx = Context.newVarDB(SICX, Address.class);
    public static final VarDB<Address> dex = Context.newVarDB(DEX, Address.class);
    public static final VarDB<Address> oracle = Context.newVarDB(ORACLE, Address.class);
    public static final VarDB<Address> staking = Context.newVarDB(STAKING, Address.class);
@@ -45,6 +43,4 @@ public class BalancedOracleConstants {
    public static final DictDB<String, BigInteger> dexPricedAssets = Context.newDictDB(DEX_PRICED_ASSETS, BigInteger.class);
    public static final DictDB<String, String> assetSymbolMap = Context.newDictDB(ASSET_SYMBOL_MAP, String.class);
    public static final DictDB<String, BigInteger> lastPriceInLoop = Context.newDictDB(LAST_LOOP_PRICES, BigInteger.class);
-
-
 }

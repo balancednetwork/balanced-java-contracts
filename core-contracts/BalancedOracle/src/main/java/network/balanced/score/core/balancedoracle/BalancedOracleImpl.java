@@ -23,10 +23,10 @@ import static network.balanced.score.core.balancedoracle.BalancedOracleConstants
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.governance;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.lastPriceInLoop;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.oracle;
-import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.sicx;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.staking;
 import static network.balanced.score.lib.utils.Check.only;
 import static network.balanced.score.lib.utils.Check.onlyOwner;
+import static network.balanced.score.lib.utils.Check.isContract;
 import static network.balanced.score.lib.utils.Constants.EXA;
 
 import java.math.BigInteger;
@@ -99,12 +99,14 @@ public class BalancedOracleImpl implements BalancedOracle {
 
     @External(readonly = true)
     public BigInteger getAssetBnusdPoolId(String symbol) {
-        return dexPricedAssets.get(symbol);
+        BigInteger poolID = dexPricedAssets.get(symbol);
+        Context.require(poolID != null, symbol + " is not listed as a dex priced asset");
+        return poolID;
     }
 
     @External
     public void setGovernance(Address _address) {
-        only(admin);
+        onlyOwner();
         governance.set(_address);
     }
 
@@ -121,45 +123,37 @@ public class BalancedOracleImpl implements BalancedOracle {
 
     @External(readonly = true)
     public Address getAdmin() {
-        return governance.get();
-    }
-
-    @External
-    public void setSicx(Address _address) {
-        only(admin);
-        sicx.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getSicx() {
-        return governance.get();
+        return admin.get();
     }
 
     @External
     public void setOracle(Address _address) {
         only(admin);
+        isContract(_address);
         oracle.set(_address);
     }
 
     @External(readonly = true)
     public Address getOracle() {
-        return governance.get();
+        return oracle.get();
     }
 
     @External
     public void setDex(Address _address) {
         only(admin);
+        isContract(_address);
         dex.set(_address);
     }
 
     @External(readonly = true)
     public Address getDex() {
-        return governance.get();
+        return dex.get();
     }
 
     @External
     public void setStaking(Address _address){
         only(admin);
+        isContract(_address);
         staking.set(_address);
     }
 

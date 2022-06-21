@@ -30,7 +30,6 @@ public interface BalancedOracle extends
         GovernanceAddress,
         AdminAddress,
         DexAddress,
-        SicxAddress,
         OracleAddress, 
         StakingAddress {
 

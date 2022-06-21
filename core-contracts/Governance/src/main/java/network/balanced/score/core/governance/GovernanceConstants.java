@@ -63,7 +63,7 @@ public class GovernanceConstants extends Constants {
             entry("router", List.of("dex", "sicx", "staking")),
             entry("stakedLp", List.of("dex", "rewards")),
             entry("rebalancing", List.of("loans", "dex", "bnUSD", "sicx", "balancedOracle")),
-            entry("balancedOracle", List.of("dex", "sicx", "staking", "oracle"))
+            entry("balancedOracle", List.of("dex", "staking", "oracle"))
    );
 
     public static Map<String, String> ADMIN_ADDRESSES = Map.ofEntries(
@@ -80,8 +80,8 @@ public class GovernanceConstants extends Constants {
             entry("stakedLp", "governance"),
             entry("rebalancing", "governance"),
             entry("balancedOracle", "governance")
-
     );
+
     public static Map<String, String> SETTERS = Map.ofEntries(
             entry("loans", "setLoans"),
             entry("dex", "setDex"),
@@ -100,8 +100,8 @@ public class GovernanceConstants extends Constants {
             entry("feehandler", "setFeehandler"),
             entry("stakedLp", "setStakedLp"),
             entry("balancedOracle", "setOracle")
-
     );
+    
     // #-------------------------------------------------------------------------------
     // # REWARDS LAUNCH CONFIG
     // #-------------------------------------------------------------------------------

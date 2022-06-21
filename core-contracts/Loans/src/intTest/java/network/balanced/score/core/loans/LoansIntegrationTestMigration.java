@@ -143,7 +143,4 @@ class LoansIntegrationTestMigration extends LoansIntegrationTest {
         // Act
         liquidator.loans.liquidate(loanTaker.getAddress());
     }
-
-
 }
-

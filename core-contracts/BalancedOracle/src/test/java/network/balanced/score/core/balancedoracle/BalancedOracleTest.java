@@ -43,34 +43,14 @@ import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockContract;
 import network.balanced.score.lib.interfaces.*;
 
-class BalancedOracleTest extends UnitTest {
-    protected static final ServiceManager sm = getServiceManager();
-    protected static final Account owner = sm.createAccount();
-    protected static final Account adminAccount = sm.createAccount();
-
-    protected MockContract<DexScoreInterface> dex;
-    protected MockContract<OracleScoreInterface> oracle;
-    protected MockContract<StakingScoreInterface> staking;
-
-    protected Score balancedOracle;
-    protected static final Account governance = Account.newScoreAccount(scoreCount);
-    
-    protected static final BigInteger icxBnsudPoolId = BigInteger.TWO;
-
-    protected void setup() throws Exception {
-        dex = new MockContract<DexScoreInterface>(DexScoreInterface.class, sm, owner);
-        oracle = new MockContract<OracleScoreInterface>(OracleScoreInterface.class, sm, owner);
-        staking = new MockContract<StakingScoreInterface>(StakingScoreInterface.class, sm, owner);
-        balancedOracle = sm.deploy(owner, BalancedOracleImpl.class, governance.getAddress());
+class BalancedOracleTest extends BalancedOracleTestBase {
+    @BeforeEach
+    public void setupContract() throws Exception {
+        setup();
         balancedOracle.invoke(governance, "setAdmin", governance.getAddress());
         balancedOracle.invoke(governance, "setDex", dex.getAddress());
         balancedOracle.invoke(governance, "setOracle", oracle.getAddress());
         balancedOracle.invoke(governance, "setStaking", staking.getAddress());
-    }
-
-    @BeforeEach
-    public void setupContractsAndWallets() throws Exception {
-        setup();
     }
 
     @Test
@@ -88,7 +68,7 @@ class BalancedOracleTest extends UnitTest {
     }
 
     @Test
-    void getBnusdPriceInLoop() {
+    void getUSDPriceInLoop() {
         // Arrange
         BigInteger bnusdRate = BigInteger.valueOf(7).multiply(BigInteger.TEN.pow(17));
         Map<String, Object> priceData = Map.of("rate", bnusdRate);
@@ -97,6 +77,21 @@ class BalancedOracleTest extends UnitTest {
         // Act
         balancedOracle.invoke(adminAccount, "getPriceInLoop", "USD");
         BigInteger priceInLoop = (BigInteger) balancedOracle.call("getLastPriceInLoop", "USD");
+
+        // Assert
+        assertEquals(bnusdRate, priceInLoop);
+    }
+
+    @Test
+    void getBnUSDPriceInLoop_useBnUSD() {
+        // Arrange
+        BigInteger bnusdRate = BigInteger.valueOf(7).multiply(BigInteger.TEN.pow(17));
+        Map<String, Object> priceData = Map.of("rate", bnusdRate);
+        when(oracle.mock.get_reference_data("USD", "ICX")).thenReturn(priceData);
+
+        // Act
+        balancedOracle.invoke(adminAccount, "getPriceInLoop", "bnUSD");
+        BigInteger priceInLoop = (BigInteger) balancedOracle.call("getLastPriceInLoop", "bnUSD");
 
         // Assert
         assertEquals(bnusdRate, priceInLoop);
