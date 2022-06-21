@@ -40,12 +40,10 @@
   },
   {
     "name": "dex",
-    "path": "https://main.tracker.solidwallet.io/score/cxa0af3165c08318e988cb30993b3048335b94af6c_17.zip",
     "params": {},
     "addressParams": {
       "_governance": "governance"
     },
-    "contentType": "application/java",
     "order": 2.0
   },
   {

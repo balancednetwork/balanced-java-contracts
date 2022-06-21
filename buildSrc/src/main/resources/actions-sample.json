@@ -70,6 +70,26 @@
     "order": 5.0
   },
   {
+    "contract": "bnUSD",
+    "method": "setMinter",
+    "__args__": {
+      "__address_args__": {
+        "_address": "loans"
+      }
+    },
+    "order": 6.0
+  },
+  {
+    "contract": "bnUSD",
+    "method": "setMinter2",
+    "__args__": {
+      "__address_args__": {
+        "_address": "stability"
+      }
+    },
+    "order": 6.0
+  },
+  {
     "contract": "governance",
     "method": "delegate",
     "__args__": {
@@ -219,22 +239,10 @@
   },
   {
     "contract": "governance",
-    "method": "setContinuousRewardsDay",
+    "value": 100000000000000000000,
+    "method": "createBnusdMarket",
     "__args__": {
-      "__property_args__": {
-        "_day": "CONTINUOUS_REWARDS_DAY"
-      }
     },
-    "order": 12.0
-  },
-  {
-    "contract": "governance",
-    "method": "setDividendsOnlyToStakedBalnDay",
-    "__args__": {
-      "__property_args__": {
-        "_day": "DIVIDENDS_TO_STAKED_BALN_DAY"
-      }
-    },
-    "order": 12.0
+    "order": 13.0
   }
 ]

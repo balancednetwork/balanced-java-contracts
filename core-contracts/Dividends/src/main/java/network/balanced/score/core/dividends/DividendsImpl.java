@@ -75,6 +75,7 @@ public class DividendsImpl implements Dividends {
             dividendsBatchSize.set(BigInteger.valueOf(50));
             distributionActivate.set(false);
             addInitialCategories();
+            dividendsEnabledToStakedBalnDay.set(BigInteger.ONE);
         }
     }
 

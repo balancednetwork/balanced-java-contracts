@@ -117,6 +117,7 @@ public class RewardsImpl implements Rewards {
             completeRecipient.add(WORKER_TOKENS);
             completeRecipient.add(RewardsConstants.RESERVE_FUND);
             completeRecipient.add(DAOFUND);
+            continuousRewardsDay.set(BigInteger.ONE);
         }
     }
 

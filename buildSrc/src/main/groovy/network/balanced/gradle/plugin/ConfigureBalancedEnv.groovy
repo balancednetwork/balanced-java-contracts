@@ -189,7 +189,8 @@ class ConfigureBalancedEnv extends DefaultTask {
     }
 
     private void execute(Action action) {
-        client.send(wallet, getAddress(action.contract), BigInteger.ZERO, action.method, action.params, DefaultScoreClient.DEFAULT_RESULT_TIMEOUT)
+        BigInteger value = action.value == null ? BigInteger.ZERO : action.value
+        client.send(wallet, getAddress(action.contract), value, action.method, action.params, DefaultScoreClient.DEFAULT_RESULT_TIMEOUT)
     }
 
     private Address getAddress(String key) {
