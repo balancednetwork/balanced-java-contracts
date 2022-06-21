@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.systemtest;
+package network.balanced.score.core.balancedoracle;
 
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

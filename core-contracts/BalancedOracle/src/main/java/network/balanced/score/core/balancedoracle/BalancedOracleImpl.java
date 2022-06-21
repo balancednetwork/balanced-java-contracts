@@ -57,6 +57,7 @@ public class BalancedOracleImpl implements BalancedOracle {
 
     @External
     public BigInteger getPriceInLoop(String symbol) {
+        symbol = assetSymbolMap.getOrDefault(symbol, symbol);
         BigInteger priceInLoop;
         if (symbol.equals("sICX")) {
             priceInLoop = Context.call(BigInteger.class, staking.get(), "getTodayRate");
@@ -77,6 +78,7 @@ public class BalancedOracleImpl implements BalancedOracle {
 
     @External(readonly = true)
     public BigInteger getLastPriceInLoop(String symbol) {
+        symbol = assetSymbolMap.getOrDefault(symbol, symbol);
         BigInteger priceInLoop  = lastPriceInLoop.getOrDefault(symbol, BigInteger.ZERO);
         Context.require(priceInLoop.compareTo(BigInteger.ZERO) > 0, TAG + ": No price data exists for symbol");
 

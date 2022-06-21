@@ -61,6 +61,9 @@ public class BalancedClient {
     private static Reserve _reserve;
 
     @ScoreClient
+    private static BalancedOracle _balancedOracle;
+
+    @ScoreClient
     private static SystemInterface _systemScore;
 
     public GovernanceScoreClient governance;
@@ -77,6 +80,7 @@ public class BalancedClient {
     public StakedLPScoreClient stakedLp;
     public DividendsScoreClient dividends;
     public ReserveScoreClient reserve;
+    public BalancedOracleScoreClient balancedOracle;
     public SystemInterfaceScoreClient systemScore;
 
     public BalancedClient(Balanced balanced, KeyWallet wallet) {
@@ -96,6 +100,7 @@ public class BalancedClient {
         stakedLp = new StakedLPScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.stakedLp._address());
         dividends = new DividendsScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.dividends._address());
         reserve = new ReserveScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.reserve._address());
+        balancedOracle = new BalancedOracleScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.balancedOracle._address());
 
         systemScore = new SystemInterfaceScoreClient(chain.getEndpointURL(), chain.networkId, wallet, DefaultScoreClient.ZERO_ADDRESS);
     }

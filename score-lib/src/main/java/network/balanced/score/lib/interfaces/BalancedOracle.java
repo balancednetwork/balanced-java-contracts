@@ -34,7 +34,7 @@ public interface BalancedOracle extends
         OracleAddress, 
         StakingAddress {
 
-    @External(readonly = true)
+    @External
     BigInteger getPriceInLoop(String symbol);
 
     @External(readonly = true)

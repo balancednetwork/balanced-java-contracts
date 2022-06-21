@@ -30,6 +30,9 @@ import java.util.List;
 public interface Rebalancing extends AdminAddress, BnusdAddress, DexAddress, GovernanceAddress, LoansAddress,
         Name, SicxAddress, OracleAddress {
 
+    @External(readonly = true)
+    BigInteger getPriceChangeThreshold();
+
     @External
     void setPriceDiffThreshold(BigInteger _value);
 
