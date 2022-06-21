@@ -77,7 +77,7 @@ class BalancedOracleTestSetup extends BalancedOracleTestBase {
     @Test
     void addRemoveDexPricedAssets() {
         // Arrange
-        String balnSymbol = "Baln";
+        String balnSymbol = "BALN";
         String ommSymbol = "OMM";
 
         BigInteger balnBnusdPoolID = BigInteger.valueOf(3);

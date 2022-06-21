@@ -100,7 +100,7 @@ class BalancedOracleTest extends BalancedOracleTestBase {
     @Test
     void getDexPriceInLoop() {
         // Arrange
-        String tokenSymbol = "Baln";
+        String tokenSymbol = "BALN";
         BigInteger poolID = BigInteger.valueOf(3);
         balancedOracle.invoke(owner, "addDexPricedAsset", tokenSymbol, poolID);
 
@@ -113,8 +113,8 @@ class BalancedOracleTest extends BalancedOracleTestBase {
         when(dex.mock.getQuotePriceInBase(poolID)).thenReturn(balnPriceInBnusd);
         
         // Act
-        balancedOracle.invoke(adminAccount, "getPriceInLoop", "Baln");
-        BigInteger priceInLoop = (BigInteger) balancedOracle.call("getLastPriceInLoop", "Baln");
+        balancedOracle.invoke(adminAccount, "getPriceInLoop", "BALN");
+        BigInteger priceInLoop = (BigInteger) balancedOracle.call("getLastPriceInLoop", "BALN");
 
         // Assert
         assertEquals(expectedBalnpriceInLoop, priceInLoop);
