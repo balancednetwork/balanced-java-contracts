@@ -124,11 +124,6 @@ public class LoansImpl implements Loans {
     }
 
     @External(readonly = true)
-    public int getNonzeroPositionCount() {
-        return 0;
-    }
-
-    @External(readonly = true)
     public Address getPositionAddress(int _index) {
         return PositionsDB.get(_index).getAddress();
     }
