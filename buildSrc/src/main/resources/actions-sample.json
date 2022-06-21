@@ -14,16 +14,13 @@
           "sicx": "sicx",
           "bnUSD": "bnUSD",
           "baln": "baln",
-          "bwt": "worker_token",
+          "bwt": "workerToken",
           "router": "router",
           "rebalancing": "rebalancing",
           "feehandler": "feehandler",
           "stakedLp": "stakedLp",
           "reserve": "reserve",
           "oracle": "oracle"
-        },
-        "__property_args__": {
-          "stakedLp": "STAKEDLP_ADDRESS"
         }
       }
     },
@@ -94,7 +91,7 @@
     "contract": "rewards",
     "method": "addDataProvider",
     "__args__": {
-      "__property_args__": {
+      "__address_args__": {
         "_source": "dex"
       }
     },
@@ -104,93 +101,93 @@
     "contract": "rewards",
     "method": "addDataProvider",
     "__args__": {
-      "__property_args__": {
+      "__address_args__": {
         "_source": "loans"
       }
     },
-    "order": 9.0
+    "order": 8.0
   },
   {
     "contract": "rewards",
     "method": "addDataProvider",
     "__args__": {
-      "__property_args__": {
+      "__address_args__": {
         "_source": "stakedLp"
       }
     },
-    "order": 10.0
+    "order": 8.0
   },
   {
     "contract": "governance",
     "method": "addAcceptedTokens",
     "__args__": {
-      "__property_args__": {
+      "__address_args__": {
         "_token": "sicx"
       }
     },
-    "order": 11.0
+    "order": 8.0
   },
   {
     "contract": "governance",
     "method": "addAcceptedTokens",
     "__args__": {
-      "__property_args__": {
+      "__address_args__": {
         "_token": "bnUSD"
       }
     },
-    "order": 12.0
+    "order": 8.0
   },
   {
     "contract": "governance",
     "method": "addAcceptedTokens",
     "__args__": {
-      "__property_args__": {
+      "__address_args__": {
         "_token": "baln"
       }
     },
-    "order": 13.0
+    "order": 8.0
   },
   {
     "contract": "governance",
     "method": "setAdmin",
     "__args__": {
-      "__property_args__": {
+      "__address_args__": {
         "contractAddress": "dividends",
         "admin": "owner"
       }
     },
-    "order": 14.0
+    "order": 9.0
   },
   {
     "contract": "dividends",
     "method": "setDistributionActivationStatus",
     "__args__": {
       "__property_args__": {
-        "_status": 1
+        "_status": "STATUS_PARAM"
       }
     },
-    "order": 15.0
+    "order": 10.0
   },
   {
     "contract": "governance",
     "method": "setAdmin",
     "__args__": {
-      "__property_args__": {
+      "__address_args__": {
         "contractAddress": "dividends",
         "admin": "governance"
       }
     },
-    "order": 16.0
+    "order": 11.0
   },
   {
     "contract": "governance",
     "method": "setAcceptedDividendTokens",
     "__args__": {
       "__property_args__": {
-        "_tokens": ["sicx", "bnUSD", "baln"]
+        "_tokens": "ACCEPTED_TOKENS"
       }
     },
-    "order": 17.0
+    "order": 12.0
   },
   {
     "contract": "governance",
@@ -198,46 +195,46 @@
     "__args__": {
 
     },
-    "order": 18.0
+    "order": 12.0
   },
   {
     "contract": "governance",
     "method": "setFeeProcessingInterval",
     "__args__": {
       "__property_args__": {
-        "_interval": 100
+        "_interval": "FEE_INTERVAL_IN_BLOCKS"
       }
     },
-    "order": 19.0
+    "order": 12.0
   },
   {
     "contract": "multicall",
     "method": "setDexAddress",
     "__args__": {
-      "__property_args__": {
+      "__address_args__": {
         "dex": "dex"
       }
     },
-    "order": 20.0
+    "order": 12.0
   },
   {
     "contract": "governance",
     "method": "setContinuousRewardsDay",
     "__args__": {
       "__property_args__": {
-        "_day": 1
+        "_day": "CONTINUOUS_REWARDS_DAY"
       }
     },
-    "order": 21.0
+    "order": 12.0
   },
   {
     "contract": "governance",
     "method": "setDividendsOnlyToStakedBalnDay",
     "__args__": {
       "__property_args__": {
-        "_day": 2
+        "_day": "DIVIDENDS_TO_STAKED_BALN_DAY"
       }
     },
-    "order": 22.0
+    "order": 12.0
   }
 ]
