@@ -16,31 +16,35 @@
 
 package network.balanced.score.lib.interfaces;
 
-import foundation.icon.score.client.ScoreClient;
-import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.*;
 import network.balanced.score.lib.interfaces.base.Name;
-import score.Address;
 import score.annotation.External;
-import score.annotation.Optional;
 
 import java.math.BigInteger;
-import java.util.List;
 
-@ScoreClient
+import foundation.icon.score.client.ScoreInterface;
+
 @ScoreInterface
-public interface Rebalancing extends AdminAddress, BnusdAddress, DexAddress, GovernanceAddress, LoansAddress,
-        Name, SicxAddress, OracleAddress {
-
-    @External(readonly = true)
-    BigInteger getPriceChangeThreshold();
-
-    @External
-    void setPriceDiffThreshold(BigInteger _value);
-
-    @External(readonly = true)
-    List<Object> getRebalancingStatusFor(Address address);
+public interface BalancedOracle extends 
+        Name,
+        GovernanceAddress,
+        AdminAddress,
+        DexAddress,
+        OracleAddress, 
+        StakingAddress {
 
     @External
-    void rebalance(@Optional Address address);
+    BigInteger getPriceInLoop(String symbol);
+
+    @External(readonly = true)
+    BigInteger getLastPriceInLoop(String symbol);
+
+    @External
+    void addDexPricedAsset(String symbol, BigInteger dexBnusdPoolId);
+
+    @External
+    void removeDexPricedAsset(String symbol);
+
+    @External(readonly = true)
+    BigInteger getAssetBnusdPoolId(String symbol);
 }

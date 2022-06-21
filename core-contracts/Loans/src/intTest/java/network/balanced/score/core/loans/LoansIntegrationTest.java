@@ -310,7 +310,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         BalancedClient rebalancer = balanced.newClient();
         while (true) {
             BigInteger threshold = calculateThreshold();
-            owner.rebalancing.rebalance();
+            owner.rebalancing.rebalance(balanced.sicx._address());
             if (threshold.equals(calculateThreshold())) {
                 return;
             }

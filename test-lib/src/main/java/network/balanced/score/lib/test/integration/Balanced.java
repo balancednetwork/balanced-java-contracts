@@ -62,6 +62,7 @@ public class Balanced {
     public DefaultScoreClient staking;
     public DefaultScoreClient stakedLp;
     public DefaultScoreClient stability;
+    public DefaultScoreClient balancedOracle;
 
     public GovernanceScoreClient governanceScore;
     public StakingScoreClient stakingScore;
@@ -110,6 +111,7 @@ public class Balanced {
         Hash reserveTx = deployAsync(owner, "Reserve", Map.of("governance", governance._address()));
         Hash routerTx = deployAsync(owner, "Router", Map.of("_governance", governance._address()));
         Hash stakedLpTx = deployAsync(owner, "StakedLP", Map.of("governance", governance._address()));
+        Hash balancedOracleTx = deployAsync(owner, "BalancedOracle", Map.of("_governance", governance._address()));
         staking = getDeploymentResult(owner, stakingTx);
         feehandler = getDeploymentResult(owner, feehandlerTx);
         bnusd = getDeploymentResult(owner, bnusdTx);
@@ -137,6 +139,7 @@ public class Balanced {
         stakedLp = getDeploymentResult(owner, stakedLpTx);
         sicx = getDeploymentResult(owner, sicxTx);
         stability = getDeploymentResult(owner, stabilityTx);
+        balancedOracle = getDeploymentResult(owner, balancedOracleTx);
 
         ownerClient = new BalancedClient(this, owner);
     }
@@ -159,6 +162,7 @@ public class Balanced {
         balancedAddresses.rebalancing = rebalancing._address();
         balancedAddresses.feehandler = feehandler._address();
         balancedAddresses.stakedLp = stakedLp._address();
+        balancedAddresses.balancedOracle = balancedOracle._address();
 
         ownerClient.governance.setAddresses(balancedAddresses);
         ownerClient.governance.setAdmins();

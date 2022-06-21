@@ -285,7 +285,7 @@ class LoansTestRewards extends LoansTestBase {
         verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
 
         BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
-        bnusd.invoke(admin, "setPrice", newPrice);
+        mockOraclePrice("bnUSD", newPrice);
 
         // Act
         loans.invoke(liquidater, "liquidate", account.getAddress());

@@ -555,7 +555,8 @@ class LoansTest extends LoansTestBase {
         verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
 
         BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
-        bnusd.invoke(admin, "setPrice", newPrice);
+        mockOraclePrice("bnUSD", newPrice);
+       
 
         // Act
         loans.invoke(liquidater, "liquidate", account.getAddress());
@@ -621,7 +622,7 @@ class LoansTest extends LoansTestBase {
         takeLoanICX(account, "bnUSD", collateral, loan);
 
         BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
-        bnusd.invoke(admin, "setPrice", newPrice);
+        mockOraclePrice("bnUSD", newPrice);
         loans.invoke(liquidater, "liquidate", account.getAddress());
 
         BigInteger badDebt = loan.add(expectedFee);
@@ -673,9 +674,9 @@ class LoansTest extends LoansTestBase {
         BigInteger pricePreLiquidation = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
         BigInteger pricePostLiquidation = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(6));
 
-        bnusd.invoke(admin, "setPrice", pricePreLiquidation);
+        mockOraclePrice("bnUSD", pricePreLiquidation);
         loans.invoke(liquidater, "liquidate", account.getAddress());
-        bnusd.invoke(admin, "setPrice", pricePostLiquidation);
+        mockOraclePrice("bnUSD", pricePostLiquidation);
 
         BigInteger liquidationPool = collateral.subtract(expectedReward);
 
@@ -724,7 +725,7 @@ class LoansTest extends LoansTestBase {
         takeLoanICX(account, "bnUSD", collateral, loan);
 
         BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
-        bnusd.invoke(admin, "setPrice", newPrice);
+        mockOraclePrice("bnUSD", newPrice);
         loans.invoke(liquidater, "liquidate", account.getAddress());
 
         // Assert & Act
@@ -749,7 +750,7 @@ class LoansTest extends LoansTestBase {
         takeLoanICX(account, "bnUSD", collateral, loan);
 
         BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
-        bnusd.invoke(admin, "setPrice", newPrice);
+        mockOraclePrice("bnUSD", newPrice);
         loans.invoke(liquidater, "liquidate", account.getAddress());
 
         // Assert & Act
@@ -774,7 +775,7 @@ class LoansTest extends LoansTestBase {
         takeLoanICX(account, "bnUSD", collateral, loan);
 
         BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
-        bnusd.invoke(admin, "setPrice", newPrice);
+        mockOraclePrice("bnUSD", newPrice);
         loans.invoke(liquidater, "liquidate", account.getAddress());
 
         // Assert & Act
@@ -799,7 +800,7 @@ class LoansTest extends LoansTestBase {
         takeLoanICX(account, "bnUSD", collateral, loan);
 
         BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
-        bnusd.invoke(admin, "setPrice", newPrice);
+        mockOraclePrice("bnUSD", newPrice);
         loans.invoke(liquidater, "liquidate", account.getAddress());
 
         // Assert & Act

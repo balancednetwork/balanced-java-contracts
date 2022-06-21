@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2022-2022 Balanced.network.
  *
@@ -14,25 +15,17 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.structs;
-import score.Address;
+package network.balanced.score.lib.interfaces;
 
-public class BalancedAddresses {
-    public Address loans;
-    public Address dex;
-    public Address staking;
-    public Address rewards;
-    public Address reserve;
-    public Address dividends;
-    public Address daofund;
-    public Address oracle;
-    public Address sicx;
-    public Address bnUSD;
-    public Address baln;
-    public Address bwt;
-    public Address router;
-    public Address rebalancing;
-    public Address feehandler;
-    public Address stakedLp;
-    public Address balancedOracle;
+import score.annotation.External;
+
+import java.util.Map;
+
+import foundation.icon.score.client.ScoreInterface;
+
+@ScoreInterface
+public interface Oracle {
+    @External(readonly = true)
+    Map<String, Object>  get_reference_data(String base, String quote);
 }
+

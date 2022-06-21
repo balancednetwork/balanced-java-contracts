@@ -645,7 +645,7 @@ public class LoansImpl implements Loans {
         Position position = PositionsDB.getPosition(from);
         BigInteger oldTotalDebt = totalDebts.getOrDefault(assetToBorrow, BigInteger.ZERO);
 
-        BigInteger collateral = position.totalCollateralInLoop(collateralSymbol);
+        BigInteger collateral = position.totalCollateralInLoop(collateralSymbol, false);
         BigInteger maxDebtValue = POINTS.multiply(collateral).divide(lockingRatio.get());
         BigInteger fee = originationFee.get().multiply(amount).divide(POINTS);
 
@@ -787,6 +787,19 @@ public class LoansImpl implements Loans {
     @External(readonly = true)
     public Address getStaking() {
         return staking.get();
+    }
+
+
+    @External
+    public void setOracle(Address _address) {
+        only(admin);
+        isContract(_address);
+        oracle.set(_address);
+    }
+
+    @External(readonly = true)
+    public Address getOracle() {
+        return oracle.get();
     }
 
     @External
