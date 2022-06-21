@@ -43,6 +43,7 @@ public class Addresses {
     public static final VarDB<Address> router = Context.newVarDB("router", Address.class);
     public static final VarDB<Address> feehandler = Context.newVarDB("feehandler", Address.class);
     public static final VarDB<Address> stakedLp = Context.newVarDB("stakedLp", Address.class);
+    public static final VarDB<Address> balancedOracle = Context.newVarDB("balancedOracle", Address.class);
     
     private Addresses() {}
 
@@ -71,6 +72,7 @@ public class Addresses {
         rebalancing.set(addresses.rebalancing);
         feehandler.set(addresses.feehandler);
         stakedLp.set(addresses.stakedLp);
+        balancedOracle.set(addresses.balancedOracle);
     }
 
     public static Map<String, Address> getAddresses() {
@@ -91,6 +93,8 @@ public class Addresses {
         addressData.put("router", router.get());
         addressData.put("feehandler", feehandler.get());
         addressData.put("stakedLp", stakedLp.get());
+        addressData.put("balancedOracle", balancedOracle.get());
+
         return addressData;
     }
 

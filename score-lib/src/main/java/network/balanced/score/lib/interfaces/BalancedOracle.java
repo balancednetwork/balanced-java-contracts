@@ -16,29 +16,35 @@
 
 package network.balanced.score.lib.interfaces;
 
-import network.balanced.score.lib.interfaces.addresses.SicxAddress;
-import network.balanced.score.lib.interfaces.tokens.IRC2;
-import score.Address;
+import network.balanced.score.lib.interfaces.addresses.*;
+import network.balanced.score.lib.interfaces.base.Name;
 import score.annotation.External;
 
 import java.math.BigInteger;
 
 import foundation.icon.score.client.ScoreInterface;
+
 @ScoreInterface
-public interface Sicx extends SicxAddress, IRC2 {
-    @External(readonly = true)
-    String getPeg();
+public interface BalancedOracle extends 
+        Name,
+        GovernanceAddress,
+        AdminAddress,
+        DexAddress,
+        OracleAddress, 
+        StakingAddress {
+
+    @External
+    BigInteger getPriceInLoop(String symbol);
 
     @External(readonly = true)
-    BigInteger priceInLoop();
+    BigInteger getLastPriceInLoop(String symbol);
+
+    @External
+    void addDexPricedAsset(String symbol, BigInteger dexBnusdPoolId);
+
+    @External
+    void removeDexPricedAsset(String symbol);
 
     @External(readonly = true)
-    BigInteger lastPriceInLoop();
-
-    @External(readonly = true)
-    Address getStakingAddress();
-
-    @External(readonly = true)
-    Address getAdmin();
-
+    BigInteger getAssetBnusdPoolId(String symbol);
 }

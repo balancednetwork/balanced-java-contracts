@@ -33,6 +33,7 @@ public class LoansVariables {
     private static final String RESERVE = "reserve";
     private static final String REWARDS = "rewards";
     private static final String STAKING = "staking";
+    private static final String ORACLE = "oracle";
     private static final String ADMIN = "admin";
 
     private static final String TIME_OFFSET = "time_offset";
@@ -64,6 +65,7 @@ public class LoansVariables {
     static final VarDB<Address> reserve = Context.newVarDB(RESERVE, Address.class);
     static final VarDB<Address> rewards = Context.newVarDB(REWARDS, Address.class);
     static final VarDB<Address> staking = Context.newVarDB(STAKING, Address.class);
+    public static final VarDB<Address> oracle = Context.newVarDB(ORACLE, Address.class);
 
     static final VarDB<BigInteger> timeOffset = Context.newVarDB(TIME_OFFSET, BigInteger.class);
     public static final VarDB<BigInteger> miningRatio = Context.newVarDB(MINING_RATIO, BigInteger.class);

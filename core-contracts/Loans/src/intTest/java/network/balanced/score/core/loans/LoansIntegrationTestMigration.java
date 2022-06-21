@@ -23,6 +23,7 @@ import foundation.icon.jsonrpc.model.TransactionResult;
 
 import static  network.balanced.score.lib.utils.Constants.*;
 import static  network.balanced.score.lib.test.integration.BalancedUtils.*;
+
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
@@ -88,6 +89,9 @@ class LoansIntegrationTestMigration extends LoansIntegrationTest {
        }
 
        balanced.loans._update(loansPath, Map.of("_governance", balanced.governance._address()));
+       owner.governance.setAddressesOnContract("loans");
+       owner.balancedOracle.getPriceInLoop((txr) -> {}, "sICX");
+       owner.balancedOracle.getPriceInLoop((txr) -> {}, "USD");
 
        Map<String, Object>  availableAssetsPostUpdate = reader.loans.getAvailableAssets().get("bnUSD");;
        Map<String, String> collateralTokensPost = reader.loans.getCollateralTokens();
