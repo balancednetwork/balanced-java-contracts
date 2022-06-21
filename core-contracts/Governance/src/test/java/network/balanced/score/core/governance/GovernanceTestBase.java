@@ -179,7 +179,6 @@ public class GovernanceTestBase extends UnitTest {
         verify(rebalancing.mock).setOracle(balancedOracle.getAddress());
 
         verify(balancedOracle.mock).setDex(dex.getAddress());
-        verify(balancedOracle.mock).setSicx(sicx.getAddress());
         verify(balancedOracle.mock).setStaking(staking.getAddress());
         verify(balancedOracle.mock).setOracle(oracle.getAddress());
     }
