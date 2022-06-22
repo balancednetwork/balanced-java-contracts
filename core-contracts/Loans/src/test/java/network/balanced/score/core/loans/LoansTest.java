@@ -691,16 +691,14 @@ class LoansTest extends LoansTestBase {
         BigInteger sICXBalancePre = (BigInteger) sicx.call("balanceOf", badDebtReedemer.getAddress());
 
         BigInteger amountRedeemed = debtInsICX.subtract(liquidationPool);
-        mockRedeemFromReserve(badDebtReedemer.getAddress(), amountRedeemed, icxPrice);
         loans.invoke(badDebtReedemer, "retireBadDebt", "bnUSD", badDebtRedeemed);
 
         // Assert
+        BigInteger valueNeededFromReserve = amountRedeemed.multiply(icxPrice).divide(EXA);
+        verify(reserve.mock).redeem(badDebtReedemer.getAddress(), valueNeededFromReserve);
+        
         BigInteger bnUSDBalancePost = (BigInteger) bnusd.call("balanceOf", badDebtReedemer.getAddress());
-        BigInteger sICXBalancePost = (BigInteger) sicx.call("balanceOf", badDebtReedemer.getAddress());
-
-
         assertEquals(bnUSDBalancePre.subtract(badDebtRedeemed), bnUSDBalancePost);
-        assertEquals(sICXBalancePre.add(debtInsICX), sICXBalancePost);
 
         Map<String, Object> bnusdAsset = ((Map<String, Map<String, Object>>)loans.call("getAvailableAssets")).get("bnUSD");
         BigInteger expectedBadDebt = loan.add(expectedFee);

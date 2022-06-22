@@ -39,6 +39,12 @@ dependencies {
     // Use JUnit Jupiter for testing.
     testImplementation Dependencies.junitJupiter
     testRuntimeOnly Dependencies.junitJupiterEngine
+    
+    intTestAnnotationProcessor project(':score-client')
+    intTestImplementation project(':score-client')
+    intTestImplementation Dependencies.iconSdk
+    intTestImplementation Dependencies.minimalJson
+    intTestImplementation Dependencies.jacksonDatabind
 }
 
 optimizedJar {
@@ -83,4 +89,23 @@ jacocoTestReport {
         csv.required = false
         html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
     }
+}
+
+task integrationTest(type: Test) {
+    useJUnitPlatform()
+
+    rootProject.allprojects {
+        if(it.getTasks().findByName('optimizedJar')) {
+            dependsOn(it.getTasks().getByName('optimizedJar'))
+        }
+    }
+
+    options {
+        testLogging.showStandardStreams = true
+        description = 'Runs integration tests.'
+        group = 'verification'
+        testClassesDirs = sourceSets.intTest.output.classesDirs
+        classpath = sourceSets.intTest.runtimeClasspath
+    }
+
 }

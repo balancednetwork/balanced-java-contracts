@@ -160,16 +160,6 @@ class LoansTestBase extends UnitTest {
 
     }
 
-    protected void mockRedeemFromReserve(Address address, BigInteger amount, BigInteger icxPrice) {
-        Mockito.doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable {
-                sicx.invoke(reserve.account, "transfer", loans.getAddress(), amount, new byte[0]);
-                return null;
-            }
-        }).when(reserve.mock).redeem(address, amount, icxPrice);
-    }
-
     protected void takeLoanSICX(Account account, BigInteger collateral, int loan) {
         Map<String, Object> map = new HashMap<>();
         JsonObject data = new JsonObject()

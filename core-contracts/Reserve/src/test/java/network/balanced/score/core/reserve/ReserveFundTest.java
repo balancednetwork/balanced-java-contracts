@@ -21,7 +21,6 @@ import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
 import com.iconloop.score.token.irc2.IRC2Mintable;
-import network.balanced.score.core.reserve.utils.Loans;
 import network.balanced.score.lib.test.mock.MockContract;
 import network.balanced.score.lib.interfaces.*;
 
@@ -45,6 +44,7 @@ import static org.mockito.Mockito.when;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static  network.balanced.score.core.reserve.ReserveFund.TAG;
 import network.balanced.score.lib.interfaces.tokens.*;
+import network.balanced.score.lib.structs.Disbursement;
 
 
 public class ReserveFundTest extends ReserveFundTestBase {
@@ -187,7 +187,7 @@ public class ReserveFundTest extends ReserveFundTestBase {
         String expectedErrorMesssage = TAG +": Unable to process request at this time.";
         Executable withToHighValue = () -> reserve.invoke(loans.account, "redeem", redeemer.getAddress(), loopValueToRedeem);
         expectErrorMessage(withToHighValue, expectedErrorMesssage);
-        
+
         // Assert
         verify(sicx.mock).transfer(redeemer.getAddress(), sicxBalance, new byte[0]);
         verify(ieth.mock).transfer(redeemer.getAddress(), iethBalance, new byte[0]);
@@ -197,8 +197,8 @@ public class ReserveFundTest extends ReserveFundTestBase {
     void disburseSicx() {
         //Arrange
         Account target = sm.createAccount();
-        ReserveFund.Disbursement[] disbursements = new ReserveFund.Disbursement[]{new
-        ReserveFund.Disbursement()};
+        Disbursement[] disbursements = new Disbursement[]{new
+        Disbursement()};
         disbursements[0].address = sicx.getAddress();
         disbursements[0].amount = BigInteger.TEN.pow(20);
         setBalance(sicx,  BigInteger.TEN.pow(21));

@@ -21,7 +21,6 @@ import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
 import com.iconloop.score.token.irc2.IRC2Mintable;
-import network.balanced.score.core.reserve.utils.Loans;
 import network.balanced.score.lib.test.mock.MockContract;
 import network.balanced.score.lib.interfaces.*;
 

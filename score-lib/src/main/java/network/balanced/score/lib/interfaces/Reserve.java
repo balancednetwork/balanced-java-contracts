@@ -17,9 +17,6 @@
 
 package network.balanced.score.lib.interfaces;
 
-import score.annotation.External;
-import score.Address;
-
 import java.math.BigInteger;
 import java.util.Map;
 
@@ -27,16 +24,26 @@ import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.AdminAddress;
 import network.balanced.score.lib.interfaces.addresses.BalnAddress;
 import network.balanced.score.lib.interfaces.addresses.LoansAddress;
+import network.balanced.score.lib.interfaces.addresses.GovernanceAddress;
 import network.balanced.score.lib.interfaces.addresses.SicxAddress;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
+import network.balanced.score.lib.interfaces.base.Name;
+import network.balanced.score.lib.structs.Disbursement;
+import score.Address;
+import score.annotation.External;
 
 @ScoreInterface
-public interface Reserve extends TokenFallback, AdminAddress, BalnAddress, SicxAddress, LoansAddress {
+public interface Reserve extends Name, TokenFallback, AdminAddress, BalnAddress, SicxAddress, LoansAddress, GovernanceAddress {
     @External
-    public void redeem(Address to, BigInteger amount, BigInteger icxRate);
+    void redeem(Address to, BigInteger _valueInLoop);
 
     @External(readonly = true)
-    public Map<String, BigInteger> getBalances();
-    
+    Map<String, BigInteger> getBalances();
+
+    @External
+    boolean disburse(Address _recipient, Disbursement[] _amounts);
+
+    @External
+    void claim();
 }
 

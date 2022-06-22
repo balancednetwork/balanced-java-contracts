@@ -29,10 +29,13 @@ import scorex.util.HashMap;
 import java.math.BigInteger;
 import java.util.Map;
 
+import network.balanced.score.lib.interfaces.Reserve;
+import network.balanced.score.lib.structs.Disbursement;
+
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 
-public class ReserveFund {
+public class ReserveFund implements Reserve {
 
     private static final String GOVERNANCE = "governance";
     private static final String ADMIN = "admin";
@@ -55,12 +58,6 @@ public class ReserveFund {
             Context.require(governance.isContract(), "ReserveFund: Governance address should be a contract");
             ReserveFund.governance.set(governance);
         }
-
-    }
-
-    public static class Disbursement {
-        public Address address;
-        public BigInteger amount;
     }
 
     @EventLog(indexed = 2)
@@ -159,7 +156,6 @@ public class ReserveFund {
         Context.require(sender.equals(loansScoreAddress), TAG + ": The redeem method can only be called by the Loans " +
                 "SCORE.");
 
-        Address balnTokenAddress = balnToken.get();
         Address loans = loansScore.get();
         Address oracle = Context.call(Address.class, loans, "getOracle");
 
@@ -168,37 +164,22 @@ public class ReserveFund {
 
         for (String symbol : collateralPriority) {
             String collateralAddress = collateralTokens.get(symbol);
-
-            BigInteger rate = Context.call(BigInteger.class, oracle, "getPriceInLoop", symbol);
-            BigInteger balance = getBalance(collateralAddress);
-            BigInteger totalValue = rate.multiply(balance).divide(EXA);
-            if (totalValue.compareTo(remaningValue) > 0){
-                BigInteger amountToSend = remaningValue.multiply(EXA).divide(rate);
-                sendToken(collateralAddress, _to, amountToSend, "To Loans: ");
+            remaningValue = redeemAsset(symbol, collateralAddress, _to, oracle, remaningValue);
+            if (remaningValue.equals(BigInteger.ZERO)) {
                 return;
             }
 
-            sendToken(collateralAddress, _to, balance, "To Loans: ");
-            remaningValue = remaningValue.subtract(totalValue);
             collateralTokens.remove(symbol);
         }
 
         for (Map.Entry<String,String> entry : collateralTokens.entrySet()) {
-            String symbol = entry.getKey();
-            String collateralAddress = entry.getValue();
-
-            BigInteger rate = Context.call(BigInteger.class, oracle, "getPriceInLoop", symbol);
-            BigInteger balance = getBalance(collateralAddress);
-            BigInteger totalValue = rate.multiply(balance).divide(EXA);
-            if (totalValue.compareTo(remaningValue) >= 0){
-                BigInteger amountToSend = remaningValue.multiply(EXA).divide(rate);
-                sendToken(collateralAddress, _to, amountToSend, "To Loans: ");
+            remaningValue = redeemAsset(entry.getKey(), entry.getValue(), _to, oracle, remaningValue);
+            if (remaningValue.equals(BigInteger.ZERO)) {
                 return;
             }
-
-            sendToken(collateralAddress, _to, balance, "To Loans: ");
-            remaningValue = remaningValue.subtract(totalValue);
         }
+
+        Address balnTokenAddress = balnToken.get();
 
         BigInteger balnRate = Context.call(BigInteger.class, oracle, "getPriceInLoop", "BALN");
         BigInteger balance = getBalance(balnTokenAddress);
@@ -253,6 +234,21 @@ public class ReserveFund {
             }
         }
     }
+
+    private BigInteger redeemAsset(String symbol, String collateralAddress, Address to,  Address oracle, BigInteger remaningValue) {
+        BigInteger rate = Context.call(BigInteger.class, oracle, "getPriceInLoop", symbol);
+        BigInteger balance = getBalance(collateralAddress);
+        BigInteger totalValue = rate.multiply(balance).divide(EXA);
+        if (totalValue.compareTo(remaningValue) >= 0){
+            BigInteger amountToSend = remaningValue.multiply(EXA).divide(rate);
+            sendToken(collateralAddress, to, amountToSend, "To Loans: ");
+            return BigInteger.ZERO;
+        } 
+    
+        sendToken(collateralAddress, to, balance, "To Loans: ");
+        return remaningValue.subtract(totalValue);
+    }
+
     private void sendToken(String tokenAddress, Address to, BigInteger amount, String message) {
         sendToken(Address.fromString(tokenAddress), to, amount, message);
     }

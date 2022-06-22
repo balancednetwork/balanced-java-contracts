@@ -619,15 +619,11 @@ public class LoansImpl implements Loans {
         }
 
         asset.setLiquidationPool(collateralSymbol, null);
-        expectedToken.set(collateral.getAssetAddress());
+        BigInteger remaningCollateral = badDebtCollateral.subtract(inPool);
+        BigInteger remaningValue =  remaningCollateral.multiply(collateralPriceInLoop).divide(EXA);
+        Context.call(reserve.get(), "redeem", from, remaningValue);
+        return inPool;
 
-        Context.call(reserve.get(), "redeem", from, badDebtCollateral.subtract(inPool), collateralPriceInLoop);
-
-        BigInteger received = amountReceived.get();
-        Context.require(received.equals(badDebtCollateral.subtract(inPool)), TAG + ": Got unexpected sICX from reserve.");
-        amountReceived.set(null);
-
-        return inPool.add(received);
     }
 
     private void depositCollateral(String _symbol, BigInteger _amount, Address _from) {
