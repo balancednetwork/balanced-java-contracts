@@ -9,11 +9,11 @@ import java.util.Map;
 
 import com.eclipsesource.json.JsonArray;
 
+import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
 
 import static foundation.icon.score.client.DefaultScoreClient._deploy;
 import network.balanced.score.lib.interfaces.Governance;
-import score.Address;
 
 public class BalancedUtils {
 

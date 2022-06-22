@@ -20,6 +20,7 @@ import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import foundation.icon.icx.KeyWallet;
+import foundation.icon.jsonrpc.Address;
 import foundation.icon.jsonrpc.model.TransactionResult;
 
 import static  network.balanced.score.lib.utils.Constants.*;
@@ -27,7 +28,6 @@ import static  network.balanced.score.lib.test.integration.BalancedUtils.*;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
-import score.Address;
 import score.UserRevertedException;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -46,6 +46,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
     protected static Balanced balanced;
     protected static BalancedClient owner;
     protected static BalancedClient reader;
+    protected static Address ethAddress;
 
     protected static BigInteger voteDefinitionFee = BigInteger.TEN.pow(10);
     public static void setup() {
@@ -67,17 +68,16 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         owner.governance.setVoteDefinitionFee(voteDefinitionFee);
         owner.governance.setBalnVoteDefinitionCriterion(BigInteger.ZERO);
         owner.governance.setQuorum(BigInteger.ONE);
-        Address ethAddress = createIRC2Token(owner, "ICON ETH", "iETH");
-    }
 
-    @Test
-    void testName() {
-        assertEquals("Balanced Loans", reader.loans.name());
+        ethAddress = createIRC2Token(owner, "ICON ETH", "iETH");
+        owner.irc2(ethAddress).setMinter(owner.getAddress());
     }
 
     @Test
     @Order(1)
     void takeLoans() throws Exception {
+        addCollateralType(owner, ethAddress, BigInteger.TEN.pow(22), BigInteger.TEN.pow(24)); 
+
         // Arrange
         BalancedClient loantakerICX = balanced.newClient();
         BalancedClient loantakerSICX = balanced.newClient();
@@ -90,7 +90,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         loantakerICX.loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
         twoStepLoanTaker.loans.depositAndBorrow(collateral, "bnUSD", BigInteger.ZERO, null, null);
         twoStepLoanTaker.loans.depositAndBorrow(BigInteger.ZERO, "bnUSD", loanAmount, null, null);
-        loantakerSICX.sICXDepositAndBorrow(collateral, loanAmount);
+        loantakerSICX.stakeDepositAndBorrow(collateral, loanAmount);
 
         // Assert
         BigInteger feePercent = hexObjectToBigInteger(owner.loans.getParameters().get("origination fee"));
@@ -123,8 +123,8 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         BigInteger initalTotalDebt = getTotalDebt();
 
         // Act
-        loanTakerFullRepay.sICXDepositAndBorrow(collateral, loanAmount);
-        loanTakerPartialRepay.sICXDepositAndBorrow(collateral, loanAmount);
+        loanTakerFullRepay.stakeDepositAndBorrow(collateral, loanAmount);
+        loanTakerPartialRepay.stakeDepositAndBorrow(collateral, loanAmount);
 
         loanTakerPartialRepay.loans.returnAsset("sICX", "bnUSD", debt.divide(BigInteger.TWO));
         loanTakerPartialRepay.bnUSD.transfer(loanTakerFullRepay.getAddress(), fee, null);
@@ -158,9 +158,9 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         BigInteger initalTotalDebt = getTotalDebt();
 
         // Act
-        loanTakerFullWithdraw.sICXDepositAndBorrow(collateral, loanAmount);
-        loanTakerPartialWithdraw.sICXDepositAndBorrow(collateral, loanAmount);
-        zeroLoanWithdrawFull.sICXDepositAndBorrow(collateral, BigInteger.ZERO);
+        loanTakerFullWithdraw.stakeDepositAndBorrow(collateral, loanAmount);
+        loanTakerPartialWithdraw.stakeDepositAndBorrow(collateral, loanAmount);
+        zeroLoanWithdrawFull.stakeDepositAndBorrow(collateral, BigInteger.ZERO);
 
         loanTakerPartialWithdraw.bnUSD.transfer(loanTakerFullWithdraw.getAddress(), fee, null);
         loanTakerFullWithdraw.loans.returnAsset("sICX", "bnUSD", debt);
@@ -201,10 +201,10 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         BigInteger initalTotalDebt = getTotalDebt();
 
         // Act
-        loanTakerCloseLoanOnly.sICXDepositAndBorrow(collateral, loanAmount);
-        loanTakerCloseLoanOnly2.sICXDepositAndBorrow(collateral, loanAmount);
-        loanTakerFullClose.sICXDepositAndBorrow(collateral, loanAmount);
-        loanTakerPartialRepay.sICXDepositAndBorrow(collateral, loanAmount);
+        loanTakerCloseLoanOnly.stakeDepositAndBorrow(collateral, loanAmount);
+        loanTakerCloseLoanOnly2.stakeDepositAndBorrow(collateral, loanAmount);
+        loanTakerFullClose.stakeDepositAndBorrow(collateral, loanAmount);
+        loanTakerPartialRepay.stakeDepositAndBorrow(collateral, loanAmount);
 
         loanTakerPartialRepay.bnUSD.transfer(loanTakerCloseLoanOnly.getAddress(), fee, null);
         loanTakerPartialRepay.bnUSD.transfer(loanTakerCloseLoanOnly2.getAddress(), fee, null);
@@ -219,13 +219,46 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         loanTakerFullClose.loans.withdrawCollateral("sICX", loanTakerFullClose.getLoansAssetPosition("sICX"));
 
         loanTakerCloseLoanOnly.loans.depositAndBorrow(BigInteger.ZERO, "bnUSD", loanAmount, null, null);
-        loanTakerCloseLoanOnly2.sICXDepositAndBorrow(collateral, loanAmount);
-        loanTakerFullClose.sICXDepositAndBorrow(collateral, loanAmount);
+        loanTakerCloseLoanOnly2.stakeDepositAndBorrow(collateral, loanAmount);
+        loanTakerFullClose.stakeDepositAndBorrow(collateral, loanAmount);
         loanTakerPartialRepay.loans.depositAndBorrow(BigInteger.ZERO, "bnUSD", amountRepaid, null, null);
 
         // Assert
         BigInteger expectedTotalDebt = initalTotalDebt.add(debt.multiply(BigInteger.valueOf(4))).add(amountRepaid.multiply(feePercent).divide(POINTS));
         assertEquals(expectedTotalDebt, getTotalDebt());
+    }
+
+
+    @Test
+    @Order(5)
+    void takeLoans_multiCollateral() throws Exception {
+        // Arrange
+        BalancedClient loantakerSICX = balanced.newClient();
+        BalancedClient loantakerMulti = balanced.newClient();
+        BalancedClient loantakerIETH = balanced.newClient();
+        
+        BigInteger collateralICX = BigInteger.TEN.pow(23);
+        BigInteger collateralETH = BigInteger.TEN.pow(20);
+
+        owner.irc2(ethAddress).mintTo(loantakerMulti.getAddress(), collateralETH, null);
+        owner.irc2(ethAddress).mintTo(loantakerIETH.getAddress(), collateralETH, null);
+
+        BigInteger loanAmount = BigInteger.TEN.pow(22);
+        BigInteger totalDebt = getTotalDebt();
+        // Act
+        loantakerSICX.stakeDepositAndBorrow(collateralICX, loanAmount);
+        loantakerMulti.stakeDepositAndBorrow(collateralICX, loanAmount);
+        loantakerMulti.depositAndBorrow(ethAddress, collateralETH, loanAmount);
+        loantakerIETH.depositAndBorrow(ethAddress, collateralETH, loanAmount);
+
+        // Assert
+        BigInteger feePercent = hexObjectToBigInteger(owner.loans.getParameters().get("origination fee"));
+        BigInteger fee = loanAmount.multiply(feePercent).divide(POINTS);
+        BigInteger debt = loanAmount.add(fee);
+        totalDebt = debt.multiply(BigInteger.valueOf(4)).add(totalDebt);
+
+        // TODO assert more
+        assertEquals(totalDebt, getTotalDebt());
     }
 
     @Test
@@ -305,8 +338,6 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         assertEquals(BigInteger.ZERO, loanTaker.getLoansAssetPosition("bnUSD"));
         assertEquals(BigInteger.ZERO, LiquidatedUserBaS.get("_balance"));
     }
-
-   
 
     protected void rebalance() throws Exception {
         BalancedClient rebalancer = balanced.newClient();
@@ -410,5 +441,20 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         JsonArray actions = new JsonArray()
             .add(setLockingRatioCall);
         executeVoteActions(balanced, voter, name, actions);
+    }
+
+    private void addCollateralType(BalancedClient minter, Address collateralAddress, BigInteger tokenAmount, BigInteger bnUSDAmount) {
+        minter.irc2(collateralAddress).mintTo(owner.getAddress(), tokenAmount, new byte[0]);
+        depositToStabilityContract(owner, bnUSDAmount);
+
+        JsonObject depositData = Json.object();
+        depositData.add("method", "_deposit");
+        owner.irc2(collateralAddress).transfer(balanced.dex._address(), tokenAmount, depositData.toString().getBytes());
+
+        BigInteger bnusdDeposit = owner.bnUSD.balanceOf(owner.getAddress());
+        owner.bnUSD.transfer(balanced.dex._address(), bnusdDeposit, depositData.toString().getBytes());
+        owner.dex.add(collateralAddress, balanced.bnusd._address(), tokenAmount, bnusdDeposit, false);
+
+        owner.governance.addCollateral(collateralAddress, true);
     }
 }

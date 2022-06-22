@@ -59,7 +59,7 @@ public class Balanced {
 
     public Balanced() throws Exception {
         balancedClients = new HashMap<>();
-        owner = createWalletWithBalance(BigInteger.TEN.pow(24));
+        owner = createWalletWithBalance(BigInteger.TEN.pow(25));
     }
 
     public void setupBalanced() throws Exception {
@@ -93,7 +93,7 @@ public class Balanced {
         Hash bnusdTx = deployAsync(owner, "BalancedDollar", Map.of("_governance", governance._address()));
         Hash daofundTx = deployAsync(owner, "DAOfund", Map.of("_governance", governance._address()));
         Hash dividendsTx = deployAsync(owner, "Dividends", Map.of("_governance", governance._address()));
-        Hash oracleTx = deployAsync(owner, "Oracle",null);
+        Hash oracleTx = deployAsync(owner, "DummyOracle",null);
         Hash reserveTx = deployAsync(owner, "Reserve", Map.of("governance", governance._address()));
         Hash routerTx = deployAsync(owner, "Router", Map.of("_governance", governance._address()));
         Hash stakedLpTx = deployAsync(owner, "StakedLP", Map.of("governance", governance._address()));

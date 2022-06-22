@@ -35,7 +35,6 @@ import org.junit.jupiter.api.Test;
 import java.math.BigInteger;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.zip.ZipEntry;
 
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
 import static org.junit.jupiter.api.Assertions.*;

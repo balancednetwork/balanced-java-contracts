@@ -192,7 +192,7 @@ public interface Governance extends
     BigInteger getLaunchTime();
 
     @External
-    void addAsset(Address _token_address, boolean _active, boolean _collateral);
+    void addCollateral(Address _token_address, boolean _active);
 
     @External
     void toggleAssetActive(String _symbol);

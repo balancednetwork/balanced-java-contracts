@@ -700,11 +700,10 @@ public class GovernanceImpl {
     }
 
     @External
-    public void addAsset(Address _token_address, boolean _active, boolean _collateral) {
+    public void addCollateral(Address _token_address, boolean _active) {
         onlyOwner();
         Address loansAddress = Addresses.get("loans");
-        Context.call(loansAddress, "addAsset", _token_address, _active, _collateral);
-        Context.call(_token_address, "setAdmin", loansAddress);
+        Context.call(loansAddress, "addAsset", _token_address, _active, true);
     }
 
     @External
