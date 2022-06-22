@@ -76,7 +76,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         setupBaseLoans();
     }
 
-    private void setupBaseLoans() throws Exception {
+    private static void setupBaseLoans() throws Exception {
         BalancedClient loantakerICX1 = balanced.newClient();
         BalancedClient loantakerICX2 = balanced.newClient();
         BalancedClient loantakerICX3 = balanced.newClient();
@@ -97,7 +97,6 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         balanced.increaseDay(1);
         claimAllRewards();
         BalancedClient voter = balanced.newClient();
-        BigInteger expectedTotalDebt = getTotalDebt();
         depositToStabilityContract(voter, voteDefinitionFee.multiply(BigInteger.TWO));
 
         BigInteger initalLockingRatio = hexObjectToBigInteger(owner.loans.getParameters().get("locking ratio"));
@@ -144,7 +143,6 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         assertTrue(sICXBalancePreRetire.compareTo(sICXBalancePostRetire) < 0);
 
         Map<String, BigInteger> LiquidatedUserBaS = reader.loans.getBalanceAndSupply("Loans", loanTaker.getAddress());
-        assertEquals(expectedTotalDebt, getTotalDebt());
         assertEquals(BigInteger.ZERO, loanTaker.getLoansAssetPosition("sICX"));
         assertEquals(BigInteger.ZERO, loanTaker.getLoansAssetPosition("bnUSD"));
         assertEquals(BigInteger.ZERO, LiquidatedUserBaS.get("_balance"));

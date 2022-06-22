@@ -300,28 +300,41 @@ public class LoansImpl implements Loans {
     @External
     public void retireBadDebt(String _symbol, BigInteger _value) {
         loansOn();
-        String collateralSymbol = SICX_SYMBOL;
-
         Context.require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Amount retired must be greater than zero.");
 
         Address from = Context.getCaller();
         Asset asset = AssetDB.getAsset(_symbol);
-        BigInteger badDebt = asset.getBadDebt(collateralSymbol);
 
         Address assetAddress = asset.getAssetAddress();
         Token assetContract = new Token(assetAddress);
 
         Context.require(asset.isActive(), TAG + ": " + _symbol + " is not an active, borrowable asset on Balanced.");
         Context.require(assetContract.balanceOf(from).compareTo(_value) >= 0, TAG + ": Insufficient balance.");
-        Context.require(badDebt.compareTo(BigInteger.ZERO) > 0, TAG + ": No bad debt for " + _symbol);
+   
+        BigInteger totalBadDebt = BigInteger.ZERO;
+        BigInteger remaningValue = _value;
+        for (String collateralSymbol :  CollateralDB.getCollateral().keySet()) {
+            BigInteger badDebt = asset.getBadDebt(collateralSymbol);
+            BigInteger badDebtAmount = badDebt.min(remaningValue);
 
-        BigInteger badDebtAmount = badDebt.min(_value);
-        asset.burnFrom(from, badDebtAmount);
+            BigInteger collateralToRedeem = badDebtRedeem(from, collateralSymbol, asset, badDebtAmount);
+            transferCollateral(collateralSymbol, from, collateralToRedeem, "Bad Debt redeemed.", new byte[0]);
 
-        BigInteger collateralToRedeem = badDebtRedeem(from, collateralSymbol, asset, badDebtAmount);
-        transferCollateral(collateralSymbol, from, collateralToRedeem, "Bad Debt redeemed.", new byte[0]);
+            remaningValue = remaningValue.subtract(badDebtAmount);
+            totalBadDebt = totalBadDebt.add(badDebtAmount);
+            if (remaningValue.equals(BigInteger.ZERO)) {
+                break;
+            }
+        }
+
+        Context.require(totalBadDebt.compareTo(BigInteger.ZERO) > 0, TAG + ": No bad debt for " + _symbol);
+        Context.require(remaningValue.compareTo(BigInteger.ZERO) >= 0, TAG + ": Amount retired must be greater than zero.");
+        //unreachable safeguard
+        Context.require(_value.compareTo(totalBadDebt) >= 0, TAG + "Cannot retire more debt that value");
+
+        asset.burnFrom(from, totalBadDebt);
         asset.checkForDeadMarket();
-        BadDebtRetired(from, _symbol, badDebtAmount, collateralToRedeem);
+        BadDebtRetired(from, _symbol, totalBadDebt);
     }
 
     @External
@@ -952,7 +965,7 @@ public class LoansImpl implements Loans {
     }
 
     @EventLog(indexed = 3)
-    public void BadDebtRetired(Address account, String symbol, BigInteger amount, BigInteger sicx_received) {
+    public void BadDebtRetired(Address account, String symbol, BigInteger amount) {
     }
 
     @EventLog(indexed = 2)
