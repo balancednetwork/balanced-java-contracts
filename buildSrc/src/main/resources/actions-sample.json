@@ -218,6 +218,33 @@
     "order": 12.0
   },
   {
+    "contract": "baln",
+    "method": "setTimeOffset",
+    "__args__": {
+    },
+    "order": 12.0
+  },
+  {
+    "contract": "batchDisbursement",
+    "method": "setDaofund",
+    "__args__": {
+      "__address_args__": {
+        "_address": "daofund"
+      }
+    },
+    "order": 12.0
+  },
+  {
+    "contract": "batchDisbursement",
+    "method": "setReserveFund",
+    "__args__": {
+      "__address_args__": {
+        "_address": "reserve"
+      }
+    },
+    "order": 12.0
+  },
+  {
     "contract": "governance",
     "method": "setFeeProcessingInterval",
     "__args__": {
