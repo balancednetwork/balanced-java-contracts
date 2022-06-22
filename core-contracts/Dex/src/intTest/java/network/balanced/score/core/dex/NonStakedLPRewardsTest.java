@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,17 +37,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class NonStakedLPRewardsTest {
 
-    @ScoreClient
-    private static Staking staking;
-
-    @ScoreClient
-    private static Loans loans;
-
-    @ScoreClient
-    private static Rewards rewards;
-
-    @ScoreClient
-    private static Baln baln;
+    private static StakingScoreClient staking;
+    private static LoansScoreClient loans;
+    private static RewardsScoreClient rewards;
+    private static BalnScoreClient baln;
 
     static Env.Chain chain = Env.getDefaultChain();
     private static Balanced balanced;
@@ -94,22 +87,16 @@ public class NonStakedLPRewardsTest {
 
     private static final Address userAddress = Address.of(userWallet);
 
-    @ScoreClient
-    private static final Dex dexUserScoreClient = new DexScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid()
-            , userWallet, dexScoreClient._address());
-    @ScoreClient
-    private static final Sicx userSicxScoreClient = new SicxScoreClient(dexScoreClient.endpoint(),
+    private static final DexScoreClient dexUserScoreClient = new DexScoreClient(dexScoreClient.endpoint(),
+            dexScoreClient._nid(), userWallet, dexScoreClient._address());
+    private static final SicxScoreClient userSicxScoreClient = new SicxScoreClient(dexScoreClient.endpoint(),
             dexScoreClient._nid(), userWallet, sIcxScoreClient._address());
-    @ScoreClient
-    private static final Rewards userWalletRewardsClient = new RewardsScoreClient(dexScoreClient.endpoint(),
-            dexScoreClient._nid(), userWallet, rewardsScoreClient._address());
-    @ScoreClient
-    private static final Baln userBalnScoreClient = new BalnScoreClient(dexScoreClient.endpoint(),
-            dexScoreClient._nid(), userWallet, balnScoreClient._address());
-    @ScoreClient
-    private static final Governance governanceDexScoreClient = new GovernanceScoreClient(governanceScoreClient);
-    @ScoreClient
-    private static final DAOfund userDaoFundScoreClient = new DAOfundScoreClient(daoFund);
+    private static final RewardsScoreClient userWalletRewardsClient =
+            new RewardsScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet,
+                    rewardsScoreClient._address());
+    private static final BalnScoreClient userBalnScoreClient = new BalnScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet, balnScoreClient._address());
+    private static final GovernanceScoreClient governanceDexScoreClient = new GovernanceScoreClient(governanceScoreClient);
+    private static final DAOfundScoreClient userDaoFundScoreClient = new DAOfundScoreClient(daoFund);
 
 
     @Test

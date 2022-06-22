@@ -23,8 +23,6 @@ import foundation.icon.jsonrpc.model.Hash;
 import foundation.icon.jsonrpc.model.TransactionResult;
 import foundation.icon.score.client.DefaultScoreClient;
 import foundation.icon.score.client.RevertedException;
-import foundation.icon.score.client.ScoreClient;
-import network.balanced.score.lib.interfaces.SystemInterface;
 import network.balanced.score.lib.interfaces.SystemInterfaceScoreClient;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Tag;
@@ -59,9 +57,7 @@ public interface ScoreIntegrationTest {
             DefaultScoreClient.ZERO_ADDRESS);
     DefaultScoreClient client = new DefaultScoreClient(chain.getEndpointURL(), chain.networkId, null, null);
 
-    @ScoreClient
-    SystemInterface _systemScore = new SystemInterfaceScoreClient(godClient);
-    SystemInterfaceScoreClient systemScore = (SystemInterfaceScoreClient) _systemScore;
+    SystemInterfaceScoreClient systemScore = new SystemInterfaceScoreClient(godClient);
 
     @SuppressWarnings("unchecked")
     static void registerPreps() throws Exception {

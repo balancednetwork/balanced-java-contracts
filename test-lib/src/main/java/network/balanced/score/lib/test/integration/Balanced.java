@@ -61,14 +61,10 @@ public class Balanced {
     public DefaultScoreClient stakedLp;
     public DefaultScoreClient stability;
 
-    @ScoreClient
-    public Governance governanceScore;
-    @ScoreClient
-    public Staking stakingScore;
-    @ScoreClient
-    public DAOfund daofundScore;
-    @ScoreClient
-    public Rewards rewardsScore;
+    public GovernanceScoreClient governanceScore;
+    public StakingScoreClient stakingScore;
+    public DAOfundScoreClient daofundScore;
+    public RewardsScoreClient rewardsScore;
 
     public Map<Address, BalancedClient> balancedClients;
 
@@ -88,7 +84,7 @@ public class Balanced {
         setupContracts();
 //         delegate(adminWallet);
         String className = new Exception().getStackTrace()[1].getClassName();
-        // no need to setup market in staking integration test case
+        // no need to set up market in staking integration test case
         if (!className.equals("network.balanced.score.core.staking.StakingIntegrationTest")) {
             setupMarkets();
         }
@@ -197,13 +193,13 @@ public class Balanced {
     }
 
     public void setupMarkets() {
-        ((GovernanceScoreClient)ownerClient.governance).createBnusdMarket(BigInteger.valueOf(400000).multiply(BigInteger.TEN.pow(18)));
+        ownerClient.governance.createBnusdMarket(BigInteger.valueOf(400000).multiply(BigInteger.TEN.pow(18)));
         increaseDay(2);
         syncDistributions();
         BigInteger balnBalance = ownerClient.rewards.getBalnHolding(governance._address());
         BigInteger initialPoolDepths = balnBalance.divide(BigInteger.TWO);
         ownerClient.governance.createBalnMarket(initialPoolDepths, initialPoolDepths);
-        ((StakingScoreClient)ownerClient.staking).stakeICX(initialPoolDepths.multiply(BigInteger.TWO), null, null);
+        ownerClient.staking.stakeICX(initialPoolDepths.multiply(BigInteger.TWO), null, null);
         ownerClient.sicx.transfer(governance._address(), initialPoolDepths, null);
         ownerClient.governance.createBalnSicxMarket(initialPoolDepths, initialPoolDepths);
     }
@@ -226,8 +222,8 @@ public class Balanced {
     public void syncDistributions() {
         Consumer<TransactionResult> distributeConsumer = result -> {};
         while (!checkDistributionsDone()) {
-            ((RewardsScoreClient)ownerClient.rewards).distribute(distributeConsumer);
-            ((DividendsScoreClient)ownerClient.dividends).distribute(distributeConsumer);
+            ownerClient.rewards.distribute(distributeConsumer);
+            ownerClient.dividends.distribute(distributeConsumer);
         }
     }
 

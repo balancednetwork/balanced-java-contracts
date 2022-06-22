@@ -16,6 +16,7 @@
 
 package network.balanced.score.lib.interfaces;
 
+import foundation.icon.score.client.ScoreClient;
 import network.balanced.score.lib.interfaces.addresses.*;
 import network.balanced.score.lib.interfaces.base.Fallback;
 import network.balanced.score.lib.interfaces.base.Name;
@@ -29,6 +30,7 @@ import java.math.BigInteger;
 
 import foundation.icon.score.client.ScoreInterface;
 
+@ScoreClient
 @ScoreInterface
 public interface Router extends Name, GovernanceAddress, AdminAddress, DexAddress, SicxAddress, StakingAddress,
         TokenFallback, Fallback {

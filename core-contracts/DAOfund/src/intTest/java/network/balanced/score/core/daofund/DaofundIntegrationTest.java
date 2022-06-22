@@ -35,8 +35,7 @@ class DaofundIntegrationTest {
     private static Wallet tester;
     private static Balanced balanced;
 
-    @ScoreClient
-    private static DAOfund daofund;
+    private static DAOfundScoreClient daofund;
 
     @BeforeAll
     static void setup() throws Exception {

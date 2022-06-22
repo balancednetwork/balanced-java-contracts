@@ -14,73 +14,38 @@
  * limitations under the License.
  */
 package network.balanced.score.lib.test.integration;
+
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.score.client.DefaultScoreClient;
-import foundation.icon.score.client.ScoreClient;
 import network.balanced.score.lib.interfaces.*;
-import network.balanced.score.lib.interfaces.*;
-import network.balanced.score.lib.interfaces.SystemInterface;
-import network.balanced.score.lib.interfaces.SystemInterfaceScoreClient;
-import network.balanced.score.lib.interfaces.base.*;
-import network.balanced.score.lib.structs.BalancedAddresses;
 
-import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
-
-import java.math.BigInteger;
+import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.chain;
 
 public class BalancedClient {
-    private Balanced balanced;
-    private KeyWallet wallet;
+    private final KeyWallet wallet;
 
-
-    @ScoreClient
-    public Governance governance;
-
-    @ScoreClient
-    public Staking staking;
-
-    @ScoreClient
-    public BalancedDollar bnUSD;
-
-    @ScoreClient
-    public DAOfund daofund;
-
-    @ScoreClient
-    public Rewards rewards;
-
-    @ScoreClient
-    public Loans loans;
-
-    @ScoreClient
-    public Baln baln;
-
-    @ScoreClient
-    public Rebalancing rebalancing;
-
-    @ScoreClient
-    public Sicx sicx;
-
-    @ScoreClient
-    public Dex dex;
-
-    @ScoreClient
-    public Stability stability;
-
-    @ScoreClient
-    public StakedLP stakedLp;
-
-    @ScoreClient
-    public Dividends dividends;
-
-    @ScoreClient
-    public SystemInterface systemScore;
+    public GovernanceScoreClient governance;
+    public StakingScoreClient staking;
+    public BalancedDollarScoreClient bnUSD;
+    public DAOfundScoreClient daofund;
+    public RewardsScoreClient rewards;
+    public LoansScoreClient loans;
+    public BalnScoreClient baln;
+    public RebalancingScoreClient rebalancing;
+    public SicxScoreClient sicx;
+    public DexScoreClient dex;
+    public StabilityScoreClient stability;
+    public StakedLPScoreClient stakedLp;
+    public DividendsScoreClient dividends;
+    public SystemInterfaceScoreClient systemScore;
 
     public BalancedClient(Balanced balanced, KeyWallet wallet) {
-        this.balanced = balanced;
         this.wallet = wallet;
-        governance = new GovernanceScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.governance._address());
+        governance = new GovernanceScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
+                balanced.governance._address());
         staking = new StakingScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.staking._address());
-        bnUSD = new BalancedDollarScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.bnusd._address());
+        bnUSD = new BalancedDollarScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
+                balanced.bnusd._address());
         daofund = new DAOfundScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.daofund._address());
         rewards = new RewardsScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.rewards._address());
         loans = new LoansScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.loans._address());

@@ -16,6 +16,8 @@
 
 package network.balanced.score.lib.interfaces;
 
+import foundation.icon.score.client.ScoreClient;
+import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.StakingAddress;
 import network.balanced.score.lib.interfaces.tokens.IRC2;
 import score.Address;
@@ -23,6 +25,8 @@ import score.annotation.External;
 
 import java.math.BigInteger;
 
+@ScoreClient
+@ScoreInterface
 public interface Sicx extends StakingAddress, IRC2 {
 
     @External(readonly = true)

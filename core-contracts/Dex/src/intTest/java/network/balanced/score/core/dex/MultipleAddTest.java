@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,7 @@ package network.balanced.score.core.dex;
 import foundation.icon.icx.Wallet;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
-import foundation.icon.score.client.ScoreClient;
 import network.balanced.score.lib.interfaces.*;
-import network.balanced.score.lib.interfaces.dex.DexTest;
 import network.balanced.score.lib.interfaces.dex.DexTestScoreClient;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.Env;
@@ -40,25 +38,12 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class MultipleAddTest {
 
-
-    @ScoreClient
-    static Staking staking;
-
-    @ScoreClient
-    static Loans loans;
-
-    @ScoreClient
-    static Rewards rewards;
-
-    @ScoreClient
-    static Sicx sicx;
-
-    @ScoreClient
-    static StakedLP stakedLp;
-
-
-    @ScoreClient
-    static Baln baln;
+    static StakingScoreClient staking;
+    static LoansScoreClient loans;
+    static RewardsScoreClient rewards;
+    static SicxScoreClient sicx;
+    static StakedLPScoreClient stakedLp;
+    static BalnScoreClient baln;
 
     private static final Env.Chain chain = Env.getDefaultChain();
     private static Wallet userWallet;
@@ -99,26 +84,22 @@ public class MultipleAddTest {
 
     private static final Address userAddress = Address.of(userWallet);
 
-    @ScoreClient
-    private static final DexTest ownerDexTestThirdScoreClient = new DexTestScoreClient(chain.getEndpointURL(),
-            chain.networkId,
-            testOwnerWallet, DefaultScoreClient.address(dexTestThirdScoreAddress));
-    private static final DexTest ownerDexTestFourthScoreClient = new DexTestScoreClient(chain.getEndpointURL(),
-            chain.networkId,
-            testOwnerWallet, DefaultScoreClient.address(dexTestFourthScoreAddress));
-    @ScoreClient
-    private static final Dex dexUserScoreClient = new DexScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid()
-            , userWallet,
-            dexScoreClient._address());
-
-    private static final DexTest userDexTestThirdScoreClient = new DexTestScoreClient(dexScoreClient.endpoint(),
-            dexScoreClient._nid(), userWallet,
-            DefaultScoreClient.address(dexTestThirdScoreAddress));
-    private static final DexTest userDexTestFourthScoreClient = new DexTestScoreClient(dexScoreClient.endpoint(),
-            dexScoreClient._nid(), userWallet,
-            DefaultScoreClient.address(dexTestFourthScoreAddress));
-    @ScoreClient
-    private static final Governance governanceDexScoreClient = new GovernanceScoreClient(governanceScoreClient);
+    private static final DexTestScoreClient ownerDexTestThirdScoreClient =
+            new DexTestScoreClient(chain.getEndpointURL(), chain.networkId, testOwnerWallet,
+                    DefaultScoreClient.address(dexTestThirdScoreAddress));
+    private static final DexTestScoreClient ownerDexTestFourthScoreClient =
+            new DexTestScoreClient(chain.getEndpointURL(), chain.networkId, testOwnerWallet,
+                    DefaultScoreClient.address(dexTestFourthScoreAddress));
+    private static final DexScoreClient dexUserScoreClient = new DexScoreClient(dexScoreClient.endpoint(),
+            dexScoreClient._nid(), userWallet, dexScoreClient._address());
+    private static final DexTestScoreClient userDexTestThirdScoreClient =
+            new DexTestScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet,
+                    DefaultScoreClient.address(dexTestThirdScoreAddress));
+    private static final DexTestScoreClient userDexTestFourthScoreClient =
+            new DexTestScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet,
+                    DefaultScoreClient.address(dexTestFourthScoreAddress));
+    private static final GovernanceScoreClient governanceDexScoreClient =
+            new GovernanceScoreClient(governanceScoreClient);
 
     @Test
     @Order(4)
@@ -198,6 +179,4 @@ public class MultipleAddTest {
     BigInteger hexToBigInteger(String hex){
         return new BigInteger(hex.replace("0x", ""), 16);
     }
-
-
 }

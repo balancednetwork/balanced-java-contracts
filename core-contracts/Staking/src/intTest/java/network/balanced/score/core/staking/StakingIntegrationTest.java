@@ -18,8 +18,8 @@ package network.balanced.score.core.staking;
 
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.score.client.DefaultScoreClient;
-import foundation.icon.score.client.ScoreClient;
-import network.balanced.score.lib.interfaces.*;
+import network.balanced.score.lib.interfaces.SicxScoreClient;
+import network.balanced.score.lib.interfaces.StakingScoreClient;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
@@ -49,11 +49,8 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
 
     private static Balanced balanced;
 
-    @ScoreClient
-    private static Staking staking;
-
-    @ScoreClient
-    private static Sicx sicxScore;
+    private static StakingScoreClient staking;
+    private static SicxScoreClient sicxScore;
 
     // address generated
     private final Address senderAddress = Address.fromString(balanced.owner.getAddress().toString());
@@ -63,15 +60,16 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
     private final KeyWallet testerWallet = balanced.testerWallet;
     private final KeyWallet testerWallet2 = balanced.secondTesterWallet;
 
-    DefaultScoreClient clientWithTester = new DefaultScoreClient(balanced.staking.endpoint(), balanced.staking._nid(), testerWallet,
+    DefaultScoreClient clientWithTester = new DefaultScoreClient(balanced.staking.endpoint(), balanced.staking._nid()
+            , testerWallet, balanced.staking._address());
+    DefaultScoreClient clientWithTester2 = new DefaultScoreClient(balanced.staking.endpoint(),
+            balanced.staking._nid(), testerWallet2,
             balanced.staking._address());
-    DefaultScoreClient clientWithTester2 = new DefaultScoreClient(balanced.staking.endpoint(), balanced.staking._nid(), testerWallet2,
-            balanced.staking._address());
-    DefaultScoreClient clientWithTester3 = new DefaultScoreClient(balanced.sicx.endpoint(), balanced.sicx._nid(), testerWallet2,
+    DefaultScoreClient clientWithTester3 = new DefaultScoreClient(balanced.sicx.endpoint(), balanced.sicx._nid(),
+            testerWallet2,
             balanced.sicx._address());
     private final Address testerAddress = Address.fromString(testerWallet.getAddress().toString());
     private final Address testerAddress2 = Address.fromString(testerWallet2.getAddress().toString());
-
 
 
     @BeforeAll
@@ -86,14 +84,9 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
 
     }
 
-    @ScoreClient
-    Staking testerScore = new StakingScoreClient(clientWithTester);
-
-    @ScoreClient
-    Staking testerScore2 = new StakingScoreClient(clientWithTester2);
-
-    @ScoreClient
-    Sicx sicxScore2 = new SicxScoreClient(clientWithTester3);
+    StakingScoreClient testerScore = new StakingScoreClient(clientWithTester);
+    StakingScoreClient testerScore2 = new StakingScoreClient(clientWithTester2);
+    SicxScoreClient sicxScore2 = new SicxScoreClient(clientWithTester3);
 
     @Test
     @Order(1)
@@ -103,7 +96,7 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
 
     @Test
     @Order(2)
-    void testSicxAddress() throws Exception {
+    void testSicxAddress() {
         Address value = staking.getSicxAddress();
         assertEquals(balanced.sicx._address(), value);
     }
@@ -137,8 +130,7 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         List<Address> prepList = staking.getPrepList();
         List<Address> topPreps = staking.getTopPreps();
 
-        ((StakingScoreClient) staking).stakeICX(new BigInteger("100").multiply(ONE_EXA), null
-                , null);
+        staking.stakeICX(new BigInteger("100").multiply(ONE_EXA), null, null);
 
         // get prep delegations
         Map<String, BigInteger> prepDelegations = staking.getPrepDelegations();
@@ -173,8 +165,7 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         BigInteger secondUserBalance = sicxScore.balanceOf(user2);
 
         // stakes 200 ICX to user2
-        ((StakingScoreClient) staking).stakeICX(new BigInteger("200").multiply(ONE_EXA),
-                user2, null);
+        staking.stakeICX(new BigInteger("200").multiply(ONE_EXA), user2, null);
 
         // get prep delegations
         Map<String, BigInteger> prepDelegations = staking.getPrepDelegations();
@@ -407,8 +398,7 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         BigInteger previousTotalSupply = sicxScore.totalSupply();
         BigInteger userBalance = sicxScore.balanceOf(senderAddress);
 
-        ((StakingScoreClient) staking).stakeICX(new BigInteger("100").multiply(ONE_EXA), null
-                , null);
+        staking.stakeICX(new BigInteger("100").multiply(ONE_EXA), null, null);
 
         Map<String, BigInteger> prepDelegations = staking.getPrepDelegations();
         Map<String, BigInteger> userExpectedDelegations = new HashMap<>();
@@ -445,6 +435,7 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         checkNetworkDelegations(expectedNetworkDelegations);
     }
 
+    @SuppressWarnings("unchecked")
     void checkNetworkDelegations(Map<String, BigInteger> expected) {
         Map<String, Object> delegations = systemScore.getDelegation(stakingAddress);
         Map<String, BigInteger> networkDelegations = new java.util.HashMap<>();
@@ -535,7 +526,7 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         Map<String, BigInteger> userExpectedDelegations = new HashMap<>();
         userExpectedDelegations.put(delegatedAddress.toString(), BigInteger.ZERO);
         assertEquals(userDelegations, userExpectedDelegations);
-        ((StakingScoreClient) testerScore).stakeICX(new BigInteger("50").multiply(ONE_EXA), null, null);
+        testerScore.stakeICX(new BigInteger("50").multiply(ONE_EXA), null, null);
         // get prep delegations
         Map<String, BigInteger> prepDelegations = staking.getPrepDelegations();
         Map<String, BigInteger> expectedPrepDelegations = new HashMap<>();
@@ -637,11 +628,9 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         Address receiverAddress = staking.getTopPreps().get(43);
 
 
-        ((StakingScoreClient) testerScore2).stakeICX(new BigInteger("100").multiply(ONE_EXA), null
-                , null);
+        testerScore2.stakeICX(new BigInteger("100").multiply(ONE_EXA), null, null);
 
         sicxScore2.transfer(receiverAddress, new BigInteger("50").multiply(ONE_EXA), null);
-
 
         Map<String, BigInteger> userExpectedDelegations = new HashMap<>();
         Map<String, BigInteger> user2ExpectedDelegations = new HashMap<>();
@@ -741,9 +730,10 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
 
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     @Order(15)
-    void unstakePartial() throws Exception {
+    void unstakePartial() {
         JSONObject data = new JSONObject();
         data.put("method", "unstake");
 
@@ -817,7 +807,7 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
 
     @Test
     @Order(16)
-    void unstakeFull() throws Exception {
+    void unstakeFull() {
         JSONObject data = new JSONObject();
         data.put("method", "unstake");
         data.put("user", "hx8119b3eebeb9f857efb3b135275ac3775cbc6664");
@@ -893,8 +883,7 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
     void stakeAfterUnstake() {
         BigInteger previousTotalStake = staking.getTotalStake();
         BigInteger previousTotalSupply = sicxScore.totalSupply();
-        ((StakingScoreClient) staking).stakeICX(new BigInteger("10").multiply(ONE_EXA),
-                null, null);
+        staking.stakeICX(new BigInteger("10").multiply(ONE_EXA), null, null);
         Assertions.assertEquals(new BigInteger("140").multiply(ONE_EXA), staking.getUnstakingAmount());
 
         List<Map<String, Object>> userUnstakeInfo = staking.getUserUnstakeInfo(senderAddress);
@@ -922,19 +911,19 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
     void claimUnstakedICX() {
         BigInteger previousTotalStake = staking.getTotalStake();
         BigInteger previousTotalSupply = sicxScore.totalSupply();
-        ((StakingScoreClient) staking).stakeICX(new BigInteger("200").multiply(ONE_EXA),
-                null, null);
+        staking.stakeICX(new BigInteger("200").multiply(ONE_EXA), null, null);
         assertEquals(previousTotalStake.add(new BigInteger("200").multiply(ONE_EXA)), staking.getTotalStake());
         assertEquals(previousTotalSupply.add(new BigInteger("200").multiply(ONE_EXA)), sicxScore.totalSupply());
 
         Assertions.assertEquals(new BigInteger("150").multiply(ONE_EXA), staking.totalClaimableIcx());
         Assertions.assertEquals(new BigInteger("100").multiply(ONE_EXA), staking.claimableICX(senderAddress));
-        Assertions.assertEquals(new BigInteger("50").multiply(ONE_EXA), staking.claimableICX(Address.fromString("hx8119b3eebeb9f857efb3b135275ac3775cbc6664")));
+        Assertions.assertEquals(new BigInteger("50").multiply(ONE_EXA), staking.claimableICX(Address.fromString(
+                "hx8119b3eebeb9f857efb3b135275ac3775cbc6664")));
         Assertions.assertEquals(new BigInteger("0").multiply(ONE_EXA), staking.getUnstakingAmount());
 
-        ((StakingScoreClient) staking).claimUnstakedICX(senderAddress);
-        ((StakingScoreClient) staking).claimUnstakedICX(Address.fromString("hx8119b3eebeb9f857efb3b135275ac3775cbc6664"));
-        Assertions.assertEquals(((StakingScoreClient) staking)._balance(), BigInteger.ZERO);
+        staking.claimUnstakedICX(senderAddress);
+        staking.claimUnstakedICX(Address.fromString("hx8119b3eebeb9f857efb3b135275ac3775cbc6664"));
+        Assertions.assertEquals(staking._balance(), BigInteger.ZERO);
     }
 
 
@@ -985,7 +974,7 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
 //        afterUpdate(delegatedAddress);
 //    }
 
-    void checkReadonlyFunctions(String flag, Address delegatedAddress) throws Exception {
+    void checkReadonlyFunctions(String flag, Address delegatedAddress) {
         assertEquals(new BigInteger("73000000000000000000"), staking.getTotalStake());
         assertEquals(new BigInteger("27000000000000000000"), staking.getUnstakingAmount());
         assertEquals(balanced.sicx._address(), staking.getSicxAddress());
@@ -998,7 +987,7 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         assertEquals(new BigInteger("50000000000000000000"), sicxScore.balanceOf(user2));
 
 
-        if (flag == "after") {
+        if (flag.equals("after")) {
             Map<String, BigInteger> userExpectedDelegations = new HashMap<>();
             Map<String, BigInteger> expectedPrepDelegations = new HashMap<>();
             Map<String, BigInteger> expectedNetworkDelegations = new java.util.HashMap<>();
@@ -1006,9 +995,12 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
             List<Address> topPreps = staking.getTopPreps();
             for (Address prep : prepList) {
                 if (contains(prep, topPreps)) {
-                    userExpectedDelegations.put(prep.toString(), new BigInteger("23").multiply(ONE_EXA).divide(HUNDRED));
-                    expectedPrepDelegations.put(prep.toString(), new BigInteger("73").multiply(ONE_EXA).divide(HUNDRED));
-                    expectedNetworkDelegations.put(prep.toString(), new BigInteger("73").multiply(ONE_EXA).divide(HUNDRED));
+                    userExpectedDelegations.put(prep.toString(),
+                            new BigInteger("23").multiply(ONE_EXA).divide(HUNDRED));
+                    expectedPrepDelegations.put(prep.toString(),
+                            new BigInteger("73").multiply(ONE_EXA).divide(HUNDRED));
+                    expectedNetworkDelegations.put(prep.toString(),
+                            new BigInteger("73").multiply(ONE_EXA).divide(HUNDRED));
                 }
             }
             // get address delegations of a user
@@ -1057,7 +1049,7 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
 
     }
 
-    void checkFirstUserUnstakeInfo() throws Exception {
+    void checkFirstUserUnstakeInfo() {
         List<Map<String, Object>> userUnstakeInfo = staking.getUserUnstakeInfo(senderAddress);
 
         assertEquals(senderAddress.toString(), userUnstakeInfo.get(0).get("sender"));
@@ -1067,7 +1059,7 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         assertEquals(new BigInteger("10").multiply(ONE_EXA), new BigInteger(hexValue, 16));
     }
 
-    void checkSecondUserUnstakeInfo() throws Exception {
+    void checkSecondUserUnstakeInfo() {
         List<Map<String, Object>> userUnstakeInfo = staking.getUserUnstakeInfo(Address.fromString(
                 "hx8119b3eebeb9f857efb3b135275ac3775cbc6664"));
         assertEquals("hx8119b3eebeb9f857efb3b135275ac3775cbc6664", userUnstakeInfo.get(0).get("sender"));
@@ -1106,22 +1098,23 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
     }
 
 
-    void test(Address delegatedAddress) throws Exception {
+    void test(Address delegatedAddress) {
         checkReadonlyFunctions("after", delegatedAddress);
     }
 
 
-    void afterUpdate(Address delegatedAddress) throws Exception {
+    void afterUpdate(Address delegatedAddress) {
         checkReadonlyFunctions("after", delegatedAddress);
 
 
         BigInteger previousTotalStake = staking.getTotalStake();
         BigInteger previousTotalSupply = sicxScore.totalSupply();
 //         stakes ICX
-        ((StakingScoreClient) staking).stakeICX(new BigInteger("227").multiply(ONE_EXA), null
-                , null);
-        Assertions.assertEquals(previousTotalStake.add(new BigInteger("227").multiply(ONE_EXA)), staking.getTotalStake());
-        Assertions.assertEquals(previousTotalSupply.add(new BigInteger("227").multiply(ONE_EXA)), sicxScore.totalSupply());
+        staking.stakeICX(new BigInteger("227").multiply(ONE_EXA), null, null);
+        Assertions.assertEquals(previousTotalStake.add(new BigInteger("227").multiply(ONE_EXA)),
+                staking.getTotalStake());
+        Assertions.assertEquals(previousTotalSupply.add(new BigInteger("227").multiply(ONE_EXA)),
+                sicxScore.totalSupply());
         // Delegation is changed
         delegateAfterUpdate();
         transferAfterUpdate();
@@ -1243,7 +1236,8 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
     }
 
 
-    void unstakeAfterUpdate() throws Exception {
+    @SuppressWarnings("unchecked")
+    void unstakeAfterUpdate() {
         JSONObject data = new JSONObject();
         data.put("method", "unstake");
 
@@ -1318,8 +1312,7 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
     void stakeAfterUnstakeUpdate() {
         BigInteger previousTotalStake = staking.getTotalStake();
         BigInteger previousTotalSupply = sicxScore.totalSupply();
-        ((StakingScoreClient) staking).stakeICX(new BigInteger("5").multiply(ONE_EXA),
-                null, null);
+        staking.stakeICX(new BigInteger("5").multiply(ONE_EXA), null, null);
         Assertions.assertEquals(new BigInteger("5").multiply(ONE_EXA), staking.getUnstakingAmount());
 
         List<Map<String, Object>> userUnstakeInfo = staking.getUserUnstakeInfo(senderAddress);
@@ -1346,20 +1339,18 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
     void claimAfterUpdate() {
         BigInteger previousTotalStake = staking.getTotalStake();
         BigInteger previousTotalSupply = sicxScore.totalSupply();
-        ((StakingScoreClient) staking).stakeICX(new BigInteger("20").multiply(ONE_EXA),
-                null, null);
+        staking.stakeICX(new BigInteger("20").multiply(ONE_EXA), null, null);
         assertEquals(previousTotalStake.add(new BigInteger("20").multiply(ONE_EXA)), staking.getTotalStake());
         assertEquals(previousTotalSupply.add(new BigInteger("20").multiply(ONE_EXA)), sicxScore.totalSupply());
 
         Assertions.assertEquals(new BigInteger("52").multiply(ONE_EXA), staking.totalClaimableIcx());
         Assertions.assertEquals(new BigInteger("32").multiply(ONE_EXA), staking.claimableICX(senderAddress));
-        Assertions.assertEquals(new BigInteger("20").multiply(ONE_EXA), staking.claimableICX(Address.fromString("hx8119b3eebeb9f857efb3b135275ac3775cbc6664")));
+        Assertions.assertEquals(new BigInteger("20").multiply(ONE_EXA), staking.claimableICX(Address.fromString(
+                "hx8119b3eebeb9f857efb3b135275ac3775cbc6664")));
         Assertions.assertEquals(new BigInteger("0").multiply(ONE_EXA), staking.getUnstakingAmount());
 
-        ((StakingScoreClient) staking).claimUnstakedICX(senderAddress);
-        ((StakingScoreClient) staking).claimUnstakedICX(Address.fromString("hx8119b3eebeb9f857efb3b135275ac3775cbc6664"));
-        Assertions.assertEquals(((StakingScoreClient) staking)._balance(), BigInteger.ZERO);
+        staking.claimUnstakedICX(senderAddress);
+        staking.claimUnstakedICX(Address.fromString("hx8119b3eebeb9f857efb3b135275ac3775cbc6664"));
+        Assertions.assertEquals(staking._balance(), BigInteger.ZERO);
     }
-
-
 }

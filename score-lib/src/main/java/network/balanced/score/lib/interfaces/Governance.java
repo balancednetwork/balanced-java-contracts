@@ -15,7 +15,11 @@
  */
 package network.balanced.score.lib.interfaces;
 
+import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
+import network.balanced.score.lib.interfaces.base.Fallback;
+import network.balanced.score.lib.interfaces.base.Name;
+import network.balanced.score.lib.interfaces.base.TokenFallback;
 import network.balanced.score.lib.structs.BalancedAddresses;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.PrepDelegations;
@@ -23,14 +27,11 @@ import score.Address;
 import score.annotation.External;
 import score.annotation.Payable;
 
-
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-import foundation.icon.score.client.ScoreInterface;
-import network.balanced.score.lib.interfaces.base.*;
-
+@ScoreClient
 @ScoreInterface
 public interface Governance extends
         Name,
