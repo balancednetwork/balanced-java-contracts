@@ -16,7 +16,6 @@
 
 package network.balanced.score.core.dividends;
 
-import com.iconloop.score.test.Score;
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.icx.Wallet;
 import foundation.icon.score.client.DefaultScoreClient;
@@ -30,7 +29,6 @@ import score.Address;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 

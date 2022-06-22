@@ -20,7 +20,6 @@ import foundation.icon.icx.Wallet;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.jsonrpc.model.TransactionResult;
 import foundation.icon.score.client.DefaultScoreClient;
-import foundation.icon.score.client.ScoreClient;
 import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.Env;
@@ -108,14 +107,14 @@ public class NonStakedLPRewardsTest {
         balanced.syncDistributions();
 
         byte[] tokenDeposit = "{\"method\":\"_deposit\",\"params\":{\"none\":\"none\"}}".getBytes();
-        ((StakingScoreClient) staking).stakeICX(BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18)), userAddress
+        staking.stakeICX(BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18)), userAddress
                 , null);
 
         BigInteger loanAmount = BigInteger.valueOf(150).multiply(BigInteger.TEN.pow(18));
         BigInteger collateral = BigInteger.valueOf(1000).multiply(BigInteger.TEN.pow(18));
 
 
-        ((LoansScoreClient) loans).depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
+        loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
 
         waitForADay();
         balanced.syncDistributions();
@@ -145,13 +144,13 @@ public class NonStakedLPRewardsTest {
         // next day starts
         Consumer<TransactionResult> distributeConsumer = result -> {};
         for(int i =0; i<10; i++){
-            ((RewardsScoreClient)balanced.ownerClient.rewards).distribute(distributeConsumer);
+            balanced.ownerClient.rewards.distribute(distributeConsumer);
         }
         waitForADay();
 
         // next day starts
         for(int i =0; i<10; i++){
-            ((RewardsScoreClient)balanced.ownerClient.rewards).distribute(distributeConsumer);
+            balanced.ownerClient.rewards.distribute(distributeConsumer);
         }
         // users without staking LP tokens will get 0 rewards
         assertEquals(BigInteger.ZERO, rewards.getBalnHolding(userAddress));

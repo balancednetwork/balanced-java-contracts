@@ -16,8 +16,6 @@
 
 package network.balanced.score.core.rewards;
 
-import foundation.icon.score.client.ScoreClient;
-import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
@@ -25,7 +23,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -62,7 +59,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
     @Test
     void testClaimAndDistribute() throws Exception { 
         BalancedClient loanTaker = balanced.newClient();
-        ((LoansScoreClient)loanTaker.loans).depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(20), null, null);
+        loanTaker.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(20), null, null);
         
         balanced.syncDistributions();
 

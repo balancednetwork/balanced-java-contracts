@@ -20,8 +20,10 @@ import foundation.icon.icx.KeyWallet;
 import foundation.icon.jsonrpc.model.Hash;
 import foundation.icon.jsonrpc.model.TransactionResult;
 import foundation.icon.score.client.DefaultScoreClient;
-import foundation.icon.score.client.ScoreClient;
-import network.balanced.score.lib.interfaces.*;
+import network.balanced.score.lib.interfaces.DAOfundScoreClient;
+import network.balanced.score.lib.interfaces.GovernanceScoreClient;
+import network.balanced.score.lib.interfaces.RewardsScoreClient;
+import network.balanced.score.lib.interfaces.StakingScoreClient;
 import network.balanced.score.lib.structs.BalancedAddresses;
 import score.Address;
 

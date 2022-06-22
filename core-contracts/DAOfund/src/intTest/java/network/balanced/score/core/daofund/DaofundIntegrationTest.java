@@ -17,8 +17,6 @@
 package network.balanced.score.core.daofund;
 
 import foundation.icon.icx.Wallet;
-import foundation.icon.score.client.ScoreClient;
-import network.balanced.score.lib.interfaces.DAOfund;
 import network.balanced.score.lib.interfaces.DAOfundScoreClient;
 import network.balanced.score.lib.test.integration.Balanced;
 import org.junit.jupiter.api.BeforeAll;
