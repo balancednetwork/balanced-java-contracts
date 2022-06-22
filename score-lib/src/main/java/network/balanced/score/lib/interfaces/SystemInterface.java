@@ -16,11 +16,16 @@
 
 package network.balanced.score.lib.interfaces;
 
+import foundation.icon.score.client.ScoreClient;
+import foundation.icon.score.client.ScoreInterface;
 import score.Address;
 import score.annotation.Payable;
 
+import java.math.BigInteger;
 import java.util.Map;
 
+@ScoreClient
+@ScoreInterface
 public interface SystemInterface {
     Map<String, Object> getIISSInfo();
 
@@ -29,7 +34,9 @@ public interface SystemInterface {
     Map<String, Object> getStake(Address address);
 
     Map<String, Object> getDelegation(Address address);
-    
+
+    Map<String, Object> getPReps(BigInteger startRanking, BigInteger endRanking);
+
     @Payable
     void registerPRep(String name, String email, String country, String city, String website, String details, String p2pEndpoint);
 }

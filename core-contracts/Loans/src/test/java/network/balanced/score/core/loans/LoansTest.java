@@ -23,7 +23,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import score.Address;
-import scorex.util.ArrayList;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -367,7 +366,7 @@ class LoansTest extends LoansTestBase {
         // Arrange
         Account account = accounts.get(0);
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
-        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);;
+        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
         String expectedErrorMessage = "Reverted(0): " + TAG + "Loans of collateral assets are not allowed.";
 
         // Assert & Act
@@ -380,7 +379,7 @@ class LoansTest extends LoansTestBase {
         // Arrange
         Account account = accounts.get(0);
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
-        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);;
+        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
         String expectedErrorMessage = "Reverted(0): " + TAG + "Loans of inactive assets are not allowed.";
         loans.invoke(admin, "toggleAssetActive", "bnUSD");
 

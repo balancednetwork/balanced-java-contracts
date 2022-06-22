@@ -19,7 +19,7 @@ package network.balanced.score.core.governance;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import foundation.icon.icx.KeyWallet;
-import foundation.icon.jsonrpc.model.TransactionResult;
+import network.balanced.score.lib.interfaces.LoansScoreClient;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
@@ -27,10 +27,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
-import java.util.Map;
-import java.util.function.Consumer;
 
-import static network.balanced.score.core.governance.GovernanceConstants.MICRO_SECONDS_IN_A_DAY;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -56,7 +53,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest{
         balanced.increaseDay(1);
         owner.baln.toggleEnableSnapshot();
 
-        tester.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(20), null, null);        
+        tester.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(20), null, null);
 
         balanced.increaseDay(1);
         balanced.syncDistributions();
