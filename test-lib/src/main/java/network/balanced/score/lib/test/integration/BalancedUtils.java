@@ -2,11 +2,18 @@ package network.balanced.score.lib.test.integration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.io.File;
 import java.math.BigInteger;
+import java.nio.file.Paths;
+import java.util.Map;
 
 import com.eclipsesource.json.JsonArray;
 
+import foundation.icon.score.client.DefaultScoreClient;
+
+import static foundation.icon.score.client.DefaultScoreClient._deploy;
 import network.balanced.score.lib.interfaces.Governance;
+import score.Address;
 
 public class BalancedUtils {
 
@@ -39,4 +46,12 @@ public class BalancedUtils {
         return new BigInteger(hexString, 16);
 
     }
+
+    public static Address createIRC2Token(BalancedClient owner, String name, String symbol) {
+        String path = System.getProperty("user.dir") + "/../../test-lib/util-contracts/IRC2Token.jar";
+        DefaultScoreClient assetClient = _deploy(Env.getDefaultChain().getEndpointURL(), Env.getDefaultChain().networkId, owner.wallet, path,  Map.of("name", name, "symbol", symbol));
+        return assetClient._address();
+    }
+
+   
 }

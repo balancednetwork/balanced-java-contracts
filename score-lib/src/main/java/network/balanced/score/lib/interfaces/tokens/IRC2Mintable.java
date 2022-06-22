@@ -24,7 +24,7 @@ import score.annotation.Optional;
 import java.math.BigInteger;
 
 @ScoreInterface
-public interface IRC2Mintable extends IRC2{
+public interface IRC2Mintable extends IRC2 {
 
     @External
     void setMinter(Address _address);

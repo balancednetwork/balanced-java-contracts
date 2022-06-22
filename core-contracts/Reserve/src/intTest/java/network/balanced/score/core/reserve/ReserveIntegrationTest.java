@@ -126,7 +126,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
 
         // Act
         BigInteger balancePreLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
-        liquidator.loans.liquidate(loanTaker.getAddress());
+        liquidator.loans.liquidate("sICX", loanTaker.getAddress());
         BigInteger balancePostLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
         assertTrue(balancePreLiquidation.compareTo(balancePostLiquidation) < 0);
 

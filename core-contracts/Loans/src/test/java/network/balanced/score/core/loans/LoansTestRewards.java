@@ -269,7 +269,7 @@ class LoansTestRewards extends LoansTestBase {
 
 
     @Test
-    void liquidate() {
+    void liquidate("sICX", ) {
         // Arrange
         Account account = accounts.get(0);
         Account liquidater = accounts.get(1);

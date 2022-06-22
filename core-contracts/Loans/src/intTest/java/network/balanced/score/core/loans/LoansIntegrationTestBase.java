@@ -49,7 +49,6 @@ class LoansIntegrationTestBase extends LoansIntegrationTest {
         reader = balanced.newClient(BigInteger.ZERO);
         
         LoansIntegrationTest.setup();
-        
     }
    
     @Test
@@ -87,7 +86,7 @@ class LoansIntegrationTestBase extends LoansIntegrationTest {
 
         // Act
         BigInteger balancePreLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
-        liquidator.loans.liquidate(loanTaker.getAddress());
+        liquidator.loans.liquidate("sICX", loanTaker.getAddress());
         BigInteger balancePostLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
         assertTrue(balancePreLiquidation.compareTo(balancePostLiquidation) < 0);
 

@@ -27,6 +27,7 @@ import static  network.balanced.score.lib.test.integration.BalancedUtils.*;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
+import score.Address;
 import score.UserRevertedException;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -66,6 +67,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         owner.governance.setVoteDefinitionFee(voteDefinitionFee);
         owner.governance.setBalnVoteDefinitionCriterion(BigInteger.ZERO);
         owner.governance.setQuorum(BigInteger.ONE);
+        Address ethAddress = createIRC2Token(owner, "ICON ETH", "iETH");
     }
 
     @Test
@@ -124,9 +126,9 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         loanTakerFullRepay.sICXDepositAndBorrow(collateral, loanAmount);
         loanTakerPartialRepay.sICXDepositAndBorrow(collateral, loanAmount);
 
-        loanTakerPartialRepay.loans.returnAsset("bnUSD", debt.divide(BigInteger.TWO), true);
+        loanTakerPartialRepay.loans.returnAsset("sICX", "bnUSD", debt.divide(BigInteger.TWO));
         loanTakerPartialRepay.bnUSD.transfer(loanTakerFullRepay.getAddress(), fee, null);
-        loanTakerFullRepay.loans.returnAsset("bnUSD", debt, true);
+        loanTakerFullRepay.loans.returnAsset("sICX", "bnUSD", debt);
 
         BigInteger outstandingNewDebt = debt.divide(BigInteger.TWO);
 
@@ -161,16 +163,16 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         zeroLoanWithdrawFull.sICXDepositAndBorrow(collateral, BigInteger.ZERO);
 
         loanTakerPartialWithdraw.bnUSD.transfer(loanTakerFullWithdraw.getAddress(), fee, null);
-        loanTakerFullWithdraw.loans.returnAsset("bnUSD", debt, true);
+        loanTakerFullWithdraw.loans.returnAsset("sICX", "bnUSD", debt);
         BigInteger sICXCollateral = loanTakerFullWithdraw.getLoansAssetPosition("sICX");
-        loanTakerFullWithdraw.loans.withdrawCollateral(sICXCollateral);
+        loanTakerFullWithdraw.loans.withdrawCollateral("sICX", sICXCollateral);
 
         assertThrows(UserRevertedException.class, () -> 
-            loanTakerPartialWithdraw.loans.withdrawCollateral(sICXCollateral));
+            loanTakerPartialWithdraw.loans.withdrawCollateral("sICX", sICXCollateral));
         BigInteger amountWithdrawn = BigInteger.TEN.pow(20);
-        loanTakerPartialWithdraw.loans.withdrawCollateral(amountWithdrawn);
+        loanTakerPartialWithdraw.loans.withdrawCollateral("sICX", amountWithdrawn);
 
-        zeroLoanWithdrawFull.loans.withdrawCollateral(sICXCollateral);
+        zeroLoanWithdrawFull.loans.withdrawCollateral("sICX", sICXCollateral);
 
         // Assert
         BigInteger expectedTotalDebt = initalTotalDebt.add(debt);
@@ -208,13 +210,13 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         loanTakerPartialRepay.bnUSD.transfer(loanTakerCloseLoanOnly2.getAddress(), fee, null);
         loanTakerPartialRepay.bnUSD.transfer(loanTakerFullClose.getAddress(), fee, null);
 
-        loanTakerCloseLoanOnly.loans.returnAsset("bnUSD", debt, true);
-        loanTakerCloseLoanOnly2.loans.returnAsset("bnUSD", debt, true);
-        loanTakerFullClose.loans.returnAsset("bnUSD", debt, true);
+        loanTakerCloseLoanOnly.loans.returnAsset("sICX", "bnUSD", debt);
+        loanTakerCloseLoanOnly2.loans.returnAsset("sICX", "bnUSD", debt);
+        loanTakerFullClose.loans.returnAsset("sICX", "bnUSD", debt);
         BigInteger amountRepaid = BigInteger.TEN.pow(21);
-        loanTakerPartialRepay.loans.returnAsset("bnUSD", amountRepaid, true);
+        loanTakerPartialRepay.loans.returnAsset("sICX", "bnUSD", amountRepaid);
 
-        loanTakerFullClose.loans.withdrawCollateral(loanTakerFullClose.getLoansAssetPosition("sICX"));
+        loanTakerFullClose.loans.withdrawCollateral("sICX", loanTakerFullClose.getLoansAssetPosition("sICX"));
 
         loanTakerCloseLoanOnly.loans.depositAndBorrow(BigInteger.ZERO, "bnUSD", loanAmount, null, null);
         loanTakerCloseLoanOnly2.sICXDepositAndBorrow(collateral, loanAmount);
@@ -281,7 +283,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
 
         // Act
         BigInteger balancePreLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
-        liquidator.loans.liquidate(loanTaker.getAddress());
+        liquidator.loans.liquidate("sICX", loanTaker.getAddress());
         BigInteger balancePostLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
         assertTrue(balancePreLiquidation.compareTo(balancePostLiquidation) < 0);
 

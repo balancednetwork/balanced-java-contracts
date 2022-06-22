@@ -218,9 +218,7 @@ public class LoansImpl implements Loans {
         }
 
         Position position = PositionsDB.get(id);
-        // for each collateral type fetch
         BigInteger balance = position.getDebt(SICX_SYMBOL, BNUSD_SYMBOL);
-
         return Map.of(
                 "_balance", balance,
                 "_totalSupply", totalSupply
@@ -251,8 +249,7 @@ public class LoansImpl implements Loans {
 
         Token collateralToken = new Token(token);
         String collateralSymbol = collateralToken.symbol();
-        // Allow active assets for mutli collateral
-        Context.require(CollateralDB.getCollateral("sICX").getAssetAddress().equals(token), TAG + ": The Balanced Loans " +
+        Context.require(CollateralDB.getCollateral(collateralSymbol).isActive(), TAG + ": The Balanced Loans " +
             "contract does not accept that token type.");
 
         String unpackedData = new String(_data);
@@ -271,8 +268,10 @@ public class LoansImpl implements Loans {
     }
 
     // make external when mutli collateral is released
-    private void borrow(String _collateralToBorrowAgainst, String _assetToBorrow, BigInteger _amountToBorrow, Address _from) {
+    @External
+    public void borrow(String _collateralToBorrowAgainst, String _assetToBorrow, BigInteger _amountToBorrow, @Optional Address _from) {
         loansOn();
+        _from = optionalDefault(_from, Context.getCaller());
         originateLoan(_collateralToBorrowAgainst, _assetToBorrow, _amountToBorrow, _from);
     }
 
@@ -338,10 +337,10 @@ public class LoansImpl implements Loans {
     }
 
     @External
-    public void returnAsset(String _symbol, BigInteger _value, @Optional boolean _repay) {
+    public void returnAsset(String _collateralSymbol, String _assetSymbol, BigInteger _value) {
         loansOn();
-        String collateralSymbol = SICX_SYMBOL;
-        String assetSymbol = _symbol;
+        String collateralSymbol = _collateralSymbol;
+        String assetSymbol = _assetSymbol;
         Context.require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Amount retired must be greater than zero.");
 
         Address from = Context.getCaller();
@@ -381,15 +380,15 @@ public class LoansImpl implements Loans {
         Context.call(rewards.get(), "updateRewardsData", "Loans", oldSupply, from, borrowed);
 
         asset.checkForDeadMarket();
-        String logMessage = "Loan of " + repaid + " " + _symbol + " repaid to Balanced.";
-        LoanRepaid(from, _symbol, repaid, logMessage);
+        String logMessage = "Loan of " + repaid + " " + assetSymbol + " repaid to Balanced.";
+        LoanRepaid(from, assetSymbol, repaid, logMessage);
     }
 
     @External
-    public void raisePrice(BigInteger _total_tokens_required) {
+    public void raisePrice(String _collateralSymbol, BigInteger _total_tokens_required) {
         loansOn();
         only(rebalancing);
-        String collateralSymbol = SICX_SYMBOL;
+        String collateralSymbol = _collateralSymbol;
         String assetSymbol = BNUSD_SYMBOL;
 
         Asset asset = AssetDB.getAsset(assetSymbol);
@@ -454,10 +453,10 @@ public class LoansImpl implements Loans {
     }
 
     @External
-    public void lowerPrice(BigInteger _total_tokens_required) {
+    public void lowerPrice(String _collateralSymbol, BigInteger _total_tokens_required) {
         loansOn();
         only(rebalancing);
-        String collateralSymbol = SICX_SYMBOL;
+        String collateralSymbol = _collateralSymbol;
         String assetSymbol = BNUSD_SYMBOL;
 
         Collateral collateral = CollateralDB.getCollateral(collateralSymbol);
@@ -521,9 +520,9 @@ public class LoansImpl implements Loans {
     }
 
     @External
-    public void withdrawCollateral(BigInteger _value) {
+    public void withdrawCollateral(String _collateralSymbol, BigInteger _value) {
         loansOn();
-        String collateralSymbol = SICX_SYMBOL;
+        String collateralSymbol = _collateralSymbol;
 
         Context.require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Withdraw amount must be more than zero.");
         Address from = Context.getCaller();
@@ -554,9 +553,9 @@ public class LoansImpl implements Loans {
     }
 
     @External
-    public void liquidate(Address _owner) {
+    public void liquidate(String _collateralSymbol, Address _owner) {
         loansOn();
-        String collateralSymbol = SICX_SYMBOL;
+        String collateralSymbol = _collateralSymbol;
         Context.require(PositionsDB.hasPosition(_owner), TAG + ": This address does not have a position on Balanced.");
         Position position = PositionsDB.getPosition(_owner);
         Standings standing;
@@ -601,7 +600,7 @@ public class LoansImpl implements Loans {
         AssetDB.updateDeadMarkets();
 
         String logMessage = collateral + " liquidated from " + _owner;
-        Liquidate(_owner, collateral, logMessage);
+        liquidated(_owner, collateral, logMessage);
     }
 
     private BigInteger badDebtRedeem(Address from, String collateralSymbol, Asset asset, BigInteger badDebtAmount) {
@@ -969,7 +968,7 @@ public class LoansImpl implements Loans {
     }
 
     @EventLog(indexed = 2)
-    public void Liquidate(Address account, BigInteger amount, String note) {
+    public void liquidated(Address account, BigInteger amount, String note) {
     }
 
     @EventLog(indexed = 3)

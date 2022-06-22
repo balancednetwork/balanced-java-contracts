@@ -1,9 +1,12 @@
 package network.balanced.score.lib.test.integration;
 import foundation.icon.icx.KeyWallet;
+import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
 import foundation.icon.score.client.ScoreClient;
 import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.interfaces.base.*;
+import network.balanced.score.lib.interfaces.tokens.*;
+import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
 import network.balanced.score.lib.structs.BalancedAddresses;
 
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
@@ -16,7 +19,7 @@ import com.eclipsesource.json.JsonObject;
 
 public class BalancedClient {
     private Balanced balanced;
-    private KeyWallet wallet;
+    public KeyWallet wallet;
 
     @ScoreClient
     private Governance _governance;
@@ -64,6 +67,9 @@ public class BalancedClient {
     private static BalancedOracle _balancedOracle;
 
     @ScoreClient
+    private static IRC2Mintable _irc2Mintable;
+
+    @ScoreClient
     private static SystemInterface _systemScore;
 
     public GovernanceScoreClient governance;
@@ -107,6 +113,10 @@ public class BalancedClient {
     
     public score.Address getAddress() {
         return score.Address.fromString(wallet.getAddress().toString());
+    }
+
+    public IRC2Mintable irc2(Address address) {
+       return new IRC2MintableScoreClient(chain.getEndpointURL(), chain.networkId, wallet, address);
     }
 
 

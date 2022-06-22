@@ -48,6 +48,8 @@ public class BalancedOracleImpl implements BalancedOracle {
 
         governance.set(_governance);
         assetSymbolMap.set("bnUSD", "USD");
+        assetSymbolMap.set("iETH", "ETH");
+        assetSymbolMap.set("iBTC", "BTC");
     }
     
     @External(readonly = true)

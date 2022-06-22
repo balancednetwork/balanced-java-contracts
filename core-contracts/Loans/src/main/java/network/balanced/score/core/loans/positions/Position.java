@@ -42,6 +42,8 @@ public class Position {
             "loan_balance", BigInteger.class);
     private final BranchDB<String, DictDB<String, BigInteger>> collateral = Context.newBranchDB("collateral_balance"
             , BigInteger.class);
+    // private final BranchDB<String, BranchDB<String, DictDB<String, BigInteger>>> totaldebt = Context.newBranchDB(
+    //     "loan_balance", BigInteger.class);
 
     private final String dbKey;
 
