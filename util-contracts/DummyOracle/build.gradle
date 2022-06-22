@@ -50,6 +50,11 @@ deployJar {
             nid = 0x53
             to = "cx342c69da9d8ac099f10fc4eb226ae0de54d8097f"
         }
+        berlin {
+            uri = "https://berlin.net.solidwallet.io/api/v3"
+            nid = 0x7
+            to = "cx18f2bc4510f827b0aa9acfe5298d039271e0bb73"
+        }
         local {
             uri = 'http://localhost:9082/api/v3'
             nid = 0x3
