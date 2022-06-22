@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import foundation.icon.icx.Wallet
 import foundation.icon.jsonrpc.Address
+import foundation.icon.jsonrpc.JsonrpcClient
 import foundation.icon.score.client.DefaultScoreClient
 import network.balanced.gradle.plugin.utils.NameMapping
 import network.balanced.gradle.plugin.utils.Network
@@ -122,6 +123,9 @@ class DeployBalancedContracts extends DefaultTask {
 
     private void deployPrep() {
         try {
+            TypeReference<Map<String, Object>> responseClass = new TypeReference<Map<String, Object>>() {}
+            client._call(responseClass, DefaultScoreClient.ZERO_ADDRESS, "getPReps", Map.of("startRanking", 1, "endRanking", 100))
+        } catch (JsonrpcClient.JsonrpcError ignored) {
             send(DefaultScoreClient.ZERO_ADDRESS, BigInteger.valueOf(2000) * ConfigureBalancedEnv.ICX, "registerPRep",
                     Map.of("name", "test",
                             "email", "kokoa@example.com",
@@ -130,8 +134,6 @@ class DeployBalancedContracts extends DefaultTask {
                             "website", "https://icon.kokoa.com",
                             "details", "https://icon.kokoa.com/json/details.json",
                             "p2pEndpoint", "localhost:9082"))
-        } catch (Exception ignored) {
-
         }
     }
 
