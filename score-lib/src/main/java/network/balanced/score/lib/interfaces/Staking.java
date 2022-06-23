@@ -1,5 +1,3 @@
-package network.balanced.score.lib.interfaces;
-
 /*
  * Copyright (c) 2022-2022 Balanced.network.
  *
@@ -16,6 +14,9 @@ package network.balanced.score.lib.interfaces;
  * limitations under the License.
  */
 
+package network.balanced.score.lib.interfaces;
+
+import foundation.icon.score.client.ScoreClient;
 import score.*;
 import score.annotation.External;
 import score.annotation.Optional;
@@ -25,6 +26,11 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+import foundation.icon.score.client.ScoreInterface;
+import network.balanced.score.lib.structs.PrepDelegations;
+
+@ScoreClient
+@ScoreInterface
 public interface Staking {
 
     @External(readonly = true)
@@ -111,17 +117,4 @@ public interface Staking {
 
     @External(readonly = true)
     List<Map<String, Object>> getUserUnstakeInfo(Address _address);
-
-    class PrepDelegations {
-        public Address _address;
-        public BigInteger _votes_in_per;
-    }
-
-    class UnstakeDetails {
-        public BigInteger nodeId;
-        public BigInteger unstakeAmount;
-        public Address key;
-        public BigInteger unstakeBlockHeight;
-        public Address receiverAddress;
-    }
 }

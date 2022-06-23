@@ -108,7 +108,7 @@ class RouterTest extends TestBase {
         Address[] pathWithNonSicx = new Address[]{balnToken.getAddress()};
         Executable nonSicxTrade = () -> sm.call(owner, icxToTrade, routerScore.getAddress(), "route", pathWithNonSicx,
                 BigInteger.ZERO);
-        String expectedErrorMessage = TAG + ": ICX can only be traded for sICX";
+        String expectedErrorMessage = "Reverted(0): " + TAG + ": ICX can only be traded for sICX";
         expectErrorMessage(nonSicxTrade, expectedErrorMessage);
 
         Address[] pathWithMoreHops = new Address[MAX_NUMBER_OF_ITERATIONS + 1];
@@ -118,7 +118,7 @@ class RouterTest extends TestBase {
 
         Executable maxTradeHops = () -> sm.call(owner, icxToTrade, routerScore.getAddress(), "route",
                 pathWithMoreHops, BigInteger.ZERO);
-        expectedErrorMessage = TAG + ": Passed max swaps of " + MAX_NUMBER_OF_ITERATIONS;
+        expectedErrorMessage = "Reverted(0): " + TAG + ": Passed max swaps of " + MAX_NUMBER_OF_ITERATIONS;
         expectErrorMessage(maxTradeHops, expectedErrorMessage);
 
         contextMock.reset();
@@ -132,7 +132,7 @@ class RouterTest extends TestBase {
 
         Executable lessThanMinimumReceivable = () -> sm.call(owner, icxToTrade, routerScore.getAddress(), "route",
                 path, icxToTrade.multiply(BigInteger.TWO));
-        expectedErrorMessage = TAG + ": Below minimum receive amount of " + icxToTrade.multiply(BigInteger.TWO);
+        expectedErrorMessage = "Reverted(0): " + TAG + ": Below minimum receive amount of " + icxToTrade.multiply(BigInteger.TWO);
         expectErrorMessage(lessThanMinimumReceivable, expectedErrorMessage);
 
         sm.call(owner, icxToTrade, routerScore.getAddress(), "route", path, BigInteger.ZERO);
@@ -140,7 +140,7 @@ class RouterTest extends TestBase {
 
         Executable negativeMinimumBalance = () -> sm.call(owner, icxToTrade, routerScore.getAddress(),
                 "route", path, icxToTrade.negate());
-        expectedErrorMessage = TAG + ": Must specify a positive number for minimum to receive";
+        expectedErrorMessage = "Reverted(0): " + TAG + ": Must specify a positive number for minimum to receive";
         expectErrorMessage(negativeMinimumBalance, expectedErrorMessage);
     }
 
@@ -150,7 +150,7 @@ class RouterTest extends TestBase {
         // have receiver, minimum receive options
         setup();
 
-        String expectedErrorMessage = "Token Fallback: Data can't be empty";
+        String expectedErrorMessage = "Reverted(0): Token Fallback: Data can't be empty";
         Executable noDataTransfer = () -> routerScore.invoke(sicxScore, "tokenFallback", owner.getAddress(),
                 BigInteger.TEN, "".getBytes());
         expectErrorMessage(noDataTransfer, expectedErrorMessage);
@@ -162,13 +162,13 @@ class RouterTest extends TestBase {
         byte[] data = tokenData("hello", Map.of());
         Executable noSwapMethod = () -> routerScore.invoke(sicxScore, "tokenFallback", owner.getAddress(),
                 BigInteger.TEN, data);
-        expectedErrorMessage = TAG + ": Fallback directly not allowed.";
+        expectedErrorMessage = "Reverted(0): " + TAG + ": Fallback directly not allowed.";
         expectErrorMessage(noSwapMethod, expectedErrorMessage);
 
         byte[] negativeData = tokenData("_swap", Map.of("minimumReceive", -123L));
         Executable negativeMinimumReceive = () -> routerScore.invoke(sicxScore, "tokenFallback", owner.getAddress(),
                 BigInteger.TEN, negativeData);
-        expectedErrorMessage = TAG + ": Must specify a positive number for minimum to receive";
+        expectedErrorMessage = "Reverted(0): " + TAG + ": Must specify a positive number for minimum to receive";
         expectErrorMessage(negativeMinimumReceive, expectedErrorMessage);
 
         byte[] negativeStringNumber = tokenData("_swap", Map.of("minimumReceive", "-123"));
@@ -196,7 +196,7 @@ class RouterTest extends TestBase {
         byte[] pathWithMaxHops = tokenData("_swap", Map.of("path", pathWithMoreHops));
         Executable maxTradeHops = () -> routerScore.invoke(sicxScore, "tokenFallback", owner.getAddress(),
                 BigInteger.TEN, pathWithMaxHops);
-        expectedErrorMessage = TAG + ": Passed max swaps of " + MAX_NUMBER_OF_ITERATIONS;
+        expectedErrorMessage = "Reverted(0): " + TAG + ": Passed max swaps of " + MAX_NUMBER_OF_ITERATIONS;
         expectErrorMessage(maxTradeHops, expectedErrorMessage);
 
         contextMock.reset();
@@ -213,7 +213,7 @@ class RouterTest extends TestBase {
                 new Object[]{balnToken.getAddress().toString(), null}));
         Executable nonSicxIcxTrade = () -> routerScore.invoke(sicxScore, "tokenFallback", owner.getAddress(),
                 BigInteger.TEN, invalidPathWithSicxTerminalToken);
-        expectedErrorMessage = TAG + ": ICX can only be traded with sICX token";
+        expectedErrorMessage = "Reverted(0): " + TAG + ": ICX can only be traded with sICX token";
         expectErrorMessage(nonSicxIcxTrade, expectedErrorMessage);
 
         Address newReceiver = sm.createAccount().getAddress();
@@ -230,7 +230,7 @@ class RouterTest extends TestBase {
         Account nonDex = sm.createAccount();
         nonDex.addBalance("ICX", BigInteger.TEN);
         Executable nonDexCall = () -> sm.transfer(nonDex, routerScore.getAddress(), BigInteger.TEN);
-        String expectedErrorMessage = "Authorization Check: Authorization failed. Caller: " + nonDex.getAddress() +
+        String expectedErrorMessage = "Reverted(0): Authorization Check: Authorization failed. Caller: " + nonDex.getAddress() +
                 " Authorized Caller: " + dexScore.getAddress();
         expectErrorMessage(nonDexCall, expectedErrorMessage);
 
