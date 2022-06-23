@@ -16,9 +16,11 @@
 
 package network.balanced.score.lib.interfaces.addresses;
 
+import foundation.icon.score.client.ScoreInterface;
 import score.Address;
 import score.annotation.External;
 
+@ScoreInterface
 public interface DividendsAddress {
 
     @External
@@ -26,4 +28,5 @@ public interface DividendsAddress {
 
     @External(readonly = true)
     Address getDividends();
+
 }

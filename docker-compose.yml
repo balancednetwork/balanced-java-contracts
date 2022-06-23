@@ -1,0 +1,12 @@
+version: "3.7"
+services:
+    gochain-iconee:
+        container_name: gochain-iconee
+        image: public.ecr.aws/f5d2t1f5/goloop-gochain-icon:latest
+        env_file:
+            - ./gochain-local/data/dockerenv/iconee
+        volumes:
+            - ./gochain-local/data:/testsuite/data
+            - ./gochain-local/chain:/testsuite/chain
+        ports:
+            - "9082:9082"

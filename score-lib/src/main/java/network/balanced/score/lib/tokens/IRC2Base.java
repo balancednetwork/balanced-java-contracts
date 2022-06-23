@@ -16,7 +16,7 @@
 
 package network.balanced.score.lib.tokens;
 
-import network.balanced.score.lib.interfaces.base.IRC2;
+import network.balanced.score.lib.interfaces.tokens.IRC2;
 import score.Address;
 import score.Context;
 import score.DictDB;
@@ -101,7 +101,7 @@ public class IRC2Base implements IRC2 {
         this.balances.set(_from, balanceOf(_from).subtract(_value));
         this.balances.set(_to, balanceOf(_to).add(_value));
 
-        byte[] dataBytes = (_data == null) ? new byte[0] : _data;
+        byte[] dataBytes = (_data == null) ? "None".getBytes() : _data;
         Transfer(_from, _to, _value, dataBytes);
 
         if (_to.isContract()) {

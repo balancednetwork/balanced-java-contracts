@@ -19,6 +19,11 @@ package network.balanced.score.lib.utils;
 import score.ArrayDB;
 import score.Context;
 import score.DictDB;
+import scorex.util.ArrayList;
+
+import java.math.BigInteger;
+import java.util.List;
+
 
 public class EnumerableSetDB<V> {
     private final ArrayDB<V> entries;
@@ -64,15 +69,27 @@ public class EnumerableSetDB<V> {
         Integer valueIndex = indexOf(value);
 
         if (valueIndex != null) {
-            int lastIndex = entries.size();
+            int lastIndex = entries.size() - 1;
             V lastValue = entries.pop();
             indexes.set(value, null);
             if (lastIndex != valueIndex) {
-                entries.set(valueIndex - 1, lastValue);
-                indexes.set(lastValue, valueIndex);
+                entries.set(valueIndex, lastValue);
+                indexes.set(lastValue, valueIndex + 1);
                 return lastValue;
             }
         }
         return null;
+    }
+
+    public List<V> range(BigInteger start, BigInteger stop) {
+        List<V> data = new ArrayList<>();
+        BigInteger size = BigInteger.valueOf(entries.size());
+        if (start.compareTo(BigInteger.ZERO) >= 0 && start.compareTo(size) < 0 && start.compareTo(stop) < 0) {
+            BigInteger end = (stop.compareTo(size) <= 0) ? stop : size;
+            for (int i = start.intValue(); i < end.intValue(); i++) {
+                data.add(entries.get(i));
+            }
+        }
+        return data;
     }
 }

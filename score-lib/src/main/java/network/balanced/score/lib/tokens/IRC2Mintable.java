@@ -17,7 +17,6 @@
 package network.balanced.score.lib.tokens;
 
 import network.balanced.score.lib.interfaces.addresses.MinterAddress;
-import network.balanced.score.lib.interfaces.base.IRC2MintableInterface;
 import score.Address;
 import score.Context;
 import score.VarDB;
@@ -29,7 +28,7 @@ import java.math.BigInteger;
 import static network.balanced.score.lib.utils.Check.only;
 import static network.balanced.score.lib.utils.Check.onlyOwner;
 
-public class IRC2Mintable extends IRC2Base implements IRC2MintableInterface, MinterAddress {
+public class IRC2Mintable extends IRC2Base implements MinterAddress {
 
     private final String MINTER = "admin";
 
@@ -61,7 +60,7 @@ public class IRC2Mintable extends IRC2Base implements IRC2MintableInterface, Min
         mintWithTokenFallback(_account, _amount, _data);
     }
 
-    private void mintWithTokenFallback(Address _to, BigInteger _amount, byte[] _data) {
+    protected void mintWithTokenFallback(Address _to, BigInteger _amount, byte[] _data) {
         mint(_to, _amount);
         byte[] data = (_data == null) ? new byte[0] : _data;
         if (_to.isContract()) {

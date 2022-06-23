@@ -1,0 +1,85 @@
+[
+  {
+    "contract": "governance",
+    "method": "setAddresses",
+    "__args__": {
+      "_addresses": {
+        "__address_args__": {
+          "loans": "loans",
+          "dex": "dex",
+          "staking": "staking",
+          "rewards": "rewards",
+          "dividends": "dividends",
+          "daofund": "daofund",
+          "sicx": "sicx",
+          "bnUSD": "bnUSD",
+          "baln": "baln",
+          "bwt": "worker_token",
+          "router": "router",
+          "rebalancing": "rebalancing",
+          "feehandler": "feehandler",
+          "stakedLp": "stakedLp",
+          "reserve": "reserve",
+          "oracle": "oracle"
+        },
+        "__property_args__": {
+          "stakedLp": "STAKEDLP_ADDRESS"
+        }
+      }
+    },
+    "order": 1.0
+  },
+  {
+    "contract": "reserve",
+    "method": "setGovernance",
+    "__args__": {
+      "__address_args__": {
+        "_address": "governance"
+      }
+    }
+  },
+  {
+    "contract": "staking",
+    "method": "setSicxAddress",
+    "__args__": {
+      "__address_args__": {
+        "_address": "sicx"
+      }
+    },
+    "order": 2.0
+  },
+  {
+    "contract": "governance",
+    "method": "configureBalanced",
+    "__args__": {
+
+    },
+    "order": 3.0
+  },
+  {
+    "contract": "governance",
+    "method": "launchBalanced",
+    "__args__": {
+
+    },
+    "order": 4.0
+  },
+  {
+    "contract": "staking",
+    "method": "toggleStakingOn",
+    "__args__": {
+
+    },
+    "order": 5.0
+  },
+  {
+    "contract": "governance",
+    "method": "delegate",
+    "__args__": {
+      "__property_args__":{
+        "_delegations": "DELEGATE_PARAM"
+      }
+    },
+    "order": 6.0
+  }
+]
