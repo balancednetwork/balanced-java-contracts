@@ -1,16 +1,39 @@
-name: pr-test
+name: build
 
 on:
   pull_request:
     branches:
       - '*'
+  push:
+    branches:
+      - main
 
 jobs:
-  docker:
+  unit-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+        with:
+          submodules: true
 
-      - name: Build optimized jar
+      - name: Run unit tests
         run: ./gradlew clean build optimizedJar
+
+  integration-test:
+    needs: unit-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Start local Blockchain
+        run: docker-compose up -d
+
+      - name: Check if all contracts are deployable
+        run: ./gradlew deployContractsToLocal
+
+      - name: Run integration tests
+        run: ./gradlew integrationTest

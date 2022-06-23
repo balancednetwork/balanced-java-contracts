@@ -36,8 +36,28 @@ public class Check {
                 "Authorization Check: Authorization failed. Caller: " + caller + " Authorized Caller: " + authorizedCallerAddress);
     }
 
+    public static void onlyEither(VarDB<Address> authorizedCaller, VarDB<Address> authorizedCaller2) {
+        Address caller = Context.getCaller();
+        Address authorizedCallerAddress = authorizedCaller.get();
+        Address authorizedCaller2Address = authorizedCaller2.get();
+        Context.require(authorizedCallerAddress != null || 
+                        authorizedCaller2Address != null, 
+                        "Authorization Check: Address not set");
+        Context.require(caller.equals(authorizedCallerAddress) ||
+                        caller.equals(authorizedCaller2Address),
+                "Authorization Check: Authorization failed. Caller: " + caller + " Authorized Caller: " + authorizedCallerAddress + " or " + authorizedCaller2Address);
+    }
+
     public static void isContract(Address address) {
         Context.require(address.isContract(), "Address Check: Address provided is an EOA address. A contract address " +
                 "is required.");
     }
-} 
+
+    public static <T> T optionalDefault(T value, T base) {
+        if (value == null) {
+            return base;
+        }
+
+        return value;
+    }
+}
