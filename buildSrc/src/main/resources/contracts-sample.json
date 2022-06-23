@@ -123,9 +123,7 @@
   },
   {
     "name": "staking",
-    "path": "https://main.tracker.solidwallet.io/score/cx43e2eec79eb76293c298f2b17aec06097be606e0_6.zip",
     "params": {},
-    "contentType": "application/java",
     "order": 3.0
   },
   {

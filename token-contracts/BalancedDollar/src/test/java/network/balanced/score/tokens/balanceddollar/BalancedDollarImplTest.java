@@ -51,7 +51,7 @@ class BalancedDollarImplTest extends TestBase {
     private static Score bnUSDScore;
     private BalancedDollarImpl bnUSDSpy;
 
-    private String name = "Balanced Dollar";;
+    private String name = "Balanced Dollar";
 
     private final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
 

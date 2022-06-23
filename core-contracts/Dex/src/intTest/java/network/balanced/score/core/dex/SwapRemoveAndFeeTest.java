@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,9 @@ package network.balanced.score.core.dex;
 import foundation.icon.icx.Wallet;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
-import foundation.icon.score.client.ScoreClient;
 import network.balanced.score.lib.interfaces.Dex;
 import network.balanced.score.lib.interfaces.DexScoreClient;
-import network.balanced.score.lib.interfaces.Governance;
 import network.balanced.score.lib.interfaces.GovernanceScoreClient;
-import network.balanced.score.lib.interfaces.dex.DexTest;
 import network.balanced.score.lib.interfaces.dex.DexTestScoreClient;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.Env;
@@ -87,25 +84,25 @@ public class SwapRemoveAndFeeTest {
 
     private static final Address userAddress = Address.of(userWallet);
 
-    @ScoreClient
-    private static final DexTest ownerDexTestScoreClient = new DexTestScoreClient(chain.getEndpointURL(),
+    private static final DexTestScoreClient ownerDexTestScoreClient = new DexTestScoreClient(chain.getEndpointURL(),
             chain.networkId, testOwnerWallet, DefaultScoreClient.address(dexTestScoreAddress));
-    private static final DexTest ownerDexTestBaseScoreClient = new DexTestScoreClient(chain.getEndpointURL(),
+    private static final DexTestScoreClient ownerDexTestBaseScoreClient = new DexTestScoreClient(chain.getEndpointURL(),
             chain.networkId, testOwnerWallet, DefaultScoreClient.address(dexTestBaseScoreAddress));
-    private static final DexTest ownerDexTestThirdScoreClient = new DexTestScoreClient(chain.getEndpointURL(),
+    private static final DexTestScoreClient ownerDexTestThirdScoreClient =
+            new DexTestScoreClient(chain.getEndpointURL(),
             chain.networkId, testOwnerWallet, DefaultScoreClient.address(dexTestThirdScoreAddress));
-    @ScoreClient
     private static final Dex dexUserScoreClient = new DexScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(),
             userWallet, dexScoreClient._address());
 
-    private static final DexTest userDexTestScoreClient = new DexTestScoreClient(dexScoreClient.endpoint(),
+    private static final DexTestScoreClient userDexTestScoreClient = new DexTestScoreClient(dexScoreClient.endpoint(),
             dexScoreClient._nid(), userWallet, DefaultScoreClient.address(dexTestScoreAddress));
-    private static final DexTest userDexTestBaseScoreClient = new DexTestScoreClient(dexScoreClient.endpoint(),
+    private static final DexTestScoreClient userDexTestBaseScoreClient =
+            new DexTestScoreClient(dexScoreClient.endpoint(),
             dexScoreClient._nid(), userWallet, DefaultScoreClient.address(dexTestBaseScoreAddress));
-    private static final DexTest userDexTestThirdScoreClient = new DexTestScoreClient(dexScoreClient.endpoint(),
+    private static final DexTestScoreClient userDexTestThirdScoreClient =
+            new DexTestScoreClient(dexScoreClient.endpoint(),
             dexScoreClient._nid(), userWallet, DefaultScoreClient.address(dexTestThirdScoreAddress));
-    @ScoreClient
-    private static final Governance governanceDexScoreClient = new GovernanceScoreClient(governanceScoreClient);
+    private static final GovernanceScoreClient governanceDexScoreClient = new GovernanceScoreClient(governanceScoreClient);
 
     @Test
     @Order(5)
@@ -184,6 +181,4 @@ public class SwapRemoveAndFeeTest {
     BigInteger hexToBigInteger(String hex){
         return new BigInteger(hex.replace("0x", ""), 16);
     }
-
-
 }

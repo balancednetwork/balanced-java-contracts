@@ -17,6 +17,7 @@
 package network.balanced.gradle.plugin;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.core.type.TypeReference;
 import foundation.icon.icx.Wallet;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.jsonrpc.IconJsonModule;
@@ -42,6 +43,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import static foundation.icon.score.client.DefaultScoreClient.call;
 import static foundation.icon.score.client.DefaultScoreClient.callData;
 
 public class DefaultICONClient {
@@ -102,6 +104,7 @@ public class DefaultICONClient {
         SendTransactionParam tx = new SendTransactionParam(nid, address, null, "deploy", new DeployData(contentType,
                 content, params));
         Hash txh = sendTransaction(client, wallet, tx);
+        System.out.println("txh = " + txh);
         waitBlockInterval();
         TransactionResult txr = result(client, txh, timeout);
         System.out.println("SCORE address: " + txr.getScoreAddress());
@@ -116,6 +119,10 @@ public class DefaultICONClient {
         Hash txh = sendTransaction(client, wallet, tx);
         waitBlockInterval();
         return result(client, txh, timeout);
+    }
+
+    public <T> T _call(TypeReference<T> responseType, Address address, String method, Map<String, Object> params) {
+        return call(client, responseType, address, method, params);
     }
 
     public static URI getURI(String url) {

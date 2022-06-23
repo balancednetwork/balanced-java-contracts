@@ -16,6 +16,7 @@
 
 package network.balanced.score.lib.interfaces;
 
+import foundation.icon.score.client.ScoreClient;
 import score.*;
 import score.annotation.External;
 import score.annotation.Optional;
@@ -28,6 +29,7 @@ import java.util.Map;
 import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.structs.PrepDelegations;
 
+@ScoreClient
 @ScoreInterface
 public interface Staking {
 
@@ -105,7 +107,7 @@ public interface Staking {
 
     @External
     @Payable
-    void stakeICX(@Optional Address _to, @Optional byte[] _data);
+    BigInteger stakeICX(@Optional Address _to, @Optional byte[] _data);
 
     @External
     void transferUpdateDelegations(Address _from, Address _to, BigInteger _value);

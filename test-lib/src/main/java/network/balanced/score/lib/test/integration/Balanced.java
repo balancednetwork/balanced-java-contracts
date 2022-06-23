@@ -20,6 +20,10 @@ import foundation.icon.icx.KeyWallet;
 import foundation.icon.jsonrpc.model.Hash;
 import foundation.icon.jsonrpc.model.TransactionResult;
 import foundation.icon.score.client.DefaultScoreClient;
+import network.balanced.score.lib.interfaces.DAOfundScoreClient;
+import network.balanced.score.lib.interfaces.GovernanceScoreClient;
+import network.balanced.score.lib.interfaces.RewardsScoreClient;
+import network.balanced.score.lib.interfaces.StakingScoreClient;
 import network.balanced.score.lib.structs.BalancedAddresses;
 import score.Address;
 
@@ -33,6 +37,11 @@ import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
 public class Balanced {
+
+    public KeyWallet user;
+    public KeyWallet testerWallet;
+    public KeyWallet secondTesterWallet;
+
     public KeyWallet owner;
     public BalancedClient ownerClient;
     public DefaultScoreClient governance;
@@ -54,27 +63,32 @@ public class Balanced {
     public DefaultScoreClient stakedLp;
     public DefaultScoreClient stability;
 
-    public HashMap<Address, BalancedClient> balancedClients;
+    public GovernanceScoreClient governanceScore;
+    public StakingScoreClient stakingScore;
+    public DAOfundScoreClient daofundScore;
+    public RewardsScoreClient rewardsScore;
+
+    public Map<Address, BalancedClient> balancedClients;
 
     public Balanced() throws Exception {
         balancedClients = new HashMap<>();
         owner = createWalletWithBalance(BigInteger.TEN.pow(24));
+        user = createWalletWithBalance(BigInteger.TEN.pow(24));
+        testerWallet = createWalletWithBalance(BigInteger.TEN.pow(24));
+        secondTesterWallet = createWalletWithBalance(BigInteger.TEN.pow(24));
     }
 
     public void setupBalanced() throws Exception {
-        deployPrep();
+        registerPreps();
         deployContracts();
         setupAddresses();
         increaseDay(1);
         setupContracts();
 //         delegate(adminWallet);
-        setupMarkets();
-    }
-
-    public void deployPrep() {
-        try {
-            systemScore.registerPRep(BigInteger.valueOf(2000).multiply(BigInteger.TEN.pow(18)), "test", "kokoa@example.com", "USA", "New York", "https://icon.kokoa.com", "https://icon.kokoa.com/json/details.json", "localhost:9082");
-        } catch (Exception e) {
+        String className = new Exception().getStackTrace()[1].getClassName();
+        // no need to set up market in staking integration test case
+        if (!className.equals("network.balanced.score.core.staking.StakingIntegrationTest")) {
+            setupMarkets();
         }
     }
 
@@ -185,15 +199,15 @@ public class Balanced {
         increaseDay(2);
         syncDistributions();
         BigInteger balnBalance = ownerClient.rewards.getBalnHolding(governance._address());
-        BigInteger initalPoolDepths = balnBalance.divide(BigInteger.TWO);
-        ownerClient.governance.createBalnMarket(initalPoolDepths, initalPoolDepths);
-        ownerClient.staking.stakeICX(initalPoolDepths.multiply(BigInteger.TWO), null, null);
-        ownerClient.sicx.transfer(governance._address(), initalPoolDepths, null);
-        ownerClient.governance.createBalnSicxMarket(initalPoolDepths, initalPoolDepths);
+        BigInteger initialPoolDepths = balnBalance.divide(BigInteger.TWO);
+        ownerClient.governance.createBalnMarket(initialPoolDepths, initialPoolDepths);
+        ownerClient.staking.stakeICX(initialPoolDepths.multiply(BigInteger.TWO), null, null);
+        ownerClient.sicx.transfer(governance._address(), initialPoolDepths, null);
+        ownerClient.governance.createBalnSicxMarket(initialPoolDepths, initialPoolDepths);
     }
 
-    public BalancedClient newClient(BigInteger clientBalanace) throws Exception {
-        BalancedClient client = new BalancedClient(this, createWalletWithBalance(clientBalanace));
+    private BalancedClient newClient(BigInteger clientBalance) throws Exception {
+        BalancedClient client = new BalancedClient(this, createWalletWithBalance(clientBalance));
         balancedClients.put(client.getAddress(), client);
         return client;
     }
@@ -206,7 +220,7 @@ public class Balanced {
         return balancedClients.get(address);
     }
 
-    // deprecated after continous migration
+    // deprecated after continuous migration
     public void syncDistributions() {
         Consumer<TransactionResult> distributeConsumer = result -> {};
         while (!checkDistributionsDone()) {
@@ -215,6 +229,7 @@ public class Balanced {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public boolean checkDistributionsDone() {
         BigInteger day = ownerClient.governance.getDay();
         Map<String, Object> status = ownerClient.rewards.distStatus();

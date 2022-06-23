@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import foundation.icon.icx.Wallet;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.jsonrpc.model.TransactionResult;
 import foundation.icon.score.client.DefaultScoreClient;
-import foundation.icon.score.client.ScoreClient;
 import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.Env;
@@ -37,17 +36,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class NonStakedLPRewardsTest {
 
-    @ScoreClient
-    private static Staking staking;
-
-    @ScoreClient
-    private static Loans loans;
-
-    @ScoreClient
-    private static Rewards rewards;
-
-    @ScoreClient
-    private static Baln baln;
+    private static StakingScoreClient staking;
+    private static LoansScoreClient loans;
+    private static RewardsScoreClient rewards;
+    private static BalnScoreClient baln;
 
     static Env.Chain chain = Env.getDefaultChain();
     private static Balanced balanced;
@@ -94,22 +86,16 @@ public class NonStakedLPRewardsTest {
 
     private static final Address userAddress = Address.of(userWallet);
 
-    @ScoreClient
-    private static final Dex dexUserScoreClient = new DexScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid()
-            , userWallet, dexScoreClient._address());
-    @ScoreClient
-    private static final Sicx userSicxScoreClient = new SicxScoreClient(dexScoreClient.endpoint(),
+    private static final DexScoreClient dexUserScoreClient = new DexScoreClient(dexScoreClient.endpoint(),
+            dexScoreClient._nid(), userWallet, dexScoreClient._address());
+    private static final SicxScoreClient userSicxScoreClient = new SicxScoreClient(dexScoreClient.endpoint(),
             dexScoreClient._nid(), userWallet, sIcxScoreClient._address());
-    @ScoreClient
-    private static final Rewards userWalletRewardsClient = new RewardsScoreClient(dexScoreClient.endpoint(),
-            dexScoreClient._nid(), userWallet, rewardsScoreClient._address());
-    @ScoreClient
-    private static final Baln userBalnScoreClient = new BalnScoreClient(dexScoreClient.endpoint(),
-            dexScoreClient._nid(), userWallet, balnScoreClient._address());
-    @ScoreClient
-    private static final Governance governanceDexScoreClient = new GovernanceScoreClient(governanceScoreClient);
-    @ScoreClient
-    private static final DAOfund userDaoFundScoreClient = new DAOfundScoreClient(daoFund);
+    private static final RewardsScoreClient userWalletRewardsClient =
+            new RewardsScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet,
+                    rewardsScoreClient._address());
+    private static final BalnScoreClient userBalnScoreClient = new BalnScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet, balnScoreClient._address());
+    private static final GovernanceScoreClient governanceDexScoreClient = new GovernanceScoreClient(governanceScoreClient);
+    private static final DAOfundScoreClient userDaoFundScoreClient = new DAOfundScoreClient(daoFund);
 
 
     @Test
@@ -121,14 +107,14 @@ public class NonStakedLPRewardsTest {
         balanced.syncDistributions();
 
         byte[] tokenDeposit = "{\"method\":\"_deposit\",\"params\":{\"none\":\"none\"}}".getBytes();
-        ((StakingScoreClient) staking).stakeICX(BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18)), userAddress
+        staking.stakeICX(BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18)), userAddress
                 , null);
 
         BigInteger loanAmount = BigInteger.valueOf(150).multiply(BigInteger.TEN.pow(18));
         BigInteger collateral = BigInteger.valueOf(1000).multiply(BigInteger.TEN.pow(18));
 
 
-        ((LoansScoreClient) loans).depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
+        loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
 
         waitForADay();
         balanced.syncDistributions();

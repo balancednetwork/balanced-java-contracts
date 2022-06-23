@@ -32,7 +32,8 @@ public enum NameMapping {
     stability("Stability"),
     loans("Loans"),
     governance("Governance"),
-    dex("Dex");
+    dex("Dex"),
+    staking("Staking");
 
 
     private final String module;

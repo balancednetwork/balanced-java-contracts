@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import foundation.icon.icx.Wallet
 import foundation.icon.jsonrpc.Address
-import foundation.icon.jsonrpc.model.Hash
 import foundation.icon.score.client.DefaultScoreClient
 import network.balanced.gradle.plugin.utils.Action
 import network.balanced.gradle.plugin.utils.Network
@@ -245,22 +244,22 @@ class ConfigureBalancedEnv extends DefaultTask {
             throw new RuntimeException(this.propertiesFile.get() + " file not found")
         }
         this._properties.load(is)
-        this.network = Network.getNetwork(_properties.getProperty("NETWORK"));
+        this.network = Network.getNetwork(_properties.getProperty("NETWORK"))
 
-        String address = this._properties.getProperty("ORACLE_ADDRESS");
-        Address ORACLE_ADDRESS = new Address(address);
-        properties.put("ORACLE_ADDRESS", ORACLE_ADDRESS);
+        String address = this._properties.getProperty("ORACLE_ADDRESS")
+        Address ORACLE_ADDRESS = new Address(address)
+        properties.put("ORACLE_ADDRESS", ORACLE_ADDRESS)
 
         // delegate methods
         List<String> prepsAddress = _properties.getProperty("PREP_LIST").split("--;--").toList()
         List<String> vote = _properties.getProperty("VOTES_IN_PER").split("--;--").toList()
         assert (prepsAddress.size() == vote.size())
-        List<HashMap<String, Object>> delegationParam = new ArrayList<Map>()
+        List<Map<String, Object>> delegationParam = new ArrayList<Map>()
         for (int i = 0; i < vote.size(); i++) {
-            HashMap<String, Object> hashMap = new Properties();
+            Map<String, Object> hashMap = new HashMap<>()
             address = new Address(prepsAddress[i])
-            hashMap["_address"] = new Address(address);
-            hashMap["_votes_in_per"] = vote[i].toBigInteger() * BigInteger.TEN.pow(18);
+            hashMap["_address"] = new Address(address)
+            hashMap["_votes_in_per"] = vote[i].toBigInteger() * BigInteger.TEN.pow(18)
             delegationParam.add(hashMap)
         }
 
