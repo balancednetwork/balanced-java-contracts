@@ -45,6 +45,7 @@ public class RebalancingImpl implements Rebalancing {
         if (governance.getOrDefault(null) == null) {
             Context.require(_governance.isContract(), TAG + ": Governance address should be a contract");
             governance.set(_governance);
+            priceThreshold.set(BigInteger.valueOf(100000000000000000L));
         }
     }
 
