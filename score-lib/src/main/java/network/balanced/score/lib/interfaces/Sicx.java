@@ -16,6 +16,7 @@
 
 package network.balanced.score.lib.interfaces;
 
+import network.balanced.score.lib.interfaces.addresses.OracleAddress;
 import network.balanced.score.lib.interfaces.addresses.SicxAddress;
 import network.balanced.score.lib.interfaces.tokens.IRC2;
 import score.Address;
@@ -25,7 +26,7 @@ import java.math.BigInteger;
 
 import foundation.icon.score.client.ScoreInterface;
 @ScoreInterface
-public interface Sicx extends SicxAddress, IRC2 {
+public interface Sicx extends SicxAddress, IRC2, OracleAddress {
     @External(readonly = true)
     String getPeg();
 
@@ -40,5 +41,11 @@ public interface Sicx extends SicxAddress, IRC2 {
 
     @External(readonly = true)
     Address getAdmin();
+    
+    @External
+    void setOracleName(String _name);
+      
+    @External
+    void setMinInterval(BigInteger _interval);
 
 }

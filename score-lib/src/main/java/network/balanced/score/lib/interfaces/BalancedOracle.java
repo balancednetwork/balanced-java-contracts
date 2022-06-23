@@ -47,4 +47,10 @@ public interface BalancedOracle extends
 
     @External(readonly = true)
     BigInteger getAssetBnusdPoolId(String symbol);
+
+    @External
+    void setPeg(String symbol, String peg);
+
+    @External(readonly = true)
+    String addPeg(String symbol);
 }

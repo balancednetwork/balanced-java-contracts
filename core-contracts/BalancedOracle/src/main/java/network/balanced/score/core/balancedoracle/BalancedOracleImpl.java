@@ -17,7 +17,7 @@
 package network.balanced.score.core.balancedoracle;
 
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.admin;
-import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.assetSymbolMap;
+import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.assetPeg;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.dex;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.dexPricedAssets;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.governance;
@@ -47,9 +47,9 @@ public class BalancedOracleImpl implements BalancedOracle {
         }
 
         governance.set(_governance);
-        assetSymbolMap.set("bnUSD", "USD");
-        assetSymbolMap.set("iETH", "ETH");
-        assetSymbolMap.set("iBTC", "BTC");
+        assetPeg.set("bnUSD", "USD");
+        assetPeg.set("iETH", "ETH");
+        assetPeg.set("iBTC", "BTC");
     }
     
     @External(readonly = true)
@@ -59,7 +59,7 @@ public class BalancedOracleImpl implements BalancedOracle {
 
     @External
     public BigInteger getPriceInLoop(String symbol) {
-        symbol = assetSymbolMap.getOrDefault(symbol, symbol);
+        symbol = assetPeg.getOrDefault(symbol, symbol);
         BigInteger priceInLoop;
         if (symbol.equals("sICX")) {
             priceInLoop = Context.call(BigInteger.class, staking.get(), "getTodayRate");
@@ -71,7 +71,7 @@ public class BalancedOracleImpl implements BalancedOracle {
             
             priceInLoop = loopRate.multiply(bnusdPriceInAsset).divide(EXA);
         } else {
-            priceInLoop = getLoopRate(assetSymbolMap.getOrDefault(symbol, symbol));
+            priceInLoop = getLoopRate(symbol);
         }
 
         lastPriceInLoop.set(symbol, priceInLoop);
@@ -80,7 +80,7 @@ public class BalancedOracleImpl implements BalancedOracle {
 
     @External(readonly = true)
     public BigInteger getLastPriceInLoop(String symbol) {
-        symbol = assetSymbolMap.getOrDefault(symbol, symbol);
+        symbol = assetPeg.getOrDefault(symbol, symbol);
         BigInteger priceInLoop  = lastPriceInLoop.getOrDefault(symbol, BigInteger.ZERO);
         Context.require(priceInLoop.compareTo(BigInteger.ZERO) > 0, TAG + ": No price data exists for symbol");
 
@@ -104,6 +104,17 @@ public class BalancedOracleImpl implements BalancedOracle {
         BigInteger poolID = dexPricedAssets.get(symbol);
         Context.require(poolID != null, symbol + " is not listed as a dex priced asset");
         return poolID;
+    }
+
+    @External
+    public void setPeg(String symbol, String peg) {
+        onlyOwner();
+        assetPeg.set(symbol, peg);
+    }
+
+    @External(readonly = true)
+    public String addPeg(String symbol) {
+        return assetPeg.get(symbol);
     }
 
     @External

@@ -21,6 +21,9 @@ import score.annotation.External;
 
 import java.math.BigInteger;
 
+import foundation.icon.score.client.ScoreInterface;
+
+@ScoreInterface
 public interface IRC2BurnableInterface {
 
     @External

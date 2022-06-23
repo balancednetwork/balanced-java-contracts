@@ -62,12 +62,12 @@ public class RebalancingTest extends TestBase {
     private static final BigInteger FEE = BigInteger.valueOf(997);
     private static final BigInteger THOUSAND = BigInteger.valueOf(1000);
 
-    protected MockContract<LoansScoreInterface> loans;
-    protected MockContract<DexScoreInterface> dex;
-    protected MockContract<StakingScoreInterface> staking;
-    protected MockContract<SicxScoreInterface> sicx;
-    protected MockContract<BalancedDollarScoreInterface> bnUSD; 
-    protected MockContract<BalancedOracleScoreInterface> balancedOracle;
+    protected MockContract<Loans> loans;
+    protected MockContract<Dex> dex;
+    protected MockContract<Staking> staking;
+    protected MockContract<Sicx> sicx;
+    protected MockContract<BalancedDollar> bnUSD; 
+    protected MockContract<BalancedOracle> balancedOracle;
 
     @BeforeEach
     public void setup() throws Exception {
@@ -177,8 +177,8 @@ public class RebalancingTest extends TestBase {
             assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
 
             rebalancingScore.invoke(sm.createAccount(), "rebalance", sicx.getAddress());
-            verify(loans.mock, never()).raisePrice(any(BigInteger.class));
-            verify(loans.mock, never()).lowerPrice(any(BigInteger.class));
+            verify(loans.mock, never()).raisePrice(any(String.class), any(BigInteger.class));
+            verify(loans.mock, never()).lowerPrice(any(String.class), any(BigInteger.class));
 
             // Decrease price within threshold range
             bnUSDPriceInIcx = dexPriceOfBnusdInSicx.subtract(additionalPrice);
@@ -187,8 +187,8 @@ public class RebalancingTest extends TestBase {
             assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
 
             rebalancingScore.invoke(sm.createAccount(), "rebalance", sicx.getAddress());
-            verify(loans.mock, never()).raisePrice(any(BigInteger.class));
-            verify(loans.mock, never()).lowerPrice(any(BigInteger.class));
+            verify(loans.mock, never()).raisePrice(any(String.class), any(BigInteger.class));
+            verify(loans.mock, never()).lowerPrice(any(String.class), any(BigInteger.class));
 
             // Exactly equal price
             bnUSDPriceInIcx = dexPriceOfBnusdInSicx;
@@ -197,8 +197,8 @@ public class RebalancingTest extends TestBase {
             assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
 
             rebalancingScore.invoke(sm.createAccount(), "rebalance", sicx.getAddress());
-            verify(loans.mock, never()).raisePrice(any(BigInteger.class));
-            verify(loans.mock, never()).lowerPrice(any(BigInteger.class));
+            verify(loans.mock, never()).raisePrice(any(String.class), any(BigInteger.class));
+            verify(loans.mock, never()).lowerPrice(any(String.class), any(BigInteger.class));
         }
 
         @ParameterizedTest
@@ -213,8 +213,8 @@ public class RebalancingTest extends TestBase {
             assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
 
             rebalancingScore.invoke(sm.createAccount(), "rebalance", sicx.getAddress());
-            verify(loans.mock).raisePrice(any(BigInteger.class));
-            verify(loans.mock, never()).lowerPrice(any(BigInteger.class));
+            verify(loans.mock).raisePrice(any(String.class), any(BigInteger.class));
+            verify(loans.mock, never()).lowerPrice(any(String.class), any(BigInteger.class));
             
         }
 
@@ -230,8 +230,8 @@ public class RebalancingTest extends TestBase {
             assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
 
             rebalancingScore.invoke(sm.createAccount(), "rebalance", sicx.getAddress());
-            verify(loans.mock, never()).raisePrice(any(BigInteger.class));
-            verify(loans.mock).lowerPrice(any(BigInteger.class));
+            verify(loans.mock, never()).raisePrice(any(String.class), any(BigInteger.class));
+            verify(loans.mock).lowerPrice(any(String.class), any(BigInteger.class));
         }
 
         private BigInteger calculateOutputAmount(BigInteger fromTokenLiquidity, BigInteger toTokenLiquidity,

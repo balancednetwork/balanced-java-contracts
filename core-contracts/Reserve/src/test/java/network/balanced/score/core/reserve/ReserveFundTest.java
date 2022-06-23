@@ -20,7 +20,6 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
-import com.iconloop.score.token.irc2.IRC2Mintable;
 import network.balanced.score.lib.test.mock.MockContract;
 import network.balanced.score.lib.interfaces.*;
 
@@ -58,7 +57,7 @@ public class ReserveFundTest extends ReserveFundTestBase {
         when(loans.mock.getCollateralTokens()).thenReturn(tokens);
     }
 
-    private void setBalance(MockContract<IRC2MintableScoreInterface> token, BigInteger amount) {
+    private void setBalance(MockContract<IRC2Mintable> token, BigInteger amount) {
         when(token.mock.balanceOf(reserve.getAddress())).thenReturn(amount);
     }
 

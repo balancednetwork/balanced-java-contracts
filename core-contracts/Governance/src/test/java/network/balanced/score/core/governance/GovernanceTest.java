@@ -250,24 +250,22 @@ public class GovernanceTest extends GovernanceTestBase {
     }
 
     @Test
-    void addAsset() {
+    void addCollateral() {
         // Arrange
         Address tokenAddress = bwt.getAddress();
         boolean active = false;
-        boolean collateral = false;
         Account notOwner = sm.createAccount();
         String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
         
         // Act & Assert
-        Executable withNotOwner = () -> governance.invoke(notOwner, "addAsset", tokenAddress, active, collateral);
+        Executable withNotOwner = () -> governance.invoke(notOwner, "addCollateral", tokenAddress, active);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
 
         // Act
-        governance.invoke(owner, "addAsset", tokenAddress, active, collateral);
+        governance.invoke(owner, "addCollateral", tokenAddress, active);
 
         // Assert
-        verify(loans.mock).addAsset(tokenAddress, active, collateral);
-        verify(bwt.mock).setAdmin(loans.getAddress()); 
+        verify(loans.mock).addAsset(tokenAddress, active, true);
     }
 
     @Test

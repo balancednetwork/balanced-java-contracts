@@ -56,13 +56,13 @@ class LoansTestBase extends UnitTest {
     protected Score sicx;
     protected Score bnusd;
 
-    protected MockContract<DexScoreInterface> dex;
-    protected MockContract<StakingScoreInterface> staking;
-    protected MockContract<GovernanceScoreInterface> governance;
-    protected MockContract<RewardsScoreInterface> rewards;
-    protected MockContract<DividendsScoreInterface> dividends;
-    protected MockContract<ReserveScoreInterface> reserve;
-    protected MockContract<BalancedOracleScoreInterface> balancedOracle;
+    protected MockContract<Dex> dex;
+    protected MockContract<Staking> staking;
+    protected MockContract<Governance> governance;
+    protected MockContract<Rewards> rewards;
+    protected MockContract<Dividends> dividends;
+    protected MockContract<Reserve> reserve;
+    protected MockContract<BalancedOracle> balancedOracle;
     protected LoansImpl loansSpy;
 
     protected final ArrayList<Account> accounts = new ArrayList<>();
@@ -91,7 +91,7 @@ class LoansTestBase extends UnitTest {
         BigInteger dexICXBalance = BigInteger.TEN.pow(24);
         BigInteger dexbnUSDBalance = BigInteger.TEN.pow(24);
 
-        dex = new MockContract<DexScoreInterface>(DexScoreInterface.class, sm, admin);
+        dex = new MockContract<Dex>(DexScoreInterface.class, sm, admin);
         sicx.invoke(admin, "mintTo", dex.getAddress(), dexICXBalance);
         bnusd.invoke(admin, "mintTo", dex.getAddress(), dexbnUSDBalance);
     }
@@ -114,12 +114,12 @@ class LoansTestBase extends UnitTest {
     }
 
     private void setupGovernance() throws Exception {
-        governance = new MockContract<GovernanceScoreInterface>(GovernanceScoreInterface.class, sm, admin);
+        governance = new MockContract<Governance>(GovernanceScoreInterface.class, sm, admin);
         when(governance.mock.getContractAddress("feehandler")).thenReturn(feehandler.getAddress());
     }
 
     private void setupStaking() throws Exception {
-        staking = new MockContract<StakingScoreInterface>(StakingScoreInterface.class, sm, admin);
+        staking = new MockContract<Staking>(StakingScoreInterface.class, sm, admin);
     }
 
     protected void mockStakeICX(BigInteger amount) {
@@ -134,22 +134,22 @@ class LoansTestBase extends UnitTest {
     }
 
     private void setupReserve() throws Exception {
-        reserve = new MockContract<ReserveScoreInterface>(ReserveScoreInterface.class, sm, admin);
+        reserve = new MockContract<Reserve>(ReserveScoreInterface.class, sm, admin);
     }
 
     private void setupRewards() throws Exception {
-        rewards = new MockContract<RewardsScoreInterface>(RewardsScoreInterface.class, sm, admin);
+        rewards = new MockContract<Rewards>(RewardsScoreInterface.class, sm, admin);
         when(rewards.mock.distribute()).thenReturn(true);
     }
 
     private void setupDividends() throws Exception {
-        dividends = new MockContract<DividendsScoreInterface>(DividendsScoreInterface.class, sm, admin);
+        dividends = new MockContract<Dividends>(DividendsScoreInterface.class, sm, admin);
         when(dividends.mock.distribute()).thenReturn(true);
 
     }
 
     private void setupOracle() throws Exception {
-        balancedOracle = new MockContract<BalancedOracleScoreInterface>(BalancedOracleScoreInterface.class, sm, admin);
+        balancedOracle = new MockContract<BalancedOracle>(BalancedOracleScoreInterface.class, sm, admin);
         when(balancedOracle.mock.getPriceInLoop(Mockito.any(String.class))).thenReturn(EXA);
         when(balancedOracle.mock.getLastPriceInLoop(Mockito.any(String.class))).thenReturn(EXA);
 
