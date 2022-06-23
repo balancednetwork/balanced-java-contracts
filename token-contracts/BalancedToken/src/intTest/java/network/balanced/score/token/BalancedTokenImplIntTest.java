@@ -100,6 +100,8 @@ class BalancedTokenImplIntTest {
 			new DefaultScoreClient(ownerBalancedTokenClient.endpoint(),
 					ownerBalancedTokenClient._nid(), userReceiverWallet, ownerBalancedTokenClient._address());
 
+
+
 	@ScoreClient
 	private final BalancedToken userReceiverBalancedTokenScore =
 			new BalancedTokenScoreClient(userReceiverBalancedTokenClient);
