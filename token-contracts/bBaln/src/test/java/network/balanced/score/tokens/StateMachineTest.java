@@ -419,14 +419,15 @@ public class StateMachineTest extends TestBase {
         createLock(accounts.get(0), value, unlockTime);
     }
 
-    @DisplayName("before unlock expires")
+    //no throw now on withdrawing before unlocktime instead system changes penalty
+    /*@DisplayName("before unlock expires")
     @Test
     void unlockBeforeExpiry() {
         Executable withdraw = () -> bBalnScore.invoke(accounts.get(0), "withdraw");
 
         String expectedErrorMessage = "Withdraw: The lock haven't expire";
         expectErrorMessage(withdraw, expectedErrorMessage);
-    }
+    }*/
 
     @DisplayName("after the expiry")
     @Test

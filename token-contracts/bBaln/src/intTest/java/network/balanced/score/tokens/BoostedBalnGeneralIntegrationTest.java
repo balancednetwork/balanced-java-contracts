@@ -16,6 +16,7 @@ import java.util.List;
 
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.tokens.Constants.WEEK_IN_MICRO_SECONDS;
+import static network.balanced.score.tokens.Constants.ZERO_ADDRESS;
 import static network.balanced.score.tokens.TestHelper.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -123,6 +124,19 @@ public class BoostedBalnGeneralIntegrationTest implements ScoreIntegrationTest {
         BigInteger lastUserSlope = owner.boostedBaln.getLastUserSlope(owner.getAddress());
         assertEquals(lastUserSlope, getSlope(availableBalnBalance, unlockTime));
 
+    }
+
+    @Test
+    public void testZeroAddressCheckPoint(){
+        owner.boostedBaln.checkpoint();
+        BigInteger balanceOfZeroAddress = owner.baln.balanceOf(ZERO_ADDRESS);
+        assertEquals(balanceOfZeroAddress, BigInteger.ZERO);
+        owner.boostedBaln.checkpoint();
+        BigInteger balanceOfZeroAddress1 = owner.baln.balanceOf(ZERO_ADDRESS);
+        assertEquals(balanceOfZeroAddress1, BigInteger.ZERO);
+        owner.boostedBaln.checkpoint();
+        BigInteger balanceOfZeroAddress2 = owner.baln.balanceOf(ZERO_ADDRESS);
+        assertEquals(balanceOfZeroAddress2, BigInteger.ZERO);
     }
 
 
