@@ -95,7 +95,7 @@ class LoansTestRewards extends LoansTestBase {
         BigInteger balancePre = (BigInteger) bnusd.call("balanceOf", account.getAddress());
 
         // Act 
-        loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, true);
+        loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, "sICX");
 
         // Assert
         BigInteger balancePost = (BigInteger) bnusd.call("balanceOf", account.getAddress());
@@ -138,7 +138,7 @@ class LoansTestRewards extends LoansTestBase {
         mockSwap(bnusd, rebalanceAmount, expectedBnusdRecived);
 
         // Act
-        loans.invoke(rebalancing, "raisePrice", rebalanceAmount);
+        loans.invoke(rebalancing, "raisePrice", "sICX", rebalanceAmount);
 
         // Assert
         BigInteger remainingBnusd = expectedBnusdRecived;
@@ -220,7 +220,7 @@ class LoansTestRewards extends LoansTestBase {
         mockSwap(sicx, rebalanceAmount, expectedSICXRecived);
 
         // Act
-        loans.invoke(rebalancing, "lowerPrice", rebalanceAmount);
+        loans.invoke(rebalancing, "lowerPrice", "sICX", rebalanceAmount);
 
         // Assert
         BigInteger remainingSicx = expectedSICXRecived;
@@ -269,7 +269,7 @@ class LoansTestRewards extends LoansTestBase {
 
 
     @Test
-    void liquidate("sICX", ) {
+    void liquidate() {
         // Arrange
         Account account = accounts.get(0);
         Account liquidater = accounts.get(1);
@@ -288,7 +288,7 @@ class LoansTestRewards extends LoansTestBase {
         mockOraclePrice("bnUSD", newPrice);
 
         // Act
-        loans.invoke(liquidater, "liquidate", account.getAddress());
+        loans.invoke(liquidater, "liquidate", account.getAddress(), "sICX");
 
         // Assert
         BigInteger liquidaterBalancePost = (BigInteger) sicx.call("balanceOf", liquidater.getAddress());

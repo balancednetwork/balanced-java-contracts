@@ -98,7 +98,8 @@ class LoansTestBase extends UnitTest {
 
 
     protected void mockSicxBnusdPrice(BigInteger rate) {
-        when(dex.mock.getSicxBnusdPrice()).thenReturn(rate);
+        when(dex.mock.getPoolId(sicx.getAddress(), bnusd.getAddress())).thenReturn(BigInteger.valueOf(3));
+        when(dex.mock.getBasePriceInQuote(BigInteger.valueOf(3))).thenReturn(rate);
     }
 
     protected void mockSwap(Score tokenRecived, BigInteger in, BigInteger out) {

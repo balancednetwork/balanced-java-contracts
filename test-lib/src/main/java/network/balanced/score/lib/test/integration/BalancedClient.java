@@ -138,11 +138,24 @@ public class BalancedClient {
         irc2(collateralAddress).transfer(balanced.loans._address(), collateral, params);
     }
 
-    public BigInteger getLoansAssetPosition(String symbol) {
-        Map<String, String> assets = (Map<String, String>) loans.getAccountPositions(getAddress()).get("assets");
+    public void borrowFrom(String collateral, BigInteger amount) {
+        byte[] params = createBorrowData(amount);
+        loans.borrow(collateral, "bnUSD", amount, null);
+    }
+
+    public BigInteger getLoansCollateralPosition(String symbol) {
+        Map<String, Map<String, String>> assets = (Map<String, Map<String, String>>) loans.getAccountPositions(getAddress()).get("assets");
         if (!assets.containsKey(symbol)) {
             return BigInteger.ZERO;
         }
-        return hexObjectToBigInteger(assets.get(symbol));
+        return hexObjectToBigInteger(assets.get(symbol).get(symbol));
+    }
+
+    public BigInteger getLoansAssetPosition(String collateralSymbol, String assetSymbol) {
+        Map<String, Map<String, String>> assets = (Map<String, Map<String, String>>) loans.getAccountPositions(getAddress()).get("assets");
+        if (!assets.containsKey(collateralSymbol) || !assets.get(collateralSymbol).containsKey(assetSymbol) ) {
+            return BigInteger.ZERO;
+        }
+        return hexObjectToBigInteger(assets.get(collateralSymbol).get(assetSymbol));
     }
 }
