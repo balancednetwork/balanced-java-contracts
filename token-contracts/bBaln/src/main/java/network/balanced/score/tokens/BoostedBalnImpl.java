@@ -19,15 +19,11 @@ package network.balanced.score.tokens;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
-import com.iconloop.score.util.EnumerableSet;
-import network.balanced.score.lib.interfaces.BoostedBaln;
 import network.balanced.score.tokens.db.LockedBalance;
 import network.balanced.score.tokens.db.Point;
 import network.balanced.score.tokens.modal.SupplyDetails;
-import network.balanced.score.tokens.utils.MathUtils;
 import network.balanced.score.tokens.utils.UnsignedBigInteger;
 import score.*;
-import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
 import scorex.util.ArrayList;
@@ -38,82 +34,12 @@ import java.util.List;
 import java.util.Map;
 
 import static network.balanced.score.tokens.Constants.*;
-import static network.balanced.score.tokens.utils.UnsignedBigInteger.pow10;
 import static score.Context.require;
 
-public class BoostedBalnImpl implements BoostedBaln {
-    public static final BigInteger MAX_TIME = BigInteger.valueOf(4L).multiply(YEAR_IN_MICRO_SECONDS);
-    public static BigInteger ICX = MathUtils.pow(BigInteger.TEN,18);
-    private static final UnsignedBigInteger MULTIPLIER = pow10(18);
-
-    private static final int DEPOSIT_FOR_TYPE = 0;
-    private static final int CREATE_LOCK_TYPE = 1;
-    private static final int INCREASE_LOCK_AMOUNT = 2;
-    private static final int INCREASE_UNLOCK_TIME = 3;
-
-    private final String name;
-    private final String symbol;
-    private final int decimals;
-    private final Address tokenAddress;
-    private final Address rewardAddress;
-
-    private final NonReentrant nonReentrant = new NonReentrant("Boosted_Baln_Reentrancy");
-    private final VarDB<BigInteger> supply = Context.newVarDB("Boosted_Baln_Supply", BigInteger.class);
-    private final DictDB<Address, LockedBalance> locked = Context.newDictDB("Boosted_Baln_locked", LockedBalance.class);
-    private final VarDB<BigInteger> epoch = Context.newVarDB("Boosted_Baln_epoch", BigInteger.class);
-    private final DictDB<BigInteger, Point> pointHistory = Context.newDictDB("Boosted_baln_point_history", Point.class);
-    private final BranchDB<Address, DictDB<BigInteger, Point>> userPointHistory = Context.newBranchDB("Boosted_baln_user_point_history",Point.class);
-    private final DictDB<Address, BigInteger> userPointEpoch = Context.newDictDB("Boosted_Baln_user_point_epoch", BigInteger.class);
-    private final DictDB<BigInteger, BigInteger> slopeChanges = Context.newDictDB("Boosted_Baln_slope_changes", BigInteger.class);
-    private final VarDB<Address> admin = Context.newVarDB("Boosted_Baln_admin", Address.class);
-    private final VarDB<Address> futureAdmin = Context.newVarDB("Boosted_baln_future_admin", Address.class);
-    private final VarDB<Address> penaltyAddress = Context.newVarDB("Boosted_baln_penalty_address", Address.class);
-
-    private final EnumerableSet<Address> users = new EnumerableSet<>("users_list", Address.class);
-
-    private final VarDB<BigInteger> minimumLockingAmount = Context.newVarDB("Boosted_baln_minimum_locking_amount",
-            BigInteger.class);
-
-    @EventLog
-    public void CommitOwnership(Address admin) {
-    }
-
-    @EventLog
-    public void ApplyOwnership(Address admin) {
-    }
-
-    @EventLog(indexed = 2)
-    public void Deposit(Address provider, BigInteger locktime, BigInteger value, int type, BigInteger timestamp) {
-    }
-
-    @EventLog(indexed = 1)
-    public void Withdraw(Address provider, BigInteger value, BigInteger timestamp) {
-    }
-
-    @EventLog
-    public void Supply(BigInteger prevSupply, BigInteger supply) {
-    }
+public class BoostedBalnImpl extends AbstractBoostedBaln {
 
     public BoostedBalnImpl(Address tokenAddress, Address rewardAddress, String name, String symbol) {
-        this.admin.set(Context.getCaller());
-        this.tokenAddress = tokenAddress;
-        this.rewardAddress = rewardAddress;
-
-        Point point = new Point();
-        point.block = UnsignedBigInteger.valueOf(Context.getBlockHeight());
-        point.timestamp = UnsignedBigInteger.valueOf(Context.getBlockTimestamp());
-        this.pointHistory.set(BigInteger.ZERO, point);
-
-        this.decimals = ((BigInteger) Context.call(tokenAddress, "decimals")).intValue();
-        this.name = name;
-        this.symbol = symbol;
-        require(this.decimals <= 72, "Decimals should be less than 72");
-
-        if (this.supply.get() == null) {
-            this.supply.set(BigInteger.ZERO);
-            this.epoch.set(BigInteger.ZERO);
-            this.minimumLockingAmount.set(ICX);
-        }
+        super(tokenAddress, rewardAddress, name, symbol);
     }
 
     @External
@@ -183,7 +109,6 @@ public class BoostedBalnImpl implements BoostedBaln {
         return userList;
 
     }
-
 
     @External(readonly = true)
     public BigInteger getLastUserSlope(Address address) {
@@ -359,10 +284,6 @@ public class BoostedBalnImpl implements BoostedBaln {
 
         //assuming token address is reward address
         updateRewardData(userDetails);
-    }
-
-    void updateRewardData(Map<String, Object> userDetails){
-        Context.call(this.rewardAddress, "updateRewardsData", this.name, userDetails.get("totalSupply"),  userDetails.get("user"), userDetails.get("userBalance"));
     }
 
     @External
@@ -701,33 +622,8 @@ public class BoostedBalnImpl implements BoostedBaln {
     }
 
     @External(readonly = true)
-    public Address admin() {
-        return this.admin.get();
-    }
-
-    @External(readonly = true)
-    public Address futureAdmin() {
-        return this.futureAdmin.get();
-    }
-
-    @External(readonly = true)
-    public String name() {
-        return this.name;
-    }
-
-    @External(readonly = true)
-    public String symbol() {
-        return this.symbol;
-    }
-
-    @External(readonly = true)
     public BigInteger userPointEpoch(Address address) {
         return this.userPointEpoch.getOrDefault(address, BigInteger.ZERO);
-    }
-
-    @External(readonly = true)
-    public int decimals() {
-        return this.decimals;
     }
 
     private void ownerRequired() {
