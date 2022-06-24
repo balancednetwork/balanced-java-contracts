@@ -10,6 +10,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+
+import static network.balanced.score.core.dex.utils.Const.SICXICX_POOL_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.mockito.internal.matchers.Null;
@@ -44,7 +46,21 @@ public class DexTestCore extends DexTestBase {
         contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
         contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
         contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("updateBatchRewardsData"), any(String.class), any(BigInteger.class), any())).thenReturn(null);
+        contextMock.when(() -> Context.call(any(Address.class), eq("getTodayRate"))).thenReturn(EXA);
         dexScore.invoke(ownerAccount, "fallback");
+
+        Map<String, Object> poolStats = (Map<String, Object>) dexScore.call("getPoolStats", BigInteger.valueOf(SICXICX_POOL_ID));
+        BigInteger lpBalance = (BigInteger) dexScore.call("balanceOf", ownerAccount.getAddress(), BigInteger.valueOf(SICXICX_POOL_ID));
+        assertEquals(icxValue, lpBalance);
+        assertEquals(lpBalance, poolStats.get("total_supply"));
+
+        BigInteger additionIcxValue = BigInteger.valueOf(50L).multiply(EXA);
+        contextMock.when(() -> Context.getValue()).thenReturn(additionIcxValue);
+        dexScore.invoke(ownerAccount, "fallback");
+        poolStats = (Map<String, Object>) dexScore.call("getPoolStats", BigInteger.valueOf(SICXICX_POOL_ID));
+        lpBalance = (BigInteger) dexScore.call("balanceOf", ownerAccount.getAddress(), BigInteger.valueOf(SICXICX_POOL_ID));
+        assertEquals(icxValue.add(additionIcxValue), lpBalance);
+        assertEquals(icxValue.add(additionIcxValue), poolStats.get("total_supply"));
     }
 
     // Test fails on line with: activeAddresses.get(SICXICX_POOL_ID).remove(user);
@@ -74,11 +90,6 @@ public class DexTestCore extends DexTestBase {
 
     @Test
     void withdrawSicxEarnings() {
-        // Supply liquidity to sicx/icx pool.
-        // Swap some sicx to icx.
-        // Withdraw earnings.
-        // Verify transfer called with correct arguments.
-        // Assert that getSicxEarnings returns 0.
         Account depositor = sm.createAccount();
         BigInteger depositValue = BigInteger.valueOf(100).multiply(EXA);
         BigInteger withdrawValue = BigInteger.valueOf(10).multiply(EXA);
@@ -109,8 +120,45 @@ public class DexTestCore extends DexTestBase {
         dexScore.invoke(sicxScore, "tokenFallback", depositor.getAddress(), swapValue, jsonData.toString().getBytes());
 
         BigInteger sicxEarning = (BigInteger) dexScore.call("getSicxEarnings", depositor.getAddress());
-        System.out.println(sicxEarning.multiply(BigInteger.TEN).divide(EXA));
+        dexScore.invoke(depositor, "withdrawSicxEarnings", sicxEarning);
+        BigInteger newSicxEarning = (BigInteger) dexScore.call("getSicxEarnings", depositor.getAddress());
+        assertEquals(BigInteger.ZERO, newSicxEarning);
     }
+
+    @Test
+    void getSicxEarnings() {
+        Account depositor = sm.createAccount();
+        BigInteger depositValue = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger withdrawValue = BigInteger.valueOf(10).multiply(EXA);
+        turnDexOn();
+        depositToken(depositor, balnScore, depositValue);
+
+        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
+        contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
+        contextMock.when(() -> Context.call(any(Address.class), eq("decimals"))).thenReturn(BigInteger.valueOf(18));
+        contextMock.when(() -> Context.call(eq(stakingScore.getAddress()), eq("getTodayRate"))).thenReturn(EXA);
+        contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class), any(BigInteger.class))).thenReturn(null);
+        contextMock.when(()->Context.transfer(any(Address.class), any(BigInteger.class))).then(invocationOnMock -> null);
+        BigInteger depositBalance = BigInteger.valueOf(100L).multiply(EXA);
+        supplyIcxLiquidity(depositor, depositBalance);
+
+        contextMock.when(() -> Context.call(eq(balnScore.getAddress()), eq("transfer"), eq(depositor.getAddress()), eq(withdrawValue))).thenReturn(null);
+
+        // Act.
+        dexScore.invoke(depositor, "withdraw", balnScore.getAddress(), withdrawValue);
+
+        // Assert.
+        BigInteger currentDepositValue = (BigInteger) dexScore.call("getDeposit", balnScore.getAddress(), depositor.getAddress());
+        assertEquals(depositValue.subtract(withdrawValue), currentDepositValue);
+
+        JsonObject jsonData = new JsonObject();
+        jsonData.add("method", "_swap_icx");
+        BigInteger swapValue = BigInteger.valueOf(100L).multiply(EXA);
+        dexScore.invoke(sicxScore, "tokenFallback", depositor.getAddress(), swapValue, jsonData.toString().getBytes());
+
+        BigInteger sicxEarning = (BigInteger) dexScore.call("getSicxEarnings", depositor.getAddress());
+    }
+
 
     @Test
     void tokenFallback_deposit() {
@@ -412,8 +460,8 @@ public class DexTestCore extends DexTestBase {
     == Tests left == 
 
     == Icx/sicx pool methods == 
-    getSicxEarnings
-    withdrawSicxEarnings
+    getSicxEarnings //done
+    withdrawSicxEarnings // done
     fallback
     
     == Snapshot methods ==
