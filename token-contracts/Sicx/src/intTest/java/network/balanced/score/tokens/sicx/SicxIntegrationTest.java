@@ -25,43 +25,43 @@ import network.balanced.score.lib.interfaces.SicxScoreClient;
 import network.balanced.score.lib.interfaces.Staking;
 import network.balanced.score.lib.interfaces.StakingScoreClient;
 import network.balanced.score.lib.test.ScoreIntegrationTest;
+import network.balanced.score.lib.test.integration.Balanced;
 import org.json.JSONObject;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.math.BigInteger;
 import java.util.Map;
 
+import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class SicxIntegrationTest implements ScoreIntegrationTest {
-    private static final Wallet tester = ScoreIntegrationTest.getOrGenerateWallet(null);
-    private static final Address testerAddress = Address.of(tester);
+    static Balanced balanced;
+    static Wallet tester;
+    static Wallet owner;
 
-    private static final Wallet owner = ScoreIntegrationTest.getOrGenerateWallet(System.getProperties());
-    private static final Address ownerAddress = Address.of(owner);
+    static StakingScoreClient stakingScore;
+    static SicxScoreClient sicxScore;
 
-    private static final DefaultScoreClient sicxClient = DefaultScoreClient.of(System.getProperties(), Map.of("_admin"
-            , ownerAddress));
-    private static final DefaultScoreClient stakingClient = DefaultScoreClient.of("staking.", System.getProperties());
+    @BeforeAll
+    static void setup() throws Exception {
+        tester = createWalletWithBalance(BigInteger.TEN.pow(24));
+        balanced = new Balanced();
+        balanced.setupBalanced();
 
-    @ScoreClient
-    private static final Staking stakingScore = new StakingScoreClient(stakingClient);
+        owner = balanced.owner;
 
-    @ScoreClient
-    private final Sicx sicxScore = new SicxScoreClient(sicxClient);
+        stakingScore = new StakingScoreClient(balanced.staking);
+        sicxScore = new SicxScoreClient(balanced.sicx);
+    }
+
 
     @Test
     @Order(1)
     void name() {
-        System.setProperty("scoreFilePath", "../../token-contracts/sicx/build/libs/sicx-0.1.0-optimized.jar");
-        System.setProperty("isUpdate", "true");
-        System.setProperty("address", String.valueOf(sicxClient._address()));
-        DefaultScoreClient.of(System.getProperties(), Map.of("_admin", ownerAddress));
         assertEquals("sICX", sicxScore.getPeg());
-        stakingScore.toggleStakingOn();
-        stakingScore.setSicxAddress(sicxClient._address());
     }
 
     @Test
@@ -73,16 +73,16 @@ class SicxIntegrationTest implements ScoreIntegrationTest {
     @Test
     @Order(3)
     void setAndGetStaking() {
-        sicxScore.setStaking(stakingClient._address());
-        assertEquals(stakingClient._address(), sicxScore.getStaking());
+        sicxScore.setStaking(stakingScore._address());
+        assertEquals(stakingScore._address(), sicxScore.getStaking());
 
     }
 
     @Test
     @Order(4)
     void setMinterAddress() {
-        sicxScore.setMinter(stakingClient._address());
-        assertEquals(stakingClient._address(), sicxScore.getMinter());
+        sicxScore.setMinter(stakingScore._address());
+        assertEquals(stakingScore._address(), sicxScore.getMinter());
     }
 
     @Test
@@ -90,10 +90,10 @@ class SicxIntegrationTest implements ScoreIntegrationTest {
     void mint() {
         BigInteger value = BigInteger.valueOf(20).multiply(EXA);
         BigInteger previousSupply = sicxScore.totalSupply();
-        BigInteger previousBalance = sicxScore.balanceOf(ownerAddress);
+        BigInteger previousBalance = sicxScore.balanceOf(Address.fromString(owner.getAddress().toString()));
         ((StakingScoreClient) stakingScore).stakeICX(value, null, null);
         assertEquals(previousSupply.add(value), sicxScore.totalSupply());
-        assertEquals(previousBalance.add(value), sicxScore.balanceOf(ownerAddress));
+        assertEquals(previousBalance.add(value), sicxScore.balanceOf(Address.fromString(owner.getAddress().toString())));
     }
 
     @Test
@@ -101,56 +101,56 @@ class SicxIntegrationTest implements ScoreIntegrationTest {
     void transfer() {
         BigInteger value = BigInteger.valueOf(5).multiply(EXA);
         BigInteger previousSupply = sicxScore.totalSupply();
-        BigInteger previousOwnerBalance = sicxScore.balanceOf(ownerAddress);
-        BigInteger previousTesterBalance = sicxScore.balanceOf(testerAddress);
-        sicxScore.transfer(testerAddress, value, null);
+        BigInteger previousOwnerBalance = sicxScore.balanceOf(Address.fromString(owner.getAddress().toString()));
+        BigInteger previousTesterBalance = sicxScore.balanceOf(Address.fromString(tester.getAddress().toString()));
+        sicxScore.transfer(Address.fromString(tester.getAddress().toString()), value, null);
         assertEquals(previousSupply, sicxScore.totalSupply());
-        assertEquals(previousTesterBalance.add(value), sicxScore.balanceOf(testerAddress));
-        assertEquals(previousOwnerBalance.subtract(value), sicxScore.balanceOf(ownerAddress));
+        assertEquals(previousTesterBalance.add(value), sicxScore.balanceOf(Address.fromString(tester.getAddress().toString())));
+        assertEquals(previousOwnerBalance.subtract(value), sicxScore.balanceOf(Address.fromString(owner.getAddress().toString())));
     }
 
     @Test
     @Order(7)
     void burn() {
         BigInteger previousSupply = sicxScore.totalSupply();
-        BigInteger previousOwnerBalance = sicxScore.balanceOf(ownerAddress);
-        BigInteger previousTesterBalance = sicxScore.balanceOf(testerAddress);
+        BigInteger previousOwnerBalance = sicxScore.balanceOf(Address.fromString(owner.getAddress().toString()));
+        BigInteger previousTesterBalance = sicxScore.balanceOf(Address.fromString(tester.getAddress().toString()));
 
         JSONObject data = new JSONObject();
         data.put("method", "unstake");
         BigInteger value = BigInteger.TEN.multiply(EXA);
-        sicxScore.transfer(stakingClient._address(), value, data.toString().getBytes());
+        sicxScore.transfer(stakingScore._address(), value, data.toString().getBytes());
         assertEquals(previousSupply.subtract(value), sicxScore.totalSupply());
-        assertEquals(previousTesterBalance, sicxScore.balanceOf(testerAddress));
-        assertEquals(previousOwnerBalance.subtract(value), sicxScore.balanceOf(ownerAddress));
+        assertEquals(previousTesterBalance, sicxScore.balanceOf(Address.fromString(tester.getAddress().toString())));
+        assertEquals(previousOwnerBalance.subtract(value), sicxScore.balanceOf(Address.fromString(owner.getAddress().toString())));
     }
 
     @Test
     @Order(8)
     void mintTo() {
-        sicxScore.setMinter(ownerAddress);
+        sicxScore.setMinter(Address.fromString(owner.getAddress().toString()));
         BigInteger previousSupply = sicxScore.totalSupply();
-        BigInteger previousOwnerBalance = sicxScore.balanceOf(ownerAddress);
-        BigInteger previousTesterBalance = sicxScore.balanceOf(testerAddress);
+        BigInteger previousOwnerBalance = sicxScore.balanceOf(Address.fromString(owner.getAddress().toString()));
+        BigInteger previousTesterBalance = sicxScore.balanceOf(Address.fromString(tester.getAddress().toString()));
         BigInteger value = BigInteger.valueOf(20).multiply(EXA);
-        sicxScore.mintTo(testerAddress, value, null);
+        sicxScore.mintTo(Address.fromString(tester.getAddress().toString()), value, null);
         assertEquals(previousSupply.add(value), sicxScore.totalSupply());
-        assertEquals(previousTesterBalance.add(value), sicxScore.balanceOf(testerAddress));
-        assertEquals(previousOwnerBalance, sicxScore.balanceOf(ownerAddress));
+        assertEquals(previousTesterBalance.add(value), sicxScore.balanceOf(Address.fromString(tester.getAddress().toString())));
+        assertEquals(previousOwnerBalance, sicxScore.balanceOf(Address.fromString(owner.getAddress().toString())));
     }
 
     @Test
     @Order(9)
     void burnFrom() {
-        sicxScore.setMinter(ownerAddress);
+        sicxScore.setMinter(Address.fromString(owner.getAddress().toString()));
         BigInteger previousSupply = sicxScore.totalSupply();
-        BigInteger previousOwnerBalance = sicxScore.balanceOf(ownerAddress);
-        BigInteger previousTesterBalance = sicxScore.balanceOf(testerAddress);
+        BigInteger previousOwnerBalance = sicxScore.balanceOf(Address.fromString(owner.getAddress().toString()));
+        BigInteger previousTesterBalance = sicxScore.balanceOf(Address.fromString(tester.getAddress().toString()));
         BigInteger value = BigInteger.TEN.multiply(EXA);
-        sicxScore.burnFrom(testerAddress, value);
+        sicxScore.burnFrom(Address.fromString(tester.getAddress().toString()), value);
         assertEquals(previousSupply.subtract(value), sicxScore.totalSupply());
-        assertEquals(previousTesterBalance.subtract(value), sicxScore.balanceOf(testerAddress));
-        assertEquals(previousOwnerBalance, sicxScore.balanceOf(ownerAddress));
+        assertEquals(previousTesterBalance.subtract(value), sicxScore.balanceOf(Address.fromString(tester.getAddress().toString())));
+        assertEquals(previousOwnerBalance, sicxScore.balanceOf(Address.fromString(owner.getAddress().toString())));
     }
 
 }

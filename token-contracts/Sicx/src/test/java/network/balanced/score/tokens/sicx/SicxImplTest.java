@@ -97,7 +97,7 @@ class SicxImplTest extends TestBase {
         // setStakingAddress not called by owner
         Executable InvalidValue = () -> sicxScore.invoke(user, "setStaking", staking.getAddress());
         String expectedErrorMessage =
-                "SenderNotScoreOwner: Sender=" + user.getAddress() + "Owner=" + owner.getAddress();
+                "Reverted(0): SenderNotScoreOwner: Sender=" + user.getAddress() + "Owner=" + owner.getAddress();
         AssertionError e = Assertions.assertThrows(AssertionError.class, InvalidValue);
         assertEquals(expectedErrorMessage, e.getMessage());
 

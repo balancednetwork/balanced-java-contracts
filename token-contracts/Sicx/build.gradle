@@ -16,7 +16,6 @@
 
 import network.balanced.score.dependencies.Dependencies
 
-
 version = '0.1.0'
 
 repositories {
@@ -26,32 +25,35 @@ repositories {
 
 dependencies {
     compileOnly Dependencies.javaeeApi
+    implementation Dependencies.javaeeScorex
+    implementation Dependencies.minimalJson
     implementation project(':score-lib')
 
     testImplementation Dependencies.javaeeUnitTest
+    testImplementation Dependencies.javaeeTokens
+    testImplementation Dependencies.json
+
     // Use JUnit Jupiter for testing.
+
     testImplementation Dependencies.junitJupiter
     testRuntimeOnly Dependencies.junitJupiterEngine
-
     testImplementation Dependencies.mockitoCore
     testImplementation Dependencies.mockitoInline
-    testImplementation project(':test-lib')
 
-    intTestImplementation Dependencies.javaeeScoreClient
-    intTestAnnotationProcessor Dependencies.javaeeScoreClient
-
+    intTestImplementation project(":score-client")
+    intTestAnnotationProcessor project(":score-client")
     intTestImplementation Dependencies.iconSdk
     intTestImplementation Dependencies.jacksonDatabind
-    intTestImplementation Dependencies.json
+
+    testImplementation project(':test-lib')
 }
 
 optimizedJar {
     mainClassName = 'network.balanced.score.tokens.sicx.SicxImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
-        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
     }
-    enableDebug = false
 }
 
 deployJar {
@@ -68,10 +70,6 @@ deployJar {
             uri = 'https://ctz.solidwallet.io/api/v3'
             nid = 0x1
         }
-        berlin {
-            uri = 'https://berlin.net.solidwallet.io/api/v3'
-            nid = 0x7
-        }
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
@@ -81,6 +79,7 @@ deployJar {
 tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+    finalizedBy jacocoTestReport
 }
 
 jacocoTestReport {
@@ -92,33 +91,26 @@ jacocoTestReport {
     }
 }
 
-task integrationTest(type: Test, dependsOn: optimizedJar) {
+task integrationTest(type: Test) {
     useJUnitPlatform()
+
+    rootProject.allprojects {
+        if(it.getTasks().findByName('optimizedJar')) {
+            dependsOn(it.getTasks().getByName('optimizedJar'))
+        }
+    }
+
     options {
         testLogging.showStandardStreams = true
         description = 'Runs integration tests.'
         group = 'verification'
+
         testClassesDirs = sourceSets.intTest.output.classesDirs
         classpath = sourceSets.intTest.runtimeClasspath
 
-        systemProperty 'scoreFilePath', "../../sicx.zip"
-        project.extensions.deployJar.arguments.each { arg -> systemProperty 'params.' + arg.name, arg.value
-        }
-
-        systemProperty 'url', scoreTest.url
-        systemProperty 'nid', scoreTest.nid
-        systemProperty 'keyStore', scoreTest.keystoreName
-        systemProperty 'keyPassword', scoreTest.keystorePass
-//        systemProperty 'isUpdate', "false"
-//        systemProperty 'address', "cx2ad810776298b1946c6b57f7109d3a5602ae44f6"
-
-        systemProperty 'staking.url', scoreTest.url
-        systemProperty 'staking.nid', scoreTest.nid
-        systemProperty 'staking.keyStore', scoreTest.keystoreName
-        systemProperty 'staking.keyPassword', scoreTest.keystorePass
-        systemProperty 'staking.scoreFilePath', "../../staking.zip"
-//        systemProperty 'staking.isUpdate', "false"
-//        systemProperty 'staking.address', "cxb205adfafde0a9e76539e2a405b9ce82ae8c4ee2"
+        systemProperty "python", new File(project(':test-lib').projectDir, 'python-contracts/sicx.zip')
+        systemProperty "java", optimizedJar.outputJarName
 
     }
+
 }

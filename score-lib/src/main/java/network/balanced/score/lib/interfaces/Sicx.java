@@ -18,8 +18,11 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
+import network.balanced.score.lib.interfaces.addresses.AdminAddress;
 import network.balanced.score.lib.interfaces.addresses.StakingAddress;
 import network.balanced.score.lib.interfaces.tokens.IRC2;
+import network.balanced.score.lib.interfaces.tokens.IRC2BurnableInterface;
+import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
 import score.Address;
 import score.annotation.External;
 
@@ -27,7 +30,7 @@ import java.math.BigInteger;
 
 @ScoreClient
 @ScoreInterface
-public interface Sicx extends StakingAddress, IRC2 {
+public interface Sicx extends StakingAddress, IRC2BurnableInterface, IRC2Mintable {
 
     @External(readonly = true)
     String getPeg();
@@ -37,8 +40,5 @@ public interface Sicx extends StakingAddress, IRC2 {
 
     @External(readonly = true)
     BigInteger lastPriceInLoop();
-
-    @External(readonly = true)
-    Address getAdmin();
 
 }
