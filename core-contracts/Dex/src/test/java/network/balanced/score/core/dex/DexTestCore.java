@@ -41,6 +41,7 @@ public class DexTestCore extends DexTestBase {
 
     @Test
     void fallback() {
+        Account account = sm.createAccount();
         BigInteger icxValue = BigInteger.valueOf(100).multiply(EXA);
         contextMock.when(() -> Context.getValue()).thenReturn(icxValue);
         contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
@@ -49,7 +50,8 @@ public class DexTestCore extends DexTestBase {
         contextMock.when(() -> Context.call(any(Address.class), eq("getTodayRate"))).thenReturn(EXA);
         dexScore.invoke(ownerAccount, "fallback");
 
-        Map<String, Object> poolStats = (Map<String, Object>) dexScore.call("getPoolStats", BigInteger.valueOf(SICXICX_POOL_ID));
+        BigInteger poolId = BigInteger.valueOf(SICXICX_POOL_ID);
+        Map<String, Object> poolStats = (Map<String, Object>) dexScore.call("getPoolStats", poolId);
         BigInteger lpBalance = (BigInteger) dexScore.call("balanceOf", ownerAccount.getAddress(), BigInteger.valueOf(SICXICX_POOL_ID));
         assertEquals(icxValue, lpBalance);
         assertEquals(lpBalance, poolStats.get("total_supply"));
@@ -57,10 +59,16 @@ public class DexTestCore extends DexTestBase {
         BigInteger additionIcxValue = BigInteger.valueOf(50L).multiply(EXA);
         contextMock.when(() -> Context.getValue()).thenReturn(additionIcxValue);
         dexScore.invoke(ownerAccount, "fallback");
-        poolStats = (Map<String, Object>) dexScore.call("getPoolStats", BigInteger.valueOf(SICXICX_POOL_ID));
+        poolStats = (Map<String, Object>) dexScore.call("getPoolStats", poolId);
         lpBalance = (BigInteger) dexScore.call("balanceOf", ownerAccount.getAddress(), BigInteger.valueOf(SICXICX_POOL_ID));
         assertEquals(icxValue.add(additionIcxValue), lpBalance);
         assertEquals(icxValue.add(additionIcxValue), poolStats.get("total_supply"));
+
+        dexScore.invoke(account, "fallback");
+        poolStats = (Map<String, Object>) dexScore.call("getPoolStats", poolId);
+        BigInteger balanceOwner = (BigInteger) dexScore.call("balanceOf", ownerAccount.getAddress(), poolId);
+        BigInteger balanceAccount = (BigInteger) dexScore.call("balanceOf", account.getAddress(), poolId);
+        assertEquals(balanceOwner.add(balanceAccount), poolStats.get("total_supply"));
     }
 
     // Test fails on line with: activeAddresses.get(SICXICX_POOL_ID).remove(user);
@@ -231,6 +239,7 @@ public class DexTestCore extends DexTestBase {
     @Test
     void addLiquidity() {
         Account account = sm.createAccount();
+        Account account1 = sm.createAccount();
         turnDexOn();
 
 
@@ -249,8 +258,11 @@ public class DexTestCore extends DexTestBase {
         BigInteger balnValue = BigInteger.valueOf(100L).multiply(EXA);
         dexScore.invoke(bnusdScore, "tokenFallback", account.getAddress(), bnusdValue, data.getBytes());
         dexScore.invoke(balnScore, "tokenFallback", account.getAddress(), bnusdValue, data.getBytes());
+        dexScore.invoke(bnusdScore, "tokenFallback", account1.getAddress(), bnusdValue, data.getBytes());
+        dexScore.invoke(balnScore, "tokenFallback", account1.getAddress(), bnusdValue, data.getBytes());
         // add liquidity pool
         dexScore.invoke(account, "add", balnScore.getAddress(), bnusdScore.getAddress(), balnValue, bnusdValue, false);
+        dexScore.invoke(account1, "add", balnScore.getAddress(), bnusdScore.getAddress(), balnValue, bnusdValue, false);
         BigInteger poolId = (BigInteger) dexScore.call("getPoolId", bnusdScore.getAddress(), balnScore.getAddress());
         Map<String, Object> poolStats = (Map<String, Object>) dexScore.call("getPoolStats", poolId);
         BigInteger balance = (BigInteger) dexScore.call("balanceOf", account.getAddress(), poolId);
@@ -258,6 +270,8 @@ public class DexTestCore extends DexTestBase {
         assertEquals((Address) poolStats.get("quote_token"), bnusdScore.getAddress());
         assertEquals(bnusdValue.multiply(balnValue).sqrt(), balance);
 
+        BigInteger account1_balance = (BigInteger) dexScore.call("balanceOf", account1.getAddress(), poolId);
+        assertEquals(balance.add(account1_balance), poolStats.get("total_supply"));
     }
 
     @Test
@@ -449,10 +463,108 @@ public class DexTestCore extends DexTestBase {
         swapSicxToIcx(ownerAccount, swapValue, sicxIcxConversionRate);
     }
 
+    @Test
+    void balanceOfAt() {
+
+        Account account = sm.createAccount();
+        turnDexOn();
+
+
+        final String data = "{" +
+                "\"method\": \"_deposit\"" +
+                "}";
+
+        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
+        contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
+        contextMock.when(() -> Context.call(any(Address.class), eq("decimals"))).thenReturn(BigInteger.valueOf(18));
+        contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class), any(BigInteger.class))).thenReturn(null);
+
+        BigInteger FIFTY = BigInteger.valueOf(50L).multiply(EXA);
+        //deposit
+        dexScore.invoke(bnusdScore, "tokenFallback", account.getAddress(), BigInteger.valueOf(50L).multiply(EXA), data.getBytes());
+        dexScore.invoke(balnScore, "tokenFallback", account.getAddress(), BigInteger.valueOf(50L).multiply(EXA), data.getBytes());
+        // add liquidity pool
+        dexScore.invoke(account, "add", balnScore.getAddress(), bnusdScore.getAddress(), FIFTY, FIFTY.divide(BigInteger.TWO), false);
+        BigInteger poolId = (BigInteger) dexScore.call("getPoolId", balnScore.getAddress(), bnusdScore.getAddress());
+        BigInteger day = BigInteger.valueOf(Context.getBlockTimestamp()).divide(BigInteger.valueOf(1000000L));
+        BigInteger balance = (BigInteger) dexScore.call("balanceOfAt", account.getAddress(), poolId, day, true);
+        assertEquals(dexScore.call("balanceOf", account.getAddress(), poolId), balance);
+    }
+
+    @Test
+    void totalSupplyAt() {
+        Account account = sm.createAccount();
+        turnDexOn();
+
+
+        final String data = "{" +
+                "\"method\": \"_deposit\"" +
+                "}";
+
+        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
+        contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
+        contextMock.when(() -> Context.call(any(Address.class), eq("decimals"))).thenReturn(BigInteger.valueOf(18));
+        contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class), any(BigInteger.class))).thenReturn(null);
+        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("updateBatchRewardsData"), any(String.class), any(BigInteger.class), any())).thenReturn(null);
+        contextMock.when(() -> Context.call(any(Address.class), eq("getTodayRate"))).thenReturn(EXA);
+
+        BigInteger FIFTY = BigInteger.valueOf(50L).multiply(EXA);
+        //deposit
+        dexScore.invoke(bnusdScore, "tokenFallback", account.getAddress(), BigInteger.valueOf(50L).multiply(EXA), data.getBytes());
+        dexScore.invoke(balnScore, "tokenFallback", account.getAddress(), BigInteger.valueOf(50L).multiply(EXA), data.getBytes());
+        // add liquidity pool
+        dexScore.invoke(account, "add", balnScore.getAddress(), bnusdScore.getAddress(), FIFTY, FIFTY.divide(BigInteger.TWO), false);
+        BigInteger poolId = (BigInteger) dexScore.call("getPoolId", balnScore.getAddress(), bnusdScore.getAddress());
+        BigInteger day = BigInteger.valueOf(Context.getBlockTimestamp()).divide(BigInteger.valueOf(1000000L));
+        Map<String, Object> poolStats = (Map<String, Object>) dexScore.call("getPoolStats", poolId);
+        BigInteger totalSupply = (BigInteger) dexScore.call("totalSupplyAt", poolId, day, false);
+        assertEquals(poolStats.get("total_supply"), totalSupply);
+
+        BigInteger icxValue = BigInteger.valueOf(100).multiply(EXA);
+        contextMock.when(() -> Context.getValue()).thenReturn(icxValue);
+        contextMock.when(() -> Context.call(any(Address.class), eq("getTodayRate"))).thenReturn(EXA);
+        dexScore.invoke(ownerAccount, "fallback");
+        poolId = BigInteger.valueOf(SICXICX_POOL_ID);
+        poolStats = (Map<String, Object>) dexScore.call("getPoolStats", poolId);
+        totalSupply = (BigInteger) dexScore.call("totalSupplyAt", poolId, day, false);
+        assertEquals(poolStats.get("total_supply"), totalSupply);
+    }
+
+    @Test
+    void getTotalValue() {
+        Account account = sm.createAccount();
+        turnDexOn();
+
+        final String data = "{" +
+                "\"method\": \"_deposit\"" +
+                "}";
+
+        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
+        contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
+        contextMock.when(() -> Context.call(any(Address.class), eq("decimals"))).thenReturn(BigInteger.valueOf(18));
+        contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class), any(BigInteger.class))).thenReturn(null);
+
+        BigInteger FIFTY = BigInteger.valueOf(50L).multiply(EXA);
+        //deposit
+        BigInteger bnusdValue = BigInteger.valueOf(276L).multiply(EXA);
+        BigInteger balnValue = BigInteger.valueOf(100L).multiply(EXA);
+        dexScore.invoke(bnusdScore, "tokenFallback", account.getAddress(), bnusdValue, data.getBytes());
+        dexScore.invoke(balnScore, "tokenFallback", account.getAddress(), bnusdValue, data.getBytes());
+
+        dexScore.invoke(account, "add", balnScore.getAddress(), bnusdScore.getAddress(), balnValue, bnusdValue, false);
+        BigInteger poolId = (BigInteger) dexScore.call("getPoolId", balnScore.getAddress(), bnusdScore.getAddress());
+
+        String marketName = "BALN/BNUSD";
+        dexScore.invoke(governanceScore, "setMarketName", poolId, marketName);
+        BigInteger totalValue = (BigInteger) dexScore.call("getTotalValue", marketName, BigInteger.ONE);
+        BigInteger totalSupply = (BigInteger) dexScore.call("totalSupply", poolId);
+        assertEquals(totalSupply, totalValue);
+    }
+
     @AfterEach
     void closeMock() {
         contextMock.close();
-    }   
+    }
 }
 
 
@@ -462,16 +574,16 @@ public class DexTestCore extends DexTestBase {
     == Icx/sicx pool methods == 
     getSicxEarnings //done
     withdrawSicxEarnings // done
-    fallback
+    fallback //done
     
     == Snapshot methods ==
     getBalnSnapshot
     loadBalancesAtSnapshot
     getDataBatch
-    totalSupplyAt
+    totalSupplyAt // done
     totalBalnAt
-    balanceOfAt
-    getTotalValue
+    balanceOfAt // done
+    getTotalValue //done
     
     == Normal liquidity pool methods ==
     tokenFallback / done

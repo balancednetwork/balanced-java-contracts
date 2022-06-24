@@ -78,7 +78,7 @@ public class DexImpl extends AbstractDex {
 
         // Update total ICX queue size
         BigInteger oldIcxTotal = icxQueueTotal.getOrDefault(BigInteger.ZERO);
-        BigInteger currentIcxTotal = oldIcxTotal.add(orderValue).subtract(oldIcxTotal);
+        BigInteger currentIcxTotal = oldIcxTotal.add(orderValue).subtract(oldOrderValue);
         icxQueueTotal.set(currentIcxTotal);
 
         activeAddresses.get(SICXICX_POOL_ID).add(user);
