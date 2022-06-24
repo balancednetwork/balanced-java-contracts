@@ -17,7 +17,7 @@
 package network.balanced.score.lib.interfaces;
 
 import network.balanced.score.lib.interfaces.addresses.*;
-import network.balanced.score.lib.interfaces.base.IRC2BurnableInterface;
+import network.balanced.score.lib.interfaces.tokens.IRC2BurnableInterface;
 import score.Address;
 import score.annotation.EventLog;
 import score.annotation.External;
