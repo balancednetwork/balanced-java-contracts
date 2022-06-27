@@ -23,6 +23,9 @@ import network.balanced.score.lib.interfaces.addresses.BnusdAddress;
 import network.balanced.score.lib.interfaces.addresses.DexAddress;
 import network.balanced.score.lib.interfaces.addresses.DividendsAddress;
 import network.balanced.score.lib.interfaces.tokens.IRC2;
+import network.balanced.score.lib.interfaces.tokens.IRC2BurnableInterface;
+import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
+import network.balanced.score.lib.interfaces.tokens.IRC2MintableScoreInterface;
 import score.Address;
 import score.annotation.External;
 
@@ -31,7 +34,7 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface Baln extends IRC2, AdminAddress, DividendsAddress, BnusdAddress, DexAddress {
+public interface Baln extends IRC2BurnableInterface, AdminAddress, DividendsAddress, BnusdAddress, DexAddress {
 
     @External
     void stake(BigInteger _value);

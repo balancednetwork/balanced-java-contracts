@@ -18,122 +18,99 @@ import network.balanced.score.dependencies.Dependencies
 
 version = '0.1.0'
 
-sourceSets {
-    intTest {
-        compileClasspath += sourceSets.main.output
-        runtimeClasspath += sourceSets.main.output
-    }
-}
-
-configurations {
-    intTestImplementation.extendsFrom testImplementation
-    intTestAnnotationProcessor.extendsFrom testAnnotationProcessor
-    intTestRuntimeOnly.extendsFrom testRuntimeOnly
-
+repositories {
+    // Use Maven Central for resolving dependencies.
+    mavenCentral()
 }
 
 dependencies {
     compileOnly Dependencies.javaeeApi
+    implementation Dependencies.javaeeScorex
+    implementation Dependencies.minimalJson
     implementation project(':score-lib')
 
     testImplementation Dependencies.javaeeUnitTest
+    testImplementation Dependencies.javaeeTokens
+    testImplementation Dependencies.json
+
     // Use JUnit Jupiter for testing.
+
     testImplementation Dependencies.junitJupiter
     testRuntimeOnly Dependencies.junitJupiterEngine
-
     testImplementation Dependencies.mockitoCore
-    testRuntimeOnly Dependencies.mockitoInline
-    testImplementation project(':test-lib')
+    testImplementation Dependencies.mockitoInline
 
-    intTestImplementation Dependencies.javaeeScoreClient
-    intTestAnnotationProcessor Dependencies.javaeeScoreClient
+    intTestImplementation project(":score-client")
+    intTestAnnotationProcessor project(":score-client")
     intTestImplementation Dependencies.iconSdk
     intTestImplementation Dependencies.jacksonDatabind
-    intTestImplementation Dependencies.okhttp
 
+    testImplementation project(':test-lib')
 }
 
 optimizedJar {
     mainClassName = 'network.balanced.score.token.balancedtoken.BalancedTokenImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
-        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
     }
 }
 
 deployJar {
     endpoints {
+        sejong {
+            uri = 'https://sejong.net.solidwallet.io/api/v3'
+            nid = 0x53
+        }
         local {
             uri = 'http://localhost:9082/api/v3'
             nid = 0x3
         }
+        mainnet {
+            uri = 'https://ctz.solidwallet.io/api/v3'
+            nid = 0x1
+        }
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
-    parameters { arg('_governance', 'cxe460cb87f451ea235e5be8894920f6436aab63f9') }
+    parameters {}
 }
 
-test {
+tasks.named('test') {
+    // Use JUnit Platform for unit tests.
     useJUnitPlatform()
-    finalizedBy jacocoTestReport // report is always generated after tests run
+    finalizedBy jacocoTestReport
 }
 
-def loadProperties = {
-    def prefix = 'score-test.'
-    def props = project.getProperties()
-    def scoreTest = new HashMap<String, Object>()
-
-    scoreTest.put('keystoreName',  props.getOrDefault(prefix + 'keystoreName', ''))
-    scoreTest.put('keystorePass', props.getOrDefault(prefix + 'keystorePass', ''))
-    scoreTest.put('url', props.getOrDefault(prefix + 'url', 'http://localhost:9082/api/v3'))
-    scoreTest.put('nid', props.getOrDefault(prefix + 'nid', 3))
-
-    scoreTest.put('governance.keystoreName', props.get(prefix + 'governance.keystoreName'))
-    scoreTest.put('governance.keystorePass', props.get(prefix + 'governance.keystorePass'))
-    scoreTest.put('governance.url', props.getOrDefault(prefix + 'url', 'http://127.0.0.1:9082/api/v3'))
-    scoreTest.put('governance.nid', props.getOrDefault(prefix + 'nid', 3))
-
-    scoreTest.put('user.provisioning.keystoreName', props.get(prefix + 'user.provisioning.keystoreName'))
-    scoreTest.put('user.provisioning.keystorePass', props.get(prefix + 'user.provisioning.keystorePass'))
-    scoreTest.put('user.provisioning.url', props.getOrDefault(prefix + 'url', 'http://127.0.0.1:9082/api/v3'))
-    scoreTest.put('user.provisioning.nid', props.getOrDefault(prefix + 'nid', 3))
-
-    scoreTest.put('user.receiver.keystoreName', props.get(prefix + 'user.receiver.keystoreName'))
-    scoreTest.put('user.receiver.keystorePass', props.get(prefix + 'user.receiver.keystorePass'))
-    scoreTest.put('user.receiver.url', props.getOrDefault(prefix + 'url', 'http://127.0.0.1:9082/api/v3'))
-    scoreTest.put('user.receiver.nid', props.getOrDefault(prefix + 'nid', 3))
-
-    ext['scoreTest'] = scoreTest
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = false
+        csv.required = false
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+    }
 }
-loadProperties()
 
-task intTest(type: Test, dependsOn: optimizedJar) {
+task integrationTest(type: Test) {
     useJUnitPlatform()
+
+    rootProject.allprojects {
+        if(it.getTasks().findByName('optimizedJar')) {
+            dependsOn(it.getTasks().getByName('optimizedJar'))
+        }
+    }
+
     options {
         testLogging.showStandardStreams = true
         description = 'Runs integration tests.'
         group = 'verification'
+
         testClassesDirs = sourceSets.intTest.output.classesDirs
         classpath = sourceSets.intTest.runtimeClasspath
 
-        systemProperty 'url', scoreTest.url
-        systemProperty 'nid', scoreTest.nid
-
-        systemProperty 'keyStore', scoreTest.keystoreName
-        systemProperty 'keyPassword', scoreTest.keystorePass
-
-        systemProperty 'scoreFilePath', project.tasks.optimizedJar.outputJarName
-        project.extensions.deployJar.arguments.each { arg -> systemProperty 'params.' + arg.name, arg.value
-        }
-
-        systemProperty 'governance.keyStore', scoreTest['governance.keystoreName']
-        systemProperty 'governance.keyPassword', scoreTest['governance.keystorePass']
-
-        systemProperty 'user.provisioning.keyStore', scoreTest['user.provisioning.keystoreName']
-        systemProperty 'user.provisioning.keyPassword', scoreTest['user.provisioning.keystorePass']
-
-        systemProperty 'user.receiver.keyStore', scoreTest['user.receiver.keystoreName']
-        systemProperty 'user.receiver.keyPassword', scoreTest['user.receiver.keystorePass']
+        systemProperty "python", new File(project(':test-lib').projectDir, 'python-contracts/baln.zip')
+        systemProperty "java", optimizedJar.outputJarName
 
     }
+
 }

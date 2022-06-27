@@ -16,173 +16,183 @@
 
 package network.balanced.score.token;
 
-import foundation.icon.icx.KeyWallet;
 import foundation.icon.icx.Wallet;
-import foundation.icon.score.client.DefaultScoreClient;
-import foundation.icon.score.client.ScoreClient;
-import network.balanced.score.lib.interfaces.BalancedToken;
-import network.balanced.score.lib.interfaces.BalancedTokenScoreClient;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import foundation.icon.jsonrpc.Address;
+import network.balanced.score.lib.interfaces.BalnScoreClient;
+import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
+import org.json.JSONObject;
+import org.junit.jupiter.api.*;
 
 import java.math.BigInteger;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
+import java.util.Map;
 
+import network.balanced.score.lib.test.integration.Balanced;
+import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
+
+import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-/**
- * to run this integration test you might need to create 3 wallets by:
- * <p>
- * goloop ks gen -o governance-wallet.json
- * goloop ks gen -o user-provisioning-wallet.json
- * goloop ks gen -o user-receiver-wallet.json
- * <p>
- * and fill gradle.properties at root level with
- * <p>
- * <p>
- * #godWallet is the one from the local goloop node
- * score-test.url=http://localhost:9082/api/v3
- * score-test.nid=0x3
- * score-test.keystoreName=<wallet_base_path>/godWallet.json
- * score-test.keystorePass=gochain
- * <p>
- * score-test.governance.url=http://localhost:9082/api/v3
- * score-test.governance.nid=0x3
- * score-test.governance.keystoreName=<wallet_base_path>/governance-wallet.json
- * score-test.governance.keystorePass=gochain
- * <p>
- * score-test.user.provisioning.url=http://localhost:9082/api/v3
- * score-test.user.provisioning.nid=0x3
- * score-test.user.provisioning.keystoreName=<wallet_base_path>/user-provisioning-wallet.json
- * score-test.user.provisioning.keystorePass=gochain
- * <p>
- * score-test.user.receiver.url=http://localhost:9082/api/v3
- * score-test.user.receiver.nid=0x3
- * score-test.user.receiver.keystoreName=<wallet_base_path>/user-receiver-wallet.json
- * score-test.user.receiver.keystorePass=gochain
- * and start your local goloop node
- * <p>
- * and then exec:
- * balanced-java-contracts$ ./gradlew clean build optimizedJar
- * balanced-java-contracts$ ./gradlew intTest
- */
-@Tag("integration")
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class BalancedTokenImplIntTest {
 
-	private static final Wallet governanceWallet = DefaultScoreClient.wallet("governance.", System.getProperties());
-	private static final Wallet userProvisioningWallet = DefaultScoreClient.wallet("user.provisioning.",
-			System.getProperties());
-	private static Wallet userReceiverWallet = DefaultScoreClient.wallet("user.receiver.", System.getProperties());
+	static Balanced balanced;
+	static Wallet tester;
+	static Wallet owner;
 
-	private final DefaultScoreClient ownerBalancedTokenClient = DefaultScoreClient.of(System.getProperties());
-
-	@ScoreClient
-	private final BalancedToken ownerBalancedTokenScore = new BalancedTokenScoreClient(ownerBalancedTokenClient);
-
-	private final DefaultScoreClient governanceBalancedTokenClient =
-			new DefaultScoreClient(ownerBalancedTokenClient.endpoint(), ownerBalancedTokenClient._nid(),
-					governanceWallet, ownerBalancedTokenClient._address());
-	@ScoreClient
-	private final BalancedToken governanceBalancedTokenScore =
-			new BalancedTokenScoreClient(governanceBalancedTokenClient);
-
-	private final DefaultScoreClient userProvisioningBalancedTokenClient =
-			new DefaultScoreClient(ownerBalancedTokenClient.endpoint(), ownerBalancedTokenClient._nid(),
-					userProvisioningWallet, ownerBalancedTokenClient._address());
-	@ScoreClient
-	private final BalancedToken userProvisioningBalancedTokenScore =
-			new BalancedTokenScoreClient(userProvisioningBalancedTokenClient);
-
-	private final DefaultScoreClient userReceiverBalancedTokenClient =
-			new DefaultScoreClient(ownerBalancedTokenClient.endpoint(),
-					ownerBalancedTokenClient._nid(), userReceiverWallet, ownerBalancedTokenClient._address());
-
-
-
-	@ScoreClient
-	private final BalancedToken userReceiverBalancedTokenScore =
-			new BalancedTokenScoreClient(userReceiverBalancedTokenClient);
+	static BalnScoreClient balnScore;
 
 	@BeforeAll
-	static void init() throws InvalidAlgorithmParameterException, NoSuchAlgorithmException,
-			NoSuchProviderException {
-		userReceiverWallet = KeyWallet.create();
+	static void setup() throws Exception {
+		System.setProperty("Baln", System.getProperty("java"));
+		tester = ScoreIntegrationTest.createWalletWithBalance(BigInteger.TEN.pow(24));
+		balanced = new Balanced();
+		balanced.setupBalanced();
+
+		owner = balanced.owner;
+
+		balnScore = new BalnScoreClient(balanced.baln);
 	}
 
 	@Test
+	@Order(1)
+	void testName(){
+		assertEquals("Balance Token", balnScore.name());
+	}
+
+	@Test
+	@Order(2)
 	void ShouldAUserMintAndTransferAndMakeStake() {
 
-		//owner of contract is setting governance addr
-		score.Address governanceAddress = score.Address.fromString(governanceWallet.getAddress().toString());
-		ownerBalancedTokenScore.setGovernance(governanceAddress);
+		BigInteger loanAmount = BigInteger.valueOf(50).multiply(BigInteger.TEN.pow(18));
+		// take loans
+		BigInteger collateral = BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18));
+		balanced.ownerClient.loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
+		balanced.increaseDay(1);
+		balanced.syncDistributions();
 
-		//sending some ICX to have funds to exec operations
-		BigInteger amountToTransfer = BigInteger.TEN.multiply(BigInteger.TEN).multiply(BigInteger.TEN.pow(18));
+		// balance token is minted in owner address
+		balanced.ownerClient.rewards.claimRewards();
+		BigInteger amountToMint = balnScore.balanceOf(Address.fromString(owner.getAddress().toString()));
 
-		DefaultScoreClient.transfer(
-				ownerBalancedTokenClient,
-				BigInteger.valueOf(3L),
-				ownerBalancedTokenClient._wallet(),
-				new BigInteger("1000000"),
-				foundation.icon.jsonrpc.Address.of(governanceWallet),
-				amountToTransfer,
-				null,
-				15000L);
-
-		DefaultScoreClient.transfer(
-				ownerBalancedTokenClient,
-				BigInteger.valueOf(3L),
-				ownerBalancedTokenClient._wallet(),
-				new BigInteger("1000000"),
-				foundation.icon.jsonrpc.Address.of(userProvisioningWallet),
-				amountToTransfer,
-				null,
-				15000L);
-
-		DefaultScoreClient.transfer(
-				ownerBalancedTokenClient,
-				BigInteger.valueOf(3L),
-				ownerBalancedTokenClient._wallet(),
-				new BigInteger("1000000"),
-				foundation.icon.jsonrpc.Address.of(userReceiverWallet),
-				amountToTransfer,
-				null,
-				15000L);
-
-		//governance addr setting admin = contract owner
-		governanceBalancedTokenScore.setAdmin(score.Address.fromString(ownerBalancedTokenClient._wallet().getAddress().toString()));
-
-		//mint 60x10^18 tokens to user provisioning
-		score.Address userAddressProvisioning =
-				score.Address.fromString(userProvisioningWallet.getAddress().toString());
-
-		BigInteger amountToMint = BigInteger.TEN
-				.multiply(BigInteger.TWO.add(BigInteger.ONE).multiply(BigInteger.TWO))
-				.multiply(BigInteger.TEN.pow(18));
-		ownerBalancedTokenScore.mintTo(userAddressProvisioning, amountToMint, "first mint".getBytes());
-
-		governanceBalancedTokenScore.toggleStakingEnabled();
-
-		//transferring 30x10^18 tokens from provisioning user to receiver user
+		//transfer some tokens to another user
 		BigInteger amountToTransferToReceiver = amountToMint.divide(BigInteger.TWO);
-		score.Address userReceiverAddress = score.Address.fromString(userReceiverWallet.getAddress().toString());
-		userProvisioningBalancedTokenScore.transfer(userReceiverAddress, amountToTransferToReceiver,
+
+		balnScore.transfer(Address.fromString(tester.getAddress().toString()), amountToTransferToReceiver,
 				"mole".getBytes());
+		assertEquals(amountToTransferToReceiver,balnScore.balanceOf(Address.fromString(owner.getAddress().toString())));
+		assertEquals(amountToTransferToReceiver,balnScore.balanceOf(Address.fromString(tester.getAddress().toString())));
 
 		BigInteger amountToStake = amountToTransferToReceiver.divide(BigInteger.TWO);
 
-		//user provisioning stake 15X10^18 tokens
-		userProvisioningBalancedTokenScore.stake(amountToStake);
+		// stake some token
+		balnScore.stake(amountToStake);
 
-		//user receiver stake 15X10^18 tokens
-		userReceiverBalancedTokenScore.stake(amountToStake);
+		Map<String, BigInteger> detailsBalanceOf = balnScore.detailsBalanceOf(Address.fromString(owner.getAddress().toString()));
 
-		BigInteger totalBalance = ownerBalancedTokenScore.totalStakedBalance();
-		assertEquals(amountToStake.multiply(BigInteger.TWO), totalBalance);
+		// assert if balance is staked or not.
+		assertEquals(detailsBalanceOf.get("Staked balance"), amountToStake);
+		assertEquals(detailsBalanceOf.get("Available balance"), amountToStake);
+		assertEquals(detailsBalanceOf.get("Unstaking balance"), BigInteger.ZERO);
+
+		//unstake some tokens
+		balnScore.stake(amountToStake.divide(BigInteger.TWO));
+
+		detailsBalanceOf = balnScore.detailsBalanceOf(Address.fromString(owner.getAddress().toString()));
+
+		// assert if balance is unstaked or not.
+		assertEquals(detailsBalanceOf.get("Staked balance"), amountToStake.divide(BigInteger.TWO));
+		assertEquals(detailsBalanceOf.get("Available balance"), amountToStake);
+		assertEquals(detailsBalanceOf.get("Unstaking balance"), amountToStake.divide(BigInteger.TWO));
+
+		BigInteger totalBalance = balnScore.totalStakedBalance();
+		// assert totalStakedBalance
+		assertEquals(amountToStake.divide(BigInteger.TWO), totalBalance);
+
+		// unstake completely
+
+		// wait for few days
+		balanced.increaseDay(4);
+		balanced.syncDistributions();
+
+		// unsatake completely
+		balnScore.stake(BigInteger.ZERO);
+
+		detailsBalanceOf = balnScore.detailsBalanceOf(Address.fromString(owner.getAddress().toString()));
+
+		// assert if balance is unstaked or not.
+		assertEquals(detailsBalanceOf.get("Staked balance"), BigInteger.ZERO);
+		assertEquals(detailsBalanceOf.get("Unstaking balance"), amountToStake);
 
 	}
+
+	@Test
+	@Order(3)
+	void mint() {
+		BigInteger value = BigInteger.valueOf(20).multiply(EXA);
+		BigInteger previousSupply = balnScore.totalSupply();
+		BigInteger previousBalance = balnScore.balanceOf(Address.fromString(owner.getAddress().toString()));
+		balnScore.setMinter(Address.fromString(owner.getAddress().toString()));
+		balnScore.mint(value, "mole".getBytes());
+		assertEquals(previousSupply.add(value), balnScore.totalSupply());
+		assertEquals(previousBalance.add(value), balnScore.balanceOf(Address.fromString(owner.getAddress().toString())));
+	}
+
+	@Test
+	@Order(4)
+	void transfer() {
+		BigInteger value = BigInteger.valueOf(5).multiply(EXA);
+		BigInteger previousSupply = balnScore.totalSupply();
+		BigInteger previousOwnerBalance = balnScore.balanceOf(Address.fromString(owner.getAddress().toString()));
+		BigInteger previousTesterBalance = balnScore.balanceOf(Address.fromString(tester.getAddress().toString()));
+		balnScore.transfer(Address.fromString(tester.getAddress().toString()), value, null);
+		assertEquals(previousSupply, balnScore.totalSupply());
+		assertEquals(previousTesterBalance.add(value), balnScore.balanceOf(Address.fromString(tester.getAddress().toString())));
+		assertEquals(previousOwnerBalance.subtract(value), balnScore.balanceOf(Address.fromString(owner.getAddress().toString())));
+	}
+
+	@Test
+	@Order(5)
+	void burn() {
+		BigInteger previousSupply = balnScore.totalSupply();
+		BigInteger previousOwnerBalance = balnScore.balanceOf(Address.fromString(owner.getAddress().toString()));
+		BigInteger previousTesterBalance = balnScore.balanceOf(Address.fromString(tester.getAddress().toString()));
+
+		JSONObject data = new JSONObject();
+		data.put("method", "unstake");
+		BigInteger value = BigInteger.TEN.multiply(EXA);
+		balnScore.burn(value);
+		assertEquals(previousSupply.subtract(value), balnScore.totalSupply());
+		assertEquals(previousTesterBalance, balnScore.balanceOf(Address.fromString(tester.getAddress().toString())));
+		assertEquals(previousOwnerBalance.subtract(value), balnScore.balanceOf(Address.fromString(owner.getAddress().toString())));
+	}
+
+	@Test
+	@Order(6)
+	void mintTo() {
+		balnScore.setMinter(Address.fromString(owner.getAddress().toString()));
+		BigInteger previousSupply = balnScore.totalSupply();
+		BigInteger previousOwnerBalance = balnScore.balanceOf(Address.fromString(owner.getAddress().toString()));
+		BigInteger previousTesterBalance = balnScore.balanceOf(Address.fromString(tester.getAddress().toString()));
+		BigInteger value = BigInteger.valueOf(20).multiply(EXA);
+		balnScore.mintTo(Address.fromString(tester.getAddress().toString()), value, null);
+		assertEquals(previousSupply.add(value), balnScore.totalSupply());
+		assertEquals(previousTesterBalance.add(value), balnScore.balanceOf(Address.fromString(tester.getAddress().toString())));
+		assertEquals(previousOwnerBalance, balnScore.balanceOf(Address.fromString(owner.getAddress().toString())));
+	}
+
+	@Test
+	@Order(7)
+	void burnFrom() {
+		balnScore.setMinter(Address.fromString(owner.getAddress().toString()));
+		BigInteger previousSupply = balnScore.totalSupply();
+		BigInteger previousOwnerBalance = balnScore.balanceOf(Address.fromString(owner.getAddress().toString()));
+		BigInteger previousTesterBalance = balnScore.balanceOf(Address.fromString(tester.getAddress().toString()));
+		BigInteger value = BigInteger.TEN.multiply(EXA);
+		balnScore.burnFrom(Address.fromString(tester.getAddress().toString()), value);
+		assertEquals(previousSupply.subtract(value), balnScore.totalSupply());
+		assertEquals(previousTesterBalance.subtract(value), balnScore.balanceOf(Address.fromString(tester.getAddress().toString())));
+		assertEquals(previousOwnerBalance, balnScore.balanceOf(Address.fromString(owner.getAddress().toString())));
+	}
+
 }
 

@@ -120,7 +120,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
 
     @External
     public void setBnusd(Address _address) {
-        only(admin);
+        only(governance);
         isContract(_address);
         this.bnusdScore.set(_address);
     }
@@ -132,7 +132,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
 
     @External
     public void setOracle(Address _address) {
-        only(admin);
+        only(governance);
         isContract(_address);
         this.oracle.set(_address);
     }
@@ -144,7 +144,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
 
     @External
     public void setDex(Address _address) {
-        only(admin);
+        only(governance);
         isContract(_address);
         this.dexScore.set(_address);
     }
@@ -156,7 +156,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
 
     @External
     public void setDividends(Address _address) {
-        only(admin);
+        only(governance);
         isContract(_address);
         this.dividendsScore.set(_address);
     }
@@ -168,7 +168,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
 
     @External
     public void setOracleName(String _name) {
-        only(admin);
+        only(governance);
         this.oracleName.set(_name);
     }
 
@@ -179,7 +179,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
 
     @External
     public void setMinInterval(BigInteger _interval) {
-        only(admin);
+        only(governance);
         this.minInterval.set(_interval);
     }
 
@@ -240,7 +240,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
 
     @External
     public void setMinimumStake(BigInteger _amount) {
-        only(admin);
+        only(governance);
         Context.require(_amount.compareTo(BigInteger.ZERO) >= 0, TAG + ": Amount cannot be less than zero.");
 
         BigInteger totalAmount = _amount.multiply(pow(BigInteger.TEN, decimals().intValue()));
@@ -254,7 +254,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
 
     @External
     public void setUnstakingPeriod(BigInteger _time) {
-        only(admin);
+        only(governance);
         Context.require(_time.compareTo(BigInteger.ZERO) >= 0, TAG + ": Time cannot be negative.");
 
         BigInteger totalTime = _time.multiply(DAY_TO_MICROSECOND);
@@ -269,7 +269,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
 
     @External
     public void toggleStakingEnabled() {
-        only(admin);
+        only(governance);
         this.stakingEnabled.set(!this.stakingEnabled.getOrDefault(false));
     }
 
@@ -318,13 +318,14 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
 
         DictDB<Integer, BigInteger> stakingDetail = this.stakedBalances.at(_owner);
         BigInteger unstakingTime = stakingDetail.getOrDefault(Status.UNSTAKING_PERIOD.code, BigInteger.ZERO);
-        BigInteger unstakingAmount = stakingDetail.getOrDefault(Status.UNSTAKING.code, BigInteger.ZERO);
+        BigInteger currUnstaked = stakingDetail.getOrDefault(Status.UNSTAKING.code, BigInteger.ZERO);
         BigInteger availableBalance = stakingDetail.getOrDefault(Status.AVAILABLE.code, BigInteger.ZERO);
         BigInteger stakedBalance = stakingDetail.getOrDefault(Status.STAKED.code, BigInteger.ZERO);
 
         if (unstakingTime.compareTo(BigInteger.valueOf(Context.getBlockTimestamp())) >= 0) {
-            unstakingAmount = BigInteger.ZERO;
+            currUnstaked = BigInteger.ZERO;
         }
+        BigInteger unstakingAmount = stakingDetail.getOrDefault(Status.UNSTAKING.code, BigInteger.ZERO).subtract(currUnstaked);
 
         if (unstakingAmount.equals(BigInteger.ZERO)) {
             unstakingTime = BigInteger.ZERO;
@@ -336,7 +337,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
 
         return Map.of(
                 "Total balance", this.balanceOf(_owner),
-                "Available balance", availableBalance.add(unstakingAmount),
+                "Available balance", availableBalance.add(currUnstaked),
                 "Staked balance", stakedBalance,
                 "Unstaking balance", unstakingAmount,
                 "Unstaking time (in microseconds)", unstakingTime
@@ -401,11 +402,12 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
         this.stakingEnabledOnly();
         Address from = Context.getCaller();
 
-        Context.require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Staked BALN value can't be less than or " +
-                "equal to zero.");
+        Context.require(_value.compareTo(BigInteger.ZERO) >= 0, TAG + ": Staked BALN value can't be less than zero");
         Context.require(_value.compareTo(this.balanceOf(from)) <= 0, TAG + ": Out of BALN balance.");
-        Context.require(_value.compareTo(this.minimumStake.getOrDefault(BigInteger.ZERO)) >= 0, TAG + ": Staked BALN " +
-                "must be greater than the minimum stake amount");
+        if ((_value.compareTo(this.minimumStake.getOrDefault(BigInteger.ZERO)) < 0) && !(_value.equals(BigInteger.ZERO))){
+            Context.revert(TAG + ": Staked BALN " +
+                    "must be greater than the minimum stake amount");
+        }
 
         this.checkFirstTime(from);
         this.makeAvailable(from);
