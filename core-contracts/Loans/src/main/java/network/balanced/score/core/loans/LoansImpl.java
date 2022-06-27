@@ -227,6 +227,7 @@ public class LoansImpl implements Loans {
 
     @External(readonly = true)
     public BigInteger getBnusdValue(String _name) {
+        // TODO is this used?
         Asset asset = AssetDB.getAsset(BNUSD_SYMBOL);
         Token assetContract = new Token(asset.getAssetAddress());
         BigInteger totalSupply = assetContract.totalSupply();

@@ -134,7 +134,7 @@ public class Position {
         int assetsCount = AssetDB.assetList.size();
         for (int i = 0; i < assetsCount; i++) {
             String symbol = AssetDB.assetList.get(i);
-            if (AssetDB.getAsset(symbol).isActive() && !getDebt(SICX_SYMBOL, symbol).equals(BigInteger.ZERO)) {
+            if (AssetDB.getAsset(symbol).isActive() && getTotalDebt(symbol).equals(BigInteger.ZERO)) {
                 return true;
             }
         }
@@ -219,7 +219,9 @@ public class Position {
         //     "bnBTC" : 1000,
         //     "BALN" : 4000,
         // }
-        Map<String,  Map<String, BigInteger>> holdings = new HashMap<>();
+
+        Map<String, Map<String, BigInteger>> holdings = new HashMap<>();
+        Map<String, Map<String, Object>> standings = new HashMap<>();
         int assetSymbolsCount = AssetDB.assetList.size();
         int collateralSymbolsCount = CollateralDB.collateralList.size();
         for (int i = 0; i < collateralSymbolsCount; i++) {
@@ -252,19 +254,23 @@ public class Position {
                 holdings.put(collateralSymbol, collateralAmounts);
             }
 
+            Standing standing = getStanding(collateralSymbol, true);
+            Map<String, Object> standingMap = new HashMap<>();
+            standingMap.put("total_debt", standing.totalDebt);
+            standingMap.put("collateral", standing.collateral);
+            standingMap.put("ratio", standing.ratio);
+
+            standingMap.put("standing", StandingsMap.get(standing.standing));
+            standings.put(collateralSymbol, standingMap);
+
         }
 
-        Standing standing = getStanding(SICX_SYMBOL, true);
         Map<String, Object> positionDetails = new HashMap<>();
-
         positionDetails.put("pos_id", getId());
         positionDetails.put("created", getCreated());
         positionDetails.put("address", getAddress().toString());
         positionDetails.put("assets", holdings);
-        positionDetails.put("total_debt", standing.totalDebt);
-        positionDetails.put("collateral", standing.collateral);
-        positionDetails.put("ratio", standing.ratio);
-        positionDetails.put("standing", StandingsMap.get(standing.standing));
+        positionDetails.put("standings", standings);
 
         return positionDetails;
     }

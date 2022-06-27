@@ -17,19 +17,14 @@
 package network.balanced.score.core.loans;
 
 import com.iconloop.score.test.Account;
-import network.balanced.score.lib.structs.RewardsDataEntry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
 
 import java.math.BigInteger;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.verify;
 
 @DisplayName("Loans Tests")
@@ -67,7 +62,6 @@ class LoansTestRewards extends LoansTestBase {
         BigInteger initalDebt = calculateFee(initalLoan).add(initalLoan);
         takeLoanICX(account, "bnUSD", initalCollateral, initalLoan);
 
-        BigInteger totalSupply = (BigInteger) bnusd.call("totalSupply");
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
         BigInteger expectedFee = calculateFee(loan);
@@ -80,6 +74,33 @@ class LoansTestRewards extends LoansTestBase {
         // Assert
         verifyTotalDebt(exceptedDebt);
         verifyPosition(account.getAddress(), collateral.add(initalCollateral), exceptedDebt);
+        verify(rewards.mock).updateRewardsData("Loans", BigInteger.ZERO, account.getAddress(), BigInteger.ZERO);
+        verify(rewards.mock).updateRewardsData("Loans", initalDebt, account.getAddress(), initalDebt);
+    }
+
+    @Test
+    void depositAndBorrow_mutliCollateral() {
+        // Arrange
+        Account account = accounts.get(0);
+        BigInteger sICXCollateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger sICXLoan = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger sICXDebt = calculateFee(sICXLoan).add(sICXLoan);
+        takeLoanICX(account, "bnUSD", sICXCollateral, sICXLoan);
+
+        BigInteger iETHCollateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger iETHloan = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger iETHExpectedFee = calculateFee(iETHloan);
+        BigInteger IETHDebt = iETHloan.add(iETHExpectedFee);
+
+        // Act
+        takeLoaniETH(account, iETHCollateral, iETHloan);
+
+        // Assert
+        verifyTotalDebt(IETHDebt.add(sICXDebt));
+        verifyPosition(account.getAddress(), iETHCollateral, IETHDebt, "iETH");
+        verifyPosition(account.getAddress(), sICXCollateral, sICXDebt, "sICX");
+        verify(rewards.mock).updateRewardsData("Loans", BigInteger.ZERO, account.getAddress(), BigInteger.ZERO);
+        verify(rewards.mock).updateRewardsData("Loans", sICXDebt, account.getAddress(), sICXDebt);
     }
 
     @Test
@@ -108,165 +129,38 @@ class LoansTestRewards extends LoansTestBase {
     }
 
     @Test
-    void raisePrice() {
+    void returnAsset_MultiCollateral() {
         // Arrange
-        BigInteger accountZeroCollateral = BigInteger.valueOf(10000).multiply(EXA);
-        BigInteger accountOneCollateral = BigInteger.valueOf(20000).multiply(EXA);
-        BigInteger accountTwoCollateral = BigInteger.valueOf(30000).multiply(EXA);
-        BigInteger accountZeroLoan = BigInteger.valueOf(1000).multiply(EXA);
-        BigInteger accountOneLoan = BigInteger.valueOf(2000).multiply(EXA);
-        BigInteger accountTwoLoan = BigInteger.valueOf(3000).multiply(EXA);
-        BigInteger accountZeroFee = calculateFee(accountZeroLoan);
-        BigInteger accountOneFee = calculateFee(accountOneLoan);
-        BigInteger accountTwoFee = calculateFee(accountTwoLoan);
-        BigInteger accountZeroDebt = accountZeroFee.add(accountZeroLoan);
-        BigInteger accountOneDebt = accountOneFee.add(accountOneLoan);
-        BigInteger accountTwoDebt = accountTwoFee.add(accountTwoLoan);
+        Account account = accounts.get(0);
+        BigInteger sICXCollateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger sICXloan = BigInteger.valueOf(200).multiply(EXA);
+        BigInteger sICXFee = calculateFee(sICXloan);
+        BigInteger sICXLoanToRepay = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger sICXDebt = sICXloan.add(sICXFee);
 
-        BigInteger rebalanceAmount = BigInteger.valueOf(100).multiply(EXA);
-        BigInteger totalCollateral = accountZeroCollateral.add(accountOneCollateral).add(accountTwoCollateral);
-        BigInteger totalDebt = accountZeroDebt.add(accountOneDebt).add(accountTwoDebt);
-        BigInteger oldTotalDebt = totalDebt;
+        BigInteger iETHCollateral = BigInteger.valueOf(1300).multiply(EXA);
+        BigInteger iETHloan = BigInteger.valueOf(150).multiply(EXA);
+        BigInteger iETHFee = calculateFee(iETHloan);
+        BigInteger iETHLoanToRepay = BigInteger.valueOf(80).multiply(EXA);
+        BigInteger iETHDebt = iETHloan.add(iETHFee);
 
-        takeLoanICX(accounts.get(0), "bnUSD", accountZeroCollateral, accountZeroLoan);
-        takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
-        takeLoanICX(accounts.get(2), "bnUSD", accountTwoCollateral, accountTwoLoan);
+        takeLoaniETH(account, iETHCollateral, iETHloan);
+        takeLoanICX(account, "bnUSD", sICXCollateral, sICXloan);
 
-        BigInteger rate = EXA.divide(BigInteger.TWO);
-        mockSicxBnusdPrice(rate);
-        BigInteger expectedBnusdRecived = rebalanceAmount.multiply(BigInteger.TWO);
-        mockSwap(bnusd, rebalanceAmount, expectedBnusdRecived);
-
-        // Act
-        loans.invoke(rebalancing, "raisePrice", "sICX", rebalanceAmount);
+        // Act 
+        loans.invoke(account, "returnAsset", "bnUSD", sICXLoanToRepay, "sICX");
+        loans.invoke(account, "returnAsset", "bnUSD", iETHLoanToRepay, "iETH");
 
         // Assert
-        BigInteger remainingBnusd = expectedBnusdRecived;
+        verifyPosition(account.getAddress(), sICXCollateral, sICXDebt.subtract(sICXLoanToRepay), "sICX");
+        verifyPosition(account.getAddress(), iETHCollateral, iETHDebt.subtract(iETHLoanToRepay), "iETH");
+        verifyTotalDebt(iETHDebt.add(sICXDebt).subtract(sICXLoanToRepay).subtract(iETHLoanToRepay));
 
-        BigInteger accountZeroExpectedCollateralSold = rebalanceAmount.multiply(accountZeroDebt).divide(totalDebt);
-        BigInteger accountZeroExpectedDebtRepaid = remainingBnusd.multiply(accountZeroDebt).divide(totalDebt);
-        verifyPosition(accounts.get(0).getAddress(), accountZeroCollateral.subtract(accountZeroExpectedCollateralSold),  accountZeroDebt.subtract(accountZeroExpectedDebtRepaid));
-
-        totalDebt = totalDebt.subtract(accountZeroDebt);
-        rebalanceAmount = rebalanceAmount.subtract(accountZeroExpectedCollateralSold);
-        remainingBnusd = remainingBnusd.subtract(accountZeroExpectedDebtRepaid);
-
-        BigInteger accountOneExpectedCollateralSold = rebalanceAmount.multiply(accountOneDebt).divide(totalDebt);
-        BigInteger accountOneExpectedDebtRepaid = remainingBnusd.multiply(accountOneDebt).divide(totalDebt);
-        verifyPosition(accounts.get(1).getAddress(), accountOneCollateral.subtract(accountOneExpectedCollateralSold),
-                accountOneDebt.subtract(accountOneExpectedDebtRepaid));
-
-        totalDebt = totalDebt.subtract(accountOneDebt);
-        rebalanceAmount = rebalanceAmount.subtract(accountOneExpectedCollateralSold);
-        remainingBnusd = remainingBnusd.subtract(accountOneExpectedDebtRepaid);
-
-        BigInteger accountTwoExpectedCollateralSold = rebalanceAmount.multiply(accountTwoDebt).divide(totalDebt);
-        BigInteger accountTwoExpectedDebtRepaid = remainingBnusd.multiply(accountTwoDebt).divide(totalDebt);
-        verifyPosition(accounts.get(2).getAddress(), accountTwoCollateral.subtract(accountTwoExpectedCollateralSold), accountTwoDebt.subtract(accountTwoExpectedDebtRepaid));
-
-
-        RewardsDataEntry accountZeroUpdate = new RewardsDataEntry();
-        accountZeroUpdate._user = accounts.get(0).getAddress();
-        accountZeroUpdate._balance = accountZeroDebt;
-
-        RewardsDataEntry accountOneUpdate = new RewardsDataEntry();
-        accountOneUpdate._user = accounts.get(1).getAddress();
-        accountOneUpdate._balance = accountOneDebt;
-
-        RewardsDataEntry accountTwoUpdate = new RewardsDataEntry();
-        accountTwoUpdate._user = accounts.get(2).getAddress();
-        accountTwoUpdate._balance = accountTwoDebt;
-
-
-        RewardsDataEntry[] rewardsBatchList = new RewardsDataEntry[] {accountZeroUpdate, accountOneUpdate, accountTwoUpdate};
-
-        verifyTotalDebt(oldTotalDebt.subtract(expectedBnusdRecived));
-        verify(rewards.mock).updateRewardsData("Loans", BigInteger.ZERO, accounts.get(0).getAddress(), BigInteger.ZERO);
-        verify(rewards.mock).updateRewardsData("Loans", accountZeroDebt, accounts.get(1).getAddress(), BigInteger.ZERO);
-        verify(rewards.mock).updateRewardsData("Loans", accountOneDebt.add(accountZeroDebt), accounts.get(2).getAddress(), BigInteger.ZERO);        
-        verify(rewards.mock).updateBatchRewardsData(eq("Loans"), eq(oldTotalDebt), argThat(arg -> compareRewardsData(rewardsBatchList, arg)));
+        verify(rewards.mock).updateRewardsData("Loans", BigInteger.ZERO, account.getAddress(), BigInteger.ZERO);
+        verify(rewards.mock).updateRewardsData("Loans", iETHDebt, account.getAddress(), iETHDebt);
+        verify(rewards.mock).updateRewardsData("Loans", iETHDebt.add(sICXDebt), account.getAddress(), iETHDebt.add(sICXDebt));
+        verify(rewards.mock).updateRewardsData("Loans", iETHDebt.add(sICXDebt).subtract(sICXLoanToRepay), account.getAddress(), iETHDebt.add(sICXDebt).subtract(sICXLoanToRepay));
     }
-
-    @Test
-    void lowerPrice() {
-        // Arrange
-        BigInteger accountZeroCollateral = BigInteger.valueOf(10000).multiply(EXA);
-        BigInteger accountOneCollateral = BigInteger.valueOf(20000).multiply(EXA);
-        BigInteger accountTwoCollateral = BigInteger.valueOf(30000).multiply(EXA);
-        BigInteger accountZeroLoan = BigInteger.valueOf(1000).multiply(EXA);
-        BigInteger accountOneLoan = BigInteger.valueOf(2000).multiply(EXA);
-        BigInteger accountTwoLoan = BigInteger.valueOf(3000).multiply(EXA);
-        BigInteger accountZeroFee = calculateFee(accountZeroLoan);
-        BigInteger accountOneFee = calculateFee(accountOneLoan);
-        BigInteger accountTwoFee = calculateFee(accountTwoLoan);
-        BigInteger accountZeroDebt = accountZeroFee.add(accountZeroLoan);
-        BigInteger accountOneDebt = accountOneFee.add(accountOneLoan);
-        BigInteger accountTwoDebt = accountTwoFee.add(accountTwoLoan);
-
-        BigInteger rebalanceAmount = BigInteger.valueOf(50).multiply(EXA);
-        BigInteger originalRebalanceAmount = rebalanceAmount;
-        BigInteger totalCollateral = accountZeroCollateral.add(accountOneCollateral).add(accountTwoCollateral);
-        BigInteger totalDebt = accountZeroDebt.add(accountOneDebt).add(accountTwoDebt);
-        BigInteger originalTotalDebt = totalDebt;
-
-        takeLoanICX(accounts.get(0), "bnUSD", accountZeroCollateral, accountZeroLoan);
-        takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
-        takeLoanICX(accounts.get(2), "bnUSD", accountTwoCollateral, accountTwoLoan);
-
-
-        BigInteger rate = EXA.divide(BigInteger.TWO);
-        mockSicxBnusdPrice(rate);
-        BigInteger expectedSICXRecived = rebalanceAmount.divide(BigInteger.TWO);
-        mockSwap(sicx, rebalanceAmount, expectedSICXRecived);
-
-        // Act
-        loans.invoke(rebalancing, "lowerPrice", "sICX", rebalanceAmount);
-
-        // Assert
-        BigInteger remainingSicx = expectedSICXRecived;
-
-        BigInteger accountZeroExpectedCollateralAdded = remainingSicx.multiply(accountZeroDebt).divide(totalDebt);
-        BigInteger accountZeroExpectedDebtAdded = rebalanceAmount.multiply(accountZeroDebt).divide(totalDebt);
-        verifyPosition(accounts.get(0).getAddress(), accountZeroCollateral.add(accountZeroExpectedCollateralAdded),  accountZeroDebt.add(accountZeroExpectedDebtAdded));
-
-        totalDebt = totalDebt.subtract(accountZeroDebt);
-        rebalanceAmount = rebalanceAmount.subtract(accountZeroExpectedDebtAdded);
-        remainingSicx = remainingSicx.subtract(accountZeroExpectedCollateralAdded);
-
-        BigInteger accountOneExpectedCollateralAdded = remainingSicx.multiply(accountOneDebt).divide(totalDebt);
-        BigInteger accountOneExpectedDebtAdded = rebalanceAmount.multiply(accountOneDebt).divide(totalDebt);
-        verifyPosition(accounts.get(1).getAddress(), accountOneCollateral.add(accountOneExpectedCollateralAdded),  accountOneDebt.add(accountOneExpectedDebtAdded));
-
-        totalDebt = totalDebt.subtract(accountOneDebt);
-        rebalanceAmount = rebalanceAmount.subtract(accountOneExpectedDebtAdded);
-        remainingSicx = remainingSicx.subtract(accountOneExpectedCollateralAdded);
-
-        BigInteger accountTwoExpectedCollateralAdded = remainingSicx.multiply(accountTwoDebt).divide(totalDebt);
-        BigInteger accountTwoExpectedDebtAdded = rebalanceAmount.multiply(accountTwoDebt).divide(totalDebt);
-        verifyPosition(accounts.get(2).getAddress(), accountTwoCollateral.add(accountTwoExpectedCollateralAdded), accountTwoDebt.add(accountTwoExpectedDebtAdded));
-
-        RewardsDataEntry accountZeroUpdate = new RewardsDataEntry();
-        accountZeroUpdate._user = accounts.get(0).getAddress();
-        accountZeroUpdate._balance = accountZeroDebt;
-
-        RewardsDataEntry accountOneUpdate = new RewardsDataEntry();
-        accountOneUpdate._user = accounts.get(1).getAddress();
-        accountOneUpdate._balance = accountOneDebt;
-
-        RewardsDataEntry accountTwoUpdate = new RewardsDataEntry();
-        accountTwoUpdate._user = accounts.get(2).getAddress();
-        accountTwoUpdate._balance = accountTwoDebt;
-
-
-        RewardsDataEntry[] rewardsBatchList = new RewardsDataEntry[] {accountZeroUpdate, accountOneUpdate, accountTwoUpdate};
-
-        verifyTotalDebt(originalTotalDebt.add(originalRebalanceAmount));
-        verify(rewards.mock).updateRewardsData("Loans", BigInteger.ZERO, accounts.get(0).getAddress(), BigInteger.ZERO);
-        verify(rewards.mock).updateRewardsData("Loans", accountZeroDebt, accounts.get(1).getAddress(), BigInteger.ZERO);
-        verify(rewards.mock).updateRewardsData("Loans", accountOneDebt.add(accountZeroDebt), accounts.get(2).getAddress(), BigInteger.ZERO);   
-        verify(rewards.mock).updateBatchRewardsData(eq("Loans"), eq(originalTotalDebt), argThat(arg -> compareRewardsData(rewardsBatchList, arg)));
-    }
-
 
     @Test
     void liquidate() {
@@ -296,11 +190,12 @@ class LoansTestRewards extends LoansTestBase {
         verifyPosition(account.getAddress(), BigInteger.ZERO, BigInteger.ZERO);
 
         Map<String, Object> bnusdAsset = ((Map<String, Map<String, Object>>)loans.call("getAvailableAssets")).get("bnUSD");
+        Map<String, Map<String, Object>> bnusdDebtDetails = (Map<String, Map<String, Object>>)bnusdAsset.get("debt_details");
 
         BigInteger expectedBadDebt = loan.add(expectedFee);
         BigInteger expectedLiquidationPool = collateral.subtract(expectedReward);
-        assertEquals(expectedBadDebt, bnusdAsset.get("bad_debt"));
-        assertEquals(expectedLiquidationPool, bnusdAsset.get("liquidation_pool"));
+        assertEquals(expectedBadDebt, bnusdDebtDetails.get("sICX").get("bad_debt"));
+        assertEquals(expectedLiquidationPool, bnusdDebtDetails.get("sICX").get("liquidation_pool"));
 
         verifyTotalDebt(BigInteger.ZERO);
         verify(rewards.mock).updateRewardsData("Loans", BigInteger.ZERO, account.getAddress(), BigInteger.ZERO);
