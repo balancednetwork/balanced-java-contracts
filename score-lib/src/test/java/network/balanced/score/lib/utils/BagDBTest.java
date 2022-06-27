@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ public class BagDBTest extends TestBase {
 
         public static final Address ZERO_ADDRESS = new Address(new byte[Address.LENGTH]);
         BagDB<Address> addressBagDBUnordered = new BagDB<>("address_bag_unordered", Address.class, null);
-        BagDB<Address> addressBagDBOrdered = new BagDB<>("address_bag_unordered", Address.class, true);
+        BagDB<Address> addressBagDBOrdered = new BagDB<>("address_bag_ordered", Address.class, true);
 
         public DummyScore() {
 
@@ -115,6 +115,7 @@ public class BagDBTest extends TestBase {
         dummyScore = sm.deploy(owner, DummyScore.class);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testUnorderedAddressBag(){
         List<Address> addressBagDBUnordered = new ArrayList<>();
@@ -145,6 +146,7 @@ public class BagDBTest extends TestBase {
         assertTrue((Boolean) dummyScore.call("itemUnorderedContains", address4));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testOrderedAddressBag(){
         List<Address> addressBagDBOrdered = new ArrayList<>();
@@ -152,13 +154,12 @@ public class BagDBTest extends TestBase {
         addressBagDBOrdered.add(address2);
         addressBagDBOrdered.add(null);
         addressBagDBOrdered.add(address3);
-        addressBagDBOrdered.add(address4);
         dummyScore.invoke(owner, "addOrderedAddressItems", addressBagDBOrdered);
         List<Address> retAddressBagDBUnordered = (List<Address>) dummyScore.call("getOrderedAddressItems");
 
         assertTrue(retAddressBagDBUnordered.contains(address1));
         assertTrue(retAddressBagDBUnordered.contains(null));
-        assertFalse(retAddressBagDBUnordered.contains(address5));
+        assertFalse(retAddressBagDBUnordered.contains(address4));
 
         assertTrue((Boolean) dummyScore.call("itemOrderedContains", address1));
         assertTrue((Boolean) dummyScore.call("itemOrderedContains", ZERO_ADDRESS));
@@ -170,7 +171,7 @@ public class BagDBTest extends TestBase {
 
         dummyScore.invoke(owner, "itemOrderedRemove", ZERO_ADDRESS);
         assertFalse((Boolean) dummyScore.call("itemOrderedContains", ZERO_ADDRESS));
-        assertTrue((Boolean) dummyScore.call("itemOrderedContains", address4));
+        assertFalse((Boolean) dummyScore.call("itemOrderedContains", address4));
     }
 
 }

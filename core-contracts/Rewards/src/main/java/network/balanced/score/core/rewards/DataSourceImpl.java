@@ -25,7 +25,7 @@ import java.util.Map;
 
 import static network.balanced.score.core.rewards.utils.Check.continuousRewardsActive;
 import static network.balanced.score.lib.utils.Constants.EXA;
-import static network.balanced.score.lib.utils.Constants.U_SECONDS_DAY;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
 public class DataSourceImpl {
     private final BranchDB<String, VarDB<Address>> contractAddress = Context.newBranchDB("contract_address",
@@ -145,7 +145,7 @@ public class DataSourceImpl {
         BigInteger lastUpdateTimestamp = getLastUpdateTimeUs();
 
         if (lastUpdateTimestamp.equals(BigInteger.ZERO)) {
-            lastUpdateTimestamp = RewardsImpl.continuousRewardsDay.get().multiply(U_SECONDS_DAY);
+            lastUpdateTimestamp = RewardsImpl.continuousRewardsDay.get().multiply(MICRO_SECONDS_IN_A_DAY);
         }
 
         BigInteger totalWeight = updateTotalWeight(lastUpdateTimestamp, currentTime, prevTotalSupply, readOnlyContext);
@@ -180,7 +180,7 @@ public class DataSourceImpl {
             return previousTotalWeight;
         }
 
-        BigInteger weightDelta = emission.multiply(timeDelta).multiply(EXA).divide(U_SECONDS_DAY).divide(totalSupply);
+        BigInteger weightDelta = emission.multiply(timeDelta).multiply(EXA).divide(MICRO_SECONDS_IN_A_DAY).divide(totalSupply);
 
         return previousTotalWeight.add(weightDelta);
     }
@@ -201,8 +201,8 @@ public class DataSourceImpl {
         BigInteger previousDayEndUs;
 
         while (lastUpdateTimestamp.compareTo(currentTime) < 0) {
-            previousRewardsDay = lastUpdateTimestamp.divide(U_SECONDS_DAY);
-            previousDayEndUs = previousRewardsDay.add(BigInteger.ONE).multiply(U_SECONDS_DAY);
+            previousRewardsDay = lastUpdateTimestamp.divide(MICRO_SECONDS_IN_A_DAY);
+            previousDayEndUs = previousRewardsDay.add(BigInteger.ONE).multiply(MICRO_SECONDS_IN_A_DAY);
             BigInteger endComputeTimestampUs = previousDayEndUs.min(currentTime);
 
             BigInteger emission = getTotalDist(previousRewardsDay);

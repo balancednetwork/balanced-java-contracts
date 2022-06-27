@@ -25,7 +25,7 @@ import score.Address;
 import java.math.BigInteger;
 import java.util.Map;
 
-import static network.balanced.score.lib.utils.Constants.U_SECONDS_DAY;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -116,8 +116,8 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
         BigInteger timeInUS = BigInteger.valueOf(sm.getBlock().getTimestamp());
         BigInteger diffInUSLoans = timeInUS.subtract(startTimeLoansInUS);
         BigInteger diffInUSSwap = timeInUS.subtract(startTimeSwapInUS);
-        BigInteger expectedRewards = userLoansDistribution.multiply(diffInUSLoans).divide(U_SECONDS_DAY);
-        expectedRewards = expectedRewards.add(userSwapDistribution.multiply(diffInUSSwap).divide(U_SECONDS_DAY));
+        BigInteger expectedRewards = userLoansDistribution.multiply(diffInUSLoans).divide(MICRO_SECONDS_IN_A_DAY);
+        expectedRewards = expectedRewards.add(userSwapDistribution.multiply(diffInUSSwap).divide(MICRO_SECONDS_IN_A_DAY));
 
         verifyBalnReward(account.getAddress(), expectedRewards);          
     }
@@ -158,14 +158,14 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
         rewardsScore.invoke(account1, "claimRewards");
         BigInteger user1TimeInUS = BigInteger.valueOf(sm.getBlock().getTimestamp());
         BigInteger user1DiffInUS = user1TimeInUS.subtract(startTimeInUS);
-        BigInteger user1ExpectedRewards = user1Distribution.multiply(user1DiffInUS).divide(U_SECONDS_DAY);
+        BigInteger user1ExpectedRewards = user1Distribution.multiply(user1DiffInUS).divide(MICRO_SECONDS_IN_A_DAY);
 
         BigInteger user2Distribution = loansDistribution.multiply(user2CurrentBalance).divide(totalSupply);
         
         rewardsScore.invoke(account2, "claimRewards");
         BigInteger user2TimeInUS = BigInteger.valueOf(sm.getBlock().getTimestamp());
         BigInteger user2DiffInUS = user2TimeInUS.subtract(startTimeInUS);
-        BigInteger user2ExpectedRewards = user2Distribution.multiply(user2DiffInUS).divide(U_SECONDS_DAY);
+        BigInteger user2ExpectedRewards = user2Distribution.multiply(user2DiffInUS).divide(MICRO_SECONDS_IN_A_DAY);
 
         verifyBalnReward(account1.getAddress(), user1ExpectedRewards);
         verifyBalnReward(account2.getAddress(), user2ExpectedRewards);
@@ -202,7 +202,7 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
         BigInteger rewards = (BigInteger) rewardsScore.call("getBalnHolding", account.getAddress());
     
         BigInteger diffInUS = timeInUS.subtract(startTimeInUS);
-        BigInteger expectedRewards = userDistribution.multiply(diffInUS).divide(U_SECONDS_DAY);
+        BigInteger expectedRewards = userDistribution.multiply(diffInUS).divide(MICRO_SECONDS_IN_A_DAY);
         assertEquals(expectedRewards.divide(BigInteger.TEN), rewards.divide(BigInteger.TEN));
     }
 
@@ -231,12 +231,12 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
         BigInteger distribution = loansDistribution.multiply(previousBalance).divide(totalSupply);
         
         BigInteger timeDiffInUS = endTimeInUS.subtract(startTimeInUS);
-        BigInteger expectedRewards = distribution.multiply(timeDiffInUS).divide(U_SECONDS_DAY);
+        BigInteger expectedRewards = distribution.multiply(timeDiffInUS).divide(MICRO_SECONDS_IN_A_DAY);
 
         Object users = new Address[] {account.getAddress()};
-        Map<Address, BigInteger> rewards  = (Map<Address, BigInteger>) rewardsScore.call("getBalnHoldings", users);
+        Map<String, BigInteger> rewards  = (Map<String, BigInteger>) rewardsScore.call("getBalnHoldings", users);
         
-        BigInteger reward = rewards.get(account.getAddress()).divide(BigInteger.TEN);
+        BigInteger reward = rewards.get(account.getAddress().toString()).divide(BigInteger.TEN);
         assertEquals(expectedRewards.divide(BigInteger.TEN), reward);
     }
 
@@ -286,14 +286,14 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
         BigInteger user2Distribution = loansDistribution.multiply(user2CurrentBalance).divide(totalSupply);
         
         BigInteger timeDiffInUS = endTimeInUS.subtract(startTimeInUS);
-        BigInteger user1ExpectedRewards = user1Distribution.multiply(timeDiffInUS).divide(U_SECONDS_DAY);
-        BigInteger user2ExpectedRewards = user2Distribution.multiply(timeDiffInUS).divide(U_SECONDS_DAY);
+        BigInteger user1ExpectedRewards = user1Distribution.multiply(timeDiffInUS).divide(MICRO_SECONDS_IN_A_DAY);
+        BigInteger user2ExpectedRewards = user2Distribution.multiply(timeDiffInUS).divide(MICRO_SECONDS_IN_A_DAY);
 
         Object users = new Address[] {account1.getAddress(), account2.getAddress()};
-        Map<Address, BigInteger> rewards  = (Map<Address, BigInteger>) rewardsScore.call("getBalnHoldings", users);
+        Map<String, BigInteger> rewards  = (Map<String, BigInteger>) rewardsScore.call("getBalnHoldings", users);
         
-        BigInteger user1Rewards = rewards.get(account1.getAddress()).divide(BigInteger.TEN);
-        BigInteger user2Rewards = rewards.get(account2.getAddress()).divide(BigInteger.TEN);
+        BigInteger user1Rewards = rewards.get(account1.getAddress().toString()).divide(BigInteger.TEN);
+        BigInteger user2Rewards = rewards.get(account2.getAddress().toString()).divide(BigInteger.TEN);
         assertEquals(user1ExpectedRewards.divide(BigInteger.TEN), user1Rewards);
         assertEquals(user2ExpectedRewards.divide(BigInteger.TEN), user2Rewards);
     }

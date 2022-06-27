@@ -16,46 +16,26 @@
 
 package network.balanced.score.core.governance;
 
-import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.iconloop.score.test.Account;
-import com.iconloop.score.test.Score;
-import com.iconloop.score.test.ServiceManager;
-import com.iconloop.score.test.TestBase;
-import org.junit.jupiter.api.*;
+import network.balanced.score.lib.structs.Disbursement;
+import network.balanced.score.lib.structs.DistributionPercentage;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import score.Context;
 import score.Address;
 
 import java.math.BigInteger;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
-import static network.balanced.score.lib.test.UnitTest.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static network.balanced.score.core.governance.GovernanceConstants.EXA;
+import static network.balanced.score.core.governance.GovernanceConstants.TAG;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.MockedStatic.Verification;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import network.balanced.score.lib.structs.BalancedAddresses;
-import network.balanced.score.lib.structs.Disbursement;
-import network.balanced.score.lib.structs.DistributionPercentage;
-import network.balanced.score.lib.test.UnitTest;
-import network.balanced.score.lib.test.mock.MockContract;
-import network.balanced.score.core.governance.interfaces.*;
-
-import static network.balanced.score.core.governance.GovernanceConstants.*;
+import static org.mockito.Mockito.*;
 
 public class GovernanceVotingTest extends GovernanceTestBase {
 
@@ -98,9 +78,8 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         Executable withSnapshotBeforeToday = () -> governance.invoke(owner, "defineVote", name, description, voteStart, snapshotBeforeToday, actions);
         expectErrorMessage(withSnapshotBeforeToday, expectedErrorMessage);
 
-        BigInteger snapshotAfterStart = voteStart;
         expectedErrorMessage  = "The reference snapshot must be in the range: [current_day (" + day +"), start_day - 1 (" + voteStart.subtract(BigInteger.ONE) + ")].";
-        Executable withSnapshotAfterStart = () -> governance.invoke(owner, "defineVote", name, description, voteStart, snapshotAfterStart, actions);
+        Executable withSnapshotAfterStart = () -> governance.invoke(owner, "defineVote", name, description, voteStart, voteStart, actions);
         expectErrorMessage(withSnapshotAfterStart, expectedErrorMessage);
 
         BigInteger balnVoteDefinitionCriterion = (BigInteger) governance.call("getBalnVoteDefinitionCriterion");

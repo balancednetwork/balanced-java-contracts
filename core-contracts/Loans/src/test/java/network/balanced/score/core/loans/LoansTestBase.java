@@ -27,7 +27,6 @@ import network.balanced.score.lib.structs.RewardsDataEntry;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockContract;
 import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import score.Address;
 
@@ -90,7 +89,7 @@ class LoansTestBase extends UnitTest {
         BigInteger dexICXBalance = BigInteger.TEN.pow(24);
         BigInteger dexbnUSDBalance = BigInteger.TEN.pow(24);
 
-        dex = new MockContract<DexScoreInterface>(DexScoreInterface.class, sm, admin);
+        dex = new MockContract<>(DexScoreInterface.class, sm, admin);
         sicx.invoke(admin, "mintTo", dex.getAddress(), dexICXBalance);
         bnusd.invoke(admin, "mintTo", dex.getAddress(), dexbnUSDBalance);
     }
@@ -101,58 +100,49 @@ class LoansTestBase extends UnitTest {
     }
 
     protected void mockSwap(Score tokenRecived, BigInteger in, BigInteger out) {
-        Mockito.doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable {
-                final Object[] args = invocation.getArguments();
-                tokenRecived.invoke(dex.account, "transfer", loans.getAddress(), out, new byte[0]);
-                return null;
-            }
+        Mockito.doAnswer((Answer<Void>) invocation -> {
+            final Object[] args = invocation.getArguments();
+            tokenRecived.invoke(dex.account, "transfer", loans.getAddress(), out, new byte[0]);
+            return null;
         }).when(dex.mock).tokenFallback(Mockito.eq(loans.getAddress()), Mockito.eq(in), Mockito.any(byte[].class));
     }
 
     private void setupGovernance() throws Exception {
-        governance = new MockContract<GovernanceScoreInterface>(GovernanceScoreInterface.class, sm, admin);
+        governance = new MockContract<>(GovernanceScoreInterface.class, sm, admin);
         when(governance.mock.getContractAddress("feehandler")).thenReturn(feehandler.getAddress());
     }
 
     private void setupStaking() throws Exception {
-        staking = new MockContract<StakingScoreInterface>(StakingScoreInterface.class, sm, admin);
+        staking = new MockContract<>(StakingScoreInterface.class, sm, admin);
     }
 
     protected void mockStakeICX(BigInteger amount) {
-        Mockito.doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable {
-                final Object[] args = invocation.getArguments();
-                sicx.invoke(staking.account, "mintTo", args[0], amount);
-                return null;
-            }
+        Mockito.doAnswer((Answer<Void>) invocation -> {
+            final Object[] args = invocation.getArguments();
+            sicx.invoke(staking.account, "mintTo", args[0], amount);
+            return null;
         }).when(staking.mock).stakeICX(Mockito.any(Address.class), Mockito.any(byte[].class));
     }
 
     private void setupReserve() throws Exception {
-        reserve = new MockContract<ReserveScoreInterface>(ReserveScoreInterface.class, sm, admin);
+        reserve = new MockContract<>(ReserveScoreInterface.class, sm, admin);
     }
 
     private void setupRewards() throws Exception {
-        rewards = new MockContract<RewardsScoreInterface>(RewardsScoreInterface.class, sm, admin);
+        rewards = new MockContract<>(RewardsScoreInterface.class, sm, admin);
         when(rewards.mock.distribute()).thenReturn(true);
     }
 
     private void setupDividends() throws Exception {
-        dividends = new MockContract<DividendsScoreInterface>(DividendsScoreInterface.class, sm, admin);
+        dividends = new MockContract<>(DividendsScoreInterface.class, sm, admin);
         when(dividends.mock.distribute()).thenReturn(true);
 
     }
 
     protected void mockRedeemFromReserve(Address address, BigInteger amount, BigInteger icxPrice) {
-        Mockito.doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable {
-                sicx.invoke(reserve.account, "transfer", loans.getAddress(), amount, new byte[0]);
-                return null;
-            }
+        Mockito.doAnswer((Answer<Void>) invocation -> {
+            sicx.invoke(reserve.account, "transfer", loans.getAddress(), amount, new byte[0]);
+            return null;
         }).when(reserve.mock).redeem(address, amount, icxPrice);
     }
 
@@ -160,7 +150,7 @@ class LoansTestBase extends UnitTest {
         Map<String, Object> map = new HashMap<>();
         JsonObject data = new JsonObject()
                 .add("_asset", "bnUSD")
-                .add("_amount", loan);
+                .add("_amount", BigInteger.valueOf(loan).multiply(EXA).toString());
         byte[] params = data.toString().getBytes();
 
         sicx.invoke(account, "transfer", loans.getAddress(), collateral, params);

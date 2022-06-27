@@ -41,8 +41,8 @@ dependencies {
     testImplementation Dependencies.mockitoInline
     testImplementation project(':test-lib')
 
-    intTestImplementation Dependencies.javaeeScoreClient
-    intTestAnnotationProcessor Dependencies.javaeeScoreClient
+    intTestAnnotationProcessor project(':score-client')
+    intTestImplementation project(':score-client')
     intTestImplementation Dependencies.iconSdk
     intTestImplementation Dependencies.jacksonDatabind
 }

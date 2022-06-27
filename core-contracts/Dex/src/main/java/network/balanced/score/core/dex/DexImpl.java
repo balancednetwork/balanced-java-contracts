@@ -40,6 +40,7 @@ import static network.balanced.score.core.dex.utils.Check.isDexOn;
 import static network.balanced.score.core.dex.utils.Const.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Math.convertToNumber;
+import static score.Context.require;
 
 public class DexImpl extends AbstractDex {
 
@@ -58,7 +59,7 @@ public class DexImpl extends AbstractDex {
         revertOnIncompleteRewards();
 
         BigInteger orderValue = Context.getValue();
-        Context.require(orderValue.compareTo(BigInteger.TEN.multiply(EXA)) >= 0,
+        require(orderValue.compareTo(BigInteger.TEN.multiply(EXA)) >= 0,
                 TAG + ": Minimum pool contribution is 10 ICX");
 
         Address user = Context.getCaller();
@@ -102,7 +103,7 @@ public class DexImpl extends AbstractDex {
         Address user = Context.getCaller();
         BigInteger orderId = icxQueueOrderId.getOrDefault(user, BigInteger.ZERO);
 
-        Context.require(orderId.compareTo(BigInteger.ZERO) > 0, TAG + ": No open order in sICX/ICX queue.");
+        require(orderId.compareTo(BigInteger.ZERO) > 0, TAG + ": No open order in sICX/ICX queue.");
         revertOnWithdrawalLock(user, SICXICX_POOL_ID);
 
         NodeDB order = icxQueue.getNode(orderId);
@@ -142,14 +143,14 @@ public class DexImpl extends AbstractDex {
 
         // Parse the transaction data submitted by the user
         String unpackedData = new String(_data);
-        Context.require(!unpackedData.equals(""), "Token Fallback: Data can't be empty");
+        require(!unpackedData.equals(""), "Token Fallback: Data can't be empty");
 
         JsonObject json = Json.parse(unpackedData).asObject();
 
         String method = json.get("method").asString();
         Address fromToken = Context.getCaller();
 
-        Context.require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Invalid token transfer value");
+        require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Invalid token transfer value");
 
         // Call an internal method based on the "method" param sent in tokenFallBack
         switch (method) {
@@ -167,7 +168,7 @@ public class DexImpl extends AbstractDex {
                 break;
 
             case "_swap_icx":
-                Context.require(fromToken.equals(sicx.get()),
+                require(fromToken.equals(sicx.get()),
                         TAG + ": InvalidAsset: _swap_icx can only be called with sICX");
                 swapIcx(_from, _value);
                 break;
@@ -180,7 +181,7 @@ public class DexImpl extends AbstractDex {
                 BigInteger minimumReceive = BigInteger.ZERO;
                 if (params.contains("minimumReceive")) {
                     minimumReceive = convertToNumber(params.get("minimumReceive"));
-                    Context.require(minimumReceive.signum() >= 0,
+                    require(minimumReceive.signum() >= 0,
                             TAG + ": Must specify a positive number for minimum to receive");
                 }
 
@@ -193,7 +194,7 @@ public class DexImpl extends AbstractDex {
                 }
 
                 // Get destination coin from the swap
-                Context.require(params.contains("toToken"), TAG + ": No toToken specified in swap");
+                require(params.contains("toToken"), TAG + ": No toToken specified in swap");
                 Address toToken = Address.fromString(params.get("toToken").asString());
 
                 // Perform the swap
@@ -219,18 +220,23 @@ public class DexImpl extends AbstractDex {
 
     @External
     public void withdraw(Address _token, BigInteger _value) {
+        require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Must specify a positive amount");
         isDexOn();
         Address sender = Context.getCaller();
         DictDB<Address, BigInteger> depositDetails = deposit.at(_token);
         BigInteger deposit_amount = depositDetails.getOrDefault(sender, BigInteger.ZERO);
-
-        Context.require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Must specify a positive amount");
-        Context.require(_value.compareTo(deposit_amount) <= 0, TAG + ": Insufficient Balance");
+        require(_value.compareTo(deposit_amount) <= 0, TAG + ": Insufficient Balance");
 
         depositDetails.set(sender, deposit_amount.subtract(_value));
 
         Withdraw(_token, sender, _value);
         Context.call(_token, "transfer", sender, _value);
+    }
+
+    @External(readonly = true)
+    public BigInteger depositOfUser(Address _owner, Address _token) {
+        DictDB<Address, BigInteger> depositDetails = deposit.at(_token);
+        return depositDetails.getOrDefault(_owner, BigInteger.ZERO);
     }
 
     @External
@@ -241,14 +247,14 @@ public class DexImpl extends AbstractDex {
         revertOnIncompleteRewards();
         Address user = Context.getCaller();
         Address baseToken = poolBase.get(_id.intValue());
-        Context.require(baseToken!=null, TAG + ": invalid pool id");
+        require(baseToken!=null, TAG + ": invalid pool id");
         DictDB<Address, BigInteger> userLPBalance = balance.at(_id.intValue());
         BigInteger userBalance = userLPBalance.getOrDefault(user, BigInteger.ZERO);
 
         revertOnWithdrawalLock(user, _id.intValue());
-        Context.require(active.getOrDefault(_id.intValue(), false), TAG + ": Pool is not active");
-        Context.require(_value.compareTo(BigInteger.ZERO) > 0, TAG + " Cannot withdraw a negative or zero balance");
-        Context.require(_value.compareTo(userBalance) <= 0, TAG + ": Insufficient balance");
+        require(active.getOrDefault(_id.intValue(), false), TAG + ": Pool is not active");
+        require(_value.compareTo(BigInteger.ZERO) > 0, TAG + " Cannot withdraw a negative or zero balance");
+        require(_value.compareTo(userBalance) <= 0, TAG + ": Insufficient balance");
 
 
         Address quoteToken = poolQuote.get(_id.intValue());
@@ -272,7 +278,7 @@ public class DexImpl extends AbstractDex {
         BigInteger newUserBalance = userBalance.subtract(_value);
         BigInteger newTotal = totalLPToken.subtract(_value);
 
-        Context.require(newTotal.compareTo(MIN_LIQUIDITY) >= 0,
+        require(newTotal.compareTo(MIN_LIQUIDITY) >= 0,
                 TAG + ": Cannot withdraw pool past minimum LP token amount");
 
         totalTokensInPool.set(baseToken, newBase);
@@ -317,20 +323,20 @@ public class DexImpl extends AbstractDex {
         // If none is found (return 0), we create a new pool.
         Integer id = poolId.at(_baseToken).getOrDefault(_quoteToken, 0);
 
-        Context.require(_baseToken != _quoteToken, TAG + ": Pool must contain two token contracts");
+        require(_baseToken != _quoteToken, TAG + ": Pool must contain two token contracts");
         // Check base/quote balances are valid
-        Context.require(_baseValue.compareTo(BigInteger.ZERO) > 0,
+        require(_baseValue.compareTo(BigInteger.ZERO) > 0,
                 TAG + ": Cannot send 0 or negative base token");
-        Context.require(_quoteValue.compareTo(BigInteger.ZERO) > 0,
+        require(_quoteValue.compareTo(BigInteger.ZERO) > 0,
                 TAG + ": Cannot send 0 or negative quote token");
 
         BigInteger userDepositedBase = deposit.at(_baseToken).getOrDefault(user, BigInteger.ZERO);
         BigInteger userDepositedQuote = deposit.at(_quoteToken).getOrDefault(user, BigInteger.ZERO);
 
         // Check deposits are sufficient to cover balances
-        Context.require(userDepositedBase.compareTo(_baseValue) >= 0,
+        require(userDepositedBase.compareTo(_baseValue) >= 0,
                 TAG + ": Insufficient base asset funds deposited");
-        Context.require(userDepositedQuote.compareTo(_quoteValue) >= 0,
+        require(userDepositedQuote.compareTo(_quoteValue) >= 0,
                 TAG + ": Insufficient quote asset funds deposited");
 
         BigInteger baseToCommit = _baseValue;
@@ -365,7 +371,7 @@ public class DexImpl extends AbstractDex {
             poolQuote.set(id, _quoteToken);
 
             liquidity = (_baseValue.multiply(_quoteValue)).sqrt();
-            Context.require(liquidity.compareTo(MIN_LIQUIDITY) >= 0,
+            require(liquidity.compareTo(MIN_LIQUIDITY) >= 0,
                     TAG + ": Initial LP tokens must exceed " + MIN_LIQUIDITY);
             MarketAdded(BigInteger.valueOf(id), _baseToken, _quoteToken, _baseValue, _quoteValue);
         } else {
@@ -373,7 +379,7 @@ public class DexImpl extends AbstractDex {
             Address poolBaseAddress = poolBase.get(id);
             Address poolQuoteAddress = poolQuote.get(id);
 
-            Context.require((poolBaseAddress.equals(_baseToken)) && (poolQuoteAddress.equals(_quoteToken)),
+            require((poolBaseAddress.equals(_baseToken)) && (poolQuoteAddress.equals(_quoteToken)),
                     TAG + ": Must supply " + _baseToken.toString() + " as base and " + _quoteToken.toString() +
                             " as quote");
 
@@ -399,7 +405,7 @@ public class DexImpl extends AbstractDex {
             BigInteger liquidityFromQuote = (poolLpAmount.multiply(quoteToCommit)).divide(poolQuoteAmount);
 
             liquidity = liquidityFromBase.min(liquidityFromQuote);
-            Context.require(liquidity.compareTo(BigInteger.ZERO) >= 0,
+            require(liquidity.compareTo(BigInteger.ZERO) >= 0,
                     TAG + ": LP tokens to mint is less than zero");
         }
 
@@ -461,9 +467,9 @@ public class DexImpl extends AbstractDex {
             _value = sicxEarning;
         }
 
-        Context.require(_value.compareTo(BigInteger.ZERO) > 0,
+        require(_value.compareTo(BigInteger.ZERO) > 0,
                 TAG + ": InvalidAmountError: Please send a positive amount.");
-        Context.require(_value.compareTo(sicxEarning) <= 0, TAG + ": Insufficient balance.");
+        require(_value.compareTo(sicxEarning) <= 0, TAG + ": Insufficient balance.");
 
         sicxEarnings.set(sender, sicxEarning.subtract(_value));
         ClaimSicxEarnings(sender, _value);
@@ -506,11 +512,11 @@ public class DexImpl extends AbstractDex {
         if (_offset == null) {
             _offset = BigInteger.ZERO;
         }
-        Context.require(_snapshot_id.compareTo(BigInteger.ZERO) >= 0,
+        require(_snapshot_id.compareTo(BigInteger.ZERO) >= 0,
                 TAG + ":  Snapshot id is equal to or greater then Zero.");
-        Context.require(_id.compareTo(BigInteger.ZERO) > 0,
+        require(_id.compareTo(BigInteger.ZERO) > 0,
                 TAG + ":  Pool id is greater then Zero.");
-        Context.require(_offset.compareTo(BigInteger.ZERO) >= 0,
+        require(_offset.compareTo(BigInteger.ZERO) >= 0,
                 TAG + ":  Offset is equal to or greater then Zero.");
         Map<String, Object> snapshotData = new HashMap<>();
         for (Address user : activeAddresses.get(_id.intValue()).range(_offset, _offset.add(_limit))) {

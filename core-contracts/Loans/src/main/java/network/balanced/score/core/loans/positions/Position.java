@@ -170,7 +170,11 @@ public class Position {
 
             BigInteger newTotalDebt = previousTotalDebt.add(currentValue).subtract(previousDebt);
             LoansVariables.totalDebts.set(symbol, newTotalDebt);
-            AssetDB.getAsset(symbol).getBorrowers().set(getId(), currentValue);
+            if ( value == null) {
+                AssetDB.getAsset(symbol).getBorrowers().remove(getId());
+            } else {
+                AssetDB.getAsset(symbol).getBorrowers().set(getId(), currentValue);
+            }
         }
     }
 
@@ -462,7 +466,7 @@ public class Position {
     }
 
     public Map<String, Object> toMap(Integer day) {
-        int index = SnapshotDB.getSnapshotId(day);
+        int index = getSnapshotId(day);
         if (index == -1 || day > LoansImpl._getDay().intValue()) {
             return Map.of();
         }

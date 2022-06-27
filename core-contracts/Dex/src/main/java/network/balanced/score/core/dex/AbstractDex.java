@@ -37,8 +37,7 @@ import static network.balanced.score.core.dex.DexDBVariables.*;
 import static network.balanced.score.core.dex.utils.Check.isValidPoolId;
 import static network.balanced.score.core.dex.utils.Const.*;
 import static network.balanced.score.lib.utils.Check.*;
-import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
-import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Constants.*;
 import static network.balanced.score.lib.utils.Math.pow;
 
 public abstract class AbstractDex implements Dex {
@@ -305,7 +304,7 @@ public abstract class AbstractDex implements Dex {
     public BigInteger getDay() {
         BigInteger blockTime = BigInteger.valueOf(Context.getBlockTimestamp());
         BigInteger timeDelta = blockTime.subtract(timeOffset.get());
-        return timeDelta.divide(U_SECONDS_DAY);
+        return timeDelta.divide(MICRO_SECONDS_IN_A_DAY);
     }
 
     @External
@@ -882,6 +881,7 @@ public abstract class AbstractDex implements Dex {
 
     void _transfer(Address from, Address to, BigInteger value, Integer id, byte[] data) {
 
+        Context.require(!isLockingPool(id), TAG + ": Nontransferable token id");
         Context.require(value.compareTo(BigInteger.ZERO) >= 0,
                 TAG + ": Transferring value cannot be less than 0.");
 
@@ -889,7 +889,6 @@ public abstract class AbstractDex implements Dex {
         BigInteger fromBalance = poolLpBalanceOfUser.getOrDefault(from, BigInteger.ZERO);
 
         Context.require(fromBalance.compareTo(value) >= 0, TAG + ": Out of balance");
-        Context.require(!isLockingPool(id), TAG + ": Nontransferable token id");
 
         BigInteger toBalance = poolLpBalanceOfUser.getOrDefault(to, BigInteger.ZERO);
         poolLpBalanceOfUser.set(from, fromBalance.subtract(value));

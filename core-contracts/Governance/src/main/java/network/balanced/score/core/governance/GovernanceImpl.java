@@ -68,7 +68,7 @@ public class GovernanceImpl {
     @External(readonly = true)
     public BigInteger getDay() {
         BigInteger blockTime = BigInteger.valueOf(Context.getBlockTimestamp()).subtract(timeOffset.getOrDefault(BigInteger.ZERO));
-        return blockTime.divide(U_SECONDS_DAY);
+        return blockTime.divide(MICRO_SECONDS_IN_A_DAY);
     }
 
     @External(readonly = true)
@@ -103,6 +103,7 @@ public class GovernanceImpl {
         Context.call(Addresses.get("loans"), "setTimeOffset", offset);
         Context.call(Addresses.get("rewards"), "setTimeOffset", offset);
         Context.call(Addresses.get("dex"), "setTimeOffset", offset);
+        Context.call(Addresses.get("dividends"), "setTimeOffset", offset);
     }
 
     @External(readonly = true)
@@ -179,6 +180,13 @@ public class GovernanceImpl {
     @External(readonly = true)
     public BigInteger getBalnVoteDefinitionCriterion() {
         return balnVoteDefinitionCriterion.getOrDefault(BigInteger.ZERO);
+    }
+
+    @External
+    public void setAdmin(Address contractAddress, Address admin){
+        onlyOwner();
+        Context.call(contractAddress, "setAdmin", admin);
+
     }
 
     @External
@@ -461,7 +469,7 @@ public class GovernanceImpl {
 
         BigInteger day = getDay();
         launchDay.set(day);
-        BigInteger timeDelta = BigInteger.valueOf(Context.getBlockTimestamp());
+        BigInteger timeDelta = BigInteger.valueOf(Context.getBlockTimestamp()).add(getTimeOffset());
 
         launchTime.set(timeDelta);
         setTimeOffset(timeDelta);
