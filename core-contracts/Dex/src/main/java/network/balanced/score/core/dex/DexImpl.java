@@ -46,6 +46,9 @@ public class DexImpl extends AbstractDex {
 
     public DexImpl(Address _governance) {
         super(_governance);
+
+        // Set all current icx in dex as icx queue total
+        icxQueueTotal.set(Context.getBalance(Context.getAddress()));
     }
 
     @Payable
@@ -79,7 +82,7 @@ public class DexImpl extends AbstractDex {
 
         // Update total ICX queue size
         BigInteger oldIcxTotal = icxQueueTotal.getOrDefault(BigInteger.ZERO);
-        BigInteger currentIcxTotal = oldIcxTotal.add(orderValue);
+        BigInteger currentIcxTotal = oldIcxTotal.add(orderValue).subtract(oldOrderValue);
         icxQueueTotal.set(currentIcxTotal);
 
         activeAddresses.get(SICXICX_POOL_ID).add(user);
