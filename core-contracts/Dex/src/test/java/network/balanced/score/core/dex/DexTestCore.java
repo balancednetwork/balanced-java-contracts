@@ -1,35 +1,41 @@
+/*
+ * Copyright (c) 2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package network.balanced.score.core.dex;
 
-import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 import com.iconloop.score.test.Account;
-
-import com.iconloop.score.test.TestBase;
 import network.balanced.score.core.dex.utils.Const;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
-
-import static network.balanced.score.core.dex.DexDBVariables.poolTotal;
-import static network.balanced.score.core.dex.utils.Const.SICXICX_POOL_ID;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-import org.mockito.internal.matchers.Null;
 import org.mockito.stubbing.Answer;
-
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.any;
-
 import score.Address;
 import score.Context;
-import score.DictDB;
 
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
-import static network.balanced.score.lib.utils.Constants.*;
+import static network.balanced.score.core.dex.utils.Const.SICXICX_POOL_ID;
+import static network.balanced.score.lib.utils.Constants.EXA;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 
 
 public class DexTestCore extends DexTestBase {
@@ -768,28 +774,14 @@ public class DexTestCore extends DexTestBase {
 
 
     /*
-    == Tests left == 
-
-    == Icx/sicx pool methods == 
-    getSicxEarnings //done
-    withdrawSicxEarnings // done
-    fallback //done
+    == Tests left ==
     
     == Snapshot methods ==
-    getBalnSnapshot //done
     loadBalancesAtSnapshot
     getDataBatch
-    totalSupplyAt // done
-    totalBalnAt //done
-    balanceOfAt // done
-    getTotalValue //done
     
     == Normal liquidity pool methods ==
-    tokenFallback / done
-    remove // done
-    add // done
     addLpAddresses -> No getter.
-
 
     == Others ==
     transfer  -> IRC31 transfer method..sqrt()
