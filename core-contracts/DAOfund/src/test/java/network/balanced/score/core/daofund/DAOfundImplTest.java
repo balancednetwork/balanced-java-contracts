@@ -21,6 +21,7 @@ import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
 import network.balanced.score.lib.structs.Disbursement;
+import network.balanced.score.lib.structs.PrepDelegations;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -47,12 +48,14 @@ class DAOfundImplTest extends TestBase {
     private static final Account owner = sm.createAccount();
     private static final Account admin = sm.createAccount();
     private static final Account receiver = sm.createAccount();
+    private static final Account prep_address = sm.createAccount();
 
     private static final Account governanceScore = Account.newScoreAccount(scoreCount++);
     private static final Account loansScore = Account.newScoreAccount(scoreCount++);
     private static final Account sicxScore = Account.newScoreAccount(scoreCount++);
     private static final Account balnScore = Account.newScoreAccount(scoreCount++);
     private static final Account bnUSDScore = Account.newScoreAccount(scoreCount++);
+    private static final Account stakingScore = Account.newScoreAccount(scoreCount++);
 
     private Score daofundScore;
     private DAOfundImpl daofundSpy;
@@ -87,6 +90,22 @@ class DAOfundImplTest extends TestBase {
     void setAndGetLoans() {
         testContractSettersAndGetters(daofundScore, governanceScore, admin, "setLoans", loansScore.getAddress(),
                 "getLoans");
+    }
+
+    @Test
+    void delegate(){
+        MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
+
+        PrepDelegations prep = new PrepDelegations();
+        prep._address = prep_address.getAddress();
+        prep._votes_in_per = BigInteger.valueOf(100);
+        PrepDelegations[] preps = new PrepDelegations[]{prep};
+
+        contextMock.when(() -> Context.call(eq(governanceScore.getAddress()), eq("getAddresses"))).thenReturn(Map.of("staking", stakingScore.getAddress()));
+        contextMock.when(() -> Context.call(eq(stakingScore.getAddress()), eq("delegate"), any())).thenReturn("Staking delegate called");
+        daofundScore.invoke(governanceScore, "delegate", (Object) preps);
+
+        contextMock.close();
     }
 
     @Test

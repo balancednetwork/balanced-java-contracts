@@ -17,6 +17,7 @@
 package network.balanced.score.core.dividends;
 
 import network.balanced.score.lib.structs.DistributionPercentage;
+import network.balanced.score.lib.structs.PrepDelegations;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -496,5 +497,17 @@ class DividendsImplTest extends DividendsImplTestBase {
         expectedOutput3.put("loans", BigInteger.valueOf(100000000000000000L));
         assertEquals(expectedOutput3, dividendScore.call("dividendsAt", thirdChangeDay));
         sm.getBlock().increase(-4*DAY);
+    }
+
+    @Test
+    void delegate(){
+        PrepDelegations prep = new PrepDelegations();
+        prep._address = prep_address.getAddress();
+        prep._votes_in_per = BigInteger.valueOf(100);
+        PrepDelegations[] preps = new PrepDelegations[]{prep};
+
+        contextMock.when(() -> Context.call(eq(governanceScore.getAddress()), eq("getAddresses"))).thenReturn(Map.of("staking", stakingScore.getAddress()));
+        contextMock.when(() -> Context.call(eq(stakingScore.getAddress()), eq("delegate"), any())).thenReturn("Staking delegate called");
+        dividendScore.invoke(governanceScore, "delegate", (Object) preps);
     }
 }

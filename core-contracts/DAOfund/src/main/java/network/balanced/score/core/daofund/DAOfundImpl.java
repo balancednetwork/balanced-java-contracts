@@ -41,7 +41,6 @@ public class DAOfundImpl implements DAOfund {
     private static final String GOVERNANCE = "governance";
     private static final String ADMIN = "admin";
     private static final String LOANS_SCORE = "loans_score";
-    private static final String STAKING_SCORE = "staking_score";
     private static final String ADDRESS = "address";
     private static final String FUND = "fund";
     private static final String AWARDS = "awards";
@@ -49,7 +48,6 @@ public class DAOfundImpl implements DAOfund {
     private static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
     private static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
     private final VarDB<Address> loansScore = Context.newVarDB(LOANS_SCORE, Address.class);
-    private final VarDB<Address> staking = Context.newVarDB(STAKING_SCORE, Address.class);
     // fund represents the total amount that is available to disburse
     private final DictDB<String, BigInteger> fund = Context.newDictDB(FUND, BigInteger.class);
     private final EnumerableSetDB<String> address = new EnumerableSetDB<>(ADDRESS, String.class);
@@ -107,21 +105,10 @@ public class DAOfundImpl implements DAOfund {
     }
 
     @External
-    public void setStaking(Address _address) {
-        only(admin);
-        isContract(_address);
-        staking.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getStaking() {
-        return staking.get();
-    }
-
-    @External
     public void delegate(PrepDelegations[] prepDelegations) {
         only(governance);
-        Context.call(staking.get(), "delegate", (Object) prepDelegations);
+        Map<String, Address> addresses = (Map<String, Address>) Context.call(governance.get(), "getAddresses");
+        Context.call(addresses.get("staking"), "delegate", (Object) prepDelegations);
     }
 
     /**

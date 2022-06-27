@@ -2,6 +2,7 @@ package network.balanced.score.core.dex;
 
 import com.iconloop.score.test.Account;
 
+import network.balanced.score.lib.structs.PrepDelegations;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -272,6 +273,17 @@ public class DexTestCore extends DexTestBase {
         supplyIcxLiquidity(sm.createAccount(), value);
         supplyIcxLiquidity(sm.createAccount(), value);
         swapSicxToIcx(ownerAccount, swapValue, sicxIcxConversionRate);
+    }
+
+    @Test
+    void delegate(){
+        PrepDelegations prep = new PrepDelegations();
+        prep._address = prep_address.getAddress();
+        prep._votes_in_per = BigInteger.valueOf(100);
+        PrepDelegations[] preps = new PrepDelegations[]{prep};
+
+        contextMock.when(() -> Context.call(eq(stakingScore.getAddress()), eq("delegate"), any())).thenReturn("Staking delegate called");
+        dexScore.invoke(governanceScore, "delegate", (Object) preps);
     }
 
     @AfterEach
