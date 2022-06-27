@@ -18,6 +18,7 @@ package network.balanced.score.core.dividends;
 
 import network.balanced.score.lib.interfaces.Dividends;
 import network.balanced.score.lib.structs.DistributionPercentage;
+import network.balanced.score.lib.structs.PrepDelegations;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -45,6 +46,7 @@ public class DividendsImpl implements Dividends {
     private static final VarDB<Address> daoFund = Context.newVarDB(DAOFUND, Address.class);
     private static final VarDB<Address> balnScore = Context.newVarDB(BALN_SCORE, Address.class);
     private static final VarDB<Address> dexScore = Context.newVarDB(DEX_SCORE, Address.class);
+    private static final VarDB<Address> staking = Context.newVarDB(STAKING_SCORE, Address.class);
 
     private static final ArrayDB<Address> acceptedTokens = Context.newArrayDB(ACCEPTED_TOKENS, Address.class);
     private static final VarDB<BigInteger> snapshotId = Context.newVarDB(SNAPSHOT_ID, BigInteger.class);
@@ -169,6 +171,18 @@ public class DividendsImpl implements Dividends {
     @External(readonly = true)
     public Address getDex() {
         return dexScore.get();
+    }
+
+    @External
+    public void setStaking(Address _address) {
+        only(admin);
+        isContract(_address);
+        staking.set(_address);
+    }
+
+    @External(readonly = true)
+    public Address getStaking() {
+        return staking.get();
     }
 
     @External
@@ -322,6 +336,12 @@ public class DividendsImpl implements Dividends {
     @External(readonly = true)
     public BigInteger getTimeOffset() {
         return timeOffset.getOrDefault(BigInteger.ZERO);
+    }
+
+    @External
+    public void delegate(PrepDelegations[] prepDelegations) {
+        only(governance);
+        Context.call(staking.get(), "delegate", (Object) prepDelegations);
     }
 
     @External
