@@ -18,19 +18,14 @@ package network.balanced.score.tokens.sicx;
 
 import foundation.icon.icx.Wallet;
 import foundation.icon.jsonrpc.Address;
-import foundation.icon.score.client.DefaultScoreClient;
-import foundation.icon.score.client.ScoreClient;
-import network.balanced.score.lib.interfaces.Sicx;
 import network.balanced.score.lib.interfaces.SicxScoreClient;
-import network.balanced.score.lib.interfaces.Staking;
 import network.balanced.score.lib.interfaces.StakingScoreClient;
-import network.balanced.score.lib.test.ScoreIntegrationTest;
 import network.balanced.score.lib.test.integration.Balanced;
+import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
 import org.json.JSONObject;
 import org.junit.jupiter.api.*;
 
 import java.math.BigInteger;
-import java.util.Map;
 
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
 import static network.balanced.score.lib.utils.Constants.EXA;
@@ -91,7 +86,7 @@ class SicxIntegrationTest implements ScoreIntegrationTest {
         BigInteger value = BigInteger.valueOf(20).multiply(EXA);
         BigInteger previousSupply = sicxScore.totalSupply();
         BigInteger previousBalance = sicxScore.balanceOf(Address.fromString(owner.getAddress().toString()));
-        ((StakingScoreClient) stakingScore).stakeICX(value, null, null);
+        stakingScore.stakeICX(value, null, null);
         assertEquals(previousSupply.add(value), sicxScore.totalSupply());
         assertEquals(previousBalance.add(value), sicxScore.balanceOf(Address.fromString(owner.getAddress().toString())));
     }
