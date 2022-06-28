@@ -80,3 +80,7 @@ project(':DummyOracle').projectDir = file("util-contracts/DummyOracle")
 
 include(':Dex')
 project(':Dex').projectDir = file("core-contracts/Dex")
+
+include(':Sicx')
+project(':Sicx').projectDir = file("token-contracts/Sicx")
+
