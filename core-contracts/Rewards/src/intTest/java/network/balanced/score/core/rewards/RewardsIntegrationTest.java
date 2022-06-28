@@ -33,6 +33,7 @@ import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 
 import java.math.BigInteger;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -89,8 +90,8 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         // Act
         loanTaker1.bnUSD.transfer(loanTaker2.getAddress(), fee, null);
 
-        loanTaker2.loans.returnAsset("bnUSD", loanAmount.add(fee), true);
-        loanTaker3.loans.returnAsset("bnUSD", loanAmount.divide(BigInteger.TWO), true);
+        loanTaker2.loans.returnAsset("bnUSD", loanAmount.add(fee), "sICX");
+        loanTaker3.loans.returnAsset("bnUSD", loanAmount.divide(BigInteger.TWO), "sICX");
         loanTaker2.rewards.claimRewards();
         loanTaker3.rewards.claimRewards();
 

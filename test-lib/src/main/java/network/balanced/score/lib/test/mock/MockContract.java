@@ -28,7 +28,7 @@ public class MockContract<T> {
     public final Account account;
     public final T mock;
 
-    public MockContract(Class<T> classToMock, ServiceManager sm, Account admin) throws Exception {
+    public MockContract(Class<? extends T> classToMock, ServiceManager sm, Account admin) throws Exception {
         mock = Mockito.mock(classToMock);
         Score score = sm.deploy(admin, classToMock, SCORE_ZERO);
         score.setInstance(mock);

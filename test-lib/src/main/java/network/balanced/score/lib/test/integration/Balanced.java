@@ -20,10 +20,6 @@ import foundation.icon.icx.KeyWallet;
 import foundation.icon.jsonrpc.model.Hash;
 import foundation.icon.jsonrpc.model.TransactionResult;
 import foundation.icon.score.client.DefaultScoreClient;
-import network.balanced.score.lib.interfaces.DAOfundScoreClient;
-import network.balanced.score.lib.interfaces.GovernanceScoreClient;
-import network.balanced.score.lib.interfaces.RewardsScoreClient;
-import network.balanced.score.lib.interfaces.StakingScoreClient;
 import network.balanced.score.lib.structs.BalancedAddresses;
 import score.Address;
 
@@ -37,11 +33,6 @@ import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
 public class Balanced {
-
-    public KeyWallet user;
-    public KeyWallet testerWallet;
-    public KeyWallet secondTesterWallet;
-
     public KeyWallet owner;
     public BalancedClient ownerClient;
     public DefaultScoreClient governance;
@@ -64,19 +55,11 @@ public class Balanced {
     public DefaultScoreClient stability;
     public DefaultScoreClient balancedOracle;
 
-    public GovernanceScoreClient governanceScore;
-    public StakingScoreClient stakingScore;
-    public DAOfundScoreClient daofundScore;
-    public RewardsScoreClient rewardsScore;
-
     public Map<Address, BalancedClient> balancedClients;
 
     public Balanced() throws Exception {
         balancedClients = new HashMap<>();
-        owner = createWalletWithBalance(BigInteger.TEN.pow(24));
-        user = createWalletWithBalance(BigInteger.TEN.pow(24));
-        testerWallet = createWalletWithBalance(BigInteger.TEN.pow(24));
-        secondTesterWallet = createWalletWithBalance(BigInteger.TEN.pow(24));
+        owner = createWalletWithBalance(BigInteger.TEN.pow(25));
     }
 
     public void setupBalanced() throws Exception {
@@ -107,7 +90,7 @@ public class Balanced {
         Hash bnusdTx = deployAsync(owner, "BalancedDollar", Map.of("_governance", governance._address()));
         Hash daofundTx = deployAsync(owner, "DAOfund", Map.of("_governance", governance._address()));
         Hash dividendsTx = deployAsync(owner, "Dividends", Map.of("_governance", governance._address()));
-        Hash oracleTx = deployAsync(owner, "Oracle",null);
+        Hash oracleTx = deployAsync(owner, "DummyOracle",null);
         Hash reserveTx = deployAsync(owner, "Reserve", Map.of("governance", governance._address()));
         Hash routerTx = deployAsync(owner, "Router", Map.of("_governance", governance._address()));
         Hash stakedLpTx = deployAsync(owner, "StakedLP", Map.of("governance", governance._address()));
@@ -186,14 +169,16 @@ public class Balanced {
         ownerClient.rewards.addDataProvider(dex._address());
         ownerClient.rewards.addDataProvider(loans._address());
 
-        ownerClient.governance.addAcceptedTokens(sicx._address().toString());
-        ownerClient.governance.addAcceptedTokens(baln._address().toString());
-        ownerClient.governance.addAcceptedTokens(bnusd._address().toString());
-        ownerClient.governance.setAcceptedDividendTokens(new score.Address[] {
-            sicx._address(),
-            baln._address(),
-            bnusd._address()
-        });
+        ownerClient.governance.enable_fee_handler();
+        ownerClient.governance.setFeeProcessingInterval(BigInteger.ONE);
+
+        Address[] acceptedAddress=new Address[]{
+                bnusd._address(), sicx._address(),baln._address()
+        };
+        ownerClient.governance.setAcceptedDividendTokens(acceptedAddress);
+        ownerClient.governance.addAcceptedTokens(String.valueOf(bnusd._address()));
+        ownerClient.governance.addAcceptedTokens(String.valueOf(sicx._address()));
+        ownerClient.governance.addAcceptedTokens(String.valueOf(baln._address()));
     }
 
     public void setupMarkets() {

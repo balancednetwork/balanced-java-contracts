@@ -16,22 +16,25 @@
 
 package network.balanced.score.core.loans;
 
-import com.iconloop.score.test.Account;
-import network.balanced.score.core.loans.utils.LoansConstants.Standings;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
-import score.Address;
+import static network.balanced.score.core.loans.utils.LoansConstants.StandingsMap;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.eq;
 
 import java.math.BigInteger;
 import java.util.Map;
 
-import static network.balanced.score.core.loans.utils.LoansConstants.StandingsMap;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.verify;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
+
+import com.iconloop.score.test.Account;
+
+import network.balanced.score.core.loans.utils.LoansConstants.Standings;
+import network.balanced.score.lib.structs.RewardsDataEntry;
 
 @DisplayName("Loans Tests")
 class LoansTest extends LoansTestBase {
@@ -108,26 +111,40 @@ class LoansTest extends LoansTestBase {
     void getAccountPositions() {
         // Arrange
         Account account = accounts.get(0);
-        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger sICXCollateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger iETHCollateral = BigInteger.valueOf(2000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger iETHloan = BigInteger.valueOf(200).multiply(EXA);
         BigInteger expectedFee = calculateFee(loan);
+        BigInteger iETHExpectedFee = calculateFee(iETHloan);
 
         // Act
-        takeLoanICX(account, "bnUSD", collateral, loan);
+        takeLoanICX(account, "bnUSD", sICXCollateral, loan);
+        takeLoaniETH(account, iETHCollateral, iETHloan);
 
         // Assert
-        BigInteger day = (BigInteger) loans.call("getDay");
         Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", account.getAddress());
-        Map<String, BigInteger> assets = (Map<String, BigInteger>) position.get("assets");
+        Map<String, Map<String, BigInteger>> assets = (Map<String, Map<String, BigInteger>>) position.get("assets");
+        Map<String, Map<String, Object>> standings = (Map<String, Map<String, Object>>)position.get("standings");
+
         assertEquals(1, position.get("pos_id"));
         assertEquals(account.getAddress().toString(), position.get("address"));
-        assertEquals(loan.add(expectedFee), position.get("total_debt"));
-        assertEquals(collateral, position.get("collateral"));
-        assertEquals(collateral.multiply(EXA).divide(loan.add(expectedFee)), position.get("ratio"));
-        assertEquals(StandingsMap.get(Standings.MINING), position.get("standing"));
+      
+        assertEquals(loan.add(expectedFee), standings.get("sICX").get("total_debt"));
+        assertEquals(sICXCollateral, standings.get("sICX").get("collateral"));
+        assertEquals(sICXCollateral.multiply(EXA).divide(loan.add(expectedFee)), standings.get("sICX").get("ratio"));
+        assertEquals(StandingsMap.get(Standings.MINING), standings.get("sICX").get("standing"));
 
-        assertEquals(loan.add(expectedFee), assets.get("bnUSD"));
-        assertEquals(collateral, assets.get("sICX"));
+        assertEquals(iETHloan.add(iETHExpectedFee), standings.get("iETH").get("total_debt"));
+        assertEquals(iETHCollateral, standings.get("iETH").get("collateral"));
+        assertEquals(iETHCollateral.multiply(EXA).divide(iETHloan.add(iETHExpectedFee)), standings.get("iETH").get("ratio"));
+        assertEquals(StandingsMap.get(Standings.MINING), standings.get("iETH").get("standing"));
+
+        assertEquals(loan.add(expectedFee), assets.get("sICX").get("bnUSD"));
+        assertEquals(sICXCollateral, assets.get("sICX").get("sICX"));
+
+        assertEquals(iETHloan.add(iETHExpectedFee), assets.get("iETH").get("bnUSD"));
+        assertEquals(iETHCollateral, assets.get("iETH").get("iETH"));
     }
 
     @Test
@@ -137,14 +154,29 @@ class LoansTest extends LoansTestBase {
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
         BigInteger expectedFee = calculateFee(loan);
-        takeLoanICX(account, "bnUSD", collateral, loan);
+        BigInteger sICXdebt = loan.add(expectedFee);
 
         // Act
-        Map<String, BigInteger> balanceAndSupply = (Map<String, BigInteger>) loans.call("getBalanceAndSupply", "Loans", account.getAddress());
+        takeLoanICX(account, "bnUSD", collateral, loan);
 
         // Assert
-        assertEquals(loan.add(expectedFee), balanceAndSupply.get("_balance"));
-        assertEquals(loan.add(expectedFee), balanceAndSupply.get("_totalSupply"));
+        Map<String, BigInteger> balanceAndSupply = (Map<String, BigInteger>) loans.call("getBalanceAndSupply", "Loans", account.getAddress());
+        assertEquals(sICXdebt, balanceAndSupply.get("_balance"));
+        assertEquals(sICXdebt, balanceAndSupply.get("_totalSupply"));
+
+        // ArrangeQ
+        BigInteger iETHCollateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger iETHLoan = BigInteger.valueOf(50).multiply(EXA);
+        expectedFee = calculateFee(iETHLoan);
+        BigInteger iETHDebt = iETHLoan.add(expectedFee);
+
+        // Act
+        takeLoaniETH(account, iETHCollateral, iETHLoan);
+
+        // Assert
+        balanceAndSupply = (Map<String, BigInteger>) loans.call("getBalanceAndSupply", "Loans", account.getAddress());
+        assertEquals(iETHDebt.add(sICXdebt), balanceAndSupply.get("_balance"));
+        assertEquals(iETHDebt.add(sICXdebt), balanceAndSupply.get("_totalSupply"));
     }
 
     @Test
@@ -178,16 +210,15 @@ class LoansTest extends LoansTestBase {
         // Arrange
         Account account = accounts.get(0);
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
-        int loan = 100;
-        BigInteger bigLoan = BigInteger.valueOf(loan).multiply(EXA);
-        BigInteger expectedFee = calculateFee(bigLoan);
+        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
 
         // Act
         takeLoanSICX(account, collateral, loan);
 
         // Assert
-        verifyTotalDebt(bigLoan.add(expectedFee));
-        verifyPosition(account.getAddress(), collateral, bigLoan.add(expectedFee));
+        verifyTotalDebt(loan.add(expectedFee));
+        verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
     }
 
     @Test
@@ -203,12 +234,11 @@ class LoansTest extends LoansTestBase {
     }
 
     @Test
-    void tokenFallback_NotSICX() {
+    void tokenFallback_NonSupportedCollateral() {
         // Arrange
         Account account = admin;
         BigInteger value = BigInteger.valueOf(100).multiply(EXA);
-        String expectedErrorMessage = "Reverted(0): " + TAG + "The Balanced Loans " +
-        "contract does not accept that token type.";
+        String expectedErrorMessage = "Reverted(0): " + "bnUSD is not a supported collateral type.";
 
         // Assert & Act
         Executable transferToken = () -> bnusd.invoke(account, "transfer", loans.getAddress(), value, new byte[0]);
@@ -229,7 +259,7 @@ class LoansTest extends LoansTestBase {
     }
 
     @Test
-    void DepositAndBorrow_ICX() {
+    void depositAndBorrow_ICX() {
         // Arrange
         Account account = accounts.get(0);
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
@@ -245,7 +275,7 @@ class LoansTest extends LoansTestBase {
     }
 
     @Test
-    void DepositAndBorrow_StakeOnly() {
+    void depositAndBorrow_StakeOnly() {
         // Arrange
         Account account = accounts.get(0);
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
@@ -256,10 +286,10 @@ class LoansTest extends LoansTestBase {
 
         // Assert
         Map<String, Object> position = (Map<String, Object>)loans.call("getAccountPositions", account.getAddress());
-        Map<String, BigInteger> assetHoldings = (Map<String, BigInteger>) position.get("assets");
+        Map<String, Map<String, BigInteger>> assetHoldings = (Map<String, Map<String, BigInteger> >) position.get("assets");
 
-        assertEquals(collateral, assetHoldings.get("sICX"));
-        assertEquals(false, assetHoldings.containsKey("bnUSD"));
+        assertEquals(collateral, assetHoldings.get("sICX").get("sICX"));
+        assertEquals(false, assetHoldings.get("sICX").containsKey("bnUSD"));
         verifyTotalDebt(BigInteger.ZERO);
     }
 
@@ -324,6 +354,134 @@ class LoansTest extends LoansTestBase {
         expectErrorMessage(depositAndBorrow, expectedErrorMessage);
     }
 
+
+    @Test
+    void depositCollateral_sICX() {
+        // Arrange
+        Account account = accounts.get(0);
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+
+        // Act
+        takeLoanSICX(account, collateral, BigInteger.ZERO);
+
+        // Assert
+        Map<String, Object> position = (Map<String, Object>)loans.call("getAccountPositions", account.getAddress());
+        Map<String, Map<String, BigInteger>> assetHoldings = (Map<String, Map<String, BigInteger> >) position.get("assets");
+
+        assertEquals(collateral, assetHoldings.get("sICX").get("sICX"));
+        assertEquals(false, assetHoldings.get("sICX").containsKey("bnUSD"));
+        verifyTotalDebt(BigInteger.ZERO);
+    }
+
+    @Test
+    void depositCollateral_iETH() {
+        // Arrange
+        Account account = accounts.get(0);
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+
+        // Act
+        takeLoaniETH(account, collateral, BigInteger.ZERO);
+
+        // Assert
+        Map<String, Object> position = (Map<String, Object>)loans.call("getAccountPositions", account.getAddress());
+        Map<String, Map<String, BigInteger>> assetHoldings = (Map<String, Map<String, BigInteger> >) position.get("assets");
+
+        assertEquals(collateral, assetHoldings.get("iETH").get("iETH"));
+        assertEquals(false, assetHoldings.get("iETH").containsKey("bnUSD"));
+        verifyTotalDebt(BigInteger.ZERO);
+    }
+
+    @Test
+    void depositCollateral_iETH_overLimit() {
+        // Arrange
+        Account account = accounts.get(0);
+        String symbol = "iETH";
+        BigInteger limit = BigInteger.valueOf(1500).multiply(EXA);
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        loans.invoke(admin, "setCollateralLimit", symbol, limit);
+        takeLoaniETH(account, collateral, BigInteger.ZERO);
+
+        // Assert & Act
+        String expectedErrorMessage = "Reverted(0): " + TAG + "Collateral safeguard limit for " + symbol + " has been reached";
+        System.out.println(expectedErrorMessage);
+        Executable aboveLimit = () ->   takeLoaniETH(account, collateral, BigInteger.ZERO);
+        expectErrorMessage(aboveLimit, expectedErrorMessage);
+    }
+
+    @Test
+    void borrow_sICX() {
+        // Arrange
+        Account account = accounts.get(0);
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
+        BigInteger expectedDebt = loan.add(expectedFee);
+        takeLoanSICX(account, collateral, BigInteger.ZERO);
+
+        // Act 
+        loans.invoke(account, "borrow", "sICX", "bnUSD", loan, account.getAddress());
+        // Assert
+        Map<String, Object> position = (Map<String, Object>)loans.call("getAccountPositions", account.getAddress());
+        Map<String, Map<String, BigInteger>> assetHoldings = (Map<String, Map<String, BigInteger> >) position.get("assets");
+
+        assertEquals(collateral, assetHoldings.get("sICX").get("sICX"));
+        assertEquals(expectedDebt, assetHoldings.get("sICX").get("bnUSD"));
+        verifyPosition(account.getAddress(), collateral, expectedDebt, "sICX");
+        verifyTotalDebt(expectedDebt);
+    }
+
+    @Test
+    void borrow_iETH() {
+        // Arrange
+        Account account = accounts.get(0);
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
+        BigInteger expectedDebt = loan.add(expectedFee);
+        takeLoaniETH(account, collateral, BigInteger.ZERO);
+
+        // Act 
+        loans.invoke(account, "borrow", "iETH", "bnUSD", loan, account.getAddress());
+        
+        // Assert
+        Map<String, Object> position = (Map<String, Object>)loans.call("getAccountPositions", account.getAddress());
+        Map<String, Map<String, BigInteger>> assetHoldings = (Map<String, Map<String, BigInteger> >) position.get("assets");
+
+        assertEquals(collateral, assetHoldings.get("iETH").get("iETH"));
+        assertEquals(expectedDebt, assetHoldings.get("iETH").get("bnUSD"));
+        verifyPosition(account.getAddress(), collateral, expectedDebt, "iETH");
+        verifyTotalDebt(expectedDebt);
+    }
+    
+    @Test
+    void borrow_fromWrongCollateral() {
+        // Arrange
+        Account account = accounts.get(0);
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
+
+        takeLoanSICX(account, collateral, BigInteger.ZERO);
+
+
+        // Assert & Act
+        String expectedErrorMessage = "Reverted(0): " + TAG + "0 collateral is insufficient to originate a loan of " +
+                                        loan + " bnUSD when max_debt_value = 0," +
+                                        " new_debt_value = " + loan.add(expectedFee) + ", which includes a fee of " + 
+                                        expectedFee + " bnUSD, given an existing loan value of 0.";
+        Executable returnToMuch = () ->  loans.invoke(account, "borrow", "iETH", "bnUSD", loan, account.getAddress());;
+        expectErrorMessage(returnToMuch, expectedErrorMessage);
+      
+       
+        // Assert
+        Map<String, Object> position = (Map<String, Object>)loans.call("getAccountPositions", account.getAddress());
+        Map<String, Map<String, BigInteger>> assetHoldings = (Map<String, Map<String, BigInteger> >) position.get("assets");
+
+        assertEquals(collateral, assetHoldings.get("sICX").get("sICX"));
+        assertEquals(false, assetHoldings.get("sICX").containsKey("bnUSD"));
+        verifyTotalDebt(BigInteger.ZERO);
+    }
+
     @Test
     void returnAsset() {
         // Arrange
@@ -331,18 +489,28 @@ class LoansTest extends LoansTestBase {
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
         BigInteger expectedFee = calculateFee(loan);
+
+        BigInteger iETHCollateral = BigInteger.valueOf(1200).multiply(EXA);
+        BigInteger iETHLoan = BigInteger.valueOf(250).multiply(EXA);
+        BigInteger iETHExpectedFee = calculateFee(iETHLoan);
+
         BigInteger loanToRepay = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger iETHloanToRepay = BigInteger.valueOf(200).multiply(EXA);
 
         takeLoanICX(account, "bnUSD", collateral, loan);
+        takeLoaniETH(account, iETHCollateral, iETHLoan);
         BigInteger balancePre = (BigInteger) bnusd.call("balanceOf", account.getAddress());
 
         // Act 
-        loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, true);
+        loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, "sICX");
+        loans.invoke(account, "returnAsset", "bnUSD", iETHloanToRepay, "iETH");
 
         // Assert
         BigInteger balancePost = (BigInteger) bnusd.call("balanceOf", account.getAddress());
-        assertEquals(balancePre.subtract(loanToRepay), balancePost);
-        verifyPosition(account.getAddress(), collateral, loan.subtract(loanToRepay).add(expectedFee));
+        BigInteger expectedBalance = balancePre.subtract(loanToRepay).subtract(iETHloanToRepay);
+        assertEquals(expectedBalance, balancePost);
+        verifyPosition(account.getAddress(), collateral, loan.subtract(loanToRepay).add(expectedFee), "sICX");
+        verifyPosition(account.getAddress(), iETHCollateral, iETHLoan.subtract(iETHloanToRepay).add(iETHExpectedFee), "iETH");
     }
 
     @Test
@@ -355,7 +523,7 @@ class LoansTest extends LoansTestBase {
 
         takeLoanICX(account, "bnUSD", collateral, loan);
         bnusd.invoke(admin, "transfer", account.getAddress(), expectedFee, new byte[0]);
-        loans.invoke(account, "returnAsset", "bnUSD", loan.add(expectedFee), true);
+        loans.invoke(account, "returnAsset", "bnUSD", loan.add(expectedFee), "sICX");
 
         // Assert
         verifyPosition(account.getAddress(), collateral, BigInteger.ZERO);
@@ -381,8 +549,24 @@ class LoansTest extends LoansTestBase {
         takeLoanICX(account, "bnUSD", collateral, loan);
 
         // Assert & Act
-        Executable returnToMuch = () ->  loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, true);
+        Executable returnToMuch = () ->  loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, "sICX");
         expectErrorMessage(returnToMuch, expectedErrorMessage);
+    }
+
+    @Test
+    void returnAsset_WrongCollateral() {
+        // Arrange
+        Account account = accounts.get(0);
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
+        BigInteger loanToRepay = BigInteger.valueOf(100).multiply(EXA);
+        String expectedErrorMessage = "Reverted(0): " + TAG + "Repaid amount is greater than the amount in the position of " + account.getAddress();
+
+        takeLoanICX(account, "bnUSD", collateral, loan);
+
+        // Assert & Act
+        Executable returnForiETH = () ->  loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, "iETH");
+        expectErrorMessage(returnForiETH, expectedErrorMessage);
     }
 
     @Test
@@ -397,7 +581,7 @@ class LoansTest extends LoansTestBase {
         takeLoanICX(account, "bnUSD", collateral, loan);
 
         // Assert & Act
-        Executable returnCollateral = () ->  loans.invoke(account, "returnAsset", "sICX", collateralToRepay, true);
+        Executable returnCollateral = () ->  loans.invoke(account, "returnAsset", "sICX", collateralToRepay, "sICX");
         expectErrorMessage(returnCollateral, expectedErrorMessage);
     }
 
@@ -414,7 +598,7 @@ class LoansTest extends LoansTestBase {
         loans.invoke(admin, "toggleAssetActive", "bnUSD");
 
         // Assert & Act
-        Executable nonActiveAsset = () ->  loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, true);
+        Executable nonActiveAsset = () ->  loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, "sICX");
         expectErrorMessage(nonActiveAsset, expectedErrorMessage);
     }
 
@@ -432,7 +616,7 @@ class LoansTest extends LoansTestBase {
         bnusd.invoke(account, "transfer", admin.getAddress(), loan, new byte[0]);
 
         // Assert & Act
-        Executable returnWithInsufficientBalance = () ->  loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, true);
+        Executable returnWithInsufficientBalance = () ->  loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, "sICX");
         expectErrorMessage(returnWithInsufficientBalance, expectedErrorMessage);
     }
 
@@ -447,7 +631,7 @@ class LoansTest extends LoansTestBase {
                 "in Balanced";
 
         // Assert & Act
-        Executable returnWithNoPosition = () ->  loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, true);
+        Executable returnWithNoPosition = () ->  loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, "sICX");
         expectErrorMessage(returnWithNoPosition, expectedErrorMessage);
     }
 
@@ -458,18 +642,26 @@ class LoansTest extends LoansTestBase {
         BigInteger collateral = BigInteger.valueOf(2000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
         BigInteger collateralToWithdraw = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger iETHCollateralToWithdraw = BigInteger.valueOf(80).multiply(EXA);
         BigInteger expectedFee = calculateFee(loan);
 
         takeLoanICX(account, "bnUSD", collateral, loan);
-        BigInteger balancePre = (BigInteger) sicx.call("balanceOf", account.getAddress());
+        takeLoaniETH(account, collateral, loan);
+        BigInteger sICXBalancePre = (BigInteger) sicx.call("balanceOf", account.getAddress());
+        BigInteger iETHBalancePre = (BigInteger) ieth.call("balanceOf", account.getAddress());
 
         // Act
-        loans.invoke(account, "withdrawCollateral", collateralToWithdraw);
+        loans.invoke(account, "withdrawCollateral", collateralToWithdraw, "sICX");
+        loans.invoke(account, "withdrawCollateral", iETHCollateralToWithdraw, "iETH");
 
         // Assert
-        BigInteger balancePost = (BigInteger) sicx.call("balanceOf", account.getAddress());
-        assertEquals(balancePre.add(collateralToWithdraw), balancePost);
-        verifyPosition(account.getAddress(), collateral.subtract(collateralToWithdraw), loan.add(expectedFee));
+        BigInteger sICXbalancePost = (BigInteger) sicx.call("balanceOf", account.getAddress());
+        BigInteger iETHBalancePost = (BigInteger) ieth.call("balanceOf", account.getAddress());
+
+        assertEquals(sICXBalancePre.add(collateralToWithdraw), sICXbalancePost);
+        assertEquals(iETHBalancePre.add(iETHCollateralToWithdraw), iETHBalancePost);
+        verifyPosition(account.getAddress(), collateral.subtract(collateralToWithdraw), loan.add(expectedFee), "sICX");
+        verifyPosition(account.getAddress(), collateral.subtract(iETHCollateralToWithdraw), loan.add(expectedFee), "iETH");
     }
 
     @Test
@@ -484,7 +676,7 @@ class LoansTest extends LoansTestBase {
         takeLoanICX(account, "bnUSD", collateral, loan);
 
         // Assert & Act
-        Executable withdrawZeroCollateral = () -> loans.invoke(account, "withdrawCollateral", collateralToWithdraw);
+        Executable withdrawZeroCollateral = () -> loans.invoke(account, "withdrawCollateral", collateralToWithdraw, "sICX");
         expectErrorMessage(withdrawZeroCollateral, expectedErrorMessage);
     }
 
@@ -496,7 +688,7 @@ class LoansTest extends LoansTestBase {
         String expectedErrorMessage = "Reverted(0): " + TAG +  "This address does not have a position on Balanced.";
 
         // Assert & Act
-        Executable withdrawWithNoPosition = () -> loans.invoke(account, "withdrawCollateral", collateralToWithdraw);
+        Executable withdrawWithNoPosition = () -> loans.invoke(account, "withdrawCollateral", collateralToWithdraw, "sICX");
         expectErrorMessage(withdrawWithNoPosition, expectedErrorMessage);
     }
 
@@ -512,7 +704,23 @@ class LoansTest extends LoansTestBase {
         takeLoanICX(account, "bnUSD", collateral, loan);
 
         // Assert & Act
-        Executable withdrawTooMuchCollateral = () -> loans.invoke(account, "withdrawCollateral", collateralToWithdraw);
+        Executable withdrawTooMuchCollateral = () -> loans.invoke(account, "withdrawCollateral", collateralToWithdraw, "sICX");
+        expectErrorMessage(withdrawTooMuchCollateral, expectedErrorMessage);
+    }
+
+    @Test
+    void withdrawCollateral_WrongCollateral() {
+        // Arrange
+        Account account = accounts.get(0);
+        BigInteger collateral = BigInteger.valueOf(2000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger collateralToWithdraw = BigInteger.valueOf(100).multiply(EXA);
+        String expectedErrorMessage = "Reverted(0): " + TAG + "Position holds less collateral than the requested withdrawal.";
+
+        takeLoanICX(account, "bnUSD", collateral, loan);
+
+        // Assert & Act
+        Executable withdrawTooMuchCollateral = () -> loans.invoke(account, "withdrawCollateral", collateralToWithdraw, "iETH");
         expectErrorMessage(withdrawTooMuchCollateral, expectedErrorMessage);
     }
 
@@ -534,7 +742,7 @@ class LoansTest extends LoansTestBase {
         takeLoanICX(account, "bnUSD", collateral, loan);
 
         // Assert & Act
-        Executable withdrawTooMuchCollateral = () -> loans.invoke(account, "withdrawCollateral", collateralToWithdraw);
+        Executable withdrawTooMuchCollateral = () -> loans.invoke(account, "withdrawCollateral", collateralToWithdraw, "sICX");
         expectErrorMessage(withdrawTooMuchCollateral, expectedErrorMessage);
     }
 
@@ -546,6 +754,7 @@ class LoansTest extends LoansTestBase {
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
         BigInteger expectedFee = calculateFee(loan);
+        BigInteger originalTotalDebt = getTotalDebt();
 
         BigInteger liquidationReward = (BigInteger) getParam("liquidation reward");
         BigInteger expectedReward = collateral.multiply(liquidationReward).divide(POINTS);
@@ -557,9 +766,8 @@ class LoansTest extends LoansTestBase {
         BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
         mockOraclePrice("bnUSD", newPrice);
        
-
         // Act
-        loans.invoke(liquidater, "liquidate", account.getAddress());
+        loans.invoke(liquidater, "liquidate", account.getAddress(), "sICX");
 
         // Assert
         BigInteger liquidaterBalancePost = (BigInteger) sicx.call("balanceOf", liquidater.getAddress());
@@ -567,11 +775,74 @@ class LoansTest extends LoansTestBase {
         verifyPosition(account.getAddress(), BigInteger.ZERO, BigInteger.ZERO);
 
         Map<String, Object> bnusdAsset = ((Map<String, Map<String, Object>>)loans.call("getAvailableAssets")).get("bnUSD");
+        Map<String, Map<String, Object>> bnusdDebtDetails = (Map<String, Map<String, Object>>) bnusdAsset.get("debt_details");
 
         BigInteger expectedBadDebt = loan.add(expectedFee);
         BigInteger expectedLiquidationPool = collateral.subtract(expectedReward);
-        assertEquals(expectedBadDebt, bnusdAsset.get("bad_debt"));
-        assertEquals(expectedLiquidationPool, bnusdAsset.get("liquidation_pool"));
+        assertEquals(expectedBadDebt, bnusdDebtDetails.get("sICX").get("bad_debt"));
+        assertEquals(expectedLiquidationPool, bnusdDebtDetails.get("sICX").get("liquidation_pool"));
+        verify(rewards.mock).updateRewardsData("Loans", originalTotalDebt, account.getAddress(), BigInteger.ZERO);
+    }
+
+    @Test
+    void liquidate_iETH() {
+        // Arrange
+        Account account = accounts.get(0);
+        Account liquidater = accounts.get(1);
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
+        BigInteger originalTotalDebt = getTotalDebt();
+
+        BigInteger liquidationReward = (BigInteger) getParam("liquidation reward");
+        BigInteger expectedReward = collateral.multiply(liquidationReward).divide(POINTS);
+        BigInteger liquidaterBalancePre = (BigInteger) ieth.call("balanceOf", liquidater.getAddress());
+
+        takeLoaniETH(account, collateral, loan);
+        verifyPosition(account.getAddress(), collateral, loan.add(expectedFee), "iETH");
+
+        BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
+        mockOraclePrice("bnUSD", newPrice);
+       
+        // Act
+        loans.invoke(liquidater, "liquidate", account.getAddress(), "iETH");
+
+        // Assert
+        BigInteger liquidaterBalancePost = (BigInteger) ieth.call("balanceOf", liquidater.getAddress());
+        assertEquals(liquidaterBalancePre.add(expectedReward), liquidaterBalancePost);
+        verifyPosition(account.getAddress(), BigInteger.ZERO, BigInteger.ZERO);
+
+        Map<String, Object> bnusdAsset = ((Map<String, Map<String, Object>>)loans.call("getAvailableAssets")).get("bnUSD");
+        Map<String, Map<String, Object>> bnusdDebtDetails = (Map<String, Map<String, Object>>) bnusdAsset.get("debt_details");
+
+        BigInteger expectedBadDebt = loan.add(expectedFee);
+        BigInteger expectedLiquidationPool = collateral.subtract(expectedReward);
+        assertEquals(expectedBadDebt, bnusdDebtDetails.get("iETH").get("bad_debt"));
+        assertEquals(expectedLiquidationPool, bnusdDebtDetails.get("iETH").get("liquidation_pool"));
+
+        verify(rewards.mock).updateRewardsData("Loans", originalTotalDebt, account.getAddress(), BigInteger.ZERO);
+    }
+
+    @Test
+    void liquidate_wrongCollateralType() {
+        // Arrange
+        Account account = accounts.get(0);
+        Account liquidater = accounts.get(1);
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
+
+        takeLoanICX(account, "bnUSD", collateral, loan);
+        verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
+
+        BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
+        mockOraclePrice("bnUSD", newPrice);
+       
+        // Act
+        loans.invoke(liquidater, "liquidate", account.getAddress(), "iETH");
+
+        // Assert
+        verifyPosition(account.getAddress(), collateral, loan.add(expectedFee).multiply(newPrice).divide(EXA));
     }
 
     @Test
@@ -587,7 +858,7 @@ class LoansTest extends LoansTestBase {
         verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
 
         // Act
-        loans.invoke(liquidater, "liquidate", account.getAddress());
+        loans.invoke(liquidater, "liquidate", account.getAddress(), "sICX");
 
         // Assert
         verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
@@ -601,7 +872,7 @@ class LoansTest extends LoansTestBase {
         String expectedErrorMessage = "Reverted(0): " + TAG + "This address does not have a position on Balanced.";
 
         // Assert & Act
-        Executable liquidateAccountWithNoPosition = () ->  loans.invoke(liquidater, "liquidate", account.getAddress());
+        Executable liquidateAccountWithNoPosition = () ->  loans.invoke(liquidater, "liquidate", account.getAddress(), "sICX");
         expectErrorMessage(liquidateAccountWithNoPosition, expectedErrorMessage);
     }
 
@@ -615,42 +886,91 @@ class LoansTest extends LoansTestBase {
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
         BigInteger expectedFee = calculateFee(loan);
-        bnusd.invoke(admin, "transfer", badDebtReedemer.getAddress(), loan.add(expectedFee), new byte[0]);
+        BigInteger expectedDebt = loan.add(expectedFee);
+        bnusd.invoke(admin, "transfer", badDebtReedemer.getAddress(), expectedDebt.multiply(BigInteger.TWO), new byte[0]);
 
         BigInteger liquidationReward = (BigInteger) getParam("liquidation reward");
         BigInteger expectedReward = collateral.multiply(liquidationReward).divide(POINTS);
         takeLoanICX(account, "bnUSD", collateral, loan);
+        takeLoaniETH(account, collateral, loan);
 
         BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
         mockOraclePrice("bnUSD", newPrice);
-        loans.invoke(liquidater, "liquidate", account.getAddress());
+        loans.invoke(liquidater, "liquidate", account.getAddress(), "sICX");
+        loans.invoke(liquidater, "liquidate", account.getAddress(), "iETH");
 
-        BigInteger badDebt = loan.add(expectedFee);
-        BigInteger liquidationPool = collateral.subtract(expectedReward);
+        BigInteger badDebtSICX = expectedDebt;
+        BigInteger badDebtIETH = expectedDebt;
+        BigInteger sICXLiquidationPool = collateral.subtract(expectedReward);
+        BigInteger iETHLiquidationPool = collateral.subtract(expectedReward);
 
         // Act
         BigInteger bnUSDBalancePre = (BigInteger) bnusd.call("balanceOf", badDebtReedemer.getAddress());
         BigInteger sICXBalancePre = (BigInteger) sicx.call("balanceOf", badDebtReedemer.getAddress());
+        BigInteger iETHBalancePre = (BigInteger) ieth.call("balanceOf", badDebtReedemer.getAddress());
 
-        loans.invoke(badDebtReedemer, "retireBadDebt", "bnUSD", badDebt);
+        loans.invoke(badDebtReedemer, "retireBadDebt", "bnUSD", badDebtSICX.add(badDebtIETH));
 
         // Assert
         BigInteger bnUSDBalancePost = (BigInteger) bnusd.call("balanceOf", badDebtReedemer.getAddress());
         BigInteger sICXBalancePost = (BigInteger) sicx.call("balanceOf", badDebtReedemer.getAddress());
+        BigInteger iETHBalancePost = (BigInteger) ieth.call("balanceOf", badDebtReedemer.getAddress());
 
         BigInteger bonus = POINTS.add(BigInteger.valueOf(1000));
-        BigInteger icxPrice = (BigInteger) sicx.call("priceInLoop");
-        BigInteger debtInsICX = bonus.multiply(badDebt).multiply(newPrice).divide(icxPrice.multiply(POINTS));
+        BigInteger icxPrice = EXA;
+        BigInteger iETHPrice = EXA;
+        BigInteger debtInsICX = bonus.multiply(badDebtSICX).multiply(newPrice).divide(icxPrice.multiply(POINTS));
+        BigInteger debtIniETH = bonus.multiply(badDebtIETH).multiply(newPrice).divide(iETHPrice.multiply(POINTS));
 
-        assertEquals(bnUSDBalancePre.subtract(badDebt), bnUSDBalancePost);
+        assertEquals(bnUSDBalancePre.subtract(badDebtSICX.add(badDebtIETH)), bnUSDBalancePost);
         assertEquals(sICXBalancePre.add(debtInsICX), sICXBalancePost);
+        assertEquals(iETHBalancePre.add(debtIniETH), iETHBalancePost);
 
         Map<String, Object> bnusdAsset = ((Map<String, Map<String, Object>>)loans.call("getAvailableAssets")).get("bnUSD");
-        BigInteger expectedBadDebt = loan.add(expectedFee);
+        Map<String, Map<String, Object>> bnusdDebtDetails = (Map<String, Map<String, Object>>) bnusdAsset.get("debt_details");
 
-        BigInteger expectedLiquidationPool = liquidationPool.subtract(debtInsICX);
-        assertEquals(BigInteger.ZERO, bnusdAsset.get("bad_debt"));
-        assertEquals(expectedLiquidationPool, bnusdAsset.get("liquidation_pool"));
+        BigInteger expectedLiquidationPool = sICXLiquidationPool.subtract(debtInsICX);
+        BigInteger expectedLiquidationPooliETH = iETHLiquidationPool.subtract(debtIniETH);
+        assertEquals(BigInteger.ZERO, bnusdDebtDetails.get("sICX").get("bad_debt"));
+        assertEquals(BigInteger.ZERO, bnusdDebtDetails.get("iETH").get("bad_debt"));
+        assertEquals(expectedLiquidationPool, bnusdDebtDetails.get("sICX").get("liquidation_pool"));
+        assertEquals(expectedLiquidationPooliETH, bnusdDebtDetails.get("iETH").get("liquidation_pool"));
+    }
+
+    @Test
+    void retireBadDebt_retirePartial() {
+        // Arrange
+        Account account = accounts.get(0);
+        Account liquidater = accounts.get(1);
+        Account badDebtReedemer =  accounts.get(2);
+
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
+        BigInteger expectedDebt = loan.add(expectedFee);
+        bnusd.invoke(admin, "transfer", badDebtReedemer.getAddress(), expectedDebt.multiply(BigInteger.TWO), new byte[0]);
+
+        takeLoanICX(account, "bnUSD", collateral, loan);
+        takeLoaniETH(account, collateral, loan);
+
+        BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
+        mockOraclePrice("bnUSD", newPrice);
+        loans.invoke(liquidater, "liquidate", account.getAddress(), "sICX");
+        loans.invoke(liquidater, "liquidate", account.getAddress(), "iETH");
+
+        BigInteger badDebtSICX = expectedDebt;
+        BigInteger badDebtIETH = expectedDebt;
+        BigInteger badDebtToRedeem = badDebtSICX.divide(BigInteger.TWO).add(badDebtIETH);
+
+        // Act
+        loans.invoke(badDebtReedemer, "retireBadDebt", "bnUSD", badDebtToRedeem);
+
+
+        Map<String, Object> bnusdAsset = ((Map<String, Map<String, Object>>)loans.call("getAvailableAssets")).get("bnUSD");
+        Map<String, Map<String, BigInteger>> bnusdDebtDetails = (Map<String, Map<String, BigInteger>>) bnusdAsset.get("debt_details");
+
+        assertEquals(badDebtIETH.add(badDebtIETH).subtract(badDebtToRedeem), 
+                    bnusdDebtDetails.get("sICX").get("bad_debt").add(bnusdDebtDetails.get("iETH").get("bad_debt")));
     }
 
     @Test
@@ -675,7 +995,7 @@ class LoansTest extends LoansTestBase {
         BigInteger pricePostLiquidation = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(6));
 
         mockOraclePrice("bnUSD", pricePreLiquidation);
-        loans.invoke(liquidater, "liquidate", account.getAddress());
+        loans.invoke(liquidater, "liquidate", account.getAddress(), "sICX");
         mockOraclePrice("bnUSD", pricePostLiquidation);
 
         BigInteger liquidationPool = collateral.subtract(expectedReward);
@@ -687,7 +1007,6 @@ class LoansTest extends LoansTestBase {
 
         // Act
         BigInteger bnUSDBalancePre = (BigInteger) bnusd.call("balanceOf", badDebtReedemer.getAddress());
-        BigInteger sICXBalancePre = (BigInteger) sicx.call("balanceOf", badDebtReedemer.getAddress());
 
         BigInteger amountRedeemed = debtInsICX.subtract(liquidationPool);
         loans.invoke(badDebtReedemer, "retireBadDebt", "bnUSD", badDebtRedeemed);
@@ -700,11 +1019,10 @@ class LoansTest extends LoansTestBase {
         assertEquals(bnUSDBalancePre.subtract(badDebtRedeemed), bnUSDBalancePost);
 
         Map<String, Object> bnusdAsset = ((Map<String, Map<String, Object>>)loans.call("getAvailableAssets")).get("bnUSD");
-        BigInteger expectedBadDebt = loan.add(expectedFee);
+        Map<String, Map<String, Object>> bnusdDebtDetails = (Map<String, Map<String, Object>>) bnusdAsset.get("debt_details");
 
-        BigInteger expectedLiquidationPool = liquidationPool.subtract(debtInsICX);
-        assertEquals(BigInteger.ZERO, bnusdAsset.get("bad_debt"));
-        assertEquals(BigInteger.ZERO, bnusdAsset.get("liquidation_pool"));
+        assertEquals(BigInteger.ZERO, bnusdDebtDetails.get("sICX").get("bad_debt"));
+        assertEquals(BigInteger.ZERO, bnusdDebtDetails.get("sICX").get("liquidation_pool"));
     }
 
     @Test
@@ -724,7 +1042,7 @@ class LoansTest extends LoansTestBase {
 
         BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
         mockOraclePrice("bnUSD", newPrice);
-        loans.invoke(liquidater, "liquidate", account.getAddress());
+        loans.invoke(liquidater, "liquidate", account.getAddress(), "sICX");
 
         // Assert & Act
         Executable retireBadDebtZeroAmount = () ->  loans.invoke(badDebtReedemer, "retireBadDebt", "bnUSD", BigInteger.ZERO);
@@ -749,7 +1067,7 @@ class LoansTest extends LoansTestBase {
 
         BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
         mockOraclePrice("bnUSD", newPrice);
-        loans.invoke(liquidater, "liquidate", account.getAddress());
+        loans.invoke(liquidater, "liquidate", account.getAddress(), "sICX");
 
         // Assert & Act
         Executable retireBadDebtZeroAmount = () ->  loans.invoke(badDebtReedemer, "retireBadDebt", "sICX", badDebt);
@@ -774,7 +1092,7 @@ class LoansTest extends LoansTestBase {
 
         BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
         mockOraclePrice("bnUSD", newPrice);
-        loans.invoke(liquidater, "liquidate", account.getAddress());
+        loans.invoke(liquidater, "liquidate", account.getAddress(), "sICX");
 
         // Assert & Act
         loans.invoke(admin, "toggleAssetActive", "bnUSD");
@@ -799,7 +1117,7 @@ class LoansTest extends LoansTestBase {
 
         BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
         mockOraclePrice("bnUSD", newPrice);
-        loans.invoke(liquidater, "liquidate", account.getAddress());
+        loans.invoke(liquidater, "liquidate", account.getAddress(), "sICX");
 
         // Assert & Act
         Executable retireBadDebtZeroAmount = () ->  loans.invoke(badDebtReedemer, "retireBadDebt", "bnUSD", badDebt);
@@ -837,20 +1155,20 @@ class LoansTest extends LoansTestBase {
         BigInteger accountTwoDebt = accountTwoFee.add(accountTwoLoan);
 
         BigInteger rebalanceAmount = BigInteger.valueOf(100).multiply(EXA);
-        BigInteger totalCollateral = accountZeroCollateral.add(accountOneCollateral).add(accountTwoCollateral);
         BigInteger totalDebt = accountZeroDebt.add(accountOneDebt).add(accountTwoDebt);
 
         takeLoanICX(accounts.get(0), "bnUSD", accountZeroCollateral, accountZeroLoan);
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
         takeLoanICX(accounts.get(2), "bnUSD", accountTwoCollateral, accountTwoLoan);
 
+        BigInteger originalTotalDebt = getTotalDebt();
         BigInteger rate = EXA.divide(BigInteger.TWO);
         BigInteger expectedBnusdRecived = rebalanceAmount.multiply(BigInteger.TWO);
         mockSicxBnusdPrice(rate);
         mockSwap(bnusd, rebalanceAmount, expectedBnusdRecived);
 
         // Act
-        loans.invoke(rebalancing, "raisePrice", rebalanceAmount);
+        loans.invoke(rebalancing, "raisePrice", "sICX", rebalanceAmount);
 
         // Assert
         BigInteger remainingBnusd = expectedBnusdRecived;
@@ -874,6 +1192,99 @@ class LoansTest extends LoansTestBase {
         BigInteger accountTwoExpectedCollateralSold = rebalanceAmount.multiply(accountTwoDebt).divide(totalDebt);
         BigInteger accountTwoExpectedDebtRepaid = remainingBnusd.multiply(accountTwoDebt).divide(totalDebt);
         verifyPosition(accounts.get(2).getAddress(), accountTwoCollateral.subtract(accountTwoExpectedCollateralSold), accountTwoDebt.subtract(accountTwoExpectedDebtRepaid));
+    
+        RewardsDataEntry accountZeroUpdate = new RewardsDataEntry();
+        accountZeroUpdate._user = accounts.get(0).getAddress();
+        accountZeroUpdate._balance = accountZeroDebt;
+
+        RewardsDataEntry accountOneUpdate = new RewardsDataEntry();
+        accountOneUpdate._user = accounts.get(1).getAddress();
+        accountOneUpdate._balance = accountOneDebt;
+
+        RewardsDataEntry accountTwoUpdate = new RewardsDataEntry();
+        accountTwoUpdate._user = accounts.get(2).getAddress();
+        accountTwoUpdate._balance = accountTwoDebt;
+
+        RewardsDataEntry[] rewardsBatchList = new RewardsDataEntry[] {accountZeroUpdate, accountOneUpdate, accountTwoUpdate};
+
+        verifyTotalDebt(originalTotalDebt.subtract(expectedBnusdRecived)); 
+        verify(rewards.mock).updateBatchRewardsData(eq("Loans"), eq(originalTotalDebt), argThat(arg -> compareRewardsData(rewardsBatchList, arg)));
+    }
+
+    @Test
+    void raisePrice_iETH() {
+        // Arrange
+        BigInteger accountZeroCollateral = BigInteger.valueOf(10000).multiply(EXA);
+        BigInteger accountOneCollateral = BigInteger.valueOf(20000).multiply(EXA);
+        BigInteger accountTwoCollateral = BigInteger.valueOf(30000).multiply(EXA);
+        BigInteger accountZeroLoan = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger accountOneLoan = BigInteger.valueOf(2000).multiply(EXA);
+        BigInteger accountTwoLoan = BigInteger.valueOf(3000).multiply(EXA);
+        BigInteger accountZeroFee = calculateFee(accountZeroLoan);
+        BigInteger accountOneFee = calculateFee(accountOneLoan);
+        BigInteger accountTwoFee = calculateFee(accountTwoLoan);
+        BigInteger accountZeroDebt = accountZeroFee.add(accountZeroLoan);
+        BigInteger accountOneDebt = accountOneFee.add(accountOneLoan);
+        BigInteger accountTwoDebt = accountTwoFee.add(accountTwoLoan);
+
+        BigInteger rebalanceAmount = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger totalDebt = accountZeroDebt.add(accountOneDebt).add(accountTwoDebt);
+
+        takeLoanICX(accounts.get(0), "bnUSD", accountZeroCollateral, accountZeroLoan);
+        takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
+
+        takeLoaniETH(accounts.get(0), accountZeroCollateral, accountZeroLoan);
+        takeLoaniETH(accounts.get(1), accountOneCollateral, accountOneLoan);
+        takeLoaniETH(accounts.get(2), accountTwoCollateral, accountTwoLoan);
+
+        BigInteger originalTotalDebt = getTotalDebt();
+        BigInteger rate = EXA.divide(BigInteger.TWO);
+        BigInteger expectedBnusdRecived = rebalanceAmount.multiply(BigInteger.TWO);
+        mockiETHBnusdPrice(rate);
+        mockSwap(bnusd, rebalanceAmount, expectedBnusdRecived);
+
+        // Act
+        loans.invoke(rebalancing, "raisePrice", "iETH", rebalanceAmount);
+
+        // Assert
+        BigInteger remainingBnusd = expectedBnusdRecived;
+
+        BigInteger accountZeroExpectedCollateralSold = rebalanceAmount.multiply(accountZeroDebt).divide(totalDebt);
+        BigInteger accountZeroExpectedDebtRepaid = remainingBnusd.multiply(accountZeroDebt).divide(totalDebt);
+        verifyPosition(accounts.get(0).getAddress(), accountZeroCollateral.subtract(accountZeroExpectedCollateralSold),  accountZeroDebt.subtract(accountZeroExpectedDebtRepaid), "iETH");
+
+        totalDebt = totalDebt.subtract(accountZeroDebt);
+        rebalanceAmount = rebalanceAmount.subtract(accountZeroExpectedCollateralSold);
+        remainingBnusd = remainingBnusd.subtract(accountZeroExpectedDebtRepaid);
+
+        BigInteger accountOneExpectedCollateralSold = rebalanceAmount.multiply(accountOneDebt).divide(totalDebt);
+        BigInteger accountOneExpectedDebtRepaid = remainingBnusd.multiply(accountOneDebt).divide(totalDebt);
+        verifyPosition(accounts.get(1).getAddress(), accountOneCollateral.subtract(accountOneExpectedCollateralSold),  accountOneDebt.subtract(accountOneExpectedDebtRepaid), "iETH");
+
+        totalDebt = totalDebt.subtract(accountOneDebt);
+        rebalanceAmount = rebalanceAmount.subtract(accountOneExpectedCollateralSold);
+        remainingBnusd = remainingBnusd.subtract(accountOneExpectedDebtRepaid);
+
+        BigInteger accountTwoExpectedCollateralSold = rebalanceAmount.multiply(accountTwoDebt).divide(totalDebt);
+        BigInteger accountTwoExpectedDebtRepaid = remainingBnusd.multiply(accountTwoDebt).divide(totalDebt);
+        verifyPosition(accounts.get(2).getAddress(), accountTwoCollateral.subtract(accountTwoExpectedCollateralSold), accountTwoDebt.subtract(accountTwoExpectedDebtRepaid), "iETH");
+    
+        RewardsDataEntry accountZeroUpdate = new RewardsDataEntry();
+        accountZeroUpdate._user = accounts.get(0).getAddress();
+        accountZeroUpdate._balance = accountZeroDebt.multiply(BigInteger.TWO);
+
+        RewardsDataEntry accountOneUpdate = new RewardsDataEntry();
+        accountOneUpdate._user = accounts.get(1).getAddress();
+        accountOneUpdate._balance = accountOneDebt.multiply(BigInteger.TWO);
+
+        RewardsDataEntry accountTwoUpdate = new RewardsDataEntry();
+        accountTwoUpdate._user = accounts.get(2).getAddress();
+        accountTwoUpdate._balance = accountTwoDebt;
+
+        RewardsDataEntry[] rewardsBatchList = new RewardsDataEntry[] {accountZeroUpdate, accountOneUpdate, accountTwoUpdate};
+
+        verifyTotalDebt(originalTotalDebt.subtract(expectedBnusdRecived)); 
+        verify(rewards.mock).updateBatchRewardsData(eq("Loans"), eq(originalTotalDebt), argThat(arg -> compareRewardsData(rewardsBatchList, arg)));
     }
 
     @Test
@@ -893,7 +1304,6 @@ class LoansTest extends LoansTestBase {
         BigInteger accountTwoDebt = accountTwoFee.add(accountTwoLoan);
 
         BigInteger totalDebt = accountZeroDebt.add(accountOneDebt).add(accountTwoDebt);
-        BigInteger totalCollateral = accountZeroCollateral.add(accountOneCollateral).add(accountTwoCollateral);
 
         BigInteger totalTokenRequired = BigInteger.valueOf(10000).multiply(EXA);
         BigInteger maxRetirePercent = (BigInteger) getParam("retire percent max");
@@ -909,7 +1319,7 @@ class LoansTest extends LoansTestBase {
         mockSwap(bnusd, rebalanceAmount, rebalanceAmount);
 
         // Act
-        loans.invoke(rebalancing, "raisePrice", totalTokenRequired);
+        loans.invoke(rebalancing, "raisePrice", "sICX", totalTokenRequired);
 
         // Assert
         BigInteger remainingBnusd = expectedBnusdRecived;
@@ -953,20 +1363,20 @@ class LoansTest extends LoansTestBase {
         BigInteger accountTwoDebt = accountTwoFee.add(accountTwoLoan);
 
         BigInteger rebalanceAmount = BigInteger.valueOf(50).multiply(EXA);
-        BigInteger totalCollateral = accountZeroCollateral.add(accountOneCollateral).add(accountTwoCollateral);
         BigInteger totalDebt = accountZeroDebt.add(accountOneDebt).add(accountTwoDebt);
-
+        
         takeLoanICX(accounts.get(0), "bnUSD", accountZeroCollateral, accountZeroLoan);
         takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
         takeLoanICX(accounts.get(2), "bnUSD", accountTwoCollateral, accountTwoLoan);
 
         BigInteger rate = EXA;
+        BigInteger originalTotalDebt = getTotalDebt();
         BigInteger expectedSICXRecived = rebalanceAmount;
         mockSicxBnusdPrice(rate);
         mockSwap(sicx, rebalanceAmount, rebalanceAmount);
 
         // Act
-        loans.invoke(rebalancing, "lowerPrice", rebalanceAmount);
+        loans.invoke(rebalancing, "lowerPrice", "sICX", rebalanceAmount);
 
         // Assert
         BigInteger remainingSicx = expectedSICXRecived;
@@ -990,6 +1400,101 @@ class LoansTest extends LoansTestBase {
         BigInteger accountTwoExpectedCollateralAdded = remainingSicx.multiply(accountTwoDebt).divide(totalDebt);
         BigInteger accountTwoExpectedDebtAdded = rebalanceAmount.multiply(accountTwoDebt).divide(totalDebt);
         verifyPosition(accounts.get(2).getAddress(), accountTwoCollateral.add(accountTwoExpectedCollateralAdded), accountTwoDebt.add(accountTwoExpectedDebtAdded));
+    
+        RewardsDataEntry accountZeroUpdate = new RewardsDataEntry();
+        accountZeroUpdate._user = accounts.get(0).getAddress();
+        accountZeroUpdate._balance = accountZeroDebt;
+
+        RewardsDataEntry accountOneUpdate = new RewardsDataEntry();
+        accountOneUpdate._user = accounts.get(1).getAddress();
+        accountOneUpdate._balance = accountOneDebt;
+
+        RewardsDataEntry accountTwoUpdate = new RewardsDataEntry();
+        accountTwoUpdate._user = accounts.get(2).getAddress();
+        accountTwoUpdate._balance = accountTwoDebt;
+
+        RewardsDataEntry[] rewardsBatchList = new RewardsDataEntry[] {accountZeroUpdate, accountOneUpdate, accountTwoUpdate};
+
+        verifyTotalDebt(originalTotalDebt.add(expectedSICXRecived)); 
+        verify(rewards.mock).updateBatchRewardsData(eq("Loans"), eq(originalTotalDebt), argThat(arg -> compareRewardsData(rewardsBatchList, arg)));
+    }
+
+    @Test
+    void lowerPrice_iETH() {
+        // Arrange
+        BigInteger accountZeroCollateral = BigInteger.valueOf(10000).multiply(EXA);
+        BigInteger accountOneCollateral = BigInteger.valueOf(20000).multiply(EXA);
+        BigInteger accountTwoCollateral = BigInteger.valueOf(30000).multiply(EXA);
+        BigInteger accountZeroLoan = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger accountOneLoan = BigInteger.valueOf(2000).multiply(EXA);
+        BigInteger accountTwoLoan = BigInteger.valueOf(3000).multiply(EXA);
+        BigInteger accountZeroFee = calculateFee(accountZeroLoan);
+        BigInteger accountOneFee = calculateFee(accountOneLoan);
+        BigInteger accountTwoFee = calculateFee(accountTwoLoan);
+        BigInteger accountZeroDebt = accountZeroFee.add(accountZeroLoan);
+        BigInteger accountOneDebt = accountOneFee.add(accountOneLoan);
+        BigInteger accountTwoDebt = accountTwoFee.add(accountTwoLoan);
+
+        BigInteger rebalanceAmount = BigInteger.valueOf(50).multiply(EXA);
+        BigInteger totalDebt = accountZeroDebt.add(accountOneDebt).add(accountTwoDebt);
+
+
+        takeLoanICX(accounts.get(0), "bnUSD", accountZeroCollateral, accountZeroLoan);
+        takeLoanICX(accounts.get(1), "bnUSD", accountOneCollateral, accountOneLoan);
+
+        takeLoaniETH(accounts.get(0), accountZeroCollateral, accountZeroLoan);
+        takeLoaniETH(accounts.get(1), accountOneCollateral, accountOneLoan);
+        takeLoaniETH(accounts.get(2), accountTwoCollateral, accountTwoLoan);
+
+        BigInteger originalTotalDebt = getTotalDebt();
+        BigInteger rate = EXA;
+        BigInteger expectedIETHRecived = rebalanceAmount;
+        mockiETHBnusdPrice(rate);
+        mockSwap(ieth, rebalanceAmount, rebalanceAmount);
+
+        // Act
+        loans.invoke(rebalancing, "lowerPrice", "iETH", rebalanceAmount);
+
+        // Assert
+        BigInteger remainingIETH = expectedIETHRecived;
+
+        BigInteger accountZeroExpectedCollateralAdded = remainingIETH.multiply(accountZeroDebt).divide(totalDebt);
+        BigInteger accountZeroExpectedDebtAdded = rebalanceAmount.multiply(accountZeroDebt).divide(totalDebt);
+        verifyPosition(accounts.get(0).getAddress(), accountZeroCollateral.add(accountZeroExpectedCollateralAdded),  accountZeroDebt.add(accountZeroExpectedDebtAdded), "iETH");
+
+        totalDebt = totalDebt.subtract(accountZeroDebt);
+        rebalanceAmount = rebalanceAmount.subtract(accountZeroExpectedDebtAdded);
+        remainingIETH = remainingIETH.subtract(accountZeroExpectedCollateralAdded);
+
+        BigInteger accountOneExpectedCollateralAdded = remainingIETH.multiply(accountOneDebt).divide(totalDebt);
+        BigInteger accountOneExpectedDebtAdded = rebalanceAmount.multiply(accountOneDebt).divide(totalDebt);
+        verifyPosition(accounts.get(1).getAddress(), accountOneCollateral.add(accountOneExpectedCollateralAdded),  accountOneDebt.add(accountOneExpectedDebtAdded), "iETH");
+
+        totalDebt = totalDebt.subtract(accountOneDebt);
+        rebalanceAmount = rebalanceAmount.subtract(accountOneExpectedDebtAdded);
+        remainingIETH = remainingIETH.subtract(accountOneExpectedCollateralAdded);
+
+        BigInteger accountTwoExpectedCollateralAdded = remainingIETH.multiply(accountTwoDebt).divide(totalDebt);
+        BigInteger accountTwoExpectedDebtAdded = rebalanceAmount.multiply(accountTwoDebt).divide(totalDebt);
+        verifyPosition(accounts.get(2).getAddress(), accountTwoCollateral.add(accountTwoExpectedCollateralAdded), accountTwoDebt.add(accountTwoExpectedDebtAdded), "iETH");
+    
+        RewardsDataEntry accountZeroUpdate = new RewardsDataEntry();
+        accountZeroUpdate._user = accounts.get(0).getAddress();
+        accountZeroUpdate._balance = accountZeroDebt.multiply(BigInteger.TWO);
+
+        RewardsDataEntry accountOneUpdate = new RewardsDataEntry();
+        accountOneUpdate._user = accounts.get(1).getAddress();
+        accountOneUpdate._balance = accountOneDebt.multiply(BigInteger.TWO);;
+
+        RewardsDataEntry accountTwoUpdate = new RewardsDataEntry();
+        accountTwoUpdate._user = accounts.get(2).getAddress();
+        accountTwoUpdate._balance = accountTwoDebt;
+
+
+        RewardsDataEntry[] rewardsBatchList = new RewardsDataEntry[] {accountZeroUpdate, accountOneUpdate, accountTwoUpdate};
+
+        verifyTotalDebt(originalTotalDebt.add(expectedIETHRecived)); 
+        verify(rewards.mock).updateBatchRewardsData(eq("Loans"), eq(originalTotalDebt), argThat(arg -> compareRewardsData(rewardsBatchList, arg)));
     }
 
 
@@ -1009,7 +1514,6 @@ class LoansTest extends LoansTestBase {
         BigInteger accountOneDebt = accountOneFee.add(accountOneLoan);
         BigInteger accountTwoDebt = accountTwoFee.add(accountTwoLoan);
 
-        BigInteger totalCollateral = accountZeroCollateral.add(accountOneCollateral).add(accountTwoCollateral);
         BigInteger totalDebt = accountZeroDebt.add(accountOneDebt).add(accountTwoDebt);
 
         BigInteger totalTokenRequired = BigInteger.valueOf(10000).multiply(EXA);
@@ -1026,7 +1530,7 @@ class LoansTest extends LoansTestBase {
         mockSwap(sicx, rebalanceAmount, rebalanceAmount);
 
         // Act
-        loans.invoke(rebalancing, "lowerPrice", totalTokenRequired);
+        loans.invoke(rebalancing, "lowerPrice", "sICX", totalTokenRequired);
 
         // Assert
         BigInteger remainingSicx = expectedSICXRecived;

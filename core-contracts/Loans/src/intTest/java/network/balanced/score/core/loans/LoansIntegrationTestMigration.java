@@ -62,57 +62,99 @@ class LoansIntegrationTestMigration extends LoansIntegrationTest {
     @Test
     @Order(-1)
     void updateLoans() throws Exception {
-       takeLoans();
-    //    reOpenPosition();
-       repyDebt();
-    //    rebalancing_lowerPrice();
-    //    rebalancing_raisePrice();
-       liquidateUser();
+        setupLoans();
+        liquidateUser();
 
-       Map<String, Object> availableAssetsPreUpdate = reader.loans.getAvailableAssets().get("bnUSD");
-       Map<String, Object> availableAssetsEdited = new HashMap<String, Object>(availableAssetsPreUpdate);
-       availableAssetsEdited.remove("is_collateral");
-       Map<String, String> collateralTokensPre = reader.loans.getCollateralTokens();
-       BigInteger totalCollateralPre = reader.loans.getTotalCollateral();
+        Map<String, Object> availableAssetsPreUpdate = reader.loans.getAvailableAssets().get("bnUSD");
+        Map<String, Object> availableAssetsEdited = new HashMap<String, Object>(availableAssetsPreUpdate);
+        Map<String, String> collateralTokensPre = reader.loans.getCollateralTokens();
+        BigInteger totalCollateralPre = reader.loans.getTotalCollateral();
 
-       List<Object> positionsPre = new ArrayList<>();
-       for (BalancedClient client :  balanced.balancedClients.values()) {    
+        List<Map<String, Object>> positionsPre = new ArrayList<>();
+        for (BalancedClient client :  balanced.balancedClients.values()) {    
             try {
-                Map<String, Object> positionEdited = new HashMap<String, Object>(reader.loans.getAccountPositions(client.getAddress()));
-                positionEdited.remove("first day");
-                positionEdited.remove("last_snap");
-                positionEdited.remove("snap_id");
-                positionEdited.remove("snaps_length");
-                positionsPre.add(positionEdited);
+                Map<String, Object> position = new HashMap<String, Object>(reader.loans.getAccountPositions(client.getAddress()));
+                positionsPre.add(position);
             } catch (Exception e) {
             }
-       }
+        }
 
-       balanced.loans._update(loansPath, Map.of("_governance", balanced.governance._address()));
-       owner.governance.setAddressesOnContract("loans");
-       owner.balancedOracle.getPriceInLoop((txr) -> {}, "sICX");
-       owner.balancedOracle.getPriceInLoop((txr) -> {}, "USD");
+        balanced.loans._update(loansPath, Map.of("_governance", balanced.governance._address()));
+        owner.governance.setAddressesOnContract("loans");
+        owner.balancedOracle.getPriceInLoop((txr) -> {}, "sICX");
+        owner.balancedOracle.getPriceInLoop((txr) -> {}, "USD");
 
-       Map<String, Object>  availableAssetsPostUpdate = reader.loans.getAvailableAssets().get("bnUSD");;
-       Map<String, String> collateralTokensPost = reader.loans.getCollateralTokens();
-       BigInteger totalCollateralPost = reader.loans.getTotalCollateral();
+        Map<String, Object>  availableAssetsPostUpdate = reader.loans.getAvailableAssets().get("bnUSD");;
+        Map<String, String> collateralTokensPost = reader.loans.getCollateralTokens();
+        BigInteger totalCollateralPost = reader.loans.getTotalCollateral();
 
-       List<Object> positionsPost = new ArrayList<>();
-       for (BalancedClient client :  balanced.balancedClients.values()) {
+        List<Map<String, Object>> positionsPost = new ArrayList<>();
+        for (BalancedClient client :  balanced.balancedClients.values()) {
             try {
                 positionsPost.add(reader.loans.getAccountPositions(client.getAddress()));
             } catch (Exception e) {
             }
-       }
+        }
 
-       assertEquals(availableAssetsEdited, availableAssetsPostUpdate);
-       assertEquals(collateralTokensPre, collateralTokensPost);
-       assertEquals(totalCollateralPre, totalCollateralPost);
-       assertEquals(positionsPre, positionsPost);
+        compareAssets(availableAssetsPostUpdate, availableAssetsEdited);
+        assertEquals(collateralTokensPre, collateralTokensPost);
+        assertEquals(totalCollateralPre, totalCollateralPost);
+        comparePositions(positionsPost, positionsPre);
     }
 
+    private void setupLoans() throws Exception {
+        BalancedClient loanTaker1 = balanced.newClient();
+        BalancedClient loanTaker2 = balanced.newClient();
+        BalancedClient loanTaker3 = balanced.newClient();
+        BalancedClient loanTaker4 = balanced.newClient();
+        BalancedClient loanTaker5 = balanced.newClient();
+        BalancedClient nonLoanTaker = balanced.newClient();
+        
+        BigInteger collateral = BigInteger.TEN.pow(23);
+        BigInteger loan  = BigInteger.TEN.pow(20);
+
+        loanTaker1.loans.depositAndBorrow(collateral, "bnUSD", loan,  null, null);
+        loanTaker2.loans.depositAndBorrow(collateral, "bnUSD", loan,  null, null);
+        loanTaker3.loans.depositAndBorrow(collateral, "bnUSD", loan,  null, null);
+        loanTaker4.loans.depositAndBorrow(collateral, "bnUSD", loan,  null, null);
+        loanTaker5.loans.depositAndBorrow(collateral, "bnUSD", loan,  null, null);
+    }
+
+    private void comparePositions(List<Map<String, Object>> positions, List<Map<String, Object>> refPositions) {
+        for (int i = 0; i < positions.size(); i++) {
+            Map<String, Map<String, Object>> assetsDetails = (Map<String, Map<String, Object>>) positions.get(i).get("assets");
+            Map<String, Map<String, Object>> standingDetails = (Map<String, Map<String, Object>>) positions.get(i).get("standings");
+            Map<String, Object> refAssetsDetails = (Map<String, Object>) refPositions.get(i).get("assets");
+
+            assertEquals(positions.get(i).get("totalDebt"), refPositions.get(i).get("totalDebt"));
+            assertEquals(positions.get(i).get("address"), refPositions.get(i).get("address"));
+            assertEquals(positions.get(i).get("pos_id"), refPositions.get(i).get("pos_id"));
+            assertEquals(positions.get(i).get("created"), refPositions.get(i).get("created"));
+            if (!assetsDetails.isEmpty()) {
+                assertEquals(assetsDetails.get("sICX").get("sICX"), refAssetsDetails.get("sICX"));
+                assertEquals(assetsDetails.get("sICX").get("bnUSD"), refAssetsDetails.get("bnUSD"));
+            }
+          
+            assertEquals(standingDetails.get("sICX").get("standing"), refPositions.get(i).get("standing"));
+            assertEquals(standingDetails.get("sICX").get("ratio"), refPositions.get(i).get("ratio"));
+            assertEquals(standingDetails.get("sICX").get("collateral"), refPositions.get(i).get("collateral"));
+            assertEquals(standingDetails.get("sICX").get("total_debt"), refPositions.get(i).get("total_debt"));
+        }
+    }
+
+    private void compareAssets(Map<String, Object> assets, Map<String, Object> refAssets) {
+        Map<String, Map<String, Object>> debtDetails = (Map<String, Map<String, Object>>) assets.get("debt_details");
+        assertEquals(assets.get("total_burned"), refAssets.get("total_burned"));
+        assertEquals(assets.get("symbol"), refAssets.get("symbol"));
+        assertEquals(assets.get("active"), refAssets.get("active"));
+        assertEquals(assets.get("address"), refAssets.get("address"));
+        assertEquals(assets.get("total_supply"), refAssets.get("total_supply"));
+        assertEquals(debtDetails.get("sICX").get("borrowers"), refAssets.get("borrowers"));
+        assertEquals(debtDetails.get("sICX").get("bad_debt"), refAssets.get("bad_debt"));
+        assertEquals(debtDetails.get("sICX").get("liquidation_pool"), refAssets.get("liquidation_pool"));
+    }
+    
     private void liquidateUser() throws Exception {
-        // Arrange
         balanced.increaseDay(1);
         claimAllRewards();
 
@@ -121,14 +163,14 @@ class LoansIntegrationTestMigration extends LoansIntegrationTest {
         depositToStabilityContract(voter, voteDefinitionFee.multiply(BigInteger.TWO));
 
         BigInteger initalLockingRatio = hexObjectToBigInteger(owner.loans.getParameters().get("locking ratio"));
-        BigInteger lockingRatio = BigInteger.valueOf(13000);
+        BigInteger lockingRatio = BigInteger.valueOf(14000);
 
         BalancedClient loanTaker = balanced.newClient();
         BalancedClient liquidator = balanced.newClient();
         
         setLockingRatio(voter, lockingRatio, "Liquidation setup for asset migration");
 
-        BigInteger collateral = BigInteger.TEN.pow(22);
+        BigInteger collateral = BigInteger.TEN.pow(21);
         BigInteger collateralValue = collateral.multiply(owner.sicx.lastPriceInLoop()).divide(EXA);
         BigInteger feePercent = hexObjectToBigInteger(owner.loans.getParameters().get("origination fee"));
         BigInteger maxDebt = POINTS.multiply(collateralValue).divide(lockingRatio);
@@ -138,9 +180,10 @@ class LoansIntegrationTestMigration extends LoansIntegrationTest {
 
         loanTaker.loans.depositAndBorrow(collateral, "bnUSD", loan,  null, null);
 
-        setLockingRatio(voter, initalLockingRatio, "restore Lockign ratio -1");
+        setLockingRatio(voter, initalLockingRatio, "restore Lockign ratio for asset migration");
 
-        // Act
-        liquidator.loans.liquidate(loanTaker.getAddress());
+        Map<String,Object> params = new HashMap<>();
+        params.put("_owner",loanTaker.getAddress());
+        liquidator.loans._send("liquidate", params);
     }
 }

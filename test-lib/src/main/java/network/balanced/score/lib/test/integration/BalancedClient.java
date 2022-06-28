@@ -16,11 +16,14 @@
 package network.balanced.score.lib.test.integration;
 
 import foundation.icon.icx.KeyWallet;
+import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
 import network.balanced.score.lib.interfaces.*;
 
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.chain;
 import network.balanced.score.lib.interfaces.base.*;
+import network.balanced.score.lib.interfaces.tokens.*;
+import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
 import network.balanced.score.lib.structs.BalancedAddresses;
 
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
@@ -33,7 +36,7 @@ import com.eclipsesource.json.JsonObject;
 
 public class BalancedClient {
     private Balanced balanced;
-    private final KeyWallet wallet;
+    public final KeyWallet wallet;
 
     public GovernanceScoreClient governance;
     public StakingScoreClient staking;
@@ -80,6 +83,9 @@ public class BalancedClient {
         return score.Address.fromString(wallet.getAddress().toString());
     }
 
+    public IRC2Mintable irc2(score.Address address) {
+       return new IRC2MintableScoreClient(chain.getEndpointURL(), chain.networkId, wallet, new Address(address.toString()));
+    }
 
     public byte[] createBorrowData(BigInteger amount) {
         JsonObject data = new JsonObject()
@@ -89,20 +95,35 @@ public class BalancedClient {
         return data.toString().getBytes();
     }
 
-    public void sICXDepositAndBorrow(BigInteger collateral, BigInteger amount) {
-        if (!collateral.equals(BigInteger.ZERO)) {
-            staking.stakeICX(collateral, null, null);
-        }
-
+    public void stakeDepositAndBorrow(BigInteger collateral, BigInteger amount) {
+        staking.stakeICX(collateral, null, null);
         byte[] params = createBorrowData(amount);
         sicx.transfer(balanced.loans._address(), collateral, params);
     }
 
-    public BigInteger getLoansAssetPosition(String symbol) {
-        Map<String, String> assets = (Map<String, String>) loans.getAccountPositions(getAddress()).get("assets");
+    public void depositAndBorrow(Address collateralAddress, BigInteger collateral, BigInteger amount) {
+        byte[] params = createBorrowData(amount);
+        irc2(collateralAddress).transfer(balanced.loans._address(), collateral, params);
+    }
+
+    public void borrowFrom(String collateral, BigInteger amount) {
+        byte[] params = createBorrowData(amount);
+        loans.borrow(collateral, "bnUSD", amount, null);
+    }
+
+    public BigInteger getLoansCollateralPosition(String symbol) {
+        Map<String, Map<String, String>> assets = (Map<String, Map<String, String>>) loans.getAccountPositions(getAddress()).get("assets");
         if (!assets.containsKey(symbol)) {
             return BigInteger.ZERO;
         }
-        return hexObjectToBigInteger(assets.get(symbol));
+        return hexObjectToBigInteger(assets.get(symbol).get(symbol));
+    }
+
+    public BigInteger getLoansAssetPosition(String collateralSymbol, String assetSymbol) {
+        Map<String, Map<String, String>> assets = (Map<String, Map<String, String>>) loans.getAccountPositions(getAddress()).get("assets");
+        if (!assets.containsKey(collateralSymbol) || !assets.get(collateralSymbol).containsKey(assetSymbol) ) {
+            return BigInteger.ZERO;
+        }
+        return hexObjectToBigInteger(assets.get(collateralSymbol).get(assetSymbol));
     }
 }

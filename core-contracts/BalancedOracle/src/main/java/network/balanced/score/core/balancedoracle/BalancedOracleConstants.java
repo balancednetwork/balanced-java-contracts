@@ -31,7 +31,7 @@ public class BalancedOracleConstants {
    private static final String STAKING = "staking";
 
    private static final String DEX_PRICED_ASSETS = "dexPriceAssets";
-   private static final String ASSET_SYMBOL_MAP = "assetSymbolMap";
+   private static final String ASSET_SYMBOL_PEG = "assetPegMap";
    private static final String LAST_LOOP_PRICES = "lastLoopPrices";
 
    public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
@@ -41,6 +41,6 @@ public class BalancedOracleConstants {
    public static final VarDB<Address> staking = Context.newVarDB(STAKING, Address.class);
 
    public static final DictDB<String, BigInteger> dexPricedAssets = Context.newDictDB(DEX_PRICED_ASSETS, BigInteger.class);
-   public static final DictDB<String, String> assetSymbolMap = Context.newDictDB(ASSET_SYMBOL_MAP, String.class);
+   public static final DictDB<String, String> assetPeg = Context.newDictDB(ASSET_SYMBOL_PEG, String.class);
    public static final DictDB<String, BigInteger> lastPriceInLoop = Context.newDictDB(LAST_LOOP_PRICES, BigInteger.class);
 }

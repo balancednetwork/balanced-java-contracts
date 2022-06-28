@@ -250,7 +250,6 @@ public class DexTestCore extends DexTestBase {
         Account account1 = sm.createAccount();
         turnDexOn();
 
-
         final String data = "{" +
                 "\"method\": \"_deposit\"" +
                 "}";

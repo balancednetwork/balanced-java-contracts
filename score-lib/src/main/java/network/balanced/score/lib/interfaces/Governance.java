@@ -25,6 +25,7 @@ import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.PrepDelegations;
 import score.Address;
 import score.annotation.External;
+import score.annotation.Optional;
 import score.annotation.Payable;
 
 import java.math.BigInteger;
@@ -55,9 +56,6 @@ public interface Governance extends
     
     @External(readonly = true)
     BigInteger getTimeOffset();
-
-    @External
-    void setDividendsOnlyToStakedBalnDay(BigInteger _day);
 
     @External(readonly = true)
     BigInteger getVoteDuration();
@@ -196,12 +194,26 @@ public interface Governance extends
     BigInteger getLaunchTime();
 
     @External
-    void addAsset(Address _token_address, boolean _active, boolean _collateral);
+    void addCollateral(Address _token_address, boolean _active, String _peg, @Optional BigInteger _limit);
+    
+    @External
+    void addDexPricedCollateral(Address _token_address, boolean _active, @Optional BigInteger _limit);
+
+    @External
+    void setCollateralLimit(String _symbol, BigInteger _limit);
 
     @External
     void toggleAssetActive(String _symbol);
 
     @External
+    void setPeg(String _symbol,String _peg);
+     
+    @External
+    void addDexPricedAsset(String _symbol, BigInteger _limit);  
+
+    @External
+    void removeDexPricedAsset(String _symbol);
+       
     void addNewDataSource(String _data_source_name, String _contract_address);
 
     @External

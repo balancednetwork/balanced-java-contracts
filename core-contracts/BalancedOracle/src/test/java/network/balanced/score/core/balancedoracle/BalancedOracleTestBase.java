@@ -48,9 +48,9 @@ class BalancedOracleTestBase extends UnitTest {
     protected static final Account owner = sm.createAccount();
     protected static final Account adminAccount = sm.createAccount();
 
-    protected MockContract<DexScoreInterface> dex;
-    protected MockContract<OracleScoreInterface> oracle;
-    protected MockContract<StakingScoreInterface> staking;
+    protected MockContract<Dex> dex;
+    protected MockContract<Oracle> oracle;
+    protected MockContract<Staking> staking;
 
     protected Score balancedOracle;
     protected static final Account governance = Account.newScoreAccount(scoreCount);
@@ -58,9 +58,9 @@ class BalancedOracleTestBase extends UnitTest {
     protected static final BigInteger icxBnsudPoolId = BigInteger.TWO;
 
     protected void setup() throws Exception {
-        dex = new MockContract<DexScoreInterface>(DexScoreInterface.class, sm, owner);
-        oracle = new MockContract<OracleScoreInterface>(OracleScoreInterface.class, sm, owner);
-        staking = new MockContract<StakingScoreInterface>(StakingScoreInterface.class, sm, owner);
+        dex = new MockContract<Dex>(DexScoreInterface.class, sm, owner);
+        oracle = new MockContract<Oracle>(OracleScoreInterface.class, sm, owner);
+        staking = new MockContract<Staking>(StakingScoreInterface.class, sm, owner);
         balancedOracle = sm.deploy(owner, BalancedOracleImpl.class, governance.getAddress());
     }
 }

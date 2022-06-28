@@ -47,7 +47,7 @@ public class RebalancingImpl implements Rebalancing {
         if (governance.getOrDefault(null) == null) {
             Context.require(_governance.isContract(), TAG + ": Governance address should be a contract");
             governance.set(_governance);
-            priceThreshold.set(BigInteger.valueOf(100000000000000000L));
+            // priceThreshold.set(BigInteger.valueOf(100000000000000000L));
         }
     }
 
@@ -228,15 +228,16 @@ public class RebalancingImpl implements Rebalancing {
     public void rebalance(@Optional Address address) {
         optionalDefault(address, sicx.get());
         Address loansScore = loans.get();
+        String symbol = Context.call(String.class, address, "symbol");
         Context.require(loansScore != null);
-        List<Object> status = getRebalancingStatusFor(sicx.get());
+        List<Object> status = getRebalancingStatusFor(address);
         boolean forward = (boolean) status.get(0);
         BigInteger tokenAmount = (BigInteger) status.get(1);
         boolean reverse = (boolean) status.get(2);
         if (forward && tokenAmount.signum() > 0) {
-            Context.call(loansScore, "raisePrice", tokenAmount);
+            Context.call(loansScore, "raisePrice", symbol, tokenAmount);
         } else if (reverse && tokenAmount.signum() > 0) {
-            Context.call(loansScore, "lowerPrice", tokenAmount.abs());
+            Context.call(loansScore, "lowerPrice", symbol, tokenAmount.abs());
         }
     }
 }

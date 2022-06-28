@@ -16,32 +16,14 @@
 
 package network.balanced.score.core.balancedoracle;
 
-import com.iconloop.score.test.Account;
-import com.iconloop.score.test.Score;
-import com.iconloop.score.test.ServiceManager;
-import com.iconloop.score.test.TestBase;
-import network.balanced.score.lib.structs.Disbursement;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import score.Address;
-import score.Context;
 
 import java.math.BigInteger;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
-import network.balanced.score.lib.test.UnitTest;
-import network.balanced.score.lib.test.mock.MockContract;
-import network.balanced.score.lib.interfaces.*;
 
 class BalancedOracleTest extends BalancedOracleTestBase {
     @BeforeEach
@@ -102,7 +84,7 @@ class BalancedOracleTest extends BalancedOracleTestBase {
         // Arrange
         String tokenSymbol = "BALN";
         BigInteger poolID = BigInteger.valueOf(3);
-        balancedOracle.invoke(owner, "addDexPricedAsset", tokenSymbol, poolID);
+        balancedOracle.invoke(governance, "addDexPricedAsset", tokenSymbol, poolID);
 
         BigInteger bnusdRate = BigInteger.valueOf(7).multiply(BigInteger.TEN.pow(17));
         BigInteger balnPriceInBnusd = BigInteger.valueOf(20).multiply(BigInteger.TEN.pow(17));
