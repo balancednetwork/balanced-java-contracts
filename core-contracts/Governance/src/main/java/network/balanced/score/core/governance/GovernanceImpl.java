@@ -700,15 +700,34 @@ public class GovernanceImpl {
     }
 
     @External
-    public void addCollateral(Address _token_address, boolean _active, @Optional BigInteger _limit) {
+    public void addCollateral(Address _token_address, boolean _active, String _peg, @Optional BigInteger _limit) {
         onlyOwner();
         Address loansAddress = Addresses.get("loans");
         Context.call(loansAddress, "addAsset", _token_address, _active, true);
+
+        String symbol = Context.call(String.class, _token_address, "symbol");
+        Context.call(Addresses.get("balancedOracle"), "setPeg", symbol, _peg);
         if (_limit.equals(BigInteger.ZERO)) {
             return;
         }
 
+        Context.call(loansAddress, "setCollateralLimit", symbol, _limit);
+    }
+
+    @External
+    public void addDexPricedCollateral(Address _token_address, boolean _active, @Optional BigInteger _limit) {
+        onlyOwner();
+        Address loansAddress = Addresses.get("loans");
+        Context.call(loansAddress, "addAsset", _token_address, _active, true);
+
         String symbol = Context.call(String.class, _token_address, "symbol");
+        BigInteger poolId = Context.call(BigInteger.class, Addresses.get("dex"), "getPoolId", _token_address, Addresses.get("bnUSD"));
+        Context.call(Addresses.get("balancedOracle"), "addDexPricedAsset", symbol, poolId);
+
+        if (_limit.equals(BigInteger.ZERO)) {
+            return;
+        }
+
         Context.call(loansAddress, "setCollateralLimit", symbol, _limit);
     }
 
@@ -723,6 +742,24 @@ public class GovernanceImpl {
     public void toggleAssetActive(String _symbol) {
         onlyOwner();
         Context.call(Addresses.get("loans"), "toggleAssetActive", _symbol);
+    }
+
+    @External
+    public void setPeg(String _symbol,String _peg) {
+        onlyOwner();
+        Context.call(Addresses.get("balancedOracle"), "setPeg", _symbol, _peg);
+    }
+
+    @External
+    public void addDexPricedAsset(String _symbol, BigInteger _limit) {
+        onlyOwner();
+        Context.call(Addresses.get("balancedOracle"), "addDexPricedAsset", _symbol, _limit);
+    }
+
+    @External
+    public void removeDexPricedAsset(String _symbol) {
+        onlyOwner();
+        Context.call(Addresses.get("balancedOracle"), "removeDexPricedAsset", _symbol);
     }
 
     @External

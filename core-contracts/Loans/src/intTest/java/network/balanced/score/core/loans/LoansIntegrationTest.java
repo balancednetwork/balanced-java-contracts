@@ -73,7 +73,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         owner.governance.setQuorum(BigInteger.ONE);
 
         ethAddress = createIRC2Token(owner, "ICON ETH", "iETH");
-        owner.balancedOracle.getPriceInLoop((txr)->{}, "iETH");
+        owner.balancedOracle.getPriceInLoop((txr)->{}, "ETH");
         owner.irc2(ethAddress).setMinter(owner.getAddress());
     }
 
@@ -82,10 +82,10 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
     void takeLoans() throws Exception {
         BigInteger ethAmount =  BigInteger.TEN.pow(18);
         
-        BigInteger bnusdAmount = ethAmount.multiply(reader.balancedOracle.getLastPriceInLoop("iETH"))
+        BigInteger bnusdAmount = ethAmount.multiply(reader.balancedOracle.getLastPriceInLoop("ETH"))
             .divide(reader.balancedOracle.getLastPriceInLoop("bnUSD"));
 
-        addCollateralType(owner, ethAddress, ethAmount, bnusdAmount); 
+        addCollateralType(owner, ethAddress, ethAmount, bnusdAmount, "ETH"); 
 
         // Arrange
         BalancedClient loantakerICX = balanced.newClient();
@@ -589,7 +589,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         executeVoteActions(balanced, voter, name, actions);
     }
 
-    private void addCollateralType(BalancedClient minter, Address collateralAddress, BigInteger tokenAmount, BigInteger bnUSDAmount) {
+    private void addCollateralType(BalancedClient minter, Address collateralAddress, BigInteger tokenAmount, BigInteger bnUSDAmount, String peg) {
         minter.irc2(collateralAddress).mintTo(owner.getAddress(), tokenAmount, new byte[0]);
         depositToStabilityContract(owner, bnUSDAmount);
 
@@ -601,7 +601,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         owner.bnUSD.transfer(balanced.dex._address(), bnusdDeposit, depositData.toString().getBytes());
         owner.dex.add(collateralAddress, balanced.bnusd._address(), tokenAmount, bnusdDeposit, false);
 
-        owner.governance.addCollateral(collateralAddress, true, null);
+        owner.governance.addCollateral(collateralAddress, true, peg, null);
     }
 
     private void getTokens(BalancedClient client, Address address, BigInteger amount) {

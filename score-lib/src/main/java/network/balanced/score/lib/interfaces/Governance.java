@@ -193,8 +193,11 @@ public interface Governance extends
     BigInteger getLaunchTime();
 
     @External
-    void addCollateral(Address _token_address, boolean _active, @Optional BigInteger _limit);
+    void addCollateral(Address _token_address, boolean _active, String _peg, @Optional BigInteger _limit);
     
+    @External
+    void addDexPricedCollateral(Address _token_address, boolean _active, @Optional BigInteger _limit);
+
     @External
     void setCollateralLimit(String _symbol, BigInteger _limit);
 
@@ -202,6 +205,14 @@ public interface Governance extends
     void toggleAssetActive(String _symbol);
 
     @External
+    void setPeg(String _symbol,String _peg);
+     
+    @External
+    void addDexPricedAsset(String _symbol, BigInteger _limit);  
+
+    @External
+    void removeDexPricedAsset(String _symbol);
+       
     void addNewDataSource(String _data_source_name, String _contract_address);
 
     @External

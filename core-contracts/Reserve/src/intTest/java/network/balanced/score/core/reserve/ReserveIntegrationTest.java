@@ -76,10 +76,8 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         ethAddress = createIRC2Token(owner, "ICON ETH", "iETH");
         owner.irc2(ethAddress).setMinter(owner.getAddress());
 
-        owner.balancedOracle.getPriceInLoop((txr)->{}, "iETH");
         BigInteger pid = owner.dex.getPoolId(balanced.baln._address(), balanced.bnusd._address());
-        owner.balancedOracle.addDexPricedAsset("BALN", pid);
-        owner.balancedOracle.getPriceInLoop((txr)->{}, "iETH");
+        owner.balancedOracle.getPriceInLoop((txr)->{}, "ETH");
         owner.balancedOracle.getPriceInLoop((txr)->{}, "BALN");
 
     }
@@ -102,10 +100,10 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
 
         BigInteger ethAmount =  BigInteger.TEN.pow(18);
         
-        BigInteger bnusdAmount = ethAmount.multiply(reader.balancedOracle.getLastPriceInLoop("iETH"))
+        BigInteger bnusdAmount = ethAmount.multiply(reader.balancedOracle.getLastPriceInLoop("ETH"))
             .divide(reader.balancedOracle.getLastPriceInLoop("bnUSD"));
 
-        addCollateralType(owner, ethAddress, ethAmount, bnusdAmount); 
+        addCollateralType(owner, ethAddress, ethAmount, bnusdAmount, "ETH"); 
     }
 
     @Test
@@ -309,7 +307,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
     }
 
 
-    private void addCollateralType(BalancedClient minter, Address collateralAddress, BigInteger tokenAmount, BigInteger bnUSDAmount) {
+    private void addCollateralType(BalancedClient minter, Address collateralAddress, BigInteger tokenAmount, BigInteger bnUSDAmount, String peg) {
         minter.irc2(collateralAddress).mintTo(owner.getAddress(), tokenAmount, new byte[0]);
         depositToStabilityContract(owner, bnUSDAmount);
 
@@ -321,6 +319,6 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         owner.bnUSD.transfer(balanced.dex._address(), bnusdDeposit, depositData.toString().getBytes());
         owner.dex.add(collateralAddress, balanced.bnusd._address(), tokenAmount, bnusdDeposit, false);
 
-        owner.governance.addCollateral(collateralAddress, true, null);
+        owner.governance.addCollateral(collateralAddress, true, peg, BigInteger.ZERO);
     }
 }

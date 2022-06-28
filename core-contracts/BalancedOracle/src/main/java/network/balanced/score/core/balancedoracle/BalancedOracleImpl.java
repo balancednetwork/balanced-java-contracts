@@ -48,8 +48,7 @@ public class BalancedOracleImpl implements BalancedOracle {
 
         governance.set(_governance);
         assetPeg.set("bnUSD", "USD");
-        assetPeg.set("iETH", "ETH");
-        assetPeg.set("iBTC", "BTC");
+        dexPricedAssets.set("BALN",  BigInteger.valueOf(3));
     }
     
     @External(readonly = true)
@@ -68,7 +67,6 @@ public class BalancedOracleImpl implements BalancedOracle {
             BigInteger bnusdPriceInAsset = Context.call(BigInteger.class, dex.get(), "getQuotePriceInBase", poolID);
 
             BigInteger loopRate = getLoopRate("USD");
-            
             priceInLoop = loopRate.multiply(bnusdPriceInAsset).divide(EXA);
         } else {
             priceInLoop = getLoopRate(symbol);
@@ -89,13 +87,13 @@ public class BalancedOracleImpl implements BalancedOracle {
 
     @External
     public void addDexPricedAsset(String symbol, BigInteger dexBnusdPoolId) {
-        onlyOwner();
+        only(admin);
         dexPricedAssets.set(symbol, dexBnusdPoolId);
     }
 
     @External
     public void removeDexPricedAsset(String symbol) {
-        onlyOwner();
+        only(admin);
         dexPricedAssets.set(symbol, null);
     }
 
@@ -108,7 +106,7 @@ public class BalancedOracleImpl implements BalancedOracle {
 
     @External
     public void setPeg(String symbol, String peg) {
-        onlyOwner();
+        only(admin);
         assetPeg.set(symbol, peg);
     }
 

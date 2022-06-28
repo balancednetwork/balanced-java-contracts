@@ -255,20 +255,47 @@ public class GovernanceTest extends GovernanceTestBase {
         Address tokenAddress = bwt.getAddress();
         boolean active = false;
         BigInteger limit = EXA;
+        String peg = "BTC";
         Account notOwner = sm.createAccount();
         String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
         
         // Act & Assert
-        Executable withNotOwner = () -> governance.invoke(notOwner, "addCollateral", tokenAddress, active, limit);
+        Executable withNotOwner = () -> governance.invoke(notOwner, "addCollateral", tokenAddress, active, peg, limit);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
 
         // Act
         when(bwt.mock.symbol()).thenReturn("BALW");
-        governance.invoke(owner, "addCollateral", tokenAddress, active, limit);
+        governance.invoke(owner, "addCollateral", tokenAddress, active, peg, limit);
 
         // Assert
         verify(loans.mock).addAsset(tokenAddress, active, true);
         verify(loans.mock).setCollateralLimit("BALW", limit);
+        verify(balancedOracle.mock).setPeg("BALW", peg);
+    }
+
+    @Test
+    void addDexPricedCollateral() {
+        // Arrange
+        Address tokenAddress = bwt.getAddress();
+        boolean active = false;
+        BigInteger limit = EXA;
+        BigInteger poolID = BigInteger.valueOf(7);
+        Account notOwner = sm.createAccount();
+        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+        
+        // Act & Assert
+        Executable withNotOwner = () -> governance.invoke(notOwner, "addDexPricedCollateral", tokenAddress, active, limit);
+        expectErrorMessage(withNotOwner, expectedErrorMessage);
+
+        // Act
+        when(bwt.mock.symbol()).thenReturn("BALW");
+        when(dex.mock.getPoolId(tokenAddress, bnUSD.getAddress())).thenReturn(poolID);
+        governance.invoke(owner, "addDexPricedCollateral", tokenAddress, active, limit);
+
+        // Assert
+        verify(loans.mock).addAsset(tokenAddress, active, true);
+        verify(loans.mock).setCollateralLimit("BALW", limit);
+        verify(balancedOracle.mock).addDexPricedAsset("BALW", poolID);
     }
 
     @Test
@@ -288,6 +315,62 @@ public class GovernanceTest extends GovernanceTestBase {
 
         // Assert
         verify(loans.mock).setCollateralLimit(symbol, limit);
+    }
+
+    @Test
+    void setPeg() {
+        // Arrange
+        String symbol = "TEST";
+        String peg = "BTC";
+        Account notOwner = sm.createAccount();
+        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+        
+        // Act & Assert
+        Executable withNotOwner = () -> governance.invoke(notOwner, "setPeg", symbol, peg);
+        expectErrorMessage(withNotOwner, expectedErrorMessage);
+
+        // Act
+        governance.invoke(owner, "setPeg", symbol, peg);
+
+        // Assert
+        verify(balancedOracle.mock).setPeg(symbol, peg);
+    }
+
+    @Test
+    void addDexPricedAsset() {
+        // Arrange
+        String symbol = "TEST";
+        BigInteger poolId = BigInteger.TWO;
+        Account notOwner = sm.createAccount();
+        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+        
+        // Act & Assert
+        Executable withNotOwner = () -> governance.invoke(notOwner, "addDexPricedAsset", symbol, poolId);
+        expectErrorMessage(withNotOwner, expectedErrorMessage);
+
+        // Act
+        governance.invoke(owner, "addDexPricedAsset", symbol, poolId);
+
+        // Assert
+        verify(balancedOracle.mock).addDexPricedAsset(symbol, poolId);
+    }
+
+    @Test
+    void removeDexPricedAsset() {
+        // Arrange
+        String symbol = "TEST";
+        Account notOwner = sm.createAccount();
+        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+        
+        // Act & Assert
+        Executable withNotOwner = () -> governance.invoke(notOwner, "removeDexPricedAsset", symbol);
+        expectErrorMessage(withNotOwner, expectedErrorMessage);
+
+        // Act
+        governance.invoke(owner, "removeDexPricedAsset", symbol);
+
+        // Assert
+        verify(balancedOracle.mock).removeDexPricedAsset(symbol);
     }
 
     @Test
