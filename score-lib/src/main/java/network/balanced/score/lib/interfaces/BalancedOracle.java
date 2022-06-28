@@ -22,8 +22,10 @@ import score.annotation.External;
 
 import java.math.BigInteger;
 
+import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 
+@ScoreClient
 @ScoreInterface
 public interface BalancedOracle extends 
         Name,

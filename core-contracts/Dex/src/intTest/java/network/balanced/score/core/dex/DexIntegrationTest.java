@@ -19,9 +19,7 @@ package network.balanced.score.core.dex;
 import foundation.icon.icx.Wallet;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
-import foundation.icon.score.client.ScoreClient;
 import network.balanced.score.lib.interfaces.*;
-import network.balanced.score.lib.interfaces.dex.DexTest;
 import network.balanced.score.lib.interfaces.dex.DexTestScoreClient;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.Env;
@@ -109,40 +107,37 @@ class DexIntegrationTest {
     private static final Address userAddress = Address.of(userWallet);
     private static final Address tUserAddress = Address.of(tUserWallet);
 
-    @ScoreClient
-    private static final DexTest ownerDexTestScoreClient = new DexTestScoreClient(chain.getEndpointURL(),
+    private static final DexTestScoreClient ownerDexTestScoreClient = new DexTestScoreClient(chain.getEndpointURL(),
             chain.networkId, testOwnerWallet, tokenAAddress);
-    private static final DexTest ownerDexTestBaseScoreClient = new DexTestScoreClient(chain.getEndpointURL(),
+    private static final DexTestScoreClient ownerDexTestBaseScoreClient = new DexTestScoreClient(chain.getEndpointURL(),
             chain.networkId, testOwnerWallet, tokenBAddress);
-    private static final DexTest ownerDexTestThirdScoreClient = new DexTestScoreClient(chain.getEndpointURL(),
-            chain.networkId, testOwnerWallet, tokenCAddress);
-    private static final DexTest ownerDexTestFourthScoreClient = new DexTestScoreClient(chain.getEndpointURL(),
-            chain.networkId, testOwnerWallet, tokenDAddress);
-    @ScoreClient
-    private static final Dex dexUserScoreClient = new DexScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid()
-            , userWallet, dexScoreClient._address());
+    private static final DexTestScoreClient ownerDexTestThirdScoreClient =
+            new DexTestScoreClient(chain.getEndpointURL(), chain.networkId, testOwnerWallet, tokenCAddress);
+    private static final DexTestScoreClient ownerDexTestFourthScoreClient =
+            new DexTestScoreClient(chain.getEndpointURL(), chain.networkId, testOwnerWallet, tokenDAddress);
+    private static final DexScoreClient dexUserScoreClient = new DexScoreClient(dexScoreClient.endpoint(),
+            dexScoreClient._nid(), userWallet, dexScoreClient._address());
     private static final Staking userStakeScoreClient = new StakingScoreClient(dexScoreClient.endpoint(),
             dexScoreClient._nid(), userWallet, stakingScoreClient._address());
-    private static final Sicx userSicxScoreClient = new SicxScoreClient(dexScoreClient.endpoint(),
+    private static final SicxScoreClient userSicxScoreClient = new SicxScoreClient(dexScoreClient.endpoint(),
             dexScoreClient._nid(), userWallet, sIcxScoreClient._address());
     static Rewards userWalletRewardsClient = new RewardsScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(),
             userWallet, rewardsScoreClient._address());
-    private static final Baln userBalnScoreClient = new BalnScoreClient(dexScoreClient.endpoint(),
+    private static final BalnScoreClient userBalnScoreClient = new BalnScoreClient(dexScoreClient.endpoint(),
             dexScoreClient._nid(), userWallet, balnScoreClient._address());
-    private static final DexTest userDexTestScoreClient = new DexTestScoreClient(dexScoreClient.endpoint(),
+    private static final DexTestScoreClient userDexTestScoreClient = new DexTestScoreClient(dexScoreClient.endpoint(),
             dexScoreClient._nid(), userWallet, tokenAAddress);
-    private static final DexTest userDexTestBaseScoreClient = new DexTestScoreClient(dexScoreClient.endpoint(),
-            dexScoreClient._nid(), userWallet, tokenBAddress);
-    private static final DexTest userDexTestThirdScoreClient = new DexTestScoreClient(dexScoreClient.endpoint(),
-            dexScoreClient._nid(), userWallet, tokenCAddress);
-    private static final DexTest userDexTestFourthScoreClient = new DexTestScoreClient(dexScoreClient.endpoint(),
-            dexScoreClient._nid(), userWallet, tokenDAddress);
+    private static final DexTestScoreClient userDexTestBaseScoreClient =
+            new DexTestScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet, tokenBAddress);
+    private static final DexTestScoreClient userDexTestThirdScoreClient =
+            new DexTestScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet, tokenCAddress);
+    private static final DexTestScoreClient userDexTestFourthScoreClient =
+            new DexTestScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet, tokenDAddress);
 
-    @ScoreClient
-    private static final Governance governanceDexScoreClient = new GovernanceScoreClient(governanceScoreClient);
-    private static final Rewards userRewardScoreClient = new RewardsScoreClient(rewardsScoreClient);
-    @ScoreClient
-    private static final DAOfund userDaoFundScoreClient = new DAOfundScoreClient(daoFundScoreClient);
+    private static final GovernanceScoreClient governanceDexScoreClient =
+            new GovernanceScoreClient(governanceScoreClient);
+    private static final RewardsScoreClient userRewardScoreClient = new RewardsScoreClient(rewardsScoreClient);
+    private static final DAOfundScoreClient userDaoFundScoreClient = new DAOfundScoreClient(daoFundScoreClient);
 
     private static final DefaultScoreClient userClient = new DefaultScoreClient(chain.getEndpointURL(),
             chain.networkId, userWallet, DefaultScoreClient.ZERO_ADDRESS);

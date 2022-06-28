@@ -52,6 +52,10 @@ deployJar {
             uri = 'https://sejong.net.solidwallet.io/api/v3'
             nid = 0x53
         }
+        berlin {
+            uri = "https://berlin.net.solidwallet.io/api/v3"
+            nid = 0x7
+        }
         local {
             uri = 'http://localhost:9082/api/v3'
             nid = 0x3

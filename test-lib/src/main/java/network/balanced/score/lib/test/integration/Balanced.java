@@ -55,7 +55,7 @@ public class Balanced {
     public DefaultScoreClient stability;
     public DefaultScoreClient balancedOracle;
 
-    public HashMap<Address, BalancedClient> balancedClients;
+    public Map<Address, BalancedClient> balancedClients;
 
     public Balanced() throws Exception {
         balancedClients = new HashMap<>();
@@ -63,19 +63,16 @@ public class Balanced {
     }
 
     public void setupBalanced() throws Exception {
-        deployPrep();
+        registerPreps();
         deployContracts();
         setupAddresses();
         increaseDay(1);
         setupContracts();
 //         delegate(adminWallet);
-        setupMarkets();
-    }
-
-    public void deployPrep() {
-        try {
-            systemScore.registerPRep(BigInteger.valueOf(2000).multiply(BigInteger.TEN.pow(18)), "test", "kokoa@example.com", "USA", "New York", "https://icon.kokoa.com", "https://icon.kokoa.com/json/details.json", "localhost:9082");
-        } catch (Exception e) {
+        String className = new Exception().getStackTrace()[1].getClassName();
+        // no need to set up market in staking integration test case
+        if (!className.equals("network.balanced.score.core.staking.StakingIntegrationTest")) {
+            setupMarkets();
         }
     }
 
@@ -196,8 +193,8 @@ public class Balanced {
         ownerClient.governance.createBalnSicxMarket(initalPoolDepths, initalPoolDepths);
     }
 
-    public BalancedClient newClient(BigInteger clientBalanace) throws Exception {
-        BalancedClient client = new BalancedClient(this, createWalletWithBalance(clientBalanace));
+    public BalancedClient newClient(BigInteger clientBalance) throws Exception {
+        BalancedClient client = new BalancedClient(this, createWalletWithBalance(clientBalance));
         balancedClients.put(client.getAddress(), client);
         return client;
     }

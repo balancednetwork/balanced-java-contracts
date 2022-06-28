@@ -35,7 +35,11 @@ public class DummyOracle {
             result.put("last_update_base", BigInteger.valueOf(1602202275702605L));
             result.put("last_update_quote", BigInteger.valueOf(1602202190000000L));
         }
-
+        if (_base.equals("ICX") && _quote.equals("USD")) {
+            result.put("rate", BigInteger.valueOf(1672364619704314298L));
+            result.put("last_update_base", BigInteger.valueOf(1602202190000000L));
+            result.put("last_update_quote", BigInteger.valueOf(1602202275702605L));
+        }
         if (_base.equals("DOGE") && _quote.equals("USD")) {
             result.put("rate", BigInteger.valueOf(50784000000000000L));
             result.put("last_update_base", BigInteger.valueOf(1616643098000000L));

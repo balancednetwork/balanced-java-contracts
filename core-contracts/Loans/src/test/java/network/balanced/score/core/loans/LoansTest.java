@@ -311,7 +311,7 @@ class LoansTest extends LoansTestBase {
         // Arrange
         Account account = accounts.get(0);
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
-        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);;
+        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
         String expectedErrorMessage = "Reverted(0): " + TAG + "Loans of inactive assets are not allowed.";
         loans.invoke(admin, "toggleAssetActive", "bnUSD");
 

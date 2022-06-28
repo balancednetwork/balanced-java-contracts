@@ -17,16 +17,20 @@
 package network.balanced.score.lib.interfaces;
 
 import network.balanced.score.lib.interfaces.addresses.OracleAddress;
-import network.balanced.score.lib.interfaces.addresses.SicxAddress;
+import network.balanced.score.lib.interfaces.addresses.StakingAddress;
 import network.balanced.score.lib.interfaces.tokens.IRC2;
 import score.Address;
 import score.annotation.External;
 
 import java.math.BigInteger;
 
+import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
+
+@ScoreClient
 @ScoreInterface
-public interface Sicx extends SicxAddress, IRC2, OracleAddress {
+public interface Sicx extends StakingAddress, IRC2, OracleAddress {
+
     @External(readonly = true)
     String getPeg();
 
@@ -35,9 +39,6 @@ public interface Sicx extends SicxAddress, IRC2, OracleAddress {
 
     @External(readonly = true)
     BigInteger lastPriceInLoop();
-
-    @External(readonly = true)
-    Address getStakingAddress();
 
     @External(readonly = true)
     Address getAdmin();

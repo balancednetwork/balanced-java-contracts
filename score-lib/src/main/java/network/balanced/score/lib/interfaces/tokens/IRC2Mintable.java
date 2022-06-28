@@ -16,6 +16,7 @@
 
 package network.balanced.score.lib.interfaces.tokens;
 
+import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import score.Address;
 import score.annotation.External;
@@ -24,6 +25,7 @@ import score.annotation.Optional;
 import java.math.BigInteger;
 
 @ScoreInterface
+@ScoreClient
 public interface IRC2Mintable extends IRC2 {
 
     @External

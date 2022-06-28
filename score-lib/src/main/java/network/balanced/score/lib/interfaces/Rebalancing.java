@@ -16,6 +16,7 @@
 
 package network.balanced.score.lib.interfaces;
 
+import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.*;
 import network.balanced.score.lib.interfaces.base.Name;
@@ -26,6 +27,7 @@ import score.annotation.Optional;
 import java.math.BigInteger;
 import java.util.List;
 
+@ScoreClient
 @ScoreInterface
 public interface Rebalancing extends AdminAddress, BnusdAddress, DexAddress, GovernanceAddress, LoansAddress,
         Name, SicxAddress, OracleAddress {

@@ -16,14 +16,15 @@
 
 package network.balanced.score.lib.interfaces;
 
+import foundation.icon.score.client.ScoreClient;
+import foundation.icon.score.client.ScoreInterface;
 import score.*;
 import score.annotation.External;
 
 import java.math.BigInteger;
 
-import foundation.icon.score.client.ScoreInterface;
-
 @ScoreInterface
+@ScoreClient
 public interface StakedLP {
       @External(readonly = true)
       Address getDex();

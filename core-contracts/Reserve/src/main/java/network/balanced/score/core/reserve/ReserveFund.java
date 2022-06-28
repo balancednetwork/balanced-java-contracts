@@ -241,8 +241,8 @@ public class ReserveFund implements Reserve {
         BigInteger balance = getBalance(collateralAddress);
         BigInteger totalValue = rate.multiply(balance).divide(EXA);
         if (totalValue.compareTo(remaningValue) >= 0){
-        BigInteger amountToSend = remaningValue.multiply(EXA).divide(rate);
-        sendToken(collateralAddress, to, amountToSend, "To Loans: ");
+            BigInteger amountToSend = remaningValue.multiply(EXA).divide(rate);
+            sendToken(collateralAddress, to, amountToSend, "To Loans: ");
             return BigInteger.ZERO;
         } 
     

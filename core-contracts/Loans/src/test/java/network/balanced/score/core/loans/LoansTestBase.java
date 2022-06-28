@@ -129,13 +129,10 @@ class LoansTestBase extends UnitTest {
     }
 
     protected void mockStakeICX(BigInteger amount) {
-        Mockito.doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable {
-                final Object[] args = invocation.getArguments();
-                sicx.invoke(staking.account, "mintTo", args[0], amount);
-                return null;
-            }
+        Mockito.doAnswer((Answer<Void>) invocation -> {
+            final Object[] args = invocation.getArguments();
+            sicx.invoke(staking.account, "mintTo", args[0], amount);
+            return null;
         }).when(staking.mock).stakeICX(Mockito.any(Address.class), Mockito.any(byte[].class));
     }
 

@@ -306,7 +306,6 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         executeVoteActions(balanced, voter, name, actions);
     }
 
-
     private void addCollateralType(BalancedClient minter, Address collateralAddress, BigInteger tokenAmount, BigInteger bnUSDAmount, String peg) {
         minter.irc2(collateralAddress).mintTo(owner.getAddress(), tokenAmount, new byte[0]);
         depositToStabilityContract(owner, bnUSDAmount);

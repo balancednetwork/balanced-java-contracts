@@ -42,13 +42,10 @@ public class ReserveFundTestBase extends UnitTest {
     public static final ServiceManager sm = getServiceManager();
 
     public static final Account owner = sm.createAccount();
-    private final Account bob = sm.createAccount();
     Account admin = sm.createAccount();
 
-    private static final BigInteger MINT_AMOUNT = BigInteger.TEN.pow(22);
 
     public static final Account governanceScore = Account.newScoreAccount(1);
-    private final Account balnScore = Account.newScoreAccount(7);
     protected Score reserve;
 
     MockContract<Loans> loans;

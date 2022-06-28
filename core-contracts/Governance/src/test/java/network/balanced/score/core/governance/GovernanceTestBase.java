@@ -21,6 +21,7 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import network.balanced.score.lib.interfaces.*;
+import network.balanced.score.lib.interfaces.addresses.BnusdAddress;
 import network.balanced.score.lib.structs.BalancedAddresses;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockContract;

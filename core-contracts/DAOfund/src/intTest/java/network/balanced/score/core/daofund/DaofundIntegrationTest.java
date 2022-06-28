@@ -17,8 +17,6 @@
 package network.balanced.score.core.daofund;
 
 import foundation.icon.icx.Wallet;
-import foundation.icon.score.client.ScoreClient;
-import network.balanced.score.lib.interfaces.DAOfund;
 import network.balanced.score.lib.interfaces.DAOfundScoreClient;
 import network.balanced.score.lib.test.integration.Balanced;
 import org.junit.jupiter.api.BeforeAll;
@@ -35,8 +33,7 @@ class DaofundIntegrationTest {
     private static Wallet tester;
     private static Balanced balanced;
 
-    @ScoreClient
-    private static DAOfund daofund;
+    private static DAOfundScoreClient daofund;
 
     @BeforeAll
     static void setup() throws Exception {

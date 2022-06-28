@@ -17,15 +17,23 @@
 package network.balanced.gradle.plugin.utils;
 
 public enum NameMapping {
-    batchDisbursement("BatchDisbursement"),
     multicall("Multicall"),
+    disbursement("BatchDisbursement"),
     reserve("Reserve"),
+    dividends("Dividends"),
     rebalancing("Rebalancing"),
-    workerToken("WorkerToken"),
+    rewards("Rewards"),
+    stakedLp("StakedLP"),
+    worker_token("WorkerToken"),
     router("Router"),
     daofund("DAOfund"),
-    bnusd("BalancedDollar"),
-    oracle("test-lib");
+    bnUSD("BalancedDollar"),
+    stability("Stability"),
+    loans("Loans"),
+    governance("Governance"),
+    oracle("DummyOracle"),
+    dex("Dex"),
+    staking("Staking");
 
     private final String module;
 

@@ -20,6 +20,7 @@ package network.balanced.score.lib.interfaces;
 import java.math.BigInteger;
 import java.util.Map;
 
+import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.AdminAddress;
 import network.balanced.score.lib.interfaces.addresses.BalnAddress;
@@ -32,6 +33,7 @@ import network.balanced.score.lib.structs.Disbursement;
 import score.Address;
 import score.annotation.External;
 
+@ScoreClient
 @ScoreInterface
 public interface Reserve extends Name, TokenFallback, AdminAddress, BalnAddress, SicxAddress, LoansAddress, GovernanceAddress {
     @External

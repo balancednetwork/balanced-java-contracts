@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,31 +16,25 @@
 
 package network.balanced.score.core.governance;
 
+import com.eclipsesource.json.Json;
+import com.eclipsesource.json.JsonObject;
+import com.iconloop.score.test.Account;
+import network.balanced.score.lib.structs.DistributionPercentage;
+import network.balanced.score.lib.structs.PrepDelegations;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
+import score.Address;
+
+import java.math.BigInteger;
+import java.util.Map;
+
 import static network.balanced.score.core.governance.GovernanceConstants.TAG;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.math.BigInteger;
-import java.util.Map;
-
-import com.eclipsesource.json.Json;
-import com.eclipsesource.json.JsonObject;
-import com.iconloop.score.test.Account;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
-
-import network.balanced.score.lib.interfaces.addresses.DexAddress;
-import network.balanced.score.lib.structs.DistributionPercentage;
-import network.balanced.score.lib.structs.PrepDelegations;
-import score.Address;
+import static org.mockito.Mockito.*;
 
 public class GovernanceTest extends GovernanceTestBase {
     @BeforeEach

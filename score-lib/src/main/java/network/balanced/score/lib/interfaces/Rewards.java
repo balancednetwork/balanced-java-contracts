@@ -16,6 +16,7 @@
 
 package network.balanced.score.lib.interfaces;
 
+import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.*;
 import network.balanced.score.lib.interfaces.base.Name;
@@ -29,6 +30,7 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+@ScoreClient
 @ScoreInterface
 public interface Rewards extends 
         Name, 
@@ -42,10 +44,10 @@ public interface Rewards extends
    
     @External(readonly = true)
     BigInteger getEmission(BigInteger _day);
-   
+
     @External(readonly = true)
     Map<String, BigInteger> getBalnHoldings(Address[] _holders);
-   
+
     @External(readonly = true)
     BigInteger getBalnHolding(Address _holder);
 
@@ -72,10 +74,10 @@ public interface Rewards extends
 
     @External(readonly = true)
     Map<String, Map<String, Object>> getDataSources();
-    
+
     @External(readonly = true)
     Map<String, Map<String, Object>> getDataSourcesAt(BigInteger _day);
-    
+
     @External(readonly = true)
     Map<String, Object> getSourceData(String _name);
 
@@ -103,7 +105,7 @@ public interface Rewards extends
     @External(readonly = true)
     List<Address> getDataProviders();
 
-    @External    
+    @External
     void setBatchSize(int _batch_size);
 
     @External(readonly = true)

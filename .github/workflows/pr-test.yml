@@ -32,5 +32,8 @@ jobs:
       - name: Start local Blockchain
         run: docker-compose up -d
 
+      - name: Check if all contracts are deployable
+        run: ./gradlew deployContractsToLocal
+
       - name: Run integration tests
         run: ./gradlew integrationTest

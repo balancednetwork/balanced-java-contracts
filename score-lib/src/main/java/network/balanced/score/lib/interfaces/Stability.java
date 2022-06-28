@@ -16,8 +16,9 @@
 
 package network.balanced.score.lib.interfaces;
 
+import foundation.icon.score.client.ScoreClient;
+import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.BnusdAddress;
-import network.balanced.score.lib.interfaces.addresses.FeeHandlerAddress;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
 import score.Address;
@@ -26,6 +27,8 @@ import score.annotation.External;
 import java.math.BigInteger;
 import java.util.List;
 
+@ScoreClient
+@ScoreInterface
 public interface Stability extends Name, TokenFallback, BnusdAddress {
 
     @External

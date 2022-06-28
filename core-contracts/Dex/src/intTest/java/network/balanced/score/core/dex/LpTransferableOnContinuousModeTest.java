@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,20 +17,16 @@
 package network.balanced.score.core.dex;
 
 import foundation.icon.icx.Wallet;
+import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
-import foundation.icon.score.client.ScoreClient;
-import network.balanced.score.lib.interfaces.Dex;
 import network.balanced.score.lib.interfaces.DexScoreClient;
-import network.balanced.score.lib.interfaces.Governance;
 import network.balanced.score.lib.interfaces.GovernanceScoreClient;
-import network.balanced.score.lib.interfaces.dex.DexTest;
 import network.balanced.score.lib.interfaces.dex.DexTestScoreClient;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.Env;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import foundation.icon.jsonrpc.Address;
 
 import java.io.File;
 import java.math.BigInteger;
@@ -84,25 +80,22 @@ public class LpTransferableOnContinuousModeTest {
     private static final Address userAddress = Address.of(userWallet);
     private static final Address tUserAddress = Address.of(tUserWallet);
 
-    @ScoreClient
-    private static final DexTest ownerDexTestBaseScoreClient = new DexTestScoreClient(chain.getEndpointURL(),
+    private static final DexTestScoreClient ownerDexTestBaseScoreClient = new DexTestScoreClient(chain.getEndpointURL(),
             chain.networkId, testOwnerWallet, DefaultScoreClient.address(dexTestBaseScoreAddress));
-    private static final DexTest ownerDexTestFourthScoreClient = new DexTestScoreClient(chain.getEndpointURL(),
-            chain.networkId, testOwnerWallet, DefaultScoreClient.address(dexTestFourthScoreAddress));
-    @ScoreClient
-    private static final Dex dexUserScoreClient = new DexScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid()
-            , userWallet,
-            dexScoreClient._address());
+    private static final DexTestScoreClient ownerDexTestFourthScoreClient =
+            new DexTestScoreClient(chain.getEndpointURL(), chain.networkId, testOwnerWallet,
+                    DefaultScoreClient.address(dexTestFourthScoreAddress));
+    private static final DexScoreClient dexUserScoreClient = new DexScoreClient(dexScoreClient.endpoint(),
+            dexScoreClient._nid(), userWallet, dexScoreClient._address());
 
-    private static final DexTest userDexTestBaseScoreClient = new DexTestScoreClient(dexScoreClient.endpoint(),
-            dexScoreClient._nid(), userWallet,
-            DefaultScoreClient.address(dexTestBaseScoreAddress));
-    private static final DexTest userDexTestFourthScoreClient = new DexTestScoreClient(dexScoreClient.endpoint(),
-            dexScoreClient._nid(), userWallet,
-            DefaultScoreClient.address(dexTestFourthScoreAddress));
-    @ScoreClient
-    private static final Governance governanceDexScoreClient = new GovernanceScoreClient(governanceScoreClient);
-
+    private static final DexTestScoreClient userDexTestBaseScoreClient =
+            new DexTestScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet,
+                    DefaultScoreClient.address(dexTestBaseScoreAddress));
+    private static final DexTestScoreClient userDexTestFourthScoreClient =
+            new DexTestScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet,
+                    DefaultScoreClient.address(dexTestFourthScoreAddress));
+    private static final GovernanceScoreClient governanceDexScoreClient =
+            new GovernanceScoreClient(governanceScoreClient);
 
 
     @Test
@@ -110,11 +103,15 @@ public class LpTransferableOnContinuousModeTest {
     void testBalnPoolTokenTransferableOnContinuousRewards(){
         byte[] tokenDeposit = "{\"method\":\"_deposit\",\"params\":{\"none\":\"none\"}}".getBytes();
         mintAndTransferTestTokens(tokenDeposit);
-        dexUserScoreClient.add(Address.fromString(dexTestBaseScoreAddress), Address.fromString(dexTestFourthScoreClient._address().toString()), BigInteger.valueOf(50).multiply(EXA), BigInteger.valueOf(50).multiply(EXA), false);
-        BigInteger poolId = dexUserScoreClient.getPoolId(Address.fromString(dexTestBaseScoreAddress), Address.fromString(dexTestFourthScoreAddress));
+        dexUserScoreClient.add(Address.fromString(dexTestBaseScoreAddress),
+                Address.fromString(dexTestFourthScoreClient._address().toString()),
+                BigInteger.valueOf(50).multiply(EXA), BigInteger.valueOf(50).multiply(EXA), false);
+        BigInteger poolId = dexUserScoreClient.getPoolId(Address.fromString(dexTestBaseScoreAddress),
+                Address.fromString(dexTestFourthScoreAddress));
         //assert pool id is less than 5
         assert poolId.compareTo(BigInteger.valueOf(6)) < 0;
-        BigInteger liquidity = (BigInteger.valueOf(50).multiply(EXA).multiply(BigInteger.valueOf(50).multiply(EXA))).sqrt();
+        BigInteger liquidity =
+                (BigInteger.valueOf(50).multiply(EXA).multiply(BigInteger.valueOf(50).multiply(EXA))).sqrt();
         BigInteger balance = dexUserScoreClient.balanceOf(userAddress, poolId);
         BigInteger tUsersPrevBalance = dexUserScoreClient.balanceOf(tUserAddress, poolId);
 
