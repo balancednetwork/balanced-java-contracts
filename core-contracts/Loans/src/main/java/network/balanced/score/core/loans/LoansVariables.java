@@ -48,6 +48,7 @@ public class LoansVariables {
     private static final String NEW_LOAN_MINIMUM = "new_loan_minimum";
     private static final String MAX_DEBTS_LIST_LENGTH = "max_debts_list_length";
     private static final String TOTAL_DEBT = "totalDebts";
+    private static final String COLLATERAL_LIMITS = "collateral_limits";
 
     private static final String REDEEM_BATCH_SIZE = "redeem_batch_size";
     private static final String MAX_RETIRE_PERCENT = "max_retire_percent";
@@ -71,6 +72,7 @@ public class LoansVariables {
     public static final VarDB<BigInteger> miningRatio = Context.newVarDB(MINING_RATIO, BigInteger.class);
     public static final VarDB<BigInteger> lockingRatio = Context.newVarDB(LOCKING_RATIO, BigInteger.class);
     public static final DictDB<String, BigInteger> totalDebts = Context.newDictDB(TOTAL_DEBT, BigInteger.class);
+    public static final DictDB<String, BigInteger> collateralLimits = Context.newDictDB(COLLATERAL_LIMITS, BigInteger.class);
 
     public static final VarDB<BigInteger> liquidationRatio = Context.newVarDB(LIQUIDATION_RATIO, BigInteger.class);
     static final VarDB<BigInteger> originationFee = Context.newVarDB(ORIGINATION_FEE, BigInteger.class);

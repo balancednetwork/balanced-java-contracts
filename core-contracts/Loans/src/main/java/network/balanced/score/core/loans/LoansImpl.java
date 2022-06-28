@@ -461,18 +461,19 @@ public class LoansImpl implements Loans {
         only(rebalancing);
         String collateralSymbol = _collateralSymbol;
         String assetSymbol = BNUSD_SYMBOL;
+        Asset asset = AssetDB.getAsset(assetSymbol);
 
         Collateral collateral = CollateralDB.getCollateral(collateralSymbol);
         BigInteger oldTotalDebt = totalDebts.getOrDefault(assetSymbol, BigInteger.ZERO);
         int batchSize = redeemBatch.get();
         
-        PositionBatch batch = AssetDB.getAsset(assetSymbol).getBorrowers(collateralSymbol).readDataBatch(batchSize);
+        PositionBatch batch = asset.getBorrowers(collateralSymbol).readDataBatch(batchSize);
         Map<Integer, BigInteger> positionsMap = batch.positions;
 
         BigInteger bnusdToSell = maxRetirePercent.get().multiply(batch.totalDebt).divide(POINTS);
         bnusdToSell = bnusdToSell.min(_total_tokens_required);
 
-        Address bnusdAddress = AssetDB.getAsset(assetSymbol).getAssetAddress();
+        Address bnusdAddress = asset.getAssetAddress();
         Token bnusdContract = new Token(bnusdAddress);
 
         expectedToken.set(bnusdAddress);
@@ -645,6 +646,12 @@ public class LoansImpl implements Loans {
 
     private void depositCollateral(String _symbol, BigInteger _amount, Address _from) {
         Position position = PositionsDB.getPosition(_from);
+
+        Token collateralContract = new Token(CollateralDB.getCollateral(_symbol).getAssetAddress());
+        BigInteger collateralLimit = collateralLimits.get(_symbol);
+        Context.require(collateralLimit == null || collateralContract.balanceOf(Context.getAddress()).compareTo(collateralLimit) <= 0,
+                       TAG + ": Collateral safeguard limit for " + _symbol + " has been reached");
+
         position.setCollateral(_symbol, position.getCollateral(_symbol).add(_amount));
         CollateralReceived(_from, _symbol, _amount);
     }
@@ -892,6 +899,18 @@ public class LoansImpl implements Loans {
     public void setNewLoanMinimum(BigInteger _minimum) {
         only(admin);
         newLoanMinimum.set(_minimum);
+    }
+
+
+    @External
+    public void setCollateralLimit(String symbol, BigInteger limit) {
+        only(admin);
+        collateralLimits.set(symbol, limit);
+    }
+
+    @External(readonly = true)
+    public BigInteger getCollateralLimit(String symbol) {
+        return collateralLimits.get(symbol);
     }
 
     @External

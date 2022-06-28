@@ -700,10 +700,23 @@ public class GovernanceImpl {
     }
 
     @External
-    public void addCollateral(Address _token_address, boolean _active) {
+    public void addCollateral(Address _token_address, boolean _active, @Optional BigInteger _limit) {
         onlyOwner();
         Address loansAddress = Addresses.get("loans");
         Context.call(loansAddress, "addAsset", _token_address, _active, true);
+        if (_limit.equals(BigInteger.ZERO)) {
+            return;
+        }
+
+        String symbol = Context.call(String.class, _token_address, "symbol");
+        Context.call(loansAddress, "setCollateralLimit", symbol, _limit);
+    }
+
+    @External
+    public void setCollateralLimit(String _symbol, BigInteger _limit) {
+        onlyOwner();
+        Address loansAddress = Addresses.get("loans");
+        Context.call(loansAddress, "setCollateralLimit", _symbol, _limit);
     }
 
     @External

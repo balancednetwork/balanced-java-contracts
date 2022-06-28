@@ -392,6 +392,23 @@ class LoansTest extends LoansTestBase {
     }
 
     @Test
+    void depositCollateral_iETH_overLimit() {
+        // Arrange
+        Account account = accounts.get(0);
+        String symbol = "iETH";
+        BigInteger limit = BigInteger.valueOf(1500).multiply(EXA);
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        loans.invoke(admin, "setCollateralLimit", symbol, limit);
+        takeLoaniETH(account, collateral, BigInteger.ZERO);
+
+        // Assert & Act
+        String expectedErrorMessage = "Reverted(0): " + TAG + "Collateral safeguard limit for " + symbol + " has been reached";
+        System.out.println(expectedErrorMessage);
+        Executable aboveLimit = () ->   takeLoaniETH(account, collateral, BigInteger.ZERO);
+        expectErrorMessage(aboveLimit, expectedErrorMessage);
+    }
+
+    @Test
     void borrow_sICX() {
         // Arrange
         Account account = accounts.get(0);

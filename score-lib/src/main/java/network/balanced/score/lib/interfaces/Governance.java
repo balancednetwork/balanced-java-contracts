@@ -21,6 +21,7 @@ import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.PrepDelegations;
 import score.Address;
 import score.annotation.External;
+import score.annotation.Optional;
 import score.annotation.Payable;
 
 
@@ -192,7 +193,10 @@ public interface Governance extends
     BigInteger getLaunchTime();
 
     @External
-    void addCollateral(Address _token_address, boolean _active);
+    void addCollateral(Address _token_address, boolean _active, @Optional BigInteger _limit);
+    
+    @External
+    void setCollateralLimit(String _symbol, BigInteger _limit);
 
     @External
     void toggleAssetActive(String _symbol);

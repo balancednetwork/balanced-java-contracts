@@ -254,18 +254,40 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         Address tokenAddress = bwt.getAddress();
         boolean active = false;
+        BigInteger limit = EXA;
         Account notOwner = sm.createAccount();
         String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
         
         // Act & Assert
-        Executable withNotOwner = () -> governance.invoke(notOwner, "addCollateral", tokenAddress, active);
+        Executable withNotOwner = () -> governance.invoke(notOwner, "addCollateral", tokenAddress, active, limit);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
 
         // Act
-        governance.invoke(owner, "addCollateral", tokenAddress, active);
+        when(bwt.mock.symbol()).thenReturn("BALW");
+        governance.invoke(owner, "addCollateral", tokenAddress, active, limit);
 
         // Assert
         verify(loans.mock).addAsset(tokenAddress, active, true);
+        verify(loans.mock).setCollateralLimit("BALW", limit);
+    }
+
+    @Test
+    void setCollateralLimit() {
+        // Arrange
+        String symbol = "TEST";
+        BigInteger limit = EXA;
+        Account notOwner = sm.createAccount();
+        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+        
+        // Act & Assert
+        Executable withNotOwner = () -> governance.invoke(notOwner, "setCollateralLimit", symbol, limit);
+        expectErrorMessage(withNotOwner, expectedErrorMessage);
+
+        // Act
+        governance.invoke(owner, "setCollateralLimit", symbol, limit);
+
+        // Assert
+        verify(loans.mock).setCollateralLimit(symbol, limit);
     }
 
     @Test

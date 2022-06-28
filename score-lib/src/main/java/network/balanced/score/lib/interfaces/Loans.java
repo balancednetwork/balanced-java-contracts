@@ -141,6 +141,12 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
     void setNewLoanMinimum(BigInteger _minimum);
 
     @External
+    void setCollateralLimit(String symbol, BigInteger limit);
+
+    @External(readonly = true)
+    BigInteger getCollateralLimit(String symbol);
+
+    @External
     void setTimeOffset(BigInteger deltaTime);
 
     @External
