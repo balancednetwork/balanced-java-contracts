@@ -28,7 +28,6 @@ import network.balanced.score.core.loans.positions.PositionsDB;
 import network.balanced.score.core.loans.utils.PositionBatch;
 import network.balanced.score.core.loans.utils.Token;
 import network.balanced.score.lib.interfaces.Loans;
-import network.balanced.score.lib.interfaces.Sicx;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import score.Address;

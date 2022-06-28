@@ -160,8 +160,9 @@ public class ReserveFund implements Reserve {
         Address oracle = Context.call(Address.class, loans, "getOracle");
 
         BigInteger remaningValue = _valueInLoop;
-        Map<String, String> collateralTokens = (Map<String, String>) Context.call(loansScore.get(), "getCollateralTokens");
-
+        Map<String, String> _collateralTokens = (Map<String, String>) Context.call(loansScore.get(), "getCollateralTokens");
+        Map<String, String> collateralTokens = new HashMap<>();
+        collateralTokens.putAll(_collateralTokens);
         for (String symbol : collateralPriority) {
             String collateralAddress = collateralTokens.get(symbol);
             remaningValue = redeemAsset(symbol, collateralAddress, _to, oracle, remaningValue);
@@ -240,8 +241,8 @@ public class ReserveFund implements Reserve {
         BigInteger balance = getBalance(collateralAddress);
         BigInteger totalValue = rate.multiply(balance).divide(EXA);
         if (totalValue.compareTo(remaningValue) >= 0){
-            BigInteger amountToSend = remaningValue.multiply(EXA).divide(rate);
-            sendToken(collateralAddress, to, amountToSend, "To Loans: ");
+        BigInteger amountToSend = remaningValue.multiply(EXA).divide(rate);
+        sendToken(collateralAddress, to, amountToSend, "To Loans: ");
             return BigInteger.ZERO;
         } 
     

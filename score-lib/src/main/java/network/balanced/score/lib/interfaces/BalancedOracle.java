@@ -52,5 +52,5 @@ public interface BalancedOracle extends
     void setPeg(String symbol, String peg);
 
     @External(readonly = true)
-    String addPeg(String symbol);
+    String getPeg(String symbol);
 }

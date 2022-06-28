@@ -113,7 +113,7 @@ public class BalancedOracleImpl implements BalancedOracle {
     }
 
     @External(readonly = true)
-    public String addPeg(String symbol) {
+    public String getPeg(String symbol) {
         return assetPeg.get(symbol);
     }
 
