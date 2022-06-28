@@ -226,27 +226,27 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
     //     assertEquals(expectedTotalDebt, getTotalDebt());
     // }
 
-    @Test
-    @Order(21)
-    void rebalancing_raisePrice() throws Exception {
-        BigInteger initialTotalDebt = getTotalDebt();
+    // @Test
+    // @Order(21)
+    // void rebalancing_raisePrice() throws Exception {
+    //     BigInteger initialTotalDebt = getTotalDebt();
 
-        reducePriceBelowThreshold();
-        rebalance();
+    //     reducePriceBelowThreshold();
+    //     rebalance();
 
-        assertTrue(initialTotalDebt.compareTo(getTotalDebt()) > 0);
-    }
+    //     assertTrue(initialTotalDebt.compareTo(getTotalDebt()) > 0);
+    // }
 
-    @Test
-    @Order(22)
-    void rebalancing_lowerPrice() throws Exception {
-        BigInteger initialTotalDebt = getTotalDebt();
+    // @Test
+    // @Order(22)
+    // void rebalancing_lowerPrice() throws Exception {
+    //     BigInteger initialTotalDebt = getTotalDebt();
 
-        raisePriceAboveThreshold();
-        rebalance();
+    //     raisePriceAboveThreshold();
+    //     rebalance();
 
-        assertTrue(initialTotalDebt.compareTo(getTotalDebt()) < 0);
-    }
+    //     assertTrue(initialTotalDebt.compareTo(getTotalDebt()) < 0);
+    // }
 
     @Test
     @Order(31)

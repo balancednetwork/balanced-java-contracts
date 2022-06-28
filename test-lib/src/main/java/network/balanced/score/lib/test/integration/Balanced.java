@@ -208,7 +208,7 @@ public class Balanced {
         ownerClient.governance.createBalnSicxMarket(initalPoolDepths, initalPoolDepths);
     }
 
-    private BalancedClient newClient(BigInteger clientBalance) throws Exception {
+    public BalancedClient newClient(BigInteger clientBalance) throws Exception {
         BalancedClient client = new BalancedClient(this, createWalletWithBalance(clientBalance));
         balancedClients.put(client.getAddress(), client);
         return client;

@@ -63,10 +63,10 @@ class LoansIntegrationTestMigration extends LoansIntegrationTest {
     @Order(-1)
     void updateLoans() throws Exception {
        takeLoans();
-       reOpenPosition();
+    //    reOpenPosition();
        repyDebt();
-       rebalancing_lowerPrice();
-       rebalancing_raisePrice();
+    //    rebalancing_lowerPrice();
+    //    rebalancing_raisePrice();
        liquidateUser();
 
        Map<String, Object> availableAssetsPreUpdate = reader.loans.getAvailableAssets().get("bnUSD");

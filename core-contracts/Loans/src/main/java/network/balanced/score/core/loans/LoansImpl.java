@@ -734,15 +734,43 @@ public class LoansImpl implements Loans {
     }
 
     @External
+    public void setGovernance(Address _address) {
+        onlyOwner();
+        isContract(_address);
+        governance.set(_address);
+    }
+
+    @External(readonly = true)
+    public Address getGovernance() {
+        return governance.get();
+    }
+    
+    @External
     public void setAdmin(Address _address) {
         only(governance);
         admin.set(_address);
     }
 
     @External(readonly = true)
+    public Address getAdmin() {
+        return admin.get();
+    }
+
+    public void setDex(Address _address) {
+        only(admin);
+        isContract(_address);
+        dex.set(_address);
+    }
+    
+    @External(readonly = true)
     public Address getDex() {
         return dex.get();
+    }
+
     public void setRebalance(Address _address) {
+        only(admin);
+        isContract(_address);
+        rebalancing.set(_address);
     }
 
     @External(readonly = true)
