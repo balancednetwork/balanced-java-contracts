@@ -21,7 +21,9 @@ import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
 import com.iconloop.score.token.irc2.IRC2Mintable;
-import network.balanced.score.core.reserve.utils.Loans;
+import network.balanced.score.lib.test.mock.MockContract;
+import network.balanced.score.lib.interfaces.*;
+
 import org.junit.jupiter.api.Assertions;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -32,132 +34,181 @@ import score.Address;
 
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static network.balanced.score.lib.utils.Constants.EXA;
+import static  network.balanced.score.core.reserve.ReserveFund.TAG;
+import network.balanced.score.lib.interfaces.tokens.*;
+import network.balanced.score.lib.structs.Disbursement;
 
-public class ReserveFundTest extends TestBase {
-    public static final ServiceManager sm = getServiceManager();
 
-    public static final Account owner = sm.createAccount();
-    private final Account bob = sm.createAccount();
-    Account admin = sm.createAccount();
+public class ReserveFundTest extends ReserveFundTestBase {
 
-    private static final BigInteger MINT_AMOUNT = BigInteger.TEN.pow(22);
+    private void setupCollaterals() {
+        Map<String, String> tokens = new HashMap<>();
+        tokens.put("iETH", ieth.getAddress().toString());
+        tokens.put("sICX", sicx.getAddress().toString());
 
-    public static final Account governanceScore = Account.newScoreAccount(1);
-    private final Account balnScore = Account.newScoreAccount(7);
-    private Score reserveScore;
-    private Score loansScore;
-    private Score sicxScore;
 
-    public static class SicxToken extends IRC2Mintable {
-        public SicxToken(String _name, String _symbol, int _decimals) {
-            super(_name, _symbol, _decimals);
-        }
+        when(loans.mock.getCollateralTokens()).thenReturn(tokens);
+    }
+
+    private void setBalance(MockContract<IRC2MintableScoreInterface> token, BigInteger amount) {
+        when(token.mock.balanceOf(reserve.getAddress())).thenReturn(amount);
+    }
+
+    private void setRate(String symbol, BigInteger rateInLoop) {
+        when(balancedOracle.mock.getPriceInLoop(symbol)).thenReturn(rateInLoop);
     }
 
     @BeforeEach
-    public void setup() throws Exception {
-        reserveScore = sm.deploy(owner, ReserveFund.class, governanceScore.getAddress());
-        assert (reserveScore.getAddress().isContract());
-        sicxScore = sm.deploy(owner, SicxToken.class, "Sicx Token", "sICX", 18);
-        sicxScore.invoke(owner, "mintTo", owner.getAddress(), MINT_AMOUNT);
-        loansScore = sm.deploy(owner, Loans.class, reserveScore.getAddress());
+    public void setupContract() throws Exception {
+        super.setup();
+        reserve.invoke(governanceScore, "setAdmin", admin.getAddress());
+        reserve.invoke(admin, "setSicx", sicx.getAddress());
+        reserve.invoke(admin, "setBaln", baln.getAddress());
+        reserve.invoke(admin, "setLoans", loans.getAddress());
+
+        setupCollaterals();
+        when(loans.mock.getOracle()).thenReturn(balancedOracle.getAddress());
+
     }
 
     @Test
-    @DisplayName("Deployment with non contract address")
-    void testDeploy() {
-        Account notContract = sm.createAccount();
-        Executable deploymentWithNonContract = () -> sm.deploy(owner, ReserveFund.class, notContract.getAddress());
+    void redeem_sicxOnly() {
+        // Arrange
+        BigInteger loopValueToRedeem = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger sicxRate = BigInteger.TWO.multiply(EXA);
+        BigInteger expectedSicxSent = loopValueToRedeem.multiply(EXA).divide(sicxRate);
+        BigInteger sicxBalance = BigInteger.valueOf(1200).multiply(EXA);
+        Account redeemer = sm.createAccount();;
 
-        String expectedErrorMessage = "Reverted(0): ReserveFund: Governance address should be a contract";
-        InvocationTargetException e = Assertions.assertThrows(InvocationTargetException.class,
-                deploymentWithNonContract);
-        assertEquals(expectedErrorMessage, e.getCause().getMessage());
+        setBalance(sicx, sicxBalance);
+        setRate("sICX", sicxRate);
+
+        // Act 
+        reserve.invoke(loans.account, "redeem", redeemer.getAddress(), loopValueToRedeem);
+
+        // Assert
+        verify(sicx.mock).transfer(redeemer.getAddress(), expectedSicxSent, new byte[0]);
     }
 
     @Test
-    void name() {
-        String contractName = "Balanced Reserve Fund";
-        assertEquals(contractName, reserveScore.call("name"));
+    void redeem_mutliCollateral() {
+        // Arrange
+        BigInteger loopValueToRedeem = BigInteger.valueOf(1400).multiply(EXA);
+        BigInteger sicxRate = BigInteger.TWO.multiply(EXA);
+        BigInteger iethRate = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger sicxBalance = BigInteger.valueOf(400).multiply(EXA);
+        BigInteger iethBalance = BigInteger.valueOf(10).multiply(EXA);
+
+        BigInteger valueRemaning = loopValueToRedeem.subtract(sicxBalance.multiply(sicxRate).divide(EXA));
+        BigInteger expectedIethSent = valueRemaning.multiply(EXA).divide(iethRate);
+
+        Account redeemer = sm.createAccount();
+
+        setBalance(sicx, sicxBalance);
+        setRate("sICX", sicxRate);
+
+        setBalance(ieth, iethBalance);
+        setRate("iETH", iethRate);
+
+        // Act 
+        reserve.invoke(loans.account, "redeem", redeemer.getAddress(), loopValueToRedeem);
+    
+        // Assert
+        verify(sicx.mock).transfer(redeemer.getAddress(), sicxBalance, new byte[0]);
+        verify(ieth.mock).transfer(redeemer.getAddress(), expectedIethSent, new byte[0]);
     }
 
     @Test
-    void getGovernance() {
-        assertEquals(governanceScore.getAddress(), reserveScore.call("getGovernance"));
+    void redeem_useBaln() {
+        // Arrange
+        BigInteger loopValueToRedeem = BigInteger.valueOf(2000).multiply(EXA);
+        BigInteger sicxRate = EXA;
+        BigInteger iethRate = BigInteger.valueOf(500).multiply(EXA);
+        BigInteger balnRate = BigInteger.TWO.multiply(EXA);
+        BigInteger sicxBalance = BigInteger.valueOf(500).multiply(EXA);
+        BigInteger iethBalance = BigInteger.valueOf(1).multiply(EXA);
+        BigInteger balnBalance = BigInteger.valueOf(1000).multiply(EXA);
+
+        BigInteger valueRemaning = loopValueToRedeem.subtract(sicxBalance.multiply(sicxRate).divide(EXA));
+        valueRemaning = valueRemaning.subtract(iethBalance.multiply(iethRate).divide(EXA));
+        BigInteger expectedBalnSent = valueRemaning.multiply(EXA).divide(balnRate);
+
+        Account redeemer = sm.createAccount();
+
+        setBalance(sicx, sicxBalance);
+        setRate("sICX", sicxRate);
+
+        setBalance(ieth, iethBalance);
+        setRate("iETH", iethRate);
+
+        setBalance(baln, balnBalance);
+        setRate("BALN", balnRate);
+
+        // Act 
+        reserve.invoke(loans.account, "redeem", redeemer.getAddress(), loopValueToRedeem);
+    
+        // Assert
+        verify(sicx.mock).transfer(redeemer.getAddress(), sicxBalance, new byte[0]);
+        verify(ieth.mock).transfer(redeemer.getAddress(), iethBalance, new byte[0]);
+        verify(baln.mock).transfer(redeemer.getAddress(), expectedBalnSent, new byte[0]);
     }
 
     @Test
-    void setAndGetAdmin() {
-        reserveScore.invoke(Account.getAccount(governanceScore.getAddress()), "setAdmin", admin.getAddress());
-        Address actualAdmin = (Address) reserveScore.call("getAdmin");
-        assertEquals(admin.getAddress(), actualAdmin);
+    void redeem_notEnoughBalance() {
+        // Arrange
+        BigInteger loopValueToRedeem = BigInteger.valueOf(5000).multiply(EXA);
+        BigInteger sicxRate = EXA;
+        BigInteger iethRate = BigInteger.valueOf(500).multiply(EXA);
+        BigInteger balnRate = BigInteger.TWO.multiply(EXA);
+        BigInteger sicxBalance = BigInteger.valueOf(500).multiply(EXA);
+        BigInteger iethBalance = BigInteger.valueOf(1).multiply(EXA);
+        BigInteger balnBalance = BigInteger.valueOf(1000).multiply(EXA);
+
+        Account redeemer = sm.createAccount();
+
+        setBalance(sicx, sicxBalance);
+        setRate("sICX", sicxRate);
+
+        setBalance(ieth, iethBalance);
+        setRate("iETH", iethRate);
+
+        setBalance(baln, balnBalance);
+        setRate("BALN", balnRate);
+
+        // Act
+        String expectedErrorMesssage = TAG +": Unable to process request at this time.";
+        Executable withToHighValue = () -> reserve.invoke(loans.account, "redeem", redeemer.getAddress(), loopValueToRedeem);
+        expectErrorMessage(withToHighValue, expectedErrorMesssage);
+
+        // Assert
+        verify(sicx.mock).transfer(redeemer.getAddress(), sicxBalance, new byte[0]);
+        verify(ieth.mock).transfer(redeemer.getAddress(), iethBalance, new byte[0]);
     }
 
     @Test
-    void setAndGetLoans() {
-        setAndGetAdmin();
-        reserveScore.invoke(Account.getAccount(admin.getAddress()), "setLoans", loansScore.getAddress());
-        Address actualLoan = (Address) reserveScore.call("getLoans");
-        assertEquals(loansScore.getAddress(), actualLoan);
-    }
-
-    @Test
-    void testSetBaln() {
-        setAndGetAdmin();
-        reserveScore.invoke(Account.getAccount(admin.getAddress()), "setBaln", balnScore.getAddress());
-        Address actualBaln = (Address) reserveScore.call("getBaln");
-        assertEquals(balnScore.getAddress(), actualBaln);
-    }
-
-    @Test
-    void setAndGetSicx() {
-        setAndGetAdmin();
-        reserveScore.invoke(Account.getAccount(admin.getAddress()), "setSicx", sicxScore.getAddress());
-        Address actualSicx = (Address) reserveScore.call("getSicx");
-        assertEquals(sicxScore.getAddress(), actualSicx);
-    }
-
-    @Test
-    void testRedeem() {
-        setAndGetLoans();
-        setAndGetSicx();
-
-        BigInteger prevSicxInOwner = (BigInteger) sicxScore.call("balanceOf", owner.getAddress());
-        BigInteger prevSicxInLoans = (BigInteger) sicxScore.call("balanceOf", loansScore.getAddress());
-
-        sicxScore.invoke(owner, "transfer", reserveScore.getAddress(), BigInteger.TEN.pow(21), new byte[0]);
-        loansScore.invoke(owner, "redeem", loansScore.getAddress(), BigInteger.TEN.pow(19), BigInteger.TEN.pow(18));
-
-        BigInteger afterSicxInOwner = (BigInteger) sicxScore.call("balanceOf", owner.getAddress());
-        BigInteger afterSicxInLoans = (BigInteger) sicxScore.call("balanceOf", loansScore.getAddress());
-
-        assertEquals(prevSicxInLoans.add(BigInteger.TEN.pow(19)), afterSicxInLoans);
-        assertEquals(prevSicxInOwner.subtract(BigInteger.TEN.pow(21)), afterSicxInOwner);
-        assertEquals(BigInteger.TEN.pow(21).subtract(BigInteger.TEN.pow(19)), sicxScore.call("balanceOf",
-                reserveScore.getAddress()));
-    }
-
-    @Test
-    void testDisburseSicx() {
-        setAndGetSicx();
-        testSetBaln();
-        setAndGetLoans();
-        ReserveFund.Disbursement[] disbursements = new ReserveFund.Disbursement[]{new ReserveFund.Disbursement()};
-        disbursements[0].address = sicxScore.getAddress();
+    void disburseSicx() {
+        //Arrange
+        Account target = sm.createAccount();
+        Disbursement[] disbursements = new Disbursement[]{new
+        Disbursement()};
+        disbursements[0].address = sicx.getAddress();
         disbursements[0].amount = BigInteger.TEN.pow(20);
-        sicxScore.invoke(owner, "transfer", reserveScore.getAddress(), BigInteger.TEN.pow(21), new byte[0]);
-        reserveScore.invoke(governanceScore, "disburse", bob.getAddress(), disbursements);
+        setBalance(sicx,  BigInteger.TEN.pow(21));
 
-        BigInteger sicxBefore = (BigInteger) sicxScore.call("balanceOf", bob.getAddress());
-        reserveScore.invoke(bob, "claim");
-        BigInteger sicxAfter = (BigInteger) sicxScore.call("balanceOf", bob.getAddress());
-        assertEquals(sicxAfter, sicxBefore.add(BigInteger.TEN.pow(20)));
+        // Act
+        reserve.invoke(governanceScore, "disburse", target.getAddress(), disbursements);
 
-        //Claim again
-        reserveScore.invoke(bob, "claim");
-        assertEquals(sicxBefore.add(BigInteger.TEN.pow(20)), sicxScore.call("balanceOf", bob.getAddress()));
+        // Assert
+        reserve.invoke(target, "claim");
+        reserve.invoke(target, "claim");
+        verify(sicx.mock, times(1)).transfer(target.getAddress(), BigInteger.TEN.pow(20), new byte[0]);
     }
 }
-
