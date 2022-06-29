@@ -179,4 +179,3 @@ public class BalancedOracleImpl implements BalancedOracle {
         return (BigInteger) priceData.get("rate");
     }
 }
-

@@ -313,7 +313,6 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         assertEquals(expectedTotalDebt, getTotalDebt());
     }
 
-    //TODO: improve rebalancing tests
     @Test
     @Order(21)
     void rebalancing_raisePrice() throws Exception {
@@ -492,8 +491,8 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
             if (threshold.abs().compareTo(calculateThreshold(address).abs()) > 0) {
                 return;
             }
+
             owner.rebalancing.rebalance(address);
-           
         }
     }
 
@@ -523,6 +522,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         BigInteger actualBnusdPriceInCollateral = bnusdPriceInIcx.multiply(EXA).divide(collateralPriceInIcx);
         BigInteger bnusdPriceInCollateral = collateralLiquidity.multiply(EXA).divide(bnusdLiquidity);
         BigInteger priceDifferencePercentage = (actualBnusdPriceInCollateral.subtract(bnusdPriceInCollateral)).multiply(EXA).divide(actualBnusdPriceInCollateral);
+
         return priceDifferencePercentage;
     }
 

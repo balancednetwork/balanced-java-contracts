@@ -46,6 +46,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class LoansIntegrationTestMigration extends LoansIntegrationTest {
     static String loansPath;
+
     @BeforeAll
     public static void contractSetup() throws Exception {
         loansPath = System.getProperty("Loans");

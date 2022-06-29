@@ -39,7 +39,6 @@ public class AssetDB {
     public static ArrayDB<String> assetList = Context.newArrayDB("assets_only_list", String.class); // new 
     public static final DictDB<String, String> symbolMap = Context.newDictDB("symbol|address", String.class); // shared with collateral
 
-
     public static void migrateToNewDBs() {
         int totalSymbolsCount = assetSymbols.size();
         if (assetList.size() > 0) {

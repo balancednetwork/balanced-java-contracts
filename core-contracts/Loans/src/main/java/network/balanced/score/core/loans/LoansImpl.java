@@ -226,7 +226,7 @@ public class LoansImpl implements Loans {
 
     @External(readonly = true)
     public BigInteger getBnusdValue(String _name) {
-        // TODO is this used?
+        // rewrite to work correctly? or remove and rewrite get APY in Rewards?
         Asset asset = AssetDB.getAsset(BNUSD_SYMBOL);
         Token assetContract = new Token(asset.getAssetAddress());
         BigInteger totalSupply = assetContract.totalSupply();
@@ -563,9 +563,7 @@ public class LoansImpl implements Loans {
         String collateralSymbol = optionalDefault(_collateralSymbol, SICX_SYMBOL);
         Context.require(PositionsDB.hasPosition(_owner), TAG + ": This address does not have a position on Balanced.");
         Position position = PositionsDB.getPosition(_owner);
-        Standings standing;
-       
-        standing = position.getStanding(collateralSymbol, false).standing;
+        Standings standing = position.getStanding(collateralSymbol, false).standing;
 
         if (standing != Standings.LIQUIDATE) {
             return;

@@ -103,7 +103,6 @@ class LoansTestBase extends UnitTest {
         when(dex.mock.getBasePriceInQuote(BigInteger.valueOf(3))).thenReturn(rate);
     }
 
-
     protected void mockiETHBnusdPrice(BigInteger rate) {
         when(dex.mock.getPoolId(ieth.getAddress(), bnusd.getAddress())).thenReturn(BigInteger.valueOf(4));
         when(dex.mock.getBasePriceInQuote(BigInteger.valueOf(4))).thenReturn(rate);
@@ -148,20 +147,17 @@ class LoansTestBase extends UnitTest {
     private void setupDividends() throws Exception {
         dividends = new MockContract<Dividends>(DividendsScoreInterface.class, sm, admin);
         when(dividends.mock.distribute()).thenReturn(true);
-
     }
 
     private void setupOracle() throws Exception {
         balancedOracle = new MockContract<BalancedOracle>(BalancedOracleScoreInterface.class, sm, admin);
         when(balancedOracle.mock.getPriceInLoop(Mockito.any(String.class))).thenReturn(EXA);
         when(balancedOracle.mock.getLastPriceInLoop(Mockito.any(String.class))).thenReturn(EXA);
-
     }
 
     public void mockOraclePrice(String symbol, BigInteger rate) {
         when(balancedOracle.mock.getPriceInLoop(symbol)).thenReturn(rate);
         when(balancedOracle.mock.getLastPriceInLoop(symbol)).thenReturn(rate);
-
     }
 
     protected void takeLoanSICX(Account account, BigInteger collateral, BigInteger loan) {
