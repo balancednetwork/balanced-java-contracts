@@ -123,7 +123,7 @@ class LoansIntegrationTestMigration extends LoansIntegrationTest {
 
     private void comparePositions(List<Map<String, Object>> positions, List<Map<String, Object>> refPositions) {
         for (int i = 0; i < positions.size(); i++) {
-            Map<String, Map<String, Object>> assetsDetails = (Map<String, Map<String, Object>>) positions.get(i).get("assets");
+            Map<String, Map<String, Object>> assetsDetails = (Map<String, Map<String, Object>>) positions.get(i).get("holdings");
             Map<String, Map<String, Object>> standingDetails = (Map<String, Map<String, Object>>) positions.get(i).get("standings");
             Map<String, Object> refAssetsDetails = (Map<String, Object>) refPositions.get(i).get("assets");
 

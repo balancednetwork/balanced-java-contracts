@@ -112,7 +112,7 @@ public class BalancedClient {
     }
 
     public BigInteger getLoansCollateralPosition(String symbol) {
-        Map<String, Map<String, String>> assets = (Map<String, Map<String, String>>) loans.getAccountPositions(getAddress()).get("assets");
+        Map<String, Map<String, String>> assets = (Map<String, Map<String, String>>) loans.getAccountPositions(getAddress()).get("holdings");
         if (!assets.containsKey(symbol)) {
             return BigInteger.ZERO;
         }
@@ -120,7 +120,7 @@ public class BalancedClient {
     }
 
     public BigInteger getLoansAssetPosition(String collateralSymbol, String assetSymbol) {
-        Map<String, Map<String, String>> assets = (Map<String, Map<String, String>>) loans.getAccountPositions(getAddress()).get("assets");
+        Map<String, Map<String, String>> assets = (Map<String, Map<String, String>>) loans.getAccountPositions(getAddress()).get("holdings");
         if (!assets.containsKey(collateralSymbol) || !assets.get(collateralSymbol).containsKey(assetSymbol) ) {
             return BigInteger.ZERO;
         }

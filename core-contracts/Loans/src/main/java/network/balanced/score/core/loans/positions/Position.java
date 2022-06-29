@@ -266,11 +266,18 @@ public class Position {
         }
 
         Map<String, Object> positionDetails = new HashMap<>();
+
+        Standing sICXstanding = getStanding(SICX_SYMBOL, true);
         positionDetails.put("pos_id", getId());
         positionDetails.put("created", getCreated());
         positionDetails.put("address", getAddress().toString());
-        positionDetails.put("assets", holdings);
+        positionDetails.put("assets", holdings.get("sICX"));
+        positionDetails.put("holdings", holdings);
         positionDetails.put("standings", standings);
+        positionDetails.put("total_debt", sICXstanding.totalDebt);
+        positionDetails.put("collateral", sICXstanding.collateral);
+        positionDetails.put("ratio", sICXstanding.ratio);
+        positionDetails.put("standing", StandingsMap.get(sICXstanding.standing));
 
         return positionDetails;
     }

@@ -161,9 +161,7 @@ public class Balanced {
         ownerClient.staking.toggleStakingOn();
 
         ownerClient.daofund.addAddressToSetdb();
-
-        ownerClient.bnUSD.setMinter2(stability._address());
-        ownerClient.governance.enable_fee_handler();
+        ownerClient.baln.toggleEnableSnapshot();
 
         ownerClient.rewards.addDataProvider(stakedLp._address());
         ownerClient.rewards.addDataProvider(dex._address());
@@ -179,6 +177,8 @@ public class Balanced {
         ownerClient.governance.addAcceptedTokens(String.valueOf(bnusd._address()));
         ownerClient.governance.addAcceptedTokens(String.valueOf(sicx._address()));
         ownerClient.governance.addAcceptedTokens(String.valueOf(baln._address()));
+
+        ownerClient.bnUSD.setMinter2(stability._address());
     }
 
     public void setupMarkets() {

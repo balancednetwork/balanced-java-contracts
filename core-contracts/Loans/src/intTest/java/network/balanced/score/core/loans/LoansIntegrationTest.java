@@ -55,17 +55,6 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
     public static void setup() {
         owner.stability.whitelistTokens(balanced.sicx._address(), BigInteger.TEN.pow(10));
 
-        owner.baln.toggleEnableSnapshot();
-
-        owner.governance.addAcceptedTokens(balanced.sicx._address().toString());
-        owner.governance.addAcceptedTokens(balanced.baln._address().toString());
-        owner.governance.addAcceptedTokens(balanced.bnusd._address().toString());
-        owner.governance.setAcceptedDividendTokens(new score.Address[] {
-                balanced.sicx._address(),
-                balanced.baln._address(),
-                balanced.bnusd._address()
-            });
-
         owner.governance.setRebalancingThreshold(BigInteger.TEN.pow(17));
         owner.governance.setVoteDuration(BigInteger.TWO);
         owner.governance.setVoteDefinitionFee(voteDefinitionFee);

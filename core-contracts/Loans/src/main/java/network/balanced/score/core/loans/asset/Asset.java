@@ -208,6 +208,9 @@ public class Asset {
         assetDetails.put("total_burned", getTotalBurnedTokens());
         assetDetails.put("debt_details", loansDetails);
         assetDetails.put("dead_market", isDeadMarket());
+        assetDetails.put("bad_debt", getBadDebt(SICX_SYMBOL));
+        assetDetails.put("liquidation_pool", getLiquidationPool(SICX_SYMBOL));
+        assetDetails.put("borrowers", getBorrowers(SICX_SYMBOL).size());
 
         return assetDetails;
     }
