@@ -263,15 +263,14 @@ public class LoansImpl implements Loans {
 
         depositCollateral(collateralSymbol, _value, _from);
         if (requestedAmount.compareTo(BigInteger.ZERO) > 0) {
-            borrow(collateralSymbol, assetToBorrow, requestedAmount, _from);
+            originateLoan(collateralSymbol, assetToBorrow, requestedAmount, _from);
         }
     }
 
     @External
-    public void borrow(String _collateralToBorrowAgainst, String _assetToBorrow, BigInteger _amountToBorrow, @Optional Address _from) {
+    public void borrow(String _collateralToBorrowAgainst, String _assetToBorrow, BigInteger _amountToBorrow) {
         loansOn();
-        _from = optionalDefault(_from, Context.getCaller());
-        originateLoan(_collateralToBorrowAgainst, _assetToBorrow, _amountToBorrow, _from);
+        originateLoan(_collateralToBorrowAgainst, _assetToBorrow, _amountToBorrow,  Context.getCaller());
     }
 
     @External
@@ -279,7 +278,7 @@ public class LoansImpl implements Loans {
     public void depositAndBorrow(@Optional String _asset, @Optional BigInteger _amount, @Optional Address _from, @Optional BigInteger _value) {
         loansOn();
         BigInteger deposit = Context.getValue();
-        Address depositor = optionalDefault(_from, Context.getCaller());
+        Address depositor = Context.getCaller();
 
         if (!deposit.equals(BigInteger.ZERO)) {
             Position position = PositionsDB.getPosition(depositor);
@@ -336,10 +335,10 @@ public class LoansImpl implements Loans {
     }
 
     @External
-    public void returnAsset(String _assetSymbol, BigInteger _value, @Optional String _collateralSymbol) {
+    public void returnAsset(String _symbol, BigInteger _value, @Optional String _collateralSymbol) {
         loansOn();
         String collateralSymbol = optionalDefault(_collateralSymbol, SICX_SYMBOL);
-        String assetSymbol = _assetSymbol;
+        String assetSymbol = _symbol;
         Context.require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Amount retired must be greater than zero.");
 
         Address from = Context.getCaller();

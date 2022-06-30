@@ -94,7 +94,7 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
     BigInteger getBnusdValue(String _name);
 
     @External
-    void borrow(String _collateralToBorrowAgainst, String _assetToBorrow, BigInteger _amountToBorrow, @Optional Address _from);
+    void borrow(String _collateralToBorrowAgainst, String _assetToBorrow, BigInteger _amountToBorrow);
 
     @External
     @Payable
@@ -104,7 +104,7 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
     void retireBadDebt(String _symbol, BigInteger _value);
 
     @External
-    void returnAsset(String _assetSymbol, BigInteger _value, @Optional String _collateralSymbol);
+    void returnAsset(String _symbol, BigInteger _value, @Optional String _collateralSymbol);
 
     @External
     void raisePrice(String _collateralSymbol, BigInteger _total_tokens_required);

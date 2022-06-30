@@ -108,7 +108,7 @@ public class BalancedClient {
 
     public void borrowFrom(String collateral, BigInteger amount) {
         byte[] params = createBorrowData(amount);
-        loans.borrow(collateral, "bnUSD", amount, null);
+        loans.borrow(collateral, "bnUSD", amount);
     }
 
     public BigInteger getLoansCollateralPosition(String symbol) {

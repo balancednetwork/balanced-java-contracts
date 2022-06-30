@@ -419,7 +419,7 @@ class LoansTest extends LoansTestBase {
         takeLoanSICX(account, collateral, BigInteger.ZERO);
 
         // Act 
-        loans.invoke(account, "borrow", "sICX", "bnUSD", loan, account.getAddress());
+        loans.invoke(account, "borrow", "sICX", "bnUSD", loan);
         // Assert
         Map<String, Object> position = (Map<String, Object>)loans.call("getAccountPositions", account.getAddress());
         Map<String, Map<String, BigInteger>> assetHoldings = (Map<String, Map<String, BigInteger> >) position.get("holdings");
@@ -441,7 +441,7 @@ class LoansTest extends LoansTestBase {
         takeLoaniETH(account, collateral, BigInteger.ZERO);
 
         // Act 
-        loans.invoke(account, "borrow", "iETH", "bnUSD", loan, account.getAddress());
+        loans.invoke(account, "borrow", "iETH", "bnUSD", loan);
         
         // Assert
         Map<String, Object> position = (Map<String, Object>)loans.call("getAccountPositions", account.getAddress());
@@ -469,7 +469,7 @@ class LoansTest extends LoansTestBase {
                                         loan + " bnUSD when max_debt_value = 0," +
                                         " new_debt_value = " + loan.add(expectedFee) + ", which includes a fee of " + 
                                         expectedFee + " bnUSD, given an existing loan value of 0.";
-        Executable returnToMuch = () ->  loans.invoke(account, "borrow", "iETH", "bnUSD", loan, account.getAddress());;
+        Executable returnToMuch = () ->  loans.invoke(account, "borrow", "iETH", "bnUSD", loan);
         expectErrorMessage(returnToMuch, expectedErrorMessage);
       
        
