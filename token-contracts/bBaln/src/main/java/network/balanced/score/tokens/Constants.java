@@ -16,8 +16,25 @@
 
 package network.balanced.score.tokens;
 
+import network.balanced.score.tokens.utils.UnsignedBigInteger;
 import score.Address;
 
+import java.math.BigInteger;
+
 public class Constants {
+
+    //general constants
     public static final Address ZERO_ADDRESS = new Address(new byte[21]);
+
+
+    //time constants
+    public static final BigInteger SECOND = BigInteger.valueOf(1000000L);
+    public static final BigInteger MINUTE_IN_MICRO_SECONDS = BigInteger.valueOf(60L).multiply(SECOND);
+    public static final BigInteger HOUR_IN_MICRO_SECONDS = BigInteger.valueOf(60L).multiply(MINUTE_IN_MICRO_SECONDS);
+    public static final BigInteger DAY_IN_MICRO_SECONDS = BigInteger.valueOf(24L).multiply(HOUR_IN_MICRO_SECONDS);
+    public static final BigInteger WEEK_IN_MICRO_SECONDS = BigInteger.valueOf(7L).multiply(DAY_IN_MICRO_SECONDS);
+    public static final BigInteger DAYS_PER_YEAR = BigInteger.valueOf(365L);
+    public static final BigInteger YEAR_IN_MICRO_SECONDS = DAYS_PER_YEAR.multiply(DAY_IN_MICRO_SECONDS);
+
+    public static final UnsignedBigInteger U_WEEK_IN_MICRO_SECONDS = new UnsignedBigInteger(WEEK_IN_MICRO_SECONDS);
 }

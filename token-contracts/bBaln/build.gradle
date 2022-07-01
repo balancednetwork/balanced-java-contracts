@@ -1,3 +1,5 @@
+import network.balanced.score.dependencies.Dependencies
+
 /*
  * Copyright (c) 2021-2021 Balanced.network.
  *
@@ -21,19 +23,29 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'foundation.icon:javaee-api:0.9.0'
-    implementation 'foundation.icon:javaee-scorex:0.5.2'
+    compileOnly Dependencies.javaeeApi
+    implementation Dependencies.javaeeScorex
+    implementation project(':score-lib')
     implementation 'com.github.sink772:minimal-json:0.9.6'
 
     testImplementation 'foundation.icon:javaee-unittest:0.9.2'
     implementation 'com.github.sink772:javaee-tokens:0.6.1'
     // Use JUnit Jupiter for testing.
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+    testImplementation Dependencies.junitJupiter
+    testRuntimeOnly Dependencies.junitJupiterEngine
+    testImplementation Dependencies.mockitoCore
+    testImplementation Dependencies.iconSdk
+    testImplementation Dependencies.jacksonDatabind
+
+    testImplementation group: 'org.json', name: 'json', version: '20211205'
+
+    intTestAnnotationProcessor project(':score-client')
+    intTestImplementation project(':score-client')
+    intTestImplementation project(':test-lib')
 }
 
 optimizedJar {
-    mainClassName = 'network.balanced.score.tokens.BoostedBaln'
+    mainClassName = 'network.balanced.score.tokens.BoostedBalnImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
         configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
@@ -67,4 +79,34 @@ deployJar {
 tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = false
+        csv.required = false
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+    }
+}
+
+task integrationTest(type: Test) {
+    useJUnitPlatform()
+
+    rootProject.allprojects {
+        if(it.getTasks().findByName('optimizedJar')) {
+            dependsOn(it.getTasks().getByName('optimizedJar'))
+        }
+    }
+
+    options {
+        testLogging.showStandardStreams = true
+        description = 'Runs integration tests.'
+        group = 'verification'
+
+        testClassesDirs = sourceSets.intTest.output.classesDirs
+        classpath = sourceSets.intTest.runtimeClasspath
+    }
+
 }

@@ -4,6 +4,7 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
+import network.balanced.score.tokens.utils.DummyContract;
 import network.balanced.score.tokens.utils.IRC2Token;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Assertions;
@@ -16,6 +17,9 @@ import java.math.BigInteger;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.spy;
 
 /**
  * Test voting power in the following scenario.
@@ -59,14 +63,21 @@ public class VotingPowerTest extends TestBase {
     public static BigInteger YEAR = DAY.multiply(BigInteger.valueOf(365L));
     public static BigInteger MAX_TIME = YEAR.multiply(BigInteger.valueOf(4L));
 
+    private BoostedBalnImpl scoreSpy;
 
     @BeforeEach
     public void setup() throws Exception {
         tokenScore = sm.deploy(owner, IRC2Token.class, INITIAL_SUPPLY);
-        bBALNScore = sm.deploy(owner, BoostedBaln.class, tokenScore.getAddress(), BOOSTED_BALANCE, B_BALANCED_SYMBOL);
+        Score rewardScore = sm.deploy(owner, DummyContract.class);
+        bBALNScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(), BOOSTED_BALANCE, B_BALANCED_SYMBOL);
         tokenScore.invoke(owner, "mintTo", alice.getAddress(), ICX.multiply(BigInteger.valueOf(100L)));
         tokenScore.invoke(owner, "mintTo", bob.getAddress(), ICX.multiply(BigInteger.valueOf(100L)));
 
+
+        scoreSpy = (BoostedBalnImpl) spy(bBALNScore.getInstance());
+        bBALNScore.setInstance(scoreSpy);
+
+        bBALNScore.invoke(owner, "setMinimumLockingAmount", ICX);
 
         ServiceManager.Block currentBlock = sm.getBlock();
         currentBlock.increase(1_000_000);
@@ -395,6 +406,7 @@ public class VotingPowerTest extends TestBase {
     }
 
     private void createLock(Account account, BigInteger lockUntil, BigInteger amount) {
+        doNothing().when(scoreSpy).updateRewardData(any());
         Map<String, Object> map = new HashMap<>();
         map.put("method", "createLock");
         map.put("params", Map.of("unlockTime", lockUntil));
@@ -443,6 +455,7 @@ public class VotingPowerTest extends TestBase {
             this.timestamp = timestamp;
         }
     }
+
 
 
 }

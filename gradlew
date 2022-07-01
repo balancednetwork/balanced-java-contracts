@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2021-2021 Balanced.network.
+# Copyright (c) 2022 Balanced.network.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.

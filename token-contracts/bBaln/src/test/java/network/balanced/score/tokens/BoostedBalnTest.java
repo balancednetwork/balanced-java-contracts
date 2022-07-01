@@ -23,6 +23,7 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.token.irc2.IRC2Basic;
+import network.balanced.score.tokens.utils.DummyContract;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import com.iconloop.score.test.TestBase;
@@ -32,12 +33,12 @@ import java.math.BigInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.Mockito.spy;
 
 class BoostedBalnTest extends TestBase {
     private static final ServiceManager sm = getServiceManager();
     private static final Account owner = sm.createAccount();
     private Score bBalnScore;
-    private Score tokenScore;
 
     private static final String name = "Balance Token";
     private static final String symbol = "BALN";
@@ -56,8 +57,13 @@ class BoostedBalnTest extends TestBase {
 
     @BeforeEach
     public void setup() throws Exception {
-        tokenScore = sm.deploy(owner, IRC2BasicToken.class, name, symbol, decimals, initialSupply);
-        bBalnScore = sm.deploy(owner, BoostedBaln.class, tokenScore.getAddress(), bBalnName, bBalnSymbol);
+        Score tokenScore = sm.deploy(owner, IRC2BasicToken.class, name, symbol, decimals, initialSupply);
+        Score rewardScore = sm.deploy(owner, DummyContract.class);
+        bBalnScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(), bBalnName, bBalnSymbol);
+        BoostedBalnImpl scoreSpy = (BoostedBalnImpl) spy(bBalnScore.getInstance());
+        bBalnScore.setInstance(scoreSpy);
+
+        bBalnScore.invoke(owner, "setMinimumLockingAmount", ICX);
     }
 
     @Test
