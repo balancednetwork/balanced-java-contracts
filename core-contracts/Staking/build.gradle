@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import network.balanced.score.dependencies.Dependencies
+import network.balanced.score.dependencies.*
 
 version = '0.1.0'
 
@@ -63,7 +63,7 @@ deployJar {
         sejong {
             uri = 'https://sejong.net.solidwallet.io/api/v3'
             nid = 0x53
-            to = "cx75256fadf232ad1124d9c6cd70c9b1ec122a0f47"
+            to = Addresses.sejong.staking
         }
         local {
             uri = 'http://localhost:9082/api/v3'
@@ -72,7 +72,7 @@ deployJar {
         mainnet {
             uri = 'https://ctz.solidwallet.io/api/v3'
             nid = 0x1
-            to = "cx793970c9ec84eb0dcb6164965c74fe678474d7c7"
+            to = Addresses.mainnet.staking
         }
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
