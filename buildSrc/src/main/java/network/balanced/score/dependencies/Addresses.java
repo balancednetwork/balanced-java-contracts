@@ -8,7 +8,7 @@ public class Addresses {
             public static final String governance = "cx7bbb16f746aae9d9f4fdc6d39a2a5144b123b18a";
             public static final String baln = "cxf4d8a45fedf5efc7420b7e4a4a0a8dff94269476";
             public static final String bnUSD = "cx33b73f45e494302c5098c32c36491ee39e5c6af4";
-            public static final String worker_token = "cxe13633d39c116d7fe21a71eb68f16b541300afa4";
+            public static final String bwt = "cxe13633d39c116d7fe21a71eb68f16b541300afa4";
             public static final String daofund = "cx4cd1c3e3eb3d4cc6b821d650749c626c04f4834c";
             public static final String dex = "cx7cbf2fdb26cd7d0175a3253fbbd2a0b26c6bbd9f";
             public static final String disbursement = "cx800b0b1a28887ef5d787c06afbaf5b3826c2de13";
@@ -19,7 +19,7 @@ public class Addresses {
             public static final String reserve = "cxeb7c7bc04653bb51fab18e5bffca74ca5534889c";
             public static final String rewards = "cx5b7f7355035114543d457fae5e0d80f2cee51029";
             public static final String router = "cxdb9f1e186b7144fc9d3292cbb6f6d07dbfc85897";
-            public static final String stakedLp = "cxa18b5861b7b7d9a30de32b6950d74cb2a61a74fe";
+            public static final String stakedlp = "cxa18b5861b7b7d9a30de32b6950d74cb2a61a74fe";
             public static final String stability = "cx38dd16a7184cac760c5bb536afb34a0424148329";
             public static final String staking = "cxe1fb71c7b15a0c70d7ec4b49fd8809c6e75e63c9";
             public static final String sicx = "cxfaa42fe413dc2248c3e27ad7598903a844cddfdf";

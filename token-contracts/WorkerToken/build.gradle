@@ -43,7 +43,7 @@ deployJar {
         sejong {
             uri = 'https://sejong.net.solidwallet.io/api/v3'
             nid = 0x53
-            to = Addresses.sejong.worker_token
+            to = Addresses.sejong.bwt
         }
         local {
             uri = 'http://localhost:9082/api/v3'
