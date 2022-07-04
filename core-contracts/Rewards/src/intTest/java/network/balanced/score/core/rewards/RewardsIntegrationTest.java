@@ -52,8 +52,6 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         owner = balanced.ownerClient;
         reader = balanced.newClient(BigInteger.ZERO);
 
-        owner.baln.toggleEnableSnapshot();
-
         owner.governance.addAcceptedTokens(balanced.sicx._address().toString());
         owner.governance.addAcceptedTokens(balanced.baln._address().toString());
         owner.governance.addAcceptedTokens(balanced.bnusd._address().toString());

@@ -51,7 +51,6 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         owner.governance.setVoteDefinitionFee(BigInteger.TEN.pow(10));
         owner.governance.setQuorum(BigInteger.ONE);
         balanced.increaseDay(1);
-        owner.baln.toggleEnableSnapshot();
 
         tester.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(20), null, null);
 
@@ -61,6 +60,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         tester.rewards.claimRewards();
 
         BigInteger balance = tester.baln.balanceOf(tester.getAddress());
+        System.out.println(balance);
         tester.baln.stake(balance);
     }
   

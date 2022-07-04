@@ -716,15 +716,6 @@ public abstract class AbstractDex implements Dex {
         }
     }
 
-    void revertBelowMinimum(BigInteger value, Address quoteToken) {
-        BigInteger minAmount = getRewardableAmount(quoteToken);
-        if (value.compareTo(minAmount) < 0) {
-            BigInteger readableMin = minAmount.divide(getUnitValue(quoteToken));
-            Context.revert(TAG + ": Total liquidity provided must be above " + readableMin + " quote currency");
-        }
-    }
-
-
     BigInteger snapshotValueAt(BigInteger _snapshot_id,
                                BranchDB<String, DictDB<BigInteger, BigInteger>> snapshot) {
         Context.require(_snapshot_id.compareTo(BigInteger.ZERO) >= 0,

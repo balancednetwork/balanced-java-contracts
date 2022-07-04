@@ -404,10 +404,6 @@ public class DexImpl extends AbstractDex {
         Add(BigInteger.valueOf(id), user, liquidity, baseToCommit, quoteToCommit);
         TransferSingle(user, MINT_ADDRESS, user, BigInteger.valueOf(id), liquidity);
 
-        BigInteger userQuoteHoldings = (userLpAmount.multiply(poolQuoteAmount)).divide(poolLpAmount);
-        // TODO: do we want to keep this?
-        //revertBelowMinimum(userQuoteHoldings, _quoteToken);
-
         activeAddresses.get(id).add(user);
 
         if (userDepositedBase.compareTo(BigInteger.ZERO) > 0) {
@@ -444,7 +440,6 @@ public class DexImpl extends AbstractDex {
     public void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data) {
         Context.revert(TAG + ": IRC31 Tokens not accepted");
     }
-
 
     // TODO remove when dividends no longer use this
     @External(readonly = true)

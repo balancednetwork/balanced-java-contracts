@@ -745,7 +745,7 @@ public class GovernanceImpl {
     }
 
     @External
-    public void setPeg(String _symbol,String _peg) {
+    public void setPeg(String _symbol, String _peg) {
         onlyOwner();
         Context.call(Addresses.get("balancedOracle"), "setPeg", _symbol, _peg);
     }
