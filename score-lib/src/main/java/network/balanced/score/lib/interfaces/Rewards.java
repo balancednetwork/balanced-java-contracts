@@ -25,6 +25,7 @@ import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import score.Address;
 import score.annotation.External;
+import score.annotation.Optional;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -32,9 +33,18 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface Rewards extends Name, TokenFallback, GovernanceAddress, AdminAddress, BalnAddress, BwtAddress,
-        DaoFundAddress, ReserveAddress, StakedLpAddress {
-
+public interface Rewards extends 
+        Name, 
+        TokenFallback,
+        GovernanceAddress,
+        AdminAddress,
+        BalnAddress,
+        BwtAddress,
+        DaoFundAddress,
+        ReserveAddress,
+        StakedLpAddress,
+        BoostedBalnAddress {
+   
     @External(readonly = true)
     BigInteger getEmission(BigInteger _day);
 
@@ -81,6 +91,12 @@ public interface Rewards extends Name, TokenFallback, GovernanceAddress, AdminAd
     Map<String, BigInteger> recipientAt(BigInteger _day);
 
     @External
+    void boost(String _name);
+
+    @External(readonly = true)
+    String getBoost(Address user);
+
+    @External
     void claimRewards();
 
     @External(readonly = true)
@@ -115,4 +131,10 @@ public interface Rewards extends Name, TokenFallback, GovernanceAddress, AdminAd
 
     @External(readonly = true)
     BigInteger getContinuousRewardsDay();
+
+    @External
+    void onKick(Address user, BigInteger bOMMUserBalance, @Optional byte[] data);
+
+    @External
+    void onBalanceUpdate(Address user);
 }

@@ -25,6 +25,11 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+import foundation.icon.score.client.ScoreClient;
+import foundation.icon.score.client.ScoreInterface;
+
+@ScoreClient
+@ScoreInterface
 public interface BoostedBaln {
 
     @External

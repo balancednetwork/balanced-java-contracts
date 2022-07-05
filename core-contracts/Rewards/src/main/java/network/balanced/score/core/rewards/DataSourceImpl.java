@@ -16,16 +16,21 @@
 
 package network.balanced.score.core.rewards;
 
-import network.balanced.score.lib.interfaces.DataSourceScoreInterface;
-import score.*;
-import scorex.util.HashMap;
+import static network.balanced.score.core.rewards.utils.Check.continuousRewardsActive;
+import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.core.rewards.utils.RewardsConstants.WEIGHT;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
 import java.math.BigInteger;
 import java.util.Map;
 
-import static network.balanced.score.core.rewards.utils.Check.continuousRewardsActive;
-import static network.balanced.score.lib.utils.Constants.EXA;
-import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
+import network.balanced.score.lib.interfaces.DataSourceScoreInterface;
+import score.Address;
+import score.BranchDB;
+import score.Context;
+import score.DictDB;
+import score.VarDB;
+import scorex.util.HashMap;
 
 public class DataSourceImpl {
     private final BranchDB<String, VarDB<Address>> contractAddress = Context.newBranchDB("contract_address",
@@ -34,6 +39,8 @@ public class DataSourceImpl {
     private final BranchDB<String, VarDB<BigInteger>> day = Context.newBranchDB("day", BigInteger.class);
     private final BranchDB<String, VarDB<Boolean>> precomp = Context.newBranchDB("precomp", Boolean.class);
     private final BranchDB<String, VarDB<Integer>> offset = Context.newBranchDB("offset", Integer.class);
+    private final BranchDB<String,  VarDB<BigInteger>> workingSupply = Context.newBranchDB("wokring_supply",
+    BigInteger.class);
     private final BranchDB<String, DictDB<BigInteger, BigInteger>> totalValue = Context.newBranchDB("total_value",
             BigInteger.class);
     private final BranchDB<String, DictDB<BigInteger, BigInteger>> totalDist = Context.newBranchDB("total_dist",
@@ -42,6 +49,8 @@ public class DataSourceImpl {
             BigInteger.class);
     private final BranchDB<String, DictDB<Address, BigInteger>> userWeight = Context.newBranchDB("user_weight",
             BigInteger.class);
+    private final BranchDB<String, DictDB<Address, BigInteger>> userWorkingBalance = Context.newBranchDB("user_working_balance",
+    BigInteger.class);
     private final BranchDB<String, VarDB<BigInteger>> lastUpdateTimeUs = Context.newBranchDB("last_update_us",
             BigInteger.class);
     private final BranchDB<String, VarDB<BigInteger>> totalWeight = Context.newBranchDB("running_total",
@@ -77,6 +86,22 @@ public class DataSourceImpl {
 
     public void setDay(BigInteger day){
         this.day.at(dbKey).set(day);
+    }
+
+    public BigInteger getWorkingSupply() {
+        return workingSupply.at(dbKey).getOrDefault(loadCurrentSupply(Context.getCaller()).get("_totalSupply"));
+    }
+
+    public void setWorkingSupply(BigInteger supply){
+        this.workingSupply.at(dbKey).set(supply);
+    }
+
+    public BigInteger getWorkingBalance(Address user) {
+        return userWorkingBalance.at(dbKey).getOrDefault(user, loadCurrentSupply(Context.getCaller()).get("_balance"));
+    }
+
+    public void setWorkingBalance(Address user, BigInteger balance) {
+        this.userWorkingBalance.at(dbKey).set(user, balance);
     }
 
     public Boolean getPrecomp() {
@@ -164,6 +189,38 @@ public class DataSourceImpl {
             userWeight.at(dbKey).set(user, totalWeight);
         }
         return accruedRewards;
+    }
+
+    public Map<String, BigInteger> updateWorkingBalanceAndSupply(Address user, BigInteger balance, BigInteger supply, BigInteger time, Boolean boosted) {
+        BigInteger bBalnSupply = getBoostedSupply(time);
+        if (bBalnSupply.equals(BigInteger.ZERO)) {
+            return Map.of(
+                "workingSupply", supply,
+                "workingBalance", balance
+            );
+        }
+
+        BigInteger bBalnBalance = BigInteger.ZERO;
+        if (boosted) {
+            bBalnBalance = getBoostedBalance(user, time);
+        }
+
+        // Bob’s Earning Weight = min ((1,000 * 0.4) + (1,000,000 * 500 / 500,000 * 0.6), 1000)
+        BigInteger base = WEIGHT.multiply(balance).divide(EXA);
+        BigInteger boost = supply.multiply(bBalnBalance).divide(bBalnSupply).multiply(EXA.subtract(WEIGHT));
+        BigInteger newWorkingBalance = base.add(boost);
+        newWorkingBalance = newWorkingBalance.min(balance);
+
+        BigInteger previousWorkingSupply = getWorkingBalance(user);
+        setWorkingBalance(user, newWorkingBalance);
+
+        BigInteger newTotalBalance = getWorkingSupply().subtract(previousWorkingSupply).add(newWorkingBalance);
+        setWorkingSupply(newTotalBalance);
+
+        return Map.of(
+            "workingSupply", newTotalBalance,
+            "workingBalance", newWorkingBalance
+        );
     }
 
     private BigInteger computeTotalWeight(BigInteger previousTotalWeight,
@@ -316,5 +373,13 @@ public class DataSourceImpl {
     private BigInteger computeUserRewards(BigInteger prevUserBalance, BigInteger totalWeight, BigInteger userWeight) {
         BigInteger deltaWeight = totalWeight.subtract(userWeight);
         return deltaWeight.multiply(prevUserBalance).divide(EXA);
+    }
+
+    private BigInteger getBoostedBalance(Address user, BigInteger time)  {
+        return BigInteger.ZERO;//(BigInteger) RewardsImpl.call(RewardsImpl.boostedBaln.get(), "balanceOf", user, time);
+    }
+
+    private BigInteger getBoostedSupply(BigInteger time)  {
+        return BigInteger.ZERO;//(BigInteger) RewardsImpl.call(RewardsImpl.boostedBaln.get(), "totalSupply", time);
     }
 }
