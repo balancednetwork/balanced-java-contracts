@@ -30,11 +30,11 @@ import java.util.List;
 import java.util.Map;
 
 import static network.balanced.score.core.dividends.Constants.*;
-import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
 import static network.balanced.score.lib.utils.ArrayDBUtils.removeFromArraydb;
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static network.balanced.score.lib.utils.Math.pow;
 
 public class DividendsImpl implements Dividends {
@@ -93,7 +93,7 @@ public class DividendsImpl implements Dividends {
         only(admin);
         distributionActivate.set(_status);
     }
-
+            
     @External
     public void setTimeOffset(BigInteger deltaTime) {
         only(admin);
@@ -419,7 +419,6 @@ public class DividendsImpl implements Dividends {
     @SuppressWarnings("unchecked")
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         Address token = Context.getCaller();
-        BigInteger snapId = snapshotId.getOrDefault(BigInteger.ZERO);
         Map<String, String> availableTokens;
         int acceptedTokensCount = acceptedTokens.size();
         for (int i = 0; i < acceptedTokensCount; i++) {
@@ -434,6 +433,7 @@ public class DividendsImpl implements Dividends {
         }
 
         checkForNewDay();
+        BigInteger snapId = snapshotId.getOrDefault(BigInteger.ZERO);
         DictDB<String, BigInteger> feesOnSnapId = dailyFees.at(snapId);
         BigInteger previousFees = feesOnSnapId.getOrDefault(token.toString(), BigInteger.ZERO);
         feesOnSnapId.set(token.toString(), previousFees.add(_value));

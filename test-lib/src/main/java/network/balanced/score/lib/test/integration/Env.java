@@ -93,15 +93,17 @@ public class Env {
         public final BigInteger networkId;
         public final Wallet godWallet;
         private final String nodeUrl;
+        private final String apiVersion;
 
         public Chain(BigInteger networkId, Wallet godWallet, String url, String apiVersion) {
             this.networkId = networkId;
             this.godWallet = godWallet;
             this.nodeUrl = url;
+            this.apiVersion = apiVersion;
         }
 
         public String getEndpointURL() {
-            return this.nodeUrl + "/api/v" + networkId; 
+            return this.nodeUrl + "/api/v" + apiVersion;
         }
     }
 }

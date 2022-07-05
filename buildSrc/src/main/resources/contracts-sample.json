@@ -1,0 +1,154 @@
+[
+  {
+    "name": "governance",
+    "params": {
+    },
+    "order": 1.0
+  },
+  {
+    "name": "baln",
+    "path": "https://main.tracker.solidwallet.io/score/cxf61cd5a45dc9f91c15aa65831a30a90d59a09619_6.zip",
+    "params": {},
+    "addressParams": {
+      "_governance": "governance"
+    },
+    "order": 2.0
+  },
+  {
+    "name": "bnUSD",
+    "params": {},
+    "addressParams": {
+      "_governance": "governance"
+    },
+    "order": 2.0
+  },
+  {
+    "name": "worker_token",
+    "params": {},
+    "addressParams": {
+      "_governance": "governance"
+    },
+    "order": 2.0
+  },
+  {
+    "name": "daofund",
+    "params": {},
+    "addressParams": {
+      "_governance": "governance"
+    },
+    "order": 2.0
+  },
+  {
+    "name": "dex",
+    "params": {},
+    "addressParams": {
+      "_governance": "governance"
+    },
+    "order": 2.0
+  },
+  {
+    "name": "disbursement",
+    "params": {},
+    "addressParams": {
+      "_governance": "governance"
+    },
+    "order": 2.0
+  },
+  {
+    "name": "dividends",
+    "params": {},
+    "addressParams": {
+      "_governance": "governance"
+    },
+    "order": 2.0
+  },
+  {
+    "name": "feehandler",
+    "path": "https://main.tracker.solidwallet.io/score/cx5faae53c4dbd1fbe4a2eb4aab6565030f10da5c6_5.zip",
+    "params": {},
+    "addressParams": {
+      "_governance": "governance"
+    },
+    "order": 2.0
+  },
+  {
+    "name": "loans",
+    "params": {},
+    "addressParams": {
+      "_governance": "governance"
+    },
+    "order": 2.0
+  },
+  {
+    "name": "rebalancing",
+    "params": {},
+    "addressParams": {
+      "_governance": "governance"
+    },
+    "order": 2.0
+  },
+  {
+    "name": "reserve",
+    "params": {},
+    "contentType": "application/java",
+    "order": 2.0
+  },
+  {
+    "name": "rewards",
+    "params": {},
+    "addressParams": {
+      "_governance": "governance"
+    },
+    "order": 2.0
+  },
+  {
+    "name": "router",
+    "params": {},
+    "addressParams": {
+      "_governance": "governance"
+    },
+    "order": 2.0
+  },
+  {
+    "name": "stakedLp",
+    "params": {},
+    "addressParams": {
+      "governance": "governance"
+    },
+    "order": 2.0
+  },
+  {
+    "name": "stability",
+    "params": {
+      "_feeIn": 500000000000000000,
+      "_feeOut": 500000000000000000
+    },
+    "addressParams": {
+      "_feeHandler": "feehandler",
+      "_bnusd": "bnUSD"
+    },
+    "order": 3.0
+  },
+  {
+    "name": "staking",
+    "params": {},
+    "order": 3.0
+  },
+  {
+    "name": "sicx",
+    "params": {},
+    "addressParams": {
+      "_admin": "staking"
+    },
+    "order": 4.0
+  },
+  {
+    "name": "oracle",
+    "params": {
+    }
+  },
+  {
+    "name": "multicall",
+    "params": {}
+  }
+]

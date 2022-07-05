@@ -26,19 +26,20 @@ import java.math.BigInteger;
 
 @ScoreInterface
 public interface IRC2 {
-    @External
+
+    @External(readonly = true)
     String name();
 
-    @External
+    @External(readonly = true)
     String symbol();
 
-    @External
+    @External(readonly = true)
     BigInteger decimals();
 
-    @External
+    @External(readonly = true)
     BigInteger totalSupply();
 
-    @External
+    @External(readonly = true)
     BigInteger balanceOf(Address _owner);
 
     @External

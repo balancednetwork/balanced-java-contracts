@@ -28,7 +28,4 @@ public class Constants {
     public static final BigInteger MICRO_SECONDS_IN_A_SECOND = BigInteger.valueOf(1_000_000);
     public static final BigInteger MICRO_SECONDS_IN_A_DAY = BigInteger.valueOf(86400).multiply(MICRO_SECONDS_IN_A_SECOND);
     public final static Address EOA_ZERO = new Address(new byte[Address.LENGTH]);
-
-
-
 }

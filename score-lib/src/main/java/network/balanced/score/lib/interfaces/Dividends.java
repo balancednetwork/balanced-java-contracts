@@ -16,6 +16,7 @@
 
 package network.balanced.score.lib.interfaces;
 
+import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.*;
 import network.balanced.score.lib.interfaces.base.Name;
@@ -29,6 +30,7 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+@ScoreClient
 @ScoreInterface
 public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress, DaoFundAddress, BalnAddress,
         Name, DexAddress, TokenFallback {
