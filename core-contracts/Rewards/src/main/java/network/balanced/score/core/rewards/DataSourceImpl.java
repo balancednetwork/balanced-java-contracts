@@ -17,7 +17,6 @@
 package network.balanced.score.core.rewards;
 
 import static network.balanced.score.core.rewards.utils.Check.continuousRewardsActive;
-import static network.balanced.score.core.rewards.utils.RewardsConstants.WEIGHT;
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
@@ -214,8 +213,9 @@ public class DataSourceImpl {
             bBalnBalance = getBoostedBalance(user, time);
         }
 
-        BigInteger max = balance.multiply(EXA).divide(WEIGHT);
-        BigInteger boost = supply.multiply(bBalnBalance).divide(bBalnSupply).multiply(EXA.subtract(WEIGHT)).divide(WEIGHT);
+        BigInteger weight = RewardsImpl.boostWeight.get();
+        BigInteger max = balance.multiply(EXA).divide(weight);
+        BigInteger boost = supply.multiply(bBalnBalance).divide(bBalnSupply).multiply(EXA.subtract(weight)).divide(weight);
         BigInteger newWorkingBalance = balance.add(boost);
         newWorkingBalance = newWorkingBalance.min(max);
 

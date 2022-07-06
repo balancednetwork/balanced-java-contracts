@@ -72,6 +72,7 @@ public class RewardsImpl implements Rewards {
     private static final String DATA_PROVIDERS = "data_providers";
     private static final String NON_CONTINUOUS_REWARDS_DAY_COUNT = "non_continuous_rewards_day_count";
     private static final String BOOSTS = "user_boosts_map";
+    private static final String BOOST_WEIGHT = "user_boosts_map";
 
     private static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
     private static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
@@ -99,8 +100,8 @@ public class RewardsImpl implements Rewards {
     private final static SetDB<Address> dataProviders = new SetDB<>(DATA_PROVIDERS, Address.class, null);
     private static final VarDB<BigInteger> nonContinuousRewardsDayCount =
             Context.newVarDB(NON_CONTINUOUS_REWARDS_DAY_COUNT, BigInteger.class);
-    private static final DictDB<Address, String> boosts = Context.newDictDB(BOOSTS,
-    String.class);
+    private static final DictDB<Address, String> boosts = Context.newDictDB(BOOSTS, String.class);
+    public static final VarDB<BigInteger> boostWeight = Context.newVarDB(BOOST_WEIGHT, BigInteger.class);
 
     private static final Map<String, VarDB<Address>> platformRecipients = Map.of(WORKER_TOKENS, bwtAddress,
             RewardsConstants.RESERVE_FUND, reserveFund,
@@ -123,6 +124,8 @@ public class RewardsImpl implements Rewards {
             completeRecipient.add(RewardsConstants.RESERVE_FUND);
             completeRecipient.add(DAOFUND);
         }
+
+        boostWeight.set(WEIGHT);
     }
 
     @External(readonly = true)
@@ -592,6 +595,19 @@ public class RewardsImpl implements Rewards {
         updateCurrentUserAccruedRewards(boostedSource, user);
     }
 
+    @External
+    public void setBoostWeight(BigInteger weight) {
+        only(admin);
+        Context.require(weight.compareTo(HUNDRED_PERCENTAGE.divide(BigInteger.valueOf(100))) >= 0, "Boost weight has to be above 1%");
+        Context.require(weight.compareTo(HUNDRED_PERCENTAGE) <= 0, "Boost weight has to be below 100%");
+        boostWeight.set(weight);
+    }
+
+    @External(readonly = true)
+    public BigInteger getBoostWeight() {
+        return boostWeight.get();
+    }
+
     private void updateCurrentUserAccruedRewards(String name, Address user) {
         DataSourceImpl dataSource = DataSourceDB.get(name);
         Map<String, BigInteger> data = dataSource.loadCurrentSupply(user);
@@ -606,17 +622,19 @@ public class RewardsImpl implements Rewards {
     private void updateUserAccruedRewards(String _name, BigInteger _totalSupply, BigInteger currentTime,
                                           DataSourceImpl dataSource, Address user, BigInteger previousBalance) {
 
-        Map<String, BigInteger> workingBalanceAndSupply = dataSource.updateWorkingBalanceAndSupply(user, 
-                                                                                                   previousBalance,
-                                                                                                   _totalSupply, 
-                                                                                                   currentTime, 
-                                                                                                   hasBoost(user, _name));
+        Map<String, BigInteger> workingBalanceAndSupply = 
+            dataSource.updateWorkingBalanceAndSupply(user, 
+                                                     previousBalance,
+                                                     _totalSupply, 
+                                                     currentTime, 
+                                                     hasBoost(user, _name));
 
-        BigInteger accruedRewards = dataSource.updateSingleUserData(currentTime, 
-                                                                    workingBalanceAndSupply.get("workingSupply"), 
-                                                                    user,
-                                                                    workingBalanceAndSupply.get("workingBalance"),  
-                                                                    false);
+        BigInteger accruedRewards = 
+            dataSource.updateSingleUserData(currentTime, 
+                                            workingBalanceAndSupply.get("workingSupply"), 
+                                            user,
+                                            workingBalanceAndSupply.get("workingBalance"),  
+                                            false);
 
         if (accruedRewards.compareTo(BigInteger.ZERO) > 0) {
             BigInteger newHoldings =
