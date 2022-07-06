@@ -1,9 +1,24 @@
+/*
+ * Copyright (c) 2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package network.balanced.score.tokens;
 
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
-import com.iconloop.score.test.TestBase;
 import network.balanced.score.tokens.utils.DummyContract;
 import network.balanced.score.tokens.utils.IRC2Token;
 import org.json.JSONObject;
@@ -44,11 +59,9 @@ import static org.mockito.Mockito.spy;
  * Checking that totalSupply is appropriate.
  * After the test is done, check all over again with balanceOfAt / totalSupplyAt
  */
-public class VotingPowerTest extends TestBase {
+public class VotingPowerTest extends AbstractBoostedBalnTest {
     private static final ServiceManager sm = getServiceManager();
-    private static final Account owner = sm.createAccount();
     private Score bBALNScore;
-    private Score tokenScore;
 
     private static final BigInteger INITIAL_SUPPLY = BigInteger.TEN.multiply(ICX);
     private static final String BOOSTED_BALANCE = "Boosted Balance";
@@ -73,7 +86,6 @@ public class VotingPowerTest extends TestBase {
         tokenScore.invoke(owner, "mintTo", alice.getAddress(), ICX.multiply(BigInteger.valueOf(100L)));
         tokenScore.invoke(owner, "mintTo", bob.getAddress(), ICX.multiply(BigInteger.valueOf(100L)));
 
-
         scoreSpy = (BoostedBalnImpl) spy(bBALNScore.getInstance());
         bBALNScore.setInstance(scoreSpy);
 
@@ -84,7 +96,6 @@ public class VotingPowerTest extends TestBase {
 //        Move to timing which is good for testing - beginning of a UTC week
         BigInteger timestamp = getBlockTimestamp();
         setBlockTimestamp(timestamp.divide(WEEK).add(BigInteger.ONE).multiply(WEEK).longValue());
-
     }
 
     @Test
@@ -97,7 +108,6 @@ public class VotingPowerTest extends TestBase {
         Assertions.assertEquals(BigInteger.ZERO, bobBalance);
         Assertions.assertEquals(BigInteger.ZERO, aliceBalance);
         Assertions.assertEquals(BigInteger.ZERO, totalSupply);
-
     }
 
     @Test
