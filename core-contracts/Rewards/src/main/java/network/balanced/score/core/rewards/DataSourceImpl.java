@@ -21,6 +21,7 @@ import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.core.rewards.utils.RewardsConstants.WEIGHT;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
+import java.io.Console;
 import java.math.BigInteger;
 import java.util.Map;
 
@@ -39,7 +40,7 @@ public class DataSourceImpl {
     private final BranchDB<String, VarDB<BigInteger>> day = Context.newBranchDB("day", BigInteger.class);
     private final BranchDB<String, VarDB<Boolean>> precomp = Context.newBranchDB("precomp", Boolean.class);
     private final BranchDB<String, VarDB<Integer>> offset = Context.newBranchDB("offset", Integer.class);
-    private final BranchDB<String,  VarDB<BigInteger>> workingSupply = Context.newBranchDB("wokring_supply",
+    private final BranchDB<String,  VarDB<BigInteger>> workingSupply = Context.newBranchDB("working_supply",
     BigInteger.class);
     private final BranchDB<String, DictDB<BigInteger, BigInteger>> totalValue = Context.newBranchDB("total_value",
             BigInteger.class);
@@ -205,15 +206,14 @@ public class DataSourceImpl {
             bBalnBalance = getBoostedBalance(user, time);
         }
 
-        // Bob’s Earning Weight = min ((1,000 * 0.4) + (1,000,000 * 500 / 500,000 * 0.6), 1000)
-        BigInteger base = WEIGHT.multiply(balance).divide(EXA);
-        BigInteger boost = supply.multiply(bBalnBalance).divide(bBalnSupply).multiply(EXA.subtract(WEIGHT));
-        BigInteger newWorkingBalance = base.add(boost);
-        newWorkingBalance = newWorkingBalance.min(balance);
+        BigInteger max = balance.multiply(EXA).divide(WEIGHT);
+        BigInteger boost = supply.multiply(bBalnBalance).divide(bBalnSupply).multiply(EXA.subtract(WEIGHT)).divide(WEIGHT);
+        BigInteger newWorkingBalance = balance.add(boost);
+        newWorkingBalance = newWorkingBalance.min(max);
 
         BigInteger previousWorkingSupply = getWorkingBalance(user);
         setWorkingBalance(user, newWorkingBalance);
-
+ 
         BigInteger newTotalBalance = getWorkingSupply().subtract(previousWorkingSupply).add(newWorkingBalance);
         setWorkingSupply(newTotalBalance);
 
@@ -376,10 +376,18 @@ public class DataSourceImpl {
     }
 
     private BigInteger getBoostedBalance(Address user, BigInteger time)  {
-        return BigInteger.ZERO;//(BigInteger) RewardsImpl.call(RewardsImpl.boostedBaln.get(), "balanceOf", user, time);
+        try {
+            return (BigInteger) RewardsImpl.call(RewardsImpl.boostedBaln.get(), "balanceOf", user, time);
+        } catch (Exception e) {
+            return BigInteger.ZERO;
+        }
     }
 
     private BigInteger getBoostedSupply(BigInteger time)  {
-        return BigInteger.ZERO;//(BigInteger) RewardsImpl.call(RewardsImpl.boostedBaln.get(), "totalSupply", time);
+        try {
+            return (BigInteger) RewardsImpl.call(RewardsImpl.boostedBaln.get(), "totalSupply", time);  
+        } catch (Exception e) {
+            return BigInteger.ZERO;
+        }
     }
 }

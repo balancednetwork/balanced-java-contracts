@@ -62,6 +62,7 @@ public class GovernanceTestBase extends UnitTest {
     protected MockContract<RebalancingScoreInterface> rebalancing;
     protected MockContract<FeehandlerScoreInterface> feehandler;
     protected MockContract<StakedLpScoreInterface> stakedLp;
+    protected MockContract<BoostedBalnScoreInterface> bBaln;
 
     protected BalancedAddresses balancedAddresses = new BalancedAddresses();
 
@@ -119,6 +120,7 @@ public class GovernanceTestBase extends UnitTest {
         balancedAddresses.rebalancing = rebalancing.getAddress();
         balancedAddresses.feehandler = feehandler.getAddress();
         balancedAddresses.stakedLp = stakedLp.getAddress();
+        balancedAddresses.bBaln = bBaln.getAddress();
 
         governance.invoke(owner, "setAddresses", balancedAddresses);
         governance.invoke(owner, "setContractAddresses");
@@ -142,6 +144,7 @@ public class GovernanceTestBase extends UnitTest {
         verify(rewards.mock).setBaln(baln.getAddress());
         verify(rewards.mock).setDaofund(daofund.getAddress());
         verify(rewards.mock).setStakedLp(stakedLp.getAddress());
+        verify(rewards.mock).setbBaln(bBaln.getAddress());
        
         verify(dividends.mock).setDex(dex.getAddress());
         verify(dividends.mock).setLoans(loans.getAddress());
@@ -270,6 +273,7 @@ public class GovernanceTestBase extends UnitTest {
         rebalancing = new MockContract<>(RebalancingScoreInterface.class, sm, owner);
         feehandler = new MockContract<>(FeehandlerScoreInterface.class, sm, owner);
         stakedLp = new MockContract<>(StakedLpScoreInterface.class, sm, owner);
+        bBaln = new MockContract<>(BoostedBalnScoreInterface.class, sm, owner);
         governance = sm.deploy(owner, GovernanceImpl.class);
 
         setupAddresses();
