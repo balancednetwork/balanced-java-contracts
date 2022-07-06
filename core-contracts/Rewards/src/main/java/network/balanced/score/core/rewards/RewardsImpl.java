@@ -164,19 +164,20 @@ public class RewardsImpl implements Rewards {
             String name = DataSourceDB.names.get(i);
             DataSourceImpl dataSource = DataSourceDB.get(name);
             BigInteger currentTime = getTime();
-
             Map<String, BigInteger> data = dataSource.loadCurrentSupply(_holder);
-            Map<String, BigInteger> workingBalanceAndSupply = dataSource.updateWorkingBalanceAndSupply( _holder, 
-                                                                                                       data.get(BALANCE),
-                                                                                                       data.get(TOTAL_SUPPLY), 
-                                                                                                       currentTime, 
-                                                                                                       hasBoost(_holder, name));
+            Map<String, BigInteger> workingBalanceAndSupply = 
+                dataSource.getWorkingBalanceAndSupply( _holder, 
+                                                      data.get(BALANCE),
+                                                      data.get(TOTAL_SUPPLY), 
+                                                      currentTime, 
+                                                      hasBoost(_holder, name));
 
             BigInteger sourceRewards = dataSource.updateSingleUserData(currentTime,
                                                                        workingBalanceAndSupply.get("workingSupply"),
                                                                        _holder, 
                                                                        workingBalanceAndSupply.get("workingBalance"), 
                                                                        true);
+
             accruedRewards = accruedRewards.add(sourceRewards);
         }
 
@@ -681,14 +682,14 @@ public class RewardsImpl implements Rewards {
     }
 
     @External
-    public void setbBaln(Address _address) {
+    public void setBoostedBaln(Address _address) {
         only(admin);
         isContract(_address);
         boostedBaln.set(_address);
     }
 
     @External(readonly = true)
-    public Address getbBaln() {
+    public Address getBoostedBaln() {
         return boostedBaln.get();
     }
 

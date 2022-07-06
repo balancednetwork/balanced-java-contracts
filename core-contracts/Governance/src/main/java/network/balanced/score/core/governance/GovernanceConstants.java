@@ -96,7 +96,7 @@ public class GovernanceConstants extends Constants {
             entry("router", "setRouter"),
             entry("feehandler", "setFeehandler"),
             entry("stakedLp", "setStakedLp"),
-            entry("bBaln", "setbBaln")
+            entry("bBaln", "setBoostedBaln")
     );
     // #-------------------------------------------------------------------------------
     // # REWARDS LAUNCH CONFIG

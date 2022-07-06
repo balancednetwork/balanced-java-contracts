@@ -26,9 +26,14 @@ import java.math.BigInteger;
 import java.util.Map;
 
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
+import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
+import static network.balanced.score.core.rewards.utils.RewardsConstants.WEIGHT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class RewardsTestContinuousRewards extends RewardsTestBase {
 
@@ -120,6 +125,298 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
         expectedRewards = expectedRewards.add(userSwapDistribution.multiply(diffInUSSwap).divide(MICRO_SECONDS_IN_A_DAY));
 
         verifyBalnReward(account.getAddress(), expectedRewards);          
+    }
+
+    @Test
+    void boostedRewards() {
+        // Arrange
+        Account account = sm.createAccount();
+        BigInteger loansBalance = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loansTotalSupply = BigInteger.valueOf(1_000_000).multiply(EXA);
+        BigInteger bBalnBalance = BigInteger.valueOf(200).multiply(EXA);
+        BigInteger bBalnSupply = BigInteger.valueOf(500_000).multiply(EXA);
+
+        // Act
+        when(bBaln.mock.balanceOf(eq(account.getAddress()), any(BigInteger.class))).thenReturn(bBalnBalance);
+        when(bBaln.mock.totalSupply(any(BigInteger.class))).thenReturn(bBalnSupply);
+        mockBalanceAndSupply(loans, "Loans", EOA_ZERO, BigInteger.ZERO, loansTotalSupply.subtract(loansBalance));
+        
+        rewardsScore.invoke(loans.account, "updateRewardsData", "Loans", loansTotalSupply.subtract(loansBalance), account.getAddress(), BigInteger.ZERO);
+        mockBalanceAndSupply(loans, "Loans", account.getAddress(), loansBalance, loansTotalSupply);
+
+        // Assert
+        BigInteger emission = (BigInteger)rewardsScore.call("getEmission", BigInteger.valueOf(-1));
+        BigInteger loansDistribution = loansDist.dist_percent.multiply(emission).divide(EXA);
+        BigInteger userLoansDistribution = loansDistribution.multiply(loansBalance).divide(loansTotalSupply);
+
+        BigInteger unBoostedRewards = getOneDayRewards(account.getAddress());
+        assertEquals(unBoostedRewards.divide(EXA), userLoansDistribution.divide(EXA));
+
+        // Act
+        rewardsScore.invoke(account, "boost", "Loans");
+
+        // Assert
+        BigInteger boost = loansTotalSupply.multiply(bBalnBalance).divide(bBalnSupply).multiply(EXA.subtract(WEIGHT)).divide(WEIGHT);
+        BigInteger boostedBalance = loansBalance.add(boost);
+
+        BigInteger boostedSupply = loansTotalSupply.subtract(loansBalance).add(boostedBalance);
+        userLoansDistribution = loansDistribution.multiply(boostedBalance).divide(boostedSupply);
+        BigInteger boostedRewards = getOneDayRewards(account.getAddress());
+        assertEquals(boostedRewards.divide(EXA), userLoansDistribution.divide(EXA));
+    }
+
+    @Test
+    void boostedRewards_maxBoost() {
+        // Arrange
+        Account account = sm.createAccount();
+        BigInteger loansBalance = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loansTotalSupply = BigInteger.valueOf(1_000_000).multiply(EXA);
+        BigInteger bBalnBalance = BigInteger.valueOf(800).multiply(EXA);
+        BigInteger bBalnSupply = BigInteger.valueOf(500_000).multiply(EXA);
+
+        // Act
+        when(bBaln.mock.balanceOf(eq(account.getAddress()), any(BigInteger.class))).thenReturn(bBalnBalance);
+        when(bBaln.mock.totalSupply(any(BigInteger.class))).thenReturn(bBalnSupply);
+        mockBalanceAndSupply(loans, "Loans", EOA_ZERO, BigInteger.ZERO, loansTotalSupply.subtract(loansBalance));
+        
+        rewardsScore.invoke(loans.account, "updateRewardsData", "Loans", loansTotalSupply.subtract(loansBalance), account.getAddress(), BigInteger.ZERO);
+        mockBalanceAndSupply(loans, "Loans", account.getAddress(), loansBalance, loansTotalSupply);
+
+        // Assert
+        BigInteger emission = (BigInteger)rewardsScore.call("getEmission", BigInteger.valueOf(-1));
+        BigInteger loansDistribution = loansDist.dist_percent.multiply(emission).divide(EXA);
+        BigInteger userLoansDistribution = loansDistribution.multiply(loansBalance).divide(loansTotalSupply);
+
+        BigInteger unBoostedRewards = getOneDayRewards(account.getAddress());
+        assertEquals(unBoostedRewards.divide(EXA), userLoansDistribution.divide(EXA));
+
+        // Act
+        rewardsScore.invoke(account, "boost", "Loans");
+
+        // Assert
+        BigInteger boostedBalance = loansBalance.multiply(BigInteger.valueOf(25)).divide(BigInteger.TEN);
+        BigInteger boostedSupply = loansTotalSupply.subtract(loansBalance).add(boostedBalance);
+        userLoansDistribution = loansDistribution.multiply(boostedBalance).divide(boostedSupply);
+        BigInteger boostedRewards = getOneDayRewards(account.getAddress());
+        assertEquals(boostedRewards.divide(EXA), userLoansDistribution.divide(EXA));
+    }
+
+    @Test
+    void boostedRewards_switchBoost() {
+        // Arrange
+        Account account = sm.createAccount();
+        BigInteger loansBalance = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loansTotalSupply = BigInteger.valueOf(1_000_000).multiply(EXA);
+        BigInteger swapBalance = BigInteger.valueOf(1500).multiply(EXA);
+        BigInteger swapTotalSupply = BigInteger.valueOf(2_000_000).multiply(EXA);
+        BigInteger bBalnBalance = BigInteger.valueOf(200).multiply(EXA);
+        BigInteger bBalnSupply = BigInteger.valueOf(500_000).multiply(EXA);
+
+        // Act
+        when(bBaln.mock.balanceOf(eq(account.getAddress()), any(BigInteger.class))).thenReturn(bBalnBalance);
+        when(bBaln.mock.totalSupply(any(BigInteger.class))).thenReturn(bBalnSupply);
+        mockBalanceAndSupply(loans, "Loans", EOA_ZERO, BigInteger.ZERO, loansTotalSupply.subtract(loansBalance));
+        mockBalanceAndSupply(dex, "sICX/ICX", EOA_ZERO, BigInteger.ZERO, swapTotalSupply.subtract(swapBalance));
+        
+        rewardsScore.invoke(loans.account, "updateRewardsData", "Loans", loansTotalSupply.subtract(loansBalance), account.getAddress(), BigInteger.ZERO);
+        rewardsScore.invoke(dex.account, "updateRewardsData", "sICX/ICX",swapTotalSupply.subtract(swapBalance), account.getAddress(), BigInteger.ZERO);
+
+        mockBalanceAndSupply(dex, "sICX/ICX", account.getAddress(), swapBalance, swapTotalSupply);
+        mockBalanceAndSupply(loans, "Loans", account.getAddress(), loansBalance, loansTotalSupply);
+
+        // Assert
+        BigInteger emission = (BigInteger)rewardsScore.call("getEmission", BigInteger.valueOf(-1));
+        BigInteger loansDistribution = loansDist.dist_percent.multiply(emission).divide(EXA);
+        BigInteger userLoansDistribution = loansDistribution.multiply(loansBalance).divide(loansTotalSupply);
+
+        BigInteger swapDistribution = icxPoolDist.dist_percent.multiply(emission).divide(EXA);
+        BigInteger userSwapDistribution = swapDistribution.multiply(swapBalance).divide(swapTotalSupply);
+
+        BigInteger unBoostedRewards = getOneDayRewards(account.getAddress());
+        assertEquals(unBoostedRewards.divide(EXA), userLoansDistribution.add(userSwapDistribution).divide(EXA));
+
+        // Act
+        rewardsScore.invoke(account, "boost", "Loans");
+
+        // Assert
+        BigInteger boostLoans= loansTotalSupply.multiply(bBalnBalance).divide(bBalnSupply).multiply(EXA.subtract(WEIGHT)).divide(WEIGHT);
+        BigInteger boostedLoansBalance = loansBalance.add(boostLoans);
+        BigInteger boostedLoansSupply = loansTotalSupply.subtract(loansBalance).add(boostedLoansBalance);
+        BigInteger boostedLoansDistribution = loansDistribution.multiply(boostedLoansBalance).divide(boostedLoansSupply);
+        BigInteger boostedLoansRewards = getOneDayRewards(account.getAddress());
+
+        assertEquals(boostedLoansRewards.divide(EXA), boostedLoansDistribution.add(userSwapDistribution).divide(EXA));
+
+        // Act
+        rewardsScore.invoke(account, "boost", "sICX/ICX");
+
+        // Assert
+        BigInteger boostSwap = swapTotalSupply.multiply(bBalnBalance).divide(bBalnSupply).multiply(EXA.subtract(WEIGHT)).divide(WEIGHT);
+        BigInteger boostedSwapBalance = swapBalance.add(boostSwap);
+        BigInteger boostedSwapSupply = swapTotalSupply.subtract(loansBalance).add(boostedSwapBalance);
+        BigInteger boostedSwapDistribution = swapDistribution.multiply(boostedSwapBalance).divide(boostedSwapSupply);
+        BigInteger boostedSwapRewards = getOneDayRewards(account.getAddress());
+
+        assertEquals(boostedSwapRewards.divide(EXA), userLoansDistribution.add(boostedSwapDistribution).divide(EXA));
+    }
+
+    @Test
+    void boostedRewards_updateBoostedBalance_claim() {
+        // Arrange
+        Account account = sm.createAccount();
+        BigInteger loansBalance = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loansTotalSupply = BigInteger.valueOf(1_000_000).multiply(EXA);
+        BigInteger bBalnBalance = BigInteger.valueOf(800).multiply(EXA);
+        BigInteger bBalnSupply = BigInteger.valueOf(500_000).multiply(EXA);
+
+        // Act
+        when(bBaln.mock.balanceOf(eq(account.getAddress()), any(BigInteger.class))).thenReturn(bBalnBalance);
+        when(bBaln.mock.totalSupply(any(BigInteger.class))).thenReturn(bBalnSupply);
+        mockBalanceAndSupply(loans, "Loans", EOA_ZERO, BigInteger.ZERO, loansTotalSupply.subtract(loansBalance));
+
+        
+        rewardsScore.invoke(loans.account, "updateRewardsData", "Loans", loansTotalSupply.subtract(loansBalance), account.getAddress(), BigInteger.ZERO);
+        mockBalanceAndSupply(loans, "Loans", account.getAddress(), loansBalance, loansTotalSupply);
+
+        // Assert
+        BigInteger emission = (BigInteger)rewardsScore.call("getEmission", BigInteger.valueOf(-1));
+        BigInteger loansDistribution = loansDist.dist_percent.multiply(emission).divide(EXA);
+        BigInteger userLoansDistribution = loansDistribution.multiply(loansBalance).divide(loansTotalSupply);
+
+        BigInteger unBoostedRewards = getOneDayRewards(account.getAddress());
+        assertEquals(unBoostedRewards.divide(EXA), userLoansDistribution.divide(EXA));
+
+        // Act
+        rewardsScore.invoke(account, "boost", "Loans");
+
+        // Assert
+        BigInteger boostedBalance = loansBalance.multiply(BigInteger.valueOf(25)).divide(BigInteger.TEN);
+        BigInteger boostedSupply = loansTotalSupply.subtract(loansBalance).add(boostedBalance);
+        userLoansDistribution = loansDistribution.multiply(boostedBalance).divide(boostedSupply);
+        BigInteger boostedRewards = getOneDayRewards(account.getAddress());
+        assertEquals(boostedRewards.divide(EXA), userLoansDistribution.divide(EXA));
+
+        // Act
+        bBalnBalance = BigInteger.valueOf(250).multiply(EXA);
+        bBalnSupply = BigInteger.valueOf(500_000).multiply(EXA);
+        when(bBaln.mock.balanceOf(eq(account.getAddress()), any(BigInteger.class))).thenReturn(bBalnBalance);
+        when(bBaln.mock.totalSupply(any(BigInteger.class))).thenReturn(bBalnSupply);
+        rewardsScore.invoke(account, "claimRewards");
+
+        // Assert
+        BigInteger boost = loansTotalSupply.multiply(bBalnBalance).divide(bBalnSupply).multiply(EXA.subtract(WEIGHT)).divide(WEIGHT);
+        boostedBalance = loansBalance.add(boost);
+        boostedSupply = loansTotalSupply.subtract(loansBalance).add(boostedBalance);
+        userLoansDistribution = loansDistribution.multiply(boostedBalance).divide(boostedSupply);
+        boostedRewards = getOneDayRewards(account.getAddress());
+        assertEquals(boostedRewards.divide(EXA), userLoansDistribution.divide(EXA));
+    }
+
+    @Test
+    void boostedRewards_updateBoostedBalance_onBalanceUpdate() {
+        // Arrange
+        Account account = sm.createAccount();
+        BigInteger loansBalance = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loansTotalSupply = BigInteger.valueOf(1_000_000).multiply(EXA);
+        BigInteger bBalnBalance = BigInteger.valueOf(800).multiply(EXA);
+        BigInteger bBalnSupply = BigInteger.valueOf(500_000).multiply(EXA);
+
+        // Act
+        when(bBaln.mock.balanceOf(eq(account.getAddress()), any(BigInteger.class))).thenReturn(bBalnBalance);
+        when(bBaln.mock.totalSupply(any(BigInteger.class))).thenReturn(bBalnSupply);
+        mockBalanceAndSupply(loans, "Loans", EOA_ZERO, BigInteger.ZERO, loansTotalSupply.subtract(loansBalance));
+
+        
+        rewardsScore.invoke(loans.account, "updateRewardsData", "Loans", loansTotalSupply.subtract(loansBalance), account.getAddress(), BigInteger.ZERO);
+        mockBalanceAndSupply(loans, "Loans", account.getAddress(), loansBalance, loansTotalSupply);
+
+        // Assert
+        BigInteger emission = (BigInteger)rewardsScore.call("getEmission", BigInteger.valueOf(-1));
+        BigInteger loansDistribution = loansDist.dist_percent.multiply(emission).divide(EXA);
+        BigInteger userLoansDistribution = loansDistribution.multiply(loansBalance).divide(loansTotalSupply);
+
+        BigInteger unBoostedRewards = getOneDayRewards(account.getAddress());
+        assertEquals(unBoostedRewards.divide(EXA), userLoansDistribution.divide(EXA));
+
+        // Act
+        rewardsScore.invoke(account, "boost", "Loans");
+
+        // Assert
+        BigInteger boostedBalance = loansBalance.multiply(BigInteger.valueOf(25)).divide(BigInteger.TEN);
+        BigInteger boostedSupply = loansTotalSupply.subtract(loansBalance).add(boostedBalance);
+        userLoansDistribution = loansDistribution.multiply(boostedBalance).divide(boostedSupply);
+        BigInteger boostedRewards = getOneDayRewards(account.getAddress());
+        assertEquals(boostedRewards.divide(EXA), userLoansDistribution.divide(EXA));
+
+        // Act
+        bBalnBalance = BigInteger.valueOf(250).multiply(EXA);
+        bBalnSupply = BigInteger.valueOf(500_000).multiply(EXA);
+        when(bBaln.mock.balanceOf(eq(account.getAddress()), any(BigInteger.class))).thenReturn(bBalnBalance);
+        when(bBaln.mock.totalSupply(any(BigInteger.class))).thenReturn(bBalnSupply);
+        rewardsScore.invoke(bBaln.account, "onBalanceUpdate", account.getAddress());
+
+        // Assert
+        BigInteger boost = loansTotalSupply.multiply(bBalnBalance).divide(bBalnSupply).multiply(EXA.subtract(WEIGHT)).divide(WEIGHT);
+        boostedBalance = loansBalance.add(boost);
+        boostedSupply = loansTotalSupply.subtract(loansBalance).add(boostedBalance);
+        userLoansDistribution = loansDistribution.multiply(boostedBalance).divide(boostedSupply);
+        boostedRewards = getOneDayRewards(account.getAddress());
+        assertEquals(boostedRewards.divide(EXA), userLoansDistribution.divide(EXA));
+    }
+
+    @Test
+    void boostedRewards_updateRewardsData() {
+        // Arrange
+        Account account = sm.createAccount();
+        BigInteger loansBalance = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loansTotalSupply = BigInteger.valueOf(1_000_000).multiply(EXA);
+        BigInteger bBalnBalance = BigInteger.valueOf(800).multiply(EXA);
+        BigInteger bBalnSupply = BigInteger.valueOf(500_000).multiply(EXA);
+
+        // Act
+        when(bBaln.mock.balanceOf(eq(account.getAddress()), any(BigInteger.class))).thenReturn(bBalnBalance);
+        when(bBaln.mock.totalSupply(any(BigInteger.class))).thenReturn(bBalnSupply);
+        mockBalanceAndSupply(loans, "Loans", EOA_ZERO, BigInteger.ZERO, loansTotalSupply.subtract(loansBalance));
+
+        rewardsScore.invoke(loans.account, "updateRewardsData", "Loans", loansTotalSupply.subtract(loansBalance), account.getAddress(), BigInteger.ZERO);
+        mockBalanceAndSupply(loans, "Loans", account.getAddress(), loansBalance, loansTotalSupply);
+
+        // Assert
+        BigInteger emission = (BigInteger)rewardsScore.call("getEmission", BigInteger.valueOf(-1));
+        BigInteger loansDistribution = loansDist.dist_percent.multiply(emission).divide(EXA);
+        BigInteger userLoansDistribution = loansDistribution.multiply(loansBalance).divide(loansTotalSupply);
+
+        BigInteger unBoostedRewards = getOneDayRewards(account.getAddress());
+        assertEquals(unBoostedRewards.divide(EXA), userLoansDistribution.divide(EXA));
+
+        // Act
+        rewardsScore.invoke(account, "boost", "Loans");
+
+        // Assert
+        BigInteger boostedBalance = loansBalance.multiply(BigInteger.valueOf(25)).divide(BigInteger.TEN);
+        BigInteger boostedSupply = loansTotalSupply.subtract(loansBalance).add(boostedBalance);
+        userLoansDistribution = loansDistribution.multiply(boostedBalance).divide(boostedSupply);
+        BigInteger boostedRewards = getOneDayRewards(account.getAddress());
+        assertEquals(boostedRewards.divide(EXA), userLoansDistribution.divide(EXA));
+
+        // Act
+        bBalnBalance = BigInteger.valueOf(250).multiply(EXA);
+        bBalnSupply = BigInteger.valueOf(500_000).multiply(EXA);
+        when(bBaln.mock.balanceOf(eq(account.getAddress()), any(BigInteger.class))).thenReturn(bBalnBalance);
+        when(bBaln.mock.totalSupply(any(BigInteger.class))).thenReturn(bBalnSupply);
+        
+        rewardsScore.invoke(loans.account, "updateRewardsData", "Loans", loansTotalSupply, account.getAddress(), loansBalance);
+        loansBalance = BigInteger.valueOf(20000).multiply(EXA);
+        loansTotalSupply = BigInteger.valueOf(1_019_000).multiply(EXA);
+        mockBalanceAndSupply(loans, "Loans", account.getAddress(), loansBalance, loansTotalSupply);
+
+        // Assert
+        BigInteger boost = loansTotalSupply.multiply(bBalnBalance).divide(bBalnSupply).multiply(EXA.subtract(WEIGHT)).divide(WEIGHT);
+        boostedBalance = loansBalance.add(boost);
+        boostedSupply = loansTotalSupply.subtract(loansBalance).add(boostedBalance);
+        userLoansDistribution = loansDistribution.multiply(boostedBalance).divide(boostedSupply);
+        boostedRewards = getOneDayRewards(account.getAddress());
+        assertEquals(boostedRewards.divide(EXA), userLoansDistribution.divide(EXA));
     }
 
     @Test

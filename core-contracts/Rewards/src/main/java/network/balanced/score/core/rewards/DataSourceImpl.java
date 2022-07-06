@@ -17,11 +17,11 @@
 package network.balanced.score.core.rewards;
 
 import static network.balanced.score.core.rewards.utils.Check.continuousRewardsActive;
-import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.core.rewards.utils.RewardsConstants.WEIGHT;
+import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
+import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
-import java.io.Console;
 import java.math.BigInteger;
 import java.util.Map;
 
@@ -90,7 +90,7 @@ public class DataSourceImpl {
     }
 
     public BigInteger getWorkingSupply() {
-        return workingSupply.at(dbKey).getOrDefault(loadCurrentSupply(Context.getCaller()).get("_totalSupply"));
+        return workingSupply.at(dbKey).getOrDefault(loadCurrentSupply(EOA_ZERO).get("_totalSupply"));
     }
 
     public void setWorkingSupply(BigInteger supply){
@@ -98,7 +98,7 @@ public class DataSourceImpl {
     }
 
     public BigInteger getWorkingBalance(Address user) {
-        return userWorkingBalance.at(dbKey).getOrDefault(user, loadCurrentSupply(Context.getCaller()).get("_balance"));
+        return userWorkingBalance.at(dbKey).getOrDefault(user, loadCurrentSupply(user).get("_balance"));
     }
 
     public void setWorkingBalance(Address user, BigInteger balance) {
@@ -193,6 +193,14 @@ public class DataSourceImpl {
     }
 
     public Map<String, BigInteger> updateWorkingBalanceAndSupply(Address user, BigInteger balance, BigInteger supply, BigInteger time, Boolean boosted) {
+        Map<String, BigInteger> workingSupplyAndBalance = getWorkingBalanceAndSupply(user, balance, supply, time, boosted);
+        setWorkingBalance(user, workingSupplyAndBalance.get("workingBalance"));
+        setWorkingSupply(workingSupplyAndBalance.get("workingSupply"));
+
+        return workingSupplyAndBalance;
+    }
+
+    public Map<String, BigInteger> getWorkingBalanceAndSupply(Address user, BigInteger balance, BigInteger supply, BigInteger time, Boolean boosted) {
         BigInteger bBalnSupply = getBoostedSupply(time);
         if (bBalnSupply.equals(BigInteger.ZERO)) {
             return Map.of(
@@ -211,11 +219,8 @@ public class DataSourceImpl {
         BigInteger newWorkingBalance = balance.add(boost);
         newWorkingBalance = newWorkingBalance.min(max);
 
-        BigInteger previousWorkingSupply = getWorkingBalance(user);
-        setWorkingBalance(user, newWorkingBalance);
- 
-        BigInteger newTotalBalance = getWorkingSupply().subtract(previousWorkingSupply).add(newWorkingBalance);
-        setWorkingSupply(newTotalBalance);
+        BigInteger previousWorkingBalance = getWorkingBalance(user);
+        BigInteger newTotalBalance = getWorkingSupply().subtract(previousWorkingBalance).add(newWorkingBalance);
 
         return Map.of(
             "workingSupply", newTotalBalance,
@@ -246,8 +251,6 @@ public class DataSourceImpl {
                                          BigInteger totalSupply, boolean readOnlyContext) {
 
         BigInteger runningTotal = getTotalWeight();
-
-        BigInteger originalLastUpdateTimestamp = lastUpdateTimestamp;
 
         if (currentTime.equals(lastUpdateTimestamp)) {
             return runningTotal;

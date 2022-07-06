@@ -144,7 +144,7 @@ public class GovernanceTestBase extends UnitTest {
         verify(rewards.mock).setBaln(baln.getAddress());
         verify(rewards.mock).setDaofund(daofund.getAddress());
         verify(rewards.mock).setStakedLp(stakedLp.getAddress());
-        verify(rewards.mock).setbBaln(bBaln.getAddress());
+        verify(rewards.mock).setBoostedBaln(bBaln.getAddress());
        
         verify(dividends.mock).setDex(dex.getAddress());
         verify(dividends.mock).setLoans(loans.getAddress());
