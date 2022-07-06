@@ -133,7 +133,7 @@ public interface Rewards extends
     BigInteger getContinuousRewardsDay();
 
     @External
-    void onKick(Address user, BigInteger bOMMUserBalance, @Optional byte[] data);
+    void onKick(Address user, BigInteger bBalnUserBalance, @Optional byte[] data);
 
     @External
     void onBalanceUpdate(Address user);

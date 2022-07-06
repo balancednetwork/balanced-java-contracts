@@ -568,33 +568,17 @@ public class RewardsImpl implements Rewards {
     }
 
     @External
-    public void onKick(Address user, BigInteger bOMMUserBalance, @Optional byte[] data) {
+    public void onKick(Address user, BigInteger bBalnUserBalance, @Optional byte[] data) {
         only(boostedBaln);
 
+        String boostedSource = boosts.get(user);
+        if (boostedSource == null) {
+            // TODO: check if we do anythig here
+            return;
+        }
 
-        // if (!bOMMUserBalance.equals(BigInteger.ZERO)) {
-        //     throw RewardDistributionException.unknown(user + " OMM locking has not expired");
-        // }
-        // BigInteger bOMMTotalSupply = getBOMMTotalSupply();
-
-        // List<Address> assets = this.assets.keySet(this.platformRecipientMap.keySet());
-        // BigInteger toTimestampInSeconds = TimeConstants.getBlockTimestampInSecond();
-        // for (Address assetAddr : assets) {
-        //     Asset asset = this.assets.get(assetAddr);
-        //     if (asset == null) {
-        //         continue;
-        //     }
-        //     updateIndexes(assetAddr, user, toTimestampInSeconds);
-
-        //     WorkingBalance workingBalance = getUserBalance(user, assetAddr, asset.lpID);
-        //     workingBalance.bOMMUserBalance = bOMMUserBalance;
-        //     workingBalance.bOMMTotalSupply = bOMMTotalSupply;
-
-        //     updateWorkingBalance(workingBalance);
-        // }
-        // UserKicked(user, data);
+        updateCurrentUserAccruedRewards(boostedSource, user);
     }
-
 
     @External
     public void onBalanceUpdate(Address user) {
