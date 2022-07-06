@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,10 +39,10 @@ dependencies {
     testImplementation Dependencies.iconSdk
     testImplementation Dependencies.jacksonDatabind
     testImplementation Dependencies.json
+    testImplementation project(':test-lib')
 
     intTestAnnotationProcessor project(':score-client')
     intTestImplementation project(':score-client')
-    intTestImplementation project(':test-lib')
 }
 
 optimizedJar {
