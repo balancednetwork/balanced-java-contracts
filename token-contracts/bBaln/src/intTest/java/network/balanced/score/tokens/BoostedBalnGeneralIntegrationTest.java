@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package network.balanced.score.tokens;
 
-
 import foundation.icon.score.client.DefaultScoreClient;
+import foundation.icon.score.client.RevertedException;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
@@ -25,7 +25,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import score.Address;
 import score.Context;
-import score.UserRevertedException;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -73,22 +72,23 @@ public class BoostedBalnGeneralIntegrationTest implements ScoreIntegrationTest {
         System.out.println("baln holding from reward: "+updatedBalnHolding);
         owner.rewards.claimRewards();
         BigInteger availableBalnBalance = owner.baln.availableBalanceOf(userAddress);
-        System.out.println("available balance of baln: "+availableBalnBalance);
-        System.out.println("total balance of baln: "+owner.baln.balanceOf(userAddress));
+        System.out.println("available balance of baln: " + availableBalnBalance);
+        System.out.println("total balance of baln: " + owner.baln.balanceOf(userAddress));
 
-        UserRevertedException exception = assertThrows(UserRevertedException.class, () -> {
+        RevertedException exception = assertThrows(RevertedException.class, () -> {
             String data = "{\"method\":\"depositFor\",\"params\":{\"address\":\"" + userAddress + "\"}}";
             owner.baln.transfer(owner.boostedBaln._address(), availableBalnBalance, data.getBytes());
         });
         assert exception.getMessage().equals("Reverted(0)"); //"Deposit for: No existing lock found");
 
-        exception = assertThrows(UserRevertedException.class, () -> {
-           String data = "{\"method\":\"increaseAmount\",\"params\":{\"unlockTime\":" + System.currentTimeMillis()*1000 + "}}";
+        exception = assertThrows(RevertedException.class, () -> {
+            String data =
+                    "{\"method\":\"increaseAmount\",\"params\":{\"unlockTime\":" + System.currentTimeMillis() * 1000 + "}}";
             owner.baln.transfer(owner.boostedBaln._address(), availableBalnBalance, data.getBytes());
         });
         assert exception.getMessage().equals("Reverted(0)");//"Increase amount: No existing lock found");
 
-        exception = assertThrows(UserRevertedException.class, () -> {
+        exception = assertThrows(RevertedException.class, () -> {
             String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + System.currentTimeMillis() + "}}";
             owner.baln.transfer(owner.boostedBaln._address(), availableBalnBalance, data.getBytes());
         });
@@ -139,7 +139,6 @@ public class BoostedBalnGeneralIntegrationTest implements ScoreIntegrationTest {
 
         BigInteger lastUserSlope = owner.boostedBaln.getLastUserSlope(owner.getAddress());
         assertEquals(lastUserSlope, getSlope(availableBalnBalance, unlockTime));
-
     }
 
     @Test
@@ -155,12 +154,8 @@ public class BoostedBalnGeneralIntegrationTest implements ScoreIntegrationTest {
         assertEquals(balanceOfZeroAddress2, BigInteger.ZERO);
     }
 
-
     void waitForADay(){
         balanced.increaseDay(1);
     }
-
-
-
 
 }
