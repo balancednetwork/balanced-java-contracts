@@ -33,6 +33,7 @@ import static network.balanced.score.core.dividends.Constants.*;
 import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
 import static network.balanced.score.lib.utils.ArrayDBUtils.removeFromArraydb;
 import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.core.dividends.Check.continuousDividendsActive;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static network.balanced.score.lib.utils.Math.pow;
@@ -43,11 +44,11 @@ public class DividendsImpl implements Dividends {
     private static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
     private static final VarDB<Address> loanScore = Context.newVarDB(LOANS_SCORE, Address.class);
     private static final VarDB<Address> daoFund = Context.newVarDB(DAOFUND, Address.class);
-    private static final VarDB<Address> balnScore = Context.newVarDB(BALN_SCORE, Address.class);
+    public static final VarDB<Address> balnScore = Context.newVarDB(BALN_SCORE, Address.class);
     private static final VarDB<Address> dexScore = Context.newVarDB(DEX_SCORE, Address.class);
 
     private static final ArrayDB<Address> acceptedTokens = Context.newArrayDB(ACCEPTED_TOKENS, Address.class);
-    private static final VarDB<BigInteger> snapshotId = Context.newVarDB(SNAPSHOT_ID, BigInteger.class);
+    public static final VarDB<BigInteger> snapshotId = Context.newVarDB(SNAPSHOT_ID, BigInteger.class);
     private static final BranchDB<BigInteger, DictDB<String, BigInteger>> dailyFees = Context.newBranchDB(DAILY_FEES,
             BigInteger.class);
 
@@ -66,6 +67,11 @@ public class DividendsImpl implements Dividends {
     private static final VarDB<BigInteger> timeOffset = Context.newVarDB(TIME_OFFSET, BigInteger.class);
     private static final VarDB<BigInteger> dividendsEnabledToStakedBalnDay =
             Context.newVarDB(DIVIDENDS_ENABLED_TO_STAKED_BALN_ONLY_DAY, BigInteger.class);
+    public static final VarDB<BigInteger> continuousDividendsDay =
+            Context.newVarDB(CONTINUOUS_DIVIDENDS_DAY, BigInteger.class);
+
+    private static final BranchDB<Address, DictDB<String, BigInteger>> accuredDividends =
+            Context.newBranchDB(ACCURED_DIVIDENDS, BigInteger.class);
 
     public DividendsImpl(@Optional Address _governance) {
         if (governance.get() == null) {
@@ -182,6 +188,19 @@ public class DividendsImpl implements Dividends {
     @External(readonly = true)
     public BigInteger getDividendsOnlyToStakedBalnDay() {
         return dividendsEnabledToStakedBalnDay.getOrDefault(BigInteger.ZERO);
+    }
+
+    @External
+    public void setContinuousDividendsDay(BigInteger day) {
+        onlyOwner();
+        Context.require(day.compareTo(snapshotId.getOrDefault(BigInteger.ZERO)) > 0,
+                TAG + ": Day should be greater than the current snapshot ID.");
+        continuousDividendsDay.set(day);
+    }
+
+    @External(readonly = true)
+    public BigInteger getContinuousDividendsDay() {
+        return continuousDividendsDay.getOrDefault(BigInteger.ZERO);
     }
 
     @External(readonly = true)
@@ -326,6 +345,7 @@ public class DividendsImpl implements Dividends {
 
     @External
     public boolean distribute() {
+        Context.require(!continuousDividendsActive(), "Continuous dividends is already active");
         checkForNewDay();
         return true;
     }
@@ -371,6 +391,40 @@ public class DividendsImpl implements Dividends {
         }
     }
 
+    @External(readonly = true)
+    public Map<String, BigInteger> getUnclaimedDividends(Address user) {
+        BigInteger stakedBalance = DividendsTracker.getBalnBalance(user);
+        Map<String, BigInteger> totalDividends = new HashMap<>();
+
+        int size = acceptedTokens.size();
+        DictDB<String, BigInteger> userAccuredDividends = accuredDividends.at(user);
+        for (int i = 0; i < size; i++) {
+            String token = acceptedTokens.get(i).toString();
+            BigInteger accuredDividends = DividendsTracker.updateUserData(token, user, stakedBalance, true);
+            BigInteger prevAccuredDividends = userAccuredDividends.getOrDefault(token, BigInteger.ZERO);
+            totalDividends.put(token, accuredDividends.add(prevAccuredDividends));
+        }
+
+        return totalDividends;
+    }
+
+    @External
+    public void claimDividends() {
+        Address user = Context.getCaller();
+        BigInteger stakedBalance = DividendsTracker.getBalnBalance(user);
+        int size = acceptedTokens.size();
+        DictDB<String, BigInteger> userAccuredDividends = accuredDividends.at(user);
+        for (int i = 0; i < size; i++) {
+            Address token = acceptedTokens.get(i);
+            String tokenString = token.toString();
+            BigInteger accuredDividends = DividendsTracker.updateUserData(tokenString, user, stakedBalance, false);
+            BigInteger prevAccuredDividends = userAccuredDividends.getOrDefault(tokenString, BigInteger.ZERO);
+            
+            sendToken(user, accuredDividends.add(prevAccuredDividends), token, "User dividends");
+            userAccuredDividends.set(tokenString, BigInteger.ZERO);
+        }
+    }
+
     @External
     public void claim(@Optional int _start, @Optional int _end) {
         Context.require(distributionActivate.getOrDefault(false),
@@ -401,10 +455,8 @@ public class DividendsImpl implements Dividends {
             totalDividends = addDividends(totalDividends, dividends, acceptedTokensList);
         }
 
-        int numberOfAcceptedTokens = acceptedTokens.size();
         Map<String, BigInteger> nonZeroTokens = new HashMap<>();
-        for (int i = 0; i < numberOfAcceptedTokens; i++) {
-            Address token = acceptedTokens.get(i);
+        for (Address token : acceptedTokensList) {
             if (totalDividends.containsKey(token.toString()) && totalDividends.get(token.toString()).signum() > 0) {
                 nonZeroTokens.put(token.toString(), totalDividends.get(token.toString()));
                 sendToken(account, totalDividends.get(token.toString()), token, "User dividends");
@@ -412,6 +464,45 @@ public class DividendsImpl implements Dividends {
         }
         if (nonZeroTokens.size() > 0) {
             Claimed(account, BigInteger.valueOf(start), BigInteger.valueOf(end), dividendsMapToJson(nonZeroTokens));
+        }
+    }
+
+    @External
+    public void accumulateRewards(Address user, @Optional int _start, @Optional int _end) {
+        Context.require(distributionActivate.getOrDefault(false),
+                TAG + ": Distribution is not activated. Can't transfer.");
+
+        int[] value = checkStartEnd(_start, _end);
+        int start = value[0];
+        int end = value[1];
+        Map<String, BigInteger> totalDividends = new HashMap<>();
+
+        Address baln = balnScore.get();
+        Address dex = dexScore.get();
+        BigInteger dividendsSwitchingDay = dividendsEnabledToStakedBalnDay.getOrDefault(BigInteger.ZERO);
+        int size = acceptedTokens.size();
+        List<Address> acceptedTokensList = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            acceptedTokensList.add(acceptedTokens.get(i));
+        }
+
+        for (int i = start; i < end; i++) {
+            Map<String, BigInteger> dividends = getDividendsForDay(user, BigInteger.valueOf(i), baln, dex,
+                    dividendsSwitchingDay, acceptedTokensList);
+            if (dividends.size() != 0) {
+                setClaimed(user, BigInteger.valueOf(i));
+            }
+
+            totalDividends = addDividends(totalDividends, dividends, acceptedTokensList);
+        }
+
+        DictDB<String, BigInteger> userAccuredDividends = accuredDividends.at(user);
+        for (Address token : acceptedTokensList) {
+            if (totalDividends.containsKey(token.toString()) && totalDividends.get(token.toString()).signum() > 0) {
+                BigInteger accuredDividends = totalDividends.get(token.toString());
+                BigInteger prevAccuredDividends = userAccuredDividends.getOrDefault(token.toString(), BigInteger.ZERO);
+                userAccuredDividends.set(token.toString(), accuredDividends.add(prevAccuredDividends));
+            }
         }
     }
 
@@ -432,13 +523,33 @@ public class DividendsImpl implements Dividends {
             }
         }
 
-        checkForNewDay();
-        BigInteger snapId = snapshotId.getOrDefault(BigInteger.ZERO);
-        DictDB<String, BigInteger> feesOnSnapId = dailyFees.at(snapId);
-        BigInteger previousFees = feesOnSnapId.getOrDefault(token.toString(), BigInteger.ZERO);
-        feesOnSnapId.set(token.toString(), previousFees.add(_value));
+        if (continuousDividendsActive()) {
+            BigInteger dividendsToDaofund = _value.multiply(dividendsPercentage.get(DAOFUND)).divide(EXA);
+            sendToken(daoFund.get(), dividendsToDaofund, token, "Daofund dividends");
+            DividendsTracker.updateTotalWeight(token.toString(), _value.subtract(dividendsToDaofund), getTime());
+        } else {
+            checkForNewDay();
+            BigInteger snapId = snapshotId.getOrDefault(BigInteger.ZERO);
+            DictDB<String, BigInteger> feesOnSnapId = dailyFees.at(snapId);
+            BigInteger previousFees = feesOnSnapId.getOrDefault(token.toString(), BigInteger.ZERO);
+            feesOnSnapId.set(token.toString(), previousFees.add(_value));
+        }
 
-        DividendsReceivedV2(_value, snapId, _value + " tokens received as dividends token: " + token);
+        DividendsReceivedV2(_value, getDay(), _value + " tokens received as dividends token: " + token);
+    }
+
+    @External
+    public void updateBalnStake(Address user, BigInteger prevStakedBalance, BigInteger prevTotalSupply) {
+        only(balnScore);
+        DividendsTracker.setTotalSupply(prevTotalSupply);
+        int size = acceptedTokens.size();
+        DictDB<String, BigInteger> userAccuredDividends = accuredDividends.at(user);
+        for (int i = 0; i < size; i++) {
+            String token = acceptedTokens.get(i).toString();
+            BigInteger accuredDividends = DividendsTracker.updateUserData(token, user, prevStakedBalance, false);
+            BigInteger prevAccuredDividends = userAccuredDividends.getOrDefault(token, BigInteger.ZERO);
+            userAccuredDividends.set(token, prevAccuredDividends.add(accuredDividends));
+        }
     }
 
     @External(readonly = true)
@@ -686,6 +797,10 @@ public class DividendsImpl implements Dividends {
         if (snapshotId.getOrDefault(BigInteger.ZERO).compareTo(currentSnapshotId) < 0) {
             snapshotId.set(currentSnapshotId);
         }
+    }
+
+    private static BigInteger getTime() {
+        return BigInteger.valueOf(Context.getBlockTimestamp()).subtract(timeOffset.get());
     }
 
     private void sendToken(Address to, BigInteger amount, Address token, String msg) {
