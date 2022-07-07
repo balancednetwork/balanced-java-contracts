@@ -18,7 +18,6 @@ package network.balanced.score.core.dividends;
 
 import static network.balanced.score.core.dividends.Check.continuousDividendsActive;
 import static network.balanced.score.lib.utils.Constants.EXA;
-import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
 import java.math.BigInteger;
 
@@ -31,18 +30,12 @@ import score.VarDB;
 public class DividendsTracker {
     private static final BranchDB<Address, DictDB<String, BigInteger>> userWeight = Context.newBranchDB("user_weight",
             BigInteger.class);
-    private static final DictDB<String, BigInteger>  lastUpdateTimeUs = Context.newDictDB("last_update_us",
-            BigInteger.class);
     private static final  VarDB<BigInteger> totalSupply = Context.newVarDB("balnSupply", BigInteger.class);
     private static final  DictDB<String, BigInteger> totalWeight = Context.newDictDB("running_total",
             BigInteger.class);
 
     public static BigInteger getUserWeight(Address user, String token) {
         return userWeight.at(user).getOrDefault(token, BigInteger.ZERO);
-    }
-
-    public static BigInteger getLastUpdateTimeUs(String token) {
-        return lastUpdateTimeUs.getOrDefault(token, getContinuousDividendsDayInUS());
     }
 
     public static BigInteger getTotalSupply() {
@@ -53,17 +46,8 @@ public class DividendsTracker {
         totalSupply.set(supply);
     }
 
-    private static BigInteger getContinuousDividendsDayInUS() {
-        Context.require(DividendsImpl.continuousDividendsDay.get() != null, "continuous Dividends Day is not yet set");
-        return DividendsImpl.continuousDividendsDay.get().multiply(MICRO_SECONDS_IN_A_DAY);
-    }
-
     public static BigInteger getTotalWeight(String token) {
         return totalWeight.getOrDefault(token, BigInteger.ZERO);
-    }
-
-    public static BigInteger getBalnBalance(Address user) {
-        return Context.call(BigInteger.class, DividendsImpl.balnScore.get(), "stakedBalanceOf", user);
     }
 
     public static BigInteger updateUserData(String token, Address user, BigInteger prevBalance, boolean readOnlyContext) {
@@ -80,19 +64,11 @@ public class DividendsTracker {
         return computeUserRewards(prevBalance, totalWeight, currentUserWeight);
     }
 
-    public static void updateTotalWeight(String token, BigInteger amountRecived, BigInteger currentTime) {
-        if (!continuousDividendsActive()) {
-            return;
-        }
-
+    public static void updateTotalWeight(String token, BigInteger amountRecived) {
         BigInteger previousTotalWeight = getTotalWeight(token);
-        BigInteger lastUpdateTimestamp = getLastUpdateTimeUs(token);
-        
-        BigInteger timeDelta = currentTime.subtract(lastUpdateTimestamp);
-        BigInteger addedWeight = amountRecived.multiply(timeDelta).divide(getTotalSupply());
+        BigInteger addedWeight = amountRecived.multiply(EXA).divide(getTotalSupply());
         
         totalWeight.set(token, previousTotalWeight.add(addedWeight));
-        lastUpdateTimeUs.set(token, currentTime);   
     }
 
     private static BigInteger computeUserRewards(BigInteger prevUserBalance, BigInteger totalWeight, BigInteger userWeight) {

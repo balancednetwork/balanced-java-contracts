@@ -50,6 +50,12 @@ public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress
     @External(readonly = true)
     BigInteger getDividendsOnlyToStakedBalnDay();
 
+    @External
+    void setContinuousDividendsDay(BigInteger day);
+       
+    @External(readonly = true)
+    BigInteger getContinuousDividendsDay();
+    
     @External(readonly = true)
     Map<String, BigInteger> getBalances();
 
@@ -98,8 +104,20 @@ public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress
     @External
     void transferDaofundDividends(@Optional int _start, @Optional int _end);
 
+    @External(readonly = true)
+    Map<String, BigInteger> getUnclaimedDividends(Address user);
+
+    @External
+    void claimDividends();
+
     @External
     void claim(@Optional  int _start,@Optional int _end);
+
+    @External
+    void accumulateDividends(Address user, @Optional int _start, @Optional int _end);
+
+    @External
+    void updateBalnStake(Address user, BigInteger prevStakedBalance, BigInteger currentTotalSupply);
 
     @External(readonly = true)
     Map<String, BigInteger> getUserDividends(Address _account, @Optional int _start, @Optional int _end);
