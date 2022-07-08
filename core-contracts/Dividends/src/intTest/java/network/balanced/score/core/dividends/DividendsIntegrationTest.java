@@ -50,13 +50,13 @@ public class DividendsIntegrationTest {
     static BalancedDollarScoreClient bnusd;
     static StakingScoreClient staking;
     static SicxScoreClient sicx;
-    static BalnScoreClient baln;
+    static BalancedTokenScoreClient baln;
     static GovernanceScoreClient governance;
 
-    static BalnScoreClient testerScore;
+    static BalancedTokenScoreClient testerScore;
     static DexScoreClient testerScoreDex;
     static SicxScoreClient testerScoreSicx;
-    static BalnScoreClient testerScoreBaln;
+    static BalancedTokenScoreClient testerScoreBaln;
     static DividendsScoreClient testerScoreDividends;
     static RewardsScoreClient rewards;
 
@@ -78,7 +78,7 @@ public class DividendsIntegrationTest {
         sicx = new SicxScoreClient(balanced.sicx);
         dex = new DexScoreClient(balanced.dex);
         rewards = new RewardsScoreClient(balanced.rewards);
-        baln = new BalnScoreClient(balanced.baln);
+        baln = new BalancedTokenScoreClient(balanced.baln);
         governance = new GovernanceScoreClient(balanced.governance);
         DefaultScoreClient clientWithTester = new DefaultScoreClient("http://localhost:9082/api/v3",
                 BigInteger.valueOf(3), tester, balanced.baln._address());
@@ -90,11 +90,11 @@ public class DividendsIntegrationTest {
                 BigInteger.valueOf(3), tester2, balanced.sicx._address());
         DefaultScoreClient clientWithTester5 = new DefaultScoreClient("http://localhost:9082/api/v3",
                 BigInteger.valueOf(3), tester2, balanced.baln._address());
-        testerScore = new BalnScoreClient(clientWithTester);
+        testerScore = new BalancedTokenScoreClient(clientWithTester);
         testerScoreDividends = new DividendsScoreClient(clientWithTester2);
         testerScoreDex = new DexScoreClient(clientWithTester3);
         testerScoreSicx = new SicxScoreClient(clientWithTester4);
-        testerScoreBaln = new BalnScoreClient(clientWithTester5);
+        testerScoreBaln = new BalancedTokenScoreClient(clientWithTester5);
         activateDividends();
         baln.toggleEnableSnapshot();
     }
