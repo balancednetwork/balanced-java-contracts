@@ -22,6 +22,7 @@ import network.balanced.score.lib.interfaces.addresses.AdminAddress;
 import network.balanced.score.lib.interfaces.addresses.GovernanceAddress;
 import network.balanced.score.lib.interfaces.addresses.OracleAddress;
 import network.balanced.score.lib.interfaces.tokens.IRC2BurnableInterface;
+import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
 import score.Address;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -31,7 +32,7 @@ import java.math.BigInteger;
 
 @ScoreClient
 @ScoreInterface
-public interface BalancedDollar extends IRC2BurnableInterface, GovernanceAddress, AdminAddress, OracleAddress {
+public interface BalancedDollar extends IRC2BurnableInterface, IRC2Mintable, GovernanceAddress, AdminAddress, OracleAddress {
 
     @External(readonly = true)
     String getPeg();

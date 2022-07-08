@@ -21,7 +21,7 @@ import score.annotation.External;
 
 import java.math.BigInteger;
 
-public interface IRC2BurnableInterface extends IRC2Mintable {
+public interface IRC2BurnableInterface {
 
     @External
     void burn(BigInteger _amount);

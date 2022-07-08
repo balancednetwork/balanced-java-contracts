@@ -18,6 +18,7 @@ package network.balanced.score.lib.interfaces;
 
 import network.balanced.score.lib.interfaces.addresses.*;
 import network.balanced.score.lib.interfaces.tokens.IRC2BurnableInterface;
+import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
 import score.Address;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -25,8 +26,8 @@ import score.annotation.External;
 import java.math.BigInteger;
 import java.util.Map;
 
-public interface BalancedToken extends IRC2BurnableInterface, GovernanceAddress, AdminAddress, BnusdAddress,
-        OracleAddress, DexAddress, DividendsAddress {
+public interface BalancedToken extends IRC2Mintable, IRC2BurnableInterface, GovernanceAddress, AdminAddress,
+        BnusdAddress, OracleAddress, DexAddress, DividendsAddress {
 
     @External(readonly = true)
     void setOracleName(String _name);

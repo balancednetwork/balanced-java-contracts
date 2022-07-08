@@ -34,7 +34,7 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface Baln extends IRC2BurnableInterface, AdminAddress, DividendsAddress, BnusdAddress, DexAddress {
+public interface Baln extends IRC2BurnableInterface, IRC2Mintable, AdminAddress, DividendsAddress, BnusdAddress, DexAddress {
 
     @External
     void stake(BigInteger _value);
