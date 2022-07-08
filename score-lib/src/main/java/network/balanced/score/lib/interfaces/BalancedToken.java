@@ -29,10 +29,10 @@ import java.util.Map;
 public interface BalancedToken extends IRC2Mintable, IRC2BurnableInterface, GovernanceAddress, AdminAddress,
         BnusdAddress, OracleAddress, DexAddress, DividendsAddress {
 
-    @External(readonly = true)
+    @External
     void setOracleName(String _name);
 
-    @External
+    @External(readonly = true)
     String getOracleName();
 
     @External
