@@ -33,15 +33,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class BalancedTokenImplIntTest {
 
-    static Balanced balanced;
-    static Wallet tester;
-    static Wallet owner;
+    private static Balanced balanced;
+    private static Wallet tester;
+    private static Wallet owner;
 
-    static BalancedTokenScoreClient balnScore;
+    private static BalancedTokenScoreClient balnScore;
 
     @BeforeAll
     static void setup() throws Exception {
-        System.setProperty("Baln", System.getProperty("java"));
         tester = ScoreIntegrationTest.createWalletWithBalance(BigInteger.TEN.pow(24));
         balanced = new Balanced();
         balanced.setupBalanced();
@@ -115,7 +114,7 @@ class BalancedTokenImplIntTest {
         balanced.increaseDay(4);
         balanced.syncDistributions();
 
-        // unsatake completely
+        // unstake completely
         balnScore.stake(BigInteger.ZERO);
 
         detailsBalanceOf = balnScore.detailsBalanceOf(Address.fromString(owner.getAddress().toString()));

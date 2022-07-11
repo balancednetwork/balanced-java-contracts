@@ -101,10 +101,6 @@ task integrationTest(type: Test) {
 
         testClassesDirs = sourceSets.intTest.output.classesDirs
         classpath = sourceSets.intTest.runtimeClasspath
-
-        systemProperty "python", new File(project(':test-lib').projectDir, 'python-contracts/baln.zip')
-        systemProperty "java", optimizedJar.outputJarName
-
     }
 
 }
