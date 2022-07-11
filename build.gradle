@@ -134,6 +134,12 @@ subprojects {
     afterEvaluate { project ->
         scoreIntegrationTest.put(project.name, project.getTasks().getByName("optimizedJar").outputJarName)
     }
+
+    tasks.named("assemble") {
+        if (project.tasks.findByName("compileIntTestJava")) {
+            finalizedBy(project.tasks.getByName("compileIntTestJava"))
+        }
+    }
 }
 
 gradle.taskGraph.beforeTask { Task task ->

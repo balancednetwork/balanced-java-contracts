@@ -39,14 +39,14 @@ dependencies {
     intTestAnnotationProcessor project(":score-client")
     intTestImplementation Dependencies.iconSdk
     intTestImplementation Dependencies.jacksonDatabind
-
+    intTestImplementation Dependencies.json
 }
 
 optimizedJar {
     mainClassName = 'network.balanced.score.token.balancedtoken.BalancedTokenImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
-        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
 }
 
@@ -89,7 +89,7 @@ task integrationTest(type: Test) {
     useJUnitPlatform()
 
     rootProject.allprojects {
-        if(it.getTasks().findByName('optimizedJar')) {
+        if (it.getTasks().findByName('optimizedJar')) {
             dependsOn(it.getTasks().getByName('optimizedJar'))
         }
     }
