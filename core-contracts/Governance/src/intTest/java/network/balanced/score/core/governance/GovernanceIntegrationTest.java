@@ -31,7 +31,6 @@ import java.math.BigInteger;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
 import static org.junit.jupiter.api.Assertions.*;
 
-
 class GovernanceIntegrationTest implements ScoreIntegrationTest{
     private static Balanced balanced;
     private static BalancedClient owner;
@@ -46,7 +45,6 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest{
         KeyWallet testerWallet = createWalletWithBalance(BigInteger.TEN.pow(24));
         tester = new BalancedClient(balanced, testerWallet);
 
-        owner.governance.setVoteDuration(BigInteger.TWO);
         owner.governance.setBalnVoteDefinitionCriterion(BigInteger.ZERO);
         owner.governance.setVoteDefinitionFee(BigInteger.TEN.pow(10));
         owner.governance.setQuorum(BigInteger.ONE);
@@ -72,6 +70,8 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest{
     @Test
     void executeVote() {
         BigInteger rebalancingThreshold = BigInteger.TEN;
+        BigInteger duration = BigInteger.valueOf(5);
+
         JsonObject setRebalancingThresholdParameters = new JsonObject()
             .add("_value", rebalancingThreshold.intValue());
         
@@ -83,17 +83,16 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest{
             .add(setRebalancingThreshold);
 
         BigInteger day = tester.governance.getDay();
-        String name = "testVote";
+        String name = "testVote1";
         BigInteger voteStart = day.add(BigInteger.valueOf(4));
         BigInteger snapshot = day.add(BigInteger.TWO);
-        tester.governance.defineVote(name, "test", voteStart, snapshot, actions.toString());
-        assertNotEquals(rebalancingThreshold, owner.rebalancing.getPriceChangeThreshold());
+        tester.governance.defineVote(name, "test", voteStart, snapshot, duration, actions.toString());
 
         balanced.increaseDay(4);
         BigInteger id = tester.governance.getVoteIndex(name);
         tester.governance.castVote(id, true);
 
-        balanced.increaseDay(2);
+        balanced.increaseDay(duration.intValue());
 
         tester.governance.evaluateVote(id);
 
@@ -118,7 +117,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest{
         BigInteger voteStart = day.add(BigInteger.valueOf(4));
         BigInteger snapshot = day.add(BigInteger.TWO);
         try {
-            tester.governance.defineVote(name, "test", voteStart, snapshot, actions.toString());
+            tester.governance.defineVote(name, "test", voteStart, snapshot, BigInteger.TWO, actions.toString());
             fail();
         } catch (Exception e) {
             //success

@@ -229,6 +229,32 @@ public class GovernanceTest extends GovernanceTestBase {
     }
 
     @Test
+    void setGetVoteDurationLimits() {
+        // Arrange
+        BigInteger min = BigInteger.TWO;
+        BigInteger max = BigInteger.TEN;
+        Account notOwner = sm.createAccount();
+        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+        
+        // Act & Assert
+        Executable withNotOwner = () -> governance.invoke(notOwner, "setVoteDurationLimits", min, max);
+        expectErrorMessage(withNotOwner, expectedErrorMessage);
+
+        expectedErrorMessage = "Reverted(0): Minimum vote duration has to be above 1";
+        Executable withToLowMin = () -> governance.invoke(owner, "setVoteDurationLimits", BigInteger.ZERO, max);
+        expectErrorMessage(withToLowMin, expectedErrorMessage);
+
+        // Act
+        governance.invoke(owner, "setVoteDurationLimits", min, max);
+
+        // Assert
+        BigInteger minVoteDuration = (BigInteger)governance.call("getMinVoteDuration");
+        BigInteger maxVoteDuration = (BigInteger)governance.call("getMaxVoteDuration");
+        assertEquals(min, minVoteDuration);
+        assertEquals(max, maxVoteDuration);
+    }
+
+    @Test
     void setAdmins() {
          // Arrange
          Account notOwner = sm.createAccount();
@@ -244,7 +270,6 @@ public class GovernanceTest extends GovernanceTestBase {
          // Assert
          //TODO
     }
-
    
     @Test
     void toggleBalancedOn() {
@@ -337,7 +362,6 @@ public class GovernanceTest extends GovernanceTestBase {
 
         // Assert
         verify(rewards.mock).removeDataSource(name);
-
     }
 
     @Test
