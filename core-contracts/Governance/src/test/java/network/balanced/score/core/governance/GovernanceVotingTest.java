@@ -22,6 +22,9 @@ import com.iconloop.score.test.Account;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.function.Executable;
 import score.Context;
+import network.balanced.score.lib.structs.Disbursement;
+import network.balanced.score.lib.structs.DistributionPercentage;
+import org.junit.jupiter.api.function.Executable;
 import score.Address;
 
 import java.math.BigInteger;
@@ -29,17 +32,11 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static network.balanced.score.core.governance.GovernanceConstants.EXA;
+import static network.balanced.score.core.governance.GovernanceConstants.TAG;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import network.balanced.score.lib.structs.Disbursement;
-import network.balanced.score.lib.structs.DistributionPercentage;
-
-import static network.balanced.score.core.governance.GovernanceConstants.*;
+import static org.mockito.Mockito.*;
 
 public class GovernanceVotingTest extends GovernanceTestBase {
 
@@ -74,7 +71,7 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         expectedErrorMessage = "Vote cannot start before the current block height.";
         Executable withVoteStartBeforeToday = () -> governance.invoke(owner, "defineVote", name, description, voteStartBeforeToday, snapshot, actions);
         expectErrorMessage(withVoteStartBeforeToday, expectedErrorMessage);
-
+        
         BigInteger balnVoteDefinitionCriterion = (BigInteger) governance.call("getBalnVoteDefinitionCriterion");
         expectedErrorMessage = "User needs at least " + balnVoteDefinitionCriterion.divide(BigInteger.valueOf(100)) + "% of total boosted baln supply to define a vote.";
         Executable withToFewStakedBaln = () -> governance.invoke(accountWithLowBalance, "defineVote", name, description, voteStart, snapshot, actions);

@@ -16,6 +16,7 @@
 
 package network.balanced.score.lib.interfaces;
 
+import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.*;
 import network.balanced.score.lib.interfaces.base.Fallback;
@@ -30,6 +31,7 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+@ScoreClient
 @ScoreInterface
 public interface Dex extends AdminAddress, BnusdAddress, GovernanceAddress, Name, SicxAddress, StakingAddress,
         DividendsAddress, RewardsAddress, BalnAddress, FeeHandlerAddress, StakedLpAddress, Fallback, TokenFallback,
@@ -202,5 +204,8 @@ public interface Dex extends AdminAddress, BnusdAddress, GovernanceAddress, Name
 
     @External
     void addLpAddresses(BigInteger _poolId, Address[] _addresses);
+
+    @External(readonly = true)
+    BigInteger depositOfUser(Address _owner, Address _token);
 }
 

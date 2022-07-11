@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2021 Balanced.network.
+ * Copyright (c) 2021-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,7 @@ package network.balanced.score.tokens;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
-import com.iconloop.score.test.TestBase;
 import network.balanced.score.tokens.utils.DummyContract;
-import network.balanced.score.tokens.utils.IRC2Token;
 import org.json.JSONObject;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.function.Executable;
@@ -31,26 +29,25 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import static network.balanced.score.lib.test.UnitTest.expectErrorMessage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.spy;
 
 @DisplayName("Statemachine Tests")
-public class StateMachineTest extends TestBase {
+public class StateMachineTest extends AbstractBoostedBalnTest {
     private static final Long WEEK = 7 * 86400L * 1000000L;
     private static final Long MAX_TIME = 4 * 365 * 86400L * 1000000L;
     private static final BigInteger MINT_AMOUNT = BigInteger.TEN.pow(40);
+
     private static final ServiceManager sm = getServiceManager();
-    private static final Account owner = sm.createAccount();
 
     private final ArrayList<Account> accounts = new ArrayList<>();
     private final long MAXIMUM_LOCK_WEEKS = 208;
-    private final long BLOCK_TIME = 2 * 1000000;
-    private static final BigInteger INITIAL_SUPPLY = BigInteger.TEN.multiply(ICX);
+    private final long BLOCK_TIME = 2 * 1_000_000;
 
     private Score bBalnScore;
-    private Score tokenScore;
     private BoostedBalnImpl scoreSpy;
 
     private static class VotingBalance {
@@ -84,7 +81,6 @@ public class StateMachineTest extends TestBase {
 
     @BeforeEach
     public void setup() throws Exception {
-        tokenScore = sm.deploy(owner, IRC2Token.class, INITIAL_SUPPLY);
         Score rewardScore = sm.deploy(owner, DummyContract.class);
         bBalnScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(), "Boosted Baln", "bBALN");
 
@@ -106,11 +102,6 @@ public class StateMachineTest extends TestBase {
 
     public long addWeeksToCurrentTimestamp(long numberOfWeeks) {
         return ((sm.getBlock().getTimestamp() + numberOfWeeks * WEEK) / WEEK) * WEEK;
-    }
-
-    public void expectErrorMessage(Executable contractCall, String errorMessage) {
-        AssertionError e = Assertions.assertThrows(AssertionError.class, contractCall);
-        assertEquals(errorMessage, e.getMessage());
     }
 
     public void createLock(Account account, BigInteger value, long unlockTime) {
@@ -195,7 +186,7 @@ public class StateMachineTest extends TestBase {
     @Test
     void unlockTimeLessThanCurrentTime() {
         Account account = accounts.get(0);
-        final Long unlockTimeLessThanBlockTime = addWeeksToCurrentTimestamp(-2);
+        final long unlockTimeLessThanBlockTime = addWeeksToCurrentTimestamp(-2);
 
         Executable createLock = () -> createLock(account, value, unlockTimeLessThanBlockTime);
 
@@ -248,8 +239,7 @@ public class StateMachineTest extends TestBase {
     @Test
     void minimumAmount() {
         Account account = accounts.get(2);
-        BigInteger valueMinimum = ICX;
-        createLock(account, valueMinimum, unlockTime);
+        createLock(account, ICX, unlockTime);
 
         assert (((BigInteger) bBalnScore.call("balanceOf", account.getAddress(), BigInteger.ZERO)).compareTo(
                 BigInteger.ZERO) > 0);
@@ -262,8 +252,6 @@ public class StateMachineTest extends TestBase {
             createLock(account, value, unlockTime);
         }
     }
-
-
     }
 
     @DisplayName("Increase Amount")
@@ -362,18 +350,19 @@ public class StateMachineTest extends TestBase {
         expectErrorMessage(increaseUnlockTime, expectedErrorMessage);
     }
 
-    @DisplayName("with unlock time less than the current unlock time")
-    @Test
-    void decreaseUnlockTime() {
-        Map<String, BigInteger> locked = (Map<String, BigInteger>) bBalnScore.call("getLocked", accounts.get(0)
-                .getAddress());
-        final BigInteger unlockTime = locked.get("end").subtract(BigInteger.valueOf(2 * WEEK));
+        @SuppressWarnings("unchecked")
+        @DisplayName("with unlock time less than the current unlock time")
+        @Test
+        void decreaseUnlockTime() {
+            Map<String, BigInteger> locked = (Map<String, BigInteger>) bBalnScore.call("getLocked", accounts.get(0)
+                    .getAddress());
+            final BigInteger unlockTime = locked.get("end").subtract(BigInteger.valueOf(2 * WEEK));
 
-        Executable increaseUnlockTime = () -> increaseUnlockTime(accounts.get(0), unlockTime);
+            Executable increaseUnlockTime = () -> increaseUnlockTime(accounts.get(0), unlockTime);
 
-        String expectedErrorMessage = "Increase unlock time: Can only increase lock duration";
-        expectErrorMessage(increaseUnlockTime, expectedErrorMessage);
-    }
+            String expectedErrorMessage = "Increase unlock time: Can only increase lock duration";
+            expectErrorMessage(increaseUnlockTime, expectedErrorMessage);
+        }
 
     @DisplayName("with unlock time more than max time")
     @Test

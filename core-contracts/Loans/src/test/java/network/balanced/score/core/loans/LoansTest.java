@@ -23,7 +23,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import score.Address;
-import scorex.util.ArrayList;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -367,7 +366,7 @@ class LoansTest extends LoansTestBase {
         // Arrange
         Account account = accounts.get(0);
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
-        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);;
+        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
         String expectedErrorMessage = "Reverted(0): " + TAG + "Loans of collateral assets are not allowed.";
 
         // Assert & Act
@@ -380,7 +379,7 @@ class LoansTest extends LoansTestBase {
         // Arrange
         Account account = accounts.get(0);
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
-        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);;
+        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
         String expectedErrorMessage = "Reverted(0): " + TAG + "Loans of inactive assets are not allowed.";
         loans.invoke(admin, "toggleAssetActive", "bnUSD");
 
@@ -442,6 +441,28 @@ class LoansTest extends LoansTestBase {
         BigInteger balancePost = (BigInteger) bnusd.call("balanceOf", account.getAddress());
         assertEquals(balancePre.subtract(loanToRepay), balancePost);
         verifyPosition(account.getAddress(), collateral, loan.subtract(loanToRepay).add(expectedFee));
+    }
+
+    @Test
+    void returnAssetAndReopenPosition() {
+        // Arrange
+        Account account = accounts.get(0);
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
+
+        takeLoanICX(account, "bnUSD", collateral, loan);
+        bnusd.invoke(admin, "transfer", account.getAddress(), expectedFee, new byte[0]);
+        loans.invoke(account, "returnAsset", "bnUSD", loan.add(expectedFee), true);
+
+        // Assert
+        verifyPosition(account.getAddress(), collateral, BigInteger.ZERO);
+
+        // Act 
+        takeLoanICX(account, "bnUSD", BigInteger.ZERO, loan);
+
+        // Assert
+        verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
     }
 
     @Test
@@ -525,22 +546,6 @@ class LoansTest extends LoansTestBase {
 
         // Assert & Act
         Executable returnWithNoPosition = () ->  loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, true);
-        expectErrorMessage(returnWithNoPosition, expectedErrorMessage);
-    }
-
-    @Test
-    void returnAsset_doNotRepay() {
-        // Arrange
-        Account account = accounts.get(0);
-        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
-        BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
-        BigInteger loanToRepay = BigInteger.valueOf(100).multiply(EXA);
-
-        takeLoanICX(account, "bnUSD", collateral, loan);
-        String expectedErrorMessage = "Reverted(0): " + TAG + "No debt repaid because, repay=false";
-
-        // Assert & Act
-        Executable returnWithNoPosition = () ->  loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, false);
         expectErrorMessage(returnWithNoPosition, expectedErrorMessage);
     }
 

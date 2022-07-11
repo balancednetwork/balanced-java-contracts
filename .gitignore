@@ -5,11 +5,11 @@
 # Log file
 *.log
 
-# Vscore
-.vscode
-
 # Keystore
 keystore.json
+
+# Deployments
+deployments
 
 # BlueJ files
 *.ctxt
@@ -87,5 +87,16 @@ fabric.properties
 
 # Ignore Gradle build output directory
 build
-.idea
 .DS_Store
+.vscode
+.keystores
+.deployment
+gradle.properties
+
+#eclipse
+.project
+.settings
+.classpath
+*/bin/
+/bin/
+bin/

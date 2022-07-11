@@ -36,6 +36,9 @@ dependencies {
     compileOnly Dependencies.javaeeScoreClient
     annotationProcessor Dependencies.javaeeScoreClient
 
+    implementation Dependencies.jacksonDatabind
+    implementation Dependencies.iconSdk
+
     testImplementation Dependencies.javaeeUnitTest
     testImplementation Dependencies.junitJupiter
     testRuntimeOnly Dependencies.junitJupiterEngine
@@ -46,4 +49,13 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = false
+        csv.required = false
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+    }
 }
