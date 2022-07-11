@@ -82,6 +82,10 @@ public class DividendsImpl implements Dividends {
             distributionActivate.set(false);
             addInitialCategories();
         }
+        
+        Map<String, BigInteger> dividendsDist = dividendsAt(getDay());
+        dividendsPercentage.set(DAO_FUND, dividendsDist.get(DAO_FUND));
+        dividendsPercentage.set(BALN_HOLDERS, dividendsDist.get(BALN_HOLDERS));
     }
 
     @External(readonly = true)
@@ -282,15 +286,31 @@ public class DividendsImpl implements Dividends {
         Context.require(arrayDbContains(completeDividendsCategories, _category),
                 TAG + ": " + _category + " not found in the list of dividends categories.");
 
-        Map<String, BigInteger> dividendsDist = dividendsAt(currentDay);
-        Context.require(dividendsDist.get(_category).equals(BigInteger.ZERO),
-                TAG + ": Please make the category percentage to 0 before removing.");
-
+        if (!continuousDividendsActive())  {
+            Map<String, BigInteger> dividendsDist = dividendsAt(currentDay);
+            Context.require(dividendsDist.get(_category).equals(BigInteger.ZERO),
+                    TAG + ": Please make the category percentage to 0 before removing.");
+        } else {
+            Context.require(dividendsPercentage.get(_category).equals(BigInteger.ZERO),
+            TAG + ": Please make the category percentage to 0 before removing.");
+        }
+        
         removeFromArraydb(_category, completeDividendsCategories);
     }
 
     @External(readonly = true)
     public Map<String, BigInteger> getDividendsPercentage() {
+        if (continuousDividendsActive()) {
+            Map<String, BigInteger> dividendsDist = new HashMap<>();
+            int numberOfCategories = completeDividendsCategories.size();
+            for (int i = 0; i < numberOfCategories; i++) {
+                String category = completeDividendsCategories.get(i);
+                dividendsDist.put(category, dividendsPercentage.get(category));
+            }
+            
+            return dividendsDist;
+        }
+
         BigInteger currentDay = getDay();
         return dividendsAt(currentDay);
     }
@@ -307,7 +327,12 @@ public class DividendsImpl implements Dividends {
             BigInteger percent = id.dist_percent;
             Context.require(arrayDbContains(completeDividendsCategories, category),
                     TAG + ": " + category + " is not a valid dividends category");
-            updateDividendsSnapshot(category, percent);
+            if (!continuousDividendsActive()) {
+                updateDividendsSnapshot(category, percent);
+            } else {
+                dividendsPercentage.set(category, percent);
+            }
+
             totalPercentage = totalPercentage.add(percent);
         }
 
@@ -725,7 +750,6 @@ public class DividendsImpl implements Dividends {
         }
 
         Map<String, BigInteger> daoFundDividends = new HashMap<>();
-        int acceptedTokensCount = acceptedTokensList.size();
         for (Address token : acceptedTokensList) {
             Map<String, BigInteger> dividendsDist = dividendsAt(day);
             BigInteger numerator =
