@@ -106,11 +106,6 @@ public class FeeHandlerImpl implements FeeHandler {
         }
     }
 
-    @External(readonly = true)
-    public BigInteger getSwapFeesAccruedByToken(Address token) {
-        return swapFeesAccruedDB.getOrDefault(token, BigInteger.ZERO);
-    }
-
     @External
     public void setLoans(Address _address) {
         onlyOwner();
@@ -312,6 +307,11 @@ public class FeeHandlerImpl implements FeeHandler {
     @External(readonly = true)
     public BigInteger getStabilityFundFeesAccrued() {
         return stabilityFundFeesAccrued.getOrDefault(BigInteger.ZERO);
+    }
+
+    @External(readonly = true)
+    public BigInteger getSwapFeesAccruedByToken(Address token) {
+        return swapFeesAccruedDB.getOrDefault(token, BigInteger.ZERO);
     }
 
     @External
