@@ -191,7 +191,7 @@ public class GovernanceImpl {
         Context.require(Context.getCaller().equals(proposal.proposer.get()) ||
                         Context.getCaller().equals(Context.getOwner()),
                 "Only owner or proposer may call this method.");
-        if (proposal.startSnapshot.get().compareTo(getDay()) <= 0) {
+        if (proposal.startSnapshot.get().compareTo(BigInteger.valueOf(Context.getBlockHeight())) <= 0) {
             Context.require(Context.getCaller().equals(Context.getOwner()),
                     "Only owner can cancel a vote that has started.");
         }
@@ -202,18 +202,22 @@ public class GovernanceImpl {
     }
 
     @External
-    public void defineVote(String name, String description, BigInteger vote_start, BigInteger snapshot, @Optional String actions) {
+    public void defineVote(String name, String description, @Optional BigInteger vote_start, BigInteger snapshot, @Optional String actions) {
         Context.require(description.length() <= 500, "Description must be less than or equal to 500 characters.");
-        Context.require(vote_start.compareTo(getDay()) > 0, "Vote cannot start at or before the current day.");
-        Context.require(getDay().compareTo(snapshot) <= 0 &&
-                        snapshot.compareTo(vote_start) < 0,
-                "The reference snapshot must be in the range: [current_day (" + getDay() + "), " +
-                        "start_day - 1 (" + vote_start.subtract(BigInteger.ONE) + ")].");
+
+        BigInteger snapshotBlock = BigInteger.valueOf(Context.getBlockHeight());
+        BigInteger currentBlockHeight = BigInteger.valueOf(Context.getBlockHeight());
+
+        if (vote_start == null) {
+            vote_start = BigInteger.valueOf(Context.getBlockHeight());
+        }
+
+        Context.require(vote_start.compareTo(currentBlockHeight) >= 0, "Vote cannot start before the current block height.");
 
         actions = optionalDefault(actions, "[]");
         BigInteger voteIndex = ProposalDB.getProposalId(name);
         Context.require(voteIndex.equals(BigInteger.ZERO), "Poll name " + name + " has already been used.");
-        Context.require(checkBalnVoteCriterion(Context.getCaller()), "User needs at least " + balnVoteDefinitionCriterion.get().divide(BigInteger.valueOf(100)) + "% of total baln supply staked to define a vote.");
+        Context.require(checkBalnVoteCriterion(Context.getCaller(), snapshotBlock), "User needs at least " + balnVoteDefinitionCriterion.get().divide(BigInteger.valueOf(100)) + "% of total boosted baln supply to define a vote.");
         verifyActions(actions);
 
         Context.call(Addresses.get("bnUSD"), "govTransfer", Context.getCaller(), Addresses.get("daofund"), bnusdVoteDefinitionFee.getOrDefault(BigInteger.ONE), new byte[0]);
@@ -224,7 +228,7 @@ public class GovernanceImpl {
                 Context.getCaller(),
                 quorum.get().multiply(EXA).divide(BigInteger.valueOf(100)),
                 MAJORITY,
-                snapshot,
+                snapshotBlock,
                 vote_start,
                 vote_start.add(voteDuration.get()),
                 actions,
@@ -268,18 +272,19 @@ public class GovernanceImpl {
     @External
     public void castVote(BigInteger vote_index, boolean vote) {
         ProposalDB proposal = new ProposalDB(vote_index);
+        BigInteger currentBlockHeight = BigInteger.valueOf(Context.getBlockHeight());
         Context.require((vote_index.compareTo(BigInteger.ZERO) > 0 &&
-                        getDay().compareTo(proposal.startSnapshot.getOrDefault(BigInteger.ZERO)) >= 0 &&
-                        getDay().compareTo(proposal.endSnapshot.getOrDefault(BigInteger.ZERO)) < 0) &&
+                        currentBlockHeight.compareTo(proposal.startSnapshot.getOrDefault(BigInteger.ZERO)) >= 0 &&
+                        currentBlockHeight.compareTo(proposal.endSnapshot.getOrDefault(BigInteger.ZERO)) < 0) &&
                         proposal.active.getOrDefault(false),
                 TAG + " :This is not an active poll.");
 
         Address from = Context.getCaller();
         BigInteger snapshot = proposal.voteSnapshot.get();
 
-        BigInteger totalVote = Context.call(BigInteger.class, Addresses.get("baln"), "stakedBalanceOfAt", from, snapshot);
+        BigInteger totalVote = myVotingWeight(from, snapshot);
 
-        Context.require(!totalVote.equals(BigInteger.ZERO), TAG + "Balanced tokens need to be staked to cast the vote.");
+        Context.require(!totalVote.equals(BigInteger.ZERO), TAG + "Boosted Balanced tokens needed to cast the vote.");
 
         BigInteger userForVotes = proposal.forVotesOfUser.getOrDefault(from, BigInteger.ZERO);
         BigInteger userAgainstVotes = proposal.againstVotesOfUser.getOrDefault(from, BigInteger.ZERO);
@@ -332,6 +337,11 @@ public class GovernanceImpl {
         return Context.call(BigInteger.class, Addresses.get("baln"), "totalStakedBalanceOfAt", _day);
     }
 
+    @External(readonly = true)
+    public BigInteger totalBoostedBaln(BigInteger block) {
+        return Context.call(BigInteger.class, Addresses.get("bBaln"), "totalSupplyAt", block);
+    }
+
     @External
     public void evaluateVote(BigInteger vote_index) {
         Context.require(vote_index.compareTo(BigInteger.ZERO) > 0 &&
@@ -342,8 +352,8 @@ public class GovernanceImpl {
         BigInteger endSnap = proposal.endSnapshot.get();
         String actions = proposal.actions.get();
         BigInteger majority = proposal.majority.get();
-
-        Context.require(getDay().compareTo(endSnap) >= 0, TAG + ": Voting period has not ended.");
+        BigInteger currentBlockHeight = BigInteger.valueOf(Context.getBlockHeight());
+        Context.require(currentBlockHeight.compareTo(endSnap) >= 0, TAG + ": Voting period has not ended.");
         Context.require(proposal.active.get(), TAG + ": This proposal is not active");
 
 
@@ -392,13 +402,13 @@ public class GovernanceImpl {
         }
 
         ProposalDB proposal = new ProposalDB(_vote_index);
-        BigInteger totalBaln = totalBaln(proposal.voteSnapshot.getOrDefault(BigInteger.ZERO));
+        BigInteger totalBoostedBaln = totalBoostedBaln(proposal.voteSnapshot.getOrDefault(BigInteger.ZERO));
 
         BigInteger nrForVotes = BigInteger.ZERO;
         BigInteger nrAgainstVotes = BigInteger.ZERO;
-        if (!totalBaln.equals(BigInteger.ZERO)) {
-            nrForVotes = proposal.totalForVotes.getOrDefault(BigInteger.ZERO).multiply(EXA).divide(totalBaln);
-            nrAgainstVotes = proposal.totalAgainstVotes.getOrDefault(BigInteger.ZERO).multiply(EXA).divide(totalBaln);
+        if (!totalBoostedBaln.equals(BigInteger.ZERO)) {
+            nrForVotes = proposal.totalForVotes.getOrDefault(BigInteger.ZERO).multiply(EXA).divide(totalBoostedBaln);
+            nrAgainstVotes = proposal.totalAgainstVotes.getOrDefault(BigInteger.ZERO).multiply(EXA).divide(totalBoostedBaln);
         }
 
         Map<String, Object> voteData = new HashMap<>(16);
@@ -410,8 +420,8 @@ public class GovernanceImpl {
         voteData.put("majority", proposal.majority.getOrDefault(BigInteger.ZERO));
         voteData.put("status", proposal.status.getOrDefault(""));
         voteData.put("vote snapshot", proposal.voteSnapshot.getOrDefault(BigInteger.ZERO));
-        voteData.put("start day", proposal.startSnapshot.getOrDefault(BigInteger.ZERO));
-        voteData.put("end day", proposal.endSnapshot.getOrDefault(BigInteger.ZERO));
+        voteData.put("start block", proposal.startSnapshot.getOrDefault(BigInteger.ZERO));
+        voteData.put("end block", proposal.endSnapshot.getOrDefault(BigInteger.ZERO));
         voteData.put("actions", proposal.actions.getOrDefault(""));
         voteData.put("quorum", proposal.quorum.getOrDefault(BigInteger.ZERO));
         voteData.put("for", nrForVotes);
@@ -433,8 +443,8 @@ public class GovernanceImpl {
     }
 
     @External(readonly = true)
-    public BigInteger myVotingWeight(Address _address, BigInteger _day) {
-        return Context.call(BigInteger.class, Addresses.get("baln"), "stakedBalanceOfAt", _address, _day);
+    public BigInteger myVotingWeight(Address _address, BigInteger block) {
+        return Context.call(BigInteger.class, Addresses.get("bBaln"), "balanceOfAt", _address, block);
     }
 
     @External
@@ -968,11 +978,11 @@ public class GovernanceImpl {
         proposal.feeRefunded.set(true);
     }
 
-    private boolean checkBalnVoteCriterion(Address address) {
-        BigInteger balnTotal = Context.call(BigInteger.class, Addresses.get("baln"), "totalSupply");
-        BigInteger userStaked = Context.call(BigInteger.class, Addresses.get("baln"), "stakedBalanceOf", address);
+    private boolean checkBalnVoteCriterion(Address address, BigInteger block) {
+        BigInteger boostedBalnTotal = Context.call(BigInteger.class, Addresses.get("bBaln"), "totalSupplyAt", block);
+        BigInteger userBoostedBaln = Context.call(BigInteger.class, Addresses.get("bBaln"), "balanceOfAt", address, block);
         BigInteger limit = balnVoteDefinitionCriterion.get();
-        BigInteger userPercentage = POINTS.multiply(userStaked).divide(balnTotal);
+        BigInteger userPercentage = POINTS.multiply(userBoostedBaln).divide(boostedBalnTotal);
         return userPercentage.compareTo(limit) >= 0;
     }
 
@@ -1121,6 +1131,6 @@ public class GovernanceImpl {
 
     @EventLog(indexed = 2)
     public void VoteCast(String vote_name, boolean vote, Address voter, BigInteger stake, BigInteger total_for,
-                   BigInteger total_against) {
+                         BigInteger total_against) {
     }
 }

@@ -1,5 +1,6 @@
 package network.balanced.score.lib.interfaces;
 
+import foundation.icon.score.client.ScoreInterface;
 import score.Address;
 import score.annotation.Optional;
 
@@ -7,6 +8,7 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+@ScoreInterface
 public interface BoostedBaln {
 
     void setMinimumLockingAmount(BigInteger value);

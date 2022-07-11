@@ -34,4 +34,5 @@ public class BalancedAddresses {
     public Address rebalancing;
     public Address feehandler;
     public Address stakedLp;
+    public Address bBaln;
 }
