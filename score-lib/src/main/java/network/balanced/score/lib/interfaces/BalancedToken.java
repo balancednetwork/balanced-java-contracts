@@ -39,6 +39,9 @@ public interface BalancedToken extends IRC2Mintable, IRC2BurnableInterface, Gove
     @External(readonly = true)
     String getOracleName();
 
+    @External(readonly = true)
+    String getPeg();
+
     @External
     void setMinInterval(BigInteger _interval);
 

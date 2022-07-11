@@ -25,27 +25,21 @@ repositories {
 
 dependencies {
     compileOnly Dependencies.javaeeApi
-    implementation Dependencies.javaeeScorex
-    implementation Dependencies.minimalJson
     implementation project(':score-lib')
 
     testImplementation Dependencies.javaeeUnitTest
-    testImplementation Dependencies.javaeeTokens
-    testImplementation Dependencies.json
-
-    // Use JUnit Jupiter for testing.
 
     testImplementation Dependencies.junitJupiter
     testRuntimeOnly Dependencies.junitJupiterEngine
     testImplementation Dependencies.mockitoCore
     testImplementation Dependencies.mockitoInline
+    testImplementation project(':test-lib')
 
     intTestImplementation project(":score-client")
     intTestAnnotationProcessor project(":score-client")
     intTestImplementation Dependencies.iconSdk
     intTestImplementation Dependencies.jacksonDatabind
 
-    testImplementation project(':test-lib')
 }
 
 optimizedJar {

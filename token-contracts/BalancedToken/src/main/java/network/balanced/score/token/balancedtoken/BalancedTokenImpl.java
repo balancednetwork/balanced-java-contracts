@@ -37,13 +37,13 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
     private final VarDB<Address> bnusdScore = Context.newVarDB(BNUSD_SCORE, Address.class);
     private final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
     private final VarDB<Address> oracle = Context.newVarDB(ORACLE, Address.class);
+
     private final VarDB<String> oracleName = Context.newVarDB(ORACLE_NAME, String.class);
     private final VarDB<BigInteger> priceUpdateTime = Context.newVarDB(PRICE_UPDATE_TIME, BigInteger.class);
     private final VarDB<BigInteger> lastPrice = Context.newVarDB(LAST_PRICE, BigInteger.class);
     private final VarDB<BigInteger> minInterval = Context.newVarDB(MIN_INTERVAL, BigInteger.class);
 
     private final VarDB<Boolean> stakingEnabled = Context.newVarDB(STAKING_ENABLED, Boolean.class);
-
     private final BranchDB<Address, DictDB<Integer, BigInteger>> stakedBalances = Context.newBranchDB(STAKED_BALANCES
             , BigInteger.class);
     private final VarDB<BigInteger> minimumStake = Context.newVarDB(MINIMUM_STAKE, BigInteger.class);
@@ -325,7 +325,8 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
         if (unstakingTime.compareTo(BigInteger.valueOf(Context.getBlockTimestamp())) >= 0) {
             currUnstaked = BigInteger.ZERO;
         }
-        BigInteger unstakingAmount = stakingDetail.getOrDefault(Status.UNSTAKING.code, BigInteger.ZERO).subtract(currUnstaked);
+        BigInteger unstakingAmount =
+                stakingDetail.getOrDefault(Status.UNSTAKING.code, BigInteger.ZERO).subtract(currUnstaked);
 
         if (unstakingAmount.equals(BigInteger.ZERO)) {
             unstakingTime = BigInteger.ZERO;
@@ -404,7 +405,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
 
         Context.require(_value.compareTo(BigInteger.ZERO) >= 0, TAG + ": Staked BALN value can't be less than zero");
         Context.require(_value.compareTo(this.balanceOf(from)) <= 0, TAG + ": Out of BALN balance.");
-        if ((_value.compareTo(this.minimumStake.getOrDefault(BigInteger.ZERO)) < 0) && !(_value.equals(BigInteger.ZERO))){
+        if ((_value.compareTo(this.minimumStake.getOrDefault(BigInteger.ZERO)) < 0) && !(_value.equals(BigInteger.ZERO))) {
             Context.revert(TAG + ": Staked BALN " +
                     "must be greater than the minimum stake amount");
         }
