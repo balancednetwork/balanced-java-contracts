@@ -78,22 +78,6 @@ public class Multicall {
         this.dexAddress.set(dex);
     }
 
-    @External(readonly = true)
-    public Map<String, Object> getPoolStatsForPair(Address _base, Address _quote) {
-        BigInteger poolId = (BigInteger) Context.call(dexAddress.getOrDefault(defaultAddress), "getPoolId", _base,
-                _quote);
-
-        @SuppressWarnings("unchecked")
-        Map<String, Object> poolStats = (Map<String, Object>) Context.call(dexAddress.getOrDefault(defaultAddress),
-                "getPoolStats", poolId);
-
-        Map<String, Object> poolStatsWithId = new HashMap<>();
-        poolStatsWithId.put("id", poolId);
-        poolStatsWithId.putAll(poolStats);
-
-        return poolStatsWithId;
-    }
-
     private static Object[] convertToType(String[] params) {
         Object[] results = new Object[params.length];
         for (int i = 0; i < params.length; i++) {
