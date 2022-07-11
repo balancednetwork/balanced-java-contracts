@@ -18,24 +18,20 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
-import network.balanced.score.lib.interfaces.addresses.AdminAddress;
-import network.balanced.score.lib.interfaces.addresses.GovernanceAddress;
-import network.balanced.score.lib.interfaces.addresses.OracleAddress;
+import network.balanced.score.lib.interfaces.addresses.*;
 import network.balanced.score.lib.interfaces.tokens.IRC2BurnableInterface;
 import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
 import score.Address;
 import score.annotation.EventLog;
 import score.annotation.External;
-import score.annotation.Optional;
 
 import java.math.BigInteger;
+import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface BalancedDollar extends IRC2BurnableInterface, IRC2Mintable, GovernanceAddress, AdminAddress, OracleAddress {
-
-    @External(readonly = true)
-    String getPeg();
+public interface BalancedToken extends IRC2Mintable, IRC2BurnableInterface, GovernanceAddress, AdminAddress,
+        BnusdAddress, OracleAddress, DexAddress, DividendsAddress {
 
     @External
     void setOracleName(String _name);
@@ -58,14 +54,62 @@ public interface BalancedDollar extends IRC2BurnableInterface, IRC2Mintable, Gov
     @External(readonly = true)
     BigInteger lastPriceInLoop();
 
-    @External
-    void setMinter2(Address _address);
+    @External(readonly = true)
+    Map<String, BigInteger> detailsBalanceOf(Address _owner);
 
     @External(readonly = true)
-    Address getMinter2();
+    BigInteger unstakedBalanceOf(Address _owner);
+
+    @External(readonly = true)
+    BigInteger stakedBalanceOf(Address _owner);
+
+    @External(readonly = true)
+    BigInteger availableBalanceOf(Address _owner);
+
+    @External(readonly = true)
+    boolean getStakingEnabled();
+
+    @External(readonly = true)
+    BigInteger totalStakedBalance();
+
+    @External(readonly = true)
+    BigInteger getMinimumStake();
+
+    @External(readonly = true)
+    BigInteger getUnstakingPeriod();
 
     @External
-    void govTransfer(Address _from, Address _to, BigInteger _value, @Optional byte[] _data);
+    void toggleEnableSnapshot();
+
+    @External(readonly = true)
+    boolean getSnapshotEnabled();
+
+    @External
+    void toggleStakingEnabled();
+
+    @External
+    void stake(BigInteger _value);
+
+    @External
+    void setMinimumStake(BigInteger _amount);
+
+    @External
+    void setUnstakingPeriod(BigInteger _time);
+
+    @External
+    void setTimeOffset();
+
+    @External(readonly = true)
+    BigInteger getTimeOffset();
+
+    @External(readonly = true)
+    BigInteger getDay();
+
+    @External(readonly = true)
+    BigInteger stakedBalanceOfAt(Address _account, BigInteger _day);
+
+    @External(readonly = true)
+    BigInteger totalStakedBalanceOfAt(BigInteger _day);
 
     @EventLog(indexed = 3)
     void OraclePrice(String market, String oracle_name, Address oracle_address, BigInteger price);
