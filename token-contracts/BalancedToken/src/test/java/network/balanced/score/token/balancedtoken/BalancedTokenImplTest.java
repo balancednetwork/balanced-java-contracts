@@ -33,6 +33,7 @@ import java.util.Map;
 
 import static java.math.BigInteger.*;
 import static network.balanced.score.lib.test.UnitTest.*;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.eq;
@@ -384,7 +385,7 @@ class BalancedTokenImplTest extends TestBase {
 		BigInteger stakedAmount = amountToMint.divide(TWO);
 
 		//staked balance when there is no stake for this address
-		BigInteger day = BigInteger.valueOf(Context.getBlockTimestamp()).divide(Constants.DAY_TO_MICROSECOND);
+		BigInteger day = BigInteger.valueOf(Context.getBlockTimestamp()).divide(MICRO_SECONDS_IN_A_DAY);
 		BigInteger stakedBalance = (BigInteger)balancedToken.call("stakedBalanceOfAt", owner.getAddress(), day);
 
 		assertNotNull(stakedBalance);
@@ -395,7 +396,7 @@ class BalancedTokenImplTest extends TestBase {
 		//stake
 		balancedToken.invoke(owner, "stake", stakedAmount);
 
-		day = BigInteger.valueOf(Context.getBlockTimestamp()).divide(Constants.DAY_TO_MICROSECOND);
+		day = BigInteger.valueOf(Context.getBlockTimestamp()).divide(MICRO_SECONDS_IN_A_DAY);
 		stakedBalance = (BigInteger)balancedToken.call("stakedBalanceOfAt", owner.getAddress(), day);
 
 		assertNotNull(stakedBalance);
@@ -410,7 +411,7 @@ class BalancedTokenImplTest extends TestBase {
 		BigInteger stakedAmountAtSecondDay = stakedAmount.divide(TWO);
 		balancedToken.invoke(owner, "stake", stakedAmountAtSecondDay);
 
-		day = BigInteger.valueOf(Context.getBlockTimestamp()).divide(Constants.DAY_TO_MICROSECOND);
+		day = BigInteger.valueOf(Context.getBlockTimestamp()).divide(MICRO_SECONDS_IN_A_DAY);
 		//ask for staked balance of snapshot 1
 		stakedBalance = (BigInteger)balancedToken.call("stakedBalanceOfAt", owner.getAddress(), day);
 
@@ -418,7 +419,7 @@ class BalancedTokenImplTest extends TestBase {
 		assertEquals(stakedAmountAtSecondDay, stakedBalance);
 
 		//get stake amount of 1st snapshot at 2nd day
-		day = BigInteger.valueOf(Context.getBlockTimestamp()).subtract(Constants.DAY_TO_MICROSECOND).divide(Constants.DAY_TO_MICROSECOND);
+		day = BigInteger.valueOf(Context.getBlockTimestamp()).subtract(MICRO_SECONDS_IN_A_DAY).divide(MICRO_SECONDS_IN_A_DAY);
 		//ask for staked balance of snapshot 1
 		stakedBalance = (BigInteger)balancedToken.call("stakedBalanceOfAt", owner.getAddress(), day);
 

@@ -18,18 +18,15 @@ package network.balanced.score.token.balancedtoken;
 
 import java.math.BigInteger;
 
-import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Constants.*;
 import static network.balanced.score.lib.utils.Math.pow;
 
 public interface Constants {
 
-	BigInteger SECOND_TO_MICROSECOND = BigInteger.valueOf(1_000_000);
-	BigInteger DAY_TO_MICROSECOND = BigInteger.valueOf(86_400L).multiply(SECOND_TO_MICROSECOND);
-
 	BigInteger INITIAL_PRICE_ESTIMATE = pow(BigInteger.TEN, 17); //# loop
-	BigInteger MIN_UPDATE_TIME = BigInteger.TWO.multiply(SECOND_TO_MICROSECOND); //2 seconds
+	BigInteger MIN_UPDATE_TIME = BigInteger.TWO.multiply(MICRO_SECONDS_IN_A_SECOND); //2 seconds
 	BigInteger MINIMUM_STAKE_AMOUNT = EXA;
-	BigInteger DEFAULT_UNSTAKING_PERIOD = BigInteger.valueOf(3).multiply(DAY_TO_MICROSECOND);
+	BigInteger DEFAULT_UNSTAKING_PERIOD = BigInteger.valueOf(3).multiply(MICRO_SECONDS_IN_A_DAY);
 
 	String IDS = "ids";
 	String AMOUNT = "amount";
