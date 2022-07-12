@@ -33,7 +33,8 @@ public enum NameMapping {
     governance("Governance"),
     oracle("DummyOracle"),
     dex("Dex"),
-    staking("Staking");
+    staking("Staking"),
+    feehandler("FeeHandler");
 
     private final String module;
 

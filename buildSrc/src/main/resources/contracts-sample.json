@@ -64,7 +64,6 @@
   },
   {
     "name": "feehandler",
-    "path": "https://main.tracker.solidwallet.io/score/cx5faae53c4dbd1fbe4a2eb4aab6565030f10da5c6_5.zip",
     "params": {},
     "addressParams": {
       "_governance": "governance"
