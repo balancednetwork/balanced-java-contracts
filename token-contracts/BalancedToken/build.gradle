@@ -43,7 +43,7 @@ dependencies {
 }
 
 optimizedJar {
-    mainClassName = 'network.balanced.score.token.balancedtoken.BalancedTokenImpl'
+    mainClassName = 'network.balanced.score.tokens.balancedtoken.BalancedTokenImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.token.balancedtoken;
+package network.balanced.score.tokens.balancedtoken;
 
 import java.math.BigInteger;
 

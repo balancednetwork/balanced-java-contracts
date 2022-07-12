@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.token.balancedtoken;
+package network.balanced.score.tokens.balancedtoken;
 
 import network.balanced.score.lib.interfaces.BalancedToken;
 import network.balanced.score.lib.tokens.IRC2Burnable;
@@ -30,7 +30,7 @@ import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static network.balanced.score.lib.utils.Math.pow;
-import static network.balanced.score.token.balancedtoken.Constants.*;
+import static network.balanced.score.tokens.balancedtoken.Constants.*;
 
 public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
 
