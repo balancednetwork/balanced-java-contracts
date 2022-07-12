@@ -22,6 +22,7 @@ import com.eclipsesource.json.JsonValue;
 import network.balanced.score.lib.interfaces.FeeHandler;
 import score.*;
 import score.annotation.External;
+import score.annotation.Optional;
 import scorex.util.ArrayList;
 import scorex.util.HashMap;
 
@@ -76,6 +77,8 @@ public class FeeHandlerImpl implements FeeHandler {
         if (governance.get() == null) {
             isContract(_governance);
             this.governance.set(_governance);
+        } else if (admin.get() == null) {
+            admin.set(_governance);
         }
     }
 
@@ -191,10 +194,10 @@ public class FeeHandlerImpl implements FeeHandler {
     @External(readonly = true)
     public List<Address> getAcceptedDividendTokens() {
         List<Address> tokens = new ArrayList<>();
-        for (int i = 0; i < acceptedDividendsTokens.size(); i++) {
+        int acceptedDividendsTokensCount = acceptedDividendsTokens.size();
+        for (int i = 0; i < acceptedDividendsTokensCount; i++) {
             tokens.add(acceptedDividendsTokens.get(i));
         }
-
         return tokens;
     }
 
@@ -260,6 +263,7 @@ public class FeeHandlerImpl implements FeeHandler {
         for (int i = 0; i < acceptedDividendsTokensCount; i++) {
             if (acceptedDividendsTokens.get(i).equals(sender)) {
                 transferToken(sender, getContractAddress("dividends"), getTokenBalance(sender), new byte[0]);
+                return;
             }
         }
         BigInteger accruedFees = swapFeesAccruedDB.get(sender);
@@ -280,7 +284,7 @@ public class FeeHandlerImpl implements FeeHandler {
     }
 
     @External(readonly = true)
-    public List<Address> get_allowed_address(int offset) {
+    public List<Address> get_allowed_address(@Optional int offset) {
         Context.require(offset >= 0, "Negative value not allowed.");
 
         int end = Math.min(allowedAddress.size(), offset + 20);

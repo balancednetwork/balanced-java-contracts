@@ -64,7 +64,6 @@
   },
   {
     "name": "feehandler",
-    "path": "https://main.tracker.solidwallet.io/score/cx5faae53c4dbd1fbe4a2eb4aab6565030f10da5c6_5.zip",
     "params": {},
     "addressParams": {
       "_governance": "governance"
@@ -136,7 +135,6 @@
   },
   {
     "name": "sicx",
-    "path": "https://main.tracker.solidwallet.io/score/cx2609b924e33ef00b648a409245c7ea394c467824_3.zip",
     "params": {},
     "addressParams": {
       "_admin": "staking"
