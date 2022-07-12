@@ -194,7 +194,7 @@ public class GovernanceImpl {
     }
 
     @External
-    public void setAdmin(Address contractAddress, Address admin){
+    public void setAdmin(Address contractAddress, Address admin) {
         onlyOwner();
         Context.call(contractAddress, "setAdmin", admin);
 
@@ -209,7 +209,7 @@ public class GovernanceImpl {
         Context.require(Context.getCaller().equals(proposal.proposer.get()) ||
                         Context.getCaller().equals(Context.getOwner()),
                 "Only owner or proposer may call this method.");
-        if (proposal.startSnapshot.get().compareTo(BigInteger.valueOf(Context.getBlockHeight())) <= 0) {
+        if (proposal.startSnapshot.get().compareTo(getDay()) <= 0) {
             Context.require(Context.getCaller().equals(Context.getOwner()),
                     "Only owner can cancel a vote that has started.");
         }
@@ -220,20 +220,17 @@ public class GovernanceImpl {
     }
 
     @External
-    public void defineVote(String name, String description, @Optional BigInteger vote_start, BigInteger snapshot, BigInteger duration, @Optional String actions) {
+    public void defineVote(String name, String description, BigInteger vote_start, BigInteger duration, String forumLink, @Optional String actions) {
         Context.require(description.length() <= 500, "Description must be less than or equal to 500 characters.");
 
         BigInteger snapshotBlock = BigInteger.valueOf(Context.getBlockHeight());
-        BigInteger currentBlockHeight = BigInteger.valueOf(Context.getBlockHeight());
+//        BigInteger currentBlockHeight = BigInteger.valueOf(Context.getBlockHeight());
 
-        if (vote_start == null) {
-            vote_start = BigInteger.valueOf(Context.getBlockHeight());
-        }
-
-        Context.require(vote_start.compareTo(currentBlockHeight) >= 0, "Vote cannot start before the current block height.");
+        Context.require(vote_start.compareTo(getDay()) >= 0, "Vote cannot start before the current day.");
 
         actions = optionalDefault(actions, "[]");
         BigInteger voteIndex = ProposalDB.getProposalId(name);
+        Context.require(forumLink.startsWith("https://gov.balanced.network/"), "Invalid forum link.");
         Context.require(duration.compareTo(maxVoteDuration.get()) <= 0, "Duration is above the maxium allowed duration of " + maxVoteDuration.get());
         Context.require(duration.compareTo(minVoteDuration.get()) >= 0, "Duration is below the minumum allowed duration of " + minVoteDuration.get());
         Context.require(voteIndex.equals(BigInteger.ZERO), "Poll name " + name + " has already been used.");
@@ -251,6 +248,7 @@ public class GovernanceImpl {
                 snapshotBlock,
                 vote_start,
                 vote_start.add(duration),
+                forumLink,
                 actions,
                 bnusdVoteDefinitionFee.get()
         );
@@ -292,10 +290,9 @@ public class GovernanceImpl {
     @External
     public void castVote(BigInteger vote_index, boolean vote) {
         ProposalDB proposal = new ProposalDB(vote_index);
-        BigInteger currentBlockHeight = BigInteger.valueOf(Context.getBlockHeight());
         Context.require((vote_index.compareTo(BigInteger.ZERO) > 0 &&
-                        currentBlockHeight.compareTo(proposal.startSnapshot.getOrDefault(BigInteger.ZERO)) >= 0 &&
-                        currentBlockHeight.compareTo(proposal.endSnapshot.getOrDefault(BigInteger.ZERO)) < 0) &&
+                        getDay().compareTo(proposal.startSnapshot.getOrDefault(BigInteger.ZERO)) >= 0 &&
+                        getDay().compareTo(proposal.endSnapshot.getOrDefault(BigInteger.ZERO)) < 0) &&
                         proposal.active.getOrDefault(false),
                 TAG + " :This is not an active poll.");
 
@@ -373,7 +370,7 @@ public class GovernanceImpl {
         String actions = proposal.actions.get();
         BigInteger majority = proposal.majority.get();
         BigInteger currentBlockHeight = BigInteger.valueOf(Context.getBlockHeight());
-        Context.require(currentBlockHeight.compareTo(endSnap) >= 0, TAG + ": Voting period has not ended.");
+        Context.require(getDay().compareTo(endSnap) >= 0, TAG + ": Voting period has not ended.");
         Context.require(proposal.active.get(), TAG + ": This proposal is not active");
 
 
@@ -440,8 +437,8 @@ public class GovernanceImpl {
         voteData.put("majority", proposal.majority.getOrDefault(BigInteger.ZERO));
         voteData.put("status", proposal.status.getOrDefault(""));
         voteData.put("vote snapshot", proposal.voteSnapshot.getOrDefault(BigInteger.ZERO));
-        voteData.put("start block", proposal.startSnapshot.getOrDefault(BigInteger.ZERO));
-        voteData.put("end block", proposal.endSnapshot.getOrDefault(BigInteger.ZERO));
+        voteData.put("start day", proposal.startSnapshot.getOrDefault(BigInteger.ZERO));
+        voteData.put("end day", proposal.endSnapshot.getOrDefault(BigInteger.ZERO));
         voteData.put("actions", proposal.actions.getOrDefault(""));
         voteData.put("quorum", proposal.quorum.getOrDefault(BigInteger.ZERO));
         voteData.put("for", nrForVotes);

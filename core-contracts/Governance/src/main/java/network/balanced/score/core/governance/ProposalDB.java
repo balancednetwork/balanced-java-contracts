@@ -18,6 +18,7 @@ public class ProposalDB {
     public final VarDB<BigInteger> voteSnapshot;
     public final VarDB<BigInteger> startSnapshot;
     public final VarDB<BigInteger> endSnapshot;
+    public final VarDB<String> forumLink;
     public final VarDB<String> actions;
     public final VarDB<String> name;
     public final VarDB<String> description;
@@ -42,6 +43,7 @@ public class ProposalDB {
         voteSnapshot = Context.newVarDB(key + "_vote_snapshot", BigInteger.class);
         startSnapshot = Context.newVarDB(key + "_start_snapshot", BigInteger.class);
         endSnapshot = Context.newVarDB(key + "_end_snapshot", BigInteger.class);
+        forumLink = Context.newVarDB(key + "_forum_link", String.class);
         actions = Context.newVarDB(key + "_actions", String.class);
         name = Context.newVarDB(key + "_name", String.class);
         description = Context.newVarDB(key + "_description", String.class);
@@ -75,6 +77,7 @@ public class ProposalDB {
                                  BigInteger snapshot,
                                  BigInteger start,
                                  BigInteger end,
+                                 String link,
                                  String actions,
                                  BigInteger fee) {
         BigInteger voteIndex = ProposalDB.getProposalCount().add(BigInteger.ONE);
@@ -88,6 +91,7 @@ public class ProposalDB {
         newProposal.voteSnapshot.set(snapshot);
         newProposal.startSnapshot.set(start);
         newProposal.endSnapshot.set(end);
+        newProposal.forumLink.set(link);
         newProposal.actions.set(actions);
         newProposal.name.set(name);
         newProposal.description.set(description);
