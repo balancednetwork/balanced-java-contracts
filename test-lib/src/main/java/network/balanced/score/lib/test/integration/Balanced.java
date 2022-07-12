@@ -95,8 +95,8 @@ public class Balanced {
     public void deployContracts() {
         governance = deploy(owner, "Governance", null);
 
-        Hash balnTx = deployAsync(owner, "Baln", Map.of("_governance", governance._address()));
-        Hash bwtTx = deployAsync(owner, "Bwt", Map.of("_governance", governance._address()));
+        Hash balnTx = deployAsync(owner, "BalancedToken", Map.of("_governance", governance._address()));
+        Hash bwtTx = deployAsync(owner, "WorkerToken", Map.of("_governance", governance._address()));
         Hash dexTx = deployAsync(owner, "Dex", Map.of("_governance", governance._address()));
         Hash feehandlerTx = deployAsync(owner, "Feehandler", Map.of("_governance", governance._address()));
         Hash loansTx = deployAsync(owner, "Loans", Map.of("_governance", governance._address()));
@@ -106,7 +106,7 @@ public class Balanced {
         Hash bnusdTx = deployAsync(owner, "BalancedDollar", Map.of("_governance", governance._address()));
         Hash daofundTx = deployAsync(owner, "DAOfund", Map.of("_governance", governance._address()));
         Hash dividendsTx = deployAsync(owner, "Dividends", Map.of("_governance", governance._address()));
-        Hash oracleTx = deployAsync(owner, "Oracle",null);
+        Hash oracleTx = deployAsync(owner, "DummyOracle",null);
         Hash reserveTx = deployAsync(owner, "Reserve", Map.of("governance", governance._address()));
         Hash routerTx = deployAsync(owner, "Router", Map.of("_governance", governance._address()));
         Hash stakedLpTx = deployAsync(owner, "StakedLP", Map.of("governance", governance._address()));
@@ -170,6 +170,7 @@ public class Balanced {
 
         ownerClient.bnUSD.setMinter(loans._address());
         ownerClient.sicx.setMinter(staking._address());
+        ownerClient.baln.setMinter(rewards._address());
         ownerClient.governance.configureBalanced();
         ownerClient.governance.launchBalanced();
         ownerClient.staking.toggleStakingOn();

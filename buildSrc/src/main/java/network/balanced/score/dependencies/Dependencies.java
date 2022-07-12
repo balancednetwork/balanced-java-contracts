@@ -39,4 +39,5 @@ public class Dependencies {
     public static final String json = "org.json:json:20220320";
     public static final String javaFaker = "com.github.javafaker:javafaker:1.0.2";
     public static final String jacksonDatabind = "com.fasterxml.jackson.core:jackson-databind:2.13.3";
+    public static final String okhttp = "com.squareup.okhttp3:okhttp:4.9.3";
 }
