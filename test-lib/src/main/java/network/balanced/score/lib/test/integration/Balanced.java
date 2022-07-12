@@ -98,7 +98,7 @@ public class Balanced {
         Hash balnTx = deployAsync(owner, "BalancedToken", Map.of("_governance", governance._address()));
         Hash bwtTx = deployAsync(owner, "WorkerToken", Map.of("_governance", governance._address()));
         Hash dexTx = deployAsync(owner, "Dex", Map.of("_governance", governance._address()));
-        Hash feehandlerTx = deployAsync(owner, "Feehandler", Map.of("_governance", governance._address()));
+        Hash feehandlerTx = deployAsync(owner, "FeeHandler", Map.of("_governance", governance._address()));
         Hash loansTx = deployAsync(owner, "Loans", Map.of("_governance", governance._address()));
         Hash rebalancingTx = deployAsync(owner, "Rebalancing", Map.of("_governance", governance._address()));
         Hash rewardsTx = deployAsync(owner, "Rewards", Map.of("_governance", governance._address()));
@@ -178,6 +178,7 @@ public class Balanced {
         ownerClient.daofund.addAddressToSetdb();
 
         ownerClient.bnUSD.setMinter2(stability._address());
+        ownerClient.governance.setAdmin(feehandler._address(), governance._address());
         ownerClient.governance.enable_fee_handler();
 
         ownerClient.rewards.addDataProvider(stakedLp._address());
