@@ -717,6 +717,20 @@ public abstract class AbstractDex implements Dex {
                 , effectiveFillPrice);
     }
 
+    void donate(Address fromToken, Address toToken, BigInteger value) {
+        int id = getPoolId(fromToken, toToken).intValue();
+        isValidPoolId(id);
+        Context.require(id != SICXICX_POOL_ID, TAG + ":  Not supported on this API, use the ICX swap API.");
+        Context.require(active.getOrDefault(id, false), TAG + ": Pool is not active");
+
+        DictDB<Address, BigInteger> totalTokensInPool = poolTotal.at(id);
+        BigInteger oldFromToken = totalTokensInPool.get(fromToken);
+
+        BigInteger newFromToken = oldFromToken.add(value);
+
+        totalTokensInPool.set(fromToken, newFromToken);
+    }
+
     void swapIcx(Address sender, BigInteger value) {
         revertOnIncompleteRewards();
         BigInteger sicxIcxPrice = getSicxRate();
