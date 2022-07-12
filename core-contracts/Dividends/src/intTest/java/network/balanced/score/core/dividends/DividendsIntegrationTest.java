@@ -101,7 +101,6 @@ public class DividendsIntegrationTest {
         testerScoreSicx = new SicxScoreClient(clientWithTester4);
         testerScoreBaln = new BalancedTokenScoreClient(clientWithTester5);
         activateDividends();
-        // baln.toggleEnableSnapshot();
     }
 
     public static void activateDividends(){

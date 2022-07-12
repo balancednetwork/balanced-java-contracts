@@ -33,15 +33,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class BalancedTokenImplIntTest {
 
-    static Balanced balanced;
-    static Wallet tester;
-    static Wallet owner;
+    private static Balanced balanced;
+    private static Wallet tester;
+    private static Wallet owner;
 
-    static BalancedTokenScoreClient balnScore;
+    private static BalancedTokenScoreClient balnScore;
 
     @BeforeAll
     static void setup() throws Exception {
-        System.setProperty("Baln", System.getProperty("java"));
         tester = ScoreIntegrationTest.createWalletWithBalance(BigInteger.TEN.pow(24));
         balanced = new Balanced();
         balanced.setupBalanced();
@@ -60,7 +59,6 @@ class BalancedTokenImplIntTest {
     @Test
     @Order(2)
     void ShouldAUserMintAndTransferAndMakeStake() {
-
         BigInteger loanAmount = BigInteger.valueOf(50).multiply(BigInteger.TEN.pow(18));
         // take loans
         BigInteger collateral = BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18));
@@ -115,7 +113,7 @@ class BalancedTokenImplIntTest {
         balanced.increaseDay(4);
         balanced.syncDistributions();
 
-        // unsatake completely
+        // unstake completely
         balnScore.stake(BigInteger.ZERO);
 
         detailsBalanceOf = balnScore.detailsBalanceOf(Address.fromString(owner.getAddress().toString()));
@@ -123,7 +121,6 @@ class BalancedTokenImplIntTest {
         // assert if balance is unstaked or not.
         assertEquals(detailsBalanceOf.get("Staked balance"), BigInteger.ZERO);
         assertEquals(detailsBalanceOf.get("Unstaking balance"), amountToStake);
-
     }
 
     @Test
@@ -200,6 +197,5 @@ class BalancedTokenImplIntTest {
                 balnScore.balanceOf(Address.fromString(tester.getAddress().toString())));
         assertEquals(previousOwnerBalance, balnScore.balanceOf(Address.fromString(owner.getAddress().toString())));
     }
-
 }
 

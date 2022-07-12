@@ -28,6 +28,7 @@ import java.util.Map;
 
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static network.balanced.score.lib.utils.Math.pow;
 import static network.balanced.score.token.balancedtoken.Constants.*;
 
@@ -43,7 +44,6 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
     private final VarDB<BigInteger> minInterval = Context.newVarDB(MIN_INTERVAL, BigInteger.class);
 
     private final VarDB<Boolean> stakingEnabled = Context.newVarDB(STAKING_ENABLED, Boolean.class);
-
     private final BranchDB<Address, DictDB<Integer, BigInteger>> stakedBalances = Context.newBranchDB(STAKED_BALANCES
             , BigInteger.class);
     private final VarDB<BigInteger> minimumStake = Context.newVarDB(MINIMUM_STAKE, BigInteger.class);
@@ -257,14 +257,14 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
         only(governance);
         Context.require(_time.compareTo(BigInteger.ZERO) >= 0, TAG + ": Time cannot be negative.");
 
-        BigInteger totalTime = _time.multiply(DAY_TO_MICROSECOND);
+        BigInteger totalTime = _time.multiply(MICRO_SECONDS_IN_A_DAY);
         this.unstakingPeriod.set(totalTime);
     }
 
     @External(readonly = true)
     public BigInteger getUnstakingPeriod() {
         BigInteger timeInMicroseconds = this.unstakingPeriod.getOrDefault(BigInteger.ZERO);
-        return timeInMicroseconds.divide(DAY_TO_MICROSECOND);
+        return timeInMicroseconds.divide(MICRO_SECONDS_IN_A_DAY);
     }
 
     @External
@@ -310,12 +310,11 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
      **/
     @External(readonly = true)
     public BigInteger getDay() {
-        return BigInteger.valueOf(Context.getBlockTimestamp()).subtract(this.timeOffset.getOrDefault(BigInteger.ZERO)).divide(DAY_TO_MICROSECOND);
+        return BigInteger.valueOf(Context.getBlockTimestamp()).subtract(this.timeOffset.getOrDefault(BigInteger.ZERO)).divide(MICRO_SECONDS_IN_A_DAY);
     }
 
     @External(readonly = true)
     public Map<String, BigInteger> detailsBalanceOf(Address _owner) {
-
         DictDB<Integer, BigInteger> stakingDetail = this.stakedBalances.at(_owner);
         BigInteger unstakingTime = stakingDetail.getOrDefault(Status.UNSTAKING_PERIOD.code, BigInteger.ZERO);
         BigInteger currUnstaked = stakingDetail.getOrDefault(Status.UNSTAKING.code, BigInteger.ZERO);
@@ -325,7 +324,9 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
         if (unstakingTime.compareTo(BigInteger.valueOf(Context.getBlockTimestamp())) >= 0) {
             currUnstaked = BigInteger.ZERO;
         }
-        BigInteger unstakingAmount = stakingDetail.getOrDefault(Status.UNSTAKING.code, BigInteger.ZERO).subtract(currUnstaked);
+
+        BigInteger unstakingAmount =
+                stakingDetail.getOrDefault(Status.UNSTAKING.code, BigInteger.ZERO).subtract(currUnstaked);
 
         if (unstakingAmount.equals(BigInteger.ZERO)) {
             unstakingTime = BigInteger.ZERO;
@@ -404,9 +405,9 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
 
         Context.require(_value.compareTo(BigInteger.ZERO) >= 0, TAG + ": Staked BALN value can't be less than zero");
         Context.require(_value.compareTo(this.balanceOf(from)) <= 0, TAG + ": Out of BALN balance.");
-        if ((_value.compareTo(this.minimumStake.getOrDefault(BigInteger.ZERO)) < 0) && !(_value.equals(BigInteger.ZERO))){
-            Context.revert(TAG + ": Staked BALN " +
-                    "must be greater than the minimum stake amount");
+        if ((_value.compareTo(this.minimumStake.getOrDefault(BigInteger.ZERO)) < 0) && !(_value.equals(BigInteger.ZERO))) {
+            throw new UserRevertedException(TAG + ": Staked BALN must be greater than the minimum stake amount and " +
+                    "non zero");
         }
 
         this.checkFirstTime(from);
@@ -431,7 +432,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
         stakingDetail.set(Status.UNSTAKING.code, unstakeAmount);
         stakingDetail.set(Status.UNSTAKING_PERIOD.code, BigInteger.valueOf(Context.getBlockTimestamp()).
                 add(this.unstakingPeriod.getOrDefault(BigInteger.ZERO)));
-        
+
         BigInteger newTotal = this.totalStakedBalance.getOrDefault(BigInteger.ZERO).add(stakeIncrement);
         this.totalStakedBalance.set(newTotal);
 
@@ -446,7 +447,6 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
     @Override
     @External
     public void transfer(Address _to, BigInteger _value, @Optional byte[] _data) {
-
         Address from = Context.getCaller();
         this.checkFirstTime(from);
         this.checkFirstTime(_to);
@@ -477,7 +477,6 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
     @Override
     @External
     public void mintTo(Address _account, BigInteger _amount, @Optional byte[] _data) {
-
         this.checkFirstTime(_account);
         this.makeAvailable(_account);
         DictDB<Integer, BigInteger> stakingDetailOfReceiver = this.stakedBalances.at(_account);
@@ -518,8 +517,9 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
         if (this.timeOffset.getOrDefault(BigInteger.ZERO).equals(BigInteger.ZERO)) {
             this.setTimeOffset();
         }
+
         BigInteger currentId = this.getDay();
-        Integer totalSnapshotsTaken = this.totalSnapshots.getOrDefault(account, 0);
+        int totalSnapshotsTaken = this.totalSnapshots.getOrDefault(account, 0);
 
         BranchDB<Integer, DictDB<String, BigInteger>> stakeSnapshots = this.stakeSnapshots.at(account);
         if (totalSnapshotsTaken > 0 && stakeSnapshots.at(totalSnapshotsTaken - 1).getOrDefault(IDS, BigInteger.ZERO)

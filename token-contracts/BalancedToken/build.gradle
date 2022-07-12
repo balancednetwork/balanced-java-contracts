@@ -25,34 +25,28 @@ repositories {
 
 dependencies {
     compileOnly Dependencies.javaeeApi
-    implementation Dependencies.javaeeScorex
-    implementation Dependencies.minimalJson
     implementation project(':score-lib')
 
     testImplementation Dependencies.javaeeUnitTest
-    testImplementation Dependencies.javaeeTokens
-    testImplementation Dependencies.json
-
-    // Use JUnit Jupiter for testing.
 
     testImplementation Dependencies.junitJupiter
     testRuntimeOnly Dependencies.junitJupiterEngine
     testImplementation Dependencies.mockitoCore
     testImplementation Dependencies.mockitoInline
+    testImplementation project(':test-lib')
 
     intTestImplementation project(":score-client")
     intTestAnnotationProcessor project(":score-client")
     intTestImplementation Dependencies.iconSdk
     intTestImplementation Dependencies.jacksonDatabind
-
-    testImplementation project(':test-lib')
+    intTestImplementation Dependencies.json
 }
 
 optimizedJar {
     mainClassName = 'network.balanced.score.token.balancedtoken.BalancedTokenImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
-        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
 }
 
@@ -95,7 +89,7 @@ task integrationTest(type: Test) {
     useJUnitPlatform()
 
     rootProject.allprojects {
-        if(it.getTasks().findByName('optimizedJar')) {
+        if (it.getTasks().findByName('optimizedJar')) {
             dependsOn(it.getTasks().getByName('optimizedJar'))
         }
     }
@@ -107,10 +101,6 @@ task integrationTest(type: Test) {
 
         testClassesDirs = sourceSets.intTest.output.classesDirs
         classpath = sourceSets.intTest.runtimeClasspath
-
-        systemProperty "python", new File(project(':test-lib').projectDir, 'python-contracts/baln.zip')
-        systemProperty "java", optimizedJar.outputJarName
-
     }
 
 }
