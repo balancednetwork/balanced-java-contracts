@@ -283,23 +283,6 @@ public class DexTestCore extends DexTestBase {
     }
 
     @Test
-    void removeLiquidity_withdrawalLockActive() {
-        // Arrange - remove liquidity arguments.
-        BigInteger poolId = BigInteger.TWO;
-        BigInteger lpTokensToRemove = BigInteger.valueOf(1000);
-        Boolean withdrawTokensOnRemoval = false;
-        
-        // Arrange - supply liquidity.
-        BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
-        BigInteger balnValue = BigInteger.valueOf(350).multiply(EXA);
-        supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
-
-        // Act & Assert.
-        Executable fundsLocked = () -> dexScore.invoke(ownerAccount, "remove", poolId, lpTokensToRemove, withdrawTokensOnRemoval);
-        expectErrorMessage(fundsLocked, "Reverted(0): Balanced DEX:  Assets must remain in the pool for 24 hours, please try again later.");
-    }
-
-    @Test
     void removeLiquidity() {
         // Arrange - remove liquidity arguments.
         BigInteger poolId = BigInteger.TWO;

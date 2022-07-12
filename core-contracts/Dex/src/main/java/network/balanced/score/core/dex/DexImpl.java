@@ -430,12 +430,6 @@ public class DexImpl extends AbstractDex {
         Add(BigInteger.valueOf(id), user, liquidity, baseToCommit, quoteToCommit);
         TransferSingle(user, MINT_ADDRESS, user, BigInteger.valueOf(id), liquidity);
 
-        BigInteger userQuoteHoldings = (userLpAmount.multiply(poolQuoteAmount)).divide(poolLpAmount);
-        if (isRestrictedPoolId(id)) {
-            withdrawLock.at(id).set(user, BigInteger.valueOf(Context.getBlockTimestamp()));
-            revertBelowMinimum(userQuoteHoldings, _quoteToken);
-        }
-
         activeAddresses.get(id).add(user);
         updateAccountSnapshot(user, id, userLpAmount);
         updateTotalSupplySnapshot(id, poolLpAmount);
