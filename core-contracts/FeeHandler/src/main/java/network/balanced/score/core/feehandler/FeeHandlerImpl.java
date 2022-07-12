@@ -22,6 +22,7 @@ import com.eclipsesource.json.JsonValue;
 import network.balanced.score.lib.interfaces.FeeHandler;
 import score.*;
 import score.annotation.External;
+import score.annotation.Optional;
 import scorex.util.ArrayList;
 import scorex.util.HashMap;
 
@@ -62,6 +63,8 @@ public class FeeHandlerImpl implements FeeHandler {
         if (governance.get() == null) {
             isContract(_governance);
             this.governance.set(_governance);
+        } else if (admin.get() == null) {
+            admin.set(_governance);
         }
     }
 
@@ -215,7 +218,7 @@ public class FeeHandlerImpl implements FeeHandler {
     }
 
     @External(readonly = true)
-    public List<Address> get_allowed_address(int offset) {
+    public List<Address> get_allowed_address(@Optional int offset) {
         Context.require(offset >= 0, "Negative value not allowed.");
 
         int end = Math.min(allowedAddress.size(), offset + 20);
