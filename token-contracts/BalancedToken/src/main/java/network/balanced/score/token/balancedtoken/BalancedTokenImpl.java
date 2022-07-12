@@ -316,7 +316,6 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
 
     @External(readonly = true)
     public Map<String, BigInteger> detailsBalanceOf(Address _owner) {
-
         DictDB<Integer, BigInteger> stakingDetail = this.stakedBalances.at(_owner);
         BigInteger unstakingTime = stakingDetail.getOrDefault(Status.UNSTAKING_PERIOD.code, BigInteger.ZERO);
         BigInteger currUnstaked = stakingDetail.getOrDefault(Status.UNSTAKING.code, BigInteger.ZERO);
@@ -326,6 +325,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
         if (unstakingTime.compareTo(BigInteger.valueOf(Context.getBlockTimestamp())) >= 0) {
             currUnstaked = BigInteger.ZERO;
         }
+        
         BigInteger unstakingAmount =
                 stakingDetail.getOrDefault(Status.UNSTAKING.code, BigInteger.ZERO).subtract(currUnstaked);
 
@@ -439,13 +439,11 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
             this.updateSnapshotForAddress(Context.getCaller(), _value);
             this.updateTotalStakedSnapshot(this.totalStakedBalance.getOrDefault(BigInteger.ZERO));
         }
-
     }
 
     @Override
     @External
     public void transfer(Address _to, BigInteger _value, @Optional byte[] _data) {
-
         Address from = Context.getCaller();
         this.checkFirstTime(from);
         this.checkFirstTime(_to);
@@ -476,7 +474,6 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
     @Override
     @External
     public void mintTo(Address _account, BigInteger _amount, @Optional byte[] _data) {
-
         this.checkFirstTime(_account);
         this.makeAvailable(_account);
         DictDB<Integer, BigInteger> stakingDetailOfReceiver = this.stakedBalances.at(_account);
@@ -517,6 +514,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
         if (this.timeOffset.getOrDefault(BigInteger.ZERO).equals(BigInteger.ZERO)) {
             this.setTimeOffset();
         }
+
         BigInteger currentId = this.getDay();
         int totalSnapshotsTaken = this.totalSnapshots.getOrDefault(account, 0);
 
@@ -536,6 +534,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
         if (this.timeOffset.getOrDefault(BigInteger.ZERO).equals(BigInteger.ZERO)) {
             this.setTimeOffset();
         }
+
         BigInteger currentId = this.getDay();
         int totalSnapshotsTaken = this.totalStakedSnapshotCount.getOrDefault(0);
 

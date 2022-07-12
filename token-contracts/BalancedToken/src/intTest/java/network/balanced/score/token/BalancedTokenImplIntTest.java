@@ -59,7 +59,6 @@ class BalancedTokenImplIntTest {
     @Test
     @Order(2)
     void ShouldAUserMintAndTransferAndMakeStake() {
-
         BigInteger loanAmount = BigInteger.valueOf(50).multiply(BigInteger.TEN.pow(18));
         // take loans
         BigInteger collateral = BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18));
@@ -122,7 +121,6 @@ class BalancedTokenImplIntTest {
         // assert if balance is unstaked or not.
         assertEquals(detailsBalanceOf.get("Staked balance"), BigInteger.ZERO);
         assertEquals(detailsBalanceOf.get("Unstaking balance"), amountToStake);
-
     }
 
     @Test
@@ -199,6 +197,5 @@ class BalancedTokenImplIntTest {
                 balnScore.balanceOf(Address.fromString(tester.getAddress().toString())));
         assertEquals(previousOwnerBalance, balnScore.balanceOf(Address.fromString(owner.getAddress().toString())));
     }
-
 }
 
