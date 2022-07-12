@@ -262,15 +262,12 @@ public class FeeHandlerImpl implements FeeHandler {
                 transferToken(sender, getContractAddress("dividends"), getTokenBalance(sender), new byte[0]);
             }
         }
+        BigInteger accruedFees = swapFeesAccruedDB.get(sender);
         if (_from.equals(loans.get())) {
             loanFeesAccrued.set(loanFeesAccrued.getOrDefault(BigInteger.ZERO).add(_value));
-        }
-
-        BigInteger accruedFees = swapFeesAccruedDB.get(sender);
-        if (_from.equals(dex.get()) && accruedFees != null) {
+        } else if (_from.equals(dex.get()) && accruedFees != null) {
             swapFeesAccruedDB.set(sender, accruedFees.add(_value));
-        }
-        if (_from.equals(stabilityFund.get())) {
+        } else if (_from.equals(stabilityFund.get())) {
             stabilityFundFeesAccrued.set(stabilityFundFeesAccrued.getOrDefault(BigInteger.ZERO).add(_value));
         }
     }
