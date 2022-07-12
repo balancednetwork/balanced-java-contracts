@@ -185,7 +185,7 @@ public class GovernanceTestBase extends UnitTest {
         when(bBaln.mock.totalSupplyAt(any(BigInteger.class))).thenReturn(BigInteger.valueOf(20).multiply(ICX));
         when(bBaln.mock.balanceOfAt(eq(owner.getAddress()), any(BigInteger.class))).thenReturn(BigInteger.TEN.multiply(ICX));
         
-        governance.invoke(owner, "defineVote", name, description, voteStart, snapshot, actions);
+        governance.invoke(owner, "defineVote", name, description, voteStart, snapshot, BigInteger.TWO, actions);
         BigInteger id = (BigInteger) governance.call("getVoteIndex", name);
 
         when(bBaln.mock.totalSupplyAt(any(BigInteger.class))).thenReturn(BigInteger.valueOf(6).multiply(ICX));
@@ -236,8 +236,8 @@ public class GovernanceTestBase extends UnitTest {
 
         when(bBaln.mock.totalSupplyAt(any(BigInteger.class))).thenReturn(BigInteger.TEN.multiply(ICX));
         when(bBaln.mock.balanceOfAt(eq(owner.getAddress()), any(BigInteger.class))).thenReturn(BigInteger.ONE.multiply(ICX));
-        governance.invoke(owner, "setVoteDuration", BigInteger.valueOf(100L));
-        governance.invoke(owner, "defineVote", name, description, voteStart, snapshot, actions);
+
+        governance.invoke(owner, "defineVote", name, description, voteStart, snapshot, BigInteger.TWO, actions);
 
         BigInteger id = (BigInteger) governance.call("getVoteIndex", name);
 
@@ -279,8 +279,7 @@ public class GovernanceTestBase extends UnitTest {
         governance.invoke(owner, "setBalnVoteDefinitionCriterion", BigInteger.valueOf(100)); //1%
         governance.invoke(owner, "setVoteDefinitionFee", ICX); //1% 
         governance.invoke(owner, "setQuorum", BigInteger.ONE);
-        governance.invoke(owner, "setVoteDuration", BigInteger.TWO);
-        governance.invoke(owner, "setVoteDuration", BigInteger.TWO);
+        governance.invoke(owner, "setVoteDurationLimits", BigInteger.TWO, BigInteger.TEN);
     }
 
 

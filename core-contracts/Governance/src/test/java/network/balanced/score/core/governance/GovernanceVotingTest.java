@@ -54,6 +54,7 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         String description = "test vote";
         BigInteger voteStart = block.add(BigInteger.valueOf(FIVE));
         BigInteger snapshot = block;
+        BigInteger voteDuration = BigInteger.TWO;
         String actions = "[]";
         String expectedErrorMessage;
 
@@ -64,30 +65,30 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         // Act & Assert
         String tooLongDescription = "T".repeat(501);
         expectedErrorMessage = "Description must be less than or equal to 500 characters.";
-        Executable withTooLongDescription = () -> governance.invoke(owner, "defineVote", name, tooLongDescription, voteStart, snapshot, actions);
+        Executable withTooLongDescription = () -> governance.invoke(owner, "defineVote", name, tooLongDescription, voteStart, snapshot, voteDuration, actions);
         expectErrorMessage(withTooLongDescription, expectedErrorMessage);
 
         BigInteger voteStartBeforeToday = block.subtract(BigInteger.valueOf(FIVE));
         expectedErrorMessage = "Vote cannot start before the current block height.";
-        Executable withVoteStartBeforeToday = () -> governance.invoke(owner, "defineVote", name, description, voteStartBeforeToday, snapshot, actions);
+        Executable withVoteStartBeforeToday = () -> governance.invoke(owner, "defineVote", name, description, voteStartBeforeToday, snapshot, voteDuration, actions);
         expectErrorMessage(withVoteStartBeforeToday, expectedErrorMessage);
-        
+
         BigInteger balnVoteDefinitionCriterion = (BigInteger) governance.call("getBalnVoteDefinitionCriterion");
         expectedErrorMessage = "User needs at least " + balnVoteDefinitionCriterion.divide(BigInteger.valueOf(100)) + "% of total boosted baln supply to define a vote.";
-        Executable withToFewStakedBaln = () -> governance.invoke(accountWithLowBalance, "defineVote", name, description, voteStart, snapshot, actions);
+        Executable withToFewStakedBaln = () -> governance.invoke(accountWithLowBalance, "defineVote", name, description, voteStart, snapshot, voteDuration, actions);
         expectErrorMessage(withToFewStakedBaln, expectedErrorMessage);
 
         String invalidActions = "[[\"invalidAction\", {}]]";
         expectedErrorMessage = "Vote execution failed";
-        Executable withInvalidActions = () -> governance.invoke(owner, "defineVote", name, description, voteStart, snapshot, invalidActions);
+        Executable withInvalidActions = () -> governance.invoke(owner, "defineVote", name, description, voteStart, snapshot, voteDuration, invalidActions);
         expectErrorMessage(withInvalidActions, expectedErrorMessage);
 
         // Arrange 
-        governance.invoke(owner, "defineVote", name, description, voteStart, snapshot, actions);
+        governance.invoke(owner, "defineVote", name, description, voteStart, snapshot, voteDuration, actions);
 
         // Act & Assert
         expectedErrorMessage = "Poll name " + name + " has already been used.";
-        Executable withAlreadyUsedName = () -> governance.invoke(owner, "defineVote", name, description, voteStart, snapshot, actions);
+        Executable withAlreadyUsedName = () -> governance.invoke(owner, "defineVote", name, description, voteStart, snapshot, voteDuration, actions);
         expectErrorMessage(withAlreadyUsedName, expectedErrorMessage);
 
         BigInteger id = (BigInteger) governance.call("getVoteIndex", name);
@@ -108,13 +109,14 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         String description = "test vote";
         BigInteger voteStart = block.add(BigInteger.valueOf(FIVE));
         BigInteger snapshot = block;
+        BigInteger voteDuration = BigInteger.TWO;
         String actions = "[]";
         String expectedErrorMessage;
 
         when(bBaln.mock.balanceOfAt(eq(proposer.getAddress()), any(BigInteger.class))).thenReturn(BigInteger.TEN.multiply(EXA));
         when(bBaln.mock.totalSupplyAt(any(BigInteger.class))).thenReturn(BigInteger.valueOf(6).multiply(EXA));
 
-        governance.invoke(proposer, "defineVote", name, description, voteStart, snapshot, actions);
+        governance.invoke(proposer, "defineVote", name, description, voteStart, snapshot, voteDuration, actions);
         BigInteger id = (BigInteger) governance.call("getVoteIndex", name);
 
         // Act & Assert
@@ -161,12 +163,13 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         String description = "test vote";
         BigInteger voteStart = block.add(BigInteger.valueOf(FIVE));
         BigInteger snapshot = block;
+        BigInteger voteDuration = BigInteger.TWO;
         String actions = "[]";
 
         when(bBaln.mock.balanceOfAt(eq(proposer.getAddress()), any(BigInteger.class))).thenReturn(BigInteger.TEN.multiply(EXA));
         when(bBaln.mock.totalSupplyAt(any(BigInteger.class))).thenReturn(BigInteger.valueOf(6).multiply(EXA));
 
-        governance.invoke(proposer, "defineVote", name, description, voteStart, snapshot, actions);
+        governance.invoke(proposer, "defineVote", name, description, voteStart, snapshot, voteDuration, actions);
         BigInteger id = (BigInteger) governance.call("getVoteIndex", name);
 
         // Act & Assert
@@ -673,12 +676,14 @@ public class GovernanceVotingTest extends GovernanceTestBase {
     @Test
     void executeVote_setVoteDuration() {
         // Arrange
-        BigInteger voteDuration = BigInteger.TEN;
+        BigInteger voteDurationMin = BigInteger.TEN;
+        BigInteger voteDurationMax = BigInteger.TEN;
         JsonObject setVoteDurationParameters = new JsonObject()
-                .add("_duration", voteDuration.intValue());
+                .add("_min", voteDurationMin.intValue())
+                .add("_max", voteDurationMax.intValue());
 
         JsonArray setVoteDuration = new JsonArray()
-                .add("setVoteDuration")
+                .add("setVoteDurationLimits")
                 .add(setVoteDurationParameters);
 
         JsonArray actions = new JsonArray()
@@ -688,8 +693,10 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         executeVoteWithActions(actions.toString());
 
         // Assert
-        BigInteger newVoteDuration = (BigInteger) governance.call("getVoteDuration");
-        assertEquals(voteDuration, newVoteDuration);
+        BigInteger minVoteDuration = (BigInteger)governance.call("getMinVoteDuration");
+        BigInteger maxVoteDuration = (BigInteger)governance.call("getMaxVoteDuration");
+        assertEquals(voteDurationMin, minVoteDuration);
+        assertEquals(voteDurationMax, maxVoteDuration);
     }
 
     @Test
