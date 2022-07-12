@@ -36,22 +36,22 @@ import static network.balanced.score.lib.utils.Check.*;
 public class FeeHandlerImpl implements FeeHandler {
     public static final String TAG = "FeeHandler";
 
-    private final String DIVIDEND_TOKENS = "dividend_tokens";
-    private final String LAST_BLOCK = "last_block";
-    private final String BLOCK_INTERVAL = "block_interval";
-    private final String LAST_TXHASH = "last_txhash";
-    private final String ROUTES = "routes";
-    private final String GOVERNANCE = "governance";
-    private final String LOANS = "loans";
-    private final String DEX = "dex";
-    private final String STABILITY = "stability";
-    private final String ENABLED = "enabled";
-    private final String ALLOWED_ADDRESS = "allowed_address";
-    private final String NEXT_ALLOWED_ADDRESS_INDEX = "_next_allowed_addresses_index";
-    private final String ADMIN_ADDRESS = "admin_address";
-    private final String SWAP_FEES_ACCRUED = "swap_fees_accrued";
-    private final String LOANS_FEES_ACCRUED = "loans_fees_accrued";
-    private final String STABILITY_FEES_ACCRUED = "stability_fees_accrued";
+    private static final String DIVIDEND_TOKENS = "dividend_tokens";
+    private static final String LAST_BLOCK = "last_block";
+    private static final String BLOCK_INTERVAL = "block_interval";
+    private static final String LAST_TXHASH = "last_txhash";
+    private static final String ROUTES = "routes";
+    private static final String GOVERNANCE = "governance";
+    private static final String LOANS = "loans";
+    private static final String DEX = "dex";
+    private static final String STABILITY = "stability";
+    private static final String ENABLED = "enabled";
+    private static final String ALLOWED_ADDRESS = "allowed_address";
+    private static final String NEXT_ALLOWED_ADDRESS_INDEX = "_next_allowed_addresses_index";
+    private static final String ADMIN_ADDRESS = "admin_address";
+    private static final String SWAP_FEES_ACCRUED = "swap_fees_accrued";
+    private static final String LOANS_FEES_ACCRUED = "loans_fees_accrued";
+    private static final String STABILITY_FEES_ACCRUED = "stability_fees_accrued";
 
     private final ArrayDB<Address> acceptedDividendsTokens = Context.newArrayDB(DIVIDEND_TOKENS, Address.class);
     private final DictDB<Address, BigInteger> lastFeeProcessingBlock = Context.newDictDB(LAST_BLOCK, BigInteger.class);
