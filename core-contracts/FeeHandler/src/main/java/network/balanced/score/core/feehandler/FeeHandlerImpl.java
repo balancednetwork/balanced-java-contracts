@@ -131,10 +131,10 @@ public class FeeHandlerImpl implements FeeHandler {
     @External(readonly = true)
     public List<Address> getAcceptedDividendTokens() {
         List<Address> tokens = new ArrayList<>();
-        for (int i = 0; i < acceptedDividendsTokens.size(); i++) {
+        int acceptedDividendsTokensCount = acceptedDividendsTokens.size();
+        for (int i = 0; i < acceptedDividendsTokensCount; i++) {
             tokens.add(acceptedDividendsTokens.get(i));
         }
-
         return tokens;
     }
 
@@ -198,9 +198,11 @@ public class FeeHandlerImpl implements FeeHandler {
         lastTxhash.set(Context.getTransactionHash());
         lastFeeProcessingBlock.set(sender, BigInteger.valueOf(Context.getBlockHeight()));
 
-        for (int i = 0; i < acceptedDividendsTokens.size(); i++) {
+        int acceptedDividendsTokensCount = acceptedDividendsTokens.size();
+        for (int i = 0; i < acceptedDividendsTokensCount; i++) {
             if (acceptedDividendsTokens.get(i).equals(sender)) {
                 transferToken(sender, getContractAddress("dividends"), getTokenBalance(sender), new byte[0]);
+                return;
             }
         }
     }
@@ -249,7 +251,7 @@ public class FeeHandlerImpl implements FeeHandler {
                 break;
             }
             if (i == totalAllowedAddress - 1) {
-                throw new UserRevertException(TAG + ": No fees on the contract.");
+                throw new UserRevertedException(TAG + ": No fees on the contract.");
             }
         }
 

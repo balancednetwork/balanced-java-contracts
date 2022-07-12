@@ -16,8 +16,6 @@
 
 import network.balanced.score.dependencies.Dependencies
 
-
-
 version = '0.1.0'
 
 repositories {
