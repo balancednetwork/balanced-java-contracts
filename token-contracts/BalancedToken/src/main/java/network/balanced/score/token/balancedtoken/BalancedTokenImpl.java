@@ -38,6 +38,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
     private final VarDB<Address> bnusdScore = Context.newVarDB(BNUSD_SCORE, Address.class);
     private final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
     private final VarDB<Address> oracle = Context.newVarDB(ORACLE, Address.class);
+
     private final VarDB<String> oracleName = Context.newVarDB(ORACLE_NAME, String.class);
     private final VarDB<BigInteger> priceUpdateTime = Context.newVarDB(PRICE_UPDATE_TIME, BigInteger.class);
     private final VarDB<BigInteger> lastPrice = Context.newVarDB(LAST_PRICE, BigInteger.class);
@@ -537,6 +538,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
         if (this.timeOffset.getOrDefault(BigInteger.ZERO).equals(BigInteger.ZERO)) {
             this.setTimeOffset();
         }
+
         BigInteger currentId = this.getDay();
         int totalSnapshotsTaken = this.totalStakedSnapshotCount.getOrDefault(0);
 
@@ -581,7 +583,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
         while (high > low) {
             int mid = high - (high - low) / 2;
             DictDB<String, BigInteger> midValue = stakeSnapshotDetail.at(mid);
-            if (midValue.getOrDefault(IDS, BigInteger.ZERO).compareTo(_day) == 0) {
+            if (midValue.getOrDefault(IDS, BigInteger.ZERO).equals(_day)) {
                 return midValue.getOrDefault(AMOUNT, BigInteger.ZERO);
             } else if (midValue.getOrDefault(IDS, BigInteger.ZERO).compareTo(_day) < 0) {
                 low = mid;
