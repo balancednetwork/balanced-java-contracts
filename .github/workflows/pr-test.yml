@@ -17,8 +17,11 @@ jobs:
         with:
           submodules: true
 
+      - name: Copy CI gradle.properties
+        run: mkdir -p ~/.gradle ; cp .github/ci-gradle.properties ~/.gradle/gradle.properties
+
       - name: Run unit tests
-        run: ./gradlew clean build optimizedJar --parallel
+        run: ./gradlew clean build optimizedJar
 
   integration-test:
     needs: unit-test
@@ -29,11 +32,14 @@ jobs:
         with:
           submodules: true
 
+      - name: Copy CI gradle.properties
+        run: mkdir -p ~/.gradle ; cp .github/ci-gradle.properties ~/.gradle/gradle.properties
+
       - name: Start local Blockchain
         run: docker logout public.ecr.aws && docker-compose up -d
 
       - name: Check if all contracts are deployable
-        run: ./gradlew deployContractsToLocal --parallel --max-workers=2
+        run: ./gradlew deployContractsToLocal --max-workers=2
 
       - name: Run integration tests
-        run: ./gradlew integrationTest --parallel --max-workers=2
+        run: ./gradlew integrationTest --max-workers=2
