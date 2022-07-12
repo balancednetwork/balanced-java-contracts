@@ -82,10 +82,6 @@ public class UnitTest extends TestBase {
     public static <T> void testAdminControlMethods(Score contractUnderTest, Account governanceScore,
                                                    Account adminAccount, String setterMethod, T parameterToSet,
                                                    String getterMethod) {
-        String expectedErrorMessage = "Reverted(0): Authorization Check: Address not set";
-        Executable setScoreWithoutAdmin = () -> contractUnderTest.invoke(adminAccount, setterMethod, parameterToSet);
-        expectErrorMessage(setScoreWithoutAdmin, expectedErrorMessage);
-
         testAdmin(contractUnderTest, governanceScore, adminAccount);
         assertOnlyCallableByAdmin(contractUnderTest, setterMethod, parameterToSet);
 

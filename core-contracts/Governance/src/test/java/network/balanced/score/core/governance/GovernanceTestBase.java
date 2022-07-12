@@ -56,7 +56,7 @@ public class GovernanceTestBase extends UnitTest {
     protected MockContract<DAOfundScoreInterface> daofund;
     protected MockContract<SicxScoreInterface> sicx;
     protected MockContract<BalancedDollarScoreInterface> bnUSD; 
-    protected MockContract<BalnScoreInterface> baln;
+    protected MockContract<BalancedTokenScoreInterface> baln;
     protected MockContract<WorkerTokenScoreInterface> bwt;
     protected MockContract<RouterScoreInterface> router; 
     protected MockContract<RebalancingScoreInterface> rebalancing;
@@ -264,7 +264,7 @@ public class GovernanceTestBase extends UnitTest {
         daofund = new MockContract<>(DAOfundScoreInterface.class, sm, owner);
         sicx = new MockContract<>(SicxScoreInterface.class, sm, owner);
         bnUSD = new MockContract<>(BalancedDollarScoreInterface.class, sm, owner);
-        baln = new MockContract<>(BalnScoreInterface.class, sm, owner);
+        baln = new MockContract<>(BalancedTokenScoreInterface.class, sm, owner);
         bwt = new MockContract<>(WorkerTokenScoreInterface.class, sm, owner);
         router = new MockContract<>(RouterScoreInterface.class, sm, owner);
         rebalancing = new MockContract<>(RebalancingScoreInterface.class, sm, owner);
