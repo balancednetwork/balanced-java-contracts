@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.token.balancedtoken;
+package network.balanced.score.tokens.balancedtoken;
 
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;

@@ -18,7 +18,7 @@ package network.balanced.score.dependencies;
 
 public class Dependencies {
 
-    public static final String javaeePlugin = "foundation.icon:gradle-javaee-plugin:0.8.0";
+    public static final String javaeePlugin = "foundation.icon:gradle-javaee-plugin:0.8.1";
     public static final String javaeeApi = "foundation.icon:javaee-api:0.9.1";
     public static final String javaeeScorex = "foundation.icon:javaee-scorex:0.5.2";
     public static final String javaeeUnitTest = "foundation.icon:javaee-unittest:0.9.4";

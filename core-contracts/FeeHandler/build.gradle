@@ -25,25 +25,22 @@ repositories {
 
 dependencies {
     compileOnly Dependencies.javaeeApi
+    implementation Dependencies.javaeeScorex
+    implementation Dependencies.minimalJson
     implementation project(':score-lib')
 
     testImplementation Dependencies.javaeeUnitTest
-
-    testImplementation Dependencies.junitJupiter
-    testRuntimeOnly Dependencies.junitJupiterEngine
+    testImplementation Dependencies.javaeeTokens
     testImplementation Dependencies.mockitoCore
     testImplementation Dependencies.mockitoInline
+    // Use JUnit Jupiter for testing.
+    testImplementation Dependencies.junitJupiter
+    testRuntimeOnly Dependencies.junitJupiterEngine
     testImplementation project(':test-lib')
-
-    intTestImplementation project(":score-client")
-    intTestAnnotationProcessor project(":score-client")
-    intTestImplementation Dependencies.iconSdk
-    intTestImplementation Dependencies.jacksonDatabind
-    intTestImplementation Dependencies.json
 }
 
 optimizedJar {
-    mainClassName = 'network.balanced.score.tokens.balancedtoken.BalancedTokenImpl'
+    mainClassName = 'network.balanced.score.core.feehandler.FeeHandlerImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
@@ -63,17 +60,17 @@ deployJar {
         mainnet {
             uri = 'https://ctz.solidwallet.io/api/v3'
             nid = 0x1
+            to = "cx5faae53c4dbd1fbe4a2eb4aab6565030f10da5c6"
         }
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
-    parameters {}
+    parameters {arg("_governance", "cx44250a12074799e26fdeee75648ae47e2cc84219")}
 }
 
 tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
-    finalizedBy jacocoTestReport
 }
 
 jacocoTestReport {
@@ -83,24 +80,4 @@ jacocoTestReport {
         csv.required = false
         html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
     }
-}
-
-task integrationTest(type: Test) {
-    useJUnitPlatform()
-
-    rootProject.allprojects {
-        if (it.getTasks().findByName('optimizedJar')) {
-            dependsOn(it.getTasks().getByName('optimizedJar'))
-        }
-    }
-
-    options {
-        testLogging.showStandardStreams = true
-        description = 'Runs integration tests.'
-        group = 'verification'
-
-        testClassesDirs = sourceSets.intTest.output.classesDirs
-        classpath = sourceSets.intTest.runtimeClasspath
-    }
-
 }
