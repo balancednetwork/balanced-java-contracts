@@ -442,7 +442,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
             this.updateTotalStakedSnapshot(newTotal);
         }
 
-        Context.call(dividendsScore.get(), "updateBalnStake", from, oldStake, newTotal);
+        Context.call(dividendsScore.get(), "updateBalnStake", from, stakedAmount, newTotal);
     }
 
     @Override
