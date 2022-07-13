@@ -33,8 +33,8 @@ import static network.balanced.score.core.loans.LoansVariables.*;
 import static network.balanced.score.core.loans.utils.LoansConstants.*;
 
 public class Position {
-
     static final String TAG = "BalancedLoansPositions";
+
     private final BranchDB<String, VarDB<Integer>> id = Context.newBranchDB("id", Integer.class);
     private final BranchDB<String, VarDB<BigInteger>> created = Context.newBranchDB("created", BigInteger.class);
     private final BranchDB<String, VarDB<Address>> address = Context.newBranchDB("address", Address.class);
@@ -262,7 +262,6 @@ public class Position {
 
             standingMap.put("standing", StandingsMap.get(standing.standing));
             standings.put(collateralSymbol, standingMap);
-
         }
 
         Map<String, Object> positionDetails = new HashMap<>();

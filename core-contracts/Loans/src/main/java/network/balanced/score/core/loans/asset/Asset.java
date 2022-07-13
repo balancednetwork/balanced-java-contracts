@@ -148,6 +148,7 @@ public class Asset {
             if (!collateral.isActive()) {
                 continue;
             }
+
             Address collateralAddress = collateral.getAssetAddress();
             Token collateralContract = new Token(collateralAddress);
             poolValue = poolValue.add(getLiquidationPool(SICX_SYMBOL)
