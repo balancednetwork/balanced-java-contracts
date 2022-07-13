@@ -171,11 +171,13 @@ class DividendsImplTestContinuousMigration extends DividendsImplTestBase {
 
         sm.getBlock().increase(DAY);
         dividendScore.invoke(owner, "distribute");
+        BigInteger snapshotID = (BigInteger) dividendScore.call("getSnapshotId");
+        // Act
+        sm.getBlock().increase(DAY);
+        dividendScore.invoke(owner, "distribute");
         
-        // Act & Assert
-        String expectedErrorMessage = "Reverted(0): Continuous dividends is already active";
-        Executable distributeAfterContinuous = () -> dividendScore.invoke(owner, "distribute");
-        expectErrorMessage(distributeAfterContinuous, expectedErrorMessage);
+        // Assert
+        assertEquals(snapshotID, dividendScore.call("getSnapshotId"));       
     }
 
     private void mockStakeAt(Address user, BigInteger day, BigInteger stake) {

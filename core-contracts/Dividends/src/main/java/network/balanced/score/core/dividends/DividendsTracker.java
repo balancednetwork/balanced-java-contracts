@@ -28,13 +28,13 @@ import score.DictDB;
 import score.VarDB;
 
 public class DividendsTracker {
-    private static final BranchDB<Address, DictDB<String, BigInteger>> userWeight = Context.newBranchDB("user_weight",
+    private static final BranchDB<Address, DictDB<Address, BigInteger>> userWeight = Context.newBranchDB("user_weight",
             BigInteger.class);
     private static final  VarDB<BigInteger> totalSupply = Context.newVarDB("balnSupply", BigInteger.class);
-    private static final  DictDB<String, BigInteger> totalWeight = Context.newDictDB("running_total",
+    private static final  DictDB<Address, BigInteger> totalWeight = Context.newDictDB("running_total",
             BigInteger.class);
 
-    public static BigInteger getUserWeight(Address user, String token) {
+    public static BigInteger getUserWeight(Address user, Address token) {
         return userWeight.at(user).getOrDefault(token, BigInteger.ZERO);
     }
 
@@ -46,11 +46,11 @@ public class DividendsTracker {
         totalSupply.set(supply);
     }
 
-    public static BigInteger getTotalWeight(String token) {
+    public static BigInteger getTotalWeight(Address token) {
         return totalWeight.getOrDefault(token, BigInteger.ZERO);
     }
 
-    public static BigInteger updateUserData(String token, Address user, BigInteger prevBalance, boolean readOnlyContext) {
+    public static BigInteger updateUserData(Address token, Address user, BigInteger prevBalance, boolean readOnlyContext) {
         if (!continuousDividendsActive()) {
             return BigInteger.ZERO;
         }
@@ -64,7 +64,7 @@ public class DividendsTracker {
         return computeUserRewards(prevBalance, totalWeight, currentUserWeight);
     }
 
-    public static void updateTotalWeight(String token, BigInteger amountRecived) {
+    public static void updateTotalWeight(Address token, BigInteger amountRecived) {
         BigInteger previousTotalWeight = getTotalWeight(token);
         BigInteger addedWeight = amountRecived.multiply(EXA).divide(getTotalSupply());
         

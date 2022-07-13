@@ -70,8 +70,8 @@ public class DividendsImpl implements Dividends {
     public static final VarDB<BigInteger> continuousDividendsDay =
             Context.newVarDB(CONTINUOUS_DIVIDENDS_DAY, BigInteger.class);
 
-    private static final BranchDB<Address, DictDB<String, BigInteger>> accuredDividends =
-            Context.newBranchDB(ACCURED_DIVIDENDS, BigInteger.class);
+    private static final BranchDB<Address, DictDB<Address, BigInteger>> accruedDividends =
+            Context.newBranchDB(ACCRUED_DIVIDENDS, BigInteger.class);
 
     public DividendsImpl(@Optional Address _governance) {
         if (governance.get() == null) {
@@ -370,8 +370,10 @@ public class DividendsImpl implements Dividends {
 
     @External
     public boolean distribute() {
-        Context.require(!continuousDividendsActive(), "Continuous dividends is already active");
-        checkForNewDay();
+        if (!continuousDividendsActive()) {
+            checkForNewDay();
+        }
+
         return true;
     }
 
@@ -422,14 +424,14 @@ public class DividendsImpl implements Dividends {
         Map<String, BigInteger> totalDividends = new HashMap<>();
 
         int size = acceptedTokens.size();
-        DictDB<String, BigInteger> userAccuredDividends = accuredDividends.at(user);
+        DictDB<Address, BigInteger> userAccruedDividends = accruedDividends.at(user);
         for (int i = 0; i < size; i++) {
-            String token = acceptedTokens.get(i).toString();
-            BigInteger accuredDividends = DividendsTracker.updateUserData(token, user, stakedBalance, true);
-            BigInteger prevAccuredDividends = userAccuredDividends.getOrDefault(token, BigInteger.ZERO);
-            BigInteger totalDivs = accuredDividends.add(prevAccuredDividends);
+            Address token = acceptedTokens.get(i);
+            BigInteger accruedDividends = DividendsTracker.updateUserData(token, user, stakedBalance, true);
+            BigInteger prevAccruedDividends = userAccruedDividends.getOrDefault(token, BigInteger.ZERO);
+            BigInteger totalDivs = accruedDividends.add(prevAccruedDividends);
             if (totalDivs.signum() > 0) {
-                totalDividends.put(token, totalDivs);
+                totalDividends.put(token.toString(), totalDivs);
             }
         }
 
@@ -441,16 +443,15 @@ public class DividendsImpl implements Dividends {
         Address user = Context.getCaller();
         BigInteger stakedBalance = getBalnBalance(user);
         int size = acceptedTokens.size();
-        DictDB<String, BigInteger> userAccuredDividends = accuredDividends.at(user);
+        DictDB<Address, BigInteger> userAccruedDividends = accruedDividends.at(user);
         for (int i = 0; i < size; i++) {
             Address token = acceptedTokens.get(i);
-            String tokenString = token.toString();
-            BigInteger accuredDividends = DividendsTracker.updateUserData(tokenString, user, stakedBalance, false);
-            BigInteger prevAccuredDividends = userAccuredDividends.getOrDefault(tokenString, BigInteger.ZERO);
-            BigInteger totalDivs = accuredDividends.add(prevAccuredDividends);
+            BigInteger accruedDividends = DividendsTracker.updateUserData(token, user, stakedBalance, false);
+            BigInteger prevAccruedDividends = userAccruedDividends.getOrDefault(token, BigInteger.ZERO);
+            BigInteger totalDivs = accruedDividends.add(prevAccruedDividends);
             if (totalDivs.signum() > 0) {
+                userAccruedDividends.set(token, BigInteger.ZERO);
                 sendToken(user, totalDivs, token, "User dividends");
-                userAccuredDividends.set(tokenString, BigInteger.ZERO);
             }
         }
     }
@@ -526,12 +527,12 @@ public class DividendsImpl implements Dividends {
             totalDividends = addDividends(totalDividends, dividends, acceptedTokensList);
         }
 
-        DictDB<String, BigInteger> userAccuredDividends = accuredDividends.at(user);
+        DictDB<Address, BigInteger> userAccruedDividends = accruedDividends.at(user);
         for (Address token : acceptedTokensList) {
             if (totalDividends.containsKey(token.toString()) && totalDividends.get(token.toString()).signum() > 0) {
-                BigInteger accuredDividends = totalDividends.get(token.toString());
-                BigInteger prevAccuredDividends = userAccuredDividends.getOrDefault(token.toString(), BigInteger.ZERO);
-                userAccuredDividends.set(token.toString(), accuredDividends.add(prevAccuredDividends));
+                BigInteger accruedDividends = totalDividends.get(token.toString());
+                BigInteger prevAccruedDividends = userAccruedDividends.getOrDefault(token, BigInteger.ZERO);
+                userAccruedDividends.set(token, accruedDividends.add(prevAccruedDividends));
             }
         }
     }
@@ -556,7 +557,7 @@ public class DividendsImpl implements Dividends {
         if (continuousDividendsActive()) {
             BigInteger dividendsToDaofund = _value.multiply(dividendsPercentage.get(DAOFUND)).divide(EXA);
             sendToken(daoFund.get(), dividendsToDaofund, token, "Daofund dividends");
-            DividendsTracker.updateTotalWeight(token.toString(), _value.subtract(dividendsToDaofund));
+            DividendsTracker.updateTotalWeight(token, _value.subtract(dividendsToDaofund));
         } else {
             checkForNewDay();
             BigInteger snapId = snapshotId.getOrDefault(BigInteger.ZERO);
@@ -572,12 +573,12 @@ public class DividendsImpl implements Dividends {
     public void updateBalnStake(Address user, BigInteger prevStakedBalance, BigInteger currentTotalSupply) {
         only(balnScore);
         int size = acceptedTokens.size();
-        DictDB<String, BigInteger> userAccuredDividends = accuredDividends.at(user);
+        DictDB<Address, BigInteger> userAccruedDividends = accruedDividends.at(user);
         for (int i = 0; i < size; i++) {
-            String token = acceptedTokens.get(i).toString();
-            BigInteger accuredDividends = DividendsTracker.updateUserData(token, user, prevStakedBalance, false);
-            BigInteger prevAccuredDividends = userAccuredDividends.getOrDefault(token, BigInteger.ZERO);
-            userAccuredDividends.set(token, prevAccuredDividends.add(accuredDividends));
+            Address token = acceptedTokens.get(i);
+            BigInteger accruedDividends = DividendsTracker.updateUserData(token, user, prevStakedBalance, false);
+            BigInteger prevAccruedDividends = userAccruedDividends.getOrDefault(token, BigInteger.ZERO);
+            userAccruedDividends.set(token, prevAccruedDividends.add(accruedDividends));
         }
 
         DividendsTracker.setTotalSupply(currentTotalSupply);
