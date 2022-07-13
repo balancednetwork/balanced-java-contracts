@@ -325,7 +325,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
         if (unstakingTime.compareTo(BigInteger.valueOf(Context.getBlockTimestamp())) >= 0) {
             currUnstaked = BigInteger.ZERO;
         }
-        
+
         BigInteger unstakingAmount =
                 stakingDetail.getOrDefault(Status.UNSTAKING.code, BigInteger.ZERO).subtract(currUnstaked);
 
@@ -433,12 +433,16 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
         stakingDetail.set(Status.UNSTAKING.code, unstakeAmount);
         stakingDetail.set(Status.UNSTAKING_PERIOD.code, BigInteger.valueOf(Context.getBlockTimestamp()).
                 add(this.unstakingPeriod.getOrDefault(BigInteger.ZERO)));
-        this.totalStakedBalance.set(this.totalStakedBalance.getOrDefault(BigInteger.ZERO).add(stakeIncrement));
+
+        BigInteger newTotal = this.totalStakedBalance.getOrDefault(BigInteger.ZERO).add(stakeIncrement);
+        this.totalStakedBalance.set(newTotal);
 
         if (this.enableSnapshots.getOrDefault(false)) {
             this.updateSnapshotForAddress(Context.getCaller(), _value);
-            this.updateTotalStakedSnapshot(this.totalStakedBalance.getOrDefault(BigInteger.ZERO));
+            this.updateTotalStakedSnapshot(newTotal);
         }
+
+        Context.call(dividendsScore.get(), "updateBalnStake", from, stakedAmount, newTotal);
     }
 
     @Override

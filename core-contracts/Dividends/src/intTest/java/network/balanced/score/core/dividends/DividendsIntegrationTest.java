@@ -19,9 +19,13 @@ package network.balanced.score.core.dividends;
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.icx.Wallet;
 import foundation.icon.score.client.DefaultScoreClient;
+import static network.balanced.score.lib.utils.Constants.POINTS;
 import network.balanced.score.lib.interfaces.*;
+import network.balanced.score.lib.interfaces.addresses.BalnAddress;
+import network.balanced.score.lib.interfaces.tokens.*;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.test.integration.Balanced;
+import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
 import org.json.JSONObject;
 import org.junit.jupiter.api.*;
@@ -34,6 +38,7 @@ import java.util.Map;
 
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.dummyConsumer;
+import static network.balanced.score.lib.test.integration.BalancedUtils.hexObjectToBigInteger;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -83,7 +88,7 @@ public class DividendsIntegrationTest {
         DefaultScoreClient clientWithTester = new DefaultScoreClient("http://localhost:9082/api/v3",
                 BigInteger.valueOf(3), tester, balanced.baln._address());
         DefaultScoreClient clientWithTester2 = new DefaultScoreClient("http://localhost:9082/api/v3",
-                BigInteger.valueOf(3), tester, balanced.baln._address());
+                BigInteger.valueOf(3), tester, balanced.dividends._address());
         DefaultScoreClient clientWithTester3 = new DefaultScoreClient("http://localhost:9082/api/v3",
                 BigInteger.valueOf(3), tester2, balanced.dex._address());
         DefaultScoreClient clientWithTester4 = new DefaultScoreClient("http://localhost:9082/api/v3",
@@ -426,52 +431,7 @@ public class DividendsIntegrationTest {
         assertEquals(bnusdAtDividends, bnusdFee.divide(BigInteger.TEN));
     }
 
-    @Test
-    @Order(10)
-    void testRemoveCategories() {
-        // test the removal of categories from dividends
-        governance.setAdmin(balanced.dividends._address(), balanced.ownerClient.getAddress());
 
-        DistributionPercentage map = new DistributionPercentage();
-
-        // firstly setting the baln_holders as 0 percentage
-        map.recipient_name = "baln_holders";
-        map.dist_percent = new BigInteger("0");
-
-        DistributionPercentage map2 = new DistributionPercentage();
-        map2.recipient_name = "daofund";
-        map2.dist_percent = new BigInteger("1000000000000000000");
-
-        DistributionPercentage[] percentMap = new DistributionPercentage[]{
-                map, map2
-        };
-
-        // setting dividends category to 0 for baln_holders at first
-        dividends.setDividendsCategoryPercentage(percentMap);
-
-        // removing the categories
-        dividends.removeDividendsCategory("baln_holders");
-        governance.setAdmin(balanced.dividends._address(), balanced.governance._address());
-
-        List<String> categories;
-        categories = dividends.getDividendsCategories();
-        assertEquals(1, categories.size());
-
-    }
-
-    @Test
-    @Order(11)
-    void testAddCategories() {
-        // add new categories in dividends
-
-        governance.setAdmin(balanced.dividends._address(), balanced.ownerClient.getAddress());
-        dividends.setDistributionActivationStatus(true);
-        dividends.addDividendsCategory("test");
-        governance.setAdmin(balanced.dividends._address(), balanced.governance._address());
-        List<String> categories;
-        categories = dividends.getDividendsCategories();
-        assertEquals("test", categories.get(categories.size() - 1));
-    }
 
     @Test
     @Order(5)
@@ -721,7 +681,112 @@ public class DividendsIntegrationTest {
                 dailyFees.multiply(BigInteger.valueOf(60)).divide(BigInteger.valueOf(100)));
     }
 
+    @Test
+    @Order(20)
+    void testContinuousDividends_daofund() {
+        // Arrange
+        dividends.setContinuousDividendsDay(governance.getDay().add(BigInteger.ONE));
+        balanced.increaseDay(1);
+        dividends.distribute((txr) -> {});
 
+        BigInteger feePercent = hexObjectToBigInteger(loans.getParameters().get("origination fee"));
+        BigInteger daoDistPercent = hexObjectToBigInteger(loans.getParameters().get("origination fee"));
+
+        // Act
+        BigInteger daoFundBalancePre = bnusd.balanceOf(balanced.daofund._address());
+        BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
+        BigInteger fee = loanAmount.multiply(feePercent).divide(POINTS);
+
+        loans.depositAndBorrow(BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18)), "bnUSD"
+        , loanAmount, null, null);
+        BigInteger daoFundBalancePost = bnusd.balanceOf(balanced.daofund._address());
+
+        // Assert
+        BigInteger daoPercentage = dividends.getDividendsPercentage().get("daofund");
+        BigInteger daoFee = fee.multiply(daoPercentage).divide(EXA);
+        assertEquals(daoFundBalancePre.add(daoFee), daoFundBalancePost);
+    }
+
+    @Test
+    @Order(21)
+    void testContinuousDividends_staker() throws Exception {
+        // Arrange
+        BalancedClient staker = balanced.newClient();
+        balanced.ownerClient.rewards.claimRewards();
+        BigInteger balnBalance = baln.availableBalanceOf(balanced.ownerClient.getAddress());
+        balanced.ownerClient.baln.transfer(staker.getAddress(), balnBalance, new byte[0]);
+        staker.baln.stake(balnBalance);
+        BigInteger feePercent = hexObjectToBigInteger(loans.getParameters().get("origination fee"));
+        BigInteger daoDistPercent = hexObjectToBigInteger(loans.getParameters().get("origination fee"));
+
+        // Act
+        BigInteger daoFundBalancePre = bnusd.balanceOf(balanced.daofund._address());
+        BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
+        BigInteger fee = loanAmount.multiply(feePercent).divide(POINTS);
+
+        loans.depositAndBorrow(BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18)), "bnUSD"
+        , loanAmount, null, null);
+
+        // Assert
+        // newly staked user
+        BigInteger bnusdBalancePre = staker.bnUSD.balanceOf(staker.getAddress());
+        staker.dividends.claimDividends();
+        BigInteger bnusdBalancePost = staker.bnUSD.balanceOf(staker.getAddress());
+        assertTrue(bnusdBalancePre.compareTo(bnusdBalancePost) < 0);
+
+        // staked pre continouos
+        BigInteger testerBnusdBalancePre = balanced.ownerClient.bnUSD.balanceOf(score.Address.fromString(tester.getAddress().toString()));
+        testerScoreDividends.claimDividends();
+        BigInteger testerBnusdBalancePost = balanced.ownerClient.bnUSD.balanceOf(score.Address.fromString(tester.getAddress().toString()));
+        assertTrue(testerBnusdBalancePre.compareTo(testerBnusdBalancePost) < 0);
+    }
+
+    @Test
+    @Order(30)
+    void testRemoveCategories() {
+        // test the removal of categories from dividends
+        governance.setAdmin(balanced.dividends._address(), balanced.ownerClient.getAddress());
+
+        DistributionPercentage map = new DistributionPercentage();
+
+        // firstly setting the baln_holders as 0 percentage
+        map.recipient_name = "baln_holders";
+        map.dist_percent = new BigInteger("0");
+
+        DistributionPercentage map2 = new DistributionPercentage();
+        map2.recipient_name = "daofund";
+        map2.dist_percent = new BigInteger("1000000000000000000");
+
+        DistributionPercentage[] percentMap = new DistributionPercentage[]{
+                map, map2
+        };
+
+        // setting dividends category to 0 for baln_holders at first
+        dividends.setDividendsCategoryPercentage(percentMap);
+
+        // removing the categories
+        dividends.removeDividendsCategory("baln_holders");
+        governance.setAdmin(balanced.dividends._address(), balanced.governance._address());
+
+        List<String> categories;
+        categories = dividends.getDividendsCategories();
+        assertEquals(1, categories.size());
+
+    }
+
+    @Test
+    @Order(31)
+    void testAddCategories() {
+        // add new categories in dividends
+
+        governance.setAdmin(balanced.dividends._address(), balanced.ownerClient.getAddress());
+        dividends.setDistributionActivationStatus(true);
+        dividends.addDividendsCategory("test");
+        governance.setAdmin(balanced.dividends._address(), balanced.governance._address());
+        List<String> categories;
+        categories = dividends.getDividendsCategories();
+        assertEquals("test", categories.get(categories.size() - 1));
+    }
 
     BigInteger stakeAndLp(){
 

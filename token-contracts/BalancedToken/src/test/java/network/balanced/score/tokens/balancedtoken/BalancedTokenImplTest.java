@@ -20,6 +20,7 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -76,6 +77,10 @@ class BalancedTokenImplTest extends TestBase {
 		balancedToken.invoke(governance, "setOracle", oracleScore.getAddress());
 		balancedToken.invoke(governance, "setDex", dexScore.getAddress());
 		balancedToken.invoke(governance, "setDividends", dividendsScore.getAddress());
+	}
+
+	private void mockUpdateBalnStake(Address from, BigInteger oldStake, BigInteger newTotal) {
+		contextMock.when(() -> Context.call(dividendsScore.getAddress(), "updateBalnStake", from, oldStake, newTotal)).thenReturn(null);
 	}
 
 	@Test
@@ -215,6 +220,7 @@ class BalancedTokenImplTest extends TestBase {
 		BigInteger amountToMint = BigInteger.valueOf(10000L).multiply(ICX);
 		balancedToken.invoke(owner, "setMinter", adminAccount.getAddress());
 		balancedToken.invoke(governance, "setAdmin", governance.getAddress());
+		balancedToken.invoke(governance, "setDividends", dividendsScore.getAddress());
 
 		balancedToken.invoke(adminAccount, "mint", amountToMint, "init gold".getBytes());
 
@@ -225,6 +231,7 @@ class BalancedTokenImplTest extends TestBase {
 		contextMock.when(() -> Context.call(BigInteger.class, mockDexScore.getAddress(), "getTimeOffset")).thenReturn(BigInteger.valueOf(500));
 		balancedToken.invoke(owner, "setTimeOffset");
 		//stake
+		mockUpdateBalnStake(adminAccount.getAddress(), BigInteger.ZERO, stakedAmount);
 		balancedToken.invoke(adminAccount, "stake", stakedAmount);
 
 		Map<String, BigInteger> balanceDetails = (Map<String, BigInteger>) balancedToken.call("detailsBalanceOf",
@@ -242,6 +249,7 @@ class BalancedTokenImplTest extends TestBase {
 		//set admin
 		balancedToken.invoke(governance, "setAdmin", adminAccount.getAddress());
 		balancedToken.invoke(owner, "setMinter", adminAccount.getAddress());
+		balancedToken.invoke(governance, "setDividends", dividendsScore.getAddress());
 
 		//mint some tokens
 		BigInteger amountToMint =  BigInteger.valueOf(10000L).multiply(ICX);
@@ -259,6 +267,7 @@ class BalancedTokenImplTest extends TestBase {
 		contextMock.when(() -> Context.call(BigInteger.class, mockDexScore.getAddress(), "getTimeOffset")).thenReturn(BigInteger.valueOf(500));
 		balancedToken.invoke(owner, "setTimeOffset");
 		//stake
+		mockUpdateBalnStake(user.getAddress(), BigInteger.ZERO, stakedAmount);		
 		balancedToken.invoke(user, "stake", stakedAmount);
 
 		Map<String, BigInteger>  balanceDetails = (Map<String, BigInteger>)balancedToken.call("detailsBalanceOf", user.getAddress());
@@ -277,6 +286,7 @@ class BalancedTokenImplTest extends TestBase {
 	void ShouldTransfer() {
 		//set admin
 		balancedToken.invoke(governance, "setAdmin", adminAccount.getAddress());
+		balancedToken.invoke(governance, "setDividends", dividendsScore.getAddress());
 
 		//mint some tokens
 		BigInteger amountToMint =  BigInteger.valueOf(10000L).multiply(ICX);
@@ -294,6 +304,7 @@ class BalancedTokenImplTest extends TestBase {
 		balancedToken.invoke(owner, "setTimeOffset");
 
 		//Stake
+		mockUpdateBalnStake(adminAccount.getAddress(), BigInteger.ZERO, stakedAmount);
 		balancedToken.invoke(adminAccount, "stake", stakedAmount);
 
 		//transfer
@@ -359,6 +370,7 @@ class BalancedTokenImplTest extends TestBase {
 	@SuppressWarnings("unchecked")
 	@Test
 	void ShouldGetStakedBalanceOfAt() {
+		balancedToken.invoke(governance, "setDividends", dividendsScore.getAddress());
 		boolean snapshotEnabled = (boolean)balancedToken.call("getSnapshotEnabled");
 		if(!snapshotEnabled) {
 			//enable snapshot of staked balances
@@ -390,6 +402,7 @@ class BalancedTokenImplTest extends TestBase {
 
 		contextMock.when(() -> Context.call(BigInteger.class, mockDexScore.getAddress(), "getTimeOffset")).thenReturn(BigInteger.valueOf(500));
 		//stake
+		mockUpdateBalnStake(owner.getAddress(), BigInteger.ZERO, stakedAmount);
 		balancedToken.invoke(owner, "stake", stakedAmount);
 
 		day = BigInteger.valueOf(Context.getBlockTimestamp()).divide(MICRO_SECONDS_IN_A_DAY);
@@ -405,6 +418,7 @@ class BalancedTokenImplTest extends TestBase {
 
 		//stake at next day
 		BigInteger stakedAmountAtSecondDay = stakedAmount.divide(TWO);
+		mockUpdateBalnStake(owner.getAddress(), stakedAmount, stakedAmountAtSecondDay);
 		balancedToken.invoke(owner, "stake", stakedAmountAtSecondDay);
 
 		day = BigInteger.valueOf(Context.getBlockTimestamp()).divide(MICRO_SECONDS_IN_A_DAY);
@@ -437,6 +451,7 @@ class BalancedTokenImplTest extends TestBase {
 
 	@Test
 	void ShouldGetTotalStakedBalanceOfAt() {
+		balancedToken.invoke(governance, "setDividends", dividendsScore.getAddress());
 		Account staker = sm.createAccount();
 		boolean snapshotEnabled = (boolean)balancedToken.call("getSnapshotEnabled");
 		if(!snapshotEnabled) {
@@ -469,6 +484,7 @@ class BalancedTokenImplTest extends TestBase {
 		sm.getBlock().increase(DAY);
 
 		//stake
+		mockUpdateBalnStake(owner.getAddress(), BigInteger.ZERO, stakedAmount);
 		balancedToken.invoke(owner, "stake", stakedAmount);
 
 		BigInteger day2 = BigInteger.valueOf(Context.getBlockTimestamp()).divide(MICRO_SECONDS_IN_A_DAY);
@@ -478,6 +494,7 @@ class BalancedTokenImplTest extends TestBase {
 		sm.getBlock().increase(DAY);
 
 		//stake at next day
+		mockUpdateBalnStake(staker.getAddress(), BigInteger.ZERO, stakedAmount.add(amountToMint));
 		balancedToken.invoke(staker, "stake", amountToMint);
 
 		BigInteger day3 = BigInteger.valueOf(Context.getBlockTimestamp()).divide(MICRO_SECONDS_IN_A_DAY);
@@ -485,6 +502,7 @@ class BalancedTokenImplTest extends TestBase {
 		
 		sm.getBlock().increase(DAY);
 
+		mockUpdateBalnStake(staker.getAddress(), amountToMint, expectedTotalStakeDay3.subtract(stakedAmount));
 		balancedToken.invoke(staker, "stake", stakedAmount);
 		BigInteger day4 = BigInteger.valueOf(Context.getBlockTimestamp()).divide(MICRO_SECONDS_IN_A_DAY);
 		BigInteger expectedTotalStakeDay4 = expectedTotalStakeDay3.subtract(stakedAmount);
