@@ -70,7 +70,7 @@ public interface BalancedToken extends IRC2Mintable, IRC2BurnableInterface, Gove
     BigInteger availableBalanceOf(Address _owner);
 
     @External(readonly = true)
-    BigInteger getDay();
+    boolean getStakingEnabled();
 
     @External(readonly = true)
     BigInteger totalStakedBalance();
@@ -79,7 +79,7 @@ public interface BalancedToken extends IRC2Mintable, IRC2BurnableInterface, Gove
     BigInteger getMinimumStake();
 
     @External(readonly = true)
-    BigInteger totalStakedBalanceOfAt(BigInteger _day);
+    BigInteger getUnstakingPeriod();
 
     @External
     void toggleEnableSnapshot();
@@ -106,7 +106,13 @@ public interface BalancedToken extends IRC2Mintable, IRC2BurnableInterface, Gove
     BigInteger getTimeOffset();
 
     @External(readonly = true)
+    BigInteger getDay();
+
+    @External(readonly = true)
     BigInteger stakedBalanceOfAt(Address _account, BigInteger _day);
+
+    @External(readonly = true)
+    BigInteger totalStakedBalanceOfAt(BigInteger _day);
 
     @EventLog(indexed = 3)
     void OraclePrice(String market, String oracle_name, Address oracle_address, BigInteger price);
