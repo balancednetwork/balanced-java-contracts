@@ -25,6 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import score.Address;
+import score.Context;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -56,13 +57,12 @@ public class GovernanceTest extends GovernanceTestBase {
     void getVotingWeight() {
         // Arrange
         Account user = sm.createAccount();
-        BigInteger day = BigInteger.TEN;        
+        BigInteger block = BigInteger.valueOf(Context.getBlockHeight());
         BigInteger expectedWeight = BigInteger.ONE;
 
-        when(baln.mock.stakedBalanceOfAt(user.getAddress(), day)).thenReturn(expectedWeight);
-        
+        when(bBaln.mock.balanceOfAt(user.getAddress(), block)).thenReturn(expectedWeight);
         // Act
-        BigInteger votingWeight  = (BigInteger) governance.call("myVotingWeight", user.getAddress(), day);
+        BigInteger votingWeight  = (BigInteger) governance.call("myVotingWeight", user.getAddress(), block);
 
         // Assert
         assertEquals(expectedWeight, votingWeight);
