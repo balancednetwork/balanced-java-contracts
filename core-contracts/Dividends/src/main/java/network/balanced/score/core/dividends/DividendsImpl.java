@@ -29,11 +29,11 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+import static network.balanced.score.core.dividends.Check.continuousDividendsActive;
 import static network.balanced.score.core.dividends.Constants.*;
 import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
 import static network.balanced.score.lib.utils.ArrayDBUtils.removeFromArraydb;
 import static network.balanced.score.lib.utils.Check.*;
-import static network.balanced.score.core.dividends.Check.continuousDividendsActive;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static network.balanced.score.lib.utils.Math.pow;
@@ -82,7 +82,7 @@ public class DividendsImpl implements Dividends {
             distributionActivate.set(false);
             addInitialCategories();
         }
-        
+
         Map<String, BigInteger> dividendsDist = dividendsAt(getDay());
         dividendsPercentage.set(DAO_FUND, dividendsDist.get(DAO_FUND));
         dividendsPercentage.set(BALN_HOLDERS, dividendsDist.get(BALN_HOLDERS));
@@ -103,7 +103,7 @@ public class DividendsImpl implements Dividends {
         only(admin);
         distributionActivate.set(_status);
     }
-            
+
     @External
     public void setTimeOffset(BigInteger deltaTime) {
         only(admin);
@@ -229,11 +229,12 @@ public class DividendsImpl implements Dividends {
     @External(readonly = true)
     public Map<String, BigInteger> getDailyFees(BigInteger _day) {
         Map<String, BigInteger> fees = new HashMap<>();
-        int numberOfAcceptedTokens = acceptedTokens.size();
 
+        int numberOfAcceptedTokens = acceptedTokens.size();
+        DictDB<String, BigInteger> dailyFeesInfoForDay = dailyFees.at(_day);
         for (int i = 0; i < numberOfAcceptedTokens; i++) {
             String token = acceptedTokens.get(i).toString();
-            fees.put(token, dailyFees.at(_day).getOrDefault(token, BigInteger.ZERO));
+            fees.put(token, dailyFeesInfoForDay.getOrDefault(token, BigInteger.ZERO));
         }
         return fees;
     }
@@ -286,15 +287,15 @@ public class DividendsImpl implements Dividends {
         Context.require(arrayDbContains(completeDividendsCategories, _category),
                 TAG + ": " + _category + " not found in the list of dividends categories.");
 
-        if (!continuousDividendsActive())  {
+        if (!continuousDividendsActive()) {
             Map<String, BigInteger> dividendsDist = dividendsAt(currentDay);
             Context.require(dividendsDist.get(_category).equals(BigInteger.ZERO),
                     TAG + ": Please make the category percentage to 0 before removing.");
         } else {
             Context.require(dividendsPercentage.get(_category).equals(BigInteger.ZERO),
-            TAG + ": Please make the category percentage to 0 before removing.");
+                    TAG + ": Please make the category percentage to 0 before removing.");
         }
-        
+
         removeFromArraydb(_category, completeDividendsCategories);
     }
 
@@ -307,7 +308,7 @@ public class DividendsImpl implements Dividends {
                 String category = completeDividendsCategories.get(i);
                 dividendsDist.put(category, dividendsPercentage.get(category));
             }
-            
+
             return dividendsDist;
         }
 
@@ -402,11 +403,9 @@ public class DividendsImpl implements Dividends {
             totalDividends = addDividends(totalDividends, dividends, acceptedTokensList);
         }
 
-        int numberOfAcceptedTokens = acceptedTokens.size();
-
         Map<String, BigInteger> nonZeroTokens = new HashMap<>();
-        for (int i = 0; i < numberOfAcceptedTokens; i++) {
-            Address token = acceptedTokens.get(i);
+        for (int i = 0; i < size; i++) {
+            Address token = acceptedTokensList.get(i);
 
             if (totalDividends.containsKey(token.toString()) && totalDividends.get(token.toString()).signum() > 0) {
                 nonZeroTokens.put(token.toString(), totalDividends.get(token.toString()));
@@ -556,17 +555,17 @@ public class DividendsImpl implements Dividends {
 
         if (continuousDividendsActive()) {
             BigInteger dividendsToDaofund = _value.multiply(dividendsPercentage.get(DAOFUND)).divide(EXA);
-            sendToken(daoFund.get(), dividendsToDaofund, token, "Daofund dividends");
             DividendsTracker.updateTotalWeight(token, _value.subtract(dividendsToDaofund));
+            DividendsReceivedV2(_value, getDay(), _value + " tokens received as dividends token: " + token);
+            sendToken(daoFund.get(), dividendsToDaofund, token, "Daofund dividends");
         } else {
             checkForNewDay();
             BigInteger snapId = snapshotId.getOrDefault(BigInteger.ZERO);
             DictDB<String, BigInteger> feesOnSnapId = dailyFees.at(snapId);
             BigInteger previousFees = feesOnSnapId.getOrDefault(token.toString(), BigInteger.ZERO);
             feesOnSnapId.set(token.toString(), previousFees.add(_value));
+            DividendsReceivedV2(_value, getDay(), _value + " tokens received as dividends token: " + token);
         }
-
-        DividendsReceivedV2(_value, getDay(), _value + " tokens received as dividends token: " + token);
     }
 
     @External
@@ -694,7 +693,9 @@ public class DividendsImpl implements Dividends {
         return new int[]{start, end};
     }
 
-    private Map<String, BigInteger> getDividendsForDay(Address account, BigInteger day, Address baln, Address dex, BigInteger dividendsSwitchingDay, List<Address> acceptedTokensList) {
+    private Map<String, BigInteger> getDividendsForDay(Address account, BigInteger day, Address baln, Address dex,
+                                                       BigInteger dividendsSwitchingDay,
+                                                       List<Address> acceptedTokensList) {
         boolean claim = isClaimed(account, day);
         if (claim) {
             return Map.of();
@@ -744,7 +745,8 @@ public class DividendsImpl implements Dividends {
         return myDividends;
     }
 
-    private Map<String, BigInteger> getDividendsForDaoFund(BigInteger day, List<Address> acceptedTokensList, Address dao) {
+    private Map<String, BigInteger> getDividendsForDaoFund(BigInteger day, List<Address> acceptedTokensList,
+                                                           Address dao) {
         boolean claim = isClaimed(dao, day);
         if (claim) {
             return Map.of();
@@ -762,7 +764,9 @@ public class DividendsImpl implements Dividends {
         return daoFundDividends;
     }
 
-    private Map<String, BigInteger> addDividends(Map<String, BigInteger> totalDividends, Map<String, BigInteger> currentDividends, List<Address> acceptedTokensList) {
+    private Map<String, BigInteger> addDividends(Map<String, BigInteger> totalDividends,
+                                                 Map<String, BigInteger> currentDividends,
+                                                 List<Address> acceptedTokensList) {
         if (totalDividends.size() > 0 && currentDividends.size() > 0) {
             Map<String, BigInteger> response = new HashMap<>();
             for (Address token : acceptedTokensList) {

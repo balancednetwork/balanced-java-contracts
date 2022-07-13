@@ -64,9 +64,9 @@ public class DividendsTracker {
         return computeUserRewards(prevBalance, totalWeight, currentUserWeight);
     }
 
-    public static void updateTotalWeight(Address token, BigInteger amountRecived) {
+    public static void updateTotalWeight(Address token, BigInteger amountReceived) {
         BigInteger previousTotalWeight = getTotalWeight(token);
-        BigInteger addedWeight = amountRecived.multiply(EXA).divide(getTotalSupply());
+        BigInteger addedWeight = amountReceived.multiply(EXA).divide(getTotalSupply());
         
         totalWeight.set(token, previousTotalWeight.add(addedWeight));
     }
