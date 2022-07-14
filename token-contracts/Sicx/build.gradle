@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import network.balanced.score.dependencies.Addresses
 import network.balanced.score.dependencies.Dependencies
 
 version = '0.1.0'
@@ -47,7 +48,7 @@ optimizedJar {
     mainClassName = 'network.balanced.score.tokens.sicx.SicxImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
-        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
 }
 
@@ -56,6 +57,12 @@ deployJar {
         sejong {
             uri = 'https://sejong.net.solidwallet.io/api/v3'
             nid = 0x53
+            to = Addresses.sejong.sicx
+        }
+        berlin {
+            uri = 'https://berlin.net.solidwallet.io/api/v3'
+            nid = 0x7
+            to = Addresses.berlin.sicx
         }
         local {
             uri = 'http://localhost:9082/api/v3'
@@ -64,11 +71,14 @@ deployJar {
         mainnet {
             uri = 'https://ctz.solidwallet.io/api/v3'
             nid = 0x1
+            to = Addresses.mainnet.sicx
         }
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
-    parameters {}
+    parameters {
+        arg("_admin", Addresses.mainnet.staking)
+    }
 }
 
 tasks.named('test') {
@@ -90,7 +100,7 @@ task integrationTest(type: Test) {
     useJUnitPlatform()
 
     rootProject.allprojects {
-        if(it.getTasks().findByName('optimizedJar')) {
+        if (it.getTasks().findByName('optimizedJar')) {
             dependsOn(it.getTasks().getByName('optimizedJar'))
         }
     }
