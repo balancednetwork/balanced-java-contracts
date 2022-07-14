@@ -25,6 +25,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import score.Address;
 import score.Context;
+import score.UserRevertedException;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -75,20 +76,20 @@ public class BoostedBalnGeneralIntegrationTest implements ScoreIntegrationTest {
         System.out.println("available balance of baln: " + availableBalnBalance);
         System.out.println("total balance of baln: " + owner.baln.balanceOf(userAddress));
 
-        RevertedException exception = assertThrows(RevertedException.class, () -> {
+        /*RevertedException exception = assertThrows(RevertedException.class, () -> {
             String data = "{\"method\":\"depositFor\",\"params\":{\"address\":\"" + userAddress + "\"}}";
             owner.baln.transfer(owner.boostedBaln._address(), availableBalnBalance, data.getBytes());
         });
         assert exception.getMessage().equals("Reverted(0)"); //"Deposit for: No existing lock found");
-
-        exception = assertThrows(RevertedException.class, () -> {
+*/
+        UserRevertedException exception = assertThrows(UserRevertedException.class, () -> {
             String data =
                     "{\"method\":\"increaseAmount\",\"params\":{\"unlockTime\":" + System.currentTimeMillis() * 1000 + "}}";
             owner.baln.transfer(owner.boostedBaln._address(), availableBalnBalance, data.getBytes());
         });
         assert exception.getMessage().equals("Reverted(0)");//"Increase amount: No existing lock found");
 
-        exception = assertThrows(RevertedException.class, () -> {
+        exception = assertThrows(UserRevertedException.class, () -> {
             String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + System.currentTimeMillis() + "}}";
             owner.baln.transfer(owner.boostedBaln._address(), availableBalnBalance, data.getBytes());
         });
@@ -116,19 +117,19 @@ public class BoostedBalnGeneralIntegrationTest implements ScoreIntegrationTest {
         System.out.println("expected value is: "+expectedValue);
         assertEquals(newBalance.divide(EXA), expectedValue);
 
-        data = "{\"method\":\"depositFor\",\"params\":{\"address\":\"" + userAddress + "\"}}";
+        /*data = "{\"method\":\"depositFor\",\"params\":{\"address\":\"" + userAddress + "\"}}";
         owner.baln.transfer(owner.boostedBaln._address(), availableBalnBalance.divide(BigInteger.valueOf(4)), data.getBytes());
         BigInteger balanceAfterDeposit = owner.boostedBaln.balanceOf(userAddress, BigInteger.ZERO);
         System.out.println("balance after deposit: "+balanceAfterDeposit);
         BigInteger expectedValueAfter = (getExpectedBalance(availableBalnBalance, unlockTime)).divide(EXA);
-        assertEquals(balanceAfterDeposit.divide(EXA), expectedValueAfter);
+        assertEquals(balanceAfterDeposit.divide(EXA), expectedValueAfter);*/
 
         BigInteger finalTotalSupply = owner.boostedBaln.totalSupply(BigInteger.valueOf(unlockTime));
         System.out.println("final total supply is: "+finalTotalSupply);
 
         BigInteger totalLocked = owner.boostedBaln.getTotalLocked();
         System.out.println("total locked is: "+totalLocked);
-        assertEquals(totalLocked.divide(EXA), availableBalnBalance.divide(EXA));
+        assertEquals(totalLocked.divide(EXA), availableBalnBalance.multiply(BigInteger.valueOf(3)).divide(BigInteger.valueOf(4)).divide(EXA));
 
         List<Address> users = owner.boostedBaln.getUsers(0, 100);
         assert users.size()==1;
@@ -138,7 +139,7 @@ public class BoostedBalnGeneralIntegrationTest implements ScoreIntegrationTest {
         assertEquals(lockedEnd, BigInteger.valueOf(getLockEnd(unlockTime)));
 
         BigInteger lastUserSlope = owner.boostedBaln.getLastUserSlope(owner.getAddress());
-        assertEquals(lastUserSlope, getSlope(availableBalnBalance, unlockTime));
+        assertEquals(lastUserSlope, getSlope(availableBalnBalance.multiply(BigInteger.valueOf(3)).divide(BigInteger.valueOf(4)), unlockTime));
     }
 
     @Test
