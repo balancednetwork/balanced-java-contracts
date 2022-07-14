@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,7 @@ package network.balanced.score.core.dex;
 import com.eclipsesource.json.JsonObject;
 import com.iconloop.score.test.Account;
 import network.balanced.score.core.dex.utils.Const;
-
 import network.balanced.score.lib.structs.PrepDelegations;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -861,14 +859,17 @@ public class DexTestCore extends DexTestBase {
     }
 
     @Test
-    void delegate(){
+    void delegate() {
         PrepDelegations prep = new PrepDelegations();
         prep._address = prep_address.getAddress();
         prep._votes_in_per = BigInteger.valueOf(100);
         PrepDelegations[] preps = new PrepDelegations[]{prep};
 
-        contextMock.when(() -> Context.call(eq(stakingScore.getAddress()), eq("delegate"), any())).thenReturn("Staking delegate called");
+        contextMock.when(() -> Context.call(eq(stakingScore.getAddress()), eq("delegate"), any())).thenReturn(
+                "Staking delegate called");
         dexScore.invoke(governanceScore, "delegate", (Object) preps);
+
+        contextMock.verify(() -> Context.call(eq(stakingScore.getAddress()), eq("delegate"), any()));
     }
 
     @AfterEach
