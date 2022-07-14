@@ -69,7 +69,7 @@ optimizedJar {
     mainClassName = 'network.balanced.score.core.dex.DexImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
-        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
     enableDebug = false
 }
@@ -79,6 +79,11 @@ deployJar {
         sejong {
             uri = 'https://sejong.net.solidwallet.io/api/v3'
             nid = 0x53
+        }
+        berlin {
+            uri = 'https://berlin.net.solidwallet.io/api/v3'
+            nid = 0x7
+            to = Addresses.berlin.dex
         }
         local {
             uri = 'http://localhost:9082/api/v3'

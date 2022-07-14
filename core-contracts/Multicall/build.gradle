@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import network.balanced.score.dependencies.*
-
+import network.balanced.score.dependencies.Addresses
+import network.balanced.score.dependencies.Dependencies
 
 
 version = '0.1.0'
@@ -40,7 +40,7 @@ optimizedJar {
     mainClassName = 'network.balanced.score.core.multicall.Multicall'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
-        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
     enableDebug = false
 }
@@ -55,7 +55,7 @@ deployJar {
         berlin {
             uri = 'https://berlin.net.solidwallet.io/api/v3'
             nid = 0x7
-            to = "cx94a9a5750182d117a82a866e78ce7c75856c1edb"
+            to = Addresses.berlin.multicall
         }
         local {
             uri = 'http://localhost:9082/api/v3'

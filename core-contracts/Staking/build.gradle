@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-import network.balanced.score.dependencies.*
+import network.balanced.score.dependencies.Addresses
+import network.balanced.score.dependencies.Dependencies
 
 version = '0.1.0'
 
@@ -64,6 +65,11 @@ deployJar {
             uri = 'https://sejong.net.solidwallet.io/api/v3'
             nid = 0x53
             to = Addresses.sejong.staking
+        }
+        berlin {
+            uri = 'https://berlin.net.solidwallet.io/api/v3'
+            nid = 0x7
+            to = Addresses.berlin.staking
         }
         local {
             uri = 'http://localhost:9082/api/v3'

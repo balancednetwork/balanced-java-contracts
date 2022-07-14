@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import network.balanced.score.dependencies.Dependencies
+
 import network.balanced.score.dependencies.Addresses
+import network.balanced.score.dependencies.Dependencies
 
 version = '0.1.0'
 
@@ -52,7 +53,7 @@ optimizedJar {
     mainClassName = 'network.balanced.score.core.governance.GovernanceImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
-        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
 
     enableDebug = false
@@ -64,6 +65,11 @@ deployJar {
             uri = 'https://sejong.net.solidwallet.io/api/v3'
             nid = 0x53
             to = Addresses.sejong.governance
+        }
+        berlin {
+            uri = 'https://berlin.net.solidwallet.io/api/v3'
+            nid = 0x7
+            to = Addresses.berlin.governance
         }
         local {
             uri = 'http://localhost:9082/api/v3'
@@ -83,7 +89,7 @@ deployJar {
 tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
-    finalizedBy jacocoTestReport 
+    finalizedBy jacocoTestReport
 }
 
 jacocoTestReport {
@@ -99,7 +105,7 @@ task integrationTest(type: Test) {
     useJUnitPlatform()
 
     rootProject.allprojects {
-        if(it.getTasks().findByName('optimizedJar')) {
+        if (it.getTasks().findByName('optimizedJar')) {
             dependsOn(it.getTasks().getByName('optimizedJar'))
         }
     }
@@ -113,7 +119,7 @@ task integrationTest(type: Test) {
         classpath = sourceSets.intTest.runtimeClasspath
 
         systemProperty "python", new File(project(':test-lib').projectDir, 'python-contracts/governance.zip')
-        systemProperty "java", optimizedJar.outputJarName        
+        systemProperty "java", optimizedJar.outputJarName
     }
 
 }

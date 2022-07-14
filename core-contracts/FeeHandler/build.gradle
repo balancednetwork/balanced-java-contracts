@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-import network.balanced.score.dependencies.Dependencies
+
 import network.balanced.score.dependencies.Addresses
+import network.balanced.score.dependencies.Dependencies
 
 version = '0.1.0'
 
@@ -54,6 +55,11 @@ deployJar {
             uri = 'https://sejong.net.solidwallet.io/api/v3'
             nid = 0x53
         }
+        berlin {
+            uri = 'https://berlin.net.solidwallet.io/api/v3'
+            nid = 0x7
+            to = Addresses.berlin.feehandler
+        }
         local {
             uri = 'http://localhost:9082/api/v3'
             nid = 0x3
@@ -66,7 +72,7 @@ deployJar {
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
-    parameters {arg("_governance", Addresses.mainnet.governance)}
+    parameters { arg("_governance", Addresses.mainnet.governance) }
 }
 
 tasks.named('test') {

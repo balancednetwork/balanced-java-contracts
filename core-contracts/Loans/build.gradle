@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-import network.balanced.score.dependencies.*
+import network.balanced.score.dependencies.Addresses
+import network.balanced.score.dependencies.Dependencies
 
 version = '0.1.0'
 
@@ -43,7 +44,7 @@ optimizedJar {
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
-        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
 
     enableDebug = false
@@ -55,6 +56,11 @@ deployJar {
             uri = 'https://sejong.net.solidwallet.io/api/v3'
             nid = 0x53
             to = Addresses.sejong.loans
+        }
+        berlin {
+            uri = 'https://berlin.net.solidwallet.io/api/v3'
+            nid = 0x7
+            to = Addresses.berlin.loans
         }
         local {
             uri = 'http://localhost:9082/api/v3'
@@ -75,7 +81,7 @@ deployJar {
 
 test {
     useJUnitPlatform()
-    finalizedBy jacocoTestReport 
+    finalizedBy jacocoTestReport
 }
 
 jacocoTestReport {

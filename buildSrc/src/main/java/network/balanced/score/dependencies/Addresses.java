@@ -1,8 +1,24 @@
+/*
+ * Copyright (c) 2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package network.balanced.score.dependencies;
 
 public class Addresses {
 
-      public class sejong {
+      public static class sejong {
             public static final String oracle = "cx1c89400fb97b74f9f6d6dc04d3135076f8658abe";
             public static final String multicall = "cx89ea649431a9db19115d292778d93d2d0ebad476";
             public static final String governance = "cx7bbb16f746aae9d9f4fdc6d39a2a5144b123b18a";
@@ -25,7 +41,7 @@ public class Addresses {
             public static final String sicx = "cxfaa42fe413dc2248c3e27ad7598903a844cddfdf";
       }
 
-      public class mainnet {
+      public static class mainnet {
             public static final String governance = "cx44250a12074799e26fdeee75648ae47e2cc84219";
             public static final String baln = "cxf61cd5a45dc9f91c15aa65831a30a90d59a09619";
             public static final String bnUSD = "cx88fd7df7ddff82f7cc735c871dc519838cb235bb";
@@ -46,5 +62,28 @@ public class Addresses {
             public static final String staking = "cx43e2eec79eb76293c298f2b17aec06097be606e0";
             public static final String multicall = "cxa4aa9185e23558cff990f494c1fd2845f6cbf741";
             public static final String stakedlp =  "cx8dc674ce709c518bf1a6058a2722a59f94b6fb7f";
+      }
+
+      public static class berlin {
+            public static final String governance = "cxf42e1bc5d514d988818c8d17a8a7597bebe4b025";
+            public static final String baln = "cx9eefbe346b17328e2265573f6e166f6bc4a13cc4";
+            public static final String bnUSD = "cx1cd2da25f9942fda5144e139bbda3e5108d3c083";
+            public static final String bwt = "cxb81776403a0d66343b168eb2cbf56db967aa97f3";
+            public static final String daofund = "cx6990b9e2febc4a17b954e8b10caef1b9464c34f4";
+            public static final String dex = "cx4d3b86709c387dec2927158c0377ecabe002f503";
+            public static final String disbursement = "";
+            public static final String dividends = "cx238de0dea868ea6d82fac78802705ac0338b753a";
+            public static final String feehandler = "cx5dfdc2de98f028c1fc5bf8af5110ff5a7b0a6db6";
+            public static final String stability = "";
+            public static final String loans = "cx7937a64b32be882dafc83d42078668d31fa5920f";
+            public static final String oracle = "cx18f2bc4510f827b0aa9acfe5298d039271e0bb73";
+            public static final String rebalancing = "cx1d9b9f4892d15d84328b94f036916c7abff445b9";
+            public static final String reserve = "cx7fc7a4c631329f1959de0070c81e9477eb465d19";
+            public static final String rewards = "cx46aff4379970ffeb5d5889e59fb306cc41a4e75a";
+            public static final String router = "cx00fe628e3a1a8d59c0a5aacf476d96c9e4917f9a";
+            public static final String sicx = "cxdd89d7a425b8f0b6448a8c80136727c517e64033";
+            public static final String staking = "cx506d21dbcf8b180560e7f8ba104c18983696bd55";
+            public static final String multicall = "cx94a9a5750182d117a82a866e78ce7c75856c1edb";
+            public static final String stakedlp =  "cx8ac7b22d1eea06bffb3786a7d4ce7c0c8ea9e525";
       }
 }

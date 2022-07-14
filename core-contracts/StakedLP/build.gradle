@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-import network.balanced.score.dependencies.*
+import network.balanced.score.dependencies.Addresses
+import network.balanced.score.dependencies.Dependencies
 
 version = '0.0.1'
 
@@ -42,7 +43,7 @@ optimizedJar {
     mainClassName = 'network.balanced.score.core.stakedlp.StakedLPImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
-        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
 }
 
@@ -56,6 +57,7 @@ deployJar {
         berlin {
             uri = "https://berlin.net.solidwallet.io/api/v3"
             nid = 0x7
+            to = Addresses.berlin.stakedlp
         }
         local {
             uri = 'http://localhost:9082/api/v3'
