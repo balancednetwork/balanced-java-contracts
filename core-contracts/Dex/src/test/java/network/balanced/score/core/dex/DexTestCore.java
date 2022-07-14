@@ -766,23 +766,38 @@ public class DexTestCore extends DexTestBase {
         assertEquals(liquidity, balances.get(account1.getAddress().toString()));
     }
 
+    @Test
+    void getPoolStatsWithPair() {
+        Account account = sm.createAccount();
+        turnDexOn();
+
+        final String data = "{" +
+                "\"method\": \"_deposit\"" +
+                "}";
+
+        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
+        contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
+        contextMock.when(() -> Context.call(any(Address.class), eq("decimals"))).thenReturn(BigInteger.valueOf(18));
+        contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class), any(BigInteger.class))).thenReturn(null);
+
+        //deposit
+        BigInteger bnusdValue = BigInteger.valueOf(276L).multiply(EXA);
+        BigInteger balnValue = BigInteger.valueOf(100L).multiply(EXA);
+        dexScore.invoke(bnusdScore, "tokenFallback", account.getAddress(), bnusdValue, data.getBytes());
+        dexScore.invoke(balnScore, "tokenFallback", account.getAddress(), bnusdValue, data.getBytes());
+
+        // add liquidity pool
+        dexScore.invoke(account, "add", balnScore.getAddress(), bnusdScore.getAddress(), balnValue, bnusdValue, false);
+        BigInteger poolId = (BigInteger) dexScore.call("getPoolId", bnusdScore.getAddress(), balnScore.getAddress());
+        Map<String, Object> poolStats = (Map<String, Object>) dexScore.call("getPoolStatsForPair", balnScore.getAddress(), bnusdScore.getAddress());
+
+        assertEquals(poolId, poolStats.get("id"));
+        assertEquals(balnScore.getAddress(), poolStats.get("base_token"));
+        assertEquals(bnusdScore.getAddress(), poolStats.get("quote_token"));
+    }
+
     @AfterEach
     void closeMock() {
         contextMock.close();
     }
 }
-
-
-    /*
-    == Tests left ==
-    
-    == Snapshot methods ==
-    loadBalancesAtSnapshot
-    getDataBatch
-    
-    == Normal liquidity pool methods ==
-    addLpAddresses -> No getter.
-
-    == Others ==
-    transfer  -> IRC31 transfer method..sqrt()
-    */

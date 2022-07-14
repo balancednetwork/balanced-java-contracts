@@ -19,7 +19,6 @@ package network.balanced.score.core.governance;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import foundation.icon.icx.KeyWallet;
-import network.balanced.score.lib.interfaces.LoansScoreClient;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
@@ -31,8 +30,7 @@ import java.math.BigInteger;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
 import static org.junit.jupiter.api.Assertions.*;
 
-
-class GovernanceIntegrationTest implements ScoreIntegrationTest{
+class GovernanceIntegrationTest implements ScoreIntegrationTest {
     private static Balanced balanced;
     private static BalancedClient owner;
     private static BalancedClient tester;
@@ -51,19 +49,18 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest{
         owner.governance.setVoteDefinitionFee(BigInteger.TEN.pow(10));
         owner.governance.setQuorum(BigInteger.ONE);
         balanced.increaseDay(1);
-        owner.baln.toggleEnableSnapshot();
 
         tester.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(20), null, null);
 
         balanced.increaseDay(1);
         balanced.syncDistributions();
-        
+
         tester.rewards.claimRewards();
 
         BigInteger balance = tester.baln.balanceOf(tester.getAddress());
         tester.baln.stake(balance);
     }
-  
+
     @Test
     void testName() {
         assertEquals("Balanced Governance", tester.governance.name());
@@ -73,14 +70,14 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest{
     void executeVote() {
         BigInteger rebalancingThreshold = BigInteger.TEN;
         JsonObject setRebalancingThresholdParameters = new JsonObject()
-            .add("_value", rebalancingThreshold.intValue());
-        
+                .add("_value", rebalancingThreshold.intValue());
+
         JsonArray setRebalancingThreshold = new JsonArray()
-            .add("setRebalancingThreshold")
-            .add(setRebalancingThresholdParameters);
+                .add("setRebalancingThreshold")
+                .add(setRebalancingThresholdParameters);
 
         JsonArray actions = new JsonArray()
-            .add(setRebalancingThreshold);
+                .add(setRebalancingThreshold);
 
         BigInteger day = tester.governance.getDay();
         String name = "testVote";
@@ -104,14 +101,14 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest{
     void TryDefineVoteWithBadAction() {
         BigInteger rebalancingThreshold = BigInteger.TEN;
         JsonObject setRebalancingThresholdParameters = new JsonObject()
-            .add("_value", rebalancingThreshold.intValue());
-        
+                .add("_value", rebalancingThreshold.intValue());
+
         JsonArray setRebalancingThreshold = new JsonArray()
-            .add("NonExistingMethod")
-            .add(setRebalancingThresholdParameters);
+                .add("NonExistingMethod")
+                .add(setRebalancingThresholdParameters);
 
         JsonArray actions = new JsonArray()
-            .add(setRebalancingThreshold);
+                .add(setRebalancingThreshold);
 
         BigInteger day = tester.governance.getDay();
         String name = "testFailingVote";
