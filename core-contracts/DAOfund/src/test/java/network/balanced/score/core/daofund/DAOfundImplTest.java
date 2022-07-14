@@ -93,7 +93,7 @@ class DAOfundImplTest extends TestBase {
     }
 
     @Test
-    void delegate(){
+    void delegate() {
         MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
 
         PrepDelegations prep = new PrepDelegations();
@@ -101,10 +101,13 @@ class DAOfundImplTest extends TestBase {
         prep._votes_in_per = BigInteger.valueOf(100);
         PrepDelegations[] preps = new PrepDelegations[]{prep};
 
-        contextMock.when(() -> Context.call(eq(governanceScore.getAddress()), eq("getAddresses"))).thenReturn(Map.of("staking", stakingScore.getAddress()));
-        contextMock.when(() -> Context.call(eq(stakingScore.getAddress()), eq("delegate"), any())).thenReturn("Staking delegate called");
+        contextMock.when(() -> Context.call(governanceScore.getAddress(), "getContractAddress", "staking")).thenReturn(stakingScore.getAddress());
+        contextMock.when(() -> Context.call(eq(stakingScore.getAddress()), eq("delegate"), any())).thenReturn(
+                "Staking delegate called");
         daofundScore.invoke(governanceScore, "delegate", (Object) preps);
 
+        contextMock.verify(() -> Context.call(governanceScore.getAddress(), "getContractAddress", "staking"));
+        contextMock.verify(() -> Context.call(eq(stakingScore.getAddress()), eq("delegate"), any()));
         contextMock.close();
     }
 
@@ -161,7 +164,8 @@ class DAOfundImplTest extends TestBase {
         Executable disburseInsufficientFund = () -> daofundScore.invoke(governanceScore, "disburse",
                 receiver.getAddress(), new Disbursement[]{disbursement});
         expectErrorMessage(disburseInsufficientFund,
-                "Reverted(0): " + TAG + ": Insufficient balance of asset " + balnScore.getAddress().toString() + " in DAOfund");
+                "Reverted(0): " + TAG + ": Insufficient balance of asset " + balnScore.getAddress().toString() + " in" +
+                        " DAOfund");
     }
 
     @Test

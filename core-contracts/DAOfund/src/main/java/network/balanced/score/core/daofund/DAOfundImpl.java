@@ -107,8 +107,8 @@ public class DAOfundImpl implements DAOfund {
     @External
     public void delegate(PrepDelegations[] prepDelegations) {
         only(governance);
-        Map<String, Address> addresses = (Map<String, Address>) Context.call(governance.get(), "getAddresses");
-        Context.call(addresses.get("staking"), "delegate", (Object) prepDelegations);
+        Address staking = (Address) Context.call(governance.get(), "getContractAddress", "staking");
+        Context.call(staking, "delegate", (Object) prepDelegations);
     }
 
     /**
