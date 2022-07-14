@@ -18,7 +18,7 @@ package network.balanced.score.dependencies;
 
 public class Dependencies {
 
-    public static final String javaeePlugin = "foundation.icon:gradle-javaee-plugin:0.8.0";
+    public static final String javaeePlugin = "foundation.icon:gradle-javaee-plugin:0.8.1";
     public static final String javaeeApi = "foundation.icon:javaee-api:0.9.1";
     public static final String javaeeScorex = "foundation.icon:javaee-scorex:0.5.2";
     public static final String javaeeUnitTest = "foundation.icon:javaee-unittest:0.9.4";
@@ -39,4 +39,5 @@ public class Dependencies {
     public static final String json = "org.json:json:20220320";
     public static final String javaFaker = "com.github.javafaker:javafaker:1.0.2";
     public static final String jacksonDatabind = "com.fasterxml.jackson.core:jackson-databind:2.13.3";
+    public static final String okhttp = "com.squareup.okhttp3:okhttp:4.9.3";
 }

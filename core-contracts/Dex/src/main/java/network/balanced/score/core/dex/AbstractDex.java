@@ -495,6 +495,17 @@ public abstract class AbstractDex implements Dex {
     }
 
     @External(readonly = true)
+    public Map<String, Object> getPoolStatsForPair(Address _base, Address _quote) {
+        BigInteger poolId = getPoolId( _base, _quote);
+        Map<String, Object> poolStats = getPoolStats(poolId);
+        Map<String, Object> poolStatsWithId = new HashMap<>();
+        poolStatsWithId.put("id", poolId);
+        poolStatsWithId.putAll(poolStats);
+
+        return poolStatsWithId;
+    }
+
+    @External(readonly = true)
     public BigInteger totalDexAddresses(BigInteger _id) {
         return BigInteger.valueOf(activeAddresses.get(_id.intValue()).length());
     }

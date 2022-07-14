@@ -76,7 +76,6 @@ class DividendsImplTest extends DividendsImplTestBase {
         int day = getDay().intValue();
         
         dividendScore.invoke(owner, "distribute");
-        System.out.println(day);
         Executable contractCallCase1 = () -> transferDaofundDiv(-1, day);
         String expectedErrorMessageCase1 = "Reverted(0): Balanced Dividends: Invalid value of start provided.";
         expectErrorMessage(contractCallCase1, expectedErrorMessageCase1);
@@ -100,6 +99,19 @@ class DividendsImplTest extends DividendsImplTestBase {
         Executable contractCallCase6 = () -> transferDaofundDiv(day - 4, day);
         String expectedErrorMessageCase6 = "Reverted(0): Balanced Dividends: Maximum allowed range is 2";
         expectErrorMessage(contractCallCase6, expectedErrorMessageCase6);
+
+        dividendScore.invoke(owner, "setContinuousDividendsDay", BigInteger.valueOf(day + 1));
+        sm.getBlock().increase(DAY);
+        dividendScore.invoke(owner, "distribute");
+        int continuousDay = day + 1;
+
+        Executable endAfterContinuous = () -> transferDaofundDiv(continuousDay-1, continuousDay+1);
+        String expectedErrorMessageEndAfterContinuous = "Reverted(0): Balanced Dividends: Invalid value of end provided.";
+        expectErrorMessage(endAfterContinuous, expectedErrorMessageEndAfterContinuous);
+
+        Executable startAfterContinuous = () -> transferDaofundDiv(continuousDay, continuousDay+1);
+        String expectedErrorMessageStartAfterContinuous = "Reverted(0): Balanced Dividends: Invalid value of start provided.";
+        expectErrorMessage(startAfterContinuous, expectedErrorMessageStartAfterContinuous);
     }
 
     @Test
