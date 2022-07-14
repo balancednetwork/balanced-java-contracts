@@ -64,7 +64,7 @@ deployJar {
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
     parameters {
-        arg("_governance", Addresses.mainnet.governance)
+        arg("governance", Addresses.mainnet.governance)
     }
 }
 

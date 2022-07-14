@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+
+import network.balanced.score.dependencies.Addresses
 import network.balanced.score.dependencies.Dependencies
 
 plugins {
@@ -63,13 +65,14 @@ deployJar {
         mainnet {
             uri = 'https://ctz.solidwallet.io/api/v3'
             nid = 0x1
+            to = Addresses.mainnet.stability
         }
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
     parameters {
-        arg("_feeHandler", "cx6c8f668de7ec23fffc1afc14f130e244cee773f5")
-        arg("_bnusd", "cx5838cb516d6156a060f90e9a3de92381331ff024")
+        arg("_feeHandler", Addresses.mainnet.feehandler)
+        arg("_bnusd", Addresses.mainnet.bnUSD)
         arg("_feeIn", "500000000000000000")
         arg("_feeOut", "500000000000000000")
     }

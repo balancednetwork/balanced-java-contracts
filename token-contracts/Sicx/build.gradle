@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-import network.balanced.score.dependencies.*
+import network.balanced.score.dependencies.Addresses
+import network.balanced.score.dependencies.Dependencies
 
 version = '0.1.0'
 
@@ -47,7 +48,7 @@ optimizedJar {
     mainClassName = 'network.balanced.score.tokens.sicx.SicxImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
-        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
 }
 
@@ -94,7 +95,7 @@ task integrationTest(type: Test) {
     useJUnitPlatform()
 
     rootProject.allprojects {
-        if(it.getTasks().findByName('optimizedJar')) {
+        if (it.getTasks().findByName('optimizedJar')) {
             dependsOn(it.getTasks().getByName('optimizedJar'))
         }
     }

@@ -54,7 +54,7 @@ optimizedJar {
     mainClassName = 'network.balanced.score.core.dividends.DividendsImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
-        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
 }
 
@@ -100,7 +100,7 @@ task integrationTest(type: Test) {
     useJUnitPlatform()
 
     rootProject.allprojects {
-        if(it.getTasks().findByName('optimizedJar')) {
+        if (it.getTasks().findByName('optimizedJar')) {
             dependsOn(it.getTasks().getByName('optimizedJar'))
         }
     }

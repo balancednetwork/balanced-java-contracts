@@ -59,10 +59,6 @@ deployJar {
             uri = 'http://localhost:9082/api/v3'
             nid = 0x3
         }
-        mainnet {
-            uri = 'https://ctz.solidwallet.io/api/v3'
-            nid = 0x1
-        }
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
