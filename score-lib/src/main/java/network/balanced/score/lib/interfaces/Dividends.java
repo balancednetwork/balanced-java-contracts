@@ -22,6 +22,7 @@ import network.balanced.score.lib.interfaces.addresses.*;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
 import network.balanced.score.lib.structs.DistributionPercentage;
+import network.balanced.score.lib.structs.PrepDelegations;
 import score.Address;
 import score.annotation.External;
 import score.annotation.Optional;
@@ -97,6 +98,9 @@ public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress
 
     @External(readonly = true)
     BigInteger getTimeOffset();
+
+    @External
+    void delegate(PrepDelegations[] prepDelegations);
 
     @External
     boolean distribute();

@@ -18,6 +18,7 @@ package network.balanced.score.core.dividends;
 
 import network.balanced.score.lib.interfaces.Dividends;
 import network.balanced.score.lib.structs.DistributionPercentage;
+import network.balanced.score.lib.structs.PrepDelegations;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -367,6 +368,13 @@ public class DividendsImpl implements Dividends {
     @External(readonly = true)
     public BigInteger getTimeOffset() {
         return timeOffset.getOrDefault(BigInteger.ZERO);
+    }
+
+    @External
+    public void delegate(PrepDelegations[] prepDelegations) {
+        only(governance);
+        Address staking = (Address) Context.call(governance.get(), "getContractAddress", "staking");
+        Context.call(staking, "delegate", (Object) prepDelegations);
     }
 
     @External
