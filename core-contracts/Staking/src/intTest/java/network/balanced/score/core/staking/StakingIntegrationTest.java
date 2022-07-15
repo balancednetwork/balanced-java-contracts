@@ -767,7 +767,6 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         assertEquals(userBalance.subtract(new BigInteger("100").multiply(ONE_EXA)),
                 reader.sicx.balanceOf(senderAddress));
 
-
         List<Map<String, Object>> userUnstakeInfo = reader.staking.getUserUnstakeInfo(senderAddress);
 
         assertEquals(senderAddress.toString(), userUnstakeInfo.get(0).get("sender"));

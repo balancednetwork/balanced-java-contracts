@@ -23,6 +23,7 @@ import network.balanced.score.lib.interfaces.base.Fallback;
 import network.balanced.score.lib.interfaces.base.IRC31Base;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
+import network.balanced.score.lib.structs.PrepDelegations;
 import score.Address;
 import score.annotation.External;
 import score.annotation.Optional;
@@ -108,6 +109,9 @@ public interface Dex extends AdminAddress, BnusdAddress, GovernanceAddress, Name
 
     @External(readonly = true)
     BigInteger totalSupply(BigInteger _id);
+
+    @External
+    void delegate(PrepDelegations[] prepDelegations);
 
     @External(readonly = true)
     Map<String, BigInteger> getFees();

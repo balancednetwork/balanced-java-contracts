@@ -18,6 +18,7 @@ package network.balanced.score.core.dex;
 
 import network.balanced.score.core.dex.db.NodeDB;
 import network.balanced.score.lib.interfaces.Dex;
+import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import score.Address;
 import score.BranchDB;
@@ -484,6 +485,17 @@ public abstract class AbstractDex implements Dex {
     }
 
     @External(readonly = true)
+    public Map<String, Object> getPoolStatsForPair(Address _base, Address _quote) {
+        BigInteger poolId = getPoolId( _base, _quote);
+        Map<String, Object> poolStats = getPoolStats(poolId);
+        Map<String, Object> poolStatsWithId = new HashMap<>();
+        poolStatsWithId.put("id", poolId);
+        poolStatsWithId.putAll(poolStats);
+
+        return poolStatsWithId;
+    }
+
+    @External(readonly = true)
     public BigInteger totalDexAddresses(BigInteger _id) {
         return BigInteger.valueOf(activeAddresses.get(_id.intValue()).length());
     }
@@ -545,6 +557,12 @@ public abstract class AbstractDex implements Dex {
         }
 
         return poolLpTotal.getOrDefault(_id.intValue(), BigInteger.ZERO);
+    }
+
+    @External
+    public void delegate(PrepDelegations[] prepDelegations) {
+        only(governance);
+        Context.call(staking.get(), "delegate", (Object) prepDelegations);
     }
 
     protected BigInteger getSicxRate() {

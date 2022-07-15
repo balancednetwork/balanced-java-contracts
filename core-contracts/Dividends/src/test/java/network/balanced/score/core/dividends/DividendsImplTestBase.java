@@ -40,11 +40,13 @@ class DividendsImplTestBase extends UnitTest {
     protected static Score bnUSDScore;
     protected static final Account owner = sm.createAccount();
     protected final Account admin = sm.createAccount();
+    protected final Account prep_address = sm.createAccount();
     protected static final Account governanceScore = Account.newScoreAccount(1);
     protected static final Account loansScore = Account.newScoreAccount(2);
     protected static final Account daoScore = Account.newScoreAccount(3);
     protected static final Account balnScore = Account.newScoreAccount(7);
     protected static final Account dexScore = Account.newScoreAccount(6);
+    protected static final Account stakingScore = Account.newScoreAccount(7);
     protected static final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
     protected Score dividendScore;
     protected final MockedStatic.Verification getAssetTokens = () -> Context.call(eq(loansScore.getAddress()), eq("getAssetTokens"));

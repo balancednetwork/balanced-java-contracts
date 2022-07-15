@@ -556,11 +556,11 @@ public class GovernanceTest extends GovernanceTestBase {
         String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
         
         // Act & Assert
-        Executable withNotOwner = () -> governance.invoke(notOwner, "delegate", (Object) delegations);
+        Executable withNotOwner = () -> governance.invoke(notOwner, "delegate", "loans", (Object) delegations);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
 
         // Act
-        governance.invoke(owner, "delegate", (Object) delegations);
+        governance.invoke(owner, "delegate", "loans", (Object) delegations);
 
         // Assert
         verify(loans.mock).delegate(any(PrepDelegations[].class));
@@ -758,10 +758,10 @@ public class GovernanceTest extends GovernanceTestBase {
     @Test
     void setAssetOracle() {
         // Arrange
-        String _symbol = "sicx";
+        String _symbol = "bnUSD";
         Address oracleAddress = oracle.getAddress();
         Account notOwner = sm.createAccount();
-        Map<String, String> tokens = Map.of(_symbol, sicx.getAddress().toString());
+        Map<String, String> tokens = Map.of(_symbol, bnUSD.getAddress().toString());
         when(loans.mock.getAssetTokens()).thenReturn(tokens);
 
         // Act & Assert
@@ -778,16 +778,16 @@ public class GovernanceTest extends GovernanceTestBase {
         governance.invoke(owner, "setAssetOracle", _symbol, oracleAddress);
 
         // Assert
-        verify(sicx.mock).setOracle(oracleAddress);
+        verify(bnUSD.mock, times(2)).setOracle(oracleAddress);
     }
 
     @Test
     void setAssetOracleName() {
         // Arrange
-        String _symbol = "sicx";
+        String _symbol = "bnUSD";
         String oracleName = "oracleName";
         Account notOwner = sm.createAccount();
-        Map<String, String> tokens = Map.of(_symbol, sicx.getAddress().toString());
+        Map<String, String> tokens = Map.of(_symbol, bnUSD.getAddress().toString());
         when(loans.mock.getAssetTokens()).thenReturn(tokens);
 
         // Act & Assert
@@ -804,16 +804,16 @@ public class GovernanceTest extends GovernanceTestBase {
         governance.invoke(owner, "setAssetOracleName", _symbol, oracleName);
 
         // Assert
-        verify(sicx.mock).setOracleName(oracleName);
+        verify(bnUSD.mock).setOracleName(oracleName);
     }
 
     @Test
     void setAssetMinInterval() {
         // Arrange
-        String _symbol = "sicx";
+        String _symbol = "bnUSD";
         BigInteger minInterval = BigInteger.TEN;
         Account notOwner = sm.createAccount();
-        Map<String, String> tokens = Map.of(_symbol, sicx.getAddress().toString());
+        Map<String, String> tokens = Map.of(_symbol, bnUSD.getAddress().toString());
         when(loans.mock.getAssetTokens()).thenReturn(tokens);
 
         // Act & Assert
@@ -830,7 +830,7 @@ public class GovernanceTest extends GovernanceTestBase {
         governance.invoke(owner, "setAssetMinInterval", _symbol, minInterval);
 
         // Assert
-        verify(sicx.mock).setMinInterval(minInterval);
+        verify(bnUSD.mock).setMinInterval(minInterval);
     }
 
     @Test

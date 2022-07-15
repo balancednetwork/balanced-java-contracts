@@ -42,7 +42,6 @@ dependencies {
     implementation Dependencies.json
     implementation Dependencies.javaeeScorex
 
-    implementation Dependencies.iconSdk
     implementation Dependencies.javaFaker
 }
 

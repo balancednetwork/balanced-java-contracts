@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,33 +20,59 @@ import java.math.BigInteger;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
-import score.annotation.External;
+import network.balanced.score.lib.interfaces.addresses.AdminAddress;
+import network.balanced.score.lib.interfaces.addresses.GovernanceAddress;
+import network.balanced.score.lib.interfaces.base.Name;
+import network.balanced.score.lib.interfaces.base.TokenFallback;
 import score.Address;
+import score.annotation.External;
+
+import java.util.List;
+import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface FeeHandler {
-    @External
-    void setAcceptedDividendTokens(Address[] _tokens);
-   
-    @External
-    void setRoute(Address _fromToken, Address _toToken, Address[] _path);
- 
-    @External
-    void deleteRoute(Address _fromToken, Address _toToken);
-        
-    @External
-    void setFeeProcessingInterval(BigInteger _interval);
-    
+public interface FeeHandler extends Name, GovernanceAddress, AdminAddress, TokenFallback {
+
     @External
     void enable();
 
     @External
     void disable();
 
+    @External(readonly = true)
+    boolean isEnabled();
+
     @External
-    void setFeeProcessingInterval();
+    void setAcceptedDividendTokens(Address[] _tokens);
 
     @External(readonly = true)
-    int getFeeProcessingInterval();
+    List<Address> getAcceptedDividendTokens();
+
+    @External
+    void setRoute(Address _fromToken, Address _toToken, Address[] _path);
+
+    @External
+    void deleteRoute(Address _fromToken, Address _toToken);
+
+    @External(readonly = true)
+    Map<String, Object> getRoute(Address _fromToken, Address _toToken);
+
+    @External
+    void setFeeProcessingInterval(BigInteger _interval);
+
+    @External(readonly = true)
+    BigInteger getFeeProcessingInterval();
+
+    @External
+    void addAllowedAddress(Address address);
+
+    @External(readonly = true)
+    List<Address> get_allowed_address(int offset);
+
+    @External(readonly = true)
+    int getNextAllowedAddressIndex();
+
+    @External
+    void route_contract_balances();
 }

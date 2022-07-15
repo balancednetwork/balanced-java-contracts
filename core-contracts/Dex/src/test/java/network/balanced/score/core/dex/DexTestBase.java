@@ -45,6 +45,7 @@ class DexTestBase extends UnitTest {
     protected static final ServiceManager sm = getServiceManager();
     protected static Account ownerAccount = sm.createAccount();
     protected static Account adminAccount = sm.createAccount();
+    protected static Account prep_address = sm.createAccount();
 
     int scoreCount = 0;
     protected final Account governanceScore = Account.newScoreAccount(scoreCount++);

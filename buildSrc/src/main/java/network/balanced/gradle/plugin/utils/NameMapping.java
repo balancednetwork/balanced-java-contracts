@@ -34,7 +34,10 @@ public enum NameMapping {
     oracle("DummyOracle"),
     balanced_oracle("BalancedOracle"),
     dex("Dex"),
-    staking("Staking");
+    staking("Staking"),
+    sicx("Sicx"),
+    baln("BalancedToken"),
+    feehandler("FeeHandler");
 
     private final String module;
 
