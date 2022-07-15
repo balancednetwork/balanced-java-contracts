@@ -163,6 +163,7 @@ public class Balanced {
         balancedAddresses.rebalancing = rebalancing._address();
         balancedAddresses.feehandler = feehandler._address();
         balancedAddresses.stakedLp = stakedLp._address();
+        balancedAddresses.bBaln = bBaln._address();
 
         ownerClient.governance.setAddresses(balancedAddresses);
         ownerClient.governance.setAdmins();

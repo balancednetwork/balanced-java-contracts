@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigInteger;
 
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static org.junit.jupiter.api.Assertions.*;
 
 class GovernanceIntegrationTest implements ScoreIntegrationTest{
@@ -59,7 +60,12 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest{
         tester.rewards.claimRewards();
 
         BigInteger balance = tester.baln.balanceOf(tester.getAddress());
-        tester.baln.stake(balance);
+
+        final BigInteger WEEK_IN_MICRO_SECONDS = BigInteger.valueOf(7L).multiply(MICRO_SECONDS_IN_A_DAY);
+        long unlockTime = (System.currentTimeMillis()*1000)+(WEEK_IN_MICRO_SECONDS.multiply(BigInteger.valueOf(4))).longValue();
+        String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
+        tester.baln.transfer(tester.boostedBaln._address(), balance.divide(BigInteger.TWO), data.getBytes());
+
     }
   
     @Test
@@ -85,8 +91,9 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest{
         BigInteger day = tester.governance.getDay();
         String name = "testVote1";
         BigInteger voteStart = day.add(BigInteger.valueOf(4));
-        BigInteger snapshot = day.add(BigInteger.TWO);
-        tester.governance.defineVote(name, "test", voteStart, snapshot, duration, actions.toString());
+        String forumLink = "https://gov.balanced.network/";
+
+        tester.governance.defineVote(name, "test", voteStart, duration, forumLink, actions.toString());
 
         balanced.increaseDay(4);
         BigInteger id = tester.governance.getVoteIndex(name);
@@ -115,9 +122,9 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest{
         BigInteger day = tester.governance.getDay();
         String name = "testFailingVote";
         BigInteger voteStart = day.add(BigInteger.valueOf(4));
-        BigInteger snapshot = day.add(BigInteger.TWO);
+        String forumLink = "https://gov.balanced.network/";
         try {
-            tester.governance.defineVote(name, "test", voteStart, snapshot, BigInteger.TWO, actions.toString());
+            tester.governance.defineVote(name, "test", voteStart, BigInteger.TWO, forumLink, actions.toString());
             fail();
         } catch (Exception e) {
             //success

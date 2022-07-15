@@ -102,7 +102,7 @@ public interface Governance extends
     void cancelVote(BigInteger vote_index);
 
     @External
-    void defineVote(String name, String description, BigInteger vote_start, BigInteger snapshot, BigInteger duration, String actions);
+    void defineVote(String name, String description, BigInteger vote_start, BigInteger duration, String forumLink, String actions);
 
     @External
     void tryExecuteActions(String actions);
