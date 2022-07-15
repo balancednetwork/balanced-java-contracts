@@ -17,6 +17,7 @@
 package network.balanced.score.core.rewards;
 
 import com.iconloop.score.test.Account;
+
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,7 @@ import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.core.rewards.utils.RewardsConstants.WEIGHT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -37,41 +39,10 @@ import static org.mockito.Mockito.when;
 
 class RewardsTestContinuousRewards extends RewardsTestBase {
 
-    private final BigInteger continuousRewardsDay = BigInteger.valueOf(5);
 
     @BeforeEach
     void setup() throws Exception {
         super.setup();
-        rewardsScore.invoke(admin, "setContinuousRewardsDay", continuousRewardsDay);
-        long day = ((BigInteger)rewardsScore.call("getDay")).intValue();
-
-        if (day < continuousRewardsDay.intValue()) {
-            sm.getBlock().increase(DAY*continuousRewardsDay.intValue() - day);
-            for (long i = day; i <= continuousRewardsDay.intValue(); i++){
-                rewardsScore.invoke(admin, "distribute");
-                rewardsScore.invoke(admin, "distribute");
-            }
-        }
-      
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    void getDataSourcesAt() {
-        // Arrange
-        sm.getBlock().increase(DAY);
-        BigInteger currentDay = (BigInteger) rewardsScore.call("getDay");
-        BigInteger previousDay = currentDay.subtract(BigInteger.ONE);
-        rewardsScore.invoke(admin, "distribute");
-
-        // Act
-        Map<String, Map<String, Object>>  data = (Map<String, Map<String, Object>> ) rewardsScore.call("getDataSourcesAt", previousDay);
-
-        // Assert
-        BigInteger emission = (BigInteger)rewardsScore.call("getEmission", BigInteger.valueOf(-1));
-        assertEquals(loansDist.dist_percent.multiply(emission).divide(EXA), data.get("Loans").get("total_dist"));
-        assertEquals(icxPoolDist.dist_percent.multiply(emission).divide(EXA), data.get("sICX/ICX").get("total_dist"));
-
     }
 
     @Test
@@ -85,9 +56,9 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
         // Assert
         BigInteger emission = (BigInteger)rewardsScore.call("getEmission", BigInteger.valueOf(-1));
 
-        verify(baln.mock, times(day)).transfer(bwt.getAddress(), bwtDist.dist_percent.multiply(emission).divide(EXA), new byte[0]);
-        verify(baln.mock, times(day)).transfer(daoFund.getAddress(), daoDist.dist_percent.multiply(emission).divide(EXA), new byte[0]);
-        verify(baln.mock, times(day)).transfer(reserve.getAddress(), reserveDist.dist_percent.multiply(emission).divide(EXA), new byte[0]);
+        verify(baln.mock, times(day-1)).transfer(bwt.getAddress(), bwtDist.dist_percent.multiply(emission).divide(EXA), new byte[0]);
+        verify(baln.mock, times(day-1)).transfer(daoFund.getAddress(), daoDist.dist_percent.multiply(emission).divide(EXA), new byte[0]);
+        verify(baln.mock, times(day-1)).transfer(reserve.getAddress(), reserveDist.dist_percent.multiply(emission).divide(EXA), new byte[0]);
     }
 
     @Test
@@ -117,7 +88,7 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
         BigInteger swapDistribution = icxPoolDist.dist_percent.multiply(emission).divide(EXA);
         BigInteger userSwapDistribution = loansDistribution.multiply(swapBalance).divide(swapTotalSupply);
 
-        rewardsScore.invoke(account, "claimRewards");
+        claim(account);
         BigInteger timeInUS = BigInteger.valueOf(sm.getBlock().getTimestamp());
         BigInteger diffInUSLoans = timeInUS.subtract(startTimeLoansInUS);
         BigInteger diffInUSSwap = timeInUS.subtract(startTimeSwapInUS);
@@ -301,7 +272,7 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
         bBalnSupply = BigInteger.valueOf(500_000).multiply(EXA);
         when(bBaln.mock.balanceOf(eq(account.getAddress()), any(BigInteger.class))).thenReturn(bBalnBalance);
         when(bBaln.mock.totalSupply(any(BigInteger.class))).thenReturn(bBalnSupply);
-        rewardsScore.invoke(account, "claimRewards");
+        claim(account);
 
         // Assert
         BigInteger boost = loansTotalSupply.multiply(bBalnBalance).divide(bBalnSupply).multiply(EXA.subtract(WEIGHT)).divide(WEIGHT);
@@ -452,14 +423,14 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
         BigInteger loansDistribution = loansDist.dist_percent.multiply(emission).divide(EXA);
         BigInteger user1Distribution = loansDistribution.multiply(user1CurrentBalance).divide(totalSupply);
         
-        rewardsScore.invoke(account1, "claimRewards");
+        claim(account1);
         BigInteger user1TimeInUS = BigInteger.valueOf(sm.getBlock().getTimestamp());
         BigInteger user1DiffInUS = user1TimeInUS.subtract(startTimeInUS);
         BigInteger user1ExpectedRewards = user1Distribution.multiply(user1DiffInUS).divide(MICRO_SECONDS_IN_A_DAY);
 
         BigInteger user2Distribution = loansDistribution.multiply(user2CurrentBalance).divide(totalSupply);
         
-        rewardsScore.invoke(account2, "claimRewards");
+        claim(account2);
         BigInteger user2TimeInUS = BigInteger.valueOf(sm.getBlock().getTimestamp());
         BigInteger user2DiffInUS = user2TimeInUS.subtract(startTimeInUS);
         BigInteger user2ExpectedRewards = user2Distribution.multiply(user2DiffInUS).divide(MICRO_SECONDS_IN_A_DAY);
@@ -484,7 +455,7 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
 
         mockBalanceAndSupply(loans, name, account.getAddress(), currentBalance, currentTotalSupply);
         
-        BigInteger initialRewards = (BigInteger) rewardsScore.call("getBalnHolding", account.getAddress());
+        BigInteger initialRewards = getBalnHoldings(account.getAddress());
         assertEquals(BigInteger.ZERO, initialRewards);
         
         sm.getBlock().increase(DAY);
@@ -496,11 +467,53 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
         BigInteger loansDistribution = loansDist.dist_percent.multiply(emission).divide(EXA);
         BigInteger userDistribution = loansDistribution.multiply(currentBalance).divide(currentTotalSupply);
 
-        BigInteger rewards = (BigInteger) rewardsScore.call("getBalnHolding", account.getAddress());
+        BigInteger rewards = getBalnHoldings(account.getAddress());
     
         BigInteger diffInUS = timeInUS.subtract(startTimeInUS);
         BigInteger expectedRewards = userDistribution.multiply(diffInUS).divide(MICRO_SECONDS_IN_A_DAY);
         assertEquals(expectedRewards.divide(BigInteger.TEN), rewards.divide(BigInteger.TEN));
+    }
+
+    @Test
+    void claimRewards_withoutRewardsUpdate() {
+        // Arrange
+        Account account = sm.createAccount();
+        Account account2 = sm.createAccount();
+        String name = "Loans";
+        BigInteger currentBalance = BigInteger.ONE.multiply(EXA);
+        BigInteger currentTotalSupply = BigInteger.TEN.multiply(EXA);
+        rewardsScore.invoke(loans.account, "updateRewardsData", "Loans", BigInteger.TWO.multiply(EXA), account2.getAddress(), BigInteger.ZERO);
+
+        mockBalanceAndSupply(loans, name, account.getAddress(), currentBalance, currentTotalSupply);  
+        sm.getBlock().increase(DAY);
+        BigInteger rewards = getBalnHoldings(account.getAddress());
+        assertEquals(BigInteger.ZERO, rewards);
+
+        // Act
+        rewardsScore.invoke(account, "addUserDataSource", "Loans");
+        rewards = getBalnHoldings(account.getAddress());
+        assertTrue(rewards.compareTo(BigInteger.ZERO) > 0);
+    }
+
+    @Test
+    void closePostion_removesFromUserSources() {
+        // Arrange
+        Account account = sm.createAccount();
+        String name = "Loans";
+        BigInteger initialBalance = BigInteger.ONE.multiply(EXA);
+        BigInteger initialTotalSupply = BigInteger.TWO.multiply(EXA);
+        BigInteger currentTotalSupply = BigInteger.ONE.multiply(EXA);
+
+        // Act
+        assertTrue(!getUserSources(account.getAddress()).contains("Loans"));
+        rewardsScore.invoke(loans.account, "updateRewardsData", name, initialTotalSupply, account.getAddress(), initialBalance);
+        assertTrue(getUserSources(account.getAddress()).contains("Loans"));
+
+        mockBalanceAndSupply(loans, name, account.getAddress(), BigInteger.ZERO, currentTotalSupply);
+        claim(account);
+
+        // Assert
+        assertTrue(!getUserSources(account.getAddress()).contains("Loans"));
     }
 
     @SuppressWarnings("unchecked")
@@ -593,6 +606,42 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
         BigInteger user2Rewards = rewards.get(account2.getAddress().toString()).divide(BigInteger.TEN);
         assertEquals(user1ExpectedRewards.divide(BigInteger.TEN), user1Rewards);
         assertEquals(user2ExpectedRewards.divide(BigInteger.TEN), user2Rewards);
+    }
+
+    @Test
+    void addNewDataSourceAndDelegate() {
+        // Arrange
+        Account account = sm.createAccount();
+        String name = "newLP";
+        BigInteger initialBalance = BigInteger.ZERO.multiply(EXA);
+        BigInteger initialTotalSupply = BigInteger.TWO.multiply(EXA);
+        BigInteger currentBalance = BigInteger.ONE.multiply(EXA);
+        BigInteger currentTotalSupply = BigInteger.TEN.multiply(EXA);
+
+        BigInteger finalBalance = BigInteger.TWO.multiply(EXA);
+        BigInteger finalTotalSupply = BigInteger.TEN.multiply(EXA);
+
+        // Act
+        rewardsScore.invoke(account, "addNewDataSource", name, dex.getAddress(), dex.getAddress());
+        rewardsScore.invoke(dex.account, "updateRewardsData", name, initialTotalSupply, account.getAddress(), initialBalance);
+
+        BigInteger initialRewards = getBalnHoldings(account.getAddress());
+        assertEquals(BigInteger.ZERO, initialRewards);
+        
+        sm.getBlock().increase(DAY);
+
+        rewardsScore.invoke(dex.account, "updateRewardsData", name, currentTotalSupply, account.getAddress(), currentBalance);
+        mockBalanceAndSupply(dex, name, account.getAddress(), finalBalance, finalTotalSupply);
+        addDistribution(name); //20%
+        
+        initialRewards = getBalnHoldings(account.getAddress());
+        assertEquals(BigInteger.ZERO, initialRewards);
+
+        sm.getBlock().increase(DAY);
+
+        // Assert
+        BigInteger rewards = getBalnHoldings(account.getAddress());
+        assertTrue(rewards.compareTo(BigInteger.ZERO) > 0);
     }
 }
 

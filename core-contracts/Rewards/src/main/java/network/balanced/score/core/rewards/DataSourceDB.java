@@ -22,53 +22,33 @@ import score.Context;
 
 import static network.balanced.score.core.rewards.RewardsImpl.TAG;
 import static network.balanced.score.core.rewards.utils.RewardsConstants.DATASOURCE_DB_PREFIX;
-import static network.balanced.score.lib.utils.DBHelpers.contains;
+
 
 public class DataSourceDB {
-    public static final ArrayDB<String> names = Context.newArrayDB("names", String.class);
-
-    private DataSourceDB() {}
+    public static final ArrayDB<String> names = Context.newArrayDB("names", String.class); // depreacted
 
     public static DataSourceImpl get(String name) {
+        DataSourceImpl dataSource = _get(name);
+        Context.require(name.equals(dataSource.getName()),  TAG + ": Data source does not exist");
+
+        return dataSource;
+    }
+
+    private static DataSourceImpl _get(String name) {
         return new DataSourceImpl(DATASOURCE_DB_PREFIX + "|" + name);
     }
 
+    // deprecated
     public static int size() {
         return names.size();
     }
 
-    public static void newSource(String name, Address address) {
-        Context.require(!contains(names, name), TAG + ": Data source already exists");
+    public static void newSource(String name, Address contractAddress, Address dataProvider) {
+        DataSourceImpl dataSource = _get(name);
+        Context.require(!name.equals(dataSource.getName()),  TAG + ": Data source does not exist");
 
-        names.add(name);
-        DataSourceImpl dataSource = get(name);
         dataSource.setName(name);
-        dataSource.setDay(RewardsImpl.getDay());
-        dataSource.setContractAddress(address);
+        dataSource.setContractAddress(contractAddress);
+        dataSource.setDataProvider(dataProvider);
     }
-
-    public static void removeSource(String name) {
-        // TODO Shouldn't be removed (Also add test cases)
-        //  Avoid removing data source, must be disabled instead
-        // TODO Double check, remove one, return boolean
-        if (!contains(names, name)) {
-            return;
-        }
-        DataSourceImpl dataSource = get(name);
-        dataSource.setName(null);
-        dataSource.setDay(null);
-        dataSource.setContractAddress(null);
-
-        // TODO Use helper method to remove from array db
-        String topSourceName = names.pop();
-        if (topSourceName.equals(name)) {
-            return;
-        }
-
-        for(int i = 0; i < names.size(); i++) {
-            if (names.get(i).equals(name)) {
-                names.set(i, topSourceName);
-            }
-        }
-    }   
 }

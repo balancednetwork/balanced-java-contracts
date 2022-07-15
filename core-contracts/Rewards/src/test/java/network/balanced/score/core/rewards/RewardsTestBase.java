@@ -28,6 +28,7 @@ import network.balanced.score.lib.test.mock.MockContract;
 import score.Address;
 
 import java.math.BigInteger;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -73,8 +74,8 @@ class RewardsTestBase extends UnitTest {
         rewardsScore.invoke(governance, "setAdmin", admin.getAddress());
         rewardsScore.invoke(admin, "setTimeOffset", startTime);
 
-        rewardsScore.invoke(governance, "addNewDataSource", "sICX/ICX", dex.getAddress());
-        rewardsScore.invoke(governance, "addNewDataSource", "Loans", loans.getAddress());
+        rewardsScore.invoke(governance, "addNewDataSource", "sICX/ICX", dex.getAddress(), dex.getAddress());
+        rewardsScore.invoke(governance, "addNewDataSource", "Loans", loans.getAddress(), loans.getAddress());
 
         Map<String, BigInteger> emptyDataSource = Map.of(
                 "_balance", BigInteger.ZERO,
@@ -123,9 +124,35 @@ class RewardsTestBase extends UnitTest {
         rewardsScore.invoke(governance, "updateBalTokenDistPercentage", (Object) distributionPercentages);
     }
 
+    void addDistribution(String name) {
+        loansDist.recipient_name = "Loans";
+        loansDist.dist_percent = ICX.divide(BigInteger.valueOf(10)); //10%
+
+        icxPoolDist.recipient_name = "sICX/ICX";
+        icxPoolDist.dist_percent = ICX.divide(BigInteger.valueOf(10)); //10%
+
+        bwtDist.recipient_name = "Worker Tokens";
+        bwtDist.dist_percent = ICX.divide(BigInteger.valueOf(5)); //20%
+
+        reserveDist.recipient_name = "Reserve Fund";
+        reserveDist.dist_percent = ICX.divide(BigInteger.valueOf(5)); //20%
+
+        daoDist.recipient_name = "DAOfund";
+        daoDist.dist_percent = ICX.divide(BigInteger.valueOf(5)); //20%
+
+        DistributionPercentage newSource = new DistributionPercentage();
+        newSource.recipient_name = name;
+        newSource.dist_percent = ICX.divide(BigInteger.valueOf(5)); //20%
+
+        DistributionPercentage[] distributionPercentages = new DistributionPercentage[]{loansDist, icxPoolDist,
+                bwtDist, reserveDist, daoDist, newSource};
+
+        rewardsScore.invoke(governance, "updateBalTokenDistPercentage", (Object) distributionPercentages);
+    }
+
     void syncDistributions() {
         BigInteger currentDay = (BigInteger) rewardsScore.call("getDay");
-        for (long i = 0; i < currentDay.intValue(); i++) {
+        for (long i = 0; i <= currentDay.intValue(); i++) {
             rewardsScore.invoke(admin, "distribute");
             rewardsScore.invoke(admin, "distribute");
         }
@@ -149,14 +176,28 @@ class RewardsTestBase extends UnitTest {
     }
 
     BigInteger getOneDayRewards(Address address) {
-        BigInteger rewardsPre = (BigInteger) rewardsScore.call("getBalnHolding", address);
+        BigInteger rewardsPre = getBalnHoldings(address);
         sm.getBlock().increase(DAY);
         rewardsScore.invoke(admin, "distribute");
-        BigInteger rewardsPost = (BigInteger) rewardsScore.call("getBalnHolding", address);
+        BigInteger rewardsPost = getBalnHoldings(address);
     
         return rewardsPost.subtract(rewardsPre);
     }
 
+    BigInteger getBalnHoldings(Address address) {
+        List<String> userSources = getUserSources(address);
+        return (BigInteger) rewardsScore.call("getBalnHolding", address, (Object) userSources.stream().toArray(String[]::new));
+    }
+
+    void claim(Account account) {
+        List<String> userSources = getUserSources(account.getAddress());
+        rewardsScore.invoke(account, "claimRewards", (Object) userSources.stream().toArray(String[]::new));
+    }
+
+    List<String> getUserSources(Address address) {
+        return (List<String>) rewardsScore.call("getUserDataSources", address);
+    }
+    
     void snapshotDistributionPercentage() {
         Object distributionPercentages = new DistributionPercentage[]{loansDist, icxPoolDist, bwtDist, reserveDist,
                 daoDist};
