@@ -537,22 +537,22 @@ public class LoansImpl implements Loans {
         Context.require(position.getCollateral(collateralSymbol).compareTo(_value) >= 0, TAG + ": Position holds less " +
                 "collateral than the requested withdrawal.");
         BigInteger assetValue = position.totalDebtInLoop(collateralSymbol, false);
-        BigInteger remainingSicx = position.getCollateral(collateralSymbol).subtract(_value);
+        BigInteger remainingCollateral = position.getCollateral(collateralSymbol).subtract(_value);
 
-        Address sicxAddress = CollateralDB.getCollateral(collateralSymbol).getAssetAddress();
-        Token sicxContract = new Token(sicxAddress);
+        Address collateralAddress = CollateralDB.getCollateral(collateralSymbol).getAssetAddress();
+        Token collateralContract = new Token(collateralAddress);
 
-        BigInteger remainingCollateral = remainingSicx.multiply(sicxContract.priceInLoop()).divide(EXA);
+        BigInteger remainingCollateralInLoop = remainingCollateral.multiply(collateralContract.priceInLoop()).divide(EXA);
 
         BigInteger lockingValue = lockingRatio.get().multiply(assetValue).divide(POINTS);
-        Context.require(remainingCollateral.compareTo(lockingValue) >= 0,
+        Context.require(remainingCollateralInLoop.compareTo(lockingValue) >= 0,
                 TAG + ": Requested withdrawal is more than available collateral. " +
                         "total debt value: " + assetValue + " ICX " +
-                        "remaining collateral value: " + remainingCollateral + " ICX " +
+                        "remaining collateral value: " + remainingCollateralInLoop + " ICX " +
                         "locking value (max debt): " + lockingValue + " ICX"
         );
 
-        position.setCollateral(collateralSymbol, remainingSicx);
+        position.setCollateral(collateralSymbol, remainingCollateral);
         transferCollateral(collateralSymbol, from, _value, "Collateral withdrawn.", new byte[0]);
     }
 

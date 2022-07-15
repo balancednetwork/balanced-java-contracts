@@ -739,7 +739,6 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         List<Address> prepList = reader.staking.getPrepList();
         List<Address> topPreps = reader.staking.getTopPreps();
 
-
         for (Address prep : prepList) {
             if (prep.toString().equals("hx051e14eb7d2e04fae723cd610c153742778ad5f7")) {
                 expectedPrepDelegations.put(prep.toString(), new BigInteger("50").multiply(ONE_EXA));
