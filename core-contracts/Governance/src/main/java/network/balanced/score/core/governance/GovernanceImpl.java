@@ -770,9 +770,9 @@ public class GovernanceImpl {
     }
 
     @External
-    public void delegate(PrepDelegations[] _delegations) {
+    public void delegate(String contract, PrepDelegations[] _delegations) {
         onlyOwner();
-        Context.call(Addresses.get("loans"), "delegate", (Object) _delegations);
+        Context.call(Addresses.get(contract), "delegate", (Object) _delegations);
     }
 
     @External

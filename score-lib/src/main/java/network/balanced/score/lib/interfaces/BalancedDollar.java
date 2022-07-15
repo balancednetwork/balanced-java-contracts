@@ -32,8 +32,7 @@ import java.math.BigInteger;
 
 @ScoreClient
 @ScoreInterface
-public interface BalancedDollar extends IRC2BurnableInterface, IRC2Mintable, GovernanceAddress, AdminAddress,
-        OracleAddress {
+public interface BalancedDollar extends IRC2BurnableInterface, IRC2Mintable, GovernanceAddress, AdminAddress, OracleAddress {
 
     @External(readonly = true)
     String getPeg();

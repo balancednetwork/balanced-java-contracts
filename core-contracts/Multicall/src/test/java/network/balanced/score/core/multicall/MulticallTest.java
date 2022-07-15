@@ -80,18 +80,4 @@ public class MulticallTest extends TestBase {
         assertEquals(dexMock.getAddress(), actualDex);
     }
 
-    @Test
-    void getPoolStatsForPairTest() {
-        setAndGetDex();
-        Address baseToken = Account.newScoreAccount(51).getAddress();
-        Address quoteToken = Account.newScoreAccount(52).getAddress();
-
-        @SuppressWarnings("unchecked")
-        Map<String, Object> poolStats = (Map<String, Object>) multicallScore.call("getPoolStatsForPair", baseToken,
-                quoteToken);
-        verify(dexSpy).getPoolId(baseToken, quoteToken);
-        verify(dexSpy).getPoolStats(BigInteger.ONE);
-        reset();
-    }
-
 }

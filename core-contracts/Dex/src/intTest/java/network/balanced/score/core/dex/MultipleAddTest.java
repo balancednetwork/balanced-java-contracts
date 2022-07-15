@@ -43,7 +43,7 @@ public class MultipleAddTest {
     static RewardsScoreClient rewards;
     static SicxScoreClient sicx;
     static StakedLPScoreClient stakedLp;
-    static BalnScoreClient baln;
+    static BalancedTokenScoreClient baln;
 
     private static final Env.Chain chain = Env.getDefaultChain();
     private static Wallet userWallet;

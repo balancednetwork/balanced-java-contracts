@@ -30,7 +30,7 @@ public class BalancedClient {
     public DAOfundScoreClient daofund;
     public RewardsScoreClient rewards;
     public LoansScoreClient loans;
-    public BalnScoreClient baln;
+    public BalancedTokenScoreClient baln;
     public BoostedBalnScoreClient boostedBaln;
     public RebalancingScoreClient rebalancing;
     public SicxScoreClient sicx;
@@ -50,7 +50,7 @@ public class BalancedClient {
         daofund = new DAOfundScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.daofund._address());
         rewards = new RewardsScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.rewards._address());
         loans = new LoansScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.loans._address());
-        baln = new BalnScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.baln._address());
+        baln = new BalancedTokenScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.baln._address());
         boostedBaln = new BoostedBalnScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.bBaln._address());
         rebalancing = new RebalancingScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.rebalancing._address());
         sicx = new SicxScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.sicx._address());

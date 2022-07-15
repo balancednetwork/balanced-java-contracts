@@ -24,6 +24,7 @@ import network.balanced.score.lib.interfaces.base.Fallback;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
 import network.balanced.score.lib.structs.Disbursement;
+import network.balanced.score.lib.structs.PrepDelegations;
 import score.Address;
 import score.annotation.External;
 
@@ -38,6 +39,9 @@ public interface DAOfund extends Name, GovernanceAddress, AdminAddress, LoansAdd
 
     @External
     void addAddressToSetdb();
+
+    @External
+    void delegate(PrepDelegations[] prepDelegations);
 
     @External(readonly = true)
     Map<String, BigInteger> getBalances();
