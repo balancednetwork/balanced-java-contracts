@@ -21,6 +21,7 @@ import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import score.RevertedException;
 import score.UserRevertedException;
 
 import java.math.BigInteger;
@@ -61,19 +62,17 @@ public class BoostedBalnIncreaseTimeTest {
         System.out.println("available balance of baln: "+availableBalnBalance);
         System.out.println("total balance of baln: "+owner.baln.balanceOf(userAddress));
 
-        UserRevertedException exception = assertThrows(UserRevertedException.class, () -> {
+        assertThrows(RevertedException.class, () -> {
             long unlockTime = -(System.currentTimeMillis() * 1000) + (BigInteger.valueOf(4).multiply(WEEK_IN_MICRO_SECONDS)).longValue();
             String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
             owner.baln.transfer(owner.boostedBaln._address(), availableBalnBalance.divide(BigInteger.TWO), data.getBytes());
         });
-        assert exception.getMessage().equals("Reverted(0)");//invalid unlock time
 
-        exception = assertThrows(UserRevertedException.class, () -> {
+        assertThrows(RevertedException.class, () -> {
             long unlockTime = (System.currentTimeMillis() * 1000) - (BigInteger.valueOf(4).multiply(WEEK_IN_MICRO_SECONDS)).longValue();
             String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
             owner.baln.transfer(owner.boostedBaln._address(), availableBalnBalance.divide(BigInteger.TWO), data.getBytes());
         });
-        assert exception.getMessage().equals("Reverted(0)");//invalid unlock time
 
         long unlockTime = (System.currentTimeMillis()*1000)+(BigInteger.valueOf(4).multiply(WEEK_IN_MICRO_SECONDS)).longValue();
         System.out.println("unlock time is: "+unlockTime);

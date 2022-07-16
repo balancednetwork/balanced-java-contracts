@@ -76,24 +76,16 @@ public class BoostedBalnGeneralIntegrationTest implements ScoreIntegrationTest {
         System.out.println("available balance of baln: " + availableBalnBalance);
         System.out.println("total balance of baln: " + owner.baln.balanceOf(userAddress));
 
-        /*RevertedException exception = assertThrows(RevertedException.class, () -> {
-            String data = "{\"method\":\"depositFor\",\"params\":{\"address\":\"" + userAddress + "\"}}";
-            owner.baln.transfer(owner.boostedBaln._address(), availableBalnBalance, data.getBytes());
-        });
-        assert exception.getMessage().equals("Reverted(0)"); //"Deposit for: No existing lock found");
-*/
-        UserRevertedException exception = assertThrows(UserRevertedException.class, () -> {
+        assertThrows(RevertedException.class, () -> {
             String data =
                     "{\"method\":\"increaseAmount\",\"params\":{\"unlockTime\":" + System.currentTimeMillis() * 1000 + "}}";
             owner.baln.transfer(owner.boostedBaln._address(), availableBalnBalance, data.getBytes());
         });
-        assert exception.getMessage().equals("Reverted(0)");//"Increase amount: No existing lock found");
 
-        exception = assertThrows(UserRevertedException.class, () -> {
+        assertThrows(RevertedException.class, () -> {
             String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + System.currentTimeMillis() + "}}";
             owner.baln.transfer(owner.boostedBaln._address(), availableBalnBalance, data.getBytes());
         });
-        assert exception.getMessage().equals("Reverted(0)");//"Increase amount: No existing lock found");
 
         long unlockTime = (System.currentTimeMillis()*1000)+(WEEK_IN_MICRO_SECONDS.multiply(BigInteger.valueOf(4))).longValue();
         System.out.println("unlock time is: "+unlockTime);
@@ -116,13 +108,6 @@ public class BoostedBalnGeneralIntegrationTest implements ScoreIntegrationTest {
         BigInteger expectedValue = (getExpectedBalance(availableBalnBalance.multiply(BigInteger.valueOf(3)).divide(BigInteger.valueOf(4)), unlockTime)).divide(EXA);
         System.out.println("expected value is: "+expectedValue);
         assertEquals(newBalance.divide(EXA), expectedValue);
-
-        /*data = "{\"method\":\"depositFor\",\"params\":{\"address\":\"" + userAddress + "\"}}";
-        owner.baln.transfer(owner.boostedBaln._address(), availableBalnBalance.divide(BigInteger.valueOf(4)), data.getBytes());
-        BigInteger balanceAfterDeposit = owner.boostedBaln.balanceOf(userAddress, BigInteger.ZERO);
-        System.out.println("balance after deposit: "+balanceAfterDeposit);
-        BigInteger expectedValueAfter = (getExpectedBalance(availableBalnBalance, unlockTime)).divide(EXA);
-        assertEquals(balanceAfterDeposit.divide(EXA), expectedValueAfter);*/
 
         BigInteger finalTotalSupply = owner.boostedBaln.totalSupply(BigInteger.valueOf(unlockTime));
         System.out.println("final total supply is: "+finalTotalSupply);
