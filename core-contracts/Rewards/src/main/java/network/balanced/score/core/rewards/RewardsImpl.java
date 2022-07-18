@@ -151,6 +151,7 @@ public class RewardsImpl {
             }
 
             dataSource.setDistPercent(day, dists.get(name));
+            dataSource.setUncheckedTotalWeight(day);
         }
 
         lastUpdateDay.set(day);

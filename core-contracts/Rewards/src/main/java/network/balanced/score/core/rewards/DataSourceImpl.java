@@ -53,6 +53,8 @@ public class DataSourceImpl {
             BigInteger.class);
     private final BranchDB<String, VarDB<BigInteger>> totalWeight = Context.newBranchDB("running_total",
             BigInteger.class);
+    private final BranchDB<String, VarDB<BigInteger>> uncheckedTotalWeight = Context.newBranchDB("unchecked_running_total",
+    BigInteger.class);
 
     private final String dbKey;
 
@@ -92,6 +94,23 @@ public class DataSourceImpl {
         this.cumulativeTotalDist.at(dbKey).set(dist);
     }
 
+    public void setUncheckedTotalWeight(BigInteger day) {
+        BigInteger lastUpdateTimestamp = getLastUpdateTimeUs();
+        BigInteger previousRewardsDay = lastUpdateTimestamp.divide(MICRO_SECONDS_IN_A_DAY);
+        BigInteger previousDayEndUs = previousRewardsDay.add(BigInteger.ONE).multiply(MICRO_SECONDS_IN_A_DAY);
+        BigInteger timeLeft = previousDayEndUs.subtract(lastUpdateTimestamp);
+
+        BigInteger totalDist = getTotalDist(day, true);
+        BigInteger remaningDist = totalDist.multiply(timeLeft).divide(MICRO_SECONDS_IN_A_DAY);
+        
+        this.uncheckedTotalWeight.at(dbKey).set(getTotalWeight());
+        addCumulativeTotalDist(remaningDist);
+    }
+
+    public BigInteger getUncheckedTotalWeight() {
+        return uncheckedTotalWeight.at(dbKey).getOrDefault(BigInteger.ZERO);
+    }
+
     public void addCumulativeTotalDist(BigInteger dist){
         VarDB<BigInteger> cumulativeTotalDist = this.cumulativeTotalDist.at(dbKey);
         BigInteger remaningDist = cumulativeTotalDist.getOrDefault(BigInteger.ZERO);
@@ -104,7 +123,6 @@ public class DataSourceImpl {
         VarDB<BigInteger> cumulativeTotalDist = this.cumulativeTotalDist.at(dbKey);
         BigInteger remaningDist = cumulativeTotalDist.getOrDefault(BigInteger.ZERO).subtract(dist);
         Context.require(remaningDist.signum() >= 0, RewardsImpl.TAG + ": There are no rewards left to claim for " + getName());
-        System.out.println(remaningDist);
         cumulativeTotalDist.set(remaningDist);
     }
 
@@ -182,14 +200,24 @@ public class DataSourceImpl {
                                            BigInteger prevBalance, boolean readOnlyContext) {
 
         BigInteger currentUserWeight = getUserWeight(user);
+        BigInteger uncheckedWeight = getUncheckedTotalWeight();
         BigInteger lastUpdateTimestamp = getLastUpdateTimeUs();
 
-
         BigInteger totalWeight = updateTotalWeight(lastUpdateTimestamp, currentTime, prevTotalSupply, readOnlyContext);
+
         if (currentUserWeight.equals(totalWeight)) {
             return BigInteger.ZERO;
         }
 
+        BigInteger uncheckedRewards = BigInteger.ZERO;
+        if (currentUserWeight.compareTo(uncheckedWeight) < 0) {
+            uncheckedRewards = computeUserRewards(prevBalance, uncheckedWeight, currentUserWeight);
+            currentUserWeight = uncheckedWeight;
+            if (!readOnlyContext) {
+                userWeight.at(dbKey).set(user, uncheckedWeight);
+            }
+        }
+        
         BigInteger accruedRewards = BigInteger.ZERO;
         //  If the user's current weight is less than the total, update their weight and issue rewards
         if (prevBalance.compareTo(BigInteger.ZERO) > 0) {
@@ -201,7 +229,7 @@ public class DataSourceImpl {
             removeCumulativeTotalDist(accruedRewards);
         }
 
-        return accruedRewards;
+        return accruedRewards.add(uncheckedRewards);
     }
 
     public Map<String, BigInteger> updateWorkingBalanceAndSupply(Address user, BigInteger balance, BigInteger supply, BigInteger time, Boolean boosted) {
