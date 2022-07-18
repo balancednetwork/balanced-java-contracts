@@ -971,8 +971,8 @@ public class GovernanceImpl {
             return;
         }
 
-        Context.call(Addresses.get("bnUSD"), "govTransfer", Addresses.get("daofund"), proposal.proposer.get(), proposal.fee.get(), new byte[0]);
         proposal.feeRefunded.set(true);
+        Context.call(Addresses.get("bnUSD"), "govTransfer", Addresses.get("daofund"), proposal.proposer.get(), proposal.fee.get(), new byte[0]);
     }
 
     private boolean checkBalnVoteCriterion(Address address) {
