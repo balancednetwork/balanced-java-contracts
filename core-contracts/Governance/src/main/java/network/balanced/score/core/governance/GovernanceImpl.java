@@ -224,7 +224,6 @@ public class GovernanceImpl {
         Context.require(description.length() <= 500, "Description must be less than or equal to 500 characters.");
 
         BigInteger snapshotBlock = BigInteger.valueOf(Context.getBlockHeight());
-//        BigInteger currentBlockHeight = BigInteger.valueOf(Context.getBlockHeight());
 
         Context.require(vote_start.compareTo(getDay()) >= 0, "Vote cannot start before the current day.");
 
@@ -347,11 +346,6 @@ public class GovernanceImpl {
         proposal.totalAgainstVotes.set(totalAgainst);
 
         VoteCast(proposal.name.get(), vote, from, totalVote, totalFor, totalAgainst);
-    }
-
-    @External(readonly = true)
-    public BigInteger totalBaln(BigInteger _day) {
-        return Context.call(BigInteger.class, Addresses.get("baln"), "totalStakedBalanceOfAt", _day);
     }
 
     @External(readonly = true)
