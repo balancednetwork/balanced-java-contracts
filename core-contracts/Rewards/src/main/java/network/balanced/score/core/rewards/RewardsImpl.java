@@ -53,6 +53,7 @@ public class RewardsImpl implements Rewards {
     private static final String GOVERNANCE = "governance";
     private static final String ADMIN = "admin";
     private static final String BALN_ADDRESS = "baln_address";
+    private static final String BOOSTED_BALN_ADDRESS = "boosted_baln_address";
     private static final String BWT_ADDRESS = "bwt_address";
     private static final String RESERVE_FUND = "reserve_fund";
     private static final String DAO_FUND = "dao_fund";
@@ -70,10 +71,13 @@ public class RewardsImpl implements Rewards {
     private static final String CONTINUOUS_REWARDS_DAY = "continuous_rewards_day";
     private static final String DATA_PROVIDERS = "data_providers";
     private static final String NON_CONTINUOUS_REWARDS_DAY_COUNT = "non_continuous_rewards_day_count";
+    private static final String BOOSTS = "user_boosts_map";
+    private static final String BOOST_WEIGHT = "user_boosts_map";
 
     private static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
     private static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
     private static final VarDB<Address> balnAddress = Context.newVarDB(BALN_ADDRESS, Address.class);
+    public static final VarDB<Address> boostedBaln = Context.newVarDB(BOOSTED_BALN_ADDRESS, Address.class);
     private static final VarDB<Address> bwtAddress = Context.newVarDB(BWT_ADDRESS, Address.class);
     private static final VarDB<Address> reserveFund = Context.newVarDB(RESERVE_FUND, Address.class);
     private static final VarDB<Address> daofund = Context.newVarDB(DAO_FUND, Address.class);
@@ -96,6 +100,8 @@ public class RewardsImpl implements Rewards {
     private final static SetDB<Address> dataProviders = new SetDB<>(DATA_PROVIDERS, Address.class, null);
     private static final VarDB<BigInteger> nonContinuousRewardsDayCount =
             Context.newVarDB(NON_CONTINUOUS_REWARDS_DAY_COUNT, BigInteger.class);
+    private static final DictDB<Address, String> boosts = Context.newDictDB(BOOSTS, String.class);
+    public static final VarDB<BigInteger> boostWeight = Context.newVarDB(BOOST_WEIGHT, BigInteger.class);
 
     private static final Map<String, VarDB<Address>> platformRecipients = Map.of(WORKER_TOKENS, bwtAddress,
             RewardsConstants.RESERVE_FUND, reserveFund,
@@ -118,6 +124,8 @@ public class RewardsImpl implements Rewards {
             completeRecipient.add(RewardsConstants.RESERVE_FUND);
             completeRecipient.add(DAOFUND);
         }
+
+        boostWeight.set(WEIGHT);
     }
 
     @External(readonly = true)
@@ -158,12 +166,21 @@ public class RewardsImpl implements Rewards {
         for (int i = 0; i < dataSourcesCount; i++) {
             String name = DataSourceDB.names.get(i);
             DataSourceImpl dataSource = DataSourceDB.get(name);
-
-            Map<String, BigInteger> data = dataSource.loadCurrentSupply(_holder);
-
             BigInteger currentTime = getTime();
-            BigInteger sourceRewards = dataSource.updateSingleUserData(currentTime, data.get(TOTAL_SUPPLY), _holder
-                    , data.get(BALANCE), true);
+            Map<String, BigInteger> data = dataSource.loadCurrentSupply(_holder);
+            Map<String, BigInteger> workingBalanceAndSupply = 
+                dataSource.getWorkingBalanceAndSupply( _holder, 
+                                                      data.get(BALANCE),
+                                                      data.get(TOTAL_SUPPLY), 
+                                                      currentTime, 
+                                                      hasBoost(_holder, name));
+
+            BigInteger sourceRewards = dataSource.updateSingleUserData(currentTime,
+                                                                       workingBalanceAndSupply.get("workingSupply"),
+                                                                       _holder, 
+                                                                       workingBalanceAndSupply.get("workingBalance"), 
+                                                                       true);
+
             accruedRewards = accruedRewards.add(sourceRewards);
         }
 
@@ -442,6 +459,24 @@ public class RewardsImpl implements Rewards {
         return distributions;
     }
 
+
+    @External
+    public void boost(String _name) {
+        Address user = Context.getCaller();
+        String previousBoost = boosts.get(user);
+        boosts.set(user, _name);
+        if (previousBoost != null) {
+            updateCurrentUserAccruedRewards(previousBoost, user);
+        }
+
+        updateCurrentUserAccruedRewards(_name, user);
+    }
+
+    @External(readonly = true)
+    public String getBoost(Address user) {
+        return boosts.get(user);
+    }
+
     @External
     public void claimRewards() {
         Address address = Context.getCaller();
@@ -451,14 +486,7 @@ public class RewardsImpl implements Rewards {
         int dataSourcesCount = DataSourceDB.size();
         for (int i = 0; i < dataSourcesCount; i++) {
             String name = DataSourceDB.names.get(i);
-            DataSourceImpl dataSource = DataSourceDB.get(name);
-            Map<String, BigInteger> data = dataSource.loadCurrentSupply(address);
-
-            BigInteger totalSupply = data.get(TOTAL_SUPPLY);
-            BigInteger balance = data.get(BALANCE);
-
-            currentTime = getTime();
-            updateUserAccruedRewards(name, totalSupply, currentTime, dataSource, address, balance);
+            updateCurrentUserAccruedRewards(name, address);
         }
 
         BigInteger userClaimableRewards = balnHoldings.getOrDefault(address.toString(), BigInteger.ZERO);
@@ -542,10 +570,71 @@ public class RewardsImpl implements Rewards {
         }
     }
 
+    @External
+    public void onKick(Address user, BigInteger bBalnUserBalance, @Optional byte[] data) {
+        only(boostedBaln);
+
+        String boostedSource = boosts.get(user);
+        if (boostedSource == null) {
+            // TODO: check if we do anythig here
+            return;
+        }
+
+        updateCurrentUserAccruedRewards(boostedSource, user);
+    }
+
+    @External
+    public void onBalanceUpdate(Address user) {
+        only(boostedBaln);
+        String boostedSource = boosts.get(user);
+        if (boostedSource == null) {
+            // TODO: check if we do anythig here
+            return;
+        }
+
+        updateCurrentUserAccruedRewards(boostedSource, user);
+    }
+
+    @External
+    public void setBoostWeight(BigInteger weight) {
+        only(admin);
+        Context.require(weight.compareTo(HUNDRED_PERCENTAGE.divide(BigInteger.valueOf(100))) >= 0, "Boost weight has to be above 1%");
+        Context.require(weight.compareTo(HUNDRED_PERCENTAGE) <= 0, "Boost weight has to be below 100%");
+        boostWeight.set(weight);
+    }
+
+    @External(readonly = true)
+    public BigInteger getBoostWeight() {
+        return boostWeight.get();
+    }
+
+    private void updateCurrentUserAccruedRewards(String name, Address user) {
+        DataSourceImpl dataSource = DataSourceDB.get(name);
+        Map<String, BigInteger> data = dataSource.loadCurrentSupply(user);
+
+        BigInteger totalSupply = data.get(TOTAL_SUPPLY);
+        BigInteger balance = data.get(BALANCE);
+
+        BigInteger currentTime = getTime();
+        updateUserAccruedRewards(name, totalSupply, currentTime, dataSource, user, balance);
+    }
+
     private void updateUserAccruedRewards(String _name, BigInteger _totalSupply, BigInteger currentTime,
                                           DataSourceImpl dataSource, Address user, BigInteger previousBalance) {
-        BigInteger accruedRewards = dataSource.updateSingleUserData(currentTime, _totalSupply, user,
-                previousBalance, false);
+
+        Map<String, BigInteger> workingBalanceAndSupply = 
+            dataSource.updateWorkingBalanceAndSupply(user, 
+                                                     previousBalance,
+                                                     _totalSupply, 
+                                                     currentTime, 
+                                                     hasBoost(user, _name));
+
+        BigInteger accruedRewards = 
+            dataSource.updateSingleUserData(currentTime, 
+                                            workingBalanceAndSupply.get("workingSupply"), 
+                                            user,
+                                            workingBalanceAndSupply.get("workingBalance"),  
+                                            false);
 
         if (accruedRewards.compareTo(BigInteger.ZERO) > 0) {
             BigInteger newHoldings =
@@ -553,6 +642,10 @@ public class RewardsImpl implements Rewards {
             balnHoldings.set(user.toString(), newHoldings);
             RewardsAccrued(user, _name, accruedRewards);
         }
+    }
+
+    private boolean hasBoost(Address user, String name) {
+        return name.equals(boosts.get(user));
     }
 
     @External
@@ -588,6 +681,18 @@ public class RewardsImpl implements Rewards {
     @External(readonly = true)
     public Address getBaln() {
         return balnAddress.get();
+    }
+
+    @External
+    public void setBoostedBaln(Address _address) {
+        only(admin);
+        isContract(_address);
+        boostedBaln.set(_address);
+    }
+
+    @External(readonly = true)
+    public Address getBoostedBaln() {
+        return boostedBaln.get();
     }
 
     @External
