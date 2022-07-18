@@ -38,7 +38,7 @@ public class DataSourceImpl {
     private final BranchDB<String, VarDB<Address>> dataProvider = Context.newBranchDB("data_provider",
             Address.class);
     private final BranchDB<String, VarDB<String>> name = Context.newBranchDB("name", String.class);
-
+    private final BranchDB<String,  VarDB<BigInteger>> cumulativeTotalDist = Context.newBranchDB("cumulative_total_dist", BigInteger.class);
     private final BranchDB<String,  VarDB<BigInteger>> workingSupply = Context.newBranchDB("working_supply",
         BigInteger.class);
     private final BranchDB<String, DictDB<BigInteger, BigInteger>> totalDist = Context.newBranchDB("total_dist",
@@ -84,6 +84,30 @@ public class DataSourceImpl {
         this.name.at(dbKey).set(name);
     }
 
+    public BigInteger getCumulativeTotalDist() {
+        return cumulativeTotalDist.at(dbKey).getOrDefault(BigInteger.ZERO);
+    }
+
+    public void setCumulativeTotalDist(BigInteger dist){
+        this.cumulativeTotalDist.at(dbKey).set(dist);
+    }
+
+    public void addCumulativeTotalDist(BigInteger dist){
+        VarDB<BigInteger> cumulativeTotalDist = this.cumulativeTotalDist.at(dbKey);
+        BigInteger remaningDist = cumulativeTotalDist.getOrDefault(BigInteger.ZERO);
+        cumulativeTotalDist.set(remaningDist.add(dist));
+        System.out.println(remaningDist.add(dist));
+        
+    }
+
+    public void removeCumulativeTotalDist(BigInteger dist){
+        VarDB<BigInteger> cumulativeTotalDist = this.cumulativeTotalDist.at(dbKey);
+        BigInteger remaningDist = cumulativeTotalDist.getOrDefault(BigInteger.ZERO).subtract(dist);
+        Context.require(remaningDist.signum() >= 0, RewardsImpl.TAG + ": There are no rewards left to claim for " + getName());
+        System.out.println(remaningDist);
+        cumulativeTotalDist.set(remaningDist);
+    }
+
     public BigInteger getWorkingSupply() {
         return workingSupply.at(dbKey).getOrDefault(loadCurrentSupply(EOA_ZERO).get("_totalSupply"));
     }
@@ -106,15 +130,12 @@ public class DataSourceImpl {
         if (dist == null) {
             dist = calculateTotalDist(day, readOnly);
             if (!readOnly) {
+                addCumulativeTotalDist(dist);
                 totalDist.set(day, dist);
             }
         }
 
         return dist;
-    }
-
-    public void  setTotalDist(BigInteger day, BigInteger value) {
-        totalDist.at(dbKey).set(day, value);
     }
 
     public BigInteger getDistPercent(BigInteger day, boolean readOnly) {
@@ -177,6 +198,7 @@ public class DataSourceImpl {
 
         if (!readOnlyContext) {
             userWeight.at(dbKey).set(user, totalWeight);
+            removeCumulativeTotalDist(accruedRewards);
         }
 
         return accruedRewards;

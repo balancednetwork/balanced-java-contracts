@@ -21,7 +21,10 @@ import com.iconloop.score.test.Account;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
+
 import score.Address;
+
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -296,7 +299,6 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
         when(bBaln.mock.balanceOf(eq(account.getAddress()), any(BigInteger.class))).thenReturn(bBalnBalance);
         when(bBaln.mock.totalSupply(any(BigInteger.class))).thenReturn(bBalnSupply);
         mockBalanceAndSupply(loans, "Loans", EOA_ZERO, BigInteger.ZERO, loansTotalSupply.subtract(loansBalance));
-
         
         rewardsScore.invoke(loans.account, "updateRewardsData", "Loans", loansTotalSupply.subtract(loansBalance), account.getAddress(), BigInteger.ZERO);
         mockBalanceAndSupply(loans, "Loans", account.getAddress(), loansBalance, loansTotalSupply);
@@ -642,6 +644,53 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
         // Assert
         BigInteger rewards = getBalnHoldings(account.getAddress());
         assertTrue(rewards.compareTo(BigInteger.ZERO) > 0);
+    }
+
+    @Test
+    void updateRewardsData_maliciousDataSource() {
+        // Arrange
+        Account account = sm.createAccount();
+        String expectedErrorMessage;
+        BigInteger loansBalance = BigInteger.valueOf(5).multiply(EXA);
+        BigInteger loansTotalSupply = BigInteger.TEN.multiply(EXA);
+        rewardsScore.invoke(loans.account, "updateRewardsData", "Loans", BigInteger.ZERO, account.getAddress(), BigInteger.ZERO);
+
+        // Arrange
+        rewardsScore.invoke(loans.account, "updateRewardsData", "Loans", loansTotalSupply , account.getAddress(), loansBalance);
+        Account account2 = sm.createAccount();
+        BigInteger account2Balance = BigInteger.TEN.multiply(BigInteger.TEN.pow(24));
+
+        sm.getBlock().increase(DAY);
+
+        // Act & Assert
+        expectedErrorMessage = "Reverted(0): "+ RewardsImpl.TAG + ": There are no rewards left to claim for Loans";
+        Executable aboveTotalSupply = () -> 
+            rewardsScore.invoke(loans.account, "updateRewardsData", "Loans", loansTotalSupply, account2.getAddress(), account2Balance);
+        expectErrorMessage(aboveTotalSupply, expectedErrorMessage);
+    }
+
+    @Test
+    void claimRewards_maliciousBalanceAndSupply() {
+        // Arrange
+        Account user1 = sm.createAccount();
+        Account user2 = sm.createAccount();
+        BigInteger user1Balance = BigInteger.valueOf(5).multiply(EXA);
+        BigInteger user2Balance = BigInteger.TEN.multiply(EXA);
+        BigInteger loansTotalSupply = BigInteger.TEN.multiply(EXA);
+
+        // Act
+        rewardsScore.invoke(loans.account, "updateRewardsData", "Loans", BigInteger.ZERO, user1.getAddress(), BigInteger.ZERO);
+        rewardsScore.invoke(loans.account, "updateRewardsData", "Loans", user1Balance, user2.getAddress(), BigInteger.ZERO);
+        mockBalanceAndSupply(loans, "Loans", user1.getAddress(), user1Balance, loansTotalSupply);
+        mockBalanceAndSupply(loans, "Loans", user2.getAddress(), user2Balance, loansTotalSupply);
+        
+        sm.getBlock().increase(DAY * 4);
+        
+        // Assert
+        claim(user2);
+        String expectedErrorMessage = "Reverted(0): "+ RewardsImpl.TAG + ": There are no rewards left to claim for Loans";
+        Executable aboveTotalSupply = () -> claim(user1);
+        expectErrorMessage(aboveTotalSupply, expectedErrorMessage);
     }
 }
 

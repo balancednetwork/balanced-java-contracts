@@ -539,7 +539,6 @@ public class RewardsImpl {
 
     private void updateUserAccruedRewards(String _name, BigInteger _totalSupply, BigInteger currentTime,
                                           DataSourceImpl dataSource, Address user, BigInteger previousBalance) {
-
         Map<String, BigInteger> workingBalanceAndSupply = 
             dataSource.updateWorkingBalanceAndSupply(user, 
                                                      previousBalance,
