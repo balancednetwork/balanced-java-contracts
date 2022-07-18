@@ -16,17 +16,21 @@
 
 package network.balanced.score.core.rewards;
 
-import network.balanced.score.lib.interfaces.DataSourceScoreInterface;
-import score.*;
-import scorex.util.HashMap;
+import static network.balanced.score.core.rewards.utils.RewardsConstants.HUNDRED_PERCENTAGE;
+import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
+import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
 import java.math.BigInteger;
 import java.util.Map;
 
-import static network.balanced.score.lib.utils.Constants.EXA;
-import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
-import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
-import static network.balanced.score.core.rewards.utils.RewardsConstants.HUNDRED_PERCENTAGE;
+import network.balanced.score.lib.interfaces.DataSourceScoreInterface;
+import score.Address;
+import score.BranchDB;
+import score.Context;
+import score.DictDB;
+import score.VarDB;
+import scorex.util.HashMap;
 
 public class DataSourceImpl {
     private final BranchDB<String, VarDB<Address>> contractAddress = Context.newBranchDB("contract_address",

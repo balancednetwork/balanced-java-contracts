@@ -33,7 +33,7 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface Rewards extends 
+public interface RewardsNewTmp extends 
         Name, 
         TokenFallback,
         GovernanceAddress,
@@ -61,6 +61,9 @@ public interface Rewards extends
 
     @External(readonly = true)
     Map<String, Object> getSourceData(String _name);
+
+    @External(readonly = true)
+    List<String> getDataSourceNames(int _offset, int _batchSize);
 
     @External
     boolean distribute();

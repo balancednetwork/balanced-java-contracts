@@ -49,17 +49,31 @@ class RewardsTest extends RewardsTestBase {
     //     assertTrue(dataSources.containsKey("sICX/ICX"));
     // }
 
-    // @SuppressWarnings("unchecked")
-    // @Test
-    // void getDataSourceNames() {
-    //     // Act 
-    //     List<String> names = (List<String>) rewardsScore.call("getDataSourceNames");
+    @SuppressWarnings("unchecked")
+    @Test
+    void getDataSourceNames() {
+        // Act 
+        List<String> names = (List<String>) rewardsScore.call("getDataSourceNames", 0, 2);
 
-    //     // Assert
-    //     assertEquals(2, names.size());
-    //     assertTrue(names.contains("Loans"));
-    //     assertTrue(names.contains("sICX/ICX"));
-    // }
+        // Assert
+        assertEquals(2, names.size());
+        assertTrue(names.contains("Loans"));
+        assertTrue(names.contains("sICX/ICX"));
+
+        // Act 
+        names = (List<String>) rewardsScore.call("getDataSourceNames", 0, 1);
+
+        // Assert
+        assertEquals(1, names.size());
+        assertTrue(names.contains("sICX/ICX"));
+
+        // Act 
+        names = (List<String>) rewardsScore.call("getDataSourceNames", 1, 1);
+
+        // Assert
+        assertEquals(1, names.size());
+        assertTrue(names.contains("Loans"));
+    }
 
     // @SuppressWarnings("unchecked")
     // @Test

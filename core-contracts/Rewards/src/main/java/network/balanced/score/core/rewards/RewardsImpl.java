@@ -49,7 +49,7 @@ import static network.balanced.score.lib.utils.Math.pow;
  * There can be unclaimed rewards if there are no participants in the data source. This can happen in testnet and
  * when we add new source where user haven't participated.
  */
-public class RewardsImpl implements Rewards {
+public class RewardsImpl {
     public static final String TAG = "BalancedRewards";
 
     private static final String GOVERNANCE = "governance";
@@ -277,6 +277,18 @@ public class RewardsImpl implements Rewards {
     @External(readonly = true)
     public Map<String, Object> getSourceData(String _name) {
         return DataSourceDB.get(_name).getData();
+    }
+
+    @External(readonly = true)
+    public List<String> getDataSourceNames(int _offset, int _batchSize) {
+        List<String> names = new ArrayList<>();
+        int dataSourcesCount = DataSourceDB.size();
+        Context.require(_offset + _batchSize <= dataSourcesCount, TAG + "Cannot fetch datasources above index : " + dataSourcesCount);
+        for (int i = _offset; i < _offset + _batchSize; i++) {
+            names.add(DataSourceDB.names.get(i));
+        }
+
+        return names;
     }
 
     /**

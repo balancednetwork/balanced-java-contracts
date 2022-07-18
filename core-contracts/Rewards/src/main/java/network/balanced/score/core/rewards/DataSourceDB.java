@@ -25,7 +25,7 @@ import static network.balanced.score.core.rewards.utils.RewardsConstants.DATASOU
 
 
 public class DataSourceDB {
-    public static final ArrayDB<String> names = Context.newArrayDB("names", String.class); // depreacted
+    public static final ArrayDB<String> names = Context.newArrayDB("names", String.class);
 
     public static DataSourceImpl get(String name) {
         DataSourceImpl dataSource = _get(name);
@@ -38,7 +38,6 @@ public class DataSourceDB {
         return new DataSourceImpl(DATASOURCE_DB_PREFIX + "|" + name);
     }
 
-    // deprecated
     public static int size() {
         return names.size();
     }
@@ -47,6 +46,7 @@ public class DataSourceDB {
         DataSourceImpl dataSource = _get(name);
         Context.require(!name.equals(dataSource.getName()),  TAG + ": Data source does not exist");
 
+        names.add(name);
         dataSource.setName(name);
         dataSource.setContractAddress(contractAddress);
         dataSource.setDataProvider(dataProvider);
