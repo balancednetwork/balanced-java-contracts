@@ -41,7 +41,8 @@ public class GovernanceConstants extends Constants {
     public static final String LAUNCHED = "launched";
     public static final String REBALANCING = "rebalancing";
     public static final String TIME_OFFSET = "time_offset";
-    public static final String VOTE_DURATION = "vote_duration";
+    public static final String MAX_VOTE_DURATION = "vote_duration_max";
+    public static final String MIN_VOTE_DURATION = "vote_duration_min";
     public static final String MIN_BALN = "min_baln";
     public static final String DEFINITION_FEE = "definition_fee";
     public static final String QUORUM = "quorum";
