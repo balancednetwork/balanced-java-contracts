@@ -7,7 +7,6 @@
   },
   {
     "name": "baln",
-    "path": "https://main.tracker.solidwallet.io/score/cxf61cd5a45dc9f91c15aa65831a30a90d59a09619_6.zip",
     "params": {},
     "addressParams": {
       "_governance": "governance"
@@ -64,7 +63,6 @@
   },
   {
     "name": "feehandler",
-    "path": "https://main.tracker.solidwallet.io/score/cx5faae53c4dbd1fbe4a2eb4aab6565030f10da5c6_5.zip",
     "params": {},
     "addressParams": {
       "_governance": "governance"

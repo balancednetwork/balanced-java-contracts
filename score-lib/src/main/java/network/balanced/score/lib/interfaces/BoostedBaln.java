@@ -78,10 +78,10 @@ public interface BoostedBaln {
     void withdraw();
 
     @External(readonly = true)
-    BigInteger balanceOf(Address address, @Optional BigInteger timestamp);
+    BigInteger balanceOf(Address _owner, @Optional BigInteger timestamp);
 
     @External(readonly = true)
-    BigInteger balanceOfAt(Address address, BigInteger block);
+    BigInteger balanceOfAt(Address _owner, BigInteger block);
 
     @External(readonly = true)
     BigInteger totalSupply(@Optional BigInteger time);

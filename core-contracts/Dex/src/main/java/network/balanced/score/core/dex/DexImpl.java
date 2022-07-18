@@ -46,9 +46,6 @@ public class DexImpl extends AbstractDex {
 
     public DexImpl(Address _governance) {
         super(_governance);
-
-        // Set all current icx in dex as icx queue total
-        icxQueueTotal.set(Context.getBalance(Context.getAddress()));
     }
 
     @Payable
