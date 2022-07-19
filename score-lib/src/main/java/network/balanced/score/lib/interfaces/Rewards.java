@@ -32,9 +32,16 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface Rewards extends Name, TokenFallback, GovernanceAddress, AdminAddress, BalnAddress, BwtAddress,
-        DaoFundAddress, ReserveAddress, StakedLpAddress {
-
+public interface Rewards extends 
+        Name, 
+        TokenFallback,
+        GovernanceAddress,
+        AdminAddress,
+        BalnAddress,
+        BwtAddress,
+        DaoFundAddress,
+        ReserveAddress {
+   
     @External(readonly = true)
     BigInteger getEmission(BigInteger _day);
 
@@ -109,10 +116,4 @@ public interface Rewards extends Name, TokenFallback, GovernanceAddress, AdminAd
 
     @External(readonly = true)
     BigInteger getTimeOffset();
-
-    @External
-    void setContinuousRewardsDay(BigInteger _continuous_rewards_day);
-
-    @External(readonly = true)
-    BigInteger getContinuousRewardsDay();
 }

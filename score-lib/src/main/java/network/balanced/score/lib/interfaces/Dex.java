@@ -75,12 +75,6 @@ public interface Dex extends AdminAddress, BnusdAddress, GovernanceAddress, Name
     BigInteger getTimeOffset();
 
     @External
-    void setContinuousRewardsDay(BigInteger _continuous_rewards_day);
-
-    @External(readonly = true)
-    BigInteger getContinuousRewardsDay();
-
-    @External
     void cancelSicxicxOrder();
 
     @External
@@ -97,9 +91,6 @@ public interface Dex extends AdminAddress, BnusdAddress, GovernanceAddress, Name
 
     @External(readonly = true)
     BigInteger getSicxEarnings(Address _user);
-
-    @External(readonly = true)
-    BigInteger getWithdrawLock(BigInteger _id, Address _owner);
 
     @External(readonly = true)
     BigInteger getPoolId(Address _token1Address, Address _token2Address);
@@ -178,17 +169,6 @@ public interface Dex extends AdminAddress, BnusdAddress, GovernanceAddress, Name
 
     @External(readonly = true)
     BigInteger getTotalValue(String _name, BigInteger _snapshot_id);
-
-    @External(readonly = true)
-    BigInteger getBalnSnapshot(String _name, BigInteger _snapshot_id);
-
-    @External(readonly = true)
-    Map<String, Object> loadBalancesAtSnapshot(BigInteger _id, BigInteger _snapshot_id, BigInteger _limit,
-                                               @Optional BigInteger _offset);
-
-    @External(readonly = true)
-    Map<String, Object> getDataBatch(String _name, BigInteger _snapshot_id, BigInteger _limit,
-                                     @Optional BigInteger _offset);
 
     @External
     void permit(BigInteger _id, boolean _permission);

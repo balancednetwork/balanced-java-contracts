@@ -19,8 +19,7 @@ package network.balanced.score.core.stakedlp;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
-import network.balanced.score.lib.interfaces.DexScoreInterface;
-import network.balanced.score.lib.interfaces.RewardsScoreInterface;
+import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockContract;
 import org.junit.jupiter.api.Assertions;
@@ -49,8 +48,8 @@ public class StakedLPTest extends UnitTest {
     private final Account alice = sm.createAccount();
     private final Account bob = sm.createAccount();
 
-    public MockContract<DexScoreInterface> dex;
-    public MockContract<RewardsScoreInterface> rewards;
+    public MockContract<Dex> dex;
+    public MockContract<Rewards> rewards;
 
     public static final String poolOneName = "pool1";
     public static final String poolTwoName = "pool2";

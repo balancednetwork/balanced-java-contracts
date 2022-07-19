@@ -25,6 +25,8 @@ import score.Address;
 import java.math.BigInteger;
 import java.util.List;
 
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class RewardsTestSetup extends RewardsTestBase {
@@ -76,12 +78,6 @@ class RewardsTestSetup extends RewardsTestBase {
     }
 
     @Test
-    void setAndGetStakedLp() {
-        testContractSettersAndGetters(rewardsScore, governance, admin, "setStakedLp",
-        testAccount.getAddress(), "getStakedLp");
-    }
-
-    @Test
     void setAndGetBatchSize() {
         int batchSize = 1;
         String expectedErrorMessage = "Authorization Check: Address not set";
@@ -103,7 +99,7 @@ class RewardsTestSetup extends RewardsTestBase {
 
     @Test
     void setAndGetTimeOffset() {
-        BigInteger timeOffset = BigInteger.ONE;
+        BigInteger timeOffset = BigInteger.ONE.multiply(MICRO_SECONDS_IN_A_DAY).negate();
         String expectedErrorMessage = "Authorization Check: Address not set";
 
         Executable setWithoutAdmin = () -> rewardsScore.invoke(admin, "setTimeOffset", timeOffset);
@@ -119,26 +115,6 @@ class RewardsTestSetup extends RewardsTestBase {
 
         rewardsScore.invoke(admin, "setTimeOffset", timeOffset);
         assertEquals(timeOffset, rewardsScore.call("getTimeOffset"));
-    }
-
-    @Test
-    void setAndGetContinuousRewards() {
-        BigInteger continuousRewardsDay = BigInteger.ONE;
-        String expectedErrorMessage = "Authorization Check: Address not set";
-
-        Executable setWithoutAdmin = () -> rewardsScore.invoke(admin, "setContinuousRewardsDay", continuousRewardsDay);
-        expectErrorMessage(setWithoutAdmin, expectedErrorMessage);
-
-        rewardsScore.invoke(governance, "setAdmin", admin.getAddress());
-
-        Account nonAdmin = sm.createAccount();
-        expectedErrorMessage = "Authorization Check: Authorization failed. Caller: " + nonAdmin.getAddress() +
-                " Authorized Caller: " + admin.getAddress();
-        Executable setNotFromAdmin = () -> rewardsScore.invoke(nonAdmin, "setContinuousRewardsDay", continuousRewardsDay);
-        expectErrorMessage(setNotFromAdmin, expectedErrorMessage);
-
-        rewardsScore.invoke(admin, "setContinuousRewardsDay", continuousRewardsDay);
-        assertEquals(continuousRewardsDay, rewardsScore.call("getContinuousRewardsDay"));
     }
 
     @SuppressWarnings("unchecked")

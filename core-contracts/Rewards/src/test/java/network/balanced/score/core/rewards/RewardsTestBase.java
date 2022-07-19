@@ -20,8 +20,8 @@ package network.balanced.score.core.rewards;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
-import network.balanced.score.lib.interfaces.DataSourceScoreInterface;
-import network.balanced.score.lib.interfaces.tokens.IRC2MintableScoreInterface;
+import network.balanced.score.lib.interfaces.*;
+import network.balanced.score.lib.interfaces.tokens.*;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockContract;
@@ -52,10 +52,10 @@ class RewardsTestBase extends UnitTest {
     final Account daoFund = Account.newScoreAccount(scoreCount++);
     final Account reserve = Account.newScoreAccount(scoreCount++);
 
-    MockContract<DataSourceScoreInterface> dex;
-    MockContract<DataSourceScoreInterface> loans;
-    MockContract<IRC2MintableScoreInterface> baln;
-    MockContract<IRC2MintableScoreInterface> bwt;
+    MockContract<DataSource> dex;
+    MockContract<DataSource> loans;
+    MockContract<IRC2Mintable> baln;
+    MockContract<IRC2Mintable> bwt;
     Score rewardsScore;
 
     void setup() throws Exception {
@@ -126,7 +126,7 @@ class RewardsTestBase extends UnitTest {
         }
     }
 
-    void mockBalanceAndSupply(MockContract<DataSourceScoreInterface> dataSource, String name, Address address,
+    void mockBalanceAndSupply(MockContract<DataSource> dataSource, String name, Address address,
                               BigInteger balance, BigInteger supply) {
         Map<String, BigInteger> balanceAndSupply = Map.of(
                 "_balance", balance,

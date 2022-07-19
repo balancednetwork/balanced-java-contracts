@@ -20,10 +20,6 @@ import foundation.icon.icx.KeyWallet;
 import foundation.icon.jsonrpc.model.Hash;
 import foundation.icon.jsonrpc.model.TransactionResult;
 import foundation.icon.score.client.DefaultScoreClient;
-import network.balanced.score.lib.interfaces.DAOfundScoreClient;
-import network.balanced.score.lib.interfaces.GovernanceScoreClient;
-import network.balanced.score.lib.interfaces.RewardsScoreClient;
-import network.balanced.score.lib.interfaces.StakingScoreClient;
 import network.balanced.score.lib.structs.BalancedAddresses;
 import score.Address;
 
@@ -37,11 +33,6 @@ import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
 public class Balanced {
-
-    public KeyWallet user;
-    public KeyWallet testerWallet;
-    public KeyWallet secondTesterWallet;
-
     public KeyWallet owner;
     public BalancedClient ownerClient;
     public DefaultScoreClient governance;
@@ -62,20 +53,13 @@ public class Balanced {
     public DefaultScoreClient staking;
     public DefaultScoreClient stakedLp;
     public DefaultScoreClient stability;
-
-    public GovernanceScoreClient governanceScore;
-    public StakingScoreClient stakingScore;
-    public DAOfundScoreClient daofundScore;
-    public RewardsScoreClient rewardsScore;
+    public DefaultScoreClient balancedOracle;
 
     public Map<Address, BalancedClient> balancedClients;
 
     public Balanced() throws Exception {
         balancedClients = new HashMap<>();
-        owner = createWalletWithBalance(BigInteger.TEN.pow(24));
-        user = createWalletWithBalance(BigInteger.TEN.pow(24));
-        testerWallet = createWalletWithBalance(BigInteger.TEN.pow(24));
-        secondTesterWallet = createWalletWithBalance(BigInteger.TEN.pow(24));
+        owner = createWalletWithBalance(BigInteger.TEN.pow(25));
     }
 
     public void setupBalanced() throws Exception {
@@ -110,6 +94,7 @@ public class Balanced {
         Hash reserveTx = deployAsync(owner, "Reserve", Map.of("governance", governance._address()));
         Hash routerTx = deployAsync(owner, "Router", Map.of("_governance", governance._address()));
         Hash stakedLpTx = deployAsync(owner, "StakedLP", Map.of("governance", governance._address()));
+        Hash balancedOracleTx = deployAsync(owner, "BalancedOracle", Map.of("_governance", governance._address()));
         staking = getDeploymentResult(owner, stakingTx);
         feehandler = getDeploymentResult(owner, feehandlerTx);
         bnusd = getDeploymentResult(owner, bnusdTx);
@@ -137,6 +122,7 @@ public class Balanced {
         stakedLp = getDeploymentResult(owner, stakedLpTx);
         sicx = getDeploymentResult(owner, sicxTx);
         stability = getDeploymentResult(owner, stabilityTx);
+        balancedOracle = getDeploymentResult(owner, balancedOracleTx);
 
         ownerClient = new BalancedClient(this, owner);
     }
@@ -159,6 +145,7 @@ public class Balanced {
         balancedAddresses.rebalancing = rebalancing._address();
         balancedAddresses.feehandler = feehandler._address();
         balancedAddresses.stakedLp = stakedLp._address();
+        balancedAddresses.balancedOracle = balancedOracle._address();
 
         ownerClient.governance.setAddresses(balancedAddresses);
         ownerClient.governance.setAdmins();
@@ -195,21 +182,23 @@ public class Balanced {
         ownerClient.governance.addAcceptedTokens(String.valueOf(bnusd._address()));
         ownerClient.governance.addAcceptedTokens(String.valueOf(sicx._address()));
         ownerClient.governance.addAcceptedTokens(String.valueOf(baln._address()));
+
+        ownerClient.bnUSD.setMinter2(stability._address());
     }
 
     public void setupMarkets() {
-        ownerClient.governance.createBnusdMarket(BigInteger.valueOf(400000).multiply(BigInteger.TEN.pow(18)));
-        increaseDay(2);
-        syncDistributions();
+        ownerClient.governance.createBnusdMarket(BigInteger.valueOf(40000).multiply(BigInteger.TEN.pow(18)));
+        increaseDay(1);
+
         BigInteger balnBalance = ownerClient.rewards.getBalnHolding(governance._address());
-        BigInteger initialPoolDepths = balnBalance.divide(BigInteger.TWO);
-        ownerClient.governance.createBalnMarket(initialPoolDepths, initialPoolDepths);
-        ownerClient.staking.stakeICX(initialPoolDepths.multiply(BigInteger.TWO), null, null);
-        ownerClient.sicx.transfer(governance._address(), initialPoolDepths, null);
-        ownerClient.governance.createBalnSicxMarket(initialPoolDepths, initialPoolDepths);
+        BigInteger initalPoolDepths = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
+        ownerClient.governance.createBalnMarket(initalPoolDepths, initalPoolDepths);
+        ownerClient.staking.stakeICX(initalPoolDepths.multiply(BigInteger.TWO), null, null);
+        ownerClient.sicx.transfer(governance._address(), initalPoolDepths, null);
+        ownerClient.governance.createBalnSicxMarket(initalPoolDepths, initalPoolDepths);
     }
 
-    private BalancedClient newClient(BigInteger clientBalance) throws Exception {
+    public BalancedClient newClient(BigInteger clientBalance) throws Exception {
         BalancedClient client = new BalancedClient(this, createWalletWithBalance(clientBalance));
         balancedClients.put(client.getAddress(), client);
         return client;
@@ -223,31 +212,10 @@ public class Balanced {
         return balancedClients.get(address);
     }
 
-    // deprecated after continuous migration
     public void syncDistributions() {
         Consumer<TransactionResult> distributeConsumer = result -> {};
-        while (!checkDistributionsDone()) {
-            ownerClient.rewards.distribute(distributeConsumer);
-            ownerClient.dividends.distribute(distributeConsumer);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    public boolean checkDistributionsDone() {
-        BigInteger day = ownerClient.governance.getDay();
-        Map<String, Object> status = ownerClient.rewards.distStatus();
-        if (hexObjectToBigInteger(status.get("platform_day")).intValue() < day.intValue()) {
-            return false;
-        }
-
-        Map<String, String> dataSourceStatus = (Map<String, String>) status.get("source_days");
-        for (String sourceDay : dataSourceStatus.values()) {
-            if (hexObjectToBigInteger(sourceDay).intValue() < day.intValue()) {
-                return false;
-            }
-        }
-
-        return true;
+        ownerClient.rewards.distribute(distributeConsumer);
+        ownerClient.dividends.distribute(distributeConsumer);
     }
 
     public void increaseDay(int nrOfDays) {

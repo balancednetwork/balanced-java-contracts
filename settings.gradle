@@ -47,6 +47,9 @@ project(':Rewards').projectDir = file("core-contracts/Rewards")
 include(':StakedLP')
 project(':StakedLP').projectDir = file("core-contracts/StakedLP")
 
+include(':BalancedOracle')
+project(':BalancedOracle').projectDir = file("core-contracts/BalancedOracle")
+
 include 'score-client'
 include 'score-lib'
 include 'test-lib'

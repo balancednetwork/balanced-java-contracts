@@ -45,10 +45,23 @@ public class DummyOracle {
             result.put("last_update_base", BigInteger.valueOf(1616643098000000L));
             result.put("last_update_quote", BigInteger.valueOf(1616643311790241L));
         }
+
         if (_base.equals("XLM") && _quote.equals("USD")) {
             result.put("rate", BigInteger.valueOf(360358450000000000L));
             result.put("last_update_base", BigInteger.valueOf(1616650080000000L));
             result.put("last_update_quote", BigInteger.valueOf(1616650390762201L));
+        }
+
+        if (_base.equals("BTC") && _quote.equals("ICX")) {
+            result.put("rate", new BigInteger("32c6eaee89097750da0", 16));
+            result.put("last_update_base", new BigInteger("5cf17f1c573c0", 16));
+            result.put("last_update_quote",new BigInteger("5e2055b001840", 16));
+        }
+
+        if (_base.equals("ETH") && _quote.equals("ICX")) {
+            result.put("rate", new BigInteger("2f723e28a3d2f1eddb84", 16));
+            result.put("last_update_base", new BigInteger("5cf17f1c573c0", 16));
+            result.put("last_update_quote", new BigInteger("5e2055b001840", 16));
         }
 
         return result;

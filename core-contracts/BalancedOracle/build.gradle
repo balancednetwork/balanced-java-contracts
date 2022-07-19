@@ -1,0 +1,89 @@
+/*
+ * Copyright (c) 2022-2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import network.balanced.score.dependencies.Dependencies
+
+version = '0.1.0'
+
+repositories {
+    // Use Maven Central for resolving dependencies.
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly Dependencies.javaeeApi
+    implementation Dependencies.javaeeScorex
+    implementation Dependencies.minimalJson
+    implementation project(':score-lib')
+
+    testImplementation Dependencies.javaeeUnitTest
+    testImplementation Dependencies.javaeeTokens
+    // Use JUnit Jupiter for testing.
+
+    testImplementation Dependencies.junitJupiter
+    testRuntimeOnly Dependencies.junitJupiterEngine
+    testImplementation Dependencies.mockitoCore
+    testImplementation Dependencies.mockitoInline
+
+    intTestImplementation project(':score-client')
+    intTestImplementation Dependencies.iconSdk
+    intTestImplementation Dependencies.jacksonDatabind
+
+    testImplementation project(':test-lib')
+}
+
+optimizedJar {
+    mainClassName = 'network.balanced.score.core.balancedoracle.BalancedOracleImpl'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from {
+        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
+    }
+}
+
+deployJar {
+    endpoints {
+        sejong {
+            uri = 'https://sejong.net.solidwallet.io/api/v3'
+            nid = 0x53
+        }
+        local {
+            uri = 'http://localhost:9082/api/v3'
+            nid = 0x3
+        }
+        mainnet {
+            uri = 'https://ctz.solidwallet.io/api/v3'
+            nid = 0x1
+        }
+    }
+    keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
+    password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
+    parameters {}
+}
+
+tasks.named('test') {
+    // Use JUnit Platform for unit tests.
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport 
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = false
+        csv.required = false
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+    }
+}

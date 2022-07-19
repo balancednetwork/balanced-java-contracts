@@ -23,8 +23,8 @@ import score.annotation.External;
 
 import java.math.BigInteger;
 
-@ScoreClient
 @ScoreInterface
+@ScoreClient
 public interface StakedLP {
       @External(readonly = true)
       Address getDex();

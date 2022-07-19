@@ -32,22 +32,11 @@ import static org.mockito.Mockito.verify;
 
 class RewardsTestContinuousRewards extends RewardsTestBase {
 
-    private final BigInteger continuousRewardsDay = BigInteger.valueOf(5);
 
     @BeforeEach
     void setup() throws Exception {
         super.setup();
-        rewardsScore.invoke(admin, "setContinuousRewardsDay", continuousRewardsDay);
         long day = ((BigInteger)rewardsScore.call("getDay")).intValue();
-
-        if (day < continuousRewardsDay.intValue()) {
-            sm.getBlock().increase(DAY*continuousRewardsDay.intValue() - day);
-            for (long i = day; i <= continuousRewardsDay.intValue(); i++){
-                rewardsScore.invoke(admin, "distribute");
-                rewardsScore.invoke(admin, "distribute");
-            }
-        }
-      
     }
 
     @SuppressWarnings("unchecked")

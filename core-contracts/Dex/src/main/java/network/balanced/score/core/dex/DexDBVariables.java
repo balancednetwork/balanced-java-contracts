@@ -53,7 +53,6 @@ public class DexDBVariables {
     private static final String POOL_TOTAL = "poolTotal";
     private static final String POOL_LP_TOTAL = "poolLPTotal";
     private static final String BALANCE = "balances";
-    private static final String WITHDRAW_LOCK = "withdrawLock";
     private static final String BALN_SNAPSHOT = "balnSnapshot";
     private static final String POOL_LP_FEE = "pool_lp_fee";
     private static final String POOL_BALN_FEE = "pool_baln_fee";
@@ -103,8 +102,6 @@ public class DexDBVariables {
     // User Balances
     // Map: pool_id -> user address -> lp token balance
     final static BranchDB<Integer, DictDB<Address, BigInteger>> balance = Context.newBranchDB(BALANCE,
-            BigInteger.class);
-    final static BranchDB<Integer, DictDB<Address, BigInteger>> withdrawLock = Context.newBranchDB(WITHDRAW_LOCK,
             BigInteger.class);
 
     // Map: pool_id -> user address -> ids/values/length -> length/0 -> value

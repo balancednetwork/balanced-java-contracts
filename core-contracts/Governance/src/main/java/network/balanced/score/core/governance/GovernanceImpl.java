@@ -112,14 +112,6 @@ public class GovernanceImpl {
     }
 
     @External
-    public void setContinuousRewardsDay(BigInteger _day) {
-        onlyOwner();
-        Context.call(Addresses.get("loans"), "setContinuousRewardsDay", _day);
-        Context.call(Addresses.get("rewards"), "setContinuousRewardsDay", _day);
-        Context.call(Addresses.get("dex"), "setContinuousRewardsDay", _day);
-    }
-
-    @External
     public void setDividendsOnlyToStakedBalnDay(BigInteger _day) {
         onlyOwner();
         Context.call(Addresses.get("dividends"), "setDividendsOnlyToStakedBalnDay", _day);
@@ -183,7 +175,7 @@ public class GovernanceImpl {
     }
 
     @External
-    public void setAdmin(Address contractAddress, Address admin){
+    public void setAdmin(Address contractAddress, Address admin) {
         onlyOwner();
         Context.call(contractAddress, "setAdmin", admin);
 
@@ -506,7 +498,7 @@ public class GovernanceImpl {
         BigInteger amount = EXA.multiply(value).divide(price.multiply(BigInteger.valueOf(7)));
         Context.call(value.divide(BigInteger.valueOf(7)), stakingAddress, "stakeICX", Context.getAddress(),
                 new byte[0]);
-        Context.call(Context.getBalance(Context.getAddress()), loansAddress, "depositAndBorrow", "bnUSD", amount, new Address(new byte[21]), BigInteger.ZERO);
+        Context.call(Context.getBalance(Context.getAddress()), loansAddress, "depositAndBorrow", "bnUSD", amount, Context.getAddress(), BigInteger.ZERO);
 
         BigInteger bnUSDValue = Context.call(BigInteger.class, bnUSDAddress, "balanceOf", Context.getAddress());
         BigInteger sICXValue = Context.call(BigInteger.class, sICXAddress, "balanceOf", Context.getAddress());
@@ -548,7 +540,7 @@ public class GovernanceImpl {
         Address loansAddress = Addresses.get("loans");
 
         Context.call(rewardsAddress, "claimRewards");
-        Context.call(loansAddress, "depositAndBorrow", "bnUSD", _bnUSD_amount, new Address(new byte[21]), BigInteger.ZERO);
+        Context.call(loansAddress, "depositAndBorrow", "bnUSD", _bnUSD_amount, Context.getAddress(), BigInteger.ZERO);
 
         JsonObject depositData = Json.object();
         depositData.add("method", "_deposit");
@@ -708,17 +700,66 @@ public class GovernanceImpl {
     }
 
     @External
-    public void addAsset(Address _token_address, boolean _active, boolean _collateral) {
+    public void addCollateral(Address _token_address, boolean _active, String _peg, @Optional BigInteger _limit) {
         onlyOwner();
         Address loansAddress = Addresses.get("loans");
-        Context.call(loansAddress, "addAsset", _token_address, _active, _collateral);
-        Context.call(_token_address, "setAdmin", loansAddress);
+        Context.call(loansAddress, "addAsset", _token_address, _active, true);
+
+        String symbol = Context.call(String.class, _token_address, "symbol");
+        Context.call(Addresses.get("balancedOracle"), "setPeg", symbol, _peg);
+        if (_limit.equals(BigInteger.ZERO)) {
+            return;
+        }
+
+        Context.call(loansAddress, "setCollateralLimit", symbol, _limit);
+    }
+
+    @External
+    public void addDexPricedCollateral(Address _token_address, boolean _active, @Optional BigInteger _limit) {
+        onlyOwner();
+        Address loansAddress = Addresses.get("loans");
+        Context.call(loansAddress, "addAsset", _token_address, _active, true);
+
+        String symbol = Context.call(String.class, _token_address, "symbol");
+        BigInteger poolId = Context.call(BigInteger.class, Addresses.get("dex"), "getPoolId", _token_address, Addresses.get("bnUSD"));
+        Context.call(Addresses.get("balancedOracle"), "addDexPricedAsset", symbol, poolId);
+
+        if (_limit.equals(BigInteger.ZERO)) {
+            return;
+        }
+
+        Context.call(loansAddress, "setCollateralLimit", symbol, _limit);
+    }
+
+    @External
+    public void setCollateralLimit(String _symbol, BigInteger _limit) {
+        onlyOwner();
+        Address loansAddress = Addresses.get("loans");
+        Context.call(loansAddress, "setCollateralLimit", _symbol, _limit);
     }
 
     @External
     public void toggleAssetActive(String _symbol) {
         onlyOwner();
         Context.call(Addresses.get("loans"), "toggleAssetActive", _symbol);
+    }
+
+    @External
+    public void setPeg(String _symbol, String _peg) {
+        onlyOwner();
+        Context.call(Addresses.get("balancedOracle"), "setPeg", _symbol, _peg);
+    }
+
+    @External
+    public void addDexPricedAsset(String _symbol, BigInteger _limit) {
+        onlyOwner();
+        Context.call(Addresses.get("balancedOracle"), "addDexPricedAsset", _symbol, _limit);
+    }
+
+    @External
+    public void removeDexPricedAsset(String _symbol) {
+        onlyOwner();
+        Context.call(Addresses.get("balancedOracle"), "removeDexPricedAsset", _symbol);
     }
 
     @External

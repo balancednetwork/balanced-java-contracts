@@ -125,8 +125,6 @@ public class MultipleAddTest {
         assertEquals(hexToBigInteger(poolStats.get("quote_decimals").toString()), BigInteger.valueOf(18));
         assertEquals(hexToBigInteger(poolStats.get("min_quote").toString()), BigInteger.ZERO);
 
-        System.out.println("here " + previousSecondUserBalance);
-        System.out.println("here " + previousUserBalance);
         // after lp is added to the pool, remaining balance is checked
         assertEquals(previousUserBalance.add(BigInteger.valueOf(150).multiply(EXA)), ownerDexTestFourthScoreClient.balanceOf(userAddress));
         assertEquals(previousSecondUserBalance.add(BigInteger.valueOf(150).multiply(EXA)), ownerDexTestThirdScoreClient.balanceOf(userAddress));

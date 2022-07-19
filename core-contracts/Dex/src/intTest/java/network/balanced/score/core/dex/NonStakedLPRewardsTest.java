@@ -100,9 +100,6 @@ public class NonStakedLPRewardsTest {
 
     @Test
     void testNonStakedLpRewards() {
-        // test if the non staked lp token is rewarded or not once continuous rewards is activated.
-        //balanced = new Balanced();
-        //balanced.setupBalanced();
         userDaoFundScoreClient.addAddressToSetdb();
         balanced.syncDistributions();
 
@@ -131,12 +128,7 @@ public class NonStakedLPRewardsTest {
         waitForADay();
         balanced.syncDistributions();
         userWalletRewardsClient.claimRewards();
-        if(dexUserScoreClient.getContinuousRewardsDay()==null) {
-            governanceDexScoreClient.setContinuousRewardsDay(dexUserScoreClient.getDay().add(BigInteger.ONE));
-        }
-        waitForADay();
 
-        // continuous rewards starts here
         balanced.syncDistributions();
         userWalletRewardsClient.claimRewards();
         waitForADay();

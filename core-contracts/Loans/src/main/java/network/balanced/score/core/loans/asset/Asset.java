@@ -16,26 +16,34 @@
 
 package network.balanced.score.core.loans.asset;
 
+import static network.balanced.score.core.loans.LoansImpl.call;
+import static network.balanced.score.core.loans.utils.LoansConstants.SICX_SYMBOL;
+
+import java.math.BigInteger;
+import java.util.Map;
+
+import network.balanced.score.core.loans.LoansVariables;
+import network.balanced.score.core.loans.collateral.Collateral;
+import network.balanced.score.core.loans.collateral.CollateralDB;
 import network.balanced.score.core.loans.linkedlist.LinkedListDB;
 import network.balanced.score.core.loans.utils.Token;
 import score.Address;
 import score.BranchDB;
 import score.Context;
+import score.DictDB;
 import score.VarDB;
 import scorex.util.HashMap;
 
-import java.math.BigInteger;
-import java.util.Map;
-
-import static network.balanced.score.core.loans.utils.LoansConstants.SICX_SYMBOL;
-import static network.balanced.score.core.loans.LoansImpl.call;
-
 public class Asset {
-
+    private static final String BORROWER_DB_PREFIX = "borrowers";
     private final BranchDB<String, VarDB<BigInteger>> assetAddedTime = Context.newBranchDB("added", BigInteger.class);
     private final BranchDB<String, VarDB<Address>> assetAddress = Context.newBranchDB("address", Address.class);
-    private final BranchDB<String, VarDB<BigInteger>> badDebt = Context.newBranchDB("bad_debt", BigInteger.class);
+    private final BranchDB<String, VarDB<BigInteger>> badDebt = Context.newBranchDB("bad_debt", BigInteger.class); // depreacted
+    private final BranchDB<String, DictDB<String, BigInteger>> badDebts = Context.newBranchDB("multi_collateral_bad_debts",
+    BigInteger.class);
     private final BranchDB<String, VarDB<BigInteger>> liquidationPool = Context.newBranchDB("liquidation_pool",
+            BigInteger.class); // depreacted
+            private final BranchDB<String, DictDB<String, BigInteger>> liquidationPools = Context.newBranchDB("multi_collateral_liquidation_pools",
             BigInteger.class);
     private final BranchDB<String, VarDB<BigInteger>> totalBurnedTokens = Context.newBranchDB("burned",
             BigInteger.class);
@@ -47,6 +55,20 @@ public class Asset {
 
     Asset(String key) {
         dbKey = key;
+    }
+
+    public void migrateLiquidationPool() {
+        BigInteger liquidationPoolBalance = liquidationPool.at(dbKey).get();
+        if (liquidationPoolBalance != null && liquidationPoolBalance.compareTo(BigInteger.ZERO) > 0 ) {
+            setLiquidationPool("sICX", liquidationPool.at(dbKey).getOrDefault(BigInteger.ZERO));
+        }
+    }
+
+    public void migrateBadDebt() {
+        BigInteger badDebtBalance = badDebt.at(dbKey).get();
+        if (badDebtBalance != null && badDebtBalance.compareTo(BigInteger.ZERO) > 0 ) {
+            setBadDebt("sICX", badDebt.at(dbKey).getOrDefault(BigInteger.ZERO));
+        }
     }
 
     public void burn(BigInteger amount) {
@@ -69,20 +91,20 @@ public class Asset {
         return assetAddress.at(dbKey).get();
     }
 
-    public void setBadDebt(BigInteger badDebt) {
-        this.badDebt.at(dbKey).set(badDebt);
+    public void setBadDebt(String symbol, BigInteger badDebt) {
+        this.badDebts.at(dbKey).set(symbol, badDebt);
     }
 
-    public BigInteger getBadDebt() {
-        return badDebt.at(dbKey).getOrDefault(BigInteger.ZERO);
+    public BigInteger getBadDebt(String symbol) {
+        return badDebts.at(dbKey).getOrDefault(symbol, BigInteger.ZERO);
     }
 
-    public void setLiquidationPool(BigInteger liquidationPool) {
-        this.liquidationPool.at(dbKey).set(liquidationPool);
+    public void setLiquidationPool(String collateralSymbol, BigInteger liquidationPool) {
+        this.liquidationPools.at(dbKey).set(collateralSymbol, liquidationPool);
     }
 
-    public BigInteger getLiquidationPool() {
-        return liquidationPool.at(dbKey).getOrDefault(BigInteger.ZERO);
+    public BigInteger getLiquidationPool(String collateralSymbol) {
+        return liquidationPools.at(dbKey).getOrDefault(collateralSymbol, BigInteger.ZERO);
     }
 
     private BigInteger getTotalBurnedTokens() {
@@ -110,46 +132,55 @@ public class Asset {
      * the point at which total debt equals the minimum value of collateral that could be backing it.
      */
     public boolean checkForDeadMarket() {
-        if (isCollateral() || !isActive()) {
+        if (!isActive()) {
             return false;
         }
-
-        BigInteger badDebt = getBadDebt();
 
         Address assetAddress = this.assetAddress.at(dbKey).get();
         Token assetContract = new Token(assetAddress);
 
-        BigInteger outStanding = assetContract.totalSupply().subtract(badDebt);
+        BigInteger badDebt = getBadDebt(SICX_SYMBOL);
+        BigInteger poolValue = BigInteger.ZERO;
+        int collateralListCount = CollateralDB.collateralList.size();
+        for (int i = 0; i < collateralListCount; i++) {
+            String symbol = CollateralDB.collateralList.get(i);
+            Collateral collateral = CollateralDB.getCollateral(symbol);
+            if (!collateral.isActive()) {
+                continue;
+            }
 
-        Address sicxAddress = AssetDB.getAsset(SICX_SYMBOL).getAssetAddress();
-        Token sicxContract = new Token(sicxAddress);
+            Address collateralAddress = collateral.getAssetAddress();
+            Token collateralContract = new Token(collateralAddress);
+            poolValue = poolValue.add(getLiquidationPool(SICX_SYMBOL)
+                                 .multiply(assetContract.priceInLoop()))
+                                 .divide(collateralContract.priceInLoop());
+            badDebt = badDebt.add(getBadDebt(symbol));
+        }
 
-        // [Multi-collateral] Here it assumes every token should be denominated in terms of sicx.
-        BigInteger poolValue =
-                getLiquidationPool().multiply(assetContract.priceInLoop()).divide(sicxContract.priceInLoop());
+        BigInteger totalDebt = LoansVariables.totalDebts.getOrDefault(assetContract.symbol(), BigInteger.ZERO);
         BigInteger netBadDebt = badDebt.subtract(poolValue);
-        Boolean isDead = netBadDebt.compareTo(outStanding.divide(BigInteger.TWO)) > 0;
+        Boolean isDead = netBadDebt.compareTo(totalDebt.divide(BigInteger.TWO)) > 0;
 
         VarDB<Boolean> deadMarket = this.deadMarket.at(dbKey);
         if (deadMarket.getOrDefault(false) != isDead) {
             deadMarket.set(isDead);
         }
+
         return isDead;
     }
 
-    public LinkedListDB getBorrowers() {
-        return new LinkedListDB("borrowers", dbKey);
+    public LinkedListDB getBorrowers(String collateralSymbol) {
+        if (collateralSymbol.equals(SICX_SYMBOL)) {
+            return new LinkedListDB(BORROWER_DB_PREFIX, dbKey);
+        } else {
+            return new LinkedListDB(collateralSymbol + "|" + BORROWER_DB_PREFIX, dbKey);
+        }
     }
 
-    public void removeBorrowers(int positionId) {
-        getBorrowers().remove(positionId);
-    }
-
-    void setAsset(Address assetAddress, BigInteger assetAddedTime, Boolean active, Boolean collateral) {
+    void setAsset(Address assetAddress, Boolean active) {
         this.assetAddress.at(dbKey).set(assetAddress);
-        this.assetAddedTime.at(dbKey).set(assetAddedTime);
         this.active.at(dbKey).set(active);
-        this.isCollateral.at(dbKey).set(collateral);
+        this.isCollateral.at(dbKey).set(false);
     }
 
     Map<String, Object> toMap() {
@@ -157,19 +188,30 @@ public class Asset {
         Token tokenContract = new Token(assetAddress);
 
         Map<String, Object> assetDetails = new HashMap<>();
+        Map<String, Map<String, Object>> loansDetails = new HashMap<>();
+
+        int collateralListCount = CollateralDB.collateralList.size();
+        for (int i = 0; i < collateralListCount; i++) {
+            Map<String, Object> loansDetail = new HashMap<>();
+            String symbol = CollateralDB.collateralList.get(i);
+            loansDetail.put("borrowers", getBorrowers(symbol).size());
+            loansDetail.put("bad_debt", getBadDebt(symbol));
+            loansDetail.put("liquidation_pool", getLiquidationPool(symbol));
+            loansDetails.put(symbol, loansDetail);
+        }
 
         assetDetails.put("symbol", tokenContract.symbol());
         assetDetails.put("address", assetAddress);
         assetDetails.put("peg", tokenContract.getPeg());
         assetDetails.put("added", getAssetAddedTime());
-        assetDetails.put("is_collateral", isCollateral());
         assetDetails.put("active", isActive());
-        assetDetails.put("borrowers", getBorrowers().size());
         assetDetails.put("total_supply", tokenContract.totalSupply());
         assetDetails.put("total_burned", getTotalBurnedTokens());
-        assetDetails.put("bad_debt", getBadDebt());
-        assetDetails.put("liquidation_pool", getLiquidationPool());
+        assetDetails.put("debt_details", loansDetails);
         assetDetails.put("dead_market", isDeadMarket());
+        assetDetails.put("bad_debt", getBadDebt(SICX_SYMBOL));
+        assetDetails.put("liquidation_pool", getLiquidationPool(SICX_SYMBOL));
+        assetDetails.put("borrowers", getBorrowers(SICX_SYMBOL).size());
 
         return assetDetails;
     }
