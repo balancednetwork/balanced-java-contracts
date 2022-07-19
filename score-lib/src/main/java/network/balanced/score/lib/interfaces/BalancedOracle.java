@@ -55,4 +55,16 @@ public interface BalancedOracle extends
 
     @External(readonly = true)
     String getPeg(String symbol);
+
+    @External
+    void setDexPriceTimespan(BigInteger time);
+
+    @External(readonly = true)
+    BigInteger getDexPriceTimespan();
+
+    @External
+    void setOrcalePriceTimespan(BigInteger time);
+
+    @External(readonly = true)
+    BigInteger getOraclePriceTimespan();
 }

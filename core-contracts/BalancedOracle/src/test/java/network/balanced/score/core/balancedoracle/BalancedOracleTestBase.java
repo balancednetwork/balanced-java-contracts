@@ -44,6 +44,8 @@ import network.balanced.score.lib.test.mock.MockContract;
 import network.balanced.score.lib.interfaces.*;
 
 class BalancedOracleTestBase extends UnitTest {
+    protected static final long DAY = 43200L;
+
     protected static final ServiceManager sm = getServiceManager();
     protected static final Account owner = sm.createAccount();
     protected static final Account adminAccount = sm.createAccount();
@@ -62,5 +64,7 @@ class BalancedOracleTestBase extends UnitTest {
         oracle = new MockContract<Oracle>(OracleScoreInterface.class, sm, owner);
         staking = new MockContract<Staking>(StakingScoreInterface.class, sm, owner);
         balancedOracle = sm.deploy(owner, BalancedOracleImpl.class, governance.getAddress());
+
+        sm.getBlock().increase(DAY);
     }
 }

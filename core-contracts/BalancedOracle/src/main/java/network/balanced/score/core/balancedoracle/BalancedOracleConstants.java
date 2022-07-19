@@ -34,6 +34,9 @@ public class BalancedOracleConstants {
    private static final String ASSET_SYMBOL_PEG = "assetPegMap";
    private static final String LAST_LOOP_PRICES = "lastLoopPrices";
 
+   private static final String ORACLE_PRICE_TIMESPAN = "oraclePriceTimeSpan";
+   private static final String DEX_PRICE_TIMESPA= "dexPricedTimeSpan";
+
    public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
    public static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
    public static final VarDB<Address> dex = Context.newVarDB(DEX, Address.class);
@@ -43,4 +46,7 @@ public class BalancedOracleConstants {
    public static final DictDB<String, BigInteger> dexPricedAssets = Context.newDictDB(DEX_PRICED_ASSETS, BigInteger.class);
    public static final DictDB<String, String> assetPeg = Context.newDictDB(ASSET_SYMBOL_PEG, String.class);
    public static final DictDB<String, BigInteger> lastPriceInLoop = Context.newDictDB(LAST_LOOP_PRICES, BigInteger.class);
+
+   public static final VarDB<BigInteger> oraclePriceTimeSpan = Context.newVarDB(ORACLE_PRICE_TIMESPAN, BigInteger.class);
+   public static final VarDB<BigInteger> dexPricedTimeSpan = Context.newVarDB(DEX_PRICE_TIMESPA, BigInteger.class);
 }
