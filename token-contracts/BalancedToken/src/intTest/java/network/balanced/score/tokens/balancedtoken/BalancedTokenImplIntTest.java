@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.token;
+package network.balanced.score.tokens.balancedtoken;
 
 import foundation.icon.icx.Wallet;
 import foundation.icon.jsonrpc.Address;

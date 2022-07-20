@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.token.balancedtoken;
+package network.balanced.score.tokens.balancedtoken;
 
 import network.balanced.score.lib.interfaces.BalancedToken;
 import network.balanced.score.lib.tokens.IRC2Burnable;
@@ -30,7 +30,7 @@ import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static network.balanced.score.lib.utils.Math.pow;
-import static network.balanced.score.token.balancedtoken.Constants.*;
+import static network.balanced.score.tokens.balancedtoken.Constants.*;
 
 public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
 
@@ -325,7 +325,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
         if (unstakingTime.compareTo(BigInteger.valueOf(Context.getBlockTimestamp())) >= 0) {
             currUnstaked = BigInteger.ZERO;
         }
-        
+
         BigInteger unstakingAmount =
                 stakingDetail.getOrDefault(Status.UNSTAKING.code, BigInteger.ZERO).subtract(currUnstaked);
 
@@ -433,12 +433,16 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
         stakingDetail.set(Status.UNSTAKING.code, unstakeAmount);
         stakingDetail.set(Status.UNSTAKING_PERIOD.code, BigInteger.valueOf(Context.getBlockTimestamp()).
                 add(this.unstakingPeriod.getOrDefault(BigInteger.ZERO)));
-        this.totalStakedBalance.set(this.totalStakedBalance.getOrDefault(BigInteger.ZERO).add(stakeIncrement));
+
+        BigInteger newTotal = this.totalStakedBalance.getOrDefault(BigInteger.ZERO).add(stakeIncrement);
+        this.totalStakedBalance.set(newTotal);
 
         if (this.enableSnapshots.getOrDefault(false)) {
             this.updateSnapshotForAddress(Context.getCaller(), _value);
-            this.updateTotalStakedSnapshot(this.totalStakedBalance.getOrDefault(BigInteger.ZERO));
+            this.updateTotalStakedSnapshot(newTotal);
         }
+
+        Context.call(dividendsScore.get(), "updateBalnStake", from, stakedAmount, newTotal);
     }
 
     @Override

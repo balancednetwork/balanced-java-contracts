@@ -770,9 +770,9 @@ public class GovernanceImpl {
     }
 
     @External
-    public void delegate(PrepDelegations[] _delegations) {
+    public void delegate(String contract, PrepDelegations[] _delegations) {
         onlyOwner();
-        Context.call(Addresses.get("loans"), "delegate", (Object) _delegations);
+        Context.call(Addresses.get(contract), "delegate", (Object) _delegations);
     }
 
     @External
@@ -971,8 +971,8 @@ public class GovernanceImpl {
             return;
         }
 
-        Context.call(Addresses.get("bnUSD"), "govTransfer", Addresses.get("daofund"), proposal.proposer.get(), proposal.fee.get(), new byte[0]);
         proposal.feeRefunded.set(true);
+        Context.call(Addresses.get("bnUSD"), "govTransfer", Addresses.get("daofund"), proposal.proposer.get(), proposal.fee.get(), new byte[0]);
     }
 
     private boolean checkBalnVoteCriterion(Address address) {
@@ -985,7 +985,7 @@ public class GovernanceImpl {
 
     private void _refundVoteDefinitionFee(ProposalDB proposal) {
         Address daoFund = Addresses.get("daofund");
-        Context.call(Addresses.get("bnUSD"), "govTransfer", daoFund, Context.getCaller(), proposal.fee.get(), new byte[0]);
+        Context.call(Addresses.get("bnUSD"), "govTransfer", daoFund, proposal.proposer.get(), proposal.fee.get(), new byte[0]);
         proposal.feeRefunded.set(true);
     }
 
