@@ -428,14 +428,14 @@ public class DividendsImpl implements Dividends {
 
     @External(readonly = true)
     public Map<String, BigInteger> getUnclaimedDividends(Address user) {
-        BigInteger stakedBalance = getBalnBalance(user);
+        BigInteger boostedBalance = getBoostedBalnBalance(user);
         Map<String, BigInteger> totalDividends = new HashMap<>();
 
         int size = acceptedTokens.size();
         DictDB<Address, BigInteger> userAccruedDividends = accruedDividends.at(user);
         for (int i = 0; i < size; i++) {
             Address token = acceptedTokens.get(i);
-            BigInteger accruedDividends = DividendsTracker.updateUserData(token, user, stakedBalance, true);
+            BigInteger accruedDividends = DividendsTracker.updateUserData(token, user, boostedBalance, true, getDay());
             BigInteger prevAccruedDividends = userAccruedDividends.getOrDefault(token, BigInteger.ZERO);
             BigInteger totalDivs = accruedDividends.add(prevAccruedDividends);
             if (totalDivs.signum() > 0) {
@@ -449,13 +449,12 @@ public class DividendsImpl implements Dividends {
     @External
     public void claimDividends() {
         Address user = Context.getCaller();
-        //TODO: Check this
-        BigInteger stakedBalance = getBalnBalance(user);
+        BigInteger boostedBalance = getBoostedBalnBalance(user);
         int size = acceptedTokens.size();
         DictDB<Address, BigInteger> userAccruedDividends = accruedDividends.at(user);
         for (int i = 0; i < size; i++) {
             Address token = acceptedTokens.get(i);
-            BigInteger accruedDividends = DividendsTracker.updateUserData(token, user, stakedBalance, false);
+            BigInteger accruedDividends = DividendsTracker.updateUserData(token, user, boostedBalance, false, getDay());
             BigInteger prevAccruedDividends = userAccruedDividends.getOrDefault(token, BigInteger.ZERO);
             BigInteger totalDivs = accruedDividends.add(prevAccruedDividends);
             if (totalDivs.signum() > 0) {
@@ -565,7 +564,7 @@ public class DividendsImpl implements Dividends {
 
         if (continuousDividendsActive()) {
             BigInteger dividendsToDaofund = _value.multiply(dividendsPercentage.get(DAOFUND)).divide(EXA);
-            DividendsTracker.updateTotalWeight(token, _value.subtract(dividendsToDaofund));
+            DividendsTracker.updateTotalWeight(token, _value.subtract(dividendsToDaofund), getDay());
             DividendsReceivedV2(_value, getDay(), _value + " tokens received as dividends token: " + token);
             sendToken(daoFund.get(), dividendsToDaofund, token, "Daofund dividends");
         } else {
@@ -585,12 +584,12 @@ public class DividendsImpl implements Dividends {
         DictDB<Address, BigInteger> userAccruedDividends = accruedDividends.at(user);
         for (int i = 0; i < size; i++) {
             Address token = acceptedTokens.get(i);
-            BigInteger accruedDividends = DividendsTracker.updateUserData(token, user, prevStakedBalance, false);
+            BigInteger accruedDividends = DividendsTracker.updateUserData(token, user, prevStakedBalance, false, getDay());
             BigInteger prevAccruedDividends = userAccruedDividends.getOrDefault(token, BigInteger.ZERO);
             userAccruedDividends.set(token, prevAccruedDividends.add(accruedDividends));
         }
 
-        DividendsTracker.setTotalSupply(currentTotalSupply);
+        DividendsTracker.setTotalSupply(currentTotalSupply, getDay());
     }
 
     @External(readonly = true)
@@ -849,8 +848,8 @@ public class DividendsImpl implements Dividends {
         FundTransfer(to, amount, msg + amount + " token sent to" + to);
     }
 
-    private BigInteger getBalnBalance(Address user) {
-        return Context.call(BigInteger.class, bbalnScore.get(), "stakedBalanceOf", user);
+    private BigInteger getBoostedBalnBalance(Address user) {
+        return Context.call(BigInteger.class, bbalnScore.get(), "balanceOf", user);
     }
 
     private void setTimeOffset() {
