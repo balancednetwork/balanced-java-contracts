@@ -136,9 +136,6 @@ public class SwapRemoveAndFeeTest {
         assert updatedFeeBalanceOfTestToken.compareTo(feeBalanceOfTestToken)>0;
         assertEquals( BigInteger.valueOf(150).multiply(EXA).divide(BigInteger.valueOf(1000)),updatedFeeBalanceOfTestToken);
 
-        UserRevertedException exception = assertThrows(UserRevertedException.class, () -> dexUserScoreClient.remove(poolId, BigInteger.valueOf(5), true));
-        assertEquals(exception.getMessage(), "Reverted(0)");  //locked
-
         waitForADay();
         balanced.syncDistributions();
         BigInteger withdrawAmount = BigInteger.valueOf(5);
