@@ -47,6 +47,7 @@ public class DividendsImpl implements Dividends {
     private static final VarDB<Address> daoFund = Context.newVarDB(DAOFUND, Address.class);
     public static final VarDB<Address> balnScore = Context.newVarDB(BALN_SCORE, Address.class);
     private static final VarDB<Address> dexScore = Context.newVarDB(DEX_SCORE, Address.class);
+    private static final VarDB<Address> bbalnScore = Context.newVarDB(BBALN_SCORE, Address.class);
 
     private static final ArrayDB<Address> acceptedTokens = Context.newArrayDB(ACCEPTED_TOKENS, Address.class);
     public static final VarDB<BigInteger> snapshotId = Context.newVarDB(SNAPSHOT_ID, BigInteger.class);
@@ -448,6 +449,7 @@ public class DividendsImpl implements Dividends {
     @External
     public void claimDividends() {
         Address user = Context.getCaller();
+        //TODO: Check this
         BigInteger stakedBalance = getBalnBalance(user);
         int size = acceptedTokens.size();
         DictDB<Address, BigInteger> userAccruedDividends = accruedDividends.at(user);
@@ -848,7 +850,7 @@ public class DividendsImpl implements Dividends {
     }
 
     private BigInteger getBalnBalance(Address user) {
-        return Context.call(BigInteger.class, balnScore.get(), "stakedBalanceOf", user);
+        return Context.call(BigInteger.class, bbalnScore.get(), "stakedBalanceOf", user);
     }
 
     private void setTimeOffset() {
