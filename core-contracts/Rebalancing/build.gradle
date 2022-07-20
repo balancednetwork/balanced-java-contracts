@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import network.balanced.score.dependencies.Addresses
 import network.balanced.score.dependencies.Dependencies
 
 version = '0.1.0'
@@ -42,7 +44,7 @@ optimizedJar {
     mainClassName = 'network.balanced.score.core.rebalancing.RebalancingImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
-        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
 
     enableDebug = false
@@ -53,6 +55,12 @@ deployJar {
         sejong {
             uri = 'https://sejong.net.solidwallet.io/api/v3'
             nid = 0x53
+            to = Addresses.sejong.rebalancing
+        }
+        berlin {
+            uri = 'https://berlin.net.solidwallet.io/api/v3'
+            nid = 0x7
+            to = Addresses.berlin.rebalancing
         }
         local {
             uri = 'http://localhost:9082/api/v3'
@@ -61,17 +69,20 @@ deployJar {
         mainnet {
             uri = 'https://ctz.solidwallet.io/api/v3'
             nid = 0x1
+            to = Addresses.mainnet.rebalancing
         }
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
-    parameters {}
+    parameters {
+        arg("_governance", Addresses.mainnet.governance)
+    }
 }
 
 tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
-    finalizedBy jacocoTestReport 
+    finalizedBy jacocoTestReport
 }
 
 jacocoTestReport {

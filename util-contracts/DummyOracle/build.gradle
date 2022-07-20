@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import network.balanced.score.dependencies.Addresses
 import network.balanced.score.dependencies.Dependencies
 
 plugins {
@@ -53,15 +54,11 @@ deployJar {
         berlin {
             uri = "https://berlin.net.solidwallet.io/api/v3"
             nid = 0x7
-            to = "cx18f2bc4510f827b0aa9acfe5298d039271e0bb73"
+            to = Addresses.berlin.oracle
         }
         local {
             uri = 'http://localhost:9082/api/v3'
             nid = 0x3
-        }
-        mainnet {
-            uri = 'https://ctz.solidwallet.io/api/v3'
-            nid = 0x1
         }
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''

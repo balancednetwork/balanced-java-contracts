@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+
+import network.balanced.score.dependencies.Addresses
 import network.balanced.score.dependencies.Dependencies
 
 version = '0.1.0'
@@ -50,7 +52,7 @@ optimizedJar {
     mainClassName = 'network.balanced.score.core.daofund.DAOfundImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
-        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
 }
 
@@ -60,6 +62,11 @@ deployJar {
             uri = 'https://sejong.net.solidwallet.io/api/v3'
             nid = 0x53
         }
+        berlin {
+            uri = 'https://berlin.net.solidwallet.io/api/v3'
+            nid = 0x7
+            to = Addresses.berlin.daofund
+        }
         local {
             uri = 'http://localhost:9082/api/v3'
             nid = 0x3
@@ -67,11 +74,14 @@ deployJar {
         mainnet {
             uri = 'https://ctz.solidwallet.io/api/v3'
             nid = 0x1
+            to = Addresses.mainnet.daofund
         }
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
-    parameters {}
+    parameters {
+        arg('_governance', Addresses.mainnet.governance)
+    }
 }
 
 tasks.named('test') {
@@ -83,7 +93,7 @@ task integrationTest(type: Test) {
     useJUnitPlatform()
 
     rootProject.allprojects {
-        if(it.getTasks().findByName('optimizedJar')) {
+        if (it.getTasks().findByName('optimizedJar')) {
             dependsOn(it.getTasks().getByName('optimizedJar'))
         }
     }
@@ -97,7 +107,7 @@ task integrationTest(type: Test) {
         classpath = sourceSets.intTest.runtimeClasspath
 
         systemProperty "python", new File(project(':test-lib').projectDir, 'python-contracts/daofund.zip')
-        systemProperty "java", optimizedJar.outputJarName        
+        systemProperty "java", optimizedJar.outputJarName
     }
 
 }

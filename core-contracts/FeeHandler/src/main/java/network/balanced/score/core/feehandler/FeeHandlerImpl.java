@@ -250,6 +250,8 @@ public class FeeHandlerImpl implements FeeHandler {
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         Address sender = Context.getCaller();
+        collectFeeData(sender, _from, _value);
+
         if (Arrays.equals(lastTxhash.getOrDefault(new byte[0]), Context.getTransactionHash())) {
             return;
         } else if (!isTimeForFeeProcessing(sender)) {
@@ -265,14 +267,6 @@ public class FeeHandlerImpl implements FeeHandler {
                 transferToken(sender, getContractAddress("dividends"), getTokenBalance(sender), new byte[0]);
                 return;
             }
-        }
-        BigInteger accruedFees = swapFeesAccruedDB.get(sender);
-        if (_from.equals(loans.get())) {
-            loanFeesAccrued.set(loanFeesAccrued.getOrDefault(BigInteger.ZERO).add(_value));
-        } else if (_from.equals(dex.get()) && accruedFees != null) {
-            swapFeesAccruedDB.set(sender, accruedFees.add(_value));
-        } else if (_from.equals(stabilityFund.get())) {
-            stabilityFundFeesAccrued.set(stabilityFundFeesAccrued.getOrDefault(BigInteger.ZERO).add(_value));
         }
     }
 
@@ -378,6 +372,17 @@ public class FeeHandlerImpl implements FeeHandler {
 
     private Address getContractAddress(String _contract) {
         return (Address) Context.call(governance.get(), "getContractAddress", _contract);
+    }
+
+    private void collectFeeData(Address sender, Address _from, BigInteger _value) {
+        BigInteger accruedFees = swapFeesAccruedDB.get(sender);
+        if (_from.equals(loans.get())) {
+            loanFeesAccrued.set(loanFeesAccrued.getOrDefault(BigInteger.ZERO).add(_value));
+        } else if (_from.equals(dex.get()) && accruedFees != null) {
+            swapFeesAccruedDB.set(sender, accruedFees.add(_value));
+        } else if (_from.equals(stabilityFund.get())) {
+            stabilityFundFeesAccrued.set(stabilityFundFeesAccrued.getOrDefault(BigInteger.ZERO).add(_value));
+        }
     }
 
     private boolean isTimeForFeeProcessing(Address _token) {

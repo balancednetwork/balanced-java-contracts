@@ -171,13 +171,14 @@ public class Balanced {
         ownerClient.bnUSD.setMinter(loans._address());
         ownerClient.sicx.setMinter(staking._address());
         ownerClient.baln.setMinter(rewards._address());
+        ownerClient.bnUSD.setMinter2(stability._address());
+
         ownerClient.governance.configureBalanced();
         ownerClient.governance.launchBalanced();
         ownerClient.staking.toggleStakingOn();
 
         ownerClient.daofund.addAddressToSetdb();
 
-        ownerClient.bnUSD.setMinter2(stability._address());
         ownerClient.governance.setAdmin(feehandler._address(), governance._address());
         ownerClient.governance.enable_fee_handler();
 
@@ -185,7 +186,6 @@ public class Balanced {
         ownerClient.rewards.addDataProvider(dex._address());
         ownerClient.rewards.addDataProvider(loans._address());
 
-        ownerClient.governance.enable_fee_handler();
         ownerClient.governance.setFeeProcessingInterval(BigInteger.ONE);
 
         Address[] acceptedAddress=new Address[]{

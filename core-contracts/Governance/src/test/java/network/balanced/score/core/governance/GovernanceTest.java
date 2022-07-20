@@ -473,11 +473,11 @@ public class GovernanceTest extends GovernanceTestBase {
         String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
         
         // Act & Assert
-        Executable withNotOwner = () -> governance.invoke(notOwner, "delegate", (Object) delegations);
+        Executable withNotOwner = () -> governance.invoke(notOwner, "delegate", "loans", (Object) delegations);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
 
         // Act
-        governance.invoke(owner, "delegate", (Object) delegations);
+        governance.invoke(owner, "delegate", "loans", (Object) delegations);
 
         // Assert
         verify(loans.mock).delegate(any(PrepDelegations[].class));
