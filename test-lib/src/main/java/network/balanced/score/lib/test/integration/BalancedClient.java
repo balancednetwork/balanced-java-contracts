@@ -31,6 +31,7 @@ public class BalancedClient {
     public RewardsScoreClient rewards;
     public LoansScoreClient loans;
     public BalancedTokenScoreClient baln;
+    public BoostedBalnScoreClient boostedBaln;
     public RebalancingScoreClient rebalancing;
     public SicxScoreClient sicx;
     public DexScoreClient dex;
@@ -50,6 +51,7 @@ public class BalancedClient {
         rewards = new RewardsScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.rewards._address());
         loans = new LoansScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.loans._address());
         baln = new BalancedTokenScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.baln._address());
+        boostedBaln = new BoostedBalnScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.bBaln._address());
         rebalancing = new RebalancingScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.rebalancing._address());
         sicx = new SicxScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.sicx._address());
         dex = new DexScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.dex._address());
