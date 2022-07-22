@@ -6,7 +6,7 @@ services:
         env_file:
             - ./gochain-local/data/single/iconee.env
         volumes:
-            - ./gochain-local/data/single:/testsuite/data
+            - ./gochain-local/data/single:/goloop/data
             - ./gochain-local/data/governance:/goloop/data/gov
             - ./gochain-local/chain:/testsuite/chain
         ports:
