@@ -37,7 +37,7 @@ task buildContracts(type: Exec) {
 
 
 apply plugin: 'deploy-contracts'
-deployBalancedContracts  {
+deployBalancedContracts {
     envs {
         local {
             env = "local"
@@ -123,9 +123,11 @@ subprojects {
     }
 }
 
-gradle.taskGraph.beforeTask { Task task ->
-    if(task.name=='integrationTest') {
-        scoreIntegrationTest.each { key, val -> task.systemProperty key, val }
+gradle.taskGraph.whenReady { taskGraph ->
+    taskGraph.getAllTasks().eachWithIndex { task, n ->
+        if (task.name == 'integrationTest') {
+            scoreIntegrationTest.each { key, val -> task.systemProperty key, val }
+        }
     }
 }
 
