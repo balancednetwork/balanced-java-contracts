@@ -22,45 +22,71 @@ import score.ArrayDB;
 import score.BranchDB;
 import score.Context;
 
+import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.updateFrequency;
+import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.lastPriceInLoop;
+
 import java.math.BigInteger;
 
 public class TWAPCalculator {
-   private static final BranchDB<String, DictDB<BigInteger, BigInteger>> cumulativePrices = Context.newBranchDB("tmp1", BigInteger.class);
-   private static final BranchDB<String, ArrayDB<BigInteger>> updateTimestamps = Context.newBranchDB("tmp2", BigInteger.class);
-   private static final BranchDB<String, VarDB<Integer>> indexDB = Context.newBranchDB("tmp3", Integer.class);
+   private static final BranchDB<String, DictDB<BigInteger, BigInteger>> cumulativeWeights = Context.newBranchDB("cummulative_weights", BigInteger.class);
+   private static final BranchDB<String, ArrayDB<BigInteger>> updateTimestamps = Context.newBranchDB("price_update_timestamps", BigInteger.class);
+   private static final BranchDB<String, VarDB<Integer>> indexDB = Context.newBranchDB("timestamp_indexes", Integer.class);
+   private static final BranchDB<String, VarDB<BigInteger>> lastPrices = Context.newBranchDB("last_prices", BigInteger.class);
 
    public static BigInteger updatePrice(String symbol, BigInteger currentPrice, BigInteger timespan) {
-      BigInteger currentTime = BigInteger.valueOf(Context.getBlockTimestamp());
-      BigInteger startTime = currentTime.subtract(timespan);
-      DictDB<BigInteger, BigInteger> cumulativePrices = TWAPCalculator.cumulativePrices.at(symbol);
+      DictDB<BigInteger, BigInteger> cumulativeWeights = TWAPCalculator.cumulativeWeights.at(symbol);
       ArrayDB<BigInteger> timestamps = updateTimestamps.at(symbol);
+
       int numberOfTimestamps = timestamps.size();
       if (numberOfTimestamps == 0) {
-         cumulativePrices.set(BigInteger.ZERO, BigInteger.ZERO);
+         cumulativeWeights.set(BigInteger.ZERO, BigInteger.ZERO);
          timestamps.add(BigInteger.ZERO);
          numberOfTimestamps = 1;
       }
 
-      BigInteger lastUpdate = timestamps.get(numberOfTimestamps-1);
-      BigInteger addedPriceWeight = currentTime.subtract(lastUpdate).multiply(currentPrice);
-      BigInteger lastCumulative = cumulativePrices.getOrDefault(lastUpdate, BigInteger.ZERO);
+      BigInteger currentTime = BigInteger.valueOf(Context.getBlockTimestamp());
+      BigInteger lastUpdate = timestamps.get(numberOfTimestamps - 1);
+      BigInteger timeSinceLastUpdate = currentTime.subtract(lastUpdate);
+
+      if (timeSinceLastUpdate.compareTo(updateFrequency.get()) < 0) {
+         return lastPriceInLoop.get(symbol);
+      }
+
+      VarDB<BigInteger> lastPrice = lastPrices.at(symbol);
+
+      BigInteger price = lastPrice.getOrDefault(BigInteger.ZERO);
+
+      BigInteger addedPriceWeight = timeSinceLastUpdate.multiply(price);
+      BigInteger lastCumulative = cumulativeWeights.getOrDefault(lastUpdate, BigInteger.ZERO);
       BigInteger newPriceWeight = addedPriceWeight.add(lastCumulative);
 
-      cumulativePrices.set(currentTime, newPriceWeight);
+      cumulativeWeights.set(currentTime, newPriceWeight);
+      lastPrice.set(currentPrice);
       timestamps.add(currentTime);
 
-      BigInteger oldPriceWeight = getCumulativePriceAt(symbol, startTime, timestamps, cumulativePrices);
-      BigInteger priceInLoop = newPriceWeight.subtract(oldPriceWeight).divide(timespan);
+      BigInteger startTime = currentTime.subtract(timespan);
+      BigInteger startPriceWeight = getCumulativePriceAt(symbol, startTime, timestamps, cumulativeWeights);
+      BigInteger priceInLoop = newPriceWeight.subtract(startPriceWeight).divide(timespan);
+
+      if (numberOfTimestamps < 2) {
+         return currentPrice;
+      }
 
       return priceInLoop;
    }
 
-   private static BigInteger getCumulativePriceAt(String symbol, BigInteger time, ArrayDB<BigInteger> timestamps, DictDB<BigInteger, BigInteger> cumulativePrices) {
+   private static BigInteger getCumulativePriceAt(String symbol, BigInteger time, ArrayDB<BigInteger> timestamps, DictDB<BigInteger, BigInteger> cumulativeWeights) {
       VarDB<Integer> indexDB = TWAPCalculator.indexDB.at(symbol);
       int index = indexDB.getOrDefault(0);
 
-      BigInteger lastTime = timestamps.get(index);
+      BigInteger lastTime = BigInteger.ZERO;
       BigInteger currentTime = timestamps.get(index);
+
+      // if timespan has been increased
+      while (currentTime.compareTo(time) >= 0) {
+         index--;
+         currentTime = timestamps.get(index);
+      }
 
       while (currentTime.compareTo(time) < 0) {
          index++;
@@ -68,11 +94,12 @@ public class TWAPCalculator {
          currentTime = timestamps.get(index);
       }
 
-      BigInteger lastWeight = cumulativePrices.get(lastTime);
-      BigInteger currentWeight = cumulativePrices.get(currentTime);
-      BigInteger diff = currentWeight.subtract(lastWeight);
+      BigInteger lastWeight = cumulativeWeights.get(lastTime);
+      BigInteger currentWeight = cumulativeWeights.get(currentTime);
+      BigInteger weightDiff = currentWeight.subtract(lastWeight);
       BigInteger timeDiff = currentTime.subtract(lastTime);
-      BigInteger price = diff.divide(timeDiff);
+      BigInteger price = weightDiff.divide(timeDiff);
+
       BigInteger activeWeight = lastWeight.add(time.subtract(lastTime).multiply(price));
       indexDB.set(index - 1);
 

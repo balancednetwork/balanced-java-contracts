@@ -22,6 +22,7 @@ import static network.balanced.score.core.balancedoracle.BalancedOracleConstants
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.dexPricedAssets;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.dexPricedTimeSpan;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.oraclePriceTimeSpan;
+import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.updateFrequency;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.governance;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.lastPriceInLoop;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.oracle;
@@ -54,8 +55,10 @@ public class BalancedOracleImpl implements BalancedOracle {
         assetPeg.set("bnUSD", "USD");
         dexPricedAssets.set("BALN",  BigInteger.valueOf(3));
 
+        // TMP values
         dexPricedTimeSpan.set(MICRO_SECONDS_IN_A_DAY);
         oraclePriceTimeSpan.set(MICRO_SECONDS_IN_A_SECOND.multiply(BigInteger.valueOf(3600))); // HOUR
+        updateFrequency.set(MICRO_SECONDS_IN_A_SECOND.multiply(BigInteger.valueOf(600))); // 10 MIN
     }
     
     @External(readonly = true)
@@ -65,24 +68,24 @@ public class BalancedOracleImpl implements BalancedOracle {
 
     @External
     public BigInteger getPriceInLoop(String symbol) {
-        symbol = assetPeg.getOrDefault(symbol, symbol);
+        String pegSymbol = assetPeg.getOrDefault(symbol, symbol);
         BigInteger priceInLoop;
-        if (symbol.equals("sICX")) {
+        if (pegSymbol.equals("sICX")) {
             priceInLoop = Context.call(BigInteger.class, staking.get(), "getTodayRate");
-        } else if (dexPricedAssets.get(symbol) != null) {
-            priceInLoop = getDexPriceInLoop(symbol);
+        } else if (dexPricedAssets.get(pegSymbol) != null) {
+            priceInLoop = getDexPriceInLoop(pegSymbol);
         } else {
-            priceInLoop = getLoopRate(symbol);
+            priceInLoop = getLoopRate(pegSymbol);
         }
 
-        lastPriceInLoop.set(symbol, priceInLoop);
+        lastPriceInLoop.set(pegSymbol, priceInLoop);
         return priceInLoop;
     }
 
     @External(readonly = true)
     public BigInteger getLastPriceInLoop(String symbol) {
-        symbol = assetPeg.getOrDefault(symbol, symbol);
-        BigInteger priceInLoop  = lastPriceInLoop.getOrDefault(symbol, BigInteger.ZERO);
+        String pegSymbol = assetPeg.getOrDefault(symbol, symbol);
+        BigInteger priceInLoop  = lastPriceInLoop.getOrDefault(pegSymbol, BigInteger.ZERO);
         Context.require(priceInLoop.compareTo(BigInteger.ZERO) > 0, TAG + ": No price data exists for symbol");
 
         return priceInLoop;
@@ -138,6 +141,17 @@ public class BalancedOracleImpl implements BalancedOracle {
     @External(readonly = true)
     public BigInteger getDexPriceTimespan() {
         return dexPricedTimeSpan.get();
+    }
+
+    @External
+    public void setUpdateFrequency(BigInteger time) {
+        only(admin);
+        updateFrequency.set(time);
+    }
+
+    @External(readonly = true)
+    public BigInteger getUpdateFrequency() {
+        return updateFrequency.get();
     }
 
     @External

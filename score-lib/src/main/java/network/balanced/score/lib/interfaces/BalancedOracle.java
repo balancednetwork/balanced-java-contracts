@@ -67,4 +67,10 @@ public interface BalancedOracle extends
 
     @External(readonly = true)
     BigInteger getOraclePriceTimespan();
+
+    @External
+    void setUpdateFrequency(BigInteger time);
+
+    @External(readonly = true)
+     BigInteger getUpdateFrequency();
 }

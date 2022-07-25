@@ -35,7 +35,8 @@ public class BalancedOracleConstants {
    private static final String LAST_LOOP_PRICES = "lastLoopPrices";
 
    private static final String ORACLE_PRICE_TIMESPAN = "oraclePriceTimeSpan";
-   private static final String DEX_PRICE_TIMESPA= "dexPricedTimeSpan";
+   private static final String DEX_PRICE_TIMESPAN = "dexPricedTimeSpan";
+   private static final String UPDATE_FREQUENCY= "update_frequency";
 
    public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
    public static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
@@ -48,5 +49,6 @@ public class BalancedOracleConstants {
    public static final DictDB<String, BigInteger> lastPriceInLoop = Context.newDictDB(LAST_LOOP_PRICES, BigInteger.class);
 
    public static final VarDB<BigInteger> oraclePriceTimeSpan = Context.newVarDB(ORACLE_PRICE_TIMESPAN, BigInteger.class);
-   public static final VarDB<BigInteger> dexPricedTimeSpan = Context.newVarDB(DEX_PRICE_TIMESPA, BigInteger.class);
+   public static final VarDB<BigInteger> dexPricedTimeSpan = Context.newVarDB(DEX_PRICE_TIMESPAN, BigInteger.class);
+   public static final VarDB<BigInteger> updateFrequency = Context.newVarDB(UPDATE_FREQUENCY, BigInteger.class);
 }
