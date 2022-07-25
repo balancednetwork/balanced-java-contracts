@@ -501,6 +501,20 @@ public class DexTestCore extends DexTestBase {
         assertEquals(totalSupply, totalValue);
     }
 
+    @Test
+    void delegate() {
+        PrepDelegations prep = new PrepDelegations();
+        prep._address = prep_address.getAddress();
+        prep._votes_in_per = BigInteger.valueOf(100);
+        PrepDelegations[] preps = new PrepDelegations[]{prep};
+
+        contextMock.when(() -> Context.call(eq(stakingScore.getAddress()), eq("delegate"), any())).thenReturn(
+                "Staking delegate called");
+        dexScore.invoke(governanceScore, "delegate", (Object) preps);
+
+        contextMock.verify(() -> Context.call(eq(stakingScore.getAddress()), eq("delegate"), any()));
+    }
+    
     @AfterEach
     void closeMock() {
         contextMock.close();

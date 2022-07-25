@@ -167,7 +167,7 @@ public class RebalancingImpl implements Rebalancing {
 
     @External(readonly = true)
     @SuppressWarnings("unchecked")
-    public List<Object> getRebalancingStatusFor(Address address) {
+    public List<Object> getRebalancingStatusFor(Address collateralAddress) {
 
         List<Object> results = new ArrayList<>(3);
 
@@ -178,8 +178,8 @@ public class RebalancingImpl implements Rebalancing {
         BigInteger threshold = priceThreshold.get();
 
         Context.require(bnusdScore != null && dexScore != null && sicxScore != null && threshold != null);
-        String symbol = Context.call(String.class, address, "symbol");
-        BigInteger poolID = Context.call(BigInteger.class, dexScore, "getPoolId", address, bnusdScore);
+        String symbol = Context.call(String.class, collateralAddress, "symbol");
+        BigInteger poolID = Context.call(BigInteger.class, dexScore, "getPoolId", collateralAddress, bnusdScore);
 
         BigInteger bnusdPriceInIcx = (BigInteger) Context.call(oracleScore, "getPriceInLoop", "USD");
         BigInteger assetPriceInIcx = (BigInteger) Context.call(oracleScore, "getPriceInLoop", symbol);
@@ -225,12 +225,12 @@ public class RebalancingImpl implements Rebalancing {
     }
 
     @External
-    public void rebalance(@Optional Address address) {
-        optionalDefault(address, sicx.get());
+    public void rebalance(@Optional Address collateralAddress) {
+        optionalDefault(collateralAddress, sicx.get());
         Address loansScore = loans.get();
-        String symbol = Context.call(String.class, address, "symbol");
+        String symbol = Context.call(String.class, collateralAddress, "symbol");
         Context.require(loansScore != null);
-        List<Object> status = getRebalancingStatusFor(address);
+        List<Object> status = getRebalancingStatusFor(collateralAddress);
         boolean forward = (boolean) status.get(0);
         BigInteger tokenAmount = (BigInteger) status.get(1);
         boolean reverse = (boolean) status.get(2);

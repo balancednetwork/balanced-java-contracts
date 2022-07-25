@@ -39,8 +39,8 @@ public interface Rebalancing extends AdminAddress, BnusdAddress, DexAddress, Gov
     void setPriceDiffThreshold(BigInteger _value);
 
     @External(readonly = true)
-    List<Object> getRebalancingStatusFor(Address address);
+    List<Object> getRebalancingStatusFor(Address collateralAddress);
 
     @External
-    void rebalance(@Optional Address address);
+    void rebalance(@Optional Address collateralAddress);
 }

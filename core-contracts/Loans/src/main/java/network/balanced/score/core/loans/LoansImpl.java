@@ -603,7 +603,7 @@ public class LoansImpl implements Loans {
         AssetDB.updateDeadMarkets();
 
         String logMessage = collateral + " liquidated from " + _owner;
-        liquidated(_owner, collateral, logMessage);
+        Liquidated(_owner, collateral, logMessage);
     }
 
     private BigInteger badDebtRedeem(Address from, String collateralSymbol, Asset asset, BigInteger badDebtAmount) {
@@ -990,7 +990,7 @@ public class LoansImpl implements Loans {
     }
 
     @EventLog(indexed = 2)
-    public void liquidated(Address account, BigInteger amount, String note) {
+    public void Liquidated(Address account, BigInteger amount, String note) {
     }
 
     @EventLog(indexed = 3)
