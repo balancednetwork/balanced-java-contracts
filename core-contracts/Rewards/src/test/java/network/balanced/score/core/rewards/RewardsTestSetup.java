@@ -20,12 +20,12 @@ import com.iconloop.score.test.Account;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
-import score.Address;
 
 import static network.balanced.score.core.rewards.utils.RewardsConstants.HUNDRED_PERCENTAGE;
 
 import java.math.BigInteger;
-import java.util.List;
+
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -78,34 +78,8 @@ class RewardsTestSetup extends RewardsTestBase {
     }
 
     @Test
-    void setAndGetStakedLp() {
-        testContractSettersAndGetters(rewardsScore, governance, admin, "setStakedLp",
-        testAccount.getAddress(), "getStakedLp");
-    }
-
-    @Test
-    void setAndGetBatchSize() {
-        int batchSize = 1;
-        String expectedErrorMessage = "Authorization Check: Address not set";
-
-        Executable setWithoutAdmin = () -> rewardsScore.invoke(admin, "setBatchSize", batchSize);
-        expectErrorMessage(setWithoutAdmin, expectedErrorMessage);
-
-        rewardsScore.invoke(governance, "setAdmin", admin.getAddress());
-
-        Account nonAdmin = sm.createAccount();
-        expectedErrorMessage = "Authorization Check: Authorization failed. Caller: " + nonAdmin.getAddress() +
-                " Authorized Caller: " + admin.getAddress();
-        Executable setNotFromAdmin = () -> rewardsScore.invoke(nonAdmin, "setBatchSize", batchSize);
-        expectErrorMessage(setNotFromAdmin, expectedErrorMessage);
-
-        rewardsScore.invoke(admin, "setBatchSize", batchSize);
-        assertEquals(batchSize, rewardsScore.call("getBatchSize"));
-    }
-
-    @Test
     void setAndGetTimeOffset() {
-        BigInteger timeOffset = BigInteger.ONE;
+        BigInteger timeOffset = BigInteger.ONE.multiply(MICRO_SECONDS_IN_A_DAY).negate();
         String expectedErrorMessage = "Authorization Check: Address not set";
 
         Executable setWithoutAdmin = () -> rewardsScore.invoke(admin, "setTimeOffset", timeOffset);
@@ -121,54 +95,6 @@ class RewardsTestSetup extends RewardsTestBase {
 
         rewardsScore.invoke(admin, "setTimeOffset", timeOffset);
         assertEquals(timeOffset, rewardsScore.call("getTimeOffset"));
-    }
-
-    @Test
-    void setAndGetContinuousRewards() {
-        BigInteger continuousRewardsDay = BigInteger.ONE;
-        String expectedErrorMessage = "Authorization Check: Address not set";
-
-        Executable setWithoutAdmin = () -> rewardsScore.invoke(admin, "setContinuousRewardsDay", continuousRewardsDay);
-        expectErrorMessage(setWithoutAdmin, expectedErrorMessage);
-
-        rewardsScore.invoke(governance, "setAdmin", admin.getAddress());
-
-        Account nonAdmin = sm.createAccount();
-        expectedErrorMessage = "Authorization Check: Authorization failed. Caller: " + nonAdmin.getAddress() +
-                " Authorized Caller: " + admin.getAddress();
-        Executable setNotFromAdmin = () -> rewardsScore.invoke(nonAdmin, "setContinuousRewardsDay", continuousRewardsDay);
-        expectErrorMessage(setNotFromAdmin, expectedErrorMessage);
-
-        rewardsScore.invoke(admin, "setContinuousRewardsDay", continuousRewardsDay);
-        assertEquals(continuousRewardsDay, rewardsScore.call("getContinuousRewardsDay"));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    void addAndRemoveDataProviders() {
-        Address dataProvider1 = Account.newScoreAccount(scoreCount++).getAddress();
-        Address dataProvider2 = Account.newScoreAccount(scoreCount++).getAddress();
-        
-        Account nonOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + nonOwner.getAddress() + "Owner=" + owner.getAddress();
-        Executable addFromNotOwner= () -> rewardsScore.invoke(nonOwner, "addDataProvider", dataProvider1);
-        expectErrorMessage(addFromNotOwner, expectedErrorMessage);
-
-        rewardsScore.invoke(owner, "addDataProvider", dataProvider1);
-        rewardsScore.invoke(owner, "addDataProvider", dataProvider2);
-
-        List<Address> dataProviders = (List<Address>) rewardsScore.call("getDataProviders");
-        assertTrue(dataProviders.contains(dataProvider1));
-        assertTrue(dataProviders.contains(dataProvider2));
-
-        Executable removeFromNotOwner= () -> rewardsScore.invoke(nonOwner, "removeDataProvider", dataProvider1);
-        expectErrorMessage(removeFromNotOwner, expectedErrorMessage);
-
-        rewardsScore.invoke(owner, "removeDataProvider", dataProvider1);
-
-        dataProviders = (List<Address>) rewardsScore.call("getDataProviders");
-        assertFalse(dataProviders.contains(dataProvider1));
-        assertTrue(dataProviders.contains(dataProvider2));
     }
 
     @Test

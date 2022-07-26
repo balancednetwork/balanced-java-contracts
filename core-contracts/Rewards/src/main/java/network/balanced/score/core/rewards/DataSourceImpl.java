@@ -16,7 +16,7 @@
 
 package network.balanced.score.core.rewards;
 
-import static network.balanced.score.core.rewards.utils.Check.continuousRewardsActive;
+import static network.balanced.score.core.rewards.utils.RewardsConstants.HUNDRED_PERCENTAGE;
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
@@ -35,28 +35,26 @@ import scorex.util.HashMap;
 public class DataSourceImpl {
     private final BranchDB<String, VarDB<Address>> contractAddress = Context.newBranchDB("contract_address",
             Address.class);
+    private final BranchDB<String, VarDB<Address>> dataProvider = Context.newBranchDB("data_provider",
+            Address.class);
     private final BranchDB<String, VarDB<String>> name = Context.newBranchDB("name", String.class);
-    private final BranchDB<String, VarDB<BigInteger>> day = Context.newBranchDB("day", BigInteger.class);
-    private final BranchDB<String, VarDB<Boolean>> precomp = Context.newBranchDB("precomp", Boolean.class);
-    private final BranchDB<String, VarDB<Integer>> offset = Context.newBranchDB("offset", Integer.class);
+    private final BranchDB<String,  VarDB<BigInteger>> cumulativeTotalDist = Context.newBranchDB("cumulative_total_dist", BigInteger.class);
     private final BranchDB<String,  VarDB<BigInteger>> workingSupply = Context.newBranchDB("working_supply",
-    BigInteger.class);
-    private final BranchDB<String, DictDB<BigInteger, BigInteger>> totalValue = Context.newBranchDB("total_value",
-            BigInteger.class);
+        BigInteger.class);
     private final BranchDB<String, DictDB<BigInteger, BigInteger>> totalDist = Context.newBranchDB("total_dist",
             BigInteger.class);
-    private final BranchDB<String, VarDB<BigInteger>> distPercent = Context.newBranchDB("dist_percent",
+    private final BranchDB<String, DictDB<BigInteger, BigInteger>> distPercent = Context.newBranchDB("dist_percent_at_day",
             BigInteger.class);
     private final BranchDB<String, DictDB<Address, BigInteger>> userWeight = Context.newBranchDB("user_weight",
             BigInteger.class);
     private final BranchDB<String, DictDB<Address, BigInteger>> userWorkingBalance = Context.newBranchDB("user_working_balance",
-    BigInteger.class);
+        BigInteger.class);
     private final BranchDB<String, VarDB<BigInteger>> lastUpdateTimeUs = Context.newBranchDB("last_update_us",
             BigInteger.class);
     private final BranchDB<String, VarDB<BigInteger>> totalWeight = Context.newBranchDB("running_total",
             BigInteger.class);
-    private final BranchDB<String, VarDB<BigInteger>> totalSupply = Context.newBranchDB("total_supply",
-            BigInteger.class);
+    private final BranchDB<String, VarDB<BigInteger>> uncheckedTotalWeight = Context.newBranchDB("unchecked_running_total",
+    BigInteger.class);
 
     private final String dbKey;
 
@@ -72,6 +70,14 @@ public class DataSourceImpl {
         this.contractAddress.at(dbKey).set(address);
     }
 
+    public Address getDataProvider() {
+        return dataProvider.at(dbKey).get();
+    }
+
+    public void setDataProvider(Address address){
+        this.dataProvider.at(dbKey).set(address);
+    }
+
     public String getName() {
         return name.at(dbKey).get();
     }
@@ -80,12 +86,44 @@ public class DataSourceImpl {
         this.name.at(dbKey).set(name);
     }
 
-    public BigInteger getDay() {
-        return day.at(dbKey).getOrDefault(BigInteger.ZERO);
+    public BigInteger getCumulativeTotalDist() {
+        return cumulativeTotalDist.at(dbKey).getOrDefault(BigInteger.ZERO);
     }
 
-    public void setDay(BigInteger day){
-        this.day.at(dbKey).set(day);
+    public void setCumulativeTotalDist(BigInteger dist){
+        this.cumulativeTotalDist.at(dbKey).set(dist);
+    }
+
+    public void setUncheckedTotalWeight(BigInteger day) {
+        BigInteger lastUpdateTimestamp = getLastUpdateTimeUs();
+        BigInteger previousRewardsDay = lastUpdateTimestamp.divide(MICRO_SECONDS_IN_A_DAY);
+        BigInteger previousDayEndUs = previousRewardsDay.add(BigInteger.ONE).multiply(MICRO_SECONDS_IN_A_DAY);
+        BigInteger timeLeft = previousDayEndUs.subtract(lastUpdateTimestamp);
+
+        BigInteger totalDist = getTotalDist(day, true);
+        BigInteger remaningDist = totalDist.multiply(timeLeft).divide(MICRO_SECONDS_IN_A_DAY);
+        
+        this.uncheckedTotalWeight.at(dbKey).set(getTotalWeight());
+        addCumulativeTotalDist(remaningDist);
+    }
+
+    public BigInteger getUncheckedTotalWeight() {
+        return uncheckedTotalWeight.at(dbKey).getOrDefault(BigInteger.ZERO);
+    }
+
+    public void addCumulativeTotalDist(BigInteger dist){
+        VarDB<BigInteger> cumulativeTotalDist = this.cumulativeTotalDist.at(dbKey);
+        BigInteger remaningDist = cumulativeTotalDist.getOrDefault(BigInteger.ZERO);
+        cumulativeTotalDist.set(remaningDist.add(dist));
+        System.out.println(remaningDist.add(dist));
+        
+    }
+
+    public void removeCumulativeTotalDist(BigInteger dist){
+        VarDB<BigInteger> cumulativeTotalDist = this.cumulativeTotalDist.at(dbKey);
+        BigInteger remaningDist = cumulativeTotalDist.getOrDefault(BigInteger.ZERO).subtract(dist);
+        Context.require(remaningDist.signum() >= 0, RewardsImpl.TAG + ": There are no rewards left to claim for " + getName());
+        cumulativeTotalDist.set(remaningDist);
     }
 
     public BigInteger getWorkingSupply() {
@@ -104,32 +142,35 @@ public class DataSourceImpl {
         this.userWorkingBalance.at(dbKey).set(user, balance);
     }
 
-    public Boolean getPrecomp() {
-        return precomp.at(dbKey).getOrDefault(false);
+    public BigInteger getTotalDist(BigInteger day, boolean readOnly) {
+        DictDB<BigInteger, BigInteger> totalDist = this.totalDist.at(dbKey);
+        BigInteger dist = totalDist.get(day);
+        if (dist == null) {
+            dist = calculateTotalDist(day, readOnly);
+            if (!readOnly) {
+                addCumulativeTotalDist(dist);
+                totalDist.set(day, dist);
+            }
+        }
+
+        return dist;
     }
 
-    public Integer getOffset() {
-        return offset.at(dbKey).getOrDefault(0);
+    public BigInteger getDistPercent(BigInteger day, boolean readOnly) {
+        DictDB<BigInteger, BigInteger> distPercent = this.distPercent.at(dbKey);
+        BigInteger percentage = distPercent.get(day);
+        if (percentage == null) {
+            percentage = distPercent.getOrDefault(day.subtract(BigInteger.ONE), BigInteger.ZERO);
+            if (!readOnly) {
+                distPercent.set(day, percentage);
+            }
+        }
+
+        return percentage;
     }
 
-    public BigInteger getTotalValue(BigInteger day) {
-        return totalValue.at(dbKey).getOrDefault(day, BigInteger.ZERO);
-    }
-
-    public BigInteger getTotalDist(BigInteger day) {
-        return totalDist.at(dbKey).getOrDefault(day, BigInteger.ZERO);
-    }
-
-    public void  setTotalDist(BigInteger day, BigInteger value) {
-        totalDist.at(dbKey).set(day, value);
-    }
-    
-    public BigInteger getDistPercent() {
-        return distPercent.at(dbKey).getOrDefault(BigInteger.ZERO);
-    }
-
-    public void setDistPercent(BigInteger distPercent) {
-        this.distPercent.at(dbKey).set(distPercent);
+    public void setDistPercent(BigInteger day, BigInteger distPercent) {
+        this.distPercent.at(dbKey).set(day, distPercent);
     }
 
     public BigInteger getUserWeight(Address user) {
@@ -144,11 +185,6 @@ public class DataSourceImpl {
         return totalWeight.at(dbKey).getOrDefault(BigInteger.ZERO);
     }
 
-    public BigInteger getTotalSupply() {
-        return totalSupply.at(dbKey).getOrDefault(BigInteger.ZERO);
-    }
-
-
     public Map<String, BigInteger> loadCurrentSupply(Address owner) {
         try {
             DataSourceScoreInterface datasource = new DataSourceScoreInterface(getContractAddress());
@@ -162,16 +198,10 @@ public class DataSourceImpl {
 
     public BigInteger updateSingleUserData(BigInteger currentTime, BigInteger prevTotalSupply, Address user,
                                            BigInteger prevBalance, boolean readOnlyContext) {
-        if (!continuousRewardsActive()) {
-            return BigInteger.ZERO;
-        }
 
         BigInteger currentUserWeight = getUserWeight(user);
+        BigInteger uncheckedWeight = getUncheckedTotalWeight();
         BigInteger lastUpdateTimestamp = getLastUpdateTimeUs();
-
-        if (lastUpdateTimestamp.equals(BigInteger.ZERO)) {
-            lastUpdateTimestamp = RewardsImpl.continuousRewardsDay.get().multiply(MICRO_SECONDS_IN_A_DAY);
-        }
 
         BigInteger totalWeight = updateTotalWeight(lastUpdateTimestamp, currentTime, prevTotalSupply, readOnlyContext);
 
@@ -179,6 +209,15 @@ public class DataSourceImpl {
             return BigInteger.ZERO;
         }
 
+        BigInteger uncheckedRewards = BigInteger.ZERO;
+        if (currentUserWeight.compareTo(uncheckedWeight) < 0) {
+            uncheckedRewards = computeUserRewards(prevBalance, uncheckedWeight, currentUserWeight);
+            currentUserWeight = uncheckedWeight;
+            if (!readOnlyContext) {
+                userWeight.at(dbKey).set(user, uncheckedWeight);
+            }
+        }
+        
         BigInteger accruedRewards = BigInteger.ZERO;
         //  If the user's current weight is less than the total, update their weight and issue rewards
         if (prevBalance.compareTo(BigInteger.ZERO) > 0) {
@@ -187,8 +226,10 @@ public class DataSourceImpl {
 
         if (!readOnlyContext) {
             userWeight.at(dbKey).set(user, totalWeight);
+            removeCumulativeTotalDist(accruedRewards);
         }
-        return accruedRewards;
+
+        return accruedRewards.add(uncheckedRewards);
     }
 
     public Map<String, BigInteger> updateWorkingBalanceAndSupply(Address user, BigInteger balance, BigInteger supply, BigInteger time, Boolean boosted) {
@@ -252,10 +293,16 @@ public class DataSourceImpl {
 
         BigInteger runningTotal = getTotalWeight();
 
+        if (lastUpdateTimestamp.equals(BigInteger.ZERO)) {
+            lastUpdateTimestamp = currentTime;
+            if (!readOnlyContext) {
+                lastUpdateTimeUs.at(dbKey).set(currentTime);
+            }
+        }
+
         if (currentTime.equals(lastUpdateTimestamp)) {
             return runningTotal;
         }
-
         // Emit rewards based on the time delta * reward rate
         BigInteger previousRewardsDay;
         BigInteger previousDayEndUs;
@@ -264,10 +311,10 @@ public class DataSourceImpl {
             previousRewardsDay = lastUpdateTimestamp.divide(MICRO_SECONDS_IN_A_DAY);
             previousDayEndUs = previousRewardsDay.add(BigInteger.ONE).multiply(MICRO_SECONDS_IN_A_DAY);
             BigInteger endComputeTimestampUs = previousDayEndUs.min(currentTime);
-
-            BigInteger emission = getTotalDist(previousRewardsDay);
+            BigInteger emission = getTotalDist(previousRewardsDay, readOnlyContext);
             runningTotal = computeTotalWeight(runningTotal, emission, totalSupply, lastUpdateTimestamp,
                     endComputeTimestampUs);
+
             lastUpdateTimestamp = endComputeTimestampUs;
         }
 
@@ -284,93 +331,16 @@ public class DataSourceImpl {
         return datasource.getBnusdValue(getName());
     }
 
-    public Map<String, Object> getDataAt(BigInteger day) {
+    public Map<String, Object> getData() {
         Map<String, Object> sourceData = new HashMap<>();
-        sourceData.put("day", day);
+        BigInteger day = RewardsImpl.getDay();
         sourceData.put("contract_address", getContractAddress());
-        sourceData.put("dist_percent", getDistPercent());
-        sourceData.put("precomp", getPrecomp());
-        sourceData.put("offset", getOffset());
-        sourceData.put("total_value", getTotalValue(day));
-        sourceData.put("total_dist", getTotalDist(day));
+        sourceData.put("data_provider", getDataProvider());
+        sourceData.put("dist_percent", getDistPercent(day, true));
+        sourceData.put("total_weight", getTotalWeight());
+        sourceData.put("working_total", getWorkingSupply());
 
         return sourceData;
-    }
-
-    public Map<String, Object> getData() {
-        BigInteger day = this.getDay();
-        return getDataAt(day);
-    }
-
-    @SuppressWarnings("unchecked")
-    public void distribute(int batchSize) {
-        DataSourceScoreInterface datasource = new DataSourceScoreInterface(getContractAddress());
-
-        BigInteger day = getDay();
-        String name = getName();
-
-        Object precomputeDoneObj = RewardsImpl.call(getContractAddress(), "precompute", day,
-                BigInteger.valueOf(batchSize));
-        boolean precomputeDone;
-        try {
-            precomputeDone = (boolean)precomputeDoneObj;
-        } catch (Exception e) {
-            precomputeDone = !((BigInteger)precomputeDoneObj).equals(BigInteger.ZERO);
-        }
-
-        boolean localPreCompute = getPrecomp();
-        if (!localPreCompute && precomputeDone) {
-            precomp.at(dbKey).set(true);
-            localPreCompute = true;
-            BigInteger sourceTotalValue = datasource.getTotalValue(name, day);
-            totalValue.at(dbKey).set(day, sourceTotalValue);
-        }
-
-        if (!localPreCompute) {
-            return;
-        }
-
-        int offset = this.getOffset();
-        Map<String, BigInteger> dataBatch = (Map<String, BigInteger>) RewardsImpl.call(getContractAddress(), "getDataBatch",
-                name, day.intValue(), batchSize, offset);
-        this.offset.at(dbKey).set(offset + batchSize);
-        if (dataBatch.isEmpty()) {
-            this.day.at(dbKey).set(day.add(BigInteger.ONE));
-            this.offset.at(dbKey).set(0);
-            this.precomp.at(dbKey).set(false);
-            return;
-        }
-
-        BigInteger remaining = getTotalDist(day);
-        BigInteger shares = getTotalValue(day);
-        BigInteger originalShares = shares;
-
-        BigInteger batchSum = BigInteger.ZERO;
-        for (Map.Entry<String, BigInteger> entry : dataBatch.entrySet()) {
-            batchSum = batchSum.add(entry.getValue());
-        }
-
-        BigInteger tokenShare;
-        for (Map.Entry<String,BigInteger> entry : dataBatch.entrySet()) {
-            BigInteger value = entry.getValue();
-            String address = entry.getKey();
-            tokenShare = remaining.multiply(value).divide(shares);
-            Context.require(shares.compareTo(BigInteger.ZERO) > 0,
-                    RewardsImpl.TAG + ": zero or negative divisor for " + name + ", " +
-                            "sum: " + batchSum + ", " +
-                            "total: " + shares + ", " +
-                            "remaining: " + remaining + ", " +
-                            "token_share: " + tokenShare + ", " +
-                            "starting: " + originalShares);
-
-            remaining = remaining.subtract(tokenShare);
-            shares = shares.subtract(value);
-            BigInteger prevHoldings = RewardsImpl.balnHoldings.getOrDefault(address, BigInteger.ZERO);
-            RewardsImpl.balnHoldings.set(address, prevHoldings.add(tokenShare));
-        }
-
-        totalDist.at(dbKey).set(day, remaining);
-        totalValue.at(dbKey).set(day, shares);
     }
 
     private BigInteger computeUserRewards(BigInteger prevUserBalance, BigInteger totalWeight, BigInteger userWeight) {
@@ -392,5 +362,12 @@ public class DataSourceImpl {
         } catch (Exception e) {
             return BigInteger.ZERO;
         }
+    }
+
+    private BigInteger calculateTotalDist(BigInteger day, boolean readOnly) {
+        BigInteger totalDist = RewardsImpl.dailyDistribution(day);
+        BigInteger percentage = getDistPercent(day, readOnly);
+
+        return percentage.multiply(totalDist).divide(HUNDRED_PERCENTAGE);
     }
 }
