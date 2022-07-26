@@ -31,8 +31,12 @@ public class Math {
     }
 
     public static BigInteger convertToNumber(JsonValue value) {
+        return convertToNumber(value, null);
+    }
+
+    public static BigInteger convertToNumber(JsonValue value, BigInteger defaultValue) {
         if (value == null) {
-            return null;
+            return defaultValue;
         }
         if (value.isString()) {
             String number = value.asString();
