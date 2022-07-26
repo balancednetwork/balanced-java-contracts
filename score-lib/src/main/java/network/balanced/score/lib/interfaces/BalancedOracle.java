@@ -57,20 +57,14 @@ public interface BalancedOracle extends
     String getPeg(String symbol);
 
     @External
-    void setDexPriceTimespan(BigInteger time);
-
+    void setDexPriceEMADecay(BigInteger decay);
+       
     @External(readonly = true)
-    BigInteger getDexPriceTimespan();
-
+    BigInteger getDexPriceEMADecay();
+    
     @External
-    void setOrcalePriceTimespan(BigInteger time);
-
+    void setOraclePriceEMADecay(BigInteger decay);
+   
     @External(readonly = true)
-    BigInteger getOraclePriceTimespan();
-
-    @External
-    void setUpdateFrequency(BigInteger time);
-
-    @External(readonly = true)
-     BigInteger getUpdateFrequency();
+    BigInteger getOraclePriceEMADecay();
 }

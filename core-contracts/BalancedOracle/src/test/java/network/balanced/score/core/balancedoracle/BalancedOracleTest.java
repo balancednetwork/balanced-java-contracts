@@ -16,16 +16,15 @@
 
 package network.balanced.score.core.balancedoracle;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static network.balanced.score.lib.utils.Math.exaPow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
 
 import java.math.BigInteger;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.when;
-
-import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_SECOND;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 class BalancedOracleTest extends BalancedOracleTestBase {
     @BeforeEach
@@ -82,165 +81,6 @@ class BalancedOracleTest extends BalancedOracleTestBase {
     }
 
     @Test
-    void timeWeightedAverage_matchingTimestamp() {
-        // Arrange'
-        BigInteger timespan = (BigInteger) balancedOracle.call("getOraclePriceTimespan");
-        BigInteger timespanInBlocks = timespan.divide(MICRO_SECONDS_IN_A_SECOND).divide(BigInteger.TWO);
-
-        // Act
-        BigInteger rate1 = BigInteger.valueOf(6).multiply(BigInteger.TEN.pow(17));
-        mockRate("USD", rate1);
-        balancedOracle.invoke(adminAccount, "getPriceInLoop", "bnUSD");
-        BigInteger T1 = BigInteger.valueOf(sm.getBlock().getTimestamp());
-
-        BigInteger timeDelta0 = timespanInBlocks.subtract(BigInteger.ONE);
-        sm.getBlock().increase(timeDelta0.intValue());
-
-        BigInteger rate2 = BigInteger.valueOf(8).multiply(BigInteger.TEN.pow(17));
-        mockRate("USD", rate2);
-        balancedOracle.invoke(adminAccount, "getPriceInLoop", "bnUSD");
-        BigInteger T2 = BigInteger.valueOf(sm.getBlock().getTimestamp());
-        BigInteger weight2  = T2.subtract(T1).multiply(rate1);
-
-        sm.getBlock().increase(timespanInBlocks.divide(BigInteger.TWO).subtract(BigInteger.ONE).intValue());
-
-        BigInteger rate3 = BigInteger.valueOf(5).multiply(BigInteger.TEN.pow(17));
-        mockRate("USD", rate3);
-        balancedOracle.invoke(adminAccount, "getPriceInLoop", "bnUSD");
-        BigInteger T3 = BigInteger.valueOf(sm.getBlock().getTimestamp());
-        BigInteger weight3  = weight2.add(T3.subtract(T2).multiply(rate2));
-        
-        sm.getBlock().increase(timespanInBlocks.divide(BigInteger.TWO).subtract(BigInteger.ONE).intValue());
-
-        BigInteger rate4 = BigInteger.valueOf(10).multiply(BigInteger.TEN.pow(17));
-        mockRate("USD", rate4);
-        balancedOracle.invoke(adminAccount, "getPriceInLoop", "bnUSD");
-        BigInteger T4 = BigInteger.valueOf(sm.getBlock().getTimestamp());
-        BigInteger weight4  = weight3.add(T4.subtract(T3).multiply(rate3));
-
-        // Assert
-        BigInteger expectedPrice = weight4.subtract(weight2).divide(timespan);
-        BigInteger priceInLoop = (BigInteger) balancedOracle.call("getLastPriceInLoop", "bnUSD");
-
-        assertEquals(expectedPrice, priceInLoop);
-    }
-
-    @Test
-    void timeWeightedAverage_recalculatedWeight() {
-        // Arrange'
-        BigInteger timespan = (BigInteger) balancedOracle.call("getOraclePriceTimespan");
-        BigInteger timespanInBlocks = timespan.divide(MICRO_SECONDS_IN_A_SECOND).divide(BigInteger.TWO);
-
-        // Act
-        BigInteger rate1 = BigInteger.valueOf(6).multiply(BigInteger.TEN.pow(17));
-        mockRate("USD", rate1);
-        balancedOracle.invoke(adminAccount, "getPriceInLoop", "bnUSD");
-        BigInteger T1 = BigInteger.valueOf(sm.getBlock().getTimestamp());
-
-        BigInteger timeDelta0 = timespanInBlocks.subtract(BigInteger.ONE);
-        sm.getBlock().increase(timeDelta0.intValue());
-
-        BigInteger rate2 = BigInteger.valueOf(8).multiply(BigInteger.TEN.pow(17));
-        mockRate("USD", rate2);
-        balancedOracle.invoke(adminAccount, "getPriceInLoop", "bnUSD");
-        BigInteger T2 = BigInteger.valueOf(sm.getBlock().getTimestamp());
-        BigInteger weight2 = T2.subtract(T1).multiply(rate1);
-
-        BigInteger timeDelta1 = timespanInBlocks.subtract(BigInteger.ONE);
-        sm.getBlock().increase(timeDelta1.intValue());
-
-        BigInteger rate3 = BigInteger.valueOf(5).multiply(BigInteger.TEN.pow(17));
-        mockRate("USD", rate3);
-        balancedOracle.invoke(adminAccount, "getPriceInLoop", "bnUSD");
-        BigInteger T3 = BigInteger.valueOf(sm.getBlock().getTimestamp());
-        BigInteger weight3  = weight2.add(T3.subtract(T2).multiply(rate2));
-        
-        BigInteger timeDelta2 = timespanInBlocks.divide(BigInteger.valueOf(2)).subtract(BigInteger.ONE);
-        sm.getBlock().increase(timeDelta2.intValue());
-
-        BigInteger rate4 = BigInteger.valueOf(10).multiply(BigInteger.TEN.pow(17));
-        mockRate("USD", rate4);
-        balancedOracle.invoke(adminAccount, "getPriceInLoop", "bnUSD");
-        BigInteger T4 = BigInteger.valueOf(sm.getBlock().getTimestamp());
-        BigInteger weight4  = weight3.add(T4.subtract(T3).multiply(rate3));
-
-        BigInteger timeDelta3 = timespanInBlocks.divide(BigInteger.valueOf(5)).subtract(BigInteger.ONE);
-        sm.getBlock().increase(timeDelta3.intValue());
-
-        BigInteger rate5 = BigInteger.valueOf(12).multiply(BigInteger.TEN.pow(17));
-        mockRate("USD", rate5);
-        balancedOracle.invoke(adminAccount, "getPriceInLoop", "bnUSD");
-        BigInteger T5 = BigInteger.valueOf(sm.getBlock().getTimestamp());
-        BigInteger weight5  = weight4.add(T5.subtract(T4).multiply(rate4));
-
-        // Assert
-        BigInteger endTime = T5.subtract(timespan);
-        BigInteger calculatedWeight2 = weight2.add(rate2.multiply(endTime.subtract(T2)));
-        BigInteger expectedPrice = weight5.subtract(calculatedWeight2).divide(timespan);
-        BigInteger priceInLoop = (BigInteger) balancedOracle.call("getLastPriceInLoop", "bnUSD");
-
-        assertEquals(expectedPrice, priceInLoop);
-    }
-
-    @Test
-    void timeWeightedAverage_changeTimespan() {
-        // Arrange'
-        BigInteger timespan = (BigInteger) balancedOracle.call("getOraclePriceTimespan");
-        BigInteger timespanInBlocks = timespan.divide(MICRO_SECONDS_IN_A_SECOND).divide(BigInteger.TWO);
-
-        // Act
-        BigInteger rate1 = BigInteger.valueOf(6).multiply(BigInteger.TEN.pow(17));
-        mockRate("USD", rate1);
-        balancedOracle.invoke(adminAccount, "getPriceInLoop", "bnUSD");
-        BigInteger T1 = BigInteger.valueOf(sm.getBlock().getTimestamp());
-
-        BigInteger timeDelta0 = timespanInBlocks.subtract(BigInteger.ONE);
-        sm.getBlock().increase(timeDelta0.intValue());
-
-        BigInteger rate2 = BigInteger.valueOf(8).multiply(BigInteger.TEN.pow(17));
-        mockRate("USD", rate2);
-        balancedOracle.invoke(adminAccount, "getPriceInLoop", "bnUSD");
-        BigInteger T2 = BigInteger.valueOf(sm.getBlock().getTimestamp());
-        BigInteger weight2 = T2.subtract(T1).multiply(rate1);
-
-        BigInteger timeDelta1 = timespanInBlocks.subtract(BigInteger.ONE);
-        sm.getBlock().increase(timeDelta1.intValue());
-
-        BigInteger rate3 = BigInteger.valueOf(5).multiply(BigInteger.TEN.pow(17));
-        mockRate("USD", rate3);
-        balancedOracle.invoke(adminAccount, "getPriceInLoop", "bnUSD");
-        BigInteger T3 = BigInteger.valueOf(sm.getBlock().getTimestamp());
-        BigInteger weight3  = weight2.add(T3.subtract(T2).multiply(rate2));
-        
-        BigInteger timeDelta2 = timespanInBlocks.divide(BigInteger.valueOf(2)).subtract(BigInteger.ONE);
-        sm.getBlock().increase(timeDelta2.intValue());
-
-        BigInteger rate4 = BigInteger.valueOf(10).multiply(BigInteger.TEN.pow(17));
-        mockRate("USD", rate4);
-        balancedOracle.invoke(adminAccount, "getPriceInLoop", "bnUSD");
-        BigInteger T4 = BigInteger.valueOf(sm.getBlock().getTimestamp());
-        BigInteger weight4  = weight3.add(T4.subtract(T3).multiply(rate3));
-
-        BigInteger timeDelta3 = timespanInBlocks.divide(BigInteger.valueOf(2)).subtract(BigInteger.TWO);
-        sm.getBlock().increase(timeDelta3.intValue());
-
-        BigInteger newTimespan = timespan.multiply(BigInteger.TWO);
-        balancedOracle.invoke(governance, "setOrcalePriceTimespan", newTimespan);
-
-        BigInteger rate5 = BigInteger.valueOf(12).multiply(BigInteger.TEN.pow(17));
-        mockRate("USD", rate5);
-        balancedOracle.invoke(adminAccount, "getPriceInLoop", "bnUSD");
-        BigInteger T5 = BigInteger.valueOf(sm.getBlock().getTimestamp());
-        BigInteger weight5  = weight4.add(T5.subtract(T4).multiply(rate4));
-
-        // Assert
-        BigInteger expectedPrice = weight5.subtract(weight2).divide(newTimespan);
-        BigInteger priceInLoop = (BigInteger) balancedOracle.call("getLastPriceInLoop", "bnUSD");
-
-        assertEquals(expectedPrice, priceInLoop);
-    }
-
-    @Test
     void getDexPriceInLoop() {
         // Arrange
         String tokenSymbol = "BALN";
@@ -263,10 +103,115 @@ class BalancedOracleTest extends BalancedOracleTestBase {
         assertEquals(expectedBalnpriceInLoop, priceInLoop);
     }
 
+    @Test
+    void EMA_OracleAsset() {
+        // Arrange
+        BigInteger alpha = ICX.divide(BigInteger.valueOf(DAY));
+        BigInteger decay = ICX.subtract(alpha);
+        balancedOracle.invoke(governance, "setOraclePriceEMADecay", alpha);
+
+        // Act
+        BigInteger rate1 = BigInteger.valueOf(6).multiply(BigInteger.TEN.pow(17));
+        mockRate("USD", rate1);
+        balancedOracle.invoke(adminAccount, "getPriceInLoop", "bnUSD");
+        BigInteger EMA = rate1;
+
+        int blockDiff = (int)DAY/4;
+        sm.getBlock().increase(blockDiff - 1);
+
+        BigInteger rate2 = BigInteger.valueOf(8).multiply(BigInteger.TEN.pow(17));
+        mockRate("USD", rate2);
+        balancedOracle.invoke(adminAccount, "getPriceInLoop", "bnUSD");
+        BigInteger factor = exaPow(decay, blockDiff);
+        BigInteger priceDiff = rate1.subtract(EMA);
+        EMA = rate1.subtract(priceDiff.multiply(factor).divide(ICX));
+
+        sm.getBlock().increase(blockDiff - 1);
+
+        BigInteger rate3 = BigInteger.valueOf(5).multiply(BigInteger.TEN.pow(17));
+        mockRate("USD", rate3);
+        balancedOracle.invoke(adminAccount, "getPriceInLoop", "bnUSD");
+        factor = exaPow(decay, blockDiff);
+        priceDiff = rate2.subtract(EMA);
+        EMA = rate2.subtract(priceDiff.multiply(factor).divide(ICX));
+        
+        blockDiff = (int)DAY;
+        sm.getBlock().increase(blockDiff-1);
+
+        BigInteger rate4 = BigInteger.valueOf(10).multiply(BigInteger.TEN.pow(17));
+        mockRate("USD", rate4);
+        balancedOracle.invoke(adminAccount, "getPriceInLoop", "bnUSD");
+        factor = exaPow(decay, blockDiff);
+        priceDiff = rate3.subtract(EMA);
+        EMA = rate3.subtract(priceDiff.multiply(factor).divide(ICX));
+        
+        // Assert
+        BigInteger priceInLoop = (BigInteger) balancedOracle.call("getLastPriceInLoop", "bnUSD");
+
+        assertEquals(EMA, priceInLoop);
+    }
+
+    @Test
+    void EMA_DexAsset() {
+        // Arrange
+        String tokenSymbol = "BALN";
+        BigInteger poolID = BigInteger.valueOf(3);
+        balancedOracle.invoke(governance, "addDexPricedAsset", tokenSymbol, poolID);
+        when(dex.mock.getQuotePriceInBase(poolID)).thenReturn(ICX);
+
+        BigInteger alpha = ICX.divide(BigInteger.valueOf(DAY));
+        BigInteger decay = ICX.subtract(alpha);
+        balancedOracle.invoke(governance, "setDexPriceEMADecay", alpha);
+
+        // Act
+        BigInteger rate1 = BigInteger.valueOf(6).multiply(BigInteger.TEN.pow(17));
+        mockDexRate(poolID, rate1);
+        balancedOracle.invoke(adminAccount, "getPriceInLoop", tokenSymbol);
+        BigInteger EMA = rate1;
+
+        int blockDiff = (int)DAY/4;
+        sm.getBlock().increase(blockDiff - 1);
+
+        BigInteger rate2 = BigInteger.valueOf(6).multiply(BigInteger.TEN.pow(17));
+        mockDexRate(poolID, rate2);
+        balancedOracle.invoke(adminAccount, "getPriceInLoop", tokenSymbol);
+        BigInteger factor = exaPow(decay, blockDiff);
+        BigInteger priceDiff = rate1.subtract(EMA);
+        EMA = rate1.subtract(priceDiff.multiply(factor).divide(ICX));
+        
+         blockDiff = (int)DAY/4;
+        sm.getBlock().increase(blockDiff - 1);
+
+        BigInteger rate3 = BigInteger.valueOf(5).multiply(BigInteger.TEN.pow(17));
+        mockDexRate(poolID, rate3);
+        balancedOracle.invoke(adminAccount, "getPriceInLoop", tokenSymbol);
+        factor = exaPow(decay, blockDiff);
+        priceDiff = rate2.subtract(EMA);
+        EMA = rate2.subtract(priceDiff.multiply(factor).divide(ICX));
+        
+        blockDiff = (int)DAY;
+        sm.getBlock().increase(blockDiff-1);
+
+        BigInteger rate4 = BigInteger.valueOf(10).multiply(BigInteger.TEN.pow(17));
+        mockDexRate(poolID, rate4);
+        balancedOracle.invoke(adminAccount, "getPriceInLoop", tokenSymbol);
+        factor = exaPow(decay, blockDiff);
+        priceDiff = rate3.subtract(EMA);
+        EMA = rate3.subtract(priceDiff.multiply(factor).divide(ICX));
+        
+        // Assert
+        BigInteger priceInLoop = (BigInteger) balancedOracle.call("getLastPriceInLoop", tokenSymbol);
+
+        assertEquals(EMA, priceInLoop);
+    }
 
     private void mockRate(String symbol, BigInteger rate) {
         Map<String, Object> priceData = Map.of("rate", rate);
         when(oracle.mock.get_reference_data(symbol, "ICX")).thenReturn(priceData);
     }
 
+    private void mockDexRate(BigInteger poolID, BigInteger rate) {
+        mockRate("USD", ICX);
+        when(dex.mock.getQuotePriceInBase(poolID)).thenReturn(rate);
+    }
 }

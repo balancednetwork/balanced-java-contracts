@@ -21,6 +21,8 @@ import score.UserRevertedException;
 
 import java.math.BigInteger;
 
+import static network.balanced.score.lib.utils.Constants.EXA;
+
 public class Math {
     public static BigInteger pow(BigInteger base, int exponent) {
         BigInteger res = BigInteger.ONE;
@@ -29,6 +31,26 @@ public class Math {
         }
         return res;
     }
+
+    public static BigInteger exaPow(BigInteger base, int exponent) {
+        BigInteger res = base;
+        if (exponent % 2 == 0) {
+           res = EXA;
+        }
+  
+        exponent = exponent / 2;
+  
+        while (exponent != 0) {
+           base = base.multiply(base).divide(EXA);
+           if (exponent % 2 != 0) {
+              res = res.multiply(base).divide(EXA);
+           }
+  
+           exponent = exponent / 2;
+        }
+  
+        return res;
+     }
 
     public static BigInteger convertToNumber(JsonValue value) {
         if (value == null) {

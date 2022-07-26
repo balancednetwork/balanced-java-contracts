@@ -20,9 +20,8 @@ import static network.balanced.score.core.balancedoracle.BalancedOracleConstants
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.assetPeg;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.dex;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.dexPricedAssets;
-import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.dexPricedTimeSpan;
-import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.oraclePriceTimeSpan;
-import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.updateFrequency;
+import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.dexPriceEMADecay;
+import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.oraclePriceEMADecay;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.governance;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.lastPriceInLoop;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.oracle;
@@ -31,8 +30,6 @@ import static network.balanced.score.lib.utils.Check.only;
 import static network.balanced.score.lib.utils.Check.onlyOwner;
 import static network.balanced.score.lib.utils.Check.isContract;
 import static network.balanced.score.lib.utils.Constants.EXA;
-import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_SECOND;
-import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -56,9 +53,8 @@ public class BalancedOracleImpl implements BalancedOracle {
         dexPricedAssets.set("BALN",  BigInteger.valueOf(3));
 
         // TMP values
-        dexPricedTimeSpan.set(MICRO_SECONDS_IN_A_DAY);
-        oraclePriceTimeSpan.set(MICRO_SECONDS_IN_A_SECOND.multiply(BigInteger.valueOf(3600))); // HOUR
-        updateFrequency.set(MICRO_SECONDS_IN_A_SECOND.multiply(BigInteger.valueOf(600))); // 10 MIN
+        dexPriceEMADecay.set(EXA);
+        oraclePriceEMADecay.set(EXA);
     }
     
     @External(readonly = true)
@@ -89,17 +85,6 @@ public class BalancedOracleImpl implements BalancedOracle {
         Context.require(priceInLoop.compareTo(BigInteger.ZERO) > 0, TAG + ": No price data exists for symbol");
 
         return priceInLoop;
-    }
-
-    private BigInteger getDexPriceInLoop(String symbol) {
-
-        BigInteger poolID = dexPricedAssets.get(symbol);
-        BigInteger bnusdPriceInAsset = Context.call(BigInteger.class, dex.get(), "getQuotePriceInBase", poolID);
-
-        BigInteger loopRate = getLoopRate("USD");
-        BigInteger priceInLoop = loopRate.multiply(bnusdPriceInAsset).divide(EXA);
-
-        return TWAPCalculator.updatePrice(symbol, priceInLoop, dexPricedTimeSpan.get());
     }
 
     @External
@@ -133,36 +118,29 @@ public class BalancedOracleImpl implements BalancedOracle {
     }
 
     @External
-    public void setDexPriceTimespan(BigInteger time) {
+    public void setDexPriceEMADecay(BigInteger decay) {
         only(admin);
-        dexPricedTimeSpan.set(time);
+        Context.require(decay.compareTo(EXA) <= 0, TAG + ": decay has to be less than " + EXA);
+        Context.require(decay.compareTo(BigInteger.ZERO) > 0, TAG + ": decay has to be larger than zero");
+        dexPriceEMADecay.set(decay);
     }
 
     @External(readonly = true)
-    public BigInteger getDexPriceTimespan() {
-        return dexPricedTimeSpan.get();
+    public BigInteger getDexPriceEMADecay() {
+        return dexPriceEMADecay.get();
     }
 
     @External
-    public void setUpdateFrequency(BigInteger time) {
+    public void setOraclePriceEMADecay(BigInteger decay) {
         only(admin);
-        updateFrequency.set(time);
+        Context.require(decay.compareTo(EXA) <= 0, TAG + ": decay has to be less than " + EXA);
+        Context.require(decay.compareTo(BigInteger.ZERO) > 0, TAG + ": decay has to be larger than zero");
+        oraclePriceEMADecay.set(decay);
     }
 
     @External(readonly = true)
-    public BigInteger getUpdateFrequency() {
-        return updateFrequency.get();
-    }
-
-    @External
-    public void setOrcalePriceTimespan(BigInteger time) {
-        only(admin);
-        oraclePriceTimeSpan.set(time);
-    }
-
-    @External(readonly = true)
-    public BigInteger getOraclePriceTimespan() {
-        return oraclePriceTimeSpan.get();
+    public BigInteger getOraclePriceEMADecay() {
+        return oraclePriceEMADecay.get();
     }
 
     @External
@@ -223,10 +201,20 @@ public class BalancedOracleImpl implements BalancedOracle {
         return staking.get();
     }
 
+    private BigInteger getDexPriceInLoop(String symbol) {
+        BigInteger poolID = dexPricedAssets.get(symbol);
+        BigInteger bnusdPriceInAsset = Context.call(BigInteger.class, dex.get(), "getQuotePriceInBase", poolID);
+
+        BigInteger loopRate = getLoopRate("USD");
+        BigInteger priceInLoop = loopRate.multiply(bnusdPriceInAsset).divide(EXA);
+        return EMACalculator.updatePrice(symbol, priceInLoop, getDexPriceEMADecay());
+    }
+
     private BigInteger getLoopRate(String symbol) {
         // Ask multiple oracles when it exists
         Map<String, Object> priceData = (Map<String, Object>) Context.call(oracle.get(), "get_reference_data", symbol, "ICX");
         BigInteger priceInLoop =  (BigInteger) priceData.get("rate");
-        return TWAPCalculator.updatePrice(symbol, priceInLoop, oraclePriceTimeSpan.get());
+
+        return EMACalculator.updatePrice(symbol, priceInLoop, getOraclePriceEMADecay());
     }
 }

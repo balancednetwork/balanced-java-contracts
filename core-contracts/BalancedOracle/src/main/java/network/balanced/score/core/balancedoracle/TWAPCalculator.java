@@ -22,9 +22,6 @@ import score.ArrayDB;
 import score.BranchDB;
 import score.Context;
 
-import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.updateFrequency;
-import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.lastPriceInLoop;
-
 import java.math.BigInteger;
 
 public class TWAPCalculator {
@@ -48,9 +45,6 @@ public class TWAPCalculator {
       BigInteger lastUpdate = timestamps.get(numberOfTimestamps - 1);
       BigInteger timeSinceLastUpdate = currentTime.subtract(lastUpdate);
 
-      if (timeSinceLastUpdate.compareTo(updateFrequency.get()) < 0) {
-         return lastPriceInLoop.get(symbol);
-      }
 
       VarDB<BigInteger> lastPrice = lastPrices.at(symbol);
 
