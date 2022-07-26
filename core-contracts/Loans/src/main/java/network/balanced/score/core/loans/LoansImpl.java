@@ -59,9 +59,8 @@ public class LoansImpl implements Loans {
         if (governance.get() == null) {
             governance.set(_governance);
             loansOn.set(false);
-            miningRatio.set(MINING_RATIO);
-            lockingRatio.set(LOCKING_RATIO);
-            liquidationRatio.set(LIQUIDATION_RATIO);
+            lockingRatio.set(SICX_SYMBOL, LOCKING_RATIO);
+            liquidationRatio.set(SICX_SYMBOL, LIQUIDATION_RATIO);
             originationFee.set(ORIGINATION_FEE);
             redemptionFee.set(REDEMPTION_FEE);
             liquidationReward.set(LIQUIDATION_REWARD);
@@ -70,6 +69,11 @@ public class LoansImpl implements Loans {
             redeemBatch.set(REDEEM_BATCH_SIZE);
             maxRetirePercent.set(MAX_RETIRE_PERCENT);
             maxDebtsListLength.set(MAX_DEBTS_LIST_LENGTH);
+        }
+
+        if (liquidationRatio.get(SICX_SYMBOL) == null) {
+            lockingRatio.set(SICX_SYMBOL, lockingRatioSICX.get());
+            liquidationRatio.set(SICX_SYMBOL, liquidationRatioSICX.get());
         }
 
         CollateralDB.migrateToNewDBs();
@@ -175,14 +179,18 @@ public class LoansImpl implements Loans {
     @External
     public void addAsset(Address _token_address, boolean _active, boolean _collateral) {
         only(admin);
+        Token assetContract = new Token(_token_address);
+        String symbol = assetContract.symbol();
+
         if (_collateral) {
             CollateralDB.addCollateral(_token_address, _active);
         } else {
             AssetDB.addAsset(_token_address, _active);
         }
 
-        Token assetContract = new Token(_token_address);
-        AssetAdded(_token_address, assetContract.symbol(), _collateral);
+        lockingRatio.set(symbol, LOCKING_RATIO);
+        liquidationRatio.set(symbol, LIQUIDATION_RATIO);
+        AssetAdded(_token_address, symbol, _collateral);
     }
 
     @External
@@ -544,7 +552,7 @@ public class LoansImpl implements Loans {
 
         BigInteger remainingCollateralInLoop = remainingCollateral.multiply(collateralContract.priceInLoop()).divide(EXA);
 
-        BigInteger lockingValue = lockingRatio.get().multiply(assetValue).divide(POINTS);
+        BigInteger lockingValue = getLockingRatio(collateralSymbol).multiply(assetValue).divide(POINTS);
         Context.require(remainingCollateralInLoop.compareTo(lockingValue) >= 0,
                 TAG + ": Requested withdrawal is more than available collateral. " +
                         "total debt value: " + assetValue + " ICX " +
@@ -663,7 +671,7 @@ public class LoansImpl implements Loans {
         BigInteger oldTotalDebt = totalDebts.getOrDefault(assetToBorrow, BigInteger.ZERO);
 
         BigInteger collateral = position.totalCollateralInLoop(collateralSymbol, false);
-        BigInteger maxDebtValue = POINTS.multiply(collateral).divide(lockingRatio.get());
+        BigInteger maxDebtValue = POINTS.multiply(collateral).divide(getLockingRatio(collateralSymbol));
         BigInteger fee = originationFee.get().multiply(amount).divide(POINTS);
 
         Address borrowAssetAddress = asset.getAssetAddress();
@@ -851,21 +859,25 @@ public class LoansImpl implements Loans {
     }
 
     @External
-    public void setMiningRatio(BigInteger _ratio) {
+    public void setLockingRatio(String _symbol, BigInteger _ratio) {
         only(admin);
-        miningRatio.set(_ratio);
+        lockingRatio.set(_symbol, _ratio);
     }
 
     @External
-    public void setLockingRatio(BigInteger _ratio) {
-        only(admin);
-        lockingRatio.set(_ratio);
+    public BigInteger getLockingRatio(String _symbol) {
+        return lockingRatio.get(_symbol);
     }
 
     @External
-    public void setLiquidationRatio(BigInteger _ratio) {
+    public void setLiquidationRatio(String _symbol, BigInteger _ratio) {
         only(admin);
-        liquidationRatio.set(_ratio);
+        liquidationRatio.set(_symbol, _ratio);
+    }
+    
+    @External
+    public BigInteger getLiquidationRatio(String symbol) {
+        return liquidationRatio.get(symbol);
     }
 
     @External
@@ -941,9 +953,8 @@ public class LoansImpl implements Loans {
         parameters.put("reserve_fund", reserve.get());
         parameters.put("rewards", rewards.get());
         parameters.put("staking", staking.get());
-        parameters.put("mining ratio", miningRatio.get());
-        parameters.put("locking ratio", lockingRatio.get());
-        parameters.put("liquidation ratio", liquidationRatio.get());
+        parameters.put("locking ratio", lockingRatio.get(SICX_SYMBOL));
+        parameters.put("liquidation ratio", liquidationRatio.get(SICX_SYMBOL));
         parameters.put("origination fee", originationFee.get());
         parameters.put("redemption fee", redemptionFee.get());
         parameters.put("liquidation reward", liquidationReward.get());

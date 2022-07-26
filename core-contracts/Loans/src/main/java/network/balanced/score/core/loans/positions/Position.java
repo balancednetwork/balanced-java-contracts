@@ -200,7 +200,7 @@ public class Position {
 
         standing.ratio = standing.collateral.multiply(EXA).divide(standing.totalDebt);
 
-        if (standing.ratio.compareTo(liquidationRatio.get().multiply(EXA).divide(POINTS)) > 0) {
+        if (standing.ratio.compareTo(liquidationRatio.get(collateralSymbol).multiply(EXA).divide(POINTS)) > 0) {
             standing.standing = Standings.MINING;
         } else {
             standing.standing = Standings.LIQUIDATE;

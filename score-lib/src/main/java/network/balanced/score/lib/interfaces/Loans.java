@@ -119,13 +119,16 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
     void liquidate(Address _owner, @Optional String _collateralSymbol);
 
     @External
-    void setMiningRatio(BigInteger _ratio);
+    void setLockingRatio(String _symbol, BigInteger _ratio);
+
+    @External(readonly = true)
+    BigInteger getLockingRatio(String _symbol);
 
     @External
-    void setLockingRatio(BigInteger _ratio);
+    void setLiquidationRatio(String _symbol, BigInteger _ratio);
 
-    @External
-    void setLiquidationRatio(BigInteger _ratio);
+    @External(readonly = true)
+    BigInteger getLiquidationRatio(String _symbol);
 
     @External
     void setOriginationFee(BigInteger _fee);

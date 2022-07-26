@@ -292,15 +292,25 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
     }
 
     protected void setLockingRatio(BalancedClient voter, BigInteger ratio, String name) throws Exception {
-        JsonObject setLockingRatioParameters = new JsonObject()
-        .add("_value", ratio.intValue());
+        JsonObject setLockingRatioParametersSICX = new JsonObject()
+            .add("_symbol", "sICX")
+            .add("_value", ratio.intValue());
         
-        JsonArray setLockingRatioCall = new JsonArray()
+        JsonArray setLockingRatioCallSICX = new JsonArray()
             .add("setLockingRatio")
-            .add(setLockingRatioParameters);
+            .add(setLockingRatioParametersSICX);
+
+        JsonObject setLockingRatioParametersIETH = new JsonObject()
+            .add("_symbol", "iETH")
+            .add("_value", ratio.intValue());
+        
+        JsonArray setLockingRatioCallIETH = new JsonArray()
+            .add("setLockingRatio")
+            .add(setLockingRatioParametersIETH);
 
         JsonArray actions = new JsonArray()
-            .add(setLockingRatioCall);
+            .add(setLockingRatioCallSICX)
+            .add(setLockingRatioCallIETH);
         executeVoteActions(balanced, voter, name, actions);
     }
 

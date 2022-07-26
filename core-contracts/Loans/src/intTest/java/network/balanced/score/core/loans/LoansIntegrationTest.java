@@ -356,7 +356,8 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         lockingRatio = BigInteger.valueOf(13000);
         depositToStabilityContract(voter, voteDefinitionFee.multiply(BigInteger.TWO));
         
-        setLockingRatio(voter, lockingRatio, "Liquidation setup");
+        setLockingRatio(voter, "sICX", lockingRatio, "Liquidation setup ICX");
+        setLockingRatio(voter, "iETH", lockingRatio, "Liquidation setup IETH");
     }
 
     @Test
@@ -470,7 +471,8 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         BalancedClient voter = balanced.newClient();
         initalLockingRatio = hexObjectToBigInteger(owner.loans.getParameters().get("locking ratio"));
         depositToStabilityContract(voter, voteDefinitionFee.multiply(BigInteger.TWO));
-        setLockingRatio(voter, initalLockingRatio, "restore  locking ratio");
+        setLockingRatio(voter, "sICX", initalLockingRatio, "restore locking ratio sICX");
+        setLockingRatio(voter, "iETH", initalLockingRatio, "restore locking ratio iETH");
     }
   
     protected void rebalance(Address address) throws Exception {
@@ -565,10 +567,11 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         }
     }
 
-    protected void setLockingRatio(BalancedClient voter, BigInteger ratio, String name) throws Exception {
+    protected void setLockingRatio(BalancedClient voter, String symbol, BigInteger ratio, String name) throws Exception {
         JsonObject setLockingRatioParameters = new JsonObject()
-        .add("_value", ratio.intValue());
-        
+            .add("_symbol", symbol)
+            .add("_value", ratio.intValue());
+            
         JsonArray setLockingRatioCall = new JsonArray()
             .add("setLockingRatio")
             .add(setLockingRatioParameters);

@@ -510,34 +510,14 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         executeVoteWithActions(actions.toString());
         verify(rewards.mock, times(2)).updateBalTokenDistPercentage(any(DistributionPercentage[].class));
     }
-
-    @Test
-    void executeVote_setMiningRatio() {
-        // Arrange
-        BigInteger miningRatio = BigInteger.TEN;
-        JsonObject setMiningRatioParameters = new JsonObject()
-            .add("_value", miningRatio.intValue());
-        
-        JsonArray setMiningRatio = new JsonArray()
-            .add("setMiningRatio")
-            .add(setMiningRatioParameters);
-
-        JsonArray actions = new JsonArray()
-            .add(setMiningRatio);
-
-        // Act
-        executeVoteWithActions(actions.toString());
-        
-        // Assert
-        verify(loans.mock, times(2)).setMiningRatio(miningRatio);
-    }
-    
     
     @Test
     void executeVote_setLockingRatio() {
         // Arrange
         BigInteger lockingRatio = BigInteger.TEN;
+        String symbol = "sICX";
         JsonObject setLockingRatioParameters = new JsonObject()
+            .add("_symbol", symbol)
             .add("_value", lockingRatio.intValue());
         
         JsonArray setLockingRatio = new JsonArray()
@@ -551,9 +531,8 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         executeVoteWithActions(actions.toString());
         
         // Assert
-        verify(loans.mock, times(2)).setLockingRatio(lockingRatio);
+        verify(loans.mock, times(2)).setLockingRatio(symbol, lockingRatio);
     }
-    
     
     @Test
     void executeVote_setOriginationFee() {
@@ -581,8 +560,10 @@ public class GovernanceVotingTest extends GovernanceTestBase {
     void executeVote_setLiquidationRatio() {
         // Arrange
         BigInteger liquidationRatio = BigInteger.TEN;
+        String symbol = "sICX";
         JsonObject setLiquidationRatioParameters = new JsonObject()
-            .add("_ratio", liquidationRatio.intValue());
+        .add("_symbol", symbol)
+        .add("_ratio", liquidationRatio.intValue());
         
         JsonArray setLiquidationRatio = new JsonArray()
             .add("setLiquidationRatio")
@@ -595,7 +576,7 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         executeVoteWithActions(actions.toString());
         
         // Assert
-        verify(loans.mock, times(2)).setLiquidationRatio(liquidationRatio);
+        verify(loans.mock, times(2)).setLiquidationRatio(symbol, liquidationRatio);
     }
     
     

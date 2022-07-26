@@ -153,6 +153,8 @@ public class Balanced {
     }
 
     public void setupContracts() {
+        ownerClient.balancedOracle.getPriceInLoop((txr) -> {}, "sICX");
+        ownerClient.balancedOracle.getPriceInLoop((txr) -> {}, "USD");
         ownerClient.staking.setSicxAddress(sicx._address());
 
         ownerClient.bnUSD.setMinter(loans._address());

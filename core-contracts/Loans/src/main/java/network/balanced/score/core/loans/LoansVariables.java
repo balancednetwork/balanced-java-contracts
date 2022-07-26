@@ -38,9 +38,10 @@ public class LoansVariables {
 
     private static final String TIME_OFFSET = "time_offset";
 
-    private static final String MINING_RATIO = "mining_ratio";
     private static final String LOCKING_RATIO = "locking_ratio";
+    private static final String PER_COLLATERAL_LOCKING_RATIO = "per_collateral_locking_ratio";
     private static final String LIQUIDATION_RATIO = "liquidation_ratio";
+    private static final String PER_COLLATERAL_LIQUIDATION_RATIO = "per_collateral_liquidation_ratio";
     private static final String ORIGINATION_FEE = "origination_fee";
     private static final String REDEMPTION_FEE = "redemption_fee";
     private static final String RETIREMENT_BONUS = "retirement_bonus";
@@ -69,12 +70,13 @@ public class LoansVariables {
     public static final VarDB<Address> oracle = Context.newVarDB(ORACLE, Address.class);
 
     static final VarDB<BigInteger> timeOffset = Context.newVarDB(TIME_OFFSET, BigInteger.class);
-    public static final VarDB<BigInteger> miningRatio = Context.newVarDB(MINING_RATIO, BigInteger.class);
-    public static final VarDB<BigInteger> lockingRatio = Context.newVarDB(LOCKING_RATIO, BigInteger.class);
+    public static final VarDB<BigInteger> lockingRatioSICX = Context.newVarDB(LOCKING_RATIO, BigInteger.class);
+    public static final DictDB<String, BigInteger> lockingRatio = Context.newDictDB(PER_COLLATERAL_LOCKING_RATIO, BigInteger.class);
     public static final DictDB<String, BigInteger> totalDebts = Context.newDictDB(TOTAL_DEBT, BigInteger.class);
     public static final DictDB<String, BigInteger> collateralLimits = Context.newDictDB(COLLATERAL_LIMITS, BigInteger.class);
 
-    public static final VarDB<BigInteger> liquidationRatio = Context.newVarDB(LIQUIDATION_RATIO, BigInteger.class);
+    public static final VarDB<BigInteger> liquidationRatioSICX = Context.newVarDB(LIQUIDATION_RATIO, BigInteger.class);
+    public static final DictDB<String, BigInteger> liquidationRatio = Context.newDictDB(PER_COLLATERAL_LIQUIDATION_RATIO, BigInteger.class);
     static final VarDB<BigInteger> originationFee = Context.newVarDB(ORIGINATION_FEE, BigInteger.class);
     static final VarDB<BigInteger> redemptionFee = Context.newVarDB(REDEMPTION_FEE, BigInteger.class);
     static final VarDB<BigInteger> retirementBonus = Context.newVarDB(RETIREMENT_BONUS, BigInteger.class);

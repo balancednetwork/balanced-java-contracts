@@ -63,8 +63,8 @@ class LoansTest extends LoansTestBase {
         loans.invoke(admin, "setLiquidationReward", BigInteger.valueOf(6));
         loans.invoke(admin, "setRedemptionFee", BigInteger.valueOf(7));
         loans.invoke(admin, "setOriginationFee", BigInteger.valueOf(8));
-        loans.invoke(admin, "setLiquidationRatio", BigInteger.valueOf(9));
-        loans.invoke(admin, "setLockingRatio", BigInteger.valueOf(10));
+        loans.invoke(admin, "setLiquidationRatio", "sICX", BigInteger.valueOf(9));
+        loans.invoke(admin, "setLockingRatio", "sICX", BigInteger.valueOf(10));
 
         loans.invoke(admin, "setStaking", staking.getAddress());
         loans.invoke(admin, "setRewards", rewards.getAddress());

@@ -82,8 +82,6 @@ class LoansIntegrationTestMigration extends LoansIntegrationTest {
 
         balanced.loans._update(loansPath, Map.of("_governance", balanced.governance._address()));
         owner.governance.setAddressesOnContract("loans");
-        owner.balancedOracle.getPriceInLoop((txr) -> {}, "sICX");
-        owner.balancedOracle.getPriceInLoop((txr) -> {}, "USD");
 
         Map<String, Object>  availableAssetsPostUpdate = reader.loans.getAvailableAssets().get("bnUSD");;
         Map<String, String> collateralTokensPost = reader.loans.getCollateralTokens();
@@ -186,5 +184,31 @@ class LoansIntegrationTestMigration extends LoansIntegrationTest {
         Map<String,Object> params = new HashMap<>();
         params.put("_owner",loanTaker.getAddress());
         liquidator.loans._send("liquidate", params);
+    }
+
+    protected void setLockingRatio(BalancedClient voter, BigInteger ratio, String name) throws Exception {
+        JsonArray setLockingRatioParameters = new JsonArray()
+         .add(createParameter("Number", ratio));
+
+        JsonObject setLockingRatioList = new JsonObject()
+            .add("contract_address", balanced.loans._address().toString())
+            .add("method", "setLockingRatio")
+            .add("parameters", setLockingRatioParameters);
+    
+        JsonArray setLockingRatio = new JsonArray()
+            .add("call")
+            .add(setLockingRatioList);
+
+        JsonArray actions = new JsonArray()
+            .add(setLockingRatio);
+
+        executeVoteActions(balanced, voter, name, actions);
+    }
+
+    protected JsonObject createParameter(String type, BigInteger value) {
+
+        return new JsonObject()
+            .add("type", type)
+            .add("value", value.intValue());
     }
 }

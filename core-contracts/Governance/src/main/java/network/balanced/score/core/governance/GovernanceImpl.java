@@ -1065,20 +1065,16 @@ public class GovernanceImpl {
         Context.call(Addresses.get("dividends"), "setDistributionActivationStatus", true);
     }
 
-    public void setMiningRatio(BigInteger _value) {
-        Context.call(Addresses.get("loans"), "setMiningRatio", _value);
-    }
-
-    public void setLockingRatio(BigInteger _value) {
-        Context.call(Addresses.get("loans"), "setLockingRatio", _value);
+    public void setLockingRatio(String _symbol, BigInteger _value) {
+        Context.call(Addresses.get("loans"), "setLockingRatio", _symbol, _value);
     }
 
     public void setOriginationFee(BigInteger _fee) {
         Context.call(Addresses.get("loans"), "setOriginationFee", _fee);
     }
 
-    public void setLiquidationRatio(BigInteger _ratio) {
-        Context.call(Addresses.get("loans"), "setLiquidationRatio", _ratio);
+    public void setLiquidationRatio(String _symbol, BigInteger _ratio) {
+        Context.call(Addresses.get("loans"), "setLiquidationRatio", _symbol,  _ratio);
     }
 
     public void setRetirementBonus(BigInteger _points) {
