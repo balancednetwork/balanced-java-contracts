@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 
 public class FeeHandlerImpl implements FeeHandler {
     public static final String TAG = "FeeHandler";
@@ -376,7 +377,7 @@ public class FeeHandlerImpl implements FeeHandler {
 
     private void collectFeeData(Address sender, Address _from, BigInteger _value) {
         BigInteger accruedFees = swapFeesAccruedDB.get(sender);
-        if (_from.equals(loans.get())) {
+        if (_from.equals(EOA_ZERO)) {
             loanFeesAccrued.set(loanFeesAccrued.getOrDefault(BigInteger.ZERO).add(_value));
         } else if (_from.equals(dex.get()) && accruedFees != null) {
             swapFeesAccruedDB.set(sender, accruedFees.add(_value));
