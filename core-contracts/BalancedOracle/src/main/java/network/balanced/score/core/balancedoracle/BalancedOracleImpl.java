@@ -19,16 +19,16 @@ package network.balanced.score.core.balancedoracle;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.admin;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.assetPeg;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.dex;
-import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.dexPricedAssets;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.dexPriceEMADecay;
-import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.oraclePriceEMADecay;
+import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.dexPricedAssets;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.governance;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.lastPriceInLoop;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.oracle;
+import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.oraclePriceEMADecay;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.staking;
+import static network.balanced.score.lib.utils.Check.isContract;
 import static network.balanced.score.lib.utils.Check.only;
 import static network.balanced.score.lib.utils.Check.onlyOwner;
-import static network.balanced.score.lib.utils.Check.isContract;
 import static network.balanced.score.lib.utils.Constants.EXA;
 
 import java.math.BigInteger;
@@ -52,7 +52,6 @@ public class BalancedOracleImpl implements BalancedOracle {
         assetPeg.set("bnUSD", "USD");
         dexPricedAssets.set("BALN",  BigInteger.valueOf(3));
 
-        // TMP values
         dexPriceEMADecay.set(EXA);
         oraclePriceEMADecay.set(EXA);
     }
@@ -67,7 +66,7 @@ public class BalancedOracleImpl implements BalancedOracle {
         String pegSymbol = assetPeg.getOrDefault(symbol, symbol);
         BigInteger priceInLoop;
         if (pegSymbol.equals("sICX")) {
-            priceInLoop = Context.call(BigInteger.class, staking.get(), "getTodayRate");
+            priceInLoop = getSICXPriceInLoop();
         } else if (dexPricedAssets.get(pegSymbol) != null) {
             priceInLoop = getDexPriceInLoop(pegSymbol);
         } else {
@@ -201,20 +200,23 @@ public class BalancedOracleImpl implements BalancedOracle {
         return staking.get();
     }
 
+    private BigInteger getSICXPriceInLoop() {
+        return Context.call(BigInteger.class, staking.get(), "getTodayRate");
+    }
+
     private BigInteger getDexPriceInLoop(String symbol) {
         BigInteger poolID = dexPricedAssets.get(symbol);
         BigInteger bnusdPriceInAsset = Context.call(BigInteger.class, dex.get(), "getQuotePriceInBase", poolID);
 
         BigInteger loopRate = getLoopRate("USD");
         BigInteger priceInLoop = loopRate.multiply(bnusdPriceInAsset).divide(EXA);
-        return EMACalculator.updatePrice(symbol, priceInLoop, getDexPriceEMADecay());
+        return EMACalculator.updateEMA(symbol, priceInLoop, getDexPriceEMADecay());
     }
 
     private BigInteger getLoopRate(String symbol) {
-        // Ask multiple oracles when it exists
         Map<String, Object> priceData = (Map<String, Object>) Context.call(oracle.get(), "get_reference_data", symbol, "ICX");
         BigInteger priceInLoop =  (BigInteger) priceData.get("rate");
 
-        return EMACalculator.updatePrice(symbol, priceInLoop, getOraclePriceEMADecay());
+        return EMACalculator.updateEMA(symbol, priceInLoop, getOraclePriceEMADecay());
     }
 }

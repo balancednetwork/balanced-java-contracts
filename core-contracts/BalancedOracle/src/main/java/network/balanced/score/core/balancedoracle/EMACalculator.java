@@ -25,11 +25,11 @@ import static network.balanced.score.lib.utils.Math.exaPow;
 import java.math.BigInteger;
 
 public class EMACalculator {
-   private static final BranchDB<String, VarDB<BigInteger>> movingAverages = Context.newBranchDB("tmp1", BigInteger.class);
-   private static final BranchDB<String, VarDB<BigInteger>> lastUpdateBlock = Context.newBranchDB("tmp2", BigInteger.class);
-   private static final BranchDB<String, VarDB<BigInteger>> lastPrices = Context.newBranchDB("tmp3", BigInteger.class);
+   private static final BranchDB<String, VarDB<BigInteger>> movingAverages = Context.newBranchDB("exponential_moving_averages", BigInteger.class);
+   private static final BranchDB<String, VarDB<BigInteger>> lastUpdateBlock = Context.newBranchDB("last_update_blocks", BigInteger.class);
+   private static final BranchDB<String, VarDB<BigInteger>> previousPrices = Context.newBranchDB("previous_prices", BigInteger.class);
 
-   public static BigInteger updatePrice(String symbol, BigInteger currentPrice, BigInteger alpha) {
+   public static BigInteger updateEMA(String symbol, BigInteger currentPrice, BigInteger alpha) {
       VarDB<BigInteger> lastUpdate = lastUpdateBlock.at(symbol);
       VarDB<BigInteger> movingAverage = movingAverages.at(symbol);
       BigInteger lastBlock = lastUpdate.get();
@@ -38,7 +38,7 @@ public class EMACalculator {
          BigInteger currentBlock = BigInteger.valueOf(Context.getBlockHeight());
          lastUpdate.set(currentBlock);
          movingAverage.set(currentPrice);
-         lastPrices.at(symbol).set(currentPrice);
+         previousPrices.at(symbol).set(currentPrice);
          
          return currentPrice;
       }
@@ -51,14 +51,13 @@ public class EMACalculator {
          return currentMovingAverage;
       }
 
-      VarDB<BigInteger> lastPrice = lastPrices.at(symbol);
-      BigInteger price = lastPrice.getOrDefault(BigInteger.ZERO);
-      lastPrice.set(currentPrice);
+      VarDB<BigInteger> previousPrice = previousPrices.at(symbol);
+      BigInteger price = previousPrice.getOrDefault(BigInteger.ZERO);
+      previousPrice.set(currentPrice);
 
-      
-      BigInteger factor = exaPow(EXA.subtract(alpha), blockDiff.intValue());
-      BigInteger delta = price.subtract(currentMovingAverage);
-      BigInteger newMovingAverge = price.subtract(delta.multiply(factor).divide(EXA));
+      BigInteger weight = exaPow(EXA.subtract(alpha), blockDiff.intValue());
+      BigInteger priceChange = price.subtract(currentMovingAverage);
+      BigInteger newMovingAverge = price.subtract(priceChange.multiply(weight).divide(EXA));
 
       lastUpdate.set(currentBlock);
       movingAverage.set(newMovingAverge);
