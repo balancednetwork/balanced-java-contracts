@@ -47,6 +47,7 @@ public class DividendsImpl implements Dividends {
     private static final VarDB<Address> daoFund = Context.newVarDB(DAOFUND, Address.class);
     public static final VarDB<Address> balnScore = Context.newVarDB(BALN_SCORE, Address.class);
     private static final VarDB<Address> dexScore = Context.newVarDB(DEX_SCORE, Address.class);
+    private static final VarDB<Address> boostedBalnScore = Context.newVarDB(BBALN_SCORE, Address.class);
 
     private static final ArrayDB<Address> acceptedTokens = Context.newArrayDB(ACCEPTED_TOKENS, Address.class);
     public static final VarDB<BigInteger> snapshotId = Context.newVarDB(SNAPSHOT_ID, BigInteger.class);
@@ -427,14 +428,14 @@ public class DividendsImpl implements Dividends {
 
     @External(readonly = true)
     public Map<String, BigInteger> getUnclaimedDividends(Address user) {
-        BigInteger stakedBalance = getBalnBalance(user);
+        BigInteger boostedBalance = getBoostedBalnBalance(user);
         Map<String, BigInteger> totalDividends = new HashMap<>();
 
         int size = acceptedTokens.size();
         DictDB<Address, BigInteger> userAccruedDividends = accruedDividends.at(user);
         for (int i = 0; i < size; i++) {
             Address token = acceptedTokens.get(i);
-            BigInteger accruedDividends = DividendsTracker.updateUserData(token, user, stakedBalance, true);
+            BigInteger accruedDividends = DividendsTracker.updateUserData(token, user, boostedBalance, true, getDay());
             BigInteger prevAccruedDividends = userAccruedDividends.getOrDefault(token, BigInteger.ZERO);
             BigInteger totalDivs = accruedDividends.add(prevAccruedDividends);
             if (totalDivs.signum() > 0) {
@@ -448,12 +449,12 @@ public class DividendsImpl implements Dividends {
     @External
     public void claimDividends() {
         Address user = Context.getCaller();
-        BigInteger stakedBalance = getBalnBalance(user);
+        BigInteger boostedBalance = getBoostedBalnBalance(user);
         int size = acceptedTokens.size();
         DictDB<Address, BigInteger> userAccruedDividends = accruedDividends.at(user);
         for (int i = 0; i < size; i++) {
             Address token = acceptedTokens.get(i);
-            BigInteger accruedDividends = DividendsTracker.updateUserData(token, user, stakedBalance, false);
+            BigInteger accruedDividends = DividendsTracker.updateUserData(token, user, boostedBalance, false, getDay());
             BigInteger prevAccruedDividends = userAccruedDividends.getOrDefault(token, BigInteger.ZERO);
             BigInteger totalDivs = accruedDividends.add(prevAccruedDividends);
             if (totalDivs.signum() > 0) {
@@ -563,7 +564,7 @@ public class DividendsImpl implements Dividends {
 
         if (continuousDividendsActive()) {
             BigInteger dividendsToDaofund = _value.multiply(dividendsPercentage.get(DAOFUND)).divide(EXA);
-            DividendsTracker.updateTotalWeight(token, _value.subtract(dividendsToDaofund));
+            DividendsTracker.updateTotalWeight(token, _value.subtract(dividendsToDaofund), getDay());
             DividendsReceivedV2(_value, getDay(), _value + " tokens received as dividends token: " + token);
             sendToken(daoFund.get(), dividendsToDaofund, token, "Daofund dividends");
         } else {
@@ -583,12 +584,12 @@ public class DividendsImpl implements Dividends {
         DictDB<Address, BigInteger> userAccruedDividends = accruedDividends.at(user);
         for (int i = 0; i < size; i++) {
             Address token = acceptedTokens.get(i);
-            BigInteger accruedDividends = DividendsTracker.updateUserData(token, user, prevStakedBalance, false);
+            BigInteger accruedDividends = DividendsTracker.updateUserData(token, user, prevStakedBalance, false, getDay());
             BigInteger prevAccruedDividends = userAccruedDividends.getOrDefault(token, BigInteger.ZERO);
             userAccruedDividends.set(token, prevAccruedDividends.add(accruedDividends));
         }
 
-        DividendsTracker.setTotalSupply(currentTotalSupply);
+        DividendsTracker.setTotalSupply(currentTotalSupply, getDay());
     }
 
     @External(readonly = true)
@@ -679,6 +680,33 @@ public class DividendsImpl implements Dividends {
         }
 
         return dividendsDist;
+    }
+
+    @External
+    public void onKick(Address user, BigInteger bBalancedUserBalance, @Optional byte[] data) {
+        Context.require(Context.getCaller() == boostedBalnScore.get(), "Only bBaln contract is allowed to call onKick method");
+        Context.require(!bBalancedUserBalance.equals(BigInteger.ZERO), user + " baln locking has not expired");
+
+        updateUserDividends(user, bBalancedUserBalance);
+        UserKicked(user, data);
+    }
+
+    @External
+    public void onBalanceUpdate(Address user) {
+        Context.require(Context.getCaller() == boostedBalnScore.get(), "Only bBaln contract is allowed to call onBalanceUpdate method");
+        updateUserDividends(user, null);
+    }
+
+    private void updateUserDividends(Address _user, BigInteger bBalnUserBalance) {
+        if (bBalnUserBalance == null) {
+            bBalnUserBalance = Context.call(BigInteger.class, boostedBalnScore.get(), "balanceOf", _user);
+        }
+
+        int size = acceptedTokens.size();
+        for (int i = 0; i < size; i++) {
+            Address token = acceptedTokens.get(i);
+            DividendsTracker.updateUserData(token, _user, bBalnUserBalance, false, getDay());
+        }
     }
 
     private int[] checkStartEnd(int start, int end) {
@@ -847,8 +875,8 @@ public class DividendsImpl implements Dividends {
         FundTransfer(to, amount, msg + amount + " token sent to" + to);
     }
 
-    private BigInteger getBalnBalance(Address user) {
-        return Context.call(BigInteger.class, balnScore.get(), "stakedBalanceOf", user);
+    private BigInteger getBoostedBalnBalance(Address user) {
+        return Context.call(BigInteger.class, boostedBalnScore.get(), "balanceOf", user);
     }
 
     private void setTimeOffset() {
@@ -884,6 +912,11 @@ public class DividendsImpl implements Dividends {
 
     @EventLog(indexed = 1)
     public void Claimed(Address _address, BigInteger _start, BigInteger _end, String _dividends) {
+
+    }
+
+    @EventLog(indexed = 1)
+    public void UserKicked(Address user, byte[] _data) {
 
     }
 }
