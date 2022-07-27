@@ -47,7 +47,7 @@ public class DividendsImpl implements Dividends {
     private static final VarDB<Address> daoFund = Context.newVarDB(DAOFUND, Address.class);
     public static final VarDB<Address> balnScore = Context.newVarDB(BALN_SCORE, Address.class);
     private static final VarDB<Address> dexScore = Context.newVarDB(DEX_SCORE, Address.class);
-    private static final VarDB<Address> bbalnScore = Context.newVarDB(BBALN_SCORE, Address.class);
+    private static final VarDB<Address> boostedBalnScore = Context.newVarDB(BBALN_SCORE, Address.class);
 
     private static final ArrayDB<Address> acceptedTokens = Context.newArrayDB(ACCEPTED_TOKENS, Address.class);
     public static final VarDB<BigInteger> snapshotId = Context.newVarDB(SNAPSHOT_ID, BigInteger.class);
@@ -682,6 +682,33 @@ public class DividendsImpl implements Dividends {
         return dividendsDist;
     }
 
+    @External
+    public void onKick(Address user, BigInteger bBalancedUserBalance, @Optional byte[] data) {
+        Context.require(Context.getCaller() == boostedBalnScore.get(), "Only bBaln contract is allowed to call onKick method");
+        Context.require(!bBalancedUserBalance.equals(BigInteger.ZERO), user + " baln locking has not expired");
+
+        updateUserDividends(user, bBalancedUserBalance);
+        UserKicked(user, data);
+    }
+
+    @External
+    public void onBalanceUpdate(Address user) {
+        Context.require(Context.getCaller() == boostedBalnScore.get(), "Only bBaln contract is allowed to call onBalanceUpdate method");
+        updateUserDividends(user, null);
+    }
+
+    private void updateUserDividends(Address _user, BigInteger bBalnUserBalance) {
+        if (bBalnUserBalance == null) {
+            bBalnUserBalance = Context.call(BigInteger.class, boostedBalnScore.get(), "balanceOf", _user);
+        }
+
+        int size = acceptedTokens.size();
+        for (int i = 0; i < size; i++) {
+            Address token = acceptedTokens.get(i);
+            DividendsTracker.updateUserData(token, _user, bBalnUserBalance, false, getDay());
+        }
+    }
+
     private int[] checkStartEnd(int start, int end) {
         int batch = dividendsBatchSize.getOrDefault(BigInteger.ZERO).intValue();
         int snap = snapshotId.getOrDefault(BigInteger.ZERO).intValue();
@@ -849,7 +876,7 @@ public class DividendsImpl implements Dividends {
     }
 
     private BigInteger getBoostedBalnBalance(Address user) {
-        return Context.call(BigInteger.class, bbalnScore.get(), "balanceOf", user);
+        return Context.call(BigInteger.class, boostedBalnScore.get(), "balanceOf", user);
     }
 
     private void setTimeOffset() {
@@ -885,6 +912,11 @@ public class DividendsImpl implements Dividends {
 
     @EventLog(indexed = 1)
     public void Claimed(Address _address, BigInteger _start, BigInteger _end, String _dividends) {
+
+    }
+
+    @EventLog(indexed = 1)
+    public void UserKicked(Address user, byte[] _data) {
 
     }
 }
