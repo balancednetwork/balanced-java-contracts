@@ -548,7 +548,7 @@ public class LoansImpl implements Loans {
         loansOn();
         String collateralSymbol = optionalDefault(_collateralSymbol, SICX_SYMBOL);
         Address from = Context.getCaller();
-        removeCollateral(from, _value, _collateralSymbol);
+        removeCollateral(from, _value, collateralSymbol);
         transferCollateral(collateralSymbol, from, _value, "Collateral withdrawn.", new byte[0]);
     }
 
@@ -649,7 +649,7 @@ public class LoansImpl implements Loans {
         CollateralReceived(_from, _symbol, _amount);
     }
 
-    private void removeCollateral(Address from, BigInteger value, @Optional String collateralSymbol) {
+    private void removeCollateral(Address from, BigInteger value, String collateralSymbol) {
         Context.require(value.compareTo(BigInteger.ZERO) > 0, TAG + ": Withdraw amount must be more than zero.");
         Context.require(PositionsDB.hasPosition(from), TAG + ": This address does not have a position on Balanced.");
 

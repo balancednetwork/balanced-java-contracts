@@ -257,8 +257,6 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         BigInteger loanAmount = BigInteger.TEN.pow(21);
         loanTaker.loans.depositAndBorrow(collateralAmount, "bnUSD", loanAmount, null, null);
         icxSicxLP.dex._transfer(balanced.dex._address(), BigInteger.TEN.pow(22), null);
-        System.out.println(distributions);
-    
         
         // Act
         DistributionPercentage[] recipients = new DistributionPercentage[] {

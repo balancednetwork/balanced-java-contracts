@@ -706,7 +706,12 @@ public class GovernanceImpl {
         Context.call(loansAddress, "addAsset", _token_address, _active, true);
 
         String symbol = Context.call(String.class, _token_address, "symbol");
-        Context.call(Addresses.get("balancedOracle"), "setPeg", symbol, _peg);
+
+        Address balancedOraclAddress = Addresses.get("balancedOracle");
+        Context.call(balancedOraclAddress, "setPeg", symbol, _peg);
+        BigInteger price = Context.call(BigInteger.class, balancedOraclAddress, "getPriceInLoop", symbol);
+        Context.require(price.compareTo(BigInteger.ZERO) > 0, "Balanced oracle return a invalid icx price for " + symbol + "/" + _peg);
+
         if (_limit.equals(BigInteger.ZERO)) {
             return;
         }
@@ -722,7 +727,11 @@ public class GovernanceImpl {
 
         String symbol = Context.call(String.class, _token_address, "symbol");
         BigInteger poolId = Context.call(BigInteger.class, Addresses.get("dex"), "getPoolId", _token_address, Addresses.get("bnUSD"));
-        Context.call(Addresses.get("balancedOracle"), "addDexPricedAsset", symbol, poolId);
+        
+        Address balancedOraclAddress = Addresses.get("balancedOracle");
+        Context.call(balancedOraclAddress, "addDexPricedAsset", symbol, poolId);
+        BigInteger price = Context.call(BigInteger.class, balancedOraclAddress, "getPriceInLoop", symbol);
+        Context.require(price.compareTo(BigInteger.ZERO) > 0, "Balanced oracle return a invalid icx price for " + symbol);
 
         if (_limit.equals(BigInteger.ZERO)) {
             return;

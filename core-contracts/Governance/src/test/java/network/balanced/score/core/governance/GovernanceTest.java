@@ -249,6 +249,7 @@ public class GovernanceTest extends GovernanceTestBase {
         Address tokenAddress = bwt.getAddress();
         boolean active = false;
         BigInteger limit = EXA;
+        String symbol = "BALW";
         String peg = "BTC";
         Account notOwner = sm.createAccount();
         String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
@@ -257,14 +258,23 @@ public class GovernanceTest extends GovernanceTestBase {
         Executable withNotOwner = () -> governance.invoke(notOwner, "addCollateral", tokenAddress, active, peg, limit);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
 
+        // Arrange
+        when(bwt.mock.symbol()).thenReturn(symbol);
+
+        // Act & Assert
+        when(balancedOracle.mock.getPriceInLoop(symbol)).thenReturn(BigInteger.ZERO);
+        expectedErrorMessage = "Reverted(0): Balanced oracle return a invalid icx price for " + symbol + "/" + peg;
+        Executable withFaultyPeg = () -> governance.invoke(owner, "addCollateral", tokenAddress, active, peg, limit);
+        expectErrorMessage(withFaultyPeg, expectedErrorMessage);
+
         // Act
-        when(bwt.mock.symbol()).thenReturn("BALW");
+        when(balancedOracle.mock.getPriceInLoop(symbol)).thenReturn(ICX);
         governance.invoke(owner, "addCollateral", tokenAddress, active, peg, limit);
 
         // Assert
-        verify(loans.mock).addAsset(tokenAddress, active, true);
-        verify(loans.mock).setCollateralLimit("BALW", limit);
-        verify(balancedOracle.mock).setPeg("BALW", peg);
+        verify(loans.mock, times(2)).addAsset(tokenAddress, active, true);
+        verify(balancedOracle.mock, times(2)).setPeg(symbol, peg);
+        verify(loans.mock).setCollateralLimit(symbol, limit);
     }
 
     @Test
@@ -272,6 +282,7 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         Address tokenAddress = bwt.getAddress();
         boolean active = false;
+        String symbol = "BALW";
         BigInteger limit = EXA;
         BigInteger poolID = BigInteger.valueOf(7);
         Account notOwner = sm.createAccount();
@@ -281,15 +292,24 @@ public class GovernanceTest extends GovernanceTestBase {
         Executable withNotOwner = () -> governance.invoke(notOwner, "addDexPricedCollateral", tokenAddress, active, limit);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
 
-        // Act
-        when(bwt.mock.symbol()).thenReturn("BALW");
+        // Arrange
+        when(bwt.mock.symbol()).thenReturn(symbol);
         when(dex.mock.getPoolId(tokenAddress, bnUSD.getAddress())).thenReturn(poolID);
+
+        // Act & Assert
+        when(balancedOracle.mock.getPriceInLoop(symbol)).thenReturn(BigInteger.ZERO);
+        expectedErrorMessage = "Reverted(0): Balanced oracle return a invalid icx price for " + symbol;
+        Executable withFaultyPeg = () -> governance.invoke(owner, "addDexPricedCollateral", tokenAddress, active, limit);
+        expectErrorMessage(withFaultyPeg, expectedErrorMessage);
+
+        // Act
+        when(balancedOracle.mock.getPriceInLoop(symbol)).thenReturn(ICX);
         governance.invoke(owner, "addDexPricedCollateral", tokenAddress, active, limit);
 
         // Assert
-        verify(loans.mock).addAsset(tokenAddress, active, true);
-        verify(loans.mock).setCollateralLimit("BALW", limit);
-        verify(balancedOracle.mock).addDexPricedAsset("BALW", poolID);
+        verify(loans.mock, times(2)).addAsset(tokenAddress, active, true);
+        verify(balancedOracle.mock, times(2)).addDexPricedAsset(symbol, poolID);
+        verify(loans.mock).setCollateralLimit(symbol, limit);
     }
 
     @Test
