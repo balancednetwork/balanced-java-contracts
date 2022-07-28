@@ -303,6 +303,26 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
     }
 
     @Test
+    @Order(5)
+    void withdrawAndUnstake() throws Exception {
+        // Arrange
+        BalancedClient loantakerSICX = balanced.newClient();
+        BalancedClient staker = balanced.newClient();
+    
+        BigInteger collateral = BigInteger.TEN.pow(23);
+
+        BigInteger totalDebt = getTotalDebt();
+
+        // Act
+        loantakerSICX.stakeDepositAndBorrow(collateral, BigInteger.ZERO);
+        loantakerSICX.loans.withdrawAndUnstake(collateral);
+        staker.staking.stakeICX(collateral, null, null);
+
+        // Assert
+        assertEquals(collateral, loantakerSICX.staking.claimableICX(loantakerSICX.getAddress()));
+    }
+
+    @Test
     @Order(21)
     void rebalancing_raisePrice() throws Exception {
         BigInteger initialTotalDebt = getTotalDebt();

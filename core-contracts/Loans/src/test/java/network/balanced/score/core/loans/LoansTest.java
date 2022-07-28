@@ -31,6 +31,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
+import com.eclipsesource.json.JsonObject;
 import com.iconloop.score.test.Account;
 
 import network.balanced.score.core.loans.utils.LoansConstants.Standings;
@@ -781,6 +782,24 @@ class LoansTest extends LoansTestBase {
         // Assert & Act
         Executable withdrawTooMuchCollateral = () -> loans.invoke(account, "withdrawCollateral", collateralToWithdraw, "sICX");
         expectErrorMessage(withdrawTooMuchCollateral, expectedErrorMessage);
+    }
+
+    @Test
+    void withdrawAndUnstake() {
+        // Arrange
+        Account account = accounts.get(0);
+        BigInteger collateral = BigInteger.valueOf(2000).multiply(EXA);
+
+        // Act
+        takeLoanICX(account, "bnUSD", collateral, BigInteger.ZERO);
+        loans.invoke(account, "withdrawAndUnstake", collateral);
+
+        // Assert
+        JsonObject data = new JsonObject()
+            .add("method", "unstake")
+            .add("user", account.getAddress().toString());
+        verify(staking.mock).tokenFallback(loans.getAddress(), collateral, data.toString().getBytes());
+        verifyPosition(account.getAddress(), BigInteger.ZERO, BigInteger.ZERO, "sICX");
     }
 
     @Test

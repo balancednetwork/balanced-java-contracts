@@ -50,7 +50,7 @@ public class Math {
         }
   
         return res;
-     }
+    }
 
     public static BigInteger convertToNumber(JsonValue value) {
         if (value == null) {

@@ -532,35 +532,23 @@ public class LoansImpl implements Loans {
     }
 
     @External
+    public void withdrawAndUnstake(BigInteger _value) {
+        loansOn();
+        Address from = Context.getCaller();
+        removeCollateral(from, _value, SICX_SYMBOL);
+
+        JsonObject data = new JsonObject();
+        data.set("method", "unstake");
+        data.set("user", from.toString());
+        transferCollateral(SICX_SYMBOL, staking.get(), _value, "SICX Collateral withdrawn and unstaked", data.toString().getBytes());
+    }
+
+    @External
     public void withdrawCollateral(BigInteger _value, @Optional String _collateralSymbol) {
         loansOn();
         String collateralSymbol = optionalDefault(_collateralSymbol, SICX_SYMBOL);
-
-        Context.require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Withdraw amount must be more than zero.");
         Address from = Context.getCaller();
-        Context.require(PositionsDB.hasPosition(from), TAG + ": This address does not have a position on Balanced.");
-
-        Position position = PositionsDB.getPosition(from);
-
-        Context.require(position.getCollateral(collateralSymbol).compareTo(_value) >= 0, TAG + ": Position holds less " +
-                "collateral than the requested withdrawal.");
-        BigInteger assetValue = position.totalDebtInLoop(collateralSymbol, false);
-        BigInteger remainingCollateral = position.getCollateral(collateralSymbol).subtract(_value);
-
-        Address collateralAddress = CollateralDB.getCollateral(collateralSymbol).getAssetAddress();
-        Token collateralContract = new Token(collateralAddress);
-
-        BigInteger remainingCollateralInLoop = remainingCollateral.multiply(collateralContract.priceInLoop()).divide(EXA);
-
-        BigInteger lockingValue = getLockingRatio(collateralSymbol).multiply(assetValue).divide(POINTS);
-        Context.require(remainingCollateralInLoop.compareTo(lockingValue) >= 0,
-                TAG + ": Requested withdrawal is more than available collateral. " +
-                        "total debt value: " + assetValue + " ICX " +
-                        "remaining collateral value: " + remainingCollateralInLoop + " ICX " +
-                        "locking value (max debt): " + lockingValue + " ICX"
-        );
-
-        position.setCollateral(collateralSymbol, remainingCollateral);
+        removeCollateral(from, _value, _collateralSymbol);
         transferCollateral(collateralSymbol, from, _value, "Collateral withdrawn.", new byte[0]);
     }
 
@@ -659,6 +647,33 @@ public class LoansImpl implements Loans {
 
         position.setCollateral(_symbol, position.getCollateral(_symbol).add(_amount));
         CollateralReceived(_from, _symbol, _amount);
+    }
+
+    private void removeCollateral(Address from, BigInteger value, @Optional String collateralSymbol) {
+        Context.require(value.compareTo(BigInteger.ZERO) > 0, TAG + ": Withdraw amount must be more than zero.");
+        Context.require(PositionsDB.hasPosition(from), TAG + ": This address does not have a position on Balanced.");
+
+        Position position = PositionsDB.getPosition(from);
+
+        Context.require(position.getCollateral(collateralSymbol).compareTo(value) >= 0, TAG + ": Position holds less " +
+                "collateral than the requested withdrawal.");
+        BigInteger assetValue = position.totalDebtInLoop(collateralSymbol, false);
+        BigInteger remainingCollateral = position.getCollateral(collateralSymbol).subtract(value);
+
+        Address collateralAddress = CollateralDB.getCollateral(collateralSymbol).getAssetAddress();
+        Token collateralContract = new Token(collateralAddress);
+
+        BigInteger remainingCollateralInLoop = remainingCollateral.multiply(collateralContract.priceInLoop()).divide(EXA);
+
+        BigInteger lockingValue = getLockingRatio(collateralSymbol).multiply(assetValue).divide(POINTS);
+        Context.require(remainingCollateralInLoop.compareTo(lockingValue) >= 0,
+                TAG + ": Requested withdrawal is more than available collateral. " +
+                        "total debt value: " + assetValue + " ICX " +
+                        "remaining collateral value: " + remainingCollateralInLoop + " ICX " +
+                        "locking value (max debt): " + lockingValue + " ICX"
+        );
+
+        position.setCollateral(collateralSymbol, remainingCollateral);
     }
 
     private void originateLoan(String collateralSymbol, String assetToBorrow, BigInteger amount, Address from) {
