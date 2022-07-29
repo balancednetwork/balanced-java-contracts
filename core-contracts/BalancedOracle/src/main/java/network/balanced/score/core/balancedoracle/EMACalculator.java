@@ -39,8 +39,8 @@ public class EMACalculator {
         VarDB<BigInteger> movingAverage = movingAverages.at(symbol);
         BigInteger lastBlock = lastUpdate.get();
 
+        BigInteger currentBlock = BigInteger.valueOf(Context.getBlockHeight());
         if (lastBlock == null) {
-            BigInteger currentBlock = BigInteger.valueOf(Context.getBlockHeight());
             lastUpdate.set(currentBlock);
             movingAverage.set(currentPrice);
             previousPrices.at(symbol).set(currentPrice);
@@ -48,7 +48,6 @@ public class EMACalculator {
             return currentPrice;
         }
 
-        BigInteger currentBlock = BigInteger.valueOf(Context.getBlockHeight());
         BigInteger blockDiff = currentBlock.subtract(lastBlock);
         BigInteger currentMovingAverage = movingAverage.get();
 
@@ -62,11 +61,11 @@ public class EMACalculator {
 
         BigInteger weight = exaPow(EXA.subtract(alpha), blockDiff.intValue());
         BigInteger priceChange = price.subtract(currentMovingAverage);
-        BigInteger newMovingAverge = price.subtract(priceChange.multiply(weight).divide(EXA));
+        BigInteger newMovingAverage = price.subtract(priceChange.multiply(weight).divide(EXA));
 
         lastUpdate.set(currentBlock);
-        movingAverage.set(newMovingAverge);
+        movingAverage.set(newMovingAverage);
 
-        return newMovingAverge;
+        return newMovingAverage;
     }
 }
