@@ -1,6 +1,6 @@
 # Balanced Java Contracts
 
-![Gradle](https://img.shields.io/badge/gradle-7.3.3-blue)
+![Gradle](https://img.shields.io/badge/gradle-7.4.2-blue)
 [![build](https://github.com/balancednetwork/balanced-java-contracts/actions/workflows/pr-test.yml/badge.svg?branch=main)](https://github.com/balancednetwork/balanced-java-contracts/actions/workflows/pr-test.yml)
 
 This repository contains the smart contracts for Balanced in Java. For python contracts check [balanced-contracts](
@@ -31,7 +31,7 @@ $ git submodule update --init
 - Install [docker](https://docs.docker.com/engine/install/) and [docker-compose](https://docs.docker.com/compose/install/)
 - Start local blockchain
 ```shell
-$ docker-conpose up -d
+$ docker-compose up -d
 ```
 - Run integration test
 ```shell

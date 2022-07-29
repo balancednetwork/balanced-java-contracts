@@ -39,7 +39,7 @@ public class NonStakedLPRewardsTest {
     private static StakingScoreClient staking;
     private static LoansScoreClient loans;
     private static RewardsScoreClient rewards;
-    private static BalnScoreClient baln;
+    private static BalancedTokenScoreClient baln;
 
     static Env.Chain chain = Env.getDefaultChain();
     private static Balanced balanced;
@@ -73,7 +73,7 @@ public class NonStakedLPRewardsTest {
             staking = new StakingScoreClient(stakingScoreClient);
             rewards = new RewardsScoreClient(rewardsScoreClient);
             loans = new LoansScoreClient(balanced.loans);
-            baln = new BalnScoreClient(balnScoreClient);
+            baln = new BalancedTokenScoreClient(balnScoreClient);
             Sicx sicx = new SicxScoreClient(sIcxScoreClient);
             StakedLP stakedLp = new StakedLPScoreClient(balanced.stakedLp);
 
@@ -93,7 +93,7 @@ public class NonStakedLPRewardsTest {
     private static final RewardsScoreClient userWalletRewardsClient =
             new RewardsScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet,
                     rewardsScoreClient._address());
-    private static final BalnScoreClient userBalnScoreClient = new BalnScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet, balnScoreClient._address());
+    private static final BalancedTokenScoreClient userBalnScoreClient = new BalancedTokenScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet, balnScoreClient._address());
     private static final GovernanceScoreClient governanceDexScoreClient = new GovernanceScoreClient(governanceScoreClient);
     private static final DAOfundScoreClient userDaoFundScoreClient = new DAOfundScoreClient(daoFund);
 

@@ -58,10 +58,13 @@ public class Constants {
     static final String TIME_OFFSET = "time_offset";
 
     static final String DIVIDENDS_ENABLED_TO_STAKED_BALN_ONLY_DAY = "dividends_enabled_to_staked_baln_only_day";
+    static final String CONTINUOUS_DIVIDENDS_DAY = "continuous_dividednds_day";
 
     static final String SNAPSHOT_DIVIDENDS = "snapshot_dividends";
     static final String TOTAL_SNAPSHOT = "total_snapshots";
     static final String COMPLETE_DIVIDENDS_CATEGORIES = "complete_dividends_categories";
+
+    static final String ACCRUED_DIVIDENDS = "accrued_dividends";
 
     static final BigInteger TWO_FIFTY_SIX = BigInteger.valueOf(256);
 

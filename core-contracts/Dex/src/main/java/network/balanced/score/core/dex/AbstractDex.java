@@ -18,6 +18,7 @@ package network.balanced.score.core.dex;
 
 import network.balanced.score.core.dex.db.NodeDB;
 import network.balanced.score.lib.interfaces.Dex;
+import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import score.Address;
 import score.BranchDB;
@@ -495,6 +496,17 @@ public abstract class AbstractDex implements Dex {
     }
 
     @External(readonly = true)
+    public Map<String, Object> getPoolStatsForPair(Address _base, Address _quote) {
+        BigInteger poolId = getPoolId( _base, _quote);
+        Map<String, Object> poolStats = getPoolStats(poolId);
+        Map<String, Object> poolStatsWithId = new HashMap<>();
+        poolStatsWithId.put("id", poolId);
+        poolStatsWithId.putAll(poolStats);
+
+        return poolStatsWithId;
+    }
+
+    @External(readonly = true)
     public BigInteger totalDexAddresses(BigInteger _id) {
         return BigInteger.valueOf(activeAddresses.get(_id.intValue()).length());
     }
@@ -574,6 +586,12 @@ public abstract class AbstractDex implements Dex {
         }
 
         return poolLpTotal.getOrDefault(_id.intValue(), BigInteger.ZERO);
+    }
+
+    @External
+    public void delegate(PrepDelegations[] prepDelegations) {
+        only(governance);
+        Context.call(staking.get(), "delegate", (Object) prepDelegations);
     }
 
     protected BigInteger getSicxRate() {
@@ -707,6 +725,20 @@ public abstract class AbstractDex implements Dex {
                 , effectiveFillPrice);
     }
 
+    void donate(Address fromToken, Address toToken, BigInteger value) {
+        int id = getPoolId(fromToken, toToken).intValue();
+        isValidPoolId(id);
+        Context.require(id != SICXICX_POOL_ID, TAG + ":  Not supported on this API, use the ICX swap API.");
+        Context.require(active.getOrDefault(id, false), TAG + ": Pool is not active");
+
+        DictDB<Address, BigInteger> totalTokensInPool = poolTotal.at(id);
+        BigInteger oldFromToken = totalTokensInPool.get(fromToken);
+
+        BigInteger newFromToken = oldFromToken.add(value);
+
+        totalTokensInPool.set(fromToken, newFromToken);
+    }
+
     void swapIcx(Address sender, BigInteger value) {
         revertOnIncompleteRewards();
         BigInteger sicxIcxPrice = getSicxRate();
@@ -783,14 +815,6 @@ public abstract class AbstractDex implements Dex {
             return EXA;
         } else {
             return pow(BigInteger.TEN, tokenPrecisions.get(tokenAddress).intValue());
-        }
-    }
-
-    void revertBelowMinimum(BigInteger value, Address quoteToken) {
-        BigInteger minAmount = getRewardableAmount(quoteToken);
-        if (value.compareTo(minAmount) < 0) {
-            BigInteger readableMin = minAmount.divide(getUnitValue(quoteToken));
-            Context.revert(TAG + ": Total liquidity provided must be above " + readableMin + " quote currency");
         }
     }
 

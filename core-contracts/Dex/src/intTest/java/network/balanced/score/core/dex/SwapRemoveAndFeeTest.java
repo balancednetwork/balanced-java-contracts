@@ -141,7 +141,6 @@ public class SwapRemoveAndFeeTest {
             assertEquals(exception.getMessage(), "Reverted(0)");  //locked
         }
 
-
         waitForADay();
 //        balanced.syncDistributions();
         BigInteger withdrawAmount = BigInteger.valueOf(5);

@@ -19,6 +19,7 @@ package network.balanced.score.core.daofund;
 import network.balanced.score.lib.interfaces.DAOfund;
 import network.balanced.score.lib.interfaces.LoansScoreInterface;
 import network.balanced.score.lib.structs.Disbursement;
+import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.utils.EnumerableSetDB;
 import score.*;
 import score.annotation.EventLog;
@@ -101,6 +102,13 @@ public class DAOfundImpl implements DAOfund {
     @External(readonly = true)
     public Address getLoans() {
         return loansScore.get();
+    }
+
+    @External
+    public void delegate(PrepDelegations[] prepDelegations) {
+        only(governance);
+        Address staking = (Address) Context.call(governance.get(), "getContractAddress", "staking");
+        Context.call(staking, "delegate", (Object) prepDelegations);
     }
 
     /**

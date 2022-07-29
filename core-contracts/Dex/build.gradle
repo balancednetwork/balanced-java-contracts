@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+
+import network.balanced.score.dependencies.Addresses
 import network.balanced.score.dependencies.Dependencies
 
 version = '0.1.0'
@@ -67,7 +69,7 @@ optimizedJar {
     mainClassName = 'network.balanced.score.core.dex.DexImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
-        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
     enableDebug = false
 }
@@ -78,18 +80,26 @@ deployJar {
             uri = 'https://sejong.net.solidwallet.io/api/v3'
             nid = 0x53
         }
+        berlin {
+            uri = 'https://berlin.net.solidwallet.io/api/v3'
+            nid = 0x7
+            to = Addresses.berlin.dex
+        }
         local {
             uri = 'http://localhost:9082/api/v3'
             nid = 0x3
         }
         mainnet {
+            to = Addresses.mainnet.dex
             uri = 'https://ctz.solidwallet.io/api/v3'
             nid = 0x1
         }
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
-    parameters {}
+    parameters {
+        arg("_governance", Addresses.mainnet.governance)
+    }
 }
 
 tasks.named('test') {

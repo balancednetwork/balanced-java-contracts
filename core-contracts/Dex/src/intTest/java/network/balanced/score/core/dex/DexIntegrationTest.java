@@ -88,7 +88,7 @@ class DexIntegrationTest {
 
             Rewards rewards = new RewardsScoreClient(balanced.rewards);
             Loans loans = new LoansScoreClient(balanced.loans);
-            Baln baln = new BalnScoreClient(balanced.baln);
+            BalancedToken baln = new BalancedTokenScoreClient(balanced.baln);
             Sicx sicx = new SicxScoreClient(balanced.sicx);
             StakedLP stakedLp = new StakedLPScoreClient(balanced.stakedLp);
 
@@ -123,7 +123,7 @@ class DexIntegrationTest {
             dexScoreClient._nid(), userWallet, sIcxScoreClient._address());
     static Rewards userWalletRewardsClient = new RewardsScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(),
             userWallet, rewardsScoreClient._address());
-    private static final BalnScoreClient userBalnScoreClient = new BalnScoreClient(dexScoreClient.endpoint(),
+    private static final BalancedTokenScoreClient userBalnScoreClient = new BalancedTokenScoreClient(dexScoreClient.endpoint(),
             dexScoreClient._nid(), userWallet, balnScoreClient._address());
     private static final DexTestScoreClient userDexTestScoreClient = new DexTestScoreClient(dexScoreClient.endpoint(),
             dexScoreClient._nid(), userWallet, tokenAAddress);

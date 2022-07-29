@@ -93,4 +93,10 @@ build
 .deployment
 gradle.properties
 
+#eclipse
+.project
+.settings
+.classpath
+*/bin/
+/bin/
 bin/
