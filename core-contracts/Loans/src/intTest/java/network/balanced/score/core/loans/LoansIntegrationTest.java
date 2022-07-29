@@ -663,7 +663,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         owner.bnUSD.transfer(balanced.dex._address(), bnusdDeposit, depositData.toString().getBytes());
         owner.dex.add(collateralAddress, balanced.bnusd._address(), tokenAmount, bnusdDeposit, false);
 
-        owner.governance.addCollateral(collateralAddress, true, peg, BigInteger.TEN.pow(26));
+        owner.governance.addCollateral(collateralAddress, true, peg, BigInteger.TEN.pow(30));
     }
 
     private void getTokens(BalancedClient client, Address address, BigInteger amount) {
