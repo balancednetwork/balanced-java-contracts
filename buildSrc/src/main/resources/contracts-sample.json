@@ -119,7 +119,7 @@
     "name": "balancedoracle",
     "params": {},
     "addressParams": {
-      "governance": "governance"
+      "_governance": "governance"
     },
     "order": 2.0
   },
