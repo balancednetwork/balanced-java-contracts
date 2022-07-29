@@ -176,7 +176,7 @@ class DexIntegrationTest {
         assertEquals(hexToBigInteger(poolStats.get("total_supply").toString()), BigInteger.ZERO);
 
         //test icx transfer and verify stats
-//        balanced.syncDistributions();
+        balanced.syncDistributions();
         userClient._transfer(dexScoreClient._address(), BigInteger.valueOf(200).multiply(EXA), null);
         poolStats = dexUserScoreClient.getPoolStats(defaultPoolId);
 
@@ -211,7 +211,7 @@ class DexIntegrationTest {
         System.out.println(" day is: " + dexUserScoreClient.getDay());
         waitForADay();
         //release lock by distributing rewards
-//        balanced.syncDistributions();
+        balanced.syncDistributions();
         //verify sicx earning and make withdraw
         BigInteger sicxEarning = dexUserScoreClient.getSicxEarnings(userAddress);
         assertNotNull(sicxEarning);
@@ -311,7 +311,7 @@ class DexIntegrationTest {
     @Order(8)
     void testNonContinuousAndContinuousReward(){
         userDaoFundScoreClient.addAddressToSetdb();
-//        balanced.syncDistributions();
+        balanced.syncDistributions();
         BigInteger balnHolding = userRewardScoreClient.getBalnHolding(tUserAddress);
         tUserClient._transfer(dexScoreClient._address(), BigInteger.valueOf(200).multiply(EXA), null);
         if(dexUserScoreClient.getContinuousRewardsDay()==null) {
@@ -320,7 +320,7 @@ class DexIntegrationTest {
 
         waitForADay();
 
-//       balanced.syncDistributions();
+       balanced.syncDistributions();
        BigInteger updatedBalnHolding = userRewardScoreClient.getBalnHolding(tUserAddress);
        assert balnHolding.compareTo(updatedBalnHolding)<0;
        BigInteger beforeSleepDay = dexUserScoreClient.getDay();

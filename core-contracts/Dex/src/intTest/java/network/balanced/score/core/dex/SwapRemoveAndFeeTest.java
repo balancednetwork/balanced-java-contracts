@@ -142,7 +142,7 @@ public class SwapRemoveAndFeeTest {
         }
 
         waitForADay();
-//        balanced.syncDistributions();
+        balanced.syncDistributions();
         BigInteger withdrawAmount = BigInteger.valueOf(5);
         BigInteger balanceBefore = dexUserScoreClient.balanceOf(userAddress, poolId);
         // this cal was working on 1-min day, but not working for offset manipulation.

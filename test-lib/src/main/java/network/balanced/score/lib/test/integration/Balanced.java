@@ -225,10 +225,12 @@ public class Balanced {
 
     // deprecated after continuous migration
     public void syncDistributions() {
-        Consumer<TransactionResult> distributeConsumer = result -> {};
-        while (!checkDistributionsDone()) {
-            ownerClient.rewards.distribute(distributeConsumer);
-            ownerClient.dividends.distribute(distributeConsumer);
+        if (ownerClient.dex.getContinuousRewardsDay() == null) {
+            Consumer<TransactionResult> distributeConsumer = result -> {};
+            while (!checkDistributionsDone()) {
+                ownerClient.rewards.distribute(distributeConsumer);
+                ownerClient.dividends.distribute(distributeConsumer);
+            }
         }
     }
 
