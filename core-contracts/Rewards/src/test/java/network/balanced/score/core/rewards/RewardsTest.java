@@ -316,9 +316,9 @@ class RewardsTest extends RewardsTestBase {
         BigInteger userDistribution = userSwapDistribution.add(userLoansDistribution);
 
         assertEquals(userDistribution, rewards.get(account.getAddress().toString()));
-        verify(baln.mock, times(day)).transfer(bwt.getAddress(), bwtDist.dist_percent.multiply(emission).divide(EXA), new byte[0]);
-        verify(baln.mock, times(day)).transfer(daoFund.getAddress(), daoDist.dist_percent.multiply(emission).divide(EXA), new byte[0]);
-        verify(baln.mock, times(day)).transfer(reserve.getAddress(), reserveDist.dist_percent.multiply(emission).divide(EXA), new byte[0]);
+        verify(baln.mock, times(day+1)).transfer(bwt.getAddress(), bwtDist.dist_percent.multiply(emission).divide(EXA), new byte[0]);
+        verify(baln.mock, times(day+1)).transfer(daoFund.getAddress(), daoDist.dist_percent.multiply(emission).divide(EXA), new byte[0]);
+        verify(baln.mock, times(day+1)).transfer(reserve.getAddress(), reserveDist.dist_percent.multiply(emission).divide(EXA), new byte[0]);
     }
 
     @Test
@@ -371,7 +371,6 @@ class RewardsTest extends RewardsTestBase {
     @Test
     void distStatus() {
         // Arrange        
-        sm.getBlock().increase(DAY);
         BigInteger day = (BigInteger) rewardsScore.call("getDay");
 
         // TODO Distribute once and check the platform day is increased but not the source days and calling
@@ -384,9 +383,11 @@ class RewardsTest extends RewardsTestBase {
         Map<String, BigInteger> sourceDays = (Map<String, BigInteger>)distStatus.get("source_days");
         BigInteger platformDay = (BigInteger) distStatus.get("platform_day");
 
-        assertEquals(day, platformDay);
-        assertEquals(sourceDays.get("sICX/ICX"), platformDay);
-        assertEquals(sourceDays.get("Loans"), platformDay);
+        BigInteger continuous_day = (BigInteger) rewardsScore.call("getContinuousRewardsDay");
+
+        assertEquals(day.add(BigInteger.ONE), platformDay);
+        assertEquals(sourceDays.get("sICX/ICX"), continuous_day.add(BigInteger.ONE));
+        assertEquals(sourceDays.get("Loans"), continuous_day.add(BigInteger.ONE));
     }
 
     @SuppressWarnings("unchecked")

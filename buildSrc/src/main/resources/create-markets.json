@@ -1,0 +1,31 @@
+[
+  {
+    "contract": "governance",
+    "method": "createBalnMarket",
+    "__args__": {
+      "_bnUSD_amount": "10000000000000000000",
+      "_baln_amount": "10000000000000000000"
+    },
+    "order": 1.0
+  },
+  {
+    "contract": "staking",
+    "method": "stakeICX",
+    "value": 100000000000000000000,
+    "__args__": {
+      "__address_args__": {
+        "_to": "governance"
+      }
+    },
+    "order": 2.0
+  },
+  {
+    "contract": "governance",
+    "method": "createBalnSicxMarket",
+    "__args__": {
+      "_sicx_amount": "10000000000000000000",
+      "_baln_amount": "10000000000000000000"
+    },
+    "order": 3.0
+  }
+]

@@ -22,7 +22,7 @@
     "order": 2.0
   },
   {
-    "name": "worker_token",
+    "name": "workerToken",
     "params": {},
     "addressParams": {
       "_governance": "governance"
@@ -46,7 +46,7 @@
     "order": 2.0
   },
   {
-    "name": "disbursement",
+    "name": "batchDisbursement",
     "params": {},
     "addressParams": {
       "_governance": "governance"
@@ -88,7 +88,6 @@
   {
     "name": "reserve",
     "params": {},
-    "contentType": "application/java",
     "order": 2.0
   },
   {
@@ -116,16 +115,9 @@
     "order": 2.0
   },
   {
-    "name": "stability",
-    "params": {
-      "_feeIn": 500000000000000000,
-      "_feeOut": 500000000000000000
-    },
-    "addressParams": {
-      "_feeHandler": "feehandler",
-      "_bnusd": "bnUSD"
-    },
-    "order": 3.0
+    "name": "multicall",
+    "params": {},
+    "order": 2.0
   },
   {
     "name": "staking",
@@ -141,12 +133,20 @@
     "order": 4.0
   },
   {
+    "name": "stability",
+    "params": {
+      "_feeIn": 500000000000000000,
+      "_feeOut": 500000000000000000
+    },
+    "addressParams": {
+      "_feeHandler": "feehandler",
+      "_bnusd": "bnUSD"
+    },
+    "order": 4.0
+  },
+  {
     "name": "oracle",
     "params": {
     }
-  },
-  {
-    "name": "multicall",
-    "params": {}
   }
 ]

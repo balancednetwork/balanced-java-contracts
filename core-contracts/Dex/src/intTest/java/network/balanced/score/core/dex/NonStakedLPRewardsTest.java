@@ -110,18 +110,15 @@ public class NonStakedLPRewardsTest {
         staking.stakeICX(BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18)), userAddress
                 , null);
 
-        BigInteger loanAmount = BigInteger.valueOf(150).multiply(BigInteger.TEN.pow(18));
-        BigInteger collateral = BigInteger.valueOf(1000).multiply(BigInteger.TEN.pow(18));
-
+        BigInteger loanAmount = BigInteger.valueOf(2000).multiply(BigInteger.TEN.pow(18));
+        BigInteger collateral = BigInteger.valueOf(5000).multiply(BigInteger.TEN.pow(18));
 
         loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
 
         waitForADay();
         balanced.syncDistributions();
         rewards.claimRewards();
-
-        baln.transfer(userAddress, loanAmount, null);
-
+        baln.transfer(userAddress, BigInteger.valueOf(110).multiply(BigInteger.TEN.pow(18)), null);
         // deposit base token
         userSicxScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(100).multiply(EXA), tokenDeposit);
         //deposit quote token
@@ -136,7 +133,7 @@ public class NonStakedLPRewardsTest {
         }
         waitForADay();
 
-        // continuous rewards starts here
+        // continuous rewards starts here if not already started
         balanced.syncDistributions();
         userWalletRewardsClient.claimRewards();
         waitForADay();

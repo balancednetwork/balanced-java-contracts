@@ -60,8 +60,8 @@ Once we are done with the process, we can simply deploy the contract to the netw
 ## Configuration Steps
 
 After the contract is deployed, a json file such as `addresses-BERLIN-2022-05-31-21-22.json` is created in the 
-`.deployment` folder.  The received filename should be added to `contractAddressFile` parameter of 
-`executeBalancedActions` in `build.gradle`. The resulting action then should be as follows:
+`.deployment` folder. The received filename should be added to `contractAddressFile` parameter of 
+`executeBalancedActions` in `build.gradle`. First run the configuration with `actions-sample.json` and in order to create BALN markets change actionFile to `create-markets.json`. The resulting action then should be as follows:
 
 ```gradle
 executeBalancedActions {

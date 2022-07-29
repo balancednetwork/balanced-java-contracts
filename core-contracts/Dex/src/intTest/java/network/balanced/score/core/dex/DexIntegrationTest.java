@@ -318,16 +318,12 @@ class DexIntegrationTest {
             governanceDexScoreClient.setContinuousRewardsDay(dexUserScoreClient.getDay().add(BigInteger.ONE));
         }
 
-        System.out.println("Baln total supply is: "+userBalnScoreClient.totalSupply());
         waitForADay();
 
        balanced.syncDistributions();
-       System.out.println("Baln total supply is: "+userBalnScoreClient.totalSupply());
        BigInteger updatedBalnHolding = userRewardScoreClient.getBalnHolding(tUserAddress);
-       System.out.println("baln holding: "+balnHolding);
-       System.out.println("updated baln holding: "+updatedBalnHolding);
        assert balnHolding.compareTo(updatedBalnHolding)<0;
-            BigInteger beforeSleepDay = dexUserScoreClient.getDay();
+       BigInteger beforeSleepDay = dexUserScoreClient.getDay();
         try {
             Thread.sleep(5000); //wait some time
         }catch (Exception e){
@@ -336,9 +332,6 @@ class DexIntegrationTest {
 
         BigInteger nextUpdatedBalnHolding = userRewardScoreClient.getBalnHolding(tUserAddress);
         assertEquals(beforeSleepDay, dexUserScoreClient.getDay());
-
-        System.out.println("updated baln holding: "+updatedBalnHolding);
-        System.out.println("next updated baln holding: "+nextUpdatedBalnHolding);
         assert updatedBalnHolding.compareTo(nextUpdatedBalnHolding)<0;
 
     }

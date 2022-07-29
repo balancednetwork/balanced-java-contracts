@@ -74,6 +74,7 @@ public class LoansImpl implements Loans {
             redeemBatch.set(REDEEM_BATCH_SIZE);
             maxRetirePercent.set(MAX_RETIRE_PERCENT);
             maxDebtsListLength.set(MAX_DEBTS_LIST_LENGTH);
+            continuousRewardDay.set(BigInteger.ONE);
         }
     }
 
