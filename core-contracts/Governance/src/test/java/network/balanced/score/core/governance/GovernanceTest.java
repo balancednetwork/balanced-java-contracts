@@ -274,7 +274,7 @@ public class GovernanceTest extends GovernanceTestBase {
         // Assert
         verify(loans.mock, times(2)).addAsset(tokenAddress, active, true);
         verify(balancedOracle.mock, times(2)).setPeg(symbol, peg);
-        verify(loans.mock).setCollateralLimit(symbol, limit);
+        verify(loans.mock).setDebtCeiling(symbol, limit);
     }
 
     @Test
@@ -309,11 +309,11 @@ public class GovernanceTest extends GovernanceTestBase {
         // Assert
         verify(loans.mock, times(2)).addAsset(tokenAddress, active, true);
         verify(balancedOracle.mock, times(2)).addDexPricedAsset(symbol, poolID);
-        verify(loans.mock).setCollateralLimit(symbol, limit);
+        verify(loans.mock).setDebtCeiling(symbol, limit);
     }
 
     @Test
-    void setCollateralLimit() {
+    void setDebtCeiling() {
         // Arrange
         String symbol = "TEST";
         BigInteger limit = EXA;
@@ -321,14 +321,14 @@ public class GovernanceTest extends GovernanceTestBase {
         String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
         
         // Act & Assert
-        Executable withNotOwner = () -> governance.invoke(notOwner, "setCollateralLimit", symbol, limit);
+        Executable withNotOwner = () -> governance.invoke(notOwner, "setDebtCeiling", symbol, limit);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
 
         // Act
-        governance.invoke(owner, "setCollateralLimit", symbol, limit);
+        governance.invoke(owner, "setDebtCeiling", symbol, limit);
 
         // Assert
-        verify(loans.mock).setCollateralLimit(symbol, limit);
+        verify(loans.mock).setDebtCeiling(symbol, limit);
     }
 
     @Test

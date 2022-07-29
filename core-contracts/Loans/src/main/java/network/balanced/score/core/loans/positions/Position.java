@@ -83,7 +83,7 @@ public class Position {
         return debt.at(dbKey).at(collateral).getOrDefault(symbol, BigInteger.ZERO);
     }
     
-    private void setTotalDebt(String symbol, BigInteger value) {
+    private void setPositionTotalDebt(String symbol, BigInteger value) {
         totalDebt.at(dbKey).set(symbol, value);
     }
 
@@ -111,7 +111,10 @@ public class Position {
     
         setLoansPosition(collateralSymbol, assetSymbol, value);
 
+        DictDB<String, BigInteger> totalPerCollateralDebts = LoansVariables.totalPerCollateralDebts.at(collateralSymbol);
+
         BigInteger previousTotalDebt = LoansVariables.totalDebts.getOrDefault(assetSymbol, BigInteger.ZERO);
+        BigInteger previousTotalPerCollateralDebt = totalPerCollateralDebts.getOrDefault(assetSymbol, BigInteger.ZERO);
         BigInteger currentValue = BigInteger.ZERO;
         if (value != null) {
             currentValue = value;
@@ -119,9 +122,17 @@ public class Position {
 
         BigInteger debtChange = currentValue.subtract(previousDebt);
 
-        setTotalDebt(assetSymbol, previousUserDebt.add(debtChange));
+        setPositionTotalDebt(assetSymbol, previousUserDebt.add(debtChange));
         BigInteger newTotalDebt = previousTotalDebt.add(debtChange);
+        BigInteger newTotalPerCollateralDebt = previousTotalPerCollateralDebt.add(debtChange);
+        BigInteger debtCeiling = LoansVariables.debtCeiling.get(collateralSymbol);
+        Context.require(debtCeiling == null 
+                        || debtChange.signum() != 1 
+                        || newTotalPerCollateralDebt.compareTo(debtCeiling) <= 0, 
+                        TAG + ": Cannot mint more " + assetSymbol + " on collateral " + collateralSymbol);
+    
         LoansVariables.totalDebts.set(assetSymbol, newTotalDebt);
+        totalPerCollateralDebts.set(assetSymbol, newTotalPerCollateralDebt);
 
         if ( value == null) {
             AssetDB.getAsset(assetSymbol).getBorrowers(collateralSymbol).remove(getId());
