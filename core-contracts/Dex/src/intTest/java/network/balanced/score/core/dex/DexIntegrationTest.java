@@ -176,7 +176,7 @@ class DexIntegrationTest {
         assertEquals(hexToBigInteger(poolStats.get("total_supply").toString()), BigInteger.ZERO);
 
         //test icx transfer and verify stats
-        balanced.syncDistributions();
+//        balanced.syncDistributions();
         userClient._transfer(dexScoreClient._address(), BigInteger.valueOf(200).multiply(EXA), null);
         poolStats = dexUserScoreClient.getPoolStats(defaultPoolId);
 
@@ -211,7 +211,7 @@ class DexIntegrationTest {
         System.out.println(" day is: " + dexUserScoreClient.getDay());
         waitForADay();
         //release lock by distributing rewards
-        balanced.syncDistributions();
+//        balanced.syncDistributions();
         //verify sicx earning and make withdraw
         BigInteger sicxEarning = dexUserScoreClient.getSicxEarnings(userAddress);
         assertNotNull(sicxEarning);
@@ -311,23 +311,19 @@ class DexIntegrationTest {
     @Order(8)
     void testNonContinuousAndContinuousReward(){
         userDaoFundScoreClient.addAddressToSetdb();
-        balanced.syncDistributions();
+//        balanced.syncDistributions();
         BigInteger balnHolding = userRewardScoreClient.getBalnHolding(tUserAddress);
         tUserClient._transfer(dexScoreClient._address(), BigInteger.valueOf(200).multiply(EXA), null);
         if(dexUserScoreClient.getContinuousRewardsDay()==null) {
             governanceDexScoreClient.setContinuousRewardsDay(dexUserScoreClient.getDay().add(BigInteger.ONE));
         }
 
-        System.out.println("Baln total supply is: "+userBalnScoreClient.totalSupply());
         waitForADay();
 
-       balanced.syncDistributions();
-       System.out.println("Baln total supply is: "+userBalnScoreClient.totalSupply());
+//       balanced.syncDistributions();
        BigInteger updatedBalnHolding = userRewardScoreClient.getBalnHolding(tUserAddress);
-       System.out.println("baln holding: "+balnHolding);
-       System.out.println("updated baln holding: "+updatedBalnHolding);
        assert balnHolding.compareTo(updatedBalnHolding)<0;
-            BigInteger beforeSleepDay = dexUserScoreClient.getDay();
+       BigInteger beforeSleepDay = dexUserScoreClient.getDay();
         try {
             Thread.sleep(5000); //wait some time
         }catch (Exception e){
@@ -336,9 +332,6 @@ class DexIntegrationTest {
 
         BigInteger nextUpdatedBalnHolding = userRewardScoreClient.getBalnHolding(tUserAddress);
         assertEquals(beforeSleepDay, dexUserScoreClient.getDay());
-
-        System.out.println("updated baln holding: "+updatedBalnHolding);
-        System.out.println("next updated baln holding: "+nextUpdatedBalnHolding);
         assert updatedBalnHolding.compareTo(nextUpdatedBalnHolding)<0;
 
     }

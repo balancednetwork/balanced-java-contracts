@@ -106,7 +106,7 @@ public class LpTransferableOnContinuousModeTest {
             governanceDexScoreClient.setContinuousRewardsDay(dexUserScoreClient.getDay().add(BigInteger.ONE));
         }
         waitForADay();
-        balanced.syncDistributions();
+//        balanced.syncDistributions();
         //continuous starts
         byte[] tokenDeposit = "{\"method\":\"_deposit\",\"params\":{\"none\":\"none\"}}".getBytes();
         mintAndTransferTestTokens(tokenDeposit);

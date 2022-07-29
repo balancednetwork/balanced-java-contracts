@@ -61,10 +61,12 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         BalancedClient loanTaker = balanced.newClient();
         loanTaker.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(20), null, null);
         
-        balanced.syncDistributions();
+//        balanced.syncDistributions();
 
+        BigInteger previousBalance = loanTaker.baln.balanceOf(loanTaker.getAddress());
         loanTaker.rewards.claimRewards();
-        assertEquals(loanTaker.baln.balanceOf(loanTaker.getAddress()), BigInteger.ZERO);
+        BigInteger newBalance = loanTaker.baln.balanceOf(loanTaker.getAddress());
+        assert(newBalance.compareTo(previousBalance) > 0);
     
     }
 }

@@ -197,7 +197,7 @@ public class Balanced {
     public void setupMarkets() {
         ownerClient.governance.createBnusdMarket(BigInteger.valueOf(400000).multiply(BigInteger.TEN.pow(18)));
         increaseDay(2);
-        syncDistributions();
+//        syncDistributions();
         BigInteger balnBalance = ownerClient.rewards.getBalnHolding(governance._address());
         BigInteger initialPoolDepths = balnBalance.divide(BigInteger.TWO);
         ownerClient.governance.createBalnMarket(initialPoolDepths, initialPoolDepths);

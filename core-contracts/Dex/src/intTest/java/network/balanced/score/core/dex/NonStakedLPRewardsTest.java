@@ -104,24 +104,21 @@ public class NonStakedLPRewardsTest {
         //balanced = new Balanced();
         //balanced.setupBalanced();
         userDaoFundScoreClient.addAddressToSetdb();
-        balanced.syncDistributions();
+//        balanced.syncDistributions();
 
         byte[] tokenDeposit = "{\"method\":\"_deposit\",\"params\":{\"none\":\"none\"}}".getBytes();
         staking.stakeICX(BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18)), userAddress
                 , null);
 
-        BigInteger loanAmount = BigInteger.valueOf(150).multiply(BigInteger.TEN.pow(18));
-        BigInteger collateral = BigInteger.valueOf(1000).multiply(BigInteger.TEN.pow(18));
-
+        BigInteger loanAmount = BigInteger.valueOf(2000).multiply(BigInteger.TEN.pow(18));
+        BigInteger collateral = BigInteger.valueOf(5000).multiply(BigInteger.TEN.pow(18));
 
         loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
 
         waitForADay();
-        balanced.syncDistributions();
+//        balanced.syncDistributions();
         rewards.claimRewards();
-
-        baln.transfer(userAddress, loanAmount, null);
-
+        baln.transfer(userAddress, BigInteger.valueOf(110).multiply(BigInteger.TEN.pow(18)), null);
         // deposit base token
         userSicxScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(100).multiply(EXA), tokenDeposit);
         //deposit quote token
@@ -129,15 +126,15 @@ public class NonStakedLPRewardsTest {
         dexUserScoreClient.add(balanced.baln._address(), balanced.sicx._address(), BigInteger.valueOf(100).multiply(EXA), BigInteger.valueOf(100).multiply(EXA), false);
 
         waitForADay();
-        balanced.syncDistributions();
+//        balanced.syncDistributions();
         userWalletRewardsClient.claimRewards();
         if(dexUserScoreClient.getContinuousRewardsDay()==null) {
             governanceDexScoreClient.setContinuousRewardsDay(dexUserScoreClient.getDay().add(BigInteger.ONE));
         }
         waitForADay();
 
-        // continuous rewards starts here
-        balanced.syncDistributions();
+        // continuous rewards starts here if not already started
+//        balanced.syncDistributions();
         userWalletRewardsClient.claimRewards();
         waitForADay();
 
