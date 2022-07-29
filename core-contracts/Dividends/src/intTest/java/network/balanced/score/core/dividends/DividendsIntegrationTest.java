@@ -561,14 +561,11 @@ public class DividendsIntegrationTest {
             // verify if the dividends is claimed or not.
             assertEquals(userDividends.get(balanced.bnusd._address().toString()),
                     bnusd.balanceOf(Address.fromString(owner.getAddress().toString())).subtract(previousBalances));
-        } else {
-            // verify the user Dividends is empty as no dividends distributed to lp providers
-            assertTrue(userDividends.isEmpty());
-        }
-        // After claiming userDividends should be empty
-        Map<String, BigInteger> newUserDividends = dividends.getUserDividends(Address.fromString(owner.getAddress().toString()), currentDay.intValue(), currentDay.intValue() + 1);
 
-        assertTrue(newUserDividends.isEmpty());
+            // After claiming userDividends should be empty
+            Map<String, BigInteger> newUserDividends = dividends.getUserDividends(Address.fromString(owner.getAddress().toString()), currentDay.intValue(), currentDay.intValue() + 1);
+            assertTrue(newUserDividends.isEmpty());
+        }
     }
 
     @Test
