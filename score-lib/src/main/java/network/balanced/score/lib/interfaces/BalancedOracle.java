@@ -16,23 +16,22 @@
 
 package network.balanced.score.lib.interfaces;
 
+import foundation.icon.score.client.ScoreClient;
+import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.*;
 import network.balanced.score.lib.interfaces.base.Name;
 import score.annotation.External;
 
 import java.math.BigInteger;
 
-import foundation.icon.score.client.ScoreClient;
-import foundation.icon.score.client.ScoreInterface;
-
 @ScoreClient
 @ScoreInterface
-public interface BalancedOracle extends 
+public interface BalancedOracle extends
         Name,
         GovernanceAddress,
         AdminAddress,
         DexAddress,
-        OracleAddress, 
+        OracleAddress,
         StakingAddress {
 
     @External
@@ -58,13 +57,13 @@ public interface BalancedOracle extends
 
     @External
     void setDexPriceEMADecay(BigInteger decay);
-       
+
     @External(readonly = true)
     BigInteger getDexPriceEMADecay();
-    
+
     @External
     void setOraclePriceEMADecay(BigInteger decay);
-   
+
     @External(readonly = true)
     BigInteger getOraclePriceEMADecay();
 }

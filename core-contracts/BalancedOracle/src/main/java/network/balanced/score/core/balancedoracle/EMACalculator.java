@@ -16,52 +16,57 @@
  */
 
 package network.balanced.score.core.balancedoracle;
-import score.VarDB;
+
 import score.BranchDB;
 import score.Context;
+import score.VarDB;
+
+import java.math.BigInteger;
 
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Math.exaPow;
-import java.math.BigInteger;
 
 public class EMACalculator {
-   private static final BranchDB<String, VarDB<BigInteger>> movingAverages = Context.newBranchDB("exponential_moving_averages", BigInteger.class);
-   private static final BranchDB<String, VarDB<BigInteger>> lastUpdateBlock = Context.newBranchDB("last_update_blocks", BigInteger.class);
-   private static final BranchDB<String, VarDB<BigInteger>> previousPrices = Context.newBranchDB("previous_prices", BigInteger.class);
+    private static final BranchDB<String, VarDB<BigInteger>> movingAverages = Context.newBranchDB(
+            "exponential_moving_averages", BigInteger.class);
+    private static final BranchDB<String, VarDB<BigInteger>> lastUpdateBlock = Context.newBranchDB(
+            "last_update_blocks", BigInteger.class);
+    private static final BranchDB<String, VarDB<BigInteger>> previousPrices = Context.newBranchDB("previous_prices",
+            BigInteger.class);
 
-   public static BigInteger updateEMA(String symbol, BigInteger currentPrice, BigInteger alpha) {
-      VarDB<BigInteger> lastUpdate = lastUpdateBlock.at(symbol);
-      VarDB<BigInteger> movingAverage = movingAverages.at(symbol);
-      BigInteger lastBlock = lastUpdate.get();
+    public static BigInteger updateEMA(String symbol, BigInteger currentPrice, BigInteger alpha) {
+        VarDB<BigInteger> lastUpdate = lastUpdateBlock.at(symbol);
+        VarDB<BigInteger> movingAverage = movingAverages.at(symbol);
+        BigInteger lastBlock = lastUpdate.get();
 
-      if (lastBlock == null) {
-         BigInteger currentBlock = BigInteger.valueOf(Context.getBlockHeight());
-         lastUpdate.set(currentBlock);
-         movingAverage.set(currentPrice);
-         previousPrices.at(symbol).set(currentPrice);
-         
-         return currentPrice;
-      }
+        if (lastBlock == null) {
+            BigInteger currentBlock = BigInteger.valueOf(Context.getBlockHeight());
+            lastUpdate.set(currentBlock);
+            movingAverage.set(currentPrice);
+            previousPrices.at(symbol).set(currentPrice);
 
-      BigInteger currentBlock = BigInteger.valueOf(Context.getBlockHeight());
-      BigInteger blockDiff = currentBlock.subtract(lastBlock);
-      BigInteger currentMovingAverage = movingAverage.get();
+            return currentPrice;
+        }
 
-      if (blockDiff.equals(BigInteger.ZERO)) {
-         return currentMovingAverage;
-      }
+        BigInteger currentBlock = BigInteger.valueOf(Context.getBlockHeight());
+        BigInteger blockDiff = currentBlock.subtract(lastBlock);
+        BigInteger currentMovingAverage = movingAverage.get();
 
-      VarDB<BigInteger> previousPrice = previousPrices.at(symbol);
-      BigInteger price = previousPrice.getOrDefault(BigInteger.ZERO);
-      previousPrice.set(currentPrice);
+        if (blockDiff.equals(BigInteger.ZERO)) {
+            return currentMovingAverage;
+        }
 
-      BigInteger weight = exaPow(EXA.subtract(alpha), blockDiff.intValue());
-      BigInteger priceChange = price.subtract(currentMovingAverage);
-      BigInteger newMovingAverge = price.subtract(priceChange.multiply(weight).divide(EXA));
+        VarDB<BigInteger> previousPrice = previousPrices.at(symbol);
+        BigInteger price = previousPrice.getOrDefault(BigInteger.ZERO);
+        previousPrice.set(currentPrice);
 
-      lastUpdate.set(currentBlock);
-      movingAverage.set(newMovingAverge);
+        BigInteger weight = exaPow(EXA.subtract(alpha), blockDiff.intValue());
+        BigInteger priceChange = price.subtract(currentMovingAverage);
+        BigInteger newMovingAverge = price.subtract(priceChange.multiply(weight).divide(EXA));
 
-      return newMovingAverge;
-   }
+        lastUpdate.set(currentBlock);
+        movingAverage.set(newMovingAverge);
+
+        return newMovingAverge;
+    }
 }
