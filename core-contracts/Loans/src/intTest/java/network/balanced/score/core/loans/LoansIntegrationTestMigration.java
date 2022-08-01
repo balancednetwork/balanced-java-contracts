@@ -138,7 +138,7 @@ class LoansIntegrationTestMigration extends LoansIntegrationTest {
             assertEquals(positions.get(i).get("address"), refPositions.get(i).get("address"));
             assertEquals(positions.get(i).get("pos_id"), refPositions.get(i).get("pos_id"));
             assertEquals(positions.get(i).get("created"), refPositions.get(i).get("created"));
-            if (!assetsDetails.isEmpty()) {
+            if (!refAssetsDetails.isEmpty()) {
                 assertEquals(assetsDetails.get("sICX").get("sICX"), refAssetsDetails.get("sICX"));
                 assertEquals(assetsDetails.get("sICX").get("bnUSD"), refAssetsDetails.get("bnUSD"));
             }
