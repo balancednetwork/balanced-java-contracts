@@ -16,32 +16,31 @@
 
 package network.balanced.score.core.loans;
 
+import static network.balanced.score.lib.test.integration.BalancedUtils.createIRC2Token;
+import static network.balanced.score.lib.test.integration.BalancedUtils.executeVoteActions;
+import static network.balanced.score.lib.test.integration.BalancedUtils.hexObjectToBigInteger;
+import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Constants.POINTS;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.math.BigInteger;
+import java.util.Map;
+
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
-import foundation.icon.icx.KeyWallet;
-import foundation.icon.jsonrpc.Address;
-import foundation.icon.jsonrpc.model.TransactionResult;
-import foundation.icon.score.client.RevertedException;
 
-import static  network.balanced.score.lib.utils.Constants.*;
-import static  network.balanced.score.lib.test.integration.BalancedUtils.*;
+import foundation.icon.jsonrpc.Address;
+import foundation.icon.score.client.RevertedException;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
 import score.UserRevertedException;
-
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-
-import java.math.BigInteger;
-import java.util.Map;
-import java.util.function.Consumer;
-import java.util.zip.ZipEntry;
-
-import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
-import static org.junit.jupiter.api.Assertions.*;
 
 abstract class LoansIntegrationTest implements ScoreIntegrationTest {
     protected static Balanced balanced;
@@ -505,7 +504,9 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         BigInteger sICXLoan = BigInteger.TEN.pow(21);
         BigInteger sICXdebt = sICXLoan.add(sICXLoan.multiply(feePercent).divide(POINTS));
 
+        
         loanTaker.loans.depositAndBorrow(collateral, "bnUSD", sICXLoan,  null, null);
+        BigInteger expectedsICXCollateral = collateral.multiply(reader.balancedOracle.getLastPriceInLoop("sICX").divide(EXA));
 
         // Act
         BigInteger balancePreLiquidation = liquidator.irc2(ethAddress).balanceOf(liquidator.getAddress());
@@ -528,7 +529,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
 
         Map<String, BigInteger> LiquidatedUserBaS = reader.loans.getBalanceAndSupply("Loans", loanTaker.getAddress());
         assertEquals(initalDebt.add(sICXdebt), getTotalDebt());
-        assertEquals(collateral, loanTaker.getLoansCollateralPosition("sICX"));
+        assertEquals(expectedsICXCollateral, loanTaker.getLoansCollateralPosition("sICX"));
         assertEquals(BigInteger.ZERO,  loanTaker.getLoansCollateralPosition("iETH"));
         assertEquals(sICXdebt, loanTaker.getLoansAssetPosition("sICX", "bnUSD"));
         assertEquals(BigInteger.ZERO, loanTaker.getLoansAssetPosition("iETH", "bnUSD"));
