@@ -94,9 +94,6 @@ class RewardsTestBase extends UnitTest {
         rewardsScore.invoke(admin, "setReserve", reserve.getAddress());
         rewardsScore.invoke(admin, "setBoostedBaln", bBaln.getAddress());
 
-        rewardsScore.invoke(owner, "addDataProvider", loans.getAddress());
-        rewardsScore.invoke(owner, "addDataProvider", dex.getAddress());
-
         setupDistributions();
         sm.getBlock().increase(DAY);
         syncDistributions();

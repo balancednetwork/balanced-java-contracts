@@ -44,7 +44,7 @@ public class DataSourceDB {
 
     public static void newSource(String name, Address contractAddress, Address dataProvider) {
         DataSourceImpl dataSource = _get(name);
-        Context.require(!name.equals(dataSource.getName()),  TAG + ": Data source does not exist");
+        Context.require(!name.equals(dataSource.getName()),  TAG + ": Data source does already exist");
 
         names.add(name);
         dataSource.setName(name);

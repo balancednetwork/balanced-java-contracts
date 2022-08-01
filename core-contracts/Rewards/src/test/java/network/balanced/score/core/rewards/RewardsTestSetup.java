@@ -126,6 +126,18 @@ class RewardsTestSetup extends RewardsTestBase {
         rewardsScore.invoke(admin, "setBoostWeight", weight);
         assertEquals(weight, rewardsScore.call("getBoostWeight"));
     }
+
+    @Test
+    void addNewDataSource() {
+        Account account = sm.createAccount();
+        String name = "newLP";
+       
+        rewardsScore.invoke(account, "addNewDataSource", name, testAccount.getAddress(), testAccount.getAddress());
+
+        String expectedErrorMessage = "Reverted(0): BalancedRewards: Data source does already exist";
+        Executable duplicateName = () -> rewardsScore.invoke(account, "addNewDataSource", name, testAccount.getAddress(), testAccount.getAddress());
+        expectErrorMessage(duplicateName, expectedErrorMessage);
+    }
 }
 
 

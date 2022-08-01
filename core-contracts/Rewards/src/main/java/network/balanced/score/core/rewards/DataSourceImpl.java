@@ -115,7 +115,6 @@ public class DataSourceImpl {
         VarDB<BigInteger> cumulativeTotalDist = this.cumulativeTotalDist.at(dbKey);
         BigInteger remaningDist = cumulativeTotalDist.getOrDefault(BigInteger.ZERO);
         cumulativeTotalDist.set(remaningDist.add(dist));
-        System.out.println(remaningDist.add(dist));
         
     }
 
