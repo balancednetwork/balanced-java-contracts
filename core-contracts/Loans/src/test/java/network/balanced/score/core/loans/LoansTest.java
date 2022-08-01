@@ -301,7 +301,7 @@ class LoansTest extends LoansTestBase {
         Map<String, Map<String, BigInteger>> assetHoldings = (Map<String, Map<String, BigInteger> >) position.get("holdings");
 
         assertEquals(collateral, assetHoldings.get("sICX").get("sICX"));
-        assertEquals(false, assetHoldings.get("sICX").containsKey("bnUSD"));
+        assertEquals(BigInteger.ZERO, assetHoldings.get("sICX").get("bnUSD"));
         verifyTotalDebt(BigInteger.ZERO);
     }
 
@@ -381,7 +381,7 @@ class LoansTest extends LoansTestBase {
         Map<String, Map<String, BigInteger>> assetHoldings = (Map<String, Map<String, BigInteger> >) position.get("holdings");
 
         assertEquals(collateral, assetHoldings.get("sICX").get("sICX"));
-        assertEquals(false, assetHoldings.get("sICX").containsKey("bnUSD"));
+        assertEquals(BigInteger.ZERO, assetHoldings.get("sICX").get("bnUSD"));
         verifyTotalDebt(BigInteger.ZERO);
     }
 
@@ -399,7 +399,7 @@ class LoansTest extends LoansTestBase {
         Map<String, Map<String, BigInteger>> assetHoldings = (Map<String, Map<String, BigInteger> >) position.get("holdings");
 
         assertEquals(collateral, assetHoldings.get("iETH").get("iETH"));
-        assertEquals(false, assetHoldings.get("iETH").containsKey("bnUSD"));
+        assertEquals(BigInteger.ZERO, assetHoldings.get("iETH").get("bnUSD"));
         verifyTotalDebt(BigInteger.ZERO);
     }
 
@@ -568,7 +568,7 @@ class LoansTest extends LoansTestBase {
         Map<String, Map<String, BigInteger>> assetHoldings = (Map<String, Map<String, BigInteger> >) position.get("holdings");
 
         assertEquals(collateral, assetHoldings.get("sICX").get("sICX"));
-        assertEquals(false, assetHoldings.get("sICX").containsKey("bnUSD"));
+        assertEquals(BigInteger.ZERO, assetHoldings.get("sICX").get("bnUSD"));
         verifyTotalDebt(BigInteger.ZERO);
     }
 

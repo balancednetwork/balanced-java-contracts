@@ -252,18 +252,13 @@ public class Position {
                 }
     
                 BigInteger amount = getDebt(collateralSymbol, assetSymbol);
-    
-                if (amount.compareTo(BigInteger.ZERO) > 0) {
-                    collateralAmounts.put(assetSymbol, amount);
-                }
+                collateralAmounts.put(assetSymbol, amount);
             }
 
             BigInteger amount = getCollateral(collateralSymbol);
 
-            if (amount.compareTo(BigInteger.ZERO) > 0) {
-                collateralAmounts.put(collateralSymbol, amount);
-                holdings.put(collateralSymbol, collateralAmounts);
-            }
+            collateralAmounts.put(collateralSymbol, amount);
+            holdings.put(collateralSymbol, collateralAmounts);
 
             Standing standing = getStanding(collateralSymbol, true);
             Map<String, Object> standingMap = new HashMap<>();
