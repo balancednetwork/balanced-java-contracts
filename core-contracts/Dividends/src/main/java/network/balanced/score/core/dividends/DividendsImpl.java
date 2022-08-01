@@ -83,10 +83,6 @@ public class DividendsImpl implements Dividends {
             distributionActivate.set(false);
             addInitialCategories();
         }
-
-        Map<String, BigInteger> dividendsDist = dividendsAt(getDay());
-        dividendsPercentage.set(DAO_FUND, dividendsDist.get(DAO_FUND));
-        dividendsPercentage.set(BALN_HOLDERS, dividendsDist.get(BALN_HOLDERS));
     }
 
     @External(readonly = true)

@@ -50,6 +50,8 @@ class FeeHandlerImplTest extends TestBase {
     private static final Account router = Account.newScoreAccount(scoreCount++);
     private static final Account dividends = Account.newScoreAccount(scoreCount++);
     private static final Account dex = Account.newScoreAccount(scoreCount++);
+    private static final Account loans = Account.newScoreAccount(scoreCount++);
+    private static final Account stabilityFund = Account.newScoreAccount(scoreCount++);
     private static final Account sicxScore = Account.newScoreAccount(scoreCount++);
     private static final Account bnusd = Account.newScoreAccount(scoreCount++);
     private static final Account governance = Account.newScoreAccount(scoreCount++);
@@ -284,4 +286,52 @@ class FeeHandlerImplTest extends TestBase {
         String expectedErrorMessage = TAG + ": No fees on the contract.";
         expectErrorMessage(contractCall, expectedErrorMessage);
     }
+
+    @Test
+    void feeData() {
+        // Arrange
+        setAdmin();
+        Account usdc = Account.newScoreAccount(scoreCount++);
+        feeHandler.invoke(owner, "setLoans", loans.getAddress());
+        feeHandler.invoke(owner, "setDex", dex.getAddress());
+        feeHandler.invoke(owner, "setStabilityFund", stabilityFund.getAddress());
+
+        BigInteger loanFee1 = BigInteger.valueOf(5).multiply(ICX);
+        BigInteger loanFee2 = BigInteger.valueOf(1).multiply(ICX);
+        BigInteger dexFeeICX = BigInteger.valueOf(12).multiply(ICX);
+        BigInteger dexFeeBnusd = BigInteger.valueOf(4).multiply(ICX);
+        BigInteger dexFeeBaln = BigInteger.valueOf(7).multiply(ICX);
+        BigInteger dexFeeUsdc = BigInteger.valueOf(9).multiply(ICX);
+        BigInteger StabilityFeeBnsud = BigInteger.valueOf(20).multiply(ICX);
+
+        Object token = new Address[]{sicxScore.getAddress(), bnusd.getAddress(), baln.getAddress()};
+        feeHandler.invoke(admin, "setAcceptedDividendTokens", token);
+        feeHandler.invoke(admin, "setSwapFeesAccruedDB");
+
+        // Act
+        feeHandler.invoke(bnusd, "tokenFallback", loans.getAddress(), loanFee1, new byte[0]);
+        feeHandler.invoke(bnusd, "tokenFallback", loans.getAddress(), loanFee2, new byte[0]);
+
+        feeHandler.invoke(sicxScore, "tokenFallback", dex.getAddress(), dexFeeICX, new byte[0]);
+        feeHandler.invoke(bnusd, "tokenFallback", dex.getAddress(), dexFeeBnusd, new byte[0]);
+        feeHandler.invoke(baln, "tokenFallback", dex.getAddress(), dexFeeBaln, new byte[0]);
+        feeHandler.invoke(usdc, "tokenFallback", dex.getAddress(), dexFeeUsdc, new byte[0]);
+
+        feeHandler.invoke(sicxScore, "tokenFallback", dex.getAddress(), dexFeeICX, new byte[0]);
+        feeHandler.invoke(bnusd, "tokenFallback", dex.getAddress(), dexFeeBnusd, new byte[0]);
+        feeHandler.invoke(baln, "tokenFallback", dex.getAddress(), dexFeeBaln, new byte[0]);
+        feeHandler.invoke(usdc, "tokenFallback", dex.getAddress(), dexFeeUsdc, new byte[0]);
+
+        feeHandler.invoke(bnusd, "tokenFallback", stabilityFund.getAddress(), StabilityFeeBnsud, new byte[0]);
+        feeHandler.invoke(bnusd, "tokenFallback", stabilityFund.getAddress(), StabilityFeeBnsud, new byte[0]);
+
+        assertEquals(loanFee1.add(loanFee2), feeHandler.call("getLoanFeesAccrued"));
+
+        assertEquals(dexFeeICX.multiply(BigInteger.TWO), feeHandler.call("getSwapFeesAccruedByToken", sicxScore.getAddress()));
+        assertEquals(dexFeeBnusd.multiply(BigInteger.TWO), feeHandler.call("getSwapFeesAccruedByToken", bnusd.getAddress()));
+        assertEquals(dexFeeBaln.multiply(BigInteger.TWO), feeHandler.call("getSwapFeesAccruedByToken", baln.getAddress()));
+        assertEquals(BigInteger.ZERO, feeHandler.call("getSwapFeesAccruedByToken", usdc.getAddress()));
+
+        assertEquals(StabilityFeeBnsud.multiply(BigInteger.TWO), feeHandler.call("getStabilityFundFeesAccrued"));
+    }  
 }
