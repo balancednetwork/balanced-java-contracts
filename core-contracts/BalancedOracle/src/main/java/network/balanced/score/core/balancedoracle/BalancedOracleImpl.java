@@ -56,20 +56,28 @@ public class BalancedOracleImpl implements BalancedOracle {
         BigInteger priceInLoop;
         if (pegSymbol.equals("sICX")) {
             priceInLoop = getSICXPriceInLoop();
+            lastPriceInLoop.set(pegSymbol, priceInLoop);
         } else if (dexPricedAssets.get(pegSymbol) != null) {
             priceInLoop = getDexPriceInLoop(pegSymbol);
         } else {
             priceInLoop = getLoopRate(pegSymbol);
+            lastPriceInLoop.set(pegSymbol, priceInLoop);
         }
 
-        lastPriceInLoop.set(pegSymbol, priceInLoop);
         return priceInLoop;
     }
 
     @External(readonly = true)
     public BigInteger getLastPriceInLoop(String symbol) {
         String pegSymbol = assetPeg.getOrDefault(symbol, symbol);
-        BigInteger priceInLoop = lastPriceInLoop.getOrDefault(pegSymbol, BigInteger.ZERO);
+        BigInteger priceInLoop; 
+
+        if (dexPricedAssets.get(pegSymbol) != null) {
+            priceInLoop = EMACalculator.calculateEMA(pegSymbol, getDexPriceEMADecay());
+        } else {
+            priceInLoop = lastPriceInLoop.getOrDefault(pegSymbol, BigInteger.ZERO);
+        }
+        
         Context.require(priceInLoop.compareTo(BigInteger.ZERO) > 0, TAG + ": No price data exists for symbol");
 
         return priceInLoop;
@@ -205,8 +213,8 @@ public class BalancedOracleImpl implements BalancedOracle {
     private BigInteger getLoopRate(String symbol) {
         Map<String, Object> priceData = (Map<String, Object>) Context.call(oracle.get(), "get_reference_data", symbol
                 , "ICX");
-        BigInteger priceInLoop = (BigInteger) priceData.get("rate");
 
-        return EMACalculator.updateEMA(symbol, priceInLoop, getOraclePriceEMADecay());
+        return (BigInteger) priceData.get("rate");
+        // return EMACalculator.updateEMA(symbol, priceInLoop, getOraclePriceEMADecay());
     }
 }

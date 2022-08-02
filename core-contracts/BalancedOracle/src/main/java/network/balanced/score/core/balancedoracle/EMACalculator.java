@@ -63,4 +63,24 @@ public class EMACalculator {
 
         return newMovingAverage;
     }
+
+    public static BigInteger calculateEMA(String symbol, BigInteger alpha) {
+        BigInteger lastBlock = lastUpdateBlock.get(symbol);
+        BigInteger currentBlock = BigInteger.valueOf(Context.getBlockHeight());
+
+        BigInteger blockDiff = currentBlock.subtract(lastBlock);
+        BigInteger currentMovingAverage = movingAverages.get(symbol);
+
+        if (blockDiff.equals(BigInteger.ZERO)) {
+            return currentMovingAverage;
+        }
+
+        BigInteger price = previousPrices.get(symbol);
+
+        BigInteger weight = exaPow(EXA.subtract(alpha), blockDiff.intValue());
+        BigInteger priceChange = price.subtract(currentMovingAverage);
+        BigInteger newMovingAverage = price.subtract(priceChange.multiply(weight).divide(EXA));
+        
+        return newMovingAverage;
+    }
 }
