@@ -17,8 +17,8 @@
 
 package network.balanced.score.core.balancedoracle;
 
-import score.DictDB;
 import score.Context;
+import score.DictDB;
 
 import java.math.BigInteger;
 
@@ -80,7 +80,7 @@ public class EMACalculator {
         BigInteger weight = exaPow(EXA.subtract(alpha), blockDiff.intValue());
         BigInteger priceChange = price.subtract(currentMovingAverage);
         BigInteger newMovingAverage = price.subtract(priceChange.multiply(weight).divide(EXA));
-        
+
         return newMovingAverage;
     }
 }
