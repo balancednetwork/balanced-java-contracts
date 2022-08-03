@@ -36,6 +36,7 @@ import java.util.Map;
 
 import static network.balanced.score.core.feehandler.FeeHandlerImpl.TAG;
 import static network.balanced.score.lib.test.UnitTest.*;
+import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -309,8 +310,8 @@ class FeeHandlerImplTest extends TestBase {
         feeHandler.invoke(admin, "setSwapFeesAccruedDB");
 
         // Act
-        feeHandler.invoke(bnusd, "tokenFallback", loans.getAddress(), loanFee1, new byte[0]);
-        feeHandler.invoke(bnusd, "tokenFallback", loans.getAddress(), loanFee2, new byte[0]);
+        feeHandler.invoke(bnusd, "tokenFallback", EOA_ZERO, loanFee1, new byte[0]);
+        feeHandler.invoke(bnusd, "tokenFallback", EOA_ZERO, loanFee2, new byte[0]);
 
         feeHandler.invoke(sicxScore, "tokenFallback", dex.getAddress(), dexFeeICX, new byte[0]);
         feeHandler.invoke(bnusd, "tokenFallback", dex.getAddress(), dexFeeBnusd, new byte[0]);
