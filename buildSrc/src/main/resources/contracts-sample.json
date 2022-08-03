@@ -116,6 +116,14 @@
     "order": 2.0
   },
   {
+    "name": "balancedoracle",
+    "params": {},
+    "addressParams": {
+      "_governance": "governance"
+    },
+    "order": 2.0
+  },
+  {
     "name": "stability",
     "params": {
       "_feeIn": 500000000000000000,
