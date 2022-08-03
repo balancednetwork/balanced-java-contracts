@@ -379,7 +379,7 @@ public class FeeHandlerImpl implements FeeHandler {
         BigInteger accruedFees = swapFeesAccruedDB.get(sender);
         if (_from.equals(EOA_ZERO) && accruedFees != null) {
             loanFeesAccrued.set(loanFeesAccrued.getOrDefault(BigInteger.ZERO).add(_value));
-        } else if (accruedFees != null && _from.equals(dex.get())  ) {
+        } else if (accruedFees != null && _from.equals(dex.get())) {
             swapFeesAccruedDB.set(sender, accruedFees.add(_value));
         } else if (_from.equals(stabilityFund.get())) {
             stabilityFundFeesAccrued.set(stabilityFundFeesAccrued.getOrDefault(BigInteger.ZERO).add(_value));
