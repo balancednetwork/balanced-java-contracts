@@ -22,6 +22,8 @@ import foundation.icon.icx.KeyWallet;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
+import score.Address;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -69,15 +71,12 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
     @Test
     void executeVote() {
         BigInteger rebalancingThreshold = BigInteger.TEN;
-        JsonObject setRebalancingThresholdParameters = new JsonObject()
-                .add("_value", rebalancingThreshold.intValue());
-
-        JsonArray setRebalancingThreshold = new JsonArray()
-                .add("setRebalancingThreshold")
-                .add(setRebalancingThresholdParameters);
+       
+        JsonArray rebalancingThresholdParameter = new JsonArray()
+            .add(createParameter(rebalancingThreshold));
 
         JsonArray actions = new JsonArray()
-                .add(setRebalancingThreshold);
+            .add(createVoteAction(balanced.rebalancing._address(), "setPriceDiffThreshold", rebalancingThresholdParameter));
 
         BigInteger day = tester.governance.getDay();
         String name = "testVote";
@@ -120,5 +119,61 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         } catch (Exception e) {
             //success
         }
+    }
+
+
+    public static JsonObject createJsonDistribtion(String name, BigInteger dist) {
+        return new JsonObject()
+            .add("recipient_name", name)
+            .add("dist_percent", dist.toString());
+    }
+    
+    public static JsonObject createJsonDisbusment(String token, BigInteger amount) {
+        return new JsonObject()
+            .add("address", token)
+            .add("amount", amount.intValue());
+    }
+
+    public static JsonObject createParameter(String value) {
+        return new JsonObject()
+            .add("type", "String")
+            .add("value", value);
+    }
+
+    public static JsonObject createParameter(Address value) {
+        return new JsonObject()
+            .add("type", "Address")
+            .add("value", value.toString());
+    }
+
+    public static JsonObject createParameter(BigInteger value) {
+        return new JsonObject()
+            .add("type", "int")
+            .add("value", value.intValue());
+    }
+
+    public static JsonObject createParameter(Boolean value) {
+        return new JsonObject()
+            .add("type", "boolean")
+            .add("value", value);
+    }
+
+    public static JsonObject createParameter(String type, JsonObject value) {
+        return new JsonObject()
+            .add("type", type)
+            .add("value", value);
+    }
+
+    public static JsonObject createParameter(String type, JsonArray value) {
+        return new JsonObject()
+            .add("type", type)
+            .add("value", value);
+    }
+
+    public static JsonArray createVoteAction(Address address, String method, JsonArray parameters) {
+        return new JsonArray()
+            .add(address.toString())
+            .add(method)
+            .add(parameters);
     }
 }

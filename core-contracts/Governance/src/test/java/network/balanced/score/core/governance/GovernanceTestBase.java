@@ -16,6 +16,7 @@
 
 package network.balanced.score.core.governance;
 
+import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
@@ -25,6 +26,7 @@ import network.balanced.score.lib.interfaces.addresses.BnusdAddress;
 import network.balanced.score.lib.structs.BalancedAddresses;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockContract;
+import score.Address;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -65,39 +67,59 @@ public class GovernanceTestBase extends UnitTest {
 
     protected Score governance;
 
-    protected JsonObject createJsonDistribtion(String name, BigInteger dist) {
-
+    public static JsonObject createJsonDistribtion(String name, BigInteger dist) {
         return new JsonObject()
             .add("recipient_name", name)
             .add("dist_percent", dist.toString());
     }
     
-    protected JsonObject createJsonDisbusment(String token, BigInteger amount) {
-
+    public static JsonObject createJsonDisbusment(String token, BigInteger amount) {
         return new JsonObject()
             .add("address", token)
             .add("amount", amount.intValue());
     }
 
-    protected JsonObject createParameter(String type, String value) {
-
+    public static JsonObject createParameter(String value) {
         return new JsonObject()
-            .add("type", type)
+            .add("type", "String")
             .add("value", value);
     }
 
-    protected JsonObject createParameter(String type, BigInteger value) {
-
+    public static JsonObject createParameter(Address value) {
         return new JsonObject()
-            .add("type", type)
+            .add("type", "Address")
+            .add("value", value.toString());
+    }
+
+    public static JsonObject createParameter(BigInteger value) {
+        return new JsonObject()
+            .add("type", "int")
             .add("value", value.intValue());
     }
 
-    protected JsonObject createParameter(String type, Boolean value) {
+    public static JsonObject createParameter(Boolean value) {
+        return new JsonObject()
+            .add("type", "boolean")
+            .add("value", value);
+    }
 
+    public static JsonObject createParameter(String type, JsonObject value) {
         return new JsonObject()
             .add("type", type)
             .add("value", value);
+    }
+
+    public static JsonObject createParameter(String type, JsonArray value) {
+        return new JsonObject()
+            .add("type", type)
+            .add("value", value);
+    }
+
+    public static JsonArray createVoteAction(Address address, String method, JsonArray parameters) {
+        return new JsonArray()
+            .add(address.toString())
+            .add(method)
+            .add(parameters);
     }
 
     private void setupAddresses() {

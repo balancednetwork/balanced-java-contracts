@@ -1,131 +1,97 @@
 package network.balanced.score.core.governance;
 
-import java.util.List;
-
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 
-import network.balanced.score.lib.structs.Disbursement;
-import network.balanced.score.lib.structs.DistributionPercentage;
-import static network.balanced.score.lib.utils.Math.convertToNumber;
-import score.Address;
-import score.Context;
+import network.balanced.score.lib.structs.StructParser;
 
-import scorex.util.ArrayList;
+import static network.balanced.score.lib.utils.Math.convertToNumber;
+
+import java.util.function.Function;
+
+import score.Address;
 
 public class VoteActions {
-     public static void execute(GovernanceImpl gov, String method, JsonObject params) {
-          switch (method) {
-               case "enableDividends":
-                    gov.enableDividends();
-                    break;
-               case "addNewDataSource":
-                    gov._addNewDataSource(params.get("_data_source_name").asString(), params.get("_contract_address").asString());
-                    break;
-               case "updateBalTokenDistPercentage":
-                    gov._updateBalTokenDistPercentage(parseDistPercentage(params.get("_recipient_list").asArray()));
-                    break;
-               case "setLockingRatio":
-                    gov.setLockingRatio(params.get("_symbol").asString(), convertToNumber(params.get("_value")));
-                    break;
-               case "setOriginationFee":
-                    gov.setOriginationFee(convertToNumber(params.get("_fee")));
-                    break;
-               case "setLiquidationRatio":
-                    gov.setLiquidationRatio(params.get("_symbol").asString(), convertToNumber(params.get("_ratio")));
-                    break;
-               case "setRetirementBonus":
-                    gov.setRetirementBonus(convertToNumber(params.get("_points")));
-                    break;
-               case "setLiquidationReward":
-                    gov.setLiquidationReward(convertToNumber(params.get("_points")));
-                    break;
-               case "setMaxRetirePercent":
-                    gov._setMaxRetirePercent(convertToNumber(params.get("_value")));
-                    break;
-               case "setRebalancingThreshold":
-                    gov._setRebalancingThreshold(convertToNumber(params.get("_value")));
-                    break;
-               case "setVoteDuration":
-                    gov._setVoteDuration(convertToNumber(params.get("_duration")));
-                    break;
-               case "setQuorum":
-                    gov._setQuorum(convertToNumber(params.get("quorum")));
-                    break;
-               case "setVoteDefinitionFee":
-                    gov._setVoteDefinitionFee(convertToNumber(params.get("fee")));
-                    break;
-               case "setBalnVoteDefinitionCriterion":
-                    gov._setBalnVoteDefinitionCriterion(convertToNumber(params.get("percentage")));
-                    break;
-               case "setDividendsCategoryPercentage":
-                    gov.setDividendsCategoryPercentage(parseDistPercentage(params.get("_dist_list").asArray()));
-                    break;
-               case "daoDisburse":
-                    gov.daoDisburse(params.get("_recipient").asString(), parseDisbursement(params.get("_amounts").asArray()));
-                    break;
-               case "addAcceptedTokens":
-                    gov._addAcceptedTokens(params.get("_token").asString());
-                    break;
-               case "call":
-                    Address address = Address.fromString(params.get("contract_address").asString());
-                    GovernanceImpl.call(address, params.get("method").asString(), parseVarArgs(params.get("parameters").asArray()));
-                    break;
+     public static void executeAction(JsonArray action) { 
+          JsonArray parsedAction = action.asArray();
 
-               default:
-                    Context.require(false, "Method "+ method + " does not exist.");
-        }
+          Address address = Address.fromString(parsedAction.get(0).asString());
+          String method = parsedAction.get(1).asString();
+          JsonArray jsonParams = parsedAction.get(2).asArray();
+          Object[] params = getConvertedParams(jsonParams);
+          GovernanceImpl.call(address, method, params);
      }
 
-     private static Object[] parseVarArgs(JsonArray parameters) {
-          List<Object> varArgs = new ArrayList<>(parameters.size());
-          for (int i = 0; i < parameters.size(); i++) {
-               JsonObject jsonParameter = parameters.get(i).asObject();
-               String type = jsonParameter.get("type").asString();
-               JsonValue value = jsonParameter.get("value");
-               switch (type) {
-                    case "String":
-                         varArgs.add(value.asString());
-                         break;
-                    case "Address":
-                         varArgs.add(Address.fromString(value.asString()));
-                         break;
-                    case "Number":
-                         varArgs.add(convertToNumber(value));
-                         break;
-                    case "Boolean":
-                         varArgs.add(value.asBoolean());
-                         break;
+     private static Object[] getConvertedParams(JsonArray params) {
+          Object[] convertedParameters = new Object[params.size()];
+          int i = 0;
+          for (JsonValue param : params) {
+              JsonObject member = param.asObject();
+               String type = member.getString("type", null);
+               JsonValue paramValue = member.get("value");
+               if (type.endsWith("[]")) {
+                    convertedParameters[i++] = convertParam(type.substring(0, type.length() - 2), paramValue.asArray(), true);
+               } else {
+                    convertedParameters[i++] = convertParam(type, paramValue, false);
                }
           }
 
-          return varArgs.toArray();
+          return convertedParameters;
      }
 
-    private static DistributionPercentage[] parseDistPercentage(JsonArray jsonDistributions) {
-          DistributionPercentage[] distPercentages = new DistributionPercentage[jsonDistributions.size()];  
-          for (int i = 0; i < jsonDistributions.size(); i++) {
-               JsonObject jsonDist = jsonDistributions.get(i).asObject();
-               DistributionPercentage dist = new DistributionPercentage();
-               dist.recipient_name = jsonDist.get("recipient_name").asString();
-               dist.dist_percent = convertToNumber(jsonDist.get("dist_percent"));
-               distPercentages[i] = dist;
+     private static Object convertParam(String type, JsonValue value, boolean isArray){
+          switch (type) {
+               case "Address":
+                    return parse(value, isArray, jsonValue -> Address.fromString(jsonValue.asString()));
+               case "String":
+                    return parse(value, isArray, jsonValue -> jsonValue.asString());
+               case "int":
+                    return parse(value, isArray, jsonValue -> convertToNumber(jsonValue));
+               case "boolean":
+                    return parse(value, isArray, jsonValue -> jsonValue.asBoolean());
+               case "bytes":
+                    return parse(value, isArray, jsonValue -> convertBytesParam(jsonValue));
+               case "DistributionPercentage":
+                    return parse(value, isArray, jsonValue -> StructParser.parseDistributionPercentage(jsonValue.asObject()));
+               case "Disbursement":
+                    return parse(value, isArray, jsonValue -> StructParser.parseDisbursement(jsonValue.asObject()));
+               case "PrepDelegations":
+                    return parse(value, isArray, jsonValue -> StructParser.parsePrepDelegations(jsonValue.asObject()));
           }
 
-          return distPercentages;
-    }
+          throw new IllegalArgumentException("Unknown type");
+     }    
 
-    private static Disbursement[] parseDisbursement(JsonArray jsonDisbursement) {
-          Disbursement[] disbursements = new Disbursement[jsonDisbursement.size()];  
-          for (int i = 0; i < jsonDisbursement.size(); i++) {
-               JsonObject jsonDisb = jsonDisbursement.get(i).asObject();
-               Disbursement disb = new Disbursement();
-               disb.address = Address.fromString(jsonDisb.get("address").asString());
-               disb.amount = convertToNumber(jsonDisb.get("amount"));
-               disbursements[i] = disb;
+     private static <T> Object parse(JsonValue value, boolean isArray, Function<JsonValue, T> parser) {
+          if (!isArray) {
+               return parser.apply(value);
           }
 
-          return disbursements;
-}
+          JsonArray array = value.asArray();
+          Object[] convertedArray =  new Object[array.size()];
+          int i = 0;
+          for (JsonValue param : array) {
+               convertedArray[i++] = parser.apply(param);
+          }
+
+          return convertedArray;
+     }
+
+     private static Object convertBytesParam(JsonValue value) {
+          String stringValue = value.asString();
+          if (stringValue.startsWith("0x") && (stringValue.length() % 2 == 0)) {
+               String hex = stringValue.substring(2);
+               int len = hex.length() / 2;
+               byte[] bytes = new byte[len];
+               for (int i = 0; i < len; i++) {
+                    int j = i * 2;
+                    bytes[i] = (byte) Integer.parseInt(hex.substring(j, j + 2), 16);
+               }
+
+               return (Object) bytes;
+          }
+
+          throw new IllegalArgumentException("Illegal bytes format"); 
+     }
 }
