@@ -19,11 +19,12 @@ package network.balanced.score.core.governance;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
-import com.eclipsesource.json.JsonValue;
 import network.balanced.score.lib.structs.BalancedAddresses;
-import network.balanced.score.lib.structs.Disbursement;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.PrepDelegations;
+
+import network.balanced.score.lib.interfaces.Governance;
+
 import score.Address;
 import score.Context;
 import score.VarDB;
@@ -43,7 +44,7 @@ import static network.balanced.score.lib.utils.Check.onlyOwner;
 import static network.balanced.score.lib.utils.Check.optionalDefault;
 import static network.balanced.score.lib.utils.Math.pow;
 
-public class GovernanceImpl {
+public class GovernanceImpl implements Governance {
     public final VarDB<BigInteger> launchDay = Context.newVarDB(LAUNCH_DAY, BigInteger.class);
     public final VarDB<BigInteger> launchTime = Context.newVarDB(LAUNCH_TIME, BigInteger.class);
     public final VarDB<Boolean> launched = Context.newVarDB(LAUNCHED, Boolean.class);
@@ -112,36 +113,6 @@ public class GovernanceImpl {
     }
 
     @External
-    public void setDividendsOnlyToStakedBalnDay(BigInteger _day) {
-        onlyOwner();
-        Context.call(Addresses.get("dividends"), "setDividendsOnlyToStakedBalnDay", _day);
-    }
-
-    @External
-    public void setFeeProcessingInterval(BigInteger _interval) {
-        onlyOwner();
-        Context.call(Addresses.get("feehandler"), "setFeeProcessingInterval", _interval);
-    }
-
-    @External
-    public void deleteRoute(Address _fromToken, Address _toToken) {
-        onlyOwner();
-        Context.call(Addresses.get("feehandler"), "deleteRoute", _fromToken, _toToken);
-    }
-
-    @External
-    public void setAcceptedDividendTokens(Address[] _tokens) {
-        onlyOwner();
-        Context.call(Addresses.get("feehandler"), "setAcceptedDividendTokens", (Object) _tokens);
-    }
-
-    @External
-    public void setRoute(Address _fromToken, Address _toToken, Address[] _path) {
-        onlyOwner();
-        Context.call(Addresses.get("feehandler"), "setRoute", _fromToken, _toToken, _path);
-    }
-
-    @External
     public void setQuorum(BigInteger quorum) {
         onlyOwner();
         _setQuorum(quorum);
@@ -178,7 +149,6 @@ public class GovernanceImpl {
     public void setAdmin(Address contractAddress, Address admin) {
         onlyOwner();
         Context.call(contractAddress, "setAdmin", admin);
-
     }
 
     @External
@@ -440,14 +410,24 @@ public class GovernanceImpl {
     public void configureBalanced() {
         onlyOwner();
         for (Map<String, Object> asset : ASSETS) {
+            Address tokenAddress = Addresses.get((String) asset.get("address"));
             Context.call(
                     Addresses.get("loans"),
                     "addAsset",
-                    Addresses.get((String) asset.get("address")),
+                    tokenAddress,
                     asset.get("active"),
                     asset.get("collateral")
             );
+            Context.call(Addresses.get("dividends"), "addAcceptedTokens", tokenAddress);
         }
+
+        Address[] acceptedFeeTokens = new Address[]{
+            Addresses.get("sicx"), 
+            Addresses.get("bnUSD"), 
+            Addresses.get("baln")
+        };
+
+        Context.call(Addresses.get("feehandler"), "setAcceptedDividendTokens", (Object) acceptedFeeTokens);
     }
 
     @External
@@ -471,11 +451,6 @@ public class GovernanceImpl {
         }
 
         Context.call(Addresses.get("rewards"), "updateBalTokenDistPercentage", (Object) RECIPIENTS);
-
-        // balanceToggleStakingEnabled();
-        // Context.call(Addresses.get("loans"), "turnLoansOn");
-        // Context.call(Addresses.get("dex"), "turnDexOn");
-        // enableDividends();
     }
 
     @External
@@ -608,57 +583,6 @@ public class GovernanceImpl {
     }
 
     @External
-    public void rebalancingSetBnusd(Address _address) {
-        onlyOwner();
-        Context.call(rebalancing.get(), SETTERS.get("bnUSD"), _address);
-
-    }
-
-    @External
-    public void rebalancingSetSicx(Address _address) {
-        onlyOwner();
-        Context.call(rebalancing.get(), SETTERS.get("sicx"), _address);
-
-    }
-
-    @External
-    public void rebalancingSetDex(Address _address) {
-        onlyOwner();
-        Context.call(rebalancing.get(), SETTERS.get("dex"), _address);
-
-    }
-
-    @External
-    public void rebalancingSetLoans(Address _address) {
-        onlyOwner();
-        Context.call(rebalancing.get(), SETTERS.get("loans"), _address);
-    }
-
-    @External
-    public void setLoansRebalance(Address _address) {
-        onlyOwner();
-        Context.call(Addresses.get("loans"), SETTERS.get("rebalancing"), _address);
-    }
-
-    @External
-    public void setLoansDex(Address _address) {
-        onlyOwner();
-        Context.call(Addresses.get("loans"), SETTERS.get("dex"), _address);
-    }
-
-    @External
-    public void setRebalancing(Address _address) {
-        onlyOwner();
-        rebalancing.set(_address);
-    }
-
-    @External
-    public void setRebalancingThreshold(BigInteger _value) {
-        onlyOwner();
-        _setRebalancingThreshold(_value);
-    }
-
-    @External
     public void setAddresses(BalancedAddresses _addresses) {
         onlyOwner();
         Addresses.setAddresses(_addresses);
@@ -739,82 +663,9 @@ public class GovernanceImpl {
     }
 
     @External
-    public void setCollateralLimit(String _symbol, BigInteger _limit) {
-        onlyOwner();
-        Address loansAddress = Addresses.get("loans");
-        Context.call(loansAddress, "setCollateralLimit", _symbol, _limit);
-    }
-
-    @External
-    public void toggleAssetActive(String _symbol) {
-        onlyOwner();
-        Context.call(Addresses.get("loans"), "toggleAssetActive", _symbol);
-    }
-
-    @External
-    public void setPeg(String _symbol, String _peg) {
-        onlyOwner();
-        Context.call(Addresses.get("balancedOracle"), "setPeg", _symbol, _peg);
-    }
-
-    @External
-    public void addDexPricedAsset(String _symbol, BigInteger _limit) {
-        onlyOwner();
-        Context.call(Addresses.get("balancedOracle"), "addDexPricedAsset", _symbol, _limit);
-    }
-
-    @External
-    public void removeDexPricedAsset(String _symbol) {
-        onlyOwner();
-        Context.call(Addresses.get("balancedOracle"), "removeDexPricedAsset", _symbol);
-    }
-
-    @External
-    public void addNewDataSource(String _data_source_name, String _contract_address) {
-        onlyOwner();
-        _addNewDataSource(_data_source_name, _contract_address);
-    }
-
-    @External
-    public void removeDataSource(String _data_source_name) {
-        onlyOwner();
-        Context.call(Addresses.get("rewards"), "removeDataSource", _data_source_name);
-    }
-
-    @External
-    public void updateBalTokenDistPercentage(DistributionPercentage[] _recipient_list) {
-        onlyOwner();
-        _updateBalTokenDistPercentage(_recipient_list);
-    }
-
-    @External
-    public void bonusDist(Address[] _addresses, BigInteger[] _amounts) {
-        onlyOwner();
-        Context.call(Addresses.get("rewards"), "bonusDist", (Object) _addresses, (Object) _amounts);
-    }
-
-    @External
     public void setDay(BigInteger _day) {
         onlyOwner();
         Context.call(Addresses.get("rewards"), "setDay", _day);
-    }
-
-    @External
-    public void dexPermit(BigInteger _id, boolean _permission) {
-        onlyOwner();
-        Context.call(Addresses.get("dex"), "permit", _id, _permission);
-    }
-
-    @External
-    public void dexAddQuoteCoin(Address _address) {
-        onlyOwner();
-        Context.call(Addresses.get("dex"), "addQuoteCoin", _address);
-    }
-
-    @External
-    public void setMarketName(BigInteger _id, String _name) {
-        onlyOwner();
-        Context.call(Addresses.get("dex"), "setMarketName", _id, _name);
     }
 
     @External
@@ -830,181 +681,10 @@ public class GovernanceImpl {
     }
 
     @External
-    public void setbnUSD(Address _address) {
-        onlyOwner();
-        Context.call(Addresses.get("baln"), SETTERS.get("bnUSD"), _address);
-    }
-
-    @External
-    public void setDividends(Address _score) {
-        onlyOwner();
-        Context.call(Addresses.get("baln"), SETTERS.get("dividends"), _score);
-    }
-
-    @External
-    public void balanceSetDex(Address _address) {
-        onlyOwner();
-        Context.call(Addresses.get("baln"), SETTERS.get("dex"), _address);
-    }
-
-    @External
-    public void balanceSetOracleName(String _name) {
-        onlyOwner();
-        Context.call(Addresses.get("baln"), "setOracleName", _name);
-    }
-
-    // @External
-    // public void balanceSetMinInterval(BigInteger _interval) {
-    //     onlyOwner();
-    //     Context.call(Addresses.get("baln"), "setMinInterval", _interval);
-    // }
-
-    // @External
-    // public void balanceToggleStakingEnabled() {
-    //     onlyOwner();
-    //     Context.call(Addresses.get("baln"), "toggleStakingEnabled");
-    // }
-
-    // @External
-    // public void balanceSetMinimumStake(BigInteger _amount) {
-    //     onlyOwner();
-    //     Context.call(Addresses.get("baln"), "setMinimumStake", _amount);
-    // }
-
-    // @External
-    // public void balanceSetUnstakingPeriod(BigInteger _time) {
-    //     onlyOwner();
-    //     Context.call(Addresses.get("baln"), "setUnstakingPeriod", _time);
-    // }
-
-    // @External
-    // public void addAcceptedTokens(String _token) {
-    //     onlyOwner();
-    //     _addAcceptedTokens(_token);
-    // }
-
-    @SuppressWarnings("unchecked")
-    @External
-    public void setAssetOracle(String _symbol, Address _address) {
-        onlyOwner();
-        Map<String, String> assetAddresses = (Map<String, String>) Context.call(Addresses.get("loans"), "getAssetTokens");
-        Context.require(assetAddresses.containsKey(_symbol), TAG + ": " + _symbol + " is not a supported asset in Balanced.");
-
-        Address token = Address.fromString(assetAddresses.get(_symbol));
-        Context.call(token, "setOracle", _address);
-    }
-
-    @SuppressWarnings("unchecked")
-    @External
-    public void setAssetOracleName(String _symbol, String _name) {
-        onlyOwner();
-        Map<String, String> assetAddresses = (Map<String, String>) Context.call(Addresses.get("loans"), "getAssetTokens");
-        Context.require(assetAddresses.containsKey(_symbol), TAG + ": " + _symbol + " is not a supported asset in Balanced.");
-
-        Address token = Address.fromString(assetAddresses.get(_symbol));
-        Context.call(token, "setOracleName", _name);
-    }
-
-    @SuppressWarnings("unchecked")
-    @External
-    public void setAssetMinInterval(String _symbol, BigInteger _interval) {
-        onlyOwner();
-        Map<String, String> assetAddresses = (Map<String, String>) Context.call(Addresses.get("loans"), "getAssetTokens");
-        Context.require(assetAddresses.containsKey(_symbol), TAG + ": " + _symbol + " is not a supported asset in Balanced.");
-
-        Address token = Address.fromString(assetAddresses.get(_symbol));
-        Context.call(token, "setMinInterval", _interval);
-    }
-
-    // @External
-    // public void bnUSDSetOracle(Address _address) {
-    //     onlyOwner();
-    //     Context.call(Addresses.get("bnUSD"), "setOracle", _address);
-    // }
-
-    // @External
-    // public void bnUSDSetOracleName(String _name) {
-    //     onlyOwner();
-    //     Context.call(Addresses.get("bnUSD"), "setOracleName", _name);
-    // }
-
-    // @External
-    // public void bnUSDSetMinInterval(BigInteger _interval) {
-    //     onlyOwner();
-    //     Context.call(Addresses.get("bnUSD"), "setMinInterval", _interval);
-    // }
-
-    // @External
-    // public void addUsersToActiveAddresses(BigInteger _poolId, Address[] _addressList) {
-    //     onlyOwner();
-    //     Context.call(Addresses.get("dex"), "addLpAddresses", _poolId, _addressList);
-    // }
-
-    // @External
-    // public void setRedemptionFee(BigInteger _fee) {
-    //     onlyOwner();
-    //     Context.call(Addresses.get("loans"), "setRedemptionFee", _fee);
-    // }
-
-    // @External
-    // public void setNewLoanMinimum(BigInteger _minimum) {
-    //     onlyOwner();
-    //     _setNewLoanMinimum(_minimum);
-    // }
-
-    // @External
-    // public void setMinMiningDebt(BigInteger _value) {
-    //     onlyOwner();
-    //     _setMinMiningDebt(_value);
-    // }
-
-    // @External
-    // public void setBatchSize(BigInteger _batch_size) {
-    //     onlyOwner();
-    //     _setBatchSize(_batch_size);
-    // }
-
-    // @External
-    // public void setMaxRetirePercent(BigInteger _value) {
-    //     onlyOwner();
-    //     _setMaxRetirePercent(_value);
-    // }
-
-    // @External
-    // public void setRedeemBatchSize(BigInteger _value) {
-    //     onlyOwner();
-    //     Context.call(Addresses.get("loans"), "setRedeemBatchSize", _value.intValue());
-    // }
-
-    // @External
-    // public void addPoolOnStakedLp(BigInteger _id) {
-    //     onlyOwner();
-    //     Context.call(Addresses.get("stakedLp"), "addPool", _id);
-    // }
-
-    @External
     public void setAddressesOnContract(String _contract) {
         onlyOwner();
         Addresses.setAddress(_contract);
     }
-
-    @External
-    public void setRouter(Address _router) {
-        onlyOwner();
-        Addresses.router.set(_router);
-    }
-
-    // @External
-    // public void enable_fee_handler() {
-    //     onlyOwner();
-    //     Context.call(Addresses.get("feehandler"), "enable");
-    // }
-
-    // @External
-    // public void disable_fee_handler() {
-    //     onlyOwner();
-    //     Context.call(Addresses.get("feehandler"), "disable");
-    // }
 
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
@@ -1012,6 +692,12 @@ public class GovernanceImpl {
 
     @Payable
     public void fallback() {
+    }
+
+    @External
+    public void callActions(String actions) {
+        onlyOwner();
+        executeVoteActions(actions);
     }
 
     private void refundVoteDefinitionFee(ProposalDB proposal) {
@@ -1057,61 +743,6 @@ public class GovernanceImpl {
         Context.call(targetAddress, method, params);
     }
 
-    public void daoDisburse(String _recipient, Disbursement[] _amounts) {
-        Context.require(_amounts.length <= 3, "Cannot disburse more than 3 assets at a time.");
-        Address recipient = Address.fromString(_recipient);
-        Context.call(Addresses.get("daofund"), "disburse", recipient, (Object) _amounts);
-    }
-
-    // public void enableDividends() {
-    //     Context.call(Addresses.get("dividends"), "setDistributionActivationStatus", true);
-    // }
-
-    // public void setMiningRatio(BigInteger _value) {
-    //     Context.call(Addresses.get("loans"), "setMiningRatio", _value);
-    // }
-
-    // public void setLockingRatio(BigInteger _value) {
-    //     Context.call(Addresses.get("loans"), "setLockingRatio", _value);
-    // }
-
-    // public void setOriginationFee(BigInteger _fee) {
-    //     Context.call(Addresses.get("loans"), "setOriginationFee", _fee);
-    // }
-
-    // public void setLiquidationRatio(BigInteger _ratio) {
-    //     Context.call(Addresses.get("loans"), "setLiquidationRatio", _ratio);
-    // }
-
-    // public void setRetirementBonus(BigInteger _points) {
-    //     Context.call(Addresses.get("loans"), "setRetirementBonus", _points);
-    // }
-
-    // public void setLiquidationReward(BigInteger _points) {
-    //     Context.call(Addresses.get("loans"), "setLiquidationReward", _points);
-    // }
-
-    // public void setDividendsCategoryPercentage(DistributionPercentage[] _dist_list) {
-    //     Context.call(Addresses.get("dividends"), "setDividendsCategoryPercentage", (Object) _dist_list);
-    // }
-
-    // Unreachable in current version
-    // public void setPoolLpFee(BigInteger _value) {
-    //     Context.call(Addresses.get("dex"), "setPoolLpFee",  _value);
-    // }
-
-    // public void setPoolBalnFee(BigInteger _value) {
-    //     Context.call(Addresses.get("dex"), "setPoolBalnFee",  _value);       
-    // }
-
-    // public void setIcxConversionFee(BigInteger _value) {
-    //     Context.call(Addresses.get("dex"), "setIcxConversionFee",  _value);
-    // }
-
-    // public void setIcxBalnFee(BigInteger _value) {
-    //      Context.call(Addresses.get("dex"), "setIcxBalnFee",  _value);
-    // }
-
     public void _setVoteDuration(BigInteger duration) {
         voteDuration.set(duration);
     }
@@ -1133,41 +764,6 @@ public class GovernanceImpl {
 
         balnVoteDefinitionCriterion.set(percentage);
     }
-
-    // public void _addNewDataSource(String _data_source_name, String _contract_address) {
-    //     Context.call(Addresses.get("rewards"), "addNewDataSource", _data_source_name, Address.fromString(_contract_address));
-    // }
-
-    // public void _addAcceptedTokens(String _token) {
-    //     Address token = Address.fromString(_token);
-    //     Context.call(Addresses.get("dividends"), "addAcceptedTokens", token);
-    // }
-
-    // public void _setMaxRetirePercent(BigInteger _value) {
-    //     Context.call(Addresses.get("loans"), "setMaxRetirePercent", _value);
-    // }
-
-    // public void _setRebalancingThreshold(BigInteger _value) {
-    //     Context.call(rebalancing.get(), "setPriceDiffThreshold", _value);
-    // }
-
-    // public void _setNewLoanMinimum(BigInteger _minimum) {
-    //     Context.call(Addresses.get("loans"), "setNewLoanMinimum", _minimum);
-    // }
-
-
-    // public void _setMinMiningDebt(BigInteger _minimum) {
-    //     Context.call(Addresses.get("loans"), "setMinMiningDebt", _minimum);
-    // }
-
-
-    // public void _setBatchSize(BigInteger _batch_size) {
-    //     Context.call(Addresses.get("rewards"), "setBatchSize", _batch_size);
-    // }
-
-    // public void _updateBalTokenDistPercentage(DistributionPercentage[] _recipient_list) {
-    //     Context.call(Addresses.get("rewards"), "updateBalTokenDistPercentage", (Object) _recipient_list);
-    // }
 
     @EventLog(indexed = 2)
     public void VoteCast(String vote_name, boolean vote, Address voter, BigInteger stake, BigInteger total_for,

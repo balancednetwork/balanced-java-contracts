@@ -58,7 +58,7 @@ public class LoansImpl implements Loans {
 
         if (governance.get() == null) {
             governance.set(_governance);
-            loansOn.set(false);
+            loansOn.set(true);
             lockingRatio.set(SICX_SYMBOL, LOCKING_RATIO);
             liquidationRatio.set(SICX_SYMBOL, LIQUIDATION_RATIO);
             originationFee.set(ORIGINATION_FEE);
@@ -83,13 +83,6 @@ public class LoansImpl implements Loans {
     @External(readonly = true)
     public String name() {
         return "Balanced Loans";
-    }
-
-    @External
-    public void turnLoansOn() {
-        only(governance);
-        loansOn.set(true);
-        ContractActive("Loans", "Active");
     }
 
     @External

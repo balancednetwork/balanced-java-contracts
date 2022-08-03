@@ -162,30 +162,16 @@ public class Balanced {
         ownerClient.baln.setMinter(rewards._address());
         ownerClient.bnUSD.setMinter2(stability._address());
 
+        ownerClient.governance.setAdmin(feehandler._address(), governance._address());
+
         ownerClient.governance.configureBalanced();
         ownerClient.governance.launchBalanced();
-        ownerClient.staking.toggleStakingOn();
 
         ownerClient.daofund.addAddressToSetdb();
-
-        ownerClient.governance.setAdmin(feehandler._address(), governance._address());
-        ownerClient.governance.enable_fee_handler();
 
         ownerClient.rewards.addDataProvider(stakedLp._address());
         ownerClient.rewards.addDataProvider(dex._address());
         ownerClient.rewards.addDataProvider(loans._address());
-
-        ownerClient.governance.setFeeProcessingInterval(BigInteger.ONE);
-
-        Address[] acceptedAddress=new Address[]{
-                bnusd._address(), sicx._address(),baln._address()
-        };
-        ownerClient.governance.setAcceptedDividendTokens(acceptedAddress);
-        ownerClient.governance.addAcceptedTokens(String.valueOf(bnusd._address()));
-        ownerClient.governance.addAcceptedTokens(String.valueOf(sicx._address()));
-        ownerClient.governance.addAcceptedTokens(String.valueOf(baln._address()));
-
-        ownerClient.bnUSD.setMinter2(stability._address());
     }
 
     public void setupMarkets() {

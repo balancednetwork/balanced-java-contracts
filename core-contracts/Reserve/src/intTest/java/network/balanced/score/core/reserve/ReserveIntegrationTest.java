@@ -16,9 +16,7 @@
 
 package network.balanced.score.core.reserve;
 
-import static network.balanced.score.lib.test.integration.BalancedUtils.createIRC2Token;
-import static network.balanced.score.lib.test.integration.BalancedUtils.executeVoteActions;
-import static network.balanced.score.lib.test.integration.BalancedUtils.hexObjectToBigInteger;
+import static network.balanced.score.lib.test.integration.BalancedUtils.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.POINTS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -56,16 +54,6 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         
         owner.stability.whitelistTokens(balanced.sicx._address(), BigInteger.TEN.pow(10));
 
-        owner.governance.addAcceptedTokens(balanced.sicx._address().toString());
-        owner.governance.addAcceptedTokens(balanced.baln._address().toString());
-        owner.governance.addAcceptedTokens(balanced.bnusd._address().toString());
-        owner.governance.setAcceptedDividendTokens(new score.Address[] {
-                balanced.sicx._address(),
-                balanced.baln._address(),
-                balanced.bnusd._address()
-            });
-
-        owner.governance.setRebalancingThreshold(BigInteger.TEN.pow(17));
         owner.governance.setVoteDuration(BigInteger.TWO);
         owner.governance.setVoteDefinitionFee(voteDefinitionFee);
         owner.governance.setBalnVoteDefinitionCriterion(BigInteger.ZERO);
@@ -291,26 +279,27 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         }
     }
 
-    protected void setLockingRatio(BalancedClient voter, BigInteger ratio, String name) throws Exception {
-        JsonObject setLockingRatioParametersSICX = new JsonObject()
-            .add("_symbol", "sICX")
-            .add("_value", ratio.intValue());
-        
-        JsonArray setLockingRatioCallSICX = new JsonArray()
-            .add("setLockingRatio")
-            .add(setLockingRatioParametersSICX);
-
-        JsonObject setLockingRatioParametersIETH = new JsonObject()
-            .add("_symbol", "iETH")
-            .add("_value", ratio.intValue());
-        
-        JsonArray setLockingRatioCallIETH = new JsonArray()
-            .add("setLockingRatio")
-            .add(setLockingRatioParametersIETH);
+    protected void setLockingRatio(BalancedClient voter, String symbol, BigInteger ratio, String name) throws Exception {
+        JsonArray setLockingRatioParameters = new JsonArray()
+            .add(createParameter(symbol))
+            .add(createParameter(ratio));
 
         JsonArray actions = new JsonArray()
-            .add(setLockingRatioCallSICX)
-            .add(setLockingRatioCallIETH);
+            .add(createVoteAction(balanced.loans._address(), "setLockingRatio", setLockingRatioParameters));
+        executeVoteActions(balanced, voter, name, actions);
+    }
+
+    protected void setLockingRatio(BalancedClient voter, BigInteger ratio, String name) throws Exception {
+        JsonArray setLockingRatioParametersSICX = new JsonArray()
+            .add(createParameter("sICX"))
+            .add(createParameter(ratio));
+        JsonArray setLockingRatioParametersIETH = new JsonArray()
+            .add(createParameter("iETH"))
+            .add(createParameter(ratio));
+
+        JsonArray actions = new JsonArray()
+            .add(createVoteAction(balanced.loans._address(), "setLockingRatio", setLockingRatioParametersSICX))
+            .add(createVoteAction(balanced.loans._address(), "setLockingRatio", setLockingRatioParametersIETH));
         executeVoteActions(balanced, voter, name, actions);
     }
 

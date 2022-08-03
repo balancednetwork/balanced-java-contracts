@@ -72,7 +72,7 @@ public class StakingImpl implements Staking {
             rate.set(ONE_EXA);
             setTopPreps();
             unstakeBatchLimit.set(DEFAULT_UNSTAKE_BATCH_LIMIT);
-            stakingOn.set(false);
+            stakingOn.set(true);
         } else {
             BigInteger stakedAmount = totalStake.getOrDefault(BigInteger.ZERO);
             Map<String, BigInteger> prepDelegations = prepDelegationInIcx.getOrDefault(DEFAULT_DELEGATION_LIST).toMap();

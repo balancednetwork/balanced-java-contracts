@@ -29,6 +29,9 @@ import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
 import org.json.JSONObject;
 import org.junit.jupiter.api.*;
+
+import com.eclipsesource.json.JsonArray;
+
 import score.Address;
 
 import java.math.BigInteger;
@@ -36,6 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static network.balanced.score.lib.test.integration.BalancedUtils.*;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.dummyConsumer;
 import static network.balanced.score.lib.test.integration.BalancedUtils.hexObjectToBigInteger;
@@ -481,7 +485,7 @@ public class DividendsIntegrationTest {
 
         String name = "BALN/sICX";
         BigInteger pid = dex.getPoolId(balanced.baln._address(), balanced.sicx._address());
-        governance.setMarketName(pid, name);
+        setMarketName(pid, name);
 
         balanced.increaseDay(1);
 
@@ -669,6 +673,17 @@ public class DividendsIntegrationTest {
         }
 
         return currentDay;
+    }
+
+    void setMarketName(BigInteger poolID, String name) {
+        JsonArray setMarketNameParameters = new JsonArray()
+            .add(createParameter(poolID))
+            .add(createParameter(name));
+
+        JsonArray actions = new JsonArray()
+            .add(createVoteAction(balanced.dex._address(), "setMarketName", setMarketNameParameters));
+
+            balanced.ownerClient.governance.callActions(actions.toString());
     }
 
 }

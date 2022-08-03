@@ -55,7 +55,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
     public static void setup() {
         owner.stability.whitelistTokens(balanced.sicx._address(), BigInteger.TEN.pow(10));
 
-        owner.governance.setRebalancingThreshold(BigInteger.TEN.pow(17));
+        setRebalancingThreshold(BigInteger.TEN.pow(17));
         owner.governance.setVoteDuration(BigInteger.TWO);
         owner.governance.setVoteDefinitionFee(voteDefinitionFee);
         owner.governance.setBalnVoteDefinitionCriterion(BigInteger.ZERO);
@@ -588,16 +588,12 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
     }
 
     protected void setLockingRatio(BalancedClient voter, String symbol, BigInteger ratio, String name) throws Exception {
-        JsonObject setLockingRatioParameters = new JsonObject()
-            .add("_symbol", symbol)
-            .add("_value", ratio.intValue());
-            
-        JsonArray setLockingRatioCall = new JsonArray()
-            .add("setLockingRatio")
-            .add(setLockingRatioParameters);
+        JsonArray setLockingRatioParameters = new JsonArray()
+            .add(createParameter(symbol))
+            .add(createParameter(ratio));
 
         JsonArray actions = new JsonArray()
-            .add(setLockingRatioCall);
+            .add(createVoteAction(balanced.loans._address(), "setLockingRatio", setLockingRatioParameters));
         executeVoteActions(balanced, voter, name, actions);
     }
 
@@ -622,5 +618,15 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         } else if (address.equals(ethAddress)) {
             owner.irc2(ethAddress).mintTo(client.getAddress(), amount, null);
         }
+    }
+
+    private static void setRebalancingThreshold(BigInteger threshold) {
+        JsonArray rebalancingThresholdParameter = new JsonArray()
+            .add(createParameter(threshold));
+
+        JsonArray actions = new JsonArray()
+            .add(createVoteAction(balanced.rebalancing._address(), "setPriceDiffThreshold", rebalancingThresholdParameter));
+
+        owner.governance.callActions(actions.toString());
     }
 }

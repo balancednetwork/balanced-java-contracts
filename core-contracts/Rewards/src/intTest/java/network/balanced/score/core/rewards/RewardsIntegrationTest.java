@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
 import com.eclipsesource.json.Json;
+import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 
 import java.math.BigInteger;
@@ -51,15 +52,6 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
 
         owner = balanced.ownerClient;
         reader = balanced.newClient(BigInteger.ZERO);
-
-        owner.governance.addAcceptedTokens(balanced.sicx._address().toString());
-        owner.governance.addAcceptedTokens(balanced.baln._address().toString());
-        owner.governance.addAcceptedTokens(balanced.bnusd._address().toString());
-        owner.governance.setAcceptedDividendTokens(new score.Address[] {
-                balanced.sicx._address(),
-                balanced.baln._address(),
-                balanced.bnusd._address()
-            });
     }
 
     @Test
@@ -214,18 +206,23 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
 
         // Act
         BigInteger halfLoansDist = distributions.get("Loans").divide(BigInteger.TWO);
-        DistributionPercentage[] recipients = new DistributionPercentage[] {
-            createDistributionPercentage("Loans", halfLoansDist),
-            createDistributionPercentage("sICX/ICX", distributions.get("sICX/ICX").add(halfLoansDist)),
-            createDistributionPercentage("Worker Tokens", distributions.get("Worker Tokens")),
-            createDistributionPercentage("Reserve Fund", distributions.get("Reserve Fund")),
-            createDistributionPercentage("DAOfund", distributions.get("DAOfund")),
-            createDistributionPercentage("sICX/bnUSD", distributions.get("sICX/bnUSD")),
-            createDistributionPercentage("BALN/bnUSD", distributions.get("BALN/bnUSD")),
-            createDistributionPercentage("BALN/sICX", distributions.get("BALN/sICX"))
-        };
+        JsonArray recipients = new JsonArray()
+            .add(createDistributionPercentage("Loans", halfLoansDist))
+            .add(createDistributionPercentage("sICX/ICX", distributions.get("sICX/ICX").add(halfLoansDist)))
+            .add(createDistributionPercentage("Worker Tokens", distributions.get("Worker Tokens")))
+            .add(createDistributionPercentage("Reserve Fund", distributions.get("Reserve Fund")))
+            .add(createDistributionPercentage("DAOfund", distributions.get("DAOfund")))
+            .add(createDistributionPercentage("sICX/bnUSD", distributions.get("sICX/bnUSD")))
+            .add(createDistributionPercentage("BALN/bnUSD", distributions.get("BALN/bnUSD")))
+            .add(createDistributionPercentage("BALN/sICX", distributions.get("BALN/sICX")));
 
-        owner.governance.updateBalTokenDistPercentage(recipients);
+        JsonArray updateBalTokenDistPercentage = new JsonArray()
+            .add(createParameter("DistributionPercentage[]", recipients));
+
+        JsonArray actions = new JsonArray()
+            .add(createVoteAction(balanced.rewards._address(), "updateBalTokenDistPercentage", updateBalTokenDistPercentage));
+
+        owner.governance.callActions(actions.toString());
 
         balanced.increaseDay(1);
         distributedDay = distributedDay.add(BigInteger.ONE);
@@ -259,18 +256,23 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         icxSicxLP.dex._transfer(balanced.dex._address(), BigInteger.TEN.pow(22), null);
         
         // Act
-        DistributionPercentage[] recipients = new DistributionPercentage[] {
-            createDistributionPercentage("Loans", BigInteger.ZERO),
-            createDistributionPercentage("sICX/ICX", distributions.get("sICX/ICX").add(loansDist)),
-            createDistributionPercentage("Worker Tokens", distributions.get("Worker Tokens")),
-            createDistributionPercentage("Reserve Fund", distributions.get("Reserve Fund")),
-            createDistributionPercentage("DAOfund", distributions.get("DAOfund")),
-            createDistributionPercentage("sICX/bnUSD", distributions.get("sICX/bnUSD")),
-            createDistributionPercentage("BALN/bnUSD", distributions.get("BALN/bnUSD")),
-            createDistributionPercentage("BALN/sICX", distributions.get("BALN/sICX"))
-        };
+        JsonArray recipients = new JsonArray()
+            .add(createDistributionPercentage("Loans", BigInteger.ZERO))
+            .add(createDistributionPercentage("sICX/ICX", distributions.get("sICX/ICX").add(loansDist)))
+            .add(createDistributionPercentage("Worker Tokens", distributions.get("Worker Tokens")))
+            .add(createDistributionPercentage("Reserve Fund", distributions.get("Reserve Fund")))
+            .add(createDistributionPercentage("DAOfund", distributions.get("DAOfund")))
+            .add(createDistributionPercentage("sICX/bnUSD", distributions.get("sICX/bnUSD")))
+            .add(createDistributionPercentage("BALN/bnUSD", distributions.get("BALN/bnUSD")))
+            .add(createDistributionPercentage("BALN/sICX", distributions.get("BALN/sICX")));
 
-        owner.governance.updateBalTokenDistPercentage(recipients);
+        JsonArray updateBalTokenDistPercentage = new JsonArray()
+            .add(createParameter("DistributionPercentage[]", recipients));
+
+        JsonArray actions = new JsonArray()
+            .add(createVoteAction(balanced.rewards._address(), "updateBalTokenDistPercentage", updateBalTokenDistPercentage));
+
+        owner.governance.callActions(actions.toString());
 
         verifyRewards(loanTaker);
         verifyRewards(icxSicxLP);
@@ -341,10 +343,11 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         assertTrue(balancePostClaim.equals(balancePreClaim));
     }
 
-    private DistributionPercentage createDistributionPercentage(String name, BigInteger percentage) {
-        DistributionPercentage recipient = new DistributionPercentage();
-        recipient.recipient_name = name;
-        recipient.dist_percent = percentage;
+    private JsonObject createDistributionPercentage(String name, BigInteger percentage) {
+        JsonObject recipient = new JsonObject()
+            .add("recipient_name", name)
+            .add("dist_percent", percentage.longValue());
+
         return recipient;
     }
 

@@ -80,7 +80,7 @@ public class DividendsImpl implements Dividends {
             DividendsImpl.governance.set(_governance);
             snapshotId.set(BigInteger.ONE);
             dividendsBatchSize.set(BigInteger.valueOf(50));
-            distributionActivate.set(false);
+            distributionActivate.set(true);
             addInitialCategories();
         }
     }

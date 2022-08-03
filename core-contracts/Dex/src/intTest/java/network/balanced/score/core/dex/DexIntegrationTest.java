@@ -27,10 +27,14 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import score.UserRevertedException;
 
+import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.JsonObject;
+
 import java.io.File;
 import java.math.BigInteger;
 import java.util.Map;
 
+import static network.balanced.score.lib.test.integration.BalancedUtils.*;
 import static foundation.icon.score.client.DefaultScoreClient._deploy;
 import static network.balanced.score.core.dex.utils.Const.SICXICX_MARKET_NAME;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
@@ -360,19 +364,29 @@ class DexIntegrationTest {
 
         //check isQuoteCoinAllowed for test token if not added
         if (!dexUserScoreClient.isQuoteCoinAllowed(tokenAAddress)) {
-            governanceDexScoreClient.dexAddQuoteCoin(tokenAAddress);
+            dexAddQuoteCoin(tokenAAddress);
         }
         if (!dexUserScoreClient.isQuoteCoinAllowed(tokenBAddress)) {
-            governanceDexScoreClient.dexAddQuoteCoin(tokenBAddress);
+            dexAddQuoteCoin(tokenBAddress);
         }
         if (!dexUserScoreClient.isQuoteCoinAllowed(tokenCAddress)) {
-            governanceDexScoreClient.dexAddQuoteCoin(tokenCAddress);
+            dexAddQuoteCoin(tokenCAddress);
         }
         if (!dexUserScoreClient.isQuoteCoinAllowed(tokenDAddress)) {
-            governanceDexScoreClient.dexAddQuoteCoin(tokenDAddress);
+            dexAddQuoteCoin(tokenDAddress);
         }
     }
 
+    private static void dexAddQuoteCoin(Address address) {
+        JsonArray addQuoteCoinParameters = new JsonArray()
+            .add(createParameter(address));
+
+        JsonArray actions = new JsonArray()
+            .add(createVoteAction(balanced.dex._address(), "addQuoteCoin", addQuoteCoinParameters));
+
+            balanced.ownerClient.governance.callActions(actions.toString());
+    }
+    
     void waitForADay(){
         balanced.increaseDay(1);
     }
