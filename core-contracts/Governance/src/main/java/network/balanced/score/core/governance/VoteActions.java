@@ -4,13 +4,13 @@ import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 
-import network.balanced.score.lib.structs.StructParser;
-
 import static network.balanced.score.lib.utils.Math.convertToNumber;
 
+import java.util.Map;
 import java.util.function.Function;
 
 import score.Address;
+import scorex.util.HashMap;
 
 public class VoteActions {
      public static void executeAction(JsonArray action) { 
@@ -47,23 +47,22 @@ public class VoteActions {
                case "String":
                     return parse(value, isArray, jsonValue -> jsonValue.asString());
                case "int":
+               case "BigInteger":
+               case "Long":
                     return parse(value, isArray, jsonValue -> convertToNumber(jsonValue));
                case "boolean":
+               case "Boolean":
                     return parse(value, isArray, jsonValue -> jsonValue.asBoolean());
+               case "Struct":
+                    return parse(value, isArray, jsonValue -> parseStruct(jsonValue.asObject()));
                case "bytes":
                     return parse(value, isArray, jsonValue -> convertBytesParam(jsonValue));
-               case "DistributionPercentage":
-                    return parse(value, isArray, jsonValue -> StructParser.parseDistributionPercentage(jsonValue.asObject()));
-               case "Disbursement":
-                    return parse(value, isArray, jsonValue -> StructParser.parseDisbursement(jsonValue.asObject()));
-               case "PrepDelegations":
-                    return parse(value, isArray, jsonValue -> StructParser.parsePrepDelegations(jsonValue.asObject()));
           }
 
           throw new IllegalArgumentException("Unknown type");
      }    
 
-     private static <T> Object parse(JsonValue value, boolean isArray, Function<JsonValue, T> parser) {
+     private static Object parse(JsonValue value, boolean isArray, Function<JsonValue, ?> parser) {
           if (!isArray) {
                return parser.apply(value);
           }
@@ -93,5 +92,23 @@ public class VoteActions {
           }
 
           throw new IllegalArgumentException("Illegal bytes format"); 
+     }
+
+     private static Object parseStruct(JsonObject jsonStruct) {
+          Map<String, Object> struct = new HashMap<String, Object>();
+          for (JsonObject.Member member : jsonStruct) {
+               String name = member.getName();
+               JsonObject jsonObject = member.getValue().asObject();
+               String type = jsonObject.getString("type", null);
+               JsonValue jsonValue = jsonObject.get("value");
+
+               if (type.endsWith("[]")) {
+                    struct.put(name, convertParam(type.substring(0, type.length() - 2), jsonValue.asArray(), true));
+               } else {
+                    struct.put(name, convertParam(type, jsonValue, false));
+               }
+          }
+         
+          return struct;
      }
 }

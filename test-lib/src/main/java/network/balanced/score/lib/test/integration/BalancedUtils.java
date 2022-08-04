@@ -97,7 +97,7 @@ public class BalancedUtils {
     public static JsonObject createParameter(BigInteger value) {
         return new JsonObject()
             .add("type", "int")
-            .add("value", value.intValue());
+            .add("value", value.toString());
     }
 
     public static JsonObject createParameter(Boolean value) {

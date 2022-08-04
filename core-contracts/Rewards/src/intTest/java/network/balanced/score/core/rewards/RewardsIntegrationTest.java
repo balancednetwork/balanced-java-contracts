@@ -217,7 +217,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
             .add(createDistributionPercentage("BALN/sICX", distributions.get("BALN/sICX")));
 
         JsonArray updateBalTokenDistPercentage = new JsonArray()
-            .add(createParameter("DistributionPercentage[]", recipients));
+            .add(createParameter("Struct[]", recipients));
 
         JsonArray actions = new JsonArray()
             .add(createVoteAction(balanced.rewards._address(), "updateBalTokenDistPercentage", updateBalTokenDistPercentage));
@@ -267,7 +267,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
             .add(createDistributionPercentage("BALN/sICX", distributions.get("BALN/sICX")));
 
         JsonArray updateBalTokenDistPercentage = new JsonArray()
-            .add(createParameter("DistributionPercentage[]", recipients));
+            .add(createParameter("Struct[]", recipients));
 
         JsonArray actions = new JsonArray()
             .add(createVoteAction(balanced.rewards._address(), "updateBalTokenDistPercentage", updateBalTokenDistPercentage));
@@ -345,8 +345,8 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
 
     private JsonObject createDistributionPercentage(String name, BigInteger percentage) {
         JsonObject recipient = new JsonObject()
-            .add("recipient_name", name)
-            .add("dist_percent", percentage.longValue());
+            .add("recipient_name", createParameter(name))
+            .add("dist_percent", createParameter(percentage));
 
         return recipient;
     }
