@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 
 import static network.balanced.score.core.governance.GovernanceConstants.*;
+import static network.balanced.score.lib.utils.Check.onlyOwnerOrContract;
 import static network.balanced.score.lib.utils.Check.onlyOwner;
 import static network.balanced.score.lib.utils.Check.optionalDefault;
 import static network.balanced.score.lib.utils.Math.pow;
@@ -88,8 +89,8 @@ public class GovernanceImpl implements Governance {
 
     @External
     public void setVoteDuration(BigInteger duration) {
-        onlyOwner();
-        _setVoteDuration(duration);
+        onlyOwnerOrContract();
+        voteDuration.set(duration);
     }
 
     @External(readonly = true)
@@ -99,7 +100,7 @@ public class GovernanceImpl implements Governance {
 
     @External
     public void setTimeOffset(BigInteger offset) {
-        onlyOwner();
+        onlyOwnerOrContract();
         timeOffset.set(offset);
         Context.call(Addresses.get("loans"), "setTimeOffset", offset);
         Context.call(Addresses.get("rewards"), "setTimeOffset", offset);
@@ -114,8 +115,11 @@ public class GovernanceImpl implements Governance {
 
     @External
     public void setQuorum(BigInteger quorum) {
-        onlyOwner();
-        _setQuorum(quorum);
+        onlyOwnerOrContract();
+        Context.require(quorum.compareTo(BigInteger.ZERO) > 0, "Quorum must be between 0 and 100.");
+        Context.require(quorum.compareTo(BigInteger.valueOf(100)) < 0, "Quorum must be between 0 and 100.");
+
+        this.quorum.set(quorum);
     }
 
     @External(readonly = true)
@@ -125,8 +129,8 @@ public class GovernanceImpl implements Governance {
 
     @External
     public void setVoteDefinitionFee(BigInteger fee) {
-        onlyOwner();
-        _setVoteDefinitionFee(fee);
+        onlyOwnerOrContract();
+        bnusdVoteDefinitionFee.set(fee);
     }
 
     @External(readonly = true)
@@ -136,8 +140,11 @@ public class GovernanceImpl implements Governance {
 
     @External
     public void setBalnVoteDefinitionCriterion(BigInteger percentage) {
-        onlyOwner();
-        _setBalnVoteDefinitionCriterion(percentage);
+        onlyOwnerOrContract();
+        Context.require(percentage.compareTo(BigInteger.ZERO) >= 0, "Basis point must be between 0 and 10000.");
+        Context.require(percentage.compareTo(BigInteger.valueOf(10000)) <= 0, "Basis point must be between 0 and 10000.");
+
+        balnVoteDefinitionCriterion.set(percentage);
     }
 
     @External(readonly = true)
@@ -147,7 +154,7 @@ public class GovernanceImpl implements Governance {
 
     @External
     public void setAdmin(Address contractAddress, Address admin) {
-        onlyOwner();
+        onlyOwnerOrContract();
         Context.call(contractAddress, "setAdmin", admin);
     }
 
@@ -205,7 +212,7 @@ public class GovernanceImpl implements Governance {
     public void tryExecuteActions(String actions) {
         JsonArray actionsParsed = Json.parse(actions).asArray();
         Context.require(actionsParsed.size() <= maxActions(), TAG + ": Only " + maxActions() + " actions are allowed");
-        executeVoteActions(actions);
+        executeActions(actions);
         Context.revert(succsesfulVoteExecutionRevertID);
     }
 
@@ -296,11 +303,6 @@ public class GovernanceImpl implements Governance {
         VoteCast(proposal.name.get(), vote, from, totalVote, totalFor, totalAgainst);
     }
 
-    @External(readonly = true)
-    public BigInteger totalBaln(BigInteger _day) {
-        return Context.call(BigInteger.class, Addresses.get("baln"), "totalStakedBalanceOfAt", _day);
-    }
-
     @External
     public void evaluateVote(BigInteger vote_index) {
         Context.require(vote_index.compareTo(BigInteger.ZERO) > 0 &&
@@ -339,7 +341,7 @@ public class GovernanceImpl implements Governance {
         }
 
         try {
-            executeVoteActions(actions);
+            executeActions(actions);
             proposal.status.set(ProposalStatus.STATUS[ProposalStatus.EXECUTED]);
         } catch (Exception e) {
             proposal.status.set(ProposalStatus.STATUS[ProposalStatus.FAILED_EXECUTION]);
@@ -545,7 +547,7 @@ public class GovernanceImpl implements Governance {
 
     @External
     public void createBalnSicxMarket(BigInteger _sicx_amount, BigInteger _baln_amount) {
-        onlyOwner();
+        onlyOwnerOrContract();
 
         Address dexAddress = Addresses.get("dex");
         Address balnAddress = Addresses.get("baln");
@@ -584,7 +586,7 @@ public class GovernanceImpl implements Governance {
 
     @External
     public void setAddresses(BalancedAddresses _addresses) {
-        onlyOwner();
+        onlyOwnerOrContract();
         Addresses.setAddresses(_addresses);
     }
 
@@ -595,20 +597,14 @@ public class GovernanceImpl implements Governance {
 
     @External
     public void setAdmins() {
-        onlyOwner();
+        onlyOwnerOrContract();
         Addresses.setAdmins();
     }
 
     @External
     public void setContractAddresses() {
-        onlyOwner();
+        onlyOwnerOrContract();
         Addresses.setContractAddresses();
-    }
-
-    @External
-    public void toggleBalancedOn() {
-        onlyOwner();
-        Context.call(Addresses.get("loans"), "toggleLoansOn");
     }
 
     @External(readonly = true)
@@ -623,7 +619,7 @@ public class GovernanceImpl implements Governance {
 
     @External
     public void addCollateral(Address _token_address, boolean _active, String _peg, @Optional BigInteger _limit) {
-        onlyOwner();
+        onlyOwnerOrContract();
         Address loansAddress = Addresses.get("loans");
         Context.call(loansAddress, "addAsset", _token_address, _active, true);
 
@@ -643,7 +639,7 @@ public class GovernanceImpl implements Governance {
 
     @External
     public void addDexPricedCollateral(Address _token_address, boolean _active, @Optional BigInteger _limit) {
-        onlyOwner();
+        onlyOwnerOrContract();
         Address loansAddress = Addresses.get("loans");
         Context.call(loansAddress, "addAsset", _token_address, _active, true);
 
@@ -663,26 +659,20 @@ public class GovernanceImpl implements Governance {
     }
 
     @External
-    public void setDay(BigInteger _day) {
-        onlyOwner();
-        Context.call(Addresses.get("rewards"), "setDay", _day);
-    }
-
-    @External
     public void delegate(String contract, PrepDelegations[] _delegations) {
-        onlyOwner();
+        onlyOwnerOrContract();
         Context.call(Addresses.get(contract), "delegate", (Object) _delegations);
     }
 
     @External
     public void balwAdminTransfer(Address _from, Address _to, BigInteger _value, @Optional byte[] _data) {
-        onlyOwner();
+        onlyOwnerOrContract();
         Context.call(Addresses.get("bwt"), "adminTransfer", _from, _to, _value, _data);
     }
 
     @External
     public void setAddressesOnContract(String _contract) {
-        onlyOwner();
+        onlyOwnerOrContract();
         Addresses.setAddress(_contract);
     }
 
@@ -697,7 +687,7 @@ public class GovernanceImpl implements Governance {
     @External
     public void callActions(String actions) {
         onlyOwner();
-        executeVoteActions(actions);
+        executeActions(actions);
     }
 
     private void refundVoteDefinitionFee(ProposalDB proposal) {
@@ -707,6 +697,10 @@ public class GovernanceImpl implements Governance {
 
         proposal.feeRefunded.set(true);
         Context.call(Addresses.get("bnUSD"), "govTransfer", Addresses.get("daofund"), proposal.proposer.get(), proposal.fee.get(), new byte[0]);
+    }
+
+    private BigInteger totalBaln(BigInteger _day) {
+        return Context.call(BigInteger.class, Addresses.get("baln"), "totalStakedBalanceOfAt", _day);
     }
 
     private boolean checkBalnVoteCriterion(Address address) {
@@ -731,7 +725,7 @@ public class GovernanceImpl implements Governance {
         }
     }
 
-    private void executeVoteActions(String actions) {
+    private void executeActions(String actions) {
         JsonArray actionsList = Json.parse(actions).asArray();
         for (int i = 0; i < actionsList.size(); i++) {
             JsonArray action = actionsList.get(i).asArray();
@@ -741,28 +735,6 @@ public class GovernanceImpl implements Governance {
 
     public static void call(Address targetAddress, String method, Object... params) {
         Context.call(targetAddress, method, params);
-    }
-
-    public void _setVoteDuration(BigInteger duration) {
-        voteDuration.set(duration);
-    }
-
-    public void _setVoteDefinitionFee(BigInteger fee) {
-        bnusdVoteDefinitionFee.set(fee);
-    }
-
-    public void _setQuorum(BigInteger quorum) {
-        Context.require(quorum.compareTo(BigInteger.ZERO) > 0, "Quorum must be between 0 and 100.");
-        Context.require(quorum.compareTo(BigInteger.valueOf(100)) < 0, "Quorum must be between 0 and 100.");
-
-        this.quorum.set(quorum);
-    }
-
-    public void _setBalnVoteDefinitionCriterion(BigInteger percentage) {
-        Context.require(percentage.compareTo(BigInteger.ZERO) >= 0, "Basis point must be between 0 and 10000.");
-        Context.require(percentage.compareTo(BigInteger.valueOf(10000)) <= 0, "Basis point must be between 0 and 10000.");
-
-        balnVoteDefinitionCriterion.set(percentage);
     }
 
     @EventLog(indexed = 2)

@@ -102,9 +102,6 @@ public interface Governance extends
     @External
     void castVote(BigInteger vote_index, boolean vote);
 
-    @External(readonly = true)
-    BigInteger totalBaln(BigInteger _day);
-
     @External
     void evaluateVote(BigInteger vote_index);
 
@@ -151,9 +148,6 @@ public interface Governance extends
     @External
     void setContractAddresses();
 
-    @External
-    void toggleBalancedOn();
-
     @External(readonly = true)
     BigInteger getLaunchDay();
 
@@ -165,9 +159,6 @@ public interface Governance extends
     
     @External
     void addDexPricedCollateral(Address _token_address, boolean _active, @Optional BigInteger _limit);
-    
-    @External
-    void setDay(BigInteger _day);
 
     @External
     void delegate(String contract, PrepDelegations[] _delegations);

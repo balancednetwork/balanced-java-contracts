@@ -28,6 +28,14 @@ public class Check {
         Context.require(caller.equals(owner), "SenderNotScoreOwner: Sender=" + caller + "Owner=" + owner);
     }
 
+    public static void onlyOwnerOrContract() {
+        Address caller = Context.getCaller();
+        Address owner = Context.getOwner();
+        Address contract = Context.getAddress();
+        Context.require(caller.equals(owner) || caller.equals(contract),  
+                "SenderNotScoreOwnerOrContract: Sender=" + caller + " Owner=" + owner + " Contract=" + contract);
+    }
+
     public static void only(VarDB<Address> authorizedCaller) {
         Address caller = Context.getCaller();
         Address authorizedCallerAddress = authorizedCaller.get();

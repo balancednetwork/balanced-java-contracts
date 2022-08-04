@@ -456,7 +456,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         BigInteger sICXdebt = sICXLoan.add(sICXLoan.multiply(feePercent).divide(POINTS));
 
         loanTaker.loans.depositAndBorrow(collateral, "bnUSD", sICXLoan,  null, null);
-
+        BigInteger sICXPriceInLoop = reader.balancedOracle.getLastPriceInLoop("sICX");
         // Act
         BigInteger balancePreLiquidation = liquidator.irc2(ethAddress).balanceOf(liquidator.getAddress());
         liquidator.loans.liquidate(loanTaker.getAddress(), "iETH");
@@ -478,7 +478,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
 
         Map<String, BigInteger> LiquidatedUserBaS = reader.loans.getBalanceAndSupply("Loans", loanTaker.getAddress());
         assertEquals(initalDebt.add(sICXdebt), getTotalDebt());
-        assertEquals(collateral, loanTaker.getLoansCollateralPosition("sICX"));
+        assertEquals(collateral.multiply(EXA).divide(sICXPriceInLoop), loanTaker.getLoansCollateralPosition("sICX"));
         assertEquals(BigInteger.ZERO,  loanTaker.getLoansCollateralPosition("iETH"));
         assertEquals(sICXdebt, loanTaker.getLoansAssetPosition("sICX", "bnUSD"));
         assertEquals(BigInteger.ZERO, loanTaker.getLoansAssetPosition("iETH", "bnUSD"));
