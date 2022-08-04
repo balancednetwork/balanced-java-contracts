@@ -208,6 +208,7 @@ class FeeHandlerImplTest extends TestBase {
     void tokenFallback() {
         setAcceptedDividendTokens_NoPreviousTokens();
         setFeeProcessingInterval();
+        feeHandler.invoke(admin, "disable");
 
         contextMock.when(() -> Context.call(any(Address.class), eq("balanceOf"), any(Address.class))).thenReturn(BigInteger.TEN);
         contextMock.when(() -> Context.call(any(Address.class), eq("getContractAddress"), eq("dividends"))).thenReturn(dividends.getAddress());
@@ -217,8 +218,8 @@ class FeeHandlerImplTest extends TestBase {
         contextMock.verify(() -> Context.call(sicxScore.getAddress(), "transfer", dividends.getAddress(),
                 BigInteger.TEN, new byte[0]), times(0));
 
-        feeHandler.invoke(admin, "enable");
-        feeHandler.invoke(sicxScore, "tokenFallback", baln.getAddress(), BigInteger.TEN.pow(2), new byte[0]);
+                feeHandler.invoke(admin, "enable");
+                feeHandler.invoke(sicxScore, "tokenFallback", baln.getAddress(), BigInteger.TEN.pow(2), new byte[0]);
         contextMock.verify(() -> Context.call(sicxScore.getAddress(), "transfer", dividends.getAddress(),
                 BigInteger.TEN, new byte[0]));
 

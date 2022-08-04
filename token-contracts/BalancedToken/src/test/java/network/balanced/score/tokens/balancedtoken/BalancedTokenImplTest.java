@@ -224,12 +224,11 @@ class BalancedTokenImplTest extends TestBase {
 
 		balancedToken.invoke(adminAccount, "mint", amountToMint, "init gold".getBytes());
 
-		//enable staking
-		balancedToken.invoke(governance, "toggleStakingEnabled");
 		BigInteger stakedAmount = amountToMint.divide(TWO);
 		balancedToken.invoke(governance, "setDex", mockDexScore.getAddress());
 		contextMock.when(() -> Context.call(BigInteger.class, mockDexScore.getAddress(), "getTimeOffset")).thenReturn(BigInteger.valueOf(500));
 		balancedToken.invoke(owner, "setTimeOffset");
+
 		//stake
 		mockUpdateBalnStake(adminAccount.getAddress(), BigInteger.ZERO, stakedAmount);
 		balancedToken.invoke(adminAccount, "stake", stakedAmount);
@@ -260,8 +259,6 @@ class BalancedTokenImplTest extends TestBase {
 		BigInteger amountToTransfer = amountToMint.divide(TWO).divide(TWO);
 		balancedToken.invoke(adminAccount, "transfer", user.getAddress(), amountToTransfer, "quezadillas".getBytes());
 
-		//enable staking
-		balancedToken.invoke(governance, "toggleStakingEnabled");
 		BigInteger stakedAmount = amountToTransfer.divide(TWO);
 		balancedToken.invoke(governance, "setDex", mockDexScore.getAddress());
 		contextMock.when(() -> Context.call(BigInteger.class, mockDexScore.getAddress(), "getTimeOffset")).thenReturn(BigInteger.valueOf(500));
@@ -294,8 +291,6 @@ class BalancedTokenImplTest extends TestBase {
 
 		balancedToken.invoke(adminAccount, "mint", amountToMint, "init gold".getBytes());
 
-		//enable staking
-		balancedToken.invoke(governance, "toggleStakingEnabled");
 		BigInteger stakedAmount = amountToMint.divide(TWO);
 
 		balancedToken.invoke(governance, "setDex", mockDexScore.getAddress());

@@ -92,7 +92,6 @@ class StakingTest extends TestBase {
 
         // Configure Staking contract
         staking.invoke(owner, "setSicxAddress", sicx.getAddress());
-        staking.invoke(owner, "toggleStakingOn");
     }
 
     void setupSystemScore() {

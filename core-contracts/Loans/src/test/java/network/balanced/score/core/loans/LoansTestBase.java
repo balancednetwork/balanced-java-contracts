@@ -281,7 +281,6 @@ class LoansTestBase extends UnitTest {
         loans.invoke(admin, "setStaking", staking.getAddress());
         loans.invoke(admin, "setOracle", balancedOracle.getAddress());
 
-        governanceCall("turnLoansOn");
         loans.invoke(admin, "setRewards", rewards.getAddress());
         loans.invoke(admin, "setDividends", rewards.getAddress());
         loans.invoke(admin, "setReserve", reserve.getAddress());
