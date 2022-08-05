@@ -1,4 +1,4 @@
-package network.balanced.score.core.governance;
+package network.balanced.score.core.governance.proposal;
 
 public class ProposalStatus {
     public static final int PENDING = 0;

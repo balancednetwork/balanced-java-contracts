@@ -19,6 +19,8 @@ package network.balanced.score.core.governance;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.iconloop.score.test.Account;
+
+import network.balanced.score.core.governance.proposal.ProposalStatus;
 import network.balanced.score.lib.structs.Disbursement;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,7 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 import static network.balanced.score.core.governance.GovernanceConstants.EXA;
-import static network.balanced.score.core.governance.GovernanceConstants.TAG;
+import static network.balanced.score.core.governance.utils.GovernanceConstants.TAG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;

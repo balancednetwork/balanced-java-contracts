@@ -1,4 +1,4 @@
-package network.balanced.score.core.governance;
+package network.balanced.score.core.governance.proposal;
 
 import score.Address;
 import score.Context;

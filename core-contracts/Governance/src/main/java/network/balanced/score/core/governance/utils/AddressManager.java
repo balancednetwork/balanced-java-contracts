@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.governance;
+package network.balanced.score.core.governance.utils;
 
+import network.balanced.score.core.governance.GovernanceImpl;
 import network.balanced.score.lib.structs.BalancedAddresses;
 import score.Address;
 import score.Context;
 import score.VarDB;
 import scorex.util.HashMap;
 
+import static network.balanced.score.core.governance.utils.GovernanceConstants.*;
+
 import java.util.Map;
 
-import static network.balanced.score.core.governance.GovernanceConstants.*;
-
-public class Addresses {
+public class AddressManager {
     public static final VarDB<Address> loans = Context.newVarDB("loans", Address.class);
     public static final VarDB<Address> dex = Context.newVarDB("dex", Address.class);
     public static final VarDB<Address> staking = Context.newVarDB("staking", Address.class);
@@ -45,7 +46,7 @@ public class Addresses {
     public static final VarDB<Address> stakedLp = Context.newVarDB("stakedLp", Address.class);
     public static final VarDB<Address> balancedOracle = Context.newVarDB("balancedOracle", Address.class);
     
-    private Addresses() {}
+    private AddressManager() {}
 
     public static Address get(String key) {
         if (key.equals("governance")) {

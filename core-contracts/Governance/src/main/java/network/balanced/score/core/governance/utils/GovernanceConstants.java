@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.governance;
+package network.balanced.score.core.governance.utils;
 
 import static java.util.Map.entry;
 import static network.balanced.score.lib.utils.Math.pow;
@@ -45,7 +45,6 @@ public class GovernanceConstants extends Constants {
     public static final String MIN_BALN = "min_baln";
     public static final String DEFINITION_FEE = "definition_fee";
     public static final String QUORUM = "quorum";
-
 
     public static String[] CONTRACTS = {"loans", "dex", "staking", "rewards", "dividends", "daofund",
             "reserve", "sicx", "bnUSD", "baln", "bwt", "router", "feehandler", "stakedLp", "rebalancing", "balancedOracle"};
@@ -126,7 +125,6 @@ public class GovernanceConstants extends Constants {
             createDistributionPercentage("Reserve Fund", BigInteger.valueOf(5).multiply(pow(BigInteger.TEN, 16))),
             createDistributionPercentage("DAOfund", BigInteger.valueOf(40).multiply(pow(BigInteger.TEN, 16)))
     };
-
 
     // #-------------------------------------------------------------------------------
     // # LOANS LAUNCH CONFIG

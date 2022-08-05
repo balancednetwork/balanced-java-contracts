@@ -29,7 +29,7 @@ import score.Address;
 import java.math.BigInteger;
 import java.util.Map;
 
-import static network.balanced.score.core.governance.GovernanceConstants.TAG;
+import static network.balanced.score.core.governance.utils.GovernanceConstants.TAG;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;

@@ -1,8 +1,11 @@
-package network.balanced.score.core.governance;
+package network.balanced.score.core.governance.utils;
 
+import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
+
+import network.balanced.score.core.governance.GovernanceImpl;
 
 import static network.balanced.score.lib.utils.Math.convertToNumber;
 
@@ -12,13 +15,19 @@ import java.util.function.Function;
 import score.Address;
 import scorex.util.HashMap;
 
-public class VoteActions {
-     public static void executeAction(JsonArray action) { 
-          JsonArray parsedAction = action.asArray();
+public class ArbitraryCallManager {
+     public static void executeActions(String actions) {
+          JsonArray actionsList = Json.parse(actions).asArray();
+          for (int i = 0; i < actionsList.size(); i++) {
+              JsonArray action = actionsList.get(i).asArray();
+              ArbitraryCallManager.executeAction(action);
+          }
+      }
 
-          Address address = Address.fromString(parsedAction.get(0).asString());
-          String method = parsedAction.get(1).asString();
-          JsonArray jsonParams = parsedAction.get(2).asArray();
+     public static void executeAction(JsonArray action) { 
+          Address address = Address.fromString(action.get(0).asString());
+          String method = action.get(1).asString();
+          JsonArray jsonParams = action.get(2).asArray();
           Object[] params = getConvertedParams(jsonParams);
           GovernanceImpl.call(address, method, params);
      }
