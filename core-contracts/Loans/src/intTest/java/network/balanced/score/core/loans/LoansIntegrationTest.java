@@ -506,7 +506,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
 
         
         loanTaker.loans.depositAndBorrow(collateral, "bnUSD", sICXLoan,  null, null);
-        BigInteger expectedsICXCollateral = collateral.multiply(reader.balancedOracle.getLastPriceInLoop("sICX")).divide(EXA);
+        BigInteger expectedsICXCollateral = collateral.multiply(EXA).divide(reader.balancedOracle.getLastPriceInLoop("sICX"));
 
         // Act
         BigInteger balancePreLiquidation = liquidator.irc2(ethAddress).balanceOf(liquidator.getAddress());
