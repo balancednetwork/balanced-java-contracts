@@ -874,7 +874,7 @@ public class LoansImpl implements Loans {
         lockingRatio.set(_symbol, _ratio);
     }
 
-    @External
+    @External(readonly = true)
     public BigInteger getLockingRatio(String _symbol) {
         return lockingRatio.get(_symbol);
     }
@@ -885,7 +885,7 @@ public class LoansImpl implements Loans {
         liquidationRatio.set(_symbol, _ratio);
     }
     
-    @External
+    @External(readonly = true)
     public BigInteger getLiquidationRatio(String symbol) {
         return liquidationRatio.get(symbol);
     }
