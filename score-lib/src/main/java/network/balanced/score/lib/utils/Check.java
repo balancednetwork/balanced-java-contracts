@@ -16,6 +16,8 @@
 
 package network.balanced.score.lib.utils;
 
+import java.math.BigInteger;
+
 import score.Address;
 import score.Context;
 import score.VarDB;
@@ -61,7 +63,23 @@ public class Check {
                 "is required.");
     }
 
-    public static <T> T optionalDefault(T value, T base) {
+    public static BigInteger optionalDefault(BigInteger value, BigInteger base) {
+        if (value.equals(BigInteger.ZERO)) {
+            return base;
+        }
+
+        return value;
+    }
+
+    public static Address optionalDefault(Address value, Address base) {
+        if (value == null) {
+            return base;
+        }
+
+        return value;
+    }
+
+    public static String optionalDefault(String value, String base) {
         if (value == null) {
             return base;
         }

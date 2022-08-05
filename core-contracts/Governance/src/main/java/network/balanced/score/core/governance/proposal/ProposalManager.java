@@ -1,6 +1,5 @@
 package network.balanced.score.core.governance.proposal;
 
-
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 
@@ -9,7 +8,6 @@ import network.balanced.score.core.governance.utils.ArbitraryCallManager;
 
 import score.Address;
 import score.Context;
-import score.annotation.EventLog;
 import scorex.util.ArrayList;
 import scorex.util.HashMap;
 
