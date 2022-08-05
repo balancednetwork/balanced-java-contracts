@@ -181,7 +181,7 @@ public class SwapRemoveAndFeeTest {
         JsonArray actions = new JsonArray()
             .add(createVoteAction(balanced.dex._address(), "addQuoteCoin", addQuoteCoinParameters));
 
-            balanced.ownerClient.governance.callActions(actions.toString());
+            balanced.ownerClient.governance.execute(actions.toString());
     }
 
     void waitForADay(){

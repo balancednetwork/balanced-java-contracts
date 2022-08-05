@@ -222,7 +222,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         JsonArray actions = new JsonArray()
             .add(createVoteAction(balanced.rewards._address(), "updateBalTokenDistPercentage", updateBalTokenDistPercentage));
 
-        owner.governance.callActions(actions.toString());
+        owner.governance.execute(actions.toString());
 
         balanced.increaseDay(1);
         distributedDay = distributedDay.add(BigInteger.ONE);
@@ -272,7 +272,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         JsonArray actions = new JsonArray()
             .add(createVoteAction(balanced.rewards._address(), "updateBalTokenDistPercentage", updateBalTokenDistPercentage));
 
-        owner.governance.callActions(actions.toString());
+        owner.governance.execute(actions.toString());
 
         verifyRewards(loanTaker);
         verifyRewards(icxSicxLP);

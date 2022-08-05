@@ -627,6 +627,6 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         JsonArray actions = new JsonArray()
             .add(createVoteAction(balanced.rebalancing._address(), "setPriceDiffThreshold", rebalancingThresholdParameter));
 
-        owner.governance.callActions(actions.toString());
+        owner.governance.execute(actions.toString());
     }
 }

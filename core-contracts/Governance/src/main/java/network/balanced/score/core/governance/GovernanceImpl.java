@@ -684,7 +684,7 @@ public class GovernanceImpl implements Governance {
     }
 
     @External
-    public void callActions(String actions) {
+    public void execute(String actions) {
         onlyOwner();
         executeActions(actions);
     }

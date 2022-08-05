@@ -88,7 +88,7 @@ public interface Governance extends
     void tryExecuteActions(String actions);
 
     @External
-    void callActions(String actions);
+    void execute(String actions);
 
     @External(readonly = true)
     int maxActions();

@@ -683,7 +683,7 @@ public class DividendsIntegrationTest {
         JsonArray actions = new JsonArray()
             .add(createVoteAction(balanced.dex._address(), "setMarketName", setMarketNameParameters));
 
-            balanced.ownerClient.governance.callActions(actions.toString());
+            balanced.ownerClient.governance.execute(actions.toString());
     }
 
 }
