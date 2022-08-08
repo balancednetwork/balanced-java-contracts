@@ -33,7 +33,7 @@ public class ProposalManager {
         Context.require(checkBalnVoteCriterion(Context.getCaller()), "User needs at least " + balnVoteDefinitionCriterion.get().divide(BigInteger.valueOf(100)) + "% of total baln supply staked to define a vote.");
         verifyActions(actions);
 
-        Context.call(AddressManager.get("bnUSD"), "govTransfer", Context.getCaller(), AddressManager.get("daofund"), bnusdVoteDefinitionFee.getOrDefault(BigInteger.ONE), new byte[0]);
+        call(AddressManager.get("bnUSD"), "govTransfer", Context.getCaller(), AddressManager.get("daofund"), bnusdVoteDefinitionFee.getOrDefault(BigInteger.ONE), new byte[0]);
 
         ProposalDB.createProposal(
                 name,
@@ -89,7 +89,7 @@ public class ProposalManager {
         Address from = Context.getCaller();
         BigInteger snapshot = proposal.voteSnapshot.get();
 
-        BigInteger totalVote = Context.call(BigInteger.class, AddressManager.get("baln"), "stakedBalanceOfAt", from, snapshot);
+        BigInteger totalVote = call(BigInteger.class, AddressManager.get("baln"), "stakedBalanceOfAt", from, snapshot);
 
         Context.require(!totalVote.equals(BigInteger.ZERO), TAG + "Balanced tokens need to be staked to cast the vote.");
 
@@ -245,16 +245,16 @@ public class ProposalManager {
         }
 
         proposal.feeRefunded.set(true);
-        Context.call(AddressManager.get("bnUSD"), "govTransfer", AddressManager.get("daofund"), proposal.proposer.get(), proposal.fee.get(), new byte[0]);
+        call(AddressManager.get("bnUSD"), "govTransfer", AddressManager.get("daofund"), proposal.proposer.get(), proposal.fee.get(), new byte[0]);
     }
 
     private static BigInteger totalBaln(BigInteger _day) {
-        return Context.call(BigInteger.class, AddressManager.get("baln"), "totalStakedBalanceOfAt", _day);
+        return call(BigInteger.class, AddressManager.get("baln"), "totalStakedBalanceOfAt", _day);
     }
 
     private static boolean checkBalnVoteCriterion(Address address) {
-        BigInteger balnTotal = Context.call(BigInteger.class, AddressManager.get("baln"), "totalSupply");
-        BigInteger userStaked = Context.call(BigInteger.class, AddressManager.get("baln"), "stakedBalanceOf", address);
+        BigInteger balnTotal = call(BigInteger.class, AddressManager.get("baln"), "totalSupply");
+        BigInteger userStaked = call(BigInteger.class, AddressManager.get("baln"), "stakedBalanceOf", address);
         BigInteger limit = balnVoteDefinitionCriterion.get();
         BigInteger userPercentage = POINTS.multiply(userStaked).divide(balnTotal);
         return userPercentage.compareTo(limit) >= 0;
@@ -262,13 +262,13 @@ public class ProposalManager {
 
     private static void _refundVoteDefinitionFee(ProposalDB proposal) {
         Address daoFund = AddressManager.get("daofund");
-        Context.call(AddressManager.get("bnUSD"), "govTransfer", daoFund, proposal.proposer.get(), proposal.fee.get(), new byte[0]);
+        call(AddressManager.get("bnUSD"), "govTransfer", daoFund, proposal.proposer.get(), proposal.fee.get(), new byte[0]);
         proposal.feeRefunded.set(true);
     }
 
     private static void verifyActions(String actions) {
         try {
-            Context.call(Context.getAddress(), "tryExecuteActions", actions);
+            call(Context.getAddress(), "tryExecuteActions", actions);
         } catch (score.UserRevertedException e) {
             Context.require(e.getCode() == succsesfulVoteExecutionRevertID, "Vote execution failed");
         }

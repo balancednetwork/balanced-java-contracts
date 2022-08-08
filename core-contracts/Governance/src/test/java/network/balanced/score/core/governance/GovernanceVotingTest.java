@@ -32,7 +32,7 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-import static network.balanced.score.core.governance.GovernanceConstants.EXA;
+import static network.balanced.score.core.governance.utils.GovernanceConstants.EXA;
 import static network.balanced.score.core.governance.utils.GovernanceConstants.TAG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;

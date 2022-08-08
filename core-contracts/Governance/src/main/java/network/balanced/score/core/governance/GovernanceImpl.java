@@ -355,6 +355,14 @@ public class GovernanceImpl implements Governance {
         Context.call(targetAddress, method, params);
     }
 
+    public static void call(BigInteger icxValue, Address targetAddress, String method, Object... params) {
+        Context.call(icxValue, targetAddress, method, params);
+    }
+
+    public static <T>  T call(Class<T> retunType, Address targetAddress, String method, Object... params) {
+        return Context.call(retunType, targetAddress, method, params);
+    }
+
     public static BigInteger _getDay() {
         BigInteger blockTime = BigInteger.valueOf(Context.getBlockTimestamp()).subtract(timeOffset.getOrDefault(BigInteger.ZERO));
         return blockTime.divide(MICRO_SECONDS_IN_A_DAY);

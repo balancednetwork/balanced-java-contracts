@@ -100,5 +100,4 @@ public class ProposalDB {
 
         return newProposal;
     }
-
 }
