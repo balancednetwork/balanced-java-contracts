@@ -209,7 +209,7 @@ public class GovernanceImpl {
         Context.require(Context.getCaller().equals(proposal.proposer.get()) ||
                         Context.getCaller().equals(Context.getOwner()),
                 "Only owner or proposer may call this method.");
-        if (proposal.startSnapshot.get().compareTo(getDay()) <= 0) {
+        if (proposal.startDay.get().compareTo(getDay()) <= 0) {
             Context.require(Context.getCaller().equals(Context.getOwner()),
                     "Only owner can cancel a vote that has started.");
         }
@@ -290,13 +290,13 @@ public class GovernanceImpl {
     public void castVote(BigInteger vote_index, boolean vote) {
         ProposalDB proposal = new ProposalDB(vote_index);
         Context.require((vote_index.compareTo(BigInteger.ZERO) > 0 &&
-                        getDay().compareTo(proposal.startSnapshot.getOrDefault(BigInteger.ZERO)) >= 0 &&
-                        getDay().compareTo(proposal.endSnapshot.getOrDefault(BigInteger.ZERO)) < 0) &&
+                        getDay().compareTo(proposal.startDay.getOrDefault(BigInteger.ZERO)) >= 0 &&
+                        getDay().compareTo(proposal.endDay.getOrDefault(BigInteger.ZERO)) < 0) &&
                         proposal.active.getOrDefault(false),
                 TAG + " :This is not an active poll.");
 
         Address from = Context.getCaller();
-        BigInteger snapshot = proposal.voteSnapshot.get();
+        BigInteger snapshot = proposal.snapshotBlock.get();
 
         BigInteger totalVote = myVotingWeight(from, snapshot);
 
@@ -360,13 +360,12 @@ public class GovernanceImpl {
                 TAG + ": There is no proposal with index " + vote_index);
 
         ProposalDB proposal = new ProposalDB(vote_index);
-        BigInteger endSnap = proposal.endSnapshot.get();
+        BigInteger endSnap = proposal.endDay.get();
         String actions = proposal.actions.get();
         BigInteger majority = proposal.majority.get();
-        BigInteger currentBlockHeight = BigInteger.valueOf(Context.getBlockHeight());
+
         Context.require(getDay().compareTo(endSnap) >= 0, TAG + ": Voting period has not ended.");
         Context.require(proposal.active.get(), TAG + ": This proposal is not active");
-
 
         Map<String, Object> result = checkVote(vote_index);
         proposal.active.set(false);
@@ -413,7 +412,7 @@ public class GovernanceImpl {
         }
 
         ProposalDB proposal = new ProposalDB(_vote_index);
-        BigInteger totalBoostedBaln = totalBoostedBaln(proposal.voteSnapshot.getOrDefault(BigInteger.ZERO));
+        BigInteger totalBoostedBaln = totalBoostedBaln(proposal.snapshotBlock.getOrDefault(BigInteger.ZERO));
 
         BigInteger nrForVotes = BigInteger.ZERO;
         BigInteger nrAgainstVotes = BigInteger.ZERO;
@@ -430,9 +429,9 @@ public class GovernanceImpl {
         voteData.put("description", proposal.description.getOrDefault(""));
         voteData.put("majority", proposal.majority.getOrDefault(BigInteger.ZERO));
         voteData.put("status", proposal.status.getOrDefault(""));
-        voteData.put("vote snapshot", proposal.voteSnapshot.getOrDefault(BigInteger.ZERO));
-        voteData.put("start day", proposal.startSnapshot.getOrDefault(BigInteger.ZERO));
-        voteData.put("end day", proposal.endSnapshot.getOrDefault(BigInteger.ZERO));
+        voteData.put("vote snapshot", proposal.snapshotBlock.getOrDefault(BigInteger.ZERO));
+        voteData.put("start day", proposal.startDay.getOrDefault(BigInteger.ZERO));
+        voteData.put("end day", proposal.endDay.getOrDefault(BigInteger.ZERO));
         voteData.put("actions", proposal.actions.getOrDefault(""));
         voteData.put("quorum", proposal.quorum.getOrDefault(BigInteger.ZERO));
         voteData.put("for", nrForVotes);

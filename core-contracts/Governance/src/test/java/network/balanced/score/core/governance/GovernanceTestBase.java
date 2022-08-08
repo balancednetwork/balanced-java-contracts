@@ -56,7 +56,7 @@ public class GovernanceTestBase extends UnitTest {
     protected MockContract<DAOfundScoreInterface> daofund;
     protected MockContract<SicxScoreInterface> sicx;
     protected MockContract<BalancedDollarScoreInterface> bnUSD;
-    protected MockContract<BalancedTokenScoreClient> baln;
+    protected MockContract<BalancedTokenScoreInterface> baln;
     protected MockContract<BoostedBalnScoreInterface> bBaln;
     protected MockContract<WorkerTokenScoreInterface> bwt;
     protected MockContract<RouterScoreInterface> router;
@@ -190,7 +190,6 @@ public class GovernanceTestBase extends UnitTest {
 
         when(bBaln.mock.totalSupplyAt(any(BigInteger.class))).thenReturn(BigInteger.valueOf(6).multiply(ICX));
 
-
         Map<String, Object> vote = getVote(id);
         goToDay((BigInteger) vote.get("start day"));
 
@@ -268,7 +267,7 @@ public class GovernanceTestBase extends UnitTest {
         daofund = new MockContract<>(DAOfundScoreInterface.class, sm, owner);
         sicx = new MockContract<>(SicxScoreInterface.class, sm, owner);
         bnUSD = new MockContract<>(BalancedDollarScoreInterface.class, sm, owner);
-        baln = new MockContract<>(BalancedTokenScoreClient.class, sm, owner);
+        baln = new MockContract<>(BalancedTokenScoreInterface.class, sm, owner);
         bBaln = new MockContract<>(BoostedBalnScoreInterface.class, sm, owner);
         bwt = new MockContract<>(WorkerTokenScoreInterface.class, sm, owner);
         router = new MockContract<>(RouterScoreInterface.class, sm, owner);

@@ -52,7 +52,6 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         String forumLink = "https://gov.balanced.network/";
         String description = "test vote";
         BigInteger voteStart = day.add(BigInteger.TWO);
-        ;
         BigInteger voteDuration = BigInteger.TWO;
         String actions = "[]";
         String expectedErrorMessage;
@@ -169,7 +168,6 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         String forumLink = "https://gov.balanced.network/";
         String description = "test vote";
         BigInteger voteStart = day.add(BigInteger.TWO);
-        ;
         BigInteger voteDuration = BigInteger.TWO;
         String actions = "[]";
 
