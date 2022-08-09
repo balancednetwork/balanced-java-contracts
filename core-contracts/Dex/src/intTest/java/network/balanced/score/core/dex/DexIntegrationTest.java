@@ -308,7 +308,6 @@ class DexIntegrationTest {
     @Test
     @Order(8)
     void testNonContinuousAndContinuousReward(){
-        userDaoFundScoreClient.addAddressToSetdb();
         balanced.syncDistributions();
         BigInteger balnHolding = userRewardScoreClient.getBalnHolding(tUserAddress);
         tUserClient._transfer(dexScoreClient._address(), BigInteger.valueOf(200).multiply(EXA), null);

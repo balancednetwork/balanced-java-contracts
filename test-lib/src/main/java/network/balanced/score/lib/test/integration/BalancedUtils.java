@@ -55,6 +55,20 @@ public class BalancedUtils {
         assertEquals("Executed", voter.governance.checkVote(id).get("status"));
     }
 
+    public static void whitelistToken(Balanced balanced, Address address, BigInteger limit) {
+        JsonArray whitelistTokensParams = new JsonArray()
+            .add(createParameter(address))
+            .add(createParameter(limit));
+
+        JsonArray whitelistTokens = createSingleTransaction(
+            balanced.stability._address(), 
+            "whitelistTokens", 
+            whitelistTokensParams
+        );
+
+        balanced.ownerClient.governance.execute(whitelistTokens.toString());
+    }
+
     public static BigInteger hexObjectToBigInteger(Object hexNumber) {
         String hexString = (String) hexNumber;
         if (hexString.startsWith("0x")) {
@@ -123,5 +137,10 @@ public class BalancedUtils {
             .add("address", address.toString())
             .add("method", method)
             .add("parameters", parameters);
+    }
+
+    public static JsonArray createSingleTransaction(Address address, String method, JsonArray parameters) {
+        return new JsonArray()
+            .add(createTransaction(address, method, parameters));
     }
 }

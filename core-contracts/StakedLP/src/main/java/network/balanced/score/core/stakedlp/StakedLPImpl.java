@@ -17,6 +17,7 @@
 package network.balanced.score.core.stakedlp;
 
 import network.balanced.score.lib.interfaces.StakedLP;
+import network.balanced.score.lib.utils.Names;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -42,9 +43,9 @@ public class StakedLPImpl implements StakedLP {
     private static final VarDB<Address> rewards = Context.newVarDB("rewardsAddress", Address.class);
     static final VarDB<Address> admin = Context.newVarDB("adminAddress", Address.class);
 
-    public StakedLPImpl(Address governance) {
-        Context.require(governance.isContract(), "StakedLP: Governance address should be a contract");
-        StakedLPImpl.governance.set(governance);
+    public StakedLPImpl(Address _governance) {
+        Context.require(_governance.isContract(), "StakedLP: Governance address should be a contract");
+        governance.set(_governance);
     }
 
     /*
@@ -59,7 +60,7 @@ public class StakedLPImpl implements StakedLP {
 
     @External(readonly = true)
     public String name() {
-        return "Balanced StakedLP";
+        return Names.STAKEDLP;
     }
 
     @External(readonly = true)

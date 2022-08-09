@@ -523,7 +523,14 @@ public class DividendsIntegrationTest {
     @Order(20)
     void testContinuousDividends_daofund() {
         // Arrange
-        dividends.setContinuousDividendsDay(governance.getDay().add(BigInteger.ONE));
+        JsonArray setTimeOffset = createSingleTransaction(
+                dividends._address(), 
+                "setContinuousDividendsDay", 
+                new JsonArray().add(createParameter(governance.getDay().add(BigInteger.ONE)))
+        );
+
+        balanced.ownerClient.governance.execute(setTimeOffset.toString());
+
         balanced.increaseDay(1);
         dividends.distribute((txr) -> {});
 

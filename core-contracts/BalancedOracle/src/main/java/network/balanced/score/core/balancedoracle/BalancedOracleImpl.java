@@ -30,6 +30,7 @@ import static network.balanced.score.lib.utils.Check.isContract;
 import static network.balanced.score.lib.utils.Check.only;
 import static network.balanced.score.lib.utils.Check.onlyOwner;
 import static network.balanced.score.lib.utils.Constants.EXA;
+import network.balanced.score.lib.utils.Names;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -41,7 +42,7 @@ import score.annotation.External;
 import score.annotation.Optional;
 
 public class BalancedOracleImpl implements BalancedOracle {
-    public static final String TAG = "Balanced Oracle";
+    public static final String TAG = Names.BALANCEDORACLE;
 
     public BalancedOracleImpl(@Optional Address _governance) {
         if (governance.get() != null){
@@ -58,7 +59,7 @@ public class BalancedOracleImpl implements BalancedOracle {
     
     @External(readonly = true)
     public String name() {
-        return TAG;
+        return Names.BALANCEDORACLE;
     }
 
     @External

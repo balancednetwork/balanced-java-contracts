@@ -36,6 +36,11 @@ public class ArbitraryCallManager {
           GovernanceImpl.call(address, method, params);
      }
 
+     public static Object[] getConvertedParams(String params) {
+          JsonArray paramsList = Json.parse(params).asArray();
+          return getConvertedParams(paramsList);
+     }
+
      private static Object[] getConvertedParams(JsonArray params) {
           Object[] convertedParameters = new Object[params.size()];
           int i = 0;

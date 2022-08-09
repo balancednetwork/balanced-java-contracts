@@ -3,7 +3,8 @@ package network.balanced.score.core.governance.proposal;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 
-import network.balanced.score.core.governance.utils.AddressManager;
+import network.balanced.score.core.governance.utils.ContractManager;
+import network.balanced.score.lib.utils.Names;
 import network.balanced.score.core.governance.utils.ArbitraryCallManager;
 
 import score.Address;
@@ -33,7 +34,7 @@ public class ProposalManager {
         Context.require(checkBalnVoteCriterion(Context.getCaller()), "User needs at least " + balnVoteDefinitionCriterion.get().divide(BigInteger.valueOf(100)) + "% of total baln supply staked to define a vote.");
         verifyActions(actions);
 
-        call(AddressManager.get("bnUSD"), "govTransfer", Context.getCaller(), AddressManager.get("daofund"), bnusdVoteDefinitionFee.getOrDefault(BigInteger.ONE), new byte[0]);
+        call(ContractManager.getAddress(Names.BNUSD), "govTransfer", Context.getCaller(), ContractManager.getAddress(Names.DAOFUND), bnusdVoteDefinitionFee.getOrDefault(BigInteger.ONE), new byte[0]);
 
         ProposalDB.createProposal(
                 name,
@@ -89,7 +90,7 @@ public class ProposalManager {
         Address from = Context.getCaller();
         BigInteger snapshot = proposal.voteSnapshot.get();
 
-        BigInteger totalVote = call(BigInteger.class, AddressManager.get("baln"), "stakedBalanceOfAt", from, snapshot);
+        BigInteger totalVote = call(BigInteger.class, ContractManager.getAddress(Names.BALN), "stakedBalanceOfAt", from, snapshot);
 
         Context.require(!totalVote.equals(BigInteger.ZERO), TAG + "Balanced tokens need to be staked to cast the vote.");
 
@@ -245,24 +246,24 @@ public class ProposalManager {
         }
 
         proposal.feeRefunded.set(true);
-        call(AddressManager.get("bnUSD"), "govTransfer", AddressManager.get("daofund"), proposal.proposer.get(), proposal.fee.get(), new byte[0]);
+        call(ContractManager.getAddress(Names.BNUSD), "govTransfer", ContractManager.getAddress(Names.DAOFUND), proposal.proposer.get(), proposal.fee.get(), new byte[0]);
     }
 
     private static BigInteger totalBaln(BigInteger _day) {
-        return call(BigInteger.class, AddressManager.get("baln"), "totalStakedBalanceOfAt", _day);
+        return call(BigInteger.class, ContractManager.getAddress(Names.BALN), "totalStakedBalanceOfAt", _day);
     }
 
     private static boolean checkBalnVoteCriterion(Address address) {
-        BigInteger balnTotal = call(BigInteger.class, AddressManager.get("baln"), "totalSupply");
-        BigInteger userStaked = call(BigInteger.class, AddressManager.get("baln"), "stakedBalanceOf", address);
+        BigInteger balnTotal = call(BigInteger.class, ContractManager.getAddress(Names.BALN), "totalSupply");
+        BigInteger userStaked = call(BigInteger.class, ContractManager.getAddress(Names.BALN), "stakedBalanceOf", address);
         BigInteger limit = balnVoteDefinitionCriterion.get();
         BigInteger userPercentage = POINTS.multiply(userStaked).divide(balnTotal);
         return userPercentage.compareTo(limit) >= 0;
     }
 
     private static void _refundVoteDefinitionFee(ProposalDB proposal) {
-        Address daoFund = AddressManager.get("daofund");
-        call(AddressManager.get("bnUSD"), "govTransfer", daoFund, proposal.proposer.get(), proposal.fee.get(), new byte[0]);
+        Address daoFund = ContractManager.getAddress(Names.DAOFUND);
+        call(ContractManager.getAddress(Names.BNUSD), "govTransfer", daoFund, proposal.proposer.get(), proposal.fee.get(), new byte[0]);
         proposal.feeRefunded.set(true);
     }
 

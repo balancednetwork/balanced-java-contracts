@@ -25,9 +25,10 @@ import java.util.Map;
 
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.utils.Constants;
+import network.balanced.score.lib.utils.Names;
 
 public class GovernanceConstants extends Constants {
-    public static final String TAG = "Governance";
+    public static final String TAG = Names.GOVERNANCE;
     public static final int succsesfulVoteExecutionRevertID = 20;
 
     public static final BigInteger MAJORITY = new BigInteger("666666666666666667", 10);
@@ -79,6 +80,27 @@ public class GovernanceConstants extends Constants {
             entry("stakedLp", "governance"),
             entry("rebalancing", "governance"),
             entry("balancedOracle", "governance")
+    );
+
+    public static Map<String, String> oldNamesMap = Map.ofEntries(
+        entry("loans", Names.LOANS),
+        entry("dex", Names.DEX),
+        entry("rewards", Names.REWARDS),
+        entry("dividends", Names.DIVIDENDS),
+        entry("daofund", Names.DAOFUND),
+        entry("reserve", Names.RESERVE),
+        entry("baln", Names.BALN),
+        entry("bwt", Names.WORKERTOKEN),
+        entry("router", Names.ROUTER),
+        entry("stakedLp", Names.STAKEDLP),
+        entry("rebalancing", Names.REBALANCING),
+        entry("balancedOracle", Names.BALANCEDORACLE),
+        entry("oracle", Names.ORACLE),
+        entry("staking", Names.STAKING),
+        entry("sicx", Names.SICX),
+        entry("bnUSD", Names.BNUSD),
+        entry("feehandler", Names.FEEHANDLER)
+        
     );
 
     public static Map<String, String> SETTERS = Map.ofEntries(

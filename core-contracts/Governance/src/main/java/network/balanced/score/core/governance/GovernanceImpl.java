@@ -16,13 +16,11 @@
 
 package network.balanced.score.core.governance;
 
-import com.eclipsesource.json.Json;
-import com.eclipsesource.json.JsonArray;
-import network.balanced.score.lib.structs.BalancedAddresses;
 import network.balanced.score.lib.structs.PrepDelegations;
+import network.balanced.score.lib.utils.Names;
 import network.balanced.score.core.governance.proposal.ProposalDB;
 import network.balanced.score.core.governance.proposal.ProposalManager;
-import network.balanced.score.core.governance.utils.AddressManager;
+import network.balanced.score.core.governance.utils.ContractManager;
 import network.balanced.score.core.governance.utils.ArbitraryCallManager;
 import network.balanced.score.core.governance.utils.EventLogger;
 import network.balanced.score.core.governance.utils.SetupManager;
@@ -58,12 +56,15 @@ public class GovernanceImpl implements Governance {
     public GovernanceImpl() {
         if (launched.getOrDefault(null) == null) {
             launched.set(false);
+            return;
         }
+
+        ContractManager.migrateAddresses();
     }
 
     @External(readonly = true)
     public String name() {
-        return "Balanced Governance";
+        return Names.GOVERNANCE;
     }
 
     @External(readonly = true)
@@ -78,7 +79,7 @@ public class GovernanceImpl implements Governance {
 
     @External(readonly = true)
     public Address getContractAddress(String contract) {
-        return AddressManager.get(contract);
+        return ContractManager.get(contract);
     }
 
     @External
@@ -161,15 +162,8 @@ public class GovernanceImpl implements Governance {
 
     @External
     public void tryExecuteTransactions(String transactions) {
-        JsonArray actionsParsed = Json.parse(transactions).asArray();
-        Context.require(actionsParsed.size() <= maxTransactions(), TAG + ": Only " + maxTransactions() + " transactions are allowed");
         ArbitraryCallManager.executeTransactions(transactions);
         Context.revert(succsesfulVoteExecutionRevertID);
-    }
-
-    @External(readonly = true)
-    public int maxTransactions() {
-        return 5;
     }
 
     @External(readonly = true)
@@ -211,7 +205,7 @@ public class GovernanceImpl implements Governance {
 
     @External(readonly = true)
     public BigInteger myVotingWeight(Address _address, BigInteger _day) {
-        return Context.call(BigInteger.class, AddressManager.get("baln"), "stakedBalanceOfAt", _address, _day);
+        return Context.call(BigInteger.class, ContractManager.getAddress(Names.BALN), "stakedBalanceOfAt", _address, _day);
     }
 
     @External
@@ -245,27 +239,26 @@ public class GovernanceImpl implements Governance {
         SetupManager.createBalnSicxMarket(_sicx_amount, _baln_amount);
     }
 
-    @External
-    public void setAddresses(BalancedAddresses _addresses) {
-        onlyOwnerOrContract();
-        AddressManager.setAddresses(_addresses);
+    @External(readonly = true)
+    public Map<String, Address> getAddresses() {
+        return ContractManager.getAddresses();
     }
 
     @External(readonly = true)
-    public Map<String, Address> getAddresses() {
-        return AddressManager.getAddresses();
+    public Address getAddress(String name) {
+        return ContractManager.getAddress(name);
     }
 
     @External
     public void setAdmins() {
         onlyOwnerOrContract();
-        AddressManager.setAdmins();
+        ContractManager.setAdmins();
     }
 
     @External
     public void setContractAddresses() {
         onlyOwnerOrContract();
-        AddressManager.setContractAddresses();
+        ContractManager.setContractAddresses();
     }
 
     @External(readonly = true)
@@ -281,12 +274,12 @@ public class GovernanceImpl implements Governance {
     @External
     public void addCollateral(Address _token_address, boolean _active, String _peg, @Optional BigInteger _limit) {
         onlyOwnerOrContract();
-        Address loansAddress = AddressManager.get("loans");
+        Address loansAddress = ContractManager.getAddress(Names.LOANS);
         Context.call(loansAddress, "addAsset", _token_address, _active, true);
 
         String symbol = Context.call(String.class, _token_address, "symbol");
 
-        Address balancedOraclAddress = AddressManager.get("balancedOracle");
+        Address balancedOraclAddress = ContractManager.getAddress(Names.BALANCEDORACLE);
         Context.call(balancedOraclAddress, "setPeg", symbol, _peg);
         BigInteger price = Context.call(BigInteger.class, balancedOraclAddress, "getPriceInLoop", symbol);
         Context.require(price.compareTo(BigInteger.ZERO) > 0, "Balanced oracle return a invalid icx price for " + symbol + "/" + _peg);
@@ -301,13 +294,13 @@ public class GovernanceImpl implements Governance {
     @External
     public void addDexPricedCollateral(Address _token_address, boolean _active, @Optional BigInteger _limit) {
         onlyOwnerOrContract();
-        Address loansAddress = AddressManager.get("loans");
+        Address loansAddress = ContractManager.getAddress(Names.LOANS);
         Context.call(loansAddress, "addAsset", _token_address, _active, true);
 
         String symbol = Context.call(String.class, _token_address, "symbol");
-        BigInteger poolId = Context.call(BigInteger.class, AddressManager.get("dex"), "getPoolId", _token_address, AddressManager.get("bnUSD"));
+        BigInteger poolId = Context.call(BigInteger.class, ContractManager.getAddress(Names.DEX), "getPoolId", _token_address, ContractManager.getAddress(Names.BNUSD));
         
-        Address balancedOraclAddress = AddressManager.get("balancedOracle");
+        Address balancedOraclAddress = ContractManager.getAddress(Names.BALANCEDORACLE);
         Context.call(balancedOraclAddress, "addDexPricedAsset", symbol, poolId);
         BigInteger price = Context.call(BigInteger.class, balancedOraclAddress, "getPriceInLoop", symbol);
         Context.require(price.compareTo(BigInteger.ZERO) > 0, "Balanced oracle return a invalid icx price for " + symbol);
@@ -322,19 +315,37 @@ public class GovernanceImpl implements Governance {
     @External
     public void delegate(String contract, PrepDelegations[] _delegations) {
         onlyOwnerOrContract();
-        Context.call(AddressManager.get(contract), "delegate", (Object) _delegations);
+        Context.call(ContractManager.getAddress(contract), "delegate", (Object) _delegations);
     }
 
     @External
     public void balwAdminTransfer(Address _from, Address _to, BigInteger _value, @Optional byte[] _data) {
         onlyOwnerOrContract();
-        Context.call(AddressManager.get("bwt"), "adminTransfer", _from, _to, _value, _data);
+        Context.call(ContractManager.getAddress(Names.WORKERTOKEN), "adminTransfer", _from, _to, _value, _data);
     }
 
     @External
     public void setAddressesOnContract(String _contract) {
         onlyOwnerOrContract();
-        AddressManager.setAddress(_contract);
+        ContractManager.setAddress(_contract);
+    }
+    
+    @External
+    public void addExternalContract(String name, Address address) {
+        onlyOwnerOrContract();
+        ContractManager.addContract(name, address);
+    }
+
+    @External
+    public void deployTo(byte[] contractData, Address targetContract, String deploymentParams) {
+        onlyOwnerOrContract();
+        ContractManager.updateContract(contractData, targetContract, deploymentParams);
+    }
+
+    @External
+    public void deploy(byte[] contractData, String deploymentParams) {
+        onlyOwnerOrContract();
+        ContractManager.newContract(contractData, deploymentParams);
     }
 
     @External
@@ -371,10 +382,10 @@ public class GovernanceImpl implements Governance {
     public static void _setTimeOffset(BigInteger offset) {
         onlyOwnerOrContract();
         timeOffset.set(offset);
-        Context.call(AddressManager.get("loans"), "setTimeOffset", offset);
-        Context.call(AddressManager.get("rewards"), "setTimeOffset", offset);
-        Context.call(AddressManager.get("dex"), "setTimeOffset", offset);
-        Context.call(AddressManager.get("dividends"), "setTimeOffset", offset);
+        Context.call(ContractManager.getAddress(Names.LOANS), "setTimeOffset", offset);
+        Context.call(ContractManager.getAddress(Names.REWARDS), "setTimeOffset", offset);
+        Context.call(ContractManager.getAddress(Names.DEX), "setTimeOffset", offset);
+        Context.call(ContractManager.getAddress(Names.DIVIDENDS), "setTimeOffset", offset);
     }
 
     public static EventLogger getEventLogger() {

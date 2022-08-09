@@ -20,6 +20,7 @@ import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonValue;
 import network.balanced.score.lib.interfaces.FeeHandler;
+import network.balanced.score.lib.utils.Names;
 import score.*;
 import score.annotation.External;
 import score.annotation.Optional;
@@ -85,7 +86,7 @@ public class FeeHandlerImpl implements FeeHandler {
 
     @External(readonly = true)
     public String name() {
-        return "Balanced " + TAG;
+        return Names.FEEHANDLER;
     }
 
     @External

@@ -18,6 +18,8 @@ package network.balanced.score.tokens.balancedtoken;
 
 import java.math.BigInteger;
 
+import network.balanced.score.lib.utils.Names;
+
 import static network.balanced.score.lib.utils.Constants.*;
 import static network.balanced.score.lib.utils.Math.pow;
 
@@ -32,7 +34,7 @@ public interface Constants {
 	String AMOUNT = "amount";
 
 	String TAG = "BALN";
-	String TOKEN_NAME = "Balance Token";
+	String TOKEN_NAME = Names.BALN;
 	String SYMBOL_NAME = "BALN";
 	String DEFAULT_ORACLE_NAME = "Balanced DEX";
 

@@ -88,10 +88,16 @@ public interface Governance extends
     void tryExecuteTransactions(String transactions);
 
     @External
-    void execute(String transactions);
+    void addExternalContract(String name, Address address);
 
-    @External(readonly = true)
-    int maxTransactions();
+    @External
+    void deployTo(byte[] contractData, Address targetContract, String deploymentParams);
+
+    @External
+    void deploy(byte[] contractData, String deploymentParams);
+
+    @External
+    void execute(String transactions);
 
     @External(readonly = true)
     BigInteger getProposalCount();
@@ -133,11 +139,11 @@ public interface Governance extends
     @External
     void createBalnSicxMarket(BigInteger  _sicx_amount, BigInteger _baln_amount);
 
-    @External
-    void setAddresses(BalancedAddresses _addresses);
-
     @External(readonly = true)
     Map<String, Address>  getAddresses();
+
+    @External(readonly = true)
+    Address getAddress(String name);
 
     @External
     void setAdmins();
