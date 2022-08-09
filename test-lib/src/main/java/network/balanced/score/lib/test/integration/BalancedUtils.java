@@ -19,7 +19,10 @@ package network.balanced.score.lib.test.integration;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
+import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 
@@ -78,6 +81,14 @@ public class BalancedUtils {
 
     }
 
+    public static byte[] getContractBytes(String path) {
+        try {
+            return Files.readAllBytes(Path.of(path));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static Address createIRC2Token(BalancedClient owner, String name, String symbol) {
         String path = System.getProperty("user.dir") + "/../../test-lib/util-contracts/IRC2Token.jar";
         DefaultScoreClient assetClient = _deploy(Env.getDefaultChain().getEndpointURL(), Env.getDefaultChain().networkId, owner.wallet, path,  Map.of("name", name, "symbol", symbol));
@@ -102,7 +113,20 @@ public class BalancedUtils {
             .add("value", value);
     }
 
+    public static JsonObject createParameter(byte[] value) {
+        return new JsonObject()
+            .add("type", "bytes")
+            .add("value", getHex(value));
+    }
+    
+
     public static JsonObject createParameter(Address value) {
+        return new JsonObject()
+            .add("type", "Address")
+            .add("value", value.toString());
+    }
+
+    public static JsonObject createParameter(score.Address value) {
         return new JsonObject()
             .add("type", "Address")
             .add("value", value.toString());
@@ -142,5 +166,14 @@ public class BalancedUtils {
     public static JsonArray createSingleTransaction(Address address, String method, JsonArray parameters) {
         return new JsonArray()
             .add(createTransaction(address, method, parameters));
+    }
+
+    private static String getHex(byte[] raw) {
+        String HEXES = "0123456789ABCDEF";
+        final StringBuilder hex = new StringBuilder(2 * raw.length);
+        for (final byte b : raw) {
+            hex.append(HEXES.charAt((b & 0xF0) >> 4)).append(HEXES.charAt((b & 0x0F)));
+        }
+        return hex.toString();
     }
 }

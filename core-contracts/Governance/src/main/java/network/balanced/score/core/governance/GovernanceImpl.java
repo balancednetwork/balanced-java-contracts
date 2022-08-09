@@ -337,9 +337,9 @@ public class GovernanceImpl implements Governance {
     }
 
     @External
-    public void deployTo(byte[] contractData, Address targetContract, String deploymentParams) {
+    public void deployTo(Address targetContract, byte[] contractData, String deploymentParams) {
         onlyOwnerOrContract();
-        ContractManager.updateContract(contractData, targetContract, deploymentParams);
+        ContractManager.updateContract(targetContract, contractData, deploymentParams);
     }
 
     @External

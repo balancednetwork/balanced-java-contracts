@@ -219,7 +219,7 @@ public class ContractManager {
         contractAddresses.set(name, address); 
     }
 
-    public static void updateContract(byte[] contractData, Address targetContract, String params) {
+    public static void updateContract(Address targetContract, byte[] contractData, String params) {
         Object[] parsedParams = ArbitraryCallManager.getConvertedParams(params);
         Context.deploy(targetContract, contractData, parsedParams);
     }

@@ -91,7 +91,7 @@ public interface Governance extends
     void addExternalContract(String name, Address address);
 
     @External
-    void deployTo(byte[] contractData, Address targetContract, String deploymentParams);
+    void deployTo(Address targetContract, byte[] contractData, String deploymentParams);
 
     @External
     void deploy(byte[] contractData, String deploymentParams);

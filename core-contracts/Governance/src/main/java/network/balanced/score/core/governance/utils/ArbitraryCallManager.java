@@ -1,18 +1,18 @@
 package network.balanced.score.core.governance.utils;
 
+import static network.balanced.score.lib.utils.Math.convertToNumber;
+
+import java.util.Map;
+import java.util.function.Function;
+
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 
 import network.balanced.score.core.governance.GovernanceImpl;
-
-import static network.balanced.score.lib.utils.Math.convertToNumber;
-
-import java.util.Map;
-import java.util.function.Function;
-
 import score.Address;
+import score.Context;
 import scorex.util.HashMap;
 
 public class ArbitraryCallManager {
@@ -96,20 +96,21 @@ public class ArbitraryCallManager {
      }
 
      private static Object convertBytesParam(JsonValue value) {
-          String stringValue = value.asString();
-          if (stringValue.startsWith("0x") && (stringValue.length() % 2 == 0)) {
-               String hex = stringValue.substring(2);
-               int len = hex.length() / 2;
-               byte[] bytes = new byte[len];
-               for (int i = 0; i < len; i++) {
-                    int j = i * 2;
-                    bytes[i] = (byte) Integer.parseInt(hex.substring(j, j + 2), 16);
-               }
+          String hex = value.asString();
+          Context.require(hex.length() % 2 == 0, "Illegal bytes format");
 
-               return (Object) bytes;
+          if (hex.startsWith("0x")) {
+               hex = hex.substring(2);
           }
 
-          throw new IllegalArgumentException("Illegal bytes format"); 
+          int len = hex.length() / 2;
+          byte[] bytes = new byte[len];
+          for (int i = 0; i < len; i++) {
+               int j = i * 2;
+               bytes[i] = (byte) Integer.parseInt(hex.substring(j, j + 2), 16);
+          }
+
+          return bytes;
      }
 
      private static Object parseStruct(JsonObject jsonStruct) {
