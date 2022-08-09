@@ -56,12 +56,10 @@ public class BalancedOracleImpl implements BalancedOracle {
         BigInteger priceInLoop;
         if (pegSymbol.equals("sICX")) {
             priceInLoop = getSICXPriceInLoop();
-            lastPriceInLoop.set(pegSymbol, priceInLoop);
         } else if (dexPricedAssets.get(pegSymbol) != null) {
             priceInLoop = getDexPriceInLoop(pegSymbol);
         } else {
             priceInLoop = getLoopRate(pegSymbol);
-            lastPriceInLoop.set(pegSymbol, priceInLoop);
         }
 
         return priceInLoop;
@@ -72,13 +70,13 @@ public class BalancedOracleImpl implements BalancedOracle {
         String pegSymbol = assetPeg.getOrDefault(symbol, symbol);
         BigInteger priceInLoop; 
 
-        if (dexPricedAssets.get(pegSymbol) != null) {
+        if (pegSymbol.equals("sICX")) {
+            priceInLoop = getSICXPriceInLoop();
+        } else if (dexPricedAssets.get(pegSymbol) != null) {
             priceInLoop = EMACalculator.calculateEMA(pegSymbol, getDexPriceEMADecay());
         } else {
-            priceInLoop = lastPriceInLoop.getOrDefault(pegSymbol, BigInteger.ZERO);
+            priceInLoop = getLoopRate(pegSymbol);
         }
-        
-        Context.require(priceInLoop.compareTo(BigInteger.ZERO) > 0, TAG + ": No price data exists for symbol");
 
         return priceInLoop;
     }
@@ -215,6 +213,5 @@ public class BalancedOracleImpl implements BalancedOracle {
                 , "ICX");
 
         return (BigInteger) priceData.get("rate");
-        // return EMACalculator.updateEMA(symbol, priceInLoop, getOraclePriceEMADecay());
     }
 }
