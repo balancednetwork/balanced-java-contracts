@@ -44,6 +44,7 @@ public class BalancedOracleImpl implements BalancedOracle {
         dexPriceEMADecay.set(EXA);
         oraclePriceEMADecay.set(EXA);
     }
+
     @External(readonly = true)
     public String name() {
         return TAG;
