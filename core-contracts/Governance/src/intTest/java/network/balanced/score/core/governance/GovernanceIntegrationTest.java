@@ -53,7 +53,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         tester.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(20), null, null);
 
         balanced.increaseDay(1);
-        balanced.syncDistributions();
+//        balanced.syncDistributions();
 
         tester.rewards.claimRewards();
 

@@ -82,7 +82,7 @@ public class Balanced {
         registerPreps();
         deployContracts();
         setupAddresses();
-        increaseDay(1);
+//        increaseDay(1);
         setupContracts();
 //         delegate(adminWallet);
         String className = new Exception().getStackTrace()[1].getClassName();
@@ -199,8 +199,17 @@ public class Balanced {
 
     public void setupMarkets() {
         ownerClient.governance.createBnusdMarket(BigInteger.valueOf(400000).multiply(BigInteger.TEN.pow(18)));
-        increaseDay(2);
-//        syncDistributions();
+//        increaseDay(2);
+//        distribution needs to be called once after continuous rewards activation
+        Consumer<TransactionResult> distributeConsumer = result -> {};
+        ownerClient.rewards.distribute(distributeConsumer);
+        ownerClient.dividends.distribute(distributeConsumer);
+
+        try {
+            Thread.sleep(5000); //wait some time
+        }catch (Exception e){
+            System.out.println(e.getMessage());
+        }
         BigInteger balnBalance = ownerClient.rewards.getBalnHolding(governance._address());
         BigInteger initialPoolDepths = balnBalance.divide(BigInteger.TWO);
         ownerClient.governance.createBalnMarket(initialPoolDepths, initialPoolDepths);
@@ -225,12 +234,10 @@ public class Balanced {
 
     // deprecated after continuous migration
     public void syncDistributions() {
-        if (ownerClient.dex.getContinuousRewardsDay() == null) {
-            Consumer<TransactionResult> distributeConsumer = result -> {};
-            while (!checkDistributionsDone()) {
-                ownerClient.rewards.distribute(distributeConsumer);
-                ownerClient.dividends.distribute(distributeConsumer);
-            }
+        Consumer<TransactionResult> distributeConsumer = result -> {};
+        while (!checkDistributionsDone()) {
+            ownerClient.rewards.distribute(distributeConsumer);
+            ownerClient.dividends.distribute(distributeConsumer);
         }
     }
 

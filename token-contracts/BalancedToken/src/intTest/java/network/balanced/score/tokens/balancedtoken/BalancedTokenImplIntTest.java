@@ -64,7 +64,7 @@ class BalancedTokenImplIntTest {
         BigInteger collateral = BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18));
         balanced.ownerClient.loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
         balanced.increaseDay(1);
-        balanced.syncDistributions();
+//        balanced.syncDistributions();
 
         // balance token is minted in owner address
         balanced.ownerClient.rewards.claimRewards();
@@ -111,7 +111,7 @@ class BalancedTokenImplIntTest {
 
         // wait for few days
         balanced.increaseDay(4);
-        balanced.syncDistributions();
+//        balanced.syncDistributions();
 
         // unstake completely
         balnScore.stake(BigInteger.ZERO);

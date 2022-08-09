@@ -176,7 +176,7 @@ class DexIntegrationTest {
         assertEquals(hexToBigInteger(poolStats.get("total_supply").toString()), BigInteger.ZERO);
 
         //test icx transfer and verify stats
-        balanced.syncDistributions();
+//        balanced.syncDistributions();
         userClient._transfer(dexScoreClient._address(), BigInteger.valueOf(200).multiply(EXA), null);
         poolStats = dexUserScoreClient.getPoolStats(defaultPoolId);
 
@@ -208,10 +208,9 @@ class DexIntegrationTest {
         assertEquals(hexToBigInteger(poolStats.get("quote").toString()).divide(EXA), BigInteger.valueOf(150));
         assertEquals(hexToBigInteger(poolStats.get("total_supply").toString()).divide(EXA), BigInteger.valueOf(150));
 
-        System.out.println(" day is: " + dexUserScoreClient.getDay());
-        waitForADay();
+        waitForSomeBlocks();
         //release lock by distributing rewards
-        balanced.syncDistributions();
+//        balanced.syncDistributions();
         //verify sicx earning and make withdraw
         BigInteger sicxEarning = dexUserScoreClient.getSicxEarnings(userAddress);
         assertNotNull(sicxEarning);
@@ -222,7 +221,7 @@ class DexIntegrationTest {
         assertEquals(exception.getMessage(), "Reverted(0)");  //locked
         //cancel order
         // this cal was working on 1-min day, but not working for offset manipulation.
-        //waitForADay();
+        //waitForSomeBlocks();
         //balanced.syncDistributions();
         //dexUserScoreClient.cancelSicxicxOrder();
     }
@@ -234,7 +233,7 @@ class DexIntegrationTest {
         if(dexUserScoreClient.getContinuousRewardsDay()==null) {
             governanceDexScoreClient.setContinuousRewardsDay(dexUserScoreClient.getDay().add(BigInteger.ONE));
         }
-        waitForADay();
+        waitForSomeBlocks();
         balanced.syncDistributions();
         //continuous starts
         byte[] tokenDeposit = "{\"method\":\"_deposit\",\"params\":{\"none\":\"none\"}}".getBytes();
@@ -293,11 +292,10 @@ class DexIntegrationTest {
         dexUserScoreClient.add(tokenBAddress, tokenCAddress, BigInteger.valueOf(50).multiply(EXA),
                 BigInteger.valueOf(25).multiply(EXA), false);
 
-        waitForADay();
+        waitForSomeBlocks();
 
         //take pool id > 5 so that it can be transferred
         BigInteger poolId = dexUserScoreClient.getPoolId(tokenBAddress, tokenCAddress);
-        System.out.println(poolId);
         BigInteger balance = dexUserScoreClient.balanceOf(userAddress, poolId);
         assertNotEquals(balance, BigInteger.ZERO);
         dexUserScoreClient.transfer(Address.fromString(tUserAddress.toString()), BigInteger.valueOf(5).multiply(EXA),
@@ -311,29 +309,23 @@ class DexIntegrationTest {
     @Order(8)
     void testNonContinuousAndContinuousReward(){
         userDaoFundScoreClient.addAddressToSetdb();
-        balanced.syncDistributions();
+//        balanced.syncDistributions();
         BigInteger balnHolding = userRewardScoreClient.getBalnHolding(tUserAddress);
         tUserClient._transfer(dexScoreClient._address(), BigInteger.valueOf(200).multiply(EXA), null);
         if(dexUserScoreClient.getContinuousRewardsDay()==null) {
             governanceDexScoreClient.setContinuousRewardsDay(dexUserScoreClient.getDay().add(BigInteger.ONE));
         }
 
-        waitForADay();
-
-       balanced.syncDistributions();
+        waitForSomeBlocks();
+//       balanced.syncDistributions();
        BigInteger updatedBalnHolding = userRewardScoreClient.getBalnHolding(tUserAddress);
        assert balnHolding.compareTo(updatedBalnHolding)<0;
        BigInteger beforeSleepDay = dexUserScoreClient.getDay();
-        try {
-            Thread.sleep(5000); //wait some time
-        }catch (Exception e){
-            System.out.println(e.getMessage());
-        }
+       waitForSomeBlocks();
 
         BigInteger nextUpdatedBalnHolding = userRewardScoreClient.getBalnHolding(tUserAddress);
         assertEquals(beforeSleepDay, dexUserScoreClient.getDay());
         assert updatedBalnHolding.compareTo(nextUpdatedBalnHolding)<0;
-
     }
 
     void transferSicxToken(){
@@ -377,8 +369,12 @@ class DexIntegrationTest {
         }
     }
 
-    void waitForADay(){
-        balanced.increaseDay(1);
+    void waitForSomeBlocks(){
+        try {
+            Thread.sleep(5000); //wait some time
+        }catch (Exception e){
+            System.out.println(e.getMessage());
+        }
     }
 
     BigInteger hexToBigInteger(String hex){

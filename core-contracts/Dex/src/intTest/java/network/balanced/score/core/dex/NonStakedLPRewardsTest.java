@@ -104,7 +104,7 @@ public class NonStakedLPRewardsTest {
         //balanced = new Balanced();
         //balanced.setupBalanced();
         userDaoFundScoreClient.addAddressToSetdb();
-        balanced.syncDistributions();
+//        balanced.syncDistributions();
 
         byte[] tokenDeposit = "{\"method\":\"_deposit\",\"params\":{\"none\":\"none\"}}".getBytes();
         staking.stakeICX(BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18)), userAddress
@@ -116,7 +116,7 @@ public class NonStakedLPRewardsTest {
         loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
 
         waitForADay();
-        balanced.syncDistributions();
+//        balanced.syncDistributions();
         rewards.claimRewards();
         baln.transfer(userAddress, BigInteger.valueOf(110).multiply(BigInteger.TEN.pow(18)), null);
         // deposit base token
@@ -126,7 +126,7 @@ public class NonStakedLPRewardsTest {
         dexUserScoreClient.add(balanced.baln._address(), balanced.sicx._address(), BigInteger.valueOf(100).multiply(EXA), BigInteger.valueOf(100).multiply(EXA), false);
 
         waitForADay();
-        balanced.syncDistributions();
+//        balanced.syncDistributions();
         userWalletRewardsClient.claimRewards();
         if(dexUserScoreClient.getContinuousRewardsDay()==null) {
             governanceDexScoreClient.setContinuousRewardsDay(dexUserScoreClient.getDay().add(BigInteger.ONE));
@@ -134,7 +134,7 @@ public class NonStakedLPRewardsTest {
         waitForADay();
 
         // continuous rewards starts here if not already started
-        balanced.syncDistributions();
+//        balanced.syncDistributions();
         userWalletRewardsClient.claimRewards();
         waitForADay();
 

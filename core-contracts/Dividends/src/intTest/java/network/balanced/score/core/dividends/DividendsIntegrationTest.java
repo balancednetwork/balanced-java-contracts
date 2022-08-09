@@ -263,7 +263,7 @@ public class DividendsIntegrationTest {
 
         balanced.increaseDay(1);
 
-        balanced.syncDistributions();
+//        balanced.syncDistributions();
 
         rewards.claimRewards();
         BigInteger balance = baln.balanceOf(Address.fromString(owner.getAddress().toString()));
@@ -444,7 +444,7 @@ public class DividendsIntegrationTest {
         BigInteger collateral = BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18));
         loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
 
-        balanced.syncDistributions();
+//        balanced.syncDistributions();
 
         JSONObject data = new JSONObject();
         data.put("method", "_deposit");
@@ -453,7 +453,7 @@ public class DividendsIntegrationTest {
 
         balanced.increaseDay(1);
 
-        balanced.syncDistributions();
+//        balanced.syncDistributions();
 
         // claim rewards of loans
         rewards.claimRewards();
@@ -521,7 +521,7 @@ public class DividendsIntegrationTest {
         BigInteger lpAmount = BigInteger.valueOf(30).multiply(BigInteger.TEN.pow(18));
 
         balanced.increaseDay(1);
-        balanced.syncDistributions();
+//        balanced.syncDistributions();
 
         // claim baln rewards
         rewards.claimRewards();
@@ -587,7 +587,7 @@ public class DividendsIntegrationTest {
         BigInteger userDividendsBnusd = userDividends.get(balanced.bnusd._address().toString());
         BigInteger userDividendsTesterBnusd = userDividendsTester.get(balanced.bnusd._address().toString());
         BigInteger userDividendsGovernanceBnusd = userDividendsGovernance.get(balanced.bnusd._address().toString());
-        balanced.syncDistributions();
+//        balanced.syncDistributions();
 
         BigInteger dividendsSwitchingDay = dividends.getDividendsOnlyToStakedBalnDay();
         BigInteger actual = userDividendsTesterBnusd;
@@ -629,7 +629,7 @@ public class DividendsIntegrationTest {
         loans.depositAndBorrow(BigInteger.valueOf(1000).multiply(BigInteger.TEN.pow(18)), "bnUSD", loanAmount, null,
                 null);
 
-        balanced.syncDistributions();
+//        balanced.syncDistributions();
         BigInteger amount = new BigInteger("500").multiply(BigInteger.TEN.pow(18));
         // create bnusd market
 
@@ -644,7 +644,7 @@ public class DividendsIntegrationTest {
         BigInteger lpAmount = BigInteger.valueOf(30).multiply(BigInteger.TEN.pow(18));
         balanced.increaseDay(1);
 
-        balanced.syncDistributions();
+//        balanced.syncDistributions();
         // claim rewards for the user
         rewards.claimRewards();
 
@@ -818,7 +818,7 @@ public class DividendsIntegrationTest {
         BigInteger lpAmount = BigInteger.valueOf(30).multiply(BigInteger.TEN.pow(18));
         balanced.increaseDay(2);
 
-        balanced.syncDistributions();
+//        balanced.syncDistributions();
 
         // Claim rewards
         rewards.claimRewards();
