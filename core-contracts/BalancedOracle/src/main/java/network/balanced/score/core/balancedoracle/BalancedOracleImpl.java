@@ -70,14 +70,14 @@ public class BalancedOracleImpl implements BalancedOracle {
     @External(readonly = true)
     public BigInteger getLastPriceInLoop(String symbol) {
         String pegSymbol = assetPeg.getOrDefault(symbol, symbol);
-        BigInteger priceInLoop; 
+        BigInteger priceInLoop;
 
         if (dexPricedAssets.get(pegSymbol) != null) {
             priceInLoop = EMACalculator.calculateEMA(pegSymbol, getDexPriceEMADecay());
         } else {
             priceInLoop = lastPriceInLoop.getOrDefault(pegSymbol, BigInteger.ZERO);
         }
-        
+
         Context.require(priceInLoop.compareTo(BigInteger.ZERO) > 0, TAG + ": No price data exists for symbol");
 
         return priceInLoop;
