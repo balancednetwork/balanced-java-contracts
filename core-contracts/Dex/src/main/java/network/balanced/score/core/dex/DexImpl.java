@@ -134,7 +134,7 @@ public class DexImpl extends AbstractDex {
 
         // Call an internal method based on the "method" param sent in tokenFallBack
         switch (method) {
-            case "_deposit":
+            case "_deposit": {
                 DictDB<Address, BigInteger> depositDetails = deposit.at(fromToken);
                 BigInteger userBalance = depositDetails.getOrDefault(_from, BigInteger.ZERO);
                 userBalance = userBalance.add(_value);
@@ -147,13 +147,13 @@ public class DexImpl extends AbstractDex {
                 }
                 break;
 
-            case "_swap_icx":
+            } case "_swap_icx": {
                 require(fromToken.equals(sicx.get()),
                         TAG + ": InvalidAsset: _swap_icx can only be called with sICX");
                 swapIcx(_from, _value);
                 break;
 
-            case "_swap":
+            } case "_swap":{
 
                 // Parse the slippage sent by the user in minimumReceive.
                 // If none is sent, use the maximum.
@@ -181,8 +181,17 @@ public class DexImpl extends AbstractDex {
                 exchange(fromToken, toToken, _from, receiver, _value, minimumReceive);
 
                 break;
+            } case "_donate": {
+                require(_from.equals(Context.getOwner()), "Only owner is allowed to donate");
 
-            default:
+                JsonObject params = json.get("params").asObject();
+                require(params.contains("toToken"), TAG + ": No toToken specified in swap");
+                Address toToken = Address.fromString(params.get("toToken").asString());
+
+                donate(fromToken, toToken, _value);
+
+                break;
+            } default:
                 // If no supported method was sent, revert the transaction
                 Context.revert(100, TAG + ": Unsupported method supplied");
                 break;

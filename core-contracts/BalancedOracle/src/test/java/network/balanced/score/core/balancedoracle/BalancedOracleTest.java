@@ -104,54 +104,6 @@ class BalancedOracleTest extends BalancedOracleTestBase {
     }
 
     @Test
-    void EMA_OracleAsset() {
-        // Arrange
-        BigInteger alpha = ICX.divide(BigInteger.valueOf(DAY));
-        BigInteger decay = ICX.subtract(alpha);
-        balancedOracle.invoke(governance, "setOraclePriceEMADecay", alpha);
-
-        // Act
-        BigInteger rate1 = BigInteger.valueOf(6).multiply(BigInteger.TEN.pow(17));
-        mockRate("USD", rate1);
-        balancedOracle.invoke(adminAccount, "getPriceInLoop", "bnUSD");
-        BigInteger EMA = rate1;
-
-        int blockDiff = (int)DAY/4;
-        sm.getBlock().increase(blockDiff - 1);
-
-        BigInteger rate2 = BigInteger.valueOf(8).multiply(BigInteger.TEN.pow(17));
-        mockRate("USD", rate2);
-        balancedOracle.invoke(adminAccount, "getPriceInLoop", "bnUSD");
-        BigInteger factor = exaPow(decay, blockDiff);
-        BigInteger priceDiff = rate1.subtract(EMA);
-        EMA = rate1.subtract(priceDiff.multiply(factor).divide(ICX));
-
-        sm.getBlock().increase(blockDiff - 1);
-
-        BigInteger rate3 = BigInteger.valueOf(5).multiply(BigInteger.TEN.pow(17));
-        mockRate("USD", rate3);
-        balancedOracle.invoke(adminAccount, "getPriceInLoop", "bnUSD");
-        factor = exaPow(decay, blockDiff);
-        priceDiff = rate2.subtract(EMA);
-        EMA = rate2.subtract(priceDiff.multiply(factor).divide(ICX));
-        
-        blockDiff = (int)DAY;
-        sm.getBlock().increase(blockDiff-1);
-
-        BigInteger rate4 = BigInteger.valueOf(10).multiply(BigInteger.TEN.pow(17));
-        mockRate("USD", rate4);
-        balancedOracle.invoke(adminAccount, "getPriceInLoop", "bnUSD");
-        factor = exaPow(decay, blockDiff);
-        priceDiff = rate3.subtract(EMA);
-        EMA = rate3.subtract(priceDiff.multiply(factor).divide(ICX));
-        
-        // Assert
-        BigInteger priceInLoop = (BigInteger) balancedOracle.call("getLastPriceInLoop", "bnUSD");
-
-        assertEquals(EMA, priceInLoop);
-    }
-
-    @Test
     void EMA_DexAsset() {
         // Arrange
         String tokenSymbol = "BALN";

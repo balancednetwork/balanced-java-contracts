@@ -25,8 +25,6 @@ repositories {
 
 dependencies {
     compileOnly Dependencies.javaeeApi
-    implementation Dependencies.javaeeScorex
-    implementation Dependencies.minimalJson
     implementation project(':score-lib')
 
     testImplementation Dependencies.javaeeUnitTest
@@ -49,7 +47,7 @@ optimizedJar {
     mainClassName = 'network.balanced.score.core.balancedoracle.BalancedOracleImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
-        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
 }
 
@@ -76,7 +74,7 @@ deployJar {
 tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
-    finalizedBy jacocoTestReport 
+    finalizedBy jacocoTestReport
 }
 
 jacocoTestReport {

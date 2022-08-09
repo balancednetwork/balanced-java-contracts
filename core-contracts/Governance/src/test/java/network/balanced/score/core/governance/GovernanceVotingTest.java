@@ -344,6 +344,7 @@ public class GovernanceVotingTest extends GovernanceTestBase {
     @Test
     void evaluateVote_succeded() {
         // Arrange
+        Account voteEvaluator = sm.createAccount();
         BigInteger forVoters = BigInteger.valueOf(7).multiply(EXA);
         BigInteger againstVoters = BigInteger.valueOf(3).multiply(EXA);
         BigInteger totalSupply = BigInteger.TEN.multiply(EXA);
@@ -352,7 +353,7 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         // Act
         Map<String, Object> vote = getVote(voteIndex);
         goToDay((BigInteger)vote.get("end day"));
-        governance.invoke(owner, "evaluateVote", voteIndex);
+        governance.invoke(voteEvaluator, "evaluateVote", voteIndex);
         vote = getVote(voteIndex);
 
         // Assert

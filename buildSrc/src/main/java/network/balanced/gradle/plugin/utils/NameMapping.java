@@ -32,12 +32,12 @@ public enum NameMapping {
     loans("Loans"),
     governance("Governance"),
     oracle("DummyOracle"),
-    balanced_oracle("BalancedOracle"),
     dex("Dex"),
     staking("Staking"),
     sicx("Sicx"),
     baln("BalancedToken"),
-    feehandler("FeeHandler");
+    feehandler("FeeHandler"),
+    balancedoracle("BalancedOracle");
 
     private final String module;
 

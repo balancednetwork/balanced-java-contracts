@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,23 @@
 
 package network.balanced.score.core.dividends;
 
+import com.iconloop.score.test.Account;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import com.iconloop.score.test.Account;
-
 import score.Address;
 import score.Context;
+import scorex.util.HashMap;
 
 import java.math.BigInteger;
-import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.eq;
 
 class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
 
     private BigInteger batchSize = BigInteger.TWO;
+
     @BeforeEach
     void setup() throws Exception {
         sm.getBlock().increase(2 * DAY);
@@ -81,14 +80,14 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
 
         // Act
         dividendScore.invoke(balnScore, "updateBalnStake", staker1.getAddress(), BigInteger.ZERO, staker1Balance);
-        
+
         BigInteger expectedFees = BigInteger.TEN.pow(20);
         BigInteger expectedStakingFees = expectedFees.multiply(stakerPercentage).divide(ICX);
         addBnusdFeesAndMockDaoFund(expectedFees);
         staker1ExpectedFees = staker1ExpectedFees.add(expectedStakingFees);
 
         dividendScore.invoke(balnScore, "updateBalnStake", staker2.getAddress(), BigInteger.ZERO, totalStake);
-        
+
         expectedFees = BigInteger.valueOf(30).pow(20);
         expectedStakingFees = expectedFees.multiply(stakerPercentage).divide(ICX);
         addBnusdFeesAndMockDaoFund(expectedFees);
@@ -96,17 +95,21 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         staker2ExpectedFees = staker2ExpectedFees.add(expectedStakingFees.multiply(staker2Balance).divide(totalStake));
 
         BigInteger staker2Increase = BigInteger.valueOf(100).multiply(ICX);
-        dividendScore.invoke(balnScore, "updateBalnStake", staker2.getAddress(), staker2Balance, totalStake.add(staker2Increase));
+        dividendScore.invoke(balnScore, "updateBalnStake", staker2.getAddress(), staker2Balance,
+                totalStake.add(staker2Increase));
         staker2Balance = staker2Balance.add(staker2Increase);
 
         expectedFees = BigInteger.valueOf(10).pow(22);
         expectedStakingFees = expectedFees.multiply(stakerPercentage).divide(ICX);
         addBnusdFeesAndMockDaoFund(expectedFees);
-        staker1ExpectedFees = staker1ExpectedFees.add(expectedStakingFees.multiply(staker1Balance).divide(totalStake.add(staker2Increase)));
-        staker2ExpectedFees = staker2ExpectedFees.add(expectedStakingFees.multiply(staker2Balance).divide(totalStake.add(staker2Increase)));
+        staker1ExpectedFees =
+                staker1ExpectedFees.add(expectedStakingFees.multiply(staker1Balance).divide(totalStake.add(staker2Increase)));
+        staker2ExpectedFees =
+                staker2ExpectedFees.add(expectedStakingFees.multiply(staker2Balance).divide(totalStake.add(staker2Increase)));
 
 
-        dividendScore.invoke(balnScore, "updateBalnStake", staker1.getAddress(), staker1Balance, totalStake.add(staker2Increase).subtract(staker1Balance));
+        dividendScore.invoke(balnScore, "updateBalnStake", staker1.getAddress(), staker1Balance,
+                totalStake.add(staker2Increase).subtract(staker1Balance));
         staker1Balance = BigInteger.ZERO;
 
         expectedFees = BigInteger.TEN.pow(19);
@@ -116,15 +119,17 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
 
         // Assert
         Map<String, BigInteger> expected_result_staker1 = new HashMap<>();
-        expected_result_staker1.put(String.valueOf(bnUSDScore.getAddress()), staker1ExpectedFees);
+        expected_result_staker1.put(bnUSDScore.getAddress().toString(), staker1ExpectedFees);
 
         Map<String, BigInteger> expected_result_staker2 = new HashMap<>();
-        expected_result_staker2.put(String.valueOf(bnUSDScore.getAddress()), staker2ExpectedFees);
+        expected_result_staker2.put(bnUSDScore.getAddress().toString(), staker2ExpectedFees);
 
         mockStake(staker1.getAddress(), staker1Balance);
         mockStake(staker2.getAddress(), staker2Balance);
-        assertEquals(expected_result_staker1, dividendScore.call("getUnclaimedDividends", staker1.getAddress()));
-        assertEquals(expected_result_staker2, dividendScore.call("getUnclaimedDividends", staker2.getAddress()));
+        assertEquals(expected_result_staker1.toString(), ((Map<String, BigInteger>) dividendScore.call(
+                "getUnclaimedDividends", staker1.getAddress())).toString());
+        assertEquals(expected_result_staker2.toString(), ((Map<String, BigInteger>) dividendScore.call(
+                "getUnclaimedDividends", staker2.getAddress())).toString());
     }
 
     @Test
@@ -141,7 +146,7 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         // Act
         dividendScore.invoke(balnScore, "updateBalnStake", staker1.getAddress(), BigInteger.ZERO, staker1Balance);
         dividendScore.invoke(balnScore, "updateBalnStake", staker2.getAddress(), BigInteger.ZERO, totalStake);
-        
+
         BigInteger expectedFees = BigInteger.TEN.pow(20);
         BigInteger expectedStakingFees = expectedFees.multiply(stakerPercentage).divide(ICX);
         addBnusdFeesAndMockDaoFund(expectedFees);
@@ -152,15 +157,21 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         mockStake(staker1.getAddress(), staker1Balance);
         mockStake(staker2.getAddress(), staker2Balance);
 
-        contextMock.when(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker1.getAddress(), staker1ExpectedFees)).thenReturn("Token Transferred");
-        contextMock.when(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker2.getAddress(), staker2ExpectedFees)).thenReturn("Token Transferred");
+        contextMock.when(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker1.getAddress(),
+                staker1ExpectedFees)).thenReturn("Token Transferred");
+        contextMock.when(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker2.getAddress(),
+                staker2ExpectedFees)).thenReturn("Token Transferred");
         dividendScore.invoke(staker1, "claimDividends");
         dividendScore.invoke(staker2, "claimDividends");
-        contextMock.verify(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker1.getAddress(), staker1ExpectedFees));
-        contextMock.verify(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker2.getAddress(), staker2ExpectedFees));
+        contextMock.verify(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker1.getAddress(),
+                staker1ExpectedFees));
+        contextMock.verify(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker2.getAddress(),
+                staker2ExpectedFees));
 
-        assertEquals(Map.of(), dividendScore.call("getUnclaimedDividends", staker1.getAddress()));
-        assertEquals(Map.of(), dividendScore.call("getUnclaimedDividends", staker2.getAddress()));
+        assertEquals(Map.of(bnUSDScore.getAddress().toString(), BigInteger.ZERO), dividendScore.call(
+                "getUnclaimedDividends", staker1.getAddress()));
+        assertEquals(Map.of(bnUSDScore.getAddress().toString(), BigInteger.ZERO), dividendScore.call(
+                "getUnclaimedDividends", staker2.getAddress()));
     }
 
     private void addBnusdFeesAndMockDaoFund(BigInteger amount) {

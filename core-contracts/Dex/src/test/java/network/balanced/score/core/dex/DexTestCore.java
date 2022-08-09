@@ -369,6 +369,58 @@ public class DexTestCore extends DexTestBase {
     }
 
     @Test
+    void tokenFallback_donate() {
+        Account account = sm.createAccount();
+        turnDexOn();
+
+        final String data = "{" +
+                "\"method\": \"_deposit\"" +
+                "}";
+
+        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
+        contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
+        contextMock.when(() -> Context.call(any(Address.class), eq("decimals"))).thenReturn(BigInteger.valueOf(18));
+        contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class), any(BigInteger.class))).thenReturn(null);
+
+        BigInteger FIFTY = BigInteger.valueOf(50L).multiply(EXA);
+        //deposit
+        dexScore.invoke(bnusdScore, "tokenFallback", account.getAddress(), BigInteger.valueOf(50L).multiply(EXA), data.getBytes());
+        dexScore.invoke(balnScore, "tokenFallback", account.getAddress(), BigInteger.valueOf(50L).multiply(EXA), data.getBytes());
+        // add liquidity pool
+        dexScore.invoke(account, "add", balnScore.getAddress(), bnusdScore.getAddress(), FIFTY, FIFTY.divide(BigInteger.TWO), false);
+        BigInteger poolId = (BigInteger) dexScore.call("getPoolId", balnScore.getAddress(), bnusdScore.getAddress());
+        Map<String, Object> poolStats = (Map<String, Object>) dexScore.call("getPoolStats", poolId);
+        BigInteger initalBase = (BigInteger) poolStats.get("base");
+        BigInteger initalQuote = (BigInteger) poolStats.get("quote");
+        BigInteger initalSupply = (BigInteger) poolStats.get("total_supply");
+
+        BigInteger bnusdDonation = BigInteger.valueOf(100L).multiply(EXA);
+        JsonObject jsonData = new JsonObject();
+        JsonObject params = new JsonObject();
+        params.add("toToken", balnScore.getAddress().toString());
+        jsonData.add("method", "_donate");
+        jsonData.add("params", params);
+        dexScore.invoke(bnusdScore, "tokenFallback", ownerAccount.getAddress(), bnusdDonation, jsonData.toString().getBytes());
+        poolStats = (Map<String, Object>) dexScore.call("getPoolStats", poolId);
+
+        assertEquals(initalBase, poolStats.get("base"));
+        assertEquals(initalQuote.add(bnusdDonation), poolStats.get("quote"));
+
+        BigInteger balnDonation = BigInteger.valueOf(50L).multiply(EXA);
+        jsonData = new JsonObject();
+        params = new JsonObject();
+        params.add("toToken", bnusdScore.getAddress().toString());
+        jsonData.add("method", "_donate");
+        jsonData.add("params", params);
+        dexScore.invoke(balnScore, "tokenFallback", ownerAccount.getAddress(), balnDonation, jsonData.toString().getBytes());
+        poolStats = (Map<String, Object>) dexScore.call("getPoolStats", poolId);
+
+        assertEquals(initalBase.add(balnDonation), poolStats.get("base"));
+        assertEquals(initalQuote.add(bnusdDonation), poolStats.get("quote"));
+        assertEquals(initalSupply, poolStats.get("total_supply"));
+    }
+
+    @Test
     void tokenfallback_swapSicx() {
         Account account = sm.createAccount();
         turnDexOn();

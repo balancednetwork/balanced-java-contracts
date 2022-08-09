@@ -92,3 +92,6 @@ project(':BalancedToken').projectDir = file("token-contracts/BalancedToken")
 
 include(':FeeHandler')
 project(':FeeHandler').projectDir = file("core-contracts/FeeHandler")
+
+include(':BalancedOracle')
+project(':BalancedOracle').projectDir = file("core-contracts/BalancedOracle")
