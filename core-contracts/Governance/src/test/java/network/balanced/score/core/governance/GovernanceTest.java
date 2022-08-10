@@ -211,26 +211,6 @@ public class GovernanceTest extends GovernanceTestBase {
         verify(bwt.mock).adminTransfer(_from, _to, _value, _data);
     }
 
-    @Test
-    void setAddressesOnContract() {
-        // Arrange
-        String _contract = "loans";
-        Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwnerOrContract: Sender=" + notOwner.getAddress() + " Owner=" + owner.getAddress() + " Contract=" + governance.getAddress();
-        
-        // Act & Assert
-        Executable withNotOwner = () -> governance.invoke(notOwner, "setAddressesOnContract", _contract);
-        expectErrorMessage(withNotOwner, expectedErrorMessage);
-
-        // Act
-        governance.invoke(owner, "setAddressesOnContract", _contract);
-
-        // Assert
-        verify(loans.mock, times(1)).setDividends(dividends.getAddress());
-        verify(loans.mock, times(1)).setStaking(staking.getAddress());
-        verify(loans.mock, times(1)).setReserve(reserve.getAddress());
-        verify(loans.mock, times(1)).setRewards(rewards.getAddress());
-    }
 
     @Test
     void configureBalanced() {

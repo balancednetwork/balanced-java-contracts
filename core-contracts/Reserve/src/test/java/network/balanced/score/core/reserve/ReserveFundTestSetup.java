@@ -55,27 +55,7 @@ public class ReserveFundTestSetup extends ReserveFundTestBase {
     }
 
     @Test
-    void setgetGovernance() {
-        testGovernance(reserve, governanceScore, owner);
-    }
-
-    @Test
     void setAndGetAdmin() {
         testAdmin(reserve, governanceScore, admin);
-    }
-
-    @Test
-    void setAndGetLoans() {
-        testContractSettersAndGetters(reserve, governanceScore, admin, "setLoans", loans.getAddress(), "getLoans");
-    }
-
-    @Test
-    void testSetBaln() {
-        testContractSettersAndGetters(reserve, governanceScore, admin, "setBaln", baln.getAddress(), "getBaln");
-    }
-
-    @Test
-    void setAndGetSicx() {
-        testContractSettersAndGetters(reserve, governanceScore, admin, "setSicx", baln.getAddress(), "getSicx");
     }
 }

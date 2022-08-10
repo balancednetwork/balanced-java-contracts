@@ -57,7 +57,7 @@ public class ReserveFundTest extends ReserveFundTestBase {
         when(loans.mock.getCollateralTokens()).thenReturn(tokens);
     }
 
-    private void setBalance(MockContract<IRC2Mintable> token, BigInteger amount) {
+    private void setBalance(MockContract<? extends IRC2Mintable> token, BigInteger amount) {
         when(token.mock.balanceOf(reserve.getAddress())).thenReturn(amount);
     }
 
@@ -69,13 +69,7 @@ public class ReserveFundTest extends ReserveFundTestBase {
     public void setupContract() throws Exception {
         super.setup();
         reserve.invoke(governanceScore, "setAdmin", admin.getAddress());
-        reserve.invoke(admin, "setSicx", sicx.getAddress());
-        reserve.invoke(admin, "setBaln", baln.getAddress());
-        reserve.invoke(admin, "setLoans", loans.getAddress());
-
         setupCollaterals();
-        when(loans.mock.getOracle()).thenReturn(balancedOracle.getAddress());
-
     }
 
     @Test

@@ -31,9 +31,6 @@ class BalancedOracleTest extends BalancedOracleTestBase {
     public void setupContract() throws Exception {
         setup();
         balancedOracle.invoke(governance, "setAdmin", governance.getAddress());
-        balancedOracle.invoke(governance, "setDex", dex.getAddress());
-        balancedOracle.invoke(governance, "setOracle", oracle.getAddress());
-        balancedOracle.invoke(governance, "setStaking", staking.getAddress());
     }
 
     @Test

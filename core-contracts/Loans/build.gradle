@@ -82,6 +82,7 @@ deployJar {
     parameters {
         arg('_governance', Addresses.mainnet.governance)
     }
+    // need to be deployed after reserveFund address upgrade
 }
 
 test {

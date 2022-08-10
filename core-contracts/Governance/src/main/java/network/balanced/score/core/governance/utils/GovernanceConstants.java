@@ -71,7 +71,6 @@ public class GovernanceConstants extends Constants {
             entry("dex", "governance"),
             entry("rewards", "governance"),
             entry("dividends", "governance"),
-            entry("daofund", "governance"),
             entry("reserve", "governance"),
             entry("bnUSD", "loans"),
             entry("baln", "rewards"),

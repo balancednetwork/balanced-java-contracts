@@ -19,27 +19,11 @@ package network.balanced.score.core.balancedoracle;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
-import com.iconloop.score.test.TestBase;
-import network.balanced.score.lib.structs.Disbursement;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import score.Address;
-import score.Context;
 
 import java.math.BigInteger;
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import network.balanced.score.lib.test.UnitTest;
+import network.balanced.score.lib.test.mock.MockBalanced;
 import network.balanced.score.lib.test.mock.MockContract;
 import network.balanced.score.lib.interfaces.*;
 
@@ -49,20 +33,22 @@ class BalancedOracleTestBase extends UnitTest {
     protected static final ServiceManager sm = getServiceManager();
     protected static final Account owner = sm.createAccount();
     protected static final Account adminAccount = sm.createAccount();
+    protected static final BigInteger icxBnsudPoolId = BigInteger.TWO;
 
     protected MockContract<Dex> dex;
     protected MockContract<Oracle> oracle;
     protected MockContract<Staking> staking;
 
     protected Score balancedOracle;
-    protected static final Account governance = Account.newScoreAccount(scoreCount);
+    protected Account governance;
     
-    protected static final BigInteger icxBnsudPoolId = BigInteger.TWO;
 
     protected void setup() throws Exception {
-        dex = new MockContract<Dex>(DexScoreInterface.class, sm, owner);
-        oracle = new MockContract<Oracle>(OracleScoreInterface.class, sm, owner);
-        staking = new MockContract<Staking>(StakingScoreInterface.class, sm, owner);
+        MockBalanced mockBalanced = new MockBalanced(sm, owner);
+        dex = mockBalanced.dex;
+        oracle = mockBalanced.oracle;
+        staking = mockBalanced.staking;
+        governance = mockBalanced.governance.account;
         balancedOracle = sm.deploy(owner, BalancedOracleImpl.class, governance.getAddress());
 
         sm.getBlock().increase(DAY);

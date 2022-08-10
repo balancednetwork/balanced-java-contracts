@@ -36,26 +36,6 @@ class BalancedOracleTestSetup extends BalancedOracleTestBase {
     }
 
     @Test
-    void testGovernance() {
-        testGovernance(balancedOracle, governance, owner);
-    }
-
-    @Test
-    void setGetOracle() {
-        testContractSettersAndGetters(balancedOracle, governance, adminAccount, "setOracle", oracle.getAddress(), "getOracle");
-    }
-
-    @Test
-    void setGetDex() {
-        testContractSettersAndGetters(balancedOracle, governance, adminAccount, "setDex", dex.getAddress(), "getDex");
-    }
-
-    @Test
-    void setGetStaking() {
-        testContractSettersAndGetters(balancedOracle, governance, adminAccount, "setStaking", staking.getAddress(), "getStaking");
-    }
-
-    @Test
     void addRemoveDexPricedAssets() {
         // Arrange
         testAdmin();

@@ -67,18 +67,8 @@ class LoansTest extends LoansTestBase {
         loans.invoke(admin, "setLiquidationRatio", "sICX", BigInteger.valueOf(9));
         loans.invoke(admin, "setLockingRatio", "sICX", BigInteger.valueOf(10));
 
-        loans.invoke(admin, "setStaking", staking.getAddress());
-        loans.invoke(admin, "setRewards", rewards.getAddress());
-        loans.invoke(admin, "setReserve", reserve.getAddress());
-        loans.invoke(admin, "setDividends", dividends.getAddress());
-
         Map<String, Object> params = (Map<String, Object>)loans.call("getParameters");
         assertEquals(admin.getAddress(), params.get("admin"));
-        assertEquals(governance.getAddress(), params.get("governance"));
-        assertEquals(staking.getAddress(), params.get("staking"));
-        assertEquals(rewards.getAddress(), params.get("rewards"));
-        assertEquals(reserve.getAddress(), params.get("reserve_fund"));
-        assertEquals(dividends.getAddress(), params.get("dividends"));
 
         assertEquals(1, params.get("redeem batch size"));
         assertEquals(BigInteger.valueOf(2), params.get("retire percent max"));
@@ -1280,7 +1270,7 @@ class LoansTest extends LoansTestBase {
         mockSwap(bnusd, rebalanceAmount, expectedBnusdRecived);
 
         // Act
-        loans.invoke(rebalancing, "raisePrice", "sICX", rebalanceAmount);
+        loans.invoke(mockBalanced.rebalancing.account, "raisePrice", "sICX", rebalanceAmount);
 
         // Assert
         BigInteger remainingBnusd = expectedBnusdRecived;
@@ -1356,7 +1346,7 @@ class LoansTest extends LoansTestBase {
         mockSwap(bnusd, rebalanceAmount, expectedBnusdRecived);
 
         // Act
-        loans.invoke(rebalancing, "raisePrice", "iETH", rebalanceAmount);
+        loans.invoke(mockBalanced.rebalancing.account, "raisePrice", "iETH", rebalanceAmount);
 
         // Assert
         BigInteger remainingBnusd = expectedBnusdRecived;
@@ -1431,7 +1421,7 @@ class LoansTest extends LoansTestBase {
         mockSwap(bnusd, rebalanceAmount, rebalanceAmount);
 
         // Act
-        loans.invoke(rebalancing, "raisePrice", "sICX", totalTokenRequired);
+        loans.invoke(mockBalanced.rebalancing.account, "raisePrice", "sICX", totalTokenRequired);
 
         // Assert
         BigInteger remainingBnusd = expectedBnusdRecived;
@@ -1488,7 +1478,7 @@ class LoansTest extends LoansTestBase {
         mockSwap(sicx, rebalanceAmount, rebalanceAmount);
 
         // Act
-        loans.invoke(rebalancing, "lowerPrice", "sICX", rebalanceAmount);
+        loans.invoke(mockBalanced.rebalancing.account, "lowerPrice", "sICX", rebalanceAmount);
 
         // Assert
         BigInteger remainingSicx = expectedSICXRecived;
@@ -1565,7 +1555,7 @@ class LoansTest extends LoansTestBase {
         mockSwap(ieth, rebalanceAmount, rebalanceAmount);
 
         // Act
-        loans.invoke(rebalancing, "lowerPrice", "iETH", rebalanceAmount);
+        loans.invoke(mockBalanced.rebalancing.account, "lowerPrice", "iETH", rebalanceAmount);
 
         // Assert
         BigInteger remainingIETH = expectedIETHRecived;
@@ -1642,7 +1632,7 @@ class LoansTest extends LoansTestBase {
         mockSwap(sicx, rebalanceAmount, rebalanceAmount);
 
         // Act
-        loans.invoke(rebalancing, "lowerPrice", "sICX", totalTokenRequired);
+        loans.invoke(mockBalanced.rebalancing.account, "lowerPrice", "sICX", totalTokenRequired);
 
         // Assert
         BigInteger remainingSicx = expectedSICXRecived;

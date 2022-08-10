@@ -22,7 +22,7 @@ public class BalancedAddressManager {
         contractAddresses.set(name, address);
     }
 
-    private static Address fetchAddress(String name) {
+    public static Address fetchAddress(String name) {
         return Context.call(Address.class, contractAddresses.getOrDefault(Names.GOVERNANCE, mainnetGovernance), "getAddress", name);
     }
 
@@ -30,7 +30,10 @@ public class BalancedAddressManager {
         Address address = contractAddresses.get(name);
         if (address == null) {
             address = fetchAddress(name);
-            contractAddresses.set(name, address);
+            try {
+                contractAddresses.set(name, address);
+            } catch (Exception e) {
+            }
         }
 
         return address;

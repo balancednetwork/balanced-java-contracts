@@ -21,6 +21,7 @@ import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
 import network.balanced.score.lib.test.UnitTest;
+import network.balanced.score.lib.test.mock.MockBalanced;
 import network.balanced.score.lib.test.mock.MockContract;
 import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.interfaces.tokens.*;
@@ -45,21 +46,24 @@ public class ReserveFundTestBase extends UnitTest {
     Account admin = sm.createAccount();
 
 
-    public static final Account governanceScore = Account.newScoreAccount(1);
+    public Account governanceScore;
     protected Score reserve;
 
+    MockBalanced mockBalanced;
     MockContract<Loans> loans;
-    MockContract<IRC2Mintable> baln;
-    MockContract<IRC2Mintable> sicx;
+    MockContract<BalancedToken> baln;
+    MockContract<Sicx> sicx;
     MockContract<IRC2Mintable> ieth;
     MockContract<BalancedOracle> balancedOracle;
 
     protected void setup() throws Exception {
-        loans = new MockContract<>(LoansScoreInterface.class, sm, admin);
-        baln = new MockContract<>(IRC2MintableScoreInterface.class, sm, admin);
-        sicx = new MockContract<>(IRC2MintableScoreInterface.class, sm, admin);
+        mockBalanced = new MockBalanced(sm, owner);
+        governanceScore = mockBalanced.governance.account;
+        loans = mockBalanced.loans;
+        baln = mockBalanced.baln;
+        sicx = mockBalanced.sicx;
         ieth = new MockContract<>(IRC2MintableScoreInterface.class, sm, admin);
-        balancedOracle = new MockContract<>(BalancedOracleScoreInterface.class, sm, admin);
+        balancedOracle = mockBalanced.balancedOracle;
         reserve = sm.deploy(owner, ReserveFund.class, governanceScore.getAddress());    
     }
 }
