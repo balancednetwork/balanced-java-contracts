@@ -39,7 +39,7 @@ public class Position {
     private final BranchDB<String, VarDB<BigInteger>> created = Context.newBranchDB("created", BigInteger.class);
     private final BranchDB<String, VarDB<Address>> address = Context.newBranchDB("address", Address.class);
     private final BranchDB<String, BranchDB<String, DictDB<String, BigInteger>>> debt = Context.newBranchDB(
-            "loan_balance", BigInteger.class);
+            "loan_balance", BigInteger.class); // Address:CollateralSymbol:AssetSymbol:debt
     private final BranchDB<String, DictDB<String, BigInteger>> collateral = Context.newBranchDB("collateral_balance"
             , BigInteger.class);
     private final BranchDB<String, DictDB<String, BigInteger>> totalDebt = Context.newBranchDB(

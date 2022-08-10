@@ -139,7 +139,7 @@ public class Asset {
         Address assetAddress = this.assetAddress.at(dbKey).get();
         Token assetContract = new Token(assetAddress);
 
-        BigInteger badDebt = getBadDebt(SICX_SYMBOL);
+        BigInteger badDebt = BigInteger.ZERO;
         BigInteger poolValue = BigInteger.ZERO;
         int collateralListCount = CollateralDB.collateralList.size();
         for (int i = 0; i < collateralListCount; i++) {
@@ -151,9 +151,10 @@ public class Asset {
 
             Address collateralAddress = collateral.getAssetAddress();
             Token collateralContract = new Token(collateralAddress);
-            poolValue = poolValue.add(getLiquidationPool(SICX_SYMBOL)
-                                 .multiply(assetContract.priceInLoop()))
-                                 .divide(collateralContract.priceInLoop());
+            BigInteger collateralPoolValue = getLiquidationPool(symbol)
+                .multiply(assetContract.priceInLoop())
+                .divide(collateralContract.priceInLoop());
+            poolValue = poolValue.add(collateralPoolValue);
             badDebt = badDebt.add(getBadDebt(symbol));
         }
 
