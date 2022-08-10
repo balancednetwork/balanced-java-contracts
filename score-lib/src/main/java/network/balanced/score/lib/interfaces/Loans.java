@@ -33,8 +33,7 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, GovernanceAddress, StakingAddress,
-        RebalancingAddress, DividendsAddress, ReserveAddress, RewardsAddress, OracleAddress {
+public interface Loans extends Name, TokenFallback, AdminAddress, AddressManager {
 
     @External
     void toggleLoansOn();

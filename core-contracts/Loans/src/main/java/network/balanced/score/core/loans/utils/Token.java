@@ -20,9 +20,8 @@ import score.Address;
 
 import java.math.BigInteger;
 
-import network.balanced.score.core.loans.LoansVariables;
-
 import static network.balanced.score.core.loans.LoansImpl.call;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getBalancedOracle;
 
 public class Token {
 
@@ -49,11 +48,11 @@ public class Token {
     }
 
     public BigInteger priceInLoop() {
-        return (BigInteger) call(LoansVariables.oracle.get(), "getPriceInLoop", symbol());
+        return (BigInteger) call(getBalancedOracle(), "getPriceInLoop", symbol());
     }
 
     public BigInteger lastPriceInLoop() {
-        return (BigInteger) call(LoansVariables.oracle.get(), "getLastPriceInLoop", symbol());
+        return (BigInteger) call(getBalancedOracle(), "getLastPriceInLoop", symbol());
     }
 
     public void mintTo(Address to, BigInteger amount) {

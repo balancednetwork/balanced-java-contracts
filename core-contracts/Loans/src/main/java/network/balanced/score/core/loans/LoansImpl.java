@@ -50,6 +50,7 @@ import static network.balanced.score.core.loans.utils.LoansConstants.*;
 import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Math.convertToNumber;
+import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 
 public class LoansImpl implements Loans {
 
@@ -72,13 +73,7 @@ public class LoansImpl implements Loans {
             maxDebtsListLength.set(MAX_DEBTS_LIST_LENGTH);
         }
 
-        if (liquidationRatio.get(SICX_SYMBOL) == null) {
-            lockingRatio.set(SICX_SYMBOL, lockingRatioSICX.get());
-            liquidationRatio.set(SICX_SYMBOL, liquidationRatioSICX.get());
-        }
-
-        CollateralDB.migrateToNewDBs();
-        AssetDB.migrateToNewDBs();
+        setGovernance(governance.get());
     }
 
     @External(readonly = true)
@@ -88,7 +83,7 @@ public class LoansImpl implements Loans {
 
     @External
     public void toggleLoansOn() {
-        only(governance);
+        only(getGovernance());
         loansOn.set(!loansOn.get());
         ContractActive("Loans", loansOn.get() ? "Active" : "Inactive");
     }
@@ -111,8 +106,8 @@ public class LoansImpl implements Loans {
 
     @External
     public void delegate(PrepDelegations[] prepDelegations) {
-        only(governance);
-        Context.call(staking.get(), "delegate", (Object) prepDelegations);
+        only(getGovernance());
+        Context.call(getStaking(), "delegate", (Object) prepDelegations);
     }
 
     @External(readonly = true)
@@ -378,7 +373,7 @@ public class LoansImpl implements Loans {
 
         asset.burnFrom(from, repaid);
 
-        Context.call(rewards.get(), "updateRewardsData", "Loans", oldSupply, from, oldUserDebt);
+        Context.call(getRewards(), "updateRewardsData", "Loans", oldSupply, from, oldUserDebt);
 
         asset.checkForDeadMarket();
         String logMessage = "Loan of " + repaid + " " + assetSymbol + " repaid to Balanced.";
@@ -388,7 +383,7 @@ public class LoansImpl implements Loans {
     @External
     public void raisePrice(String _collateralSymbol, BigInteger _total_tokens_required) {
         loansOn();
-        only(rebalancing);
+        only(getRebalance());
         String collateralSymbol = _collateralSymbol;
         Address collateralAddress = Address.fromString(CollateralDB.symbolMap.get(collateralSymbol));
 
@@ -397,8 +392,8 @@ public class LoansImpl implements Loans {
         Address assetAddress = asset.getAssetAddress();
 
         BigInteger oldTotalDebt = totalDebts.getOrDefault(assetSymbol, BigInteger.ZERO);
-        BigInteger poolID = Context.call(BigInteger.class, dex.get(), "getPoolId", collateralAddress, assetAddress);
-        BigInteger rate = Context.call(BigInteger.class, dex.get(), "getBasePriceInQuote", poolID);
+        BigInteger poolID = Context.call(BigInteger.class, getDex(), "getPoolId", collateralAddress, assetAddress);
+        BigInteger rate = Context.call(BigInteger.class, getDex(), "getBasePriceInQuote", poolID);
         int batchSize = redeemBatch.get();
         
         PositionBatch batch = asset.getBorrowers(collateralSymbol).readDataBatch(batchSize);
@@ -410,7 +405,7 @@ public class LoansImpl implements Loans {
 
         expectedToken.set(assetAddress);
         byte[] data = createSwapData(assetAddress);
-        transferCollateral(collateralSymbol, dex.get(), collateralToSell, "sICX swapped for bnUSD", data);
+        transferCollateral(collateralSymbol, getDex(), collateralToSell, "sICX swapped for bnUSD", data);
 
         BigInteger bnUSDReceived = amountReceived.get();
         amountReceived.set(null);
@@ -449,7 +444,7 @@ public class LoansImpl implements Loans {
             "'c': " + collateralShare.negate() + "}, ");
         }
 
-        Context.call(rewards.get(), "updateBatchRewardsData", "Loans", oldTotalDebt, rewardsBatchList);
+        Context.call(getRewards(), "updateBatchRewardsData", "Loans", oldTotalDebt, rewardsBatchList);
 
         changeLog.delete(changeLog.length()-2, changeLog.length()).append("}");
 
@@ -459,7 +454,7 @@ public class LoansImpl implements Loans {
     @External
     public void lowerPrice(String _collateralSymbol, BigInteger _total_tokens_required) {
         loansOn();
-        only(rebalancing);
+        only(getRebalance());
         String collateralSymbol = _collateralSymbol;
         String assetSymbol = BNUSD_SYMBOL;
         Asset asset = AssetDB.getAsset(assetSymbol);
@@ -483,7 +478,7 @@ public class LoansImpl implements Loans {
 
         expectedToken.set(collateral.getAssetAddress());
         byte[] data = createSwapData(collateral.getAssetAddress());
-        transferAsset(assetSymbol, dex.get(), bnusdToSell, "bnUSD swapped for sICX", data);
+        transferAsset(assetSymbol, getDex(), bnusdToSell, "bnUSD swapped for sICX", data);
         BigInteger receivedSicx = amountReceived.get();
         amountReceived.set(null);
 
@@ -519,7 +514,7 @@ public class LoansImpl implements Loans {
                 "'c': " + collateralShare + "}, ");
         }
 
-        Context.call(rewards.get(), "updateBatchRewardsData", "Loans", oldTotalDebt, rewardsBatchList);
+        Context.call(getRewards(), "updateBatchRewardsData", "Loans", oldTotalDebt, rewardsBatchList);
 
         changeLog.delete(changeLog.length()-2, changeLog.length()).append("}");
         Rebalance(Context.getCaller(), assetSymbol, changeLog.toString(), batch.totalDebt);
@@ -534,7 +529,7 @@ public class LoansImpl implements Loans {
         JsonObject data = new JsonObject();
         data.set("method", "unstake");
         data.set("user", from.toString());
-        transferCollateral(SICX_SYMBOL, staking.get(), _value, "SICX Collateral withdrawn and unstaked", data.toString().getBytes());
+        transferCollateral(SICX_SYMBOL, getStaking(), _value, "SICX Collateral withdrawn and unstaked", data.toString().getBytes());
     }
 
     @External
@@ -575,7 +570,7 @@ public class LoansImpl implements Loans {
             BigInteger debt = position.getDebt(collateralSymbol, symbol);
             BigInteger oldUserDebt = position.getTotalDebt(symbol);
             if (asset.isActive() && debt.compareTo(BigInteger.ZERO) > 0) {
-                Context.call(rewards.get(), "updateRewardsData", "Loans", oldTotalDebt, _owner, oldUserDebt);
+                Context.call(getRewards(), "updateRewardsData", "Loans", oldTotalDebt, _owner, oldUserDebt);
 
                 BigInteger badDebt = asset.getBadDebt(collateralSymbol);
                 asset.setBadDebt(collateralSymbol, badDebt.add(debt));
@@ -616,7 +611,7 @@ public class LoansImpl implements Loans {
         if (inPool.compareTo(badDebtCollateral) >= 0) {
             asset.setLiquidationPool(collateralSymbol, inPool.subtract(badDebtCollateral));
             if (badDebt.equals(BigInteger.ZERO)) {
-                transferCollateral(collateralSymbol, reserve.get(), inPool.subtract(badDebtCollateral), "Sweep to ReserveFund:",
+                transferCollateral(collateralSymbol, getReserve(), inPool.subtract(badDebtCollateral), "Sweep to ReserveFund:",
                         new byte[0]);
             }
 
@@ -626,7 +621,7 @@ public class LoansImpl implements Loans {
         asset.setLiquidationPool(collateralSymbol, null);
         BigInteger remaningCollateral = badDebtCollateral.subtract(inPool);
         BigInteger remaningValue =  remaningCollateral.multiply(collateralPriceInLoop).divide(EXA);
-        Context.call(reserve.get(), "redeem", from, remaningValue);
+        Context.call(getReserve(), "redeem", from, remaningValue);
         return inPool;
 
     }
@@ -709,14 +704,14 @@ public class LoansImpl implements Loans {
                         " given an existing loan value of " + totalDebt + ".");
 
         BigInteger oldUserDebt = position.getTotalDebt(assetToBorrow);
-        Context.call(rewards.get(), "updateRewardsData", "Loans", oldTotalDebt, from, oldUserDebt);
+        Context.call(getRewards(), "updateRewardsData", "Loans", oldTotalDebt, from, oldUserDebt);
 
         position.setDebt(collateralSymbol, assetToBorrow, holdings.add(newDebt));
 
         borrowAsset.mintTo(from, amount);
         String logMessage = "Loan of " + amount + " " + assetToBorrow + " from Balanced.";
         OriginateLoan(from, assetToBorrow, amount, logMessage);
-        borrowAsset.mintTo(Context.call(Address.class, governance.get(), "getContractAddress", "feehandler"), fee);
+        borrowAsset.mintTo(getFeehandler(), fee);
         FeePaid(assetToBorrow, fee, "origination");
     }
 
@@ -750,7 +745,7 @@ public class LoansImpl implements Loans {
         }
 
         expectedToken.set(CollateralDB.getCollateral(SICX_SYMBOL).getAssetAddress());
-        Context.call(amount, staking.get(), "stakeICX", Context.getAddress(), new byte[0]);
+        Context.call(amount, getStaking(), "stakeICX", Context.getAddress(), new byte[0]);
 
         BigInteger received = amountReceived.getOrDefault(BigInteger.ZERO);
         Context.require(!received.equals(BigInteger.ZERO), TAG + ": Expected sICX not received.");
@@ -761,7 +756,7 @@ public class LoansImpl implements Loans {
 
     @External
     public void setAdmin(Address _address) {
-        only(governance);
+        only(getGovernance());
         admin.set(_address);
     }
 
@@ -771,100 +766,13 @@ public class LoansImpl implements Loans {
     }
 
     @External
-    public void setGovernance(Address _address) {
-        onlyOwner();
-        isContract(_address);
-        governance.set(_address);
+    public void updateAddress(String name) {
+        resetAddress(name);
     }
 
     @External(readonly = true)
-    public Address getGovernance() {
-        return governance.get();
-    }
-
-    @External
-    public void setDex(Address _address) {
-        only(admin);
-        isContract(_address);
-        dex.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getDex() {
-        return dex.get();
-    }
-
-    @External
-    public void setRebalance(Address _address) {
-        only(admin);
-        isContract(_address);
-        rebalancing.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getRebalance() {
-        return rebalancing.get();
-    }
-
-    @External
-    public void setDividends(Address _address) {
-        only(admin);
-        isContract(_address);
-        dividends.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getDividends() {
-        return dividends.get();
-    }
-
-    @External
-    public void setReserve(Address _address) {
-        only(admin);
-        isContract(_address);
-        reserve.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getReserve() {
-        return reserve.get();
-    }
-
-    @External
-    public void setRewards(Address _address) {
-        only(admin);
-        isContract(_address);
-        rewards.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getRewards() {
-        return rewards.get();
-    }
-
-    @External
-    public void setStaking(Address _address) {
-        only(admin);
-        isContract(_address);
-        staking.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getStaking() {
-        return staking.get();
-    }
-
-
-    @External
-    public void setOracle(Address _address) {
-        only(admin);
-        isContract(_address);
-        oracle.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getOracle() {
-        return oracle.get();
+    public Address getAddress(String name) {
+        return getAddressByName(name);
     }
 
     @External
@@ -933,7 +841,7 @@ public class LoansImpl implements Loans {
 
     @External
     public void setTimeOffset(BigInteger deltaTime) {
-        only(governance);
+        only(getGovernance());
         timeOffset.set(deltaTime);
     }
 
@@ -957,11 +865,6 @@ public class LoansImpl implements Loans {
         Map<String, Object> parameters = new HashMap<>();
 
         parameters.put("admin", admin.get());
-        parameters.put("governance", governance.get());
-        parameters.put("dividends", dividends.get());
-        parameters.put("reserve_fund", reserve.get());
-        parameters.put("rewards", rewards.get());
-        parameters.put("staking", staking.get());
         parameters.put("locking ratio", lockingRatio.get(SICX_SYMBOL));
         parameters.put("liquidation ratio", liquidationRatio.get(SICX_SYMBOL));
         parameters.put("origination fee", originationFee.get());
