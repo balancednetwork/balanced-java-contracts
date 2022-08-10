@@ -38,12 +38,15 @@ public class Check {
                 "SenderNotScoreOwnerOrContract: Sender=" + caller + " Owner=" + owner + " Contract=" + contract);
     }
 
-    public static void only(VarDB<Address> authorizedCaller) {
+    public static void only(Address authorizedCallerAddress) {
         Address caller = Context.getCaller();
-        Address authorizedCallerAddress = authorizedCaller.get();
         Context.require(authorizedCallerAddress != null, "Authorization Check: Address not set");
         Context.require(caller.equals(authorizedCallerAddress),
                 "Authorization Check: Authorization failed. Caller: " + caller + " Authorized Caller: " + authorizedCallerAddress);
+    }
+
+    public static void only(VarDB<Address> authorizedCaller) {
+        only(authorizedCaller.get());
     }
 
     public static void onlyEither(VarDB<Address> authorizedCaller, VarDB<Address> authorizedCaller2) {

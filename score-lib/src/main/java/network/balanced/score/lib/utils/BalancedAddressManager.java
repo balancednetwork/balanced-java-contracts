@@ -2,40 +2,38 @@ package network.balanced.score.lib.utils;
 
 import score.Address;
 import score.Context;
-import score.VarDB;
 import score.DictDB;
 
 public class BalancedAddressManager {
     public static String TAG = "BalancedAddressManager";
     private static final Address mainnetGovernance = Address.fromString("cx44250a12074799e26fdeee75648ae47e2cc84219");
-    private static final VarDB<Address> governanceAddress = Context.newVarDB(TAG + "GovernanceAddress", Address.class);
     public static final DictDB<String, Address> contractAddresses = Context.newDictDB(TAG + "ContractAddresses", Address.class);
         
     public static void setGovernance(Address address) {
-        governanceAddress.set(address);
+        contractAddresses.set(Names.GOVERNANCE, address);
     }
 
-    public static Address getAddress(String name) {
-        Address address = contractAddresses.get(name);
-        if (name == null) {
-            address = fetchAddress(name);
-            setAddress(name, address);
-        }
-
-        return address;
+    public static Address getAddressByName(String name) {
+        return contractAddresses.get(name);
     }
 
     public static void resetAddress(String name) {
         Address address = fetchAddress(name);
-        setAddress(name, address);
-    }
-
-    public static void setAddress(String name, Address address) {
         contractAddresses.set(name, address);
     }
 
-    public static Address fetchAddress(String name) {
-        return Context.call(Address.class, governanceAddress.getOrDefault(mainnetGovernance), "getAddress", name);
+    private static Address fetchAddress(String name) {
+        return Context.call(Address.class, contractAddresses.getOrDefault(Names.GOVERNANCE, mainnetGovernance), "getAddress", name);
+    }
+
+    private static Address getAddress(String name) {
+        Address address = contractAddresses.get(name);
+        if (address == null) {
+            address = fetchAddress(name);
+            contractAddresses.set(name, address);
+        }
+
+        return address;
     }
 
     public static Address getBaln() {
@@ -107,6 +105,6 @@ public class BalancedAddressManager {
     }
 
     public static Address getGovernance() {
-        return getAddress(Names.GOVERNANCE);
+        return contractAddresses.get(Names.GOVERNANCE);
     }
 }
