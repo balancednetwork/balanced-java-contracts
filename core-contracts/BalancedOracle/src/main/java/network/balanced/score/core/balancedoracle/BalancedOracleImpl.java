@@ -18,18 +18,14 @@ package network.balanced.score.core.balancedoracle;
 
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.admin;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.assetPeg;
-import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.dex;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.dexPriceEMADecay;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.dexPricedAssets;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.governance;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.lastPriceInLoop;
-import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.oracle;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.oraclePriceEMADecay;
-import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.staking;
-import static network.balanced.score.lib.utils.Check.isContract;
 import static network.balanced.score.lib.utils.Check.only;
-import static network.balanced.score.lib.utils.Check.onlyOwner;
 import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import network.balanced.score.lib.utils.Names;
 
 import java.math.BigInteger;
@@ -45,16 +41,16 @@ public class BalancedOracleImpl implements BalancedOracle {
     public static final String TAG = Names.BALANCEDORACLE;
 
     public BalancedOracleImpl(@Optional Address _governance) {
-        if (governance.get() != null){
-            return;
+        if (governance.get() == null){
+            governance.set(_governance);
+            assetPeg.set("bnUSD", "USD");
+            dexPricedAssets.set("BALN",  BigInteger.valueOf(3));
+    
+            dexPriceEMADecay.set(EXA);
+            oraclePriceEMADecay.set(EXA);
         }
 
-        governance.set(_governance);
-        assetPeg.set("bnUSD", "USD");
-        dexPricedAssets.set("BALN",  BigInteger.valueOf(3));
-
-        dexPriceEMADecay.set(EXA);
-        oraclePriceEMADecay.set(EXA);
+        setGovernance(governance.get());
     }
     
     @External(readonly = true)
@@ -144,19 +140,8 @@ public class BalancedOracleImpl implements BalancedOracle {
     }
 
     @External
-    public void setGovernance(Address _address) {
-        onlyOwner();
-        governance.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getGovernance() {
-        return governance.get();
-    }
-
-    @External
     public void setAdmin(Address _address) {
-        only(governance);
+        only(getGovernance());
         admin.set(_address);
     }
 
@@ -166,48 +151,22 @@ public class BalancedOracleImpl implements BalancedOracle {
     }
 
     @External
-    public void setOracle(Address _address) {
-        only(admin);
-        isContract(_address);
-        oracle.set(_address);
+    public void updateAddress(String name) {
+        resetAddress(name);
     }
 
     @External(readonly = true)
-    public Address getOracle() {
-        return oracle.get();
-    }
-
-    @External
-    public void setDex(Address _address) {
-        only(admin);
-        isContract(_address);
-        dex.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getDex() {
-        return dex.get();
-    }
-
-    @External
-    public void setStaking(Address _address){
-        only(admin);
-        isContract(_address);
-        staking.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getStaking() {
-        return staking.get();
+    public Address getAddress(String name) {
+        return getAddressByName(name);
     }
 
     private BigInteger getSICXPriceInLoop() {
-        return Context.call(BigInteger.class, staking.get(), "getTodayRate");
+        return Context.call(BigInteger.class, getStaking(), "getTodayRate");
     }
 
     private BigInteger getDexPriceInLoop(String symbol) {
         BigInteger poolID = dexPricedAssets.get(symbol);
-        BigInteger bnusdPriceInAsset = Context.call(BigInteger.class, dex.get(), "getQuotePriceInBase", poolID);
+        BigInteger bnusdPriceInAsset = Context.call(BigInteger.class, getDex(), "getQuotePriceInBase", poolID);
 
         BigInteger loopRate = getLoopRate("USD");
         BigInteger priceInLoop = loopRate.multiply(bnusdPriceInAsset).divide(EXA);
@@ -215,7 +174,7 @@ public class BalancedOracleImpl implements BalancedOracle {
     }
 
     private BigInteger getLoopRate(String symbol) {
-        Map<String, Object> priceData = (Map<String, Object>) Context.call(oracle.get(), "get_reference_data", symbol, "ICX");
+        Map<String, Object> priceData = (Map<String, Object>) Context.call(getOracle(), "get_reference_data", symbol, "ICX");
         BigInteger priceInLoop =  (BigInteger) priceData.get("rate");
 
         return EMACalculator.updateEMA(symbol, priceInLoop, getOraclePriceEMADecay());

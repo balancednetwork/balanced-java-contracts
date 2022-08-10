@@ -29,11 +29,8 @@ import foundation.icon.score.client.ScoreInterface;
 @ScoreInterface
 public interface BalancedOracle extends 
         Name,
-        GovernanceAddress,
         AdminAddress,
-        DexAddress,
-        OracleAddress, 
-        StakingAddress {
+        AddressManager {
 
     @External
     BigInteger getPriceInLoop(String symbol);
