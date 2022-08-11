@@ -18,7 +18,7 @@ package network.balanced.score.core.governance;
 
 import static network.balanced.score.core.governance.DeploymentTester.src.main.java.network.balanced.score.core.deploymenttester.DeploymentTester.name;
 import static network.balanced.score.lib.test.integration.BalancedUtils.createParameter;
-import static network.balanced.score.lib.test.integration.BalancedUtils.createVoteAction;
+import static network.balanced.score.lib.test.integration.BalancedUtils.createTransaction;
 import static network.balanced.score.lib.test.integration.BalancedUtils.getContractBytes;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.newScoreClient;
@@ -201,8 +201,8 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
             .add(createParameter(newSetterValue));
 
         JsonArray actions = new JsonArray()
-            .add(createVoteAction(balanced.governance._address(), "deployTo", deployToParameters))
-            .add(createVoteAction(new foundation.icon.jsonrpc.Address(contractAddress.toString()), "setValue2", setNewValueParameter));
+            .add(createTransaction(balanced.governance._address(), "deployTo", deployToParameters))
+            .add(createTransaction(new foundation.icon.jsonrpc.Address(contractAddress.toString()), "setValue2", setNewValueParameter));
 
         // Act
         owner.governance.execute(actions.toString());
