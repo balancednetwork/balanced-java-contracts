@@ -367,8 +367,8 @@ public class GovernanceVotingTest extends GovernanceTestBase {
     @Test
     void evaluateVote_executed() {
         // Arrange
-        String actions = "[[\"" + daofund.getAddress().toString() +  "\", \"name\", []]]";
-        
+        String actions = new JsonArray().add(createTransaction(daofund.getAddress(), "name", new JsonArray())).toString();
+     
         // Act
         BigInteger voteIndex = executeVoteWithActions(actions);
         Map<String, Object> vote = getVote(voteIndex);
@@ -476,8 +476,8 @@ public class GovernanceVotingTest extends GovernanceTestBase {
             .add(createParameter( true));
 
         JsonArray actions = new JsonArray()
-            .add(createVoteAction(dividends.getAddress(), "addAcceptedTokens", addAcceptedTokensParameters))
-            .add(createVoteAction(dex.getAddress(), "permit", permitParameters));
+            .add(createTransaction(dividends.getAddress(), "addAcceptedTokens", addAcceptedTokensParameters))
+            .add(createTransaction(dex.getAddress(), "permit", permitParameters));
 
         // Act
         executeVoteWithActions(actions.toString());

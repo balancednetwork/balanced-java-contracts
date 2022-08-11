@@ -82,16 +82,16 @@ public interface Governance extends
     void cancelVote(BigInteger vote_index);
 
     @External
-    void defineVote(String name, String description, BigInteger vote_start, BigInteger snapshot, String actions);
+    void defineVote(String name, String description, BigInteger vote_start, BigInteger snapshot, String transactions);
 
     @External
-    void tryExecuteActions(String actions);
+    void tryExecuteTransactions(String transactions);
 
     @External
-    void execute(String actions);
+    void execute(String transactions);
 
     @External(readonly = true)
-    int maxActions();
+    int maxTransactions();
 
     @External(readonly = true)
     BigInteger getProposalCount();

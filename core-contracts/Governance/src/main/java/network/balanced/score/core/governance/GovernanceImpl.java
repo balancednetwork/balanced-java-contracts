@@ -149,9 +149,9 @@ public class GovernanceImpl implements Governance {
     }
 
     @External
-    public void defineVote(String name, String description, BigInteger vote_start, BigInteger snapshot, @Optional String actions) {
-        actions = optionalDefault(actions, "[]");
-        ProposalManager.defineVote(name, description, vote_start, snapshot, actions);
+    public void defineVote(String name, String description, BigInteger vote_start, BigInteger snapshot, @Optional String transactions) {
+        transactions = optionalDefault(transactions, "[]");
+        ProposalManager.defineVote(name, description, vote_start, snapshot, transactions);
     }
 
     @External
@@ -160,15 +160,15 @@ public class GovernanceImpl implements Governance {
     }
 
     @External
-    public void tryExecuteActions(String actions) {
-        JsonArray actionsParsed = Json.parse(actions).asArray();
-        Context.require(actionsParsed.size() <= maxActions(), TAG + ": Only " + maxActions() + " actions are allowed");
-        ArbitraryCallManager.executeActions(actions);
+    public void tryExecuteTransactions(String transactions) {
+        JsonArray actionsParsed = Json.parse(transactions).asArray();
+        Context.require(actionsParsed.size() <= maxTransactions(), TAG + ": Only " + maxTransactions() + " transactions are allowed");
+        ArbitraryCallManager.executeTransactions(transactions);
         Context.revert(succsesfulVoteExecutionRevertID);
     }
 
     @External(readonly = true)
-    public int maxActions() {
+    public int maxTransactions() {
         return 5;
     }
 
@@ -338,9 +338,9 @@ public class GovernanceImpl implements Governance {
     }
 
     @External
-    public void execute(String actions) {
+    public void execute(String transactions) {
         onlyOwner();
-        ArbitraryCallManager.executeActions(actions);
+        ArbitraryCallManager.executeTransactions(transactions);
     }
 
     @External

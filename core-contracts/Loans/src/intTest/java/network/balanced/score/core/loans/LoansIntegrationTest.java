@@ -593,8 +593,8 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
             .add(createParameter(ratio));
 
         JsonArray actions = new JsonArray()
-            .add(createVoteAction(balanced.loans._address(), "setLockingRatio", setLockingRatioParameters));
-        executeVoteActions(balanced, voter, name, actions);
+            .add(createTransaction(balanced.loans._address(), "setLockingRatio", setLockingRatioParameters));
+        executeVote(balanced, voter, name, actions);
     }
 
     private void addCollateralType(BalancedClient minter, Address collateralAddress, BigInteger tokenAmount, BigInteger bnUSDAmount, String peg) {
@@ -625,7 +625,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
             .add(createParameter(threshold));
 
         JsonArray actions = new JsonArray()
-            .add(createVoteAction(balanced.rebalancing._address(), "setPriceDiffThreshold", rebalancingThresholdParameter));
+            .add(createTransaction(balanced.rebalancing._address(), "setPriceDiffThreshold", rebalancingThresholdParameter));
 
         owner.governance.execute(actions.toString());
     }

@@ -34,12 +34,12 @@ import network.balanced.score.lib.interfaces.Governance;
 
 public class BalancedUtils {
 
-    public static void executeVoteActions(Balanced balanced, BalancedClient voter, String name, JsonArray actions) {
+    public static void executeVote(Balanced balanced, BalancedClient voter, String name, JsonArray transactions) {
         BigInteger day = voter.governance.getDay();
         BigInteger voteStart = day.add(BigInteger.TWO);
         BigInteger snapshot = day.add(BigInteger.ONE);
         
-        voter.governance.defineVote(name, "test", voteStart, snapshot, actions.toString());
+        voter.governance.defineVote(name, "test", voteStart, snapshot, transactions.toString());
         BigInteger id = voter.governance.getVoteIndex(name);
         balanced.increaseDay(2);
 
@@ -118,10 +118,10 @@ public class BalancedUtils {
             .add("value", value);
     }
 
-    public static JsonArray createVoteAction(Address address, String method, JsonArray parameters) {
-        return new JsonArray()
-            .add(address.toString())
-            .add(method)
-            .add(parameters);
+    public static JsonObject createTransaction(Address address, String method, JsonArray parameters) {
+        return new JsonObject()
+            .add("address", address.toString())
+            .add("method", method)
+            .add("parameters", parameters);
     }
 }

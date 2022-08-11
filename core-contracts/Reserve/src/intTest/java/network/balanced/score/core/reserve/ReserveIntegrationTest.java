@@ -285,8 +285,8 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
             .add(createParameter(ratio));
 
         JsonArray actions = new JsonArray()
-            .add(createVoteAction(balanced.loans._address(), "setLockingRatio", setLockingRatioParameters));
-        executeVoteActions(balanced, voter, name, actions);
+            .add(createTransaction(balanced.loans._address(), "setLockingRatio", setLockingRatioParameters));
+        executeVote(balanced, voter, name, actions);
     }
 
     protected void setLockingRatio(BalancedClient voter, BigInteger ratio, String name) throws Exception {
@@ -298,9 +298,9 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
             .add(createParameter(ratio));
 
         JsonArray actions = new JsonArray()
-            .add(createVoteAction(balanced.loans._address(), "setLockingRatio", setLockingRatioParametersSICX))
-            .add(createVoteAction(balanced.loans._address(), "setLockingRatio", setLockingRatioParametersIETH));
-        executeVoteActions(balanced, voter, name, actions);
+            .add(createTransaction(balanced.loans._address(), "setLockingRatio", setLockingRatioParametersSICX))
+            .add(createTransaction(balanced.loans._address(), "setLockingRatio", setLockingRatioParametersIETH));
+        executeVote(balanced, voter, name, actions);
     }
 
     private void addCollateralType(BalancedClient minter, Address collateralAddress, BigInteger tokenAmount, BigInteger bnUSDAmount, String peg) {

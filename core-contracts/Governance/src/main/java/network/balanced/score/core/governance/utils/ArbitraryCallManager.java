@@ -16,18 +16,22 @@ import score.Address;
 import scorex.util.HashMap;
 
 public class ArbitraryCallManager {
-     public static void executeActions(String actions) {
-          JsonArray actionsList = Json.parse(actions).asArray();
+     public static final String METHOD = "method";
+     public static final String ADDRESS = "address";
+     public static final String PARAMS = "parameters";
+
+     public static void executeTransactions(String transactions) {
+          JsonArray actionsList = Json.parse(transactions).asArray();
           for (int i = 0; i < actionsList.size(); i++) {
-              JsonArray action = actionsList.get(i).asArray();
-              ArbitraryCallManager.executeAction(action);
+              JsonObject transaction = actionsList.get(i).asObject();
+              executeTransaction(transaction);
           }
       }
 
-     public static void executeAction(JsonArray action) { 
-          Address address = Address.fromString(action.get(0).asString());
-          String method = action.get(1).asString();
-          JsonArray jsonParams = action.get(2).asArray();
+     public static void executeTransaction(JsonObject transaction) { 
+          Address address = Address.fromString(transaction.get(ADDRESS).asString());
+          String method = transaction.get(METHOD).asString();
+          JsonArray jsonParams = transaction.get(PARAMS).asArray();
           Object[] params = getConvertedParams(jsonParams);
           GovernanceImpl.call(address, method, params);
      }

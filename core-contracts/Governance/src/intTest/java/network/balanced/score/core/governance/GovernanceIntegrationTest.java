@@ -78,7 +78,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
             .add(createParameter(rebalancingThreshold));
 
         JsonArray actions = new JsonArray()
-            .add(createVoteAction(balanced.rebalancing._address(), "setPriceDiffThreshold", rebalancingThresholdParameter));
+            .add(createTransaction(balanced.rebalancing._address(), "setPriceDiffThreshold", rebalancingThresholdParameter));
 
         BigInteger day = tester.governance.getDay();
         String name = "testVote";

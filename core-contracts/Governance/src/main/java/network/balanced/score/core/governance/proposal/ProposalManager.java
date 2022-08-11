@@ -176,7 +176,7 @@ public class ProposalManager {
         }
 
         try {
-            executeActions(actions);
+            ArbitraryCallManager.executeTransactions(actions);
             proposal.status.set(ProposalStatus.STATUS[ProposalStatus.EXECUTED]);
         } catch (Exception e) {
             proposal.status.set(ProposalStatus.STATUS[ProposalStatus.FAILED_EXECUTION]);
@@ -268,17 +268,9 @@ public class ProposalManager {
 
     private static void verifyActions(String actions) {
         try {
-            call(Context.getAddress(), "tryExecuteActions", actions);
+            call(Context.getAddress(), "tryExecuteTransactions", actions);
         } catch (score.UserRevertedException e) {
             Context.require(e.getCode() == succsesfulVoteExecutionRevertID, "Vote execution failed");
-        }
-    }
-
-    private static void executeActions(String actions) {
-        JsonArray actionsList = Json.parse(actions).asArray();
-        for (int i = 0; i < actionsList.size(); i++) {
-            JsonArray action = actionsList.get(i).asArray();
-            ArbitraryCallManager.executeAction(action);
         }
     }
 }

@@ -220,7 +220,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
             .add(createParameter("Struct[]", recipients));
 
         JsonArray actions = new JsonArray()
-            .add(createVoteAction(balanced.rewards._address(), "updateBalTokenDistPercentage", updateBalTokenDistPercentage));
+            .add(createTransaction(balanced.rewards._address(), "updateBalTokenDistPercentage", updateBalTokenDistPercentage));
 
         owner.governance.execute(actions.toString());
 
@@ -270,7 +270,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
             .add(createParameter("Struct[]", recipients));
 
         JsonArray actions = new JsonArray()
-            .add(createVoteAction(balanced.rewards._address(), "updateBalTokenDistPercentage", updateBalTokenDistPercentage));
+            .add(createTransaction(balanced.rewards._address(), "updateBalTokenDistPercentage", updateBalTokenDistPercentage));
 
         owner.governance.execute(actions.toString());
 

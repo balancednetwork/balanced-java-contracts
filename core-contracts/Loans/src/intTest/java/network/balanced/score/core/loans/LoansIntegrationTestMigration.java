@@ -202,7 +202,7 @@
 //         JsonArray actions = new JsonArray()
 //             .add(setLockingRatio);
 
-//         executeVoteActions(balanced, voter, name, actions);
+//         executeVote(balanced, voter, name, actions);
 //     }
 
 //     protected JsonObject createParameter(String type, BigInteger value) {

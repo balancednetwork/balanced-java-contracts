@@ -115,11 +115,11 @@ public class GovernanceTestBase extends UnitTest {
             .add("value", value);
     }
 
-    public static JsonArray createVoteAction(Address address, String method, JsonArray parameters) {
-        return new JsonArray()
-            .add(address.toString())
-            .add(method)
-            .add(parameters);
+    public static JsonObject createTransaction(Address address, String method, JsonArray parameters) {
+        return new JsonObject()
+            .add("address", address.toString())
+            .add("method", method)
+            .add("parameters", parameters);
     }
 
     private void setupAddresses() {
