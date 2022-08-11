@@ -5,7 +5,7 @@ import score.Context;
 import score.DictDB;
 
 public class BalancedAddressManager {
-    public static String TAG = "BalancedAddressManager";
+    private static String TAG = "BalancedAddressManager";
     private static final Address mainnetGovernance = Address.fromString("cx44250a12074799e26fdeee75648ae47e2cc84219");
     public static final DictDB<String, Address> contractAddresses = Context.newDictDB(TAG + "ContractAddresses", Address.class);
         

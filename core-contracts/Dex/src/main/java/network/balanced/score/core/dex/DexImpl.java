@@ -40,6 +40,7 @@ import static network.balanced.score.core.dex.utils.Check.isDexOn;
 import static network.balanced.score.core.dex.utils.Const.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Math.convertToNumber;
+import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static score.Context.require;
 
 public class DexImpl extends AbstractDex {
@@ -107,13 +108,7 @@ public class DexImpl extends AbstractDex {
     }
 
     private void sendRewardsData(Address user, BigInteger amount, BigInteger oldIcxTotal) {
-        List<RewardsDataEntry> rewardsList = new ArrayList<>();
-        RewardsDataEntry rewardsEntry = new RewardsDataEntry();
-        rewardsEntry._user = user;
-        rewardsEntry._balance = amount;
-        rewardsList.add(rewardsEntry);
-        Context.call(rewards.get(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal,
-                rewardsList);
+        Context.call(getRewards(), "updateRewardsData", SICXICX_MARKET_NAME, oldIcxTotal, user, amount);
     }
 
     @External
@@ -148,7 +143,7 @@ public class DexImpl extends AbstractDex {
                 break;
 
             } case "_swap_icx": {
-                require(fromToken.equals(sicx.get()),
+                require(fromToken.equals(getSicx()),
                         TAG + ": InvalidAsset: _swap_icx can only be called with sICX");
                 swapIcx(_from, _value);
                 break;
@@ -219,7 +214,7 @@ public class DexImpl extends AbstractDex {
         depositDetails.set(sender, deposit_amount.subtract(_value));
 
         Withdraw(_token, sender, _value);
-        Context.call(_token, "transfer", sender, _value);
+        Context.call(_token, "transfer", sender, _value, new byte[0]);
     }
 
     @External(readonly = true)
@@ -439,7 +434,7 @@ public class DexImpl extends AbstractDex {
 
         sicxEarnings.set(sender, sicxEarning.subtract(_value));
         ClaimSicxEarnings(sender, _value);
-        Context.call(sicx.get(), "transfer", sender, _value);
+        Context.call(getSicx(), "transfer", sender, _value, new byte[0]);
     }
 
     @External

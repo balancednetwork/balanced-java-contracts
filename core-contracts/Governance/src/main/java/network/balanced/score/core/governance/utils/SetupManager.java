@@ -47,6 +47,8 @@ public class SetupManager {
         call(ContractManager.getAddress(Names.BALN), "setMinter", rewardsAddress);
         call(ContractManager.getAddress(Names.BNUSD), "setMinter", ContractManager.getAddress(Names.LOANS));
         call(ContractManager.getAddress(Names.BNUSD), "setMinter2", ContractManager.getAddress(Names.STABILITY));
+        call(ContractManager.getAddress(Names.DEX), "addQuoteCoin", ContractManager.getAddress(Names.BNUSD));
+        call(ContractManager.getAddress(Names.DEX), "addQuoteCoin", ContractManager.getAddress(Names.SICX));
     }
 
     public static void launchBalanced() {

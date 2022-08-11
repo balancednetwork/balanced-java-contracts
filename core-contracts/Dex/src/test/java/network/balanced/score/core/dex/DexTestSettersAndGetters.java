@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doReturn;
 
 import score.Context;
@@ -27,8 +28,6 @@ public class DexTestSettersAndGetters extends DexTestBase {
     
     @BeforeEach
     public void configureContract() throws Exception {
-        dexScore = sm.deploy(ownerAccount, DexImpl.class, governanceScore.getAddress());
-        setupAddresses();
         super.setup();
     }
 
@@ -67,8 +66,8 @@ public class DexTestSettersAndGetters extends DexTestBase {
 
         // Act & assert - set all fees and assert that all fee methods are only settable by governance.
         for (Map.Entry<String, BigInteger> fee : fees.entrySet()) {
-            dexScore.invoke(governanceScore, fee.getKey(), fee.getValue());
-            assertOnlyCallableByGovernance(dexScore, fee.getKey(), fee.getValue());
+            dexScore.invoke(governance.account, fee.getKey(), fee.getValue());
+            assertOnlyCallableByAdmin(dexScore, fee.getKey(), fee.getValue());
         }
 
         // Assert - retrieve all fees and check validity.
@@ -90,11 +89,11 @@ public class DexTestSettersAndGetters extends DexTestBase {
         );
 
         // Arrange - Setup dex contract.
-        dexScore.invoke(governanceScore, "setMarketName", poolId, poolName);
+        dexScore.invoke(governance.account, "setMarketName", poolId, poolName);
 
         // Arrange - Mock these calls to stakedLP contract.
-        contextMock.when(() -> Context.call(eq(stakedLPScore.getAddress()), eq("balanceOf"), eq(ownerAccount.getAddress()), eq(poolId))).thenReturn(mockBalance);
-        contextMock.when(() -> Context.call(eq(stakedLPScore.getAddress()), eq("totalStaked"), eq(poolId))).thenReturn(mockTotalSupply);
+        when(stakedLP.mock.balanceOf(eq(ownerAccount.getAddress()), eq(poolId))).thenReturn(mockBalance);
+        when(stakedLP.mock.totalStaked(eq(poolId))).thenReturn(mockTotalSupply);
         
         // Assert.
         Map<String, BigInteger> returnedData = (Map<String, BigInteger>) dexScore.call( "getBalanceAndSupply", poolName, ownerAccount.getAddress());
@@ -124,9 +123,9 @@ public class DexTestSettersAndGetters extends DexTestBase {
 
     @Test
     void turnDexOnAndGetDexOn() {
-        dexScore.invoke(governanceScore, "turnDexOn");
+        dexScore.invoke(governance.account, "turnDexOn");
         assertEquals(true, dexScore.call("getDexOn"));
-        assertOnlyCallableByGovernance(dexScore, "turnDexOn");
+        assertOnlyCallableByAdmin(dexScore, "turnDexOn");
     }
 
     @Test
@@ -135,12 +134,12 @@ public class DexTestSettersAndGetters extends DexTestBase {
         Address quoteCoin = Account.newScoreAccount(1).getAddress();
 
         // Act.
-        dexScore.invoke(governanceScore, "addQuoteCoin", quoteCoin);
+        dexScore.invoke(governance.account, "addQuoteCoin", quoteCoin);
 
         // Assert.
         Boolean quoteCoinAllowed = (Boolean) dexScore.call("isQuoteCoinAllowed", quoteCoin);
         assertEquals(true, quoteCoinAllowed);
-        assertOnlyCallableByGovernance(dexScore, "addQuoteCoin", quoteCoin);
+        assertOnlyCallableByAdmin(dexScore, "addQuoteCoin", quoteCoin);
     }
 
     @Test
@@ -149,12 +148,12 @@ public class DexTestSettersAndGetters extends DexTestBase {
         BigInteger timeOffset = BigInteger.valueOf(100);
 
         // Act.
-        dexScore.invoke(governanceScore, "setTimeOffset", timeOffset);
+        dexScore.invoke(governance.account, "setTimeOffset", timeOffset);
 
         // Assert.
         BigInteger retrievedTimeOffset = (BigInteger) dexScore.call("getTimeOffset");
         assertEquals(timeOffset, retrievedTimeOffset);
-        assertOnlyCallableByGovernance(dexScore, "setTimeOffset", timeOffset);
+        assertOnlyCallableByAdmin(dexScore, "setTimeOffset", timeOffset);
     }
 
     @Test
@@ -185,10 +184,10 @@ public class DexTestSettersAndGetters extends DexTestBase {
          BigInteger value = BigInteger.valueOf(100).multiply(EXA);
  
          // Act.
-         depositToken(depositor, bnusdScore, value);
+         depositToken(depositor, bnusd.account, value);
         
          // Assert.
-         BigInteger retrievedValue = (BigInteger) dexScore.call("getDeposit", bnusdScore.getAddress(), depositor.getAddress());
+         BigInteger retrievedValue = (BigInteger) dexScore.call("getDeposit", bnusd.getAddress(), depositor.getAddress());
          assertEquals(value, retrievedValue);
 
     }
@@ -201,7 +200,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
         BigInteger expectedNonce = BigInteger.valueOf(3);
 
         // Act.
-        supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+        supplyLiquidity(ownerAccount, bnusd.account, baln.account, bnusdValue, balnValue, false);
 
         // Assert.
         BigInteger retrievedNonce = (BigInteger) dexScore.call( "getNonce");
@@ -216,10 +215,10 @@ public class DexTestSettersAndGetters extends DexTestBase {
         BigInteger expectedPoolValue = BigInteger.TWO;
 
         // Act.
-        supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+        supplyLiquidity(ownerAccount, bnusd.account, baln.account, bnusdValue, balnValue, false);
 
         // Assert.
-        BigInteger retrievedPoolId = (BigInteger) dexScore.call( "getPoolId", bnusdScore.getAddress(), balnScore.getAddress());
+        BigInteger retrievedPoolId = (BigInteger) dexScore.call( "getPoolId", bnusd.getAddress(), baln.getAddress());
         assertEquals(expectedPoolValue, retrievedPoolId);
     }
 
@@ -242,11 +241,11 @@ public class DexTestSettersAndGetters extends DexTestBase {
         BigInteger poolId = BigInteger.TWO;
 
         // Act.
-        supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+        supplyLiquidity(ownerAccount, bnusd.account, baln.account, bnusdValue, balnValue, false);
 
         // Assert.
-        BigInteger retrievedBnusdValue = (BigInteger) dexScore.call("getPoolTotal", poolId, bnusdScore.getAddress());
-        BigInteger retrievedBalnValue = (BigInteger) dexScore.call("getPoolTotal", poolId, balnScore.getAddress());
+        BigInteger retrievedBnusdValue = (BigInteger) dexScore.call("getPoolTotal", poolId, bnusd.getAddress());
+        BigInteger retrievedBalnValue = (BigInteger) dexScore.call("getPoolTotal", poolId, baln.getAddress());
         assertEquals(bnusdValue, retrievedBnusdValue);
         assertEquals(balnValue, retrievedBalnValue);
     }
@@ -260,7 +259,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
         BigInteger poolId = BigInteger.TWO;
 
         // Act.
-        supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+        supplyLiquidity(ownerAccount, bnusd.account, baln.account, bnusdValue, balnValue, false);
 
         // Assert.
         BigInteger retrievedUserLpTokenValue = (BigInteger) dexScore.call("balanceOf", ownerAccount.getAddress(), poolId);
@@ -304,7 +303,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
         BigInteger poolId = BigInteger.TWO;
 
         // Act.
-        supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+        supplyLiquidity(ownerAccount, bnusd.account, baln.account, bnusdValue, balnValue, false);
 
         // Assert.
         BigInteger retrievedTotalLpTokens = (BigInteger) dexScore.call("totalSupply", poolId);
@@ -320,7 +319,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
         List<String> expectedMarketNames = Arrays.asList("sICX/ICX", poolName);
 
         // Act.
-        dexScore.invoke(governanceScore, "setMarketName", poolId, poolName);
+        dexScore.invoke(governance.account, "setMarketName", poolId, poolName);
 
         // Assert.
         List<String> namedPools = (List<String>) dexScore.call("getNamedPools");
@@ -335,13 +334,13 @@ public class DexTestSettersAndGetters extends DexTestBase {
         BigInteger balnValue = BigInteger.valueOf(10).pow(19);
 
         // Act.
-        supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+        supplyLiquidity(ownerAccount, bnusd.account, baln.account, bnusdValue, balnValue, false);
 
         // Assert.
         Address poolBase = (Address) dexScore.call( "getPoolBase", BigInteger.TWO);
         Address poolQuote = (Address) dexScore.call( "getPoolQuote", BigInteger.TWO);
-        assertEquals(poolBase, bnusdScore.getAddress());
-        assertEquals(poolQuote, balnScore.getAddress());
+        assertEquals(poolBase, bnusd.getAddress());
+        assertEquals(poolQuote, baln.getAddress());
     }
 
     @Test
@@ -353,7 +352,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
         BigInteger poolId = BigInteger.TWO;
 
         // Act.
-        supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+        supplyLiquidity(ownerAccount, bnusd.account, baln.account, bnusdValue, balnValue, false);
 
         // Assert.
         BigInteger price = (BigInteger) dexScore.call( "getQuotePriceInBase", poolId);
@@ -369,7 +368,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
         BigInteger poolId = BigInteger.TWO;
 
         // Act.
-        supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+        supplyLiquidity(ownerAccount, bnusd.account, baln.account, bnusdValue, balnValue, false);
 
         // Assert.
         BigInteger price = (BigInteger) dexScore.call( "getBasePriceInQuote", poolId);
@@ -385,7 +384,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
         BigInteger poolId = BigInteger.TWO;
 
         // Act.
-        supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+        supplyLiquidity(ownerAccount, bnusd.account, baln.account, bnusdValue, balnValue, false);
 
         // Assert.
         BigInteger price = (BigInteger) dexScore.call( "getPrice", poolId);
@@ -400,7 +399,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
         BigInteger expectedPrice = computePrice(balnValue, bnusdValue);
 
         // Act.
-        supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+        supplyLiquidity(ownerAccount, bnusd.account, baln.account, bnusdValue, balnValue, false);
 
         // Assert.
         BigInteger price = (BigInteger) dexScore.call( "getBalnPrice");
@@ -415,7 +414,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
         BigInteger expectedPrice = computePrice(bnusdValue, sicxValue);
 
         // Act.
-        supplyLiquidity(ownerAccount, sicxScore, bnusdScore, sicxValue, bnusdValue, false);
+        supplyLiquidity(ownerAccount, sicx.account, bnusd.account, sicxValue, bnusdValue, false);
 
         // Assert.
         BigInteger price = (BigInteger) dexScore.call( "getSicxBnusdPrice");
@@ -434,7 +433,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
         doReturn(sicxIcxConversionRate).when(dexScoreSpy).getSicxRate();
         
         // Act.
-        supplyLiquidity(ownerAccount, sicxScore, bnusdScore, sicxValue, bnusdValue, false);
+        supplyLiquidity(ownerAccount, sicx.account, bnusd.account, sicxValue, bnusdValue, false);
         supplyIcxLiquidity(ownerAccount, icxValue);     
         
         // Assert.
@@ -454,8 +453,8 @@ public class DexTestSettersAndGetters extends DexTestBase {
     //     doReturn(sicxBnusdPrice).when(dexScoreSpy).getSicxBnusdPrice();
 
     //     // Act. Why can I not supply with sicx as quote currency? Fails.
-    //     dexScore.invoke(governanceScore, "setMarketName", poolId, poolName);
-    //     supplyLiquidity(ownerAccount, bnusdScore, sicxScore, balnValue, sicxValue, false);
+    //     dexScore.invoke(governance.account, "setMarketName", poolId, poolName);
+    //     supplyLiquidity(ownerAccount, bnusd.account sicxScore, balnValue, sicxValue, false);
 
     //     // Assert.
     //     //BigInteger poolValue = (BigInteger) dexScore.call( "getBnusdValue", poolName);
@@ -472,8 +471,8 @@ public class DexTestSettersAndGetters extends DexTestBase {
         BigInteger poolId = BigInteger.TWO;
 
         // Act.
-        dexScore.invoke(governanceScore, "setMarketName", poolId, poolName);
-        supplyLiquidity(ownerAccount, balnScore, bnusdScore, balnValue, bnusdValue, false);
+        dexScore.invoke(governance.account, "setMarketName", poolId, poolName);
+        supplyLiquidity(ownerAccount, baln.account, bnusd.account, balnValue, bnusdValue, false);
 
         // Assert.
         BigInteger poolValue = (BigInteger) dexScore.call( "getBnusdValue", poolName);
@@ -489,8 +488,8 @@ public class DexTestSettersAndGetters extends DexTestBase {
         BigInteger poolId = BigInteger.TWO;
 
          // Act.
-        dexScore.invoke(governanceScore, "setMarketName", poolId, poolName);
-        supplyLiquidity(ownerAccount, bnusdScore, balnScore, balnValue, bnusdValue, false);
+        dexScore.invoke(governance.account, "setMarketName", poolId, poolName);
+        supplyLiquidity(ownerAccount, bnusd.account, baln.account, balnValue, bnusdValue, false);
 
          // Assert
         BigInteger poolValue = (BigInteger) dexScore.call( "getBnusdValue", "bnUSD/BALN");
@@ -507,8 +506,8 @@ public class DexTestSettersAndGetters extends DexTestBase {
          BigInteger expectedPrice = computePrice(balnValue, bnusdValue);
  
           // Act.
-         dexScore.invoke(governanceScore, "setMarketName", poolId, poolName);
-         supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+         dexScore.invoke(governance.account, "setMarketName", poolId, poolName);
+         supplyLiquidity(ownerAccount, bnusd.account, baln.account, bnusdValue, balnValue, false);
  
           // Assert
          BigInteger price = (BigInteger) dexScore.call( "getPriceByName", "bnUSD/BALN");
@@ -522,7 +521,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
         BigInteger poolId = BigInteger.TWO;
 
         // Act.
-        dexScore.invoke(governanceScore, "setMarketName", poolId, poolName);
+        dexScore.invoke(governance.account, "setMarketName", poolId, poolName);
 
         // Assert.
         String retrievedPoolName = (String) dexScore.call("getPoolName", poolId);
@@ -545,8 +544,8 @@ public class DexTestSettersAndGetters extends DexTestBase {
         Map<String, Object> expectedPoolStats = Map.of(
             "base", bnusdValue,
             "quote", balnValue,
-            "base_token", bnusdScore.getAddress(),
-            "quote_token", balnScore.getAddress(),
+            "base_token", bnusd.getAddress(),
+            "quote_token", baln.getAddress(),
             "total_supply", totalLpTokens,
             "price", expectedPrice,
             "name", poolName,
@@ -556,8 +555,8 @@ public class DexTestSettersAndGetters extends DexTestBase {
         );
         
         // Act.
-        dexScore.invoke(governanceScore, "setMarketName", poolId, poolName);
-        supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+        dexScore.invoke(governance.account, "setMarketName", poolId, poolName);
+        supplyLiquidity(ownerAccount, bnusd.account, baln.account, bnusdValue, balnValue, false);
 
         // Assert.
         Map<String, Object> poolStats = (Map<String, Object>) dexScore.call( "getPoolStats", poolId);
@@ -572,8 +571,8 @@ public class DexTestSettersAndGetters extends DexTestBase {
          BigInteger poolId = BigInteger.TWO;
  
           // Act.
-         supplyLiquidity(governanceScore, bnusdScore, balnScore, bnusdValue, balnValue, false);
-         supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
+         supplyLiquidity(governance.account, bnusd.account, baln.account, bnusdValue, balnValue, false);
+         supplyLiquidity(ownerAccount, bnusd.account, baln.account, bnusdValue, balnValue, false);
  
           // Assert
          BigInteger totalDexAddresses = (BigInteger) dexScore.call("totalDexAddresses", BigInteger.TWO);
@@ -587,11 +586,6 @@ public class DexTestSettersAndGetters extends DexTestBase {
         Boolean permission = true;
 
         // Assert.
-        assertOnlyCallableByGovernance(dexScore, "permit", poolId, permission);
-    }
-
-    @AfterEach
-    void closeMock() {
-        contextMock.close();
+        assertOnlyCallableByAdmin(dexScore, "permit", poolId, permission);
     }
 }

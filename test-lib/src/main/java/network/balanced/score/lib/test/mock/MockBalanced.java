@@ -2,6 +2,8 @@ package network.balanced.score.lib.test.mock;
 
 import static org.mockito.Mockito.when;
 
+import java.math.BigInteger;
+
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
@@ -13,7 +15,6 @@ import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.interfaces.*;
 
 public class MockBalanced {
-
     private static MockedStatic<BalancedAddressManager> addressManagerMock;
     public MockContract<Loans> loans;
     public MockContract<Dex> dex;
@@ -80,5 +81,13 @@ public class MockBalanced {
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.STAKEDLP)).thenReturn(stakedLp.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.STABILITY)).thenReturn(stability.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.BALANCEDORACLE)).thenReturn(balancedOracle.getAddress());
+
+        when(bnUSD.mock.symbol()).thenReturn("bnUSD");
+        when(sicx.mock.symbol()).thenReturn("sICX");
+        when(baln.mock.symbol()).thenReturn("BALN");
+
+        when(bnUSD.mock.decimals()).thenReturn(BigInteger.valueOf(18));
+        when(sicx.mock.decimals()).thenReturn(BigInteger.valueOf(18));
+        when(baln.mock.decimals()).thenReturn(BigInteger.valueOf(18));
     }
 }
