@@ -18,6 +18,8 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
+import network.balanced.score.lib.interfaces.addresses.AddressManager;
+import network.balanced.score.lib.interfaces.addresses.AdminAddress;
 import score.*;
 import score.annotation.External;
 
@@ -25,31 +27,7 @@ import java.math.BigInteger;
 
 @ScoreInterface
 @ScoreClient
-public interface StakedLP {
-      @External(readonly = true)
-      Address getDex();
-  
-      @External
-      void setDex(Address dex);
-  
-      @External(readonly = true)
-      Address getGovernance();
-
-      @External
-      void setGovernance(Address governance);
-
-      @External(readonly = true)
-      Address getAdmin();
-  
-      @External
-      void setAdmin(Address admin);
-  
-      @External(readonly = true)
-      Address getRewards();
-
-      @External
-      void setRewards(Address rewards);
-  
+public interface StakedLP extends AddressManager, AdminAddress {
       @External(readonly = true)
       BigInteger balanceOf(Address _owner, BigInteger _id);
 

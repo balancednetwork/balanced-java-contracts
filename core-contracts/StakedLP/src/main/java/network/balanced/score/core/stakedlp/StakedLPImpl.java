@@ -24,8 +24,8 @@ import score.annotation.External;
 
 import java.math.BigInteger;
 import java.util.Map;
-
-import static network.balanced.score.core.stakedlp.Checks.*;
+import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 
 public class StakedLPImpl implements StakedLP {
 
@@ -39,13 +39,15 @@ public class StakedLPImpl implements StakedLP {
 
     // Linked Contracts
     static final VarDB<Address> governance = Context.newVarDB("governanceAddress", Address.class);
-    static final VarDB<Address> dex = Context.newVarDB("dexAddress", Address.class);
-    private static final VarDB<Address> rewards = Context.newVarDB("rewardsAddress", Address.class);
     static final VarDB<Address> admin = Context.newVarDB("adminAddress", Address.class);
 
     public StakedLPImpl(Address _governance) {
-        Context.require(_governance.isContract(), "StakedLP: Governance address should be a contract");
-        governance.set(_governance);
+        if (governance.get() == null) {
+            Context.require(_governance.isContract(), "StakedLP: Governance address should be a contract");
+            governance.set(_governance);
+        }
+
+        setGovernance(governance.get());
     }
 
     /*
@@ -63,28 +65,14 @@ public class StakedLPImpl implements StakedLP {
         return Names.STAKEDLP;
     }
 
-    @External(readonly = true)
-    public Address getDex() {
-        return dex.get();
-    }
-
     @External
-    public void setDex(Address dex) {
-        onlyGovernance();
-        Context.require(dex.isContract(), "StakedLP: Dex address should be a contract");
-        StakedLPImpl.dex.set(dex);
+    public void updateAddress(String name) {
+        resetAddress(name);
     }
 
     @External(readonly = true)
-    public Address getGovernance() {
-        return governance.get();
-    }
-
-    @External
-    public void setGovernance(Address governance) {
-        onlyOwner();
-        Context.require(governance.isContract(), "StakedLP: Governance address should be a contract");
-        StakedLPImpl.governance.set(governance);
+    public Address getAddress(String name) {
+        return getAddressByName(name);
     }
 
     @External(readonly = true)
@@ -94,21 +82,10 @@ public class StakedLPImpl implements StakedLP {
 
     @External
     public void setAdmin(Address admin) {
-        onlyGovernance();
+        only(getGovernance());
         StakedLPImpl.admin.set(admin);
     }
 
-    @External(readonly = true)
-    public Address getRewards() {
-        return rewards.get();
-    }
-
-    @External
-    public void setRewards(Address rewards) {
-        onlyGovernance();
-        Context.require(rewards.isContract(), "StakedLP: Rewards address should be a contract");
-        StakedLPImpl.rewards.set(rewards);
-    }
 
     @External(readonly = true)
     public BigInteger balanceOf(Address _owner, BigInteger _id) {
@@ -122,7 +99,7 @@ public class StakedLPImpl implements StakedLP {
 
     @External
     public void addPool(BigInteger id) {
-        onlyGovernance();
+        only(getGovernance());
         if (!supportedPools.getOrDefault(id, Boolean.FALSE)) {
             supportedPools.set(id, Boolean.TRUE);
         }
@@ -130,7 +107,7 @@ public class StakedLPImpl implements StakedLP {
 
     @External
     public void removePool(BigInteger id) {
-        onlyGovernance();
+        only(getGovernance());
         if (supportedPools.getOrDefault(id, Boolean.FALSE)) {
             supportedPools.set(id, Boolean.FALSE);
         }
@@ -160,12 +137,12 @@ public class StakedLPImpl implements StakedLP {
         totalStakedAmount.set(id, newTotal);
 
         Unstake(caller, id, value);
-
-        String poolName = (String) Context.call(dex.get(), "getPoolName", id);
-        Context.call(rewards.get(), "updateRewardsData", poolName, previousTotal, caller, previousBalance);
+        Address dexAddress = getDex();
+        String poolName = (String) Context.call(dexAddress, "getPoolName", id);
+        Context.call(getRewards(), "updateRewardsData", poolName, previousTotal, caller, previousBalance);
 
         try {
-            Context.call(dex.get(), "transfer", caller, value, id, new byte[0]);
+            Context.call(dexAddress, "transfer", caller, value, id, new byte[0]);
         } catch (Exception e) {
             Context.revert("StakedLP: Failed to transfer LP tokens back to user. Reason: " + e.getMessage());
         }
@@ -173,7 +150,7 @@ public class StakedLPImpl implements StakedLP {
 
     @External
     public void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data) {
-        onlyDex();
+        only(getDex());
         Context.require(_value.signum() > 0, "StakedLP: Token value should be a positive number");
         this.stake(_from, _id, _value);
     }
@@ -195,20 +172,22 @@ public class StakedLPImpl implements StakedLP {
 
         Stake(user, id, value);
 
-        String poolName = (String) Context.call(dex.get(), "getPoolName", id);
-        Context.call(rewards.get(), "updateRewardsData", poolName, previousTotal, user, previousBalance);
+        String poolName = (String) Context.call(getDex(), "getPoolName", id);
+        Context.call(getRewards(), "updateRewardsData", poolName, previousTotal, user, previousBalance);
     }
 
     @SuppressWarnings("unchecked")
     private boolean isNamedPool(BigInteger id) {
+        
         if (!supportedPools.getOrDefault(id, Boolean.FALSE)) {
-            String poolName = (String) Context.call(dex.get(), "getPoolName", id);
+            Address dexAddress = getDex();
+            String poolName = (String) Context.call(dexAddress, "getPoolName", id);
             if (poolName == null) {
                 return false;
             }
             
-            Map<String, Object> dataSource = (Map<String, Object>) Context.call(rewards.get(), "getSourceData", poolName);
-            if (dataSource.isEmpty() || !dex.get().equals(dataSource.get("contract_address"))) {
+            Map<String, Object> dataSource = (Map<String, Object>) Context.call(getRewards(), "getSourceData", poolName);
+            if (dataSource.isEmpty() || !dexAddress.equals(dataSource.get("contract_address"))) {
                 return false;
             }
 
