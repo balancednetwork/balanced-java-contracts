@@ -23,10 +23,7 @@ public class Constants {
 
     static final String GOVERNANCE = "governance";
     static final String ADMIN = "admin";
-    static final String LOANS_SCORE = "loans_score";
     static final String DAOFUND = "daofund";
-    static final String BALN_SCORE = "baln_score";
-    static final String DEX_SCORE = "dex_score";
 
     static final String ACCEPTED_TOKENS = "accepted_tokens";
     public static final String AMOUNT_TO_DISTRIBUTE = "amount_to_distribute";

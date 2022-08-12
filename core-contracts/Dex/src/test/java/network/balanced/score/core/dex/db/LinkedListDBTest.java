@@ -54,7 +54,7 @@ public class LinkedListDBTest extends TestBase {
 
         }
 
-        public void appendUsers(ArrayList<Address > addresses){
+        public void appendUsers(Address[] addresses){
             int id = 1;
             for (Address address: addresses) {
                 linkedListDB.append(BigInteger.valueOf(3), address, BigInteger.valueOf(id++));

@@ -214,7 +214,7 @@ public class DexImpl extends AbstractDex {
         depositDetails.set(sender, deposit_amount.subtract(_value));
 
         Withdraw(_token, sender, _value);
-        Context.call(_token, "transfer", sender, _value, new byte[0]);
+        Context.call(_token, "transfer", sender, _value);
     }
 
     @External(readonly = true)

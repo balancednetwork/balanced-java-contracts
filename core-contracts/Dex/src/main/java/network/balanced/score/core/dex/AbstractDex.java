@@ -543,10 +543,10 @@ public abstract class AbstractDex implements Dex {
         BigInteger totalQuote = isSell ? newToToken : newFromToken;
 
         // Send the trader their funds
-        Context.call(toToken, "transfer", receiver, sendAmount, new byte[0]);
+        Context.call(toToken, "transfer", receiver, sendAmount);
 
         // Send the platform fees to the fee handler SCORE
-        Context.call(fromToken, "transfer", getFeehandler(), balnFees, new byte[0]);
+        Context.call(fromToken, "transfer", getFeehandler(), balnFees);
 
         // Broadcast pool ending price
         BigInteger effectiveFillPrice = (value.multiply(EXA)).divide(sendAmount);
@@ -639,7 +639,7 @@ public abstract class AbstractDex implements Dex {
         
         Context.call(getRewards(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal,
                 oldData);
-        Context.call(sicxAddress, "transfer", getFeehandler(), balnFees, new byte[0]);
+        Context.call(sicxAddress, "transfer", getFeehandler(), balnFees);
         Context.transfer(sender, orderIcxValue);
     }
 

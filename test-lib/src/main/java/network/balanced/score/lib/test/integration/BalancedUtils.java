@@ -174,15 +174,7 @@ public class BalancedUtils {
         for (final byte b : raw) {
             hex.append(HEXES.charAt((b & 0xF0) >> 4)).append(HEXES.charAt((b & 0x0F)));
         }
-        return hex.toString();
-    }
 
-    private static String getHex(byte[] raw) {
-        String HEXES = "0123456789ABCDEF";
-        final StringBuilder hex = new StringBuilder(2 * raw.length);
-        for (final byte b : raw) {
-            hex.append(HEXES.charAt((b & 0xF0) >> 4)).append(HEXES.charAt((b & 0x0F)));
-        }
         return hex.toString();
     }
 }

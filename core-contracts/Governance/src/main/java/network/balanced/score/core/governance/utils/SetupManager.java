@@ -86,8 +86,7 @@ public class SetupManager {
 
         BigInteger price = call(BigInteger.class, bnUSDAddress, "priceInLoop");
         BigInteger amount = EXA.multiply(value).divide(price.multiply(BigInteger.valueOf(7)));
-        call(value.divide(BigInteger.valueOf(7)), stakingAddress, "stakeICX", Context.getAddress(),
-                new byte[0]);
+        call(value.divide(BigInteger.valueOf(7)), stakingAddress, "stakeICX", Context.getAddress(), new byte[0]);
         call(Context.getBalance(Context.getAddress()), loansAddress, "depositAndBorrow", "bnUSD", amount, Context.getAddress(), BigInteger.ZERO);
 
         BigInteger bnUSDValue = call(BigInteger.class, bnUSDAddress, "balanceOf", Context.getAddress());

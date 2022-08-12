@@ -18,12 +18,10 @@ package network.balanced.score.core.dividends;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
 
 import com.iconloop.score.test.Account;
 
 import score.Address;
-import score.Context;
 
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -40,24 +38,18 @@ class DividendsImplTestContinuousMigration extends DividendsImplTestBase {
         sm.getBlock().increase(2 * DAY);
 
         setupBase();
-        dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
-        dividendScore.invoke(admin, "setDaofund", daoScore.getAddress());
-        dividendScore.invoke(admin, "setBaln", balnScore.getAddress());
+        dividendScore.invoke(governance.account, "setAdmin", admin.getAddress());
 
-        dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
-        dividendScore.invoke(admin, "setLoans", loansScore.getAddress());
-        dividendScore.invoke(admin, "setDex", dexScore.getAddress());
-        dividendScore.invoke(admin, "addAcceptedTokens", bnUSDScore.getAddress());
+        dividendScore.invoke(admin, "addAcceptedTokens", bnusd.getAddress());
         dividendScore.invoke(admin, "setDividendsBatchSize", batchSize);
         dividendScore.invoke(admin, "setDistributionActivationStatus", true);
 
-        contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("getTimeOffset"))).thenReturn(BigInteger.TWO);
-
+        when(dex.mock.getTimeOffset()).thenReturn(BigInteger.TWO);
         Map<String, String> asset = new HashMap<>();
-        asset.put("baln", String.valueOf(balnScore.getAddress()));
-        asset.put("bnUSD", String.valueOf(bnUSDScore.getAddress()));
+        asset.put("baln", String.valueOf(baln.getAddress()));
+        asset.put("bnUSD", String.valueOf(bnusd.getAddress()));
 
-        contextMock.when(getAssetTokens).thenReturn(asset);
+        when(loans.mock.getAssetTokens()).thenReturn(asset);
 
         BigInteger day = getDay();
         dividendScore.invoke(admin, "setDividendsOnlyToStakedBalnDay", day.add(BigInteger.ONE));
@@ -86,11 +78,11 @@ class DividendsImplTestContinuousMigration extends DividendsImplTestBase {
         BigInteger expectedStakingFees = expectedFees.multiply(stakerPercentage).divide(ICX);
         
         BigInteger staker1Balance = BigInteger.valueOf(150).multiply(ICX);
-        dividendScore.invoke(balnScore, "updateBalnStake", staker1.getAddress(), BigInteger.ZERO, staker1Balance);
+        dividendScore.invoke(baln.account, "updateBalnStake", staker1.getAddress(), BigInteger.ZERO, staker1Balance);
 
         BigInteger staker2Balance = BigInteger.valueOf(50).multiply(ICX);
         BigInteger totalStake = BigInteger.valueOf(200).multiply(ICX);
-        dividendScore.invoke(balnScore, "updateBalnStake", staker2.getAddress(), BigInteger.ZERO, totalStake);
+        dividendScore.invoke(baln.account, "updateBalnStake", staker2.getAddress(), BigInteger.ZERO, totalStake);
 
         BigInteger expectedStaker1Fees = expectedStakingFees.multiply(staker1Balance).divide(totalStake);
         BigInteger expectedStaker2Fees = expectedStakingFees.multiply(staker2Balance).divide(totalStake);
@@ -106,15 +98,16 @@ class DividendsImplTestContinuousMigration extends DividendsImplTestBase {
         mockTotalSupplyAt(day, totalStake);
 
         BigInteger expectedDaofundFees = expectedFees.multiply(daofundPercentage).divide(ICX);
-        mockDaoFundTranfer(expectedDaofundFees);
         addBnusdFees(expectedFees);
 
         // Assert
+        verify(bnusd.mock).transfer(daofund.getAddress(), expectedDaofundFees, null);
+
         Map<String, BigInteger> expected_result_staker1 = new HashMap<>();
-        expected_result_staker1.put(String.valueOf(bnUSDScore.getAddress()), expectedStaker1Fees);
+        expected_result_staker1.put(String.valueOf(bnusd.getAddress()), expectedStaker1Fees);
 
         Map<String, BigInteger> expected_result_staker2 = new HashMap<>();
-        expected_result_staker2.put(String.valueOf(bnUSDScore.getAddress()), expectedStaker2Fees);
+        expected_result_staker2.put(String.valueOf(bnusd.getAddress()), expectedStaker2Fees);
 
         assertEquals(expected_result_staker1, dividendScore.call("getUnclaimedDividends", staker1.getAddress()));
         assertEquals(expected_result_staker2, dividendScore.call("getUnclaimedDividends", staker2.getAddress()));
@@ -125,8 +118,8 @@ class DividendsImplTestContinuousMigration extends DividendsImplTestBase {
         dividendScore.invoke(staker1, "accumulateDividends", staker1.getAddress(), day.intValue(), day.intValue()+1);
         dividendScore.invoke(staker2, "accumulateDividends", staker2.getAddress(), day.intValue(), day.intValue()+1);
 
-        expected_result_staker1.put(String.valueOf(bnUSDScore.getAddress()), expectedStaker1Fees.multiply(BigInteger.TWO));
-        expected_result_staker2.put(String.valueOf(bnUSDScore.getAddress()), expectedStaker2Fees.multiply(BigInteger.TWO));
+        expected_result_staker1.put(String.valueOf(bnusd.getAddress()), expectedStaker1Fees.multiply(BigInteger.TWO));
+        expected_result_staker2.put(String.valueOf(bnusd.getAddress()), expectedStaker2Fees.multiply(BigInteger.TWO));
 
         assertEquals(expected_result_staker1, dividendScore.call("getUnclaimedDividends", staker1.getAddress()));
         assertEquals(expected_result_staker2, dividendScore.call("getUnclaimedDividends", staker2.getAddress()));
@@ -140,7 +133,7 @@ class DividendsImplTestContinuousMigration extends DividendsImplTestBase {
         // Arrange
         int day = getDay().intValue();
         dividendScore.invoke(owner, "setContinuousDividendsDay", getDay().add(BigInteger.ONE));
-        dividendScore.invoke(balnScore, "updateBalnStake", owner.getAddress(), BigInteger.ZERO, BigInteger.valueOf(50));
+        dividendScore.invoke(baln.account, "updateBalnStake", owner.getAddress(), BigInteger.ZERO, BigInteger.valueOf(50));
         BigInteger expectedFees = BigInteger.TEN.pow(20);
         BigInteger expectedContinuousFees = BigInteger.valueOf(15).pow(20);
         addBnusdFees(expectedFees);
@@ -152,14 +145,14 @@ class DividendsImplTestContinuousMigration extends DividendsImplTestBase {
         dividendScore.invoke(owner, "distribute");
     
         // Act
-        mockDaoFundTranfer(expectedContinuousDaofundFees);
         addBnusdFees(expectedContinuousFees);
         
-        mockDaoFundTranfer(expectedDaofundFees);
         dividendScore.invoke(owner, "transferDaofundDividends", day, day+1);
 
         // Assert
-        contextMock.verify(() -> Context.call(bnUSDScore.getAddress(), "transfer", daoScore.getAddress(), expectedDaofundFees));
+
+        verify(bnusd.mock).transfer(daofund.getAddress(), expectedContinuousDaofundFees, null);
+        verify(bnusd.mock).transfer(daofund.getAddress(), expectedDaofundFees, null);
         Map<String, BigInteger> zeroDivsMap = new HashMap<>();
         assertEquals(zeroDivsMap, dividendScore.call("getDaoFundDividends", day, day+1));
     }
@@ -181,18 +174,16 @@ class DividendsImplTestContinuousMigration extends DividendsImplTestBase {
     }
 
     private void mockStakeAt(Address user, BigInteger day, BigInteger stake) {
-        contextMock.when(() -> Context.call(balnScore.getAddress(), "stakedBalanceOfAt", user, day)).thenReturn(stake);
+        when(baln.mock.stakedBalanceOfAt(user, day)).thenReturn(stake);
     }
 
     private void mockStake(Address user, BigInteger stake) {
-        contextMock.when(() -> Context.call(BigInteger.class, balnScore.getAddress(), "stakedBalanceOf", user)).thenReturn(stake);
+        when(baln.mock.stakedBalanceOf(user)).thenReturn(stake);
     }
 
     private void mockTotalSupplyAt(BigInteger day, BigInteger supply) {
-        contextMock.when(() -> Context.call(balnScore.getAddress(), "totalStakedBalanceOfAt", day)).thenReturn(supply);
+        when(baln.mock.totalStakedBalanceOfAt(day)).thenReturn(supply);
     }
 
-    private void mockDaoFundTranfer(BigInteger amount) {
-        contextMock.when(() -> Context.call(bnUSDScore.getAddress(), "transfer", daoScore.getAddress(), amount)).thenReturn("Token Transferred");
-    }
+   
 }

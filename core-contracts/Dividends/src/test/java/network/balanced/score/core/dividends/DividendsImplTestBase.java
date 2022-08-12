@@ -19,13 +19,10 @@ package network.balanced.score.core.dividends;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
-import network.balanced.score.core.dividends.utils.bnUSD;
 import network.balanced.score.lib.test.UnitTest;
-
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import score.Address;
-import score.Context;
+import network.balanced.score.lib.test.mock.MockBalanced;
+import network.balanced.score.lib.test.mock.MockContract;
+import network.balanced.score.lib.interfaces.*;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -37,23 +34,23 @@ class DividendsImplTestBase extends UnitTest {
     protected static final Object MINT_AMOUNT = BigInteger.TEN.pow(22);
     protected final BigInteger initialFees = BigInteger.TEN.pow(20);
     protected static final long DAY = 43200L;
-    protected static Score bnUSDScore;
+
     protected static final Account owner = sm.createAccount();
     protected final Account admin = sm.createAccount();
     protected final Account prep_address = sm.createAccount();
-    protected static final Account governanceScore = Account.newScoreAccount(1);
-    protected static final Account loansScore = Account.newScoreAccount(2);
-    protected static final Account daoScore = Account.newScoreAccount(3);
-    protected static final Account balnScore = Account.newScoreAccount(7);
-    protected static final Account dexScore = Account.newScoreAccount(6);
-    protected static final Account stakingScore = Account.newScoreAccount(7);
-    protected static final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
+
+    protected static MockContract<Governance> governance;
+    protected static MockContract<Staking> staking;
+    protected static MockContract<BalancedDollar> bnusd;
+    protected static MockContract<BalancedToken> baln;
+    protected static MockContract<DAOfund> daofund;
+    protected static MockContract<Dex> dex;
+    protected static MockContract<Loans> loans;
+    protected static MockBalanced mockBalanced;
     protected Score dividendScore;
-    protected final MockedStatic.Verification getAssetTokens = () -> Context.call(eq(loansScore.getAddress()), eq("getAssetTokens"));
-    protected final MockedStatic.Verification balanceOf = () -> Context.call(eq(balnScore.getAddress()), eq("balanceOf"), any(Address.class));
- 
+
     protected void addBnusdFees(BigInteger amount) {
-        dividendScore.invoke(bnUSDScore.getAccount(), "tokenFallback", bnUSDScore.getAddress(), amount, new byte[0]);
+        dividendScore.invoke(bnusd.account, "tokenFallback", bnusd.getAddress(), amount, new byte[0]);
     }
 
     protected BigInteger getDay() {
@@ -66,12 +63,15 @@ class DividendsImplTestBase extends UnitTest {
 
     }
     protected void setupBase() throws Exception {
-        dividendScore = sm.deploy(owner, DividendsImpl.class, governanceScore.getAddress());
-        assert (dividendScore.getAddress().isContract());
-
-        bnUSDScore = sm.deploy(owner, bnUSD.class, "bnUSD Token", "bnUSD", 18);
-        bnUSDScore.invoke(owner, "mint", MINT_AMOUNT);
-        bnUSDScore.invoke(owner, "transfer", dividendScore.getAddress(), initialFees, new byte[0]);
+        mockBalanced = new MockBalanced(sm, owner);
+        governance = mockBalanced.governance;
+        staking = mockBalanced.staking;
+        bnusd = mockBalanced.bnUSD;
+        baln = mockBalanced.baln;
+        daofund = mockBalanced.daofund;
+        dex = mockBalanced.dex;
+        loans = mockBalanced.loans;
+        dividendScore = sm.deploy(owner, DividendsImpl.class, governance.getAddress());
 
         DividendsImpl dividendsSpy = (DividendsImpl) spy(dividendScore.getInstance());
         dividendScore.setInstance(dividendsSpy);

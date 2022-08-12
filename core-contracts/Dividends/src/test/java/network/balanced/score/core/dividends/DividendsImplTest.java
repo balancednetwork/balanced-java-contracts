@@ -33,7 +33,8 @@ import java.util.Map;
 import static network.balanced.score.lib.utils.Math.pow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class DividendsImplTest extends DividendsImplTestBase {
 
@@ -42,29 +43,21 @@ class DividendsImplTest extends DividendsImplTestBase {
     @BeforeEach
     void setup() throws Exception {
         sm.getBlock().increase(2 * DAY);
-
         setupBase();
-        dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
-        dividendScore.invoke(admin, "setDaofund", daoScore.getAddress());
-        dividendScore.invoke(admin, "setBaln", balnScore.getAddress());
+        dividendScore.invoke(governance.account, "setAdmin", admin.getAddress());
 
-        dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
-        dividendScore.invoke(admin, "setLoans", loansScore.getAddress());
-        dividendScore.invoke(admin, "setDex", dexScore.getAddress());
-        dividendScore.invoke(admin, "addAcceptedTokens", bnUSDScore.getAddress());
+        dividendScore.invoke(admin, "addAcceptedTokens", bnusd.getAddress());
         dividendScore.invoke(admin, "setDividendsBatchSize", batchSize);
         dividendScore.invoke(admin, "setDistributionActivationStatus", true);
 
-        contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("getTimeOffset"))).thenReturn(BigInteger.TWO);
-
+        when(dex.mock.getTimeOffset()).thenReturn(BigInteger.TWO);
         Map<String, String> asset = new HashMap<>();
-        asset.put("baln", String.valueOf(balnScore.getAddress()));
-        asset.put("bnUSD", String.valueOf(bnUSDScore.getAddress()));
+        asset.put("baln", String.valueOf(baln.getAddress()));
+        asset.put("bnUSD", String.valueOf(bnusd.getAddress()));
 
-        contextMock.when(getAssetTokens).thenReturn(asset);
+        when(loans.mock.getAssetTokens()).thenReturn(asset);
 
         dividendScore.invoke(owner, "distribute");
-
     }
 
     private void transferDaofundDiv(int start, int end) {
@@ -122,13 +115,13 @@ class DividendsImplTest extends DividendsImplTestBase {
 
     @Test
     void getBalance() {
-        dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
-        dividendScore.invoke(admin, "setLoans", loansScore.getAddress());
+        dividendScore.invoke(governance.account, "setAdmin", admin.getAddress());
 
         Map<String, String> asset = new HashMap<>();
-        asset.put("baln", String.valueOf(balnScore.getAddress()));
-        contextMock.when(getAssetTokens).thenReturn(asset);
-        contextMock.when(balanceOf).thenReturn(BigInteger.TEN.pow(4));
+        asset.put("baln", String.valueOf(baln.getAddress()));
+
+        when(loans.mock.getAssetTokens()).thenReturn(asset);
+        when(baln.mock.balanceOf(any(Address.class))).thenReturn(BigInteger.TEN.pow(4));
 
         Map<String, BigInteger> expectedResult = new HashMap<>();
         expectedResult.put("baln", BigInteger.TEN.pow(4));
@@ -144,7 +137,7 @@ class DividendsImplTest extends DividendsImplTestBase {
         BigInteger day = getDay();
         BigInteger expectedFees = BigInteger.TWO.multiply(BigInteger.TEN.pow(19));
         Map<String, BigInteger> expectedResult = new HashMap<>();
-        expectedResult.put(bnUSDScore.getAddress().toString(), expectedFees);
+        expectedResult.put(bnusd.getAddress().toString(), expectedFees);
 
         // Act
         addBnusdFees(expectedFees);
@@ -160,14 +153,14 @@ class DividendsImplTest extends DividendsImplTestBase {
         BigInteger expectedFeesBnusd = BigInteger.valueOf(20).multiply(ICX);
         BigInteger expectedFeesBaln = BigInteger.valueOf(30).multiply(ICX);
         Map<String, BigInteger> expectedResult = new HashMap<>();
-        expectedResult.put(bnUSDScore.getAddress().toString(), expectedFeesBnusd);
-        expectedResult.put(balnScore.getAddress().toString(), expectedFeesBaln);
+        expectedResult.put(bnusd.getAddress().toString(), expectedFeesBnusd);
+        expectedResult.put(baln.getAddress().toString(), expectedFeesBaln);
 
         // Act
-        dividendScore.invoke(bnUSDScore.getAccount(), "tokenFallback", bnUSDScore.getAddress(), expectedFeesBnusd,
+        dividendScore.invoke(bnusd.account, "tokenFallback", bnusd.getAddress(), expectedFeesBnusd,
                 new byte[0]);
         // not yet added 
-        dividendScore.invoke(balnScore, "tokenFallback", balnScore.getAddress(), expectedFeesBaln, new byte[0]);
+        dividendScore.invoke(baln.account, "tokenFallback", baln.getAddress(), expectedFeesBaln, new byte[0]);
 
         // Assert
         assertEquals(expectedResult, dividendScore.call("getDailyFees", day));
@@ -187,282 +180,16 @@ class DividendsImplTest extends DividendsImplTestBase {
 
         sm.getBlock().increase(DAY);
         dividendScore.invoke(owner, "distribute");
-        contextMock.when(() -> Context.call(bnUSDScore.getAddress(), "transfer", daoScore.getAddress(),
-                expectedDaofundFees)).thenReturn("Token Transferred");
 
         // Act
         dividendScore.invoke(owner, "transferDaofundDividends", day, day + 1);
 
         // Assert
-        contextMock.verify(() -> Context.call(bnUSDScore.getAddress(), "transfer", daoScore.getAddress(),
-                expectedDaofundFees));
+        verify(bnusd.mock).transfer(daofund.getAddress(), expectedDaofundFees, null);
+                
         Map<String, BigInteger> zeroDivsMap = new HashMap<>();
         assertEquals(zeroDivsMap, dividendScore.call("getDaoFundDividends", day, day + 1));
 
-    }
-
-    @Test
-    void claim() {
-        // Arrange
-        sm.getBlock().increase(DAY);
-        dividendScore.invoke(owner, "distribute");
-
-        int day = getDay().intValue();
-        BigInteger expectedFees = BigInteger.TEN.pow(20);
-        addBnusdFees(expectedFees);
-
-        sm.getBlock().increase(DAY);
-        dividendScore.invoke(owner, "distribute");
-        contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class),
-                any(BigInteger.class))).thenReturn("Token Transferred");
-
-        contextMock.when(() -> Context.call(eq(balnScore.getAddress()), eq("stakedBalanceOfAt"), any(Address.class),
-                any(BigInteger.class))).thenReturn(BigInteger.valueOf(200).multiply(pow(BigInteger.TEN, 18)));
-        contextMock.when(() -> Context.call(eq(balnScore.getAddress()), eq("totalStakedBalanceOfAt"),
-                any(BigInteger.class))).thenReturn(BigInteger.valueOf(200).multiply(pow(BigInteger.TEN, 18)));
-
-        contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("balanceOfAt"), any(Address.class),
-                any(BigInteger.class), any(BigInteger.class))).thenReturn(BigInteger.valueOf(30).multiply(pow(BigInteger.TEN, 18)));
-        contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("totalSupplyAt"), any(BigInteger.class),
-                any(BigInteger.class))).thenReturn(BigInteger.valueOf(50).multiply(pow(BigInteger.TEN, 18)));
-        contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("totalBalnAt"), any(BigInteger.class),
-                any(BigInteger.class))).thenReturn(BigInteger.valueOf(80).multiply(pow(BigInteger.TEN, 18)));
-
-        contextMock.when(() -> Context.call(eq(bnUSDScore.getAddress()), eq("transfer"), eq(owner.getAddress()),
-                any(BigInteger.class))).thenReturn("Token Transferred");
-
-        // Act
-        dividendScore.invoke(owner, "claim", day, day + 1);
-
-        // Assert
-        contextMock.verify(() -> Context.call(eq(bnUSDScore.getAddress()), eq("transfer"), eq(owner.getAddress()),
-                any(BigInteger.class)));
-        Map<String, BigInteger> zeroDivsMap = new HashMap<>();
-        assertEquals(zeroDivsMap, dividendScore.call("getUserDividends", owner.getAddress(), day, day + 1));
-    }
-
-    @Test
-    void getUserDividends() {
-        sm.getBlock().increase(DAY);
-        dividendScore.invoke(owner, "distribute");
-
-        int day = getDay().intValue();
-        BigInteger expectedFees = BigInteger.TEN.pow(20);
-        addBnusdFees(expectedFees);
-        BigInteger stakerPercentage = getFeePercentage("baln_holders");
-        BigInteger expectedStakingFees = expectedFees.multiply(stakerPercentage).divide(ICX);
-
-        sm.getBlock().increase(DAY);
-        dividendScore.invoke(owner, "distribute");
-
-        contextMock.when(() -> Context.call(eq(balnScore.getAddress()), eq("stakedBalanceOfAt"), any(Address.class),
-                any(BigInteger.class))).thenReturn(BigInteger.valueOf(200).multiply(pow(BigInteger.TEN, 18)));
-        contextMock.when(() -> Context.call(eq(balnScore.getAddress()), eq("totalStakedBalanceOfAt"),
-                any(BigInteger.class))).thenReturn(BigInteger.valueOf(200).multiply(pow(BigInteger.TEN, 18)));
-
-        contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("balanceOfAt"), any(Address.class),
-                any(BigInteger.class), any(BigInteger.class))).thenReturn(BigInteger.valueOf(50).multiply(pow(BigInteger.TEN, 18)));
-        contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("totalSupplyAt"), any(BigInteger.class),
-                any(BigInteger.class))).thenReturn(BigInteger.valueOf(50).multiply(pow(BigInteger.TEN, 18)));
-        contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("totalBalnAt"), any(BigInteger.class),
-                any(BigInteger.class))).thenReturn(BigInteger.valueOf(80).multiply(pow(BigInteger.TEN, 18)));
-
-        Map<String, BigInteger> expected_result = new HashMap<>();
-        expected_result.put(String.valueOf(bnUSDScore.getAddress()), expectedStakingFees);
-
-        assertEquals(expected_result, dividendScore.call("getUserDividends", owner.getAddress(), day, day + 1));
-    }
-
-    @Test
-    void getUserDividendsOnlyToStaked() {
-        // Arrange
-        BigInteger day = getDay();
-        dividendScore.invoke(admin, "setDividendsOnlyToStakedBalnDay", day.add(BigInteger.ONE));
-        sm.getBlock().increase(DAY);
-        dividendScore.invoke(owner, "distribute");
-
-        sm.getBlock().increase(DAY);
-        dividendScore.invoke(owner, "distribute");
-
-        day = getDay();
-
-        BigInteger expectedFees = BigInteger.TEN.pow(20);
-        addBnusdFees(expectedFees);
-        BigInteger stakerPercentage = getFeePercentage("baln_holders");
-        BigInteger expectedStakingFees = expectedFees.multiply(stakerPercentage).divide(ICX);
-
-        BigInteger ownerStake = BigInteger.valueOf(100).multiply(ICX);
-        BigInteger totalStake = BigInteger.valueOf(200).multiply(ICX);
-        BigInteger expectedOwnerFees = expectedStakingFees.multiply(ownerStake).divide(totalStake);
-
-        sm.getBlock().increase(DAY);
-        dividendScore.invoke(owner, "distribute");
-
-        // Act
-        contextMock.when(() -> Context.call(eq(balnScore.getAddress()), eq("stakedBalanceOfAt"), any(Address.class),
-                any(BigInteger.class))).thenReturn(ownerStake);
-        contextMock.when(() -> Context.call(eq(balnScore.getAddress()), eq("totalStakedBalanceOfAt"),
-                any(BigInteger.class))).thenReturn(totalStake);
-
-        contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("balanceOfAt"), any(Address.class),
-                any(BigInteger.class), any(BigInteger.class))).thenReturn(BigInteger.valueOf(30).multiply(pow(BigInteger.TEN, 18)));
-        contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("totalSupplyAt"), any(BigInteger.class),
-                any(BigInteger.class))).thenReturn(BigInteger.valueOf(50).multiply(pow(BigInteger.TEN, 18)));
-        contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("totalBalnAt"), any(BigInteger.class),
-                any(BigInteger.class))).thenReturn(BigInteger.valueOf(80).multiply(pow(BigInteger.TEN, 18)));
-
-
-        // Assert
-        Map<String, BigInteger> expected_result = new HashMap<>();
-        expected_result.put(String.valueOf(bnUSDScore.getAddress()), expectedOwnerFees);
-
-        assertEquals(expected_result, dividendScore.call("getUserDividends", owner.getAddress(), day.intValue(),
-                day.intValue() + 1));
-    }
-
-    @Test
-    void getUserDividendsOnlyToStaked_MultipleDays() {
-        // Arrange
-        BigInteger day = getDay();
-        dividendScore.invoke(admin, "setDividendsOnlyToStakedBalnDay", day.add(BigInteger.ONE));
-        sm.getBlock().increase(DAY);
-        dividendScore.invoke(owner, "distribute");
-
-        sm.getBlock().increase(DAY);
-        dividendScore.invoke(owner, "distribute");
-
-        day = getDay();
-
-        BigInteger dayOneFees = BigInteger.TEN.pow(20);
-        addBnusdFees(dayOneFees);
-        BigInteger stakerPercentage = getFeePercentage("baln_holders");
-        BigInteger ownerStake = BigInteger.valueOf(100).multiply(ICX);
-        BigInteger totalStake = BigInteger.valueOf(200).multiply(ICX);
-        contextMock.when(() -> Context.call(eq(balnScore.getAddress()), eq("stakedBalanceOfAt"), any(Address.class),
-                any(BigInteger.class))).thenReturn(ownerStake);
-        contextMock.when(() -> Context.call(eq(balnScore.getAddress()), eq("totalStakedBalanceOfAt"),
-                any(BigInteger.class))).thenReturn(totalStake);
-
-
-        BigInteger expectedStakingFees = dayOneFees.multiply(stakerPercentage).divide(ICX);
-        BigInteger expectedOwnerFees = expectedStakingFees.multiply(ownerStake).divide(totalStake);
-
-        sm.getBlock().increase(DAY);
-        dividendScore.invoke(owner, "distribute");
-        BigInteger dayTwoFees = BigInteger.TEN.pow(19);
-        addBnusdFees(dayTwoFees);
-        expectedStakingFees = dayTwoFees.multiply(stakerPercentage).divide(ICX);
-        expectedOwnerFees = expectedOwnerFees.add(expectedStakingFees.multiply(ownerStake).divide(totalStake));
-
-        // Act
-        sm.getBlock().increase(DAY);
-        dividendScore.invoke(owner, "distribute");
-
-        // Assert
-        Map<String, BigInteger> expected_result = new HashMap<>();
-        expected_result.put(String.valueOf(bnUSDScore.getAddress()), expectedOwnerFees);
-
-        assertEquals(expected_result, dividendScore.call("getUserDividends", owner.getAddress(), day.intValue(),
-                day.intValue() + 2));
-    }
-
-    @Test
-    void getDaoFundDividends() {
-        // Arrange
-        sm.getBlock().increase(DAY);
-        dividendScore.invoke(owner, "distribute");
-
-        int day = getDay().intValue();
-        BigInteger expectedFees = BigInteger.TEN.pow(20);
-        addBnusdFees(expectedFees);
-        BigInteger daofundPercentage = getFeePercentage("daofund");
-        BigInteger expectedDaofundFees = expectedFees.multiply(daofundPercentage).divide(ICX);
-
-        // Act
-        sm.getBlock().increase(DAY);
-        dividendScore.invoke(owner, "distribute");
-
-        // Assert       
-        Map<String, BigInteger> result = new HashMap<>();
-        result.put(bnUSDScore.getAddress().toString(), expectedDaofundFees);
-
-        assertEquals(result, dividendScore.call("getDaoFundDividends", day, day + 1));
-    }
-
-    @Test
-    void getDaoFundDividends_MultipleDays() {
-        // Arrange
-        dividendScore.invoke(admin, "setDividendsBatchSize", BigInteger.valueOf(4));
-        sm.getBlock().increase(DAY);
-        dividendScore.invoke(owner, "distribute");
-
-        int day = getDay().intValue();
-        BigInteger dayOneFees = BigInteger.TEN.pow(20);
-        addBnusdFees(dayOneFees);
-        BigInteger daofundPercentage = getFeePercentage("daofund");
-        BigInteger expectedDaofundFees = dayOneFees.multiply(daofundPercentage).divide(ICX);
-
-        // Act
-        sm.getBlock().increase(DAY);
-        dividendScore.invoke(owner, "distribute");
-        BigInteger dayTwoFees = BigInteger.TEN.pow(21);
-        addBnusdFees(dayTwoFees);
-        expectedDaofundFees = expectedDaofundFees.add(dayTwoFees.multiply(daofundPercentage).divide(ICX));
-
-        sm.getBlock().increase(DAY);
-        dividendScore.invoke(owner, "distribute");
-        BigInteger dayThreeFees = BigInteger.TEN.pow(19);
-        addBnusdFees(dayThreeFees);
-        expectedDaofundFees = expectedDaofundFees.add(dayThreeFees.multiply(daofundPercentage).divide(ICX));
-
-        sm.getBlock().increase(DAY);
-        dividendScore.invoke(owner, "distribute");
-
-        // Assert       
-        Map<String, BigInteger> result = new HashMap<>();
-        result.put(bnUSDScore.getAddress().toString(), expectedDaofundFees);
-
-        assertEquals(result, dividendScore.call("getDaoFundDividends", day, day + 3));
-    }
-
-    @Test
-    void getDaoFundDividends_partialClaimedInTheFuture() {
-        // Arrange
-        dividendScore.invoke(admin, "setDividendsBatchSize", BigInteger.valueOf(4));
-        sm.getBlock().increase(DAY);
-        dividendScore.invoke(owner, "distribute");
-
-        int day = getDay().intValue();
-        BigInteger dayOneFees = BigInteger.TEN.pow(20);
-        addBnusdFees(dayOneFees);
-        BigInteger daofundPercentage = getFeePercentage("daofund");
-        BigInteger expectedDaofundFees = dayOneFees.multiply(daofundPercentage).divide(ICX);
-
-
-        sm.getBlock().increase(DAY);
-        dividendScore.invoke(owner, "distribute");
-        BigInteger dayTwoFees = BigInteger.TEN.pow(21);
-        addBnusdFees(dayTwoFees);
-        expectedDaofundFees = expectedDaofundFees.add(dayTwoFees.multiply(daofundPercentage).divide(ICX));
-
-        sm.getBlock().increase(DAY);
-        dividendScore.invoke(owner, "distribute");
-        BigInteger dayThreeFees = BigInteger.TEN.pow(19);
-        addBnusdFees(dayThreeFees);
-        BigInteger expectedDayThreeDaofundFees = dayThreeFees.multiply(daofundPercentage).divide(ICX);
-
-        // Act
-        sm.getBlock().increase(DAY);
-        dividendScore.invoke(owner, "distribute");
-        contextMock.when(() -> Context.call(bnUSDScore.getAddress(), "transfer", daoScore.getAddress(),
-                expectedDayThreeDaofundFees)).thenReturn("Token Transferred");
-        dividendScore.invoke(owner, "transferDaofundDividends", day + 2, day + 3);
-
-        // Assert       
-        Map<String, BigInteger> result = new HashMap<>();
-        result.put(bnUSDScore.getAddress().toString(), expectedDaofundFees);
-
-        assertEquals(result, dividendScore.call("getDaoFundDividends", day, day + 3));
     }
 
     @Test
@@ -477,7 +204,7 @@ class DividendsImplTest extends DividendsImplTestBase {
     @Test
     void dividendsAt_snapshottedDistributions() {
 
-        dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
+        dividendScore.invoke(governance.account, "setAdmin", admin.getAddress());
 
         List<String> expected_list = new ArrayList<>();
         expected_list.add("daofund");
@@ -552,12 +279,8 @@ class DividendsImplTest extends DividendsImplTestBase {
         prep._votes_in_per = BigInteger.valueOf(100);
         PrepDelegations[] preps = new PrepDelegations[]{prep};
 
-        contextMock.when(() -> Context.call(governanceScore.getAddress(), "getContractAddress", "staking")).thenReturn(stakingScore.getAddress());
-        contextMock.when(() -> Context.call(eq(stakingScore.getAddress()), eq("delegate"), any())).thenReturn(
-                "Staking delegate called");
-        dividendScore.invoke(governanceScore, "delegate", (Object) preps);
+        dividendScore.invoke(governance.account, "delegate", (Object) preps);
 
-        contextMock.verify(() -> Context.call(governanceScore.getAddress(), "getContractAddress", "staking"));
-        contextMock.verify(() -> Context.call(eq(stakingScore.getAddress()), eq("delegate"), any()));
+        verify(staking.mock).delegate(any());
     }
 }

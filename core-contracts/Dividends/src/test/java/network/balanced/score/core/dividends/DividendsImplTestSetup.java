@@ -46,59 +46,30 @@ class DividendsImplTestSetup extends DividendsImplTestBase {
 
     @Test
     void setDistributionActivationStatus() {
-        dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
+        dividendScore.invoke(governance.account, "setAdmin", admin.getAddress());
         dividendScore.invoke(admin, "setDistributionActivationStatus", true);
         assertEquals(true, dividendScore.call("getDistributionActivationStatus"));
     }
 
     @Test
-    void setAndGetGovernance() {
-        testGovernance(dividendScore, governanceScore, owner);
-    }
-
-    @Test
     void setAndGetAdmin() {
-        testAdmin(dividendScore, governanceScore, admin);
-    }
-
-    @Test
-    void setAndGetLoans() {
-        testContractSettersAndGetters(dividendScore, governanceScore, admin, "setLoans",
-                loansScore.getAddress(), "getLoans");
-    }
-
-    @Test
-    void setAndGetDao() {
-        testContractSettersAndGetters(dividendScore, governanceScore, admin, "setDaofund",
-                daoScore.getAddress(), "getDaofund");
-    }
-
-    @Test
-    void setAndGetBaln() {
-        testContractSettersAndGetters(dividendScore, governanceScore, admin, "setBaln",
-                balnScore.getAddress(), "getBaln");
-    }
-
-    @Test
-    void setAndGetDex() {
-        testContractSettersAndGetters(dividendScore, governanceScore, admin, "setDex",
-                dexScore.getAddress(), "getDex");
+        testAdmin(dividendScore, governance.account, admin);
     }
 
     @Test
     void getAcceptedTokens() {
         List<Address> expected_list = new ArrayList<>();
-        expected_list.add(balnScore.getAddress());
+        expected_list.add(baln.getAddress());
 
-        dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
-        dividendScore.invoke(admin, "addAcceptedTokens", balnScore.getAddress());
+        dividendScore.invoke(governance.account, "setAdmin", admin.getAddress());
+        dividendScore.invoke(admin, "addAcceptedTokens", baln.getAddress());
 
         assertEquals(expected_list, dividendScore.call("getAcceptedTokens"));
     }
 
     @Test
     void getDividendsCategories() {
-        dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
+        dividendScore.invoke(governance.account, "setAdmin", admin.getAddress());
 
         List<String> expected_list = new ArrayList<>();
         expected_list.add("daofund");
@@ -112,7 +83,7 @@ class DividendsImplTestSetup extends DividendsImplTestBase {
 
     @Test
     void removeDividendsCategory() {
-        dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
+        dividendScore.invoke(governance.account, "setAdmin", admin.getAddress());
 
         List<String> expected_list = new ArrayList<>();
         expected_list.add("daofund");
@@ -150,7 +121,7 @@ class DividendsImplTestSetup extends DividendsImplTestBase {
 
     @Test
     void setGetDividendsBatchSize() {
-        dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
+        dividendScore.invoke(governance.account, "setAdmin", admin.getAddress());
         dividendScore.invoke(admin, "setDividendsBatchSize", BigInteger.valueOf(2));
 
         assertEquals(BigInteger.valueOf(2), dividendScore.call("getDividendsBatchSize"));
@@ -163,7 +134,7 @@ class DividendsImplTestSetup extends DividendsImplTestBase {
 
     @Test
     void setGetDividendsOnlyToStakedBalnDay() {
-        dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
+        dividendScore.invoke(governance.account, "setAdmin", admin.getAddress());
         dividendScore.invoke(admin, "setDividendsOnlyToStakedBalnDay", BigInteger.TWO);
         assertEquals(BigInteger.TWO, dividendScore.call("getDividendsOnlyToStakedBalnDay"));
     }
@@ -176,17 +147,15 @@ class DividendsImplTestSetup extends DividendsImplTestBase {
 
     @Test
     void getTimeOffset() {
-        setAndGetDex();
-        contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("getTimeOffset"))).thenReturn(BigInteger.valueOf(2 * DAY));
+        when(dex.mock.getTimeOffset()).thenReturn(BigInteger.valueOf(2 * DAY));
         dividendScore.invoke(owner, "distribute");
         assertEquals(BigInteger.valueOf(2 * DAY), dividendScore.call("getTimeOffset"));
     }
 
     @Test
     void getDividendsPercentage() {
-        dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
-        dividendScore.invoke(admin, "setLoans", loansScore.getAddress());
-        contextMock.when(() -> Context.call(eq(loansScore.getAddress()), eq("getDay"))).thenReturn(BigInteger.valueOf(1));
+        dividendScore.invoke(governance.account, "setAdmin", admin.getAddress());
+        when(loans.mock.getDay()).thenReturn(BigInteger.valueOf(1));
 
         Map<String, BigInteger> expected_output = new HashMap<>();
         expected_output.put("daofund", BigInteger.valueOf(400000000000000000L));
@@ -197,8 +166,7 @@ class DividendsImplTestSetup extends DividendsImplTestBase {
 
     @Test
     void getDayTest() {
-        dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
-        dividendScore.invoke(admin, "setDex", dexScore.getAddress());
+        dividendScore.invoke(governance.account, "setAdmin", admin.getAddress());
 
         BigInteger currentDay = (BigInteger) dividendScore.call("getDay");
         sm.getBlock().increase(4 * DAY);

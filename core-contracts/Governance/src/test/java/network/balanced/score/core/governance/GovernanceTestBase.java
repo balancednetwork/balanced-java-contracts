@@ -227,23 +227,23 @@ public class GovernanceTestBase extends UnitTest {
     }
 
     protected void setup() throws Exception {
-        loans = new MockContract<>(LoansScoreInterface.class, sm, owner);
-        dex = new MockContract<>(DexScoreInterface.class, sm, owner);
-        staking = new MockContract<>(StakingScoreInterface.class, sm, owner);
-        rewards = new MockContract<>(RewardsScoreInterface.class, sm, owner);
-        reserve = new MockContract<>(ReserveScoreInterface.class, sm, owner);
-        dividends = new MockContract<>(DividendsScoreInterface.class, sm, owner);
-        daofund = new MockContract<>(DAOfundScoreInterface.class, sm, owner);
-        sicx = new MockContract<>(SicxScoreInterface.class, sm, owner);
-        bnUSD = new MockContract<>(BalancedDollarScoreInterface.class, sm, owner);
-        baln = new MockContract<>(BalancedTokenScoreInterface.class, sm, owner);
-        bwt = new MockContract<>(WorkerTokenScoreInterface.class, sm, owner);
-        router = new MockContract<>(RouterScoreInterface.class, sm, owner);
-        rebalancing = new MockContract<>(RebalancingScoreInterface.class, sm, owner);
-        feehandler = new MockContract<>(FeeHandlerScoreInterface.class, sm, owner);
-        stakedLp = new MockContract<>(StakedLPScoreInterface.class, sm, owner);
-        stability = new MockContract<>(StabilityScoreInterface.class, sm, owner);
-        balancedOracle = new MockContract<>(BalancedOracleScoreInterface.class, sm, owner);
+        loans = new MockContract<>(LoansScoreInterface.class, Loans.class, sm, owner);
+        dex = new MockContract<>(DexScoreInterface.class, Dex.class, sm, owner);
+        staking = new MockContract<>(StakingScoreInterface.class, Staking.class, sm, owner);
+        rewards = new MockContract<>(RewardsScoreInterface.class, Rewards.class, sm, owner);
+        reserve = new MockContract<>(ReserveScoreInterface.class, Reserve.class, sm, owner);
+        dividends = new MockContract<>(DividendsScoreInterface.class, Dividends.class, sm, owner);
+        daofund = new MockContract<>(DAOfundScoreInterface.class, DAOfund.class, sm, owner);
+        sicx = new MockContract<>(SicxScoreInterface.class, Sicx.class, sm, owner);
+        bnUSD = new MockContract<>(BalancedDollarScoreInterface.class, BalancedDollar.class, sm, owner);
+        baln = new MockContract<>(BalancedTokenScoreInterface.class, BalancedToken.class, sm, owner);
+        bwt = new MockContract<>(WorkerTokenScoreInterface.class, WorkerToken.class, sm, owner);
+        router = new MockContract<>(RouterScoreInterface.class, Router.class, sm, owner);
+        rebalancing = new MockContract<>(RebalancingScoreInterface.class, Rebalancing.class, sm, owner);
+        feehandler = new MockContract<>(FeeHandlerScoreInterface.class, FeeHandler.class, sm, owner);
+        stakedLp = new MockContract<>(StakedLPScoreInterface.class, StakedLP.class, sm, owner);
+        stability = new MockContract<>(StabilityScoreInterface.class, Stability.class, sm, owner);
+        balancedOracle = new MockContract<>(BalancedOracleScoreInterface.class, BalancedOracle.class, sm, owner);
         governance = sm.deploy(owner, GovernanceImpl.class);
 
         setupAddresses();
