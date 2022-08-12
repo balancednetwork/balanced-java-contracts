@@ -31,15 +31,11 @@ import java.util.Map;
 
 import static network.balanced.score.core.rebalancing.Constants.*;
 import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 
 public class RebalancingImpl implements Rebalancing {
 
-    private final VarDB<Address> bnusd = Context.newVarDB(BNUSD_ADDRESS, Address.class);
-    private final VarDB<Address> sicx = Context.newVarDB(SICX_ADDRESS, Address.class);
-    private final VarDB<Address> dex = Context.newVarDB(DEX_ADDRESS, Address.class);
-    private final VarDB<Address> loans = Context.newVarDB(LOANS_ADDRESS, Address.class);
-    private final VarDB<Address> oracle = Context.newVarDB(ORACLE_ADDRESS, Address.class);
     public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE_ADDRESS, Address.class);
     public static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
     private final VarDB<BigInteger> priceThreshold = Context.newVarDB(PRICE_THRESHOLD, BigInteger.class);
@@ -50,53 +46,13 @@ public class RebalancingImpl implements Rebalancing {
             governance.set(_governance);
             // priceThreshold.set(BigInteger.valueOf(100000000000000000L));
         }
+
+        setGovernance(governance.get());
     }
 
     @External(readonly = true)
     public String name() {
         return Names.REBALANCING;
-    }
-
-    @External
-    public void setBnusd(Address _address) {
-        only(admin);
-        isContract(_address);
-        bnusd.set(_address);
-    }
-
-    @External
-    public void setLoans(Address _address) {
-        only(admin);
-        isContract(_address);
-        loans.set(_address);
-    }
-
-    @External
-    public void setSicx(Address _address){
-        only(admin);
-        isContract(_address);
-        sicx.set(_address);
-    }
-    
-    @External
-    public void setGovernance(Address _address) {
-        onlyOwner();
-        isContract(_address);
-        governance.set(_address);
-    }
-
-    @External
-    public void setDex(Address _address) {
-        only(admin);
-        isContract(_address);
-        dex.set(_address);
-    }
-
-    @External
-    public void setOracle(Address _address) {
-        only(admin);
-        isContract(_address);
-        oracle.set(_address);
     }
 
     @External
@@ -106,38 +62,18 @@ public class RebalancingImpl implements Rebalancing {
     }
 
     @External(readonly = true)
-    public Address getGovernance() {
-        return governance.get();
-    }
-
-    @External(readonly = true)
     public Address getAdmin() {
         return admin.get();
     }
 
-    @External(readonly = true)
-    public Address getLoans(){
-        return loans.get();
+    @External
+    public void updateAddress(String name) {
+        resetAddress(name);
     }
 
     @External(readonly = true)
-    public Address getBnusd() {
-        return bnusd.get();
-    }
-
-    @External(readonly = true)
-    public Address getSicx() {
-        return sicx.get();
-    }
-
-    @External(readonly = true)
-    public Address getDex() {
-        return dex.get();
-    }
-
-    @External(readonly = true)
-    public Address getOracle() {
-        return oracle.get();
+    public Address getAddress(String name) {
+        return getAddressByName(name);
     }
 
     private BigInteger calculateTokensToSell(BigInteger price, BigInteger fromTokenLiquidity,
@@ -147,7 +83,7 @@ public class RebalancingImpl implements Rebalancing {
 
     @External
     public void setPriceDiffThreshold(BigInteger _value) {
-        only(governance);
+        only(getGovernance());
         priceThreshold.set(_value);
     }
 
@@ -172,10 +108,10 @@ public class RebalancingImpl implements Rebalancing {
 
         List<Object> results = new ArrayList<>(3);
 
-        Address bnusdScore = bnusd.get();
-        Address dexScore = dex.get();
-        Address sicxScore = sicx.get();
-        Address oracleScore = oracle.get();
+        Address bnusdScore = getBnusd();
+        Address dexScore = getDex();
+        Address sicxScore = getSicx();
+        Address oracleScore = getBalancedOracle();
         BigInteger threshold = priceThreshold.get();
 
         Context.require(bnusdScore != null && dexScore != null && sicxScore != null && threshold != null);
@@ -227,8 +163,8 @@ public class RebalancingImpl implements Rebalancing {
 
     @External
     public void rebalance(@Optional Address collateralAddress) {
-        optionalDefault(collateralAddress, sicx.get());
-        Address loansScore = loans.get();
+        optionalDefault(collateralAddress, getSicx());
+        Address loansScore = getLoans();
         String symbol = Context.call(String.class, collateralAddress, "symbol");
         Context.require(loansScore != null);
         List<Object> status = getRebalancingStatusFor(collateralAddress);

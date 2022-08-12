@@ -33,7 +33,7 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface Dividends extends AdminAddress, Name, TokenFallback {
+public interface Dividends extends AdminAddress, Name, TokenFallback, AddressManager {
 
     @External(readonly = true)
     boolean getDistributionActivationStatus();

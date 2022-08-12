@@ -119,6 +119,16 @@ public class DividendsImpl implements Dividends {
     }
 
     @External
+    public void updateAddress(String name) {
+        resetAddress(name);
+    }
+
+    @External(readonly = true)
+    public Address getAddress(String name) {
+        return getAddressByName(name);
+    }
+
+    @External
     public void setDividendsOnlyToStakedBalnDay(BigInteger day) {
         only(admin);
         Context.require(day.compareTo(snapshotId.getOrDefault(BigInteger.ZERO)) > 0,

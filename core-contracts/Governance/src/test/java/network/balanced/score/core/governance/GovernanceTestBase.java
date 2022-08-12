@@ -22,9 +22,8 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import network.balanced.score.lib.interfaces.*;
-import network.balanced.score.lib.interfaces.addresses.BnusdAddress;
-import network.balanced.score.lib.structs.BalancedAddresses;
 import network.balanced.score.lib.test.UnitTest;
+import network.balanced.score.lib.test.mock.MockBalanced;
 import network.balanced.score.lib.test.mock.MockContract;
 import network.balanced.score.lib.utils.Names;
 import score.Address;
@@ -34,7 +33,6 @@ import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class GovernanceTestBase extends UnitTest {
@@ -47,6 +45,7 @@ public class GovernanceTestBase extends UnitTest {
 
     protected static final Account oracle = Account.newScoreAccount(scoreCount);
 
+    protected MockBalanced mockBalanced;
     protected MockContract<Loans> loans;
     protected MockContract<Dex> dex;
     protected MockContract<Staking> staking;
@@ -227,23 +226,24 @@ public class GovernanceTestBase extends UnitTest {
     }
 
     protected void setup() throws Exception {
-        loans = new MockContract<>(LoansScoreInterface.class, Loans.class, sm, owner);
-        dex = new MockContract<>(DexScoreInterface.class, Dex.class, sm, owner);
-        staking = new MockContract<>(StakingScoreInterface.class, Staking.class, sm, owner);
-        rewards = new MockContract<>(RewardsScoreInterface.class, Rewards.class, sm, owner);
-        reserve = new MockContract<>(ReserveScoreInterface.class, Reserve.class, sm, owner);
-        dividends = new MockContract<>(DividendsScoreInterface.class, Dividends.class, sm, owner);
-        daofund = new MockContract<>(DAOfundScoreInterface.class, DAOfund.class, sm, owner);
-        sicx = new MockContract<>(SicxScoreInterface.class, Sicx.class, sm, owner);
-        bnUSD = new MockContract<>(BalancedDollarScoreInterface.class, BalancedDollar.class, sm, owner);
-        baln = new MockContract<>(BalancedTokenScoreInterface.class, BalancedToken.class, sm, owner);
-        bwt = new MockContract<>(WorkerTokenScoreInterface.class, WorkerToken.class, sm, owner);
-        router = new MockContract<>(RouterScoreInterface.class, Router.class, sm, owner);
-        rebalancing = new MockContract<>(RebalancingScoreInterface.class, Rebalancing.class, sm, owner);
-        feehandler = new MockContract<>(FeeHandlerScoreInterface.class, FeeHandler.class, sm, owner);
-        stakedLp = new MockContract<>(StakedLPScoreInterface.class, StakedLP.class, sm, owner);
-        stability = new MockContract<>(StabilityScoreInterface.class, Stability.class, sm, owner);
-        balancedOracle = new MockContract<>(BalancedOracleScoreInterface.class, BalancedOracle.class, sm, owner);
+        mockBalanced = new MockBalanced(sm, owner);
+        loans = mockBalanced.loans;
+        dex = mockBalanced.dex;
+        staking = mockBalanced.staking;
+        rewards = mockBalanced.rewards;
+        reserve = mockBalanced.reserve;
+        dividends = mockBalanced.dividends;
+        daofund = mockBalanced.daofund;
+        sicx = mockBalanced.sicx;
+        bnUSD = mockBalanced.bnUSD;
+        baln = mockBalanced.baln;
+        bwt = mockBalanced.bwt;
+        router = mockBalanced.router;
+        rebalancing = mockBalanced.rebalancing;
+        feehandler = mockBalanced.feehandler;
+        stakedLp = mockBalanced.stakedLp;
+        stability = mockBalanced.stability;
+        balancedOracle = mockBalanced.balancedOracle;
         governance = sm.deploy(owner, GovernanceImpl.class);
 
         setupAddresses();

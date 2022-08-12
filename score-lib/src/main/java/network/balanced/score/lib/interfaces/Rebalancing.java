@@ -29,8 +29,7 @@ import java.util.List;
 
 @ScoreClient
 @ScoreInterface
-public interface Rebalancing extends AdminAddress, BnusdAddress, DexAddress, GovernanceAddress, LoansAddress,
-        Name, SicxAddress, OracleAddress {
+public interface Rebalancing extends AdminAddress, AddressManager, Name {
 
     @External(readonly = true)
     BigInteger getPriceChangeThreshold();

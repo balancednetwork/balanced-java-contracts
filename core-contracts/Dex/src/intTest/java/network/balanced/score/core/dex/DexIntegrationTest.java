@@ -20,6 +20,7 @@ import foundation.icon.icx.Wallet;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
 import network.balanced.score.lib.interfaces.*;
+import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.interfaces.dex.DexTestScoreClient;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.Env;
@@ -154,15 +155,15 @@ class DexIntegrationTest {
     @Order(1)
     void testGovernanceAddress() {
         assertEquals("Balanced DEX", dexUserScoreClient.name());
-        score.Address governanceAddress = dexUserScoreClient.getGovernance();
-        assertEquals(governanceAddress, governanceScoreClient._address());
+        score.Address governanceAddress = dexUserScoreClient.getAddress(Names.GOVERNANCE);
+        assertEquals(governanceAddress, balanced.governance._address());
     }
 
     @Test
     @Order(2)
     void testAdminAddress() {
-        score.Address adminAddress = dexUserScoreClient.getGovernance();
-        assertEquals(adminAddress, governanceScoreClient._address());
+        score.Address adminAddress = dexUserScoreClient.getAddress(Names.GOVERNANCE);
+        assertEquals(adminAddress, balanced.governance._address());
     }
 
     @Test
