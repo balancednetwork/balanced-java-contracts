@@ -33,12 +33,10 @@ import score.annotation.Payable;
 import java.math.BigInteger;
 
 import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.StringUtils.convertStringToBigInteger;
 
 public class RouterImpl implements Router {
-    private static final String DEX_ADDRESS = "dex_address";
-    private static final String SICX_ADDRESS = "sicx_address";
-    private static final String STAKING_ADDRESS = "staking_address";
     private static final String GOVERNANCE_ADDRESS = "governance_address";
     private static final String ADMIN = "admin";
 
@@ -48,15 +46,13 @@ public class RouterImpl implements Router {
 
     private final VarDB<Address> governance = Context.newVarDB(GOVERNANCE_ADDRESS, Address.class);
     private final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
-    private final VarDB<Address> sicx = Context.newVarDB(SICX_ADDRESS, Address.class);
-    private final VarDB<Address> staking = Context.newVarDB(STAKING_ADDRESS, Address.class);
-    private final VarDB<Address> dex = Context.newVarDB(DEX_ADDRESS, Address.class);
-
     public RouterImpl(Address _governance) {
         if (governance.get() == null) {
             isContract(_governance);
             governance.set(_governance);
         }
+
+        setGovernance(governance.get());
     }
 
     @External(readonly = true)
@@ -65,20 +61,8 @@ public class RouterImpl implements Router {
     }
 
     @External
-    public void setGovernance(Address _address) {
-        onlyOwner();
-        isContract(_address);
-        governance.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getGovernance() {
-        return governance.get();
-    }
-
-    @External
     public void setAdmin(Address _admin) {
-        only(governance);
+        only(getGovernance());
         admin.set(_admin);
     }
 
@@ -88,53 +72,26 @@ public class RouterImpl implements Router {
     }
 
     @External
-    public void setDex(Address _dex) {
-        only(admin);
-        isContract(_dex);
-        dex.set(_dex);
+    public void updateAddress(String name) {
+        resetAddress(name);
     }
 
     @External(readonly = true)
-    public Address getDex() {
-        return dex.get();
+    public Address getAddress(String name) {
+        return getAddressByName(name);
     }
-
-    @External
-    public void setSicx(Address _address) {
-        only(admin);
-        isContract(_address);
-        sicx.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getSicx() {
-        return sicx.get();
-    }
-
-    @External
-    public void setStaking(Address _address) {
-        only(admin);
-        isContract(_address);
-        staking.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getStaking() {
-        return staking.get();
-    }
-
 
     private void swap(Address fromToken, Address toToken) {
         if (fromToken == null) {
-            Context.require(toToken.equals(sicx.get()), TAG + ": ICX can only be traded for sICX");
+            Context.require(toToken.equals(getSicx()), TAG + ": ICX can only be traded for sICX");
             BigInteger balance = Context.getBalance(Context.getAddress());
-            Context.transfer(staking.get(), balance);
+            Context.transfer(getStaking(), balance);
         } else if (toToken == null) {
-            Context.require(fromToken.equals(sicx.get()), TAG + ": ICX can only be traded with sICX token");
+            Context.require(fromToken.equals(getSicx()), TAG + ": ICX can only be traded with sICX token");
             JsonObject data = new JsonObject();
             data.add("method", "_swap_icx");
             BigInteger balance = (BigInteger) Context.call(fromToken, "balanceOf", Context.getAddress());
-            Context.call(fromToken, "transfer", dex.get(), balance, data.toString().getBytes());
+            Context.call(fromToken, "transfer", getDex(), balance, data.toString().getBytes());
         } else {
             JsonObject params = new JsonObject();
             params.add("toToken", toToken.toString());
@@ -142,7 +99,7 @@ public class RouterImpl implements Router {
             data.add("method", "_swap");
             data.add("params", params);
             BigInteger balance = (BigInteger) Context.call(fromToken, "balanceOf", Context.getAddress());
-            Context.call(fromToken, "transfer", dex.get(), balance, data.toString().getBytes());
+            Context.call(fromToken, "transfer", getDex(), balance, data.toString().getBytes());
         }
     }
 
@@ -195,7 +152,7 @@ public class RouterImpl implements Router {
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         // Receive token transfers from Balanced DEX and staking while in mid-route
-        if (_from.equals(dex.get()) || _from.equals(MINT_ADDRESS)) {
+        if (_from.equals(getDex()) || _from.equals(MINT_ADDRESS)) {
             return;
         }
 
@@ -247,6 +204,6 @@ public class RouterImpl implements Router {
 
     @Payable
     public void fallback() {
-        only(dex);
+        only(getDex());
     }
 }

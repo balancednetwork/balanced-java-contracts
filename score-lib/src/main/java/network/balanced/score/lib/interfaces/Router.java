@@ -32,7 +32,7 @@ import foundation.icon.score.client.ScoreInterface;
 
 @ScoreClient
 @ScoreInterface
-public interface Router extends Name, GovernanceAddress, AdminAddress, DexAddress, SicxAddress, StakingAddress,
+public interface Router extends Name, AdminAddress,
         TokenFallback, Fallback {
 
     @Payable

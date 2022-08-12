@@ -27,11 +27,12 @@ import java.util.List;
 import java.util.Map;
 
 import foundation.icon.score.client.ScoreInterface;
+import network.balanced.score.lib.interfaces.base.Fallback;
 import network.balanced.score.lib.structs.PrepDelegations;
 
 @ScoreClient
 @ScoreInterface
-public interface Staking {
+public interface Staking extends Fallback{
 
     @External(readonly = true)
     String name();
