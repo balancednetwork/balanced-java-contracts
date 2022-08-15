@@ -101,10 +101,10 @@ public class DataSourceImpl {
         BigInteger timeLeft = previousDayEndUs.subtract(lastUpdateTimestamp);
 
         BigInteger totalDist = getTotalDist(day, true);
-        BigInteger remaningDist = totalDist.multiply(timeLeft).divide(MICRO_SECONDS_IN_A_DAY);
+        BigInteger remainingDist = totalDist.multiply(timeLeft).divide(MICRO_SECONDS_IN_A_DAY);
         
         this.uncheckedTotalWeight.at(dbKey).set(getTotalWeight());
-        addCumulativeTotalDist(remaningDist);
+        addCumulativeTotalDist(remainingDist);
     }
 
     public BigInteger getUncheckedTotalWeight() {
@@ -113,16 +113,15 @@ public class DataSourceImpl {
 
     public void addCumulativeTotalDist(BigInteger dist){
         VarDB<BigInteger> cumulativeTotalDist = this.cumulativeTotalDist.at(dbKey);
-        BigInteger remaningDist = cumulativeTotalDist.getOrDefault(BigInteger.ZERO);
-        cumulativeTotalDist.set(remaningDist.add(dist));
-        
+        BigInteger remainingDist = cumulativeTotalDist.getOrDefault(BigInteger.ZERO);
+        cumulativeTotalDist.set(remainingDist.add(dist));
     }
 
     public void removeCumulativeTotalDist(BigInteger dist){
         VarDB<BigInteger> cumulativeTotalDist = this.cumulativeTotalDist.at(dbKey);
-        BigInteger remaningDist = cumulativeTotalDist.getOrDefault(BigInteger.ZERO).subtract(dist);
-        Context.require(remaningDist.signum() >= 0, RewardsImpl.TAG + ": There are no rewards left to claim for " + getName());
-        cumulativeTotalDist.set(remaningDist);
+        BigInteger remainingDist = cumulativeTotalDist.getOrDefault(BigInteger.ZERO).subtract(dist);
+        Context.require(remainingDist.signum() >= 0, RewardsImpl.TAG + ": There are no rewards left to claim for " + getName());
+        cumulativeTotalDist.set(remainingDist);
     }
 
     public BigInteger getWorkingSupply() {

@@ -284,7 +284,7 @@ public class RewardsImpl {
     public List<String> getDataSourceNames(int _offset, int _batchSize) {
         List<String> names = new ArrayList<>();
         int dataSourcesCount = DataSourceDB.size();
-        Context.require(_offset + _batchSize <= dataSourcesCount, TAG + "Cannot fetch datasources above index : " + dataSourcesCount);
+        Context.require(_offset + _batchSize <= dataSourcesCount, TAG + "Cannot fetch datasource above index : " + dataSourcesCount);
         for (int i = _offset; i < _offset + _batchSize; i++) {
             names.add(DataSourceDB.names.get(i));
         }
