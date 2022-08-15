@@ -257,8 +257,10 @@ public class LoansImpl implements Loans {
 
         Token collateralToken = new Token(token);
         String collateralSymbol = collateralToken.symbol();
-        Context.require(CollateralDB.getCollateral(collateralSymbol).isActive(), TAG + ": The Balanced Loans " +
-            "contract does not accept that token type.");
+        Collateral collateral = CollateralDB.getCollateral(collateralSymbol);
+        Context.require(collateral.isActive() &&
+                        collateral.getAssetAddress().equals(token),
+                        TAG + ": The Balanced Loans contract does not accept that token type.");
 
         String unpackedData = new String(_data);
         Context.require(!unpackedData.equals(""), TAG + ": Token Fallback: Data can't be empty");

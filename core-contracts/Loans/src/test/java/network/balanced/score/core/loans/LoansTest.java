@@ -20,6 +20,7 @@ import static network.balanced.score.core.loans.utils.LoansConstants.StandingsMa
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.eq;
 
@@ -35,7 +36,9 @@ import com.eclipsesource.json.JsonObject;
 import com.iconloop.score.test.Account;
 
 import network.balanced.score.core.loans.utils.LoansConstants.Standings;
+import network.balanced.score.lib.interfaces.tokens.*;
 import network.balanced.score.lib.structs.RewardsDataEntry;
+import network.balanced.score.lib.test.mock.MockContract;
 
 @DisplayName("Loans Tests")
 class LoansTest extends LoansTestBase {
@@ -243,6 +246,20 @@ class LoansTest extends LoansTestBase {
 
         // Assert & Act
         Executable transferToken = () -> bnusd.invoke(account, "transfer", loans.getAddress(), value, new byte[0]);
+        expectErrorMessage(transferToken, expectedErrorMessage);
+    }
+
+    @Test
+    void tokenFallback_NonSupportedCollateral_SameSymbol() throws Exception {
+        // Arrange
+        Account account = admin;
+        BigInteger value = BigInteger.valueOf(100).multiply(EXA);
+        String expectedErrorMessage = "Reverted(0): BalancedLoans: The Balanced Loans contract does not accept that token type.";
+        MockContract<IRC2> fakesICX = new MockContract<IRC2>(IRC2ScoreInterface.class, sm, admin);
+        when(fakesICX.mock.symbol()).thenReturn((String)sicx.call("symbol"));
+
+        // Assert & Act
+        Executable transferToken = () -> loans.invoke(fakesICX.account, "tokenFallback", account.getAddress(), value, new byte[0]);
         expectErrorMessage(transferToken, expectedErrorMessage);
     }
 
