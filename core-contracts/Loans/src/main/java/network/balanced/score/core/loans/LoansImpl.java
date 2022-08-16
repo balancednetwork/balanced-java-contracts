@@ -318,6 +318,7 @@ public class LoansImpl implements Loans {
         for (String collateralSymbol :  CollateralDB.getCollateral().keySet()) {
             BigInteger badDebt = asset.getBadDebt(collateralSymbol);
             BigInteger badDebtAmount = badDebt.min(remainingValue);
+            asset.burnFrom(from, badDebtAmount);
 
             BigInteger collateralToRedeem = badDebtRedeem(from, collateralSymbol, asset, badDebtAmount);
             transferCollateral(collateralSymbol, from, collateralToRedeem, "Bad Debt redeemed.", new byte[0]);
@@ -334,7 +335,6 @@ public class LoansImpl implements Loans {
         //unreachable safeguard
         Context.require(_value.compareTo(totalBadDebt) >= 0, TAG + "Cannot retire more debt than value");
 
-        asset.burnFrom(from, totalBadDebt);
         BadDebtRetired(from, _symbol, totalBadDebt);
     }
 
@@ -356,13 +356,13 @@ public class LoansImpl implements Loans {
         Context.require(badDebt.compareTo(BigInteger.ZERO) > 0, TAG + ": No bad debt for " + _symbol);
 
         BigInteger badDebtRedeemed = badDebt.min(_value);
+        asset.burnFrom(from, badDebtRedeemed);
 
         BigInteger collateralToRedeem = badDebtRedeem(from, _collateralSymbol, asset, badDebtRedeemed);
-        transferCollateral(_collateralSymbol, from, collateralToRedeem, "Bad Debt redeemed.", new byte[0]);
 
         Context.require(badDebtRedeemed.compareTo(BigInteger.ZERO) >= 0, TAG + ": Amount retired must be greater than zero.");
 
-        asset.burnFrom(from, badDebtRedeemed);
+        transferCollateral(_collateralSymbol, from, collateralToRedeem, "Bad Debt redeemed.", new byte[0]);
         BadDebtRetired(from, _symbol, badDebtRedeemed);
     }
 
