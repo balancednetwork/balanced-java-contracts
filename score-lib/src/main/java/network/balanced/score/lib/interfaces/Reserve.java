@@ -37,7 +37,7 @@ import score.annotation.External;
 @ScoreInterface
 public interface Reserve extends Name, TokenFallback, AdminAddress, BalnAddress, SicxAddress, LoansAddress, GovernanceAddress {
     @External
-    void redeem(Address to, BigInteger _valueInLoop);
+    void redeem(Address to, BigInteger _valueInLoop, String collateralSymbol);
 
     @External(readonly = true)
     Map<String, BigInteger> getBalances();

@@ -49,7 +49,6 @@ public class Asset {
             BigInteger.class);
     private final BranchDB<String, VarDB<Boolean>> isCollateral = Context.newBranchDB("is_collateral", Boolean.class);
     private final BranchDB<String, VarDB<Boolean>> active = Context.newBranchDB("active", Boolean.class);
-    private final BranchDB<String, VarDB<Boolean>> deadMarket = Context.newBranchDB("dead_market", Boolean.class);
 
     private final String dbKey;
 
@@ -123,53 +122,6 @@ public class Asset {
         return active.at(dbKey).getOrDefault(false);
     }
 
-    boolean isDeadMarket() {
-        return deadMarket.at(dbKey).getOrDefault(false);
-    }
-
-    /**
-     * Calculates whether the market is dead and sets the dead market flag. A dead market is defined as being below
-     * the point at which total debt equals the minimum value of collateral that could be backing it.
-     */
-    public boolean checkForDeadMarket() {
-        if (!isActive()) {
-            return false;
-        }
-
-        Address assetAddress = this.assetAddress.at(dbKey).get();
-        Token assetContract = new Token(assetAddress);
-
-        BigInteger badDebt = BigInteger.ZERO;
-        BigInteger poolValue = BigInteger.ZERO;
-        int collateralListCount = CollateralDB.collateralList.size();
-        for (int i = 0; i < collateralListCount; i++) {
-            String symbol = CollateralDB.collateralList.get(i);
-            Collateral collateral = CollateralDB.getCollateral(symbol);
-            if (!collateral.isActive()) {
-                continue;
-            }
-
-            Address collateralAddress = collateral.getAssetAddress();
-            Token collateralContract = new Token(collateralAddress);
-            BigInteger collateralPoolValue = getLiquidationPool(symbol)
-                .multiply(assetContract.priceInLoop())
-                .divide(collateralContract.priceInLoop());
-            poolValue = poolValue.add(collateralPoolValue);
-            badDebt = badDebt.add(getBadDebt(symbol));
-        }
-
-        BigInteger totalDebt = LoansVariables.totalDebts.getOrDefault(assetContract.symbol(), BigInteger.ZERO);
-        BigInteger netBadDebt = badDebt.subtract(poolValue);
-        Boolean isDead = netBadDebt.compareTo(totalDebt.divide(BigInteger.TWO)) > 0;
-
-        VarDB<Boolean> deadMarket = this.deadMarket.at(dbKey);
-        if (deadMarket.getOrDefault(false) != isDead) {
-            deadMarket.set(isDead);
-        }
-
-        return isDead;
-    }
-
     public LinkedListDB getBorrowers(String collateralSymbol) {
         if (collateralSymbol.equals(SICX_SYMBOL)) {
             return new LinkedListDB(BORROWER_DB_PREFIX, dbKey);
@@ -209,7 +161,6 @@ public class Asset {
         assetDetails.put("total_supply", tokenContract.totalSupply());
         assetDetails.put("total_burned", getTotalBurnedTokens());
         assetDetails.put("debt_details", loansDetails);
-        assetDetails.put("dead_market", isDeadMarket());
         assetDetails.put("bad_debt", getBadDebt(SICX_SYMBOL));
         assetDetails.put("liquidation_pool", getLiquidationPool(SICX_SYMBOL));
         assetDetails.put("borrowers", getBorrowers(SICX_SYMBOL).size());
