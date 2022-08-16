@@ -104,6 +104,9 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
     void retireBadDebt(String _symbol, BigInteger _value);
 
     @External
+    void retireBadDebtForCollateral(String _symbol, BigInteger _value, String _collateralSymbol);
+
+    @External
     void returnAsset(String _symbol, BigInteger _value, @Optional String _collateralSymbol);
 
     @External

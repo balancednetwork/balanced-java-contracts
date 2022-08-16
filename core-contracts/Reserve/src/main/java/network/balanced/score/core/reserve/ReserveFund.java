@@ -44,8 +44,9 @@ public class ReserveFund implements Reserve {
     private static final String SICX_TOKEN = "sicx_token";
     private static final String AWARDS = "awards";
 
+    public static final String SICX_SYMBOL = "sICX";
+
     public static final String TAG = "BalancedReserveFund";
-    public static final String[] collateralPriority= {"sICX"};
     public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
     public static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
     private final VarDB<Address> loansScore = Context.newVarDB(LOANS_SCORE, Address.class);
@@ -150,7 +151,7 @@ public class ReserveFund implements Reserve {
 
     @External
     @SuppressWarnings("unchecked")
-    public void redeem(Address _to, BigInteger _valueInLoop) {
+    public void redeem(Address _to, BigInteger _valueInLoop, String collateralSymbol) {
         Address sender = Context.getCaller();
         Address loansScoreAddress = loansScore.get();
         Context.require(sender.equals(loansScoreAddress), TAG + ": The redeem method can only be called by the Loans " +
@@ -159,32 +160,27 @@ public class ReserveFund implements Reserve {
         Address loans = loansScore.get();
         Address oracle = Context.call(Address.class, loans, "getOracle");
 
-        BigInteger remaningValue = _valueInLoop;
-        Map<String, String> _collateralTokens = (Map<String, String>) Context.call(loansScore.get(), "getCollateralTokens");
-        Map<String, String> collateralTokens = new HashMap<>();
-        collateralTokens.putAll(_collateralTokens);
-        for (String symbol : collateralPriority) {
-            String collateralAddress = collateralTokens.get(symbol);
-            remaningValue = redeemAsset(symbol, collateralAddress, _to, oracle, remaningValue);
-            if (remaningValue.equals(BigInteger.ZERO)) {
-                return;
-            }
+        BigInteger remainingValue = _valueInLoop;
+        Map<String, String> collateralTokens = (Map<String, String>) Context.call(loansScore.get(), "getCollateralTokens");
 
-            collateralTokens.remove(symbol);
+        String collateralAddress = collateralTokens.get(collateralSymbol);
+        remainingValue = redeemAsset(collateralSymbol, collateralAddress, _to, oracle, remainingValue);
+        if (remainingValue.equals(BigInteger.ZERO)) {
+            return;
         }
 
-        for (Map.Entry<String,String> entry : collateralTokens.entrySet()) {
-            remaningValue = redeemAsset(entry.getKey(), entry.getValue(), _to, oracle, remaningValue);
-            if (remaningValue.equals(BigInteger.ZERO)) {
+        if (!collateralSymbol.equals(SICX_SYMBOL)) {
+            remainingValue = redeemAsset(SICX_SYMBOL, collateralTokens.get(SICX_SYMBOL), _to, oracle, remainingValue);
+            if (remainingValue.equals(BigInteger.ZERO)) {
                 return;
             }
-        }
+        }   
 
         Address balnTokenAddress = balnToken.get();
 
         BigInteger balnRate = Context.call(BigInteger.class, oracle, "getPriceInLoop", "BALN");
         BigInteger balance = getBalance(balnTokenAddress);
-        BigInteger balnToSend = remaningValue.multiply(EXA).divide(balnRate);
+        BigInteger balnToSend = remainingValue.multiply(EXA).divide(balnRate);
 
         Context.require(balance.compareTo(balnToSend) > 0, TAG +": Unable to process request at this time.");
 

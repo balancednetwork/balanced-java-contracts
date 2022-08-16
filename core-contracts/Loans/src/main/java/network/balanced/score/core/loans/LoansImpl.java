@@ -319,29 +319,58 @@ public class LoansImpl implements Loans {
         Context.require(assetContract.balanceOf(from).compareTo(_value) >= 0, TAG + ": Insufficient balance.");
    
         BigInteger totalBadDebt = BigInteger.ZERO;
-        BigInteger remaningValue = _value;
+        BigInteger remainingValue = _value;
         for (String collateralSymbol :  CollateralDB.getCollateral().keySet()) {
             BigInteger badDebt = asset.getBadDebt(collateralSymbol);
-            BigInteger badDebtAmount = badDebt.min(remaningValue);
+            BigInteger badDebtAmount = badDebt.min(remainingValue);
 
             BigInteger collateralToRedeem = badDebtRedeem(from, collateralSymbol, asset, badDebtAmount);
             transferCollateral(collateralSymbol, from, collateralToRedeem, "Bad Debt redeemed.", new byte[0]);
 
-            remaningValue = remaningValue.subtract(badDebtAmount);
+            remainingValue = remainingValue.subtract(badDebtAmount);
             totalBadDebt = totalBadDebt.add(badDebtAmount);
-            if (remaningValue.equals(BigInteger.ZERO)) {
+            if (remainingValue.equals(BigInteger.ZERO)) {
                 break;
             }
         }
 
         Context.require(totalBadDebt.compareTo(BigInteger.ZERO) > 0, TAG + ": No bad debt for " + _symbol);
-        Context.require(remaningValue.compareTo(BigInteger.ZERO) >= 0, TAG + ": Amount retired must be greater than zero.");
+        Context.require(remainingValue.compareTo(BigInteger.ZERO) >= 0, TAG + ": Amount retired must be greater than zero.");
         //unreachable safeguard
-        Context.require(_value.compareTo(totalBadDebt) >= 0, TAG + "Cannot retire more debt that value");
+        Context.require(_value.compareTo(totalBadDebt) >= 0, TAG + "Cannot retire more debt than value");
 
         asset.burnFrom(from, totalBadDebt);
         asset.checkForDeadMarket();
         BadDebtRetired(from, _symbol, totalBadDebt);
+    }
+
+    @External
+    public void retireBadDebtForCollateral(String _symbol, BigInteger _value, String _collateralSymbol) {
+        loansOn();
+        Context.require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Amount retired must be greater than zero.");
+
+        Address from = Context.getCaller();
+        Asset asset = AssetDB.getAsset(_symbol);
+
+        Address assetAddress = asset.getAssetAddress();
+        Token assetContract = new Token(assetAddress);
+
+        Context.require(asset.isActive(), TAG + ": " + _symbol + " is not an active, borrowable asset on Balanced.");
+        Context.require(assetContract.balanceOf(from).compareTo(_value) >= 0, TAG + ": Insufficient balance.");
+   
+        BigInteger badDebt = asset.getBadDebt(_collateralSymbol);
+        Context.require(badDebt.compareTo(BigInteger.ZERO) > 0, TAG + ": No bad debt for " + _symbol);
+
+        BigInteger badDebtRedeemed = badDebt.min(_value);
+
+        BigInteger collateralToRedeem = badDebtRedeem(from, _collateralSymbol, asset, badDebtRedeemed);
+        transferCollateral(_collateralSymbol, from, collateralToRedeem, "Bad Debt redeemed.", new byte[0]);
+
+        Context.require(badDebtRedeemed.compareTo(BigInteger.ZERO) >= 0, TAG + ": Amount retired must be greater than zero.");
+
+        asset.burnFrom(from, badDebtRedeemed);
+        asset.checkForDeadMarket();
+        BadDebtRetired(from, _symbol, badDebtRedeemed);
     }
 
     @External
@@ -601,7 +630,7 @@ public class LoansImpl implements Loans {
         AssetDB.updateDeadMarkets();
 
         String logMessage = collateral + " liquidated from " + _owner;
-        Liquidated(_owner, collateral, logMessage);
+        Liquidate(_owner, collateral, logMessage);
     }
 
     private BigInteger badDebtRedeem(Address from, String collateralSymbol, Asset asset, BigInteger badDebtAmount) {
@@ -632,9 +661,9 @@ public class LoansImpl implements Loans {
         }
 
         asset.setLiquidationPool(collateralSymbol, null);
-        BigInteger remaningCollateral = badDebtCollateral.subtract(inPool);
-        BigInteger remaningValue =  remaningCollateral.multiply(collateralPriceInLoop).divide(EXA);
-        Context.call(reserve.get(), "redeem", from, remaningValue);
+        BigInteger remainingCollateral = badDebtCollateral.subtract(inPool);
+        BigInteger remainingValue =  remainingCollateral.multiply(collateralPriceInLoop).divide(EXA);
+        Context.call(reserve.get(), "redeem", from, remainingValue, collateralSymbol);
         return inPool;
 
     }
@@ -1018,7 +1047,7 @@ public class LoansImpl implements Loans {
     }
 
     @EventLog(indexed = 2)
-    public void Liquidated(Address account, BigInteger amount, String note) {
+    public void Liquidate(Address account, BigInteger amount, String note) {
     }
 
     @EventLog(indexed = 3)
