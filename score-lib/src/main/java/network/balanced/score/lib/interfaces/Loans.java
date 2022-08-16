@@ -52,9 +52,6 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
     void delegate(PrepDelegations[] prepDelegations);
 
     @External(readonly = true)
-    List<String> checkDeadMarkets();
-
-    @External(readonly = true)
     Address getPositionAddress(int _index);
 
     @External(readonly = true)

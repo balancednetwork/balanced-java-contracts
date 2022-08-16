@@ -122,11 +122,6 @@ public class LoansImpl implements Loans {
     }
 
     @External(readonly = true)
-    public List<String> checkDeadMarkets() {
-        return AssetDB.getDeadMarkets();
-    }
-
-    @External(readonly = true)
     public Address getPositionAddress(int _index) {
         return PositionsDB.get(_index).getAddress();
     }
@@ -340,7 +335,6 @@ public class LoansImpl implements Loans {
         Context.require(_value.compareTo(totalBadDebt) >= 0, TAG + "Cannot retire more debt than value");
 
         asset.burnFrom(from, totalBadDebt);
-        asset.checkForDeadMarket();
         BadDebtRetired(from, _symbol, totalBadDebt);
     }
 
@@ -369,7 +363,6 @@ public class LoansImpl implements Loans {
         Context.require(badDebtRedeemed.compareTo(BigInteger.ZERO) >= 0, TAG + ": Amount retired must be greater than zero.");
 
         asset.burnFrom(from, badDebtRedeemed);
-        asset.checkForDeadMarket();
         BadDebtRetired(from, _symbol, badDebtRedeemed);
     }
 
@@ -417,7 +410,6 @@ public class LoansImpl implements Loans {
 
         Context.call(rewards.get(), "updateRewardsData", "Loans", oldSupply, from, oldUserDebt);
 
-        asset.checkForDeadMarket();
         String logMessage = "Loan of " + repaid + " " + assetSymbol + " repaid to Balanced.";
         LoanRepaid(from, assetSymbol, repaid, logMessage);
     }
@@ -627,7 +619,6 @@ public class LoansImpl implements Loans {
 
         position.setCollateral(collateralSymbol, null);
         transferCollateral(collateralSymbol, Context.getCaller(), reward, "Liquidation reward of", new byte[0]);
-        AssetDB.updateDeadMarkets();
 
         String logMessage = collateral + " liquidated from " + _owner;
         Liquidate(_owner, collateral, logMessage);
@@ -709,8 +700,6 @@ public class LoansImpl implements Loans {
 
     private void originateLoan(String collateralSymbol, String assetToBorrow, BigInteger amount, Address from) {
         Asset asset = AssetDB.getAsset(assetToBorrow);
-        Context.require(!asset.checkForDeadMarket(), TAG + ": No new loans of " + assetToBorrow + " can be originated" +
-                " since it is in a dead market state.");
         Context.require(asset.isActive(), TAG + ": Loans of inactive assets are not allowed.");
 
         Position position = PositionsDB.getPosition(from);

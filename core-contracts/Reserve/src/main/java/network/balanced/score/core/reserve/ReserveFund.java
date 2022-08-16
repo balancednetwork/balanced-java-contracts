@@ -174,7 +174,7 @@ public class ReserveFund implements Reserve {
             if (remainingValue.equals(BigInteger.ZERO)) {
                 return;
             }
-        }   
+        }
 
         Address balnTokenAddress = balnToken.get();
 

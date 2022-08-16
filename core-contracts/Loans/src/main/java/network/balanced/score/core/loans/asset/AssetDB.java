@@ -111,30 +111,4 @@ public class AssetDB {
         assetList.add(symbol);
         symbolMap.set(symbol, assetToAdd);
     }
-
-    public static List<String> getDeadMarkets() {
-        List<String> deadAssets = new ArrayList<>();
-
-        int assetsCount = assetList.size();
-        for (int i = 0; i < assetsCount; i++) {
-            String symbol = assetList.get(i);
-            Asset asset = getAsset(symbol);
-            if (asset.isActive() && asset.isDeadMarket()) {
-                deadAssets.add(symbol);
-            }
-        }
-
-        return deadAssets;
-    }
-
-    public static void updateDeadMarkets() {
-        int assetsCount = assetList.size();
-        for (int i = 0; i < assetsCount; i++) {
-            String symbol = assetList.get(i);
-            Asset asset = getAsset(symbol);
-            if (asset.isActive()) {
-                asset.checkForDeadMarket();
-            }
-        }
-    }
 }
