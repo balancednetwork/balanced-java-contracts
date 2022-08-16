@@ -52,9 +52,6 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
     void delegate(PrepDelegations[] prepDelegations);
 
     @External(readonly = true)
-    List<String> checkDeadMarkets();
-
-    @External(readonly = true)
     Address getPositionAddress(int _index);
 
     @External(readonly = true)
@@ -102,6 +99,9 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
 
     @External
     void retireBadDebt(String _symbol, BigInteger _value);
+
+    @External
+    void retireBadDebtForCollateral(String _symbol, BigInteger _value, String _collateralSymbol);
 
     @External
     void returnAsset(String _symbol, BigInteger _value, @Optional String _collateralSymbol);
