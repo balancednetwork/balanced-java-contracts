@@ -76,11 +76,6 @@ public class GovernanceImpl implements Governance {
         return ProposalManager.getVotersCount(vote_index);
     }
 
-    @External(readonly = true)
-    public Address getContractAddress(String contract) {
-        return AddressManager.get(contract);
-    }
-
     @External
     public void setVoteDuration(BigInteger duration) {
         onlyOwnerOrContract();
@@ -140,12 +135,6 @@ public class GovernanceImpl implements Governance {
     @External(readonly = true)
     public BigInteger getBalnVoteDefinitionCriterion() {
         return balnVoteDefinitionCriterion.getOrDefault(BigInteger.ZERO);
-    }
-
-    @External
-    public void setAdmin(Address contractAddress, Address admin) {
-        onlyOwnerOrContract();
-        Context.call(contractAddress, "setAdmin", admin);
     }
 
     @External
@@ -245,15 +234,32 @@ public class GovernanceImpl implements Governance {
         SetupManager.createBalnSicxMarket(_sicx_amount, _baln_amount);
     }
 
+    @External(readonly = true)
+    public Map<String, Address> getAddresses() {
+        return AddressManager.getAddresses();
+    }
+
+    @External(readonly = true)
+    public Address getContractAddress(String contract) {
+        return AddressManager.get(contract);
+    }
+
     @External
     public void setAddresses(BalancedAddresses _addresses) {
         onlyOwnerOrContract();
         AddressManager.setAddresses(_addresses);
     }
 
-    @External(readonly = true)
-    public Map<String, Address> getAddresses() {
-        return AddressManager.getAddresses();
+    @External
+    public void setContractAddresses() {
+        onlyOwnerOrContract();
+        AddressManager.setContractAddresses();
+    }
+
+    @External
+    public void setAddressesOnContract(String _contract) {
+        onlyOwnerOrContract();
+        AddressManager.setAddress(_contract);
     }
 
     @External
@@ -263,9 +269,9 @@ public class GovernanceImpl implements Governance {
     }
 
     @External
-    public void setContractAddresses() {
+    public void setAdmin(Address contractAddress, Address admin) {
         onlyOwnerOrContract();
-        AddressManager.setContractAddresses();
+        Context.call(contractAddress, "setAdmin", admin);
     }
 
     @External(readonly = true)
@@ -278,6 +284,21 @@ public class GovernanceImpl implements Governance {
         return launchTime.get();
     }
 
+    @External
+    public void execute(String transactions) {
+        onlyOwner();
+        ArbitraryCallManager.executeTransactions(transactions);
+    }
+
+    @External
+    public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
+    }
+
+    @Payable
+    public void fallback() {
+    }
+
+    // External short hand calls, could be done by a set of transactions
     @External
     public void addCollateral(Address _token_address, boolean _active, String _peg, @Optional BigInteger _limit) {
         onlyOwnerOrContract();
@@ -329,26 +350,6 @@ public class GovernanceImpl implements Governance {
     public void balwAdminTransfer(Address _from, Address _to, BigInteger _value, @Optional byte[] _data) {
         onlyOwnerOrContract();
         Context.call(AddressManager.get("bwt"), "adminTransfer", _from, _to, _value, _data);
-    }
-
-    @External
-    public void setAddressesOnContract(String _contract) {
-        onlyOwnerOrContract();
-        AddressManager.setAddress(_contract);
-    }
-
-    @External
-    public void execute(String transactions) {
-        onlyOwner();
-        ArbitraryCallManager.executeTransactions(transactions);
-    }
-
-    @External
-    public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
-    }
-
-    @Payable
-    public void fallback() {
     }
 
     public static void call(Address targetAddress, String method, Object... params) {
