@@ -18,7 +18,7 @@ public class ProposalDB {
     public final VarDB<BigInteger> voteSnapshot;
     public final VarDB<BigInteger> startSnapshot;
     public final VarDB<BigInteger> endSnapshot;
-    public final VarDB<String> actions;
+    public final VarDB<String> transactions;
     public final VarDB<String> name;
     public final VarDB<String> description;
     public final VarDB<Boolean> active;
@@ -42,7 +42,7 @@ public class ProposalDB {
         voteSnapshot = Context.newVarDB(key + "_vote_snapshot", BigInteger.class);
         startSnapshot = Context.newVarDB(key + "_start_snapshot", BigInteger.class);
         endSnapshot = Context.newVarDB(key + "_end_snapshot", BigInteger.class);
-        actions = Context.newVarDB(key + "_actions", String.class);
+        transactions = Context.newVarDB(key + "_actions", String.class);
         name = Context.newVarDB(key + "_name", String.class);
         description = Context.newVarDB(key + "_description", String.class);
         active = Context.newVarDB(key + "_active", Boolean.class);
@@ -75,7 +75,7 @@ public class ProposalDB {
                                  BigInteger snapshot,
                                  BigInteger start,
                                  BigInteger end,
-                                 String actions,
+                                 String transactions,
                                  BigInteger fee) {
         BigInteger voteIndex = ProposalDB.getProposalCount().add(BigInteger.ONE);
         ProposalDB newProposal = new ProposalDB(voteIndex);
@@ -88,7 +88,7 @@ public class ProposalDB {
         newProposal.voteSnapshot.set(snapshot);
         newProposal.startSnapshot.set(start);
         newProposal.endSnapshot.set(end);
-        newProposal.actions.set(actions);
+        newProposal.transactions.set(transactions);
         newProposal.name.set(name);
         newProposal.description.set(description);
         newProposal.status.set(ProposalStatus.STATUS[ProposalStatus.ACTIVE]);

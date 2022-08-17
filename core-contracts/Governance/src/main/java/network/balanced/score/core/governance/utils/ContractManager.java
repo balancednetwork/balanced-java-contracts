@@ -220,12 +220,12 @@ public class ContractManager {
     }
 
     public static void updateContract(Address targetContract, byte[] contractData, String params) {
-        Object[] parsedParams = ArbitraryCallManager.getConvertedParams(params);
+        Object[] parsedParams = ArbitraryCallManager.getConvertedParameters(params);
         Context.deploy(targetContract, contractData, parsedParams);
     }
 
     public static void newContract(byte[] contractData, String params) {
-        Object[] parsedParams = ArbitraryCallManager.getConvertedParams(params);
+        Object[] parsedParams = ArbitraryCallManager.getConvertedParameters(params);
         Address contractAddress = Context.deploy(contractData, parsedParams);
         String name = getName(contractAddress);
         balancedContractNames.add(name);

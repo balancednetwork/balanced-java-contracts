@@ -16,6 +16,7 @@
 
 package network.balanced.score.core.governance;
 
+import network.balanced.score.lib.structs.BalancedAddresses;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.core.governance.proposal.ProposalDB;
@@ -75,11 +76,6 @@ public class GovernanceImpl implements Governance {
     @External(readonly = true)
     public Map<String, BigInteger> getVotersCount(BigInteger vote_index) {
         return ProposalManager.getVotersCount(vote_index);
-    }
-
-    @External(readonly = true)
-    public Address getContractAddress(String contract) {
-        return ContractManager.get(contract);
     }
 
     @External
@@ -144,12 +140,6 @@ public class GovernanceImpl implements Governance {
     }
 
     @External
-    public void setAdmin(Address contractAddress, Address admin) {
-        onlyOwnerOrContract();
-        Context.call(contractAddress, "setAdmin", admin);
-    }
-
-    @External
     public void defineVote(String name, String description, BigInteger vote_start, BigInteger snapshot, @Optional String transactions) {
         transactions = optionalDefault(transactions, "[]");
         ProposalManager.defineVote(name, description, vote_start, snapshot, transactions);
@@ -163,7 +153,7 @@ public class GovernanceImpl implements Governance {
     @External
     public void tryExecuteTransactions(String transactions) {
         ArbitraryCallManager.executeTransactions(transactions);
-        Context.revert(succsesfulVoteExecutionRevertID);
+        Context.revert(successfulVoteExecutionRevertID);
     }
 
     @External(readonly = true)
@@ -249,6 +239,23 @@ public class GovernanceImpl implements Governance {
         return ContractManager.getAddress(name);
     }
 
+    @External(readonly = true)
+    public Address getContractAddress(String contract) {
+        return ContractManager.get(contract);
+    }
+
+    @External
+    public void setContractAddresses() {
+        onlyOwnerOrContract();
+        ContractManager.setContractAddresses();
+    }
+
+    @External
+    public void setAddressesOnContract(String _contract) {
+        onlyOwnerOrContract();
+        ContractManager.setAddress(_contract);
+    }
+
     @External
     public void setAdmins() {
         onlyOwnerOrContract();
@@ -256,9 +263,9 @@ public class GovernanceImpl implements Governance {
     }
 
     @External
-    public void setContractAddresses() {
+    public void setAdmin(Address contractAddress, Address admin) {
         onlyOwnerOrContract();
-        ContractManager.setContractAddresses();
+        Context.call(contractAddress, "setAdmin", admin);
     }
 
     @External(readonly = true)
@@ -271,65 +278,7 @@ public class GovernanceImpl implements Governance {
         return launchTime.get();
     }
 
-    @External
-    public void addCollateral(Address _token_address, boolean _active, String _peg, @Optional BigInteger _limit) {
-        onlyOwnerOrContract();
-        Address loansAddress = ContractManager.getAddress(Names.LOANS);
-        Context.call(loansAddress, "addAsset", _token_address, _active, true);
-
-        String symbol = Context.call(String.class, _token_address, "symbol");
-
-        Address balancedOraclAddress = ContractManager.getAddress(Names.BALANCEDORACLE);
-        Context.call(balancedOraclAddress, "setPeg", symbol, _peg);
-        BigInteger price = Context.call(BigInteger.class, balancedOraclAddress, "getPriceInLoop", symbol);
-        Context.require(price.compareTo(BigInteger.ZERO) > 0, "Balanced oracle return a invalid icx price for " + symbol + "/" + _peg);
-
-        if (_limit.equals(BigInteger.ZERO)) {
-            return;
-        }
-
-        Context.call(loansAddress, "setCollateralLimit", symbol, _limit);
-    }
-
-    @External
-    public void addDexPricedCollateral(Address _token_address, boolean _active, @Optional BigInteger _limit) {
-        onlyOwnerOrContract();
-        Address loansAddress = ContractManager.getAddress(Names.LOANS);
-        Context.call(loansAddress, "addAsset", _token_address, _active, true);
-
-        String symbol = Context.call(String.class, _token_address, "symbol");
-        BigInteger poolId = Context.call(BigInteger.class, ContractManager.getAddress(Names.DEX), "getPoolId", _token_address, ContractManager.getAddress(Names.BNUSD));
         
-        Address balancedOraclAddress = ContractManager.getAddress(Names.BALANCEDORACLE);
-        Context.call(balancedOraclAddress, "addDexPricedAsset", symbol, poolId);
-        BigInteger price = Context.call(BigInteger.class, balancedOraclAddress, "getPriceInLoop", symbol);
-        Context.require(price.compareTo(BigInteger.ZERO) > 0, "Balanced oracle return a invalid icx price for " + symbol);
-
-        if (_limit.equals(BigInteger.ZERO)) {
-            return;
-        }
-
-        Context.call(loansAddress, "setCollateralLimit", symbol, _limit);
-    }
-
-    @External
-    public void delegate(String contract, PrepDelegations[] _delegations) {
-        onlyOwnerOrContract();
-        Context.call(ContractManager.getAddress(contract), "delegate", (Object) _delegations);
-    }
-
-    @External
-    public void balwAdminTransfer(Address _from, Address _to, BigInteger _value, @Optional byte[] _data) {
-        onlyOwnerOrContract();
-        Context.call(ContractManager.getAddress(Names.WORKERTOKEN), "adminTransfer", _from, _to, _value, _data);
-    }
-
-    @External
-    public void setAddressesOnContract(String _contract) {
-        onlyOwnerOrContract();
-        ContractManager.setAddress(_contract);
-    }
-    
     @External
     public void addExternalContract(String name, Address address) {
         onlyOwnerOrContract();
@@ -362,6 +311,60 @@ public class GovernanceImpl implements Governance {
     public void fallback() {
     }
 
+    // External short hand calls, could be done by a set of transactions
+    @External
+    public void addCollateral(Address _token_address, boolean _active, String _peg, @Optional BigInteger _limit) {
+        onlyOwnerOrContract();
+        Address loansAddress = ContractManager.getAddress(Names.LOANS);
+        Context.call(loansAddress, "addAsset", _token_address, _active, true);
+
+        String symbol = Context.call(String.class, _token_address, "symbol");
+
+        Address balancedOracleAddress = ContractManager.get("balancedOracle");
+        Context.call(balancedOracleAddress, "setPeg", symbol, _peg);
+        BigInteger price = Context.call(BigInteger.class, balancedOracleAddress, "getPriceInLoop", symbol);
+        Context.require(price.compareTo(BigInteger.ZERO) > 0, "Balanced oracle return a invalid icx price for " + symbol + "/" + _peg);
+
+        if (_limit.equals(BigInteger.ZERO)) {
+            return;
+        }
+
+        Context.call(loansAddress, "setCollateralLimit", symbol, _limit);
+    }
+
+    @External
+    public void addDexPricedCollateral(Address _token_address, boolean _active, @Optional BigInteger _limit) {
+        onlyOwnerOrContract();
+        Address loansAddress = ContractManager.getAddress(Names.LOANS);
+        Context.call(loansAddress, "addAsset", _token_address, _active, true);
+
+        String symbol = Context.call(String.class, _token_address, "symbol");
+        BigInteger poolId = Context.call(BigInteger.class, ContractManager.getAddress(Names.DEX), "getPoolId", _token_address, ContractManager.getAddress(Names.BNUSD));
+        
+        Address balancedOracleAddress = ContractManager.get("balancedOracle");
+        Context.call(balancedOracleAddress, "addDexPricedAsset", symbol, poolId);
+        BigInteger price = Context.call(BigInteger.class, balancedOracleAddress, "getPriceInLoop", symbol);
+        Context.require(price.compareTo(BigInteger.ZERO) > 0, "Balanced oracle return a invalid icx price for " + symbol);
+
+        if (_limit.equals(BigInteger.ZERO)) {
+            return;
+        }
+
+        Context.call(loansAddress, "setCollateralLimit", symbol, _limit);
+    }
+
+    @External
+    public void delegate(String contract, PrepDelegations[] _delegations) {
+        onlyOwnerOrContract();
+        Context.call(ContractManager.getAddress(contract), "delegate", (Object) _delegations);
+    }
+
+    @External
+    public void balwAdminTransfer(Address _from, Address _to, BigInteger _value, @Optional byte[] _data) {
+        onlyOwnerOrContract();
+        Context.call(ContractManager.getAddress(Names.WORKERTOKEN), "adminTransfer", _from, _to, _value, _data);
+    }
+
     public static void call(Address targetAddress, String method, Object... params) {
         Context.call(targetAddress, method, params);
     }
@@ -370,8 +373,8 @@ public class GovernanceImpl implements Governance {
         Context.call(icxValue, targetAddress, method, params);
     }
 
-    public static <T>  T call(Class<T> retunType, Address targetAddress, String method, Object... params) {
-        return Context.call(retunType, targetAddress, method, params);
+    public static <T>  T call(Class<T> returnType, Address targetAddress, String method, Object... params) {
+        return Context.call(returnType, targetAddress, method, params);
     }
 
     public static BigInteger _getDay() {

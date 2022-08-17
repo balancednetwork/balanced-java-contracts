@@ -32,30 +32,34 @@ public class ArbitraryCallManager {
           Address address = Address.fromString(transaction.get(ADDRESS).asString());
           String method = transaction.get(METHOD).asString();
           JsonArray jsonParams = transaction.get(PARAMS).asArray();
-          Object[] params = getConvertedParams(jsonParams);
+          Object[] params = getConvertedParameters(jsonParams);
           GovernanceImpl.call(address, method, params);
      }
 
-     public static Object[] getConvertedParams(String params) {
+     public static Object[] getConvertedParameters(String params) {
           JsonArray paramsList = Json.parse(params).asArray();
-          return getConvertedParams(paramsList);
+          return getConvertedParameters(paramsList);
      }
 
-     private static Object[] getConvertedParams(JsonArray params) {
+     private static Object[] getConvertedParameters(JsonArray params) {
           Object[] convertedParameters = new Object[params.size()];
           int i = 0;
           for (JsonValue param : params) {
-              JsonObject member = param.asObject();
-               String type = member.getString("type", null);
-               JsonValue paramValue = member.get("value");
-               if (type.endsWith("[]")) {
-                    convertedParameters[i++] = convertParam(type.substring(0, type.length() - 2), paramValue.asArray(), true);
-               } else {
-                    convertedParameters[i++] = convertParam(type, paramValue, false);
-               }
+               convertedParameters[i++] = getConvertedParameter(param);
           }
 
           return convertedParameters;
+     }
+     
+     private static Object getConvertedParameter(JsonValue param) {
+          JsonObject member = param.asObject();
+          String type = member.getString("type", null);
+          JsonValue paramValue = member.get("value");
+          if (type.endsWith("[]")) {
+               return convertParam(type.substring(0, type.length() - 2), paramValue, true);
+          }
+
+          return convertParam(type, paramValue, false);
      }
 
      private static Object convertParam(String type, JsonValue value, boolean isArray){
@@ -67,6 +71,7 @@ public class ArbitraryCallManager {
                case "int":
                case "BigInteger":
                case "Long":
+               case "Short":
                     return parse(value, isArray, jsonValue -> convertToNumber(jsonValue));
                case "boolean":
                case "Boolean":
@@ -81,10 +86,14 @@ public class ArbitraryCallManager {
      }    
 
      private static Object parse(JsonValue value, boolean isArray, Function<JsonValue, ?> parser) {
-          if (!isArray) {
-               return parser.apply(value);
+          if (isArray) {
+               return parseArray(value, parser);
           }
 
+          return parser.apply(value);
+     }
+
+     private static Object parseArray(JsonValue value, Function<JsonValue, ?> parser) {
           JsonArray array = value.asArray();
           Object[] convertedArray =  new Object[array.size()];
           int i = 0;
