@@ -698,7 +698,7 @@ public class DividendsIntegrationTest {
     @Order(20)
     void testContinuousDividends_daofund() {
         // Arrange
-        dividends.setContinuousDividendsDay(governance.getDay().add(BigInteger.ONE));
+//        dividends.setContinuousDividendsDay(governance.getDay().add(BigInteger.ONE));
         balanced.increaseDay(1);
         dividends.distribute((txr) -> {});
 

@@ -158,20 +158,6 @@ public class DexTestSettersAndGetters extends DexTestBase {
     }
 
     @Test
-    void setGetContinuousRewardsDay() {
-        // Arrange.
-        BigInteger continuousRewardsDay = BigInteger.valueOf(2);
-
-        // Act.
-        dexScore.invoke(governanceScore, "setContinuousRewardsDay", continuousRewardsDay);
-
-        // Assert.
-        BigInteger retrievedContinuousRewardsDay = (BigInteger) dexScore.call("getContinuousRewardsDay");
-        assertEquals(continuousRewardsDay, retrievedContinuousRewardsDay);
-        assertOnlyCallableByGovernance(dexScore, "setContinuousRewardsDay", continuousRewardsDay);
-    }
-
-    @Test
     void getIcxBalance() {
         // Arrange.
         Account supplier = sm.createAccount();

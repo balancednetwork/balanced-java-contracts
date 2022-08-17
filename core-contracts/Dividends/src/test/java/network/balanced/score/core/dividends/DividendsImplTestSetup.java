@@ -162,16 +162,13 @@ class DividendsImplTestSetup extends DividendsImplTestBase {
     }
 
     @Test
-    void setGetDividendsOnlyToStakedBalnDay() {
-        dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
-        dividendScore.invoke(admin, "setDividendsOnlyToStakedBalnDay", BigInteger.TWO);
-        assertEquals(BigInteger.TWO, dividendScore.call("getDividendsOnlyToStakedBalnDay"));
+    void getDividendsOnlyToStakedBalnDay() {
+        assertEquals(BigInteger.ONE, dividendScore.call("getDividendsOnlyToStakedBalnDay"));
     }
 
     @Test
-    void setGetContinuousDividendsDay() {
-        dividendScore.invoke(owner, "setContinuousDividendsDay", BigInteger.TWO);
-        assertEquals(BigInteger.TWO, dividendScore.call("getContinuousDividendsDay"));
+    void getContinuousDividendsDay() {
+        assertEquals(BigInteger.ONE, dividendScore.call("getContinuousDividendsDay"));
     }
 
     @Test

@@ -83,6 +83,7 @@ public class DividendsImpl implements Dividends {
             distributionActivate.set(false);
             addInitialCategories();
             dividendsEnabledToStakedBalnDay.set(BigInteger.ONE);
+            continuousDividendsDay.set(BigInteger.ONE);
         }
     }
 
@@ -179,25 +180,9 @@ public class DividendsImpl implements Dividends {
         return dexScore.get();
     }
 
-    @External
-    public void setDividendsOnlyToStakedBalnDay(BigInteger day) {
-        only(admin);
-        Context.require(day.compareTo(snapshotId.getOrDefault(BigInteger.ZERO)) > 0,
-                TAG + ": Day should be greater than the current snapshot ID.");
-        dividendsEnabledToStakedBalnDay.set(day);
-    }
-
     @External(readonly = true)
     public BigInteger getDividendsOnlyToStakedBalnDay() {
         return dividendsEnabledToStakedBalnDay.getOrDefault(BigInteger.ZERO);
-    }
-
-    @External
-    public void setContinuousDividendsDay(BigInteger day) {
-        onlyOwner();
-        Context.require(day.compareTo(snapshotId.getOrDefault(BigInteger.ZERO)) > 0,
-                TAG + ": Day should be greater than the current snapshot ID.");
-        continuousDividendsDay.set(day);
     }
 
     @External(readonly = true)

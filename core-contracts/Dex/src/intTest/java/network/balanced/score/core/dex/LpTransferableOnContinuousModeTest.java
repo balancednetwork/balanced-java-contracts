@@ -102,9 +102,6 @@ public class LpTransferableOnContinuousModeTest {
     @Order(4)
     void testBalnPoolTokenTransferableOnContinuousRewards() {
 
-        if (dexUserScoreClient.getContinuousRewardsDay() == null) {
-            governanceDexScoreClient.setContinuousRewardsDay(dexUserScoreClient.getDay().add(BigInteger.ONE));
-        }
         waitForADay();
 //        balanced.syncDistributions();
         //continuous starts

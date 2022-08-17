@@ -57,9 +57,6 @@ public interface Governance extends
     BigInteger getTimeOffset();
 
     @External
-    void setContinuousRewardsDay(BigInteger _day);
-
-    @External
     void setAdmin(Address contractAddress, Address admin);
 
     @External

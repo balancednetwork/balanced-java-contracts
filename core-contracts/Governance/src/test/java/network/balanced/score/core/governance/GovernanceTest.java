@@ -69,26 +69,6 @@ public class GovernanceTest extends GovernanceTestBase {
     }
 
     @Test
-    void setContinuousRewardsDay() {
-        // Arrange
-        BigInteger day = BigInteger.TEN;
-        Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
-        // Act & Assert
-        Executable withNotOwner = () -> governance.invoke(notOwner, "setContinuousRewardsDay", day);
-        expectErrorMessage(withNotOwner, expectedErrorMessage);
-
-        // Act
-        governance.invoke(owner, "setContinuousRewardsDay", day);
-
-        // Assert
-        verify(loans.mock).setContinuousRewardsDay(day);
-        verify(dex.mock).setContinuousRewardsDay(day);
-        verify(rewards.mock).setContinuousRewardsDay(day);
-    }
-
-    @Test
     void rebalancingSetBnusd() {
         // Arrange
         Address _address = Account.newScoreAccount(scoreCount++).getAddress();

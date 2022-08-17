@@ -74,9 +74,6 @@ public interface Dex extends AdminAddress, BnusdAddress, GovernanceAddress, Name
     @External(readonly = true)
     BigInteger getTimeOffset();
 
-    @External
-    void setContinuousRewardsDay(BigInteger _continuous_rewards_day);
-
     @External(readonly = true)
     BigInteger getContinuousRewardsDay();
 

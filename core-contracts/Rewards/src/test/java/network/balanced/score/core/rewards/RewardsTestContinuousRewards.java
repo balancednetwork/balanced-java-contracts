@@ -32,13 +32,11 @@ import static org.mockito.Mockito.verify;
 
 class RewardsTestContinuousRewards extends RewardsTestBase {
 
-    private final BigInteger continuousRewardsDay = BigInteger.valueOf(5);
-
     @BeforeEach
     void setup() throws Exception {
         super.setup();
-        rewardsScore.invoke(admin, "setContinuousRewardsDay", continuousRewardsDay);
         long day = ((BigInteger)rewardsScore.call("getDay")).intValue();
+        final BigInteger continuousRewardsDay = (BigInteger) rewardsScore.call("getContinuousRewardsDay");
 
         if (day < continuousRewardsDay.intValue()) {
             sm.getBlock().increase(DAY*continuousRewardsDay.intValue() - day);

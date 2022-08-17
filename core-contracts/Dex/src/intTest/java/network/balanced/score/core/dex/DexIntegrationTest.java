@@ -312,9 +312,6 @@ class DexIntegrationTest {
 //        balanced.syncDistributions();
         BigInteger balnHolding = userRewardScoreClient.getBalnHolding(tUserAddress);
         tUserClient._transfer(dexScoreClient._address(), BigInteger.valueOf(200).multiply(EXA), null);
-        if(dexUserScoreClient.getContinuousRewardsDay()==null) {
-            governanceDexScoreClient.setContinuousRewardsDay(dexUserScoreClient.getDay().add(BigInteger.ONE));
-        }
 
         waitForSomeBlocks();
 //       balanced.syncDistributions();

@@ -40,11 +40,11 @@ class LoansTestContinuousRewards extends LoansTestBase {
     @BeforeEach
     public void setupContractsAndWallets() throws Exception {
         super.setup();
-        enableContinuousRewards();
     }
 
     @Test
     void getPositonStanding() {
+        sm.getBlock().increase(DAY);
         Account account = accounts.get(0);
         BigInteger lastDay = BigInteger.valueOf(-1);
         Executable getPositionStanding = () -> loans.call("getPositionStanding", account.getAddress(), lastDay);
@@ -53,6 +53,7 @@ class LoansTestContinuousRewards extends LoansTestBase {
 
     @Test
     void getPositionByIndex() {
+        sm.getBlock().increase(DAY);
         int index = 1;
         BigInteger lastDay = BigInteger.valueOf(-1);
         Executable getPositionByIndex = () -> loans.call("getPositionByIndex", index, lastDay);
@@ -61,6 +62,7 @@ class LoansTestContinuousRewards extends LoansTestBase {
 
     @Test
     void getTotalValue() {
+        sm.getBlock().increase(DAY);
         BigInteger lastDay = BigInteger.valueOf(-1);
         Executable getTotalValue = () -> loans.call("getTotalValue", "loans", lastDay);
         expectErrorMessage(getTotalValue, continuousRewardsErrorMessage);
@@ -68,6 +70,7 @@ class LoansTestContinuousRewards extends LoansTestBase {
 
     @Test
     void getDataBatch_SameDay() {
+        sm.getBlock().increase(DAY);
         BigInteger lastDay = BigInteger.valueOf(-1);
         Executable getTotalValue = () ->  loans.call("getDataBatch", "loans", lastDay, 0, 0);
         expectErrorMessage(getTotalValue, continuousRewardsErrorMessage);
@@ -84,7 +87,6 @@ class LoansTestContinuousRewards extends LoansTestBase {
     @Test
     void migrateUserData_UserWithPosition() {
         // Arrange
-        governanceCall("setContinuousRewardsDay", BigInteger.valueOf(100000));
         Account account = accounts.get(0);
         BigInteger totalSupply = (BigInteger) bnusd.call("totalSupply");
         BigInteger intialDebt = BigInteger.ZERO;
@@ -101,7 +103,6 @@ class LoansTestContinuousRewards extends LoansTestBase {
         assertTrue((boolean) loans.call("hasDebt", account.getAddress()));
 
         // Act
-        enableContinuousRewards();
         loans.invoke(account, "migrateUserData", account.getAddress());
 
         // Assert
@@ -112,7 +113,6 @@ class LoansTestContinuousRewards extends LoansTestBase {
     @Test
     void migrateUserData_ChangePosition_beforeMigration() {
         // Arrange
-        governanceCall("setContinuousRewardsDay", BigInteger.valueOf(100000));
         Account account = accounts.get(0);
         BigInteger totalSupply = (BigInteger) bnusd.call("totalSupply");
         BigInteger intialDebt = BigInteger.ZERO;
@@ -129,7 +129,6 @@ class LoansTestContinuousRewards extends LoansTestBase {
         assertTrue((boolean) loans.call("hasDebt", account.getAddress()));
 
         // Act
-        enableContinuousRewards();
         BigInteger addedCollateral = BigInteger.valueOf(100).multiply(EXA);
         BigInteger addedLoan = BigInteger.valueOf(100).multiply(EXA);
         BigInteger expectedAddedFee = calculateFee(addedLoan);

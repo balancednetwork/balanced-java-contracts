@@ -557,14 +557,6 @@ public abstract class AbstractDex implements Dex {
         }
     }
 
-    @External
-    public void setContinuousRewardsDay(BigInteger _continuous_rewards_day) {
-        only(admin);
-        Context.require(_continuous_rewards_day.compareTo(getDay()) > 0, TAG + ": Continuous reward day must be " +
-                "greater than current day.");
-        continuousRewardsDay.set(_continuous_rewards_day);
-    }
-
     @External(readonly = true)
     public BigInteger getContinuousRewardsDay() {
         return continuousRewardsDay.get();

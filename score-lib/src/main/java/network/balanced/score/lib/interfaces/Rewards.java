@@ -110,9 +110,6 @@ public interface Rewards extends Name, TokenFallback, GovernanceAddress, AdminAd
     @External(readonly = true)
     BigInteger getTimeOffset();
 
-    @External
-    void setContinuousRewardsDay(BigInteger _continuous_rewards_day);
-
     @External(readonly = true)
     BigInteger getContinuousRewardsDay();
 }

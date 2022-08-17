@@ -663,12 +663,6 @@ public class RewardsImpl implements Rewards {
         return startTimestamp.get();
     }
 
-    @External
-    public void setContinuousRewardsDay(BigInteger _continuous_rewards_day) {
-        only(admin);
-        continuousRewardsDay.set(_continuous_rewards_day);
-    }
-
     @External(readonly = true)
     public BigInteger getContinuousRewardsDay() {
         return continuousRewardsDay.get();

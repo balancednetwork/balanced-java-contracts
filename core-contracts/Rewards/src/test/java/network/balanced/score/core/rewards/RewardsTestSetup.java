@@ -104,6 +104,7 @@ class RewardsTestSetup extends RewardsTestBase {
     @Test
     void setAndGetTimeOffset() {
         BigInteger timeOffset = BigInteger.ONE;
+        sm.getBlock().increase(DAY);
         String expectedErrorMessage = "Authorization Check: Address not set";
 
         Executable setWithoutAdmin = () -> rewardsScore.invoke(admin, "setTimeOffset", timeOffset);
@@ -122,23 +123,8 @@ class RewardsTestSetup extends RewardsTestBase {
     }
 
     @Test
-    void setAndGetContinuousRewards() {
-        BigInteger continuousRewardsDay = BigInteger.ONE;
-        String expectedErrorMessage = "Authorization Check: Address not set";
-
-        Executable setWithoutAdmin = () -> rewardsScore.invoke(admin, "setContinuousRewardsDay", continuousRewardsDay);
-        expectErrorMessage(setWithoutAdmin, expectedErrorMessage);
-
-        rewardsScore.invoke(governance, "setAdmin", admin.getAddress());
-
-        Account nonAdmin = sm.createAccount();
-        expectedErrorMessage = "Authorization Check: Authorization failed. Caller: " + nonAdmin.getAddress() +
-                " Authorized Caller: " + admin.getAddress();
-        Executable setNotFromAdmin = () -> rewardsScore.invoke(nonAdmin, "setContinuousRewardsDay", continuousRewardsDay);
-        expectErrorMessage(setNotFromAdmin, expectedErrorMessage);
-
-        rewardsScore.invoke(admin, "setContinuousRewardsDay", continuousRewardsDay);
-        assertEquals(continuousRewardsDay, rewardsScore.call("getContinuousRewardsDay"));
+    void getContinuousRewards() {
+        assertEquals(BigInteger.ONE, rewardsScore.call("getContinuousRewardsDay"));
     }
 
     @SuppressWarnings("unchecked")

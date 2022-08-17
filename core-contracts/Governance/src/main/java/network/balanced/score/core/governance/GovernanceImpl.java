@@ -112,14 +112,6 @@ public class GovernanceImpl {
     }
 
     @External
-    public void setContinuousRewardsDay(BigInteger _day) {
-        onlyOwner();
-        Context.call(Addresses.get("loans"), "setContinuousRewardsDay", _day);
-        Context.call(Addresses.get("rewards"), "setContinuousRewardsDay", _day);
-        Context.call(Addresses.get("dex"), "setContinuousRewardsDay", _day);
-    }
-
-    @External
     public void setDividendsOnlyToStakedBalnDay(BigInteger _day) {
         onlyOwner();
         Context.call(Addresses.get("dividends"), "setDividendsOnlyToStakedBalnDay", _day);

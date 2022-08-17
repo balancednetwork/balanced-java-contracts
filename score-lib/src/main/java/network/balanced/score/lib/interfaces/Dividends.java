@@ -45,14 +45,8 @@ public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress
     @External
     void setTimeOffset(BigInteger deltaTime);
 
-    @External
-    void setDividendsOnlyToStakedBalnDay(BigInteger day);
-
     @External(readonly = true)
     BigInteger getDividendsOnlyToStakedBalnDay();
-
-    @External
-    void setContinuousDividendsDay(BigInteger day);
        
     @External(readonly = true)
     BigInteger getContinuousDividendsDay();

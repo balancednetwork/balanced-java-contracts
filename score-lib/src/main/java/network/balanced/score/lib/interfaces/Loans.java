@@ -51,9 +51,6 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
     @External(readonly = true)
     Map<String, Object> userMigrationDetails(Address _address);
 
-    @External
-    void setContinuousRewardsDay(BigInteger _day);
-
     @External(readonly = true)
     BigInteger getContinuousRewardsDay();
 

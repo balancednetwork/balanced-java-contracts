@@ -166,12 +166,6 @@ public class LoansImpl implements Loans {
         return migrationDetails;
     }
 
-    @External
-    public void setContinuousRewardsDay(BigInteger _day) {
-        only(governance);
-        continuousRewardDay.set(_day);
-    }
-
     @External(readonly = true)
     public BigInteger getContinuousRewardsDay() {
         return continuousRewardDay.get();
