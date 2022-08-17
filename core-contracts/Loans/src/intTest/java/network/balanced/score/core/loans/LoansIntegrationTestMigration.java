@@ -134,7 +134,7 @@ class LoansIntegrationTestMigration extends LoansIntegrationTest {
             Map<String, Map<String, Object>> standingDetails = (Map<String, Map<String, Object>>) positions.get(i).get("standings");
             Map<String, Object> refAssetsDetails = (Map<String, Object>) refPositions.get(i).get("assets");
 
-            assertEquals(positions.get(i).get("totalDebt"), refPositions.get(i).get("totalDebt"));
+            assertEquals(positions.get(i).get("total_debt"), refPositions.get(i).get("total_debt"));
             assertEquals(positions.get(i).get("address"), refPositions.get(i).get("address"));
             assertEquals(positions.get(i).get("pos_id"), refPositions.get(i).get("pos_id"));
             assertEquals(positions.get(i).get("created"), refPositions.get(i).get("created"));

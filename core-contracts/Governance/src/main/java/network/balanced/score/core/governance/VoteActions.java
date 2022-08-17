@@ -27,13 +27,13 @@ public class VoteActions {
                     gov._updateBalTokenDistPercentage(parseDistPercentage(params.get("_recipient_list").asArray()));
                     break;
                case "setLockingRatio":
-                    gov.setLockingRatio(params.get("_symbol").asString(), convertToNumber(params.get("_value")));
+                    gov._setLockingRatio(params.get("_symbol").asString(), convertToNumber(params.get("_value")));
                     break;
                case "setOriginationFee":
                     gov.setOriginationFee(convertToNumber(params.get("_fee")));
                     break;
                case "setLiquidationRatio":
-                    gov.setLiquidationRatio(params.get("_symbol").asString(), convertToNumber(params.get("_ratio")));
+                    gov._setLiquidationRatio(params.get("_symbol").asString(), convertToNumber(params.get("_ratio")));
                     break;
                case "setRetirementBonus":
                     gov.setRetirementBonus(convertToNumber(params.get("_points")));

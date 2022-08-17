@@ -740,6 +740,18 @@ public class GovernanceImpl {
     }
 
     @External
+    public void setLockingRatio(String _symbol, BigInteger _value) {
+        onlyOwner();
+        _setLockingRatio(_symbol, _value);
+    }
+
+    @External
+    public void setLiquidationRatio(String _symbol, BigInteger _value) {
+        onlyOwner();
+        _setLiquidationRatio(_symbol, _value);
+    }
+
+    @External
     public void toggleAssetActive(String _symbol) {
         onlyOwner();
         Context.call(Addresses.get("loans"), "toggleAssetActive", _symbol);
@@ -1066,7 +1078,7 @@ public class GovernanceImpl {
         Context.call(Addresses.get("dividends"), "setDistributionActivationStatus", true);
     }
 
-    public void setLockingRatio(String _symbol, BigInteger _value) {
+    public void _setLockingRatio(String _symbol, BigInteger _value) {
         Context.call(Addresses.get("loans"), "setLockingRatio", _symbol, _value);
     }
 
@@ -1074,7 +1086,7 @@ public class GovernanceImpl {
         Context.call(Addresses.get("loans"), "setOriginationFee", _fee);
     }
 
-    public void setLiquidationRatio(String _symbol, BigInteger _ratio) {
+    public void _setLiquidationRatio(String _symbol, BigInteger _ratio) {
         Context.call(Addresses.get("loans"), "setLiquidationRatio", _symbol,  _ratio);
     }
 
