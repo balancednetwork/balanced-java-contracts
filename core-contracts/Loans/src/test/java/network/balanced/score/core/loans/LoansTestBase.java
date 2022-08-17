@@ -231,6 +231,10 @@ class LoansTestBase extends UnitTest {
 
     protected void verifyTotalDebt(BigInteger expectedDebt) {
         assertEquals(expectedDebt, getTotalDebt());
+        assertEquals(expectedDebt, loans.call("getTotalDebt", "bnUSD"));
+        BigInteger iETHDebt = (BigInteger) loans.call("getTotalCollateralDebt", "iETH", "bnUSD");
+        BigInteger sICXDebt = (BigInteger) loans.call("getTotalCollateralDebt", "sICX", "bnUSD");
+        assertEquals(expectedDebt, iETHDebt.add(sICXDebt));
     }
 
     protected BigInteger getTotalDebt() {

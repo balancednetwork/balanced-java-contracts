@@ -70,6 +70,7 @@ class LoansIntegrationTestMigration extends LoansIntegrationTest {
         Map<String, Object> availableAssetsEdited = new HashMap<String, Object>(availableAssetsPreUpdate);
         Map<String, String> collateralTokensPre = reader.loans.getCollateralTokens();
         BigInteger totalCollateralPre = reader.loans.getTotalCollateral();
+        BigInteger totalDebtPre = reader.loans.getBalanceAndSupply("Loans", reader.getAddress()).get("_totalSupply");
 
         List<Map<String, Object>> positionsPre = new ArrayList<>();
         for (BalancedClient client :  balanced.balancedClients.values()) {    
@@ -86,6 +87,9 @@ class LoansIntegrationTestMigration extends LoansIntegrationTest {
         Map<String, Object>  availableAssetsPostUpdate = reader.loans.getAvailableAssets().get("bnUSD");;
         Map<String, String> collateralTokensPost = reader.loans.getCollateralTokens();
         BigInteger totalCollateralPost = reader.loans.getTotalCollateral();
+        BigInteger balanceAndSupplyTotalDebtPost = reader.loans.getBalanceAndSupply("Loans", reader.getAddress()).get("_totalSupply");
+        BigInteger totalDebtPost = reader.loans.getTotalDebt("bnUSD");
+        BigInteger totalSICXDebtPost = reader.loans.getTotalCollateralDebt("sICX", "bnUSD");
 
         List<Map<String, Object>> positionsPost = new ArrayList<>();
         for (BalancedClient client :  balanced.balancedClients.values()) {
@@ -99,6 +103,11 @@ class LoansIntegrationTestMigration extends LoansIntegrationTest {
         assertEquals(collateralTokensPre, collateralTokensPost);
         assertEquals(totalCollateralPre, totalCollateralPost);
         comparePositions(positionsPost, positionsPre);
+
+        assertEquals(totalDebtPre, balanceAndSupplyTotalDebtPost);
+        assertEquals(totalDebtPre, totalDebtPost);
+        assertEquals(totalDebtPre, totalSICXDebtPost);
+
     }
 
     private void setupLoans() throws Exception {
@@ -129,7 +138,7 @@ class LoansIntegrationTestMigration extends LoansIntegrationTest {
             assertEquals(positions.get(i).get("address"), refPositions.get(i).get("address"));
             assertEquals(positions.get(i).get("pos_id"), refPositions.get(i).get("pos_id"));
             assertEquals(positions.get(i).get("created"), refPositions.get(i).get("created"));
-            if (!assetsDetails.isEmpty()) {
+            if (!refAssetsDetails.isEmpty()) {
                 assertEquals(assetsDetails.get("sICX").get("sICX"), refAssetsDetails.get("sICX"));
                 assertEquals(assetsDetails.get("sICX").get("bnUSD"), refAssetsDetails.get("bnUSD"));
             }

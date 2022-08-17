@@ -700,7 +700,7 @@ public class GovernanceImpl {
     }
 
     @External
-    public void addCollateral(Address _token_address, boolean _active, String _peg, @Optional BigInteger _limit) {
+    public void addCollateral(Address _token_address, boolean _active, String _peg,  BigInteger _debtCeiling) {
         onlyOwner();
         Address loansAddress = Addresses.get("loans");
         Context.call(loansAddress, "addAsset", _token_address, _active, true);
@@ -712,15 +712,11 @@ public class GovernanceImpl {
         BigInteger price = Context.call(BigInteger.class, balancedOraclAddress, "getPriceInLoop", symbol);
         Context.require(price.compareTo(BigInteger.ZERO) > 0, "Balanced oracle return a invalid icx price for " + symbol + "/" + _peg);
 
-        if (_limit.equals(BigInteger.ZERO)) {
-            return;
-        }
-
-        Context.call(loansAddress, "setCollateralLimit", symbol, _limit);
+        Context.call(loansAddress, "setDebtCeiling", symbol, _debtCeiling);
     }
 
     @External
-    public void addDexPricedCollateral(Address _token_address, boolean _active, @Optional BigInteger _limit) {
+    public void addDexPricedCollateral(Address _token_address, boolean _active, BigInteger _debtCeiling) {
         onlyOwner();
         Address loansAddress = Addresses.get("loans");
         Context.call(loansAddress, "addAsset", _token_address, _active, true);
@@ -733,18 +729,14 @@ public class GovernanceImpl {
         BigInteger price = Context.call(BigInteger.class, balancedOraclAddress, "getPriceInLoop", symbol);
         Context.require(price.compareTo(BigInteger.ZERO) > 0, "Balanced oracle return a invalid icx price for " + symbol);
 
-        if (_limit.equals(BigInteger.ZERO)) {
-            return;
-        }
-
-        Context.call(loansAddress, "setCollateralLimit", symbol, _limit);
+        Context.call(loansAddress, "setDebtCeiling", symbol, _debtCeiling);
     }
 
     @External
-    public void setCollateralLimit(String _symbol, BigInteger _limit) {
+    public void setDebtCeiling(String _symbol, BigInteger _debtCeiling) {
         onlyOwner();
         Address loansAddress = Addresses.get("loans");
-        Context.call(loansAddress, "setCollateralLimit", _symbol, _limit);
+        Context.call(loansAddress, "setDebtCeiling", _symbol, _debtCeiling);
     }
 
     @External
