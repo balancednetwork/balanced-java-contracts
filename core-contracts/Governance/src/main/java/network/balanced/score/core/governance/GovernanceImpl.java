@@ -153,7 +153,7 @@ public class GovernanceImpl implements Governance {
         JsonArray actionsParsed = Json.parse(transactions).asArray();
         Context.require(actionsParsed.size() <= maxTransactions(), TAG + ": Only " + maxTransactions() + " transactions are allowed");
         ArbitraryCallManager.executeTransactions(transactions);
-        Context.revert(succsesfulVoteExecutionRevertID);
+        Context.revert(successfulVoteExecutionRevertID);
     }
 
     @External(readonly = true)
@@ -307,9 +307,9 @@ public class GovernanceImpl implements Governance {
 
         String symbol = Context.call(String.class, _token_address, "symbol");
 
-        Address balancedOraclAddress = AddressManager.get("balancedOracle");
-        Context.call(balancedOraclAddress, "setPeg", symbol, _peg);
-        BigInteger price = Context.call(BigInteger.class, balancedOraclAddress, "getPriceInLoop", symbol);
+        Address balancedOracleAddress = AddressManager.get("balancedOracle");
+        Context.call(balancedOracleAddress, "setPeg", symbol, _peg);
+        BigInteger price = Context.call(BigInteger.class, balancedOracleAddress, "getPriceInLoop", symbol);
         Context.require(price.compareTo(BigInteger.ZERO) > 0, "Balanced oracle return a invalid icx price for " + symbol + "/" + _peg);
 
         if (_limit.equals(BigInteger.ZERO)) {
@@ -328,9 +328,9 @@ public class GovernanceImpl implements Governance {
         String symbol = Context.call(String.class, _token_address, "symbol");
         BigInteger poolId = Context.call(BigInteger.class, AddressManager.get("dex"), "getPoolId", _token_address, AddressManager.get("bnUSD"));
         
-        Address balancedOraclAddress = AddressManager.get("balancedOracle");
-        Context.call(balancedOraclAddress, "addDexPricedAsset", symbol, poolId);
-        BigInteger price = Context.call(BigInteger.class, balancedOraclAddress, "getPriceInLoop", symbol);
+        Address balancedOracleAddress = AddressManager.get("balancedOracle");
+        Context.call(balancedOracleAddress, "addDexPricedAsset", symbol, poolId);
+        BigInteger price = Context.call(BigInteger.class, balancedOracleAddress, "getPriceInLoop", symbol);
         Context.require(price.compareTo(BigInteger.ZERO) > 0, "Balanced oracle return a invalid icx price for " + symbol);
 
         if (_limit.equals(BigInteger.ZERO)) {
@@ -360,8 +360,8 @@ public class GovernanceImpl implements Governance {
         Context.call(icxValue, targetAddress, method, params);
     }
 
-    public static <T>  T call(Class<T> retunType, Address targetAddress, String method, Object... params) {
-        return Context.call(retunType, targetAddress, method, params);
+    public static <T>  T call(Class<T> returnType, Address targetAddress, String method, Object... params) {
+        return Context.call(returnType, targetAddress, method, params);
     }
 
     public static BigInteger _getDay() {

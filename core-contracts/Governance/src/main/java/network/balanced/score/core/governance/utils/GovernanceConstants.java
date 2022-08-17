@@ -28,7 +28,7 @@ import network.balanced.score.lib.utils.Constants;
 
 public class GovernanceConstants extends Constants {
     public static final String TAG = "Governance";
-    public static final int succsesfulVoteExecutionRevertID = 20;
+    public static final int successfulVoteExecutionRevertID = 20;
 
     public static final BigInteger MAJORITY = new BigInteger("666666666666666667", 10);
     public static final BigInteger DAY_ZERO = BigInteger.valueOf(18647);

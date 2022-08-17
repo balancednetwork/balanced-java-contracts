@@ -1,8 +1,5 @@
 package network.balanced.score.core.governance.proposal;
 
-import com.eclipsesource.json.Json;
-import com.eclipsesource.json.JsonArray;
-
 import network.balanced.score.core.governance.utils.AddressManager;
 import network.balanced.score.core.governance.utils.ArbitraryCallManager;
 
@@ -31,7 +28,7 @@ public class ProposalManager {
         BigInteger voteIndex = ProposalDB.getProposalId(name);
         Context.require(voteIndex.equals(BigInteger.ZERO), "Poll name " + name + " has already been used.");
         Context.require(checkBalnVoteCriterion(Context.getCaller()), "User needs at least " + balnVoteDefinitionCriterion.get().divide(BigInteger.valueOf(100)) + "% of total baln supply staked to define a vote.");
-        verifyActions(actions);
+        verifyTransactions(actions);
 
         call(AddressManager.get("bnUSD"), "govTransfer", Context.getCaller(), AddressManager.get("daofund"), bnusdVoteDefinitionFee.getOrDefault(BigInteger.ONE), new byte[0]);
 
@@ -106,28 +103,24 @@ public class ProposalManager {
         if (vote) {
             proposal.forVotesOfUser.set(from, totalVote);
             proposal.againstVotesOfUser.set(from, BigInteger.ZERO);
-            //TODO use safemath
 
             totalFor = totalForVotes.add(totalVote).subtract(userForVotes);
             totalAgainst = totalAgainstVotes.subtract(userAgainstVotes);
             if (isFirstTimeVote) {
                 proposal.forVotersCount.set(totalForVotersCount.add(BigInteger.ONE));
             } else if (userAgainstVotes.compareTo(BigInteger.ZERO) > 0) {
-                //TODO use safemath
                 proposal.againstVotersCount.set(totalForAgainstVotersCount.subtract(BigInteger.ONE));
                 proposal.forVotersCount.set(totalForVotersCount.add(BigInteger.ONE));
             }
         } else {
             proposal.againstVotesOfUser.set(from, totalVote);
             proposal.forVotesOfUser.set(from, BigInteger.ZERO);
-            //TODO use safemath
             totalFor = totalForVotes.subtract(userForVotes);
             totalAgainst = totalAgainstVotes.add(totalVote).subtract(userAgainstVotes);
 
             if (isFirstTimeVote) {
                 proposal.againstVotersCount.set(totalForAgainstVotersCount.add(BigInteger.ONE));
             } else if (userForVotes.compareTo(BigInteger.ZERO) > 0) {
-                //TODO use safemath
                 proposal.againstVotersCount.set(totalForAgainstVotersCount.add(BigInteger.ONE));
                 proposal.forVotersCount.set(totalForVotersCount.subtract(BigInteger.ONE));
             }
@@ -146,12 +139,11 @@ public class ProposalManager {
 
         ProposalDB proposal = new ProposalDB(vote_index);
         BigInteger endSnap = proposal.endSnapshot.get();
-        String actions = proposal.actions.get();
+        String transactions = proposal.transactions.get();
         BigInteger majority = proposal.majority.get();
 
         Context.require(_getDay().compareTo(endSnap) >= 0, TAG + ": Voting period has not ended.");
         Context.require(proposal.active.get(), TAG + ": This proposal is not active");
-
 
         Map<String, Object> result = checkVote(vote_index);
         proposal.active.set(false);
@@ -163,20 +155,19 @@ public class ProposalManager {
             return;
         }
 
-        //TODO SafeMath
         BigInteger percentageFor = EXA.subtract(majority).multiply(forVotes);
         BigInteger percentageAgainst = majority.multiply(againstVotes);
         if (percentageFor.compareTo(percentageAgainst) <= 0) {
             proposal.status.set(ProposalStatus.STATUS[ProposalStatus.DEFEATED]);
             return;
-        } else if (actions.equals("[]")) {
+        } else if (transactions.equals("[]")) {
             proposal.status.set(ProposalStatus.STATUS[ProposalStatus.SUCCEEDED]);
             _refundVoteDefinitionFee(proposal);
             return;
         }
 
         try {
-            ArbitraryCallManager.executeTransactions(actions);
+            ArbitraryCallManager.executeTransactions(transactions);
             proposal.status.set(ProposalStatus.STATUS[ProposalStatus.EXECUTED]);
         } catch (Exception e) {
             proposal.status.set(ProposalStatus.STATUS[ProposalStatus.FAILED_EXECUTION]);
@@ -212,7 +203,7 @@ public class ProposalManager {
         voteData.put("vote snapshot", proposal.voteSnapshot.getOrDefault(BigInteger.ZERO));
         voteData.put("start day", proposal.startSnapshot.getOrDefault(BigInteger.ZERO));
         voteData.put("end day", proposal.endSnapshot.getOrDefault(BigInteger.ZERO));
-        voteData.put("actions", proposal.actions.getOrDefault(""));
+        voteData.put("actions", proposal.transactions.getOrDefault(""));
         voteData.put("quorum", proposal.quorum.getOrDefault(BigInteger.ZERO));
         voteData.put("for", nrForVotes);
         voteData.put("against", nrAgainstVotes);
@@ -266,11 +257,11 @@ public class ProposalManager {
         proposal.feeRefunded.set(true);
     }
 
-    private static void verifyActions(String actions) {
+    private static void verifyTransactions(String transactions) {
         try {
-            call(Context.getAddress(), "tryExecuteTransactions", actions);
+            call(Context.getAddress(), "tryExecuteTransactions", transactions);
         } catch (score.UserRevertedException e) {
-            Context.require(e.getCode() == succsesfulVoteExecutionRevertID, "Vote execution failed");
+            Context.require(e.getCode() == successfulVoteExecutionRevertID, "Vote execution failed");
         }
     }
 }
