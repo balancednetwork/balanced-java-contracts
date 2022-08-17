@@ -173,9 +173,14 @@ class DividendsImplTestSetup extends DividendsImplTestBase {
 
     @Test
     void getTimeOffset() {
+        dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
+        dividendScore.invoke(admin, "setTimeOffset", BigInteger.valueOf(2 * DAY));
         setAndGetDex();
-        contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("getTimeOffset"))).thenReturn(BigInteger.valueOf(2 * DAY));
-        dividendScore.invoke(owner, "distribute");
+
+//      this will be redundant when continuous dividends is activated on day 1
+//        contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("getTimeOffset"))).thenReturn(BigInteger.valueOf(2));
+//        dividendScore.invoke(owner, "distribute");
+
         assertEquals(BigInteger.valueOf(2 * DAY), dividendScore.call("getTimeOffset"));
     }
 
