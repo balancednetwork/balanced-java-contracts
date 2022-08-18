@@ -17,6 +17,7 @@
 package network.balanced.score.core.dividends;
 
 import static network.balanced.score.core.dividends.Check.continuousDividendsActive;
+import static network.balanced.score.core.dividends.Constants.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 
 import java.math.BigInteger;
@@ -30,78 +31,101 @@ import score.VarDB;
 public class DividendsTracker {
     private static final BranchDB<Address, DictDB<Address, BigInteger>> userWeight = Context.newBranchDB("user_weight",
             BigInteger.class);
+    private static final  DictDB<Address, Boolean> bBalnFlag = Context.newDictDB(BBALN_FLAG,
+            Boolean.class);
     private static final  VarDB<BigInteger> totalSupply = Context.newVarDB("balnSupply", BigInteger.class);
     private static final  DictDB<Address, BigInteger> totalWeight = Context.newDictDB("running_total",
             BigInteger.class);
 
-    private static final BranchDB<Address, DictDB<Address, BigInteger>> boostedUserWeight = Context.newBranchDB("bossted_user_weight",
+    private static final BranchDB<Address, DictDB<Address, BigInteger>> boostedUserWeight = Context.newBranchDB(BBALN_USER_WEIGHT,
             BigInteger.class);
-    private static final  VarDB<BigInteger> boostedTotalSupply = Context.newVarDB("boostedbalnSupply", BigInteger.class);
-    private static final  DictDB<Address, BigInteger> boostedTotalWeight = Context.newDictDB("boosted_running_total",
+    private static final  VarDB<BigInteger> boostedTotalSupply = Context.newVarDB(BBALN_SUPPLY, BigInteger.class);
+    private static final  DictDB<Address, BigInteger> boostedTotalWeight = Context.newDictDB(BBALN_TOTAL_WEIGHT,
             BigInteger.class);
-    private static final BigInteger boostedDay = BigInteger.valueOf(1000000000000000000L);
+    protected static final VarDB<BigInteger> bBalnDay = Context.newVarDB(BBALN_DAY, BigInteger.class);
 
-    public static BigInteger getUserWeight(Address user, Address token, BigInteger day) {
-        if (day.compareTo(boostedDay) >= 0) {
-            return boostedUserWeight.at(user).getOrDefault(token, BigInteger.ZERO);
-        } else {
+
+    public static BigInteger getUserWeight(Address user, Address token, boolean isUserMigrated) {
+        if(isUserMigrated){
             return boostedUserWeight.at(user).getOrDefault(token, BigInteger.ZERO);
         }
+        return userWeight.at(user).getOrDefault(token, BigInteger.ZERO);
     }
 
-    public static BigInteger getTotalSupply(BigInteger day) {
-        if (day.compareTo(boostedDay) >= 0) {
+    protected static boolean isUserMigrated(Address user) {
+
+        if(bBalnFlag.getOrDefault(user, false).equals(true)){
+            return true;
+        }
+        return false;
+    }
+
+    protected static BigInteger getBoostedBalnDay(){
+        return bBalnDay.getOrDefault(BigInteger.ZERO);
+    }
+
+    public static BigInteger getTotalSupply(boolean isBBalnDay) {
+        if(isBBalnDay){
             return boostedTotalSupply.getOrDefault(BigInteger.ZERO);
-        } else {
-            return totalSupply.getOrDefault(BigInteger.ZERO);
+        }
+        return totalSupply.getOrDefault(BigInteger.ZERO);
+    }
+
+    public static void setFlag(Address user, boolean flag){
+        if(bBalnFlag.get(user) == null){
+            bBalnFlag.set(user, flag);
         }
     }
 
-    public static void setTotalSupply(BigInteger supply, BigInteger day) {
-        if (day.compareTo(boostedDay) >= 0) {
-            boostedTotalSupply.set(supply);
-        } else {
+    public static void setTotalSupply(BigInteger supply)  {
             totalSupply.set(supply);
         }
+
+    public static void setBBalnTotalSupply(BigInteger supply) {
+        boostedTotalSupply.set(supply);
     }
 
-    public static BigInteger getTotalWeight(Address token, BigInteger day) {
-        if (day.compareTo(boostedDay) >= 0) {
+    public static BigInteger getTotalWeight(Address token, boolean isBBalnDay) {
+        if(isBBalnDay){
             return boostedTotalWeight.getOrDefault(token, BigInteger.ZERO);
-        } else {
-            return totalWeight.getOrDefault(token, BigInteger.ZERO);
         }
+        return totalWeight.getOrDefault(token, BigInteger.ZERO);
     }
 
-    public static BigInteger updateUserData(Address token, Address user, BigInteger prevBalance, boolean readOnlyContext, BigInteger day) {
+    public static BigInteger updateUserData(Address token, Address user, BigInteger prevBalance, boolean readOnlyContext) {
         if (!continuousDividendsActive()) {
             return BigInteger.ZERO;
         }
-
-        BigInteger currentUserWeight = getUserWeight(user, token, day);
-        BigInteger totalWeight = getTotalWeight(token, day);
+        boolean isUserMigrated = isUserMigrated(user);
+        BigInteger currentUserWeight = getUserWeight(user, token, isUserMigrated);
+        BigInteger totalWeight = getTotalWeight(token, isUserMigrated);
         if (!readOnlyContext) {
-            if (day.compareTo(boostedDay) >= 0) {
+            if (isUserMigrated) {
                 boostedUserWeight.at(user).set(token, totalWeight);
             } else {
                 userWeight.at(user).set(token, totalWeight);
             }
         }
-
         return computeUserRewards(prevBalance, totalWeight, currentUserWeight);
     }
 
-    public static void updateTotalWeight(Address token, BigInteger amountReceived, BigInteger day) {
-        BigInteger previousTotalWeight = getTotalWeight(token, day);
-        BigInteger addedWeight = amountReceived.multiply(EXA).divide(getTotalSupply(day));
-        if (day.compareTo(boostedDay) >= 0) {
+    protected static void setTotalWeight(Address token, BigInteger amountReceived, boolean isBBalnDay){
+        BigInteger addedWeight = amountReceived.multiply(EXA).divide(getTotalSupply(isBBalnDay));
+        BigInteger previousTotalWeight = getTotalWeight(token, isBBalnDay);
+        if(isBBalnDay){
             boostedTotalWeight.set(token, previousTotalWeight.add(addedWeight));
-        } else {
+        }
+        else {
             totalWeight.set(token, previousTotalWeight.add(addedWeight));
         }
     }
 
-    private static BigInteger computeUserRewards(BigInteger prevUserBalance, BigInteger totalWeight, BigInteger userWeight) {
+    public static void updateTotalWeight(Address token, BigInteger amountReceived, BigInteger day) {
+
+        setTotalWeight(token, amountReceived, day.compareTo(getBoostedBalnDay()) >= 0);
+    }
+
+    protected static BigInteger computeUserRewards(BigInteger prevUserBalance, BigInteger totalWeight, BigInteger userWeight) {
         BigInteger deltaWeight = totalWeight.subtract(userWeight);
         return deltaWeight.multiply(prevUserBalance).divide(EXA);
     }
