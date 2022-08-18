@@ -33,7 +33,6 @@ public class Constants {
     static final String BBALN_TOTAL_WEIGHT = "boosted_running_total";
     static final String BBALN_SUPPLY = "boosted_baln_supply";
     static final String BBALN_USER_WEIGHT = "boosted_user_weight";
-    static final String PREVIOUS_STAKED_BALANCE = "previous_staked_balance";
 
     static final String ACCEPTED_TOKENS = "accepted_tokens";
     public static final String AMOUNT_TO_DISTRIBUTE = "amount_to_distribute";
