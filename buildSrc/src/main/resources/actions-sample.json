@@ -62,6 +62,17 @@
     "order": 4.0
   },
   {
+    "contract": "governance",
+    "method": "setAdmin",
+    "__args__": {
+      "__address_args__": {
+        "contractAddress": "feehandler",
+        "admin": "governance"
+      }
+    },
+    "order": 5.0
+  },
+  {
     "contract": "staking",
     "method": "toggleStakingOn",
     "__args__": {
@@ -80,6 +91,26 @@
     "order": 6.0
   },
   {
+    "contract": "sicx",
+    "method": "setMinter",
+    "__args__": {
+      "__address_args__": {
+        "_address": "staking"
+      }
+    },
+    "order": 6.0
+  },
+  {
+    "contract": "baln",
+    "method": "setMinter",
+    "__args__": {
+      "__address_args__": {
+        "_address": "rewards"
+      }
+    },
+    "order": 6.0
+  },
+  {
     "contract": "bnUSD",
     "method": "setMinter2",
     "__args__": {
@@ -93,6 +124,7 @@
     "contract": "governance",
     "method": "delegate",
     "__args__": {
+      "contract": "staking",
       "__property_args__":{
         "_delegations": "DELEGATE_PARAM"
       }

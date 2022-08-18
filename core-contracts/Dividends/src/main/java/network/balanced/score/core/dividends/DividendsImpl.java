@@ -542,6 +542,11 @@ public class DividendsImpl implements Dividends {
         }
 
         if (continuousDividendsActive()) {
+            if(DividendsTracker.getTotalSupply().equals(BigInteger.ZERO)){
+                sendToken(daoFund.get(), _value, token, "Daofund dividends");
+                DividendsReceivedV2(_value, getDay(), _value + " tokens received as dividends token: " + token);
+                return;
+            }
             BigInteger dividendsToDaofund = _value.multiply(dividendsPercentage.get(DAOFUND)).divide(EXA);
             DividendsTracker.updateTotalWeight(token, _value.subtract(dividendsToDaofund));
             DividendsReceivedV2(_value, getDay(), _value + " tokens received as dividends token: " + token);
