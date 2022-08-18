@@ -27,7 +27,13 @@ public class Constants {
     static final String DAOFUND = "daofund";
     static final String BALN_SCORE = "baln_score";
     static final String DEX_SCORE = "dex_score";
-    static final String BBALN_SCORE = "bbaln_score";
+    static final String BBALN_SCORE = "boosted_baln_score";
+    static final String BBALN_DAY = "boosted_baln_day";
+    static final String BBALN_FLAG = "boosted_baln_flag";
+    static final String BBALN_TOTAL_WEIGHT = "boosted_running_total";
+    static final String BBALN_SUPPLY = "boosted_baln_supply";
+    static final String BBALN_USER_WEIGHT = "boosted_user_weight";
+    static final String PREVIOUS_STAKED_BALANCE = "previous_staked_balance";
 
     static final String ACCEPTED_TOKENS = "accepted_tokens";
     public static final String AMOUNT_TO_DISTRIBUTE = "amount_to_distribute";
