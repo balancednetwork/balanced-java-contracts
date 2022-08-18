@@ -43,6 +43,24 @@ public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress
     void setDistributionActivationStatus(boolean _status);
 
     @External
+    void setBBalnDay(BigInteger day);
+
+    @External(readonly = true)
+    BigInteger getBBalnDay();
+
+    @External
+    void onBalanceUpdate(Address user, BigInteger prevBalance, BigInteger currentTotalSupply);
+
+    @External
+    void onKick(Address user, BigInteger bBalancedUserBalance, @Optional byte[] data);
+
+    @External
+    void setBBalnAddress(Address _address);
+
+    @External(readonly = true)
+    Address getBBalnAddress();
+
+    @External
     void setTimeOffset(BigInteger deltaTime);
 
     @External
