@@ -183,8 +183,6 @@ public class LoansImpl implements Loans {
             AssetDB.addAsset(_token_address, _active);
         }
 
-        lockingRatio.set(symbol, LOCKING_RATIO);
-        liquidationRatio.set(symbol, LIQUIDATION_RATIO);
         AssetAdded(_token_address, symbol, _collateral);
     }
 
@@ -907,8 +905,8 @@ public class LoansImpl implements Loans {
     }
     
     @External(readonly = true)
-    public BigInteger getLiquidationRatio(String symbol) {
-        return liquidationRatio.get(symbol);
+    public BigInteger getLiquidationRatio(String _symbol) {
+        return liquidationRatio.get(_symbol);
     }
 
     @External

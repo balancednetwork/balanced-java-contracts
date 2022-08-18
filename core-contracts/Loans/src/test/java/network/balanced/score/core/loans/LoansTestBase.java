@@ -39,6 +39,8 @@ import java.util.Map;
 
 import static network.balanced.score.core.loans.utils.LoansConstants.Standings;
 import static network.balanced.score.core.loans.utils.LoansConstants.StandingsMap;
+import static network.balanced.score.core.loans.utils.LoansConstants.LIQUIDATION_RATIO;
+import static network.balanced.score.core.loans.utils.LoansConstants.LOCKING_RATIO;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -294,5 +296,10 @@ class LoansTestBase extends UnitTest {
         loans.invoke(admin, "addAsset", bnusd.getAddress(), true, false);
         loans.invoke(admin, "addAsset", sicx.getAddress(), true, true);
         loans.invoke(admin, "addAsset", ieth.getAddress(), true, true);
+
+        loans.invoke(admin, "setLockingRatio", "sICX", LOCKING_RATIO);
+        loans.invoke(admin, "setLiquidationRatio","sICX", LIQUIDATION_RATIO);
+        loans.invoke(admin, "setLockingRatio", "iETH", LOCKING_RATIO);
+        loans.invoke(admin, "setLiquidationRatio", "iETH", LIQUIDATION_RATIO);
     }
 }
