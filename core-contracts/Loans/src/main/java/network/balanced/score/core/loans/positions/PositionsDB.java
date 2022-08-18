@@ -25,6 +25,7 @@ import java.math.BigInteger;
 import java.util.Map;
 
 import static network.balanced.score.core.loans.positions.Position.TAG;
+import static network.balanced.score.core.loans.utils.LoansConstants.SICX_SYMBOL;
 
 public class PositionsDB {
     private static final String POSITION_DB_PREFIX = "position";
@@ -94,6 +95,7 @@ public class PositionsDB {
         newPosition.setId(id);
         newPosition.setCreated(BigInteger.valueOf(Context.getBlockTimestamp()));
         newPosition.setAddress(owner);
+        newPosition.setDataMigrationStatus(SICX_SYMBOL, true);
 
         return newPosition;
     }
