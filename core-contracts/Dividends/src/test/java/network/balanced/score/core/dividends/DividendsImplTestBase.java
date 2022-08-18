@@ -45,13 +45,14 @@ class DividendsImplTestBase extends UnitTest {
     protected static final Account loansScore = Account.newScoreAccount(2);
     protected static final Account daoScore = Account.newScoreAccount(3);
     protected static final Account balnScore = Account.newScoreAccount(7);
+    protected static final Account bBalnScore = Account.newScoreAccount(8);
     protected static final Account dexScore = Account.newScoreAccount(6);
     protected static final Account stakingScore = Account.newScoreAccount(7);
     protected static final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
     protected Score dividendScore;
     protected final MockedStatic.Verification getAssetTokens = () -> Context.call(eq(loansScore.getAddress()), eq("getAssetTokens"));
     protected final MockedStatic.Verification balanceOf = () -> Context.call(eq(balnScore.getAddress()), eq("balanceOf"), any(Address.class));
- 
+
     protected void addBnusdFees(BigInteger amount) {
         dividendScore.invoke(bnUSDScore.getAccount(), "tokenFallback", bnUSDScore.getAddress(), amount, new byte[0]);
     }
@@ -77,6 +78,6 @@ class DividendsImplTestBase extends UnitTest {
         dividendScore.setInstance(dividendsSpy);
     }
 
-  
+
 
 }

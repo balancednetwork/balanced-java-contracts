@@ -166,7 +166,7 @@ class DividendsImplTest extends DividendsImplTestBase {
         // Act
         dividendScore.invoke(bnUSDScore.getAccount(), "tokenFallback", bnUSDScore.getAddress(), expectedFeesBnusd,
                 new byte[0]);
-        // not yet added 
+        // not yet added
         dividendScore.invoke(balnScore, "tokenFallback", balnScore.getAddress(), expectedFeesBaln, new byte[0]);
 
         // Assert
@@ -382,7 +382,7 @@ class DividendsImplTest extends DividendsImplTestBase {
         sm.getBlock().increase(DAY);
         dividendScore.invoke(owner, "distribute");
 
-        // Assert       
+        // Assert
         Map<String, BigInteger> result = new HashMap<>();
         result.put(bnUSDScore.getAddress().toString(), expectedDaofundFees);
 
@@ -418,7 +418,7 @@ class DividendsImplTest extends DividendsImplTestBase {
         sm.getBlock().increase(DAY);
         dividendScore.invoke(owner, "distribute");
 
-        // Assert       
+        // Assert
         Map<String, BigInteger> result = new HashMap<>();
         result.put(bnUSDScore.getAddress().toString(), expectedDaofundFees);
 
@@ -458,7 +458,7 @@ class DividendsImplTest extends DividendsImplTestBase {
                 expectedDayThreeDaofundFees)).thenReturn("Token Transferred");
         dividendScore.invoke(owner, "transferDaofundDividends", day + 2, day + 3);
 
-        // Assert       
+        // Assert
         Map<String, BigInteger> result = new HashMap<>();
         result.put(bnUSDScore.getAddress().toString(), expectedDaofundFees);
 
@@ -559,5 +559,17 @@ class DividendsImplTest extends DividendsImplTestBase {
 
         contextMock.verify(() -> Context.call(governanceScore.getAddress(), "getContractAddress", "staking"));
         contextMock.verify(() -> Context.call(eq(stakingScore.getAddress()), eq("delegate"), any()));
+    }
+
+    @Test
+    void setBBalnDay() {
+        dividendScore.invoke(admin, "setBBalnDay", BigInteger.TWO);
+        assertEquals(BigInteger.TWO,dividendScore.call("getBBalnDay"));
+    }
+
+    @Test
+    void setBBalnAddress() {
+        dividendScore.invoke(admin, "setBBalnAddress", bBalnScore.getAddress());
+        assertEquals(bBalnScore.getAddress(),dividendScore.call("getBBalnAddress"));
     }
 }
