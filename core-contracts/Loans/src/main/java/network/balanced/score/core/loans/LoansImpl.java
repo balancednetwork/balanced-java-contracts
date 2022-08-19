@@ -229,12 +229,7 @@ public class LoansImpl implements Loans {
 
     @External(readonly = true)
     public BigInteger getBnusdValue(String _name) {
-        // rewrite to work correctly? or remove and rewrite get APY in Rewards?
-        Asset asset = AssetDB.getAsset(BNUSD_SYMBOL);
-        Token assetContract = new Token(asset.getAssetAddress());
-        BigInteger totalSupply = assetContract.totalSupply();
-
-        return totalSupply.subtract(asset.getBadDebt(SICX_SYMBOL));
+        return getTotalDebt(BNUSD_SYMBOL);
     }
 
     @External
