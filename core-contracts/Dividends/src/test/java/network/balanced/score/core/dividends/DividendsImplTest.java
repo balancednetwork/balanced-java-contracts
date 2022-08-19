@@ -563,7 +563,7 @@ class DividendsImplTest extends DividendsImplTestBase {
 
     @Test
     void setBBalnDay() {
-        dividendScore.invoke(admin, "setBBalnDay", BigInteger.TWO);
+        dividendScore.invoke(owner, "setBBalnDay", BigInteger.TWO);
         assertEquals(BigInteger.TWO,dividendScore.call("getBBalnDay"));
     }
 

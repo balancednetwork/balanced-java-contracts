@@ -79,7 +79,7 @@ class DividendsImplTestContinuousMigration extends DividendsImplTestBase {
         Account staker3 = sm.createAccount();
 
         dividendScore.invoke(owner, "setContinuousDividendsDay", day.add(BigInteger.ONE));
-        dividendScore.invoke(admin, "setBBalnDay", day.add(BigInteger.TWO));
+        dividendScore.invoke(owner, "setBBalnDay", day.add(BigInteger.TWO));
         contextMock.when(() -> Context.call(BigInteger.class, balnScore.getAddress(), "stakedBalanceOf", staker3.getAddress())).thenReturn(BigInteger.ZERO);
 
         dividendScore.invoke(bBalnScore, "onBalanceUpdate", staker3.getAddress(), BigInteger.ZERO, BigInteger.valueOf(1L));
@@ -148,7 +148,7 @@ class DividendsImplTestContinuousMigration extends DividendsImplTestBase {
         // Arrange
         int day = getDay().intValue();
         dividendScore.invoke(owner, "setContinuousDividendsDay", getDay().add(BigInteger.ONE));
-        dividendScore.invoke(admin, "setBBalnDay", BigInteger.valueOf(100L));
+        dividendScore.invoke(owner, "setBBalnDay", BigInteger.valueOf(100L));
         Address staker3 = sm.createAccount().getAddress();
         contextMock.when(() -> Context.call(BigInteger.class, balnScore.getAddress(), "stakedBalanceOf", staker3)).thenReturn(BigInteger.ZERO);
 

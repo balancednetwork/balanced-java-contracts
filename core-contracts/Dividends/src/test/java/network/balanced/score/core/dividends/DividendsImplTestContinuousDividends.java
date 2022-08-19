@@ -51,7 +51,7 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         dividendScore.invoke(admin, "addAcceptedTokens", bnUSDScore.getAddress());
         dividendScore.invoke(admin, "setDividendsBatchSize", batchSize);
         dividendScore.invoke(admin, "setDistributionActivationStatus", true);
-        dividendScore.invoke(admin, "setBBalnDay", BigInteger.valueOf(105L));
+        dividendScore.invoke(owner, "setBBalnDay", BigInteger.valueOf(105L));
 
 
         contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("getTimeOffset"))).thenReturn(BigInteger.TWO);
@@ -193,7 +193,7 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
     @Test
     void claimDividends_bbaln() {
 
-        dividendScore.invoke(admin, "setBBalnDay", getDay());
+        dividendScore.invoke(owner, "setBBalnDay", getDay());
 
         // Arrange
         Account staker1 = sm.createAccount();
@@ -242,7 +242,7 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
     @Test
     void onKick_bbaln() {
 
-        dividendScore.invoke(admin, "setBBalnDay", getDay());
+        dividendScore.invoke(owner, "setBBalnDay", getDay());
 
         // Arrange
         Account staker1 = sm.createAccount();
