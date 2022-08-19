@@ -210,8 +210,9 @@ public class Position {
         }
 
         standing.ratio = standing.collateral.multiply(EXA).divide(standing.totalDebt);
-
-        if (standing.ratio.compareTo(liquidationRatio.get(collateralSymbol).multiply(EXA).divide(POINTS)) > 0) {
+        BigInteger liquidationRatio  = LoansVariables.liquidationRatio.get(collateralSymbol);
+        Context.require(liquidationRatio != null && liquidationRatio.compareTo(BigInteger.ZERO) > 0, "Liquidation ratio for " + collateralSymbol + " is not set");
+        if (standing.ratio.compareTo(liquidationRatio.multiply(EXA).divide(POINTS)) > 0) {
             standing.standing = Standings.MINING;
         } else {
             standing.standing = Standings.LIQUIDATE;

@@ -204,7 +204,7 @@ public class BalancedOracleImpl implements BalancedOracle {
         BigInteger bnusdPriceInAsset = Context.call(BigInteger.class, dex.get(), "getQuotePriceInBase", poolID);
 
         BigInteger loopRate = getLoopRate("USD");
-        BigInteger priceInLoop = loopRate.multiply(bnusdPriceInAsset).divide(EXA);
+        BigInteger priceInLoop = loopRate.multiply(EXA).divide(bnusdPriceInAsset);
         return EMACalculator.updateEMA(symbol, priceInLoop, getDexPriceEMADecay());
     }
 

@@ -68,6 +68,21 @@ public class VoteActions {
                case "addAcceptedTokens":
                     gov._addAcceptedTokens(params.get("_token").asString());
                     break;
+               case "addCollateral":
+                    gov._addCollateral(Address.fromString(params.get("_token_address").asString()),
+                                       params.get("_active").asBoolean(),
+                                       params.get("_peg").asString(),
+                                       convertToNumber(params.get("_lockingRatio")),
+                                       convertToNumber(params.get("_liquidationRatio")),
+                                       convertToNumber(params.get("_debtCeiling")));
+                    break;
+               case "addDexPricedCollateral":
+                    gov._addDexPricedCollateral(Address.fromString(params.get("_token_address").asString()),
+                                        params.get("_active").asBoolean(),
+                                        convertToNumber(params.get("_lockingRatio")),
+                                        convertToNumber(params.get("_liquidationRatio")),
+                                        convertToNumber(params.get("_debtCeiling")));
+                    break;
                case "call":
                     Address address = Address.fromString(params.get("contract_address").asString());
                     GovernanceImpl.call(address, params.get("method").asString(), parseVarArgs(params.get("parameters").asArray()));

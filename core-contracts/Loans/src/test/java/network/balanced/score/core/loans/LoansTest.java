@@ -17,12 +17,14 @@
 package network.balanced.score.core.loans;
 
 import static network.balanced.score.core.loans.utils.LoansConstants.StandingsMap;
+import static network.balanced.score.core.loans.utils.LoansConstants.LOCKING_RATIO;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.eq;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -590,6 +592,28 @@ class LoansTest extends LoansTestBase {
     }
 
     @Test
+    void borrow_collateralWithoutLockingRation() throws Exception {
+        // Arrange
+        MockContract<IRC2> iBTC = new MockContract<IRC2>(IRC2ScoreInterface.class, sm, admin);
+        when(iBTC.mock.symbol()).thenReturn("iBTC");
+        loans.invoke(admin, "addAsset", iBTC.getAddress(), true, true);
+
+        Account account = accounts.get(0);
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
+        JsonObject data = new JsonObject()
+            .add("_asset", "bnUSD")
+            .add("_amount", BigInteger.ZERO.toString());
+
+        loans.invoke(iBTC.account, "tokenFallback", account.getAddress(), collateral, data.toString().getBytes());
+
+        // Act & Assert
+        String expectedErrorMessage = "Reverted(0): Locking ratio for iBTC is not set";
+        Executable loanWithoutLockingRatio = () -> loans.invoke(account, "borrow", "iBTC", "bnUSD", loan);
+        expectErrorMessage(loanWithoutLockingRatio, expectedErrorMessage);
+    }
+
+    @Test
     void getTotalDebts() {
         // Arrange
         Account account1 = accounts.get(0);
@@ -970,6 +994,32 @@ class LoansTest extends LoansTestBase {
         verify(rewards.mock).updateRewardsData("Loans", originalTotalDebt, account.getAddress(), BigInteger.ZERO);
         verify(rewards.mock).updateRewardsData("Loans", originalTotalDebt.add(loan.add(expectedFee)), account.getAddress(),  loan.add(expectedFee));
         verifyTotalDebt(originalTotalDebt);
+    }
+
+    @Test
+    void liquidate_liquidationRatioNotSet() throws Exception {
+        // Arrange
+        MockContract<IRC2> iBTC = new MockContract<IRC2>(IRC2ScoreInterface.class, sm, admin);
+        when(iBTC.mock.symbol()).thenReturn("iBTC");
+        loans.invoke(admin, "addAsset", iBTC.getAddress(), true, true);
+        loans.invoke(admin, "setLockingRatio", "iBTC", LOCKING_RATIO);
+
+        Account account = accounts.get(0);
+        Account liquidater = accounts.get(1);
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
+        JsonObject data = new JsonObject()
+            .add("_asset", "bnUSD")
+            .add("_amount", BigInteger.ZERO.toString());
+        mockOraclePrice("iBTC", EXA);
+     
+        loans.invoke(iBTC.account, "tokenFallback", account.getAddress(), collateral, data.toString().getBytes());
+        loans.invoke(account, "borrow", "iBTC", "bnUSD", loan);
+       
+        // Act & Assert
+        String expectedErrorMessage = "Reverted(0): Liquidation ratio for iBTC is not set";
+        Executable liquidateWithoutLiquidationRatio = () -> loans.invoke(liquidater, "liquidate", account.getAddress(), "iBTC");
+        expectErrorMessage(liquidateWithoutLiquidationRatio, expectedErrorMessage);
     }
 
     @Test
