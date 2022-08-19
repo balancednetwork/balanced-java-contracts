@@ -105,12 +105,8 @@ public class Position {
     }
 
     public void setDebt(String collateralSymbol, String assetSymbol, BigInteger value) {
-        BigInteger previousDebt = BigInteger.ZERO;
-        previousDebt = getDebt(collateralSymbol, assetSymbol);
+        BigInteger previousDebt = getDebt(collateralSymbol, assetSymbol);
         BigInteger previousUserDebt = getTotalDebt(assetSymbol);
-    
-        setLoansPosition(collateralSymbol, assetSymbol, value);
-
         DictDB<String, BigInteger> totalPerCollateralDebts = LoansVariables.totalPerCollateralDebts.at(collateralSymbol);
 
         BigInteger previousTotalDebt = LoansVariables.totalDebts.getOrDefault(assetSymbol, BigInteger.ZERO);
@@ -121,18 +117,21 @@ public class Position {
         }
 
         BigInteger debtChange = currentValue.subtract(previousDebt);
-
-        setPositionTotalDebt(assetSymbol, previousUserDebt.add(debtChange));
         BigInteger newTotalDebt = previousTotalDebt.add(debtChange);
         BigInteger newTotalPerCollateralDebt = previousTotalPerCollateralDebt.add(debtChange);
+
+        Asset asset = AssetDB.getAsset(assetSymbol);
+        BigInteger debtAndBadDebtPerCollateral = newTotalPerCollateralDebt.add(asset.getBadDebt(collateralSymbol));
         BigInteger debtCeiling = LoansVariables.debtCeiling.get(collateralSymbol);
         Context.require(debtCeiling == null 
                         || debtChange.signum() != 1 
-                        || newTotalPerCollateralDebt.compareTo(debtCeiling) <= 0, 
+                        || debtAndBadDebtPerCollateral.compareTo(debtCeiling) <= 0, 
                         TAG + ": Cannot mint more " + assetSymbol + " on collateral " + collateralSymbol);
     
         LoansVariables.totalDebts.set(assetSymbol, newTotalDebt);
         totalPerCollateralDebts.set(assetSymbol, newTotalPerCollateralDebt);
+        setLoansPosition(collateralSymbol, assetSymbol, value);
+        setPositionTotalDebt(assetSymbol, previousUserDebt.add(debtChange));
 
         if ( value == null) {
             AssetDB.getAsset(assetSymbol).getBorrowers(collateralSymbol).remove(getId());
