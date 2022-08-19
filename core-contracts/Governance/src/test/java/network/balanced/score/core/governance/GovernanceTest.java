@@ -1264,4 +1264,21 @@ public class GovernanceTest extends GovernanceTestBase {
         verify(stakedLp.mock).addPool(balnSicxPid);
         verify(rewards.mock, times(4)).updateBalTokenDistPercentage(any(DistributionPercentage[].class));
     }
+
+    @Test
+    void totalBaln() {
+        // Arrange
+        BigInteger day = (BigInteger) governance.call("getDay");
+        BigInteger expectedTotalBaln = BigInteger.TEN;
+        when(baln.mock.totalStakedBalanceOfAt(day)).thenReturn(expectedTotalBaln);
+
+        // Act
+        BigInteger totalBaln = (BigInteger) governance.call("totalBaln", day);
+        BigInteger totalBalnFuture = (BigInteger) governance.call("totalBaln", day.add(BigInteger.ONE));
+
+        // Assert
+        assertEquals(expectedTotalBaln, totalBaln);
+        assertEquals(BigInteger.ZERO, totalBalnFuture);
+        verify(baln.mock, times(1)).totalStakedBalanceOfAt(any(BigInteger.class));
+    }
 }

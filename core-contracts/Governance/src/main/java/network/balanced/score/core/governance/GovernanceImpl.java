@@ -328,6 +328,10 @@ public class GovernanceImpl {
 
     @External(readonly = true)
     public BigInteger totalBaln(BigInteger _day) {
+        if (_day.compareTo(getDay()) > 0) {
+            return BigInteger.ZERO;
+        }
+
         return Context.call(BigInteger.class, Addresses.get("baln"), "totalStakedBalanceOfAt", _day);
     }
 
