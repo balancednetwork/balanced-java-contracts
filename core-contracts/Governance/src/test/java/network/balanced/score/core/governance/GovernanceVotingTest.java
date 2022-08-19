@@ -912,11 +912,11 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         when(dex.mock.getPoolId(tokenAddress, bnUSD.getAddress())).thenReturn(poolID);
 
         JsonObject addCollateralParameters = new JsonObject()
-        .add("_token_address", tokenAddress.toString())
-        .add("_active", active)
-        .add("_lockingRatio", lockingRatio.toString())
-        .add("_liquidationRatio", liquidationRatio.toString())
-        .add("_debtCeiling", debtCeiling.toString());
+            .add("_token_address", tokenAddress.toString())
+            .add("_active", active)
+            .add("_lockingRatio", lockingRatio.toString())
+            .add("_liquidationRatio", liquidationRatio.toString())
+            .add("_debtCeiling", debtCeiling.toString());
     
         JsonArray addCollateral = new JsonArray()
             .add("addDexPricedCollateral")

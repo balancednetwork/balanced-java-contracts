@@ -225,7 +225,6 @@ public class GovernanceTest extends GovernanceTestBase {
          //TODO
     }
 
-   
     @Test
     void toggleBalancedOn() {
         // Arrange

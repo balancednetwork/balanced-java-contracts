@@ -700,7 +700,9 @@ public class LoansImpl implements Loans {
         BigInteger oldTotalDebt = totalDebts.getOrDefault(assetToBorrow, BigInteger.ZERO);
 
         BigInteger collateral = position.totalCollateralInLoop(collateralSymbol, false);
-        BigInteger maxDebtValue = POINTS.multiply(collateral).divide(getLockingRatio(collateralSymbol));
+        BigInteger lockingRatio  = getLockingRatio(collateralSymbol);
+        Context.require(lockingRatio != null && lockingRatio.compareTo(BigInteger.ZERO) > 0, "Locking ratio for " + collateralSymbol + " is not set");
+        BigInteger maxDebtValue = POINTS.multiply(collateral).divide(lockingRatio);
         BigInteger fee = originationFee.get().multiply(amount).divide(POINTS);
 
         Address borrowAssetAddress = asset.getAssetAddress();
@@ -890,6 +892,7 @@ public class LoansImpl implements Loans {
     @External
     public void setLockingRatio(String _symbol, BigInteger _ratio) {
         only(admin);
+        Context.require(_ratio.compareTo(BigInteger.ZERO) > 0, "Locking Ratio has to be greater than 0");
         lockingRatio.set(_symbol, _ratio);
     }
 
@@ -901,6 +904,7 @@ public class LoansImpl implements Loans {
     @External
     public void setLiquidationRatio(String _symbol, BigInteger _ratio) {
         only(admin);
+        Context.require(_ratio.compareTo(BigInteger.ZERO) > 0, "Liquidation Ratio has to be greater than 0");
         liquidationRatio.set(_symbol, _ratio);
     }
     
