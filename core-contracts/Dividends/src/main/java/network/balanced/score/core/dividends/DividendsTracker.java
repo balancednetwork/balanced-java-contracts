@@ -39,7 +39,7 @@ public class DividendsTracker {
     }
 
     public static BigInteger getTotalSupply() {
-        return totalSupply.getOrDefault(BigInteger.ZERO);
+        return totalSupply.getOrDefault(BigInteger.ONE);
     }
 
     public static void setTotalSupply(BigInteger supply) {
