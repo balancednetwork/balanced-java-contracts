@@ -115,7 +115,7 @@ public class DividendsImpl implements Dividends {
 
     @External
     public void setBBalnDay(BigInteger day) {
-        only(admin);
+        onlyOwner();
         bBalnDay.set(day);
     }
 
@@ -460,7 +460,7 @@ public class DividendsImpl implements Dividends {
         for (int i = 0; i < size; i++) {
             Address token = acceptedTokens.get(i);
             if(isUserMigrated(user)){
-                balance = getBoostedBalnBalance(user);;
+                balance = getBoostedBalnBalance(user);
             }
             BigInteger accruedDividends = DividendsTracker.updateUserData(token, user, balance, true);
             BigInteger prevAccruedDividends = userAccruedDividends.getOrDefault(token, BigInteger.ZERO);
@@ -593,7 +593,7 @@ public class DividendsImpl implements Dividends {
         }
 
         if (continuousDividendsActive()) {
-            if(getTotalSupply(true).equals(BigInteger.ZERO)){
+            if(getTotalSupply(checkBBalnDay(getDay())).equals(BigInteger.ZERO)){
                 sendToken(daoFund.get(), _value, token, "Daofund dividends");
                 return;
             }
@@ -622,9 +622,6 @@ public class DividendsImpl implements Dividends {
             BigInteger prevAccruedDividends = userAccruedDividends.getOrDefault(token, BigInteger.ZERO);
             userAccruedDividends.set(token, prevAccruedDividends.add(accruedDividends));
         }
-//        if(prevStakedBalance.equals(BigInteger.ZERO)) {
-//            previousStakedBalance.set(user, prevStakedBalance);
-//        }
         DividendsTracker.setTotalSupply(currentTotalSupply);
     }
 
