@@ -120,9 +120,13 @@ public class DividendsTracker {
         }
     }
 
+    protected static boolean checkBBalnDay(BigInteger day){
+        return day.compareTo(getBoostedBalnDay()) >= 0 ;
+    }
+
     public static void updateTotalWeight(Address token, BigInteger amountReceived, BigInteger day) {
 
-        setTotalWeight(token, amountReceived, day.compareTo(getBoostedBalnDay()) >= 0);
+        setTotalWeight(token, amountReceived, checkBBalnDay(day));
     }
 
     protected static BigInteger computeUserRewards(BigInteger prevUserBalance, BigInteger totalWeight, BigInteger userWeight) {
