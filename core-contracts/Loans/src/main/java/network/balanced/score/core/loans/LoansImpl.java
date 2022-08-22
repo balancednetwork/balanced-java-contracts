@@ -291,6 +291,8 @@ public class LoansImpl implements Loans {
         }
 
         if (_asset == null || _asset.equals("") || _amount == null || _amount.compareTo(BigInteger.ZERO) <= 0) {
+            Collateral sICXCollateral = CollateralDB.getCollateral(SICX_SYMBOL);
+            Context.require(sICXCollateral.isActive(), TAG + ": Loans from inactive collaterals are not allowed.");
             return;
         }
 
@@ -694,15 +696,17 @@ public class LoansImpl implements Loans {
 
     private void originateLoan(String collateralSymbol, String assetToBorrow, BigInteger amount, Address from) {
         Asset asset = AssetDB.getAsset(assetToBorrow);
+        Collateral collateral = CollateralDB.getCollateral(collateralSymbol);
         Context.require(asset.isActive(), TAG + ": Loans of inactive assets are not allowed.");
+        Context.require(collateral.isActive(), TAG + ": Loans from inactive collaterals are not allowed.");
 
         Position position = PositionsDB.getPosition(from);
         BigInteger oldTotalDebt = totalDebts.getOrDefault(assetToBorrow, BigInteger.ZERO);
 
-        BigInteger collateral = position.totalCollateralInLoop(collateralSymbol, false);
+        BigInteger collateralInLoop = position.totalCollateralInLoop(collateralSymbol, false);
         BigInteger lockingRatio  = getLockingRatio(collateralSymbol);
         Context.require(lockingRatio != null && lockingRatio.compareTo(BigInteger.ZERO) > 0, "Locking ratio for " + collateralSymbol + " is not set");
-        BigInteger maxDebtValue = POINTS.multiply(collateral).divide(lockingRatio);
+        BigInteger maxDebtValue = POINTS.multiply(collateralInLoop).divide(lockingRatio);
         BigInteger fee = originationFee.get().multiply(amount).divide(POINTS);
 
         Address borrowAssetAddress = asset.getAssetAddress();
@@ -723,7 +727,7 @@ public class LoansImpl implements Loans {
 
         BigInteger totalDebt = position.totalDebtInLoop(collateralSymbol, false);
         Context.require(totalDebt.add(newDebtValue).compareTo(maxDebtValue) <= 0,
-                TAG + ": " + collateral + " collateral is insufficient" +
+                TAG + ": " + collateralInLoop + " collateral is insufficient" +
                         " to originate a loan of " + amount + " " + assetToBorrow +
                         " when max_debt_value = " + maxDebtValue + "," +
                         " new_debt_value = " + newDebtValue + "," +

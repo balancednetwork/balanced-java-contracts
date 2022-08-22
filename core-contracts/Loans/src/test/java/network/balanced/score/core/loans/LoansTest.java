@@ -326,6 +326,22 @@ class LoansTest extends LoansTestBase {
     }
 
     @Test
+    void depositAndBorrow_sICXInactive() {
+        // Arrange
+        Account account = accounts.get(0);
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.ZERO;
+
+        // Act
+        loans.invoke(admin, "toggleAssetActive", "sICX");
+        
+        // Assert
+        String expectedErrorMessage = TAG + "Loans from inactive collaterals are not allowed.";
+        Executable  depositICX = () ->  takeLoanICX(account, "", collateral, loan);
+        expectErrorMessage(depositICX, expectedErrorMessage);
+    }
+
+    @Test
     void DepositAndBorrow_OriginateLoan_NotBorrowable() {
         // Arrange
         Account account = accounts.get(0);
@@ -424,6 +440,21 @@ class LoansTest extends LoansTestBase {
     }
 
     @Test
+    void depositCollateral_inactive() {
+        // Arrange
+        Account account = accounts.get(0);
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        
+        // Act
+        loans.invoke(admin, "toggleAssetActive", "sICX");
+        
+        // Assert
+        String expectedErrorMessage = TAG + "The Balanced Loans contract does not accept that token type.";
+        Executable depositInactiveCollateral = () -> takeLoanSICX(account, collateral, BigInteger.ZERO);
+        expectErrorMessage(depositInactiveCollateral, expectedErrorMessage);
+    }
+
+    @Test
     void borrow_sICX() {
         // Arrange
         Account account = accounts.get(0);
@@ -443,6 +474,23 @@ class LoansTest extends LoansTestBase {
         assertEquals(expectedDebt, assetHoldings.get("sICX").get("bnUSD"));
         verifyPosition(account.getAddress(), collateral, expectedDebt, "sICX");
         verifyTotalDebt(expectedDebt);
+    }
+
+    @Test
+    void borrow_inactiveCollateral() {
+        // Arrange
+        Account account = accounts.get(0);
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
+        takeLoanSICX(account, collateral, BigInteger.ZERO);
+
+        // Act
+        loans.invoke(admin, "toggleAssetActive", "sICX");
+        
+        // Assert
+        String expectedErrorMessage = TAG + "Loans from inactive collaterals are not allowed.";
+        Executable  loanOnInactiveCollateral = () -> loans.invoke(account, "borrow", "sICX", "bnUSD", loan);
+        expectErrorMessage(loanOnInactiveCollateral, expectedErrorMessage);
     }
 
     @Test
