@@ -42,7 +42,7 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
         dividendScore.invoke(admin, "setDaofund", daoScore.getAddress());
         dividendScore.invoke(admin, "setBaln", balnScore.getAddress());
-        dividendScore.invoke(admin, "setBBalnAddress", bBalnScore.getAddress());
+        dividendScore.invoke(owner, "setBBalnAddress", bBalnScore.getAddress());
 
 
         dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
@@ -278,7 +278,6 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
 
         contextMock.when(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker1.getAddress(), staker1ExpectedFees)).thenReturn("Token Transferred");
         contextMock.when(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker2.getAddress(), staker2ExpectedFees)).thenReturn("Token Transferred");
-
 
         dividendScore.invoke(staker1, "claimDividends");
         dividendScore.invoke(staker2, "claimDividends");

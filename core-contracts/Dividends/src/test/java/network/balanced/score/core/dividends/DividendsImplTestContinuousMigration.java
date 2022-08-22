@@ -43,7 +43,7 @@ class DividendsImplTestContinuousMigration extends DividendsImplTestBase {
         dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
         dividendScore.invoke(admin, "setDaofund", daoScore.getAddress());
         dividendScore.invoke(admin, "setBaln", balnScore.getAddress());
-        dividendScore.invoke(admin, "setBBalnAddress", bBalnScore.getAddress());
+        dividendScore.invoke(owner, "setBBalnAddress", bBalnScore.getAddress());
 
         dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
         dividendScore.invoke(admin, "setLoans", loansScore.getAddress());
