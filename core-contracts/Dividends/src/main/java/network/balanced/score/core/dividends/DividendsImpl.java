@@ -185,7 +185,7 @@ public class DividendsImpl implements Dividends {
 
     @External
     public void setBBalnAddress(Address _address) {
-        only(admin);
+        onlyOwner();
         isContract(_address);
         boostedBalnScore.set(_address);
     }
@@ -469,6 +469,7 @@ public class DividendsImpl implements Dividends {
                 totalDividends.put(token.toString(), totalDivs);
             }
         }
+
         return totalDividends;
     }
 
@@ -716,11 +717,12 @@ public class DividendsImpl implements Dividends {
     }
 
     @External
-    public void onKick(Address user, BigInteger bBalancedUserBalance, @Optional byte[] data) {
+    public void onKick(Address user, BigInteger bBalancedUserBalance, BigInteger currentSupply, @Optional byte[] data) {
         Context.require(Context.getCaller().equals(boostedBalnScore.get()), TAG + " Only BBaln contract is allowed to call onKick method");
         Context.require(!bBalancedUserBalance.equals(BigInteger.ZERO), TAG + " " + user + " Baln locking has not expired");
         updateUserDividends(user, bBalancedUserBalance);
         UserKicked(user, data);
+        DividendsTracker.setBBalnTotalSupply(currentSupply);
     }
 
     @External
