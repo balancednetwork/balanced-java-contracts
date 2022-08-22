@@ -52,7 +52,7 @@ public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress
     void onBalanceUpdate(Address user, BigInteger prevBalance, BigInteger currentTotalSupply);
 
     @External
-    void onKick(Address user, BigInteger bBalancedUserBalance, @Optional byte[] data);
+    void onKick(Address user, BigInteger bBalancedUserBalance, BigInteger currentSupply, @Optional byte[] data);
 
     @External
     void setBBalnAddress(Address _address);
