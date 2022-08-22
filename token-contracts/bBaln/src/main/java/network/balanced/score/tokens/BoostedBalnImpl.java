@@ -39,8 +39,8 @@ import static network.balanced.score.tokens.Constants.WEEK_IN_MICRO_SECONDS;
 
 public class BoostedBalnImpl extends AbstractBoostedBaln {
 
-    public BoostedBalnImpl(Address tokenAddress, Address rewardAddress, String name, String symbol) {
-        super(tokenAddress, rewardAddress, name, symbol);
+    public BoostedBalnImpl(Address tokenAddress, Address rewardAddress, Address dividendsAddress,  String name, String symbol) {
+        super(tokenAddress, rewardAddress, dividendsAddress,  name, symbol);
     }
 
     @External
@@ -192,6 +192,15 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
     }
 
     @External
+    public void kick(Address user) {
+        BigInteger bBalnBalance = balanceOf(user, BigInteger.ZERO);
+        Context.require(bBalnBalance.equals(BigInteger.ZERO), user + " BBaln locking has not expired");
+        LockedBalance locked = getLockedBalance(user).newLockedBalance();
+        BigInteger previousLockedAmount = locked.amount;
+        onKick(user, previousLockedAmount, this.supply.get(), "User kicked".getBytes());
+    }
+
+    @External
     public void withdraw() {
         this.nonReentrant.updateLock(true);
         Address sender = Context.getCaller();
@@ -206,7 +215,8 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
         locked.amount = BigInteger.ZERO;
         this.locked.set(sender, locked);
         BigInteger supplyBefore = this.supply.get();
-        this.supply.set(supplyBefore.subtract(value));
+        BigInteger currentSupply = supplyBefore.subtract(value);
+        this.supply.set(currentSupply);
 
         this.checkpoint(sender, oldLocked, locked);
 
@@ -222,8 +232,9 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
         Context.call(this.tokenAddress.get(), "transfer", sender, value, "withdraw".getBytes());
         users.remove(sender);
         Withdraw(sender, value, blockTimestamp);
-        Supply(supplyBefore, supplyBefore.subtract(value));
+        Supply(supplyBefore, currentSupply);
         this.nonReentrant.updateLock(false);
+        onKick(sender, oldLocked.amount, currentSupply, "User kicked".getBytes());
     }
 
     @External(readonly = true)

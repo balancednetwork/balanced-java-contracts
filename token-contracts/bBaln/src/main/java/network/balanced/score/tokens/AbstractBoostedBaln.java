@@ -52,6 +52,7 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
 
     protected final VarDB<Address> tokenAddress = Context.newVarDB("tokenAddress", Address.class);
     protected final VarDB<Address> rewardAddress = Context.newVarDB("rewardAddress", Address.class);
+    protected final VarDB<Address> dividendsAddress = Context.newVarDB("dividendsAddress", Address.class);
     protected final VarDB<Address> penaltyAddress = Context.newVarDB("Boosted_baln_penalty_address", Address.class);
 
     protected final NonReentrant nonReentrant = new NonReentrant("Boosted_Baln_Reentrancy");
@@ -74,17 +75,19 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
             BigInteger.class);
 
 
-    public AbstractBoostedBaln(Address tokenAddress, Address rewardAddress, String name, String symbol) {
+    public AbstractBoostedBaln(Address tokenAddress, Address rewardAddress, Address dividendsAddress,
+                               String name, String symbol) {
         this.admin.set(Context.getCaller());
-        onInstall(tokenAddress, rewardAddress, name, symbol);
+        onInstall(tokenAddress, rewardAddress, dividendsAddress, name, symbol);
     }
 
-    private void onInstall(Address tokenAddress, Address rewardAddress, String name, String symbol) {
+    private void onInstall(Address tokenAddress, Address rewardAddress, Address dividendsAddress, String name, String symbol) {
         if (this.tokenAddress.get() != null) {
             return;
         }
         this.tokenAddress.set(tokenAddress);
         this.rewardAddress.set(rewardAddress);
+        this.dividendsAddress.set(dividendsAddress);
 
         BigInteger decimals = ((BigInteger) Context.call(tokenAddress, "decimals"));
         this.decimals.set(decimals);
@@ -353,11 +356,12 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
         LockedBalance locked = lockedBalance.newLockedBalance();
         BigInteger supplyBefore = this.supply.get();
         BigInteger blockTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());
-
-        this.supply.set(supplyBefore.add(value));
+        BigInteger currentSupply = supplyBefore.add(value);
+        this.supply.set(currentSupply);
         LockedBalance oldLocked = locked.newLockedBalance();
 
-        locked.amount = locked.amount.add(value);
+        BigInteger previousLockedAmount = locked.amount;
+        locked.amount = previousLockedAmount.add(value);
         if (!unlockTime.equals(BigInteger.ZERO)) {
             locked.end = new UnsignedBigInteger(unlockTime);
         }
@@ -368,7 +372,7 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
         Deposit(address, value, locked.getEnd(), type, blockTimestamp);
         Supply(supplyBefore, supplyBefore.add(value));
 
-        onBalanceUpdate(address);
+        onBalanceUpdate(address, previousLockedAmount, currentSupply);
     }
 
     protected void createLock(Address sender, BigInteger value, BigInteger unlockTime) {
@@ -389,6 +393,10 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
         users.add(sender);
         this.depositFor(sender, value, unlockTime, locked, CREATE_LOCK_TYPE);
         this.nonReentrant.updateLock(false);
+    }
+
+    protected void onKick(Address user, BigInteger prevBalance, BigInteger currentSupply, byte[] data){
+        Context.call(this.dividendsAddress.get(), "onKick", user, prevBalance, currentSupply, data);
     }
 
     protected void increaseAmount(Address sender, BigInteger value, BigInteger unlockTime) {
@@ -417,7 +425,7 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
         Context.require(!address.isContract(), "Assert Not contract: Smart contract depositors not allowed");
     }
 
-    private void onBalanceUpdate(Address address) {
+    private void onBalanceUpdate(Address address, BigInteger previousLockedAmount, BigInteger previousSupply) {
         // calling handle action for rewards
         Map<String, Object> userDetails = new HashMap<>();
         userDetails.put("user", address);
@@ -426,6 +434,7 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
 
         //assuming token address is reward address
         updateRewardData(userDetails);
+        Context.call(this.dividendsAddress.get(), "onBalanceUpdate", address, previousLockedAmount, previousSupply);
     }
 
     protected void updateRewardData(Map<String, Object> userDetails) {
