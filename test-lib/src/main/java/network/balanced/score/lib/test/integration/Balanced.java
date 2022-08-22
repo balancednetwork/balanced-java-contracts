@@ -126,7 +126,6 @@ public class Balanced {
 
         baln = getDeploymentResult(owner, balnTx);
         rewards = getDeploymentResult(owner, rewardsTx);
-        Hash bBalnTx = deployAsync(owner, "bBaln", Map.of("tokenAddress", baln._address(), "rewardAddress", rewards._address(), "name", "Boosted Baln", "symbol", "bBaln"));
 
         bwt = getDeploymentResult(owner, bwtTx);
         dex = getDeploymentResult(owner, dexTx);
@@ -134,6 +133,9 @@ public class Balanced {
         rebalancing = getDeploymentResult(owner, rebalancingTx);
         daofund = getDeploymentResult(owner, daofundTx);
         dividends = getDeploymentResult(owner, dividendsTx);
+
+        Hash bBalnTx = deployAsync(owner, "bBaln", Map.of("tokenAddress", baln._address(), "rewardAddress", rewards._address(), "dividendsAddress", dividends._address(),
+                "name", "Boosted Baln", "symbol", "bBaln"));
         oracle = getDeploymentResult(owner, oracleTx);
         reserve = getDeploymentResult(owner, reserveTx);
         router = getDeploymentResult(owner, routerTx);
