@@ -46,6 +46,9 @@ public interface BoostedBaln {
     @External
     void applyTransferOwnership();
 
+    @External
+    void kick(Address user);
+
     @External(readonly = true)
     Map<String, BigInteger> getLocked(Address _owner);
 
