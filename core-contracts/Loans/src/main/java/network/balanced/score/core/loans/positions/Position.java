@@ -145,7 +145,7 @@ public class Position {
         int assetsCount = AssetDB.assetList.size();
         for (int i = 0; i < assetsCount; i++) {
             String symbol = AssetDB.assetList.get(i);
-            if (AssetDB.getAsset(symbol).isActive() && getTotalDebt(symbol).equals(BigInteger.ZERO)) {
+            if (AssetDB.getAsset(symbol).isActive() && !getTotalDebt(symbol).equals(BigInteger.ZERO)) {
                 return true;
             }
         }

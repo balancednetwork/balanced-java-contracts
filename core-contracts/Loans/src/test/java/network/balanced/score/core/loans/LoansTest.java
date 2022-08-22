@@ -20,6 +20,7 @@ import static network.balanced.score.core.loans.utils.LoansConstants.StandingsMa
 import static network.balanced.score.core.loans.utils.LoansConstants.LOCKING_RATIO;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -687,12 +688,14 @@ class LoansTest extends LoansTestBase {
         loans.invoke(account, "returnAsset", "bnUSD", loan.add(expectedFee), "sICX");
 
         // Assert
+        assertFalse((boolean)loans.call("hasDebt", account.getAddress()));
         verifyPosition(account.getAddress(), collateral, BigInteger.ZERO);
 
         // Act 
         takeLoanICX(account, "bnUSD", BigInteger.ZERO, loan);
 
         // Assert
+        assertTrue((boolean)loans.call("hasDebt", account.getAddress()));
         verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
         verifyTotalDebt(loan.add(expectedFee));
     }
