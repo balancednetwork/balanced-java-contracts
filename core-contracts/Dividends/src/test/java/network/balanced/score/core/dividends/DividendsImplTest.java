@@ -569,7 +569,7 @@ class DividendsImplTest extends DividendsImplTestBase {
 
     @Test
     void setBBalnAddress() {
-        dividendScore.invoke(admin, "setBBalnAddress", bBalnScore.getAddress());
+        dividendScore.invoke(owner, "setBBalnAddress", bBalnScore.getAddress());
         assertEquals(bBalnScore.getAddress(),dividendScore.call("getBBalnAddress"));
     }
 }
