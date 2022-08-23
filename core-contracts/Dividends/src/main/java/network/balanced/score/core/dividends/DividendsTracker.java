@@ -31,8 +31,6 @@ import score.VarDB;
 public class DividendsTracker {
     protected static final BranchDB<Address, DictDB<Address, BigInteger>> userWeight = Context.newBranchDB("user_weight",
             BigInteger.class);
-    private static final  DictDB<Address, Boolean> bBalnFlag = Context.newDictDB(BBALN_FLAG,
-            Boolean.class);
     private static final  VarDB<BigInteger> totalSupply = Context.newVarDB("balnSupply", BigInteger.class);
     private static final  DictDB<Address, BigInteger> totalWeight = Context.newDictDB("running_total",
             BigInteger.class);
