@@ -562,6 +562,59 @@ class LoansTest extends LoansTestBase {
 
         verifyTotalDebt(sICXLoan.add(sICXExpectedFee).add(iETHLoan.add(iETHExpectedFee)));
     }
+
+    @Test
+    void borrow_withDebtCeilings_badDebt() {
+        // Arrange
+        Account liquidatedLoanTaker = accounts.get(0);
+        Account liquidator = accounts.get(1);
+        Account account = accounts.get(2);
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
+        BigInteger expectedBadDebt = loan.add(expectedFee);
+        BigInteger debtCeiling = BigInteger.valueOf(300).multiply(EXA);
+        bnusd.invoke(admin, "transfer", liquidator.getAddress(), expectedBadDebt, new byte[0]);
+        loans.invoke(admin, "setDebtCeiling", "sICX", debtCeiling);
+
+        takeLoanICX(liquidatedLoanTaker, "bnUSD", collateral, loan);
+        verifyPosition(liquidatedLoanTaker.getAddress(), collateral, loan.add(expectedFee));
+
+        BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
+        mockOraclePrice("bnUSD", newPrice);
+       
+        // Act
+        loans.invoke(liquidator, "liquidate", liquidatedLoanTaker.getAddress(), "sICX");
+        mockOraclePrice("bnUSD", EXA);
+
+        // Assert
+        Map<String, Object> bnusdAsset = ((Map<String, Map<String, Object>>)loans.call("getAvailableAssets")).get("bnUSD");
+        Map<String, Map<String, Object>> bnusdDebtDetails = (Map<String, Map<String, Object>>) bnusdAsset.get("debt_details");
+
+        assertEquals(expectedBadDebt, bnusdDebtDetails.get("sICX").get("bad_debt"));
+
+        // Arrange
+        BigInteger feePercentage = (BigInteger)getParam("origination fee");
+        BigInteger expectedAvailableBnusd = debtCeiling.subtract(expectedBadDebt);
+        BigInteger allowedLoan = expectedAvailableBnusd.multiply(POINTS).divide(POINTS.add(feePercentage));
+
+        // Act
+        String expectedErrorMessage = "BalancedLoansPositions: Cannot mint more bnUSD on collateral sICX";
+        Executable overDebtCeilingSICX = () -> takeLoanICX(account, "bnUSD", collateral, allowedLoan.add(BigInteger.TWO));
+        expectErrorMessage(overDebtCeilingSICX, expectedErrorMessage);
+
+        // Assert
+        takeLoanICX(account, "bnUSD", collateral, allowedLoan);
+
+        overDebtCeilingSICX = () -> takeLoanICX(account, "bnUSD", collateral, loan);
+        expectErrorMessage(overDebtCeilingSICX, expectedErrorMessage);
+        
+        // Act
+        loans.invoke(liquidator, "retireBadDebt", "bnUSD", expectedBadDebt);
+
+        // Assert
+        takeLoanICX(account, "bnUSD", collateral, loan);
+    }
     
     @Test
     void borrow_fromWrongCollateral() {

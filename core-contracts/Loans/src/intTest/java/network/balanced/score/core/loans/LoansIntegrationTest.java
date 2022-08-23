@@ -376,7 +376,6 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         BalancedClient loanTaker2 = balanced.newClient();
         BigInteger sICXCollateral = BigInteger.TEN.pow(23);
 
-
         BigInteger loanAmount1 = BigInteger.TEN.pow(22);
         BigInteger loanAmount2 = BigInteger.TEN.pow(21);
         BigInteger feePercent = hexObjectToBigInteger(owner.loans.getParameters().get("origination fee"));
@@ -388,7 +387,9 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         BigInteger initalTotalDebt = getTotalDebt();
         BigInteger initalsICXDebt = reader.loans.getTotalCollateralDebt("sICX", "bnUSD");
         BigInteger initaliETHDebt = reader.loans.getTotalCollateralDebt("iETH", "bnUSD");
-        owner.governance.setDebtCeiling("sICX", initalsICXDebt.add(debt1));
+        Map<String, Map<String, Object>> debtDetails = (Map<String, Map<String, Object>>)reader.loans.getAvailableAssets().get("bnUSD").get("debt_details");
+        BigInteger badDebt = hexObjectToBigInteger(debtDetails.get("sICX").get("bad_debt"));
+        owner.governance.setDebtCeiling("sICX", initalsICXDebt.add(debt1).add(badDebt));
 
         // Act
         loanTaker1.stakeDepositAndBorrow(sICXCollateral, loanAmount1);
