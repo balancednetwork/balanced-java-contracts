@@ -455,35 +455,28 @@ public class DividendsImpl implements Dividends {
         boolean checkBBalnDay = checkBBalnDay(getDay());
         BigInteger balance = getBalnBalance(user);
 
-        if (getUserWeight(user, token).equals(BigInteger.ZERO)) {
             if(checkBBalnDay){
+                if (getUserWeight(user, token).equals(BigInteger.ZERO)) {
                 // new user after bbaln day
                 balance = getBoostedBalnBalance(user);
                 accruedDividends = DividendsTracker.updateBoostedUserData(token,
                         user, balance, readonly);
             }
             else{
-                // new user before bbaln day
-                accruedDividends = DividendsTracker.updateUserData(token, user, balance, readonly);
+                    // existing user after bbaln day
+                    accruedDividends = DividendsTracker.updateUserData
+                                    (token, user, balance, readonly);
+                    balance = getBoostedBalnBalance(user);
+                    accruedDividends = accruedDividends.add(DividendsTracker.updateBoostedUserData(token,
+                            user, balance, readonly));
+                    if(!readonly){
+                        DividendsTracker.userWeight.at(user).set(token, null);
+                    }
             }
         }
         else{
-            if(checkBBalnDay){
-                // existing user after bbaln day
-                accruedDividends = accruedDividends.add(
-                        DividendsTracker.updateUserData
-                                (token, user, balance, readonly));
-                balance = getBoostedBalnBalance(user);
-                accruedDividends = accruedDividends.add(DividendsTracker.updateBoostedUserData(token,
-                        user, balance, readonly));
-                if(!readonly){
-                    DividendsTracker.userWeight.at(user).set(token, null);
-                }
-            }
-            else{
-                // existing user before bbaln day
+                // existing user or new user before bbaln day
                 accruedDividends = DividendsTracker.updateUserData(token, user, balance, readonly);
-            }
         }
         return accruedDividends;
     }
