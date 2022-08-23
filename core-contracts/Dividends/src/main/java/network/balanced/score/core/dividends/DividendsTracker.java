@@ -29,7 +29,7 @@ import score.DictDB;
 import score.VarDB;
 
 public class DividendsTracker {
-    private static final BranchDB<Address, DictDB<Address, BigInteger>> userWeight = Context.newBranchDB("user_weight",
+    protected static final BranchDB<Address, DictDB<Address, BigInteger>> userWeight = Context.newBranchDB("user_weight",
             BigInteger.class);
     private static final  DictDB<Address, Boolean> bBalnFlag = Context.newDictDB(BBALN_FLAG,
             Boolean.class);
@@ -45,36 +45,24 @@ public class DividendsTracker {
     protected static final VarDB<BigInteger> bBalnDay = Context.newVarDB(BBALN_DAY, BigInteger.class);
 
 
-    public static BigInteger getUserWeight(Address user, Address token, boolean isUserMigrated) {
-        if(isUserMigrated){
-            return boostedUserWeight.at(user).getOrDefault(token, BigInteger.ZERO);
-        }
+    public static BigInteger getUserWeight(Address user, Address token) {
         return userWeight.at(user).getOrDefault(token, BigInteger.ZERO);
     }
 
-    protected static boolean isUserMigrated(Address user) {
-
-        if(bBalnFlag.getOrDefault(user, false).equals(true)){
-            return true;
-        }
-        return false;
+    public static BigInteger getUserBoostedWeight(Address user, Address token) {
+        return boostedUserWeight.at(user).getOrDefault(token, BigInteger.ZERO);
     }
 
     protected static BigInteger getBoostedBalnDay(){
         return bBalnDay.getOrDefault(BigInteger.ZERO);
     }
 
-    public static BigInteger getTotalSupply(boolean isBBalnDay) {
-        if(isBBalnDay){
-            return boostedTotalSupply.getOrDefault(BigInteger.ZERO);
-        }
+    public static BigInteger getTotalSupply() {
         return totalSupply.getOrDefault(BigInteger.ZERO);
     }
 
-    public static void setFlag(Address user, boolean flag){
-        if(bBalnFlag.get(user) == null){
-            bBalnFlag.set(user, flag);
-        }
+    public static BigInteger getBoostedTotalSupply() {
+        return boostedTotalSupply.getOrDefault(BigInteger.ZERO);
     }
 
     public static void setTotalSupply(BigInteger supply)  {
@@ -85,48 +73,61 @@ public class DividendsTracker {
         boostedTotalSupply.set(supply);
     }
 
-    public static BigInteger getTotalWeight(Address token, boolean isBBalnDay) {
-        if(isBBalnDay){
-            return boostedTotalWeight.getOrDefault(token, BigInteger.ZERO);
-        }
+    public static BigInteger getTotalWeight(Address token) {
         return totalWeight.getOrDefault(token, BigInteger.ZERO);
+    }
+
+    public static BigInteger getBoostedTotalWeight(Address token) {
+        return boostedTotalWeight.getOrDefault(token, BigInteger.ZERO);
     }
 
     public static BigInteger updateUserData(Address token, Address user, BigInteger prevBalance, boolean readOnlyContext) {
         if (!continuousDividendsActive()) {
             return BigInteger.ZERO;
         }
-        boolean isUserMigrated = isUserMigrated(user);
-        BigInteger currentUserWeight = getUserWeight(user, token, isUserMigrated);
-        BigInteger totalWeight = getTotalWeight(token, isUserMigrated);
+        BigInteger currentUserWeight = getUserWeight(user, token);
+        BigInteger totalWeight = getTotalWeight(token);
         if (!readOnlyContext) {
-            if (isUserMigrated) {
-                boostedUserWeight.at(user).set(token, totalWeight);
-            } else {
                 userWeight.at(user).set(token, totalWeight);
-            }
         }
         return computeUserRewards(prevBalance, totalWeight, currentUserWeight);
     }
 
-    protected static void setTotalWeight(Address token, BigInteger amountReceived, boolean isBBalnDay){
-        BigInteger addedWeight = amountReceived.multiply(EXA).divide(getTotalSupply(isBBalnDay));
-        BigInteger previousTotalWeight = getTotalWeight(token, isBBalnDay);
-        if(isBBalnDay){
-            boostedTotalWeight.set(token, previousTotalWeight.add(addedWeight));
+    public static BigInteger updateBoostedUserData(Address token, Address user, BigInteger prevBalance, boolean readOnlyContext) {
+        if (!continuousDividendsActive()) {
+            return BigInteger.ZERO;
         }
-        else {
-            totalWeight.set(token, previousTotalWeight.add(addedWeight));
+        BigInteger currentUserWeight = getUserBoostedWeight(user, token);
+        BigInteger totalWeight = getBoostedTotalWeight(token);
+        if (!readOnlyContext) {
+            boostedUserWeight.at(user).set(token, totalWeight);
         }
+        return computeUserRewards(prevBalance, totalWeight, currentUserWeight);
+    }
+
+    protected static void setTotalWeight(Address token, BigInteger amountReceived){
+        BigInteger addedWeight = amountReceived.multiply(EXA).divide(getTotalSupply());
+        BigInteger previousTotalWeight = getTotalWeight(token);
+        totalWeight.set(token, previousTotalWeight.add(addedWeight));
+    }
+
+    protected static void setBoostedTotalWeight(Address token, BigInteger amountReceived){
+        BigInteger addedWeight = amountReceived.multiply(EXA).divide(getBoostedTotalSupply());
+        BigInteger previousTotalWeight = getBoostedTotalWeight(token);
+        boostedTotalWeight.set(token, previousTotalWeight.add(addedWeight));
     }
 
     protected static boolean checkBBalnDay(BigInteger day){
         return day.compareTo(getBoostedBalnDay()) >= 0 ;
     }
 
-    public static void updateTotalWeight(Address token, BigInteger amountReceived, BigInteger day) {
+    public static void updateTotalWeight(Address token, BigInteger amountReceived) {
 
-        setTotalWeight(token, amountReceived, checkBBalnDay(day));
+        setTotalWeight(token, amountReceived);
+    }
+
+    public static void updateBoostedTotalWeight(Address token, BigInteger amountReceived) {
+        setBoostedTotalWeight(token, amountReceived);
     }
 
     protected static BigInteger computeUserRewards(BigInteger prevUserBalance, BigInteger totalWeight, BigInteger userWeight) {

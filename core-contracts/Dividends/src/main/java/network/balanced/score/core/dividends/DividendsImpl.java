@@ -450,19 +450,53 @@ public class DividendsImpl implements Dividends {
         }
     }
 
+    protected BigInteger calculateAccruedDividends(Address token, Address user, boolean readonly){
+        BigInteger accruedDividends = BigInteger.ZERO;
+        boolean checkBBalnDay = checkBBalnDay(getDay());
+        BigInteger balance = getBalnBalance(user);
+
+        if (getUserWeight(user, token).equals(BigInteger.ZERO)) {
+            if(checkBBalnDay){
+                // new user after bbaln day
+                balance = getBoostedBalnBalance(user);
+                accruedDividends = DividendsTracker.updateBoostedUserData(token,
+                        user, balance, readonly);
+            }
+            else{
+                // new user before bbaln day
+                accruedDividends = DividendsTracker.updateUserData(token, user, balance, readonly);
+            }
+        }
+        else{
+            if(checkBBalnDay){
+                // existing user after bbaln day
+                accruedDividends = accruedDividends.add(
+                        DividendsTracker.updateUserData
+                                (token, user, balance, readonly));
+                balance = getBoostedBalnBalance(user);
+                accruedDividends = accruedDividends.add(DividendsTracker.updateBoostedUserData(token,
+                        user, balance, readonly));
+                if(!readonly){
+                    DividendsTracker.userWeight.at(user).set(token, null);
+                }
+            }
+            else{
+                // existing user before bbaln day
+                accruedDividends = DividendsTracker.updateUserData(token, user, balance, readonly);
+            }
+        }
+        return accruedDividends;
+    }
+
     @External(readonly = true)
     public Map<String, BigInteger> getUnclaimedDividends(Address user) {
-        BigInteger balance = getBalnBalance(user);
         Map<String, BigInteger> totalDividends = new HashMap<>();
 
         int size = acceptedTokens.size();
         DictDB<Address, BigInteger> userAccruedDividends = accruedDividends.at(user);
         for (int i = 0; i < size; i++) {
             Address token = acceptedTokens.get(i);
-            if(isUserMigrated(user)){
-                balance = getBoostedBalnBalance(user);
-            }
-            BigInteger accruedDividends = DividendsTracker.updateUserData(token, user, balance, true);
+            BigInteger accruedDividends = calculateAccruedDividends( token, user, true);
             BigInteger prevAccruedDividends = userAccruedDividends.getOrDefault(token, BigInteger.ZERO);
             BigInteger totalDivs = accruedDividends.add(prevAccruedDividends);
             if (totalDivs.signum() > 0) {
@@ -476,16 +510,12 @@ public class DividendsImpl implements Dividends {
     @External
     public void claimDividends() {
         Address user = Context.getCaller();
-        BigInteger balance = getBalnBalance(user);
 
         int size = acceptedTokens.size();
         DictDB<Address, BigInteger> userAccruedDividends = accruedDividends.at(user);
         for (int i = 0; i < size; i++) {
             Address token = acceptedTokens.get(i);
-            if(isUserMigrated(user)){
-                balance = getBoostedBalnBalance(user);
-            }
-            BigInteger accruedDividends = DividendsTracker.updateUserData(token, user, balance, false);
+            BigInteger accruedDividends = calculateAccruedDividends( token, user, false);
             BigInteger prevAccruedDividends = userAccruedDividends.getOrDefault(token, BigInteger.ZERO);
             BigInteger totalDivs = accruedDividends.add(prevAccruedDividends);
             if (totalDivs.signum() > 0) {
@@ -594,12 +624,21 @@ public class DividendsImpl implements Dividends {
         }
 
         if (continuousDividendsActive()) {
-            if(getTotalSupply(checkBBalnDay(getDay())).equals(BigInteger.ZERO)){
-                sendToken(daoFund.get(), _value, token, "Daofund dividends");
-                return;
+            boolean checkBBalnDay = checkBBalnDay(getDay());
+            if(checkBBalnDay && getBoostedTotalSupply().equals(BigInteger.ZERO)){
+                    sendToken(daoFund.get(), _value, token, "Daofund dividends");
+                    return;
             }
             BigInteger dividendsToDaofund = _value.multiply(dividendsPercentage.get(DAOFUND)).divide(EXA);
-            DividendsTracker.updateTotalWeight(token, _value.subtract(dividendsToDaofund), getDay());
+
+            // update boosted total weight if the bbaln day is started
+            if(checkBBalnDay){
+                DividendsTracker.updateBoostedTotalWeight(token, _value.subtract(dividendsToDaofund));
+            }
+            else {
+                DividendsTracker.updateTotalWeight(token, _value.subtract(dividendsToDaofund));
+            }
+
             DividendsReceivedV2(_value, getDay(), _value + " tokens received as dividends token: " + token);
             sendToken(daoFund.get(), dividendsToDaofund, token, "Daofund dividends");
         } else {
@@ -737,19 +776,9 @@ public class DividendsImpl implements Dividends {
         int size = acceptedTokens.size();
         for (int i = 0; i < size; i++) {
             Address token = acceptedTokens.get(i);
-            BigInteger dividendsBeforeBBaln = BigInteger.ZERO;
-            BigInteger userPreviousStakedBalance = getBalnBalance(user);
-
-            if(! getUserWeight(user, token, false).equals(getTotalWeight(token, false))){
-                // calculates the previous dividends that was supposed to be received by user before bbaln deployment
-                dividendsBeforeBBaln = DividendsTracker.updateUserData(token, user, userPreviousStakedBalance, false);
-            }
-            setFlag(user, true);
-
-            BigInteger accruedDividends = DividendsTracker.updateUserData(token, user, bBalnUserBalance, false);
+            BigInteger accruedDividends = DividendsTracker.updateBoostedUserData(token, user, bBalnUserBalance, false);
             BigInteger prevAccruedDividends = userAccruedDividends.getOrDefault(token, BigInteger.ZERO);
-
-            userAccruedDividends.set(token, prevAccruedDividends.add(accruedDividends).add(dividendsBeforeBBaln));
+            userAccruedDividends.set(token, prevAccruedDividends.add(accruedDividends));
         }
     }
 
