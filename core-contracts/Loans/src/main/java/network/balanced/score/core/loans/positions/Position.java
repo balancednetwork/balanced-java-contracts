@@ -119,6 +119,7 @@ public class Position {
                 }
 
                 dataMigrationStatus.at(dbKey).set(SICX_SYMBOL, true);
+                return collateralAmount;
             }
         }
     
