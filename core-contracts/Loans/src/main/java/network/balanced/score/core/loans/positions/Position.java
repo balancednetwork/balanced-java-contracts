@@ -45,6 +45,12 @@ public class Position {
     private final BranchDB<String, DictDB<String, BigInteger>> totalDebt = Context.newBranchDB(
         "total_debt_in_asset", BigInteger.class);
 
+    private final BranchDB<String, BranchDB<Integer, DictDB<String, BigInteger>>> assets = Context.newBranchDB("assets",
+        BigInteger.class);
+    private final BranchDB<String, DictDB<String, Boolean>> dataMigrationStatus = Context.newBranchDB("data_migration " +
+        "_status", Boolean.class);
+    private final BranchDB<String, ArrayDB<Integer>> snaps = Context.newBranchDB("snaps", Integer.class);
+    
     private final String dbKey;
 
     Position(String dbKey) {
@@ -101,7 +107,27 @@ public class Position {
     }
 
     public BigInteger getCollateral(String symbol) {
+        if (symbol.equals(SICX_SYMBOL)) {
+            if (!dataMigrationStatus.at(dbKey).getOrDefault(SICX_SYMBOL, false) && 
+                collateral.at(dbKey).getOrDefault(SICX_SYMBOL, BigInteger.ZERO).equals(BigInteger.ZERO)) {
+    
+                int lastSnapIndex = snaps.at(dbKey).size() - 1;
+                int lastSnap = snaps.at(dbKey).get(lastSnapIndex);
+                BigInteger collateralAmount = assets.at(dbKey).at(lastSnap).getOrDefault(SICX_SYMBOL, BigInteger.ZERO);
+                if (collateralAmount.compareTo(BigInteger.ZERO) > 0) {
+                    setCollateral(SICX_SYMBOL, collateralAmount);
+                }
+
+                dataMigrationStatus.at(dbKey).set(SICX_SYMBOL, true);
+                return collateralAmount;
+            }
+        }
+    
         return collateral.at(dbKey).getOrDefault(symbol, BigInteger.ZERO);
+    }
+
+    public void setDataMigrationStatus(String symbol, Boolean value) {
+        dataMigrationStatus.at(dbKey).set(symbol, value);
     }
 
     public void setDebt(String collateralSymbol, String assetSymbol, BigInteger value) {
