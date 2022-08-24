@@ -78,6 +78,8 @@ public class BalancedOracleImpl implements BalancedOracle {
             priceInLoop = getLoopRate(pegSymbol);
         }
 
+        Context.require(priceInLoop.compareTo(BigInteger.ZERO) > 0, TAG + ": No price data exists for symbol");
+
         return priceInLoop;
     }
 
@@ -208,6 +210,7 @@ public class BalancedOracleImpl implements BalancedOracle {
         return EMACalculator.updateEMA(symbol, priceInLoop, getDexPriceEMADecay());
     }
 
+    @SuppressWarnings("unchecked")
     private BigInteger getLoopRate(String symbol) {
         Map<String, Object> priceData = (Map<String, Object>) Context.call(oracle.get(), "get_reference_data", symbol
                 , "ICX");

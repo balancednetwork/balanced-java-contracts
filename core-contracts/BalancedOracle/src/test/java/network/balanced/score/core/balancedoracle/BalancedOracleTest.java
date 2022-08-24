@@ -94,7 +94,7 @@ class BalancedOracleTest extends BalancedOracleTestBase {
         Map<String, Object> priceData = Map.of("rate", bnusdRate);
         when(oracle.mock.get_reference_data("USD", "ICX")).thenReturn(priceData);
         when(dex.mock.getQuotePriceInBase(poolID)).thenReturn(bnusdPriceInBaln);
-        
+
         // Act
         balancedOracle.invoke(adminAccount, "getPriceInLoop", "BALN");
         BigInteger priceInLoop = (BigInteger) balancedOracle.call("getLastPriceInLoop", "BALN");
@@ -133,7 +133,6 @@ class BalancedOracleTest extends BalancedOracleTestBase {
         BigInteger priceDiff = price1.subtract(EMA);
         EMA = price1.subtract(priceDiff.multiply(factor).divide(ICX));
 
-        blockDiff = (int)DAY/4;
         sm.getBlock().increase(blockDiff - 1);
 
         BigInteger rate3 = BigInteger.valueOf(5).multiply(BigInteger.TEN.pow(17));
@@ -143,9 +142,9 @@ class BalancedOracleTest extends BalancedOracleTestBase {
         factor = exaPow(decay, blockDiff);
         priceDiff = price2.subtract(EMA);
         EMA = price2.subtract(priceDiff.multiply(factor).divide(ICX));
-        
-        blockDiff = (int)DAY;
-        sm.getBlock().increase(blockDiff-1);
+
+        blockDiff = (int) DAY;
+        sm.getBlock().increase(blockDiff - 1);
 
         BigInteger rate4 = BigInteger.valueOf(10).multiply(BigInteger.TEN.pow(17));
         mockDexRate(poolID, rate4);
@@ -153,7 +152,7 @@ class BalancedOracleTest extends BalancedOracleTestBase {
         factor = exaPow(decay, blockDiff);
         priceDiff = price3.subtract(EMA);
         EMA = price3.subtract(priceDiff.multiply(factor).divide(ICX));
-        
+
         // Assert
         BigInteger priceInLoop = (BigInteger) balancedOracle.call("getLastPriceInLoop", tokenSymbol);
 
