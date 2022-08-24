@@ -90,7 +90,7 @@ public class StakedlpIntegrationTest {
 
     @Test
     @Order(1)
-    void testName() {
+    void testStakeAndUnstake() {
 
         DexTestScoreClient userDexTestScoreClient = new DexTestScoreClient("http://localhost:9082/api/v3",
                 BigInteger.valueOf(3), userWallet, tokenAClient._address());
