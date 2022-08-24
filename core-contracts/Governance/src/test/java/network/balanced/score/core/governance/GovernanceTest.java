@@ -39,7 +39,7 @@ import static org.mockito.Mockito.*;
 public class GovernanceTest extends GovernanceTestBase {
     @BeforeEach
     public void setup() throws Exception {
-       super.setup();
+        super.setup();
     }
 
     @Test
@@ -56,13 +56,13 @@ public class GovernanceTest extends GovernanceTestBase {
     void getVotingWeight() {
         // Arrange
         Account user = sm.createAccount();
-        BigInteger day = BigInteger.TEN;        
+        BigInteger day = BigInteger.TEN;
         BigInteger expectedWeight = BigInteger.ONE;
 
         when(baln.mock.stakedBalanceOfAt(user.getAddress(), day)).thenReturn(expectedWeight);
-        
+
         // Act
-        BigInteger votingWeight  = (BigInteger) governance.call("myVotingWeight", user.getAddress(), day);
+        BigInteger votingWeight = (BigInteger) governance.call("myVotingWeight", user.getAddress(), day);
 
         // Assert
         assertEquals(expectedWeight, votingWeight);
@@ -73,8 +73,9 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         Address _address = Account.newScoreAccount(scoreCount++).getAddress();
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "rebalancingSetBnusd", _address);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -91,8 +92,9 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         Address _address = Account.newScoreAccount(scoreCount++).getAddress();
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "rebalancingSetSicx", _address);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -109,8 +111,9 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         Address _address = Account.newScoreAccount(scoreCount++).getAddress();
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "rebalancingSetDex", _address);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -127,8 +130,9 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         Address _address = Account.newScoreAccount(scoreCount++).getAddress();
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "rebalancingSetLoans", _address);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -145,8 +149,9 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         Address _address = Account.newScoreAccount(scoreCount++).getAddress();
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "setLoansRebalance", _address);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -163,8 +168,9 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         Address _address = Account.newScoreAccount(scoreCount++).getAddress();
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "setLoansDex", _address);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -181,8 +187,9 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         Address _address = Account.newScoreAccount(scoreCount++).getAddress();
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "setRebalancing", _address);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -195,8 +202,9 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         BigInteger _value = BigInteger.TEN;
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "setRebalancingThreshold", _value);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -210,27 +218,29 @@ public class GovernanceTest extends GovernanceTestBase {
 
     @Test
     void setAdmins() {
-         // Arrange
-         Account notOwner = sm.createAccount();
-         String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-         
-         // Act & Assert
-         Executable withNotOwner = () -> governance.invoke(notOwner, "setAdmins");
-         expectErrorMessage(withNotOwner, expectedErrorMessage);
- 
-         // Act
-         governance.invoke(owner, "setAdmins") ;
+        // Arrange
+        Account notOwner = sm.createAccount();
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
 
-         // Assert
-         //TODO
+        // Act & Assert
+        Executable withNotOwner = () -> governance.invoke(notOwner, "setAdmins");
+        expectErrorMessage(withNotOwner, expectedErrorMessage);
+
+        // Act
+        governance.invoke(owner, "setAdmins");
+
+        // Assert
+        //TODO
     }
 
     @Test
     void toggleBalancedOn() {
         // Arrange
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "toggleBalancedOn");
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -249,14 +259,16 @@ public class GovernanceTest extends GovernanceTestBase {
         boolean active = false;
         BigInteger lockingRatio = BigInteger.valueOf(30_000);
         BigInteger liquidationRatio = BigInteger.valueOf(10_000);
-        BigInteger debtCeiling =  BigInteger.TEN.pow(20);
+        BigInteger debtCeiling = BigInteger.TEN.pow(20);
         String symbol = "BALW";
         String peg = "BTC";
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
-        Executable withNotOwner = () -> governance.invoke(notOwner, "addCollateral", tokenAddress, active, peg, lockingRatio, liquidationRatio, debtCeiling);
+        Executable withNotOwner = () -> governance.invoke(notOwner, "addCollateral", tokenAddress, active, peg,
+                lockingRatio, liquidationRatio, debtCeiling);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
 
         // Arrange
@@ -265,12 +277,14 @@ public class GovernanceTest extends GovernanceTestBase {
         // Act & Assert
         when(balancedOracle.mock.getPriceInLoop(symbol)).thenReturn(BigInteger.ZERO);
         expectedErrorMessage = "Reverted(0): Balanced oracle return a invalid icx price for " + symbol + "/" + peg;
-        Executable withFaultyPeg = () -> governance.invoke(owner, "addCollateral", tokenAddress, active, peg, lockingRatio, liquidationRatio, debtCeiling);
+        Executable withFaultyPeg = () -> governance.invoke(owner, "addCollateral", tokenAddress, active, peg,
+                lockingRatio, liquidationRatio, debtCeiling);
         expectErrorMessage(withFaultyPeg, expectedErrorMessage);
 
         // Act
         when(balancedOracle.mock.getPriceInLoop(symbol)).thenReturn(ICX);
-        governance.invoke(owner, "addCollateral", tokenAddress, active, peg, lockingRatio, liquidationRatio, debtCeiling);
+        governance.invoke(owner, "addCollateral", tokenAddress, active, peg, lockingRatio, liquidationRatio,
+                debtCeiling);
 
         // Assert
         verify(loans.mock, times(2)).addAsset(tokenAddress, active, true);
@@ -288,13 +302,15 @@ public class GovernanceTest extends GovernanceTestBase {
         String symbol = "BALW";
         BigInteger lockingRatio = BigInteger.valueOf(30_000);
         BigInteger liquidationRatio = BigInteger.valueOf(10_000);
-        BigInteger debtCeiling =  BigInteger.TEN.pow(20);
+        BigInteger debtCeiling = BigInteger.TEN.pow(20);
         BigInteger poolID = BigInteger.valueOf(7);
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
-        Executable withNotOwner = () -> governance.invoke(notOwner, "addDexPricedCollateral", tokenAddress, active, lockingRatio, liquidationRatio, debtCeiling);
+        Executable withNotOwner = () -> governance.invoke(notOwner, "addDexPricedCollateral", tokenAddress, active,
+                lockingRatio, liquidationRatio, debtCeiling);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
 
         // Arrange
@@ -304,12 +320,14 @@ public class GovernanceTest extends GovernanceTestBase {
         // Act & Assert
         when(balancedOracle.mock.getPriceInLoop(symbol)).thenReturn(BigInteger.ZERO);
         expectedErrorMessage = "Reverted(0): Balanced oracle return a invalid icx price for " + symbol;
-        Executable withFaultyPeg = () -> governance.invoke(owner, "addDexPricedCollateral", tokenAddress, active, lockingRatio, liquidationRatio, debtCeiling);
+        Executable withFaultyPeg = () -> governance.invoke(owner, "addDexPricedCollateral", tokenAddress, active,
+                lockingRatio, liquidationRatio, debtCeiling);
         expectErrorMessage(withFaultyPeg, expectedErrorMessage);
 
         // Act
         when(balancedOracle.mock.getPriceInLoop(symbol)).thenReturn(ICX);
-        governance.invoke(owner, "addDexPricedCollateral", tokenAddress, active, lockingRatio, liquidationRatio, debtCeiling);
+        governance.invoke(owner, "addDexPricedCollateral", tokenAddress, active, lockingRatio, liquidationRatio,
+                debtCeiling);
 
         // Assert
         verify(loans.mock, times(2)).addAsset(tokenAddress, active, true);
@@ -325,8 +343,9 @@ public class GovernanceTest extends GovernanceTestBase {
         String symbol = "TEST";
         BigInteger limit = EXA;
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "setDebtCeiling", symbol, limit);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -344,8 +363,9 @@ public class GovernanceTest extends GovernanceTestBase {
         String symbol = "TEST";
         String peg = "BTC";
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "setPeg", symbol, peg);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -363,8 +383,9 @@ public class GovernanceTest extends GovernanceTestBase {
         String symbol = "TEST";
         BigInteger poolId = BigInteger.TWO;
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "addDexPricedAsset", symbol, poolId);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -381,8 +402,9 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         String symbol = "TEST";
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "removeDexPricedAsset", symbol);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -399,8 +421,9 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         String _symbol = "test";
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "toggleAssetActive", _symbol);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -418,8 +441,9 @@ public class GovernanceTest extends GovernanceTestBase {
         String name = "test";
         Address address = Account.newScoreAccount(scoreCount++).getAddress();
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "addNewDataSource", name, address.toString());
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -436,8 +460,9 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         String name = "test";
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "removeDataSource", name);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -455,10 +480,12 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         DistributionPercentage[] distributionPercentage = GovernanceConstants.RECIPIENTS;
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
-        Executable withNotOwner = () -> governance.invoke(notOwner, "updateBalTokenDistPercentage", (Object) distributionPercentage);
+        Executable withNotOwner = () -> governance.invoke(notOwner, "updateBalTokenDistPercentage",
+                (Object) distributionPercentage);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
 
         // Act
@@ -474,8 +501,9 @@ public class GovernanceTest extends GovernanceTestBase {
         BigInteger _id = BigInteger.TEN;
         boolean _permission = true;
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "dexPermit", _id, _permission);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -490,11 +518,13 @@ public class GovernanceTest extends GovernanceTestBase {
     @Test
     void setAcceptedDividendTokens() {
         // Arrange
-        Address[] _tokens =  new Address[] {Account.newScoreAccount(scoreCount).getAddress(), Account.newScoreAccount(scoreCount).getAddress()};
+        Address[] _tokens = new Address[]{Account.newScoreAccount(scoreCount).getAddress(),
+                Account.newScoreAccount(scoreCount).getAddress()};
 
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "setAcceptedDividendTokens", (Object) _tokens);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -511,11 +541,13 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         Address from = Account.newScoreAccount(scoreCount).getAddress();
         Address to = Account.newScoreAccount(scoreCount).getAddress();
-        Address[] _path =  new Address[] {Account.newScoreAccount(scoreCount).getAddress(), Account.newScoreAccount(scoreCount).getAddress()};
+        Address[] _path = new Address[]{Account.newScoreAccount(scoreCount).getAddress(),
+                Account.newScoreAccount(scoreCount).getAddress()};
 
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "setRoute", from, to, (Object) _path);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -532,8 +564,9 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         Address _address = Account.newScoreAccount(scoreCount++).getAddress();
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "dexAddQuoteCoin", _address);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -551,8 +584,9 @@ public class GovernanceTest extends GovernanceTestBase {
         BigInteger _id = BigInteger.ONE;
         String _name = "test";
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "setMarketName", _id, _name);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -574,14 +608,15 @@ public class GovernanceTest extends GovernanceTestBase {
         delegation2._address = Address.fromString("cx66d4d90f5f113eba575bf793570135f9b1022222");
         delegation2._votes_in_per = BigInteger.valueOf(30);
 
-        PrepDelegations[] delegations = new PrepDelegations[] {
-            delegation1,
-            delegation2
+        PrepDelegations[] delegations = new PrepDelegations[]{
+                delegation1,
+                delegation2
         };
 
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "delegate", "loans", (Object) delegations);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -600,10 +635,11 @@ public class GovernanceTest extends GovernanceTestBase {
         Address _from = Account.newScoreAccount(scoreCount++).getAddress();
         Address _to = Account.newScoreAccount(scoreCount++).getAddress();
         BigInteger _value = BigInteger.TEN;
-        byte[] _data  = new byte[0];
+        byte[] _data = new byte[0];
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "balwAdminTransfer", _from, _to, _value, _data);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -620,8 +656,9 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         Address _address = Account.newScoreAccount(scoreCount++).getAddress();
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "setbnUSD", _address);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -638,8 +675,9 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         Address _score = Account.newScoreAccount(scoreCount++).getAddress();
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "setDividends", _score);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -657,8 +695,9 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         Address _address = Account.newScoreAccount(scoreCount++).getAddress();
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "balanceSetDex", _address);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -676,8 +715,9 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         String _name = "test";
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "balanceSetOracleName", _name);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -695,8 +735,9 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         BigInteger _interval = BigInteger.TEN;
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "balanceSetMinInterval", _interval);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -711,19 +752,20 @@ public class GovernanceTest extends GovernanceTestBase {
 
     @Test
     void balanceToggleStakingEnabled() {
-         // Arrange
-         Account notOwner = sm.createAccount();
-         String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-         
-         // Act & Assert
-         Executable withNotOwner = () -> governance.invoke(notOwner, "balanceToggleStakingEnabled");
-         expectErrorMessage(withNotOwner, expectedErrorMessage);
- 
-         // Act
-         governance.invoke(owner, "balanceToggleStakingEnabled");
- 
-         // Assert
-         verify(baln.mock).toggleStakingEnabled();
+        // Arrange
+        Account notOwner = sm.createAccount();
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
+        // Act & Assert
+        Executable withNotOwner = () -> governance.invoke(notOwner, "balanceToggleStakingEnabled");
+        expectErrorMessage(withNotOwner, expectedErrorMessage);
+
+        // Act
+        governance.invoke(owner, "balanceToggleStakingEnabled");
+
+        // Assert
+        verify(baln.mock).toggleStakingEnabled();
     }
 
     @Test
@@ -731,8 +773,9 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         BigInteger _amount = BigInteger.TEN;
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "balanceSetMinimumStake", _amount);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -750,8 +793,9 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         BigInteger _time = BigInteger.TEN;
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "balanceSetUnstakingPeriod", _time);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -766,20 +810,21 @@ public class GovernanceTest extends GovernanceTestBase {
 
     @Test
     void addAcceptedTokens() {
-          // Arrange
-          Address token = Account.newScoreAccount(scoreCount++).getAddress();
-          Account notOwner = sm.createAccount();
-          String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-          
-          // Act & Assert
-          Executable withNotOwner = () -> governance.invoke(notOwner, "addAcceptedTokens", token.toString());
-          expectErrorMessage(withNotOwner, expectedErrorMessage);
-  
-          // Act
-          governance.invoke(owner, "addAcceptedTokens", token.toString());
-  
-          // Assert
-          verify(dividends.mock).addAcceptedTokens(token);
+        // Arrange
+        Address token = Account.newScoreAccount(scoreCount++).getAddress();
+        Account notOwner = sm.createAccount();
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
+        // Act & Assert
+        Executable withNotOwner = () -> governance.invoke(notOwner, "addAcceptedTokens", token.toString());
+        expectErrorMessage(withNotOwner, expectedErrorMessage);
+
+        // Act
+        governance.invoke(owner, "addAcceptedTokens", token.toString());
+
+        // Assert
+        verify(dividends.mock).addAcceptedTokens(token);
     }
 
     @Test
@@ -792,13 +837,15 @@ public class GovernanceTest extends GovernanceTestBase {
         when(loans.mock.getAssetTokens()).thenReturn(tokens);
 
         // Act & Assert
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
         Executable withNotOwner = () -> governance.invoke(notOwner, "setAssetOracle", _symbol, oracleAddress);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
 
         String nonSupportedToken = "test";
-        expectedErrorMessage =  TAG + ": " + nonSupportedToken + " is not a supported asset in Balanced.";
-        Executable withNonSupportedToken = () -> governance.invoke(owner, "setAssetOracle", nonSupportedToken, oracleAddress);
+        expectedErrorMessage = TAG + ": " + nonSupportedToken + " is not a supported asset in Balanced.";
+        Executable withNonSupportedToken = () -> governance.invoke(owner, "setAssetOracle", nonSupportedToken,
+                oracleAddress);
         expectErrorMessage(withNonSupportedToken, expectedErrorMessage);
 
         // Act
@@ -818,13 +865,15 @@ public class GovernanceTest extends GovernanceTestBase {
         when(loans.mock.getAssetTokens()).thenReturn(tokens);
 
         // Act & Assert
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
         Executable withNotOwner = () -> governance.invoke(notOwner, "setAssetOracleName", _symbol, oracleName);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
 
         String nonSupportedToken = "test";
-        expectedErrorMessage =  TAG + ": " + nonSupportedToken + " is not a supported asset in Balanced.";
-        Executable withNonSupportedToken = () -> governance.invoke(owner, "setAssetOracleName", nonSupportedToken, oracleName);
+        expectedErrorMessage = TAG + ": " + nonSupportedToken + " is not a supported asset in Balanced.";
+        Executable withNonSupportedToken = () -> governance.invoke(owner, "setAssetOracleName", nonSupportedToken,
+                oracleName);
         expectErrorMessage(withNonSupportedToken, expectedErrorMessage);
 
         // Act
@@ -844,13 +893,15 @@ public class GovernanceTest extends GovernanceTestBase {
         when(loans.mock.getAssetTokens()).thenReturn(tokens);
 
         // Act & Assert
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
         Executable withNotOwner = () -> governance.invoke(notOwner, "setAssetMinInterval", _symbol, minInterval);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
 
         String nonSupportedToken = "test";
-        expectedErrorMessage =  TAG + ": " + nonSupportedToken + " is not a supported asset in Balanced.";
-        Executable withNonSupportedToken = () -> governance.invoke(owner, "setAssetMinInterval", nonSupportedToken, minInterval);
+        expectedErrorMessage = TAG + ": " + nonSupportedToken + " is not a supported asset in Balanced.";
+        Executable withNonSupportedToken = () -> governance.invoke(owner, "setAssetMinInterval", nonSupportedToken,
+                minInterval);
         expectErrorMessage(withNonSupportedToken, expectedErrorMessage);
 
         // Act
@@ -865,8 +916,9 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         Address _address = Account.newScoreAccount(scoreCount++).getAddress();
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "bnUSDSetOracle", _address);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -884,8 +936,9 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         String _name = "test";
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "bnUSDSetOracleName", _name);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -903,8 +956,9 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         BigInteger _interval = BigInteger.TEN;
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "bnUSDSetMinInterval", _interval);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -921,16 +975,19 @@ public class GovernanceTest extends GovernanceTestBase {
     void addUsersToActiveAddresses() {
         // Arrange
         BigInteger _poolId = BigInteger.TEN;
-        Address[] _addressList =  new Address[] {Account.newScoreAccount(scoreCount).getAddress(), Account.newScoreAccount(scoreCount).getAddress()};
+        Address[] _addressList = new Address[]{Account.newScoreAccount(scoreCount).getAddress(),
+                Account.newScoreAccount(scoreCount).getAddress()};
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
-        Executable withNotOwner = () -> governance.invoke(notOwner, "addUsersToActiveAddresses", _poolId, (Object)_addressList);
+        Executable withNotOwner = () -> governance.invoke(notOwner, "addUsersToActiveAddresses", _poolId,
+                (Object) _addressList);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
 
         // Act
-        governance.invoke(owner, "addUsersToActiveAddresses", _poolId, (Object)_addressList);
+        governance.invoke(owner, "addUsersToActiveAddresses", _poolId, (Object) _addressList);
 
         // Assert
         verify(dex.mock).addLpAddresses(_poolId, _addressList);
@@ -941,8 +998,9 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         BigInteger _fee = BigInteger.TEN;
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "setRedemptionFee", _fee);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -960,8 +1018,9 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         BigInteger _value = BigInteger.TEN;
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "setMaxRetirePercent", _value);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -979,8 +1038,9 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         BigInteger _value = BigInteger.TEN;
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "setRedeemBatchSize", _value);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -998,8 +1058,9 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         BigInteger _id = BigInteger.TEN;
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "addPoolOnStakedLp", _id);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -1017,8 +1078,9 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         String _contract = "loans";
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "setAddressesOnContract", _contract);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -1034,13 +1096,15 @@ public class GovernanceTest extends GovernanceTestBase {
 
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void setRouter() {
         // Arrange
         Address _router = Account.newScoreAccount(scoreCount++).getAddress();
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "setRouter", _router);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -1049,7 +1113,7 @@ public class GovernanceTest extends GovernanceTestBase {
         governance.invoke(owner, "setRouter", _router);
 
         // Assert
-        Map<String, Address> addresses =  (Map<String, Address>) governance.call("getAddresses");
+        Map<String, Address> addresses = (Map<String, Address>) governance.call("getAddresses");
         assertEquals(_router, addresses.get("router"));
     }
 
@@ -1058,8 +1122,9 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         BigInteger interval = BigInteger.TEN;
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "setFeeProcessingInterval", interval);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -1069,7 +1134,7 @@ public class GovernanceTest extends GovernanceTestBase {
 
         // Assert
         verify(feehandler.mock).setFeeProcessingInterval(interval);
-  
+
     }
 
     @Test
@@ -1078,8 +1143,9 @@ public class GovernanceTest extends GovernanceTestBase {
         Address from = Account.newScoreAccount(scoreCount++).getAddress();
         Address to = Account.newScoreAccount(scoreCount++).getAddress();
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "deleteRoute", from, to);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -1095,8 +1161,9 @@ public class GovernanceTest extends GovernanceTestBase {
     void enable_fee_handler() {
         // Arrange
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "enable_fee_handler");
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -1106,15 +1173,16 @@ public class GovernanceTest extends GovernanceTestBase {
 
         // Assert
         verify(feehandler.mock).enable();
-  
+
     }
 
     @Test
     void disable_fee_handler() {
         // Arrange
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
-        
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "disable_fee_handler");
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -1154,7 +1222,7 @@ public class GovernanceTest extends GovernanceTestBase {
         verify(rewards.mock).addNewDataSource("sICX/ICX", dex.getAddress());
 
         verify(rewards.mock).updateBalTokenDistPercentage(any(DistributionPercentage[].class));
-        
+
         verify(baln.mock).toggleStakingEnabled();
         verify(loans.mock).turnLoansOn();
         verify(dex.mock).turnDexOn();
@@ -1178,7 +1246,7 @@ public class GovernanceTest extends GovernanceTestBase {
         when(bnUSD.mock.balanceOf(governance.getAddress())).thenReturn(bnUSDValue);
         when(sicx.mock.balanceOf(governance.getAddress())).thenReturn(sICXValue);
         when(dex.mock.getPoolId(sicx.getAddress(), bnUSD.getAddress())).thenReturn(sicxBnusdPid);
-        
+
         // Act 
         sm.call(owner, intitalICX, governance.getAddress(), "createBnusdMarket");
 
@@ -1192,10 +1260,10 @@ public class GovernanceTest extends GovernanceTestBase {
         depositData.add("method", "_deposit");
         verify(bnUSD.mock).transfer(dex.getAddress(), bnUSDValue, depositData.toString().getBytes());
         verify(sicx.mock).transfer(dex.getAddress(), sICXValue, depositData.toString().getBytes());
-        
+
         verify(dex.mock).add(sicx.getAddress(), bnUSD.getAddress(), sICXValue, bnUSDValue, false);
         verify(dex.mock).setMarketName(sicxBnusdPid, "sICX/bnUSD");
-        
+
         verify(rewards.mock).addNewDataSource("sICX/bnUSD", dex.getAddress());
         verify(stakedLp.mock).addPool(sicxBnusdPid);
         verify(rewards.mock, times(2)).updateBalTokenDistPercentage(any(DistributionPercentage[].class));
@@ -1211,7 +1279,7 @@ public class GovernanceTest extends GovernanceTestBase {
         BigInteger balnBnusdPid = BigInteger.valueOf(3);
 
         when(dex.mock.getPoolId(baln.getAddress(), bnUSD.getAddress())).thenReturn(balnBnusdPid);
-        
+
         // Act 
         governance.invoke(owner, "createBalnMarket", bnUSDValue, balnValue);
 
@@ -1223,10 +1291,10 @@ public class GovernanceTest extends GovernanceTestBase {
         depositData.add("method", "_deposit");
         verify(bnUSD.mock, times(2)).transfer(dex.getAddress(), bnUSDValue, depositData.toString().getBytes());
         verify(baln.mock).transfer(dex.getAddress(), balnValue, depositData.toString().getBytes());
-        
+
         verify(dex.mock).add(baln.getAddress(), bnUSD.getAddress(), balnValue, bnUSDValue, false);
         verify(dex.mock).setMarketName(balnBnusdPid, "BALN/bnUSD");
-        
+
         verify(rewards.mock).addNewDataSource("BALN/bnUSD", dex.getAddress());
         verify(stakedLp.mock).addPool(balnBnusdPid);
         verify(rewards.mock, times(3)).updateBalTokenDistPercentage(any(DistributionPercentage[].class));
@@ -1245,7 +1313,7 @@ public class GovernanceTest extends GovernanceTestBase {
         BigInteger balnSicxPid = BigInteger.valueOf(4);
 
         when(dex.mock.getPoolId(baln.getAddress(), sicx.getAddress())).thenReturn(balnSicxPid);
-        
+
         // Act 
         governance.invoke(owner, "createBalnSicxMarket", sicxValue, balnValue);
 
@@ -1256,10 +1324,10 @@ public class GovernanceTest extends GovernanceTestBase {
         depositData.add("method", "_deposit");
         verify(sicx.mock, times(2)).transfer(dex.getAddress(), sicxValue, depositData.toString().getBytes());
         verify(baln.mock, times(2)).transfer(dex.getAddress(), balnValue, depositData.toString().getBytes());
-        
+
         verify(dex.mock).add(baln.getAddress(), sicx.getAddress(), balnValue, sicxValue, false);
         verify(dex.mock).setMarketName(balnSicxPid, "BALN/sICX");
-        
+
         verify(rewards.mock).addNewDataSource("BALN/sICX", dex.getAddress());
         verify(stakedLp.mock).addPool(balnSicxPid);
         verify(rewards.mock, times(4)).updateBalTokenDistPercentage(any(DistributionPercentage[].class));

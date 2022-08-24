@@ -16,15 +16,15 @@
 
 package network.balanced.score.core.governance;
 
-import static java.util.Map.entry;
-import static network.balanced.score.lib.utils.Math.pow;
+import network.balanced.score.lib.structs.DistributionPercentage;
+import network.balanced.score.lib.utils.Constants;
 
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-import network.balanced.score.lib.structs.DistributionPercentage;
-import network.balanced.score.lib.utils.Constants;
+import static java.util.Map.entry;
+import static network.balanced.score.lib.utils.Math.pow;
 
 public class GovernanceConstants extends Constants {
     public static final String TAG = "Governance";
@@ -48,10 +48,12 @@ public class GovernanceConstants extends Constants {
 
 
     public static String[] CONTRACTS = {"loans", "dex", "staking", "rewards", "dividends", "daofund",
-            "reserve", "sicx", "bnUSD", "baln", "bwt", "router", "feehandler", "stakedLp", "rebalancing", "balancedOracle"};
+            "reserve", "sicx", "bnUSD", "baln", "bwt", "router", "feehandler", "stakedLp", "rebalancing",
+            "balancedOracle"};
 
     public static Map<String, List<String>> ADDRESSES = Map.ofEntries(
-            entry("loans", List.of("rewards", "dividends", "staking", "reserve", "dex", "rebalancing", "balancedOracle")),
+            entry("loans", List.of("rewards", "dividends", "staking", "reserve", "dex", "rebalancing",
+                    "balancedOracle")),
             entry("dex", List.of("rewards", "dividends", "staking", "sicx", "bnUSD", "baln", "feehandler", "stakedLp")),
             entry("rewards", List.of("reserve", "baln", "bwt", "daofund", "stakedLp")),
             entry("dividends", List.of("loans", "daofund", "dex", "baln")),
@@ -64,7 +66,7 @@ public class GovernanceConstants extends Constants {
             entry("stakedLp", List.of("dex", "rewards")),
             entry("rebalancing", List.of("loans", "dex", "bnUSD", "sicx", "balancedOracle")),
             entry("balancedOracle", List.of("dex", "staking", "oracle"))
-   );
+    );
 
     public static Map<String, String> ADMIN_ADDRESSES = Map.ofEntries(
             entry("loans", "governance"),
@@ -101,11 +103,12 @@ public class GovernanceConstants extends Constants {
             entry("stakedLp", "setStakedLp"),
             entry("balancedOracle", "setOracle")
     );
-    
+
     // #-------------------------------------------------------------------------------
     // # REWARDS LAUNCH CONFIG
     // #-------------------------------------------------------------------------------
 
+    @SuppressWarnings("unchecked")
     public static Map<String, String>[] DATA_SOURCES = (Map<String, String>[]) new Map[]{
             Map.of("name", "Loans", "address", "loans"),
             Map.of("name", "sICX/ICX", "address", "dex")
@@ -131,6 +134,7 @@ public class GovernanceConstants extends Constants {
     // #-------------------------------------------------------------------------------
     // # LOANS LAUNCH CONFIG
     // #-------------------------------------------------------------------------------
+    @SuppressWarnings("unchecked")
     public static Map<String, Object>[] ASSETS = (Map<String, Object>[]) new Map[]{
             Map.of("address", "sicx", "active", true, "collateral", true),
             Map.of("address", "bnUSD", "active", true, "collateral", false),

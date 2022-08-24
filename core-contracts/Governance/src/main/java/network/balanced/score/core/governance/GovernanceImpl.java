@@ -67,7 +67,8 @@ public class GovernanceImpl {
 
     @External(readonly = true)
     public BigInteger getDay() {
-        BigInteger blockTime = BigInteger.valueOf(Context.getBlockTimestamp()).subtract(timeOffset.getOrDefault(BigInteger.ZERO));
+        BigInteger blockTime =
+                BigInteger.valueOf(Context.getBlockTimestamp()).subtract(timeOffset.getOrDefault(BigInteger.ZERO));
         return blockTime.divide(MICRO_SECONDS_IN_A_DAY);
     }
 
@@ -185,8 +186,10 @@ public class GovernanceImpl {
     public void cancelVote(BigInteger vote_index) {
         ProposalDB proposal = new ProposalDB(vote_index);
         Context.require(vote_index.compareTo(BigInteger.ONE) >= 0, "There is no proposal with index " + vote_index);
-        Context.require(vote_index.compareTo(proposal.proposalsCount.get()) <= 0, "There is no proposal with index " + vote_index);
-        Context.require(proposal.status.get().equals(ProposalStatus.STATUS[ProposalStatus.ACTIVE]), "Proposal can be cancelled only from active status.");
+        Context.require(vote_index.compareTo(proposal.proposalsCount.get()) <= 0,
+                "There is no proposal with index " + vote_index);
+        Context.require(proposal.status.get().equals(ProposalStatus.STATUS[ProposalStatus.ACTIVE]), "Proposal can be " +
+                "cancelled only from active status.");
         Context.require(Context.getCaller().equals(proposal.proposer.get()) ||
                         Context.getCaller().equals(Context.getOwner()),
                 "Only owner or proposer may call this method.");
@@ -201,7 +204,8 @@ public class GovernanceImpl {
     }
 
     @External
-    public void defineVote(String name, String description, BigInteger vote_start, BigInteger snapshot, @Optional String actions) {
+    public void defineVote(String name, String description, BigInteger vote_start, BigInteger snapshot,
+                           @Optional String actions) {
         Context.require(description.length() <= 500, "Description must be less than or equal to 500 characters.");
         Context.require(vote_start.compareTo(getDay()) > 0, "Vote cannot start at or before the current day.");
         Context.require(getDay().compareTo(snapshot) <= 0 &&
@@ -212,10 +216,13 @@ public class GovernanceImpl {
         actions = optionalDefault(actions, "[]");
         BigInteger voteIndex = ProposalDB.getProposalId(name);
         Context.require(voteIndex.equals(BigInteger.ZERO), "Poll name " + name + " has already been used.");
-        Context.require(checkBalnVoteCriterion(Context.getCaller()), "User needs at least " + balnVoteDefinitionCriterion.get().divide(BigInteger.valueOf(100)) + "% of total baln supply staked to define a vote.");
+        Context.require(checkBalnVoteCriterion(Context.getCaller()),
+                "User needs at least " + balnVoteDefinitionCriterion.get().divide(BigInteger.valueOf(100)) + "% of " +
+                        "total baln supply staked to define a vote.");
         verifyActions(actions);
 
-        Context.call(Addresses.get("bnUSD"), "govTransfer", Context.getCaller(), Addresses.get("daofund"), bnusdVoteDefinitionFee.getOrDefault(BigInteger.ONE), new byte[0]);
+        Context.call(Addresses.get("bnUSD"), "govTransfer", Context.getCaller(), Addresses.get("daofund"),
+                bnusdVoteDefinitionFee.getOrDefault(BigInteger.ONE), new byte[0]);
 
         ProposalDB.createProposal(
                 name,
@@ -276,9 +283,11 @@ public class GovernanceImpl {
         Address from = Context.getCaller();
         BigInteger snapshot = proposal.voteSnapshot.get();
 
-        BigInteger totalVote = Context.call(BigInteger.class, Addresses.get("baln"), "stakedBalanceOfAt", from, snapshot);
+        BigInteger totalVote = Context.call(BigInteger.class, Addresses.get("baln"), "stakedBalanceOfAt", from,
+                snapshot);
 
-        Context.require(!totalVote.equals(BigInteger.ZERO), TAG + "Balanced tokens need to be staked to cast the vote.");
+        Context.require(!totalVote.equals(BigInteger.ZERO), TAG + "Balanced tokens need to be staked to cast the vote" +
+                ".");
 
         BigInteger userForVotes = proposal.forVotesOfUser.getOrDefault(from, BigInteger.ZERO);
         BigInteger userAgainstVotes = proposal.againstVotesOfUser.getOrDefault(from, BigInteger.ZERO);
@@ -471,7 +480,8 @@ public class GovernanceImpl {
         setTimeOffset(timeDelta);
 
         for (Map<String, String> source : DATA_SOURCES) {
-            Context.call(Addresses.get("rewards"), "addNewDataSource", source.get("name"), Addresses.get(source.get("address")));
+            Context.call(Addresses.get("rewards"), "addNewDataSource", source.get("name"), Addresses.get(source.get(
+                    "address")));
         }
 
         Context.call(Addresses.get("rewards"), "updateBalTokenDistPercentage", (Object) RECIPIENTS);
@@ -502,7 +512,8 @@ public class GovernanceImpl {
         BigInteger amount = EXA.multiply(value).divide(price.multiply(BigInteger.valueOf(7)));
         Context.call(value.divide(BigInteger.valueOf(7)), stakingAddress, "stakeICX", Context.getAddress(),
                 new byte[0]);
-        Context.call(Context.getBalance(Context.getAddress()), loansAddress, "depositAndBorrow", "bnUSD", amount, Context.getAddress(), BigInteger.ZERO);
+        Context.call(Context.getBalance(Context.getAddress()), loansAddress, "depositAndBorrow", "bnUSD", amount,
+                Context.getAddress(), BigInteger.ZERO);
 
         BigInteger bnUSDValue = Context.call(BigInteger.class, bnUSDAddress, "balanceOf", Context.getAddress());
         BigInteger sICXValue = Context.call(BigInteger.class, sICXAddress, "balanceOf", Context.getAddress());
@@ -704,13 +715,15 @@ public class GovernanceImpl {
     }
 
     @External
-    public void addCollateral(Address _token_address, boolean _active, String _peg,  BigInteger _lockingRatio, BigInteger _liquidationRatio, BigInteger _debtCeiling) {
+    public void addCollateral(Address _token_address, boolean _active, String _peg, BigInteger _lockingRatio,
+                              BigInteger _liquidationRatio, BigInteger _debtCeiling) {
         onlyOwner();
         _addCollateral(_token_address, _active, _peg, _lockingRatio, _liquidationRatio, _debtCeiling);
     }
 
     @External
-    public void addDexPricedCollateral(Address _token_address, boolean _active,  BigInteger _lockingRatio, BigInteger _liquidationRatio, BigInteger _debtCeiling) {
+    public void addDexPricedCollateral(Address _token_address, boolean _active, BigInteger _lockingRatio,
+                                       BigInteger _liquidationRatio, BigInteger _debtCeiling) {
         onlyOwner();
         _addDexPricedCollateral(_token_address, _active, _lockingRatio, _liquidationRatio, _debtCeiling);
     }
@@ -876,8 +889,10 @@ public class GovernanceImpl {
     @External
     public void setAssetOracle(String _symbol, Address _address) {
         onlyOwner();
-        Map<String, String> assetAddresses = (Map<String, String>) Context.call(Addresses.get("loans"), "getAssetTokens");
-        Context.require(assetAddresses.containsKey(_symbol), TAG + ": " + _symbol + " is not a supported asset in Balanced.");
+        Map<String, String> assetAddresses = (Map<String, String>) Context.call(Addresses.get("loans"),
+                "getAssetTokens");
+        Context.require(assetAddresses.containsKey(_symbol), TAG + ": " + _symbol + " is not a supported asset in " +
+                "Balanced.");
 
         Address token = Address.fromString(assetAddresses.get(_symbol));
         Context.call(token, "setOracle", _address);
@@ -887,8 +902,10 @@ public class GovernanceImpl {
     @External
     public void setAssetOracleName(String _symbol, String _name) {
         onlyOwner();
-        Map<String, String> assetAddresses = (Map<String, String>) Context.call(Addresses.get("loans"), "getAssetTokens");
-        Context.require(assetAddresses.containsKey(_symbol), TAG + ": " + _symbol + " is not a supported asset in Balanced.");
+        Map<String, String> assetAddresses = (Map<String, String>) Context.call(Addresses.get("loans"),
+                "getAssetTokens");
+        Context.require(assetAddresses.containsKey(_symbol), TAG + ": " + _symbol + " is not a supported asset in " +
+                "Balanced.");
 
         Address token = Address.fromString(assetAddresses.get(_symbol));
         Context.call(token, "setOracleName", _name);
@@ -898,8 +915,10 @@ public class GovernanceImpl {
     @External
     public void setAssetMinInterval(String _symbol, BigInteger _interval) {
         onlyOwner();
-        Map<String, String> assetAddresses = (Map<String, String>) Context.call(Addresses.get("loans"), "getAssetTokens");
-        Context.require(assetAddresses.containsKey(_symbol), TAG + ": " + _symbol + " is not a supported asset in Balanced.");
+        Map<String, String> assetAddresses = (Map<String, String>) Context.call(Addresses.get("loans"),
+                "getAssetTokens");
+        Context.require(assetAddresses.containsKey(_symbol), TAG + ": " + _symbol + " is not a supported asset in " +
+                "Balanced.");
 
         Address token = Address.fromString(assetAddresses.get(_symbol));
         Context.call(token, "setMinInterval", _interval);
@@ -1009,7 +1028,8 @@ public class GovernanceImpl {
         }
 
         proposal.feeRefunded.set(true);
-        Context.call(Addresses.get("bnUSD"), "govTransfer", Addresses.get("daofund"), proposal.proposer.get(), proposal.fee.get(), new byte[0]);
+        Context.call(Addresses.get("bnUSD"), "govTransfer", Addresses.get("daofund"), proposal.proposer.get(),
+                proposal.fee.get(), new byte[0]);
     }
 
     private boolean checkBalnVoteCriterion(Address address) {
@@ -1022,7 +1042,8 @@ public class GovernanceImpl {
 
     private void _refundVoteDefinitionFee(ProposalDB proposal) {
         Address daoFund = Addresses.get("daofund");
-        Context.call(Addresses.get("bnUSD"), "govTransfer", daoFund, proposal.proposer.get(), proposal.fee.get(), new byte[0]);
+        Context.call(Addresses.get("bnUSD"), "govTransfer", daoFund, proposal.proposer.get(), proposal.fee.get(),
+                new byte[0]);
         proposal.feeRefunded.set(true);
     }
 
@@ -1070,7 +1091,7 @@ public class GovernanceImpl {
     }
 
     public void _setLiquidationRatio(String _symbol, BigInteger _ratio) {
-        Context.call(Addresses.get("loans"), "setLiquidationRatio", _symbol,  _ratio);
+        Context.call(Addresses.get("loans"), "setLiquidationRatio", _symbol, _ratio);
     }
 
     public void setRetirementBonus(BigInteger _points) {
@@ -1119,13 +1140,15 @@ public class GovernanceImpl {
 
     public void _setBalnVoteDefinitionCriterion(BigInteger percentage) {
         Context.require(percentage.compareTo(BigInteger.ZERO) >= 0, "Basis point must be between 0 and 10000.");
-        Context.require(percentage.compareTo(BigInteger.valueOf(10000)) <= 0, "Basis point must be between 0 and 10000.");
+        Context.require(percentage.compareTo(BigInteger.valueOf(10000)) <= 0, "Basis point must be between 0 and " +
+                "10000.");
 
         balnVoteDefinitionCriterion.set(percentage);
     }
 
     public void _addNewDataSource(String _data_source_name, String _contract_address) {
-        Context.call(Addresses.get("rewards"), "addNewDataSource", _data_source_name, Address.fromString(_contract_address));
+        Context.call(Addresses.get("rewards"), "addNewDataSource", _data_source_name,
+                Address.fromString(_contract_address));
     }
 
     public void _addAcceptedTokens(String _token) {
@@ -1159,7 +1182,8 @@ public class GovernanceImpl {
         Context.call(Addresses.get("rewards"), "updateBalTokenDistPercentage", (Object) _recipient_list);
     }
 
-    public void _addCollateral(Address _token_address, boolean _active, String _peg,  BigInteger _lockingRatio, BigInteger _liquidationRatio, BigInteger _debtCeiling) {
+    public void _addCollateral(Address _token_address, boolean _active, String _peg, BigInteger _lockingRatio,
+                               BigInteger _liquidationRatio, BigInteger _debtCeiling) {
         Address loansAddress = Addresses.get("loans");
         Context.call(loansAddress, "addAsset", _token_address, _active, true);
 
@@ -1175,7 +1199,8 @@ public class GovernanceImpl {
         _setLiquidationRatio(symbol, _liquidationRatio);
     }
 
-    public void _addDexPricedCollateral(Address _token_address, boolean _active,  BigInteger _lockingRatio, BigInteger _liquidationRatio, BigInteger _debtCeiling) {
+    public void _addDexPricedCollateral(Address _token_address, boolean _active, BigInteger _lockingRatio,
+                                        BigInteger _liquidationRatio, BigInteger _debtCeiling) {
         Address loansAddress = Addresses.get("loans");
         Context.call(loansAddress, "addAsset", _token_address, _active, true);
 
@@ -1194,6 +1219,6 @@ public class GovernanceImpl {
 
     @EventLog(indexed = 2)
     public void VoteCast(String vote_name, boolean vote, Address voter, BigInteger stake, BigInteger total_for,
-                   BigInteger total_against) {
+                         BigInteger total_against) {
     }
 }
