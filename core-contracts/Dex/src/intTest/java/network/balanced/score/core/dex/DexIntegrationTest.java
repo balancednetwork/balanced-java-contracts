@@ -25,7 +25,6 @@ import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.Env;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import score.UserRevertedException;
 
 import java.io.File;
 import java.math.BigInteger;
@@ -123,8 +122,9 @@ class DexIntegrationTest {
             dexScoreClient._nid(), userWallet, sIcxScoreClient._address());
     static Rewards userWalletRewardsClient = new RewardsScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(),
             userWallet, rewardsScoreClient._address());
-    private static final BalancedTokenScoreClient userBalnScoreClient = new BalancedTokenScoreClient(dexScoreClient.endpoint(),
-            dexScoreClient._nid(), userWallet, balnScoreClient._address());
+    private static final BalancedTokenScoreClient userBalnScoreClient =
+            new BalancedTokenScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet,
+                    balnScoreClient._address());
     private static final DexTestScoreClient userDexTestScoreClient = new DexTestScoreClient(dexScoreClient.endpoint(),
             dexScoreClient._nid(), userWallet, tokenAAddress);
     private static final DexTestScoreClient userDexTestBaseScoreClient =
@@ -163,12 +163,12 @@ class DexIntegrationTest {
 
     @Test
     @Order(3)
-    void testICXTransferSwapEarningAndCancelOrder(){
+    void testICXTransferSwapEarningAndCancelOrder() {
         assertEquals(SICXICX_MARKET_NAME, dexUserScoreClient.getPoolName(BigInteger.ONE));
         BigInteger defaultPoolId = dexUserScoreClient.lookupPid(SICXICX_MARKET_NAME);
         assertEquals(BigInteger.ONE, defaultPoolId);
 
-        Map<String, Object>  poolStats = dexUserScoreClient.getPoolStats(defaultPoolId);
+        Map<String, Object> poolStats = dexUserScoreClient.getPoolStats(defaultPoolId);
         assertEquals(poolStats.get("base_token").toString(), sIcxScoreClient._address().toString());
         assertNull(poolStats.get("quote_token"));
         assertEquals(hexToBigInteger(poolStats.get("base").toString()), BigInteger.ZERO);
@@ -216,7 +216,7 @@ class DexIntegrationTest {
         BigInteger sicxEarning = dexUserScoreClient.getSicxEarnings(userAddress);
         assertNotNull(sicxEarning);
         dexUserScoreClient.withdrawSicxEarnings(sicxEarning);
-        
+
         balanced.syncDistributions();
         dexUserScoreClient.cancelSicxicxOrder();
     }
@@ -233,11 +233,15 @@ class DexIntegrationTest {
         //continuous starts
         byte[] tokenDeposit = "{\"method\":\"_deposit\",\"params\":{\"none\":\"none\"}}".getBytes();
         mintAndTransferTestTokens(tokenDeposit);
-        dexUserScoreClient.add(Address.fromString(dexTestBaseScoreAddress), Address.fromString(dexTestFourthScoreClient._address().toString()), BigInteger.valueOf(50).multiply(EXA), BigInteger.valueOf(50).multiply(EXA), false);
-        BigInteger poolId = dexUserScoreClient.getPoolId(Address.fromString(dexTestBaseScoreAddress), Address.fromString(dexTestFourthScoreAddress));
+        dexUserScoreClient.add(Address.fromString(dexTestBaseScoreAddress), Address.fromString
+        (dexTestFourthScoreClient._address().toString()), BigInteger.valueOf(50).multiply(EXA), BigInteger.valueOf
+        (50).multiply(EXA), false);
+        BigInteger poolId = dexUserScoreClient.getPoolId(Address.fromString(dexTestBaseScoreAddress), Address
+        .fromString(dexTestFourthScoreAddress));
         //assert pool id is less than 5
         assert poolId.compareTo(BigInteger.valueOf(6)) < 0;
-        BigInteger liquidity = (BigInteger.valueOf(50).multiply(EXA).multiply(BigInteger.valueOf(50).multiply(EXA))).sqrt();
+        BigInteger liquidity = (BigInteger.valueOf(50).multiply(EXA).multiply(BigInteger.valueOf(50).multiply(EXA)))
+        .sqrt();
         BigInteger balance = dexUserScoreClient.balanceOf(userAddress, poolId);
         BigInteger tUsersPrevBalance = dexUserScoreClient.balanceOf(tUserAddress, poolId);
 
@@ -249,7 +253,7 @@ class DexIntegrationTest {
 
     @Test
     @Order(6)
-    void testWithdraw(){
+    void testWithdraw() {
         byte[] tokenDeposit = "{\"method\":\"_deposit\",\"params\":{\"none\":\"none\"}}".getBytes();
         this.mintAndTransferTestTokens(tokenDeposit);
         BigInteger withdrawAMount = BigInteger.valueOf(50);
@@ -303,7 +307,7 @@ class DexIntegrationTest {
 
     @Test
     @Order(8)
-    void testNonContinuousAndContinuousReward(){
+    void testNonContinuousAndContinuousReward() {
         userDaoFundScoreClient.addAddressToSetdb();
         balanced.syncDistributions();
         BigInteger balnHolding = userRewardScoreClient.getBalnHolding(tUserAddress);
@@ -311,28 +315,28 @@ class DexIntegrationTest {
 
 
         balanced.syncDistributions();
-        System.out.println("Baln total supply is: "+userBalnScoreClient.totalSupply());
+        System.out.println("Baln total supply is: " + userBalnScoreClient.totalSupply());
         BigInteger updatedBalnHolding = userRewardScoreClient.getBalnHolding(tUserAddress);
-        System.out.println("baln holding: "+balnHolding);
-        System.out.println("updated baln holding: "+updatedBalnHolding);
-        assert balnHolding.compareTo(updatedBalnHolding)<0;
-                BigInteger beforeSleepDay = dexUserScoreClient.getDay();
+        System.out.println("baln holding: " + balnHolding);
+        System.out.println("updated baln holding: " + updatedBalnHolding);
+        assert balnHolding.compareTo(updatedBalnHolding) < 0;
+        BigInteger beforeSleepDay = dexUserScoreClient.getDay();
         try {
-                Thread.sleep(5000); //wait some time
-        }catch (Exception e){
-                System.out.println(e.getMessage());
+            Thread.sleep(5000); //wait some time
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
         }
 
         BigInteger nextUpdatedBalnHolding = userRewardScoreClient.getBalnHolding(tUserAddress);
         assertEquals(beforeSleepDay, dexUserScoreClient.getDay());
 
-        System.out.println("updated baln holding: "+updatedBalnHolding);
-        System.out.println("next updated baln holding: "+nextUpdatedBalnHolding);
-        assert updatedBalnHolding.compareTo(nextUpdatedBalnHolding)<0;
+        System.out.println("updated baln holding: " + updatedBalnHolding);
+        System.out.println("next updated baln holding: " + nextUpdatedBalnHolding);
+        assert updatedBalnHolding.compareTo(nextUpdatedBalnHolding) < 0;
 
     }
 
-    void transferSicxToken(){
+    void transferSicxToken() {
         byte[] data = "testData".getBytes();
         ((StakingScoreClient) userStakeScoreClient).stakeICX(BigInteger.valueOf(80).multiply(EXA), userAddress, data);
 
@@ -373,11 +377,11 @@ class DexIntegrationTest {
         }
     }
 
-    void waitForADay(){
+    void waitForADay() {
         balanced.increaseDay(1);
     }
 
-    BigInteger hexToBigInteger(String hex){
+    BigInteger hexToBigInteger(String hex) {
         return new BigInteger(hex.replace("0x", ""), 16);
     }
 
