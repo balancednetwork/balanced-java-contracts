@@ -148,11 +148,10 @@ public class ReserveFund implements Reserve {
     @SuppressWarnings("unchecked")
     public void redeem(Address _to, BigInteger _valueInLoop, String collateralSymbol) {
         Address sender = Context.getCaller();
-        Address loansScoreAddress = loansScore.get();
-        Context.require(sender.equals(loansScoreAddress), TAG + ": The redeem method can only be called by the Loans " +
+        Address loans = loansScore.get();
+        Context.require(sender.equals(loans), TAG + ": The redeem method can only be called by the Loans " +
                 "SCORE.");
 
-        Address loans = loansScore.get();
         Address oracle = Context.call(Address.class, loans, "getOracle");
 
         BigInteger remainingValue = _valueInLoop;
@@ -248,14 +247,9 @@ public class ReserveFund implements Reserve {
     }
 
     private void sendToken(Address tokenAddress, Address to, BigInteger amount, String message) {
-        String symbol = "";
-        try {
-            symbol = (String) Context.call(tokenAddress, "symbol");
-            Context.call(tokenAddress, "transfer", to, amount, new byte[0]);
-            TokenTransfer(to, amount, message + amount + symbol + " sent to " + to);
-        } catch (Exception e) {
-            Context.revert(TAG + amount + symbol + " not sent to " + to);
-        }
+        String symbol = (String) Context.call(tokenAddress, "symbol");
+        Context.call(tokenAddress, "transfer", to, amount, new byte[0]);
+        TokenTransfer(to, amount, message + amount + symbol + " sent to " + to);
     }
 
     private BigInteger getBalance(Address tokenAddress) {
