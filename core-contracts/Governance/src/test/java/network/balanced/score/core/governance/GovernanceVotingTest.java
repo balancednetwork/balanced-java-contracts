@@ -855,6 +855,88 @@ public class GovernanceVotingTest extends GovernanceTestBase {
     }
 
     @Test
+    void executeVote_addCollateral() {
+        // Arrange
+        Address tokenAddress = bwt.getAddress();
+        boolean active = false;
+        BigInteger lockingRatio = BigInteger.valueOf(30_000);
+        BigInteger liquidationRatio = BigInteger.valueOf(10_000);
+        BigInteger debtCeiling =  BigInteger.TEN.pow(20);
+        String symbol = "BALW";
+        String peg = "BTC";
+
+        when(bwt.mock.symbol()).thenReturn(symbol);
+        when(balancedOracle.mock.getPriceInLoop(symbol)).thenReturn(ICX);
+
+        JsonObject addCollateralParameters = new JsonObject()
+        .add("_token_address", tokenAddress.toString())
+        .add("_active", active)
+        .add("_peg", peg)
+        .add("_lockingRatio", lockingRatio.toString())
+        .add("_liquidationRatio", liquidationRatio.toString())
+        .add("_debtCeiling", debtCeiling.toString());
+    
+        JsonArray addCollateral = new JsonArray()
+            .add("addCollateral")
+            .add(addCollateralParameters);
+
+        JsonArray actions = new JsonArray()
+            .add(addCollateral);
+
+        // Act
+        executeVoteWithActions(actions.toString());
+        System.out.println(actions.toString());
+
+        // Assert
+        verify(loans.mock, times(2)).addAsset(tokenAddress, active, true);
+        verify(balancedOracle.mock, times(2)).setPeg(symbol, peg);
+        verify(loans.mock, times(2)).setLockingRatio(symbol, lockingRatio);
+        verify(loans.mock, times(2)).setLiquidationRatio(symbol, liquidationRatio);
+        verify(loans.mock, times(2)).setDebtCeiling(symbol, debtCeiling);
+    }
+
+    @Test
+    void executeVote_addDexPricedCollateral() {
+        // Arrange
+        Address tokenAddress = bwt.getAddress();
+        boolean active = false;
+        BigInteger lockingRatio = BigInteger.valueOf(30_000);
+        BigInteger liquidationRatio = BigInteger.valueOf(10_000);
+        BigInteger debtCeiling =  BigInteger.TEN.pow(20);
+        BigInteger poolID = BigInteger.valueOf(7);
+        String symbol = "BWT";
+
+        when(bwt.mock.symbol()).thenReturn(symbol);
+        when(balancedOracle.mock.getPriceInLoop(symbol)).thenReturn(ICX);
+        when(bwt.mock.symbol()).thenReturn(symbol);
+        when(dex.mock.getPoolId(tokenAddress, bnUSD.getAddress())).thenReturn(poolID);
+
+        JsonObject addCollateralParameters = new JsonObject()
+            .add("_token_address", tokenAddress.toString())
+            .add("_active", active)
+            .add("_lockingRatio", lockingRatio.toString())
+            .add("_liquidationRatio", liquidationRatio.toString())
+            .add("_debtCeiling", debtCeiling.toString());
+    
+        JsonArray addCollateral = new JsonArray()
+            .add("addDexPricedCollateral")
+            .add(addCollateralParameters);
+
+        JsonArray actions = new JsonArray()
+            .add(addCollateral);
+
+        // Act
+        executeVoteWithActions(actions.toString());
+
+        // Assert
+        verify(loans.mock, times(2)).addAsset(tokenAddress, active, true);
+        verify(balancedOracle.mock, times(2)).addDexPricedAsset(symbol, poolID);
+        verify(loans.mock, times(2)).setLockingRatio(symbol, lockingRatio);
+        verify(loans.mock, times(2)).setLiquidationRatio(symbol, liquidationRatio);
+        verify(loans.mock, times(2)).setDebtCeiling(symbol, debtCeiling);
+    }
+
+    @Test
     void executeVote_call() {
         // Arrange
         JsonArray addAcceptedTokensParameters = new JsonArray()

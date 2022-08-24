@@ -416,7 +416,11 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         BigInteger bnusdDeposit = owner.bnUSD.balanceOf(owner.getAddress());
         owner.bnUSD.transfer(balanced.dex._address(), bnusdDeposit, depositData.toString().getBytes());
         owner.dex.add(collateralAddress, balanced.bnusd._address(), tokenAmount, bnusdDeposit, false);
+        
+        BigInteger lockingRatio = BigInteger.valueOf(40_000);
+        BigInteger liquidationRatio = BigInteger.valueOf(15_000);
+        BigInteger debtCeiling =  BigInteger.TEN.pow(30);
+        owner.governance.addCollateral(collateralAddress, true, peg, lockingRatio, liquidationRatio, debtCeiling);
 
-        owner.governance.addCollateral(collateralAddress, true, peg, BigInteger.ZERO);
     }
 }

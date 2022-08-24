@@ -74,10 +74,10 @@ public class LoansImpl implements Loans {
         if (liquidationRatio.get(SICX_SYMBOL) == null) {
             lockingRatio.set(SICX_SYMBOL, lockingRatioSICX.get());
             liquidationRatio.set(SICX_SYMBOL, liquidationRatioSICX.get());
+            LoansVariables.totalPerCollateralDebts.at(SICX_SYMBOL).set(BNUSD_SYMBOL, totalDebts.get(BNUSD_SYMBOL));
+            CollateralDB.migrateToNewDBs();
+            AssetDB.migrateToNewDBs();
         }
-
-        CollateralDB.migrateToNewDBs();
-        AssetDB.migrateToNewDBs();
     }
 
     @External(readonly = true)
@@ -183,8 +183,6 @@ public class LoansImpl implements Loans {
             AssetDB.addAsset(_token_address, _active);
         }
 
-        lockingRatio.set(symbol, LOCKING_RATIO);
-        liquidationRatio.set(symbol, LIQUIDATION_RATIO);
         AssetAdded(_token_address, symbol, _collateral);
     }
 
@@ -229,12 +227,7 @@ public class LoansImpl implements Loans {
 
     @External(readonly = true)
     public BigInteger getBnusdValue(String _name) {
-        // rewrite to work correctly? or remove and rewrite get APY in Rewards?
-        Asset asset = AssetDB.getAsset(BNUSD_SYMBOL);
-        Token assetContract = new Token(asset.getAssetAddress());
-        BigInteger totalSupply = assetContract.totalSupply();
-
-        return totalSupply.subtract(asset.getBadDebt(SICX_SYMBOL));
+        return getTotalDebt(BNUSD_SYMBOL);
     }
 
     @External
@@ -663,11 +656,6 @@ public class LoansImpl implements Loans {
     private void depositCollateral(String _symbol, BigInteger _amount, Address _from) {
         Position position = PositionsDB.getPosition(_from);
 
-        Token collateralContract = new Token(CollateralDB.getCollateral(_symbol).getAssetAddress());
-        BigInteger collateralLimit = collateralLimits.get(_symbol);
-        Context.require(collateralLimit == null || collateralContract.balanceOf(Context.getAddress()).compareTo(collateralLimit) <= 0,
-                       TAG + ": Collateral safeguard limit for " + _symbol + " has been reached");
-
         position.setCollateral(_symbol, position.getCollateral(_symbol).add(_amount));
         CollateralReceived(_from, _symbol, _amount);
     }
@@ -707,7 +695,9 @@ public class LoansImpl implements Loans {
         BigInteger oldTotalDebt = totalDebts.getOrDefault(assetToBorrow, BigInteger.ZERO);
 
         BigInteger collateral = position.totalCollateralInLoop(collateralSymbol, false);
-        BigInteger maxDebtValue = POINTS.multiply(collateral).divide(getLockingRatio(collateralSymbol));
+        BigInteger lockingRatio  = getLockingRatio(collateralSymbol);
+        Context.require(lockingRatio != null && lockingRatio.compareTo(BigInteger.ZERO) > 0, "Locking ratio for " + collateralSymbol + " is not set");
+        BigInteger maxDebtValue = POINTS.multiply(collateral).divide(lockingRatio);
         BigInteger fee = originationFee.get().multiply(amount).divide(POINTS);
 
         Address borrowAssetAddress = asset.getAssetAddress();
@@ -897,10 +887,11 @@ public class LoansImpl implements Loans {
     @External
     public void setLockingRatio(String _symbol, BigInteger _ratio) {
         only(admin);
+        Context.require(_ratio.compareTo(BigInteger.ZERO) > 0, "Locking Ratio has to be greater than 0");
         lockingRatio.set(_symbol, _ratio);
     }
 
-    @External
+    @External(readonly = true)
     public BigInteger getLockingRatio(String _symbol) {
         return lockingRatio.get(_symbol);
     }
@@ -908,12 +899,13 @@ public class LoansImpl implements Loans {
     @External
     public void setLiquidationRatio(String _symbol, BigInteger _ratio) {
         only(admin);
+        Context.require(_ratio.compareTo(BigInteger.ZERO) > 0, "Liquidation Ratio has to be greater than 0");
         liquidationRatio.set(_symbol, _ratio);
     }
     
-    @External
-    public BigInteger getLiquidationRatio(String symbol) {
-        return liquidationRatio.get(symbol);
+    @External(readonly = true)
+    public BigInteger getLiquidationRatio(String _symbol) {
+        return liquidationRatio.get(_symbol);
     }
 
     @External
@@ -946,16 +938,25 @@ public class LoansImpl implements Loans {
         newLoanMinimum.set(_minimum);
     }
 
-
     @External
-    public void setCollateralLimit(String symbol, BigInteger limit) {
+    public void setDebtCeiling(String symbol, BigInteger ceiling) {
         only(admin);
-        collateralLimits.set(symbol, limit);
+        debtCeiling.set(symbol, ceiling);
     }
 
     @External(readonly = true)
-    public BigInteger getCollateralLimit(String symbol) {
-        return collateralLimits.get(symbol);
+    public BigInteger getDebtCeiling(String symbol) {
+        return debtCeiling.get(symbol);
+    }
+    
+    @External(readonly = true)
+    public BigInteger getTotalDebt(String assetSymbol) {
+        return totalDebts.getOrDefault(assetSymbol, BigInteger.ZERO);
+    }
+
+    @External(readonly = true)
+    public BigInteger getTotalCollateralDebt(String collateral, String assetSymbol) {
+        return totalPerCollateralDebts.at(collateral).getOrDefault(assetSymbol, BigInteger.ZERO);
     }
 
     @External

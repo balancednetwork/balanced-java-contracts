@@ -27,13 +27,13 @@ public class VoteActions {
                     gov._updateBalTokenDistPercentage(parseDistPercentage(params.get("_recipient_list").asArray()));
                     break;
                case "setLockingRatio":
-                    gov.setLockingRatio(params.get("_symbol").asString(), convertToNumber(params.get("_value")));
+                    gov._setLockingRatio(params.get("_symbol").asString(), convertToNumber(params.get("_value")));
                     break;
                case "setOriginationFee":
                     gov.setOriginationFee(convertToNumber(params.get("_fee")));
                     break;
                case "setLiquidationRatio":
-                    gov.setLiquidationRatio(params.get("_symbol").asString(), convertToNumber(params.get("_ratio")));
+                    gov._setLiquidationRatio(params.get("_symbol").asString(), convertToNumber(params.get("_ratio")));
                     break;
                case "setRetirementBonus":
                     gov.setRetirementBonus(convertToNumber(params.get("_points")));
@@ -67,6 +67,21 @@ public class VoteActions {
                     break;
                case "addAcceptedTokens":
                     gov._addAcceptedTokens(params.get("_token").asString());
+                    break;
+               case "addCollateral":
+                    gov._addCollateral(Address.fromString(params.get("_token_address").asString()),
+                                       params.get("_active").asBoolean(),
+                                       params.get("_peg").asString(),
+                                       convertToNumber(params.get("_lockingRatio")),
+                                       convertToNumber(params.get("_liquidationRatio")),
+                                       convertToNumber(params.get("_debtCeiling")));
+                    break;
+               case "addDexPricedCollateral":
+                    gov._addDexPricedCollateral(Address.fromString(params.get("_token_address").asString()),
+                                        params.get("_active").asBoolean(),
+                                        convertToNumber(params.get("_lockingRatio")),
+                                        convertToNumber(params.get("_liquidationRatio")),
+                                        convertToNumber(params.get("_debtCeiling")));
                     break;
                case "call":
                     Address address = Address.fromString(params.get("contract_address").asString());
