@@ -523,7 +523,6 @@ public class GovernanceImpl {
         Context.call(dexAddress, "setMarketName", pid, name);
 
         Context.call(rewardsAddress, "addNewDataSource", name, dexAddress);
-        Context.call(stakedLpAddress, "addPool", pid);
         DistributionPercentage[] recipients = new DistributionPercentage[]{
                 createDistributionPercentage("Loans", BigInteger.valueOf(25).multiply(pow(BigInteger.TEN, 16))),
                 createDistributionPercentage("sICX/ICX", BigInteger.TEN.multiply(pow(BigInteger.TEN, 16))),
@@ -561,7 +560,6 @@ public class GovernanceImpl {
         Context.call(dexAddress, "setMarketName", pid, name);
 
         Context.call(rewardsAddress, "addNewDataSource", name, dexAddress);
-        Context.call(stakedLpAddress, "addPool", pid);
 
         DistributionPercentage[] recipients = new DistributionPercentage[]{
                 createDistributionPercentage("Loans", BigInteger.valueOf(25).multiply(pow(BigInteger.TEN, 16))),
@@ -599,7 +597,6 @@ public class GovernanceImpl {
         Context.call(dexAddress, "setMarketName", pid, name);
 
         Context.call(rewardsAddress, "addNewDataSource", name, dexAddress);
-        Context.call(stakedLpAddress, "addPool", pid);
 
         DistributionPercentage[] recipients = new DistributionPercentage[]{
                 createDistributionPercentage("Loans", BigInteger.valueOf(20).multiply(pow(BigInteger.TEN, 16))),
@@ -926,12 +923,6 @@ public class GovernanceImpl {
     public void setRedeemBatchSize(BigInteger _value) {
         onlyOwner();
         Context.call(Addresses.get("loans"), "setRedeemBatchSize", _value.intValue());
-    }
-
-    @External
-    public void addPoolOnStakedLp(BigInteger _id) {
-        onlyOwner();
-        Context.call(Addresses.get("stakedLp"), "addPool", _id);
     }
 
     @External

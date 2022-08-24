@@ -292,9 +292,6 @@ public interface Governance extends
     void setRedeemBatchSize(BigInteger _value);
 
     @External
-    void addPoolOnStakedLp(BigInteger _id);
-
-    @External
     void setAddressesOnContract(String _contract);
 
     @External

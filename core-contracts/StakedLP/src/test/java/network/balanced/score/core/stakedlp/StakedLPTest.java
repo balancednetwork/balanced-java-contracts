@@ -121,18 +121,6 @@ public class StakedLPTest extends UnitTest {
         assertEquals(rewards.getAddress(), stakedLpScore.call("getRewards"));
     }
 
-    @Test
-    void addAndRemovePools() {
-        BigInteger poolId = BigInteger.ONE;
-        assertEquals(Boolean.FALSE, stakedLpScore.call("isSupportedPool", poolId));
-
-        stakedLpScore.invoke(Account.getAccount(governanceScore.getAddress()), "addPool", poolId);
-        assertEquals(Boolean.TRUE, stakedLpScore.call("isSupportedPool", poolId));
-
-        stakedLpScore.invoke(Account.getAccount(governanceScore.getAddress()), "removePool", poolId);
-        assertEquals(Boolean.FALSE, stakedLpScore.call("isSupportedPool", poolId));
-    }
-
     private void stakeLpTokens(Account from, BigInteger poolId, BigInteger value) {
         stakedLpScore.invoke(dex.account, "onIRC31Received",  from.getAddress(), from.getAddress(), poolId, value, new byte[0]);
     }
@@ -146,20 +134,10 @@ public class StakedLPTest extends UnitTest {
         BigInteger initalLpTokenBalance = BigInteger.TEN.pow(10);
         when(dex.mock.balanceOf(eq(alice.getAddress()), Mockito.any(BigInteger.class))).thenReturn(initalLpTokenBalance);
         when(dex.mock.balanceOf(eq(bob.getAddress()), Mockito.any(BigInteger.class))).thenReturn(initalLpTokenBalance);
-
         // Stake Zero tokens
         Executable zeroStakeValue = () -> stakeLpTokens(alice, BigInteger.ONE, BigInteger.ZERO);
         String expectedErrorMessage = "Reverted(0): StakedLP: Token value should be a positive number";
         expectErrorMessage(zeroStakeValue, expectedErrorMessage);
-
-        // Stake for unsupported pool
-        Executable unsupportedPoolStake = () -> stakeLpTokens(alice, BigInteger.valueOf(3), BigInteger.TEN);
-        expectedErrorMessage = "Reverted(0): StakedLP: Pool with " + BigInteger.valueOf(3) + " is not supported";
-        expectErrorMessage(unsupportedPoolStake, expectedErrorMessage);
-
-        //Add  pool 1 and let pool 2 be added on first stake
-        stakedLpScore.invoke(Account.getAccount(governanceScore.getAddress()), "addPool", BigInteger.ONE);
-        assertEquals(Boolean.TRUE, stakedLpScore.call("isSupportedPool", BigInteger.ONE));
 
         // Pool 1 related tests
         // Stake 10 LP tokens from alice account
@@ -181,7 +159,6 @@ public class StakedLPTest extends UnitTest {
         assertEquals(BigInteger.ZERO, stakedLpScore.call("balanceOf", alice.getAddress(), BigInteger.TWO));
         assertEquals(BigInteger.ZERO, stakedLpScore.call("balanceOf", bob.getAddress(), BigInteger.TWO));
         assertEquals(BigInteger.ZERO, stakedLpScore.call("totalStaked", BigInteger.TWO));
-        assertEquals(Boolean.FALSE, stakedLpScore.call("isSupportedPool", BigInteger.TWO));
 
         // Stake 20 LP tokens from alice and bob account
         stakeLpTokens(alice, BigInteger.TWO, BigInteger.valueOf(20L));
@@ -192,7 +169,6 @@ public class StakedLPTest extends UnitTest {
         assertEquals(BigInteger.valueOf(40L), stakedLpScore.call("totalStaked", BigInteger.TWO));
         assertEquals(BigInteger.valueOf(20L), stakedLpScore.call("balanceOf", alice.getAddress(), BigInteger.TWO));
         assertEquals(BigInteger.valueOf(20L), stakedLpScore.call("balanceOf", bob.getAddress(), BigInteger.TWO));
-        assertEquals(Boolean.TRUE, stakedLpScore.call("isSupportedPool", BigInteger.TWO));
     }
 
     @Test
@@ -257,7 +233,7 @@ public class StakedLPTest extends UnitTest {
 
         // Unstake from pool 2
         // Unstake from unsupported pool
-        stakedLpScore.invoke(Account.getAccount(governanceScore.getAddress()), "removePool", BigInteger.TWO);
+//        stakedLpScore.invoke(Account.getAccount(governanceScore.getAddress()), "removePool", BigInteger.TWO);
 
         BigInteger aliceStakedBalancePool2 = (BigInteger) stakedLpScore.call("balanceOf", alice.getAddress(),
                 BigInteger.TWO);

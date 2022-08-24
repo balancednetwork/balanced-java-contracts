@@ -55,15 +55,6 @@ public interface StakedLP {
 
       @External(readonly = true)
       BigInteger totalStaked(BigInteger _id);
-
-      @External
-      void addPool(BigInteger id);
-
-      @External
-      void removePool(BigInteger id);
-
-      @External(readonly = true)
-      boolean isSupportedPool(BigInteger id);
   
       @External
       void unstake(BigInteger id, BigInteger value);

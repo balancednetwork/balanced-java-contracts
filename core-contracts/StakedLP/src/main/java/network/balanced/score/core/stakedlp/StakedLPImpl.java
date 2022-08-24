@@ -120,27 +120,6 @@ public class StakedLPImpl implements StakedLP {
     }
 
     @External
-    public void addPool(BigInteger id) {
-        onlyGovernance();
-        if (!supportedPools.getOrDefault(id, Boolean.FALSE)) {
-            supportedPools.set(id, Boolean.TRUE);
-        }
-    }
-
-    @External
-    public void removePool(BigInteger id) {
-        onlyGovernance();
-        if (supportedPools.getOrDefault(id, Boolean.FALSE)) {
-            supportedPools.set(id, Boolean.FALSE);
-        }
-    }
-
-    @External(readonly = true)
-    public boolean isSupportedPool(BigInteger id) {
-        return supportedPools.getOrDefault(id, Boolean.FALSE);
-    }
-
-    @External
     public void unstake(BigInteger id, BigInteger value) {
         Address caller = Context.getCaller();
         Context.require(value.compareTo(BigInteger.ZERO) > 0, "StakedLP: Cannot unstake less than zero value");
@@ -180,7 +159,6 @@ public class StakedLPImpl implements StakedLP {
     private void stake(Address user, BigInteger id, BigInteger value) {
 
         // Validate inputs
-        Context.require(isSupportedPool(id) || isNamedPool(id), "StakedLP: Pool with " + id + " is not supported");
         Context.require(value.compareTo(BigInteger.ZERO) > 0,
                 "StakedLP: Cannot stake less than zero, value to stake " + value);
 
@@ -198,22 +176,4 @@ public class StakedLPImpl implements StakedLP {
         Context.call(rewards.get(), "updateRewardsData", poolName, previousTotal, user, previousBalance);
     }
 
-    @SuppressWarnings("unchecked")
-    private boolean isNamedPool(BigInteger id) {
-        if (!supportedPools.getOrDefault(id, Boolean.FALSE)) {
-            String poolName = (String) Context.call(dex.get(), "getPoolName", id);
-            if (poolName == null) {
-                return false;
-            }
-            
-            Map<String, Object> dataSource = (Map<String, Object>) Context.call(rewards.get(), "getSourceData", poolName);
-            if (dataSource.isEmpty() || !dex.get().equals(dataSource.get("contract_address"))) {
-                return false;
-            }
-
-            supportedPools.set(id, Boolean.TRUE);
-        }
-        
-        return true;
-    }
 }
