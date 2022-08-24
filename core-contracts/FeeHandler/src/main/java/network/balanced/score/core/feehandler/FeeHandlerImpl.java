@@ -79,8 +79,7 @@ public class FeeHandlerImpl implements FeeHandler {
             isContract(_governance);
             this.governance.set(_governance);
             enabled.set(true);
-        } else if (admin.get() == null) {
-            admin.set(_governance);
+            admin.set(governance.get()) ;
         }
     }
 
