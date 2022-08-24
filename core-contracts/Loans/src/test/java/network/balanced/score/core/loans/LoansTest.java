@@ -1625,7 +1625,7 @@ class LoansTest extends LoansTestBase {
         mockSwap(bnusd, rebalanceAmount, expectedBnusdRecived);
 
         // Act
-        loans.invoke(rebalancing, "raisePrice", "sICX", rebalanceAmount);
+        loans.invoke(rebalancing, "raisePrice", sicx.getAddress(), rebalanceAmount);
 
         // Assert
         BigInteger remainingBnusd = expectedBnusdRecived;
@@ -1701,7 +1701,7 @@ class LoansTest extends LoansTestBase {
         mockSwap(bnusd, rebalanceAmount, expectedBnusdRecived);
 
         // Act
-        loans.invoke(rebalancing, "raisePrice", "iETH", rebalanceAmount);
+        loans.invoke(rebalancing, "raisePrice", ieth.getAddress(), rebalanceAmount);
 
         // Assert
         BigInteger remainingBnusd = expectedBnusdRecived;
@@ -1776,7 +1776,7 @@ class LoansTest extends LoansTestBase {
         mockSwap(bnusd, rebalanceAmount, rebalanceAmount);
 
         // Act
-        loans.invoke(rebalancing, "raisePrice", "sICX", totalTokenRequired);
+        loans.invoke(rebalancing, "raisePrice", sicx.getAddress(), totalTokenRequired);
 
         // Assert
         BigInteger remainingBnusd = expectedBnusdRecived;
@@ -1833,7 +1833,7 @@ class LoansTest extends LoansTestBase {
         mockSwap(sicx, rebalanceAmount, rebalanceAmount);
 
         // Act
-        loans.invoke(rebalancing, "lowerPrice", "sICX", rebalanceAmount);
+        loans.invoke(rebalancing, "lowerPrice", sicx.getAddress(), rebalanceAmount);
 
         // Assert
         BigInteger remainingSicx = expectedSICXRecived;
@@ -1910,7 +1910,7 @@ class LoansTest extends LoansTestBase {
         mockSwap(ieth, rebalanceAmount, rebalanceAmount);
 
         // Act
-        loans.invoke(rebalancing, "lowerPrice", "iETH", rebalanceAmount);
+        loans.invoke(rebalancing, "lowerPrice", ieth.getAddress(), rebalanceAmount);
 
         // Assert
         BigInteger remainingIETH = expectedIETHRecived;
@@ -1987,7 +1987,7 @@ class LoansTest extends LoansTestBase {
         mockSwap(sicx, rebalanceAmount, rebalanceAmount);
 
         // Act
-        loans.invoke(rebalancing, "lowerPrice", "sICX", totalTokenRequired);
+        loans.invoke(rebalancing, "lowerPrice", sicx.getAddress(), totalTokenRequired);
 
         // Assert
         BigInteger remainingSicx = expectedSICXRecived;

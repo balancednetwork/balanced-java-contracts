@@ -107,10 +107,10 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
     void returnAsset(String _symbol, BigInteger _value, @Optional String _collateralSymbol);
 
     @External
-    void raisePrice(String _collateralSymbol, BigInteger _total_tokens_required);
+    void raisePrice(Address _collateralAddress, BigInteger _total_tokens_required);
 
     @External
-    void lowerPrice(String _collateralSymbol, BigInteger _total_tokens_required);
+    void lowerPrice(Address _collateralAddress, BigInteger _total_tokens_required);
 
     @External
     void withdrawAndUnstake(BigInteger _value);
