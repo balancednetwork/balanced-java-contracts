@@ -409,18 +409,19 @@ public class LoansImpl implements Loans {
     }
 
     @External
-    public void raisePrice(String _collateralSymbol, BigInteger _total_tokens_required) {
+    public void raisePrice(Address _collateralAddress, BigInteger _total_tokens_required) {
         loansOn();
         only(rebalancing);
-        String collateralSymbol = _collateralSymbol;
-        Address collateralAddress = Address.fromString(CollateralDB.symbolMap.get(collateralSymbol));
+        Token collateralToken = new Token(_collateralAddress);
+        String collateralSymbol = collateralToken.symbol();
+        Context.require(CollateralDB.symbolMap.get(collateralSymbol).equals(_collateralAddress.toString()), collateralSymbol + " is not a supported collateral type.");
 
         String assetSymbol = BNUSD_SYMBOL;
         Asset asset = AssetDB.getAsset(assetSymbol);
         Address assetAddress = asset.getAssetAddress();
 
         BigInteger oldTotalDebt = totalDebts.getOrDefault(assetSymbol, BigInteger.ZERO);
-        BigInteger poolID = Context.call(BigInteger.class, dex.get(), "getPoolId", collateralAddress, assetAddress);
+        BigInteger poolID = Context.call(BigInteger.class, dex.get(), "getPoolId", _collateralAddress, assetAddress);
         BigInteger rate = Context.call(BigInteger.class, dex.get(), "getBasePriceInQuote", poolID);
         int batchSize = redeemBatch.get();
         
@@ -480,14 +481,16 @@ public class LoansImpl implements Loans {
     }
 
     @External
-    public void lowerPrice(String _collateralSymbol, BigInteger _total_tokens_required) {
+    public void lowerPrice(Address _collateralAddress, BigInteger _total_tokens_required) {
         loansOn();
         only(rebalancing);
-        String collateralSymbol = _collateralSymbol;
         String assetSymbol = BNUSD_SYMBOL;
         Asset asset = AssetDB.getAsset(assetSymbol);
 
-        Collateral collateral = CollateralDB.getCollateral(collateralSymbol);
+        Collateral collateral = CollateralDB.getCollateral(_collateralAddress);
+        Token collateralToken = new Token(_collateralAddress);
+        String collateralSymbol = collateralToken.symbol();
+
         BigInteger oldTotalDebt = totalDebts.getOrDefault(assetSymbol, BigInteger.ZERO);
         int batchSize = redeemBatch.get();
         

@@ -30,6 +30,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+
+import score.Address;
 import score.Context;
 
 import java.math.BigInteger;
@@ -177,8 +179,8 @@ public class RebalancingTest extends TestBase {
             assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
 
             rebalancingScore.invoke(sm.createAccount(), "rebalance", sicx.getAddress());
-            verify(loans.mock, never()).raisePrice(any(String.class), any(BigInteger.class));
-            verify(loans.mock, never()).lowerPrice(any(String.class), any(BigInteger.class));
+            verify(loans.mock, never()).raisePrice(any(Address.class), any(BigInteger.class));
+            verify(loans.mock, never()).lowerPrice(any(Address.class), any(BigInteger.class));
 
             // Decrease price within threshold range
             bnUSDPriceInIcx = dexPriceOfBnusdInSicx.subtract(additionalPrice);
@@ -187,8 +189,8 @@ public class RebalancingTest extends TestBase {
             assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
 
             rebalancingScore.invoke(sm.createAccount(), "rebalance", sicx.getAddress());
-            verify(loans.mock, never()).raisePrice(any(String.class), any(BigInteger.class));
-            verify(loans.mock, never()).lowerPrice(any(String.class), any(BigInteger.class));
+            verify(loans.mock, never()).raisePrice(any(Address.class), any(BigInteger.class));
+            verify(loans.mock, never()).lowerPrice(any(Address.class), any(BigInteger.class));
 
             // Exactly equal price
             bnUSDPriceInIcx = dexPriceOfBnusdInSicx;
@@ -197,8 +199,8 @@ public class RebalancingTest extends TestBase {
             assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
 
             rebalancingScore.invoke(sm.createAccount(), "rebalance", sicx.getAddress());
-            verify(loans.mock, never()).raisePrice(any(String.class), any(BigInteger.class));
-            verify(loans.mock, never()).lowerPrice(any(String.class), any(BigInteger.class));
+            verify(loans.mock, never()).raisePrice(any(Address.class), any(BigInteger.class));
+            verify(loans.mock, never()).lowerPrice(any(Address.class), any(BigInteger.class));
         }
 
         @ParameterizedTest
@@ -213,8 +215,8 @@ public class RebalancingTest extends TestBase {
             assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
 
             rebalancingScore.invoke(sm.createAccount(), "rebalance", sicx.getAddress());
-            verify(loans.mock).raisePrice(any(String.class), any(BigInteger.class));
-            verify(loans.mock, never()).lowerPrice(any(String.class), any(BigInteger.class));
+            verify(loans.mock).raisePrice(any(Address.class), any(BigInteger.class));
+            verify(loans.mock, never()).lowerPrice(any(Address.class), any(BigInteger.class));
             
         }
 
@@ -230,8 +232,8 @@ public class RebalancingTest extends TestBase {
             assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
 
             rebalancingScore.invoke(sm.createAccount(), "rebalance", sicx.getAddress());
-            verify(loans.mock, never()).raisePrice(any(String.class), any(BigInteger.class));
-            verify(loans.mock).lowerPrice(any(String.class), any(BigInteger.class));
+            verify(loans.mock, never()).raisePrice(any(Address.class), any(BigInteger.class));
+            verify(loans.mock).lowerPrice(any(Address.class), any(BigInteger.class));
         }
 
         private BigInteger calculateOutputAmount(BigInteger fromTokenLiquidity, BigInteger toTokenLiquidity,
