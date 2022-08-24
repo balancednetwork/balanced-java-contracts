@@ -64,14 +64,14 @@ public class GovernanceTestBase extends UnitTest {
 
     protected Score governance;
 
-    protected JsonObject createJsonDistribtion(String name, BigInteger dist) {
+    protected JsonObject createJsonDistribution(String name, BigInteger dist) {
 
         return new JsonObject()
                 .add("recipient_name", name)
                 .add("dist_percent", dist.toString());
     }
-    
-    protected JsonObject createJsonDisbusment(String token, BigInteger amount) {
+
+    protected JsonObject createJsonDisbursement(String token, BigInteger amount) {
 
         return new JsonObject()
                 .add("address", token)
@@ -211,20 +211,20 @@ public class GovernanceTestBase extends UnitTest {
     protected BigInteger createVoteWith(String name, BigInteger totalSupply, BigInteger forVotes,
                                         BigInteger againstVotes) {
         Account forVoter = sm.createAccount();
-        Account aginstVoter = sm.createAccount();
+        Account againstVoter = sm.createAccount();
 
         BigInteger id = defineTestVoteWithName(name);
         Map<String, Object> vote = getVote(id);
 
         when(baln.mock.totalSupply()).thenReturn(totalSupply);
         when(baln.mock.stakedBalanceOfAt(eq(forVoter.getAddress()), any(BigInteger.class))).thenReturn(forVotes);
-        when(baln.mock.stakedBalanceOfAt(eq(aginstVoter.getAddress()), any(BigInteger.class))).thenReturn(againstVotes);
-   
-        goToDay((BigInteger)vote.get("start day"));
-      
+        when(baln.mock.stakedBalanceOfAt(eq(againstVoter.getAddress()), any(BigInteger.class))).thenReturn(againstVotes);
+
+        goToDay((BigInteger) vote.get("start day"));
+
         //Act
         governance.invoke(forVoter, "castVote", id, true);
-        governance.invoke(aginstVoter, "castVote", id, false);
+        governance.invoke(againstVoter, "castVote", id, false);
 
         return id;
     }

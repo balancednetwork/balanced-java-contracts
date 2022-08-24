@@ -1232,14 +1232,14 @@ public class GovernanceTest extends GovernanceTestBase {
     void createBnusdMarket() {
         // Arrange
         launchBalanced();
-        BigInteger intitalICX = BigInteger.TEN.pow(23);
+        BigInteger initialICX = BigInteger.TEN.pow(23);
         BigInteger bnusdPrice = BigInteger.ONE.pow(18);
 
         BigInteger bnUSDValue = BigInteger.TEN.pow(23);
         BigInteger sICXValue = BigInteger.TEN.pow(23);
 
         BigInteger sicxBnusdPid = BigInteger.TWO;
-        BigInteger stakeAmount = intitalICX.divide(BigInteger.valueOf(7));
+        BigInteger stakeAmount = initialICX.divide(BigInteger.valueOf(7));
 
         when(bnUSD.mock.priceInLoop()).thenReturn(bnusdPrice);
 
@@ -1248,12 +1248,12 @@ public class GovernanceTest extends GovernanceTestBase {
         when(dex.mock.getPoolId(sicx.getAddress(), bnUSD.getAddress())).thenReturn(sicxBnusdPid);
 
         // Act 
-        sm.call(owner, intitalICX, governance.getAddress(), "createBnusdMarket");
+        sm.call(owner, initialICX, governance.getAddress(), "createBnusdMarket");
 
         // Assert
         verify(staking.mock).stakeICX(eq(governance.getAddress()), any(byte[].class));
 
-        BigInteger amount = EXA.multiply(intitalICX).divide(bnusdPrice.multiply(BigInteger.valueOf(7)));
+        BigInteger amount = EXA.multiply(initialICX).divide(bnusdPrice.multiply(BigInteger.valueOf(7)));
         verify(loans.mock).depositAndBorrow("bnUSD", amount, governance.getAddress(), BigInteger.ZERO);
 
         JsonObject depositData = Json.object();
@@ -1304,7 +1304,7 @@ public class GovernanceTest extends GovernanceTestBase {
     void createBalnSicxMarket() {
         // Arrange
         createBalnMarket();
-        BigInteger intitalICX = BigInteger.TEN.pow(23);
+        BigInteger initialICX = BigInteger.TEN.pow(23);
         BigInteger bnusdPrice = BigInteger.ONE.pow(18);
 
         BigInteger sicxValue = BigInteger.TEN.pow(23);

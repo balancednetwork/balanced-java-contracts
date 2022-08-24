@@ -243,7 +243,7 @@ public class GovernanceImpl {
         JsonArray actionsParsed = Json.parse(actions).asArray();
         Context.require(actionsParsed.size() <= maxActions(), TAG + ": Only " + maxActions() + " actions are allowed");
         executeVoteActions(actions);
-        Context.revert(succsesfulVoteExecutionRevertID);
+        Context.revert(successfulVoteExecutionRevertID);
     }
 
     @External(readonly = true)
@@ -1051,7 +1051,7 @@ public class GovernanceImpl {
         try {
             Context.call(Context.getAddress(), "tryExecuteActions", actions);
         } catch (score.UserRevertedException e) {
-            Context.require(e.getCode() == succsesfulVoteExecutionRevertID, "Vote execution failed");
+            Context.require(e.getCode() == successfulVoteExecutionRevertID, "Vote execution failed");
         }
     }
 
@@ -1189,10 +1189,11 @@ public class GovernanceImpl {
 
         String symbol = Context.call(String.class, _token_address, "symbol");
 
-        Address balancedOraclAddress = Addresses.get("balancedOracle");
-        Context.call(balancedOraclAddress, "setPeg", symbol, _peg);
-        BigInteger price = Context.call(BigInteger.class, balancedOraclAddress, "getPriceInLoop", symbol);
-        Context.require(price.compareTo(BigInteger.ZERO) > 0, "Balanced oracle return a invalid icx price for " + symbol + "/" + _peg);
+        Address balancedOracleAddress = Addresses.get("balancedOracle");
+        Context.call(balancedOracleAddress, "setPeg", symbol, _peg);
+        BigInteger price = Context.call(BigInteger.class, balancedOracleAddress, "getPriceInLoop", symbol);
+        Context.require(price.compareTo(BigInteger.ZERO) > 0,
+                "Balanced oracle return a invalid icx price for " + symbol + "/" + _peg);
 
         Context.call(loansAddress, "setDebtCeiling", symbol, _debtCeiling);
         _setLockingRatio(symbol, _lockingRatio);
@@ -1205,12 +1206,14 @@ public class GovernanceImpl {
         Context.call(loansAddress, "addAsset", _token_address, _active, true);
 
         String symbol = Context.call(String.class, _token_address, "symbol");
-        BigInteger poolId = Context.call(BigInteger.class, Addresses.get("dex"), "getPoolId", _token_address, Addresses.get("bnUSD"));
-        
-        Address balancedOraclAddress = Addresses.get("balancedOracle");
-        Context.call(balancedOraclAddress, "addDexPricedAsset", symbol, poolId);
-        BigInteger price = Context.call(BigInteger.class, balancedOraclAddress, "getPriceInLoop", symbol);
-        Context.require(price.compareTo(BigInteger.ZERO) > 0, "Balanced oracle return a invalid icx price for " + symbol);
+        BigInteger poolId = Context.call(BigInteger.class, Addresses.get("dex"), "getPoolId", _token_address,
+                Addresses.get("bnUSD"));
+
+        Address balancedOracleAddress = Addresses.get("balancedOracle");
+        Context.call(balancedOracleAddress, "addDexPricedAsset", symbol, poolId);
+        BigInteger price = Context.call(BigInteger.class, balancedOracleAddress, "getPriceInLoop", symbol);
+        Context.require(price.compareTo(BigInteger.ZERO) > 0,
+                "Balanced oracle return a invalid icx price for " + symbol);
 
         Context.call(loansAddress, "setDebtCeiling", symbol, _debtCeiling);
         _setLockingRatio(symbol, _lockingRatio);

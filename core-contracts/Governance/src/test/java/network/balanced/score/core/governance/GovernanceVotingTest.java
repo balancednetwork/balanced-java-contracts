@@ -258,13 +258,13 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         //Arrange
         Account forVoter1 = sm.createAccount();
         Account forVoter2 = sm.createAccount();
-        Account aginstVoter = sm.createAccount();
+        Account againstVoter = sm.createAccount();
         Account swayedAgainstVoter = sm.createAccount();
         Account swayedForVoter = sm.createAccount();
 
         BigInteger forVoter1Balance = BigInteger.valueOf(3).multiply(EXA);
         BigInteger forVoter2Balance = BigInteger.TWO.multiply(EXA);
-        BigInteger aginstVoterBalance = BigInteger.valueOf(3).multiply(EXA);
+        BigInteger againstVoterBalance = BigInteger.valueOf(3).multiply(EXA);
         BigInteger swayedAgainstVoterBalance = BigInteger.ONE.multiply(EXA);
         BigInteger swayedForVoterBalance = BigInteger.ONE.multiply(EXA);
 
@@ -277,7 +277,7 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         when(baln.mock.totalStakedBalanceOfAt(any(BigInteger.class))).thenReturn(totalSupply);
         when(baln.mock.stakedBalanceOfAt(eq(forVoter1.getAddress()), any(BigInteger.class))).thenReturn(forVoter1Balance);
         when(baln.mock.stakedBalanceOfAt(eq(forVoter2.getAddress()), any(BigInteger.class))).thenReturn(forVoter2Balance);
-        when(baln.mock.stakedBalanceOfAt(eq(aginstVoter.getAddress()), any(BigInteger.class))).thenReturn(aginstVoterBalance);
+        when(baln.mock.stakedBalanceOfAt(eq(againstVoter.getAddress()), any(BigInteger.class))).thenReturn(againstVoterBalance);
         when(baln.mock.stakedBalanceOfAt(eq(swayedAgainstVoter.getAddress()), any(BigInteger.class))).thenReturn(swayedAgainstVoterBalance);
         when(baln.mock.stakedBalanceOfAt(eq(swayedForVoter.getAddress()), any(BigInteger.class))).thenReturn(swayedForVoterBalance);
 
@@ -287,8 +287,8 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         governance.invoke(forVoter1, "castVote", id, true);
         governance.invoke(forVoter2, "castVote", id, true);
         governance.invoke(swayedAgainstVoter, "castVote", id, true);
-       
-        governance.invoke(aginstVoter, "castVote", id, false);
+
+        governance.invoke(againstVoter, "castVote", id, false);
         governance.invoke(swayedForVoter, "castVote", id, false);
 
         governance.invoke(swayedAgainstVoter, "castVote", id, false);
@@ -302,10 +302,11 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         assertEquals(BigInteger.valueOf(3), voterCount.get("for_voters"));
         assertEquals(BigInteger.TWO, voterCount.get("against_voters"));
 
-        BigInteger forVotes = forVoter1Balance.add(forVoter2Balance).add(swayedForVoterBalance).multiply(EXA).divide(totalSupply);
-        BigInteger againstvotes = aginstVoterBalance.add(swayedAgainstVoterBalance).multiply(EXA).divide(totalSupply);
+        BigInteger forVotes =
+                forVoter1Balance.add(forVoter2Balance).add(swayedForVoterBalance).multiply(EXA).divide(totalSupply);
+        BigInteger againstVotes = againstVoterBalance.add(swayedAgainstVoterBalance).multiply(EXA).divide(totalSupply);
         assertEquals(forVotes, vote.get("for"));
-        assertEquals(againstvotes, vote.get("against"));
+        assertEquals(againstVotes, vote.get("against"));
 
         Map<String, BigInteger> swayedAgainstVoterVotes = (Map<String, BigInteger>) governance.call("getVotesOfUser",
                 id, swayedAgainstVoter.getAddress());
@@ -356,7 +357,7 @@ public class GovernanceVotingTest extends GovernanceTestBase {
     }
 
     @Test
-    void evaluateVote_succeded() {
+    void evaluateVote_succeeded() {
         // Arrange
         Account voteEvaluator = sm.createAccount();
         BigInteger forVoters = BigInteger.valueOf(7).multiply(EXA);
@@ -730,8 +731,8 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         executeVoteWithActions(actions.toString());
 
         // Assert
-        BigInteger newQuorom = (BigInteger)governance.call("getQuorum");
-        assertEquals(quorum, newQuorom);
+        BigInteger newQuorum = (BigInteger) governance.call("getQuorum");
+        assertEquals(quorum, newQuorum);
     }
 
     @Test
@@ -807,11 +808,11 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         // Arrange
         String expectedErrorMessage = "Vote execution failed";
         JsonArray disbursement = new JsonArray()
-            .add(createJsonDisbusment("cx1111d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
-            .add(createJsonDisbusment("cx2222d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
-            .add(createJsonDisbusment("cx3333d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
-            .add(createJsonDisbusment("cx4444d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN));
-        
+                .add(createJsonDisbursement("cx1111d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
+                .add(createJsonDisbursement("cx2222d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
+                .add(createJsonDisbursement("cx3333d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
+                .add(createJsonDisbursement("cx4444d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN));
+
         JsonObject setDividendsCategoryPercentageParameter = new JsonObject()
                 .add("_recipient", "hx0000d90f5f113eba575bf793570135f9b10cece1")
                 .add("_amounts", disbursement);
@@ -834,10 +835,10 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         Address address = Address.fromString("hx0000d90f5f113eba575bf793570135f9b10cece1");
         String expectedErrorMessage = "Cannot disburse more than 3 assets at a time.";
         JsonArray disbursement = new JsonArray()
-            .add(createJsonDisbusment("cx1111d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
-            .add(createJsonDisbusment("cx2222d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
-            .add(createJsonDisbusment("cx3333d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN));
-        
+                .add(createJsonDisbursement("cx1111d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
+                .add(createJsonDisbursement("cx2222d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
+                .add(createJsonDisbursement("cx3333d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN));
+
         JsonObject setDividendsCategoryPercentageParameter = new JsonObject()
                 .add("_recipient", address.toString())
                 .add("_amounts", disbursement);
