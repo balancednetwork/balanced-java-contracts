@@ -16,8 +16,6 @@
 
 package network.balanced.score.core.staking;
 
-import foundation.icon.icx.KeyWallet;
-import foundation.icon.score.client.DefaultScoreClient;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
@@ -306,7 +304,7 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
             }
         }
 
-        BigInteger prepDelegationsSum = new BigInteger("0");
+        BigInteger prepDelegationsSum = BigInteger.ZERO;
         for (BigInteger value : prepDelegations.values()) {
             prepDelegationsSum = prepDelegationsSum.add(value);
         }
@@ -530,12 +528,14 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
             if (prep.toString().equals(outsideTopPrep.toString())) {
                 expectedPrepDelegations.put(prep.toString(), userBalance);
             } else if (prep.toString().equals(delegatedAddress.toString())) {
-                expectedPrepDelegations.put(prep.toString(), testerBalance.add(new BigInteger("525").multiply(ONE_EXA).divide(BigInteger.TEN)));
+                expectedPrepDelegations.put(prep.toString(),
+                        testerBalance.add(new BigInteger("525").multiply(ONE_EXA).divide(BigInteger.TEN)));
                 userExpectedDelegations.put(prep.toString(), testerBalance.add(new BigInteger("50").multiply(ONE_EXA)));
                 expectedNetworkDelegations.put(prep.toString(), new BigInteger("54").multiply(ONE_EXA));
             } else if (contains(prep, topPreps)) {
                 expectedNetworkDelegations.put(prep.toString(), new BigInteger("4").multiply(ONE_EXA));
-                expectedPrepDelegations.put(prep.toString(), new BigInteger("25").multiply(ONE_EXA).divide(BigInteger.TEN));
+                expectedPrepDelegations.put(prep.toString(),
+                        new BigInteger("25").multiply(ONE_EXA).divide(BigInteger.TEN));
             }
         }
 
@@ -575,12 +575,16 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
                 expectedPrepDelegations.put(prep.toString(), newUserBalance);
                 userExpectedDelegations.put(prep.toString(), newUserBalance);
             } else if (prep.toString().equals(delegatedAddress.toString())) {
-                expectedPrepDelegations.put(prep.toString(), testerBalance.add(new BigInteger("525").multiply(ONE_EXA).divide(BigInteger.TEN)));
+                expectedPrepDelegations.put(prep.toString(),
+                        testerBalance.add(new BigInteger("525").multiply(ONE_EXA).divide(BigInteger.TEN)));
                 user2ExpectedDelegations.put(prep.toString(), newSupply);
-                expectedNetworkDelegations.put(prep.toString(), new BigInteger("1035").multiply(ONE_EXA).divide(BigInteger.TEN));
+                expectedNetworkDelegations.put(prep.toString(),
+                        new BigInteger("1035").multiply(ONE_EXA).divide(BigInteger.TEN));
             } else if (contains(prep, topPreps)) {
-                expectedNetworkDelegations.put(prep.toString(), new BigInteger("35").multiply(ONE_EXA).divide(BigInteger.TEN));
-                expectedPrepDelegations.put(prep.toString(), new BigInteger("25").multiply(ONE_EXA).divide(BigInteger.TEN));
+                expectedNetworkDelegations.put(prep.toString(),
+                        new BigInteger("35").multiply(ONE_EXA).divide(BigInteger.TEN));
+                expectedPrepDelegations.put(prep.toString(),
+                        new BigInteger("25").multiply(ONE_EXA).divide(BigInteger.TEN));
             }
         }
 
@@ -631,15 +635,19 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
             } else {
                 BigInteger divide = new BigInteger("5").multiply(ONE_EXA).divide(BigInteger.TEN);
                 if (prep.toString().equals(delegatedAddress.toString())) {
-                    expectedPrepDelegations.put(prep.toString(), testerBalance.add(new BigInteger("35").multiply(ONE_EXA).divide(BigInteger.TEN)));
-                    expectedNetworkDelegations.put(prep.toString(), new BigInteger("1045").multiply(ONE_EXA).divide(BigInteger.TEN));
+                    expectedPrepDelegations.put(prep.toString(),
+                            testerBalance.add(new BigInteger("35").multiply(ONE_EXA).divide(BigInteger.TEN)));
+                    expectedNetworkDelegations.put(prep.toString(),
+                            new BigInteger("1045").multiply(ONE_EXA).divide(BigInteger.TEN));
                     userExpectedDelegations.put(prep.toString(), divide);
                     user2ExpectedDelegations.put(prep.toString(), divide);
                 } else if (contains(prep, topPreps)) {
                     userExpectedDelegations.put(prep.toString(), divide);
                     user2ExpectedDelegations.put(prep.toString(), divide);
-                    expectedNetworkDelegations.put(prep.toString(), new BigInteger("45").multiply(ONE_EXA).divide(BigInteger.TEN));
-                    expectedPrepDelegations.put(prep.toString(), new BigInteger("35").multiply(ONE_EXA).divide(BigInteger.TEN));
+                    expectedNetworkDelegations.put(prep.toString(),
+                            new BigInteger("45").multiply(ONE_EXA).divide(BigInteger.TEN));
+                    expectedPrepDelegations.put(prep.toString(),
+                            new BigInteger("35").multiply(ONE_EXA).divide(BigInteger.TEN));
                 }
             }
         }
@@ -691,10 +699,12 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
 
             } else if (prep.toString().equals(delegatedAddress.toString())) {
                 expectedPrepDelegations.put(prep.toString(), testerBalance.add(new BigInteger("3").multiply(ONE_EXA)));
-                expectedNetworkDelegations.put(prep.toString(), new BigInteger("1045").multiply(ONE_EXA).divide(BigInteger.TEN));
+                expectedNetworkDelegations.put(prep.toString(),
+                        new BigInteger("1045").multiply(ONE_EXA).divide(BigInteger.TEN));
                 userExpectedDelegations.put(prep.toString(), divide);
             } else if (contains(prep, topPreps)) {
-                expectedNetworkDelegations.put(prep.toString(), new BigInteger("45").multiply(ONE_EXA).divide(BigInteger.TEN));
+                expectedNetworkDelegations.put(prep.toString(),
+                        new BigInteger("45").multiply(ONE_EXA).divide(BigInteger.TEN));
                 expectedPrepDelegations.put(prep.toString(), new BigInteger("3").multiply(ONE_EXA));
                 userExpectedDelegations.put(prep.toString(), divide);
             }
@@ -744,10 +754,12 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
                 expectedPrepDelegations.put(prep.toString(), new BigInteger("50").multiply(ONE_EXA));
                 userExpectedDelegations.put(prep.toString(), new BigInteger("50").multiply(ONE_EXA));
             } else if (prep.toString().equals(delegatedAddress.toString())) {
-                expectedNetworkDelegations.put(prep.toString(), new BigInteger("1035").multiply(ONE_EXA).divide(BigInteger.TEN));
+                expectedNetworkDelegations.put(prep.toString(),
+                        new BigInteger("1035").multiply(ONE_EXA).divide(BigInteger.TEN));
                 expectedPrepDelegations.put(prep.toString(), new BigInteger("103").multiply(ONE_EXA));
             } else if (contains(prep, topPreps)) {
-                expectedNetworkDelegations.put(prep.toString(), new BigInteger("35").multiply(ONE_EXA).divide(BigInteger.TEN));
+                expectedNetworkDelegations.put(prep.toString(),
+                        new BigInteger("35").multiply(ONE_EXA).divide(BigInteger.TEN));
                 expectedPrepDelegations.put(prep.toString(), new BigInteger("3").multiply(ONE_EXA));
             }
         }
@@ -787,7 +799,8 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         Map<String, Object> stakeDetails = systemScore.getStake(stakingAddress);
         List<Map<String, Object>> unstakeInfo2 = (List<Map<String, Object>>) stakeDetails.get("unstakes");
         String unstakeExpected = (String) unstakeInfo2.get(0).get("unstakeBlockHeight");
-        Assertions.assertEquals(unstakeExpected, reader.staking.getUserUnstakeInfo(senderAddress).get(0).get("blockHeight"));
+        Assertions.assertEquals(unstakeExpected, reader.staking.getUserUnstakeInfo(senderAddress).get(0).get(
+                "blockHeight"));
     }
 
     @Test
@@ -837,14 +850,16 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         Map<String, BigInteger> userDelegations = reader.staking.getAddressDelegations(senderAddress);
         assertEquals(previousTotalStake.subtract(new BigInteger("50").multiply(ONE_EXA)),
                 reader.staking.getTotalStake());
-        assertEquals(previousUnstakingAmount.add(new BigInteger("50").multiply(ONE_EXA)), reader.staking.getUnstakingAmount());
+        assertEquals(previousUnstakingAmount.add(new BigInteger("50").multiply(ONE_EXA)),
+                reader.staking.getUnstakingAmount());
         assertEquals(previousTotalSupply.subtract(new BigInteger("50").multiply(ONE_EXA)),
                 reader.sicx.totalSupply());
         assertEquals(userBalance.subtract(new BigInteger("50").multiply(ONE_EXA)),
                 reader.sicx.balanceOf(senderAddress));
 
 
-        List<Map<String, Object>> userUnstakeInfo = reader.staking.getUserUnstakeInfo(Address.fromString("hx8119b3eebeb9f857efb3b135275ac3775cbc6664"));
+        List<Map<String, Object>> userUnstakeInfo = reader.staking.getUserUnstakeInfo(Address.fromString(
+                "hx8119b3eebeb9f857efb3b135275ac3775cbc6664"));
         assertEquals("hx8119b3eebeb9f857efb3b135275ac3775cbc6664", userUnstakeInfo.get(0).get("sender"));
         assertEquals(senderAddress.toString(), userUnstakeInfo.get(0).get("from"));
         String hexValue = (String) userUnstakeInfo.get(0).get("amount");
@@ -1074,10 +1089,10 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         String hexVal = (String) secondItem.get(1);
         hexVal = hexVal.replace("0x", "");
         assertEquals(new BigInteger("10000000000000000000"), new BigInteger(hexVal, 16));
-        List<Object> thirdtItem = unstakeInfo.get(2);
-        assertEquals(senderAddress.toString(), thirdtItem.get(2).toString());
-        assertEquals(senderAddress.toString(), thirdtItem.get(4).toString());
-        String hexValue = (String) thirdtItem.get(1);
+        List<Object> thirdItem = unstakeInfo.get(2);
+        assertEquals(senderAddress.toString(), thirdItem.get(2).toString());
+        assertEquals(senderAddress.toString(), thirdItem.get(4).toString());
+        String hexValue = (String) thirdItem.get(1);
         hexValue = hexValue.replace("0x", "");
         assertEquals(new BigInteger("10000000000000000000"), new BigInteger(hexValue, 16));
     }
@@ -1138,12 +1153,16 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         for (Address prep : prepList) {
             if (contains(prep, topPreps)) {
                 if (prep.toString().equals(delegatedAddress.toString())) {
-                    expectedPrepDelegations.put(prep.toString(), new BigInteger("2505").multiply(ONE_EXA).divide(BigInteger.TEN));
+                    expectedPrepDelegations.put(prep.toString(),
+                            new BigInteger("2505").multiply(ONE_EXA).divide(BigInteger.TEN));
                     userExpectedDelegations.put(prep.toString(), new BigInteger("250").multiply(ONE_EXA));
-                    expectedNetworkDelegations.put(prep.toString(), new BigInteger("2505").multiply(ONE_EXA).divide(BigInteger.TEN));
+                    expectedNetworkDelegations.put(prep.toString(),
+                            new BigInteger("2505").multiply(ONE_EXA).divide(BigInteger.TEN));
                 } else {
-                    expectedNetworkDelegations.put(prep.toString(), new BigInteger("5").multiply(ONE_EXA).divide(BigInteger.TEN));
-                    expectedPrepDelegations.put(prep.toString(), new BigInteger("5").multiply(ONE_EXA).divide(BigInteger.TEN));
+                    expectedNetworkDelegations.put(prep.toString(),
+                            new BigInteger("5").multiply(ONE_EXA).divide(BigInteger.TEN));
+                    expectedPrepDelegations.put(prep.toString(),
+                            new BigInteger("5").multiply(ONE_EXA).divide(BigInteger.TEN));
                 }
             }
         }
@@ -1189,7 +1208,8 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
 
             if (prep.toString().equals(delegatedAddress.toString())) {
                 expectedPrepDelegations.put(prep.toString(), new BigInteger("201").multiply(ONE_EXA));
-                userExpectedDelegations.put(prep.toString(), userBalance.subtract(new BigInteger("50").multiply(ONE_EXA)));
+                userExpectedDelegations.put(prep.toString(),
+                        userBalance.subtract(new BigInteger("50").multiply(ONE_EXA)));
                 expectedNetworkDelegations.put(prep.toString(), new BigInteger("201").multiply(ONE_EXA));
                 user2ExpectedDelegations.put(prep.toString(), ONE_EXA);
             } else if (contains(prep, topPreps)) {
@@ -1246,7 +1266,8 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
 
             if (prep.toString().equals(delegatedAddress.toString())) {
                 expectedPrepDelegations.put(prep.toString(), new BigInteger("191").multiply(ONE_EXA));
-                userExpectedDelegations.put(prep.toString(), userBalance.subtract(new BigInteger("10").multiply(ONE_EXA)));
+                userExpectedDelegations.put(prep.toString(),
+                        userBalance.subtract(new BigInteger("10").multiply(ONE_EXA)));
                 expectedNetworkDelegations.put(prep.toString(), new BigInteger("191").multiply(ONE_EXA));
             } else if (contains(prep, topPreps)) {
                 expectedNetworkDelegations.put(prep.toString(), ONE_EXA);
@@ -1290,7 +1311,8 @@ public class StakingIntegrationTest implements ScoreIntegrationTest {
         Map<String, Object> stakeDetails = systemScore.getStake(stakingAddress);
         List<Map<String, Object>> unstakeInfo2 = (List<Map<String, Object>>) stakeDetails.get("unstakes");
         String unstakeExpected = (String) unstakeInfo2.get(0).get("unstakeBlockHeight");
-        Assertions.assertEquals(unstakeExpected, reader.staking.getUserUnstakeInfo(senderAddress).get(0).get("blockHeight"));
+        Assertions.assertEquals(unstakeExpected, reader.staking.getUserUnstakeInfo(senderAddress).get(0).get(
+                "blockHeight"));
     }
 
 
