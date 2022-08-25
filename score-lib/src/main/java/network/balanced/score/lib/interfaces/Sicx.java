@@ -16,15 +16,14 @@
 
 package network.balanced.score.lib.interfaces;
 
+import foundation.icon.score.client.ScoreClient;
+import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.StakingAddress;
 import network.balanced.score.lib.interfaces.tokens.IRC2BurnableInterface;
 import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
 import score.annotation.External;
 
 import java.math.BigInteger;
-
-import foundation.icon.score.client.ScoreClient;
-import foundation.icon.score.client.ScoreInterface;
 
 @ScoreClient
 @ScoreInterface

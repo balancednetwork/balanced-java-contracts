@@ -17,7 +17,9 @@
 package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
-import score.*;
+import foundation.icon.score.client.ScoreInterface;
+import network.balanced.score.lib.structs.PrepDelegations;
+import score.Address;
 import score.annotation.External;
 import score.annotation.Optional;
 import score.annotation.Payable;
@@ -25,9 +27,6 @@ import score.annotation.Payable;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
-
-import foundation.icon.score.client.ScoreInterface;
-import network.balanced.score.lib.structs.PrepDelegations;
 
 @ScoreClient
 @ScoreInterface

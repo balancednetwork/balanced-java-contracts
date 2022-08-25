@@ -15,6 +15,7 @@
  */
 
 package network.balanced.score.lib.structs;
+
 import score.Address;
 
 public class BalancedAddresses {

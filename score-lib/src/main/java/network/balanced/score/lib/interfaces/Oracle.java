@@ -17,20 +17,19 @@
 
 package network.balanced.score.lib.interfaces;
 
+import foundation.icon.score.client.ScoreClient;
+import foundation.icon.score.client.ScoreInterface;
 import score.annotation.External;
 
 import java.math.BigInteger;
 import java.util.Map;
 
-import foundation.icon.score.client.ScoreClient;
-import foundation.icon.score.client.ScoreInterface;
-
 @ScoreInterface
 @ScoreClient
 public interface Oracle {
     @External(readonly = true)
-    Map<String, Object>  get_reference_data(String base, String quote);
-    
+    Map<String, Object> get_reference_data(String base, String quote);
+
     @External
     void setICXRate(String symbol, BigInteger rate);
 }
