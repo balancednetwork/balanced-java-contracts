@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import score.Address;
+import score.Context;
 import scorex.util.HashMap;
 
 public class ArbitraryCallManager {
@@ -36,7 +37,7 @@ public class ArbitraryCallManager {
           GovernanceImpl.call(address, method, params);
      }
 
-     private static Object[] getConvertedParameters(JsonArray params) {
+     public static Object[] getConvertedParameters(JsonArray params) {
           Object[] convertedParameters = new Object[params.size()];
           int i = 0;
           for (JsonValue param : params) {
@@ -46,7 +47,7 @@ public class ArbitraryCallManager {
           return convertedParameters;
      }
      
-     private static Object getConvertedParameter(JsonValue param) {
+     public static Object getConvertedParameter(JsonValue param) {
           JsonObject member = param.asObject();
           String type = member.getString("type", null);
           JsonValue paramValue = member.get("value");
@@ -74,6 +75,7 @@ public class ArbitraryCallManager {
                case "Struct":
                     return parse(value, isArray, jsonValue -> parseStruct(jsonValue.asObject()));
                case "bytes":
+               case "byte[]":
                     return parse(value, isArray, jsonValue -> convertBytesParam(jsonValue));
           }
 
@@ -100,12 +102,13 @@ public class ArbitraryCallManager {
      }
 
      private static Object convertBytesParam(JsonValue value) {
-          String stringValue = value.asString();
-          if (stringValue.startsWith("0x") && (stringValue.length() % 2 == 0)) {
-               throw new IllegalArgumentException("Illegal bytes format"); 
+          String hex = value.asString();
+          Context.require(hex.length() % 2 == 0, "Illegal bytes format");
+
+          if (hex.startsWith("0x")) {
+               hex = hex.substring(2);
           }
 
-          String hex = stringValue.substring(2);
           int len = hex.length() / 2;
           byte[] bytes = new byte[len];
           for (int i = 0; i < len; i++) {
@@ -113,7 +116,7 @@ public class ArbitraryCallManager {
                bytes[i] = (byte) Integer.parseInt(hex.substring(j, j + 2), 16);
           }
 
-          return (Object) bytes;
+          return bytes;
      }
 
      private static Object parseStruct(JsonObject jsonStruct) {
