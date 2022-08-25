@@ -27,7 +27,7 @@ import static network.balanced.score.core.governance.utils.GovernanceConstants.*
 
 import java.util.Map;
 
-public class AddressManager {
+public class ContractManager {
     public static final VarDB<Address> loans = Context.newVarDB("loans", Address.class);
     public static final VarDB<Address> dex = Context.newVarDB("dex", Address.class);
     public static final VarDB<Address> staking = Context.newVarDB("staking", Address.class);
@@ -46,7 +46,7 @@ public class AddressManager {
     public static final VarDB<Address> stakedLp = Context.newVarDB("stakedLp", Address.class);
     public static final VarDB<Address> balancedOracle = Context.newVarDB("balancedOracle", Address.class);
     
-    private AddressManager() {}
+    private ContractManager() {}
 
     public static Address get(String key) {
         if (key.equals("governance")) {

@@ -1,6 +1,6 @@
 package network.balanced.score.core.governance.proposal;
 
-import network.balanced.score.core.governance.utils.AddressManager;
+import network.balanced.score.core.governance.utils.ContractManager;
 import network.balanced.score.core.governance.utils.ArbitraryCallManager;
 
 import score.Address;
@@ -30,7 +30,12 @@ public class ProposalManager {
         Context.require(checkBalnVoteCriterion(Context.getCaller()), "User needs at least " + balnVoteDefinitionCriterion.get().divide(BigInteger.valueOf(100)) + "% of total baln supply staked to define a vote.");
         verifyTransactions(actions);
 
-        call(AddressManager.get("bnUSD"), "govTransfer", Context.getCaller(), AddressManager.get("daofund"), bnusdVoteDefinitionFee.getOrDefault(BigInteger.ONE), new byte[0]);
+        call(ContractManager.get("bnUSD"), 
+            "govTransfer", 
+            Context.getCaller(), 
+            ContractManager.get("daofund"), 
+            bnusdVoteDefinitionFee.getOrDefault(BigInteger.ONE),
+            new byte[0]);
 
         ProposalDB.createProposal(
                 name,
@@ -48,9 +53,12 @@ public class ProposalManager {
 
     public static void cancelVote(BigInteger vote_index) {
         ProposalDB proposal = new ProposalDB(vote_index);
-        Context.require(vote_index.compareTo(BigInteger.ONE) >= 0, "There is no proposal with index " + vote_index);
-        Context.require(vote_index.compareTo(proposal.proposalsCount.get()) <= 0, "There is no proposal with index " + vote_index);
-        Context.require(proposal.status.get().equals(ProposalStatus.STATUS[ProposalStatus.ACTIVE]), "Proposal can be cancelled only from active status.");
+        Context.require(vote_index.compareTo(BigInteger.ONE) >= 0,
+                        "There is no proposal with index " + vote_index);
+        Context.require(vote_index.compareTo(proposal.proposalsCount.get()) <= 0, 
+                        "There is no proposal with index " + vote_index);
+        Context.require(proposal.status.get().equals(ProposalStatus.STATUS[ProposalStatus.ACTIVE]), 
+                        "Proposal can be cancelled only from active status.");
         Context.require(Context.getCaller().equals(proposal.proposer.get()) ||
                         Context.getCaller().equals(Context.getOwner()),
                 "Only owner or proposer may call this method.");
@@ -86,7 +94,7 @@ public class ProposalManager {
         Address from = Context.getCaller();
         BigInteger snapshot = proposal.voteSnapshot.get();
 
-        BigInteger totalVote = call(BigInteger.class, AddressManager.get("baln"), "stakedBalanceOfAt", from, snapshot);
+        BigInteger totalVote = call(BigInteger.class, ContractManager.get("baln"), "stakedBalanceOfAt", from, snapshot);
 
         Context.require(!totalVote.equals(BigInteger.ZERO), TAG + "Balanced tokens need to be staked to cast the vote.");
 
@@ -236,24 +244,24 @@ public class ProposalManager {
         }
 
         proposal.feeRefunded.set(true);
-        call(AddressManager.get("bnUSD"), "govTransfer", AddressManager.get("daofund"), proposal.proposer.get(), proposal.fee.get(), new byte[0]);
+        call(ContractManager.get("bnUSD"), "govTransfer", ContractManager.get("daofund"), proposal.proposer.get(), proposal.fee.get(), new byte[0]);
     }
 
     private static BigInteger totalBaln(BigInteger _day) {
-        return call(BigInteger.class, AddressManager.get("baln"), "totalStakedBalanceOfAt", _day);
+        return call(BigInteger.class, ContractManager.get("baln"), "totalStakedBalanceOfAt", _day);
     }
 
     private static boolean checkBalnVoteCriterion(Address address) {
-        BigInteger balnTotal = call(BigInteger.class, AddressManager.get("baln"), "totalSupply");
-        BigInteger userStaked = call(BigInteger.class, AddressManager.get("baln"), "stakedBalanceOf", address);
+        BigInteger balnTotal = call(BigInteger.class, ContractManager.get("baln"), "totalSupply");
+        BigInteger userStaked = call(BigInteger.class, ContractManager.get("baln"), "stakedBalanceOf", address);
         BigInteger limit = balnVoteDefinitionCriterion.get();
         BigInteger userPercentage = POINTS.multiply(userStaked).divide(balnTotal);
         return userPercentage.compareTo(limit) >= 0;
     }
 
     private static void _refundVoteDefinitionFee(ProposalDB proposal) {
-        Address daoFund = AddressManager.get("daofund");
-        call(AddressManager.get("bnUSD"), "govTransfer", daoFund, proposal.proposer.get(), proposal.fee.get(), new byte[0]);
+        Address daoFund = ContractManager.get("daofund");
+        call(ContractManager.get("bnUSD"), "govTransfer", daoFund, proposal.proposer.get(), proposal.fee.get(), new byte[0]);
         proposal.feeRefunded.set(true);
     }
 

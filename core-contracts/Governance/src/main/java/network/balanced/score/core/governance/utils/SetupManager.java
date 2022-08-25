@@ -18,24 +18,24 @@ public class SetupManager {
     
     public static void configureBalanced() {
         for (Map<String, Object> asset : ASSETS) {
-            Address tokenAddress = AddressManager.get((String) asset.get("address"));
+            Address tokenAddress = ContractManager.get((String) asset.get("address"));
             call(
-                    AddressManager.get("loans"),
+                    ContractManager.get("loans"),
                     "addAsset",
                     tokenAddress,
                     asset.get("active"),
                     asset.get("collateral")
             );
-            call(AddressManager.get("dividends"), "addAcceptedTokens", tokenAddress);
+            call(ContractManager.get("dividends"), "addAcceptedTokens", tokenAddress);
         }
 
         Address[] acceptedFeeTokens = new Address[]{
-            AddressManager.get("sicx"), 
-            AddressManager.get("bnUSD"), 
-            AddressManager.get("baln")
+            ContractManager.get("sicx"), 
+            ContractManager.get("bnUSD"), 
+            ContractManager.get("baln")
         };
 
-        call(AddressManager.get("feehandler"), "setAcceptedDividendTokens", (Object) acceptedFeeTokens);
+        call(ContractManager.get("feehandler"), "setAcceptedDividendTokens", (Object) acceptedFeeTokens);
     }
 
     public static void launchBalanced() {
@@ -53,23 +53,23 @@ public class SetupManager {
         _setTimeOffset(timeDelta);
 
         for (Map<String, String> source : DATA_SOURCES) {
-            call(AddressManager.get("rewards"), "addNewDataSource", source.get("name"), AddressManager.get(source.get("address")));
+            call(ContractManager.get("rewards"), "addNewDataSource", source.get("name"), ContractManager.get(source.get("address")));
         }
 
-        call(AddressManager.get("rewards"), "updateBalTokenDistPercentage", (Object) RECIPIENTS);
+        call(ContractManager.get("rewards"), "updateBalTokenDistPercentage", (Object) RECIPIENTS);
     }
 
     public static void createBnusdMarket() {
         BigInteger value = Context.getValue();
         Context.require(!value.equals(BigInteger.ZERO), TAG + "ICX sent must be greater than zero.");
 
-        Address dexAddress = AddressManager.get("dex");
-        Address sICXAddress = AddressManager.get("sicx");
-        Address bnUSDAddress = AddressManager.get("bnUSD");
-        Address stakedLpAddress = AddressManager.get("stakedLp");
-        Address stakingAddress = AddressManager.get("staking");
-        Address rewardsAddress = AddressManager.get("rewards");
-        Address loansAddress = AddressManager.get("loans");
+        Address dexAddress = ContractManager.get("dex");
+        Address sICXAddress = ContractManager.get("sicx");
+        Address bnUSDAddress = ContractManager.get("bnUSD");
+        Address stakedLpAddress = ContractManager.get("stakedLp");
+        Address stakingAddress = ContractManager.get("staking");
+        Address rewardsAddress = ContractManager.get("rewards");
+        Address loansAddress = ContractManager.get("loans");
 
         BigInteger price = call(BigInteger.class, bnUSDAddress, "priceInLoop");
         BigInteger amount = EXA.multiply(value).divide(price.multiply(BigInteger.valueOf(7)));
@@ -101,16 +101,16 @@ public class SetupManager {
             createDistributionPercentage("sICX/bnUSD", BigInteger.valueOf(175).multiply(pow(BigInteger.TEN, 15)))
         };
 
-        call(AddressManager.get("rewards"), "updateBalTokenDistPercentage", (Object) recipients);
+        call(ContractManager.get("rewards"), "updateBalTokenDistPercentage", (Object) recipients);
     }
 
     public static void createBalnMarket(BigInteger _bnUSD_amount, BigInteger _baln_amount) {
-        Address dexAddress = AddressManager.get("dex");
-        Address balnAddress = AddressManager.get("baln");
-        Address bnUSDAddress = AddressManager.get("bnUSD");
-        Address stakedLpAddress = AddressManager.get("stakedLp");
-        Address rewardsAddress = AddressManager.get("rewards");
-        Address loansAddress = AddressManager.get("loans");
+        Address dexAddress = ContractManager.get("dex");
+        Address balnAddress = ContractManager.get("baln");
+        Address bnUSDAddress = ContractManager.get("bnUSD");
+        Address stakedLpAddress = ContractManager.get("stakedLp");
+        Address rewardsAddress = ContractManager.get("rewards");
+        Address loansAddress = ContractManager.get("loans");
 
         call(rewardsAddress, "claimRewards");
         call(loansAddress, "depositAndBorrow", "bnUSD", _bnUSD_amount, Context.getAddress(), BigInteger.ZERO);
@@ -142,11 +142,11 @@ public class SetupManager {
     }
 
     public static void createBalnSicxMarket(BigInteger _sicx_amount, BigInteger _baln_amount) {
-        Address dexAddress = AddressManager.get("dex");
-        Address balnAddress = AddressManager.get("baln");
-        Address sICXAddress = AddressManager.get("sicx");
-        Address stakedLpAddress = AddressManager.get("stakedLp");
-        Address rewardsAddress = AddressManager.get("rewards");
+        Address dexAddress = ContractManager.get("dex");
+        Address balnAddress = ContractManager.get("baln");
+        Address sICXAddress = ContractManager.get("sicx");
+        Address stakedLpAddress = ContractManager.get("stakedLp");
+        Address rewardsAddress = ContractManager.get("rewards");
 
         call(rewardsAddress, "claimRewards");
 
@@ -174,6 +174,6 @@ public class SetupManager {
                 createDistributionPercentage("BALN/sICX", BigInteger.valueOf(10).multiply(pow(BigInteger.TEN, 16)))
         };
 
-        call(AddressManager.get("rewards"), "updateBalTokenDistPercentage", (Object) recipients);
+        call(ContractManager.get("rewards"), "updateBalTokenDistPercentage", (Object) recipients);
     }
 }

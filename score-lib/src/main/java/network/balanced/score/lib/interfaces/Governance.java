@@ -91,9 +91,6 @@ public interface Governance extends
     void execute(String transactions);
 
     @External(readonly = true)
-    int maxTransactions();
-
-    @External(readonly = true)
     BigInteger getProposalCount();
 
     @External(readonly = true)
