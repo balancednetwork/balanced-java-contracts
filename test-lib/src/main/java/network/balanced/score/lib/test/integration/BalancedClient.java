@@ -15,27 +15,22 @@
  */
 package network.balanced.score.lib.test.integration;
 
+import com.eclipsesource.json.JsonObject;
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
 import network.balanced.score.lib.interfaces.*;
-
-import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.chain;
-import network.balanced.score.lib.interfaces.base.*;
-import network.balanced.score.lib.interfaces.tokens.*;
 import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
-import network.balanced.score.lib.structs.BalancedAddresses;
-
-import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
-import static network.balanced.score.lib.test.integration.BalancedUtils.*;
+import network.balanced.score.lib.interfaces.tokens.IRC2MintableScoreClient;
 
 import java.math.BigInteger;
 import java.util.Map;
 
-import com.eclipsesource.json.JsonObject;
+import static network.balanced.score.lib.test.integration.BalancedUtils.hexObjectToBigInteger;
+import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.chain;
 
 public class BalancedClient {
-    private Balanced balanced;
+    private final Balanced balanced;
     public final KeyWallet wallet;
 
     public GovernanceScoreClient governance;
@@ -67,16 +62,22 @@ public class BalancedClient {
         rewards = new RewardsScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.rewards._address());
         loans = new LoansScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.loans._address());
         baln = new BalancedTokenScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.baln._address());
-        rebalancing = new RebalancingScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.rebalancing._address());
+        rebalancing = new RebalancingScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
+                balanced.rebalancing._address());
         sicx = new SicxScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.sicx._address());
         dex = new DexScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.dex._address());
-        stability = new StabilityScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.stability._address());
-        stakedLp = new StakedLPScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.stakedLp._address());
-        dividends = new DividendsScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.dividends._address());
+        stability = new StabilityScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
+                balanced.stability._address());
+        stakedLp = new StakedLPScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
+                balanced.stakedLp._address());
+        dividends = new DividendsScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
+                balanced.dividends._address());
         reserve = new ReserveScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.reserve._address());
-        balancedOracle = new BalancedOracleScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.balancedOracle._address());
+        balancedOracle = new BalancedOracleScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
+                balanced.balancedOracle._address());
 
-        systemScore = new SystemInterfaceScoreClient(chain.getEndpointURL(), chain.networkId, wallet, DefaultScoreClient.ZERO_ADDRESS);
+        systemScore = new SystemInterfaceScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
+                DefaultScoreClient.ZERO_ADDRESS);
     }
 
     public score.Address getAddress() {
@@ -84,13 +85,14 @@ public class BalancedClient {
     }
 
     public IRC2Mintable irc2(score.Address address) {
-       return new IRC2MintableScoreClient(chain.getEndpointURL(), chain.networkId, wallet, new Address(address.toString()));
+        return new IRC2MintableScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
+                new Address(address.toString()));
     }
 
     public byte[] createBorrowData(BigInteger amount) {
         JsonObject data = new JsonObject()
-            .add("_asset", "bnUSD")
-            .add("_amount", amount.toString());
+                .add("_asset", "bnUSD")
+                .add("_amount", amount.toString());
 
         return data.toString().getBytes();
     }
@@ -111,17 +113,21 @@ public class BalancedClient {
         loans.borrow(collateral, "bnUSD", amount);
     }
 
+    @SuppressWarnings("unchecked")
     public BigInteger getLoansCollateralPosition(String symbol) {
-        Map<String, Map<String, String>> assets = (Map<String, Map<String, String>>) loans.getAccountPositions(getAddress()).get("holdings");
+        Map<String, Map<String, String>> assets =
+                (Map<String, Map<String, String>>) loans.getAccountPositions(getAddress()).get("holdings");
         if (!assets.containsKey(symbol)) {
             return BigInteger.ZERO;
         }
         return hexObjectToBigInteger(assets.get(symbol).get(symbol));
     }
 
+    @SuppressWarnings("unchecked")
     public BigInteger getLoansAssetPosition(String collateralSymbol, String assetSymbol) {
-        Map<String, Map<String, String>> assets = (Map<String, Map<String, String>>) loans.getAccountPositions(getAddress()).get("holdings");
-        if (!assets.containsKey(collateralSymbol) || !assets.get(collateralSymbol).containsKey(assetSymbol) ) {
+        Map<String, Map<String, String>> assets =
+                (Map<String, Map<String, String>>) loans.getAccountPositions(getAddress()).get("holdings");
+        if (!assets.containsKey(collateralSymbol) || !assets.get(collateralSymbol).containsKey(assetSymbol)) {
             return BigInteger.ZERO;
         }
         return hexObjectToBigInteger(assets.get(collateralSymbol).get(assetSymbol));
