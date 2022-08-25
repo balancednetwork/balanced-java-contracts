@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ public class AddressManager {
         bnUSD.set(addresses.bnUSD);
         baln.set(addresses.baln);
         bwt.set(addresses.bwt);
-        router .set(addresses.router);
+        router.set(addresses.router);
         rebalancing.set(addresses.rebalancing);
         feehandler.set(addresses.feehandler);
         stakedLp.set(addresses.stakedLp);
@@ -104,15 +104,15 @@ public class AddressManager {
         for (String contractToBeSet : ADDRESSES.get(contract)) {
             String setMethod = SETTERS.get(contractToBeSet);
             try {
-                GovernanceImpl.call(get(contract), setMethod, get(contractToBeSet));  
+                GovernanceImpl.call(get(contract), setMethod, get(contractToBeSet));
             } catch (Exception e) {
                 // to make migration/testing easier
 
                 if (contractToBeSet.equals("bnUSD")) {
                     try {
-                        GovernanceImpl.call(get(contract), "setbnUSD", get(contractToBeSet));  
-                    } catch (Exception e2) {
-                    
+                        GovernanceImpl.call(get(contract), "setbnUSD", get(contractToBeSet));
+                    } catch (Exception ignored) {
+
                     }
                 }
             }
@@ -129,9 +129,9 @@ public class AddressManager {
                     // to make migration/testing easier
                     if (contract.equals("bnUSD")) {
                         try {
-                            GovernanceImpl.call(get(targetContract), "setbnUSD", get(contract));  
-                        } catch (Exception e2) {
-                        
+                            GovernanceImpl.call(get(targetContract), "setbnUSD", get(contract));
+                        } catch (Exception ignored) {
+
                         }
                     }
                 }
@@ -143,7 +143,7 @@ public class AddressManager {
     public static void setAdmins() {
         for (String targetContract : ADMIN_ADDRESSES.keySet()) {
             String contract = ADMIN_ADDRESSES.get(targetContract);
-            GovernanceImpl.call(get(targetContract), "setAdmin", get(contract));        
+            GovernanceImpl.call(get(targetContract), "setAdmin", get(contract));
         }
     }
 }

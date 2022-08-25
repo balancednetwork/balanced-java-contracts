@@ -42,7 +42,8 @@ class BalancedOracleTestSetup extends BalancedOracleTestBase {
 
     @Test
     void setGetOracle() {
-        testContractSettersAndGetters(balancedOracle, governance, adminAccount, "setOracle", oracle.getAddress(), "getOracle");
+        testContractSettersAndGetters(balancedOracle, governance, adminAccount, "setOracle", oracle.getAddress(),
+                "getOracle");
     }
 
     @Test
@@ -52,7 +53,8 @@ class BalancedOracleTestSetup extends BalancedOracleTestBase {
 
     @Test
     void setGetStaking() {
-        testContractSettersAndGetters(balancedOracle, governance, adminAccount, "setStaking", staking.getAddress(), "getStaking");
+        testContractSettersAndGetters(balancedOracle, governance, adminAccount, "setStaking", staking.getAddress(),
+                "getStaking");
     }
 
     @Test
@@ -80,7 +82,7 @@ class BalancedOracleTestSetup extends BalancedOracleTestBase {
         String expectedErrorMessage = balnSymbol + " is not listed as a dex priced asset";
         Executable getBalnPoolID = () -> balancedOracle.call("getAssetBnusdPoolId", balnSymbol);
         expectErrorMessage(getBalnPoolID, expectedErrorMessage);
-        
+
         assertEquals(ommBnusdPoolID, balancedOracle.call("getAssetBnusdPoolId", ommSymbol));
 
     }

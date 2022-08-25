@@ -300,44 +300,17 @@ public class GovernanceImpl implements Governance {
 
     // External short hand calls, could be done by a set of transactions
     @External
-    public void addCollateral(Address _token_address, boolean _active, String _peg, @Optional BigInteger _limit) {
+    public void addCollateral(Address _token_address, boolean _active, String _peg, BigInteger _lockingRatio,
+                              BigInteger _liquidationRatio, BigInteger _debtCeiling) {
         onlyOwnerOrContract();
-        Address loansAddress = AddressManager.get("loans");
-        Context.call(loansAddress, "addAsset", _token_address, _active, true);
-
-        String symbol = Context.call(String.class, _token_address, "symbol");
-
-        Address balancedOracleAddress = AddressManager.get("balancedOracle");
-        Context.call(balancedOracleAddress, "setPeg", symbol, _peg);
-        BigInteger price = Context.call(BigInteger.class, balancedOracleAddress, "getPriceInLoop", symbol);
-        Context.require(price.compareTo(BigInteger.ZERO) > 0, "Balanced oracle return a invalid icx price for " + symbol + "/" + _peg);
-
-        if (_limit.equals(BigInteger.ZERO)) {
-            return;
-        }
-
-        Context.call(loansAddress, "setCollateralLimit", symbol, _limit);
+        _addCollateral(_token_address, _active, _peg, _lockingRatio, _liquidationRatio, _debtCeiling);
     }
 
     @External
-    public void addDexPricedCollateral(Address _token_address, boolean _active, @Optional BigInteger _limit) {
+    public void addDexPricedCollateral(Address _token_address, boolean _active, BigInteger _lockingRatio,
+                                       BigInteger _liquidationRatio, BigInteger _debtCeiling) {
         onlyOwnerOrContract();
-        Address loansAddress = AddressManager.get("loans");
-        Context.call(loansAddress, "addAsset", _token_address, _active, true);
-
-        String symbol = Context.call(String.class, _token_address, "symbol");
-        BigInteger poolId = Context.call(BigInteger.class, AddressManager.get("dex"), "getPoolId", _token_address, AddressManager.get("bnUSD"));
-        
-        Address balancedOracleAddress = AddressManager.get("balancedOracle");
-        Context.call(balancedOracleAddress, "addDexPricedAsset", symbol, poolId);
-        BigInteger price = Context.call(BigInteger.class, balancedOracleAddress, "getPriceInLoop", symbol);
-        Context.require(price.compareTo(BigInteger.ZERO) > 0, "Balanced oracle return a invalid icx price for " + symbol);
-
-        if (_limit.equals(BigInteger.ZERO)) {
-            return;
-        }
-
-        Context.call(loansAddress, "setCollateralLimit", symbol, _limit);
+        _addDexPricedCollateral(_token_address, _active, _lockingRatio, _liquidationRatio, _debtCeiling);
     }
 
     @External
@@ -377,6 +350,55 @@ public class GovernanceImpl implements Governance {
         Context.call(AddressManager.get("dex"), "setTimeOffset", offset);
         Context.call(AddressManager.get("dividends"), "setTimeOffset", offset);
     }
+
+    public void _addCollateral(Address _token_address, boolean _active, String _peg, BigInteger _lockingRatio,
+                               BigInteger _liquidationRatio, BigInteger _debtCeiling) {
+        Address loansAddress = AddressManager.get("loans");
+        Context.call(loansAddress, "addAsset", _token_address, _active, true);
+
+        String symbol = Context.call(String.class, _token_address, "symbol");
+
+        Address balancedOracleAddress = AddressManager.get("balancedOracle");
+        Context.call(balancedOracleAddress, "setPeg", symbol, _peg);
+        BigInteger price = Context.call(BigInteger.class, balancedOracleAddress, "getPriceInLoop", symbol);
+        Context.require(price.compareTo(BigInteger.ZERO) > 0,
+                "Balanced oracle return a invalid icx price for " + symbol + "/" + _peg);
+
+        Context.call(loansAddress, "setDebtCeiling", symbol, _debtCeiling);
+        _setLockingRatio(symbol, _lockingRatio);
+        _setLiquidationRatio(symbol, _liquidationRatio);
+    }
+
+    public void _addDexPricedCollateral(Address _token_address, boolean _active, BigInteger _lockingRatio,
+                                        BigInteger _liquidationRatio, BigInteger _debtCeiling) {
+        Address loansAddress = AddressManager.get("loans");
+        Context.call(loansAddress, "addAsset", _token_address, _active, true);
+
+        String symbol = Context.call(String.class, _token_address, "symbol");
+        BigInteger poolId = Context.call(BigInteger.class, AddressManager.get("dex"), "getPoolId", _token_address,
+            AddressManager.get("bnUSD"));
+
+        Address balancedOracleAddress = AddressManager.get("balancedOracle");
+        Context.call(balancedOracleAddress, "addDexPricedAsset", symbol, poolId);
+        BigInteger price = Context.call(BigInteger.class, balancedOracleAddress, "getPriceInLoop", symbol);
+        Context.require(price.compareTo(BigInteger.ZERO) > 0,
+                "Balanced oracle return a invalid icx price for " + symbol);
+
+        Context.call(loansAddress, "setDebtCeiling", symbol, _debtCeiling);
+        _setLockingRatio(symbol, _lockingRatio);
+        _setLiquidationRatio(symbol, _liquidationRatio);
+    }
+
+
+    public void _setLockingRatio(String _symbol, BigInteger _value) {
+        Context.call(AddressManager.get("loans"), "setLockingRatio", _symbol, _value);
+    }
+
+    public void _setLiquidationRatio(String _symbol, BigInteger _ratio) {
+        Context.call(AddressManager.get("loans"), "setLiquidationRatio", _symbol, _ratio);
+    }
+
+
 
     public static EventLogger getEventLogger() {
         return new EventLogger();

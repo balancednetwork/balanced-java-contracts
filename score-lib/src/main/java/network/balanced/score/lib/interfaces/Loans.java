@@ -49,9 +49,6 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
     void delegate(PrepDelegations[] prepDelegations);
 
     @External(readonly = true)
-    List<String> checkDeadMarkets();
-
-    @External(readonly = true)
     Address getPositionAddress(int _index);
 
     @External(readonly = true)
@@ -101,13 +98,16 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
     void retireBadDebt(String _symbol, BigInteger _value);
 
     @External
+    void retireBadDebtForCollateral(String _symbol, BigInteger _value, String _collateralSymbol);
+
+    @External
     void returnAsset(String _symbol, BigInteger _value, @Optional String _collateralSymbol);
 
     @External
-    void raisePrice(String _collateralSymbol, BigInteger _total_tokens_required);
+    void raisePrice(Address _collateralAddress, BigInteger _total_tokens_required);
 
     @External
-    void lowerPrice(String _collateralSymbol, BigInteger _total_tokens_required);
+    void lowerPrice(Address _collateralAddress, BigInteger _total_tokens_required);
 
     @External
     void withdrawAndUnstake(BigInteger _value);
@@ -146,10 +146,16 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
     void setNewLoanMinimum(BigInteger _minimum);
 
     @External
-    void setCollateralLimit(String symbol, BigInteger limit);
+    void setDebtCeiling(String symbol, BigInteger limit);
 
     @External(readonly = true)
-    BigInteger getCollateralLimit(String symbol);
+    BigInteger getDebtCeiling(String symbol);
+
+    @External(readonly = true)
+    BigInteger getTotalDebt(String assetSymbol);
+
+    @External(readonly = true)
+    BigInteger getTotalCollateralDebt(String collateral, String assetSymbol);
 
     @External
     void setTimeOffset(BigInteger deltaTime);

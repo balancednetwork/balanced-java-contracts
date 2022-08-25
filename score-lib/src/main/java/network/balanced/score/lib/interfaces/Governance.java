@@ -155,10 +155,10 @@ public interface Governance extends
     BigInteger getLaunchTime();
 
     @External
-    void addCollateral(Address _token_address, boolean _active, String _peg, @Optional BigInteger _limit);
+    void addCollateral(Address _token_address, boolean _active, String _peg, BigInteger _lockingRatio, BigInteger _liquidationRatio, BigInteger _debtCeiling);
     
     @External
-    void addDexPricedCollateral(Address _token_address, boolean _active, @Optional BigInteger _limit);
+    void addDexPricedCollateral(Address _token_address, boolean _active, BigInteger _lockingRatio, BigInteger _liquidationRatio, BigInteger _debtCeiling);
 
     @External
     void delegate(String contract, PrepDelegations[] _delegations);

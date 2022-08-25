@@ -29,11 +29,9 @@ import score.annotation.External;
 import score.annotation.Optional;
 import score.annotation.Payable;
 import scorex.util.ArrayList;
-import scorex.util.HashMap;
 
 import java.math.BigInteger;
 import java.util.List;
-import java.util.Map;
 
 import static network.balanced.score.core.dex.DexDBVariables.*;
 import static network.balanced.score.core.dex.utils.Check.isDexOn;
@@ -147,13 +145,15 @@ public class DexImpl extends AbstractDex {
                 }
                 break;
 
-            } case "_swap_icx": {
+            }
+            case "_swap_icx": {
                 require(fromToken.equals(sicx.get()),
                         TAG + ": InvalidAsset: _swap_icx can only be called with sICX");
                 swapIcx(_from, _value);
                 break;
 
-            } case "_swap":{
+            }
+            case "_swap": {
 
                 // Parse the slippage sent by the user in minimumReceive.
                 // If none is sent, use the maximum.
@@ -181,7 +181,8 @@ public class DexImpl extends AbstractDex {
                 exchange(fromToken, toToken, _from, receiver, _value, minimumReceive);
 
                 break;
-            } case "_donate": {
+            }
+            case "_donate": {
                 require(_from.equals(Context.getOwner()), "Only owner is allowed to donate");
 
                 JsonObject params = json.get("params").asObject();
@@ -191,7 +192,8 @@ public class DexImpl extends AbstractDex {
                 donate(fromToken, toToken, _value);
 
                 break;
-            } default:
+            }
+            default:
                 // If no supported method was sent, revert the transaction
                 Context.revert(100, TAG + ": Unsupported method supplied");
                 break;
@@ -233,7 +235,7 @@ public class DexImpl extends AbstractDex {
         isDexOn();
         Address user = Context.getCaller();
         Address baseToken = poolBase.get(_id.intValue());
-        require(baseToken!=null, TAG + ": invalid pool id");
+        require(baseToken != null, TAG + ": invalid pool id");
         DictDB<Address, BigInteger> userLPBalance = balance.at(_id.intValue());
         BigInteger userBalance = userLPBalance.getOrDefault(user, BigInteger.ZERO);
 

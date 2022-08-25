@@ -116,8 +116,11 @@ public class MultipleAddTest {
 
         this.mintAndTransferTestTokens(tokenDeposit);
         //add the pool of test token and sicx
-        dexUserScoreClient.add(Address.fromString(dexTestThirdScoreAddress), Address.fromString(dexTestFourthScoreAddress), BigInteger.valueOf(50).multiply(EXA), BigInteger.valueOf(50).multiply(EXA), true);
-        BigInteger poolId = dexUserScoreClient.getPoolId(Address.fromString(dexTestThirdScoreAddress), Address.fromString(dexTestFourthScoreAddress));
+        dexUserScoreClient.add(Address.fromString(dexTestThirdScoreAddress),
+                Address.fromString(dexTestFourthScoreAddress), BigInteger.valueOf(50).multiply(EXA),
+                BigInteger.valueOf(50).multiply(EXA), true);
+        BigInteger poolId = dexUserScoreClient.getPoolId(Address.fromString(dexTestThirdScoreAddress),
+                Address.fromString(dexTestFourthScoreAddress));
         Map<String, Object> poolStats = dexUserScoreClient.getPoolStats(poolId);
         assertNull(poolStats.get("name"));
         assertEquals(poolStats.get("base_token").toString(), dexTestThirdScoreAddress);
@@ -131,18 +134,23 @@ public class MultipleAddTest {
         assertEquals(hexToBigInteger(poolStats.get("min_quote").toString()), BigInteger.ZERO);
 
         // after lp is added to the pool, remaining balance is checked
-        assertEquals(previousUserBalance.add(BigInteger.valueOf(150).multiply(EXA)), ownerDexTestFourthScoreClient.balanceOf(userAddress));
-        assertEquals(previousSecondUserBalance.add(BigInteger.valueOf(150).multiply(EXA)), ownerDexTestThirdScoreClient.balanceOf(userAddress));
+        assertEquals(previousUserBalance.add(BigInteger.valueOf(150).multiply(EXA)),
+                ownerDexTestFourthScoreClient.balanceOf(userAddress));
+        assertEquals(previousSecondUserBalance.add(BigInteger.valueOf(150).multiply(EXA)),
+                ownerDexTestThirdScoreClient.balanceOf(userAddress));
 
         this.mintAndTransferTestTokens(tokenDeposit);
 
-        dexUserScoreClient.add(Address.fromString(dexTestThirdScoreAddress), Address.fromString(dexTestFourthScoreAddress), BigInteger.valueOf(80).multiply(EXA), BigInteger.valueOf(60).multiply(EXA), true);
+        dexUserScoreClient.add(Address.fromString(dexTestThirdScoreAddress),
+                Address.fromString(dexTestFourthScoreAddress), BigInteger.valueOf(80).multiply(EXA),
+                BigInteger.valueOf(60).multiply(EXA), true);
 
         // after lp is added to the pool, remaining balance is checked
         assertEquals(BigInteger.valueOf(290).multiply(EXA), ownerDexTestFourthScoreClient.balanceOf(userAddress));
         assertEquals(BigInteger.valueOf(290).multiply(EXA), ownerDexTestThirdScoreClient.balanceOf(userAddress));
 
-        poolId = dexUserScoreClient.getPoolId(Address.fromString(dexTestThirdScoreAddress), Address.fromString(dexTestFourthScoreAddress));
+        poolId = dexUserScoreClient.getPoolId(Address.fromString(dexTestThirdScoreAddress),
+                Address.fromString(dexTestFourthScoreAddress));
         poolStats = dexUserScoreClient.getPoolStats(poolId);
         assertNull(poolStats.get("name"));
         assertEquals(poolStats.get("base_token").toString(), dexTestThirdScoreAddress);
@@ -161,14 +169,16 @@ public class MultipleAddTest {
         assertEquals(updatedPoolStats.get("name").toString(), "DTT/DTBT");
     }
 
-    void mintAndTransferTestTokens(byte[] tokenDeposit){
+    void mintAndTransferTestTokens(byte[] tokenDeposit) {
 
         ownerDexTestThirdScoreClient.mintTo(userAddress, BigInteger.valueOf(200).multiply(EXA));
         ownerDexTestFourthScoreClient.mintTo(userAddress, BigInteger.valueOf(200).multiply(EXA));
 
 
-        userDexTestThirdScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(190).multiply(EXA), tokenDeposit);
-        userDexTestFourthScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(190).multiply(EXA), tokenDeposit);
+        userDexTestThirdScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(190).multiply(EXA),
+                tokenDeposit);
+        userDexTestFourthScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(190).multiply(EXA),
+                tokenDeposit);
 
         //check isQuoteCoinAllowed for test token if not added
         if(!dexUserScoreClient.isQuoteCoinAllowed(Address.fromString(dexTestThirdScoreAddress))) {

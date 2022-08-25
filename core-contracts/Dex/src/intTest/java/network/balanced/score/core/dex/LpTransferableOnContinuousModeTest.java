@@ -104,7 +104,7 @@ public class LpTransferableOnContinuousModeTest {
 
     @Test
     @Order(4)
-    void testBalnPoolTokenTransferableOnContinuousRewards(){
+    void testBalnPoolTokenTransferableOnContinuousRewards() {
         byte[] tokenDeposit = "{\"method\":\"_deposit\",\"params\":{\"none\":\"none\"}}".getBytes();
         mintAndTransferTestTokens(tokenDeposit);
         dexUserScoreClient.add(Address.fromString(dexTestBaseScoreAddress),
@@ -125,16 +125,18 @@ public class LpTransferableOnContinuousModeTest {
         assertEquals(tUsersPrevBalance.add(BigInteger.valueOf(5).multiply(EXA)), tUsersBalance);
     }
 
-    void mintAndTransferTestTokens(byte[] tokenDeposit){
+    void mintAndTransferTestTokens(byte[] tokenDeposit) {
 
         ownerDexTestBaseScoreClient.mintTo(userAddress, BigInteger.valueOf(200).multiply(EXA));
         ownerDexTestFourthScoreClient.mintTo(userAddress, BigInteger.valueOf(200).multiply(EXA));
 
 
         //deposit base token
-        userDexTestBaseScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(190).multiply(EXA), tokenDeposit);
+        userDexTestBaseScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(190).multiply(EXA),
+                tokenDeposit);
         //deposit quote token
-        userDexTestFourthScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(190).multiply(EXA), tokenDeposit);
+        userDexTestFourthScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(190).multiply(EXA),
+                tokenDeposit);
 
         //check isQuoteCoinAllowed for test token if not added
 

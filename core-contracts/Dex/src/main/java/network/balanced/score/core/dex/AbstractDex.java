@@ -30,7 +30,6 @@ import scorex.util.ArrayList;
 import scorex.util.HashMap;
 
 import java.math.BigInteger;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -487,7 +486,7 @@ public abstract class AbstractDex implements Dex {
 
     @External(readonly = true)
     public Map<String, Object> getPoolStatsForPair(Address _base, Address _quote) {
-        BigInteger poolId = getPoolId( _base, _quote);
+        BigInteger poolId = getPoolId(_base, _quote);
         Map<String, Object> poolStats = getPoolStats(poolId);
         Map<String, Object> poolStatsWithId = new HashMap<>();
         poolStatsWithId.put("id", poolId);
@@ -733,7 +732,7 @@ public abstract class AbstractDex implements Dex {
         Swap(BigInteger.valueOf(SICXICX_POOL_ID), sicxAddress, sicxAddress, EOA_ZERO, sender, sender, value,
                 orderIcxValue, BigInteger.valueOf(Context.getBlockTimestamp()), conversionFees, balnFees, newIcxTotal
                 , BigInteger.ZERO, sicxIcxPrice, effectiveFillPrice);
-        
+
         Context.call(rewards.get(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal,
                 oldData);
         Context.call(sicxAddress, "transfer", feeHandler.get(), balnFees);

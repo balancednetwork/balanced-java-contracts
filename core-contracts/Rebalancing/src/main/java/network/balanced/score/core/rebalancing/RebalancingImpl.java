@@ -228,16 +228,15 @@ public class RebalancingImpl implements Rebalancing {
     public void rebalance(@Optional Address collateralAddress) {
         optionalDefault(collateralAddress, sicx.get());
         Address loansScore = loans.get();
-        String symbol = Context.call(String.class, collateralAddress, "symbol");
         Context.require(loansScore != null);
         List<Object> status = getRebalancingStatusFor(collateralAddress);
         boolean forward = (boolean) status.get(0);
         BigInteger tokenAmount = (BigInteger) status.get(1);
         boolean reverse = (boolean) status.get(2);
         if (forward && tokenAmount.signum() > 0) {
-            Context.call(loansScore, "raisePrice", symbol, tokenAmount);
+            Context.call(loansScore, "raisePrice", collateralAddress, tokenAmount);
         } else if (reverse && tokenAmount.signum() > 0) {
-            Context.call(loansScore, "lowerPrice", symbol, tokenAmount.abs());
+            Context.call(loansScore, "lowerPrice", collateralAddress, tokenAmount.abs());
         }
     }
 }

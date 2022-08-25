@@ -62,6 +62,11 @@ public class CollateralDB {
         return new Collateral(COLLATERAL_DB_PREFIX + "|" + collateralAddress);
     }
 
+    public static Collateral getCollateral(Address address) {
+        Context.require(arrayDbContains(collateralAddresses, address), address + " is not a supported collateral type.");
+        return new Collateral(COLLATERAL_DB_PREFIX + "|" + address.toString());
+    }
+
     public static void addCollateral(Address address, Boolean active) {
         String collateralToAdd = address.toString();
         Context.require(!arrayDbContains(collateralAddresses, address), TAG + ": " + collateralToAdd + " already exists in " +

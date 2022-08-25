@@ -16,52 +16,71 @@
  */
 
 package network.balanced.score.core.balancedoracle;
-import score.VarDB;
-import score.BranchDB;
+
 import score.Context;
+import score.DictDB;
+
+import java.math.BigInteger;
 
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Math.exaPow;
-import java.math.BigInteger;
 
 public class EMACalculator {
-   private static final BranchDB<String, VarDB<BigInteger>> movingAverages = Context.newBranchDB("exponential_moving_averages", BigInteger.class);
-   private static final BranchDB<String, VarDB<BigInteger>> lastUpdateBlock = Context.newBranchDB("last_update_blocks", BigInteger.class);
-   private static final BranchDB<String, VarDB<BigInteger>> previousPrices = Context.newBranchDB("previous_prices", BigInteger.class);
+    private static final DictDB<String, BigInteger> movingAverages = Context.newDictDB(
+            "exponential_moving_averages", BigInteger.class);
+    private static final DictDB<String, BigInteger> lastUpdateBlock = Context.newDictDB(
+            "last_update_blocks", BigInteger.class);
+    private static final DictDB<String, BigInteger> previousPrices = Context.newDictDB("previous_prices",
+            BigInteger.class);
 
-   public static BigInteger updateEMA(String symbol, BigInteger currentPrice, BigInteger alpha) {
-      VarDB<BigInteger> lastUpdate = lastUpdateBlock.at(symbol);
-      VarDB<BigInteger> movingAverage = movingAverages.at(symbol);
-      BigInteger lastBlock = lastUpdate.get();
+    public static BigInteger updateEMA(String symbol, BigInteger currentPrice, BigInteger alpha) {
+        BigInteger lastBlock = lastUpdateBlock.get(symbol);
+        BigInteger currentBlock = BigInteger.valueOf(Context.getBlockHeight());
+        if (lastBlock == null) {
+            lastUpdateBlock.set(symbol, currentBlock);
+            movingAverages.set(symbol, currentPrice);
+            previousPrices.set(symbol, currentPrice);
 
-      if (lastBlock == null) {
-         BigInteger currentBlock = BigInteger.valueOf(Context.getBlockHeight());
-         lastUpdate.set(currentBlock);
-         movingAverage.set(currentPrice);
-         previousPrices.at(symbol).set(currentPrice);
-         
-         return currentPrice;
-      }
+            return currentPrice;
+        }
 
-      BigInteger currentBlock = BigInteger.valueOf(Context.getBlockHeight());
-      BigInteger blockDiff = currentBlock.subtract(lastBlock);
-      BigInteger currentMovingAverage = movingAverage.get();
+        BigInteger blockDiff = currentBlock.subtract(lastBlock);
+        BigInteger currentMovingAverage = movingAverages.get(symbol);
 
-      if (blockDiff.equals(BigInteger.ZERO)) {
-         return currentMovingAverage;
-      }
+        if (blockDiff.equals(BigInteger.ZERO)) {
+            return currentMovingAverage;
+        }
 
-      VarDB<BigInteger> previousPrice = previousPrices.at(symbol);
-      BigInteger price = previousPrice.getOrDefault(BigInteger.ZERO);
-      previousPrice.set(currentPrice);
+        BigInteger price = previousPrices.get(symbol);
+        previousPrices.set(symbol, currentPrice);
 
-      BigInteger weight = exaPow(EXA.subtract(alpha), blockDiff.intValue());
-      BigInteger priceChange = price.subtract(currentMovingAverage);
-      BigInteger newMovingAverge = price.subtract(priceChange.multiply(weight).divide(EXA));
+        BigInteger weight = exaPow(EXA.subtract(alpha), blockDiff.intValue());
+        BigInteger priceChange = price.subtract(currentMovingAverage);
+        BigInteger newMovingAverage = price.subtract(priceChange.multiply(weight).divide(EXA));
 
-      lastUpdate.set(currentBlock);
-      movingAverage.set(newMovingAverge);
+        lastUpdateBlock.set(symbol, currentBlock);
+        movingAverages.set(symbol, newMovingAverage);
 
-      return newMovingAverge;
-   }
+        return newMovingAverage;
+    }
+
+    public static BigInteger calculateEMA(String symbol, BigInteger alpha) {
+        BigInteger lastBlock = lastUpdateBlock.get(symbol);
+        BigInteger currentBlock = BigInteger.valueOf(Context.getBlockHeight());
+
+        BigInteger blockDiff = currentBlock.subtract(lastBlock);
+        BigInteger currentMovingAverage = movingAverages.get(symbol);
+
+        if (blockDiff.equals(BigInteger.ZERO)) {
+            return currentMovingAverage;
+        }
+
+        BigInteger price = previousPrices.get(symbol);
+
+        BigInteger weight = exaPow(EXA.subtract(alpha), blockDiff.intValue());
+        BigInteger priceChange = price.subtract(currentMovingAverage);
+        BigInteger newMovingAverage = price.subtract(priceChange.multiply(weight).divide(EXA));
+
+        return newMovingAverage;
+    }
 }

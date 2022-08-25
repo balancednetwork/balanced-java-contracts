@@ -39,12 +39,18 @@ public class Position {
     private final BranchDB<String, VarDB<BigInteger>> created = Context.newBranchDB("created", BigInteger.class);
     private final BranchDB<String, VarDB<Address>> address = Context.newBranchDB("address", Address.class);
     private final BranchDB<String, BranchDB<String, DictDB<String, BigInteger>>> debt = Context.newBranchDB(
-            "loan_balance", BigInteger.class);
+            "loan_balance", BigInteger.class); // Address:CollateralSymbol:AssetSymbol:debt
     private final BranchDB<String, DictDB<String, BigInteger>> collateral = Context.newBranchDB("collateral_balance"
             , BigInteger.class);
     private final BranchDB<String, DictDB<String, BigInteger>> totalDebt = Context.newBranchDB(
         "total_debt_in_asset", BigInteger.class);
 
+    private final BranchDB<String, BranchDB<Integer, DictDB<String, BigInteger>>> assets = Context.newBranchDB("assets",
+        BigInteger.class);
+    private final BranchDB<String, DictDB<String, Boolean>> dataMigrationStatus = Context.newBranchDB("data_migration " +
+        "_status", Boolean.class);
+    private final BranchDB<String, ArrayDB<Integer>> snaps = Context.newBranchDB("snaps", Integer.class);
+    
     private final String dbKey;
 
     Position(String dbKey) {
@@ -83,7 +89,7 @@ public class Position {
         return debt.at(dbKey).at(collateral).getOrDefault(symbol, BigInteger.ZERO);
     }
     
-    private void setTotalDebt(String symbol, BigInteger value) {
+    private void setPositionTotalDebt(String symbol, BigInteger value) {
         totalDebt.at(dbKey).set(symbol, value);
     }
 
@@ -101,27 +107,57 @@ public class Position {
     }
 
     public BigInteger getCollateral(String symbol) {
+        if (symbol.equals(SICX_SYMBOL)) {
+            if (!dataMigrationStatus.at(dbKey).getOrDefault(SICX_SYMBOL, false) && 
+                collateral.at(dbKey).getOrDefault(SICX_SYMBOL, BigInteger.ZERO).equals(BigInteger.ZERO)) {
+    
+                int lastSnapIndex = snaps.at(dbKey).size() - 1;
+                int lastSnap = snaps.at(dbKey).get(lastSnapIndex);
+                BigInteger collateralAmount = assets.at(dbKey).at(lastSnap).getOrDefault(SICX_SYMBOL, BigInteger.ZERO);
+                if (collateralAmount.compareTo(BigInteger.ZERO) > 0) {
+                    setCollateral(SICX_SYMBOL, collateralAmount);
+                }
+
+                dataMigrationStatus.at(dbKey).set(SICX_SYMBOL, true);
+                return collateralAmount;
+            }
+        }
+    
         return collateral.at(dbKey).getOrDefault(symbol, BigInteger.ZERO);
     }
 
+    public void setDataMigrationStatus(String symbol, Boolean value) {
+        dataMigrationStatus.at(dbKey).set(symbol, value);
+    }
+
     public void setDebt(String collateralSymbol, String assetSymbol, BigInteger value) {
-        BigInteger previousDebt = BigInteger.ZERO;
-        previousDebt = getDebt(collateralSymbol, assetSymbol);
+        BigInteger previousDebt = getDebt(collateralSymbol, assetSymbol);
         BigInteger previousUserDebt = getTotalDebt(assetSymbol);
-    
-        setLoansPosition(collateralSymbol, assetSymbol, value);
+        DictDB<String, BigInteger> totalPerCollateralDebts = LoansVariables.totalPerCollateralDebts.at(collateralSymbol);
 
         BigInteger previousTotalDebt = LoansVariables.totalDebts.getOrDefault(assetSymbol, BigInteger.ZERO);
+        BigInteger previousTotalPerCollateralDebt = totalPerCollateralDebts.getOrDefault(assetSymbol, BigInteger.ZERO);
         BigInteger currentValue = BigInteger.ZERO;
         if (value != null) {
             currentValue = value;
         }
 
         BigInteger debtChange = currentValue.subtract(previousDebt);
-
-        setTotalDebt(assetSymbol, previousUserDebt.add(debtChange));
         BigInteger newTotalDebt = previousTotalDebt.add(debtChange);
+        BigInteger newTotalPerCollateralDebt = previousTotalPerCollateralDebt.add(debtChange);
+
+        Asset asset = AssetDB.getAsset(assetSymbol);
+        BigInteger debtAndBadDebtPerCollateral = newTotalPerCollateralDebt.add(asset.getBadDebt(collateralSymbol));
+        BigInteger debtCeiling = LoansVariables.debtCeiling.get(collateralSymbol);
+        Context.require(debtCeiling == null 
+                        || debtChange.signum() != 1 
+                        || debtAndBadDebtPerCollateral.compareTo(debtCeiling) <= 0, 
+                        TAG + ": Cannot mint more " + assetSymbol + " on collateral " + collateralSymbol);
+    
         LoansVariables.totalDebts.set(assetSymbol, newTotalDebt);
+        totalPerCollateralDebts.set(assetSymbol, newTotalPerCollateralDebt);
+        setLoansPosition(collateralSymbol, assetSymbol, value);
+        setPositionTotalDebt(assetSymbol, previousUserDebt.add(debtChange));
 
         if ( value == null) {
             AssetDB.getAsset(assetSymbol).getBorrowers(collateralSymbol).remove(getId());
@@ -134,7 +170,7 @@ public class Position {
         int assetsCount = AssetDB.assetList.size();
         for (int i = 0; i < assetsCount; i++) {
             String symbol = AssetDB.assetList.get(i);
-            if (AssetDB.getAsset(symbol).isActive() && getTotalDebt(symbol).equals(BigInteger.ZERO)) {
+            if (AssetDB.getAsset(symbol).isActive() && !getTotalDebt(symbol).equals(BigInteger.ZERO)) {
                 return true;
             }
         }
@@ -199,8 +235,9 @@ public class Position {
         }
 
         standing.ratio = standing.collateral.multiply(EXA).divide(standing.totalDebt);
-
-        if (standing.ratio.compareTo(liquidationRatio.get(collateralSymbol).multiply(EXA).divide(POINTS)) > 0) {
+        BigInteger liquidationRatio  = LoansVariables.liquidationRatio.get(collateralSymbol);
+        Context.require(liquidationRatio != null && liquidationRatio.compareTo(BigInteger.ZERO) > 0, "Liquidation ratio for " + collateralSymbol + " is not set");
+        if (standing.ratio.compareTo(liquidationRatio.multiply(EXA).divide(POINTS)) > 0) {
             standing.standing = Standings.MINING;
         } else {
             standing.standing = Standings.LIQUIDATE;
@@ -241,18 +278,13 @@ public class Position {
                 }
     
                 BigInteger amount = getDebt(collateralSymbol, assetSymbol);
-    
-                if (amount.compareTo(BigInteger.ZERO) > 0) {
-                    collateralAmounts.put(assetSymbol, amount);
-                }
+                collateralAmounts.put(assetSymbol, amount);
             }
 
             BigInteger amount = getCollateral(collateralSymbol);
 
-            if (amount.compareTo(BigInteger.ZERO) > 0) {
-                collateralAmounts.put(collateralSymbol, amount);
-                holdings.put(collateralSymbol, collateralAmounts);
-            }
+            collateralAmounts.put(collateralSymbol, amount);
+            holdings.put(collateralSymbol, collateralAmounts);
 
             Standing standing = getStanding(collateralSymbol, true);
             Map<String, Object> standingMap = new HashMap<>();
