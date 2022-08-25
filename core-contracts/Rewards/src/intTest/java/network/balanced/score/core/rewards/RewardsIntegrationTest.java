@@ -16,25 +16,22 @@
 
 package network.balanced.score.core.rewards;
 
-import foundation.icon.score.client.ScoreClient;
-import network.balanced.score.lib.interfaces.*;
+import com.eclipsesource.json.Json;
+import com.eclipsesource.json.JsonObject;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.test.integration.Balanced;
-import static network.balanced.score.lib.test.integration.BalancedUtils.*;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
-import static network.balanced.score.lib.utils.Constants.*;
-
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
-import com.eclipsesource.json.Json;
-import com.eclipsesource.json.JsonObject;
-
 import java.math.BigInteger;
 import java.util.Map;
 
+import static network.balanced.score.lib.test.integration.BalancedUtils.hexObjectToBigInteger;
+import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Constants.POINTS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -55,21 +52,21 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         owner.governance.addAcceptedTokens(balanced.sicx._address().toString());
         owner.governance.addAcceptedTokens(balanced.baln._address().toString());
         owner.governance.addAcceptedTokens(balanced.bnusd._address().toString());
-        owner.governance.setAcceptedDividendTokens(new score.Address[] {
+        owner.governance.setAcceptedDividendTokens(new score.Address[]{
                 balanced.sicx._address(),
                 balanced.baln._address(),
                 balanced.bnusd._address()
-            });
+        });
     }
 
     @Test
     @Order(10)
     void verifyRewards_Loans() throws Exception {
         // Arrange
-        BalancedClient loanTaker1 = balanced.newClient();   
-        BalancedClient loanTaker2 = balanced.newClient();   
+        BalancedClient loanTaker1 = balanced.newClient();
+        BalancedClient loanTaker2 = balanced.newClient();
         BalancedClient loanTaker3 = balanced.newClient();
-        
+
         BigInteger feePercent = hexObjectToBigInteger(owner.loans.getParameters().get("origination fee"));
         BigInteger collateralAmount = BigInteger.TEN.pow(23);
         BigInteger loanAmount = BigInteger.TEN.pow(21);
@@ -110,9 +107,9 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
     @Test
     void verifyRewards_SICX() throws Exception {
         // Arrange
-        BalancedClient icxSicxLp = balanced.newClient();   
-        BalancedClient icxSicxLpLeaving = balanced.newClient();   
-    
+        BalancedClient icxSicxLp = balanced.newClient();
+        BalancedClient icxSicxLpLeaving = balanced.newClient();
+
         // Act
         icxSicxLp.dex._transfer(balanced.dex._address(), BigInteger.TEN.pow(22), null);
         icxSicxLpLeaving.dex._transfer(balanced.dex._address(), BigInteger.TEN.pow(22), null);
@@ -133,13 +130,14 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
     @Test
     void verifyRewards_StakedLP() throws Exception {
         // Arrange
-        BalancedClient borrower = balanced.newClient(BigInteger.TEN.pow(25));   
-        BalancedClient sicxBnusdLP1 = balanced.newClient();   
-        BalancedClient sicxBnusdLP2 = balanced.newClient();   
+        BalancedClient borrower = balanced.newClient(BigInteger.TEN.pow(25));
+        BalancedClient sicxBnusdLP1 = balanced.newClient();
+        BalancedClient sicxBnusdLP2 = balanced.newClient();
         BalancedClient sicxBnusdLP3 = balanced.newClient();
         BigInteger lpAmount = BigInteger.TEN.pow(22);
 
-        borrower.loans.depositAndBorrow(BigInteger.TEN.pow(24), "bnUSD", lpAmount.multiply(BigInteger.valueOf(3)), null, null);
+        borrower.loans.depositAndBorrow(BigInteger.TEN.pow(24), "bnUSD", lpAmount.multiply(BigInteger.valueOf(3)),
+                null, null);
 
         borrower.bnUSD.transfer(sicxBnusdLP1.getAddress(), lpAmount, null);
         borrower.bnUSD.transfer(sicxBnusdLP2.getAddress(), lpAmount, null);
@@ -195,7 +193,8 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
     void changeRewardsDistributions() {
         // Arrange
         balanced.increaseDay(1);
-        owner.rewards.distribute((txr) -> {});
+        owner.rewards.distribute((txr) -> {
+        });
 
         BigInteger platformDay = hexObjectToBigInteger(reader.rewards.distStatus().get("platform_day"));
         BigInteger distributedDay = platformDay.subtract(BigInteger.ONE);
@@ -207,36 +206,42 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         BigInteger expectedSicxMint = sicxDist.multiply(emission).divide(EXA);
 
         // Assert
-        BigInteger loansMint = hexObjectToBigInteger(reader.rewards.getDataSourcesAt(distributedDay).get("Loans").get("total_dist"));
-        BigInteger sicxMint = hexObjectToBigInteger(reader.rewards.getDataSourcesAt(distributedDay).get("sICX/ICX").get("total_dist"));
+        BigInteger loansMint =
+                hexObjectToBigInteger(reader.rewards.getDataSourcesAt(distributedDay).get("Loans").get("total_dist"));
+        BigInteger sicxMint =
+                hexObjectToBigInteger(reader.rewards.getDataSourcesAt(distributedDay).get("sICX/ICX").get("total_dist"
+                ));
         assertEquals(expectedLoansMint, loansMint);
         assertEquals(expectedSicxMint, sicxMint);
 
         // Act
         BigInteger halfLoansDist = distributions.get("Loans").divide(BigInteger.TWO);
-        DistributionPercentage[] recipients = new DistributionPercentage[] {
-            createDistributionPercentage("Loans", halfLoansDist),
-            createDistributionPercentage("sICX/ICX", distributions.get("sICX/ICX").add(halfLoansDist)),
-            createDistributionPercentage("Worker Tokens", distributions.get("Worker Tokens")),
-            createDistributionPercentage("Reserve Fund", distributions.get("Reserve Fund")),
-            createDistributionPercentage("DAOfund", distributions.get("DAOfund")),
-            createDistributionPercentage("sICX/bnUSD", distributions.get("sICX/bnUSD")),
-            createDistributionPercentage("BALN/bnUSD", distributions.get("BALN/bnUSD")),
-            createDistributionPercentage("BALN/sICX", distributions.get("BALN/sICX"))
+        DistributionPercentage[] recipients = new DistributionPercentage[]{
+                createDistributionPercentage("Loans", halfLoansDist),
+                createDistributionPercentage("sICX/ICX", distributions.get("sICX/ICX").add(halfLoansDist)),
+                createDistributionPercentage("Worker Tokens", distributions.get("Worker Tokens")),
+                createDistributionPercentage("Reserve Fund", distributions.get("Reserve Fund")),
+                createDistributionPercentage("DAOfund", distributions.get("DAOfund")),
+                createDistributionPercentage("sICX/bnUSD", distributions.get("sICX/bnUSD")),
+                createDistributionPercentage("BALN/bnUSD", distributions.get("BALN/bnUSD")),
+                createDistributionPercentage("BALN/sICX", distributions.get("BALN/sICX"))
         };
 
         owner.governance.updateBalTokenDistPercentage(recipients);
 
         balanced.increaseDay(1);
         distributedDay = distributedDay.add(BigInteger.ONE);
-        owner.rewards.distribute((txr) -> {});
+        owner.rewards.distribute((txr) -> {
+        });
 
         // Assert
         expectedLoansMint = loansDist.subtract(halfLoansDist).multiply(emission).divide(EXA);
         expectedSicxMint = sicxDist.add(halfLoansDist).multiply(emission).divide(EXA);
 
-        loansMint = hexObjectToBigInteger(reader.rewards.getDataSourcesAt(distributedDay).get("Loans").get("total_dist"));
-        sicxMint = hexObjectToBigInteger(reader.rewards.getDataSourcesAt(distributedDay).get("sICX/ICX").get("total_dist"));
+        loansMint = hexObjectToBigInteger(reader.rewards.getDataSourcesAt(distributedDay).get("Loans").get(
+                "total_dist"));
+        sicxMint = hexObjectToBigInteger(reader.rewards.getDataSourcesAt(distributedDay).get("sICX/ICX").get(
+                "total_dist"));
         assertEquals(expectedLoansMint, loansMint);
         assertEquals(expectedSicxMint, sicxMint);
 
@@ -257,17 +262,17 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         BigInteger loanAmount = BigInteger.TEN.pow(21);
         loanTaker.loans.depositAndBorrow(collateralAmount, "bnUSD", loanAmount, null, null);
         icxSicxLP.dex._transfer(balanced.dex._address(), BigInteger.TEN.pow(22), null);
-        
+
         // Act
-        DistributionPercentage[] recipients = new DistributionPercentage[] {
-            createDistributionPercentage("Loans", BigInteger.ZERO),
-            createDistributionPercentage("sICX/ICX", distributions.get("sICX/ICX").add(loansDist)),
-            createDistributionPercentage("Worker Tokens", distributions.get("Worker Tokens")),
-            createDistributionPercentage("Reserve Fund", distributions.get("Reserve Fund")),
-            createDistributionPercentage("DAOfund", distributions.get("DAOfund")),
-            createDistributionPercentage("sICX/bnUSD", distributions.get("sICX/bnUSD")),
-            createDistributionPercentage("BALN/bnUSD", distributions.get("BALN/bnUSD")),
-            createDistributionPercentage("BALN/sICX", distributions.get("BALN/sICX"))
+        DistributionPercentage[] recipients = new DistributionPercentage[]{
+                createDistributionPercentage("Loans", BigInteger.ZERO),
+                createDistributionPercentage("sICX/ICX", distributions.get("sICX/ICX").add(loansDist)),
+                createDistributionPercentage("Worker Tokens", distributions.get("Worker Tokens")),
+                createDistributionPercentage("Reserve Fund", distributions.get("Reserve Fund")),
+                createDistributionPercentage("DAOfund", distributions.get("DAOfund")),
+                createDistributionPercentage("sICX/bnUSD", distributions.get("sICX/bnUSD")),
+                createDistributionPercentage("BALN/bnUSD", distributions.get("BALN/bnUSD")),
+                createDistributionPercentage("BALN/sICX", distributions.get("BALN/sICX"))
         };
 
         owner.governance.updateBalTokenDistPercentage(recipients);
@@ -277,12 +282,14 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
 
         // Assert
         balanced.increaseDay(1);
-        owner.rewards.distribute((txr) -> {});
+        owner.rewards.distribute((txr) -> {
+        });
         verifyRewards(loanTaker);
         BigInteger rewardsPreChange = verifyRewards(icxSicxLP);
 
         balanced.increaseDay(1);
-        owner.rewards.distribute((txr) -> {});
+        owner.rewards.distribute((txr) -> {
+        });
         verifyNoRewards(loanTaker);
         BigInteger rewardsPostChange = verifyRewards(icxSicxLP);
         BigInteger increase = rewardsPostChange.multiply(EXA).divide(rewardsPreChange);
@@ -325,7 +332,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         client.stakedLp.unstake(icxBnusdPoolId, poolBalance);
     }
 
-    private BigInteger verifyRewards(BalancedClient client)  {
+    private BigInteger verifyRewards(BalancedClient client) {
         BigInteger balancePreClaim = client.baln.balanceOf(client.getAddress());
         client.rewards.claimRewards();
         BigInteger balancePostClaim = client.baln.balanceOf(client.getAddress());
@@ -338,7 +345,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         BigInteger balancePreClaim = client.baln.balanceOf(client.getAddress());
         client.rewards.claimRewards();
         BigInteger balancePostClaim = client.baln.balanceOf(client.getAddress());
-        assertTrue(balancePostClaim.equals(balancePreClaim));
+        assertEquals(balancePostClaim, balancePreClaim);
     }
 
     private DistributionPercentage createDistributionPercentage(String name, BigInteger percentage) {
