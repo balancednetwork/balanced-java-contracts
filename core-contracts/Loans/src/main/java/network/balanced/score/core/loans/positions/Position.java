@@ -29,7 +29,7 @@ import scorex.util.HashMap;
 import java.math.BigInteger;
 import java.util.Map;
 
-import static network.balanced.score.core.loans.LoansVariables.*;
+import static network.balanced.score.lib.utils.Math.pow;
 import static network.balanced.score.core.loans.utils.LoansConstants.*;
 
 public class Position {
@@ -185,6 +185,7 @@ public class Position {
         Token collateralContract = new Token(collateralAddress);
 
         BigInteger amount = getCollateral(collateralSymbol);
+        BigInteger decimals = pow(BigInteger.TEN, collateralContract.decimals().intValue());
         BigInteger price;
         if (readOnly) {
             price  = collateralContract.lastPriceInLoop();
@@ -193,7 +194,7 @@ public class Position {
         }
         
 
-        return amount.multiply(price).divide(EXA);
+        return amount.multiply(price).divide(decimals);
     }
 
     public BigInteger totalDebtInLoop(String collateralSymbol, boolean readOnly) {

@@ -49,6 +49,8 @@ import static network.balanced.score.core.loans.utils.LoansConstants.*;
 import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Math.convertToNumber;
+import static network.balanced.score.lib.utils.Math.pow;
+
 
 public class LoansImpl implements Loans {
 
@@ -629,6 +631,7 @@ public class LoansImpl implements Loans {
         Address collateralAddress = collateral.getAssetAddress();
         Token collateralContract = new Token(collateralAddress);
 
+        BigInteger collateralDecimals = pow(BigInteger.TEN, collateralContract.decimals().intValue());
         BigInteger assetPriceInLoop = assetContract.priceInLoop();
         BigInteger collateralPriceInLoop = collateralContract.priceInLoop();
         BigInteger inPool = asset.getLiquidationPool(collateralSymbol);
@@ -650,10 +653,10 @@ public class LoansImpl implements Loans {
 
         asset.setLiquidationPool(collateralSymbol, null);
         BigInteger remainingCollateral = badDebtCollateral.subtract(inPool);
-        BigInteger remainingValue =  remainingCollateral.multiply(collateralPriceInLoop).divide(EXA);
+        BigInteger remainingValue = remainingCollateral.multiply(collateralPriceInLoop).divide(collateralDecimals);
         Context.call(reserve.get(), "redeem", from, remainingValue, collateralSymbol);
-        return inPool;
 
+        return inPool;
     }
 
     private void depositCollateral(String _symbol, BigInteger _amount, Address _from) {
@@ -676,8 +679,9 @@ public class LoansImpl implements Loans {
 
         Address collateralAddress = CollateralDB.getCollateral(collateralSymbol).getAssetAddress();
         Token collateralContract = new Token(collateralAddress);
+        BigInteger collateralDecimals = pow(BigInteger.TEN, collateralContract.decimals().intValue());
 
-        BigInteger remainingCollateralInLoop = remainingCollateral.multiply(collateralContract.priceInLoop()).divide(EXA);
+        BigInteger remainingCollateralInLoop = remainingCollateral.multiply(collateralContract.priceInLoop()).divide(collateralDecimals);
 
         BigInteger lockingValue = getLockingRatio(collateralSymbol).multiply(assetValue).divide(POINTS);
         Context.require(remainingCollateralInLoop.compareTo(lockingValue) >= 0,
