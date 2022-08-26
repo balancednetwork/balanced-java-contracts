@@ -20,8 +20,11 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import network.balanced.score.lib.interfaces.*;
+import network.balanced.score.lib.interfaces.tokens.*;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockContract;
+
+import static org.mockito.Mockito.when;
 
 import java.math.BigInteger;
 
@@ -35,6 +38,8 @@ class BalancedOracleTestBase extends UnitTest {
     protected MockContract<Dex> dex;
     protected MockContract<Oracle> oracle;
     protected MockContract<Staking> staking;
+    protected MockContract<BalancedToken> baln;
+    protected MockContract<IRC2> iusdc;
 
     protected Score balancedOracle;
     protected static final Account governance = Account.newScoreAccount(scoreCount);
@@ -45,8 +50,12 @@ class BalancedOracleTestBase extends UnitTest {
         dex = new MockContract<>(DexScoreInterface.class, sm, owner);
         oracle = new MockContract<>(OracleScoreInterface.class, sm, owner);
         staking = new MockContract<>(StakingScoreInterface.class, sm, owner);
+        baln = new MockContract<>(BalancedTokenScoreInterface.class, sm, owner);
+        iusdc = new MockContract<>(IRC2ScoreInterface.class, sm, owner);
         balancedOracle = sm.deploy(owner, BalancedOracleImpl.class, governance.getAddress());
 
+        when(baln.mock.decimals()).thenReturn(BigInteger.valueOf(18));
+        when(iusdc.mock.decimals()).thenReturn(BigInteger.valueOf(6));
         sm.getBlock().increase(DAY);
     }
 }

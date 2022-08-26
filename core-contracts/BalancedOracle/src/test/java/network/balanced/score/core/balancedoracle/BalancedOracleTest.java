@@ -83,8 +83,10 @@ class BalancedOracleTest extends BalancedOracleTestBase {
     @Test
     void getDexPriceInLoop() {
         // Arrange
-        String tokenSymbol = "BALN";
+        String tokenSymbol = "BALN";        
         BigInteger poolID = BigInteger.valueOf(3);
+        when(dex.mock.getPoolBase(poolID)).thenReturn(baln.getAddress());
+
         balancedOracle.invoke(governance, "addDexPricedAsset", tokenSymbol, poolID);
 
         BigInteger bnusdRate = BigInteger.valueOf(7).multiply(BigInteger.TEN.pow(17));
@@ -96,11 +98,36 @@ class BalancedOracleTest extends BalancedOracleTestBase {
         when(dex.mock.getQuotePriceInBase(poolID)).thenReturn(bnusdPriceInBaln);
 
         // Act
-        balancedOracle.invoke(adminAccount, "getPriceInLoop", "BALN");
-        BigInteger priceInLoop = (BigInteger) balancedOracle.call("getLastPriceInLoop", "BALN");
+        balancedOracle.invoke(adminAccount, "getPriceInLoop", tokenSymbol);
+        BigInteger priceInLoop = (BigInteger) balancedOracle.call("getLastPriceInLoop", tokenSymbol);
 
         // Assert
         assertEquals(expectedBalnpriceInLoop, priceInLoop);
+    }
+
+    @Test
+    void getDexPriceInLoop_IUSDC() {
+        // Arrange
+        String tokenSymbol = "IUSDC";
+        BigInteger poolID = BigInteger.valueOf(4);
+        when(dex.mock.getPoolBase(poolID)).thenReturn(iusdc.getAddress());
+
+        balancedOracle.invoke(governance, "addDexPricedAsset", tokenSymbol, poolID);
+
+        BigInteger bnusdRate = BigInteger.valueOf(7).multiply(BigInteger.TEN.pow(17));
+        BigInteger bnusdPriceIUSDC = BigInteger.valueOf(20).multiply(BigInteger.TEN.pow(5));
+        BigInteger expectedIUSDCpriceInLoop = bnusdRate.multiply(BigInteger.TEN.pow(6)).divide(bnusdPriceIUSDC);
+
+        Map<String, Object> priceData = Map.of("rate", bnusdRate);
+        when(oracle.mock.get_reference_data("USD", "ICX")).thenReturn(priceData);
+        when(dex.mock.getQuotePriceInBase(poolID)).thenReturn(bnusdPriceIUSDC);
+        
+        // Act
+        balancedOracle.invoke(adminAccount, "getPriceInLoop", tokenSymbol);
+        BigInteger priceInLoop = (BigInteger) balancedOracle.call("getLastPriceInLoop", tokenSymbol);
+
+        // Assert
+        assertEquals(expectedIUSDCpriceInLoop, priceInLoop);
     }
 
     @Test
@@ -108,6 +135,8 @@ class BalancedOracleTest extends BalancedOracleTestBase {
         // Arrange
         String tokenSymbol = "BALN";
         BigInteger poolID = BigInteger.valueOf(3);
+        when(dex.mock.getPoolBase(poolID)).thenReturn(baln.getAddress());
+
         balancedOracle.invoke(governance, "addDexPricedAsset", tokenSymbol, poolID);
         when(dex.mock.getQuotePriceInBase(poolID)).thenReturn(ICX);
 

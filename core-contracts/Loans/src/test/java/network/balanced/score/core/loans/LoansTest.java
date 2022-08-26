@@ -650,6 +650,7 @@ class LoansTest extends LoansTestBase {
         // Arrange
         MockContract<IRC2> iBTC = new MockContract<IRC2>(IRC2ScoreInterface.class, sm, admin);
         when(iBTC.mock.symbol()).thenReturn("iBTC");
+        when(iBTC.mock.decimals()).thenReturn(BigInteger.valueOf(18));
         loans.invoke(admin, "addAsset", iBTC.getAddress(), true, true);
 
         Account account = accounts.get(0);
@@ -1057,6 +1058,7 @@ class LoansTest extends LoansTestBase {
         // Arrange
         MockContract<IRC2> iBTC = new MockContract<IRC2>(IRC2ScoreInterface.class, sm, admin);
         when(iBTC.mock.symbol()).thenReturn("iBTC");
+        when(iBTC.mock.decimals()).thenReturn(BigInteger.valueOf(18));
         loans.invoke(admin, "addAsset", iBTC.getAddress(), true, true);
         loans.invoke(admin, "setLockingRatio", "iBTC", LOCKING_RATIO);
 

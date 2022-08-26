@@ -28,6 +28,7 @@ import java.util.Map;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.*;
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Math.pow;
 
 public class BalancedOracleImpl implements BalancedOracle {
     public static final String TAG = "Balanced Oracle";
@@ -203,10 +204,12 @@ public class BalancedOracleImpl implements BalancedOracle {
 
     private BigInteger getDexPriceInLoop(String symbol) {
         BigInteger poolID = dexPricedAssets.get(symbol);
+        Address base = Context.call(Address.class, dex.get(), "getPoolBase", poolID);
+        BigInteger decimals = Context.call(BigInteger.class, base, "decimals");
         BigInteger bnusdPriceInAsset = Context.call(BigInteger.class, dex.get(), "getQuotePriceInBase", poolID);
 
         BigInteger loopRate = getLoopRate("USD");
-        BigInteger priceInLoop = loopRate.multiply(EXA).divide(bnusdPriceInAsset);
+        BigInteger priceInLoop = loopRate.multiply(pow(BigInteger.TEN, decimals.intValue())).divide(bnusdPriceInAsset);
         return EMACalculator.updateEMA(symbol, priceInLoop, getDexPriceEMADecay());
     }
 

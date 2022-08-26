@@ -80,6 +80,8 @@ public class RebalancingTest extends TestBase {
         sicx = new MockContract<>(SicxScoreInterface.class, sm, owner);
         bnUSD = new MockContract<>(BalancedDollarScoreInterface.class, sm, owner);
         balancedOracle = new MockContract<>(BalancedOracleScoreInterface.class, sm, owner);
+
+        when(sicx.mock.decimals()).thenReturn(BigInteger.valueOf(18));
     }
 
     @Test
