@@ -432,7 +432,11 @@ public class LoansImpl implements Loans {
 
         BigInteger collateralToSell =
                 maxRetirePercent.get().multiply(batch.totalDebt).multiply(EXA).divide(POINTS.multiply(rate));
-        collateralToSell = collateralToSell.min(_total_tokens_required);
+        Context.println("################################# _total_tokens_required" + ": " + _total_tokens_required);
+        Context.println("################################# collateralToSell" + ": " + collateralToSell);
+        Context.println("################################# rate" + ": " + rate);
+        Context.println("################################# batch.totalDebt" + ": " + batch.totalDebt);
+            collateralToSell = collateralToSell.min(_total_tokens_required);
 
         expectedToken.set(assetAddress);
         byte[] data = createSwapData(assetAddress);
@@ -504,7 +508,9 @@ public class LoansImpl implements Loans {
 
         Address bnusdAddress = asset.getAssetAddress();
         Token bnusdContract = new Token(bnusdAddress);
-
+        Context.println("################################# _lower price");
+        Context.println("################################# _total_tokens_required" + ": " + _total_tokens_required);
+        Context.println("################################# batch.totalDebt" + ": " + batch.totalDebt);
         expectedToken.set(bnusdAddress);
         bnusdContract.mintTo(Context.getAddress(), bnusdToSell);
         amountReceived.set(null);
@@ -638,7 +644,8 @@ public class LoansImpl implements Loans {
         BigInteger badDebt = asset.getBadDebt(collateralSymbol).subtract(badDebtAmount);
 
         BigInteger bonus = POINTS.add(retirementBonus.get());
-        BigInteger badDebtCollateral = bonus.multiply(badDebtAmount).multiply(assetPriceInLoop).divide(collateralPriceInLoop.multiply(POINTS));
+        BigInteger badDebtCollateral = bonus.multiply(badDebtAmount).multiply(assetPriceInLoop).multiply(collateralDecimals)
+            .divide(collateralPriceInLoop.multiply(POINTS).multiply(EXA));
 
         asset.setBadDebt(collateralSymbol, badDebt);
         if (inPool.compareTo(badDebtCollateral) >= 0) {

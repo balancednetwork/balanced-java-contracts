@@ -16,6 +16,26 @@
 
 package network.balanced.score.core.rebalancing;
 
+import static network.balanced.score.core.rebalancing.Constants.ADMIN;
+import static network.balanced.score.core.rebalancing.Constants.BNUSD_ADDRESS;
+import static network.balanced.score.core.rebalancing.Constants.DEX_ADDRESS;
+import static network.balanced.score.core.rebalancing.Constants.GOVERNANCE_ADDRESS;
+import static network.balanced.score.core.rebalancing.Constants.LOANS_ADDRESS;
+import static network.balanced.score.core.rebalancing.Constants.ORACLE_ADDRESS;
+import static network.balanced.score.core.rebalancing.Constants.PRICE_THRESHOLD;
+import static network.balanced.score.core.rebalancing.Constants.SICX_ADDRESS;
+import static network.balanced.score.core.rebalancing.Constants.TAG;
+import static network.balanced.score.lib.utils.Check.isContract;
+import static network.balanced.score.lib.utils.Check.only;
+import static network.balanced.score.lib.utils.Check.onlyOwner;
+import static network.balanced.score.lib.utils.Check.optionalDefault;
+import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Math.pow;
+
+import java.math.BigInteger;
+import java.util.List;
+import java.util.Map;
+
 import network.balanced.score.lib.interfaces.Rebalancing;
 import score.Address;
 import score.Context;
@@ -23,15 +43,6 @@ import score.VarDB;
 import score.annotation.External;
 import score.annotation.Optional;
 import scorex.util.ArrayList;
-
-import java.math.BigInteger;
-import java.util.List;
-import java.util.Map;
-
-import static network.balanced.score.core.rebalancing.Constants.*;
-import static network.balanced.score.lib.utils.Check.*;
-import static network.balanced.score.lib.utils.Constants.EXA;
-import static network.balanced.score.lib.utils.Math.pow;
 
 public class RebalancingImpl implements Rebalancing {
 
@@ -185,10 +196,10 @@ public class RebalancingImpl implements Rebalancing {
 
         BigInteger bnusdPriceInIcx = (BigInteger) Context.call(oracleScore, "getPriceInLoop", "USD");
         BigInteger assetPriceInIcx = (BigInteger) Context.call(oracleScore, "getPriceInLoop", symbol);
-        BigInteger actualBnusdPrice = bnusdPriceInIcx.multiply(pow(BigInteger.TEN, decimals.intValue())).divide(assetPriceInIcx);
+        BigInteger actualBnusdPrice = bnusdPriceInIcx.multiply(EXA).divide(assetPriceInIcx);
 
         Map<String, Object> poolStats = (Map<String, Object>) Context.call(dexScore, "getPoolStats", poolID);
-        BigInteger assetLiquidity = (BigInteger) poolStats.get("base");
+        BigInteger assetLiquidity = ((BigInteger) poolStats.get("base")).multiply(EXA).divide(pow(BigInteger.TEN, decimals.intValue()));
         BigInteger bnusdLiquidity = (BigInteger) poolStats.get("quote");
         BigInteger bnusdPrice = assetLiquidity.multiply(EXA).divide(bnusdLiquidity);
 
