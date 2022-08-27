@@ -74,7 +74,13 @@ public class LoansImpl implements Loans {
             redeemBatch.set(REDEEM_BATCH_SIZE);
             maxRetirePercent.set(MAX_RETIRE_PERCENT);
             maxDebtsListLength.set(MAX_DEBTS_LIST_LENGTH);
+        } else {
+            Asset asset = AssetDB.getAsset(BNUSD_SYMBOL);
+            if (asset.getBadDebt().equals(BigInteger.ZERO)) {
+                asset.setLiquidationPool(null);
+            }
         }
+
     }
 
     @External(readonly = true)
@@ -846,7 +852,9 @@ public class LoansImpl implements Loans {
             if (badDebt.equals(BigInteger.ZERO)) {
                 transferToken(SICX_SYMBOL, reserve.get(), inPool.subtract(badDebtSicx), "Sweep to ReserveFund:",
                         new byte[0]);
+                asset.setLiquidationPool(null);
             }
+
             return badDebtSicx;
         }
 
