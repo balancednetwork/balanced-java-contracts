@@ -133,7 +133,6 @@ public class Position {
         }
 
         Asset asset = AssetDB.getAsset(symbol);
-        Context.require(asset.isActive(), TAG + ": " + symbol + " is not an active asset on Balanced.");
 
         if (asset.isCollateral()) {
             return getCollateralPosition(symbol);
