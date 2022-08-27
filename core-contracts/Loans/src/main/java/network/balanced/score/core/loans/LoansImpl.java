@@ -846,7 +846,9 @@ public class LoansImpl implements Loans {
             if (badDebt.equals(BigInteger.ZERO)) {
                 transferToken(SICX_SYMBOL, reserve.get(), inPool.subtract(badDebtSicx), "Sweep to ReserveFund:",
                         new byte[0]);
+                asset.setLiquidationPool(null);
             }
+
             return badDebtSicx;
         }
 
