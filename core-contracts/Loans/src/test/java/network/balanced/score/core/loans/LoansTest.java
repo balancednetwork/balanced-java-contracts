@@ -747,7 +747,7 @@ class LoansTest extends LoansTestBase {
 
         BigInteger expectedLiquidationPool = liquidationPool.subtract(debtInsICX);
         assertEquals(BigInteger.ZERO, bnusdAsset.get("bad_debt"));
-        assertEquals(expectedLiquidationPool, bnusdAsset.get("liquidation_pool"));
+        assertEquals(BigInteger.ZERO, bnusdAsset.get("liquidation_pool"));
     }
 
     @Test

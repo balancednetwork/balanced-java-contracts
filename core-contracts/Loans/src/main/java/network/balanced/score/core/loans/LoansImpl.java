@@ -74,7 +74,13 @@ public class LoansImpl implements Loans {
             redeemBatch.set(REDEEM_BATCH_SIZE);
             maxRetirePercent.set(MAX_RETIRE_PERCENT);
             maxDebtsListLength.set(MAX_DEBTS_LIST_LENGTH);
+        } else {
+            Asset asset = AssetDB.getAsset(BNUSD_SYMBOL);
+            if (asset.getBadDebt().equals(BigInteger.ZERO)) {
+                asset.setLiquidationPool(null);
+            }
         }
+
     }
 
     @External(readonly = true)
