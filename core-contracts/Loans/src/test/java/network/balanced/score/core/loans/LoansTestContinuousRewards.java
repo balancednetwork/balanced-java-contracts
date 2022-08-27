@@ -17,7 +17,10 @@
 package network.balanced.score.core.loans;
 
 import com.iconloop.score.test.Account;
+import network.balanced.score.lib.interfaces.tokens.*;
 import network.balanced.score.lib.structs.RewardsDataEntry;
+import network.balanced.score.lib.test.mock.MockContract;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 
 @DisplayName("Loans Tests")
@@ -389,6 +393,50 @@ class LoansTestContinuousRewards extends LoansTestBase {
 
         takeLoanICX(account, "bnUSD", collateral, loan);
         verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
+
+        BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
+        bnusd.invoke(admin, "setPrice", newPrice);
+
+        // Act
+        loans.invoke(liquidater, "liquidate", account.getAddress());
+
+        // Assert
+        BigInteger liquidaterBalancePost = (BigInteger) sicx.call("balanceOf", liquidater.getAddress());
+        assertEquals(liquidaterBalancePre.add(expectedReward), liquidaterBalancePost);
+        verifyPosition(account.getAddress(), BigInteger.ZERO, BigInteger.ZERO);
+
+        Map<String, Object> bnusdAsset = ((Map<String, Map<String, Object>>)loans.call("getAvailableAssets")).get("bnUSD");
+
+        BigInteger expectedBadDebt = loan.add(expectedFee);
+        BigInteger expectedLiquidationPool = collateral.subtract(expectedReward);
+        assertEquals(expectedBadDebt, bnusdAsset.get("bad_debt"));
+        assertEquals(expectedLiquidationPool, bnusdAsset.get("liquidation_pool"));
+
+        verifyTotalDebt(BigInteger.ZERO);
+        verify(rewards.mock).updateRewardsData("Loans", BigInteger.ZERO, account.getAddress(), BigInteger.ZERO);
+        verify(rewards.mock).updateRewardsData("Loans", loan.add(expectedFee), account.getAddress(), loan.add(expectedFee));
+    }
+
+    @Test
+    void liquidate_nonActiveAssetExist() throws Exception {
+        // Arrange
+        MockContract<IRC2ScoreInterface> nonActiveAsset = new MockContract<>(IRC2ScoreInterface.class, sm, admin);
+        when(nonActiveAsset.mock.symbol()).thenReturn("TestToken");
+        loans.invoke(admin, "addAsset", nonActiveAsset.getAddress(), false, true);
+
+        Account account = accounts.get(0);
+        Account liquidater = accounts.get(1);
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
+
+        BigInteger liquidationReward = (BigInteger) getParam("liquidation reward");
+        BigInteger expectedReward = collateral.multiply(liquidationReward).divide(POINTS);
+        BigInteger liquidaterBalancePre = (BigInteger) sicx.call("balanceOf", liquidater.getAddress());
+
+        takeLoanICX(account, "bnUSD", collateral, loan);
+        verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
+        loans.invoke(admin, "migrateUserData", account.getAddress());
 
         BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
         bnusd.invoke(admin, "setPrice", newPrice);
