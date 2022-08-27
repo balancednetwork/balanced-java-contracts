@@ -793,10 +793,13 @@ public class LoansImpl implements Loans {
         for (int i = 0; i < assetSymbolsCount; i++) {
             String symbol = AssetDB.assetSymbols.get(i);
             Asset asset = AssetDB.getAsset(symbol);
+            if (!asset.isActive() || asset.isCollateral()) {
+                continue;
+            }
             Address assetAddress = asset.getAssetAddress();
             Token assetContract = new Token(assetAddress);
             BigInteger debt = position.getAssetPosition(symbol);
-            if (!asset.isCollateral() && asset.isActive() && debt.compareTo(BigInteger.ZERO) > 0) {
+            if (debt.compareTo(BigInteger.ZERO) > 0) {
                 Context.call(rewards.get(), "updateRewardsData", "Loans", oldTotalDebt, _owner, debt);
 
                 BigInteger badDebt = asset.getBadDebt();
