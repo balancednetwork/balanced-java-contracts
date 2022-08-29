@@ -259,7 +259,7 @@ public class LoansImpl implements Loans {
         BigInteger requestedAmount = amount == null ? null : convertToNumber(amount);
 
         depositCollateral(collateralSymbol, _value, _from);
-        if (requestedAmount.compareTo(BigInteger.ZERO) > 0) {
+        if (BigInteger.ZERO.compareTo(requestedAmount) < 0) {
             originateLoan(collateralSymbol, assetToBorrow, requestedAmount, _from);
         }
     }
@@ -387,9 +387,6 @@ public class LoansImpl implements Loans {
 
         Context.require(_value.compareTo(borrowed) <= 0, TAG + ": Repaid amount is greater than the amount in the " +
                 "position of " + from);
-        if (_value.compareTo(BigInteger.ZERO) <= 0) {
-            return;
-        }
 
         BigInteger remaining = borrowed.subtract(_value);
         BigInteger repaid;

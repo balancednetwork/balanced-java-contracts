@@ -54,15 +54,15 @@ public class Asset {
 
     public void migrateLiquidationPool() {
         BigInteger liquidationPoolBalance = liquidationPool.at(dbKey).get();
-        if (liquidationPoolBalance != null && liquidationPoolBalance.compareTo(BigInteger.ZERO) > 0 ) {
-            setLiquidationPool("sICX", liquidationPool.at(dbKey).getOrDefault(BigInteger.ZERO));
+        if (liquidationPoolBalance != null && liquidationPoolBalance.compareTo(BigInteger.ZERO) > 0) {
+            setLiquidationPool(SICX_SYMBOL, liquidationPoolBalance);
         }
     }
 
     public void migrateBadDebt() {
         BigInteger badDebtBalance = badDebt.at(dbKey).get();
-        if (badDebtBalance != null && badDebtBalance.compareTo(BigInteger.ZERO) > 0 ) {
-            setBadDebt("sICX", badDebt.at(dbKey).getOrDefault(BigInteger.ZERO));
+        if (badDebtBalance != null && badDebtBalance.compareTo(BigInteger.ZERO) > 0) {
+            setBadDebt(SICX_SYMBOL, badDebtBalance);
         }
     }
 
