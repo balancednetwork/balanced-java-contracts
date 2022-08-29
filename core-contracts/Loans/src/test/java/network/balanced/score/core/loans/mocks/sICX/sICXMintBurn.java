@@ -48,7 +48,7 @@ public class sICXMintBurn extends sICX {
 
     }
 
-    @External(readonly=true)
+    @External(readonly = true)
     public BigInteger lastPriceInLoop() {
         return BigInteger.valueOf(1).multiply(BigInteger.TEN.pow(18));
     }

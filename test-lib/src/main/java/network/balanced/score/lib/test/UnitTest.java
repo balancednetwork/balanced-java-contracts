@@ -72,7 +72,8 @@ public class UnitTest extends TestBase {
                                                      String getterMethod) {
         testAdminControlMethods(contractUnderTest, governanceScore, adminAccount, setterMethod, addressToSet,
                 getterMethod);
-        String expectedErrorMessage = "Reverted(0): Address Check: Address provided is an EOA address. A contract address is " +
+        String expectedErrorMessage = "Reverted(0): Address Check: Address provided is an EOA address. A contract " +
+                "address is " +
                 "required.";
         Executable setScoreToInvalidAddress = () -> contractUnderTest.invoke(adminAccount, setterMethod,
                 sm.createAccount().getAddress());
@@ -89,14 +90,14 @@ public class UnitTest extends TestBase {
         assertEquals(parameterToSet, contractUnderTest.call(getterMethod));
     }
 
-     public static <T> void testGovernanceControlMethods(Score contractUnderTest, Account governanceScore,
-                                                   Account owner, String setterMethod, T parameterToSet,
-                                                   String getterMethod) {
+    public static <T> void testGovernanceControlMethods(Score contractUnderTest, Account governanceScore,
+                                                        Account owner, String setterMethod, T parameterToSet,
+                                                        String getterMethod) {
 
-         assertOnlyCallableByGovernance(contractUnderTest, setterMethod, parameterToSet);
-         contractUnderTest.invoke(governanceScore, setterMethod, parameterToSet);
-         assertEquals(parameterToSet, contractUnderTest.call(getterMethod));
-     }
+        assertOnlyCallableByGovernance(contractUnderTest, setterMethod, parameterToSet);
+        contractUnderTest.invoke(governanceScore, setterMethod, parameterToSet);
+        assertEquals(parameterToSet, contractUnderTest.call(getterMethod));
+    }
 
     public static <T> void testOwnerControlMethods(Score contractUnderTest, String setterMethod,
                                                    String getterMethod, T parameterToSet) {
@@ -113,8 +114,8 @@ public class UnitTest extends TestBase {
     public static void testIsContract(Account caller, Score contractUnderTest, String setterMethod,
                                       Address parameterToSet, String getterMethod) {
         Account nonContractAddress = sm.createAccount();
-        String expectedErrorMessage = "Reverted(0): Address Check: Address provided is an EOA address. A contract address is " +
-                "required.";
+        String expectedErrorMessage = "Reverted(0): Address Check: Address provided is an EOA address. A contract " +
+                "address is required.";
         Executable nonContractParameter = () -> contractUnderTest.invoke(caller, setterMethod,
                 nonContractAddress.getAddress());
         expectErrorMessage(nonContractParameter, expectedErrorMessage);

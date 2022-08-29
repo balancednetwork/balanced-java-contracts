@@ -33,7 +33,9 @@ public class CollateralDB {
     private static final String TAG = "BalancedLoansAssets";
     private static final String COLLATERAL_DB_PREFIX = "asset";
 
-    public static ArrayDB<Address> collateralAddresses = Context.newArrayDB("collateral_only_address_list", Address.class); // new
+    // new
+    public static ArrayDB<Address> collateralAddresses = Context.newArrayDB("collateral_only_address_list",
+            Address.class);
     public static ArrayDB<String> collateralList = Context.newArrayDB("collateral", String.class);
     public static final DictDB<String, String> symbolMap = Context.newDictDB("symbol|address", String.class);
 
@@ -46,7 +48,7 @@ public class CollateralDB {
         for (int i = 0; i < totalCollateralCount; i++) {
             String symbol = collateralList.get(i);
             Collateral collateral = getCollateral(symbol);
-            
+
             collateralAddresses.add(collateral.getAssetAddress());
         }
     }
@@ -68,11 +70,11 @@ public class CollateralDB {
 
     public static void addCollateral(Address address, Boolean active) {
         String collateralToAdd = address.toString();
-        Context.require(!arrayDbContains(collateralAddresses, address), TAG + ": " + collateralToAdd + " already exists in " +
-                "the database.");
+        Context.require(!arrayDbContains(collateralAddresses, address), TAG + ": " + collateralToAdd + " already " +
+                "exists in the database.");
 
         collateralAddresses.add(address);
-        
+
         Collateral collateral = new Collateral(COLLATERAL_DB_PREFIX + "|" + collateralToAdd);
         collateral.setCollateral(address, active);
 

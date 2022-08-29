@@ -25,7 +25,6 @@ import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.PrepDelegations;
 import score.Address;
 import score.annotation.External;
-import score.annotation.Optional;
 import score.annotation.Payable;
 
 import java.math.BigInteger;
@@ -53,7 +52,7 @@ public interface Governance extends
 
     @External
     void setTimeOffset(BigInteger offset);
-    
+
     @External(readonly = true)
     BigInteger getTimeOffset();
 
@@ -124,7 +123,7 @@ public interface Governance extends
     Map<String, Object> checkVote(BigInteger _vote_index);
 
     @External(readonly = true)
-    Map<String, BigInteger> getVotesOfUser(BigInteger vote_index, Address user );
+    Map<String, BigInteger> getVotesOfUser(BigInteger vote_index, Address user);
 
     @External(readonly = true)
     BigInteger myVotingWeight(Address _address, BigInteger _day);
@@ -143,7 +142,7 @@ public interface Governance extends
     void createBalnMarket(BigInteger _bnUSD_amount, BigInteger _baln_amount);
 
     @External
-    void createBalnSicxMarket(BigInteger  _sicx_amount, BigInteger _baln_amount);
+    void createBalnSicxMarket(BigInteger _sicx_amount, BigInteger _baln_amount);
 
     @External
     void rebalancingSetBnusd(Address _address);
@@ -173,7 +172,7 @@ public interface Governance extends
     void setAddresses(BalancedAddresses _addresses);
 
     @External(readonly = true)
-    Map<String, Address>  getAddresses();
+    Map<String, Address> getAddresses();
 
     @External
     void setAdmins();
@@ -194,10 +193,12 @@ public interface Governance extends
     BigInteger getLaunchTime();
 
     @External
-    void addCollateral(Address _token_address, boolean _active, String _peg, BigInteger _lockingRatio, BigInteger _liquidationRatio, BigInteger _debtCeiling);
-    
+    void addCollateral(Address _token_address, boolean _active, String _peg, BigInteger _lockingRatio,
+                       BigInteger _liquidationRatio, BigInteger _debtCeiling);
+
     @External
-    void addDexPricedCollateral(Address _token_address, boolean _active, BigInteger _lockingRatio, BigInteger _liquidationRatio, BigInteger _debtCeiling);
+    void addDexPricedCollateral(Address _token_address, boolean _active, BigInteger _lockingRatio,
+                                BigInteger _liquidationRatio, BigInteger _debtCeiling);
 
     @External
     void setDebtCeiling(String _symbol, BigInteger _debtCeiling);
@@ -206,14 +207,14 @@ public interface Governance extends
     void toggleAssetActive(String _symbol);
 
     @External
-    void setPeg(String _symbol,String _peg);
-     
+    void setPeg(String _symbol, String _peg);
+
     @External
-    void addDexPricedAsset(String _symbol, BigInteger _limit);  
+    void addDexPricedAsset(String _symbol, BigInteger _limit);
 
     @External
     void removeDexPricedAsset(String _symbol);
-       
+
     void addNewDataSource(String _data_source_name, String _contract_address);
 
     @External
@@ -241,7 +242,7 @@ public interface Governance extends
     void delegate(PrepDelegations[] _delegations);
 
     @External
-    void balwAdminTransfer(Address _from , Address _to , BigInteger _value, byte[] _data);
+    void balwAdminTransfer(Address _from, Address _to, BigInteger _value, byte[] _data);
 
     @External
     void setbnUSD(Address _address);

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
- package network.balanced.score.core.loans.utils;
+package network.balanced.score.core.loans.utils;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -22,5 +22,5 @@ import java.util.Map;
 public class PositionBatch {
     public BigInteger totalDebt;
     public int size;
-    public Map<Integer, BigInteger>  positions;
+    public Map<Integer, BigInteger> positions;
 }

@@ -16,33 +16,29 @@
 
 package network.balanced.score.core.reserve;
 
+import static org.mockito.Mockito.when;
+
+import java.math.BigInteger;
+
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
-import com.iconloop.score.test.TestBase;
+import network.balanced.score.lib.interfaces.BalancedOracle;
+import network.balanced.score.lib.interfaces.BalancedOracleScoreInterface;
+import network.balanced.score.lib.interfaces.Loans;
+import network.balanced.score.lib.interfaces.LoansScoreInterface;
+import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
+import network.balanced.score.lib.interfaces.tokens.IRC2MintableScoreInterface;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockContract;
-import network.balanced.score.lib.interfaces.*;
-import network.balanced.score.lib.interfaces.tokens.*;
-
-import org.junit.jupiter.api.Assertions;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
-import score.Address;
-
-import java.lang.reflect.InvocationTargetException;
-import java.math.BigInteger;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ReserveFundTestBase extends UnitTest {
     public static final ServiceManager sm = getServiceManager();
 
     public static final Account owner = sm.createAccount();
     Account admin = sm.createAccount();
+    public static final BigInteger nrDecimalsIETH = BigInteger.valueOf(6);
+    public static final BigInteger iETHDecimals = BigInteger.TEN.pow(6);
 
 
     public static final Account governanceScore = Account.newScoreAccount(1);
@@ -60,7 +56,10 @@ public class ReserveFundTestBase extends UnitTest {
         sicx = new MockContract<>(IRC2MintableScoreInterface.class, sm, admin);
         ieth = new MockContract<>(IRC2MintableScoreInterface.class, sm, admin);
         balancedOracle = new MockContract<>(BalancedOracleScoreInterface.class, sm, admin);
-        reserve = sm.deploy(owner, ReserveFund.class, governanceScore.getAddress());    
+        reserve = sm.deploy(owner, ReserveFund.class, governanceScore.getAddress());
+
+        when(sicx.mock.decimals()).thenReturn(BigInteger.valueOf(18));
+        when(ieth.mock.decimals()).thenReturn(nrDecimalsIETH);
     }
 }
 

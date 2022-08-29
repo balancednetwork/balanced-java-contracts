@@ -27,7 +27,8 @@ import static network.balanced.score.lib.utils.DBHelpers.contains;
 public class DataSourceDB {
     public static final ArrayDB<String> names = Context.newArrayDB("names", String.class);
 
-    private DataSourceDB() {}
+    private DataSourceDB() {
+    }
 
     public static DataSourceImpl get(String name) {
         return new DataSourceImpl(DATASOURCE_DB_PREFIX + "|" + name);
@@ -65,10 +66,10 @@ public class DataSourceDB {
             return;
         }
 
-        for(int i = 0; i < names.size(); i++) {
+        for (int i = 0; i < names.size(); i++) {
             if (names.get(i).equals(name)) {
                 names.set(i, topSourceName);
             }
         }
-    }   
+    }
 }

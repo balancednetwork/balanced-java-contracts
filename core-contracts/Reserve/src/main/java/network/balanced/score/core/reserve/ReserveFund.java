@@ -16,11 +16,9 @@
 
 package network.balanced.score.core.reserve;
 
-import score.Address;
-import score.Context;
-import score.VarDB;
-import score.DictDB;
-import score.BranchDB;
+import network.balanced.score.lib.interfaces.Reserve;
+import network.balanced.score.lib.structs.Disbursement;
+import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
@@ -28,9 +26,6 @@ import scorex.util.HashMap;
 
 import java.math.BigInteger;
 import java.util.Map;
-
-import network.balanced.score.lib.interfaces.Reserve;
-import network.balanced.score.lib.structs.Disbursement;
 
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
@@ -154,15 +149,15 @@ public class ReserveFund implements Reserve {
     @SuppressWarnings("unchecked")
     public void redeem(Address _to, BigInteger _valueInLoop, String collateralSymbol) {
         Address sender = Context.getCaller();
-        Address loansScoreAddress = loansScore.get();
-        Context.require(sender.equals(loansScoreAddress), TAG + ": The redeem method can only be called by the Loans " +
+        Address loans = loansScore.get();
+        Context.require(sender.equals(loans), TAG + ": The redeem method can only be called by the Loans " +
                 "SCORE.");
 
-        Address loans = loansScore.get();
         Address oracle = Context.call(Address.class, loans, "getOracle");
 
         BigInteger remainingValue = _valueInLoop;
-        Map<String, String> collateralTokens = (Map<String, String>) Context.call(loansScore.get(), "getCollateralTokens");
+        Map<String, String> collateralTokens = (Map<String, String>) Context.call(loansScore.get(),
+                "getCollateralTokens");
 
         String collateralAddress = collateralTokens.get(collateralSymbol);
         remainingValue = redeemAsset(collateralSymbol, collateralAddress, _to, oracle, remainingValue);
@@ -183,7 +178,7 @@ public class ReserveFund implements Reserve {
         BigInteger balance = getBalance(balnTokenAddress);
         BigInteger balnToSend = remainingValue.multiply(EXA).divide(balnRate);
 
-        Context.require(balance.compareTo(balnToSend) > 0, TAG +": Unable to process request at this time.");
+        Context.require(balance.compareTo(balnToSend) > 0, TAG + ": Unable to process request at this time.");
 
         sendToken(balnTokenAddress, _to, balnToSend, "Redeemed: ");
     }
@@ -233,19 +228,20 @@ public class ReserveFund implements Reserve {
         }
     }
 
-    private BigInteger redeemAsset(String symbol, String collateralAddress, Address to,  Address oracle, BigInteger remaningValue) {
+    private BigInteger redeemAsset(String symbol, String collateralAddress, Address to, Address oracle,
+                                   BigInteger remainingValue) {
         BigInteger rate = Context.call(BigInteger.class, oracle, "getPriceInLoop", symbol);
         BigInteger balance = getBalance(collateralAddress);
         BigInteger decimals = getDecimals(collateralAddress);
         BigInteger totalValue = rate.multiply(balance).divide(decimals);
-        if (totalValue.compareTo(remaningValue) >= 0){
-            BigInteger amountToSend = remaningValue.multiply(decimals).divide(rate);
+        if (totalValue.compareTo(remainingValue) >= 0) {
+            BigInteger amountToSend = remainingValue.multiply(decimals).divide(rate);
             sendToken(collateralAddress, to, amountToSend, "To Loans: ");
             return BigInteger.ZERO;
-        } 
-    
+        }
+
         sendToken(collateralAddress, to, balance, "To Loans: ");
-        return remaningValue.subtract(totalValue);
+        return remainingValue.subtract(totalValue);
     }
 
     private void sendToken(String tokenAddress, Address to, BigInteger amount, String message) {
@@ -253,14 +249,9 @@ public class ReserveFund implements Reserve {
     }
 
     private void sendToken(Address tokenAddress, Address to, BigInteger amount, String message) {
-        String symbol = "";
-        try {
-            symbol = (String) Context.call(tokenAddress, "symbol");
-            Context.call(tokenAddress, "transfer", to, amount, new byte[0]);
-            TokenTransfer(to, amount, message + amount + symbol + " sent to " + to);
-        } catch (Exception e) {
-            Context.revert(TAG + amount + symbol + " not sent to " + to);
-        }
+        String symbol = (String) Context.call(tokenAddress, "symbol");
+        Context.call(tokenAddress, "transfer", to, amount, new byte[0]);
+        TokenTransfer(to, amount, message + amount + symbol + " sent to " + to);
     }
 
     private BigInteger getBalance(Address tokenAddress) {

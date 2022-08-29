@@ -16,10 +16,10 @@
 
 package network.balanced.score.core.loans.utils;
 
+import network.balanced.score.lib.utils.Constants;
+
 import java.math.BigInteger;
 import java.util.Map;
-
-import network.balanced.score.lib.utils.Constants;
 
 public class LoansConstants extends Constants {
     public static final BigInteger MINING_RATIO = BigInteger.valueOf(50_000);
@@ -33,7 +33,7 @@ public class LoansConstants extends Constants {
 
     //In USD
     public static final BigInteger NEW_BNUSD_LOAN_MINIMUM = BigInteger.TEN.multiply(EXA);
-    
+
     public static final int MAX_DEBTS_LIST_LENGTH = 400;
     public static final int REDEEM_BATCH_SIZE = 50;
 
@@ -48,10 +48,10 @@ public class LoansConstants extends Constants {
     }
 
     public static Map<Standings, String> StandingsMap = Map.of(
-        Standings.ZERO, "Zero",
-        Standings.LIQUIDATE, "Liquidate",
-        Standings.MINING, "Mining",
-        Standings.NO_DEBT, "No Debt"
+            Standings.ZERO, "Zero",
+            Standings.LIQUIDATE, "Liquidate",
+            Standings.MINING, "Mining",
+            Standings.NO_DEBT, "No Debt"
     );
 }
 
