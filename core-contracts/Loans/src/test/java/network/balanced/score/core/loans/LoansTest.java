@@ -19,6 +19,8 @@ package network.balanced.score.core.loans;
 import static network.balanced.score.core.loans.utils.LoansConstants.StandingsMap;
 import static network.balanced.score.core.loans.utils.LoansConstants.LOCKING_RATIO;
 
+import network.balanced.score.lib.interfaces.tokens.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -1053,6 +1055,49 @@ class LoansTest extends LoansTestBase {
     }
 
     @Test
+    void liquidate_nonActiveAssetExist() throws Exception {
+        // Arrange
+        MockContract<IRC2ScoreInterface> nonActiveAsset = new MockContract(IRC2ScoreInterface.class, sm, admin);
+        when(nonActiveAsset.mock.symbol()).thenReturn("TestToken");
+        loans.invoke(admin, "addAsset", nonActiveAsset.getAddress(), false, true);
+
+        Account account = accounts.get(0);
+        Account liquidater = accounts.get(1);
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
+
+        BigInteger liquidationReward = (BigInteger) getParam("liquidation reward");
+        BigInteger expectedReward = collateral.multiply(liquidationReward).divide(POINTS);
+        BigInteger liquidaterBalancePre = (BigInteger) sicx.call("balanceOf", liquidater.getAddress());
+
+        takeLoanICX(account, "bnUSD", collateral, loan);
+        verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
+
+        BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
+        mockOraclePrice("bnUSD", newPrice);
+
+        // Act
+        loans.invoke(liquidater, "liquidate", account.getAddress(), "sICX");
+
+        // Assert
+        BigInteger liquidaterBalancePost = (BigInteger) sicx.call("balanceOf", liquidater.getAddress());
+        assertEquals(liquidaterBalancePre.add(expectedReward), liquidaterBalancePost);
+        verifyPosition(account.getAddress(), BigInteger.ZERO, BigInteger.ZERO);
+
+        Map<String, Object> bnusdAsset = ((Map<String, Map<String, Object>>)loans.call("getAvailableAssets")).get("bnUSD");
+
+        BigInteger expectedBadDebt = loan.add(expectedFee);
+        BigInteger expectedLiquidationPool = collateral.subtract(expectedReward);
+        assertEquals(expectedBadDebt, bnusdAsset.get("bad_debt"));
+        assertEquals(expectedLiquidationPool, bnusdAsset.get("liquidation_pool"));
+
+        verifyTotalDebt(BigInteger.ZERO);
+        verify(rewards.mock).updateRewardsData("Loans", BigInteger.ZERO, account.getAddress(), BigInteger.ZERO);
+        verify(rewards.mock).updateRewardsData("Loans", loan.add(expectedFee), account.getAddress(), loan.add(expectedFee));
+    }
+
+    @Test
     void liquidate_liquidationRatioNotSet() throws Exception {
         // Arrange
         MockContract<IRC2> iBTC = new MockContract<IRC2>(IRC2ScoreInterface.class, sm, admin);
@@ -1282,12 +1327,10 @@ class LoansTest extends LoansTestBase {
         Map<String, Object> bnusdAsset = ((Map<String, Map<String, Object>>)loans.call("getAvailableAssets")).get("bnUSD");
         Map<String, Map<String, Object>> bnusdDebtDetails = (Map<String, Map<String, Object>>) bnusdAsset.get("debt_details");
 
-        BigInteger expectedLiquidationPool = sICXLiquidationPool.subtract(debtInsICX);
-        BigInteger expectedLiquidationPooliETH = iETHLiquidationPool.subtract(debtIniETH);
         assertEquals(BigInteger.ZERO, bnusdDebtDetails.get("sICX").get("bad_debt"));
         assertEquals(BigInteger.ZERO, bnusdDebtDetails.get("iETH").get("bad_debt"));
-        assertEquals(expectedLiquidationPool, bnusdDebtDetails.get("sICX").get("liquidation_pool"));
-        assertEquals(expectedLiquidationPooliETH, bnusdDebtDetails.get("iETH").get("liquidation_pool"));
+        assertEquals(BigInteger.ZERO, bnusdDebtDetails.get("sICX").get("liquidation_pool"));
+        assertEquals(BigInteger.ZERO, bnusdDebtDetails.get("iETH").get("liquidation_pool"));
     }
 
     @Test
@@ -1477,9 +1520,8 @@ class LoansTest extends LoansTestBase {
         Map<String, Object> bnusdAsset = ((Map<String, Map<String, Object>>)loans.call("getAvailableAssets")).get("bnUSD");
         Map<String, Map<String, Object>> bnusdDebtDetails = (Map<String, Map<String, Object>>) bnusdAsset.get("debt_details");
 
-        BigInteger expectedLiquidationPooliETH = iETHLiquidationPool.subtract(debtIniETH);
         assertEquals(BigInteger.ZERO, bnusdDebtDetails.get("iETH").get("bad_debt"));
-        assertEquals(expectedLiquidationPooliETH, bnusdDebtDetails.get("iETH").get("liquidation_pool"));
+        assertEquals(BigInteger.ZERO, bnusdDebtDetails.get("iETH").get("liquidation_pool"));
     }
 
     @Test

@@ -595,12 +595,15 @@ public class LoansImpl implements Loans {
         for (int i = 0; i < assetSymbolsCount; i++) {
             String symbol = AssetDB.assetList.get(i);
             Asset asset  = AssetDB.getAsset(symbol);
-                
+            if (!asset.isActive()) {
+                continue;
+            }
+
             Address assetAddress = asset.getAssetAddress();
             Token assetContract = new Token(assetAddress);
             BigInteger debt = position.getDebt(collateralSymbol, symbol);
             BigInteger oldUserDebt = position.getTotalDebt(symbol);
-            if (asset.isActive() && debt.compareTo(BigInteger.ZERO) > 0) {
+            if (debt.compareTo(BigInteger.ZERO) > 0) {
                 Context.call(rewards.get(), "updateRewardsData", "Loans", oldTotalDebt, _owner, oldUserDebt);
 
                 BigInteger badDebt = asset.getBadDebt(collateralSymbol);
@@ -643,6 +646,7 @@ public class LoansImpl implements Loans {
             if (badDebt.equals(BigInteger.ZERO)) {
                 transferCollateral(collateralSymbol, reserve.get(), inPool.subtract(badDebtCollateral), "Sweep to ReserveFund:",
                         new byte[0]);
+                asset.setLiquidationPool(collateralSymbol, null);
             }
 
             return badDebtCollateral;
