@@ -48,6 +48,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
     protected static BalancedClient reader;
     protected static Address ethAddress;
     protected static BigInteger iethDecimals = BigInteger.TEN.pow(6);
+    protected static BigInteger iethNumberOfDecimals = BigInteger.valueOf(6);
     protected static Address btcAddress;
 
     private static BigInteger initalLockingRatio;
@@ -63,7 +64,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         owner.governance.setBalnVoteDefinitionCriterion(BigInteger.ZERO);
         owner.governance.setQuorum(BigInteger.ONE);
 
-        ethAddress = createIRC2Token(owner, "ICON ETH", "iETH", BigInteger.valueOf(6));
+        ethAddress = createIRC2Token(owner, "ICON ETH", "iETH", iethNumberOfDecimals);
         owner.balancedOracle.getPriceInLoop((txr)->{}, "ETH");
         owner.irc2(ethAddress).setMinter(owner.getAddress());
 

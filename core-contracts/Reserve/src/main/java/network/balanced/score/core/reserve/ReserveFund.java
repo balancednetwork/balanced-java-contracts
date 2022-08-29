@@ -278,6 +278,5 @@ public class ReserveFund implements Reserve {
     private BigInteger getDecimals(Address tokenAddress) {
         BigInteger decimals = Context.call(BigInteger.class, tokenAddress, "decimals");
         return pow(BigInteger.TEN, decimals.intValue());
-
     }
 }

@@ -83,7 +83,7 @@ class BalancedOracleTest extends BalancedOracleTestBase {
     @Test
     void getDexPriceInLoop() {
         // Arrange
-        String tokenSymbol = "BALN";        
+        String tokenSymbol = "BALN";
         BigInteger poolID = BigInteger.valueOf(3);
         when(dex.mock.getPoolBase(poolID)).thenReturn(baln.getAddress());
 

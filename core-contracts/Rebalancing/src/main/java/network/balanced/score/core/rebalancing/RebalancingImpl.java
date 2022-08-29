@@ -191,7 +191,8 @@ public class RebalancingImpl implements Rebalancing {
 
         Context.require(bnusdScore != null && dexScore != null && sicxScore != null && threshold != null);
         String symbol = Context.call(String.class, collateralAddress, "symbol");
-        BigInteger decimals = Context.call(BigInteger.class, collateralAddress, "decimals");
+        BigInteger nrDecimals = Context.call(BigInteger.class, collateralAddress, "decimals");
+        BigInteger decimals = pow(BigInteger.TEN, nrDecimals.intValue());
         BigInteger poolID = Context.call(BigInteger.class, dexScore, "getPoolId", collateralAddress, bnusdScore);
 
         BigInteger bnusdPriceInIcx = (BigInteger) Context.call(oracleScore, "getPriceInLoop", "USD");
@@ -199,7 +200,7 @@ public class RebalancingImpl implements Rebalancing {
         BigInteger actualBnusdPrice = bnusdPriceInIcx.multiply(EXA).divide(assetPriceInIcx);
 
         Map<String, Object> poolStats = (Map<String, Object>) Context.call(dexScore, "getPoolStats", poolID);
-        BigInteger assetLiquidity = ((BigInteger) poolStats.get("base")).multiply(EXA).divide(pow(BigInteger.TEN, decimals.intValue()));
+        BigInteger assetLiquidity = ((BigInteger) poolStats.get("base")).multiply(EXA).divide(decimals);
         BigInteger bnusdLiquidity = (BigInteger) poolStats.get("quote");
         BigInteger bnusdPrice = assetLiquidity.multiply(EXA).divide(bnusdLiquidity);
 

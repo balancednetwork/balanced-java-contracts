@@ -205,11 +205,13 @@ public class BalancedOracleImpl implements BalancedOracle {
     private BigInteger getDexPriceInLoop(String symbol) {
         BigInteger poolID = dexPricedAssets.get(symbol);
         Address base = Context.call(Address.class, dex.get(), "getPoolBase", poolID);
-        BigInteger decimals = Context.call(BigInteger.class, base, "decimals");
+        BigInteger nrDecimals = Context.call(BigInteger.class, base, "decimals");
+        BigInteger decimals = pow(BigInteger.TEN, nrDecimals.intValue());
+
         BigInteger bnusdPriceInAsset = Context.call(BigInteger.class, dex.get(), "getQuotePriceInBase", poolID);
 
         BigInteger loopRate = getLoopRate("USD");
-        BigInteger priceInLoop = loopRate.multiply(pow(BigInteger.TEN, decimals.intValue())).divide(bnusdPriceInAsset);
+        BigInteger priceInLoop = loopRate.multiply(decimals).divide(bnusdPriceInAsset);
         return EMACalculator.updateEMA(symbol, priceInLoop, getDexPriceEMADecay());
     }
 
