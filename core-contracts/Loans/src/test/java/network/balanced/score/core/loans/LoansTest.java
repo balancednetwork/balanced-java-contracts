@@ -198,7 +198,7 @@ class LoansTest extends LoansTestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void getBalanceAndSupply_noPositition() {
+    void getBalanceAndSupply_noPosition() {
         // Arrange
         Account loanTaker = accounts.get(0);
         Account zeroAccount = accounts.get(1);
@@ -832,7 +832,7 @@ class LoansTest extends LoansTestBase {
     }
 
     @Test
-    void returnAsset_returnNonActiveAssest() {
+    void returnAsset_returnNonActiveAsset() {
         // Arrange
         Account account = accounts.get(0);
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
@@ -1054,7 +1054,7 @@ class LoansTest extends LoansTestBase {
     void liquidate() {
         // Arrange
         Account account = accounts.get(0);
-        Account liquidater = accounts.get(1);
+        Account liquidator = accounts.get(1);
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
         BigInteger expectedFee = calculateFee(loan);
@@ -1062,7 +1062,7 @@ class LoansTest extends LoansTestBase {
 
         BigInteger liquidationReward = (BigInteger) getParam("liquidation reward");
         BigInteger expectedReward = collateral.multiply(liquidationReward).divide(POINTS);
-        BigInteger liquidaterBalancePre = (BigInteger) sicx.call("balanceOf", liquidater.getAddress());
+        BigInteger liquidatorBalancePre = (BigInteger) sicx.call("balanceOf", liquidator.getAddress());
 
         takeLoanICX(account, "bnUSD", collateral, loan);
         verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
@@ -1071,11 +1071,11 @@ class LoansTest extends LoansTestBase {
         mockOraclePrice("bnUSD", newPrice);
 
         // Act
-        loans.invoke(liquidater, "liquidate", account.getAddress(), "sICX");
+        loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
 
         // Assert
-        BigInteger liquidaterBalancePost = (BigInteger) sicx.call("balanceOf", liquidater.getAddress());
-        assertEquals(liquidaterBalancePre.add(expectedReward), liquidaterBalancePost);
+        BigInteger liquidatorBalancePost = (BigInteger) sicx.call("balanceOf", liquidator.getAddress());
+        assertEquals(liquidatorBalancePre.add(expectedReward), liquidatorBalancePost);
         verifyPosition(account.getAddress(), BigInteger.ZERO, BigInteger.ZERO);
 
         Map<String, Object> bnusdAsset = ((Map<String, Map<String, Object>>) loans.call("getAvailableAssets")).get(
@@ -1115,7 +1115,8 @@ class LoansTest extends LoansTestBase {
 
         // Act & Assert
         String expectedErrorMessage = "Reverted(0): Liquidation ratio for iBTC is not set";
-        Executable liquidateWithoutLiquidationRatio = () -> loans.invoke(liquidater, "liquidate", account.getAddress(), "iBTC");
+        Executable liquidateWithoutLiquidationRatio = () -> loans.invoke(liquidator, "liquidate",
+                account.getAddress(), "iBTC");
         expectErrorMessage(liquidateWithoutLiquidationRatio, expectedErrorMessage);
     }
 
@@ -1124,7 +1125,7 @@ class LoansTest extends LoansTestBase {
     void liquidate_iETH() {
         // Arrange
         Account account = accounts.get(0);
-        Account liquidater = accounts.get(1);
+        Account liquidator = accounts.get(1);
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
         BigInteger expectedFee = calculateFee(loan);
@@ -1132,7 +1133,7 @@ class LoansTest extends LoansTestBase {
 
         BigInteger liquidationReward = (BigInteger) getParam("liquidation reward");
         BigInteger expectedReward = collateral.multiply(liquidationReward).divide(POINTS);
-        BigInteger liquidaterBalancePre = (BigInteger) ieth.call("balanceOf", liquidater.getAddress());
+        BigInteger liquidatorBalancePre = (BigInteger) ieth.call("balanceOf", liquidator.getAddress());
 
         takeLoaniETH(account, collateral, loan);
         verifyPosition(account.getAddress(), collateral, loan.add(expectedFee), "iETH");
@@ -1141,11 +1142,11 @@ class LoansTest extends LoansTestBase {
         mockOraclePrice("bnUSD", newPrice);
 
         // Act
-        loans.invoke(liquidater, "liquidate", account.getAddress(), "iETH");
+        loans.invoke(liquidator, "liquidate", account.getAddress(), "iETH");
 
         // Assert
-        BigInteger liquidaterBalancePost = (BigInteger) ieth.call("balanceOf", liquidater.getAddress());
-        assertEquals(liquidaterBalancePre.add(expectedReward), liquidaterBalancePost);
+        BigInteger liquidatorBalancePost = (BigInteger) ieth.call("balanceOf", liquidator.getAddress());
+        assertEquals(liquidatorBalancePre.add(expectedReward), liquidatorBalancePost);
         verifyPosition(account.getAddress(), BigInteger.ZERO, BigInteger.ZERO);
 
         Map<String, Object> bnusdAsset = ((Map<String, Map<String, Object>>) loans.call("getAvailableAssets")).get(
@@ -1168,7 +1169,7 @@ class LoansTest extends LoansTestBase {
     void liquidate_differentLiquidationRatios() {
         // Arrange
         Account account = accounts.get(0);
-        Account liquidater = accounts.get(1);
+        Account liquidator = accounts.get(1);
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
         BigInteger expectedFee = calculateFee(loan);
@@ -1199,26 +1200,26 @@ class LoansTest extends LoansTestBase {
         // Act & Assert
         BigInteger bnusdPrice = sICXLiquidationPrice.subtract(BigInteger.TEN);
         mockOraclePrice("bnUSD", bnusdPrice);
-        loans.invoke(liquidater, "liquidate", account.getAddress(), "sICX");
-        loans.invoke(liquidater, "liquidate", account.getAddress(), "iETH");
+        loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
+        loans.invoke(liquidator, "liquidate", account.getAddress(), "iETH");
         verifyPosition(account.getAddress(), collateral, debt.multiply(bnusdPrice).divide(EXA), "sICX");
         verifyPosition(account.getAddress(), collateral, debt.multiply(bnusdPrice).divide(EXA), "iETH");
 
         bnusdPrice = sICXLiquidationPrice;
         mockOraclePrice("bnUSD", bnusdPrice);
-        loans.invoke(liquidater, "liquidate", account.getAddress(), "sICX");
-        
+        loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
+
         verifyPosition(account.getAddress(), BigInteger.ZERO, BigInteger.ZERO, "sICX");
         verifyPosition(account.getAddress(), collateral, debt.multiply(bnusdPrice).divide(EXA), "iETH");
 
         // Act & Assert
         bnusdPrice = iETHLiquidationPrice.subtract(BigInteger.TEN);
         mockOraclePrice("bnUSD", bnusdPrice);
-        loans.invoke(liquidater, "liquidate", account.getAddress(), "iETH");
+        loans.invoke(liquidator, "liquidate", account.getAddress(), "iETH");
         verifyPosition(account.getAddress(), collateral, debt.multiply(bnusdPrice).divide(EXA), "iETH");
 
         mockOraclePrice("bnUSD", iETHLiquidationPrice);
-        loans.invoke(liquidater, "liquidate", account.getAddress(), "iETH");
+        loans.invoke(liquidator, "liquidate", account.getAddress(), "iETH");
         verifyPosition(account.getAddress(), BigInteger.ZERO, BigInteger.ZERO, "iETH");
         verifyTotalDebt(BigInteger.ZERO);
     }
@@ -1227,7 +1228,7 @@ class LoansTest extends LoansTestBase {
     void liquidate_wrongCollateralType() {
         // Arrange
         Account account = accounts.get(0);
-        Account liquidater = accounts.get(1);
+        Account liquidator = accounts.get(1);
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
         BigInteger expectedFee = calculateFee(loan);
@@ -1239,17 +1240,17 @@ class LoansTest extends LoansTestBase {
         mockOraclePrice("bnUSD", newPrice);
 
         // Act
-        loans.invoke(liquidater, "liquidate", account.getAddress(), "iETH");
+        loans.invoke(liquidator, "liquidate", account.getAddress(), "iETH");
 
         // Assert
         verifyPosition(account.getAddress(), collateral, loan.add(expectedFee).multiply(newPrice).divide(EXA));
     }
 
     @Test
-    void liquidate_PostionNotInLiquidateStanding() {
+    void liquidate_PositionNotInLiquidateStanding() {
         // Arrange
         Account account = accounts.get(0);
-        Account liquidater = accounts.get(1);
+        Account liquidator = accounts.get(1);
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
         BigInteger expectedFee = calculateFee(loan);
@@ -1258,7 +1259,7 @@ class LoansTest extends LoansTestBase {
         verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
 
         // Act
-        loans.invoke(liquidater, "liquidate", account.getAddress(), "sICX");
+        loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
 
         // Assert
         verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
@@ -1268,11 +1269,12 @@ class LoansTest extends LoansTestBase {
     void liquidate_NoPosition() {
         // Arrange
         Account account = accounts.get(0);
-        Account liquidater = accounts.get(1);
+        Account liquidator = accounts.get(1);
         String expectedErrorMessage = "Reverted(0): " + TAG + "This address does not have a position on Balanced.";
 
         // Assert & Act
-        Executable liquidateAccountWithNoPosition = () ->  loans.invoke(liquidater, "liquidate", account.getAddress(), "sICX");
+        Executable liquidateAccountWithNoPosition = () -> loans.invoke(liquidator, "liquidate", account.getAddress(),
+                "sICX");
         expectErrorMessage(liquidateAccountWithNoPosition, expectedErrorMessage);
     }
 
@@ -1281,8 +1283,8 @@ class LoansTest extends LoansTestBase {
     void retireBadDebt_retireAll() {
         // Arrange
         Account account = accounts.get(0);
-        Account liquidater = accounts.get(1);
-        Account badDebtReedemer =  accounts.get(2);
+        Account liquidator = accounts.get(1);
+        Account badDebtReedemer = accounts.get(2);
 
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
@@ -1298,8 +1300,8 @@ class LoansTest extends LoansTestBase {
 
         BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
         mockOraclePrice("bnUSD", newPrice);
-        loans.invoke(liquidater, "liquidate", account.getAddress(), "sICX");
-        loans.invoke(liquidater, "liquidate", account.getAddress(), "iETH");
+        loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
+        loans.invoke(liquidator, "liquidate", account.getAddress(), "iETH");
 
         BigInteger badDebtSICX = expectedDebt;
         BigInteger badDebtIETH = expectedDebt;
@@ -1346,8 +1348,8 @@ class LoansTest extends LoansTestBase {
     void retireBadDebt_retirePartial() {
         // Arrange
         Account account = accounts.get(0);
-        Account liquidater = accounts.get(1);
-        Account badDebtReedemer =  accounts.get(2);
+        Account liquidator = accounts.get(1);
+        Account badDebtReedemer = accounts.get(2);
 
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
@@ -1361,8 +1363,8 @@ class LoansTest extends LoansTestBase {
 
         BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
         mockOraclePrice("bnUSD", newPrice);
-        loans.invoke(liquidater, "liquidate", account.getAddress(), "sICX");
-        loans.invoke(liquidater, "liquidate", account.getAddress(), "iETH");
+        loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
+        loans.invoke(liquidator, "liquidate", account.getAddress(), "iETH");
 
         BigInteger badDebtSICX = expectedDebt;
         BigInteger badDebtIETH = expectedDebt;
@@ -1386,8 +1388,8 @@ class LoansTest extends LoansTestBase {
     void retireBadDebt_UseReserve() {
         // Arrange
         Account account = accounts.get(0);
-        Account liquidater = accounts.get(1);
-        Account badDebtReedemer =  accounts.get(2);
+        Account liquidator = accounts.get(1);
+        Account badDebtReedemer = accounts.get(2);
 
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
@@ -1404,7 +1406,7 @@ class LoansTest extends LoansTestBase {
         BigInteger pricePostLiquidation = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(6));
 
         mockOraclePrice("bnUSD", pricePreLiquidation);
-        loans.invoke(liquidater, "liquidate", account.getAddress(), "sICX");
+        loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
         mockOraclePrice("bnUSD", pricePostLiquidation);
 
         BigInteger liquidationPool = collateral.subtract(expectedReward);
@@ -1442,8 +1444,8 @@ class LoansTest extends LoansTestBase {
     void retireBadDebtForCollateral_UseReserve_sICX() {
         // Arrange
         Account account = accounts.get(0);
-        Account liquidater = accounts.get(1);
-        Account badDebtReedemer =  accounts.get(2);
+        Account liquidator = accounts.get(1);
+        Account badDebtReedemer = accounts.get(2);
 
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
@@ -1460,7 +1462,7 @@ class LoansTest extends LoansTestBase {
         BigInteger pricePostLiquidation = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(6));
 
         mockOraclePrice("bnUSD", pricePreLiquidation);
-        loans.invoke(liquidater, "liquidate", account.getAddress(), "sICX");
+        loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
         mockOraclePrice("bnUSD", pricePostLiquidation);
 
         BigInteger liquidationPool = collateral.subtract(expectedReward);
@@ -1498,8 +1500,8 @@ class LoansTest extends LoansTestBase {
     void retireBadDebtForCollateral_UseReserve_IETH() {
         // Arrange
         Account account = accounts.get(0);
-        Account liquidater = accounts.get(1);
-        Account badDebtReedemer =  accounts.get(2);
+        Account liquidator = accounts.get(1);
+        Account badDebtReedemer = accounts.get(2);
 
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
@@ -1515,8 +1517,8 @@ class LoansTest extends LoansTestBase {
 
         BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
         mockOraclePrice("bnUSD", newPrice);
-        loans.invoke(liquidater, "liquidate", account.getAddress(), "sICX");
-        loans.invoke(liquidater, "liquidate", account.getAddress(), "iETH");
+        loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
+        loans.invoke(liquidator, "liquidate", account.getAddress(), "iETH");
 
         BigInteger badDebtSICX = expectedDebt;
         BigInteger badDebtIETH = expectedDebt;
@@ -1553,8 +1555,8 @@ class LoansTest extends LoansTestBase {
     void retireBadDebt_ZeroAmount() {
         // Arrange
         Account account = accounts.get(0);
-        Account liquidater = accounts.get(1);
-        Account badDebtReedemer =  accounts.get(2);
+        Account liquidator = accounts.get(1);
+        Account badDebtReedemer = accounts.get(2);
         String expectedErrorMessage = "Reverted(0): " + TAG + "Amount retired must be greater than zero.";
 
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
@@ -1566,7 +1568,7 @@ class LoansTest extends LoansTestBase {
 
         BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
         mockOraclePrice("bnUSD", newPrice);
-        loans.invoke(liquidater, "liquidate", account.getAddress(), "sICX");
+        loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
 
         // Assert & Act
         Executable retireBadDebtZeroAmount = () -> loans.invoke(badDebtReedemer, "retireBadDebt", "bnUSD",
@@ -1578,8 +1580,8 @@ class LoansTest extends LoansTestBase {
     void retireBadDebt_Collateral() {
         // Arrange
         Account account = accounts.get(0);
-        Account liquidater = accounts.get(1);
-        Account badDebtReedemer =  accounts.get(2);
+        Account liquidator = accounts.get(1);
+        Account badDebtReedemer = accounts.get(2);
         String expectedErrorMessage = "Reverted(0): BalancedLoansAssets sICX is not a supported asset.";
 
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
@@ -1592,7 +1594,7 @@ class LoansTest extends LoansTestBase {
 
         BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
         mockOraclePrice("bnUSD", newPrice);
-        loans.invoke(liquidater, "liquidate", account.getAddress(), "sICX");
+        loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
 
         // Assert & Act
         Executable retireBadDebtZeroAmount = () -> loans.invoke(badDebtReedemer, "retireBadDebt", "sICX", badDebt);
@@ -1603,8 +1605,8 @@ class LoansTest extends LoansTestBase {
     void retireBadDebt_AssetNotActive() {
         // Arrange
         Account account = accounts.get(0);
-        Account liquidater = accounts.get(1);
-        Account badDebtReedemer =  accounts.get(2);
+        Account liquidator = accounts.get(1);
+        Account badDebtReedemer = accounts.get(2);
         String expectedErrorMessage = "Reverted(0): " + TAG + "bnUSD is not an active, borrowable asset on Balanced.";
 
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
@@ -1617,7 +1619,7 @@ class LoansTest extends LoansTestBase {
 
         BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
         mockOraclePrice("bnUSD", newPrice);
-        loans.invoke(liquidater, "liquidate", account.getAddress(), "sICX");
+        loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
 
         // Assert & Act
         loans.invoke(admin, "toggleAssetActive", "bnUSD");
@@ -1629,8 +1631,8 @@ class LoansTest extends LoansTestBase {
     void retireBadDebt_InsufficientBalance() {
         // Arrange
         Account account = accounts.get(0);
-        Account liquidater = accounts.get(1);
-        Account badDebtReedemer =  accounts.get(2);
+        Account liquidator = accounts.get(1);
+        Account badDebtReedemer = accounts.get(2);
         String expectedErrorMessage = "Reverted(0): " + TAG + "Insufficient balance.";
 
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
@@ -1642,7 +1644,7 @@ class LoansTest extends LoansTestBase {
 
         BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
         mockOraclePrice("bnUSD", newPrice);
-        loans.invoke(liquidater, "liquidate", account.getAddress(), "sICX");
+        loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
 
         // Assert & Act
         Executable retireBadDebtZeroAmount = () -> loans.invoke(badDebtReedemer, "retireBadDebt", "bnUSD", badDebt);

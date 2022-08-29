@@ -127,11 +127,11 @@ public class LoansImpl implements Loans {
 
     @External(readonly = true)
     public Map<String, String> getAssetTokens() {
-        Map<String, String> assestAndCollateral = new HashMap<>();
-        assestAndCollateral.putAll(AssetDB.getAssets());
-        assestAndCollateral.putAll(CollateralDB.getCollateral());
+        Map<String, String> assetAndCollateral = new HashMap<>();
+        assetAndCollateral.putAll(AssetDB.getAssets());
+        assetAndCollateral.putAll(CollateralDB.getCollateral());
 
-        return assestAndCollateral;
+        return assetAndCollateral;
     }
 
     @External(readonly = true)

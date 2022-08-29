@@ -78,7 +78,7 @@ class LoansTestBase extends UnitTest {
     protected static final String symbolBnusd = "bnUSD";
 
     protected static final int tokenDecimals = 18;
-    protected static final BigInteger initalaupplyTokens = BigInteger.TEN.pow(50);
+    protected static final BigInteger initialSupplyTokens = BigInteger.TEN.pow(50);
 
     protected void setupAccounts() {
         int numberOfAccounts = 10;
@@ -108,13 +108,10 @@ class LoansTestBase extends UnitTest {
         when(dex.mock.getBasePriceInQuote(BigInteger.valueOf(4))).thenReturn(rate);
     }
 
-    protected void mockSwap(Score tokenRecived, BigInteger in, BigInteger out) {
-        Mockito.doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable {
-                tokenRecived.invoke(dex.account, "transfer", loans.getAddress(), out, new byte[0]);
-                return null;
-            }
+    protected void mockSwap(Score tokenReceived, BigInteger in, BigInteger out) {
+        Mockito.doAnswer((Answer<Void>) invocation -> {
+            tokenReceived.invoke(dex.account, "transfer", loans.getAddress(), out, new byte[0]);
+            return null;
         }).when(dex.mock).tokenFallback(Mockito.eq(loans.getAddress()), Mockito.eq(in), Mockito.any(byte[].class));
     }
 
@@ -201,9 +198,9 @@ class LoansTestBase extends UnitTest {
         assertEquals(collateral, standings.get(collateralSymbol).get("collateral"));
     }
 
-    protected boolean compareRewardsData(RewardsDataEntry[] expectedDataEntires, RewardsDataEntry[] dataEntires) {
-        for (RewardsDataEntry entry : expectedDataEntires) {
-            if (!containsRewardsData(entry, dataEntires)) {
+    protected boolean compareRewardsData(RewardsDataEntry[] expectedDataEntries, RewardsDataEntry[] dataEntries) {
+        for (RewardsDataEntry entry : expectedDataEntries) {
+            if (!containsRewardsData(entry, dataEntries)) {
                 return false;
             }
         }
@@ -211,8 +208,8 @@ class LoansTestBase extends UnitTest {
         return true;
     }
 
-    private boolean containsRewardsData(RewardsDataEntry expectedData, RewardsDataEntry[] dataEntires) {
-        for (RewardsDataEntry data : dataEntires) {
+    private boolean containsRewardsData(RewardsDataEntry expectedData, RewardsDataEntry[] dataEntries) {
+        for (RewardsDataEntry data : dataEntries) {
             if (data._user.equals(expectedData._user) && data._balance.equals(expectedData._balance)) {
                 return true;
             }
@@ -268,9 +265,9 @@ class LoansTestBase extends UnitTest {
     }
 
     public void setup() throws Exception {
-        sicx = sm.deploy(admin, sICXMintBurn.class, nameSicx, symbolSicx, tokenDecimals, initalaupplyTokens);
-        bnusd = sm.deploy(admin, bnUSDMintBurn.class, nameBnusd, symbolBnusd, tokenDecimals, initalaupplyTokens);
-        ieth = sm.deploy(admin, iETHMintBurn.class, "ICON ETH", "iETH", 18, initalaupplyTokens);
+        sicx = sm.deploy(admin, sICXMintBurn.class, nameSicx, symbolSicx, tokenDecimals, initialSupplyTokens);
+        bnusd = sm.deploy(admin, bnUSDMintBurn.class, nameBnusd, symbolBnusd, tokenDecimals, initialSupplyTokens);
+        ieth = sm.deploy(admin, iETHMintBurn.class, "ICON ETH", "iETH", 18, initialSupplyTokens);
 
         setupGovernance();
 

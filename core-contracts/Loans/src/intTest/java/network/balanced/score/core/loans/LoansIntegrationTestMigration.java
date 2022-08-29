@@ -167,7 +167,7 @@ class LoansIntegrationTestMigration extends LoansIntegrationTest {
         BigInteger expectedTotalDebt = getTotalDebt();
         depositToStabilityContract(voter, voteDefinitionFee.multiply(BigInteger.TWO));
 
-        BigInteger initalLockingRatio = hexObjectToBigInteger(owner.loans.getParameters().get("locking ratio"));
+        BigInteger initialLockingRatio = hexObjectToBigInteger(owner.loans.getParameters().get("locking ratio"));
         BigInteger lockingRatio = BigInteger.valueOf(14000);
 
         BalancedClient loanTaker = balanced.newClient();
@@ -185,7 +185,7 @@ class LoansIntegrationTestMigration extends LoansIntegrationTest {
 
         loanTaker.loans.depositAndBorrow(collateral, "bnUSD", loan, null, null);
 
-        setLockingRatio(voter, initalLockingRatio, "restore Lockign ratio for asset migration");
+        setLockingRatio(voter, initialLockingRatio, "restore Locking ratio for asset migration");
 
         Map<String, Object> params = new HashMap<>();
         params.put("_owner", loanTaker.getAddress());
