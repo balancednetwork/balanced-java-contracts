@@ -1335,12 +1335,10 @@ class LoansTest extends LoansTestBase {
         Map<String, Map<String, Object>> bnusdDebtDetails = (Map<String, Map<String, Object>>) bnusdAsset.get(
                 "debt_details");
 
-        BigInteger expectedLiquidationPool = sICXLiquidationPool.subtract(debtInsICX);
-        BigInteger expectedLiquidationPooliETH = iETHLiquidationPool.subtract(debtIniETH);
         assertEquals(BigInteger.ZERO, bnusdDebtDetails.get("sICX").get("bad_debt"));
         assertEquals(BigInteger.ZERO, bnusdDebtDetails.get("iETH").get("bad_debt"));
-        assertEquals(expectedLiquidationPool, bnusdDebtDetails.get("sICX").get("liquidation_pool"));
-        assertEquals(expectedLiquidationPooliETH, bnusdDebtDetails.get("iETH").get("liquidation_pool"));
+        assertEquals(BigInteger.ZERO, bnusdDebtDetails.get("sICX").get("liquidation_pool"));
+        assertEquals(BigInteger.ZERO, bnusdDebtDetails.get("iETH").get("liquidation_pool"));
     }
 
     @SuppressWarnings("unchecked")
@@ -1546,9 +1544,8 @@ class LoansTest extends LoansTestBase {
         Map<String, Map<String, Object>> bnusdDebtDetails = (Map<String, Map<String, Object>>) bnusdAsset.get(
                 "debt_details");
 
-        BigInteger expectedLiquidationPooliETH = iETHLiquidationPool.subtract(debtIniETH);
         assertEquals(BigInteger.ZERO, bnusdDebtDetails.get("iETH").get("bad_debt"));
-        assertEquals(expectedLiquidationPooliETH, bnusdDebtDetails.get("iETH").get("liquidation_pool"));
+        assertEquals(BigInteger.ZERO, bnusdDebtDetails.get("iETH").get("liquidation_pool"));
     }
 
     @Test
