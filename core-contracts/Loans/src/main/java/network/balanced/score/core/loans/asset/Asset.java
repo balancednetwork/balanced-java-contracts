@@ -16,35 +16,31 @@
 
 package network.balanced.score.core.loans.asset;
 
-import static network.balanced.score.core.loans.LoansImpl.call;
-import static network.balanced.score.core.loans.utils.LoansConstants.SICX_SYMBOL;
+import network.balanced.score.core.loans.collateral.CollateralDB;
+import network.balanced.score.core.loans.linkedlist.LinkedListDB;
+import network.balanced.score.core.loans.utils.Token;
+import score.*;
+import scorex.util.HashMap;
 
 import java.math.BigInteger;
 import java.util.Map;
 
-import network.balanced.score.core.loans.LoansVariables;
-import network.balanced.score.core.loans.collateral.Collateral;
-import network.balanced.score.core.loans.collateral.CollateralDB;
-import network.balanced.score.core.loans.linkedlist.LinkedListDB;
-import network.balanced.score.core.loans.utils.Token;
-import score.Address;
-import score.BranchDB;
-import score.Context;
-import score.DictDB;
-import score.VarDB;
-import scorex.util.HashMap;
+import static network.balanced.score.core.loans.LoansImpl.call;
+import static network.balanced.score.core.loans.utils.LoansConstants.SICX_SYMBOL;
 
 public class Asset {
     private static final String BORROWER_DB_PREFIX = "borrowers";
     private final BranchDB<String, VarDB<BigInteger>> assetAddedTime = Context.newBranchDB("added", BigInteger.class);
     private final BranchDB<String, VarDB<Address>> assetAddress = Context.newBranchDB("address", Address.class);
-    private final BranchDB<String, VarDB<BigInteger>> badDebt = Context.newBranchDB("bad_debt", BigInteger.class); // depreacted
-    private final BranchDB<String, DictDB<String, BigInteger>> badDebts = Context.newBranchDB("multi_collateral_bad_debts",
-    BigInteger.class);
+    // deprecated
+    private final BranchDB<String, VarDB<BigInteger>> badDebt = Context.newBranchDB("bad_debt", BigInteger.class);
+    private final BranchDB<String, DictDB<String, BigInteger>> badDebts = Context.newBranchDB(
+            "multi_collateral_bad_debts", BigInteger.class);
+    // deprecated
     private final BranchDB<String, VarDB<BigInteger>> liquidationPool = Context.newBranchDB("liquidation_pool",
-            BigInteger.class); // depreacted
-            private final BranchDB<String, DictDB<String, BigInteger>> liquidationPools = Context.newBranchDB("multi_collateral_liquidation_pools",
             BigInteger.class);
+    private final BranchDB<String, DictDB<String, BigInteger>> liquidationPools = Context.newBranchDB(
+            "multi_collateral_liquidation_pools", BigInteger.class);
     private final BranchDB<String, VarDB<BigInteger>> totalBurnedTokens = Context.newBranchDB("burned",
             BigInteger.class);
     private final BranchDB<String, VarDB<Boolean>> isCollateral = Context.newBranchDB("is_collateral", Boolean.class);

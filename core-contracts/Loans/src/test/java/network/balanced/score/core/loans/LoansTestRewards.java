@@ -125,7 +125,8 @@ class LoansTestRewards extends LoansTestBase {
 
         verifyTotalDebt(loan.add(expectedFee).subtract(loanToRepay));
         verify(rewards.mock).updateRewardsData("Loans", BigInteger.ZERO, account.getAddress(), BigInteger.ZERO);
-        verify(rewards.mock).updateRewardsData("Loans", loan.add(expectedFee), account.getAddress(), loan.add(expectedFee));
+        verify(rewards.mock).updateRewardsData("Loans", loan.add(expectedFee), account.getAddress(),
+                loan.add(expectedFee));
     }
 
     @Test
@@ -158,10 +159,13 @@ class LoansTestRewards extends LoansTestBase {
 
         verify(rewards.mock).updateRewardsData("Loans", BigInteger.ZERO, account.getAddress(), BigInteger.ZERO);
         verify(rewards.mock).updateRewardsData("Loans", iETHDebt, account.getAddress(), iETHDebt);
-        verify(rewards.mock).updateRewardsData("Loans", iETHDebt.add(sICXDebt), account.getAddress(), iETHDebt.add(sICXDebt));
-        verify(rewards.mock).updateRewardsData("Loans", iETHDebt.add(sICXDebt).subtract(sICXLoanToRepay), account.getAddress(), iETHDebt.add(sICXDebt).subtract(sICXLoanToRepay));
+        verify(rewards.mock).updateRewardsData("Loans", iETHDebt.add(sICXDebt), account.getAddress(),
+                iETHDebt.add(sICXDebt));
+        verify(rewards.mock).updateRewardsData("Loans", iETHDebt.add(sICXDebt).subtract(sICXLoanToRepay),
+                account.getAddress(), iETHDebt.add(sICXDebt).subtract(sICXLoanToRepay));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void liquidate() {
         // Arrange
@@ -189,8 +193,10 @@ class LoansTestRewards extends LoansTestBase {
         assertEquals(liquidaterBalancePre.add(expectedReward), liquidaterBalancePost);
         verifyPosition(account.getAddress(), BigInteger.ZERO, BigInteger.ZERO);
 
-        Map<String, Object> bnusdAsset = ((Map<String, Map<String, Object>>)loans.call("getAvailableAssets")).get("bnUSD");
-        Map<String, Map<String, Object>> bnusdDebtDetails = (Map<String, Map<String, Object>>)bnusdAsset.get("debt_details");
+        Map<String, Object> bnusdAsset = ((Map<String, Map<String, Object>>) loans.call("getAvailableAssets")).get(
+                "bnUSD");
+        Map<String, Map<String, Object>> bnusdDebtDetails = (Map<String, Map<String, Object>>) bnusdAsset.get(
+                "debt_details");
 
         BigInteger expectedBadDebt = loan.add(expectedFee);
         BigInteger expectedLiquidationPool = collateral.subtract(expectedReward);
@@ -199,6 +205,7 @@ class LoansTestRewards extends LoansTestBase {
 
         verifyTotalDebt(BigInteger.ZERO);
         verify(rewards.mock).updateRewardsData("Loans", BigInteger.ZERO, account.getAddress(), BigInteger.ZERO);
-        verify(rewards.mock).updateRewardsData("Loans", loan.add(expectedFee), account.getAddress(), loan.add(expectedFee));
+        verify(rewards.mock).updateRewardsData("Loans", loan.add(expectedFee), account.getAddress(),
+                loan.add(expectedFee));
     }
 }

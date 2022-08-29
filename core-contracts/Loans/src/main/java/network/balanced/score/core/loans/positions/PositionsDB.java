@@ -45,7 +45,7 @@ public class PositionsDB {
         if (id < 0) {
             id = lastUid + id + 1;
         }
-        
+
         Context.require(id >= 1, TAG + ": That is not a valid key.");
         Context.require(id <= lastUid, TAG + ": That key does not exist yet.");
         return new Position(POSITION_DB_PREFIX + "|" + id);
@@ -72,9 +72,9 @@ public class PositionsDB {
     }
 
     public static Position getPosition(Address owner) {
-        return  getPosition(owner, false);
+        return getPosition(owner, false);
     }
-    
+
     public static Position getPosition(Address owner, boolean readOnly) {
         int id = getAddressIds(owner);
         if (id == 0) {

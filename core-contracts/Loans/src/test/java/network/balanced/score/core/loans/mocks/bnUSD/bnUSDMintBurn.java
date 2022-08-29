@@ -59,7 +59,7 @@ public class bnUSDMintBurn extends bnUSD {
 
     }
 
-    @External(readonly=true)
+    @External(readonly = true)
     public BigInteger lastPriceInLoop() {
         return lastPrice.get();
     }
