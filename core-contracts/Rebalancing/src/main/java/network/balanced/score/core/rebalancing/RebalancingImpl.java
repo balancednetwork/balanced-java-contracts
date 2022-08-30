@@ -197,10 +197,10 @@ public class RebalancingImpl implements Rebalancing {
 
         BigInteger usdPriceInIcx = (BigInteger) Context.call(oracleScore, "getPriceInLoop", "USD");
         BigInteger assetPriceInIcx = (BigInteger) Context.call(oracleScore, "getPriceInLoop", symbol);
-        BigInteger actualUsdPriceInAsset = usdPriceInIcx.multiply(EXA).divide(assetPriceInIcx);
+        BigInteger actualUsdPriceInAsset = usdPriceInIcx.multiply(decimals).divide(assetPriceInIcx);
 
         Map<String, Object> poolStats = (Map<String, Object>) Context.call(dexScore, "getPoolStats", poolID);
-        BigInteger assetLiquidity = ((BigInteger) poolStats.get("base")).multiply(EXA).divide(decimals);
+        BigInteger assetLiquidity = ((BigInteger) poolStats.get("base"));
         BigInteger bnusdLiquidity = (BigInteger) poolStats.get("quote");
         BigInteger bnusdPriceInAsset = assetLiquidity.multiply(EXA).divide(bnusdLiquidity);
 
