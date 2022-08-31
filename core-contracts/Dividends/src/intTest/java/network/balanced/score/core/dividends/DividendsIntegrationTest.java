@@ -637,7 +637,7 @@ public class DividendsIntegrationTest {
         assertTrue(expected.subtract(actual).compareTo(BigInteger.ZERO)  > 0);
 
     }
-
+//
     @Test
     @Order(8)
     void testContinuousRewards() {
@@ -731,7 +731,6 @@ public class DividendsIntegrationTest {
         dividends.distribute((txr) -> {});
 
         BigInteger feePercent = hexObjectToBigInteger(loans.getParameters().get("origination fee"));
-        BigInteger daoDistPercent = hexObjectToBigInteger(loans.getParameters().get("origination fee"));
 
         // Act
         BigInteger daoFundBalancePre = bnusd.balanceOf(balanced.daofund._address());
@@ -812,8 +811,20 @@ public class DividendsIntegrationTest {
     @Test
     @Order(22)
     void testBBaln_daofund() throws Exception {
+        /*
+        If there are no supply of boosted baln even after bbaln day is started
+        but there are some dividends received by dividends contract then,
+        1. Daofund will get all the dividends .
+        2.  No any user dividends will be increased.
+         */
         Address bbalnTesterAddress =  Address.fromString(tester_bbaln.getAddress().toString());
+        Address bbalnTesterAddress2 =  Address.fromString(tester_bbaln2.getAddress().toString());
+        Address bbalnTesterAddress3 =  Address.fromString(tester_bbaln3.getAddress().toString());
+
         Map<String, BigInteger> unclaimedDividends = dividends.getUnclaimedDividends(bbalnTesterAddress);
+        Map<String, BigInteger> unclaimedDividends2 = dividends.getUnclaimedDividends(bbalnTesterAddress2);
+        Map<String, BigInteger> unclaimedDividends3 = dividends.getUnclaimedDividends(bbalnTesterAddress3);
+
         dividends.setBBalnDay(governance.getDay());
         dividends.setBBalnAddress(boostedBaln._address());
         BigInteger feePercent = hexObjectToBigInteger(loans.getParameters().get("origination fee"));
@@ -831,12 +842,20 @@ public class DividendsIntegrationTest {
         assertEquals(daoFundBalancePre.add(fee), daoFundBalancePost);
         // dividends shouldn't increase once bbalnDay is set unless there is some transaction
         assertEquals(unclaimedDividends, dividends.getUnclaimedDividends(bbalnTesterAddress) );
-        System.out.println(dividends.getUnclaimedDividends(bbalnTesterAddress));
+        assertEquals(unclaimedDividends2, dividends.getUnclaimedDividends(bbalnTesterAddress2) );
+
+        // new user will have nothing unless he adds bbaln
+        assertEquals(unclaimedDividends3, dividends.getUnclaimedDividends(bbalnTesterAddress3) );
     }
 
     @Test
     @Order(23)
-    void testBBaln_staker() throws Exception {
+    void testBBaln_lock() throws Exception {
+        /*
+        1. Daofund doesn't get all the dividends once user starts locking baln token.
+        2. User1 locks balance for few weeks and starts getting dividends.
+        2. User2 doesn't lock balance and the unclaimed dividends remain same for few weeks.
+         */
         Address bbalnTesterAddress =  Address.fromString(tester_bbaln.getAddress().toString());
         Address bbalnTesterAddress2 =  Address.fromString(tester_bbaln2.getAddress().toString());
 
@@ -853,22 +872,19 @@ public class DividendsIntegrationTest {
         // locks baln for 4 weeks
         balnTesterScore.transfer(boostedBaln._address(), availableBalnBalance.divide(BigInteger.TWO), data.getBytes());
 
-        // did tx to create a dividends
         BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
         BigInteger feePercent = hexObjectToBigInteger(loans.getParameters().get("origination fee"));
-
-        // Act
         BigInteger daoFundBalancePre = bnusd.balanceOf(balanced.daofund._address());
         BigInteger fee = loanAmount.multiply(feePercent).divide(POINTS);
         BigInteger unclaimedDividendsBefore = dividends.getUnclaimedDividends(bbalnTesterAddress).get(balanced.bnusd._address().toString());
-
         BigInteger collateral = BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18));
+
+        // did tx to create a dividends
         loans.depositAndBorrow(collateral, "bnUSD"
                 , loanAmount, null, null);
+
         BigInteger unclaimedDividendsAfter = dividends.getUnclaimedDividends(bbalnTesterAddress).get(balanced.bnusd._address().toString());
-
         BigInteger daoFundBalancePost = bnusd.balanceOf(balanced.daofund._address());
-
         BigInteger daoPercentage = dividends.getDividendsPercentage().get("daofund");
         BigInteger daoFee = fee.multiply(daoPercentage).divide(EXA);
 
@@ -878,6 +894,7 @@ public class DividendsIntegrationTest {
         // unclaimed dividends increases for the user once the dividends is received by contract
         assertTrue(unclaimedDividendsAfter.compareTo(unclaimedDividendsBefore) > 0);
 
+        // day changes and creation of dividends
         balanced.increaseDay(1);
         loans.depositAndBorrow(collateral, "bnUSD"
                 , loanAmount, null, null);
@@ -891,10 +908,13 @@ public class DividendsIntegrationTest {
                 , loanAmount, null, null);
 
         BigInteger unclaimedDividendsAfter2 = dividends.getUnclaimedDividends(bbalnTesterAddress2).get(balanced.bnusd._address().toString());
+        BigInteger user1DividendsAfter = dividends.getUnclaimedDividends(bbalnTesterAddress).get(balanced.bnusd._address().toString());
 
         // as the user is not migrated to bbaln , the dividends
         // to be received by user remains same even after days
         assertEquals(unclaimedDividendsAfter2, unclaimedDividendsBefore2);
+
+        assertTrue(user1DividendsAfter.compareTo(unclaimedDividendsAfter) > 0);
 
         BigInteger bnusdBalanceUser2Before = bnusd.balanceOf(bbalnTesterAddress2);
         bbalntesterScoreDividends2.claimDividends();
@@ -912,7 +932,12 @@ public class DividendsIntegrationTest {
 
     @Test
     @Order(24)
-    void testBBaln_staker2() throws Exception {
+    void testBBaln_claim() throws Exception {
+        /*
+        1. User1 claims the dividends and the expected dividends is sent to user wallet.
+        2. After the claim , there will be dividends for that user only if dividends is received by the contract.
+        3. Multiple claim of dividends doesn't increase the balance.
+         */
         Address bbalnTesterAddress =  Address.fromString(tester_bbaln.getAddress().toString());
         BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
         BigInteger collateral = BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18));
@@ -920,23 +945,20 @@ public class DividendsIntegrationTest {
         BigInteger unclaimedDividendsBefore = dividends.getUnclaimedDividends(bbalnTesterAddress).get(bnusd._address().toString());
         BigInteger bnusdBalanceUserBefore = bnusd.balanceOf(bbalnTesterAddress);
 
-        System.out.println(bnusdBalanceUserBefore);
-        System.out.println(unclaimedDividendsBefore);
-        System.out.println(bbalnTesterAddress);
-
         bbalntesterScoreDividends.claimDividends();
 
         BigInteger newUnclaimedDividends = dividends.getUnclaimedDividends(bbalnTesterAddress).get(bnusd._address().toString());
         BigInteger actualBnusdAfterClaim = bnusd.balanceOf(bbalnTesterAddress);
+        // claims multiple times
+        bbalntesterScoreDividends.claimDividends();
+
+        // bnusd in user wallet doesn't increase
+        assertEquals(actualBnusdAfterClaim, bnusd.balanceOf(bbalnTesterAddress));
+
         BigInteger expectedBnusdAfterClaim = bnusdBalanceUserBefore.add(unclaimedDividendsBefore);
 
-//        System.out.println(dividends.getUnclaimedDividends(bbalnTesterAddress).get(balanced.bnusd._address().toString()));
-        System.out.println(unclaimedDividendsBefore);
-        System.out.println(actualBnusdAfterClaim);
-        System.out.println(expectedBnusdAfterClaim);
-        // unclaimedDividends goes to user wallet and as it is a continuous dividends
-        // the received value is greater than the calculated expected value
-//        assertTrue(actualBnusdAfterClaim.compareTo(expectedBnusdAfterClaim) > 0);
+        // unclaimedDividends goes to user wallet
+        assertEquals(actualBnusdAfterClaim, expectedBnusdAfterClaim);
 
         // once user claims dividends the unclaimedDividends become null
         assertNull(newUnclaimedDividends);
@@ -954,6 +976,10 @@ public class DividendsIntegrationTest {
     @Test
     @Order(25)
     void testBBaln_newUser() throws Exception {
+        /*
+        A new user comes and locks the baln and that user will be eligible to earn dividends
+        anytime after that.
+         */
         Address bbalnTesterAddress =  Address.fromString(tester_bbaln3.getAddress().toString());
         BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
         BigInteger collateral = BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18));
@@ -977,15 +1003,12 @@ public class DividendsIntegrationTest {
         // after user locks baln, he will start getting dividends
         assertTrue(unclaimedDividendsBefore.compareTo(BigInteger.ZERO) > 0);
 
-        System.out.println(unclaimedDividendsBefore);
-        System.out.println(bnusdBalancePre);
-
         bbalntesterScoreDividends3.claimDividends();
 
         BigInteger bnusdBalancePost = bnusd.balanceOf(bbalnTesterAddress);
-        System.out.println(bnusdBalancePost);
+
+        assertEquals(bnusdBalancePost, bnusdBalancePre.add(unclaimedDividendsBefore));
         unclaimedDividendsBefore = bbalntesterScoreDividends.getUnclaimedDividends(bbalnTesterAddress).get(bnusd._address().toString());
-        System.out.println(unclaimedDividendsBefore);
 
         // after claiming dividends unclaimed dividends will be null unless dividends is received.
         assertNull(bbalntesterScoreDividends.getUnclaimedDividends(bbalnTesterAddress).get(bnusd._address().toString()));

@@ -82,6 +82,10 @@ class DividendsImplTestContinuousMigration extends DividendsImplTestBase {
         dividendScore.invoke(owner, "setBBalnDay", day.add(BigInteger.TWO));
         contextMock.when(() -> Context.call(BigInteger.class, balnScore.getAddress(), "stakedBalanceOf", staker3.getAddress())).thenReturn(BigInteger.ZERO);
 
+        BigInteger staker3Balance = BigInteger.valueOf(150).multiply(ICX);
+
+        mockBBalnBalanceOf(staker3.getAddress(), staker3Balance);
+
         dividendScore.invoke(bBalnScore, "onBalanceUpdate", staker3.getAddress(), BigInteger.ZERO, BigInteger.valueOf(1L));
 
         BigInteger expectedFees = BigInteger.TEN.pow(20);
@@ -151,6 +155,9 @@ class DividendsImplTestContinuousMigration extends DividendsImplTestBase {
         dividendScore.invoke(owner, "setBBalnDay", BigInteger.valueOf(100L));
         Address staker3 = sm.createAccount().getAddress();
         contextMock.when(() -> Context.call(BigInteger.class, balnScore.getAddress(), "stakedBalanceOf", staker3)).thenReturn(BigInteger.ZERO);
+        BigInteger staker3Balance = BigInteger.valueOf(150).multiply(ICX);
+
+        mockBBalnBalanceOf(staker3, staker3Balance);
 
         dividendScore.invoke(bBalnScore, "onBalanceUpdate",staker3 , BigInteger.ZERO, BigInteger.valueOf(1L));
         dividendScore.invoke(balnScore, "updateBalnStake", owner.getAddress(), BigInteger.ZERO, BigInteger.valueOf(50));
@@ -203,6 +210,10 @@ class DividendsImplTestContinuousMigration extends DividendsImplTestBase {
 
     private void mockBBalnBalanceOf(Address user) {
         contextMock.when(() -> Context.call(BigInteger.class, bBalnScore.getAddress(), "balanceOf", user)).thenReturn(BigInteger.TEN.pow(18));
+    }
+
+    private void mockBBalnBalanceOf(Address user, BigInteger stake) {
+        contextMock.when(() -> Context.call(BigInteger.class, bBalnScore.getAddress(), "balanceOf", user)).thenReturn(stake);
     }
 
     private void mockTotalSupplyAt(BigInteger day, BigInteger supply) {

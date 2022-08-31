@@ -78,12 +78,12 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         contextMock.when(() -> Context.call(BigInteger.class, balnScore.getAddress(), "stakedBalanceOf", staker3.getAddress())).thenReturn(BigInteger.ZERO);
 
         BigInteger stakerPercentage = getFeePercentage("baln_holders");
-
-        dividendScore.invoke(bBalnScore, "onBalanceUpdate", staker3.getAddress(), BigInteger.ZERO, BigInteger.valueOf(1L));
-
-
         BigInteger staker1Balance = BigInteger.valueOf(150).multiply(ICX);
         BigInteger staker2Balance = BigInteger.valueOf(50).multiply(ICX);
+
+        mockBBalnBalanceOf(staker3.getAddress(), staker2Balance);
+
+        dividendScore.invoke(bBalnScore, "onBalanceUpdate", staker3.getAddress(), BigInteger.ZERO, BigInteger.valueOf(1L));
         BigInteger totalStake = BigInteger.valueOf(200).multiply(ICX);
 
         BigInteger staker1ExpectedFees = BigInteger.ZERO;
@@ -153,6 +153,7 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         BigInteger staker1Balance = BigInteger.valueOf(150).multiply(ICX);
         BigInteger staker2Balance = BigInteger.valueOf(50).multiply(ICX);
         BigInteger totalStake = BigInteger.valueOf(200).multiply(ICX);
+        mockBBalnBalanceOf(staker3.getAddress(), staker2Balance);
 
         dividendScore.invoke(bBalnScore, "onBalanceUpdate", staker3.getAddress(), BigInteger.ZERO, BigInteger.valueOf(1L));
 
@@ -208,6 +209,8 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         BigInteger staker2Balance = BigInteger.valueOf(50).multiply(ICX);
         BigInteger totalStake = BigInteger.valueOf(200).multiply(ICX);
 
+        mockBBalnBalanceOf(staker2.getAddress(), staker2Balance);
+        mockBBalnBalanceOf(staker1.getAddress(), staker1Balance);
 
         // Act
         dividendScore.invoke(bBalnScore, "onBalanceUpdate", staker1.getAddress(), BigInteger.ZERO, staker1Balance);
@@ -257,6 +260,8 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         BigInteger staker2Balance = BigInteger.valueOf(50).multiply(ICX);
         BigInteger totalStake = BigInteger.valueOf(200).multiply(ICX);
 
+        mockBBalnBalanceOf(staker2.getAddress(), staker2Balance);
+        mockBBalnBalanceOf(staker1.getAddress(), staker1Balance);
 
         // Act
         dividendScore.invoke(bBalnScore, "onBalanceUpdate", staker1.getAddress(), BigInteger.ZERO, staker1Balance);
