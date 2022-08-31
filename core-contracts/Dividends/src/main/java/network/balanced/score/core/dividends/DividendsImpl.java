@@ -748,10 +748,10 @@ public class DividendsImpl implements Dividends {
     }
 
     @External
-    public void onKick(Address user, BigInteger bBalancedUserBalance, BigInteger currentSupply, @Optional byte[] data) {
+    public void onKick(Address user, BigInteger prevBalance, BigInteger currentSupply, @Optional byte[] data) {
         Context.require(Context.getCaller().equals(boostedBalnScore.get()), TAG + " Only BBaln contract is allowed to call onKick method");
-        Context.require(!bBalancedUserBalance.equals(BigInteger.ZERO), TAG + " " + user + " Baln locking has not expired");
-        updateUserDividends(user, bBalancedUserBalance);
+        Context.require(!prevBalance.equals(BigInteger.ZERO), TAG + " " + user + " Baln locking has not expired");
+        updateUserDividends(user, prevBalance);
         userBalance.set(user, getBoostedBalnBalance(user));
         DividendsTracker.setBBalnTotalSupply(currentSupply);
         UserKicked(user, data);
@@ -765,12 +765,12 @@ public class DividendsImpl implements Dividends {
         DividendsTracker.setBBalnTotalSupply(currentTotalSupply);
     }
 
-    private void updateUserDividends(Address user, BigInteger bBalnUserBalance) {
+    private void updateUserDividends(Address user, BigInteger prevBalance) {
         DictDB<Address, BigInteger> userAccruedDividends = accruedDividends.at(user);
         int size = acceptedTokens.size();
         for (int i = 0; i < size; i++) {
             Address token = acceptedTokens.get(i);
-            BigInteger accruedDividends = DividendsTracker.updateBoostedUserData(token, user, bBalnUserBalance, false);
+            BigInteger accruedDividends = DividendsTracker.updateBoostedUserData(token, user, prevBalance, false);
             BigInteger prevAccruedDividends = userAccruedDividends.getOrDefault(token, BigInteger.ZERO);
             userAccruedDividends.set(token, prevAccruedDividends.add(accruedDividends));
         }
