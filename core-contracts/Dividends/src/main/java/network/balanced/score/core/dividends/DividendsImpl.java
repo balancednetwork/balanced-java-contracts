@@ -454,21 +454,20 @@ public class DividendsImpl implements Dividends {
         BigInteger accruedDividends = BigInteger.ZERO;
         boolean checkBBalnDay = checkBBalnDay(getDay());
         BigInteger balance = getBalnBalance(user);
+        BigInteger bbalnBalance = userBalance.getOrDefault(user, BigInteger.ZERO);
 
             if(checkBBalnDay){
                 if (getUserWeight(user, token).equals(BigInteger.ZERO)) {
                 // new user after bbaln day
-                balance = getBoostedBalnBalance(user);
                 accruedDividends = DividendsTracker.updateBoostedUserData(token,
-                        user, balance, readonly);
+                        user, bbalnBalance, readonly);
             }
             else{
                     // existing user after bbaln day
                     accruedDividends = DividendsTracker.updateUserData
                                     (token, user, balance, readonly);
-                    balance = getBoostedBalnBalance(user);
                     accruedDividends = accruedDividends.add(DividendsTracker.updateBoostedUserData(token,
-                            user, balance, readonly));
+                            user, bbalnBalance, readonly));
                     if(!readonly){
                         DividendsTracker.userWeight.at(user).set(token, null);
                     }
@@ -753,14 +752,16 @@ public class DividendsImpl implements Dividends {
         Context.require(Context.getCaller().equals(boostedBalnScore.get()), TAG + " Only BBaln contract is allowed to call onKick method");
         Context.require(!bBalancedUserBalance.equals(BigInteger.ZERO), TAG + " " + user + " Baln locking has not expired");
         updateUserDividends(user, bBalancedUserBalance);
-        UserKicked(user, data);
+        userBalance.set(user, getBoostedBalnBalance(user));
         DividendsTracker.setBBalnTotalSupply(currentSupply);
+        UserKicked(user, data);
     }
 
     @External
     public void onBalanceUpdate(Address user, BigInteger prevBalance, BigInteger currentTotalSupply) {
         Context.require(Context.getCaller().equals(boostedBalnScore.get()), TAG+" Only bBaln contract is allowed to call onBalanceUpdate method");
         updateUserDividends(user, prevBalance);
+        userBalance.set(user, getBoostedBalnBalance(user));
         DividendsTracker.setBBalnTotalSupply(currentTotalSupply);
     }
 

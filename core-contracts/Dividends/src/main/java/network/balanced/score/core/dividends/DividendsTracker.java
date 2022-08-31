@@ -40,6 +40,8 @@ public class DividendsTracker {
     private static final  VarDB<BigInteger> boostedTotalSupply = Context.newVarDB(BBALN_SUPPLY, BigInteger.class);
     private static final  DictDB<Address, BigInteger> boostedTotalWeight = Context.newDictDB(BBALN_TOTAL_WEIGHT,
             BigInteger.class);
+    protected static final  DictDB<Address, BigInteger> userBalance = Context.newDictDB(USER_BBALN_BALANCE,
+            BigInteger.class);
     protected static final VarDB<BigInteger> bBalnDay = Context.newVarDB(BBALN_DAY, BigInteger.class);
 
 
