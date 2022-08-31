@@ -16,11 +16,13 @@
 
 package network.balanced.score.lib.interfaces.tokens;
 
+import foundation.icon.score.client.ScoreInterface;
 import score.Address;
 import score.annotation.External;
 
 import java.math.BigInteger;
 
+@ScoreInterface
 public interface IRC2BurnableInterface {
 
     @External

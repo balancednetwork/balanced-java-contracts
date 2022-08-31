@@ -28,7 +28,6 @@ import network.balanced.score.lib.test.integration.Env;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import score.UserRevertedException;
 
 import java.io.File;
 import java.math.BigInteger;
@@ -36,7 +35,8 @@ import java.util.Map;
 
 import static foundation.icon.score.client.DefaultScoreClient._deploy;
 import static network.balanced.score.lib.utils.Constants.EXA;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class SwapRemoveAndFeeTest {
 
@@ -89,20 +89,21 @@ public class SwapRemoveAndFeeTest {
     private static final DexTestScoreClient ownerDexTestBaseScoreClient = new DexTestScoreClient(chain.getEndpointURL(),
             chain.networkId, testOwnerWallet, DefaultScoreClient.address(dexTestBaseScoreAddress));
     private static final DexTestScoreClient ownerDexTestThirdScoreClient =
-            new DexTestScoreClient(chain.getEndpointURL(),
-            chain.networkId, testOwnerWallet, DefaultScoreClient.address(dexTestThirdScoreAddress));
+            new DexTestScoreClient(chain.getEndpointURL(), chain.networkId, testOwnerWallet,
+                    DefaultScoreClient.address(dexTestThirdScoreAddress));
     private static final Dex dexUserScoreClient = new DexScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(),
             userWallet, dexScoreClient._address());
 
     private static final DexTestScoreClient userDexTestScoreClient = new DexTestScoreClient(dexScoreClient.endpoint(),
             dexScoreClient._nid(), userWallet, DefaultScoreClient.address(dexTestScoreAddress));
     private static final DexTestScoreClient userDexTestBaseScoreClient =
-            new DexTestScoreClient(dexScoreClient.endpoint(),
-            dexScoreClient._nid(), userWallet, DefaultScoreClient.address(dexTestBaseScoreAddress));
+            new DexTestScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet,
+                    DefaultScoreClient.address(dexTestBaseScoreAddress));
     private static final DexTestScoreClient userDexTestThirdScoreClient =
-            new DexTestScoreClient(dexScoreClient.endpoint(),
-            dexScoreClient._nid(), userWallet, DefaultScoreClient.address(dexTestThirdScoreAddress));
-    private static final GovernanceScoreClient governanceDexScoreClient = new GovernanceScoreClient(governanceScoreClient);
+            new DexTestScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet,
+                    DefaultScoreClient.address(dexTestThirdScoreAddress));
+    private static final GovernanceScoreClient governanceDexScoreClient =
+            new GovernanceScoreClient(governanceScoreClient);
 
     @Test
     @Order(5)
@@ -133,20 +134,20 @@ public class SwapRemoveAndFeeTest {
         assertEquals(hexToBigInteger(poolStats.get("quote_decimals").toString()), BigInteger.valueOf(18));
         assertEquals(hexToBigInteger(poolStats.get("min_quote").toString()), BigInteger.ZERO);
         BigInteger updatedFeeBalanceOfTestToken = userDexTestScoreClient.balanceOf(feeHandlerScoreClient._address());
-        assert updatedFeeBalanceOfTestToken.compareTo(feeBalanceOfTestToken)>0;
-        assertEquals( BigInteger.valueOf(150).multiply(EXA).divide(BigInteger.valueOf(1000)),updatedFeeBalanceOfTestToken);
+        assert updatedFeeBalanceOfTestToken.compareTo(feeBalanceOfTestToken) > 0;
+        assertEquals(BigInteger.valueOf(150).multiply(EXA).divide(BigInteger.valueOf(1000)),
+                updatedFeeBalanceOfTestToken);
 
         waitForADay();
         balanced.syncDistributions();
         BigInteger withdrawAmount = BigInteger.valueOf(5);
         BigInteger balanceBefore = dexUserScoreClient.balanceOf(userAddress, poolId);
-        // this cal was working on 1-min day, but not working for offset manipulation.
-        //dexUserScoreClient.remove(poolId, BigInteger.valueOf(5), true);
+        dexUserScoreClient.remove(poolId, BigInteger.valueOf(5), true);
         BigInteger balanceAfter = dexUserScoreClient.balanceOf(userAddress, poolId);
-        //assert balanceAfter.equals(balanceBefore.subtract(withdrawAmount));
+        assert balanceAfter.equals(balanceBefore.subtract(withdrawAmount));
     }
 
-    void mintAndTransferTestTokens(byte[] tokenDeposit){
+    void mintAndTransferTestTokens(byte[] tokenDeposit) {
 
         ownerDexTestScoreClient.mintTo(userAddress, BigInteger.valueOf(200).multiply(EXA));
         ownerDexTestBaseScoreClient.mintTo(userAddress, BigInteger.valueOf(200).multiply(EXA));
@@ -154,28 +155,30 @@ public class SwapRemoveAndFeeTest {
 
 
         //deposit base token
-        userDexTestBaseScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(190).multiply(EXA), tokenDeposit);
+        userDexTestBaseScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(190).multiply(EXA),
+                tokenDeposit);
         //deposit quote token
         userDexTestScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(190).multiply(EXA), tokenDeposit);
-        userDexTestThirdScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(190).multiply(EXA), tokenDeposit);
+        userDexTestThirdScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(190).multiply(EXA),
+                tokenDeposit);
 
         //check isQuoteCoinAllowed for test token if not added
-        if(!dexUserScoreClient.isQuoteCoinAllowed(Address.fromString(dexTestScoreAddress))) {
+        if (!dexUserScoreClient.isQuoteCoinAllowed(Address.fromString(dexTestScoreAddress))) {
             governanceDexScoreClient.dexAddQuoteCoin(Address.fromString(dexTestScoreAddress));
         }
-        if(!dexUserScoreClient.isQuoteCoinAllowed(Address.fromString(dexTestBaseScoreAddress))) {
+        if (!dexUserScoreClient.isQuoteCoinAllowed(Address.fromString(dexTestBaseScoreAddress))) {
             governanceDexScoreClient.dexAddQuoteCoin(Address.fromString(dexTestBaseScoreAddress));
         }
-        if(!dexUserScoreClient.isQuoteCoinAllowed(Address.fromString(dexTestThirdScoreAddress))) {
+        if (!dexUserScoreClient.isQuoteCoinAllowed(Address.fromString(dexTestThirdScoreAddress))) {
             governanceDexScoreClient.dexAddQuoteCoin(Address.fromString(dexTestThirdScoreAddress));
         }
     }
 
-    void waitForADay(){
+    void waitForADay() {
         balanced.increaseDay(1);
     }
 
-    BigInteger hexToBigInteger(String hex){
+    BigInteger hexToBigInteger(String hex) {
         return new BigInteger(hex.replace("0x", ""), 16);
     }
 }

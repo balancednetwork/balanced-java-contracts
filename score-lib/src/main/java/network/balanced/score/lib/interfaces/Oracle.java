@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2022-2022 Balanced.network.
  *
@@ -14,16 +15,22 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.rewards.utils;
+package network.balanced.score.lib.interfaces;
 
-import network.balanced.score.core.rewards.RewardsImpl;
+import foundation.icon.score.client.ScoreClient;
+import foundation.icon.score.client.ScoreInterface;
+import score.annotation.External;
 
 import java.math.BigInteger;
+import java.util.Map;
 
-public class Check {
+@ScoreInterface
+@ScoreClient
+public interface Oracle {
+    @External(readonly = true)
+    Map<String, Object> get_reference_data(String base, String quote);
 
-    public static boolean continuousRewardsActive() {
-        BigInteger continuousRewardDay = RewardsImpl.continuousRewardsDay.get();
-        return continuousRewardDay != null && continuousRewardDay.compareTo(RewardsImpl.getDay()) <= 0;
-    }
+    @External
+    void setICXRate(String symbol, BigInteger rate);
 }
+

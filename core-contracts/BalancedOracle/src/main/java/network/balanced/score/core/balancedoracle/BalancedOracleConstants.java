@@ -33,7 +33,6 @@ public class BalancedOracleConstants {
 
     private static final String DEX_PRICED_ASSETS = "dexPriceAssets";
     private static final String ASSET_SYMBOL_PEG = "assetPegMap";
-    private static final String LAST_LOOP_PRICES = "lastLoopPrices";
 
     private static final String ORACLE_PRICE_DECAY = "oraclePriceDecay";
     private static final String DEX_PRICE_DECAY = "dexPriceDecay";
@@ -47,8 +46,6 @@ public class BalancedOracleConstants {
     public static final DictDB<String, BigInteger> dexPricedAssets = Context.newDictDB(DEX_PRICED_ASSETS,
             BigInteger.class);
     public static final DictDB<String, String> assetPeg = Context.newDictDB(ASSET_SYMBOL_PEG, String.class);
-    public static final DictDB<String, BigInteger> lastPriceInLoop = Context.newDictDB(LAST_LOOP_PRICES,
-            BigInteger.class);
 
     public static final VarDB<BigInteger> oraclePriceEMADecay = Context.newVarDB(ORACLE_PRICE_DECAY, BigInteger.class);
     public static final VarDB<BigInteger> dexPriceEMADecay = Context.newVarDB(DEX_PRICE_DECAY, BigInteger.class);

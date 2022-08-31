@@ -25,6 +25,7 @@ import score.annotation.External;
 import score.annotation.Optional;
 
 import java.math.BigInteger;
+
 public abstract class bnUSD {
     protected static final Address ZERO_ADDRESS = new Address(new byte[Address.LENGTH]);
     private final VarDB<String> name = Context.newVarDB("token_name", String.class);
@@ -52,27 +53,27 @@ public abstract class bnUSD {
         return str.trim();
     }
 
-    @External(readonly=true)
+    @External(readonly = true)
     public String name() {
         return name.get();
     }
 
-    @External(readonly=true)
+    @External(readonly = true)
     public String symbol() {
         return symbol.get();
     }
 
-    @External(readonly=true)
+    @External(readonly = true)
     public BigInteger decimals() {
         return decimals.get();
     }
 
-    @External(readonly=true)
+    @External(readonly = true)
     public BigInteger totalSupply() {
         return totalSupply.getOrDefault(BigInteger.ZERO);
     }
 
-    @External(readonly=true)
+    @External(readonly = true)
     public BigInteger balanceOf(Address _owner) {
         return safeGetBalance(_owner);
     }
@@ -132,6 +133,7 @@ public abstract class bnUSD {
         balances.set(owner, amount);
     }
 
-    @EventLog(indexed=3)
-    public void Transfer(Address _from, Address _to, BigInteger _value, byte[] _data) {}
+    @EventLog(indexed = 3)
+    public void Transfer(Address _from, Address _to, BigInteger _value, byte[] _data) {
+    }
 }

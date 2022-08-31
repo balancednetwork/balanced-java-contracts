@@ -56,12 +56,10 @@ public class BalancedOracleImpl implements BalancedOracle {
         BigInteger priceInLoop;
         if (pegSymbol.equals("sICX")) {
             priceInLoop = getSICXPriceInLoop();
-            lastPriceInLoop.set(pegSymbol, priceInLoop);
         } else if (dexPricedAssets.get(pegSymbol) != null) {
             priceInLoop = getDexPriceInLoop(pegSymbol);
         } else {
             priceInLoop = getLoopRate(pegSymbol);
-            lastPriceInLoop.set(pegSymbol, priceInLoop);
         }
 
         return priceInLoop;
@@ -70,14 +68,16 @@ public class BalancedOracleImpl implements BalancedOracle {
     @External(readonly = true)
     public BigInteger getLastPriceInLoop(String symbol) {
         String pegSymbol = assetPeg.getOrDefault(symbol, symbol);
-        BigInteger priceInLoop; 
+        BigInteger priceInLoop;
 
-        if (dexPricedAssets.get(pegSymbol) != null) {
+        if (pegSymbol.equals("sICX")) {
+            priceInLoop = getSICXPriceInLoop();
+        } else if (dexPricedAssets.get(pegSymbol) != null) {
             priceInLoop = EMACalculator.calculateEMA(pegSymbol, getDexPriceEMADecay());
         } else {
-            priceInLoop = lastPriceInLoop.getOrDefault(pegSymbol, BigInteger.ZERO);
+            priceInLoop = getLoopRate(pegSymbol);
         }
-        
+
         Context.require(priceInLoop.compareTo(BigInteger.ZERO) > 0, TAG + ": No price data exists for symbol");
 
         return priceInLoop;
@@ -206,15 +206,15 @@ public class BalancedOracleImpl implements BalancedOracle {
         BigInteger bnusdPriceInAsset = Context.call(BigInteger.class, dex.get(), "getQuotePriceInBase", poolID);
 
         BigInteger loopRate = getLoopRate("USD");
-        BigInteger priceInLoop = loopRate.multiply(bnusdPriceInAsset).divide(EXA);
+        BigInteger priceInLoop = loopRate.multiply(EXA).divide(bnusdPriceInAsset);
         return EMACalculator.updateEMA(symbol, priceInLoop, getDexPriceEMADecay());
     }
 
+    @SuppressWarnings("unchecked")
     private BigInteger getLoopRate(String symbol) {
         Map<String, Object> priceData = (Map<String, Object>) Context.call(oracle.get(), "get_reference_data", symbol
                 , "ICX");
 
         return (BigInteger) priceData.get("rate");
-        // return EMACalculator.updateEMA(symbol, priceInLoop, getOraclePriceEMADecay());
     }
 }

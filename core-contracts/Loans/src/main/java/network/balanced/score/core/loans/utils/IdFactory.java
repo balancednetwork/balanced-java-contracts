@@ -22,8 +22,8 @@ import score.VarDB;
 public class IdFactory {
     private static final String _NAME = "_ID_FACTORY";
     private static VarDB<Integer> uid;
-    
-    public IdFactory (String varKey) {
+
+    public IdFactory(String varKey) {
         uid = Context.newVarDB(varKey + _NAME + "_uid", Integer.class);
     }
 
