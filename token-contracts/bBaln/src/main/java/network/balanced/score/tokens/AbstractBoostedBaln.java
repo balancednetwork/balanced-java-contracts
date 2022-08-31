@@ -425,7 +425,7 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
         Context.require(!address.isContract(), "Assert Not contract: Smart contract depositors not allowed");
     }
 
-    private void onBalanceUpdate(Address address, BigInteger previousLockedAmount, BigInteger previousSupply) {
+    protected void onBalanceUpdate(Address address, BigInteger previousLockedAmount, BigInteger currentSupply) {
         // calling handle action for rewards
         Map<String, Object> userDetails = new HashMap<>();
         userDetails.put("user", address);
@@ -434,7 +434,7 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
 
         //assuming token address is reward address
         updateRewardData(userDetails);
-        Context.call(this.dividendsAddress.get(), "onBalanceUpdate", address, previousLockedAmount, previousSupply);
+        Context.call(this.dividendsAddress.get(), "onBalanceUpdate", address, previousLockedAmount, currentSupply);
     }
 
     protected void updateRewardData(Map<String, Object> userDetails) {
