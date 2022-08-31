@@ -234,7 +234,7 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
         Withdraw(sender, value, blockTimestamp);
         Supply(supplyBefore, currentSupply);
         this.nonReentrant.updateLock(false);
-        onKick(sender, oldLocked.amount, currentSupply, "User kicked".getBytes());
+        onBalanceUpdate(sender, oldLocked.amount, currentSupply);
     }
 
     @External(readonly = true)
