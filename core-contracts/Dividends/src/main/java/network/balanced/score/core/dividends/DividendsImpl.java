@@ -83,10 +83,6 @@ public class DividendsImpl implements Dividends {
             distributionActivate.set(false);
             addInitialCategories();
         }
-
-        Map<String, BigInteger> dividendsDist = dividendsAt(getDay());
-        dividendsPercentage.set(DAO_FUND, dividendsDist.get(DAO_FUND));
-        dividendsPercentage.set(BALN_HOLDERS, dividendsDist.get(BALN_HOLDERS));
     }
 
     @External(readonly = true)
@@ -437,9 +433,7 @@ public class DividendsImpl implements Dividends {
             BigInteger accruedDividends = DividendsTracker.updateUserData(token, user, stakedBalance, true);
             BigInteger prevAccruedDividends = userAccruedDividends.getOrDefault(token, BigInteger.ZERO);
             BigInteger totalDivs = accruedDividends.add(prevAccruedDividends);
-            if (totalDivs.signum() > 0) {
-                totalDividends.put(token.toString(), totalDivs);
-            }
+            totalDividends.put(token.toString(), totalDivs);
         }
 
         return totalDividends;

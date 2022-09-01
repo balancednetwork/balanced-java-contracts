@@ -28,13 +28,12 @@ import score.annotation.Optional;
 import score.annotation.Payable;
 
 import java.math.BigInteger;
-import java.util.List;
 import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
 public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, GovernanceAddress, StakingAddress,
-        RebalancingAddress, DividendsAddress, ReserveAddress, RewardsAddress {
+        RebalancingAddress, DividendsAddress, ReserveAddress, RewardsAddress, OracleAddress {
 
     @External
     void turnLoansOn();
@@ -46,34 +45,10 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
     boolean getLoansOn();
 
     @External(readonly = true)
-    void migrateUserData(Address address);
-
-    @External(readonly = true)
-    Map<String, Object> userMigrationDetails(Address _address);
-
-    @External
-    void setContinuousRewardsDay(BigInteger _day);
-
-    @External(readonly = true)
-    BigInteger getContinuousRewardsDay();
-
-    @External(readonly = true)
     BigInteger getDay();
 
     @External
     void delegate(PrepDelegations[] prepDelegations);
-
-    @External(readonly = true)
-    Map<String, Boolean> getDistributionsDone();
-
-    @External(readonly = true)
-    List<String> checkDeadMarkets();
-
-    @External(readonly = true)
-    int getNonzeroPositionCount();
-
-    @External(readonly = true)
-    Map<String, Object> getPositionStanding(Address _address, @Optional BigInteger snapshot);
 
     @External(readonly = true)
     Address getPositionAddress(int _index);
@@ -91,9 +66,6 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
     Map<String, Object> getAccountPositions(Address _owner);
 
     @External(readonly = true)
-    Map<String, Object> getPositionByIndex(int _index, BigInteger _day);
-
-    @External(readonly = true)
     Map<String, Map<String, Object>> getAvailableAssets();
 
     @External(readonly = true)
@@ -105,69 +77,61 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
     @External(readonly = true)
     boolean hasDebt(Address _owner);
 
-    @External(readonly = true)
-    Map<String, Object> getSnapshot(@Optional BigInteger _snap_id);
-
     @External
     void addAsset(Address _token_address, boolean _active, boolean _collateral);
 
     @External
     void toggleAssetActive(String _symbol);
 
-    @External
-    boolean precompute(BigInteger _snapshot_id, BigInteger batch_size);
-
     @External(readonly = true)
-    BigInteger getTotalValue(String _name, BigInteger _snapshot_id);
-
-    @External(readonly = true)
-    Map<String, BigInteger> getBalanceAndSupply(String _name, Address __owner);
+    Map<String, BigInteger> getBalanceAndSupply(String _name, Address _owner);
 
     @External(readonly = true)
     BigInteger getBnusdValue(String _name);
 
-    @External(readonly = true)
-    BigInteger getDataCount(BigInteger _snapshot_id);
-
-    @External(readonly = true)
-    Map<String, BigInteger> getDataBatch(String _name, BigInteger _snapshot_id, int _limit, @Optional int _offset);
-
     @External
-    boolean checkForNewDay();
-
-    @External
-    void checkDistributions(BigInteger _day, boolean _new_day);
+    void borrow(String _collateralToBorrowAgainst, String _assetToBorrow, BigInteger _amountToBorrow);
 
     @External
     @Payable
-    void depositAndBorrow(@Optional String _asset, @Optional BigInteger _amount, @Optional Address _from, @Optional BigInteger _value);
+    void depositAndBorrow(@Optional String _asset, @Optional BigInteger _amount, @Optional Address _from,
+                          @Optional BigInteger _value);
 
     @External
     void retireBadDebt(String _symbol, BigInteger _value);
 
     @External
-    void returnAsset(String _symbol, BigInteger _value, boolean _repay);
+    void retireBadDebtForCollateral(String _symbol, BigInteger _value, String _collateralSymbol);
 
     @External
-    void raisePrice(BigInteger _total_tokens_required);
+    void returnAsset(String _symbol, BigInteger _value, @Optional String _collateralSymbol);
 
     @External
-    void lowerPrice(BigInteger _total_tokens_required);
+    void raisePrice(Address _collateralAddress, BigInteger _total_tokens_required);
 
     @External
-    void withdrawCollateral(BigInteger _value);
+    void lowerPrice(Address _collateralAddress, BigInteger _total_tokens_required);
 
     @External
-    void liquidate(Address _owner);
+    void withdrawAndUnstake(BigInteger _value);
 
     @External
-    void setMiningRatio(BigInteger _ratio);
+    void withdrawCollateral(BigInteger _value, @Optional String _collateralSymbol);
 
     @External
-    void setLockingRatio(BigInteger _ratio);
+    void liquidate(Address _owner, @Optional String _collateralSymbol);
 
     @External
-    void setLiquidationRatio(BigInteger _ratio);
+    void setLockingRatio(String _symbol, BigInteger _ratio);
+
+    @External(readonly = true)
+    BigInteger getLockingRatio(String _symbol);
+
+    @External
+    void setLiquidationRatio(String _symbol, BigInteger _ratio);
+
+    @External(readonly = true)
+    BigInteger getLiquidationRatio(String _symbol);
 
     @External
     void setOriginationFee(BigInteger _fee);
@@ -185,7 +149,16 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
     void setNewLoanMinimum(BigInteger _minimum);
 
     @External
-    void setMinMiningDebt(BigInteger _minimum);
+    void setDebtCeiling(String symbol, BigInteger limit);
+
+    @External(readonly = true)
+    BigInteger getDebtCeiling(String symbol);
+
+    @External(readonly = true)
+    BigInteger getTotalDebt(String assetSymbol);
+
+    @External(readonly = true)
+    BigInteger getTotalCollateralDebt(String collateral, String assetSymbol);
 
     @External
     void setTimeOffset(BigInteger deltaTime);
@@ -196,6 +169,6 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
     @External
     void setRedeemBatchSize(int _value);
 
-    @External(readonly= true)
+    @External(readonly = true)
     Map<String, Object> getParameters();
 }

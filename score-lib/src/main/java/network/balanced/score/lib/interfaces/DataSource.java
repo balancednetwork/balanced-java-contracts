@@ -17,7 +17,6 @@
 package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreInterface;
-
 import score.Address;
 import score.annotation.External;
 

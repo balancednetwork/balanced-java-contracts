@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,9 @@
 
 package network.balanced.score.core.dividends;
 
+import com.iconloop.score.test.Account;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
-
-import com.iconloop.score.test.Account;
-
 import score.Address;
 import score.Context;
 
@@ -30,11 +27,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.eq;
 
 class DividendsImplTestContinuousMigration extends DividendsImplTestBase {
 
-    private BigInteger batchSize = BigInteger.TWO;
+    private final BigInteger batchSize = BigInteger.TWO;
+
     @BeforeEach
     void setup() throws Exception {
         sm.getBlock().increase(2 * DAY);
@@ -64,7 +62,7 @@ class DividendsImplTestContinuousMigration extends DividendsImplTestBase {
 
         sm.getBlock().increase(DAY);
         dividendScore.invoke(owner, "distribute");
-        
+
         sm.getBlock().increase(DAY);
         dividendScore.invoke(owner, "distribute");
     }
@@ -75,7 +73,7 @@ class DividendsImplTestContinuousMigration extends DividendsImplTestBase {
         BigInteger day = getDay();
         Account staker1 = sm.createAccount();
         Account staker2 = sm.createAccount();
-        
+
         dividendScore.invoke(owner, "setContinuousDividendsDay", day.add(BigInteger.ONE));
 
         BigInteger expectedFees = BigInteger.TEN.pow(20);
@@ -84,7 +82,7 @@ class DividendsImplTestContinuousMigration extends DividendsImplTestBase {
         BigInteger daofundPercentage = getFeePercentage("daofund");
 
         BigInteger expectedStakingFees = expectedFees.multiply(stakerPercentage).divide(ICX);
-        
+
         BigInteger staker1Balance = BigInteger.valueOf(150).multiply(ICX);
         dividendScore.invoke(balnScore, "updateBalnStake", staker1.getAddress(), BigInteger.ZERO, staker1Balance);
 
@@ -106,7 +104,7 @@ class DividendsImplTestContinuousMigration extends DividendsImplTestBase {
         mockTotalSupplyAt(day, totalStake);
 
         BigInteger expectedDaofundFees = expectedFees.multiply(daofundPercentage).divide(ICX);
-        mockDaoFundTranfer(expectedDaofundFees);
+        mockDaoFundTransfer(expectedDaofundFees);
         addBnusdFees(expectedFees);
 
         // Assert
@@ -119,20 +117,26 @@ class DividendsImplTestContinuousMigration extends DividendsImplTestBase {
         assertEquals(expected_result_staker1, dividendScore.call("getUnclaimedDividends", staker1.getAddress()));
         assertEquals(expected_result_staker2, dividendScore.call("getUnclaimedDividends", staker2.getAddress()));
 
-        assertEquals(expected_result_staker1, dividendScore.call("getUserDividends", staker1.getAddress(), day.intValue(), day.intValue()+1));
-        assertEquals(expected_result_staker2, dividendScore.call("getUserDividends", staker2.getAddress(), day.intValue(), day.intValue()+1));
+        assertEquals(expected_result_staker1, dividendScore.call("getUserDividends", staker1.getAddress(),
+                day.intValue(), day.intValue() + 1));
+        assertEquals(expected_result_staker2, dividendScore.call("getUserDividends", staker2.getAddress(),
+                day.intValue(), day.intValue() + 1));
 
-        dividendScore.invoke(staker1, "accumulateDividends", staker1.getAddress(), day.intValue(), day.intValue()+1);
-        dividendScore.invoke(staker2, "accumulateDividends", staker2.getAddress(), day.intValue(), day.intValue()+1);
+        dividendScore.invoke(staker1, "accumulateDividends", staker1.getAddress(), day.intValue(), day.intValue() + 1);
+        dividendScore.invoke(staker2, "accumulateDividends", staker2.getAddress(), day.intValue(), day.intValue() + 1);
 
-        expected_result_staker1.put(String.valueOf(bnUSDScore.getAddress()), expectedStaker1Fees.multiply(BigInteger.TWO));
-        expected_result_staker2.put(String.valueOf(bnUSDScore.getAddress()), expectedStaker2Fees.multiply(BigInteger.TWO));
+        expected_result_staker1.put(String.valueOf(bnUSDScore.getAddress()),
+                expectedStaker1Fees.multiply(BigInteger.TWO));
+        expected_result_staker2.put(String.valueOf(bnUSDScore.getAddress()),
+                expectedStaker2Fees.multiply(BigInteger.TWO));
 
         assertEquals(expected_result_staker1, dividendScore.call("getUnclaimedDividends", staker1.getAddress()));
         assertEquals(expected_result_staker2, dividendScore.call("getUnclaimedDividends", staker2.getAddress()));
 
-        assertEquals(Map.of(), dividendScore.call("getUserDividends", staker1.getAddress(), day.intValue(), day.intValue()+1));
-        assertEquals(Map.of(), dividendScore.call("getUserDividends", staker2.getAddress(), day.intValue(), day.intValue()+1));
+        assertEquals(Map.of(), dividendScore.call("getUserDividends", staker1.getAddress(), day.intValue(),
+                day.intValue() + 1));
+        assertEquals(Map.of(), dividendScore.call("getUserDividends", staker2.getAddress(), day.intValue(),
+                day.intValue() + 1));
     }
 
     @Test
@@ -150,18 +154,19 @@ class DividendsImplTestContinuousMigration extends DividendsImplTestBase {
 
         sm.getBlock().increase(DAY);
         dividendScore.invoke(owner, "distribute");
-    
+
         // Act
-        mockDaoFundTranfer(expectedContinuousDaofundFees);
+        mockDaoFundTransfer(expectedContinuousDaofundFees);
         addBnusdFees(expectedContinuousFees);
-        
-        mockDaoFundTranfer(expectedDaofundFees);
-        dividendScore.invoke(owner, "transferDaofundDividends", day, day+1);
+
+        mockDaoFundTransfer(expectedDaofundFees);
+        dividendScore.invoke(owner, "transferDaofundDividends", day, day + 1);
 
         // Assert
-        contextMock.verify(() -> Context.call(bnUSDScore.getAddress(), "transfer", daoScore.getAddress(), expectedDaofundFees));
+        contextMock.verify(() -> Context.call(bnUSDScore.getAddress(), "transfer", daoScore.getAddress(),
+                expectedDaofundFees));
         Map<String, BigInteger> zeroDivsMap = new HashMap<>();
-        assertEquals(zeroDivsMap, dividendScore.call("getDaoFundDividends", day, day+1));
+        assertEquals(zeroDivsMap, dividendScore.call("getDaoFundDividends", day, day + 1));
     }
 
     @Test
@@ -175,9 +180,9 @@ class DividendsImplTestContinuousMigration extends DividendsImplTestBase {
         // Act
         sm.getBlock().increase(DAY);
         dividendScore.invoke(owner, "distribute");
-        
+
         // Assert
-        assertEquals(snapshotID, dividendScore.call("getSnapshotId"));       
+        assertEquals(snapshotID, dividendScore.call("getSnapshotId"));
     }
 
     private void mockStakeAt(Address user, BigInteger day, BigInteger stake) {
@@ -192,7 +197,7 @@ class DividendsImplTestContinuousMigration extends DividendsImplTestBase {
         contextMock.when(() -> Context.call(balnScore.getAddress(), "totalStakedBalanceOfAt", day)).thenReturn(supply);
     }
 
-    private void mockDaoFundTranfer(BigInteger amount) {
+    private void mockDaoFundTransfer(BigInteger amount) {
         contextMock.when(() -> Context.call(bnUSDScore.getAddress(), "transfer", daoScore.getAddress(), amount)).thenReturn("Token Transferred");
     }
 }
