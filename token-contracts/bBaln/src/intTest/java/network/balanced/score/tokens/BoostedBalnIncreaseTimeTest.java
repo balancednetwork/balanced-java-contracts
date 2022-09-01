@@ -52,9 +52,7 @@ public class BoostedBalnIncreaseTimeTest {
         owner.daofund.addAddressToSetdb();
         balanced.syncDistributions();
         ownerClient._transfer(owner.dex._address(), BigInteger.valueOf(1000).multiply(EXA), null);
-        owner.governance.setContinuousRewardsDay(owner.dex.getDay().add(BigInteger.ONE));
         waitDays(1);
-        balanced.syncDistributions();
         BigInteger updatedBalnHolding = owner.rewards.getBalnHolding(userAddress);
         System.out.println("baln holding from reward: "+updatedBalnHolding);
         owner.rewards.claimRewards();
@@ -98,9 +96,7 @@ public class BoostedBalnIncreaseTimeTest {
         score.Address userAddress = score.Address.fromString(balanced.owner.getAddress().toString());
         owner.daofund.addAddressToSetdb();
         ownerClient._transfer(owner.dex._address(), BigInteger.valueOf(1000).multiply(EXA), null);
-        owner.governance.setContinuousRewardsDay(owner.dex.getDay().add(BigInteger.ONE));
         waitDays(1);
-        balanced.syncDistributions();
         BigInteger updatedBalnHolding = owner.rewards.getBalnHolding(userAddress);
         System.out.println("baln holding from reward: "+updatedBalnHolding);
         owner.rewards.claimRewards();
