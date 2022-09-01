@@ -127,6 +127,12 @@ public class ReserveFund implements Reserve {
         return sicxToken.get();
     }
 
+    @External
+    public void transfer(Address _tokenAddress, Address _targetAddress, BigInteger _amount) {
+        only(governance);
+        Context.call(_tokenAddress, "transfer", _targetAddress, _amount, new byte[0]);
+    }
+
     @External(readonly = true)
     @SuppressWarnings("unchecked")
     public Map<String, BigInteger> getBalances() {

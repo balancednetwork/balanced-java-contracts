@@ -1195,6 +1195,25 @@ public class GovernanceTest extends GovernanceTestBase {
     }
 
     @Test
+    void reserveTransfer() {
+        // Arrange
+        BigInteger amount = BigInteger.TEN;
+        Account notOwner = sm.createAccount();
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
+        // Act & Assert
+        Executable withNotOwner = () -> governance.invoke(notOwner, "reserveTransfer", sicx.getAddress(), loans.getAddress(), amount);
+        expectErrorMessage(withNotOwner, expectedErrorMessage);
+
+        // Act
+        governance.invoke(owner, "reserveTransfer", sicx.getAddress(), loans.getAddress(), amount);
+
+        // Assert
+        verify(reserve.mock).transfer(sicx.getAddress(), loans.getAddress(), amount);
+    }
+
+    @Test
     void configureBalanced() {
         // Act
         governance.invoke(owner, "configureBalanced");
@@ -1247,7 +1266,7 @@ public class GovernanceTest extends GovernanceTestBase {
         when(sicx.mock.balanceOf(governance.getAddress())).thenReturn(sICXValue);
         when(dex.mock.getPoolId(sicx.getAddress(), bnUSD.getAddress())).thenReturn(sicxBnusdPid);
 
-        // Act 
+        // Act
         sm.call(owner, initialICX, governance.getAddress(), "createBnusdMarket");
 
         // Assert
@@ -1280,7 +1299,7 @@ public class GovernanceTest extends GovernanceTestBase {
 
         when(dex.mock.getPoolId(baln.getAddress(), bnUSD.getAddress())).thenReturn(balnBnusdPid);
 
-        // Act 
+        // Act
         governance.invoke(owner, "createBalnMarket", bnUSDValue, balnValue);
 
         // Assert
@@ -1314,7 +1333,7 @@ public class GovernanceTest extends GovernanceTestBase {
 
         when(dex.mock.getPoolId(baln.getAddress(), sicx.getAddress())).thenReturn(balnSicxPid);
 
-        // Act 
+        // Act
         governance.invoke(owner, "createBalnSicxMarket", sicxValue, balnValue);
 
         // Assert
