@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package network.balanced.score.tokens;
 
 import foundation.icon.score.client.DefaultScoreClient;
@@ -5,13 +21,14 @@ import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import score.RevertedException;
 import score.UserRevertedException;
 
 import java.math.BigInteger;
 
+import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.tokens.Constants.WEEK_IN_MICRO_SECONDS;
-import static network.balanced.score.tokens.Constants.ZERO_ADDRESS;
 import static network.balanced.score.tokens.TestHelper.getExpectedBalance;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -35,9 +52,7 @@ public class BoostedBalnIncreaseTimeTest {
         owner.daofund.addAddressToSetdb();
         balanced.syncDistributions();
         ownerClient._transfer(owner.dex._address(), BigInteger.valueOf(1000).multiply(EXA), null);
-        owner.governance.setContinuousRewardsDay(owner.dex.getDay().add(BigInteger.ONE));
         waitDays(1);
-        balanced.syncDistributions();
         BigInteger updatedBalnHolding = owner.rewards.getBalnHolding(userAddress);
         System.out.println("baln holding from reward: "+updatedBalnHolding);
         owner.rewards.claimRewards();
@@ -45,19 +60,17 @@ public class BoostedBalnIncreaseTimeTest {
         System.out.println("available balance of baln: "+availableBalnBalance);
         System.out.println("total balance of baln: "+owner.baln.balanceOf(userAddress));
 
-        UserRevertedException exception = assertThrows(UserRevertedException.class, () -> {
+        assertThrows(RevertedException.class, () -> {
             long unlockTime = -(System.currentTimeMillis() * 1000) + (BigInteger.valueOf(4).multiply(WEEK_IN_MICRO_SECONDS)).longValue();
             String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
             owner.baln.transfer(owner.boostedBaln._address(), availableBalnBalance.divide(BigInteger.TWO), data.getBytes());
         });
-        assert exception.getMessage().equals("Reverted(0)");//invalid unlock time
 
-        exception = assertThrows(UserRevertedException.class, () -> {
+        assertThrows(RevertedException.class, () -> {
             long unlockTime = (System.currentTimeMillis() * 1000) - (BigInteger.valueOf(4).multiply(WEEK_IN_MICRO_SECONDS)).longValue();
             String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
             owner.baln.transfer(owner.boostedBaln._address(), availableBalnBalance.divide(BigInteger.TWO), data.getBytes());
         });
-        assert exception.getMessage().equals("Reverted(0)");//invalid unlock time
 
         long unlockTime = (System.currentTimeMillis()*1000)+(BigInteger.valueOf(4).multiply(WEEK_IN_MICRO_SECONDS)).longValue();
         System.out.println("unlock time is: "+unlockTime);
@@ -74,20 +87,16 @@ public class BoostedBalnIncreaseTimeTest {
         owner.boostedBaln.increaseUnlockTime( updateUnlockTime );
         balance = owner.boostedBaln.balanceOf(userAddress, BigInteger.ZERO);
         assertEquals(balance.divide(EXA), getExpectedBalance(availableBalnBalance.divide(BigInteger.TWO), updateUnlockTime.longValue()).divide(EXA));
-
-
     }
 
     @Test
     void withdrawTest(){
-        owner.boostedBaln.setPenaltyAddress(ZERO_ADDRESS);
+        owner.boostedBaln.setPenaltyAddress(EOA_ZERO);
         DefaultScoreClient ownerClient  = getOwnerClient();
         score.Address userAddress = score.Address.fromString(balanced.owner.getAddress().toString());
         owner.daofund.addAddressToSetdb();
         ownerClient._transfer(owner.dex._address(), BigInteger.valueOf(1000).multiply(EXA), null);
-        owner.governance.setContinuousRewardsDay(owner.dex.getDay().add(BigInteger.ONE));
         waitDays(1);
-        balanced.syncDistributions();
         BigInteger updatedBalnHolding = owner.rewards.getBalnHolding(userAddress);
         System.out.println("baln holding from reward: "+updatedBalnHolding);
         owner.rewards.claimRewards();

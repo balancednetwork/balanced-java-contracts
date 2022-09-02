@@ -20,13 +20,16 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
-import org.junit.jupiter.api.*;
+import network.balanced.score.lib.interfaces.*;
+import network.balanced.score.lib.test.mock.MockContract;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import score.Context;
+import score.Address;
 
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -34,13 +37,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static network.balanced.score.core.rebalancing.Constants.SICX_BNUSD_POOL_ID;
 import static network.balanced.score.lib.test.UnitTest.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.MockedStatic.Verification;
-import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.*;
 
 
 public class RebalancingTest extends TestBase {
@@ -49,24 +49,29 @@ public class RebalancingTest extends TestBase {
     private static final Account owner = sm.createAccount();
     private static final Account adminAccount = sm.createAccount();
 
-    int scoreCount = 0;
+    private int scoreCount = 0;
     private final Account governanceScore = Account.newScoreAccount(scoreCount++);
-    private final Account dexScore = Account.newScoreAccount(scoreCount++);
-    private final Account loansScore = Account.newScoreAccount(scoreCount++);
-    private final Account bnUSDScore = Account.newScoreAccount(scoreCount++);
-    private final Account sicxScore = Account.newScoreAccount(scoreCount++);
 
     private Score rebalancingScore;
     private static final BigInteger FEE = BigInteger.valueOf(997);
     private static final BigInteger THOUSAND = BigInteger.valueOf(1000);
 
-    private final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
+    protected MockContract<Loans> loans;
+    protected MockContract<Dex> dex;
+    protected MockContract<Staking> staking;
+    protected MockContract<Sicx> sicx;
+    protected MockContract<BalancedDollar> bnUSD;
+    protected MockContract<BalancedOracle> balancedOracle;
 
     @BeforeEach
     public void setup() throws Exception {
         rebalancingScore = sm.deploy(owner, RebalancingImpl.class, governanceScore.getAddress());
-        contextMock.when(() -> Context.call(eq(loansScore.getAddress()), eq("raisePrice"), any(BigInteger.class))).thenReturn(null);
-        contextMock.when(() -> Context.call(eq(loansScore.getAddress()), eq("lowerPrice"), any(BigInteger.class))).thenReturn(null);
+        loans = new MockContract<>(LoansScoreInterface.class, sm, owner);
+        dex = new MockContract<>(DexScoreInterface.class, sm, owner);
+        staking = new MockContract<>(StakingScoreInterface.class, sm, owner);
+        sicx = new MockContract<>(SicxScoreInterface.class, sm, owner);
+        bnUSD = new MockContract<>(BalancedDollarScoreInterface.class, sm, owner);
+        balancedOracle = new MockContract<>(BalancedOracleScoreInterface.class, sm, owner);
     }
 
     @Test
@@ -82,25 +87,25 @@ public class RebalancingTest extends TestBase {
     @Test
     void setAndGetDex() {
         testContractSettersAndGetters(rebalancingScore, governanceScore, adminAccount, "setDex",
-                dexScore.getAddress(), "getDex");
+                dex.getAddress(), "getDex");
     }
 
     @Test
     void setAndGetSICX() {
         testContractSettersAndGetters(rebalancingScore, governanceScore, adminAccount, "setSicx",
-                sicxScore.getAddress(), "getSicx");
+                sicx.getAddress(), "getSicx");
     }
 
     @Test
     void setAndGetBnusd() {
         testContractSettersAndGetters(rebalancingScore, governanceScore, adminAccount, "setBnusd",
-                bnUSDScore.getAddress(), "getBnusd");
+                bnUSD.getAddress(), "getBnusd");
     }
 
     @Test
     void setAndGetLoans() {
         testContractSettersAndGetters(rebalancingScore, governanceScore, adminAccount, "setLoans",
-                loansScore.getAddress(), "getLoans");
+                loans.getAddress(), "getLoans");
     }
 
     @Test
@@ -110,8 +115,8 @@ public class RebalancingTest extends TestBase {
         // Sender not governance
         Account nonGovernance = sm.createAccount();
         String expectedErrorMessage =
-                "Reverted(0): Authorization Check: Authorization failed. Caller: " + nonGovernance.getAddress() + " Authorized " +
-                        "Caller: " + governanceScore.getAddress();
+                "Reverted(0): Authorization Check: Authorization failed. Caller: " + nonGovernance.getAddress() + " " +
+                        "Authorized Caller: " + governanceScore.getAddress();
         Executable setThresholdNotFromGovernance = () -> rebalancingScore.invoke(nonGovernance,
                 "setPriceDiffThreshold", threshold);
         expectErrorMessage(setThresholdNotFromGovernance, expectedErrorMessage);
@@ -133,22 +138,23 @@ public class RebalancingTest extends TestBase {
         private final BigInteger dexPriceOfBnusdInSicx = sicxLiquidity.multiply(ICX).divide(bnusdLiquidity);
         private final BigInteger sicxPriceInIcx = ICX;
 
-        Verification getBnusdPrice = () -> Context.call(bnUSDScore.getAddress(), "lastPriceInLoop");
-
         @BeforeEach
         void configureRebalancing() {
-            setAndGetAdmin();
-            rebalancingScore.invoke(adminAccount, "setBnusd", bnUSDScore.getAddress());
-            rebalancingScore.invoke(adminAccount, "setDex", dexScore.getAddress());
-            rebalancingScore.invoke(adminAccount, "setSicx", sicxScore.getAddress());
-            rebalancingScore.invoke(adminAccount, "setLoans", loansScore.getAddress());
+            rebalancingScore.invoke(governanceScore, "setAdmin", adminAccount.getAddress());
+            rebalancingScore.invoke(adminAccount, "setBnusd", bnUSD.getAddress());
+            rebalancingScore.invoke(adminAccount, "setDex", dex.getAddress());
+            rebalancingScore.invoke(adminAccount, "setSicx", sicx.getAddress());
+            rebalancingScore.invoke(adminAccount, "setLoans", loans.getAddress());
+            rebalancingScore.invoke(adminAccount, "setOracle", balancedOracle.getAddress());
 
             Map<String, Object> poolStats = new HashMap<>();
             poolStats.put("base", sicxLiquidity);
             poolStats.put("quote", bnusdLiquidity);
-            contextMock.when(() -> Context.call(dexScore.getAddress(), "getPoolStats", SICX_BNUSD_POOL_ID)).thenReturn(poolStats);
 
-            contextMock.when(() -> Context.call(sicxScore.getAddress(), "lastPriceInLoop")).thenReturn(sicxPriceInIcx);
+            when(sicx.mock.symbol()).thenReturn("sICX");
+            when(dex.mock.getPoolId(sicx.getAddress(), bnUSD.getAddress())).thenReturn(BigInteger.TWO);
+            when(dex.mock.getPoolStats(BigInteger.TWO)).thenReturn(poolStats);
+            when(balancedOracle.mock.getPriceInLoop("sICX")).thenReturn(sicxPriceInIcx);
         }
 
         @ParameterizedTest
@@ -160,33 +166,33 @@ public class RebalancingTest extends TestBase {
             rebalancingScore.invoke(governanceScore, "setPriceDiffThreshold", threshold);
             BigInteger additionalPrice = threshold.multiply(dexPriceOfBnusdInSicx).divide(ICX).divide(BigInteger.TEN);
             BigInteger bnUSDPriceInIcx = dexPriceOfBnusdInSicx.add(additionalPrice);
-            contextMock.when(getBnusdPrice).thenReturn(bnUSDPriceInIcx);
+            when(balancedOracle.mock.getPriceInLoop("USD")).thenReturn(bnUSDPriceInIcx);
             BigInteger expectedBnusdPriceInSicx = bnUSDPriceInIcx.multiply(ICX).divide(sicxPriceInIcx);
             assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
 
-            rebalancingScore.invoke(sm.createAccount(), "rebalance");
-            contextMock.verify(() -> Context.call(eq(loansScore.getAddress()), any(String.class),
-                    any(BigInteger.class)), never());
+            rebalancingScore.invoke(sm.createAccount(), "rebalance", sicx.getAddress());
+            verify(loans.mock, never()).raisePrice(any(Address.class), any(BigInteger.class));
+            verify(loans.mock, never()).lowerPrice(any(Address.class), any(BigInteger.class));
 
             // Decrease price within threshold range
             bnUSDPriceInIcx = dexPriceOfBnusdInSicx.subtract(additionalPrice);
-            contextMock.when(getBnusdPrice).thenReturn(bnUSDPriceInIcx);
+            when(balancedOracle.mock.getPriceInLoop("USD")).thenReturn(bnUSDPriceInIcx);
             expectedBnusdPriceInSicx = bnUSDPriceInIcx.multiply(ICX).divide(sicxPriceInIcx);
             assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
 
-            rebalancingScore.invoke(sm.createAccount(), "rebalance");
-            contextMock.verify(() -> Context.call(eq(loansScore.getAddress()), any(String.class),
-                    any(BigInteger.class)), never());
+            rebalancingScore.invoke(sm.createAccount(), "rebalance", sicx.getAddress());
+            verify(loans.mock, never()).raisePrice(any(Address.class), any(BigInteger.class));
+            verify(loans.mock, never()).lowerPrice(any(Address.class), any(BigInteger.class));
 
             // Exactly equal price
             bnUSDPriceInIcx = dexPriceOfBnusdInSicx;
-            contextMock.when(getBnusdPrice).thenReturn(bnUSDPriceInIcx);
+            when(balancedOracle.mock.getPriceInLoop("USD")).thenReturn(bnUSDPriceInIcx);
             expectedBnusdPriceInSicx = bnUSDPriceInIcx.multiply(ICX).divide(sicxPriceInIcx);
             assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
 
-            rebalancingScore.invoke(sm.createAccount(), "rebalance");
-            contextMock.verify(() -> Context.call(eq(loansScore.getAddress()), any(String.class),
-                    any(BigInteger.class)), never());
+            rebalancingScore.invoke(sm.createAccount(), "rebalance", sicx.getAddress());
+            verify(loans.mock, never()).raisePrice(any(Address.class), any(BigInteger.class));
+            verify(loans.mock, never()).lowerPrice(any(Address.class), any(BigInteger.class));
         }
 
         @ParameterizedTest
@@ -196,15 +202,14 @@ public class RebalancingTest extends TestBase {
             rebalancingScore.invoke(governanceScore, "setPriceDiffThreshold", threshold);
             BigInteger additionalPrice = threshold.multiply(BigInteger.TWO).multiply(dexPriceOfBnusdInSicx).divide(ICX);
             BigInteger bnUSDPriceInIcx = dexPriceOfBnusdInSicx.add(additionalPrice);
-            contextMock.when(getBnusdPrice).thenReturn(bnUSDPriceInIcx);
+            when(balancedOracle.mock.getPriceInLoop("USD")).thenReturn(bnUSDPriceInIcx);
             BigInteger expectedBnusdPriceInSicx = bnUSDPriceInIcx.multiply(ICX).divide(sicxPriceInIcx);
             assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
 
-            rebalancingScore.invoke(sm.createAccount(), "rebalance");
-            contextMock.verify(() -> Context.call(eq(loansScore.getAddress()), eq("raisePrice"),
-                    any(BigInteger.class)));
-            contextMock.verify(() -> Context.call(eq(loansScore.getAddress()), eq("lowerPrice"),
-                    any(BigInteger.class)), never());
+            rebalancingScore.invoke(sm.createAccount(), "rebalance", sicx.getAddress());
+            verify(loans.mock).raisePrice(any(Address.class), any(BigInteger.class));
+            verify(loans.mock, never()).lowerPrice(any(Address.class), any(BigInteger.class));
+
         }
 
         @ParameterizedTest
@@ -214,15 +219,13 @@ public class RebalancingTest extends TestBase {
             rebalancingScore.invoke(governanceScore, "setPriceDiffThreshold", threshold);
             BigInteger additionalPrice = threshold.multiply(BigInteger.TWO).multiply(dexPriceOfBnusdInSicx).divide(ICX);
             BigInteger bnUSDPriceInIcx = dexPriceOfBnusdInSicx.subtract(additionalPrice);
-            contextMock.when(getBnusdPrice).thenReturn(bnUSDPriceInIcx);
+            when(balancedOracle.mock.getPriceInLoop("USD")).thenReturn(bnUSDPriceInIcx);
             BigInteger expectedBnusdPriceInSicx = bnUSDPriceInIcx.multiply(ICX).divide(sicxPriceInIcx);
             assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
 
-            rebalancingScore.invoke(sm.createAccount(), "rebalance");
-            contextMock.verify(() -> Context.call(eq(loansScore.getAddress()), eq("raisePrice"),
-                    any(BigInteger.class)), never());
-            contextMock.verify(() -> Context.call(eq(loansScore.getAddress()), eq("lowerPrice"),
-                    any(BigInteger.class)));
+            rebalancingScore.invoke(sm.createAccount(), "rebalance", sicx.getAddress());
+            verify(loans.mock, never()).raisePrice(any(Address.class), any(BigInteger.class));
+            verify(loans.mock).lowerPrice(any(Address.class), any(BigInteger.class));
         }
 
         private BigInteger calculateOutputAmount(BigInteger fromTokenLiquidity, BigInteger toTokenLiquidity,
@@ -233,7 +236,7 @@ public class RebalancingTest extends TestBase {
         private void assertRebalancingStatus(BigInteger expectedBnusdPriceInSicx, BigInteger sicxLiquidity,
                                              BigInteger bnusdLiquidity, BigInteger threshold) {
             @SuppressWarnings("unchecked")
-            List<Object> results = (List<Object>) rebalancingScore.call("getRebalancingStatus");
+            List<Object> results = (List<Object>) rebalancingScore.call("getRebalancingStatusFor", sicx.getAddress());
 
             boolean forward = (boolean) results.get(0);
             boolean reverse = (boolean) results.get(2);
@@ -265,10 +268,5 @@ public class RebalancingTest extends TestBase {
 
             assertTrue(priceDifferencePercentage.abs().compareTo(threshold) <= 0);
         }
-    }
-
-    @AfterEach
-    void closeMock() {
-        contextMock.close();
     }
 }

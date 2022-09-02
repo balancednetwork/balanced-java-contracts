@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import network.balanced.score.core.dividends.utils.bnUSD;
 import network.balanced.score.lib.test.UnitTest;
-
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import score.Address;
@@ -40,16 +39,21 @@ class DividendsImplTestBase extends UnitTest {
     protected static Score bnUSDScore;
     protected static final Account owner = sm.createAccount();
     protected final Account admin = sm.createAccount();
+    protected final Account prep_address = sm.createAccount();
     protected static final Account governanceScore = Account.newScoreAccount(1);
     protected static final Account loansScore = Account.newScoreAccount(2);
     protected static final Account daoScore = Account.newScoreAccount(3);
     protected static final Account balnScore = Account.newScoreAccount(7);
     protected static final Account dexScore = Account.newScoreAccount(6);
-    protected static final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
+    protected static final Account stakingScore = Account.newScoreAccount(7);
+    protected static final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class,
+            Mockito.CALLS_REAL_METHODS);
     protected Score dividendScore;
-    protected final MockedStatic.Verification getAssetTokens = () -> Context.call(eq(loansScore.getAddress()), eq("getAssetTokens"));
-    protected final MockedStatic.Verification balanceOf = () -> Context.call(eq(balnScore.getAddress()), eq("balanceOf"), any(Address.class));
- 
+    protected final MockedStatic.Verification getAssetTokens = () -> Context.call(eq(loansScore.getAddress()), eq(
+            "getAssetTokens"));
+    protected final MockedStatic.Verification balanceOf = () -> Context.call(eq(balnScore.getAddress()), eq(
+            "balanceOf"), any(Address.class));
+
     protected void addBnusdFees(BigInteger amount) {
         dividendScore.invoke(bnUSDScore.getAccount(), "tokenFallback", bnUSDScore.getAddress(), amount, new byte[0]);
     }
@@ -58,11 +62,13 @@ class DividendsImplTestBase extends UnitTest {
         return (BigInteger) dividendScore.call("getDay");
     }
 
+    @SuppressWarnings("unchecked")
     protected BigInteger getFeePercentage(String source) {
         Map<String, BigInteger> percentages = (Map<String, BigInteger>) dividendScore.call("getDividendsPercentage");
         return percentages.get(source);
 
     }
+
     protected void setupBase() throws Exception {
         dividendScore = sm.deploy(owner, DividendsImpl.class, governanceScore.getAddress());
         assert (dividendScore.getAddress().isContract());
@@ -75,6 +81,5 @@ class DividendsImplTestBase extends UnitTest {
         dividendScore.setInstance(dividendsSpy);
     }
 
-  
 
 }

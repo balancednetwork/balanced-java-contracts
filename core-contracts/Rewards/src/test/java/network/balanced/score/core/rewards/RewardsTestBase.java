@@ -52,11 +52,12 @@ class RewardsTestBase extends UnitTest {
     final Account daoFund = Account.newScoreAccount(scoreCount++);
     final Account reserve = Account.newScoreAccount(scoreCount++);
 
-    MockContract<DataSourceScoreInterface> dex;
-    MockContract<DataSourceScoreInterface> loans;
-    MockContract<IRC2MintableScoreInterface> baln;
-    MockContract<IRC2MintableScoreInterface> bwt;
-    MockContract<BoostedBalnScoreInterface> bBaln;
+    MockContract<DataSource> dex;
+    MockContract<DataSource> loans;
+    MockContract<IRC2Mintable> baln;
+    MockContract<IRC2Mintable> bwt;
+    MockContract<BoostedBaln> bBaln;
+
     Score rewardsScore;
 
     void setup() throws Exception {
@@ -131,7 +132,7 @@ class RewardsTestBase extends UnitTest {
         }
     }
 
-    void mockBalanceAndSupply(MockContract<DataSourceScoreInterface> dataSource, String name, Address address,
+    void mockBalanceAndSupply(MockContract<DataSource> dataSource, String name, Address address,
                               BigInteger balance, BigInteger supply) {
         Map<String, BigInteger> balanceAndSupply = Map.of(
                 "_balance", balance,
@@ -153,7 +154,7 @@ class RewardsTestBase extends UnitTest {
         sm.getBlock().increase(DAY);
         rewardsScore.invoke(admin, "distribute");
         BigInteger rewardsPost = (BigInteger) rewardsScore.call("getBalnHolding", address);
-    
+
         return rewardsPost.subtract(rewardsPre);
     }
 

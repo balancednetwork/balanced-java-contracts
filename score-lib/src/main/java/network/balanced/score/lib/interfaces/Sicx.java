@@ -37,5 +37,4 @@ public interface Sicx extends StakingAddress, IRC2BurnableInterface, IRC2Mintabl
 
     @External(readonly = true)
     BigInteger lastPriceInLoop();
-
 }

@@ -16,13 +16,12 @@
 
 package network.balanced.score.core.loans.utils;
 
+import network.balanced.score.lib.utils.Constants;
+
 import java.math.BigInteger;
 import java.util.Map;
 
-import network.balanced.score.lib.utils.Constants;
-
 public class LoansConstants extends Constants {
-    public static final BigInteger POINTS = BigInteger.valueOf(10_000);
     public static final BigInteger MINING_RATIO = BigInteger.valueOf(50_000);
     public static final BigInteger LOCKING_RATIO = BigInteger.valueOf(40_000);
     public static final BigInteger LIQUIDATION_RATIO = BigInteger.valueOf(15_000);
@@ -34,33 +33,23 @@ public class LoansConstants extends Constants {
 
     //In USD
     public static final BigInteger NEW_BNUSD_LOAN_MINIMUM = BigInteger.TEN.multiply(EXA);
-    public static final BigInteger MIN_BNUSD_MINING_DEBT = BigInteger.valueOf(50).multiply(EXA);
 
     public static final int MAX_DEBTS_LIST_LENGTH = 400;
-    public static final int SNAP_BATCH_SIZE = 50;
     public static final int REDEEM_BATCH_SIZE = 50;
 
-    public static final String continuousRewardsErrorMessage = "BalancedLoansPosition: The continuous rewards is " +
-            "already active.";
     public static final String SICX_SYMBOL = "sICX";
     public static final String BNUSD_SYMBOL = "bnUSD";
 
     public enum Standings {
-        INDETERMINATE,
         ZERO,
         LIQUIDATE,
-        LOCKED,
-        NOT_MINING,
         MINING,
         NO_DEBT
     }
 
     public static Map<Standings, String> StandingsMap = Map.of(
-            Standings.INDETERMINATE, "Indeterminate",
             Standings.ZERO, "Zero",
             Standings.LIQUIDATE, "Liquidate",
-            Standings.LOCKED, "Locked",
-            Standings.NOT_MINING, "Not Mining",
             Standings.MINING, "Mining",
             Standings.NO_DEBT, "No Debt"
     );

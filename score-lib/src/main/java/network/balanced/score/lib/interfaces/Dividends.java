@@ -22,6 +22,7 @@ import network.balanced.score.lib.interfaces.addresses.*;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
 import network.balanced.score.lib.structs.DistributionPercentage;
+import network.balanced.score.lib.structs.PrepDelegations;
 import score.Address;
 import score.annotation.External;
 import score.annotation.Optional;
@@ -49,6 +50,12 @@ public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress
 
     @External(readonly = true)
     BigInteger getDividendsOnlyToStakedBalnDay();
+
+    @External
+    void setContinuousDividendsDay(BigInteger day);
+
+    @External(readonly = true)
+    BigInteger getContinuousDividendsDay();
 
     @External(readonly = true)
     Map<String, BigInteger> getBalances();
@@ -93,13 +100,28 @@ public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress
     BigInteger getTimeOffset();
 
     @External
+    void delegate(PrepDelegations[] prepDelegations);
+
+    @External
     boolean distribute();
 
     @External
     void transferDaofundDividends(@Optional int _start, @Optional int _end);
 
+    @External(readonly = true)
+    Map<String, BigInteger> getUnclaimedDividends(Address user);
+
     @External
-    void claim(@Optional  int _start,@Optional int _end);
+    void claimDividends();
+
+    @External
+    void claim(@Optional int _start, @Optional int _end);
+
+    @External
+    void accumulateDividends(Address user, @Optional int _start, @Optional int _end);
+
+    @External
+    void updateBalnStake(Address user, BigInteger prevStakedBalance, BigInteger currentTotalSupply);
 
     @External(readonly = true)
     Map<String, BigInteger> getUserDividends(Address _account, @Optional int _start, @Optional int _end);

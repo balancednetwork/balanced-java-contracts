@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import java.util.Map;
 
 import static network.balanced.score.lib.utils.Math.pow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.eq;
 
 class DividendsImplTestSetup extends DividendsImplTestBase {
     @BeforeEach
@@ -121,7 +121,8 @@ class DividendsImplTestSetup extends DividendsImplTestBase {
 
 //        add category
         dividendScore.invoke(admin, "addDividendsCategory", "loans");
-        DistributionPercentage[] dist = new DistributionPercentage[]{new DistributionPercentage(), new DistributionPercentage(), new DistributionPercentage()};
+        DistributionPercentage[] dist = new DistributionPercentage[]{new DistributionPercentage(),
+                new DistributionPercentage(), new DistributionPercentage()};
         dist[0].recipient_name = "daofund";
         dist[1].recipient_name = "baln_holders";
         dist[2].recipient_name = "loans";
@@ -166,6 +167,12 @@ class DividendsImplTestSetup extends DividendsImplTestBase {
         dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
         dividendScore.invoke(admin, "setDividendsOnlyToStakedBalnDay", BigInteger.TWO);
         assertEquals(BigInteger.TWO, dividendScore.call("getDividendsOnlyToStakedBalnDay"));
+    }
+
+    @Test
+    void setGetContinuousDividendsDay() {
+        dividendScore.invoke(owner, "setContinuousDividendsDay", BigInteger.TWO);
+        assertEquals(BigInteger.TWO, dividendScore.call("getContinuousDividendsDay"));
     }
 
     @Test

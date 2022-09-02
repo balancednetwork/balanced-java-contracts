@@ -102,7 +102,7 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
         List<Address> result = new ArrayList<>();
         int _end = Math.min(end, users.length());
 
-        for (int index = start; index < end; index++) {
+        for (int index = start; index < _end; index++) {
             result.add(users.at(index));
         }
         return result;

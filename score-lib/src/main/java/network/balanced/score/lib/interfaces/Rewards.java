@@ -33,8 +33,8 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface Rewards extends 
-        Name, 
+public interface Rewards extends
+        Name,
         TokenFallback,
         GovernanceAddress,
         AdminAddress,
@@ -42,9 +42,8 @@ public interface Rewards extends
         BwtAddress,
         DaoFundAddress,
         ReserveAddress,
-        StakedLpAddress,
         BoostedBalnAddress {
-   
+
     @External(readonly = true)
     BigInteger getEmission(BigInteger _day);
 
@@ -70,7 +69,7 @@ public interface Rewards extends
     Map<String, BigInteger> getRecipientsSplit();
 
     @External
-    void addNewDataSource(String _name, Address _address );
+    void addNewDataSource(String _name, Address _address);
 
     @External
     void removeDataSource(String _name);
@@ -125,12 +124,6 @@ public interface Rewards extends
 
     @External(readonly = true)
     BigInteger getTimeOffset();
-
-    @External
-    void setContinuousRewardsDay(BigInteger _continuous_rewards_day);
-
-    @External(readonly = true)
-    BigInteger getContinuousRewardsDay();
 
     @External
     void onKick(Address user, BigInteger bBalnUserBalance, @Optional byte[] data);

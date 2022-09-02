@@ -25,6 +25,7 @@ public class Constants {
     public static final String SICX_ADDRESS = "sicx_address";
     public static final String DEX_ADDRESS = "dex_address";
     public static final String LOANS_ADDRESS = "loans_address";
+    public static final String ORACLE_ADDRESS = "oracle_address";
     public static final String GOVERNANCE_ADDRESS = "governance_address";
     public static final String ADMIN = "admin";
     public static final String PRICE_THRESHOLD = "_price_threshold";

@@ -429,7 +429,7 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
     }
 
     protected void updateRewardData(Map<String, Object> userDetails) {
-        Context.call(this.rewardAddress.get(), "updateRewardsData", this.name, userDetails.get("totalSupply"),
+        Context.call(this.rewardAddress.get(), "updateRewardsData", this.name.get(), userDetails.get("totalSupply"),
                 userDetails.get("user"), userDetails.get("userBalance"));
     }
 
