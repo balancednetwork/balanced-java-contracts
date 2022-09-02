@@ -645,7 +645,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         BigInteger bnusdPriceInCollateral = collateralLiquidity.multiply(EXA).divide(bnusdLiquidity);
         BigInteger priceDifferencePercentage =
                 (actualBnusdPriceInCollateral.subtract(bnusdPriceInCollateral)).multiply(EXA).divide(actualBnusdPriceInCollateral);
-        System.out.println(priceDifferencePercentage);
+
         return priceDifferencePercentage;
     }
 

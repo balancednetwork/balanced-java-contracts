@@ -18,10 +18,11 @@ package network.balanced.score.core.balancedoracle;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 
 import java.math.BigInteger;
 import java.util.Map;
-
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static network.balanced.score.lib.utils.Math.exaPow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
@@ -34,6 +35,7 @@ class BalancedOracleTest extends BalancedOracleTestBase {
         balancedOracle.invoke(governance, "setDex", dex.getAddress());
         balancedOracle.invoke(governance, "setOracle", oracle.getAddress());
         balancedOracle.invoke(governance, "setStaking", staking.getAddress());
+        balancedOracle.invoke(owner, "setLastUpdateThreshold", MICRO_SECONDS_IN_A_DAY);
     }
 
     @Test
@@ -54,8 +56,7 @@ class BalancedOracleTest extends BalancedOracleTestBase {
     void getUSDPriceInLoop() {
         // Arrange
         BigInteger bnusdRate = BigInteger.valueOf(7).multiply(BigInteger.TEN.pow(17));
-        Map<String, Object> priceData = Map.of("rate", bnusdRate);
-        when(oracle.mock.get_reference_data("USD", "ICX")).thenReturn(priceData);
+        mockRate("USD", bnusdRate);
 
         // Act
         balancedOracle.invoke(adminAccount, "getPriceInLoop", "USD");
@@ -69,9 +70,7 @@ class BalancedOracleTest extends BalancedOracleTestBase {
     void getBnUSDPriceInLoop_useBnUSD() {
         // Arrange
         BigInteger bnusdRate = BigInteger.valueOf(7).multiply(BigInteger.TEN.pow(17));
-        Map<String, Object> priceData = Map.of("rate", bnusdRate);
-        when(oracle.mock.get_reference_data("USD", "ICX")).thenReturn(priceData);
-
+        mockRate("USD", bnusdRate);
         // Act
         balancedOracle.invoke(adminAccount, "getPriceInLoop", "bnUSD");
         BigInteger priceInLoop = (BigInteger) balancedOracle.call("getLastPriceInLoop", "bnUSD");
@@ -93,8 +92,7 @@ class BalancedOracleTest extends BalancedOracleTestBase {
         BigInteger bnusdPriceInBaln = BigInteger.valueOf(20).multiply(BigInteger.TEN.pow(17));
         BigInteger expectedBalnpriceInLoop = bnusdRate.multiply(BigInteger.TEN.pow(18)).divide(bnusdPriceInBaln);
 
-        Map<String, Object> priceData = Map.of("rate", bnusdRate);
-        when(oracle.mock.get_reference_data("USD", "ICX")).thenReturn(priceData);
+        mockRate("USD", bnusdRate);
         when(dex.mock.getQuotePriceInBase(poolID)).thenReturn(bnusdPriceInBaln);
 
         // Act
@@ -118,10 +116,9 @@ class BalancedOracleTest extends BalancedOracleTestBase {
         BigInteger bnusdPriceIUSDC = BigInteger.valueOf(20).multiply(BigInteger.TEN.pow(5));
         BigInteger expectedIUSDCpriceInLoop = bnusdRate.multiply(BigInteger.TEN.pow(6)).divide(bnusdPriceIUSDC);
 
-        Map<String, Object> priceData = Map.of("rate", bnusdRate);
-        when(oracle.mock.get_reference_data("USD", "ICX")).thenReturn(priceData);
+        mockRate("USD", bnusdRate);
         when(dex.mock.getQuotePriceInBase(poolID)).thenReturn(bnusdPriceIUSDC);
-        
+
         // Act
         balancedOracle.invoke(adminAccount, "getPriceInLoop", tokenSymbol);
         BigInteger priceInLoop = (BigInteger) balancedOracle.call("getLastPriceInLoop", tokenSymbol);
@@ -188,8 +185,51 @@ class BalancedOracleTest extends BalancedOracleTestBase {
         assertEquals(EMA, priceInLoop);
     }
 
+    @Test
+    void testUpdateThreshold() {
+        // Arrange
+        BigInteger threshold = MICRO_SECONDS_IN_A_DAY;
+        BigInteger rate = BigInteger.TEN;
+
+        BigInteger baseUpdateTime = BigInteger.valueOf(sm.getBlock().getTimestamp());
+        BigInteger quoteUpdateTime = BigInteger.valueOf(sm.getBlock().getTimestamp()).subtract(threshold);
+        mockRate("USD", rate, baseUpdateTime, quoteUpdateTime);
+
+        // Act & Assert
+        String expectedErrorMessage = "";
+        Executable quoteAboveThreshold = () -> balancedOracle.call("getLastPriceInLoop", "USD");
+        expectErrorMessage(quoteAboveThreshold, expectedErrorMessage);
+
+        // Arrange
+        baseUpdateTime = BigInteger.valueOf(sm.getBlock().getTimestamp()).subtract(threshold);
+        quoteUpdateTime = BigInteger.valueOf(sm.getBlock().getTimestamp());
+        mockRate("USD", rate, baseUpdateTime, quoteUpdateTime);
+
+        // Act & Assert
+        expectedErrorMessage = "";
+        Executable baseAboveThreshold = () -> balancedOracle.call("getLastPriceInLoop", "USD");
+        expectErrorMessage(baseAboveThreshold, expectedErrorMessage);
+
+        // Act
+        baseUpdateTime = BigInteger.valueOf(sm.getBlock().getTimestamp()).subtract(threshold).add(BigInteger.TEN);
+        quoteUpdateTime = BigInteger.valueOf(sm.getBlock().getTimestamp()).subtract(threshold).add(BigInteger.TEN);
+        mockRate("USD", rate, baseUpdateTime, quoteUpdateTime);
+        BigInteger priceInLoop = (BigInteger) balancedOracle.call("getLastPriceInLoop", "USD");
+
+        // Assert
+        assertEquals(rate, priceInLoop);
+    }
+
     private void mockRate(String symbol, BigInteger rate) {
-        Map<String, Object> priceData = Map.of("rate", rate);
+        mockRate(symbol, rate, BigInteger.valueOf(sm.getBlock().getTimestamp()), BigInteger.valueOf(sm.getBlock().getTimestamp()));
+    }
+
+    private void mockRate(String symbol, BigInteger rate, BigInteger baseUpdateTime, BigInteger quoteUpdateTime) {
+        Map<String, Object> priceData = Map.of(
+            "rate", rate,
+            "last_update_base", baseUpdateTime,
+            "last_update_quote", quoteUpdateTime
+        );
         when(oracle.mock.get_reference_data(symbol, "ICX")).thenReturn(priceData);
     }
 

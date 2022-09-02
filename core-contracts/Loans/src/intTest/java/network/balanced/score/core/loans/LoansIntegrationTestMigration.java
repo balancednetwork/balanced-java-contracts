@@ -190,6 +190,7 @@ class LoansIntegrationTestMigration extends LoansIntegrationTest {
         Map<String, Object> params = new HashMap<>();
         params.put("_owner", loanTaker.getAddress());
         liquidator.loans._send("liquidate", params);
+        assertEquals(BigInteger.ZERO, loanTaker.loans.getBalanceAndSupply("Loans",loanTaker.getAddress()).get("_balance"));
     }
 
     protected void setLockingRatio(BalancedClient voter, BigInteger ratio, String name) {

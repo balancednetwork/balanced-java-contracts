@@ -1,4 +1,4 @@
- 
+
 /*
  * Copyright (c) 2022-2022 Balanced.network.
  *
@@ -36,6 +36,7 @@ public class BalancedOracleConstants {
 
     private static final String ORACLE_PRICE_DECAY = "oraclePriceDecay";
     private static final String DEX_PRICE_DECAY = "dexPriceDecay";
+    private static final String PRICE_UPDATE_THRESHOLD = "priceUpdateThreshold";
 
     public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
     public static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
@@ -49,4 +50,5 @@ public class BalancedOracleConstants {
 
     public static final VarDB<BigInteger> oraclePriceEMADecay = Context.newVarDB(ORACLE_PRICE_DECAY, BigInteger.class);
     public static final VarDB<BigInteger> dexPriceEMADecay = Context.newVarDB(DEX_PRICE_DECAY, BigInteger.class);
+    public static final VarDB<BigInteger> lastUpdateThreshold = Context.newVarDB(PRICE_UPDATE_THRESHOLD, BigInteger.class);
 }

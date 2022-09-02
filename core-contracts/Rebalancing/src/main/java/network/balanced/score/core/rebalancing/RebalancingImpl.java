@@ -151,11 +151,6 @@ public class RebalancingImpl implements Rebalancing {
         return oracle.get();
     }
 
-    private BigInteger calculateTokensToSell(BigInteger price, BigInteger fromTokenLiquidity,
-                                             BigInteger toTokenLiquidity) {
-        return price.multiply(fromTokenLiquidity).multiply(toTokenLiquidity).divide(EXA).sqrt().subtract(fromTokenLiquidity);
-    }
-
     @External
     public void setPriceDiffThreshold(BigInteger _value) {
         only(governance);
@@ -223,11 +218,11 @@ public class RebalancingImpl implements Rebalancing {
         boolean reverse = priceDifferencePercentage.compareTo(threshold.negate()) < 0;
         if (forward) {
             //Add sicx in the pool i.e. buy bnusd from the pool and sell icx. pair: sicx/bnusd
-            tokensToSell = calculateTokensToSell(actualUsdPriceInAsset, assetLiquidity, bnusdLiquidity);
+            tokensToSell = actualUsdPriceInAsset.multiply(assetLiquidity).multiply(bnusdLiquidity).divide(EXA).sqrt().subtract(assetLiquidity);
         } else if (reverse) {
             // Add bnusd in the pool i.e. buy sicx from the pool and sell bnusd. pair bnusd/sicx
             BigInteger actualAssetPriceInBnusd = assetPriceInIcx.multiply(EXA).divide(usdPriceInIcx);
-            tokensToSell = calculateTokensToSell(actualAssetPriceInBnusd, bnusdLiquidity, assetLiquidity);
+            tokensToSell = actualAssetPriceInBnusd.multiply(bnusdLiquidity).multiply(assetLiquidity).divide(decimals).sqrt().subtract(bnusdLiquidity);
         } else {
             tokensToSell = BigInteger.ZERO;
         }
