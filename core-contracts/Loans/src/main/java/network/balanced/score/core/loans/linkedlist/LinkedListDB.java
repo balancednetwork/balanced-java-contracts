@@ -16,15 +16,13 @@
 
 package network.balanced.score.core.loans.linkedlist;
 
+import network.balanced.score.core.loans.utils.PositionBatch;
 import score.Context;
 import score.VarDB;
-
 import scorex.util.HashMap;
 
 import java.math.BigInteger;
 import java.util.Map;
-
-import network.balanced.score.core.loans.utils.PositionBatch;
 
 public class LinkedListDB {
     private final static String _NAME = "_LINKED_LISTDB";
@@ -139,7 +137,7 @@ public class LinkedListDB {
 
     public PositionBatch readDataBatch(int batchSize) {
         Context.require(size != 0, name + ": No data in the list");
-        
+
         PositionBatch batch = new PositionBatch();
         batch.totalDebt = BigInteger.ZERO;
         Map<Integer, BigInteger> positionsMap = new HashMap<>();
@@ -152,7 +150,7 @@ public class LinkedListDB {
 
         positionsMap.put(headId, head.getValue());
         batch.totalDebt = batch.totalDebt.add(head.getValue());
-        
+
         int iterations = Math.min(batchSize, size());
         for (int i = 1; i < iterations; i++) {
             currentNodeId = currentNode.getNext();
@@ -175,7 +173,7 @@ public class LinkedListDB {
         // Update node next to head
         nextHead.setPrev(0);
         nextHead.repack();
-        
+
         // Update tail node
         tail.setNext(headId);
         tail.repack();

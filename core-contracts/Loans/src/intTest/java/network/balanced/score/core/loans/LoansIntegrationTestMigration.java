@@ -56,7 +56,7 @@
 //         balanced.setupBalanced();
 //         owner = balanced.ownerClient;
 //         reader = balanced.newClient(BigInteger.ZERO);
-        
+
 //         LoansIntegrationTest.setup();
 //     }
 // }

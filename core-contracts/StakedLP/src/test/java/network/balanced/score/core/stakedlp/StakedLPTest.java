@@ -19,7 +19,10 @@ package network.balanced.score.core.stakedlp;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
-import network.balanced.score.lib.interfaces.*;
+import network.balanced.score.lib.interfaces.Dex;
+import network.balanced.score.lib.interfaces.DexScoreInterface;
+import network.balanced.score.lib.interfaces.Rewards;
+import network.balanced.score.lib.interfaces.RewardsScoreInterface;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockContract;
 import org.junit.jupiter.api.Assertions;
@@ -133,7 +136,8 @@ public class StakedLPTest extends UnitTest {
     }
 
     private void stakeLpTokens(Account from, BigInteger poolId, BigInteger value) {
-        stakedLpScore.invoke(dex.account, "onIRC31Received",  from.getAddress(), from.getAddress(), poolId, value, new byte[0]);
+        stakedLpScore.invoke(dex.account, "onIRC31Received", from.getAddress(), from.getAddress(), poolId, value,
+                new byte[0]);
     }
 
     @Test
@@ -142,9 +146,9 @@ public class StakedLPTest extends UnitTest {
         setAndGetRewards();
 
         // Mint LP tokens in Alice and Bob account
-        BigInteger initalLpTokenBalance = BigInteger.TEN.pow(10);
-        when(dex.mock.balanceOf(eq(alice.getAddress()), Mockito.any(BigInteger.class))).thenReturn(initalLpTokenBalance);
-        when(dex.mock.balanceOf(eq(bob.getAddress()), Mockito.any(BigInteger.class))).thenReturn(initalLpTokenBalance);
+        BigInteger initialLpTokenBalance = BigInteger.TEN.pow(10);
+        when(dex.mock.balanceOf(eq(alice.getAddress()), Mockito.any(BigInteger.class))).thenReturn(initialLpTokenBalance);
+        when(dex.mock.balanceOf(eq(bob.getAddress()), Mockito.any(BigInteger.class))).thenReturn(initialLpTokenBalance);
 
         // Stake Zero tokens
         Executable zeroStakeValue = () -> stakeLpTokens(alice, BigInteger.ONE, BigInteger.ZERO);
@@ -217,7 +221,8 @@ public class StakedLPTest extends UnitTest {
         BigInteger finalAliceStakedBalance = aliceStakedBalance;
         Executable unstakeMoreThanStakedAmount = () -> stakedLpScore.invoke(alice, "unstake", BigInteger.ONE,
                 finalAliceStakedBalance.add(BigInteger.ONE));
-        expectedErrorMessage = "Reverted(0): StakedLP: Cannot unstake, user don't have enough staked balance, Amount to unstake: " +
+        expectedErrorMessage = "Reverted(0): StakedLP: Cannot unstake, user don't have enough staked balance, Amount " +
+                "to unstake: " +
                 aliceStakedBalance.add(BigInteger.ONE) + " Staked balance of user: " + alice.getAddress() + " is: " +
                 aliceStakedBalance;
         expectErrorMessage(unstakeMoreThanStakedAmount, expectedErrorMessage);
@@ -230,7 +235,8 @@ public class StakedLPTest extends UnitTest {
         assertEquals(totalStakedBalanceBeforeUnstake.subtract(aliceUnstakeAmount), stakedLpScore.call("totalStaked",
                 BigInteger.ONE));
         verify(dex.mock).transfer(alice.getAddress(), aliceUnstakeAmount, BigInteger.ONE, new byte[0]);
-        verify(rewards.mock).updateRewardsData(poolOneName, totalStakedBalanceBeforeUnstake, alice.getAddress(), aliceStakedBalance);
+        verify(rewards.mock).updateRewardsData(poolOneName, totalStakedBalanceBeforeUnstake, alice.getAddress(),
+                aliceStakedBalance);
 
         // Adjust the values after first unstake
         aliceStakedBalance = aliceStakedBalance.subtract(aliceUnstakeAmount);
@@ -242,7 +248,7 @@ public class StakedLPTest extends UnitTest {
                 BigInteger.ONE));
         assertEquals(totalStakedBalanceBeforeUnstake.subtract(bobStakedBalance), stakedLpScore.call("totalStaked",
                 BigInteger.ONE));
-                verify(dex.mock).transfer(bob.getAddress(), bobStakedBalance, BigInteger.ONE, new byte[0]);
+        verify(dex.mock).transfer(bob.getAddress(), bobStakedBalance, BigInteger.ONE, new byte[0]);
 
         // Unstake alice remaining amount
         totalStakedBalanceBeforeUnstake = totalStakedBalanceBeforeUnstake.subtract(bobStakedBalance);

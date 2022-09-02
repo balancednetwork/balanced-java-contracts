@@ -58,7 +58,7 @@ public class DataSourceImpl {
         return contractAddress.at(dbKey).get();
     }
 
-    public void setContractAddress(Address address){
+    public void setContractAddress(Address address) {
         this.contractAddress.at(dbKey).set(address);
     }
 
@@ -66,7 +66,7 @@ public class DataSourceImpl {
         return name.at(dbKey).get();
     }
 
-    public void setName(String name){
+    public void setName(String name) {
         this.name.at(dbKey).set(name);
     }
 
@@ -74,7 +74,7 @@ public class DataSourceImpl {
         return day.at(dbKey).getOrDefault(BigInteger.ZERO);
     }
 
-    public void setDay(BigInteger day){
+    public void setDay(BigInteger day) {
         this.day.at(dbKey).set(day);
     }
 
@@ -94,10 +94,10 @@ public class DataSourceImpl {
         return totalDist.at(dbKey).getOrDefault(day, BigInteger.ZERO);
     }
 
-    public void  setTotalDist(BigInteger day, BigInteger value) {
+    public void setTotalDist(BigInteger day, BigInteger value) {
         totalDist.at(dbKey).set(day, value);
     }
-    
+
     public BigInteger getDistPercent() {
         return distPercent.at(dbKey).getOrDefault(BigInteger.ZERO);
     }
@@ -127,9 +127,9 @@ public class DataSourceImpl {
         try {
             DataSourceScoreInterface datasource = new DataSourceScoreInterface(getContractAddress());
             return datasource.getBalanceAndSupply(getName(), owner);
-        } catch (Exception e ) {
+        } catch (Exception e) {
             return Map.of("_totalSupply", BigInteger.ZERO,
-                          "_balance", BigInteger.ZERO
+                    "_balance", BigInteger.ZERO
             );
         }
     }
@@ -173,7 +173,8 @@ public class DataSourceImpl {
             return previousTotalWeight;
         }
 
-        BigInteger weightDelta = emission.multiply(timeDelta).multiply(EXA).divide(MICRO_SECONDS_IN_A_DAY).divide(totalSupply);
+        BigInteger weightDelta =
+                emission.multiply(timeDelta).multiply(EXA).divide(MICRO_SECONDS_IN_A_DAY).divide(totalSupply);
 
         return previousTotalWeight.add(weightDelta);
     }

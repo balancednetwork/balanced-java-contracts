@@ -28,7 +28,6 @@ import score.annotation.Optional;
 import score.annotation.Payable;
 
 import java.math.BigInteger;
-import java.util.List;
 import java.util.Map;
 
 @ScoreClient
@@ -62,7 +61,7 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
 
     @External(readonly = true)
     Map<String, Object> getAccountPositions(Address _owner);
- 
+
     @External(readonly = true)
     Map<String, Map<String, Object>> getAvailableAssets();
 
@@ -92,7 +91,8 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
 
     @External
     @Payable
-    void depositAndBorrow(@Optional String _asset, @Optional BigInteger _amount, @Optional Address _from, @Optional BigInteger _value);
+    void depositAndBorrow(@Optional String _asset, @Optional BigInteger _amount, @Optional Address _from,
+                          @Optional BigInteger _value);
 
     @External
     void retireBadDebt(String _symbol, BigInteger _value);
@@ -166,6 +166,6 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
     @External
     void setRedeemBatchSize(int _value);
 
-    @External(readonly= true)
+    @External(readonly = true)
     Map<String, Object> getParameters();
 }

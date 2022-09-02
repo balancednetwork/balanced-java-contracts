@@ -20,19 +20,16 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
-
-import network.balanced.score.lib.test.mock.MockContract;
 import network.balanced.score.lib.interfaces.*;
-
-import org.junit.jupiter.api.*;
+import network.balanced.score.lib.test.mock.MockContract;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-
 import score.Address;
-import score.Context;
 
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -40,15 +37,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static network.balanced.score.core.rebalancing.Constants.SICX_BNUSD_POOL_ID;
 import static network.balanced.score.lib.test.UnitTest.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.MockedStatic.Verification;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 
 public class RebalancingTest extends TestBase {
@@ -57,7 +49,7 @@ public class RebalancingTest extends TestBase {
     private static final Account owner = sm.createAccount();
     private static final Account adminAccount = sm.createAccount();
 
-    int scoreCount = 0;
+    private int scoreCount = 0;
     private final Account governanceScore = Account.newScoreAccount(scoreCount++);
 
     private Score rebalancingScore;
@@ -68,7 +60,7 @@ public class RebalancingTest extends TestBase {
     protected MockContract<Dex> dex;
     protected MockContract<Staking> staking;
     protected MockContract<Sicx> sicx;
-    protected MockContract<BalancedDollar> bnUSD; 
+    protected MockContract<BalancedDollar> bnUSD;
     protected MockContract<BalancedOracle> balancedOracle;
 
     @BeforeEach
@@ -123,8 +115,8 @@ public class RebalancingTest extends TestBase {
         // Sender not governance
         Account nonGovernance = sm.createAccount();
         String expectedErrorMessage =
-                "Reverted(0): Authorization Check: Authorization failed. Caller: " + nonGovernance.getAddress() + " Authorized " +
-                        "Caller: " + governanceScore.getAddress();
+                "Reverted(0): Authorization Check: Authorization failed. Caller: " + nonGovernance.getAddress() + " " +
+                        "Authorized Caller: " + governanceScore.getAddress();
         Executable setThresholdNotFromGovernance = () -> rebalancingScore.invoke(nonGovernance,
                 "setPriceDiffThreshold", threshold);
         expectErrorMessage(setThresholdNotFromGovernance, expectedErrorMessage);
@@ -217,7 +209,7 @@ public class RebalancingTest extends TestBase {
             rebalancingScore.invoke(sm.createAccount(), "rebalance", sicx.getAddress());
             verify(loans.mock).raisePrice(any(Address.class), any(BigInteger.class));
             verify(loans.mock, never()).lowerPrice(any(Address.class), any(BigInteger.class));
-            
+
         }
 
         @ParameterizedTest

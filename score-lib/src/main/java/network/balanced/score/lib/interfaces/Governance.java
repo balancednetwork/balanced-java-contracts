@@ -53,7 +53,7 @@ public interface Governance extends
 
     @External
     void setTimeOffset(BigInteger offset);
-    
+
     @External(readonly = true)
     BigInteger getTimeOffset();
 
@@ -109,7 +109,7 @@ public interface Governance extends
     Map<String, Object> checkVote(BigInteger _vote_index);
 
     @External(readonly = true)
-    Map<String, BigInteger> getVotesOfUser(BigInteger vote_index, Address user );
+    Map<String, BigInteger> getVotesOfUser(BigInteger vote_index, Address user);
 
     @External(readonly = true)
     BigInteger myVotingWeight(Address _address, BigInteger _day);
@@ -128,13 +128,13 @@ public interface Governance extends
     void createBalnMarket(BigInteger _bnUSD_amount, BigInteger _baln_amount);
 
     @External
-    void createBalnSicxMarket(BigInteger  _sicx_amount, BigInteger _baln_amount);
+    void createBalnSicxMarket(BigInteger _sicx_amount, BigInteger _baln_amount);
 
     @External
     void setAddresses(BalancedAddresses _addresses);
 
     @External(readonly = true)
-    Map<String, Address>  getAddresses();
+    Map<String, Address> getAddresses();
 
     @External
     void setAdmins();
@@ -152,16 +152,18 @@ public interface Governance extends
     BigInteger getLaunchTime();
 
     @External
-    void addCollateral(Address _token_address, boolean _active, String _peg, BigInteger _lockingRatio, BigInteger _liquidationRatio, BigInteger _debtCeiling);
-    
+    void addCollateral(Address _token_address, boolean _active, String _peg, BigInteger _lockingRatio,
+                       BigInteger _liquidationRatio, BigInteger _debtCeiling);
+
     @External
-    void addDexPricedCollateral(Address _token_address, boolean _active, BigInteger _lockingRatio, BigInteger _liquidationRatio, BigInteger _debtCeiling);
+    void addDexPricedCollateral(Address _token_address, boolean _active, BigInteger _lockingRatio,
+                                BigInteger _liquidationRatio, BigInteger _debtCeiling);
 
     @External
     void delegate(String contract, PrepDelegations[] _delegations);
 
     @External
-    void balwAdminTransfer(Address _from , Address _to , BigInteger _value, byte[] _data);
+    void balwAdminTransfer(Address _from, Address _to, BigInteger _value, byte[] _data);
 
     @External
     void setAddressesOnContract(String _contract);

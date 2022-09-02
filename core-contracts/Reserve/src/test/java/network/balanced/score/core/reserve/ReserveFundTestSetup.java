@@ -17,9 +17,7 @@
 package network.balanced.score.core.reserve;
 
 import com.iconloop.score.test.Account;
-
 import org.junit.jupiter.api.Assertions;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,7 +31,7 @@ public class ReserveFundTestSetup extends ReserveFundTestBase {
 
     @BeforeEach
     public void setupContract() throws Exception {
-       super.setup();
+        super.setup();
     }
 
     @Test
@@ -55,7 +53,7 @@ public class ReserveFundTestSetup extends ReserveFundTestBase {
     }
 
     @Test
-    void setgetGovernance() {
+    void setAndGetGovernance() {
         testGovernance(reserve, governanceScore, owner);
     }
 

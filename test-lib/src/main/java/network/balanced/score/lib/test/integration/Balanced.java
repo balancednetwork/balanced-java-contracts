@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import static network.balanced.score.lib.test.integration.BalancedUtils.hexObjectToBigInteger;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
@@ -90,7 +89,7 @@ public class Balanced {
         Hash bnusdTx = deployAsync(owner, "BalancedDollar", Map.of("_governance", governance._address()));
         Hash daofundTx = deployAsync(owner, "DAOfund", Map.of("_governance", governance._address()));
         Hash dividendsTx = deployAsync(owner, "Dividends", Map.of("_governance", governance._address()));
-        Hash oracleTx = deployAsync(owner, "DummyOracle",null);
+        Hash oracleTx = deployAsync(owner, "DummyOracle", null);
         Hash reserveTx = deployAsync(owner, "Reserve", Map.of("governance", governance._address()));
         Hash routerTx = deployAsync(owner, "Router", Map.of("_governance", governance._address()));
         Hash stakedLpTx = deployAsync(owner, "StakedLP", Map.of("governance", governance._address()));
@@ -153,8 +152,10 @@ public class Balanced {
     }
 
     public void setupContracts() {
-        ownerClient.balancedOracle.getPriceInLoop((txr) -> {}, "sICX");
-        ownerClient.balancedOracle.getPriceInLoop((txr) -> {}, "USD");
+        ownerClient.balancedOracle.getPriceInLoop((txr) -> {
+        }, "sICX");
+        ownerClient.balancedOracle.getPriceInLoop((txr) -> {
+        }, "USD");
         ownerClient.staking.setSicxAddress(sicx._address());
 
         ownerClient.bnUSD.setMinter(loans._address());
@@ -179,11 +180,11 @@ public class Balanced {
         increaseDay(1);
 
         BigInteger balnBalance = ownerClient.rewards.getBalnHolding(governance._address());
-        BigInteger initalPoolDepths = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
-        ownerClient.governance.createBalnMarket(initalPoolDepths, initalPoolDepths);
-        ownerClient.staking.stakeICX(initalPoolDepths.multiply(BigInteger.TWO), null, null);
-        ownerClient.sicx.transfer(governance._address(), initalPoolDepths, null);
-        ownerClient.governance.createBalnSicxMarket(initalPoolDepths, initalPoolDepths);
+        BigInteger initialPoolDepths = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
+        ownerClient.governance.createBalnMarket(initialPoolDepths, initialPoolDepths);
+        ownerClient.staking.stakeICX(initialPoolDepths.multiply(BigInteger.TWO), null, null);
+        ownerClient.sicx.transfer(governance._address(), initialPoolDepths, null);
+        ownerClient.governance.createBalnSicxMarket(initialPoolDepths, initialPoolDepths);
     }
 
     public BalancedClient newClient(BigInteger clientBalance) throws Exception {
@@ -201,7 +202,8 @@ public class Balanced {
     }
 
     public void syncDistributions() {
-        Consumer<TransactionResult> distributeConsumer = result -> {};
+        Consumer<TransactionResult> distributeConsumer = result -> {
+        };
         ownerClient.rewards.distribute(distributeConsumer);
         ownerClient.dividends.distribute(distributeConsumer);
     }

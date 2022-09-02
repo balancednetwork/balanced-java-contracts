@@ -26,7 +26,6 @@ import java.math.BigInteger;
 import java.util.List;
 
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class RewardsTestSetup extends RewardsTestBase {
@@ -56,25 +55,25 @@ class RewardsTestSetup extends RewardsTestBase {
     @Test
     void setAndGetBwt() {
         testContractSettersAndGetters(rewardsScore, governance, admin, "setBwt",
-        testAccount.getAddress(), "getBwt");
+                testAccount.getAddress(), "getBwt");
     }
 
     @Test
     void setAndGetBaln() {
         testContractSettersAndGetters(rewardsScore, governance, admin, "setBaln",
-        testAccount.getAddress(), "getBaln");
+                testAccount.getAddress(), "getBaln");
     }
 
     @Test
     void setAndGetReserve() {
         testContractSettersAndGetters(rewardsScore, governance, admin, "setReserve",
-        testAccount.getAddress(), "getReserve");
+                testAccount.getAddress(), "getReserve");
     }
 
     @Test
     void setAndGetDaofund() {
         testContractSettersAndGetters(rewardsScore, governance, admin, "setDaofund",
-        testAccount.getAddress(), "getDaofund");
+                testAccount.getAddress(), "getDaofund");
     }
 
     @Test
@@ -122,10 +121,11 @@ class RewardsTestSetup extends RewardsTestBase {
     void addAndRemoveDataProviders() {
         Address dataProvider1 = Account.newScoreAccount(scoreCount++).getAddress();
         Address dataProvider2 = Account.newScoreAccount(scoreCount++).getAddress();
-        
+
         Account nonOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + nonOwner.getAddress() + "Owner=" + owner.getAddress();
-        Executable addFromNotOwner= () -> rewardsScore.invoke(nonOwner, "addDataProvider", dataProvider1);
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + nonOwner.getAddress() + "Owner=" + owner.getAddress();
+        Executable addFromNotOwner = () -> rewardsScore.invoke(nonOwner, "addDataProvider", dataProvider1);
         expectErrorMessage(addFromNotOwner, expectedErrorMessage);
 
         rewardsScore.invoke(owner, "addDataProvider", dataProvider1);
@@ -135,7 +135,7 @@ class RewardsTestSetup extends RewardsTestBase {
         assertTrue(dataProviders.contains(dataProvider1));
         assertTrue(dataProviders.contains(dataProvider2));
 
-        Executable removeFromNotOwner= () -> rewardsScore.invoke(nonOwner, "removeDataProvider", dataProvider1);
+        Executable removeFromNotOwner = () -> rewardsScore.invoke(nonOwner, "removeDataProvider", dataProvider1);
         expectErrorMessage(removeFromNotOwner, expectedErrorMessage);
 
         rewardsScore.invoke(owner, "removeDataProvider", dataProvider1);

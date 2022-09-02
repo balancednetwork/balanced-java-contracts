@@ -135,7 +135,7 @@ public class RewardsImpl implements Rewards {
     @External(readonly = true)
     public Map<String, BigInteger> getBalnHoldings(Address[] _holders) {
         Map<String, BigInteger> holdings = new HashMap<>();
-        for(Address address : _holders) {
+        for (Address address : _holders) {
             holdings.put(address.toString(), balnHoldings.getOrDefault(address.toString(), BigInteger.ZERO));
         }
 
@@ -635,7 +635,7 @@ public class RewardsImpl implements Rewards {
         int offset = 5;
         if (day.compareTo(BigInteger.valueOf(60)) <= 0) {
             return baseDistribution;
-        } else if (day.compareTo(BigInteger.valueOf(66)) <= 0) { 
+        } else if (day.compareTo(BigInteger.valueOf(66)) <= 0) {
             BigInteger index = day.subtract(BigInteger.valueOf(60));
             BigInteger decay = pow(BigInteger.valueOf(995), index.intValue());
             BigInteger decayOffset = pow(BigInteger.valueOf(1000), index.intValue());
@@ -646,7 +646,7 @@ public class RewardsImpl implements Rewards {
         } else {
             int index = day.subtract(BigInteger.valueOf(60)).intValue();
             BigInteger distribution = baseDistribution;
-            
+
             for (int i = 0; i < offset; i++) {
                 distribution = distribution.multiply(BigInteger.valueOf(995));
             }
@@ -682,12 +682,15 @@ public class RewardsImpl implements Rewards {
         }
     }
 
-    @EventLog(indexed=1)
-    public void RewardsClaimed(Address _address, BigInteger _amount){}
+    @EventLog(indexed = 1)
+    public void RewardsClaimed(Address _address, BigInteger _amount) {
+    }
 
-    @EventLog(indexed=2)
-    public void Report(BigInteger _day, String _name, BigInteger _dist, BigInteger _value) {}
+    @EventLog(indexed = 2)
+    public void Report(BigInteger _day, String _name, BigInteger _dist, BigInteger _value) {
+    }
 
-    @EventLog(indexed=2)
-    public void  RewardsAccrued(Address _user, String _source, BigInteger _value) {}
+    @EventLog(indexed = 2)
+    public void RewardsAccrued(Address _user, String _source, BigInteger _value) {
+    }
 }
