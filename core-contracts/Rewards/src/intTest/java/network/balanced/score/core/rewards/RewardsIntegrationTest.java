@@ -32,6 +32,7 @@ import java.util.Map;
 import static network.balanced.score.lib.test.integration.BalancedUtils.hexObjectToBigInteger;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.POINTS;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -95,7 +96,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         verifyNoRewards(loanTaker2);
         verifyRewards(loanTaker3);
 
-        // Act 
+        // Act
         loanTaker2.loans.depositAndBorrow(BigInteger.ZERO, "bnUSD", loanAmount, null, null);
 
         // Assert
@@ -125,6 +126,72 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         // Assert
         verifyRewards(icxSicxLp);
         verifyNoRewards(icxSicxLpLeaving);
+    }
+
+    @Test
+    void boostRewards() throws Exception {
+        // Arrange
+        String sourceName = "sICX/ICX";
+        BalancedClient icxSicxLp = balanced.newClient();
+        BalancedClient icxSicxLpBoosted = balanced.newClient();
+
+        BigInteger lockDays = BigInteger.valueOf(7).multiply(BigInteger.valueOf(3));
+        BigInteger lpBalance = BigInteger.TEN.pow(22);
+        BigInteger initialSupply = reader.dex.getBalanceAndSupply(sourceName, reader.getAddress()).get("_totalSupply");
+        icxSicxLp.dex._transfer(balanced.dex._address(), lpBalance, null);
+        icxSicxLpBoosted.dex._transfer(balanced.dex._address(), lpBalance, null);
+
+        initialSupply = initialSupply.add(lpBalance).add(lpBalance);
+
+        balanced.increaseDay(1);
+        verifyRewards(icxSicxLp);
+        verifyRewards(icxSicxLpBoosted);
+
+        // Act
+        BigInteger availableBalnBalance = reader.baln.balanceOf(icxSicxLpBoosted.getAddress());
+        long unlockTime = (System.currentTimeMillis()*1000)+(MICRO_SECONDS_IN_A_DAY.multiply(lockDays)).longValue();
+        String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
+        icxSicxLpBoosted.baln.transfer(owner.boostedBaln._address(), availableBalnBalance, data.getBytes());
+
+        icxSicxLpBoosted.rewards.boost(sourceName);
+
+        // Assert
+        verifyRewards(icxSicxLpBoosted);
+
+        // Map<String, BigInteger> currentWorkingBalanceAndSupply = reader.rewards.getWorkingBalanceAndSupply(sourceName, icxSicxLpBoosted.getAddress());
+        // assertTrue(currentWorkingBalanceAndSupply.get("workingSupply").compareTo(initialSupply) > 0);
+        // assertTrue(currentWorkingBalanceAndSupply.get("workingBalance").compareTo(lpBalance) > 0);
+        // assertEquals(sourceName, reader.rewards.getBoost(icxSicxLpBoosted.getAddress()));
+
+        // // Act
+        // balanced.increaseDay(7);
+        // verifyRewards(icxSicxLpBoosted);
+
+        // // Assert
+        // Map<String, BigInteger> newWorkingBalanceAndSupply = reader.rewards.getWorkingBalanceAndSupply(sourceName, icxSicxLpBoosted.getAddress());
+        // assertTrue(newWorkingBalanceAndSupply.get("workingSupply").compareTo(currentWorkingBalanceAndSupply.get("workingSupply")) < 0);
+        // assertTrue(newWorkingBalanceAndSupply.get("workingBalance").compareTo(currentWorkingBalanceAndSupply.get("workingBalance")) < 0);
+        // currentWorkingBalanceAndSupply = newWorkingBalanceAndSupply;
+
+        // // Act
+        // balanced.increaseDay(7);
+        // verifyRewards(icxSicxLpBoosted);
+        // //kick
+
+        // // Assert
+        // newWorkingBalanceAndSupply = reader.rewards.getWorkingBalanceAndSupply(sourceName, icxSicxLpBoosted.getAddress());
+        // assertTrue(newWorkingBalanceAndSupply.get("workingSupply").compareTo(currentWorkingBalanceAndSupply.get("workingSupply")) < 0);
+        // assertTrue(newWorkingBalanceAndSupply.get("workingBalance").compareTo(currentWorkingBalanceAndSupply.get("workingBalance")) < 0);
+        // currentWorkingBalanceAndSupply = newWorkingBalanceAndSupply;
+
+        // // Act
+        // balanced.increaseDay(8);
+        // verifyRewards(icxSicxLpBoosted);
+
+        // // Assert
+        // Map<String, BigInteger> newWorkingBalanceAndSupply = reader.rewards.getWorkingBalanceAndSupply(sourceName, icxSicxLpBoosted.getAddress());
+        // assertEquals(newWorkingBalanceAndSupply.get("workingSupply"), initialSupply);
+        // assertEquals(newWorkingBalanceAndSupply.get("workingBalance"), lpBalance);
     }
 
     @Test

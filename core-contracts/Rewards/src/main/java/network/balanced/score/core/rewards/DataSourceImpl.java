@@ -291,8 +291,8 @@ public class DataSourceImpl {
         sourceData.put("day", day);
         sourceData.put("contract_address", getContractAddress());
         sourceData.put("dist_percent", getDistPercent());
-        sourceData.put("precomp", getPrecomp());
-        sourceData.put("offset", getOffset());
+        sourceData.put("workingSupply", getDistPercent());
+        sourceData.put("supply", getDistPercent());
         sourceData.put("total_value", getTotalValue(day));
         sourceData.put("total_dist", getTotalDist(day));
 

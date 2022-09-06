@@ -418,19 +418,7 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
     }
 
     private void onBalanceUpdate(Address address) {
-        // calling handle action for rewards
-        Map<String, Object> userDetails = new HashMap<>();
-        userDetails.put("user", address);
-        userDetails.put("userBalance", balanceOf(address, BigInteger.ZERO));
-        userDetails.put("totalSupply", totalSupply(BigInteger.ZERO));
-
-        //assuming token address is reward address
-        updateRewardData(userDetails);
-    }
-
-    protected void updateRewardData(Map<String, Object> userDetails) {
-        Context.call(this.rewardAddress.get(), "updateRewardsData", this.name.get(), userDetails.get("totalSupply"),
-                userDetails.get("user"), userDetails.get("userBalance"));
+        Context.call(this.rewardAddress.get(), "onBalanceUpdate", address);
     }
 
 }

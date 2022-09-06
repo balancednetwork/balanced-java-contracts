@@ -324,6 +324,15 @@ public class RewardsImpl implements Rewards {
         return DataSourceDB.get(_name).getData();
     }
 
+    @External(readonly = true)
+    public Map<String, BigInteger> getWorkingBalanceAndSupply(String _name, Address _user) {
+        DataSourceImpl datasource = DataSourceDB.get(_name);
+        return Map.of(
+            "workingSupply", datasource.getWorkingSupply(),
+            "workingBalance", datasource.getWorkingBalance(_user)
+        );
+    }
+
     /**
      * This method should be called once after the balanced has been launched, so that if there are baln tokens to
      * mint it will be minted. In continuous rewards it will be minted while in non-continuous it will not  be minted

@@ -83,6 +83,9 @@ public interface Rewards extends
     @External(readonly = true)
     Map<String, Object> getSourceData(String _name);
 
+    @External(readonly = true)
+    Map<String, BigInteger> getWorkingBalanceAndSupply(String _name, Address _user);
+
     @External
     boolean distribute();
 
