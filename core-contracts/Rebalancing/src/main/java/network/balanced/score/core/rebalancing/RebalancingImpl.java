@@ -190,8 +190,8 @@ public class RebalancingImpl implements Rebalancing {
         BigInteger decimals = pow(BigInteger.TEN, nrDecimals.intValue());
         BigInteger poolID = Context.call(BigInteger.class, dexScore, "getPoolId", collateralAddress, bnusdScore);
 
-        BigInteger usdPriceInIcx = (BigInteger) Context.call(oracleScore, "getPriceInLoop", "USD");
-        BigInteger assetPriceInIcx = (BigInteger) Context.call(oracleScore, "getPriceInLoop", symbol);
+        BigInteger usdPriceInIcx = (BigInteger) Context.call(oracleScore, "getLastPriceInLoop", "USD");
+        BigInteger assetPriceInIcx = (BigInteger) Context.call(oracleScore, "getLastPriceInLoop", symbol);
         BigInteger actualUsdPriceInAsset = usdPriceInIcx.multiply(decimals).divide(assetPriceInIcx);
 
         Map<String, Object> poolStats = (Map<String, Object>) Context.call(dexScore, "getPoolStats", poolID);
