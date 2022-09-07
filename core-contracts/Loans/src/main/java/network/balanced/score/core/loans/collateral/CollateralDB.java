@@ -64,7 +64,8 @@ public class CollateralDB {
     }
 
     public static Collateral getCollateral(Address address) {
-        Context.require(arrayDbContains(collateralAddresses, address), address + " is not a supported collateral type.");
+        Context.require(arrayDbContains(collateralAddresses, address), address + " is not a supported collateral type" +
+                ".");
         return new Collateral(COLLATERAL_DB_PREFIX + "|" + address.toString());
     }
 
@@ -109,7 +110,8 @@ public class CollateralDB {
             Token collateralContract = new Token(collateralAddress);
             BigInteger collateralDecimals = pow(BigInteger.TEN, collateralContract.decimals().intValue());
 
-            BigInteger value = collateralContract.balanceOf(Context.getAddress()).multiply(collateralContract.lastPriceInLoop()).divide(collateralDecimals);
+            BigInteger value =
+                    collateralContract.balanceOf(Context.getAddress()).multiply(collateralContract.lastPriceInLoop()).divide(collateralDecimals);
             totalCollateral = totalCollateral.add(value);
         }
 

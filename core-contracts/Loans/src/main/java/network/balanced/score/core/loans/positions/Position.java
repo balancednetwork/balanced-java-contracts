@@ -29,8 +29,8 @@ import scorex.util.HashMap;
 import java.math.BigInteger;
 import java.util.Map;
 
-import static network.balanced.score.lib.utils.Math.pow;
 import static network.balanced.score.core.loans.utils.LoansConstants.*;
+import static network.balanced.score.lib.utils.Math.pow;
 
 public class Position {
     static final String TAG = "BalancedLoansPositions";

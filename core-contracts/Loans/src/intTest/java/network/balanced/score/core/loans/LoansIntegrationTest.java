@@ -96,7 +96,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
 
         // get enough baln to vote through a new collateral
         balanced.increaseDay(3);
-        BigInteger ethAmount =  BigInteger.valueOf(2).multiply(iethDecimals);
+        BigInteger ethAmount = BigInteger.valueOf(2).multiply(iethDecimals);
         BigInteger ethPriceInLoop = reader.balancedOracle.getLastPriceInLoop("ETH");
         BigInteger bnusdPriceInLoop = reader.balancedOracle.getLastPriceInLoop("bnUSD");
         BigInteger ethValue = ethAmount.multiply(ethPriceInLoop).divide(iethDecimals);
@@ -504,7 +504,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         BigInteger loan = (maxDebt.subtract(maxFee)).multiply(EXA).divide(owner.bnUSD.lastPriceInLoop());
         BigInteger fee = loan.multiply(feePercent).divide(POINTS);
 
-        loanTaker.loans.depositAndBorrow(icxCollateral, "bnUSD", loan,  null, null);
+        loanTaker.loans.depositAndBorrow(icxCollateral, "bnUSD", loan, null, null);
         BigInteger ethLoan = BigInteger.TEN.pow(22);
         BigInteger ethDebt = ethLoan.add(ethLoan.multiply(feePercent).divide(POINTS));
         loanTaker.depositAndBorrow(ethAddress, collateralETH, ethLoan);

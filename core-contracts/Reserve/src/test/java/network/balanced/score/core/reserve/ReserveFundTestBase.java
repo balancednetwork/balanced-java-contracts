@@ -16,10 +16,6 @@
 
 package network.balanced.score.core.reserve;
 
-import static org.mockito.Mockito.when;
-
-import java.math.BigInteger;
-
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
@@ -31,6 +27,10 @@ import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
 import network.balanced.score.lib.interfaces.tokens.IRC2MintableScoreInterface;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockContract;
+
+import java.math.BigInteger;
+
+import static org.mockito.Mockito.when;
 
 public class ReserveFundTestBase extends UnitTest {
     public static final ServiceManager sm = getServiceManager();

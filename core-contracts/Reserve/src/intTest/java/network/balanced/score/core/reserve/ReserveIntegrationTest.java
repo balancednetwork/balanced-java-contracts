@@ -94,7 +94,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         loanTakerICX3.loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
         loanTakerICX4.loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
 
-        BigInteger ethAmount =  BigInteger.valueOf(2).multiply(iethDecimals);
+        BigInteger ethAmount = BigInteger.valueOf(2).multiply(iethDecimals);
         BigInteger ethPriceInLoop = reader.balancedOracle.getLastPriceInLoop("ETH");
         BigInteger bnusdPriceInLoop = reader.balancedOracle.getLastPriceInLoop("bnUSD");
         BigInteger ethValue = ethAmount.multiply(ethPriceInLoop).divide(iethDecimals);

@@ -20,13 +20,14 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import network.balanced.score.lib.interfaces.*;
-import network.balanced.score.lib.interfaces.tokens.*;
+import network.balanced.score.lib.interfaces.tokens.IRC2;
+import network.balanced.score.lib.interfaces.tokens.IRC2ScoreInterface;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockContract;
 
-import static org.mockito.Mockito.when;
-
 import java.math.BigInteger;
+
+import static org.mockito.Mockito.when;
 
 class BalancedOracleTestBase extends UnitTest {
     protected static final long DAY = 43200L;

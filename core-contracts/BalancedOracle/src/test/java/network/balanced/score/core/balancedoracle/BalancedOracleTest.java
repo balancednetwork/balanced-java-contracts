@@ -22,6 +22,7 @@ import org.junit.jupiter.api.function.Executable;
 
 import java.math.BigInteger;
 import java.util.Map;
+
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static network.balanced.score.lib.utils.Math.exaPow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -221,14 +222,15 @@ class BalancedOracleTest extends BalancedOracleTestBase {
     }
 
     private void mockRate(String symbol, BigInteger rate) {
-        mockRate(symbol, rate, BigInteger.valueOf(sm.getBlock().getTimestamp()), BigInteger.valueOf(sm.getBlock().getTimestamp()));
+        mockRate(symbol, rate, BigInteger.valueOf(sm.getBlock().getTimestamp()),
+                BigInteger.valueOf(sm.getBlock().getTimestamp()));
     }
 
     private void mockRate(String symbol, BigInteger rate, BigInteger baseUpdateTime, BigInteger quoteUpdateTime) {
         Map<String, Object> priceData = Map.of(
-            "rate", rate,
-            "last_update_base", baseUpdateTime,
-            "last_update_quote", quoteUpdateTime
+                "rate", rate,
+                "last_update_base", baseUpdateTime,
+                "last_update_quote", quoteUpdateTime
         );
         when(oracle.mock.get_reference_data(symbol, "ICX")).thenReturn(priceData);
     }

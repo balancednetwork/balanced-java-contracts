@@ -16,31 +16,20 @@
 
 package network.balanced.score.core.balancedoracle;
 
-import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.admin;
-import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.assetPeg;
-import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.dex;
-import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.dexPriceEMADecay;
-import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.dexPricedAssets;
-import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.governance;
-import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.oracle;
-import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.oraclePriceEMADecay;
-import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.staking;
-import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.lastUpdateThreshold;
-import static network.balanced.score.lib.utils.Check.isContract;
-import static network.balanced.score.lib.utils.Check.only;
-import static network.balanced.score.lib.utils.Check.onlyOwner;
-import static network.balanced.score.lib.utils.Constants.EXA;
-import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
-import static network.balanced.score.lib.utils.Math.pow;
-
-import java.math.BigInteger;
-import java.util.Map;
-
 import network.balanced.score.lib.interfaces.BalancedOracle;
 import score.Address;
 import score.Context;
 import score.annotation.External;
 import score.annotation.Optional;
+
+import java.math.BigInteger;
+import java.util.Map;
+
+import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.*;
+import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
+import static network.balanced.score.lib.utils.Math.pow;
 
 public class BalancedOracleImpl implements BalancedOracle {
     public static final String TAG = "Balanced Oracle";
@@ -240,15 +229,17 @@ public class BalancedOracleImpl implements BalancedOracle {
 
     @SuppressWarnings("unchecked")
     private BigInteger getLoopRate(String symbol) {
-        Map<String, BigInteger> priceData = (Map<String, BigInteger>) Context.call(oracle.get(), "get_reference_data", symbol
-                , "ICX");
+        Map<String, BigInteger> priceData = (Map<String, BigInteger>) Context.call(oracle.get(), "get_reference_data"
+                , symbol, "ICX");
         BigInteger last_update_base = priceData.get("last_update_base");
         BigInteger last_update_quote = priceData.get("last_update_quote");
         BigInteger blockTime = BigInteger.valueOf(Context.getBlockTimestamp());
         BigInteger threshold = lastUpdateThreshold.getOrDefault(BigInteger.ZERO);
 
-        Context.require(blockTime.subtract(last_update_base).compareTo(threshold) < 0, "The last price update for " + symbol + " is outdated");
-        Context.require(blockTime.subtract(last_update_quote).compareTo(threshold) < 0, "The last price update for ICX is outdated" );
+        Context.require(blockTime.subtract(last_update_base).compareTo(threshold) < 0,
+                "The last price update for " + symbol + " is outdated");
+        Context.require(blockTime.subtract(last_update_quote).compareTo(threshold) < 0, "The last price update for " +
+                "ICX is outdated");
 
         return (BigInteger) priceData.get("rate");
     }

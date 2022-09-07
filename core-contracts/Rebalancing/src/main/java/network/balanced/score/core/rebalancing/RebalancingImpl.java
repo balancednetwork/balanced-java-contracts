@@ -16,26 +16,6 @@
 
 package network.balanced.score.core.rebalancing;
 
-import static network.balanced.score.core.rebalancing.Constants.ADMIN;
-import static network.balanced.score.core.rebalancing.Constants.BNUSD_ADDRESS;
-import static network.balanced.score.core.rebalancing.Constants.DEX_ADDRESS;
-import static network.balanced.score.core.rebalancing.Constants.GOVERNANCE_ADDRESS;
-import static network.balanced.score.core.rebalancing.Constants.LOANS_ADDRESS;
-import static network.balanced.score.core.rebalancing.Constants.ORACLE_ADDRESS;
-import static network.balanced.score.core.rebalancing.Constants.PRICE_THRESHOLD;
-import static network.balanced.score.core.rebalancing.Constants.SICX_ADDRESS;
-import static network.balanced.score.core.rebalancing.Constants.TAG;
-import static network.balanced.score.lib.utils.Check.isContract;
-import static network.balanced.score.lib.utils.Check.only;
-import static network.balanced.score.lib.utils.Check.onlyOwner;
-import static network.balanced.score.lib.utils.Check.optionalDefault;
-import static network.balanced.score.lib.utils.Constants.EXA;
-import static network.balanced.score.lib.utils.Math.pow;
-
-import java.math.BigInteger;
-import java.util.List;
-import java.util.Map;
-
 import network.balanced.score.lib.interfaces.Rebalancing;
 import score.Address;
 import score.Context;
@@ -43,6 +23,15 @@ import score.VarDB;
 import score.annotation.External;
 import score.annotation.Optional;
 import scorex.util.ArrayList;
+
+import java.math.BigInteger;
+import java.util.List;
+import java.util.Map;
+
+import static network.balanced.score.core.rebalancing.Constants.*;
+import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Math.pow;
 
 public class RebalancingImpl implements Rebalancing {
 
@@ -218,11 +207,13 @@ public class RebalancingImpl implements Rebalancing {
         boolean reverse = priceDifferencePercentage.compareTo(threshold.negate()) < 0;
         if (forward) {
             //Add sicx in the pool i.e. buy bnusd from the pool and sell icx. pair: sicx/bnusd
-            tokensToSell = actualUsdPriceInAsset.multiply(assetLiquidity).multiply(bnusdLiquidity).divide(EXA).sqrt().subtract(assetLiquidity);
+            tokensToSell =
+                    actualUsdPriceInAsset.multiply(assetLiquidity).multiply(bnusdLiquidity).divide(EXA).sqrt().subtract(assetLiquidity);
         } else if (reverse) {
             // Add bnusd in the pool i.e. buy sicx from the pool and sell bnusd. pair bnusd/sicx
             BigInteger actualAssetPriceInBnusd = assetPriceInIcx.multiply(EXA).divide(usdPriceInIcx);
-            tokensToSell = actualAssetPriceInBnusd.multiply(bnusdLiquidity).multiply(assetLiquidity).divide(decimals).sqrt().subtract(bnusdLiquidity);
+            tokensToSell =
+                    actualAssetPriceInBnusd.multiply(bnusdLiquidity).multiply(assetLiquidity).divide(decimals).sqrt().subtract(bnusdLiquidity);
         } else {
             tokensToSell = BigInteger.ZERO;
         }

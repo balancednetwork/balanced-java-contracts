@@ -268,7 +268,8 @@ public class LoansImpl implements Loans {
     @External
     public void borrow(String _collateralToBorrowAgainst, String _assetToBorrow, BigInteger _amountToBorrow) {
         loansOn();
-        Context.require(_amountToBorrow.compareTo(BigInteger.ZERO) > 0, TAG +": _amountToBorrow needs to be larger than 0" );
+        Context.require(_amountToBorrow.compareTo(BigInteger.ZERO) > 0, TAG + ": _amountToBorrow needs to be larger " +
+                "than 0");
         originateLoan(_collateralToBorrowAgainst, _assetToBorrow, _amountToBorrow, Context.getCaller());
     }
 
@@ -496,7 +497,7 @@ public class LoansImpl implements Loans {
         String collateralSymbol = collateralToken.symbol();
 
         Context.require(CollateralDB.symbolMap.get(collateralSymbol).equals(_collateralAddress.toString()),
-            collateralSymbol + " is not a supported collateral type.");
+                collateralSymbol + " is not a supported collateral type.");
 
         BigInteger oldTotalDebt = totalDebts.getOrDefault(assetSymbol, BigInteger.ZERO);
         int batchSize = redeemBatch.get();
@@ -600,7 +601,7 @@ public class LoansImpl implements Loans {
 
         for (int i = 0; i < assetSymbolsCount; i++) {
             String symbol = AssetDB.assetList.get(i);
-            Asset asset  = AssetDB.getAsset(symbol);
+            Asset asset = AssetDB.getAsset(symbol);
             if (!asset.isActive()) {
                 continue;
             }
