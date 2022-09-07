@@ -41,6 +41,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
     protected static BalancedClient owner;
     protected static BalancedClient reader;
     protected static Address ethAddress;
+    protected static BigInteger iethDecimals = BigInteger.TEN.pow(6);
 
     protected static BigInteger voteDefinitionFee = BigInteger.TEN.pow(10);
 
@@ -68,7 +69,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         owner.governance.setBalnVoteDefinitionCriterion(BigInteger.ZERO);
         owner.governance.setQuorum(BigInteger.ONE);
 
-        ethAddress = createIRC2Token(owner, "ICON ETH", "iETH");
+        ethAddress = createIRC2Token(owner, "ICON ETH", "iETH", BigInteger.valueOf(6));
         owner.irc2(ethAddress).setMinter(owner.getAddress());
 
         BigInteger pid = owner.dex.getPoolId(balanced.baln._address(), balanced.bnusd._address());
@@ -93,10 +94,11 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         loanTakerICX3.loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
         loanTakerICX4.loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
 
-        BigInteger ethAmount = BigInteger.TEN.pow(18);
-
-        BigInteger bnusdAmount = ethAmount.multiply(reader.balancedOracle.getLastPriceInLoop("ETH"))
-                .divide(reader.balancedOracle.getLastPriceInLoop("bnUSD"));
+        BigInteger ethAmount = BigInteger.valueOf(2).multiply(iethDecimals);
+        BigInteger ethPriceInLoop = reader.balancedOracle.getLastPriceInLoop("ETH");
+        BigInteger bnusdPriceInLoop = reader.balancedOracle.getLastPriceInLoop("bnUSD");
+        BigInteger ethValue = ethAmount.multiply(ethPriceInLoop).divide(iethDecimals);
+        BigInteger bnusdAmount = ethValue.multiply(EXA).divide(bnusdPriceInLoop);
 
         addCollateralType(owner, ethAddress, ethAmount, bnusdAmount, "ETH");
     }
@@ -121,7 +123,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         setLockingRatio(voter, lockingRatio, "Liquidation setup with reserve multiCollateral");
 
         BigInteger sICXCollateral = BigInteger.TEN.pow(23);
-        BigInteger iETHCollateral = BigInteger.TEN.pow(18);
+        BigInteger iETHCollateral = BigInteger.TEN.pow(6);
         owner.staking.stakeICX(sICXCollateral, null, null);
         owner.sicx.transfer(balanced.reserve._address(), sICXCollateral, null);
         owner.irc2(ethAddress).mintTo(balanced.reserve._address(), iETHCollateral, null);
@@ -136,7 +138,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         BigInteger fee = loan.multiply(feePercent).divide(POINTS);
 
         BigInteger iETHcollateralValue =
-                iETHCollateral.multiply(owner.balancedOracle.getLastPriceInLoop("iETH")).divide(EXA);
+                iETHCollateral.multiply(owner.balancedOracle.getLastPriceInLoop("iETH")).divide(iethDecimals);
         BigInteger iETHfeePercent = hexObjectToBigInteger(owner.loans.getParameters().get("origination fee"));
         BigInteger iETHmaxDebt = POINTS.multiply(iETHcollateralValue).divide(lockingRatio);
         BigInteger iETHmaxFee = iETHmaxDebt.multiply(iETHfeePercent).divide(POINTS);
@@ -210,10 +212,10 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         BigInteger totalValueInSICXPool =
                 hexObjectToBigInteger(bnusdDebtDetails.get("sICX").get("liquidation_pool")).multiply(sICXPriceInLoop).divide(EXA);
         BigInteger totalValueInIETHPool =
-                hexObjectToBigInteger(bnusdDebtDetails.get("iETH").get("liquidation_pool")).multiply(iETHPriceInLoop).divide(EXA);
+                hexObjectToBigInteger(bnusdDebtDetails.get("iETH").get("liquidation_pool")).multiply(iETHPriceInLoop).divide(iethDecimals);
 
         BigInteger valueNeededFromIETHReserve = totalIETHBadDebtValueInLoop.subtract(totalValueInIETHPool);
-        BigInteger amountOfiETHRedeemed = valueNeededFromIETHReserve.multiply(EXA).divide(iETHPriceInLoop);
+        BigInteger amountOfiETHRedeemed = valueNeededFromIETHReserve.multiply(iethDecimals).divide(iETHPriceInLoop);
 
         BigInteger valueNeededFromSICXReserve = totalSICXBadDebtValueInLoop.subtract(totalValueInSICXPool);
         BigInteger amountOfSICXRedeemed = valueNeededFromSICXReserve.multiply(EXA).divide(sICXPriceInLoop);
@@ -305,7 +307,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         setLockingRatio(voter, lockingRatio, "Liquidation setup with reserve specificCollateral");
 
         BigInteger sICXCollateral = BigInteger.TEN.pow(23);
-        BigInteger iETHCollateral = BigInteger.TEN.pow(18);
+        BigInteger iETHCollateral = BigInteger.TEN.pow(6);
         owner.irc2(ethAddress).mintTo(balanced.reserve._address(), iETHCollateral, null);
 
         BigInteger collateralValue =
@@ -318,7 +320,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         BigInteger fee = loan.multiply(feePercent).divide(POINTS);
 
         BigInteger iETHcollateralValue =
-                iETHCollateral.multiply(owner.balancedOracle.getLastPriceInLoop("iETH")).divide(EXA);
+                iETHCollateral.multiply(owner.balancedOracle.getLastPriceInLoop("iETH")).divide(iethDecimals);
         BigInteger iETHfeePercent = hexObjectToBigInteger(owner.loans.getParameters().get("origination fee"));
         BigInteger iETHmaxDebt = POINTS.multiply(iETHcollateralValue).divide(lockingRatio);
         BigInteger iETHmaxFee = iETHmaxDebt.multiply(iETHfeePercent).divide(POINTS);
@@ -380,10 +382,10 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
                 totalIETHBadDebtValueInLoop.multiply(BAD_DEBT_RETIREMENT_BONUS.add(POINTS)).divide(POINTS);
 
         BigInteger totalValueInIETHPool =
-                hexObjectToBigInteger(bnusdDebtDetails.get("iETH").get("liquidation_pool")).multiply(iETHPriceInLoop).divide(EXA);
+                hexObjectToBigInteger(bnusdDebtDetails.get("iETH").get("liquidation_pool")).multiply(iETHPriceInLoop).divide(iethDecimals);
 
         BigInteger valueNeededFromIETHReserve = totalIETHBadDebtValueInLoop.subtract(totalValueInIETHPool);
-        BigInteger amountOfiETHRedeemed = valueNeededFromIETHReserve.multiply(EXA).divide(iETHPriceInLoop);
+        BigInteger amountOfiETHRedeemed = valueNeededFromIETHReserve.multiply(iethDecimals).divide(iETHPriceInLoop);
 
         assertEquals(reserveIETHBalance.subtract(amountOfiETHRedeemed).divide(BigInteger.TEN),
                 reserveIETHBalanceAfterRedeem.divide(BigInteger.TEN));

@@ -31,6 +31,7 @@ import java.util.Map;
 import static network.balanced.score.core.rebalancing.Constants.*;
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Math.pow;
 
 public class RebalancingImpl implements Rebalancing {
 
@@ -139,11 +140,6 @@ public class RebalancingImpl implements Rebalancing {
         return oracle.get();
     }
 
-    private BigInteger calculateTokensToSell(BigInteger price, BigInteger fromTokenLiquidity,
-                                             BigInteger toTokenLiquidity) {
-        return price.multiply(fromTokenLiquidity).multiply(toTokenLiquidity).divide(EXA).sqrt().subtract(fromTokenLiquidity);
-    }
-
     @External
     public void setPriceDiffThreshold(BigInteger _value) {
         only(governance);
@@ -179,14 +175,16 @@ public class RebalancingImpl implements Rebalancing {
 
         Context.require(bnusdScore != null && dexScore != null && sicxScore != null && threshold != null);
         String symbol = Context.call(String.class, collateralAddress, "symbol");
+        BigInteger nrDecimals = Context.call(BigInteger.class, collateralAddress, "decimals");
+        BigInteger decimals = pow(BigInteger.TEN, nrDecimals.intValue());
         BigInteger poolID = Context.call(BigInteger.class, dexScore, "getPoolId", collateralAddress, bnusdScore);
 
         BigInteger usdPriceInIcx = (BigInteger) Context.call(oracleScore, "getPriceInLoop", "USD");
         BigInteger assetPriceInIcx = (BigInteger) Context.call(oracleScore, "getPriceInLoop", symbol);
-        BigInteger actualUsdPriceInAsset = usdPriceInIcx.multiply(EXA).divide(assetPriceInIcx);
+        BigInteger actualUsdPriceInAsset = usdPriceInIcx.multiply(decimals).divide(assetPriceInIcx);
 
         Map<String, Object> poolStats = (Map<String, Object>) Context.call(dexScore, "getPoolStats", poolID);
-        BigInteger assetLiquidity = (BigInteger) poolStats.get("base");
+        BigInteger assetLiquidity = ((BigInteger) poolStats.get("base"));
         BigInteger bnusdLiquidity = (BigInteger) poolStats.get("quote");
         BigInteger bnusdPriceInAsset = assetLiquidity.multiply(EXA).divide(bnusdLiquidity);
 
@@ -209,11 +207,13 @@ public class RebalancingImpl implements Rebalancing {
         boolean reverse = priceDifferencePercentage.compareTo(threshold.negate()) < 0;
         if (forward) {
             //Add sicx in the pool i.e. buy bnusd from the pool and sell icx. pair: sicx/bnusd
-            tokensToSell = calculateTokensToSell(actualUsdPriceInAsset, assetLiquidity, bnusdLiquidity);
+            tokensToSell =
+                    actualUsdPriceInAsset.multiply(assetLiquidity).multiply(bnusdLiquidity).divide(EXA).sqrt().subtract(assetLiquidity);
         } else if (reverse) {
             // Add bnusd in the pool i.e. buy sicx from the pool and sell bnusd. pair bnusd/sicx
             BigInteger actualAssetPriceInBnusd = assetPriceInIcx.multiply(EXA).divide(usdPriceInIcx);
-            tokensToSell = calculateTokensToSell(actualAssetPriceInBnusd, bnusdLiquidity, assetLiquidity);
+            tokensToSell =
+                    actualAssetPriceInBnusd.multiply(bnusdLiquidity).multiply(assetLiquidity).divide(decimals).sqrt().subtract(bnusdLiquidity);
         } else {
             tokensToSell = BigInteger.ZERO;
         }

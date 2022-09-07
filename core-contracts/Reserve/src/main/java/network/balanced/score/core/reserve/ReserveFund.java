@@ -29,6 +29,7 @@ import java.util.Map;
 
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Math.pow;
 
 public class ReserveFund implements Reserve {
 
@@ -231,9 +232,10 @@ public class ReserveFund implements Reserve {
                                    BigInteger remainingValue) {
         BigInteger rate = Context.call(BigInteger.class, oracle, "getPriceInLoop", symbol);
         BigInteger balance = getBalance(collateralAddress);
-        BigInteger totalValue = rate.multiply(balance).divide(EXA);
+        BigInteger decimals = getDecimals(collateralAddress);
+        BigInteger totalValue = rate.multiply(balance).divide(decimals);
         if (totalValue.compareTo(remainingValue) >= 0) {
-            BigInteger amountToSend = remainingValue.multiply(EXA).divide(rate);
+            BigInteger amountToSend = remainingValue.multiply(decimals).divide(rate);
             sendToken(collateralAddress, to, amountToSend, "To Loans: ");
             return BigInteger.ZERO;
         }
@@ -257,6 +259,15 @@ public class ReserveFund implements Reserve {
     }
 
     private BigInteger getBalance(String tokenAddress) {
-        return Context.call(BigInteger.class, Address.fromString(tokenAddress), "balanceOf", Context.getAddress());
+        return getBalance(Address.fromString(tokenAddress));
+    }
+
+    private BigInteger getDecimals(String tokenAddress) {
+        return getDecimals(Address.fromString(tokenAddress));
+    }
+
+    private BigInteger getDecimals(Address tokenAddress) {
+        BigInteger decimals = Context.call(BigInteger.class, tokenAddress, "decimals");
+        return pow(BigInteger.TEN, decimals.intValue());
     }
 }
