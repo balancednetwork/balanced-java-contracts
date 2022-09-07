@@ -1203,7 +1203,8 @@ public class GovernanceTest extends GovernanceTestBase {
                 "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
 
         // Act & Assert
-        Executable withNotOwner = () -> governance.invoke(notOwner, "reserveTransfer", sicx.getAddress(), loans.getAddress(), amount);
+        Executable withNotOwner = () -> governance.invoke(notOwner, "reserveTransfer", sicx.getAddress(),
+                loans.getAddress(), amount);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
 
         // Act

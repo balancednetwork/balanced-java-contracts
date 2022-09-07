@@ -236,7 +236,7 @@ public class ReserveFundTest extends ReserveFundTestBase {
     void transfer() {
         BigInteger amount = BigInteger.valueOf(10);
         assertOnlyCallableByGovernance(reserve, "transfer", sicx.getAddress(), loans.getAddress(), amount);
-        reserve.invoke(governanceScore, "transfer",  sicx.getAddress(), loans.getAddress(), amount);
+        reserve.invoke(governanceScore, "transfer", sicx.getAddress(), loans.getAddress(), amount);
 
         verify(sicx.mock).transfer(loans.getAddress(), amount, new byte[0]);
     }
