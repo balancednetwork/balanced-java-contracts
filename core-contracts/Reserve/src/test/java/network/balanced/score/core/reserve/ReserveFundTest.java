@@ -231,4 +231,13 @@ public class ReserveFundTest extends ReserveFundTestBase {
         reserve.invoke(target, "claim");
         verify(sicx.mock, times(1)).transfer(target.getAddress(), BigInteger.TEN.pow(20), new byte[0]);
     }
+
+    @Test
+    void transfer() {
+        BigInteger amount = BigInteger.valueOf(10);
+        assertOnlyCallableByGovernance(reserve, "transfer", sicx.getAddress(), loans.getAddress(), amount);
+        reserve.invoke(governanceScore, "transfer", sicx.getAddress(), loans.getAddress(), amount);
+
+        verify(sicx.mock).transfer(loans.getAddress(), amount, new byte[0]);
+    }
 }
