@@ -616,7 +616,7 @@ public class LoansImpl implements Loans {
                 BigInteger badDebt = asset.getBadDebt(collateralSymbol);
                 asset.setBadDebt(collateralSymbol, badDebt.add(debt));
                 BigInteger symbolDebt = debt.multiply(assetContract.priceInLoop()).divide(EXA);
-                BigInteger share = forPool.multiply(symbolDebt.divide(totalDebt));
+                BigInteger share = forPool.multiply(symbolDebt).divide(totalDebt);
                 totalDebt = totalDebt.subtract(symbolDebt);
                 forPool = forPool.subtract(share);
                 asset.setLiquidationPool(collateralSymbol, asset.getLiquidationPool(collateralSymbol).add(share));
@@ -646,8 +646,9 @@ public class LoansImpl implements Loans {
         BigInteger badDebt = asset.getBadDebt(collateralSymbol).subtract(badDebtAmount);
 
         BigInteger bonus = POINTS.add(retirementBonus.get());
-        BigInteger badDebtValue = bonus.multiply(badDebtAmount).multiply(assetPriceInLoop).divide(EXA).divide(POINTS);
-        BigInteger badDebtCollateral = badDebtValue.multiply(collateralDecimals).divide(collateralPriceInLoop);
+        BigInteger badDebtCollateral =
+                bonus.multiply(badDebtAmount).multiply(assetPriceInLoop).multiply(collateralDecimals).
+                        divide(collateralPriceInLoop.multiply(POINTS).multiply(EXA));
 
         asset.setBadDebt(collateralSymbol, badDebt);
         if (inPool.compareTo(badDebtCollateral) >= 0) {
