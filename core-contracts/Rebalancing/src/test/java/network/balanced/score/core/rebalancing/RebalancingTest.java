@@ -156,7 +156,7 @@ public class RebalancingTest extends TestBase {
             when(sicx.mock.symbol()).thenReturn("sICX");
             when(dex.mock.getPoolId(sicx.getAddress(), bnUSD.getAddress())).thenReturn(BigInteger.TWO);
             when(dex.mock.getPoolStats(BigInteger.TWO)).thenReturn(poolStats);
-            when(balancedOracle.mock.getPriceInLoop("sICX")).thenReturn(sicxPriceInIcx);
+            when(balancedOracle.mock.getLastPriceInLoop("sICX")).thenReturn(sicxPriceInIcx);
         }
 
         @ParameterizedTest
@@ -168,7 +168,7 @@ public class RebalancingTest extends TestBase {
             rebalancingScore.invoke(governanceScore, "setPriceDiffThreshold", threshold);
             BigInteger additionalPrice = threshold.multiply(dexPriceOfBnusdInSicx).divide(ICX).divide(BigInteger.TEN);
             BigInteger bnUSDPriceInIcx = dexPriceOfBnusdInSicx.add(additionalPrice);
-            when(balancedOracle.mock.getPriceInLoop("USD")).thenReturn(bnUSDPriceInIcx);
+            when(balancedOracle.mock.getLastPriceInLoop("USD")).thenReturn(bnUSDPriceInIcx);
             BigInteger expectedBnusdPriceInSicx = bnUSDPriceInIcx.multiply(ICX).divide(sicxPriceInIcx);
             assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
 
@@ -178,7 +178,7 @@ public class RebalancingTest extends TestBase {
 
             // Decrease price within threshold range
             bnUSDPriceInIcx = dexPriceOfBnusdInSicx.subtract(additionalPrice);
-            when(balancedOracle.mock.getPriceInLoop("USD")).thenReturn(bnUSDPriceInIcx);
+            when(balancedOracle.mock.getLastPriceInLoop("USD")).thenReturn(bnUSDPriceInIcx);
             expectedBnusdPriceInSicx = bnUSDPriceInIcx.multiply(ICX).divide(sicxPriceInIcx);
             assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
 
@@ -188,7 +188,7 @@ public class RebalancingTest extends TestBase {
 
             // Exactly equal price
             bnUSDPriceInIcx = dexPriceOfBnusdInSicx;
-            when(balancedOracle.mock.getPriceInLoop("USD")).thenReturn(bnUSDPriceInIcx);
+            when(balancedOracle.mock.getLastPriceInLoop("USD")).thenReturn(bnUSDPriceInIcx);
             expectedBnusdPriceInSicx = bnUSDPriceInIcx.multiply(ICX).divide(sicxPriceInIcx);
             assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
 
@@ -204,7 +204,7 @@ public class RebalancingTest extends TestBase {
             rebalancingScore.invoke(governanceScore, "setPriceDiffThreshold", threshold);
             BigInteger additionalPrice = threshold.multiply(BigInteger.TWO).multiply(dexPriceOfBnusdInSicx).divide(ICX);
             BigInteger bnUSDPriceInIcx = dexPriceOfBnusdInSicx.add(additionalPrice);
-            when(balancedOracle.mock.getPriceInLoop("USD")).thenReturn(bnUSDPriceInIcx);
+            when(balancedOracle.mock.getLastPriceInLoop("USD")).thenReturn(bnUSDPriceInIcx);
             BigInteger expectedBnusdPriceInSicx = bnUSDPriceInIcx.multiply(ICX).divide(sicxPriceInIcx);
             assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
 
@@ -221,7 +221,7 @@ public class RebalancingTest extends TestBase {
             rebalancingScore.invoke(governanceScore, "setPriceDiffThreshold", threshold);
             BigInteger additionalPrice = threshold.multiply(BigInteger.TWO).multiply(dexPriceOfBnusdInSicx).divide(ICX);
             BigInteger bnUSDPriceInIcx = dexPriceOfBnusdInSicx.subtract(additionalPrice);
-            when(balancedOracle.mock.getPriceInLoop("USD")).thenReturn(bnUSDPriceInIcx);
+            when(balancedOracle.mock.getLastPriceInLoop("USD")).thenReturn(bnUSDPriceInIcx);
             BigInteger expectedBnusdPriceInSicx = bnUSDPriceInIcx.multiply(ICX).divide(sicxPriceInIcx);
             assertRebalancingStatus(expectedBnusdPriceInSicx, sicxLiquidity, bnusdLiquidity, threshold);
 
