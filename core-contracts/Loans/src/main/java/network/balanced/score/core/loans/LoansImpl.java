@@ -243,6 +243,10 @@ public class LoansImpl implements Loans {
             return;
         }
 
+        if(_from.equals(reserve.get())) {
+            return;
+        }
+
         Token collateralToken = new Token(token);
         String collateralSymbol = collateralToken.symbol();
         Collateral collateral = CollateralDB.getCollateral(collateralSymbol);
