@@ -421,6 +421,12 @@ public class StateMachineTest extends AbstractBoostedBalnTest {
         expectErrorMessage(withdraw, expectedErrorMessage);
     }*/
 
+    @DisplayName("kick")
+    @Test
+    void testKick(){
+        bBalnScore.invoke(accounts.get(0), "kick", accounts.get(0).getAddress());
+    }
+
     @DisplayName("after the expiry")
     @Test
     void unlockAfterExpiry() {
