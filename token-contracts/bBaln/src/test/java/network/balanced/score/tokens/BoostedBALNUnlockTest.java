@@ -54,7 +54,8 @@ public class BoostedBALNUnlockTest extends AbstractBoostedBalnTest {
     @BeforeEach
     public void setup() throws Exception {
         Score rewardScore = sm.deploy(owner, DummyContract.class);
-        bBALNScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(),
+        Score dividendsScore = sm.deploy(owner, DummyContract.class);
+        bBALNScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(),dividendsScore.getAddress(),
                 BOOSTED_BALANCE, B_BALANCED_SYMBOL);
 
         scoreSpy = (BoostedBalnImpl) spy(bBALNScore.getInstance());
@@ -77,6 +78,7 @@ public class BoostedBALNUnlockTest extends AbstractBoostedBalnTest {
         JSONObject json = new JSONObject(map);
         byte[] lockBytes = json.toString().getBytes();
         doNothing().when(scoreSpy).updateRewardData(any());
+        doNothing().when(scoreSpy).updateDividendsData(any(), any());
         tokenScore.invoke(owner, "transfer", bBALNScore.getAddress(), ICX, lockBytes);
 
         Map<String, BigInteger> balance = (Map<String, BigInteger>) bBALNScore.call("getLocked", owner.getAddress());
@@ -107,6 +109,7 @@ public class BoostedBALNUnlockTest extends AbstractBoostedBalnTest {
         JSONObject json = new JSONObject(map);
         byte[] lockBytes = json.toString().getBytes();
         doNothing().when(scoreSpy).updateRewardData(any());
+        doNothing().when(scoreSpy).updateDividendsData(any(), any());
         tokenScore.invoke(owner, "transfer", bBALNScore.getAddress(), ICX.multiply(BigInteger.ONE), lockBytes);
 
         Map<String, BigInteger> balance = (Map<String, BigInteger>) bBALNScore.call("getLocked", owner.getAddress());

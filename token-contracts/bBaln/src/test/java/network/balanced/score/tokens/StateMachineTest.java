@@ -82,7 +82,9 @@ public class StateMachineTest extends AbstractBoostedBalnTest {
     @BeforeEach
     public void setup() throws Exception {
         Score rewardScore = sm.deploy(owner, DummyContract.class);
-        bBalnScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(), "Boosted Baln", "bBALN");
+        Score dividendsScore = sm.deploy(owner, DummyContract.class);
+        bBalnScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(),
+                dividendsScore.getAddress(), "Boosted Baln", "bBALN");
 
         scoreSpy = (BoostedBalnImpl) spy(bBalnScore.getInstance());
         bBalnScore.setInstance(scoreSpy);
@@ -108,6 +110,7 @@ public class StateMachineTest extends AbstractBoostedBalnTest {
         byte[] createLockParams = tokenData("createLock", Map.of("unlockTime", unlockTime));
 
         doNothing().when(scoreSpy).updateRewardData(any());
+        doNothing().when(scoreSpy).updateDividendsData(any(), any());
         VotingBalance vote = votingBalances.getOrDefault(account, new VotingBalance());
         vote.value = vote.value.add(value);
         try {

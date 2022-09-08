@@ -178,6 +178,7 @@ public class Balanced {
         ownerClient.sicx.setMinter(staking._address());
         ownerClient.baln.setMinter(rewards._address());
         ownerClient.bnUSD.setMinter2(stability._address());
+        ownerClient.dividends.setBBalnAddress(ownerClient.boostedBaln._address());
 
         ownerClient.governance.configureBalanced();
         ownerClient.governance.launchBalanced();

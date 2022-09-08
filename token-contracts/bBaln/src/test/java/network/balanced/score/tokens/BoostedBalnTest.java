@@ -52,7 +52,10 @@ class BoostedBalnTest extends AbstractBoostedBalnTest {
     @BeforeEach
     public void setup() throws Exception {
         Score rewardScore = sm.deploy(owner, DummyContract.class);
-        bBalnScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(), bBalnName, bBalnSymbol);
+        Score dividendsScore = sm.deploy(owner, DummyContract.class);
+        bBalnScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(),
+                dividendsScore.getAddress(),
+                bBalnName, bBalnSymbol);
         BoostedBalnImpl scoreSpy = (BoostedBalnImpl) spy(bBalnScore.getInstance());
         bBalnScore.setInstance(scoreSpy);
 
