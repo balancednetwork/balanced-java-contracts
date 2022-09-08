@@ -33,6 +33,7 @@ import java.util.Map;
 import static network.balanced.score.core.dividends.Check.continuousDividendsActive;
 import static network.balanced.score.core.dividends.Constants.*;
 import static network.balanced.score.core.dividends.DividendsTracker.*;
+import static network.balanced.score.core.dividends.DividendsTracker.userBalance;
 import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
 import static network.balanced.score.lib.utils.ArrayDBUtils.removeFromArraydb;
 import static network.balanced.score.lib.utils.Check.*;
@@ -748,19 +749,20 @@ public class DividendsImpl implements Dividends {
     }
 
     @External
-    public void onKick(Address user, BigInteger prevBalance, BigInteger currentSupply, @Optional byte[] data) {
-        Context.require(Context.getCaller().equals(boostedBalnScore.get()), TAG + " Only BBaln contract is allowed to call onKick method");
-        Context.require(!prevBalance.equals(BigInteger.ZERO), TAG + " " + user + " Baln locking has not expired");
-        updateUserDividends(user, prevBalance);
+    public void onKick(Address user, BigInteger currentSupply, @Optional byte[] data) {
+        Context.require(Context.getCaller().equals(boostedBalnScore.get()), TAG + " Only BBaln contract is allowed to call onKick method.");
+        BigInteger userPrevBalance = userBalance.getOrDefault(user, BigInteger.ZERO);
+        Context.require(!userPrevBalance.equals(BigInteger.ZERO), TAG + " " + user + " User with no balance can not be kicked.");
+        updateUserDividends(user, userPrevBalance);
         userBalance.set(user, getBoostedBalnBalance(user));
         DividendsTracker.setBBalnTotalSupply(currentSupply);
         UserKicked(user, data);
     }
 
     @External
-    public void onBalanceUpdate(Address user, BigInteger prevBalance, BigInteger currentTotalSupply) {
-        Context.require(Context.getCaller().equals(boostedBalnScore.get()), TAG+" Only bBaln contract is allowed to call onBalanceUpdate method");
-        updateUserDividends(user, prevBalance);
+    public void onBalanceUpdate(Address user, BigInteger currentTotalSupply) {
+        Context.require(Context.getCaller().equals(boostedBalnScore.get()), TAG+" Only BBaln contract is allowed to call onBalanceUpdate method.");
+        updateUserDividends(user, userBalance.getOrDefault(user, BigInteger.ZERO));
         userBalance.set(user, getBoostedBalnBalance(user));
         DividendsTracker.setBBalnTotalSupply(currentTotalSupply);
     }
