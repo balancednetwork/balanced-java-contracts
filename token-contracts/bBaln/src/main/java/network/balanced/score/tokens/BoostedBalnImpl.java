@@ -194,10 +194,13 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
     @External
     public void kick(Address user) {
         BigInteger bBalnBalance = balanceOf(user, BigInteger.ZERO);
-        Context.require(bBalnBalance.equals(BigInteger.ZERO), user + " BBaln locking has not expired");
-        LockedBalance locked = getLockedBalance(user).newLockedBalance();
-        BigInteger previousLockedAmount = locked.amount;
-        onKick(user, previousLockedAmount, this.supply.get(), "User kicked".getBytes());
+        BigInteger currentSupply =  this.supply.get();
+        if(bBalnBalance.equals(BigInteger.ZERO)){
+            onKick(user,currentSupply, "User kicked".getBytes());
+        }
+        else {
+            onBalanceUpdate(user, currentSupply);
+        }
     }
 
     @External
@@ -234,7 +237,7 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
         Withdraw(sender, value, blockTimestamp);
         Supply(supplyBefore, currentSupply);
         this.nonReentrant.updateLock(false);
-        onBalanceUpdate(sender, oldLocked.amount, currentSupply);
+        onBalanceUpdate(sender, currentSupply);
     }
 
     @External(readonly = true)

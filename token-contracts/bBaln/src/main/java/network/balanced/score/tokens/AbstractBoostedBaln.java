@@ -372,7 +372,7 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
         Deposit(address, value, locked.getEnd(), type, blockTimestamp);
         Supply(supplyBefore, supplyBefore.add(value));
 
-        onBalanceUpdate(address, previousLockedAmount, currentSupply);
+        onBalanceUpdate(address, currentSupply);
     }
 
     protected void createLock(Address sender, BigInteger value, BigInteger unlockTime) {
@@ -395,8 +395,8 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
         this.nonReentrant.updateLock(false);
     }
 
-    protected void onKick(Address user, BigInteger prevBalance, BigInteger currentSupply, byte[] data){
-        Context.call(this.dividendsAddress.get(), "onKick", user, prevBalance, currentSupply, data);
+    protected void onKick(Address user, BigInteger currentSupply, byte[] data){
+        Context.call(this.dividendsAddress.get(), "onKick", user, currentSupply, data);
     }
 
     protected void increaseAmount(Address sender, BigInteger value, BigInteger unlockTime) {
@@ -425,7 +425,7 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
         Context.require(!address.isContract(), "Assert Not contract: Smart contract depositors not allowed");
     }
 
-    protected void onBalanceUpdate(Address address, BigInteger previousLockedAmount, BigInteger currentSupply) {
+    protected void onBalanceUpdate(Address address, BigInteger currentSupply) {
         // calling handle action for rewards
         Map<String, Object> userDetails = new HashMap<>();
         userDetails.put("user", address);
@@ -433,13 +433,16 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
         userDetails.put("totalSupply", totalSupply(BigInteger.ZERO));
 
         //assuming token address is reward address
-        updateRewardData(userDetails);
-        Context.call(this.dividendsAddress.get(), "onBalanceUpdate", address, previousLockedAmount, currentSupply);
+        updateDividendsData(address, currentSupply);
     }
 
     protected void updateRewardData(Map<String, Object> userDetails) {
         Context.call(this.rewardAddress.get(), "updateRewardsData", this.name.get(), userDetails.get("totalSupply"),
                 userDetails.get("user"), userDetails.get("userBalance"));
+    }
+
+    protected void updateDividendsData(Address address, BigInteger currentSupply) {
+        Context.call(this.dividendsAddress.get(), "onBalanceUpdate", address, currentSupply);
     }
 
 }
