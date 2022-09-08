@@ -637,7 +637,7 @@ public class DividendsIntegrationTest {
         assertTrue(expected.subtract(actual).compareTo(BigInteger.ZERO)  > 0);
 
     }
-//
+
     @Test
     @Order(8)
     void testContinuousRewards() {
@@ -1013,6 +1013,36 @@ public class DividendsIntegrationTest {
         // after claiming dividends unclaimed dividends will be null unless dividends is received.
         assertNull(bbalntesterScoreDividends.getUnclaimedDividends(bbalnTesterAddress).get(bnusd._address().toString()));
 
+    }
+
+    @Test
+    @Order(25)
+    void testBBaln_newUser_kicked() throws Exception {
+        /*
+        A user starts getting less dividends once kicked.
+         */
+        Address bbalnTesterAddress =  Address.fromString(tester_bbaln3.getAddress().toString());
+        BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
+        BigInteger collateral = BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18));
+        loans.depositAndBorrow(collateral, "bnUSD"
+                , loanAmount, null, null);
+        BigInteger unclaimedDividendsBefore = bbalntesterScoreDividends.getUnclaimedDividends(bbalnTesterAddress).get(bnusd._address().toString());
+        loans.depositAndBorrow(collateral, "bnUSD"
+                , loanAmount, null, null);
+        BigInteger unclaimedDividendsAfter = bbalntesterScoreDividends.getUnclaimedDividends(bbalnTesterAddress).get(bnusd._address().toString());
+        // checking dividends before they are kicked
+        assertTrue(unclaimedDividendsAfter.subtract(unclaimedDividendsBefore.add(unclaimedDividendsBefore)).compareTo(BigInteger.valueOf(1)) <= 0);
+        bbalntesterScoreDividends3.claimDividends();
+
+        loans.depositAndBorrow(collateral, "bnUSD"
+                , loanAmount, null, null);
+        unclaimedDividendsBefore = bbalntesterScoreDividends.getUnclaimedDividends(bbalnTesterAddress).get(bnusd._address().toString());
+        boostedBaln.kick(bbalnTesterAddress);
+        loans.depositAndBorrow(collateral, "bnUSD"
+                , loanAmount, null, null);
+        unclaimedDividendsAfter = bbalntesterScoreDividends.getUnclaimedDividends(bbalnTesterAddress).get(bnusd._address().toString());
+        // checking dividends once they are kicked
+        assertTrue(unclaimedDividendsAfter.subtract(unclaimedDividendsBefore.add(unclaimedDividendsBefore)).compareTo(BigInteger.valueOf(1)) <= 0);
     }
 
     @Test
