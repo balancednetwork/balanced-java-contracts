@@ -86,7 +86,7 @@ class DividendsImplTestContinuousMigration extends DividendsImplTestBase {
 
         mockBBalnBalanceOf(staker3.getAddress(), staker3Balance);
 
-        dividendScore.invoke(bBalnScore, "onBalanceUpdate", staker3.getAddress(), BigInteger.ZERO, BigInteger.valueOf(1L));
+        dividendScore.invoke(bBalnScore, "onBalanceUpdate", staker3.getAddress(), BigInteger.valueOf(1L));
 
         BigInteger expectedFees = BigInteger.TEN.pow(20);
         addBnusdFees(expectedFees);
@@ -159,7 +159,7 @@ class DividendsImplTestContinuousMigration extends DividendsImplTestBase {
 
         mockBBalnBalanceOf(staker3, staker3Balance);
 
-        dividendScore.invoke(bBalnScore, "onBalanceUpdate",staker3 , BigInteger.ZERO, BigInteger.valueOf(1L));
+        dividendScore.invoke(bBalnScore, "onBalanceUpdate",staker3, BigInteger.valueOf(1L));
         dividendScore.invoke(balnScore, "updateBalnStake", owner.getAddress(), BigInteger.ZERO, BigInteger.valueOf(50));
         BigInteger expectedFees = BigInteger.TEN.pow(20);
         BigInteger expectedContinuousFees = BigInteger.valueOf(15).pow(20);
