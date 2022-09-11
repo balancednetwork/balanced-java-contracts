@@ -223,6 +223,77 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
 
     @Test
     @Order(4)
+    void sellCollateral() throws Exception {
+        // Arrange
+        BalancedClient loanTakerFullDebtSell = balanced.newClient();
+        BalancedClient loanTakerPartialDebtSell = balanced.newClient();
+        BalancedClient loanTakerETHFullSell = balanced.newClient();
+        BalancedClient loanTakerETHPartialSell = balanced.newClient();
+        BigInteger collateral = BigInteger.TEN.pow(21);
+        BigInteger collateralETH = BigInteger.TEN.pow(20);
+
+        owner.irc2(ethAddress).mintTo(loanTakerETHFullSell.getAddress(), collateralETH, null);
+        owner.irc2(ethAddress).mintTo(loanTakerETHPartialSell.getAddress(), collateralETH, null);
+
+        BigInteger loanAmount = BigInteger.valueOf(17).multiply(EXA);
+        BigInteger ethLoanAmount = BigInteger.TEN.pow(23);;
+
+        BigInteger collateralToSellFullDebt = BigInteger.TEN.pow(19);
+        BigInteger ETHCollateralToSellFullDebt = BigInteger.valueOf(37).multiply(BigInteger.TEN.pow(16));
+        BigInteger collateralToSellPartialDebt = BigInteger.valueOf(5).multiply(EXA);
+        BigInteger ETHCollateralToSellPartialDebt = BigInteger.valueOf(2).multiply(BigInteger.TEN.pow(17));
+
+        BigInteger minimumReceiveToSellFullDebt = BigInteger.valueOf(16).multiply(EXA);
+        BigInteger minimumReceiveToSellPartialDebt = BigInteger.valueOf(8).multiply(EXA);
+
+        // Act
+        loanTakerFullDebtSell.stakeDepositAndBorrow(collateral, loanAmount);
+        loanTakerPartialDebtSell.stakeDepositAndBorrow(collateral, loanAmount);
+        loanTakerETHFullSell.depositAndBorrow(ethAddress, collateralETH, ethLoanAmount);
+        loanTakerETHPartialSell.depositAndBorrow(ethAddress, collateralETH, ethLoanAmount);
+
+        //  requested collateral sell worth is more than debt
+        assertThrows(UserRevertedException.class, () ->
+                loanTakerFullDebtSell.loans.sellCollateral(collateral, "sICX", minimumReceiveToSellFullDebt));
+        assertThrows(UserRevertedException.class, () ->
+                loanTakerFullDebtSell.loans.sellCollateral(collateralETH, "iETH", minimumReceiveToSellFullDebt));
+
+        //  minimum receive is more than users debt
+        assertThrows(UserRevertedException.class, () ->
+                loanTakerFullDebtSell.loans.sellCollateral(collateral, "sICX", BigInteger.valueOf(50).multiply(EXA)));
+        assertThrows(UserRevertedException.class, () ->
+                loanTakerFullDebtSell.loans.sellCollateral(collateralETH, "iETH", BigInteger.TEN.pow(24)));
+
+        BigInteger loanTakerFullDebtSellCollateralPre = loanTakerFullDebtSell.getLoansCollateralPosition("sICX");
+        BigInteger loanTakerETHFullDebtSellCollateralPre = loanTakerETHFullSell.getLoansCollateralPosition("iETH");
+        BigInteger loanTakerPartialDebtSellCollateralPre = loanTakerPartialDebtSell.getLoansCollateralPosition("sICX");
+        BigInteger loanTakerETHPartialDebtSellCollateralPre = loanTakerETHPartialSell.getLoansCollateralPosition("iETH");
+
+        loanTakerFullDebtSell.loans.sellCollateral(collateralToSellFullDebt, "sICX", minimumReceiveToSellFullDebt);
+        loanTakerETHFullSell.loans.sellCollateral(ETHCollateralToSellFullDebt, "iETH", minimumReceiveToSellFullDebt);
+        loanTakerPartialDebtSell.loans.sellCollateral(collateralToSellPartialDebt, "sICX", minimumReceiveToSellPartialDebt);
+        loanTakerETHPartialSell.loans.sellCollateral(ETHCollateralToSellPartialDebt, "iETH", minimumReceiveToSellPartialDebt);
+
+        BigInteger loanTakerFullDebtSellCollateralPost = loanTakerFullDebtSell.getLoansCollateralPosition("sICX");
+        BigInteger loanTakerETHFullDebtSellCollateralPost = loanTakerETHFullSell.getLoansCollateralPosition("iETH");
+        BigInteger loanTakerPartialDebtSellCollateralPost = loanTakerPartialDebtSell.getLoansCollateralPosition("sICX");
+        BigInteger loanTakerETHPartialDebtSellCollateralPost = loanTakerETHPartialSell.getLoansCollateralPosition("iETH");
+
+        //  assert
+        //  requested collateral sell more than available collateral
+        assertThrows(UserRevertedException.class, () ->
+                loanTakerFullDebtSell.loans.sellCollateral(collateral, "sICX", minimumReceiveToSellFullDebt));
+        assertThrows(UserRevertedException.class, () ->
+                loanTakerFullDebtSell.loans.sellCollateral(collateralETH, "iETH", minimumReceiveToSellFullDebt));
+
+        assertEquals(loanTakerFullDebtSellCollateralPost, loanTakerFullDebtSellCollateralPre.subtract(collateralToSellFullDebt));
+        assertEquals(loanTakerETHFullDebtSellCollateralPost, loanTakerETHFullDebtSellCollateralPre.subtract(ETHCollateralToSellFullDebt));
+        assertEquals(loanTakerPartialDebtSellCollateralPost, loanTakerPartialDebtSellCollateralPre.subtract(collateralToSellPartialDebt));
+        assertEquals(loanTakerETHPartialDebtSellCollateralPost, loanTakerETHPartialDebtSellCollateralPre.subtract(ETHCollateralToSellPartialDebt));
+    }
+
+    @Test
+    @Order(4)
     void withdrawCollateral() throws Exception {
         // Arrange
         BalancedClient loanTakerFullWithdraw = balanced.newClient();
