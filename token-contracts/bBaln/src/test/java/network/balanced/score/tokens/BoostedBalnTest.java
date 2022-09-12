@@ -65,16 +65,6 @@ class BoostedBalnTest extends AbstractBoostedBalnTest {
     }
 
     @Test
-    void admin() {
-        assertEquals(owner.getAddress(), bBalnScore.call("admin"));
-    }
-
-    @Test
-    void futureAdmin() {
-        assertNull(bBalnScore.call("futureAdmin"));
-    }
-
-    @Test
     void symbol() {
         assertEquals(bBalnSymbol, bBalnScore.call("symbol"));
     }

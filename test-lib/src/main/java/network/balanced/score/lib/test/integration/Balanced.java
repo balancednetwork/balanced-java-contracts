@@ -110,7 +110,7 @@ public class Balanced {
 
         baln = getDeploymentResult(owner, balnTx);
         rewards = getDeploymentResult(owner, rewardsTx);
-        Hash bBalnTx = deployAsync(owner, "bBaln", Map.of("tokenAddress", baln._address(), "rewardAddress", rewards._address(), "name", "Boosted Baln", "symbol", "bBaln"));
+        Hash bBalnTx = deployAsync(owner, "bBaln", Map.of("balnAddress", baln._address(), "rewardAddress", rewards._address(), "name", "Boosted Baln", "symbol", "bBaln"));
 
         bwt = getDeploymentResult(owner, bwtTx);
         dex = getDeploymentResult(owner, dexTx);

@@ -76,7 +76,7 @@ public class BoostedBALNUnlockTest extends AbstractBoostedBalnTest {
         map.put("params", Map.of("unlockTime", expectedUnlock));
         JSONObject json = new JSONObject(map);
         byte[] lockBytes = json.toString().getBytes();
-        doNothing().when(scoreSpy).updateRewardData(any());
+        doNothing().when(scoreSpy).onBalanceUpdate(any(), any());
         tokenScore.invoke(owner, "transfer", bBALNScore.getAddress(), ICX, lockBytes);
 
         Map<String, BigInteger> balance = (Map<String, BigInteger>) bBALNScore.call("getLocked", owner.getAddress());
@@ -106,7 +106,7 @@ public class BoostedBALNUnlockTest extends AbstractBoostedBalnTest {
         map.put("params", Map.of("unlockTime", expectedUnlock));
         JSONObject json = new JSONObject(map);
         byte[] lockBytes = json.toString().getBytes();
-        doNothing().when(scoreSpy).updateRewardData(any());
+        doNothing().when(scoreSpy).onBalanceUpdate(any(), any());
         tokenScore.invoke(owner, "transfer", bBALNScore.getAddress(), ICX.multiply(BigInteger.ONE), lockBytes);
 
         Map<String, BigInteger> balance = (Map<String, BigInteger>) bBALNScore.call("getLocked", owner.getAddress());
