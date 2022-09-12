@@ -21,6 +21,7 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import network.balanced.score.core.loans.mocks.bnUSD.bnUSDMintBurn;
+import network.balanced.score.core.loans.mocks.iETH.iETHMintBurn;
 import network.balanced.score.core.loans.mocks.sICX.sICXMintBurn;
 import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.structs.RewardsDataEntry;
@@ -32,11 +33,12 @@ import score.Address;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 
 import static network.balanced.score.core.loans.utils.LoansConstants.Standings;
 import static network.balanced.score.core.loans.utils.LoansConstants.StandingsMap;
+import static network.balanced.score.core.loans.utils.LoansConstants.LIQUIDATION_RATIO;
+import static network.balanced.score.core.loans.utils.LoansConstants.LOCKING_RATIO;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -54,13 +56,15 @@ class LoansTestBase extends UnitTest {
     protected Score loans;
     protected Score sicx;
     protected Score bnusd;
+    protected Score ieth;
 
-    protected MockContract<DexScoreInterface> dex;
-    protected MockContract<StakingScoreInterface> staking;
-    protected MockContract<GovernanceScoreInterface> governance;
-    protected MockContract<RewardsScoreInterface> rewards;
-    protected MockContract<DividendsScoreInterface> dividends;
-    protected MockContract<ReserveScoreInterface> reserve;
+    protected MockContract<Dex> dex;
+    protected MockContract<Staking> staking;
+    protected MockContract<Governance> governance;
+    protected MockContract<Rewards> rewards;
+    protected MockContract<Dividends> dividends;
+    protected MockContract<Reserve> reserve;
+    protected MockContract<BalancedOracle> balancedOracle;
     protected LoansImpl loansSpy;
 
     protected final ArrayList<Account> accounts = new ArrayList<>();
@@ -74,7 +78,7 @@ class LoansTestBase extends UnitTest {
     protected static final String symbolBnusd = "bnUSD";
 
     protected static final int tokenDecimals = 18;
-    protected static final BigInteger initalaupplyTokens = BigInteger.TEN.pow(50);
+    protected static final BigInteger initialSupplyTokens = BigInteger.TEN.pow(50);
 
     protected void setupAccounts() {
         int numberOfAccounts = 10;
@@ -82,27 +86,31 @@ class LoansTestBase extends UnitTest {
             Account account = sm.createAccount();
             accounts.add(account);
             sicx.invoke(admin, "mintTo", account.getAddress(), MINT_AMOUNT);
+            ieth.invoke(admin, "mintTo", account.getAddress(), MINT_AMOUNT);
         }
     }
 
     private void setupDex() throws Exception {
-        BigInteger dexICXBalance = BigInteger.TEN.pow(24);
-        BigInteger dexbnUSDBalance = BigInteger.TEN.pow(24);
 
         dex = new MockContract<>(DexScoreInterface.class, sm, admin);
-        sicx.invoke(admin, "mintTo", dex.getAddress(), dexICXBalance);
-        bnusd.invoke(admin, "mintTo", dex.getAddress(), dexbnUSDBalance);
+        sicx.invoke(admin, "mintTo", dex.getAddress(), MINT_AMOUNT);
+        bnusd.invoke(admin, "mintTo", dex.getAddress(), MINT_AMOUNT);
+        ieth.invoke(admin, "mintTo", dex.getAddress(), MINT_AMOUNT);
     }
-
 
     protected void mockSicxBnusdPrice(BigInteger rate) {
-        when(dex.mock.getSicxBnusdPrice()).thenReturn(rate);
+        when(dex.mock.getPoolId(sicx.getAddress(), bnusd.getAddress())).thenReturn(BigInteger.valueOf(3));
+        when(dex.mock.getBasePriceInQuote(BigInteger.valueOf(3))).thenReturn(rate);
     }
 
-    protected void mockSwap(Score tokenRecived, BigInteger in, BigInteger out) {
+    protected void mockiETHBnusdPrice(BigInteger rate) {
+        when(dex.mock.getPoolId(ieth.getAddress(), bnusd.getAddress())).thenReturn(BigInteger.valueOf(4));
+        when(dex.mock.getBasePriceInQuote(BigInteger.valueOf(4))).thenReturn(rate);
+    }
+
+    protected void mockSwap(Score tokenReceived, BigInteger in, BigInteger out) {
         Mockito.doAnswer((Answer<Void>) invocation -> {
-            final Object[] args = invocation.getArguments();
-            tokenRecived.invoke(dex.account, "transfer", loans.getAddress(), out, new byte[0]);
+            tokenReceived.invoke(dex.account, "transfer", loans.getAddress(), out, new byte[0]);
             return null;
         }).when(dex.mock).tokenFallback(Mockito.eq(loans.getAddress()), Mockito.eq(in), Mockito.any(byte[].class));
     }
@@ -136,50 +144,63 @@ class LoansTestBase extends UnitTest {
     private void setupDividends() throws Exception {
         dividends = new MockContract<>(DividendsScoreInterface.class, sm, admin);
         when(dividends.mock.distribute()).thenReturn(true);
-
     }
 
-    protected void mockRedeemFromReserve(Address address, BigInteger amount, BigInteger icxPrice) {
-        Mockito.doAnswer((Answer<Void>) invocation -> {
-            sicx.invoke(reserve.account, "transfer", loans.getAddress(), amount, new byte[0]);
-            return null;
-        }).when(reserve.mock).redeem(address, amount, icxPrice);
+    private void setupOracle() throws Exception {
+        balancedOracle = new MockContract<>(BalancedOracleScoreInterface.class, sm, admin);
+        when(balancedOracle.mock.getPriceInLoop(Mockito.any(String.class))).thenReturn(EXA);
+        when(balancedOracle.mock.getLastPriceInLoop(Mockito.any(String.class))).thenReturn(EXA);
     }
 
-    protected void takeLoanSICX(Account account, BigInteger collateral, int loan) {
-        Map<String, Object> map = new HashMap<>();
+    public void mockOraclePrice(String symbol, BigInteger rate) {
+        when(balancedOracle.mock.getPriceInLoop(symbol)).thenReturn(rate);
+        when(balancedOracle.mock.getLastPriceInLoop(symbol)).thenReturn(rate);
+    }
+
+    protected void takeLoanSICX(Account account, BigInteger collateral, BigInteger loan) {
         JsonObject data = new JsonObject()
                 .add("_asset", "bnUSD")
-                .add("_amount", BigInteger.valueOf(loan).multiply(EXA).toString());
+                .add("_amount", loan.toString());
         byte[] params = data.toString().getBytes();
 
         sicx.invoke(account, "transfer", loans.getAddress(), collateral, params);
     }
 
-    protected void takeLoanICX(Account account, String asset, BigInteger collateral, BigInteger loan) {
-        mockStakeICX(collateral);
-        sm.call(account, collateral, loans.getAddress(), "depositAndBorrow", asset, loan, account.getAddress(), BigInteger.ZERO);
+    protected void takeLoaniETH(Account account, BigInteger collateral, BigInteger loan) {
+        JsonObject data = new JsonObject()
+                .add("_asset", "bnUSD")
+                .add("_amount", loan.toString());
+        byte[] params = data.toString().getBytes();
+
+        ieth.invoke(account, "transfer", loans.getAddress(), collateral, params);
     }
 
-    protected void enableContinuousRewards() {
-        BigInteger day = (BigInteger) loans.call("getDay");
-        governanceCall("setContinuousRewardsDay", day);
+    protected void takeLoanICX(Account account, String asset, BigInteger collateral, BigInteger loan) {
+        mockStakeICX(collateral);
+        sm.call(account, collateral, loans.getAddress(), "depositAndBorrow", asset, loan, account.getAddress(),
+                BigInteger.ZERO);
     }
 
     protected BigInteger calculateFee(BigInteger loan) {
-        BigInteger feePercentage = (BigInteger)getParam("origination fee");
+        BigInteger feePercentage = (BigInteger) getParam("origination fee");
         return loan.multiply(feePercentage).divide(POINTS);
     }
 
     protected void verifyPosition(Address address, BigInteger collateral, BigInteger loan) {
-        Map<String, Object> position = (Map<String, Object>)loans.call("getAccountPositions", address);
-        assertEquals(loan, position.get("total_debt"));
-        assertEquals(collateral, position.get("collateral"));
+        verifyPosition(address, collateral, loan, "sICX");
     }
 
-    protected boolean compareRewardsData(RewardsDataEntry[] expectedDataEntires, RewardsDataEntry[] dataEntires) {
-        for (RewardsDataEntry entry : expectedDataEntires) {
-            if (!containsRewardsData(entry, dataEntires)) {
+    @SuppressWarnings("unchecked")
+    protected void verifyPosition(Address address, BigInteger collateral, BigInteger loan, String collateralSymbol) {
+        Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", address);
+        Map<String, Map<String, Object>> standings = (Map<String, Map<String, Object>>) position.get("standings");
+        assertEquals(loan, standings.get(collateralSymbol).get("total_debt"));
+        assertEquals(collateral, standings.get(collateralSymbol).get("collateral"));
+    }
+
+    protected boolean compareRewardsData(RewardsDataEntry[] expectedDataEntries, RewardsDataEntry[] dataEntries) {
+        for (RewardsDataEntry entry : expectedDataEntries) {
+            if (!containsRewardsData(entry, dataEntries)) {
                 return false;
             }
         }
@@ -187,8 +208,8 @@ class LoansTestBase extends UnitTest {
         return true;
     }
 
-    private boolean containsRewardsData(RewardsDataEntry expectedData, RewardsDataEntry[] dataEntires) {
-        for (RewardsDataEntry data : dataEntires) {
+    private boolean containsRewardsData(RewardsDataEntry expectedData, RewardsDataEntry[] dataEntries) {
+        for (RewardsDataEntry data : dataEntries) {
             if (data._user.equals(expectedData._user) && data._balance.equals(expectedData._balance)) {
                 return true;
             }
@@ -197,7 +218,9 @@ class LoansTestBase extends UnitTest {
         return false;
     }
 
-    protected void verifySnapshot(int addNonZero, int removeFromNonzero, int preComputeIndex, BigInteger totalMiningDebt, BigInteger day, int miningCount) {
+    @SuppressWarnings("unchecked")
+    protected void verifySnapshot(int addNonZero, int removeFromNonzero, int preComputeIndex,
+                                  BigInteger totalMiningDebt, BigInteger day, int miningCount) {
         Map<String, Object> snap = (Map<String, Object>) loans.call("getSnapshot", day);
         assertEquals(addNonZero, snap.get("add_to_nonzero_count"));
         assertEquals(removeFromNonzero, snap.get("remove_from_nonzero_count"));
@@ -208,14 +231,26 @@ class LoansTestBase extends UnitTest {
     }
 
     protected void verifyTotalDebt(BigInteger expectedDebt) {
-        Map<String, BigInteger> balanceAndSupply = (Map<String, BigInteger>) loans.call("getBalanceAndSupply", "Loans", admin.getAddress());
-        BigInteger totalDebt = balanceAndSupply.get("_totalSupply");
-
-        assertEquals(expectedDebt, totalDebt);
+        assertEquals(expectedDebt, getTotalDebt());
+        assertEquals(expectedDebt, loans.call("getTotalDebt", "bnUSD"));
+        BigInteger iETHDebt = (BigInteger) loans.call("getTotalCollateralDebt", "iETH", "bnUSD");
+        BigInteger sICXDebt = (BigInteger) loans.call("getTotalCollateralDebt", "sICX", "bnUSD");
+        assertEquals(expectedDebt, iETHDebt.add(sICXDebt));
     }
 
+    @SuppressWarnings("unchecked")
+    protected BigInteger getTotalDebt() {
+        Map<String, BigInteger> balanceAndSupply = (Map<String, BigInteger>) loans.call("getBalanceAndSupply", "Loans"
+                , admin.getAddress());
+        BigInteger totalDebt = balanceAndSupply.get("_totalSupply");
+
+        return totalDebt;
+    }
+
+    @SuppressWarnings("unchecked")
     protected void verifyStanding(Standings standing, Address address) {
-        Map<String, Object> positionStanding = (Map<String, Object>) loans.call("getPositionStanding", address, BigInteger.valueOf(-1));
+        Map<String, Object> positionStanding = (Map<String, Object>) loans.call("getPositionStanding", address,
+                BigInteger.valueOf(-1));
         assertEquals(StandingsMap.get(standing), positionStanding.get("standing"));
     }
 
@@ -223,14 +258,16 @@ class LoansTestBase extends UnitTest {
         loans.invoke(governance.account, method, params);
     }
 
+    @SuppressWarnings("unchecked")
     public Object getParam(String key) {
-        Map<String, Object> params = (Map<String, Object>)loans.call("getParameters");
+        Map<String, Object> params = (Map<String, Object>) loans.call("getParameters");
         return params.get(key);
     }
 
     public void setup() throws Exception {
-        sicx = sm.deploy(admin, sICXMintBurn.class, nameSicx, symbolSicx, tokenDecimals, initalaupplyTokens);
-        bnusd = sm.deploy(admin, bnUSDMintBurn.class, nameBnusd, symbolBnusd, tokenDecimals, initalaupplyTokens);
+        sicx = sm.deploy(admin, sICXMintBurn.class, nameSicx, symbolSicx, tokenDecimals, initialSupplyTokens);
+        bnusd = sm.deploy(admin, bnUSDMintBurn.class, nameBnusd, symbolBnusd, tokenDecimals, initialSupplyTokens);
+        ieth = sm.deploy(admin, iETHMintBurn.class, "ICON ETH", "iETH", 18, initialSupplyTokens);
 
         setupGovernance();
 
@@ -244,6 +281,7 @@ class LoansTestBase extends UnitTest {
         setupDividends();
         setupReserve();
         setupDex();
+        setupOracle();
 
         loans.invoke(governance.account, "setAdmin", admin.getAddress());
         loans.invoke(admin, "setDex", dex.getAddress());
@@ -251,15 +289,21 @@ class LoansTestBase extends UnitTest {
         loans.invoke(admin, "setReserve", reserve.getAddress());
         loans.invoke(admin, "setRebalance", rebalancing.getAddress());
         loans.invoke(admin, "setStaking", staking.getAddress());
+        loans.invoke(admin, "setOracle", balancedOracle.getAddress());
 
         governanceCall("turnLoansOn");
         loans.invoke(admin, "setRewards", rewards.getAddress());
         loans.invoke(admin, "setDividends", rewards.getAddress());
         loans.invoke(admin, "setReserve", reserve.getAddress());
-        governanceCall("setContinuousRewardsDay", BigInteger.valueOf(100000));
         sicx.invoke(admin, "setMinter", staking.getAddress());
         bnusd.invoke(admin, "setMinter", loans.getAddress());
         loans.invoke(admin, "addAsset", bnusd.getAddress(), true, false);
         loans.invoke(admin, "addAsset", sicx.getAddress(), true, true);
+        loans.invoke(admin, "addAsset", ieth.getAddress(), true, true);
+
+        loans.invoke(admin, "setLockingRatio", "sICX", LOCKING_RATIO);
+        loans.invoke(admin, "setLiquidationRatio","sICX", LIQUIDATION_RATIO);
+        loans.invoke(admin, "setLockingRatio", "iETH", LOCKING_RATIO);
+        loans.invoke(admin, "setLiquidationRatio", "iETH", LIQUIDATION_RATIO);
     }
 }

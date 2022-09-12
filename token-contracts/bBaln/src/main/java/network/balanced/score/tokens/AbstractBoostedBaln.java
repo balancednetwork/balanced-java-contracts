@@ -24,10 +24,8 @@ import network.balanced.score.tokens.utils.UnsignedBigInteger;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
-import scorex.util.HashMap;
 
 import java.math.BigInteger;
-import java.util.Map;
 
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.Math.pow;
@@ -50,7 +48,7 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
     protected final VarDB<BigInteger> decimals = Context.newVarDB("decimals", BigInteger.class);
     protected final VarDB<BigInteger> supply = Context.newVarDB("Boosted_Baln_Supply", BigInteger.class);
 
-    protected final VarDB<Address> tokenAddress = Context.newVarDB("tokenAddress", Address.class);
+    protected final VarDB<Address> balnAddress = Context.newVarDB("balnAddress", Address.class);
     protected final VarDB<Address> rewardAddress = Context.newVarDB("rewardAddress", Address.class);
     protected final VarDB<Address> penaltyAddress = Context.newVarDB("Boosted_baln_penalty_address", Address.class);
 
@@ -66,27 +64,24 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
             BigInteger.class);
     protected final DictDB<BigInteger, BigInteger> slopeChanges = Context.newDictDB("Boosted_Baln_slope_changes",
             BigInteger.class);
-    protected final VarDB<Address> admin = Context.newVarDB("Boosted_Baln_admin", Address.class);
-    protected final VarDB<Address> futureAdmin = Context.newVarDB("Boosted_baln_future_admin", Address.class);
 
     protected final EnumerableSet<Address> users = new EnumerableSet<>("users_list", Address.class);
     protected final VarDB<BigInteger> minimumLockingAmount = Context.newVarDB("Boosted_baln_minimum_locking_amount",
             BigInteger.class);
 
 
-    public AbstractBoostedBaln(Address tokenAddress, Address rewardAddress, String name, String symbol) {
-        this.admin.set(Context.getCaller());
-        onInstall(tokenAddress, rewardAddress, name, symbol);
+    public AbstractBoostedBaln(Address balnAddress, Address rewardAddress, String name, String symbol) {
+        onInstall(balnAddress, rewardAddress, name, symbol);
     }
 
-    private void onInstall(Address tokenAddress, Address rewardAddress, String name, String symbol) {
-        if (this.tokenAddress.get() != null) {
+    private void onInstall(Address balnAddress, Address rewardAddress, String name, String symbol) {
+        if (this.balnAddress.get() != null) {
             return;
         }
-        this.tokenAddress.set(tokenAddress);
+        this.balnAddress.set(balnAddress);
         this.rewardAddress.set(rewardAddress);
 
-        BigInteger decimals = ((BigInteger) Context.call(tokenAddress, "decimals"));
+        BigInteger decimals = Context.call(BigInteger.class, balnAddress, "decimals");
         this.decimals.set(decimals);
         this.name.set(name);
         this.symbol.set(symbol);
@@ -99,14 +94,6 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
         this.supply.set(BigInteger.ZERO);
         this.epoch.set(BigInteger.ZERO);
         this.minimumLockingAmount.set(ICX);
-    }
-
-    @EventLog
-    public void CommitOwnership(Address admin) {
-    }
-
-    @EventLog
-    public void ApplyOwnership(Address admin) {
     }
 
     @EventLog(indexed = 2)
@@ -136,16 +123,6 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
         return this.symbol.get();
     }
 
-    @External(readonly = true)
-    public Address admin() {
-        return this.admin.get();
-    }
-
-    @External(readonly = true)
-    public Address futureAdmin() {
-        return this.futureAdmin.get();
-    }
-
     protected BigInteger findBlockEpoch(BigInteger block, BigInteger maxEpoch) {
         BigInteger min = BigInteger.ZERO;
         BigInteger max = maxEpoch;
@@ -159,6 +136,7 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
                 max = mid.subtract(BigInteger.ONE);
             }
         }
+
         return min;
     }
 
@@ -174,6 +152,7 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
                 max = mid.subtract(BigInteger.ONE);
             }
         }
+
         return min;
     }
 
@@ -191,6 +170,7 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
             } else {
                 dSlope = this.slopeChanges.getOrDefault(timestampIterator.toBigInteger(), BigInteger.ZERO);
             }
+
             UnsignedBigInteger delta = timestampIterator.subtract(lastPoint.timestamp);
             lastPoint.bias = lastPoint.bias.subtract(lastPoint.slope.multiply(delta.toBigInteger()));
             if (timestampIterator.equals(uTime)) {
@@ -204,6 +184,7 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
         if (lastPoint.bias.compareTo(BigInteger.ZERO) < 0) {
             lastPoint.bias = BigInteger.ZERO;
         }
+
         return lastPoint.bias;
     }
 
@@ -258,6 +239,7 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
         if (epoch.compareTo(BigInteger.ZERO) > 0) {
             lastPoint = this.pointHistory.getOrDefault(epoch, new Point());
         }
+
         UnsignedBigInteger lastCheckPoint = lastPoint.timestamp;
 
         //      initialLastPoint is used for extrapolation to calculate block number
@@ -368,7 +350,7 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
         Deposit(address, value, locked.getEnd(), type, blockTimestamp);
         Supply(supplyBefore, supplyBefore.add(value));
 
-        onBalanceUpdate(address);
+        onBalanceUpdate(address, balanceOf(address, blockTimestamp));
     }
 
     protected void createLock(Address sender, BigInteger value, BigInteger unlockTime) {
@@ -417,20 +399,14 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
         Context.require(!address.isContract(), "Assert Not contract: Smart contract depositors not allowed");
     }
 
-    private void onBalanceUpdate(Address address) {
-        // calling handle action for rewards
-        Map<String, Object> userDetails = new HashMap<>();
-        userDetails.put("user", address);
-        userDetails.put("userBalance", balanceOf(address, BigInteger.ZERO));
-        userDetails.put("totalSupply", totalSupply(BigInteger.ZERO));
-
-        //assuming token address is reward address
-        updateRewardData(userDetails);
+    protected void onKick(Address user) {
+        // Context.call(rewardAddress.get(), "onKick", user);
+        // Context.call(dividendsAddress.get(), "onKick", user);
     }
 
-    protected void updateRewardData(Map<String, Object> userDetails) {
-        Context.call(this.rewardAddress.get(), "updateRewardsData", this.name.get(), userDetails.get("totalSupply"),
-                userDetails.get("user"), userDetails.get("userBalance"));
+    protected void onBalanceUpdate(Address user, BigInteger newBalance) {
+        // Context.call(rewardAddress.get(), "onBalanceUpdate", user, newBalance);
+        // Context.call(dividendsAddress.get(), "onBalanceUpdate", user, newBalance);
     }
 
 }

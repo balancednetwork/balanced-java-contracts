@@ -107,7 +107,7 @@ public class StateMachineTest extends AbstractBoostedBalnTest {
     public void createLock(Account account, BigInteger value, long unlockTime) {
         byte[] createLockParams = tokenData("createLock", Map.of("unlockTime", unlockTime));
 
-        doNothing().when(scoreSpy).updateRewardData(any());
+        doNothing().when(scoreSpy).onBalanceUpdate(any(), any());
         VotingBalance vote = votingBalances.getOrDefault(account, new VotingBalance());
         vote.value = vote.value.add(value);
         try {

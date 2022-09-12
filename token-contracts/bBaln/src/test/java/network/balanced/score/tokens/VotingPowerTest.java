@@ -416,7 +416,7 @@ public class VotingPowerTest extends AbstractBoostedBalnTest {
     }
 
     private void createLock(Account account, BigInteger lockUntil, BigInteger amount) {
-        doNothing().when(scoreSpy).updateRewardData(any());
+        doNothing().when(scoreSpy).onBalanceUpdate(any(), any());
         Map<String, Object> map = new HashMap<>();
         map.put("method", "createLock");
         map.put("params", Map.of("unlockTime", lockUntil));

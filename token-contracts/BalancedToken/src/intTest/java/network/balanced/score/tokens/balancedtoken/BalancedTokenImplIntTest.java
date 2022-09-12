@@ -72,15 +72,17 @@ class BalancedTokenImplIntTest {
 
         //transfer some tokens to another user
         BigInteger amountToTransferToReceiver = amountToMint.divide(BigInteger.TWO);
+        BigInteger amountRemaining = amountToMint.subtract(amountToTransferToReceiver);
 
         balnScore.transfer(Address.fromString(tester.getAddress().toString()), amountToTransferToReceiver,
                 "mole".getBytes());
-        assertEquals(amountToTransferToReceiver,
+        assertEquals(amountRemaining,
                 balnScore.balanceOf(Address.fromString(owner.getAddress().toString())));
         assertEquals(amountToTransferToReceiver,
                 balnScore.balanceOf(Address.fromString(tester.getAddress().toString())));
 
-        BigInteger amountToStake = amountToTransferToReceiver.divide(BigInteger.TWO);
+        BigInteger amountToStake = amountRemaining.divide(BigInteger.TWO);
+        BigInteger unstakedBalance = amountRemaining.subtract(amountToStake);
 
         // stake some token
         balnScore.stake(amountToStake);
@@ -90,18 +92,20 @@ class BalancedTokenImplIntTest {
 
         // assert if balance is staked or not.
         assertEquals(detailsBalanceOf.get("Staked balance"), amountToStake);
-        assertEquals(detailsBalanceOf.get("Available balance"), amountToStake);
+        assertEquals(detailsBalanceOf.get("Available balance"), unstakedBalance);
         assertEquals(detailsBalanceOf.get("Unstaking balance"), BigInteger.ZERO);
 
         //unstake some tokens
-        balnScore.stake(amountToStake.divide(BigInteger.TWO));
+        BigInteger remainingStake = amountToStake.divide(BigInteger.TWO);
+        BigInteger unstakeAmount = amountToStake.subtract(remainingStake);
+        balnScore.stake(remainingStake);
 
         detailsBalanceOf = balnScore.detailsBalanceOf(Address.fromString(owner.getAddress().toString()));
 
         // assert if balance is unstaked or not.
-        assertEquals(detailsBalanceOf.get("Staked balance"), amountToStake.divide(BigInteger.TWO));
-        assertEquals(detailsBalanceOf.get("Available balance"), amountToStake);
-        assertEquals(detailsBalanceOf.get("Unstaking balance"), amountToStake.divide(BigInteger.TWO));
+        assertEquals(detailsBalanceOf.get("Staked balance"), remainingStake);
+        assertEquals(detailsBalanceOf.get("Available balance"), unstakedBalance);
+        assertEquals(detailsBalanceOf.get("Unstaking balance"), unstakeAmount);
 
         BigInteger totalBalance = balnScore.totalStakedBalance();
         // assert totalStakedBalance

@@ -86,7 +86,7 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         Executable withInvalidActions = () -> governance.invoke(owner, "defineVote", name, description, voteStart, voteDuration, forumLink, invalidActions);
         expectErrorMessage(withInvalidActions, expectedErrorMessage);
 
-        // Arrange 
+        // Arrange
         governance.invoke(owner, "defineVote", name, description, voteStart, voteDuration, forumLink, actions);
 
         // Act & Assert
@@ -233,18 +233,19 @@ public class GovernanceVotingTest extends GovernanceTestBase {
     }
 
 
+    @SuppressWarnings("unchecked")
     @Test
     void castVote() {
         //Arrange
         Account forVoter1 = sm.createAccount();
         Account forVoter2 = sm.createAccount();
-        Account aginstVoter = sm.createAccount();
+        Account againstVoter = sm.createAccount();
         Account swayedAgainstVoter = sm.createAccount();
         Account swayedForVoter = sm.createAccount();
 
         BigInteger forVoter1Balance = BigInteger.valueOf(3).multiply(EXA);
         BigInteger forVoter2Balance = BigInteger.TWO.multiply(EXA);
-        BigInteger aginstVoterBalance = BigInteger.valueOf(3).multiply(EXA);
+        BigInteger againstVoterBalance = BigInteger.valueOf(3).multiply(EXA);
         BigInteger swayedAgainstVoterBalance = BigInteger.ONE.multiply(EXA);
         BigInteger swayedForVoterBalance = BigInteger.ONE.multiply(EXA);
 
@@ -256,7 +257,7 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         when(bBaln.mock.totalSupplyAt(any(BigInteger.class))).thenReturn(totalSupply);
         when(bBaln.mock.balanceOfAt(eq(forVoter1.getAddress()), any(BigInteger.class))).thenReturn(forVoter1Balance);
         when(bBaln.mock.balanceOfAt(eq(forVoter2.getAddress()), any(BigInteger.class))).thenReturn(forVoter2Balance);
-        when(bBaln.mock.balanceOfAt(eq(aginstVoter.getAddress()), any(BigInteger.class))).thenReturn(aginstVoterBalance);
+        when(bBaln.mock.balanceOfAt(eq(againstVoter.getAddress()), any(BigInteger.class))).thenReturn(againstVoterBalance);
         when(bBaln.mock.balanceOfAt(eq(swayedAgainstVoter.getAddress()), any(BigInteger.class))).thenReturn(swayedAgainstVoterBalance);
         when(bBaln.mock.balanceOfAt(eq(swayedForVoter.getAddress()), any(BigInteger.class))).thenReturn(swayedForVoterBalance);
 
@@ -267,7 +268,7 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         governance.invoke(forVoter2, "castVote", id, true);
         governance.invoke(swayedAgainstVoter, "castVote", id, true);
 
-        governance.invoke(aginstVoter, "castVote", id, false);
+        governance.invoke(againstVoter, "castVote", id, false);
         governance.invoke(swayedForVoter, "castVote", id, false);
 
         governance.invoke(swayedAgainstVoter, "castVote", id, false);
@@ -281,13 +282,16 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         assertEquals(BigInteger.valueOf(3), voterCount.get("for_voters"));
         assertEquals(BigInteger.TWO, voterCount.get("against_voters"));
 
-        BigInteger forVotes = forVoter1Balance.add(forVoter2Balance).add(swayedForVoterBalance).multiply(EXA).divide(totalSupply);
-        BigInteger againstvotes = aginstVoterBalance.add(swayedAgainstVoterBalance).multiply(EXA).divide(totalSupply);
+        BigInteger forVotes =
+                forVoter1Balance.add(forVoter2Balance).add(swayedForVoterBalance).multiply(EXA).divide(totalSupply);
+        BigInteger againstVotes = againstVoterBalance.add(swayedAgainstVoterBalance).multiply(EXA).divide(totalSupply);
         assertEquals(forVotes, vote.get("for"));
-        assertEquals(againstvotes, vote.get("against"));
+        assertEquals(againstVotes, vote.get("against"));
 
-        Map<String, BigInteger> swayedAgainstVoterVotes = (Map<String, BigInteger>) governance.call("getVotesOfUser", id, swayedAgainstVoter.getAddress());
-        Map<String, BigInteger> swayedForVoterVotes = (Map<String, BigInteger>) governance.call("getVotesOfUser", id, swayedForVoter.getAddress());
+        Map<String, BigInteger> swayedAgainstVoterVotes = (Map<String, BigInteger>) governance.call("getVotesOfUser",
+                id, swayedAgainstVoter.getAddress());
+        Map<String, BigInteger> swayedForVoterVotes = (Map<String, BigInteger>) governance.call("getVotesOfUser", id,
+                swayedForVoter.getAddress());
 
         assertEquals(BigInteger.ZERO, swayedAgainstVoterVotes.get("for"));
         assertEquals(swayedAgainstVoterBalance, swayedAgainstVoterVotes.get("against"));
@@ -333,8 +337,9 @@ public class GovernanceVotingTest extends GovernanceTestBase {
     }
 
     @Test
-    void evaluateVote_succeded() {
+    void evaluateVote_succeeded() {
         // Arrange
+        Account voteEvaluator = sm.createAccount();
         BigInteger forVoters = BigInteger.valueOf(7).multiply(EXA);
         BigInteger againstVoters = BigInteger.valueOf(3).multiply(EXA);
         BigInteger totalSupply = BigInteger.TEN.multiply(EXA);
@@ -343,7 +348,7 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         // Act
         Map<String, Object> vote = getVote(voteIndex);
         goToDay((BigInteger) vote.get("end day"));
-        governance.invoke(owner, "evaluateVote", voteIndex);
+        governance.invoke(voteEvaluator, "evaluateVote", voteIndex);
         vote = getVote(voteIndex);
 
         // Assert
@@ -385,7 +390,8 @@ public class GovernanceVotingTest extends GovernanceTestBase {
 
         // Assert
         BigInteger voteDefinitionFee = (BigInteger) governance.call("getVoteDefinitionFee");
-        verify(bnUSD.mock, never()).govTransfer(daofund.getAddress(), owner.getAddress(), voteDefinitionFee, new byte[0]);
+        verify(bnUSD.mock, never()).govTransfer(daofund.getAddress(), owner.getAddress(), voteDefinitionFee,
+                new byte[0]);
         assertEquals(ProposalStatus.STATUS[ProposalStatus.DEFEATED], vote.get("status"));
         assertEquals(false, vote.get("fee_refund_status"));
     }
@@ -408,11 +414,13 @@ public class GovernanceVotingTest extends GovernanceTestBase {
 
         // Assert
         BigInteger voteDefinitionFee = (BigInteger) governance.call("getVoteDefinitionFee");
-        verify(bnUSD.mock, never()).govTransfer(daofund.getAddress(), owner.getAddress(), voteDefinitionFee, new byte[0]);
+        verify(bnUSD.mock, never()).govTransfer(daofund.getAddress(), owner.getAddress(), voteDefinitionFee,
+                new byte[0]);
         assertEquals(ProposalStatus.STATUS[ProposalStatus.NO_QUORUM], vote.get("status"));
         assertEquals(false, vote.get("fee_refund_status"));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void getProposals() {
         // Arrange
@@ -423,12 +431,14 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         defineTestVoteWithName(voteName1);
 
         defineTestVoteWithName(voteName2);
-        createVoteWith(voteName3, BigInteger.TEN.multiply(EXA), BigInteger.valueOf(7).multiply(EXA), BigInteger.valueOf(3).multiply(EXA));
+        createVoteWith(voteName3, BigInteger.TEN.multiply(EXA), BigInteger.valueOf(7).multiply(EXA),
+                BigInteger.valueOf(3).multiply(EXA));
         defineTestVoteWithName(voteName4);
 
 
         // Act
-        List<Map<String, Object>> votes = (List<Map<String, Object>>) governance.call("getProposals", BigInteger.valueOf(5), BigInteger.ZERO);
+        List<Map<String, Object>> votes = (List<Map<String, Object>>) governance.call("getProposals",
+                BigInteger.valueOf(5), BigInteger.ZERO);
 
         // Assert
         assertEquals(4, votes.size());
@@ -446,7 +456,8 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         assertEquals(voteName2, votes.get(1).get("name"));
 
         // Act
-        votes = (List<Map<String, Object>>) governance.call("getProposals", BigInteger.valueOf(2), BigInteger.valueOf(2));
+        votes = (List<Map<String, Object>>) governance.call("getProposals", BigInteger.valueOf(2),
+                BigInteger.valueOf(2));
 
         // Assert
         assertEquals(2, votes.size());
@@ -475,18 +486,19 @@ public class GovernanceVotingTest extends GovernanceTestBase {
                 .add(addNewDataSource);
 
         executeVoteWithActions(actions.toString());
-        verify(rewards.mock, times(2)).addNewDataSource("test", Address.fromString("cx66d4d90f5f113eba575bf793570135f9b10cece1"));
+        verify(rewards.mock, times(2)).addNewDataSource("test", Address.fromString(
+                "cx66d4d90f5f113eba575bf793570135f9b10cece1"));
     }
 
     @Test
     void executeVote_updateBalTokenDistPercentage() {
         DistributionPercentage[] distPercentages = GovernanceConstants.RECIPIENTS;
         JsonArray distribution = new JsonArray()
-                .add(createJsonDistribtion("Loans", BigInteger.valueOf(25).multiply(BigInteger.TEN.pow(16))))
-                .add(createJsonDistribtion("sICX/ICX", BigInteger.TEN.multiply(BigInteger.TEN.pow(16))))
-                .add(createJsonDistribtion("Worker Tokens", BigInteger.valueOf(20).multiply(BigInteger.TEN.pow(16))))
-                .add(createJsonDistribtion("Reserve Fund", BigInteger.valueOf(5).multiply(BigInteger.TEN.pow(16))))
-                .add(createJsonDistribtion("DAOfund", BigInteger.valueOf(40).multiply(BigInteger.TEN.pow(16))));
+                .add(createJsonDistribution("Loans", BigInteger.valueOf(25).multiply(BigInteger.TEN.pow(16))))
+                .add(createJsonDistribution("sICX/ICX", BigInteger.TEN.multiply(BigInteger.TEN.pow(16))))
+                .add(createJsonDistribution("Worker Tokens", BigInteger.valueOf(20).multiply(BigInteger.TEN.pow(16))))
+                .add(createJsonDistribution("Reserve Fund", BigInteger.valueOf(5).multiply(BigInteger.TEN.pow(16))))
+                .add(createJsonDistribution("DAOfund", BigInteger.valueOf(40).multiply(BigInteger.TEN.pow(16))));
 
         JsonObject updateBalTokenDistPercentageParameter = new JsonObject()
                 .add("_recipient_list", distribution);
@@ -503,32 +515,12 @@ public class GovernanceVotingTest extends GovernanceTestBase {
     }
 
     @Test
-    void executeVote_setMiningRatio() {
-        // Arrange
-        BigInteger miningRatio = BigInteger.TEN;
-        JsonObject setMiningRatioParameters = new JsonObject()
-                .add("_value", miningRatio.intValue());
-
-        JsonArray setMiningRatio = new JsonArray()
-                .add("setMiningRatio")
-                .add(setMiningRatioParameters);
-
-        JsonArray actions = new JsonArray()
-                .add(setMiningRatio);
-
-        // Act
-        executeVoteWithActions(actions.toString());
-
-        // Assert
-        verify(loans.mock, times(2)).setMiningRatio(miningRatio);
-    }
-
-
-    @Test
     void executeVote_setLockingRatio() {
         // Arrange
         BigInteger lockingRatio = BigInteger.TEN;
+        String symbol = "sICX";
         JsonObject setLockingRatioParameters = new JsonObject()
+                .add("_symbol", symbol)
                 .add("_value", lockingRatio.intValue());
 
         JsonArray setLockingRatio = new JsonArray()
@@ -542,9 +534,8 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         executeVoteWithActions(actions.toString());
 
         // Assert
-        verify(loans.mock, times(2)).setLockingRatio(lockingRatio);
+        verify(loans.mock, times(2)).setLockingRatio(symbol, lockingRatio);
     }
-
 
     @Test
     void executeVote_setOriginationFee() {
@@ -572,7 +563,9 @@ public class GovernanceVotingTest extends GovernanceTestBase {
     void executeVote_setLiquidationRatio() {
         // Arrange
         BigInteger liquidationRatio = BigInteger.TEN;
+        String symbol = "sICX";
         JsonObject setLiquidationRatioParameters = new JsonObject()
+                .add("_symbol", symbol)
                 .add("_ratio", liquidationRatio.intValue());
 
         JsonArray setLiquidationRatio = new JsonArray()
@@ -586,7 +579,7 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         executeVoteWithActions(actions.toString());
 
         // Assert
-        verify(loans.mock, times(2)).setLiquidationRatio(liquidationRatio);
+        verify(loans.mock, times(2)).setLiquidationRatio(symbol, liquidationRatio);
     }
 
 
@@ -681,7 +674,7 @@ public class GovernanceVotingTest extends GovernanceTestBase {
     @Test
     void executeVote_setVoteDuration() {
         // Arrange
-        BigInteger voteDurationMin = BigInteger.TEN;
+        BigInteger voteDurationMin = BigInteger.ONE;
         BigInteger voteDurationMax = BigInteger.TEN;
         JsonObject setVoteDurationParameters = new JsonObject()
                 .add("_min", voteDurationMin.intValue())
@@ -722,8 +715,8 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         executeVoteWithActions(actions.toString());
 
         // Assert
-        BigInteger newQuorom = (BigInteger) governance.call("getQuorum");
-        assertEquals(quorum, newQuorom);
+        BigInteger newQuorum = (BigInteger) governance.call("getQuorum");
+        assertEquals(quorum, newQuorum);
     }
 
     @Test
@@ -774,11 +767,11 @@ public class GovernanceVotingTest extends GovernanceTestBase {
     void executeVote_setDividendsCategoryPercentage() {
         DistributionPercentage[] distPercentages = GovernanceConstants.RECIPIENTS;
         JsonArray distribution = new JsonArray()
-                .add(createJsonDistribtion("Loans", BigInteger.valueOf(25).multiply(BigInteger.TEN.pow(16))))
-                .add(createJsonDistribtion("sICX/ICX", BigInteger.TEN.multiply(BigInteger.TEN.pow(16))))
-                .add(createJsonDistribtion("Worker Tokens", BigInteger.valueOf(20).multiply(BigInteger.TEN.pow(16))))
-                .add(createJsonDistribtion("Reserve Fund", BigInteger.valueOf(5).multiply(BigInteger.TEN.pow(16))))
-                .add(createJsonDistribtion("DAOfund", BigInteger.valueOf(40).multiply(BigInteger.TEN.pow(16))));
+                .add(createJsonDistribution("Loans", BigInteger.valueOf(25).multiply(BigInteger.TEN.pow(16))))
+                .add(createJsonDistribution("sICX/ICX", BigInteger.TEN.multiply(BigInteger.TEN.pow(16))))
+                .add(createJsonDistribution("Worker Tokens", BigInteger.valueOf(20).multiply(BigInteger.TEN.pow(16))))
+                .add(createJsonDistribution("Reserve Fund", BigInteger.valueOf(5).multiply(BigInteger.TEN.pow(16))))
+                .add(createJsonDistribution("DAOfund", BigInteger.valueOf(40).multiply(BigInteger.TEN.pow(16))));
 
         JsonObject setDividendsCategoryPercentageParameter = new JsonObject()
                 .add("_dist_list", distribution);
@@ -799,10 +792,10 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         // Arrange
         String expectedErrorMessage = "Vote execution failed";
         JsonArray disbursement = new JsonArray()
-                .add(createJsonDisbusment("cx1111d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
-                .add(createJsonDisbusment("cx2222d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
-                .add(createJsonDisbusment("cx3333d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
-                .add(createJsonDisbusment("cx4444d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN));
+                .add(createJsonDisbursement("cx1111d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
+                .add(createJsonDisbursement("cx2222d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
+                .add(createJsonDisbursement("cx3333d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
+                .add(createJsonDisbursement("cx4444d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN));
 
         JsonObject setDividendsCategoryPercentageParameter = new JsonObject()
                 .add("_recipient", "hx0000d90f5f113eba575bf793570135f9b10cece1")
@@ -826,9 +819,9 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         Address address = Address.fromString("hx0000d90f5f113eba575bf793570135f9b10cece1");
         String expectedErrorMessage = "Cannot disburse more than 3 assets at a time.";
         JsonArray disbursement = new JsonArray()
-                .add(createJsonDisbusment("cx1111d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
-                .add(createJsonDisbusment("cx2222d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
-                .add(createJsonDisbusment("cx3333d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN));
+                .add(createJsonDisbursement("cx1111d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
+                .add(createJsonDisbursement("cx2222d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
+                .add(createJsonDisbursement("cx3333d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN));
 
         JsonObject setDividendsCategoryPercentageParameter = new JsonObject()
                 .add("_recipient", address.toString())
@@ -865,6 +858,88 @@ public class GovernanceVotingTest extends GovernanceTestBase {
 
         // Assert
         verify(dividends.mock, times(2)).addAcceptedTokens(Address.fromString(token));
+    }
+
+    @Test
+    void executeVote_addCollateral() {
+        // Arrange
+        Address tokenAddress = bwt.getAddress();
+        boolean active = false;
+        BigInteger lockingRatio = BigInteger.valueOf(30_000);
+        BigInteger liquidationRatio = BigInteger.valueOf(10_000);
+        BigInteger debtCeiling = BigInteger.TEN.pow(20);
+        String symbol = "BALW";
+        String peg = "BTC";
+
+        when(bwt.mock.symbol()).thenReturn(symbol);
+        when(balancedOracle.mock.getPriceInLoop(symbol)).thenReturn(ICX);
+
+        JsonObject addCollateralParameters = new JsonObject()
+                .add("_token_address", tokenAddress.toString())
+                .add("_active", active)
+                .add("_peg", peg)
+                .add("_lockingRatio", lockingRatio.toString())
+                .add("_liquidationRatio", liquidationRatio.toString())
+                .add("_debtCeiling", debtCeiling.toString());
+
+        JsonArray addCollateral = new JsonArray()
+                .add("addCollateral")
+                .add(addCollateralParameters);
+
+        JsonArray actions = new JsonArray()
+                .add(addCollateral);
+
+        // Act
+        executeVoteWithActions(actions.toString());
+        System.out.println(actions);
+
+        // Assert
+        verify(loans.mock, times(2)).addAsset(tokenAddress, active, true);
+        verify(balancedOracle.mock, times(2)).setPeg(symbol, peg);
+        verify(loans.mock, times(2)).setLockingRatio(symbol, lockingRatio);
+        verify(loans.mock, times(2)).setLiquidationRatio(symbol, liquidationRatio);
+        verify(loans.mock, times(2)).setDebtCeiling(symbol, debtCeiling);
+    }
+
+    @Test
+    void executeVote_addDexPricedCollateral() {
+        // Arrange
+        Address tokenAddress = bwt.getAddress();
+        boolean active = false;
+        BigInteger lockingRatio = BigInteger.valueOf(30_000);
+        BigInteger liquidationRatio = BigInteger.valueOf(10_000);
+        BigInteger debtCeiling = BigInteger.TEN.pow(20);
+        BigInteger poolID = BigInteger.valueOf(7);
+        String symbol = "BWT";
+
+        when(bwt.mock.symbol()).thenReturn(symbol);
+        when(balancedOracle.mock.getPriceInLoop(symbol)).thenReturn(ICX);
+        when(bwt.mock.symbol()).thenReturn(symbol);
+        when(dex.mock.getPoolId(tokenAddress, bnUSD.getAddress())).thenReturn(poolID);
+
+        JsonObject addCollateralParameters = new JsonObject()
+                .add("_token_address", tokenAddress.toString())
+                .add("_active", active)
+                .add("_lockingRatio", lockingRatio.toString())
+                .add("_liquidationRatio", liquidationRatio.toString())
+                .add("_debtCeiling", debtCeiling.toString());
+
+        JsonArray addCollateral = new JsonArray()
+                .add("addDexPricedCollateral")
+                .add(addCollateralParameters);
+
+        JsonArray actions = new JsonArray()
+                .add(addCollateral);
+
+        // Act
+        executeVoteWithActions(actions.toString());
+
+        // Assert
+        verify(loans.mock, times(2)).addAsset(tokenAddress, active, true);
+        verify(balancedOracle.mock, times(2)).addDexPricedAsset(symbol, poolID);
+        verify(loans.mock, times(2)).setLockingRatio(symbol, lockingRatio);
+        verify(loans.mock, times(2)).setLiquidationRatio(symbol, liquidationRatio);
+        verify(loans.mock, times(2)).setDebtCeiling(symbol, debtCeiling);
     }
 
     @Test

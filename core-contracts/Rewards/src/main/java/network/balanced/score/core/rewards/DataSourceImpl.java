@@ -23,7 +23,6 @@ import scorex.util.HashMap;
 import java.math.BigInteger;
 import java.util.Map;
 
-import static network.balanced.score.core.rewards.utils.Check.continuousRewardsActive;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
@@ -59,7 +58,7 @@ public class DataSourceImpl {
         return contractAddress.at(dbKey).get();
     }
 
-    public void setContractAddress(Address address){
+    public void setContractAddress(Address address) {
         this.contractAddress.at(dbKey).set(address);
     }
 
@@ -67,7 +66,7 @@ public class DataSourceImpl {
         return name.at(dbKey).get();
     }
 
-    public void setName(String name){
+    public void setName(String name) {
         this.name.at(dbKey).set(name);
     }
 
@@ -75,7 +74,7 @@ public class DataSourceImpl {
         return day.at(dbKey).getOrDefault(BigInteger.ZERO);
     }
 
-    public void setDay(BigInteger day){
+    public void setDay(BigInteger day) {
         this.day.at(dbKey).set(day);
     }
 
@@ -95,10 +94,10 @@ public class DataSourceImpl {
         return totalDist.at(dbKey).getOrDefault(day, BigInteger.ZERO);
     }
 
-    public void  setTotalDist(BigInteger day, BigInteger value) {
+    public void setTotalDist(BigInteger day, BigInteger value) {
         totalDist.at(dbKey).set(day, value);
     }
-    
+
     public BigInteger getDistPercent() {
         return distPercent.at(dbKey).getOrDefault(BigInteger.ZERO);
     }
@@ -128,25 +127,19 @@ public class DataSourceImpl {
         try {
             DataSourceScoreInterface datasource = new DataSourceScoreInterface(getContractAddress());
             return datasource.getBalanceAndSupply(getName(), owner);
-        } catch (Exception e ) {
+        } catch (Exception e) {
             return Map.of("_totalSupply", BigInteger.ZERO,
-                          "_balance", BigInteger.ZERO
+                    "_balance", BigInteger.ZERO
             );
         }
     }
 
     public BigInteger updateSingleUserData(BigInteger currentTime, BigInteger prevTotalSupply, Address user,
                                            BigInteger prevBalance, boolean readOnlyContext) {
-        if (!continuousRewardsActive()) {
-            return BigInteger.ZERO;
-        }
 
         BigInteger currentUserWeight = getUserWeight(user);
         BigInteger lastUpdateTimestamp = getLastUpdateTimeUs();
 
-        if (lastUpdateTimestamp.equals(BigInteger.ZERO)) {
-            lastUpdateTimestamp = RewardsImpl.continuousRewardsDay.get().multiply(MICRO_SECONDS_IN_A_DAY);
-        }
 
         BigInteger totalWeight = updateTotalWeight(lastUpdateTimestamp, currentTime, prevTotalSupply, readOnlyContext);
 
@@ -180,7 +173,8 @@ public class DataSourceImpl {
             return previousTotalWeight;
         }
 
-        BigInteger weightDelta = emission.multiply(timeDelta).multiply(EXA).divide(MICRO_SECONDS_IN_A_DAY).divide(totalSupply);
+        BigInteger weightDelta =
+                emission.multiply(timeDelta).multiply(EXA).divide(MICRO_SECONDS_IN_A_DAY).divide(totalSupply);
 
         return previousTotalWeight.add(weightDelta);
     }
@@ -190,7 +184,13 @@ public class DataSourceImpl {
 
         BigInteger runningTotal = getTotalWeight();
 
-        BigInteger originalLastUpdateTimestamp = lastUpdateTimestamp;
+        if (lastUpdateTimestamp.equals(BigInteger.ZERO)) {
+            lastUpdateTimestamp = currentTime;
+            if (!readOnlyContext) {
+                lastUpdateTimeUs.at(dbKey).set(currentTime);
+
+            }
+        }
 
         if (currentTime.equals(lastUpdateTimestamp)) {
             return runningTotal;
@@ -240,77 +240,6 @@ public class DataSourceImpl {
     public Map<String, Object> getData() {
         BigInteger day = this.getDay();
         return getDataAt(day);
-    }
-
-    @SuppressWarnings("unchecked")
-    public void distribute(int batchSize) {
-        DataSourceScoreInterface datasource = new DataSourceScoreInterface(getContractAddress());
-
-        BigInteger day = getDay();
-        String name = getName();
-
-        Object precomputeDoneObj = RewardsImpl.call(getContractAddress(), "precompute", day,
-                BigInteger.valueOf(batchSize));
-        boolean precomputeDone;
-        try {
-            precomputeDone = (boolean)precomputeDoneObj;
-        } catch (Exception e) {
-            precomputeDone = !((BigInteger)precomputeDoneObj).equals(BigInteger.ZERO);
-        }
-
-        boolean localPreCompute = getPrecomp();
-        if (!localPreCompute && precomputeDone) {
-            precomp.at(dbKey).set(true);
-            localPreCompute = true;
-            BigInteger sourceTotalValue = datasource.getTotalValue(name, day);
-            totalValue.at(dbKey).set(day, sourceTotalValue);
-        }
-
-        if (!localPreCompute) {
-            return;
-        }
-
-        int offset = this.getOffset();
-        Map<String, BigInteger> dataBatch = (Map<String, BigInteger>) RewardsImpl.call(getContractAddress(), "getDataBatch",
-                name, day.intValue(), batchSize, offset);
-        this.offset.at(dbKey).set(offset + batchSize);
-        if (dataBatch.isEmpty()) {
-            this.day.at(dbKey).set(day.add(BigInteger.ONE));
-            this.offset.at(dbKey).set(0);
-            this.precomp.at(dbKey).set(false);
-            return;
-        }
-
-        BigInteger remaining = getTotalDist(day);
-        BigInteger shares = getTotalValue(day);
-        BigInteger originalShares = shares;
-
-        BigInteger batchSum = BigInteger.ZERO;
-        for (Map.Entry<String, BigInteger> entry : dataBatch.entrySet()) {
-            batchSum = batchSum.add(entry.getValue());
-        }
-
-        BigInteger tokenShare;
-        for (Map.Entry<String,BigInteger> entry : dataBatch.entrySet()) {
-            BigInteger value = entry.getValue();
-            String address = entry.getKey();
-            tokenShare = remaining.multiply(value).divide(shares);
-            Context.require(shares.compareTo(BigInteger.ZERO) > 0,
-                    RewardsImpl.TAG + ": zero or negative divisor for " + name + ", " +
-                            "sum: " + batchSum + ", " +
-                            "total: " + shares + ", " +
-                            "remaining: " + remaining + ", " +
-                            "token_share: " + tokenShare + ", " +
-                            "starting: " + originalShares);
-
-            remaining = remaining.subtract(tokenShare);
-            shares = shares.subtract(value);
-            BigInteger prevHoldings = RewardsImpl.balnHoldings.getOrDefault(address, BigInteger.ZERO);
-            RewardsImpl.balnHoldings.set(address, prevHoldings.add(tokenShare));
-        }
-
-        totalDist.at(dbKey).set(day, remaining);
-        totalValue.at(dbKey).set(day, shares);
     }
 
     private BigInteger computeUserRewards(BigInteger prevUserBalance, BigInteger totalWeight, BigInteger userWeight) {

@@ -16,6 +16,7 @@
 
 package network.balanced.score.core.loans.utils;
 
+import network.balanced.score.core.loans.LoansVariables;
 import score.Address;
 
 import java.math.BigInteger;
@@ -47,11 +48,11 @@ public class Token {
     }
 
     public BigInteger priceInLoop() {
-        return (BigInteger) call(tokenAddress, "priceInLoop");
+        return (BigInteger) call(LoansVariables.oracle.get(), "getPriceInLoop", symbol());
     }
 
     public BigInteger lastPriceInLoop() {
-        return (BigInteger) call(tokenAddress, "lastPriceInLoop");
+        return (BigInteger) call(LoansVariables.oracle.get(), "getLastPriceInLoop", symbol());
     }
 
     public void mintTo(Address to, BigInteger amount) {

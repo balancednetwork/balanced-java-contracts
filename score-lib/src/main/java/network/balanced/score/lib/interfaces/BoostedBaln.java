@@ -19,7 +19,6 @@ package network.balanced.score.lib.interfaces;
 import foundation.icon.score.client.ScoreInterface;
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
-import network.balanced.score.lib.structs.SupplyDetails;
 import score.Address;
 import score.annotation.External;
 import score.annotation.Optional;
@@ -40,12 +39,6 @@ public interface BoostedBaln {
 
     @External
     void setPenaltyAddress(Address penaltyAddress);
-
-    @External
-    void commitTransferOwnership(Address address);
-
-    @External
-    void applyTransferOwnership();
 
     @External(readonly = true)
     Map<String, BigInteger> getLocked(Address _owner);
@@ -75,6 +68,9 @@ public interface BoostedBaln {
     void increaseUnlockTime(BigInteger unlockTime);
 
     @External
+    void kick(Address user);
+
+    @External
     void withdraw();
 
     @External(readonly = true)
@@ -90,12 +86,6 @@ public interface BoostedBaln {
     BigInteger totalSupplyAt(BigInteger block);
 
     @External(readonly = true)
-    Address admin();
-
-    @External(readonly = true)
-    Address futureAdmin();
-
-    @External(readonly = true)
     String name();
 
     @External(readonly = true)
@@ -106,7 +96,4 @@ public interface BoostedBaln {
 
     @External(readonly = true)
     BigInteger userPointEpoch(Address address);
-
-    @External(readonly = true)
-    SupplyDetails getPrincipalSupply(Address _user);
 }

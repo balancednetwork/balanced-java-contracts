@@ -53,10 +53,10 @@ public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress
 
     @External
     void setContinuousDividendsDay(BigInteger day);
-       
+
     @External(readonly = true)
     BigInteger getContinuousDividendsDay();
-    
+
     @External(readonly = true)
     Map<String, BigInteger> getBalances();
 
@@ -115,7 +115,7 @@ public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress
     void claimDividends();
 
     @External
-    void claim(@Optional  int _start,@Optional int _end);
+    void claim(@Optional int _start, @Optional int _end);
 
     @External
     void accumulateDividends(Address user, @Optional int _start, @Optional int _end);

@@ -20,9 +20,6 @@ import com.eclipsesource.json.JsonObject;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
-import network.balanced.score.core.governance.interfaces.FeehandlerScoreInterface;
-import network.balanced.score.core.governance.interfaces.SicxScoreInterface;
-import network.balanced.score.core.governance.interfaces.StakedLpScoreInterface;
 import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.structs.BalancedAddresses;
 import network.balanced.score.lib.test.UnitTest;
@@ -44,38 +41,38 @@ public class GovernanceTestBase extends UnitTest {
     protected static final Account owner = sm.createAccount();
     protected static final Account adminAccount = sm.createAccount();
 
-
     protected static final Account oracle = Account.newScoreAccount(scoreCount);
 
-    protected MockContract<LoansScoreInterface> loans;
-    protected MockContract<DexScoreInterface> dex;
-    protected MockContract<StakingScoreInterface> staking;
-    protected MockContract<RewardsScoreInterface> rewards;
-    protected MockContract<ReserveScoreInterface> reserve;
-    protected MockContract<DividendsScoreInterface> dividends;
-    protected MockContract<DAOfundScoreInterface> daofund;
-    protected MockContract<SicxScoreInterface> sicx;
-    protected MockContract<BalancedDollarScoreInterface> bnUSD;
-    protected MockContract<BalancedTokenScoreInterface> baln;
-    protected MockContract<BoostedBalnScoreInterface> bBaln;
-    protected MockContract<WorkerTokenScoreInterface> bwt;
-    protected MockContract<RouterScoreInterface> router;
-    protected MockContract<RebalancingScoreInterface> rebalancing;
-    protected MockContract<FeehandlerScoreInterface> feehandler;
-    protected MockContract<StakedLpScoreInterface> stakedLp;
+    protected MockContract<Loans> loans;
+    protected MockContract<Dex> dex;
+    protected MockContract<Staking> staking;
+    protected MockContract<Rewards> rewards;
+    protected MockContract<Reserve> reserve;
+    protected MockContract<Dividends> dividends;
+    protected MockContract<DAOfund> daofund;
+    protected MockContract<Sicx> sicx;
+    protected MockContract<BalancedDollar> bnUSD;
+    protected MockContract<BalancedToken> baln;
+    protected MockContract<BoostedBaln> bBaln;
+    protected MockContract<WorkerToken> bwt;
+    protected MockContract<Router> router;
+    protected MockContract<Rebalancing> rebalancing;
+    protected MockContract<FeeHandler> feehandler;
+    protected MockContract<StakedLP> stakedLp;
+    protected MockContract<BalancedOracle> balancedOracle;
 
     protected BalancedAddresses balancedAddresses = new BalancedAddresses();
 
     protected Score governance;
 
-    protected JsonObject createJsonDistribtion(String name, BigInteger dist) {
+    protected JsonObject createJsonDistribution(String name, BigInteger dist) {
 
         return new JsonObject()
                 .add("recipient_name", name)
                 .add("dist_percent", dist.toString());
     }
 
-    protected JsonObject createJsonDisbusment(String token, BigInteger amount) {
+    protected JsonObject createJsonDisbursement(String token, BigInteger amount) {
 
         return new JsonObject()
                 .add("address", token)
@@ -121,6 +118,7 @@ public class GovernanceTestBase extends UnitTest {
         balancedAddresses.feehandler = feehandler.getAddress();
         balancedAddresses.stakedLp = stakedLp.getAddress();
         balancedAddresses.bBaln = bBaln.getAddress();
+        balancedAddresses.balancedOracle = balancedOracle.getAddress();
 
         governance.invoke(owner, "setAddresses", balancedAddresses);
         governance.invoke(owner, "setContractAddresses");
@@ -129,6 +127,7 @@ public class GovernanceTestBase extends UnitTest {
         verify(loans.mock).setDividends(dividends.getAddress());
         verify(loans.mock).setStaking(staking.getAddress());
         verify(loans.mock).setReserve(reserve.getAddress());
+        verify(loans.mock).setOracle(balancedOracle.getAddress());
 
         verify(dex.mock).setRewards(rewards.getAddress());
         verify(dex.mock).setDividends(dividends.getAddress());
@@ -143,7 +142,6 @@ public class GovernanceTestBase extends UnitTest {
         verify(rewards.mock).setBwt(bwt.getAddress());
         verify(rewards.mock).setBaln(baln.getAddress());
         verify(rewards.mock).setDaofund(daofund.getAddress());
-        verify(rewards.mock).setStakedLp(stakedLp.getAddress());
 
         verify(dividends.mock).setDex(dex.getAddress());
         verify(dividends.mock).setLoans(loans.getAddress());
@@ -171,6 +169,16 @@ public class GovernanceTestBase extends UnitTest {
 
         verify(stakedLp.mock).setDex(dex.getAddress());
         verify(stakedLp.mock).setRewards(rewards.getAddress());
+
+        verify(rebalancing.mock).setLoans(loans.getAddress());
+        verify(rebalancing.mock).setDex(dex.getAddress());
+        verify(rebalancing.mock).setBnusd(bnUSD.getAddress());
+        verify(rebalancing.mock).setSicx(sicx.getAddress());
+        verify(rebalancing.mock).setOracle(balancedOracle.getAddress());
+
+        verify(balancedOracle.mock).setDex(dex.getAddress());
+        verify(balancedOracle.mock).setStaking(staking.getAddress());
+        verify(balancedOracle.mock).setOracle(oracle.getAddress());
     }
 
     protected BigInteger executeVoteWithActions(String actions) {
@@ -202,22 +210,23 @@ public class GovernanceTestBase extends UnitTest {
         return id;
     }
 
-    protected BigInteger createVoteWith(String name, BigInteger totalSupply, BigInteger forVotes, BigInteger againstVotes) {
+    protected BigInteger createVoteWith(String name, BigInteger totalSupply, BigInteger forVotes,
+                                        BigInteger againstVotes) {
         Account forVoter = sm.createAccount();
-        Account aginstVoter = sm.createAccount();
+        Account againstVoter = sm.createAccount();
 
         BigInteger id = defineTestVoteWithName(name);
         Map<String, Object> vote = getVote(id);
 
         when(bBaln.mock.totalSupplyAt(any(BigInteger.class))).thenReturn(totalSupply);
         when(bBaln.mock.balanceOfAt(eq(forVoter.getAddress()), any(BigInteger.class))).thenReturn(forVotes);
-        when(bBaln.mock.balanceOfAt(eq(aginstVoter.getAddress()), any(BigInteger.class))).thenReturn(againstVotes);
+        when(bBaln.mock.balanceOfAt(eq(againstVoter.getAddress()), any(BigInteger.class))).thenReturn(againstVotes);
 
         goToDay((BigInteger) vote.get("start day"));
 
         //Act
         governance.invoke(forVoter, "castVote", id, true);
-        governance.invoke(aginstVoter, "castVote", id, false);
+        governance.invoke(againstVoter, "castVote", id, false);
 
         return id;
     }
@@ -272,13 +281,14 @@ public class GovernanceTestBase extends UnitTest {
         bwt = new MockContract<>(WorkerTokenScoreInterface.class, sm, owner);
         router = new MockContract<>(RouterScoreInterface.class, sm, owner);
         rebalancing = new MockContract<>(RebalancingScoreInterface.class, sm, owner);
-        feehandler = new MockContract<>(FeehandlerScoreInterface.class, sm, owner);
-        stakedLp = new MockContract<>(StakedLpScoreInterface.class, sm, owner);
+        feehandler = new MockContract<>(FeeHandlerScoreInterface.class, sm, owner);
+        stakedLp = new MockContract<>(StakedLPScoreInterface.class, sm, owner);
+        balancedOracle = new MockContract<>(BalancedOracleScoreInterface.class, sm, owner);
         governance = sm.deploy(owner, GovernanceImpl.class);
 
         setupAddresses();
         governance.invoke(owner, "setBalnVoteDefinitionCriterion", BigInteger.valueOf(100)); //1%
-        governance.invoke(owner, "setVoteDefinitionFee", ICX); //1% 
+        governance.invoke(owner, "setVoteDefinitionFee", ICX); //1%
         governance.invoke(owner, "setQuorum", BigInteger.ONE);
         governance.invoke(owner, "setVoteDurationLimits", BigInteger.TWO, BigInteger.TEN);
     }

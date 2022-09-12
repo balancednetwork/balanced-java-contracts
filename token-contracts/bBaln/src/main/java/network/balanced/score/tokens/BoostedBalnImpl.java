@@ -20,7 +20,6 @@ import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 import network.balanced.score.tokens.db.LockedBalance;
 import network.balanced.score.tokens.db.Point;
-import network.balanced.score.lib.structs.SupplyDetails;
 import network.balanced.score.tokens.utils.UnsignedBigInteger;
 import score.Address;
 import score.Context;
@@ -35,17 +34,18 @@ import java.util.Map;
 
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.Math.convertToNumber;
+import static network.balanced.score.lib.utils.Check.onlyOwner;
 import static network.balanced.score.tokens.Constants.WEEK_IN_MICRO_SECONDS;
 
 public class BoostedBalnImpl extends AbstractBoostedBaln {
 
-    public BoostedBalnImpl(Address tokenAddress, Address rewardAddress, String name, String symbol) {
-        super(tokenAddress, rewardAddress, name, symbol);
+    public BoostedBalnImpl(Address balnAddress, Address rewardAddress, String name, String symbol) {
+        super(balnAddress, rewardAddress, name, symbol);
     }
 
     @External
     public void setMinimumLockingAmount(BigInteger value) {
-        ownerRequired();
+        onlyOwner();
         Context.require(value.signum() > 0, "Invalid value for minimum locking amount");
 
         this.minimumLockingAmount.set(value);
@@ -58,30 +58,13 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
 
     @External
     public void setPenaltyAddress(Address penaltyAddress) {
-        ownerRequired();
+        onlyOwner();
         this.penaltyAddress.set(penaltyAddress);
     }
 
     @External(readonly = true)
     public Address getPenaltyAddress() {
         return this.penaltyAddress.get();
-    }
-
-    @External
-    public void commitTransferOwnership(Address address) {
-        ownerRequired();
-        futureAdmin.set(address);
-        CommitOwnership(address);
-    }
-
-    @External
-    public void applyTransferOwnership() {
-        ownerRequired();
-        Address futureAdmin = this.futureAdmin.get();
-        Context.require(futureAdmin != null, "Apply transfer ownership: Admin not set");
-        this.admin.set(futureAdmin);
-        this.futureAdmin.set(null);
-        ApplyOwnership(futureAdmin);
     }
 
     @External(readonly = true)
@@ -92,7 +75,7 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
 
     @External(readonly = true)
     public BigInteger getTotalLocked() {
-        return Context.call(BigInteger.class, this.tokenAddress.get(), "balanceOf", Context.getAddress());
+        return Context.call(BigInteger.class, this.balnAddress.get(), "balanceOf", Context.getAddress());
     }
 
     @External(readonly = true)
@@ -105,6 +88,7 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
         for (int index = start; index < _end; index++) {
             result.add(users.at(index));
         }
+
         return result;
     }
 
@@ -142,15 +126,13 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         Address token = Context.getCaller();
-        Context.require(token.equals(this.tokenAddress.get()), "Token Fallback: Only Baln deposits are allowed");
-
-        Context.println("value is: " + _value);
+        Context.require(token.equals(balnAddress.get()), "Token Fallback: Only Baln deposits are allowed");
         Context.require(_value.signum() > 0, "Token Fallback: Token value should be a positive number");
+
         String unpackedData = new String(_data);
         Context.require(!unpackedData.isEmpty(), "Token Fallback: Data can't be empty");
 
         JsonObject json = Json.parse(unpackedData).asObject();
-
         String method = json.get("method").asString();
         JsonObject params = json.get("params").asObject();
         BigInteger unlockTime = convertToNumber(params.get("unlockTime"), BigInteger.ZERO);
@@ -192,6 +174,17 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
     }
 
     @External
+    public void kick(Address user) {
+        BigInteger bBalnBalance = balanceOf(user, BigInteger.ZERO);
+        if(bBalnBalance.equals(BigInteger.ZERO)){
+            onKick(user);
+        } else {
+            onBalanceUpdate(user, bBalnBalance);
+        }
+    }
+
+    // TODO discuss instant unlock
+    @External
     public void withdraw() {
         this.nonReentrant.updateLock(true);
         Address sender = Context.getCaller();
@@ -216,13 +209,15 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
             } else {
                 value = value.divide(BigInteger.TWO).add(BigInteger.ONE);
             }
-            Context.call(this.tokenAddress.get(), "transfer", this.penaltyAddress.get(), value, "withdraw".getBytes());
+            Context.call(this.balnAddress.get(), "transfer", this.penaltyAddress.get(), value, "withdraw".getBytes());
         }
 
-        Context.call(this.tokenAddress.get(), "transfer", sender, value, "withdraw".getBytes());
+        Context.call(this.balnAddress.get(), "transfer", sender, value, "withdraw".getBytes());
         users.remove(sender);
         Withdraw(sender, value, blockTimestamp);
         Supply(supplyBefore, supplyBefore.subtract(value));
+
+        onBalanceUpdate(sender, balanceOf(sender, blockTimestamp));
         this.nonReentrant.updateLock(false);
     }
 
@@ -276,7 +271,9 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
             blockTime = blockTime.add(dTime.multiply(new UnsignedBigInteger(block).subtract(point0.block))
                     .divide(dBlock));
         }
+
         UnsignedBigInteger delta = blockTime.subtract(uPoint.timestamp);
+
         return uPoint.bias.subtract(uPoint.slope.multiply(delta.toBigInteger())).max(BigInteger.ZERO);
     }
 
@@ -290,6 +287,7 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
 
         BigInteger epoch = this.epoch.get();
         Point lastPoint = this.pointHistory.getOrDefault(epoch, new Point());
+
         return this.supplyAt(lastPoint, time);
     }
 
@@ -321,21 +319,7 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
     }
 
     @External(readonly = true)
-    public SupplyDetails getPrincipalSupply(Address _user) {
-        SupplyDetails response = new SupplyDetails();
-        response.decimals = decimals();
-        response.principalUserBalance = balanceOf(_user, BigInteger.ZERO);
-        response.principalTotalSupply = totalSupply(BigInteger.ZERO);
-        return response;
-    }
-
-    @External(readonly = true)
     public BigInteger userPointEpoch(Address address) {
         return this.userPointEpoch.getOrDefault(address, BigInteger.ZERO);
     }
-
-    private void ownerRequired() {
-        Context.require(Context.getCaller().equals(this.admin.get()), "Owner is required");
-    }
-
 }

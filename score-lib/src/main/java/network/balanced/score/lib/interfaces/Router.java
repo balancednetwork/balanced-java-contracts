@@ -17,6 +17,7 @@
 package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
+import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.*;
 import network.balanced.score.lib.interfaces.base.Fallback;
 import network.balanced.score.lib.interfaces.base.Name;
@@ -27,8 +28,6 @@ import score.annotation.Optional;
 import score.annotation.Payable;
 
 import java.math.BigInteger;
-
-import foundation.icon.score.client.ScoreInterface;
 
 @ScoreClient
 @ScoreInterface

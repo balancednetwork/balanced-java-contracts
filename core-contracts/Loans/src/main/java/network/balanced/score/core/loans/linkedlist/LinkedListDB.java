@@ -16,10 +16,13 @@
 
 package network.balanced.score.core.loans.linkedlist;
 
+import network.balanced.score.core.loans.utils.PositionBatch;
 import score.Context;
 import score.VarDB;
+import scorex.util.HashMap;
 
 import java.math.BigInteger;
+import java.util.Map;
 
 public class LinkedListDB {
     private final static String _NAME = "_LINKED_LISTDB";
@@ -132,21 +135,44 @@ public class LinkedListDB {
         serialize();
     }
 
-    public void headToTail() {
+    public PositionBatch readDataBatch(int batchSize) {
         Context.require(size != 0, name + ": No data in the list");
 
-        if (size == 1) {
-            return;
-        }
+        PositionBatch batch = new PositionBatch();
+        batch.totalDebt = BigInteger.ZERO;
+        Map<Integer, BigInteger> positionsMap = new HashMap<>();
 
         Node head = getNode(headId);
         Node tail = getNode(tailId);
-        int nextId = head.getNext();
-        Node headNext = getNode(nextId);
+        Node currentNode = head;
+        int currentNodeId = headId;
+        BigInteger currentValue;
+
+        positionsMap.put(headId, head.getValue());
+        batch.totalDebt = batch.totalDebt.add(head.getValue());
+
+        int iterations = Math.min(batchSize, size());
+        for (int i = 1; i < iterations; i++) {
+            currentNodeId = currentNode.getNext();
+            currentNode = getNode(currentNodeId);
+            currentValue = currentNode.getValue();
+            batch.totalDebt = batch.totalDebt.add(currentValue);
+            positionsMap.put(currentNodeId, currentValue);
+        }
+
+        batch.positions = positionsMap;
+        batch.size = iterations;
+
+        int nextId = currentNode.getNext();
+        if (nextId == 0) {
+            return batch;
+        }
+
+        Node nextHead = getNode(nextId);
 
         // Update node next to head
-        headNext.setPrev(0);
-        headNext.repack();
+        nextHead.setPrev(0);
+        nextHead.repack();
 
         // Update tail node
         tail.setNext(headId);
@@ -154,12 +180,16 @@ public class LinkedListDB {
 
         // Update previous head as new tail
         head.setPrev(tailId);
-        head.setNext(0);
         head.repack();
 
-        tailId = headId;
+        currentNode.setNext(0);
+        currentNode.repack();
+
+        tailId = currentNodeId;
         headId = nextId;
         serialize();
+
+        return batch;
     }
 
     private void removeHead() {
