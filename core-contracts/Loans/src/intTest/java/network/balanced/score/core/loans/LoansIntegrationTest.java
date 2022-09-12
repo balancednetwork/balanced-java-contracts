@@ -230,18 +230,18 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         BalancedClient loanTakerETHFullSell = balanced.newClient();
         BalancedClient loanTakerETHPartialSell = balanced.newClient();
         BigInteger collateral = BigInteger.TEN.pow(21);
-        BigInteger collateralETH = BigInteger.TEN.pow(20);
-
+        BigInteger ethPrice = reader.balancedOracle.getLastPriceInLoop("iETH");
+        BigInteger collateralETH = ethPrice.multiply(BigInteger.valueOf(3));
         owner.irc2(ethAddress).mintTo(loanTakerETHFullSell.getAddress(), collateralETH, null);
         owner.irc2(ethAddress).mintTo(loanTakerETHPartialSell.getAddress(), collateralETH, null);
 
         BigInteger loanAmount = BigInteger.valueOf(17).multiply(EXA);
-        BigInteger ethLoanAmount = BigInteger.TEN.pow(23);;
+        BigInteger ethLoanAmount = ethPrice.multiply(BigInteger.ONE);
 
         BigInteger collateralToSellFullDebt = BigInteger.TEN.pow(19);
-        BigInteger ETHCollateralToSellFullDebt = BigInteger.valueOf(37).multiply(BigInteger.TEN.pow(16));
+        BigInteger ETHCollateralToSellFullDebt = ethLoanAmount.divide(ethPrice).multiply(EXA);
         BigInteger collateralToSellPartialDebt = BigInteger.valueOf(5).multiply(EXA);
-        BigInteger ETHCollateralToSellPartialDebt = BigInteger.valueOf(2).multiply(BigInteger.TEN.pow(17));
+        BigInteger ETHCollateralToSellPartialDebt = ETHCollateralToSellFullDebt.divide(BigInteger.TWO);
 
         BigInteger minimumReceiveToSellFullDebt = BigInteger.valueOf(16).multiply(EXA);
         BigInteger minimumReceiveToSellPartialDebt = BigInteger.valueOf(8).multiply(EXA);
@@ -260,9 +260,9 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
 
         //  minimum receive is more than users debt
         assertThrows(UserRevertedException.class, () ->
-                loanTakerFullDebtSell.loans.sellCollateral(collateral, "sICX", BigInteger.valueOf(50).multiply(EXA)));
+                loanTakerFullDebtSell.loans.sellCollateral(collateral, "sICX", loanAmount.add(BigInteger.TEN.pow(19))));
         assertThrows(UserRevertedException.class, () ->
-                loanTakerFullDebtSell.loans.sellCollateral(collateralETH, "iETH", BigInteger.TEN.pow(24)));
+                loanTakerFullDebtSell.loans.sellCollateral(collateralETH, "iETH", ethLoanAmount.add(BigInteger.TEN.pow(19))));
 
         BigInteger loanTakerFullDebtSellCollateralPre = loanTakerFullDebtSell.getLoansCollateralPosition("sICX");
         BigInteger loanTakerETHFullDebtSellCollateralPre = loanTakerETHFullSell.getLoansCollateralPosition("iETH");

@@ -1053,9 +1053,9 @@ class LoansTest extends LoansTestBase {
 
         takeLoanICX(account, "bnUSD", collateral, loan);
         // Assert & Act
-        Executable sellTooMuchDebt = () -> loans.invoke(account, "sellCollateral", collateralToSell
+        Executable sellTooMuchCollateral = () -> loans.invoke(account, "sellCollateral", collateralToSell
                 , "sICX", minimumReceiveAfterSell);
-        expectErrorMessage(sellTooMuchDebt, expectedErrorMessage);
+        expectErrorMessage(sellTooMuchCollateral, expectedErrorMessage);
     }
 
     @Test
