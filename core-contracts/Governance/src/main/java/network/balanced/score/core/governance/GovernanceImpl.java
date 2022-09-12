@@ -472,11 +472,13 @@ public class GovernanceImpl {
 
         launched.set(true);
 
-        BigInteger day = getDay();
+        BigInteger offset = DAY_ZERO.add(launchDay.getOrDefault(BigInteger.ZERO));
+        BigInteger day = (BigInteger.valueOf(Context.getBlockTimestamp()).subtract(DAY_START)).divide(MICRO_SECONDS_IN_A_DAY).subtract(offset);
         launchDay.set(day);
-        BigInteger timeDelta = BigInteger.valueOf(Context.getBlockTimestamp()).add(getTimeOffset());
+        launchTime.set(BigInteger.valueOf(Context.getBlockTimestamp()));
 
-        launchTime.set(timeDelta);
+        BigInteger timeDelta = DAY_START.add(MICRO_SECONDS_IN_A_DAY.multiply(DAY_ZERO.add(launchDay.get()).subtract(BigInteger.ONE)));
+
         setTimeOffset(timeDelta);
 
         for (Map<String, String> source : DATA_SOURCES) {
