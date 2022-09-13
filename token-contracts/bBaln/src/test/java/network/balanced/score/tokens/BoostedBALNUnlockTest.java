@@ -21,6 +21,7 @@ import com.iconloop.score.test.ServiceManager;
 import network.balanced.score.tokens.utils.DummyContract;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -34,8 +35,13 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.times;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_SECOND;
 
 
 public class BoostedBALNUnlockTest extends AbstractBoostedBalnTest {
@@ -130,6 +136,35 @@ public class BoostedBALNUnlockTest extends AbstractBoostedBalnTest {
         assertEquals(_balance, BigInteger.ZERO);
     }
 
+    @Test
+    public void testKick() {
+        long unlockTime = WEEK.longValue() * 2;
+        long timestamp = sm.getBlock().getTimestamp();
+        long expectedUnlock = unlockTime + timestamp;
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("method", "createLock");
+        map.put("params", Map.of("unlockTime", expectedUnlock));
+        JSONObject json = new JSONObject(map);
+        byte[] lockBytes = json.toString().getBytes();
+        doNothing().when(scoreSpy).onBalanceUpdate(any(), any());
+        doNothing().when(scoreSpy).onKick(any());
+        tokenScore.invoke(owner, "transfer", bBALNScore.getAddress(), ICX.multiply(BigInteger.ONE), lockBytes);
+
+        Map<String, BigInteger> balance = (Map<String, BigInteger>) bBALNScore.call("getLocked", owner.getAddress());
+
+        BigInteger halfTime = BigInteger.valueOf(unlockTime).divide(MICRO_SECONDS_IN_A_SECOND).divide(BigInteger.valueOf(4));
+
+        sm.getBlock().increase(halfTime.longValue());
+        bBALNScore.call("kick", owner.getAddress());
+
+        verify(scoreSpy, times(2)).onBalanceUpdate(eq(owner.getAddress()), any(BigInteger.class));
+
+        sm.getBlock().increase(halfTime.longValue());
+        bBALNScore.call("kick", owner.getAddress());
+
+        verify(scoreSpy).onKick(owner.getAddress());
+    }
 
     private static Stream<Arguments> weekListLock() {
 

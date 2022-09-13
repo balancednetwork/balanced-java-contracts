@@ -91,14 +91,6 @@ public class StateMachineTest extends AbstractBoostedBalnTest {
         setupAccounts();
     }
 
-    // public byte[] tokenData(String method, Map<String, Object> params) {
-    //     Map<String, Object> map = new HashMap<>();
-    //     map.put("method", method);
-    //     map.put("params", params);
-    //     JSONObject data = new JSONObject(map);
-    //     return data.toString().getBytes();
-    // }
-
     public long addWeeksToCurrentTimestamp(long numberOfWeeks) {
         return ((sm.getBlock().getTimestamp() + numberOfWeeks * WEEK) / WEEK) * WEEK;
     }
