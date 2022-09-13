@@ -81,8 +81,7 @@ public class StateMachineTest extends AbstractBoostedBalnTest {
 
     @BeforeEach
     public void setup() throws Exception {
-        Score rewardScore = sm.deploy(owner, DummyContract.class);
-        bBalnScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(), "Boosted Baln", "bBALN");
+        bBalnScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(), dividendsScore.getAddress(), "Boosted Baln", "bBALN");
 
         scoreSpy = (BoostedBalnImpl) spy(bBalnScore.getInstance());
         bBalnScore.setInstance(scoreSpy);
@@ -92,13 +91,13 @@ public class StateMachineTest extends AbstractBoostedBalnTest {
         setupAccounts();
     }
 
-    public byte[] tokenData(String method, Map<String, Object> params) {
-        Map<String, Object> map = new HashMap<>();
-        map.put("method", method);
-        map.put("params", params);
-        JSONObject data = new JSONObject(map);
-        return data.toString().getBytes();
-    }
+    // public byte[] tokenData(String method, Map<String, Object> params) {
+    //     Map<String, Object> map = new HashMap<>();
+    //     map.put("method", method);
+    //     map.put("params", params);
+    //     JSONObject data = new JSONObject(map);
+    //     return data.toString().getBytes();
+    // }
 
     public long addWeeksToCurrentTimestamp(long numberOfWeeks) {
         return ((sm.getBlock().getTimestamp() + numberOfWeeks * WEEK) / WEEK) * WEEK;

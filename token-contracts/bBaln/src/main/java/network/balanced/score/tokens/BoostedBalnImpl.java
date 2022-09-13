@@ -36,11 +36,12 @@ import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.Math.convertToNumber;
 import static network.balanced.score.lib.utils.Check.onlyOwner;
 import static network.balanced.score.tokens.Constants.WEEK_IN_MICRO_SECONDS;
+import static  network.balanced.score.lib.utils.NonReentrant.globalReentryLock;
 
 public class BoostedBalnImpl extends AbstractBoostedBaln {
 
-    public BoostedBalnImpl(Address balnAddress, Address rewardAddress, String name, String symbol) {
-        super(balnAddress, rewardAddress, name, symbol);
+    public BoostedBalnImpl(Address balnAddress, Address rewardAddress, Address dividendsAddress, String name, String symbol) {
+        super(balnAddress, rewardAddress, dividendsAddress, name, symbol);
     }
 
     @External
@@ -154,11 +155,10 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
 
     @External
     public void increaseUnlockTime(BigInteger unlockTime) {
-        this.nonReentrant.updateLock(true);
+        globalReentryLock();
         Address sender = Context.getCaller();
         BigInteger blockTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());
 
-        this.assertNotContract(sender);
         LockedBalance locked = getLockedBalance(sender);
         unlockTime = unlockTime.divide(WEEK_IN_MICRO_SECONDS).multiply(WEEK_IN_MICRO_SECONDS);
 
@@ -170,7 +170,6 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
                 "can be 4 years max");
 
         this.depositFor(sender, BigInteger.ZERO, unlockTime, locked, INCREASE_UNLOCK_TIME);
-        this.nonReentrant.updateLock(false);
     }
 
     @External
@@ -186,7 +185,7 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
     // TODO discuss instant unlock
     @External
     public void withdraw() {
-        this.nonReentrant.updateLock(true);
+        globalReentryLock();
         Address sender = Context.getCaller();
         BigInteger blockTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());
 
@@ -218,7 +217,6 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
         Supply(supplyBefore, supplyBefore.subtract(value));
 
         onBalanceUpdate(sender, balanceOf(sender, blockTimestamp));
-        this.nonReentrant.updateLock(false);
     }
 
     @External(readonly = true)

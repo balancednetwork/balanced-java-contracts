@@ -54,7 +54,7 @@ public class BoostedBALNUnlockTest extends AbstractBoostedBalnTest {
     @BeforeEach
     public void setup() throws Exception {
         Score rewardScore = sm.deploy(owner, DummyContract.class);
-        bBALNScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(),
+        bBALNScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(), dividendsScore.getAddress(),
                 BOOSTED_BALANCE, B_BALANCED_SYMBOL);
 
         scoreSpy = (BoostedBalnImpl) spy(bBALNScore.getInstance());
