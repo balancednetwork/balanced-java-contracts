@@ -68,12 +68,6 @@ public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress
 
     @External(readonly = true)
     BigInteger getDividendsOnlyToStakedBalnDay();
-
-    @External
-    void setContinuousDividendsDay(BigInteger day);
-       
-    @External(readonly = true)
-    BigInteger getContinuousDividendsDay();
     
     @External(readonly = true)
     Map<String, BigInteger> getBalances();

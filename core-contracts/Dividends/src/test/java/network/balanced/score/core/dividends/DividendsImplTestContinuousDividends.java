@@ -64,7 +64,7 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
 
         BigInteger day = getDay();
         dividendScore.invoke(admin, "setDividendsOnlyToStakedBalnDay", day.add(BigInteger.ONE));
-        dividendScore.invoke(owner, "setContinuousDividendsDay", day.add(BigInteger.ONE));
+//        dividendScore.invoke(owner, "setContinuousDividendsDay", day.add(BigInteger.ONE));
         sm.getBlock().increase(DAY);
         dividendScore.invoke(owner, "distribute");
     }

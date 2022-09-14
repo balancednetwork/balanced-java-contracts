@@ -169,17 +169,9 @@ class DividendsImplTestSetup extends DividendsImplTestBase {
     }
 
     @Test
-    void setGetContinuousDividendsDay() {
-        dividendScore.invoke(owner, "setContinuousDividendsDay", BigInteger.TWO);
-        assertEquals(BigInteger.TWO, dividendScore.call("getContinuousDividendsDay"));
-    }
-
-    @Test
     void getTimeOffset() {
-        setAndGetDex();
-        contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("getTimeOffset"))).thenReturn(BigInteger.valueOf(2 * DAY));
         dividendScore.invoke(owner, "distribute");
-        assertEquals(BigInteger.valueOf(2 * DAY), dividendScore.call("getTimeOffset"));
+        assertEquals(BigInteger.ZERO, dividendScore.call("getTimeOffset"));
     }
 
     @Test

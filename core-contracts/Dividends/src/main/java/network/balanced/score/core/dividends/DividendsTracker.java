@@ -16,7 +16,6 @@
 
 package network.balanced.score.core.dividends;
 
-import static network.balanced.score.core.dividends.Check.continuousDividendsActive;
 import static network.balanced.score.core.dividends.Constants.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 
@@ -82,9 +81,6 @@ public class DividendsTracker {
     }
 
     public static BigInteger updateUserData(Address token, Address user, BigInteger prevBalance, boolean readOnlyContext) {
-        if (!continuousDividendsActive()) {
-            return BigInteger.ZERO;
-        }
         BigInteger currentUserWeight = getUserWeight(user, token);
         BigInteger totalWeight = getTotalWeight(token);
         if (!readOnlyContext) {
@@ -94,9 +90,6 @@ public class DividendsTracker {
     }
 
     public static BigInteger updateBoostedUserData(Address token, Address user, BigInteger prevBalance, boolean readOnlyContext) {
-        if (!continuousDividendsActive()) {
-            return BigInteger.ZERO;
-        }
         BigInteger currentUserWeight = getUserBoostedWeight(user, token);
         BigInteger totalWeight = getBoostedTotalWeight(token);
         if (!readOnlyContext) {

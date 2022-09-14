@@ -23,14 +23,10 @@ import foundation.icon.score.client.DefaultScoreClient;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.chain;
 
-import foundation.icon.score.client.RevertedException;
 import network.balanced.score.lib.interfaces.*;
-import network.balanced.score.lib.interfaces.addresses.BalnAddress;
-import network.balanced.score.lib.interfaces.tokens.*;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
-import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
 import org.json.JSONObject;
 import org.junit.jupiter.api.*;
 import score.Address;
@@ -146,6 +142,8 @@ public class DividendsIntegrationTest {
         governance.setAdmin(balanced.dividends._address(), balanced.ownerClient.getAddress());
         dividends.setDistributionActivationStatus(true);
         governance.setAdmin(balanced.dividends._address(), balanced.governance._address());
+        dividends.setBBalnDay(governance.getDay().add(BigInteger.valueOf(100L)));
+
 
     }
 
@@ -156,28 +154,31 @@ public class DividendsIntegrationTest {
         assertEquals("Balanced Dividends", dividends.name());
     }
 
+
+
     public BigInteger calculateDividends(BigInteger currentDay, BigInteger fee){
         List<BigInteger> poolList = new ArrayList<>();
         poolList.add(BigInteger.valueOf(3));
         poolList.add(BigInteger.valueOf(4));
-
+        BigInteger dividendsSwitchingDay = dividends.getDividendsOnlyToStakedBalnDay();
 
         BigInteger myBalnFromPools = BigInteger.ZERO;
         BigInteger totalBalnFromPools = BigInteger.ZERO;
+        if (dividendsSwitchingDay.equals(BigInteger.ZERO) || (currentDay.compareTo(dividendsSwitchingDay) < 0)) {
+            for (BigInteger poolId : poolList) {
+                BigInteger myLp = dex.balanceOfAt(Address.fromString(balanced.owner.getAddress().toString()), poolId, currentDay, true);
+                BigInteger totalLp = dex.totalSupplyAt(poolId, currentDay, true);
+                BigInteger totalBaln = dex.totalBalnAt(poolId, currentDay, true);
+                BigInteger equivalentBaln = BigInteger.ZERO;
 
-        for (BigInteger poolId : poolList) {
-            BigInteger myLp = dex.balanceOfAt(Address.fromString(balanced.owner.getAddress().toString()), poolId, currentDay, true);
-            BigInteger totalLp = dex.totalSupplyAt(poolId, currentDay, true);
-            BigInteger totalBaln = dex.totalBalnAt(poolId, currentDay, true);
-            BigInteger equivalentBaln = BigInteger.ZERO;
+                if (myLp.compareTo(BigInteger.ZERO) > 0 && totalLp.compareTo(BigInteger.ZERO) > 0 && totalBaln.compareTo(BigInteger.ZERO) > 0) {
+                    equivalentBaln = (myLp.multiply(totalBaln)).divide(totalLp);
+                }
 
-            if (myLp.compareTo(BigInteger.ZERO) > 0 && totalLp.compareTo(BigInteger.ZERO) > 0 && totalBaln.compareTo(BigInteger.ZERO) > 0) {
-                equivalentBaln = (myLp.multiply(totalBaln)).divide(totalLp);
+                myBalnFromPools = myBalnFromPools.add(equivalentBaln);
+                totalBalnFromPools = totalBalnFromPools.add(totalBaln);
+
             }
-
-            myBalnFromPools = myBalnFromPools.add(equivalentBaln);
-            totalBalnFromPools = totalBalnFromPools.add(totalBaln);
-
         }
 
         BigInteger stakedBaln = baln.stakedBalanceOfAt(Address.fromString(balanced.owner.getAddress().toString()), currentDay);
@@ -199,232 +200,6 @@ public class DividendsIntegrationTest {
 
     @Test
     @Order(2)
-    void testUserDividends() {
-        balanced.increaseDay(1);
-
-        BigInteger oldDividendsBalance = dividends.getBalances().get("bnUSD");
-        BigInteger loanAmount = BigInteger.valueOf(50).multiply(BigInteger.TEN.pow(18));
-        BigInteger originationFees = BigInteger.valueOf(100);
-        // take loans
-        BigInteger collateral = BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18));
-        loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
-
-        BigInteger dividendsBalance = (loanAmount.multiply(originationFees)).divide(BigInteger.valueOf(10000));
-        Map<String, BigInteger> balances = Map.of("bnUSD", dividendsBalance.add(oldDividendsBalance), "ICX", BigInteger.ZERO);
-
-        // verify the getBalances of dividends contract
-        assertEquals(balances, dividends.getBalances());
-
-        balanced.increaseDay(1);
-
-        for (int i = 0; i < 5; i++) {
-            rewards.distribute(dummyConsumer());
-        }
-
-        // Claim rewards for that user
-        rewards.claimRewards();
-        BigInteger balance = baln.balanceOf(Address.fromString(balanced.owner.getAddress().toString()));
-        // stakes balance token
-        baln.stake(balance);
-
-        balanced.increaseDay(1);
-
-        // take loans to create a dividends
-        loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
-
-        BigInteger currentDay = dividends.getDay();
-
-        balanced.increaseDay(1);
-
-        for (int i = 0; i<3; i++) {
-            dividends.distribute(dummyConsumer());
-        }
-
-        // user dividends ready to  claim
-        Map<String, BigInteger> userOldDividends = dividends.getUserDividends(Address.fromString(balanced.owner.getAddress().toString()), currentDay.intValue(), currentDay.intValue() + 1);
-
-        // bnusd ready to claim
-        BigInteger bnusdToClaim = userOldDividends.get(balanced.bnusd._address().toString());
-
-        // previous bnusd balance of a user
-        BigInteger userOldBalance = bnusd.balanceOf(Address.fromString(balanced.owner.getAddress().toString()));
-
-        // dividends result should not be empty
-        assertFalse(userOldDividends.isEmpty());
-
-        assertEquals(userOldDividends.get(balanced.bnusd._address().toString()), calculateDividends(currentDay,
-                dividends.getDailyFees(currentDay).get(balanced.bnusd._address().toString())));
-
-        Map<String, BigInteger> oldBalance = dividends.getBalances();
-        BigInteger bnusdAtDividends = oldBalance.get("bnUSD");
-
-        // dividends claimed by user
-        dividends.claim(currentDay.intValue(), currentDay.intValue() + 1);
-
-        Map<String, BigInteger> userNewDividends =
-                dividends.getUserDividends(Address.fromString(balanced.owner.getAddress().toString()),
-                        currentDay.intValue(), currentDay.intValue() + 1);
-
-        // once claimed previous userDividends should be empty
-        assertTrue(userNewDividends.isEmpty());
-
-
-        BigInteger userNewBalance = bnusd.balanceOf(Address.fromString(balanced.owner.getAddress().toString()));
-
-        // verify new balance of user as dividends are added on the balance too
-        assertEquals(userNewBalance, userOldBalance.add(bnusdToClaim));
-
-        Map<String, BigInteger> newBalance = dividends.getBalances();
-        BigInteger newBnusdAtDividends = newBalance.get("bnUSD");
-
-        // contract balances should be decreased after claim
-        assertEquals(newBnusdAtDividends, bnusdAtDividends.subtract(bnusdToClaim));
-
-    }
-
-    @Test
-    @Order(3)
-    void testClaimDividends() {
-        balanced.increaseDay(1);
-
-        BigInteger loanAmount = BigInteger.valueOf(50).multiply(BigInteger.TEN.pow(18));
-        BigInteger originationFees = BigInteger.valueOf(100);
-//         take loans
-        BigInteger collateral = BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18));
-
-        BigInteger dividendsOldBalance = bnusd.balanceOf(balanced.dividends._address());
-        loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
-
-        BigInteger dividendsBalance = (loanAmount.multiply(originationFees)).divide(BigInteger.valueOf(10000));
-
-//         test if the dividends is arrived at dividends contract
-        assertEquals(dividendsBalance, bnusd.balanceOf(balanced.dividends._address()).subtract(dividendsOldBalance));
-
-        balanced.increaseDay(1);
-
-        balanced.syncDistributions();
-
-        rewards.claimRewards();
-        BigInteger balance = baln.balanceOf(Address.fromString(owner.getAddress().toString()));
-
-        loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
-
-        ScoreIntegrationTest.transfer(balanced.dex._address(), collateral);
-
-        staking.stakeICX(BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18)), null, null);
-
-        JSONObject data = new JSONObject();
-        data.put("method", "_swap_icx");
-        BigInteger swappedAmount = BigInteger.valueOf(10).multiply(BigInteger.TEN.pow(18));
-        sicx.transfer(balanced.dex._address(), swappedAmount, data.toString().getBytes());
-        Map<String, BigInteger> dexFees = dex.getFees();
-        BigInteger icxBalnFee = dexFees.get("icx_baln_fee");
-        BigInteger sicxBalance = icxBalnFee.multiply(swappedAmount).divide(BigInteger.valueOf(10000));
-        assertEquals(sicxBalance, sicx.balanceOf(balanced.dividends._address()));
-        baln.stake(balance);
-
-        balanced.increaseDay(1);
-
-        loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
-
-
-        BigInteger currentDay = dividends.getDay();
-
-        balanced.increaseDay(1);
-
-        for (int i = 0; i < 5; i++) {
-            dividends.distribute(dummyConsumer());
-        }
-
-        Map<String, BigInteger> firstDividendsInfo = dividends.getUserDividends(Address.fromString(owner.getAddress().toString()), currentDay.intValue() , currentDay.intValue() + 1);
-
-        assertFalse(firstDividendsInfo.isEmpty());
-        // calculate the amount to be received by the user
-        BigInteger dividendsBnusdFee = firstDividendsInfo.get(balanced.bnusd._address().toString());
-        BigInteger dividendsSicxFee = firstDividendsInfo.get(balanced.sicx._address().toString());
-
-        // take old balance of user
-        BigInteger oldBnusdBalance = bnusd.balanceOf(Address.fromString(owner.getAddress().toString()));
-        BigInteger oldSicxBalance = sicx.balanceOf(Address.fromString(owner.getAddress().toString()));
-
-        Map<String, BigInteger> oldBalance = dividends.getBalances();
-
-        // total balance of dividends
-        BigInteger sicxAtDividends = oldBalance.get("sICX");
-        BigInteger bnusdAtDividends = oldBalance.get("bnUSD");
-
-        dividends.claim(currentDay.intValue(), currentDay.intValue() + 1);
-
-        BigInteger newBnusdBalance = bnusd.balanceOf(Address.fromString(owner.getAddress().toString()));
-        BigInteger newSicxBalance = sicx.balanceOf(Address.fromString(owner.getAddress().toString()));
-
-        // test balance of user
-        assertEquals(newBnusdBalance, oldBnusdBalance.add(dividendsBnusdFee));
-        assertEquals(newSicxBalance, oldSicxBalance.add(dividendsSicxFee));
-
-        Map<String, BigInteger> newDividendsBalance = dividends.getBalances();
-
-        // total balance of dividends
-        BigInteger newSicxAtDividends = newDividendsBalance.get("sICX");
-        BigInteger newBnusdAtDividends = newDividendsBalance.get("bnUSD");
-
-        // test the balance of dividends
-        assertEquals(newSicxAtDividends, sicxAtDividends.subtract(dividendsSicxFee));
-        assertEquals(newBnusdAtDividends, bnusdAtDividends.subtract(dividendsBnusdFee));
-
-
-        // test user dividends at that day again
-        Map<String, BigInteger> dividendsAfterClaim =
-                dividends.getUserDividends(Address.fromString(owner.getAddress().toString()), currentDay.intValue(),
-                        currentDay.intValue() + 1);
-
-        assertTrue(dividendsAfterClaim.isEmpty());
-
-    }
-
-    @Test
-    @Order(4)
-    void testDaofundTransfer() {
-        // test the transfer of dividends to daofund
-        balanced.increaseDay(1);
-        BigInteger loanAmount = BigInteger.valueOf(50).multiply(BigInteger.TEN.pow(18));
-        // take loans
-        loans.depositAndBorrow(BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18)), "bnUSD", loanAmount, null,
-                null);
-        BigInteger currentDay = dividends.getDay();
-        balanced.increaseDay(1);
-
-        for (int i = 0; i < 5; i++) {
-            dividends.distribute(dummyConsumer());
-        }
-
-        // get dividends for daofund
-        BigInteger daofundDividends =
-                dividends.getDaoFundDividends(currentDay.intValue(), currentDay.intValue() + 1).get(balanced.bnusd._address().toString());
-
-        assertEquals(daofundDividends,
-                dividends.getDailyFees(currentDay).get(balanced.bnusd._address().toString()).multiply(dividends.dividendsAt(currentDay).get("daofund")).divide(EXA));
-
-        Map<String, BigInteger> dividendsBalances;
-
-        dividendsBalances = dividends.getBalances();
-        BigInteger bnusdBalance = dividendsBalances.get("bnUSD");
-
-        dividends.transferDaofundDividends(currentDay.intValue(), currentDay.intValue() + 1);
-
-        // assert daofund balance after transfer
-        assertEquals(daofundDividends, bnusd.balanceOf(balanced.daofund._address()));
-
-        dividendsBalances = dividends.getBalances();
-        BigInteger newBnusdBalance = dividendsBalances.get("bnUSD");
-
-        // verify new balance of dividends contract
-        assertEquals(newBnusdBalance, bnusdBalance.subtract(daofundDividends));
-
-    }
-
-    @Test
-    @Order(9)
     void testChangeInPercentage() {
 
         balanced.increaseDay(1);
@@ -447,209 +222,94 @@ public class DividendsIntegrationTest {
         dividends.setDividendsCategoryPercentage(percentMap);
         governance.setAdmin(balanced.dividends._address(), balanced.governance._address());
 
+        BigInteger daoBalanceBefore = bnusd.balanceOf(balanced.daofund._address());
+
         BigInteger loanAmount = BigInteger.valueOf(50).multiply(BigInteger.TEN.pow(18));
         // take loans
         loans.depositAndBorrow(BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18)), "bnUSD", loanAmount, null,
                 null);
 
-        BigInteger currentDay = dividends.getDay();
+        BigInteger originationFees = BigInteger.valueOf(100);
+        BigInteger dividendsBalance = (loanAmount.multiply(originationFees)).divide(BigInteger.valueOf(10000));
+        Map<String, BigInteger> daoFundDividendsPercent = dividends.getDividendsPercentage();
+        BigInteger dividendsToDao = daoFundDividendsPercent.get("daofund").multiply(dividendsBalance).divide(EXA);
 
-        balanced.increaseDay(2);
-        for (int i = 0; i < 5; i++) {
-            dividends.distribute(dummyConsumer());
-        }
-        BigInteger bnusdFee = dividends.getDailyFees(currentDay).get(balanced.bnusd._address().toString());
-
-        BigInteger bnusdAtDividends = dividends.getDaoFundDividends(currentDay.intValue(), currentDay.intValue() + 1).get(balanced.bnusd._address().toString());
-        BigInteger oldDaofundBalance = bnusd.balanceOf(balanced.daofund._address());
-        dividends.transferDaofundDividends(currentDay.intValue(), currentDay.intValue() + 1);
-
-        // verify if the daofund contract receives the dividends or not
-        assertEquals(bnusdAtDividends, bnusd.balanceOf(balanced.daofund._address()).subtract(oldDaofundBalance));
-
-        // verify the total bnUSD transferred as per the new percentage or not
-        assertEquals(bnusdAtDividends, bnusdFee.divide(BigInteger.TEN));
+        BigInteger daoBalanceAfter = bnusd.balanceOf(balanced.daofund._address());
+        System.out.println(daoBalanceBefore);
+        System.out.println(dividendsToDao);
+        assertEquals(daoBalanceAfter, daoBalanceBefore.add(dividendsToDao));
     }
 
 
-
     @Test
-    @Order(5)
-    void testBnusdBalnDividends() {
-        // verify the user of a baln/bnUSD LP dividends
-
-        BigInteger loanAmount = BigInteger.valueOf(50).multiply(BigInteger.TEN.pow(18));
-        // take loans
-        BigInteger collateral = BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18));
-        loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
-
+    @Order(3)
+    void testContinuousRewards() {
+        // test continuous rewards for dividends i.e. once continuous rewards is activated only staked baln will get
+        // the dividends
+        balanced.increaseDay(1);
         balanced.syncDistributions();
+
+        BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
+        // take loans
+        loans.depositAndBorrow(BigInteger.valueOf(1000).multiply(BigInteger.TEN.pow(18)), "bnUSD", loanAmount, null,
+                null);
+
+        BigInteger amount = new BigInteger("500").multiply(BigInteger.TEN.pow(18));
+        // create bnusd market
+
+        staking.stakeICX(amount, Address.fromString(tester.getAddress().toString()), null);
+        staking.stakeICX(new BigInteger("50").multiply(BigInteger.TEN.pow(18)),
+                Address.fromString(owner.getAddress().toString()), null);
 
         JSONObject data = new JSONObject();
         data.put("method", "_deposit");
 
         BigInteger lpAmount = BigInteger.valueOf(30).multiply(BigInteger.TEN.pow(18));
-
-        balanced.increaseDay(1);
-
-        balanced.syncDistributions();
-
-        // claim rewards of loans
-        rewards.claimRewards();
-
-        // provides LP to baln/bnUSD market
-        baln.transfer(balanced.dex._address(), lpAmount, data.toString().getBytes());
-        bnusd.transfer(balanced.dex._address(), lpAmount, data.toString().getBytes());
-
-        dex.add(balanced.baln._address(), balanced.bnusd._address(), lpAmount, lpAmount, true);
-
-        balanced.increaseDay(1);
-
-        // take loans to provide the dividends
-        loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
-
-        BigInteger currentDay = dividends.getDay();
-
-        balanced.increaseDay(1);
-
-        for (int i = 0; i < 10; i++) {
-            dividends.distribute(dummyConsumer());
-        }
-
-
-        BigInteger userPreviousBalance = bnusd.balanceOf(Address.fromString(owner.getAddress().toString()));
-        Map<String, BigInteger> userDividends = dividends.getUserDividends(Address.fromString(owner.getAddress().toString()), currentDay.intValue(), currentDay.intValue() + 1);
-
-        // user Dividends should not be empty
-        assertFalse(userDividends.isEmpty());
-
-        assertEquals(userDividends.get(balanced.bnusd._address().toString()), calculateDividends(currentDay, dividends.getDailyFees(currentDay).get(balanced.bnusd._address().toString())));
-
-        dividends.claim(currentDay.intValue(), currentDay.intValue() + 1);
-
-        // after claim dividends should be empty
-        Map<String, BigInteger> newUserDividends = dividends.getUserDividends(Address.fromString(owner.getAddress().toString()), currentDay.intValue(), currentDay.intValue() + 1);
-
-        assertTrue(newUserDividends.isEmpty());
-
-        // verify if the dividends is claimed or not
-        assertEquals(userDividends.get(balanced.bnusd._address().toString()), bnusd.balanceOf(Address.fromString(owner.getAddress().toString())).subtract(userPreviousBalance));
-
-    }
-
-    @Test
-    @Order(6)
-    void testSicxBalnDividends() {
-        balanced.increaseDay(1);
-        BigInteger loanAmount = BigInteger.valueOf(50).multiply(BigInteger.TEN.pow(18));
-
-        // take loans
-        loans.depositAndBorrow(BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18)), "bnUSD"
-                , loanAmount, null, null);
-
-        for (int i = 0; i < 10; i++) {
-            rewards.distribute(dummyConsumer());
-        }
-
-        // take sicx from staking contract
-        staking.stakeICX(new BigInteger("500").multiply(BigInteger.TEN.pow(18)), null, null);
-
-        JSONObject data = new JSONObject();
-        data.put("method", "_deposit");
-
-        BigInteger lpAmount = BigInteger.valueOf(30).multiply(BigInteger.TEN.pow(18));
-
         balanced.increaseDay(1);
         balanced.syncDistributions();
-
-        // claim baln rewards
+        // claim rewards for the user
         rewards.claimRewards();
 
-        // provides lp to the baln and sicx
+        // provides liquidity to baln/Sicx pool
         baln.transfer(balanced.dex._address(), lpAmount, data.toString().getBytes());
         sicx.transfer(balanced.dex._address(), lpAmount, data.toString().getBytes());
         dex.add(balanced.baln._address(), balanced.sicx._address(), lpAmount, lpAmount, true);
+        baln.transfer(Address.fromString(tester.getAddress().toString()),
+                BigInteger.valueOf(50).multiply(BigInteger.TEN.pow(18)), null);
 
-        balanced.increaseDay(1);
-        BigInteger currentDay = dividends.getDay();
+        // stake balance by tester wallet
+        testerScore.stake(BigInteger.valueOf(30).multiply(BigInteger.TEN.pow(18)));
 
-        // take loans for dividends
-        loans.depositAndBorrow(BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18)), "bnUSD", loanAmount, null,
-                null);
+        String name = "BALN/sICX";
+        BigInteger pid = dex.getPoolId(balanced.baln._address(), balanced.sicx._address());
+        governance.setMarketName(pid, name);
 
-        balanced.increaseDay(1);
+        loans.depositAndBorrow(BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18)), "bnUSD"
+                , loanAmount, null, null);
 
-        for (int i = 0; i < 10; i++) {
-            dividends.distribute(dummyConsumer());
-        }
+        BigInteger originationFees = BigInteger.valueOf(100);
+        BigInteger dividendsBalance = (loanAmount.multiply(originationFees)).divide(BigInteger.valueOf(10000));
+        Map<String, BigInteger> daoFundDividendsPercent = dividends.getDividendsPercentage();
+        BigInteger daoDividends = daoFundDividendsPercent.get("daofund").multiply(dividendsBalance).divide(EXA);
+        dividendsBalance = dividendsBalance.subtract(daoDividends);
 
-        BigInteger previousBalances = bnusd.balanceOf(Address.fromString(owner.getAddress().toString()));
         Map<String, BigInteger> userDividends =
-                dividends.getUserDividends(Address.fromString(owner.getAddress().toString()), currentDay.intValue(),
-                        currentDay.intValue() + 1);
+                dividends.getUnclaimedDividends(Address.fromString(owner.getAddress().toString()));
 
-        // verify the user Dividends is not empty
-        assertFalse(userDividends.isEmpty());
+        Map<String, BigInteger> userDividendsTester =
+                dividends.getUnclaimedDividends(Address.fromString(tester.getAddress().toString()));
 
-        // claim dividends
-        dividends.claim(currentDay.intValue(), currentDay.intValue() + 1);
-
-
-        // verify if the dividends is claimed or not.
-        assertEquals(userDividends.get(balanced.bnusd._address().toString()),
-                bnusd.balanceOf(Address.fromString(owner.getAddress().toString())).subtract(previousBalances));
-
-        // After claiming userDividends should be empty
-        Map<String, BigInteger> newUserDividends = dividends.getUserDividends(Address.fromString(owner.getAddress().toString()), currentDay.intValue(), currentDay.intValue() + 1);
-
-        assertTrue(newUserDividends.isEmpty());
+        BigInteger userDividendsBnusd = userDividends.getOrDefault(balanced.bnusd._address().toString(),
+                BigInteger.ZERO);
+        BigInteger userDividendsTesterBnusd = userDividendsTester.getOrDefault(balanced.bnusd._address().toString(),
+                BigInteger.ZERO);
+        // LP provider should have zero dividends to claim after continuous rewards is activated
+        assertEquals(userDividendsBnusd, BigInteger.ZERO);
+        // only baln staker should receive dividends
+        assertEquals(userDividendsBnusd.add(userDividendsTesterBnusd), dividendsBalance);
     }
 
-    @Test
-    @Order(7)
-    void testBalnStakeAndLpUsers() {
-        // test the dividends received by two user i.e. baln stake and lp provider on baln/sicx pool
-        balanced.increaseDay(1);
-        BigInteger currentDay = stakeAndLp();
-        BigInteger dailyFees;
-        dailyFees = dividends.getDailyFees(currentDay).get(balanced.bnusd._address().toString());
-
-        // getUserDividends for both of user
-        Map<String, BigInteger> userDividends = dividends.getUserDividends(Address.fromString(tester2.getAddress().toString()), currentDay.intValue() , currentDay.intValue() + 1);
-        Map<String, BigInteger> userDividendsTester = dividends.getUserDividends(Address.fromString(tester.getAddress().toString()), currentDay.intValue() , currentDay.intValue() + 1);
-        Map<String, BigInteger> userDividendsGovernance = dividends.getUserDividends(Address.fromString(balanced.governance._address().toString()), currentDay.intValue() , currentDay.intValue() + 1);
-
-
-        // bnusd to be received by each user
-        BigInteger userDividendsBnusd = userDividends.get(balanced.bnusd._address().toString());
-        BigInteger userDividendsTesterBnusd = userDividendsTester.get(balanced.bnusd._address().toString());
-        BigInteger userDividendsGovernanceBnusd = userDividendsGovernance.get(balanced.bnusd._address().toString());
-
-        balanced.syncDistributions();
-
-        // Dividends of owner should not be empty
-        assertFalse(userDividends.isEmpty());
-        // Dividends of another account also should not be empty
-        assertFalse(userDividendsTester.isEmpty());
-        BigInteger actual =userDividendsBnusd.add(userDividendsTesterBnusd).add(userDividendsGovernanceBnusd);
-        BigInteger expected = dailyFees.multiply(BigInteger.valueOf(60)).divide(BigInteger.valueOf(100));
-        // sum of both dividends add up to 60 percent of the daily fees of that day
-        assertTrue(expected.subtract(actual).compareTo(BigInteger.ZERO)  > 0);
-
-    }
-
-    @Test
-    @Order(8)
-    void testContinuousRewards() {
-
-        baln.stake(BigInteger.ZERO);
-
-        // test continuous rewards for dividends i.e. once continuous rewards is activated only staked baln will get
-        // the dividends
-
-        balanced.increaseDay(1);
-        // set continuous rewards day
-        governance.setDividendsOnlyToStakedBalnDay(dividends.getDay().add(BigInteger.ONE));
+    void stakeAndProvideLiquidity() {
 
         BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
         // take loans
@@ -690,43 +350,17 @@ public class DividendsIntegrationTest {
         governance.setMarketName(pid, name);
 
         balanced.increaseDay(1);
-
-        BigInteger currentDay = dividends.getDay();
-        loans.depositAndBorrow(BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18)), "bnUSD"
-                , loanAmount, null, null);
-
-        balanced.increaseDay(1);
-        for (int i = 0; i < 10; i++) {
-            dividends.distribute(dummyConsumer());
-        }
-        BigInteger dailyFees = dividends.getDailyFees(currentDay).get(balanced.bnusd._address().toString());
-
-
-        Map<String, BigInteger> userDividends =
-                dividends.getUserDividends(Address.fromString(owner.getAddress().toString()), currentDay.intValue(),
-                        currentDay.intValue() + 1);
-
-        Map<String, BigInteger> userDividendsTester =
-                dividends.getUserDividends(Address.fromString(tester.getAddress().toString()), currentDay.intValue(),
-                        currentDay.intValue() + 1);
-
-        BigInteger userDividendsBnusd = userDividends.getOrDefault(balanced.bnusd._address().toString(),
-                BigInteger.ZERO);
-        BigInteger userDividendsTesterBnusd = userDividendsTester.getOrDefault(balanced.bnusd._address().toString(),
-                BigInteger.ZERO);
-        // LP provider should have zero dividends to claim after continuous rewards is activated
-        assertEquals(userDividendsBnusd, BigInteger.ZERO);
-        // only baln staker should receive dividends
-        assertEquals(userDividendsBnusd.add(userDividendsTesterBnusd),
-                dailyFees.multiply(BigInteger.valueOf(60)).divide(BigInteger.valueOf(100)));
     }
 
     @Test
-    @Order(20)
+    @Order(4)
     void testContinuousDividends_daofund() {
+        stakeAndProvideLiquidity();
         // Arrange
-        dividends.setContinuousDividendsDay(governance.getDay().add(BigInteger.ONE));
+        BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
         dividends.setBBalnDay(governance.getDay().add(BigInteger.valueOf(100L)));
+        loans.depositAndBorrow(BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18)), "bnUSD"
+                , loanAmount, null, null);
         balanced.increaseDay(1);
         dividends.distribute((txr) -> {});
 
@@ -734,7 +368,7 @@ public class DividendsIntegrationTest {
 
         // Act
         BigInteger daoFundBalancePre = bnusd.balanceOf(balanced.daofund._address());
-        BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
+         loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
         BigInteger fee = loanAmount.multiply(feePercent).divide(POINTS);
 
         loans.depositAndBorrow(BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18)), "bnUSD"
@@ -748,7 +382,7 @@ public class DividendsIntegrationTest {
     }
 
     @Test
-    @Order(21)
+    @Order(5)
     void testContinuousDividends_staker() throws Exception {
         // Arrange
         BalancedClient staker = balanced.newClient();
@@ -782,7 +416,7 @@ public class DividendsIntegrationTest {
     }
 
     @Test
-    @Order(21)
+    @Order(6)
     void testCreateNewUserForBBaln() throws Exception{
         Address bbalnTesterAddress =  Address.fromString(tester_bbaln.getAddress().toString());
         Address bbalnTesterAddress2 =  Address.fromString(tester_bbaln2.getAddress().toString());
@@ -809,7 +443,7 @@ public class DividendsIntegrationTest {
     }
 
     @Test
-    @Order(22)
+    @Order(7)
     void testBBaln_daofund() throws Exception {
         /*
         If there are no supply of boosted baln even after bbaln day is started
@@ -849,7 +483,7 @@ public class DividendsIntegrationTest {
     }
 
     @Test
-    @Order(23)
+    @Order(8)
     void testBBaln_lock() throws Exception {
         /*
         1. Daofund doesn't get all the dividends once user starts locking baln token.
@@ -931,7 +565,7 @@ public class DividendsIntegrationTest {
     }
 
     @Test
-    @Order(24)
+    @Order(9)
     void testBBaln_claim() throws Exception {
         /*
         1. User1 claims the dividends and the expected dividends is sent to user wallet.
@@ -974,7 +608,7 @@ public class DividendsIntegrationTest {
     }
 
     @Test
-    @Order(25)
+    @Order(10)
     void testBBaln_newUser() throws Exception {
         /*
         A new user comes and locks the baln and that user will be eligible to earn dividends
@@ -1016,7 +650,7 @@ public class DividendsIntegrationTest {
     }
 
     @Test
-    @Order(25)
+    @Order(11)
     void testBBaln_newUser_kicked() throws Exception {
         /*
         A user starts getting less dividends once kicked.
@@ -1046,7 +680,7 @@ public class DividendsIntegrationTest {
     }
 
     @Test
-    @Order(30)
+    @Order(12)
     void testRemoveCategories() {
         // test the removal of categories from dividends
         governance.setAdmin(balanced.dividends._address(), balanced.ownerClient.getAddress());
@@ -1079,7 +713,7 @@ public class DividendsIntegrationTest {
     }
 
     @Test
-    @Order(31)
+    @Order(13)
     void testAddCategories() {
         // add new categories in dividends
 
@@ -1091,54 +725,4 @@ public class DividendsIntegrationTest {
         categories = dividends.getDividendsCategories();
         assertEquals("test", categories.get(categories.size() - 1));
     }
-
-    BigInteger stakeAndLp(){
-
-        BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
-
-//        // take loans
-        loans.depositAndBorrow(BigInteger.valueOf(1000).multiply(BigInteger.TEN.pow(18)), "bnUSD", loanAmount, null, null);
-
-        // takes sICX from staking contract
-        staking.stakeICX(new BigInteger("500").multiply(BigInteger.TEN.pow(18)),
-                Address.fromString(tester2.getAddress().toString()), null);
-
-        JSONObject data = new JSONObject();
-        data.put("method", "_deposit");
-
-        BigInteger lpAmount = BigInteger.valueOf(30).multiply(BigInteger.TEN.pow(18));
-        balanced.increaseDay(2);
-
-        balanced.syncDistributions();
-
-        // Claim rewards
-        rewards.claimRewards();
-
-        baln.transfer(Address.fromString(tester2.getAddress().toString()),
-                BigInteger.valueOf(50).multiply(BigInteger.TEN.pow(18)), null);
-
-        // add liquidity to baln/sICX pool
-        testerScoreBaln.transfer(balanced.dex._address(), lpAmount, data.toString().getBytes());
-        testerScoreSicx.transfer(balanced.dex._address(), lpAmount, data.toString().getBytes());
-        testerScoreDex.add(balanced.baln._address(), balanced.sicx._address(), lpAmount, lpAmount, true);
-        baln.transfer(Address.fromString(tester.getAddress().toString()),
-                BigInteger.valueOf(50).multiply(BigInteger.TEN.pow(18)), null);
-
-        // stake balance through another user
-        testerScore.stake(BigInteger.valueOf(50).multiply(BigInteger.TEN.pow(18)));
-
-        balanced.increaseDay(1);
-
-        BigInteger currentDay = dividends.getDay();
-        // take loans to create dividends
-        loans.depositAndBorrow(BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18)), "bnUSD"
-                , loanAmount, null, null);
-        balanced.increaseDay(1);
-        for (int i = 0; i < 10; i++) {
-            dividends.distribute(dummyConsumer());
-        }
-
-        return currentDay;
-    }
-
 }

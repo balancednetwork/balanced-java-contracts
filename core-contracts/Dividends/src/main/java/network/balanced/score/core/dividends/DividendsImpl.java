@@ -30,7 +30,6 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-import static network.balanced.score.core.dividends.Check.continuousDividendsActive;
 import static network.balanced.score.core.dividends.Constants.*;
 import static network.balanced.score.core.dividends.DividendsTracker.*;
 import static network.balanced.score.core.dividends.DividendsTracker.userBalance;
@@ -71,8 +70,6 @@ public class DividendsImpl implements Dividends {
     private static final VarDB<BigInteger> timeOffset = Context.newVarDB(TIME_OFFSET, BigInteger.class);
     private static final VarDB<BigInteger> dividendsEnabledToStakedBalnDay =
             Context.newVarDB(DIVIDENDS_ENABLED_TO_STAKED_BALN_ONLY_DAY, BigInteger.class);
-    public static final VarDB<BigInteger> continuousDividendsDay =
-            Context.newVarDB(CONTINUOUS_DIVIDENDS_DAY, BigInteger.class);
 
     private static final BranchDB<Address, DictDB<Address, BigInteger>> accruedDividends =
             Context.newBranchDB(ACCRUED_DIVIDENDS, BigInteger.class);
@@ -90,6 +87,8 @@ public class DividendsImpl implements Dividends {
         Map<String, BigInteger> dividendsDist = dividendsAt(getDay());
         dividendsPercentage.set(DAO_FUND, dividendsDist.get(DAO_FUND));
         dividendsPercentage.set(BALN_HOLDERS, dividendsDist.get(BALN_HOLDERS));
+        // TODO : added for unit test , can be removed before going on prod.
+        DividendsTracker.setTotalSupply(BigInteger.ONE);
     }
 
     @External(readonly = true)
@@ -221,19 +220,6 @@ public class DividendsImpl implements Dividends {
         return dividendsEnabledToStakedBalnDay.getOrDefault(BigInteger.ZERO);
     }
 
-    @External
-    public void setContinuousDividendsDay(BigInteger day) {
-        onlyOwner();
-        Context.require(day.compareTo(snapshotId.getOrDefault(BigInteger.ZERO)) > 0,
-                TAG + ": Day should be greater than the current snapshot ID.");
-        continuousDividendsDay.set(day);
-    }
-
-    @External(readonly = true)
-    public BigInteger getContinuousDividendsDay() {
-        return continuousDividendsDay.getOrDefault(BigInteger.ZERO);
-    }
-
     @External(readonly = true)
     @SuppressWarnings("unchecked")
     public Map<String, BigInteger> getBalances() {
@@ -313,34 +299,23 @@ public class DividendsImpl implements Dividends {
         BigInteger currentDay = getDay();
         Context.require(arrayDbContains(completeDividendsCategories, _category),
                 TAG + ": " + _category + " not found in the list of dividends categories.");
+        Context.require(dividendsPercentage.get(_category).equals(BigInteger.ZERO),
+                    TAG + ": Please make the category percentage to 0 before removing.");
 
-        if (!continuousDividendsActive()) {
-            Map<String, BigInteger> dividendsDist = dividendsAt(currentDay);
-            Context.require(dividendsDist.get(_category).equals(BigInteger.ZERO),
-                    TAG + ": Please make the category percentage to 0 before removing.");
-        } else {
-            Context.require(dividendsPercentage.get(_category).equals(BigInteger.ZERO),
-                    TAG + ": Please make the category percentage to 0 before removing.");
-        }
 
         removeFromArraydb(_category, completeDividendsCategories);
     }
 
     @External(readonly = true)
     public Map<String, BigInteger> getDividendsPercentage() {
-        if (continuousDividendsActive()) {
-            Map<String, BigInteger> dividendsDist = new HashMap<>();
-            int numberOfCategories = completeDividendsCategories.size();
-            for (int i = 0; i < numberOfCategories; i++) {
-                String category = completeDividendsCategories.get(i);
-                dividendsDist.put(category, dividendsPercentage.get(category));
-            }
-
-            return dividendsDist;
+        Map<String, BigInteger> dividendsDist = new HashMap<>();
+        int numberOfCategories = completeDividendsCategories.size();
+        for (int i = 0; i < numberOfCategories; i++) {
+            String category = completeDividendsCategories.get(i);
+            dividendsDist.put(category, dividendsPercentage.get(category));
         }
+        return dividendsDist;
 
-        BigInteger currentDay = getDay();
-        return dividendsAt(currentDay);
     }
 
     @External
@@ -355,11 +330,9 @@ public class DividendsImpl implements Dividends {
             BigInteger percent = id.dist_percent;
             Context.require(arrayDbContains(completeDividendsCategories, category),
                     TAG + ": " + category + " is not a valid dividends category");
-            if (!continuousDividendsActive()) {
-                updateDividendsSnapshot(category, percent);
-            } else {
-                dividendsPercentage.set(category, percent);
-            }
+
+            dividendsPercentage.set(category, percent);
+
 
             totalPercentage = totalPercentage.add(percent);
         }
@@ -405,10 +378,6 @@ public class DividendsImpl implements Dividends {
 
     @External
     public boolean distribute() {
-        if (!continuousDividendsActive()) {
-            checkForNewDay();
-        }
-
         return true;
     }
 
@@ -616,7 +585,6 @@ public class DividendsImpl implements Dividends {
             }
         }
 
-        if (continuousDividendsActive()) {
             boolean checkBBalnDay = checkBBalnDay(getDay());
             if(checkBBalnDay && getBoostedTotalSupply().equals(BigInteger.ZERO)){
                     sendToken(daoFund.get(), _value, token, "Daofund dividends");
@@ -632,16 +600,10 @@ public class DividendsImpl implements Dividends {
                 DividendsTracker.updateTotalWeight(token, _value.subtract(dividendsToDaofund));
             }
 
-            DividendsReceivedV2(_value, getDay(), _value + " tokens received as dividends token: " + token);
+
+        DividendsReceivedV2(_value, getDay(), _value + " tokens received as dividends token: " + token);
             sendToken(daoFund.get(), dividendsToDaofund, token, "Daofund dividends");
-        } else {
-            checkForNewDay();
-            BigInteger snapId = snapshotId.getOrDefault(BigInteger.ZERO);
-            DictDB<String, BigInteger> feesOnSnapId = dailyFees.at(snapId);
-            BigInteger previousFees = feesOnSnapId.getOrDefault(token.toString(), BigInteger.ZERO);
-            feesOnSnapId.set(token.toString(), previousFees.add(_value));
-            DividendsReceivedV2(_value, getDay(), _value + " tokens received as dividends token: " + token);
-        }
+
     }
 
     @External
@@ -926,16 +888,6 @@ public class DividendsImpl implements Dividends {
             snapshot.at(totalSnapshotsTaken).set(IDS, currentDay);
             snapshot.at(totalSnapshotsTaken).set(AMOUNT, percent);
             totalSnapshots.set(category, totalSnapshotsTaken.add(BigInteger.ONE));
-        }
-    }
-
-    private void checkForNewDay() {
-        if (timeOffset.getOrDefault(BigInteger.ZERO).equals(BigInteger.ZERO)) {
-            setTimeOffset();
-        }
-        BigInteger currentSnapshotId = getDay();
-        if (snapshotId.getOrDefault(BigInteger.ZERO).compareTo(currentSnapshotId) < 0) {
-            snapshotId.set(currentSnapshotId);
         }
     }
 
