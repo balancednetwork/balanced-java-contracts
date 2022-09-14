@@ -366,17 +366,6 @@ public class StateMachineTest extends AbstractBoostedBalnTest {
         expectErrorMessage(increaseUnlockTime, expectedErrorMessage);
     }
 
-    @DisplayName("from contract")
-    @Test
-    void increaseUnlockFromContract() {
-        Account account = Account.getAccount(Account.newScoreAccount(500).getAddress());
-        Executable increaseUnlockTime = () -> increaseUnlockTime(account, BigInteger.valueOf(unlockTime));
-
-        String expectedErrorMessage = "Assert Not contract: Smart contract depositors not allowed";
-        expectErrorMessage(increaseUnlockTime, expectedErrorMessage);
-
-    }
-
     @DisplayName("with valid data")
     @Test
     void increaseUnlockWithValidData() {

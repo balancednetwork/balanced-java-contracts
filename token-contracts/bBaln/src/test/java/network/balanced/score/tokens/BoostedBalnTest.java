@@ -77,4 +77,19 @@ class BoostedBalnTest extends AbstractBoostedBalnTest {
         assertEquals(BigInteger.ZERO, bBalnScore.call("totalSupply", BigInteger.ZERO));
     }
 
+    @Test
+    void setGetBaln() {
+        testOwnerControlMethods(bBalnScore, "setBaln", "getBaln", Account.newScoreAccount(scoreCount++).getAddress());
+    }
+
+    @Test
+    void setGetRewards() {
+        testOwnerControlMethods(bBalnScore, "setRewards", "getRewards", Account.newScoreAccount(scoreCount++).getAddress());
+    }
+
+    @Test
+    void setGetDividends() {
+        testOwnerControlMethods(bBalnScore, "setDividends", "getDividends", Account.newScoreAccount(scoreCount++).getAddress());
+    }
+
 }

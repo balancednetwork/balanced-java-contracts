@@ -72,15 +72,11 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
     protected final VarDB<BigInteger> minimumLockingAmount = Context.newVarDB("Boosted_baln_minimum_locking_amount",
             BigInteger.class);
 
-
     public AbstractBoostedBaln(Address balnAddress, Address rewardAddress, Address dividendsAddress, String name, String symbol) {
         onInstall(balnAddress, rewardAddress, dividendsAddress, name, symbol);
     }
 
     private void onInstall(Address balnAddress, Address rewardAddress, Address dividendsAddress, String name, String symbol) {
-        if (this.balnAddress.get() != null) {
-            return;
-        }
         this.balnAddress.set(balnAddress);
         this.rewardAddress.set(rewardAddress);
         this.dividendsAddress.set(dividendsAddress);

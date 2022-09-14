@@ -209,14 +209,13 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
                 value = value.divide(BigInteger.TWO).add(BigInteger.ONE);
             }
             Context.call(this.balnAddress.get(), "transfer", this.penaltyAddress.get(), value, "withdraw".getBytes());
+            onKick(sender);
         }
 
         Context.call(this.balnAddress.get(), "transfer", sender, value, "withdraw".getBytes());
         users.remove(sender);
         Withdraw(sender, value, blockTimestamp);
         Supply(supplyBefore, supplyBefore.subtract(value));
-
-        onBalanceUpdate(sender, balanceOf(sender, blockTimestamp));
     }
 
     @External(readonly = true)
@@ -319,5 +318,38 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
     @External(readonly = true)
     public BigInteger userPointEpoch(Address address) {
         return this.userPointEpoch.getOrDefault(address, BigInteger.ZERO);
+    }
+
+    @External
+    public void setBaln(Address _address) {
+        onlyOwner();
+        balnAddress.set(_address);
+    }
+
+    @External(readonly = true)
+    public Address getBaln() {
+        return balnAddress.get();
+    }
+
+    @External
+    public void setDividends(Address _address) {
+        onlyOwner();
+        dividendsAddress.set(_address);
+    }
+
+    @External(readonly = true)
+    public Address getDividends() {
+        return dividendsAddress.get();
+    }
+
+    @External
+    public void setRewards(Address _address) {
+        onlyOwner();
+        rewardAddress.set(_address);
+    }
+
+    @External(readonly = true)
+    public Address getRewards() {
+        return rewardAddress.get();
     }
 }
