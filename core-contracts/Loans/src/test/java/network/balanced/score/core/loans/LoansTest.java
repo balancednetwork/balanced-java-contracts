@@ -444,7 +444,7 @@ class LoansTest extends LoansTestBase {
         BigInteger expectedDebt = loan.add(expectedFee);
         takeLoanSICX(account, collateral, BigInteger.ZERO);
 
-        // Act 
+        // Act
         loans.invoke(account, "borrow", "sICX", "bnUSD", loan);
         // Assert
         Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", account.getAddress());
@@ -508,7 +508,7 @@ class LoansTest extends LoansTestBase {
         BigInteger expectedDebt = loan.add(expectedFee);
         takeLoaniETH(account, collateral, BigInteger.ZERO);
 
-        // Act 
+        // Act
         loans.invoke(account, "borrow", "iETH", "bnUSD", loan);
 
         // Assert
@@ -674,6 +674,7 @@ class LoansTest extends LoansTestBase {
         // Arrange
         MockContract<IRC2> iBTC = new MockContract<>(IRC2ScoreInterface.class, sm, admin);
         when(iBTC.mock.symbol()).thenReturn("iBTC");
+        when(iBTC.mock.decimals()).thenReturn(BigInteger.valueOf(18));
         loans.invoke(admin, "addAsset", iBTC.getAddress(), true, true);
 
         Account account = accounts.get(0);
@@ -689,6 +690,21 @@ class LoansTest extends LoansTestBase {
         String expectedErrorMessage = "Reverted(0): Locking ratio for iBTC is not set";
         Executable loanWithoutLockingRatio = () -> loans.invoke(account, "borrow", "iBTC", "bnUSD", loan);
         expectErrorMessage(loanWithoutLockingRatio, expectedErrorMessage);
+    }
+
+    @Test
+    void borrow_negativeAmount() throws Exception {
+        // Arrange
+        Account account = accounts.get(0);
+        BigInteger collateral = BigInteger.valueOf(2000).multiply(EXA);
+        BigInteger sICXLoan = BigInteger.valueOf(300).multiply(EXA).negate();
+
+        takeLoanSICX(account, collateral, BigInteger.ZERO);
+
+        // Act & Assert
+        String expectedErrorMessage = "_amountToBorrow needs to be larger than 0";
+        Executable negativeLoan = () -> loans.invoke(account, "borrow", "sICX", "bnUSD", sICXLoan);
+        expectErrorMessage(negativeLoan, expectedErrorMessage);
     }
 
     @Test
@@ -738,7 +754,7 @@ class LoansTest extends LoansTestBase {
         takeLoaniETH(account, iETHCollateral, iETHLoan);
         BigInteger balancePre = (BigInteger) bnusd.call("balanceOf", account.getAddress());
 
-        // Act 
+        // Act
         loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, "sICX");
         loans.invoke(account, "returnAsset", "bnUSD", iETHloanToRepay, "iETH");
 
@@ -770,7 +786,7 @@ class LoansTest extends LoansTestBase {
         assertFalse((boolean) loans.call("hasDebt", account.getAddress()));
         verifyPosition(account.getAddress(), collateral, BigInteger.ZERO);
 
-        // Act 
+        // Act
         takeLoanICX(account, "bnUSD", BigInteger.ZERO, loan);
 
         // Assert
@@ -1248,6 +1264,7 @@ class LoansTest extends LoansTestBase {
         // Arrange
         MockContract<IRC2> iBTC = new MockContract<>(IRC2ScoreInterface.class, sm, admin);
         when(iBTC.mock.symbol()).thenReturn("iBTC");
+        when(iBTC.mock.decimals()).thenReturn(BigInteger.valueOf(18));
         loans.invoke(admin, "addAsset", iBTC.getAddress(), true, true);
         loans.invoke(admin, "setLockingRatio", "iBTC", LOCKING_RATIO);
 
