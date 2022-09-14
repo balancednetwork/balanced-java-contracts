@@ -723,22 +723,19 @@ public class LoansImpl implements Loans {
 
         position.setCollateral(collateralSymbol, remainingCollateral);
 
-        BigInteger debtSold;
         if (remainingDebt.compareTo(BigInteger.ZERO) > 0) {
             position.setDebt(collateralSymbol, assetSymbol, remainingDebt);
-            debtSold = assetReceived;
         } else {
             position.setDebt(collateralSymbol, assetSymbol, null);
-            debtSold = userDebt;
         }
 
-        asset.burnFrom(from, debtSold);
+        asset.burnFrom(Context.getCaller(), assetReceived);
 
         Context.call(rewards.get(), "updateRewardsData", "Loans", oldSupply, from, oldUserDebt);
 
-        String logMessage = "Loan of " + debtSold + " " + assetSymbol + " sold for" + collateralToSell + " " +
+        String logMessage = "Loan of " + assetReceived + " " + assetSymbol + " sold for" + collateralToSell + " " +
                 collateralSymbol + " to Balanced.";
-        CollateralSold(from, assetSymbol, collateralSymbol, debtSold, logMessage);
+        CollateralSold(from, assetSymbol, collateralSymbol, assetReceived, logMessage);
     }
 
     private void removeCollateral(Address from, BigInteger value, String collateralSymbol) {
