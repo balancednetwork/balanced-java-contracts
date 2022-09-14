@@ -16,10 +16,10 @@
 
 package network.balanced.score.core.rewards;
 
-import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
-import network.balanced.score.lib.interfaces.*;
+import network.balanced.score.lib.interfaces.DataSourceScoreInterface;
+
 import java.math.BigInteger;
 import java.util.Map;
 
@@ -28,7 +28,6 @@ import score.BranchDB;
 import score.Context;
 import score.DictDB;
 import score.VarDB;
-
 import scorex.util.HashMap;
 
 public class DataSourceImpl {
@@ -49,9 +48,14 @@ public class DataSourceImpl {
     private final BranchDB<String, DictDB<Address, BigInteger>> userWeight = Context.newBranchDB("user_weight",
             BigInteger.class);
     private final BranchDB<String, DictDB<Address, BigInteger>> userWorkingBalance = Context.newBranchDB("user_working_balance",
-    BigInteger.class);
+        BigInteger.class);
+    private final BranchDB<String, DictDB<Address, BigInteger>> userBoostedBalance = Context.newBranchDB("user_working_balance",
+        BigInteger.class);
+    private final BranchDB<String, VarDB<BigInteger>> totalBoostedSupply = Context.newBranchDB("totalBoostedBalance",
+        BigInteger.class);
+
     private final BranchDB<String, VarDB<BigInteger>> lastUpdateTimeUs = Context.newBranchDB("last_update_us",
-            BigInteger.class);
+        BigInteger.class);
     private final BranchDB<String, VarDB<BigInteger>> totalWeight = Context.newBranchDB("running_total",
             BigInteger.class);
     private final BranchDB<String, VarDB<BigInteger>> totalSupply = Context.newBranchDB("total_supply",
@@ -88,7 +92,7 @@ public class DataSourceImpl {
     }
 
     public BigInteger getWorkingSupply() {
-        return workingSupply.at(dbKey).getOrDefault(loadCurrentSupply(EOA_ZERO).get("_totalSupply"));
+        return workingSupply.at(dbKey).get();
     }
 
     public void setWorkingSupply(BigInteger supply){
@@ -96,7 +100,7 @@ public class DataSourceImpl {
     }
 
     public BigInteger getWorkingBalance(Address user) {
-        return userWorkingBalance.at(dbKey).getOrDefault(user, loadCurrentSupply(user).get("_balance"));
+        return userWorkingBalance.at(dbKey).get(user);
     }
 
     public void setWorkingBalance(Address user, BigInteger balance) {
@@ -184,40 +188,49 @@ public class DataSourceImpl {
         return accruedRewards;
     }
 
-    public Map<String, BigInteger> updateWorkingBalanceAndSupply(Address user, BigInteger balance, BigInteger supply, BigInteger time, Boolean boosted) {
-        Map<String, BigInteger> workingSupplyAndBalance = getWorkingBalanceAndSupply(user, balance, supply, time, boosted);
-        setWorkingBalance(user, workingSupplyAndBalance.get("workingBalance"));
-        setWorkingSupply(workingSupplyAndBalance.get("workingSupply"));
-
-        return workingSupplyAndBalance;
+    public Map<String, BigInteger> getWorkingBalanceAndSupply(Address user, BigInteger balance, BigInteger supply) {
+        return updateWorkingBalanceAndSupply(user, balance, supply, null, true);
     }
 
-    public Map<String, BigInteger> getWorkingBalanceAndSupply(Address user, BigInteger balance, BigInteger supply, BigInteger time, Boolean boosted) {
-        BigInteger bBalnSupply = getBoostedSupply(time);
-        if (bBalnSupply.equals(BigInteger.ZERO)) {
-            return Map.of(
-                "workingSupply", supply,
-                "workingBalance", balance
-            );
-        }
+    public Map<String, BigInteger> updateWorkingBalanceAndSupply(Address user, BigInteger balance, BigInteger supply, BigInteger newBoostedBalance, boolean readonly) {
 
-        BigInteger bBalnBalance = BigInteger.ZERO;
-        if (boosted) {
-            bBalnBalance = getBoostedBalance(user, time);
-        }
-
+        BigInteger boostedSupply = getBoostedSupply();
+        BigInteger boostedBalance = getUserBoostedBalance(user);
         BigInteger weight = RewardsImpl.boostWeight.get();
         BigInteger max = balance.multiply(EXA).divide(weight);
-        BigInteger boost = supply.multiply(bBalnBalance).divide(bBalnSupply).multiply(EXA.subtract(weight)).divide(weight);
+
+        BigInteger boost = BigInteger.ZERO;
+        if (boostedSupply.compareTo(BigInteger.ZERO) > 0) {
+            boost = supply.multiply(boostedBalance).divide(boostedSupply).multiply(EXA.subtract(weight)).divide(weight);
+        }
+
         BigInteger newWorkingBalance = balance.add(boost);
         newWorkingBalance = newWorkingBalance.min(max);
 
         BigInteger previousWorkingBalance = getWorkingBalance(user);
-        BigInteger newTotalBalance = getWorkingSupply().subtract(previousWorkingBalance).add(newWorkingBalance);
+        if (previousWorkingBalance == null) {
+            previousWorkingBalance = balance;
+        }
+
+        BigInteger previousWorkingSupply =  getWorkingSupply();
+        if (previousWorkingSupply == null) {
+            previousWorkingSupply = supply;
+        }
+
+        BigInteger newTotalWorkingSupply = previousWorkingSupply.subtract(previousWorkingBalance).add(newWorkingBalance);
+
+        if (!readonly) {
+            setWorkingBalance(user, newWorkingBalance);
+            setWorkingSupply(newTotalWorkingSupply);
+            BigInteger diff = newBoostedBalance.subtract(boostedBalance);
+            setBoostedSupply(boostedSupply.add(diff));
+            setUserBoostedBalance(user, newBoostedBalance);
+        }
 
         return Map.of(
-            "workingSupply", newTotalBalance,
-            "workingBalance", newWorkingBalance
+            "workingBalance", newWorkingBalance,
+            "workingSupply", newTotalWorkingSupply
+
         );
     }
 
@@ -309,19 +322,19 @@ public class DataSourceImpl {
         return deltaWeight.multiply(prevUserBalance).divide(EXA);
     }
 
-    private BigInteger getBoostedBalance(Address user, BigInteger time)  {
-        try {
-            return (BigInteger) RewardsImpl.call(RewardsImpl.boostedBaln.get(), "balanceOf", user, time);
-        } catch (Exception e) {
-            return BigInteger.ZERO;
-        }
+    private void setBoostedSupply( BigInteger supply) {
+        totalBoostedSupply.at(dbKey).set(supply);
     }
 
-    private BigInteger getBoostedSupply(BigInteger time)  {
-        try {
-            return (BigInteger) RewardsImpl.call(RewardsImpl.boostedBaln.get(), "totalSupply", time);
-        } catch (Exception e) {
-            return BigInteger.ZERO;
-        }
+    public BigInteger getBoostedSupply() {
+        return totalBoostedSupply.at(dbKey).getOrDefault(BigInteger.ZERO);
+    }
+
+    public BigInteger getUserBoostedBalance(Address user) {
+        return userBoostedBalance.at(dbKey).getOrDefault(user, BigInteger.ZERO);
+    }
+
+    private void setUserBoostedBalance(Address user, BigInteger balance) {
+        userBoostedBalance.at(dbKey).set(user, balance);
     }
 }

@@ -93,10 +93,7 @@ public interface Rewards extends
     Map<String, BigInteger> recipientAt(BigInteger _day);
 
     @External
-    void boost(String _name);
-
-    @External(readonly = true)
-    String getBoost(Address user);
+    void boost();
 
     @External
     void claimRewards();
@@ -129,8 +126,8 @@ public interface Rewards extends
     BigInteger getTimeOffset();
 
     @External
-    void onKick(Address user, BigInteger bBalnUserBalance, @Optional byte[] data);
+    void onKick(Address user);
 
     @External
-    void onBalanceUpdate(Address user);
+    void onBalanceUpdate(Address user, BigInteger balance);
 }

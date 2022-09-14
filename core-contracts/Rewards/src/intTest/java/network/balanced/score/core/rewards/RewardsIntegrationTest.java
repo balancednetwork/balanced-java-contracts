@@ -106,6 +106,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
     }
 
     @Test
+    @Order(11)
     void verifyRewards_SICX() throws Exception {
         // Arrange
         BalancedClient icxSicxLp = balanced.newClient();
@@ -128,73 +129,74 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         verifyNoRewards(icxSicxLpLeaving);
     }
 
+    // @Test
+    // void boostRewards() throws Exception {
+    //     // Arrange
+    //     String sourceName = "sICX/ICX";
+    //     BalancedClient icxSicxLp = balanced.newClient();
+    //     BalancedClient icxSicxLpBoosted = balanced.newClient();
+
+    //     BigInteger lockDays = BigInteger.valueOf(7).multiply(BigInteger.valueOf(3));
+    //     BigInteger lpBalance = BigInteger.TEN.pow(22);
+    //     BigInteger initialSupply = reader.dex.getBalanceAndSupply(sourceName, reader.getAddress()).get("_totalSupply");
+    //     icxSicxLp.dex._transfer(balanced.dex._address(), lpBalance, null);
+    //     icxSicxLpBoosted.dex._transfer(balanced.dex._address(), lpBalance, null);
+
+    //     initialSupply = initialSupply.add(lpBalance).add(lpBalance);
+
+    //     balanced.increaseDay(1);
+    //     verifyRewards(icxSicxLp);
+    //     verifyRewards(icxSicxLpBoosted);
+
+    //     // Act
+    //     BigInteger availableBalnBalance = reader.baln.balanceOf(icxSicxLpBoosted.getAddress());
+    //     long unlockTime = (System.currentTimeMillis()*1000)+(MICRO_SECONDS_IN_A_DAY.multiply(lockDays)).longValue();
+    //     String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
+    //     icxSicxLpBoosted.baln.transfer(owner.boostedBaln._address(), availableBalnBalance, data.getBytes());
+
+    //     icxSicxLpBoosted.rewards.boost();
+
+    //     // Assert
+    //     verifyRewards(icxSicxLpBoosted);
+
+    //     // Map<String, BigInteger> currentWorkingBalanceAndSupply = reader.rewards.getWorkingBalanceAndSupply(sourceName, icxSicxLpBoosted.getAddress());
+    //     // assertTrue(currentWorkingBalanceAndSupply.get("workingSupply").compareTo(initialSupply) > 0);
+    //     // assertTrue(currentWorkingBalanceAndSupply.get("workingBalance").compareTo(lpBalance) > 0);
+    //     // assertEquals(sourceName, reader.rewards.getBoost(icxSicxLpBoosted.getAddress()));
+
+    //     // // Act
+    //     // balanced.increaseDay(7);
+    //     // verifyRewards(icxSicxLpBoosted);
+
+    //     // // Assert
+    //     // Map<String, BigInteger> newWorkingBalanceAndSupply = reader.rewards.getWorkingBalanceAndSupply(sourceName, icxSicxLpBoosted.getAddress());
+    //     // assertTrue(newWorkingBalanceAndSupply.get("workingSupply").compareTo(currentWorkingBalanceAndSupply.get("workingSupply")) < 0);
+    //     // assertTrue(newWorkingBalanceAndSupply.get("workingBalance").compareTo(currentWorkingBalanceAndSupply.get("workingBalance")) < 0);
+    //     // currentWorkingBalanceAndSupply = newWorkingBalanceAndSupply;
+
+    //     // // Act
+    //     // balanced.increaseDay(7);
+    //     // verifyRewards(icxSicxLpBoosted);
+    //     // //kick
+
+    //     // // Assert
+    //     // newWorkingBalanceAndSupply = reader.rewards.getWorkingBalanceAndSupply(sourceName, icxSicxLpBoosted.getAddress());
+    //     // assertTrue(newWorkingBalanceAndSupply.get("workingSupply").compareTo(currentWorkingBalanceAndSupply.get("workingSupply")) < 0);
+    //     // assertTrue(newWorkingBalanceAndSupply.get("workingBalance").compareTo(currentWorkingBalanceAndSupply.get("workingBalance")) < 0);
+    //     // currentWorkingBalanceAndSupply = newWorkingBalanceAndSupply;
+
+    //     // // Act
+    //     // balanced.increaseDay(8);
+    //     // verifyRewards(icxSicxLpBoosted);
+
+    //     // // Assert
+    //     // Map<String, BigInteger> newWorkingBalanceAndSupply = reader.rewards.getWorkingBalanceAndSupply(sourceName, icxSicxLpBoosted.getAddress());
+    //     // assertEquals(newWorkingBalanceAndSupply.get("workingSupply"), initialSupply);
+    //     // assertEquals(newWorkingBalanceAndSupply.get("workingBalance"), lpBalance);
+    // }
+
     @Test
-    void boostRewards() throws Exception {
-        // Arrange
-        String sourceName = "sICX/ICX";
-        BalancedClient icxSicxLp = balanced.newClient();
-        BalancedClient icxSicxLpBoosted = balanced.newClient();
-
-        BigInteger lockDays = BigInteger.valueOf(7).multiply(BigInteger.valueOf(3));
-        BigInteger lpBalance = BigInteger.TEN.pow(22);
-        BigInteger initialSupply = reader.dex.getBalanceAndSupply(sourceName, reader.getAddress()).get("_totalSupply");
-        icxSicxLp.dex._transfer(balanced.dex._address(), lpBalance, null);
-        icxSicxLpBoosted.dex._transfer(balanced.dex._address(), lpBalance, null);
-
-        initialSupply = initialSupply.add(lpBalance).add(lpBalance);
-
-        balanced.increaseDay(1);
-        verifyRewards(icxSicxLp);
-        verifyRewards(icxSicxLpBoosted);
-
-        // Act
-        BigInteger availableBalnBalance = reader.baln.balanceOf(icxSicxLpBoosted.getAddress());
-        long unlockTime = (System.currentTimeMillis()*1000)+(MICRO_SECONDS_IN_A_DAY.multiply(lockDays)).longValue();
-        String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
-        icxSicxLpBoosted.baln.transfer(owner.boostedBaln._address(), availableBalnBalance, data.getBytes());
-
-        icxSicxLpBoosted.rewards.boost(sourceName);
-
-        // Assert
-        verifyRewards(icxSicxLpBoosted);
-
-        // Map<String, BigInteger> currentWorkingBalanceAndSupply = reader.rewards.getWorkingBalanceAndSupply(sourceName, icxSicxLpBoosted.getAddress());
-        // assertTrue(currentWorkingBalanceAndSupply.get("workingSupply").compareTo(initialSupply) > 0);
-        // assertTrue(currentWorkingBalanceAndSupply.get("workingBalance").compareTo(lpBalance) > 0);
-        // assertEquals(sourceName, reader.rewards.getBoost(icxSicxLpBoosted.getAddress()));
-
-        // // Act
-        // balanced.increaseDay(7);
-        // verifyRewards(icxSicxLpBoosted);
-
-        // // Assert
-        // Map<String, BigInteger> newWorkingBalanceAndSupply = reader.rewards.getWorkingBalanceAndSupply(sourceName, icxSicxLpBoosted.getAddress());
-        // assertTrue(newWorkingBalanceAndSupply.get("workingSupply").compareTo(currentWorkingBalanceAndSupply.get("workingSupply")) < 0);
-        // assertTrue(newWorkingBalanceAndSupply.get("workingBalance").compareTo(currentWorkingBalanceAndSupply.get("workingBalance")) < 0);
-        // currentWorkingBalanceAndSupply = newWorkingBalanceAndSupply;
-
-        // // Act
-        // balanced.increaseDay(7);
-        // verifyRewards(icxSicxLpBoosted);
-        // //kick
-
-        // // Assert
-        // newWorkingBalanceAndSupply = reader.rewards.getWorkingBalanceAndSupply(sourceName, icxSicxLpBoosted.getAddress());
-        // assertTrue(newWorkingBalanceAndSupply.get("workingSupply").compareTo(currentWorkingBalanceAndSupply.get("workingSupply")) < 0);
-        // assertTrue(newWorkingBalanceAndSupply.get("workingBalance").compareTo(currentWorkingBalanceAndSupply.get("workingBalance")) < 0);
-        // currentWorkingBalanceAndSupply = newWorkingBalanceAndSupply;
-
-        // // Act
-        // balanced.increaseDay(8);
-        // verifyRewards(icxSicxLpBoosted);
-
-        // // Assert
-        // Map<String, BigInteger> newWorkingBalanceAndSupply = reader.rewards.getWorkingBalanceAndSupply(sourceName, icxSicxLpBoosted.getAddress());
-        // assertEquals(newWorkingBalanceAndSupply.get("workingSupply"), initialSupply);
-        // assertEquals(newWorkingBalanceAndSupply.get("workingBalance"), lpBalance);
-    }
-
-    @Test
+    @Order(12)
     void verifyRewards_StakedLP() throws Exception {
         // Arrange
         BalancedClient borrower = balanced.newClient(BigInteger.TEN.pow(25));
@@ -311,10 +313,10 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
                 "total_dist"));
         assertEquals(expectedLoansMint, loansMint);
         assertEquals(expectedSicxMint, sicxMint);
-
     }
 
     @Test
+    @Order(21)
     void removeRewardsDistributions() throws Exception {
         // Arrange
         BigInteger platformDay = hexObjectToBigInteger(reader.rewards.distStatus().get("platform_day"));
@@ -358,6 +360,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         owner.rewards.distribute((txr) -> {
         });
         verifyNoRewards(loanTaker);
+
         BigInteger rewardsPostChange = verifyRewards(icxSicxLP);
         BigInteger increase = rewardsPostChange.multiply(EXA).divide(rewardsPreChange);
         BigInteger expectedIncrease = loansDist.add(icxDist).multiply(EXA).divide(icxDist);
