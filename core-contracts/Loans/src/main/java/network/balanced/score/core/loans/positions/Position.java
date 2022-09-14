@@ -107,7 +107,7 @@ public class Position {
     }
 
     public BigInteger getCollateral(String symbol) {
-        return getCollateral(symbol, true);
+        return getCollateral(symbol, false);
     }
 
     public BigInteger getCollateral(String symbol, boolean readOnly) {

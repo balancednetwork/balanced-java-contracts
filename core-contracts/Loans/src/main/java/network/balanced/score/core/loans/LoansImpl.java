@@ -243,7 +243,7 @@ public class LoansImpl implements Loans {
             return;
         }
 
-        if(_from.equals(reserve.get())) {
+        if (_from.equals(reserve.get())) {
             return;
         }
 
