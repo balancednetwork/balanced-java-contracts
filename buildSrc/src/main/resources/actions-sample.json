@@ -20,10 +20,8 @@
           "feehandler": "feehandler",
           "stakedLp": "stakedLp",
           "reserve": "reserve",
-          "oracle": "oracle"
-        },
-        "__property_args__": {
-          "stakedLp": "STAKEDLP_ADDRESS"
+          "oracle": "oracle",
+          "balancedOracle": "balancedoracle"
         }
       }
     },
@@ -50,6 +48,22 @@
   },
   {
     "contract": "governance",
+    "method": "setAdmins",
+    "__args__": {
+
+    },
+    "order": 2.0
+  },
+  {
+    "contract": "governance",
+    "method": "setContractAddresses",
+    "__args__": {
+
+    },
+    "order": 2.0
+  },
+  {
+    "contract": "governance",
     "method": "configureBalanced",
     "__args__": {
 
@@ -65,6 +79,17 @@
     "order": 4.0
   },
   {
+    "contract": "governance",
+    "method": "setAdmin",
+    "__args__": {
+      "__address_args__": {
+        "contractAddress": "feehandler",
+        "admin": "governance"
+      }
+    },
+    "order": 5.0
+  },
+  {
     "contract": "staking",
     "method": "toggleStakingOn",
     "__args__": {
@@ -73,13 +98,227 @@
     "order": 5.0
   },
   {
+    "contract": "bnUSD",
+    "method": "setMinter",
+    "__args__": {
+      "__address_args__": {
+        "_address": "loans"
+      }
+    },
+    "order": 6.0
+  },
+  {
+    "contract": "sicx",
+    "method": "setMinter",
+    "__args__": {
+      "__address_args__": {
+        "_address": "staking"
+      }
+    },
+    "order": 6.0
+  },
+  {
+    "contract": "baln",
+    "method": "setMinter",
+    "__args__": {
+      "__address_args__": {
+        "_address": "rewards"
+      }
+    },
+    "order": 6.0
+  },
+  {
+    "contract": "bnUSD",
+    "method": "setMinter2",
+    "__args__": {
+      "__address_args__": {
+        "_address": "stability"
+      }
+    },
+    "order": 6.0
+  },
+  {
     "contract": "governance",
     "method": "delegate",
     "__args__": {
+      "contract": "staking",
       "__property_args__":{
         "_delegations": "DELEGATE_PARAM"
       }
     },
     "order": 6.0
+  },
+  {
+    "contract": "daofund",
+    "method": "addAddressToSetdb",
+    "__args__": {
+
+    },
+    "order": 7.0
+  },
+  {
+    "contract": "rewards",
+    "method": "addDataProvider",
+    "__args__": {
+      "__address_args__": {
+        "_source": "dex"
+      }
+    },
+    "order": 8.0
+  },
+  {
+    "contract": "rewards",
+    "method": "addDataProvider",
+    "__args__": {
+      "__address_args__": {
+        "_source": "loans"
+      }
+    },
+    "order": 8.0
+  },
+  {
+    "contract": "rewards",
+    "method": "addDataProvider",
+    "__args__": {
+      "__address_args__": {
+        "_source": "stakedLp"
+      }
+    },
+    "order": 8.0
+  },
+  {
+    "contract": "governance",
+    "method": "addAcceptedTokens",
+    "__args__": {
+      "__address_args__": {
+        "_token": "sicx"
+      }
+    },
+    "order": 8.0
+  },
+  {
+    "contract": "governance",
+    "method": "addAcceptedTokens",
+    "__args__": {
+      "__address_args__": {
+        "_token": "bnUSD"
+      }
+    },
+    "order": 8.0
+  },
+  {
+    "contract": "governance",
+    "method": "addAcceptedTokens",
+    "__args__": {
+      "__address_args__": {
+        "_token": "baln"
+      }
+    },
+    "order": 8.0
+  },
+  {
+    "contract": "governance",
+    "method": "setAdmin",
+    "__args__": {
+      "__address_args__": {
+        "contractAddress": "dividends",
+        "admin": "owner"
+      }
+    },
+    "order": 9.0
+  },
+  {
+    "contract": "dividends",
+    "method": "setDistributionActivationStatus",
+    "__args__": {
+      "__property_args__": {
+        "_status": "STATUS_PARAM"
+      }
+    },
+    "order": 10.0
+  },
+  {
+    "contract": "governance",
+    "method": "setAdmin",
+    "__args__": {
+      "__address_args__": {
+        "contractAddress": "dividends",
+        "admin": "governance"
+      }
+    },
+    "order": 11.0
+  },
+  {
+    "contract": "governance",
+    "method": "setAcceptedDividendTokens",
+    "__args__": {
+      "__property_args__": {
+        "_tokens": "ACCEPTED_TOKENS"
+      }
+    },
+    "order": 12.0
+  },
+  {
+    "contract": "governance",
+    "method": "enable_fee_handler",
+    "__args__": {
+
+    },
+    "order": 12.0
+  },
+  {
+    "contract": "baln",
+    "method": "setTimeOffset",
+    "__args__": {
+    },
+    "order": 12.0
+  },
+  {
+    "contract": "disbursement",
+    "method": "setDaofund",
+    "__args__": {
+      "__address_args__": {
+        "_address": "daofund"
+      }
+    },
+    "order": 12.0
+  },
+  {
+    "contract": "disbursement",
+    "method": "setReserveFund",
+    "__args__": {
+      "__address_args__": {
+        "_address": "reserve"
+      }
+    },
+    "order": 12.0
+  },
+  {
+    "contract": "governance",
+    "method": "setFeeProcessingInterval",
+    "__args__": {
+      "__property_args__": {
+        "_interval": "FEE_INTERVAL_IN_BLOCKS"
+      }
+    },
+    "order": 12.0
+  },
+  {
+    "contract": "multicall",
+    "method": "setDexAddress",
+    "__args__": {
+      "__address_args__": {
+        "dex": "dex"
+      }
+    },
+    "order": 12.0
+  },
+  {
+    "contract": "governance",
+    "value": 100000000000000000000,
+    "method": "createBnusdMarket",
+    "__args__": {
+    },
+    "order": 13.0
   }
 ]
