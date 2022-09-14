@@ -914,7 +914,6 @@ class LoansTest extends LoansTestBase {
     @Test
     void sellCollateral() {
         // Arrange
-
         Account account = accounts.get(0);
         BigInteger collateral = BigInteger.valueOf(2000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
@@ -940,6 +939,7 @@ class LoansTest extends LoansTestBase {
         loans.invoke(account, "sellCollateral", collateralToSell, "sICX", minimumReceiveSicxCollateralSell);
         loans.invoke(account, "sellCollateral", iETHCollateralToSell, "iETH", minimumReceiveiETHCollateralSell);
 
+        //  Assert
         verifyPosition(account.getAddress(), collateral.subtract(collateralToSell), loan.add(expectedFee).subtract(expectedBnusdRepaidForSicx),
                 "sICX");
         verifyPosition(account.getAddress(), collateral.subtract(iETHCollateralToSell), loan.add(expectedFee).subtract(expectedBnusdRepaidForiETH),
@@ -1010,6 +1010,7 @@ class LoansTest extends LoansTestBase {
         String expectedErrorMessage = "Reverted(0): " + TAG + "There doesn't exist a bnUSD pool for "+ collateralSymbol + ".";
 
         takeLoanICX(account, "bnUSD", collateral, loan);
+
         // Assert & Act
         Executable noAvailablePool = () -> loans.invoke(account, "sellCollateral", collateralToSell
                 , collateralSymbol, minimumReceiveAfterSell);
@@ -1030,6 +1031,7 @@ class LoansTest extends LoansTestBase {
         mockSicxBnusdPrice(rate);
 
         takeLoanICX(account, "bnUSD", collateral, loan);
+
         // Assert & Act
         Executable sellTooMuchDebt = () -> loans.invoke(account, "sellCollateral", collateralToSell
                 , "sICX", minimumReceiveAfterSell);
@@ -1052,6 +1054,7 @@ class LoansTest extends LoansTestBase {
         mockSwap(bnusd, collateralToSell, expectedBnusdRepaidForSicx);
 
         takeLoanICX(account, "bnUSD", collateral, loan);
+        
         // Assert & Act
         Executable sellTooMuchCollateral = () -> loans.invoke(account, "sellCollateral", collateralToSell
                 , "sICX", minimumReceiveAfterSell);

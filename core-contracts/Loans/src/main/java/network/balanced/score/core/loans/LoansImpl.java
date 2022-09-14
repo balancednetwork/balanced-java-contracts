@@ -574,9 +574,8 @@ public class LoansImpl implements Loans {
     }
 
     @External
-    public void sellCollateral(BigInteger collateralAmountToSell, String _collateralSymbol, BigInteger minimumDebtRepaid) {
+    public void sellCollateral(BigInteger collateralAmountToSell, String collateralSymbol, BigInteger minimumDebtRepaid) {
         loansOn();
-        String collateralSymbol = optionalDefault(_collateralSymbol, SICX_SYMBOL);
         Address from = Context.getCaller();
         sellUserCollateral(from, collateralAmountToSell, collateralSymbol, minimumDebtRepaid);
     }
@@ -681,41 +680,65 @@ public class LoansImpl implements Loans {
         Context.require(PositionsDB.hasPosition(from), TAG + ": This address does not have a position on Balanced.");
 
         Position position = PositionsDB.getPosition(from);
+        BigInteger userCollateral = position.getCollateral(collateralSymbol);
 
-        Context.require(position.getCollateral(collateralSymbol).compareTo(collateralToSell) >= 0, TAG + ": Position holds less " +
+        Context.require(userCollateral.compareTo(collateralToSell) >= 0, TAG + ": Position holds less " +
                 "collateral than the requested sell.");
 
         String assetSymbol = BNUSD_SYMBOL;
         Asset asset = AssetDB.getAsset(assetSymbol);
         Address assetAddress = asset.getAssetAddress();
+        BigInteger oldSupply = totalDebts.getOrDefault(assetSymbol, BigInteger.ZERO);
+        BigInteger oldUserDebt = position.getTotalDebt(assetSymbol);
+        BigInteger userDebt = position.getDebt(collateralSymbol, assetSymbol);
 
         Collateral collateral = CollateralDB.getCollateral(collateralSymbol);
         Address collateralAddress = collateral.getAssetAddress();
+        Address dexAddress = dex.get();
 
         amountReceived.set(null);
-        BigInteger poolID = Context.call(BigInteger.class, dex.get(), "getPoolId", collateralAddress, assetAddress);
+        BigInteger poolID = Context.call(BigInteger.class, dexAddress, "getPoolId", collateralAddress, assetAddress);
         Context.require(poolID != null, TAG + ": There doesn't exist a bnUSD pool for "+ collateralSymbol + ".");
 
-        BigInteger userDebt = position.getDebt(collateralSymbol, assetSymbol);
         Context.require(userDebt.compareTo(minimumDebtToRepay) >= 0, TAG + ": Minimum receive cannot be greater than your debt.");
         expectedToken.set(assetAddress);
 
-        JsonObject swapData = Json.object();
-        swapData.add("method", "_swap");
-        swapData.add("params", Json.object().add("toToken", assetAddress.toString()).add("minimumReceive", minimumDebtToRepay.toString()));
+        JsonObject swapParams = Json.object()
+                .add("toToken", assetAddress.toString())
+                .add("minimumReceive", minimumDebtToRepay.toString());
+        JsonObject swapData = Json.object()
+                .add("method", "_swap")
+                .add("params", swapParams);
         byte[] data = swapData.toString().getBytes();
-        transferCollateral(collateralSymbol, dex.get(), collateralToSell,
+
+        transferCollateral(collateralSymbol, dexAddress, collateralToSell,
                 collateralSymbol + " swapped for " + assetSymbol, data);
         BigInteger assetReceived = amountReceived.get();
         amountReceived.set(null);
-        asset.burnFrom(Context.getAddress(), assetReceived);
 
         Context.require(userDebt.compareTo(assetReceived) >= 0, TAG + ": Cannot sell collateral worth more than your debt.");
-        BigInteger remainingDebt = position.getDebt(collateralSymbol, assetSymbol).subtract(assetReceived);
-        BigInteger remainingCollateral = position.getCollateral(collateralSymbol).subtract(collateralToSell);
+
+        BigInteger remainingDebt = userDebt.subtract(assetReceived);
+        BigInteger remainingCollateral = userCollateral.subtract(collateralToSell);
 
         position.setCollateral(collateralSymbol, remainingCollateral);
-        position.setDebt(collateralSymbol, assetSymbol, remainingDebt);
+
+        BigInteger debtSold;
+        if (remainingDebt.compareTo(BigInteger.ZERO) > 0) {
+            position.setDebt(collateralSymbol, assetSymbol, remainingDebt);
+            debtSold = assetReceived;
+        } else {
+            position.setDebt(collateralSymbol, assetSymbol, null);
+            debtSold = userDebt;
+        }
+
+        asset.burnFrom(from, debtSold);
+
+        Context.call(rewards.get(), "updateRewardsData", "Loans", oldSupply, from, oldUserDebt);
+
+        String logMessage = "Loan of " + debtSold + " " + assetSymbol + " sold for" + collateralToSell + " " +
+                collateralSymbol + " to Balanced.";
+        CollateralSold(from, assetSymbol, collateralSymbol, debtSold, logMessage);
     }
 
     private void removeCollateral(Address from, BigInteger value, String collateralSymbol) {
@@ -1091,6 +1114,10 @@ public class LoansImpl implements Loans {
 
     @EventLog(indexed = 3)
     public void LoanRepaid(Address account, String symbol, BigInteger amount, String note) {
+    }
+
+    @EventLog(indexed = 3)
+    public void CollateralSold(Address account, String assetSymbol, String collateralSymbol, BigInteger amount, String note) {
     }
 
     @EventLog(indexed = 3)
