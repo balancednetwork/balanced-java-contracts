@@ -97,10 +97,12 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         // get enough baln to vote through a new collateral
         balanced.increaseDay(3);
         BigInteger ethAmount = BigInteger.valueOf(2).multiply(iethDecimals);
+        System.out.println("ethAmount = " + ethAmount);
         BigInteger ethPriceInLoop = reader.balancedOracle.getLastPriceInLoop("ETH");
         BigInteger bnusdPriceInLoop = reader.balancedOracle.getLastPriceInLoop("bnUSD");
         BigInteger ethValue = ethAmount.multiply(ethPriceInLoop).divide(iethDecimals);
         BigInteger bnusdAmount = ethValue.multiply(EXA).divide(bnusdPriceInLoop);
+        System.out.println("bnusdAmount = " + bnusdAmount);
 
         addCollateralType(owner, ethAddress, ethAmount, bnusdAmount, "ETH");
 
@@ -236,20 +238,19 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         BalancedClient loanTakerPartialDebtSell = balanced.newClient();
         BalancedClient loanTakerETHFullSell = balanced.newClient();
         BalancedClient loanTakerETHPartialSell = balanced.newClient();
-        BigInteger collateral = BigInteger.TEN.pow(21);
-        BigInteger ethPrice = reader.balancedOracle.getLastPriceInLoop("iETH");
-        BigInteger sicxPrice = reader.dex.getBasePriceInQuote(BigInteger.TWO);
-        BigInteger collateralETH = BigInteger.TEN.pow(20);
+        BigInteger collateral = BigInteger.TEN.pow(5).multiply(sicxDecimals);
+        BigInteger collateralETH = BigInteger.TEN.multiply(iethDecimals);
+
         owner.irc2(ethAddress).mintTo(loanTakerETHFullSell.getAddress(), collateralETH, null);
         owner.irc2(ethAddress).mintTo(loanTakerETHPartialSell.getAddress(), collateralETH, null);
 
-        BigInteger loanAmount = sicxPrice.multiply(BigInteger.valueOf(20));
-        BigInteger ethLoanAmount = ethPrice.multiply(BigInteger.ONE);
+        BigInteger loanAmount = BigInteger.valueOf(17).multiply(EXA);
+        BigInteger ethLoanAmount = BigInteger.TEN.pow(23);
 
-        BigInteger collateralToSellFullDebt = loanAmount.divide(sicxPrice).multiply(EXA).subtract(EXA);
-        BigInteger ETHCollateralToSellFullDebt = ethLoanAmount.divide(ethPrice).multiply(EXA);
-        BigInteger collateralToSellPartialDebt = collateralToSellFullDebt.divide(BigInteger.TWO);
-        BigInteger ETHCollateralToSellPartialDebt = ETHCollateralToSellFullDebt.divide(BigInteger.TWO);
+        BigInteger collateralToSellFullDebt = BigInteger.TEN.pow(19);
+        BigInteger ETHCollateralToSellFullDebt = BigInteger.valueOf(28).multiply(BigInteger.TEN.pow(22));
+        BigInteger collateralToSellPartialDebt = BigInteger.valueOf(5).multiply(EXA);
+        BigInteger ETHCollateralToSellPartialDebt = BigInteger.valueOf(2).multiply(BigInteger.TEN.pow(23));
 
         BigInteger minimumReceiveToSellFullDebt = BigInteger.valueOf(16).multiply(EXA);
         BigInteger minimumReceiveToSellPartialDebt = BigInteger.valueOf(8).multiply(EXA);
