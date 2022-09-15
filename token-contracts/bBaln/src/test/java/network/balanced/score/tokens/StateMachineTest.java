@@ -20,6 +20,8 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import network.balanced.score.tokens.utils.DummyContract;
+import score.Address;
+
 import org.json.JSONObject;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.function.Executable;
@@ -379,24 +381,27 @@ public class StateMachineTest extends AbstractBoostedBalnTest {
     class WithdrawLockTests {
 
     private final long lockedWeeks = 5;
+    private BigInteger value;
+    private final Account penaltyAddress = sm.createAccount();
 
     @DisplayName("Create Lock of 1000 OMM tokens from account 0")
     @BeforeEach
     void setupLock() {
         long unlockTime = addWeeksToCurrentTimestamp(lockedWeeks);
-        BigInteger value = BigInteger.TEN.pow(21);
+        value = BigInteger.TEN.pow(21);
         createLock(accounts.get(0), value, unlockTime);
+
+        bBalnScore.invoke(owner, "setPenaltyAddress", penaltyAddress.getAddress());
     }
 
-    //no throw now on withdrawing before unlocktime instead system changes penalty
-    /*@DisplayName("before unlock expires")
+    @DisplayName("before unlock expires")
     @Test
     void unlockBeforeExpiry() {
         Executable withdraw = () -> bBalnScore.invoke(accounts.get(0), "withdraw");
 
         String expectedErrorMessage = "Withdraw: The lock haven't expire";
         expectErrorMessage(withdraw, expectedErrorMessage);
-    }*/
+    }
 
     @DisplayName("after the expiry")
     @Test
@@ -409,7 +414,35 @@ public class StateMachineTest extends AbstractBoostedBalnTest {
         bBalnScore.invoke(accounts.get(0), "withdraw");
         assertEquals(MINT_AMOUNT, tokenScore.call("balanceOf", accounts.get(0).getAddress()));
         votingBalances.put(accounts.get(0), new VotingBalance());
-        }
+    }
+
+    @DisplayName("early before the expiry")
+    @Test
+    void unlockEarlyBeforeExpiry() {
+        long deltaBlock = (addWeeksToCurrentTimestamp(lockedWeeks) - sm.getBlock().getTimestamp()) / BLOCK_TIME + 1;
+        sm.getBlock().increase(deltaBlock / 2);
+
+        bBalnScore.invoke(accounts.get(0), "withdrawEarly");
+        BigInteger penaltyAmount = value.divide(BigInteger.TWO);
+        assertEquals(MINT_AMOUNT.subtract(penaltyAmount), tokenScore.call("balanceOf", accounts.get(0).getAddress()));
+        assertEquals(penaltyAmount, tokenScore.call("balanceOf", penaltyAddress.getAddress()));
+        votingBalances.put(accounts.get(0), new VotingBalance());
+
+        tokenScore.invoke(penaltyAddress, "transfer", accounts.get(0).getAddress(), penaltyAmount, new byte[0]);
+    }
+
+    @DisplayName("early after the expiry")
+    @Test
+    void unlockEarlyAfterExpiry() {
+        long deltaBlock = (addWeeksToCurrentTimestamp(lockedWeeks) - sm.getBlock().getTimestamp()) / BLOCK_TIME + 1;
+        sm.getBlock().increase(deltaBlock);
+        assertEquals(BigInteger.ZERO, bBalnScore.call("balanceOf", accounts.get(0).getAddress(), BigInteger.ZERO));
+
+        Executable withdraw = () -> bBalnScore.invoke(accounts.get(0), "withdraw");
+
+        String expectedErrorMessage = "Withdraw: The lock has expired, use withdraw method";
+        expectErrorMessage(withdraw, expectedErrorMessage);
+    }
     }
 
     @DisplayName("Checkpoint")

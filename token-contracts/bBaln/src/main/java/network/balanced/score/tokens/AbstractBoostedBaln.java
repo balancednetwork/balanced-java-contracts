@@ -267,8 +267,8 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
                 dSlope = this.slopeChanges.getOrDefault(timeIterator.toBigInteger(), BigInteger.ZERO);
             }
 
-            lastPoint.bias = lastPoint.bias.subtract(lastPoint.slope.multiply(timeIterator.subtract(lastCheckPoint)
-                    .toBigInteger()));
+            lastPoint.bias = lastPoint.bias.subtract(lastPoint.slope.multiply(
+                    timeIterator.subtract(lastCheckPoint).toBigInteger()));
             lastPoint.slope = lastPoint.slope.add(dSlope);
 
             if (lastPoint.bias.compareTo(BigInteger.ZERO) < 0) {
@@ -281,8 +281,8 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
 
             lastCheckPoint = timeIterator;
             lastPoint.timestamp = timeIterator;
-            UnsignedBigInteger dtime = timeIterator.subtract(initialLastPoint.timestamp);
-            lastPoint.block = initialLastPoint.block.add(blockSlope.multiply(dtime).divide(MULTIPLIER));
+            UnsignedBigInteger dTime = timeIterator.subtract(initialLastPoint.timestamp);
+            lastPoint.block = initialLastPoint.block.add(blockSlope.multiply(dTime).divide(MULTIPLIER));
             epoch = epoch.add(BigInteger.ONE);
 
             if (timeIterator.equals(blockTimestamp)) {
@@ -314,6 +314,7 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
                 if (newLocked.end.equals(oldLocked.end)) {
                     oldDSlope = oldDSlope.subtract(uNew.slope);
                 }
+
                 this.slopeChanges.set(oldLocked.getEnd(), oldDSlope);
             }
 

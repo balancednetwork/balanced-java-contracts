@@ -16,6 +16,10 @@
 
 package network.balanced.score.lib.interfaces;
 
+import java.math.BigInteger;
+import java.util.List;
+import java.util.Map;
+
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.BalnAddress;
@@ -25,10 +29,6 @@ import network.balanced.score.lib.interfaces.base.TokenFallback;
 import score.Address;
 import score.annotation.External;
 import score.annotation.Optional;
-
-import java.math.BigInteger;
-import java.util.List;
-import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
@@ -71,6 +71,9 @@ public interface BoostedBaln extends BalnAddress, RewardsAddress, DividendsAddre
 
     @External
     void withdraw();
+
+    @External
+    void withdrawEarly();
 
     @External(readonly = true)
     BigInteger balanceOf(Address _owner, @Optional BigInteger timestamp);

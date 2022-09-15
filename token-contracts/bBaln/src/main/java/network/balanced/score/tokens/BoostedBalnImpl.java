@@ -182,7 +182,6 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
         }
     }
 
-    // TODO discuss instant unlock
     @External
     public void withdraw() {
         globalReentryLock();
@@ -190,7 +189,35 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
         BigInteger blockTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());
 
         LockedBalance locked = getLockedBalance(sender);
-        //require(blockTimestamp.compareTo(locked.getEnd()) >= 0, "Withdraw: The lock haven't expire");
+        Context.require(blockTimestamp.compareTo(locked.getEnd()) >= 0, "Withdraw: The lock haven't expire");
+        BigInteger value = locked.amount;
+
+        LockedBalance oldLocked = locked.newLockedBalance();
+        locked.end = UnsignedBigInteger.ZERO;
+        locked.amount = BigInteger.ZERO;
+
+        this.locked.set(sender, locked);
+        BigInteger supplyBefore = this.supply.get();
+        this.supply.set(supplyBefore.subtract(value));
+
+        this.checkpoint(sender, oldLocked, locked);
+
+        Context.call(this.balnAddress.get(), "transfer", sender, value, "withdraw".getBytes());
+
+        users.remove(sender);
+        Withdraw(sender, value, blockTimestamp);
+        Supply(supplyBefore, supplyBefore.subtract(value));
+        onKick(sender);
+    }
+
+    @External
+    public void withdrawEarly() {
+        globalReentryLock();
+        Address sender = Context.getCaller();
+        BigInteger blockTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());
+
+        LockedBalance locked = getLockedBalance(sender);
+        Context.require(blockTimestamp.compareTo(locked.getEnd()) < 0, "Withdraw: The lock has expired, use withdraw method");
         BigInteger value = locked.amount;
 
         LockedBalance oldLocked = locked.newLockedBalance();
@@ -202,20 +229,16 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
 
         this.checkpoint(sender, oldLocked, locked);
 
-        if (blockTimestamp.compareTo(oldLocked.getEnd()) < 0) {
-            if (value.mod(BigInteger.TWO).equals(BigInteger.ZERO)) {
-                value = value.divide(BigInteger.TWO);
-            } else {
-                value = value.divide(BigInteger.TWO).add(BigInteger.ONE);
-            }
-            Context.call(this.balnAddress.get(), "transfer", this.penaltyAddress.get(), value, "withdraw".getBytes());
-            onKick(sender);
-        }
+        BigInteger penaltyAmount =  value.divide(BigInteger.TWO);
+        BigInteger returnAmount = value.subtract(penaltyAmount);
 
-        Context.call(this.balnAddress.get(), "transfer", sender, value, "withdraw".getBytes());
+        Context.call(this.balnAddress.get(), "transfer", this.penaltyAddress.get(), penaltyAmount, "withdrawPenalty".getBytes());
+        Context.call(this.balnAddress.get(), "transfer", sender, returnAmount, "withdrawEarly".getBytes());
+
         users.remove(sender);
         Withdraw(sender, value, blockTimestamp);
         Supply(supplyBefore, supplyBefore.subtract(value));
+        onKick(sender);
     }
 
     @External(readonly = true)
@@ -233,9 +256,11 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
         } else {
             Point lastPoint = getUserPointHistory(_owner, epoch);
             UnsignedBigInteger _delta = uTimestamp.subtract(lastPoint.timestamp);
-            return lastPoint.bias
+            BigInteger balance = lastPoint.bias
                     .subtract(lastPoint.slope.multiply(_delta.toBigInteger()))
                     .max(BigInteger.ZERO);
+
+            return balance;
         }
     }
 
@@ -270,8 +295,9 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
         }
 
         UnsignedBigInteger delta = blockTime.subtract(uPoint.timestamp);
+        BigInteger balance = uPoint.bias.subtract(uPoint.slope.multiply(delta.toBigInteger())).max(BigInteger.ZERO);
 
-        return uPoint.bias.subtract(uPoint.slope.multiply(delta.toBigInteger())).max(BigInteger.ZERO);
+        return balance;
     }
 
     @External(readonly = true)
