@@ -46,7 +46,7 @@ public class BoostedBalnIncreaseTimeTest {
     }
 
     @Test
-    void testIncreaseTIme(){
+    void testIncreaseTime(){
         DefaultScoreClient ownerClient  = getOwnerClient();
         score.Address userAddress = score.Address.fromString(balanced.owner.getAddress().toString());
         owner.daofund.addAddressToSetdb();
@@ -114,7 +114,7 @@ public class BoostedBalnIncreaseTimeTest {
         System.out.println("balance is: "+balance);
         System.out.println("expected balance is: "+availableBalnBalance.divide(BigInteger.TWO));
 
-        owner.boostedBaln.withdraw();
+        owner.boostedBaln.withdrawEarly();
 
         BigInteger balanceAfterWithdraw = owner.boostedBaln.balanceOf(userAddress, BigInteger.ZERO);
         assertEquals(balanceAfterWithdraw, BigInteger.ZERO);
