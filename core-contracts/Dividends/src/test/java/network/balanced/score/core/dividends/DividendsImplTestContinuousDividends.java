@@ -129,11 +129,11 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         staker2ExpectedFees = staker2ExpectedFees.add(expectedStakingFees);
 
         // Assert
-        Map<String, BigInteger> expected_result_staker1 = new HashMap<>();
-        expected_result_staker1.put(bnUSDScore.getAddress().toString(), staker1ExpectedFees);
+        Map<String, BigInteger> expected_result_staker1 = Map.of(bnUSDScore.getAddress().toString(),
+                staker1ExpectedFees);
 
-        Map<String, BigInteger> expected_result_staker2 = new HashMap<>();
-        expected_result_staker2.put(bnUSDScore.getAddress().toString(), staker2ExpectedFees);
+        Map<String, BigInteger> expected_result_staker2 = Map.of(bnUSDScore.getAddress().toString(),
+                staker2ExpectedFees);
 
         mockStake(staker1.getAddress(), staker1Balance);
         mockStake(staker2.getAddress(), staker2Balance);
@@ -195,8 +195,10 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         contextMock.verify(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker2.getAddress(),
                 staker2ExpectedFees));
 
-        assertEquals(Map.of(), dividendScore.call("getUnclaimedDividends", staker1.getAddress()));
-        assertEquals(Map.of(), dividendScore.call("getUnclaimedDividends", staker2.getAddress()));
+        assertEquals(Map.of(bnUSDScore.getAddress().toString(), BigInteger.ZERO), dividendScore.call(
+                "getUnclaimedDividends", staker1.getAddress()));
+        assertEquals(Map.of(bnUSDScore.getAddress().toString(), BigInteger.ZERO), dividendScore.call(
+                "getUnclaimedDividends", staker2.getAddress()));
     }
 
     @Test
@@ -252,8 +254,10 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         contextMock.verify(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker2.getAddress(),
                 staker2ExpectedFees));
 
-        assertEquals(Map.of(), dividendScore.call("getUnclaimedDividends", staker1.getAddress()));
-        assertEquals(Map.of(), dividendScore.call("getUnclaimedDividends", staker2.getAddress()));
+        assertEquals(Map.of(bnUSDScore.getAddress().toString(), BigInteger.ZERO), dividendScore.call(
+                "getUnclaimedDividends", staker1.getAddress()));
+        assertEquals(Map.of(bnUSDScore.getAddress().toString(), BigInteger.ZERO), dividendScore.call(
+                "getUnclaimedDividends", staker2.getAddress()));
     }
 
     @Test

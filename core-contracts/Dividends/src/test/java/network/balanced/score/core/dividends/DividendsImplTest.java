@@ -118,7 +118,7 @@ class DividendsImplTest extends DividendsImplTestBase {
         // Assert
         contextMock.verify(() -> Context.call(eq(bnUSDScore.getAddress()), eq("transfer"), eq(owner.getAddress()),
                 any(BigInteger.class)));
-        Map<String, BigInteger> zeroDivsMap = new HashMap<>();
+        Map<String, BigInteger> zeroDivsMap = Map.of(bnUSDScore.getAddress().toString(), BigInteger.ZERO);
         assertEquals(zeroDivsMap, dividendScore.call("getUnclaimedDividends", owner.getAddress()));
     }
 
