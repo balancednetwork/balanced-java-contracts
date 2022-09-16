@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -421,8 +421,6 @@ public class VotingPowerTest extends AbstractBoostedBalnTest {
 
     private void createLock(Account account, BigInteger lockUntil, BigInteger amount) {
         doNothing().when(scoreSpy).onBalanceUpdate(any(), any());
-        doNothing().when(scoreSpy).updateRewardData(any());
-        doNothing().when(scoreSpy).updateDividendsData(any(), any());
         Map<String, Object> map = new HashMap<>();
         map.put("method", "createLock");
         map.put("params", Map.of("unlockTime", lockUntil));
