@@ -16,11 +16,9 @@
 
 package network.balanced.score.core.reserve;
 
-import score.Address;
-import score.Context;
-import score.VarDB;
-import score.DictDB;
-import score.BranchDB;
+import network.balanced.score.lib.interfaces.Reserve;
+import network.balanced.score.lib.structs.Disbursement;
+import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
@@ -29,28 +27,26 @@ import scorex.util.HashMap;
 import java.math.BigInteger;
 import java.util.Map;
 
-import static network.balanced.score.core.reserve.Checks.*;
+import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.Constants.EXA;
 
-public class ReserveFund {
+public class ReserveFund implements Reserve {
 
     private static final String GOVERNANCE = "governance";
     private static final String ADMIN = "admin";
     private static final String LOANS_SCORE = "loans_score";
     private static final String BALN_TOKEN = "baln_token";
     private static final String SICX_TOKEN = "sicx_token";
-    private static final String BALN = "baln";
-    private static final String SICX = "sicx";
     private static final String AWARDS = "awards";
 
-    public static final String TAG = "BalancedReserveFund";
+    public static final String SICX_SYMBOL = "sICX";
 
+    public static final String TAG = "BalancedReserveFund";
     public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
     public static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
     private final VarDB<Address> loansScore = Context.newVarDB(LOANS_SCORE, Address.class);
     private final VarDB<Address> balnToken = Context.newVarDB(BALN_TOKEN, Address.class);
     private final VarDB<Address> sicxToken = Context.newVarDB(SICX_TOKEN, Address.class);
-    private final VarDB<BigInteger> baln = Context.newVarDB(BALN, BigInteger.class);
-    public static final VarDB<BigInteger> sicx = Context.newVarDB(SICX, BigInteger.class);
     private final BranchDB<Address, DictDB<Address, BigInteger>> awards = Context.newBranchDB(AWARDS, BigInteger.class);
 
     public ReserveFund(@Optional Address governance) {
@@ -58,11 +54,6 @@ public class ReserveFund {
             Context.require(governance.isContract(), "ReserveFund: Governance address should be a contract");
             ReserveFund.governance.set(governance);
         }
-    }
-
-    public static class Disbursement {
-        public Address address;
-        public BigInteger amount;
     }
 
     @EventLog(indexed = 2)
@@ -77,8 +68,7 @@ public class ReserveFund {
     @External
     public void setGovernance(Address _address) {
         onlyOwner();
-        Context.require(_address.isContract(), TAG + ": Address provided is an EOA address. A contract address is " +
-                "required.");
+        isContract(_address);
         governance.set(_address);
     }
 
@@ -89,7 +79,7 @@ public class ReserveFund {
 
     @External
     public void setAdmin(Address _address) {
-        onlyGovernance();
+        only(governance);
         admin.set(_address);
     }
 
@@ -100,9 +90,9 @@ public class ReserveFund {
 
     @External
     public void setLoans(Address _address) {
-        onlyAdmin();
-        Context.require(_address.isContract(), TAG + ": Address provided is an EOA address. A contract address is " +
-                "required.");
+        only(admin);
+        isContract(_address);
+
         loansScore.set(_address);
     }
 
@@ -113,9 +103,9 @@ public class ReserveFund {
 
     @External
     public void setBaln(Address _address) {
-        onlyAdmin();
-        Context.require(_address.isContract(), TAG + ": Address provided is an EOA address. A contract address is " +
-                "required.");
+        only(admin);
+        isContract(_address);
+
         balnToken.set(_address);
     }
 
@@ -126,9 +116,9 @@ public class ReserveFund {
 
     @External
     public void setSicx(Address _address) {
-        onlyAdmin();
-        Context.require(_address.isContract(), TAG + ": Address provided is an EOA address. A contract address is " +
-                "required.");
+        only(admin);
+        isContract(_address);
+
         sicxToken.set(_address);
     }
 
@@ -140,83 +130,77 @@ public class ReserveFund {
     @External(readonly = true)
     @SuppressWarnings("unchecked")
     public Map<String, BigInteger> getBalances() {
-        Map<String, ?> assets = (Map<String, ?>) Context.call(loansScore.getOrDefault(Checks.defaultAddress),
-                "getCollateralTokens");
+        Map<String, ?> collateralTokens = (Map<String, ?>) Context.call(loansScore.get(), "getCollateralTokens");
         Map<String, BigInteger> balances = new HashMap<>();
-        for (String symbol : assets.keySet()) {
-            BigInteger balance = (BigInteger) Context.call(Address.fromString((String) assets.get(symbol)), "balanceOf",
-                    Context.getAddress());
-            if (balance.compareTo(BigInteger.ZERO) > 0) {
-                balances.put(symbol, balance);
-            }
+        for (String symbol : collateralTokens.keySet()) {
+            BigInteger balance = getBalance(Address.fromString((String) collateralTokens.get(symbol)));
+            balances.put(symbol, balance);
         }
+
         return balances;
     }
 
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
-        Address tokenContract = Context.getCaller();
-        if (tokenContract.equals(balnToken.get())) {
-            baln.set(baln.getOrDefault(BigInteger.ZERO).add(_value));
-        } else if (tokenContract.equals(sicxToken.get())) {
-            sicx.set(sicx.getOrDefault(BigInteger.ZERO).add(_value));
-        } else {
-            Context.revert(TAG + ": The Reserve Fund can only accept BALN or sICX tokens. Deposit not accepted from " +
-                    tokenContract + " Only accepted from BALN = " + balnToken.get() + " Or sICX = " + sicxToken.get());
-        }
     }
 
     @External
-    public BigInteger redeem(Address _to, BigInteger _amount, BigInteger _sicx_rate) {
+    @SuppressWarnings("unchecked")
+    public void redeem(Address _to, BigInteger _valueInLoop, String collateralSymbol) {
         Address sender = Context.getCaller();
-        Address loansScoreAddress = loansScore.get();
-        Context.require(sender.equals(loansScoreAddress), TAG + ": The redeem method can only be called by the Loans " +
+        Address loans = loansScore.get();
+        Context.require(sender.equals(loans), TAG + ": The redeem method can only be called by the Loans " +
                 "SCORE.");
 
-        BigInteger sicxAmount = sicx.getOrDefault(BigInteger.ZERO);
-        BigInteger sicxToSend;
-        Address balnTokenAddress = balnToken.get();
-        Address sicxTokenAddress = sicxToken.get();
+        Address oracle = Context.call(Address.class, loans, "getOracle");
 
-        if (_amount.compareTo(sicxAmount) <= 0) {
-            sicxToSend = _amount;
-        } else {
-            sicxToSend = sicxAmount;
-            BigInteger balnRate = (BigInteger) Context.call(balnTokenAddress, "priceInLoop");
-            BigInteger balnToSend = _amount.subtract(sicxAmount).multiply(_sicx_rate).divide(balnRate);
-            BigInteger balnRemaining = baln.getOrDefault(BigInteger.ZERO).subtract(balnToSend);
-            Context.require(balnRemaining.signum() >= 0, TAG + ": Unable to process request at this time.");
-            baln.set(balnRemaining);
-            sendToken(balnTokenAddress, _to, balnToSend, "Redeemed: ");
+        BigInteger remainingValue = _valueInLoop;
+        Map<String, String> collateralTokens = (Map<String, String>) Context.call(loansScore.get(),
+                "getCollateralTokens");
+
+        String collateralAddress = collateralTokens.get(collateralSymbol);
+        remainingValue = redeemAsset(collateralSymbol, collateralAddress, _to, oracle, remainingValue);
+        if (remainingValue.equals(BigInteger.ZERO)) {
+            return;
         }
-        BigInteger newSicxBalance = sicxAmount.subtract(sicxToSend);
-        Context.require(newSicxBalance.signum() >= 0, TAG + ": sICX balance can't be set negative");
-        sicx.set(newSicxBalance);
-        sendToken(sicxTokenAddress, loansScoreAddress, sicxToSend, "To Loans: ");
-        return sicxToSend;
+
+        if (!collateralSymbol.equals(SICX_SYMBOL)) {
+            remainingValue = redeemAsset(SICX_SYMBOL, collateralTokens.get(SICX_SYMBOL), _to, oracle, remainingValue);
+            if (remainingValue.equals(BigInteger.ZERO)) {
+                return;
+            }
+        }
+
+        Address balnTokenAddress = balnToken.get();
+
+        BigInteger balnRate = Context.call(BigInteger.class, oracle, "getPriceInLoop", "BALN");
+        BigInteger balance = getBalance(balnTokenAddress);
+        BigInteger balnToSend = remainingValue.multiply(EXA).divide(balnRate);
+
+        Context.require(balance.compareTo(balnToSend) > 0, TAG + ": Unable to process request at this time.");
+
+        sendToken(balnTokenAddress, _to, balnToSend, "Redeemed: ");
     }
 
     @External
     public boolean disburse(Address _recipient, Disbursement[] _amounts) {
-        onlyGovernance();
+        only(governance);
         for (Disbursement asset : _amounts) {
             if (asset.address.equals(sicxToken.get())) {
-                BigInteger sicxAmount = sicx.getOrDefault(BigInteger.ZERO);
+                BigInteger sicxAmount = getBalance(asset.address);
                 BigInteger amountToBeClaimedByRecipient = awards.at(_recipient).getOrDefault(asset.address,
                         BigInteger.ZERO);
 
                 Context.require(sicxAmount.compareTo(asset.amount) >= 0,
                         TAG + ":Insufficient balance of asset " + asset.address + " in the reserve fund.");
-                sicx.set(sicxAmount.subtract(asset.amount));
                 awards.at(_recipient).set(asset.address, amountToBeClaimedByRecipient.add(asset.amount));
             } else if (asset.address.equals(balnToken.get())) {
-                BigInteger balnAmount = baln.getOrDefault(BigInteger.ZERO);
+                BigInteger balnAmount = getBalance(asset.address);
                 BigInteger amountToBeClaimedByRecipient = awards.at(_recipient).getOrDefault(asset.address,
                         BigInteger.ZERO);
 
                 Context.require(balnAmount.compareTo(asset.amount) >= 0,
                         TAG + ":Insufficient balance of asset " + asset.address + " in the reserve fund.");
-                baln.set(balnAmount.subtract(asset.amount));
                 awards.at(_recipient).set(asset.address, amountToBeClaimedByRecipient.add(asset.amount));
             } else {
                 Context.revert(TAG + ": Unavailable assets in the reserve fund requested.");
@@ -243,15 +227,36 @@ public class ReserveFund {
         }
     }
 
-    private void sendToken(Address tokenAddress, Address to, BigInteger amount, String message) {
-        String symbol = "";
-        try {
-            symbol = (String) Context.call(tokenAddress, "symbol");
-            Context.call(tokenAddress, "transfer", to, amount, new byte[0]);
-            TokenTransfer(to, amount, message + amount + symbol + " sent to " + to);
-        } catch (Exception e) {
-            Context.revert(TAG + amount + symbol + " not sent to " + to);
+    private BigInteger redeemAsset(String symbol, String collateralAddress, Address to, Address oracle,
+                                   BigInteger remainingValue) {
+        BigInteger rate = Context.call(BigInteger.class, oracle, "getPriceInLoop", symbol);
+        BigInteger balance = getBalance(collateralAddress);
+        BigInteger totalValue = rate.multiply(balance).divide(EXA);
+        if (totalValue.compareTo(remainingValue) >= 0) {
+            BigInteger amountToSend = remainingValue.multiply(EXA).divide(rate);
+            sendToken(collateralAddress, to, amountToSend, "To Loans: ");
+            return BigInteger.ZERO;
         }
+
+        sendToken(collateralAddress, to, balance, "To Loans: ");
+        return remainingValue.subtract(totalValue);
     }
 
+    private void sendToken(String tokenAddress, Address to, BigInteger amount, String message) {
+        sendToken(Address.fromString(tokenAddress), to, amount, message);
+    }
+
+    private void sendToken(Address tokenAddress, Address to, BigInteger amount, String message) {
+        String symbol = (String) Context.call(tokenAddress, "symbol");
+        Context.call(tokenAddress, "transfer", to, amount, new byte[0]);
+        TokenTransfer(to, amount, message + amount + symbol + " sent to " + to);
+    }
+
+    private BigInteger getBalance(Address tokenAddress) {
+        return Context.call(BigInteger.class, tokenAddress, "balanceOf", Context.getAddress());
+    }
+
+    private BigInteger getBalance(String tokenAddress) {
+        return Context.call(BigInteger.class, Address.fromString(tokenAddress), "balanceOf", Context.getAddress());
+    }
 }

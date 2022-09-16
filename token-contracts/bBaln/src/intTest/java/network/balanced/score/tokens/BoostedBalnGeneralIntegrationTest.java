@@ -63,9 +63,7 @@ public class BoostedBalnGeneralIntegrationTest implements ScoreIntegrationTest {
         owner.daofund.addAddressToSetdb();
         balanced.syncDistributions();
         ownerClient._transfer(owner.dex._address(), BigInteger.valueOf(1000).multiply(EXA), null);
-        owner.governance.setContinuousRewardsDay(owner.dex.getDay().add(BigInteger.ONE));
         waitForADay();
-        balanced.syncDistributions();
         //check the effect of checkpoint external method call
         owner.boostedBaln.checkpoint();
         score.Address userAddress = score.Address.fromString(balanced.owner.getAddress().toString());

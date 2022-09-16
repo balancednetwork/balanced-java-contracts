@@ -461,9 +461,7 @@ public class DividendsImpl implements Dividends {
             BigInteger accruedDividends = calculateAccruedDividends( token, user, true);
             BigInteger prevAccruedDividends = userAccruedDividends.getOrDefault(token, BigInteger.ZERO);
             BigInteger totalDivs = accruedDividends.add(prevAccruedDividends);
-            if (totalDivs.signum() > 0) {
-                totalDividends.put(token.toString(), totalDivs);
-            }
+            totalDividends.put(token.toString(), totalDivs);
         }
 
         return totalDividends;

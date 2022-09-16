@@ -127,7 +127,7 @@ public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress
     void claimDividends();
 
     @External
-    void claim(@Optional  int _start,@Optional int _end);
+    void claim(@Optional int _start, @Optional int _end);
 
     @External
     void accumulateDividends(Address user, @Optional int _start, @Optional int _end);

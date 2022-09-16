@@ -82,6 +82,7 @@ public class VotingPowerTest extends AbstractBoostedBalnTest {
     public void setup() throws Exception {
         tokenScore = sm.deploy(owner, IRC2Token.class, INITIAL_SUPPLY);
         Score rewardScore = sm.deploy(owner, DummyContract.class);
+        bBALNScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(), dividendsScore.getAddress(), BOOSTED_BALANCE, B_BALANCED_SYMBOL);
         Score dividendsScore = sm.deploy(owner, DummyContract.class);
         bBALNScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(),
                 dividendsScore.getAddress(), BOOSTED_BALANCE, B_BALANCED_SYMBOL);
@@ -418,6 +419,7 @@ public class VotingPowerTest extends AbstractBoostedBalnTest {
     }
 
     private void createLock(Account account, BigInteger lockUntil, BigInteger amount) {
+        doNothing().when(scoreSpy).onBalanceUpdate(any(), any());
         doNothing().when(scoreSpy).updateRewardData(any());
         doNothing().when(scoreSpy).updateDividendsData(any(), any());
         Map<String, Object> map = new HashMap<>();

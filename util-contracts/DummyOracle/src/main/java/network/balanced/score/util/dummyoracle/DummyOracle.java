@@ -16,6 +16,8 @@
 
 package network.balanced.score.util.dummyoracle;
 
+import score.Context;
+import score.DictDB;
 import score.annotation.External;
 import scorex.util.HashMap;
 
@@ -23,15 +25,19 @@ import java.math.BigInteger;
 import java.util.Map;
 
 public class DummyOracle {
-
+    public static final DictDB<String, BigInteger> icxRates = Context.newDictDB("rates", BigInteger.class);
+    
     public DummyOracle() {
+        icxRates.set("USD", BigInteger.valueOf(597955725813433531L));
+        icxRates.set("BTC", new BigInteger("32c6eaee89097750da0", 16));
+        icxRates.set("ETH", new BigInteger("2f723e28a3d2f1eddb84", 16));
     }
 
     @External(readonly = true)
     public Map<String, BigInteger> get_reference_data(String _base, String _quote) {
         Map<String, BigInteger> result = new HashMap<>();
         if (_base.equals("USD") && _quote.equals("ICX")) {
-            result.put("rate", BigInteger.valueOf(597955725813433531L));
+            result.put("rate", icxRates.get("USD"));
             result.put("last_update_base", BigInteger.valueOf(1602202275702605L));
             result.put("last_update_quote", BigInteger.valueOf(1602202190000000L));
         }
@@ -45,12 +51,30 @@ public class DummyOracle {
             result.put("last_update_base", BigInteger.valueOf(1616643098000000L));
             result.put("last_update_quote", BigInteger.valueOf(1616643311790241L));
         }
+
         if (_base.equals("XLM") && _quote.equals("USD")) {
             result.put("rate", BigInteger.valueOf(360358450000000000L));
             result.put("last_update_base", BigInteger.valueOf(1616650080000000L));
             result.put("last_update_quote", BigInteger.valueOf(1616650390762201L));
         }
 
+        if (_base.equals("BTC") && _quote.equals("ICX")) {
+            result.put("rate", icxRates.get("BTC"));
+            result.put("last_update_base", new BigInteger("5cf17f1c573c0", 16));
+            result.put("last_update_quote",new BigInteger("5e2055b001840", 16));
+        }
+
+        if (_base.equals("ETH") && _quote.equals("ICX")) {
+            result.put("rate", icxRates.get("ETH"));
+            result.put("last_update_base", new BigInteger("5cf17f1c573c0", 16));
+            result.put("last_update_quote", new BigInteger("5e2055b001840", 16));
+        }
+
         return result;
+    }
+
+    @External
+    public void setICXRate(String symbol, BigInteger rate) {
+        icxRates.set(symbol, rate);
     }
 }

@@ -46,15 +46,13 @@ public class BoostedBalnIncreaseTimeTest {
     }
 
     @Test
-    void testIncreaseTIme(){
+    void testIncreaseTime(){
         DefaultScoreClient ownerClient  = getOwnerClient();
         score.Address userAddress = score.Address.fromString(balanced.owner.getAddress().toString());
         owner.daofund.addAddressToSetdb();
         balanced.syncDistributions();
         ownerClient._transfer(owner.dex._address(), BigInteger.valueOf(1000).multiply(EXA), null);
-        owner.governance.setContinuousRewardsDay(owner.dex.getDay().add(BigInteger.ONE));
         waitDays(1);
-        balanced.syncDistributions();
         BigInteger updatedBalnHolding = owner.rewards.getBalnHolding(userAddress);
         System.out.println("baln holding from reward: "+updatedBalnHolding);
         owner.rewards.claimRewards();
@@ -98,9 +96,7 @@ public class BoostedBalnIncreaseTimeTest {
         score.Address userAddress = score.Address.fromString(balanced.owner.getAddress().toString());
         owner.daofund.addAddressToSetdb();
         ownerClient._transfer(owner.dex._address(), BigInteger.valueOf(1000).multiply(EXA), null);
-        owner.governance.setContinuousRewardsDay(owner.dex.getDay().add(BigInteger.ONE));
         waitDays(1);
-        balanced.syncDistributions();
         BigInteger updatedBalnHolding = owner.rewards.getBalnHolding(userAddress);
         System.out.println("baln holding from reward: "+updatedBalnHolding);
         owner.rewards.claimRewards();
@@ -118,7 +114,7 @@ public class BoostedBalnIncreaseTimeTest {
         System.out.println("balance is: "+balance);
         System.out.println("expected balance is: "+availableBalnBalance.divide(BigInteger.TWO));
 
-        owner.boostedBaln.withdraw();
+        owner.boostedBaln.withdrawEarly();
 
         BigInteger balanceAfterWithdraw = owner.boostedBaln.balanceOf(userAddress, BigInteger.ZERO);
         assertEquals(balanceAfterWithdraw, BigInteger.ZERO);

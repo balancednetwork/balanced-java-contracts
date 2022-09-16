@@ -30,8 +30,8 @@ repositories {
 }
 
 dependencies {
-    runtimeClasspath files('../.deployment')
-    runtimeClasspath files('../.keystores')
+    runtimeOnly files('../.deployment')
+    runtimeOnly files('../.keystores')
     implementation "foundation.icon:javaee-api:0.9.0"
 
     annotationProcessor "foundation.icon:javaee-score-client:0.9.0"

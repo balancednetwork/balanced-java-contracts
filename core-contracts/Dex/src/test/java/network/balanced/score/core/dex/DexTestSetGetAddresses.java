@@ -16,12 +16,12 @@
 
 package network.balanced.score.core.dex;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class DexTestSetGetAddresses extends DexTestBase {
-    
+
     @BeforeEach
     public void configureContract() throws Exception {
         dexScore = sm.deploy(ownerAccount, DexImpl.class, governanceScore.getAddress());
@@ -31,7 +31,7 @@ public class DexTestSetGetAddresses extends DexTestBase {
     void setGetAdmin() {
         testAdmin(dexScore, governanceScore, governanceScore);
     }
-    
+
     @Test
     void setGetGovernance() {
         testGovernance(dexScore, governanceScore, ownerAccount);
@@ -40,9 +40,9 @@ public class DexTestSetGetAddresses extends DexTestBase {
     @Test
     void setGetSicx() {
         testContractSettersAndGetters(dexScore, governanceScore, governanceScore,
-                 "setSicx", dexScore.getAddress(), "getSicx");
+                "setSicx", dexScore.getAddress(), "getSicx");
     }
-    
+
     @Test
     void setGetDividends() {
         testContractSettersAndGetters(dexScore, governanceScore, governanceScore,

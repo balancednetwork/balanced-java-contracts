@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,8 +43,10 @@ public class Addresses {
     public static final VarDB<Address> router = Context.newVarDB("router", Address.class);
     public static final VarDB<Address> feehandler = Context.newVarDB("feehandler", Address.class);
     public static final VarDB<Address> stakedLp = Context.newVarDB("stakedLp", Address.class);
-    
-    private Addresses() {}
+    public static final VarDB<Address> balancedOracle = Context.newVarDB("balancedOracle", Address.class);
+
+    private Addresses() {
+    }
 
     public static Address get(String key) {
         if (key.equals("governance")) {
@@ -67,10 +69,11 @@ public class Addresses {
         bnUSD.set(addresses.bnUSD);
         baln.set(addresses.baln);
         bwt.set(addresses.bwt);
-        router .set(addresses.router);
+        router.set(addresses.router);
         rebalancing.set(addresses.rebalancing);
         feehandler.set(addresses.feehandler);
         stakedLp.set(addresses.stakedLp);
+        balancedOracle.set(addresses.balancedOracle);
     }
 
     public static Map<String, Address> getAddresses() {
@@ -91,6 +94,8 @@ public class Addresses {
         addressData.put("router", router.get());
         addressData.put("feehandler", feehandler.get());
         addressData.put("stakedLp", stakedLp.get());
+        addressData.put("balancedOracle", balancedOracle.get());
+
         return addressData;
     }
 
@@ -99,15 +104,15 @@ public class Addresses {
         for (String contractToBeSet : ADDRESSES.get(contract)) {
             String setMethod = SETTERS.get(contractToBeSet);
             try {
-                GovernanceImpl.call(get(contract), setMethod, get(contractToBeSet));  
+                GovernanceImpl.call(get(contract), setMethod, get(contractToBeSet));
             } catch (Exception e) {
                 // to make migration/testing easier
 
                 if (contractToBeSet.equals("bnUSD")) {
                     try {
-                        GovernanceImpl.call(get(contract), "setbnUSD", get(contractToBeSet));  
-                    } catch (Exception e2) {
-                    
+                        GovernanceImpl.call(get(contract), "setbnUSD", get(contractToBeSet));
+                    } catch (Exception ignored) {
+
                     }
                 }
             }
@@ -124,9 +129,9 @@ public class Addresses {
                     // to make migration/testing easier
                     if (contract.equals("bnUSD")) {
                         try {
-                            GovernanceImpl.call(get(targetContract), "setbnUSD", get(contract));  
-                        } catch (Exception e2) {
-                        
+                            GovernanceImpl.call(get(targetContract), "setbnUSD", get(contract));
+                        } catch (Exception ignored) {
+
                         }
                     }
                 }
@@ -138,7 +143,7 @@ public class Addresses {
     public static void setAdmins() {
         for (String targetContract : ADMIN_ADDRESSES.keySet()) {
             String contract = ADMIN_ADDRESSES.get(targetContract);
-            GovernanceImpl.call(get(targetContract), "setAdmin", get(contract));        
+            GovernanceImpl.call(get(targetContract), "setAdmin", get(contract));
         }
     }
 }

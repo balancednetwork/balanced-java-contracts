@@ -16,21 +16,23 @@
 
 package network.balanced.score.lib.interfaces;
 
-import foundation.icon.score.client.ScoreClient;
-import foundation.icon.score.client.ScoreInterface;
-import network.balanced.score.lib.structs.SupplyDetails;
-import score.Address;
-import score.annotation.External;
-import score.annotation.Optional;
-
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+import foundation.icon.score.client.ScoreClient;
+import foundation.icon.score.client.ScoreInterface;
+import network.balanced.score.lib.interfaces.addresses.BalnAddress;
+import network.balanced.score.lib.interfaces.addresses.DividendsAddress;
+import network.balanced.score.lib.interfaces.addresses.RewardsAddress;
+import network.balanced.score.lib.interfaces.base.TokenFallback;
+import score.Address;
+import score.annotation.External;
+import score.annotation.Optional;
+
 @ScoreClient
 @ScoreInterface
-public interface BoostedBaln {
-
+public interface BoostedBaln extends BalnAddress, RewardsAddress, DividendsAddress, TokenFallback {
     @External
     void setMinimumLockingAmount(BigInteger value);
 
@@ -39,15 +41,6 @@ public interface BoostedBaln {
 
     @External
     void setPenaltyAddress(Address penaltyAddress);
-
-    @External
-    void commitTransferOwnership(Address address);
-
-    @External
-    void applyTransferOwnership();
-
-    @External
-    void kick(Address user);
 
     @External(readonly = true)
     Map<String, BigInteger> getLocked(Address _owner);
@@ -71,13 +64,16 @@ public interface BoostedBaln {
     void checkpoint();
 
     @External
-    void tokenFallback(Address _from, BigInteger _value, byte[] _data);
-
-    @External
     void increaseUnlockTime(BigInteger unlockTime);
 
     @External
+    void kick(Address user);
+
+    @External
     void withdraw();
+
+    @External
+    void withdrawEarly();
 
     @External(readonly = true)
     BigInteger balanceOf(Address _owner, @Optional BigInteger timestamp);
@@ -92,12 +88,6 @@ public interface BoostedBaln {
     BigInteger totalSupplyAt(BigInteger block);
 
     @External(readonly = true)
-    Address admin();
-
-    @External(readonly = true)
-    Address futureAdmin();
-
-    @External(readonly = true)
     String name();
 
     @External(readonly = true)
@@ -108,7 +98,4 @@ public interface BoostedBaln {
 
     @External(readonly = true)
     BigInteger userPointEpoch(Address address);
-
-    @External(readonly = true)
-    SupplyDetails getPrincipalSupply(Address _user);
 }
