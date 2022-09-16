@@ -58,6 +58,11 @@ class BalancedOracleTestSetup extends BalancedOracleTestBase {
     }
 
     @Test
+    void setGetUpdateThreshold() {
+        testOwnerControlMethods(balancedOracle, "setLastUpdateThreshold", "getLastUpdateThreshold", BigInteger.TEN);
+    }
+
+    @Test
     void addRemoveDexPricedAssets() {
         // Arrange
         testAdmin();

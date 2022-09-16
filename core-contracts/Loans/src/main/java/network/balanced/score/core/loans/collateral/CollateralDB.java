@@ -27,8 +27,7 @@ import java.math.BigInteger;
 import java.util.Map;
 
 import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
-import static network.balanced.score.lib.utils.Constants.EXA;
-
+import static network.balanced.score.lib.utils.Math.pow;
 
 public class CollateralDB {
     private static final String TAG = "BalancedLoansAssets";
@@ -65,7 +64,8 @@ public class CollateralDB {
     }
 
     public static Collateral getCollateral(Address address) {
-        Context.require(arrayDbContains(collateralAddresses, address), address + " is not a supported collateral type.");
+        Context.require(arrayDbContains(collateralAddresses, address), address + " is not a supported collateral type" +
+                ".");
         return new Collateral(COLLATERAL_DB_PREFIX + "|" + address.toString());
     }
 
@@ -108,10 +108,13 @@ public class CollateralDB {
 
             Address collateralAddress = collateral.getAssetAddress();
             Token collateralContract = new Token(collateralAddress);
-            BigInteger value = collateralContract.balanceOf(Context.getAddress()).multiply(collateralContract.lastPriceInLoop());
+            BigInteger collateralDecimals = pow(BigInteger.TEN, collateralContract.decimals().intValue());
+
+            BigInteger value =
+                    collateralContract.balanceOf(Context.getAddress()).multiply(collateralContract.lastPriceInLoop()).divide(collateralDecimals);
             totalCollateral = totalCollateral.add(value);
         }
 
-        return totalCollateral.divide(EXA);
+        return totalCollateral;
     }
 }
