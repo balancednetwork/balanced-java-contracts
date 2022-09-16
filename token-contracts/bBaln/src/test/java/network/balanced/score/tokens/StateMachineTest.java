@@ -438,7 +438,7 @@ public class StateMachineTest extends AbstractBoostedBalnTest {
         sm.getBlock().increase(deltaBlock);
         assertEquals(BigInteger.ZERO, bBalnScore.call("balanceOf", accounts.get(0).getAddress(), BigInteger.ZERO));
 
-        Executable withdraw = () -> bBalnScore.invoke(accounts.get(0), "withdraw");
+        Executable withdraw = () -> bBalnScore.invoke(accounts.get(0), "withdrawEarly");
 
         String expectedErrorMessage = "Withdraw: The lock has expired, use withdraw method";
         expectErrorMessage(withdraw, expectedErrorMessage);
