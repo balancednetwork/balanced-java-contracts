@@ -32,16 +32,12 @@ import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_SECOND;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.times;
-import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_SECOND;
+import static org.mockito.Mockito.*;
 
 
 public class BoostedBALNUnlockTest extends AbstractBoostedBalnTest {
@@ -60,8 +56,8 @@ public class BoostedBALNUnlockTest extends AbstractBoostedBalnTest {
     @BeforeEach
     public void setup() throws Exception {
         Score rewardScore = sm.deploy(owner, DummyContract.class);
-        bBALNScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(), dividendsScore.getAddress(),
-                BOOSTED_BALANCE, B_BALANCED_SYMBOL);
+        bBALNScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(),
+                dividendsScore.getAddress(), BOOSTED_BALANCE, B_BALANCED_SYMBOL);
 
         scoreSpy = (BoostedBalnImpl) spy(bBALNScore.getInstance());
         bBALNScore.setInstance(scoreSpy);
@@ -87,7 +83,8 @@ public class BoostedBALNUnlockTest extends AbstractBoostedBalnTest {
 
         Map<String, BigInteger> balance = (Map<String, BigInteger>) bBALNScore.call("getLocked", owner.getAddress());
         long actual_unlock = balance.get("end").longValue();
-        long delta = BigInteger.valueOf(actual_unlock - timestamp).divide(BigInteger.TEN.pow(6)).divide(BigInteger.TWO).longValue();
+        long delta =
+                BigInteger.valueOf(actual_unlock - timestamp).divide(BigInteger.TEN.pow(6)).divide(BigInteger.TWO).longValue();
 
         sm.getBlock().increase(delta - 5);
         BigInteger _balance = (BigInteger) bBALNScore.call("balanceOf", owner.getAddress(), BigInteger.ZERO);
@@ -124,7 +121,8 @@ public class BoostedBALNUnlockTest extends AbstractBoostedBalnTest {
         Map<String, BigInteger> newBalance = (Map<String, BigInteger>) bBALNScore.call("getLocked", owner.getAddress());
         BigInteger extendedActualUnlock = newBalance.get("end");
 
-        long delta = extendedActualUnlock.subtract(BigInteger.valueOf(timestamp)).divide(BigInteger.TEN.pow(6)).divide(BigInteger.TWO).longValue();
+        long delta =
+                extendedActualUnlock.subtract(BigInteger.valueOf(timestamp)).divide(BigInteger.TEN.pow(6)).divide(BigInteger.TWO).longValue();
 
         sm.getBlock().increase(delta - 2);
         BigInteger _balance = (BigInteger) bBALNScore.call("balanceOf", owner.getAddress(), BigInteger.ZERO);
@@ -153,7 +151,8 @@ public class BoostedBALNUnlockTest extends AbstractBoostedBalnTest {
 
         Map<String, BigInteger> balance = (Map<String, BigInteger>) bBALNScore.call("getLocked", owner.getAddress());
 
-        BigInteger halfTime = BigInteger.valueOf(unlockTime).divide(MICRO_SECONDS_IN_A_SECOND).divide(BigInteger.valueOf(4));
+        BigInteger halfTime =
+                BigInteger.valueOf(unlockTime).divide(MICRO_SECONDS_IN_A_SECOND).divide(BigInteger.valueOf(4));
 
         sm.getBlock().increase(halfTime.longValue());
         bBALNScore.call("kick", owner.getAddress());
@@ -170,7 +169,9 @@ public class BoostedBALNUnlockTest extends AbstractBoostedBalnTest {
 
         long low = WEEK.longValue() * 2;
         long high = WEEK.longValue() * 52;
-        return Stream.of(Arguments.of(ThreadLocalRandom.current().nextLong(low, high + 1)), Arguments.of(ThreadLocalRandom.current().nextLong(low, high + 1)), Arguments.of(ThreadLocalRandom.current().nextLong(low, high + 1)));
+        return Stream.of(Arguments.of(ThreadLocalRandom.current().nextLong(low, high + 1)),
+                Arguments.of(ThreadLocalRandom.current().nextLong(low, high + 1)),
+                Arguments.of(ThreadLocalRandom.current().nextLong(low, high + 1)));
     }
 
     private static Stream<Arguments> extendedUnlockWeeks() {
@@ -178,6 +179,11 @@ public class BoostedBALNUnlockTest extends AbstractBoostedBalnTest {
         long week = WEEK.longValue();
         long low = week * 2;
         long high = week * 52;
-        return Stream.of(Arguments.of(ThreadLocalRandom.current().nextLong(low, high + 1), ThreadLocalRandom.current().nextLong(week, low)), Arguments.of(ThreadLocalRandom.current().nextLong(low, high + 1), ThreadLocalRandom.current().nextLong(week, low)), Arguments.of(ThreadLocalRandom.current().nextLong(low, high + 1), ThreadLocalRandom.current().nextLong(week, low)));
+        return Stream.of(Arguments.of(ThreadLocalRandom.current().nextLong(low, high + 1),
+                        ThreadLocalRandom.current().nextLong(week, low)),
+                Arguments.of(ThreadLocalRandom.current().nextLong(low, high + 1),
+                        ThreadLocalRandom.current().nextLong(week, low)),
+                Arguments.of(ThreadLocalRandom.current().nextLong(low, high + 1),
+                        ThreadLocalRandom.current().nextLong(week, low)));
     }
 }

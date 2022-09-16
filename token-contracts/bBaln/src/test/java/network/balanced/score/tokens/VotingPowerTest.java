@@ -82,7 +82,8 @@ public class VotingPowerTest extends AbstractBoostedBalnTest {
     public void setup() throws Exception {
         tokenScore = sm.deploy(owner, IRC2Token.class, INITIAL_SUPPLY);
         Score rewardScore = sm.deploy(owner, DummyContract.class);
-        bBALNScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(), dividendsScore.getAddress(), BOOSTED_BALANCE, B_BALANCED_SYMBOL);
+        bBALNScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(),
+                dividendsScore.getAddress(), BOOSTED_BALANCE, B_BALANCED_SYMBOL);
         Score dividendsScore = sm.deploy(owner, DummyContract.class);
         bBALNScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(),
                 dividendsScore.getAddress(), BOOSTED_BALANCE, B_BALANCED_SYMBOL);
@@ -470,7 +471,6 @@ public class VotingPowerTest extends AbstractBoostedBalnTest {
             this.timestamp = timestamp;
         }
     }
-
 
 
 }
