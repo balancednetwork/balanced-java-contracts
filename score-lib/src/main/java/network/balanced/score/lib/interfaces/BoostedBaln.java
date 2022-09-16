@@ -17,20 +17,24 @@
 package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreInterface;
-import foundation.icon.score.client.ScoreClient;
-import foundation.icon.score.client.ScoreInterface;
-import score.Address;
-import score.annotation.External;
-import score.annotation.Optional;
 
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+import foundation.icon.score.client.ScoreClient;
+import foundation.icon.score.client.ScoreInterface;
+import network.balanced.score.lib.interfaces.addresses.BalnAddress;
+import network.balanced.score.lib.interfaces.addresses.DividendsAddress;
+import network.balanced.score.lib.interfaces.addresses.RewardsAddress;
+import network.balanced.score.lib.interfaces.base.TokenFallback;
+import score.Address;
+import score.annotation.External;
+import score.annotation.Optional;
+
 @ScoreClient
 @ScoreInterface
-public interface BoostedBaln {
-
+public interface BoostedBaln extends BalnAddress, RewardsAddress, DividendsAddress, TokenFallback {
     @External
     void setMinimumLockingAmount(BigInteger value);
 
@@ -62,9 +66,6 @@ public interface BoostedBaln {
     void checkpoint();
 
     @External
-    void tokenFallback(Address _from, BigInteger _value, byte[] _data);
-
-    @External
     void increaseUnlockTime(BigInteger unlockTime);
 
     @External
@@ -72,6 +73,9 @@ public interface BoostedBaln {
 
     @External
     void withdraw();
+
+    @External
+    void withdrawEarly();
 
     @External(readonly = true)
     BigInteger balanceOf(Address _owner, @Optional BigInteger timestamp);

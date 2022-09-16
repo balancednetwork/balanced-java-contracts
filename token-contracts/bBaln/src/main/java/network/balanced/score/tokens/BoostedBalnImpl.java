@@ -36,11 +36,12 @@ import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.Math.convertToNumber;
 import static network.balanced.score.lib.utils.Check.onlyOwner;
 import static network.balanced.score.tokens.Constants.WEEK_IN_MICRO_SECONDS;
+import static  network.balanced.score.lib.utils.NonReentrant.globalReentryLock;
 
 public class BoostedBalnImpl extends AbstractBoostedBaln {
 
-    public BoostedBalnImpl(Address balnAddress, Address rewardAddress, String name, String symbol) {
-        super(balnAddress, rewardAddress, name, symbol);
+    public BoostedBalnImpl(Address balnAddress, Address rewardAddress, Address dividendsAddress, String name, String symbol) {
+        super(balnAddress, rewardAddress, dividendsAddress, name, symbol);
     }
 
     @External
@@ -154,11 +155,10 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
 
     @External
     public void increaseUnlockTime(BigInteger unlockTime) {
-        this.nonReentrant.updateLock(true);
+        globalReentryLock();
         Address sender = Context.getCaller();
         BigInteger blockTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());
 
-        this.assertNotContract(sender);
         LockedBalance locked = getLockedBalance(sender);
         unlockTime = unlockTime.divide(WEEK_IN_MICRO_SECONDS).multiply(WEEK_IN_MICRO_SECONDS);
 
@@ -170,7 +170,6 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
                 "can be 4 years max");
 
         this.depositFor(sender, BigInteger.ZERO, unlockTime, locked, INCREASE_UNLOCK_TIME);
-        this.nonReentrant.updateLock(false);
     }
 
     @External
@@ -183,15 +182,42 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
         }
     }
 
-    // TODO discuss instant unlock
     @External
     public void withdraw() {
-        this.nonReentrant.updateLock(true);
+        globalReentryLock();
         Address sender = Context.getCaller();
         BigInteger blockTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());
 
         LockedBalance locked = getLockedBalance(sender);
-        //require(blockTimestamp.compareTo(locked.getEnd()) >= 0, "Withdraw: The lock haven't expire");
+        Context.require(blockTimestamp.compareTo(locked.getEnd()) >= 0, "Withdraw: The lock haven't expire");
+        BigInteger value = locked.amount;
+
+        LockedBalance oldLocked = locked.newLockedBalance();
+        locked.end = UnsignedBigInteger.ZERO;
+        locked.amount = BigInteger.ZERO;
+
+        this.locked.set(sender, locked);
+        BigInteger supplyBefore = this.supply.get();
+        this.supply.set(supplyBefore.subtract(value));
+
+        this.checkpoint(sender, oldLocked, locked);
+
+        Context.call(this.balnAddress.get(), "transfer", sender, value, "withdraw".getBytes());
+
+        users.remove(sender);
+        Withdraw(sender, value, blockTimestamp);
+        Supply(supplyBefore, supplyBefore.subtract(value));
+        onKick(sender);
+    }
+
+    @External
+    public void withdrawEarly() {
+        globalReentryLock();
+        Address sender = Context.getCaller();
+        BigInteger blockTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());
+
+        LockedBalance locked = getLockedBalance(sender);
+        Context.require(blockTimestamp.compareTo(locked.getEnd()) < 0, "Withdraw: The lock has expired, use withdraw method");
         BigInteger value = locked.amount;
 
         LockedBalance oldLocked = locked.newLockedBalance();
@@ -203,22 +229,16 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
 
         this.checkpoint(sender, oldLocked, locked);
 
-        if (blockTimestamp.compareTo(oldLocked.getEnd()) < 0) {
-            if (value.mod(BigInteger.TWO).equals(BigInteger.ZERO)) {
-                value = value.divide(BigInteger.TWO);
-            } else {
-                value = value.divide(BigInteger.TWO).add(BigInteger.ONE);
-            }
-            Context.call(this.balnAddress.get(), "transfer", this.penaltyAddress.get(), value, "withdraw".getBytes());
-        }
+        BigInteger penaltyAmount =  value.divide(BigInteger.TWO);
+        BigInteger returnAmount = value.subtract(penaltyAmount);
 
-        Context.call(this.balnAddress.get(), "transfer", sender, value, "withdraw".getBytes());
+        Context.call(this.balnAddress.get(), "transfer", this.penaltyAddress.get(), penaltyAmount, "withdrawPenalty".getBytes());
+        Context.call(this.balnAddress.get(), "transfer", sender, returnAmount, "withdrawEarly".getBytes());
+
         users.remove(sender);
         Withdraw(sender, value, blockTimestamp);
         Supply(supplyBefore, supplyBefore.subtract(value));
-
-        onBalanceUpdate(sender, balanceOf(sender, blockTimestamp));
-        this.nonReentrant.updateLock(false);
+        onKick(sender);
     }
 
     @External(readonly = true)
@@ -236,9 +256,11 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
         } else {
             Point lastPoint = getUserPointHistory(_owner, epoch);
             UnsignedBigInteger _delta = uTimestamp.subtract(lastPoint.timestamp);
-            return lastPoint.bias
+            BigInteger balance = lastPoint.bias
                     .subtract(lastPoint.slope.multiply(_delta.toBigInteger()))
                     .max(BigInteger.ZERO);
+
+            return balance;
         }
     }
 
@@ -273,8 +295,9 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
         }
 
         UnsignedBigInteger delta = blockTime.subtract(uPoint.timestamp);
+        BigInteger balance = uPoint.bias.subtract(uPoint.slope.multiply(delta.toBigInteger())).max(BigInteger.ZERO);
 
-        return uPoint.bias.subtract(uPoint.slope.multiply(delta.toBigInteger())).max(BigInteger.ZERO);
+        return balance;
     }
 
     @External(readonly = true)
@@ -321,5 +344,38 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
     @External(readonly = true)
     public BigInteger userPointEpoch(Address address) {
         return this.userPointEpoch.getOrDefault(address, BigInteger.ZERO);
+    }
+
+    @External
+    public void setBaln(Address _address) {
+        onlyOwner();
+        balnAddress.set(_address);
+    }
+
+    @External(readonly = true)
+    public Address getBaln() {
+        return balnAddress.get();
+    }
+
+    @External
+    public void setDividends(Address _address) {
+        onlyOwner();
+        dividendsAddress.set(_address);
+    }
+
+    @External(readonly = true)
+    public Address getDividends() {
+        return dividendsAddress.get();
+    }
+
+    @External
+    public void setRewards(Address _address) {
+        onlyOwner();
+        rewardAddress.set(_address);
+    }
+
+    @External(readonly = true)
+    public Address getRewards() {
+        return rewardAddress.get();
     }
 }
