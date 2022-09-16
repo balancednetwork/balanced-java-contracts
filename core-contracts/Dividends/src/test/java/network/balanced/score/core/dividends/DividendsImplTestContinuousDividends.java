@@ -74,7 +74,8 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         Account staker1 = sm.createAccount();
         Account staker2 = sm.createAccount();
         Account staker3 = sm.createAccount();
-        contextMock.when(() -> Context.call(BigInteger.class, balnScore.getAddress(), "stakedBalanceOf", staker3.getAddress())).thenReturn(BigInteger.ZERO);
+        contextMock.when(() -> Context.call(BigInteger.class, balnScore.getAddress(), "stakedBalanceOf",
+                staker3.getAddress())).thenReturn(BigInteger.ZERO);
 
         BigInteger stakerPercentage = getFeePercentage("baln_holders");
         BigInteger staker1Balance = BigInteger.valueOf(150).multiply(ICX);
@@ -149,7 +150,8 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         Account staker2 = sm.createAccount();
         Account staker3 = sm.createAccount();
 
-        contextMock.when(() -> Context.call(BigInteger.class, balnScore.getAddress(), "stakedBalanceOf", staker3.getAddress())).thenReturn(BigInteger.ZERO);
+        contextMock.when(() -> Context.call(BigInteger.class, balnScore.getAddress(), "stakedBalanceOf",
+                staker3.getAddress())).thenReturn(BigInteger.ZERO);
 
         BigInteger stakerPercentage = getFeePercentage("baln_holders");
 
@@ -173,8 +175,6 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         BigInteger staker2ExpectedFees = expectedStakingFees.multiply(staker2Balance).divide(totalStake);
 
 
-
-
         // Assert
         mockStake(staker1.getAddress(), staker1Balance);
         mockStake(staker2.getAddress(), staker2Balance);
@@ -182,14 +182,18 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         mockBBalnBalanceOf(staker1.getAddress(), staker1Balance);
 
 
-        contextMock.when(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker1.getAddress(), staker1ExpectedFees)).thenReturn("Token Transferred");
-        contextMock.when(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker2.getAddress(), staker2ExpectedFees)).thenReturn("Token Transferred");
+        contextMock.when(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker1.getAddress(),
+                staker1ExpectedFees)).thenReturn("Token Transferred");
+        contextMock.when(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker2.getAddress(),
+                staker2ExpectedFees)).thenReturn("Token Transferred");
 
         dividendScore.invoke(staker1, "claimDividends");
         dividendScore.invoke(staker2, "claimDividends");
 
-        contextMock.verify(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker1.getAddress(), staker1ExpectedFees));
-        contextMock.verify(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker2.getAddress(), staker2ExpectedFees));
+        contextMock.verify(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker1.getAddress(),
+                staker1ExpectedFees));
+        contextMock.verify(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker2.getAddress(),
+                staker2ExpectedFees));
 
         assertEquals(Map.of(), dividendScore.call("getUnclaimedDividends", staker1.getAddress()));
         assertEquals(Map.of(), dividendScore.call("getUnclaimedDividends", staker2.getAddress()));
@@ -204,8 +208,10 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         Account staker1 = sm.createAccount();
         Account staker2 = sm.createAccount();
 
-        contextMock.when(() -> Context.call(BigInteger.class, balnScore.getAddress(), "stakedBalanceOf", staker1.getAddress())).thenReturn(BigInteger.ZERO);
-        contextMock.when(() -> Context.call(BigInteger.class, balnScore.getAddress(), "stakedBalanceOf", staker2.getAddress())).thenReturn(BigInteger.ZERO);
+        contextMock.when(() -> Context.call(BigInteger.class, balnScore.getAddress(), "stakedBalanceOf",
+                staker1.getAddress())).thenReturn(BigInteger.ZERO);
+        contextMock.when(() -> Context.call(BigInteger.class, balnScore.getAddress(), "stakedBalanceOf",
+                staker2.getAddress())).thenReturn(BigInteger.ZERO);
 
         BigInteger stakerPercentage = getFeePercentage("baln_holders");
 
@@ -233,14 +239,18 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         mockBBalnBalanceOf(staker1.getAddress(), staker1Balance);
 
 
-        contextMock.when(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker1.getAddress(), staker1ExpectedFees)).thenReturn("Token Transferred");
-        contextMock.when(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker2.getAddress(), staker2ExpectedFees)).thenReturn("Token Transferred");
+        contextMock.when(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker1.getAddress(),
+                staker1ExpectedFees)).thenReturn("Token Transferred");
+        contextMock.when(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker2.getAddress(),
+                staker2ExpectedFees)).thenReturn("Token Transferred");
 
         dividendScore.invoke(staker1, "claimDividends");
         dividendScore.invoke(staker2, "claimDividends");
 
-        contextMock.verify(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker1.getAddress(), staker1ExpectedFees));
-        contextMock.verify(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker2.getAddress(), staker2ExpectedFees));
+        contextMock.verify(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker1.getAddress(),
+                staker1ExpectedFees));
+        contextMock.verify(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker2.getAddress(),
+                staker2ExpectedFees));
 
         assertEquals(Map.of(), dividendScore.call("getUnclaimedDividends", staker1.getAddress()));
         assertEquals(Map.of(), dividendScore.call("getUnclaimedDividends", staker2.getAddress()));
@@ -255,8 +265,10 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         Account staker1 = sm.createAccount();
         Account staker2 = sm.createAccount();
 
-        contextMock.when(() -> Context.call(BigInteger.class, balnScore.getAddress(), "stakedBalanceOf", staker1.getAddress())).thenReturn(BigInteger.ZERO);
-        contextMock.when(() -> Context.call(BigInteger.class, balnScore.getAddress(), "stakedBalanceOf", staker2.getAddress())).thenReturn(BigInteger.ZERO);
+        contextMock.when(() -> Context.call(BigInteger.class, balnScore.getAddress(), "stakedBalanceOf",
+                staker1.getAddress())).thenReturn(BigInteger.ZERO);
+        contextMock.when(() -> Context.call(BigInteger.class, balnScore.getAddress(), "stakedBalanceOf",
+                staker2.getAddress())).thenReturn(BigInteger.ZERO);
 
         BigInteger stakerPercentage = getFeePercentage("baln_holders");
 
@@ -283,16 +295,20 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         mockBBalnBalanceOf(staker2.getAddress(), staker2Balance);
         mockBBalnBalanceOf(staker1.getAddress(), staker1Balance);
 
-        dividendScore.invoke(bBalnScore, "onKick",  staker1.getAddress(), BigInteger.ZERO, "null".getBytes());
+        dividendScore.invoke(bBalnScore, "onKick", staker1.getAddress(), BigInteger.ZERO, "null".getBytes());
 
-        contextMock.when(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker1.getAddress(), staker1ExpectedFees)).thenReturn("Token Transferred");
-        contextMock.when(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker2.getAddress(), staker2ExpectedFees)).thenReturn("Token Transferred");
+        contextMock.when(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker1.getAddress(),
+                staker1ExpectedFees)).thenReturn("Token Transferred");
+        contextMock.when(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker2.getAddress(),
+                staker2ExpectedFees)).thenReturn("Token Transferred");
 
         dividendScore.invoke(staker1, "claimDividends");
         dividendScore.invoke(staker2, "claimDividends");
 
-        contextMock.verify(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker1.getAddress(), staker1ExpectedFees));
-        contextMock.verify(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker2.getAddress(), staker2ExpectedFees));
+        contextMock.verify(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker1.getAddress(),
+                staker1ExpectedFees));
+        contextMock.verify(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker2.getAddress(),
+                staker2ExpectedFees));
 
         assertEquals(Map.of(bnUSDScore.getAddress().toString(), BigInteger.ZERO), dividendScore.call(
                 "getUnclaimedDividends", staker1.getAddress()));

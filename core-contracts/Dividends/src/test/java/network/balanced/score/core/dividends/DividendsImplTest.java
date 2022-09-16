@@ -28,7 +28,6 @@ import java.util.Map;
 
 import static network.balanced.score.lib.utils.Math.pow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
 
@@ -182,8 +181,9 @@ class DividendsImplTest extends DividendsImplTestBase {
         BigInteger stakeBalance = BigInteger.valueOf(200).multiply(ICX);
         BigInteger totalStake = BigInteger.valueOf(200).multiply(ICX);
 
-        contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class), any(BigInteger.class))).thenReturn("Token Transferred");
-        mockStake(owner.getAddress(),stakeBalance);
+        contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class),
+                any(BigInteger.class))).thenReturn("Token Transferred");
+        mockStake(owner.getAddress(), stakeBalance);
         dividendScore.invoke(balnScore, "updateBalnStake", owner.getAddress(), BigInteger.ZERO, totalStake);
 
         addBnusdFees(expectedFees);
@@ -199,13 +199,13 @@ class DividendsImplTest extends DividendsImplTestBase {
     @Test
     void setBBalnDay() {
         dividendScore.invoke(owner, "setBBalnDay", BigInteger.TWO);
-        assertEquals(BigInteger.TWO,dividendScore.call("getBBalnDay"));
+        assertEquals(BigInteger.TWO, dividendScore.call("getBBalnDay"));
     }
 
     @Test
     void setBBalnAddress() {
         dividendScore.invoke(owner, "setBBalnAddress", bBalnScore.getAddress());
-        assertEquals(bBalnScore.getAddress(),dividendScore.call("getBBalnAddress"));
+        assertEquals(bBalnScore.getAddress(), dividendScore.call("getBBalnAddress"));
     }
 
     private void mockStake(Address user, BigInteger stake) {
