@@ -28,6 +28,8 @@ import java.util.Map;
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.*;
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
+import static network.balanced.score.lib.utils.Math.pow;
 
 public class BalancedOracleImpl implements BalancedOracle {
     public static final String TAG = "Balanced Oracle";
@@ -40,7 +42,7 @@ public class BalancedOracleImpl implements BalancedOracle {
         governance.set(_governance);
         assetPeg.set("bnUSD", "USD");
         dexPricedAssets.set("BALN", BigInteger.valueOf(3));
-
+        lastUpdateThreshold.set(MICRO_SECONDS_IN_A_DAY);
         dexPriceEMADecay.set(EXA);
         oraclePriceEMADecay.set(EXA);
     }
@@ -106,6 +108,17 @@ public class BalancedOracleImpl implements BalancedOracle {
     public void setPeg(String symbol, String peg) {
         only(admin);
         assetPeg.set(symbol, peg);
+    }
+
+    @External(readonly = true)
+    public BigInteger getLastUpdateThreshold() {
+        return lastUpdateThreshold.get();
+    }
+
+    @External
+    public void setLastUpdateThreshold(BigInteger threshold) {
+        onlyOwner();
+        lastUpdateThreshold.set(threshold);
     }
 
     @External(readonly = true)
@@ -203,17 +216,30 @@ public class BalancedOracleImpl implements BalancedOracle {
 
     private BigInteger getDexPriceInLoop(String symbol) {
         BigInteger poolID = dexPricedAssets.get(symbol);
+        Address base = Context.call(Address.class, dex.get(), "getPoolBase", poolID);
+        BigInteger nrDecimals = Context.call(BigInteger.class, base, "decimals");
+        BigInteger decimals = pow(BigInteger.TEN, nrDecimals.intValue());
+
         BigInteger bnusdPriceInAsset = Context.call(BigInteger.class, dex.get(), "getQuotePriceInBase", poolID);
 
         BigInteger loopRate = getLoopRate("USD");
-        BigInteger priceInLoop = loopRate.multiply(EXA).divide(bnusdPriceInAsset);
+        BigInteger priceInLoop = loopRate.multiply(decimals).divide(bnusdPriceInAsset);
         return EMACalculator.updateEMA(symbol, priceInLoop, getDexPriceEMADecay());
     }
 
     @SuppressWarnings("unchecked")
     private BigInteger getLoopRate(String symbol) {
-        Map<String, Object> priceData = (Map<String, Object>) Context.call(oracle.get(), "get_reference_data", symbol
-                , "ICX");
+        Map<String, BigInteger> priceData = (Map<String, BigInteger>) Context.call(oracle.get(), "get_reference_data"
+                , symbol, "ICX");
+        BigInteger last_update_base = priceData.get("last_update_base");
+        BigInteger last_update_quote = priceData.get("last_update_quote");
+        BigInteger blockTime = BigInteger.valueOf(Context.getBlockTimestamp());
+        BigInteger threshold = lastUpdateThreshold.getOrDefault(BigInteger.ZERO);
+
+        Context.require(blockTime.subtract(last_update_base).compareTo(threshold) < 0,
+                "The last price update for " + symbol + " is outdated");
+        Context.require(blockTime.subtract(last_update_quote).compareTo(threshold) < 0, "The last price update for " +
+                "ICX is outdated");
 
         return (BigInteger) priceData.get("rate");
     }

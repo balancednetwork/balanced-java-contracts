@@ -1015,6 +1015,12 @@ public class GovernanceImpl {
     }
 
     @External
+    public void reserveTransfer(Address _tokenAddress, Address _targetAddress, BigInteger _amount) {
+        onlyOwner();
+        Context.call(Addresses.get("reserve"), "transfer", _tokenAddress, _targetAddress, _amount);
+    }
+
+    @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
     }
 
@@ -1112,7 +1118,7 @@ public class GovernanceImpl {
     // }
 
     // public void setPoolBalnFee(BigInteger _value) {
-    //     Context.call(Addresses.get("dex"), "setPoolBalnFee",  _value);       
+    //     Context.call(Addresses.get("dex"), "setPoolBalnFee",  _value);
     // }
 
     // public void setIcxConversionFee(BigInteger _value) {
