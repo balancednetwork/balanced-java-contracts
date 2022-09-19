@@ -29,9 +29,9 @@ import java.math.BigInteger;
 
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.Math.pow;
+import static network.balanced.score.lib.utils.NonReentrant.globalReentryLock;
 import static network.balanced.score.tokens.Constants.*;
 import static network.balanced.score.tokens.utils.UnsignedBigInteger.pow10;
-import static  network.balanced.score.lib.utils.NonReentrant.globalReentryLock;
 
 
 public abstract class AbstractBoostedBaln implements BoostedBaln {
@@ -72,11 +72,13 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
     protected final VarDB<BigInteger> minimumLockingAmount = Context.newVarDB("Boosted_baln_minimum_locking_amount",
             BigInteger.class);
 
-    public AbstractBoostedBaln(Address balnAddress, Address rewardAddress, Address dividendsAddress, String name, String symbol) {
+    public AbstractBoostedBaln(Address balnAddress, Address rewardAddress, Address dividendsAddress, String name,
+                               String symbol) {
         onInstall(balnAddress, rewardAddress, dividendsAddress, name, symbol);
     }
 
-    private void onInstall(Address balnAddress, Address rewardAddress, Address dividendsAddress, String name, String symbol) {
+    private void onInstall(Address balnAddress, Address rewardAddress, Address dividendsAddress, String name,
+                           String symbol) {
         this.balnAddress.set(balnAddress);
         this.rewardAddress.set(rewardAddress);
         this.dividendsAddress.set(dividendsAddress);
@@ -395,22 +397,26 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
     protected void onKick(Address user) {
         try {
             Context.call(dividendsAddress.get(), "onKick", user);
-        } catch (Exception e) {}
+        } catch (Exception ignored) {
+        }
 
         try {
             Context.call(rewardAddress.get(), "onKick", user);
-        } catch (Exception e) {}
+        } catch (Exception ignored) {
+        }
 
     }
 
     protected void onBalanceUpdate(Address user, BigInteger newBalance) {
         try {
             Context.call(rewardAddress.get(), "onBalanceUpdate", user, newBalance);
-        } catch (Exception e) {}
+        } catch (Exception ignored) {
+        }
 
         try {
             Context.call(dividendsAddress.get(), "onBalanceUpdate", user, newBalance);
-        } catch (Exception e) {}
+        } catch (Exception ignored) {
+        }
     }
 
 }

@@ -50,7 +50,8 @@ class BoostedBalnTest extends AbstractBoostedBalnTest {
 
     @BeforeEach
     public void setup() throws Exception {
-        bBalnScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(), dividendsScore.getAddress(), bBalnName, bBalnSymbol);
+        bBalnScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(),
+                dividendsScore.getAddress(), bBalnName, bBalnSymbol);
         BoostedBalnImpl scoreSpy = (BoostedBalnImpl) spy(bBalnScore.getInstance());
         bBalnScore.setInstance(scoreSpy);
 
@@ -84,12 +85,14 @@ class BoostedBalnTest extends AbstractBoostedBalnTest {
 
     @Test
     void setGetRewards() {
-        testOwnerControlMethods(bBalnScore, "setRewards", "getRewards", Account.newScoreAccount(scoreCount++).getAddress());
+        testOwnerControlMethods(bBalnScore, "setRewards", "getRewards",
+                Account.newScoreAccount(scoreCount++).getAddress());
     }
 
     @Test
     void setGetDividends() {
-        testOwnerControlMethods(bBalnScore, "setDividends", "getDividends", Account.newScoreAccount(scoreCount++).getAddress());
+        testOwnerControlMethods(bBalnScore, "setDividends", "getDividends",
+                Account.newScoreAccount(scoreCount++).getAddress());
     }
 
 }
