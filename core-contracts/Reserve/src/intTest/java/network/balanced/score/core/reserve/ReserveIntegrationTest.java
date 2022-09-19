@@ -31,9 +31,7 @@ import java.math.BigInteger;
 import java.util.Map;
 
 import static network.balanced.score.lib.test.integration.BalancedUtils.*;
-import static network.balanced.score.lib.utils.Constants.EXA;
-import static network.balanced.score.lib.utils.Constants.POINTS;
-import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
+import static network.balanced.score.lib.utils.Constants.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -404,7 +402,8 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
             BigInteger balance = client.baln.availableBalanceOf(client.getAddress());
             BigInteger boostedBalance = client.boostedBaln.balanceOf(client.getAddress(), BigInteger.ZERO);
             if (boostedBalance.equals(BigInteger.ZERO) && balance.compareTo(EXA) > 0) {
-                long unlockTime = (System.currentTimeMillis()*1000)+(BigInteger.valueOf(52).multiply(MICRO_SECONDS_IN_A_DAY).multiply(BigInteger.valueOf(7))).longValue();
+                long unlockTime =
+                        (System.currentTimeMillis() * 1000) + (BigInteger.valueOf(52).multiply(MICRO_SECONDS_IN_A_DAY).multiply(BigInteger.valueOf(7))).longValue();
                 String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
                 client.baln.transfer(owner.boostedBaln._address(), balance, data.getBytes());
             }

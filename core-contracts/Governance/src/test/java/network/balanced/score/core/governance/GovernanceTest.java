@@ -62,7 +62,7 @@ public class GovernanceTest extends GovernanceTestBase {
 
         when(bBaln.mock.balanceOfAt(user.getAddress(), block)).thenReturn(expectedWeight);
         // Act
-        BigInteger votingWeight  = (BigInteger) governance.call("myVotingWeight", user.getAddress(), block);
+        BigInteger votingWeight = (BigInteger) governance.call("myVotingWeight", user.getAddress(), block);
 
         // Assert
         assertEquals(expectedWeight, votingWeight);
@@ -222,7 +222,8 @@ public class GovernanceTest extends GovernanceTestBase {
         BigInteger min = BigInteger.TWO;
         BigInteger max = BigInteger.TEN;
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
 
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "setVoteDurationLimits", min, max);
@@ -236,8 +237,8 @@ public class GovernanceTest extends GovernanceTestBase {
         governance.invoke(owner, "setVoteDurationLimits", min, max);
 
         // Assert
-        BigInteger minVoteDuration = (BigInteger)governance.call("getMinVoteDuration");
-        BigInteger maxVoteDuration = (BigInteger)governance.call("getMaxVoteDuration");
+        BigInteger minVoteDuration = (BigInteger) governance.call("getMinVoteDuration");
+        BigInteger maxVoteDuration = (BigInteger) governance.call("getMaxVoteDuration");
         assertEquals(min, minVoteDuration);
         assertEquals(max, maxVoteDuration);
     }

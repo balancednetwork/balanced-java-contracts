@@ -16,12 +16,6 @@
 
 package network.balanced.score.lib.interfaces;
 
-import foundation.icon.score.client.ScoreInterface;
-
-import java.math.BigInteger;
-import java.util.List;
-import java.util.Map;
-
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.BalnAddress;
@@ -31,6 +25,10 @@ import network.balanced.score.lib.interfaces.base.TokenFallback;
 import score.Address;
 import score.annotation.External;
 import score.annotation.Optional;
+
+import java.math.BigInteger;
+import java.util.List;
+import java.util.Map;
 
 @ScoreClient
 @ScoreInterface

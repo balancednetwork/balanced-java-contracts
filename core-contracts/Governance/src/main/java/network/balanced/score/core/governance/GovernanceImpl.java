@@ -215,7 +215,8 @@ public class GovernanceImpl {
     }
 
     @External
-    public void defineVote(String name, String description, BigInteger vote_start, BigInteger duration, String forumLink, @Optional String actions) {
+    public void defineVote(String name, String description, BigInteger vote_start, BigInteger duration,
+                           String forumLink, @Optional String actions) {
         Context.require(description.length() <= 500, "Description must be less than or equal to 500 characters.");
 
         BigInteger snapshotBlock = BigInteger.valueOf(Context.getBlockHeight());
@@ -225,10 +226,14 @@ public class GovernanceImpl {
         actions = optionalDefault(actions, "[]");
         BigInteger voteIndex = ProposalDB.getProposalId(name);
         Context.require(forumLink.startsWith("https://gov.balanced.network/"), "Invalid forum link.");
-        Context.require(duration.compareTo(maxVoteDuration.get()) <= 0, "Duration is above the maxium allowed duration of " + maxVoteDuration.get());
-        Context.require(duration.compareTo(minVoteDuration.get()) >= 0, "Duration is below the minumum allowed duration of " + minVoteDuration.get());
+        Context.require(duration.compareTo(maxVoteDuration.get()) <= 0, "Duration is above the maximum allowed " +
+                "duration of " + maxVoteDuration.get());
+        Context.require(duration.compareTo(minVoteDuration.get()) >= 0, "Duration is below the minimum allowed " +
+                "duration of " + minVoteDuration.get());
         Context.require(voteIndex.equals(BigInteger.ZERO), "Poll name " + name + " has already been used.");
-        Context.require(checkBalnVoteCriterion(Context.getCaller(), snapshotBlock), "User needs at least " + balnVoteDefinitionCriterion.get().divide(BigInteger.valueOf(100)) + "% of total boosted baln supply to define a vote.");
+        Context.require(checkBalnVoteCriterion(Context.getCaller(), snapshotBlock),
+                "User needs at least " + balnVoteDefinitionCriterion.get().divide(BigInteger.valueOf(100)) + "% of " +
+                        "total boosted baln supply to define a vote.");
         verifyActions(actions);
 
         Context.call(Addresses.get("bnUSD"), "govTransfer", Context.getCaller(), Addresses.get("daofund"),
@@ -414,7 +419,8 @@ public class GovernanceImpl {
         BigInteger nrAgainstVotes = BigInteger.ZERO;
         if (!totalBoostedBaln.equals(BigInteger.ZERO)) {
             nrForVotes = proposal.totalForVotes.getOrDefault(BigInteger.ZERO).multiply(EXA).divide(totalBoostedBaln);
-            nrAgainstVotes = proposal.totalAgainstVotes.getOrDefault(BigInteger.ZERO).multiply(EXA).divide(totalBoostedBaln);
+            nrAgainstVotes =
+                    proposal.totalAgainstVotes.getOrDefault(BigInteger.ZERO).multiply(EXA).divide(totalBoostedBaln);
         }
 
         Map<String, Object> voteData = new HashMap<>(16);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,16 +86,16 @@ public class ProposalDB {
     }
 
     public static ProposalDB createProposal(String name,
-                                 String description,
-                                 Address proposer,
-                                 BigInteger quorum,
-                                 BigInteger majority,
-                                 BigInteger snapshot,
-                                 BigInteger start,
-                                 BigInteger end,
-                                 String link,
-                                 String actions,
-                                 BigInteger fee) {
+                                            String description,
+                                            Address proposer,
+                                            BigInteger quorum,
+                                            BigInteger majority,
+                                            BigInteger snapshot,
+                                            BigInteger start,
+                                            BigInteger end,
+                                            String link,
+                                            String actions,
+                                            BigInteger fee) {
         BigInteger voteIndex = ProposalDB.getProposalCount().add(BigInteger.ONE);
         ProposalDB newProposal = new ProposalDB(voteIndex);
 

@@ -29,7 +29,8 @@ import java.math.BigInteger;
 
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class GovernanceIntegrationTest implements ScoreIntegrationTest {
     private static Balanced balanced;
@@ -60,7 +61,8 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         BigInteger balance = tester.baln.balanceOf(tester.getAddress());
 
         final BigInteger WEEK_IN_MICRO_SECONDS = BigInteger.valueOf(7L).multiply(MICRO_SECONDS_IN_A_DAY);
-        long unlockTime = (System.currentTimeMillis()*1000)+(WEEK_IN_MICRO_SECONDS.multiply(BigInteger.valueOf(4))).longValue();
+        long unlockTime =
+                (System.currentTimeMillis() * 1000) + (WEEK_IN_MICRO_SECONDS.multiply(BigInteger.valueOf(4))).longValue();
         String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
         tester.baln.transfer(tester.boostedBaln._address(), balance.divide(BigInteger.TWO), data.getBytes());
 
