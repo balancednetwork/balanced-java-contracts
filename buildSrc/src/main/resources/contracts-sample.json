@@ -88,7 +88,6 @@
   {
     "name": "reserve",
     "params": {},
-    "contentType": "application/java",
     "order": 2.0
   },
   {
