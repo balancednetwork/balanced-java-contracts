@@ -78,7 +78,7 @@ public class RewardsImpl implements Rewards {
     private static final String TOTAL_DIST = "total_dist";
     private static final String PLATFORM_DAY = "platform_day";
     private static final String DATA_PROVIDERS = "data_providers";
-    private static final String BOOST_WEIGHT = "user_boosts_map";
+    private static final String BOOST_WEIGHT = "boost_weight";
 
     private static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
     private static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
