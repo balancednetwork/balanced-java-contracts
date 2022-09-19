@@ -25,6 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import score.Address;
+import score.Context;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -56,13 +57,12 @@ public class GovernanceTest extends GovernanceTestBase {
     void getVotingWeight() {
         // Arrange
         Account user = sm.createAccount();
-        BigInteger day = BigInteger.TEN;
+        BigInteger block = BigInteger.valueOf(Context.getBlockHeight());
         BigInteger expectedWeight = BigInteger.ONE;
 
-        when(baln.mock.stakedBalanceOfAt(user.getAddress(), day)).thenReturn(expectedWeight);
-
+        when(bBaln.mock.balanceOfAt(user.getAddress(), block)).thenReturn(expectedWeight);
         // Act
-        BigInteger votingWeight = (BigInteger) governance.call("myVotingWeight", user.getAddress(), day);
+        BigInteger votingWeight = (BigInteger) governance.call("myVotingWeight", user.getAddress(), block);
 
         // Assert
         assertEquals(expectedWeight, votingWeight);
@@ -214,6 +214,33 @@ public class GovernanceTest extends GovernanceTestBase {
 
         // Assert
         verify(rebalancing.mock).setPriceDiffThreshold(_value);
+    }
+
+    @Test
+    void setGetVoteDurationLimits() {
+        // Arrange
+        BigInteger min = BigInteger.TWO;
+        BigInteger max = BigInteger.TEN;
+        Account notOwner = sm.createAccount();
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
+        // Act & Assert
+        Executable withNotOwner = () -> governance.invoke(notOwner, "setVoteDurationLimits", min, max);
+        expectErrorMessage(withNotOwner, expectedErrorMessage);
+
+        expectedErrorMessage = "Reverted(0): Minimum vote duration has to be above 1";
+        Executable withToLowMin = () -> governance.invoke(owner, "setVoteDurationLimits", BigInteger.ZERO, max);
+        expectErrorMessage(withToLowMin, expectedErrorMessage);
+
+        // Act
+        governance.invoke(owner, "setVoteDurationLimits", min, max);
+
+        // Assert
+        BigInteger minVoteDuration = (BigInteger) governance.call("getMinVoteDuration");
+        BigInteger maxVoteDuration = (BigInteger) governance.call("getMaxVoteDuration");
+        assertEquals(min, minVoteDuration);
+        assertEquals(max, maxVoteDuration);
     }
 
     @Test
@@ -472,7 +499,6 @@ public class GovernanceTest extends GovernanceTestBase {
 
         // Assert
         verify(rewards.mock).removeDataSource(name);
-
     }
 
     @Test
@@ -1351,22 +1377,5 @@ public class GovernanceTest extends GovernanceTestBase {
         verify(rewards.mock).addNewDataSource("BALN/sICX", dex.getAddress());
         verify(stakedLp.mock).addPool(balnSicxPid);
         verify(rewards.mock, times(4)).updateBalTokenDistPercentage(any(DistributionPercentage[].class));
-    }
-
-    @Test
-    void totalBaln() {
-        // Arrange
-        BigInteger day = (BigInteger) governance.call("getDay");
-        BigInteger expectedTotalBaln = BigInteger.TEN;
-        when(baln.mock.totalStakedBalanceOfAt(day)).thenReturn(expectedTotalBaln);
-
-        // Act
-        BigInteger totalBaln = (BigInteger) governance.call("totalBaln", day);
-        BigInteger totalBalnFuture = (BigInteger) governance.call("totalBaln", day.add(BigInteger.ONE));
-
-        // Assert
-        assertEquals(expectedTotalBaln, totalBaln);
-        assertEquals(BigInteger.ZERO, totalBalnFuture);
-        verify(baln.mock, times(1)).totalStakedBalanceOfAt(any(BigInteger.class));
     }
 }
