@@ -24,15 +24,15 @@ import network.balanced.score.tokens.utils.UnsignedBigInteger;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
-import scorex.util.HashMap;
 
 import java.math.BigInteger;
-import java.util.Map;
 
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.Math.pow;
 import static network.balanced.score.tokens.Constants.*;
 import static network.balanced.score.tokens.utils.UnsignedBigInteger.pow10;
+import static  network.balanced.score.lib.utils.NonReentrant.globalReentryLock;
+
 
 public abstract class AbstractBoostedBaln implements BoostedBaln {
 
@@ -50,11 +50,12 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
     protected final VarDB<BigInteger> decimals = Context.newVarDB("decimals", BigInteger.class);
     protected final VarDB<BigInteger> supply = Context.newVarDB("Boosted_Baln_Supply", BigInteger.class);
 
-    protected final VarDB<Address> tokenAddress = Context.newVarDB("tokenAddress", Address.class);
+    protected final VarDB<Address> balnAddress = Context.newVarDB("balnAddress", Address.class);
     protected final VarDB<Address> rewardAddress = Context.newVarDB("rewardAddress", Address.class);
+    protected final VarDB<Address> dividendsAddress = Context.newVarDB("dividendsAddress", Address.class);
+
     protected final VarDB<Address> penaltyAddress = Context.newVarDB("Boosted_baln_penalty_address", Address.class);
 
-    protected final NonReentrant nonReentrant = new NonReentrant("Boosted_Baln_Reentrancy");
     protected final DictDB<Address, LockedBalance> locked = Context.newDictDB("Boosted_Baln_locked",
             LockedBalance.class);
     protected final VarDB<BigInteger> epoch = Context.newVarDB("Boosted_Baln_epoch", BigInteger.class);
@@ -66,27 +67,21 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
             BigInteger.class);
     protected final DictDB<BigInteger, BigInteger> slopeChanges = Context.newDictDB("Boosted_Baln_slope_changes",
             BigInteger.class);
-    protected final VarDB<Address> admin = Context.newVarDB("Boosted_Baln_admin", Address.class);
-    protected final VarDB<Address> futureAdmin = Context.newVarDB("Boosted_baln_future_admin", Address.class);
 
     protected final EnumerableSet<Address> users = new EnumerableSet<>("users_list", Address.class);
     protected final VarDB<BigInteger> minimumLockingAmount = Context.newVarDB("Boosted_baln_minimum_locking_amount",
             BigInteger.class);
 
-
-    public AbstractBoostedBaln(Address tokenAddress, Address rewardAddress, String name, String symbol) {
-        this.admin.set(Context.getCaller());
-        onInstall(tokenAddress, rewardAddress, name, symbol);
+    public AbstractBoostedBaln(Address balnAddress, Address rewardAddress, Address dividendsAddress, String name, String symbol) {
+        onInstall(balnAddress, rewardAddress, dividendsAddress, name, symbol);
     }
 
-    private void onInstall(Address tokenAddress, Address rewardAddress, String name, String symbol) {
-        if (this.tokenAddress.get() != null) {
-            return;
-        }
-        this.tokenAddress.set(tokenAddress);
+    private void onInstall(Address balnAddress, Address rewardAddress, Address dividendsAddress, String name, String symbol) {
+        this.balnAddress.set(balnAddress);
         this.rewardAddress.set(rewardAddress);
+        this.dividendsAddress.set(dividendsAddress);
 
-        BigInteger decimals = ((BigInteger) Context.call(tokenAddress, "decimals"));
+        BigInteger decimals = Context.call(BigInteger.class, balnAddress, "decimals");
         this.decimals.set(decimals);
         this.name.set(name);
         this.symbol.set(symbol);
@@ -99,14 +94,6 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
         this.supply.set(BigInteger.ZERO);
         this.epoch.set(BigInteger.ZERO);
         this.minimumLockingAmount.set(ICX);
-    }
-
-    @EventLog
-    public void CommitOwnership(Address admin) {
-    }
-
-    @EventLog
-    public void ApplyOwnership(Address admin) {
     }
 
     @EventLog(indexed = 2)
@@ -136,16 +123,6 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
         return this.symbol.get();
     }
 
-    @External(readonly = true)
-    public Address admin() {
-        return this.admin.get();
-    }
-
-    @External(readonly = true)
-    public Address futureAdmin() {
-        return this.futureAdmin.get();
-    }
-
     protected BigInteger findBlockEpoch(BigInteger block, BigInteger maxEpoch) {
         BigInteger min = BigInteger.ZERO;
         BigInteger max = maxEpoch;
@@ -159,6 +136,7 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
                 max = mid.subtract(BigInteger.ONE);
             }
         }
+
         return min;
     }
 
@@ -174,6 +152,7 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
                 max = mid.subtract(BigInteger.ONE);
             }
         }
+
         return min;
     }
 
@@ -191,6 +170,7 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
             } else {
                 dSlope = this.slopeChanges.getOrDefault(timestampIterator.toBigInteger(), BigInteger.ZERO);
             }
+
             UnsignedBigInteger delta = timestampIterator.subtract(lastPoint.timestamp);
             lastPoint.bias = lastPoint.bias.subtract(lastPoint.slope.multiply(delta.toBigInteger()));
             if (timestampIterator.equals(uTime)) {
@@ -204,6 +184,7 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
         if (lastPoint.bias.compareTo(BigInteger.ZERO) < 0) {
             lastPoint.bias = BigInteger.ZERO;
         }
+
         return lastPoint.bias;
     }
 
@@ -258,6 +239,7 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
         if (epoch.compareTo(BigInteger.ZERO) > 0) {
             lastPoint = this.pointHistory.getOrDefault(epoch, new Point());
         }
+
         UnsignedBigInteger lastCheckPoint = lastPoint.timestamp;
 
         //      initialLastPoint is used for extrapolation to calculate block number
@@ -285,8 +267,8 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
                 dSlope = this.slopeChanges.getOrDefault(timeIterator.toBigInteger(), BigInteger.ZERO);
             }
 
-            lastPoint.bias = lastPoint.bias.subtract(lastPoint.slope.multiply(timeIterator.subtract(lastCheckPoint)
-                    .toBigInteger()));
+            lastPoint.bias = lastPoint.bias.subtract(lastPoint.slope.multiply(
+                    timeIterator.subtract(lastCheckPoint).toBigInteger()));
             lastPoint.slope = lastPoint.slope.add(dSlope);
 
             if (lastPoint.bias.compareTo(BigInteger.ZERO) < 0) {
@@ -299,8 +281,8 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
 
             lastCheckPoint = timeIterator;
             lastPoint.timestamp = timeIterator;
-            UnsignedBigInteger dtime = timeIterator.subtract(initialLastPoint.timestamp);
-            lastPoint.block = initialLastPoint.block.add(blockSlope.multiply(dtime).divide(MULTIPLIER));
+            UnsignedBigInteger dTime = timeIterator.subtract(initialLastPoint.timestamp);
+            lastPoint.block = initialLastPoint.block.add(blockSlope.multiply(dTime).divide(MULTIPLIER));
             epoch = epoch.add(BigInteger.ONE);
 
             if (timeIterator.equals(blockTimestamp)) {
@@ -332,6 +314,7 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
                 if (newLocked.end.equals(oldLocked.end)) {
                     oldDSlope = oldDSlope.subtract(uNew.slope);
                 }
+
                 this.slopeChanges.set(oldLocked.getEnd(), oldDSlope);
             }
 
@@ -368,13 +351,12 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
         Deposit(address, value, locked.getEnd(), type, blockTimestamp);
         Supply(supplyBefore, supplyBefore.add(value));
 
-        onBalanceUpdate(address);
+        onBalanceUpdate(address, balanceOf(address, blockTimestamp));
     }
 
     protected void createLock(Address sender, BigInteger value, BigInteger unlockTime) {
-        this.nonReentrant.updateLock(true);
+        globalReentryLock();
         BigInteger blockTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());
-        this.assertNotContract(sender);
 
         unlockTime = unlockTime.divide(WEEK_IN_MICRO_SECONDS).multiply(WEEK_IN_MICRO_SECONDS);
         LockedBalance locked = getLockedBalance(sender);
@@ -388,13 +370,11 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
 
         users.add(sender);
         this.depositFor(sender, value, unlockTime, locked, CREATE_LOCK_TYPE);
-        this.nonReentrant.updateLock(false);
     }
 
     protected void increaseAmount(Address sender, BigInteger value, BigInteger unlockTime) {
-        this.nonReentrant.updateLock(true);
+        globalReentryLock();
         BigInteger blockTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());
-        this.assertNotContract(sender);
         LockedBalance locked = getLockedBalance(sender);
 
         Context.require(value.compareTo(BigInteger.ZERO) > 0, "Increase amount: Need non zero value");
@@ -410,15 +390,27 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
         }
 
         this.depositFor(sender, value, unlockTime, locked, INCREASE_LOCK_AMOUNT);
-        this.nonReentrant.updateLock(false);
     }
 
-    protected void assertNotContract(Address address) {
-        Context.require(!address.isContract(), "Assert Not contract: Smart contract depositors not allowed");
+    protected void onKick(Address user) {
+        try {
+            Context.call(dividendsAddress.get(), "onKick", user);
+        } catch (Exception e) {}
+
+        try {
+            Context.call(rewardAddress.get(), "onKick", user);
+        } catch (Exception e) {}
+
     }
 
-    private void onBalanceUpdate(Address address) {
-        Context.call(this.rewardAddress.get(), "onBalanceUpdate", address);
+    protected void onBalanceUpdate(Address user, BigInteger newBalance) {
+        try {
+            Context.call(rewardAddress.get(), "onBalanceUpdate", user, newBalance);
+        } catch (Exception e) {}
+
+        try {
+            Context.call(dividendsAddress.get(), "onBalanceUpdate", user, newBalance);
+        } catch (Exception e) {}
     }
 
 }

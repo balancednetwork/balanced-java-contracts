@@ -44,5 +44,8 @@ public interface Reserve extends Name, TokenFallback, AdminAddress, BalnAddress,
 
     @External
     void claim();
+
+    @External
+    void transfer(Address _tokenAddress, Address _targetAddress, BigInteger _amount);
 }
 

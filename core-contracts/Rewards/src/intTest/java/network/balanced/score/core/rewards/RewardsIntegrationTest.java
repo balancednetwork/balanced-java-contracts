@@ -129,72 +129,6 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         verifyNoRewards(icxSicxLpLeaving);
     }
 
-    // @Test
-    // void boostRewards() throws Exception {
-    //     // Arrange
-    //     String sourceName = "sICX/ICX";
-    //     BalancedClient icxSicxLp = balanced.newClient();
-    //     BalancedClient icxSicxLpBoosted = balanced.newClient();
-
-    //     BigInteger lockDays = BigInteger.valueOf(7).multiply(BigInteger.valueOf(3));
-    //     BigInteger lpBalance = BigInteger.TEN.pow(22);
-    //     BigInteger initialSupply = reader.dex.getBalanceAndSupply(sourceName, reader.getAddress()).get("_totalSupply");
-    //     icxSicxLp.dex._transfer(balanced.dex._address(), lpBalance, null);
-    //     icxSicxLpBoosted.dex._transfer(balanced.dex._address(), lpBalance, null);
-
-    //     initialSupply = initialSupply.add(lpBalance).add(lpBalance);
-
-    //     balanced.increaseDay(1);
-    //     verifyRewards(icxSicxLp);
-    //     verifyRewards(icxSicxLpBoosted);
-
-    //     // Act
-    //     BigInteger availableBalnBalance = reader.baln.balanceOf(icxSicxLpBoosted.getAddress());
-    //     long unlockTime = (System.currentTimeMillis()*1000)+(MICRO_SECONDS_IN_A_DAY.multiply(lockDays)).longValue();
-    //     String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
-    //     icxSicxLpBoosted.baln.transfer(owner.boostedBaln._address(), availableBalnBalance, data.getBytes());
-
-    //     icxSicxLpBoosted.rewards.boost();
-
-    //     // Assert
-    //     verifyRewards(icxSicxLpBoosted);
-
-    //     // Map<String, BigInteger> currentWorkingBalanceAndSupply = reader.rewards.getWorkingBalanceAndSupply(sourceName, icxSicxLpBoosted.getAddress());
-    //     // assertTrue(currentWorkingBalanceAndSupply.get("workingSupply").compareTo(initialSupply) > 0);
-    //     // assertTrue(currentWorkingBalanceAndSupply.get("workingBalance").compareTo(lpBalance) > 0);
-    //     // assertEquals(sourceName, reader.rewards.getBoost(icxSicxLpBoosted.getAddress()));
-
-    //     // // Act
-    //     // balanced.increaseDay(7);
-    //     // verifyRewards(icxSicxLpBoosted);
-
-    //     // // Assert
-    //     // Map<String, BigInteger> newWorkingBalanceAndSupply = reader.rewards.getWorkingBalanceAndSupply(sourceName, icxSicxLpBoosted.getAddress());
-    //     // assertTrue(newWorkingBalanceAndSupply.get("workingSupply").compareTo(currentWorkingBalanceAndSupply.get("workingSupply")) < 0);
-    //     // assertTrue(newWorkingBalanceAndSupply.get("workingBalance").compareTo(currentWorkingBalanceAndSupply.get("workingBalance")) < 0);
-    //     // currentWorkingBalanceAndSupply = newWorkingBalanceAndSupply;
-
-    //     // // Act
-    //     // balanced.increaseDay(7);
-    //     // verifyRewards(icxSicxLpBoosted);
-    //     // //kick
-
-    //     // // Assert
-    //     // newWorkingBalanceAndSupply = reader.rewards.getWorkingBalanceAndSupply(sourceName, icxSicxLpBoosted.getAddress());
-    //     // assertTrue(newWorkingBalanceAndSupply.get("workingSupply").compareTo(currentWorkingBalanceAndSupply.get("workingSupply")) < 0);
-    //     // assertTrue(newWorkingBalanceAndSupply.get("workingBalance").compareTo(currentWorkingBalanceAndSupply.get("workingBalance")) < 0);
-    //     // currentWorkingBalanceAndSupply = newWorkingBalanceAndSupply;
-
-    //     // // Act
-    //     // balanced.increaseDay(8);
-    //     // verifyRewards(icxSicxLpBoosted);
-
-    //     // // Assert
-    //     // Map<String, BigInteger> newWorkingBalanceAndSupply = reader.rewards.getWorkingBalanceAndSupply(sourceName, icxSicxLpBoosted.getAddress());
-    //     // assertEquals(newWorkingBalanceAndSupply.get("workingSupply"), initialSupply);
-    //     // assertEquals(newWorkingBalanceAndSupply.get("workingBalance"), lpBalance);
-    // }
-
     @Test
     @Order(12)
     void verifyRewards_StakedLP() throws Exception {
@@ -258,119 +192,150 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
     }
 
     @Test
-    @Order(20)
-    void changeRewardsDistributions() {
+    @Order(13)
+    void boostRewards() throws Exception {
         // Arrange
+        String sourceName = "sICX/ICX";
+        BalancedClient icxSicxLp = balanced.newClient();
+        BalancedClient icxSicxLpBoosted = balanced.newClient();
+
+        BigInteger lockDays = BigInteger.valueOf(7).multiply(BigInteger.valueOf(3));
+        BigInteger lpBalance = BigInteger.TEN.pow(22);
+        BigInteger initialSupply = reader.dex.getBalanceAndSupply(sourceName, reader.getAddress()).get("_totalSupply");
+        icxSicxLp.dex._transfer(balanced.dex._address(), lpBalance, null);
+        icxSicxLpBoosted.dex._transfer(balanced.dex._address(), lpBalance, null);
+
+        initialSupply = initialSupply.add(lpBalance).add(lpBalance);
+
         balanced.increaseDay(1);
-        owner.rewards.distribute((txr) -> {
-        });
-
-        BigInteger platformDay = hexObjectToBigInteger(reader.rewards.distStatus().get("platform_day"));
-        BigInteger distributedDay = platformDay.subtract(BigInteger.ONE);
-        BigInteger emission = reader.rewards.getEmission(distributedDay);
-        Map<String, BigInteger> distributions = reader.rewards.recipientAt(distributedDay);
-        BigInteger loansDist = distributions.get("Loans");
-        BigInteger sicxDist = distributions.get("sICX/ICX");
-        BigInteger expectedLoansMint = loansDist.multiply(emission).divide(EXA);
-        BigInteger expectedSicxMint = sicxDist.multiply(emission).divide(EXA);
-
-        // Assert
-        BigInteger loansMint =
-                hexObjectToBigInteger(reader.rewards.getDataSourcesAt(distributedDay).get("Loans").get("total_dist"));
-        BigInteger sicxMint =
-                hexObjectToBigInteger(reader.rewards.getDataSourcesAt(distributedDay).get("sICX/ICX").get("total_dist"
-                ));
-        assertEquals(expectedLoansMint, loansMint);
-        assertEquals(expectedSicxMint, sicxMint);
+        verifyRewards(icxSicxLp);
+        verifyRewards(icxSicxLpBoosted);
 
         // Act
-        BigInteger halfLoansDist = distributions.get("Loans").divide(BigInteger.TWO);
-        DistributionPercentage[] recipients = new DistributionPercentage[]{
-                createDistributionPercentage("Loans", halfLoansDist),
-                createDistributionPercentage("sICX/ICX", distributions.get("sICX/ICX").add(halfLoansDist)),
-                createDistributionPercentage("Worker Tokens", distributions.get("Worker Tokens")),
-                createDistributionPercentage("Reserve Fund", distributions.get("Reserve Fund")),
-                createDistributionPercentage("DAOfund", distributions.get("DAOfund")),
-                createDistributionPercentage("sICX/bnUSD", distributions.get("sICX/bnUSD")),
-                createDistributionPercentage("BALN/bnUSD", distributions.get("BALN/bnUSD")),
-                createDistributionPercentage("BALN/sICX", distributions.get("BALN/sICX"))
-        };
-
-        owner.governance.updateBalTokenDistPercentage(recipients);
-
-        balanced.increaseDay(1);
-        distributedDay = distributedDay.add(BigInteger.ONE);
-        owner.rewards.distribute((txr) -> {
-        });
+        BigInteger availableBalnBalance = reader.baln.balanceOf(icxSicxLpBoosted.getAddress());
+        long unlockTime = (System.currentTimeMillis()*1000)+(MICRO_SECONDS_IN_A_DAY.multiply(lockDays)).longValue();
+        String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
+        icxSicxLpBoosted.baln.transfer(owner.boostedBaln._address(), availableBalnBalance, data.getBytes());
 
         // Assert
-        expectedLoansMint = loansDist.subtract(halfLoansDist).multiply(emission).divide(EXA);
-        expectedSicxMint = sicxDist.add(halfLoansDist).multiply(emission).divide(EXA);
+        verifyRewards(icxSicxLpBoosted);
 
-        loansMint = hexObjectToBigInteger(reader.rewards.getDataSourcesAt(distributedDay).get("Loans").get(
-                "total_dist"));
-        sicxMint = hexObjectToBigInteger(reader.rewards.getDataSourcesAt(distributedDay).get("sICX/ICX").get(
-                "total_dist"));
-        assertEquals(expectedLoansMint, loansMint);
-        assertEquals(expectedSicxMint, sicxMint);
-    }
-
-    @Test
-    @Order(21)
-    void removeRewardsDistributions() throws Exception {
-        // Arrange
-        BigInteger platformDay = hexObjectToBigInteger(reader.rewards.distStatus().get("platform_day"));
-        BigInteger distributedDay = platformDay.subtract(BigInteger.ONE);
-        Map<String, BigInteger> distributions = reader.rewards.recipientAt(distributedDay);
-        BigInteger loansDist = distributions.get("Loans");
-        BigInteger icxDist = distributions.get("sICX/ICX");
-
-        BalancedClient loanTaker = balanced.newClient();
-        BalancedClient icxSicxLP = balanced.newClient();
-        BigInteger collateralAmount = BigInteger.TEN.pow(23);
-        BigInteger loanAmount = BigInteger.TEN.pow(21);
-        loanTaker.loans.depositAndBorrow(collateralAmount, "bnUSD", loanAmount, null, null);
-        icxSicxLP.dex._transfer(balanced.dex._address(), BigInteger.TEN.pow(22), null);
+        Map<String, BigInteger> currentWorkingBalanceAndSupply = reader.rewards.getWorkingBalanceAndSupply(sourceName, icxSicxLpBoosted.getAddress());
+        assertTrue(currentWorkingBalanceAndSupply.get("workingSupply").compareTo(initialSupply) > 0);
+        assertTrue(currentWorkingBalanceAndSupply.get("workingBalance").compareTo(lpBalance) > 0);
 
         // Act
-        DistributionPercentage[] recipients = new DistributionPercentage[]{
-                createDistributionPercentage("Loans", BigInteger.ZERO),
-                createDistributionPercentage("sICX/ICX", distributions.get("sICX/ICX").add(loansDist)),
-                createDistributionPercentage("Worker Tokens", distributions.get("Worker Tokens")),
-                createDistributionPercentage("Reserve Fund", distributions.get("Reserve Fund")),
-                createDistributionPercentage("DAOfund", distributions.get("DAOfund")),
-                createDistributionPercentage("sICX/bnUSD", distributions.get("sICX/bnUSD")),
-                createDistributionPercentage("BALN/bnUSD", distributions.get("BALN/bnUSD")),
-                createDistributionPercentage("BALN/sICX", distributions.get("BALN/sICX"))
-        };
-
-        owner.governance.updateBalTokenDistPercentage(recipients);
-
-        verifyRewards(loanTaker);
-        verifyRewards(icxSicxLP);
-
-        // Assert
-        balanced.increaseDay(1);
-        owner.rewards.distribute((txr) -> {
-        });
-        verifyRewards(loanTaker);
-        BigInteger rewardsPreChange = verifyRewards(icxSicxLP);
-
-        balanced.increaseDay(1);
-        owner.rewards.distribute((txr) -> {
-        });
-        verifyNoRewards(loanTaker);
-
-        BigInteger rewardsPostChange = verifyRewards(icxSicxLP);
-        BigInteger increase = rewardsPostChange.multiply(EXA).divide(rewardsPreChange);
-        BigInteger expectedIncrease = loansDist.add(icxDist).multiply(EXA).divide(icxDist);
-
-        BigInteger increasePercent = increase.divide(BigInteger.TEN.pow(17));
-        BigInteger expectedIncreasePercent = expectedIncrease.divide(BigInteger.TEN.pow(17));
-        BigInteger diff = increasePercent.subtract(expectedIncreasePercent);
-
-        assertTrue(diff.abs().compareTo(BigInteger.ONE) <= 0);
+        owner.boostedBaln.setPenaltyAddress(balanced.daofund._address());
+        icxSicxLpBoosted.boostedBaln.withdrawEarly();
+        currentWorkingBalanceAndSupply = reader.rewards.getWorkingBalanceAndSupply(sourceName, icxSicxLpBoosted.getAddress());
+        assertTrue(currentWorkingBalanceAndSupply.get("workingSupply").equals(initialSupply));
+        assertTrue(currentWorkingBalanceAndSupply.get("workingBalance").equals(lpBalance));
     }
+
+    // @Test
+    // @Order(20)
+    // void changeRewardsDistributions() {
+    //     // Arrange
+    //     balanced.increaseDay(1);
+    //     owner.rewards.distribute((txr) -> {
+    //     });
+
+    //     BigInteger platformDay = hexObjectToBigInteger(reader.rewards.distStatus().get("platform_day"));
+    //     BigInteger distributedDay = platformDay.subtract(BigInteger.ONE);
+    //     BigInteger emission = reader.rewards.getEmission(distributedDay);
+    //     Map<String, BigInteger> distributions = reader.rewards.recipientAt(distributedDay);
+    //     BigInteger loansDist = distributions.get("Loans");
+    //     BigInteger sicxDist = distributions.get("sICX/ICX");
+    //     BigInteger expectedLoansMint = loansDist.multiply(emission).divide(EXA);
+    //     BigInteger expectedSicxMint = sicxDist.multiply(emission).divide(EXA);
+
+    //     // Assert
+    //     BigInteger loansMint =
+    //             hexObjectToBigInteger(reader.rewards.getDataSourcesAt(distributedDay).get("Loans").get("total_dist"));
+    //     BigInteger sicxMint =
+    //             hexObjectToBigInteger(reader.rewards.getDataSourcesAt(distributedDay).get("sICX/ICX").get("total_dist"
+    //             ));
+    //     assertEquals(expectedLoansMint, loansMint);
+    //     assertEquals(expectedSicxMint, sicxMint);
+
+    //     // Act
+    //     BigInteger halfLoansDist = distributions.get("Loans").divide(BigInteger.TWO);
+    //     DistributionPercentage[] recipients = new DistributionPercentage[]{
+    //             createDistributionPercentage("Loans", halfLoansDist),
+    //             createDistributionPercentage("sICX/ICX", distributions.get("sICX/ICX").add(halfLoansDist)),
+    //             createDistributionPercentage("Worker Tokens", distributions.get("Worker Tokens")),
+    //             createDistributionPercentage("Reserve Fund", distributions.get("Reserve Fund")),
+    //             createDistributionPercentage("DAOfund", distributions.get("DAOfund")),
+    //             createDistributionPercentage("sICX/bnUSD", distributions.get("sICX/bnUSD")),
+    //             createDistributionPercentage("BALN/bnUSD", distributions.get("BALN/bnUSD")),
+    //             createDistributionPercentage("BALN/sICX", distributions.get("BALN/sICX"))
+    //     };
+
+    //     owner.governance.updateBalTokenDistPercentage(recipients);
+
+    //     balanced.increaseDay(1);
+    //     distributedDay = distributedDay.add(BigInteger.ONE);
+    //     owner.rewards.distribute((txr) -> {
+    //     });
+
+    //     // Assert
+    //     expectedLoansMint = loansDist.subtract(halfLoansDist).multiply(emission).divide(EXA);
+    //     expectedSicxMint = sicxDist.add(halfLoansDist).multiply(emission).divide(EXA);
+
+    //     loansMint = hexObjectToBigInteger(reader.rewards.getDataSourcesAt(distributedDay).get("Loans").get(
+    //             "total_dist"));
+    //     sicxMint = hexObjectToBigInteger(reader.rewards.getDataSourcesAt(distributedDay).get("sICX/ICX").get(
+    //             "total_dist"));
+    //     assertEquals(expectedLoansMint, loansMint);
+    //     assertEquals(expectedSicxMint, sicxMint);
+    // }
+
+    // @Test
+    // @Order(21)
+    // void removeRewardsDistributions() throws Exception {
+    //     // Arrange
+    //     BigInteger platformDay = hexObjectToBigInteger(reader.rewards.distStatus().get("platform_day"));
+    //     BigInteger distributedDay = platformDay.subtract(BigInteger.ONE);
+    //     Map<String, BigInteger> distributions = reader.rewards.recipientAt(distributedDay);
+    //     BigInteger loansDist = distributions.get("Loans");
+    //     BigInteger icxDist = distributions.get("sICX/ICX");
+
+    //     BalancedClient loanTaker = balanced.newClient();
+    //     BalancedClient icxSicxLP = balanced.newClient();
+    //     BigInteger collateralAmount = BigInteger.TEN.pow(23);
+    //     BigInteger loanAmount = BigInteger.TEN.pow(21);
+    //     loanTaker.loans.depositAndBorrow(collateralAmount, "bnUSD", loanAmount, null, null);
+    //     icxSicxLP.dex._transfer(balanced.dex._address(), BigInteger.TEN.pow(22), null);
+
+    //     // Act
+    //     DistributionPercentage[] recipients = new DistributionPercentage[]{
+    //             createDistributionPercentage("Loans", BigInteger.ZERO),
+    //             createDistributionPercentage("sICX/ICX", distributions.get("sICX/ICX").add(loansDist)),
+    //             createDistributionPercentage("Worker Tokens", distributions.get("Worker Tokens")),
+    //             createDistributionPercentage("Reserve Fund", distributions.get("Reserve Fund")),
+    //             createDistributionPercentage("DAOfund", distributions.get("DAOfund")),
+    //             createDistributionPercentage("sICX/bnUSD", distributions.get("sICX/bnUSD")),
+    //             createDistributionPercentage("BALN/bnUSD", distributions.get("BALN/bnUSD")),
+    //             createDistributionPercentage("BALN/sICX", distributions.get("BALN/sICX"))
+    //     };
+
+    //     owner.governance.updateBalTokenDistPercentage(recipients);
+
+    //     verifyRewards(loanTaker);
+    //     verifyRewards(icxSicxLP);
+
+    //     // Assert
+    //     balanced.increaseDay(1);
+    //     owner.rewards.distribute((txr) -> {
+    //     });
+    //     verifyRewards(loanTaker);
+    //     BigInteger rewardsPreChange = verifyRewards(icxSicxLP);
+
+    //     balanced.increaseDay(1);
+    //     owner.rewards.distribute((txr) -> {
+    //     });
+    //     verifyNoRewards(loanTaker);
+    // }
 
 
     private void joinsICXBnusdLP(BalancedClient client, BigInteger icxAmount, BigInteger bnusdAmount) {

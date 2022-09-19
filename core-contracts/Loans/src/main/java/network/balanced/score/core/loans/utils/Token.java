@@ -35,6 +35,10 @@ public class Token {
         return (String) call(tokenAddress, "symbol");
     }
 
+    public BigInteger decimals() {
+        return (BigInteger) call(tokenAddress, "decimals");
+    }
+
     public BigInteger totalSupply() {
         return (BigInteger) call(tokenAddress, "totalSupply");
     }

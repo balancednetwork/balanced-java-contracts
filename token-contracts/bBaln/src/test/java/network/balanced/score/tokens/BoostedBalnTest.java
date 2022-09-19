@@ -16,10 +16,10 @@
 
 package network.balanced.score.tokens;
 
+import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.token.irc2.IRC2Basic;
-import network.balanced.score.tokens.utils.DummyContract;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import score.Context;
@@ -27,7 +27,6 @@ import score.Context;
 import java.math.BigInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.spy;
 
 class BoostedBalnTest extends AbstractBoostedBalnTest {
@@ -51,8 +50,7 @@ class BoostedBalnTest extends AbstractBoostedBalnTest {
 
     @BeforeEach
     public void setup() throws Exception {
-        Score rewardScore = sm.deploy(owner, DummyContract.class);
-        bBalnScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(), bBalnName, bBalnSymbol);
+        bBalnScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(), dividendsScore.getAddress(), bBalnName, bBalnSymbol);
         BoostedBalnImpl scoreSpy = (BoostedBalnImpl) spy(bBalnScore.getInstance());
         bBalnScore.setInstance(scoreSpy);
 
@@ -62,16 +60,6 @@ class BoostedBalnTest extends AbstractBoostedBalnTest {
     @Test
     void name() {
         assertEquals(bBalnName, bBalnScore.call("name"));
-    }
-
-    @Test
-    void admin() {
-        assertEquals(owner.getAddress(), bBalnScore.call("admin"));
-    }
-
-    @Test
-    void futureAdmin() {
-        assertNull(bBalnScore.call("futureAdmin"));
     }
 
     @Test
@@ -87,6 +75,21 @@ class BoostedBalnTest extends AbstractBoostedBalnTest {
     @Test
     void totalSupply() {
         assertEquals(BigInteger.ZERO, bBalnScore.call("totalSupply", BigInteger.ZERO));
+    }
+
+    @Test
+    void setGetBaln() {
+        testOwnerControlMethods(bBalnScore, "setBaln", "getBaln", Account.newScoreAccount(scoreCount++).getAddress());
+    }
+
+    @Test
+    void setGetRewards() {
+        testOwnerControlMethods(bBalnScore, "setRewards", "getRewards", Account.newScoreAccount(scoreCount++).getAddress());
+    }
+
+    @Test
+    void setGetDividends() {
+        testOwnerControlMethods(bBalnScore, "setDividends", "getDividends", Account.newScoreAccount(scoreCount++).getAddress());
     }
 
 }
