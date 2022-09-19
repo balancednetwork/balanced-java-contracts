@@ -37,7 +37,8 @@ public enum NameMapping {
     sicx("Sicx"),
     baln("BalancedToken"),
     feehandler("FeeHandler"),
-    balancedoracle("BalancedOracle");
+    balancedoracle("BalancedOracle"),
+    bBaln("bBaln");
 
     private final String module;
 
