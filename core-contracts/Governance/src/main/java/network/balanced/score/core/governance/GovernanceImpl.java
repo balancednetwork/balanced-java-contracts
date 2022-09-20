@@ -49,7 +49,8 @@ public class GovernanceImpl {
     public final VarDB<Boolean> launched = Context.newVarDB(LAUNCHED, Boolean.class);
     public final VarDB<Address> rebalancing = Context.newVarDB(REBALANCING, Address.class);
     public final VarDB<BigInteger> timeOffset = Context.newVarDB(TIME_OFFSET, BigInteger.class);
-    public final VarDB<BigInteger> voteDuration = Context.newVarDB(VOTE_DURATION, BigInteger.class);
+    public final VarDB<BigInteger> maxVoteDuration = Context.newVarDB(MAX_VOTE_DURATION, BigInteger.class);
+    public final VarDB<BigInteger> minVoteDuration = Context.newVarDB(MIN_VOTE_DURATION, BigInteger.class);
     public final VarDB<BigInteger> balnVoteDefinitionCriterion = Context.newVarDB(MIN_BALN, BigInteger.class);
     public final VarDB<BigInteger> bnusdVoteDefinitionFee = Context.newVarDB(DEFINITION_FEE, BigInteger.class);
     public final VarDB<BigInteger> quorum = Context.newVarDB(QUORUM, BigInteger.class);
@@ -57,6 +58,11 @@ public class GovernanceImpl {
     public GovernanceImpl() {
         if (launched.getOrDefault(null) == null) {
             launched.set(false);
+        }
+
+        if (maxVoteDuration.get() == null) {
+            maxVoteDuration.set(BigInteger.valueOf(14));
+            minVoteDuration.set(BigInteger.valueOf(1));
         }
     }
 
@@ -87,14 +93,19 @@ public class GovernanceImpl {
     }
 
     @External
-    public void setVoteDuration(BigInteger duration) {
+    public void setVoteDurationLimits(BigInteger max, BigInteger min) {
         onlyOwner();
-        _setVoteDuration(duration);
+        _setVoteDurationLimits(max, min);
     }
 
     @External(readonly = true)
-    public BigInteger getVoteDuration() {
-        return voteDuration.getOrDefault(BigInteger.ZERO);
+    public BigInteger getMinVoteDuration() {
+        return minVoteDuration.get();
+    }
+
+    @External(readonly = true)
+    public BigInteger getMaxVoteDuration() {
+        return maxVoteDuration.get();
     }
 
     @External
@@ -193,7 +204,7 @@ public class GovernanceImpl {
         Context.require(Context.getCaller().equals(proposal.proposer.get()) ||
                         Context.getCaller().equals(Context.getOwner()),
                 "Only owner or proposer may call this method.");
-        if (proposal.startSnapshot.get().compareTo(getDay()) <= 0) {
+        if (proposal.startDay.get().compareTo(getDay()) <= 0) {
             Context.require(Context.getCaller().equals(Context.getOwner()),
                     "Only owner can cancel a vote that has started.");
         }
@@ -204,21 +215,25 @@ public class GovernanceImpl {
     }
 
     @External
-    public void defineVote(String name, String description, BigInteger vote_start, BigInteger snapshot,
-                           @Optional String actions) {
+    public void defineVote(String name, String description, BigInteger vote_start, BigInteger duration,
+                           String forumLink, @Optional String actions) {
         Context.require(description.length() <= 500, "Description must be less than or equal to 500 characters.");
-        Context.require(vote_start.compareTo(getDay()) > 0, "Vote cannot start at or before the current day.");
-        Context.require(getDay().compareTo(snapshot) <= 0 &&
-                        snapshot.compareTo(vote_start) < 0,
-                "The reference snapshot must be in the range: [current_day (" + getDay() + "), " +
-                        "start_day - 1 (" + vote_start.subtract(BigInteger.ONE) + ")].");
+
+        BigInteger snapshotBlock = BigInteger.valueOf(Context.getBlockHeight());
+
+        Context.require(vote_start.compareTo(getDay()) >= 0, "Vote cannot start before the current day.");
 
         actions = optionalDefault(actions, "[]");
         BigInteger voteIndex = ProposalDB.getProposalId(name);
+        Context.require(forumLink.startsWith("https://gov.balanced.network/"), "Invalid forum link.");
+        Context.require(duration.compareTo(maxVoteDuration.get()) <= 0, "Duration is above the maximum allowed " +
+                "duration of " + maxVoteDuration.get());
+        Context.require(duration.compareTo(minVoteDuration.get()) >= 0, "Duration is below the minimum allowed " +
+                "duration of " + minVoteDuration.get());
         Context.require(voteIndex.equals(BigInteger.ZERO), "Poll name " + name + " has already been used.");
-        Context.require(checkBalnVoteCriterion(Context.getCaller()),
+        Context.require(checkBalnVoteCriterion(Context.getCaller(), snapshotBlock),
                 "User needs at least " + balnVoteDefinitionCriterion.get().divide(BigInteger.valueOf(100)) + "% of " +
-                        "total baln supply staked to define a vote.");
+                        "total boosted baln supply to define a vote.");
         verifyActions(actions);
 
         Context.call(Addresses.get("bnUSD"), "govTransfer", Context.getCaller(), Addresses.get("daofund"),
@@ -230,9 +245,10 @@ public class GovernanceImpl {
                 Context.getCaller(),
                 quorum.get().multiply(EXA).divide(BigInteger.valueOf(100)),
                 MAJORITY,
-                snapshot,
+                snapshotBlock,
                 vote_start,
-                vote_start.add(voteDuration.get()),
+                vote_start.add(duration),
+                forumLink,
                 actions,
                 bnusdVoteDefinitionFee.get()
         );
@@ -275,19 +291,17 @@ public class GovernanceImpl {
     public void castVote(BigInteger vote_index, boolean vote) {
         ProposalDB proposal = new ProposalDB(vote_index);
         Context.require((vote_index.compareTo(BigInteger.ZERO) > 0 &&
-                        getDay().compareTo(proposal.startSnapshot.getOrDefault(BigInteger.ZERO)) >= 0 &&
-                        getDay().compareTo(proposal.endSnapshot.getOrDefault(BigInteger.ZERO)) < 0) &&
+                        getDay().compareTo(proposal.startDay.getOrDefault(BigInteger.ZERO)) >= 0 &&
+                        getDay().compareTo(proposal.endDay.getOrDefault(BigInteger.ZERO)) < 0) &&
                         proposal.active.getOrDefault(false),
                 TAG + " :This is not an active poll.");
 
         Address from = Context.getCaller();
-        BigInteger snapshot = proposal.voteSnapshot.get();
+        BigInteger snapshot = proposal.snapshotBlock.get();
 
-        BigInteger totalVote = Context.call(BigInteger.class, Addresses.get("baln"), "stakedBalanceOfAt", from,
-                snapshot);
+        BigInteger totalVote = myVotingWeight(from, snapshot);
 
-        Context.require(!totalVote.equals(BigInteger.ZERO), TAG + "Balanced tokens need to be staked to cast the vote" +
-                ".");
+        Context.require(!totalVote.equals(BigInteger.ZERO), TAG + "Boosted Balanced tokens needed to cast the vote.");
 
         BigInteger userForVotes = proposal.forVotesOfUser.getOrDefault(from, BigInteger.ZERO);
         BigInteger userAgainstVotes = proposal.againstVotesOfUser.getOrDefault(from, BigInteger.ZERO);
@@ -336,12 +350,8 @@ public class GovernanceImpl {
     }
 
     @External(readonly = true)
-    public BigInteger totalBaln(BigInteger _day) {
-        if (_day.compareTo(getDay()) > 0) {
-            return BigInteger.ZERO;
-        }
-
-        return Context.call(BigInteger.class, Addresses.get("baln"), "totalStakedBalanceOfAt", _day);
+    public BigInteger totalBoostedBaln(BigInteger block) {
+        return Context.call(BigInteger.class, Addresses.get("bBaln"), "totalSupplyAt", block);
     }
 
     @External
@@ -351,13 +361,12 @@ public class GovernanceImpl {
                 TAG + ": There is no proposal with index " + vote_index);
 
         ProposalDB proposal = new ProposalDB(vote_index);
-        BigInteger endSnap = proposal.endSnapshot.get();
+        BigInteger endSnap = proposal.endDay.get();
         String actions = proposal.actions.get();
         BigInteger majority = proposal.majority.get();
 
         Context.require(getDay().compareTo(endSnap) >= 0, TAG + ": Voting period has not ended.");
         Context.require(proposal.active.get(), TAG + ": This proposal is not active");
-
 
         Map<String, Object> result = checkVote(vote_index);
         proposal.active.set(false);
@@ -404,13 +413,19 @@ public class GovernanceImpl {
         }
 
         ProposalDB proposal = new ProposalDB(_vote_index);
-        BigInteger totalBaln = totalBaln(proposal.voteSnapshot.getOrDefault(BigInteger.ZERO));
+        BigInteger totalBoostedBaln = BigInteger.ZERO;
+        if (proposal.forumLink.get() == null) {
+            totalBoostedBaln = totalBaln(proposal.snapshotBlock.getOrDefault(BigInteger.ZERO));
+        } else {
+            totalBoostedBaln = totalBoostedBaln(proposal.snapshotBlock.getOrDefault(BigInteger.ZERO));
+        }
 
         BigInteger nrForVotes = BigInteger.ZERO;
         BigInteger nrAgainstVotes = BigInteger.ZERO;
-        if (!totalBaln.equals(BigInteger.ZERO)) {
-            nrForVotes = proposal.totalForVotes.getOrDefault(BigInteger.ZERO).multiply(EXA).divide(totalBaln);
-            nrAgainstVotes = proposal.totalAgainstVotes.getOrDefault(BigInteger.ZERO).multiply(EXA).divide(totalBaln);
+        if (!totalBoostedBaln.equals(BigInteger.ZERO)) {
+            nrForVotes = proposal.totalForVotes.getOrDefault(BigInteger.ZERO).multiply(EXA).divide(totalBoostedBaln);
+            nrAgainstVotes =
+                    proposal.totalAgainstVotes.getOrDefault(BigInteger.ZERO).multiply(EXA).divide(totalBoostedBaln);
         }
 
         Map<String, Object> voteData = new HashMap<>(16);
@@ -421,9 +436,9 @@ public class GovernanceImpl {
         voteData.put("description", proposal.description.getOrDefault(""));
         voteData.put("majority", proposal.majority.getOrDefault(BigInteger.ZERO));
         voteData.put("status", proposal.status.getOrDefault(""));
-        voteData.put("vote snapshot", proposal.voteSnapshot.getOrDefault(BigInteger.ZERO));
-        voteData.put("start day", proposal.startSnapshot.getOrDefault(BigInteger.ZERO));
-        voteData.put("end day", proposal.endSnapshot.getOrDefault(BigInteger.ZERO));
+        voteData.put("vote snapshot", proposal.snapshotBlock.getOrDefault(BigInteger.ZERO));
+        voteData.put("start day", proposal.startDay.getOrDefault(BigInteger.ZERO));
+        voteData.put("end day", proposal.endDay.getOrDefault(BigInteger.ZERO));
         voteData.put("actions", proposal.actions.getOrDefault(""));
         voteData.put("quorum", proposal.quorum.getOrDefault(BigInteger.ZERO));
         voteData.put("for", nrForVotes);
@@ -445,8 +460,8 @@ public class GovernanceImpl {
     }
 
     @External(readonly = true)
-    public BigInteger myVotingWeight(Address _address, BigInteger _day) {
-        return Context.call(BigInteger.class, Addresses.get("baln"), "stakedBalanceOfAt", _address, _day);
+    public BigInteger myVotingWeight(Address _address, BigInteger block) {
+        return Context.call(BigInteger.class, Addresses.get("bBaln"), "balanceOfAt", _address, block);
     }
 
     @External
@@ -472,11 +487,13 @@ public class GovernanceImpl {
 
         launched.set(true);
 
-        BigInteger day = getDay();
+        BigInteger offset = DAY_ZERO.add(launchDay.getOrDefault(BigInteger.ZERO));
+        BigInteger day = (BigInteger.valueOf(Context.getBlockTimestamp()).subtract(DAY_START)).divide(MICRO_SECONDS_IN_A_DAY).subtract(offset);
         launchDay.set(day);
-        BigInteger timeDelta = BigInteger.valueOf(Context.getBlockTimestamp()).add(getTimeOffset());
+        launchTime.set(BigInteger.valueOf(Context.getBlockTimestamp()));
 
-        launchTime.set(timeDelta);
+        BigInteger timeDelta = DAY_START.add(MICRO_SECONDS_IN_A_DAY.multiply(DAY_ZERO.add(launchDay.get()).subtract(BigInteger.ONE)));
+
         setTimeOffset(timeDelta);
 
         for (Map<String, String> source : DATA_SOURCES) {
@@ -1038,12 +1055,20 @@ public class GovernanceImpl {
                 proposal.fee.get(), new byte[0]);
     }
 
-    private boolean checkBalnVoteCriterion(Address address) {
-        BigInteger balnTotal = Context.call(BigInteger.class, Addresses.get("baln"), "totalSupply");
-        BigInteger userStaked = Context.call(BigInteger.class, Addresses.get("baln"), "stakedBalanceOf", address);
+    private boolean checkBalnVoteCriterion(Address address, BigInteger block) {
+        BigInteger boostedBalnTotal = Context.call(BigInteger.class, Addresses.get("bBaln"), "totalSupplyAt", block);
+        BigInteger userBoostedBaln = myVotingWeight(address, block);
         BigInteger limit = balnVoteDefinitionCriterion.get();
-        BigInteger userPercentage = POINTS.multiply(userStaked).divide(balnTotal);
+        BigInteger userPercentage = POINTS.multiply(userBoostedBaln).divide(boostedBalnTotal);
         return userPercentage.compareTo(limit) >= 0;
+    }
+
+    private BigInteger totalBaln(BigInteger _day) {
+        if (_day.compareTo(getDay()) > 0) {
+            return BigInteger.ZERO;
+        }
+
+        return Context.call(BigInteger.class, Addresses.get("baln"), "totalStakedBalanceOfAt", _day);
     }
 
     private void _refundVoteDefinitionFee(ProposalDB proposal) {
@@ -1112,25 +1137,10 @@ public class GovernanceImpl {
         Context.call(Addresses.get("dividends"), "setDividendsCategoryPercentage", (Object) _dist_list);
     }
 
-    // Unreachable in current version
-    // public void setPoolLpFee(BigInteger _value) {
-    //     Context.call(Addresses.get("dex"), "setPoolLpFee",  _value);
-    // }
-
-    // public void setPoolBalnFee(BigInteger _value) {
-    //     Context.call(Addresses.get("dex"), "setPoolBalnFee",  _value);
-    // }
-
-    // public void setIcxConversionFee(BigInteger _value) {
-    //     Context.call(Addresses.get("dex"), "setIcxConversionFee",  _value);
-    // }
-
-    // public void setIcxBalnFee(BigInteger _value) {
-    //      Context.call(Addresses.get("dex"), "setIcxBalnFee",  _value);
-    // }
-
-    public void _setVoteDuration(BigInteger duration) {
-        voteDuration.set(duration);
+    public void _setVoteDurationLimits(BigInteger min, BigInteger max) {
+        Context.require(min.compareTo(BigInteger.ONE) >= 0, "Minimum vote duration has to be above 1");
+        minVoteDuration.set(min);
+        maxVoteDuration.set(max);
     }
 
     public void _setVoteDefinitionFee(BigInteger fee) {

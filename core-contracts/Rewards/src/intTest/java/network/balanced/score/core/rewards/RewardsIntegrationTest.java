@@ -328,8 +328,9 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         balanced.increaseDay(1);
         owner.rewards.distribute((txr) -> {
         });
+
         verifyRewards(loanTaker);
-        BigInteger rewardsPreChange = verifyRewards(icxSicxLP);
+        verifyRewards(icxSicxLP);
 
         balanced.increaseDay(1);
         owner.rewards.distribute((txr) -> {

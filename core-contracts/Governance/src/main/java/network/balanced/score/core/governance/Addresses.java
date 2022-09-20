@@ -43,6 +43,7 @@ public class Addresses {
     public static final VarDB<Address> router = Context.newVarDB("router", Address.class);
     public static final VarDB<Address> feehandler = Context.newVarDB("feehandler", Address.class);
     public static final VarDB<Address> stakedLp = Context.newVarDB("stakedLp", Address.class);
+    public static final VarDB<Address> bBaln = Context.newVarDB("bBaln", Address.class);
     public static final VarDB<Address> balancedOracle = Context.newVarDB("balancedOracle", Address.class);
     public static final VarDB<Address> bBaln = Context.newVarDB("bBaln", Address.class);
 
