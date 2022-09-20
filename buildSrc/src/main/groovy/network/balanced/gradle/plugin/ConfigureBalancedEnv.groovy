@@ -188,7 +188,8 @@ class ConfigureBalancedEnv extends DefaultTask {
     }
 
     private void execute(Action action) {
-        client.send(wallet, getAddress(action.contract), BigInteger.ZERO, action.method, action.params, DefaultScoreClient.DEFAULT_RESULT_TIMEOUT)
+        BigInteger value = action.value == null ? BigInteger.ZERO : action.value
+        client.send(wallet, getAddress(action.contract), value, action.method, action.params, DefaultScoreClient.DEFAULT_RESULT_TIMEOUT)
     }
 
     private Address getAddress(String key) {
@@ -249,10 +250,6 @@ class ConfigureBalancedEnv extends DefaultTask {
         Address ORACLE_ADDRESS = new Address(address)
         properties.put("ORACLE_ADDRESS", ORACLE_ADDRESS)
 
-        address = this._properties.getProperty("STAKEDLP_ADDRESS")
-        Address stakedlp = new Address(address)
-        properties.put("STAKEDLP_ADDRESS", stakedlp)
-
         // delegate methods
         List<String> prepsAddress = _properties.getProperty("PREP_LIST").split("--;--").toList()
         List<String> vote = _properties.getProperty("VOTES_IN_PER").split("--;--").toList()
@@ -267,5 +264,15 @@ class ConfigureBalancedEnv extends DefaultTask {
         }
 
         properties.put("DELEGATE_PARAM", delegationParam)
+        boolean status_param = this._properties.getProperty("STATUS")
+        properties.put("STATUS_PARAM", status_param)
+
+        Address[] acceptedTokens = new Address[3];
+        acceptedTokens[0] = addresses.get("sicx")
+        acceptedTokens[1] = addresses.get("bnUSD")
+        acceptedTokens[2] = addresses.get("baln")
+        properties.put("ACCEPTED_TOKENS", acceptedTokens)
+
+        properties.put("FEE_INTERVAL_IN_BLOCKS", this._properties.getProperty("FEE_INTERVAL_IN_BLOCKS"))
     }
 }

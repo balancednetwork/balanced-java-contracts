@@ -63,8 +63,8 @@ public class VoteActions {
             case "setRebalancingThreshold":
                 gov._setRebalancingThreshold(convertToNumber(params.get("_value")));
                 break;
-            case "setVoteDuration":
-                gov._setVoteDuration(convertToNumber(params.get("_duration")));
+            case "setVoteDurationLimits":
+                gov._setVoteDurationLimits(convertToNumber(params.get("_min")), convertToNumber(params.get("_max")));
                 break;
             case "setQuorum":
                 gov._setQuorum(convertToNumber(params.get("quorum")));

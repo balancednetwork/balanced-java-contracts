@@ -16,11 +16,13 @@
 
 package network.balanced.score.lib.utils;
 
+import java.util.Arrays;
+
 import score.Context;
 import score.VarDB;
 
 public class NonReentrant {
-    private static final VarDB<String> txLock  = Context.newVarDB("global_tx_locked", String.class);
+    private static final VarDB<byte[]> txLock  = Context.newVarDB("global_tx_locked", byte[].class);
 
     static public void globalReentryLock() {
         byte[] txHash = Context.getTransactionHash();
@@ -28,10 +30,8 @@ public class NonReentrant {
             return;
         }
 
-        String tx = txHash.toString();
-        String lastTx = txLock.getOrDefault("");
-
-        Context.require(!tx.equals(lastTx), "Reentrancy Lock: Can't call multiple times in one transaction");
-        txLock.set(tx);
+        byte[] lastTx = txLock.getOrDefault(new byte[0]);
+        Context.require(!Arrays.equals(txHash, lastTx), "Reentrancy Lock: Can't call multiple times in one transaction");
+        txLock.set(txHash);
     }
 }
