@@ -77,6 +77,10 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
     }
 
     private void onInstall(Address balnAddress, Address rewardAddress, Address dividendsAddress, String name, String symbol) {
+        if (this.name.get() != null) {
+            return;
+        }
+
         this.balnAddress.set(balnAddress);
         this.rewardAddress.set(rewardAddress);
         this.dividendsAddress.set(dividendsAddress);
