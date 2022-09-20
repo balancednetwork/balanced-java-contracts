@@ -721,9 +721,10 @@ public class DividendsImpl implements Dividends {
     public void onBalanceUpdate(Address user, BigInteger bBalnBalance) {
         Context.require(Context.getCaller().equals(boostedBalnScore.get()), TAG + " Only BBaln contract is allowed to" +
                 " call onBalanceUpdate method.");
-        updateUserDividends(user, userBalance.getOrDefault(user, BigInteger.ZERO));
+        BigInteger prevBalance = userBalance.getOrDefault(user, BigInteger.ZERO);
+        updateUserDividends(user, prevBalance);
         userBalance.set(user, bBalnBalance);
-        DividendsTracker.setBBalnTotalSupply(getBoostedTotalSupply().add(bBalnBalance));
+        DividendsTracker.setBBalnTotalSupply(getBoostedTotalSupply().add(bBalnBalance).subtract(prevBalance));
     }
 
     private void updateUserDividends(Address user, BigInteger prevBalance) {
