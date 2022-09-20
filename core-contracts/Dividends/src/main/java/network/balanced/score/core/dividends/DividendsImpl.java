@@ -705,7 +705,7 @@ public class DividendsImpl implements Dividends {
     }
 
     @External
-    public void onKick(Address user, BigInteger currentSupply, @Optional byte[] data) {
+    public void onKick(Address user) {
         Context.require(Context.getCaller().equals(boostedBalnScore.get()), TAG + " Only BBaln contract is allowed to" +
                 " call onKick method.");
         BigInteger userPrevBalance = userBalance.getOrDefault(user, BigInteger.ZERO);
@@ -713,17 +713,17 @@ public class DividendsImpl implements Dividends {
                 "be kicked.");
         updateUserDividends(user, userPrevBalance);
         userBalance.set(user, getBoostedBalnBalance(user));
-        DividendsTracker.setBBalnTotalSupply(currentSupply);
-        UserKicked(user, data);
+        DividendsTracker.setBBalnTotalSupply(getBoostedTotalSupply().subtract(userPrevBalance));
+        UserKicked(user, "user kicked".getBytes());
     }
 
     @External
-    public void onBalanceUpdate(Address user, BigInteger currentTotalSupply) {
+    public void onBalanceUpdate(Address user, BigInteger bBalnBalance) {
         Context.require(Context.getCaller().equals(boostedBalnScore.get()), TAG + " Only BBaln contract is allowed to" +
                 " call onBalanceUpdate method.");
         updateUserDividends(user, userBalance.getOrDefault(user, BigInteger.ZERO));
-        userBalance.set(user, getBoostedBalnBalance(user));
-        DividendsTracker.setBBalnTotalSupply(currentTotalSupply);
+        userBalance.set(user, bBalnBalance);
+        DividendsTracker.setBBalnTotalSupply(getBoostedTotalSupply().add(bBalnBalance));
     }
 
     private void updateUserDividends(Address user, BigInteger prevBalance) {
