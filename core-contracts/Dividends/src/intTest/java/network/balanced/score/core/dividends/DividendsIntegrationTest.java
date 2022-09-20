@@ -428,6 +428,10 @@ public class DividendsIntegrationTest {
         Address bbalnTesterAddress2 =  Address.fromString(tester_bbaln2.getAddress().toString());
         Address bbalnTesterAddress3 =  Address.fromString(tester_bbaln3.getAddress().toString());
 
+        balanced.syncDistributions();
+        balanced.increaseDay(2);
+        balanced.syncDistributions();
+
         balanced.ownerClient.rewards.claimRewards();
 
         // sent baln token to two users
@@ -566,8 +570,8 @@ public class DividendsIntegrationTest {
         assertEquals(bnusdBalanceUser2After, bnusdBalanceUser2Before.add(unclaimedDividendsAfter2));
 
         // user claims the rewards of baln stake after many days of bbaln start
-        // once user claims dividends the unclaimedDividends become null
-        assertNull(newUnclaimedDividends2);
+        // once user claims dividends the unclaimedDividends become 0
+        assertEquals(newUnclaimedDividends2, BigInteger.ZERO);
     }
 
     @Test
@@ -601,7 +605,7 @@ public class DividendsIntegrationTest {
         assertEquals(actualBnusdAfterClaim, expectedBnusdAfterClaim);
 
         // once user claims dividends the unclaimedDividends become null
-        assertNull(newUnclaimedDividends);
+        assertEquals(newUnclaimedDividends, BigInteger.ZERO);
 
         balanced.increaseDay(1);
         loans.depositAndBorrow(collateral, "bnUSD"
@@ -630,9 +634,12 @@ public class DividendsIntegrationTest {
         String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
 
         // a new user will have 0 accumulated dividends
-        assertNull(bbalntesterScoreDividends.getUnclaimedDividends(bbalnTesterAddress).get(bnusd._address().toString()));
+        assertEquals(bbalntesterScoreDividends.getUnclaimedDividends(bbalnTesterAddress).get(bnusd._address().toString()), BigInteger.ZERO);
+//        System.out.println(boostedBaln.getTxLock());
+        System.out.println("here");
         // locks baln for 4 weeks
         balnTesterScore3.transfer(boostedBaln._address(), availableBalnBalance.divide(BigInteger.TWO), data.getBytes());
+//        System.out.println(boostedBaln.getTxLock());
 
         // for dividends
         loans.depositAndBorrow(collateral, "bnUSD"
@@ -651,7 +658,7 @@ public class DividendsIntegrationTest {
         unclaimedDividendsBefore = bbalntesterScoreDividends.getUnclaimedDividends(bbalnTesterAddress).get(bnusd._address().toString());
 
         // after claiming dividends unclaimed dividends will be null unless dividends is received.
-        assertNull(bbalntesterScoreDividends.getUnclaimedDividends(bbalnTesterAddress).get(bnusd._address().toString()));
+        assertEquals(bbalntesterScoreDividends.getUnclaimedDividends(bbalnTesterAddress).get(bnusd._address().toString()), BigInteger.ZERO);
 
     }
 
