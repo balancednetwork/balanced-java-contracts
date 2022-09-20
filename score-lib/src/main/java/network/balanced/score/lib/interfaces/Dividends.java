@@ -49,10 +49,10 @@ public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress
     BigInteger getBBalnDay();
 
     @External
-    void onBalanceUpdate(Address user, BigInteger currentTotalSupply);
+    void onBalanceUpdate(Address user, BigInteger bBalnBalance);
 
     @External
-    void onKick(Address user, BigInteger currentSupply, @Optional byte[] data);
+    void onKick(Address user);
 
     @External
     void setBBalnAddress(Address _address);
