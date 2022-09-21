@@ -711,7 +711,7 @@ public class DividendsImpl implements Dividends {
         Context.require(!userPrevBalance.equals(BigInteger.ZERO), TAG + " " + user + " User with no balance can not " +
                 "be kicked.");
         updateUserDividends(user, userPrevBalance);
-        userBalance.set(user, getBoostedBalnBalance(user));
+        userBalance.set(user, BigInteger.ZERO);
         DividendsTracker.setBBalnTotalSupply(getBoostedTotalSupply().subtract(userPrevBalance));
         UserKicked(user, "user kicked".getBytes());
     }
