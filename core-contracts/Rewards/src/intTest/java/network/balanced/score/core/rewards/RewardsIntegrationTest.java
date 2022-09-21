@@ -88,8 +88,8 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
 
         loanTaker2.loans.returnAsset("bnUSD", loanAmount.add(fee), "sICX");
         loanTaker3.loans.returnAsset("bnUSD", loanAmount.divide(BigInteger.TWO), "sICX");
-        loanTaker2.rewards.claimRewards();
-        loanTaker3.rewards.claimRewards();
+        loanTaker2.rewards.claimRewards(reader.rewards.getUserSources(loanTaker2.getAddress()));
+        loanTaker3.rewards.claimRewards(reader.rewards.getUserSources(loanTaker3.getAddress()));
 
         // Assert
         verifyRewards(loanTaker1);
@@ -122,7 +122,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
 
         // Act
         icxSicxLpLeaving.dex.cancelSicxicxOrder();
-        icxSicxLpLeaving.rewards.claimRewards();
+        icxSicxLpLeaving.rewards.claimRewards(reader.rewards.getUserSources(icxSicxLpLeaving.getAddress()));
 
         // Assert
         verifyRewards(icxSicxLp);
@@ -173,8 +173,8 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         // Act
         unstakeICXBnusdLP(sicxBnusdLP2);
         unstakeICXBnusdLP(sicxBnusdLP3);
-        sicxBnusdLP2.rewards.claimRewards();
-        sicxBnusdLP3.rewards.claimRewards();
+        sicxBnusdLP2.rewards.claimRewards(reader.rewards.getUserSources(sicxBnusdLP2.getAddress()));
+        sicxBnusdLP3.rewards.claimRewards(reader.rewards.getUserSources(sicxBnusdLP3.getAddress()));
 
         // Assert
         verifyRewards(sicxBnusdLP1);
@@ -369,7 +369,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
 
     private BigInteger verifyRewards(BalancedClient client) {
         BigInteger balancePreClaim = client.baln.balanceOf(client.getAddress());
-        client.rewards.claimRewards();
+        client.rewards.claimRewards(client.rewards.getUserSources(client.getAddress()));
         BigInteger balancePostClaim = client.baln.balanceOf(client.getAddress());
         assertTrue(balancePostClaim.compareTo(balancePreClaim) > 0);
 
@@ -378,7 +378,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
 
     private void verifyNoRewards(BalancedClient client) {
         BigInteger balancePreClaim = client.baln.balanceOf(client.getAddress());
-        client.rewards.claimRewards();
+        client.rewards.claimRewards(client.rewards.getUserSources(client.getAddress()));
         BigInteger balancePostClaim = client.baln.balanceOf(client.getAddress());
         assertEquals(balancePostClaim, balancePreClaim);
     }

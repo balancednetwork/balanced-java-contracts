@@ -266,7 +266,7 @@ public class DataSourceImpl {
 
         BigInteger boost = BigInteger.ZERO;
         if (boostedSupply.compareTo(BigInteger.ZERO) > 0 && balance.compareTo(BigInteger.ZERO) > 0) {
-            boost = supply.multiply(boostedBalance).divide(boostedSupply).multiply(EXA.subtract(weight)).divide(weight);
+            boost = supply.multiply(boostedBalance).multiply(EXA.subtract(weight)).divide(boostedSupply).divide(weight);
         }
 
         BigInteger newWorkingBalance = balance.add(boost);

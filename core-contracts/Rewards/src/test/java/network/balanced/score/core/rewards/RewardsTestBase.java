@@ -158,6 +158,10 @@ class RewardsTestBase extends UnitTest {
         return rewardsPost.subtract(rewardsPre);
     }
 
+    Object getUserSources(Address address) {
+        return rewardsScore.call("getUserSources", address);
+    }
+
     void snapshotDistributionPercentage() {
         Object distributionPercentages = new DistributionPercentage[]{loansDist, icxPoolDist, bwtDist, reserveDist,
                 daoDist};

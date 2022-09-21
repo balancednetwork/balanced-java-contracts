@@ -93,10 +93,10 @@ public interface Rewards extends
     Map<String, BigInteger> recipientAt(BigInteger _day);
 
     @External
-    void boost();
+    void boost(String[] sources);
 
     @External
-    void claimRewards();
+    void claimRewards(@Optional String[] sources);
 
     @External(readonly = true)
     BigInteger getAPY(String _name);
@@ -129,5 +129,17 @@ public interface Rewards extends
     void onKick(Address user);
 
     @External
+    void kick(Address user, String[] sources);
+
+    @External
     void onBalanceUpdate(Address user, BigInteger balance);
+
+    @External
+    void setBoostWeight(BigInteger weight);
+
+    @External(readonly = true)
+    BigInteger getBoostWeight();
+
+    @External(readonly = true)
+    String[] getUserSources(Address user);
 }

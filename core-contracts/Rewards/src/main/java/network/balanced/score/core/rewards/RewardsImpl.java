@@ -434,17 +434,21 @@ public class RewardsImpl implements Rewards {
     }
 
     @External
-    public void boost() {
+    public void boost(String[] sources) {
         Address user = Context.getCaller();
         BigInteger boostedBalance = fetchBoostedBalance(user);
-        updateAllUserRewards(user, boostedBalance);
+        updateAllUserRewards(user, sources,  boostedBalance);
     }
 
     @External
-    public void claimRewards() {
+    public void claimRewards(@Optional String[] sources) {
+        if (sources == null) {
+            sources = getAllSources();
+        }
+
         Address address = Context.getCaller();
         BigInteger newBoostedBalance = fetchBoostedBalance(address);
-        updateAllUserRewards(address, newBoostedBalance);
+        updateAllUserRewards(address, sources, newBoostedBalance);
 
         BigInteger userClaimableRewards = balnHoldings.getOrDefault(address.toString(), BigInteger.ZERO);
         if (userClaimableRewards.compareTo(BigInteger.ZERO) > 0) {
@@ -533,13 +537,19 @@ public class RewardsImpl implements Rewards {
     @External
     public void onKick(Address user) {
         only(boostedBaln);
-        updateAllUserRewards(user, BigInteger.ZERO);
+        updateAllUserRewards(user, getAllSources(), BigInteger.ZERO);
+    }
+
+    @External
+    public void kick(Address user, String[] sources) {
+        BigInteger boostedBalance = fetchBoostedBalance(user);
+        updateAllUserRewards(user, sources, boostedBalance);
     }
 
     @External
     public void onBalanceUpdate(Address user, BigInteger balance) {
         only(boostedBaln);
-        updateAllUserRewards(user, balance);
+        updateAllUserRewards(user, getAllSources(), balance);
     }
 
     @External
@@ -555,16 +565,49 @@ public class RewardsImpl implements Rewards {
         return boostWeight.get();
     }
 
-    private void updateAllUserRewards(Address user, BigInteger newBoostedBalance) {
-        distribute();
-
+    @External(readonly = true)
+    public String[] getUserSources(Address user) {
         int dataSourcesCount = DataSourceDB.size();
+
+        List<String> sources = new ArrayList<>();
         for (int i = 0; i < dataSourcesCount; i++) {
             String name = DataSourceDB.names.get(i);
             DataSourceImpl dataSource = DataSourceDB.get(name);
-            BigInteger currentTime = getTime();
+            BigInteger workingBalance = dataSource.getWorkingBalance(user, true);
+            if (workingBalance.compareTo(BigInteger.ZERO) > 0) {
+                sources.add(name);
+            }
+        }
+        int userSourcesCount = sources.size();
+        String[] arrSources = new String[userSourcesCount];
+        for (int i = 0; i < userSourcesCount; i++) {
+            arrSources[i] = sources.get(i);
+        }
 
+        return arrSources;
+    }
+
+    private String[] getAllSources() {
+        int dataSourcesCount = DataSourceDB.size();
+        String[] sources = new String[dataSourcesCount];
+        for (int i = 0; i < dataSourcesCount; i++) {
+            String name = DataSourceDB.names.get(i);
+            sources[i] = name;
+        }
+
+        return sources;
+    }
+
+    private void updateAllUserRewards(Address user, String[] sources, BigInteger newBoostedBalance) {
+        distribute();
+        BigInteger currentTime = getTime();
+        for (String name : sources) {
+            DataSourceImpl dataSource = DataSourceDB.get(name);
             BigInteger workingBalance = dataSource.getWorkingBalance(user, false);
+            if (workingBalance.equals(BigInteger.ZERO)) {
+                continue;
+            }
+
             BigInteger workingSupply = dataSource.getWorkingSupply(false);
             updateUserAccruedRewards(name, currentTime, workingSupply, dataSource, user, workingBalance, newBoostedBalance);
         }

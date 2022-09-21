@@ -183,7 +183,7 @@ public class DividendsIntegrationTest {
         }
 
         // Claim rewards for that user
-        rewards.claimRewards();
+        rewards.claimRewards(null);
         BigInteger balance = baln.balanceOf(Address.fromString(balanced.owner.getAddress().toString()));
         // stakes balance token
         baln.stake(balance);
@@ -267,7 +267,7 @@ public class DividendsIntegrationTest {
 
         balanced.syncDistributions();
 
-        rewards.claimRewards();
+        rewards.claimRewards(null);
         BigInteger balance = baln.balanceOf(Address.fromString(owner.getAddress().toString()));
 
         loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
@@ -471,7 +471,7 @@ public class DividendsIntegrationTest {
 
         balanced.syncDistributions();
         // claim rewards for the user
-        rewards.claimRewards();
+        rewards.claimRewards(null);
 
         // provides liquidity to baln/Sicx pool
         baln.transfer(balanced.dex._address(), lpAmount, data.toString().getBytes());
@@ -550,7 +550,7 @@ public class DividendsIntegrationTest {
     void testContinuousDividends_staker() throws Exception {
         // Arrange
         BalancedClient staker = balanced.newClient();
-        balanced.ownerClient.rewards.claimRewards();
+        balanced.ownerClient.rewards.claimRewards(null);
         BigInteger balnBalance = baln.availableBalanceOf(balanced.ownerClient.getAddress());
         balanced.ownerClient.baln.transfer(staker.getAddress(), balnBalance, new byte[0]);
         staker.baln.stake(balnBalance);
@@ -649,7 +649,7 @@ public class DividendsIntegrationTest {
         balanced.syncDistributions();
 
         // Claim rewards
-        rewards.claimRewards();
+        rewards.claimRewards(null);
 
         baln.transfer(Address.fromString(tester2.getAddress().toString()),
                 BigInteger.valueOf(50).multiply(BigInteger.TEN.pow(18)), null);

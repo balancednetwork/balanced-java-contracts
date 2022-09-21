@@ -59,7 +59,6 @@ public class GovernanceTestBase extends UnitTest {
     protected MockContract<Rebalancing> rebalancing;
     protected MockContract<FeeHandler> feehandler;
     protected MockContract<StakedLP> stakedLp;
-    protected MockContract<BoostedBaln> bBaln;
     protected MockContract<BalancedOracle> balancedOracle;
 
     protected BalancedAddresses balancedAddresses = new BalancedAddresses();

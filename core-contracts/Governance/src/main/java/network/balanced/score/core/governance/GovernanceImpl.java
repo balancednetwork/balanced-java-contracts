@@ -571,7 +571,8 @@ public class GovernanceImpl {
         Address rewardsAddress = Addresses.get("rewards");
         Address loansAddress = Addresses.get("loans");
 
-        Context.call(rewardsAddress, "claimRewards");
+        Object sources = new String[]{"Loans", "sICX/bnUSD"};
+        Context.call(rewardsAddress, "claimRewards", sources);
         Context.call(loansAddress, "depositAndBorrow", "bnUSD", _bnUSD_amount, Context.getAddress(), BigInteger.ZERO);
 
         JsonObject depositData = Json.object();
@@ -610,7 +611,8 @@ public class GovernanceImpl {
         Address stakedLpAddress = Addresses.get("stakedLp");
         Address rewardsAddress = Addresses.get("rewards");
 
-        Context.call(rewardsAddress, "claimRewards");
+        Object sources = new String[]{"Loans", "sICX/bnUSD", "BALN/bnUSD"};
+        Context.call(rewardsAddress, "claimRewards", sources);
 
         JsonObject depositData = Json.object();
         depositData.add("method", "_deposit");
