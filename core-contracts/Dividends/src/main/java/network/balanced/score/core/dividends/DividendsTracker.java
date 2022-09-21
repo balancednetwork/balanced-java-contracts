@@ -37,8 +37,6 @@ public class DividendsTracker {
             BigInteger.class);
     protected static final DictDB<Address, BigInteger> userBalance = Context.newDictDB(USER_BBALN_BALANCE,
             BigInteger.class);
-    protected static final VarDB<BigInteger> bBalnDay = Context.newVarDB(BBALN_DAY, BigInteger.class);
-
 
     public static BigInteger getUserWeight(Address user, Address token) {
         return userWeight.at(user).getOrDefault(token, BigInteger.ZERO);
@@ -48,20 +46,8 @@ public class DividendsTracker {
         return boostedUserWeight.at(user).getOrDefault(token, BigInteger.ZERO);
     }
 
-    protected static BigInteger getBoostedBalnDay() {
-        return bBalnDay.getOrDefault(BigInteger.ZERO);
-    }
-
-    public static BigInteger getTotalSupply() {
-        return totalSupply.getOrDefault(BigInteger.ZERO);
-    }
-
     public static BigInteger getBoostedTotalSupply() {
         return boostedTotalSupply.getOrDefault(BigInteger.ZERO);
-    }
-
-    public static void setTotalSupply(BigInteger supply) {
-        totalSupply.set(supply);
     }
 
     public static void setBBalnTotalSupply(BigInteger supply) {
@@ -96,25 +82,10 @@ public class DividendsTracker {
         return computeUserRewards(prevBalance, totalWeight, currentUserWeight);
     }
 
-    protected static void setTotalWeight(Address token, BigInteger amountReceived) {
-        BigInteger addedWeight = amountReceived.multiply(EXA).divide(getTotalSupply());
-        BigInteger previousTotalWeight = getTotalWeight(token);
-        totalWeight.set(token, previousTotalWeight.add(addedWeight));
-    }
-
     protected static void setBoostedTotalWeight(Address token, BigInteger amountReceived) {
         BigInteger addedWeight = amountReceived.multiply(EXA).divide(getBoostedTotalSupply());
         BigInteger previousTotalWeight = getBoostedTotalWeight(token);
         boostedTotalWeight.set(token, previousTotalWeight.add(addedWeight));
-    }
-
-    protected static boolean checkBBalnDay(BigInteger day) {
-        return day.compareTo(getBoostedBalnDay()) >= 0;
-    }
-
-    public static void updateTotalWeight(Address token, BigInteger amountReceived) {
-
-        setTotalWeight(token, amountReceived);
     }
 
     public static void updateBoostedTotalWeight(Address token, BigInteger amountReceived) {
