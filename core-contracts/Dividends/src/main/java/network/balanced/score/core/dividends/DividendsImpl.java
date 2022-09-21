@@ -706,8 +706,7 @@ public class DividendsImpl implements Dividends {
 
     @External
     public void onKick(Address user) {
-        Context.require(Context.getCaller().equals(boostedBalnScore.get()), TAG + " Only BBaln contract is allowed to" +
-                " call onKick method.");
+        only(boostedBalnScore);
         BigInteger userPrevBalance = userBalance.getOrDefault(user, BigInteger.ZERO);
         Context.require(!userPrevBalance.equals(BigInteger.ZERO), TAG + " " + user + " User with no balance can not " +
                 "be kicked.");
@@ -719,8 +718,7 @@ public class DividendsImpl implements Dividends {
 
     @External
     public void onBalanceUpdate(Address user, BigInteger bBalnBalance) {
-        Context.require(Context.getCaller().equals(boostedBalnScore.get()), TAG + " Only BBaln contract is allowed to" +
-                " call onBalanceUpdate method.");
+        only(boostedBalnScore);
         BigInteger prevBalance = userBalance.getOrDefault(user, BigInteger.ZERO);
         updateUserDividends(user, prevBalance);
         userBalance.set(user, bBalnBalance);
