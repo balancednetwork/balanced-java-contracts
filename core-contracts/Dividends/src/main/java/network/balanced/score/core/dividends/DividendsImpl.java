@@ -86,8 +86,6 @@ public class DividendsImpl implements Dividends {
         Map<String, BigInteger> dividendsDist = dividendsAt(getDay());
         dividendsPercentage.set(DAO_FUND, dividendsDist.get(DAO_FUND));
         dividendsPercentage.set(BALN_HOLDERS, dividendsDist.get(BALN_HOLDERS));
-        // TODO : added for unit test , can be removed before going on prod.
-        DividendsTracker.setTotalSupply(BigInteger.ONE);
     }
 
     @External(readonly = true)
@@ -110,17 +108,6 @@ public class DividendsImpl implements Dividends {
     public void setTimeOffset(BigInteger deltaTime) {
         only(admin);
         timeOffset.set(deltaTime);
-    }
-
-    @External
-    public void setBBalnDay(BigInteger day) {
-        onlyOwner();
-        bBalnDay.set(day);
-    }
-
-    @External(readonly = true)
-    public BigInteger getBBalnDay() {
-        return getBoostedBalnDay();
     }
 
     @External
@@ -295,7 +282,6 @@ public class DividendsImpl implements Dividends {
     @External
     public void removeDividendsCategory(String _category) {
         only(admin);
-        BigInteger currentDay = getDay();
         Context.require(arrayDbContains(completeDividendsCategories, _category),
                 TAG + ": " + _category + " not found in the list of dividends categories.");
         Context.require(dividendsPercentage.get(_category).equals(BigInteger.ZERO),
@@ -420,30 +406,20 @@ public class DividendsImpl implements Dividends {
     }
 
     protected BigInteger calculateAccruedDividends(Address token, Address user, boolean readonly) {
-        BigInteger accruedDividends;
-        boolean checkBBalnDay = checkBBalnDay(getDay());
+        BigInteger accruedDividends = BigInteger.ZERO;
         BigInteger balance = getBalnBalance(user);
         BigInteger bbalnBalance = userBalance.getOrDefault(user, BigInteger.ZERO);
 
-        if (checkBBalnDay) {
-            if (getUserWeight(user, token).equals(BigInteger.ZERO)) {
-                // new user after bbaln day
-                accruedDividends = DividendsTracker.updateBoostedUserData(token,
-                        user, bbalnBalance, readonly);
-            } else {
-                // existing user after bbaln day
-                accruedDividends = DividendsTracker.updateUserData
-                        (token, user, balance, readonly);
-                accruedDividends = accruedDividends.add(DividendsTracker.updateBoostedUserData(token,
-                        user, bbalnBalance, readonly));
-                if (!readonly) {
-                    DividendsTracker.userWeight.at(user).set(token, null);
-                }
-            }
-        } else {
-            // existing user or new user before bbaln day
-            accruedDividends = DividendsTracker.updateUserData(token, user, balance, readonly);
+        if (! getUserWeight(user, token).equals(BigInteger.ZERO)){
+            accruedDividends = DividendsTracker.updateUserData
+                    (token, user, balance, readonly);
         }
+        accruedDividends = accruedDividends.add(DividendsTracker.updateBoostedUserData(token,
+                    user, bbalnBalance, readonly));
+            if (!readonly) {
+                DividendsTracker.userWeight.at(user).set(token, null);
+            }
+
         return accruedDividends;
     }
 
@@ -580,19 +556,14 @@ public class DividendsImpl implements Dividends {
             }
         }
 
-        boolean checkBBalnDay = checkBBalnDay(getDay());
-        if (checkBBalnDay && getBoostedTotalSupply().equals(BigInteger.ZERO)) {
+        if (getBoostedTotalSupply().equals(BigInteger.ZERO)) {
             sendToken(daoFund.get(), _value, token, "Daofund dividends");
             return;
         }
         BigInteger dividendsToDaofund = _value.multiply(dividendsPercentage.get(DAOFUND)).divide(EXA);
 
         // update boosted total weight if the bbaln day is started
-        if (checkBBalnDay) {
             DividendsTracker.updateBoostedTotalWeight(token, _value.subtract(dividendsToDaofund));
-        } else {
-            DividendsTracker.updateTotalWeight(token, _value.subtract(dividendsToDaofund));
-        }
 
 
         DividendsReceivedV2(_value, getDay(), _value + " tokens received as dividends token: " + token);
@@ -602,16 +573,6 @@ public class DividendsImpl implements Dividends {
 
     @External
     public void updateBalnStake(Address user, BigInteger prevStakedBalance, BigInteger currentTotalSupply) {
-        only(balnScore);
-        int size = acceptedTokens.size();
-        DictDB<Address, BigInteger> userAccruedDividends = accruedDividends.at(user);
-        for (int i = 0; i < size; i++) {
-            Address token = acceptedTokens.get(i);
-            BigInteger accruedDividends = DividendsTracker.updateUserData(token, user, prevStakedBalance, false);
-            BigInteger prevAccruedDividends = userAccruedDividends.getOrDefault(token, BigInteger.ZERO);
-            userAccruedDividends.set(token, prevAccruedDividends.add(accruedDividends));
-        }
-        DividendsTracker.setTotalSupply(currentTotalSupply);
     }
 
     @External(readonly = true)
@@ -872,37 +833,13 @@ public class DividendsImpl implements Dividends {
         return claimedWord.and(mask).equals(mask);
     }
 
-    private void updateDividendsSnapshot(String category, BigInteger percent) {
-        BigInteger currentDay = getDay();
-        BigInteger totalSnapshotsTaken = totalSnapshots.getOrDefault(category, BigInteger.ZERO);
-        BranchDB<BigInteger, DictDB<String, BigInteger>> snapshot = snapshotDividends.at(category);
-        BigInteger value = snapshot.at(totalSnapshotsTaken.subtract(BigInteger.ONE)).get(IDS);
-
-        if (totalSnapshotsTaken.compareTo(BigInteger.ZERO) > 0 && value.equals(currentDay)) {
-            snapshot.at(totalSnapshotsTaken.subtract(BigInteger.ONE)).set(AMOUNT, percent);
-        } else {
-            snapshot.at(totalSnapshotsTaken).set(IDS, currentDay);
-            snapshot.at(totalSnapshotsTaken).set(AMOUNT, percent);
-            totalSnapshots.set(category, totalSnapshotsTaken.add(BigInteger.ONE));
-        }
-    }
-
     private void sendToken(Address to, BigInteger amount, Address token, String msg) {
         Context.call(token, "transfer", to, amount);
         FundTransfer(to, amount, msg + amount + " token sent to" + to);
     }
 
-    private BigInteger getBoostedBalnBalance(Address user) {
-        return Context.call(BigInteger.class, boostedBalnScore.get(), "balanceOf", user);
-    }
-
     private BigInteger getBalnBalance(Address user) {
         return Context.call(BigInteger.class, balnScore.get(), "stakedBalanceOf", user);
-    }
-
-    private void setTimeOffset() {
-        BigInteger offsetTime = (BigInteger) Context.call(dexScore.get(), "getTimeOffset");
-        timeOffset.set(offsetTime);
     }
 
     private void addInitialCategories() {
