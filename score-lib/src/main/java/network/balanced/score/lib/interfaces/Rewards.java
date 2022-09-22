@@ -142,4 +142,7 @@ public interface Rewards extends
 
     @External(readonly = true)
     String[] getUserSources(Address user);
+
+    @External(readonly = true)
+    Map<String, Map<String, BigInteger>> getBoostData(Address user, String[] sources);
 }

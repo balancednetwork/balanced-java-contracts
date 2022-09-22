@@ -20,6 +20,8 @@ import static network.balanced.score.core.rewards.utils.RewardsConstants.AMOUNT;
 import static network.balanced.score.core.rewards.utils.RewardsConstants.DAOFUND;
 import static network.balanced.score.core.rewards.utils.RewardsConstants.DEFAULT_BATCH_SIZE;
 import static network.balanced.score.core.rewards.utils.RewardsConstants.HUNDRED_PERCENTAGE;
+import static network.balanced.score.core.rewards.utils.RewardsConstants.BALANCE;
+import static network.balanced.score.core.rewards.utils.RewardsConstants.TOTAL_SUPPLY;
 import static network.balanced.score.core.rewards.utils.RewardsConstants.IDS;
 import static network.balanced.score.core.rewards.utils.RewardsConstants.WEIGHT;
 import static network.balanced.score.core.rewards.utils.RewardsConstants.WORKER_TOKENS;
@@ -333,6 +335,27 @@ public class RewardsImpl implements Rewards {
         );
     }
 
+    @External(readonly = true)
+    public Map<String, Map<String, BigInteger>> getBoostData(Address user, String[] sources) {
+        Map<String, Map<String, BigInteger>> boostData = new HashMap<>();
+        for (String name : sources) {
+            Map<String, BigInteger> sourceData = new HashMap<>();
+            DataSourceImpl datasource = DataSourceDB.get(name);
+            Map<String, BigInteger> balanceAndSupply = datasource.loadCurrentSupply(user);
+
+            sourceData.put("workingBalance", datasource.getWorkingBalance(user, true));
+            sourceData.put("workingSupply", datasource.getWorkingSupply(true));
+            sourceData.put("balance", balanceAndSupply.get(BALANCE));
+            sourceData.put("supply", balanceAndSupply.get(TOTAL_SUPPLY));
+            sourceData.put("boostedBalnBalance", datasource.getUserBoostedBalance(user));
+            sourceData.put("boostedBalnSupply", datasource.getBoostedSupply());
+
+            boostData.put(name, sourceData);
+        }
+
+        return boostData;
+    }
+
     /**
      * This method should be called once after the balanced has been launched, so that if there are baln tokens to
      * mint it will be minted. In continuous rewards it will be minted while in non-continuous it will not  be minted
@@ -437,7 +460,7 @@ public class RewardsImpl implements Rewards {
     public void boost(String[] sources) {
         Address user = Context.getCaller();
         BigInteger boostedBalance = fetchBoostedBalance(user);
-        updateAllUserRewards(user, sources,  boostedBalance);
+        updateAllUserRewards(user, sources, boostedBalance);
     }
 
     @External
@@ -578,6 +601,7 @@ public class RewardsImpl implements Rewards {
                 sources.add(name);
             }
         }
+
         int userSourcesCount = sources.size();
         String[] arrSources = new String[userSourcesCount];
         for (int i = 0; i < userSourcesCount; i++) {

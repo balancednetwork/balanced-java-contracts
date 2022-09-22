@@ -224,9 +224,19 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         assertTrue(currentWorkingBalanceAndSupply.get("workingSupply").compareTo(initialSupply) > 0);
         assertTrue(currentWorkingBalanceAndSupply.get("workingBalance").compareTo(lpBalance) > 0);
 
+        Map<String, Map<String, BigInteger>> boostData = reader.rewards.getBoostData(icxSicxLpBoosted.getAddress(), new String[]{"sICX/ICX", "Loans"});
+        assertEquals(currentWorkingBalanceAndSupply.get("workingSupply") , boostData.get("sICX/ICX").get("workingSupply"));
+        assertEquals(currentWorkingBalanceAndSupply.get("workingBalance"), boostData.get("sICX/ICX").get("workingBalance"));
+        assertEquals(initialSupply, boostData.get("sICX/ICX").get("supply"));
+        assertEquals(lpBalance, boostData.get("sICX/ICX").get("balance"));
+        assertTrue(boostData.get("sICX/ICX").get("boostedBalnBalance").compareTo(BigInteger.ZERO) > 0);
+        assertTrue(boostData.get("sICX/ICX").get("boostedBalnSupply").compareTo(BigInteger.ZERO) > 0);
+
         // Act
         owner.boostedBaln.setPenaltyAddress(balanced.daofund._address());
         icxSicxLpBoosted.boostedBaln.withdrawEarly();
+
+        // Assert
         currentWorkingBalanceAndSupply = reader.rewards.getWorkingBalanceAndSupply(sourceName, icxSicxLpBoosted.getAddress());
         assertTrue(currentWorkingBalanceAndSupply.get("workingSupply").equals(initialSupply));
         assertTrue(currentWorkingBalanceAndSupply.get("workingBalance").equals(lpBalance));
