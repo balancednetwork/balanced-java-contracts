@@ -413,12 +413,12 @@ public class DividendsImpl implements Dividends {
         if (! getUserWeight(user, token).equals(BigInteger.ZERO)){
             accruedDividends = DividendsTracker.updateUserData
                     (token, user, balance, readonly);
-        }
-        accruedDividends = accruedDividends.add(DividendsTracker.updateBoostedUserData(token,
-                    user, bbalnBalance, readonly));
             if (!readonly) {
                 DividendsTracker.userWeight.at(user).set(token, null);
             }
+        }
+        accruedDividends = accruedDividends.add(DividendsTracker.updateBoostedUserData(token,
+                    user, bbalnBalance, readonly));
 
         return accruedDividends;
     }
