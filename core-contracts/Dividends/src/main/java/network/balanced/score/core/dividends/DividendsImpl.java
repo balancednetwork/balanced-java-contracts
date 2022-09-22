@@ -577,6 +577,19 @@ public class DividendsImpl implements Dividends {
 
     @External
     public void updateBalnStake(Address user, BigInteger prevStakedBalance, BigInteger currentTotalSupply) {
+        only(balnScore);
+        int size = acceptedTokens.size();
+        DictDB<Address, BigInteger> userAccruedDividends = accruedDividends.at(user);
+        for (int i = 0; i < size; i++) {
+            Address token = acceptedTokens.get(i);
+            if (DividendsTracker.userWeight.at(user).getOrDefault(token,BigInteger.ZERO).equals(BigInteger.ZERO)) {
+                return;
+            }
+            BigInteger accruedDividends = DividendsTracker.updateUserData(token, user, prevStakedBalance, false);
+            BigInteger prevAccruedDividends = userAccruedDividends.getOrDefault(token, BigInteger.ZERO);
+            userAccruedDividends.set(token, prevAccruedDividends.add(accruedDividends));
+        }
+        DividendsTracker.setTotalSupply(currentTotalSupply);
     }
 
     @External(readonly = true)

@@ -42,6 +42,10 @@ public class DividendsTracker {
         return userWeight.at(user).getOrDefault(token, BigInteger.ZERO);
     }
 
+    public static void setTotalSupply(BigInteger supply) {
+        totalSupply.set(supply);
+    }
+
     public static BigInteger getUserBoostedWeight(Address user, Address token) {
         return boostedUserWeight.at(user).getOrDefault(token, BigInteger.ZERO);
     }
