@@ -454,6 +454,10 @@ public class DividendsImpl implements Dividends {
             if (totalDivs.signum() > 0) {
                 userAccruedDividends.set(token, BigInteger.ZERO);
                 sendToken(user, totalDivs, token, "User dividends");
+                BigInteger bbalnBalance = getBBalnBalance(user);
+                BigInteger prevBalance = userBalance.getOrDefault(user, BigInteger.ZERO);
+                userBalance.set(user, bbalnBalance);
+                DividendsTracker.setBBalnTotalSupply(getBoostedTotalSupply().add(bbalnBalance).subtract(prevBalance));
             }
         }
     }
@@ -840,6 +844,10 @@ public class DividendsImpl implements Dividends {
 
     private BigInteger getBalnBalance(Address user) {
         return Context.call(BigInteger.class, balnScore.get(), "stakedBalanceOf", user);
+    }
+
+    private BigInteger getBBalnBalance(Address user) {
+        return Context.call(BigInteger.class, boostedBalnScore.get(), "balanceOf", user);
     }
 
     private void addInitialCategories() {
