@@ -27,6 +27,7 @@ repositories {
 dependencies {
     compileOnly Dependencies.javaeeApi
     implementation project(':score-lib')
+    implementation Dependencies.javaeeScorex
 
     testImplementation project(':test-lib')
     testImplementation Dependencies.javaeeUnitTest
@@ -84,6 +85,16 @@ deployJar {
 tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = false
+        csv.required = false
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+    }
 }
 
 task integrationTest(type: Test) {

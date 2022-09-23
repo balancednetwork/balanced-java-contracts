@@ -1054,23 +1054,24 @@ public class GovernanceTest extends GovernanceTestBase {
     }
 
     @Test
-    void addPoolOnStakedLp() {
+    void addStakedLpDataSource() {
         // Arrange
-        BigInteger _id = BigInteger.TEN;
+        BigInteger id = BigInteger.TEN;
+        String name = "testSource";
         Account notOwner = sm.createAccount();
         String expectedErrorMessage =
                 "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
 
         // Act & Assert
-        Executable withNotOwner = () -> governance.invoke(notOwner, "addPoolOnStakedLp", _id);
+        Executable withNotOwner = () -> governance.invoke(notOwner, "addStakedLpDataSource", name, id);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
 
         // Act
-        governance.invoke(owner, "addPoolOnStakedLp", _id);
+        governance.invoke(owner, "addStakedLpDataSource", name, id);
 
         // Assert
-        verify(stakedLp.mock).addPool(_id);
-
+        verify(stakedLp.mock).addDataSource(id, name);
+        verify(rewards.mock).addNewDataSource(name, stakedLp.getAddress());
     }
 
     @Test

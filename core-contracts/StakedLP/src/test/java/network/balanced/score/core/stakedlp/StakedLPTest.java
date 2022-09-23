@@ -19,10 +19,7 @@ package network.balanced.score.core.stakedlp;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
-import network.balanced.score.lib.interfaces.Dex;
-import network.balanced.score.lib.interfaces.DexScoreInterface;
-import network.balanced.score.lib.interfaces.Rewards;
-import network.balanced.score.lib.interfaces.RewardsScoreInterface;
+import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockContract;
 import org.junit.jupiter.api.Assertions;
@@ -89,28 +86,12 @@ public class StakedLPTest extends UnitTest {
 
     @Test
     void setAndGetDex() {
-        Executable setDexNotFromGovernance = () -> stakedLpScore.invoke(owner, "setDex", dex.getAddress());
-        String expectedErrorMessage = "Reverted(0): StakedLP: Sender not governance contract";
-        expectErrorMessage(setDexNotFromGovernance, expectedErrorMessage);
-
-        stakedLpScore.invoke(governanceScore, "setDex", dex.getAddress());
-        Address actualDex = (Address) stakedLpScore.call("getDex");
-        assertEquals(dex.getAddress(), actualDex);
-    }
-
-    @Test
-    Address setAndGetAdmin() {
-        Account admin = sm.createAccount();
-        stakedLpScore.invoke(Account.getAccount(governanceScore.getAddress()), "setAdmin", admin.getAddress());
-        Address actualAdmin = (Address) stakedLpScore.call("getAdmin");
-        assertEquals(admin.getAddress(), actualAdmin);
-        return actualAdmin;
+        testGovernanceControlMethods(stakedLpScore, governanceScore, governanceScore, "setDex", dex.getAddress(), "getDex");
     }
 
     @Test
     void changeGovernanceAddress() {
         assertEquals(governanceScore.getAddress(), stakedLpScore.call("getGovernance"));
-        Address admin = setAndGetAdmin();
         Address newGovernance = Account.newScoreAccount(2).getAddress();
         stakedLpScore.invoke(owner, "setGovernance", newGovernance);
         assertEquals(newGovernance, stakedLpScore.call("getGovernance"));
@@ -118,7 +99,6 @@ public class StakedLPTest extends UnitTest {
 
     @Test
     void setAndGetRewards() {
-        Address admin = setAndGetAdmin();
         stakedLpScore.invoke(governanceScore, "setRewards", rewards.getAddress());
         assertEquals(rewards.getAddress(), stakedLpScore.call("getRewards"));
     }
@@ -255,4 +235,40 @@ public class StakedLPTest extends UnitTest {
         verify(dex.mock).transfer(alice.getAddress(), aliceStakedBalancePool2, BigInteger.TWO, new byte[0]);
     }
 
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void testStakeUnstake_unnamedPool() {
+        // Arrange
+        setAndGetDex();
+        setAndGetRewards();
+        BigInteger poolId = BigInteger.valueOf(3);
+        String name = "newPoolName";
+        BigInteger initialLpTokenBalance = BigInteger.TEN.pow(10);
+        when(dex.mock.balanceOf(alice.getAddress(), poolId)).thenReturn(initialLpTokenBalance);
+
+        // Act & Assert
+        Executable zeroStakeValue = () ->  stakeLpTokens(alice, poolId, BigInteger.TEN);
+        String expectedErrorMessage = "Pool id: " + poolId + " is not a valid pool";
+        expectErrorMessage(zeroStakeValue, expectedErrorMessage);
+
+        // Act
+        stakedLpScore.invoke(governanceScore, "addDataSource", poolId, name);
+        stakeLpTokens(alice, poolId, BigInteger.TEN);
+
+        // Assert
+        Map<String, BigInteger> balanceAndSupply = (Map<String, BigInteger>) stakedLpScore.call("getBalanceAndSupply", name, alice.getAddress());
+        assertEquals(BigInteger.TEN, balanceAndSupply.get("_balance"));
+        assertEquals(BigInteger.TEN, balanceAndSupply.get("_totalSupply"));
+        verify(rewards.mock).updateRewardsData(name, BigInteger.ZERO, alice.getAddress(), BigInteger.ZERO);
+
+        // Act
+        stakedLpScore.invoke(alice, "unstake", poolId, BigInteger.TWO);
+
+        // Assert
+        balanceAndSupply = (Map<String, BigInteger>) stakedLpScore.call("getBalanceAndSupply", name, alice.getAddress());
+        assertEquals(BigInteger.valueOf(8), balanceAndSupply.get("_balance"));
+        assertEquals(BigInteger.valueOf(8), balanceAndSupply.get("_totalSupply"));
+        verify(rewards.mock).updateRewardsData(name, BigInteger.TEN, alice.getAddress(), BigInteger.TEN);
+    }
 }

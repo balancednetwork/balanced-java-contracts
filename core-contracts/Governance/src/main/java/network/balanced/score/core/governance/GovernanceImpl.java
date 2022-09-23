@@ -775,6 +775,14 @@ public class GovernanceImpl {
     }
 
     @External
+    public void addStakedLpDataSource(String _name, BigInteger _poolId) {
+        onlyOwner();
+        Address stakedLP = Addresses.get("stakedLp");
+        _addNewDataSource(_name, stakedLP.toString());
+        Context.call(stakedLP, "addDataSource",  _poolId, _name);
+    }
+
+    @External
     public void removeDataSource(String _data_source_name) {
         onlyOwner();
         Context.call(Addresses.get("rewards"), "removeDataSource", _data_source_name);
@@ -1103,7 +1111,7 @@ public class GovernanceImpl {
     // }
 
     // public void setPoolBalnFee(BigInteger _value) {
-    //     Context.call(Addresses.get("dex"), "setPoolBalnFee",  _value);       
+    //     Context.call(Addresses.get("dex"), "setPoolBalnFee",  _value);
     // }
 
     // public void setIcxConversionFee(BigInteger _value) {
