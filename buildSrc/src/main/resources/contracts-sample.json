@@ -155,5 +155,18 @@
   {
     "name": "multicall",
     "params": {}
+  },
+  {
+    "name": "bBaln",
+    "params": {
+      "name": "Boosted Baln",
+      "symbol": "bBaln"
+    },
+    "addressParams": {
+      "balnAddress": "baln",
+      "rewardAddress": "rewards",
+      "dividendsAddress": "dividends"
+    },
+    "order": 3.0
   }
 ]

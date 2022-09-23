@@ -413,7 +413,12 @@ public class GovernanceImpl {
         }
 
         ProposalDB proposal = new ProposalDB(_vote_index);
-        BigInteger totalBoostedBaln = totalBoostedBaln(proposal.snapshotBlock.getOrDefault(BigInteger.ZERO));
+        BigInteger totalBoostedBaln = BigInteger.ZERO;
+        if (proposal.forumLink.get() == null) {
+            totalBoostedBaln = totalBaln(proposal.snapshotBlock.getOrDefault(BigInteger.ZERO));
+        } else {
+            totalBoostedBaln = totalBoostedBaln(proposal.snapshotBlock.getOrDefault(BigInteger.ZERO));
+        }
 
         BigInteger nrForVotes = BigInteger.ZERO;
         BigInteger nrAgainstVotes = BigInteger.ZERO;
@@ -1056,6 +1061,14 @@ public class GovernanceImpl {
         BigInteger limit = balnVoteDefinitionCriterion.get();
         BigInteger userPercentage = POINTS.multiply(userBoostedBaln).divide(boostedBalnTotal);
         return userPercentage.compareTo(limit) >= 0;
+    }
+
+    private BigInteger totalBaln(BigInteger _day) {
+        if (_day.compareTo(getDay()) > 0) {
+            return BigInteger.ZERO;
+        }
+
+        return Context.call(BigInteger.class, Addresses.get("baln"), "totalStakedBalanceOfAt", _day);
     }
 
     private void _refundVoteDefinitionFee(ProposalDB proposal) {
