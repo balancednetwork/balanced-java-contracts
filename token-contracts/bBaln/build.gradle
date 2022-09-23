@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import network.balanced.score.dependencies.Addresses
 import network.balanced.score.dependencies.Dependencies
 
 
@@ -63,6 +64,11 @@ deployJar {
             uri = 'http://localhost:9082/api/v3'
             nid = 0x3
         }
+         berlin {
+            uri = 'https://berlin.net.solidwallet.io/api/v3'
+            nid = 0x7
+            to = Addresses.berlin.bBaln
+        }
         mainnet {
             uri = 'https://ctz.solidwallet.io/api/v3'
             nid = 0x1
@@ -71,7 +77,9 @@ deployJar {
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
     parameters {
-        arg('tokenAddress', 'cx83c7f9dc24fead0ea3a895ed66d984f319ef7800')
+        arg('balnAddress', 'cx9eefbe346b17328e2265573f6e166f6bc4a13cc4')
+        arg('rewardAddress', 'cx46aff4379970ffeb5d5889e59fb306cc41a4e75a')
+        arg('dividendsAddress', 'cx238de0dea868ea6d82fac78802705ac0338b753a')
         arg('name', 'Boosted Baln')
         arg('symbol', 'bBaln')
     }
