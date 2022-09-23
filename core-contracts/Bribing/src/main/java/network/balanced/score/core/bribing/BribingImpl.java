@@ -36,28 +36,28 @@ public class BribingImpl {
     public static final BigInteger WEEK = BigInteger.valueOf(7L).multiply(MICRO_SECONDS_IN_A_DAY);
 
     public static final VarDB<Address> rewards = Context.newVarDB("rewards", Address.class);
-    //Source->RewardToken->claimedAmount
+    //Source->bribeToken->claimedAmount
     public static final BranchDB<String, DictDB<Address, BigInteger>> claimsPerSource = Context.newBranchDB("claimsPerSource", BigInteger.class);
-    //Source->RewardToken->availableBribes
+    //Source->bribeToken->availableBribes
     public static final BranchDB<String, DictDB<Address, BigInteger>> rewardPerSource = Context.newBranchDB("rewardPerSource", BigInteger.class);
-    //Source->RewardToken->period->amount
-    public static final BranchDB<String, BranchDB<Address, DictDB<BigInteger, BigInteger>>> futureRewardPerSource = Context.newBranchDB("futureRewardPerSource", BigInteger.class);
+    //Source->bribeToken->period->amount
+    public static final BranchDB<String, BranchDB<Address, DictDB<BigInteger, BigInteger>>> futureBribePerSource = Context.newBranchDB("futureBribePerSource", BigInteger.class);
 
-    //Source->RewardToken->amountPerWeight
-    public static final BranchDB<String, DictDB<Address, BigInteger>> rewardPerToken = Context.newBranchDB("rewardPerToken", BigInteger.class);
-    //Source->RewardToken->period
+    //Source->bribeToken->amountPerWeight
+    public static final BranchDB<String, DictDB<Address, BigInteger>> bribePerToken = Context.newBranchDB("bribePerToken", BigInteger.class);
+    //Source->bribeToken->period
     public static final BranchDB<String, DictDB<Address, BigInteger>> activePeriod = Context.newBranchDB("activePeriod", BigInteger.class);
-    //userAddress->Source->RewardToken->timeOfLastClaim
+    //userAddress->Source->bribeToken->timeOfLastClaim
     public static final BranchDB<Address, BranchDB<String, DictDB<Address, BigInteger>>> lastUserClaim = Context.newBranchDB("lastUserClaim", BigInteger.class);
 
-    public static final BranchDB<String, ArrayDB<Address>> rewardsPerSource = Context.newBranchDB("rewardsPerSource", BigInteger.class);
-    public static final BranchDB<Address, ArrayDB<String>> sourcesPerReward = Context.newBranchDB("sourcesPerReward", BigInteger.class);
-    //Source->RewardToken->HasAvailableRewards
-    public static final BranchDB<String, DictDB<Address, Boolean>> rewardsInSource = Context.newBranchDB("rewardsInSource", Boolean.class);
+    public static final BranchDB<String, ArrayDB<Address>> bribesPerSource = Context.newBranchDB("bribesPerSource", BigInteger.class);
+    public static final BranchDB<Address, ArrayDB<String>> sourcesPerBribe = Context.newBranchDB("sourcesPerBribe", BigInteger.class);
+    //Source->bribeToken->HasAvailableBribes
+    public static final BranchDB<String, DictDB<Address, Boolean>> bribesInSource = Context.newBranchDB("bribesInSource", Boolean.class);
 
     private class SourceStatus {
         BigInteger period;
-        BigInteger rewardsPerToken;
+        BigInteger bribesPerToken;
     }
 
     public BribingImpl(Address rewards) {
@@ -80,36 +80,68 @@ public class BribingImpl {
     }
 
     @External(readonly=true)
-    public BigInteger getActivePeriod(String source, Address rewardToken) {
-        return activePeriod.at(source).get(rewardToken);
+    public BigInteger getActivePeriod(String source, Address bribeToken) {
+        return activePeriod.at(source).get(bribeToken);
     }
-
-    // function rewardsPerSource(String source) external view returns (Address[] memory) {
-    //     return rewardsPerSource[source];
-    // }
-
-    // function sourcesPerReward(Address reward) external view returns (Address[] memory) {
-    //     return sourcesPerReward[reward];
-    // }
 
     @External(readonly=true)
-    public BigInteger claimable(Address user, String source, Address rewardToken) {
-        return getRewardsAmount(user, source, rewardToken, true);
+    public Address[] bribesPerSource(String source) {
+        ArrayDB<Address> bribesDB = bribesPerSource.at(source);
+        int size = bribesDB.size();
+        Address[] bribes = new Address[size];
+        for (int i = 0; i < size; i++) {
+            bribes[i] = bribesDB.get(i);
+        }
+
+        return bribes;
+    }
+
+    @External(readonly=true)
+    public String[] sourcesPerBribe(Address reward) {
+        ArrayDB<String> sourcesDB = sourcesPerBribe.at(reward);
+        int size = sourcesDB.size();
+        String[] sources = new String[size];
+        for (int i = 0; i < size; i++) {
+            sources[i] = sourcesDB.get(i);
+        }
+
+        return sources;
+    }
+
+    @External(readonly=true)
+    public BigInteger getTotalBribes(String source, Address bribeToken) {
+        return rewardPerSource.at(source).getOrDefault(bribeToken, BigInteger.ZERO);
+    }
+
+    @External(readonly=true)
+    public BigInteger getClaimedBribes(String source, Address bribeToken) {
+        return rewardPerSource.at(source).getOrDefault(bribeToken, BigInteger.ZERO);
+    }
+
+    @External(readonly=true)
+    public BigInteger getFutureBribe(String source, Address bribeToken, BigInteger period) {
+        period = period.divide(WEEK).multiply(WEEK);
+        return futureBribePerSource.at(source).at(bribeToken).getOrDefault(period, BigInteger.ZERO);
+    }
+
+    @External(readonly=true)
+    public BigInteger claimable(Address user, String source, Address bribeToken) {
+        return getBribesAmount(user, source, bribeToken, true);
     }
 
     @External
-    public void updatePeriod(String source, Address rewardToken) {
-        updateSource(source, rewardToken, false);
+    public void updatePeriod(String source, Address bribeToken) {
+        updateSource(source, bribeToken, false);
     }
 
     @External
-    public void claimBribe(String source, Address rewardToken) {
+    public void claimBribe(String source, Address bribeToken) {
         Address user = Context.getCaller();
-        BigInteger amount = getRewardsAmount(user, source, rewardToken, false);
-        Context.require(amount.compareTo(BigInteger.ZERO) > 0, user.toString() + " has no bribe in " + rewardToken.toString() + " to  claim for source: " + source);
-        BigInteger prevClaims = claimsPerSource.at(source).getOrDefault(rewardToken, BigInteger.ZERO);
-        claimsPerSource.at(source).set(rewardToken, prevClaims.add(amount));
-        Context.call(rewardToken, "transfer", user, amount, new byte[0]);
+        BigInteger amount = getBribesAmount(user, source, bribeToken, false);
+        Context.require(amount.compareTo(BigInteger.ZERO) > 0, user.toString() + " has no bribe in " + bribeToken.toString() + " to  claim for source: " + source);
+        BigInteger prevClaims = claimsPerSource.at(source).getOrDefault(bribeToken, BigInteger.ZERO);
+        claimsPerSource.at(source).set(bribeToken, prevClaims.add(amount));
+        Context.call(bribeToken, "transfer", user, amount, new byte[0]);
     }
 
     @External
@@ -124,7 +156,7 @@ public class BribingImpl {
         String method = json.get("method").asString();
         JsonObject params = json.get("params").asObject();
         String source = params.getString("source", "");
-
+        // TODO verify source
         switch (method) {
             case "addBribe":
                 addBribe(source, token, _value);
@@ -138,42 +170,42 @@ public class BribingImpl {
         }
     }
 
-    private void addBribe(String source, Address rewardToken, BigInteger amount) {
-        BigInteger activePeriod = updateSource(source, rewardToken, false).period;
+    private void addBribe(String source, Address bribeToken, BigInteger amount) {
+        BigInteger activePeriod = updateSource(source, bribeToken, false).period;
         BigInteger nextPeriod = activePeriod.add(WEEK);
-        BigInteger previousFutureRewards = futureRewardPerSource.at(source).at(rewardToken).getOrDefault(activePeriod, BigInteger.ZERO);
+        BigInteger previousFutureBribes= futureBribePerSource.at(source).at(bribeToken).getOrDefault(activePeriod, BigInteger.ZERO);
 
-        futureRewardPerSource.at(source).at(rewardToken).set(nextPeriod, previousFutureRewards.add(amount));
-        add(source, rewardToken);
+        futureBribePerSource.at(source).at(bribeToken).set(nextPeriod, previousFutureBribes.add(amount));
+        add(source, bribeToken);
     }
 
-    private void scheduledBribes(String source, Address rewardToken, BigInteger total, JsonArray amounts) {
+    private void scheduledBribes(String source, Address bribeToken, BigInteger total, JsonArray amounts) {
         BigInteger sum = BigInteger.ZERO;
-        BigInteger period = updateSource(source, rewardToken, false).period;
+        BigInteger period = updateSource(source, bribeToken, false).period;
 
-        DictDB<BigInteger, BigInteger> futureRewards = futureRewardPerSource.at(source).at(rewardToken);
+        DictDB<BigInteger, BigInteger> futureBribes = futureBribePerSource.at(source).at(bribeToken);
         for (JsonValue jsonAmount : amounts) {
             period = period.add(WEEK);
 
             BigInteger amount = convertToNumber(jsonAmount);
             sum = sum.add(amount);
-            BigInteger prevAmount = futureRewards.getOrDefault(period, BigInteger.ZERO);
-            futureRewards.set(period, amount.add(prevAmount));
+            BigInteger prevAmount = futureBribes.getOrDefault(period, BigInteger.ZERO);
+            futureBribes.set(period, amount.add(prevAmount));
         }
 
-        Context.require(sum.equals(total), "Scheduled rewards and amount deposited are not equal");
-        add(source, rewardToken);
+        Context.require(sum.equals(total), "Scheduled bribes and amount deposited are not equal");
+        add(source, bribeToken);
     }
 
-    private BigInteger getRewardsAmount(Address user, String source, Address rewardToken, boolean readonly) {
-        SourceStatus status = updateSource(source, rewardToken, readonly);
+    private BigInteger getBribesAmount(Address user, String source, Address bribeToken, boolean readonly) {
+        SourceStatus status = updateSource(source, bribeToken, readonly);
         DictDB<Address, BigInteger> lastUserClaim = BribingImpl.lastUserClaim.at(user).at(source);
-        if (lastUserClaim.getOrDefault(rewardToken, BigInteger.ZERO).compareTo(status.period) >= 0) {
+        if (lastUserClaim.getOrDefault(bribeToken, BigInteger.ZERO).compareTo(status.period) >= 0) {
             return BigInteger.ZERO;
         }
 
         if (!readonly) {
-            lastUserClaim.set(rewardToken, status.period);
+            lastUserClaim.set(bribeToken, status.period);
         }
 
         BigInteger lastVote = Context.call(BigInteger.class, rewards.get(), "lastUserVote", user, source);
@@ -183,16 +215,16 @@ public class BribingImpl {
         }
 
         BigInteger slope = Context.call(BigInteger.class, rewards.get(), "voteUserSlopes", user, source);
-        BigInteger amount = slope.multiply(status.rewardsPerToken).divide(EXA);
+        BigInteger amount = slope.multiply(status.bribesPerToken).divide(EXA);
 
         return amount;
     }
 
-    private SourceStatus updateSource(String source, Address rewardToken, boolean readOnly) {
+    private SourceStatus updateSource(String source, Address bribeToken, boolean readOnly) {
         BigInteger blockTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());
         SourceStatus status = new SourceStatus();
-        status.period = activePeriod.at(source).getOrDefault(rewardToken, BigInteger.ZERO);
-        status.rewardsPerToken = rewardPerToken.at(source).getOrDefault(rewardToken, BigInteger.ZERO);
+        status.period = activePeriod.at(source).getOrDefault(bribeToken, BigInteger.ZERO);
+        status.bribesPerToken = bribePerToken.at(source).getOrDefault(bribeToken, BigInteger.ZERO);
         BigInteger nextPeriod = status.period.add(WEEK);
         if (blockTimestamp.compareTo(nextPeriod) < 0) {
             return status;
@@ -205,30 +237,30 @@ public class BribingImpl {
         status.period = blockTimestamp.divide(WEEK).multiply(WEEK);
 
         BigInteger slope = Context.call(BigInteger.class, rewards.get(), "pointsWeight", source, status.period);
-        BigInteger claimedRewards = claimsPerSource.at(source).getOrDefault(rewardToken, BigInteger.ZERO);
-        BigInteger totalPreviousAmount = rewardPerSource.at(source).getOrDefault(rewardToken, BigInteger.ZERO);
-        BigInteger addedAmount = futureRewardPerSource.at(source).at(rewardToken).getOrDefault(status.period, BigInteger.ZERO);
+        BigInteger claimedBribes = claimsPerSource.at(source).getOrDefault(bribeToken, BigInteger.ZERO);
+        BigInteger totalPreviousAmount = rewardPerSource.at(source).getOrDefault(bribeToken, BigInteger.ZERO);
+        BigInteger addedAmount = futureBribePerSource.at(source).at(bribeToken).getOrDefault(status.period, BigInteger.ZERO);
         BigInteger newTotal = totalPreviousAmount.add(addedAmount);
-        BigInteger amount = newTotal.subtract(claimedRewards);
-        status.rewardsPerToken = amount.multiply(EXA).divide(slope);
+        BigInteger amount = newTotal.subtract(claimedBribes);
+        status.bribesPerToken = amount.multiply(EXA).divide(slope);
 
         if (!readOnly) {
-            rewardPerSource.at(source).set(rewardToken, newTotal);
-            rewardPerToken.at(source).set(rewardToken, status.rewardsPerToken);
-            activePeriod.at(source).set(rewardToken, status.period);
-            futureRewardPerSource.at(source).at(rewardToken).set(status.period, BigInteger.ZERO);
+            rewardPerSource.at(source).set(bribeToken, newTotal);
+            bribePerToken.at(source).set(bribeToken, status.bribesPerToken);
+            activePeriod.at(source).set(bribeToken, status.period);
+            futureBribePerSource.at(source).at(bribeToken).set(status.period, BigInteger.ZERO);
         }
 
         return status;
     }
 
-    private void add(String source, Address reward) {
-        if (rewardsInSource.at(source).getOrDefault(reward, false)) {
+    private void add(String source, Address bribe) {
+        if (bribesInSource.at(source).getOrDefault(bribe, false)) {
             return;
         }
 
-        rewardsPerSource.at(source).add(reward);
-        sourcesPerReward.at(reward).add(source);
-        rewardsInSource.at(source).set(reward, true);
+        bribesPerSource.at(source).add(bribe);
+        sourcesPerBribe.at(bribe).add(source);
+        bribesInSource.at(source).set(bribe, true);
     }
 }
