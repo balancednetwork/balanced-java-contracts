@@ -410,7 +410,7 @@ public class DividendsImpl implements Dividends {
         BigInteger balance = getBalnBalance(user);
         BigInteger bbalnBalance = userBalance.getOrDefault(user, BigInteger.ZERO);
 
-        if (! getUserWeight(user, token).equals(BigInteger.ZERO)){
+        if (!getUserWeight(user, token).equals(BigInteger.ZERO)) {
             accruedDividends = DividendsTracker.updateUserData
                     (token, user, balance, readonly);
             if (!readonly) {
@@ -418,7 +418,7 @@ public class DividendsImpl implements Dividends {
             }
         }
         accruedDividends = accruedDividends.add(DividendsTracker.updateBoostedUserData(token,
-                    user, bbalnBalance, readonly));
+                user, bbalnBalance, readonly));
 
         return accruedDividends;
     }
@@ -567,7 +567,7 @@ public class DividendsImpl implements Dividends {
         BigInteger dividendsToDaofund = _value.multiply(dividendsPercentage.get(DAOFUND)).divide(EXA);
 
         // update boosted total weight if the bbaln day is started
-            DividendsTracker.updateBoostedTotalWeight(token, _value.subtract(dividendsToDaofund));
+        DividendsTracker.updateBoostedTotalWeight(token, _value.subtract(dividendsToDaofund));
 
 
         DividendsReceivedV2(_value, getDay(), _value + " tokens received as dividends token: " + token);
@@ -582,7 +582,7 @@ public class DividendsImpl implements Dividends {
         DictDB<Address, BigInteger> userAccruedDividends = accruedDividends.at(user);
         for (int i = 0; i < size; i++) {
             Address token = acceptedTokens.get(i);
-            if (DividendsTracker.userWeight.at(user).getOrDefault(token,BigInteger.ZERO).equals(BigInteger.ZERO)) {
+            if (DividendsTracker.userWeight.at(user).getOrDefault(token, BigInteger.ZERO).equals(BigInteger.ZERO)) {
                 return;
             }
             BigInteger accruedDividends = DividendsTracker.updateUserData(token, user, prevStakedBalance, false);
