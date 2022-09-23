@@ -114,7 +114,7 @@ public interface ScoreIntegrationTest {
     }
 
     static DefaultScoreClient getDeploymentResult(Wallet wallet, Hash hash) {
-        return  DefaultScoreClient.getDeploymentResult(chain.getEndpointURL(), chain.networkId, wallet, hash);
+        return DefaultScoreClient.getDeploymentResult(chain.getEndpointURL(), chain.networkId, wallet, hash);
     }
 
     static String getFilePath(String key) {

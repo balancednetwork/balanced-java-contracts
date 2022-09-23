@@ -52,18 +52,9 @@ public interface Governance extends
 
     @External
     void setTimeOffset(BigInteger offset);
-    
+
     @External(readonly = true)
     BigInteger getTimeOffset();
-
-    @External
-    void setContinuousRewardsDay(BigInteger _day);
-
-    @External
-    void setAdmin(Address contractAddress, Address admin);
-
-    @External
-    void setDividendsOnlyToStakedBalnDay(BigInteger _day);
 
     @External(readonly = true)
     BigInteger getVoteDuration();
@@ -132,7 +123,7 @@ public interface Governance extends
     Map<String, Object> checkVote(BigInteger _vote_index);
 
     @External(readonly = true)
-    Map<String, BigInteger> getVotesOfUser(BigInteger vote_index, Address user );
+    Map<String, BigInteger> getVotesOfUser(BigInteger vote_index, Address user);
 
     @External(readonly = true)
     BigInteger myVotingWeight(Address _address, BigInteger _day);
@@ -151,7 +142,7 @@ public interface Governance extends
     void createBalnMarket(BigInteger _bnUSD_amount, BigInteger _baln_amount);
 
     @External
-    void createBalnSicxMarket(BigInteger  _sicx_amount, BigInteger _baln_amount);
+    void createBalnSicxMarket(BigInteger _sicx_amount, BigInteger _baln_amount);
 
     @External
     void rebalancingSetBnusd(Address _address);
@@ -181,10 +172,13 @@ public interface Governance extends
     void setAddresses(BalancedAddresses _addresses);
 
     @External(readonly = true)
-    Map<String, Address>  getAddresses();
+    Map<String, Address> getAddresses();
 
     @External
     void setAdmins();
+
+    @External
+    void setAdmin(Address contractAddress, Address admin);
 
     @External
     void setContractAddresses();
@@ -199,12 +193,28 @@ public interface Governance extends
     BigInteger getLaunchTime();
 
     @External
-    void addAsset(Address _token_address, boolean _active, boolean _collateral);
+    void addCollateral(Address _token_address, boolean _active, String _peg, BigInteger _lockingRatio,
+                       BigInteger _liquidationRatio, BigInteger _debtCeiling);
+
+    @External
+    void addDexPricedCollateral(Address _token_address, boolean _active, BigInteger _lockingRatio,
+                                BigInteger _liquidationRatio, BigInteger _debtCeiling);
+
+    @External
+    void setDebtCeiling(String _symbol, BigInteger _debtCeiling);
 
     @External
     void toggleAssetActive(String _symbol);
 
     @External
+    void setPeg(String _symbol, String _peg);
+
+    @External
+    void addDexPricedAsset(String _symbol, BigInteger _limit);
+
+    @External
+    void removeDexPricedAsset(String _symbol);
+
     void addNewDataSource(String _data_source_name, String _contract_address);
 
     @External
@@ -232,7 +242,7 @@ public interface Governance extends
     void delegate(PrepDelegations[] _delegations);
 
     @External
-    void balwAdminTransfer(Address _from , Address _to , BigInteger _value, byte[] _data);
+    void balwAdminTransfer(Address _from, Address _to, BigInteger _value, byte[] _data);
 
     @External
     void setbnUSD(Address _address);

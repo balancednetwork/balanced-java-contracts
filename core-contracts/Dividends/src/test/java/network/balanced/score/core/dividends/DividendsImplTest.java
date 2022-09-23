@@ -37,7 +37,7 @@ import static org.mockito.Mockito.eq;
 
 class DividendsImplTest extends DividendsImplTestBase {
 
-    private BigInteger batchSize = BigInteger.TWO;
+    private final BigInteger batchSize = BigInteger.TWO;
 
     @BeforeEach
     void setup() throws Exception {

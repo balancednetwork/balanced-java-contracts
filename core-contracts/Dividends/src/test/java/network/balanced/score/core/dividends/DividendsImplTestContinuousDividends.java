@@ -31,7 +31,7 @@ import static org.mockito.Mockito.eq;
 
 class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
 
-    private BigInteger batchSize = BigInteger.TWO;
+    private final BigInteger batchSize = BigInteger.TWO;
 
     @BeforeEach
     void setup() throws Exception {
@@ -126,10 +126,10 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
 
         mockStake(staker1.getAddress(), staker1Balance);
         mockStake(staker2.getAddress(), staker2Balance);
-        assertEquals(expected_result_staker1.toString(), ((Map<String, BigInteger>) dividendScore.call(
-                "getUnclaimedDividends", staker1.getAddress())).toString());
-        assertEquals(expected_result_staker2.toString(), ((Map<String, BigInteger>) dividendScore.call(
-                "getUnclaimedDividends", staker2.getAddress())).toString());
+        assertEquals(expected_result_staker1.toString(), dividendScore.call("getUnclaimedDividends",
+                staker1.getAddress()).toString());
+        assertEquals(expected_result_staker2.toString(), dividendScore.call("getUnclaimedDividends",
+                staker2.getAddress()).toString());
     }
 
     @Test
@@ -177,7 +177,7 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
     private void addBnusdFeesAndMockDaoFund(BigInteger amount) {
         BigInteger daofundPercentage = getFeePercentage("daofund");
         BigInteger expectedDaofundFees = amount.multiply(daofundPercentage).divide(ICX);
-        mockDaoFundTranfer(expectedDaofundFees);
+        mockDaoFundTransfer(expectedDaofundFees);
         addBnusdFees(amount);
     }
 
@@ -185,7 +185,7 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         contextMock.when(() -> Context.call(BigInteger.class, balnScore.getAddress(), "stakedBalanceOf", user)).thenReturn(stake);
     }
 
-    private void mockDaoFundTranfer(BigInteger amount) {
+    private void mockDaoFundTransfer(BigInteger amount) {
         contextMock.when(() -> Context.call(bnUSDScore.getAddress(), "transfer", daoScore.getAddress(), amount)).thenReturn("Token Transferred");
     }
 }

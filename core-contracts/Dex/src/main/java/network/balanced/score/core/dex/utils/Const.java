@@ -22,6 +22,7 @@ import java.math.BigInteger;
 
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
+
 public class Const {
 
     public static final String SICXICX_MARKET_NAME = "sICX/ICX";

@@ -18,47 +18,56 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
-import score.*;
+import score.Address;
 import score.annotation.External;
 
 import java.math.BigInteger;
 
-@ScoreClient
 @ScoreInterface
+@ScoreClient
 public interface StakedLP {
-      @External(readonly = true)
-      Address getDex();
-  
-      @External
-      void setDex(Address dex);
-  
-      @External(readonly = true)
-      Address getGovernance();
+    @External(readonly = true)
+    Address getDex();
 
-      @External
-      void setGovernance(Address governance);
+    @External
+    void setDex(Address dex);
 
-      @External(readonly = true)
-      Address getAdmin();
-  
-      @External
-      void setAdmin(Address admin);
-  
-      @External(readonly = true)
-      Address getRewards();
+    @External(readonly = true)
+    Address getGovernance();
 
-      @External
-      void setRewards(Address rewards);
-  
-      @External(readonly = true)
-      BigInteger balanceOf(Address _owner, BigInteger _id);
+    @External
+    void setGovernance(Address governance);
 
-      @External(readonly = true)
-      BigInteger totalStaked(BigInteger _id);
-  
-      @External
-      void unstake(BigInteger id, BigInteger value);
-  
-      @External
-      void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data);
+    @External(readonly = true)
+    Address getAdmin();
+
+    @External
+    void setAdmin(Address admin);
+
+    @External(readonly = true)
+    Address getRewards();
+
+    @External
+    void setRewards(Address rewards);
+
+    @External(readonly = true)
+    BigInteger balanceOf(Address _owner, BigInteger _id);
+
+    @External(readonly = true)
+    BigInteger totalStaked(BigInteger _id);
+
+    @External
+    void addPool(BigInteger id);
+
+    @External
+    void removePool(BigInteger id);
+
+    @External(readonly = true)
+    boolean isSupportedPool(BigInteger id);
+
+    @External
+    void unstake(BigInteger id, BigInteger value);
+
+    @External
+    void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data);
 }

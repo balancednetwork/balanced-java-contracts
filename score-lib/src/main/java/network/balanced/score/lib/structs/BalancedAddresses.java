@@ -15,6 +15,7 @@
  */
 
 package network.balanced.score.lib.structs;
+
 import score.Address;
 
 public class BalancedAddresses {
@@ -34,4 +35,5 @@ public class BalancedAddresses {
     public Address rebalancing;
     public Address feehandler;
     public Address stakedLp;
+    public Address balancedOracle;
 }
