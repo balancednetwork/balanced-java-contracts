@@ -19,8 +19,9 @@ package network.balanced.score.core.bribing;
 import score.*;
 import score.annotation.External;
 
+import network.balanced.score.lib.interfaces.Bribing;
+
 import java.math.BigInteger;
-import java.util.Map;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
@@ -32,7 +33,7 @@ import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Math.convertToNumber;
 
-public class BribingImpl {
+public class BribingImpl implements Bribing {
     public static final BigInteger WEEK = BigInteger.valueOf(7L).multiply(MICRO_SECONDS_IN_A_DAY);
 
     public static final VarDB<Address> rewards = Context.newVarDB("rewards", Address.class);

@@ -226,7 +226,7 @@ class BribingImplTest extends BribingImplTestBase {
 
         // Act & Assert
         Executable scheduleWithWrongTotal = () -> scheduledBribes(source, total, amounts);;
-        String expectedErrorMessage = "Scheduled rewards and amount deposited are not equal";
+        String expectedErrorMessage = "Scheduled bribes and amount deposited are not equal";
 
         expectErrorMessage(scheduleWithWrongTotal, expectedErrorMessage);
     }

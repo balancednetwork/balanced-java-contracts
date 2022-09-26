@@ -58,7 +58,6 @@ class BribingImplTestBase extends UnitTest {
         rewards = new MockContract<>(RewardsScoreInterface.class, sm, owner);
         bribeToken = new MockContract<>(IRC2ScoreInterface.class, sm, owner);
         bribing = sm.deploy(owner, BribingImpl.class, rewards.getAddress());
-
     }
 
     protected BigInteger getPeriod() {
