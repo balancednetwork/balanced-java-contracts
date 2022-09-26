@@ -235,6 +235,7 @@ public class DividendsImpl implements Dividends {
             String token = acceptedTokens.get(i).toString();
             fees.put(token, dailyFeesInfoForDay.getOrDefault(token, BigInteger.ZERO));
         }
+
         return fees;
     }
 
@@ -247,6 +248,7 @@ public class DividendsImpl implements Dividends {
             Address token = acceptedTokens.get(i);
             acceptedTokenList.add(token);
         }
+
         return acceptedTokenList;
     }
 
@@ -268,6 +270,7 @@ public class DividendsImpl implements Dividends {
         for (int i = 0; i < numberOfCategories; i++) {
             item.add(completeDividendsCategories.get(i));
         }
+
         return item;
     }
 
@@ -299,8 +302,8 @@ public class DividendsImpl implements Dividends {
             String category = completeDividendsCategories.get(i);
             dividendsDist.put(category, dividendsPercentage.get(category));
         }
-        return dividendsDist;
 
+        return dividendsDist;
     }
 
     @External
@@ -409,14 +412,11 @@ public class DividendsImpl implements Dividends {
         BigInteger accruedDividends = BigInteger.ZERO;
         BigInteger balance = getBalnBalance(user);
         BigInteger bbalnBalance = userBalance.getOrDefault(user, BigInteger.ZERO);
-
-        if (!getUserWeight(user, token).equals(BigInteger.ZERO)) {
+        if (!DividendsTracker.balnRewardsClaimed(user, token)) {
             accruedDividends = DividendsTracker.updateUserData
                     (token, user, balance, readonly);
-            if (!readonly) {
-                DividendsTracker.userWeight.at(user).set(token, null);
-            }
         }
+
         accruedDividends = accruedDividends.add(DividendsTracker.updateBoostedUserData(token,
                 user, bbalnBalance, readonly));
 
@@ -564,6 +564,7 @@ public class DividendsImpl implements Dividends {
             sendToken(daoFund.get(), _value, token, "Daofund dividends");
             return;
         }
+
         BigInteger dividendsToDaofund = _value.multiply(dividendsPercentage.get(DAOFUND)).divide(EXA);
 
         // update boosted total weight if the bbaln day is started
@@ -582,13 +583,15 @@ public class DividendsImpl implements Dividends {
         DictDB<Address, BigInteger> userAccruedDividends = accruedDividends.at(user);
         for (int i = 0; i < size; i++) {
             Address token = acceptedTokens.get(i);
-            if (DividendsTracker.userWeight.at(user).getOrDefault(token, BigInteger.ZERO).equals(BigInteger.ZERO)) {
+            if (DividendsTracker.balnRewardsClaimed(user, token)) {
                 return;
             }
+
             BigInteger accruedDividends = DividendsTracker.updateUserData(token, user, prevStakedBalance, false);
             BigInteger prevAccruedDividends = userAccruedDividends.getOrDefault(token, BigInteger.ZERO);
             userAccruedDividends.set(token, prevAccruedDividends.add(accruedDividends));
         }
+
         DividendsTracker.setTotalSupply(currentTotalSupply);
     }
 
@@ -630,6 +633,7 @@ public class DividendsImpl implements Dividends {
         for (int i = 0; i < size; i++) {
             acceptedTokensList.add(acceptedTokens.get(i));
         }
+
         Address dao = daoFund.get();
         for (int i = start; i < end; i++) {
             Map<String, BigInteger> dividends = getDividendsForDaoFund(BigInteger.valueOf(i), acceptedTokensList, dao);
@@ -875,7 +879,9 @@ public class DividendsImpl implements Dividends {
         for (String key : map.keySet()) {
             mapAsJson.append("'").append(key).append("': ").append(map.get(key)).append(", ");
         }
+
         mapAsJson.delete(mapAsJson.length() - 2, mapAsJson.length()).append("}");
+
         return mapAsJson.toString();
     }
 

@@ -37,6 +37,8 @@ public class DividendsTracker {
             BigInteger.class);
     protected static final DictDB<Address, BigInteger> userBalance = Context.newDictDB(USER_BBALN_BALANCE,
             BigInteger.class);
+    protected static final BranchDB<Address, DictDB<Address, Boolean>> balnRewardsClaimed = Context.newBranchDB(
+            "baln_to_bBaln_migration_check", Boolean.class);
 
     public static BigInteger getUserWeight(Address user, Address token) {
         return userWeight.at(user).getOrDefault(token, BigInteger.ZERO);
@@ -66,13 +68,19 @@ public class DividendsTracker {
         return boostedTotalWeight.getOrDefault(token, BigInteger.ZERO);
     }
 
+    public static Boolean balnRewardsClaimed(Address user, Address token) {
+        return balnRewardsClaimed.at(token).getOrDefault(user, false);
+    }
+
     public static BigInteger updateUserData(Address token, Address user, BigInteger prevBalance,
                                             boolean readOnlyContext) {
         BigInteger currentUserWeight = getUserWeight(user, token);
         BigInteger totalWeight = getTotalWeight(token);
         if (!readOnlyContext) {
             userWeight.at(user).set(token, totalWeight);
+            balnRewardsClaimed.at(token).set(user, true);
         }
+
         return computeUserRewards(prevBalance, totalWeight, currentUserWeight);
     }
 
@@ -83,6 +91,7 @@ public class DividendsTracker {
         if (!readOnlyContext) {
             boostedUserWeight.at(user).set(token, totalWeight);
         }
+
         return computeUserRewards(prevBalance, totalWeight, currentUserWeight);
     }
 
