@@ -97,12 +97,10 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         // get enough baln to vote through a new collateral
         balanced.increaseDay(3);
         BigInteger ethAmount = BigInteger.valueOf(2).multiply(iethDecimals);
-        System.out.println("ethAmount = " + ethAmount);
         BigInteger ethPriceInLoop = reader.balancedOracle.getLastPriceInLoop("ETH");
         BigInteger bnusdPriceInLoop = reader.balancedOracle.getLastPriceInLoop("bnUSD");
         BigInteger ethValue = ethAmount.multiply(ethPriceInLoop).divide(iethDecimals);
         BigInteger bnusdAmount = ethValue.multiply(EXA).divide(bnusdPriceInLoop);
-        System.out.println("bnusdAmount = " + bnusdAmount);
 
         addCollateralType(owner, ethAddress, ethAmount, bnusdAmount, "ETH");
 

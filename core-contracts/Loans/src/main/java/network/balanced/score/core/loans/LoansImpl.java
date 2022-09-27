@@ -742,7 +742,7 @@ public class LoansImpl implements Loans {
             position.setDebt(collateralSymbol, assetSymbol, null);
         }
 
-        asset.burnFrom(Context.getCaller(), assetReceived);
+        asset.burnFrom(Context.getAddress(), assetReceived);
 
         Context.call(rewards.get(), "updateRewardsData", "Loans", oldSupply, from, oldUserDebt);
 
