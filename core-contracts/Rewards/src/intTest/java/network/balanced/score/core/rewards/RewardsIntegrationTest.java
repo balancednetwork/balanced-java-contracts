@@ -229,8 +229,6 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         assertEquals(currentWorkingBalanceAndSupply.get("workingBalance"), boostData.get("sICX/ICX").get("workingBalance"));
         assertEquals(initialSupply, boostData.get("sICX/ICX").get("supply"));
         assertEquals(lpBalance, boostData.get("sICX/ICX").get("balance"));
-        assertTrue(boostData.get("sICX/ICX").get("boostedBalnBalance").compareTo(BigInteger.ZERO) > 0);
-        assertTrue(boostData.get("sICX/ICX").get("boostedBalnSupply").compareTo(BigInteger.ZERO) > 0);
 
         // Act
         owner.boostedBaln.setPenaltyAddress(balanced.daofund._address());

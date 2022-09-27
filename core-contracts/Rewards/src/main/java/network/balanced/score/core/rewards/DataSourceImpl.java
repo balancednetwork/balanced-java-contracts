@@ -52,10 +52,6 @@ public class DataSourceImpl {
             BigInteger.class);
     private final BranchDB<String, DictDB<Address, BigInteger>> userWorkingBalance = Context.newBranchDB("user_working_balance",
         BigInteger.class);
-    private final BranchDB<String, DictDB<Address, BigInteger>> userBoostedBalance = Context.newBranchDB("user_boosted_balance",
-        BigInteger.class);
-    private final BranchDB<String, VarDB<BigInteger>> totalBoostedSupply = Context.newBranchDB("total_boosted_balance",
-        BigInteger.class);
 
     private final BranchDB<String, VarDB<BigInteger>> lastUpdateTimeUs = Context.newBranchDB("last_update_us",
         BigInteger.class);
@@ -248,18 +244,10 @@ public class DataSourceImpl {
         return accruedRewards;
     }
 
-    public void updateWorkingBalanceAndSupply(Address user, BigInteger boostedBalance) {
+    public void updateWorkingBalanceAndSupply(Address user, BigInteger boostedBalance, BigInteger boostedSupply) {
         Map<String, BigInteger> balanceAndSupply = loadCurrentSupply(user);
         BigInteger balance = balanceAndSupply.get(BALANCE);
         BigInteger supply = balanceAndSupply.get(TOTAL_SUPPLY);
-        BigInteger prevBoostedSupply = getBoostedSupply();
-        BigInteger prevBoostedBalance = getUserBoostedBalance(user);
-
-        BigInteger diff = boostedBalance.subtract(prevBoostedBalance);
-        BigInteger boostedSupply = prevBoostedSupply.add(diff);
-
-        setUserBoostedBalance(user, boostedBalance);
-        setBoostedSupply(boostedSupply);
 
         BigInteger weight = RewardsImpl.boostWeight.get();
         BigInteger max = balance.multiply(EXA).divide(weight);
@@ -367,21 +355,5 @@ public class DataSourceImpl {
     private BigInteger computeUserRewards(BigInteger prevUserBalance, BigInteger totalWeight, BigInteger userWeight) {
         BigInteger deltaWeight = totalWeight.subtract(userWeight);
         return deltaWeight.multiply(prevUserBalance).divide(EXA);
-    }
-
-    public BigInteger getBoostedSupply() {
-        return totalBoostedSupply.at(dbKey).getOrDefault(BigInteger.ZERO);
-    }
-
-    private void setBoostedSupply( BigInteger supply) {
-        totalBoostedSupply.at(dbKey).set(supply);
-    }
-
-    public BigInteger getUserBoostedBalance(Address user) {
-        return userBoostedBalance.at(dbKey).getOrDefault(user, BigInteger.ZERO);
-    }
-
-    private void setUserBoostedBalance(Address user, BigInteger balance) {
-        userBoostedBalance.at(dbKey).set(user, balance);
     }
 }

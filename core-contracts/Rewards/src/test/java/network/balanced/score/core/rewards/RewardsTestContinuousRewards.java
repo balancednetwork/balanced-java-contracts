@@ -128,20 +128,16 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
     void boostedRewards() {
         // Arrange
         Account account = sm.createAccount();
-        Account setupAccount = sm.createAccount();
         BigInteger loansBalance = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger setupBalance = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger initialSupply = BigInteger.valueOf(1_000_000).multiply(EXA);
         BigInteger currentSupply = initialSupply.add(loansBalance).add(setupBalance);
         BigInteger bBalnBalance = BigInteger.valueOf(100).multiply(EXA);
-        BigInteger setupBBalnBalance = BigInteger.valueOf(100_000).multiply(EXA);
+        BigInteger bBalnSupply = BigInteger.valueOf(100_000).multiply(EXA);
 
         // Act
         mockBalanceAndSupply(loans, "Loans", account.getAddress(), loansBalance, currentSupply.subtract(setupBalance));
-        mockBalanceAndSupply(loans, "Loans", setupAccount.getAddress(), setupBalance, currentSupply);
-
         rewardsScore.invoke(loans.account, "updateRewardsData", "Loans", initialSupply, account.getAddress(), BigInteger.ZERO);
-        rewardsScore.invoke(loans.account, "updateRewardsData", "Loans", initialSupply.add(loansBalance), setupAccount.getAddress(), BigInteger.ZERO);
 
         // Assert
         BigInteger emission = (BigInteger)rewardsScore.call("getEmission", BigInteger.valueOf(-1));
@@ -153,10 +149,11 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
 
         // Act
         when(bBaln.mock.balanceOf(eq(account.getAddress()), any(BigInteger.class))).thenReturn(bBalnBalance);
+        when(bBaln.mock.totalSupply(BigInteger.ZERO)).thenReturn(bBalnSupply);
         rewardsScore.invoke(account, "boost", getUserSources(account.getAddress()) );
 
         // Assert
-        BigInteger boost = currentSupply.multiply(bBalnBalance).divide(bBalnBalance.add(setupBBalnBalance)).multiply(EXA.subtract(WEIGHT)).divide(WEIGHT);
+        BigInteger boost = currentSupply.multiply(bBalnBalance).divide(bBalnSupply).multiply(EXA.subtract(WEIGHT)).divide(WEIGHT);
         BigInteger boostedBalance = loansBalance.add(boost);
 
         BigInteger boostedSupply = currentSupply.subtract(loansBalance).add(boostedBalance);
@@ -173,6 +170,7 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
         BigInteger initialSupply = BigInteger.valueOf(1_000_000).multiply(EXA);
         BigInteger currentSupply = initialSupply.add(loansBalance);
         BigInteger bBalnBalance = BigInteger.valueOf(200).multiply(EXA);
+        BigInteger bBalnSupply = BigInteger.valueOf(400).multiply(EXA);
 
         // Act
         when(bBaln.mock.balanceOf(eq(account.getAddress()), any(BigInteger.class))).thenReturn(BigInteger.ZERO);
@@ -190,6 +188,7 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
 
         // Act
         when(bBaln.mock.balanceOf(eq(account.getAddress()), any(BigInteger.class))).thenReturn(bBalnBalance);
+        when(bBaln.mock.totalSupply(BigInteger.ZERO)).thenReturn(bBalnSupply);
         rewardsScore.invoke(account, "boost", getUserSources(account.getAddress()));
 
         // Assert
@@ -206,7 +205,6 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
     void boostedRewards_updateBoostedBalance_claim() {
         // Arrange
         Account account = sm.createAccount();
-        Account bBalnSupplyAccount = sm.createAccount();
         BigInteger loansBalance = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loansTotalSupply = BigInteger.valueOf(1_000_000).multiply(EXA);
         BigInteger bBalnBalance = BigInteger.valueOf(177).multiply(EXA);
@@ -214,11 +212,8 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
 
         // Act
         when(bBaln.mock.balanceOf(eq(account.getAddress()), any(BigInteger.class))).thenReturn(BigInteger.ZERO);
-        when(bBaln.mock.balanceOf(eq(bBalnSupplyAccount.getAddress()), any(BigInteger.class))).thenReturn(bBalnSupply.subtract(bBalnBalance));
         mockBalanceAndSupply(loans, "Loans", account.getAddress(), loansBalance, loansTotalSupply);
-        mockBalanceAndSupply(loans, "Loans", bBalnSupplyAccount.getAddress(), BigInteger.ZERO, loansTotalSupply);
 
-        rewardsScore.invoke(loans.account, "updateRewardsData", "Loans", loansTotalSupply.subtract(loansBalance), bBalnSupplyAccount.getAddress(), BigInteger.ZERO);
         rewardsScore.invoke(loans.account, "updateRewardsData", "Loans", loansTotalSupply.subtract(loansBalance), account.getAddress(), BigInteger.ZERO);
 
         // Assert
@@ -231,6 +226,7 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
 
         // Act
         when(bBaln.mock.balanceOf(eq(account.getAddress()), any(BigInteger.class))).thenReturn(bBalnBalance);
+        when(bBaln.mock.totalSupply(BigInteger.ZERO)).thenReturn(bBalnSupply);
         rewardsScore.invoke(account, "boost", getUserSources(account.getAddress()));
 
         // Assert
@@ -245,8 +241,7 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
         bBalnBalance = BigInteger.valueOf(250).multiply(EXA);
         bBalnSupply = BigInteger.valueOf(500_000).multiply(EXA);
         when(bBaln.mock.balanceOf(eq(account.getAddress()), any(BigInteger.class))).thenReturn(bBalnBalance);
-        when(bBaln.mock.balanceOf(eq(bBalnSupplyAccount.getAddress()), any(BigInteger.class))).thenReturn(bBalnSupply.subtract(bBalnBalance));
-        rewardsScore.invoke(bBalnSupplyAccount, "boost", getUserSources(account.getAddress()));
+        when(bBaln.mock.totalSupply(BigInteger.ZERO)).thenReturn(bBalnSupply);
         rewardsScore.invoke(account, "claimRewards", getUserSources(account.getAddress()));
 
         // Assert
@@ -262,7 +257,6 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
     void boostedRewards_updateBoostedBalance_onBalanceUpdate() {
         // Arrange
         Account account = sm.createAccount();
-        Account bBalnSupplyAccount = sm.createAccount();
         BigInteger loansBalance = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loansTotalSupply = BigInteger.valueOf(1_000_000).multiply(EXA);
         BigInteger bBalnBalance = BigInteger.valueOf(800).multiply(EXA);
@@ -270,10 +264,6 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
 
         // Act
         mockBalanceAndSupply(loans, "Loans", account.getAddress(), loansBalance, loansTotalSupply);
-        mockBalanceAndSupply(loans, "Loans", bBalnSupplyAccount.getAddress(), BigInteger.ZERO, loansTotalSupply);
-        when(bBaln.mock.balanceOf(eq(bBalnSupplyAccount.getAddress()), any(BigInteger.class))).thenReturn(bBalnSupply.subtract(bBalnBalance));
-
-        rewardsScore.invoke(loans.account, "updateRewardsData", "Loans", loansTotalSupply.subtract(loansBalance), bBalnSupplyAccount.getAddress(), BigInteger.ZERO);
         rewardsScore.invoke(loans.account, "updateRewardsData", "Loans", loansTotalSupply.subtract(loansBalance), account.getAddress(), BigInteger.ZERO);
 
         // Assert
@@ -286,9 +276,11 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
 
         // Act
         when(bBaln.mock.balanceOf(eq(account.getAddress()), any(BigInteger.class))).thenReturn(bBalnBalance);
+        when(bBaln.mock.totalSupply(BigInteger.ZERO)).thenReturn(bBalnSupply);
         rewardsScore.invoke(account, "boost", getUserSources(account.getAddress()));
 
         // Assert
+        // max boost
         BigInteger initialBoostedBalance = loansBalance.multiply(BigInteger.valueOf(25)).divide(BigInteger.TEN);
         BigInteger boostedSupply = loansTotalSupply.subtract(loansBalance).add(initialBoostedBalance);
         userLoansDistribution = loansDistribution.multiply(initialBoostedBalance).divide(boostedSupply);
@@ -303,7 +295,7 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
         // Assert
         BigInteger boost = loansTotalSupply.multiply(bBalnBalance).divide(bBalnSupply).multiply(EXA.subtract(WEIGHT)).divide(WEIGHT);
         BigInteger boostedBalance = loansBalance.add(boost);
-        boostedSupply = loansTotalSupply.subtract(initialBoostedBalance).add(boostedBalance);
+        boostedSupply = boostedSupply.subtract(initialBoostedBalance).add(boostedBalance);
         userLoansDistribution = loansDistribution.multiply(boostedBalance).divide(boostedSupply);
 
         boostedRewards = getOneDayRewards(account.getAddress());
@@ -314,7 +306,6 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
     void boostedRewards_updateRewardsData() {
         // Arrange
         Account account = sm.createAccount();
-        Account bBalnSupplyAccount = sm.createAccount();
         BigInteger loansBalance = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loansTotalSupply = BigInteger.valueOf(1_000_000).multiply(EXA);
         BigInteger bBalnBalance = BigInteger.valueOf(200).multiply(EXA);
@@ -322,9 +313,6 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
 
         // Act
         mockBalanceAndSupply(loans, "Loans", account.getAddress(), loansBalance, loansTotalSupply);
-        mockBalanceAndSupply(loans, "Loans", bBalnSupplyAccount.getAddress(), BigInteger.ZERO, loansTotalSupply);
-        when(bBaln.mock.balanceOf(eq(bBalnSupplyAccount.getAddress()), any(BigInteger.class))).thenReturn(bBalnSupply.subtract(bBalnBalance));
-        rewardsScore.invoke(loans.account, "updateRewardsData", "Loans", loansTotalSupply.subtract(loansBalance), bBalnSupplyAccount.getAddress(), BigInteger.ZERO);
         rewardsScore.invoke(loans.account, "updateRewardsData", "Loans", loansTotalSupply.subtract(loansBalance), account.getAddress(), BigInteger.ZERO);
 
         // Assert
@@ -337,6 +325,7 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
 
         // Act
         when(bBaln.mock.balanceOf(eq(account.getAddress()), any(BigInteger.class))).thenReturn(bBalnBalance);
+        when(bBaln.mock.totalSupply(BigInteger.ZERO)).thenReturn(bBalnSupply);
         rewardsScore.invoke(account, "boost", getUserSources(account.getAddress()));
 
         // Assert
@@ -349,9 +338,8 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
         assertEquals(boostedRewards.divide(EXA), userLoansDistribution.divide(EXA));
 
         // Act
-        BigInteger newbBalnBalance = BigInteger.valueOf(250).multiply(EXA);
-        bBalnSupply = bBalnSupply.add(newbBalnBalance).subtract(bBalnBalance);
-        when(bBaln.mock.balanceOf(eq(account.getAddress()), any(BigInteger.class))).thenReturn(newbBalnBalance);
+        bBalnBalance = BigInteger.valueOf(250).multiply(EXA);
+        when(bBaln.mock.balanceOf(eq(account.getAddress()), any(BigInteger.class))).thenReturn(bBalnBalance);
 
         BigInteger newLoansBalance = BigInteger.valueOf(20000).multiply(EXA);
         BigInteger newLoansTotalSupply = loansTotalSupply.add(newLoansBalance).subtract(loansBalance);
@@ -359,7 +347,7 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
         rewardsScore.invoke(loans.account, "updateRewardsData", "Loans", newLoansTotalSupply, account.getAddress(), newLoansBalance);
 
         // Assert
-        boost = newLoansTotalSupply.multiply(newbBalnBalance).divide(bBalnSupply).multiply(EXA.subtract(WEIGHT)).divide(WEIGHT);
+        boost = newLoansTotalSupply.multiply(bBalnBalance).divide(bBalnSupply).multiply(EXA.subtract(WEIGHT)).divide(WEIGHT);
         boostedBalance = newLoansBalance.add(boost);
         boostedSupply = newLoansTotalSupply.subtract(newLoansBalance).add(boostedBalance);
         userLoansDistribution = loansDistribution.multiply(boostedBalance).divide(boostedSupply);
