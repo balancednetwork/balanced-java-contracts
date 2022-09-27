@@ -279,7 +279,6 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         totalSupply = newStaker1BBalnBalance.add(newStaker2BBalnBalance);
         expectedFees = loanAmount.multiply(stakerPercentage).divide(ICX);
         BigInteger addedWeight = expectedFees.multiply(ICX).divide(totalSupply);
-        BigInteger newWeight = weight.add(addedWeight);
 
         // new accrued dividends for users
         BigInteger newStaker1AccruedDividends = addedWeight.multiply(newStaker1BBalnBalance).divide(ICX);

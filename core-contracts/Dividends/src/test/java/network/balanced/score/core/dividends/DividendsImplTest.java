@@ -19,7 +19,6 @@ package network.balanced.score.core.dividends;
 import network.balanced.score.lib.structs.PrepDelegations;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import score.Address;
 import score.Context;
 
 import java.math.BigInteger;
@@ -108,9 +107,5 @@ class DividendsImplTest extends DividendsImplTestBase {
     void setBBalnAddress() {
         dividendScore.invoke(owner, "setBBalnAddress", bBalnScore.getAddress());
         assertEquals(bBalnScore.getAddress(), dividendScore.call("getBBalnAddress"));
-    }
-
-    private void mockStake(Address user, BigInteger stake) {
-        contextMock.when(() -> Context.call(BigInteger.class, balnScore.getAddress(), "stakedBalanceOf", user)).thenReturn(stake);
     }
 }
