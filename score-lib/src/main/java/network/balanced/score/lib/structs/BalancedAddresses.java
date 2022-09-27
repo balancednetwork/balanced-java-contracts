@@ -37,5 +37,4 @@ public class BalancedAddresses {
     public Address stakedLp;
     public Address bBaln;
     public Address balancedOracle;
-
 }
