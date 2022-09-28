@@ -222,7 +222,6 @@ public class DataSourceImpl {
 
     public BigInteger updateSingleUserData(BigInteger currentTime, BigInteger prevTotalSupply, Address user,
                                            BigInteger prevBalance, boolean readOnlyContext) {
-
         BigInteger currentUserWeight = getUserWeight(user);
         BigInteger lastUpdateTimestamp = getLastUpdateTimeUs();
 
@@ -241,6 +240,7 @@ public class DataSourceImpl {
         if (!readOnlyContext) {
             userWeight.at(dbKey).set(user, totalWeight);
         }
+
         return accruedRewards;
     }
 

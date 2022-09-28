@@ -493,6 +493,7 @@ public class RewardsImpl implements Rewards {
         BigInteger year = BigInteger.valueOf(365);
 
         BigInteger sourceAmount = year.multiply(emission).multiply(percentage);
+
         return sourceAmount.multiply(balnPrice).divide(sourceValue.multiply(HUNDRED_PERCENTAGE));
     }
 
@@ -515,6 +516,7 @@ public class RewardsImpl implements Rewards {
         for (int i = 0; i < dataProvidersSize; i++) {
             dataProvidersList.add(dataProviders.get(i));
         }
+
         return dataProvidersList;
     }
 
@@ -526,7 +528,7 @@ public class RewardsImpl implements Rewards {
 
     @External
     public void updateRewardsData(String _name, BigInteger _totalSupply, Address _user, BigInteger _balance) {
-        Context.require(dataProviders.contains(Context.getCaller()), TAG + ": Only data sources are allowed to update" +
+        Context.require(dataProviders.contains(Context.getCaller()), TAG + ": Only data provider are allowed to update" +
                 " rewards data");
 
         BigInteger currentTime = getTime();
@@ -541,7 +543,7 @@ public class RewardsImpl implements Rewards {
 
     @External
     public void updateBatchRewardsData(String _name, BigInteger _totalSupply, RewardsDataEntry[] _data) {
-        Context.require(dataProviders.contains(Context.getCaller()), TAG + ": Only data sources are allowed to update" +
+        Context.require(dataProviders.contains(Context.getCaller()), TAG + ": Only data provider are allowed to update" +
                 " rewards data");
 
         BigInteger currentTime = getTime();
@@ -793,8 +795,8 @@ public class RewardsImpl implements Rewards {
             BigInteger decayOffset = pow(BigInteger.valueOf(1000), index.intValue());
             BigInteger minDistribution = BigInteger.valueOf(1250).multiply(EXA);
             BigInteger distribution = decay.multiply(baseDistribution).divide(decayOffset);
-            return minDistribution.max(distribution);
 
+            return minDistribution.max(distribution);
         } else {
             int index = day.subtract(BigInteger.valueOf(60)).intValue();
             BigInteger distribution = baseDistribution;
@@ -813,6 +815,7 @@ public class RewardsImpl implements Rewards {
             }
 
             BigInteger minDistribution = BigInteger.valueOf(1250).multiply(EXA);
+
             return minDistribution.max(distribution);
         }
     }
