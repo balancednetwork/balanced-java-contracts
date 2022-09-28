@@ -18,15 +18,24 @@ package network.balanced.gradle.plugin.utils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import java.math.BigInteger;
 import java.util.Map;
 
 public class Action {
     private String contract;
     private String method;
+    private BigInteger value;
     private JsonNode __args__;
     private Map<String, Object> params;
     private float order;
 
+    public BigInteger getValue() {
+        return value;
+    }
+
+    public void setValue(BigInteger value) {
+        this.value = value;
+    }
 
     public String getContract() {
         return contract;
