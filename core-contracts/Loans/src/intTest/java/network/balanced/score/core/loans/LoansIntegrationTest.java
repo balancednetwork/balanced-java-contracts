@@ -269,32 +269,43 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         assertThrows(UserRevertedException.class, () ->
                 loanTakerFullDebtSell.loans.sellCollateral(collateral, "sICX", loanAmount.add(BigInteger.TEN.pow(19))));
         assertThrows(UserRevertedException.class, () ->
-                loanTakerFullDebtSell.loans.sellCollateral(collateralETH, "iETH", ethLoanAmount.add(BigInteger.TEN.pow(19))));
+                loanTakerFullDebtSell.loans.sellCollateral(collateralETH, "iETH",
+                        ethLoanAmount.add(BigInteger.TEN.pow(19))));
 
         BigInteger loanTakerFullDebtSellCollateralPre = loanTakerFullDebtSell.getLoansCollateralPosition("sICX");
         BigInteger loanTakerETHFullDebtSellCollateralPre = loanTakerETHFullSell.getLoansCollateralPosition("iETH");
         BigInteger loanTakerPartialDebtSellCollateralPre = loanTakerPartialDebtSell.getLoansCollateralPosition("sICX");
-        BigInteger loanTakerETHPartialDebtSellCollateralPre = loanTakerETHPartialSell.getLoansCollateralPosition("iETH");
+        BigInteger loanTakerETHPartialDebtSellCollateralPre = loanTakerETHPartialSell.getLoansCollateralPosition(
+                "iETH");
 
         BigInteger loanTakerFullDebtSellDebtPositionPre = loanTakerFullDebtSell.getLoansAssetPosition("sICX", "bnUSD");
-        BigInteger loanTakerETHFullDebtSellDebtPositionPre = loanTakerETHFullSell.getLoansAssetPosition("iETH", "bnUSD");
-        BigInteger loanTakerPartialDebtSellDebtPositionPre = loanTakerPartialDebtSell.getLoansAssetPosition("sICX", "bnUSD");
-        BigInteger loanTakerETHPartialDebtSellDebtPositionPre = loanTakerETHPartialSell.getLoansAssetPosition("iETH", "bnUSD");
+        BigInteger loanTakerETHFullDebtSellDebtPositionPre = loanTakerETHFullSell.getLoansAssetPosition("iETH",
+                "bnUSD");
+        BigInteger loanTakerPartialDebtSellDebtPositionPre = loanTakerPartialDebtSell.getLoansAssetPosition("sICX",
+                "bnUSD");
+        BigInteger loanTakerETHPartialDebtSellDebtPositionPre = loanTakerETHPartialSell.getLoansAssetPosition("iETH",
+                "bnUSD");
 
         loanTakerFullDebtSell.loans.sellCollateral(collateralToSellFullDebt, "sICX", minimumReceiveToSellFullDebt);
         loanTakerETHFullSell.loans.sellCollateral(ETHCollateralToSellFullDebt, "iETH", minimumReceiveToSellFullDebt);
-        loanTakerPartialDebtSell.loans.sellCollateral(collateralToSellPartialDebt, "sICX", minimumReceiveToSellPartialDebt);
-        loanTakerETHPartialSell.loans.sellCollateral(ETHCollateralToSellPartialDebt, "iETH", minimumReceiveToSellPartialDebt);
+        loanTakerPartialDebtSell.loans.sellCollateral(collateralToSellPartialDebt, "sICX",
+                minimumReceiveToSellPartialDebt);
+        loanTakerETHPartialSell.loans.sellCollateral(ETHCollateralToSellPartialDebt, "iETH",
+                minimumReceiveToSellPartialDebt);
 
         BigInteger loanTakerFullDebtSellCollateralPost = loanTakerFullDebtSell.getLoansCollateralPosition("sICX");
         BigInteger loanTakerETHFullDebtSellCollateralPost = loanTakerETHFullSell.getLoansCollateralPosition("iETH");
         BigInteger loanTakerPartialDebtSellCollateralPost = loanTakerPartialDebtSell.getLoansCollateralPosition("sICX");
-        BigInteger loanTakerETHPartialDebtSellCollateralPost = loanTakerETHPartialSell.getLoansCollateralPosition("iETH");
+        BigInteger loanTakerETHPartialDebtSellCollateralPost = loanTakerETHPartialSell.getLoansCollateralPosition(
+                "iETH");
 
         BigInteger loanTakerFullDebtSellDebtPositionPost = loanTakerFullDebtSell.getLoansAssetPosition("sICX", "bnUSD");
-        BigInteger loanTakerETHFullDebtSellDebtPositionPost = loanTakerETHFullSell.getLoansAssetPosition("iETH", "bnUSD");
-        BigInteger loanTakerPartialDebtSellDebtPositionPost = loanTakerPartialDebtSell.getLoansAssetPosition("sICX", "bnUSD");
-        BigInteger loanTakerETHPartialDebtSellDebtPositionPost = loanTakerETHPartialSell.getLoansAssetPosition("iETH", "bnUSD");
+        BigInteger loanTakerETHFullDebtSellDebtPositionPost = loanTakerETHFullSell.getLoansAssetPosition("iETH",
+                "bnUSD");
+        BigInteger loanTakerPartialDebtSellDebtPositionPost = loanTakerPartialDebtSell.getLoansAssetPosition("sICX",
+                "bnUSD");
+        BigInteger loanTakerETHPartialDebtSellDebtPositionPost = loanTakerETHPartialSell.getLoansAssetPosition("iETH"
+                , "bnUSD");
 
         //  Assert
         //  requested collateral sell more than available collateral
@@ -303,10 +314,14 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         assertThrows(UserRevertedException.class, () ->
                 loanTakerFullDebtSell.loans.sellCollateral(collateralETH, "iETH", minimumReceiveToSellFullDebt));
 
-        assertEquals(loanTakerFullDebtSellCollateralPost, loanTakerFullDebtSellCollateralPre.subtract(collateralToSellFullDebt));
-        assertEquals(loanTakerETHFullDebtSellCollateralPost, loanTakerETHFullDebtSellCollateralPre.subtract(ETHCollateralToSellFullDebt));
-        assertEquals(loanTakerPartialDebtSellCollateralPost, loanTakerPartialDebtSellCollateralPre.subtract(collateralToSellPartialDebt));
-        assertEquals(loanTakerETHPartialDebtSellCollateralPost, loanTakerETHPartialDebtSellCollateralPre.subtract(ETHCollateralToSellPartialDebt));
+        assertEquals(loanTakerFullDebtSellCollateralPost,
+                loanTakerFullDebtSellCollateralPre.subtract(collateralToSellFullDebt));
+        assertEquals(loanTakerETHFullDebtSellCollateralPost,
+                loanTakerETHFullDebtSellCollateralPre.subtract(ETHCollateralToSellFullDebt));
+        assertEquals(loanTakerPartialDebtSellCollateralPost,
+                loanTakerPartialDebtSellCollateralPre.subtract(collateralToSellPartialDebt));
+        assertEquals(loanTakerETHPartialDebtSellCollateralPost,
+                loanTakerETHPartialDebtSellCollateralPre.subtract(ETHCollateralToSellPartialDebt));
 
         assertTrue(loanTakerFullDebtSellDebtPositionPost.compareTo(loanTakerFullDebtSellDebtPositionPre) < 0);
         assertTrue(loanTakerETHFullDebtSellDebtPositionPost.compareTo(loanTakerETHFullDebtSellDebtPositionPre) < 0);

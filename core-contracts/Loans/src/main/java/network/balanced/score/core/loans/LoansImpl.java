@@ -584,7 +584,8 @@ public class LoansImpl implements Loans {
     }
 
     @External
-    public void sellCollateral(BigInteger collateralAmountToSell, String collateralSymbol, BigInteger minimumDebtRepaid) {
+    public void sellCollateral(BigInteger collateralAmountToSell, String collateralSymbol,
+                               BigInteger minimumDebtRepaid) {
         loansOn();
         Address from = Context.getCaller();
         sellUserCollateral(from, collateralAmountToSell, collateralSymbol, minimumDebtRepaid);
@@ -687,7 +688,8 @@ public class LoansImpl implements Loans {
         CollateralReceived(_from, _symbol, _amount);
     }
 
-    private void sellUserCollateral(Address from, BigInteger collateralToSell, String collateralSymbol, BigInteger minimumDebtToRepay) {
+    private void sellUserCollateral(Address from, BigInteger collateralToSell, String collateralSymbol,
+                                    BigInteger minimumDebtToRepay) {
         Context.require(collateralToSell.compareTo(BigInteger.ZERO) > 0, TAG + ": Sell amount must be more than zero.");
         Context.require(PositionsDB.hasPosition(from), TAG + ": This address does not have a position on Balanced.");
 
@@ -710,9 +712,10 @@ public class LoansImpl implements Loans {
 
         amountReceived.set(null);
         BigInteger poolID = Context.call(BigInteger.class, dexAddress, "getPoolId", collateralAddress, assetAddress);
-        Context.require(poolID != null, TAG + ": There doesn't exist a bnUSD pool for "+ collateralSymbol + ".");
+        Context.require(poolID != null, TAG + ": There doesn't exist a bnUSD pool for " + collateralSymbol + ".");
 
-        Context.require(userDebt.compareTo(minimumDebtToRepay) >= 0, TAG + ": Minimum receive cannot be greater than your debt.");
+        Context.require(userDebt.compareTo(minimumDebtToRepay) >= 0, TAG + ": Minimum receive cannot be greater than " +
+                "your debt.");
         expectedToken.set(assetAddress);
 
         JsonObject swapParams = Json.object()
@@ -728,7 +731,8 @@ public class LoansImpl implements Loans {
         BigInteger assetReceived = amountReceived.get();
         amountReceived.set(null);
 
-        Context.require(userDebt.compareTo(assetReceived) >= 0, TAG + ": Cannot sell collateral worth more than your debt.");
+        Context.require(userDebt.compareTo(assetReceived) >= 0, TAG + ": Cannot sell collateral worth more than your " +
+                "debt.");
 
         BigInteger remainingDebt = userDebt.subtract(assetReceived);
         BigInteger remainingCollateral = userCollateral.subtract(collateralToSell);
@@ -1126,7 +1130,8 @@ public class LoansImpl implements Loans {
     }
 
     @EventLog(indexed = 3)
-    public void CollateralSold(Address account, String assetSymbol, String collateralSymbol, BigInteger amount, String note) {
+    public void CollateralSold(Address account, String assetSymbol, String collateralSymbol, BigInteger amount,
+                               String note) {
     }
 
     @EventLog(indexed = 3)

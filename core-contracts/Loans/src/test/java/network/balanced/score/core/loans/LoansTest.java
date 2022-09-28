@@ -693,7 +693,7 @@ class LoansTest extends LoansTestBase {
     }
 
     @Test
-    void borrow_negativeAmount() throws Exception {
+    void borrow_negativeAmount() {
         // Arrange
         Account account = accounts.get(0);
         BigInteger collateral = BigInteger.valueOf(2000).multiply(EXA);
@@ -926,7 +926,7 @@ class LoansTest extends LoansTestBase {
         verifyPosition(loanRepayer.getAddress(), collateral, loan.subtract(loanToRepay).add(expectedFee), "sICX");
         verifyTotalDebt(expectedDebt.multiply(BigInteger.TWO).subtract(loanToRepay));
     }
-    
+
     @Test
     void sellCollateral() {
         // Arrange
@@ -956,10 +956,10 @@ class LoansTest extends LoansTestBase {
         loans.invoke(account, "sellCollateral", iETHCollateralToSell, "iETH", minimumReceiveiETHCollateralSell);
 
         //  Assert
-        verifyPosition(account.getAddress(), collateral.subtract(collateralToSell), loan.add(expectedFee).subtract(expectedBnusdRepaidForSicx),
-                "sICX");
-        verifyPosition(account.getAddress(), collateral.subtract(iETHCollateralToSell), loan.add(expectedFee).subtract(expectedBnusdRepaidForiETH),
-                "iETH");
+        verifyPosition(account.getAddress(), collateral.subtract(collateralToSell),
+                loan.add(expectedFee).subtract(expectedBnusdRepaidForSicx), "sICX");
+        verifyPosition(account.getAddress(), collateral.subtract(iETHCollateralToSell),
+                loan.add(expectedFee).subtract(expectedBnusdRepaidForiETH), "iETH");
     }
 
     @Test
@@ -969,7 +969,7 @@ class LoansTest extends LoansTestBase {
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
         BigInteger collateralToSell = BigInteger.valueOf(0).multiply(EXA);
-        BigInteger minimumReceiveAfterSell= BigInteger.valueOf(50).multiply(EXA);
+        BigInteger minimumReceiveAfterSell = BigInteger.valueOf(50).multiply(EXA);
         String expectedErrorMessage = "Reverted(0): " + TAG + "Sell amount must be more than zero.";
 
         takeLoanICX(account, "bnUSD", collateral, loan);
@@ -985,7 +985,7 @@ class LoansTest extends LoansTestBase {
         // Arrange
         Account account = accounts.get(0);
         BigInteger collateralToSell = BigInteger.valueOf(200).multiply(EXA);
-        BigInteger minimumReceiveAfterSell= BigInteger.valueOf(50).multiply(EXA);
+        BigInteger minimumReceiveAfterSell = BigInteger.valueOf(50).multiply(EXA);
 
         String expectedErrorMessage = "Reverted(0): " + TAG + "This address does not have a position on Balanced.";
 
@@ -1002,7 +1002,7 @@ class LoansTest extends LoansTestBase {
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
         BigInteger collateralToSell = BigInteger.valueOf(1100).multiply(EXA);
-        BigInteger minimumReceiveAfterSell= BigInteger.valueOf(50).multiply(EXA);
+        BigInteger minimumReceiveAfterSell = BigInteger.valueOf(50).multiply(EXA);
         String expectedErrorMessage = "Reverted(0): " + TAG + "Position holds less collateral than the requested " +
                 "sell.";
 
@@ -1021,9 +1021,10 @@ class LoansTest extends LoansTestBase {
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
         BigInteger collateralToSell = BigInteger.valueOf(300).multiply(EXA);
-        BigInteger minimumReceiveAfterSell= BigInteger.valueOf(300).multiply(EXA);
+        BigInteger minimumReceiveAfterSell = BigInteger.valueOf(300).multiply(EXA);
         String collateralSymbol = "sICX";
-        String expectedErrorMessage = "Reverted(0): " + TAG + "There doesn't exist a bnUSD pool for "+ collateralSymbol + ".";
+        String expectedErrorMessage =
+                "Reverted(0): " + TAG + "There doesn't exist a bnUSD pool for " + collateralSymbol + ".";
 
         takeLoanICX(account, "bnUSD", collateral, loan);
 
@@ -1040,7 +1041,7 @@ class LoansTest extends LoansTestBase {
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
         BigInteger collateralToSell = BigInteger.valueOf(300).multiply(EXA);
-        BigInteger minimumReceiveAfterSell= BigInteger.valueOf(300).multiply(EXA);
+        BigInteger minimumReceiveAfterSell = BigInteger.valueOf(300).multiply(EXA);
         String expectedErrorMessage = "Reverted(0): " + TAG + "Minimum receive cannot be greater than your debt.";
 
         BigInteger rate = EXA.divide(BigInteger.TWO);
@@ -1061,7 +1062,7 @@ class LoansTest extends LoansTestBase {
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
         BigInteger collateralToSell = BigInteger.valueOf(400).multiply(EXA);
-        BigInteger minimumReceiveAfterSell= BigInteger.valueOf(100).multiply(EXA);
+        BigInteger minimumReceiveAfterSell = BigInteger.valueOf(100).multiply(EXA);
         String expectedErrorMessage = "Reverted(0): " + TAG + "Cannot sell collateral worth more than your debt.";
 
         BigInteger rate = EXA.divide(BigInteger.TWO);
@@ -1070,7 +1071,7 @@ class LoansTest extends LoansTestBase {
         mockSwap(bnusd, collateralToSell, expectedBnusdRepaidForSicx);
 
         takeLoanICX(account, "bnUSD", collateral, loan);
-        
+
         // Assert & Act
         Executable sellTooMuchCollateral = () -> loans.invoke(account, "sellCollateral", collateralToSell
                 , "sICX", minimumReceiveAfterSell);
