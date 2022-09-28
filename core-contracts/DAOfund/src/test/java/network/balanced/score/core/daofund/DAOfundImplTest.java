@@ -114,19 +114,14 @@ class DAOfundImplTest extends TestBase {
     @Test
     void addSymbolToSetdb() {
         setAndGetLoans();
-        try (MockedStatic<Context> loansMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS)) {
-            loansMock
-                    .when(() -> Context.call(loansScore.getAddress(), "getAssetTokens"))
-                    .thenReturn(Map.of("sICX", sicxScore.getAddress().toString(),
-                            "BALN", balnScore.getAddress().toString(),
-                            "bnUSD", bnUSDScore.getAddress().toString()));
-            daofundScore.invoke(owner, "addAddressToSetdb");
-            Map<String, BigInteger> expectedBalances = Map.of(sicxScore.getAddress().toString(), BigInteger.ZERO,
-                    balnScore.getAddress().toString(), BigInteger.ZERO,
-                    bnUSDScore.getAddress().toString(), BigInteger.ZERO);
-            assertEquals(expectedBalances, daofundScore.call("getBalances"));
+        daofundScore.invoke(admin, "addAcceptedToken", sicxScore.getAddress());
+        daofundScore.invoke(admin, "addAcceptedToken", balnScore.getAddress());
+        daofundScore.invoke(admin, "addAcceptedToken", bnUSDScore.getAddress());
+        Map<String, BigInteger> expectedBalances = Map.of(sicxScore.getAddress().toString(), BigInteger.ZERO,
+                balnScore.getAddress().toString(), BigInteger.ZERO,
+                bnUSDScore.getAddress().toString(), BigInteger.ZERO);
+        assertEquals(expectedBalances, daofundScore.call("getBalances"));
         }
-    }
 
     @Test
     void receiveTokens() {

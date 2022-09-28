@@ -48,7 +48,6 @@ public class BoostedBalnIncreaseTimeTest {
     void testIncreaseTime() {
         DefaultScoreClient ownerClient = getOwnerClient();
         score.Address userAddress = score.Address.fromString(balanced.owner.getAddress().toString());
-        owner.daofund.addAddressToSetdb();
         balanced.syncDistributions();
         ownerClient._transfer(owner.dex._address(), BigInteger.valueOf(1000).multiply(EXA), null);
         waitDays(1);
@@ -101,7 +100,6 @@ public class BoostedBalnIncreaseTimeTest {
         owner.boostedBaln.setPenaltyAddress(EOA_ZERO);
         DefaultScoreClient ownerClient = getOwnerClient();
         score.Address userAddress = score.Address.fromString(balanced.owner.getAddress().toString());
-        owner.daofund.addAddressToSetdb();
         ownerClient._transfer(owner.dex._address(), BigInteger.valueOf(1000).multiply(EXA), null);
         waitDays(1);
         BigInteger updatedBalnHolding = owner.rewards.getBalnHolding(userAddress);

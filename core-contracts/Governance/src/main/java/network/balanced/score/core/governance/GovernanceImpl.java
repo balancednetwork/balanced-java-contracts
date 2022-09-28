@@ -475,6 +475,8 @@ public class GovernanceImpl {
                     asset.get("active"),
                     asset.get("collateral")
             );
+            Context.call(Addresses.get("dividends"), "addAcceptedTokens",  Addresses.get((String) asset.get("address")));
+            Context.call(Addresses.get("daofund"), "addAcceptedToken",  Addresses.get((String) asset.get("address")));
         }
     }
 

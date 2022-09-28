@@ -59,7 +59,6 @@ public class BoostedBalnGeneralIntegrationTest implements ScoreIntegrationTest {
     @Test
     void testCreateLockIncreaseTimeAndDeposit() {
         DefaultScoreClient ownerClient = getOwnerClient();
-        owner.daofund.addAddressToSetdb();
         balanced.syncDistributions();
         ownerClient._transfer(owner.dex._address(), BigInteger.valueOf(1000).multiply(EXA), null);
         waitForADay();

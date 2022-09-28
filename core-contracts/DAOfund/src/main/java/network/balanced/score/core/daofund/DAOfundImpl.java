@@ -111,20 +111,17 @@ public class DAOfundImpl implements DAOfund {
         Context.call(staking, "delegate", (Object) prepDelegations);
     }
 
-    /**
-     * This method fetch the asset tokens from loans contract and add it to address enumerable set. Loans provide a
-     * map of token symbol and its address.
-     */
     @External
-    public void addAddressToSetdb() {
-        onlyOwner();
-        LoansScoreInterface loans = new LoansScoreInterface(loansScore.get());
-        Map<String, String> assets = loans.getAssetTokens();
+    public void addAcceptedToken(Address _token) {
+        only(admin);
+        isContract(_token);
+        address.add(_token.toString());
+    }
 
-        for (Map.Entry<String, String> tokenSymbolAddress : assets.entrySet()) {
-            String address = tokenSymbolAddress.getValue();
-            this.address.add(address);
-        }
+    @External
+    public void removeAcceptedToken(Address _token) {
+        only(admin);
+        address.remove(_token.toString());
     }
 
     @External(readonly = true)

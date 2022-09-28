@@ -62,7 +62,7 @@ public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress
 
     @External(readonly = true)
     BigInteger getDividendsOnlyToStakedBalnDay();
-    
+
     @External(readonly = true)
     Map<String, BigInteger> getBalances();
 
@@ -74,6 +74,9 @@ public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress
 
     @External
     void addAcceptedTokens(Address _token);
+
+    @External
+    void removeAcceptedToken(Address _token);
 
     @External(readonly = true)
     List<String> getDividendsCategories();

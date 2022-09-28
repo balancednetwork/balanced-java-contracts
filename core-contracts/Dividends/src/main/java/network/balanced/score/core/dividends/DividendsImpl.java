@@ -204,14 +204,14 @@ public class DividendsImpl implements Dividends {
     }
 
     @External(readonly = true)
-    @SuppressWarnings("unchecked")
     public Map<String, BigInteger> getBalances() {
         Address address = Context.getAddress();
-        Map<String, String> assets = (Map<String, String>) Context.call(loanScore.get(), "getAssetTokens");
+        int numberOfAcceptedTokens = acceptedTokens.size();
         Map<String, BigInteger> balances = new HashMap<>();
-        for (String symbol : assets.keySet()) {
-            BigInteger balance = (BigInteger) Context.call(Address.fromString(assets.get(symbol)), "balanceOf",
-                    address);
+        for (int i = 0; i < numberOfAcceptedTokens; i++) {
+            Address token = acceptedTokens.get(i);
+            BigInteger balance = Context.call(BigInteger.class, token, "balanceOf", address);
+            String symbol = Context.call(String.class, token, "symbol");
             if (balance.compareTo(BigInteger.ZERO) > 0) {
                 balances.put(symbol, balance);
             }
@@ -257,6 +257,12 @@ public class DividendsImpl implements Dividends {
         if (!arrayDbContains(acceptedTokens, _token)) {
             acceptedTokens.add(_token);
         }
+    }
+
+    @External
+    public void removeAcceptedToken(Address _token) {
+        only(admin);
+        removeFromArraydb(_token, acceptedTokens);
     }
 
     @External(readonly = true)
@@ -544,21 +550,9 @@ public class DividendsImpl implements Dividends {
     }
 
     @External
-    @SuppressWarnings("unchecked")
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         Address token = Context.getCaller();
-        Map<String, String> availableTokens;
-        int acceptedTokensCount = acceptedTokens.size();
-        for (int i = 0; i < acceptedTokensCount; i++) {
-            if (!token.equals(acceptedTokens.get(i))) {
-                availableTokens = (Map<String, String>) Context.call(loanScore.get(), "getAssetTokens");
-                for (String value : availableTokens.values()) {
-                    if (token.toString().equals(value)) {
-                        acceptedTokens.add(token);
-                    }
-                }
-            }
-        }
+        Context.require(arrayDbContains(acceptedTokens, token), "Dividends does not accept that token");
 
         if (getBoostedTotalSupply().equals(BigInteger.ZERO)) {
             sendToken(daoFund.get(), _value, token, "Daofund dividends");

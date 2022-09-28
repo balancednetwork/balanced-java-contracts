@@ -174,8 +174,6 @@ public class Balanced {
         ownerClient.governance.launchBalanced();
         ownerClient.staking.toggleStakingOn();
 
-        ownerClient.daofund.addAddressToSetdb();
-
         ownerClient.governance.setAdmin(feehandler._address(), governance._address());
         ownerClient.governance.enable_fee_handler();
 

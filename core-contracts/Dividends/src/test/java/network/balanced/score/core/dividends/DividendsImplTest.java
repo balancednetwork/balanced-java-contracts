@@ -19,6 +19,8 @@ package network.balanced.score.core.dividends;
 import network.balanced.score.lib.structs.PrepDelegations;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import score.Address;
 import score.Context;
 
 import java.math.BigInteger;
@@ -64,15 +66,10 @@ class DividendsImplTest extends DividendsImplTestBase {
     @Test
     void getBalance() {
         dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
-        dividendScore.invoke(admin, "setLoans", loansScore.getAddress());
-
-        Map<String, String> asset = new HashMap<>();
-        asset.put("baln", String.valueOf(balnScore.getAddress()));
-        contextMock.when(getAssetTokens).thenReturn(asset);
-        contextMock.when(balanceOf).thenReturn(BigInteger.TEN.pow(4));
-
+        contextMock.when(() -> Context.call(BigInteger.class, bnUSDScore.getAddress(), "balanceOf", dividendScore.getAddress())).thenReturn(BigInteger.TEN);
+        contextMock.when(() -> Context.call(String.class, bnUSDScore.getAddress(), "symbol")).thenReturn("bnUSD");
         Map<String, BigInteger> expectedResult = new HashMap<>();
-        expectedResult.put("baln", BigInteger.TEN.pow(4));
+        expectedResult.put("bnUSD", BigInteger.TEN);
         expectedResult.put("ICX", BigInteger.ZERO);
 
         assertEquals(expectedResult, dividendScore.call("getBalances"));

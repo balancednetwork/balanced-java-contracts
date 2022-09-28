@@ -37,20 +37,15 @@ class DaofundIntegrationTest {
 
     @BeforeAll
     static void setup() throws Exception {
-        System.setProperty("DAOfund", System.getProperty("python"));
         tester = createWalletWithBalance(BigInteger.TEN.pow(24));
         balanced = new Balanced();
         balanced.setupBalanced();
 
         daofund = new DAOfundScoreClient(balanced.daofund);
     }
-  
+
     @Test
     void testName() {
-        assertEquals("Balanced DAOfund", daofund.name());
-
-        balanced.daofund._update(System.getProperty("java"), Map.of("_governance", balanced.governance._address()));
-
         assertEquals("Balanced DAOfund", daofund.name());
     }
 }
