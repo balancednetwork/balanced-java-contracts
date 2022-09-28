@@ -32,11 +32,11 @@ public class DividendsTracker {
 
     private static final BranchDB<Address, DictDB<Address, BigInteger>> boostedUserWeight =
             Context.newBranchDB(BBALN_USER_WEIGHT, BigInteger.class);
-    private static final VarDB<BigInteger> boostedTotalSupply = Context.newVarDB(BBALN_SUPPLY, BigInteger.class);
     private static final DictDB<Address, BigInteger> boostedTotalWeight = Context.newDictDB(BBALN_TOTAL_WEIGHT,
             BigInteger.class);
     protected static final DictDB<Address, BigInteger> userBalance = Context.newDictDB(USER_BBALN_BALANCE,
             BigInteger.class);
+    private static final VarDB<BigInteger> boostedTotalSupply = Context.newVarDB(BBALN_SUPPLY, BigInteger.class);
     protected static final BranchDB<Address, DictDB<Address, Boolean>> balnRewardsClaimed = Context.newBranchDB(
             "baln_to_bBaln_migration_check", Boolean.class);
 
@@ -96,8 +96,8 @@ public class DividendsTracker {
     }
 
     protected static void setBoostedTotalWeight(Address token, BigInteger amountReceived) {
-        BigInteger addedWeight = amountReceived.multiply(EXA).divide(getBoostedTotalSupply());
         BigInteger previousTotalWeight = getBoostedTotalWeight(token);
+        BigInteger addedWeight = amountReceived.multiply(EXA).divide(getBoostedTotalSupply());
         boostedTotalWeight.set(token, previousTotalWeight.add(addedWeight));
     }
 

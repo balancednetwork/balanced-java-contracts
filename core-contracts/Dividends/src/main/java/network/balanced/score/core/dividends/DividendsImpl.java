@@ -31,7 +31,8 @@ import java.util.List;
 import java.util.Map;
 
 import static network.balanced.score.core.dividends.Constants.*;
-import static network.balanced.score.core.dividends.DividendsTracker.*;
+import static network.balanced.score.core.dividends.DividendsTracker.getBoostedTotalSupply;
+import static network.balanced.score.core.dividends.DividendsTracker.userBalance;
 import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
 import static network.balanced.score.lib.utils.ArrayDBUtils.removeFromArraydb;
 import static network.balanced.score.lib.utils.Check.*;
@@ -82,10 +83,6 @@ public class DividendsImpl implements Dividends {
             distributionActivate.set(false);
             addInitialCategories();
         }
-
-        Map<String, BigInteger> dividendsDist = dividendsAt(getDay());
-        dividendsPercentage.set(DAO_FUND, dividendsDist.get(DAO_FUND));
-        dividendsPercentage.set(BALN_HOLDERS, dividendsDist.get(BALN_HOLDERS));
     }
 
     @External(readonly = true)
@@ -300,7 +297,7 @@ public class DividendsImpl implements Dividends {
         int numberOfCategories = completeDividendsCategories.size();
         for (int i = 0; i < numberOfCategories; i++) {
             String category = completeDividendsCategories.get(i);
-            dividendsDist.put(category, dividendsPercentage.get(category));
+            dividendsDist.put(category, dividendsPercentage.getOrDefault(category, BigInteger.ZERO));
         }
 
         return dividendsDist;
@@ -320,8 +317,6 @@ public class DividendsImpl implements Dividends {
                     TAG + ": " + category + " is not a valid dividends category");
 
             dividendsPercentage.set(category, percent);
-
-
             totalPercentage = totalPercentage.add(percent);
         }
 
@@ -446,19 +441,24 @@ public class DividendsImpl implements Dividends {
 
         int size = acceptedTokens.size();
         DictDB<Address, BigInteger> userAccruedDividends = accruedDividends.at(user);
+        Map<String, BigInteger> nonZeroTokens = new HashMap<>();
         for (int i = 0; i < size; i++) {
             Address token = acceptedTokens.get(i);
             BigInteger accruedDividends = calculateAccruedDividends(token, user, false);
             BigInteger prevAccruedDividends = userAccruedDividends.getOrDefault(token, BigInteger.ZERO);
             BigInteger totalDivs = accruedDividends.add(prevAccruedDividends);
             if (totalDivs.signum() > 0) {
-                userAccruedDividends.set(token, BigInteger.ZERO);
-                sendToken(user, totalDivs, token, "User dividends");
+                nonZeroTokens.put(token.toString(), totalDivs);
+                userAccruedDividends.set(token, null);
                 BigInteger bbalnBalance = getBBalnBalance(user);
                 BigInteger prevBalance = userBalance.getOrDefault(user, BigInteger.ZERO);
                 userBalance.set(user, bbalnBalance);
                 DividendsTracker.setBBalnTotalSupply(getBoostedTotalSupply().add(bbalnBalance).subtract(prevBalance));
+                sendToken(user, totalDivs, token, "User dividends");
             }
+        }
+        if (nonZeroTokens.size() > 0) {
+            Claimed(user, BigInteger.ZERO, BigInteger.ZERO, dividendsMapToJson(nonZeroTokens));
         }
     }
 
@@ -569,11 +569,8 @@ public class DividendsImpl implements Dividends {
 
         // update boosted total weight if the bbaln day is started
         DividendsTracker.updateBoostedTotalWeight(token, _value.subtract(dividendsToDaofund));
-
-
         DividendsReceivedV2(_value, getDay(), _value + " tokens received as dividends token: " + token);
         sendToken(daoFund.get(), dividendsToDaofund, token, "Daofund dividends");
-
     }
 
     @External
@@ -693,7 +690,7 @@ public class DividendsImpl implements Dividends {
         Context.require(!userPrevBalance.equals(BigInteger.ZERO), TAG + " " + user + " User with no balance can not " +
                 "be kicked.");
         updateUserDividends(user, userPrevBalance);
-        userBalance.set(user, BigInteger.ZERO);
+        userBalance.set(user, null);
         DividendsTracker.setBBalnTotalSupply(getBoostedTotalSupply().subtract(userPrevBalance));
         UserKicked(user, "user kicked".getBytes());
     }
