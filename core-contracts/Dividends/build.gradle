@@ -119,7 +119,7 @@ task integrationTest(type: Test) {
         classpath = sourceSets.intTest.runtimeClasspath
 
         systemProperty "python", new File(project(':test-lib').projectDir, 'python-contracts/dividends.zip')
-        systemProperty "continuous-java", new File(project(':test-lib').projectDir, 'mainnet-contracts/Dividends-0.1.0-optimized.jar')
+        systemProperty "dividends-continuous", new File(project(':test-lib').projectDir, 'mainnet-contracts/Dividends-0.1.0-optimized.jar')
         systemProperty "java", optimizedJar.outputJarName
 
     }
