@@ -33,6 +33,9 @@ import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.c
 import static network.balanced.score.lib.test.integration.BalancedUtils.*;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class GovernanceIntegrationTest implements ScoreIntegrationTest {
     private static Balanced balanced;
@@ -48,7 +51,6 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         KeyWallet testerWallet = createWalletWithBalance(BigInteger.TEN.pow(24));
         tester = new BalancedClient(balanced, testerWallet);
 
-        owner.governance.setVoteDuration(BigInteger.TWO);
         owner.governance.setBalnVoteDefinitionCriterion(BigInteger.ZERO);
         owner.governance.setVoteDefinitionFee(BigInteger.TEN.pow(10));
         owner.governance.setQuorum(BigInteger.ONE);
@@ -62,7 +64,13 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         tester.rewards.claimRewards();
 
         BigInteger balance = tester.baln.balanceOf(tester.getAddress());
-        tester.baln.stake(balance);
+
+        final BigInteger WEEK_IN_MICRO_SECONDS = BigInteger.valueOf(7L).multiply(MICRO_SECONDS_IN_A_DAY);
+        long unlockTime =
+                (System.currentTimeMillis() * 1000) + (WEEK_IN_MICRO_SECONDS.multiply(BigInteger.valueOf(4))).longValue();
+        String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
+        tester.baln.transfer(tester.boostedBaln._address(), balance.divide(BigInteger.TWO), data.getBytes());
+
     }
 
     @Test
@@ -73,7 +81,8 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
     @Test
     void executeVote() {
         BigInteger rebalancingThreshold = BigInteger.TEN;
-       
+        BigInteger duration = BigInteger.valueOf(5);
+
         JsonArray rebalancingThresholdParameter = new JsonArray()
             .add(createParameter(rebalancingThreshold));
 
@@ -81,17 +90,17 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
             .add(createTransaction(balanced.rebalancing._address(), "setPriceDiffThreshold", rebalancingThresholdParameter));
 
         BigInteger day = tester.governance.getDay();
-        String name = "testVote";
+        String name = "testVote1";
         BigInteger voteStart = day.add(BigInteger.valueOf(4));
-        BigInteger snapshot = day.add(BigInteger.TWO);
-        tester.governance.defineVote(name, "test", voteStart, snapshot, actions.toString());
-        assertNotEquals(rebalancingThreshold, owner.rebalancing.getPriceChangeThreshold());
+        String forumLink = "https://gov.balanced.network/";
+
+        tester.governance.defineVote(name, "test", voteStart, duration, forumLink, actions.toString());
 
         balanced.increaseDay(4);
         BigInteger id = tester.governance.getVoteIndex(name);
         tester.governance.castVote(id, true);
 
-        balanced.increaseDay(2);
+        balanced.increaseDay(duration.intValue());
 
         tester.governance.evaluateVote(id);
 
@@ -114,9 +123,9 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         BigInteger day = tester.governance.getDay();
         String name = "testFailingVote";
         BigInteger voteStart = day.add(BigInteger.valueOf(4));
-        BigInteger snapshot = day.add(BigInteger.TWO);
+        String forumLink = "https://gov.balanced.network/";
         try {
-            tester.governance.defineVote(name, "test", voteStart, snapshot, actions.toString());
+            tester.governance.defineVote(name, "test", voteStart, BigInteger.TWO, forumLink, actions.toString());
             fail();
         } catch (Exception e) {
             //success

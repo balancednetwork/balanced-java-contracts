@@ -50,14 +50,19 @@ public class GovernanceImpl implements Governance {
     public static final VarDB<Boolean> launched = Context.newVarDB(LAUNCHED, Boolean.class);
     public static final VarDB<Address> rebalancing = Context.newVarDB(REBALANCING, Address.class);
     public static final VarDB<BigInteger> timeOffset = Context.newVarDB(TIME_OFFSET, BigInteger.class);
-    public static final VarDB<BigInteger> voteDuration = Context.newVarDB(VOTE_DURATION, BigInteger.class);
-    public static final VarDB<BigInteger> balnVoteDefinitionCriterion = Context.newVarDB(MIN_BALN, BigInteger.class);
+    public static final VarDB<BigInteger> maxVoteDuration = Context.newVarDB(MAX_VOTE_DURATION, BigInteger.class);
+    public static final VarDB<BigInteger> minVoteDuration = Context.newVarDB(MIN_VOTE_DURATION, BigInteger.class);    public static final VarDB<BigInteger> balnVoteDefinitionCriterion = Context.newVarDB(MIN_BALN, BigInteger.class);
     public static final VarDB<BigInteger> bnusdVoteDefinitionFee = Context.newVarDB(DEFINITION_FEE, BigInteger.class);
     public static final VarDB<BigInteger> quorum = Context.newVarDB(QUORUM, BigInteger.class);
 
     public GovernanceImpl() {
         if (launched.getOrDefault(null) == null) {
             launched.set(false);
+        }
+
+        if (maxVoteDuration.get() == null) {
+            maxVoteDuration.set(BigInteger.valueOf(14));
+            minVoteDuration.set(BigInteger.valueOf(1));
         }
     }
 
@@ -77,14 +82,21 @@ public class GovernanceImpl implements Governance {
     }
 
     @External
-    public void setVoteDuration(BigInteger duration) {
+    public void setVoteDurationLimits(BigInteger min, BigInteger max) {
         onlyOwnerOrContract();
-        voteDuration.set(duration);
+        Context.require(min.compareTo(BigInteger.ONE) >= 0, "Minimum vote duration has to be above 1");
+        minVoteDuration.set(min);
+        maxVoteDuration.set(max);
     }
 
     @External(readonly = true)
-    public BigInteger getVoteDuration() {
-        return voteDuration.getOrDefault(BigInteger.ZERO);
+    public BigInteger getMinVoteDuration() {
+        return minVoteDuration.get();
+    }
+
+    @External(readonly = true)
+    public BigInteger getMaxVoteDuration() {
+        return maxVoteDuration.get();
     }
 
     @External
@@ -138,9 +150,10 @@ public class GovernanceImpl implements Governance {
     }
 
     @External
-    public void defineVote(String name, String description, BigInteger vote_start, BigInteger snapshot, @Optional String transactions) {
+    public void defineVote(String name, String description, BigInteger vote_start, BigInteger duration,
+                           String forumLink, @Optional String transactions) {
         transactions = optionalDefault(transactions, "[]");
-        ProposalManager.defineVote(name, description, vote_start, snapshot, transactions);
+        ProposalManager.defineVote(name, description, vote_start, duration, forumLink, transactions);
     }
 
     @External
@@ -192,8 +205,13 @@ public class GovernanceImpl implements Governance {
     }
 
     @External(readonly = true)
-    public BigInteger myVotingWeight(Address _address, BigInteger _day) {
-        return Context.call(BigInteger.class, ContractManager.get("baln"), "stakedBalanceOfAt", _address, _day);
+    public BigInteger totalBoostedBaln(BigInteger block) {
+        return ProposalManager.totalBoostedBaln(block);
+    }
+
+    @External(readonly = true)
+    public BigInteger myVotingWeight(Address _address, BigInteger block) {
+        return ProposalManager.myVotingWeight(_address, block);
     }
 
     @External

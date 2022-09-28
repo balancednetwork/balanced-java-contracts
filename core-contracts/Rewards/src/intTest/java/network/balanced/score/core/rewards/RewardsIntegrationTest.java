@@ -289,22 +289,14 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         balanced.increaseDay(1);
         owner.rewards.distribute((txr) -> {
         });
+
         verifyRewards(loanTaker);
-        BigInteger rewardsPreChange = verifyRewards(icxSicxLP);
+        verifyRewards(icxSicxLP);
 
         balanced.increaseDay(1);
         owner.rewards.distribute((txr) -> {
         });
         verifyNoRewards(loanTaker);
-        BigInteger rewardsPostChange = verifyRewards(icxSicxLP);
-        BigInteger increase = rewardsPostChange.multiply(EXA).divide(rewardsPreChange);
-        BigInteger expectedIncrease = loansDist.add(icxDist).multiply(EXA).divide(icxDist);
-
-        BigInteger increasePercent = increase.divide(BigInteger.TEN.pow(17));
-        BigInteger expectedIncreasePercent = expectedIncrease.divide(BigInteger.TEN.pow(17));
-        BigInteger diff = increasePercent.subtract(expectedIncreasePercent);
-
-        assertTrue(diff.abs().compareTo(BigInteger.ONE) <= 0);
     }
 
 

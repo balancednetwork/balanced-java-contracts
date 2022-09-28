@@ -16,6 +16,7 @@
 
 package network.balanced.score.core.governance;
 
+import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.iconloop.score.test.Account;
@@ -49,67 +50,62 @@ public class GovernanceVotingTest extends GovernanceTestBase {
     @Test
     void defineVote() {
         // Arrange
-        sm.getBlock().increase(DAY);
         Account accountWithLowBalance = sm.createAccount();
         BigInteger day = (BigInteger) governance.call("getDay");
         String name = "test";
+        String forumLink = "https://gov.balanced.network/";
         String description = "test vote";
         BigInteger voteStart = day.add(BigInteger.TWO);
-        BigInteger snapshot = day.add(BigInteger.ONE);
+        BigInteger voteDuration = BigInteger.TWO;
         String actions = "[]";
         String expectedErrorMessage;
 
-        when(baln.mock.totalSupply()).thenReturn(BigInteger.TEN.multiply(EXA));
-        when(baln.mock.stakedBalanceOf(owner.getAddress())).thenReturn(BigInteger.TEN.multiply(EXA));
-        when(baln.mock.stakedBalanceOf(accountWithLowBalance.getAddress())).thenReturn(BigInteger.ZERO);
-        when(baln.mock.totalStakedBalanceOfAt(snapshot)).thenReturn(BigInteger.valueOf(6).multiply(EXA));
+        when(bBaln.mock.balanceOfAt(eq(owner.getAddress()), any(BigInteger.class))).thenReturn(BigInteger.TEN.multiply(EXA));
+        when(bBaln.mock.balanceOfAt(eq(accountWithLowBalance.getAddress()), any(BigInteger.class))).thenReturn(BigInteger.ZERO);
+        when(bBaln.mock.totalSupplyAt(any(BigInteger.class))).thenReturn(BigInteger.valueOf(6).multiply(EXA));
 
         // Act & Assert
         String tooLongDescription = "T".repeat(501);
         expectedErrorMessage = "Description must be less than or equal to 500 characters.";
         Executable withTooLongDescription = () -> governance.invoke(owner, "defineVote", name, tooLongDescription,
-                voteStart, snapshot, actions);
+                voteStart, voteDuration, forumLink, actions);
         expectErrorMessage(withTooLongDescription, expectedErrorMessage);
 
         BigInteger voteStartBeforeToday = day.subtract(BigInteger.ONE);
-        expectedErrorMessage = "Vote cannot start at or before the current day.";
+        expectedErrorMessage = "Vote cannot start before the current day.";
         Executable withVoteStartBeforeToday = () -> governance.invoke(owner, "defineVote", name, description,
-                voteStartBeforeToday, snapshot, actions);
+                voteStartBeforeToday, voteDuration, forumLink, actions);
         expectErrorMessage(withVoteStartBeforeToday, expectedErrorMessage);
-
-        BigInteger snapshotBeforeToday = day.subtract(BigInteger.ONE);
-        expectedErrorMessage = "The reference snapshot must be in the range: [current_day (" + day + "), start_day - " +
-                "1 (" + voteStart.subtract(BigInteger.ONE) + ")].";
-        Executable withSnapshotBeforeToday = () -> governance.invoke(owner, "defineVote", name, description,
-                voteStart, snapshotBeforeToday, actions);
-        expectErrorMessage(withSnapshotBeforeToday, expectedErrorMessage);
-
-        expectedErrorMessage = "The reference snapshot must be in the range: [current_day (" + day + "), start_day - " +
-                "1 (" + voteStart.subtract(BigInteger.ONE) + ")].";
-        Executable withSnapshotAfterStart = () -> governance.invoke(owner, "defineVote", name, description, voteStart
-                , voteStart, actions);
-        expectErrorMessage(withSnapshotAfterStart, expectedErrorMessage);
 
         BigInteger balnVoteDefinitionCriterion = (BigInteger) governance.call("getBalnVoteDefinitionCriterion");
         expectedErrorMessage =
                 "User needs at least " + balnVoteDefinitionCriterion.divide(BigInteger.valueOf(100)) + "% of total " +
-                        "baln supply staked to define a vote.";
+                        "boosted baln supply to define a vote.";
         Executable withToFewStakedBaln = () -> governance.invoke(accountWithLowBalance, "defineVote", name,
-                description, voteStart, snapshot, actions);
+                description, voteStart, voteDuration, forumLink, actions);
         expectErrorMessage(withToFewStakedBaln, expectedErrorMessage);
 
-        String invalidActions = "[[\"" + governance.getAddress().toString() + "\", \"invalidAction\", [invalid]]]";
-        expectedErrorMessage  = "";
-        Executable withInvalidActions = () -> governance.invoke(owner, "defineVote", name, description, voteStart, snapshot, invalidActions);
+        String invalidForumLink = "www.google.com";
+        expectedErrorMessage = "Invalid forum link.";
+        Executable withInvalidForumLink = () -> governance.invoke(owner, "defineVote", name, description, voteStart,
+                voteDuration, invalidForumLink, actions);
+        expectErrorMessage(withInvalidForumLink, expectedErrorMessage);
+
+        String invalidActions = new JsonArray()
+            .add(createTransaction(governance.getAddress(), "cancelVote", new JsonArray().add(createParameter(BigInteger.ZERO)))).toString();
+
+        expectedErrorMessage = "Vote execution failed";
+        Executable withInvalidActions = () -> governance.invoke(owner, "defineVote", name, description, voteStart,
+                voteDuration, forumLink, invalidActions);
         expectErrorMessage(withInvalidActions, expectedErrorMessage);
 
-        // Arrange 
-        governance.invoke(owner, "defineVote", name, description, voteStart, snapshot, actions);
+        // Arrange
+        governance.invoke(owner, "defineVote", name, description, voteStart, voteDuration, forumLink, actions);
 
         // Act & Assert
         expectedErrorMessage = "Poll name " + name + " has already been used.";
         Executable withAlreadyUsedName = () -> governance.invoke(owner, "defineVote", name, description, voteStart,
-                snapshot, actions);
+                voteDuration, forumLink, actions);
         expectErrorMessage(withAlreadyUsedName, expectedErrorMessage);
 
         BigInteger id = (BigInteger) governance.call("getVoteIndex", name);
@@ -128,17 +124,17 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         Account nonProposer = sm.createAccount();
         BigInteger day = (BigInteger) governance.call("getDay");
         String name = "test";
+        String forumLink = "https://gov.balanced.network/";
         String description = "test vote";
         BigInteger voteStart = day.add(BigInteger.TWO);
-        BigInteger snapshot = day.add(BigInteger.ONE);
+        BigInteger voteDuration = BigInteger.TWO;
         String actions = "[]";
         String expectedErrorMessage;
 
-        when(baln.mock.totalSupply()).thenReturn(BigInteger.TEN);
-        when(baln.mock.stakedBalanceOf(proposer.getAddress())).thenReturn(BigInteger.TEN);
-        when(baln.mock.totalStakedBalanceOfAt(snapshot)).thenReturn(BigInteger.valueOf(6).multiply(EXA));
+        when(bBaln.mock.balanceOfAt(eq(proposer.getAddress()), any(BigInteger.class))).thenReturn(BigInteger.TEN.multiply(EXA));
+        when(bBaln.mock.totalSupplyAt(any(BigInteger.class))).thenReturn(BigInteger.valueOf(6).multiply(EXA));
 
-        governance.invoke(proposer, "defineVote", name, description, voteStart, snapshot, actions);
+        governance.invoke(proposer, "defineVote", name, description, voteStart, voteDuration, forumLink, actions);
         BigInteger id = (BigInteger) governance.call("getVoteIndex", name);
 
         // Act & Assert
@@ -179,22 +175,20 @@ public class GovernanceVotingTest extends GovernanceTestBase {
     @Test
     void cancelVote_Proposer() {
         // Arrange
-        sm.getBlock().increase(DAY);
         Account proposer = sm.createAccount();
         Account nonProposer = sm.createAccount();
         BigInteger day = (BigInteger) governance.call("getDay");
         String name = "test";
+        String forumLink = "https://gov.balanced.network/";
         String description = "test vote";
         BigInteger voteStart = day.add(BigInteger.TWO);
-        BigInteger snapshot = day.add(BigInteger.ONE);
+        BigInteger voteDuration = BigInteger.TWO;
         String actions = "[]";
-        String expectedErrorMessage;
 
-        when(baln.mock.totalSupply()).thenReturn(BigInteger.TEN);
-        when(baln.mock.stakedBalanceOf(proposer.getAddress())).thenReturn(BigInteger.TEN);
-        when(baln.mock.totalStakedBalanceOfAt(snapshot)).thenReturn(BigInteger.valueOf(6).multiply(EXA));
+        when(bBaln.mock.balanceOfAt(eq(proposer.getAddress()), any(BigInteger.class))).thenReturn(BigInteger.TEN.multiply(EXA));
+        when(bBaln.mock.totalSupplyAt(any(BigInteger.class))).thenReturn(BigInteger.valueOf(6).multiply(EXA));
 
-        governance.invoke(proposer, "defineVote", name, description, voteStart, snapshot, actions);
+        governance.invoke(proposer, "defineVote", name, description, voteStart, voteDuration, forumLink, actions);
         BigInteger id = (BigInteger) governance.call("getVoteIndex", name);
 
         // Act & Assert
@@ -216,8 +210,8 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         String expectedErrorMessage;
         Map<String, Object> vote = getVote(id);
 
-        when(baln.mock.stakedBalanceOfAt(eq(owner.getAddress()), any(BigInteger.class))).thenReturn(BigInteger.valueOf(8));
-        when(baln.mock.stakedBalanceOfAt(eq(zeroBalanceAccount.getAddress()), any(BigInteger.class))).thenReturn(BigInteger.ZERO);
+        when(bBaln.mock.balanceOfAt(eq(owner.getAddress()), any(BigInteger.class))).thenReturn(BigInteger.valueOf(8));
+        when(bBaln.mock.balanceOfAt(eq(zeroBalanceAccount.getAddress()), any(BigInteger.class))).thenReturn(BigInteger.ZERO);
 
         // Act & Assert
         expectedErrorMessage = TAG + " :This is not an active poll.";
@@ -238,7 +232,7 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         goToDay((BigInteger) vote.get("start day"));
 
         // Act & Assert
-        expectedErrorMessage = TAG + "Balanced tokens need to be staked to cast the vote.";
+        expectedErrorMessage = TAG + "Boosted Balanced tokens needed to cast the vote.";
         Executable withNoStakedBaln = () -> governance.invoke(zeroBalanceAccount, "castVote", id, true);
         expectErrorMessage(withNoStakedBaln, expectedErrorMessage);
 
@@ -274,13 +268,12 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         String expectedErrorMessage;
         Map<String, Object> vote = getVote(id);
 
-        when(baln.mock.totalSupply()).thenReturn(totalSupply);
-        when(baln.mock.totalStakedBalanceOfAt(any(BigInteger.class))).thenReturn(totalSupply);
-        when(baln.mock.stakedBalanceOfAt(eq(forVoter1.getAddress()), any(BigInteger.class))).thenReturn(forVoter1Balance);
-        when(baln.mock.stakedBalanceOfAt(eq(forVoter2.getAddress()), any(BigInteger.class))).thenReturn(forVoter2Balance);
-        when(baln.mock.stakedBalanceOfAt(eq(againstVoter.getAddress()), any(BigInteger.class))).thenReturn(againstVoterBalance);
-        when(baln.mock.stakedBalanceOfAt(eq(swayedAgainstVoter.getAddress()), any(BigInteger.class))).thenReturn(swayedAgainstVoterBalance);
-        when(baln.mock.stakedBalanceOfAt(eq(swayedForVoter.getAddress()), any(BigInteger.class))).thenReturn(swayedForVoterBalance);
+        when(bBaln.mock.totalSupplyAt(any(BigInteger.class))).thenReturn(totalSupply);
+        when(bBaln.mock.balanceOfAt(eq(forVoter1.getAddress()), any(BigInteger.class))).thenReturn(forVoter1Balance);
+        when(bBaln.mock.balanceOfAt(eq(forVoter2.getAddress()), any(BigInteger.class))).thenReturn(forVoter2Balance);
+        when(bBaln.mock.balanceOfAt(eq(againstVoter.getAddress()), any(BigInteger.class))).thenReturn(againstVoterBalance);
+        when(bBaln.mock.balanceOfAt(eq(swayedAgainstVoter.getAddress()), any(BigInteger.class))).thenReturn(swayedAgainstVoterBalance);
+        when(bBaln.mock.balanceOfAt(eq(swayedForVoter.getAddress()), any(BigInteger.class))).thenReturn(swayedForVoterBalance);
 
         goToDay((BigInteger) vote.get("start day"));
 
@@ -383,7 +376,7 @@ public class GovernanceVotingTest extends GovernanceTestBase {
     void evaluateVote_executed() {
         // Arrange
         String actions = new JsonArray().add(createTransaction(daofund.getAddress(), "name", new JsonArray())).toString();
-     
+
         // Act
         BigInteger voteIndex = executeVoteWithActions(actions);
         Map<String, Object> vote = getVote(voteIndex);

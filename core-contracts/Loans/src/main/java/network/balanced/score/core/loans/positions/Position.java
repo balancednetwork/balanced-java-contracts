@@ -30,6 +30,7 @@ import java.math.BigInteger;
 import java.util.Map;
 
 import static network.balanced.score.core.loans.utils.LoansConstants.*;
+import static network.balanced.score.lib.utils.Math.pow;
 
 public class Position {
     static final String TAG = "BalancedLoansPositions";
@@ -106,6 +107,10 @@ public class Position {
     }
 
     public BigInteger getCollateral(String symbol) {
+        return getCollateral(symbol, false);
+    }
+
+    public BigInteger getCollateral(String symbol, boolean readOnly) {
         if (symbol.equals(SICX_SYMBOL)) {
             if (!dataMigrationStatus.at(dbKey).getOrDefault(SICX_SYMBOL, false) &&
                     collateral.at(dbKey).getOrDefault(SICX_SYMBOL, BigInteger.ZERO).equals(BigInteger.ZERO)) {
@@ -113,6 +118,10 @@ public class Position {
                 int lastSnapIndex = snaps.at(dbKey).size() - 1;
                 int lastSnap = snaps.at(dbKey).get(lastSnapIndex);
                 BigInteger collateralAmount = assets.at(dbKey).at(lastSnap).getOrDefault(SICX_SYMBOL, BigInteger.ZERO);
+                if (readOnly) {
+                    return collateralAmount;
+                }
+
                 if (collateralAmount.compareTo(BigInteger.ZERO) > 0) {
                     setCollateral(SICX_SYMBOL, collateralAmount);
                 }
@@ -184,7 +193,8 @@ public class Position {
         Address collateralAddress = collateral.getAssetAddress();
         Token collateralContract = new Token(collateralAddress);
 
-        BigInteger amount = getCollateral(collateralSymbol);
+        BigInteger amount = getCollateral(collateralSymbol, readOnly);
+        BigInteger decimals = pow(BigInteger.TEN, collateralContract.decimals().intValue());
         BigInteger price;
         if (readOnly) {
             price = collateralContract.lastPriceInLoop();
@@ -193,7 +203,7 @@ public class Position {
         }
 
 
-        return amount.multiply(price).divide(EXA);
+        return amount.multiply(price).divide(decimals);
     }
 
     public BigInteger totalDebtInLoop(String collateralSymbol, boolean readOnly) {
@@ -282,7 +292,7 @@ public class Position {
                 collateralAmounts.put(assetSymbol, amount);
             }
 
-            BigInteger amount = getCollateral(collateralSymbol);
+            BigInteger amount = getCollateral(collateralSymbol, true);
 
             collateralAmounts.put(collateralSymbol, amount);
             holdings.put(collateralSymbol, collateralAmounts);

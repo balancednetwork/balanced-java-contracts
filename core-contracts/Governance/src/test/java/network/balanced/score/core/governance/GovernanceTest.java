@@ -25,6 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import score.Address;
+import score.Context;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -56,13 +57,12 @@ public class GovernanceTest extends GovernanceTestBase {
     void getVotingWeight() {
         // Arrange
         Account user = sm.createAccount();
-        BigInteger day = BigInteger.TEN;
+        BigInteger block = BigInteger.valueOf(Context.getBlockHeight());
         BigInteger expectedWeight = BigInteger.ONE;
 
-        when(baln.mock.stakedBalanceOfAt(user.getAddress(), day)).thenReturn(expectedWeight);
-
+        when(bBaln.mock.balanceOfAt(user.getAddress(), block)).thenReturn(expectedWeight);
         // Act
-        BigInteger votingWeight = (BigInteger) governance.call("myVotingWeight", user.getAddress(), day);
+        BigInteger votingWeight = (BigInteger) governance.call("myVotingWeight", user.getAddress(), block);
 
         // Assert
         assertEquals(expectedWeight, votingWeight);
@@ -73,11 +73,11 @@ public class GovernanceTest extends GovernanceTestBase {
          // Arrange
          Account notOwner = sm.createAccount();
          String expectedErrorMessage = "SenderNotScoreOwnerOrContract: Sender=" + notOwner.getAddress() + " Owner=" + owner.getAddress() + " Contract=" + governance.getAddress();
-         
+
          // Act & Assert
          Executable withNotOwner = () -> governance.invoke(notOwner, "setAdmins");
          expectErrorMessage(withNotOwner, expectedErrorMessage);
- 
+
          // Act
          governance.invoke(owner, "setAdmins") ;
 
@@ -97,7 +97,7 @@ public class GovernanceTest extends GovernanceTestBase {
         String peg = "BTC";
         Account notOwner = sm.createAccount();
         String expectedErrorMessage = "SenderNotScoreOwnerOrContract: Sender=" + notOwner.getAddress() + " Owner=" + owner.getAddress() + " Contract=" + governance.getAddress();
-        
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "addCollateral", tokenAddress, active, peg,
                 lockingRatio, liquidationRatio, debtCeiling);
@@ -138,7 +138,7 @@ public class GovernanceTest extends GovernanceTestBase {
         BigInteger poolID = BigInteger.valueOf(7);
         Account notOwner = sm.createAccount();
         String expectedErrorMessage = "SenderNotScoreOwnerOrContract: Sender=" + notOwner.getAddress() + " Owner=" + owner.getAddress() + " Contract=" + governance.getAddress();
-        
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "addDexPricedCollateral", tokenAddress, active,
                 lockingRatio, liquidationRatio, debtCeiling);
@@ -185,7 +185,7 @@ public class GovernanceTest extends GovernanceTestBase {
 
         Account notOwner = sm.createAccount();
         String expectedErrorMessage = "SenderNotScoreOwnerOrContract: Sender=" + notOwner.getAddress() + " Owner=" + owner.getAddress() + " Contract=" + governance.getAddress();
-        
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "delegate", "loans", (Object) delegations);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -224,7 +224,7 @@ public class GovernanceTest extends GovernanceTestBase {
         String _contract = "loans";
         Account notOwner = sm.createAccount();
         String expectedErrorMessage = "SenderNotScoreOwnerOrContract: Sender=" + notOwner.getAddress() + " Owner=" + owner.getAddress() + " Contract=" + governance.getAddress();
-        
+
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "setAddressesOnContract", _contract);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -289,7 +289,7 @@ public class GovernanceTest extends GovernanceTestBase {
         when(sicx.mock.balanceOf(governance.getAddress())).thenReturn(sICXValue);
         when(dex.mock.getPoolId(sicx.getAddress(), bnUSD.getAddress())).thenReturn(sicxBnusdPid);
 
-        // Act 
+        // Act
         sm.call(owner, initialICX, governance.getAddress(), "createBnusdMarket");
 
         // Assert
@@ -322,7 +322,7 @@ public class GovernanceTest extends GovernanceTestBase {
 
         when(dex.mock.getPoolId(baln.getAddress(), bnUSD.getAddress())).thenReturn(balnBnusdPid);
 
-        // Act 
+        // Act
         governance.invoke(owner, "createBalnMarket", bnUSDValue, balnValue);
 
         // Assert
@@ -356,7 +356,7 @@ public class GovernanceTest extends GovernanceTestBase {
 
         when(dex.mock.getPoolId(baln.getAddress(), sicx.getAddress())).thenReturn(balnSicxPid);
 
-        // Act 
+        // Act
         governance.invoke(owner, "createBalnSicxMarket", sicxValue, balnValue);
 
         // Assert

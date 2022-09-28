@@ -49,16 +49,19 @@ public interface Governance extends
     Address getContractAddress(String contract);
 
     @External
-    void setVoteDuration(BigInteger duration);
+    void setVoteDurationLimits(BigInteger min, BigInteger max);
+
+    @External(readonly = true)
+    BigInteger getMinVoteDuration();
+
+    @External(readonly = true)
+    BigInteger getMaxVoteDuration();
 
     @External
     void setTimeOffset(BigInteger offset);
 
     @External(readonly = true)
     BigInteger getTimeOffset();
-
-    @External(readonly = true)
-    BigInteger getVoteDuration();
 
     @External
     void setQuorum(BigInteger quorum);
@@ -82,7 +85,8 @@ public interface Governance extends
     void cancelVote(BigInteger vote_index);
 
     @External
-    void defineVote(String name, String description, BigInteger vote_start, BigInteger snapshot, String transactions);
+    void defineVote(String name, String description, BigInteger vote_start, BigInteger duration, String forumLink,
+                    String transactions);
 
     @External
     void tryExecuteTransactions(String transactions);

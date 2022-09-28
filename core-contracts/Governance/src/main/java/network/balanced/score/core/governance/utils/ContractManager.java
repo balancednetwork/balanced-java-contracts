@@ -44,6 +44,7 @@ public class ContractManager {
     public static final VarDB<Address> router = Context.newVarDB("router", Address.class);
     public static final VarDB<Address> feehandler = Context.newVarDB("feehandler", Address.class);
     public static final VarDB<Address> stakedLp = Context.newVarDB("stakedLp", Address.class);
+    public static final VarDB<Address> bBaln = Context.newVarDB("bBaln", Address.class);
     public static final VarDB<Address> balancedOracle = Context.newVarDB("balancedOracle", Address.class);
     
     private ContractManager() {}
@@ -73,6 +74,7 @@ public class ContractManager {
         rebalancing.set(addresses.rebalancing);
         feehandler.set(addresses.feehandler);
         stakedLp.set(addresses.stakedLp);
+        bBaln.set(addresses.bBaln);
         balancedOracle.set(addresses.balancedOracle);
     }
 
@@ -94,6 +96,7 @@ public class ContractManager {
         addressData.put("router", router.get());
         addressData.put("feehandler", feehandler.get());
         addressData.put("stakedLp", stakedLp.get());
+        addressData.put("bBaln", bBaln.get());
         addressData.put("balancedOracle", balancedOracle.get());
 
         return addressData;

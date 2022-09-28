@@ -55,6 +55,7 @@ public class GovernanceTestBase extends UnitTest {
     protected MockContract<Sicx> sicx;
     protected MockContract<BalancedDollar> bnUSD;
     protected MockContract<BalancedToken> baln;
+    protected MockContract<BoostedBaln> bBaln;
     protected MockContract<WorkerToken> bwt;
     protected MockContract<Router> router;
     protected MockContract<Rebalancing> rebalancing;
@@ -138,6 +139,7 @@ public class GovernanceTestBase extends UnitTest {
         balancedAddresses.rebalancing = rebalancing.getAddress();
         balancedAddresses.feehandler = feehandler.getAddress();
         balancedAddresses.stakedLp = stakedLp.getAddress();
+        balancedAddresses.bBaln = bBaln.getAddress();
         balancedAddresses.balancedOracle = balancedOracle.getAddress();
 
         governance.invoke(owner, "setAddresses", balancedAddresses);
@@ -203,25 +205,25 @@ public class GovernanceTestBase extends UnitTest {
 
     protected BigInteger executeVoteWithActions(String actions) {
         sm.getBlock().increase(DAY);
+
         BigInteger day = (BigInteger) governance.call("getDay");
         String name = "test";
         String description = "test vote";
         BigInteger voteStart = day.add(BigInteger.TWO);
-        BigInteger snapshot = day.add(BigInteger.ONE);
+        String forumLink = "https://gov.balanced.network/";
 
-        when(baln.mock.totalSupply()).thenReturn(BigInteger.valueOf(20).multiply(ICX));
-        when(baln.mock.stakedBalanceOf(owner.getAddress())).thenReturn(BigInteger.TEN.multiply(ICX));
+        when(bBaln.mock.totalSupplyAt(any(BigInteger.class))).thenReturn(BigInteger.valueOf(20).multiply(ICX));
+        when(bBaln.mock.balanceOfAt(eq(owner.getAddress()), any(BigInteger.class))).thenReturn(BigInteger.TEN.multiply(ICX));
 
-        governance.invoke(owner, "defineVote", name, description, voteStart, snapshot, actions);
+        governance.invoke(owner, "defineVote", name, description, voteStart, BigInteger.TWO, forumLink, actions);
         BigInteger id = (BigInteger) governance.call("getVoteIndex", name);
 
-        when(baln.mock.totalStakedBalanceOfAt(snapshot)).thenReturn(BigInteger.valueOf(6).multiply(ICX));
-
+        when(bBaln.mock.totalSupplyAt(any(BigInteger.class))).thenReturn(BigInteger.valueOf(6).multiply(ICX));
 
         Map<String, Object> vote = getVote(id);
         goToDay((BigInteger) vote.get("start day"));
 
-        when(baln.mock.stakedBalanceOfAt(owner.getAddress(), snapshot)).thenReturn(BigInteger.valueOf(8).multiply(ICX));
+        when(bBaln.mock.balanceOfAt(eq(owner.getAddress()), any(BigInteger.class))).thenReturn(BigInteger.valueOf(8).multiply(ICX));
         governance.invoke(owner, "castVote", id, true);
 
         goToDay((BigInteger) vote.get("end day"));
@@ -238,9 +240,9 @@ public class GovernanceTestBase extends UnitTest {
         BigInteger id = defineTestVoteWithName(name);
         Map<String, Object> vote = getVote(id);
 
-        when(baln.mock.totalSupply()).thenReturn(totalSupply);
-        when(baln.mock.stakedBalanceOfAt(eq(forVoter.getAddress()), any(BigInteger.class))).thenReturn(forVotes);
-        when(baln.mock.stakedBalanceOfAt(eq(againstVoter.getAddress()), any(BigInteger.class))).thenReturn(againstVotes);
+        when(bBaln.mock.totalSupplyAt(any(BigInteger.class))).thenReturn(totalSupply);
+        when(bBaln.mock.balanceOfAt(eq(forVoter.getAddress()), any(BigInteger.class))).thenReturn(forVotes);
+        when(bBaln.mock.balanceOfAt(eq(againstVoter.getAddress()), any(BigInteger.class))).thenReturn(againstVotes);
 
         goToDay((BigInteger) vote.get("start day"));
 
@@ -257,20 +259,21 @@ public class GovernanceTestBase extends UnitTest {
 
     protected BigInteger defineTestVoteWithName(String name) {
         sm.getBlock().increase(DAY);
+
         BigInteger day = (BigInteger) governance.call("getDay");
         String description = "test vote";
         String actions = "[]";
         BigInteger voteStart = day.add(BigInteger.TWO);
-        BigInteger snapshot = day.add(BigInteger.ONE);
+        String forumLink = "https://gov.balanced.network/";
 
-        when(baln.mock.totalSupply()).thenReturn(BigInteger.TEN.multiply(ICX));
-        when(baln.mock.stakedBalanceOf(owner.getAddress())).thenReturn(BigInteger.ONE.multiply(ICX));
+        when(bBaln.mock.totalSupplyAt(any(BigInteger.class))).thenReturn(BigInteger.TEN.multiply(ICX));
+        when(bBaln.mock.balanceOfAt(eq(owner.getAddress()), any(BigInteger.class))).thenReturn(BigInteger.ONE.multiply(ICX));
 
-        governance.invoke(owner, "defineVote", name, description, voteStart, snapshot, actions);
+        governance.invoke(owner, "defineVote", name, description, voteStart, BigInteger.TWO, forumLink, actions);
 
         BigInteger id = (BigInteger) governance.call("getVoteIndex", name);
 
-        when(baln.mock.totalStakedBalanceOfAt(snapshot)).thenReturn(BigInteger.valueOf(6).multiply(ICX));
+        when(bBaln.mock.totalSupplyAt(any(BigInteger.class))).thenReturn(BigInteger.valueOf(6).multiply(ICX));
         return id;
     }
 
@@ -296,6 +299,7 @@ public class GovernanceTestBase extends UnitTest {
         sicx = new MockContract<>(SicxScoreInterface.class, sm, owner);
         bnUSD = new MockContract<>(BalancedDollarScoreInterface.class, sm, owner);
         baln = new MockContract<>(BalancedTokenScoreInterface.class, sm, owner);
+        bBaln = new MockContract<>(BoostedBalnScoreInterface.class, sm, owner);
         bwt = new MockContract<>(WorkerTokenScoreInterface.class, sm, owner);
         router = new MockContract<>(RouterScoreInterface.class, sm, owner);
         rebalancing = new MockContract<>(RebalancingScoreInterface.class, sm, owner);
@@ -306,10 +310,9 @@ public class GovernanceTestBase extends UnitTest {
 
         setupAddresses();
         governance.invoke(owner, "setBalnVoteDefinitionCriterion", BigInteger.valueOf(100)); //1%
-        governance.invoke(owner, "setVoteDefinitionFee", ICX); //1% 
+        governance.invoke(owner, "setVoteDefinitionFee", ICX); //1%
         governance.invoke(owner, "setQuorum", BigInteger.ONE);
-        governance.invoke(owner, "setVoteDuration", BigInteger.TWO);
-        governance.invoke(owner, "setVoteDuration", BigInteger.TWO);
+        governance.invoke(owner, "setVoteDurationLimits", BigInteger.TWO, BigInteger.TEN);
     }
 
 
