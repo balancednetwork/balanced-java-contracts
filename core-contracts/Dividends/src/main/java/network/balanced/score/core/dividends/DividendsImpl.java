@@ -441,19 +441,24 @@ public class DividendsImpl implements Dividends {
 
         int size = acceptedTokens.size();
         DictDB<Address, BigInteger> userAccruedDividends = accruedDividends.at(user);
+        Map<String, BigInteger> nonZeroTokens = new HashMap<>();
         for (int i = 0; i < size; i++) {
             Address token = acceptedTokens.get(i);
             BigInteger accruedDividends = calculateAccruedDividends(token, user, false);
             BigInteger prevAccruedDividends = userAccruedDividends.getOrDefault(token, BigInteger.ZERO);
             BigInteger totalDivs = accruedDividends.add(prevAccruedDividends);
             if (totalDivs.signum() > 0) {
-                userAccruedDividends.set(token, BigInteger.ZERO);
-                sendToken(user, totalDivs, token, "User dividends");
+                nonZeroTokens.put(token.toString(), totalDivs);
+                userAccruedDividends.set(token, null);
                 BigInteger bbalnBalance = getBBalnBalance(user);
                 BigInteger prevBalance = userBalance.getOrDefault(user, BigInteger.ZERO);
                 userBalance.set(user, bbalnBalance);
                 DividendsTracker.setBBalnTotalSupply(getBoostedTotalSupply().add(bbalnBalance).subtract(prevBalance));
+                sendToken(user, totalDivs, token, "User dividends");
             }
+        }
+        if (nonZeroTokens.size() > 0) {
+            Claimed(user, BigInteger.ZERO, BigInteger.ZERO, dividendsMapToJson(nonZeroTokens));
         }
     }
 
