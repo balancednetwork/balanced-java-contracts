@@ -622,8 +622,6 @@ public class LoansImpl implements Loans {
             BigInteger debt = position.getDebt(collateralSymbol, symbol);
             BigInteger oldUserDebt = position.getTotalDebt(symbol);
             if (debt.compareTo(BigInteger.ZERO) > 0) {
-                Context.call(rewards.get(), "updateRewardsData", "Loans", oldTotalDebt, _owner, oldUserDebt);
-
                 BigInteger badDebt = asset.getBadDebt(collateralSymbol);
                 asset.setBadDebt(collateralSymbol, badDebt.add(debt));
                 BigInteger symbolDebt = debt.multiply(assetContract.priceInLoop()).divide(EXA);
@@ -632,6 +630,7 @@ public class LoansImpl implements Loans {
                 forPool = forPool.subtract(share);
                 asset.setLiquidationPool(collateralSymbol, asset.getLiquidationPool(collateralSymbol).add(share));
                 position.setDebt(collateralSymbol, symbol, null);
+                Context.call(rewards.get(), "updateRewardsData", "Loans", oldTotalDebt, _owner, oldUserDebt);
             }
         }
 
@@ -820,9 +819,8 @@ public class LoansImpl implements Loans {
                         " given an existing loan value of " + totalDebt + ".");
 
         BigInteger oldUserDebt = position.getTotalDebt(assetToBorrow);
-        Context.call(rewards.get(), "updateRewardsData", "Loans", oldTotalDebt, from, oldUserDebt);
-
         position.setDebt(collateralSymbol, assetToBorrow, holdings.add(newDebt));
+        Context.call(rewards.get(), "updateRewardsData", "Loans", oldTotalDebt, from, oldUserDebt);
 
         borrowAsset.mintTo(from, amount);
         String logMessage = "Loan of " + amount + " " + assetToBorrow + " from Balanced.";
