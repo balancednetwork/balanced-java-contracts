@@ -42,6 +42,8 @@ public class DividendsIntegrationTest {
     static BalancedClient bob;
     static BalancedClient charlie;
     static BalancedClient Dave;
+    static BalancedClient Eve;
+    static BalancedClient Ferry;
     static BalancedClient ownerClient;
 
 
@@ -57,6 +59,8 @@ public class DividendsIntegrationTest {
         bob = balanced.newClient();
         charlie = balanced.newClient();
         Dave = balanced.newClient();
+        Eve = balanced.newClient();
+        Ferry = balanced.newClient();
 
         owner = balanced.owner;
         ownerClient = balanced.ownerClient;
@@ -289,6 +293,67 @@ public class DividendsIntegrationTest {
 
     @Test
     @Order(5)
+    void testBBaln_claimOnly(){
+        /* Eve claims the dividends after the contract is updated
+        without unstaking staked baln token or without creating lock */
+        Address addressEve = Eve.getAddress();
+        BigInteger unclaimedDividendsBeforeEve =
+                ownerClient.dividends.getUnclaimedDividends(addressEve).get(balanced.bnusd._address().toString());
+        BigInteger bnusdBeforeEve = Eve.bnUSD.balanceOf(addressEve);
+        Eve.dividends.claimDividends();
+        BigInteger unclaimedDividendsAfterEve =
+                ownerClient.dividends.getUnclaimedDividends(addressEve).get(balanced.bnusd._address().toString());
+        BigInteger bnusdAfterEve = Eve.bnUSD.balanceOf(addressEve);
+        // unclaimed dividends become 0 after claiming
+        assertEquals(unclaimedDividendsAfterEve, BigInteger.ZERO);
+        // unclaimed dividends should go to Eve's wallet after claiming
+        assertEquals(bnusdBeforeEve.add(unclaimedDividendsBeforeEve), bnusdAfterEve);
+
+        BigInteger collateral = BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18));
+        BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
+        ownerClient.loans.depositAndBorrow(collateral, "bnUSD"
+                , loanAmount, null, null);
+        unclaimedDividendsAfterEve =
+                ownerClient.dividends.getUnclaimedDividends(addressEve).get(balanced.bnusd._address().toString());
+
+        // unclaimed dividends remains 0 for that user
+        assertEquals(unclaimedDividendsAfterEve, BigInteger.ZERO);
+
+    }
+
+    @Test
+    @Order(6)
+    void testBBaln_claimAfterUnstake(){
+        /* Ferry claims the dividends after unstaking baln token. */
+        Address addressFerry = Ferry.getAddress();
+        BigInteger unclaimedDividendsBeforeFerry =
+                ownerClient.dividends.getUnclaimedDividends(addressFerry).get(balanced.bnusd._address().toString());
+        BigInteger bnusdBeforeFerry = Ferry.bnUSD.balanceOf(addressFerry);
+        // Ferry unstakes baln token
+        Ferry.baln.stake(BigInteger.ZERO);
+        Ferry.dividends.claimDividends();
+        BigInteger unclaimedDividendsAfterFerry =
+                ownerClient.dividends.getUnclaimedDividends(addressFerry).get(balanced.bnusd._address().toString());
+        BigInteger bnusdAfterFerry = Eve.bnUSD.balanceOf(addressFerry);
+        // unclaimed dividends become 0 after claiming
+        assertEquals(unclaimedDividendsAfterFerry, BigInteger.ZERO);
+        // unclaimed dividends should go to Eve's wallet after claiming
+        assertEquals(bnusdBeforeFerry.add(unclaimedDividendsBeforeFerry), bnusdAfterFerry);
+
+        BigInteger collateral = BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18));
+        BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
+        ownerClient.loans.depositAndBorrow(collateral, "bnUSD"
+                , loanAmount, null, null);
+        unclaimedDividendsAfterFerry =
+                ownerClient.dividends.getUnclaimedDividends(addressFerry).get(balanced.bnusd._address().toString());
+
+        // unclaimed dividends remains 0 for that user
+        assertEquals(unclaimedDividendsAfterFerry, BigInteger.ZERO);
+
+    }
+
+    @Test
+    @Order(7)
     void testBBaln_claim() {
         /*
         1. Alice claims the dividends and the expected dividends is sent to Alice wallet.
@@ -336,7 +401,7 @@ public class DividendsIntegrationTest {
     }
 
     @Test
-    @Order(6)
+    @Order(8)
     void testBBaln_newUser() {
         /*
         A new user comes and locks the baln and that user will be eligible to earn dividends
@@ -381,7 +446,7 @@ public class DividendsIntegrationTest {
     }
 
     @Test
-    @Order(7)
+    @Order(9)
     void testBBaln_newUser_kicked() {
         /*
         A user starts getting less dividends once kicked.
@@ -422,7 +487,7 @@ public class DividendsIntegrationTest {
     }
 
     @Test
-    @Order(8)
+    @Order(10)
     void testRemoveCategories() {
         // test the removal of categories from dividends
         ownerClient.governance.setAdmin(balanced.dividends._address(), balanced.ownerClient.getAddress());
@@ -454,7 +519,7 @@ public class DividendsIntegrationTest {
     }
 
     @Test
-    @Order(9)
+    @Order(11)
     void testAddCategories() {
         // add new categories in dividends
 
@@ -468,7 +533,7 @@ public class DividendsIntegrationTest {
     }
 
     @Test
-    @Order(10)
+    @Order(12)
     void testChangeInPercentage() {
 
         balanced.increaseDay(1);
@@ -513,9 +578,11 @@ public class DividendsIntegrationTest {
     void createNewUserForBBaln() {
         // alice and bob stakes baln token
 
-        Address bbalnTesterAddress = alice.getAddress();
-        Address bbalnTesterAddress2 = bob.getAddress();
-        Address bbalnTesterAddress3 = charlie.getAddress();
+        Address addressAlice = alice.getAddress();
+        Address addressBob = bob.getAddress();
+        Address addressCharlie = charlie.getAddress();
+        Address addressEve = Eve.getAddress();
+        Address addressFerry = Ferry.getAddress();
 
         BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
         BigInteger collateral = BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18));
@@ -531,14 +598,18 @@ public class DividendsIntegrationTest {
 
         balanced.ownerClient.rewards.claimRewards();
         // sent baln token to two users
-        balanced.ownerClient.baln.transfer(bbalnTesterAddress, collateral, new byte[0]);
-        balanced.ownerClient.baln.transfer(bbalnTesterAddress2, collateral, new byte[0]);
-        balanced.ownerClient.baln.transfer(bbalnTesterAddress3, collateral, new byte[0]);
+        balanced.ownerClient.baln.transfer(addressAlice, collateral, new byte[0]);
+        balanced.ownerClient.baln.transfer(addressBob, collateral, new byte[0]);
+        balanced.ownerClient.baln.transfer(addressCharlie, collateral, new byte[0]);
+        balanced.ownerClient.baln.transfer(addressEve, collateral, new byte[0]);
+        balanced.ownerClient.baln.transfer(addressFerry, collateral, new byte[0]);
 
-        // staking baln token with two different users.
+        // staking baln token with multiple different users.
         BigInteger stakedAmount = BigInteger.valueOf(50).multiply(BigInteger.TEN.pow(18));
         alice.baln.stake(stakedAmount);
         bob.baln.stake(stakedAmount);
+        Eve.baln.stake(stakedAmount);
+        Ferry.baln.stake(stakedAmount);
 
         // loan taken to send some dividends to contract
         ownerClient.loans.depositAndBorrow(collateral, "bnUSD"
