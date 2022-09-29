@@ -48,15 +48,6 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
 
         owner = balanced.ownerClient;
         reader = balanced.newClient(BigInteger.ZERO);
-
-        owner.governance.addAcceptedTokens(balanced.sicx._address().toString());
-        owner.governance.addAcceptedTokens(balanced.baln._address().toString());
-        owner.governance.addAcceptedTokens(balanced.bnusd._address().toString());
-        owner.governance.setAcceptedDividendTokens(new score.Address[]{
-                balanced.sicx._address(),
-                balanced.baln._address(),
-                balanced.bnusd._address()
-        });
     }
 
     @Test

@@ -849,24 +849,24 @@ public class GovernanceVotingTest extends GovernanceTestBase {
     }
 
     @Test
-    void executeVote_addAcceptedTokens() {
+    void executeVote_addAcceptedToken() {
         // Arrange
         String token = "cx66d4d90f5f113eba575bf793570135f9b10cece1";
-        JsonObject setAddAcceptedTokensParameters = new JsonObject()
+        JsonObject setaddAcceptedTokenParameters = new JsonObject()
                 .add("_token", token);
 
-        JsonArray setAddAcceptedTokensCriterion = new JsonArray()
-                .add("addAcceptedTokens")
-                .add(setAddAcceptedTokensParameters);
+        JsonArray setaddAcceptedTokenCriterion = new JsonArray()
+                .add("addAcceptedToken")
+                .add(setaddAcceptedTokenParameters);
 
         JsonArray actions = new JsonArray()
-                .add(setAddAcceptedTokensCriterion);
+                .add(setaddAcceptedTokenCriterion);
 
         // Act
         executeVoteWithActions(actions.toString());
 
         // Assert
-        verify(dividends.mock, times(2)).addAcceptedTokens(Address.fromString(token));
+        verify(dividends.mock, times(2)).addAcceptedToken(Address.fromString(token));
     }
 
     @Test
@@ -954,17 +954,17 @@ public class GovernanceVotingTest extends GovernanceTestBase {
     @Test
     void executeVote_call() {
         // Arrange
-        JsonArray addAcceptedTokensParameters = new JsonArray()
+        JsonArray addAcceptedTokenParameters = new JsonArray()
                 .add(createParameter("Address", sicx.getAddress().toString()));
 
-        JsonObject addAcceptedTokensList = new JsonObject()
+        JsonObject addAcceptedTokenList = new JsonObject()
                 .add("contract_address", dividends.getAddress().toString())
-                .add("method", "addAcceptedTokens")
-                .add("parameters", addAcceptedTokensParameters);
+                .add("method", "addAcceptedToken")
+                .add("parameters", addAcceptedTokenParameters);
 
-        JsonArray addAcceptedTokens = new JsonArray()
+        JsonArray addAcceptedToken = new JsonArray()
                 .add("call")
-                .add(addAcceptedTokensList);
+                .add(addAcceptedTokenList);
 
         JsonArray permitParameters = new JsonArray()
                 .add(createParameter("Number", BigInteger.ONE))
@@ -980,14 +980,14 @@ public class GovernanceVotingTest extends GovernanceTestBase {
                 .add(permitList);
 
         JsonArray actions = new JsonArray()
-                .add(addAcceptedTokens)
+                .add(addAcceptedToken)
                 .add(permit);
 
         // Act
         executeVoteWithActions(actions.toString());
 
         // Assert
-        verify(dividends.mock, times(2)).addAcceptedTokens(sicx.getAddress());
+        verify(dividends.mock, times(2)).addAcceptedToken(sicx.getAddress());
         verify(dex.mock, times(2)).permit(BigInteger.ONE, true);
     }
 

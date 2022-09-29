@@ -270,7 +270,7 @@ public interface Governance extends
     void balanceSetUnstakingPeriod(BigInteger _time);
 
     @External
-    void addAcceptedTokens(String _token);
+    void addAcceptedToken(String _token);
 
     @External
     void setAssetOracle(String _symbol, Address _address);

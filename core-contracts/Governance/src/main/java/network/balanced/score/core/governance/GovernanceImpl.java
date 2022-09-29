@@ -475,7 +475,7 @@ public class GovernanceImpl {
                     asset.get("active"),
                     asset.get("collateral")
             );
-            Context.call(Addresses.get("dividends"), "addAcceptedTokens",  Addresses.get((String) asset.get("address")));
+            Context.call(Addresses.get("dividends"), "addAcceptedToken",  Addresses.get((String) asset.get("address")));
             Context.call(Addresses.get("daofund"), "addAcceptedToken",  Addresses.get((String) asset.get("address")));
         }
     }
@@ -899,9 +899,9 @@ public class GovernanceImpl {
     }
 
     @External
-    public void addAcceptedTokens(String _token) {
+    public void addAcceptedToken(String _token) {
         onlyOwner();
-        _addAcceptedTokens(_token);
+        _addAcceptedToken(_token);
     }
 
     @SuppressWarnings("unchecked")
@@ -1169,9 +1169,9 @@ public class GovernanceImpl {
                 Address.fromString(_contract_address));
     }
 
-    public void _addAcceptedTokens(String _token) {
+    public void _addAcceptedToken(String _token) {
         Address token = Address.fromString(_token);
-        Context.call(Addresses.get("dividends"), "addAcceptedTokens", token);
+        Context.call(Addresses.get("dividends"), "addAcceptedToken", token);
     }
 
     public void _setMaxRetirePercent(BigInteger _value) {

@@ -53,15 +53,6 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
 
         owner.stability.whitelistTokens(balanced.sicx._address(), BigInteger.TEN.pow(10));
 
-        owner.governance.addAcceptedTokens(balanced.sicx._address().toString());
-        owner.governance.addAcceptedTokens(balanced.baln._address().toString());
-        owner.governance.addAcceptedTokens(balanced.bnusd._address().toString());
-        owner.governance.setAcceptedDividendTokens(new score.Address[]{
-                balanced.sicx._address(),
-                balanced.baln._address(),
-                balanced.bnusd._address()
-        });
-
         owner.governance.setRebalancingThreshold(BigInteger.TEN.pow(17));
         owner.governance.setVoteDefinitionFee(voteDefinitionFee);
         owner.governance.setBalnVoteDefinitionCriterion(BigInteger.ZERO);

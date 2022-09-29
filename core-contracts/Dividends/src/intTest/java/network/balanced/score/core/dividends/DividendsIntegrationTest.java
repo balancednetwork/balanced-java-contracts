@@ -48,7 +48,7 @@ public class DividendsIntegrationTest {
     @BeforeAll
     static void setup() throws Exception {
         // deploying continuous dividends at first
-        System.setProperty("Dividends", System.getProperty("dividends-continuous"));
+        // System.setProperty("Dividends", System.getProperty("dividends-continuous"));
 
         balanced = new Balanced();
         balanced.setupBalanced();
@@ -80,75 +80,6 @@ public class DividendsIntegrationTest {
     }
 
     @Test
-    @Order(2)
-    void testContinuousDividends() {
-        /* test continuous rewards for dividends i.e. once continuous rewards is activated only staked baln will get
-         the dividends */
-
-        balanced.increaseDay(1);
-        balanced.syncDistributions();
-
-        BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
-        // take loans
-        ownerClient.loans.depositAndBorrow(BigInteger.valueOf(1000).multiply(BigInteger.TEN.pow(18)), "bnUSD",
-                loanAmount, null, null);
-
-        BigInteger amount = new BigInteger("500").multiply(BigInteger.TEN.pow(18));
-        // create bnusd market
-
-        ownerClient.staking.stakeICX(amount, Dave.getAddress(), null);
-        ownerClient.staking.stakeICX(new BigInteger("50").multiply(BigInteger.TEN.pow(18)),
-                Address.fromString(owner.getAddress().toString()), null);
-
-        JSONObject data = new JSONObject();
-        data.put("method", "_deposit");
-
-        BigInteger lpAmount = BigInteger.valueOf(30).multiply(BigInteger.TEN.pow(18));
-        balanced.increaseDay(1);
-        balanced.syncDistributions();
-        // claim rewards for the user
-        ownerClient.rewards.claimRewards();
-
-        // provides liquidity to baln/Sicx pool by owner
-        ownerClient.baln.transfer(balanced.dex._address(), lpAmount, data.toString().getBytes());
-        ownerClient.sicx.transfer(balanced.dex._address(), lpAmount, data.toString().getBytes());
-        ownerClient.dex.add(balanced.baln._address(), balanced.sicx._address(), lpAmount, lpAmount, true);
-        ownerClient.baln.transfer(Dave.getAddress(),
-                BigInteger.valueOf(50).multiply(BigInteger.TEN.pow(18)), null);
-
-        // stake balance by Dave
-        Dave.baln.stake(lpAmount);
-
-        String name = "BALN/sICX";
-        BigInteger pid = ownerClient.dex.getPoolId(balanced.baln._address(), balanced.sicx._address());
-        ownerClient.governance.setMarketName(pid, name);
-
-        // loans to create a dividends
-        ownerClient.loans.depositAndBorrow(BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18)), "bnUSD"
-                , loanAmount, null, null);
-
-        BigInteger balnHolderPercentage = ownerClient.dividends.getDividendsPercentage().get("baln_holders");
-        BigInteger feePercent = hexObjectToBigInteger(ownerClient.loans.getParameters().get("origination fee"));
-        BigInteger fee = loanAmount.multiply(feePercent).divide(POINTS);
-        // Dividends for the BalnStaker
-        BigInteger expectedDividendsForBalnStaker = fee.multiply(balnHolderPercentage).divide(EXA);
-
-        Map<String, BigInteger> ownerDividends =
-                ownerClient.dividends.getUnclaimedDividends(Address.fromString(owner.getAddress().toString()));
-        Map<String, BigInteger> DaveDividends =
-                ownerClient.dividends.getUnclaimedDividends(Dave.getAddress());
-        BigInteger ownerDividendsBnusd = ownerDividends.getOrDefault(balanced.bnusd._address().toString(),
-                BigInteger.ZERO);
-        BigInteger DaveDividendsBnusd = DaveDividends.getOrDefault(balanced.bnusd._address().toString(),
-                BigInteger.ZERO);
-
-        // LP provider(owner) should have zero dividends to claim after continuous rewards is activated
-        assertEquals(ownerDividendsBnusd, BigInteger.ZERO);
-        // As Dave staked baln , so Dave is eligible for dividends
-        assertEquals(ownerDividendsBnusd.add(DaveDividendsBnusd), expectedDividendsForBalnStaker);
-    }
-
-    @Test
     @Order(3)
     void testBBaln_daofund() {
         /*
@@ -160,7 +91,7 @@ public class DividendsIntegrationTest {
         createNewUserForBBaln();
 
         // contract is updated with bbaln changes in dividends
-        balanced.ownerClient.dividends._update(System.getProperty("java"), null);
+        // balanced.ownerClient.dividends._update(System.getProperty("java"), null);
 
         Address addressAlice = alice.getAddress();
         Address addressBob = bob.getAddress();

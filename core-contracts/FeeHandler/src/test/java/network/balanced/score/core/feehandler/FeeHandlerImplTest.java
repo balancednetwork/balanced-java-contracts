@@ -129,9 +129,9 @@ class FeeHandlerImplTest extends TestBase {
         List<Address> expectedTokens = new ArrayList<>();
         expectedTokens.add(sicxScore.getAddress());
         expectedTokens.add(baln.getAddress());
-        Object addAcceptedTokens = expectedTokens.toArray(new Address[0]);
+        Object addAcceptedToken = expectedTokens.toArray(new Address[0]);
 
-        feeHandler.invoke(admin, "setAcceptedDividendTokens", addAcceptedTokens);
+        feeHandler.invoke(admin, "setAcceptedDividendTokens", addAcceptedToken);
         assertEquals(expectedTokens, feeHandler.call("getAcceptedDividendTokens"));
     }
 
@@ -145,9 +145,9 @@ class FeeHandlerImplTest extends TestBase {
         List<Address> expectedTokens = new ArrayList<>();
         expectedTokens.add(sicxScore.getAddress());
         expectedTokens.add(baln.getAddress());
-        Object addAcceptedTokens = expectedTokens.toArray(new Address[0]);
+        Object addAcceptedToken = expectedTokens.toArray(new Address[0]);
 
-        feeHandler.invoke(admin, "setAcceptedDividendTokens", addAcceptedTokens);
+        feeHandler.invoke(admin, "setAcceptedDividendTokens", addAcceptedToken);
         assertEquals(expectedTokens, feeHandler.call("getAcceptedDividendTokens"));
     }
 
@@ -334,5 +334,5 @@ class FeeHandlerImplTest extends TestBase {
         assertEquals(BigInteger.ZERO, feeHandler.call("getSwapFeesAccruedByToken", usdc.getAddress()));
 
         assertEquals(StabilityFeeBnsud.multiply(BigInteger.TWO), feeHandler.call("getStabilityFundFeesAccrued"));
-    }  
+    }
 }

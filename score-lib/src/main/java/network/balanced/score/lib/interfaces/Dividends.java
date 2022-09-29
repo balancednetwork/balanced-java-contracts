@@ -73,7 +73,7 @@ public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress
     List<Address> getAcceptedTokens();
 
     @External
-    void addAcceptedTokens(Address _token);
+    void addAcceptedToken(Address _token);
 
     @External
     void removeAcceptedToken(Address _token);

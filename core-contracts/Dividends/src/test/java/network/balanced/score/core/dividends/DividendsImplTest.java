@@ -47,7 +47,7 @@ class DividendsImplTest extends DividendsImplTestBase {
         dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
         dividendScore.invoke(admin, "setLoans", loansScore.getAddress());
         dividendScore.invoke(admin, "setDex", dexScore.getAddress());
-        dividendScore.invoke(admin, "addAcceptedTokens", bnUSDScore.getAddress());
+        dividendScore.invoke(admin, "addAcceptedToken", bnUSDScore.getAddress());
         dividendScore.invoke(admin, "setDividendsBatchSize", batchSize);
         dividendScore.invoke(admin, "setDistributionActivationStatus", true);
 

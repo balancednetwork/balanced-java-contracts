@@ -91,7 +91,7 @@ class DividendsImplTestSetup extends DividendsImplTestBase {
         expected_list.add(balnScore.getAddress());
 
         dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
-        dividendScore.invoke(admin, "addAcceptedTokens", balnScore.getAddress());
+        dividendScore.invoke(admin, "addAcceptedToken", balnScore.getAddress());
 
         assertEquals(expected_list, dividendScore.call("getAcceptedTokens"));
     }

@@ -835,7 +835,7 @@ public class GovernanceTest extends GovernanceTestBase {
     }
 
     @Test
-    void addAcceptedTokens() {
+    void addAcceptedToken() {
         // Arrange
         Address token = Account.newScoreAccount(scoreCount++).getAddress();
         Account notOwner = sm.createAccount();
@@ -843,14 +843,14 @@ public class GovernanceTest extends GovernanceTestBase {
                 "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
 
         // Act & Assert
-        Executable withNotOwner = () -> governance.invoke(notOwner, "addAcceptedTokens", token.toString());
+        Executable withNotOwner = () -> governance.invoke(notOwner, "addAcceptedToken", token.toString());
         expectErrorMessage(withNotOwner, expectedErrorMessage);
 
         // Act
-        governance.invoke(owner, "addAcceptedTokens", token.toString());
+        governance.invoke(owner, "addAcceptedToken", token.toString());
 
         // Assert
-        verify(dividends.mock).addAcceptedTokens(token);
+        verify(dividends.mock).addAcceptedToken(token);
     }
 
     @Test

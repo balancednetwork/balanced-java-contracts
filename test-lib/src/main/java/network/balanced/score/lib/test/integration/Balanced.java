@@ -188,9 +188,6 @@ public class Balanced {
                 bnusd._address(), sicx._address(), baln._address()
         };
         ownerClient.governance.setAcceptedDividendTokens(acceptedAddress);
-        ownerClient.governance.addAcceptedTokens(String.valueOf(bnusd._address()));
-        ownerClient.governance.addAcceptedTokens(String.valueOf(sicx._address()));
-        ownerClient.governance.addAcceptedTokens(String.valueOf(baln._address()));
 
         ownerClient.bnUSD.setMinter2(stability._address());
     }

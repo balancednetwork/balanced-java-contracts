@@ -82,8 +82,8 @@ public class VoteActions {
                 gov.daoDisburse(params.get("_recipient").asString(),
                         parseDisbursement(params.get("_amounts").asArray()));
                 break;
-            case "addAcceptedTokens":
-                gov._addAcceptedTokens(params.get("_token").asString());
+            case "addAcceptedToken":
+                gov._addAcceptedToken(params.get("_token").asString());
                 break;
             case "addCollateral":
                 gov._addCollateral(Address.fromString(params.get("_token_address").asString()),

@@ -250,7 +250,7 @@ public class DividendsImpl implements Dividends {
     }
 
     @External
-    public void addAcceptedTokens(Address _token) {
+    public void addAcceptedToken(Address _token) {
         only(admin);
         isContract(_token);
 
