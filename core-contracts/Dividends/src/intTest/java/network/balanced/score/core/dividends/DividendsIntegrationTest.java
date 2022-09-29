@@ -111,7 +111,7 @@ public class DividendsIntegrationTest {
         balanced.increaseDay(1);
         balanced.syncDistributions();
         // claim rewards for the user
-        ownerClient.rewards.claimRewards();
+        ownerClient.rewards.claimRewards(null);
 
         // provides liquidity to baln/Sicx pool by owner
         ownerClient.baln.transfer(balanced.dex._address(), lpAmount, data.toString().getBytes());
@@ -594,7 +594,7 @@ public class DividendsIntegrationTest {
             balanced.syncDistributions();
         }
 
-        balanced.ownerClient.rewards.claimRewards();
+        balanced.ownerClient.rewards.claimRewards(null);
         // sent baln token to two users
         balanced.ownerClient.baln.transfer(addressAlice, collateral, new byte[0]);
         balanced.ownerClient.baln.transfer(addressBob, collateral, new byte[0]);
