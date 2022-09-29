@@ -25,7 +25,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import score.Address;
 import score.Context;
-import score.UserRevertedException;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -48,7 +47,7 @@ public class BoostedBalnGeneralIntegrationTest implements ScoreIntegrationTest {
         owner = balanced.ownerClient;
     }
 
-    DefaultScoreClient getOwnerClient(){
+    DefaultScoreClient getOwnerClient() {
         return new DefaultScoreClient(
                 owner.baln.endpoint(),
                 owner.baln._nid(),
@@ -58,8 +57,8 @@ public class BoostedBalnGeneralIntegrationTest implements ScoreIntegrationTest {
     }
 
     @Test
-    void testCreateLockIncreaseTimeAndDeposit(){
-        DefaultScoreClient ownerClient  = getOwnerClient();
+    void testCreateLockIncreaseTimeAndDeposit() {
+        DefaultScoreClient ownerClient = getOwnerClient();
         owner.daofund.addAddressToSetdb();
         balanced.syncDistributions();
         ownerClient._transfer(owner.dex._address(), BigInteger.valueOf(1000).multiply(EXA), null);
@@ -68,8 +67,8 @@ public class BoostedBalnGeneralIntegrationTest implements ScoreIntegrationTest {
         owner.boostedBaln.checkpoint();
         score.Address userAddress = score.Address.fromString(balanced.owner.getAddress().toString());
         BigInteger updatedBalnHolding = owner.rewards.getBalnHolding(userAddress);
-        System.out.println("baln holding from reward: "+updatedBalnHolding);
-        owner.rewards.claimRewards(null);
+        System.out.println("baln holding from reward: " + updatedBalnHolding);
+        owner.rewards.claimRewards();
         BigInteger availableBalnBalance = owner.baln.availableBalanceOf(userAddress);
         System.out.println("available balance of baln: " + availableBalnBalance);
         System.out.println("total balance of baln: " + owner.baln.balanceOf(userAddress));
@@ -85,48 +84,55 @@ public class BoostedBalnGeneralIntegrationTest implements ScoreIntegrationTest {
             owner.baln.transfer(owner.boostedBaln._address(), availableBalnBalance, data.getBytes());
         });
 
-        long unlockTime = (System.currentTimeMillis()*1000)+(WEEK_IN_MICRO_SECONDS.multiply(BigInteger.valueOf(4))).longValue();
-        System.out.println("unlock time is: "+unlockTime);
+        long unlockTime =
+                (System.currentTimeMillis() * 1000) + (WEEK_IN_MICRO_SECONDS.multiply(BigInteger.valueOf(4))).longValue();
+        System.out.println("unlock time is: " + unlockTime);
         String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
-        System.out.println("transfer amount: "+availableBalnBalance.divide(BigInteger.TWO));
+        System.out.println("transfer amount: " + availableBalnBalance.divide(BigInteger.TWO));
         owner.baln.transfer(owner.boostedBaln._address(), availableBalnBalance.divide(BigInteger.TWO), data.getBytes());
 
         BigInteger balance = owner.boostedBaln.balanceOf(userAddress, BigInteger.ZERO);
-        System.out.println("balance is: "+balance);
+        System.out.println("balance is: " + balance);
 
-        assertEquals(balance.divide(EXA), getExpectedBalance(availableBalnBalance.divide(BigInteger.TWO), unlockTime).divide(EXA));
+        assertEquals(balance.divide(EXA),
+                getExpectedBalance(availableBalnBalance.divide(BigInteger.TWO), unlockTime).divide(EXA));
 
         BigInteger totalSupply = owner.boostedBaln.totalSupply(BigInteger.valueOf(unlockTime));
-        Context.println("total supply is: "+totalSupply);
-        unlockTime = (unlockTime+(WEEK_IN_MICRO_SECONDS.multiply(BigInteger.TWO)).longValue());
+        Context.println("total supply is: " + totalSupply);
+        unlockTime = (unlockTime + (WEEK_IN_MICRO_SECONDS.multiply(BigInteger.TWO)).longValue());
         data = "{\"method\":\"increaseAmount\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
-        owner.baln.transfer(owner.boostedBaln._address(), availableBalnBalance.divide(BigInteger.valueOf(4)), data.getBytes());
+        owner.baln.transfer(owner.boostedBaln._address(), availableBalnBalance.divide(BigInteger.valueOf(4)),
+                data.getBytes());
         BigInteger newBalance = owner.boostedBaln.balanceOf(userAddress, BigInteger.ZERO);
-        System.out.println("new balance is: "+newBalance);
-        BigInteger expectedValue = (getExpectedBalance(availableBalnBalance.multiply(BigInteger.valueOf(3)).divide(BigInteger.valueOf(4)), unlockTime)).divide(EXA);
-        System.out.println("expected value is: "+expectedValue);
+        System.out.println("new balance is: " + newBalance);
+        BigInteger expectedValue =
+                (getExpectedBalance(availableBalnBalance.multiply(BigInteger.valueOf(3)).divide(BigInteger.valueOf(4)), unlockTime)).divide(EXA);
+        System.out.println("expected value is: " + expectedValue);
         assertEquals(newBalance.divide(EXA), expectedValue);
 
         BigInteger finalTotalSupply = owner.boostedBaln.totalSupply(BigInteger.valueOf(unlockTime));
-        System.out.println("final total supply is: "+finalTotalSupply);
+        System.out.println("final total supply is: " + finalTotalSupply);
 
         BigInteger totalLocked = owner.boostedBaln.getTotalLocked();
-        System.out.println("total locked is: "+totalLocked);
-        assertEquals(totalLocked.divide(EXA), availableBalnBalance.multiply(BigInteger.valueOf(3)).divide(BigInteger.valueOf(4)).divide(EXA));
+        System.out.println("total locked is: " + totalLocked);
+        assertEquals(totalLocked.divide(EXA),
+                availableBalnBalance.multiply(BigInteger.valueOf(3)).divide(BigInteger.valueOf(4)).divide(EXA));
 
         List<Address> users = owner.boostedBaln.getUsers(0, 100);
-        assert users.size()==1;
+        assert users.size() == 1;
         assertEquals(users.get(0), owner.getAddress());
 
         BigInteger lockedEnd = owner.boostedBaln.lockedEnd(owner.getAddress());
         assertEquals(lockedEnd, BigInteger.valueOf(getLockEnd(unlockTime)));
 
         BigInteger lastUserSlope = owner.boostedBaln.getLastUserSlope(owner.getAddress());
-        assertEquals(lastUserSlope, getSlope(availableBalnBalance.multiply(BigInteger.valueOf(3)).divide(BigInteger.valueOf(4)), unlockTime));
+        assertEquals(lastUserSlope,
+                getSlope(availableBalnBalance.multiply(BigInteger.valueOf(3)).divide(BigInteger.valueOf(4)),
+                        unlockTime));
     }
 
     @Test
-    public void testZeroAddressCheckPoint(){
+    public void testZeroAddressCheckPoint() {
         owner.boostedBaln.checkpoint();
         BigInteger balanceOfZeroAddress = owner.baln.balanceOf(EOA_ZERO);
         assertEquals(balanceOfZeroAddress, BigInteger.ZERO);
@@ -138,7 +144,7 @@ public class BoostedBalnGeneralIntegrationTest implements ScoreIntegrationTest {
         assertEquals(balanceOfZeroAddress2, BigInteger.ZERO);
     }
 
-    void waitForADay(){
+    void waitForADay() {
         balanced.increaseDay(1);
     }
 

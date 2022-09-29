@@ -93,9 +93,9 @@ public class GovernanceImpl {
     }
 
     @External
-    public void setVoteDurationLimits(BigInteger max, BigInteger min) {
+    public void setVoteDurationLimits(BigInteger min, BigInteger max) {
         onlyOwner();
-        _setVoteDurationLimits(max, min);
+        _setVoteDurationLimits(min, max);
     }
 
     @External(readonly = true)
