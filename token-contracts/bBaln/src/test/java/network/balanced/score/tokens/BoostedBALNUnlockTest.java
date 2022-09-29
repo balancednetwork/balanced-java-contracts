@@ -180,7 +180,7 @@ public class BoostedBALNUnlockTest extends AbstractBoostedBalnTest {
         long low = week * 2;
         long high = week * 52;
         return Stream.of(Arguments.of(ThreadLocalRandom.current().nextLong(low, high + 1),
-                ThreadLocalRandom.current().nextLong(week, low)),
+                        ThreadLocalRandom.current().nextLong(week, low)),
                 Arguments.of(ThreadLocalRandom.current().nextLong(low, high + 1),
                         ThreadLocalRandom.current().nextLong(week, low)),
                 Arguments.of(ThreadLocalRandom.current().nextLong(low, high + 1),
