@@ -336,7 +336,14 @@ public class RewardsImpl implements Rewards {
     }
 
     @External(readonly = true)
-    public Map<String, Map<String, BigInteger>> getBoostData(Address user, String[] sources) {
+    public Map<String, Map<String, BigInteger>> getBoostData(Address user, @Optional String[] sources) {
+        if (sources == null) {
+            sources = getAllSources();
+        }
+
+        BigInteger boostedBalance = fetchBoostedBalance(user);
+        BigInteger boostedSupply = fetchBoostedSupply();
+
         Map<String, Map<String, BigInteger>> boostData = new HashMap<>();
         for (String name : sources) {
             Map<String, BigInteger> sourceData = new HashMap<>();
@@ -347,6 +354,8 @@ public class RewardsImpl implements Rewards {
             sourceData.put("workingSupply", datasource.getWorkingSupply(true));
             sourceData.put("balance", balanceAndSupply.get(BALANCE));
             sourceData.put("supply", balanceAndSupply.get(TOTAL_SUPPLY));
+            sourceData.put("boostedBalance", boostedBalance);
+            sourceData.put("boostedSupply", boostedSupply);
 
             boostData.put(name, sourceData);
         }

@@ -169,8 +169,8 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
         BigInteger loansBalance = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger initialSupply = BigInteger.valueOf(1_000_000).multiply(EXA);
         BigInteger currentSupply = initialSupply.add(loansBalance);
-        BigInteger bBalnBalance = BigInteger.valueOf(200).multiply(EXA);
-        BigInteger bBalnSupply = BigInteger.valueOf(400).multiply(EXA);
+        BigInteger bBalnSupply = BigInteger.valueOf(40000).multiply(EXA);
+        BigInteger bBalnBalance = loansBalance.multiply(bBalnSupply).divide(currentSupply);
 
         // Act
         when(bBaln.mock.balanceOf(eq(account.getAddress()), any(BigInteger.class))).thenReturn(BigInteger.ZERO);
