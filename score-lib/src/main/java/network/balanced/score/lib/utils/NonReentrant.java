@@ -14,26 +14,24 @@
  * limitations under the License.
  */
 
-package network.balanced.score.tokens;
+package network.balanced.score.lib.utils;
+
+import java.util.Arrays;
 
 import score.Context;
 import score.VarDB;
 
 public class NonReentrant {
-    private final VarDB<Boolean> lock;
+    private static final VarDB<byte[]> txLock  = Context.newVarDB("global_tx_locked", byte[].class);
 
-    public NonReentrant(String contractName) {
-        this.lock = Context.newVarDB(contractName + "_locked", Boolean.class);
-    }
-
-    public void updateLock(boolean lock) {
-        boolean lockStatus = this.lock.getOrDefault(false);
-        if (lock) {
-            Context.require(!lockStatus, "Reentrancy Lock: Can't change. The contract lock state: "  + lockStatus);
-            this.lock.set(true);
-        } else {
-            Context.require(lockStatus, "Reentrancy Lock: Can't change. The contract lock state: " + lockStatus);
-            this.lock.set(false);
+    static public void globalReentryLock() {
+        byte[] txHash = Context.getTransactionHash();
+        if (txHash == null) {
+            return;
         }
+
+        byte[] lastTx = txLock.getOrDefault(new byte[0]);
+        Context.require(!Arrays.equals(txHash, lastTx), "Reentrancy Lock: Can't call multiple times in one transaction");
+        txLock.set(txHash);
     }
 }

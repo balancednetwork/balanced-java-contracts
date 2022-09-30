@@ -28,11 +28,17 @@ import network.balanced.score.lib.interfaces.tokens.IRC2MintableScoreInterface;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockContract;
 
+import java.math.BigInteger;
+
+import static org.mockito.Mockito.when;
+
 public class ReserveFundTestBase extends UnitTest {
     public static final ServiceManager sm = getServiceManager();
 
     public static final Account owner = sm.createAccount();
     Account admin = sm.createAccount();
+    public static final BigInteger nrDecimalsIETH = BigInteger.valueOf(6);
+    public static final BigInteger iETHDecimals = BigInteger.TEN.pow(6);
 
 
     public static final Account governanceScore = Account.newScoreAccount(1);
@@ -51,6 +57,9 @@ public class ReserveFundTestBase extends UnitTest {
         ieth = new MockContract<>(IRC2MintableScoreInterface.class, sm, admin);
         balancedOracle = new MockContract<>(BalancedOracleScoreInterface.class, sm, admin);
         reserve = sm.deploy(owner, ReserveFund.class, governanceScore.getAddress());
+
+        when(sicx.mock.decimals()).thenReturn(BigInteger.valueOf(18));
+        when(ieth.mock.decimals()).thenReturn(nrDecimalsIETH);
     }
 }
 

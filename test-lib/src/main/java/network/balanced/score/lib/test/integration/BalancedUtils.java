@@ -31,9 +31,8 @@ public class BalancedUtils {
     public static void executeVoteActions(Balanced balanced, BalancedClient voter, String name, JsonArray actions) {
         BigInteger day = voter.governance.getDay();
         BigInteger voteStart = day.add(BigInteger.TWO);
-        BigInteger snapshot = day.add(BigInteger.ONE);
-
-        voter.governance.defineVote(name, "test", voteStart, snapshot, actions.toString());
+        String forumLink = "https://gov.balanced.network/";
+        voter.governance.defineVote(name, "test", voteStart, BigInteger.ONE, forumLink, actions.toString());
         BigInteger id = voter.governance.getVoteIndex(name);
         balanced.increaseDay(2);
 
@@ -62,7 +61,20 @@ public class BalancedUtils {
     public static Address createIRC2Token(BalancedClient owner, String name, String symbol) {
         String path = System.getProperty("user.dir") + "/../../test-lib/util-contracts/IRC2Token.jar";
         DefaultScoreClient assetClient = _deploy(Env.getDefaultChain().getEndpointURL(),
-                Env.getDefaultChain().networkId, owner.wallet, path, Map.of("name", name, "symbol", symbol));
+                Env.getDefaultChain().networkId,
+                owner.wallet,
+                path,
+                Map.of("name", name, "symbol", symbol, "decimals", BigInteger.valueOf(18)));
+        return assetClient._address();
+    }
+
+    public static Address createIRC2Token(BalancedClient owner, String name, String symbol, BigInteger decimals) {
+        String path = System.getProperty("user.dir") + "/../../test-lib/util-contracts/IRC2Token.jar";
+        DefaultScoreClient assetClient = _deploy(Env.getDefaultChain().getEndpointURL(),
+                Env.getDefaultChain().networkId,
+                owner.wallet,
+                path,
+                Map.of("name", name, "symbol", symbol, "decimals", decimals));
         return assetClient._address();
     }
 

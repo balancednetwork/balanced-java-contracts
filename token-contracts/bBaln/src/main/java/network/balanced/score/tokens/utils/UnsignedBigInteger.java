@@ -20,7 +20,7 @@ import score.UserRevertedException;
 
 import java.math.BigInteger;
 
-public class UnsignedBigInteger implements Comparable<UnsignedBigInteger>{
+public class UnsignedBigInteger implements Comparable<UnsignedBigInteger> {
 
     private final BigInteger value;
 
