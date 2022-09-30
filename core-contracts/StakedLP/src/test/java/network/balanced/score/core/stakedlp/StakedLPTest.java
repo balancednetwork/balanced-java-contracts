@@ -60,10 +60,8 @@ public class StakedLPTest extends UnitTest {
         dex = new MockContract<>(DexScoreInterface.class, sm, owner);
         rewards = new MockContract<>(RewardsScoreInterface.class, sm, owner);
 
-        when(dex.mock.getPoolName(BigInteger.ONE)).thenReturn(poolOneName);
-        when(dex.mock.getPoolName(BigInteger.TWO)).thenReturn(poolTwoName);
-        when(rewards.mock.getSourceData(poolOneName)).thenReturn(Map.of("contract_address", dex.getAddress()));
-        when(rewards.mock.getSourceData(poolTwoName)).thenReturn(Map.of("contract_address", dex.getAddress()));
+        stakedLpScore.invoke(governanceScore, "addDataSource", BigInteger.ONE, poolOneName);
+        stakedLpScore.invoke(governanceScore, "addDataSource", BigInteger.TWO, poolTwoName);
     }
 
     @Test

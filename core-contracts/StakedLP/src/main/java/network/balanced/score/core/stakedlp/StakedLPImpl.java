@@ -24,6 +24,7 @@ import scorex.util.HashMap;
 
 import java.math.BigInteger;
 import java.util.Map;
+import java.util.List;
 
 import static network.balanced.score.lib.utils.Check.*;
 
@@ -44,8 +45,19 @@ public class StakedLPImpl implements StakedLP {
     private static final VarDB<Address> rewards = Context.newVarDB("rewardsAddress", Address.class);
 
     public StakedLPImpl(Address governance) {
-        Context.require(governance.isContract(), "StakedLP: Governance address should be a contract");
-        StakedLPImpl.governance.set(governance);
+        if (StakedLPImpl.governance.get() == null) {
+            Context.require(governance.isContract(), "StakedLP: Governance address should be a contract");
+            StakedLPImpl.governance.set(governance);
+        } else if (dataSourceIds.get("sICX/bnUSD") == null) {
+            List<String> dataSources = (List<String>) Context.call(rewards.get(), "getDataSourceNames");
+            for (String source : dataSources) {
+                if (source.equals("Loans") || source.equals("sICX/ICX")) {
+                    continue;
+                }
+
+                migratePool(source);
+            }
+        }
     }
 
     /*
@@ -188,15 +200,13 @@ public class StakedLPImpl implements StakedLP {
 
     private String getSourceName(BigInteger id) {
         String name = dataSourceNames.get(id);
-        if (name != null) {
-            return name;
-        }
-
-        name = Context.call(String.class, dex.get(), "getPoolName", id);
-        Context.require(name != null && !name.equals(""), "Pool id: " + id + " is not a valid pool");
-        dataSourceNames.set(id, name);
-        dataSourceIds.set(name, id);
-
+        Context.require(name != null, "Pool id: " + id + " is not a valid pool");
         return name;
+    }
+
+    private void migratePool(String name) {
+        BigInteger id = Context.call(BigInteger.class, dex.get(), "lookupPid", name);
+        dataSourceIds.set(name, id);
+        dataSourceNames.set(id, name);
     }
 }
