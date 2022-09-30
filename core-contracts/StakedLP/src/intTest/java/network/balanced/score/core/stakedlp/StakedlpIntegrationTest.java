@@ -120,7 +120,7 @@ public class StakedlpIntegrationTest {
         BigInteger balance = dex.balanceOf(userAddress, poolId);
 
         //set name
-        governance.setMarketName(poolId, "test");
+        governance.addStakedLpDataSource("test", poolId);
 
         assertEquals(dex.balanceOf(userAddress, poolId), balance);
         assertEquals(stakedlp.balanceOf(userAddress, poolId), BigInteger.ZERO);
