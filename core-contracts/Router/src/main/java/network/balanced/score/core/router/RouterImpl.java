@@ -169,13 +169,13 @@ public class RouterImpl implements Router {
             Context.require(balance.compareTo(_minReceive) >= 0,
                     TAG + ": Below minimum receive amount of " + _minReceive);
             Context.transfer(from, balance);
-            Route(fromAddress, EOA_ZERO, fromAmount, balance);
+            Route(fromAddress, fromAmount, EOA_ZERO, balance);
         } else {
             BigInteger balance = (BigInteger) Context.call(currentToken, "balanceOf", Context.getAddress());
             Context.require(balance.compareTo(_minReceive) >= 0,
                     TAG + ": Below minimum receive amount of " + _minReceive);
             Context.call(currentToken, "transfer", from, balance);
-            Route(fromAddress, currentToken, fromAmount, balance);
+            Route(fromAddress, fromAmount, currentToken, balance);
         }
     }
 
@@ -262,7 +262,7 @@ public class RouterImpl implements Router {
         only(dex);
     }
 
-    @EventLog(indexed = 2)
-    public void Route(Address from, Address to, BigInteger fromAmount, BigInteger toAmount) {
+    @EventLog(indexed = 1)
+    public void Route(Address from, BigInteger fromAmount, Address to, BigInteger toAmount) {
     }
 }
