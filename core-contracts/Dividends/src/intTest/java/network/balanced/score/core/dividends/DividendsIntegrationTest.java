@@ -290,7 +290,7 @@ public class DividendsIntegrationTest {
 
     @Test
     @Order(5)
-    void testBBaln_claimOnly(){
+    void testBBaln_claimOnly() {
         /* Eve claims the dividends after the contract is updated
         without unstaking staked baln token or without creating lock */
         Address addressEve = Eve.getAddress();
@@ -320,7 +320,7 @@ public class DividendsIntegrationTest {
 
     @Test
     @Order(6)
-    void testBBaln_claimAfterUnstake(){
+    void testBBaln_claimAfterUnstake() {
         /* Ferry claims the dividends after unstaking baln token. */
         Address addressFerry = Ferry.getAddress();
         BigInteger unclaimedDividendsBeforeFerry =

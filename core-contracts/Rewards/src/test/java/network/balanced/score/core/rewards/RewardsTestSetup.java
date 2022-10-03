@@ -22,11 +22,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import score.Address;
 
-import static network.balanced.score.core.rewards.utils.RewardsConstants.HUNDRED_PERCENTAGE;
-
 import java.math.BigInteger;
 import java.util.List;
 
+import static network.balanced.score.core.rewards.utils.RewardsConstants.HUNDRED_PERCENTAGE;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static org.junit.jupiter.api.Assertions.*;
 

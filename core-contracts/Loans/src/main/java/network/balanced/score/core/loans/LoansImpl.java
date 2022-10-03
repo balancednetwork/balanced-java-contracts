@@ -754,7 +754,6 @@ public class LoansImpl implements Loans {
 
         Context.call(rewards.get(), "updateRewardsData", "Loans", oldTotalDebt, from, oldUserDebt);
 
-
         borrowAsset.mintTo(from, amount);
         String logMessage = "Loan of " + amount + " " + assetToBorrow + " from Balanced.";
         OriginateLoan(from, assetToBorrow, amount, logMessage);

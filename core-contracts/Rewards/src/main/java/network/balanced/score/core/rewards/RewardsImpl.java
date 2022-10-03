@@ -16,44 +16,29 @@
 
 package network.balanced.score.core.rewards;
 
-import static network.balanced.score.core.rewards.utils.RewardsConstants.AMOUNT;
-import static network.balanced.score.core.rewards.utils.RewardsConstants.DAOFUND;
-import static network.balanced.score.core.rewards.utils.RewardsConstants.DEFAULT_BATCH_SIZE;
-import static network.balanced.score.core.rewards.utils.RewardsConstants.HUNDRED_PERCENTAGE;
-import static network.balanced.score.core.rewards.utils.RewardsConstants.BALANCE;
-import static network.balanced.score.core.rewards.utils.RewardsConstants.TOTAL_SUPPLY;
-import static network.balanced.score.core.rewards.utils.RewardsConstants.IDS;
-import static network.balanced.score.core.rewards.utils.RewardsConstants.WEIGHT;
-import static network.balanced.score.core.rewards.utils.RewardsConstants.WORKER_TOKENS;
-import static network.balanced.score.lib.utils.Check.isContract;
-import static network.balanced.score.lib.utils.Check.only;
-import static network.balanced.score.lib.utils.Check.onlyOwner;
-import static network.balanced.score.lib.utils.Constants.EXA;
-import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
-import static network.balanced.score.lib.utils.DBHelpers.contains;
-import static network.balanced.score.lib.utils.Math.pow;
+import network.balanced.score.core.rewards.utils.RewardsConstants;
+import network.balanced.score.lib.interfaces.Rewards;
+import network.balanced.score.lib.structs.DistributionPercentage;
+import network.balanced.score.lib.structs.RewardsDataEntry;
+import network.balanced.score.lib.utils.SetDB;
+import score.*;
+import score.annotation.EventLog;
+import score.annotation.External;
+import score.annotation.Optional;
+import scorex.util.ArrayList;
+import scorex.util.HashMap;
 
 import java.math.BigInteger;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import network.balanced.score.core.rewards.utils.RewardsConstants;
-import network.balanced.score.lib.interfaces.Rewards;
-import network.balanced.score.lib.structs.DistributionPercentage;
-import network.balanced.score.lib.structs.RewardsDataEntry;
-import network.balanced.score.lib.utils.SetDB;
-import score.Address;
-import score.ArrayDB;
-import score.BranchDB;
-import score.Context;
-import score.DictDB;
-import score.VarDB;
-import score.annotation.EventLog;
-import score.annotation.External;
-import score.annotation.Optional;
-import scorex.util.ArrayList;
-import scorex.util.HashMap;
+import static network.balanced.score.core.rewards.utils.RewardsConstants.*;
+import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
+import static network.balanced.score.lib.utils.DBHelpers.contains;
+import static network.balanced.score.lib.utils.Math.pow;
 
 /***
  * There can be unclaimed rewards if there are no participants in the data source. This can happen in testnet and
@@ -170,11 +155,8 @@ public class RewardsImpl implements Rewards {
             DataSourceImpl dataSource = DataSourceDB.get(name);
             BigInteger currentTime = getTime();
 
-            BigInteger sourceRewards = dataSource.updateSingleUserData(currentTime,
-                                                                       dataSource.getWorkingSupply(true),
-                                                                       _holder,
-                                                                       dataSource.getWorkingBalance(_holder, true),
-                                                                       true);
+            BigInteger sourceRewards = dataSource.updateSingleUserData(currentTime, dataSource.getWorkingSupply(true)
+                    , _holder, dataSource.getWorkingBalance(_holder, true), true);
 
             accruedRewards = accruedRewards.add(sourceRewards);
         }
@@ -330,8 +312,8 @@ public class RewardsImpl implements Rewards {
     public Map<String, BigInteger> getWorkingBalanceAndSupply(String _name, Address _user) {
         DataSourceImpl datasource = DataSourceDB.get(_name);
         return Map.of(
-            "workingSupply", datasource.getWorkingSupply(true),
-            "workingBalance", datasource.getWorkingBalance(_user, true)
+                "workingSupply", datasource.getWorkingSupply(true),
+                "workingBalance", datasource.getWorkingBalance(_user, true)
         );
     }
 
@@ -532,8 +514,8 @@ public class RewardsImpl implements Rewards {
 
     @External
     public void updateRewardsData(String _name, BigInteger _totalSupply, Address _user, BigInteger _balance) {
-        Context.require(dataProviders.contains(Context.getCaller()), TAG + ": Only data provider are allowed to update" +
-                " rewards data");
+        Context.require(dataProviders.contains(Context.getCaller()), TAG + ": Only data provider are allowed to " +
+                "update rewards data");
 
         BigInteger currentTime = getTime();
         distribute();
@@ -542,13 +524,14 @@ public class RewardsImpl implements Rewards {
         BigInteger boostedSupply = fetchBoostedSupply();
         BigInteger workingBalance = dataSource.getWorkingBalance(_user, _balance, false);
         BigInteger workingSupply = dataSource.getWorkingSupply(_totalSupply, false);
-        updateUserAccruedRewards(_name, currentTime, workingSupply, dataSource, _user, workingBalance, boostedBalance, boostedSupply);
+        updateUserAccruedRewards(_name, currentTime, workingSupply, dataSource, _user, workingBalance, boostedBalance
+                , boostedSupply);
     }
 
     @External
     public void updateBatchRewardsData(String _name, BigInteger _totalSupply, RewardsDataEntry[] _data) {
-        Context.require(dataProviders.contains(Context.getCaller()), TAG + ": Only data provider are allowed to update" +
-                " rewards data");
+        Context.require(dataProviders.contains(Context.getCaller()), TAG + ": Only data provider are allowed to " +
+                "update rewards data");
 
         BigInteger currentTime = getTime();
         distribute();
@@ -562,7 +545,8 @@ public class RewardsImpl implements Rewards {
             BigInteger previousBalance = entry._balance;
             BigInteger workingBalance = dataSource.getWorkingBalance(user, previousBalance, false);
             BigInteger workingSupply = dataSource.getWorkingSupply(_totalSupply, false);
-            updateUserAccruedRewards(_name, currentTime, workingSupply, dataSource, user, workingBalance, boostedBalance, boostedSupply);
+            updateUserAccruedRewards(_name, currentTime, workingSupply, dataSource, user, workingBalance,
+                    boostedBalance, boostedSupply);
         }
     }
 
@@ -590,7 +574,8 @@ public class RewardsImpl implements Rewards {
     @External
     public void setBoostWeight(BigInteger weight) {
         only(admin);
-        Context.require(weight.compareTo(HUNDRED_PERCENTAGE.divide(BigInteger.valueOf(100))) >= 0, "Boost weight has to be above 1%");
+        Context.require(weight.compareTo(HUNDRED_PERCENTAGE.divide(BigInteger.valueOf(100))) >= 0, "Boost weight has " +
+                "to be above 1%");
         Context.require(weight.compareTo(HUNDRED_PERCENTAGE) <= 0, "Boost weight has to be below 100%");
         boostWeight.set(weight);
     }
@@ -634,7 +619,8 @@ public class RewardsImpl implements Rewards {
         return sources;
     }
 
-    private void updateAllUserRewards(Address user, String[] sources, BigInteger boostedBalance, BigInteger boostedSupply) {
+    private void updateAllUserRewards(Address user, String[] sources, BigInteger boostedBalance,
+                                      BigInteger boostedSupply) {
         distribute();
         BigInteger currentTime = getTime();
         for (String name : sources) {
@@ -645,19 +631,17 @@ public class RewardsImpl implements Rewards {
             }
 
             BigInteger workingSupply = dataSource.getWorkingSupply(false);
-            updateUserAccruedRewards(name, currentTime, workingSupply, dataSource, user, workingBalance, boostedBalance, boostedSupply);
+            updateUserAccruedRewards(name, currentTime, workingSupply, dataSource, user, workingBalance,
+                    boostedBalance, boostedSupply);
         }
     }
 
-    private void updateUserAccruedRewards(String _name, BigInteger currentTime, BigInteger prevWorkingSupply, DataSourceImpl dataSource,
-            Address user, BigInteger prevWorkingBalance, BigInteger boostedBalance, BigInteger boostedSupply) {
+    private void updateUserAccruedRewards(String _name, BigInteger currentTime, BigInteger prevWorkingSupply,
+                                          DataSourceImpl dataSource, Address user, BigInteger prevWorkingBalance,
+                                          BigInteger boostedBalance, BigInteger boostedSupply) {
 
-        BigInteger accruedRewards =
-            dataSource.updateSingleUserData(currentTime,
-                                            prevWorkingSupply,
-                                            user,
-                                            prevWorkingBalance,
-                                            false);
+        BigInteger accruedRewards = dataSource.updateSingleUserData(currentTime, prevWorkingSupply, user,
+                prevWorkingBalance, false);
         dataSource.updateWorkingBalanceAndSupply(user, boostedBalance, boostedSupply);
 
         if (accruedRewards.compareTo(BigInteger.ZERO) > 0) {
@@ -841,7 +825,7 @@ public class RewardsImpl implements Rewards {
         }
     }
 
-    private BigInteger fetchBoostedBalance(Address user)  {
+    private BigInteger fetchBoostedBalance(Address user) {
         try {
             return (BigInteger) RewardsImpl.call(boostedBaln.get(), "balanceOf", user, BigInteger.ZERO);
         } catch (Exception e) {
@@ -849,7 +833,7 @@ public class RewardsImpl implements Rewards {
         }
     }
 
-    private BigInteger fetchBoostedSupply()  {
+    private BigInteger fetchBoostedSupply() {
         try {
             return (BigInteger) RewardsImpl.call(boostedBaln.get(), "totalSupply", BigInteger.ZERO);
         } catch (Exception e) {

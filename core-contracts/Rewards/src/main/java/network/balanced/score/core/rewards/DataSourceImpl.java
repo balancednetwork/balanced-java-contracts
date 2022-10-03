@@ -16,22 +16,16 @@
 
 package network.balanced.score.core.rewards;
 
-import static network.balanced.score.lib.utils.Constants.EXA;
-import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
-import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
-import static network.balanced.score.core.rewards.utils.RewardsConstants.BALANCE;
-import static network.balanced.score.core.rewards.utils.RewardsConstants.TOTAL_SUPPLY;
 import network.balanced.score.lib.interfaces.DataSourceScoreInterface;
+import score.*;
+import scorex.util.HashMap;
 
 import java.math.BigInteger;
 import java.util.Map;
 
-import score.Address;
-import score.BranchDB;
-import score.Context;
-import score.DictDB;
-import score.VarDB;
-import scorex.util.HashMap;
+import static network.balanced.score.core.rewards.utils.RewardsConstants.BALANCE;
+import static network.balanced.score.core.rewards.utils.RewardsConstants.TOTAL_SUPPLY;
+import static network.balanced.score.lib.utils.Constants.*;
 
 public class DataSourceImpl {
     private final BranchDB<String, VarDB<Address>> contractAddress = Context.newBranchDB("contract_address",
@@ -40,8 +34,8 @@ public class DataSourceImpl {
     private final BranchDB<String, VarDB<BigInteger>> day = Context.newBranchDB("day", BigInteger.class);
     private final BranchDB<String, VarDB<Boolean>> precomp = Context.newBranchDB("precomp", Boolean.class);
     private final BranchDB<String, VarDB<Integer>> offset = Context.newBranchDB("offset", Integer.class);
-    private final BranchDB<String,  VarDB<BigInteger>> workingSupply = Context.newBranchDB("working_supply",
-    BigInteger.class);
+    private final BranchDB<String, VarDB<BigInteger>> workingSupply = Context.newBranchDB("working_supply",
+            BigInteger.class);
     private final BranchDB<String, DictDB<BigInteger, BigInteger>> totalValue = Context.newBranchDB("total_value",
             BigInteger.class);
     private final BranchDB<String, DictDB<BigInteger, BigInteger>> totalDist = Context.newBranchDB("total_dist",
@@ -50,11 +44,11 @@ public class DataSourceImpl {
             BigInteger.class);
     private final BranchDB<String, DictDB<Address, BigInteger>> userWeight = Context.newBranchDB("user_weight",
             BigInteger.class);
-    private final BranchDB<String, DictDB<Address, BigInteger>> userWorkingBalance = Context.newBranchDB("user_working_balance",
-        BigInteger.class);
+    private final BranchDB<String, DictDB<Address, BigInteger>> userWorkingBalance = Context.newBranchDB(
+            "user_working_balance", BigInteger.class);
 
     private final BranchDB<String, VarDB<BigInteger>> lastUpdateTimeUs = Context.newBranchDB("last_update_us",
-        BigInteger.class);
+            BigInteger.class);
     private final BranchDB<String, VarDB<BigInteger>> totalWeight = Context.newBranchDB("running_total",
             BigInteger.class);
     private final BranchDB<String, VarDB<BigInteger>> totalSupply = Context.newBranchDB("total_supply",
@@ -263,7 +257,8 @@ public class DataSourceImpl {
         BigInteger previousWorkingBalance = getWorkingBalance(user);
         BigInteger previousWorkingSupply = getWorkingSupply();
 
-        BigInteger newTotalWorkingSupply = previousWorkingSupply.subtract(previousWorkingBalance).add(newWorkingBalance);
+        BigInteger newTotalWorkingSupply =
+                previousWorkingSupply.subtract(previousWorkingBalance).add(newWorkingBalance);
 
         setWorkingBalance(user, newWorkingBalance);
         setWorkingSupply(newTotalWorkingSupply);
