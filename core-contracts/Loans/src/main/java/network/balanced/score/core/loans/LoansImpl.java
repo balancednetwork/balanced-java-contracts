@@ -584,6 +584,14 @@ public class LoansImpl implements Loans {
     }
 
     @External
+    public void sellCollateral(BigInteger collateralAmountToSell, String collateralSymbol,
+                               BigInteger minimumDebtRepaid) {
+        loansOn();
+        Address from = Context.getCaller();
+        sellUserCollateral(from, collateralAmountToSell, collateralSymbol, minimumDebtRepaid);
+    }
+
+    @External
     public void liquidate(Address _owner, @Optional String _collateralSymbol) {
         loansOn();
         String collateralSymbol = optionalDefault(_collateralSymbol, SICX_SYMBOL);
@@ -615,8 +623,6 @@ public class LoansImpl implements Loans {
             BigInteger debt = position.getDebt(collateralSymbol, symbol);
             BigInteger oldUserDebt = position.getTotalDebt(symbol);
             if (debt.compareTo(BigInteger.ZERO) > 0) {
-                Context.call(rewards.get(), "updateRewardsData", "Loans", oldTotalDebt, _owner, oldUserDebt);
-
                 BigInteger badDebt = asset.getBadDebt(collateralSymbol);
                 asset.setBadDebt(collateralSymbol, badDebt.add(debt));
                 BigInteger symbolDebt = debt.multiply(assetContract.priceInLoop()).divide(EXA);
@@ -625,6 +631,7 @@ public class LoansImpl implements Loans {
                 forPool = forPool.subtract(share);
                 asset.setLiquidationPool(collateralSymbol, asset.getLiquidationPool(collateralSymbol).add(share));
                 position.setDebt(collateralSymbol, symbol, null);
+                Context.call(rewards.get(), "updateRewardsData", "Loans", oldTotalDebt, _owner, oldUserDebt);
             }
         }
 
@@ -679,6 +686,72 @@ public class LoansImpl implements Loans {
 
         position.setCollateral(_symbol, position.getCollateral(_symbol).add(_amount));
         CollateralReceived(_from, _symbol, _amount);
+    }
+
+    private void sellUserCollateral(Address from, BigInteger collateralToSell, String collateralSymbol,
+                                    BigInteger minimumDebtToRepay) {
+        Context.require(collateralToSell.compareTo(BigInteger.ZERO) > 0, TAG + ": Sell amount must be more than zero.");
+        Context.require(PositionsDB.hasPosition(from), TAG + ": This address does not have a position on Balanced.");
+
+        Position position = PositionsDB.getPosition(from);
+        BigInteger userCollateral = position.getCollateral(collateralSymbol);
+
+        Context.require(userCollateral.compareTo(collateralToSell) >= 0, TAG + ": Position holds less " +
+                "collateral than the requested sell.");
+
+        String assetSymbol = BNUSD_SYMBOL;
+        Asset asset = AssetDB.getAsset(assetSymbol);
+        Address assetAddress = asset.getAssetAddress();
+        BigInteger oldSupply = totalDebts.getOrDefault(assetSymbol, BigInteger.ZERO);
+        BigInteger oldUserDebt = position.getTotalDebt(assetSymbol);
+        BigInteger userDebt = position.getDebt(collateralSymbol, assetSymbol);
+
+        Collateral collateral = CollateralDB.getCollateral(collateralSymbol);
+        Address collateralAddress = collateral.getAssetAddress();
+        Address dexAddress = dex.get();
+
+        amountReceived.set(null);
+        BigInteger poolID = Context.call(BigInteger.class, dexAddress, "getPoolId", collateralAddress, assetAddress);
+        Context.require(poolID != null, TAG + ": There doesn't exist a bnUSD pool for " + collateralSymbol + ".");
+
+        Context.require(userDebt.compareTo(minimumDebtToRepay) >= 0, TAG + ": Minimum receive cannot be greater than " +
+                "your debt.");
+        expectedToken.set(assetAddress);
+
+        JsonObject swapParams = Json.object()
+                .add("toToken", assetAddress.toString())
+                .add("minimumReceive", minimumDebtToRepay.toString());
+        JsonObject swapData = Json.object()
+                .add("method", "_swap")
+                .add("params", swapParams);
+        byte[] data = swapData.toString().getBytes();
+
+        transferCollateral(collateralSymbol, dexAddress, collateralToSell,
+                collateralSymbol + " swapped for " + assetSymbol, data);
+        BigInteger assetReceived = amountReceived.get();
+        amountReceived.set(null);
+
+        Context.require(userDebt.compareTo(assetReceived) >= 0, TAG + ": Cannot sell collateral worth more than your " +
+                "debt.");
+
+        BigInteger remainingDebt = userDebt.subtract(assetReceived);
+        BigInteger remainingCollateral = userCollateral.subtract(collateralToSell);
+
+        position.setCollateral(collateralSymbol, remainingCollateral);
+
+        if (remainingDebt.compareTo(BigInteger.ZERO) > 0) {
+            position.setDebt(collateralSymbol, assetSymbol, remainingDebt);
+        } else {
+            position.setDebt(collateralSymbol, assetSymbol, null);
+        }
+
+        asset.burnFrom(Context.getAddress(), assetReceived);
+
+        Context.call(rewards.get(), "updateRewardsData", "Loans", oldSupply, from, oldUserDebt);
+
+        String logMessage = "Loan of " + assetReceived + " " + assetSymbol + " sold for" + collateralToSell + " " +
+                collateralSymbol + " to Balanced.";
+        CollateralSold(from, assetSymbol, collateralSymbol, assetReceived, logMessage);
     }
 
     private void removeCollateral(Address from, BigInteger value, String collateralSymbol) {
@@ -751,6 +824,7 @@ public class LoansImpl implements Loans {
 
         BigInteger oldUserDebt = position.getTotalDebt(assetToBorrow);
         position.setDebt(collateralSymbol, assetToBorrow, holdings.add(newDebt));
+        Context.call(rewards.get(), "updateRewardsData", "Loans", oldTotalDebt, from, oldUserDebt);
 
         Context.call(rewards.get(), "updateRewardsData", "Loans", oldTotalDebt, from, oldUserDebt);
 
@@ -1055,6 +1129,11 @@ public class LoansImpl implements Loans {
 
     @EventLog(indexed = 3)
     public void LoanRepaid(Address account, String symbol, BigInteger amount, String note) {
+    }
+
+    @EventLog(indexed = 3)
+    public void CollateralSold(Address account, String assetSymbol, String collateralSymbol, BigInteger amount,
+                               String note) {
     }
 
     @EventLog(indexed = 3)
