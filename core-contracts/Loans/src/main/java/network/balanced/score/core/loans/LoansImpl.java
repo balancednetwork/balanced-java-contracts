@@ -826,8 +826,6 @@ public class LoansImpl implements Loans {
         position.setDebt(collateralSymbol, assetToBorrow, holdings.add(newDebt));
         Context.call(rewards.get(), "updateRewardsData", "Loans", oldTotalDebt, from, oldUserDebt);
 
-        Context.call(rewards.get(), "updateRewardsData", "Loans", oldTotalDebt, from, oldUserDebt);
-
         borrowAsset.mintTo(from, amount);
         String logMessage = "Loan of " + amount + " " + assetToBorrow + " from Balanced.";
         OriginateLoan(from, assetToBorrow, amount, logMessage);

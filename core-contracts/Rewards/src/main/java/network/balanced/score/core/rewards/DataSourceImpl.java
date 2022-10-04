@@ -334,8 +334,7 @@ public class DataSourceImpl {
         sourceData.put("day", day);
         sourceData.put("contract_address", getContractAddress());
         sourceData.put("dist_percent", getDistPercent());
-        sourceData.put("workingSupply", getDistPercent());
-        sourceData.put("supply", getDistPercent());
+        sourceData.put("workingSupply", getWorkingSupply());
         sourceData.put("total_value", getTotalValue(day));
         sourceData.put("total_dist", getTotalDist(day));
 
