@@ -32,7 +32,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-class RewardsTestContinuousRewards extends RewardsTestBase {
+class RewardsTestRewards extends RewardsTestBase {
 
 
     @BeforeEach

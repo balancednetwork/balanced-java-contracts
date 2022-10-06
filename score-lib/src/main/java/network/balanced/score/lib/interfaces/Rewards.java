@@ -155,5 +155,5 @@ public interface Rewards extends
     void setFixedSourcePercentage(String name, BigInteger percentage);
 
     @External(readonly = true)
-    Map<String, BigInteger> getDistributionPercentages();
+    Map<String,  Map<String, BigInteger>> getDistributionPercentages();
 }

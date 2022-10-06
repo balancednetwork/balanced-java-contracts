@@ -144,7 +144,7 @@ public class RewardsImpl implements Rewards {
             distributionPercentages.set(RewardsConstants.RESERVE_FUND, BigInteger.ZERO);
             distributionPercentages.set(DAOFUND, BigInteger.ZERO);
 
-            // depereacted setters
+            // deprecated setters
             recipientSplit.set(WORKER_TOKENS, BigInteger.ZERO);
             recipientSplit.set(RewardsConstants.RESERVE_FUND, BigInteger.ZERO);
             recipientSplit.set(DAOFUND, BigInteger.ZERO);
@@ -166,12 +166,6 @@ public class RewardsImpl implements Rewards {
         }
 
         boostWeight.set(WEIGHT);
-
-
-    }
-
-    private void migrateToWeightController() {
-        // add/Create sources in weightcontroller
     }
 
     @External(readonly = true)
@@ -553,6 +547,10 @@ public class RewardsImpl implements Rewards {
     public void setMigrateToVotingDay(BigInteger day) {
         onlyOwner();
         Context.require(day.compareTo(platformDay.get()) > 0, "day has to be greater than platformDay");
+        if (weightControllerMigrationDay.get() == null) {
+            migrateWeightController();
+        }
+
         weightControllerMigrationDay.set(day);
     }
 
@@ -584,27 +582,40 @@ public class RewardsImpl implements Rewards {
     }
 
     @External(readonly = true)
-    public Map<String, BigInteger> getDistributionPercentages() {
-        Map<String, BigInteger> percentages = new HashMap<>();
+    public Map<String, Map<String, BigInteger>> getDistributionPercentages() {
+        Map<String,  Map<String, BigInteger>> allPercentages = new HashMap<>();
+        Map<String, BigInteger> basePercentages = new HashMap<>();
+        Map<String, BigInteger> fixedPercentages = new HashMap<>();
+        Map<String, BigInteger> votePercentages = new HashMap<>();
 
         BigInteger total = HUNDRED_PERCENTAGE;
         List<String> recipients = distributionPercentages.keys();
         for (String recipient : recipients) {
             BigInteger percentage = distributionPercentages.get(recipient);
-            percentages.put(recipient, percentage);
+            basePercentages.put(recipient, percentage);
             total = total.subtract(percentage);
         }
 
         List<String> fixedPercentageSources = fixedDistributionPercentages.keys();
         for (String recipient : fixedPercentageSources) {
             BigInteger percentage = fixedDistributionPercentages.get(recipient);
-            percentages.put(recipient, percentage);
+            fixedPercentages.put(recipient, percentage);
             total = total.subtract(percentage);
         }
 
-        percentages.put("Voting", total);
+        String[] sources = getAllSources();
+        BigInteger votingPercentage = total;
+        BigInteger time = BigInteger.valueOf(Context.getBlockTimestamp());
+        for (String source: sources) {
+            BigInteger percent = SourceWeightController.getRelativeWeight(source, time).multiply(votingPercentage).divide(HUNDRED_PERCENTAGE);
+            votePercentages.put(source, percent);
+        }
 
-        return percentages;
+        allPercentages.put("Base", basePercentages);
+        allPercentages.put("Fixed", fixedPercentages);
+        allPercentages.put("Voting", votePercentages);
+
+        return allPercentages;
     }
 
     @External
@@ -843,11 +854,12 @@ public class RewardsImpl implements Rewards {
         return Context.call(targetAddress, method, params);
     }
 
-    public static BigInteger getTotalDist(String sourceName, BigInteger day) {
+    public static BigInteger getTotalDist(String sourceName, BigInteger day, boolean readonly) {
         BigInteger migrationDay = weightControllerMigrationDay.get();
-        if (migrationDay == null || migrationDay.compareTo(day) < 0) {
+        if (migrationDay == null || migrationDay.compareTo(day) > 0) {
             BigInteger dist = dailyDistribution(day);
             Map<String, BigInteger> recipientDistribution = _recipientAt(day);
+
             BigInteger split = recipientDistribution.get(sourceName);
             if (split == null) {
                 return BigInteger.ZERO;
@@ -858,10 +870,16 @@ public class RewardsImpl implements Rewards {
 
         BigInteger dist = dailyVotableDistribution.get(day);
         BigInteger time = day.multiply(MICRO_SECONDS_IN_A_DAY).add(startTimestamp.get());
-        BigInteger weight = SourceWeightController.updateRelativeWeight(sourceName, time);
-        BigInteger fixedDist = dailyFixedDistribution.at(sourceName).getOrDefault(day, weight);
+        BigInteger weight;
+        if (readonly) {
+            weight = SourceWeightController.getRelativeWeight(sourceName, time);
+        } else {
+            weight = SourceWeightController.updateRelativeWeight(sourceName, time);
+        }
 
-        return weight.multiply(dist).divide(day).add(fixedDist);
+        BigInteger fixedDist = dailyFixedDistribution.at(sourceName).getOrDefault(day, BigInteger.ZERO);
+
+        return weight.multiply(dist).divide(HUNDRED_PERCENTAGE).add(fixedDist);
     }
 
 
@@ -902,6 +920,46 @@ public class RewardsImpl implements Rewards {
             BigInteger minDistribution = BigInteger.valueOf(1250).multiply(EXA);
 
             return minDistribution.max(distribution);
+        }
+    }
+
+    private void migrateWeightController() {
+        String mainTypeName = "MainSources";
+        String LPTypeName = "LPSources";
+        SourceWeightController.addType(mainTypeName, EXA);
+        SourceWeightController.addType(LPTypeName, EXA);
+        int mainType = SourceWeightController.getTypeId(mainTypeName);
+        int LPType = SourceWeightController.getTypeId(LPTypeName);
+        Map<String, BigInteger>  recipients = recipientAt(getDay());
+
+        // MainSources
+        if (DataSourceDB.hasSource("Loans")) {
+            SourceWeightController.addSource("Loans", mainType, BigInteger.ZERO);
+            SourceWeightController.setVotable("Loans", false);
+            fixedDistributionPercentages.set("Loans", recipients.get("Loans"));
+        }
+        if (DataSourceDB.hasSource("sICX/bnUSD")) {
+            SourceWeightController.addSource("sICX/bnUSD", mainType, BigInteger.ZERO);
+        }
+        if (DataSourceDB.hasSource("BALN/bnUSD")) {
+            SourceWeightController.addSource("BALN/bnUSD", mainType, BigInteger.ZERO);
+        }
+
+        // LP sources
+        if (DataSourceDB.hasSource("sICX/ICX")) {
+            SourceWeightController.addSource("sICX/ICX", LPType, BigInteger.ZERO);
+        }
+        if (DataSourceDB.hasSource("BALN/sICX")) {
+            SourceWeightController.addSource("BALN/sICX", LPType, BigInteger.ZERO);
+        }
+        if (DataSourceDB.hasSource("IUSDC/bnUSD")) {
+            SourceWeightController.addSource("IUSDC/bnUSD", LPType, BigInteger.ZERO);
+        }
+        if (DataSourceDB.hasSource("USDS/bnUSD")) {
+            SourceWeightController.addSource("USDS/bnUSD", LPType, BigInteger.ZERO);
+        }
+        if (DataSourceDB.hasSource("IUSDT/bnUSD")) {
+            SourceWeightController.addSource("IUSDT/bnUSD", LPType, BigInteger.ZERO);
         }
     }
 

@@ -36,6 +36,7 @@ import org.junit.jupiter.api.function.Executable;
 
 
 import network.balanced.score.core.rewards.weight.SourceWeightController;
+import static network.balanced.score.core.rewards.weight.SourceWeightController.VOTE_POINTS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
@@ -59,7 +60,6 @@ public class SourceWeightControllerTest extends UnitTest {
     int stakedLPId;
     int externalSourcesId;
 
-    BigInteger maxVotePercentage = BigInteger.valueOf(10000);
     BigInteger unlockTime;
     @BeforeEach
     void setup() throws Exception {
@@ -91,8 +91,8 @@ public class SourceWeightControllerTest extends UnitTest {
         BigInteger expectedShare = EXA.divide(BigInteger.TWO);
 
         // Act
-        vote(user, "sICX/ICX", maxVotePercentage.divide(BigInteger.TWO));
-        vote(user, "sICX/bnUSD", maxVotePercentage.divide(BigInteger.TWO));
+        vote(user, "sICX/ICX", VOTE_POINTS.divide(BigInteger.TWO));
+        vote(user, "sICX/bnUSD", VOTE_POINTS.divide(BigInteger.TWO));
         sm.getBlock().increase(WEEK_BLOCKS);
         weightController.invoke(owner, "updateRelativeWeight", "sICX/ICX", BigInteger.valueOf(sm.getBlock().getTimestamp()));
         weightController.invoke(owner, "updateRelativeWeight", "sICX/bnUSD", BigInteger.valueOf(sm.getBlock().getTimestamp()));
@@ -110,11 +110,10 @@ public class SourceWeightControllerTest extends UnitTest {
         Account user = sm.createAccount();
         Account user2 = sm.createAccount();
         mockUserWeight(user, EXA);
-        BigInteger expectedShare = EXA.divide(BigInteger.TWO);
 
         // Act
-        vote(user, "sICX/ICX", maxVotePercentage.divide(BigInteger.TWO));
-        vote(user, "sICX/bnUSD", maxVotePercentage.divide(BigInteger.TWO));
+        vote(user, "sICX/ICX", VOTE_POINTS.divide(BigInteger.TWO));
+        vote(user, "sICX/bnUSD", VOTE_POINTS.divide(BigInteger.TWO));
         sm.getBlock().increase(WEEK_BLOCKS);
         weightController.invoke(owner, "updateRelativeWeight", "sICX/ICX", BigInteger.valueOf(sm.getBlock().getTimestamp()));
         weightController.invoke(owner, "updateRelativeWeight", "sICX/bnUSD", BigInteger.valueOf(sm.getBlock().getTimestamp()));
@@ -124,10 +123,10 @@ public class SourceWeightControllerTest extends UnitTest {
 
         // Assert
         String expectedErrorMessage = "Reverted(0): sICX/bnUSD is not a votable source, you can only remove weight";
-        Executable voteOnDisabled_noPower =  () -> vote(user2, "sICX/bnUSD", maxVotePercentage.divide(BigInteger.TWO));
+        Executable voteOnDisabled_noPower =  () -> vote(user2, "sICX/bnUSD", VOTE_POINTS.divide(BigInteger.TWO));
         expectErrorMessage(voteOnDisabled_noPower, expectedErrorMessage);
 
-        Executable voteOnDisabled_changePower =  () -> vote(user, "sICX/bnUSD", maxVotePercentage.divide(BigInteger.TEN));
+        Executable voteOnDisabled_changePower =  () -> vote(user, "sICX/bnUSD", VOTE_POINTS.divide(BigInteger.TEN));
         expectErrorMessage(voteOnDisabled_changePower, expectedErrorMessage);
 
         vote(user, "sICX/bnUSD", BigInteger.ZERO);
@@ -150,11 +149,11 @@ public class SourceWeightControllerTest extends UnitTest {
         mockUserWeight(user, EXA);
 
         // Act
-        vote(user, "sICX/ICX", maxVotePercentage.divide(BigInteger.TWO));
+        vote(user, "sICX/ICX", VOTE_POINTS.divide(BigInteger.TWO));
 
         // Assert
         String expectedErrorMessage = "Reverted(0): Used too much power";
-        Executable voteWithToMuchPower =  () -> vote(user, "sICX/bnUSD", maxVotePercentage.divide(BigInteger.TWO).add(BigInteger.ONE));
+        Executable voteWithToMuchPower =  () -> vote(user, "sICX/bnUSD", VOTE_POINTS.divide(BigInteger.TWO).add(BigInteger.ONE));
         expectErrorMessage(voteWithToMuchPower, expectedErrorMessage);
     }
 
@@ -177,17 +176,17 @@ public class SourceWeightControllerTest extends UnitTest {
         mockUserWeight(user, EXA);
 
         // Act
-        vote(user, "sICX/ICX", maxVotePercentage.divide(BigInteger.TWO));
-        vote(user, "sICX/bnUSD", maxVotePercentage.divide(BigInteger.TWO));
+        vote(user, "sICX/ICX", VOTE_POINTS.divide(BigInteger.TWO));
+        vote(user, "sICX/bnUSD", VOTE_POINTS.divide(BigInteger.TWO));
 
         // Assert
         String expectedErrorMessage = "Reverted(0): Cannot vote so often";
-        Executable voteWithToMuchPower =  () -> vote(user, "sICX/ICX", maxVotePercentage.divide(BigInteger.valueOf(4)));
+        Executable voteWithToMuchPower =  () -> vote(user, "sICX/ICX", VOTE_POINTS.divide(BigInteger.valueOf(4)));
         expectErrorMessage(voteWithToMuchPower, expectedErrorMessage);
 
         // Act
         sm.getBlock().increase(DAY_BLOCKS * 10);
-        vote(user, "sICX/ICX", maxVotePercentage.divide(BigInteger.valueOf(4)));
+        vote(user, "sICX/ICX", VOTE_POINTS.divide(BigInteger.valueOf(4)));
         sm.getBlock().increase(WEEK_BLOCKS);
 
         weightController.invoke(owner, "updateRelativeWeight", "sICX/ICX", BigInteger.valueOf(sm.getBlock().getTimestamp()));
@@ -207,8 +206,8 @@ public class SourceWeightControllerTest extends UnitTest {
         mockUserWeight(user, EXA);
 
         // Act
-        vote(user, "sICX/ICX", maxVotePercentage.divide(BigInteger.TWO));
-        vote(user, "sICX/bnUSD", maxVotePercentage.divide(BigInteger.TWO));
+        vote(user, "sICX/ICX", VOTE_POINTS.divide(BigInteger.TWO));
+        vote(user, "sICX/bnUSD", VOTE_POINTS.divide(BigInteger.TWO));
         sm.getBlock().increase(WEEK_BLOCKS);
         weightController.invoke(owner, "updateRelativeWeight", "sICX/ICX", BigInteger.valueOf(sm.getBlock().getTimestamp()));
         weightController.invoke(owner, "updateRelativeWeight", "sICX/bnUSD", BigInteger.valueOf(sm.getBlock().getTimestamp()));
@@ -217,20 +216,20 @@ public class SourceWeightControllerTest extends UnitTest {
         Map<String, Map<String, BigInteger>> data = (Map<String, Map<String, BigInteger>>) weightController.call("getUserVoteData", user.getAddress());
         assertTrue(data.containsKey("sICX/ICX"));
         assertTrue(data.containsKey("sICX/bnUSD"));
-        assertEquals(maxVotePercentage.divide(BigInteger.TWO), data.get("sICX/ICX").get("power"));
-        assertEquals(maxVotePercentage.divide(BigInteger.TWO), data.get("sICX/bnUSD").get("power"));
+        assertEquals(VOTE_POINTS.divide(BigInteger.TWO), data.get("sICX/ICX").get("power"));
+        assertEquals(VOTE_POINTS.divide(BigInteger.TWO), data.get("sICX/bnUSD").get("power"));
 
         // Act
         sm.getBlock().increase(DAY_BLOCKS * 10);
         vote(user, "sICX/ICX", BigInteger.ZERO);
-        vote(user, "sICX/bnUSD", maxVotePercentage);
+        vote(user, "sICX/bnUSD", VOTE_POINTS);
         weightController.invoke(owner, "updateRelativeWeight", "sICX/bnUSD", BigInteger.valueOf(sm.getBlock().getTimestamp()));
 
         // Assert
         data = (Map<String, Map<String, BigInteger>>) weightController.call("getUserVoteData", user.getAddress());
         assertTrue(!data.containsKey("sICX/ICX"));
         assertTrue(data.containsKey("sICX/bnUSD"));
-        assertEquals(maxVotePercentage, data.get("sICX/bnUSD").get("power"));
+        assertEquals(VOTE_POINTS, data.get("sICX/bnUSD").get("power"));
     }
 
     @Test
@@ -243,9 +242,9 @@ public class SourceWeightControllerTest extends UnitTest {
         weightController.invoke(owner, "addSource", "OMMbnUSD", externalSourcesId, BigInteger.ZERO);
 
         // Act
-        vote(user, "sICX/ICX", maxVotePercentage.divide(BigInteger.valueOf(4)));
-        vote(user, "sICX/bnUSD", maxVotePercentage.divide(BigInteger.valueOf(4)));
-        vote(user, "OMMbnUSD", maxVotePercentage.divide(BigInteger.TWO));
+        vote(user, "sICX/ICX", VOTE_POINTS.divide(BigInteger.valueOf(4)));
+        vote(user, "sICX/bnUSD", VOTE_POINTS.divide(BigInteger.valueOf(4)));
+        vote(user, "OMMbnUSD", VOTE_POINTS.divide(BigInteger.TWO));
         sm.getBlock().increase(WEEK_BLOCKS);
         weightController.invoke(owner, "updateRelativeWeight", "sICX/ICX", BigInteger.valueOf(sm.getBlock().getTimestamp()));
         weightController.invoke(owner, "updateRelativeWeight", "sICX/bnUSD", BigInteger.valueOf(sm.getBlock().getTimestamp()));
@@ -271,8 +270,6 @@ public class SourceWeightControllerTest extends UnitTest {
         assertEquals(EXA.divide(BigInteger.valueOf(4)), bnUSDLpShare);
         assertEquals(EXA.divide(BigInteger.TWO), OMMbnUSDShare);
     }
-
-    // Todo Votable
 
     private void vote(Account user, String name, BigInteger weight) {
         weightController.invoke(user, "voteForSourceWeights", name, weight);

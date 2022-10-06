@@ -173,11 +173,11 @@ public class DataSourceImpl {
     public BigInteger getTotalDist(BigInteger day, boolean readonly) {
         DictDB<BigInteger, BigInteger> distAt =  totalDist.at(dbKey);
         BigInteger dist = distAt.get(day);
-        if (dist!= null) {
+        if (dist != null) {
             return dist;
         }
 
-        dist = RewardsImpl.getTotalDist(getName(), day);
+        dist = RewardsImpl.getTotalDist(getName(), day, readonly);
         if (!readonly) {
             distAt.set(day, dist);
         }

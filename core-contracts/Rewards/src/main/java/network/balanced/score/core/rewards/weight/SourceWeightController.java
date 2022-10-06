@@ -40,6 +40,7 @@ public class SourceWeightController {
     public static final BigInteger WEEK = MICRO_SECONDS_IN_A_DAY.multiply(BigInteger.valueOf(7));
     // Cannot change weight votes more often than once in 10 days
     public static final BigInteger WEIGHT_VOTE_DELAY = MICRO_SECONDS_IN_A_DAY.multiply(BigInteger.TEN);
+    public static final BigInteger VOTE_POINTS = BigInteger.valueOf(10000);
 
     // sourceTypeNames: public(HashMap.get(int128, String[64]))
     private static final EnumerableSetDB<String> sourceTypeNames = new EnumerableSetDB<String>("sourceTypeNames", String.class);
@@ -164,7 +165,7 @@ public class SourceWeightController {
                 and return the total for the future week
         *@return Total weight
         */
-        BigInteger time = timeTotal.get();
+        BigInteger time = timeTotal.getOrDefault(BigInteger.ZERO);
         BigInteger timestamp = BigInteger.valueOf(Context.getBlockTimestamp());
         if (time.compareTo(timestamp) > 0) {
             // If we have already checkpointed - still need to change the value
@@ -311,7 +312,7 @@ public class SourceWeightController {
 
         int sourceType = sourceTypes.get(name) - 1;
         BigInteger typeWeight = pointsTypeWeight.at(sourceType).get(time);
-        BigInteger sourceWeight = pointsWeight.at(name).get(time).bias;
+        BigInteger sourceWeight = pointsWeight.at(name).getOrDefault(time, new Point()).bias;
         return EXA.multiply(typeWeight).multiply(sourceWeight).divide(totalWeight);
     }
 
@@ -382,7 +383,7 @@ public class SourceWeightController {
         BigInteger nextTime = getNextWeekTimestamp();
 
         Context.require(lockEnd.compareTo(nextTime) > 0, "Your token lock expires too soon");
-        Context.require((userWeight.compareTo(BigInteger.ZERO) >= 0) && (userWeight.compareTo(BigInteger.valueOf(10000)) <= 0), "Weight has to be between 0 and 10000");
+        Context.require((userWeight.compareTo(BigInteger.ZERO) >= 0) && (userWeight.compareTo(VOTE_POINTS) <= 0), "Weight has to be between 0 and 10000");
         BigInteger nextUserVote = lastUserVote.at(user).getOrDefault(sourceName, BigInteger.ZERO).add(WEIGHT_VOTE_DELAY);
         Context.require(timestamp.compareTo(nextUserVote) >= 0, "Cannot vote so often");
 
@@ -397,7 +398,7 @@ public class SourceWeightController {
 
         BigInteger oldBias = oldSlope.slope.multiply(oldDt);
         VotedSlope newSlope = new VotedSlope(
-            slope.multiply(userWeight).divide(BigInteger.valueOf(10000)),
+            slope.multiply(userWeight).divide(VOTE_POINTS),
             userWeight,
             lockEnd
         );
@@ -407,7 +408,7 @@ public class SourceWeightController {
         // Check and update powers (weights) used
         BigInteger powerUsed = voteUserPower.getOrDefault(user, BigInteger.ZERO);
         powerUsed = powerUsed.add(newSlope.power).subtract(oldSlope.power);
-        Context.require((powerUsed.compareTo(BigInteger.ZERO) >= 0) && (powerUsed.compareTo(BigInteger.valueOf(10000)) <= 0),  "Used too much power");
+        Context.require((powerUsed.compareTo(BigInteger.ZERO) >= 0) && (powerUsed.compareTo(VOTE_POINTS) <= 0),  "Used too much power");
         voteUserPower.set(user, powerUsed);
 
         // Remove old and schedule new slope changes
