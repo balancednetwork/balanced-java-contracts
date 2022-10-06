@@ -41,7 +41,9 @@ import network.balanced.score.core.rewards.utils.EventLogger;
 import network.balanced.score.core.rewards.utils.RewardsConstants;
 import network.balanced.score.lib.interfaces.Rewards;
 import network.balanced.score.lib.structs.DistributionPercentage;
+import network.balanced.score.lib.structs.Point;
 import network.balanced.score.lib.structs.RewardsDataEntry;
+import network.balanced.score.lib.structs.VotedSlope;
 import network.balanced.score.lib.utils.IterableDictDB;
 import network.balanced.score.lib.utils.SetDB;
 import network.balanced.score.core.rewards.weight.SourceWeightController;
@@ -649,8 +651,8 @@ public class RewardsImpl implements Rewards {
     }
 
     @External(readonly = true)
-    public BigInteger getSourceWeight(String sourceName) {
-        return SourceWeightController.getSourceWeight(sourceName);
+    public Point getSourceWeight(String sourceName) {
+        return SourceWeightController.getSourcePointsWeight(sourceName);
     }
 
     @External(readonly = true)
@@ -664,8 +666,18 @@ public class RewardsImpl implements Rewards {
     }
 
     @External(readonly = true)
-    public BigInteger getWeightsSumPerType(int typeId) {
-        return SourceWeightController.getWeightsSumPerType(typeId);
+    public Point getWeightsSumPerType(int typeId) {
+        return SourceWeightController.getPointsSumPerType(typeId);
+    }
+
+    @External(readonly = true)
+    public VotedSlope getUserSlope(Address user, String source) {
+        return SourceWeightController.getUserSlope(user, source);
+    }
+
+    @External(readonly = true)
+    public BigInteger getLastUserVote(Address user, String source) {
+        return SourceWeightController.getLastUserVote(user, source);
     }
 
     @External(readonly = true)
@@ -677,7 +689,6 @@ public class RewardsImpl implements Rewards {
     public int getSourceType(String sourceName) {
         return SourceWeightController.getSourceType(sourceName);
     }
-
 
     @External(readonly = true)
     public Map<String, Map<String, BigInteger>> getUserVoteData(Address user) {

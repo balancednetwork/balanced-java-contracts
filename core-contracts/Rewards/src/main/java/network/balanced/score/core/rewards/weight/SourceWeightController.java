@@ -26,6 +26,8 @@ import score.Context;
 import score.DictDB;
 import score.VarDB;
 import scorex.util.HashMap;
+import network.balanced.score.lib.structs.Point;
+import network.balanced.score.lib.structs.VotedSlope;
 import network.balanced.score.lib.utils.EnumerableSetDB;
 
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
@@ -475,13 +477,13 @@ public class SourceWeightController {
         return isVotable.getOrDefault(name, true);
     }
 
-    public static BigInteger getSourceWeight(String sourceName) {
+    public static Point getSourcePointsWeight(String sourceName) {
         /**
         *@notice Get current source weight
         *@param sourceName Source name
         *@return Source weight
         */
-        return pointsWeight.at(sourceName).get(timeWeight.get(sourceName)).bias;
+        return pointsWeight.at(sourceName).get(timeWeight.get(sourceName));
     }
 
     public static BigInteger getCurrentTypeWeight(int typeId) {
@@ -501,13 +503,21 @@ public class SourceWeightController {
         return pointsTotal.get(timeTotal.get());
     }
 
-    public static BigInteger getWeightsSumPerType(int typeId) {
+    public static Point getPointsSumPerType(int typeId) {
         /**
         *@notice Get sum of source weights per type
         *@param typeId Type id
         *@return Sum of source weights
         */
-        return pointsSum.at(typeId).get(timeSum.get(typeId)).bias;
+        return pointsSum.at(typeId).get(timeSum.get(typeId));
+    }
+
+    public static VotedSlope getUserSlope(Address user, String source) {
+        return voteUserSlopes.at(user).get(source);
+    }
+
+    public static BigInteger getLastUserVote(Address user, String source) {
+        return lastUserVote.at(user).get(source);
     }
 
     public static Map<String, Map<String, BigInteger>> getUserVoteData(Address user) {

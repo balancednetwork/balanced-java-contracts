@@ -22,6 +22,9 @@ import score.annotation.External;
 import java.math.BigInteger;
 import java.util.Map;
 
+import network.balanced.score.lib.structs.Point;
+import network.balanced.score.lib.structs.VotedSlope;
+
 public interface RewardsVoting {
     @External
     void setVotable(String name, boolean votable);
@@ -54,7 +57,13 @@ public interface RewardsVoting {
     boolean isVotable(String name);
 
     @External(readonly = true)
-    BigInteger getSourceWeight(String sourceName);
+    Point getSourceWeight(String sourceName);
+
+    @External(readonly = true)
+    VotedSlope getUserSlope(Address user, String source);
+
+    @External(readonly = true)
+    BigInteger getLastUserVote(Address user, String source);
 
     @External(readonly = true)
     BigInteger getCurrentTypeWeight(int typeId);
@@ -63,7 +72,7 @@ public interface RewardsVoting {
     BigInteger getTotalWeight();
 
     @External(readonly = true)
-    BigInteger getWeightsSumPerType(int typeId);
+    Point getWeightsSumPerType(int typeId);
 
     @External(readonly = true)
     int getTypeId(String name);

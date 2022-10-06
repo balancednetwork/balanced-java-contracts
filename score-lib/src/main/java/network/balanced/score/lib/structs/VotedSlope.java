@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.rewards.weight;
+package network.balanced.score.lib.structs;
 
 import score.ByteArrayObjectWriter;
 import score.Context;
@@ -23,52 +23,56 @@ import score.ObjectWriter;
 
 import java.math.BigInteger;
 
-public class Point {
+public class VotedSlope {
 
-    public BigInteger bias;
     public BigInteger slope;
+    public BigInteger power;
+    public BigInteger end;
 
-    public Point(BigInteger bias, BigInteger slope) {
-        this.bias = bias;
+    public VotedSlope(BigInteger slope, BigInteger power, BigInteger end) {
         this.slope = slope;
+        this.power = power;
+        this.end = end;
     }
 
-    public Point() {
-        this(BigInteger.ZERO, BigInteger.ZERO);
+    public VotedSlope() {
+        this(BigInteger.ZERO, BigInteger.ZERO,  BigInteger.ZERO);
     }
 
-    public Point newPoint() {
-        return new Point(this.bias, this.slope);
+    public VotedSlope newPoint() {
+        return new VotedSlope(this.slope, this.power, this.end);
     }
 
-    public static void writeObject(ObjectWriter writer, Point obj) {
+    public static void writeObject(ObjectWriter writer, VotedSlope obj) {
         obj.writeObject(writer);
     }
 
-    public static Point readObject(ObjectReader reader) {
-        Point obj = new Point();
+    public static VotedSlope readObject(ObjectReader reader) {
+        VotedSlope obj = new VotedSlope();
         reader.beginList();
-        obj.bias = reader.readBigInteger();
         obj.slope = reader.readBigInteger();
+        obj.power = reader.readBigInteger();
+        obj.end = reader.readBigInteger();
         reader.end();
         return obj;
     }
 
     public void writeObject(ObjectWriter writer) {
         writer.beginList(2);
-        writer.write(this.bias);
         writer.write(this.slope);
+        writer.write(this.power);
+        writer.write(this.end);
         writer.end();
     }
 
-    public static Point fromBytes(byte[] bytes) {
+    public static VotedSlope fromBytes(byte[] bytes) {
         ObjectReader reader = Context.newByteArrayObjectReader("RLPn", bytes);
-        return Point.readObject(reader);
+        return VotedSlope.readObject(reader);
     }
 
     public byte[] toBytes() {
         ByteArrayObjectWriter writer = Context.newByteArrayObjectWriter("RLPn");
-        Point.writeObject(writer, this);
+        VotedSlope.writeObject(writer, this);
         return writer.toByteArray();
     }
 }
