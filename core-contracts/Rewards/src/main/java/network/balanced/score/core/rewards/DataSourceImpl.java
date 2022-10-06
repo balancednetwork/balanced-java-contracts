@@ -170,6 +170,21 @@ public class DataSourceImpl {
         return totalValue.at(dbKey).getOrDefault(day, BigInteger.ZERO);
     }
 
+    public BigInteger getTotalDist(BigInteger day, boolean readonly) {
+        DictDB<BigInteger, BigInteger> distAt =  totalDist.at(dbKey);
+        BigInteger dist = distAt.get(day);
+        if (dist!= null) {
+            return dist;
+        }
+
+        dist = RewardsImpl.getTotalDist(getName(), day);
+        if (!readonly) {
+            distAt.set(day, dist);
+        }
+
+        return dist;
+    }
+
     public BigInteger getTotalDist(BigInteger day) {
         return totalDist.at(dbKey).getOrDefault(day, BigInteger.ZERO);
     }
@@ -293,7 +308,6 @@ public class DataSourceImpl {
             lastUpdateTimestamp = currentTime;
             if (!readOnlyContext) {
                 lastUpdateTimeUs.at(dbKey).set(currentTime);
-
             }
         }
 
@@ -310,7 +324,7 @@ public class DataSourceImpl {
             previousDayEndUs = previousRewardsDay.add(BigInteger.ONE).multiply(MICRO_SECONDS_IN_A_DAY);
             BigInteger endComputeTimestampUs = previousDayEndUs.min(currentTime);
 
-            BigInteger emission = getTotalDist(previousRewardsDay);
+            BigInteger emission = getTotalDist(previousRewardsDay, readOnlyContext);
             runningTotal = computeTotalWeight(runningTotal, emission, totalSupply, lastUpdateTimestamp,
                     endComputeTimestampUs);
             lastUpdateTimestamp = endComputeTimestampUs;
@@ -337,7 +351,7 @@ public class DataSourceImpl {
         sourceData.put("workingSupply", getDistPercent());
         sourceData.put("supply", getDistPercent());
         sourceData.put("total_value", getTotalValue(day));
-        sourceData.put("total_dist", getTotalDist(day));
+        sourceData.put("total_dist", getTotalDist(day, true));
 
         return sourceData;
     }

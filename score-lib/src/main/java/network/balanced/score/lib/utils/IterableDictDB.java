@@ -51,8 +51,17 @@ public class IterableDictDB<K, V> {
         this.values.set(key, value);
     }
 
+    public void remove(K key) {
+        this.keys.remove(key);
+        this.values.set(key, null);
+    }
+
     public V get(K key) {
         return this.values.get(key);
+    }
+
+    public V getOrDefault(K key, V defaultValue) {
+        return this.values.getOrDefault(key, defaultValue);
     }
 
 
