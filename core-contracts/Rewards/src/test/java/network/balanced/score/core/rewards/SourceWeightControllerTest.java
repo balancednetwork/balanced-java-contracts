@@ -271,6 +271,32 @@ public class SourceWeightControllerTest extends UnitTest {
         assertEquals(EXA.divide(BigInteger.TWO), OMMbnUSDShare);
     }
 
+    @Test
+    void getLastUserVote() {
+        // Arrange
+        Account user = sm.createAccount();
+        mockUserWeight(user, EXA);
+
+        // Act
+        BigInteger timeBeforeVote = BigInteger.valueOf(sm.getBlock().getTimestamp());
+        sm.getBlock().increase();
+        vote(user, "sICX/ICX", VOTE_POINTS.divide(BigInteger.TWO));
+        sm.getBlock().increase();
+        BigInteger timeAfterVote1 = BigInteger.valueOf(sm.getBlock().getTimestamp());
+        sm.getBlock().increase();
+        vote(user, "sICX/bnUSD", VOTE_POINTS.divide(BigInteger.TWO));
+        sm.getBlock().increase();
+
+        BigInteger timeAfterVote2 = BigInteger.valueOf(sm.getBlock().getTimestamp());
+
+        // Assert
+        BigInteger lastUserVoteICX = (BigInteger) weightController.call("getLastUserVote", user.getAddress(), "sICX/ICX");
+        BigInteger lastUserVoteBnUSD = (BigInteger) weightController.call("getLastUserVote", user.getAddress(), "sICX/bnUSD");
+
+        assertTrue(lastUserVoteICX.compareTo(timeBeforeVote) > 0 && lastUserVoteICX.compareTo(timeAfterVote1) < 0);
+        assertTrue(lastUserVoteBnUSD.compareTo(timeAfterVote1) > 0 && lastUserVoteBnUSD.compareTo(timeAfterVote2) < 0);
+    }
+
     private void vote(Account user, String name, BigInteger weight) {
         weightController.invoke(user, "voteForSourceWeights", name, weight);
     }

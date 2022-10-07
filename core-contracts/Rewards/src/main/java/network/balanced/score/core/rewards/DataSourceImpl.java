@@ -46,7 +46,6 @@ public class DataSourceImpl {
             BigInteger.class);
     private final BranchDB<String, DictDB<Address, BigInteger>> userWorkingBalance = Context.newBranchDB(
             "user_working_balance", BigInteger.class);
-
     private final BranchDB<String, VarDB<BigInteger>> lastUpdateTimeUs = Context.newBranchDB("last_update_us",
             BigInteger.class);
     private final BranchDB<String, VarDB<BigInteger>> totalWeight = Context.newBranchDB("running_total",
@@ -217,7 +216,6 @@ public class DataSourceImpl {
         return totalSupply.at(dbKey).getOrDefault(BigInteger.ZERO);
     }
 
-
     public Map<String, BigInteger> loadCurrentSupply(Address owner) {
         try {
             DataSourceScoreInterface datasource = new DataSourceScoreInterface(getContractAddress());
@@ -347,6 +345,7 @@ public class DataSourceImpl {
         Map<String, Object> sourceData = new HashMap<>();
         sourceData.put("day", day);
         sourceData.put("contract_address", getContractAddress());
+        // dist_percent is deprecated
         sourceData.put("dist_percent", getDistPercent());
         sourceData.put("workingSupply", getDistPercent());
         sourceData.put("supply", getDistPercent());

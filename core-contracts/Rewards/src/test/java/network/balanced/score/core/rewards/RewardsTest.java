@@ -76,7 +76,6 @@ class RewardsTest extends RewardsTestBase {
         assertTrue(names.contains("DAOfund"));
     }
 
-
     @SuppressWarnings("unchecked")
     @Test
     void removeDataSource() {

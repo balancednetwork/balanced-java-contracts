@@ -38,7 +38,6 @@ class RewardsTestRewards extends RewardsTestBase {
     @BeforeEach
     void setup() throws Exception {
         super.setup();
-        long day = ((BigInteger) rewardsScore.call("getDay")).intValue();
     }
 
     @SuppressWarnings("unchecked")
@@ -62,7 +61,6 @@ class RewardsTestRewards extends RewardsTestBase {
 
     @Test
     void distribute() {
-
         // Act
         sm.getBlock().increase(DAY);
         syncDistributions();
@@ -114,7 +112,7 @@ class RewardsTestRewards extends RewardsTestBase {
         BigInteger expectedRewards = userLoansDistribution.multiply(diffInUSLoans).divide(MICRO_SECONDS_IN_A_DAY);
         expectedRewards =
                 expectedRewards.add(userSwapDistribution.multiply(diffInUSSwap).divide(MICRO_SECONDS_IN_A_DAY));
-        System.out.print(expectedRewards);
+
         verifyBalnReward(account.getAddress(), expectedRewards);
     }
 

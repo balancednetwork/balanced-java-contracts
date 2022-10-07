@@ -313,8 +313,9 @@ public class RewardsImpl implements Rewards {
         BigInteger platformDay = RewardsImpl.platformDay.get();
         BigInteger day = getDay();
 
-        if (platformDay.compareTo(day) <= 0) {
-            return mintAndAllocateBalnReward(platformDay);
+        while (platformDay.compareTo(day) <= 0) {
+            mintAndAllocateBalnReward(platformDay);
+            platformDay = RewardsImpl.platformDay.get();
         }
 
         return true;
@@ -385,7 +386,16 @@ public class RewardsImpl implements Rewards {
         BigInteger emission = this.getEmission(BigInteger.valueOf(-1));
 
         BigInteger balnPrice = Context.call(BigInteger.class, dexDataSource.getContractAddress(), "getBalnPrice");
-        BigInteger percentage = dataSource.getDistPercent();
+        BigInteger migrationDay = weightControllerMigrationDay.get();
+        BigInteger percentage;
+
+        if (migrationDay == null || migrationDay.compareTo(getDay()) > 0) {
+            percentage = dataSource.getDistPercent();
+        } else {
+            BigInteger relativePercentage = SourceWeightController.getRelativeWeight(_name, BigInteger.valueOf(Context.getBlockTimestamp()));
+            percentage = relativePercentage.multiply(getVotableDist()).divide(HUNDRED_PERCENTAGE);
+        }
+
         BigInteger sourceValue = dataSource.getValue();
         BigInteger year = BigInteger.valueOf(365);
 
@@ -529,7 +539,7 @@ public class RewardsImpl implements Rewards {
     public void addDataSource(String name, int sourceType, BigInteger weight) {
         only(governance);
         DataSourceImpl dataSource = DataSourceDB.get(name);
-        Context.require(dataSource.getName().equals(name), "There is no data source with the name " + name );
+        Context.require(name.equals(dataSource.getName()), "There is no data source with the name " + name );
         SourceWeightController.addSource(name, sourceType, weight);
     }
 
@@ -709,7 +719,24 @@ public class RewardsImpl implements Rewards {
             total = total.add(split);
         }
 
-        Context.require(total.compareTo(HUNDRED_PERCENTAGE) <= 0);
+        Context.require(total.compareTo(HUNDRED_PERCENTAGE) <= 0, "Sum of distributions exceeds 100%");
+    }
+
+    private BigInteger getVotableDist() {
+        BigInteger total = HUNDRED_PERCENTAGE;
+        List<String> recipients = distributionPercentages.keys();
+        for (String recipient : recipients) {
+            BigInteger split = distributionPercentages.get(recipient);
+            total = total.subtract(split);
+        }
+
+        List<String> fixedPercentageSources = fixedDistributionPercentages.keys();
+        for (String recipient : fixedPercentageSources) {
+            BigInteger split = fixedDistributionPercentages.get(recipient);
+            total = total.subtract(split);
+        }
+
+        return total;
     }
 
     private String[] getAllSources() {
@@ -879,7 +906,7 @@ public class RewardsImpl implements Rewards {
             return split.multiply(dist).divide(HUNDRED_PERCENTAGE);
         }
 
-        BigInteger dist = dailyVotableDistribution.get(day);
+        BigInteger dist = dailyVotableDistribution.getOrDefault(day, BigInteger.ZERO);
         BigInteger time = day.multiply(MICRO_SECONDS_IN_A_DAY).add(startTimestamp.get());
         BigInteger weight;
         if (readonly) {
@@ -892,7 +919,6 @@ public class RewardsImpl implements Rewards {
 
         return weight.multiply(dist).divide(HUNDRED_PERCENTAGE).add(fixedDist);
     }
-
 
     public static EventLogger getEventLogger() {
         return new EventLogger();

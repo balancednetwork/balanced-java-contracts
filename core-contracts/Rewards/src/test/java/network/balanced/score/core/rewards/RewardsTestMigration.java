@@ -19,6 +19,7 @@ package network.balanced.score.core.rewards;
 import static network.balanced.score.core.rewards.weight.SourceWeightController.VOTE_POINTS;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -27,13 +28,14 @@ import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 
 import com.iconloop.score.test.Account;
 
 import network.balanced.score.lib.structs.DistributionPercentage;
 import score.Address;
 
-class RewardsTestRewardsMigration extends RewardsTestBase {
+class RewardsTestMigration extends RewardsTestBase {
 
     BigInteger migrationDay;
     DistributionPercentage sICXbnUSDDist = new DistributionPercentage();
@@ -167,5 +169,48 @@ class RewardsTestRewardsMigration extends RewardsTestBase {
         assertEquals(votingPercentage.divide(BigInteger.TWO), distData.get("Voting").get(icxPoolDist.recipient_name));
 
         assertEquals(loansDist.dist_percent, distData.get("Fixed").get(loansDist.recipient_name));
+    }
+
+    @Test
+    void setGetVotable() {
+        assertTrue((boolean)rewardsScore.call("isVotable", "sICX/ICX"));
+        assertOnlyCallableByGovernance(rewardsScore, "setVotable", "sICX/ICX", false);
+        rewardsScore.invoke(governance, "setVotable", "sICX/ICX", false);
+        assertTrue(!(boolean)rewardsScore.call("isVotable", "sICX/ICX"));
+    }
+
+    @Test
+    void addDataSource() {
+        // Arrange
+        String newDataSource = "foo";
+        int type = 1;
+        // Act & Assert
+        String expectedErrorMessage = "Reverted(0): There is no data source with the name foo";
+        Executable nonExistingDataSource = () -> rewardsScore.invoke(governance, "addDataSource", newDataSource, 1, BigInteger.ZERO);
+        expectErrorMessage(nonExistingDataSource, expectedErrorMessage);
+
+        // Arrange
+        rewardsScore.invoke(governance, "addNewDataSource", newDataSource, dex.getAddress());
+        assertOnlyCallableByGovernance(rewardsScore, "addDataSource", newDataSource, type, BigInteger.ZERO);
+
+        rewardsScore.invoke(governance, "addDataSource", newDataSource, 1, BigInteger.ZERO);
+
+        // Assert
+        assertEquals(type, rewardsScore.call("getSourceType", newDataSource));
+    }
+
+    @Test
+    void addType() {
+        assertOnlyCallableByGovernance(rewardsScore, "addType", "newType");
+    }
+
+    @Test
+    void setGetTypeWeight() {
+        int type = (int)rewardsScore.call("getSourceType", "sICX/ICX");
+        rewardsScore.invoke(admin, "checkpoint");
+        assertEquals(EXA ,rewardsScore.call("getCurrentTypeWeight", type));
+        assertOnlyCallableByGovernance(rewardsScore, "changeTypeWeight", type, EXA.multiply(BigInteger.TWO));
+        rewardsScore.invoke(governance, "changeTypeWeight", type, EXA.multiply(BigInteger.TWO));
+        assertEquals(EXA.multiply(BigInteger.TWO) ,rewardsScore.call("getCurrentTypeWeight", type));
     }
 }
