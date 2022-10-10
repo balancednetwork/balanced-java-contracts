@@ -178,6 +178,11 @@ public class StakedLPImpl implements StakedLP {
         return rewardsData;
     }
 
+    @External(readonly = true)
+    public BigInteger getBnusdValue(String _name) {
+        return Context.call(BigInteger.class, dex.get(), "getLPBnusdValue", dataSourceIds.get(_name));
+    }
+
     private void stake(Address user, BigInteger id, BigInteger value) {
 
         // Validate inputs

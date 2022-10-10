@@ -62,4 +62,7 @@ public interface StakedLP {
 
     @External(readonly = true)
     Map<String, BigInteger> getBalanceAndSupply(String _name, Address _owner);
+
+    @External(readonly = true)
+    BigInteger getBnusdValue(String _name);
 }
