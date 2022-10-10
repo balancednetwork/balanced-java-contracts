@@ -1086,10 +1086,10 @@ public class RewardsImpl implements Rewards {
             BigInteger totalSnapshotsTaken = totalSnapshots.getOrDefault(recipient, BigInteger.ZERO);
             BranchDB<BigInteger, DictDB<String, BigInteger>> snapshot = snapshotRecipient.at(recipient);
             if (totalSnapshotsTaken.equals(BigInteger.ZERO)) {
-                distributions.put(recipient, recipientSplit.get(recipient));
+                distributions.put(recipient, recipientSplit.getOrDefault(recipient, BigInteger.ZERO));
                 continue;
             } else if (snapshot.at(totalSnapshotsTaken.subtract(BigInteger.ONE)).getOrDefault(IDS, BigInteger.ZERO).compareTo(_day) <= 0) {
-                distributions.put(recipient, snapshot.at(totalSnapshotsTaken.subtract(BigInteger.ONE)).get(AMOUNT));
+                distributions.put(recipient, snapshot.at(totalSnapshotsTaken.subtract(BigInteger.ONE)).getOrDefault(AMOUNT, BigInteger.ZERO));
                 continue;
             } else if (snapshot.at(BigInteger.ZERO).getOrDefault(IDS, BigInteger.ZERO).compareTo(_day) > 0) {
                 distributions.put(recipient, recipientSplit.getOrDefault(recipient, BigInteger.ZERO));
@@ -1112,7 +1112,7 @@ public class RewardsImpl implements Rewards {
                 }
             }
 
-            distributions.put(recipient, snapshot.at(low).get(AMOUNT));
+            distributions.put(recipient, snapshot.at(low).getOrDefault(AMOUNT, BigInteger.ZERO));
         }
 
         Iterator<Map.Entry<String, BigInteger>> it;
