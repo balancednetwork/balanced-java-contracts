@@ -129,7 +129,6 @@ class RewardsTestRewardsPostMigration extends RewardsTestRewards {
 
         verify(baln.mock).transfer(daoFund.getAddress(),
              ICX.divide(BigInteger.TEN).multiply(emission).divide(EXA), new byte[0]);
-
     }
 
     @Test

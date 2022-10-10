@@ -80,6 +80,9 @@ public interface Rewards extends
     Map<String, Map<String, Object>> getDataSources();
 
     @External(readonly = true)
+    Map<String, Map<String, Object>> getSourceVoteData();
+
+    @External(readonly = true)
     Map<String, Map<String, Object>> getDataSourcesAt(BigInteger _day);
 
     @External(readonly = true)

@@ -60,17 +60,6 @@ import score.annotation.Optional;
 import scorex.util.ArrayList;
 import scorex.util.HashMap;
 
-import java.math.BigInteger;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-import static network.balanced.score.core.rewards.utils.RewardsConstants.*;
-import static network.balanced.score.lib.utils.Check.*;
-import static network.balanced.score.lib.utils.Constants.EXA;
-import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
-import static network.balanced.score.lib.utils.DBHelpers.contains;
-import static network.balanced.score.lib.utils.Math.pow;
 
 /***
  * There can be unclaimed rewards if there are no participants in the data source. This can happen in testnet and
@@ -264,6 +253,24 @@ public class RewardsImpl implements Rewards {
             DataSourceImpl dataSource = DataSourceDB.get(name);
             dataSources.put(name, dataSource.getDataAt(_day));
         }
+
+        return dataSources;
+    }
+
+    @External(readonly = true)
+    public Map<String, Map<String, Object>> getSourceVoteData() {
+        Map<String, Map<String, Object>> dataSources = new HashMap<>();
+        BigInteger timestamp = BigInteger.valueOf(Context.getBlockTimestamp());
+        Map<String, Object> data = new HashMap<>();
+        int dataSourcesCount = DataSourceDB.size();
+        for (int i = 0; i < dataSourcesCount; i++) {
+            String name = DataSourceDB.names.get(i);
+            data.put("votable", SourceWeightController.isVotable(name));
+            data.put("type", SourceWeightController.getSourceType(name));
+            data.put("weight", SourceWeightController.getRelativeWeight(name, timestamp));
+            dataSources.put(name, data);
+        }
+
         return dataSources;
     }
 
