@@ -154,6 +154,18 @@ public class RewardsImpl implements Rewards {
             distributionPercentages.set(WORKER_TOKENS, bwtPercentage);
             distributionPercentages.set(RewardsConstants.RESERVE_FUND, reservePercentage);
             distributionPercentages.set(DAOFUND, daoFundPercentage);
+
+            //migrate dex -> stakedLP
+            List<String> dataSources = getDataSourceNames();
+            Address stakedLPAddress = Context.call(Address.class, governance.get(), "getContractAddress", "stakedLp");
+            for (String source : dataSources) {
+                if (source.equals("Loans") || source.equals("sICX/ICX")) {
+                    continue;
+                }
+
+                DataSourceImpl dataSource = DataSourceDB.get(source);
+                dataSource.setContractAddress(stakedLPAddress);
+            }
         }
 
         boostWeight.set(WEIGHT);

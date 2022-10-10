@@ -23,7 +23,6 @@ public class EventLogger {
     public void VoteForSource(String sourceName, Address user, BigInteger weight, BigInteger time) {
     }
 
-
     @EventLog(indexed = 1)
     public void NewSource(String sourceName, int typeId, BigInteger weight) {
     }
