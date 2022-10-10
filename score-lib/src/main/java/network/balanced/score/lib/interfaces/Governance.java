@@ -219,6 +219,9 @@ public interface Governance extends
     void addNewDataSource(String _data_source_name, String _contract_address);
 
     @External
+    void addStakedLpDataSource(String _name, BigInteger _poolId);
+
+    @External
     void removeDataSource(String _data_source_name);
 
     @External
@@ -301,9 +304,6 @@ public interface Governance extends
 
     @External
     void setRedeemBatchSize(BigInteger _value);
-
-    @External
-    void addPoolOnStakedLp(BigInteger _id);
 
     @External
     void setAddressesOnContract(String _contract);
