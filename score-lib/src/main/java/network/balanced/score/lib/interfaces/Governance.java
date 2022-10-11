@@ -225,6 +225,21 @@ public interface Governance extends
     void removeDataSource(String _data_source_name);
 
     @External
+    void setPlatformDistPercentage(String name, BigInteger percentage);
+
+    @External
+    void setFixedSourcePercentage(String name, BigInteger percentage);
+
+    @External
+    void setVotable(String name, boolean votable);
+
+    @External
+    void addType(String name);
+
+    @External
+    void changeTypeWeight(int typeId, BigInteger weight);
+
+    @External
     void updateBalTokenDistPercentage(DistributionPercentage[] _recipient_list);
 
     @External
