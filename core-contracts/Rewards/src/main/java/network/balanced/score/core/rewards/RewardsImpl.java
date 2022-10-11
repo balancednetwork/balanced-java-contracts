@@ -231,6 +231,8 @@ public class RewardsImpl implements Rewards {
         return names;
     }
 
+    // Split to allow creation of mainnet like scenario
+    // In the future use createDataSource
     @External
     public void addNewDataSource(String _name, Address _address) {
         only(governance);
@@ -240,6 +242,26 @@ public class RewardsImpl implements Rewards {
         recipients.add(_name);
         completeRecipient.add(_name);
         DataSourceDB.newSource(_name, _address);
+    }
+
+    @External
+    public void addDataSource(String name, int sourceType, BigInteger weight) {
+        only(governance);
+        DataSourceImpl dataSource = DataSourceDB.get(name);
+        Context.require(name.equals(dataSource.getName()), "There is no data source with the name " + name );
+        SourceWeightController.addSource(name, sourceType, weight);
+    }
+
+    @External
+    public void createDataSource(String _name, Address _address, int sourceType) {
+        only(governance);
+        Context.require(!contains(recipients, _name), TAG + ": Recipient already exists");
+        Context.require(_address.isContract(), TAG + " : Data source must be a contract.");
+
+        recipients.add(_name);
+        completeRecipient.add(_name);
+        DataSourceDB.newSource(_name, _address);
+        SourceWeightController.addSource(_name, sourceType, BigInteger.ZERO);
     }
 
     @External(readonly = true)
@@ -552,14 +574,6 @@ public class RewardsImpl implements Rewards {
     public void setVotable(String name, boolean votable) {
         only(governance);
         SourceWeightController.setVotable(name, votable);
-    }
-
-    @External
-    public void addDataSource(String name, int sourceType, BigInteger weight) {
-        only(governance);
-        DataSourceImpl dataSource = DataSourceDB.get(name);
-        Context.require(name.equals(dataSource.getName()), "There is no data source with the name " + name );
-        SourceWeightController.addSource(name, sourceType, weight);
     }
 
     @External

@@ -119,8 +119,11 @@ public class StakedlpIntegrationTest {
         BigInteger poolId = dex.getPoolId(tokenAClient._address(), tokenBClient._address());
         BigInteger balance = dex.balanceOf(userAddress, poolId);
 
+        // init rewards weight controller
+        BigInteger day = balanced.ownerClient.governance.getDay();
+        balanced.ownerClient.rewards.setMigrateToVotingDay(day.add(BigInteger.TEN));
         //set name
-        governance.addStakedLpDataSource("test", poolId);
+        governance.addStakedLpDataSource("test", poolId, 1);
 
         assertEquals(dex.balanceOf(userAddress, poolId), balance);
         assertEquals(stakedlp.balanceOf(userAddress, poolId), BigInteger.ZERO);

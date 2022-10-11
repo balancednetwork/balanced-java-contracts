@@ -74,6 +74,9 @@ public interface Rewards extends
     void addNewDataSource(String _name, Address _address);
 
     @External
+    void createDataSource(String _name, Address _address, int sourceType);
+
+    @External
     void removeDataSource(String _name);
 
     @External(readonly = true)

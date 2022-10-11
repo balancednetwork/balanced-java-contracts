@@ -219,7 +219,7 @@ public interface Governance extends
     void addNewDataSource(String _data_source_name, String _contract_address);
 
     @External
-    void addStakedLpDataSource(String _name, BigInteger _poolId);
+    void addStakedLpDataSource(String _name, BigInteger _poolId, int _sourceType);
 
     @External
     void removeDataSource(String _data_source_name);
