@@ -116,9 +116,6 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
     void withdrawAndUnstake(BigInteger _value);
 
     @External
-    void sellCollateral(BigInteger collateralAmountToSell, String collateralSymbol, BigInteger minimumDebtRepaid);
-
-    @External
     void withdrawCollateral(BigInteger _value, @Optional String _collateralSymbol);
 
     @External
