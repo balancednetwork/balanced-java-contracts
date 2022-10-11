@@ -100,6 +100,9 @@ public class VoteActions {
                         convertToNumber(params.get("_liquidationRatio")),
                         convertToNumber(params.get("_debtCeiling")));
                 break;
+            case "addLPDataSource":
+                gov._addLPDataSource(params.get("_name").asString(), convertToNumber(params.get("_poolId")), params.getInt("_sourceType", 0));
+                break;
             case "call":
                 Address address = Address.fromString(params.get("contract_address").asString());
                 GovernanceImpl.call(address, params.get("method").asString(),

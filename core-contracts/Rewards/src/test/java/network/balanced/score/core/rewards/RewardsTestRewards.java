@@ -32,13 +32,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-class RewardsTestContinuousRewards extends RewardsTestBase {
+class RewardsTestRewards extends RewardsTestBase {
 
 
     @BeforeEach
     void setup() throws Exception {
         super.setup();
-        long day = ((BigInteger) rewardsScore.call("getDay")).intValue();
     }
 
     @SuppressWarnings("unchecked")
@@ -58,12 +57,10 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
         BigInteger emission = (BigInteger) rewardsScore.call("getEmission", BigInteger.valueOf(-1));
         assertEquals(loansDist.dist_percent.multiply(emission).divide(EXA), data.get("Loans").get("total_dist"));
         assertEquals(icxPoolDist.dist_percent.multiply(emission).divide(EXA), data.get("sICX/ICX").get("total_dist"));
-
     }
 
     @Test
     void distribute() {
-
         // Act
         sm.getBlock().increase(DAY);
         syncDistributions();
@@ -115,7 +112,7 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
         BigInteger expectedRewards = userLoansDistribution.multiply(diffInUSLoans).divide(MICRO_SECONDS_IN_A_DAY);
         expectedRewards =
                 expectedRewards.add(userSwapDistribution.multiply(diffInUSSwap).divide(MICRO_SECONDS_IN_A_DAY));
-        System.out.print(expectedRewards);
+
         verifyBalnReward(account.getAddress(), expectedRewards);
     }
 

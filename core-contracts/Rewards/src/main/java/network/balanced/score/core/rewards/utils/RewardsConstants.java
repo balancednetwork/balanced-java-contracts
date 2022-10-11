@@ -21,7 +21,6 @@ import network.balanced.score.lib.utils.Constants;
 import java.math.BigInteger;
 
 public class RewardsConstants extends Constants {
-    public static final int DEFAULT_BATCH_SIZE = 50;
     public static final String DATASOURCE_DB_PREFIX = "datasource";
 
     public static final String WORKER_TOKENS = "Worker Tokens";
