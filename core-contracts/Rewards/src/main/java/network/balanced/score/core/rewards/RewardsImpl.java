@@ -694,8 +694,12 @@ public class RewardsImpl implements Rewards {
     }
 
     @External(readonly = true)
-    public Point getSourceWeight(String sourceName) {
-        return SourceWeightController.getSourcePointsWeight(sourceName);
+    public Point getSourceWeight(String sourceName, @Optional BigInteger time) {
+        if (time.equals(BigInteger.ZERO)) {
+            return SourceWeightController.getSourcePointsWeight(sourceName);
+        }
+
+        return SourceWeightController.getSourcePointsWeightAt(sourceName, time);
     }
 
     @External(readonly = true)

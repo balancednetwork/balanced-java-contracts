@@ -483,7 +483,11 @@ public class SourceWeightController {
         *@param sourceName Source name
         *@return Source weight
         */
-        return pointsWeight.at(sourceName).get(timeWeight.get(sourceName));
+        return getSourcePointsWeightAt(sourceName, timeWeight.get(sourceName));
+    }
+
+    public static Point getSourcePointsWeightAt(String sourceName, BigInteger time) {
+        return pointsWeight.at(sourceName).get(time);
     }
 
     public static BigInteger getCurrentTypeWeight(int typeId) {

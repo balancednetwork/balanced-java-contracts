@@ -18,6 +18,7 @@ package network.balanced.score.lib.interfaces.base;
 
 import score.Address;
 import score.annotation.External;
+import score.annotation.Optional;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -57,7 +58,7 @@ public interface RewardsVoting {
     boolean isVotable(String name);
 
     @External(readonly = true)
-    Point getSourceWeight(String sourceName);
+    Point getSourceWeight(String sourceName, @Optional BigInteger time);
 
     @External(readonly = true)
     VotedSlope getUserSlope(Address user, String source);
