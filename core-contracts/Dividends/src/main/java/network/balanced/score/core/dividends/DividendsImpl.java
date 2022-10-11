@@ -208,7 +208,7 @@ public class DividendsImpl implements Dividends {
     @SuppressWarnings("unchecked")
     public Map<String, BigInteger> getBalances() {
         Address address = Context.getAddress();
-        Map<String, String> assets = (Map<String, String>) Context.call(loanScore.get(), "getAssetTokens");
+        Map<String, String> assets = (Map<String, String>) Context.call(governance.get(), "getAssetTokens");
         Map<String, BigInteger> balances = new HashMap<>();
         for (String symbol : assets.keySet()) {
             BigInteger balance = (BigInteger) Context.call(Address.fromString(assets.get(symbol)), "balanceOf",
@@ -546,7 +546,7 @@ public class DividendsImpl implements Dividends {
         int acceptedTokensCount = acceptedTokens.size();
         for (int i = 0; i < acceptedTokensCount; i++) {
             if (!token.equals(acceptedTokens.get(i))) {
-                availableTokens = (Map<String, String>) Context.call(loanScore.get(), "getAssetTokens");
+                availableTokens = (Map<String, String>) Context.call(governance.get(), "getAssetTokens");
                 for (String value : availableTokens.values()) {
                     if (token.toString().equals(value)) {
                         acceptedTokens.add(token);
