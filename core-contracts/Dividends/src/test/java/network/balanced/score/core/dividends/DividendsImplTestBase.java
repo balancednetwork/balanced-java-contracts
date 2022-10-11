@@ -49,7 +49,7 @@ class DividendsImplTestBase extends UnitTest {
     protected static final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class,
             Mockito.CALLS_REAL_METHODS);
     protected Score dividendScore;
-    protected final MockedStatic.Verification getAssetTokens = () -> Context.call(eq(governanceScore.getAddress()), eq(
+    protected final MockedStatic.Verification getAssetTokens = () -> Context.call(eq(loansScore.getAddress()), eq(
             "getAssetTokens"));
     protected final MockedStatic.Verification balanceOf = () -> Context.call(eq(balnScore.getAddress()), eq(
             "balanceOf"), any(Address.class));

@@ -17,7 +17,6 @@
 package network.balanced.score.core.daofund;
 
 import network.balanced.score.lib.interfaces.DAOfund;
-import network.balanced.score.lib.interfaces.GovernanceScoreInterface;
 import network.balanced.score.lib.interfaces.LoansScoreInterface;
 import network.balanced.score.lib.structs.Disbursement;
 import network.balanced.score.lib.structs.PrepDelegations;
@@ -119,8 +118,8 @@ public class DAOfundImpl implements DAOfund {
     @External
     public void addAddressToSetdb() {
         onlyOwner();
-        GovernanceScoreInterface governance = new GovernanceScoreInterface(getGovernance());
-        Map<String, String> assets = governance.getAssetTokens();
+        LoansScoreInterface loans = new LoansScoreInterface(loansScore.get());
+        Map<String, String> assets = loans.getAssetTokens();
 
         for (Map.Entry<String, String> tokenSymbolAddress : assets.entrySet()) {
             String address = tokenSymbolAddress.getValue();

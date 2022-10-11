@@ -114,9 +114,9 @@ class DAOfundImplTest extends TestBase {
     @Test
     void addSymbolToSetdb() {
         setAndGetLoans();
-        try (MockedStatic<Context> governanceMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS)) {
-            governanceMock
-                    .when(() -> Context.call(governanceScore.getAddress(), "getAssetTokens"))
+        try (MockedStatic<Context> loansMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS)) {
+            loansMock
+                    .when(() -> Context.call(loansScore.getAddress(), "getAssetTokens"))
                     .thenReturn(Map.of("sICX", sicxScore.getAddress().toString(),
                             "BALN", balnScore.getAddress().toString(),
                             "bnUSD", bnUSDScore.getAddress().toString()));
