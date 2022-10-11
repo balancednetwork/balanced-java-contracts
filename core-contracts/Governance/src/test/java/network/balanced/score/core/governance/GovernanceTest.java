@@ -835,6 +835,7 @@ public class GovernanceTest extends GovernanceTestBase {
         Account notOwner = sm.createAccount();
         Map<String, String> tokens = Map.of(_symbol, bnUSD.getAddress().toString());
         when(loans.mock.getAssetTokens()).thenReturn(tokens);
+        governance.invoke(owner, "initializeAssetAndCollateralDb");
 
         // Act & Assert
         String expectedErrorMessage =
@@ -863,6 +864,7 @@ public class GovernanceTest extends GovernanceTestBase {
         Account notOwner = sm.createAccount();
         Map<String, String> tokens = Map.of(_symbol, bnUSD.getAddress().toString());
         when(loans.mock.getAssetTokens()).thenReturn(tokens);
+        governance.invoke(owner, "initializeAssetAndCollateralDb");
 
         // Act & Assert
         String expectedErrorMessage =
@@ -891,6 +893,7 @@ public class GovernanceTest extends GovernanceTestBase {
         Account notOwner = sm.createAccount();
         Map<String, String> tokens = Map.of(_symbol, bnUSD.getAddress().toString());
         when(loans.mock.getAssetTokens()).thenReturn(tokens);
+        governance.invoke(owner, "initializeAssetAndCollateralDb");
 
         // Act & Assert
         String expectedErrorMessage =

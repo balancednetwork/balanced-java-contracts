@@ -24,9 +24,7 @@ import network.balanced.score.lib.structs.BalancedAddresses;
 import network.balanced.score.lib.structs.Disbursement;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.PrepDelegations;
-import score.Address;
-import score.Context;
-import score.VarDB;
+import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
@@ -39,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 
 import static network.balanced.score.core.governance.GovernanceConstants.*;
+import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
 import static network.balanced.score.lib.utils.Check.onlyOwner;
 import static network.balanced.score.lib.utils.Check.optionalDefault;
 import static network.balanced.score.lib.utils.Math.pow;
@@ -53,10 +52,26 @@ public class GovernanceImpl {
     public final VarDB<BigInteger> balnVoteDefinitionCriterion = Context.newVarDB(MIN_BALN, BigInteger.class);
     public final VarDB<BigInteger> bnusdVoteDefinitionFee = Context.newVarDB(DEFINITION_FEE, BigInteger.class);
     public final VarDB<BigInteger> quorum = Context.newVarDB(QUORUM, BigInteger.class);
+    public static final DictDB<String, String> symbolMapToken = Context.newDictDB("token_symbol|address", String.class);
+    public static ArrayDB<String> assetAndCollateralList = Context.newArrayDB("assets_collateral_list", String.class);
+
 
     public GovernanceImpl() {
         if (launched.getOrDefault(null) == null) {
             launched.set(false);
+        }
+        if (Addresses.get("loans") != null){
+        initializeAssetAndCollateralDb();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @External
+    public void initializeAssetAndCollateralDb(){
+        Address loansAddress = Addresses.get("loans");
+        Map<String, String> availableTokens =  (Map<String, String>) Context.call(loansAddress, "getAssetTokens");
+        for (Map.Entry<String, String> token : availableTokens.entrySet()) {
+            setAssetAndCollateralTokens(token.getKey(), token.getValue());
         }
     }
 
@@ -236,6 +251,27 @@ public class GovernanceImpl {
                 actions,
                 bnusdVoteDefinitionFee.get()
         );
+    }
+
+    @External
+    public void setAssetAndCollateralTokens(String symbol, String assetToAdd) {
+        onlyOwner();
+        Context.require(!arrayDbContains(assetAndCollateralList, symbol), TAG + ": " + assetToAdd + " already exists in " +
+                "the database.");
+        symbolMapToken.set(symbol, assetToAdd);
+        assetAndCollateralList.add(symbol);
+    }
+
+    @External(readonly = true)
+    public Map<String, String> getAssetTokens() {
+        Map<String, String> assetAndCollateral = new HashMap<>();
+        int totalSymbolsCount = assetAndCollateralList.size();
+        for (int i = 0; i < totalSymbolsCount; i++) {
+            String symbol = assetAndCollateralList.get(i);
+            assetAndCollateral.put(symbol, symbolMapToken.get(symbol));
+        }
+
+        return assetAndCollateral;
     }
 
     @External
@@ -891,8 +927,7 @@ public class GovernanceImpl {
     @External
     public void setAssetOracle(String _symbol, Address _address) {
         onlyOwner();
-        Map<String, String> assetAddresses = (Map<String, String>) Context.call(Addresses.get("loans"),
-                "getAssetTokens");
+        Map<String, String> assetAddresses = getAssetTokens();
         Context.require(assetAddresses.containsKey(_symbol), TAG + ": " + _symbol + " is not a supported asset in " +
                 "Balanced.");
 
@@ -904,8 +939,7 @@ public class GovernanceImpl {
     @External
     public void setAssetOracleName(String _symbol, String _name) {
         onlyOwner();
-        Map<String, String> assetAddresses = (Map<String, String>) Context.call(Addresses.get("loans"),
-                "getAssetTokens");
+        Map<String, String> assetAddresses = getAssetTokens();
         Context.require(assetAddresses.containsKey(_symbol), TAG + ": " + _symbol + " is not a supported asset in " +
                 "Balanced.");
 
@@ -917,8 +951,7 @@ public class GovernanceImpl {
     @External
     public void setAssetMinInterval(String _symbol, BigInteger _interval) {
         onlyOwner();
-        Map<String, String> assetAddresses = (Map<String, String>) Context.call(Addresses.get("loans"),
-                "getAssetTokens");
+        Map<String, String> assetAddresses = getAssetTokens();
         Context.require(assetAddresses.containsKey(_symbol), TAG + ": " + _symbol + " is not a supported asset in " +
                 "Balanced.");
 

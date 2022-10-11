@@ -42,6 +42,15 @@ public interface Governance extends
     BigInteger getDay();
 
     @External(readonly = true)
+    Map<String, String> getAssetTokens();
+
+    @External
+    void initializeAssetAndCollateralDb();
+
+    @External
+    void setAssetAndCollateralTokens(String symbol, String assetToAdd);
+
+    @External(readonly = true)
     Map<String, BigInteger> getVotersCount(BigInteger vote_index);
 
     @External(readonly = true)
