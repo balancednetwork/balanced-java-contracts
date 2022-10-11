@@ -20,6 +20,8 @@ import score.*;
 import score.annotation.External;
 
 import network.balanced.score.lib.interfaces.Bribing;
+import network.balanced.score.lib.structs.Point;
+import network.balanced.score.lib.structs.VotedSlope;
 
 import java.math.BigInteger;
 
@@ -209,13 +211,13 @@ public class BribingImpl implements Bribing {
             lastUserClaim.set(bribeToken, status.period);
         }
 
-        BigInteger lastVote = Context.call(BigInteger.class, rewards.get(), "lastUserVote", user, source);
+        BigInteger lastVote = Context.call(BigInteger.class, rewards.get(), "getLastUserVote", user, source);
 
         if (lastVote.compareTo(status.period) >= 0) {
             return BigInteger.ZERO;
         }
 
-        BigInteger slope = Context.call(BigInteger.class, rewards.get(), "voteUserSlopes", user, source);
+        BigInteger slope = Context.call(VotedSlope.class, rewards.get(), "getUserSlope", user, source).slope;
         BigInteger amount = slope.multiply(status.bribesPerToken).divide(EXA);
 
         return amount;
@@ -232,12 +234,12 @@ public class BribingImpl implements Bribing {
         }
 
         if (!readOnly) {
-            Context.call(rewards.get(), "checkPointSource", source);
+            Context.call(rewards.get(), "checkpointSource", source);
         }
 
         status.period = blockTimestamp.divide(WEEK).multiply(WEEK);
 
-        BigInteger slope = Context.call(BigInteger.class, rewards.get(), "pointsWeight", source, status.period);
+        BigInteger slope = Context.call(Point.class, rewards.get(), "getSourceWeight", source, status.period).slope;
         BigInteger claimedBribes = claimsPerSource.at(source).getOrDefault(bribeToken, BigInteger.ZERO);
         BigInteger totalPreviousAmount = rewardPerSource.at(source).getOrDefault(bribeToken, BigInteger.ZERO);
         BigInteger addedAmount = futureBribePerSource.at(source).at(bribeToken).getOrDefault(status.period, BigInteger.ZERO);

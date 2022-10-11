@@ -17,6 +17,10 @@
 package network.balanced.score.core.bribing;
 
 import com.iconloop.score.test.Account;
+
+import network.balanced.score.lib.structs.Point;
+import network.balanced.score.lib.structs.VotedSlope;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -47,19 +51,19 @@ class BribingImplTest extends BribingImplTestBase {
         sm.getBlock().increase(WEEK);
 
         BigInteger startPeriod = getPeriod();
-        when(rewards.mock.pointsWeight(source, startPeriod)).thenReturn(totalWeight);
+        when(rewards.mock.getSourceWeight(source, startPeriod)).thenReturn(new Point(BigInteger.ZERO, totalWeight));
 
         // Act
         addBribe(source, amount);
 
-        when(rewards.mock.lastUserVote(user.getAddress(), source)).thenReturn(startPeriod.add(BigInteger.ONE));
-        when(rewards.mock.voteUserSlopes(user.getAddress(), source)).thenReturn(userWeight);
+        when(rewards.mock.getLastUserVote(user.getAddress(), source)).thenReturn(startPeriod.add(BigInteger.ONE));
+        when(rewards.mock.getUserSlope(user.getAddress(), source)).thenReturn(new VotedSlope(userWeight, BigInteger.ZERO, BigInteger.ZERO));
 
         assertEquals(BigInteger.ZERO, bribing.call("claimable", user.getAddress(), source, bribeToken.getAddress()));
 
         // Assert
         sm.getBlock().increase(WEEK);
-        when(rewards.mock.pointsWeight(source, getPeriod())).thenReturn(totalWeight);
+         when(rewards.mock.getSourceWeight(source, getPeriod())).thenReturn(new Point(BigInteger.ZERO, totalWeight));;
         BigInteger expectedRewards = userWeight.multiply(amount.divide(totalWeight));
         assertEquals(expectedRewards, bribing.call("claimable", user.getAddress(), source, bribeToken.getAddress()));
     }
@@ -75,17 +79,17 @@ class BribingImplTest extends BribingImplTestBase {
         sm.getBlock().increase(WEEK);
 
         BigInteger startPeriod = getPeriod();
-        when(rewards.mock.pointsWeight(source, startPeriod)).thenReturn(totalWeight);
+         when(rewards.mock.getSourceWeight(source, startPeriod)).thenReturn(new Point(BigInteger.ZERO, totalWeight));
 
         // Act
         addBribe(source, amount);
 
         // Assert
-        when(rewards.mock.lastUserVote(user.getAddress(), source)).thenReturn(startPeriod.subtract(BigInteger.ONE));
-        when(rewards.mock.voteUserSlopes(user.getAddress(), source)).thenReturn(userWeight);
+        when(rewards.mock.getLastUserVote(user.getAddress(), source)).thenReturn(startPeriod.subtract(BigInteger.ONE));
+        when(rewards.mock.getUserSlope(user.getAddress(), source)).thenReturn(new VotedSlope(userWeight, BigInteger.ZERO, BigInteger.ZERO));
 
         sm.getBlock().increase(WEEK);
-        when(rewards.mock.pointsWeight(source, getPeriod())).thenReturn(totalWeight);
+         when(rewards.mock.getSourceWeight(source, getPeriod())).thenReturn(new Point(BigInteger.ZERO, totalWeight));;
         BigInteger expectedRewards = userWeight.multiply(amount.divide(totalWeight));
         bribing.invoke(user, "claimBribe", source, bribeToken.getAddress());
 
@@ -103,17 +107,17 @@ class BribingImplTest extends BribingImplTestBase {
         sm.getBlock().increase(WEEK);
 
         BigInteger startPeriod = getPeriod();
-        when(rewards.mock.pointsWeight(source, startPeriod)).thenReturn(totalWeight);
+         when(rewards.mock.getSourceWeight(source, startPeriod)).thenReturn(new Point(BigInteger.ZERO, totalWeight));
 
         // Act
         addBribe(source, amount);
 
         // Assert
-        when(rewards.mock.lastUserVote(user.getAddress(), source)).thenReturn(startPeriod.add(BigInteger.ONE));
-        when(rewards.mock.voteUserSlopes(user.getAddress(), source)).thenReturn(userWeight);
+        when(rewards.mock.getLastUserVote(user.getAddress(), source)).thenReturn(startPeriod.add(BigInteger.ONE));
+        when(rewards.mock.getUserSlope(user.getAddress(), source)).thenReturn(new VotedSlope(userWeight, BigInteger.ZERO, BigInteger.ZERO));
 
         sm.getBlock().increase(WEEK);
-        when(rewards.mock.pointsWeight(source, getPeriod())).thenReturn(totalWeight);
+         when(rewards.mock.getSourceWeight(source, getPeriod())).thenReturn(new Point(BigInteger.ZERO, totalWeight));;
         BigInteger expectedRewards = userWeight.multiply(amount).divide(totalWeight);
         bribing.invoke(user, "claimBribe", source, bribeToken.getAddress());
 
@@ -121,7 +125,7 @@ class BribingImplTest extends BribingImplTestBase {
 
         // Act
         sm.getBlock().increase(WEEK);
-        when(rewards.mock.pointsWeight(source, getPeriod())).thenReturn(totalWeight);
+         when(rewards.mock.getSourceWeight(source, getPeriod())).thenReturn(new Point(BigInteger.ZERO, totalWeight));;
         bribing.invoke(user, "claimBribe", source, bribeToken.getAddress());
 
         // Assert
@@ -141,16 +145,16 @@ class BribingImplTest extends BribingImplTestBase {
         sm.getBlock().increase(WEEK);
 
         BigInteger startPeriod = getPeriod();
-        when(rewards.mock.pointsWeight(source, startPeriod)).thenReturn(totalWeight);
+         when(rewards.mock.getSourceWeight(source, startPeriod)).thenReturn(new Point(BigInteger.ZERO, totalWeight));
 
         // Act
         addBribe(source, amount);
 
-        when(rewards.mock.lastUserVote(user.getAddress(), source)).thenReturn(startPeriod.subtract(BigInteger.ONE));
-        when(rewards.mock.voteUserSlopes(user.getAddress(), source)).thenReturn(userWeight);
+        when(rewards.mock.getLastUserVote(user.getAddress(), source)).thenReturn(startPeriod.subtract(BigInteger.ONE));
+        when(rewards.mock.getUserSlope(user.getAddress(), source)).thenReturn(new VotedSlope(userWeight, BigInteger.ZERO, BigInteger.ZERO));
 
         sm.getBlock().increase(WEEK);
-        when(rewards.mock.pointsWeight(source, getPeriod())).thenReturn(totalWeight);
+         when(rewards.mock.getSourceWeight(source, getPeriod())).thenReturn(new Point(BigInteger.ZERO, totalWeight));;
         BigInteger expectedRewards = userWeight.multiply(amount.divide(totalWeight));
         bribing.invoke(user, "claimBribe", source, bribeToken.getAddress());
 
@@ -182,21 +186,21 @@ class BribingImplTest extends BribingImplTestBase {
         sm.getBlock().increase(WEEK);
 
         BigInteger startPeriod = getPeriod();
-        when(rewards.mock.pointsWeight(source, startPeriod)).thenReturn(totalWeight);
+         when(rewards.mock.getSourceWeight(source, startPeriod)).thenReturn(new Point(BigInteger.ZERO, totalWeight));
 
         // Act
         scheduledBribes(source, total, amounts);
 
         // Assert
-        when(rewards.mock.lastUserVote(user1.getAddress(), source)).thenReturn(startPeriod.subtract(BigInteger.ONE));
-        when(rewards.mock.voteUserSlopes(user1.getAddress(), source)).thenReturn(userWeight);
-        when(rewards.mock.lastUserVote(user2.getAddress(), source)).thenReturn(startPeriod.subtract(BigInteger.ONE));
-        when(rewards.mock.voteUserSlopes(user2.getAddress(), source)).thenReturn(userWeight);
+        when(rewards.mock.getLastUserVote(user1.getAddress(), source)).thenReturn(startPeriod.subtract(BigInteger.ONE));
+        when(rewards.mock.getUserSlope(user1.getAddress(), source)).thenReturn(new VotedSlope(userWeight, BigInteger.ZERO, BigInteger.ZERO));
+        when(rewards.mock.getLastUserVote(user2.getAddress(), source)).thenReturn(startPeriod.subtract(BigInteger.ONE));
+        when(rewards.mock.getUserSlope(user2.getAddress(), source)).thenReturn(new VotedSlope(userWeight, BigInteger.ZERO, BigInteger.ZERO));
 
         for (int i = 0; i < 4; i++) {
             sm.getBlock().increase(WEEK);
 
-            when(rewards.mock.pointsWeight(source, getPeriod())).thenReturn(totalWeight);
+             when(rewards.mock.getSourceWeight(source, getPeriod())).thenReturn(new Point(BigInteger.ZERO, totalWeight));;
             BigInteger expectedRewards = userWeight.multiply(amounts[i].divide(totalWeight));
             bribing.invoke(user1, "claimBribe", source, bribeToken.getAddress());
             bribing.invoke(user2, "claimBribe", source, bribeToken.getAddress());
@@ -222,7 +226,7 @@ class BribingImplTest extends BribingImplTestBase {
         sm.getBlock().increase(WEEK);
 
         BigInteger startPeriod = getPeriod();
-        when(rewards.mock.pointsWeight(source, startPeriod)).thenReturn(totalWeight);
+         when(rewards.mock.getSourceWeight(source, startPeriod)).thenReturn(new Point(BigInteger.ZERO, totalWeight));
 
         // Act & Assert
         Executable scheduleWithWrongTotal = () -> scheduledBribes(source, total, amounts);;
