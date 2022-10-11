@@ -600,6 +600,7 @@ public abstract class AbstractDex implements Dex {
         BigInteger fees = lpFees.add(balnFees);
 
         Address poolBaseToken = poolBase.get(id);
+        Address poolQuoteToken = poolQuote.get(id);
         boolean isSell = fromToken.equals(poolBaseToken);
 
         // We consider the trade in terms of toToken (token we are trading to), and fromToken (token we are trading
@@ -633,6 +634,18 @@ public abstract class AbstractDex implements Dex {
         totalTokensInPool.set(fromToken, newFromToken);
         totalTokensInPool.set(toToken, newToToken);
 
+        if (!fromToken.equals(poolQuoteToken)) {
+            oldFromToken = totalTokensInPool.get(fromToken);
+            oldToToken = totalTokensInPool.get(toToken);
+
+            newFromToken = oldFromToken.add(balnFees);
+            newToToken = (oldFromToken.multiply(oldToToken)).divide(newFromToken);
+
+            balnFees = oldToToken.subtract(newToToken);
+
+            totalTokensInPool.set(fromToken, newFromToken);
+            totalTokensInPool.set(toToken, newToToken);
+        }
         // Capture details for event logs
         BigInteger totalBase = isSell ? newFromToken : newToToken;
         BigInteger totalQuote = isSell ? newToToken : newFromToken;
@@ -641,7 +654,7 @@ public abstract class AbstractDex implements Dex {
         Context.call(toToken, "transfer", receiver, sendAmount);
 
         // Send the platform fees to the fee handler SCORE
-        Context.call(fromToken, "transfer", feeHandler.get(), balnFees);
+        Context.call(poolQuoteToken, "transfer", feeHandler.get(), balnFees);
 
         // Broadcast pool ending price
         BigInteger effectiveFillPrice = (value.multiply(EXA)).divide(sendAmount);
