@@ -143,16 +143,6 @@ public interface Rewards extends
     @External(readonly = true)
     String[] getUserSources(Address user);
 
-    // TMP
     @External(readonly = true)
-    BigInteger lastUserVote(Address user, String source);
-
-    @External(readonly = true)
-    BigInteger voteUserSlopes(Address user, String source);
-
-    @External(readonly = true)
-    BigInteger pointsWeight(String source, BigInteger period);
-
-    @External
-    BigInteger checkPointSource(String source);
+    Map<String, Map<String, BigInteger>> getBoostData(Address user, String[] sources);
 }

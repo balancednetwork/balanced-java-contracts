@@ -19,7 +19,6 @@ package network.balanced.score.tokens;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
-
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.tokens.utils.IRC2Token;
 import org.junit.jupiter.api.BeforeAll;

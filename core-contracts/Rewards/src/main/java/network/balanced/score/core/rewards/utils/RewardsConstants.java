@@ -33,8 +33,8 @@ public class RewardsConstants extends Constants {
 
     public static final BigInteger HUNDRED_PERCENTAGE = EXA;
     public static final BigInteger WEIGHT = BigInteger.valueOf(40)
-                                            .multiply(HUNDRED_PERCENTAGE)
-                                            .divide(BigInteger.valueOf(100L));
+            .multiply(HUNDRED_PERCENTAGE)
+            .divide(BigInteger.valueOf(100L));
     public static final String IDS = "ids";
     public static final String AMOUNT = "amount";
 }

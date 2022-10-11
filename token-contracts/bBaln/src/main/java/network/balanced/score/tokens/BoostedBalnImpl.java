@@ -32,15 +32,16 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+import static network.balanced.score.lib.utils.Check.onlyOwner;
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.Math.convertToNumber;
-import static network.balanced.score.lib.utils.Check.onlyOwner;
+import static network.balanced.score.lib.utils.NonReentrant.globalReentryLock;
 import static network.balanced.score.tokens.Constants.WEEK_IN_MICRO_SECONDS;
-import static  network.balanced.score.lib.utils.NonReentrant.globalReentryLock;
 
 public class BoostedBalnImpl extends AbstractBoostedBaln {
 
-    public BoostedBalnImpl(Address balnAddress, Address rewardAddress, Address dividendsAddress, String name, String symbol) {
+    public BoostedBalnImpl(Address balnAddress, Address rewardAddress, Address dividendsAddress, String name,
+                           String symbol) {
         super(balnAddress, rewardAddress, dividendsAddress, name, symbol);
     }
 
@@ -175,7 +176,7 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
     @External
     public void kick(Address user) {
         BigInteger bBalnBalance = balanceOf(user, BigInteger.ZERO);
-        if(bBalnBalance.equals(BigInteger.ZERO)){
+        if (bBalnBalance.equals(BigInteger.ZERO)) {
             onKick(user);
         } else {
             onBalanceUpdate(user, bBalnBalance);
@@ -217,7 +218,8 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
         BigInteger blockTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());
 
         LockedBalance locked = getLockedBalance(sender);
-        Context.require(blockTimestamp.compareTo(locked.getEnd()) < 0, "Withdraw: The lock has expired, use withdraw method");
+        Context.require(blockTimestamp.compareTo(locked.getEnd()) < 0, "Withdraw: The lock has expired, use withdraw " +
+                "method");
         BigInteger value = locked.amount;
 
         LockedBalance oldLocked = locked.newLockedBalance();
@@ -229,10 +231,11 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
 
         this.checkpoint(sender, oldLocked, locked);
 
-        BigInteger penaltyAmount =  value.divide(BigInteger.TWO);
+        BigInteger penaltyAmount = value.divide(BigInteger.TWO);
         BigInteger returnAmount = value.subtract(penaltyAmount);
 
-        Context.call(this.balnAddress.get(), "transfer", this.penaltyAddress.get(), penaltyAmount, "withdrawPenalty".getBytes());
+        Context.call(this.balnAddress.get(), "transfer", this.penaltyAddress.get(), penaltyAmount,
+                "withdrawPenalty".getBytes());
         Context.call(this.balnAddress.get(), "transfer", sender, returnAmount, "withdrawEarly".getBytes());
 
         users.remove(sender);
