@@ -17,6 +17,7 @@
 package network.balanced.score.core.stakedlp;
 
 import network.balanced.score.lib.interfaces.StakedLP;
+import network.balanced.score.lib.utils.IterableDictDB;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -35,10 +36,10 @@ public class StakedLPImpl implements StakedLP {
             Context.newBranchDB("poolStakeDetails", BigInteger.class);
     private static final DictDB<BigInteger, BigInteger> totalStakedAmount = Context.newDictDB("totalStaked",
             BigInteger.class);
-    private static final DictDB<BigInteger, String> dataSourceNames = Context.newDictDB("dataSourceNames",
-            String.class);
-    private static final DictDB<String, BigInteger> dataSourceIds = Context.newDictDB("dataSourceIds",
-            BigInteger.class);
+    private static final IterableDictDB<BigInteger, String> dataSourceNames = new IterableDictDB<>("dataSourceNames",
+            String.class, BigInteger.class, false);
+    private static final IterableDictDB<String, BigInteger> dataSourceIds = new IterableDictDB<>("dataSourceIds",
+            BigInteger.class, String.class, false);
 
     static final VarDB<Address> governance = Context.newVarDB("governanceAddress", Address.class);
     static final VarDB<Address> dex = Context.newVarDB("dexAddress", Address.class);
@@ -183,8 +184,31 @@ public class StakedLPImpl implements StakedLP {
         return Context.call(BigInteger.class, dex.get(), "getLPBnusdValue", dataSourceIds.get(_name));
     }
 
-    private void stake(Address user, BigInteger id, BigInteger value) {
+    @External(readonly = true)
+    public String getSourceName(BigInteger id) {
+        String name = dataSourceNames.get(id);
+        Context.require(name != null, "Pool id: " + id + " is not a valid pool");
+        return name;
+    }
 
+    @External(readonly = true)
+    public BigInteger getSourceId(String name) {
+        BigInteger id = dataSourceIds.get(name);
+        Context.require(id != null, "datasource " + name + " is not a valid source");
+        return id;
+    }
+
+    @External(readonly = true)
+    public List<BigInteger> getAllowedPoolIds() {
+        return dataSourceNames.keys();
+    }
+
+    @External(readonly = true)
+    public List<String> getDataSources() {
+        return dataSourceIds.keys();
+    }
+
+    private void stake(Address user, BigInteger id, BigInteger value) {
         // Validate inputs
         Context.require(value.compareTo(BigInteger.ZERO) > 0,
                 "StakedLP: Cannot stake less than zero, value to stake " + value);
@@ -203,11 +227,6 @@ public class StakedLPImpl implements StakedLP {
         Context.call(rewards.get(), "updateRewardsData", poolName, previousTotal, user, previousBalance);
     }
 
-    private String getSourceName(BigInteger id) {
-        String name = dataSourceNames.get(id);
-        Context.require(name != null, "Pool id: " + id + " is not a valid pool");
-        return name;
-    }
 
     private void migratePool(String name) {
         BigInteger id = Context.call(BigInteger.class, dex.get(), "lookupPid", name);

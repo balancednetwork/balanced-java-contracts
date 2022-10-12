@@ -32,9 +32,11 @@ import score.Address;
 
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -62,6 +64,30 @@ public class StakedLPTest extends UnitTest {
 
         stakedLpScore.invoke(governanceScore, "addDataSource", BigInteger.ONE, poolOneName);
         stakedLpScore.invoke(governanceScore, "addDataSource", BigInteger.TWO, poolTwoName);
+    }
+
+    @Test
+    void getSourceName() {
+        assertEquals(poolOneName, stakedLpScore.call("getSourceName", BigInteger.ONE));
+    }
+
+    @Test
+    void getSourceId() {
+        assertEquals(BigInteger.ONE, stakedLpScore.call("getSourceId", poolOneName));
+    }
+
+    @Test
+    void getAllowedPoolIds() {
+        List<BigInteger> ids = (List<BigInteger>) stakedLpScore.call("getAllowedPoolIds");
+        assertTrue(ids.contains(BigInteger.ONE));
+        assertTrue(ids.contains(BigInteger.TWO));
+    }
+
+    @Test
+    void getDataSources() {
+        List<String> ids = (List<String>) stakedLpScore.call("getDataSources");
+        assertTrue(ids.contains(poolOneName));
+        assertTrue(ids.contains(poolTwoName));
     }
 
     @Test
