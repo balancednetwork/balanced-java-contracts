@@ -630,22 +630,20 @@ public abstract class AbstractDex implements Dex {
         // sent to BALN holders.
         newFromToken = newFromToken.add(lpFees);
 
+        if (isSell) {
+            BigInteger fromTokenWithoutFees = newFromToken;
+            BigInteger toTokenWithoutFees = newToToken;
+
+            newFromToken = fromTokenWithoutFees.add(balnFees);
+            newToToken = (fromTokenWithoutFees.multiply(toTokenWithoutFees)).divide(newFromToken);
+
+            balnFees = oldToToken.subtract(newToToken);
+        }
+
         // Save updated pool totals
         totalTokensInPool.set(fromToken, newFromToken);
         totalTokensInPool.set(toToken, newToToken);
 
-        if (isSell) {
-            oldFromToken = newFromToken;
-            oldToToken = newToToken;
-
-            BigInteger newFromTokenWithBalnFee = oldFromToken.add(balnFees);
-            BigInteger newToTokenAfterFeeSwap = (oldFromToken.multiply(oldToToken)).divide(newFromTokenWithBalnFee);
-
-            balnFees = oldToToken.subtract(newToTokenAfterFeeSwap);
-
-            totalTokensInPool.set(fromToken, newFromTokenWithBalnFee);
-            totalTokensInPool.set(toToken, newToTokenAfterFeeSwap);
-        }
         // Capture details for event logs
         BigInteger totalBase = isSell ? newFromToken : newToToken;
         BigInteger totalQuote = isSell ? newToToken : newFromToken;
