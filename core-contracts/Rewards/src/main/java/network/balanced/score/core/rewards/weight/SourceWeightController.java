@@ -470,10 +470,12 @@ public class SourceWeightController {
     }
 
     public static void setVotable(String name, boolean votable) {
+        Context.require(sourceTypes.get(name) != null, "Source with name " + name + " does not exists");
         isVotable.set(name, votable);
     }
 
     public static boolean isVotable(String name) {
+        Context.require(sourceTypes.get(name) != null, "Source with name " + name + " does not exists");
         return isVotable.getOrDefault(name, true);
     }
 
