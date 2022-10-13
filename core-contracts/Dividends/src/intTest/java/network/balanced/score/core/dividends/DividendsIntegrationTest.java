@@ -174,7 +174,7 @@ public class DividendsIntegrationTest {
         Map<String, BigInteger> unclaimedDividendsBob = ownerClient.dividends.getUnclaimedDividends(addressBob);
         Map<String, BigInteger> unclaimedDividendsCharlie = ownerClient.dividends.getUnclaimedDividends(addressCharlie);
 
-        ownerClient.dividends.setBBalnAddress(alice.boostedBaln._address());
+        ownerClient.dividends.setBoostedBaln(alice.boostedBaln._address());
         BigInteger feePercent = hexObjectToBigInteger(ownerClient.loans.getParameters().get("origination fee"));
 
         // Act

@@ -41,7 +41,7 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
         dividendScore.invoke(admin, "setDaofund", daoScore.getAddress());
         dividendScore.invoke(admin, "setBaln", balnScore.getAddress());
-        dividendScore.invoke(owner, "setBBalnAddress", bBalnScore.getAddress());
+        dividendScore.invoke(owner, "setBoostedBaln", bBalnScore.getAddress());
 
 
         dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
