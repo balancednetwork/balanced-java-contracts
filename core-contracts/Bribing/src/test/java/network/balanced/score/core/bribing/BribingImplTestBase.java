@@ -67,6 +67,7 @@ class BribingImplTestBase extends UnitTest {
     protected void addBribe(String source, BigInteger amount) {
         Map<String, Object> params = Map.of("source", source);
         byte[] data = tokenData("addBribe", params);
+        when(rewards.mock.isVotable(source)).thenReturn(true);
         bribing.invoke(bribeToken.account, "tokenFallback", bribeToken.getAddress(), amount, data);
     }
 
@@ -77,6 +78,7 @@ class BribingImplTestBase extends UnitTest {
         );
 
         byte[] data = tokenData("scheduledBribes", params);
+        when(rewards.mock.isVotable(source)).thenReturn(true);
         bribing.invoke(bribeToken.account, "tokenFallback", bribeToken.getAddress(), total, data);
     }
 }

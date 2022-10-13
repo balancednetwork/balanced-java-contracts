@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
 import java.math.BigInteger;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -66,6 +67,23 @@ class BribingImplTest extends BribingImplTestBase {
          when(rewards.mock.getSourceWeight(source, getPeriod())).thenReturn(new Point(BigInteger.ZERO, totalWeight));;
         BigInteger expectedRewards = userWeight.multiply(amount.divide(totalWeight));
         assertEquals(expectedRewards, bribing.call("claimable", user.getAddress(), source, bribeToken.getAddress()));
+    }
+
+    @Test
+    public void addReward_nonValidSource() {
+        // Arrange
+        String source = "testSource";
+        BigInteger amount = BigInteger.valueOf(1000).multiply(EXA);
+
+        Map<String, Object> params = Map.of("source", source);
+        byte[] data = tokenData("addBribe", params);
+        when(rewards.mock.isVotable(source)).thenReturn(false);
+
+        // Act & Assert
+        Executable scheduleWithWrongTotal = () -> bribing.invoke(bribeToken.account, "tokenFallback", bribeToken.getAddress(), amount, data);
+        String expectedErrorMessage = "testSource is not a valid datasource";
+
+        expectErrorMessage(scheduleWithWrongTotal, expectedErrorMessage);
     }
 
     @Test
@@ -229,7 +247,7 @@ class BribingImplTest extends BribingImplTestBase {
          when(rewards.mock.getSourceWeight(source, startPeriod)).thenReturn(new Point(BigInteger.ZERO, totalWeight));
 
         // Act & Assert
-        Executable scheduleWithWrongTotal = () -> scheduledBribes(source, total, amounts);;
+        Executable scheduleWithWrongTotal = () -> scheduledBribes(source, total, amounts);
         String expectedErrorMessage = "Scheduled bribes and amount deposited are not equal";
 
         expectErrorMessage(scheduleWithWrongTotal, expectedErrorMessage);

@@ -159,7 +159,7 @@ public class BribingImpl implements Bribing {
         String method = json.get("method").asString();
         JsonObject params = json.get("params").asObject();
         String source = params.getString("source", "");
-        // TODO verify source
+        Context.require(Context.call(Boolean.class, rewards.get(), "isVotable", source), source + " is not a valid datasource");
         switch (method) {
             case "addBribe":
                 addBribe(source, token, _value);
