@@ -21,6 +21,7 @@ import network.balanced.score.lib.structs.PrepDelegations;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.mockito.Mockito;
 import score.Address;
 import score.Context;
 
@@ -61,7 +62,15 @@ class DividendsImplTest extends DividendsImplTestBase {
         asset.put("baln", String.valueOf(balnScore.getAddress()));
         asset.put("bnUSD", String.valueOf(bnUSDScore.getAddress()));
 
-        contextMock.when(getAssetTokens).thenReturn(asset);
+//        contextMock.when(getAssetTokens).thenReturn(asset);
+
+
+        contextMock.when(() -> Context.call(balnScore.getAddress(), "symbol"))
+                    .thenReturn("baln");
+        contextMock.when(() -> Context.call(bnUSDScore.getAddress(), "symbol"))
+                    .thenReturn("bnUSD");
+            dividendScore.invoke(admin, "setAssetTokens",balnScore.getAddress());
+            dividendScore.invoke(admin, "setAssetTokens",bnUSDScore.getAddress());
 
         dividendScore.invoke(owner, "distribute");
 
@@ -127,13 +136,14 @@ class DividendsImplTest extends DividendsImplTestBase {
 
         Map<String, String> asset = new HashMap<>();
         asset.put("baln", String.valueOf(balnScore.getAddress()));
-        contextMock.when(getAssetTokens).thenReturn(asset);
+//        contextMock.when(getAssetTokens).thenReturn(asset);
         contextMock.when(balanceOf).thenReturn(BigInteger.TEN.pow(4));
 
         Map<String, BigInteger> expectedResult = new HashMap<>();
         expectedResult.put("baln", BigInteger.TEN.pow(4));
         expectedResult.put("ICX", BigInteger.ZERO);
 
+        dividendScore.invoke(admin,"removeAssetTokens", bnUSDScore.getAddress());
         assertEquals(expectedResult, dividendScore.call("getBalances"));
     }
 

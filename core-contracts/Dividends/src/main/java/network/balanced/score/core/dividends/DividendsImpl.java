@@ -74,6 +74,12 @@ public class DividendsImpl implements Dividends {
     private static final BranchDB<Address, DictDB<Address, BigInteger>> accruedDividends =
             Context.newBranchDB(ACCRUED_DIVIDENDS, BigInteger.class);
 
+    public static ArrayDB<Address> assetAddresses = Context.newArrayDB("asset_address_list", Address.class);
+
+    public static ArrayDB<String> assetList = Context.newArrayDB("assets_symbol_list", String.class);
+    // shared with collateral
+    public static final DictDB<String, String> symbolMap = Context.newDictDB("symbol_map_address", String.class);
+
     public DividendsImpl(@Optional Address _governance) {
         if (governance.get() == null) {
             isContract(_governance);
@@ -83,6 +89,23 @@ public class DividendsImpl implements Dividends {
             distributionActivate.set(false);
             addInitialCategories();
         }
+        else{
+            Map<String, String> availableTokens = (Map<String, String>) Context.call(loanScore.get(), "getAssetTokens");
+            for (Map.Entry<String, String> tokenSymbolAddress : availableTokens.entrySet()) {
+                String address = tokenSymbolAddress.getValue();
+                addAssetsToDb(Address.fromString(address));
+            }
+        }
+    }
+
+    private void addAssetsToDb(Address asset){
+        String assetToAdd = asset.toString();
+        Context.require(!arrayDbContains(assetAddresses, asset), TAG + ": " + assetToAdd + " already exists in " +
+                "the database.");
+        assetAddresses.add(asset);
+        String symbol = (String) Context.call(asset, "symbol");
+        assetList.add(symbol);
+        symbolMap.set(symbol, assetToAdd);
     }
 
     @External(readonly = true)
@@ -199,16 +222,60 @@ public class DividendsImpl implements Dividends {
         continuousDividendsDay.set(day);
     }
 
+    @External
+    public void setAssetTokens(Address asset) {
+        only(admin);
+        String assetToAdd = asset.toString();
+        Context.require(!arrayDbContains(assetAddresses, asset), TAG + ": " + assetToAdd + " already exists in " +
+                "the database.");
+        assetAddresses.add(asset);
+        String symbol = (String) Context.call(asset, "symbol");
+        assetList.add(symbol);
+        symbolMap.set(symbol, assetToAdd);
+    }
+
+    @External
+    public void removeAssetTokens(Address asset) {
+        only(admin);
+        String assetToRemove = asset.toString();
+        String symbol = (String) Context.call(asset, "symbol");
+        Context.require(arrayDbContains(assetAddresses, asset), TAG + ": " + assetToRemove + " does not exist in " +
+                "the database.");
+
+        Address poppedAddress = assetAddresses.pop();
+        String poppedSymbol = assetList.pop();
+        if (!poppedAddress.equals(asset)) {
+            for (int i = 0; i < assetAddresses.size(); i++) {
+                if (assetAddresses.get(i).equals(asset)) {
+                    assetAddresses.set(i, poppedAddress);
+                    symbolMap.set(symbol, null);
+                    assetList.set(i, poppedSymbol);
+                }
+            }
+        }
+    }
+
+    @External(readonly = true)
+    public Map<String, String> getAssetTokens() {
+        int totalAssetsCount = assetList.size();
+        Map<String, String> assets = new HashMap<>();
+        for (int i = 0; i < totalAssetsCount; i++) {
+            String symbol = assetList.get(i);
+            assets.put(symbol, symbolMap.get(symbol));
+        }
+
+        return assets;
+    }
+
     @External(readonly = true)
     public BigInteger getContinuousDividendsDay() {
         return continuousDividendsDay.getOrDefault(BigInteger.ZERO);
     }
 
     @External(readonly = true)
-    @SuppressWarnings("unchecked")
     public Map<String, BigInteger> getBalances() {
         Address address = Context.getAddress();
-        Map<String, String> assets = (Map<String, String>) Context.call(loanScore.get(), "getAssetTokens");
+        Map<String, String> assets = getAssetTokens();
         Map<String, BigInteger> balances = new HashMap<>();
         for (String symbol : assets.keySet()) {
             BigInteger balance = (BigInteger) Context.call(Address.fromString(assets.get(symbol)), "balanceOf",
@@ -539,22 +606,22 @@ public class DividendsImpl implements Dividends {
     }
 
     @External
-    @SuppressWarnings("unchecked")
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         Address token = Context.getCaller();
         Map<String, String> availableTokens;
         int acceptedTokensCount = acceptedTokens.size();
         for (int i = 0; i < acceptedTokensCount; i++) {
             if (!token.equals(acceptedTokens.get(i))) {
-                availableTokens = (Map<String, String>) Context.call(loanScore.get(), "getAssetTokens");
+                availableTokens = getAssetTokens();
                 for (String value : availableTokens.values()) {
                     if (token.toString().equals(value)) {
-                        acceptedTokens.add(token);
+                        if(!arrayDbContains(acceptedTokens, token)){
+                            acceptedTokens.add(token);
+                        }
                     }
                 }
             }
         }
-
         if (continuousDividendsActive()) {
             BigInteger dividendsToDaofund = _value.multiply(dividendsPercentage.get(DAOFUND)).divide(EXA);
             DividendsTracker.updateTotalWeight(token, _value.subtract(dividendsToDaofund));

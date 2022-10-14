@@ -694,6 +694,30 @@ public class GovernanceImpl {
     }
 
     @External
+    public void setDividendsAssetTokens(Address asset) {
+        onlyOwner();
+        Context.call(Addresses.get("dividends"), "setAssetTokens", asset);
+    }
+
+    @External
+    public void removeDividendsAssetTokens(Address asset) {
+        onlyOwner();
+        Context.call(Addresses.get("dividends"), "removeAssetTokens", asset);
+    }
+
+    @External
+    public void setDaofundAssetTokens(Address asset) {
+        onlyOwner();
+        Context.call(Addresses.get("daofund"), "setAssetTokens", asset);
+    }
+
+    @External
+    public void removeDaofundAssetTokens(Address asset) {
+        onlyOwner();
+        Context.call(Addresses.get("daofund"), "removeAssetTokens", asset);
+    }
+
+    @External
     public void setContractAddresses() {
         onlyOwner();
         Addresses.setContractAddresses();

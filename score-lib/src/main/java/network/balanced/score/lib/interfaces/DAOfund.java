@@ -52,5 +52,14 @@ public interface DAOfund extends Name, GovernanceAddress, AdminAddress, LoansAdd
     boolean disburse(Address _recipient, Disbursement[] _amounts);
 
     @External
+    void setAssetTokens(Address asset);
+
+    @External
+    void removeAssetTokens(Address asset);
+
+    @External(readonly = true)
+    Map<String, String> getAssetTokens();
+
+    @External
     void claim();
 }

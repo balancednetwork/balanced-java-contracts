@@ -116,10 +116,16 @@ class DAOfundImplTest extends TestBase {
         setAndGetLoans();
         try (MockedStatic<Context> loansMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS)) {
             loansMock
-                    .when(() -> Context.call(loansScore.getAddress(), "getAssetTokens"))
-                    .thenReturn(Map.of("sICX", sicxScore.getAddress().toString(),
-                            "BALN", balnScore.getAddress().toString(),
-                            "bnUSD", bnUSDScore.getAddress().toString()));
+                    .when(() -> Context.call(sicxScore.getAddress(), "symbol"))
+                    .thenReturn("sICX");
+            loansMock.when(() -> Context.call(balnScore.getAddress(), "symbol"))
+                    .thenReturn("BALN");
+            loansMock.when(() -> Context.call(bnUSDScore.getAddress(), "symbol"))
+                    .thenReturn("bnUSD");
+            daofundScore.invoke(admin, "setAssetTokens",sicxScore.getAddress());
+            daofundScore.invoke(admin, "setAssetTokens",balnScore.getAddress());
+            daofundScore.invoke(admin, "setAssetTokens",bnUSDScore.getAddress());
+
             daofundScore.invoke(owner, "addAddressToSetdb");
             Map<String, BigInteger> expectedBalances = Map.of(sicxScore.getAddress().toString(), BigInteger.ZERO,
                     balnScore.getAddress().toString(), BigInteger.ZERO,

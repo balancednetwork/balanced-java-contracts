@@ -69,6 +69,15 @@ public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress
     @External
     void addAcceptedTokens(Address _token);
 
+    @External
+    void setAssetTokens(Address asset);
+
+    @External
+    void removeAssetTokens(Address asset);
+
+    @External(readonly = true)
+    Map<String, String> getAssetTokens();
+
     @External(readonly = true)
     List<String> getDividendsCategories();
 

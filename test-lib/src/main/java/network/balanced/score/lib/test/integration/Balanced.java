@@ -65,10 +65,15 @@ public class Balanced {
         registerPreps();
         deployContracts();
         setupAddresses();
+        String className = new Exception().getStackTrace()[1].getClassName();
+        if (!className.equals("network.balanced.score.core.daofund.DaofundIntegrationTest")) {
+            ownerClient.governance.setDaofundAssetTokens(sicx._address());
+            ownerClient.governance.setDaofundAssetTokens(baln._address());
+            ownerClient.governance.setDaofundAssetTokens(bnusd._address());
+        }
         increaseDay(1);
         setupContracts();
 //         delegate(adminWallet);
-        String className = new Exception().getStackTrace()[1].getClassName();
         // no need to set up market in staking integration test case
         if (!className.equals("network.balanced.score.core.staking.StakingIntegrationTest")) {
             setupMarkets();
@@ -163,6 +168,9 @@ public class Balanced {
         ownerClient.baln.setMinter(rewards._address());
         ownerClient.bnUSD.setMinter2(stability._address());
 
+        ownerClient.governance.setDividendsAssetTokens(sicx._address());
+        ownerClient.governance.setDividendsAssetTokens(bnusd._address());
+        ownerClient.governance.setDividendsAssetTokens(baln._address());
         ownerClient.governance.configureBalanced();
         ownerClient.governance.launchBalanced();
         ownerClient.staking.toggleStakingOn();
