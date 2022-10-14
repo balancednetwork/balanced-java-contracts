@@ -339,13 +339,6 @@ public abstract class AbstractDex implements Dex {
     }
 
     @External(readonly = true)
-    public List<String> getNamedPools() {
-        List<String> namedPools = new ArrayList<>();
-        namedPools.addAll(namedMarkets.keys());
-        return namedPools;
-    }
-
-    @External(readonly = true)
     public BigInteger lookupPid(String _name) {
         return BigInteger.valueOf(namedMarkets.get(_name));
     }
@@ -435,11 +428,6 @@ public abstract class AbstractDex implements Dex {
     }
 
     @External(readonly = true)
-    public BigInteger getPriceByName(String _name) {
-        return getPrice(BigInteger.valueOf(namedMarkets.get(_name)));
-    }
-
-    @External(readonly = true)
     public BigInteger getICXBalance(Address _address) {
         BigInteger orderId = icxQueueOrderId.get(_address);
         if (orderId == null) {
@@ -466,7 +454,7 @@ public abstract class AbstractDex implements Dex {
         } else {
             Address baseToken = poolBase.get(_id.intValue());
             Address quoteToken = poolQuote.get(_id.intValue());
-            String name = marketsToNames.get(_id.intValue());
+            String name = marketsToNames.getOrDefault(_id.intValue(), "");
             DictDB<Address, BigInteger> totalTokensInPool = poolTotal.at(_id.intValue());
 
             poolStats.put("base", totalTokensInPool.get(baseToken));
@@ -517,11 +505,6 @@ public abstract class AbstractDex implements Dex {
         rewardsData.put("_balance", balance);
         rewardsData.put("_totalSupply", totalSupply);
         return rewardsData;
-    }
-
-    @External(readonly = true)
-    public BigInteger getTotalValue(String _name, BigInteger _snapshot_id) {
-        return totalSupply(BigInteger.valueOf(namedMarkets.get(_name)));
     }
 
     @External

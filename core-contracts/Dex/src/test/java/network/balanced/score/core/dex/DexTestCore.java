@@ -530,38 +530,6 @@ public class DexTestCore extends DexTestBase {
         swapSicxToIcx(ownerAccount, swapValue, sicxIcxConversionRate);
     }
 
-    @Test
-    void getTotalValue() {
-        Account account = sm.createAccount();
-        turnDexOn();
-
-        final String data = "{" +
-                "\"method\": \"_deposit\"" +
-                "}";
-
-        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
-        contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
-        contextMock.when(() -> Context.call(any(Address.class), eq("decimals"))).thenReturn(BigInteger.valueOf(18));
-        contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class),
-                any(BigInteger.class))).thenReturn(null);
-
-        BigInteger FIFTY = BigInteger.valueOf(50L).multiply(EXA);
-        //deposit
-        BigInteger bnusdValue = BigInteger.valueOf(276L).multiply(EXA);
-        BigInteger balnValue = BigInteger.valueOf(100L).multiply(EXA);
-        dexScore.invoke(bnusdScore, "tokenFallback", account.getAddress(), bnusdValue, data.getBytes());
-        dexScore.invoke(balnScore, "tokenFallback", account.getAddress(), bnusdValue, data.getBytes());
-
-        dexScore.invoke(account, "add", balnScore.getAddress(), bnusdScore.getAddress(), balnValue, bnusdValue, false);
-        BigInteger poolId = (BigInteger) dexScore.call("getPoolId", balnScore.getAddress(), bnusdScore.getAddress());
-
-        String marketName = "BALN/BNUSD";
-        dexScore.invoke(governanceScore, "setMarketName", poolId, marketName);
-        BigInteger totalValue = (BigInteger) dexScore.call("getTotalValue", marketName, BigInteger.ONE);
-        BigInteger totalSupply = (BigInteger) dexScore.call("totalSupply", poolId);
-        assertEquals(totalSupply, totalValue);
-    }
-
     @SuppressWarnings("unchecked")
     @Test
     void getPoolStatsWithPair() {

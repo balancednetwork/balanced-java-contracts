@@ -99,9 +99,6 @@ public interface Dex extends AdminAddress, BnusdAddress, GovernanceAddress, Name
     BigInteger getNonce();
 
     @External(readonly = true)
-    List<String> getNamedPools();
-
-    @External(readonly = true)
     BigInteger lookupPid(String _name);
 
     @External(readonly = true)
@@ -141,9 +138,6 @@ public interface Dex extends AdminAddress, BnusdAddress, GovernanceAddress, Name
     BigInteger getBnusdValue(String _name);
 
     @External(readonly = true)
-    BigInteger getPriceByName(String _name);
-
-    @External(readonly = true)
     BigInteger getICXBalance(Address _address);
 
     @External(readonly = true)
@@ -166,9 +160,6 @@ public interface Dex extends AdminAddress, BnusdAddress, GovernanceAddress, Name
 
     @External(readonly = true)
     BigInteger totalBalnAt(BigInteger _id, BigInteger _snapshot_id, @Optional boolean _twa);
-
-    @External(readonly = true)
-    BigInteger getTotalValue(String _name, BigInteger _snapshot_id);
 
     @External
     void permit(BigInteger _id, boolean _permission);

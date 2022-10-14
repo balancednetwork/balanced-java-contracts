@@ -329,23 +329,6 @@ public class DexTestSettersAndGetters extends DexTestBase {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    void setGetMarketNames() {
-        // Arrange.
-        String poolName = "bnUSD/BALN";
-        BigInteger poolId = BigInteger.TWO;
-        List<String> expectedMarketNames = Arrays.asList("sICX/ICX", poolName);
-
-        // Act.
-        dexScore.invoke(governanceScore, "setMarketName", poolId, poolName);
-
-        // Assert.
-        List<String> namedPools = (List<String>) dexScore.call("getNamedPools");
-        assertEquals(expectedMarketNames, namedPools);
-        assertOnlyCallableByAdmin(dexScore, "setMarketName", poolId, poolName);
-    }
-
-    @Test
     void getPoolBaseAndGetPoolQuote() {
         // Arrange.
         BigInteger bnusdValue = BigInteger.valueOf(10).pow(19);
@@ -513,24 +496,6 @@ public class DexTestSettersAndGetters extends DexTestBase {
         // Assert
         BigInteger poolValue = (BigInteger) dexScore.call("getBnusdValue", "bnUSD/BALN");
         assertEquals(BigInteger.ZERO, poolValue);
-    }
-
-    @Test
-    void getPriceByName() {
-        // Arrange.
-        BigInteger bnusdValue = BigInteger.valueOf(195).multiply(EXA);
-        BigInteger balnValue = BigInteger.valueOf(350).multiply(EXA);
-        String poolName = "bnUSD/BALN";
-        BigInteger poolId = BigInteger.TWO;
-        BigInteger expectedPrice = computePrice(balnValue, bnusdValue);
-
-        // Act.
-        dexScore.invoke(governanceScore, "setMarketName", poolId, poolName);
-        supplyLiquidity(ownerAccount, bnusdScore, balnScore, bnusdValue, balnValue, false);
-
-        // Assert
-        BigInteger price = (BigInteger) dexScore.call("getPriceByName", "bnUSD/BALN");
-        assertEquals(expectedPrice, price);
     }
 
     @Test
