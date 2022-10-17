@@ -96,7 +96,7 @@ class RewardsTestRewards extends RewardsTestBase {
                 account.getAddress(), BigInteger.ZERO);
         BigInteger startTimeSwapInUS = BigInteger.valueOf(sm.getBlock().getTimestamp());
 
-        sm.getBlock().increase(DAY);
+        sm.getBlock().increase(DAY*2);
 
         // Assert
         BigInteger emission = (BigInteger) rewardsScore.call("getEmission", BigInteger.valueOf(-1));
@@ -426,9 +426,8 @@ class RewardsTestRewards extends RewardsTestBase {
         BigInteger initialRewards = (BigInteger) rewardsScore.call("getBalnHolding", account.getAddress());
         assertEquals(BigInteger.ZERO, initialRewards);
 
-        sm.getBlock().increase(DAY);
-        rewardsScore.invoke(loans.account, "updateRewardsData", name, currentTotalSupply, account.getAddress(),
-                currentBalance);
+        sm.getBlock().increase(DAY*3);
+        rewardsScore.invoke(admin, "distribute");
         BigInteger timeInUS = BigInteger.valueOf(sm.getBlock().getTimestamp());
 
         // Assert
