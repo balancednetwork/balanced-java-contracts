@@ -53,8 +53,8 @@ public class BribingImpl implements Bribing {
     //userAddress->Source->bribeToken->timeOfLastClaim
     public static final BranchDB<Address, BranchDB<String, DictDB<Address, BigInteger>>> lastUserClaim = Context.newBranchDB("lastUserClaim", BigInteger.class);
 
-    public static final BranchDB<String, ArrayDB<Address>> bribesPerSource = Context.newBranchDB("bribesPerSource", BigInteger.class);
-    public static final BranchDB<Address, ArrayDB<String>> sourcesPerBribe = Context.newBranchDB("sourcesPerBribe", BigInteger.class);
+    public static final BranchDB<String, ArrayDB<Address>> bribesPerSource = Context.newBranchDB("bribesPerSource", Address.class);
+    public static final BranchDB<Address, ArrayDB<String>> sourcesPerBribe = Context.newBranchDB("sourcesPerBribe", String.class);
     //Source->bribeToken->HasAvailableBribes
     public static final BranchDB<String, DictDB<Address, Boolean>> bribesInSource = Context.newBranchDB("bribesInSource", Boolean.class);
 
