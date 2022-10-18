@@ -554,6 +554,10 @@ public class SourceWeightController {
         return sourceTypeNames.indexOf(name);
     }
 
+    public static String getTypeName(int id) {
+        return sourceTypeNames.at(id);
+    }
+
     private static BigInteger getWeekTimestamp() {
         return BigInteger.valueOf(Context.getBlockTimestamp()).divide(WEEK).multiply(WEEK);
     }

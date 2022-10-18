@@ -295,9 +295,9 @@ public class RewardsImpl implements Rewards {
     public Map<String, Map<String, Object>> getSourceVoteData() {
         Map<String, Map<String, Object>> dataSources = new HashMap<>();
         BigInteger timestamp = BigInteger.valueOf(Context.getBlockTimestamp());
-        Map<String, Object> data = new HashMap<>();
         int dataSourcesCount = DataSourceDB.size();
         for (int i = 0; i < dataSourcesCount; i++) {
+            Map<String, Object> data = new HashMap<>();
             String name = DataSourceDB.names.get(i);
             data.put("votable", SourceWeightController.isVotable(name));
             data.put("type", SourceWeightController.getSourceType(name));
@@ -728,8 +728,13 @@ public class RewardsImpl implements Rewards {
     }
 
     @External(readonly = true)
-    public int getTypeId(String name){
+    public int getTypeId(String name) {
         return SourceWeightController.getTypeId(name);
+    }
+
+    @External(readonly = true)
+    public String getTypeName(int typeId) {
+        return SourceWeightController.getTypeName(typeId);
     }
 
     @External(readonly = true)

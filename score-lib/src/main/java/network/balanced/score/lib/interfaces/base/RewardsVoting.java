@@ -79,6 +79,9 @@ public interface RewardsVoting {
     int getTypeId(String name);
 
     @External(readonly = true)
+    String getTypeName(int typeId);
+
+    @External(readonly = true)
     int getSourceType(String sourceName);
 
     @External(readonly = true)
