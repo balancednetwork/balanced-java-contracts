@@ -70,6 +70,10 @@ public class BribingImpl implements Bribing {
         }
     }
 
+    @External(readonly=true)
+    public String name() {
+        return "Bribing";
+    }
 
     @External(readonly=true)
     public Address getRewards() {
@@ -176,7 +180,7 @@ public class BribingImpl implements Bribing {
     private void addBribe(String source, Address bribeToken, BigInteger amount) {
         BigInteger activePeriod = updateSource(source, bribeToken, false).period;
         BigInteger nextPeriod = activePeriod.add(WEEK);
-        BigInteger previousFutureBribes= futureBribePerSource.at(source).at(bribeToken).getOrDefault(activePeriod, BigInteger.ZERO);
+        BigInteger previousFutureBribes = futureBribePerSource.at(source).at(bribeToken).getOrDefault(activePeriod, BigInteger.ZERO);
 
         futureBribePerSource.at(source).at(bribeToken).set(nextPeriod, previousFutureBribes.add(amount));
         add(source, bribeToken);
@@ -239,13 +243,21 @@ public class BribingImpl implements Bribing {
 
         status.period = blockTimestamp.divide(WEEK).multiply(WEEK);
 
-        BigInteger slope = Context.call(Point.class, rewards.get(), "getSourceWeight", source, status.period).slope;
+        Point point  = Context.call(Point.class, rewards.get(), "getSourceWeight", source, status.period);
+        BigInteger slope = BigInteger.ZERO;
+        if (point != null) {
+            slope = point.slope;
+        }
+
         BigInteger claimedBribes = claimsPerSource.at(source).getOrDefault(bribeToken, BigInteger.ZERO);
         BigInteger totalPreviousAmount = rewardPerSource.at(source).getOrDefault(bribeToken, BigInteger.ZERO);
         BigInteger addedAmount = futureBribePerSource.at(source).at(bribeToken).getOrDefault(status.period, BigInteger.ZERO);
         BigInteger newTotal = totalPreviousAmount.add(addedAmount);
         BigInteger amount = newTotal.subtract(claimedBribes);
-        status.bribesPerToken = amount.multiply(EXA).divide(slope);
+        status.bribesPerToken = BigInteger.ZERO;
+        if (!amount.equals(BigInteger.ZERO)) {
+            status.bribesPerToken = amount.multiply(EXA).divide(slope);
+        }
 
         if (!readOnly) {
             rewardPerSource.at(source).set(bribeToken, newTotal);
