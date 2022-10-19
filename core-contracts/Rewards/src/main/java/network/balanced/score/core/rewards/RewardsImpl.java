@@ -517,8 +517,8 @@ public class RewardsImpl implements Rewards {
         balances.boostedSupply = fetchBoostedSupply();
         balances.balance = _balance;
         balances.supply = _totalSupply;
-        balances.prevWorkingBalance = dataSource.getWorkingBalance(_user, _balance, false);
-        balances.prevWorkingSupply = dataSource.getWorkingSupply(_totalSupply, false);
+        balances.prevWorkingBalance = dataSource.getWorkingBalance(_user);
+        balances.prevWorkingSupply = dataSource.getWorkingSupply();
 
 
         updateUserAccruedRewards(_name, currentTime, dataSource, _user, balances);
@@ -543,8 +543,8 @@ public class RewardsImpl implements Rewards {
             balances.boostedSupply = boostedSupply;
             balances.balance = entry._balance;
             balances.supply = _totalSupply;
-            balances.prevWorkingBalance = dataSource.getWorkingBalance(user, entry._balance, false);
-            balances.prevWorkingSupply = dataSource.getWorkingSupply(_totalSupply, false);
+            balances.prevWorkingBalance = dataSource.getWorkingBalance(user);
+            balances.prevWorkingSupply = dataSource.getWorkingSupply();
 
             updateUserAccruedRewards(_name, currentTime, dataSource, user, balances);
         }

@@ -86,7 +86,7 @@ public class DataSourceImpl {
 
     // Used for migration if it happens on Claim
     public BigInteger getWorkingSupply(boolean readonly) {
-        BigInteger workingSupply = getWorkingSupply();
+        BigInteger workingSupply = this.workingSupply.at(dbKey).get();
         if (workingSupply != null) {
             return workingSupply;
         }
@@ -101,7 +101,7 @@ public class DataSourceImpl {
 
     // Used for migration if it happens on BalanceUpdate
     public BigInteger getWorkingSupply(BigInteger prevSupply, boolean readonly) {
-        BigInteger workingSupply = getWorkingSupply();
+        BigInteger workingSupply = this.workingSupply.at(dbKey).get();
         if (workingSupply != null) {
             return workingSupply;
         }
@@ -113,8 +113,8 @@ public class DataSourceImpl {
         return prevSupply;
     }
 
-    private BigInteger getWorkingSupply() {
-        return workingSupply.at(dbKey).get();
+    public BigInteger getWorkingSupply() {
+        return workingSupply.at(dbKey).getOrDefault(BigInteger.ZERO);
     }
 
     private void setWorkingSupply(BigInteger supply) {
@@ -123,7 +123,7 @@ public class DataSourceImpl {
 
     // Used for migration if it happens on Claim
     public BigInteger getWorkingBalance(Address user, boolean readonly) {
-        BigInteger workingBalance = getWorkingBalance(user);
+        BigInteger workingBalance = userWorkingBalance.at(dbKey).get(user);
         if (workingBalance != null) {
             return workingBalance;
         }
@@ -138,7 +138,7 @@ public class DataSourceImpl {
 
     // Used for migration if it happens on BalanceUpdate
     public BigInteger getWorkingBalance(Address user, BigInteger prevBalance, boolean readonly) {
-        BigInteger workingBalance = getWorkingBalance(user);
+        BigInteger workingBalance = userWorkingBalance.at(dbKey).get(user);
         if (workingBalance != null) {
             return workingBalance;
         }
@@ -150,8 +150,8 @@ public class DataSourceImpl {
         return prevBalance;
     }
 
-    private BigInteger getWorkingBalance(Address user) {
-        return userWorkingBalance.at(dbKey).get(user);
+    public BigInteger getWorkingBalance(Address user) {
+        return userWorkingBalance.at(dbKey).getOrDefault(user, BigInteger.ZERO);
     }
 
     private void setWorkingBalance(Address user, BigInteger balance) {
