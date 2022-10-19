@@ -16,6 +16,7 @@
 
 package network.balanced.score.core.rewards;
 
+import network.balanced.score.core.rewards.utils.BalanceData;
 import network.balanced.score.lib.interfaces.DataSourceScoreInterface;
 import score.*;
 import scorex.util.HashMap;
@@ -251,17 +252,18 @@ public class DataSourceImpl {
         return accruedRewards;
     }
 
-    public void updateWorkingBalanceAndSupply(Address user, BigInteger boostedBalance, BigInteger boostedSupply) {
-        Map<String, BigInteger> balanceAndSupply = loadCurrentSupply(user);
-        BigInteger balance = balanceAndSupply.get(BALANCE);
-        BigInteger supply = balanceAndSupply.get(TOTAL_SUPPLY);
+    public void updateWorkingBalanceAndSupply(Address user, BalanceData balances) {
+        BigInteger balance = balances.balance;
+        BigInteger supply = balances.supply;
+        Context.require(balance.compareTo(BigInteger.ZERO) >= 0);
+        Context.require(supply.compareTo(BigInteger.ZERO) >= 0);
 
         BigInteger weight = RewardsImpl.boostWeight.get();
         BigInteger max = balance.multiply(EXA).divide(weight);
 
         BigInteger boost = BigInteger.ZERO;
-        if (boostedSupply.compareTo(BigInteger.ZERO) > 0 && balance.compareTo(BigInteger.ZERO) > 0) {
-            boost = supply.multiply(boostedBalance).multiply(EXA.subtract(weight)).divide(boostedSupply).divide(weight);
+        if (balances.boostedSupply.compareTo(BigInteger.ZERO) > 0 && balance.compareTo(BigInteger.ZERO) > 0) {
+            boost = supply.multiply(balances.boostedBalance).multiply(EXA.subtract(weight)).divide(balances.boostedSupply).divide(weight);
         }
 
         BigInteger newWorkingBalance = balance.add(boost);

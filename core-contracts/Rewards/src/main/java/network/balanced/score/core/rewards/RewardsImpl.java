@@ -37,6 +37,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import network.balanced.score.core.rewards.utils.BalanceData;
 import network.balanced.score.core.rewards.utils.EventLogger;
 import network.balanced.score.core.rewards.utils.RewardsConstants;
 import network.balanced.score.lib.interfaces.Rewards;
@@ -146,29 +147,8 @@ public class RewardsImpl implements Rewards {
             completeRecipient.add(WORKER_TOKENS);
             completeRecipient.add(RewardsConstants.RESERVE_FUND);
             completeRecipient.add(DAOFUND);
-        } else {
-            Map<String, BigInteger>  recipients = recipientAt(getDay());
-            BigInteger bwtPercentage = recipients.get(WORKER_TOKENS);
-            BigInteger reservePercentage = recipients.get(RewardsConstants.RESERVE_FUND);
-            BigInteger daoFundPercentage = recipients.get(DAOFUND);
-            distributionPercentages.set(WORKER_TOKENS, bwtPercentage);
-            distributionPercentages.set(RewardsConstants.RESERVE_FUND, reservePercentage);
-            distributionPercentages.set(DAOFUND, daoFundPercentage);
-
-            //migrate dex -> stakedLP
-            List<String> dataSources = getDataSourceNames();
-            Address stakedLPAddress = Context.call(Address.class, governance.get(), "getContractAddress", "stakedLp");
-            for (String source : dataSources) {
-                if (source.equals("Loans") || source.equals("sICX/ICX")) {
-                    continue;
-                }
-
-                DataSourceImpl dataSource = DataSourceDB.get(source);
-                dataSource.setContractAddress(stakedLPAddress);
-            }
+            boostWeight.set(WEIGHT);
         }
-
-        boostWeight.set(WEIGHT);
     }
 
     @External(readonly = true)
@@ -258,8 +238,6 @@ public class RewardsImpl implements Rewards {
         Context.require(!contains(recipients, _name), TAG + ": Recipient already exists");
         Context.require(_address.isContract(), TAG + " : Data source must be a contract.");
 
-        recipients.add(_name);
-        completeRecipient.add(_name);
         DataSourceDB.newSource(_name, _address);
         SourceWeightController.addSource(_name, sourceType, BigInteger.ZERO);
     }
@@ -474,41 +452,101 @@ public class RewardsImpl implements Rewards {
         dataProviders.remove(_source);
     }
 
+    // old versions only used by balanced contracts
     @External
     public void updateRewardsData(String _name, BigInteger _totalSupply, Address _user, BigInteger _balance) {
-        Context.require(dataProviders.contains(Context.getCaller()), TAG + ": Only data provider are allowed to " +
+        DataSourceImpl dataSource = DataSourceDB.get(_name);
+        Context.require(dataSource.getContractAddress().equals(Context.getCaller()), TAG + ": Only data provider are allowed to " +
                 "update rewards data");
 
         BigInteger currentTime = getTime();
         distribute();
-        DataSourceImpl dataSource = DataSourceDB.get(_name);
-        BigInteger boostedBalance = fetchBoostedBalance(_user);
-        BigInteger boostedSupply = fetchBoostedSupply();
-        BigInteger workingBalance = dataSource.getWorkingBalance(_user, _balance, false);
-        BigInteger workingSupply = dataSource.getWorkingSupply(_totalSupply, false);
-        updateUserAccruedRewards(_name, currentTime, workingSupply, dataSource, _user, workingBalance, boostedBalance
-                , boostedSupply);
+
+
+        BalanceData balances = new BalanceData();
+        balances.boostedBalance = fetchBoostedBalance(_user);
+        balances.boostedSupply = fetchBoostedSupply();
+        Map<String, BigInteger> balanceAndSupply = dataSource.loadCurrentSupply(_user);
+        balances.balance = balanceAndSupply.get(BALANCE);
+        balances.supply = balanceAndSupply.get(TOTAL_SUPPLY);
+        balances.prevWorkingBalance = dataSource.getWorkingBalance(_user, _balance, false);
+        balances.prevWorkingSupply = dataSource.getWorkingSupply(_totalSupply, false);
+
+
+        updateUserAccruedRewards(_name, currentTime, dataSource, _user, balances);
     }
 
+    // old versions only used by balanced contracts
     @External
     public void updateBatchRewardsData(String _name, BigInteger _totalSupply, RewardsDataEntry[] _data) {
-        Context.require(dataProviders.contains(Context.getCaller()), TAG + ": Only data provider are allowed to " +
+        DataSourceImpl dataSource = DataSourceDB.get(_name);
+        Context.require(dataSource.getContractAddress().equals(Context.getCaller()), TAG + ": Only data provider are allowed to " +
                 "update rewards data");
 
         BigInteger currentTime = getTime();
         distribute();
 
-        DataSourceImpl dataSource = DataSourceDB.get(_name);
         BigInteger boostedSupply = fetchBoostedSupply();
 
         for (RewardsDataEntry entry : _data) {
             Address user = entry._user;
-            BigInteger boostedBalance = fetchBoostedBalance(user);
-            BigInteger previousBalance = entry._balance;
-            BigInteger workingBalance = dataSource.getWorkingBalance(user, previousBalance, false);
-            BigInteger workingSupply = dataSource.getWorkingSupply(_totalSupply, false);
-            updateUserAccruedRewards(_name, currentTime, workingSupply, dataSource, user, workingBalance,
-                    boostedBalance, boostedSupply);
+            BalanceData balances = new BalanceData();
+            balances.boostedSupply = boostedSupply;
+            balances.boostedBalance = fetchBoostedBalance(user);
+            Map<String, BigInteger> balanceAndSupply = dataSource.loadCurrentSupply(user);
+            balances.balance = balanceAndSupply.get(BALANCE);
+            balances.supply = balanceAndSupply.get(TOTAL_SUPPLY);
+            balances.prevWorkingBalance = dataSource.getWorkingBalance(user, entry._balance, false);
+            balances.prevWorkingSupply = dataSource.getWorkingSupply(_totalSupply, false);
+
+            updateUserAccruedRewards(_name, currentTime, dataSource, user, balances);
+        }
+    }
+
+    @External
+    public void updateBalanceAndSupply(String _name, BigInteger _totalSupply, Address _user, BigInteger _balance) {
+        DataSourceImpl dataSource = DataSourceDB.get(_name);
+        Context.require(dataSource.getContractAddress().equals(Context.getCaller()), TAG + ": Only data provider are allowed to " +
+                "update rewards data");
+
+        BigInteger currentTime = getTime();
+        distribute();
+
+        BalanceData balances = new BalanceData();
+        balances.boostedBalance = fetchBoostedBalance(_user);
+        balances.boostedSupply = fetchBoostedSupply();
+        balances.balance = _balance;
+        balances.supply = _totalSupply;
+        balances.prevWorkingBalance = dataSource.getWorkingBalance(_user, _balance, false);
+        balances.prevWorkingSupply = dataSource.getWorkingSupply(_totalSupply, false);
+
+
+        updateUserAccruedRewards(_name, currentTime, dataSource, _user, balances);
+    }
+
+    @External
+    public void updateBalanceAndSupplyBatch(String _name, BigInteger _totalSupply, RewardsDataEntry[] _data) {
+        DataSourceImpl dataSource = DataSourceDB.get(_name);
+        Context.require(dataSource.getContractAddress().equals(Context.getCaller()), TAG + ": Only data provider are allowed to " +
+                "update rewards data");
+
+        BigInteger currentTime = getTime();
+        distribute();
+
+        BigInteger boostedSupply = fetchBoostedSupply();
+
+        for (RewardsDataEntry entry : _data) {
+            Address user = entry._user;
+
+            BalanceData balances = new BalanceData();
+            balances.boostedBalance = fetchBoostedBalance(user);
+            balances.boostedSupply = boostedSupply;
+            balances.balance = entry._balance;
+            balances.supply = _totalSupply;
+            balances.prevWorkingBalance = dataSource.getWorkingBalance(user, entry._balance, false);
+            balances.prevWorkingSupply = dataSource.getWorkingSupply(_totalSupply, false);
+
+            updateUserAccruedRewards(_name, currentTime, dataSource, user, balances);
         }
     }
 
@@ -803,19 +841,24 @@ public class RewardsImpl implements Rewards {
                 continue;
             }
 
-            BigInteger workingSupply = dataSource.getWorkingSupply(false);
-            updateUserAccruedRewards(name, currentTime, workingSupply, dataSource, user, workingBalance,
-                    boostedBalance, boostedSupply);
+            BalanceData balances = new BalanceData();
+            balances.boostedBalance = fetchBoostedBalance(user);
+            balances.boostedSupply = boostedSupply;
+            Map<String, BigInteger> balanceAndSupply = dataSource.loadCurrentSupply(user);
+            balances.balance = balanceAndSupply.get(BALANCE);
+            balances.supply = balanceAndSupply.get(TOTAL_SUPPLY);
+            balances.prevWorkingBalance = workingBalance;
+            balances.prevWorkingSupply = dataSource.getWorkingSupply( false);
+
+            updateUserAccruedRewards(name, currentTime,dataSource, user, balances);
         }
     }
 
-    private void updateUserAccruedRewards(String _name, BigInteger currentTime, BigInteger prevWorkingSupply,
-                                          DataSourceImpl dataSource, Address user, BigInteger prevWorkingBalance,
-                                          BigInteger boostedBalance, BigInteger boostedSupply) {
+    private void updateUserAccruedRewards(String _name, BigInteger currentTime, DataSourceImpl dataSource, Address user, BalanceData balances) {
 
-        BigInteger accruedRewards = dataSource.updateSingleUserData(currentTime, prevWorkingSupply, user,
-                prevWorkingBalance, false);
-        dataSource.updateWorkingBalanceAndSupply(user, boostedBalance, boostedSupply);
+        BigInteger accruedRewards = dataSource.updateSingleUserData(currentTime, balances.prevWorkingSupply, user,
+                balances.prevWorkingBalance, false);
+        dataSource.updateWorkingBalanceAndSupply(user, balances);
 
         if (accruedRewards.compareTo(BigInteger.ZERO) > 0) {
             BigInteger newHoldings =
