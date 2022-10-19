@@ -39,4 +39,9 @@ public interface SystemInterface {
 
     @Payable
     void registerPRep(String name, String email, String country, String city, String website, String details, String p2pEndpoint);
+
+    void setScoreOwner(Address score, Address owner );
+
+    Address getScoreOwner(Address score);
+
 }

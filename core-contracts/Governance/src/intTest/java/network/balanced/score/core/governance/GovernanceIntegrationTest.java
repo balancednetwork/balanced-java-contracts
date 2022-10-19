@@ -22,6 +22,7 @@ import static network.balanced.score.lib.test.integration.BalancedUtils.createTr
 import static network.balanced.score.lib.test.integration.BalancedUtils.getContractBytes;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.newScoreClient;
+import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.getContractData;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -139,6 +140,24 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         }
     }
 
+    void changeOwner(Address score, Address new_owner) {
+        owner.systemScore.setScoreOwner(score, new_owner);
+    }
+
+    @Test
+    void setNewOwner() throws Exception {
+        // Arrange
+        KeyWallet newOwnerWallet = createWalletWithBalance(BigInteger.TEN.pow(24));
+        BalancedClient newOwner = new BalancedClient(balanced, newOwnerWallet);
+
+        // Act
+        changeOwner(owner.governance._address(), newOwner.getAddress());
+
+        // Assert
+        Address actualResult = owner.systemScore.getScoreOwner(owner.governance._address());
+        assertEquals(newOwner.getAddress(), actualResult);
+    }
+
     @Test
     @Order(10)
     void deployNewContract() {
@@ -212,6 +231,88 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         assertEquals(deploymentValueParameter, getValue(contractAddress));
     }
 
+    @Test
+    @Order(13)
+    void updateContractFromVote(){
+        // updating dex from vote
+        // size of dex contract: 57,878 bytes (61 KB)
+        // vote definition fee: fee=25907653000000000000 steps=2072612240 price=12500000000
+        // vote execution fee: fee=25217133812500000000 steps=2017370705 price=12500000000
+
+        String updatedContract = "Balanced DEX";
+        Address contractAddress = owner.governance.getAddress("Balanced DEX");
+
+        JsonArray deploymentParameters = new JsonArray()
+                .add(createParameter(owner.governance._address()));
+
+        JsonArray deployToParameters = new JsonArray()
+                .add(createParameter(contractAddress))
+                .add(createParameter(getContractData("Dex")))
+                .add(createParameter(deploymentParameters.toString()));
+
+        JsonArray actions = new JsonArray()
+                .add(createTransaction(balanced.governance._address(), "deployTo", deployToParameters));
+
+        BigInteger day = tester.governance.getDay();
+        String name = "testUpdateContractVote";
+        BigInteger voteStart = day.add(BigInteger.valueOf(4));
+        BigInteger snapshot = day.add(BigInteger.TWO);
+        tester.governance.defineVote(name, "test", voteStart, snapshot, actions.toString());
+
+        balanced.increaseDay(4);
+        BigInteger id = tester.governance.getVoteIndex(name);
+        tester.governance.castVote(id, true);
+
+        balanced.increaseDay(2);
+        tester.governance.evaluateVote(id);
+
+        assertEquals(updatedContract, tester.dex.name());
+    }
+
+    @Test
+    @Order(14)
+    void updateSmallContractFromVote() {
+        // updating DeploymentTesterJar1 contract from vote
+        // size of dex contract: 969 bytes (4 KB)
+        // vote definition fee: fee=12754290212500000000 steps=1020343217 price=12500000000
+        // vote execution fee: fee=12732669150000000000 steps=1018613532 price=12500000000
+
+        String updateValueParameter = "update";
+        String deploymentValueParameter = "first deployment";
+        byte[] contractData = getContractBytes(deploymentTesterJar1);
+        JsonArray params = new JsonArray()
+                .add(createParameter(deploymentValueParameter));
+        owner.governance.deploy(contractData, params.toString());
+
+        Address contractAddress = owner.governance.getAddress(deploymentTesterName);
+
+        JsonArray deploymentParameters = new JsonArray()
+                .add(createParameter(updateValueParameter));
+
+        JsonArray deployToParameters = new JsonArray()
+                .add(createParameter(contractAddress))
+                .add(createParameter(getContractBytes(deploymentTesterJar1)))
+                .add(createParameter(deploymentParameters.toString()));
+
+        JsonArray actions = new JsonArray()
+                .add(createTransaction(balanced.governance._address(), "deployTo", deployToParameters));
+
+        BigInteger day = tester.governance.getDay();
+        String name = "testUpdateContractVote";
+        BigInteger voteStart = day.add(BigInteger.valueOf(4));
+        BigInteger snapshot = day.add(BigInteger.TWO);
+        tester.governance.defineVote(name, "test", voteStart, snapshot, actions.toString());
+
+        balanced.increaseDay(4);
+        BigInteger id = tester.governance.getVoteIndex(name);
+        tester.governance.castVote(id, true);
+
+        balanced.increaseDay(2);
+        tester.governance.evaluateVote(id);
+
+        assertEquals(updateValueParameter, getValue(contractAddress));
+    }
+
     private String getValue(Address address) {
         DefaultScoreClient client = newScoreClient(owner.wallet, address); 
         return client._call(String.class, "getValue", Map.of());
@@ -220,6 +321,5 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
     private String getValue2(Address address) {
         DefaultScoreClient client = newScoreClient(owner.wallet, address); 
         return client._call(String.class, "getValue2", Map.of());
-
     }
 }
