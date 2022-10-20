@@ -306,7 +306,12 @@ public class SourceWeightController {
         *@param time Relative weight at the specified timestamp in the past or present
         *@return Value of relative weight normalized to 1e18
         */
-        time = getWeekTimestamp(time);
+        if (time.equals(BigInteger.ZERO)) {
+            time = getWeekTimestamp();
+        } else {
+            time = getWeekTimestamp(time);
+        }
+
         BigInteger totalWeight = pointsTotal.getOrDefault(time, BigInteger.ZERO);
         if (totalWeight.compareTo(BigInteger.ZERO) <= 0) {
             return BigInteger.ZERO;

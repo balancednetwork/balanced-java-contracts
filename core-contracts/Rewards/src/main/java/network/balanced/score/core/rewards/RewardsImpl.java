@@ -679,7 +679,7 @@ public class RewardsImpl implements Rewards {
     }
 
     @External(readonly = true)
-    public BigInteger getRelativeSourceWeight(String name, BigInteger time) {
+    public BigInteger getRelativeSourceWeight(String name, @Optional BigInteger time) {
         return SourceWeightController.getRelativeWeight(name, time);
     }
 

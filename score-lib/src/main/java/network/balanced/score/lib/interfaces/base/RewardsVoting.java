@@ -49,7 +49,7 @@ public interface RewardsVoting {
     BigInteger updateRelativeSourceWeight(String name, BigInteger time);
 
     @External(readonly = true)
-    BigInteger getRelativeSourceWeight(String name, BigInteger time);
+    BigInteger getRelativeSourceWeight(String name, @Optional BigInteger time);
 
     @External
     void voteForSource(String name, BigInteger userWeight);
