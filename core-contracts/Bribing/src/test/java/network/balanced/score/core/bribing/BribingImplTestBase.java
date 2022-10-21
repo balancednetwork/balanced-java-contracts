@@ -53,11 +53,15 @@ class BribingImplTestBase extends UnitTest {
     protected MockContract<IRC2> bribeToken;
 
     protected Score bribing;
+    protected BribingImpl bribingSpy;
 
     protected void setupBase() throws Exception {
         rewards = new MockContract<>(RewardsScoreInterface.class, sm, owner);
         bribeToken = new MockContract<>(IRC2ScoreInterface.class, sm, owner);
         bribing = sm.deploy(owner, BribingImpl.class, rewards.getAddress());
+
+        bribingSpy = (BribingImpl) spy(bribing.getInstance());
+        bribing.setInstance(bribingSpy);
     }
 
     protected BigInteger getPeriod() {
