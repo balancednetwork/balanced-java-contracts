@@ -36,6 +36,10 @@ public class Collateral {
         dbKey = key;
     }
 
+    public void setAddress(Address address) {
+        this.assetAddress.at(dbKey).set(address);
+    }
+
     public Address getAssetAddress() {
         return assetAddress.at(dbKey).get();
     }

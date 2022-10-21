@@ -36,6 +36,9 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
         RebalancingAddress, DividendsAddress, ReserveAddress, RewardsAddress, OracleAddress {
 
     @External
+    void removeBALN();
+
+    @External
     void turnLoansOn();
 
     @External

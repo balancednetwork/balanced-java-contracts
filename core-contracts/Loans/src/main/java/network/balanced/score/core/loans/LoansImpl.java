@@ -46,6 +46,7 @@ import static network.balanced.score.core.loans.LoansVariables.*;
 import static network.balanced.score.core.loans.utils.Checks.loansOn;
 import static network.balanced.score.core.loans.utils.LoansConstants.*;
 import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
+import static network.balanced.score.lib.utils.ArrayDBUtils.removeFromArraydb;
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Math.convertToNumber;
 import static network.balanced.score.lib.utils.Math.pow;
@@ -78,6 +79,23 @@ public class LoansImpl implements Loans {
             CollateralDB.migrateToNewDBs();
             AssetDB.migrateToNewDBs();
         }
+    }
+
+    @External
+    public void removeBALN() {
+        onlyOwner();
+        String symbol = "BALN";
+        Collateral collateral = CollateralDB.getCollateral(symbol);
+        Address address = collateral.getAssetAddress();
+        CollateralDB.symbolMap.set(symbol, null);
+        removeFromArraydb(address, CollateralDB.collateralAddresses);
+        removeFromArraydb(symbol, CollateralDB.collateralList);
+
+        collateral.setActive(null);
+        collateral.setAddress(null);
+
+        Context.require(!arrayDbContains(CollateralDB.collateralAddresses, address));
+        Context.require(!arrayDbContains(CollateralDB.collateralList, symbol));
     }
 
     @External(readonly = true)
