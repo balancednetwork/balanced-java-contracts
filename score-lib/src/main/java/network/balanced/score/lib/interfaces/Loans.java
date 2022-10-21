@@ -33,7 +33,7 @@ import java.util.Map;
 @ScoreClient
 @ScoreInterface
 public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, GovernanceAddress, StakingAddress,
-        RebalancingAddress, DividendsAddress, ReserveAddress, RewardsAddress, OracleAddress {
+        RebalancingAddress, DividendsAddress, ReserveAddress, RewardsAddress, OracleAddress, BnusdAddress {
 
     @External
     void turnLoansOn();
@@ -79,9 +79,6 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
 
     @External
     void addAsset(Address _token_address, boolean _active, boolean _collateral);
-
-    @External
-    void toggleAssetActive(String _symbol);
 
     @External(readonly = true)
     Map<String, BigInteger> getBalanceAndSupply(String _name, Address _owner);

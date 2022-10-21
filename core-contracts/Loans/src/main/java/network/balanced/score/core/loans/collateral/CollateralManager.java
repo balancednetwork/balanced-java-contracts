@@ -16,57 +16,34 @@
 
 package network.balanced.score.core.loans.collateral;
 
-import network.balanced.score.core.loans.utils.Token;
+import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
+import static network.balanced.score.lib.utils.Math.pow;
+
+import java.math.BigInteger;
+import java.util.Map;
+
+import network.balanced.score.core.loans.utils.TokenUtils;
 import score.Address;
 import score.ArrayDB;
 import score.Context;
 import score.DictDB;
 import scorex.util.HashMap;
 
-import java.math.BigInteger;
-import java.util.Map;
 
-import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
-import static network.balanced.score.lib.utils.Math.pow;
-
-public class CollateralDB {
+public class CollateralManager {
     private static final String TAG = "BalancedLoansAssets";
-    private static final String COLLATERAL_DB_PREFIX = "asset";
-
-    // new
     public static ArrayDB<Address> collateralAddresses = Context.newArrayDB("collateral_only_address_list",
             Address.class);
     public static ArrayDB<String> collateralList = Context.newArrayDB("collateral", String.class);
     public static final DictDB<String, String> symbolMap = Context.newDictDB("symbol|address", String.class);
 
-    public static void migrateToNewDBs() {
-        int totalCollateralCount = collateralList.size();
-        if (collateralAddresses.size() > 0) {
-            return;
-        }
-
-        for (int i = 0; i < totalCollateralCount; i++) {
-            String symbol = collateralList.get(i);
-            Collateral collateral = getCollateral(symbol);
-
-            collateralAddresses.add(collateral.getAssetAddress());
-        }
-    }
-
     public static int size() {
         return collateralAddresses.size();
     }
 
-    public static Collateral getCollateral(String symbol) {
+    public static Address getAddress(String symbol) {
         Context.require(arrayDbContains(collateralList, symbol), symbol + " is not a supported collateral type.");
-        String collateralAddress = symbolMap.get(symbol);
-        return new Collateral(COLLATERAL_DB_PREFIX + "|" + collateralAddress);
-    }
-
-    public static Collateral getCollateral(Address address) {
-        Context.require(arrayDbContains(collateralAddresses, address), address + " is not a supported collateral type" +
-                ".");
-        return new Collateral(COLLATERAL_DB_PREFIX + "|" + address.toString());
+        return Address.fromString(symbolMap.get(symbol));
     }
 
     public static void addCollateral(Address address, Boolean active) {
@@ -76,11 +53,7 @@ public class CollateralDB {
 
         collateralAddresses.add(address);
 
-        Collateral collateral = new Collateral(COLLATERAL_DB_PREFIX + "|" + collateralToAdd);
-        collateral.setCollateral(address, active);
-
-        Token collateralContract = new Token(address);
-        String symbol = collateralContract.symbol();
+        String symbol = TokenUtils.symbol(address);
         symbolMap.set(symbol, collateralToAdd);
         collateralList.add(symbol);
     }
@@ -101,17 +74,10 @@ public class CollateralDB {
         int collateralCount = collateralList.size();
         for (int i = 0; i < collateralCount; i++) {
             String symbol = collateralList.get(i);
-            Collateral collateral = getCollateral(symbol);
-            if (!collateral.isActive()) {
-                continue;
-            }
+            Address collateralAddress = getAddress(symbol);
+            BigInteger collateralDecimals = pow(BigInteger.TEN, TokenUtils.decimals(collateralAddress).intValue());
 
-            Address collateralAddress = collateral.getAssetAddress();
-            Token collateralContract = new Token(collateralAddress);
-            BigInteger collateralDecimals = pow(BigInteger.TEN, collateralContract.decimals().intValue());
-
-            BigInteger value =
-                    collateralContract.balanceOf(Context.getAddress()).multiply(collateralContract.lastPriceInLoop()).divide(collateralDecimals);
+            BigInteger value = TokenUtils.balanceOf(collateralAddress, Context.getAddress()).multiply(TokenUtils.getPriceInLoop(symbol, true)).divide(collateralDecimals);
             totalCollateral = totalCollateral.add(value);
         }
 

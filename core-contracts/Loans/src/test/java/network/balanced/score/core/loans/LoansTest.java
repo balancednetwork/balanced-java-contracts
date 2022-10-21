@@ -331,33 +331,6 @@ class LoansTest extends LoansTestBase {
     }
 
     @Test
-    void DepositAndBorrow_OriginateLoan_NotBorrowable() {
-        // Arrange
-        Account account = accounts.get(0);
-        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
-        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
-        String expectedErrorMessage = "Reverted(0): BalancedLoansAssets sICX is not a supported asset.";
-
-        // Assert & Act
-        Executable depositAndBorrow = () -> takeLoanICX(account, "sICX", collateral, loan);
-        expectErrorMessage(depositAndBorrow, expectedErrorMessage);
-    }
-
-    @Test
-    void DepositAndBorrow_OriginateLoan_NotActive() {
-        // Arrange
-        Account account = accounts.get(0);
-        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
-        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
-        String expectedErrorMessage = "Reverted(0): " + TAG + "Loans of inactive assets are not allowed.";
-        loans.invoke(admin, "toggleAssetActive", "bnUSD");
-
-        // Assert & Act
-        Executable depositAndBorrow = () -> takeLoanICX(account, "bnUSD", collateral, loan);
-        expectErrorMessage(depositAndBorrow, expectedErrorMessage);
-    }
-
-    @Test
     void DepositAndBorrow_OriginateLoan_LowerThanMinimum() {
         // Arrange
         Account account = accounts.get(0);
@@ -829,39 +802,6 @@ class LoansTest extends LoansTestBase {
         // Assert & Act
         Executable returnForiETH = () -> loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, "iETH");
         expectErrorMessage(returnForiETH, expectedErrorMessage);
-    }
-
-    @Test
-    void returnAsset_returnCollateral() {
-        // Arrange
-        Account account = accounts.get(0);
-        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
-        BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
-        BigInteger collateralToRepay = BigInteger.valueOf(100).multiply(EXA);
-        String expectedErrorMessage = "Reverted(0): BalancedLoansAssets sICX is not a supported asset.";
-
-        takeLoanICX(account, "bnUSD", collateral, loan);
-
-        // Assert & Act
-        Executable returnCollateral = () -> loans.invoke(account, "returnAsset", "sICX", collateralToRepay, "sICX");
-        expectErrorMessage(returnCollateral, expectedErrorMessage);
-    }
-
-    @Test
-    void returnAsset_returnNonActiveAsset() {
-        // Arrange
-        Account account = accounts.get(0);
-        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
-        BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
-        BigInteger loanToRepay = BigInteger.valueOf(100).multiply(EXA);
-        String expectedErrorMessage = "Reverted(0): " + TAG + "bnUSD is not an active, borrowable asset on Balanced.";
-
-        takeLoanICX(account, "bnUSD", collateral, loan);
-        loans.invoke(admin, "toggleAssetActive", "bnUSD");
-
-        // Assert & Act
-        Executable nonActiveAsset = () -> loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, "sICX");
-        expectErrorMessage(nonActiveAsset, expectedErrorMessage);
     }
 
     @Test
@@ -1738,57 +1678,6 @@ class LoansTest extends LoansTestBase {
         // Assert & Act
         Executable retireBadDebtZeroAmount = () -> loans.invoke(badDebtReedemer, "retireBadDebt", "bnUSD",
                 BigInteger.ZERO);
-        expectErrorMessage(retireBadDebtZeroAmount, expectedErrorMessage);
-    }
-
-    @Test
-    void retireBadDebt_Collateral() {
-        // Arrange
-        Account account = accounts.get(0);
-        Account liquidator = accounts.get(1);
-        Account badDebtReedemer = accounts.get(2);
-        String expectedErrorMessage = "Reverted(0): BalancedLoansAssets sICX is not a supported asset.";
-
-        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
-        BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
-        BigInteger expectedFee = calculateFee(loan);
-        BigInteger badDebt = loan.add(expectedFee);
-
-        bnusd.invoke(admin, "transfer", badDebtReedemer.getAddress(), loan.add(expectedFee), new byte[0]);
-        takeLoanICX(account, "bnUSD", collateral, loan);
-
-        BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
-        mockOraclePrice("bnUSD", newPrice);
-        loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
-
-        // Assert & Act
-        Executable retireBadDebtZeroAmount = () -> loans.invoke(badDebtReedemer, "retireBadDebt", "sICX", badDebt);
-        expectErrorMessage(retireBadDebtZeroAmount, expectedErrorMessage);
-    }
-
-    @Test
-    void retireBadDebt_AssetNotActive() {
-        // Arrange
-        Account account = accounts.get(0);
-        Account liquidator = accounts.get(1);
-        Account badDebtReedemer = accounts.get(2);
-        String expectedErrorMessage = "Reverted(0): " + TAG + "bnUSD is not an active, borrowable asset on Balanced.";
-
-        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
-        BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
-        BigInteger expectedFee = calculateFee(loan);
-        BigInteger badDebt = loan.add(expectedFee);
-
-        bnusd.invoke(admin, "transfer", badDebtReedemer.getAddress(), loan.add(expectedFee), new byte[0]);
-        takeLoanICX(account, "bnUSD", collateral, loan);
-
-        BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
-        mockOraclePrice("bnUSD", newPrice);
-        loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
-
-        // Assert & Act
-        loans.invoke(admin, "toggleAssetActive", "bnUSD");
-        Executable retireBadDebtZeroAmount = () -> loans.invoke(badDebtReedemer, "retireBadDebt", "bnUSD", badDebt);
         expectErrorMessage(retireBadDebtZeroAmount, expectedErrorMessage);
     }
 
