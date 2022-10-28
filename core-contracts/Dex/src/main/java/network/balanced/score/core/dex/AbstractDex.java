@@ -447,14 +447,12 @@ public abstract class AbstractDex implements Dex {
             poolStats.put("quote", icxQueueTotal.getOrDefault(BigInteger.ZERO));
             poolStats.put("total_supply", icxQueueTotal.getOrDefault(BigInteger.ZERO));
             poolStats.put("price", getPrice(_id));
-            poolStats.put("name", SICXICX_MARKET_NAME);
             poolStats.put("base_decimals", 18);
             poolStats.put("quote_decimals", 18);
             poolStats.put("min_quote", getRewardableAmount(null));
         } else {
             Address baseToken = poolBase.get(_id.intValue());
             Address quoteToken = poolQuote.get(_id.intValue());
-            String name = marketsToNames.getOrDefault(_id.intValue(), "");
             DictDB<Address, BigInteger> totalTokensInPool = poolTotal.at(_id.intValue());
 
             poolStats.put("base", totalTokensInPool.get(baseToken));
@@ -463,7 +461,6 @@ public abstract class AbstractDex implements Dex {
             poolStats.put("quote_token", quoteToken);
             poolStats.put("total_supply", poolLpTotal.get(_id.intValue()));
             poolStats.put("price", getPrice(_id));
-            poolStats.put("name", name);
             poolStats.put("base_decimals", tokenPrecisions.get(baseToken));
             poolStats.put("quote_decimals", tokenPrecisions.get(quoteToken));
             poolStats.put("min_quote", getRewardableAmount(quoteToken));

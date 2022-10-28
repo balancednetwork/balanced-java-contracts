@@ -532,7 +532,6 @@ public class DexTestSettersAndGetters extends DexTestBase {
                 "quote_token", balnScore.getAddress(),
                 "total_supply", totalLpTokens,
                 "price", expectedPrice,
-                "name", poolName,
                 "base_decimals", tokenDecimals,
                 "quote_decimals", tokenDecimals,
                 "min_quote", minQuote

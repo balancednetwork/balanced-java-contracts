@@ -117,7 +117,6 @@ public class MultipleAddTest {
         BigInteger poolId = dexUserScoreClient.getPoolId(Address.fromString(dexTestThirdScoreAddress),
                 Address.fromString(dexTestFourthScoreAddress));
         Map<String, Object> poolStats = dexUserScoreClient.getPoolStats(poolId);
-        assertEquals(poolStats.get("name"), "");
         assertEquals(poolStats.get("base_token").toString(), dexTestThirdScoreAddress);
         assertEquals(poolStats.get("quote_token").toString(), dexTestFourthScoreAddress);
         assertEquals(hexToBigInteger(poolStats.get("base").toString()), BigInteger.valueOf(50).multiply(EXA));
@@ -147,7 +146,6 @@ public class MultipleAddTest {
         poolId = dexUserScoreClient.getPoolId(Address.fromString(dexTestThirdScoreAddress),
                 Address.fromString(dexTestFourthScoreAddress));
         poolStats = dexUserScoreClient.getPoolStats(poolId);
-        assertEquals(poolStats.get("name"), "");
         assertEquals(poolStats.get("base_token").toString(), dexTestThirdScoreAddress);
         assertEquals(poolStats.get("quote_token").toString(), dexTestFourthScoreAddress);
         assertEquals(hexToBigInteger(poolStats.get("base").toString()), BigInteger.valueOf(110).multiply(EXA));
@@ -158,10 +156,6 @@ public class MultipleAddTest {
         assertEquals(hexToBigInteger(poolStats.get("quote_decimals").toString()), BigInteger.valueOf(18));
         assertEquals(hexToBigInteger(poolStats.get("min_quote").toString()), BigInteger.ZERO);
 
-        //change name and verify
-        governanceDexScoreClient.setMarketName(poolId, "DTT/DTBT");
-        Map<String, Object> updatedPoolStats = dexUserScoreClient.getPoolStats(poolId);
-        assertEquals(updatedPoolStats.get("name").toString(), "DTT/DTBT");
     }
 
     void mintAndTransferTestTokens(byte[] tokenDeposit) {
