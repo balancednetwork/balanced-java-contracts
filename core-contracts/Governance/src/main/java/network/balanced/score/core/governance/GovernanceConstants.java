@@ -41,21 +41,22 @@ public class GovernanceConstants extends Constants {
     public static final String LAUNCHED = "launched";
     public static final String REBALANCING = "rebalancing";
     public static final String TIME_OFFSET = "time_offset";
-    public static final String VOTE_DURATION = "vote_duration";
+    public static final String MAX_VOTE_DURATION = "vote_duration_max";
+    public static final String MIN_VOTE_DURATION = "vote_duration_min";
     public static final String MIN_BALN = "min_baln";
     public static final String DEFINITION_FEE = "definition_fee";
     public static final String QUORUM = "quorum";
 
 
     public static String[] CONTRACTS = {"loans", "dex", "staking", "rewards", "dividends", "daofund",
-            "reserve", "sicx", "bnUSD", "baln", "bwt", "router", "feehandler", "stakedLp", "rebalancing",
+            "reserve", "sicx", "bnUSD", "baln", "bwt", "router", "feehandler", "stakedLp", "rebalancing", "bBaln",
             "balancedOracle"};
 
     public static Map<String, List<String>> ADDRESSES = Map.ofEntries(
             entry("loans", List.of("rewards", "dividends", "staking", "reserve", "dex", "rebalancing",
                     "balancedOracle")),
             entry("dex", List.of("rewards", "dividends", "staking", "sicx", "bnUSD", "baln", "feehandler", "stakedLp")),
-            entry("rewards", List.of("reserve", "baln", "bwt", "daofund", "stakedLp")),
+            entry("rewards", List.of("reserve", "baln", "bwt", "daofund", "stakedLp", "bBaln")),
             entry("dividends", List.of("loans", "daofund", "dex", "baln")),
             entry("daofund", List.of("loans")),
             entry("reserve", List.of("loans", "baln", "sicx")),
@@ -101,6 +102,7 @@ public class GovernanceConstants extends Constants {
             entry("router", "setRouter"),
             entry("feehandler", "setFeehandler"),
             entry("stakedLp", "setStakedLp"),
+            entry("bBaln", "setBoostedBaln"),
             entry("balancedOracle", "setOracle")
     );
 

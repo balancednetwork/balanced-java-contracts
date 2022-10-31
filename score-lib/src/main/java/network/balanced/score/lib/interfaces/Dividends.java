@@ -34,13 +34,19 @@ import java.util.Map;
 @ScoreClient
 @ScoreInterface
 public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress, DaoFundAddress, BalnAddress,
-        Name, DexAddress, TokenFallback {
+        Name, DexAddress, TokenFallback, BoostedBalnAddress {
 
     @External(readonly = true)
     boolean getDistributionActivationStatus();
 
     @External
     void setDistributionActivationStatus(boolean _status);
+
+    @External
+    void onBalanceUpdate(Address user, BigInteger bBalnBalance);
+
+    @External
+    void onKick(Address user);
 
     @External
     void setTimeOffset(BigInteger deltaTime);
@@ -50,12 +56,6 @@ public interface Dividends extends AdminAddress, GovernanceAddress, LoansAddress
 
     @External(readonly = true)
     BigInteger getDividendsOnlyToStakedBalnDay();
-
-    @External
-    void setContinuousDividendsDay(BigInteger day);
-
-    @External(readonly = true)
-    BigInteger getContinuousDividendsDay();
 
     @External(readonly = true)
     Map<String, BigInteger> getBalances();
