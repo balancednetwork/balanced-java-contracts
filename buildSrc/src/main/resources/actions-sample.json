@@ -314,6 +314,36 @@
     "order": 12.0
   },
   {
+    "contract": "feehandler",
+    "method": "setLoans",
+    "__args__": {
+      "__address_args__": {
+        "_address": "loans"
+      }
+    },
+    "order": 12.0
+  },
+  {
+    "contract": "feehandler",
+    "method": "setDex",
+    "__args__": {
+      "__address_args__": {
+        "_address": "dex"
+      }
+    },
+    "order": 12.0
+  },
+  {
+    "contract": "feehandler",
+    "method": "setStabilityFund",
+    "__args__": {
+      "__address_args__": {
+        "_address": "stability"
+      }
+    },
+    "order": 12.0
+  },
+  {
     "contract": "governance",
     "value": 100000000000000000000,
     "method": "createBnusdMarket",
