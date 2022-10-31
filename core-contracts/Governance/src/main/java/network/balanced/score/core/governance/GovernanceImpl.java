@@ -60,7 +60,7 @@ public class GovernanceImpl implements Governance {
             return;
         }
 
-        ContractManager.migrateAddresses();
+//        ContractManager.migrateAddresses();
     }
 
     @External(readonly = true)
@@ -76,6 +76,12 @@ public class GovernanceImpl implements Governance {
     @External(readonly = true)
     public Map<String, BigInteger> getVotersCount(BigInteger vote_index) {
         return ProposalManager.getVotersCount(vote_index);
+    }
+
+    @External
+    public void changeScoreOwner(Address score, Address newOwner) {
+        Address SYSTEM_SCORE_ADDRESS = getSystemScoreAddress();
+        Context.call(SYSTEM_SCORE_ADDRESS, "setScoreOwner", score, newOwner);
     }
 
     @External
@@ -393,5 +399,11 @@ public class GovernanceImpl implements Governance {
 
     public static EventLogger getEventLogger() {
         return new EventLogger();
+    }
+
+    private static Address getSystemScoreAddress() {
+        byte[] rawAddress = new byte[Address.LENGTH];
+        rawAddress[0] = 1;
+        return new Address(rawAddress);
     }
 }

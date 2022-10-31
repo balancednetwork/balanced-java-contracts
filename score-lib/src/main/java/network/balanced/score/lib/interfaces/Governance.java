@@ -45,6 +45,9 @@ public interface Governance extends
     @External(readonly = true)
     Map<String, BigInteger> getVotersCount(BigInteger vote_index);
 
+    @External
+    void changeScoreOwner(Address score, Address newOwner);
+
     @External(readonly = true)
     Address getContractAddress(String contract);
 
