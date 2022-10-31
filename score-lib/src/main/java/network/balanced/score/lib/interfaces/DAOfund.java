@@ -37,9 +37,6 @@ import java.util.Map;
 public interface DAOfund extends Name, GovernanceAddress, AdminAddress, LoansAddress, TokenFallback, Fallback {
 
     @External
-    void addAddressToSetdb();
-
-    @External
     void delegate(PrepDelegations[] prepDelegations);
 
     @External(readonly = true)
@@ -52,13 +49,10 @@ public interface DAOfund extends Name, GovernanceAddress, AdminAddress, LoansAdd
     boolean disburse(Address _recipient, Disbursement[] _amounts);
 
     @External
-    void setAssetTokens(Address asset);
+    void addAcceptedToken(Address asset);
 
     @External
-    void removeAssetTokens(Address asset);
-
-    @External(readonly = true)
-    Map<String, String> getAssetTokens();
+    void removeAcceptedToken(Address asset);
 
     @External
     void claim();

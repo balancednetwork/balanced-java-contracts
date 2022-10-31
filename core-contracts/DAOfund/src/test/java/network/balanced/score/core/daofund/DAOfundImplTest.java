@@ -122,11 +122,10 @@ class DAOfundImplTest extends TestBase {
                     .thenReturn("BALN");
             loansMock.when(() -> Context.call(bnUSDScore.getAddress(), "symbol"))
                     .thenReturn("bnUSD");
-            daofundScore.invoke(admin, "setAssetTokens",sicxScore.getAddress());
-            daofundScore.invoke(admin, "setAssetTokens",balnScore.getAddress());
-            daofundScore.invoke(admin, "setAssetTokens",bnUSDScore.getAddress());
+            daofundScore.invoke(admin, "addAcceptedToken",sicxScore.getAddress());
+            daofundScore.invoke(admin, "addAcceptedToken",balnScore.getAddress());
+            daofundScore.invoke(admin, "addAcceptedToken",bnUSDScore.getAddress());
 
-            daofundScore.invoke(owner, "addAddressToSetdb");
             Map<String, BigInteger> expectedBalances = Map.of(sicxScore.getAddress().toString(), BigInteger.ZERO,
                     balnScore.getAddress().toString(), BigInteger.ZERO,
                     bnUSDScore.getAddress().toString(), BigInteger.ZERO);

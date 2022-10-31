@@ -54,12 +54,6 @@ public class DAOfundImpl implements DAOfund {
     private final EnumerableSetDB<String> address = new EnumerableSetDB<>(ADDRESS, String.class);
     // Awards hold the amount that can be claimed by any user
     private final BranchDB<Address, DictDB<Address, BigInteger>> awards = Context.newBranchDB(AWARDS, BigInteger.class);
-
-    public static ArrayDB<Address> assetAddresses = Context.newArrayDB("asset_address_list", Address.class);
-
-    public static ArrayDB<String> assetList = Context.newArrayDB("assets_symbol_list", String.class);
-    // shared with collateral
-    public static final DictDB<String, String> symbolMap = Context.newDictDB("symbol_map_address", String.class);
     public static final String TAG = "Balanced DAOfund";
 
     public DAOfundImpl(Address _governance) {
@@ -67,23 +61,6 @@ public class DAOfundImpl implements DAOfund {
             isContract(_governance);
             governance.set(_governance);
         }
-        else{
-            Map<String, String> availableTokens = (Map<String, String>) Context.call(loansScore.get(), "getAssetTokens");
-            for (Map.Entry<String, String> tokenSymbolAddress : availableTokens.entrySet()) {
-                String address = tokenSymbolAddress.getValue();
-                addAssetsToDb(Address.fromString(address));
-            }
-        }
-    }
-
-    private void addAssetsToDb(Address asset){
-        String assetToAdd = asset.toString();
-        Context.require(!arrayDbContains(assetAddresses, asset), TAG + ": " + assetToAdd + " already exists in " +
-                "the database.");
-        assetAddresses.add(asset);
-        String symbol = (String) Context.call(asset, "symbol");
-        assetList.add(symbol);
-        symbolMap.set(symbol, assetToAdd);
     }
 
     @External(readonly = true)
@@ -123,47 +100,15 @@ public class DAOfundImpl implements DAOfund {
     }
 
     @External
-    public void setAssetTokens(Address asset) {
+    public void addAcceptedToken(Address address) {
         only(admin);
-        String assetToAdd = asset.toString();
-        Context.require(!arrayDbContains(assetAddresses, asset), TAG + ": " + assetToAdd + " already exists in " +
-                "the database.");
-        assetAddresses.add(asset);
-        String symbol = (String) Context.call(asset, "symbol");
-        assetList.add(symbol);
-        symbolMap.set(symbol, assetToAdd);
+        this.address.add(address.toString());
     }
 
     @External
-    public void removeAssetTokens(Address asset) {
+    public void removeAcceptedToken(Address address) {
         only(admin);
-        String assetToRemove = asset.toString();
-        Context.require(arrayDbContains(assetAddresses, asset), TAG + ": " + assetToRemove + " does not exist in " +
-                "the database.");
-        String symbol = (String) Context.call(asset, "symbol");
-        Address poppedAddress = assetAddresses.pop();
-        String poppedSymbol = assetList.pop();
-        if (!poppedAddress.equals(asset)) {
-            for (int i = 0; i < assetAddresses.size(); i++) {
-                if (assetAddresses.get(i).equals(asset)) {
-                    assetAddresses.set(i, poppedAddress);
-                    symbolMap.set(symbol, null);
-                    assetList.set(i, poppedSymbol);
-                }
-            }
-        }
-    }
-
-    @External(readonly = true)
-    public Map<String, String> getAssetTokens() {
-        int totalAssetsCount = assetList.size();
-        Map<String, String> assets = new HashMap<>();
-        for (int i = 0; i < totalAssetsCount; i++) {
-            String symbol = assetList.get(i);
-            assets.put(symbol, symbolMap.get(symbol));
-        }
-
-        return assets;
+        this.address.remove(address.toString());
     }
 
     @External(readonly = true)
@@ -176,21 +121,6 @@ public class DAOfundImpl implements DAOfund {
         only(governance);
         Address staking = (Address) Context.call(governance.get(), "getContractAddress", "staking");
         Context.call(staking, "delegate", (Object) prepDelegations);
-    }
-
-    /**
-     * This method fetch the asset tokens from loans contract and add it to address enumerable set. Loans provide a
-     * map of token symbol and its address.
-     */
-    @External
-    public void addAddressToSetdb() {
-        onlyOwner();
-        Map<String, String> assets = getAssetTokens();
-
-        for (Map.Entry<String, String> tokenSymbolAddress : assets.entrySet()) {
-            String address = tokenSymbolAddress.getValue();
-            this.address.add(address);
-        }
     }
 
     @External(readonly = true)

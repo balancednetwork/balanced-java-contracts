@@ -460,6 +460,8 @@ public class GovernanceImpl {
                     asset.get("active"),
                     asset.get("collateral")
             );
+            _addAcceptedTokens(Addresses.get((String) asset.get("address")).toString());
+            Context.call(Addresses.get("daofund"), "addAcceptedToken", Addresses.get((String) asset.get("address")));
         }
     }
 
@@ -694,34 +696,21 @@ public class GovernanceImpl {
     }
 
     @External
-    public void setDividendsAssetTokens(Address asset) {
+    public void addAcceptedDaofundToken(Address asset) {
         onlyOwner();
-        Context.call(Addresses.get("dividends"), "setAssetTokens", asset);
+        Context.call(Addresses.get("daofund"), "addAcceptedToken", asset);
     }
 
     @External
-    public void removeDividendsAssetTokens(Address asset) {
+    public void removeAcceptedDaofundToken(Address asset) {
         onlyOwner();
-        Context.call(Addresses.get("dividends"), "removeAssetTokens", asset);
-    }
-
-    @External
-    public void setDaofundAssetTokens(Address asset) {
-        onlyOwner();
-        Context.call(Addresses.get("daofund"), "setAssetTokens", asset);
-    }
-
-    @External
-    public void removeDaofundAssetTokens(Address asset) {
-        onlyOwner();
-        Context.call(Addresses.get("daofund"), "removeAssetTokens", asset);
+        Context.call(Addresses.get("daofund"), "removeAcceptedTokens", asset);
     }
 
     @External
     public void setContractAddresses() {
         onlyOwner();
         Addresses.setContractAddresses();
-
     }
 
     @External

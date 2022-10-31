@@ -66,11 +66,6 @@ public class Balanced {
         deployContracts();
         setupAddresses();
         String className = new Exception().getStackTrace()[1].getClassName();
-        if (!className.equals("network.balanced.score.core.daofund.DaofundIntegrationTest")) {
-            ownerClient.governance.setDaofundAssetTokens(sicx._address());
-            ownerClient.governance.setDaofundAssetTokens(baln._address());
-            ownerClient.governance.setDaofundAssetTokens(bnusd._address());
-        }
         increaseDay(1);
         setupContracts();
 //         delegate(adminWallet);
@@ -168,14 +163,9 @@ public class Balanced {
         ownerClient.baln.setMinter(rewards._address());
         ownerClient.bnUSD.setMinter2(stability._address());
 
-        ownerClient.governance.setDividendsAssetTokens(sicx._address());
-        ownerClient.governance.setDividendsAssetTokens(bnusd._address());
-        ownerClient.governance.setDividendsAssetTokens(baln._address());
         ownerClient.governance.configureBalanced();
         ownerClient.governance.launchBalanced();
         ownerClient.staking.toggleStakingOn();
-
-        ownerClient.daofund.addAddressToSetdb();
 
         ownerClient.governance.setAdmin(feehandler._address(), governance._address());
         ownerClient.governance.enable_fee_handler();
@@ -185,15 +175,10 @@ public class Balanced {
         ownerClient.rewards.addDataProvider(loans._address());
 
         ownerClient.governance.setFeeProcessingInterval(BigInteger.ONE);
-
         Address[] acceptedAddress = new Address[]{
                 bnusd._address(), sicx._address(), baln._address()
         };
         ownerClient.governance.setAcceptedDividendTokens(acceptedAddress);
-        ownerClient.governance.addAcceptedTokens(String.valueOf(bnusd._address()));
-        ownerClient.governance.addAcceptedTokens(String.valueOf(sicx._address()));
-        ownerClient.governance.addAcceptedTokens(String.valueOf(baln._address()));
-
         ownerClient.bnUSD.setMinter2(stability._address());
     }
 

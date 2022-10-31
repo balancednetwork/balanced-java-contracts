@@ -308,12 +308,6 @@ public interface Governance extends
     void setAddressesOnContract(String _contract);
 
     @External
-    void setDividendsAssetTokens(Address asset);
-
-    @External
-    void removeDividendsAssetTokens(Address asset);
-
-    @External
     void setDaofundAssetTokens(Address asset);
 
     @External
