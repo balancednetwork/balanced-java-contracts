@@ -56,7 +56,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         balanced.increaseDay(1);
         balanced.syncDistributions();
 
-        tester.rewards.claimRewards();
+        tester.rewards.claimRewards(null);
 
         BigInteger balance = tester.baln.balanceOf(tester.getAddress());
 

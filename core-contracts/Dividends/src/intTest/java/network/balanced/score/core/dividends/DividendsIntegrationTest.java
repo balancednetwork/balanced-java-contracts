@@ -111,7 +111,7 @@ public class DividendsIntegrationTest {
         balanced.increaseDay(1);
         balanced.syncDistributions();
         // claim rewards for the user
-        ownerClient.rewards.claimRewards();
+        ownerClient.rewards.claimRewards(null);
 
         // provides liquidity to baln/Sicx pool by owner
         ownerClient.baln.transfer(balanced.dex._address(), lpAmount, data.toString().getBytes());
@@ -174,7 +174,7 @@ public class DividendsIntegrationTest {
         Map<String, BigInteger> unclaimedDividendsBob = ownerClient.dividends.getUnclaimedDividends(addressBob);
         Map<String, BigInteger> unclaimedDividendsCharlie = ownerClient.dividends.getUnclaimedDividends(addressCharlie);
 
-        ownerClient.dividends.setBBalnAddress(alice.boostedBaln._address());
+        ownerClient.dividends.setBoostedBaln(alice.boostedBaln._address());
         BigInteger feePercent = hexObjectToBigInteger(ownerClient.loans.getParameters().get("origination fee"));
 
         // Act
@@ -290,7 +290,7 @@ public class DividendsIntegrationTest {
 
     @Test
     @Order(5)
-    void testBBaln_claimOnly(){
+    void testBBaln_claimOnly() {
         /* Eve claims the dividends after the contract is updated
         without unstaking staked baln token or without creating lock */
         Address addressEve = Eve.getAddress();
@@ -320,7 +320,7 @@ public class DividendsIntegrationTest {
 
     @Test
     @Order(6)
-    void testBBaln_claimAfterUnstake(){
+    void testBBaln_claimAfterUnstake() {
         /* Ferry claims the dividends after unstaking baln token. */
         Address addressFerry = Ferry.getAddress();
         BigInteger unclaimedDividendsBeforeFerry =
@@ -594,7 +594,7 @@ public class DividendsIntegrationTest {
             balanced.syncDistributions();
         }
 
-        balanced.ownerClient.rewards.claimRewards();
+        balanced.ownerClient.rewards.claimRewards(null);
         // sent baln token to two users
         balanced.ownerClient.baln.transfer(addressAlice, collateral, new byte[0]);
         balanced.ownerClient.baln.transfer(addressBob, collateral, new byte[0]);

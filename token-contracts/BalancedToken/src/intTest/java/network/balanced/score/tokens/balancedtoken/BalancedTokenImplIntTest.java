@@ -67,7 +67,7 @@ class BalancedTokenImplIntTest {
         balanced.syncDistributions();
 
         // balance token is minted in owner address
-        balanced.ownerClient.rewards.claimRewards();
+        balanced.ownerClient.rewards.claimRewards(null);
         BigInteger amountToMint = balnScore.balanceOf(Address.fromString(owner.getAddress().toString()));
 
         //transfer some tokens to another user

@@ -413,7 +413,7 @@ public class GovernanceImpl {
         }
 
         ProposalDB proposal = new ProposalDB(_vote_index);
-        BigInteger totalBoostedBaln = BigInteger.ZERO;
+        BigInteger totalBoostedBaln;
         if (proposal.forumLink.get() == null) {
             totalBoostedBaln = totalBaln(proposal.snapshotBlock.getOrDefault(BigInteger.ZERO));
         } else {
@@ -488,11 +488,13 @@ public class GovernanceImpl {
         launched.set(true);
 
         BigInteger offset = DAY_ZERO.add(launchDay.getOrDefault(BigInteger.ZERO));
-        BigInteger day = (BigInteger.valueOf(Context.getBlockTimestamp()).subtract(DAY_START)).divide(MICRO_SECONDS_IN_A_DAY).subtract(offset);
+        BigInteger day =
+                (BigInteger.valueOf(Context.getBlockTimestamp()).subtract(DAY_START)).divide(MICRO_SECONDS_IN_A_DAY).subtract(offset);
         launchDay.set(day);
         launchTime.set(BigInteger.valueOf(Context.getBlockTimestamp()));
 
-        BigInteger timeDelta = DAY_START.add(MICRO_SECONDS_IN_A_DAY.multiply(DAY_ZERO.add(launchDay.get()).subtract(BigInteger.ONE)));
+        BigInteger timeDelta =
+                DAY_START.add(MICRO_SECONDS_IN_A_DAY.multiply(DAY_ZERO.add(launchDay.get()).subtract(BigInteger.ONE)));
 
         setTimeOffset(timeDelta);
 
@@ -571,7 +573,8 @@ public class GovernanceImpl {
         Address rewardsAddress = Addresses.get("rewards");
         Address loansAddress = Addresses.get("loans");
 
-        Context.call(rewardsAddress, "claimRewards");
+        Object sources = new String[]{"Loans", "sICX/bnUSD"};
+        Context.call(rewardsAddress, "claimRewards", sources);
         Context.call(loansAddress, "depositAndBorrow", "bnUSD", _bnUSD_amount, Context.getAddress(), BigInteger.ZERO);
 
         JsonObject depositData = Json.object();
@@ -610,7 +613,8 @@ public class GovernanceImpl {
         Address stakedLpAddress = Addresses.get("stakedLp");
         Address rewardsAddress = Addresses.get("rewards");
 
-        Context.call(rewardsAddress, "claimRewards");
+        Object sources = new String[]{"Loans", "sICX/bnUSD", "BALN/bnUSD"};
+        Context.call(rewardsAddress, "claimRewards", sources);
 
         JsonObject depositData = Json.object();
         depositData.add("method", "_deposit");

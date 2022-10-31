@@ -398,7 +398,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
                 continue;
             }
 
-            client.rewards.claimRewards();
+            client.rewards.claimRewards(null);
             BigInteger balance = client.baln.availableBalanceOf(client.getAddress());
             BigInteger boostedBalance = client.boostedBaln.balanceOf(client.getAddress(), BigInteger.ZERO);
             if (boostedBalance.equals(BigInteger.ZERO) && balance.compareTo(EXA) > 0) {

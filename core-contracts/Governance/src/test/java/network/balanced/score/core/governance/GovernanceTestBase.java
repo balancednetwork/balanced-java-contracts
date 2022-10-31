@@ -142,6 +142,7 @@ public class GovernanceTestBase extends UnitTest {
         verify(rewards.mock).setBwt(bwt.getAddress());
         verify(rewards.mock).setBaln(baln.getAddress());
         verify(rewards.mock).setDaofund(daofund.getAddress());
+        verify(rewards.mock).setBoostedBaln(bBaln.getAddress());
 
         verify(dividends.mock).setDex(dex.getAddress());
         verify(dividends.mock).setLoans(loans.getAddress());
@@ -283,6 +284,7 @@ public class GovernanceTestBase extends UnitTest {
         rebalancing = new MockContract<>(RebalancingScoreInterface.class, sm, owner);
         feehandler = new MockContract<>(FeeHandlerScoreInterface.class, sm, owner);
         stakedLp = new MockContract<>(StakedLPScoreInterface.class, sm, owner);
+        bBaln = new MockContract<>(BoostedBalnScoreInterface.class, sm, owner);
         balancedOracle = new MockContract<>(BalancedOracleScoreInterface.class, sm, owner);
         governance = sm.deploy(owner, GovernanceImpl.class);
 

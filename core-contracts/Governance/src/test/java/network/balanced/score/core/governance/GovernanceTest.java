@@ -1330,7 +1330,8 @@ public class GovernanceTest extends GovernanceTestBase {
         governance.invoke(owner, "createBalnMarket", bnUSDValue, balnValue);
 
         // Assert
-        verify(rewards.mock).claimRewards();
+        String[] sources = new String[]{"Loans", "sICX/bnUSD"};
+        verify(rewards.mock).claimRewards(sources);
         verify(loans.mock).depositAndBorrow("bnUSD", bnUSDValue, governance.getAddress(), BigInteger.ZERO);
 
         JsonObject depositData = Json.object();
@@ -1364,7 +1365,8 @@ public class GovernanceTest extends GovernanceTestBase {
         governance.invoke(owner, "createBalnSicxMarket", sicxValue, balnValue);
 
         // Assert
-        verify(rewards.mock, times(2)).claimRewards();
+        String[] sources = new String[]{"Loans", "sICX/bnUSD", "BALN/bnUSD"};
+        verify(rewards.mock, times(1)).claimRewards(sources);
 
         JsonObject depositData = Json.object();
         depositData.add("method", "_deposit");
