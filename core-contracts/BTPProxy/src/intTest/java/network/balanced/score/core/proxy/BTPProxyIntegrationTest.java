@@ -41,7 +41,6 @@ import network.balanced.score.btp.ReqID;
 import network.balanced.score.btp.icon.BTPAddress;
 import network.balanced.solidity.proxy.Proxy;
 
-
 import java.math.BigInteger;
 import java.util.Map;
 
@@ -50,9 +49,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static network.balanced.score.lib.test.integration.Env.getDefaultChain;
 
 class BTPProxyIntegrationTest {
+    static BTPProxyScoreClient proxy_icon;
+    static Proxy proxy_eth;
+    static BTPAddress ICONProxyBTPAddress;
+    static BTPAddress EVMProxyBTPAddress;
 
-    protected static BTPProxyScoreClient proxy_icon;
-    protected static Proxy proxy_eth;
     @BeforeAll
     static void setup() throws Exception {
         Wallet owner = createWalletWithBalance(BigInteger.TEN.pow(24));
@@ -64,23 +65,23 @@ class BTPProxyIntegrationTest {
         MockBTP.configureBTP_EVM(web3j, txManager);
         MockBTP.deploy();
 
-        // proxy_icon = new BTPProxyScoreClient(deploy(owner, "BTPProxy", Map.of("_callService", MockBTP.XCall_ICON._address())));
-        // proxy_eth = Proxy.deploy(web3j, txManager, new DefaultGasProvider()).send();
-        // proxy_eth.initialize(MockBTP.XCall_EVM.getContractAddress()).send();
+        proxy_icon = new BTPProxyScoreClient(deploy(owner, "BTPProxy", Map.of("_callService", MockBTP.XCall_ICON._address())));
+        proxy_eth = Proxy.deploy(web3j, txManager, new DefaultGasProvider()).send();
+        proxy_eth.initialize(MockBTP.XCall_EVM.getContractAddress()).send();
 
-        // BTPAddress ICONProxyBTPAddress = new BTPAddress("icon", proxy_icon._address().toString());
-        // BTPAddress EVMProxyBTPAddress = new BTPAddress("evm", proxy_eth.getContractAddress().toString());
+        ICONProxyBTPAddress = new BTPAddress("icon", proxy_icon._address().toString());
+        EVMProxyBTPAddress = new BTPAddress("evm", proxy_eth.getContractAddress().toString());
     }
 
     @Test
     void test() throws Exception {
-        // ReqID id = new ReqID();
-        // byte[] data = "test".getBytes();
+        ReqID id = new ReqID();
+        byte[] data = "test".getBytes();
 
-        // Relay.relayToICON(id).accept(proxy_eth.sendMessage(ICONProxyBTPAddress.toString(), data, new byte[0], BigInteger.TEN.pow(18)).send());
-        // Relay.executeXCallICON(id);
+        Relay.relayToICON(id).accept(proxy_eth.sendMessage(ICONProxyBTPAddress.toString(), data, new byte[0], BigInteger.TEN.pow(18)).send());
+        Relay.executeXCallICON(id);
 
-        // proxy_icon.sendMessage(Relay.relayToEVM(id), BigInteger.TEN.pow(18), EVMProxyBTPAddress.toString(), data, null);
-        // Relay.executeXCallEVM(id);
+        proxy_icon.sendMessage(Relay.relayToEVM(id), BigInteger.TEN.pow(18), EVMProxyBTPAddress.toString(), data, null);
+        Relay.executeXCallEVM(id);
     }
 }
