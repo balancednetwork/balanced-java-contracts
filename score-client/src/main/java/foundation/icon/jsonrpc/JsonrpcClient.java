@@ -156,6 +156,7 @@ public class JsonrpcClient {
         }
     }
 
+    @JsonIgnoreProperties({"oneShot", "duplex"})
     public static class JsonrpcRequest extends RequestBody {
         @JsonIgnore
         ObjectMapper mapper;

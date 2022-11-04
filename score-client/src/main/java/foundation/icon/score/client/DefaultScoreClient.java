@@ -95,6 +95,13 @@ public class DefaultScoreClient extends JsonrpcClient {
         return new DefaultScoreClient(url, nid, wallet, address);
     }
 
+    public static DefaultScoreClient _deploy(String url, BigInteger nid, Wallet wallet, byte[] content, Map<String, Object> params) {
+        JsonrpcClient client = new JsonrpcClient(url);
+        initialize(client);
+        Address address = deploy(client, nid, wallet, DEFAULT_STEP_LIMIT, ZERO_ADDRESS, content, params, DEFAULT_RESULT_TIMEOUT);
+        return new DefaultScoreClient(url, nid, wallet, address);
+    }
+
     public static Hash _deployAsync(String url, BigInteger nid, Wallet wallet, String scoreFilePath, Map<String, Object> params) {
         JsonrpcClient client = new JsonrpcClient(url);
         initialize(client);
@@ -423,6 +430,20 @@ public class DefaultScoreClient extends JsonrpcClient {
         System.out.println("SCORE address: "+txr.getScoreAddress());
         return txr.getScoreAddress();
     }
+
+    public static Address deploy(
+        JsonrpcClient client, BigInteger nid, Wallet wallet, BigInteger stepLimit, Address address,
+        byte[] content, Map<String, Object> params,
+        long timeout) {
+
+    String contentType = "application/java";
+    SendTransactionParam tx = new SendTransactionParam(nid, address,null,"deploy", new DeployData(contentType, content, params));
+    Hash txh = sendTransaction(client, wallet, tx);
+    waitBlockInterval();
+    TransactionResult txr = result(client, txh, timeout);
+    System.out.println("SCORE address: "+txr.getScoreAddress());
+    return txr.getScoreAddress();
+}
 
     public static Hash deployAsync(
             JsonrpcClient client, BigInteger nid, Wallet wallet, BigInteger stepLimit, Address address,

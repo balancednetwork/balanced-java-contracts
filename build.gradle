@@ -22,9 +22,14 @@ import network.balanced.score.dependencies.Dependencies
 buildscript {
     repositories {
         mavenCentral()
+         maven {
+            url "https://plugins.gradle.org/m2/"
+        }
     }
     dependencies {
         classpath Dependencies.javaeePlugin
+        classpath "org.web3j:web3j-gradle-plugin:4.9.4"
+
     }
 }
 
@@ -73,11 +78,21 @@ executeBalancedActions {
 subprojects {
     repositories {
         mavenCentral()
+        jcenter()
+        maven { url "https://hyperledger.jfrog.io/artifactory/besu-maven/" }
+        maven { url "https://artifacts.consensys.net/public/maven/maven/" }
+        maven { url "https://splunk.jfrog.io/splunk/ext-releases-local" }
+        maven { url "https://dl.cloudsmith.io/public/consensys/quorum-mainnet-launcher/maven/" }
     }
 
     apply plugin: 'java'
     apply plugin: 'jacoco'
     apply plugin: 'foundation.icon.javaee'
+    apply plugin: 'org.web3j'
+
+    solidity {
+        resolvePackages = false
+    }
 
     sourceSets {
         intTest {

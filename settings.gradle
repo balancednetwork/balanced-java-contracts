@@ -95,3 +95,8 @@ project(':BalancedOracle').projectDir = file("core-contracts/BalancedOracle")
 
 include(':bBaln')
 project(':bBaln').projectDir = file("token-contracts/bBaln")
+
+include(':BTPProxy')
+project(':BTPProxy').projectDir = file("core-contracts/BTPProxy")
+
+include 'btp'
