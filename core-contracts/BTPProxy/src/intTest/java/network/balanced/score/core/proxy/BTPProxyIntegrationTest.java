@@ -98,6 +98,7 @@ class BTPProxyIntegrationTest {
 
         ReqID id1 = new ReqID();
         ReqID id2 = new ReqID();
+        data = "test".getBytes();
 
         Relay.relayToICON(id1).accept(proxy_eth.sendMessage(ICONProxyBTPAddress.toString(), data, new byte[0], BigInteger.TEN.pow(18)).send());
         Relay.relayToICON(id2).accept(proxy_eth.sendMessage(ICONProxyBTPAddress.toString(), data, new byte[0], BigInteger.TEN.pow(18)).send());
