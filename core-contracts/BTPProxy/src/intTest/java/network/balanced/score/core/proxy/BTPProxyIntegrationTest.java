@@ -92,8 +92,16 @@ class BTPProxyIntegrationTest {
         Relay.executeAndRelayResponseEVM(id);
         Relay.executeRollbackICON(id);
 
-        Relay.relayToICON(id).accept(proxy_eth.sendMessage(ICONProxyBTPAddress.toString(), data, new byte[0], BigInteger.TEN.pow(18)).send());
+        Relay.relayToICON(id).accept(proxy_eth.sendMessage(ICONProxyBTPAddress.toString(), data, "rollback".getBytes(), BigInteger.TEN.pow(18)).send());
         Relay.executeAndRelayResponseICON(id);
-        Relay.executeRollbackICON(id);
+        Relay.executeRollbackEVM(id);
+
+        ReqID id1 = new ReqID();
+        ReqID id2 = new ReqID();
+
+        Relay.relayToICON(id1).accept(proxy_eth.sendMessage(ICONProxyBTPAddress.toString(), data, new byte[0], BigInteger.TEN.pow(18)).send());
+        Relay.relayToICON(id2).accept(proxy_eth.sendMessage(ICONProxyBTPAddress.toString(), data, new byte[0], BigInteger.TEN.pow(18)).send());
+        Relay.executeXCallICON(id2);
+        Relay.executeXCallICON(id1);
     }
 }
