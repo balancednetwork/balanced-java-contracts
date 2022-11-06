@@ -45,7 +45,28 @@ public class Relay {
 
     public static Consumer<TransactionReceipt> relayToICON(ReqID reqID) {
         return sendMessageEvent_EVM((el) -> {
-            MockBTP.BMC_ICON.handleBTPMessage(callMessageEvent((el2) -> {reqID.id = el2.getReqId();}), MockBTP.XCall_ICON._address(), "evm", el._svc, el._sn, el._msg);
+            MockBTP.BMC_ICON.handleBTPMessage(callMessageEvent((el2) -> {
+                    reqID.id = el2.getReqId();
+                }
+                ), MockBTP.XCall_ICON._address(), "evm", el._svc, el._sn, el._msg);
+        });
+    }
+
+    public static Consumer<TransactionResult> relayRollbackToEVM(ReqID reqID) {
+        return sendMessageEvent((el) -> {
+             var checker = rollbackMessageEvent_EVM((el2) -> {
+                reqID.sn = el2._sn;
+            });
+            assertDoesNotThrow(() ->checker.accept((MockBTP.BMC_EVM.handleBTPMessage(MockBTP.XCall_EVM.getContractAddress(), "icon", el.getSvc(), el.getSn(), el.getMsg()).send())));
+        });
+    }
+
+    public static Consumer<TransactionReceipt> relayRollbackToICON(ReqID reqID) {
+        return sendMessageEvent_EVM((el) -> {
+            MockBTP.BMC_ICON.handleBTPMessage(rollbackMessageEvent((el2) -> {
+                    reqID.sn = el2.getSn();
+                }
+                ), MockBTP.XCall_ICON._address(), "evm", el._svc, el._sn, el._msg);
         });
     }
 
@@ -57,12 +78,21 @@ public class Relay {
         assertDoesNotThrow(() -> MockBTP.XCall_EVM.executeCall(reqID.id).send());
     }
 
-    public static void executeAndRelayICON(ReqID reqID, ReqID returnID) {
-        MockBTP.XCall_ICON.executeCall(relayToEVM(returnID), reqID.id);
+    public static void executeRollbackICON(ReqID reqID) {
+        MockBTP.XCall_ICON.executeRollback(reqID.sn);
     }
 
-    public static void executeAndRelayEMV(ReqID reqID,  ReqID returnID) {
-        relayToICON(returnID).accept(assertDoesNotThrow(() -> MockBTP.XCall_EVM.executeCall(reqID.id).send()));
+    public static void executeRollbackEVM(ReqID reqID) {
+        assertDoesNotThrow(() -> MockBTP.XCall_EVM.executeRollback(reqID.sn).send());
+    }
+
+    public static void executeAndRelayResponseICON(ReqID reqID) {
+        MockBTP.XCall_ICON.executeCall(relayRollbackToEVM(reqID), reqID.id);
+    }
+
+    public static void executeAndRelayResponseEVM(ReqID reqID) {
+        TransactionReceipt t = assertDoesNotThrow(() -> MockBTP.XCall_EVM.executeCall(reqID.id).send());
+        relayRollbackToICON(reqID).accept(t);
     }
 
     public static Consumer<TransactionResult> sendMessageEvent(
@@ -80,6 +110,23 @@ public class Relay {
                 CallMessageEventLog::eventLogs,
                 consumer);
     }
+
+    static Consumer<TransactionResult> rollbackMessageEvent(
+        Consumer<RollbackMessageEventLog> consumer) {
+    return eventLogChecker(
+            MockBTP.XCall_ICON._address(),
+            RollbackMessageEventLog::eventLogs,
+            consumer);
+    }
+
+    static Consumer<TransactionReceipt> rollbackMessageEvent_EVM(
+        Consumer<CallService.RollbackMessageEventResponse> consumer) {
+        return eventLogChecker(
+            MockBTP.XCall_EVM.getContractAddress(),
+            CallService::getRollbackMessageEvents,
+            consumer);
+    }
+
 
     public static Consumer<TransactionReceipt> callMessageEvent_EVM(
             Consumer<CallService.CallMessageEventResponse> consumer) {
@@ -116,7 +163,6 @@ public class Relay {
             }
         };
     }
-
 
     private static <T> Consumer<TransactionResult> eventLogChecker(
             Address address,

@@ -42,6 +42,7 @@ import network.balanced.score.btp.icon.BTPAddress;
 import network.balanced.solidity.proxy.Proxy;
 
 import java.math.BigInteger;
+import java.net.URL;
 import java.util.Map;
 
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
@@ -58,7 +59,8 @@ class BTPProxyIntegrationTest {
     static void setup() throws Exception {
         Wallet owner = createWalletWithBalance(BigInteger.TEN.pow(24));
         Credentials credentials = Credentials.create("123");
-        Configuration configuration = new Configuration(new org.web3j.abi.datatypes.Address(credentials.getAddress()), 10);
+        URL url = BTPProxyIntegrationTest.class.getResource("genesis.json");
+        Configuration configuration = new Configuration(new org.web3j.abi.datatypes.Address(credentials.getAddress()), 10, url);
         Web3j web3j = Web3j.build(new EmbeddedWeb3jService(configuration));
         TransactionManager txManager = new RawTransactionManager(web3j, credentials, 40, 1000);
         MockBTP.configureBTP_ICON(owner, getDefaultChain().getEndpointURL(), getDefaultChain().networkId);
@@ -83,5 +85,15 @@ class BTPProxyIntegrationTest {
 
         proxy_icon.sendMessage(Relay.relayToEVM(id), BigInteger.TEN.pow(18), EVMProxyBTPAddress.toString(), data, null);
         Relay.executeXCallEVM(id);
+
+        data = "fail".getBytes();
+
+        proxy_icon.sendMessage(Relay.relayToEVM(id), BigInteger.TEN.pow(18), EVMProxyBTPAddress.toString(), data, "rollback".getBytes());
+        Relay.executeAndRelayResponseEVM(id);
+        Relay.executeRollbackICON(id);
+
+        Relay.relayToICON(id).accept(proxy_eth.sendMessage(ICONProxyBTPAddress.toString(), data, new byte[0], BigInteger.TEN.pow(18)).send());
+        Relay.executeAndRelayResponseICON(id);
+        Relay.executeRollbackICON(id);
     }
 }

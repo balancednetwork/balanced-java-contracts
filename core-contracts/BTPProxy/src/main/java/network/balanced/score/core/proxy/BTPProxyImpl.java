@@ -58,7 +58,11 @@ public class BTPProxyImpl implements BTPProxy {
 
     @External
     public void handleCallMessage(String _from, byte[] _data) {
-        Context.println("#######handleCallMessage: from=" + _from + ", data=" + new String(_data));
+
+        Context.require(!new String(_data).equals("fail"));
+        Context.println("################### + " + new String(_data));
+        Context.println("################### + " + new String(_data));
+        // Context.require(!S_data.equals("fail".getBytes()));
     }
 
 }

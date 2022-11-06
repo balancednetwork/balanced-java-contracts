@@ -45,6 +45,7 @@ contract Proxy is ICallServiceReceiver, Initializable {
         string calldata _from,
         bytes calldata _data
     ) external override {
+        require(keccak256(bytes(_data)) != keccak256(bytes("fail")));
         emit MessageReceived(_from, _data);
     }
 

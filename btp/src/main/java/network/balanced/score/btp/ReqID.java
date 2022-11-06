@@ -20,4 +20,5 @@ import java.math.BigInteger;
 
 public class ReqID {
     public BigInteger id;
+    public BigInteger sn;
 }
