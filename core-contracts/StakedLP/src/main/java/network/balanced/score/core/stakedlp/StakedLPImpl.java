@@ -17,34 +17,48 @@
 package network.balanced.score.core.stakedlp;
 
 import network.balanced.score.lib.interfaces.StakedLP;
+import network.balanced.score.lib.utils.IterableDictDB;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
+import scorex.util.HashMap;
 
 import java.math.BigInteger;
 import java.util.Map;
+import java.util.List;
 
-import static network.balanced.score.core.stakedlp.Checks.*;
+import static network.balanced.score.lib.utils.Check.*;
 
 public class StakedLPImpl implements StakedLP {
 
-    // Business Logic
-    private static final DictDB<BigInteger, Boolean> supportedPools = Context.newDictDB("supportedPools",
-            Boolean.class);
+
     private static final BranchDB<Address, DictDB<BigInteger, BigInteger>> poolStakedDetails =
             Context.newBranchDB("poolStakeDetails", BigInteger.class);
     private static final DictDB<BigInteger, BigInteger> totalStakedAmount = Context.newDictDB("totalStaked",
             BigInteger.class);
+    private static final IterableDictDB<BigInteger, String> dataSourceNames = new IterableDictDB<>("dataSourceNames",
+            String.class, BigInteger.class, false);
+    private static final IterableDictDB<String, BigInteger> dataSourceIds = new IterableDictDB<>("dataSourceIds",
+            BigInteger.class, String.class, false);
 
-    // Linked Contracts
     static final VarDB<Address> governance = Context.newVarDB("governanceAddress", Address.class);
     static final VarDB<Address> dex = Context.newVarDB("dexAddress", Address.class);
     private static final VarDB<Address> rewards = Context.newVarDB("rewardsAddress", Address.class);
-    static final VarDB<Address> admin = Context.newVarDB("adminAddress", Address.class);
 
     public StakedLPImpl(Address governance) {
-        Context.require(governance.isContract(), "StakedLP: Governance address should be a contract");
-        StakedLPImpl.governance.set(governance);
+        if (StakedLPImpl.governance.get() == null) {
+            Context.require(governance.isContract(), "StakedLP: Governance address should be a contract");
+            StakedLPImpl.governance.set(governance);
+        } else if (dataSourceIds.get("sICX/bnUSD") == null) {
+            List<String> dataSources = (List<String>) Context.call(rewards.get(), "getDataSourceNames");
+            for (String source : dataSources) {
+                if (source.equals("Loans") || source.equals("sICX/ICX")) {
+                    continue;
+                }
+
+                migratePool(source);
+            }
+        }
     }
 
     /*
@@ -69,8 +83,8 @@ public class StakedLPImpl implements StakedLP {
 
     @External
     public void setDex(Address dex) {
-        onlyGovernance();
-        Context.require(dex.isContract(), "StakedLP: Dex address should be a contract");
+        only(governance);
+        isContract(dex);
         StakedLPImpl.dex.set(dex);
     }
 
@@ -82,19 +96,8 @@ public class StakedLPImpl implements StakedLP {
     @External
     public void setGovernance(Address governance) {
         onlyOwner();
-        Context.require(governance.isContract(), "StakedLP: Governance address should be a contract");
+        isContract(governance);
         StakedLPImpl.governance.set(governance);
-    }
-
-    @External(readonly = true)
-    public Address getAdmin() {
-        return admin.get();
-    }
-
-    @External
-    public void setAdmin(Address admin) {
-        onlyGovernance();
-        StakedLPImpl.admin.set(admin);
     }
 
     @External(readonly = true)
@@ -104,8 +107,8 @@ public class StakedLPImpl implements StakedLP {
 
     @External
     public void setRewards(Address rewards) {
-        onlyGovernance();
-        Context.require(rewards.isContract(), "StakedLP: Rewards address should be a contract");
+        only(governance);
+        isContract(rewards);
         StakedLPImpl.rewards.set(rewards);
     }
 
@@ -120,33 +123,13 @@ public class StakedLPImpl implements StakedLP {
     }
 
     @External
-    public void addPool(BigInteger id) {
-        onlyGovernance();
-        if (!supportedPools.getOrDefault(id, Boolean.FALSE)) {
-            supportedPools.set(id, Boolean.TRUE);
-        }
-    }
-
-    @External
-    public void removePool(BigInteger id) {
-        onlyGovernance();
-        if (supportedPools.getOrDefault(id, Boolean.FALSE)) {
-            supportedPools.set(id, Boolean.FALSE);
-        }
-    }
-
-    @External(readonly = true)
-    public boolean isSupportedPool(BigInteger id) {
-        return supportedPools.getOrDefault(id, Boolean.FALSE);
-    }
-
-    @External
     public void unstake(BigInteger id, BigInteger value) {
         Address caller = Context.getCaller();
         Context.require(value.compareTo(BigInteger.ZERO) > 0, "StakedLP: Cannot unstake less than zero value");
 
         BigInteger previousBalance = poolStakedDetails.at(caller).getOrDefault(id, BigInteger.ZERO);
         BigInteger previousTotal = totalStaked(id);
+        String poolName = getSourceName(id);
 
         Context.require(previousBalance.compareTo(value) >= 0, "StakedLP: Cannot unstake, user don't have enough " +
                 "staked balance, Amount to unstake: " + value + " Staked balance of user: " + caller + " is: " + previousBalance);
@@ -160,7 +143,6 @@ public class StakedLPImpl implements StakedLP {
 
         Unstake(caller, id, value);
 
-        String poolName = (String) Context.call(dex.get(), "getPoolName", id);
         Context.call(rewards.get(), "updateRewardsData", poolName, previousTotal, caller, previousBalance);
 
         try {
@@ -172,17 +154,71 @@ public class StakedLPImpl implements StakedLP {
 
     @External
     public void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data) {
-        onlyDex();
+        only(dex);
         Context.require(_value.signum() > 0, "StakedLP: Token value should be a positive number");
         this.stake(_from, _id, _value);
     }
 
-    private void stake(Address user, BigInteger id, BigInteger value) {
+    @External
+    public void addDataSource(BigInteger id, String name) {
+        only(governance);
+        dataSourceIds.set(name, id);
+        dataSourceNames.set(id, name);
+    }
 
+    @External(readonly = true)
+    public Map<String, BigInteger> getBalanceAndSupply(String _name, Address _owner) {
+        BigInteger poolId = dataSourceIds.get(_name);
+        BigInteger totalSupply = totalStaked(poolId);
+        BigInteger balance = balanceOf(_owner, poolId);
+
+        Map<String, BigInteger> rewardsData = new HashMap<>();
+        rewardsData.put("_balance", balance);
+        rewardsData.put("_totalSupply", totalSupply);
+
+        return rewardsData;
+    }
+
+    @External(readonly = true)
+    public BigInteger getBnusdValue(String _name) {
+        return Context.call(BigInteger.class, dex.get(), "getLPBnusdValue", dataSourceIds.get(_name));
+    }
+
+    @External(readonly = true)
+    public String getSourceName(BigInteger id) {
+        String name = dataSourceNames.get(id);
+        Context.require(name != null, "Pool id: " + id + " is not a valid pool");
+        return name;
+    }
+
+    @External(readonly = true)
+    public BigInteger getSourceId(String name) {
+        BigInteger id = dataSourceIds.get(name);
+        Context.require(id != null, "datasource " + name + " is not a valid source");
+        return id;
+    }
+
+    @External(readonly = true)
+    public List<BigInteger> getAllowedPoolIds() {
+        return dataSourceNames.keys();
+    }
+
+    @External(readonly = true)
+    public List<String> getDataSources() {
+        return dataSourceIds.keys();
+    }
+
+    @External(readonly = true)
+    public boolean isSupportedPool(BigInteger id) {
+        String name = dataSourceNames.get(id);
+        return name != null;
+    }
+
+    private void stake(Address user, BigInteger id, BigInteger value) {
         // Validate inputs
-        Context.require(isSupportedPool(id) || isNamedPool(id), "StakedLP: Pool with " + id + " is not supported");
         Context.require(value.compareTo(BigInteger.ZERO) > 0,
                 "StakedLP: Cannot stake less than zero, value to stake " + value);
+        String poolName = getSourceName(id);
 
         // Compute and store changes
         BigInteger previousBalance = poolStakedDetails.at(user).getOrDefault(id, BigInteger.ZERO);
@@ -194,26 +230,13 @@ public class StakedLPImpl implements StakedLP {
 
         Stake(user, id, value);
 
-        String poolName = (String) Context.call(dex.get(), "getPoolName", id);
         Context.call(rewards.get(), "updateRewardsData", poolName, previousTotal, user, previousBalance);
     }
 
-    @SuppressWarnings("unchecked")
-    private boolean isNamedPool(BigInteger id) {
-        if (!supportedPools.getOrDefault(id, Boolean.FALSE)) {
-            String poolName = (String) Context.call(dex.get(), "getPoolName", id);
-            if (poolName == null) {
-                return false;
-            }
-            
-            Map<String, Object> dataSource = (Map<String, Object>) Context.call(rewards.get(), "getSourceData", poolName);
-            if (dataSource.isEmpty() || !dex.get().equals(dataSource.get("contract_address"))) {
-                return false;
-            }
 
-            supportedPools.set(id, Boolean.TRUE);
-        }
-        
-        return true;
+    private void migratePool(String name) {
+        BigInteger id = Context.call(BigInteger.class, dex.get(), "lookupPid", name);
+        dataSourceIds.set(name, id);
+        dataSourceNames.set(id, name);
     }
 }

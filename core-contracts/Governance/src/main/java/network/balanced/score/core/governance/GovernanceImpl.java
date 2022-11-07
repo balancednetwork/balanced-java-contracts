@@ -548,8 +548,7 @@ public class GovernanceImpl {
         BigInteger pid = Context.call(BigInteger.class, dexAddress, "getPoolId", sICXAddress, bnUSDAddress);
         Context.call(dexAddress, "setMarketName", pid, name);
 
-        Context.call(rewardsAddress, "addNewDataSource", name, dexAddress);
-        Context.call(stakedLpAddress, "addPool", pid);
+        _addLPDataSource(name, pid);
         DistributionPercentage[] recipients = new DistributionPercentage[]{
                 createDistributionPercentage("Loans", BigInteger.valueOf(25).multiply(pow(BigInteger.TEN, 16))),
                 createDistributionPercentage("sICX/ICX", BigInteger.TEN.multiply(pow(BigInteger.TEN, 16))),
@@ -587,8 +586,7 @@ public class GovernanceImpl {
         BigInteger pid = Context.call(BigInteger.class, dexAddress, "getPoolId", balnAddress, bnUSDAddress);
         Context.call(dexAddress, "setMarketName", pid, name);
 
-        Context.call(rewardsAddress, "addNewDataSource", name, dexAddress);
-        Context.call(stakedLpAddress, "addPool", pid);
+        _addLPDataSource(name, pid);
 
         DistributionPercentage[] recipients = new DistributionPercentage[]{
                 createDistributionPercentage("Loans", BigInteger.valueOf(25).multiply(pow(BigInteger.TEN, 16))),
@@ -626,8 +624,7 @@ public class GovernanceImpl {
         BigInteger pid = Context.call(BigInteger.class, dexAddress, "getPoolId", balnAddress, sICXAddress);
         Context.call(dexAddress, "setMarketName", pid, name);
 
-        Context.call(rewardsAddress, "addNewDataSource", name, dexAddress);
-        Context.call(stakedLpAddress, "addPool", pid);
+        _addLPDataSource(name, pid);
 
         DistributionPercentage[] recipients = new DistributionPercentage[]{
                 createDistributionPercentage("Loans", BigInteger.valueOf(20).multiply(pow(BigInteger.TEN, 16))),
@@ -796,6 +793,12 @@ public class GovernanceImpl {
     public void addNewDataSource(String _data_source_name, String _contract_address) {
         onlyOwner();
         _addNewDataSource(_data_source_name, _contract_address);
+    }
+
+    @External
+    public void addStakedLpDataSource(String _name, BigInteger _poolId) {
+        onlyOwner();
+        _addLPDataSource(_name, _poolId);
     }
 
     @External
@@ -1006,12 +1009,6 @@ public class GovernanceImpl {
     }
 
     @External
-    public void addPoolOnStakedLp(BigInteger _id) {
-        onlyOwner();
-        Context.call(Addresses.get("stakedLp"), "addPool", _id);
-    }
-
-    @External
     public void setAddressesOnContract(String _contract) {
         onlyOwner();
         Addresses.setAddress(_contract);
@@ -1169,6 +1166,12 @@ public class GovernanceImpl {
     public void _addNewDataSource(String _data_source_name, String _contract_address) {
         Context.call(Addresses.get("rewards"), "addNewDataSource", _data_source_name,
                 Address.fromString(_contract_address));
+    }
+
+    public void _addLPDataSource(String _name, BigInteger _poolId) {
+        Address stakedLP = Addresses.get("stakedLp");
+        _addNewDataSource(_name, stakedLP.toString());
+        Context.call(stakedLP, "addDataSource",  _poolId, _name);
     }
 
     public void _addAcceptedTokens(String _token) {
