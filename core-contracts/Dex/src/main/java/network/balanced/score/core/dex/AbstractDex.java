@@ -600,8 +600,8 @@ public abstract class AbstractDex implements Dex {
         BigInteger fees = lpFees.add(balnFees);
 
         Address poolBaseToken = poolBase.get(id);
-        Address poolQuoteToken = poolQuote.get(id);
         boolean isSell = fromToken.equals(poolBaseToken);
+        Address poolQuoteToken = isSell ? toToken : fromToken;
 
         // We consider the trade in terms of toToken (token we are trading to), and fromToken (token we are trading
         // away) in the pool. It must obey the xy=k constant product formula.
@@ -631,11 +631,11 @@ public abstract class AbstractDex implements Dex {
         newFromToken = newFromToken.add(lpFees);
 
         if (isSell) {
-            BigInteger fromTokenWithoutFees = newFromToken;
-            BigInteger toTokenWithoutFees = newToToken;
+            oldFromToken = newFromToken;
+            oldToToken = newToToken;
 
-            newFromToken = fromTokenWithoutFees.add(balnFees);
-            newToToken = (fromTokenWithoutFees.multiply(toTokenWithoutFees)).divide(newFromToken);
+            newFromToken = oldFromToken.add(balnFees);
+            newToToken = (oldFromToken.multiply(oldToToken)).divide(newFromToken);
 
             balnFees = oldToToken.subtract(newToToken);
         }

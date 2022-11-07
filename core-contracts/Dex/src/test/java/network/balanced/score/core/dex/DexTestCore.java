@@ -257,7 +257,7 @@ public class DexTestCore extends DexTestBase {
         // Act.
         dexScore.invoke(depositor, "withdraw", balnScore.getAddress(), withdrawValue);
 
-        // Assert. 
+        // Assert.
         BigInteger currentDepositValue = (BigInteger) dexScore.call("getDeposit", balnScore.getAddress(),
                 depositor.getAddress());
         assertEquals(depositValue.subtract(withdrawValue), currentDepositValue);
@@ -384,6 +384,8 @@ public class DexTestCore extends DexTestBase {
         assertEquals(newFromToken, newPoolStats.get("quote"));
         assertEquals(newToToken, newPoolStats.get("base"));
         assertEquals(balance, newBalance);
+
+        contextMock.verify(() -> Context.call(eq(bnusdScore.getAddress()), eq("transfer"), eq(feehandlerScore.getAddress()), eq(baln_fee)));
     }
 
 
@@ -436,6 +438,7 @@ public class DexTestCore extends DexTestBase {
         oldToToken = newToToken;
         BigInteger newFromTokenWithBalnFee = oldFromToken.add(baln_fee);
         BigInteger newToTokenAfterFeeSwap = (oldFromToken.multiply(oldToToken)).divide(newFromTokenWithBalnFee);
+        BigInteger swappedBalnFee = oldToToken.subtract(newToTokenAfterFeeSwap);
 
         // test swap when from token is pool base token
         JsonObject jsonData = new JsonObject();
@@ -451,6 +454,8 @@ public class DexTestCore extends DexTestBase {
         assertEquals(newFromTokenWithBalnFee, newPoolStats.get("base"));
         assertEquals(newToTokenAfterFeeSwap, newPoolStats.get("quote"));
         assertEquals(balance, newBalance);
+
+        contextMock.verify(() -> Context.call(eq(bnusdScore.getAddress()), eq("transfer"), eq(feehandlerScore.getAddress()), eq(swappedBalnFee)));
     }
 
     @SuppressWarnings("unchecked")
