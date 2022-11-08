@@ -40,6 +40,7 @@ dependencies {
     intTestImplementation project(":score-client")
     intTestAnnotationProcessor project(":score-client")
     intTestImplementation Dependencies.iconSdk
+    intTestImplementation Dependencies.minimalJson
     intTestImplementation Dependencies.jacksonDatabind
     intTestImplementation Dependencies.json
 }

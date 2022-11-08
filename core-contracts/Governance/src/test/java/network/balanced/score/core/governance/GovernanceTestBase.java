@@ -25,6 +25,7 @@ import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.structs.BalancedAddresses;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockContract;
+import network.balanced.score.lib.utils.Names;
 import score.Address;
 
 import java.math.BigInteger;
@@ -61,9 +62,8 @@ public class GovernanceTestBase extends UnitTest {
     protected MockContract<Rebalancing> rebalancing;
     protected MockContract<FeeHandler> feehandler;
     protected MockContract<StakedLP> stakedLp;
+    protected MockContract<Stability> stability;
     protected MockContract<BalancedOracle> balancedOracle;
-
-    protected BalancedAddresses balancedAddresses = new BalancedAddresses();
 
     protected Score governance;
 
@@ -123,85 +123,25 @@ public class GovernanceTestBase extends UnitTest {
     }
 
     private void setupAddresses() {
-        balancedAddresses.loans = loans.getAddress();
-        balancedAddresses.dex = dex.getAddress();
-        balancedAddresses.staking = staking.getAddress();
-        balancedAddresses.rewards = rewards.getAddress();
-        balancedAddresses.reserve = reserve.getAddress();
-        balancedAddresses.dividends = dividends.getAddress();
-        balancedAddresses.daofund = daofund.getAddress();
-        balancedAddresses.oracle = oracle.getAddress();
-        balancedAddresses.sicx = sicx.getAddress();
-        balancedAddresses.bnUSD = bnUSD.getAddress();
-        balancedAddresses.baln = baln.getAddress();
-        balancedAddresses.bwt = bwt.getAddress();
-        balancedAddresses.router = router.getAddress();
-        balancedAddresses.rebalancing = rebalancing.getAddress();
-        balancedAddresses.feehandler = feehandler.getAddress();
-        balancedAddresses.stakedLp = stakedLp.getAddress();
-        balancedAddresses.bBaln = bBaln.getAddress();
-        balancedAddresses.balancedOracle = balancedOracle.getAddress();
-
-        governance.invoke(owner, "setAddresses", balancedAddresses);
-        governance.invoke(owner, "setContractAddresses");
-
-        verify(loans.mock).setRewards(rewards.getAddress());
-        verify(loans.mock).setDividends(dividends.getAddress());
-        verify(loans.mock).setStaking(staking.getAddress());
-        verify(loans.mock).setReserve(reserve.getAddress());
-        verify(loans.mock).setOracle(balancedOracle.getAddress());
-
-        verify(dex.mock).setRewards(rewards.getAddress());
-        verify(dex.mock).setDividends(dividends.getAddress());
-        verify(dex.mock).setStaking(staking.getAddress());
-        verify(dex.mock).setSicx(sicx.getAddress());
-        verify(dex.mock).setBnusd(bnUSD.getAddress());
-        verify(dex.mock).setBaln(baln.getAddress());
-        verify(dex.mock).setFeehandler(feehandler.getAddress());
-        verify(dex.mock).setStakedLp(stakedLp.getAddress());
-
-        verify(rewards.mock).setReserve(reserve.getAddress());
-        verify(rewards.mock).setBwt(bwt.getAddress());
-        verify(rewards.mock).setBaln(baln.getAddress());
-        verify(rewards.mock).setDaofund(daofund.getAddress());
-        verify(rewards.mock).setBoostedBaln(bBaln.getAddress());
-
-        verify(dividends.mock).setDex(dex.getAddress());
-        verify(dividends.mock).setLoans(loans.getAddress());
-        verify(dividends.mock).setDaofund(daofund.getAddress());
-        verify(dividends.mock).setBaln(baln.getAddress());
-
-        verify(daofund.mock).setLoans(loans.getAddress());
-
-        verify(reserve.mock).setLoans(loans.getAddress());
-        verify(reserve.mock).setBaln(baln.getAddress());
-        verify(reserve.mock).setSicx(sicx.getAddress());
-
-        verify(bnUSD.mock).setOracle(oracle.getAddress());
-
-        verify(baln.mock).setDividends(dividends.getAddress());
-        verify(baln.mock).setOracle(oracle.getAddress());
-        verify(baln.mock).setDex(dex.getAddress());
-        verify(baln.mock).setBnusd(bnUSD.getAddress());
-
-        verify(bwt.mock).setBaln(baln.getAddress());
-
-        verify(router.mock).setDex(dex.getAddress());
-        verify(router.mock).setSicx(sicx.getAddress());
-        verify(router.mock).setStaking(staking.getAddress());
-
-        verify(stakedLp.mock).setDex(dex.getAddress());
-        verify(stakedLp.mock).setRewards(rewards.getAddress());
-
-        verify(rebalancing.mock).setLoans(loans.getAddress());
-        verify(rebalancing.mock).setDex(dex.getAddress());
-        verify(rebalancing.mock).setBnusd(bnUSD.getAddress());
-        verify(rebalancing.mock).setSicx(sicx.getAddress());
-        verify(rebalancing.mock).setOracle(balancedOracle.getAddress());
-
-        verify(balancedOracle.mock).setDex(dex.getAddress());
-        verify(balancedOracle.mock).setStaking(staking.getAddress());
-        verify(balancedOracle.mock).setOracle(oracle.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.LOANS ,loans.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.DEX ,dex.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.STAKING ,staking.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.REWARDS,rewards.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.RESERVE ,reserve.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.DIVIDENDS ,dividends.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.DAOFUND ,daofund.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.ORACLE ,oracle.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.SICX ,sicx.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.BNUSD ,bnUSD.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.BALN ,baln.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.WORKERTOKEN ,bwt.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.ROUTER ,router.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.REBALANCING ,rebalancing.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.FEEHANDLER ,feehandler.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.STAKEDLP ,stakedLp.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.STABILITY ,stability.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.BALANCEDORACLE ,balancedOracle.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.BOOSTEDBALN ,bBaln.getAddress());
     }
 
     protected BigInteger executeVoteWithActions(String actions) {
@@ -306,6 +246,7 @@ public class GovernanceTestBase extends UnitTest {
         rebalancing = new MockContract<>(RebalancingScoreInterface.class, sm, owner);
         feehandler = new MockContract<>(FeeHandlerScoreInterface.class, sm, owner);
         stakedLp = new MockContract<>(StakedLPScoreInterface.class, sm, owner);
+        stability = new MockContract<>(StabilityScoreInterface.class, sm, owner);
         bBaln = new MockContract<>(BoostedBalnScoreInterface.class, sm, owner);
         balancedOracle = new MockContract<>(BalancedOracleScoreInterface.class, sm, owner);
         governance = sm.deploy(owner, GovernanceImpl.class);

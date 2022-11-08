@@ -66,8 +66,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
     protected static BigInteger voteDefinitionFee = BigInteger.TEN.pow(10);
 
     public static void setup() {
-        owner.stability.whitelistTokens(balanced.sicx._address(), BigInteger.TEN.pow(10));
-
+        whitelistToken(balanced, balanced.sicx._address(), BigInteger.TEN.pow(10));
         setRebalancingThreshold(BigInteger.TEN.pow(17));
         owner.governance.setVoteDefinitionFee(voteDefinitionFee);
         owner.governance.setBalnVoteDefinitionCriterion(BigInteger.ZERO);

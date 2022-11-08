@@ -226,7 +226,8 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         assertEquals(lpBalance, boostData.get("sICX/ICX").get("balance"));
 
         // Act
-        owner.boostedBaln.setPenaltyAddress(balanced.daofund._address());
+        owner.governance.execute(createSingleTransaction(balanced.bBaln._address(), "setPenaltyAddress",
+                 new JsonArray().add(createParameter(balanced.daofund._address()))).toString());
         icxSicxLpBoosted.boostedBaln.withdrawEarly();
 
         // Assert

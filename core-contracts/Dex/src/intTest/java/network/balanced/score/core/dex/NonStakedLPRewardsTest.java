@@ -107,7 +107,6 @@ public class NonStakedLPRewardsTest {
 
     @Test
     void testNonStakedLpRewards() {
-        userDaoFundScoreClient.addAddressToSetdb();
         balanced.syncDistributions();
 
         byte[] tokenDeposit = "{\"method\":\"_deposit\",\"params\":{\"none\":\"none\"}}".getBytes();

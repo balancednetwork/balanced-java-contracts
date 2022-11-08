@@ -38,6 +38,10 @@ public interface SystemInterface {
     Map<String, Object> getPReps(BigInteger startRanking, BigInteger endRanking);
 
     @Payable
-    void registerPRep(String name, String email, String country, String city, String website, String details,
-                      String p2pEndpoint);
+    void registerPRep(String name, String email, String country, String city, String website, String details, String p2pEndpoint);
+
+    void setScoreOwner(Address score, Address owner );
+
+    Address getScoreOwner(Address score);
+
 }

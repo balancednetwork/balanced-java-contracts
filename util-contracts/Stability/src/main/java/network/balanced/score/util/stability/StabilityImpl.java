@@ -17,6 +17,7 @@
 package network.balanced.score.util.stability;
 
 import network.balanced.score.lib.interfaces.Stability;
+import network.balanced.score.lib.utils.Names;
 import score.*;
 import score.annotation.External;
 import scorex.util.ArrayList;
@@ -66,7 +67,7 @@ public class StabilityImpl implements Stability {
 
     @External(readonly = true)
     public String name() {
-        return TAG;
+        return Names.STABILITY;
     }
 
     @External

@@ -64,7 +64,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         owner = balanced.ownerClient;
         reader = balanced.newClient(BigInteger.ZERO);
 
-        owner.stability.whitelistTokens(balanced.sicx._address(), BigInteger.TEN.pow(10));
+        whitelistToken(balanced, balanced.sicx._address(), BigInteger.TEN.pow(10));
 
         owner.governance.setVoteDefinitionFee(voteDefinitionFee);
         owner.governance.setBalnVoteDefinitionCriterion(BigInteger.ZERO);

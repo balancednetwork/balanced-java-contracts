@@ -21,6 +21,7 @@ import network.balanced.score.lib.interfaces.LoansScoreInterface;
 import network.balanced.score.lib.structs.Disbursement;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.utils.EnumerableSetDB;
+import network.balanced.score.lib.utils.Names;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -54,7 +55,7 @@ public class DAOfundImpl implements DAOfund {
     // Awards hold the amount that can be claimed by any user
     private final BranchDB<Address, DictDB<Address, BigInteger>> awards = Context.newBranchDB(AWARDS, BigInteger.class);
 
-    public static final String TAG = "Balanced DAOfund";
+    public static final String TAG = Names.DAOFUND;
 
     public DAOfundImpl(Address _governance) {
         if (governance.get() == null) {
@@ -65,7 +66,7 @@ public class DAOfundImpl implements DAOfund {
 
     @External(readonly = true)
     public String name() {
-        return TAG;
+        return Names.DAOFUND;
     }
 
     //Setup methods

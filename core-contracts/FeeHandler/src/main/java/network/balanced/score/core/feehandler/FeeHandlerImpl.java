@@ -21,6 +21,7 @@ import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import network.balanced.score.lib.interfaces.FeeHandler;
+import network.balanced.score.lib.utils.Names;
 import score.*;
 import score.annotation.External;
 import score.annotation.Optional;
@@ -79,14 +80,13 @@ public class FeeHandlerImpl implements FeeHandler {
             isContract(_governance);
             this.governance.set(_governance);
             enabled.set(true);
-        } else if (admin.get() == null) {
-            admin.set(_governance);
+            admin.set(governance.get()) ;
         }
     }
 
     @External(readonly = true)
     public String name() {
-        return "Balanced " + TAG;
+        return Names.FEEHANDLER;
     }
 
     @External

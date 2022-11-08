@@ -1,6 +1,7 @@
 package network.balanced.score.core.governance.proposal;
 
 import network.balanced.score.core.governance.utils.ContractManager;
+import network.balanced.score.lib.utils.Names;
 import network.balanced.score.core.governance.utils.ArbitraryCallManager;
 
 import score.Address;
@@ -37,7 +38,7 @@ public class ProposalManager {
                         "total boosted baln supply to define a vote.");
         verifyTransactions(transactions);
 
-        Context.call(ContractManager.get("bnUSD"), "govTransfer", Context.getCaller(), ContractManager.get("daofund"),
+        call(ContractManager.getAddress(Names.BNUSD), "govTransfer", Context.getCaller(), ContractManager.getAddress(Names.DAOFUND),
                 bnusdVoteDefinitionFee.getOrDefault(BigInteger.ONE), new byte[0]);
 
         ProposalDB.createProposal(
@@ -147,7 +148,7 @@ public class ProposalManager {
         getEventLogger().VoteCast(proposal.name.get(), vote, from, totalVote, totalFor, totalAgainst);
     }
 
-    public static  void evaluateVote(BigInteger vote_index) {
+    public static void evaluateVote(BigInteger vote_index) {
         Context.require(vote_index.compareTo(BigInteger.ZERO) > 0 &&
                         vote_index.compareTo(ProposalDB.getProposalCount()) <= 0,
                 TAG + ": There is no proposal with index " + vote_index);
@@ -178,7 +179,7 @@ public class ProposalManager {
             return;
         } else if (transactions.equals("[]")) {
             proposal.status.set(ProposalStatus.STATUS[ProposalStatus.SUCCEEDED]);
-            _refundVoteDefinitionFee(proposal);
+            refundVoteDefinitionFee(proposal);
             return;
         }
 
@@ -189,7 +190,7 @@ public class ProposalManager {
             proposal.status.set(ProposalStatus.STATUS[ProposalStatus.FAILED_EXECUTION]);
         }
 
-        _refundVoteDefinitionFee(proposal);
+        refundVoteDefinitionFee(proposal);
     }
 
     public static Map<String, Object> checkVote(BigInteger _vote_index) {
@@ -254,11 +255,11 @@ public class ProposalManager {
     }
 
     public static BigInteger totalBoostedBaln(BigInteger block) {
-        return Context.call(BigInteger.class, ContractManager.get("bBaln"), "totalSupplyAt", block);
+        return Context.call(BigInteger.class, ContractManager.getAddress(Names.BOOSTEDBALN), "totalSupplyAt", block);
     }
 
     public static BigInteger myVotingWeight(Address _address, BigInteger block) {
-        return Context.call(BigInteger.class, ContractManager.get("bBaln"), "balanceOfAt", _address, block);
+        return Context.call(BigInteger.class, ContractManager.getAddress(Names.BOOSTEDBALN), "balanceOfAt", _address, block);
     }
 
     private static void refundVoteDefinitionFee(ProposalDB proposal) {
@@ -267,25 +268,19 @@ public class ProposalManager {
         }
 
         proposal.feeRefunded.set(true);
-        call(ContractManager.get("bnUSD"), "govTransfer", ContractManager.get("daofund"), proposal.proposer.get(), proposal.fee.get(), new byte[0]);
+        call(ContractManager.getAddress(Names.BNUSD), "govTransfer", ContractManager.getAddress(Names.DAOFUND), proposal.proposer.get(), proposal.fee.get(), new byte[0]);
     }
 
     private static BigInteger totalBaln(BigInteger _day) {
-        return call(BigInteger.class, ContractManager.get("baln"), "totalStakedBalanceOfAt", _day);
+        return call(BigInteger.class, ContractManager.getAddress(Names.BALN), "totalStakedBalanceOfAt", _day);
     }
 
     private static boolean checkBalnVoteCriterion(Address address, BigInteger block) {
-        BigInteger boostedBalnTotal = Context.call(BigInteger.class, ContractManager.get("bBaln"), "totalSupplyAt", block);
+        BigInteger boostedBalnTotal = Context.call(BigInteger.class, ContractManager.getAddress(Names.BOOSTEDBALN), "totalSupplyAt", block);
         BigInteger userBoostedBaln = myVotingWeight(address, block);
         BigInteger limit = balnVoteDefinitionCriterion.get();
         BigInteger userPercentage = POINTS.multiply(userBoostedBaln).divide(boostedBalnTotal);
         return userPercentage.compareTo(limit) >= 0;
-    }
-
-    private static void _refundVoteDefinitionFee(ProposalDB proposal) {
-        Address daoFund = ContractManager.get("daofund");
-        call(ContractManager.get("bnUSD"), "govTransfer", daoFund, proposal.proposer.get(), proposal.fee.get(), new byte[0]);
-        proposal.feeRefunded.set(true);
     }
 
     private static void verifyTransactions(String transactions) {

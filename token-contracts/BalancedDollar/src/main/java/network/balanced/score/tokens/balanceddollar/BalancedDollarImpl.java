@@ -18,6 +18,7 @@ package network.balanced.score.tokens.balanceddollar;
 
 import network.balanced.score.lib.interfaces.BalancedDollar;
 import network.balanced.score.lib.tokens.IRC2Burnable;
+import network.balanced.score.lib.utils.Names;
 import score.Address;
 import score.Context;
 import score.VarDB;
@@ -31,7 +32,7 @@ import java.util.Map;
 import static network.balanced.score.lib.utils.Check.*;
 
 public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
-    private static final String TOKEN_NAME = "Balanced Dollar";
+    private static final String TOKEN_NAME = Names.BNUSD;
     private static final String SYMBOL_NAME = "bnUSD";
     private final String USD_BASE = "USD";
     private final String ICX_QUOTE = "ICX";

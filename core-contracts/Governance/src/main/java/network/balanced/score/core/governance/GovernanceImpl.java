@@ -16,10 +16,9 @@
 
 package network.balanced.score.core.governance;
 
-import com.eclipsesource.json.Json;
-import com.eclipsesource.json.JsonArray;
 import network.balanced.score.lib.structs.BalancedAddresses;
 import network.balanced.score.lib.structs.PrepDelegations;
+import network.balanced.score.lib.utils.Names;
 import network.balanced.score.core.governance.proposal.ProposalDB;
 import network.balanced.score.core.governance.proposal.ProposalManager;
 import network.balanced.score.core.governance.utils.ContractManager;
@@ -58,17 +57,16 @@ public class GovernanceImpl implements Governance {
     public GovernanceImpl() {
         if (launched.getOrDefault(null) == null) {
             launched.set(false);
+            setVoteDurationLimits(BigInteger.ONE, BigInteger.valueOf(14));
+            return;
         }
 
-        if (maxVoteDuration.get() == null) {
-            maxVoteDuration.set(BigInteger.valueOf(14));
-            minVoteDuration.set(BigInteger.valueOf(1));
-        }
+//        ContractManager.migrateAddresses();
     }
 
     @External(readonly = true)
     public String name() {
-        return "Balanced Governance";
+        return Names.GOVERNANCE;
     }
 
     @External(readonly = true)
@@ -82,6 +80,12 @@ public class GovernanceImpl implements Governance {
     }
 
     @External
+    public void changeScoreOwner(Address score, Address newOwner) {
+        onlyOwnerOrContract();
+        Address SYSTEM_SCORE_ADDRESS = getSystemScoreAddress();
+        Context.call(SYSTEM_SCORE_ADDRESS, "setScoreOwner", score, newOwner);
+    }
+
     public void setVoteDurationLimits(BigInteger min, BigInteger max) {
         onlyOwnerOrContract();
         Context.require(min.compareTo(BigInteger.ONE) >= 0, "Minimum vote duration has to be above 1");
@@ -251,14 +255,13 @@ public class GovernanceImpl implements Governance {
     }
 
     @External(readonly = true)
-    public Address getContractAddress(String contract) {
-        return ContractManager.get(contract);
+    public Address getAddress(String name) {
+        return ContractManager.getAddress(name);
     }
 
-    @External
-    public void setAddresses(BalancedAddresses _addresses) {
-        onlyOwnerOrContract();
-        ContractManager.setAddresses(_addresses);
+    @External(readonly = true)
+    public Address getContractAddress(String contract) {
+        return ContractManager.get(contract);
     }
 
     @External
@@ -296,6 +299,24 @@ public class GovernanceImpl implements Governance {
     }
 
     @External
+    public void addExternalContract(String name, Address address) {
+        onlyOwnerOrContract();
+        ContractManager.addContract(name, address);
+    }
+
+    @External
+    public void deployTo(Address targetContract, byte[] contractData, String deploymentParams) {
+        onlyOwnerOrContract();
+        ContractManager.updateContract(targetContract, contractData, deploymentParams);
+    }
+
+    @External
+    public void deploy(byte[] contractData, String deploymentParams) {
+        onlyOwnerOrContract();
+        ContractManager.newContract(contractData, deploymentParams);
+    }
+
+    @External
     public void execute(String transactions) {
         onlyOwner();
         ArbitraryCallManager.executeTransactions(transactions);
@@ -327,13 +348,13 @@ public class GovernanceImpl implements Governance {
     @External
     public void delegate(String contract, PrepDelegations[] _delegations) {
         onlyOwnerOrContract();
-        Context.call(ContractManager.get(contract), "delegate", (Object) _delegations);
+        Context.call(ContractManager.getAddress(contract), "delegate", (Object) _delegations);
     }
 
     @External
     public void balwAdminTransfer(Address _from, Address _to, BigInteger _value, @Optional byte[] _data) {
         onlyOwnerOrContract();
-        Context.call(ContractManager.get("bwt"), "adminTransfer", _from, _to, _value, _data);
+        Context.call(ContractManager.getAddress(Names.WORKERTOKEN), "adminTransfer", _from, _to, _value, _data);
     }
 
     public static void call(Address targetAddress, String method, Object... params) {
@@ -356,10 +377,10 @@ public class GovernanceImpl implements Governance {
     public static void _setTimeOffset(BigInteger offset) {
         onlyOwnerOrContract();
         timeOffset.set(offset);
-        Context.call(ContractManager.get("loans"), "setTimeOffset", offset);
-        Context.call(ContractManager.get("rewards"), "setTimeOffset", offset);
-        Context.call(ContractManager.get("dex"), "setTimeOffset", offset);
-        Context.call(ContractManager.get("dividends"), "setTimeOffset", offset);
+        Context.call(ContractManager.getAddress(Names.LOANS), "setTimeOffset", offset);
+        Context.call(ContractManager.getAddress(Names.REWARDS), "setTimeOffset", offset);
+        Context.call(ContractManager.getAddress(Names.DEX), "setTimeOffset", offset);
+        Context.call(ContractManager.getAddress(Names.DIVIDENDS), "setTimeOffset", offset);
     }
 
     public void _addCollateral(Address _token_address, boolean _active, String _peg, BigInteger _lockingRatio,
@@ -413,5 +434,11 @@ public class GovernanceImpl implements Governance {
 
     public static EventLogger getEventLogger() {
         return new EventLogger();
+    }
+
+    private static Address getSystemScoreAddress() {
+        byte[] rawAddress = new byte[Address.LENGTH];
+        rawAddress[0] = 1;
+        return new Address(rawAddress);
     }
 }

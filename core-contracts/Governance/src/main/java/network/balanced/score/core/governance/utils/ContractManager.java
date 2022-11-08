@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,19 @@
 
 package network.balanced.score.core.governance.utils;
 
-import network.balanced.score.core.governance.GovernanceImpl;
-import network.balanced.score.lib.structs.BalancedAddresses;
-import score.Address;
-import score.Context;
-import score.VarDB;
-import scorex.util.HashMap;
-
+import static network.balanced.score.core.governance.GovernanceImpl.call;
 import static network.balanced.score.core.governance.utils.GovernanceConstants.*;
 
 import java.util.Map;
+
+import network.balanced.score.core.governance.GovernanceImpl;
+import network.balanced.score.lib.utils.Names;
+import score.Address;
+import score.ArrayDB;
+import score.Context;
+import score.DictDB;
+import score.VarDB;
+import scorex.util.HashMap;
 
 public class ContractManager {
     public static final VarDB<Address> loans = Context.newVarDB("loans", Address.class);
@@ -44,60 +47,124 @@ public class ContractManager {
     public static final VarDB<Address> router = Context.newVarDB("router", Address.class);
     public static final VarDB<Address> feehandler = Context.newVarDB("feehandler", Address.class);
     public static final VarDB<Address> stakedLp = Context.newVarDB("stakedLp", Address.class);
-    public static final VarDB<Address> bBaln = Context.newVarDB("bBaln", Address.class);
     public static final VarDB<Address> balancedOracle = Context.newVarDB("balancedOracle", Address.class);
-    
+
+    public static final DictDB<String, Address> contractAddresses = Context.newDictDB("BalancedContractAddresses", Address.class);
+    public static final ArrayDB<String> balancedContractNames = Context.newArrayDB("BalancedContractNames", String.class);
+
     private ContractManager() {}
+
+    public static Address getAddress(String name) {
+        if (name.equals(Names.GOVERNANCE)) {
+            return Context.getAddress();
+        }
+
+        return contractAddresses.get(name);
+    }
 
     public static Address get(String key) {
         if (key.equals("governance")) {
             return Context.getAddress();
         }
 
-        return Context.newVarDB(key, Address.class).get();
+        return getAddress(oldNamesMap.get(key));
     }
 
-    public static void setAddresses(BalancedAddresses addresses) {
-        loans.set(addresses.loans);
-        dex.set(addresses.dex);
-        staking.set(addresses.staking);
-        rewards.set(addresses.rewards);
-        reserve.set(addresses.reserve);
-        dividends.set(addresses.dividends);
-        daofund.set(addresses.daofund);
-        oracle.set(addresses.oracle);
-        sicx.set(addresses.sicx);
-        bnUSD.set(addresses.bnUSD);
-        baln.set(addresses.baln);
-        bwt.set(addresses.bwt);
-        router.set(addresses.router);
-        rebalancing.set(addresses.rebalancing);
-        feehandler.set(addresses.feehandler);
-        stakedLp.set(addresses.stakedLp);
-        bBaln.set(addresses.bBaln);
-        balancedOracle.set(addresses.balancedOracle);
+    public static void migrateAddresses() {
+        Address loansAddress = loans.get();
+        String loansName = getName(loansAddress);
+        balancedContractNames.add(loansName);
+        contractAddresses.set(loansName, loansAddress);
+
+        Address dexAddress = dex.get();
+        String dexName = getName(dexAddress);
+        balancedContractNames.add(dexName);
+        contractAddresses.set(dexName, dexAddress);
+
+        Address stakingAddress = staking.get();
+        String stakingName = getName(stakingAddress);
+        balancedContractNames.add(stakingName);
+        contractAddresses.set(stakingName, stakingAddress);
+
+        Address rewardsAddress = rewards.get();
+        String rewardsName = getName(rewardsAddress);
+        balancedContractNames.add(rewardsName);
+        contractAddresses.set(rewardsName, rewardsAddress);
+
+        Address reserveAddress = reserve.get();
+        String reserveName = getName(reserveAddress);
+        balancedContractNames.add(reserveName);
+        contractAddresses.set(reserveName, reserveAddress);
+
+        Address dividendsAddress = dividends.get();
+        String dividendsName = getName(dividendsAddress);
+        balancedContractNames.add(dividendsName);
+        contractAddresses.set(dividendsName, dividendsAddress);
+
+        Address daofundAddress = daofund.get();
+        String daofundName = getName(daofundAddress);
+        balancedContractNames.add(daofundName);
+        contractAddresses.set(daofundName, daofundAddress);
+
+        Address oracleAddress = oracle.get();
+        String oracleName = Names.ORACLE;
+        balancedContractNames.add(oracleName);
+        contractAddresses.set(oracleName, oracleAddress);
+
+        Address sicxAddress = sicx.get();
+        String sicxName = getName(sicxAddress);
+        balancedContractNames.add(sicxName);
+        contractAddresses.set(sicxName, sicxAddress);
+
+        Address bnUSDAddress = bnUSD.get();
+        String bnUSDName = getName(bnUSDAddress);
+        balancedContractNames.add(bnUSDName);
+        contractAddresses.set(bnUSDName, bnUSDAddress);
+
+        Address balnAddress = baln.get();
+        String balnName = getName(balnAddress);
+        balancedContractNames.add(balnName);
+        contractAddresses.set(balnName, balnAddress);
+
+        Address bwtAddress = bwt.get();
+        String bwtName = getName(bwtAddress);
+        balancedContractNames.add(bwtName);
+        contractAddresses.set(bwtName, bwtAddress);
+
+        Address rebalancingAddress = rebalancing.get();
+        String rebalancingName = getName(rebalancingAddress);
+        balancedContractNames.add(rebalancingName);
+        contractAddresses.set(rebalancingName, rebalancingAddress);
+
+        Address routerAddress = router.get();
+        String routerName = getName(routerAddress);
+        balancedContractNames.add(routerName);
+        contractAddresses.set(routerName, routerAddress);
+
+        Address feehandlerAddress = feehandler.get();
+        String feehandlerName = getName(feehandlerAddress);
+        balancedContractNames.add(feehandlerName);
+        contractAddresses.set(feehandlerName, feehandlerAddress);
+
+        Address stakedLpAddress = stakedLp.get();
+        String stakedLpName = getName(stakedLpAddress);
+        balancedContractNames.add(stakedLpName);
+        contractAddresses.set(stakedLpName, stakedLpAddress);
+
+        Address balancedOracleAddress = balancedOracle.get();
+        String balancedOracleName = getName(balancedOracleAddress);
+        balancedContractNames.add(balancedOracleName);
+        contractAddresses.set(balancedOracleName, balancedOracleAddress);
     }
 
     public static Map<String, Address> getAddresses() {
         Map<String, Address> addressData = new HashMap<>();
-        addressData.put("loans", loans.get());
-        addressData.put("dex", dex.get());
-        addressData.put("staking", staking.get());
-        addressData.put("rewards", rewards.get());
-        addressData.put("reserve", reserve.get());
-        addressData.put("dividends", dividends.get());
-        addressData.put("daofund", daofund.get());
-        addressData.put("oracle", oracle.get());
-        addressData.put("sicx", sicx.get());
-        addressData.put("bnUSD", bnUSD.get());
-        addressData.put("baln", baln.get());
-        addressData.put("bwt", bwt.get());
-        addressData.put("rebalancing", rebalancing.get());
-        addressData.put("router", router.get());
-        addressData.put("feehandler", feehandler.get());
-        addressData.put("stakedLp", stakedLp.get());
-        addressData.put("bBaln", bBaln.get());
-        addressData.put("balancedOracle", balancedOracle.get());
+        int numberOfContracts = balancedContractNames.size();
+        for (int i = 0; i < numberOfContracts; i++) {
+            String name = balancedContractNames.get(i);
+            Address address = getAddress(name);
+            addressData.put(name, address);
+        }
 
         return addressData;
     }
@@ -109,12 +176,10 @@ public class ContractManager {
             try {
                 GovernanceImpl.call(get(contract), setMethod, get(contractToBeSet));
             } catch (Exception e) {
-                // to make migration/testing easier
-
                 if (contractToBeSet.equals("bnUSD")) {
                     try {
                         GovernanceImpl.call(get(contract), "setbnUSD", get(contractToBeSet));
-                    } catch (Exception ignored) {
+                    } catch (Exception e2) {
 
                     }
                 }
@@ -129,11 +194,10 @@ public class ContractManager {
                 try {
                     GovernanceImpl.call(get(targetContract), setMethod, get(contract));
                 } catch (Exception e) {
-                    // to make migration/testing easier
                     if (contract.equals("bnUSD")) {
                         try {
                             GovernanceImpl.call(get(targetContract), "setbnUSD", get(contract));
-                        } catch (Exception ignored) {
+                        } catch (Exception e2) {
 
                         }
                     }
@@ -148,5 +212,27 @@ public class ContractManager {
             String contract = ADMIN_ADDRESSES.get(targetContract);
             GovernanceImpl.call(get(targetContract), "setAdmin", get(contract));
         }
+    }
+
+    public static void addContract(String name, Address address) {
+        balancedContractNames.add(name);
+        contractAddresses.set(name, address);
+    }
+
+    public static void updateContract(Address targetContract, byte[] contractData, String params) {
+        Object[] parsedParams = ArbitraryCallManager.getConvertedParameters(params);
+        Context.deploy(targetContract, contractData, parsedParams);
+    }
+
+    public static void newContract(byte[] contractData, String params) {
+        Object[] parsedParams = ArbitraryCallManager.getConvertedParameters(params);
+        Address contractAddress = Context.deploy(contractData, parsedParams);
+        String name = getName(contractAddress);
+        balancedContractNames.add(name);
+        contractAddresses.set(name, contractAddress);
+    }
+
+    private static String getName(Address address) {
+        return call(String.class, address, "name");
     }
 }

@@ -20,6 +20,7 @@ import network.balanced.score.core.rewards.utils.RewardsConstants;
 import network.balanced.score.lib.interfaces.Rewards;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.RewardsDataEntry;
+import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.SetDB;
 import score.*;
 import score.annotation.EventLog;
@@ -117,7 +118,7 @@ public class RewardsImpl implements Rewards {
 
     @External(readonly = true)
     public String name() {
-        return "Balanced Rewards";
+        return Names.REWARDS;
     }
 
     @External(readonly = true)

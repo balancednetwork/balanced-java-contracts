@@ -311,8 +311,7 @@ class DexIntegrationTest {
 
     @Test
     @Order(8)
-    void testNonContinuousAndContinuousReward() {
-        userDaoFundScoreClient.addAddressToSetdb();
+    void testNonContinuousAndContinuousReward(){
         balanced.syncDistributions();
         BigInteger balnHolding = userRewardScoreClient.getBalnHolding(tUserAddress);
         tUserClient._transfer(dexScoreClient._address(), BigInteger.valueOf(200).multiply(EXA), null);
@@ -390,7 +389,7 @@ class DexIntegrationTest {
 
             balanced.ownerClient.governance.execute(actions.toString());
     }
-    
+
     void waitForADay(){
         balanced.increaseDay(1);
     }

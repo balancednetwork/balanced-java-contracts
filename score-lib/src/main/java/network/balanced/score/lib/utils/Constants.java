@@ -16,11 +16,11 @@
 
 package network.balanced.score.lib.utils;
 
-import score.Address;
+import static network.balanced.score.lib.utils.Math.pow;
 
 import java.math.BigInteger;
 
-import static network.balanced.score.lib.utils.Math.pow;
+import score.Address;
 
 public class Constants {
     public final static BigInteger EXA = pow(BigInteger.TEN, 18);

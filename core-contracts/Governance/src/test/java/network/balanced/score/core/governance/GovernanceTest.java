@@ -21,6 +21,8 @@ import com.eclipsesource.json.JsonObject;
 import com.iconloop.score.test.Account;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.PrepDelegations;
+import network.balanced.score.lib.utils.Names;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -51,6 +53,11 @@ public class GovernanceTest extends GovernanceTestBase {
     @Test
     void getContractAddress() {
         assertEquals(loans.getAddress(), governance.call("getContractAddress", "loans"));
+    }
+
+    @Test
+    void getAddress() {
+        assertEquals(loans.getAddress(), governance.call("getAddress", Names.LOANS));
     }
 
     @Test
@@ -187,11 +194,11 @@ public class GovernanceTest extends GovernanceTestBase {
         String expectedErrorMessage = "SenderNotScoreOwnerOrContract: Sender=" + notOwner.getAddress() + " Owner=" + owner.getAddress() + " Contract=" + governance.getAddress();
 
         // Act & Assert
-        Executable withNotOwner = () -> governance.invoke(notOwner, "delegate", "loans", (Object) delegations);
+        Executable withNotOwner = () -> governance.invoke(notOwner, "delegate", Names.LOANS, (Object) delegations);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
 
         // Act
-        governance.invoke(owner, "delegate", "loans", (Object) delegations);
+        governance.invoke(owner, "delegate", Names.LOANS, (Object) delegations);
 
         // Assert
         verify(loans.mock).delegate(any(PrepDelegations[].class));
@@ -233,11 +240,10 @@ public class GovernanceTest extends GovernanceTestBase {
         governance.invoke(owner, "setAddressesOnContract", _contract);
 
         // Assert
-        verify(loans.mock, times(2)).setDividends(dividends.getAddress());
-        verify(loans.mock, times(2)).setStaking(staking.getAddress());
-        verify(loans.mock, times(2)).setReserve(reserve.getAddress());
-        verify(loans.mock, times(2)).setRewards(rewards.getAddress());
-
+        verify(loans.mock, times(1)).setDividends(dividends.getAddress());
+        verify(loans.mock, times(1)).setStaking(staking.getAddress());
+        verify(loans.mock, times(1)).setReserve(reserve.getAddress());
+        verify(loans.mock, times(1)).setRewards(rewards.getAddress());
     }
 
     @Test
@@ -281,7 +287,6 @@ public class GovernanceTest extends GovernanceTestBase {
         BigInteger sICXValue = BigInteger.TEN.pow(23);
 
         BigInteger sicxBnusdPid = BigInteger.TWO;
-        BigInteger stakeAmount = initialICX.divide(BigInteger.valueOf(7));
 
         when(bnUSD.mock.priceInLoop()).thenReturn(bnusdPrice);
 

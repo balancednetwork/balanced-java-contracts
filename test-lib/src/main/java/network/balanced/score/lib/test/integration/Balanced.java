@@ -20,14 +20,23 @@ import foundation.icon.icx.KeyWallet;
 import foundation.icon.jsonrpc.model.Hash;
 import foundation.icon.jsonrpc.model.TransactionResult;
 import foundation.icon.score.client.DefaultScoreClient;
+import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.structs.BalancedAddresses;
-import score.Address;
+import network.balanced.score.lib.utils.Names;
+import foundation.icon.jsonrpc.Address;
 
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import com.eclipsesource.json.Json;
+import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.JsonObject;
+
+import static network.balanced.score.lib.test.integration.BalancedUtils.hexObjectToBigInteger;
+import static network.balanced.score.lib.test.integration.BalancedUtils.createParameter;
+import static network.balanced.score.lib.test.integration.BalancedUtils.createSingleTransaction;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
@@ -54,8 +63,9 @@ public class Balanced {
     public DefaultScoreClient stability;
     public DefaultScoreClient bBaln;
     public DefaultScoreClient balancedOracle;
+    public Governance governanceClient;
 
-    public Map<Address, BalancedClient> balancedClients;
+    public Map<score.Address, BalancedClient> balancedClients;
 
     public Balanced() throws Exception {
         balancedClients = new HashMap<>();
@@ -68,7 +78,7 @@ public class Balanced {
         setupAddresses();
         increaseDay(1);
         setupContracts();
-//         delegate(adminWallet);
+        // delegate(adminWallet);
         String className = new Exception().getStackTrace()[1].getClassName();
         // no need to set up market in staking integration test case
         if (!className.equals("network.balanced.score.core.staking.StakingIntegrationTest")) {
@@ -78,82 +88,80 @@ public class Balanced {
 
     public void deployContracts() {
         governance = deploy(owner, "Governance", null);
+        governanceClient = new GovernanceScoreClient(chain.getEndpointURL(), chain.networkId, owner, governance._address());
+        String governanceParam = new JsonArray()
+            .add(createParameter(governance._address()))
+            .toString();
 
-        Hash balnTx = deployAsync(owner, "BalancedToken", Map.of("_governance", governance._address()));
-        Hash bwtTx = deployAsync(owner, "WorkerToken", Map.of("_governance", governance._address()));
-        Hash dexTx = deployAsync(owner, "Dex", Map.of("_governance", governance._address()));
-        Hash feehandlerTx = deployAsync(owner, "FeeHandler", Map.of("_governance", governance._address()));
-        Hash loansTx = deployAsync(owner, "Loans", Map.of("_governance", governance._address()));
-        Hash rebalancingTx = deployAsync(owner, "Rebalancing", Map.of("_governance", governance._address()));
-        Hash rewardsTx = deployAsync(owner, "Rewards", Map.of("_governance", governance._address()));
-        Hash stakingTx = deployAsync(owner, "Staking", null);
-        Hash bnusdTx = deployAsync(owner, "BalancedDollar", Map.of("_governance", governance._address()));
-        Hash daofundTx = deployAsync(owner, "DAOfund", Map.of("_governance", governance._address()));
-        Hash dividendsTx = deployAsync(owner, "Dividends", Map.of("_governance", governance._address()));
+        governanceClient.deploy(getContractData("BalancedToken"), governanceParam);
+        governanceClient.deploy(getContractData("WorkerToken"), governanceParam);
+        governanceClient.deploy(getContractData("Dex"), governanceParam);
+        governanceClient.deploy(getContractData("FeeHandler"), governanceParam);
+        governanceClient.deploy(getContractData("Loans"), governanceParam);
+        governanceClient.deploy(getContractData("Rebalancing"), governanceParam);
+        governanceClient.deploy(getContractData("Rewards"), governanceParam);
+        governanceClient.deploy(getContractData("Staking"), "[]");
+        governanceClient.deploy(getContractData("BalancedDollar"), governanceParam);
+        governanceClient.deploy(getContractData("DAOfund"), governanceParam);
+        governanceClient.deploy(getContractData("Dividends"), governanceParam);
+        governanceClient.deploy(getContractData("Reserve"), governanceParam);
+        governanceClient.deploy(getContractData("Router"), governanceParam);
+        governanceClient.deploy(getContractData("StakedLP"), governanceParam);
+        governanceClient.deploy(getContractData("BalancedOracle"), governanceParam);
+
         Hash oracleTx = deployAsync(owner, "DummyOracle", null);
-        Hash reserveTx = deployAsync(owner, "Reserve", Map.of("governance", governance._address()));
-        Hash routerTx = deployAsync(owner, "Router", Map.of("_governance", governance._address()));
-        Hash stakedLpTx = deployAsync(owner, "StakedLP", Map.of("governance", governance._address()));
-        Hash balancedOracleTx = deployAsync(owner, "BalancedOracle", Map.of("_governance", governance._address()));
-        staking = getDeploymentResult(owner, stakingTx);
-        feehandler = getDeploymentResult(owner, feehandlerTx);
-        bnusd = getDeploymentResult(owner, bnusdTx);
+        Hash stakingTx = deployAsync(owner, "Staking", null);
 
-        Hash stabilityTx = deployAsync(owner, "Stability", Map.of(
-                "_feeHandler", feehandler._address(),
-                "_bnusd", bnusd._address(),
-                "_feeIn", BigInteger.TEN.pow(18),
-                "_feeOut", BigInteger.TEN.pow(18)
-        ));
+        baln = newScoreClient(owner, governanceClient.getAddress(Names.BALN));
+        bnusd = newScoreClient(owner, governanceClient.getAddress(Names.BNUSD));
+        bwt = newScoreClient(owner, governanceClient.getAddress(Names.WORKERTOKEN));
+        dex = newScoreClient(owner, governanceClient.getAddress(Names.DEX));
+        loans = newScoreClient(owner, governanceClient.getAddress(Names.LOANS));
+        rebalancing = newScoreClient(owner, governanceClient.getAddress(Names.REBALANCING));
+        rewards = newScoreClient(owner, governanceClient.getAddress(Names.REWARDS));
+        daofund = newScoreClient(owner, governanceClient.getAddress(Names.DAOFUND));
+        dividends = newScoreClient(owner, governanceClient.getAddress(Names.DIVIDENDS));
+        reserve = newScoreClient(owner, governanceClient.getAddress(Names.RESERVE));
+        router = newScoreClient(owner, governanceClient.getAddress(Names.ROUTER));
+        stakedLp = newScoreClient(owner, governanceClient.getAddress(Names.STAKEDLP));
+        balancedOracle = newScoreClient(owner, governanceClient.getAddress(Names.BALANCEDORACLE));
+        feehandler = newScoreClient(owner, governanceClient.getAddress(Names.FEEHANDLER));
+
+        oracle = getDeploymentResult(owner, oracleTx);
+        staking = getDeploymentResult(owner, stakingTx);
+
+        String StabilityParams = new JsonArray()
+            .add(createParameter(feehandler._address()))
+            .add(createParameter(bnusd._address()))
+            .add(createParameter(BigInteger.TEN.pow(18)))
+            .add(createParameter(BigInteger.TEN.pow(18)))
+            .toString();
+
+        governanceClient.deploy(getContractData("Stability"), StabilityParams);
+
+        String BoostedBalnParams = new JsonArray()
+            .add(createParameter(baln._address()))
+            .add(createParameter(rewards._address()))
+            .add(createParameter(dividends._address()))
+            .add(createParameter("bBaln"))
+            .toString();
+
+        governanceClient.deploy(getContractData("bBaln"), BoostedBalnParams);
+        bBaln = newScoreClient(owner, governanceClient.getAddress(Names.BOOSTEDBALN));
 
         Hash sicxTx = deployAsync(owner, "Sicx", Map.of("_admin", staking._address()));
 
-        baln = getDeploymentResult(owner, balnTx);
-        rewards = getDeploymentResult(owner, rewardsTx);
-        dividends = getDeploymentResult(owner, dividendsTx);
-        Hash bBalnTx = deployAsync(owner, "bBaln", Map.of("balnAddress", baln._address(), "rewardAddress",
-                rewards._address(), "dividendsAddress", dividends._address(), "name", "Boosted Baln", "symbol",
-                "bBaln"));
 
-        bwt = getDeploymentResult(owner, bwtTx);
-        dex = getDeploymentResult(owner, dexTx);
-        loans = getDeploymentResult(owner, loansTx);
-        rebalancing = getDeploymentResult(owner, rebalancingTx);
-        daofund = getDeploymentResult(owner, daofundTx);
-        oracle = getDeploymentResult(owner, oracleTx);
-        reserve = getDeploymentResult(owner, reserveTx);
-        router = getDeploymentResult(owner, routerTx);
-        stakedLp = getDeploymentResult(owner, stakedLpTx);
+        stability = newScoreClient(owner, governanceClient.getAddress(Names.STABILITY));
         sicx = getDeploymentResult(owner, sicxTx);
-        stability = getDeploymentResult(owner, stabilityTx);
-        bBaln = getDeploymentResult(owner, bBalnTx);
-        balancedOracle = getDeploymentResult(owner, balancedOracleTx);
 
         ownerClient = new BalancedClient(this, owner);
     }
 
     public void setupAddresses() {
-        BalancedAddresses balancedAddresses = new BalancedAddresses();
-        balancedAddresses.loans = loans._address();
-        balancedAddresses.dex = dex._address();
-        balancedAddresses.staking = staking._address();
-        balancedAddresses.rewards = rewards._address();
-        balancedAddresses.reserve = reserve._address();
-        balancedAddresses.dividends = dividends._address();
-        balancedAddresses.daofund = daofund._address();
-        balancedAddresses.oracle = oracle._address();
-        balancedAddresses.sicx = sicx._address();
-        balancedAddresses.bnUSD = bnusd._address();
-        balancedAddresses.baln = baln._address();
-        balancedAddresses.bwt = bwt._address();
-        balancedAddresses.router = router._address();
-        balancedAddresses.rebalancing = rebalancing._address();
-        balancedAddresses.feehandler = feehandler._address();
-        balancedAddresses.stakedLp = stakedLp._address();
-        balancedAddresses.bBaln = bBaln._address();
-        balancedAddresses.balancedOracle = balancedOracle._address();
-
-        ownerClient.governance.setAddresses(balancedAddresses);
+        ownerClient.governance.addExternalContract(Names.ORACLE, oracle._address());
+        ownerClient.governance.addExternalContract(Names.STAKING, staking._address());
+        ownerClient.governance.addExternalContract(Names.SICX, sicx._address());
         ownerClient.governance.setAdmins();
         ownerClient.governance.setContractAddresses();
     }
@@ -164,35 +172,10 @@ public class Balanced {
         ownerClient.balancedOracle.getPriceInLoop((txr) -> {
         }, "USD");
         ownerClient.staking.setSicxAddress(sicx._address());
-
-        ownerClient.bnUSD.setMinter(loans._address());
         ownerClient.sicx.setMinter(staking._address());
-        ownerClient.baln.setMinter(rewards._address());
-        ownerClient.bnUSD.setMinter2(stability._address());
-
-        ownerClient.governance.setAdmin(feehandler._address(), governance._address());
 
         ownerClient.governance.configureBalanced();
         ownerClient.governance.launchBalanced();
-
-        ownerClient.daofund.addAddressToSetdb();
-
-        ownerClient.rewards.addDataProvider(stakedLp._address());
-        ownerClient.rewards.addDataProvider(dex._address());
-        ownerClient.rewards.addDataProvider(loans._address());
-        // ownerClient.rewards.addDataProvider(bBaln._address());
-
-        // ownerClient.governance.setFeeProcessingInterval(BigInteger.ONE);
-
-        // Address[] acceptedAddress = new Address[]{
-        //         bnusd._address(), sicx._address(), baln._address()
-        // };
-        // ownerClient.governance.setAcceptedDividendTokens(acceptedAddress);
-        // ownerClient.governance.addAcceptedTokens(String.valueOf(bnusd._address()));
-        // ownerClient.governance.addAcceptedTokens(String.valueOf(sicx._address()));
-        // ownerClient.governance.addAcceptedTokens(String.valueOf(baln._address()));
-
-        // ownerClient.bnUSD.setMinter2(stability._address());
     }
 
     public void setupMarkets() {
@@ -230,6 +213,8 @@ public class Balanced {
 
     public void increaseDay(int nrOfDays) {
         ownerClient.governance.setTimeOffset(ownerClient.governance.getTimeOffset().subtract(MICRO_SECONDS_IN_A_DAY.multiply(BigInteger.valueOf(nrOfDays))));
-        ownerClient.baln.setTimeOffset();
+        JsonArray setTimeOffset = createSingleTransaction(baln._address(), "setTimeOffset", new JsonArray());
+
+        ownerClient.governance.execute(setTimeOffset.toString());
     }
 }

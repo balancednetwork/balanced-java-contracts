@@ -1,17 +1,16 @@
 package network.balanced.score.core.governance.utils;
 
+import static network.balanced.score.lib.utils.Math.convertToNumber;
+
+import java.util.Map;
+import java.util.function.Function;
+
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 
 import network.balanced.score.core.governance.GovernanceImpl;
-
-import static network.balanced.score.lib.utils.Math.convertToNumber;
-
-import java.util.Map;
-import java.util.function.Function;
-
 import score.Address;
 import score.Context;
 import scorex.util.HashMap;
@@ -29,7 +28,7 @@ public class ArbitraryCallManager {
           }
       }
 
-     public static void executeTransaction(JsonObject transaction) { 
+     public static void executeTransaction(JsonObject transaction) {
           Address address = Address.fromString(transaction.get(ADDRESS).asString());
           String method = transaction.get(METHOD).asString();
           JsonArray jsonParams = transaction.get(PARAMS).asArray();
@@ -37,7 +36,12 @@ public class ArbitraryCallManager {
           GovernanceImpl.call(address, method, params);
      }
 
-     public static Object[] getConvertedParameters(JsonArray params) {
+     public static Object[] getConvertedParameters(String params) {
+          JsonArray paramsList = Json.parse(params).asArray();
+          return getConvertedParameters(paramsList);
+     }
+
+     private static Object[] getConvertedParameters(JsonArray params) {
           Object[] convertedParameters = new Object[params.size()];
           int i = 0;
           for (JsonValue param : params) {
@@ -46,7 +50,7 @@ public class ArbitraryCallManager {
 
           return convertedParameters;
      }
-     
+
      public static Object getConvertedParameter(JsonValue param) {
           JsonObject member = param.asObject();
           String type = member.getString("type", null);
@@ -80,7 +84,7 @@ public class ArbitraryCallManager {
           }
 
           throw new IllegalArgumentException("Unknown type");
-     }    
+     }
 
      private static Object parse(JsonValue value, boolean isArray, Function<JsonValue, ?> parser) {
           if (isArray) {
@@ -133,7 +137,7 @@ public class ArbitraryCallManager {
                     struct.put(name, convertParam(type, jsonValue, false));
                }
           }
-         
+
           return struct;
      }
 }

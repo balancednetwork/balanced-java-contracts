@@ -20,8 +20,6 @@ import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.base.Fallback;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
-import network.balanced.score.lib.structs.BalancedAddresses;
-import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.PrepDelegations;
 import score.Address;
 import score.annotation.External;
@@ -44,6 +42,9 @@ public interface Governance extends
 
     @External(readonly = true)
     Map<String, BigInteger> getVotersCount(BigInteger vote_index);
+
+    @External
+    void changeScoreOwner(Address score, Address newOwner);
 
     @External(readonly = true)
     Address getContractAddress(String contract);
@@ -92,6 +93,15 @@ public interface Governance extends
     void tryExecuteTransactions(String transactions);
 
     @External
+    void addExternalContract(String name, Address address);
+
+    @External
+    void deployTo(Address targetContract, byte[] contractData, String deploymentParams);
+
+    @External
+    void deploy(byte[] contractData, String deploymentParams);
+
+    @External
     void execute(String transactions);
 
     @External(readonly = true)
@@ -134,11 +144,11 @@ public interface Governance extends
     @External
     void createBalnSicxMarket(BigInteger _sicx_amount, BigInteger _baln_amount);
 
-    @External
-    void setAddresses(BalancedAddresses _addresses);
-
     @External(readonly = true)
     Map<String, Address> getAddresses();
+
+    @External(readonly = true)
+    Address getAddress(String name);
 
     @External
     void setAdmins();

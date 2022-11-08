@@ -30,6 +30,7 @@ import network.balanced.score.core.loans.utils.Token;
 import network.balanced.score.lib.interfaces.Loans;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.structs.RewardsDataEntry;
+import network.balanced.score.lib.utils.Names;
 import score.Address;
 import score.Context;
 import score.annotation.EventLog;
@@ -82,7 +83,7 @@ public class LoansImpl implements Loans {
 
     @External(readonly = true)
     public String name() {
-        return "Balanced Loans";
+        return Names.LOANS;
     }
 
     @External

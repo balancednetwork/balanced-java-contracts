@@ -20,9 +20,12 @@ import foundation.icon.icx.KeyWallet;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
+import network.balanced.score.lib.utils.Names;
+
 import org.json.JSONObject;
 import org.junit.jupiter.api.*;
 
+import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 
 import score.Address;
@@ -167,7 +170,10 @@ public class DividendsIntegrationTest {
         createNewUserForBBaln();
 
         // contract is updated with bbaln changes in dividends
-        balanced.ownerClient.dividends._update(System.getProperty("java"), null);
+        byte[] contractData = getContractBytes(System.getProperty("java"));
+
+        // Act
+        ownerClient.governance.deployTo(balanced.dividends._address(), contractData, "[]");
 
         Address addressAlice = alice.getAddress();
         Address addressBob = bob.getAddress();
@@ -177,7 +183,9 @@ public class DividendsIntegrationTest {
         Map<String, BigInteger> unclaimedDividendsBob = ownerClient.dividends.getUnclaimedDividends(addressBob);
         Map<String, BigInteger> unclaimedDividendsCharlie = ownerClient.dividends.getUnclaimedDividends(addressCharlie);
 
-        ownerClient.dividends.setBoostedBaln(alice.boostedBaln._address());
+        ownerClient.governance.execute(createSingleTransaction(balanced.dividends._address(), "setBoostedBaln",
+                 new JsonArray().add(createParameter(balanced.bBaln._address()))).toString());
+
         BigInteger feePercent = hexObjectToBigInteger(ownerClient.loans.getParameters().get("origination fee"));
 
         // Act
