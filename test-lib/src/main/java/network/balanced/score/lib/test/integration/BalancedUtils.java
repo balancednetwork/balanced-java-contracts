@@ -33,23 +33,23 @@ import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
 
 import static foundation.icon.score.client.DefaultScoreClient._deploy;
-import network.balanced.score.lib.interfaces.Governance;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class BalancedUtils {
 
     public static void executeVote(Balanced balanced, BalancedClient voter, String name, JsonArray transactions) {
         BigInteger day = voter.governance.getDay();
         BigInteger voteStart = day.add(BigInteger.TWO);
-        BigInteger snapshot = day.add(BigInteger.ONE);
-        
-        voter.governance.defineVote(name, "test", voteStart, snapshot, transactions.toString());
+        String forumLink = "https://gov.balanced.network/";
+        voter.governance.defineVote(name, "test", voteStart, BigInteger.ONE, forumLink, transactions.toString());
         BigInteger id = voter.governance.getVoteIndex(name);
         balanced.increaseDay(2);
 
         for (BalancedClient client : balanced.balancedClients.values()) {
             try {
                 client.governance.castVote(id, true);
-            } catch (Exception e) {}
+            } catch (Exception ignored) {
+            }
         }
 
         balanced.increaseDay(2);
@@ -64,8 +64,8 @@ public class BalancedUtils {
             .add(createParameter(limit));
 
         JsonArray whitelistTokens = createSingleTransaction(
-            balanced.stability._address(), 
-            "whitelistTokens", 
+            balanced.stability._address(),
+            "whitelistTokens",
             whitelistTokensParams
         );
 
@@ -91,7 +91,21 @@ public class BalancedUtils {
 
     public static Address createIRC2Token(BalancedClient owner, String name, String symbol) {
         String path = System.getProperty("user.dir") + "/../../test-lib/util-contracts/IRC2Token.jar";
-        DefaultScoreClient assetClient = _deploy(Env.getDefaultChain().getEndpointURL(), Env.getDefaultChain().networkId, owner.wallet, path,  Map.of("name", name, "symbol", symbol));
+        DefaultScoreClient assetClient = _deploy(Env.getDefaultChain().getEndpointURL(),
+                Env.getDefaultChain().networkId,
+                owner.wallet,
+                path,
+                Map.of("name", name, "symbol", symbol, "decimals", BigInteger.valueOf(18)));
+        return assetClient._address();
+    }
+
+    public static Address createIRC2Token(BalancedClient owner, String name, String symbol, BigInteger decimals) {
+        String path = System.getProperty("user.dir") + "/../../test-lib/util-contracts/IRC2Token.jar";
+        DefaultScoreClient assetClient = _deploy(Env.getDefaultChain().getEndpointURL(),
+                Env.getDefaultChain().networkId,
+                owner.wallet,
+                path,
+                Map.of("name", name, "symbol", symbol, "decimals", decimals));
         return assetClient._address();
     }
 
@@ -100,7 +114,7 @@ public class BalancedUtils {
             .add("recipient_name", name)
             .add("dist_percent", dist.toString());
     }
-    
+
     public static JsonObject createJsonDisbusment(String token, BigInteger amount) {
         return new JsonObject()
             .add("address", token)
@@ -118,7 +132,7 @@ public class BalancedUtils {
             .add("type", "bytes")
             .add("value", getHex(value));
     }
-    
+
 
     public static JsonObject createParameter(Address value) {
         return new JsonObject()

@@ -85,5 +85,7 @@ public class Addresses {
             public static final String staking = "cx506d21dbcf8b180560e7f8ba104c18983696bd55";
             public static final String multicall = "cx94a9a5750182d117a82a866e78ce7c75856c1edb";
             public static final String stakedlp =  "cx8ac7b22d1eea06bffb3786a7d4ce7c0c8ea9e525";
+            public static final String balancedoracle =  "cx5c244805b38c3f71d494cbcfd25f87c201d81629";
+            public static final String bBaln =  "cx63d5d4a710d83afa29fa15e528fb5379638e848f";
       }
 }

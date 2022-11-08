@@ -25,6 +25,7 @@ import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import score.Address;
 import score.annotation.External;
+import score.annotation.Optional;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -32,16 +33,17 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface Rewards extends 
-        Name, 
+public interface Rewards extends
+        Name,
         TokenFallback,
         GovernanceAddress,
         AdminAddress,
         BalnAddress,
         BwtAddress,
         DaoFundAddress,
-        ReserveAddress {
-   
+        ReserveAddress,
+        BoostedBalnAddress {
+
     @External(readonly = true)
     BigInteger getEmission(BigInteger _day);
 
@@ -67,7 +69,7 @@ public interface Rewards extends
     Map<String, BigInteger> getRecipientsSplit();
 
     @External
-    void addNewDataSource(String _name, Address _address );
+    void addNewDataSource(String _name, Address _address);
 
     @External
     void removeDataSource(String _name);
@@ -81,6 +83,9 @@ public interface Rewards extends
     @External(readonly = true)
     Map<String, Object> getSourceData(String _name);
 
+    @External(readonly = true)
+    Map<String, BigInteger> getWorkingBalanceAndSupply(String _name, Address _user);
+
     @External
     boolean distribute();
 
@@ -88,7 +93,10 @@ public interface Rewards extends
     Map<String, BigInteger> recipientAt(BigInteger _day);
 
     @External
-    void claimRewards();
+    void boost(String[] sources);
+
+    @External
+    void claimRewards(@Optional String[] sources);
 
     @External(readonly = true)
     BigInteger getAPY(String _name);
@@ -116,4 +124,25 @@ public interface Rewards extends
 
     @External(readonly = true)
     BigInteger getTimeOffset();
+
+    @External
+    void onKick(Address user);
+
+    @External
+    void kick(Address user, String[] sources);
+
+    @External
+    void onBalanceUpdate(Address user, BigInteger balance);
+
+    @External
+    void setBoostWeight(BigInteger weight);
+
+    @External(readonly = true)
+    BigInteger getBoostWeight();
+
+    @External(readonly = true)
+    String[] getUserSources(Address user);
+
+    @External(readonly = true)
+    Map<String, Map<String, BigInteger>> getBoostData(Address user, String[] sources);
 }

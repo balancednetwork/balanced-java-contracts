@@ -39,7 +39,7 @@ dependencies {
     // Use JUnit Jupiter for testing.
     testImplementation Dependencies.junitJupiter
     testRuntimeOnly Dependencies.junitJupiterEngine
-    
+
     intTestAnnotationProcessor project(':score-client')
     intTestImplementation project(':score-client')
     intTestImplementation Dependencies.iconSdk
@@ -87,7 +87,7 @@ deployJar {
 tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
-    finalizedBy jacocoTestReport 
+    finalizedBy jacocoTestReport
 }
 
 jacocoTestReport {
@@ -103,7 +103,7 @@ task integrationTest(type: Test) {
     useJUnitPlatform()
 
     rootProject.allprojects {
-        if(it.getTasks().findByName('optimizedJar')) {
+        if (it.getTasks().findByName('optimizedJar')) {
             dependsOn(it.getTasks().getByName('optimizedJar'))
         }
     }

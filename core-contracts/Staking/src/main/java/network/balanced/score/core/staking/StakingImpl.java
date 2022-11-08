@@ -263,7 +263,8 @@ public class StakingImpl implements Staking {
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         stakingOn();
-        Context.require(Context.getCaller().equals(sicxAddress.get()), TAG + ": The Staking contract only accepts sICX tokens.: "+ sicxAddress.get());
+        Context.require(Context.getCaller().equals(sicxAddress.get()), TAG + ": The Staking contract only accepts " +
+                "sICX tokens.: " + sicxAddress.get());
 
         String unpackedData = new String(_data);
         JsonObject json = Json.parse(unpackedData).asObject();
@@ -427,7 +428,8 @@ public class StakingImpl implements Staking {
         Map<String, BigInteger> prepDelegations = prepDelegationInIcx.getOrDefault(DEFAULT_DELEGATION_LIST).toMap();
 
         if (balance.compareTo(BigInteger.ZERO) > 0) {
-            prepDelegations = subtractUserDelegationFromPrepDelegation(prepDelegations, previousDelegations, icxHoldPreviously);
+            prepDelegations = subtractUserDelegationFromPrepDelegation(prepDelegations, previousDelegations,
+                    icxHoldPreviously);
             prepDelegations = addUserDelegationToPrepDelegation(prepDelegations, newDelegations, icxHoldPreviously);
         }
         stakeAndDelegateInNetwork(totalStake.getOrDefault(BigInteger.ZERO), prepDelegations);

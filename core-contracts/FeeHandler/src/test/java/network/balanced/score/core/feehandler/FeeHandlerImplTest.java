@@ -36,6 +36,7 @@ import java.util.Map;
 
 import static network.balanced.score.core.feehandler.FeeHandlerImpl.TAG;
 import static network.balanced.score.lib.test.UnitTest.*;
+import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -106,19 +107,13 @@ class FeeHandlerImplTest extends TestBase {
     }
 
     private void testEnableAndDisable(String setterMethod, boolean expectedValue) {
-        String expectedErrorMessage = "Authorization Check: Address not set";
-        Executable actWithoutAdmin = () -> feeHandler.invoke(admin, setterMethod);
-        expectErrorMessage(actWithoutAdmin, expectedErrorMessage);
-
-        testAdmin(feeHandler, governance, admin);
-
         Account nonAdmin = sm.createAccount();
-        expectedErrorMessage = "Authorization Check: Authorization failed. Caller: " + nonAdmin.getAddress() +
-                " Authorized Caller: " + admin.getAddress();
+        String expectedErrorMessage = "Authorization Check: Authorization failed. Caller: " + nonAdmin.getAddress() +
+                " Authorized Caller: " + governance.getAddress();
         Executable enableNotFromAdmin = () -> feeHandler.invoke(nonAdmin, setterMethod);
         expectErrorMessage(enableNotFromAdmin, expectedErrorMessage);
 
-        feeHandler.invoke(admin, setterMethod);
+        feeHandler.invoke(governance, setterMethod);
         assertEquals(expectedValue, feeHandler.call("isEnabled"));
     }
 
@@ -218,8 +213,8 @@ class FeeHandlerImplTest extends TestBase {
         contextMock.verify(() -> Context.call(sicxScore.getAddress(), "transfer", dividends.getAddress(),
                 BigInteger.TEN, new byte[0]), times(0));
 
-                feeHandler.invoke(admin, "enable");
-                feeHandler.invoke(sicxScore, "tokenFallback", baln.getAddress(), BigInteger.TEN.pow(2), new byte[0]);
+        feeHandler.invoke(admin, "enable");
+        feeHandler.invoke(sicxScore, "tokenFallback", baln.getAddress(), BigInteger.TEN.pow(2), new byte[0]);
         contextMock.verify(() -> Context.call(sicxScore.getAddress(), "transfer", dividends.getAddress(),
                 BigInteger.TEN, new byte[0]));
 
@@ -292,6 +287,7 @@ class FeeHandlerImplTest extends TestBase {
     void feeData() {
         // Arrange
         setAdmin();
+        feeHandler.invoke(admin, "disable");
         Account usdc = Account.newScoreAccount(scoreCount++);
         feeHandler.invoke(owner, "setLoans", loans.getAddress());
         feeHandler.invoke(owner, "setDex", dex.getAddress());
@@ -310,8 +306,8 @@ class FeeHandlerImplTest extends TestBase {
         feeHandler.invoke(admin, "setSwapFeesAccruedDB");
 
         // Act
-        feeHandler.invoke(bnusd, "tokenFallback", loans.getAddress(), loanFee1, new byte[0]);
-        feeHandler.invoke(bnusd, "tokenFallback", loans.getAddress(), loanFee2, new byte[0]);
+        feeHandler.invoke(bnusd, "tokenFallback", EOA_ZERO, loanFee1, new byte[0]);
+        feeHandler.invoke(bnusd, "tokenFallback", EOA_ZERO, loanFee2, new byte[0]);
 
         feeHandler.invoke(sicxScore, "tokenFallback", dex.getAddress(), dexFeeICX, new byte[0]);
         feeHandler.invoke(bnusd, "tokenFallback", dex.getAddress(), dexFeeBnusd, new byte[0]);
@@ -334,5 +330,5 @@ class FeeHandlerImplTest extends TestBase {
         assertEquals(BigInteger.ZERO, feeHandler.call("getSwapFeesAccruedByToken", usdc.getAddress()));
 
         assertEquals(StabilityFeeBnsud.multiply(BigInteger.TWO), feeHandler.call("getStabilityFundFeesAccrued"));
-    }  
+    }
 }

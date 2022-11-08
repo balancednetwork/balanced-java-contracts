@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http,//www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,16 +16,17 @@
 
 package network.balanced.score.core.governance.utils;
 
-import static java.util.Map.entry;
-import static network.balanced.score.lib.utils.Math.pow;
+import network.balanced.score.lib.structs.DistributionPercentage;
+import network.balanced.score.lib.utils.Constants;
 
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-import network.balanced.score.lib.structs.DistributionPercentage;
-import network.balanced.score.lib.utils.Constants;
 import network.balanced.score.lib.utils.Names;
+
+import static java.util.Map.entry;
+import static network.balanced.score.lib.utils.Math.pow;
 
 public class GovernanceConstants extends Constants {
     public static final String TAG = Names.GOVERNANCE;
@@ -42,18 +43,21 @@ public class GovernanceConstants extends Constants {
     public static final String LAUNCHED = "launched";
     public static final String REBALANCING = "rebalancing";
     public static final String TIME_OFFSET = "time_offset";
-    public static final String VOTE_DURATION = "vote_duration";
+    public static final String MAX_VOTE_DURATION = "vote_duration_max";
+    public static final String MIN_VOTE_DURATION = "vote_duration_min";
     public static final String MIN_BALN = "min_baln";
     public static final String DEFINITION_FEE = "definition_fee";
     public static final String QUORUM = "quorum";
 
     public static String[] CONTRACTS = {"loans", "dex", "staking", "rewards", "dividends", "daofund",
-            "reserve", "sicx", "bnUSD", "baln", "bwt", "router", "feehandler", "stakedLp", "rebalancing", "balancedOracle"};
+            "reserve", "sicx", "bnUSD", "baln", "bwt", "router", "feehandler", "stakedLp", "rebalancing", "bBaln",
+            "balancedOracle"};
 
     public static Map<String, List<String>> ADDRESSES = Map.ofEntries(
-            entry("loans", List.of("rewards", "dividends", "staking", "reserve", "dex", "rebalancing", "balancedOracle")),
+            entry("loans", List.of("rewards", "dividends", "staking", "reserve", "dex", "rebalancing",
+                    "balancedOracle")),
             entry("dex", List.of("rewards", "dividends", "staking", "sicx", "bnUSD", "baln", "feehandler", "stakedLp")),
-            entry("rewards", List.of("reserve", "baln", "bwt", "daofund", "stakedLp")),
+            entry("rewards", List.of("reserve", "baln", "bwt", "daofund", "stakedLp", "bBaln")),
             entry("dividends", List.of("loans", "daofund", "dex", "baln")),
             entry("daofund", List.of("loans")),
             entry("reserve", List.of("loans", "baln", "sicx")),
@@ -64,7 +68,7 @@ public class GovernanceConstants extends Constants {
             entry("stakedLp", List.of("dex", "rewards")),
             entry("rebalancing", List.of("loans", "dex", "bnUSD", "sicx", "balancedOracle")),
             entry("balancedOracle", List.of("dex", "staking", "oracle"))
-   );
+    );
 
     public static Map<String, String> ADMIN_ADDRESSES = Map.ofEntries(
             entry("loans", "governance"),
@@ -99,8 +103,9 @@ public class GovernanceConstants extends Constants {
         entry("staking", Names.STAKING),
         entry("sicx", Names.SICX),
         entry("bnUSD", Names.BNUSD),
-        entry("feehandler", Names.FEEHANDLER)
-        
+        entry("feehandler", Names.FEEHANDLER),
+        entry("bBaln", Names.BOOSTEDBALN)
+
     );
 
     public static Map<String, String> SETTERS = Map.ofEntries(
@@ -120,13 +125,15 @@ public class GovernanceConstants extends Constants {
             entry("router", "setRouter"),
             entry("feehandler", "setFeehandler"),
             entry("stakedLp", "setStakedLp"),
+            entry("bBaln", "setBoostedBaln"),
             entry("balancedOracle", "setOracle")
     );
-    
+
     // #-------------------------------------------------------------------------------
     // # REWARDS LAUNCH CONFIG
     // #-------------------------------------------------------------------------------
 
+    @SuppressWarnings("unchecked")
     public static Map<String, String>[] DATA_SOURCES = (Map<String, String>[]) new Map[]{
             Map.of("name", "Loans", "address", "loans"),
             Map.of("name", "sICX/ICX", "address", "dex")
@@ -151,6 +158,7 @@ public class GovernanceConstants extends Constants {
     // #-------------------------------------------------------------------------------
     // # LOANS LAUNCH CONFIG
     // #-------------------------------------------------------------------------------
+    @SuppressWarnings("unchecked")
     public static Map<String, Object>[] ASSETS = (Map<String, Object>[]) new Map[]{
             Map.of("address", "sicx", "active", true, "collateral", true),
             Map.of("address", "bnUSD", "active", true, "collateral", false),

@@ -16,11 +16,9 @@
 
 package network.balanced.score.core.reserve;
 
-import score.Address;
-import score.Context;
-import score.VarDB;
-import score.DictDB;
-import score.BranchDB;
+import network.balanced.score.lib.interfaces.Reserve;
+import network.balanced.score.lib.structs.Disbursement;
+import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
@@ -29,12 +27,11 @@ import scorex.util.HashMap;
 import java.math.BigInteger;
 import java.util.Map;
 
-import network.balanced.score.lib.interfaces.Reserve;
-import network.balanced.score.lib.structs.Disbursement;
 import network.balanced.score.lib.utils.Names;
 
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Math.pow;
 
 public class ReserveFund implements Reserve {
 
@@ -45,8 +42,9 @@ public class ReserveFund implements Reserve {
     private static final String SICX_TOKEN = "sicx_token";
     private static final String AWARDS = "awards";
 
+    public static final String SICX_SYMBOL = "sICX";
+
     public static final String TAG = "BalancedReserveFund";
-    public static final String[] collateralPriority= {"sICX"};
     public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
     public static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
     private final VarDB<Address> loansScore = Context.newVarDB(LOANS_SCORE, Address.class);
@@ -132,6 +130,12 @@ public class ReserveFund implements Reserve {
         return sicxToken.get();
     }
 
+    @External
+    public void transfer(Address _tokenAddress, Address _targetAddress, BigInteger _amount) {
+        only(governance);
+        Context.call(_tokenAddress, "transfer", _targetAddress, _amount, new byte[0]);
+    }
+
     @External(readonly = true)
     @SuppressWarnings("unchecked")
     public Map<String, BigInteger> getBalances() {
@@ -151,32 +155,27 @@ public class ReserveFund implements Reserve {
 
     @External
     @SuppressWarnings("unchecked")
-    public void redeem(Address _to, BigInteger _valueInLoop) {
+    public void redeem(Address _to, BigInteger _valueInLoop, String collateralSymbol) {
         Address sender = Context.getCaller();
-        Address loansScoreAddress = loansScore.get();
-        Context.require(sender.equals(loansScoreAddress), TAG + ": The redeem method can only be called by the Loans " +
+        Address loans = loansScore.get();
+        Context.require(sender.equals(loans), TAG + ": The redeem method can only be called by the Loans " +
                 "SCORE.");
 
-        Address loans = loansScore.get();
         Address oracle = Context.call(Address.class, loans, "getOracle");
 
-        BigInteger remaningValue = _valueInLoop;
-        Map<String, String> _collateralTokens = (Map<String, String>) Context.call(loansScore.get(), "getCollateralTokens");
-        Map<String, String> collateralTokens = new HashMap<>();
-        collateralTokens.putAll(_collateralTokens);
-        for (String symbol : collateralPriority) {
-            String collateralAddress = collateralTokens.get(symbol);
-            remaningValue = redeemAsset(symbol, collateralAddress, _to, oracle, remaningValue);
-            if (remaningValue.equals(BigInteger.ZERO)) {
-                return;
-            }
+        BigInteger remainingValue = _valueInLoop;
+        Map<String, String> collateralTokens = (Map<String, String>) Context.call(loansScore.get(),
+                "getCollateralTokens");
 
-            collateralTokens.remove(symbol);
+        String collateralAddress = collateralTokens.get(collateralSymbol);
+        remainingValue = redeemAsset(collateralSymbol, collateralAddress, _to, oracle, remainingValue);
+        if (remainingValue.equals(BigInteger.ZERO)) {
+            return;
         }
 
-        for (Map.Entry<String,String> entry : collateralTokens.entrySet()) {
-            remaningValue = redeemAsset(entry.getKey(), entry.getValue(), _to, oracle, remaningValue);
-            if (remaningValue.equals(BigInteger.ZERO)) {
+        if (!collateralSymbol.equals(SICX_SYMBOL)) {
+            remainingValue = redeemAsset(SICX_SYMBOL, collateralTokens.get(SICX_SYMBOL), _to, oracle, remainingValue);
+            if (remainingValue.equals(BigInteger.ZERO)) {
                 return;
             }
         }
@@ -185,9 +184,9 @@ public class ReserveFund implements Reserve {
 
         BigInteger balnRate = Context.call(BigInteger.class, oracle, "getPriceInLoop", "BALN");
         BigInteger balance = getBalance(balnTokenAddress);
-        BigInteger balnToSend = remaningValue.multiply(EXA).divide(balnRate);
+        BigInteger balnToSend = remainingValue.multiply(EXA).divide(balnRate);
 
-        Context.require(balance.compareTo(balnToSend) > 0, TAG +": Unable to process request at this time.");
+        Context.require(balance.compareTo(balnToSend) > 0, TAG + ": Unable to process request at this time.");
 
         sendToken(balnTokenAddress, _to, balnToSend, "Redeemed: ");
     }
@@ -237,18 +236,20 @@ public class ReserveFund implements Reserve {
         }
     }
 
-    private BigInteger redeemAsset(String symbol, String collateralAddress, Address to,  Address oracle, BigInteger remaningValue) {
+    private BigInteger redeemAsset(String symbol, String collateralAddress, Address to, Address oracle,
+                                   BigInteger remainingValue) {
         BigInteger rate = Context.call(BigInteger.class, oracle, "getPriceInLoop", symbol);
         BigInteger balance = getBalance(collateralAddress);
-        BigInteger totalValue = rate.multiply(balance).divide(EXA);
-        if (totalValue.compareTo(remaningValue) >= 0){
-            BigInteger amountToSend = remaningValue.multiply(EXA).divide(rate);
+        BigInteger decimals = getDecimals(collateralAddress);
+        BigInteger totalValue = rate.multiply(balance).divide(decimals);
+        if (totalValue.compareTo(remainingValue) >= 0) {
+            BigInteger amountToSend = remainingValue.multiply(decimals).divide(rate);
             sendToken(collateralAddress, to, amountToSend, "To Loans: ");
             return BigInteger.ZERO;
-        } 
-    
+        }
+
         sendToken(collateralAddress, to, balance, "To Loans: ");
-        return remaningValue.subtract(totalValue);
+        return remainingValue.subtract(totalValue);
     }
 
     private void sendToken(String tokenAddress, Address to, BigInteger amount, String message) {
@@ -256,14 +257,9 @@ public class ReserveFund implements Reserve {
     }
 
     private void sendToken(Address tokenAddress, Address to, BigInteger amount, String message) {
-        String symbol = "";
-        try {
-            symbol = (String) Context.call(tokenAddress, "symbol");
-            Context.call(tokenAddress, "transfer", to, amount, new byte[0]);
-            TokenTransfer(to, amount, message + amount + symbol + " sent to " + to);
-        } catch (Exception e) {
-            Context.revert(TAG + amount + symbol + " not sent to " + to);
-        }
+        String symbol = (String) Context.call(tokenAddress, "symbol");
+        Context.call(tokenAddress, "transfer", to, amount, new byte[0]);
+        TokenTransfer(to, amount, message + amount + symbol + " sent to " + to);
     }
 
     private BigInteger getBalance(Address tokenAddress) {
@@ -271,6 +267,15 @@ public class ReserveFund implements Reserve {
     }
 
     private BigInteger getBalance(String tokenAddress) {
-        return Context.call(BigInteger.class, Address.fromString(tokenAddress), "balanceOf", Context.getAddress());
+        return getBalance(Address.fromString(tokenAddress));
+    }
+
+    private BigInteger getDecimals(String tokenAddress) {
+        return getDecimals(Address.fromString(tokenAddress));
+    }
+
+    private BigInteger getDecimals(Address tokenAddress) {
+        BigInteger decimals = Context.call(BigInteger.class, tokenAddress, "decimals");
+        return pow(BigInteger.TEN, decimals.intValue());
     }
 }

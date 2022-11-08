@@ -21,10 +21,8 @@ import score.Address;
 import score.ArrayDB;
 import score.Context;
 import score.DictDB;
-import scorex.util.ArrayList;
 import scorex.util.HashMap;
 
-import java.util.List;
 import java.util.Map;
 
 import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
@@ -33,11 +31,14 @@ public class AssetDB {
     private static final String TAG = "BalancedLoansAssets";
     private static final String ASSET_DB_PREFIX = "asset";
 
-    private static ArrayDB<String> assetSymbols = Context.newArrayDB("symbol_list", String.class); // deprecated
-
-    public static ArrayDB<Address> assetAddresses = Context.newArrayDB("assets_only_address_list", Address.class); // new
-    public static ArrayDB<String> assetList = Context.newArrayDB("assets_only_list", String.class); // new 
-    public static final DictDB<String, String> symbolMap = Context.newDictDB("symbol|address", String.class); // shared with collateral
+    // deprecated
+    private static final ArrayDB<String> assetSymbols = Context.newArrayDB("symbol_list", String.class);
+    // new
+    public static ArrayDB<Address> assetAddresses = Context.newArrayDB("assets_only_address_list", Address.class);
+    // new
+    public static ArrayDB<String> assetList = Context.newArrayDB("assets_only_list", String.class);
+    // shared with collateral
+    public static final DictDB<String, String> symbolMap = Context.newDictDB("symbol|address", String.class);
 
     public static void migrateToNewDBs() {
         int totalSymbolsCount = assetSymbols.size();
@@ -52,7 +53,7 @@ public class AssetDB {
             if (asset.isCollateral()) {
                 continue;
             }
-            
+
             asset.migrateLiquidationPool();
             asset.migrateBadDebt();
             assetAddresses.add(asset.getAssetAddress());
@@ -87,7 +88,7 @@ public class AssetDB {
         Map<String, Map<String, Object>> assets = new HashMap<>();
         for (int i = 0; i < totalAssetsCount; i++) {
             String symbol = assetList.get(i);
-            if (getAsset(symbol).isActive()){
+            if (getAsset(symbol).isActive()) {
                 assets.put(symbol, getAsset(symbol).toMap());
             }
         }
@@ -110,31 +111,5 @@ public class AssetDB {
 
         assetList.add(symbol);
         symbolMap.set(symbol, assetToAdd);
-    }
-
-    public static List<String> getDeadMarkets() {
-        List<String> deadAssets = new ArrayList<>();
-
-        int assetsCount = assetList.size();
-        for (int i = 0; i < assetsCount; i++) {
-            String symbol = assetList.get(i);
-            Asset asset = getAsset(symbol);
-            if (asset.isActive() && asset.isDeadMarket()) {
-                deadAssets.add(symbol);
-            }
-        }
-
-        return deadAssets;
-    }
-
-    public static void updateDeadMarkets() {
-        int assetsCount = assetList.size();
-        for (int i = 0; i < assetsCount; i++) {
-            String symbol = assetList.get(i);
-            Asset asset = getAsset(symbol);
-            if (asset.isActive()) {
-                asset.checkForDeadMarket();
-            }
-        }
     }
 }

@@ -65,7 +65,7 @@ public class NodeDB {
     }
 
     public void setUser(Address user) {
-         this.user.set(user);
+        this.user.set(user);
     }
 
     public void setValues(BigInteger size, Address user) {

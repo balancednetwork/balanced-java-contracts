@@ -27,14 +27,15 @@ import java.math.BigInteger;
 import java.util.Map;
 
 import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
-import static network.balanced.score.lib.utils.Constants.EXA;
-
+import static network.balanced.score.lib.utils.Math.pow;
 
 public class CollateralDB {
     private static final String TAG = "BalancedLoansAssets";
     private static final String COLLATERAL_DB_PREFIX = "asset";
 
-    public static ArrayDB<Address> collateralAddresses = Context.newArrayDB("collateral_only_address_list", Address.class); // new
+    // new
+    public static ArrayDB<Address> collateralAddresses = Context.newArrayDB("collateral_only_address_list",
+            Address.class);
     public static ArrayDB<String> collateralList = Context.newArrayDB("collateral", String.class);
     public static final DictDB<String, String> symbolMap = Context.newDictDB("symbol|address", String.class);
 
@@ -47,7 +48,7 @@ public class CollateralDB {
         for (int i = 0; i < totalCollateralCount; i++) {
             String symbol = collateralList.get(i);
             Collateral collateral = getCollateral(symbol);
-            
+
             collateralAddresses.add(collateral.getAssetAddress());
         }
     }
@@ -62,13 +63,19 @@ public class CollateralDB {
         return new Collateral(COLLATERAL_DB_PREFIX + "|" + collateralAddress);
     }
 
+    public static Collateral getCollateral(Address address) {
+        Context.require(arrayDbContains(collateralAddresses, address), address + " is not a supported collateral type" +
+                ".");
+        return new Collateral(COLLATERAL_DB_PREFIX + "|" + address.toString());
+    }
+
     public static void addCollateral(Address address, Boolean active) {
         String collateralToAdd = address.toString();
-        Context.require(!arrayDbContains(collateralAddresses, address), TAG + ": " + collateralToAdd + " already exists in " +
-                "the database.");
+        Context.require(!arrayDbContains(collateralAddresses, address), TAG + ": " + collateralToAdd + " already " +
+                "exists in the database.");
 
         collateralAddresses.add(address);
-        
+
         Collateral collateral = new Collateral(COLLATERAL_DB_PREFIX + "|" + collateralToAdd);
         collateral.setCollateral(address, active);
 
@@ -101,10 +108,13 @@ public class CollateralDB {
 
             Address collateralAddress = collateral.getAssetAddress();
             Token collateralContract = new Token(collateralAddress);
-            BigInteger value = collateralContract.balanceOf(Context.getAddress()).multiply(collateralContract.lastPriceInLoop());
+            BigInteger collateralDecimals = pow(BigInteger.TEN, collateralContract.decimals().intValue());
+
+            BigInteger value =
+                    collateralContract.balanceOf(Context.getAddress()).multiply(collateralContract.lastPriceInLoop()).divide(collateralDecimals);
             totalCollateral = totalCollateral.add(value);
         }
 
-        return totalCollateral.divide(EXA);
+        return totalCollateral;
     }
 }

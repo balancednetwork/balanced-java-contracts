@@ -35,26 +35,30 @@ public class Math {
     public static BigInteger exaPow(BigInteger base, int exponent) {
         BigInteger res = base;
         if (exponent % 2 == 0) {
-           res = EXA;
+            res = EXA;
         }
-  
+
         exponent = exponent / 2;
-  
+
         while (exponent != 0) {
-           base = base.multiply(base).divide(EXA);
-           if (exponent % 2 != 0) {
-              res = res.multiply(base).divide(EXA);
-           }
-  
-           exponent = exponent / 2;
+            base = base.multiply(base).divide(EXA);
+            if (exponent % 2 != 0) {
+                res = res.multiply(base).divide(EXA);
+            }
+
+            exponent = exponent / 2;
         }
-  
+
         return res;
     }
 
     public static BigInteger convertToNumber(JsonValue value) {
+        return convertToNumber(value, null);
+    }
+
+    public static BigInteger convertToNumber(JsonValue value, BigInteger defaultValue) {
         if (value == null) {
-            return null;
+            return defaultValue;
         }
         if (value.isString()) {
             String number = value.asString();

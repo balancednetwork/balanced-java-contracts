@@ -26,7 +26,7 @@ import java.util.Map;
 
 public class DummyOracle {
     public static final DictDB<String, BigInteger> icxRates = Context.newDictDB("rates", BigInteger.class);
-    
+
     public DummyOracle() {
         icxRates.set("USD", BigInteger.valueOf(597955725813433531L));
         icxRates.set("BTC", new BigInteger("32c6eaee89097750da0", 16));
@@ -38,36 +38,36 @@ public class DummyOracle {
         Map<String, BigInteger> result = new HashMap<>();
         if (_base.equals("USD") && _quote.equals("ICX")) {
             result.put("rate", icxRates.get("USD"));
-            result.put("last_update_base", BigInteger.valueOf(1602202275702605L));
-            result.put("last_update_quote", BigInteger.valueOf(1602202190000000L));
+            result.put("last_update_base", BigInteger.valueOf(Context.getBlockTimestamp()));
+            result.put("last_update_quote", BigInteger.valueOf(Context.getBlockTimestamp()));
         }
         if (_base.equals("ICX") && _quote.equals("USD")) {
             result.put("rate", BigInteger.valueOf(1672364619704314298L));
-            result.put("last_update_base", BigInteger.valueOf(1602202190000000L));
-            result.put("last_update_quote", BigInteger.valueOf(1602202275702605L));
+            result.put("last_update_base", BigInteger.valueOf(Context.getBlockTimestamp()));
+            result.put("last_update_quote", BigInteger.valueOf(Context.getBlockTimestamp()));
         }
         if (_base.equals("DOGE") && _quote.equals("USD")) {
             result.put("rate", BigInteger.valueOf(50784000000000000L));
-            result.put("last_update_base", BigInteger.valueOf(1616643098000000L));
-            result.put("last_update_quote", BigInteger.valueOf(1616643311790241L));
+            result.put("last_update_base", BigInteger.valueOf(Context.getBlockTimestamp()));
+            result.put("last_update_quote", BigInteger.valueOf(Context.getBlockTimestamp()));
         }
 
         if (_base.equals("XLM") && _quote.equals("USD")) {
             result.put("rate", BigInteger.valueOf(360358450000000000L));
-            result.put("last_update_base", BigInteger.valueOf(1616650080000000L));
-            result.put("last_update_quote", BigInteger.valueOf(1616650390762201L));
+            result.put("last_update_base", BigInteger.valueOf(Context.getBlockTimestamp()));
+            result.put("last_update_quote", BigInteger.valueOf(Context.getBlockTimestamp()));
         }
 
         if (_base.equals("BTC") && _quote.equals("ICX")) {
             result.put("rate", icxRates.get("BTC"));
-            result.put("last_update_base", new BigInteger("5cf17f1c573c0", 16));
-            result.put("last_update_quote",new BigInteger("5e2055b001840", 16));
+            result.put("last_update_base", BigInteger.valueOf(Context.getBlockTimestamp()));
+            result.put("last_update_quote", BigInteger.valueOf(Context.getBlockTimestamp()));
         }
 
         if (_base.equals("ETH") && _quote.equals("ICX")) {
             result.put("rate", icxRates.get("ETH"));
-            result.put("last_update_base", new BigInteger("5cf17f1c573c0", 16));
-            result.put("last_update_quote", new BigInteger("5e2055b001840", 16));
+            result.put("last_update_base", BigInteger.valueOf(Context.getBlockTimestamp()));
+            result.put("last_update_quote", BigInteger.valueOf(Context.getBlockTimestamp()));
         }
 
         return result;

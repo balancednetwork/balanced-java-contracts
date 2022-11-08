@@ -16,11 +16,10 @@
 
 package network.balanced.score.core.loans.utils;
 
+import network.balanced.score.core.loans.LoansVariables;
 import score.Address;
 
 import java.math.BigInteger;
-
-import network.balanced.score.core.loans.LoansVariables;
 
 import static network.balanced.score.core.loans.LoansImpl.call;
 
@@ -34,6 +33,10 @@ public class Token {
 
     public String symbol() {
         return (String) call(tokenAddress, "symbol");
+    }
+
+    public BigInteger decimals() {
+        return (BigInteger) call(tokenAddress, "decimals");
     }
 
     public BigInteger totalSupply() {

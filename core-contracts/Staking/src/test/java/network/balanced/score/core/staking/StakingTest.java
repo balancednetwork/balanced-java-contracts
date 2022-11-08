@@ -258,7 +258,8 @@ class StakingTest extends TestBase {
         // Calling from contracts other than sicx fails
         Executable callNotFromSicx = () -> staking.invoke(owner, "tokenFallback", owner.getAddress(),
                 ICX.multiply(BigInteger.ONE), new byte[0]);
-        String expectedErrorMessage =  "Reverted(0): Staked ICX Manager: The Staking contract only accepts sICX tokens.: " +
+        String expectedErrorMessage = "Reverted(0): Staked ICX Manager: The Staking contract only accepts sICX tokens" +
+                ".: " +
                 sicx.getAddress().toString();
         expectErrorMessage(callNotFromSicx, expectedErrorMessage);
 
@@ -519,17 +520,19 @@ class StakingTest extends TestBase {
 
         doReturn(BigInteger.TEN).when(stakingSpy).claimableICX(any(Address.class));
         doReturn(BigInteger.TWO).when(stakingSpy).totalClaimableIcx();
-        String expectedErrorMessage ="Reverted(0): Staked ICX Manager: No sufficient icx to claim. Requested: 10 Available: 2";
+        String expectedErrorMessage = "Reverted(0): Staked ICX Manager: No sufficient icx to claim. Requested: 10 " +
+                "Available: 2";
         Executable claimMoreThanAvailable = () -> staking.invoke(owner, "claimUnstakedICX", owner.getAddress());
         expectErrorMessage(claimMoreThanAvailable, expectedErrorMessage);
 
         doReturn(icxPayable).when(stakingSpy).claimableICX(any(Address.class));
         doReturn(icxToClaim).when(stakingSpy).totalClaimableIcx();
 
-        contextMock.when(()->Context.transfer(any(Address.class), any(BigInteger.class))).then(invocationOnMock -> null);
+        contextMock.when(() -> Context.transfer(any(Address.class), any(BigInteger.class))).then(invocationOnMock -> null);
 
         staking.invoke(owner, "claimUnstakedICX", owner.getAddress());
-        verify(stakingSpy).FundTransfer(owner.getAddress(), icxPayable, icxPayable + " ICX sent to " + owner.getAddress() + ".");
+        verify(stakingSpy).FundTransfer(owner.getAddress(), icxPayable,
+                icxPayable + " ICX sent to " + owner.getAddress() + ".");
         contextMock.verify(() -> Context.transfer(owner.getAddress(), icxPayable));
     }
 
@@ -542,19 +545,21 @@ class StakingTest extends TestBase {
 
         Executable duplicatePrep = () -> staking.invoke(owner, "delegate", (Object) new PrepDelegations[]{delegation,
                 delegation});
-        String expectedErrorMessage = "Reverted(0): Staked ICX Manager: You can not delegate same P-Rep twice in a transaction.";
+        String expectedErrorMessage = "Reverted(0): Staked ICX Manager: You can not delegate same P-Rep twice in a " +
+                "transaction.";
         expectErrorMessage(duplicatePrep, expectedErrorMessage);
 
         delegation._votes_in_per = BigInteger.TEN;
         Executable voteLessThanMinimum = () -> staking.invoke(owner, "delegate",
                 (Object) new PrepDelegations[]{delegation});
-        expectedErrorMessage = "Reverted(0): Staked ICX Manager: You should provide delegation percentage more than 0.001%.";
+        expectedErrorMessage = "Reverted(0): Staked ICX Manager: You should provide delegation percentage more than 0" +
+                ".001%.";
         expectErrorMessage(voteLessThanMinimum, expectedErrorMessage);
 
         delegation._votes_in_per = HUNDRED_PERCENTAGE.subtract(BigInteger.ONE);
         Executable totalLessThanHundred = () -> staking.invoke(owner, "delegate",
                 (Object) new PrepDelegations[]{delegation});
-        expectedErrorMessage ="Reverted(0): Staked ICX Manager: Total delegations should be 100%.";
+        expectedErrorMessage = "Reverted(0): Staked ICX Manager: Total delegations should be 100%.";
         expectErrorMessage(totalLessThanHundred, expectedErrorMessage);
     }
 
@@ -593,7 +598,8 @@ class StakingTest extends TestBase {
         unstakes.add(unstakeList);
         contextMock.when(getStake).thenReturn(Map.of("unstakes", unstakes));
 
-        sm.call(sm.createAccount(), BigInteger.TEN, staking.getAddress(), "stakeICX", new Address(new byte[Address.LENGTH]), new byte[0]);
+        sm.call(sm.createAccount(), BigInteger.TEN, staking.getAddress(), "stakeICX",
+                new Address(new byte[Address.LENGTH]), new byte[0]);
         totalUnstaked = totalUnstaked.subtract(BigInteger.TEN);
         assertEquals(totalUnstaked, staking.call("getUnstakingAmount"));
         assertEquals(BigInteger.TEN, staking.call("claimableICX", owner.getAddress()));

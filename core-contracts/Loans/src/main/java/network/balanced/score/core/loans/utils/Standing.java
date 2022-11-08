@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
- package network.balanced.score.core.loans.utils;
+package network.balanced.score.core.loans.utils;
+
+import scorex.util.HashMap;
 
 import java.math.BigInteger;
 import java.util.Map;
-import scorex.util.HashMap;
 
-import static network.balanced.score.core.loans.utils.LoansConstants.StandingsMap;
 import static network.balanced.score.core.loans.utils.LoansConstants.Standings;
+import static network.balanced.score.core.loans.utils.LoansConstants.StandingsMap;
 
 public class Standing {
     public BigInteger totalDebt;

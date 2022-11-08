@@ -18,6 +18,7 @@ package network.balanced.score.core.feehandler;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import network.balanced.score.lib.interfaces.FeeHandler;
 import network.balanced.score.lib.utils.Names;
@@ -25,7 +26,6 @@ import score.*;
 import score.annotation.External;
 import score.annotation.Optional;
 import scorex.util.ArrayList;
-import scorex.util.HashMap;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 
 public class FeeHandlerImpl implements FeeHandler {
     public static final String TAG = "FeeHandler";
@@ -356,19 +357,19 @@ public class FeeHandlerImpl implements FeeHandler {
     }
 
     private byte[] createDataFieldRouter(Address _receiver, JsonArray _path) {
-        Map<String, Object> map = new HashMap<>();
-        map.put("method", "_swap");
-        map.put("params", Map.of("path", _path, "receiver", _receiver.toString()));
-        String data = map.toString();
-        return data.getBytes();
+        JsonObject params = Json.object().add("path", _path).add("receiver", _receiver.toString());
+        JsonObject data = new JsonObject();
+        data.add("method", "_swap");
+        data.add("params", params);
+        return data.toString().getBytes();
     }
 
     private byte[] createDataFieldDex(Address _toToken, Address _receiver) {
-        Map<String, Object> map = new HashMap<>();
-        map.put("method", "_swap");
-        map.put("params", Map.of("toToken", _toToken.toString(), "receiver", _receiver.toString()));
-        String data = map.toString();
-        return data.getBytes();
+        JsonObject params = Json.object().add("toToken", _toToken.toString()).add("receiver", _receiver.toString());
+        JsonObject data = new JsonObject();
+        data.add("method", "_swap");
+        data.add("params", params);
+        return data.toString().getBytes();
     }
 
     private Address getContractAddress(String _contract) {
@@ -377,9 +378,9 @@ public class FeeHandlerImpl implements FeeHandler {
 
     private void collectFeeData(Address sender, Address _from, BigInteger _value) {
         BigInteger accruedFees = swapFeesAccruedDB.get(sender);
-        if (_from.equals(loans.get())) {
+        if (_from.equals(EOA_ZERO) && accruedFees != null) {
             loanFeesAccrued.set(loanFeesAccrued.getOrDefault(BigInteger.ZERO).add(_value));
-        } else if (_from.equals(dex.get()) && accruedFees != null) {
+        } else if (accruedFees != null && _from.equals(dex.get())) {
             swapFeesAccruedDB.set(sender, accruedFees.add(_value));
         } else if (_from.equals(stabilityFund.get())) {
             stabilityFundFeesAccrued.set(stabilityFundFeesAccrued.getOrDefault(BigInteger.ZERO).add(_value));

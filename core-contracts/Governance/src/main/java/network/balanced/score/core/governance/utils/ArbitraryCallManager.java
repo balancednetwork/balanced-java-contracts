@@ -28,7 +28,7 @@ public class ArbitraryCallManager {
           }
       }
 
-     public static void executeTransaction(JsonObject transaction) { 
+     public static void executeTransaction(JsonObject transaction) {
           Address address = Address.fromString(transaction.get(ADDRESS).asString());
           String method = transaction.get(METHOD).asString();
           JsonArray jsonParams = transaction.get(PARAMS).asArray();
@@ -50,8 +50,8 @@ public class ArbitraryCallManager {
 
           return convertedParameters;
      }
-     
-     private static Object getConvertedParameter(JsonValue param) {
+
+     public static Object getConvertedParameter(JsonValue param) {
           JsonObject member = param.asObject();
           String type = member.getString("type", null);
           JsonValue paramValue = member.get("value");
@@ -79,11 +79,12 @@ public class ArbitraryCallManager {
                case "Struct":
                     return parse(value, isArray, jsonValue -> parseStruct(jsonValue.asObject()));
                case "bytes":
+               case "byte[]":
                     return parse(value, isArray, jsonValue -> convertBytesParam(jsonValue));
           }
 
           throw new IllegalArgumentException("Unknown type");
-     }    
+     }
 
      private static Object parse(JsonValue value, boolean isArray, Function<JsonValue, ?> parser) {
           if (isArray) {
@@ -136,7 +137,7 @@ public class ArbitraryCallManager {
                     struct.put(name, convertParam(type, jsonValue, false));
                }
           }
-         
+
           return struct;
      }
 }

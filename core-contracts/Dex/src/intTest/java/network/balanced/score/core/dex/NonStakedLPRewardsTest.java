@@ -97,8 +97,11 @@ public class NonStakedLPRewardsTest {
     private static final RewardsScoreClient userWalletRewardsClient =
             new RewardsScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet,
                     rewardsScoreClient._address());
-    private static final BalancedTokenScoreClient userBalnScoreClient = new BalancedTokenScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet, balnScoreClient._address());
-    private static final GovernanceScoreClient governanceDexScoreClient = new GovernanceScoreClient(governanceScoreClient);
+    private static final BalancedTokenScoreClient userBalnScoreClient =
+            new BalancedTokenScoreClient(dexScoreClient.endpoint(), dexScoreClient._nid(), userWallet,
+                    balnScoreClient._address());
+    private static final GovernanceScoreClient governanceDexScoreClient =
+            new GovernanceScoreClient(governanceScoreClient);
     private static final DAOfundScoreClient userDaoFundScoreClient = new DAOfundScoreClient(daoFund);
 
 
@@ -118,7 +121,7 @@ public class NonStakedLPRewardsTest {
 
         waitForADay();
         balanced.syncDistributions();
-        rewards.claimRewards();
+        rewards.claimRewards(null);
 
         baln.transfer(userAddress, loanAmount, null);
 
@@ -126,42 +129,44 @@ public class NonStakedLPRewardsTest {
         userSicxScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(100).multiply(EXA), tokenDeposit);
         //deposit quote token
         userBalnScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(100).multiply(EXA), tokenDeposit);
-        dexUserScoreClient.add(balanced.baln._address(), balanced.sicx._address(), BigInteger.valueOf(100).multiply(EXA), BigInteger.valueOf(100).multiply(EXA), false);
+        dexUserScoreClient.add(balanced.baln._address(), balanced.sicx._address(),
+                BigInteger.valueOf(100).multiply(EXA), BigInteger.valueOf(100).multiply(EXA), false);
 
         waitForADay();
         balanced.syncDistributions();
-        userWalletRewardsClient.claimRewards();
+        userWalletRewardsClient.claimRewards(null);
 
         balanced.syncDistributions();
-        userWalletRewardsClient.claimRewards();
+        userWalletRewardsClient.claimRewards(null);
         waitForADay();
 
         // next day starts
         Consumer<TransactionResult> distributeConsumer = result -> {};
-        for(int i =0; i<10; i++){
+        for (int i = 0; i < 10; i++) {
             balanced.ownerClient.rewards.distribute(distributeConsumer);
         }
         waitForADay();
 
         // next day starts
-        for(int i =0; i<10; i++){
+        for (int i = 0; i < 10; i++) {
             balanced.ownerClient.rewards.distribute(distributeConsumer);
         }
         // users without staking LP tokens will get 0 rewards
         assertEquals(BigInteger.ZERO, rewards.getBalnHolding(userAddress));
 
         byte[] stakeLp = "{\"method\":\"_stake\"}".getBytes();
-        dexUserScoreClient.transfer(balanced.stakedLp._address(), BigInteger.valueOf(90),BigInteger.valueOf(4), stakeLp);
+        dexUserScoreClient.transfer(balanced.stakedLp._address(), BigInteger.valueOf(90), BigInteger.valueOf(4),
+                stakeLp);
 
         // user gets rewards after lp token is staked
         assertTrue(rewards.getBalnHolding(userAddress).compareTo(BigInteger.ZERO) > 0);
         BigInteger previousUserBalance = baln.balanceOf(userAddress);
-        userWalletRewardsClient.claimRewards();
+        userWalletRewardsClient.claimRewards(null);
         BigInteger newBalance = baln.balanceOf(userAddress);
         assertTrue(newBalance.compareTo(previousUserBalance) > 0);
     }
 
-    void waitForADay(){
+    void waitForADay() {
         balanced.increaseDay(1);
     }
 }

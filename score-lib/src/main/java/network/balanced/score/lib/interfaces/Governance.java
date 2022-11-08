@@ -20,8 +20,6 @@ import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.base.Fallback;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
-import network.balanced.score.lib.structs.BalancedAddresses;
-import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.PrepDelegations;
 import score.Address;
 import score.annotation.External;
@@ -52,16 +50,19 @@ public interface Governance extends
     Address getContractAddress(String contract);
 
     @External
-    void setVoteDuration(BigInteger duration);
+    void setVoteDurationLimits(BigInteger min, BigInteger max);
+
+    @External(readonly = true)
+    BigInteger getMinVoteDuration();
+
+    @External(readonly = true)
+    BigInteger getMaxVoteDuration();
 
     @External
     void setTimeOffset(BigInteger offset);
-    
-    @External(readonly = true)
-    BigInteger getTimeOffset();
 
     @External(readonly = true)
-    BigInteger getVoteDuration();
+    BigInteger getTimeOffset();
 
     @External
     void setQuorum(BigInteger quorum);
@@ -85,7 +86,8 @@ public interface Governance extends
     void cancelVote(BigInteger vote_index);
 
     @External
-    void defineVote(String name, String description, BigInteger vote_start, BigInteger snapshot, String transactions);
+    void defineVote(String name, String description, BigInteger vote_start, BigInteger duration, String forumLink,
+                    String transactions);
 
     @External
     void tryExecuteTransactions(String transactions);
@@ -121,7 +123,7 @@ public interface Governance extends
     Map<String, Object> checkVote(BigInteger _vote_index);
 
     @External(readonly = true)
-    Map<String, BigInteger> getVotesOfUser(BigInteger vote_index, Address user );
+    Map<String, BigInteger> getVotesOfUser(BigInteger vote_index, Address user);
 
     @External(readonly = true)
     BigInteger myVotingWeight(Address _address, BigInteger _day);
@@ -140,10 +142,10 @@ public interface Governance extends
     void createBalnMarket(BigInteger _bnUSD_amount, BigInteger _baln_amount);
 
     @External
-    void createBalnSicxMarket(BigInteger  _sicx_amount, BigInteger _baln_amount);
+    void createBalnSicxMarket(BigInteger _sicx_amount, BigInteger _baln_amount);
 
     @External(readonly = true)
-    Map<String, Address>  getAddresses();
+    Map<String, Address> getAddresses();
 
     @External(readonly = true)
     Address getAddress(String name);
@@ -164,16 +166,18 @@ public interface Governance extends
     BigInteger getLaunchTime();
 
     @External
-    void addCollateral(Address _token_address, boolean _active, String _peg, @Optional BigInteger _limit);
-    
+    void addCollateral(Address _token_address, boolean _active, String _peg, BigInteger _lockingRatio,
+                       BigInteger _liquidationRatio, BigInteger _debtCeiling);
+
     @External
-    void addDexPricedCollateral(Address _token_address, boolean _active, @Optional BigInteger _limit);
+    void addDexPricedCollateral(Address _token_address, boolean _active, BigInteger _lockingRatio,
+                                BigInteger _liquidationRatio, BigInteger _debtCeiling);
 
     @External
     void delegate(String contract, PrepDelegations[] _delegations);
 
     @External
-    void balwAdminTransfer(Address _from , Address _to , BigInteger _value, byte[] _data);
+    void balwAdminTransfer(Address _from, Address _to, BigInteger _value, byte[] _data);
 
     @External
     void setAddressesOnContract(String _contract);

@@ -22,7 +22,6 @@ import score.Context;
 import score.VarDB;
 import scorex.util.ArrayList;
 
-
 import java.math.BigInteger;
 import java.util.List;
 

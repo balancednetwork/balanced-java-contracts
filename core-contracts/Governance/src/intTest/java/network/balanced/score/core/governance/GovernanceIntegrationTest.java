@@ -23,6 +23,7 @@ import static network.balanced.score.lib.test.integration.BalancedUtils.getContr
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.newScoreClient;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.getContractData;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -62,7 +63,6 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         KeyWallet testerWallet = createWalletWithBalance(BigInteger.TEN.pow(24));
         tester = new BalancedClient(balanced, testerWallet);
 
-        owner.governance.setVoteDuration(BigInteger.TWO);
         owner.governance.setBalnVoteDefinitionCriterion(BigInteger.ZERO);
         owner.governance.setVoteDefinitionFee(BigInteger.TEN.pow(10));
         owner.governance.setQuorum(BigInteger.ONE);
@@ -73,10 +73,16 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         balanced.increaseDay(1);
         balanced.syncDistributions();
 
-        tester.rewards.claimRewards();
+        tester.rewards.claimRewards(null);
 
         BigInteger balance = tester.baln.balanceOf(tester.getAddress());
-        tester.baln.stake(balance);
+
+        final BigInteger WEEK_IN_MICRO_SECONDS = BigInteger.valueOf(7L).multiply(MICRO_SECONDS_IN_A_DAY);
+        long unlockTime =
+                (System.currentTimeMillis() * 1000) + (WEEK_IN_MICRO_SECONDS.multiply(BigInteger.valueOf(4))).longValue();
+        String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
+        tester.baln.transfer(tester.boostedBaln._address(), balance.divide(BigInteger.TWO), data.getBytes());
+
     }
 
     @Test
@@ -89,7 +95,8 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
     @Order(2)
     void executeVote() {
         BigInteger rebalancingThreshold = BigInteger.TEN;
-       
+        BigInteger duration = BigInteger.valueOf(5);
+
         JsonArray rebalancingThresholdParameter = new JsonArray()
             .add(createParameter(rebalancingThreshold));
 
@@ -97,17 +104,17 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
             .add(createTransaction(balanced.rebalancing._address(), "setPriceDiffThreshold", rebalancingThresholdParameter));
 
         BigInteger day = tester.governance.getDay();
-        String name = "testVote";
+        String name = "testVote1";
         BigInteger voteStart = day.add(BigInteger.valueOf(4));
-        BigInteger snapshot = day.add(BigInteger.TWO);
-        tester.governance.defineVote(name, "test", voteStart, snapshot, actions.toString());
-        assertNotEquals(rebalancingThreshold, owner.rebalancing.getPriceChangeThreshold());
+        String forumLink = "https://gov.balanced.network/";
+
+        tester.governance.defineVote(name, "test", voteStart, duration, forumLink, actions.toString());
 
         balanced.increaseDay(4);
         BigInteger id = tester.governance.getVoteIndex(name);
         tester.governance.castVote(id, true);
 
-        balanced.increaseDay(2);
+        balanced.increaseDay(duration.intValue());
 
         tester.governance.evaluateVote(id);
 
@@ -131,9 +138,9 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         BigInteger day = tester.governance.getDay();
         String name = "testFailingVote";
         BigInteger voteStart = day.add(BigInteger.valueOf(4));
-        BigInteger snapshot = day.add(BigInteger.TWO);
+        String forumLink = "https://gov.balanced.network/";
         try {
-            tester.governance.defineVote(name, "test", voteStart, snapshot, actions.toString());
+            tester.governance.defineVote(name, "test", voteStart, BigInteger.TWO, forumLink, actions.toString());
             fail();
         } catch (Exception e) {
             //success
@@ -144,19 +151,19 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         owner.systemScore.setScoreOwner(score, new_owner);
     }
 
-    @Test
-    void setNewOwner() throws Exception {
-        // Arrange
-        KeyWallet newOwnerWallet = createWalletWithBalance(BigInteger.TEN.pow(24));
-        BalancedClient newOwner = new BalancedClient(balanced, newOwnerWallet);
+    // @Test
+    // void setNewOwner() throws Exception {
+    //     // Arrange
+    //     KeyWallet newOwnerWallet = createWalletWithBalance(BigInteger.TEN.pow(24));
+    //     BalancedClient newOwner = new BalancedClient(balanced, newOwnerWallet);
 
-        // Act
-        changeOwner(owner.governance._address(), newOwner.getAddress());
+    //     // Act
+    //     changeOwner(owner.governance._address(), newOwner.getAddress());
 
-        // Assert
-        Address actualResult = owner.systemScore.getScoreOwner(owner.governance._address());
-        assertEquals(newOwner.getAddress(), actualResult);
-    }
+    //     // Assert
+    //     Address actualResult = owner.systemScore.getScoreOwner(owner.governance._address());
+    //     assertEquals(newOwner.getAddress(), actualResult);
+    // }
 
     @Test
     @Order(10)
@@ -166,7 +173,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         byte[] contractData = getContractBytes(deploymentTesterJar1);
         JsonArray params = new JsonArray()
             .add(createParameter(deploymentValueParameter));
-        
+
         // Act
         owner.governance.deploy(contractData, params.toString());
 
@@ -189,7 +196,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         byte[] contractData = getContractBytes(deploymentTesterJar1);
         JsonArray params = new JsonArray()
             .add(createParameter(deploymentValueParameter));
-        
+
         // Act
         owner.governance.deployTo(contractAddress, contractData, params.toString());
 
@@ -257,10 +264,9 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         BigInteger day = tester.governance.getDay();
         String name = "testUpdateContractVote";
         BigInteger voteStart = day.add(BigInteger.valueOf(4));
-        BigInteger snapshot = day.add(BigInteger.TWO);
-        changeOwner(owner.staking._address(), owner.governance._address());
+        // changeOwner(owner.staking._address(), owner.governance._address());
 
-        tester.governance.defineVote(name, "test", voteStart, snapshot, actions.toString());
+        tester.governance.defineVote(name, "test", voteStart, BigInteger.TWO, "https://gov.balanced.network/dummy", actions.toString());
 
         balanced.increaseDay(4);
         BigInteger id = tester.governance.getVoteIndex(name);
@@ -309,10 +315,11 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
                 .add(createTransaction(balanced.governance._address(), "deployTo", deployToParameters));
 
         BigInteger day = tester.governance.getDay();
-        String name = "testUpdateContractVote";
+        String name = "testUpdateContractVote2";
         BigInteger voteStart = day.add(BigInteger.valueOf(4));
-        BigInteger snapshot = day.add(BigInteger.TWO);
-        tester.governance.defineVote(name, "test", voteStart, snapshot, actions.toString());
+
+        tester.governance.defineVote(name, "test", voteStart, BigInteger.TWO, "https://gov.balanced.network/dummy", actions.toString());
+
 
         balanced.increaseDay(4);
         BigInteger id = tester.governance.getVoteIndex(name);
@@ -324,54 +331,54 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         assertEquals(updateValueParameter, getValue(contractAddress));
     }
 
-    @Test
-    @Order(15)
-    void updateSelfContractFromVote() {
-        // updating governance from vote
-        // size of governance contract: 54,962 bytes
-        // vote definition fee: fee=25254928662500000000 steps=2020394293 price=12500000000
-        // vote execution fee: fee=24599163162500000000 steps=1967933053 price=12500000000
+    // need to remove owner/contract lock on changeOwner to test this
+    // @Test
+    // @Order(15)
+    // void updateSelfContractFromVote() {
+    //     // updating governance from vote
+    //     // size of governance contract: 54,962 bytes
+    //     // vote definition fee: fee=25254928662500000000 steps=2020394293 price=12500000000
+    //     // vote execution fee: fee=24599163162500000000 steps=1967933053 price=12500000000
 
-        changeOwner(owner.governance._address(), owner.governance._address());
+    //     changeOwner(owner.governance._address(), owner.governance._address());
 
-        String updatedContract = "Balanced Governance";
-        Address contractAddress = owner.governance.getAddress("Balanced Governance");
+    //     String updatedContract = "Balanced Governance";
+    //     Address contractAddress = owner.governance.getAddress("Balanced Governance");
 
-        JsonArray deployToParameters = new JsonArray()
-                .add(createParameter(contractAddress))
-                .add(createParameter(getContractData("Governance")))
-                .add(createParameter("[]"));
+    //     JsonArray deployToParameters = new JsonArray()
+    //             .add(createParameter(contractAddress))
+    //             .add(createParameter(getContractData("Governance")))
+    //             .add(createParameter("[]"));
 
-        JsonArray actions = new JsonArray()
-                .add(createTransaction(balanced.governance._address(), "deployTo", deployToParameters));
+    //     JsonArray actions = new JsonArray()
+    //             .add(createTransaction(balanced.governance._address(), "deployTo", deployToParameters));
 
-        BigInteger day = tester.governance.getDay();
-        String name = "testUpdateContractVote";
-        BigInteger voteStart = day.add(BigInteger.valueOf(4));
-        BigInteger snapshot = day.add(BigInteger.TWO);
+    //     BigInteger day = tester.governance.getDay();
+    //     String name = "testSelfUpdateContractVote";
+    //     BigInteger voteStart = day.add(BigInteger.valueOf(4));
 
-        tester.governance.defineVote(name, "test", voteStart, snapshot, actions.toString());
+    //     tester.governance.defineVote(name, "test", voteStart, BigInteger.TWO, "https://gov.balanced.network/dummy", actions.toString());
 
-        owner.governance.changeScoreOwner(owner.governance._address(), owner.getAddress());
-        balanced.increaseDay(4);
-        BigInteger id = tester.governance.getVoteIndex(name);
-        tester.governance.castVote(id, true);
+    //     // owner.governance.changeScoreOwner(owner.governance._address(), owner.getAddress());
+    //     balanced.increaseDay(4);
+    //     BigInteger id = tester.governance.getVoteIndex(name);
+    //     tester.governance.castVote(id, true);
 
-        balanced.increaseDay(2);
+    //     balanced.increaseDay(2);
 
-        changeOwner(owner.governance._address(), owner.governance._address());
-        tester.governance.evaluateVote(id);
-        System.out.println(tester.governance.name());
-        assertEquals(updatedContract, tester.governance.name());
-    }
+    //     changeOwner(owner.governance._address(), owner.governance._address());
+    //     tester.governance.evaluateVote(id);
+    //     System.out.println(tester.governance.name());
+    //     assertEquals(updatedContract, tester.governance.name());
+    // }
 
     private String getValue(Address address) {
-        DefaultScoreClient client = newScoreClient(owner.wallet, address); 
+        DefaultScoreClient client = newScoreClient(owner.wallet, address);
         return client._call(String.class, "getValue", Map.of());
     }
 
     private String getValue2(Address address) {
-        DefaultScoreClient client = newScoreClient(owner.wallet, address); 
+        DefaultScoreClient client = newScoreClient(owner.wallet, address);
         return client._call(String.class, "getValue2", Map.of());
     }
 }

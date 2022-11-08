@@ -51,7 +51,7 @@ public class ContractManager {
 
     public static final DictDB<String, Address> contractAddresses = Context.newDictDB("BalancedContractAddresses", Address.class);
     public static final ArrayDB<String> balancedContractNames = Context.newArrayDB("BalancedContractNames", String.class);
-    
+
     private ContractManager() {}
 
     public static Address getAddress(String name) {
@@ -174,13 +174,13 @@ public class ContractManager {
         for (String contractToBeSet : ADDRESSES.get(contract)) {
             String setMethod = SETTERS.get(contractToBeSet);
             try {
-                GovernanceImpl.call(get(contract), setMethod, get(contractToBeSet));  
+                GovernanceImpl.call(get(contract), setMethod, get(contractToBeSet));
             } catch (Exception e) {
                 if (contractToBeSet.equals("bnUSD")) {
                     try {
-                        GovernanceImpl.call(get(contract), "setbnUSD", get(contractToBeSet));  
+                        GovernanceImpl.call(get(contract), "setbnUSD", get(contractToBeSet));
                     } catch (Exception e2) {
-                    
+
                     }
                 }
             }
@@ -196,9 +196,9 @@ public class ContractManager {
                 } catch (Exception e) {
                     if (contract.equals("bnUSD")) {
                         try {
-                            GovernanceImpl.call(get(targetContract), "setbnUSD", get(contract));  
+                            GovernanceImpl.call(get(targetContract), "setbnUSD", get(contract));
                         } catch (Exception e2) {
-                        
+
                         }
                     }
                 }
@@ -210,13 +210,13 @@ public class ContractManager {
     public static void setAdmins() {
         for (String targetContract : ADMIN_ADDRESSES.keySet()) {
             String contract = ADMIN_ADDRESSES.get(targetContract);
-            GovernanceImpl.call(get(targetContract), "setAdmin", get(contract));        
+            GovernanceImpl.call(get(targetContract), "setAdmin", get(contract));
         }
     }
 
     public static void addContract(String name, Address address) {
         balancedContractNames.add(name);
-        contractAddresses.set(name, address); 
+        contractAddresses.set(name, address);
     }
 
     public static void updateContract(Address targetContract, byte[] contractData, String params) {
@@ -229,7 +229,7 @@ public class ContractManager {
         Address contractAddress = Context.deploy(contractData, parsedParams);
         String name = getName(contractAddress);
         balancedContractNames.add(name);
-        contractAddresses.set(name, contractAddress); 
+        contractAddresses.set(name, contractAddress);
     }
 
     private static String getName(Address address) {
