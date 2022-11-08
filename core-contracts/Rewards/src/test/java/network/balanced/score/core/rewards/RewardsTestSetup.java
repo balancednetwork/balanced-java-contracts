@@ -25,6 +25,7 @@ import score.Address;
 import java.math.BigInteger;
 import java.util.List;
 
+import static network.balanced.score.core.rewards.utils.RewardsConstants.HUNDRED_PERCENTAGE;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -143,6 +144,36 @@ class RewardsTestSetup extends RewardsTestBase {
         dataProviders = (List<Address>) rewardsScore.call("getDataProviders");
         assertFalse(dataProviders.contains(dataProvider1));
         assertTrue(dataProviders.contains(dataProvider2));
+    }
+
+    @Test
+    void setBoostWeight() {
+        BigInteger weight = BigInteger.valueOf(50).multiply(HUNDRED_PERCENTAGE).divide(BigInteger.valueOf(100));
+        BigInteger weightAbove = HUNDRED_PERCENTAGE.add(BigInteger.ONE);
+        BigInteger weightBelow = HUNDRED_PERCENTAGE.divide(BigInteger.valueOf(100)).subtract(BigInteger.ONE);
+        String expectedErrorMessage = "Authorization Check: Address not set";
+
+        Executable setWithoutAdmin = () -> rewardsScore.invoke(admin, "setBoostWeight", weight);
+        expectErrorMessage(setWithoutAdmin, expectedErrorMessage);
+
+        rewardsScore.invoke(governance, "setAdmin", admin.getAddress());
+
+        Account nonAdmin = sm.createAccount();
+        expectedErrorMessage = "Authorization Check: Authorization failed. Caller: " + nonAdmin.getAddress() +
+                " Authorized Caller: " + admin.getAddress();
+        Executable setNotFromAdmin = () -> rewardsScore.invoke(nonAdmin, "setBoostWeight", weight);
+        expectErrorMessage(setNotFromAdmin, expectedErrorMessage);
+
+        expectedErrorMessage = "Reverted(0): Boost weight has to be above 1%";
+        Executable setWeightAbove = () -> rewardsScore.invoke(admin, "setBoostWeight", weightBelow);
+        expectErrorMessage(setWeightAbove, expectedErrorMessage);
+
+        expectedErrorMessage = "Reverted(0): Boost weight has to be below 100%";
+        Executable setWeightBelow = () -> rewardsScore.invoke(admin, "setBoostWeight", weightAbove);
+        expectErrorMessage(setWeightBelow, expectedErrorMessage);
+
+        rewardsScore.invoke(admin, "setBoostWeight", weight);
+        assertEquals(weight, rewardsScore.call("getBoostWeight"));
     }
 }
 

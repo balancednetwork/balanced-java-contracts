@@ -54,7 +54,7 @@ public class BoostedBalnIncreaseTimeTest {
         waitDays(1);
         BigInteger updatedBalnHolding = owner.rewards.getBalnHolding(userAddress);
         System.out.println("baln holding from reward: " + updatedBalnHolding);
-        owner.rewards.claimRewards();
+        owner.rewards.claimRewards(null);
         BigInteger availableBalnBalance = owner.baln.availableBalanceOf(userAddress);
         System.out.println("available balance of baln: " + availableBalnBalance);
         System.out.println("total balance of baln: " + owner.baln.balanceOf(userAddress));
@@ -106,7 +106,7 @@ public class BoostedBalnIncreaseTimeTest {
         waitDays(1);
         BigInteger updatedBalnHolding = owner.rewards.getBalnHolding(userAddress);
         System.out.println("baln holding from reward: " + updatedBalnHolding);
-        owner.rewards.claimRewards();
+        owner.rewards.claimRewards(null);
         BigInteger availableBalnBalance = owner.baln.availableBalanceOf(userAddress);
         System.out.println("available balance of baln: " + availableBalnBalance);
         System.out.println("total balance of baln: " + owner.baln.balanceOf(userAddress));

@@ -15,7 +15,7 @@ import static network.balanced.score.core.governance.utils.GovernanceConstants.*
 import static network.balanced.score.lib.utils.Math.pow;
 
 public class SetupManager {
-    
+
     public static void configureBalanced() {
         for (Map<String, Object> asset : ASSETS) {
             Address tokenAddress = ContractManager.get((String) asset.get("address"));
@@ -30,8 +30,8 @@ public class SetupManager {
         }
 
         Address[] acceptedFeeTokens = new Address[]{
-            ContractManager.get("sicx"), 
-            ContractManager.get("bnUSD"), 
+            ContractManager.get("sicx"),
+            ContractManager.get("bnUSD"),
             ContractManager.get("baln")
         };
 
@@ -112,7 +112,8 @@ public class SetupManager {
         Address rewardsAddress = ContractManager.get("rewards");
         Address loansAddress = ContractManager.get("loans");
 
-        call(rewardsAddress, "claimRewards");
+        Object sources = new String[]{"Loans", "sICX/bnUSD"};
+        call(rewardsAddress, "claimRewards", sources);
         call(loansAddress, "depositAndBorrow", "bnUSD", _bnUSD_amount, Context.getAddress(), BigInteger.ZERO);
 
         JsonObject depositData = Json.object();
@@ -148,7 +149,8 @@ public class SetupManager {
         Address stakedLpAddress = ContractManager.get("stakedLp");
         Address rewardsAddress = ContractManager.get("rewards");
 
-        call(rewardsAddress, "claimRewards");
+        Object sources = new String[]{"Loans", "sICX/bnUSD", "BALN/bnUSD"};
+        call(rewardsAddress, "claimRewards", sources);
 
         JsonObject depositData = Json.object();
         depositData.add("method", "_deposit");

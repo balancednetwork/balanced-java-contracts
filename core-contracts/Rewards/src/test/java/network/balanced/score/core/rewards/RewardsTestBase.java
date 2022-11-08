@@ -20,6 +20,8 @@ package network.balanced.score.core.rewards;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
+import network.balanced.score.lib.interfaces.BoostedBaln;
+import network.balanced.score.lib.interfaces.BoostedBalnScoreInterface;
 import network.balanced.score.lib.interfaces.DataSource;
 import network.balanced.score.lib.interfaces.DataSourceScoreInterface;
 import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
@@ -58,6 +60,8 @@ class RewardsTestBase extends UnitTest {
     MockContract<DataSource> loans;
     MockContract<IRC2Mintable> baln;
     MockContract<IRC2Mintable> bwt;
+    MockContract<BoostedBaln> bBaln;
+
     Score rewardsScore;
 
     void setup() throws Exception {
@@ -65,6 +69,7 @@ class RewardsTestBase extends UnitTest {
         loans = new MockContract<>(DataSourceScoreInterface.class, sm, admin);
         baln = new MockContract<>(IRC2MintableScoreInterface.class, sm, admin);
         bwt = new MockContract<>(IRC2MintableScoreInterface.class, sm, admin);
+        bBaln = new MockContract<>(BoostedBalnScoreInterface.class, sm, admin);
 
         BigInteger startTime = BigInteger.valueOf(sm.getBlock().getTimestamp());
         sm.getBlock().increase(DAY);
@@ -84,11 +89,14 @@ class RewardsTestBase extends UnitTest {
         when(dex.mock.getBalanceAndSupply(any(String.class), any(Address.class))).thenReturn(emptyDataSource);
         when(loans.mock.precompute(any(BigInteger.class), any(BigInteger.class))).thenReturn(true);
         when(dex.mock.precompute(any(BigInteger.class), any(BigInteger.class))).thenReturn(true);
+        when(bBaln.mock.balanceOf(any(Address.class), any(BigInteger.class))).thenReturn(BigInteger.ZERO);
+        when(bBaln.mock.totalSupply(any(BigInteger.class))).thenReturn(BigInteger.ZERO);
 
         rewardsScore.invoke(admin, "setBaln", baln.getAddress());
         rewardsScore.invoke(admin, "setBwt", bwt.getAddress());
         rewardsScore.invoke(admin, "setDaofund", daoFund.getAddress());
         rewardsScore.invoke(admin, "setReserve", reserve.getAddress());
+        rewardsScore.invoke(admin, "setBoostedBaln", bBaln.getAddress());
 
         rewardsScore.invoke(owner, "addDataProvider", loans.getAddress());
         rewardsScore.invoke(owner, "addDataProvider", dex.getAddress());
@@ -143,6 +151,19 @@ class RewardsTestBase extends UnitTest {
             assertEquals(expectedReward.divide(BigInteger.TEN), reward.divide(BigInteger.TEN));
             return true;
         }), eq(new byte[0]));
+    }
+
+    BigInteger getOneDayRewards(Address address) {
+        BigInteger rewardsPre = (BigInteger) rewardsScore.call("getBalnHolding", address);
+        sm.getBlock().increase(DAY);
+        rewardsScore.invoke(admin, "distribute");
+        BigInteger rewardsPost = (BigInteger) rewardsScore.call("getBalnHolding", address);
+
+        return rewardsPost.subtract(rewardsPre);
+    }
+
+    Object getUserSources(Address address) {
+        return rewardsScore.call("getUserSources", address);
     }
 
     void snapshotDistributionPercentage() {

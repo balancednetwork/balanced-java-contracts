@@ -220,6 +220,7 @@ public class ProposalManager {
         voteData.put("name", proposal.name.getOrDefault(""));
         voteData.put("proposer", proposal.proposer.getOrDefault(EOA_ZERO));
         voteData.put("description", proposal.description.getOrDefault(""));
+        voteData.put("forum link", proposal.forumLink.getOrDefault(""));
         voteData.put("majority", proposal.majority.getOrDefault(BigInteger.ZERO));
         voteData.put("status", proposal.status.getOrDefault(""));
         voteData.put("vote snapshot", proposal.snapshotBlock.getOrDefault(BigInteger.ZERO));
