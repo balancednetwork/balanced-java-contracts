@@ -311,8 +311,8 @@ public class GovernanceTest extends GovernanceTestBase {
         verify(dex.mock).add(sicx.getAddress(), bnUSD.getAddress(), sICXValue, bnUSDValue, false);
         verify(dex.mock).setMarketName(sicxBnusdPid, "sICX/bnUSD");
 
-        verify(rewards.mock).addNewDataSource("sICX/bnUSD", dex.getAddress());
-        verify(stakedLp.mock).addPool(sicxBnusdPid);
+        verify(rewards.mock).addNewDataSource("sICX/bnUSD", stakedLp.getAddress());
+        verify(stakedLp.mock).addDataSource(sicxBnusdPid, "sICX/bnUSD");
         verify(rewards.mock, times(2)).updateBalTokenDistPercentage(any(DistributionPercentage[].class));
     }
 
@@ -343,8 +343,8 @@ public class GovernanceTest extends GovernanceTestBase {
         verify(dex.mock).add(baln.getAddress(), bnUSD.getAddress(), balnValue, bnUSDValue, false);
         verify(dex.mock).setMarketName(balnBnusdPid, "BALN/bnUSD");
 
-        verify(rewards.mock).addNewDataSource("BALN/bnUSD", dex.getAddress());
-        verify(stakedLp.mock).addPool(balnBnusdPid);
+        verify(rewards.mock).addNewDataSource("BALN/bnUSD", stakedLp.getAddress());
+        verify(stakedLp.mock).addDataSource(balnBnusdPid, "BALN/bnUSD");
         verify(rewards.mock, times(3)).updateBalTokenDistPercentage(any(DistributionPercentage[].class));
     }
 
@@ -377,8 +377,8 @@ public class GovernanceTest extends GovernanceTestBase {
         verify(dex.mock).add(baln.getAddress(), sicx.getAddress(), balnValue, sicxValue, false);
         verify(dex.mock).setMarketName(balnSicxPid, "BALN/sICX");
 
-        verify(rewards.mock).addNewDataSource("BALN/sICX", dex.getAddress());
-        verify(stakedLp.mock).addPool(balnSicxPid);
+        verify(rewards.mock).addNewDataSource("BALN/sICX", stakedLp.getAddress());
+        verify(stakedLp.mock).addDataSource(balnSicxPid, "BALN/sICX");
         verify(rewards.mock, times(4)).updateBalTokenDistPercentage(any(DistributionPercentage[].class));
     }
 }

@@ -22,6 +22,8 @@ import score.Address;
 import score.annotation.External;
 
 import java.math.BigInteger;
+import java.util.List;
+import java.util.Map;
 
 @ScoreInterface
 @ScoreClient
@@ -39,12 +41,6 @@ public interface StakedLP {
     void setGovernance(Address governance);
 
     @External(readonly = true)
-    Address getAdmin();
-
-    @External
-    void setAdmin(Address admin);
-
-    @External(readonly = true)
     Address getRewards();
 
     @External
@@ -57,17 +53,29 @@ public interface StakedLP {
     BigInteger totalStaked(BigInteger _id);
 
     @External
-    void addPool(BigInteger id);
-
-    @External
-    void removePool(BigInteger id);
-
-    @External(readonly = true)
-    boolean isSupportedPool(BigInteger id);
-
-    @External
     void unstake(BigInteger id, BigInteger value);
 
     @External
     void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data);
+
+    @External
+    void addDataSource(BigInteger id, String name);
+
+    @External(readonly = true)
+    Map<String, BigInteger> getBalanceAndSupply(String _name, Address _owner);
+
+    @External(readonly = true)
+    BigInteger getBnusdValue(String _name);
+
+    @External(readonly = true)
+    String getSourceName(BigInteger id);
+
+    @External(readonly = true)
+    BigInteger getSourceId(String name);
+
+    @External(readonly = true)
+    List<BigInteger> getAllowedPoolIds();
+
+    @External(readonly = true)
+    List<String> getDataSources();
 }

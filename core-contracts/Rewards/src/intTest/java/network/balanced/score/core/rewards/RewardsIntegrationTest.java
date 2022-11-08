@@ -22,6 +22,8 @@ import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
+import score.UserRevertedException;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -34,6 +36,7 @@ import java.util.Map;
 import static network.balanced.score.lib.test.integration.BalancedUtils.*;
 import static network.balanced.score.lib.utils.Constants.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
@@ -41,6 +44,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
     private static Balanced balanced;
     private static BalancedClient owner;
     private static BalancedClient reader;
+    private static Map<String, BigInteger> initialDistributions;
 
     @BeforeAll
     static void setup() throws Exception {
@@ -49,6 +53,9 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
 
         owner = balanced.ownerClient;
         reader = balanced.newClient(BigInteger.ZERO);
+        BigInteger platformDay = hexObjectToBigInteger(reader.rewards.distStatus().get("platform_day"));
+        BigInteger distributedDay = platformDay.subtract(BigInteger.ONE);
+        initialDistributions = reader.rewards.recipientAt(distributedDay);
     }
 
     @Test
@@ -265,7 +272,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
 
         // Act
         BigInteger halfLoansDist = distributions.get("Loans").divide(BigInteger.TWO);
-        JsonArray recipients = new JsonArray()
+        JsonArray distributionPercentages = new JsonArray()
             .add(createDistributionPercentage("Loans", halfLoansDist))
             .add(createDistributionPercentage("sICX/ICX", distributions.get("sICX/ICX").add(halfLoansDist)))
             .add(createDistributionPercentage("Worker Tokens", distributions.get("Worker Tokens")))
@@ -276,7 +283,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
             .add(createDistributionPercentage("BALN/sICX", distributions.get("BALN/sICX")));
 
         JsonArray updateBalTokenDistPercentage = new JsonArray()
-            .add(createParameter("Struct[]", recipients));
+            .add(createParameter("Struct[]", distributionPercentages));
 
         JsonArray actions = new JsonArray()
             .add(createTransaction(balanced.rewards._address(), "updateBalTokenDistPercentage", updateBalTokenDistPercentage));
@@ -318,7 +325,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         icxSicxLP.dex._transfer(balanced.dex._address(), BigInteger.TEN.pow(22), null);
 
         // Act
-        JsonArray recipients = new JsonArray()
+        JsonArray distributionPercentages = new JsonArray()
             .add(createDistributionPercentage("Loans", BigInteger.ZERO))
             .add(createDistributionPercentage("sICX/ICX", distributions.get("sICX/ICX").add(loansDist)))
             .add(createDistributionPercentage("Worker Tokens", distributions.get("Worker Tokens")))
@@ -329,7 +336,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
             .add(createDistributionPercentage("BALN/sICX", distributions.get("BALN/sICX")));
 
         JsonArray updateBalTokenDistPercentage = new JsonArray()
-            .add(createParameter("Struct[]", recipients));
+            .add(createParameter("Struct[]", distributionPercentages));
 
         JsonArray actions = new JsonArray()
             .add(createTransaction(balanced.rewards._address(), "updateBalTokenDistPercentage", updateBalTokenDistPercentage));
@@ -351,6 +358,98 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         owner.rewards.distribute((txr) -> {
         });
         verifyNoRewards(loanTaker);
+    }
+
+    @Test
+    @Order(22)
+    void resetRewardsDistributions() throws Exception {
+        JsonArray distributionPercentages = new JsonArray()
+            .add(createDistributionPercentage("Loans", initialDistributions.get("Loans")))
+            .add(createDistributionPercentage("sICX/ICX", initialDistributions.get("sICX/ICX")))
+            .add(createDistributionPercentage("Worker Tokens", initialDistributions.get("Worker Tokens")))
+            .add(createDistributionPercentage("Reserve Fund", initialDistributions.get("Reserve Fund")))
+            .add(createDistributionPercentage("DAOfund", initialDistributions.get("DAOfund")))
+            .add(createDistributionPercentage("sICX/bnUSD", initialDistributions.get("sICX/bnUSD")))
+            .add(createDistributionPercentage("BALN/bnUSD", initialDistributions.get("BALN/bnUSD")))
+            .add(createDistributionPercentage("BALN/sICX", initialDistributions.get("BALN/sICX")));
+
+    JsonArray updateBalTokenDistPercentage = new JsonArray()
+        .add(createParameter("Struct[]", distributionPercentages));
+
+    JsonArray actions = new JsonArray()
+        .add(createTransaction(balanced.rewards._address(), "updateBalTokenDistPercentage", updateBalTokenDistPercentage));
+
+    owner.governance.execute(actions.toString());
+    balanced.increaseDay(1);
+        owner.rewards.distribute((txr) -> {
+    });
+    }
+
+    @Test
+    @Order(30)
+    void migrate() throws Exception {
+        // Arrange
+        BalancedClient borrower = balanced.newClient(BigInteger.TEN.pow(25));
+        BalancedClient sicxBnusdLP = balanced.newClient();
+        BigInteger lpAmount = BigInteger.TEN.pow(22);
+
+        borrower.loans.depositAndBorrow(BigInteger.TEN.pow(24), "bnUSD", lpAmount, null, null);
+        borrower.bnUSD.transfer(sicxBnusdLP.getAddress(), lpAmount, null);
+        joinsICXBnusdLP(sicxBnusdLP, lpAmount, lpAmount);
+        stakeICXBnusdLP(sicxBnusdLP);
+
+        // Act
+        BigInteger platformDay = hexObjectToBigInteger(reader.rewards.distStatus().get("platform_day"));
+
+        JsonArray setMigrateToVotingDayParameters = new JsonArray()
+            .add(createParameter(platformDay.add(BigInteger.ONE)));
+        JsonArray actions = createSingleTransaction(balanced.rewards._address(), "setMigrateToVotingDay", setMigrateToVotingDayParameters);
+
+        owner.governance.execute(actions.toString());
+
+        // Assert
+        verifyRewards(borrower);
+        verifyRewards(sicxBnusdLP);
+        balanced.increaseDay(2);
+
+        verifyRewards(borrower);
+        verifyRewards(sicxBnusdLP);
+
+        // SICX/bnUSD will no longer have a percentage since votes take a week to come into effect
+        balanced.increaseDay(1);
+        verifyRewards(borrower);
+        verifyNoRewards(sicxBnusdLP);
+
+        JsonArray params = new JsonArray()
+            .add(createParameter("sICX/bnUSD"))
+            .add(createParameter(EXA.divide(BigInteger.TEN)));
+        actions = createSingleTransaction(balanced.rewards._address(), "setFixedSourcePercentage", params);
+        owner.governance.execute(actions.toString());
+
+
+        balanced.increaseDay(1);
+
+        verifyRewards(borrower);
+        verifyRewards(sicxBnusdLP);
+
+        // Arrange
+        BigInteger availableBalnBalance = reader.baln.balanceOf(sicxBnusdLP.getAddress());
+        long unlockTime = (System.currentTimeMillis() * 1000) + (MICRO_SECONDS_IN_A_DAY.multiply(BigInteger.valueOf(400))).longValue();
+        String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
+        sicxBnusdLP.baln.transfer(owner.boostedBaln._address(), availableBalnBalance, data.getBytes());
+        availableBalnBalance = reader.baln.balanceOf(borrower.getAddress());
+        borrower.baln.transfer(owner.boostedBaln._address(), availableBalnBalance, data.getBytes());
+
+        // Act & Assert
+        sicxBnusdLP.rewards.voteForSource("BALN/bnUSD", BigInteger.valueOf(5000));
+        sicxBnusdLP.rewards.voteForSource("BALN/sICX", BigInteger.valueOf(5000));
+        borrower.rewards.voteForSource("BALN/sICX", BigInteger.valueOf(10000));
+
+        assertThrows(UserRevertedException.class, () ->
+            sicxBnusdLP.rewards.voteForSource("BALN/bnUSD", BigInteger.valueOf(2000)));
+
+        assertThrows(UserRevertedException.class, () ->
+            borrower.rewards.voteForSource("BALN/bnUSD", BigInteger.valueOf(1)));
     }
 
     private void joinsICXBnusdLP(BalancedClient client, BigInteger icxAmount, BigInteger bnusdAmount) {

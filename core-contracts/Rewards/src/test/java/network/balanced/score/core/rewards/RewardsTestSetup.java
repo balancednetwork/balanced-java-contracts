@@ -78,26 +78,6 @@ class RewardsTestSetup extends RewardsTestBase {
     }
 
     @Test
-    void setAndGetBatchSize() {
-        int batchSize = 1;
-        String expectedErrorMessage = "Authorization Check: Address not set";
-
-        Executable setWithoutAdmin = () -> rewardsScore.invoke(admin, "setBatchSize", batchSize);
-        expectErrorMessage(setWithoutAdmin, expectedErrorMessage);
-
-        rewardsScore.invoke(governance, "setAdmin", admin.getAddress());
-
-        Account nonAdmin = sm.createAccount();
-        expectedErrorMessage = "Authorization Check: Authorization failed. Caller: " + nonAdmin.getAddress() +
-                " Authorized Caller: " + admin.getAddress();
-        Executable setNotFromAdmin = () -> rewardsScore.invoke(nonAdmin, "setBatchSize", batchSize);
-        expectErrorMessage(setNotFromAdmin, expectedErrorMessage);
-
-        rewardsScore.invoke(admin, "setBatchSize", batchSize);
-        assertEquals(batchSize, rewardsScore.call("getBatchSize"));
-    }
-
-    @Test
     void setAndGetTimeOffset() {
         BigInteger timeOffset = BigInteger.ONE.multiply(MICRO_SECONDS_IN_A_DAY).negate();
         String expectedErrorMessage = "Authorization Check: Address not set";

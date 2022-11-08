@@ -16,7 +16,6 @@
 
 package network.balanced.score.core.governance;
 
-import network.balanced.score.lib.structs.BalancedAddresses;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.core.governance.proposal.ProposalDB;
@@ -61,7 +60,7 @@ public class GovernanceImpl implements Governance {
             return;
         }
 
-//        ContractManager.migrateAddresses();
+       ContractManager.migrateAddresses();
     }
 
     @External(readonly = true)

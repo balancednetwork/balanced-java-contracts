@@ -77,9 +77,7 @@ public class SetupManager {
         Address dexAddress = ContractManager.getAddress(Names.DEX);
         Address sICXAddress = ContractManager.getAddress(Names.SICX);
         Address bnUSDAddress = ContractManager.getAddress(Names.BNUSD);
-        Address stakedLpAddress = ContractManager.getAddress(Names.STAKEDLP);
         Address stakingAddress = ContractManager.getAddress(Names.STAKING);
-        Address rewardsAddress = ContractManager.getAddress(Names.REWARDS);
         Address loansAddress = ContractManager.getAddress(Names.LOANS);
 
         BigInteger price = call(BigInteger.class, bnUSDAddress, "priceInLoop");
@@ -101,8 +99,8 @@ public class SetupManager {
         BigInteger pid = call(BigInteger.class, dexAddress, "getPoolId", sICXAddress, bnUSDAddress);
         call(dexAddress, "setMarketName", pid, name);
 
-        call(rewardsAddress, "addNewDataSource", name, dexAddress);
-        call(stakedLpAddress, "addPool", pid);
+        _addLPDataSource(name, pid);
+
         DistributionPercentage[] recipients = new DistributionPercentage[]{
             createDistributionPercentage("Loans", BigInteger.valueOf(25).multiply(pow(BigInteger.TEN, 16))),
             createDistributionPercentage("sICX/ICX", BigInteger.TEN.multiply(pow(BigInteger.TEN, 16))),
@@ -119,7 +117,6 @@ public class SetupManager {
         Address dexAddress = ContractManager.getAddress(Names.DEX);
         Address balnAddress = ContractManager.getAddress(Names.BALN);
         Address bnUSDAddress = ContractManager.getAddress(Names.BNUSD);
-        Address stakedLpAddress = ContractManager.getAddress(Names.STAKEDLP);
         Address rewardsAddress = ContractManager.getAddress(Names.REWARDS);
         Address loansAddress = ContractManager.getAddress(Names.LOANS);
 
@@ -137,8 +134,7 @@ public class SetupManager {
         BigInteger pid = call(BigInteger.class, dexAddress, "getPoolId", balnAddress, bnUSDAddress);
         call(dexAddress, "setMarketName", pid, name);
 
-        call(rewardsAddress, "addNewDataSource", name, dexAddress);
-        call(stakedLpAddress, "addPool", pid);
+        _addLPDataSource(name, pid);
 
         DistributionPercentage[] recipients = new DistributionPercentage[]{
                 createDistributionPercentage("Loans", BigInteger.valueOf(25).multiply(pow(BigInteger.TEN, 16))),
@@ -157,7 +153,6 @@ public class SetupManager {
         Address dexAddress = ContractManager.getAddress(Names.DEX);
         Address balnAddress = ContractManager.getAddress(Names.BALN);
         Address sICXAddress = ContractManager.getAddress(Names.SICX);
-        Address stakedLpAddress = ContractManager.getAddress(Names.STAKEDLP);
         Address rewardsAddress = ContractManager.getAddress(Names.REWARDS);
 
         Object sources = new String[]{"Loans", "sICX/bnUSD", "BALN/bnUSD"};
@@ -173,8 +168,7 @@ public class SetupManager {
         BigInteger pid = call(BigInteger.class, dexAddress, "getPoolId", balnAddress, sICXAddress);
         call(dexAddress, "setMarketName", pid, name);
 
-        call(rewardsAddress, "addNewDataSource", name, dexAddress);
-        call(stakedLpAddress, "addPool", pid);
+        _addLPDataSource(name, pid);
 
         DistributionPercentage[] recipients = new DistributionPercentage[]{
                 createDistributionPercentage("Loans", BigInteger.valueOf(20).multiply(pow(BigInteger.TEN, 16))),
@@ -188,5 +182,16 @@ public class SetupManager {
         };
 
         call(ContractManager.getAddress(Names.REWARDS), "updateBalTokenDistPercentage", (Object) recipients);
+    }
+
+    private static void _addNewDataSource(String _data_source_name, String _contract_address) {
+        Context.call(ContractManager.getAddress(Names.REWARDS), "addNewDataSource", _data_source_name,
+                Address.fromString(_contract_address));
+    }
+
+    private static void _addLPDataSource(String _name, BigInteger _poolId) {
+        Address stakedLP = ContractManager.getAddress(Names.STAKEDLP);
+        Context.call(stakedLP, "addDataSource",  _poolId, _name);
+        _addNewDataSource(_name, stakedLP.toString());
     }
 }
