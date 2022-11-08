@@ -1003,42 +1003,42 @@ public class RewardsImpl implements Rewards {
     }
 
     private void migrateWeightController() {
-        String mainTypeName = "MainSources";
-        String LPTypeName = "LPSources";
-        SourceWeightController.addType(mainTypeName, EXA);
-        SourceWeightController.addType(LPTypeName, EXA);
-        int mainType = SourceWeightController.getTypeId(mainTypeName);
-        int LPType = SourceWeightController.getTypeId(LPTypeName);
+        String coreTypeName = "BALN Core";
+        String communityTypeName = "Community";
+        SourceWeightController.addType(coreTypeName, EXA);
+        SourceWeightController.addType(communityTypeName, EXA);
+        int coreType = SourceWeightController.getTypeId(coreTypeName);
+        int communityType = SourceWeightController.getTypeId(communityTypeName);
         Map<String, BigInteger>  recipients = recipientAt(getDay());
 
-        // MainSources
+        // core
         if (DataSourceDB.hasSource("Loans")) {
-            SourceWeightController.addSource("Loans", mainType, BigInteger.ZERO);
+            SourceWeightController.addSource("Loans", coreType, BigInteger.ZERO);
             SourceWeightController.setVotable("Loans", false);
             fixedDistributionPercentages.set("Loans", recipients.get("Loans"));
         }
         if (DataSourceDB.hasSource("sICX/bnUSD")) {
-            SourceWeightController.addSource("sICX/bnUSD", mainType, BigInteger.ZERO);
+            SourceWeightController.addSource("sICX/bnUSD", coreType, BigInteger.ZERO);
         }
         if (DataSourceDB.hasSource("BALN/bnUSD")) {
-            SourceWeightController.addSource("BALN/bnUSD", mainType, BigInteger.ZERO);
-        }
-
-        // LP sources
-        if (DataSourceDB.hasSource("sICX/ICX")) {
-            SourceWeightController.addSource("sICX/ICX", LPType, BigInteger.ZERO);
+            SourceWeightController.addSource("BALN/bnUSD", coreType, BigInteger.ZERO);
         }
         if (DataSourceDB.hasSource("BALN/sICX")) {
-            SourceWeightController.addSource("BALN/sICX", LPType, BigInteger.ZERO);
+            SourceWeightController.addSource("BALN/sICX", coreType, BigInteger.ZERO);
+        }
+
+        // Community
+        if (DataSourceDB.hasSource("sICX/ICX")) {
+            SourceWeightController.addSource("sICX/ICX", communityType, BigInteger.ZERO);
         }
         if (DataSourceDB.hasSource("IUSDC/bnUSD")) {
-            SourceWeightController.addSource("IUSDC/bnUSD", LPType, BigInteger.ZERO);
+            SourceWeightController.addSource("IUSDC/bnUSD", communityType, BigInteger.ZERO);
         }
         if (DataSourceDB.hasSource("USDS/bnUSD")) {
-            SourceWeightController.addSource("USDS/bnUSD", LPType, BigInteger.ZERO);
+            SourceWeightController.addSource("USDS/bnUSD", communityType, BigInteger.ZERO);
         }
         if (DataSourceDB.hasSource("IUSDT/bnUSD")) {
-            SourceWeightController.addSource("IUSDT/bnUSD", LPType, BigInteger.ZERO);
+            SourceWeightController.addSource("IUSDT/bnUSD", communityType, BigInteger.ZERO);
         }
     }
 
