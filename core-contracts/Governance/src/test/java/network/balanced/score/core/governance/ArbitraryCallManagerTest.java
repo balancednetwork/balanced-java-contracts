@@ -34,7 +34,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ArbitraryCallManagerTest extends UnitTest {
-    
+
     @Test
     void stringParameter() {
         String testString = "test";
@@ -62,7 +62,7 @@ public class ArbitraryCallManagerTest extends UnitTest {
             .add("type", "String[]")
             .add("value", testStringArray);
 
-            
+
         // Act
         Object parsedParameter = ArbitraryCallManager.getConvertedParameter(stringParam);
 
@@ -242,7 +242,7 @@ public class ArbitraryCallManagerTest extends UnitTest {
         JsonObject testBytes = new JsonObject()
             .add("_asset", "bnUSD")
             .add("_amount", "234");
-        
+
         byte[] bytes = testBytes.toString().getBytes();
         String hexBytes = getHex(bytes);
 
@@ -258,7 +258,7 @@ public class ArbitraryCallManagerTest extends UnitTest {
             .add("Number", numberParam)
             .add("boolean", boolParam)
             .add("bytes", bytesParam);
-        
+
         JsonObject strcutParam =  new JsonObject()
             .add("type", "Struct")
             .add("value", struct);

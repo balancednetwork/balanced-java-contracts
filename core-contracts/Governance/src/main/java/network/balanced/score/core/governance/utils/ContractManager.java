@@ -31,23 +31,24 @@ import score.VarDB;
 import scorex.util.HashMap;
 
 public class ContractManager {
-    public static final VarDB<Address> loans = Context.newVarDB("loans", Address.class);
-    public static final VarDB<Address> dex = Context.newVarDB("dex", Address.class);
-    public static final VarDB<Address> staking = Context.newVarDB("staking", Address.class);
-    public static final VarDB<Address> rewards = Context.newVarDB("rewards", Address.class);
-    public static final VarDB<Address> reserve = Context.newVarDB("reserve", Address.class);
-    public static final VarDB<Address> dividends = Context.newVarDB("dividends", Address.class);
-    public static final VarDB<Address> daofund = Context.newVarDB("daofund", Address.class);
-    public static final VarDB<Address> oracle = Context.newVarDB("oracle", Address.class);
-    public static final VarDB<Address> sicx = Context.newVarDB("sicx", Address.class);
-    public static final VarDB<Address> bnUSD = Context.newVarDB("bnUSD", Address.class);
-    public static final VarDB<Address> baln = Context.newVarDB("baln", Address.class);
-    public static final VarDB<Address> bwt = Context.newVarDB("bwt", Address.class);
-    public static final VarDB<Address> rebalancing = Context.newVarDB("rebalancing", Address.class);
-    public static final VarDB<Address> router = Context.newVarDB("router", Address.class);
-    public static final VarDB<Address> feehandler = Context.newVarDB("feehandler", Address.class);
-    public static final VarDB<Address> stakedLp = Context.newVarDB("stakedLp", Address.class);
-    public static final VarDB<Address> balancedOracle = Context.newVarDB("balancedOracle", Address.class);
+    private static final VarDB<Address> loans = Context.newVarDB("loans", Address.class);
+    private static final VarDB<Address> dex = Context.newVarDB("dex", Address.class);
+    private static final VarDB<Address> staking = Context.newVarDB("staking", Address.class);
+    private static final VarDB<Address> rewards = Context.newVarDB("rewards", Address.class);
+    private static final VarDB<Address> reserve = Context.newVarDB("reserve", Address.class);
+    private static final VarDB<Address> dividends = Context.newVarDB("dividends", Address.class);
+    private static final VarDB<Address> daofund = Context.newVarDB("daofund", Address.class);
+    private static final VarDB<Address> oracle = Context.newVarDB("oracle", Address.class);
+    private static final VarDB<Address> sicx = Context.newVarDB("sicx", Address.class);
+    private static final VarDB<Address> bnUSD = Context.newVarDB("bnUSD", Address.class);
+    private static final VarDB<Address> baln = Context.newVarDB("baln", Address.class);
+    private static final VarDB<Address> bwt = Context.newVarDB("bwt", Address.class);
+    private static final VarDB<Address> rebalancing = Context.newVarDB("rebalancing", Address.class);
+    private static final VarDB<Address> router = Context.newVarDB("router", Address.class);
+    private static final VarDB<Address> feehandler = Context.newVarDB("feehandler", Address.class);
+    private static final VarDB<Address> stakedLp = Context.newVarDB("stakedLp", Address.class);
+    private static final VarDB<Address> bBaln = Context.newVarDB("bBaln", Address.class);
+    private static final VarDB<Address> balancedOracle = Context.newVarDB("balancedOracle", Address.class);
 
     public static final DictDB<String, Address> contractAddresses = Context.newDictDB("BalancedContractAddresses", Address.class);
     public static final ArrayDB<String> balancedContractNames = Context.newArrayDB("BalancedContractNames", String.class);
@@ -155,6 +156,11 @@ public class ContractManager {
         String balancedOracleName = getName(balancedOracleAddress);
         balancedContractNames.add(balancedOracleName);
         contractAddresses.set(balancedOracleName, balancedOracleAddress);
+
+        Address bBalnAddress = bBaln.get();
+        String bBalnName = getName(bBalnAddress);
+        balancedContractNames.add(bBalnName);
+        contractAddresses.set(bBalnName, bBalnAddress);
     }
 
     public static Map<String, Address> getAddresses() {
