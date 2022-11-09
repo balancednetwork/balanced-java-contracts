@@ -141,7 +141,7 @@ public class GovernanceTestBase extends UnitTest {
         governance.invoke(owner, "addExternalContract", Names.STAKEDLP ,stakedLp.getAddress());
         governance.invoke(owner, "addExternalContract", Names.STABILITY ,stability.getAddress());
         governance.invoke(owner, "addExternalContract", Names.BALANCEDORACLE ,balancedOracle.getAddress());
-        governance.invoke(owner, "addExternalContract", Names.BOOSTEDBALN ,bBaln.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.BOOSTED_BALN ,bBaln.getAddress());
     }
 
     protected BigInteger executeVoteWithActions(String actions) {

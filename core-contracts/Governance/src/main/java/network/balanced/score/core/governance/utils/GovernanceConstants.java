@@ -103,7 +103,7 @@ public class GovernanceConstants extends Constants {
         entry("sicx", Names.SICX),
         entry("bnUSD", Names.BNUSD),
         entry("feehandler", Names.FEEHANDLER),
-        entry("bBaln", Names.BOOSTEDBALN)
+        entry("bBaln", Names.BOOSTED_BALN)
 
     );
 

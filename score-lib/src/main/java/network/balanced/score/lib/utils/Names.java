@@ -20,6 +20,6 @@ public class Names {
     public final static String REBALANCING = "Balanced Rebalancing";
     public final static String ROUTER = "Balanced Router";
     public final static String STAKEDLP = "Balanced StakedLP";
-    public final static String BOOSTEDBALN = "Boosted Baln";
+    public final static String BOOSTED_BALN = "Boosted Baln";
 
 }

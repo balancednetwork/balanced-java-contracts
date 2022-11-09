@@ -63,7 +63,7 @@ class BoostedBalnTest extends AbstractBoostedBalnTest {
 
     @Test
     void name() {
-        assertEquals(Names.BOOSTEDBALN, bBalnScore.call("name"));
+        assertEquals(Names.BOOSTED_BALN, bBalnScore.call("name"));
     }
 
     @Test

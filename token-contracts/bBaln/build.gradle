@@ -80,7 +80,6 @@ deployJar {
         arg('balnAddress', 'cx9eefbe346b17328e2265573f6e166f6bc4a13cc4')
         arg('rewardAddress', 'cx46aff4379970ffeb5d5889e59fb306cc41a4e75a')
         arg('dividendsAddress', 'cx238de0dea868ea6d82fac78802705ac0338b753a')
-        arg('name', 'Boosted Baln')
         arg('symbol', 'bBaln')
     }
 }

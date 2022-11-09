@@ -255,11 +255,11 @@ public class ProposalManager {
     }
 
     public static BigInteger totalBoostedBaln(BigInteger block) {
-        return Context.call(BigInteger.class, ContractManager.getAddress(Names.BOOSTEDBALN), "totalSupplyAt", block);
+        return Context.call(BigInteger.class, ContractManager.getAddress(Names.BOOSTED_BALN), "totalSupplyAt", block);
     }
 
     public static BigInteger myVotingWeight(Address _address, BigInteger block) {
-        return Context.call(BigInteger.class, ContractManager.getAddress(Names.BOOSTEDBALN), "balanceOfAt", _address, block);
+        return Context.call(BigInteger.class, ContractManager.getAddress(Names.BOOSTED_BALN), "balanceOfAt", _address, block);
     }
 
     private static void refundVoteDefinitionFee(ProposalDB proposal) {
@@ -276,7 +276,7 @@ public class ProposalManager {
     }
 
     private static boolean checkBalnVoteCriterion(Address address, BigInteger block) {
-        BigInteger boostedBalnTotal = Context.call(BigInteger.class, ContractManager.getAddress(Names.BOOSTEDBALN), "totalSupplyAt", block);
+        BigInteger boostedBalnTotal = Context.call(BigInteger.class, ContractManager.getAddress(Names.BOOSTED_BALN), "totalSupplyAt", block);
         BigInteger userBoostedBaln = myVotingWeight(address, block);
         BigInteger limit = balnVoteDefinitionCriterion.get();
         BigInteger userPercentage = POINTS.multiply(userBoostedBaln).divide(boostedBalnTotal);

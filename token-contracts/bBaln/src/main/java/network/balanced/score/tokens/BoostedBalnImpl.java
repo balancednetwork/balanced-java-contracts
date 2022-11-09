@@ -44,7 +44,7 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
 
     public BoostedBalnImpl(Address balnAddress, Address rewardAddress, Address dividendsAddress,
                            String symbol) {
-        super(balnAddress, rewardAddress, dividendsAddress, Names.BOOSTEDBALN, symbol);
+        super(balnAddress, rewardAddress, dividendsAddress, Names.BOOSTED_BALN, symbol);
     }
 
     @External
