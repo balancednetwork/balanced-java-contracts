@@ -52,6 +52,9 @@ public interface BoostedBaln extends BalnAddress, RewardsAddress, DividendsAddre
     List<Address> getUsers(int start, int end);
 
     @External(readonly = true)
+    boolean hasLocked(Address _owner);
+
+    @External(readonly = true)
     BigInteger getLastUserSlope(Address address);
 
     @External(readonly = true)

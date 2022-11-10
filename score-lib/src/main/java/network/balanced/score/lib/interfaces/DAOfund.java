@@ -18,9 +18,7 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
-import network.balanced.score.lib.interfaces.addresses.AdminAddress;
-import network.balanced.score.lib.interfaces.addresses.GovernanceAddress;
-import network.balanced.score.lib.interfaces.addresses.LoansAddress;
+import network.balanced.score.lib.interfaces.addresses.AddressManager;
 import network.balanced.score.lib.interfaces.base.Fallback;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
@@ -34,7 +32,7 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface DAOfund extends Name, GovernanceAddress, AdminAddress, LoansAddress, TokenFallback, Fallback {
+public interface DAOfund extends Name, AddressManager, TokenFallback, Fallback {
 
     @External
     void addAddressToSetdb();

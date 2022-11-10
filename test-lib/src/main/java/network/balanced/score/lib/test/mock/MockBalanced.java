@@ -21,19 +21,20 @@ public class MockBalanced {
     public MockContract<Staking> staking;
     public MockContract<Rewards> rewards;
     public MockContract<Reserve> reserve;
-    public MockContract<Dividends> dividends; 
+    public MockContract<Dividends> dividends;
     public MockContract<DAOfund> daofund;
     public MockContract<Sicx> sicx;
-    public MockContract<BalancedDollar> bnUSD; 
+    public MockContract<BalancedDollar> bnUSD;
     public MockContract<BalancedToken> baln;
     public MockContract<WorkerToken> bwt;
-    public MockContract<Router> router; 
+    public MockContract<Router> router;
     public MockContract<Rebalancing> rebalancing;
     public MockContract<FeeHandler> feehandler;
     public MockContract<StakedLP> stakedLp;
     public MockContract<Stability> stability;
     public MockContract<Oracle> oracle;
     public MockContract<BalancedOracle> balancedOracle;
+    public MockContract<BoostedBaln> bBaln;
     public MockContract<Governance> governance;
 
     public MockBalanced(ServiceManager sm, Account owner) throws Exception {
@@ -55,6 +56,7 @@ public class MockBalanced {
         stability = new MockContract<>(StabilityScoreInterface.class, Stability.class, sm, owner);
         oracle = new MockContract<>(OracleScoreInterface.class, Oracle.class, sm, owner);
         balancedOracle = new MockContract<>(BalancedOracleScoreInterface.class, BalancedOracle.class, sm, owner);
+        bBaln = new MockContract<>(BoostedBalnScoreInterface.class, BoostedBaln.class, sm, owner);
         governance = new MockContract<>(GovernanceScoreInterface.class, Governance.class, sm, owner);
 
         if (addressManagerMock != null) {
@@ -81,6 +83,7 @@ public class MockBalanced {
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.STAKEDLP)).thenReturn(stakedLp.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.STABILITY)).thenReturn(stability.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.BALANCEDORACLE)).thenReturn(balancedOracle.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.BOOSTED_BALN)).thenReturn(bBaln.getAddress());
 
         when(bnUSD.mock.symbol()).thenReturn("bnUSD");
         when(sicx.mock.symbol()).thenReturn("sICX");

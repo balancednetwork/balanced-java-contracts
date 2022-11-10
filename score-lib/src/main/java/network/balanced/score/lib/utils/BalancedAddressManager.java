@@ -8,7 +8,7 @@ public class BalancedAddressManager {
     private static String TAG = "BalancedAddressManager";
     private static final Address mainnetGovernance = Address.fromString("cx44250a12074799e26fdeee75648ae47e2cc84219");
     public static final DictDB<String, Address> contractAddresses = Context.newDictDB(TAG + "ContractAddresses", Address.class);
-        
+
     public static void setGovernance(Address address) {
         contractAddresses.set(Names.GOVERNANCE, address);
     }
@@ -105,6 +105,10 @@ public class BalancedAddressManager {
 
     public static Address getDex() {
         return getAddress(Names.DEX);
+    }
+
+    public static Address getBoostedBaln() {
+        return getAddress(Names.BOOSTED_BALN);
     }
 
     public static Address getGovernance() {
