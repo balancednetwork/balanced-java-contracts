@@ -204,7 +204,7 @@ public class DAOfundImpl implements DAOfund {
     }
 
     @External(readonly = true)
-    public Map<Address, BigInteger> getFeeEarnings() {
+    public Map<String, BigInteger> getFeeEarnings() {
         return POLManager.getFeeEarnings();
     }
 
@@ -219,15 +219,20 @@ public class DAOfundImpl implements DAOfund {
         }
 
         String tokenContract = Context.getCaller().toString();
-        Context.require(address.contains(tokenContract), TAG + ": Daofund can't receive this token");
-
-        BigInteger tokenAmountInDAOfund = fund.getOrDefault(tokenContract, BigInteger.ZERO);
-        fund.set(tokenContract, tokenAmountInDAOfund.add(_value));
+        if(address.contains(tokenContract)) {
+            BigInteger tokenAmountInDAOfund = fund.getOrDefault(tokenContract, BigInteger.ZERO);
+            fund.set(tokenContract, tokenAmountInDAOfund.add(_value));
+        }
     }
 
     @Payable
     public void fallback() {
         Context.revert("ICX not accepted in this contract");
     }
+
+    @External
+    public void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data) {
+    }
+
 
 }

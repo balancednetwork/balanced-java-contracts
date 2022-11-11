@@ -51,4 +51,22 @@ public interface DAOfund extends Name, AddressManager, TokenFallback, Fallback {
 
     @External
     void claim();
+
+    @External
+    void claimRewards();
+
+    @External
+    void claimNetworkFees();
+
+    @External
+    void supplyLiquidity(Address baseAddress, BigInteger baseAmount, Address quoteAddress, BigInteger quoteAmount);
+
+    @External
+    void withdrawLiquidity(BigInteger pid, BigInteger amount);
+
+    @External(readonly = true)
+    BigInteger getBalnEarnings();
+
+    @External(readonly = true)
+    Map<String, BigInteger> getFeeEarnings();
 }

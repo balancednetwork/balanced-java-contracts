@@ -58,7 +58,7 @@ public class GovernanceConstants extends Constants {
                     "balancedOracle")),
             entry("dex", List.of("rewards", "dividends", "staking", "sicx", "bnUSD", "baln", "feehandler", "stakedLp")),
             entry("rewards", List.of("reserve", "baln", "bwt", "daofund", "stakedLp", "bBaln")),
-            entry("dividends", List.of("loans", "daofund", "dex", "baln")),
+            entry("dividends", List.of("loans", "daofund", "dex", "baln", "bBaln")),
             entry("daofund", List.of("loans")),
             entry("reserve", List.of("loans", "baln", "sicx")),
             entry("bnUSD", List.of("oracle")),

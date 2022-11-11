@@ -109,10 +109,6 @@ class DAOfundImplTest extends TestBase {
     void receiveTokens() {
         addSymbolToSetdb();
 
-        Executable depositFromNonAllowedToken = () -> daofundScore.invoke(owner, "tokenFallback", owner.getAddress(),
-                BigInteger.TEN.pow(20), new byte[0]);
-        expectErrorMessage(depositFromNonAllowedToken, "Reverted(0): " + TAG + ": Daofund can't receive this token");
-
         daofundScore.invoke(mockBalanced.sicx.account, "tokenFallback", owner.getAddress(), BigInteger.TEN.pow(20), new byte[0]);
         Map<String, BigInteger> expectedBalances = Map.of(mockBalanced.sicx.getAddress().toString(), BigInteger.TEN.pow(20),
                 mockBalanced.baln.getAddress().toString(), BigInteger.ZERO,
@@ -240,9 +236,9 @@ class DAOfundImplTest extends TestBase {
         daofundScore.invoke(mockBalanced.governance.account, "claimNetworkFees");
 
         // Assert
-        Map<Address, BigInteger> fees = (Map<Address, BigInteger>) daofundScore.call("getFeeEarnings");
-        assertEquals(sICXFees, fees.get(mockBalanced.sicx.getAddress()));
-        assertEquals(bnUSDFees, fees.get(mockBalanced.bnUSD.getAddress()));
+        Map<String, BigInteger> fees = (Map<String, BigInteger>) daofundScore.call("getFeeEarnings");
+        assertEquals(sICXFees, fees.get(mockBalanced.sicx.getAddress().toString()));
+        assertEquals(bnUSDFees, fees.get(mockBalanced.bnUSD.getAddress().toString()));
     }
 
     @Test

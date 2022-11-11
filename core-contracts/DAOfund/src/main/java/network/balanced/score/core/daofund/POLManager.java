@@ -65,10 +65,10 @@ public class POLManager {
         return balnEarnings.get();
     }
 
-    public static Map<Address, BigInteger> getFeeEarnings() {
-        Map<Address, BigInteger> fees = new HashMap<>();
+    public static Map<String, BigInteger> getFeeEarnings() {
+        Map<String, BigInteger> fees = new HashMap<>();
         for (Address address : feeEarnings.keys()) {
-            fees.put(address, feeEarnings.get(address));
+            fees.put(address.toString(), feeEarnings.getOrDefault(address, BigInteger.ZERO));
         }
 
         return fees;
