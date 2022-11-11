@@ -450,16 +450,17 @@ public class DividendsImpl implements Dividends {
             if (totalDivs.signum() > 0) {
                 nonZeroTokens.put(token.toString(), totalDivs);
                 userAccruedDividends.set(token, null);
-                BigInteger bbalnBalance = getBBalnBalance(user);
-                BigInteger prevBalance = userBalance.getOrDefault(user, BigInteger.ZERO);
-                userBalance.set(user, bbalnBalance);
-                DividendsTracker.setBBalnTotalSupply(getBoostedTotalSupply().add(bbalnBalance).subtract(prevBalance));
                 sendToken(user, totalDivs, token, "User dividends");
             }
         }
         if (nonZeroTokens.size() > 0) {
             Claimed(user, BigInteger.ZERO, BigInteger.ZERO, dividendsMapToJson(nonZeroTokens));
         }
+
+        BigInteger bbalnBalance = getBBalnBalance(user);
+        BigInteger prevBalance = userBalance.getOrDefault(user, BigInteger.ZERO);
+        userBalance.set(user, bbalnBalance);
+        DividendsTracker.setBBalnTotalSupply(getBoostedTotalSupply().add(bbalnBalance).subtract(prevBalance));
     }
 
     @External
