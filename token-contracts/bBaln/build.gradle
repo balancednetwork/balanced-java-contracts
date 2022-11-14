@@ -67,7 +67,7 @@ deployJar {
         berlin {
             uri = 'https://berlin.net.solidwallet.io/api/v3'
             nid = 0x7
-            to = Addresses.berlin.bBaln
+
         }
         lisbon {
             uri = 'https://lisbon.net.solidwallet.io/api/v3'
