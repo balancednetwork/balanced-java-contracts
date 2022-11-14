@@ -21,6 +21,7 @@ import java.math.BigInteger;
 public enum Network {
     SEJONG("https://sejong.net.solidwallet.io/api/v3", BigInteger.valueOf(83L)),
     BERLIN("https://berlin.net.solidwallet.io/api/v3", BigInteger.valueOf(7L)),
+    LISBON("https://lisbon.net.solidwallet.io/api/v3", BigInteger.valueOf(2L)),
     MAINNET("https://ctz.solidwallet.io/api/v3", BigInteger.valueOf(3L)),
     LOCAL("http://localhost:9082/api/v3", BigInteger.valueOf(3L));
 
@@ -48,6 +49,8 @@ public enum Network {
                 return MAINNET;
             case "berlin":
                 return BERLIN;
+            case "lisbon":
+                return LISBON;
             default:
                 return LOCAL;
         }
