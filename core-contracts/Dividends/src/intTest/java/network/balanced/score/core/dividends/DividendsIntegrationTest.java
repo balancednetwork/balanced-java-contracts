@@ -35,7 +35,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class DividendsIntegrationTest {
-    static KeyWallet owner;
     static Balanced balanced;
 
     static BalancedClient alice;
@@ -44,8 +43,10 @@ public class DividendsIntegrationTest {
     static BalancedClient Dave;
     static BalancedClient Eve;
     static BalancedClient Ferry;
-    static BalancedClient ownerClient;
+    static BalancedClient owner;
+    static BalancedClient reader;
 
+    static BigInteger WEEK_IN_MICRO_SECONDS = BigInteger.valueOf(7L).multiply(MICRO_SECONDS_IN_A_DAY);
 
     @BeforeAll
     static void setup() throws Exception {
@@ -62,16 +63,16 @@ public class DividendsIntegrationTest {
         Eve = balanced.newClient();
         Ferry = balanced.newClient();
 
-        owner = balanced.owner;
-        ownerClient = balanced.ownerClient;
+        owner = balanced.ownerClient;
+        reader = balanced.newClient(BigInteger.ZERO);
 
         activateDividends();
     }
 
     public static void activateDividends() {
-        ownerClient.governance.setAdmin(balanced.dividends._address(), balanced.ownerClient.getAddress());
-        ownerClient.dividends.setDistributionActivationStatus(true);
-        ownerClient.governance.setAdmin(balanced.dividends._address(), balanced.governance._address());
+        owner.governance.setAdmin(balanced.dividends._address(), owner.getAddress());
+        owner.dividends.setDistributionActivationStatus(true);
+        owner.governance.setAdmin(balanced.dividends._address(), balanced.governance._address());
 
     }
 
@@ -94,14 +95,14 @@ public class DividendsIntegrationTest {
 
         BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
         // take loans
-        ownerClient.loans.depositAndBorrow(BigInteger.valueOf(1000).multiply(BigInteger.TEN.pow(18)), "bnUSD",
+        owner.loans.depositAndBorrow(BigInteger.valueOf(1000).multiply(BigInteger.TEN.pow(18)), "bnUSD",
                 loanAmount, null, null);
 
         BigInteger amount = new BigInteger("500").multiply(BigInteger.TEN.pow(18));
         // create bnusd market
 
-        ownerClient.staking.stakeICX(amount, Dave.getAddress(), null);
-        ownerClient.staking.stakeICX(new BigInteger("50").multiply(BigInteger.TEN.pow(18)),
+        owner.staking.stakeICX(amount, Dave.getAddress(), null);
+        owner.staking.stakeICX(new BigInteger("50").multiply(BigInteger.TEN.pow(18)),
                 Address.fromString(owner.getAddress().toString()), null);
 
         JSONObject data = new JSONObject();
@@ -111,36 +112,36 @@ public class DividendsIntegrationTest {
         balanced.increaseDay(1);
         balanced.syncDistributions();
         // claim rewards for the user
-        ownerClient.rewards.claimRewards(null);
+        owner.rewards.claimRewards(null);
 
         // provides liquidity to baln/Sicx pool by owner
-        ownerClient.baln.transfer(balanced.dex._address(), lpAmount, data.toString().getBytes());
-        ownerClient.sicx.transfer(balanced.dex._address(), lpAmount, data.toString().getBytes());
-        ownerClient.dex.add(balanced.baln._address(), balanced.sicx._address(), lpAmount, lpAmount, true);
-        ownerClient.baln.transfer(Dave.getAddress(),
+        owner.baln.transfer(balanced.dex._address(), lpAmount, data.toString().getBytes());
+        owner.sicx.transfer(balanced.dex._address(), lpAmount, data.toString().getBytes());
+        owner.dex.add(balanced.baln._address(), balanced.sicx._address(), lpAmount, lpAmount, true);
+        owner.baln.transfer(Dave.getAddress(),
                 BigInteger.valueOf(50).multiply(BigInteger.TEN.pow(18)), null);
 
         // stake balance by Dave
         Dave.baln.stake(lpAmount);
 
         String name = "BALN/sICX";
-        BigInteger pid = ownerClient.dex.getPoolId(balanced.baln._address(), balanced.sicx._address());
-        ownerClient.governance.setMarketName(pid, name);
+        BigInteger pid = owner.dex.getPoolId(balanced.baln._address(), balanced.sicx._address());
+        owner.governance.setMarketName(pid, name);
 
         // loans to create a dividends
-        ownerClient.loans.depositAndBorrow(BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18)), "bnUSD"
+        owner.loans.depositAndBorrow(BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18)), "bnUSD"
                 , loanAmount, null, null);
 
-        BigInteger balnHolderPercentage = ownerClient.dividends.getDividendsPercentage().get("baln_holders");
-        BigInteger feePercent = hexObjectToBigInteger(ownerClient.loans.getParameters().get("origination fee"));
+        BigInteger balnHolderPercentage = owner.dividends.getDividendsPercentage().get("baln_holders");
+        BigInteger feePercent = hexObjectToBigInteger(owner.loans.getParameters().get("origination fee"));
         BigInteger fee = loanAmount.multiply(feePercent).divide(POINTS);
         // Dividends for the BalnStaker
         BigInteger expectedDividendsForBalnStaker = fee.multiply(balnHolderPercentage).divide(EXA);
 
         Map<String, BigInteger> ownerDividends =
-                ownerClient.dividends.getUnclaimedDividends(Address.fromString(owner.getAddress().toString()));
+                owner.dividends.getUnclaimedDividends(Address.fromString(owner.getAddress().toString()));
         Map<String, BigInteger> DaveDividends =
-                ownerClient.dividends.getUnclaimedDividends(Dave.getAddress());
+                owner.dividends.getUnclaimedDividends(Dave.getAddress());
         BigInteger ownerDividendsBnusd = ownerDividends.getOrDefault(balanced.bnusd._address().toString(),
                 BigInteger.ZERO);
         BigInteger DaveDividendsBnusd = DaveDividends.getOrDefault(balanced.bnusd._address().toString(),
@@ -164,37 +165,37 @@ public class DividendsIntegrationTest {
         createNewUserForBBaln();
 
         // contract is updated with bbaln changes in dividends
-        balanced.ownerClient.dividends._update(System.getProperty("java"), null);
+        owner.dividends._update(System.getProperty("java"), null);
 
         Address addressAlice = alice.getAddress();
         Address addressBob = bob.getAddress();
         Address addressCharlie = charlie.getAddress();
 
-        Map<String, BigInteger> unclaimedDividendsAlice = ownerClient.dividends.getUnclaimedDividends(addressAlice);
-        Map<String, BigInteger> unclaimedDividendsBob = ownerClient.dividends.getUnclaimedDividends(addressBob);
-        Map<String, BigInteger> unclaimedDividendsCharlie = ownerClient.dividends.getUnclaimedDividends(addressCharlie);
+        Map<String, BigInteger> unclaimedDividendsAlice = owner.dividends.getUnclaimedDividends(addressAlice);
+        Map<String, BigInteger> unclaimedDividendsBob = owner.dividends.getUnclaimedDividends(addressBob);
+        Map<String, BigInteger> unclaimedDividendsCharlie = owner.dividends.getUnclaimedDividends(addressCharlie);
 
-        ownerClient.dividends.setBoostedBaln(alice.boostedBaln._address());
-        BigInteger feePercent = hexObjectToBigInteger(ownerClient.loans.getParameters().get("origination fee"));
+        owner.dividends.setBoostedBaln(alice.boostedBaln._address());
+        BigInteger feePercent = hexObjectToBigInteger(owner.loans.getParameters().get("origination fee"));
 
         // Act
-        BigInteger daoFundBalancePre = ownerClient.bnUSD.balanceOf(balanced.daofund._address());
+        BigInteger daoFundBalancePre = owner.bnUSD.balanceOf(balanced.daofund._address());
         BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
         BigInteger fee = loanAmount.multiply(feePercent).divide(POINTS);
 
         // loan taken after the update of the contract
-        ownerClient.loans.depositAndBorrow(BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18)), "bnUSD"
+        owner.loans.depositAndBorrow(BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18)), "bnUSD"
                 , loanAmount, null, null);
-        BigInteger daoFundBalancePost = ownerClient.bnUSD.balanceOf(balanced.daofund._address());
+        BigInteger daoFundBalancePost = owner.bnUSD.balanceOf(balanced.daofund._address());
 
         // dividends are sent to daofund directly as there are no boosted baln yet
         assertEquals(daoFundBalancePre.add(fee), daoFundBalancePost);
         // dividends shouldn't increase once bbalnDay is set unless there is some transaction
-        assertEquals(unclaimedDividendsAlice, ownerClient.dividends.getUnclaimedDividends(addressAlice));
-        assertEquals(unclaimedDividendsBob, ownerClient.dividends.getUnclaimedDividends(addressBob));
+        assertEquals(unclaimedDividendsAlice, owner.dividends.getUnclaimedDividends(addressAlice));
+        assertEquals(unclaimedDividendsBob, owner.dividends.getUnclaimedDividends(addressBob));
 
         // new user will have nothing unless he adds bbaln
-        assertEquals(unclaimedDividendsCharlie, ownerClient.dividends.getUnclaimedDividends(addressCharlie));
+        assertEquals(unclaimedDividendsCharlie, owner.dividends.getUnclaimedDividends(addressCharlie));
     }
 
     @Test
@@ -208,13 +209,11 @@ public class DividendsIntegrationTest {
         Address addressAlice = alice.getAddress();
         Address addressBob = bob.getAddress();
 
-        BigInteger unclaimedDividendsBeforeBob =
-                ownerClient.dividends.getUnclaimedDividends(addressBob).get(balanced.bnusd._address().toString());
+        Map<String, BigInteger> unclaimedDividendsBeforeBob = reader.dividends.getUnclaimedDividends(addressBob);
 
         // user unstakes all the baln token
         alice.baln.stake(BigInteger.ZERO);
         BigInteger availableBalnBalance = alice.baln.availableBalanceOf(addressAlice);
-        BigInteger WEEK_IN_MICRO_SECONDS = BigInteger.valueOf(7L).multiply(MICRO_SECONDS_IN_A_DAY);
 
         long unlockTime =
                 (System.currentTimeMillis() * 1000) + (BigInteger.valueOf(4).multiply(WEEK_IN_MICRO_SECONDS)).longValue();
@@ -225,97 +224,69 @@ public class DividendsIntegrationTest {
 
         BigInteger collateral = BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18));
         BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
-        BigInteger feePercent = hexObjectToBigInteger(ownerClient.loans.getParameters().get("origination fee"));
-        BigInteger daoFundBalancePre = ownerClient.bnUSD.balanceOf(balanced.daofund._address());
+        BigInteger sICXFee = EXA.multiply(BigInteger.valueOf(100));
+        owner.staking.stakeICX(sICXFee, null, null);
+        BigInteger feePercent = hexObjectToBigInteger(owner.loans.getParameters().get("origination fee"));
         BigInteger fee = loanAmount.multiply(feePercent).divide(POINTS);
-        BigInteger unclaimedDividendsBeforeAlice =
-                ownerClient.dividends.getUnclaimedDividends(addressAlice).get(balanced.bnusd._address().toString());
+
+        BigInteger daoFundBnUSDBalancePre = owner.bnUSD.balanceOf(balanced.daofund._address());
+        BigInteger daoFundSICXBalancePre = owner.sicx.balanceOf(balanced.daofund._address());
+        Map<String, BigInteger> unclaimedDividendsBeforeAlice = owner.dividends.getUnclaimedDividends(addressAlice);
 
         // did tx to create a dividends
-        ownerClient.loans.depositAndBorrow(collateral, "bnUSD"
-                , loanAmount, null, null);
 
-        BigInteger unclaimedDividendsAfterAlice =
-                ownerClient.dividends.getUnclaimedDividends(addressAlice).get(balanced.bnusd._address().toString());
+        owner.stakeDepositAndBorrow(collateral, loanAmount);
+        owner.staking.stakeICX(sICXFee, null, null);
+        owner.sicx.transfer(balanced.feehandler._address(), sICXFee, null);
 
-        BigInteger daoFundBalancePost = ownerClient.bnUSD.balanceOf(balanced.daofund._address());
-        BigInteger daoPercentage = ownerClient.dividends.getDividendsPercentage().get("daofund");
-        BigInteger daoFee = fee.multiply(daoPercentage).divide(EXA);
+        Map<String, BigInteger> unclaimedDividendsAfterAlice = owner.dividends.getUnclaimedDividends(addressAlice);
+
+        BigInteger daoFundBnUSDBalancePost = reader.bnUSD.balanceOf(balanced.daofund._address());
+        BigInteger daoFundSICXBalancePost = reader.sicx.balanceOf(balanced.daofund._address());
+        BigInteger daoPercentage = reader.dividends.getDividendsPercentage().get("daofund");
+        BigInteger daoFeeBnUSD = fee.multiply(daoPercentage).divide(EXA);
+        BigInteger daoFeeSICX = sICXFee.multiply(daoPercentage).divide(EXA);
 
         // daofund doesn't get all the dividends value once there is a supply in bbaln
-        assertEquals(daoFundBalancePre.add(daoFee), daoFundBalancePost);
+        assertEquals(daoFundBnUSDBalancePre.add(daoFeeBnUSD), daoFundBnUSDBalancePost);
+        assertEquals(daoFundSICXBalancePre.add(daoFeeSICX), daoFundSICXBalancePost);
 
-        // unclaimed dividends increases for Alice once the dividends is received by contract
-        assertTrue(unclaimedDividendsAfterAlice.compareTo(unclaimedDividendsBeforeAlice) > 0);
+        // new fees are generated
+        owner.staking.stakeICX(sICXFee, null, null);
+        owner.sicx.transfer(balanced.feehandler._address(), sICXFee, null);
+        owner.loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
 
-        // day changes and creation of dividends
-        balanced.increaseDay(1);
-        ownerClient.loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
-
-        balanced.increaseDay(1);
-        ownerClient.loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
-
-        balanced.increaseDay(1);
-        ownerClient.loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
-
-        BigInteger unclaimedDividendsAfterBob =
-                ownerClient.dividends.getUnclaimedDividends(addressBob).get(balanced.bnusd._address().toString());
-        BigInteger newDividendsAlice =
-                ownerClient.dividends.getUnclaimedDividends(addressAlice).get(balanced.bnusd._address().toString());
+        Map<String, BigInteger> unclaimedDividendsAfterBob = owner.dividends.getUnclaimedDividends(addressBob);
+        Map<String, BigInteger> newDividendsAlice = owner.dividends.getUnclaimedDividends(addressAlice);
 
         /* as Bob is not migrated to bbaln , the unclaimed dividends
          remains same even after days */
         assertEquals(unclaimedDividendsAfterBob, unclaimedDividendsBeforeBob);
 
         /* dividends keeps on increasing for alice after dividends
-         is received by contract */
-        assertTrue(newDividendsAlice.compareTo(unclaimedDividendsAfterAlice) > 0);
+        is received by contract */
+        assertTrue(newDividendsAlice.get(balanced.sicx._address().toString()).compareTo(unclaimedDividendsAfterAlice.get(balanced.sicx._address().toString())) > 0);
+        assertTrue(newDividendsAlice.get(balanced.bnusd._address().toString()).compareTo(unclaimedDividendsAfterAlice.get(balanced.bnusd._address().toString())) > 0);
 
-        BigInteger bobBnusdBalanceBefore = ownerClient.bnUSD.balanceOf(addressBob);
-
-        // bob claim dividends
-        bob.dividends.claimDividends();
-
-        BigInteger bobBnusdBalanceAfter = ownerClient.bnUSD.balanceOf(addressBob);
-        BigInteger newUnclaimedDividendsBob =
-                ownerClient.dividends.getUnclaimedDividends(addressBob).get(balanced.bnusd._address().toString());
-
-        // unclaimedDividends goes to bob wallet
-        assertEquals(bobBnusdBalanceAfter, bobBnusdBalanceBefore.add(unclaimedDividendsAfterBob));
-
-        /* bob claims the dividends for baln stake after many days of bbaln start.
-         once bob claims dividends the unclaimedDividends become 0 */
-        assertEquals(newUnclaimedDividendsBob, BigInteger.ZERO);
+        verifyClaim(bob);
+        verifyClaim(alice);
     }
 
     @Test
     @Order(5)
     void testBBaln_claimOnly() {
-        /* Eve claims the dividends after the contract is updated
-        without unstaking staked baln token or without creating lock */
-        Address addressEve = Eve.getAddress();
-        BigInteger unclaimedDividendsBeforeEve =
-                ownerClient.dividends.getUnclaimedDividends(addressEve).get(balanced.bnusd._address().toString());
-        BigInteger bnusdBeforeEve = Eve.bnUSD.balanceOf(addressEve);
-        Eve.dividends.claimDividends();
-        BigInteger unclaimedDividendsAfterEve =
-                ownerClient.dividends.getUnclaimedDividends(addressEve).get(balanced.bnusd._address().toString());
-        BigInteger bnusdAfterEve = Eve.bnUSD.balanceOf(addressEve);
-        // unclaimed dividends become 0 after claiming
-        assertEquals(unclaimedDividendsAfterEve, BigInteger.ZERO);
+        verifyClaim(Eve);
         // unclaimed dividends should go to Eve's wallet after claiming
-        assertEquals(bnusdBeforeEve.add(unclaimedDividendsBeforeEve), bnusdAfterEve);
 
         BigInteger collateral = BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18));
         BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
-        ownerClient.loans.depositAndBorrow(collateral, "bnUSD"
+        owner.loans.depositAndBorrow(collateral, "bnUSD"
                 , loanAmount, null, null);
-        unclaimedDividendsAfterEve =
-                ownerClient.dividends.getUnclaimedDividends(addressEve).get(balanced.bnusd._address().toString());
+        BigInteger unclaimedDividendsAfterEve =
+                owner.dividends.getUnclaimedDividends(Eve.getAddress()).get(balanced.bnusd._address().toString());
 
         // unclaimed dividends remains 0 for that user
         assertEquals(unclaimedDividendsAfterEve, BigInteger.ZERO);
-
     }
 
     @Test
@@ -324,13 +295,13 @@ public class DividendsIntegrationTest {
         /* Ferry claims the dividends after unstaking baln token. */
         Address addressFerry = Ferry.getAddress();
         BigInteger unclaimedDividendsBeforeFerry =
-                ownerClient.dividends.getUnclaimedDividends(addressFerry).get(balanced.bnusd._address().toString());
+                owner.dividends.getUnclaimedDividends(addressFerry).get(balanced.bnusd._address().toString());
         BigInteger bnusdBeforeFerry = Ferry.bnUSD.balanceOf(addressFerry);
         // Ferry unstakes baln token
         Ferry.baln.stake(BigInteger.ZERO);
         Ferry.dividends.claimDividends();
         BigInteger unclaimedDividendsAfterFerry =
-                ownerClient.dividends.getUnclaimedDividends(addressFerry).get(balanced.bnusd._address().toString());
+                owner.dividends.getUnclaimedDividends(addressFerry).get(balanced.bnusd._address().toString());
         BigInteger bnusdAfterFerry = Eve.bnUSD.balanceOf(addressFerry);
         // unclaimed dividends become 0 after claiming
         assertEquals(unclaimedDividendsAfterFerry, BigInteger.ZERO);
@@ -339,10 +310,10 @@ public class DividendsIntegrationTest {
 
         BigInteger collateral = BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18));
         BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
-        ownerClient.loans.depositAndBorrow(collateral, "bnUSD"
+        owner.loans.depositAndBorrow(collateral, "bnUSD"
                 , loanAmount, null, null);
         unclaimedDividendsAfterFerry =
-                ownerClient.dividends.getUnclaimedDividends(addressFerry).get(balanced.bnusd._address().toString());
+                owner.dividends.getUnclaimedDividends(addressFerry).get(balanced.bnusd._address().toString());
 
         // unclaimed dividends remains 0 for that user
         assertEquals(unclaimedDividendsAfterFerry, BigInteger.ZERO);
@@ -362,21 +333,21 @@ public class DividendsIntegrationTest {
         BigInteger collateral = BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18));
 
         BigInteger unclaimedDividendsBeforeAlice =
-                ownerClient.dividends.getUnclaimedDividends(addressAlice).get(ownerClient.bnUSD._address().toString());
-        BigInteger bnusdBalanceBeforeAlice = ownerClient.bnUSD.balanceOf(addressAlice);
+                owner.dividends.getUnclaimedDividends(addressAlice).get(owner.bnUSD._address().toString());
+        BigInteger bnusdBalanceBeforeAlice = owner.bnUSD.balanceOf(addressAlice);
 
         // alice claim dividends
         alice.dividends.claimDividends();
 
         BigInteger newUnclaimedDividendsAlice =
-                ownerClient.dividends.getUnclaimedDividends(addressAlice).get(ownerClient.bnUSD._address().toString());
-        BigInteger bnusdAfterAlice = ownerClient.bnUSD.balanceOf(addressAlice);
+                owner.dividends.getUnclaimedDividends(addressAlice).get(owner.bnUSD._address().toString());
+        BigInteger bnusdAfterAlice = owner.bnUSD.balanceOf(addressAlice);
 
         // claims second time
         alice.dividends.claimDividends();
 
         // bnusd in Alice wallet doesn't increase
-        assertEquals(bnusdAfterAlice, ownerClient.bnUSD.balanceOf(addressAlice));
+        assertEquals(bnusdAfterAlice, owner.bnUSD.balanceOf(addressAlice));
 
         BigInteger expectedBnusdAfterClaim = bnusdBalanceBeforeAlice.add(unclaimedDividendsBeforeAlice);
 
@@ -387,11 +358,11 @@ public class DividendsIntegrationTest {
         assertEquals(newUnclaimedDividendsAlice, BigInteger.ZERO);
 
         balanced.increaseDay(1);
-        ownerClient.loans.depositAndBorrow(collateral, "bnUSD"
+        owner.loans.depositAndBorrow(collateral, "bnUSD"
                 , loanAmount, null, null);
 
         newUnclaimedDividendsAlice =
-                ownerClient.dividends.getUnclaimedDividends(addressAlice).get(balanced.bnusd._address().toString());
+                owner.dividends.getUnclaimedDividends(addressAlice).get(balanced.bnusd._address().toString());
 
         // unclaimed dividends have some value once dividends is received by contract
         assertTrue(newUnclaimedDividendsAlice.compareTo(BigInteger.ZERO) > 0);
@@ -415,31 +386,31 @@ public class DividendsIntegrationTest {
         String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
 
         // a new user will have 0 accumulated dividends
-        assertEquals(alice.dividends.getUnclaimedDividends(addressCharlie).get(ownerClient.bnUSD._address().toString()), BigInteger.ZERO);
+        assertEquals(alice.dividends.getUnclaimedDividends(addressCharlie).get(owner.bnUSD._address().toString()), BigInteger.ZERO);
 
         // locks baln for 4 weeks
         charlie.baln.transfer(alice.boostedBaln._address(), availableBalnBalanceCharlie.divide(BigInteger.TWO),
                 data.getBytes());
 
         // for dividends
-        ownerClient.loans.depositAndBorrow(collateral, "bnUSD"
+        owner.loans.depositAndBorrow(collateral, "bnUSD"
                 , loanAmount, null, null);
 
         BigInteger unclaimedDividendsBeforeCharlie =
-                alice.dividends.getUnclaimedDividends(addressCharlie).get(ownerClient.bnUSD._address().toString());
-        BigInteger bnusdBalancePreCharlie = ownerClient.bnUSD.balanceOf(addressCharlie);
+                alice.dividends.getUnclaimedDividends(addressCharlie).get(owner.bnUSD._address().toString());
+        BigInteger bnusdBalancePreCharlie = owner.bnUSD.balanceOf(addressCharlie);
 
         // after CHarlie locks baln, he will start getting dividends
         assertTrue(unclaimedDividendsBeforeCharlie.compareTo(BigInteger.ZERO) > 0);
 
         charlie.dividends.claimDividends();
 
-        BigInteger bnusdBalancePostCharlie = ownerClient.bnUSD.balanceOf(addressCharlie);
+        BigInteger bnusdBalancePostCharlie = owner.bnUSD.balanceOf(addressCharlie);
 
         assertEquals(bnusdBalancePostCharlie, bnusdBalancePreCharlie.add(unclaimedDividendsBeforeCharlie));
 
         // after claiming dividends unclaimed dividends will be zero unless dividends is received.
-        assertEquals(alice.dividends.getUnclaimedDividends(addressCharlie).get(ownerClient.bnUSD._address().toString()), BigInteger.ZERO);
+        assertEquals(alice.dividends.getUnclaimedDividends(addressCharlie).get(owner.bnUSD._address().toString()), BigInteger.ZERO);
 
     }
 
@@ -453,33 +424,33 @@ public class DividendsIntegrationTest {
         BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
         BigInteger collateral = BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18));
 
-        ownerClient.loans.depositAndBorrow(collateral, "bnUSD"
+        owner.loans.depositAndBorrow(collateral, "bnUSD"
                 , loanAmount, null, null);
         BigInteger unclaimedDividendsBefore =
-                alice.dividends.getUnclaimedDividends(addressCharlie).get(ownerClient.bnUSD._address().toString());
-        ownerClient.loans.depositAndBorrow(collateral, "bnUSD"
+                alice.dividends.getUnclaimedDividends(addressCharlie).get(owner.bnUSD._address().toString());
+        owner.loans.depositAndBorrow(collateral, "bnUSD"
                 , loanAmount, null, null);
         BigInteger unclaimedDividendsAfter =
-                alice.dividends.getUnclaimedDividends(addressCharlie).get(ownerClient.bnUSD._address().toString());
+                alice.dividends.getUnclaimedDividends(addressCharlie).get(owner.bnUSD._address().toString());
         // checking if the user are getting same dividends everytime
         assertTrue(unclaimedDividendsAfter.subtract(unclaimedDividendsBefore.add(unclaimedDividendsBefore)).compareTo(BigInteger.valueOf(1)) <= 0);
         charlie.dividends.claimDividends();
 
 
         // charlie unclaimed dividends after claim is 0
-        assertEquals(charlie.dividends.getUnclaimedDividends(addressCharlie).get(ownerClient.bnUSD._address().toString()), BigInteger.ZERO);
+        assertEquals(charlie.dividends.getUnclaimedDividends(addressCharlie).get(owner.bnUSD._address().toString()), BigInteger.ZERO);
 
-        ownerClient.loans.depositAndBorrow(collateral, "bnUSD"
+        owner.loans.depositAndBorrow(collateral, "bnUSD"
                 , loanAmount, null, null);
         unclaimedDividendsBefore =
-                charlie.dividends.getUnclaimedDividends(addressCharlie).get(ownerClient.bnUSD._address().toString());
+                charlie.dividends.getUnclaimedDividends(addressCharlie).get(owner.bnUSD._address().toString());
         charlie.dividends.claimDividends();
 
         alice.boostedBaln.kick(addressCharlie);
-        ownerClient.loans.depositAndBorrow(collateral, "bnUSD"
+        owner.loans.depositAndBorrow(collateral, "bnUSD"
                 , loanAmount, null, null);
         unclaimedDividendsAfter =
-                alice.dividends.getUnclaimedDividends(addressCharlie).get(ownerClient.bnUSD._address().toString());
+                alice.dividends.getUnclaimedDividends(addressCharlie).get(owner.bnUSD._address().toString());
         // user dividends is decreased once they are kicked
         assertTrue(unclaimedDividendsAfter.compareTo(unclaimedDividendsBefore) <= 0);
     }
@@ -488,7 +459,7 @@ public class DividendsIntegrationTest {
     @Order(10)
     void testRemoveCategories() {
         // test the removal of categories from dividends
-        ownerClient.governance.setAdmin(balanced.dividends._address(), balanced.ownerClient.getAddress());
+        owner.governance.setAdmin(balanced.dividends._address(), owner.getAddress());
 
         DistributionPercentage map = new DistributionPercentage();
         // firstly setting the baln_holders as 0 percentage
@@ -504,14 +475,14 @@ public class DividendsIntegrationTest {
         };
 
         // setting dividends category to 0 for baln_holders at first
-        ownerClient.dividends.setDividendsCategoryPercentage(percentMap);
+        owner.dividends.setDividendsCategoryPercentage(percentMap);
 
         // removing the categories
-        ownerClient.dividends.removeDividendsCategory("baln_holders");
-        ownerClient.governance.setAdmin(balanced.dividends._address(), balanced.governance._address());
+        owner.dividends.removeDividendsCategory("baln_holders");
+        owner.governance.setAdmin(balanced.dividends._address(), balanced.governance._address());
 
         List<String> categories;
-        categories = ownerClient.dividends.getDividendsCategories();
+        categories = owner.dividends.getDividendsCategories();
         assertEquals(1, categories.size());
 
     }
@@ -521,12 +492,12 @@ public class DividendsIntegrationTest {
     void testAddCategories() {
         // add new categories in dividends
 
-        ownerClient.governance.setAdmin(balanced.dividends._address(), balanced.ownerClient.getAddress());
-        ownerClient.dividends.setDistributionActivationStatus(true);
-        ownerClient.dividends.addDividendsCategory("baln_holders");
-        ownerClient.governance.setAdmin(balanced.dividends._address(), balanced.governance._address());
+        owner.governance.setAdmin(balanced.dividends._address(), owner.getAddress());
+        owner.dividends.setDistributionActivationStatus(true);
+        owner.dividends.addDividendsCategory("baln_holders");
+        owner.governance.setAdmin(balanced.dividends._address(), balanced.governance._address());
         List<String> categories;
-        categories = ownerClient.dividends.getDividendsCategories();
+        categories = owner.dividends.getDividendsCategories();
         assertEquals("baln_holders", categories.get(categories.size() - 1));
     }
 
@@ -535,7 +506,7 @@ public class DividendsIntegrationTest {
     void testChangeInPercentage() {
 
         balanced.increaseDay(1);
-        ownerClient.governance.setAdmin(balanced.dividends._address(), balanced.ownerClient.getAddress());
+        owner.governance.setAdmin(balanced.dividends._address(), owner.getAddress());
 
         // verify the change in percentage
         DistributionPercentage map = new DistributionPercentage();
@@ -552,22 +523,22 @@ public class DividendsIntegrationTest {
 
 
         // set new percentage of categories of dividends
-        ownerClient.dividends.setDividendsCategoryPercentage(percentMap);
-        ownerClient.governance.setAdmin(balanced.dividends._address(), balanced.governance._address());
+        owner.dividends.setDividendsCategoryPercentage(percentMap);
+        owner.governance.setAdmin(balanced.dividends._address(), balanced.governance._address());
 
-        BigInteger daoBalanceBefore = ownerClient.bnUSD.balanceOf(balanced.daofund._address());
+        BigInteger daoBalanceBefore = owner.bnUSD.balanceOf(balanced.daofund._address());
 
         BigInteger loanAmount = BigInteger.valueOf(50).multiply(BigInteger.TEN.pow(18));
         // take loans
-        ownerClient.loans.depositAndBorrow(BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18)), "bnUSD",
+        owner.loans.depositAndBorrow(BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18)), "bnUSD",
                 loanAmount, null, null);
 
         BigInteger originationFees = BigInteger.valueOf(100);
         BigInteger dividendsBalance = (loanAmount.multiply(originationFees)).divide(BigInteger.valueOf(10000));
-        Map<String, BigInteger> daoFundDividendsPercent = ownerClient.dividends.getDividendsPercentage();
+        Map<String, BigInteger> daoFundDividendsPercent = owner.dividends.getDividendsPercentage();
         BigInteger dividendsToDao = daoFundDividendsPercent.get("daofund").multiply(dividendsBalance).divide(EXA);
 
-        BigInteger daoBalanceAfter = ownerClient.bnUSD.balanceOf(balanced.daofund._address());
+        BigInteger daoBalanceAfter = owner.bnUSD.balanceOf(balanced.daofund._address());
 
         assertEquals(daoBalanceAfter, daoBalanceBefore.add(dividendsToDao));
     }
@@ -585,7 +556,7 @@ public class DividendsIntegrationTest {
         BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
         BigInteger collateral = BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18));
 
-        ownerClient.loans.depositAndBorrow(collateral, "bnUSD"
+        owner.loans.depositAndBorrow(collateral, "bnUSD"
                 , loanAmount, null, null);
 
         balanced.syncDistributions();
@@ -594,13 +565,13 @@ public class DividendsIntegrationTest {
             balanced.syncDistributions();
         }
 
-        balanced.ownerClient.rewards.claimRewards(null);
+        owner.rewards.claimRewards(null);
         // sent baln token to two users
-        balanced.ownerClient.baln.transfer(addressAlice, collateral, new byte[0]);
-        balanced.ownerClient.baln.transfer(addressBob, collateral, new byte[0]);
-        balanced.ownerClient.baln.transfer(addressCharlie, collateral, new byte[0]);
-        balanced.ownerClient.baln.transfer(addressEve, collateral, new byte[0]);
-        balanced.ownerClient.baln.transfer(addressFerry, collateral, new byte[0]);
+        owner.baln.transfer(addressAlice, collateral, new byte[0]);
+        owner.baln.transfer(addressBob, collateral, new byte[0]);
+        owner.baln.transfer(addressCharlie, collateral, new byte[0]);
+        owner.baln.transfer(addressEve, collateral, new byte[0]);
+        owner.baln.transfer(addressFerry, collateral, new byte[0]);
 
         // staking baln token with multiple different users.
         BigInteger stakedAmount = BigInteger.valueOf(50).multiply(BigInteger.TEN.pow(18));
@@ -610,7 +581,30 @@ public class DividendsIntegrationTest {
         Ferry.baln.stake(stakedAmount);
 
         // loan taken to send some dividends to contract
-        ownerClient.loans.depositAndBorrow(collateral, "bnUSD"
+        owner.loans.depositAndBorrow(collateral, "bnUSD"
                 , loanAmount, null, null);
+    }
+
+    private void verifyClaim(BalancedClient client) {
+        BigInteger bnUSDBefore = reader.bnUSD.balanceOf(client.getAddress());
+        BigInteger sICXBefore = reader.sicx.balanceOf(client.getAddress());
+        BigInteger balnBefore = reader.baln.balanceOf(client.getAddress());
+
+        Map<String, BigInteger> divs = reader.dividends.getUnclaimedDividends(client.getAddress());
+        client.dividends.claimDividends();
+
+        BigInteger bnUSDAfter = reader.bnUSD.balanceOf(client.getAddress());
+        BigInteger sICXAfter = reader.sicx.balanceOf(client.getAddress());
+        BigInteger balnAfter = reader.baln.balanceOf(client.getAddress());
+
+        assertEquals(bnUSDBefore.add(divs.get(balanced.bnusd._address().toString())), bnUSDAfter);
+        assertEquals(sICXBefore.add(divs.get(balanced.sicx._address().toString())), sICXAfter);
+        assertEquals(balnBefore.add(divs.get(balanced.baln._address().toString())), balnAfter);
+
+        divs = reader.dividends.getUnclaimedDividends(client.getAddress());
+
+        assertEquals(BigInteger.ZERO, divs.getOrDefault(balanced.bnusd._address().toString(), BigInteger.ZERO));
+        assertEquals(BigInteger.ZERO, divs.getOrDefault(balanced.sicx._address().toString(), BigInteger.ZERO));
+        assertEquals(BigInteger.ZERO, divs.getOrDefault(balanced.baln._address().toString(), BigInteger.ZERO));
     }
 }
