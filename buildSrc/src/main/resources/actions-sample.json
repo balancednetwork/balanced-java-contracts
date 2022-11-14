@@ -21,7 +21,8 @@
           "stakedLp": "stakedLp",
           "reserve": "reserve",
           "oracle": "oracle",
-          "balancedOracle": "balancedoracle"
+          "balancedOracle": "balancedoracle",
+          "bBaln": "bBaln"
         }
       }
     },

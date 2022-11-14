@@ -52,6 +52,7 @@ public class Balanced {
     public DefaultScoreClient staking;
     public DefaultScoreClient stakedLp;
     public DefaultScoreClient stability;
+    public DefaultScoreClient bBaln;
     public DefaultScoreClient balancedOracle;
 
     public Map<Address, BalancedClient> balancedClients;
@@ -108,19 +109,24 @@ public class Balanced {
         Hash sicxTx = deployAsync(owner, "Sicx", Map.of("_admin", staking._address()));
 
         baln = getDeploymentResult(owner, balnTx);
+        rewards = getDeploymentResult(owner, rewardsTx);
+        dividends = getDeploymentResult(owner, dividendsTx);
+        Hash bBalnTx = deployAsync(owner, "bBaln", Map.of("balnAddress", baln._address(), "rewardAddress",
+                rewards._address(), "dividendsAddress", dividends._address(), "name", "Boosted Baln", "symbol",
+                "bBaln"));
+
         bwt = getDeploymentResult(owner, bwtTx);
         dex = getDeploymentResult(owner, dexTx);
         loans = getDeploymentResult(owner, loansTx);
         rebalancing = getDeploymentResult(owner, rebalancingTx);
-        rewards = getDeploymentResult(owner, rewardsTx);
         daofund = getDeploymentResult(owner, daofundTx);
-        dividends = getDeploymentResult(owner, dividendsTx);
         oracle = getDeploymentResult(owner, oracleTx);
         reserve = getDeploymentResult(owner, reserveTx);
         router = getDeploymentResult(owner, routerTx);
         stakedLp = getDeploymentResult(owner, stakedLpTx);
         sicx = getDeploymentResult(owner, sicxTx);
         stability = getDeploymentResult(owner, stabilityTx);
+        bBaln = getDeploymentResult(owner, bBalnTx);
         balancedOracle = getDeploymentResult(owner, balancedOracleTx);
 
         ownerClient = new BalancedClient(this, owner);
@@ -144,6 +150,7 @@ public class Balanced {
         balancedAddresses.rebalancing = rebalancing._address();
         balancedAddresses.feehandler = feehandler._address();
         balancedAddresses.stakedLp = stakedLp._address();
+        balancedAddresses.bBaln = bBaln._address();
         balancedAddresses.balancedOracle = balancedOracle._address();
 
         ownerClient.governance.setAddresses(balancedAddresses);
@@ -175,6 +182,7 @@ public class Balanced {
         ownerClient.rewards.addDataProvider(stakedLp._address());
         ownerClient.rewards.addDataProvider(dex._address());
         ownerClient.rewards.addDataProvider(loans._address());
+        ownerClient.rewards.addDataProvider(bBaln._address());
 
         ownerClient.governance.setFeeProcessingInterval(BigInteger.ONE);
 

@@ -31,8 +31,7 @@ import java.math.BigInteger;
 import java.util.Map;
 
 import static network.balanced.score.lib.test.integration.BalancedUtils.*;
-import static network.balanced.score.lib.utils.Constants.EXA;
-import static network.balanced.score.lib.utils.Constants.POINTS;
+import static network.balanced.score.lib.utils.Constants.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -64,7 +63,6 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         });
 
         owner.governance.setRebalancingThreshold(BigInteger.TEN.pow(17));
-        owner.governance.setVoteDuration(BigInteger.TWO);
         owner.governance.setVoteDefinitionFee(voteDefinitionFee);
         owner.governance.setBalnVoteDefinitionCriterion(BigInteger.ZERO);
         owner.governance.setQuorum(BigInteger.ONE);
@@ -109,7 +107,6 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
     void liquidate_useReserve_multicollateral() throws Exception {
         // Arrange
         balanced.increaseDay(1);
-        claimAllRewards();
         BigInteger BAD_DEBT_RETIREMENT_BONUS = BigInteger.valueOf(1_000);
         BalancedClient voter = balanced.newClient();
         depositToStabilityContract(voter, voteDefinitionFee.multiply(BigInteger.TWO));
@@ -231,7 +228,6 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
     void liquidate_useReserve() throws Exception {
         // Arrange
         balanced.increaseDay(1);
-        claimAllRewards();
         BalancedClient voter = balanced.newClient();
         depositToStabilityContract(voter, voteDefinitionFee.multiply(BigInteger.TWO));
 
@@ -293,7 +289,6 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
     void liquidate_useReserve_specificCollateral() throws Exception {
         // Arrange
         balanced.increaseDay(1);
-        claimAllRewards();
         BigInteger BAD_DEBT_RETIREMENT_BONUS = BigInteger.valueOf(1_000);
         BalancedClient voter = balanced.newClient();
         depositToStabilityContract(voter, voteDefinitionFee.multiply(BigInteger.TWO));
@@ -403,10 +398,14 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
                 continue;
             }
 
-            client.rewards.claimRewards();
-            BigInteger balance = client.baln.balanceOf(client.getAddress());
-            if (balance.compareTo(EXA) > 0) {
-                client.baln.stake(balance);
+            client.rewards.claimRewards(null);
+            BigInteger balance = client.baln.availableBalanceOf(client.getAddress());
+            BigInteger boostedBalance = client.boostedBaln.balanceOf(client.getAddress(), BigInteger.ZERO);
+            if (boostedBalance.equals(BigInteger.ZERO) && balance.compareTo(EXA) > 0) {
+                long unlockTime =
+                        (System.currentTimeMillis() * 1000) + (BigInteger.valueOf(52).multiply(MICRO_SECONDS_IN_A_DAY).multiply(BigInteger.valueOf(7))).longValue();
+                String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
+                client.baln.transfer(owner.boostedBaln._address(), balance, data.getBytes());
             }
         }
     }
@@ -431,6 +430,8 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         JsonArray actions = new JsonArray()
                 .add(setLockingRatioCallSICX)
                 .add(setLockingRatioCallIETH);
+
+        claimAllRewards();
         executeVoteActions(balanced, voter, name, actions);
     }
 

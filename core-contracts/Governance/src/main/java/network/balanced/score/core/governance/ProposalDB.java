@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,9 +31,10 @@ public class ProposalDB {
     public final VarDB<Address> proposer;
     public final VarDB<BigInteger> quorum;
     public final VarDB<BigInteger> majority;
-    public final VarDB<BigInteger> voteSnapshot;
-    public final VarDB<BigInteger> startSnapshot;
-    public final VarDB<BigInteger> endSnapshot;
+    public final VarDB<BigInteger> snapshotBlock;
+    public final VarDB<BigInteger> startDay;
+    public final VarDB<BigInteger> endDay;
+    public final VarDB<String> forumLink;
     public final VarDB<String> actions;
     public final VarDB<String> name;
     public final VarDB<String> description;
@@ -55,9 +56,10 @@ public class ProposalDB {
         proposer = Context.newVarDB(key + "_proposer", Address.class);
         quorum = Context.newVarDB(key + "_quorum", BigInteger.class);
         majority = Context.newVarDB(key + "_majority", BigInteger.class);
-        voteSnapshot = Context.newVarDB(key + "_vote_snapshot", BigInteger.class);
-        startSnapshot = Context.newVarDB(key + "_start_snapshot", BigInteger.class);
-        endSnapshot = Context.newVarDB(key + "_end_snapshot", BigInteger.class);
+        snapshotBlock = Context.newVarDB(key + "_vote_snapshot", BigInteger.class);
+        startDay = Context.newVarDB(key + "_start_snapshot", BigInteger.class);
+        endDay = Context.newVarDB(key + "_end_snapshot", BigInteger.class);
+        forumLink = Context.newVarDB(key + "_forum_link", String.class);
         actions = Context.newVarDB(key + "_actions", String.class);
         name = Context.newVarDB(key + "_name", String.class);
         description = Context.newVarDB(key + "_description", String.class);
@@ -91,6 +93,7 @@ public class ProposalDB {
                                             BigInteger snapshot,
                                             BigInteger start,
                                             BigInteger end,
+                                            String link,
                                             String actions,
                                             BigInteger fee) {
         BigInteger voteIndex = ProposalDB.getProposalCount().add(BigInteger.ONE);
@@ -101,9 +104,10 @@ public class ProposalDB {
         newProposal.proposer.set(proposer);
         newProposal.quorum.set(quorum);
         newProposal.majority.set(majority);
-        newProposal.voteSnapshot.set(snapshot);
-        newProposal.startSnapshot.set(start);
-        newProposal.endSnapshot.set(end);
+        newProposal.snapshotBlock.set(snapshot);
+        newProposal.startDay.set(start);
+        newProposal.endDay.set(end);
+        newProposal.forumLink.set(link);
         newProposal.actions.set(actions);
         newProposal.name.set(name);
         newProposal.description.set(description);
