@@ -198,6 +198,11 @@ public class DAOfundImpl implements DAOfund {
         POLManager.withdrawLiquidity(pid, amount);
     }
 
+    @External
+    public void stakeLPTokens(BigInteger pid) {
+        POLManager.stakeLPTokens(pid);
+    }
+
     @External(readonly = true)
     public BigInteger getBalnEarnings() {
         return POLManager.getBalnEarnings();

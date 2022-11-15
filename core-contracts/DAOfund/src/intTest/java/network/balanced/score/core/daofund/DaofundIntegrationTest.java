@@ -206,6 +206,33 @@ class DaofundIntegrationTest implements ScoreIntegrationTest {
         assertEquals(sICXBalance.add(expectedSICXWithdrawn), reader.sicx.balanceOf(balanced.daofund._address()));
     }
 
+    @Test
+    @Order(5)
+    void protocolOwnedLiquidity_stakeLpTokens() throws Exception {
+        // Arrange
+        byte[] tokenDepositData = "{\"method\":\"_deposit\"}".getBytes();
+        BigInteger pid = reader.dex.getPoolId(balanced.sicx._address(), balanced.bnusd._address());
+        BalancedClient client = balanced.newClient();
+        BigInteger collateral = EXA.multiply(BigInteger.valueOf(10000));
+        BigInteger loan = EXA.multiply(BigInteger.valueOf(100));
+        BigInteger lpAmount = loan;
+
+        client.stakeDepositAndBorrow(collateral, loan);
+        client.staking.stakeICX(lpAmount.multiply(BigInteger.TWO), null, null);
+        client.bnUSD.transfer(balanced.dex._address(), lpAmount, tokenDepositData);
+        client.sicx.transfer(balanced.dex._address(), lpAmount, tokenDepositData);
+        client.dex.add(balanced.sicx._address(), balanced.bnusd._address(), lpAmount, lpAmount, true);
+        BigInteger lpBalance = client.dex.balanceOf(client.getAddress(), pid);
+
+        // Act
+        client.dex.transfer(balanced.daofund._address(), lpBalance, pid, new byte[0]);
+        client.daofund.stakeLPTokens(pid);
+
+        // Assert
+        assertEquals(BigInteger.ZERO, client.dex.balanceOf(client.getAddress(), pid));
+        assertEquals(lpBalance, client.stakedLp.balanceOf(balanced.daofund._address(), pid));
+    }
+
     private BigInteger getHoldingInPool(BigInteger pid, Address token, BigInteger lpTokens) {
         BigInteger totalTokens = reader.dex.getPoolTotal(pid, token);
         BigInteger totalLpTokens = reader.dex.totalSupply(pid);

@@ -281,4 +281,20 @@ class DAOfundImplTest extends TestBase {
         verify(mockBalanced.stakedLp.mock).unstake(pid, lpBalance);
         verify(mockBalanced.dex.mock).remove(pid, lpBalance, true);
     }
+
+    @Test
+    void stakeLP() {
+        // Arrange
+        Account caller = sm.createAccount();
+        BigInteger pid = BigInteger.TWO;
+        BigInteger lpBalance = BigInteger.TEN;
+        when(mockBalanced.dex.mock.balanceOf(daofundScore.getAddress(), pid)).thenReturn(lpBalance);
+
+        // Act
+        daofundScore.invoke(caller, "stakeLPTokens", pid);
+
+        // Assert
+        verify(mockBalanced.dex.mock).transfer(mockBalanced.stakedLp.getAddress(), lpBalance, pid, new byte[0]);
+    }
+
 }

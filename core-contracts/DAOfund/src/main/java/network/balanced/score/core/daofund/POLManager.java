@@ -51,8 +51,12 @@ public class POLManager {
 
 
         BigInteger pid = Context.call(BigInteger.class, dex, "getPoolId", baseAddress, quoteAddress);
-        BigInteger balance = Context.call(BigInteger.class, dex, "balanceOf", Context.getAddress(), pid);
+        stakeLPTokens(pid);
+    }
 
+    public static void stakeLPTokens(BigInteger pid) {
+        Address dex = getDex();
+        BigInteger balance = Context.call(BigInteger.class, dex, "balanceOf", Context.getAddress(), pid);
         Context.call(dex, "transfer", getStakedLp(), balance, pid, new byte[0]);
     }
 
