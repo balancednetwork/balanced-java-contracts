@@ -71,7 +71,7 @@ public class BribingImpl implements Bribing {
 
     @External(readonly=true)
     public String name() {
-        return "Bribing";
+        return "Balanced Bribe";
     }
 
     @External(readonly=true)
