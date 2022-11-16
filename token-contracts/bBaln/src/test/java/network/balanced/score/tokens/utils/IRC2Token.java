@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.dividends;
+package network.balanced.score.tokens.utils;
+
+import com.iconloop.score.token.irc2.IRC2Mintable;
+import score.Context;
 
 import java.math.BigInteger;
 
-public class Check {
+public class IRC2Token extends IRC2Mintable {
 
-    public static boolean continuousDividendsActive() {
-        BigInteger continuousDividendsDay = DividendsImpl.continuousDividendsDay.get();
-        return continuousDividendsDay != null && continuousDividendsDay.compareTo(DividendsImpl.snapshotId.getOrDefault(BigInteger.ZERO)) <= 0;
+    public IRC2Token(BigInteger _totalSupply) {
+        super("BALN Token", "BALN", 18);
+        _mint(Context.getCaller(), _totalSupply);
     }
 }

@@ -69,6 +69,11 @@ deployJar {
             nid = 0x7
             to = Addresses.berlin.dividends
         }
+        lisbon {
+            uri = 'https://lisbon.net.solidwallet.io/api/v3'
+            nid = 0x2
+            to = Addresses.lisbon.dividends
+        }
         local {
             uri = 'http://localhost:9082/api/v3'
             nid = 0x3
@@ -119,6 +124,7 @@ task integrationTest(type: Test) {
         classpath = sourceSets.intTest.runtimeClasspath
 
         systemProperty "python", new File(project(':test-lib').projectDir, 'python-contracts/dividends.zip')
+        systemProperty "dividends-continuous", new File(project(':test-lib').projectDir, 'mainnet-contracts/Dividends-0.1.0-optimized.jar')
         systemProperty "java", optimizedJar.outputJarName
 
     }

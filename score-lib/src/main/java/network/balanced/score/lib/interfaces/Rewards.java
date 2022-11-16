@@ -21,10 +21,12 @@ import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.*;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
+import network.balanced.score.lib.interfaces.base.RewardsVoting;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import score.Address;
 import score.annotation.External;
+import score.annotation.Optional;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -40,7 +42,9 @@ public interface Rewards extends
         BalnAddress,
         BwtAddress,
         DaoFundAddress,
-        ReserveAddress {
+        ReserveAddress,
+        BoostedBalnAddress,
+        RewardsVoting {
 
     @External(readonly = true)
     BigInteger getEmission(BigInteger _day);
@@ -70,16 +74,25 @@ public interface Rewards extends
     void addNewDataSource(String _name, Address _address);
 
     @External
+    void createDataSource(String _name, Address _address, int sourceType);
+
+    @External
     void removeDataSource(String _name);
 
     @External(readonly = true)
     Map<String, Map<String, Object>> getDataSources();
 
     @External(readonly = true)
+    Map<String, Map<String, Object>> getSourceVoteData();
+
+    @External(readonly = true)
     Map<String, Map<String, Object>> getDataSourcesAt(BigInteger _day);
 
     @External(readonly = true)
     Map<String, Object> getSourceData(String _name);
+
+    @External(readonly = true)
+    Map<String, BigInteger> getWorkingBalanceAndSupply(String _name, Address _user);
 
     @External
     boolean distribute();
@@ -88,7 +101,10 @@ public interface Rewards extends
     Map<String, BigInteger> recipientAt(BigInteger _day);
 
     @External
-    void claimRewards();
+    void boost(String[] sources);
+
+    @External
+    void claimRewards(@Optional String[] sources);
 
     @External(readonly = true)
     BigInteger getAPY(String _name);
@@ -106,14 +122,44 @@ public interface Rewards extends
     List<Address> getDataProviders();
 
     @External
-    void setBatchSize(int _batch_size);
-
-    @External(readonly = true)
-    int getBatchSize();
-
-    @External
     void setTimeOffset(BigInteger _timestamp);
 
     @External(readonly = true)
     BigInteger getTimeOffset();
+
+    @External
+    void onKick(Address user);
+
+    @External
+    void kick(Address user, String[] sources);
+
+    @External
+    void onBalanceUpdate(Address user, BigInteger balance);
+
+    @External
+    void setBoostWeight(BigInteger weight);
+
+    @External(readonly = true)
+    BigInteger getBoostWeight();
+
+    @External(readonly = true)
+    String[] getUserSources(Address user);
+
+    @External(readonly = true)
+    Map<String, Map<String, BigInteger>> getBoostData(Address user, String[] sources);
+
+    @External
+    void setMigrateToVotingDay(BigInteger day);
+
+    @External(readonly = true)
+    BigInteger getMigrateToVotingDay();
+
+    @External
+    void setPlatformDistPercentage(String name, BigInteger percentage);
+
+    @External
+    void setFixedSourcePercentage(String name, BigInteger percentage);
+
+    @External(readonly = true)
+    Map<String,  Map<String, BigInteger>> getDistributionPercentages();
 }

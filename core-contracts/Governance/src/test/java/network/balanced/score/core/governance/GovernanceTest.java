@@ -25,6 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import score.Address;
+import score.Context;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -56,13 +57,12 @@ public class GovernanceTest extends GovernanceTestBase {
     void getVotingWeight() {
         // Arrange
         Account user = sm.createAccount();
-        BigInteger day = BigInteger.TEN;
+        BigInteger block = BigInteger.valueOf(Context.getBlockHeight());
         BigInteger expectedWeight = BigInteger.ONE;
 
-        when(baln.mock.stakedBalanceOfAt(user.getAddress(), day)).thenReturn(expectedWeight);
-
+        when(bBaln.mock.balanceOfAt(user.getAddress(), block)).thenReturn(expectedWeight);
         // Act
-        BigInteger votingWeight = (BigInteger) governance.call("myVotingWeight", user.getAddress(), day);
+        BigInteger votingWeight = (BigInteger) governance.call("myVotingWeight", user.getAddress(), block);
 
         // Assert
         assertEquals(expectedWeight, votingWeight);
@@ -214,6 +214,33 @@ public class GovernanceTest extends GovernanceTestBase {
 
         // Assert
         verify(rebalancing.mock).setPriceDiffThreshold(_value);
+    }
+
+    @Test
+    void setGetVoteDurationLimits() {
+        // Arrange
+        BigInteger min = BigInteger.TWO;
+        BigInteger max = BigInteger.TEN;
+        Account notOwner = sm.createAccount();
+        String expectedErrorMessage =
+                "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
+
+        // Act & Assert
+        Executable withNotOwner = () -> governance.invoke(notOwner, "setVoteDurationLimits", min, max);
+        expectErrorMessage(withNotOwner, expectedErrorMessage);
+
+        expectedErrorMessage = "Reverted(0): Minimum vote duration has to be above 1";
+        Executable withToLowMin = () -> governance.invoke(owner, "setVoteDurationLimits", BigInteger.ZERO, max);
+        expectErrorMessage(withToLowMin, expectedErrorMessage);
+
+        // Act
+        governance.invoke(owner, "setVoteDurationLimits", min, max);
+
+        // Assert
+        BigInteger minVoteDuration = (BigInteger) governance.call("getMinVoteDuration");
+        BigInteger maxVoteDuration = (BigInteger) governance.call("getMaxVoteDuration");
+        assertEquals(min, minVoteDuration);
+        assertEquals(max, maxVoteDuration);
     }
 
     @Test
@@ -472,7 +499,6 @@ public class GovernanceTest extends GovernanceTestBase {
 
         // Assert
         verify(rewards.mock).removeDataSource(name);
-
     }
 
     @Test
@@ -1054,23 +1080,24 @@ public class GovernanceTest extends GovernanceTestBase {
     }
 
     @Test
-    void addPoolOnStakedLp() {
+    void addStakedLpDataSource() {
         // Arrange
-        BigInteger _id = BigInteger.TEN;
+        BigInteger id = BigInteger.TEN;
+        String name = "testSource";
         Account notOwner = sm.createAccount();
         String expectedErrorMessage =
                 "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
 
         // Act & Assert
-        Executable withNotOwner = () -> governance.invoke(notOwner, "addPoolOnStakedLp", _id);
+        Executable withNotOwner = () -> governance.invoke(notOwner, "addStakedLpDataSource", name, id, 1);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
 
         // Act
-        governance.invoke(owner, "addPoolOnStakedLp", _id);
+        governance.invoke(owner, "addStakedLpDataSource", name, id, 1);
 
         // Assert
-        verify(stakedLp.mock).addPool(_id);
-
+        verify(stakedLp.mock).addDataSource(id, name);
+        verify(rewards.mock).createDataSource(name, stakedLp.getAddress(), 1);
     }
 
     @Test
@@ -1284,8 +1311,8 @@ public class GovernanceTest extends GovernanceTestBase {
         verify(dex.mock).add(sicx.getAddress(), bnUSD.getAddress(), sICXValue, bnUSDValue, false);
         verify(dex.mock).setMarketName(sicxBnusdPid, "sICX/bnUSD");
 
-        verify(rewards.mock).addNewDataSource("sICX/bnUSD", dex.getAddress());
-        verify(stakedLp.mock).addPool(sicxBnusdPid);
+        verify(rewards.mock).addNewDataSource("sICX/bnUSD", stakedLp.getAddress());
+        verify(stakedLp.mock).addDataSource(sicxBnusdPid, "sICX/bnUSD");
         verify(rewards.mock, times(2)).updateBalTokenDistPercentage(any(DistributionPercentage[].class));
     }
 
@@ -1304,7 +1331,8 @@ public class GovernanceTest extends GovernanceTestBase {
         governance.invoke(owner, "createBalnMarket", bnUSDValue, balnValue);
 
         // Assert
-        verify(rewards.mock).claimRewards();
+        String[] sources = new String[]{"Loans", "sICX/bnUSD"};
+        verify(rewards.mock).claimRewards(sources);
         verify(loans.mock).depositAndBorrow("bnUSD", bnUSDValue, governance.getAddress(), BigInteger.ZERO);
 
         JsonObject depositData = Json.object();
@@ -1315,8 +1343,8 @@ public class GovernanceTest extends GovernanceTestBase {
         verify(dex.mock).add(baln.getAddress(), bnUSD.getAddress(), balnValue, bnUSDValue, false);
         verify(dex.mock).setMarketName(balnBnusdPid, "BALN/bnUSD");
 
-        verify(rewards.mock).addNewDataSource("BALN/bnUSD", dex.getAddress());
-        verify(stakedLp.mock).addPool(balnBnusdPid);
+        verify(rewards.mock).addNewDataSource("BALN/bnUSD", stakedLp.getAddress());
+        verify(stakedLp.mock).addDataSource(balnBnusdPid, "BALN/bnUSD");
         verify(rewards.mock, times(3)).updateBalTokenDistPercentage(any(DistributionPercentage[].class));
     }
 
@@ -1338,7 +1366,8 @@ public class GovernanceTest extends GovernanceTestBase {
         governance.invoke(owner, "createBalnSicxMarket", sicxValue, balnValue);
 
         // Assert
-        verify(rewards.mock, times(2)).claimRewards();
+        String[] sources = new String[]{"Loans", "sICX/bnUSD", "BALN/bnUSD"};
+        verify(rewards.mock, times(1)).claimRewards(sources);
 
         JsonObject depositData = Json.object();
         depositData.add("method", "_deposit");
@@ -1348,25 +1377,8 @@ public class GovernanceTest extends GovernanceTestBase {
         verify(dex.mock).add(baln.getAddress(), sicx.getAddress(), balnValue, sicxValue, false);
         verify(dex.mock).setMarketName(balnSicxPid, "BALN/sICX");
 
-        verify(rewards.mock).addNewDataSource("BALN/sICX", dex.getAddress());
-        verify(stakedLp.mock).addPool(balnSicxPid);
+        verify(rewards.mock).addNewDataSource("BALN/sICX", stakedLp.getAddress());
+        verify(stakedLp.mock).addDataSource(balnSicxPid, "BALN/sICX");
         verify(rewards.mock, times(4)).updateBalTokenDistPercentage(any(DistributionPercentage[].class));
-    }
-
-    @Test
-    void totalBaln() {
-        // Arrange
-        BigInteger day = (BigInteger) governance.call("getDay");
-        BigInteger expectedTotalBaln = BigInteger.TEN;
-        when(baln.mock.totalStakedBalanceOfAt(day)).thenReturn(expectedTotalBaln);
-
-        // Act
-        BigInteger totalBaln = (BigInteger) governance.call("totalBaln", day);
-        BigInteger totalBalnFuture = (BigInteger) governance.call("totalBaln", day.add(BigInteger.ONE));
-
-        // Assert
-        assertEquals(expectedTotalBaln, totalBaln);
-        assertEquals(BigInteger.ZERO, totalBalnFuture);
-        verify(baln.mock, times(1)).totalStakedBalanceOfAt(any(BigInteger.class));
     }
 }

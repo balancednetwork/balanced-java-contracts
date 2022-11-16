@@ -63,8 +63,8 @@ public class VoteActions {
             case "setRebalancingThreshold":
                 gov._setRebalancingThreshold(convertToNumber(params.get("_value")));
                 break;
-            case "setVoteDuration":
-                gov._setVoteDuration(convertToNumber(params.get("_duration")));
+            case "setVoteDurationLimits":
+                gov._setVoteDurationLimits(convertToNumber(params.get("_min")), convertToNumber(params.get("_max")));
                 break;
             case "setQuorum":
                 gov._setQuorum(convertToNumber(params.get("quorum")));
@@ -99,6 +99,9 @@ public class VoteActions {
                         convertToNumber(params.get("_lockingRatio")),
                         convertToNumber(params.get("_liquidationRatio")),
                         convertToNumber(params.get("_debtCeiling")));
+                break;
+            case "addLPDataSource":
+                gov._addLPDataSource(params.get("_name").asString(), convertToNumber(params.get("_poolId")), params.getInt("_sourceType", 0));
                 break;
             case "call":
                 Address address = Address.fromString(params.get("contract_address").asString());

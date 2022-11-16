@@ -21,7 +21,6 @@ import network.balanced.score.lib.utils.Constants;
 import java.math.BigInteger;
 
 public class RewardsConstants extends Constants {
-    public static final int DEFAULT_BATCH_SIZE = 50;
     public static final String DATASOURCE_DB_PREFIX = "datasource";
 
     public static final String WORKER_TOKENS = "Worker Tokens";
@@ -32,6 +31,9 @@ public class RewardsConstants extends Constants {
     public static final String BALANCE = "_balance";
 
     public static final BigInteger HUNDRED_PERCENTAGE = EXA;
+    public static final BigInteger WEIGHT = BigInteger.valueOf(40)
+            .multiply(HUNDRED_PERCENTAGE)
+            .divide(BigInteger.valueOf(100L));
     public static final String IDS = "ids";
     public static final String AMOUNT = "amount";
 }

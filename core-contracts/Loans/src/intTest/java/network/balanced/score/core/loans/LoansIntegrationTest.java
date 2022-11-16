@@ -32,8 +32,7 @@ import java.math.BigInteger;
 import java.util.Map;
 
 import static network.balanced.score.lib.test.integration.BalancedUtils.*;
-import static network.balanced.score.lib.utils.Constants.EXA;
-import static network.balanced.score.lib.utils.Constants.POINTS;
+import static network.balanced.score.lib.utils.Constants.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 abstract class LoansIntegrationTest implements ScoreIntegrationTest {
@@ -55,7 +54,6 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         owner.stability.whitelistTokens(balanced.sicx._address(), BigInteger.TEN.pow(10));
 
         owner.governance.setRebalancingThreshold(BigInteger.TEN.pow(17));
-        owner.governance.setVoteDuration(BigInteger.TWO);
         owner.governance.setVoteDefinitionFee(voteDefinitionFee);
         owner.governance.setBalnVoteDefinitionCriterion(BigInteger.ZERO);
         owner.governance.setQuorum(BigInteger.ONE);
@@ -800,10 +798,14 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
                 continue;
             }
 
-            client.rewards.claimRewards();
-            BigInteger balance = client.baln.balanceOf(client.getAddress());
-            if (balance.compareTo(EXA) > 0) {
-                client.baln.stake(balance);
+            client.rewards.claimRewards(null);
+            BigInteger balance = client.baln.availableBalanceOf(client.getAddress());
+            BigInteger boostedBalance = client.boostedBaln.balanceOf(client.getAddress(), BigInteger.ZERO);
+            if (boostedBalance.equals(BigInteger.ZERO) && balance.compareTo(EXA) > 0) {
+                long unlockTime =
+                        (System.currentTimeMillis() * 1000) + (BigInteger.valueOf(52).multiply(MICRO_SECONDS_IN_A_DAY).multiply(BigInteger.valueOf(7))).longValue();
+                String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
+                client.baln.transfer(owner.boostedBaln._address(), balance, data.getBytes());
             }
         }
     }

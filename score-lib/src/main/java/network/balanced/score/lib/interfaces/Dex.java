@@ -138,6 +138,9 @@ public interface Dex extends AdminAddress, BnusdAddress, GovernanceAddress, Name
     BigInteger getBnusdValue(String _name);
 
     @External(readonly = true)
+    BigInteger getLPBnusdValue(int _id);
+
+    @External(readonly = true)
     BigInteger getICXBalance(Address _address);
 
     @External(readonly = true)
