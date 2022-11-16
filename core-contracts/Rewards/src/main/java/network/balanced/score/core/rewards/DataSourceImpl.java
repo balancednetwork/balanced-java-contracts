@@ -46,7 +46,6 @@ public class DataSourceImpl {
             BigInteger.class);
     private final BranchDB<String, DictDB<Address, BigInteger>> userWorkingBalance = Context.newBranchDB(
             "user_working_balance", BigInteger.class);
-
     private final BranchDB<String, VarDB<BigInteger>> lastUpdateTimeUs = Context.newBranchDB("last_update_us",
             BigInteger.class);
     private final BranchDB<String, VarDB<BigInteger>> totalWeight = Context.newBranchDB("running_total",
@@ -170,6 +169,21 @@ public class DataSourceImpl {
         return totalValue.at(dbKey).getOrDefault(day, BigInteger.ZERO);
     }
 
+    public BigInteger getTotalDist(BigInteger day, boolean readonly) {
+        DictDB<BigInteger, BigInteger> distAt =  totalDist.at(dbKey);
+        BigInteger dist = distAt.get(day);
+        if (dist != null) {
+            return dist;
+        }
+
+        dist = RewardsImpl.getTotalDist(getName(), day, readonly);
+        if (!readonly) {
+            distAt.set(day, dist);
+        }
+
+        return dist;
+    }
+
     public BigInteger getTotalDist(BigInteger day) {
         return totalDist.at(dbKey).getOrDefault(day, BigInteger.ZERO);
     }
@@ -201,7 +215,6 @@ public class DataSourceImpl {
     public BigInteger getTotalSupply() {
         return totalSupply.at(dbKey).getOrDefault(BigInteger.ZERO);
     }
-
 
     public Map<String, BigInteger> loadCurrentSupply(Address owner) {
         try {
@@ -293,7 +306,6 @@ public class DataSourceImpl {
             lastUpdateTimestamp = currentTime;
             if (!readOnlyContext) {
                 lastUpdateTimeUs.at(dbKey).set(currentTime);
-
             }
         }
 
@@ -310,7 +322,7 @@ public class DataSourceImpl {
             previousDayEndUs = previousRewardsDay.add(BigInteger.ONE).multiply(MICRO_SECONDS_IN_A_DAY);
             BigInteger endComputeTimestampUs = previousDayEndUs.min(currentTime);
 
-            BigInteger emission = getTotalDist(previousRewardsDay);
+            BigInteger emission = getTotalDist(previousRewardsDay, readOnlyContext);
             runningTotal = computeTotalWeight(runningTotal, emission, totalSupply, lastUpdateTimestamp,
                     endComputeTimestampUs);
             lastUpdateTimestamp = endComputeTimestampUs;
@@ -333,10 +345,11 @@ public class DataSourceImpl {
         Map<String, Object> sourceData = new HashMap<>();
         sourceData.put("day", day);
         sourceData.put("contract_address", getContractAddress());
+        // dist_percent is deprecated
         sourceData.put("dist_percent", getDistPercent());
         sourceData.put("workingSupply", getWorkingSupply());
         sourceData.put("total_value", getTotalValue(day));
-        sourceData.put("total_dist", getTotalDist(day));
+        sourceData.put("total_dist", getTotalDist(day, true));
 
         return sourceData;
     }

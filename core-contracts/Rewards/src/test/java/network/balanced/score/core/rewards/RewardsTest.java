@@ -39,7 +39,7 @@ class RewardsTest extends RewardsTestBase {
     @SuppressWarnings("unchecked")
     @Test
     void getDataSources() {
-        // Act 
+        // Act
         Map<String, Map<String, Object>> dataSources = (Map<String, Map<String, Object>>) rewardsScore.call(
                 "getDataSources");
 
@@ -52,7 +52,7 @@ class RewardsTest extends RewardsTestBase {
     @SuppressWarnings("unchecked")
     @Test
     void getDataSourceNames() {
-        // Act 
+        // Act
         List<String> names = (List<String>) rewardsScore.call("getDataSourceNames");
 
         // Assert
@@ -64,7 +64,7 @@ class RewardsTest extends RewardsTestBase {
     @SuppressWarnings("unchecked")
     @Test
     void getRecipients() {
-        // Act 
+        // Act
         List<String> names = (List<String>) rewardsScore.call("getRecipients");
 
         // Assert
@@ -88,7 +88,7 @@ class RewardsTest extends RewardsTestBase {
         rewardsScore.invoke(governance, "updateBalTokenDistPercentage", (Object) distributionPercentages);
         rewardsScore.invoke(admin, "distribute");
 
-        // Act 
+        // Act
         rewardsScore.invoke(governance, "removeDataSource", "sICX/ICX");
 
         // Assert
@@ -100,11 +100,11 @@ class RewardsTest extends RewardsTestBase {
 
     @Test
     void removeDataSource_nonEmptyDistribution() {
-        // Arrange 
+        // Arrange
         String expectedErrorMessage = RewardsImpl.TAG + ": Data source rewards percentage must be set to 0 before " +
                 "removing.";
 
-        // Act 
+        // Act
         Executable removeNonEmpty = () -> rewardsScore.invoke(governance, "removeDataSource", "sICX/ICX");
 
         // Assert
@@ -114,7 +114,7 @@ class RewardsTest extends RewardsTestBase {
     @SuppressWarnings("unchecked")
     @Test
     void removeDataSource_nonExisting() {
-        // Act 
+        // Act
         rewardsScore.invoke(governance, "removeDataSource", "test");
 
         // Assert
@@ -127,11 +127,11 @@ class RewardsTest extends RewardsTestBase {
 
     @Test
     void removeDataSource_notGovernance() {
-        // Arrange 
+        // Arrange
         String expectedErrorMessage = "Authorization Check: Authorization failed. Caller: " + admin.getAddress() + " " +
                 "Authorized Caller: " + governance.getAddress();
 
-        // Act 
+        // Act
         Executable removeAsAdmin = () -> rewardsScore.invoke(admin, "removeDataSource", "sICX/ICX");
 
         // Assert
@@ -158,11 +158,11 @@ class RewardsTest extends RewardsTestBase {
 
     @Test
     void updateBalTokenDistPercentage_wrongSum() {
-        // Arrange 
+        // Arrange
         icxPoolDist.dist_percent = BigInteger.ZERO; //0%
         String expectedErrorMessage = RewardsImpl.TAG + ": Total percentage does not sum up to 100.";
 
-        // Act 
+        // Act
         DistributionPercentage[] distributionPercentages = new DistributionPercentage[]{loansDist, icxPoolDist,
                 bwtDist, reserveDist, daoDist};
         Executable updateWithWrongSum = () -> rewardsScore.invoke(governance, "updateBalTokenDistPercentage",
@@ -174,10 +174,10 @@ class RewardsTest extends RewardsTestBase {
 
     @Test
     void updateBalTokenDistPercentage_wrongLength() {
-        // Arrange 
+        // Arrange
         String expectedErrorMessage = RewardsImpl.TAG + ": Recipient lists lengths mismatched!";
 
-        // Act 
+        // Act
         DistributionPercentage[] distributionPercentages = new DistributionPercentage[]{loansDist, bwtDist,
                 reserveDist, daoDist};
         Executable updateWithWrongLength = () -> rewardsScore.invoke(governance, "updateBalTokenDistPercentage",
@@ -189,11 +189,11 @@ class RewardsTest extends RewardsTestBase {
 
     @Test
     void updateBalTokenDistPercentage_notGovernance() {
-        // Arrange 
+        // Arrange
         String expectedErrorMessage = "Authorization Check: Authorization failed. Caller: " + admin.getAddress() + " " +
                 "Authorized Caller: " + governance.getAddress();
 
-        // Act 
+        // Act
         DistributionPercentage[] distributionPercentages = new DistributionPercentage[]{loansDist, icxPoolDist,
                 bwtDist, reserveDist, daoDist};
         Executable updateAsAdmin = () -> rewardsScore.invoke(admin, "updateBalTokenDistPercentage",
@@ -208,7 +208,7 @@ class RewardsTest extends RewardsTestBase {
         // Arrange
         BigInteger expectedEmission = BigInteger.TEN.pow(23);
 
-        // Act & Assert 
+        // Act & Assert
         assertEquals(expectedEmission, rewardsScore.call("getEmission", BigInteger.ONE));
         assertEquals(expectedEmission, rewardsScore.call("getEmission", BigInteger.valueOf(60)));
     }
@@ -277,7 +277,7 @@ class RewardsTest extends RewardsTestBase {
         BigInteger loansYearlyEmission = year.multiply(emission).multiply(loansDist.dist_percent);
         BigInteger expectedAPY = loansYearlyEmission.multiply(balnPrice).divide(EXA.multiply(loansValue));
 
-        //Act 
+        //Act
         BigInteger apy = (BigInteger) rewardsScore.call("getAPY", "Loans");
 
         // Assert
@@ -287,7 +287,7 @@ class RewardsTest extends RewardsTestBase {
     @SuppressWarnings("unchecked")
     @Test
     void recipientAt_multipleSnapshots() {
-        // Arrange 
+        // Arrange
         BigInteger expectedLoansDist = loansDist.dist_percent.add(ICX.divide(BigInteger.TEN));//30%
         BigInteger expectedSwapDist = icxPoolDist.dist_percent.divide(BigInteger.TWO);//10%
         BigInteger originalLoansDist = loansDist.dist_percent;
@@ -324,7 +324,7 @@ class RewardsTest extends RewardsTestBase {
     @SuppressWarnings("unchecked")
     @Test
     void recipientAt_withNewDataSourceInTheFuture() {
-        // Arrange 
+        // Arrange
         sm.getBlock().increase(DAY);
         sm.getBlock().increase(DAY);
         DistributionPercentage testDist = new DistributionPercentage();
@@ -351,7 +351,7 @@ class RewardsTest extends RewardsTestBase {
 
     @Test
     void recipientAt_dayLessThanZero() {
-        // Arrange 
+        // Arrange
         String expectedErrorMessage = RewardsImpl.TAG + ": day:-1 must be equal to or greater then Zero";
 
         // Act

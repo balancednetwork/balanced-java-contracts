@@ -219,7 +219,25 @@ public interface Governance extends
     void addNewDataSource(String _data_source_name, String _contract_address);
 
     @External
+    void addStakedLpDataSource(String _name, BigInteger _poolId, int _sourceType);
+
+    @External
     void removeDataSource(String _data_source_name);
+
+    @External
+    void setPlatformDistPercentage(String name, BigInteger percentage);
+
+    @External
+    void setFixedSourcePercentage(String name, BigInteger percentage);
+
+    @External
+    void setVotable(String name, boolean votable);
+
+    @External
+    void addType(String name);
+
+    @External
+    void changeTypeWeight(int typeId, BigInteger weight);
 
     @External
     void updateBalTokenDistPercentage(DistributionPercentage[] _recipient_list);
@@ -301,9 +319,6 @@ public interface Governance extends
 
     @External
     void setRedeemBatchSize(BigInteger _value);
-
-    @External
-    void addPoolOnStakedLp(BigInteger _id);
 
     @External
     void setAddressesOnContract(String _contract);

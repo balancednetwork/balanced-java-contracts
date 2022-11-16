@@ -80,7 +80,6 @@ public class GovernanceConstants extends Constants {
             entry("baln", "rewards"),
             entry("bwt", "governance"),
             entry("router", "governance"),
-            entry("stakedLp", "governance"),
             entry("rebalancing", "governance"),
             entry("balancedOracle", "governance")
     );

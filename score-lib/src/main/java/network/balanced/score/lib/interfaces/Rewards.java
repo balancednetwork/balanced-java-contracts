@@ -21,6 +21,7 @@ import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.*;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
+import network.balanced.score.lib.interfaces.base.RewardsVoting;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import score.Address;
@@ -42,7 +43,8 @@ public interface Rewards extends
         BwtAddress,
         DaoFundAddress,
         ReserveAddress,
-        BoostedBalnAddress {
+        BoostedBalnAddress,
+        RewardsVoting {
 
     @External(readonly = true)
     BigInteger getEmission(BigInteger _day);
@@ -72,10 +74,16 @@ public interface Rewards extends
     void addNewDataSource(String _name, Address _address);
 
     @External
+    void createDataSource(String _name, Address _address, int sourceType);
+
+    @External
     void removeDataSource(String _name);
 
     @External(readonly = true)
     Map<String, Map<String, Object>> getDataSources();
+
+    @External(readonly = true)
+    Map<String, Map<String, Object>> getSourceVoteData();
 
     @External(readonly = true)
     Map<String, Map<String, Object>> getDataSourcesAt(BigInteger _day);
@@ -114,12 +122,6 @@ public interface Rewards extends
     List<Address> getDataProviders();
 
     @External
-    void setBatchSize(int _batch_size);
-
-    @External(readonly = true)
-    int getBatchSize();
-
-    @External
     void setTimeOffset(BigInteger _timestamp);
 
     @External(readonly = true)
@@ -145,4 +147,19 @@ public interface Rewards extends
 
     @External(readonly = true)
     Map<String, Map<String, BigInteger>> getBoostData(Address user, String[] sources);
+
+    @External
+    void setMigrateToVotingDay(BigInteger day);
+
+    @External(readonly = true)
+    BigInteger getMigrateToVotingDay();
+
+    @External
+    void setPlatformDistPercentage(String name, BigInteger percentage);
+
+    @External
+    void setFixedSourcePercentage(String name, BigInteger percentage);
+
+    @External(readonly = true)
+    Map<String,  Map<String, BigInteger>> getDistributionPercentages();
 }
