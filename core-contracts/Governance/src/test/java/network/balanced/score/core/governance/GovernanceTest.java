@@ -1089,15 +1089,15 @@ public class GovernanceTest extends GovernanceTestBase {
                 "SenderNotScoreOwner: Sender=" + notOwner.getAddress() + "Owner=" + owner.getAddress();
 
         // Act & Assert
-        Executable withNotOwner = () -> governance.invoke(notOwner, "addStakedLpDataSource", name, id);
+        Executable withNotOwner = () -> governance.invoke(notOwner, "addStakedLpDataSource", name, id, 1);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
 
         // Act
-        governance.invoke(owner, "addStakedLpDataSource", name, id);
+        governance.invoke(owner, "addStakedLpDataSource", name, id, 1);
 
         // Assert
         verify(stakedLp.mock).addDataSource(id, name);
-        verify(rewards.mock).addNewDataSource(name, stakedLp.getAddress());
+        verify(rewards.mock).createDataSource(name, stakedLp.getAddress(), 1);
     }
 
     @Test

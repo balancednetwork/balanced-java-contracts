@@ -39,6 +39,8 @@ import static org.mockito.Mockito.*;
 
 class RewardsTestBase extends UnitTest {
     static final Long DAY = 43200L;
+    static final Long WEEK_BLOCKS = 7*DAY;
+
     static final BigInteger EXA = BigInteger.TEN.pow(18);
 
     static final ServiceManager sm = getServiceManager();
@@ -106,7 +108,7 @@ class RewardsTestBase extends UnitTest {
         syncDistributions();
     }
 
-    private void setupDistributions() {
+    protected void setupDistributions() {
         loansDist.recipient_name = "Loans";
         loansDist.dist_percent = ICX.divide(BigInteger.valueOf(5)); //20%
 
@@ -132,7 +134,6 @@ class RewardsTestBase extends UnitTest {
         BigInteger currentDay = (BigInteger) rewardsScore.call("getDay");
         for (long i = 0; i < currentDay.intValue(); i++) {
             rewardsScore.invoke(admin, "distribute");
-            rewardsScore.invoke(admin, "distribute");
         }
     }
 
@@ -148,7 +149,7 @@ class RewardsTestBase extends UnitTest {
 
     void verifyBalnReward(Address address, BigInteger expectedReward) {
         verify(baln.mock, times(1)).transfer(eq(address), argThat(reward -> {
-            assertEquals(expectedReward.divide(BigInteger.TEN), reward.divide(BigInteger.TEN));
+            assertEquals(expectedReward.divide(BigInteger.valueOf(100)), reward.divide(BigInteger.valueOf(100)));
             return true;
         }), eq(new byte[0]));
     }
@@ -172,5 +173,13 @@ class RewardsTestBase extends UnitTest {
 
         rewardsScore.invoke(governance, "updateBalTokenDistPercentage", distributionPercentages);
         sm.getBlock().increase(DAY);
+    }
+
+    void vote(Account user, String name, BigInteger weight) {
+        rewardsScore.invoke(user, "voteForSource", name, weight);
+    }
+
+    void mockUserWeight(Account user, BigInteger weight) {
+        when(bBaln.mock.getLastUserSlope(user.getAddress())).thenReturn(weight);
     }
 }

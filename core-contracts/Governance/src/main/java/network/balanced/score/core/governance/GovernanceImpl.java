@@ -796,15 +796,45 @@ public class GovernanceImpl {
     }
 
     @External
-    public void addStakedLpDataSource(String _name, BigInteger _poolId) {
+    public void addStakedLpDataSource(String _name, BigInteger _poolId, int _sourceType) {
         onlyOwner();
-        _addLPDataSource(_name, _poolId);
+        _addLPDataSource(_name, _poolId, _sourceType);
     }
 
     @External
     public void removeDataSource(String _data_source_name) {
         onlyOwner();
         Context.call(Addresses.get("rewards"), "removeDataSource", _data_source_name);
+    }
+
+    @External
+    public void setPlatformDistPercentage(String name, BigInteger percentage)  {
+        onlyOwner();
+        Context.call(Addresses.get("rewards"), "setPlatformDistPercentage", name, percentage);
+    }
+
+    @External
+    public void setFixedSourcePercentage(String name, BigInteger percentage)  {
+        onlyOwner();
+        Context.call(Addresses.get("rewards"), "setFixedSourcePercentage", name, percentage);
+    }
+
+    @External
+    public void setVotable(String name, boolean votable) {
+        onlyOwner();
+        Context.call(Addresses.get("rewards"), "setVotable", name, votable);
+    }
+
+    @External
+    public void addType(String name) {
+        onlyOwner();
+        Context.call(Addresses.get("rewards"), "addType", name);
+    }
+
+    @External
+    public void changeTypeWeight(int typeId, BigInteger weight) {
+        onlyOwner();
+        Context.call(Addresses.get("rewards"), "changeTypeWeight", typeId, weight);
     }
 
     @External
@@ -1168,10 +1198,17 @@ public class GovernanceImpl {
                 Address.fromString(_contract_address));
     }
 
-    public void _addLPDataSource(String _name, BigInteger _poolId) {
+    private void _addLPDataSource(String _name, BigInteger _poolId) {
         Address stakedLP = Addresses.get("stakedLp");
-        _addNewDataSource(_name, stakedLP.toString());
         Context.call(stakedLP, "addDataSource",  _poolId, _name);
+        _addNewDataSource(_name, stakedLP.toString());
+    }
+
+    public void _addLPDataSource(String _name, BigInteger _poolId, int _sourceType) {
+        Address stakedLP = Addresses.get("stakedLp");
+        Address rewards = Addresses.get("rewards");
+        Context.call(stakedLP, "addDataSource",  _poolId, _name);
+        Context.call(rewards, "createDataSource", _name, stakedLP, _sourceType);
     }
 
     public void _addAcceptedTokens(String _token) {

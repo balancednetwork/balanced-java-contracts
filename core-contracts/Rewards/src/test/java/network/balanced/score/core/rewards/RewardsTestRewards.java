@@ -32,13 +32,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-class RewardsTestContinuousRewards extends RewardsTestBase {
+class RewardsTestRewards extends RewardsTestBase {
 
 
     @BeforeEach
     void setup() throws Exception {
         super.setup();
-        long day = ((BigInteger) rewardsScore.call("getDay")).intValue();
     }
 
     @SuppressWarnings("unchecked")
@@ -58,12 +57,10 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
         BigInteger emission = (BigInteger) rewardsScore.call("getEmission", BigInteger.valueOf(-1));
         assertEquals(loansDist.dist_percent.multiply(emission).divide(EXA), data.get("Loans").get("total_dist"));
         assertEquals(icxPoolDist.dist_percent.multiply(emission).divide(EXA), data.get("sICX/ICX").get("total_dist"));
-
     }
 
     @Test
     void distribute() {
-
         // Act
         sm.getBlock().increase(DAY);
         syncDistributions();
@@ -99,7 +96,7 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
                 account.getAddress(), BigInteger.ZERO);
         BigInteger startTimeSwapInUS = BigInteger.valueOf(sm.getBlock().getTimestamp());
 
-        sm.getBlock().increase(DAY);
+        sm.getBlock().increase(DAY*2);
 
         // Assert
         BigInteger emission = (BigInteger) rewardsScore.call("getEmission", BigInteger.valueOf(-1));
@@ -115,7 +112,7 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
         BigInteger expectedRewards = userLoansDistribution.multiply(diffInUSLoans).divide(MICRO_SECONDS_IN_A_DAY);
         expectedRewards =
                 expectedRewards.add(userSwapDistribution.multiply(diffInUSSwap).divide(MICRO_SECONDS_IN_A_DAY));
-        System.out.print(expectedRewards);
+
         verifyBalnReward(account.getAddress(), expectedRewards);
     }
 
@@ -429,9 +426,8 @@ class RewardsTestContinuousRewards extends RewardsTestBase {
         BigInteger initialRewards = (BigInteger) rewardsScore.call("getBalnHolding", account.getAddress());
         assertEquals(BigInteger.ZERO, initialRewards);
 
-        sm.getBlock().increase(DAY);
-        rewardsScore.invoke(loans.account, "updateRewardsData", name, currentTotalSupply, account.getAddress(),
-                currentBalance);
+        sm.getBlock().increase(DAY*3);
+        rewardsScore.invoke(admin, "distribute");
         BigInteger timeInUS = BigInteger.valueOf(sm.getBlock().getTimestamp());
 
         // Assert

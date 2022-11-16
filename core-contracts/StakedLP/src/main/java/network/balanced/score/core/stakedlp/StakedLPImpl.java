@@ -162,6 +162,7 @@ public class StakedLPImpl implements StakedLP {
     @External
     public void addDataSource(BigInteger id, String name) {
         only(governance);
+        Context.require(dataSourceNames.get(id) == null, "Datasource with id " + id  + " already exist");
         dataSourceIds.set(name, id);
         dataSourceNames.set(id, name);
     }
