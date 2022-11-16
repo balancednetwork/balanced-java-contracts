@@ -22,6 +22,7 @@ import score.Address;
 import score.annotation.External;
 
 import java.math.BigInteger;
+import java.util.List;
 import java.util.Map;
 
 @ScoreInterface
@@ -65,4 +66,19 @@ public interface StakedLP {
 
     @External(readonly = true)
     BigInteger getBnusdValue(String _name);
+
+    @External(readonly = true)
+    String getSourceName(BigInteger id);
+
+    @External(readonly = true)
+    BigInteger getSourceId(String name);
+
+    @External(readonly = true)
+    List<BigInteger> getAllowedPoolIds();
+
+    @External(readonly = true)
+    boolean isSupportedPool(BigInteger id);
+
+    @External(readonly = true)
+    List<String> getDataSources();
 }

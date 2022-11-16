@@ -49,7 +49,7 @@ public interface RewardsVoting {
     BigInteger updateRelativeSourceWeight(String name, BigInteger time);
 
     @External(readonly = true)
-    BigInteger getRelativeSourceWeight(String name, BigInteger time);
+    BigInteger getRelativeSourceWeight(String name, @Optional BigInteger time);
 
     @External
     void voteForSource(String name, BigInteger userWeight);
@@ -77,6 +77,9 @@ public interface RewardsVoting {
 
     @External(readonly = true)
     int getTypeId(String name);
+
+    @External(readonly = true)
+    String getTypeName(int typeId);
 
     @External(readonly = true)
     int getSourceType(String sourceName);

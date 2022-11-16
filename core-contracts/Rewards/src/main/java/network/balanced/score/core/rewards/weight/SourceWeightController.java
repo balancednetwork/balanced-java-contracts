@@ -306,7 +306,12 @@ public class SourceWeightController {
         *@param time Relative weight at the specified timestamp in the past or present
         *@return Value of relative weight normalized to 1e18
         */
-        time = getWeekTimestamp(time);
+        if (time.equals(BigInteger.ZERO)) {
+            time = getWeekTimestamp();
+        } else {
+            time = getWeekTimestamp(time);
+        }
+
         BigInteger totalWeight = pointsTotal.getOrDefault(time, BigInteger.ZERO);
         if (totalWeight.compareTo(BigInteger.ZERO) <= 0) {
             return BigInteger.ZERO;
@@ -470,10 +475,12 @@ public class SourceWeightController {
     }
 
     public static void setVotable(String name, boolean votable) {
+        Context.require(sourceTypes.get(name) != null, "Source with name " + name + " does not exists");
         isVotable.set(name, votable);
     }
 
     public static boolean isVotable(String name) {
+        Context.require(sourceTypes.get(name) != null, "Source with name " + name + " does not exists");
         return isVotable.getOrDefault(name, true);
     }
 
@@ -550,6 +557,10 @@ public class SourceWeightController {
 
     public static int getTypeId(String name) {
         return sourceTypeNames.indexOf(name);
+    }
+
+    public static String getTypeName(int id) {
+        return sourceTypeNames.at(id);
     }
 
     private static BigInteger getWeekTimestamp() {
