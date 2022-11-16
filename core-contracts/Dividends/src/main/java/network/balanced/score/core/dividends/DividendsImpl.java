@@ -167,14 +167,14 @@ public class DividendsImpl implements Dividends {
     }
 
     @External
-    public void setBBalnAddress(Address _address) {
+    public void setBoostedBaln(Address _address) {
         onlyOwner();
         isContract(_address);
         boostedBalnScore.set(_address);
     }
 
     @External(readonly = true)
-    public Address getBBalnAddress() {
+    public Address getBoostedBaln() {
         return boostedBalnScore.get();
     }
 
