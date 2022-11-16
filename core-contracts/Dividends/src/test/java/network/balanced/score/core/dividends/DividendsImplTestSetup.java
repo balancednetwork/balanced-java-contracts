@@ -89,9 +89,16 @@ class DividendsImplTestSetup extends DividendsImplTestBase {
     void getAcceptedTokens() {
         List<Address> expected_list = new ArrayList<>();
         expected_list.add(balnScore.getAddress());
+        expected_list.add(sICXScore.getAddress());
 
         dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
         dividendScore.invoke(admin, "addAcceptedTokens", balnScore.getAddress());
+        dividendScore.invoke(admin, "addAcceptedTokens", sICXScore.getAddress());
+
+        assertEquals(expected_list, dividendScore.call("getAcceptedTokens"));
+
+        dividendScore.invoke(admin, "removeAcceptedTokens", balnScore.getAddress());
+        expected_list.remove(balnScore.getAddress());
 
         assertEquals(expected_list, dividendScore.call("getAcceptedTokens"));
     }

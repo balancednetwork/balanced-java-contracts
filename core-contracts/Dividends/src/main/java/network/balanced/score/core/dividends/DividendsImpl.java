@@ -257,6 +257,12 @@ public class DividendsImpl implements Dividends {
         }
     }
 
+    @External
+    public void removeAcceptedTokens(Address _token) {
+        only(admin);
+        removeFromArraydb(_token, acceptedTokens);
+    }
+
     @External(readonly = true)
     public List<String> getDividendsCategories() {
         List<String> item = new ArrayList<>();
