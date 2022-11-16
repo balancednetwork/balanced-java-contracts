@@ -870,6 +870,32 @@ public class GovernanceVotingTest extends GovernanceTestBase {
     }
 
     @Test
+    void executeVote_addLPDataSource() {
+        // Arrange
+        String name = "test";
+        BigInteger poolId = BigInteger.TEN;
+        int sourceType = 1;
+        JsonObject setAddLPDataSourceParameters = new JsonObject()
+                .add("_name", name)
+                .add("_poolId", poolId.toString())
+                .add("_sourceType", sourceType);
+
+        JsonArray addLPDataSource = new JsonArray()
+                .add("addLPDataSource")
+                .add(setAddLPDataSourceParameters);
+
+        JsonArray actions = new JsonArray()
+                .add(addLPDataSource);
+
+        // Act
+        executeVoteWithActions(actions.toString());
+
+        // Assert
+        verify(stakedLp.mock, times(2)).addDataSource(poolId, name);
+        verify(rewards.mock, times(2)).createDataSource(name, stakedLp.getAddress(), sourceType);
+    }
+
+    @Test
     void executeVote_addCollateral() {
         // Arrange
         Address tokenAddress = bwt.getAddress();
