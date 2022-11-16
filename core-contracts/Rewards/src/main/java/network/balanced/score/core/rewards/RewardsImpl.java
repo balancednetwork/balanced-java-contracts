@@ -16,29 +16,9 @@
 
 package network.balanced.score.core.rewards;
 
-import static network.balanced.score.core.rewards.utils.RewardsConstants.AMOUNT;
-import static network.balanced.score.core.rewards.utils.RewardsConstants.DAOFUND;
-import static network.balanced.score.core.rewards.utils.RewardsConstants.HUNDRED_PERCENTAGE;
-import static network.balanced.score.core.rewards.utils.RewardsConstants.BALANCE;
-import static network.balanced.score.core.rewards.utils.RewardsConstants.TOTAL_SUPPLY;
-import static network.balanced.score.core.rewards.utils.RewardsConstants.IDS;
-import static network.balanced.score.core.rewards.utils.RewardsConstants.WEIGHT;
-import static network.balanced.score.core.rewards.utils.RewardsConstants.WORKER_TOKENS;
-import static network.balanced.score.lib.utils.Check.isContract;
-import static network.balanced.score.lib.utils.Check.only;
-import static network.balanced.score.lib.utils.Check.onlyOwner;
-import static network.balanced.score.lib.utils.Constants.EXA;
-import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
-import static network.balanced.score.lib.utils.DBHelpers.contains;
-import static network.balanced.score.lib.utils.Math.pow;
-
-import java.math.BigInteger;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
 import network.balanced.score.core.rewards.utils.EventLogger;
 import network.balanced.score.core.rewards.utils.RewardsConstants;
+import network.balanced.score.core.rewards.weight.SourceWeightController;
 import network.balanced.score.lib.interfaces.Rewards;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.Point;
@@ -46,19 +26,24 @@ import network.balanced.score.lib.structs.RewardsDataEntry;
 import network.balanced.score.lib.structs.VotedSlope;
 import network.balanced.score.lib.utils.IterableDictDB;
 import network.balanced.score.lib.utils.SetDB;
-import network.balanced.score.core.rewards.weight.SourceWeightController;
-
-import score.Address;
-import score.ArrayDB;
-import score.BranchDB;
-import score.Context;
-import score.DictDB;
-import score.VarDB;
+import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
 import scorex.util.ArrayList;
 import scorex.util.HashMap;
+
+import java.math.BigInteger;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import static network.balanced.score.core.rewards.utils.RewardsConstants.*;
+import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
+import static network.balanced.score.lib.utils.DBHelpers.contains;
+import static network.balanced.score.lib.utils.Math.pow;
 
 
 /***
@@ -99,11 +84,16 @@ public class RewardsImpl implements Rewards {
     private static final VarDB<BigInteger> platformDay = Context.newVarDB(PLATFORM_DAY, BigInteger.class);
     private final static SetDB<Address> dataProviders = new SetDB<>(DATA_PROVIDERS, Address.class, null);
     public static final VarDB<BigInteger> boostWeight = Context.newVarDB(BOOST_WEIGHT, BigInteger.class);
-    public static final DictDB<BigInteger, BigInteger> dailyVotableDistribution = Context.newDictDB(DAILY_VOTABLE_DISTRIBUTIONS, BigInteger.class);
-    public static final BranchDB<String, DictDB<BigInteger, BigInteger>> dailyFixedDistribution = Context.newBranchDB(DAILY_FIXED_DISTRIBUTIONS, BigInteger.class);
-    public static final VarDB<BigInteger> weightControllerMigrationDay = Context.newVarDB("weightControllerMigrationDay", BigInteger.class);
-    private static final IterableDictDB<String, BigInteger> distributionPercentages = new IterableDictDB<String, BigInteger>(DISTRIBUTION_PERCENTAGES, BigInteger.class, String.class, false);
-    private static final IterableDictDB<String, BigInteger> fixedDistributionPercentages = new IterableDictDB<String, BigInteger>(FIXED_DISTRIBUTION_PERCENTAGES, BigInteger.class, String.class, false);
+    public static final DictDB<BigInteger, BigInteger> dailyVotableDistribution =
+            Context.newDictDB(DAILY_VOTABLE_DISTRIBUTIONS, BigInteger.class);
+    public static final BranchDB<String, DictDB<BigInteger, BigInteger>> dailyFixedDistribution =
+            Context.newBranchDB(DAILY_FIXED_DISTRIBUTIONS, BigInteger.class);
+    public static final VarDB<BigInteger> weightControllerMigrationDay = Context.newVarDB(
+            "weightControllerMigrationDay", BigInteger.class);
+    private static final IterableDictDB<String, BigInteger> distributionPercentages =
+            new IterableDictDB<>(DISTRIBUTION_PERCENTAGES, BigInteger.class, String.class, false);
+    private static final IterableDictDB<String, BigInteger> fixedDistributionPercentages =
+            new IterableDictDB<>(FIXED_DISTRIBUTION_PERCENTAGES, BigInteger.class, String.class, false);
     private static final Map<String, VarDB<Address>> platformRecipients = Map.of(WORKER_TOKENS, bwtAddress,
             RewardsConstants.RESERVE_FUND, reserveFund,
             DAOFUND, daofund);
@@ -118,9 +108,9 @@ public class RewardsImpl implements Rewards {
     private static final DictDB<String, BigInteger> recipientSplit = Context.newDictDB(RECIPIENT_SPLIT,
             BigInteger.class);
     private static final DictDB<String, BigInteger> totalSnapshots = Context.newDictDB(TOTAL_SNAPSHOTS,
-    BigInteger.class);
+            BigInteger.class);
     private static final BranchDB<String, BranchDB<BigInteger, DictDB<String, BigInteger>>> snapshotRecipient =
-    Context.newBranchDB(SNAPSHOT_RECIPIENT, BigInteger.class);
+            Context.newBranchDB(SNAPSHOT_RECIPIENT, BigInteger.class);
     private static final ArrayDB<String> completeRecipient = Context.newArrayDB(COMPLETE_RECIPIENT, String.class);
     private static final ArrayDB<String> recipients = Context.newArrayDB(RECIPIENTS, String.class);
 
@@ -147,7 +137,7 @@ public class RewardsImpl implements Rewards {
             completeRecipient.add(RewardsConstants.RESERVE_FUND);
             completeRecipient.add(DAOFUND);
         } else {
-            Map<String, BigInteger>  recipients = recipientAt(getDay());
+            Map<String, BigInteger> recipients = recipientAt(getDay());
             BigInteger bwtPercentage = recipients.get(WORKER_TOKENS);
             BigInteger reservePercentage = recipients.get(RewardsConstants.RESERVE_FUND);
             BigInteger daoFundPercentage = recipients.get(DAOFUND);
@@ -248,7 +238,7 @@ public class RewardsImpl implements Rewards {
     public void addDataSource(String name, int sourceType, BigInteger weight) {
         only(governance);
         DataSourceImpl dataSource = DataSourceDB.get(name);
-        Context.require(name.equals(dataSource.getName()), "There is no data source with the name " + name );
+        Context.require(name.equals(dataSource.getName()), "There is no data source with the name " + name);
         SourceWeightController.addSource(name, sourceType, weight);
     }
 
@@ -433,7 +423,8 @@ public class RewardsImpl implements Rewards {
         if (migrationDay == null || migrationDay.compareTo(getDay()) > 0) {
             percentage = dataSource.getDistPercent();
         } else {
-            BigInteger relativePercentage = SourceWeightController.getRelativeWeight(_name, BigInteger.valueOf(Context.getBlockTimestamp()));
+            BigInteger relativePercentage = SourceWeightController.getRelativeWeight(_name,
+                    BigInteger.valueOf(Context.getBlockTimestamp()));
             percentage = relativePercentage.multiply(getVotableDist()).divide(HUNDRED_PERCENTAGE);
         }
 
@@ -628,7 +619,7 @@ public class RewardsImpl implements Rewards {
 
     @External(readonly = true)
     public Map<String, Map<String, BigInteger>> getDistributionPercentages() {
-        Map<String,  Map<String, BigInteger>> allPercentages = new HashMap<>();
+        Map<String, Map<String, BigInteger>> allPercentages = new HashMap<>();
         Map<String, BigInteger> basePercentages = new HashMap<>();
         Map<String, BigInteger> fixedPercentages = new HashMap<>();
         Map<String, BigInteger> votePercentages = new HashMap<>();
@@ -651,8 +642,9 @@ public class RewardsImpl implements Rewards {
         String[] sources = getAllSources();
         BigInteger votingPercentage = total;
         BigInteger time = BigInteger.valueOf(Context.getBlockTimestamp());
-        for (String source: sources) {
-            BigInteger percent = SourceWeightController.getRelativeWeight(source, time).multiply(votingPercentage).divide(HUNDRED_PERCENTAGE);
+        for (String source : sources) {
+            BigInteger percent =
+                    SourceWeightController.getRelativeWeight(source, time).multiply(votingPercentage).divide(HUNDRED_PERCENTAGE);
             votePercentages.put(source, percent);
         }
 
@@ -1009,7 +1001,7 @@ public class RewardsImpl implements Rewards {
         SourceWeightController.addType(communityTypeName, EXA);
         int coreType = SourceWeightController.getTypeId(coreTypeName);
         int communityType = SourceWeightController.getTypeId(communityTypeName);
-        Map<String, BigInteger>  recipients = recipientAt(getDay());
+        Map<String, BigInteger> recipients = recipientAt(getDay());
 
         // core
         if (DataSourceDB.hasSource("Loans")) {
@@ -1042,7 +1034,7 @@ public class RewardsImpl implements Rewards {
         }
     }
 
-    private BigInteger fetchBoostedBalance(Address user)  {
+    private BigInteger fetchBoostedBalance(Address user) {
         try {
             return (BigInteger) RewardsImpl.call(boostedBaln.get(), "balanceOf", user, BigInteger.ZERO);
         } catch (Exception e) {
@@ -1124,7 +1116,9 @@ public class RewardsImpl implements Rewards {
                 distributions.put(recipient, recipientSplit.getOrDefault(recipient, BigInteger.ZERO));
                 continue;
             } else if (snapshot.at(totalSnapshotsTaken.subtract(BigInteger.ONE)).getOrDefault(IDS, BigInteger.ZERO).compareTo(_day) <= 0) {
-                distributions.put(recipient, snapshot.at(totalSnapshotsTaken.subtract(BigInteger.ONE)).getOrDefault(AMOUNT, BigInteger.ZERO));
+                distributions.put(recipient,
+                        snapshot.at(totalSnapshotsTaken.subtract(BigInteger.ONE)).getOrDefault(AMOUNT,
+                                BigInteger.ZERO));
                 continue;
             } else if (snapshot.at(BigInteger.ZERO).getOrDefault(IDS, BigInteger.ZERO).compareTo(_day) > 0) {
                 distributions.put(recipient, recipientSplit.getOrDefault(recipient, BigInteger.ZERO));
@@ -1161,7 +1155,7 @@ public class RewardsImpl implements Rewards {
         return distributions;
     }
 
-     /**
+    /**
      * This method provides a means to adjust the allocation of rewards tokens.
      * To maintain consistency a change to these percentages will only be
      * accepted if they sum to 100%, with 100% represented by the value 10**18.
