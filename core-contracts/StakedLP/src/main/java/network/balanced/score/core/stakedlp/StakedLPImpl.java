@@ -201,6 +201,12 @@ public class StakedLPImpl implements StakedLP {
         return dataSourceIds.keys();
     }
 
+    @External(readonly = true)
+    public boolean isSupportedPool(BigInteger id) {
+        String name = dataSourceNames.get(id);
+        return name != null;
+    }
+
     private void stake(Address user, BigInteger id, BigInteger value) {
         // Validate inputs
         Context.require(value.compareTo(BigInteger.ZERO) > 0,
