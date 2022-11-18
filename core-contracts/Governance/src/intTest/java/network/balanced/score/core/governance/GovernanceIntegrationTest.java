@@ -108,7 +108,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         BigInteger voteStart = day.add(BigInteger.valueOf(4));
         String forumLink = "https://gov.balanced.network/";
 
-        tester.governance.defineVote(name, "test", voteStart, duration, forumLink, actions.toString());
+        tester.governance.defineVote(name, "test", voteStart, duration, forumLink, actions.toString(), false);
 
         balanced.increaseDay(4);
         BigInteger id = tester.governance.getVoteIndex(name);
@@ -140,7 +140,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         BigInteger voteStart = day.add(BigInteger.valueOf(4));
         String forumLink = "https://gov.balanced.network/";
         try {
-            tester.governance.defineVote(name, "test", voteStart, BigInteger.TWO, forumLink, actions.toString());
+            tester.governance.defineVote(name, "test", voteStart, BigInteger.TWO, forumLink, actions.toString(), false);
             fail();
         } catch (Exception e) {
             //success
@@ -265,8 +265,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         String name = "testUpdateContractVote";
         BigInteger voteStart = day.add(BigInteger.valueOf(4));
         // changeOwner(owner.staking._address(), owner.governance._address());
-
-        tester.governance.defineVote(name, "test", voteStart, BigInteger.TWO, "https://gov.balanced.network/dummy", actions.toString());
+        tester.governance.defineVote(name, "test", voteStart, BigInteger.TWO, "https://gov.balanced.network/dummy", actions.toString(), false);
 
         balanced.increaseDay(4);
         BigInteger id = tester.governance.getVoteIndex(name);

@@ -19,7 +19,7 @@ import static network.balanced.score.core.governance.utils.GovernanceConstants.*
 public class ProposalManager {
 
     public static void defineVote(String name, String description, BigInteger vote_start, BigInteger duration,
-            String forumLink, String transactions) {
+            String forumLink, String transactions, boolean skipTransactionVerification ) {
         Context.require(description.length() <= 500, "Description must be less than or equal to 500 characters.");
 
         BigInteger snapshotBlock = BigInteger.valueOf(Context.getBlockHeight());
@@ -36,7 +36,10 @@ public class ProposalManager {
         Context.require(checkBalnVoteCriterion(Context.getCaller(), snapshotBlock),
                 "User needs at least " + balnVoteDefinitionCriterion.get().divide(BigInteger.valueOf(100)) + "% of " +
                         "total boosted baln supply to define a vote.");
-        verifyTransactions(transactions);
+       
+        if (!skipTransactionVerification) {
+            verifyTransactions(transactions);
+        }
 
         call(ContractManager.getAddress(Names.BNUSD), "govTransfer", Context.getCaller(), ContractManager.getAddress(Names.DAOFUND),
                 bnusdVoteDefinitionFee.getOrDefault(BigInteger.ONE), new byte[0]);

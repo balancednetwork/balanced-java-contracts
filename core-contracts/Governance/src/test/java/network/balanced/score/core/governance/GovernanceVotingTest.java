@@ -68,13 +68,13 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         String tooLongDescription = "T".repeat(501);
         expectedErrorMessage = "Description must be less than or equal to 500 characters.";
         Executable withTooLongDescription = () -> governance.invoke(owner, "defineVote", name, tooLongDescription,
-                voteStart, voteDuration, forumLink, actions);
+                voteStart, voteDuration, forumLink, actions, false);
         expectErrorMessage(withTooLongDescription, expectedErrorMessage);
 
         BigInteger voteStartBeforeToday = day.subtract(BigInteger.ONE);
         expectedErrorMessage = "Vote cannot start before the current day.";
         Executable withVoteStartBeforeToday = () -> governance.invoke(owner, "defineVote", name, description,
-                voteStartBeforeToday, voteDuration, forumLink, actions);
+                voteStartBeforeToday, voteDuration, forumLink, actions, false);
         expectErrorMessage(withVoteStartBeforeToday, expectedErrorMessage);
 
         BigInteger balnVoteDefinitionCriterion = (BigInteger) governance.call("getBalnVoteDefinitionCriterion");
@@ -82,13 +82,13 @@ public class GovernanceVotingTest extends GovernanceTestBase {
                 "User needs at least " + balnVoteDefinitionCriterion.divide(BigInteger.valueOf(100)) + "% of total " +
                         "boosted baln supply to define a vote.";
         Executable withToFewStakedBaln = () -> governance.invoke(accountWithLowBalance, "defineVote", name,
-                description, voteStart, voteDuration, forumLink, actions);
+                description, voteStart, voteDuration, forumLink, actions, false);
         expectErrorMessage(withToFewStakedBaln, expectedErrorMessage);
 
         String invalidForumLink = "www.google.com";
         expectedErrorMessage = "Invalid forum link.";
         Executable withInvalidForumLink = () -> governance.invoke(owner, "defineVote", name, description, voteStart,
-                voteDuration, invalidForumLink, actions);
+                voteDuration, invalidForumLink, actions, false);
         expectErrorMessage(withInvalidForumLink, expectedErrorMessage);
 
         String invalidActions = new JsonArray()
@@ -96,16 +96,16 @@ public class GovernanceVotingTest extends GovernanceTestBase {
 
         expectedErrorMessage = "Vote execution failed";
         Executable withInvalidActions = () -> governance.invoke(owner, "defineVote", name, description, voteStart,
-                voteDuration, forumLink, invalidActions);
+                voteDuration, forumLink, invalidActions, false);
         expectErrorMessage(withInvalidActions, expectedErrorMessage);
 
         // Arrange
-        governance.invoke(owner, "defineVote", name, description, voteStart, voteDuration, forumLink, actions);
+        governance.invoke(owner, "defineVote", name, description, voteStart, voteDuration, forumLink, actions, false);
 
         // Act & Assert
         expectedErrorMessage = "Poll name " + name + " has already been used.";
         Executable withAlreadyUsedName = () -> governance.invoke(owner, "defineVote", name, description, voteStart,
-                voteDuration, forumLink, actions);
+                voteDuration, forumLink, actions, false);
         expectErrorMessage(withAlreadyUsedName, expectedErrorMessage);
 
         BigInteger id = (BigInteger) governance.call("getVoteIndex", name);
@@ -134,7 +134,7 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         when(bBaln.mock.balanceOfAt(eq(proposer.getAddress()), any(BigInteger.class))).thenReturn(BigInteger.TEN.multiply(EXA));
         when(bBaln.mock.totalSupplyAt(any(BigInteger.class))).thenReturn(BigInteger.valueOf(6).multiply(EXA));
 
-        governance.invoke(proposer, "defineVote", name, description, voteStart, voteDuration, forumLink, actions);
+        governance.invoke(proposer, "defineVote", name, description, voteStart, voteDuration, forumLink, actions, false);
         BigInteger id = (BigInteger) governance.call("getVoteIndex", name);
 
         // Act & Assert
@@ -188,7 +188,7 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         when(bBaln.mock.balanceOfAt(eq(proposer.getAddress()), any(BigInteger.class))).thenReturn(BigInteger.TEN.multiply(EXA));
         when(bBaln.mock.totalSupplyAt(any(BigInteger.class))).thenReturn(BigInteger.valueOf(6).multiply(EXA));
 
-        governance.invoke(proposer, "defineVote", name, description, voteStart, voteDuration, forumLink, actions);
+        governance.invoke(proposer, "defineVote", name, description, voteStart, voteDuration, forumLink, actions, false);
         BigInteger id = (BigInteger) governance.call("getVoteIndex", name);
 
         // Act & Assert
