@@ -77,5 +77,8 @@ public interface StakedLP {
     List<BigInteger> getAllowedPoolIds();
 
     @External(readonly = true)
+    boolean isSupportedPool(BigInteger id);
+
+    @External(readonly = true)
     List<String> getDataSources();
 }
