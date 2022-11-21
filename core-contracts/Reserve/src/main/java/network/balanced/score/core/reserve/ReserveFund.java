@@ -27,6 +27,8 @@ import scorex.util.HashMap;
 import java.math.BigInteger;
 import java.util.Map;
 
+import network.balanced.score.lib.utils.Names;
+
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Math.pow;
@@ -50,10 +52,10 @@ public class ReserveFund implements Reserve {
     private final VarDB<Address> sicxToken = Context.newVarDB(SICX_TOKEN, Address.class);
     private final BranchDB<Address, DictDB<Address, BigInteger>> awards = Context.newBranchDB(AWARDS, BigInteger.class);
 
-    public ReserveFund(@Optional Address governance) {
-        if (governance != null) {
-            Context.require(governance.isContract(), "ReserveFund: Governance address should be a contract");
-            ReserveFund.governance.set(governance);
+    public ReserveFund(@Optional Address _governance) {
+        if (governance.get() == null) {
+            Context.require(_governance.isContract(), "ReserveFund: Governance address should be a contract");
+            governance.set(_governance);
         }
     }
 
@@ -63,7 +65,7 @@ public class ReserveFund implements Reserve {
 
     @External(readonly = true)
     public String name() {
-        return "Balanced Reserve Fund";
+        return Names.RESERVE;
     }
 
     @External

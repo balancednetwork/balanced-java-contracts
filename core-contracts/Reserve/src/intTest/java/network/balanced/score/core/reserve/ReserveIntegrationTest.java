@@ -16,6 +16,19 @@
 
 package network.balanced.score.core.reserve;
 
+import static network.balanced.score.lib.test.integration.BalancedUtils.*;
+import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Constants.POINTS;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.math.BigInteger;
+import java.util.Map;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
@@ -31,8 +44,7 @@ import java.math.BigInteger;
 import java.util.Map;
 
 import static network.balanced.score.lib.test.integration.BalancedUtils.*;
-import static network.balanced.score.lib.utils.Constants.EXA;
-import static network.balanced.score.lib.utils.Constants.POINTS;
+import static network.balanced.score.lib.utils.Constants.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -52,19 +64,8 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         owner = balanced.ownerClient;
         reader = balanced.newClient(BigInteger.ZERO);
 
-        owner.stability.whitelistTokens(balanced.sicx._address(), BigInteger.TEN.pow(10));
+        whitelistToken(balanced, balanced.sicx._address(), BigInteger.TEN.pow(10));
 
-        owner.governance.addAcceptedTokens(balanced.sicx._address().toString());
-        owner.governance.addAcceptedTokens(balanced.baln._address().toString());
-        owner.governance.addAcceptedTokens(balanced.bnusd._address().toString());
-        owner.governance.setAcceptedDividendTokens(new score.Address[]{
-                balanced.sicx._address(),
-                balanced.baln._address(),
-                balanced.bnusd._address()
-        });
-
-        owner.governance.setRebalancingThreshold(BigInteger.TEN.pow(17));
-        owner.governance.setVoteDuration(BigInteger.TWO);
         owner.governance.setVoteDefinitionFee(voteDefinitionFee);
         owner.governance.setBalnVoteDefinitionCriterion(BigInteger.ZERO);
         owner.governance.setQuorum(BigInteger.ONE);
@@ -109,7 +110,6 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
     void liquidate_useReserve_multicollateral() throws Exception {
         // Arrange
         balanced.increaseDay(1);
-        claimAllRewards();
         BigInteger BAD_DEBT_RETIREMENT_BONUS = BigInteger.valueOf(1_000);
         BalancedClient voter = balanced.newClient();
         depositToStabilityContract(voter, voteDefinitionFee.multiply(BigInteger.TWO));
@@ -231,7 +231,6 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
     void liquidate_useReserve() throws Exception {
         // Arrange
         balanced.increaseDay(1);
-        claimAllRewards();
         BalancedClient voter = balanced.newClient();
         depositToStabilityContract(voter, voteDefinitionFee.multiply(BigInteger.TWO));
 
@@ -293,7 +292,6 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
     void liquidate_useReserve_specificCollateral() throws Exception {
         // Arrange
         balanced.increaseDay(1);
-        claimAllRewards();
         BigInteger BAD_DEBT_RETIREMENT_BONUS = BigInteger.valueOf(1_000);
         BalancedClient voter = balanced.newClient();
         depositToStabilityContract(voter, voteDefinitionFee.multiply(BigInteger.TWO));
@@ -403,35 +401,41 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
                 continue;
             }
 
-            client.rewards.claimRewards();
-            BigInteger balance = client.baln.balanceOf(client.getAddress());
-            if (balance.compareTo(EXA) > 0) {
-                client.baln.stake(balance);
+            client.rewards.claimRewards(null);
+            BigInteger balance = client.baln.availableBalanceOf(client.getAddress());
+            BigInteger boostedBalance = client.boostedBaln.balanceOf(client.getAddress(), BigInteger.ZERO);
+            if (boostedBalance.equals(BigInteger.ZERO) && balance.compareTo(EXA) > 0) {
+                long unlockTime =
+                        (System.currentTimeMillis() * 1000) + (BigInteger.valueOf(52).multiply(MICRO_SECONDS_IN_A_DAY).multiply(BigInteger.valueOf(7))).longValue();
+                String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
+                client.baln.transfer(owner.boostedBaln._address(), balance, data.getBytes());
             }
         }
     }
 
-    protected void setLockingRatio(BalancedClient voter, BigInteger ratio, String name) {
-        JsonObject setLockingRatioParametersSICX = new JsonObject()
-                .add("_symbol", "sICX")
-                .add("_value", ratio.intValue());
-
-        JsonArray setLockingRatioCallSICX = new JsonArray()
-                .add("setLockingRatio")
-                .add(setLockingRatioParametersSICX);
-
-        JsonObject setLockingRatioParametersIETH = new JsonObject()
-                .add("_symbol", "iETH")
-                .add("_value", ratio.intValue());
-
-        JsonArray setLockingRatioCallIETH = new JsonArray()
-                .add("setLockingRatio")
-                .add(setLockingRatioParametersIETH);
+    protected void setLockingRatio(BalancedClient voter, String symbol, BigInteger ratio, String name) throws Exception {
+        JsonArray setLockingRatioParameters = new JsonArray()
+            .add(createParameter(symbol))
+            .add(createParameter(ratio));
 
         JsonArray actions = new JsonArray()
-                .add(setLockingRatioCallSICX)
-                .add(setLockingRatioCallIETH);
-        executeVoteActions(balanced, voter, name, actions);
+            .add(createTransaction(balanced.loans._address(), "setLockingRatio", setLockingRatioParameters));
+        executeVote(balanced, voter, name, actions);
+    }
+
+    protected void setLockingRatio(BalancedClient voter, BigInteger ratio, String name) throws Exception {
+        JsonArray setLockingRatioParametersSICX = new JsonArray()
+            .add(createParameter("sICX"))
+            .add(createParameter(ratio));
+        JsonArray setLockingRatioParametersIETH = new JsonArray()
+            .add(createParameter("iETH"))
+            .add(createParameter(ratio));
+
+        JsonArray actions = new JsonArray()
+            .add(createTransaction(balanced.loans._address(), "setLockingRatio", setLockingRatioParametersSICX))
+            .add(createTransaction(balanced.loans._address(), "setLockingRatio", setLockingRatioParametersIETH));
+        claimAllRewards();
+        executeVote(balanced, voter, name, actions);
     }
 
     private void addCollateralType(BalancedClient minter, Address collateralAddress, BigInteger tokenAmount,

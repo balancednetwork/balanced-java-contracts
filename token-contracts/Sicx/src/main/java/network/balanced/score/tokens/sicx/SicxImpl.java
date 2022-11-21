@@ -18,6 +18,7 @@ package network.balanced.score.tokens.sicx;
 
 import network.balanced.score.lib.interfaces.Sicx;
 import network.balanced.score.lib.tokens.IRC2Burnable;
+import network.balanced.score.lib.utils.Names;
 import score.Address;
 import score.Context;
 import score.VarDB;
@@ -30,7 +31,7 @@ import static network.balanced.score.lib.utils.Check.onlyOwner;
 
 public class SicxImpl extends IRC2Burnable implements Sicx {
     private static final String TAG = "sICX";
-    private static final String TOKEN_NAME = "Staked ICX";
+    private static final String TOKEN_NAME = Names.SICX;
     private static final String SYMBOL_NAME = "sICX";
     private static final BigInteger DECIMALS = BigInteger.valueOf(18);
     private static final String STAKING = "staking";

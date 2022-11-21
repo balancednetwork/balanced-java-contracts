@@ -26,10 +26,14 @@ import network.balanced.score.lib.test.integration.Env;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
 import org.junit.jupiter.api.Test;
 
+import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.JsonObject;
+
 import java.io.File;
 import java.math.BigInteger;
 import java.util.function.Consumer;
 
+import static network.balanced.score.lib.test.integration.BalancedUtils.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -117,7 +121,7 @@ public class NonStakedLPRewardsTest {
 
         waitForADay();
         balanced.syncDistributions();
-        rewards.claimRewards();
+        rewards.claimRewards(null);
 
         baln.transfer(userAddress, loanAmount, null);
 
@@ -130,10 +134,10 @@ public class NonStakedLPRewardsTest {
 
         waitForADay();
         balanced.syncDistributions();
-        userWalletRewardsClient.claimRewards();
+        userWalletRewardsClient.claimRewards(null);
 
         balanced.syncDistributions();
-        userWalletRewardsClient.claimRewards();
+        userWalletRewardsClient.claimRewards(null);
         waitForADay();
 
         // next day starts
@@ -157,7 +161,7 @@ public class NonStakedLPRewardsTest {
         // user gets rewards after lp token is staked
         assertTrue(rewards.getBalnHolding(userAddress).compareTo(BigInteger.ZERO) > 0);
         BigInteger previousUserBalance = baln.balanceOf(userAddress);
-        userWalletRewardsClient.claimRewards();
+        userWalletRewardsClient.claimRewards(null);
         BigInteger newBalance = baln.balanceOf(userAddress);
         assertTrue(newBalance.compareTo(previousUserBalance) > 0);
     }

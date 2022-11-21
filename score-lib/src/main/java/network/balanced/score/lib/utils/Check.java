@@ -16,9 +16,13 @@
 
 package network.balanced.score.lib.utils;
 
+import java.math.BigInteger;
+
 import score.Address;
 import score.Context;
 import score.VarDB;
+
+import static network.balanced.score.lib.utils.BalancedAddressManager.getGovernance;
 
 public class Check {
 
@@ -28,9 +32,25 @@ public class Check {
         Context.require(caller.equals(owner), "SenderNotScoreOwner: Sender=" + caller + "Owner=" + owner);
     }
 
-    public static void only(VarDB<Address> authorizedCaller) {
+    public static void onlyGovernance() {
+        Address governance = getGovernance();
+        only(governance);
+    }
+
+    public static void onlyOwnerOrContract() {
         Address caller = Context.getCaller();
-        Address authorizedCallerAddress = authorizedCaller.get();
+        Address owner = Context.getOwner();
+        Address contract = Context.getAddress();
+        Context.require(caller.equals(owner) || caller.equals(contract),
+                "SenderNotScoreOwnerOrContract: Sender=" + caller + " Owner=" + owner + " Contract=" + contract);
+    }
+
+    public static void only(VarDB<Address> authorizedCaller) {
+        only(authorizedCaller.get());
+    }
+
+    public static void only(Address authorizedCallerAddress) {
+        Address caller = Context.getCaller();
         Context.require(authorizedCallerAddress != null, "Authorization Check: Address not set");
         Context.require(caller.equals(authorizedCallerAddress),
                 "Authorization Check: Authorization failed. Caller: " + caller + " Authorized Caller: " + authorizedCallerAddress);
@@ -40,8 +60,8 @@ public class Check {
         Address caller = Context.getCaller();
         Address authorizedCallerAddress = authorizedCaller.get();
         Address authorizedCaller2Address = authorizedCaller2.get();
-        Context.require(authorizedCallerAddress != null || 
-                        authorizedCaller2Address != null, 
+        Context.require(authorizedCallerAddress != null ||
+                        authorizedCaller2Address != null,
                         "Authorization Check: Address not set");
         Context.require(caller.equals(authorizedCallerAddress) ||
                         caller.equals(authorizedCaller2Address),
@@ -53,7 +73,23 @@ public class Check {
                 "is required.");
     }
 
-    public static <T> T optionalDefault(T value, T base) {
+    public static BigInteger optionalDefault(BigInteger value, BigInteger base) {
+        if (value.equals(BigInteger.ZERO)) {
+            return base;
+        }
+
+        return value;
+    }
+
+    public static Address optionalDefault(Address value, Address base) {
+        if (value == null) {
+            return base;
+        }
+
+        return value;
+    }
+
+    public static String optionalDefault(String value, String base) {
         if (value == null) {
             return base;
         }

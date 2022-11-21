@@ -16,6 +16,9 @@
 
 package network.balanced.score.core.dex;
 
+import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.JsonObject;
+
 import foundation.icon.icx.Wallet;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
@@ -33,6 +36,7 @@ import java.io.File;
 import java.math.BigInteger;
 import java.util.Map;
 
+import static network.balanced.score.lib.test.integration.BalancedUtils.*;
 import static foundation.icon.score.client.DefaultScoreClient._deploy;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -163,18 +167,28 @@ public class SwapRemoveAndFeeTest {
                 tokenDeposit);
 
         //check isQuoteCoinAllowed for test token if not added
-        if (!dexUserScoreClient.isQuoteCoinAllowed(Address.fromString(dexTestScoreAddress))) {
-            governanceDexScoreClient.dexAddQuoteCoin(Address.fromString(dexTestScoreAddress));
+        if(!dexUserScoreClient.isQuoteCoinAllowed(Address.fromString(dexTestScoreAddress))) {
+            dexAddQuoteCoin(new Address(dexTestScoreAddress));
         }
-        if (!dexUserScoreClient.isQuoteCoinAllowed(Address.fromString(dexTestBaseScoreAddress))) {
-            governanceDexScoreClient.dexAddQuoteCoin(Address.fromString(dexTestBaseScoreAddress));
+        if(!dexUserScoreClient.isQuoteCoinAllowed(Address.fromString(dexTestBaseScoreAddress))) {
+            dexAddQuoteCoin(new Address(dexTestBaseScoreAddress));
         }
-        if (!dexUserScoreClient.isQuoteCoinAllowed(Address.fromString(dexTestThirdScoreAddress))) {
-            governanceDexScoreClient.dexAddQuoteCoin(Address.fromString(dexTestThirdScoreAddress));
+        if(!dexUserScoreClient.isQuoteCoinAllowed(Address.fromString(dexTestThirdScoreAddress))) {
+            dexAddQuoteCoin(new Address(dexTestThirdScoreAddress));
         }
     }
 
-    void waitForADay() {
+    void dexAddQuoteCoin(Address address) {
+        JsonArray addQuoteCoinParameters = new JsonArray()
+            .add(createParameter(address));
+
+        JsonArray actions = new JsonArray()
+            .add(createTransaction(balanced.dex._address(), "addQuoteCoin", addQuoteCoinParameters));
+
+            balanced.ownerClient.governance.execute(actions.toString());
+    }
+
+    void waitForADay(){
         balanced.increaseDay(1);
     }
 

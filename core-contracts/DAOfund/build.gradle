@@ -67,6 +67,11 @@ deployJar {
             nid = 0x7
             to = Addresses.berlin.daofund
         }
+        lisbon {
+            uri = 'https://lisbon.net.solidwallet.io/api/v3'
+            nid = 0x2
+            to = Addresses.lisbon.daofund
+        }
         local {
             uri = 'http://localhost:9082/api/v3'
             nid = 0x3
@@ -87,6 +92,16 @@ deployJar {
 tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = false
+        csv.required = false
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+    }
 }
 
 task integrationTest(type: Test) {

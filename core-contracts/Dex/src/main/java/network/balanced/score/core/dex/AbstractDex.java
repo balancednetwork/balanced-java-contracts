@@ -56,6 +56,7 @@ public abstract class AbstractDex implements Dex {
             currentDay.set(BigInteger.valueOf(1L));
             namedMarkets.set(SICXICX_MARKET_NAME, SICXICX_POOL_ID);
             marketsToNames.set(SICXICX_POOL_ID, SICXICX_MARKET_NAME);
+            dexOn.set(true);
         }
     }
 
@@ -410,8 +411,14 @@ public abstract class AbstractDex implements Dex {
 
     @External(readonly = true)
     public BigInteger getBnusdValue(String _name) {
+        // Should eventually only handle sICX/ICX
         Integer _id = namedMarkets.get(_name);
-        if (_id.equals(SICXICX_POOL_ID)) {
+        return getLPBnusdValue(_id);
+    }
+
+    @External(readonly = true)
+    public BigInteger getLPBnusdValue(int _id) {
+        if (_id == SICXICX_POOL_ID) {
             BigInteger icxTotal = icxQueueTotal.getOrDefault(BigInteger.ZERO);
             return (icxTotal.multiply(getSicxBnusdPrice())).divide(getSicxRate());
         }
@@ -426,6 +433,7 @@ public abstract class AbstractDex implements Dex {
         } else if (poolQuoteToken.equals(bnusdAddress)) {
             return poolTotal.at(_id).get(bnusdAddress).multiply(BigInteger.TWO);
         }
+
         return BigInteger.ZERO;
     }
 

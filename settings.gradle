@@ -75,6 +75,9 @@ project(':Loans').projectDir = file("core-contracts/Loans")
 include(':Governance')
 project(':Governance').projectDir = file("core-contracts/Governance")
 
+include(':DeploymentTester')
+project(':DeploymentTester').projectDir = file("core-contracts/Governance/src/intTest/java/network/balanced/score/core/governance/DeploymentTester")
+
 include(':DummyOracle')
 project(':DummyOracle').projectDir = file("util-contracts/DummyOracle")
 
@@ -92,3 +95,6 @@ project(':FeeHandler').projectDir = file("core-contracts/FeeHandler")
 
 include(':BalancedOracle')
 project(':BalancedOracle').projectDir = file("core-contracts/BalancedOracle")
+
+include(':bBaln')
+project(':bBaln').projectDir = file("token-contracts/bBaln")

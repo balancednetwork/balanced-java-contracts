@@ -21,6 +21,7 @@ import network.balanced.score.lib.interfaces.LoansScoreInterface;
 import network.balanced.score.lib.structs.Disbursement;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.utils.EnumerableSetDB;
+import network.balanced.score.lib.utils.Names;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -32,6 +33,11 @@ import java.util.Map;
 
 import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
 import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.BalancedAddressManager.setGovernance;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getLoans;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getStaking;
+import static network.balanced.score.lib.utils.BalancedAddressManager.resetAddress;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getAddressByName;
 
 public class DAOfundImpl implements DAOfund {
 
@@ -40,87 +46,59 @@ public class DAOfundImpl implements DAOfund {
     }
 
     private static final String GOVERNANCE = "governance";
-    private static final String ADMIN = "admin";
-    private static final String LOANS_SCORE = "loans_score";
     private static final String ADDRESS = "address";
     private static final String FUND = "fund";
     private static final String AWARDS = "awards";
 
     private static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
-    private static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
-    private final VarDB<Address> loansScore = Context.newVarDB(LOANS_SCORE, Address.class);
     // fund represents the total amount that is available to disburse
     private final DictDB<String, BigInteger> fund = Context.newDictDB(FUND, BigInteger.class);
     private final EnumerableSetDB<String> address = new EnumerableSetDB<>(ADDRESS, String.class);
     // Awards hold the amount that can be claimed by any user
     private final BranchDB<Address, DictDB<Address, BigInteger>> awards = Context.newBranchDB(AWARDS, BigInteger.class);
-    public static final String TAG = "Balanced DAOfund";
+
+    public static final String TAG = Names.DAOFUND;
 
     public DAOfundImpl(Address _governance) {
         if (governance.get() == null) {
             isContract(_governance);
             governance.set(_governance);
         }
+
+        setGovernance(governance.get());
     }
 
     @External(readonly = true)
     public String name() {
-        return TAG;
-    }
-
-    //Setup methods
-    @External
-    public void setGovernance(Address _address) {
-        onlyOwner();
-        isContract(_address);
-        governance.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getGovernance() {
-        return governance.get();
+        return Names.DAOFUND;
     }
 
     @External
-    public void setAdmin(Address _address) {
-        only(governance);
-        admin.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getAdmin() {
-        return admin.get();
-    }
-
-    @External
-    public void setLoans(Address _address) {
-        only(admin);
-        isContract(_address);
-        loansScore.set(_address);
+    public void updateAddress(String name) {
+        resetAddress(name);
     }
 
     @External
     public void addAcceptedToken(Address address) {
-        only(admin);
+        onlyGovernance();
         this.address.add(address.toString());
     }
 
     @External
     public void removeAcceptedToken(Address address) {
-        only(admin);
+        onlyGovernance();
         this.address.remove(address.toString());
     }
 
     @External(readonly = true)
-    public Address getLoans() {
-        return loansScore.get();
+    public Address getAddress(String name) {
+        return getAddressByName(name);
     }
 
     @External
     public void delegate(PrepDelegations[] prepDelegations) {
-        only(governance);
-        Address staking = (Address) Context.call(governance.get(), "getContractAddress", "staking");
-        Context.call(staking, "delegate", (Object) prepDelegations);
+        onlyGovernance();
+        Context.call(getStaking(), "delegate", (Object) prepDelegations);
     }
 
     @External(readonly = true)
@@ -159,7 +137,7 @@ public class DAOfundImpl implements DAOfund {
      */
     @External
     public boolean disburse(Address _recipient, Disbursement[] _amounts) {
-        only(governance);
+        onlyGovernance();
         for (Disbursement asset : _amounts) {
             BigInteger amountInDaofund = fund.getOrDefault(asset.address.toString(), BigInteger.ZERO);
             BigInteger amountToBeClaimedByRecipient = awards.at(_recipient).getOrDefault(asset.address,
@@ -196,17 +174,67 @@ public class DAOfundImpl implements DAOfund {
     }
 
     @External
-    public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
-        String tokenContract = Context.getCaller().toString();
-        Context.require(address.contains(tokenContract), TAG + ": Daofund can't receive this token");
+    public void claimRewards() {
+        POLManager.claimRewards();
+    }
 
-        BigInteger tokenAmountInDAOfund = fund.getOrDefault(tokenContract, BigInteger.ZERO);
-        fund.set(tokenContract, tokenAmountInDAOfund.add(_value));
+    @External
+    public void claimNetworkFees() {
+        POLManager.claimNetworkFees();
+    }
+
+    @External
+    public void supplyLiquidity(Address baseAddress, BigInteger baseAmount, Address quoteAddress, BigInteger quoteAmount) {
+        onlyGovernance();
+        POLManager.supplyLiquidity(baseAddress, baseAmount, quoteAddress, quoteAmount);;
+    }
+
+    @External
+    public void withdrawLiquidity(BigInteger pid, BigInteger amount) {
+        onlyGovernance();
+        POLManager.withdrawLiquidity(pid, amount);
+    }
+
+    @External
+    public void stakeLPTokens(BigInteger pid) {
+        POLManager.stakeLPTokens(pid);
+    }
+
+    @External(readonly = true)
+    public BigInteger getBalnEarnings() {
+        return POLManager.getBalnEarnings();
+    }
+
+    @External(readonly = true)
+    public Map<String, BigInteger> getFeeEarnings() {
+        return POLManager.getFeeEarnings();
+    }
+
+    @External
+    public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
+        if (POLManager.isProcessingFees()) {
+            POLManager.handleFee(_value);
+            return;
+        } else if (POLManager.isProcessingRewards()) {
+            POLManager.handleRewards(_value);
+            return;
+        }
+
+        String tokenContract = Context.getCaller().toString();
+        if(address.contains(tokenContract)) {
+            BigInteger tokenAmountInDAOfund = fund.getOrDefault(tokenContract, BigInteger.ZERO);
+            fund.set(tokenContract, tokenAmountInDAOfund.add(_value));
+        }
     }
 
     @Payable
     public void fallback() {
         Context.revert("ICX not accepted in this contract");
     }
+
+    @External
+    public void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data) {
+    }
+
 
 }

@@ -88,6 +88,9 @@
   {
     "name": "reserve",
     "params": {},
+    "addressParams": {
+      "_governance": "governance"
+    },
     "order": 2.0
   },
   {
@@ -155,5 +158,17 @@
   {
     "name": "multicall",
     "params": {}
+  },
+  {
+    "name": "bBaln",
+    "params": {
+      "symbol": "bBaln"
+    },
+    "addressParams": {
+      "balnAddress": "baln",
+      "rewardAddress": "rewards",
+      "dividendsAddress": "dividends"
+    },
+    "order": 3.0
   }
 ]

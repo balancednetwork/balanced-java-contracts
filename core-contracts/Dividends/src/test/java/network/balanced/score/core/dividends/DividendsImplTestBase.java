@@ -45,6 +45,7 @@ class DividendsImplTestBase extends UnitTest {
     protected static final Account daoScore = Account.newScoreAccount(3);
     protected static final Account balnScore = Account.newScoreAccount(4);
     protected static final Account sICXScore = Account.newScoreAccount(5);
+    protected static final Account bBalnScore = Account.newScoreAccount(8);
     protected static final Account dexScore = Account.newScoreAccount(6);
     protected static final Account stakingScore = Account.newScoreAccount(7);
     protected static final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class,

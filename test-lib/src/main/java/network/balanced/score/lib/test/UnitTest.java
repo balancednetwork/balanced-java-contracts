@@ -154,4 +154,14 @@ public class UnitTest extends TestBase {
         Executable setScoreNotFromAdmin = () -> contractUnderTest.invoke(nonAdmin, method, params);
         expectErrorMessage(setScoreNotFromAdmin, expectedErrorMessage);
     }
+
+    public static void assertOnlyCallableBy(Address caller, Score contractUnderTest, String method, Object... params) {
+        Account nonAuthorizedCaller = sm.createAccount();
+        String expectedErrorMessage =
+                "Reverted(0): Authorization Check: Authorization failed. Caller: " + nonAuthorizedCaller.getAddress() +
+                        " Authorized Caller: " + caller;
+        System.out.println(expectedErrorMessage);
+        Executable unAuthorizedCall = () -> contractUnderTest.invoke(nonAuthorizedCaller, method, params);
+        expectErrorMessage(unAuthorizedCall, expectedErrorMessage);
+    }
 }
