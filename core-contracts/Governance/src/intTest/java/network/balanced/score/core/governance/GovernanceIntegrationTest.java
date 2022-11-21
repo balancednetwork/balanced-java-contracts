@@ -317,7 +317,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         String name = "testUpdateContractVote2";
         BigInteger voteStart = day.add(BigInteger.valueOf(4));
 
-        tester.governance.defineVote(name, "test", voteStart, BigInteger.TWO, "https://gov.balanced.network/dummy", actions.toString());
+        tester.governance.defineVote(name, "test", voteStart, BigInteger.TWO, "https://gov.balanced.network/dummy", actions.toString(), false);
 
 
         balanced.increaseDay(4);
