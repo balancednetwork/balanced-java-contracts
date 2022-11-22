@@ -154,9 +154,9 @@ public class GovernanceImpl implements Governance {
 
     @External
     public void defineVote(String name, String description, BigInteger vote_start, BigInteger duration,
-                           String forumLink, @Optional String transactions, @Optional boolean skipTransactionVerification ) {
+                           String forumLink, @Optional String transactions) {
         transactions = optionalDefault(transactions, "[]");
-        ProposalManager.defineVote(name, description, vote_start, duration, forumLink, transactions, skipTransactionVerification);
+        ProposalManager.defineVote(name, description, vote_start, duration, forumLink, transactions);
     }
 
     @External

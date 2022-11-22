@@ -41,7 +41,7 @@ public class BalancedUtils {
         BigInteger day = voter.governance.getDay();
         BigInteger voteStart = day.add(BigInteger.TWO);
         String forumLink = "https://gov.balanced.network/";
-        voter.governance.defineVote(name, "test", voteStart, BigInteger.ONE, forumLink, transactions.toString(), false);
+        voter.governance.defineVote(name, "test", voteStart, BigInteger.ONE, forumLink, transactions.toString());
         BigInteger id = voter.governance.getVoteIndex(name);
         balanced.increaseDay(2);
 

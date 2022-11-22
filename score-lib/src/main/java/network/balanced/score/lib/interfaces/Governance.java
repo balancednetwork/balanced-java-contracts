@@ -87,7 +87,7 @@ public interface Governance extends
 
     @External
     void defineVote(String name, String description, BigInteger vote_start, BigInteger duration, String forumLink,
-                    String transactions, boolean skipTransactionVerification);
+                    String transactions);
 
     @External
     void tryExecuteTransactions(String transactions);
