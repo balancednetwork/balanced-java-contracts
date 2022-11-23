@@ -54,12 +54,6 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
 
         contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("getTimeOffset"))).thenReturn(BigInteger.TWO);
 
-        Map<String, String> asset = new HashMap<>();
-        asset.put("baln", String.valueOf(balnScore.getAddress()));
-        asset.put("bnUSD", String.valueOf(bnUSDScore.getAddress()));
-
-        contextMock.when(getAssetTokens).thenReturn(asset);
-
         BigInteger day = getDay();
         dividendScore.invoke(admin, "setDividendsOnlyToStakedBalnDay", day.add(BigInteger.ONE));
         sm.getBlock().increase(DAY);

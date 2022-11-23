@@ -54,11 +54,18 @@ deployBalancedContracts {
             keystore = rootProject.findProperty('keystoreName') ?: ''
             password = rootProject.findProperty('keystorePass') ?: ''
         }
+        lisbon {
+            env = "lisbon"
+            configFile = "contracts-sample.json"
+            keystore = rootProject.findProperty('keystoreName') ?: ''
+            password = rootProject.findProperty('keystorePass') ?: ''
+        }
     }
 }
 
 project.tasks.getByName("deployContractsToBerlin").dependsOn(project.tasks.getByName("buildContracts"))
 project.tasks.getByName("deployContractsToSejong").dependsOn(project.tasks.getByName("buildContracts"))
+project.tasks.getByName("deployContractsToLisbon").dependsOn(project.tasks.getByName("buildContracts"))
 project.tasks.getByName("deployContractsToLocal").dependsOn(project.tasks.getByName("buildContracts"))
 
 

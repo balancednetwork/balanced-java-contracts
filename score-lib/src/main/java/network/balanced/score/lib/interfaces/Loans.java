@@ -39,9 +39,6 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
     void removeBALN();
 
     @External
-    void turnLoansOn();
-
-    @External
     void toggleLoansOn();
 
     @External(readonly = true)

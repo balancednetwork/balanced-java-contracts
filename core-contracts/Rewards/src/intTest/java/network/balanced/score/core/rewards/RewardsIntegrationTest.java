@@ -28,10 +28,12 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
+import com.eclipsesource.json.JsonArray;
+
 import java.math.BigInteger;
 import java.util.Map;
 
-import static network.balanced.score.lib.test.integration.BalancedUtils.hexObjectToBigInteger;
+import static network.balanced.score.lib.test.integration.BalancedUtils.*;
 import static network.balanced.score.lib.utils.Constants.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -51,17 +53,6 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
 
         owner = balanced.ownerClient;
         reader = balanced.newClient(BigInteger.ZERO);
-
-        owner.governance.addAcceptedTokens(balanced.sicx._address().toString());
-        owner.governance.addAcceptedTokens(balanced.baln._address().toString());
-        owner.governance.addAcceptedTokens(balanced.bnusd._address().toString());
-        owner.governance.setAcceptedDividendTokens(new score.Address[]{
-                balanced.sicx._address(),
-                balanced.baln._address(),
-                balanced.bnusd._address()
-        });
-
-
         BigInteger platformDay = hexObjectToBigInteger(reader.rewards.distStatus().get("platform_day"));
         BigInteger distributedDay = platformDay.subtract(BigInteger.ONE);
         initialDistributions = reader.rewards.recipientAt(distributedDay);
@@ -242,7 +233,8 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         assertEquals(lpBalance, boostData.get("sICX/ICX").get("balance"));
 
         // Act
-        owner.boostedBaln.setPenaltyAddress(balanced.daofund._address());
+        owner.governance.execute(createSingleTransaction(balanced.bBaln._address(), "setPenaltyAddress",
+                 new JsonArray().add(createParameter(balanced.daofund._address()))).toString());
         icxSicxLpBoosted.boostedBaln.withdrawEarly();
 
         // Assert
@@ -280,18 +272,23 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
 
         // Act
         BigInteger halfLoansDist = distributions.get("Loans").divide(BigInteger.TWO);
-        DistributionPercentage[] recipients = new DistributionPercentage[]{
-                createDistributionPercentage("Loans", halfLoansDist),
-                createDistributionPercentage("sICX/ICX", distributions.get("sICX/ICX").add(halfLoansDist)),
-                createDistributionPercentage("Worker Tokens", distributions.get("Worker Tokens")),
-                createDistributionPercentage("Reserve Fund", distributions.get("Reserve Fund")),
-                createDistributionPercentage("DAOfund", distributions.get("DAOfund")),
-                createDistributionPercentage("sICX/bnUSD", distributions.get("sICX/bnUSD")),
-                createDistributionPercentage("BALN/bnUSD", distributions.get("BALN/bnUSD")),
-                createDistributionPercentage("BALN/sICX", distributions.get("BALN/sICX"))
-        };
+        JsonArray distributionPercentages = new JsonArray()
+            .add(createDistributionPercentage("Loans", halfLoansDist))
+            .add(createDistributionPercentage("sICX/ICX", distributions.get("sICX/ICX").add(halfLoansDist)))
+            .add(createDistributionPercentage("Worker Tokens", distributions.get("Worker Tokens")))
+            .add(createDistributionPercentage("Reserve Fund", distributions.get("Reserve Fund")))
+            .add(createDistributionPercentage("DAOfund", distributions.get("DAOfund")))
+            .add(createDistributionPercentage("sICX/bnUSD", distributions.get("sICX/bnUSD")))
+            .add(createDistributionPercentage("BALN/bnUSD", distributions.get("BALN/bnUSD")))
+            .add(createDistributionPercentage("BALN/sICX", distributions.get("BALN/sICX")));
 
-        owner.governance.updateBalTokenDistPercentage(recipients);
+        JsonArray updateBalTokenDistPercentage = new JsonArray()
+            .add(createParameter("Struct[]", distributionPercentages));
+
+        JsonArray actions = new JsonArray()
+            .add(createTransaction(balanced.rewards._address(), "updateBalTokenDistPercentage", updateBalTokenDistPercentage));
+
+        owner.governance.execute(actions.toString());
 
         balanced.increaseDay(1);
         distributedDay = distributedDay.add(BigInteger.ONE);
@@ -328,18 +325,23 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         icxSicxLP.dex._transfer(balanced.dex._address(), BigInteger.TEN.pow(22), null);
 
         // Act
-        DistributionPercentage[] recipients = new DistributionPercentage[]{
-                createDistributionPercentage("Loans", BigInteger.ZERO),
-                createDistributionPercentage("sICX/ICX", distributions.get("sICX/ICX").add(loansDist)),
-                createDistributionPercentage("Worker Tokens", distributions.get("Worker Tokens")),
-                createDistributionPercentage("Reserve Fund", distributions.get("Reserve Fund")),
-                createDistributionPercentage("DAOfund", distributions.get("DAOfund")),
-                createDistributionPercentage("sICX/bnUSD", distributions.get("sICX/bnUSD")),
-                createDistributionPercentage("BALN/bnUSD", distributions.get("BALN/bnUSD")),
-                createDistributionPercentage("BALN/sICX", distributions.get("BALN/sICX"))
-        };
+        JsonArray distributionPercentages = new JsonArray()
+            .add(createDistributionPercentage("Loans", BigInteger.ZERO))
+            .add(createDistributionPercentage("sICX/ICX", distributions.get("sICX/ICX").add(loansDist)))
+            .add(createDistributionPercentage("Worker Tokens", distributions.get("Worker Tokens")))
+            .add(createDistributionPercentage("Reserve Fund", distributions.get("Reserve Fund")))
+            .add(createDistributionPercentage("DAOfund", distributions.get("DAOfund")))
+            .add(createDistributionPercentage("sICX/bnUSD", distributions.get("sICX/bnUSD")))
+            .add(createDistributionPercentage("BALN/bnUSD", distributions.get("BALN/bnUSD")))
+            .add(createDistributionPercentage("BALN/sICX", distributions.get("BALN/sICX")));
 
-        owner.governance.updateBalTokenDistPercentage(recipients);
+        JsonArray updateBalTokenDistPercentage = new JsonArray()
+            .add(createParameter("Struct[]", distributionPercentages));
+
+        JsonArray actions = new JsonArray()
+            .add(createTransaction(balanced.rewards._address(), "updateBalTokenDistPercentage", updateBalTokenDistPercentage));
+
+        owner.governance.execute(actions.toString());
 
         verifyRewards(loanTaker);
         verifyRewards(icxSicxLP);
@@ -361,21 +363,26 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
     @Test
     @Order(22)
     void resetRewardsDistributions() throws Exception {
-        DistributionPercentage[] recipients = new DistributionPercentage[]{
-            createDistributionPercentage("Loans", initialDistributions.get("Loans")),
-            createDistributionPercentage("sICX/ICX", initialDistributions.get("sICX/ICX")),
-            createDistributionPercentage("Worker Tokens", initialDistributions.get("Worker Tokens")),
-            createDistributionPercentage("Reserve Fund", initialDistributions.get("Reserve Fund")),
-            createDistributionPercentage("DAOfund", initialDistributions.get("DAOfund")),
-            createDistributionPercentage("sICX/bnUSD", initialDistributions.get("sICX/bnUSD")),
-            createDistributionPercentage("BALN/bnUSD", initialDistributions.get("BALN/bnUSD")),
-            createDistributionPercentage("BALN/sICX", initialDistributions.get("BALN/sICX"))
-        };
+        JsonArray distributionPercentages = new JsonArray()
+            .add(createDistributionPercentage("Loans", initialDistributions.get("Loans")))
+            .add(createDistributionPercentage("sICX/ICX", initialDistributions.get("sICX/ICX")))
+            .add(createDistributionPercentage("Worker Tokens", initialDistributions.get("Worker Tokens")))
+            .add(createDistributionPercentage("Reserve Fund", initialDistributions.get("Reserve Fund")))
+            .add(createDistributionPercentage("DAOfund", initialDistributions.get("DAOfund")))
+            .add(createDistributionPercentage("sICX/bnUSD", initialDistributions.get("sICX/bnUSD")))
+            .add(createDistributionPercentage("BALN/bnUSD", initialDistributions.get("BALN/bnUSD")))
+            .add(createDistributionPercentage("BALN/sICX", initialDistributions.get("BALN/sICX")));
 
-        owner.governance.updateBalTokenDistPercentage(recipients);
-        balanced.increaseDay(1);
-            owner.rewards.distribute((txr) -> {
-        });
+    JsonArray updateBalTokenDistPercentage = new JsonArray()
+        .add(createParameter("Struct[]", distributionPercentages));
+
+    JsonArray actions = new JsonArray()
+        .add(createTransaction(balanced.rewards._address(), "updateBalTokenDistPercentage", updateBalTokenDistPercentage));
+
+    owner.governance.execute(actions.toString());
+    balanced.increaseDay(1);
+        owner.rewards.distribute((txr) -> {
+    });
     }
 
     @Test
@@ -393,7 +400,12 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
 
         // Act
         BigInteger platformDay = hexObjectToBigInteger(reader.rewards.distStatus().get("platform_day"));
-        owner.rewards.setMigrateToVotingDay(platformDay.add(BigInteger.ONE));
+
+        JsonArray setMigrateToVotingDayParameters = new JsonArray()
+            .add(createParameter(platformDay.add(BigInteger.ONE)));
+        JsonArray actions = createSingleTransaction(balanced.rewards._address(), "setMigrateToVotingDay", setMigrateToVotingDayParameters);
+
+        owner.governance.execute(actions.toString());
 
         // Assert
         verifyRewards(borrower);
@@ -408,7 +420,13 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         verifyRewards(borrower);
         verifyNoRewards(sicxBnusdLP);
 
-        owner.governance.setFixedSourcePercentage("sICX/bnUSD", EXA.divide(BigInteger.TEN));
+        JsonArray params = new JsonArray()
+            .add(createParameter("sICX/bnUSD"))
+            .add(createParameter(EXA.divide(BigInteger.TEN)));
+        actions = createSingleTransaction(balanced.rewards._address(), "setFixedSourcePercentage", params);
+        owner.governance.execute(actions.toString());
+
+
         balanced.increaseDay(1);
 
         verifyRewards(borrower);
@@ -479,10 +497,11 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         assertEquals(balancePostClaim, balancePreClaim);
     }
 
-    private DistributionPercentage createDistributionPercentage(String name, BigInteger percentage) {
-        DistributionPercentage recipient = new DistributionPercentage();
-        recipient.recipient_name = name;
-        recipient.dist_percent = percentage;
+    private JsonObject createDistributionPercentage(String name, BigInteger percentage) {
+        JsonObject recipient = new JsonObject()
+            .add("recipient_name", createParameter(name))
+            .add("dist_percent", createParameter(percentage));
+
         return recipient;
     }
 

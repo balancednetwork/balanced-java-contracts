@@ -16,26 +16,21 @@
 
 package network.balanced.score.core.rewards.weight;
 
-import java.math.BigInteger;
-import java.util.Map;
-
-import score.Address;
-import score.ArrayDB;
-import score.BranchDB;
-import score.Context;
-import score.DictDB;
-import score.VarDB;
-import scorex.util.HashMap;
 import network.balanced.score.lib.structs.Point;
 import network.balanced.score.lib.structs.VotedSlope;
 import network.balanced.score.lib.utils.EnumerableSetDB;
+import score.*;
+import scorex.util.HashMap;
 
-import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
-import static network.balanced.score.lib.utils.Constants.EXA;
+import java.math.BigInteger;
+import java.util.Map;
+
 import static network.balanced.score.core.rewards.RewardsImpl.boostedBaln;
 import static network.balanced.score.core.rewards.RewardsImpl.getEventLogger;
-import static network.balanced.score.lib.utils.ArrayDBUtils.removeFromArraydb;
 import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
+import static network.balanced.score.lib.utils.ArrayDBUtils.removeFromArraydb;
+import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
 public class SourceWeightController {
     // 7 * 86400 seconds - all future times are rounded by week
@@ -45,19 +40,24 @@ public class SourceWeightController {
     public static final BigInteger VOTE_POINTS = BigInteger.valueOf(10000);
 
     // sourceTypeNames: public(HashMap.get(int128, String[64]))
-    private static final EnumerableSetDB<String> sourceTypeNames = new EnumerableSetDB<String>("sourceTypeNames", String.class);
+    private static final EnumerableSetDB<String> sourceTypeNames = new EnumerableSetDB<>("sourceTypeNames",
+            String.class);
 
-    // we increment values by 1 prior to storing them here so we can rely on a value
+    // we increment values by 1 prior to storing them here, so we can rely on a value
     // of zero as meaning the source has not been set
     private static final DictDB<String, Integer> sourceTypes = Context.newDictDB("sourceTypes", Integer.class);
     private static final DictDB<String, Boolean> isVotable = Context.newDictDB("votable", Boolean.class);
 
-    private static final BranchDB<Address, DictDB<String, VotedSlope>> voteUserSlopes = Context.newBranchDB("voteUserSlopes", VotedSlope.class);
+    private static final BranchDB<Address, DictDB<String, VotedSlope>> voteUserSlopes = Context.newBranchDB(
+            "voteUserSlopes", VotedSlope.class);
 
-    private static final DictDB<Address, BigInteger> voteUserPower = Context.newDictDB("voteUserPower", BigInteger.class);
+    private static final DictDB<Address, BigInteger> voteUserPower = Context.newDictDB("voteUserPower",
+            BigInteger.class);
 
-    private static final BranchDB<Address, DictDB<String, BigInteger>> lastUserVote = Context.newBranchDB("lastUserVote", BigInteger.class);
-    private static final BranchDB<Address, ArrayDB<String>> activeUserWeights = Context.newBranchDB("activeUserWeights", String.class);
+    private static final BranchDB<Address, DictDB<String, BigInteger>> lastUserVote = Context.newBranchDB(
+            "lastUserVote", BigInteger.class);
+    private static final BranchDB<Address, ArrayDB<String>> activeUserWeights = Context.newBranchDB(
+            "activeUserWeights", String.class);
 
     // Past and scheduled points for source weight, sum of weights per type, total weight
     // Point is for bias+slope
@@ -65,40 +65,47 @@ public class SourceWeightController {
     // time* are for the last change timestamp
     // timestamps are rounded to whole weeks
 
-    private static final BranchDB<String, DictDB<BigInteger, Point>> pointsWeight = Context.newBranchDB("pointsWeight", Point.class);
+    private static final BranchDB<String, DictDB<BigInteger, Point>> pointsWeight = Context.newBranchDB("pointsWeight"
+            , Point.class);
 
-    private static final BranchDB<String, DictDB<BigInteger, BigInteger>> changesWeight = Context.newBranchDB("changesWeight", BigInteger.class);
+    private static final BranchDB<String, DictDB<BigInteger, BigInteger>> changesWeight = Context.newBranchDB(
+            "changesWeight", BigInteger.class);
 
     private static final DictDB<String, BigInteger> timeWeight = Context.newDictDB("timeWeight", BigInteger.class);
 
-    private static final BranchDB<Integer, DictDB<BigInteger, Point>> pointsSum = Context.newBranchDB("pointsSum", Point.class);
+    private static final BranchDB<Integer, DictDB<BigInteger, Point>> pointsSum = Context.newBranchDB("pointsSum",
+            Point.class);
 
-    private static final BranchDB<Integer, DictDB<BigInteger, BigInteger>> changesSum = Context.newBranchDB("changesSum", BigInteger.class);
+    private static final BranchDB<Integer, DictDB<BigInteger, BigInteger>> changesSum = Context.newBranchDB(
+            "changesSum", BigInteger.class);
 
     private static final DictDB<Integer, BigInteger> timeSum = Context.newDictDB("timeSum", BigInteger.class);
 
 
     // time -> total weight
-    private static final DictDB<BigInteger, BigInteger> pointsTotal = Context.newDictDB("pointsTotal", BigInteger.class);
+    private static final DictDB<BigInteger, BigInteger> pointsTotal = Context.newDictDB("pointsTotal",
+            BigInteger.class);
 
     // last scheduled time
     private static final VarDB<BigInteger> timeTotal = Context.newVarDB("timeTotal", BigInteger.class);
 
-    private static final BranchDB<Integer, DictDB<BigInteger, BigInteger>> pointsTypeWeight = Context.newBranchDB("pointsTypeWeight", BigInteger.class);
-    private static final DictDB<Integer, BigInteger> timeTypeWeight = Context.newDictDB("timeTypeWeight", BigInteger.class);
+    private static final BranchDB<Integer, DictDB<BigInteger, BigInteger>> pointsTypeWeight = Context.newBranchDB(
+            "pointsTypeWeight", BigInteger.class);
+    private static final DictDB<Integer, BigInteger> timeTypeWeight = Context.newDictDB("timeTypeWeight",
+            BigInteger.class);
 
     public SourceWeightController(Address bBalnAddress) {
         boostedBaln.set(bBalnAddress);
         timeTotal.set(getWeekTimestamp());
     }
 
+    /**
+     * Fill historic type weights week-over-week for missed checkins and return the type weight for the future week
+     *
+     * @param sourceType Source type id
+     * @return Type weight
+     */
     private static BigInteger getTypeWeight(int sourceType) {
-        /**
-        *@notice Fill historic type weights week-over-week for missed checkins
-                and return the type weight for the future week
-        *@param sourceType Source type id
-        *@return Type weight
-        */
         BigInteger time = timeTypeWeight.getOrDefault(sourceType, BigInteger.ZERO);
         if (time.compareTo(BigInteger.ZERO) <= 0) {
             return BigInteger.ZERO;
@@ -121,14 +128,14 @@ public class SourceWeightController {
         return weight;
     }
 
-
+    /**
+     * Fill sum of source weights for the same type week-over-week for missed checkins and return the sum for the
+     * future week
+     *
+     * @param sourceType Source type id
+     * @return Sum of weights
+     */
     private static BigInteger getSum(int sourceType) {
-        /**
-        *@notice Fill sum of source weights for the same type week-over-week for
-                missed checkins and return the sum for the future week
-        *@param sourceType Source type id
-        *@return Sum of weights
-        */
         BigInteger time = timeSum.getOrDefault(sourceType, BigInteger.ZERO);
         BigInteger timeStamp = BigInteger.valueOf(Context.getBlockTimestamp());
         if (time.compareTo(BigInteger.ZERO) <= 0) {
@@ -161,16 +168,16 @@ public class SourceWeightController {
         return pt.bias;
     }
 
+    /**
+     * Fill historic total weights week-over-week for missed checkins and return the total for the future week
+     *
+     * @return Total weight
+     */
     private static BigInteger getTotal() {
-        /**
-        *@notice Fill historic total weights week-over-week for missed checkins
-                and return the total for the future week
-        *@return Total weight
-        */
         BigInteger time = timeTotal.getOrDefault(BigInteger.ZERO);
         BigInteger timestamp = BigInteger.valueOf(Context.getBlockTimestamp());
         if (time.compareTo(timestamp) > 0) {
-            // If we have already checkpointed - still need to change the value
+            // If we have already check pointed - still need to change the value
             time = time.subtract(WEEK);
         }
         BigInteger pt = pointsTotal.getOrDefault(time, BigInteger.ZERO);
@@ -205,13 +212,13 @@ public class SourceWeightController {
         return pt;
     }
 
+    /**
+     * Fill historic source weights week-over-week for missed checkins and return the total for the future week
+     *
+     * @param source Name of the source
+     * @return Source weight
+     */
     private static BigInteger getWeight(String source) {
-        /**
-        *@notice Fill historic source weights week-over-week for missed checkins
-                and return the total for the future week
-        *@param source Name of the source
-        *@return Source weight
-        */
         BigInteger time = timeWeight.getOrDefault(source, BigInteger.ZERO);
         BigInteger timestamp = BigInteger.valueOf(Context.getBlockTimestamp());
         if (time.compareTo(BigInteger.ZERO) <= 0) {
@@ -243,13 +250,14 @@ public class SourceWeightController {
         return pt.bias;
     }
 
+    /**
+     * Add source `name` of type `sourceType` with weight `weight`
+     *
+     * @param name       Source name
+     * @param sourceType Source type
+     * @param weight     Source weight
+     */
     public static void addSource(String name, int sourceType, BigInteger weight) {
-        /**
-        *@notice Add source `name` of type `sourceType` with weight `weight`
-        *@param name Source name
-        *@param sourceType Source type
-        *@param weight Source weight
-        */
 
         Context.require(sourceTypeNames.at(sourceType) != null, "Not a valid sourceType");
         Context.require(sourceTypes.get(name) == null, "Source with name " + name + " already exists");
@@ -281,32 +289,38 @@ public class SourceWeightController {
         getEventLogger().NewSource(name, sourceType, weight);
     }
 
+    /**
+     * Checkpoint to fill data common for all sources
+     */
     public static void checkpoint() {
-        /**
-        *@notice Checkpoint to fill data common for all sources
-        */
         getTotal();
     }
 
+    /**
+     * Checkpoint to fill data for both a specific source and common for all sources
+     *
+     * @param name Source name
+     */
     public static void checkpointSource(String name) {
-        /**
-        *@notice Checkpoint to fill data for both a specific source and common for all sources
-        *@param addr Source address
-        */
         getWeight(name);
         getTotal();
     }
 
+    /**
+     * Get Source relative weight (not more than 1.0) normalized to 1e18 (e.g. 1.0 == 1e18). Inflation which will be
+     * received by it is inflationRate * relativeWeight / 1e18
+     *
+     * @param name Source name
+     * @param time Relative weight at the specified timestamp in the past or present
+     * @return Value of relative weight normalized to 1e18
+     */
     public static BigInteger getRelativeWeight(String name, BigInteger time) {
-        /**
-        *@notice Get Source relative weight (not more than 1.0) normalized to 1e18
-                (e.g. 1.0 == 1e18). Inflation which will be received by it is
-                inflationRate * relativeWeight / 1e18
-        *@param name Source name
-        *@param time Relative weight at the specified timestamp in the past or present
-        *@return Value of relative weight normalized to 1e18
-        */
-        time = getWeekTimestamp(time);
+        if (time.equals(BigInteger.ZERO)) {
+            time = getWeekTimestamp();
+        } else {
+            time = getWeekTimestamp(time);
+        }
+
         BigInteger totalWeight = pointsTotal.getOrDefault(time, BigInteger.ZERO);
         if (totalWeight.compareTo(BigInteger.ZERO) <= 0) {
             return BigInteger.ZERO;
@@ -318,26 +332,27 @@ public class SourceWeightController {
         return EXA.multiply(typeWeight).multiply(sourceWeight).divide(totalWeight);
     }
 
+    /**
+     * Get source weight normalized to 1e18 and also fill all the unfilled values for type and source records
+     *
+     * @param name Source name
+     * @param time Relative weight at the specified timestamp in the past or present
+     * @return Value of relative weight normalized to 1e18
+     * @dev Any address can call, however nothing is recorded if the values are filled already
+     */
     public static BigInteger updateRelativeWeight(String name, BigInteger time) {
-        /**
-        *@notice Get source weight normalized to 1e18 and also fill all the unfilled
-                values for type and source records
-        *@dev Any address can call, however nothing is recorded if the values are filled already
-        *@param name Source name
-        *@param time Relative weight at the specified timestamp in the past or present
-        *@return Value of relative weight normalized to 1e18
-        */
         getWeight(name);
         getTotal();  // Also calculates getSum
         return getRelativeWeight(name, time);
     }
 
+    /**
+     * Change type weight
+     *
+     * @param typeId Type id
+     * @param weight New type weight
+     */
     public static void changeTypeWeight(int typeId, BigInteger weight) {
-        /**
-        *@notice Change type weight
-        *@param typeId Type id
-        *@param weight New type weight
-        */
         BigInteger oldWeight = getTypeWeight(typeId);
         BigInteger oldSum = getSum(typeId);
         BigInteger totalWeight = getTotal();
@@ -353,12 +368,13 @@ public class SourceWeightController {
         getEventLogger().NewTypeWeight(typeId, nextTime, oldWeight, totalWeight);
     }
 
+    /**
+     * Add source type with name `Name` and weight `weight`
+     *
+     * @param name   Name of source type
+     * @param weight Weight of source type = 0
+     */
     public static void addType(String name, BigInteger weight) {
-        /**
-        *notice Add source type with name `Name` and weight `weight`
-        *param Name Name of source type
-        *param weight Weight of source type = 0
-        */
         int typeId = sourceTypeNames.length();
         sourceTypeNames.add(name);
         Context.require(sourceTypeNames.at(typeId).equals(name));
@@ -369,13 +385,15 @@ public class SourceWeightController {
         getEventLogger().AddType(name, typeId);
     }
 
+    /**
+     * Allocate voting power for changing pool weights
+     *
+     * @param sourceName Source which `user` votes for
+     * @param userWeight Weight for a source in bps (units of 0.01%). Minimal is 0.01%. Ignored if 0
+     */
     public static void voteForSourceWeights(String sourceName, BigInteger userWeight) {
-        /**
-        *@notice Allocate voting power for changing pool weights
-        *@param sourceName Source which `user` votes for
-        *@param UserWeight Weight for a source in bps (units of 0.01%). Minimal is 0.01%. Ignored if 0
-        */
-        Context.require(isVotable.getOrDefault(sourceName, true) || userWeight.equals(BigInteger.ZERO), sourceName + " is not a votable source, you can only remove weight");
+        Context.require(isVotable.getOrDefault(sourceName, true) || userWeight.equals(BigInteger.ZERO), sourceName +
+                " is not a votable source, you can only remove weight");
 
         Address bBalnAddress = boostedBaln.get();
         Address user = Context.getCaller();
@@ -385,12 +403,14 @@ public class SourceWeightController {
         BigInteger nextTime = getNextWeekTimestamp();
 
         Context.require(lockEnd.compareTo(nextTime) > 0, "Your token lock expires too soon");
-        Context.require((userWeight.compareTo(BigInteger.ZERO) >= 0) && (userWeight.compareTo(VOTE_POINTS) <= 0), "Weight has to be between 0 and 10000");
-        BigInteger nextUserVote = lastUserVote.at(user).getOrDefault(sourceName, BigInteger.ZERO).add(WEIGHT_VOTE_DELAY);
+        Context.require((userWeight.compareTo(BigInteger.ZERO) >= 0) && (userWeight.compareTo(VOTE_POINTS) <= 0),
+                "Weight has to be between 0 and 10000");
+        BigInteger nextUserVote =
+                lastUserVote.at(user).getOrDefault(sourceName, BigInteger.ZERO).add(WEIGHT_VOTE_DELAY);
         Context.require(timestamp.compareTo(nextUserVote) >= 0, "Cannot vote so often");
 
         int sourceType = sourceTypes.get(sourceName) - 1;
-        Context.require( sourceType >= 0, "Source not added");
+        Context.require(sourceType >= 0, "Source not added");
         // Prepare slopes and biases in memory
         VotedSlope oldSlope = voteUserSlopes.at(user).getOrDefault(sourceName, new VotedSlope());
         BigInteger oldDt = BigInteger.ZERO;
@@ -400,9 +420,9 @@ public class SourceWeightController {
 
         BigInteger oldBias = oldSlope.slope.multiply(oldDt);
         VotedSlope newSlope = new VotedSlope(
-            slope.multiply(userWeight).divide(VOTE_POINTS),
-            userWeight,
-            lockEnd
+                slope.multiply(userWeight).divide(VOTE_POINTS),
+                userWeight,
+                lockEnd
         );
         BigInteger newDt = lockEnd.subtract(nextTime); // dev: raises when expired
         BigInteger newBias = newSlope.slope.multiply(newDt);
@@ -410,7 +430,8 @@ public class SourceWeightController {
         // Check and update powers (weights) used
         BigInteger powerUsed = voteUserPower.getOrDefault(user, BigInteger.ZERO);
         powerUsed = powerUsed.add(newSlope.power).subtract(oldSlope.power);
-        Context.require((powerUsed.compareTo(BigInteger.ZERO) >= 0) && (powerUsed.compareTo(VOTE_POINTS) <= 0),  "Used too much power");
+        Context.require((powerUsed.compareTo(BigInteger.ZERO) >= 0) && (powerUsed.compareTo(VOTE_POINTS) <= 0), "Used" +
+                " too much power");
         voteUserPower.set(user, powerUsed);
 
         // Remove old and schedule new slope changes
@@ -435,7 +456,7 @@ public class SourceWeightController {
         }
 
         if (oldSlope.end.compareTo(timestamp) > 0) {
-            // Cancel old slope changes if they still didn'time happen
+            // Cancel old slope changes if they still didn't happen
             BigInteger oldWeight = changesWeight.at(sourceName).get(oldSlope.end);
             changesWeight.at(sourceName).set(oldSlope.end, oldWeight.subtract(oldSlope.slope));
             BigInteger oldSum = changesSum.at(sourceType).get(oldSlope.end);
@@ -479,12 +500,13 @@ public class SourceWeightController {
         return isVotable.getOrDefault(name, true);
     }
 
+    /**
+     * Get current source weight
+     *
+     * @param sourceName Source name
+     * @return Source weight
+     */
     public static Point getSourcePointsWeight(String sourceName) {
-        /**
-        *@notice Get current source weight
-        *@param sourceName Source name
-        *@return Source weight
-        */
         return getSourcePointsWeightAt(sourceName, timeWeight.get(sourceName));
     }
 
@@ -492,29 +514,32 @@ public class SourceWeightController {
         return pointsWeight.at(sourceName).get(time);
     }
 
+    /**
+     * Get current type weight
+     *
+     * @param typeId Type id
+     * @return Type weight
+     */
     public static BigInteger getCurrentTypeWeight(int typeId) {
-        /**
-        *@notice Get current type weight
-        *@param typeId Type id
-        *@return Type weight
-        */
         return pointsTypeWeight.at(typeId).get(timeTypeWeight.get(typeId));
     }
 
+    /**
+     * Get current total (type-weighted) weight
+     *
+     * @return Total weight
+     */
     public static BigInteger getTotalWeight() {
-        /**
-        *@notice Get current total (type-weighted) weight
-        *@return Total weight
-        */
         return pointsTotal.get(timeTotal.get());
     }
 
+    /**
+     * Get sum of source weights per type
+     *
+     * @param typeId Type id
+     * @return Sum of source weights
+     */
     public static Point getPointsSumPerType(int typeId) {
-        /**
-        *@notice Get sum of source weights per type
-        *@param typeId Type id
-        *@return Sum of source weights
-        */
         return pointsSum.at(typeId).get(timeSum.get(typeId));
     }
 
@@ -552,6 +577,10 @@ public class SourceWeightController {
 
     public static int getTypeId(String name) {
         return sourceTypeNames.indexOf(name);
+    }
+
+    public static String getTypeName(int id) {
+        return sourceTypeNames.at(id);
     }
 
     private static BigInteger getWeekTimestamp() {

@@ -16,9 +16,12 @@
 
 package network.balanced.score.core.governance;
 
+import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.iconloop.score.test.Account;
+
+import network.balanced.score.core.governance.proposal.ProposalStatus;
 import network.balanced.score.lib.structs.Disbursement;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,8 +33,8 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-import static network.balanced.score.core.governance.GovernanceConstants.EXA;
-import static network.balanced.score.core.governance.GovernanceConstants.TAG;
+import static network.balanced.score.core.governance.utils.GovernanceConstants.EXA;
+import static network.balanced.score.core.governance.utils.GovernanceConstants.TAG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -88,7 +91,9 @@ public class GovernanceVotingTest extends GovernanceTestBase {
                 voteDuration, invalidForumLink, actions);
         expectErrorMessage(withInvalidForumLink, expectedErrorMessage);
 
-        String invalidActions = "[[\"invalidAction\", {}]]";
+        String invalidActions = new JsonArray()
+            .add(createTransaction(governance.getAddress(), "cancelVote", new JsonArray().add(createParameter(BigInteger.ZERO)))).toString();
+
         expectedErrorMessage = "Vote execution failed";
         Executable withInvalidActions = () -> governance.invoke(owner, "defineVote", name, description, voteStart,
                 voteDuration, forumLink, invalidActions);
@@ -370,7 +375,7 @@ public class GovernanceVotingTest extends GovernanceTestBase {
     @Test
     void evaluateVote_executed() {
         // Arrange
-        String actions = "[[\"enableDividends\", {}]]";
+        String actions = new JsonArray().add(createTransaction(daofund.getAddress(), "name", new JsonArray())).toString();
 
         // Act
         BigInteger voteIndex = executeVoteWithActions(actions);
@@ -475,539 +480,18 @@ public class GovernanceVotingTest extends GovernanceTestBase {
     }
 
     @Test
-    void executeVote_enableDividends() {
-        String actions = "[[\"enableDividends\", {}]]";
-        executeVoteWithActions(actions);
-        verify(dividends.mock, times(2)).setDistributionActivationStatus(true);
-    }
-
-    @Test
-    void executeVote_addNewDataSource() {
-        JsonObject addNewDataSourceParameters = new JsonObject()
-                .add("_data_source_name", "test")
-                .add("_contract_address", "cx66d4d90f5f113eba575bf793570135f9b10cece1");
-
-        JsonArray addNewDataSource = new JsonArray()
-                .add("addNewDataSource")
-                .add(addNewDataSourceParameters);
-
-        JsonArray actions = new JsonArray()
-                .add(addNewDataSource);
-
-        executeVoteWithActions(actions.toString());
-        verify(rewards.mock, times(2)).addNewDataSource("test", Address.fromString(
-                "cx66d4d90f5f113eba575bf793570135f9b10cece1"));
-    }
-
-    @Test
-    void executeVote_updateBalTokenDistPercentage() {
-        DistributionPercentage[] distPercentages = GovernanceConstants.RECIPIENTS;
-        JsonArray distribution = new JsonArray()
-                .add(createJsonDistribution("Loans", BigInteger.valueOf(25).multiply(BigInteger.TEN.pow(16))))
-                .add(createJsonDistribution("sICX/ICX", BigInteger.TEN.multiply(BigInteger.TEN.pow(16))))
-                .add(createJsonDistribution("Worker Tokens", BigInteger.valueOf(20).multiply(BigInteger.TEN.pow(16))))
-                .add(createJsonDistribution("Reserve Fund", BigInteger.valueOf(5).multiply(BigInteger.TEN.pow(16))))
-                .add(createJsonDistribution("DAOfund", BigInteger.valueOf(40).multiply(BigInteger.TEN.pow(16))));
-
-        JsonObject updateBalTokenDistPercentageParameter = new JsonObject()
-                .add("_recipient_list", distribution);
-
-        JsonArray updateBalTokenDistPercentage = new JsonArray()
-                .add("updateBalTokenDistPercentage")
-                .add(updateBalTokenDistPercentageParameter);
-
-        JsonArray actions = new JsonArray()
-                .add(updateBalTokenDistPercentage);
-
-        executeVoteWithActions(actions.toString());
-        verify(rewards.mock, times(2)).updateBalTokenDistPercentage(any(DistributionPercentage[].class));
-    }
-
-    @Test
-    void executeVote_setLockingRatio() {
-        // Arrange
-        BigInteger lockingRatio = BigInteger.TEN;
-        String symbol = "sICX";
-        JsonObject setLockingRatioParameters = new JsonObject()
-                .add("_symbol", symbol)
-                .add("_value", lockingRatio.intValue());
-
-        JsonArray setLockingRatio = new JsonArray()
-                .add("setLockingRatio")
-                .add(setLockingRatioParameters);
-
-        JsonArray actions = new JsonArray()
-                .add(setLockingRatio);
-
-        // Act
-        executeVoteWithActions(actions.toString());
-
-        // Assert
-        verify(loans.mock, times(2)).setLockingRatio(symbol, lockingRatio);
-    }
-
-    @Test
-    void executeVote_setOriginationFee() {
-        // Arrange
-        BigInteger originationFee = BigInteger.TEN;
-        JsonObject setOriginationFeeParameters = new JsonObject()
-                .add("_fee", originationFee.intValue());
-
-        JsonArray setOriginationFee = new JsonArray()
-                .add("setOriginationFee")
-                .add(setOriginationFeeParameters);
-
-        JsonArray actions = new JsonArray()
-                .add(setOriginationFee);
-
-        // Act
-        executeVoteWithActions(actions.toString());
-
-        // Assert
-        verify(loans.mock, times(2)).setOriginationFee(originationFee);
-    }
-
-
-    @Test
-    void executeVote_setLiquidationRatio() {
-        // Arrange
-        BigInteger liquidationRatio = BigInteger.TEN;
-        String symbol = "sICX";
-        JsonObject setLiquidationRatioParameters = new JsonObject()
-                .add("_symbol", symbol)
-                .add("_ratio", liquidationRatio.intValue());
-
-        JsonArray setLiquidationRatio = new JsonArray()
-                .add("setLiquidationRatio")
-                .add(setLiquidationRatioParameters);
-
-        JsonArray actions = new JsonArray()
-                .add(setLiquidationRatio);
-
-        // Act
-        executeVoteWithActions(actions.toString());
-
-        // Assert
-        verify(loans.mock, times(2)).setLiquidationRatio(symbol, liquidationRatio);
-    }
-
-
-    @Test
-    void executeVote_setRetirementBonus() {
-        // Arrange
-        BigInteger retirementBonus = BigInteger.TEN;
-        JsonObject setRetirementBonusParameters = new JsonObject()
-                .add("_points", retirementBonus.intValue());
-
-        JsonArray setRetirementBonus = new JsonArray()
-                .add("setRetirementBonus")
-                .add(setRetirementBonusParameters);
-
-        JsonArray actions = new JsonArray()
-                .add(setRetirementBonus);
-
-        // Act
-        executeVoteWithActions(actions.toString());
-
-        // Assert
-        verify(loans.mock, times(2)).setRetirementBonus(retirementBonus);
-    }
-
-
-    @Test
-    void executeVote_setLiquidationReward() {
-        // Arrange
-        BigInteger liquidationReward = BigInteger.TEN;
-        JsonObject setLiquidationRewardParameters = new JsonObject()
-                .add("_points", liquidationReward.intValue());
-
-        JsonArray setLiquidationReward = new JsonArray()
-                .add("setLiquidationReward")
-                .add(setLiquidationRewardParameters);
-
-        JsonArray actions = new JsonArray()
-                .add(setLiquidationReward);
-
-        // Act
-        executeVoteWithActions(actions.toString());
-
-        // Assert
-        verify(loans.mock, times(2)).setLiquidationReward(liquidationReward);
-    }
-
-
-    @Test
-    void executeVote_setMaxRetirePercent() {
-        // Arrange
-        BigInteger maxRetirePercent = BigInteger.TEN;
-        JsonObject setMaxRetirePercentParameters = new JsonObject()
-                .add("_value", maxRetirePercent.intValue());
-
-        JsonArray setMaxRetirePercent = new JsonArray()
-                .add("setMaxRetirePercent")
-                .add(setMaxRetirePercentParameters);
-
-        JsonArray actions = new JsonArray()
-                .add(setMaxRetirePercent);
-
-        // Act
-        executeVoteWithActions(actions.toString());
-
-        // Assert
-        verify(loans.mock, times(2)).setMaxRetirePercent(maxRetirePercent);
-    }
-
-
-    @Test
-    void executeVote_setRebalancingThreshold() {
-        // Arrange
-        BigInteger rebalancingThreshold = BigInteger.TEN;
-        JsonObject setRebalancingThresholdParameters = new JsonObject()
-                .add("_value", rebalancingThreshold.intValue());
-
-        JsonArray setRebalancingThreshold = new JsonArray()
-                .add("setRebalancingThreshold")
-                .add(setRebalancingThresholdParameters);
-
-        JsonArray actions = new JsonArray()
-                .add(setRebalancingThreshold);
-
-        // Act
-        executeVoteWithActions(actions.toString());
-
-        // Assert
-        verify(rebalancing.mock, times(2)).setPriceDiffThreshold(rebalancingThreshold);
-    }
-
-
-    @Test
-    void executeVote_setVoteDuration() {
-        // Arrange
-        BigInteger voteDurationMin = BigInteger.ONE;
-        BigInteger voteDurationMax = BigInteger.TEN;
-        JsonObject setVoteDurationParameters = new JsonObject()
-                .add("_min", voteDurationMin.intValue())
-                .add("_max", voteDurationMax.intValue());
-
-        JsonArray setVoteDuration = new JsonArray()
-                .add("setVoteDurationLimits")
-                .add(setVoteDurationParameters);
-
-        JsonArray actions = new JsonArray()
-                .add(setVoteDuration);
-
-        // Act
-        executeVoteWithActions(actions.toString());
-
-        // Assert
-        BigInteger minVoteDuration = (BigInteger) governance.call("getMinVoteDuration");
-        BigInteger maxVoteDuration = (BigInteger) governance.call("getMaxVoteDuration");
-        assertEquals(voteDurationMin, minVoteDuration);
-        assertEquals(voteDurationMax, maxVoteDuration);
-    }
-
-    @Test
-    void executeVote_setQuorum() {
-        // Arrange
-        BigInteger quorum = BigInteger.TEN;
-        JsonObject setQuorumParameters = new JsonObject()
-                .add("quorum", quorum.intValue());
-
-        JsonArray setQuorum = new JsonArray()
-                .add("setQuorum")
-                .add(setQuorumParameters);
-
-        JsonArray actions = new JsonArray()
-                .add(setQuorum);
-
-        // Act
-        executeVoteWithActions(actions.toString());
-
-        // Assert
-        BigInteger newQuorum = (BigInteger) governance.call("getQuorum");
-        assertEquals(quorum, newQuorum);
-    }
-
-    @Test
-    void executeVote_setVoteDefinitionFee() {
-        // Arrange
-        BigInteger voteDefinitionFee = BigInteger.TEN;
-        JsonObject setVoteDefinitionFeeParameters = new JsonObject()
-                .add("fee", voteDefinitionFee.intValue());
-
-        JsonArray setVoteDefinitionFee = new JsonArray()
-                .add("setVoteDefinitionFee")
-                .add(setVoteDefinitionFeeParameters);
-
-        JsonArray actions = new JsonArray()
-                .add(setVoteDefinitionFee);
-
-        // Act
-        executeVoteWithActions(actions.toString());
-
-        // Assert
-        BigInteger newVoteDefinitionFee = (BigInteger) governance.call("getVoteDefinitionFee");
-        assertEquals(voteDefinitionFee, newVoteDefinitionFee);
-    }
-
-    @Test
-    void executeVote_setBalnVoteDefinitionCriterion() {
-        // Arrange
-        BigInteger balnVoteDefinitionCriterion = BigInteger.TEN;
-        JsonObject setBalnVoteDefinitionCriterionParameters = new JsonObject()
-                .add("percentage", balnVoteDefinitionCriterion.intValue());
-
-        JsonArray setBalnVoteDefinitionCriterion = new JsonArray()
-                .add("setBalnVoteDefinitionCriterion")
-                .add(setBalnVoteDefinitionCriterionParameters);
-
-        JsonArray actions = new JsonArray()
-                .add(setBalnVoteDefinitionCriterion);
-
-        // Act
-        executeVoteWithActions(actions.toString());
-
-        // Assert
-        BigInteger newBalnVoteDefinitionCriterion = (BigInteger) governance.call("getBalnVoteDefinitionCriterion");
-        assertEquals(balnVoteDefinitionCriterion, newBalnVoteDefinitionCriterion);
-    }
-
-    @Test
-    void executeVote_setDividendsCategoryPercentage() {
-        DistributionPercentage[] distPercentages = GovernanceConstants.RECIPIENTS;
-        JsonArray distribution = new JsonArray()
-                .add(createJsonDistribution("Loans", BigInteger.valueOf(25).multiply(BigInteger.TEN.pow(16))))
-                .add(createJsonDistribution("sICX/ICX", BigInteger.TEN.multiply(BigInteger.TEN.pow(16))))
-                .add(createJsonDistribution("Worker Tokens", BigInteger.valueOf(20).multiply(BigInteger.TEN.pow(16))))
-                .add(createJsonDistribution("Reserve Fund", BigInteger.valueOf(5).multiply(BigInteger.TEN.pow(16))))
-                .add(createJsonDistribution("DAOfund", BigInteger.valueOf(40).multiply(BigInteger.TEN.pow(16))));
-
-        JsonObject setDividendsCategoryPercentageParameter = new JsonObject()
-                .add("_dist_list", distribution);
-
-        JsonArray setDividendsCategoryPercentage = new JsonArray()
-                .add("setDividendsCategoryPercentage")
-                .add(setDividendsCategoryPercentageParameter);
-
-        JsonArray actions = new JsonArray()
-                .add(setDividendsCategoryPercentage);
-
-        executeVoteWithActions(actions.toString());
-        verify(dividends.mock, times(2)).setDividendsCategoryPercentage(any(DistributionPercentage[].class));
-    }
-
-    @Test
-    void executeVote_daoDisburse_toManyTokens() {
-        // Arrange
-        String expectedErrorMessage = "Vote execution failed";
-        JsonArray disbursement = new JsonArray()
-                .add(createJsonDisbursement("cx1111d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
-                .add(createJsonDisbursement("cx2222d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
-                .add(createJsonDisbursement("cx3333d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
-                .add(createJsonDisbursement("cx4444d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN));
-
-        JsonObject setDividendsCategoryPercentageParameter = new JsonObject()
-                .add("_recipient", "hx0000d90f5f113eba575bf793570135f9b10cece1")
-                .add("_amounts", disbursement);
-
-        JsonArray daoDisburse = new JsonArray()
-                .add("daoDisburse")
-                .add(setDividendsCategoryPercentageParameter);
-
-        JsonArray actions = new JsonArray()
-                .add(daoDisburse);
-
-        // Act & Assert
-        Executable voteDaoDisburseWithToManyTokens = () -> executeVoteWithActions(actions.toString());
-        expectErrorMessage(voteDaoDisburseWithToManyTokens, expectedErrorMessage);
-    }
-
-    @Test
-    void executeVote_daoDisburse() {
-        // Arrange
-        Address address = Address.fromString("hx0000d90f5f113eba575bf793570135f9b10cece1");
-        String expectedErrorMessage = "Cannot disburse more than 3 assets at a time.";
-        JsonArray disbursement = new JsonArray()
-                .add(createJsonDisbursement("cx1111d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
-                .add(createJsonDisbursement("cx2222d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN))
-                .add(createJsonDisbursement("cx3333d90f5f113eba575bf793570135f9b10cece1", BigInteger.TEN));
-
-        JsonObject setDividendsCategoryPercentageParameter = new JsonObject()
-                .add("_recipient", address.toString())
-                .add("_amounts", disbursement);
-
-        JsonArray daoDisburse = new JsonArray()
-                .add("daoDisburse")
-                .add(setDividendsCategoryPercentageParameter);
-
-        JsonArray actions = new JsonArray()
-                .add(daoDisburse);
-
-        // Act & Assert
-        executeVoteWithActions(actions.toString());
-        verify(daofund.mock, times(2)).disburse(eq(address), any(Disbursement[].class));
-    }
-
-    @Test
-    void executeVote_addAcceptedTokens() {
-        // Arrange
-        String token = "cx66d4d90f5f113eba575bf793570135f9b10cece1";
-        JsonObject setAddAcceptedTokensParameters = new JsonObject()
-                .add("_token", token);
-
-        JsonArray setAddAcceptedTokensCriterion = new JsonArray()
-                .add("addAcceptedTokens")
-                .add(setAddAcceptedTokensParameters);
-
-        JsonArray actions = new JsonArray()
-                .add(setAddAcceptedTokensCriterion);
-
-        // Act
-        executeVoteWithActions(actions.toString());
-
-        // Assert
-        verify(dividends.mock, times(2)).addAcceptedTokens(Address.fromString(token));
-    }
-
-    @Test
-    void executeVote_addLPDataSource() {
-        // Arrange
-        String name = "test";
-        BigInteger poolId = BigInteger.TEN;
-        int sourceType = 1;
-        JsonObject setAddLPDataSourceParameters = new JsonObject()
-                .add("_name", name)
-                .add("_poolId", poolId.toString())
-                .add("_sourceType", sourceType);
-
-        JsonArray addLPDataSource = new JsonArray()
-                .add("addLPDataSource")
-                .add(setAddLPDataSourceParameters);
-
-        JsonArray actions = new JsonArray()
-                .add(addLPDataSource);
-
-        // Act
-        executeVoteWithActions(actions.toString());
-
-        // Assert
-        verify(stakedLp.mock, times(2)).addDataSource(poolId, name);
-        verify(rewards.mock, times(2)).createDataSource(name, stakedLp.getAddress(), sourceType);
-    }
-
-    @Test
-    void executeVote_addCollateral() {
-        // Arrange
-        Address tokenAddress = bwt.getAddress();
-        boolean active = false;
-        BigInteger lockingRatio = BigInteger.valueOf(30_000);
-        BigInteger liquidationRatio = BigInteger.valueOf(10_000);
-        BigInteger debtCeiling = BigInteger.TEN.pow(20);
-        String symbol = "BALW";
-        String peg = "BTC";
-
-        when(bwt.mock.symbol()).thenReturn(symbol);
-        when(balancedOracle.mock.getPriceInLoop(symbol)).thenReturn(ICX);
-
-        JsonObject addCollateralParameters = new JsonObject()
-                .add("_token_address", tokenAddress.toString())
-                .add("_active", active)
-                .add("_peg", peg)
-                .add("_lockingRatio", lockingRatio.toString())
-                .add("_liquidationRatio", liquidationRatio.toString())
-                .add("_debtCeiling", debtCeiling.toString());
-
-        JsonArray addCollateral = new JsonArray()
-                .add("addCollateral")
-                .add(addCollateralParameters);
-
-        JsonArray actions = new JsonArray()
-                .add(addCollateral);
-
-        // Act
-        executeVoteWithActions(actions.toString());
-        System.out.println(actions);
-
-        // Assert
-        verify(loans.mock, times(2)).addAsset(tokenAddress, active, true);
-        verify(balancedOracle.mock, times(2)).setPeg(symbol, peg);
-        verify(loans.mock, times(2)).setLockingRatio(symbol, lockingRatio);
-        verify(loans.mock, times(2)).setLiquidationRatio(symbol, liquidationRatio);
-        verify(loans.mock, times(2)).setDebtCeiling(symbol, debtCeiling);
-    }
-
-    @Test
-    void executeVote_addDexPricedCollateral() {
-        // Arrange
-        Address tokenAddress = bwt.getAddress();
-        boolean active = false;
-        BigInteger lockingRatio = BigInteger.valueOf(30_000);
-        BigInteger liquidationRatio = BigInteger.valueOf(10_000);
-        BigInteger debtCeiling = BigInteger.TEN.pow(20);
-        BigInteger poolID = BigInteger.valueOf(7);
-        String symbol = "BWT";
-
-        when(bwt.mock.symbol()).thenReturn(symbol);
-        when(balancedOracle.mock.getPriceInLoop(symbol)).thenReturn(ICX);
-        when(bwt.mock.symbol()).thenReturn(symbol);
-        when(dex.mock.getPoolId(tokenAddress, bnUSD.getAddress())).thenReturn(poolID);
-
-        JsonObject addCollateralParameters = new JsonObject()
-                .add("_token_address", tokenAddress.toString())
-                .add("_active", active)
-                .add("_lockingRatio", lockingRatio.toString())
-                .add("_liquidationRatio", liquidationRatio.toString())
-                .add("_debtCeiling", debtCeiling.toString());
-
-        JsonArray addCollateral = new JsonArray()
-                .add("addDexPricedCollateral")
-                .add(addCollateralParameters);
-
-        JsonArray actions = new JsonArray()
-                .add(addCollateral);
-
-        // Act
-        executeVoteWithActions(actions.toString());
-
-        // Assert
-        verify(loans.mock, times(2)).addAsset(tokenAddress, active, true);
-        verify(balancedOracle.mock, times(2)).addDexPricedAsset(symbol, poolID);
-        verify(loans.mock, times(2)).setLockingRatio(symbol, lockingRatio);
-        verify(loans.mock, times(2)).setLiquidationRatio(symbol, liquidationRatio);
-        verify(loans.mock, times(2)).setDebtCeiling(symbol, debtCeiling);
-    }
-
-    @Test
-    void executeVote_call() {
+    void executeVote_multipleActions() {
         // Arrange
         JsonArray addAcceptedTokensParameters = new JsonArray()
-                .add(createParameter("Address", sicx.getAddress().toString()));
-
-        JsonObject addAcceptedTokensList = new JsonObject()
-                .add("contract_address", dividends.getAddress().toString())
-                .add("method", "addAcceptedTokens")
-                .add("parameters", addAcceptedTokensParameters);
-
-        JsonArray addAcceptedTokens = new JsonArray()
-                .add("call")
-                .add(addAcceptedTokensList);
+            .add(createParameter(sicx.getAddress()));
 
         JsonArray permitParameters = new JsonArray()
-                .add(createParameter("Number", BigInteger.ONE))
-                .add(createParameter("Boolean", true));
-
-        JsonObject permitList = new JsonObject()
-                .add("contract_address", dex.getAddress().toString())
-                .add("method", "permit")
-                .add("parameters", permitParameters);
-
-        JsonArray permit = new JsonArray()
-                .add("call")
-                .add(permitList);
+            .add(createParameter(BigInteger.ONE))
+            .add(createParameter( true));
 
         JsonArray actions = new JsonArray()
-                .add(addAcceptedTokens)
-                .add(permit);
+            .add(createTransaction(dividends.getAddress(), "addAcceptedTokens", addAcceptedTokensParameters))
+            .add(createTransaction(dex.getAddress(), "permit", permitParameters));
 
         // Act
         executeVoteWithActions(actions.toString());
@@ -1015,29 +499,5 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         // Assert
         verify(dividends.mock, times(2)).addAcceptedTokens(sicx.getAddress());
         verify(dex.mock, times(2)).permit(BigInteger.ONE, true);
-    }
-
-    @Test
-    void vote_multiAction() {
-        JsonArray enableDividends = new JsonArray()
-                .add("enableDividends")
-                .add(new JsonObject());
-
-        JsonObject addNewDataSourceParameters = new JsonObject()
-                .add("_data_source_name", "test")
-                .add("_contract_address", "cx66d4d90f5f113eba575bf793570135f9b10cece1");
-
-        JsonArray addNewDataSource = new JsonArray()
-                .add("addNewDataSource")
-                .add(addNewDataSourceParameters);
-
-        JsonArray actions = new JsonArray()
-                .add(addNewDataSource)
-                .add(enableDividends);
-
-        executeVoteWithActions(actions.toString());
-        verify(dividends.mock, times(2)).setDistributionActivationStatus(true);
-        verify(rewards.mock, times(2)).addNewDataSource("test", Address.fromString(
-                "cx66d4d90f5f113eba575bf793570135f9b10cece1"));
     }
 }

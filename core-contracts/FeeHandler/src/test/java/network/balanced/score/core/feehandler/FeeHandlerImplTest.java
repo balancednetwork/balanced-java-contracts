@@ -107,19 +107,13 @@ class FeeHandlerImplTest extends TestBase {
     }
 
     private void testEnableAndDisable(String setterMethod, boolean expectedValue) {
-        String expectedErrorMessage = "Authorization Check: Address not set";
-        Executable actWithoutAdmin = () -> feeHandler.invoke(admin, setterMethod);
-        expectErrorMessage(actWithoutAdmin, expectedErrorMessage);
-
-        testAdmin(feeHandler, governance, admin);
-
         Account nonAdmin = sm.createAccount();
-        expectedErrorMessage = "Authorization Check: Authorization failed. Caller: " + nonAdmin.getAddress() +
-                " Authorized Caller: " + admin.getAddress();
+        String expectedErrorMessage = "Authorization Check: Authorization failed. Caller: " + nonAdmin.getAddress() +
+                " Authorized Caller: " + governance.getAddress();
         Executable enableNotFromAdmin = () -> feeHandler.invoke(nonAdmin, setterMethod);
         expectErrorMessage(enableNotFromAdmin, expectedErrorMessage);
 
-        feeHandler.invoke(admin, setterMethod);
+        feeHandler.invoke(governance, setterMethod);
         assertEquals(expectedValue, feeHandler.call("isEnabled"));
     }
 
@@ -209,6 +203,7 @@ class FeeHandlerImplTest extends TestBase {
     void tokenFallback() {
         setAcceptedDividendTokens_NoPreviousTokens();
         setFeeProcessingInterval();
+        feeHandler.invoke(admin, "disable");
 
         contextMock.when(() -> Context.call(any(Address.class), eq("balanceOf"), any(Address.class))).thenReturn(BigInteger.TEN);
         contextMock.when(() -> Context.call(any(Address.class), eq("getContractAddress"), eq("dividends"))).thenReturn(dividends.getAddress());
@@ -292,6 +287,7 @@ class FeeHandlerImplTest extends TestBase {
     void feeData() {
         // Arrange
         setAdmin();
+        feeHandler.invoke(admin, "disable");
         Account usdc = Account.newScoreAccount(scoreCount++);
         feeHandler.invoke(owner, "setLoans", loans.getAddress());
         feeHandler.invoke(owner, "setDex", dex.getAddress());
@@ -334,5 +330,5 @@ class FeeHandlerImplTest extends TestBase {
         assertEquals(BigInteger.ZERO, feeHandler.call("getSwapFeesAccruedByToken", usdc.getAddress()));
 
         assertEquals(StabilityFeeBnsud.multiply(BigInteger.TWO), feeHandler.call("getStabilityFundFeesAccrued"));
-    }  
+    }
 }

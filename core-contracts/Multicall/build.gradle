@@ -57,6 +57,11 @@ deployJar {
             nid = 0x7
             to = Addresses.berlin.multicall
         }
+        lisbon {
+            uri = 'https://lisbon.net.solidwallet.io/api/v3'
+            nid = 0x2
+            to = Addresses.lisbon.multicall
+        }
         local {
             uri = 'http://localhost:9082/api/v3'
             nid = 0x3

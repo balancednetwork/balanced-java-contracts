@@ -17,6 +17,7 @@
 package network.balanced.score.core.stakedlp;
 
 import network.balanced.score.lib.interfaces.StakedLP;
+import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.IterableDictDB;
 import score.*;
 import score.annotation.EventLog;
@@ -49,15 +50,6 @@ public class StakedLPImpl implements StakedLP {
         if (StakedLPImpl.governance.get() == null) {
             Context.require(governance.isContract(), "StakedLP: Governance address should be a contract");
             StakedLPImpl.governance.set(governance);
-        } else if (dataSourceIds.get("sICX/bnUSD") == null) {
-            List<String> dataSources = (List<String>) Context.call(rewards.get(), "getDataSourceNames");
-            for (String source : dataSources) {
-                if (source.equals("Loans") || source.equals("sICX/ICX")) {
-                    continue;
-                }
-
-                migratePool(source);
-            }
         }
     }
 
@@ -73,7 +65,7 @@ public class StakedLPImpl implements StakedLP {
 
     @External(readonly = true)
     public String name() {
-        return "Balanced StakedLP";
+        return Names.STAKEDLP;
     }
 
     @External(readonly = true)
@@ -207,6 +199,12 @@ public class StakedLPImpl implements StakedLP {
     @External(readonly = true)
     public List<String> getDataSources() {
         return dataSourceIds.keys();
+    }
+
+    @External(readonly = true)
+    public boolean isSupportedPool(BigInteger id) {
+        String name = dataSourceNames.get(id);
+        return name != null;
     }
 
     private void stake(Address user, BigInteger id, BigInteger value) {
