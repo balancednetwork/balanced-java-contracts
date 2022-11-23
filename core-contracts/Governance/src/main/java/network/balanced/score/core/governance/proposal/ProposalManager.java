@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 import static network.balanced.score.core.governance.GovernanceImpl.*;
+import static network.balanced.score.core.governance.utils.EventLogger.VoteCast;
 import static network.balanced.score.core.governance.utils.GovernanceConstants.*;
 
 public class ProposalManager {
@@ -146,7 +147,7 @@ public class ProposalManager {
         proposal.totalForVotes.set(totalFor);
         proposal.totalAgainstVotes.set(totalAgainst);
 
-        getEventLogger().VoteCast(proposal.name.get(), vote, from, totalVote, totalFor, totalAgainst);
+        VoteCast(proposal.name.get(), vote, from, totalVote, totalFor, totalAgainst);
     }
 
     public static void evaluateVote(BigInteger vote_index) {

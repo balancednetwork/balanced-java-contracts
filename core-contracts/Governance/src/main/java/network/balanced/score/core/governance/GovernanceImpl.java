@@ -429,12 +429,6 @@ public class GovernanceImpl implements Governance {
         Context.call(ContractManager.get("loans"), "setLiquidationRatio", _symbol, _ratio);
     }
 
-
-
-    public static EventLogger getEventLogger() {
-        return new EventLogger();
-    }
-
     private static Address getSystemScoreAddress() {
         byte[] rawAddress = new byte[Address.LENGTH];
         rawAddress[0] = 1;
