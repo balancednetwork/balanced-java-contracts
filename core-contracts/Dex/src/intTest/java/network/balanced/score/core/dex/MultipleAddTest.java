@@ -17,8 +17,6 @@
 package network.balanced.score.core.dex;
 
 import com.eclipsesource.json.JsonArray;
-import com.eclipsesource.json.JsonObject;
-
 import foundation.icon.icx.Wallet;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
@@ -34,8 +32,9 @@ import java.io.File;
 import java.math.BigInteger;
 import java.util.Map;
 
-import static network.balanced.score.lib.test.integration.BalancedUtils.*;
 import static foundation.icon.score.client.DefaultScoreClient._deploy;
+import static network.balanced.score.lib.test.integration.BalancedUtils.createParameter;
+import static network.balanced.score.lib.test.integration.BalancedUtils.createTransaction;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -181,36 +180,36 @@ public class MultipleAddTest {
                 tokenDeposit);
 
         //check isQuoteCoinAllowed for test token if not added
-        if(!dexUserScoreClient.isQuoteCoinAllowed(Address.fromString(dexTestThirdScoreAddress))) {
+        if (!dexUserScoreClient.isQuoteCoinAllowed(Address.fromString(dexTestThirdScoreAddress))) {
             dexAddQuoteCoin(new Address(dexTestThirdScoreAddress));
         }
-        if(!dexUserScoreClient.isQuoteCoinAllowed(Address.fromString(dexTestFourthScoreAddress))) {
+        if (!dexUserScoreClient.isQuoteCoinAllowed(Address.fromString(dexTestFourthScoreAddress))) {
             dexAddQuoteCoin(new Address(dexTestFourthScoreAddress));
         }
     }
 
     void dexAddQuoteCoin(Address address) {
         JsonArray addQuoteCoinParameters = new JsonArray()
-            .add(createParameter(address));
+                .add(createParameter(address));
 
         JsonArray actions = new JsonArray()
-            .add(createTransaction(balanced.dex._address(), "addQuoteCoin", addQuoteCoinParameters));
+                .add(createTransaction(balanced.dex._address(), "addQuoteCoin", addQuoteCoinParameters));
 
-            balanced.ownerClient.governance.execute(actions.toString());
+        balanced.ownerClient.governance.execute(actions.toString());
     }
 
     void setMarketName(BigInteger poolID, String name) {
         JsonArray setMarketNameParameters = new JsonArray()
-            .add(createParameter(poolID))
-            .add(createParameter(name));
+                .add(createParameter(poolID))
+                .add(createParameter(name));
 
         JsonArray actions = new JsonArray()
-            .add(createTransaction(balanced.dex._address(), "setMarketName", setMarketNameParameters));
+                .add(createTransaction(balanced.dex._address(), "setMarketName", setMarketNameParameters));
 
-            balanced.ownerClient.governance.execute(actions.toString());
+        balanced.ownerClient.governance.execute(actions.toString());
     }
-    
-    BigInteger hexToBigInteger(String hex){
+
+    BigInteger hexToBigInteger(String hex) {
         return new BigInteger(hex.replace("0x", ""), 16);
     }
 }

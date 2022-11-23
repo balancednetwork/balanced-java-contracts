@@ -47,6 +47,7 @@ dependencies {
     intTestImplementation project(':score-client')
     intTestImplementation Dependencies.iconSdk
     intTestImplementation Dependencies.jacksonDatabind
+    intTestImplementation project(':DeploymentTester')
 }
 
 optimizedJar {

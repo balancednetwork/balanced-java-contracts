@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.governance.DeploymentTester.src.main.java.network.balanced.score.core.deploymenttester;
+package network.balanced.score.core.governance.deploymentTester;
 
-import score.*;
+import score.Context;
+import score.VarDB;
 import score.annotation.External;
 
 public class DeploymentTester {

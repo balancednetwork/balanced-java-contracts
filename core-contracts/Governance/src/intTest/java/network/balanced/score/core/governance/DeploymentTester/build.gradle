@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-
-import network.balanced.score.dependencies.Addresses
 import network.balanced.score.dependencies.Dependencies
 
 version = '0.1.0'
@@ -38,7 +36,7 @@ dependencies {
 }
 
 optimizedJar {
-    mainClassName = 'network.balanced.score.core.governance.DeploymentTester.src.main.java.network.balanced.score.core.deploymenttester.DeploymentTester'
+    mainClassName = 'network.balanced.score.core.governance.deploymentTester.DeploymentTester'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }

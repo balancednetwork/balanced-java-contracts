@@ -1,9 +1,20 @@
+/*
+ * Copyright (c) 2022-2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package network.balanced.score.core.daofund;
-
-import static network.balanced.score.lib.utils.Constants.MAX_LOCK_TIME;
-
-import java.math.BigInteger;
-import java.util.Map;
 
 import network.balanced.score.lib.utils.IterableDictDB;
 import score.Address;
@@ -11,17 +22,18 @@ import score.Context;
 import score.VarDB;
 import scorex.util.HashMap;
 
-import static network.balanced.score.lib.utils.BalancedAddressManager.getBoostedBaln;
-import static network.balanced.score.lib.utils.BalancedAddressManager.getRewards;
-import static network.balanced.score.lib.utils.BalancedAddressManager.getDividends;
-import static network.balanced.score.lib.utils.BalancedAddressManager.getDex;
-import static network.balanced.score.lib.utils.BalancedAddressManager.getStakedLp;
+import java.math.BigInteger;
+import java.util.Map;
+
+import static network.balanced.score.lib.utils.BalancedAddressManager.*;
+import static network.balanced.score.lib.utils.Constants.MAX_LOCK_TIME;
 
 public class POLManager {
     private static final byte[] tokenDepositData = "{\"method\":\"_deposit\"}".getBytes();
     private static final String FEE_EARNINGS = "fee_earnings";
     private static final String BALN_EARNINGS = "baln_earnings";
-    private static final IterableDictDB<Address, BigInteger> feeEarnings = new IterableDictDB<Address, BigInteger>(FEE_EARNINGS, BigInteger.class, Address.class, false);
+    private static final IterableDictDB<Address, BigInteger> feeEarnings = new IterableDictDB<>(FEE_EARNINGS,
+            BigInteger.class, Address.class, false);
     private static final VarDB<BigInteger> balnEarnings = Context.newVarDB(BALN_EARNINGS, BigInteger.class);
 
     private static final String FEE_PROCESSING = "fee_processing";
@@ -33,7 +45,7 @@ public class POLManager {
         rewardsProcessing.set(true);
         Address rewardsAddress = getRewards();
         String[] sources = Context.call(String[].class, rewardsAddress, "getUserSources", Context.getAddress());
-        Context.call(rewardsAddress, "claimRewards", (Object)sources);
+        Context.call(rewardsAddress, "claimRewards", (Object) sources);
         rewardsProcessing.set(false);
     }
 
@@ -43,7 +55,8 @@ public class POLManager {
         feeProcessing.set(false);
     }
 
-    public static void supplyLiquidity(Address baseAddress, BigInteger baseAmount, Address quoteAddress, BigInteger quoteAmount) {
+    public static void supplyLiquidity(Address baseAddress, BigInteger baseAmount, Address quoteAddress,
+                                       BigInteger quoteAmount) {
         Address dex = getDex();
         Context.call(baseAddress, "transfer", dex, baseAmount, tokenDepositData);
         Context.call(quoteAddress, "transfer", dex, quoteAmount, tokenDepositData);

@@ -182,7 +182,7 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
     public void burn(BigInteger _amount) {
         burnFrom(Context.getCaller(), _amount);
     }
-    
+
     @External
     public void burnFrom(Address _account, BigInteger _amount) {
         onlyEither(minter, minter2);

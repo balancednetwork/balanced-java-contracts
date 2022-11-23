@@ -18,12 +18,11 @@ package network.balanced.score.core.governance.utils;
 
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.utils.Constants;
+import network.balanced.score.lib.utils.Names;
 
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
-
-import network.balanced.score.lib.utils.Names;
 
 import static java.util.Map.entry;
 import static network.balanced.score.lib.utils.Math.pow;
@@ -85,24 +84,24 @@ public class GovernanceConstants extends Constants {
     );
 
     public static Map<String, String> oldNamesMap = Map.ofEntries(
-        entry("loans", Names.LOANS),
-        entry("dex", Names.DEX),
-        entry("rewards", Names.REWARDS),
-        entry("dividends", Names.DIVIDENDS),
-        entry("daofund", Names.DAOFUND),
-        entry("reserve", Names.RESERVE),
-        entry("baln", Names.BALN),
-        entry("bwt", Names.WORKERTOKEN),
-        entry("router", Names.ROUTER),
-        entry("stakedLp", Names.STAKEDLP),
-        entry("rebalancing", Names.REBALANCING),
-        entry("balancedOracle", Names.BALANCEDORACLE),
-        entry("oracle", Names.ORACLE),
-        entry("staking", Names.STAKING),
-        entry("sicx", Names.SICX),
-        entry("bnUSD", Names.BNUSD),
-        entry("feehandler", Names.FEEHANDLER),
-        entry("bBaln", Names.BOOSTED_BALN)
+            entry("loans", Names.LOANS),
+            entry("dex", Names.DEX),
+            entry("rewards", Names.REWARDS),
+            entry("dividends", Names.DIVIDENDS),
+            entry("daofund", Names.DAOFUND),
+            entry("reserve", Names.RESERVE),
+            entry("baln", Names.BALN),
+            entry("bwt", Names.WORKERTOKEN),
+            entry("router", Names.ROUTER),
+            entry("stakedLp", Names.STAKEDLP),
+            entry("rebalancing", Names.REBALANCING),
+            entry("balancedOracle", Names.BALANCEDORACLE),
+            entry("oracle", Names.ORACLE),
+            entry("staking", Names.STAKING),
+            entry("sicx", Names.SICX),
+            entry("bnUSD", Names.BNUSD),
+            entry("feehandler", Names.FEEHANDLER),
+            entry("bBaln", Names.BOOSTED_BALN)
 
     );
 
