@@ -17,7 +17,6 @@
 package network.balanced.score.core.daofund;
 
 import network.balanced.score.lib.interfaces.DAOfund;
-import network.balanced.score.lib.interfaces.LoansScoreInterface;
 import network.balanced.score.lib.structs.Disbursement;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.utils.EnumerableSetDB;
@@ -32,8 +31,8 @@ import java.math.BigInteger;
 import java.util.Map;
 
 import static network.balanced.score.lib.utils.BalancedAddressManager.*;
-import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
-import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.Check.isContract;
+import static network.balanced.score.lib.utils.Check.onlyGovernance;
 
 public class DAOfundImpl implements DAOfund {
 

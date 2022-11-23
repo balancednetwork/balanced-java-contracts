@@ -21,7 +21,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import score.Address;
 import score.Context;
-import scorex.util.HashMap;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -278,9 +277,11 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         BigInteger newStaker1AccruedDividends = addedWeight.multiply(newStaker1BBalnBalance).divide(ICX);
         BigInteger newStaker2AccruedDividends = addedWeight.multiply(newStaker2BBalnBalance).divide(ICX);
 
-        assertEquals(Map.of(bnUSDScore.getAddress().toString(), staker1AccruedDividends.add(newStaker1AccruedDividends)), dividendScore.call(
+        assertEquals(Map.of(bnUSDScore.getAddress().toString(),
+                staker1AccruedDividends.add(newStaker1AccruedDividends)), dividendScore.call(
                 "getUnclaimedDividends", staker1.getAddress()));
-        assertEquals(Map.of(bnUSDScore.getAddress().toString(), staker2AccruedDividends.add(newStaker2AccruedDividends)), dividendScore.call(
+        assertEquals(Map.of(bnUSDScore.getAddress().toString(),
+                staker2AccruedDividends.add(newStaker2AccruedDividends)), dividendScore.call(
                 "getUnclaimedDividends", staker2.getAddress()));
     }
 

@@ -54,7 +54,7 @@ class DividendsImplTestBase extends UnitTest {
     protected final MockedStatic.Verification balanceOf = () -> Context.call(eq(balnScore.getAddress()), eq(
             "balanceOf"), any(Address.class));
     protected final MockedStatic.Verification balanceOfbnUSD = () -> Context.call(eq(bnUSDScore.getAddress()), eq(
-        "balanceOf"), any(Address.class));
+            "balanceOf"), any(Address.class));
 
     protected void addBnusdFees(BigInteger amount) {
         dividendScore.invoke(bnUSDScore.getAccount(), "tokenFallback", bnUSDScore.getAddress(), amount, new byte[0]);
