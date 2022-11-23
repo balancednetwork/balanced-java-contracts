@@ -19,16 +19,17 @@ public class SetupManager {
     public static void configureBalanced() {
         for (Map<String, Object> asset : ASSETS) {
             Address tokenAddress = ContractManager.get((String) asset.get("address"));
-            call(
-                    ContractManager.getAddress(Names.LOANS),
-                    "addAsset",
-                    tokenAddress,
-                    asset.get("active"),
-                    asset.get("collateral")
-            );
             call(ContractManager.getAddress(Names.DIVIDENDS), "addAcceptedTokens", tokenAddress);
             call(ContractManager.getAddress(Names.DAOFUND), "addAcceptedToken", tokenAddress);
         }
+
+        call(
+            ContractManager.getAddress(Names.LOANS),
+            "addAsset",
+            ContractManager.getAddress(Names.SICX),
+            true,
+            true
+        );
 
         Address[] acceptedFeeTokens = new Address[]{
             ContractManager.getAddress(Names.SICX),

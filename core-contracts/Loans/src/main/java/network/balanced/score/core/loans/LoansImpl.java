@@ -179,7 +179,7 @@ public class LoansImpl {
     public void addAsset(Address _token_address, boolean _active, boolean _collateral) {
         only(admin);
         if (_collateral) {
-            CollateralManager.addCollateral(_token_address, _active);
+            CollateralManager.addCollateral(_token_address);
             AssetAdded(_token_address, TokenUtils.symbol(_token_address), _collateral);
         }
     }

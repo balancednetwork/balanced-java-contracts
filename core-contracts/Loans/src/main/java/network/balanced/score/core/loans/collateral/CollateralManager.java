@@ -46,7 +46,7 @@ public class CollateralManager {
         return Address.fromString(symbolMap.get(symbol));
     }
 
-    public static void addCollateral(Address address, Boolean active) {
+    public static void addCollateral(Address address) {
         String collateralToAdd = address.toString();
         Context.require(!arrayDbContains(collateralAddresses, address), TAG + ": " + collateralToAdd + " already " +
                 "exists in the database.");
