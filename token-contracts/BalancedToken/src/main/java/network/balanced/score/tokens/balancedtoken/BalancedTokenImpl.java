@@ -78,7 +78,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
 
         if (governance.get() == null) {
             this.governance.set(_governance);
-            this.stakingEnabled.set(false);
+            this.stakingEnabled.set(true);
             this.oracleName.set(DEFAULT_ORACLE_NAME);
             this.lastPrice.set(INITIAL_PRICE_ESTIMATE);
             this.minInterval.set(MIN_UPDATE_TIME);

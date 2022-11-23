@@ -56,6 +56,7 @@ public abstract class AbstractDex implements Dex {
             currentDay.set(BigInteger.valueOf(1L));
             namedMarkets.set(SICXICX_MARKET_NAME, SICXICX_POOL_ID);
             marketsToNames.set(SICXICX_POOL_ID, SICXICX_MARKET_NAME);
+            dexOn.set(true);
         }
     }
 

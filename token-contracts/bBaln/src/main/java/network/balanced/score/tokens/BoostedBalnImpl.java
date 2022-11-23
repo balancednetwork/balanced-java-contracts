@@ -18,6 +18,7 @@ package network.balanced.score.tokens;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
+import network.balanced.score.lib.utils.Names;
 import network.balanced.score.tokens.db.LockedBalance;
 import network.balanced.score.tokens.db.Point;
 import network.balanced.score.tokens.utils.UnsignedBigInteger;
@@ -40,9 +41,9 @@ import static network.balanced.score.tokens.Constants.WEEK_IN_MICRO_SECONDS;
 
 public class BoostedBalnImpl extends AbstractBoostedBaln {
 
-    public BoostedBalnImpl(Address balnAddress, Address rewardAddress, Address dividendsAddress, String name,
+    public BoostedBalnImpl(Address balnAddress, Address rewardAddress, Address dividendsAddress,
                            String symbol) {
-        super(balnAddress, rewardAddress, dividendsAddress, name, symbol);
+        super(balnAddress, rewardAddress, dividendsAddress, Names.BOOSTED_BALN, symbol);
     }
 
     @External

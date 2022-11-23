@@ -42,6 +42,7 @@ dependencies {
     intTestImplementation project(":score-client")
     intTestAnnotationProcessor project(":score-client")
     intTestImplementation Dependencies.iconSdk
+    intTestImplementation Dependencies.minimalJson
     intTestImplementation Dependencies.jacksonDatabind
 }
 
@@ -78,7 +79,7 @@ deployJar {
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
     parameters {
-        arg('governance', Addresses.mainnet.governance)
+        arg('_governance', Addresses.mainnet.governance)
     }
 }
 

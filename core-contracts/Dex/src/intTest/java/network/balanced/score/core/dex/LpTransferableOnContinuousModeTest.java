@@ -16,6 +16,7 @@
 
 package network.balanced.score.core.dex;
 
+import com.eclipsesource.json.JsonArray;
 import foundation.icon.icx.Wallet;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
@@ -33,6 +34,8 @@ import java.math.BigInteger;
 import java.util.Map;
 
 import static foundation.icon.score.client.DefaultScoreClient._deploy;
+import static network.balanced.score.lib.test.integration.BalancedUtils.createParameter;
+import static network.balanced.score.lib.test.integration.BalancedUtils.createTransaction;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -137,11 +140,21 @@ public class LpTransferableOnContinuousModeTest {
         //check isQuoteCoinAllowed for test token if not added
 
         if (!dexUserScoreClient.isQuoteCoinAllowed(Address.fromString(dexTestBaseScoreAddress))) {
-            governanceDexScoreClient.dexAddQuoteCoin(Address.fromString(dexTestBaseScoreAddress));
+            dexAddQuoteCoin(new Address(dexTestBaseScoreAddress));
         }
         if (!dexUserScoreClient.isQuoteCoinAllowed(Address.fromString(dexTestFourthScoreAddress))) {
-            governanceDexScoreClient.dexAddQuoteCoin(Address.fromString(dexTestFourthScoreAddress));
+            dexAddQuoteCoin(new Address(dexTestFourthScoreAddress));
         }
+    }
+
+    void dexAddQuoteCoin(Address address) {
+        JsonArray addQuoteCoinParameters = new JsonArray()
+                .add(createParameter(address));
+
+        JsonArray actions = new JsonArray()
+                .add(createTransaction(balanced.dex._address(), "addQuoteCoin", addQuoteCoinParameters));
+
+        balanced.ownerClient.governance.execute(actions.toString());
     }
 
     void waitForADay() {

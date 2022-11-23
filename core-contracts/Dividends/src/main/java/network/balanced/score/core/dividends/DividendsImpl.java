@@ -19,6 +19,7 @@ package network.balanced.score.core.dividends;
 import network.balanced.score.lib.interfaces.Dividends;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.PrepDelegations;
+import network.balanced.score.lib.utils.Names;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -80,14 +81,14 @@ public class DividendsImpl implements Dividends {
             DividendsImpl.governance.set(_governance);
             snapshotId.set(BigInteger.ONE);
             dividendsBatchSize.set(BigInteger.valueOf(50));
-            distributionActivate.set(false);
+            distributionActivate.set(true);
             addInitialCategories();
         }
     }
 
     @External(readonly = true)
     public String name() {
-        return "Balanced Dividends";
+        return Names.DIVIDENDS;
     }
 
     @External(readonly = true)

@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.governance;
+package network.balanced.score.core.governance.utils;
 
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.utils.Constants;
+import network.balanced.score.lib.utils.Names;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -27,7 +28,7 @@ import static java.util.Map.entry;
 import static network.balanced.score.lib.utils.Math.pow;
 
 public class GovernanceConstants extends Constants {
-    public static final String TAG = "Governance";
+    public static final String TAG = Names.GOVERNANCE;
     public static final int successfulVoteExecutionRevertID = 20;
 
     public static final BigInteger MAJORITY = new BigInteger("666666666666666667", 10);
@@ -46,7 +47,6 @@ public class GovernanceConstants extends Constants {
     public static final String MIN_BALN = "min_baln";
     public static final String DEFINITION_FEE = "definition_fee";
     public static final String QUORUM = "quorum";
-
 
     public static String[] CONTRACTS = {"loans", "dex", "staking", "rewards", "dividends", "daofund",
             "reserve", "sicx", "bnUSD", "baln", "bwt", "router", "feehandler", "stakedLp", "rebalancing", "bBaln",
@@ -82,6 +82,28 @@ public class GovernanceConstants extends Constants {
             entry("router", "governance"),
             entry("rebalancing", "governance"),
             entry("balancedOracle", "governance")
+    );
+
+    public static Map<String, String> oldNamesMap = Map.ofEntries(
+            entry("loans", Names.LOANS),
+            entry("dex", Names.DEX),
+            entry("rewards", Names.REWARDS),
+            entry("dividends", Names.DIVIDENDS),
+            entry("daofund", Names.DAOFUND),
+            entry("reserve", Names.RESERVE),
+            entry("baln", Names.BALN),
+            entry("bwt", Names.WORKERTOKEN),
+            entry("router", Names.ROUTER),
+            entry("stakedLp", Names.STAKEDLP),
+            entry("rebalancing", Names.REBALANCING),
+            entry("balancedOracle", Names.BALANCEDORACLE),
+            entry("oracle", Names.ORACLE),
+            entry("staking", Names.STAKING),
+            entry("sicx", Names.SICX),
+            entry("bnUSD", Names.BNUSD),
+            entry("feehandler", Names.FEEHANDLER),
+            entry("bBaln", Names.BOOSTED_BALN)
+
     );
 
     public static Map<String, String> SETTERS = Map.ofEntries(
@@ -130,7 +152,6 @@ public class GovernanceConstants extends Constants {
             createDistributionPercentage("Reserve Fund", BigInteger.valueOf(5).multiply(pow(BigInteger.TEN, 16))),
             createDistributionPercentage("DAOfund", BigInteger.valueOf(40).multiply(pow(BigInteger.TEN, 16)))
     };
-
 
     // #-------------------------------------------------------------------------------
     // # LOANS LAUNCH CONFIG

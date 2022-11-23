@@ -18,6 +18,7 @@ package network.balanced.score.tokens.workertoken;
 
 import network.balanced.score.lib.interfaces.WorkerToken;
 import network.balanced.score.lib.tokens.IRC2PresetFixedSupply;
+import network.balanced.score.lib.utils.Names;
 import score.Address;
 import score.ArrayDB;
 import score.Context;
@@ -34,7 +35,7 @@ import static network.balanced.score.lib.utils.Check.*;
 public class WorkerTokenImpl extends IRC2PresetFixedSupply implements WorkerToken {
     public static String TAG = "BALW";
 
-    private static final String TOKEN_NAME = "Balanced Worker Token";
+    private static final String TOKEN_NAME = Names.WORKERTOKEN;
     private static final String SYMBOL_NAME = "BALW";
     private static final BigInteger INITIAL_SUPPLY = BigInteger.valueOf(100);
     private static final BigInteger DECIMALS = BigInteger.valueOf(6);
@@ -71,7 +72,7 @@ public class WorkerTokenImpl extends IRC2PresetFixedSupply implements WorkerToke
      * @return Governance address
      */
     @External(readonly = true)
-    public Address getGovernance(){
+    public Address getGovernance() {
         return governance.get();
     }
 

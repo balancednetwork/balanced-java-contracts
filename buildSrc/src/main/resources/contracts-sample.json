@@ -88,6 +88,9 @@
   {
     "name": "reserve",
     "params": {},
+    "addressParams": {
+      "_governance": "governance"
+    },
     "order": 2.0
   },
   {
@@ -159,7 +162,6 @@
   {
     "name": "bBaln",
     "params": {
-      "name": "Boosted Baln",
       "symbol": "bBaln"
     },
     "addressParams": {
