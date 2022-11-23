@@ -28,6 +28,7 @@ import score.annotation.External;
 import java.math.BigInteger;
 
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
+import static network.balanced.score.lib.utils.Constants.MAX_LOCK_TIME;
 import static network.balanced.score.lib.utils.Math.pow;
 import static network.balanced.score.lib.utils.NonReentrant.globalReentryLock;
 import static network.balanced.score.tokens.Constants.*;
@@ -36,7 +37,7 @@ import static network.balanced.score.tokens.utils.UnsignedBigInteger.pow10;
 
 public abstract class AbstractBoostedBaln implements BoostedBaln {
 
-    public static final BigInteger MAX_TIME = BigInteger.valueOf(4L).multiply(YEAR_IN_MICRO_SECONDS);
+    public static final BigInteger MAX_TIME = MAX_LOCK_TIME;
     public static BigInteger ICX = pow(BigInteger.TEN, 18);
     protected static final UnsignedBigInteger MULTIPLIER = pow10(18);
 

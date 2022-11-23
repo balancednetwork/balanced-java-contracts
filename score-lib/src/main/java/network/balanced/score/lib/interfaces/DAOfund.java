@@ -18,9 +18,7 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
-import network.balanced.score.lib.interfaces.addresses.AdminAddress;
-import network.balanced.score.lib.interfaces.addresses.GovernanceAddress;
-import network.balanced.score.lib.interfaces.addresses.LoansAddress;
+import network.balanced.score.lib.interfaces.addresses.AddressManager;
 import network.balanced.score.lib.interfaces.base.Fallback;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
@@ -34,7 +32,7 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface DAOfund extends Name, GovernanceAddress, AdminAddress, LoansAddress, TokenFallback, Fallback {
+public interface DAOfund extends Name, AddressManager, TokenFallback, Fallback {
 
     @External
     void addAddressToSetdb();
@@ -53,4 +51,25 @@ public interface DAOfund extends Name, GovernanceAddress, AdminAddress, LoansAdd
 
     @External
     void claim();
+
+    @External
+    void claimRewards();
+
+    @External
+    void claimNetworkFees();
+
+    @External
+    void supplyLiquidity(Address baseAddress, BigInteger baseAmount, Address quoteAddress, BigInteger quoteAmount);
+
+    @External
+    void withdrawLiquidity(BigInteger pid, BigInteger amount);
+
+    @External
+    void stakeLPTokens(BigInteger pid);
+
+    @External(readonly = true)
+    BigInteger getBalnEarnings();
+
+    @External(readonly = true)
+    Map<String, BigInteger> getFeeEarnings();
 }

@@ -48,6 +48,7 @@ public class MockBalanced {
     public MockContract<Stability> stability;
     public MockContract<Oracle> oracle;
     public MockContract<BalancedOracle> balancedOracle;
+    public MockContract<BoostedBaln> bBaln;
     public MockContract<Governance> governance;
 
     public MockBalanced(ServiceManager sm, Account owner) throws Exception {
@@ -69,6 +70,7 @@ public class MockBalanced {
         stability = new MockContract<>(StabilityScoreInterface.class, Stability.class, sm, owner);
         oracle = new MockContract<>(OracleScoreInterface.class, Oracle.class, sm, owner);
         balancedOracle = new MockContract<>(BalancedOracleScoreInterface.class, BalancedOracle.class, sm, owner);
+        bBaln = new MockContract<>(BoostedBalnScoreInterface.class, BoostedBaln.class, sm, owner);
         governance = new MockContract<>(GovernanceScoreInterface.class, Governance.class, sm, owner);
 
         if (addressManagerMock != null) {
@@ -95,6 +97,7 @@ public class MockBalanced {
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.STAKEDLP)).thenReturn(stakedLp.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.STABILITY)).thenReturn(stability.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.BALANCEDORACLE)).thenReturn(balancedOracle.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.BOOSTED_BALN)).thenReturn(bBaln.getAddress());
 
         when(bnUSD.mock.symbol()).thenReturn("bnUSD");
         when(sicx.mock.symbol()).thenReturn("sICX");

@@ -125,6 +125,10 @@ public class BalancedAddressManager {
         return getAddress(Names.DEX);
     }
 
+    public static Address getBoostedBaln() {
+        return getAddress(Names.BOOSTED_BALN);
+    }
+
     public static Address getGovernance() {
         return contractAddresses.get(Names.GOVERNANCE);
     }
