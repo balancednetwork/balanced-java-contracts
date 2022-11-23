@@ -24,7 +24,7 @@ public class ProposalManager {
 
         BigInteger snapshotBlock = BigInteger.valueOf(Context.getBlockHeight());
 
-        Context.require(vote_start.compareTo(_getDay()) >= 0, "Vote cannot start before the current day.");
+        Context.require(vote_start.compareTo(_getDay()) > 0, "Vote cannot start before the next day.");
 
         BigInteger voteIndex = ProposalDB.getProposalId(name);
         Context.require(forumLink.startsWith("https://gov.balanced.network/"), "Invalid forum link.");

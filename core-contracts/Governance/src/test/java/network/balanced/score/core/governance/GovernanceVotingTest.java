@@ -71,8 +71,8 @@ public class GovernanceVotingTest extends GovernanceTestBase {
                 voteStart, voteDuration, forumLink, actions);
         expectErrorMessage(withTooLongDescription, expectedErrorMessage);
 
-        BigInteger voteStartBeforeToday = day.subtract(BigInteger.ONE);
-        expectedErrorMessage = "Vote cannot start before the current day.";
+        BigInteger voteStartBeforeToday = day;
+        expectedErrorMessage = "Vote cannot start before the next day.";
         Executable withVoteStartBeforeToday = () -> governance.invoke(owner, "defineVote", name, description,
                 voteStartBeforeToday, voteDuration, forumLink, actions);
         expectErrorMessage(withVoteStartBeforeToday, expectedErrorMessage);
