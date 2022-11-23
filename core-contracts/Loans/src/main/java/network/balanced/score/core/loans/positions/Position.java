@@ -235,10 +235,6 @@ public class Position {
         for (int i = 0; i < collateralSymbolsCount; i++) {
             Map<String, BigInteger> collateralAmounts = new HashMap<>();
             String collateralSymbol = CollateralManager.collateralList.get(i);
-            //TMP solution
-            if (collateralSymbol.equals("BALN")) {
-                continue;
-            }
 
             collateralAmounts.put(BNUSD_SYMBOL, getDebt(collateralSymbol));
 

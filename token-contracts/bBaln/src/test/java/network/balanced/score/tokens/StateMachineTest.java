@@ -79,7 +79,7 @@ public class StateMachineTest extends AbstractBoostedBalnTest {
     @BeforeEach
     public void setup() throws Exception {
         bBalnScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(),
-                dividendsScore.getAddress(), "Boosted Baln", "bBALN");
+                dividendsScore.getAddress(), "bBALN");
 
         scoreSpy = (BoostedBalnImpl) spy(bBalnScore.getInstance());
         bBalnScore.setInstance(scoreSpy);

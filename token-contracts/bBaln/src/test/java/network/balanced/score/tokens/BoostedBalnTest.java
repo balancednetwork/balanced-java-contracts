@@ -20,6 +20,9 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.token.irc2.IRC2Basic;
+
+import network.balanced.score.lib.utils.Names;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import score.Context;
@@ -51,7 +54,7 @@ class BoostedBalnTest extends AbstractBoostedBalnTest {
     @BeforeEach
     public void setup() throws Exception {
         bBalnScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(),
-                dividendsScore.getAddress(), bBalnName, bBalnSymbol);
+                dividendsScore.getAddress(), bBalnSymbol);
         BoostedBalnImpl scoreSpy = (BoostedBalnImpl) spy(bBalnScore.getInstance());
         bBalnScore.setInstance(scoreSpy);
 
@@ -60,7 +63,7 @@ class BoostedBalnTest extends AbstractBoostedBalnTest {
 
     @Test
     void name() {
-        assertEquals(bBalnName, bBalnScore.call("name"));
+        assertEquals(Names.BOOSTED_BALN, bBalnScore.call("name"));
     }
 
     @Test

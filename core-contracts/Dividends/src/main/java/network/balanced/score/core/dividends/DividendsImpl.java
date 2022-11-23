@@ -19,6 +19,7 @@ package network.balanced.score.core.dividends;
 import network.balanced.score.lib.interfaces.Dividends;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.PrepDelegations;
+import network.balanced.score.lib.utils.Names;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -80,14 +81,14 @@ public class DividendsImpl implements Dividends {
             DividendsImpl.governance.set(_governance);
             snapshotId.set(BigInteger.ONE);
             dividendsBatchSize.set(BigInteger.valueOf(50));
-            distributionActivate.set(false);
+            distributionActivate.set(true);
             addInitialCategories();
         }
     }
 
     @External(readonly = true)
     public String name() {
-        return "Balanced Dividends";
+        return Names.DIVIDENDS;
     }
 
     @External(readonly = true)
@@ -204,16 +205,15 @@ public class DividendsImpl implements Dividends {
     }
 
     @External(readonly = true)
-    @SuppressWarnings("unchecked")
     public Map<String, BigInteger> getBalances() {
         Address address = Context.getAddress();
-        Map<String, String> assets = (Map<String, String>) Context.call(loanScore.get(), "getAssetTokens");
         Map<String, BigInteger> balances = new HashMap<>();
-        for (String symbol : assets.keySet()) {
-            BigInteger balance = (BigInteger) Context.call(Address.fromString(assets.get(symbol)), "balanceOf",
-                    address);
+        int numberOfAcceptedTokens = acceptedTokens.size();
+        for (int i = 0; i < numberOfAcceptedTokens; i++) {
+            Address tokenAddress = acceptedTokens.get(i);
+            BigInteger balance = (BigInteger) Context.call(tokenAddress, "balanceOf", address);
             if (balance.compareTo(BigInteger.ZERO) > 0) {
-                balances.put(symbol, balance);
+                balances.put(Context.call(String.class, tokenAddress, "symbol"), balance);
             }
         }
 
@@ -257,6 +257,12 @@ public class DividendsImpl implements Dividends {
         if (!arrayDbContains(acceptedTokens, _token)) {
             acceptedTokens.add(_token);
         }
+    }
+
+    @External
+    public void removeAcceptedTokens(Address _token) {
+        only(admin);
+        removeFromArraydb(_token, acceptedTokens);
     }
 
     @External(readonly = true)
@@ -450,16 +456,17 @@ public class DividendsImpl implements Dividends {
             if (totalDivs.signum() > 0) {
                 nonZeroTokens.put(token.toString(), totalDivs);
                 userAccruedDividends.set(token, null);
-                BigInteger bbalnBalance = getBBalnBalance(user);
-                BigInteger prevBalance = userBalance.getOrDefault(user, BigInteger.ZERO);
-                userBalance.set(user, bbalnBalance);
-                DividendsTracker.setBBalnTotalSupply(getBoostedTotalSupply().add(bbalnBalance).subtract(prevBalance));
                 sendToken(user, totalDivs, token, "User dividends");
             }
         }
         if (nonZeroTokens.size() > 0) {
             Claimed(user, BigInteger.ZERO, BigInteger.ZERO, dividendsMapToJson(nonZeroTokens));
         }
+
+        BigInteger bbalnBalance = getBBalnBalance(user);
+        BigInteger prevBalance = userBalance.getOrDefault(user, BigInteger.ZERO);
+        userBalance.set(user, bbalnBalance);
+        DividendsTracker.setBBalnTotalSupply(getBoostedTotalSupply().add(bbalnBalance).subtract(prevBalance));
     }
 
     @External
@@ -544,21 +551,9 @@ public class DividendsImpl implements Dividends {
     }
 
     @External
-    @SuppressWarnings("unchecked")
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         Address token = Context.getCaller();
-        Map<String, String> availableTokens;
-        int acceptedTokensCount = acceptedTokens.size();
-        for (int i = 0; i < acceptedTokensCount; i++) {
-            if (!token.equals(acceptedTokens.get(i))) {
-                availableTokens = (Map<String, String>) Context.call(loanScore.get(), "getAssetTokens");
-                for (String value : availableTokens.values()) {
-                    if (token.toString().equals(value)) {
-                        acceptedTokens.add(token);
-                    }
-                }
-            }
-        }
+        Context.require(arrayDbContains(acceptedTokens, token), "Dividends contract does not accept " + token);
 
         if (getBoostedTotalSupply().equals(BigInteger.ZERO)) {
             sendToken(daoFund.get(), _value, token, "Daofund dividends");

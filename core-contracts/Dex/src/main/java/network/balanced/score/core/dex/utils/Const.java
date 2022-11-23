@@ -20,6 +20,8 @@ import score.Address;
 
 import java.math.BigInteger;
 
+import network.balanced.score.lib.utils.Names;
+
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
@@ -37,7 +39,7 @@ public class Const {
     public static final int IUSDT_BNUSD_ID = 15;
     public static final BigInteger WITHDRAW_LOCK_TIMEOUT = MICRO_SECONDS_IN_A_DAY;
     public static final Address MINT_ADDRESS = EOA_ZERO;
-    public static final String TAG = "Balanced DEX";
+    public static final String TAG = Names.DEX;
 
     public static final String IDS = "ids";
     public static final String VALUES = "values";

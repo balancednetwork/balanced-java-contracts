@@ -24,9 +24,12 @@ import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
 import org.json.JSONObject;
 import org.junit.jupiter.api.*;
 
+import com.eclipsesource.json.JsonArray;
+
 import java.math.BigInteger;
 import java.util.Map;
 
+import static network.balanced.score.lib.test.integration.BalancedUtils.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -133,7 +136,9 @@ class BalancedTokenImplIntTest {
         BigInteger value = BigInteger.valueOf(20).multiply(EXA);
         BigInteger previousSupply = balnScore.totalSupply();
         BigInteger previousBalance = balnScore.balanceOf(Address.fromString(owner.getAddress().toString()));
-        balnScore.setMinter(Address.fromString(owner.getAddress().toString()));
+
+        setMinter(owner.getAddress());
+
         balnScore.mint(value, "mole".getBytes());
         assertEquals(previousSupply.add(value), balnScore.totalSupply());
         assertEquals(previousBalance.add(value),
@@ -175,7 +180,7 @@ class BalancedTokenImplIntTest {
     @Test
     @Order(6)
     void mintTo() {
-        balnScore.setMinter(Address.fromString(owner.getAddress().toString()));
+        setMinter(owner.getAddress());
         BigInteger previousSupply = balnScore.totalSupply();
         BigInteger previousOwnerBalance = balnScore.balanceOf(Address.fromString(owner.getAddress().toString()));
         BigInteger previousTesterBalance = balnScore.balanceOf(Address.fromString(tester.getAddress().toString()));
@@ -190,7 +195,7 @@ class BalancedTokenImplIntTest {
     @Test
     @Order(7)
     void burnFrom() {
-        balnScore.setMinter(Address.fromString(owner.getAddress().toString()));
+        setMinter(owner.getAddress());
         BigInteger previousSupply = balnScore.totalSupply();
         BigInteger previousOwnerBalance = balnScore.balanceOf(Address.fromString(owner.getAddress().toString()));
         BigInteger previousTesterBalance = balnScore.balanceOf(Address.fromString(tester.getAddress().toString()));
@@ -200,6 +205,19 @@ class BalancedTokenImplIntTest {
         assertEquals(previousTesterBalance.subtract(value),
                 balnScore.balanceOf(Address.fromString(tester.getAddress().toString())));
         assertEquals(previousOwnerBalance, balnScore.balanceOf(Address.fromString(owner.getAddress().toString())));
+    }
+
+    private void setMinter(foundation.icon.icx.data.Address address) {
+        JsonArray setMinterParams = new JsonArray()
+        .add(createParameter(new Address(address.toString())));
+
+        JsonArray setMinter = createSingleTransaction(
+                balanced.baln._address(), 
+                "setMinter", 
+                setMinterParams
+        );
+
+        balanced.ownerClient.governance.execute(setMinter.toString());
     }
 }
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.governance;
+package network.balanced.score.core.governance.proposal;
 
 import score.Address;
 import score.Context;
@@ -35,7 +35,7 @@ public class ProposalDB {
     public final VarDB<BigInteger> startDay;
     public final VarDB<BigInteger> endDay;
     public final VarDB<String> forumLink;
-    public final VarDB<String> actions;
+    public final VarDB<String> transactions;
     public final VarDB<String> name;
     public final VarDB<String> description;
     public final VarDB<Boolean> active;
@@ -60,7 +60,7 @@ public class ProposalDB {
         startDay = Context.newVarDB(key + "_start_snapshot", BigInteger.class);
         endDay = Context.newVarDB(key + "_end_snapshot", BigInteger.class);
         forumLink = Context.newVarDB(key + "_forum_link", String.class);
-        actions = Context.newVarDB(key + "_actions", String.class);
+        transactions = Context.newVarDB(key + "_actions", String.class);
         name = Context.newVarDB(key + "_name", String.class);
         description = Context.newVarDB(key + "_description", String.class);
         active = Context.newVarDB(key + "_active", Boolean.class);
@@ -94,7 +94,7 @@ public class ProposalDB {
                                             BigInteger start,
                                             BigInteger end,
                                             String link,
-                                            String actions,
+                                            String transactions,
                                             BigInteger fee) {
         BigInteger voteIndex = ProposalDB.getProposalCount().add(BigInteger.ONE);
         ProposalDB newProposal = new ProposalDB(voteIndex);
@@ -108,7 +108,7 @@ public class ProposalDB {
         newProposal.startDay.set(start);
         newProposal.endDay.set(end);
         newProposal.forumLink.set(link);
-        newProposal.actions.set(actions);
+        newProposal.transactions.set(transactions);
         newProposal.name.set(name);
         newProposal.description.set(description);
         newProposal.status.set(ProposalStatus.STATUS[ProposalStatus.ACTIVE]);
@@ -120,5 +120,4 @@ public class ProposalDB {
 
         return newProposal;
     }
-
 }

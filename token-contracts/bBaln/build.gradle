@@ -64,10 +64,15 @@ deployJar {
             uri = 'http://localhost:9082/api/v3'
             nid = 0x3
         }
-         berlin {
+        berlin {
             uri = 'https://berlin.net.solidwallet.io/api/v3'
             nid = 0x7
-            to = Addresses.berlin.bBaln
+
+        }
+        lisbon {
+            uri = 'https://lisbon.net.solidwallet.io/api/v3'
+            nid = 0x2
+            to = Addresses.lisbon.bBaln
         }
         mainnet {
             uri = 'https://ctz.solidwallet.io/api/v3'
@@ -80,7 +85,6 @@ deployJar {
         arg('balnAddress', 'cx9eefbe346b17328e2265573f6e166f6bc4a13cc4')
         arg('rewardAddress', 'cx46aff4379970ffeb5d5889e59fb306cc41a4e75a')
         arg('dividendsAddress', 'cx238de0dea868ea6d82fac78802705ac0338b753a')
-        arg('name', 'Boosted Baln')
         arg('symbol', 'bBaln')
     }
 }

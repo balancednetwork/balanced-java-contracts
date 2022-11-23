@@ -20,11 +20,10 @@ import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.base.Fallback;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
-import network.balanced.score.lib.structs.BalancedAddresses;
-import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.PrepDelegations;
 import score.Address;
 import score.annotation.External;
+import score.annotation.Optional;
 import score.annotation.Payable;
 
 import java.math.BigInteger;
@@ -44,32 +43,26 @@ public interface Governance extends
     @External(readonly = true)
     Map<String, BigInteger> getVotersCount(BigInteger vote_index);
 
+    @External
+    void changeScoreOwner(Address score, Address newOwner);
+
     @External(readonly = true)
     Address getContractAddress(String contract);
 
     @External
     void setVoteDurationLimits(BigInteger min, BigInteger max);
 
+    @External(readonly = true)
+    BigInteger getMinVoteDuration();
+
+    @External(readonly = true)
+    BigInteger getMaxVoteDuration();
+
     @External
     void setTimeOffset(BigInteger offset);
 
     @External(readonly = true)
     BigInteger getTimeOffset();
-
-    @External(readonly = true)
-    BigInteger getVoteDuration();
-
-    @External
-    void setFeeProcessingInterval(BigInteger _interval);
-
-    @External
-    void deleteRoute(Address _fromToken, Address _toToken);
-
-    @External
-    void setAcceptedDividendTokens(Address[] _tokens);
-
-    @External
-    void setRoute(Address _fromToken, Address _toToken, Address[] _path);
 
     @External
     void setQuorum(BigInteger quorum);
@@ -94,25 +87,31 @@ public interface Governance extends
 
     @External
     void defineVote(String name, String description, BigInteger vote_start, BigInteger duration, String forumLink,
-                    String actions);
+                    String transactions);
 
     @External
-    void tryExecuteActions(String actions);
+    void tryExecuteTransactions(String transactions);
 
-    @External(readonly = true)
-    int maxActions();
+    @External
+    void addExternalContract(String name, Address address);
+
+    @External
+    void deployTo(Address targetContract, byte[] contractData, String deploymentParams);
+
+    @External
+    void deploy(byte[] contractData, String deploymentParams);
+
+    @External
+    void execute(String transactions);
 
     @External(readonly = true)
     BigInteger getProposalCount();
 
     @External(readonly = true)
-    List<Object> getProposals(int batch_size, int offset);
+    List<Object> getProposals(@Optional BigInteger batch_size, @Optional BigInteger offset);
 
     @External
     void castVote(BigInteger vote_index, boolean vote);
-
-    @External(readonly = true)
-    BigInteger totalBaln(BigInteger _day);
 
     @External
     void evaluateVote(BigInteger vote_index);
@@ -145,35 +144,11 @@ public interface Governance extends
     @External
     void createBalnSicxMarket(BigInteger _sicx_amount, BigInteger _baln_amount);
 
-    @External
-    void rebalancingSetBnusd(Address _address);
-
-    @External
-    void rebalancingSetSicx(Address _address);
-
-    @External
-    void rebalancingSetDex(Address _address);
-
-    @External
-    void rebalancingSetLoans(Address _address);
-
-    @External
-    void setLoansRebalance(Address _address);
-
-    @External
-    void setLoansDex(Address _address);
-
-    @External
-    void setRebalancing(Address _address);
-
-    @External
-    void setRebalancingThreshold(BigInteger _value);
-
-    @External
-    void setAddresses(BalancedAddresses _addresses);
-
     @External(readonly = true)
     Map<String, Address> getAddresses();
+
+    @External(readonly = true)
+    Address getAddress(String name);
 
     @External
     void setAdmins();
@@ -183,9 +158,6 @@ public interface Governance extends
 
     @External
     void setContractAddresses();
-
-    @External
-    void toggleBalancedOn();
 
     @External(readonly = true)
     BigInteger getLaunchDay();
@@ -202,133 +174,11 @@ public interface Governance extends
                                 BigInteger _liquidationRatio, BigInteger _debtCeiling);
 
     @External
-    void setDebtCeiling(String _symbol, BigInteger _debtCeiling);
-
-    @External
-    void toggleAssetActive(String _symbol);
-
-    @External
-    void setPeg(String _symbol, String _peg);
-
-    @External
-    void addDexPricedAsset(String _symbol, BigInteger _limit);
-
-    @External
-    void removeDexPricedAsset(String _symbol);
-
-    void addNewDataSource(String _data_source_name, String _contract_address);
-
-    @External
-    void addStakedLpDataSource(String _name, BigInteger _poolId, int _sourceType);
-
-    @External
-    void removeDataSource(String _data_source_name);
-
-    @External
-    void setPlatformDistPercentage(String name, BigInteger percentage);
-
-    @External
-    void setFixedSourcePercentage(String name, BigInteger percentage);
-
-    @External
-    void setVotable(String name, boolean votable);
-
-    @External
-    void addType(String name);
-
-    @External
-    void changeTypeWeight(int typeId, BigInteger weight);
-
-    @External
-    void updateBalTokenDistPercentage(DistributionPercentage[] _recipient_list);
-
-    @External
-    void bonusDist(Address[] _addresses, BigInteger[] _amounts);
-
-    @External
-    void setDay(BigInteger _day);
-
-    @External
-    void dexPermit(BigInteger _id, boolean _permission);
-
-    @External
-    void dexAddQuoteCoin(Address _address);
-
-    @External
-    void setMarketName(BigInteger _id, String _name);
-
-    @External
-    void delegate(PrepDelegations[] _delegations);
+    void delegate(String contract, PrepDelegations[] _delegations);
 
     @External
     void balwAdminTransfer(Address _from, Address _to, BigInteger _value, byte[] _data);
 
     @External
-    void setbnUSD(Address _address);
-
-    @External
-    void setDividends(Address _score);
-
-    @External
-    void balanceSetDex(Address _address);
-
-    @External
-    void balanceSetOracleName(String _name);
-
-    @External
-    void balanceSetMinInterval(BigInteger _interval);
-
-    @External
-    void balanceToggleStakingEnabled();
-
-    @External
-    void balanceSetMinimumStake(BigInteger _amount);
-
-    @External
-    void balanceSetUnstakingPeriod(BigInteger _time);
-
-    @External
-    void addAcceptedTokens(String _token);
-
-    @External
-    void setAssetOracle(String _symbol, Address _address);
-
-    @External
-    void setAssetOracleName(String _symbol, String _name);
-
-    @External
-    void setAssetMinInterval(String _symbol, BigInteger _interval);
-
-    @External
-    void bnUSDSetOracle(Address _address);
-
-    @External
-    void bnUSDSetOracleName(String _name);
-
-    @External
-    void bnUSDSetMinInterval(BigInteger _interval);
-
-    @External
-    void addUsersToActiveAddresses(BigInteger _poolId, Address[] _addressList);
-
-    @External
-    void setRedemptionFee(BigInteger _fee);
-
-    @External
-    void setMaxRetirePercent(BigInteger _value);
-
-    @External
-    void setRedeemBatchSize(BigInteger _value);
-
-    @External
     void setAddressesOnContract(String _contract);
-
-    @External
-    void setRouter(Address _router);
-
-    @External
-    void enable_fee_handler();
-
-    @External
-    void disable_fee_handler();
 }

@@ -51,31 +51,7 @@ class DividendsImplTest extends DividendsImplTestBase {
 
         contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("getTimeOffset"))).thenReturn(BigInteger.TWO);
 
-        Map<String, String> asset = new HashMap<>();
-        asset.put("baln", String.valueOf(balnScore.getAddress()));
-        asset.put("bnUSD", String.valueOf(bnUSDScore.getAddress()));
-
-        contextMock.when(getAssetTokens).thenReturn(asset);
-
         dividendScore.invoke(owner, "distribute");
-
-    }
-
-    @Test
-    void getBalance() {
-        dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
-        dividendScore.invoke(admin, "setLoans", loansScore.getAddress());
-
-        Map<String, String> asset = new HashMap<>();
-        asset.put("baln", String.valueOf(balnScore.getAddress()));
-        contextMock.when(getAssetTokens).thenReturn(asset);
-        contextMock.when(balanceOf).thenReturn(BigInteger.TEN.pow(4));
-
-        Map<String, BigInteger> expectedResult = new HashMap<>();
-        expectedResult.put("baln", BigInteger.TEN.pow(4));
-        expectedResult.put("ICX", BigInteger.ZERO);
-
-        assertEquals(expectedResult, dividendScore.call("getBalances"));
     }
 
     @Test

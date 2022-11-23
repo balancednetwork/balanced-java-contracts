@@ -21,6 +21,7 @@ import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import network.balanced.score.lib.interfaces.Router;
+import network.balanced.score.lib.utils.Names;
 import score.Address;
 import score.Context;
 import score.UserRevertException;
@@ -60,7 +61,7 @@ public class RouterImpl implements Router {
 
     @External(readonly = true)
     public String name() {
-        return TAG;
+        return Names.ROUTER;
     }
 
     @External

@@ -26,6 +26,7 @@ import network.balanced.score.core.loans.positions.PositionsDB;
 import network.balanced.score.core.loans.utils.PositionBatch;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.structs.RewardsDataEntry;
+import network.balanced.score.lib.utils.Names;
 import network.balanced.score.core.loans.utils.TokenUtils;
 
 import score.Address;
@@ -42,7 +43,8 @@ import java.util.Map;
 import static network.balanced.score.core.loans.LoansVariables.*;
 import static network.balanced.score.core.loans.utils.Checks.loansOn;
 import static network.balanced.score.core.loans.utils.LoansConstants.*;
-
+import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
+import static network.balanced.score.lib.utils.ArrayDBUtils.removeFromArraydb;
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Math.convertToNumber;
 import static network.balanced.score.lib.utils.Math.pow;
@@ -55,7 +57,7 @@ public class LoansImpl {
 
         if (governance.get() == null) {
             governance.set(_governance);
-            loansOn.set(false);
+            loansOn.set(true);
             lockingRatio.set(SICX_SYMBOL, LOCKING_RATIO);
             liquidationRatio.set(SICX_SYMBOL, LIQUIDATION_RATIO);
             originationFee.set(ORIGINATION_FEE);
@@ -66,21 +68,31 @@ public class LoansImpl {
             redeemBatch.set(REDEEM_BATCH_SIZE);
             maxRetirePercent.set(MAX_RETIRE_PERCENT);
             maxDebtsListLength.set(MAX_DEBTS_LIST_LENGTH);
-        }else if (bnUSD.get() == null) {
+        } else if (bnUSD.get() == null) {
             bnUSD.set(Address.fromString(CollateralManager.symbolMap.get(BNUSD_SYMBOL)));
         }
+
+        if (arrayDbContains(CollateralManager.collateralList, "BALN")) {
+            removeBALN();
+        }
+    }
+
+    private void removeBALN() {
+        String symbol = "BALN";
+        Address address = CollateralManager.getAddress(symbol);
+        
+        CollateralManager.symbolMap.set(symbol, null);
+        removeFromArraydb(address, CollateralManager.collateralAddresses);
+        removeFromArraydb(symbol, CollateralManager.collateralList);
+
+        Context.require(CollateralManager.symbolMap.get(symbol) == null);
+        Context.require(!arrayDbContains(CollateralManager.collateralAddresses, address));
+        Context.require(!arrayDbContains(CollateralManager.collateralList, symbol));
     }
 
     @External(readonly = true)
     public String name() {
-        return "Balanced Loans";
-    }
-
-    @External
-    public void turnLoansOn() {
-        only(governance);
-        loansOn.set(true);
-        ContractActive("Loans", "Active");
+        return Names.LOANS;
     }
 
     @External
@@ -887,7 +899,6 @@ public class LoansImpl {
     public Address getStaking() {
         return staking.get();
     }
-
 
     @External
     public void setOracle(Address _address) {
