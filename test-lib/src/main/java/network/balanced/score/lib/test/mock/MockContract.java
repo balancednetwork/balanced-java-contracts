@@ -34,7 +34,7 @@ public class MockContract<T> {
         account = score.getAccount();
     }
 
-    public MockContract(Class<? extends T> classToMock, Class<T> mockClass,  ServiceManager sm, Account admin) throws Exception {
+    public MockContract(Class<? extends T> classToMock, Class<T> mockClass, ServiceManager sm, Account admin) throws Exception {
         mock = Mockito.mock(mockClass);
         Score score = sm.deploy(admin, classToMock, SCORE_ZERO);
         score.setInstance(mock);

@@ -16,6 +16,7 @@
 
 package network.balanced.score.tokens.balancedtoken;
 
+import com.eclipsesource.json.JsonArray;
 import foundation.icon.icx.Wallet;
 import foundation.icon.jsonrpc.Address;
 import network.balanced.score.lib.interfaces.BalancedTokenScoreClient;
@@ -24,12 +25,11 @@ import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
 import org.json.JSONObject;
 import org.junit.jupiter.api.*;
 
-import com.eclipsesource.json.JsonArray;
-
 import java.math.BigInteger;
 import java.util.Map;
 
-import static network.balanced.score.lib.test.integration.BalancedUtils.*;
+import static network.balanced.score.lib.test.integration.BalancedUtils.createParameter;
+import static network.balanced.score.lib.test.integration.BalancedUtils.createSingleTransaction;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -209,11 +209,11 @@ class BalancedTokenImplIntTest {
 
     private void setMinter(foundation.icon.icx.data.Address address) {
         JsonArray setMinterParams = new JsonArray()
-        .add(createParameter(new Address(address.toString())));
+                .add(createParameter(new Address(address.toString())));
 
         JsonArray setMinter = createSingleTransaction(
-                balanced.baln._address(), 
-                "setMinter", 
+                balanced.baln._address(),
+                "setMinter",
                 setMinterParams
         );
 

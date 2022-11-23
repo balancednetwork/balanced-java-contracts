@@ -16,16 +16,14 @@
 
 package network.balanced.score.core.governance;
 
-import network.balanced.score.lib.structs.PrepDelegations;
-import network.balanced.score.lib.utils.Names;
 import network.balanced.score.core.governance.proposal.ProposalDB;
 import network.balanced.score.core.governance.proposal.ProposalManager;
-import network.balanced.score.core.governance.utils.ContractManager;
 import network.balanced.score.core.governance.utils.ArbitraryCallManager;
-import network.balanced.score.core.governance.utils.EventLogger;
+import network.balanced.score.core.governance.utils.ContractManager;
 import network.balanced.score.core.governance.utils.SetupManager;
 import network.balanced.score.lib.interfaces.Governance;
-
+import network.balanced.score.lib.structs.PrepDelegations;
+import network.balanced.score.lib.utils.Names;
 import score.Address;
 import score.Context;
 import score.VarDB;
@@ -37,10 +35,8 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-import static network.balanced.score.lib.utils.Check.onlyOwnerOrContract;
 import static network.balanced.score.core.governance.utils.GovernanceConstants.*;
-import static network.balanced.score.lib.utils.Check.onlyOwner;
-import static network.balanced.score.lib.utils.Check.optionalDefault;
+import static network.balanced.score.lib.utils.Check.*;
 
 public class GovernanceImpl implements Governance {
     public static final VarDB<BigInteger> launchDay = Context.newVarDB(LAUNCH_DAY, BigInteger.class);
@@ -49,7 +45,8 @@ public class GovernanceImpl implements Governance {
     public static final VarDB<Address> rebalancing = Context.newVarDB(REBALANCING, Address.class);
     public static final VarDB<BigInteger> timeOffset = Context.newVarDB(TIME_OFFSET, BigInteger.class);
     public static final VarDB<BigInteger> maxVoteDuration = Context.newVarDB(MAX_VOTE_DURATION, BigInteger.class);
-    public static final VarDB<BigInteger> minVoteDuration = Context.newVarDB(MIN_VOTE_DURATION, BigInteger.class);    public static final VarDB<BigInteger> balnVoteDefinitionCriterion = Context.newVarDB(MIN_BALN, BigInteger.class);
+    public static final VarDB<BigInteger> minVoteDuration = Context.newVarDB(MIN_VOTE_DURATION, BigInteger.class);
+    public static final VarDB<BigInteger> balnVoteDefinitionCriterion = Context.newVarDB(MIN_BALN, BigInteger.class);
     public static final VarDB<BigInteger> bnusdVoteDefinitionFee = Context.newVarDB(DEFINITION_FEE, BigInteger.class);
     public static final VarDB<BigInteger> quorum = Context.newVarDB(QUORUM, BigInteger.class);
 
@@ -60,7 +57,7 @@ public class GovernanceImpl implements Governance {
             return;
         }
 
-       ContractManager.migrateAddresses();
+        ContractManager.migrateAddresses();
     }
 
     @External(readonly = true)
@@ -142,7 +139,8 @@ public class GovernanceImpl implements Governance {
     public void setBalnVoteDefinitionCriterion(BigInteger percentage) {
         onlyOwnerOrContract();
         Context.require(percentage.compareTo(BigInteger.ZERO) >= 0, "Basis point must be between 0 and 10000.");
-        Context.require(percentage.compareTo(BigInteger.valueOf(10000)) <= 0, "Basis point must be between 0 and 10000.");
+        Context.require(percentage.compareTo(BigInteger.valueOf(10000)) <= 0, "Basis point must be between 0 and " +
+                "10000.");
 
         balnVoteDefinitionCriterion.set(percentage);
     }
@@ -329,7 +327,7 @@ public class GovernanceImpl implements Governance {
     public void fallback() {
     }
 
-    // External short hand calls, could be done by a set of transactions
+    // External shorthand calls, could be done by a set of transactions
     @External
     public void addCollateral(Address _token_address, boolean _active, String _peg, BigInteger _lockingRatio,
                               BigInteger _liquidationRatio, BigInteger _debtCeiling) {
@@ -364,12 +362,13 @@ public class GovernanceImpl implements Governance {
         Context.call(icxValue, targetAddress, method, params);
     }
 
-    public static <T>  T call(Class<T> returnType, Address targetAddress, String method, Object... params) {
+    public static <T> T call(Class<T> returnType, Address targetAddress, String method, Object... params) {
         return Context.call(returnType, targetAddress, method, params);
     }
 
     public static BigInteger _getDay() {
-        BigInteger blockTime = BigInteger.valueOf(Context.getBlockTimestamp()).subtract(timeOffset.getOrDefault(BigInteger.ZERO));
+        BigInteger blockTime =
+                BigInteger.valueOf(Context.getBlockTimestamp()).subtract(timeOffset.getOrDefault(BigInteger.ZERO));
         return blockTime.divide(MICRO_SECONDS_IN_A_DAY);
     }
 
@@ -407,7 +406,7 @@ public class GovernanceImpl implements Governance {
 
         String symbol = Context.call(String.class, _token_address, "symbol");
         BigInteger poolId = Context.call(BigInteger.class, ContractManager.get("dex"), "getPoolId", _token_address,
-            ContractManager.get("bnUSD"));
+                ContractManager.get("bnUSD"));
 
         Address balancedOracleAddress = ContractManager.get("balancedOracle");
         Context.call(balancedOracleAddress, "addDexPricedAsset", symbol, poolId);
@@ -427,12 +426,6 @@ public class GovernanceImpl implements Governance {
 
     public void _setLiquidationRatio(String _symbol, BigInteger _ratio) {
         Context.call(ContractManager.get("loans"), "setLiquidationRatio", _symbol, _ratio);
-    }
-
-
-
-    public static EventLogger getEventLogger() {
-        return new EventLogger();
     }
 
     private static Address getSystemScoreAddress() {

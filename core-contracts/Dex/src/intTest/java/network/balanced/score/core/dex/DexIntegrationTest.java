@@ -16,6 +16,7 @@
 
 package network.balanced.score.core.dex;
 
+import com.eclipsesource.json.JsonArray;
 import foundation.icon.icx.Wallet;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
@@ -26,16 +27,14 @@ import network.balanced.score.lib.test.integration.Env;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
-import com.eclipsesource.json.JsonArray;
-import com.eclipsesource.json.JsonObject;
-
 import java.io.File;
 import java.math.BigInteger;
 import java.util.Map;
 
-import static network.balanced.score.lib.test.integration.BalancedUtils.*;
 import static foundation.icon.score.client.DefaultScoreClient._deploy;
 import static network.balanced.score.core.dex.utils.Const.SICXICX_MARKET_NAME;
+import static network.balanced.score.lib.test.integration.BalancedUtils.createParameter;
+import static network.balanced.score.lib.test.integration.BalancedUtils.createTransaction;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.junit.jupiter.api.Assertions.*;
@@ -311,7 +310,7 @@ class DexIntegrationTest {
 
     @Test
     @Order(8)
-    void testNonContinuousAndContinuousReward(){
+    void testNonContinuousAndContinuousReward() {
         balanced.syncDistributions();
         BigInteger balnHolding = userRewardScoreClient.getBalnHolding(tUserAddress);
         tUserClient._transfer(dexScoreClient._address(), BigInteger.valueOf(200).multiply(EXA), null);
@@ -382,15 +381,15 @@ class DexIntegrationTest {
 
     private static void dexAddQuoteCoin(Address address) {
         JsonArray addQuoteCoinParameters = new JsonArray()
-            .add(createParameter(address));
+                .add(createParameter(address));
 
         JsonArray actions = new JsonArray()
-            .add(createTransaction(balanced.dex._address(), "addQuoteCoin", addQuoteCoinParameters));
+                .add(createTransaction(balanced.dex._address(), "addQuoteCoin", addQuoteCoinParameters));
 
-            balanced.ownerClient.governance.execute(actions.toString());
+        balanced.ownerClient.governance.execute(actions.toString());
     }
 
-    void waitForADay(){
+    void waitForADay() {
         balanced.increaseDay(1);
     }
 

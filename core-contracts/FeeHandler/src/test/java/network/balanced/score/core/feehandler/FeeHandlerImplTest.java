@@ -207,7 +207,8 @@ class FeeHandlerImplTest extends TestBase {
 
         contextMock.when(() -> Context.call(any(Address.class), eq("balanceOf"), any(Address.class))).thenReturn(BigInteger.TEN);
         contextMock.when(() -> Context.call(any(Address.class), eq("getContractAddress"), eq("dividends"))).thenReturn(dividends.getAddress());
-        contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class), any(BigInteger.class), any(byte[].class))).thenReturn("done");
+        contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class),
+                any(BigInteger.class), any(byte[].class))).thenReturn("done");
 
         feeHandler.invoke(sicxScore, "tokenFallback", baln.getAddress(), BigInteger.TEN.pow(2), new byte[0]);
         contextMock.verify(() -> Context.call(sicxScore.getAddress(), "transfer", dividends.getAddress(),
@@ -324,9 +325,12 @@ class FeeHandlerImplTest extends TestBase {
 
         assertEquals(loanFee1.add(loanFee2), feeHandler.call("getLoanFeesAccrued"));
 
-        assertEquals(dexFeeICX.multiply(BigInteger.TWO), feeHandler.call("getSwapFeesAccruedByToken", sicxScore.getAddress()));
-        assertEquals(dexFeeBnusd.multiply(BigInteger.TWO), feeHandler.call("getSwapFeesAccruedByToken", bnusd.getAddress()));
-        assertEquals(dexFeeBaln.multiply(BigInteger.TWO), feeHandler.call("getSwapFeesAccruedByToken", baln.getAddress()));
+        assertEquals(dexFeeICX.multiply(BigInteger.TWO), feeHandler.call("getSwapFeesAccruedByToken",
+                sicxScore.getAddress()));
+        assertEquals(dexFeeBnusd.multiply(BigInteger.TWO), feeHandler.call("getSwapFeesAccruedByToken",
+                bnusd.getAddress()));
+        assertEquals(dexFeeBaln.multiply(BigInteger.TWO), feeHandler.call("getSwapFeesAccruedByToken",
+                baln.getAddress()));
         assertEquals(BigInteger.ZERO, feeHandler.call("getSwapFeesAccruedByToken", usdc.getAddress()));
 
         assertEquals(StabilityFeeBnsud.multiply(BigInteger.TWO), feeHandler.call("getStabilityFundFeesAccrued"));

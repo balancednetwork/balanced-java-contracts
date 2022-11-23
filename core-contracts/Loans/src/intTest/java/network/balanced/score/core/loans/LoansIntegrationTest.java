@@ -16,21 +16,6 @@
 
 package network.balanced.score.core.loans;
 
-import static network.balanced.score.lib.test.integration.BalancedUtils.createIRC2Token;
-import static network.balanced.score.lib.test.integration.BalancedUtils.*;
-import static network.balanced.score.lib.test.integration.BalancedUtils.hexObjectToBigInteger;
-import static network.balanced.score.lib.utils.Constants.EXA;
-import static network.balanced.score.lib.utils.Constants.POINTS;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.math.BigInteger;
-import java.util.Map;
-
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
@@ -827,11 +812,11 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
 
     protected void setLockingRatio(BalancedClient voter, String symbol, BigInteger ratio, String name) throws Exception {
         JsonArray setLockingRatioParameters = new JsonArray()
-            .add(createParameter(symbol))
-            .add(createParameter(ratio));
+                .add(createParameter(symbol))
+                .add(createParameter(ratio));
 
         JsonArray actions = new JsonArray()
-            .add(createTransaction(balanced.loans._address(), "setLockingRatio", setLockingRatioParameters));
+                .add(createTransaction(balanced.loans._address(), "setLockingRatio", setLockingRatioParameters));
         executeVote(balanced, voter, name, actions);
     }
 
@@ -850,15 +835,15 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         BigInteger debtCeiling = BigInteger.TEN.pow(30);
 
         JsonArray addCollateralParameters = new JsonArray()
-            .add(createParameter(collateralAddress))
-            .add(createParameter(true))
-            .add(createParameter(peg))
-            .add(createParameter(lockingRatio))
-            .add(createParameter(liquidationRatio))
-            .add(createParameter(debtCeiling));
+                .add(createParameter(collateralAddress))
+                .add(createParameter(true))
+                .add(createParameter(peg))
+                .add(createParameter(lockingRatio))
+                .add(createParameter(liquidationRatio))
+                .add(createParameter(debtCeiling));
 
         JsonArray actions = new JsonArray()
-            .add(createTransaction(balanced.governance._address(), "addCollateral", addCollateralParameters));
+                .add(createTransaction(balanced.governance._address(), "addCollateral", addCollateralParameters));
 
 
         String symbol = reader.irc2(collateralAddress).symbol();
@@ -885,14 +870,15 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         BigInteger debtCeiling = BigInteger.TEN.pow(30);
 
         JsonArray addCollateralParameters = new JsonArray()
-            .add(createParameter(collateralAddress))
-            .add(createParameter(true))
-            .add(createParameter(lockingRatio))
-            .add(createParameter(liquidationRatio))
-            .add(createParameter(debtCeiling));
+                .add(createParameter(collateralAddress))
+                .add(createParameter(true))
+                .add(createParameter(lockingRatio))
+                .add(createParameter(liquidationRatio))
+                .add(createParameter(debtCeiling));
 
         JsonArray actions = new JsonArray()
-            .add(createTransaction(balanced.governance._address(), "addDexPricedCollateral", addCollateralParameters));
+                .add(createTransaction(balanced.governance._address(), "addDexPricedCollateral",
+                        addCollateralParameters));
 
         String symbol = reader.irc2(collateralAddress).symbol();
         executeVote(balanced, owner, "add dex collateral " + symbol, actions);
@@ -912,21 +898,22 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
 
     private static void setRebalancingThreshold(BigInteger threshold) {
         JsonArray rebalancingThresholdParameter = new JsonArray()
-            .add(createParameter(threshold));
+                .add(createParameter(threshold));
 
         JsonArray actions = new JsonArray()
-            .add(createTransaction(balanced.rebalancing._address(), "setPriceDiffThreshold", rebalancingThresholdParameter));
+                .add(createTransaction(balanced.rebalancing._address(), "setPriceDiffThreshold",
+                        rebalancingThresholdParameter));
 
         owner.governance.execute(actions.toString());
     }
 
     public static void setDebtCeiling(String symbol, BigInteger ceiling) {
         JsonArray setDebtCeilingParameter = new JsonArray()
-            .add(createParameter(symbol))
-            .add(createParameter(ceiling));
+                .add(createParameter(symbol))
+                .add(createParameter(ceiling));
 
         JsonArray actions = new JsonArray()
-            .add(createTransaction(balanced.loans._address(), "setDebtCeiling", setDebtCeilingParameter));
+                .add(createTransaction(balanced.loans._address(), "setDebtCeiling", setDebtCeilingParameter));
 
         owner.governance.execute(actions.toString());
     }

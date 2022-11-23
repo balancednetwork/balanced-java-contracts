@@ -22,7 +22,6 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import network.balanced.score.lib.interfaces.*;
-import network.balanced.score.lib.structs.BalancedAddresses;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockContract;
 import network.balanced.score.lib.utils.Names;
@@ -33,7 +32,6 @@ import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class GovernanceTestBase extends UnitTest {
@@ -81,32 +79,32 @@ public class GovernanceTestBase extends UnitTest {
 
     public static JsonObject createParameter(String value) {
         return new JsonObject()
-            .add("type", "String")
-            .add("value", value);
+                .add("type", "String")
+                .add("value", value);
     }
 
     public static JsonObject createParameter(Address value) {
         return new JsonObject()
-            .add("type", "Address")
-            .add("value", value.toString());
+                .add("type", "Address")
+                .add("value", value.toString());
     }
 
     public static JsonObject createParameter(BigInteger value) {
         return new JsonObject()
-            .add("type", "int")
-            .add("value", value.intValue());
+                .add("type", "int")
+                .add("value", value.intValue());
     }
 
     public static JsonObject createParameter(Boolean value) {
         return new JsonObject()
-            .add("type", "boolean")
-            .add("value", value);
+                .add("type", "boolean")
+                .add("value", value);
     }
 
     public static JsonObject createParameter(String type, JsonObject value) {
         return new JsonObject()
-            .add("type", type)
-            .add("value", value);
+                .add("type", type)
+                .add("value", value);
     }
 
     public static JsonObject createParameter(String type, JsonArray value) {
@@ -117,31 +115,31 @@ public class GovernanceTestBase extends UnitTest {
 
     public static JsonObject createTransaction(Address address, String method, JsonArray parameters) {
         return new JsonObject()
-            .add("address", address.toString())
-            .add("method", method)
-            .add("parameters", parameters);
+                .add("address", address.toString())
+                .add("method", method)
+                .add("parameters", parameters);
     }
 
     private void setupAddresses() {
-        governance.invoke(owner, "addExternalContract", Names.LOANS ,loans.getAddress());
-        governance.invoke(owner, "addExternalContract", Names.DEX ,dex.getAddress());
-        governance.invoke(owner, "addExternalContract", Names.STAKING ,staking.getAddress());
-        governance.invoke(owner, "addExternalContract", Names.REWARDS,rewards.getAddress());
-        governance.invoke(owner, "addExternalContract", Names.RESERVE ,reserve.getAddress());
-        governance.invoke(owner, "addExternalContract", Names.DIVIDENDS ,dividends.getAddress());
-        governance.invoke(owner, "addExternalContract", Names.DAOFUND ,daofund.getAddress());
-        governance.invoke(owner, "addExternalContract", Names.ORACLE ,oracle.getAddress());
-        governance.invoke(owner, "addExternalContract", Names.SICX ,sicx.getAddress());
-        governance.invoke(owner, "addExternalContract", Names.BNUSD ,bnUSD.getAddress());
-        governance.invoke(owner, "addExternalContract", Names.BALN ,baln.getAddress());
-        governance.invoke(owner, "addExternalContract", Names.WORKERTOKEN ,bwt.getAddress());
-        governance.invoke(owner, "addExternalContract", Names.ROUTER ,router.getAddress());
-        governance.invoke(owner, "addExternalContract", Names.REBALANCING ,rebalancing.getAddress());
-        governance.invoke(owner, "addExternalContract", Names.FEEHANDLER ,feehandler.getAddress());
-        governance.invoke(owner, "addExternalContract", Names.STAKEDLP ,stakedLp.getAddress());
-        governance.invoke(owner, "addExternalContract", Names.STABILITY ,stability.getAddress());
-        governance.invoke(owner, "addExternalContract", Names.BALANCEDORACLE ,balancedOracle.getAddress());
-        governance.invoke(owner, "addExternalContract", Names.BOOSTED_BALN ,bBaln.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.LOANS, loans.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.DEX, dex.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.STAKING, staking.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.REWARDS, rewards.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.RESERVE, reserve.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.DIVIDENDS, dividends.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.DAOFUND, daofund.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.ORACLE, oracle.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.SICX, sicx.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.BNUSD, bnUSD.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.BALN, baln.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.WORKERTOKEN, bwt.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.ROUTER, router.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.REBALANCING, rebalancing.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.FEEHANDLER, feehandler.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.STAKEDLP, stakedLp.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.STABILITY, stability.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.BALANCEDORACLE, balancedOracle.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.BOOSTED_BALN, bBaln.getAddress());
     }
 
     protected BigInteger executeVoteWithActions(String actions) {

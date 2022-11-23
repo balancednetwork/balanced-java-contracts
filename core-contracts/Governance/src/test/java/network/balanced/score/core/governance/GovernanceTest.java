@@ -22,7 +22,6 @@ import com.iconloop.score.test.Account;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.utils.Names;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -30,9 +29,7 @@ import score.Address;
 import score.Context;
 
 import java.math.BigInteger;
-import java.util.Map;
 
-import static network.balanced.score.core.governance.utils.GovernanceConstants.TAG;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -77,19 +74,21 @@ public class GovernanceTest extends GovernanceTestBase {
 
     @Test
     void setAdmins() {
-         // Arrange
-         Account notOwner = sm.createAccount();
-         String expectedErrorMessage = "SenderNotScoreOwnerOrContract: Sender=" + notOwner.getAddress() + " Owner=" + owner.getAddress() + " Contract=" + governance.getAddress();
+        // Arrange
+        Account notOwner = sm.createAccount();
+        String expectedErrorMessage =
+                "SenderNotScoreOwnerOrContract: Sender=" + notOwner.getAddress() + " Owner=" + owner.getAddress() +
+                        " Contract=" + governance.getAddress();
 
-         // Act & Assert
-         Executable withNotOwner = () -> governance.invoke(notOwner, "setAdmins");
-         expectErrorMessage(withNotOwner, expectedErrorMessage);
+        // Act & Assert
+        Executable withNotOwner = () -> governance.invoke(notOwner, "setAdmins");
+        expectErrorMessage(withNotOwner, expectedErrorMessage);
 
-         // Act
-         governance.invoke(owner, "setAdmins") ;
+        // Act
+        governance.invoke(owner, "setAdmins");
 
-         // Assert
-         //TODO
+        // Assert
+        //TODO
     }
 
     @Test
@@ -103,7 +102,9 @@ public class GovernanceTest extends GovernanceTestBase {
         String symbol = "BALW";
         String peg = "BTC";
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwnerOrContract: Sender=" + notOwner.getAddress() + " Owner=" + owner.getAddress() + " Contract=" + governance.getAddress();
+        String expectedErrorMessage =
+                "SenderNotScoreOwnerOrContract: Sender=" + notOwner.getAddress() + " Owner=" + owner.getAddress() +
+                        " Contract=" + governance.getAddress();
 
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "addCollateral", tokenAddress, active, peg,
@@ -144,7 +145,9 @@ public class GovernanceTest extends GovernanceTestBase {
         BigInteger debtCeiling = BigInteger.TEN.pow(20);
         BigInteger poolID = BigInteger.valueOf(7);
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwnerOrContract: Sender=" + notOwner.getAddress() + " Owner=" + owner.getAddress() + " Contract=" + governance.getAddress();
+        String expectedErrorMessage =
+                "SenderNotScoreOwnerOrContract: Sender=" + notOwner.getAddress() + " Owner=" + owner.getAddress() +
+                        " Contract=" + governance.getAddress();
 
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "addDexPricedCollateral", tokenAddress, active,
@@ -185,13 +188,15 @@ public class GovernanceTest extends GovernanceTestBase {
         delegation2._address = Address.fromString("cx66d4d90f5f113eba575bf793570135f9b1022222");
         delegation2._votes_in_per = BigInteger.valueOf(30);
 
-        PrepDelegations[] delegations = new PrepDelegations[] {
-            delegation1,
-            delegation2
+        PrepDelegations[] delegations = new PrepDelegations[]{
+                delegation1,
+                delegation2
         };
 
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwnerOrContract: Sender=" + notOwner.getAddress() + " Owner=" + owner.getAddress() + " Contract=" + governance.getAddress();
+        String expectedErrorMessage =
+                "SenderNotScoreOwnerOrContract: Sender=" + notOwner.getAddress() + " Owner=" + owner.getAddress() +
+                        " Contract=" + governance.getAddress();
 
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "delegate", Names.LOANS, (Object) delegations);
@@ -211,9 +216,11 @@ public class GovernanceTest extends GovernanceTestBase {
         Address _from = Account.newScoreAccount(scoreCount++).getAddress();
         Address _to = Account.newScoreAccount(scoreCount++).getAddress();
         BigInteger _value = BigInteger.TEN;
-        byte[] _data  = new byte[0];
+        byte[] _data = new byte[0];
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwnerOrContract: Sender=" + notOwner.getAddress() + " Owner=" + owner.getAddress() + " Contract=" + governance.getAddress();
+        String expectedErrorMessage =
+                "SenderNotScoreOwnerOrContract: Sender=" + notOwner.getAddress() + " Owner=" + owner.getAddress() +
+                        " Contract=" + governance.getAddress();
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "balwAdminTransfer", _from, _to, _value, _data);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
@@ -230,7 +237,9 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         String _contract = "loans";
         Account notOwner = sm.createAccount();
-        String expectedErrorMessage = "SenderNotScoreOwnerOrContract: Sender=" + notOwner.getAddress() + " Owner=" + owner.getAddress() + " Contract=" + governance.getAddress();
+        String expectedErrorMessage =
+                "SenderNotScoreOwnerOrContract: Sender=" + notOwner.getAddress() + " Owner=" + owner.getAddress() +
+                        " Contract=" + governance.getAddress();
 
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "setAddressesOnContract", _contract);
