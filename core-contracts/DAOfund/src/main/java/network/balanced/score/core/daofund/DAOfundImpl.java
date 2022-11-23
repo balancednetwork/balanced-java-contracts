@@ -17,7 +17,6 @@
 package network.balanced.score.core.daofund;
 
 import network.balanced.score.lib.interfaces.DAOfund;
-import network.balanced.score.lib.interfaces.LoansScoreInterface;
 import network.balanced.score.lib.structs.Disbursement;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.utils.EnumerableSetDB;
@@ -32,7 +31,8 @@ import java.math.BigInteger;
 import java.util.Map;
 
 import static network.balanced.score.lib.utils.BalancedAddressManager.*;
-import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.Check.isContract;
+import static network.balanced.score.lib.utils.Check.onlyGovernance;
 
 public class DAOfundImpl implements DAOfund {
 
@@ -73,6 +73,18 @@ public class DAOfundImpl implements DAOfund {
         resetAddress(name);
     }
 
+    @External
+    public void addAcceptedToken(Address address) {
+        onlyGovernance();
+        this.address.add(address.toString());
+    }
+
+    @External
+    public void removeAcceptedToken(Address address) {
+        onlyGovernance();
+        this.address.remove(address.toString());
+    }
+
     @External(readonly = true)
     public Address getAddress(String name) {
         return getAddressByName(name);
@@ -82,22 +94,6 @@ public class DAOfundImpl implements DAOfund {
     public void delegate(PrepDelegations[] prepDelegations) {
         onlyGovernance();
         Context.call(getStaking(), "delegate", (Object) prepDelegations);
-    }
-
-    /**
-     * This method fetch the asset tokens from loans contract and add it to address enumerable set. Loans provide a
-     * map of token symbol and its address.
-     */
-    @External
-    public void addAddressToSetdb() {
-        onlyOwner();
-        LoansScoreInterface loans = new LoansScoreInterface(getLoans());
-        Map<String, String> assets = loans.getAssetTokens();
-
-        for (Map.Entry<String, String> tokenSymbolAddress : assets.entrySet()) {
-            String address = tokenSymbolAddress.getValue();
-            this.address.add(address);
-        }
     }
 
     @External(readonly = true)

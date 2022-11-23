@@ -88,14 +88,12 @@ class DAOfundImplTest extends TestBase {
     @Test
     void addSymbolToSetdb() {
         try (MockedStatic<Context> loansMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS)) {
-            loansMock
-                    .when(() -> Context.call(mockBalanced.loans.getAddress(), "getAssetTokens"))
-                    .thenReturn(Map.of("sICX", mockBalanced.sicx.getAddress().toString(),
-                            "BALN", mockBalanced.baln.getAddress().toString(),
-                            "bnUSD", mockBalanced.bnUSD.getAddress().toString()));
-            daofundScore.invoke(owner, "addAddressToSetdb");
-            Map<String, BigInteger> expectedBalances = Map.of(mockBalanced.sicx.getAddress().toString(),
-                    BigInteger.ZERO,
+            daofundScore.invoke(mockBalanced.governance.account, "addAcceptedToken", mockBalanced.sicx.getAddress());
+            daofundScore.invoke(mockBalanced.governance.account, "addAcceptedToken", mockBalanced.baln.getAddress());
+            daofundScore.invoke(mockBalanced.governance.account, "addAcceptedToken", mockBalanced.bnUSD.getAddress());
+
+            Map<String, BigInteger> expectedBalances = Map.of(
+                    mockBalanced.sicx.getAddress().toString(), BigInteger.ZERO,
                     mockBalanced.baln.getAddress().toString(), BigInteger.ZERO,
                     mockBalanced.bnUSD.getAddress().toString(), BigInteger.ZERO);
             assertEquals(expectedBalances, daofundScore.call("getBalances"));

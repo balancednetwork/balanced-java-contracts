@@ -43,6 +43,7 @@ public class SetupManager {
                     asset.get("collateral")
             );
             call(ContractManager.getAddress(Names.DIVIDENDS), "addAcceptedTokens", tokenAddress);
+            call(ContractManager.getAddress(Names.DAOFUND), "addAcceptedToken", tokenAddress);
         }
 
         Address[] acceptedFeeTokens = new Address[]{
@@ -53,7 +54,6 @@ public class SetupManager {
 
         call(ContractManager.getAddress(Names.FEEHANDLER), "setAcceptedDividendTokens", (Object) acceptedFeeTokens);
 
-        call(ContractManager.getAddress(Names.DAOFUND), "addAddressToSetdb");
 
         Address rewardsAddress = ContractManager.getAddress(Names.REWARDS);
         call(rewardsAddress, "addDataProvider", ContractManager.getAddress(Names.STAKEDLP));
