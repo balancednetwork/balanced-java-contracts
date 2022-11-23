@@ -86,15 +86,13 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
     @Test
     @Order(0)
     void removeBALN() throws Exception {
-        System.out.println(reader.loans.getAssetTokens());
-        System.out.println(reader.loans.getAccountPositions(balanced.governance._address()));
+        assertTrue(reader.loans.getAssetTokens().containsKey("BALN"));
         String governanceParam = new JsonArray()
             .add(createParameter(balanced.governance._address()))
             .toString();
 
         owner.governance.deployTo(balanced.loans._address(), getContractData("Loans"), governanceParam);
-        System.out.println(reader.loans.getAssetTokens());
-        System.out.println(reader.loans.getAccountPositions(balanced.governance._address()));
+        assertFalse(reader.loans.getAssetTokens().containsKey("BALN"));
     }
 
     @Test
