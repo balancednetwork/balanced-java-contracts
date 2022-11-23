@@ -16,11 +16,11 @@
 
 package network.balanced.score.lib.utils;
 
-import java.math.BigInteger;
-
 import score.Address;
 import score.Context;
 import score.VarDB;
+
+import java.math.BigInteger;
 
 public class Check {
 
@@ -34,7 +34,7 @@ public class Check {
         Address caller = Context.getCaller();
         Address owner = Context.getOwner();
         Address contract = Context.getAddress();
-        Context.require(caller.equals(owner) || caller.equals(contract),  
+        Context.require(caller.equals(owner) || caller.equals(contract),
                 "SenderNotScoreOwnerOrContract: Sender=" + caller + " Owner=" + owner + " Contract=" + contract);
     }
 
@@ -50,9 +50,9 @@ public class Check {
         Address caller = Context.getCaller();
         Address authorizedCallerAddress = authorizedCaller.get();
         Address authorizedCaller2Address = authorizedCaller2.get();
-        Context.require(authorizedCallerAddress != null || 
-                        authorizedCaller2Address != null, 
-                        "Authorization Check: Address not set");
+        Context.require(authorizedCallerAddress != null ||
+                        authorizedCaller2Address != null,
+                "Authorization Check: Address not set");
         Context.require(caller.equals(authorizedCallerAddress) ||
                         caller.equals(authorizedCaller2Address),
                 "Authorization Check: Authorization failed. Caller: " + caller + " Authorized Caller: " + authorizedCallerAddress + " or " + authorizedCaller2Address);

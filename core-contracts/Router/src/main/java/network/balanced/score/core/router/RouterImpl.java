@@ -183,14 +183,14 @@ public class RouterImpl implements Router {
     }
 
     /**
-     *  This is invoked when a token is transferred to this score. It expects a JSON object with the following format:
+     * This is invoked when a token is transferred to this score. It expects a JSON object with the following format:
      * <blockquote>
-     *     {"method": "METHOD_NAME", "params":{...}}
+     * {"method": "METHOD_NAME", "params":{...}}
      * </blockquote>
      *
-     * @param _from The address calling `transfer` on the other contract
+     * @param _from  The address calling `transfer` on the other contract
      * @param _value Amount of token transferred
-     * @param _data Data called by the transfer, json object expected.
+     * @param _data  Data called by the transfer, json object expected.
      */
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {

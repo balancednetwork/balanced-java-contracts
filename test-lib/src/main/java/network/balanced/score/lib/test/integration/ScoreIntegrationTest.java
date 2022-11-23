@@ -35,7 +35,6 @@ import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.InvalidAlgorithmParameterException;
-import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.util.List;
@@ -120,12 +119,12 @@ public interface ScoreIntegrationTest {
     static DefaultScoreClient newScoreClient(KeyWallet wallet, score.Address address) {
         return newScoreClient(wallet, new Address(address.toString()));
     }
-    
+
     static DefaultScoreClient newScoreClient(KeyWallet wallet, Address address) {
         return new DefaultScoreClient(chain.getEndpointURL(), chain.networkId, wallet, address);
     }
 
-    static byte[] getContractData(String name)  {
+    static byte[] getContractData(String name) {
         String path = getFilePath(name);
         try {
             return Files.readAllBytes(Path.of(path));

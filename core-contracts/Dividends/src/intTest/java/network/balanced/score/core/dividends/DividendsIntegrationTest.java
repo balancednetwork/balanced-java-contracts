@@ -16,18 +16,12 @@
 
 package network.balanced.score.core.dividends;
 
-import foundation.icon.icx.KeyWallet;
+import com.eclipsesource.json.JsonArray;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
-import network.balanced.score.lib.utils.Names;
-
 import org.json.JSONObject;
 import org.junit.jupiter.api.*;
-
-import com.eclipsesource.json.Json;
-import com.eclipsesource.json.JsonArray;
-
 import score.Address;
 
 import java.math.BigInteger;
@@ -185,7 +179,7 @@ public class DividendsIntegrationTest {
         Map<String, BigInteger> unclaimedDividendsCharlie = owner.dividends.getUnclaimedDividends(addressCharlie);
 
         owner.governance.execute(createSingleTransaction(balanced.dividends._address(), "setBoostedBaln",
-                 new JsonArray().add(createParameter(balanced.bBaln._address()))).toString());
+                new JsonArray().add(createParameter(balanced.bBaln._address()))).toString());
 
         BigInteger feePercent = hexObjectToBigInteger(owner.loans.getParameters().get("origination fee"));
 
@@ -397,7 +391,8 @@ public class DividendsIntegrationTest {
         String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
 
         // a new user will have 0 accumulated dividends
-        assertEquals(alice.dividends.getUnclaimedDividends(addressCharlie).get(owner.bnUSD._address().toString()), BigInteger.ZERO);
+        assertEquals(alice.dividends.getUnclaimedDividends(addressCharlie).get(owner.bnUSD._address().toString()),
+                BigInteger.ZERO);
 
         // locks baln for 4 weeks
         charlie.baln.transfer(alice.boostedBaln._address(), availableBalnBalanceCharlie.divide(BigInteger.TWO),
@@ -421,7 +416,8 @@ public class DividendsIntegrationTest {
         assertEquals(bnusdBalancePostCharlie, bnusdBalancePreCharlie.add(unclaimedDividendsBeforeCharlie));
 
         // after claiming dividends unclaimed dividends will be zero unless dividends is received.
-        assertEquals(alice.dividends.getUnclaimedDividends(addressCharlie).get(owner.bnUSD._address().toString()), BigInteger.ZERO);
+        assertEquals(alice.dividends.getUnclaimedDividends(addressCharlie).get(owner.bnUSD._address().toString()),
+                BigInteger.ZERO);
 
     }
 
@@ -449,7 +445,8 @@ public class DividendsIntegrationTest {
 
 
         // charlie unclaimed dividends after claim is 0
-        assertEquals(charlie.dividends.getUnclaimedDividends(addressCharlie).get(owner.bnUSD._address().toString()), BigInteger.ZERO);
+        assertEquals(charlie.dividends.getUnclaimedDividends(addressCharlie).get(owner.bnUSD._address().toString()),
+                BigInteger.ZERO);
 
         owner.loans.depositAndBorrow(collateral, "bnUSD"
                 , loanAmount, null, null);
@@ -621,13 +618,13 @@ public class DividendsIntegrationTest {
 
     void setMarketName(BigInteger poolID, String name) {
         JsonArray setMarketNameParameters = new JsonArray()
-            .add(createParameter(poolID))
-            .add(createParameter(name));
+                .add(createParameter(poolID))
+                .add(createParameter(name));
 
         JsonArray actions = new JsonArray()
-            .add(createTransaction(balanced.dex._address(), "setMarketName", setMarketNameParameters));
+                .add(createTransaction(balanced.dex._address(), "setMarketName", setMarketNameParameters));
 
-            owner.governance.execute(actions.toString());
+        owner.governance.execute(actions.toString());
     }
 
 }

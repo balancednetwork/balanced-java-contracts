@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,15 @@
 
 package network.balanced.score.core.governance.utils;
 
-import static network.balanced.score.core.governance.GovernanceImpl.call;
-import static network.balanced.score.core.governance.utils.GovernanceConstants.*;
+import network.balanced.score.core.governance.GovernanceImpl;
+import network.balanced.score.lib.utils.Names;
+import score.*;
+import scorex.util.HashMap;
 
 import java.util.Map;
 
-import network.balanced.score.core.governance.GovernanceImpl;
-import network.balanced.score.lib.utils.Names;
-import score.Address;
-import score.ArrayDB;
-import score.Context;
-import score.DictDB;
-import score.VarDB;
-import scorex.util.HashMap;
+import static network.balanced.score.core.governance.GovernanceImpl.call;
+import static network.balanced.score.core.governance.utils.GovernanceConstants.*;
 
 public class ContractManager {
     private static final VarDB<Address> loans = Context.newVarDB("loans", Address.class);
@@ -50,10 +46,13 @@ public class ContractManager {
     private static final VarDB<Address> bBaln = Context.newVarDB("bBaln", Address.class);
     private static final VarDB<Address> balancedOracle = Context.newVarDB("balancedOracle", Address.class);
 
-    public static final DictDB<String, Address> contractAddresses = Context.newDictDB("BalancedContractAddresses", Address.class);
-    public static final ArrayDB<String> balancedContractNames = Context.newArrayDB("BalancedContractNames", String.class);
+    public static final DictDB<String, Address> contractAddresses = Context.newDictDB("BalancedContractAddresses",
+            Address.class);
+    public static final ArrayDB<String> balancedContractNames = Context.newArrayDB("BalancedContractNames",
+            String.class);
 
-    private ContractManager() {}
+    private ContractManager() {
+    }
 
     public static Address getAddress(String name) {
         if (name.equals(Names.GOVERNANCE)) {

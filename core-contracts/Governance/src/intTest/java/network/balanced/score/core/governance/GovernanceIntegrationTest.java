@@ -16,44 +16,38 @@
 
 package network.balanced.score.core.governance;
 
-import static network.balanced.score.core.governance.DeploymentTester.src.main.java.network.balanced.score.core.deploymenttester.DeploymentTester.name;
-import static network.balanced.score.lib.test.integration.BalancedUtils.createParameter;
-import static network.balanced.score.lib.test.integration.BalancedUtils.createTransaction;
-import static network.balanced.score.lib.test.integration.BalancedUtils.getContractBytes;
-import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
-import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.newScoreClient;
-import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.getContractData;
-import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-
-import java.math.BigInteger;
-import java.util.Map;
-
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
-
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.score.client.DefaultScoreClient;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
 import score.Address;
+
+import java.math.BigInteger;
+import java.util.Map;
+
+import static network.balanced.score.core.governance.deploymentTester.DeploymentTester.name;
+import static network.balanced.score.lib.test.integration.BalancedUtils.*;
+import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
+import static org.junit.jupiter.api.Assertions.*;
 
 class GovernanceIntegrationTest implements ScoreIntegrationTest {
     private static Balanced balanced;
     private static BalancedClient owner;
     private static BalancedClient tester;
 
-    private static final String deploymentTesterJar1 = System.getProperty("user.dir") + "/src/intTest/java/network/balanced/score/core/governance/DeploymentTester-V1.jar";
-    private static final String deploymentTesterJar2 = System.getProperty("user.dir") + "/src/intTest/java/network/balanced/score/core/governance/DeploymentTester-V2.jar";
+    private static final String deploymentTesterJar1 = System.getProperty("user.dir") + "/src/intTest/java/network" +
+            "/balanced/score/core/governance/DeploymentTester-V1.jar";
+    private static final String deploymentTesterJar2 = System.getProperty("user.dir") + "/src/intTest/java/network" +
+            "/balanced/score/core/governance/DeploymentTester-V2.jar";
     private static final String deploymentTesterName = name;
+
     @BeforeAll
     static void setup() throws Exception {
         balanced = new Balanced();
@@ -98,10 +92,11 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         BigInteger duration = BigInteger.valueOf(5);
 
         JsonArray rebalancingThresholdParameter = new JsonArray()
-            .add(createParameter(rebalancingThreshold));
+                .add(createParameter(rebalancingThreshold));
 
         JsonArray actions = new JsonArray()
-            .add(createTransaction(balanced.rebalancing._address(), "setPriceDiffThreshold", rebalancingThresholdParameter));
+                .add(createTransaction(balanced.rebalancing._address(), "setPriceDiffThreshold",
+                        rebalancingThresholdParameter));
 
         BigInteger day = tester.governance.getDay();
         String name = "testVote1";
@@ -172,7 +167,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         String deploymentValueParameter = "first deployment";
         byte[] contractData = getContractBytes(deploymentTesterJar1);
         JsonArray params = new JsonArray()
-            .add(createParameter(deploymentValueParameter));
+                .add(createParameter(deploymentValueParameter));
 
         // Act
         owner.governance.deploy(contractData, params.toString());
@@ -195,7 +190,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
 
         byte[] contractData = getContractBytes(deploymentTesterJar1);
         JsonArray params = new JsonArray()
-            .add(createParameter(deploymentValueParameter));
+                .add(createParameter(deploymentValueParameter));
 
         // Act
         owner.governance.deployTo(contractAddress, contractData, params.toString());
@@ -216,19 +211,20 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         byte[] contractData = getContractBytes(deploymentTesterJar2);
 
         JsonArray deploymentParameters = new JsonArray()
-            .add(createParameter(deploymentValueParameter));
+                .add(createParameter(deploymentValueParameter));
 
         JsonArray deployToParameters = new JsonArray()
-            .add(createParameter(contractAddress))
-            .add(createParameter(getContractBytes(deploymentTesterJar2)))
-            .add(createParameter(deploymentParameters.toString()));
+                .add(createParameter(contractAddress))
+                .add(createParameter(getContractBytes(deploymentTesterJar2)))
+                .add(createParameter(deploymentParameters.toString()));
 
         JsonArray setNewValueParameter = new JsonArray()
-            .add(createParameter(newSetterValue));
+                .add(createParameter(newSetterValue));
 
         JsonArray actions = new JsonArray()
-            .add(createTransaction(balanced.governance._address(), "deployTo", deployToParameters))
-            .add(createTransaction(new foundation.icon.jsonrpc.Address(contractAddress.toString()), "setValue2", setNewValueParameter));
+                .add(createTransaction(balanced.governance._address(), "deployTo", deployToParameters))
+                .add(createTransaction(new foundation.icon.jsonrpc.Address(contractAddress.toString()), "setValue2",
+                        setNewValueParameter));
 
         // Act
         owner.governance.execute(actions.toString());
@@ -240,7 +236,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
 
     @Test
     @Order(13)
-    void updateContractFromVote(){
+    void updateContractFromVote() {
         // updating dex from vote
         // size of dex contract: 57,878 bytes
         // vote definition fee: fee=25907653000000000000 steps=2072612240 price=12500000000
@@ -265,7 +261,8 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         String name = "testUpdateContractVote";
         BigInteger voteStart = day.add(BigInteger.valueOf(4));
         // changeOwner(owner.staking._address(), owner.governance._address());
-        tester.governance.defineVote(name, "test", voteStart, BigInteger.TWO, "https://gov.balanced.network/dummy", actions.toString());
+        tester.governance.defineVote(name, "test", voteStart, BigInteger.TWO, "https://gov.balanced.network/dummy",
+                actions.toString());
 
         balanced.increaseDay(4);
         BigInteger id = tester.governance.getVoteIndex(name);
@@ -317,7 +314,8 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         String name = "testUpdateContractVote2";
         BigInteger voteStart = day.add(BigInteger.valueOf(4));
 
-        tester.governance.defineVote(name, "test", voteStart, BigInteger.TWO, "https://gov.balanced.network/dummy", actions.toString());
+        tester.governance.defineVote(name, "test", voteStart, BigInteger.TWO, "https://gov.balanced.network/dummy",
+                actions.toString());
 
 
         balanced.increaseDay(4);
@@ -356,7 +354,8 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
     //     String name = "testSelfUpdateContractVote";
     //     BigInteger voteStart = day.add(BigInteger.valueOf(4));
 
-    //     tester.governance.defineVote(name, "test", voteStart, BigInteger.TWO, "https://gov.balanced.network/dummy", actions.toString());
+    //     tester.governance.defineVote(name, "test", voteStart, BigInteger.TWO, "https://gov.balanced.network/dummy",
+    //     actions.toString());
 
     //     // owner.governance.changeScoreOwner(owner.governance._address(), owner.getAddress());
     //     balanced.increaseDay(4);

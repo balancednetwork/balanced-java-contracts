@@ -16,11 +16,10 @@
 
 package network.balanced.score.core.dex.utils;
 
+import network.balanced.score.lib.utils.Names;
 import score.Address;
 
 import java.math.BigInteger;
-
-import network.balanced.score.lib.utils.Names;
 
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;

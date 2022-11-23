@@ -16,18 +16,12 @@
 
 package network.balanced.score.core.governance;
 
-import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
-import com.eclipsesource.json.JsonObject;
 import com.iconloop.score.test.Account;
-
 import network.balanced.score.core.governance.proposal.ProposalStatus;
-import network.balanced.score.lib.structs.Disbursement;
-import network.balanced.score.lib.structs.DistributionPercentage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
-import score.Address;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -92,7 +86,8 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         expectErrorMessage(withInvalidForumLink, expectedErrorMessage);
 
         String invalidActions = new JsonArray()
-            .add(createTransaction(governance.getAddress(), "cancelVote", new JsonArray().add(createParameter(BigInteger.ZERO)))).toString();
+                .add(createTransaction(governance.getAddress(), "cancelVote",
+                        new JsonArray().add(createParameter(BigInteger.ZERO)))).toString();
 
         expectedErrorMessage = "Vote execution failed";
         Executable withInvalidActions = () -> governance.invoke(owner, "defineVote", name, description, voteStart,
@@ -375,7 +370,8 @@ public class GovernanceVotingTest extends GovernanceTestBase {
     @Test
     void evaluateVote_executed() {
         // Arrange
-        String actions = new JsonArray().add(createTransaction(daofund.getAddress(), "name", new JsonArray())).toString();
+        String actions =
+                new JsonArray().add(createTransaction(daofund.getAddress(), "name", new JsonArray())).toString();
 
         // Act
         BigInteger voteIndex = executeVoteWithActions(actions);
@@ -483,15 +479,15 @@ public class GovernanceVotingTest extends GovernanceTestBase {
     void executeVote_multipleActions() {
         // Arrange
         JsonArray addAcceptedTokensParameters = new JsonArray()
-            .add(createParameter(sicx.getAddress()));
+                .add(createParameter(sicx.getAddress()));
 
         JsonArray permitParameters = new JsonArray()
-            .add(createParameter(BigInteger.ONE))
-            .add(createParameter( true));
+                .add(createParameter(BigInteger.ONE))
+                .add(createParameter(true));
 
         JsonArray actions = new JsonArray()
-            .add(createTransaction(dividends.getAddress(), "addAcceptedTokens", addAcceptedTokensParameters))
-            .add(createTransaction(dex.getAddress(), "permit", permitParameters));
+                .add(createTransaction(dividends.getAddress(), "addAcceptedTokens", addAcceptedTokensParameters))
+                .add(createTransaction(dex.getAddress(), "permit", permitParameters));
 
         // Act
         executeVoteWithActions(actions.toString());

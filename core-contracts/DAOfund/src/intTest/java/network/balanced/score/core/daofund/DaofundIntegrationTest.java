@@ -16,16 +16,10 @@
 
 package network.balanced.score.core.daofund;
 
-import foundation.icon.icx.Wallet;
-import network.balanced.score.lib.interfaces.DAOfundScoreClient;
 import network.balanced.score.lib.test.integration.Balanced;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.math.BigInteger;
-import java.util.Map;
-
-import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
@@ -37,7 +31,7 @@ class DaofundIntegrationTest {
         balanced = new Balanced();
         balanced.setupBalanced();
     }
-  
+
     @Test
     void testName() {
 

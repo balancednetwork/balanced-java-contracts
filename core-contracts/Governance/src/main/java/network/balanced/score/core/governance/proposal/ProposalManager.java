@@ -1,9 +1,24 @@
+/*
+ * Copyright (c) 2022-2022 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package network.balanced.score.core.governance.proposal;
 
+import network.balanced.score.core.governance.utils.ArbitraryCallManager;
 import network.balanced.score.core.governance.utils.ContractManager;
 import network.balanced.score.lib.utils.Names;
-import network.balanced.score.core.governance.utils.ArbitraryCallManager;
-
 import score.Address;
 import score.Context;
 import scorex.util.ArrayList;
@@ -20,7 +35,7 @@ import static network.balanced.score.core.governance.utils.GovernanceConstants.*
 public class ProposalManager {
 
     public static void defineVote(String name, String description, BigInteger vote_start, BigInteger duration,
-            String forumLink, String transactions) {
+                                  String forumLink, String transactions) {
         Context.require(description.length() <= 500, "Description must be less than or equal to 500 characters.");
 
         BigInteger snapshotBlock = BigInteger.valueOf(Context.getBlockHeight());
@@ -40,7 +55,8 @@ public class ProposalManager {
 
         verifyTransactions(transactions);
 
-        call(ContractManager.getAddress(Names.BNUSD), "govTransfer", Context.getCaller(), ContractManager.getAddress(Names.DAOFUND),
+        call(ContractManager.getAddress(Names.BNUSD), "govTransfer", Context.getCaller(),
+                ContractManager.getAddress(Names.DAOFUND),
                 bnusdVoteDefinitionFee.getOrDefault(BigInteger.ONE), new byte[0]);
 
         ProposalDB.createProposal(
@@ -66,11 +82,10 @@ public class ProposalManager {
         Context.require(proposal.status.get().equals(ProposalStatus.STATUS[ProposalStatus.ACTIVE]), "Proposal can be " +
                 "cancelled only from active status.");
         Context.require(Context.getCaller().equals(proposal.proposer.get()) ||
-                        Context.getCaller().equals(Context.getOwner()),
-                "Only owner or proposer may call this method.");
+                Context.getCaller().equals(Context.getOwner()), "Only owner or proposer may call this method.");
         if (proposal.startDay.get().compareTo(_getDay()) <= 0) {
-            Context.require(Context.getCaller().equals(Context.getOwner()),
-                    "Only owner can cancel a vote that has started.");
+            Context.require(Context.getCaller().equals(Context.getOwner()), "Only owner can cancel a vote that has " +
+                    "started.");
         }
 
         refundVoteDefinitionFee(proposal);
@@ -78,7 +93,7 @@ public class ProposalManager {
         proposal.status.set(ProposalStatus.STATUS[ProposalStatus.CANCELLED]);
     }
 
-    public static  List<Object> getProposals(BigInteger batch_size, BigInteger offset) {
+    public static List<Object> getProposals(BigInteger batch_size, BigInteger offset) {
         BigInteger start = BigInteger.ONE.max(offset);
         BigInteger end = batch_size.add(start).subtract(BigInteger.ONE).min(ProposalDB.getProposalCount());
         List<Object> proposals = new ArrayList<>();
@@ -197,12 +212,12 @@ public class ProposalManager {
 
     public static Map<String, Object> checkVote(BigInteger _vote_index) {
         if (_vote_index.compareTo(BigInteger.ONE) < 0 ||
-        _vote_index.compareTo(ProposalDB.getProposalCount()) > 0) {
+                _vote_index.compareTo(ProposalDB.getProposalCount()) > 0) {
             return Map.of();
         }
 
         ProposalDB proposal = new ProposalDB(_vote_index);
-        BigInteger totalBoostedBaln = BigInteger.ZERO;
+        BigInteger totalBoostedBaln;
         if (proposal.forumLink.get() == null) {
             totalBoostedBaln = totalBaln(proposal.snapshotBlock.getOrDefault(BigInteger.ZERO));
         } else {
@@ -261,7 +276,8 @@ public class ProposalManager {
     }
 
     public static BigInteger myVotingWeight(Address _address, BigInteger block) {
-        return Context.call(BigInteger.class, ContractManager.getAddress(Names.BOOSTED_BALN), "balanceOfAt", _address, block);
+        return Context.call(BigInteger.class, ContractManager.getAddress(Names.BOOSTED_BALN), "balanceOfAt", _address
+                , block);
     }
 
     private static void refundVoteDefinitionFee(ProposalDB proposal) {
@@ -270,7 +286,8 @@ public class ProposalManager {
         }
 
         proposal.feeRefunded.set(true);
-        call(ContractManager.getAddress(Names.BNUSD), "govTransfer", ContractManager.getAddress(Names.DAOFUND), proposal.proposer.get(), proposal.fee.get(), new byte[0]);
+        call(ContractManager.getAddress(Names.BNUSD), "govTransfer", ContractManager.getAddress(Names.DAOFUND),
+                proposal.proposer.get(), proposal.fee.get(), new byte[0]);
     }
 
     private static BigInteger totalBaln(BigInteger _day) {
@@ -278,7 +295,8 @@ public class ProposalManager {
     }
 
     private static boolean checkBalnVoteCriterion(Address address, BigInteger block) {
-        BigInteger boostedBalnTotal = Context.call(BigInteger.class, ContractManager.getAddress(Names.BOOSTED_BALN), "totalSupplyAt", block);
+        BigInteger boostedBalnTotal = Context.call(BigInteger.class, ContractManager.getAddress(Names.BOOSTED_BALN),
+                "totalSupplyAt", block);
         BigInteger userBoostedBaln = myVotingWeight(address, block);
         BigInteger limit = balnVoteDefinitionCriterion.get();
         BigInteger userPercentage = POINTS.multiply(userBoostedBaln).divide(boostedBalnTotal);
