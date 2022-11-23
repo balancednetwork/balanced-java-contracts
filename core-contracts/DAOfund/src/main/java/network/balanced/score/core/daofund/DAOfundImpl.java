@@ -31,12 +31,8 @@ import scorex.util.HashMap;
 import java.math.BigInteger;
 import java.util.Map;
 
+import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Check.*;
-import static network.balanced.score.lib.utils.BalancedAddressManager.setGovernance;
-import static network.balanced.score.lib.utils.BalancedAddressManager.getLoans;
-import static network.balanced.score.lib.utils.BalancedAddressManager.getStaking;
-import static network.balanced.score.lib.utils.BalancedAddressManager.resetAddress;
-import static network.balanced.score.lib.utils.BalancedAddressManager.getAddressByName;
 
 public class DAOfundImpl implements DAOfund {
 
@@ -187,9 +183,10 @@ public class DAOfundImpl implements DAOfund {
     }
 
     @External
-    public void supplyLiquidity(Address baseAddress, BigInteger baseAmount, Address quoteAddress, BigInteger quoteAmount) {
+    public void supplyLiquidity(Address baseAddress, BigInteger baseAmount, Address quoteAddress,
+                                BigInteger quoteAmount) {
         onlyGovernance();
-        POLManager.supplyLiquidity(baseAddress, baseAmount, quoteAddress, quoteAmount);;
+        POLManager.supplyLiquidity(baseAddress, baseAmount, quoteAddress, quoteAmount);
     }
 
     @External
@@ -224,7 +221,7 @@ public class DAOfundImpl implements DAOfund {
         }
 
         String tokenContract = Context.getCaller().toString();
-        if(address.contains(tokenContract)) {
+        if (address.contains(tokenContract)) {
             BigInteger tokenAmountInDAOfund = fund.getOrDefault(tokenContract, BigInteger.ZERO);
             fund.set(tokenContract, tokenAmountInDAOfund.add(_value));
         }
