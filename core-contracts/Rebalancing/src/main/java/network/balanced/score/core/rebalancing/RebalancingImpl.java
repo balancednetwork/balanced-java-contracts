@@ -17,6 +17,7 @@
 package network.balanced.score.core.rebalancing;
 
 import network.balanced.score.lib.interfaces.Rebalancing;
+import network.balanced.score.lib.utils.Names;
 import score.Address;
 import score.Context;
 import score.VarDB;
@@ -54,7 +55,7 @@ public class RebalancingImpl implements Rebalancing {
 
     @External(readonly = true)
     public String name() {
-        return "Balanced " + TAG;
+        return Names.REBALANCING;
     }
 
     @External

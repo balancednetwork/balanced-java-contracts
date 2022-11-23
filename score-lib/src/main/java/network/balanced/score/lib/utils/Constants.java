@@ -26,6 +26,12 @@ public class Constants {
     public final static BigInteger EXA = pow(BigInteger.TEN, 18);
     public final static BigInteger POINTS = BigInteger.valueOf(10000);
     public static final BigInteger MICRO_SECONDS_IN_A_SECOND = BigInteger.valueOf(1_000_000);
-    public static final BigInteger MICRO_SECONDS_IN_A_DAY = BigInteger.valueOf(86400).multiply(MICRO_SECONDS_IN_A_SECOND);
+    public static final BigInteger MICRO_SECONDS_IN_A_DAY =
+            BigInteger.valueOf(86400).multiply(MICRO_SECONDS_IN_A_SECOND);
+    public static final BigInteger WEEK_IN_MICRO_SECONDS = BigInteger.valueOf(7L).multiply(MICRO_SECONDS_IN_A_DAY);
+    public static final BigInteger DAYS_PER_YEAR = BigInteger.valueOf(365L);
+    public static final BigInteger YEAR_IN_MICRO_SECONDS = DAYS_PER_YEAR.multiply(MICRO_SECONDS_IN_A_DAY);
     public final static Address EOA_ZERO = new Address(new byte[Address.LENGTH]);
+    public static final BigInteger MAX_LOCK_TIME = BigInteger.valueOf(4L).multiply(YEAR_IN_MICRO_SECONDS);
+
 }

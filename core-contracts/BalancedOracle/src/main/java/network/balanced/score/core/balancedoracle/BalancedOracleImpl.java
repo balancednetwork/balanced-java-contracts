@@ -17,6 +17,7 @@
 package network.balanced.score.core.balancedoracle;
 
 import network.balanced.score.lib.interfaces.BalancedOracle;
+import network.balanced.score.lib.utils.Names;
 import score.Address;
 import score.Context;
 import score.annotation.External;
@@ -32,7 +33,7 @@ import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static network.balanced.score.lib.utils.Math.pow;
 
 public class BalancedOracleImpl implements BalancedOracle {
-    public static final String TAG = "Balanced Oracle";
+    public static final String TAG = Names.BALANCEDORACLE;
 
     public BalancedOracleImpl(@Optional Address _governance) {
         if (governance.get() != null) {
@@ -49,7 +50,7 @@ public class BalancedOracleImpl implements BalancedOracle {
 
     @External(readonly = true)
     public String name() {
-        return TAG;
+        return Names.BALANCEDORACLE;
     }
 
     @External

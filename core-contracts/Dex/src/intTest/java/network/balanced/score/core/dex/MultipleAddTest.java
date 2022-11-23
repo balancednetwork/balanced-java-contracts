@@ -16,6 +16,7 @@
 
 package network.balanced.score.core.dex;
 
+import com.eclipsesource.json.JsonArray;
 import foundation.icon.icx.Wallet;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
@@ -32,6 +33,8 @@ import java.math.BigInteger;
 import java.util.Map;
 
 import static foundation.icon.score.client.DefaultScoreClient._deploy;
+import static network.balanced.score.lib.test.integration.BalancedUtils.createParameter;
+import static network.balanced.score.lib.test.integration.BalancedUtils.createTransaction;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -48,6 +51,7 @@ public class MultipleAddTest {
     private static final Env.Chain chain = Env.getDefaultChain();
     private static Wallet userWallet;
     private static Wallet testOwnerWallet;
+    private static Balanced balanced;
     private static DefaultScoreClient dexScoreClient;
     private static DefaultScoreClient governanceScoreClient;
     private static DefaultScoreClient dexTestThirdScoreClient;
@@ -60,7 +64,7 @@ public class MultipleAddTest {
 
     static {
         try {
-            Balanced balanced = new Balanced();
+            balanced = new Balanced();
             testOwnerWallet = balanced.owner;
             userWallet = ScoreIntegrationTest.createWalletWithBalance(BigInteger.valueOf(800).multiply(EXA));
             Wallet tUserWallet = ScoreIntegrationTest.createWalletWithBalance(BigInteger.valueOf(500).multiply(EXA));
@@ -159,7 +163,7 @@ public class MultipleAddTest {
         assertEquals(hexToBigInteger(poolStats.get("min_quote").toString()), BigInteger.ZERO);
 
         //change name and verify
-        governanceDexScoreClient.setMarketName(poolId, "DTT/DTBT");
+        setMarketName(poolId, "DTT/DTBT");
         Map<String, Object> updatedPoolStats = dexUserScoreClient.getPoolStats(poolId);
         assertEquals(updatedPoolStats.get("name").toString(), "DTT/DTBT");
     }
@@ -177,11 +181,32 @@ public class MultipleAddTest {
 
         //check isQuoteCoinAllowed for test token if not added
         if (!dexUserScoreClient.isQuoteCoinAllowed(Address.fromString(dexTestThirdScoreAddress))) {
-            governanceDexScoreClient.dexAddQuoteCoin(Address.fromString(dexTestThirdScoreAddress));
+            dexAddQuoteCoin(new Address(dexTestThirdScoreAddress));
         }
         if (!dexUserScoreClient.isQuoteCoinAllowed(Address.fromString(dexTestFourthScoreAddress))) {
-            governanceDexScoreClient.dexAddQuoteCoin(Address.fromString(dexTestFourthScoreAddress));
+            dexAddQuoteCoin(new Address(dexTestFourthScoreAddress));
         }
+    }
+
+    void dexAddQuoteCoin(Address address) {
+        JsonArray addQuoteCoinParameters = new JsonArray()
+                .add(createParameter(address));
+
+        JsonArray actions = new JsonArray()
+                .add(createTransaction(balanced.dex._address(), "addQuoteCoin", addQuoteCoinParameters));
+
+        balanced.ownerClient.governance.execute(actions.toString());
+    }
+
+    void setMarketName(BigInteger poolID, String name) {
+        JsonArray setMarketNameParameters = new JsonArray()
+                .add(createParameter(poolID))
+                .add(createParameter(name));
+
+        JsonArray actions = new JsonArray()
+                .add(createTransaction(balanced.dex._address(), "setMarketName", setMarketNameParameters));
+
+        balanced.ownerClient.governance.execute(actions.toString());
     }
 
     BigInteger hexToBigInteger(String hex) {

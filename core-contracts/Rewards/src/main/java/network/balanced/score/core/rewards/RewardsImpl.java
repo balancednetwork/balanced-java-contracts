@@ -25,6 +25,7 @@ import network.balanced.score.lib.structs.Point;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import network.balanced.score.lib.structs.VotedSlope;
 import network.balanced.score.lib.utils.IterableDictDB;
+import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.SetDB;
 import score.*;
 import score.annotation.EventLog;
@@ -163,7 +164,7 @@ public class RewardsImpl implements Rewards {
 
     @External(readonly = true)
     public String name() {
-        return "Balanced Rewards";
+        return Names.REWARDS;
     }
 
     @External(readonly = true)
