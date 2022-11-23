@@ -117,6 +117,52 @@ class RewardsTestRewards extends RewardsTestBase {
     }
 
     @Test
+    void claimRewards_updateBalanceAndSupply() {
+        // Arrange
+        Account account = sm.createAccount();
+        Account supplyAccount = sm.createAccount();
+        BigInteger loansBalance = BigInteger.ONE.multiply(EXA);
+        BigInteger loansTotalSupply = BigInteger.TEN.multiply(EXA);
+        BigInteger swapBalance = BigInteger.TWO.multiply(EXA);
+        BigInteger swapTotalSupply = BigInteger.TEN.multiply(EXA);
+
+        // Act
+        rewardsScore.invoke(loans.account, "updateBalanceAndSupply", "Loans", loansTotalSupply.subtract(loansBalance),
+                supplyAccount.getAddress(), loansTotalSupply.subtract(loansBalance));
+        rewardsScore.invoke(dex.account, "updateBalanceAndSupply", "sICX/ICX", swapTotalSupply.subtract(swapBalance),
+                supplyAccount.getAddress(), swapTotalSupply.subtract(swapBalance));
+
+        rewardsScore.invoke(loans.account, "updateBalanceAndSupply", "Loans", loansTotalSupply,
+                account.getAddress(), loansBalance);
+        BigInteger startTimeLoansInUS = BigInteger.valueOf(sm.getBlock().getTimestamp());
+        rewardsScore.invoke(dex.account, "updateBalanceAndSupply", "sICX/ICX", swapTotalSupply,
+                account.getAddress(), swapBalance);
+        BigInteger startTimeSwapInUS = BigInteger.valueOf(sm.getBlock().getTimestamp());
+
+        mockBalanceAndSupply(loans, "Loans", account.getAddress(), loansBalance, loansTotalSupply);
+        mockBalanceAndSupply(dex, "sICX/ICX", account.getAddress(), swapBalance, swapTotalSupply);
+
+        sm.getBlock().increase(DAY*2);
+
+        // Assert
+        BigInteger emission = (BigInteger) rewardsScore.call("getEmission", BigInteger.valueOf(-1));
+        BigInteger loansDistribution = loansDist.dist_percent.multiply(emission).divide(EXA);
+        BigInteger userLoansDistribution = loansDistribution.multiply(loansBalance).divide(loansTotalSupply);
+        BigInteger swapDistribution = icxPoolDist.dist_percent.multiply(emission).divide(EXA);
+        BigInteger userSwapDistribution = swapDistribution.multiply(swapBalance).divide(swapTotalSupply);
+
+        rewardsScore.invoke(account, "claimRewards", getUserSources(account.getAddress()));
+        BigInteger timeInUS = BigInteger.valueOf(sm.getBlock().getTimestamp());
+        BigInteger diffInUSLoans = timeInUS.subtract(startTimeLoansInUS);
+        BigInteger diffInUSSwap = timeInUS.subtract(startTimeSwapInUS);
+        BigInteger expectedRewards = userLoansDistribution.multiply(diffInUSLoans).divide(MICRO_SECONDS_IN_A_DAY);
+        expectedRewards =
+                expectedRewards.add(userSwapDistribution.multiply(diffInUSSwap).divide(MICRO_SECONDS_IN_A_DAY));
+
+        verifyBalnReward(account.getAddress(), expectedRewards);
+    }
+
+    @Test
     void boostedRewards() {
         // Arrange
         Account account = sm.createAccount();
@@ -382,6 +428,60 @@ class RewardsTestRewards extends RewardsTestBase {
         mockBalanceAndSupply(loans, name, account2.getAddress(), user2CurrentBalance, currentTotalSupply);
         rewardsScore.invoke(loans.account, "updateBatchRewardsData", name, initialTotalSupply, batch);
         BigInteger startTimeInUS = BigInteger.valueOf(sm.getBlock().getTimestamp());
+
+        sm.getBlock().increase(DAY);
+
+        // Assert
+        BigInteger emission = (BigInteger) rewardsScore.call("getEmission", BigInteger.valueOf(-1));
+        BigInteger loansDistribution = loansDist.dist_percent.multiply(emission).divide(EXA);
+        BigInteger user1Distribution = loansDistribution.multiply(user1CurrentBalance).divide(currentTotalSupply);
+
+        rewardsScore.invoke(account1, "claimRewards", getUserSources(account1.getAddress()));
+        BigInteger user1TimeInUS = BigInteger.valueOf(sm.getBlock().getTimestamp());
+        BigInteger user1DiffInUS = user1TimeInUS.subtract(startTimeInUS);
+        BigInteger user1ExpectedRewards = user1Distribution.multiply(user1DiffInUS).divide(MICRO_SECONDS_IN_A_DAY);
+
+        BigInteger user2Distribution = loansDistribution.multiply(user2CurrentBalance).divide(currentTotalSupply);
+
+        rewardsScore.invoke(account2, "claimRewards", getUserSources(account1.getAddress()));
+        BigInteger user2TimeInUS = BigInteger.valueOf(sm.getBlock().getTimestamp());
+        BigInteger user2DiffInUS = user2TimeInUS.subtract(startTimeInUS);
+        BigInteger user2ExpectedRewards = user2Distribution.multiply(user2DiffInUS).divide(MICRO_SECONDS_IN_A_DAY);
+
+        verifyBalnReward(account1.getAddress(), user1ExpectedRewards);
+        verifyBalnReward(account2.getAddress(), user2ExpectedRewards);
+    }
+
+    @Test
+    void claimRewards_updateBalanceAndSupplyBatch() {
+        // Arrange
+        Account supplyAccount = sm.createAccount();
+        Account account1 = sm.createAccount();
+        Account account2 = sm.createAccount();
+
+        String name = "Loans";
+        BigInteger initialTotalSupply = BigInteger.TEN.multiply(EXA);
+        BigInteger user1CurrentBalance = BigInteger.ONE.multiply(EXA);
+        BigInteger user2CurrentBalance = BigInteger.TWO.multiply(EXA);
+        BigInteger currentTotalSupply = initialTotalSupply.add(user1CurrentBalance).add(user2CurrentBalance);
+
+        RewardsDataEntry user1Entry = new RewardsDataEntry();
+        user1Entry._balance =user1CurrentBalance;
+        user1Entry._user = account1.getAddress();
+        RewardsDataEntry user2Entry = new RewardsDataEntry();
+        user2Entry._balance = user2CurrentBalance;
+        user2Entry._user = account2.getAddress();
+        Object batch = new RewardsDataEntry[]{user1Entry, user2Entry};
+
+        rewardsScore.invoke(loans.account, "updateBalanceAndSupply", "Loans", initialTotalSupply,
+                supplyAccount.getAddress(), initialTotalSupply);
+
+        // Act
+        rewardsScore.invoke(loans.account, "updateBalanceAndSupplyBatch", name, currentTotalSupply, batch);
+        BigInteger startTimeInUS = BigInteger.valueOf(sm.getBlock().getTimestamp());
+
+        mockBalanceAndSupply(loans, name, account1.getAddress(), user1CurrentBalance, currentTotalSupply);
+        mockBalanceAndSupply(loans, name, account2.getAddress(), user2CurrentBalance, currentTotalSupply);
 
         sm.getBlock().increase(DAY);
 

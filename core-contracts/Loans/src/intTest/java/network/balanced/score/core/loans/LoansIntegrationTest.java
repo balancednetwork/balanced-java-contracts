@@ -49,6 +49,7 @@ import java.util.Map;
 import static network.balanced.score.lib.test.integration.BalancedUtils.*;
 import static network.balanced.score.lib.utils.Constants.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
 
 abstract class LoansIntegrationTest implements ScoreIntegrationTest {
     protected static Balanced balanced;
@@ -72,7 +73,6 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         owner.governance.setBalnVoteDefinitionCriterion(BigInteger.ZERO);
         owner.governance.setQuorum(BigInteger.ONE);
 
-        owner.loans.removeBALN();
         ethAddress = createIRC2Token(owner, "ICON ETH", "iETH", iethNumberOfDecimals);
         owner.balancedOracle.getPriceInLoop((txr) -> {
         }, "ETH");
@@ -80,6 +80,19 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
 
         btcAddress = createIRC2Token(owner, "ICON BTC", "iBTC");
         owner.irc2(btcAddress).setMinter(owner.getAddress());
+    }
+
+
+    @Test
+    @Order(0)
+    void removeBALN() throws Exception {
+        assertTrue(reader.loans.getAssetTokens().containsKey("BALN"));
+        String governanceParam = new JsonArray()
+            .add(createParameter(balanced.governance._address()))
+            .toString();
+
+        owner.governance.deployTo(balanced.loans._address(), getContractData("Loans"), governanceParam);
+        assertFalse(reader.loans.getAssetTokens().containsKey("BALN"));
     }
 
     @Test

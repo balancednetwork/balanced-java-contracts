@@ -16,6 +16,7 @@
 
 package network.balanced.score.core.rewards;
 
+import network.balanced.score.core.rewards.utils.BalanceData;
 import network.balanced.score.lib.interfaces.DataSourceScoreInterface;
 import score.*;
 import scorex.util.HashMap;
@@ -85,7 +86,7 @@ public class DataSourceImpl {
 
     // Used for migration if it happens on Claim
     public BigInteger getWorkingSupply(boolean readonly) {
-        BigInteger workingSupply = getWorkingSupply();
+        BigInteger workingSupply = this.workingSupply.at(dbKey).get();
         if (workingSupply != null) {
             return workingSupply;
         }
@@ -100,7 +101,7 @@ public class DataSourceImpl {
 
     // Used for migration if it happens on BalanceUpdate
     public BigInteger getWorkingSupply(BigInteger prevSupply, boolean readonly) {
-        BigInteger workingSupply = getWorkingSupply();
+        BigInteger workingSupply = this.workingSupply.at(dbKey).get();
         if (workingSupply != null) {
             return workingSupply;
         }
@@ -112,8 +113,8 @@ public class DataSourceImpl {
         return prevSupply;
     }
 
-    private BigInteger getWorkingSupply() {
-        return workingSupply.at(dbKey).get();
+    public BigInteger getWorkingSupply() {
+        return workingSupply.at(dbKey).getOrDefault(BigInteger.ZERO);
     }
 
     private void setWorkingSupply(BigInteger supply) {
@@ -122,7 +123,7 @@ public class DataSourceImpl {
 
     // Used for migration if it happens on Claim
     public BigInteger getWorkingBalance(Address user, boolean readonly) {
-        BigInteger workingBalance = getWorkingBalance(user);
+        BigInteger workingBalance = userWorkingBalance.at(dbKey).get(user);
         if (workingBalance != null) {
             return workingBalance;
         }
@@ -137,7 +138,7 @@ public class DataSourceImpl {
 
     // Used for migration if it happens on BalanceUpdate
     public BigInteger getWorkingBalance(Address user, BigInteger prevBalance, boolean readonly) {
-        BigInteger workingBalance = getWorkingBalance(user);
+        BigInteger workingBalance = userWorkingBalance.at(dbKey).get(user);
         if (workingBalance != null) {
             return workingBalance;
         }
@@ -149,8 +150,8 @@ public class DataSourceImpl {
         return prevBalance;
     }
 
-    private BigInteger getWorkingBalance(Address user) {
-        return userWorkingBalance.at(dbKey).get(user);
+    public BigInteger getWorkingBalance(Address user) {
+        return userWorkingBalance.at(dbKey).getOrDefault(user, BigInteger.ZERO);
     }
 
     private void setWorkingBalance(Address user, BigInteger balance) {
@@ -251,17 +252,18 @@ public class DataSourceImpl {
         return accruedRewards;
     }
 
-    public void updateWorkingBalanceAndSupply(Address user, BigInteger boostedBalance, BigInteger boostedSupply) {
-        Map<String, BigInteger> balanceAndSupply = loadCurrentSupply(user);
-        BigInteger balance = balanceAndSupply.get(BALANCE);
-        BigInteger supply = balanceAndSupply.get(TOTAL_SUPPLY);
+    public void updateWorkingBalanceAndSupply(Address user, BalanceData balances) {
+        BigInteger balance = balances.balance;
+        BigInteger supply = balances.supply;
+        Context.require(balance.compareTo(BigInteger.ZERO) >= 0);
+        Context.require(supply.compareTo(BigInteger.ZERO) >= 0);
 
         BigInteger weight = RewardsImpl.boostWeight.get();
         BigInteger max = balance.multiply(EXA).divide(weight);
 
         BigInteger boost = BigInteger.ZERO;
-        if (boostedSupply.compareTo(BigInteger.ZERO) > 0 && balance.compareTo(BigInteger.ZERO) > 0) {
-            boost = supply.multiply(boostedBalance).multiply(EXA.subtract(weight)).divide(boostedSupply).divide(weight);
+        if (balances.boostedSupply.compareTo(BigInteger.ZERO) > 0 && balance.compareTo(BigInteger.ZERO) > 0) {
+            boost = supply.multiply(balances.boostedBalance).multiply(EXA.subtract(weight)).divide(balances.boostedSupply).divide(weight);
         }
 
         BigInteger newWorkingBalance = balance.add(boost);
