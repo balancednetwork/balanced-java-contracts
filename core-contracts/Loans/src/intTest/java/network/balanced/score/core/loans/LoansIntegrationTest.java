@@ -568,49 +568,49 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         setDebtCeiling("sICX", BigInteger.TEN.pow(28));
     }
 
-    @Test
-    @Order(21)
-    void rebalancing_raisePrice() throws Exception {
-        BigInteger initialTotalDebt = getTotalDebt();
+//     @Test
+//     @Order(21)
+//     void rebalancing_raisePrice() throws Exception {
+//         BigInteger initialTotalDebt = getTotalDebt();
 
-        reducePriceBelowThreshold(balanced.sicx._address());
-        rebalance(balanced.sicx._address());
+//         reducePriceBelowThreshold(balanced.sicx._address());
+//         rebalance(balanced.sicx._address());
 
-        assertTrue(initialTotalDebt.compareTo(getTotalDebt()) > 0);
-    }
+//         assertTrue(initialTotalDebt.compareTo(getTotalDebt()) > 0);
+//     }
 
-    @Test
-    @Order(22)
-    void rebalancing_lowerPrice() throws Exception {
-        BigInteger initialTotalDebt = getTotalDebt();
+//     @Test
+//     @Order(22)
+//     void rebalancing_lowerPrice() throws Exception {
+//         BigInteger initialTotalDebt = getTotalDebt();
 
-        raisePriceAboveThreshold(balanced.sicx._address());
-        rebalance(balanced.sicx._address());
+//         raisePriceAboveThreshold(balanced.sicx._address());
+//         rebalance(balanced.sicx._address());
 
-        assertTrue(initialTotalDebt.compareTo(getTotalDebt()) < 0);
-    }
+//         assertTrue(initialTotalDebt.compareTo(getTotalDebt()) < 0);
+//     }
 
-    @Test
-    @Order(23)
-    void rebalancing_raisePrice_ETH() throws Exception {
-        BigInteger initialTotalDebt = getTotalDebt();
+//     @Test
+//     @Order(23)
+//     void rebalancing_raisePrice_ETH() throws Exception {
+//         BigInteger initialTotalDebt = getTotalDebt();
 
-        reducePriceBelowThreshold(ethAddress);
-        rebalance(ethAddress);
+//         reducePriceBelowThreshold(ethAddress);
+//         rebalance(ethAddress);
 
-        assertTrue(initialTotalDebt.compareTo(getTotalDebt()) > 0);
-    }
+//         assertTrue(initialTotalDebt.compareTo(getTotalDebt()) > 0);
+//     }
 
-    @Test
-    @Order(24)
-    void rebalancing_lowerPrice_ETH() throws Exception {
-        BigInteger initialTotalDebt = getTotalDebt();
+//     @Test
+//     @Order(24)
+//     void rebalancing_lowerPrice_ETH() throws Exception {
+//         BigInteger initialTotalDebt = getTotalDebt();
 
-        raisePriceAboveThreshold(ethAddress);
-        rebalance(ethAddress);
+//         raisePriceAboveThreshold(ethAddress);
+//         rebalance(ethAddress);
 
-        assertTrue(initialTotalDebt.compareTo(getTotalDebt()) < 0);
-    }
+//         assertTrue(initialTotalDebt.compareTo(getTotalDebt()) < 0);
+//     }
 
     @Test
     @Order(31)

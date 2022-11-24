@@ -21,10 +21,10 @@ import score.Context;
 
 import java.math.BigInteger;
 
-import network.balanced.score.core.loans.LoansVariables;
-
 import static network.balanced.score.core.loans.LoansImpl.call;
 import static network.balanced.score.core.loans.utils.LoansConstants.BNUSD_SYMBOL;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getBalancedOracle;
+
 
 public  class TokenUtils {
 
@@ -58,10 +58,10 @@ public  class TokenUtils {
 
     public static BigInteger getPriceInLoop(String symbol, boolean readOnly) {
         if (readOnly) {
-            return  Context.call(BigInteger.class, LoansVariables.oracle.get(), "getLastPriceInLoop", symbol);
+            return  Context.call(BigInteger.class, getBalancedOracle(), "getLastPriceInLoop", symbol);
         }
 
-        return Context.call(BigInteger.class, LoansVariables.oracle.get(), "getPriceInLoop", symbol);
+        return Context.call(BigInteger.class, getBalancedOracle(), "getPriceInLoop", symbol);
     }
 
     public static void mintTo(Address bnUSDAddress, Address to, BigInteger amount) {

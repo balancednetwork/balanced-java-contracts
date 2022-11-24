@@ -253,8 +253,6 @@ public class GovernanceTest extends GovernanceTestBase {
 
         // Assert
         verify(loans.mock).addAsset(sicx.getAddress(), true, true);
-        verify(loans.mock).addAsset(bnUSD.getAddress(), true, false);
-        verify(loans.mock).addAsset(baln.getAddress(), false, true);
     }
 
     @Test

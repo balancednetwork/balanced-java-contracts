@@ -163,9 +163,6 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
     @External
     void setMaxRetirePercent(BigInteger _value);
 
-    @External
-    void setRedeemBatchSize(int _value);
-
     @External(readonly = true)
     Map<String, Object> getParameters();
 }

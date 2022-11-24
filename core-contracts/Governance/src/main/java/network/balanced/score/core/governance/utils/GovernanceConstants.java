@@ -54,13 +54,10 @@ public class GovernanceConstants extends Constants {
             "balancedOracle"};
 
     public static Map<String, List<String>> ADDRESSES = Map.ofEntries(
-            entry("loans", List.of("rewards", "dividends", "staking", "reserve", "dex", "rebalancing",
-                    "balancedOracle", "bnUSD")),
             entry("dex", List.of("rewards", "dividends", "staking", "sicx", "bnUSD", "baln", "feehandler", "stakedLp")),
             entry("rewards", List.of("reserve", "baln", "bwt", "daofund", "stakedLp", "bBaln")),
             entry("dividends", List.of("loans", "daofund", "dex", "baln", "bBaln")),
             entry("daofund", List.of("loans")),
-            entry("reserve", List.of("loans", "baln", "sicx")),
             entry("bnUSD", List.of("oracle")),
             entry("baln", List.of("dividends", "oracle", "dex", "bnUSD")),
             entry("bwt", List.of("baln")),
@@ -71,11 +68,9 @@ public class GovernanceConstants extends Constants {
     );
 
     public static Map<String, String> ADMIN_ADDRESSES = Map.ofEntries(
-            entry("loans", "governance"),
             entry("dex", "governance"),
             entry("rewards", "governance"),
             entry("dividends", "governance"),
-            entry("reserve", "governance"),
             entry("bnUSD", "loans"),
             entry("baln", "rewards"),
             entry("bwt", "governance"),
