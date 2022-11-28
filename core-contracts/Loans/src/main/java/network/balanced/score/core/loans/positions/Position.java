@@ -17,8 +17,8 @@
 package network.balanced.score.core.loans.positions;
 
 import network.balanced.score.core.loans.LoansVariables;
-import network.balanced.score.core.loans.collateral.CollateralManager;
-import network.balanced.score.core.loans.debt.DebtManager;
+import network.balanced.score.core.loans.collateral.CollateralDB;
+import network.balanced.score.core.loans.debt.DebtDB;
 import network.balanced.score.core.loans.utils.Standing;
 import network.balanced.score.core.loans.utils.TokenUtils;
 
@@ -140,8 +140,8 @@ public class Position {
         BigInteger previousDebt = getDebt(collateralSymbol);
         BigInteger previousUserDebt = getTotalDebt();
 
-        BigInteger previousTotalDebt = DebtManager.getTotalDebt();
-        BigInteger previousTotalPerCollateralDebt = DebtManager.getCollateralDebt(collateralSymbol);
+        BigInteger previousTotalDebt = DebtDB.getTotalDebt();
+        BigInteger previousTotalPerCollateralDebt = DebtDB.getCollateralDebt(collateralSymbol);
         BigInteger currentValue = BigInteger.ZERO;
         if (value != null) {
             currentValue = value;
@@ -151,23 +151,23 @@ public class Position {
         BigInteger newTotalDebt = previousTotalDebt.add(debtChange);
         BigInteger newTotalPerCollateralDebt = previousTotalPerCollateralDebt.add(debtChange);
 
-        BigInteger debtAndBadDebtPerCollateral = newTotalPerCollateralDebt.add(DebtManager.getBadDebt(collateralSymbol));
-        BigInteger debtCeiling = DebtManager.getDebtCeiling(collateralSymbol);
+        BigInteger debtAndBadDebtPerCollateral = newTotalPerCollateralDebt.add(DebtDB.getBadDebt(collateralSymbol));
+        BigInteger debtCeiling = DebtDB.getDebtCeiling(collateralSymbol);
         Context.require(debtCeiling == null
                         || debtChange.signum() != 1
                         || debtAndBadDebtPerCollateral.compareTo(debtCeiling) <= 0,
                 TAG + ": Cannot mint more " + BNUSD_SYMBOL + " on collateral " + collateralSymbol);
 
-        DebtManager.setTotalDebt(newTotalDebt);
-        DebtManager.setCollateralDebt(collateralSymbol, newTotalPerCollateralDebt);
+        DebtDB.setTotalDebt(newTotalDebt);
+        DebtDB.setCollateralDebt(collateralSymbol, newTotalPerCollateralDebt);
 
         setLoansPosition(collateralSymbol, value);
         setPositionTotalDebt(previousUserDebt.add(debtChange));
 
         if (value == null) {
-            DebtManager.getBorrowers(collateralSymbol).remove(getId());
+            DebtDB.getBorrowers(collateralSymbol).remove(getId());
         } else {
-            DebtManager.getBorrowers(collateralSymbol).set(getId(), currentValue);
+            DebtDB.getBorrowers(collateralSymbol).set(getId(), currentValue);
         }
     }
 
@@ -176,7 +176,7 @@ public class Position {
     }
 
     public BigInteger totalCollateralInLoop(String collateralSymbol, boolean readOnly) {
-        Address collateralAddress = CollateralManager.getAddress(collateralSymbol);
+        Address collateralAddress = CollateralDB.getAddress(collateralSymbol);
 
         BigInteger amount = getCollateral(collateralSymbol, readOnly);
         BigInteger decimals = pow(BigInteger.TEN, TokenUtils.decimals(collateralAddress).intValue());
@@ -231,10 +231,10 @@ public class Position {
 
         Map<String, Map<String, BigInteger>> holdings = new HashMap<>();
         Map<String, Map<String, Object>> standings = new HashMap<>();
-        int collateralSymbolsCount = CollateralManager.collateralList.size();
+        int collateralSymbolsCount = CollateralDB.collateralList.size();
         for (int i = 0; i < collateralSymbolsCount; i++) {
             Map<String, BigInteger> collateralAmounts = new HashMap<>();
-            String collateralSymbol = CollateralManager.collateralList.get(i);
+            String collateralSymbol = CollateralDB.collateralList.get(i);
 
             collateralAmounts.put(BNUSD_SYMBOL, getDebt(collateralSymbol));
 
