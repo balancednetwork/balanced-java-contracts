@@ -80,7 +80,7 @@ public class LoansImpl {
     private void removeBALN() {
         String symbol = "BALN";
         Address address = CollateralManager.getAddress(symbol);
-        
+
         CollateralManager.symbolMap.set(symbol, null);
         removeFromArraydb(address, CollateralManager.collateralAddresses);
         removeFromArraydb(symbol, CollateralManager.collateralList);
@@ -355,7 +355,6 @@ public class LoansImpl {
         Position position = PositionsDB.getPosition(from);
         BigInteger oldUserDebt = position.getTotalDebt();
         BigInteger borrowed = position.getDebt(collateralSymbol);
-
         Context.require(_value.compareTo(borrowed) <= 0, TAG + ": Repaid amount is greater than the amount in the " +
                 "position of " + from);
 
@@ -398,7 +397,7 @@ public class LoansImpl {
         Map<Integer, BigInteger> positionsMap = batch.positions;
         BigInteger debtToBeRepaid = _amount;
         StringBuilder changeLog = new StringBuilder("{");
-        RewardsDataEntry[] rewardsBatchList = new RewardsDataEntry[batch.size];    
+        RewardsDataEntry[] rewardsBatchList = new RewardsDataEntry[batch.size];
         int dataEntryIndex = 0;
         for (Map.Entry<Integer, BigInteger> entry : positionsMap.entrySet()) {
             int id = entry.getKey();
@@ -435,7 +434,7 @@ public class LoansImpl {
         changeLog.delete(changeLog.length() - 2, changeLog.length()).append("}");
     }
 
-    
+
 
     @External
     public void withdrawAndUnstake(BigInteger _value) {
