@@ -140,9 +140,9 @@ class LoansTestBase extends UnitTest {
     @SuppressWarnings("unchecked")
     protected void verifyPosition(Address address, BigInteger collateral, BigInteger loan, String collateralSymbol) {
         Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", address);
-        Map<String, Map<String, Object>> standings = (Map<String, Map<String, Object>>) position.get("standings");
-        assertEquals(loan, standings.get(collateralSymbol).get("total_debt"));
-        assertEquals(collateral, standings.get(collateralSymbol).get("collateral"));
+        Map<String, Map<String, Object>> standings = (Map<String, Map<String, Object>>) position.get("holdings");
+        assertEquals(loan, standings.get(collateralSymbol).get("bnUSD"));
+        assertEquals(collateral, standings.get(collateralSymbol).get(collateralSymbol));
     }
 
     protected boolean compareRewardsData(RewardsDataEntry[] expectedDataEntries, RewardsDataEntry[] dataEntries) {

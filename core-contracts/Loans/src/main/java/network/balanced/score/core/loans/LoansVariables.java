@@ -36,6 +36,7 @@ public class LoansVariables {
     private static final String PER_COLLATERAL_LIQUIDATION_RATIO = "per_collateral_liquidation_ratio";
     private static final String ORIGINATION_FEE = "origination_fee";
     private static final String REDEMPTION_FEE = "redemption_fee";
+    private static final String REDEMPTION_DAO_FEE = "redemption_fee";
     private static final String RETIREMENT_BONUS = "retirement_bonus";
     private static final String LIQUIDATION_REWARD = "liquidation_reward";
     private static final String NEW_LOAN_MINIMUM = "new_loan_minimum";
@@ -58,6 +59,7 @@ public class LoansVariables {
             Context.newDictDB(PER_COLLATERAL_LIQUIDATION_RATIO, BigInteger.class);
     static final VarDB<BigInteger> originationFee = Context.newVarDB(ORIGINATION_FEE, BigInteger.class);
     static final VarDB<BigInteger> redemptionFee = Context.newVarDB(REDEMPTION_FEE, BigInteger.class);
+    static final VarDB<BigInteger> redemptionDaoFee = Context.newVarDB(REDEMPTION_DAO_FEE, BigInteger.class);
     static final VarDB<BigInteger> retirementBonus = Context.newVarDB(RETIREMENT_BONUS, BigInteger.class);
     static final VarDB<BigInteger> liquidationReward = Context.newVarDB(LIQUIDATION_REWARD, BigInteger.class);
     static final VarDB<BigInteger> newLoanMinimum = Context.newVarDB(NEW_LOAN_MINIMUM, BigInteger.class);

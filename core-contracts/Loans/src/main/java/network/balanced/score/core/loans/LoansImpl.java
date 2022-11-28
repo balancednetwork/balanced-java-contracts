@@ -24,6 +24,7 @@ import network.balanced.score.core.loans.debt.DebtDB;
 import network.balanced.score.core.loans.positions.Position;
 import network.balanced.score.core.loans.positions.PositionsDB;
 import network.balanced.score.core.loans.utils.PositionBatch;
+import network.balanced.score.lib.interfaces.Loans;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import network.balanced.score.lib.utils.Names;
@@ -50,7 +51,7 @@ import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Math.convertToNumber;
 import static network.balanced.score.lib.utils.Math.pow;
 
-public class LoansImpl {
+public class LoansImpl implements Loans {
 
     public static final String TAG = "BalancedLoans";
 
@@ -96,6 +97,16 @@ public class LoansImpl {
     @External(readonly = true)
     public String name() {
         return Names.LOANS;
+    }
+
+    @External
+    public void updateAddress(String name) {
+        resetAddress(name);
+    }
+
+    @External(readonly = true)
+    public Address getAddress(String name) {
+        return getAddressByName(name);
     }
 
     @External
@@ -381,14 +392,16 @@ public class LoansImpl {
     public void redeemCollateral(Address _collateralAddress, BigInteger _amount) {
         loansOn();
         Address caller = Context.getCaller();
-        String collateralSymbol = TokenUtils.symbol(_collateralAddress);
-        Context.require(CollateralDB.getAddress(collateralSymbol).equals(_collateralAddress),
-                collateralSymbol + " is not a supported collateral type.");
+        String collateralSymbol = CollateralDB.getSymbol(_collateralAddress);
+        BigInteger daofundFee = redemptionDaoFee.getOrDefault(BigInteger.ZERO).multiply(_amount).divide(POINTS);
 
-        // dao fee
-        TokenUtils.burnFrom(getBnusd(), caller, _amount);
+        Address bnUSDAddress = getBnusd();
+        TokenUtils.burnFrom(bnUSDAddress, caller, _amount);
+        TokenUtils.mintTo(bnUSDAddress, getDaofund(), daofundFee);
+        BigInteger debtToBeRepaid = _amount.subtract(daofundFee);
+
         BigInteger MAX_REDEMPTION = maxRetirePercent.get();
-        BigInteger REDEMPTION_FEE = BigInteger.valueOf(1000);
+        BigInteger REDEMPTION_FEE = redemptionFee.get();
         BigInteger debtNeeded = _amount.multiply(POINTS.divide(MAX_REDEMPTION));
         BigInteger oldTotalDebt = DebtDB.getTotalDebt();
         BigInteger USDRateInLoop = TokenUtils.getBnUSDPriceInLoop();
@@ -396,10 +409,10 @@ public class LoansImpl {
 
         PositionBatch batch = DebtDB.getBorrowers(collateralSymbol).readDataBatch(debtNeeded);
         Map<Integer, BigInteger> positionsMap = batch.positions;
-        BigInteger debtToBeRepaid = _amount;
         StringBuilder changeLog = new StringBuilder("{");
         RewardsDataEntry[] rewardsBatchList = new RewardsDataEntry[batch.size];
         int dataEntryIndex = 0;
+        BigInteger totalCollateralSold = BigInteger.ZERO;
         for (Map.Entry<Integer, BigInteger> entry : positionsMap.entrySet()) {
             int id = entry.getKey();
             Position position = PositionsDB.uncheckedGet(id);
@@ -414,6 +427,7 @@ public class LoansImpl {
             BigInteger collateralSold = amountRepaid.multiply(USDRateInLoop).divide(collateralRateInLoop);
             BigInteger fee = REDEMPTION_FEE.multiply(collateralSold).divide(POINTS);
             collateralSold = collateralSold.subtract(fee);
+            totalCollateralSold = totalCollateralSold.add(collateralSold);
 
             RewardsDataEntry userEntry = new RewardsDataEntry();
             userEntry._user = position.getAddress();
@@ -431,11 +445,9 @@ public class LoansImpl {
         }
 
         Context.call(getRewards(), "updateBatchRewardsData", "Loans", oldTotalDebt, rewardsBatchList);
-
+        transferCollateral(collateralSymbol, caller, totalCollateralSold, "bnUSD redeemed for collateral", new byte[0]);
         changeLog.delete(changeLog.length() - 2, changeLog.length()).append("}");
     }
-
-
 
     @External
     public void withdrawAndUnstake(BigInteger _value) {
@@ -692,22 +704,8 @@ public class LoansImpl {
         TokenTransfer(to, amount, logMessage);
     }
 
-    private void transferAsset(Address address, Address to, BigInteger amount, String msg, byte[] data) {
-        Context.call(address, "transfer", to, amount, data);
-        String logMessage = msg + " " + amount.toString() + " " + TokenUtils.symbol(address) + " sent to " + to;
-        TokenTransfer(to, amount, logMessage);
-    }
-
     public static Object call(Address targetAddress, String method, Object... params) {
         return Context.call(targetAddress, method, params);
-    }
-
-    private byte[] createSwapData(Address toToken) {
-        JsonObject data = Json.object();
-        data.add("method", "_swap");
-        data.add("params", Json.object().add("toToken", toToken.toString()));
-
-        return data.toString().getBytes();
     }
 
     private BigInteger stakeICX(BigInteger amount) {
@@ -759,6 +757,28 @@ public class LoansImpl {
     public void setRedemptionFee(BigInteger _fee) {
         onlyGovernance();
         redemptionFee.set(_fee);
+    }
+
+    @External(readonly = true)
+    public BigInteger getRedemptionFee() {
+        return redemptionFee.get();
+    }
+
+    @External
+    public void getRedemptionFee(BigInteger _fee) {
+        onlyGovernance();
+        redemptionFee.set(_fee);
+    }
+
+    @External
+    public void setRedemptionDaoFee(BigInteger _fee) {
+        onlyGovernance();
+        redemptionDaoFee.set(_fee);
+    }
+
+    @External(readonly = true)
+    public BigInteger getRedemptionDaoFee() {
+        return redemptionDaoFee.getOrDefault(BigInteger.ZERO);
     }
 
     @External

@@ -32,8 +32,7 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, GovernanceAddress, StakingAddress,
-        RebalancingAddress, DividendsAddress, ReserveAddress, RewardsAddress, OracleAddress, BnusdAddress {
+public interface Loans extends Name, TokenFallback, AddressManager {
 
     @External
     void toggleLoansOn();
@@ -101,12 +100,6 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
     void returnAsset(String _symbol, BigInteger _value, @Optional String _collateralSymbol);
 
     @External
-    void raisePrice(Address _collateralAddress, BigInteger _total_tokens_required);
-
-    @External
-    void lowerPrice(Address _collateralAddress, BigInteger _total_tokens_required);
-
-    @External
     void withdrawAndUnstake(BigInteger _value);
 
     @External
@@ -135,6 +128,15 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
 
     @External
     void setRedemptionFee(BigInteger _fee);
+
+    @External(readonly = true)
+    BigInteger getRedemptionFee();
+
+    @External
+    void setRedemptionDaoFee(BigInteger _fee);
+
+    @External(readonly = true)
+    BigInteger getRedemptionDaoFee();
 
     @External
     void setRetirementBonus(BigInteger _points);
