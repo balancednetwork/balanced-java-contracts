@@ -30,12 +30,22 @@ import score.DictDB;
 import scorex.util.HashMap;
 
 
-public class CollateralManager {
+public class CollateralDB {
     private static final String TAG = "BalancedLoansAssets";
     public static ArrayDB<Address> collateralAddresses = Context.newArrayDB("collateral_only_address_list",
             Address.class);
     public static ArrayDB<String> collateralList = Context.newArrayDB("collateral", String.class);
-    public static final DictDB<String, String> symbolMap = Context.newDictDB("symbol|address", String.class);
+    public static final DictDB<String, String> symbolMap = Context.newDictDB("symbol|", String.class);
+    public static final DictDB<String, String> addressMap = Context.newDictDB("address|symbol", String.class);
+
+    public static void migrateAddressMap() {
+        int collateralCount = collateralList.size();
+        for (int i = 0; i < collateralCount; i++) {
+            String symbol = collateralList.get(i);
+            String collateralAddress = symbolMap.get(symbol);
+            addressMap.set(collateralAddress, symbol);
+        }
+    }
 
     public static int size() {
         return collateralAddresses.size();
@@ -46,15 +56,22 @@ public class CollateralManager {
         return Address.fromString(symbolMap.get(symbol));
     }
 
-    public static void addCollateral(Address address) {
+    public static String getSymbol(Address address) {
+        String symbol =  addressMap.get(address.toString());
+        Context.require(symbol != null, address + " is not a supported collateral type.");
+        return symbol;
+    }
+
+    public static void addCollateral(Address address, String symbol) {
         String collateralToAdd = address.toString();
         Context.require(!arrayDbContains(collateralAddresses, address), TAG + ": " + collateralToAdd + " already " +
                 "exists in the database.");
 
         collateralAddresses.add(address);
 
-        String symbol = TokenUtils.symbol(address);
         symbolMap.set(symbol, collateralToAdd);
+        addressMap.set(collateralToAdd, symbol);
+
         collateralList.add(symbol);
     }
 

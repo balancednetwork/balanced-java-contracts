@@ -36,16 +36,8 @@ public  class TokenUtils {
         return (BigInteger) call(tokenAddress, "decimals");
     }
 
-    public static BigInteger totalSupply(Address tokenAddress) {
-        return (BigInteger) call(tokenAddress, "totalSupply");
-    }
-
     public static BigInteger balanceOf(Address tokenAddress, Address address) {
         return (BigInteger) call(tokenAddress, "balanceOf", address);
-    }
-
-    public static String getPeg(Address tokenAddress) {
-        return (String) call(tokenAddress, "getPeg");
     }
 
     public static BigInteger getBnUSDPriceInLoop() {

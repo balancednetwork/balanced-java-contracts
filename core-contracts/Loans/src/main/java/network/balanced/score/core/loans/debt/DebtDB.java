@@ -3,7 +3,7 @@ package network.balanced.score.core.loans.debt;
 import java.math.BigInteger;
 import java.util.Map;
 
-import network.balanced.score.core.loans.collateral.CollateralManager;
+import network.balanced.score.core.loans.collateral.CollateralDB;
 import network.balanced.score.core.loans.linkedlist.LinkedListDB;
 import score.BranchDB;
 import score.Context;
@@ -13,7 +13,7 @@ import scorex.util.HashMap;
 import static network.balanced.score.core.loans.utils.LoansConstants.*;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getBnusd;
 
-public class DebtManager {
+public class DebtDB {
     private static final String TOTAL_DEBT = "totalDebts";
     private static final String TOTAL_COLLATERAL_DEBTS = "totalCollateralDebts";
     private static final String DEBT_CEILINGS = "debt_ceilings";
@@ -82,10 +82,10 @@ public class DebtManager {
         Map<String, Object> debtDetails = new HashMap<>();
         Map<String, Map<String, Object>> loansDetails = new HashMap<>();
 
-        int collateralListCount = CollateralManager.collateralList.size();
+        int collateralListCount = CollateralDB.collateralList.size();
         for (int i = 0; i < collateralListCount; i++) {
             Map<String, Object> loansDetail = new HashMap<>();
-            String symbol = CollateralManager.collateralList.get(i);
+            String symbol = CollateralDB.collateralList.get(i);
             loansDetail.put("borrowers", getBorrowers(symbol).size());
             loansDetail.put("bad_debt", getBadDebt(symbol));
             loansDetail.put("liquidation_pool", getLiquidationPool(symbol));

@@ -245,7 +245,7 @@ class LoansTest extends LoansTestBase {
         // Arrange
         Account account = admin;
         BigInteger value = BigInteger.valueOf(100).multiply(EXA);
-        String expectedErrorMessage = "Reverted(0): " + "bnUSD is not a supported collateral type.";
+        String expectedErrorMessage = "Reverted(0): " + bnusd.getAddress() + " is not a supported collateral type.";
 
         // Assert & Act
         Executable transferToken = () -> loans.invoke(bnusd.account, "tokenFallback", account.getAddress(), value, new byte[0]);
@@ -257,10 +257,11 @@ class LoansTest extends LoansTestBase {
         // Arrange
         Account account = admin;
         BigInteger value = BigInteger.valueOf(100).multiply(EXA);
-        String expectedErrorMessage = "Reverted(0): BalancedLoans: The Balanced Loans contract does not accept that " +
-                "token type.";
+
         MockContract<IRC2> fakesICX = new MockContract<>(IRC2ScoreInterface.class, sm, admin);
         when(fakesICX.mock.symbol()).thenReturn((String) "sICX");
+        String expectedErrorMessage = "Reverted(0): " + fakesICX.getAddress() + " is not a supported collateral type.";
+
 
         // Assert & Act
         Executable transferToken = () -> loans.invoke(fakesICX.account, "tokenFallback", account.getAddress(), value,
