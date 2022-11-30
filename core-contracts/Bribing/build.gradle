@@ -79,7 +79,7 @@ deployJar {
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
     parameters {
-        arg('rewards', Addresses.berlin.rewards)
+        arg('rewards', Addresses.mainnet.rewards)
     }
 }
 
