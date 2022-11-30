@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.Map;
 
 import network.balanced.score.core.rewards.utils.BalanceData;
-import network.balanced.score.core.rewards.utils.EventLogger;
 import network.balanced.score.core.rewards.utils.RewardsConstants;
 import network.balanced.score.lib.interfaces.Rewards;
 import network.balanced.score.lib.structs.DistributionPercentage;
@@ -149,6 +148,8 @@ public class RewardsImpl implements Rewards {
             completeRecipient.add(DAOFUND);
             boostWeight.set(WEIGHT);
         }
+
+        SourceWeightController.rewards = this;
     }
 
     @External(readonly = true)
@@ -1005,10 +1006,6 @@ public class RewardsImpl implements Rewards {
         return weight.multiply(dist).divide(HUNDRED_PERCENTAGE).add(fixedDist);
     }
 
-    public static EventLogger getEventLogger() {
-        return new EventLogger();
-    }
-
     private static BigInteger dailyDistribution(BigInteger day) {
         BigInteger baseDistribution = pow(BigInteger.TEN, 23);
         int offset = 5;
@@ -1111,6 +1108,27 @@ public class RewardsImpl implements Rewards {
 
     @EventLog(indexed = 2)
     public void RewardsAccrued(Address _user, String _source, BigInteger _value) {
+    }
+
+    @EventLog(indexed = 2)
+    public void VoteCast(String vote_name, boolean vote, Address voter, BigInteger stake, BigInteger total_for,
+                   BigInteger total_against) {
+    }
+
+    @EventLog(indexed = 2)
+    public void AddType(String typeName, int typeId) {
+    }
+
+    @EventLog(indexed = 1)
+    public void NewTypeWeight(int typeId, BigInteger time, BigInteger weight, BigInteger totalWeight) {
+    }
+
+    @EventLog(indexed = 2)
+    public void VoteForSource(String sourceName, Address user, BigInteger weight, BigInteger time) {
+    }
+
+    @EventLog(indexed = 1)
+    public void NewSource(String sourceName, int typeId, BigInteger weight) {
     }
 
     // deprecated functions

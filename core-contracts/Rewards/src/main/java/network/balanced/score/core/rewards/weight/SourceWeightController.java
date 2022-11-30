@@ -26,6 +26,7 @@ import score.Context;
 import score.DictDB;
 import score.VarDB;
 import scorex.util.HashMap;
+import network.balanced.score.core.rewards.RewardsImpl;
 import network.balanced.score.lib.structs.Point;
 import network.balanced.score.lib.structs.VotedSlope;
 import network.balanced.score.lib.utils.EnumerableSetDB;
@@ -33,11 +34,11 @@ import network.balanced.score.lib.utils.EnumerableSetDB;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.core.rewards.RewardsImpl.boostedBaln;
-import static network.balanced.score.core.rewards.RewardsImpl.getEventLogger;
 import static network.balanced.score.lib.utils.ArrayDBUtils.removeFromArraydb;
 import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
 
 public class SourceWeightController {
+    public static RewardsImpl rewards;
     // 7 * 86400 seconds - all future times are rounded by week
     public static final BigInteger WEEK = MICRO_SECONDS_IN_A_DAY.multiply(BigInteger.valueOf(7));
     // Cannot change weight votes more often than once in 10 days
@@ -278,7 +279,7 @@ public class SourceWeightController {
         }
 
         timeWeight.set(name, nextTime);
-        getEventLogger().NewSource(name, sourceType, weight);
+        rewards.NewSource(name, sourceType, weight);
     }
 
     public static void checkpoint() {
@@ -350,7 +351,7 @@ public class SourceWeightController {
         timeTotal.set(nextTime);
         timeTypeWeight.set(typeId, nextTime);
 
-        getEventLogger().NewTypeWeight(typeId, nextTime, oldWeight, totalWeight);
+        rewards.NewTypeWeight(typeId, nextTime, oldWeight, totalWeight);
     }
 
     public static void addType(String name, BigInteger weight) {
@@ -366,7 +367,7 @@ public class SourceWeightController {
             changeTypeWeight(typeId, weight);
         }
 
-        getEventLogger().AddType(name, typeId);
+        rewards.AddType(name, typeId);
     }
 
     public static void voteForSourceWeights(String sourceName, BigInteger userWeight) {
@@ -466,7 +467,7 @@ public class SourceWeightController {
         }
 
         lastUserVote.at(user).set(sourceName, timestamp);
-        getEventLogger().VoteForSource(sourceName, user, newWeight, nextTime);
+        rewards.VoteForSource(sourceName, user, newWeight, nextTime);
     }
 
     public static void setVotable(String name, boolean votable) {
