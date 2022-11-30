@@ -212,6 +212,7 @@ class LoansTestBase extends UnitTest {
     }
 
     public void setup() throws Exception {
+        mockReadonly();
         mockBalanced = new MockBalanced(sm, admin);
 
         sicx = mockBalanced.sicx;

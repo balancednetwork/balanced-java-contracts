@@ -1751,4 +1751,66 @@ class LoansTest extends LoansTestBase {
         assertEquals(totalCollateralRedeemed, collateralRedeemedAccount1.add(collateralRedeemedAccount2).add(collateralRedeemedAccount3));
         verify(sicx.mock).transfer(eq(redeemer.getAddress()), eq(totalCollateralRedeemed), any(byte[].class));
     }
+
+    @Test
+    void redeemCollateral_iETH() {
+        // Arrange
+        Account account1 = sm.createAccount();
+        Account account2 = sm.createAccount();
+        Account account3 = sm.createAccount();
+        Account account4 = sm.createAccount();
+        Account redeemer = sm.createAccount();
+        BigInteger collateral = BigInteger.valueOf(4000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(400).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
+        BigInteger debt = loan.add(expectedFee);
+
+        BigInteger maxRedemptionPercentage = BigInteger.valueOf(100);
+        BigInteger redemptionFee = (BigInteger) loans.call("getRedemptionFee");
+        BigInteger daoFeePercentage = (BigInteger) loans.call("getRedemptionDaoFee");
+
+        BigInteger amountToRedeem = BigInteger.valueOf(10).multiply(EXA);
+        BigInteger expectedDaoFee = daoFeePercentage.multiply(amountToRedeem).divide(POINTS);
+        BigInteger amountRedeemed = amountToRedeem.subtract(expectedDaoFee);
+        when(bnusd.mock.balanceOf(redeemer.getAddress())).thenReturn(amountToRedeem);
+
+        BigInteger maxRetire = maxRedemptionPercentage.multiply(debt).divide(POINTS);
+        BigInteger expectedRepaidAccount1 = maxRetire;
+        BigInteger expectedRepaidAccount2 = maxRetire;
+        BigInteger expectedRepaidAccount3 = amountRedeemed.subtract(maxRetire).subtract(maxRetire);
+
+        BigInteger iETHRate = EXA;
+        BigInteger bnUSDRate = BigInteger.ONE.multiply(EXA);
+        mockOraclePrice("iETH", iETHRate);
+        mockOraclePrice("bnUSD", bnUSDRate);
+
+        BigInteger totalRedemptionFee = amountRedeemed.multiply(redemptionFee).divide(POINTS);
+        BigInteger totalCollateralRedeemed = amountRedeemed.subtract(totalRedemptionFee).multiply(bnUSDRate).divide(iETHRate);
+
+        BigInteger feeAccount1 = expectedRepaidAccount1.multiply(redemptionFee).divide(POINTS);
+        BigInteger collateralRedeemedAccount1 = expectedRepaidAccount1.subtract(feeAccount1).multiply(bnUSDRate).divide(iETHRate);
+        BigInteger collateralRedeemedAccount2 = collateralRedeemedAccount1;
+
+        BigInteger feeAccount3 = expectedRepaidAccount3.multiply(redemptionFee).divide(POINTS);
+        BigInteger collateralRedeemedAccount3 = expectedRepaidAccount3.subtract(feeAccount3).multiply(bnUSDRate).divide(iETHRate);
+
+        // Act
+        takeLoaniETH(account1, collateral, loan);
+        takeLoaniETH(account2, collateral, loan);
+        takeLoaniETH(account3, collateral, loan);
+        takeLoaniETH(account4, collateral, loan);
+
+        loans.invoke(redeemer, "redeemCollateral", ieth.getAddress(), amountToRedeem);
+
+        // Assert
+        verify(bnusd.mock).burnFrom(redeemer.getAddress(), amountToRedeem);
+        verify(bnusd.mock).mintTo(mockBalanced.daofund.getAddress(), expectedDaoFee, new byte[0]);
+
+        verifyPosition(account1.getAddress(), collateral.subtract(collateralRedeemedAccount1), debt.subtract(expectedRepaidAccount1), "iETH");
+        verifyPosition(account2.getAddress(), collateral.subtract(collateralRedeemedAccount2), debt.subtract(expectedRepaidAccount2), "iETH");
+        verifyPosition(account3.getAddress(), collateral.subtract(collateralRedeemedAccount3), debt.subtract(expectedRepaidAccount3), "iETH");
+        verifyPosition(account4.getAddress(), collateral, debt, "iETH");
+        assertEquals(totalCollateralRedeemed, collateralRedeemedAccount1.add(collateralRedeemedAccount2).add(collateralRedeemedAccount3));
+        verify(ieth.mock).transfer(eq(redeemer.getAddress()), eq(totalCollateralRedeemed), any(byte[].class));
+    }
 }

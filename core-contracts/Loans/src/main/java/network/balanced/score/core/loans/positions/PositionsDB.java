@@ -26,6 +26,7 @@ import java.util.Map;
 
 import static network.balanced.score.core.loans.positions.Position.TAG;
 import static network.balanced.score.core.loans.utils.LoansConstants.SICX_SYMBOL;
+import static network.balanced.score.lib.utils.Check.readonly;
 
 public class PositionsDB {
     private static final String POSITION_DB_PREFIX = "position";
@@ -72,13 +73,9 @@ public class PositionsDB {
     }
 
     public static Position getPosition(Address owner) {
-        return getPosition(owner, false);
-    }
-
-    public static Position getPosition(Address owner, boolean readOnly) {
         int id = getAddressIds(owner);
         if (id == 0) {
-            if (readOnly) {
+            if (readonly()) {
                 Context.revert(TAG + ": Address " + owner + " has no open position");
             }
             return newPosition(owner);

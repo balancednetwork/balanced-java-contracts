@@ -33,7 +33,6 @@ import java.util.Map;
 @ScoreClient
 @ScoreInterface
 public interface Loans extends Name, TokenFallback, AddressManager {
-
     @External
     void toggleLoansOn();
 
@@ -110,6 +109,9 @@ public interface Loans extends Name, TokenFallback, AddressManager {
 
     @External
     void liquidate(Address _owner, @Optional String _collateralSymbol);
+
+    @External
+    void redeemCollateral(Address _collateralAddress, BigInteger _amount);
 
     @External
     void setLockingRatio(String _symbol, BigInteger _ratio);
