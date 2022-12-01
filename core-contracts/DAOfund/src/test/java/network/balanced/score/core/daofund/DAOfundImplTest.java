@@ -39,6 +39,7 @@ import static network.balanced.score.core.daofund.DAOfundImpl.TAG;
 import static network.balanced.score.lib.test.UnitTest.assertOnlyCallableBy;
 import static network.balanced.score.lib.test.UnitTest.expectErrorMessage;
 import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Constants.POINTS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -160,19 +161,6 @@ class DAOfundImplTest extends TestBase {
         assertEquals(expectedDisbursement, daofundScore.call("getDisbursementDetail", receiver.getAddress()));
     }
 
-    // @External
-    // public void claimRewards() {
-    //     POLManager.claimRewards();
-    // }
-    //     String data;
-    // boolean hasLocked = Context.call(Boolean.class, getBoostedBaln(), "hasLocked", Context.getAddress());
-    // if (!hasLocked) {
-    //     data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
-    // } else {
-    //     data = "{\"method\":\"increaseAmount\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
-    // }
-
-    // Context.call(Context.getCaller(), "transfer", getBoostedBaln(), amount, data.getBytes());
     @Test
     void claimRewards_noLock() {
         // Arrange
@@ -256,6 +244,7 @@ class DAOfundImplTest extends TestBase {
 
         BigInteger pid = BigInteger.TWO;
         BigInteger lpBalance = BigInteger.TEN;
+        when(mockBalanced.dex.mock.getPrice(pid)).thenReturn(quoteAmount.multiply(EXA).divide(baseAmount));
         when(mockBalanced.dex.mock.getPoolId(baseToken, quoteToken)).thenReturn(pid);
         when(mockBalanced.dex.mock.balanceOf(daofundScore.getAddress(), pid)).thenReturn(lpBalance);
 
@@ -270,6 +259,45 @@ class DAOfundImplTest extends TestBase {
         verify(mockBalanced.bnUSD.mock).transfer(mockBalanced.dex.getAddress(), quoteAmount, tokenDepositData);
         verify(mockBalanced.dex.mock).add(baseToken, quoteToken, baseAmount, quoteAmount, true);
         verify(mockBalanced.dex.mock).transfer(mockBalanced.stakedLp.getAddress(), lpBalance, pid, new byte[0]);
+    }
+
+    @Test
+    void supplyLiquidity_ToLargePriceChange() {
+        // Arrange
+        Address baseToken = mockBalanced.sicx.getAddress();
+        BigInteger baseAmount = EXA;
+
+        Address quoteToken = mockBalanced.bnUSD.getAddress();
+        BigInteger quoteAmount = EXA.multiply(BigInteger.TWO);
+
+        BigInteger pid = BigInteger.TWO;
+        BigInteger lpBalance = BigInteger.TEN;
+        when(mockBalanced.dex.mock.getPoolId(baseToken, quoteToken)).thenReturn(pid);
+        when(mockBalanced.dex.mock.balanceOf(daofundScore.getAddress(), pid)).thenReturn(lpBalance);
+
+        BigInteger price = quoteAmount.multiply(EXA).divide(baseAmount);
+        BigInteger priceChangeThreshold = (BigInteger) daofundScore.call("getPOLSupplySlippage");
+        BigInteger maxDiff = price.multiply(priceChangeThreshold).divide(POINTS);
+
+        // Act & Assert
+        String expectedErrorMessage = "Price on dex was above allowed threshold";
+        when(mockBalanced.dex.mock.getPrice(pid)).thenReturn(price.add(maxDiff));
+        Executable aboveThreshold = () -> daofundScore.invoke(mockBalanced.governance.account, "supplyLiquidity", baseToken,
+            baseAmount, quoteToken,quoteAmount);
+        expectErrorMessage(aboveThreshold, expectedErrorMessage);
+
+        when(mockBalanced.dex.mock.getPrice(pid)).thenReturn(price.add(maxDiff).subtract(BigInteger.ONE));
+        daofundScore.invoke(mockBalanced.governance.account, "supplyLiquidity", baseToken, baseAmount, quoteToken, quoteAmount);
+
+        // Act & Assert
+        expectedErrorMessage = "Price on dex was below allowed threshold";
+        when(mockBalanced.dex.mock.getPrice(pid)).thenReturn(price.subtract(maxDiff));
+        Executable belowThreshold = () -> daofundScore.invoke(mockBalanced.governance.account, "supplyLiquidity", baseToken,
+            baseAmount, quoteToken,quoteAmount);
+        expectErrorMessage(belowThreshold, expectedErrorMessage);
+
+        when(mockBalanced.dex.mock.getPrice(pid)).thenReturn(price.subtract(maxDiff).add(BigInteger.ONE));
+        daofundScore.invoke(mockBalanced.governance.account, "supplyLiquidity", baseToken, baseAmount, quoteToken,quoteAmount);
     }
 
     @Test
@@ -300,6 +328,16 @@ class DAOfundImplTest extends TestBase {
 
         // Assert
         verify(mockBalanced.dex.mock).transfer(mockBalanced.stakedLp.getAddress(), lpBalance, pid, new byte[0]);
+    }
+
+    @Test
+    void setPOLSupplySlippage() {
+        BigInteger slippage = BigInteger.valueOf(700);
+
+        assertOnlyCallableBy(mockBalanced.governance.getAddress(), daofundScore, "setPOLSupplySlippage", slippage);
+        daofundScore.invoke(mockBalanced.governance.account, "setPOLSupplySlippage", slippage);
+
+        assertEquals(slippage, daofundScore.call("getPOLSupplySlippage"));
     }
 
 }

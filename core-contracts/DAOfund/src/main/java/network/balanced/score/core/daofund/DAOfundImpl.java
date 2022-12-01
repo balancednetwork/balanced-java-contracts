@@ -61,6 +61,7 @@ public class DAOfundImpl implements DAOfund {
         }
 
         setGovernance(governance.get());
+        POLManager.setPOLSupplySlippage(BigInteger.valueOf(1_000));
     }
 
     @External(readonly = true)
@@ -194,6 +195,17 @@ public class DAOfundImpl implements DAOfund {
     @External
     public void stakeLPTokens(BigInteger pid) {
         POLManager.stakeLPTokens(pid);
+    }
+
+    @External
+    public void setPOLSupplySlippage(BigInteger points) {
+        onlyGovernance();
+        POLManager.setPOLSupplySlippage(points);
+    }
+
+    @External(readonly = true)
+    public BigInteger getPOLSupplySlippage() {
+        return POLManager.getPOLSupplySlippage();
     }
 
     @External(readonly = true)
