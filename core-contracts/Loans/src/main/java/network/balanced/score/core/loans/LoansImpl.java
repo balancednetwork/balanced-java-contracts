@@ -63,6 +63,7 @@ public class LoansImpl implements Loans {
             liquidationRatio.set(SICX_SYMBOL, LIQUIDATION_RATIO);
             originationFee.set(ORIGINATION_FEE);
             redemptionFee.set(REDEMPTION_FEE);
+            redemptionDaoFee.set(REDEMPTION_DAO_FEE);
             liquidationReward.set(LIQUIDATION_REWARD);
             retirementBonus.set(BAD_DEBT_RETIREMENT_BONUS);
             newLoanMinimum.set(NEW_BNUSD_LOAN_MINIMUM);
@@ -78,6 +79,10 @@ public class LoansImpl implements Loans {
         }
 
         CollateralDB.migrateAddressMap();
+        if (redemptionDaoFee.get() == null) {
+            redemptionFee.set(REDEMPTION_FEE);
+            redemptionDaoFee.set(REDEMPTION_DAO_FEE);
+        }
 
     }
 
@@ -827,9 +832,6 @@ public class LoansImpl implements Loans {
     @External(readonly = true)
     public Map<String, Object> getParameters() {
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put("reserve_fund", getReserve());
-        parameters.put("rewards", getRewards());
-        parameters.put("staking", getStaking());
         parameters.put("locking ratio", lockingRatio.get(SICX_SYMBOL));
         parameters.put("liquidation ratio", liquidationRatio.get(SICX_SYMBOL));
         parameters.put("origination fee", originationFee.get());

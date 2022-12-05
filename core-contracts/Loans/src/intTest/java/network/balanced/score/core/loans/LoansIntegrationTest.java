@@ -16,14 +16,6 @@
 
 package network.balanced.score.core.loans;
 
-import static network.balanced.score.lib.test.integration.BalancedUtils.createIRC2Token;
-import static network.balanced.score.lib.test.integration.BalancedUtils.*;
-import static network.balanced.score.lib.test.integration.BalancedUtils.hexObjectToBigInteger;
-import static network.balanced.score.lib.utils.Constants.EXA;
-import static network.balanced.score.lib.utils.Constants.POINTS;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -39,14 +31,17 @@ import foundation.icon.score.client.RevertedException;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
 import score.UserRevertedException;
 
-import java.math.BigInteger;
-import java.util.Map;
 
+import static network.balanced.score.lib.test.integration.BalancedUtils.createIRC2Token;
 import static network.balanced.score.lib.test.integration.BalancedUtils.*;
+import static network.balanced.score.lib.test.integration.BalancedUtils.hexObjectToBigInteger;
+import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Constants.POINTS;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static network.balanced.score.lib.utils.Constants.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
@@ -577,34 +572,49 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
     @Test
     @Order(21)
     void redeemCollateral_sICX() throws Exception {
-        BigInteger initialTotalDebt = getTotalDebt();
+        BigInteger daoFee = reader.loans.getRedemptionDaoFee();
 
         BalancedClient loanTaker = balanced.newClient();
         BigInteger collateral = BigInteger.TEN.pow(5).multiply(sicxDecimals);
-        BigInteger loanAmount = BigInteger.TEN.pow(22);
+        BigInteger redeemAmount = BigInteger.TEN.pow(22);
+        loanTaker.stakeDepositAndBorrow(collateral, redeemAmount);
 
+        BigInteger initialTotalDebt = getTotalDebt();
         BigInteger initialsICXDebt = reader.loans.getTotalCollateralDebt("sICX", "bnUSD");
 
         // Act
-        loanTaker.stakeDepositAndBorrow(collateral, loanAmount);
-        loanTaker.loans.redeemCollateral(balanced.sicx._address(), loanAmount);
-        assertTrue(initialTotalDebt.compareTo(getTotalDebt()) < 0);
+        loanTaker.loans.redeemCollateral(balanced.sicx._address(), redeemAmount);
+
+        // Assert
+        BigInteger expectedFee = redeemAmount.multiply(daoFee).divide(POINTS);
+        BigInteger expectedDebtRepaid = redeemAmount.subtract(expectedFee);
+        assertEquals(initialTotalDebt.subtract(expectedDebtRepaid), getTotalDebt());
+        assertEquals(initialsICXDebt.subtract(expectedDebtRepaid), reader.loans.getTotalCollateralDebt("sICX", "bnUSD"));
     }
 
     @Test
     @Order(22)
     void redeemCollateral_iETH() throws Exception {
-        BigInteger initialTotalDebt = getTotalDebt();
+        // Arrange
+        BigInteger daoFee = reader.loans.getRedemptionDaoFee();
 
         BalancedClient loanTaker = balanced.newClient();
         BigInteger collateral = BigInteger.TEN.multiply(iethDecimals);
-        BigInteger loanAmount = BigInteger.TEN.pow(22);
+        BigInteger redeemAmount = BigInteger.TEN.pow(22);
         owner.irc2(ethAddress).mintTo(loanTaker.getAddress(), collateral, null);
+        loanTaker.depositAndBorrow(ethAddress, collateral, redeemAmount);
+
+        BigInteger initialTotalDebt = getTotalDebt();
+        BigInteger initialETHDebt = reader.loans.getTotalCollateralDebt("iETH", "bnUSD");
 
         // Act
-        loanTaker.depositAndBorrow(ethAddress, collateral, loanAmount);
-        loanTaker.loans.redeemCollateral(ethAddress, loanAmount);
-        assertTrue(initialTotalDebt.compareTo(getTotalDebt()) < 0);
+        loanTaker.loans.redeemCollateral(ethAddress, redeemAmount);
+
+        // Assert
+        BigInteger expectedFee = redeemAmount.multiply(daoFee).divide(POINTS);
+        BigInteger expectedDebtRepaid = redeemAmount.subtract(expectedFee);
+        assertEquals(initialTotalDebt.subtract(expectedDebtRepaid), getTotalDebt());
+        assertEquals(initialETHDebt.subtract(expectedDebtRepaid), reader.loans.getTotalCollateralDebt("iETH", "bnUSD"));
     }
 
     @Test
