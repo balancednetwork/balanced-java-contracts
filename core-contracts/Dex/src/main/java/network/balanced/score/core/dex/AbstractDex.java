@@ -605,6 +605,7 @@ public abstract class AbstractDex implements Dex {
 
         BigInteger lpFees = value.multiply(poolLpFee.get()).divide(FEE_SCALE);
         BigInteger balnFees = value.multiply(poolBalnFee.get()).divide(FEE_SCALE);
+        BigInteger initialBalnFees = balnFees;
         BigInteger fees = lpFees.add(balnFees);
 
         Address poolBaseToken = poolBase.get(id);
@@ -671,7 +672,7 @@ public abstract class AbstractDex implements Dex {
         }
 
         Swap(BigInteger.valueOf(id), poolBaseToken, fromToken, toToken, sender, receiver, value, sendAmount,
-                BigInteger.valueOf(Context.getBlockTimestamp()), lpFees, balnFees, totalBase, totalQuote, endingPrice
+                BigInteger.valueOf(Context.getBlockTimestamp()), lpFees, initialBalnFees, totalBase, totalQuote, endingPrice
                 , effectiveFillPrice);
     }
 
