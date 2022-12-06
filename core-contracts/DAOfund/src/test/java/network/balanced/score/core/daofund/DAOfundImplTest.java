@@ -86,93 +86,30 @@ class DAOfundImplTest extends TestBase {
     }
 
     @Test
-    void addSymbolToSetdb() {
-        try (MockedStatic<Context> loansMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS)) {
-            daofundScore.invoke(mockBalanced.governance.account, "addAcceptedToken", mockBalanced.sicx.getAddress());
-            daofundScore.invoke(mockBalanced.governance.account, "addAcceptedToken", mockBalanced.baln.getAddress());
-            daofundScore.invoke(mockBalanced.governance.account, "addAcceptedToken", mockBalanced.bnUSD.getAddress());
-
-            Map<String, BigInteger> expectedBalances = Map.of(
-                    mockBalanced.sicx.getAddress().toString(), BigInteger.ZERO,
-                    mockBalanced.baln.getAddress().toString(), BigInteger.ZERO,
-                    mockBalanced.bnUSD.getAddress().toString(), BigInteger.ZERO);
-            assertEquals(expectedBalances, daofundScore.call("getBalances"));
-        }
-    }
-
-    @Test
-    void receiveTokens() {
-        addSymbolToSetdb();
-
-        daofundScore.invoke(mockBalanced.sicx.account, "tokenFallback", owner.getAddress(), BigInteger.TEN.pow(20),
-                new byte[0]);
-        Map<String, BigInteger> expectedBalances = Map.of(mockBalanced.sicx.getAddress().toString(),
-                BigInteger.TEN.pow(20),
-                mockBalanced.baln.getAddress().toString(), BigInteger.ZERO,
-                mockBalanced.bnUSD.getAddress().toString(), BigInteger.ZERO);
-        assertEquals(expectedBalances, daofundScore.call("getBalances"));
-    }
-
-    @Test
     @DisplayName("Allocate the tokens for disbursement")
     void disburseTokens() {
-        receiveTokens();
-
+        // Arrange
         Disbursement disbursement = new Disbursement();
         disbursement.address = mockBalanced.sicx.getAddress();
         disbursement.amount = amount;
         Disbursement[] amounts = new Disbursement[]{disbursement};
+
+        // Act & Assert
+        when(mockBalanced.sicx.mock.balanceOf(daofundScore.getAddress())).thenReturn(amount.subtract(BigInteger.ONE));
+        String expectedErrorMessage = "Reverted(0): " + TAG + ": Insufficient balance of asset " + mockBalanced.sicx.getAddress().toString() +
+                " in DAOfund";
+        Executable disburseInsufficientFund = () -> daofundScore.invoke(mockBalanced.governance.account, "disburse",
+                receiver.getAddress(),amounts);
+        expectErrorMessage(disburseInsufficientFund, expectedErrorMessage);
+
+        // Act
+        when(mockBalanced.sicx.mock.balanceOf(daofundScore.getAddress())).thenReturn(amount);
         daofundScore.invoke(mockBalanced.governance.account, "disburse", receiver.getAddress(), amounts);
 
-        Map<String, Object> expectedDisbursement = Map.of("user", receiver.getAddress(),
-                "claimableTokens", Map.of(mockBalanced.sicx.getAddress().toString(), amount,
-                        mockBalanced.baln.getAddress().toString(), BigInteger.ZERO,
-                        mockBalanced.bnUSD.getAddress().toString(), BigInteger.ZERO));
-        assertEquals(expectedDisbursement, daofundScore.call("getDisbursementDetail", receiver.getAddress()));
-
-        disbursement.address = mockBalanced.baln.getAddress();
-        Executable disburseInsufficientFund = () -> daofundScore.invoke(mockBalanced.governance.account, "disburse",
-                receiver.getAddress(), new Disbursement[]{disbursement});
-        expectErrorMessage(disburseInsufficientFund,
-                "Reverted(0): " + TAG + ": Insufficient balance of asset " + mockBalanced.baln.getAddress().toString() + " in" +
-                        " DAOfund");
+        // Assert
+        verify(mockBalanced.sicx.mock).transfer(receiver.getAddress(), amount, new byte[0]);
     }
 
-    @Test
-    void claimTokens() {
-        disburseTokens();
-
-        try (MockedStatic<Context> tokenMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS)) {
-            tokenMock
-                    .when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class),
-                            any(BigInteger.class), any(byte[].class)))
-                    .thenReturn(null);
-
-            daofundScore.invoke(receiver, "claim");
-            verify(daofundSpy).TokenTransfer(receiver.getAddress(), amount,
-                    "Balanced DAOfund disbursement " + amount + " sent to " + receiver.getAddress());
-        }
-
-        Map<String, Object> expectedDisbursement = Map.of("user", receiver.getAddress(),
-                "claimableTokens", Map.of(mockBalanced.sicx.getAddress().toString(), BigInteger.ZERO,
-                        mockBalanced.baln.getAddress().toString(), BigInteger.ZERO,
-                        mockBalanced.bnUSD.getAddress().toString(), BigInteger.ZERO));
-        assertEquals(expectedDisbursement, daofundScore.call("getDisbursementDetail", receiver.getAddress()));
-    }
-
-    // @External
-    // public void claimRewards() {
-    //     POLManager.claimRewards();
-    // }
-    //     String data;
-    // boolean hasLocked = Context.call(Boolean.class, getBoostedBaln(), "hasLocked", Context.getAddress());
-    // if (!hasLocked) {
-    //     data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
-    // } else {
-    //     data = "{\"method\":\"increaseAmount\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
-    // }
-
-    // Context.call(Context.getCaller(), "transfer", getBoostedBaln(), amount, data.getBytes());
     @Test
     void claimRewards_noLock() {
         // Arrange

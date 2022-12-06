@@ -44,14 +44,7 @@ public interface DAOfund extends Name, AddressManager, TokenFallback, Fallback {
     Map<String, Object> getDisbursementDetail(Address _user);
 
     @External(readonly = true)
-    boolean disburse(Address _recipient, Disbursement[] _amounts);
-
-    @External
-    void addAcceptedToken(Address asset);
-
-    @External
-    void removeAcceptedToken(Address asset);
-
+    void disburse(Address _recipient, Disbursement[] _amounts);
     @External
     void claim();
 

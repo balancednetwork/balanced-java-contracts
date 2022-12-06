@@ -42,14 +42,13 @@ public class DAOfundImpl implements DAOfund {
 
     private static final String GOVERNANCE = "governance";
     private static final String ADDRESS = "address";
-    private static final String FUND = "fund";
     private static final String AWARDS = "awards";
 
     private static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
-    // fund represents the total amount that is available to disburse
-    private final DictDB<String, BigInteger> fund = Context.newDictDB(FUND, BigInteger.class);
+
+    // Deprecated, kept for backward compatibility
     private final EnumerableSetDB<String> address = new EnumerableSetDB<>(ADDRESS, String.class);
-    // Awards hold the amount that can be claimed by any user
+    // Awards hold the amount that can be claimed by any user. Only used for now for claiming old disbursements
     private final BranchDB<Address, DictDB<Address, BigInteger>> awards = Context.newBranchDB(AWARDS, BigInteger.class);
 
     public static final String TAG = Names.DAOFUND;
@@ -73,18 +72,6 @@ public class DAOfundImpl implements DAOfund {
         resetAddress(name);
     }
 
-    @External
-    public void addAcceptedToken(Address address) {
-        onlyGovernance();
-        this.address.add(address.toString());
-    }
-
-    @External
-    public void removeAcceptedToken(Address address) {
-        onlyGovernance();
-        this.address.remove(address.toString());
-    }
-
     @External(readonly = true)
     public Address getAddress(String name) {
         return getAddressByName(name);
@@ -96,14 +83,18 @@ public class DAOfundImpl implements DAOfund {
         Context.call(getStaking(), "delegate", (Object) prepDelegations);
     }
 
+    // Deprecated, kept for backward compatibility
     @External(readonly = true)
     public Map<String, BigInteger> getBalances() {
         Map<String, BigInteger> balances = new HashMap<>();
-
+        Address daoAddress = Context.getAddress();
         for (int addressIndex = 0; addressIndex < address.length(); addressIndex++) {
-            String tokenAddress = address.at(addressIndex);
-            balances.put(tokenAddress, fund.getOrDefault(tokenAddress, BigInteger.ZERO));
+            String tokenAddressString = address.at(addressIndex);
+            Address tokenAddress = Address.fromString(tokenAddressString);
+            BigInteger balance = Context.call(BigInteger.class, tokenAddress, "balanceOf", daoAddress);
+            balances.put(tokenAddressString, balance);
         }
+
         return balances;
     }
 
@@ -131,21 +122,18 @@ public class DAOfundImpl implements DAOfund {
      * @param _amounts   Amounts of each asset type to disburse
      */
     @External
-    public boolean disburse(Address _recipient, Disbursement[] _amounts) {
+    public void disburse(Address _recipient, Disbursement[] _amounts) {
         onlyGovernance();
+        Address daoAddress = Context.getAddress();
         for (Disbursement asset : _amounts) {
-            BigInteger amountInDaofund = fund.getOrDefault(asset.address.toString(), BigInteger.ZERO);
-            BigInteger amountToBeClaimedByRecipient = awards.at(_recipient).getOrDefault(asset.address,
-                    BigInteger.ZERO);
-
-            boolean requiredCondition = amountInDaofund.compareTo(asset.amount) >= 0;
+            BigInteger balance = Context.call(BigInteger.class, asset.address, "balanceOf", daoAddress);
+            boolean requiredCondition = balance.compareTo(asset.amount) >= 0;
             Context.require(requiredCondition, TAG + ": Insufficient balance of asset " + asset.address.toString() +
                     " in DAOfund");
-
-            awards.at(_recipient).set(asset.address, amountToBeClaimedByRecipient.add(asset.amount));
-            fund.set(asset.address.toString(), amountInDaofund.subtract(asset.amount));
+            Context.call(asset.address, "transfer", _recipient, asset.amount, new byte[0]);
+            TokenTransfer(_recipient, asset.amount,
+                    "Balanced DAOfund disbursement " + asset.amount + " sent to " + _recipient.toString());
         }
-        return Boolean.TRUE;
     }
 
     /**
@@ -214,12 +202,6 @@ public class DAOfundImpl implements DAOfund {
         } else if (POLManager.isProcessingRewards()) {
             POLManager.handleRewards(_value);
             return;
-        }
-
-        String tokenContract = Context.getCaller().toString();
-        if (address.contains(tokenContract)) {
-            BigInteger tokenAmountInDAOfund = fund.getOrDefault(tokenContract, BigInteger.ZERO);
-            fund.set(tokenContract, tokenAmountInDAOfund.add(_value));
         }
     }
 

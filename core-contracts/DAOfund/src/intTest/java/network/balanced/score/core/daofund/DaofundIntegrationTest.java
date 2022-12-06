@@ -31,6 +31,7 @@ import java.util.Map;
 
 import static network.balanced.score.lib.test.integration.BalancedUtils.createParameter;
 import static network.balanced.score.lib.test.integration.BalancedUtils.createSingleTransaction;
+import static network.balanced.score.lib.test.integration.BalancedUtils.createJsonDisbursement;
 import static network.balanced.score.lib.utils.Constants.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -211,7 +212,7 @@ class DaofundIntegrationTest implements ScoreIntegrationTest {
     }
 
     @Test
-    @Order(5)
+    @Order(6)
     void protocolOwnedLiquidity_stakeLpTokens() throws Exception {
         // Arrange
         byte[] tokenDepositData = "{\"method\":\"_deposit\"}".getBytes();
@@ -235,6 +236,34 @@ class DaofundIntegrationTest implements ScoreIntegrationTest {
         // Assert
         assertEquals(BigInteger.ZERO, client.dex.balanceOf(client.getAddress(), pid));
         assertEquals(lpBalance, client.stakedLp.balanceOf(balanced.daofund._address(), pid));
+    }
+
+    @Test
+    @Order(7)
+    void disburse() throws Exception {
+        // Arrange
+        BigInteger collateral = EXA.multiply(BigInteger.valueOf(10000));
+        BigInteger loan = EXA.multiply(BigInteger.valueOf(100));
+        owner.stakeDepositAndBorrow(collateral, loan);
+        BalancedClient recipient = balanced.newClient();
+        owner.bnUSD.transfer(balanced.daofund._address(), loan, null);
+
+        // Act
+        JsonArray disburseParam = new JsonArray()
+                .add(createJsonDisbursement(balanced.bnusd._address(), loan));
+
+        JsonArray disburseParameters = new JsonArray()
+                .add(createParameter(recipient.getAddress()))
+                .add(createParameter("Struct[]", disburseParam));
+
+        JsonArray actions = createSingleTransaction(balanced.daofund._address(), "disburse",
+                disburseParameters);
+
+        owner.governance.execute(actions.toString());
+
+        // Assert
+        BigInteger balance = reader.bnUSD.balanceOf(recipient.getAddress());
+        assertEquals(loan, balance);
     }
 
     private BigInteger getHoldingInPool(BigInteger pid, Address token, BigInteger lpTokens) {
