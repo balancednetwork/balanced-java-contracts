@@ -61,21 +61,22 @@ class DaofundIntegrationTest implements ScoreIntegrationTest {
     void protocolOwnedLiquidity_addLiquidity() {
         // Arrange
         BigInteger collateral = EXA.multiply(BigInteger.valueOf(10000));
-        BigInteger loan = EXA.multiply(BigInteger.valueOf(100));
-        BigInteger lpAmount = EXA.multiply(BigInteger.valueOf(100));
+        BigInteger quoteAmount = EXA.multiply(BigInteger.valueOf(100));
         BigInteger pid = reader.dex.getPoolId(balanced.sicx._address(), balanced.bnusd._address());
-        owner.stakeDepositAndBorrow(collateral, loan);
+        owner.stakeDepositAndBorrow(collateral, quoteAmount);
 
-        owner.staking.stakeICX(lpAmount.multiply(BigInteger.TWO), null, null);
-        owner.bnUSD.transfer(balanced.daofund._address(), lpAmount, null);
-        owner.sicx.transfer(balanced.daofund._address(), lpAmount, null);
+        BigInteger price = reader.dex.getPrice(pid);
+        BigInteger baseAmount = quoteAmount.multiply(EXA).divide(price);
+        owner.staking.stakeICX(baseAmount.multiply(BigInteger.TWO), null, null);
+        owner.bnUSD.transfer(balanced.daofund._address(), quoteAmount, null);
+        owner.sicx.transfer(balanced.daofund._address(), baseAmount, null);
 
         // Act
         JsonArray addLiquidityParameters = new JsonArray()
                 .add(createParameter(balanced.sicx._address()))
-                .add(createParameter(lpAmount))
+                .add(createParameter(baseAmount))
                 .add(createParameter(balanced.bnusd._address()))
-                .add(createParameter(lpAmount));
+                .add(createParameter(quoteAmount));
 
         JsonArray actions = createSingleTransaction(balanced.daofund._address(), "supplyLiquidity",
                 addLiquidityParameters);
