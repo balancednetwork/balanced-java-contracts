@@ -17,17 +17,15 @@
 package network.balanced.score.core.loans.utils;
 
 import score.Address;
-import score.Context;
 
 import java.math.BigInteger;
 
-import network.balanced.score.core.loans.LoansVariables;
-
 import static network.balanced.score.core.loans.LoansImpl.call;
-import static network.balanced.score.core.loans.utils.LoansConstants.BNUSD_SYMBOL;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getBalancedOracle;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getBnusd;
+import static network.balanced.score.lib.utils.Check.readonly;
 
 public  class TokenUtils {
-
     public static String symbol(Address tokenAddress) {
         return (String) call(tokenAddress, "symbol");
     }
@@ -40,34 +38,23 @@ public  class TokenUtils {
         return (BigInteger) call(tokenAddress, "balanceOf", address);
     }
 
-    public static BigInteger getBnUSDPriceInLoop() {
-        return getBnUSDPriceInLoop(false);
-    }
-
-    public static BigInteger getBnUSDPriceInLoop(boolean readOnly) {
-        return getPriceInLoop(BNUSD_SYMBOL, readOnly);
-    }
-
-    public static BigInteger getPriceInLoop(String symbol, boolean readOnly) {
-        if (readOnly) {
-            return  Context.call(BigInteger.class, LoansVariables.oracle.get(), "getLastPriceInLoop", symbol);
+    public static BigInteger getPriceInLoop(String symbol) {
+        if (readonly()) {
+            return  (BigInteger) call(getBalancedOracle(), "getLastPriceInLoop", symbol);
         }
 
-        return Context.call(BigInteger.class, LoansVariables.oracle.get(), "getPriceInLoop", symbol);
+        return (BigInteger) call(getBalancedOracle(), "getPriceInLoop", symbol);
     }
 
-    public static void mintTo(Address bnUSDAddress, Address to, BigInteger amount) {
-        call(bnUSDAddress, "mintTo", to, amount, new byte[0]);
+    public static void mintAssetTo(Address to, BigInteger amount) {
+        call(getBnusd(), "mintTo", to, amount, new byte[0]);
     }
 
-    public static void burn(Address bnUSDAddress, BigInteger amount) {
-        call(bnUSDAddress, "burn", amount);
+    public static void burnAsset( BigInteger amount) {
+        call(getBnusd(), "burn", amount);
     }
 
-    public static void burnFrom(Address bnUSDAddress, Address from, BigInteger amount) {
-        call(bnUSDAddress, "burnFrom", from, amount);
+    public static void burnAssetFrom(Address from, BigInteger amount) {
+        call(getBnusd(), "burnFrom", from, amount);
     }
-
-
-
 }

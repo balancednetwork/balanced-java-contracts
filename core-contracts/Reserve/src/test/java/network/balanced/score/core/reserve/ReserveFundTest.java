@@ -30,6 +30,7 @@ import java.util.Map;
 
 import static network.balanced.score.core.reserve.ReserveFund.TAG;
 import static network.balanced.score.lib.utils.Constants.EXA;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 
@@ -44,7 +45,7 @@ public class ReserveFundTest extends ReserveFundTestBase {
         when(loans.mock.getCollateralTokens()).thenReturn(tokens);
     }
 
-    private void setBalance(MockContract<IRC2Mintable> token, BigInteger amount) {
+    private void setBalance(MockContract<? extends IRC2Mintable> token, BigInteger amount) {
         when(token.mock.balanceOf(reserve.getAddress())).thenReturn(amount);
     }
 
@@ -55,14 +56,13 @@ public class ReserveFundTest extends ReserveFundTestBase {
     @BeforeEach
     public void setupContract() throws Exception {
         super.setup();
-        reserve.invoke(governanceScore, "setAdmin", admin.getAddress());
-        reserve.invoke(admin, "setSicx", sicx.getAddress());
-        reserve.invoke(admin, "setBaln", baln.getAddress());
-        reserve.invoke(admin, "setLoans", loans.getAddress());
-
         setupCollaterals();
-        when(loans.mock.getOracle()).thenReturn(balancedOracle.getAddress());
+    }
 
+    @Test
+    void name() {
+        String contractName = "Balanced Reserve Fund";
+        assertEquals(contractName, reserve.call("name"));
     }
 
     @Test
@@ -224,7 +224,7 @@ public class ReserveFundTest extends ReserveFundTestBase {
         setBalance(sicx, BigInteger.TEN.pow(21));
 
         // Act
-        reserve.invoke(governanceScore, "disburse", target.getAddress(), disbursements);
+        reserve.invoke(mockBalanced.governance.account, "disburse", target.getAddress(), disbursements);
 
         // Assert
         reserve.invoke(target, "claim");
@@ -235,8 +235,8 @@ public class ReserveFundTest extends ReserveFundTestBase {
     @Test
     void transfer() {
         BigInteger amount = BigInteger.valueOf(10);
-        assertOnlyCallableByGovernance(reserve, "transfer", sicx.getAddress(), loans.getAddress(), amount);
-        reserve.invoke(governanceScore, "transfer", sicx.getAddress(), loans.getAddress(), amount);
+        assertOnlyCallableBy(mockBalanced.governance.getAddress(), reserve, "transfer", sicx.getAddress(), loans.getAddress(), amount);
+        reserve.invoke(mockBalanced.governance.account, "transfer", sicx.getAddress(), loans.getAddress(), amount);
 
         verify(sicx.mock).transfer(loans.getAddress(), amount, new byte[0]);
     }

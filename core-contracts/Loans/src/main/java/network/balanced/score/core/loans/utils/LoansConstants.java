@@ -27,7 +27,8 @@ public class LoansConstants extends Constants {
     public static final BigInteger LIQUIDATION_RATIO = BigInteger.valueOf(15_000);
     public static final BigInteger LIQUIDATION_REWARD = BigInteger.valueOf(67);
     public static final BigInteger ORIGINATION_FEE = BigInteger.valueOf(100);
-    public static final BigInteger REDEMPTION_FEE = BigInteger.valueOf(50);
+    public static final BigInteger REDEMPTION_FEE = BigInteger.valueOf(950);
+    public static final BigInteger REDEMPTION_DAO_FEE = BigInteger.valueOf(50);
     public static final BigInteger BAD_DEBT_RETIREMENT_BONUS = BigInteger.valueOf(1_000);
     public static final BigInteger MAX_RETIRE_PERCENT = BigInteger.valueOf(100);
 

@@ -19,7 +19,6 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
-import network.balanced.score.lib.interfaces.addresses.*;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
 import network.balanced.score.lib.structs.Disbursement;
@@ -31,8 +30,7 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface Reserve extends Name, TokenFallback, AdminAddress, BalnAddress, SicxAddress, LoansAddress,
-        GovernanceAddress {
+public interface Reserve extends Name, TokenFallback {
     @External
     void redeem(Address to, BigInteger _valueInLoop, String collateralSymbol);
 

@@ -96,4 +96,8 @@ public class Check {
 
         return value;
     }
+
+    public static boolean readonly() {
+        return Context.getTransactionHash() == null;
+    }
 }

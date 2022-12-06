@@ -10,8 +10,8 @@ import score.Context;
 import score.DictDB;
 import scorex.util.HashMap;
 
-import static network.balanced.score.core.loans.LoansVariables.*;
 import static network.balanced.score.core.loans.utils.LoansConstants.*;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getBnusd;
 
 public class DebtDB {
     private static final String TOTAL_DEBT = "totalDebts";
@@ -55,26 +55,26 @@ public class DebtDB {
     }
 
     public static void setBadDebt(String symbol, BigInteger badDebt) {
-        badDebts.at(ASSET_DB_PREFIX + "|" + bnUSD.get()).set(symbol, badDebt);
+        badDebts.at(ASSET_DB_PREFIX + "|" + getBnusd()).set(symbol, badDebt);
     }
 
     public static BigInteger getBadDebt(String symbol) {
-        return badDebts.at(ASSET_DB_PREFIX + "|" + bnUSD.get()).getOrDefault(symbol, BigInteger.ZERO);
+        return badDebts.at(ASSET_DB_PREFIX + "|" + getBnusd()).getOrDefault(symbol, BigInteger.ZERO);
     }
 
     public static void setLiquidationPool(String collateralSymbol, BigInteger liquidationPool) {
-        liquidationPools.at(ASSET_DB_PREFIX + "|" + bnUSD.get()).set(collateralSymbol, liquidationPool);
+        liquidationPools.at(ASSET_DB_PREFIX + "|" + getBnusd()).set(collateralSymbol, liquidationPool);
     }
 
     public static BigInteger getLiquidationPool(String collateralSymbol) {
-        return liquidationPools.at(ASSET_DB_PREFIX + "|" + bnUSD.get()).getOrDefault(collateralSymbol, BigInteger.ZERO);
+        return liquidationPools.at(ASSET_DB_PREFIX + "|" + getBnusd()).getOrDefault(collateralSymbol, BigInteger.ZERO);
     }
 
     public static LinkedListDB getBorrowers(String collateralSymbol) {
         if (collateralSymbol.equals(SICX_SYMBOL)) {
-            return new LinkedListDB(BORROWER_DB_PREFIX, bnUSD.get().toString());
+            return new LinkedListDB(BORROWER_DB_PREFIX, getBnusd().toString());
         } else {
-            return new LinkedListDB(collateralSymbol + "|" + BORROWER_DB_PREFIX, bnUSD.get().toString());
+            return new LinkedListDB(collateralSymbol + "|" + BORROWER_DB_PREFIX, getBnusd().toString());
         }
     }
 

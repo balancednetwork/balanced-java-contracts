@@ -135,7 +135,7 @@ public class LinkedListDB {
         serialize();
     }
 
-    public PositionBatch readDataBatch(int batchSize) {
+    public PositionBatch readDataBatch(BigInteger debtRequired) {
         Context.require(size != 0, name + ": No data in the list");
 
         PositionBatch batch = new PositionBatch();
@@ -151,8 +151,7 @@ public class LinkedListDB {
         positionsMap.put(headId, head.getValue());
         batch.totalDebt = batch.totalDebt.add(head.getValue());
 
-        int iterations = Math.min(batchSize, size());
-        for (int i = 1; i < iterations; i++) {
+        while (batch.totalDebt.compareTo(debtRequired) < 0) { 
             currentNodeId = currentNode.getNext();
             currentNode = getNode(currentNodeId);
             currentValue = currentNode.getValue();
@@ -161,7 +160,7 @@ public class LinkedListDB {
         }
 
         batch.positions = positionsMap;
-        batch.size = iterations;
+        batch.size = positionsMap.size();
 
         int nextId = currentNode.getNext();
         if (nextId == 0) {

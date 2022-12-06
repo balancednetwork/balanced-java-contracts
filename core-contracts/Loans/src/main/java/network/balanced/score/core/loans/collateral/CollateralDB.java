@@ -94,7 +94,7 @@ public class CollateralDB {
             Address collateralAddress = getAddress(symbol);
             BigInteger collateralDecimals = pow(BigInteger.TEN, TokenUtils.decimals(collateralAddress).intValue());
 
-            BigInteger value = TokenUtils.balanceOf(collateralAddress, Context.getAddress()).multiply(TokenUtils.getPriceInLoop(symbol, true)).divide(collateralDecimals);
+            BigInteger value = TokenUtils.balanceOf(collateralAddress, Context.getAddress()).multiply(TokenUtils.getPriceInLoop(symbol)).divide(collateralDecimals);
             totalCollateral = totalCollateral.add(value);
         }
 

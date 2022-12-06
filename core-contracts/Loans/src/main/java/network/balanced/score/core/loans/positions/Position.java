@@ -30,6 +30,7 @@ import java.util.Map;
 
 import static network.balanced.score.core.loans.utils.LoansConstants.*;
 import static network.balanced.score.lib.utils.Math.pow;
+import static network.balanced.score.lib.utils.Check.readonly;
 
 public class Position {
     static final String TAG = "BalancedLoansPositions";
@@ -105,10 +106,6 @@ public class Position {
     }
 
     public BigInteger getCollateral(String symbol) {
-        return getCollateral(symbol, false);
-    }
-
-    public BigInteger getCollateral(String symbol, boolean readOnly) {
         if (symbol.equals(SICX_SYMBOL)) {
             if (!dataMigrationStatus.at(dbKey).getOrDefault(SICX_SYMBOL, false) &&
                     collateral.at(dbKey).getOrDefault(SICX_SYMBOL, BigInteger.ZERO).equals(BigInteger.ZERO)) {
@@ -116,7 +113,7 @@ public class Position {
                 int lastSnapIndex = snaps.at(dbKey).size() - 1;
                 int lastSnap = snaps.at(dbKey).get(lastSnapIndex);
                 BigInteger collateralAmount = assets.at(dbKey).at(lastSnap).getOrDefault(SICX_SYMBOL, BigInteger.ZERO);
-                if (readOnly) {
+                if (readonly()) {
                     return collateralAmount;
                 }
 
@@ -175,26 +172,26 @@ public class Position {
         return !getTotalDebt().equals(BigInteger.ZERO);
     }
 
-    public BigInteger totalCollateralInLoop(String collateralSymbol, boolean readOnly) {
+    public BigInteger totalCollateralInLoop(String collateralSymbol) {
         Address collateralAddress = CollateralDB.getAddress(collateralSymbol);
 
-        BigInteger amount = getCollateral(collateralSymbol, readOnly);
+        BigInteger amount = getCollateral(collateralSymbol);
         BigInteger decimals = pow(BigInteger.TEN, TokenUtils.decimals(collateralAddress).intValue());
-        BigInteger price = TokenUtils.getPriceInLoop(collateralSymbol, readOnly);
+        BigInteger price = TokenUtils.getPriceInLoop(collateralSymbol);
 
         return amount.multiply(price).divide(decimals);
     }
 
-    public BigInteger totalDebtInLoop(String collateralSymbol, boolean readOnly) {
+    public BigInteger totalDebtInLoop(String collateralSymbol) {
         BigInteger amount = getDebt(collateralSymbol);
-        BigInteger price = TokenUtils.getBnUSDPriceInLoop(readOnly);
+        BigInteger price = TokenUtils.getPriceInLoop(BNUSD_SYMBOL);
         return amount.multiply(price).divide(EXA);
     }
 
-    public Standing getStanding(String collateralSymbol, Boolean readOnly) {
+    public Standing getStanding(String collateralSymbol) {
         Standing standing = new Standing();
-        standing.totalDebt = totalDebtInLoop(collateralSymbol, readOnly);
-        standing.collateral = totalCollateralInLoop(collateralSymbol, readOnly);
+        standing.totalDebt = totalDebtInLoop(collateralSymbol);
+        standing.collateral = totalCollateralInLoop(collateralSymbol);
 
         if (standing.totalDebt.equals(BigInteger.ZERO)) {
             standing.ratio = BigInteger.ZERO;
@@ -238,12 +235,12 @@ public class Position {
 
             collateralAmounts.put(BNUSD_SYMBOL, getDebt(collateralSymbol));
 
-            BigInteger amount = getCollateral(collateralSymbol, true);
+            BigInteger amount = getCollateral(collateralSymbol);
 
             collateralAmounts.put(collateralSymbol, amount);
             holdings.put(collateralSymbol, collateralAmounts);
 
-            Standing standing = getStanding(collateralSymbol, true);
+            Standing standing = getStanding(collateralSymbol);
             Map<String, Object> standingMap = new HashMap<>();
             standingMap.put("total_debt", standing.totalDebt);
             standingMap.put("collateral", standing.collateral);
@@ -255,7 +252,7 @@ public class Position {
 
         Map<String, Object> positionDetails = new HashMap<>();
 
-        Standing sICXstanding = getStanding(SICX_SYMBOL, true);
+        Standing sICXstanding = getStanding(SICX_SYMBOL);
         positionDetails.put("pos_id", getId());
         positionDetails.put("created", getCreated());
         positionDetails.put("address", getAddress().toString());
