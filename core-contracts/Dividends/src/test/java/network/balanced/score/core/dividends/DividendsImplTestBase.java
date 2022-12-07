@@ -19,12 +19,10 @@ package network.balanced.score.core.dividends;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
-import network.balanced.score.core.dividends.utils.bnUSD;
+import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.test.UnitTest;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import score.Address;
-import score.Context;
+import network.balanced.score.lib.test.mock.MockBalanced;
+import network.balanced.score.lib.test.mock.MockContract;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -36,28 +34,24 @@ class DividendsImplTestBase extends UnitTest {
     protected static final Object MINT_AMOUNT = BigInteger.TEN.pow(22);
     protected final BigInteger initialFees = BigInteger.TEN.pow(20);
     protected static final long DAY = 43200L;
-    protected static Score bnUSDScore;
-    protected static final Account owner = sm.createAccount();
-    protected final Account admin = sm.createAccount();
     protected final Account prep_address = sm.createAccount();
-    protected static final Account governanceScore = Account.newScoreAccount(1);
-    protected static final Account loansScore = Account.newScoreAccount(2);
-    protected static final Account daoScore = Account.newScoreAccount(3);
-    protected static final Account balnScore = Account.newScoreAccount(4);
-    protected static final Account sICXScore = Account.newScoreAccount(5);
-    protected static final Account bBalnScore = Account.newScoreAccount(8);
-    protected static final Account dexScore = Account.newScoreAccount(6);
-    protected static final Account stakingScore = Account.newScoreAccount(7);
-    protected static final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class,
-            Mockito.CALLS_REAL_METHODS);
+    protected static final Account owner = sm.createAccount();
+
+    protected static MockBalanced mockBalanced;
+    protected static MockContract<Loans> loans;
+    protected static MockContract<Dex> dex;
+    protected static MockContract<Staking> staking;
+    protected static MockContract<DAOfund> daofund;
+    protected static MockContract<Sicx> sicx;
+    protected static MockContract<BalancedDollar> bnUSD;
+    protected static MockContract<BalancedToken> baln;
+    protected static MockContract<BoostedBaln> bBaln;
+    protected static MockContract<Governance> governance;
+
     protected Score dividendScore;
-    protected final MockedStatic.Verification balanceOf = () -> Context.call(eq(balnScore.getAddress()), eq(
-            "balanceOf"), any(Address.class));
-    protected final MockedStatic.Verification balanceOfbnUSD = () -> Context.call(eq(bnUSDScore.getAddress()), eq(
-            "balanceOf"), any(Address.class));
 
     protected void addBnusdFees(BigInteger amount) {
-        dividendScore.invoke(bnUSDScore.getAccount(), "tokenFallback", bnUSDScore.getAddress(), amount, new byte[0]);
+        dividendScore.invoke(bnUSD.account, "tokenFallback", bnUSD.getAddress(), amount, new byte[0]);
     }
 
     protected BigInteger getDay() {
@@ -68,20 +62,22 @@ class DividendsImplTestBase extends UnitTest {
     protected BigInteger getFeePercentage(String source) {
         Map<String, BigInteger> percentages = (Map<String, BigInteger>) dividendScore.call("getDividendsPercentage");
         return percentages.get(source);
-
     }
 
     protected void setupBase() throws Exception {
-        dividendScore = sm.deploy(owner, DividendsImpl.class, governanceScore.getAddress());
-        assert (dividendScore.getAddress().isContract());
+        mockBalanced = new MockBalanced(sm, owner);
+        loans = mockBalanced.loans;
+        dex = mockBalanced.dex;
+        staking = mockBalanced.staking;
+        daofund = mockBalanced.daofund;
+        sicx = mockBalanced.sicx;
+        bnUSD = mockBalanced.bnUSD;
+        baln = mockBalanced.baln;
+        bBaln = mockBalanced.bBaln;
+        governance = mockBalanced.governance;
 
-        bnUSDScore = sm.deploy(owner, bnUSD.class, "bnUSD Token", "bnUSD", 18);
-        bnUSDScore.invoke(owner, "mint", MINT_AMOUNT);
-        bnUSDScore.invoke(owner, "transfer", dividendScore.getAddress(), initialFees, new byte[0]);
-
+        dividendScore = sm.deploy(owner, DividendsImpl.class, governance.getAddress());
         DividendsImpl dividendsSpy = (DividendsImpl) spy(dividendScore.getInstance());
         dividendScore.setInstance(dividendsSpy);
     }
-
-
 }

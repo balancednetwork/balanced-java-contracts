@@ -20,6 +20,16 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
+
+import network.balanced.score.lib.interfaces.BalancedDollar;
+import network.balanced.score.lib.interfaces.BalancedToken;
+import network.balanced.score.lib.interfaces.Governance;
+import network.balanced.score.lib.interfaces.Sicx;
+import network.balanced.score.lib.interfaces.tokens.*;
+import network.balanced.score.lib.test.mock.MockBalanced;
+import network.balanced.score.lib.test.mock.MockContract;
+import network.balanced.score.lib.utils.Names;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -38,62 +48,44 @@ import static network.balanced.score.core.feehandler.FeeHandlerImpl.TAG;
 import static network.balanced.score.lib.test.UnitTest.*;
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class FeeHandlerImplTest extends TestBase {
     private static final ServiceManager sm = getServiceManager();
     private static final Account owner = sm.createAccount();
-    private final Account admin = sm.createAccount();
 
-    private static final Account baln = Account.newScoreAccount(scoreCount++);
-    private static final Account router = Account.newScoreAccount(scoreCount++);
-    private static final Account dividends = Account.newScoreAccount(scoreCount++);
-    private static final Account dex = Account.newScoreAccount(scoreCount++);
-    private static final Account loans = Account.newScoreAccount(scoreCount++);
-    private static final Account stabilityFund = Account.newScoreAccount(scoreCount++);
-    private static final Account sicxScore = Account.newScoreAccount(scoreCount++);
-    private static final Account bnusd = Account.newScoreAccount(scoreCount++);
-    private static final Account governance = Account.newScoreAccount(scoreCount++);
+    private static  MockBalanced mockBalanced;
+    private static  MockContract<BalancedToken> baln;
+    private static  MockContract<Sicx> sicx;
+    private static  MockContract<BalancedDollar> bnusd;
+    private static  MockContract<Governance> governance;
 
     private Score feeHandler;
 
-    private static final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class,
-            Mockito.CALLS_REAL_METHODS);
-
     @BeforeEach
     void setUp() throws Exception {
+        mockBalanced = new MockBalanced(sm, owner);
+        governance = mockBalanced.governance;
+        sicx = mockBalanced.sicx;
+        bnusd = mockBalanced.bnUSD;
+        baln = mockBalanced.baln;
+
+
         feeHandler = sm.deploy(owner, FeeHandlerImpl.class, governance.getAddress());
-        assert (feeHandler.getAddress().isContract());
-    }
 
-    private void getAllowedAddress(int i) {
-        feeHandler.call("get_allowed_address", i);
-    }
 
-    private void routeContractBalances() {
-        feeHandler.invoke(owner, "route_contract_balances");
-    }
-
-    void setAdmin() {
-        feeHandler.invoke(governance, "setAdmin", admin.getAddress());
     }
 
     @Test
     void name() {
-        String contractName = "Balanced FeeHandler";
+        String contractName = Names.FEEHANDLER;
         assertEquals(contractName, feeHandler.call("name"));
-    }
-
-    @Test
-    void setAndGetGovernance() {
-        testGovernance(feeHandler, governance, owner);
-    }
-
-    @Test
-    void setAndGetAdmin() {
-        testAdmin(feeHandler, governance, admin);
     }
 
     @Test
@@ -113,186 +105,78 @@ class FeeHandlerImplTest extends TestBase {
         Executable enableNotFromAdmin = () -> feeHandler.invoke(nonAdmin, setterMethod);
         expectErrorMessage(enableNotFromAdmin, expectedErrorMessage);
 
-        feeHandler.invoke(governance, setterMethod);
+        feeHandler.invoke(governance.account, setterMethod);
         assertEquals(expectedValue, feeHandler.call("isEnabled"));
     }
 
     @Test
     void setAcceptedDividendTokens_NoPreviousTokens() {
-        setAdmin();
         List<Address> expectedTokens = new ArrayList<>();
-        expectedTokens.add(sicxScore.getAddress());
+        expectedTokens.add(sicx.getAddress());
         expectedTokens.add(baln.getAddress());
         Object addAcceptedTokens = expectedTokens.toArray(new Address[0]);
 
-        feeHandler.invoke(admin, "setAcceptedDividendTokens", addAcceptedTokens);
+        feeHandler.invoke(governance.account, "setAcceptedDividendTokens", addAcceptedTokens);
         assertEquals(expectedTokens, feeHandler.call("getAcceptedDividendTokens"));
     }
 
     @Test
     void setAcceptedDividendTokens_PreviousTokens() {
-        setAdmin();
-
         Object token = new Address[]{bnusd.getAddress(), bnusd.getAddress(), bnusd.getAddress()};
-        feeHandler.invoke(admin, "setAcceptedDividendTokens", token);
+        feeHandler.invoke(governance.account, "setAcceptedDividendTokens", token);
 
         List<Address> expectedTokens = new ArrayList<>();
-        expectedTokens.add(sicxScore.getAddress());
+        expectedTokens.add(sicx.getAddress());
         expectedTokens.add(baln.getAddress());
         Object addAcceptedTokens = expectedTokens.toArray(new Address[0]);
 
-        feeHandler.invoke(admin, "setAcceptedDividendTokens", addAcceptedTokens);
+        feeHandler.invoke(governance.account, "setAcceptedDividendTokens", addAcceptedTokens);
         assertEquals(expectedTokens, feeHandler.call("getAcceptedDividendTokens"));
     }
 
     @Test
     void setAcceptedDividendTokens_GreaterThanMaxSize() {
-        setAdmin();
         int tokensCount = 11;
         List<Address> tokens = new ArrayList<>();
         for (int i = 0; i < tokensCount; i++) {
             tokens.add(Account.newScoreAccount(scoreCount++).getAddress());
         }
-        Executable maxAcceptedTokens = () -> feeHandler.invoke(admin, "setAcceptedDividendTokens",
+        Executable maxAcceptedTokens = () -> feeHandler.invoke(governance.account, "setAcceptedDividendTokens",
                 (Object) tokens.toArray(new Address[0]));
         String expectedErrorMessage = TAG + ": There can be a maximum of 10 accepted dividend tokens.";
         expectErrorMessage(maxAcceptedTokens, expectedErrorMessage);
     }
 
-    @SuppressWarnings("unchecked")
-    @Test
-    void setGetRoute() {
-        setAdmin();
-        feeHandler.invoke(admin, "setRoute", sicxScore.getAddress(), baln.getAddress(),
-                new Address[]{bnusd.getAddress()});
-        Map<String, Object> expectedResult = new HashMap<>();
-        expectedResult.put("fromToken", sicxScore.getAddress());
-        expectedResult.put("toToken", baln.getAddress());
-        expectedResult.put("path", List.of(bnusd.getAddress().toString()));
-
-        Map<String, Object> actualResult = (Map<String, Object>) feeHandler.call("getRoute", sicxScore.getAddress(),
-                baln.getAddress());
-        assertEquals(expectedResult, actualResult);
-    }
-
-    @Test
-    void getEmptyRoute() {
-        setAdmin();
-        feeHandler.invoke(admin, "setRoute", sicxScore.getAddress(), baln.getAddress(),
-                new Address[]{bnusd.getAddress()});
-        assertEquals(Map.of(), feeHandler.call("getRoute", bnusd.getAddress(), baln.getAddress()));
-    }
-
-    @Test
-    void deleteRoute() {
-        setAdmin();
-        feeHandler.invoke(admin, "setRoute", sicxScore.getAddress(), baln.getAddress(),
-                new Address[]{bnusd.getAddress()});
-        feeHandler.invoke(admin, "deleteRoute", sicxScore.getAddress(), baln.getAddress());
-        assertEquals(Map.of(), feeHandler.call("getRoute", sicxScore.getAddress(), baln.getAddress()));
-    }
-
     @Test
     void setFeeProcessingInterval() {
-        setAdmin();
-        feeHandler.invoke(admin, "setFeeProcessingInterval", BigInteger.TEN);
+        feeHandler.invoke(governance.account, "setFeeProcessingInterval", BigInteger.TEN);
         assertEquals(BigInteger.TEN, feeHandler.call("getFeeProcessingInterval"));
     }
 
     @Test
     void tokenFallback() {
+        // Arrange
         setAcceptedDividendTokens_NoPreviousTokens();
         setFeeProcessingInterval();
-        feeHandler.invoke(admin, "disable");
+        feeHandler.invoke(governance.account, "disable");
 
-        contextMock.when(() -> Context.call(any(Address.class), eq("balanceOf"), any(Address.class))).thenReturn(BigInteger.TEN);
-        contextMock.when(() -> Context.call(any(Address.class), eq("getContractAddress"), eq("dividends"))).thenReturn(dividends.getAddress());
-        contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class),
-                any(BigInteger.class), any(byte[].class))).thenReturn("done");
+        when(sicx.mock.balanceOf(feeHandler.getAddress())).thenReturn(BigInteger.TEN);
 
-        feeHandler.invoke(sicxScore, "tokenFallback", baln.getAddress(), BigInteger.TEN.pow(2), new byte[0]);
-        contextMock.verify(() -> Context.call(sicxScore.getAddress(), "transfer", dividends.getAddress(),
-                BigInteger.TEN, new byte[0]), times(0));
+        // Act
+        feeHandler.invoke(sicx.account, "tokenFallback", baln.getAddress(), BigInteger.TEN.pow(2), new byte[0]);
+        feeHandler.invoke(governance.account, "enable");
+        feeHandler.invoke(sicx.account, "tokenFallback", baln.getAddress(), BigInteger.TEN.pow(2), new byte[0]);
+        feeHandler.invoke(sicx.account, "tokenFallback", baln.getAddress(), BigInteger.TEN.pow(2), new byte[0]);
 
-        feeHandler.invoke(admin, "enable");
-        feeHandler.invoke(sicxScore, "tokenFallback", baln.getAddress(), BigInteger.TEN.pow(2), new byte[0]);
-        contextMock.verify(() -> Context.call(sicxScore.getAddress(), "transfer", dividends.getAddress(),
-                BigInteger.TEN, new byte[0]));
-
-        contextMock.clearInvocations();
-        feeHandler.invoke(sicxScore, "tokenFallback", baln.getAddress(), BigInteger.TEN.pow(2), new byte[0]);
-        contextMock.verify(() -> Context.call(sicxScore.getAddress(), "transfer", dividends.getAddress(),
-                BigInteger.TEN, new byte[0]), times(0));
-    }
-
-    @Test
-    void addAndGetAllowedAddress() {
-        List<Address> expected = new ArrayList<>();
-        expected.add(sicxScore.getAddress());
-        expected.add(bnusd.getAddress());
-
-        feeHandler.invoke(owner, "addAllowedAddress", sicxScore.getAddress());
-        feeHandler.invoke(owner, "addAllowedAddress", bnusd.getAddress());
-        assertEquals(expected, feeHandler.call("get_allowed_address", 0));
-    }
-
-    @Test
-    void get_allowed_address_NegativeOffset() {
-        feeHandler.invoke(owner, "addAllowedAddress", sicxScore.getAddress());
-        Executable contractCall = () -> getAllowedAddress(-1);
-
-        String expectedErrorMessage = "Negative value not allowed.";
-        expectErrorMessage(contractCall, expectedErrorMessage);
-    }
-
-    @Test
-    void routeContractBalances_withPath() {
-        contextMock.when(() -> Context.call(any(Address.class), eq("balanceOf"), any(Address.class))).thenReturn(BigInteger.TEN);
-        contextMock.when(() -> Context.call(any(Address.class), eq("getContractAddress"), eq("baln"))).thenReturn(baln.getAddress());
-        contextMock.when(() -> Context.call(any(Address.class), eq("getContractAddress"), eq("dividends"))).thenReturn(dividends.getAddress());
-        contextMock.when(() -> Context.call(any(Address.class), eq("getContractAddress"), eq("router"))).thenReturn(router.getAddress());
-        contextMock.when(() -> Context.call(governance.getAddress(), "getContractAddress", "dex")).thenReturn(dex.getAddress());
-        contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class),
-                any(BigInteger.class), any(byte[].class))).thenReturn("done");
-
-        Executable noAllowedAddressSet = () -> feeHandler.invoke(owner, "route_contract_balances");
-        String expectedErrorMessage = TAG + ": No allowed addresses.";
-        expectErrorMessage(noAllowedAddressSet, expectedErrorMessage);
-
-        addAndGetAllowedAddress();
-        setGetRoute();
-
-        feeHandler.invoke(owner, "route_contract_balances");
-        contextMock.verify(() -> Context.call(eq(sicxScore.getAddress()), eq("transfer"), eq(router.getAddress()),
-                any(BigInteger.class), any(byte[].class)));
-        assertEquals(1, feeHandler.call("getNextAllowedAddressIndex"));
-
-        feeHandler.invoke(owner, "route_contract_balances");
-        contextMock.verify(() -> Context.call(eq(bnusd.getAddress()), eq("transfer"), eq(dex.getAddress()),
-                any(BigInteger.class), any(byte[].class)));
-        assertEquals(0, feeHandler.call("getNextAllowedAddressIndex"));
-    }
-
-    @Test
-    void routeContractBalances_withNoFee() {
-        addAndGetAllowedAddress();
-        setGetRoute();
-
-        contextMock.when(() -> Context.call(any(Address.class), eq("balanceOf"), any(Address.class))).thenReturn(BigInteger.ZERO);
-        Executable contractCall = this::routeContractBalances;
-        String expectedErrorMessage = TAG + ": No fees on the contract.";
-        expectErrorMessage(contractCall, expectedErrorMessage);
+        // Assert
+        verify(sicx.mock, times(1)).transfer(mockBalanced.dividends.getAddress(), BigInteger.TEN, new byte[0]);
     }
 
     @Test
     void feeData() {
         // Arrange
-        setAdmin();
-        feeHandler.invoke(admin, "disable");
+        feeHandler.invoke(governance.account, "disable");
         Account usdc = Account.newScoreAccount(scoreCount++);
-        feeHandler.invoke(owner, "setLoans", loans.getAddress());
-        feeHandler.invoke(owner, "setDex", dex.getAddress());
-        feeHandler.invoke(owner, "setStabilityFund", stabilityFund.getAddress());
 
         BigInteger loanFee1 = BigInteger.valueOf(5).multiply(ICX);
         BigInteger loanFee2 = BigInteger.valueOf(1).multiply(ICX);
@@ -302,31 +186,31 @@ class FeeHandlerImplTest extends TestBase {
         BigInteger dexFeeUsdc = BigInteger.valueOf(9).multiply(ICX);
         BigInteger StabilityFeeBnsud = BigInteger.valueOf(20).multiply(ICX);
 
-        Object token = new Address[]{sicxScore.getAddress(), bnusd.getAddress(), baln.getAddress()};
-        feeHandler.invoke(admin, "setAcceptedDividendTokens", token);
-        feeHandler.invoke(admin, "setSwapFeesAccruedDB");
+        Object token = new Address[]{sicx.getAddress(), bnusd.getAddress(), baln.getAddress()};
+        feeHandler.invoke(governance.account, "setAcceptedDividendTokens", token);
+        feeHandler.invoke(governance.account, "setSwapFeesAccruedDB");
 
         // Act
-        feeHandler.invoke(bnusd, "tokenFallback", EOA_ZERO, loanFee1, new byte[0]);
-        feeHandler.invoke(bnusd, "tokenFallback", EOA_ZERO, loanFee2, new byte[0]);
+        feeHandler.invoke(bnusd.account, "tokenFallback", EOA_ZERO, loanFee1, new byte[0]);
+        feeHandler.invoke(bnusd.account, "tokenFallback", EOA_ZERO, loanFee2, new byte[0]);
 
-        feeHandler.invoke(sicxScore, "tokenFallback", dex.getAddress(), dexFeeICX, new byte[0]);
-        feeHandler.invoke(bnusd, "tokenFallback", dex.getAddress(), dexFeeBnusd, new byte[0]);
-        feeHandler.invoke(baln, "tokenFallback", dex.getAddress(), dexFeeBaln, new byte[0]);
-        feeHandler.invoke(usdc, "tokenFallback", dex.getAddress(), dexFeeUsdc, new byte[0]);
+        feeHandler.invoke(sicx.account, "tokenFallback", mockBalanced.dex.getAddress(), dexFeeICX, new byte[0]);
+        feeHandler.invoke(bnusd.account, "tokenFallback", mockBalanced.dex.getAddress(), dexFeeBnusd, new byte[0]);
+        feeHandler.invoke(baln.account, "tokenFallback", mockBalanced.dex.getAddress(), dexFeeBaln, new byte[0]);
+        feeHandler.invoke(usdc, "tokenFallback", mockBalanced.dex.getAddress(), dexFeeUsdc, new byte[0]);
 
-        feeHandler.invoke(sicxScore, "tokenFallback", dex.getAddress(), dexFeeICX, new byte[0]);
-        feeHandler.invoke(bnusd, "tokenFallback", dex.getAddress(), dexFeeBnusd, new byte[0]);
-        feeHandler.invoke(baln, "tokenFallback", dex.getAddress(), dexFeeBaln, new byte[0]);
-        feeHandler.invoke(usdc, "tokenFallback", dex.getAddress(), dexFeeUsdc, new byte[0]);
+        feeHandler.invoke(sicx.account, "tokenFallback", mockBalanced.dex.getAddress(), dexFeeICX, new byte[0]);
+        feeHandler.invoke(bnusd.account, "tokenFallback", mockBalanced.dex.getAddress(), dexFeeBnusd, new byte[0]);
+        feeHandler.invoke(baln.account, "tokenFallback", mockBalanced.dex.getAddress(), dexFeeBaln, new byte[0]);
+        feeHandler.invoke(usdc, "tokenFallback", mockBalanced.dex.getAddress(), dexFeeUsdc, new byte[0]);
 
-        feeHandler.invoke(bnusd, "tokenFallback", stabilityFund.getAddress(), StabilityFeeBnsud, new byte[0]);
-        feeHandler.invoke(bnusd, "tokenFallback", stabilityFund.getAddress(), StabilityFeeBnsud, new byte[0]);
+        feeHandler.invoke(bnusd.account, "tokenFallback", mockBalanced.stability.getAddress(), StabilityFeeBnsud, new byte[0]);
+        feeHandler.invoke(bnusd.account, "tokenFallback", mockBalanced.stability.getAddress(), StabilityFeeBnsud, new byte[0]);
 
         assertEquals(loanFee1.add(loanFee2), feeHandler.call("getLoanFeesAccrued"));
 
         assertEquals(dexFeeICX.multiply(BigInteger.TWO), feeHandler.call("getSwapFeesAccruedByToken",
-                sicxScore.getAddress()));
+                sicx.getAddress()));
         assertEquals(dexFeeBnusd.multiply(BigInteger.TWO), feeHandler.call("getSwapFeesAccruedByToken",
                 bnusd.getAddress()));
         assertEquals(dexFeeBaln.multiply(BigInteger.TWO), feeHandler.call("getSwapFeesAccruedByToken",
@@ -334,5 +218,218 @@ class FeeHandlerImplTest extends TestBase {
         assertEquals(BigInteger.ZERO, feeHandler.call("getSwapFeesAccruedByToken", usdc.getAddress()));
 
         assertEquals(StabilityFeeBnsud.multiply(BigInteger.TWO), feeHandler.call("getStabilityFundFeesAccrued"));
+    }
+
+    @Test
+    void setRoute() {
+        // Arrange
+        Address[] path = new Address[] {bnusd.getAddress(), baln.getAddress()};
+        Object acceptedTokens = new Address[]{bnusd.getAddress()};
+        feeHandler.invoke(governance.account, "setAcceptedDividendTokens", acceptedTokens);
+
+        // Act
+        feeHandler.invoke(governance.account, "setRoute", sicx.getAddress(), path);
+        Executable addAcceptedToken = () -> feeHandler.invoke(governance.account, "setRoute", bnusd.getAddress(), new Address[]{});
+
+        // Assert
+        List<String> route = (List<String>) feeHandler.call("getRoute", sicx.getAddress());
+        List<Address> routes = (List<Address>) feeHandler.call("getRoutedTokens");
+
+        assertEquals(bnusd.getAddress().toString(), route.get(0));
+        assertEquals(baln.getAddress().toString(), route.get(1));
+        assertEquals(2, route.size());
+
+        assertEquals(sicx.getAddress(), routes.get(0));
+        assertEquals(1, routes.size());
+
+        expectErrorMessage(addAcceptedToken, "Token is accepted, should not be routed");
+    }
+
+    @Test
+    void addDefaultRoute_requirements() {
+        // Arrange
+        Account caller = sm.createAccount();
+
+        Account acceptedToken = Account.newScoreAccount(scoreCount++);
+        Account nonQuoteToken = Account.newScoreAccount(scoreCount++);
+        Account tokenWithPath = Account.newScoreAccount(scoreCount++);
+        Account tokenWithoutPool = Account.newScoreAccount(scoreCount++);
+        Account tokenWithoutSupportedPool = Account.newScoreAccount(scoreCount++);
+
+        Address[] defaultPath = new Address[] {bnusd.getAddress(), baln.getAddress()};
+
+        Object acceptedTokens = new Address[]{acceptedToken.getAddress()};
+        feeHandler.invoke(governance.account, "setAcceptedDividendTokens", acceptedTokens);
+
+        when(mockBalanced.dex.mock.isQuoteCoinAllowed(nonQuoteToken.getAddress())).thenReturn(false);
+        when(mockBalanced.dex.mock.isQuoteCoinAllowed(tokenWithPath.getAddress())).thenReturn(true);
+        when(mockBalanced.dex.mock.isQuoteCoinAllowed(tokenWithoutPool.getAddress())).thenReturn(true);
+        when(mockBalanced.dex.mock.isQuoteCoinAllowed(tokenWithoutSupportedPool.getAddress())).thenReturn(true);
+
+        feeHandler.invoke(governance.account, "setRoute", tokenWithPath.getAddress(), defaultPath);
+
+        BigInteger pid = BigInteger.valueOf(4);
+        when(mockBalanced.dex.mock.getPoolId(tokenWithoutSupportedPool.getAddress(),  bnusd.getAddress())).thenReturn(pid);
+        when(mockBalanced.stakedLp.mock.isSupportedPool(pid)).thenReturn(false);
+
+
+        // Act & Assert
+        Executable withAcceptedToken = () -> feeHandler.invoke(caller, "addDefaultRoute", acceptedToken.getAddress());
+        Executable nonQuote = () -> feeHandler.invoke(caller, "addDefaultRoute", nonQuoteToken.getAddress());
+        Executable withPath = () -> feeHandler.invoke(caller, "addDefaultRoute", tokenWithPath.getAddress());
+        Executable withoutPool = () -> feeHandler.invoke(caller, "addDefaultRoute", tokenWithoutPool.getAddress());
+        Executable withoutSupportedPool = () -> feeHandler.invoke(caller, "addDefaultRoute", tokenWithoutSupportedPool.getAddress());
+
+        expectErrorMessage(withAcceptedToken, "Token is accepted, should not be routed");
+        expectErrorMessage(nonQuote, "Only quote coins should be routed");
+        expectErrorMessage(withPath, "Route is already defined");
+        expectErrorMessage(withoutPool, "no default path exists for " + tokenWithoutPool.getAddress());
+        expectErrorMessage(withoutSupportedPool,"no default path exists for " + tokenWithoutSupportedPool.getAddress());
+    }
+
+    @Test
+    void addDefaultRoute_Direct() {
+        // Arrange
+        Account caller = sm.createAccount();
+        Account token1 = Account.newScoreAccount(scoreCount++);
+        Account token2 = Account.newScoreAccount(scoreCount++);
+        BigInteger pid = BigInteger.valueOf(4);
+        BigInteger reversePid = BigInteger.valueOf(5);
+
+        when(mockBalanced.dex.mock.isQuoteCoinAllowed(token1.getAddress())).thenReturn(true);
+        when(mockBalanced.dex.mock.getPoolId(token1.getAddress(),  baln.getAddress())).thenReturn(pid);
+        when(mockBalanced.stakedLp.mock.isSupportedPool(pid)).thenReturn(true);
+
+        when(mockBalanced.dex.mock.isQuoteCoinAllowed(token2.getAddress())).thenReturn(true);
+        when(mockBalanced.dex.mock.getPoolId(baln.getAddress(),  token2.getAddress())).thenReturn(reversePid);
+        when(mockBalanced.stakedLp.mock.isSupportedPool(reversePid)).thenReturn(true);
+
+        // Act
+        feeHandler.invoke(caller, "addDefaultRoute", token1.getAddress());
+        feeHandler.invoke(caller, "addDefaultRoute", token2.getAddress());
+
+        // Assert
+        List<String> route1 = (List<String>) feeHandler.call("getRoute", token1.getAddress());
+        List<String> route2 = (List<String>) feeHandler.call("getRoute", token2.getAddress());
+        assertTrue(route1.isEmpty());
+        assertTrue(route2.isEmpty());
+    }
+
+    @Test
+    void addDefaultRoute_via_bnUSD() {
+        // Arrange
+        Account caller = sm.createAccount();
+        Account token = Account.newScoreAccount(scoreCount++);
+        BigInteger pid = BigInteger.valueOf(4);
+
+        when(mockBalanced.dex.mock.isQuoteCoinAllowed(token.getAddress())).thenReturn(true);
+        when(mockBalanced.dex.mock.getPoolId(token.getAddress(),  bnusd.getAddress())).thenReturn(pid);
+        when(mockBalanced.stakedLp.mock.isSupportedPool(pid)).thenReturn(true);
+
+        // Act
+        feeHandler.invoke(caller, "addDefaultRoute", token.getAddress());
+
+        // Assert
+        List<String> route = (List<String>) feeHandler.call("getRoute", token.getAddress());
+
+        assertEquals(bnusd.getAddress().toString(), route.get(0));
+        assertEquals(baln.getAddress().toString(), route.get(1));
+        assertEquals(2, route.size());
+    }
+
+    @Test
+    void removeRoute() {
+        // Arrange
+        Address[] path = new Address[] {bnusd.getAddress(), baln.getAddress()};
+        feeHandler.invoke(governance.account, "setRoute", sicx.getAddress(), path);
+        List<String> route = (List<String>) feeHandler.call("getRoute", sicx.getAddress());
+        assertEquals(2, route.size());
+
+        // Act
+        feeHandler.invoke(governance.account, "deleteRoute", sicx.getAddress());
+
+        // Assert
+        assertNull(feeHandler.call("getRoute", sicx.getAddress()));
+
+    }
+
+    @Test
+    void routeFees() throws Exception {
+        // Arrange
+        Account caller = sm.createAccount();
+        Address[] path = new Address[] {bnusd.getAddress(), baln.getAddress()};
+        MockContract<IRC2> token1 = new MockContract<>(IRC2ScoreInterface.class, IRC2.class, sm, owner);
+        MockContract<IRC2> token2 = new MockContract<>(IRC2ScoreInterface.class, IRC2.class, sm, owner);
+        BigInteger balance1 = BigInteger.valueOf(7);
+        BigInteger balance2 = BigInteger.valueOf(3);
+        feeHandler.invoke(governance.account, "setRoute", token1.getAddress(), path);
+        feeHandler.invoke(governance.account, "setRoute", token2.getAddress(), new Address[]{});
+
+        when(token1.mock.balanceOf(feeHandler.getAddress())).thenReturn(balance1);
+        when(token2.mock.balanceOf(feeHandler.getAddress())).thenReturn(balance2);
+
+        // Act
+        feeHandler.invoke(caller, "routeFees");
+        feeHandler.invoke(caller, "routeFees");
+        feeHandler.invoke(caller, "routeFees");
+
+        // Assert
+        verify(token2.mock, times(2)).transfer(eq(mockBalanced.dex.getAddress()), eq(balance2), any(byte[].class));
+        verify(token1.mock).transfer(eq(mockBalanced.router.getAddress()), eq(balance1), any(byte[].class));
+    }
+
+    @Test
+    void manualRoute() throws Exception {
+        // Arrange
+        Account caller = sm.createAccount();
+        Address[] path = new Address[] {bnusd.getAddress(), baln.getAddress()};
+        MockContract<IRC2> token1 = new MockContract<>(IRC2ScoreInterface.class, IRC2.class, sm, owner);
+        MockContract<IRC2> token2 = new MockContract<>(IRC2ScoreInterface.class, IRC2.class, sm, owner);
+        BigInteger balance1 = BigInteger.valueOf(7);
+        BigInteger balance2 = BigInteger.valueOf(3);
+
+        when(token1.mock.balanceOf(feeHandler.getAddress())).thenReturn(balance1);
+        when(token2.mock.balanceOf(feeHandler.getAddress())).thenReturn(balance2);
+
+        // Act
+        feeHandler.invoke(caller, "routeToken", token1.getAddress(), path);
+        feeHandler.invoke(caller, "routeToken", token2.getAddress(), new Address[]{});
+
+        // Assert
+        verify(token1.mock).transfer(eq(mockBalanced.router.getAddress()), eq(balance1), any(byte[].class));
+        verify(token2.mock).transfer(eq(mockBalanced.dex.getAddress()), eq(balance2), any(byte[].class));
+    }
+
+    @Test
+    void manualRoute_restrictions() throws Exception {
+        // Arrange
+        Account caller = sm.createAccount();
+        Address[] path = new Address[] {bnusd.getAddress(), baln.getAddress()};
+        MockContract<IRC2> acceptedToken = new MockContract<>(IRC2ScoreInterface.class, IRC2.class, sm, owner);
+        MockContract<IRC2> quoteToken = new MockContract<>(IRC2ScoreInterface.class, IRC2.class, sm, owner);
+        MockContract<IRC2> tokenWithPath = new MockContract<>(IRC2ScoreInterface.class, IRC2.class, sm, owner);
+        MockContract<IRC2> zeroBalanceToken = new MockContract<>(IRC2ScoreInterface.class, IRC2.class, sm, owner);
+
+        Object acceptedTokens = new Address[]{acceptedToken.getAddress()};
+        feeHandler.invoke(governance.account, "setAcceptedDividendTokens", acceptedTokens);
+        feeHandler.invoke(governance.account, "setRoute", tokenWithPath.getAddress(), path);
+
+        when(zeroBalanceToken.mock.balanceOf(feeHandler.getAddress())).thenReturn(BigInteger.ZERO);
+
+        when(mockBalanced.dex.mock.isQuoteCoinAllowed(quoteToken.getAddress())).thenReturn(true);
+        when(mockBalanced.dex.mock.isQuoteCoinAllowed(tokenWithPath.getAddress())).thenReturn(false);
+        when(mockBalanced.dex.mock.isQuoteCoinAllowed(zeroBalanceToken.getAddress())).thenReturn(false);
+
+        // Act
+        Executable withAcceptedToken = () -> feeHandler.invoke(caller, "routeToken", acceptedToken.getAddress(), path);
+        Executable withQuoteToken = () -> feeHandler.invoke(caller, "routeToken", quoteToken.getAddress(), path);
+        Executable withDefinedPath = () -> feeHandler.invoke(caller, "routeToken", tokenWithPath.getAddress(), path);
+        Executable withZeroBalance = () -> feeHandler.invoke(caller, "routeToken", zeroBalanceToken.getAddress(), path);
+
+        // Assert
+        expectErrorMessage(withAcceptedToken, "Token is accepted, can not be routed");
+        expectErrorMessage(withQuoteToken, "Only non quote coins can manually be routed");
+        expectErrorMessage(withDefinedPath, "Automatically routed tokens can't be manually routed");
+        expectErrorMessage(withZeroBalance, zeroBalanceToken.getAddress() + " balance is 0" );
     }
 }

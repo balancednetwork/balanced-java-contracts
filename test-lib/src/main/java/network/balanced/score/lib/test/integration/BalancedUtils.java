@@ -105,9 +105,11 @@ public class BalancedUtils {
     }
 
     public static JsonObject createJsonDistribution(String name, BigInteger dist) {
-        return new JsonObject()
-                .add("recipient_name", name)
-                .add("dist_percent", dist.toString());
+        JsonObject recipient = new JsonObject()
+                .add("recipient_name", createParameter(name))
+                .add("dist_percent", createParameter(dist));
+
+        return recipient;
     }
 
     public static JsonObject createJsonDisbursement(score.Address token, BigInteger amount) {

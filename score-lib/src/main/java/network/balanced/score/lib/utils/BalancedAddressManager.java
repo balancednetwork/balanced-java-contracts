@@ -129,6 +129,10 @@ public class BalancedAddressManager {
         return getAddress(Names.BOOSTED_BALN);
     }
 
+    public static Address getRouter() {
+        return getAddress(Names.ROUTER);
+    }
+
     public static Address getGovernance() {
         return contractAddresses.get(Names.GOVERNANCE);
     }

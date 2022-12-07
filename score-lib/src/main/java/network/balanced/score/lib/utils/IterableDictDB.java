@@ -37,6 +37,10 @@ public class IterableDictDB<K, V> {
         this.values = Context.newDictDB(key + NAME + "_values", valueType);
     }
 
+    public int size() {
+        return keys.size();
+    }
+
     public List<K> keys() {
         int size = this.keys.size();
         List<K> keyList = new ArrayList<>();
@@ -58,6 +62,10 @@ public class IterableDictDB<K, V> {
 
     public V get(K key) {
         return this.values.get(key);
+    }
+
+    public K getKey(int i) {
+        return this.keys.get(i);
     }
 
     public V getOrDefault(K key, V defaultValue) {

@@ -17,16 +17,20 @@
 package network.balanced.score.core.dividends;
 
 import com.iconloop.score.test.Account;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import score.Address;
-import score.Context;
 
 import java.math.BigInteger;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.any;
 
 class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
 
@@ -37,39 +41,24 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         sm.getBlock().increase(2 * DAY);
 
         setupBase();
-        dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
-        dividendScore.invoke(admin, "setDaofund", daoScore.getAddress());
-        dividendScore.invoke(admin, "setBaln", balnScore.getAddress());
-        dividendScore.invoke(owner, "setBoostedBaln", bBalnScore.getAddress());
-
-
-        dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
-        dividendScore.invoke(admin, "setLoans", loansScore.getAddress());
-        dividendScore.invoke(admin, "setDex", dexScore.getAddress());
-        dividendScore.invoke(admin, "addAcceptedTokens", bnUSDScore.getAddress());
-        dividendScore.invoke(admin, "setDividendsBatchSize", batchSize);
-        dividendScore.invoke(admin, "setDistributionActivationStatus", true);
-
-
-        contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("getTimeOffset"))).thenReturn(BigInteger.TWO);
+        dividendScore.invoke(governance.account, "addAcceptedTokens", bnUSD.getAddress());
+        dividendScore.invoke(governance.account, "setDividendsBatchSize", batchSize);
+        dividendScore.invoke(governance.account, "setDistributionActivationStatus", true);
 
         BigInteger day = getDay();
-        dividendScore.invoke(admin, "setDividendsOnlyToStakedBalnDay", day.add(BigInteger.ONE));
+        dividendScore.invoke(governance.account, "setDividendsOnlyToStakedBalnDay", day.add(BigInteger.ONE));
         sm.getBlock().increase(DAY);
         dividendScore.invoke(owner, "distribute");
     }
 
     @Test
     void claimDividends_bbaln() {
-
         // Arrange
         Account staker1 = sm.createAccount();
         Account staker2 = sm.createAccount();
 
-        contextMock.when(() -> Context.call(BigInteger.class, balnScore.getAddress(), "stakedBalanceOf",
-                staker1.getAddress())).thenReturn(BigInteger.ZERO);
-        contextMock.when(() -> Context.call(BigInteger.class, balnScore.getAddress(), "stakedBalanceOf",
-                staker2.getAddress())).thenReturn(BigInteger.ZERO);
+        when(baln.mock.stakedBalanceOf(staker1.getAddress())).thenReturn(BigInteger.ZERO);
+        when(baln.mock.stakedBalanceOf(staker2.getAddress())).thenReturn(BigInteger.ZERO);
 
         BigInteger stakerPercentage = getFeePercentage("baln_holders");
 
@@ -81,8 +70,8 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         mockBBalnBalanceOf(staker1.getAddress(), staker1Balance);
 
         // Act
-        dividendScore.invoke(bBalnScore, "onBalanceUpdate", staker1.getAddress(), staker1Balance);
-        dividendScore.invoke(bBalnScore, "onBalanceUpdate", staker2.getAddress(), staker2Balance);
+        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker1.getAddress(), staker1Balance);
+        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker2.getAddress(), staker2Balance);
 
         BigInteger expectedFees = BigInteger.TEN.pow(20);
         BigInteger expectedStakingFees = expectedFees.multiply(stakerPercentage).divide(ICX);
@@ -97,37 +86,26 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         mockBBalnBalanceOf(staker1.getAddress(), staker1Balance);
 
 
-        contextMock.when(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker1.getAddress(),
-                staker1ExpectedFees)).thenReturn("Token Transferred");
-        contextMock.when(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker2.getAddress(),
-                staker2ExpectedFees)).thenReturn("Token Transferred");
-
         dividendScore.invoke(staker1, "claimDividends");
         dividendScore.invoke(staker2, "claimDividends");
 
-        contextMock.verify(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker1.getAddress(),
-                staker1ExpectedFees));
-        contextMock.verify(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker2.getAddress(),
-                staker2ExpectedFees));
+        verify(bnUSD.mock).transfer(staker1.getAddress(), staker1ExpectedFees, new byte[0]);
+        verify(bnUSD.mock).transfer(staker2.getAddress(), staker2ExpectedFees, new byte[0]);
 
-        assertEquals(Map.of(bnUSDScore.getAddress().toString(), BigInteger.ZERO), dividendScore.call(
+        assertEquals(Map.of(bnUSD.getAddress().toString(), BigInteger.ZERO), dividendScore.call(
                 "getUnclaimedDividends", staker1.getAddress()));
-        assertEquals(Map.of(bnUSDScore.getAddress().toString(), BigInteger.ZERO), dividendScore.call(
+        assertEquals(Map.of(bnUSD.getAddress().toString(), BigInteger.ZERO), dividendScore.call(
                 "getUnclaimedDividends", staker2.getAddress()));
     }
 
     @Test
     void onKick_bbaln() {
-
-
         // Arrange
         Account staker1 = sm.createAccount();
         Account staker2 = sm.createAccount();
 
-        contextMock.when(() -> Context.call(BigInteger.class, balnScore.getAddress(), "stakedBalanceOf",
-                staker1.getAddress())).thenReturn(BigInteger.ZERO);
-        contextMock.when(() -> Context.call(BigInteger.class, balnScore.getAddress(), "stakedBalanceOf",
-                staker2.getAddress())).thenReturn(BigInteger.ZERO);
+        when(baln.mock.stakedBalanceOf(staker1.getAddress())).thenReturn(BigInteger.ZERO);
+        when(baln.mock.stakedBalanceOf(staker2.getAddress())).thenReturn(BigInteger.ZERO);
 
         BigInteger stakerPercentage = getFeePercentage("baln_holders");
 
@@ -139,8 +117,8 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         mockBBalnBalanceOf(staker1.getAddress(), staker1BBalnBalance);
 
         // Act
-        dividendScore.invoke(bBalnScore, "onBalanceUpdate", staker1.getAddress(), staker1BBalnBalance);
-        dividendScore.invoke(bBalnScore, "onBalanceUpdate", staker2.getAddress(), staker2BBalnBalance);
+        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker1.getAddress(), staker1BBalnBalance);
+        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker2.getAddress(), staker2BBalnBalance);
 
         BigInteger loanAmount = BigInteger.TEN.pow(20);
         BigInteger dividendsForBBalnUser = loanAmount.multiply(stakerPercentage).divide(ICX);
@@ -155,38 +133,29 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         mockBBalnBalanceOf(staker2.getAddress(), staker2BBalnBalance);
         mockBBalnBalanceOf(staker1.getAddress(), staker1BBalnBalance);
 
-        dividendScore.invoke(bBalnScore, "onKick", staker1.getAddress());
+        dividendScore.invoke(bBaln.account, "onKick", staker1.getAddress());
 
-        contextMock.when(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker1.getAddress(),
-                user1AccruedDividends)).thenReturn("Token Transferred");
-        contextMock.when(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker2.getAddress(),
-                user2AccruedDividends)).thenReturn("Token Transferred");
         dividendScore.invoke(staker1, "claimDividends");
         dividendScore.invoke(staker2, "claimDividends");
 
-        contextMock.verify(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker1.getAddress(),
-                user1AccruedDividends));
-        contextMock.verify(() -> Context.call(bnUSDScore.getAddress(), "transfer", staker2.getAddress(),
-                user2AccruedDividends));
 
-        assertEquals(Map.of(bnUSDScore.getAddress().toString(), BigInteger.ZERO), dividendScore.call(
+        verify(bnUSD.mock).transfer(staker1.getAddress(), user1AccruedDividends, new byte[0]);
+        verify(bnUSD.mock).transfer(staker2.getAddress(), user2AccruedDividends, new byte[0]);
+
+        assertEquals(Map.of(bnUSD.getAddress().toString(), BigInteger.ZERO), dividendScore.call(
                 "getUnclaimedDividends", staker1.getAddress()));
-        assertEquals(Map.of(bnUSDScore.getAddress().toString(), BigInteger.ZERO), dividendScore.call(
+        assertEquals(Map.of(bnUSD.getAddress().toString(), BigInteger.ZERO), dividendScore.call(
                 "getUnclaimedDividends", staker2.getAddress()));
     }
 
     @Test
     void onBalanceUpdate_bbaln() {
-
-
         // Arrange
         Account staker1 = sm.createAccount();
         Account staker2 = sm.createAccount();
 
-        contextMock.when(() -> Context.call(BigInteger.class, balnScore.getAddress(), "stakedBalanceOf",
-                staker1.getAddress())).thenReturn(BigInteger.ZERO);
-        contextMock.when(() -> Context.call(BigInteger.class, balnScore.getAddress(), "stakedBalanceOf",
-                staker2.getAddress())).thenReturn(BigInteger.ZERO);
+        when(baln.mock.stakedBalanceOf(staker1.getAddress())).thenReturn(BigInteger.ZERO);
+        when(baln.mock.stakedBalanceOf(staker2.getAddress())).thenReturn(BigInteger.ZERO);
 
         BigInteger stakerPercentage = getFeePercentage("baln_holders");
 
@@ -198,8 +167,8 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         mockBBalnBalanceOf(staker1.getAddress(), staker1BBalnBalance);
 
         // Act
-        dividendScore.invoke(bBalnScore, "onBalanceUpdate", staker1.getAddress(), staker1BBalnBalance);
-        dividendScore.invoke(bBalnScore, "onBalanceUpdate", staker2.getAddress(), staker2BBalnBalance);
+        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker1.getAddress(), staker1BBalnBalance);
+        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker2.getAddress(), staker2BBalnBalance);
 
         BigInteger loanAmount = BigInteger.TEN.pow(20);
 
@@ -208,11 +177,10 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         BigInteger staker1ExpectedFees = dividendsForBBalnUser.multiply(staker1BBalnBalance).divide(totalSupply);
         BigInteger staker2ExpectedFees = dividendsForBBalnUser.multiply(staker2BBalnBalance).divide(totalSupply);
 
-        assertEquals(Map.of(bnUSDScore.getAddress().toString(), staker1ExpectedFees), dividendScore.call(
+        assertEquals(Map.of(bnUSD.getAddress().toString(), staker1ExpectedFees), dividendScore.call(
                 "getUnclaimedDividends", staker1.getAddress()));
-        assertEquals(Map.of(bnUSDScore.getAddress().toString(), staker2ExpectedFees), dividendScore.call(
+        assertEquals(Map.of(bnUSD.getAddress().toString(), staker2ExpectedFees), dividendScore.call(
                 "getUnclaimedDividends", staker2.getAddress()));
-
     }
 
     @Test
@@ -223,10 +191,8 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         Account staker1 = sm.createAccount();
         Account staker2 = sm.createAccount();
 
-        contextMock.when(() -> Context.call(BigInteger.class, balnScore.getAddress(), "stakedBalanceOf",
-                staker1.getAddress())).thenReturn(BigInteger.ZERO);
-        contextMock.when(() -> Context.call(BigInteger.class, balnScore.getAddress(), "stakedBalanceOf",
-                staker2.getAddress())).thenReturn(BigInteger.ZERO);
+        when(baln.mock.stakedBalanceOf(staker1.getAddress())).thenReturn(BigInteger.ZERO);
+        when(baln.mock.stakedBalanceOf(staker2.getAddress())).thenReturn(BigInteger.ZERO);
 
         BigInteger stakerPercentage = getFeePercentage("baln_holders");
 
@@ -237,8 +203,8 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         mockBBalnBalanceOf(staker1.getAddress(), staker1BBalnBalance);
 
         // Act
-        dividendScore.invoke(bBalnScore, "onBalanceUpdate", staker1.getAddress(), staker1BBalnBalance);
-        dividendScore.invoke(bBalnScore, "onBalanceUpdate", staker2.getAddress(), staker2BBalnBalance);
+        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker1.getAddress(), staker1BBalnBalance);
+        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker2.getAddress(), staker2BBalnBalance);
 
         BigInteger loanAmount = BigInteger.TEN.pow(20);
         addBnusdFeesAndMockDaoFund(loanAmount);
@@ -255,18 +221,18 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         BigInteger staker2AccruedDividends = weight.multiply(staker2BBalnBalance).divide(ICX);
 
         // getUnclaimedDividends of SCORE should be equal to the dividends of the user
-        assertEquals(Map.of(bnUSDScore.getAddress().toString(), staker1AccruedDividends), dividendScore.call(
+        assertEquals(Map.of(bnUSD.getAddress().toString(), staker1AccruedDividends), dividendScore.call(
                 "getUnclaimedDividends", staker1.getAddress()));
-        assertEquals(Map.of(bnUSDScore.getAddress().toString(), staker2AccruedDividends), dividendScore.call(
+        assertEquals(Map.of(bnUSD.getAddress().toString(), staker2AccruedDividends), dividendScore.call(
                 "getUnclaimedDividends", staker2.getAddress()));
 
         // new bbaln balance of the users
         BigInteger newStaker1BBalnBalance = BigInteger.valueOf(350).multiply(ICX);
         BigInteger newStaker2BBalnBalance = BigInteger.valueOf(100).multiply(ICX);
 
-        dividendScore.invoke(bBalnScore, "onBalanceUpdate", staker1.getAddress(), newStaker1BBalnBalance);
-        dividendScore.invoke(bBalnScore, "onBalanceUpdate", staker2.getAddress(), newStaker2BBalnBalance);
-        addBnusdFeesAndMockDaoFund(loanAmount);
+        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker1.getAddress(), newStaker1BBalnBalance);
+        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker2.getAddress(), newStaker2BBalnBalance);
+        addBnusdFees(loanAmount);
 
         // new total supply for bbaln
         totalSupply = newStaker1BBalnBalance.add(newStaker2BBalnBalance);
@@ -277,10 +243,10 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         BigInteger newStaker1AccruedDividends = addedWeight.multiply(newStaker1BBalnBalance).divide(ICX);
         BigInteger newStaker2AccruedDividends = addedWeight.multiply(newStaker2BBalnBalance).divide(ICX);
 
-        assertEquals(Map.of(bnUSDScore.getAddress().toString(),
+        assertEquals(Map.of(bnUSD.getAddress().toString(),
                 staker1AccruedDividends.add(newStaker1AccruedDividends)), dividendScore.call(
                 "getUnclaimedDividends", staker1.getAddress()));
-        assertEquals(Map.of(bnUSDScore.getAddress().toString(),
+        assertEquals(Map.of(bnUSD.getAddress().toString(),
                 staker2AccruedDividends.add(newStaker2AccruedDividends)), dividendScore.call(
                 "getUnclaimedDividends", staker2.getAddress()));
     }
@@ -288,20 +254,17 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
     private void addBnusdFeesAndMockDaoFund(BigInteger amount) {
         BigInteger daofundPercentage = getFeePercentage("daofund");
         BigInteger expectedDaofundFees = amount.multiply(daofundPercentage).divide(ICX);
-        mockDaoFundTransfer(expectedDaofundFees);
         addBnusdFees(amount);
+
+        verify(bnUSD.mock, times(scoreCount)).transfer(daofund.getAddress(), expectedDaofundFees, new byte[0]);
     }
 
     private void mockStake(Address user, BigInteger stake) {
-        contextMock.when(() -> Context.call(BigInteger.class, balnScore.getAddress(), "stakedBalanceOf", user)).thenReturn(stake);
-    }
-
-    private void mockDaoFundTransfer(BigInteger amount) {
-        contextMock.when(() -> Context.call(bnUSDScore.getAddress(), "transfer", daoScore.getAddress(), amount)).thenReturn("Token Transferred");
+        when(baln.mock.stakedBalanceOf(user)).thenReturn(stake);
     }
 
     private void mockBBalnBalanceOf(Address user, BigInteger stake) {
-        contextMock.when(() -> Context.call(BigInteger.class, bBalnScore.getAddress(), "balanceOf", user)).thenReturn(stake);
+        when(bBaln.mock.balanceOf(eq(user), any(BigInteger.class))).thenReturn(stake);
     }
 
 }
