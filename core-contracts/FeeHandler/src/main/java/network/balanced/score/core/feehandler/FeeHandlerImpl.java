@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 
@@ -65,6 +66,7 @@ public class FeeHandlerImpl implements FeeHandler {
         }
 
         setGovernance(governance.get());
+        FeeRouter.balnRouteLimit.set(BigInteger.valueOf(100).multiply(EXA));
     }
 
     @External(readonly = true)
@@ -155,8 +157,30 @@ public class FeeHandlerImpl implements FeeHandler {
     }
 
     @External
+    public void setBalnRouteLimit(BigInteger limit) {
+        onlyGovernance();
+        FeeRouter.balnRouteLimit.set(limit);
+    }
+
+    @External(readonly = true)
+    public BigInteger getBalnRouteLimit() {
+        return FeeRouter.balnRouteLimit.get();
+    }
+
+    @External
     public void addDefaultRoute(Address token) {
         FeeRouter.addDefaultRoute(token);
+    }
+
+    @External
+    public void calculateRouteLimit(Address token) {
+        FeeRouter.calculateRouteLimit(token);
+    }
+
+
+    @External(readonly = true)
+    public BigInteger getRouteLimit(Address _fromToken) {
+        return FeeRouter.routeLimit.getOrDefault(_fromToken, BigInteger.ZERO);
     }
 
     @External

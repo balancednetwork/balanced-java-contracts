@@ -47,6 +47,7 @@ import java.util.Map;
 import static network.balanced.score.core.feehandler.FeeHandlerImpl.TAG;
 import static network.balanced.score.lib.test.UnitTest.*;
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
+import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -291,28 +292,19 @@ class FeeHandlerImplTest extends TestBase {
     void addDefaultRoute_Direct() {
         // Arrange
         Account caller = sm.createAccount();
-        Account token1 = Account.newScoreAccount(scoreCount++);
-        Account token2 = Account.newScoreAccount(scoreCount++);
+        Account token = Account.newScoreAccount(scoreCount++);
         BigInteger pid = BigInteger.valueOf(4);
-        BigInteger reversePid = BigInteger.valueOf(5);
 
-        when(mockBalanced.dex.mock.isQuoteCoinAllowed(token1.getAddress())).thenReturn(true);
-        when(mockBalanced.dex.mock.getPoolId(token1.getAddress(),  baln.getAddress())).thenReturn(pid);
+        when(mockBalanced.dex.mock.isQuoteCoinAllowed(token.getAddress())).thenReturn(true);
+        when(mockBalanced.dex.mock.getPoolId(token.getAddress(),  baln.getAddress())).thenReturn(pid);
         when(mockBalanced.stakedLp.mock.isSupportedPool(pid)).thenReturn(true);
 
-        when(mockBalanced.dex.mock.isQuoteCoinAllowed(token2.getAddress())).thenReturn(true);
-        when(mockBalanced.dex.mock.getPoolId(baln.getAddress(),  token2.getAddress())).thenReturn(reversePid);
-        when(mockBalanced.stakedLp.mock.isSupportedPool(reversePid)).thenReturn(true);
-
         // Act
-        feeHandler.invoke(caller, "addDefaultRoute", token1.getAddress());
-        feeHandler.invoke(caller, "addDefaultRoute", token2.getAddress());
+        feeHandler.invoke(caller, "addDefaultRoute", token.getAddress());
 
         // Assert
-        List<String> route1 = (List<String>) feeHandler.call("getRoute", token1.getAddress());
-        List<String> route2 = (List<String>) feeHandler.call("getRoute", token2.getAddress());
+        List<String> route1 = (List<String>) feeHandler.call("getRoute", token.getAddress());
         assertTrue(route1.isEmpty());
-        assertTrue(route2.isEmpty());
     }
 
     @Test
@@ -431,5 +423,101 @@ class FeeHandlerImplTest extends TestBase {
         expectErrorMessage(withQuoteToken, "Only non quote coins can manually be routed");
         expectErrorMessage(withDefinedPath, "Automatically routed tokens can't be manually routed");
         expectErrorMessage(withZeroBalance, zeroBalanceToken.getAddress() + " balance is 0" );
+    }
+
+    @Test
+    void configureRouteLimit_direct() throws Exception {
+        // Arrange
+        Account caller = sm.createAccount();
+        MockContract<IRC2> token = new MockContract<>(IRC2ScoreInterface.class, IRC2.class, sm, owner);
+        BigInteger balnRouteLimit = (BigInteger) feeHandler.call("getBalnRouteLimit");
+        BigInteger pid = BigInteger.TWO;
+        BigInteger tokenPriceInBaln = BigInteger.valueOf(15).multiply(BigInteger.TEN.pow(17));
+        BigInteger expectedLimit = balnRouteLimit.multiply(EXA).divide(tokenPriceInBaln);
+
+        feeHandler.invoke(governance.account, "setRoute", token.getAddress(), new Address[]{});
+
+        when(mockBalanced.dex.mock.getPoolId(mockBalanced.baln.getAddress(), token.getAddress())).thenReturn(pid);
+        when(mockBalanced.dex.mock.getPrice(pid)).thenReturn(tokenPriceInBaln);
+        when(mockBalanced.dex.mock.getPoolBase(pid)).thenReturn(token.getAddress());
+
+        // Act
+        feeHandler.invoke(caller, "calculateRouteLimit", token.getAddress());
+
+        // Assert
+        assertEquals(expectedLimit, feeHandler.call("getRouteLimit", token.getAddress()));
+    }
+
+    @Test
+    void configureRouteLimit_direct_balnBase() throws Exception {
+        // Arrange
+        Account caller = sm.createAccount();
+        MockContract<IRC2> token = new MockContract<>(IRC2ScoreInterface.class, IRC2.class, sm, owner);
+        BigInteger balnRouteLimit = (BigInteger) feeHandler.call("getBalnRouteLimit");
+        BigInteger pid = BigInteger.TWO;
+        BigInteger balnPriceInToken = BigInteger.valueOf(15).multiply(BigInteger.TEN.pow(17));
+        BigInteger expectedLimit = balnRouteLimit.multiply(balnPriceInToken).divide(EXA);
+
+        feeHandler.invoke(governance.account, "setRoute", token.getAddress(), new Address[]{});
+
+        when(mockBalanced.dex.mock.getPoolId(mockBalanced.baln.getAddress(), token.getAddress())).thenReturn(pid);
+        when(mockBalanced.dex.mock.getPrice(pid)).thenReturn(balnPriceInToken);
+        when(mockBalanced.dex.mock.getPoolBase(pid)).thenReturn(baln.getAddress());
+
+        // Act
+        feeHandler.invoke(caller, "calculateRouteLimit", token.getAddress());
+
+        // Assert
+        assertEquals(expectedLimit, feeHandler.call("getRouteLimit", token.getAddress()));
+    }
+
+    @Test
+    void configureRouteLimit_path() throws Exception {
+        // Arrange
+        Account caller = sm.createAccount();
+        Address[] path = new Address[] {sicx.getAddress(), bnusd.getAddress(), baln.getAddress()};
+        MockContract<IRC2> token = new MockContract<>(IRC2ScoreInterface.class, IRC2.class, sm, owner);
+        BigInteger balnRouteLimit = (BigInteger) feeHandler.call("getBalnRouteLimit");
+
+        BigInteger pidTokenSicx = BigInteger.ONE;
+        BigInteger pidSicxBnUSD = BigInteger.TWO;
+        BigInteger pidBnUSDBaln = BigInteger.valueOf(3);
+
+        BigInteger tokenPriceInSicx = BigInteger.valueOf(7).multiply(BigInteger.TEN.pow(17));
+        BigInteger sicxPriceInBnUSD = BigInteger.valueOf(2).multiply(BigInteger.TEN.pow(18));
+        BigInteger balnPriceInBnUSD = BigInteger.valueOf(15).multiply(BigInteger.TEN.pow(17));
+
+        BigInteger amountOfBnUSD = balnRouteLimit.multiply(balnPriceInBnUSD).divide(EXA);
+        BigInteger amountOfSicx = amountOfBnUSD.multiply(EXA).divide(sicxPriceInBnUSD);
+        BigInteger expectedLimit = amountOfSicx.multiply(EXA).divide(tokenPriceInSicx);
+
+        feeHandler.invoke(governance.account, "setRoute", token.getAddress(), path);
+
+        when(mockBalanced.dex.mock.getPoolId(sicx.getAddress(), token.getAddress())).thenReturn(pidTokenSicx);
+        when(mockBalanced.dex.mock.getPoolId(bnusd.getAddress(), sicx.getAddress())).thenReturn(pidSicxBnUSD);
+        when(mockBalanced.dex.mock.getPoolId(baln.getAddress(), bnusd.getAddress())).thenReturn(pidBnUSDBaln);
+
+        when(mockBalanced.dex.mock.getPrice(pidTokenSicx)).thenReturn(tokenPriceInSicx);
+        when(mockBalanced.dex.mock.getPrice(pidSicxBnUSD)).thenReturn(sicxPriceInBnUSD);
+        when(mockBalanced.dex.mock.getPrice(pidBnUSDBaln)).thenReturn(balnPriceInBnUSD);
+
+        when(mockBalanced.dex.mock.getPoolBase(pidTokenSicx)).thenReturn(token.getAddress());
+        when(mockBalanced.dex.mock.getPoolBase(pidSicxBnUSD)).thenReturn(sicx.getAddress());
+        when(mockBalanced.dex.mock.getPoolBase(pidBnUSDBaln)).thenReturn(baln.getAddress());
+
+        // Act
+        feeHandler.invoke(caller, "calculateRouteLimit", token.getAddress());
+
+        // Assert
+        assertEquals(expectedLimit, feeHandler.call("getRouteLimit", token.getAddress()));
+    }
+
+    @Test
+    void configureRouteLimit_limits() throws Exception {
+        Account caller = sm.createAccount();
+        MockContract<IRC2> token = new MockContract<>(IRC2ScoreInterface.class, IRC2.class, sm, owner);
+
+        Executable withNoRoute = () -> feeHandler.invoke(caller, "calculateRouteLimit", token.getAddress());
+        expectErrorMessage(withNoRoute, "No Route exists for " + token.getAddress());
     }
 }

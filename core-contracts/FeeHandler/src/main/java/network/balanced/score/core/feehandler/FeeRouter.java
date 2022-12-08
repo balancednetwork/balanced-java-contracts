@@ -28,6 +28,7 @@ import java.math.BigInteger;
 import java.util.List;
 
 import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
 import static network.balanced.score.core.feehandler.FeeHandlerImpl.acceptedDividendsTokens;
@@ -35,8 +36,13 @@ import static network.balanced.score.core.feehandler.FeeHandlerImpl.acceptedDivi
 public class FeeRouter {
     private static final String ROUTES = "routes_iterable_dictionary";
     private static final String ROUTE_INDEX = "routes_index";
+    private static final String ROUTE_LIMIT= "route_limit";
+    private static final String BALN_ROUTE_LIMIT= "baln_route_limit";
+
     public static final VarDB<Integer> routeIndex = Context.newVarDB(ROUTE_INDEX, Integer.class);
     private static final IterableDictDB<Address, String> routes = new IterableDictDB<Address, String>(ROUTES, String.class, Address.class, false);
+    public static final DictDB<Address, BigInteger> routeLimit = Context.newDictDB(ROUTE_LIMIT, BigInteger.class);
+    public static final VarDB<BigInteger> balnRouteLimit = Context.newVarDB(BALN_ROUTE_LIMIT, BigInteger.class);
 
     public static void addDefaultRoute(Address token) {
         Context.require(!arrayDbContains(acceptedDividendsTokens, token), "Token is accepted, should not be routed");
@@ -50,10 +56,6 @@ public class FeeRouter {
         Address baln = getBaln();
         Address stakedLP = getStakedLp();
         BigInteger directPid = Context.call(BigInteger.class, dex, "getPoolId", token, baln);
-        if (directPid == null) {
-            directPid = Context.call(BigInteger.class, dex, "getPoolId", baln, token);
-        }
-
         if (directPid != null && Context.call(Boolean.class, stakedLP, "isSupportedPool", directPid)) {
             routes.set(token, new JsonArray().toString());
             return;
@@ -63,7 +65,6 @@ public class FeeRouter {
         BigInteger tokenBnusdPid = Context.call(BigInteger.class, dex, "getPoolId", token, bnusd);
         Context.require(tokenBnusdPid != null, "no default path exists for " + token);
 
-
         boolean isSupportedPool = Context.call(Boolean.class, stakedLP, "isSupportedPool", tokenBnusdPid);
         Context.require(isSupportedPool, "no default path exists for " + token);
         JsonArray path = new JsonArray()
@@ -71,6 +72,47 @@ public class FeeRouter {
             .add(baln.toString());
 
         routes.set(token, path.toString());
+    }
+
+    public static void calculateRouteLimit(Address token) {
+        Context.require(routes.get(token) != null, "No Route exists for " + token);
+        String route = routes.get(token);
+        JsonArray routeJson = Json.parse(route).asArray();
+
+        Address fromToken = getBaln();
+        Address toToken;
+
+        Address dex = getDex();
+        BigInteger amount = balnRouteLimit.get();
+
+        int routeSize = routeJson.size();
+        if (routeSize > 1) {
+            // swap backwards to get the start token limit
+            for (int i = routeSize-2; i >= 0; i--) {
+                toToken = Address.fromString(routeJson.get(i).asString());
+                BigInteger pid = Context.call(BigInteger.class, dex, "getPoolId", fromToken, toToken);
+                BigInteger price = Context.call(BigInteger.class, dex, "getPrice", pid);
+                Address base = Context.call(Address.class, dex, "getPoolBase", pid);
+                if (base.equals(fromToken)) {
+                    amount = amount.multiply(price).divide(EXA);
+                } else {
+                    amount = amount.multiply(EXA).divide(price);
+                }
+
+                fromToken = toToken;
+            }
+        }
+        toToken = token;
+        BigInteger pid = Context.call(BigInteger.class, dex, "getPoolId", fromToken, toToken);
+        BigInteger price = Context.call(BigInteger.class, dex, "getPrice", pid);
+        Address base = Context.call(Address.class, dex, "getPoolBase", pid);
+        if (base.equals(fromToken)) {
+            amount = amount.multiply(price).divide(EXA);
+        } else {
+            amount = amount.multiply(EXA).divide(price);
+        }
+
+        routeLimit.set(token, amount);
     }
 
     public static void setRoute(Address token, Address[] _path) {
@@ -142,7 +184,7 @@ public class FeeRouter {
 
         Address tokenToRoute = routes.getKey(index);
         BigInteger balance = Context.call(BigInteger.class, tokenToRoute, "balanceOf", Context.getAddress());
-        if (balance.compareTo(BigInteger.ZERO) <= 0) {
+        if (balance.compareTo(routeLimit.getOrDefault(tokenToRoute, BigInteger.ZERO)) < 0) {
            return;
         }
 

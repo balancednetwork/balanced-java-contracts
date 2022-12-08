@@ -67,7 +67,19 @@ public interface FeeHandler extends Name, AddressManager {
     void setRoute(Address token, Address[] _path);
 
     @External
+    void setBalnRouteLimit(BigInteger limit);
+
+    @External(readonly = true)
+    BigInteger getBalnRouteLimit();
+
+    @External
     void addDefaultRoute(Address token);
+
+    @External
+    void calculateRouteLimit(Address token);
+
+    @External(readonly = true)
+    BigInteger getRouteLimit(Address _fromToken);
 
     @External
     void deleteRoute(Address token);
