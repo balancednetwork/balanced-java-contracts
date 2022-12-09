@@ -32,6 +32,7 @@ import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
+import static network.balanced.score.core.dex.utils.Const.FEE_SCALE;
 import static network.balanced.score.core.dex.utils.Const.SICXICX_POOL_ID;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -256,7 +257,7 @@ public class DexTestCore extends DexTestBase {
         // Act.
         dexScore.invoke(depositor, "withdraw", balnScore.getAddress(), withdrawValue);
 
-        // Assert. 
+        // Assert.
         BigInteger currentDepositValue = (BigInteger) dexScore.call("getDeposit", balnScore.getAddress(),
                 depositor.getAddress());
         assertEquals(depositValue.subtract(withdrawValue), currentDepositValue);
@@ -326,10 +327,9 @@ public class DexTestCore extends DexTestBase {
 
     @SuppressWarnings("unchecked")
     @Test
-    void tokenFallback_swap() {
+    void tokenFallbackSwapFromTokenIs_poolQuote() {
         Account account = sm.createAccount();
         turnDexOn();
-
 
         final String data = "{" +
                 "\"method\": \"_deposit\"" +
@@ -353,21 +353,109 @@ public class DexTestCore extends DexTestBase {
         BigInteger poolId = (BigInteger) dexScore.call("getPoolId", balnScore.getAddress(), bnusdScore.getAddress());
         BigInteger balance = (BigInteger) dexScore.call("balanceOf", account.getAddress(), poolId);
 
+        Map<String, BigInteger> fees = (Map<String, BigInteger>) dexScore.call("getFees");
+        Map<String, Object> poolStats = (Map<String, Object>) dexScore.call("getPoolStats", poolId);
+        BigInteger oldFromToken = (BigInteger) poolStats.get("quote");
+        BigInteger oldToToken = (BigInteger) poolStats.get("base");
+
+        BigInteger value = BigInteger.valueOf(100L).multiply(EXA);
+        BigInteger lp_fee = value.multiply(fees.get("pool_lp_fee")).divide(FEE_SCALE);
+        BigInteger baln_fee = value.multiply(fees.get("pool_baln_fee")).divide(FEE_SCALE);
+        BigInteger total_fee = lp_fee.add(baln_fee);
+
+        BigInteger inputWithoutFees = value.subtract(total_fee);
+        BigInteger newFromToken = oldFromToken.add(inputWithoutFees);
+
+        BigInteger newToToken = (oldFromToken.multiply(oldToToken)).divide(newFromToken);
+        BigInteger sendAmount = oldToToken.subtract(newToToken);
+        newFromToken = newFromToken.add(lp_fee);
 
         // test swap
-        Map<String, Object> poolStats = (Map<String, Object>) dexScore.call("getPoolStats", poolId);
         JsonObject jsonData = new JsonObject();
         JsonObject params = new JsonObject();
         params.add("minimumReceive", BigInteger.valueOf(10L).toString());
         params.add("toToken", balnScore.getAddress().toString());
         jsonData.add("method", "_swap");
         jsonData.add("params", params);
-        dexScore.invoke(bnusdScore, "tokenFallback", account.getAddress(), BigInteger.valueOf(100L).multiply(EXA),
-                jsonData.toString().getBytes());
+        dexScore.invoke(bnusdScore, "tokenFallback", account.getAddress(), value, jsonData.toString().getBytes());
         Map<String, Object> newPoolStats = (Map<String, Object>) dexScore.call("getPoolStats", poolId);
         BigInteger newBalance = (BigInteger) dexScore.call("balanceOf", account.getAddress(), poolId);
 
+        assertEquals(newFromToken, newPoolStats.get("quote"));
+        assertEquals(newToToken, newPoolStats.get("base"));
         assertEquals(balance, newBalance);
+
+        contextMock.verify(() -> Context.call(eq(bnusdScore.getAddress()), eq("transfer"), eq(feehandlerScore.getAddress()), eq(baln_fee)));
+    }
+
+
+    @Test
+    void tokenFallbackSwapFromTokenIs_poolBase() {
+        Account account = sm.createAccount();
+        turnDexOn();
+
+        final String data = "{" +
+                "\"method\": \"_deposit\"" +
+                "}";
+
+        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
+        contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
+        contextMock.when(() -> Context.call(any(Address.class), eq("decimals"))).thenReturn(BigInteger.valueOf(18));
+        contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class),
+                any(BigInteger.class))).thenReturn(null);
+
+        BigInteger FIFTY = BigInteger.valueOf(50L).multiply(EXA);
+        //deposit
+        dexScore.invoke(bnusdScore, "tokenFallback", account.getAddress(), BigInteger.valueOf(50L).multiply(EXA),
+                data.getBytes());
+        dexScore.invoke(balnScore, "tokenFallback", account.getAddress(), BigInteger.valueOf(50L).multiply(EXA),
+                data.getBytes());
+        // add liquidity pool
+        dexScore.invoke(account, "add", balnScore.getAddress(), bnusdScore.getAddress(), FIFTY,
+                FIFTY.divide(BigInteger.TWO), false);
+        BigInteger poolId = (BigInteger) dexScore.call("getPoolId", balnScore.getAddress(), bnusdScore.getAddress());
+        BigInteger balance = (BigInteger) dexScore.call("balanceOf", account.getAddress(), poolId);
+
+        Map<String, BigInteger> fees = (Map<String, BigInteger>) dexScore.call("getFees");
+        Map<String, Object> poolStats = (Map<String, Object>) dexScore.call("getPoolStats", poolId);
+        BigInteger oldFromToken = (BigInteger) poolStats.get("base");
+        BigInteger oldToToken = (BigInteger) poolStats.get("quote");
+
+        BigInteger value = BigInteger.valueOf(100L).multiply(EXA);
+        BigInteger lp_fee = value.multiply(fees.get("pool_lp_fee")).divide(FEE_SCALE);
+        BigInteger baln_fee = value.multiply(fees.get("pool_baln_fee")).divide(FEE_SCALE);
+        BigInteger total_fee = lp_fee.add(baln_fee);
+
+        BigInteger inputWithoutFees = value.subtract(total_fee);
+        BigInteger newFromToken = oldFromToken.add(inputWithoutFees);
+
+        BigInteger newToToken = (oldFromToken.multiply(oldToToken)).divide(newFromToken);
+        BigInteger sendAmount = oldToToken.subtract(newToToken);
+        newFromToken = newFromToken.add(lp_fee);
+
+        // swapping fees to quote token
+        oldFromToken = newFromToken;
+        oldToToken = newToToken;
+        BigInteger newFromTokenWithBalnFee = oldFromToken.add(baln_fee);
+        BigInteger newToTokenAfterFeeSwap = (oldFromToken.multiply(oldToToken)).divide(newFromTokenWithBalnFee);
+        BigInteger swappedBalnFee = oldToToken.subtract(newToTokenAfterFeeSwap);
+
+        // test swap when from token is pool base token
+        JsonObject jsonData = new JsonObject();
+        JsonObject params = new JsonObject();
+        params.add("minimumReceive", BigInteger.valueOf(10L).toString());
+        params.add("toToken", bnusdScore.getAddress().toString());
+        jsonData.add("method", "_swap");
+        jsonData.add("params", params);
+        dexScore.invoke(balnScore, "tokenFallback", account.getAddress(), value, jsonData.toString().getBytes());
+        Map<String, Object> newPoolStats = (Map<String, Object>) dexScore.call("getPoolStats", poolId);
+        BigInteger newBalance = (BigInteger) dexScore.call("balanceOf", account.getAddress(), poolId);
+
+        assertEquals(newFromTokenWithBalnFee, newPoolStats.get("base"));
+        assertEquals(newToTokenAfterFeeSwap, newPoolStats.get("quote"));
+        assertEquals(balance, newBalance);
+
+        contextMock.verify(() -> Context.call(eq(bnusdScore.getAddress()), eq("transfer"), eq(feehandlerScore.getAddress()), eq(swappedBalnFee)));
     }
 
     @SuppressWarnings("unchecked")

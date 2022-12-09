@@ -18,13 +18,14 @@ package network.balanced.score.core.feehandler;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import network.balanced.score.lib.interfaces.FeeHandler;
+import network.balanced.score.lib.utils.Names;
 import score.*;
 import score.annotation.External;
 import score.annotation.Optional;
 import scorex.util.ArrayList;
-import scorex.util.HashMap;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -78,14 +79,14 @@ public class FeeHandlerImpl implements FeeHandler {
         if (governance.get() == null) {
             isContract(_governance);
             this.governance.set(_governance);
-        } else if (admin.get() == null) {
-            admin.set(_governance);
+            enabled.set(true);
+            admin.set(governance.get());
         }
     }
 
     @External(readonly = true)
     public String name() {
-        return "Balanced " + TAG;
+        return Names.FEEHANDLER;
     }
 
     @External
@@ -356,19 +357,19 @@ public class FeeHandlerImpl implements FeeHandler {
     }
 
     private byte[] createDataFieldRouter(Address _receiver, JsonArray _path) {
-        Map<String, Object> map = new HashMap<>();
-        map.put("method", "_swap");
-        map.put("params", Map.of("path", _path, "receiver", _receiver.toString()));
-        String data = map.toString();
-        return data.getBytes();
+        JsonObject params = Json.object().add("path", _path).add("receiver", _receiver.toString());
+        JsonObject data = new JsonObject();
+        data.add("method", "_swap");
+        data.add("params", params);
+        return data.toString().getBytes();
     }
 
     private byte[] createDataFieldDex(Address _toToken, Address _receiver) {
-        Map<String, Object> map = new HashMap<>();
-        map.put("method", "_swap");
-        map.put("params", Map.of("toToken", _toToken.toString(), "receiver", _receiver.toString()));
-        String data = map.toString();
-        return data.getBytes();
+        JsonObject params = Json.object().add("toToken", _toToken.toString()).add("receiver", _receiver.toString());
+        JsonObject data = new JsonObject();
+        data.add("method", "_swap");
+        data.add("params", params);
+        return data.toString().getBytes();
     }
 
     private Address getContractAddress(String _contract) {

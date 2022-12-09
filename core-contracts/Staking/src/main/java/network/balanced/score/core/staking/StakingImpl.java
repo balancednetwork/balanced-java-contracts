@@ -26,6 +26,7 @@ import network.balanced.score.core.staking.utils.Constant;
 import network.balanced.score.core.staking.utils.UnstakeDetails;
 import network.balanced.score.lib.interfaces.Staking;
 import network.balanced.score.lib.structs.PrepDelegations;
+import network.balanced.score.lib.utils.Names;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -72,7 +73,7 @@ public class StakingImpl implements Staking {
             rate.set(ONE_EXA);
             setTopPreps();
             unstakeBatchLimit.set(DEFAULT_UNSTAKE_BATCH_LIMIT);
-            stakingOn.set(false);
+            stakingOn.set(true);
         } else {
             BigInteger stakedAmount = totalStake.getOrDefault(BigInteger.ZERO);
             Map<String, BigInteger> prepDelegations = prepDelegationInIcx.getOrDefault(DEFAULT_DELEGATION_LIST).toMap();
@@ -108,7 +109,7 @@ public class StakingImpl implements Staking {
     // Read Only methods
     @External(readonly = true)
     public String name() {
-        return TAG;
+        return Names.STAKING;
     }
 
     @External

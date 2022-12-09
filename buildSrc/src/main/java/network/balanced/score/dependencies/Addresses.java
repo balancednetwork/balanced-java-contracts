@@ -87,5 +87,31 @@ public class Addresses {
             public static final String stakedlp =  "cx8ac7b22d1eea06bffb3786a7d4ce7c0c8ea9e525";
             public static final String balancedoracle =  "cx5c244805b38c3f71d494cbcfd25f87c201d81629";
             public static final String bBaln =  "cx63d5d4a710d83afa29fa15e528fb5379638e848f";
+            public static final String bribing = "cx0df2381fa5fc7aefac0f3abcd0118081a3c5b81c";
+      }
+
+      public static class lisbon {
+            public static final String governance = "cxdb3d3e2717d4896b336874015a4b23871e62fb6b";
+            public static final String baln = "cxc3c552054ba6823107b56086134c2afc26ab1dfa";
+            public static final String bnUSD = "cx87f7f8ceaa054d46ba7343a2ecd21208e12913c6";
+            public static final String bwt = "cxd3c090fdf1cd2882730961491188527da5fee806";
+            public static final String daofund = "cx416a9ffc1cf126aca198d940f2065bfd27fe6adc";
+            public static final String dex = "cx7a90ed2f781876534cf1a04be34e4af026483de4";
+            public static final String disbursement = "cx224192f83983a7d09e2dbe2e59aaacaef5a79484";
+            public static final String dividends = "cx211fe0f9c23f444b4e9757785b53c61da79c0e80";
+            public static final String feehandler = "cxf19dfddfb2050a2424a8f9a799255c09271b5e08";
+            public static final String stability = "cx7d26fd58b5f2af3a784030f3cbeb2e7e4d57fc3d";
+            public static final String loans = "cx87e73719307199fa01426d0feff528d6f3fbfe07";
+            public static final String oracle = "cx03018fc77ee8862c25f1656161f8a6dbe53620d3";
+            public static final String rebalancing = "cx6d673012fbc854f6915f7a2ca34b404695336e9a";
+            public static final String reserve = "cxdf703b8dfe39ea65509707d8c8b411b114c6da7e";
+            public static final String rewards = "cx0e6c153fd2af98c74453563427694168b214a53f";
+            public static final String router = "cx2576925d931f3be8ff195914c10a87da2094c5e5";
+            public static final String sicx = "cx2d013cb55781fb54b81d629aa4b611be2daec564";
+            public static final String staking = "cx442b5db251e4f27371cc5b8479a4672c0e6ae32d";
+            public static final String multicall = "cxfe61a2d95ebf477824d2b66a86736bcf4c3f6f65";
+            public static final String stakedlp =  "cx0e04a92802d171a8d9f318f6568af47d68dba902";
+            public static final String balancedoracle =  "cxeda795dcd69fe3d2e6c88a6473cdfe5532a3393e";
+            public static final String bBaln =  "cxb0cafb790fb312e40d8c5ac88e15b15d46aad222";
       }
 }

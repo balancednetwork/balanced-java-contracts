@@ -21,10 +21,12 @@ import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import network.balanced.score.lib.interfaces.Router;
+import network.balanced.score.lib.utils.Names;
 import score.Address;
 import score.Context;
 import score.UserRevertException;
 import score.VarDB;
+import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
 import score.annotation.Payable;
@@ -32,6 +34,7 @@ import score.annotation.Payable;
 import java.math.BigInteger;
 
 import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.StringUtils.convertStringToBigInteger;
 
 public class RouterImpl implements Router {
@@ -60,7 +63,7 @@ public class RouterImpl implements Router {
 
     @External(readonly = true)
     public String name() {
-        return TAG;
+        return Names.ROUTER;
     }
 
     @External
@@ -147,6 +150,15 @@ public class RouterImpl implements Router {
 
     private void route(Address from, Address startToken, Address[] _path, BigInteger _minReceive) {
         Address currentToken = startToken;
+        BigInteger fromAmount;
+        Address fromAddress;
+        if (currentToken == null) {
+            fromAmount = Context.getBalance(Context.getAddress());
+            fromAddress = EOA_ZERO;
+        } else {
+            fromAmount = (BigInteger) Context.call(currentToken, "balanceOf", Context.getAddress());
+            fromAddress = startToken;
+        }
 
         for (Address token : _path) {
             swap(currentToken, token);
@@ -158,11 +170,13 @@ public class RouterImpl implements Router {
             Context.require(balance.compareTo(_minReceive) >= 0,
                     TAG + ": Below minimum receive amount of " + _minReceive);
             Context.transfer(from, balance);
+            Route(fromAddress, fromAmount, EOA_ZERO, balance);
         } else {
             BigInteger balance = (BigInteger) Context.call(currentToken, "balanceOf", Context.getAddress());
             Context.require(balance.compareTo(_minReceive) >= 0,
                     TAG + ": Below minimum receive amount of " + _minReceive);
             Context.call(currentToken, "transfer", from, balance);
+            Route(fromAddress, fromAmount, currentToken, balance);
         }
     }
 
@@ -182,14 +196,14 @@ public class RouterImpl implements Router {
     }
 
     /**
-     *  This is invoked when a token is transferred to this score. It expects a JSON object with the following format:
+     * This is invoked when a token is transferred to this score. It expects a JSON object with the following format:
      * <blockquote>
-     *     {"method": "METHOD_NAME", "params":{...}}
+     * {"method": "METHOD_NAME", "params":{...}}
      * </blockquote>
      *
-     * @param _from The address calling `transfer` on the other contract
+     * @param _from  The address calling `transfer` on the other contract
      * @param _value Amount of token transferred
-     * @param _data Data called by the transfer, json object expected.
+     * @param _data  Data called by the transfer, json object expected.
      */
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
@@ -247,5 +261,9 @@ public class RouterImpl implements Router {
     @Payable
     public void fallback() {
         only(dex);
+    }
+
+    @EventLog(indexed = 1)
+    public void Route(Address from, BigInteger fromAmount, Address to, BigInteger toAmount) {
     }
 }

@@ -16,6 +16,7 @@
 
 package network.balanced.score.core.dex;
 
+import com.eclipsesource.json.JsonArray;
 import foundation.icon.icx.Wallet;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
@@ -32,6 +33,8 @@ import java.util.Map;
 
 import static foundation.icon.score.client.DefaultScoreClient._deploy;
 import static network.balanced.score.core.dex.utils.Const.SICXICX_MARKET_NAME;
+import static network.balanced.score.lib.test.integration.BalancedUtils.createParameter;
+import static network.balanced.score.lib.test.integration.BalancedUtils.createTransaction;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.junit.jupiter.api.Assertions.*;
@@ -308,7 +311,6 @@ class DexIntegrationTest {
     @Test
     @Order(8)
     void testNonContinuousAndContinuousReward() {
-        userDaoFundScoreClient.addAddressToSetdb();
         balanced.syncDistributions();
         BigInteger balnHolding = userRewardScoreClient.getBalnHolding(tUserAddress);
         tUserClient._transfer(dexScoreClient._address(), BigInteger.valueOf(200).multiply(EXA), null);
@@ -364,17 +366,27 @@ class DexIntegrationTest {
 
         //check isQuoteCoinAllowed for test token if not added
         if (!dexUserScoreClient.isQuoteCoinAllowed(tokenAAddress)) {
-            governanceDexScoreClient.dexAddQuoteCoin(tokenAAddress);
+            dexAddQuoteCoin(tokenAAddress);
         }
         if (!dexUserScoreClient.isQuoteCoinAllowed(tokenBAddress)) {
-            governanceDexScoreClient.dexAddQuoteCoin(tokenBAddress);
+            dexAddQuoteCoin(tokenBAddress);
         }
         if (!dexUserScoreClient.isQuoteCoinAllowed(tokenCAddress)) {
-            governanceDexScoreClient.dexAddQuoteCoin(tokenCAddress);
+            dexAddQuoteCoin(tokenCAddress);
         }
         if (!dexUserScoreClient.isQuoteCoinAllowed(tokenDAddress)) {
-            governanceDexScoreClient.dexAddQuoteCoin(tokenDAddress);
+            dexAddQuoteCoin(tokenDAddress);
         }
+    }
+
+    private static void dexAddQuoteCoin(Address address) {
+        JsonArray addQuoteCoinParameters = new JsonArray()
+                .add(createParameter(address));
+
+        JsonArray actions = new JsonArray()
+                .add(createTransaction(balanced.dex._address(), "addQuoteCoin", addQuoteCoinParameters));
+
+        balanced.ownerClient.governance.execute(actions.toString());
     }
 
     void waitForADay() {

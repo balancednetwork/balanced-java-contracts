@@ -18,6 +18,7 @@ package network.balanced.score.core.reserve;
 
 import network.balanced.score.lib.interfaces.Reserve;
 import network.balanced.score.lib.structs.Disbursement;
+import network.balanced.score.lib.utils.Names;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -50,10 +51,10 @@ public class ReserveFund implements Reserve {
     private final VarDB<Address> sicxToken = Context.newVarDB(SICX_TOKEN, Address.class);
     private final BranchDB<Address, DictDB<Address, BigInteger>> awards = Context.newBranchDB(AWARDS, BigInteger.class);
 
-    public ReserveFund(@Optional Address governance) {
-        if (governance != null) {
-            Context.require(governance.isContract(), "ReserveFund: Governance address should be a contract");
-            ReserveFund.governance.set(governance);
+    public ReserveFund(@Optional Address _governance) {
+        if (governance.get() == null) {
+            Context.require(_governance.isContract(), "ReserveFund: Governance address should be a contract");
+            governance.set(_governance);
         }
     }
 
@@ -63,7 +64,7 @@ public class ReserveFund implements Reserve {
 
     @External(readonly = true)
     public String name() {
-        return "Balanced Reserve Fund";
+        return Names.RESERVE;
     }
 
     @External

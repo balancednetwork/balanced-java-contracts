@@ -17,10 +17,14 @@
 package network.balanced.score.lib.test.integration;
 
 import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.JsonObject;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
 
+import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
 
 import static foundation.icon.score.client.DefaultScoreClient._deploy;
@@ -28,11 +32,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class BalancedUtils {
 
-    public static void executeVoteActions(Balanced balanced, BalancedClient voter, String name, JsonArray actions) {
+    public static void executeVote(Balanced balanced, BalancedClient voter, String name, JsonArray transactions) {
         BigInteger day = voter.governance.getDay();
         BigInteger voteStart = day.add(BigInteger.TWO);
         String forumLink = "https://gov.balanced.network/";
-        voter.governance.defineVote(name, "test", voteStart, BigInteger.ONE, forumLink, actions.toString());
+        voter.governance.defineVote(name, "test", voteStart, BigInteger.ONE, forumLink, transactions.toString());
         BigInteger id = voter.governance.getVoteIndex(name);
         balanced.increaseDay(2);
 
@@ -49,6 +53,20 @@ public class BalancedUtils {
         assertEquals("Executed", voter.governance.checkVote(id).get("status"));
     }
 
+    public static void whitelistToken(Balanced balanced, Address address, BigInteger limit) {
+        JsonArray whitelistTokensParams = new JsonArray()
+                .add(createParameter(address))
+                .add(createParameter(limit));
+
+        JsonArray whitelistTokens = createSingleTransaction(
+                balanced.stability._address(),
+                "whitelistTokens",
+                whitelistTokensParams
+        );
+
+        balanced.ownerClient.governance.execute(whitelistTokens.toString());
+    }
+
     public static BigInteger hexObjectToBigInteger(Object hexNumber) {
         String hexString = (String) hexNumber;
         if (hexString.startsWith("0x")) {
@@ -56,6 +74,14 @@ public class BalancedUtils {
         }
         return new BigInteger(hexString, 16);
 
+    }
+
+    public static byte[] getContractBytes(String path) {
+        try {
+            return Files.readAllBytes(Path.of(path));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static Address createIRC2Token(BalancedClient owner, String name, String symbol) {
@@ -78,5 +104,85 @@ public class BalancedUtils {
         return assetClient._address();
     }
 
+    public static JsonObject createJsonDistribution(String name, BigInteger dist) {
+        return new JsonObject()
+                .add("recipient_name", name)
+                .add("dist_percent", dist.toString());
+    }
 
+    public static JsonObject createJsonDisbursement(score.Address token, BigInteger amount) {
+        return new JsonObject()
+            .add("address", createParameter(token))
+            .add("amount", createParameter(amount));
+    }
+
+    public static JsonObject createParameter(String value) {
+        return new JsonObject()
+                .add("type", "String")
+                .add("value", value);
+    }
+
+    public static JsonObject createParameter(byte[] value) {
+        return new JsonObject()
+                .add("type", "bytes")
+                .add("value", getHex(value));
+    }
+
+
+    public static JsonObject createParameter(Address value) {
+        return new JsonObject()
+                .add("type", "Address")
+                .add("value", value.toString());
+    }
+
+    public static JsonObject createParameter(score.Address value) {
+        return new JsonObject()
+                .add("type", "Address")
+                .add("value", value.toString());
+    }
+
+    public static JsonObject createParameter(BigInteger value) {
+        return new JsonObject()
+                .add("type", "int")
+                .add("value", value.toString());
+    }
+
+    public static JsonObject createParameter(Boolean value) {
+        return new JsonObject()
+                .add("type", "boolean")
+                .add("value", value);
+    }
+
+    public static JsonObject createParameter(String type, JsonObject value) {
+        return new JsonObject()
+                .add("type", type)
+                .add("value", value);
+    }
+
+    public static JsonObject createParameter(String type, JsonArray value) {
+        return new JsonObject()
+                .add("type", type)
+                .add("value", value);
+    }
+
+    public static JsonObject createTransaction(Address address, String method, JsonArray parameters) {
+        return new JsonObject()
+                .add("address", address.toString())
+                .add("method", method)
+                .add("parameters", parameters);
+    }
+
+    public static JsonArray createSingleTransaction(Address address, String method, JsonArray parameters) {
+        return new JsonArray()
+                .add(createTransaction(address, method, parameters));
+    }
+
+    private static String getHex(byte[] raw) {
+        String HEXES = "0123456789ABCDEF";
+        final StringBuilder hex = new StringBuilder(2 * raw.length);
+        for (final byte b : raw) {
+            hex.append(HEXES.charAt((b & 0xF0) >> 4)).append(HEXES.charAt((b & 0x0F)));
+        }
+        return hex.toString();
+    }
 }

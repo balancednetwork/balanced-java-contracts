@@ -32,6 +32,9 @@ project(':Multicall').projectDir = file("core-contracts/Multicall")
 include(':BatchDisbursement')
 project(':BatchDisbursement').projectDir = file("core-contracts/BatchDisbursement")
 
+include(':Bribing')
+project(':Bribing').projectDir = file("core-contracts/Bribing")
+
 include(':Reserve')
 project(':Reserve').projectDir = file("core-contracts/Reserve")
 
@@ -74,6 +77,9 @@ project(':Loans').projectDir = file("core-contracts/Loans")
 
 include(':Governance')
 project(':Governance').projectDir = file("core-contracts/Governance")
+
+include(':DeploymentTester')
+project(':DeploymentTester').projectDir = file("core-contracts/Governance/src/intTest/java/network/balanced/score/core/governance/DeploymentTester")
 
 include(':DummyOracle')
 project(':DummyOracle').projectDir = file("util-contracts/DummyOracle")
