@@ -16,25 +16,21 @@
 
 package network.balanced.score.lib.test.integration;
 
+import com.eclipsesource.json.JsonArray;
 import foundation.icon.icx.KeyWallet;
+import foundation.icon.jsonrpc.Address;
 import foundation.icon.jsonrpc.model.Hash;
 import foundation.icon.jsonrpc.model.TransactionResult;
 import foundation.icon.score.client.DefaultScoreClient;
-import network.balanced.score.lib.interfaces.*;
-import network.balanced.score.lib.structs.BalancedAddresses;
+import network.balanced.score.lib.interfaces.Governance;
+import network.balanced.score.lib.interfaces.GovernanceScoreClient;
 import network.balanced.score.lib.utils.Names;
-import foundation.icon.jsonrpc.Address;
 
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import com.eclipsesource.json.Json;
-import com.eclipsesource.json.JsonArray;
-import com.eclipsesource.json.JsonObject;
-
-import static network.balanced.score.lib.test.integration.BalancedUtils.hexObjectToBigInteger;
 import static network.balanced.score.lib.test.integration.BalancedUtils.createParameter;
 import static network.balanced.score.lib.test.integration.BalancedUtils.createSingleTransaction;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
@@ -88,10 +84,11 @@ public class Balanced {
 
     public void deployContracts() {
         governance = deploy(owner, "Governance", null);
-        governanceClient = new GovernanceScoreClient(chain.getEndpointURL(), chain.networkId, owner, governance._address());
+        governanceClient = new GovernanceScoreClient(chain.getEndpointURL(), chain.networkId, owner,
+                governance._address());
         String governanceParam = new JsonArray()
-            .add(createParameter(governance._address()))
-            .toString();
+                .add(createParameter(governance._address()))
+                .toString();
 
         governanceClient.deploy(getContractData("BalancedToken"), governanceParam);
         governanceClient.deploy(getContractData("WorkerToken"), governanceParam);
@@ -131,20 +128,20 @@ public class Balanced {
         staking = getDeploymentResult(owner, stakingTx);
 
         String StabilityParams = new JsonArray()
-            .add(createParameter(feehandler._address()))
-            .add(createParameter(bnusd._address()))
-            .add(createParameter(BigInteger.TEN.pow(18)))
-            .add(createParameter(BigInteger.TEN.pow(18)))
-            .toString();
+                .add(createParameter(feehandler._address()))
+                .add(createParameter(bnusd._address()))
+                .add(createParameter(BigInteger.TEN.pow(18)))
+                .add(createParameter(BigInteger.TEN.pow(18)))
+                .toString();
 
         governanceClient.deploy(getContractData("Stability"), StabilityParams);
 
         String BoostedBalnParams = new JsonArray()
-            .add(createParameter(baln._address()))
-            .add(createParameter(rewards._address()))
-            .add(createParameter(dividends._address()))
-            .add(createParameter("bBaln"))
-            .toString();
+                .add(createParameter(baln._address()))
+                .add(createParameter(rewards._address()))
+                .add(createParameter(dividends._address()))
+                .add(createParameter("bBaln"))
+                .toString();
 
         governanceClient.deploy(getContractData("bBaln"), BoostedBalnParams);
         bBaln = newScoreClient(owner, governanceClient.getAddress(Names.BOOSTED_BALN));

@@ -120,7 +120,7 @@ public interface ScoreIntegrationTest {
     static DefaultScoreClient newScoreClient(KeyWallet wallet, score.Address address) {
         return newScoreClient(wallet, new Address(address.toString()));
     }
-    
+
     static DefaultScoreClient newScoreClient(KeyWallet wallet, Address address) {
         return new DefaultScoreClient(chain.getEndpointURL(), chain.networkId, wallet, address);
     }

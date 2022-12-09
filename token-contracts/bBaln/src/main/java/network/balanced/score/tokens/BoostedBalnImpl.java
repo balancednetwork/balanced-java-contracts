@@ -18,7 +18,6 @@ package network.balanced.score.tokens;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
-
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.tokens.db.LockedBalance;
 import network.balanced.score.tokens.db.Point;

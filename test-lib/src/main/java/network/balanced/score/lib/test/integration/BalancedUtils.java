@@ -28,9 +28,14 @@ import java.util.Map;
 
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
-
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
+
+import java.io.IOException;
+import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Map;
 
 import static foundation.icon.score.client.DefaultScoreClient._deploy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -60,13 +65,13 @@ public class BalancedUtils {
 
     public static void whitelistToken(Balanced balanced, Address address, BigInteger limit) {
         JsonArray whitelistTokensParams = new JsonArray()
-            .add(createParameter(address))
-            .add(createParameter(limit));
+                .add(createParameter(address))
+                .add(createParameter(limit));
 
         JsonArray whitelistTokens = createSingleTransaction(
-            balanced.stability._address(),
-            "whitelistTokens",
-            whitelistTokensParams
+                balanced.stability._address(),
+                "whitelistTokens",
+                whitelistTokensParams
         );
 
         balanced.ownerClient.governance.execute(whitelistTokens.toString());
@@ -109,77 +114,77 @@ public class BalancedUtils {
         return assetClient._address();
     }
 
-    public static JsonObject createJsonDistribtion(String name, BigInteger dist) {
+    public static JsonObject createJsonDistribution(String name, BigInteger dist) {
         return new JsonObject()
-            .add("recipient_name", name)
-            .add("dist_percent", dist.toString());
+                .add("recipient_name", name)
+                .add("dist_percent", dist.toString());
     }
 
-    public static JsonObject createJsonDisbusment(String token, BigInteger amount) {
+    public static JsonObject createJsonDisbursement(score.Address token, BigInteger amount) {
         return new JsonObject()
-            .add("address", token)
-            .add("amount", amount.intValue());
+            .add("address", createParameter(token))
+            .add("amount", createParameter(amount));
     }
 
     public static JsonObject createParameter(String value) {
         return new JsonObject()
-            .add("type", "String")
-            .add("value", value);
+                .add("type", "String")
+                .add("value", value);
     }
 
     public static JsonObject createParameter(byte[] value) {
         return new JsonObject()
-            .add("type", "bytes")
-            .add("value", getHex(value));
+                .add("type", "bytes")
+                .add("value", getHex(value));
     }
 
 
     public static JsonObject createParameter(Address value) {
         return new JsonObject()
-            .add("type", "Address")
-            .add("value", value.toString());
+                .add("type", "Address")
+                .add("value", value.toString());
     }
 
     public static JsonObject createParameter(score.Address value) {
         return new JsonObject()
-            .add("type", "Address")
-            .add("value", value.toString());
+                .add("type", "Address")
+                .add("value", value.toString());
     }
 
     public static JsonObject createParameter(BigInteger value) {
         return new JsonObject()
-            .add("type", "int")
-            .add("value", value.toString());
+                .add("type", "int")
+                .add("value", value.toString());
     }
 
     public static JsonObject createParameter(Boolean value) {
         return new JsonObject()
-            .add("type", "boolean")
-            .add("value", value);
+                .add("type", "boolean")
+                .add("value", value);
     }
 
     public static JsonObject createParameter(String type, JsonObject value) {
         return new JsonObject()
-            .add("type", type)
-            .add("value", value);
+                .add("type", type)
+                .add("value", value);
     }
 
     public static JsonObject createParameter(String type, JsonArray value) {
         return new JsonObject()
-            .add("type", type)
-            .add("value", value);
+                .add("type", type)
+                .add("value", value);
     }
 
     public static JsonObject createTransaction(Address address, String method, JsonArray parameters) {
         return new JsonObject()
-            .add("address", address.toString())
-            .add("method", method)
-            .add("parameters", parameters);
+                .add("address", address.toString())
+                .add("method", method)
+                .add("parameters", parameters);
     }
 
     public static JsonArray createSingleTransaction(Address address, String method, JsonArray parameters) {
         return new JsonArray()
-            .add(createTransaction(address, method, parameters));
+                .add(createTransaction(address, method, parameters));
     }
 
     private static String getHex(byte[] raw) {

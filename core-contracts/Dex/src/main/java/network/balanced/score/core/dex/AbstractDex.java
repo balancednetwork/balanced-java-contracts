@@ -605,10 +605,12 @@ public abstract class AbstractDex implements Dex {
 
         BigInteger lpFees = value.multiply(poolLpFee.get()).divide(FEE_SCALE);
         BigInteger balnFees = value.multiply(poolBalnFee.get()).divide(FEE_SCALE);
+        BigInteger initialBalnFees = balnFees;
         BigInteger fees = lpFees.add(balnFees);
 
         Address poolBaseToken = poolBase.get(id);
         boolean isSell = fromToken.equals(poolBaseToken);
+        Address poolQuoteToken = isSell ? toToken : fromToken;
 
         // We consider the trade in terms of toToken (token we are trading to), and fromToken (token we are trading
         // away) in the pool. It must obey the xy=k constant product formula.
@@ -637,6 +639,16 @@ public abstract class AbstractDex implements Dex {
         // sent to BALN holders.
         newFromToken = newFromToken.add(lpFees);
 
+        if (isSell) {
+            oldFromToken = newFromToken;
+            oldToToken = newToToken;
+
+            newFromToken = oldFromToken.add(balnFees);
+            newToToken = (oldFromToken.multiply(oldToToken)).divide(newFromToken);
+
+            balnFees = oldToToken.subtract(newToToken);
+        }
+
         // Save updated pool totals
         totalTokensInPool.set(fromToken, newFromToken);
         totalTokensInPool.set(toToken, newToToken);
@@ -649,7 +661,7 @@ public abstract class AbstractDex implements Dex {
         Context.call(toToken, "transfer", receiver, sendAmount);
 
         // Send the platform fees to the fee handler SCORE
-        Context.call(fromToken, "transfer", feeHandler.get(), balnFees);
+        Context.call(poolQuoteToken, "transfer", feeHandler.get(), balnFees);
 
         // Broadcast pool ending price
         BigInteger effectiveFillPrice = (value.multiply(EXA)).divide(sendAmount);
@@ -660,7 +672,7 @@ public abstract class AbstractDex implements Dex {
         }
 
         Swap(BigInteger.valueOf(id), poolBaseToken, fromToken, toToken, sender, receiver, value, sendAmount,
-                BigInteger.valueOf(Context.getBlockTimestamp()), lpFees, balnFees, totalBase, totalQuote, endingPrice
+                BigInteger.valueOf(Context.getBlockTimestamp()), lpFees, initialBalnFees, totalBase, totalQuote, endingPrice
                 , effectiveFillPrice);
     }
 

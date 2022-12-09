@@ -27,6 +27,7 @@ import network.balanced.score.lib.structs.RewardsDataEntry;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.structs.VotedSlope;
 import network.balanced.score.lib.utils.IterableDictDB;
+import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.SetDB;
 import score.*;
 import score.annotation.EventLog;

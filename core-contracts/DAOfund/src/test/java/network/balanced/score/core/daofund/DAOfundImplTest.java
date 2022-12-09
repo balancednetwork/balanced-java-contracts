@@ -16,20 +16,13 @@
 
 package network.balanced.score.core.daofund;
 
-import static network.balanced.score.core.daofund.DAOfundImpl.TAG;
-import static network.balanced.score.lib.test.UnitTest.*;
-import static network.balanced.score.lib.utils.Constants.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.math.BigInteger;
-import java.util.Map;
-
+import com.iconloop.score.test.Account;
+import com.iconloop.score.test.Score;
+import com.iconloop.score.test.ServiceManager;
+import com.iconloop.score.test.TestBase;
+import network.balanced.score.lib.structs.Disbursement;
+import network.balanced.score.lib.structs.PrepDelegations;
+import network.balanced.score.lib.test.mock.MockBalanced;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -47,6 +40,18 @@ import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.test.mock.MockBalanced;
 import score.Address;
 import score.Context;
+
+import java.math.BigInteger;
+import java.util.Map;
+
+import static network.balanced.score.core.daofund.DAOfundImpl.TAG;
+import static network.balanced.score.lib.test.UnitTest.assertOnlyCallableBy;
+import static network.balanced.score.lib.test.UnitTest.expectErrorMessage;
+import static network.balanced.score.lib.utils.Constants.EXA;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 class DAOfundImplTest extends TestBase {
     private static final ServiceManager sm = getServiceManager();
@@ -108,8 +113,10 @@ class DAOfundImplTest extends TestBase {
     void receiveTokens() {
         addSymbolToSetdb();
 
-        daofundScore.invoke(mockBalanced.sicx.account, "tokenFallback", owner.getAddress(), BigInteger.TEN.pow(20), new byte[0]);
-        Map<String, BigInteger> expectedBalances = Map.of(mockBalanced.sicx.getAddress().toString(), BigInteger.TEN.pow(20),
+        daofundScore.invoke(mockBalanced.sicx.account, "tokenFallback", owner.getAddress(), BigInteger.TEN.pow(20),
+                new byte[0]);
+        Map<String, BigInteger> expectedBalances = Map.of(mockBalanced.sicx.getAddress().toString(),
+                BigInteger.TEN.pow(20),
                 mockBalanced.baln.getAddress().toString(), BigInteger.ZERO,
                 mockBalanced.bnUSD.getAddress().toString(), BigInteger.ZERO);
         assertEquals(expectedBalances, daofundScore.call("getBalances"));
@@ -175,6 +182,15 @@ class DAOfundImplTest extends TestBase {
         // }
 
         // Context.call(Context.getCaller(), "transfer", getBoostedBaln(), amount, data.getBytes());
+    //     String data;
+    // boolean hasLocked = Context.call(Boolean.class, getBoostedBaln(), "hasLocked", Context.getAddress());
+    // if (!hasLocked) {
+    //     data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
+    // } else {
+    //     data = "{\"method\":\"increaseAmount\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
+    // }
+
+    // Context.call(Context.getCaller(), "transfer", getBoostedBaln(), amount, data.getBytes());
     @Test
     void claimRewards_noLock() {
         // Arrange
@@ -183,16 +199,18 @@ class DAOfundImplTest extends TestBase {
         when(mockBalanced.rewards.mock.getUserSources(daofundScore.getAddress())).thenReturn(sources);
         when(mockBalanced.bBaln.mock.hasLocked(daofundScore.getAddress())).thenReturn(false);
         doAnswer(invocation -> {
-                daofundScore.invoke(mockBalanced.baln.account, "tokenFallback", mockBalanced.rewards.getAddress(), expectedBalnRewards, new byte[0]);
-                return null;
+            daofundScore.invoke(mockBalanced.baln.account, "tokenFallback", mockBalanced.rewards.getAddress(),
+                    expectedBalnRewards, new byte[0]);
+            return null;
         }).when(mockBalanced.rewards.mock).claimRewards(sources);
 
         // Act
         daofundScore.invoke(mockBalanced.governance.account, "claimRewards");
 
         // Assert
-        verify(mockBalanced.baln.mock).transfer(eq(mockBalanced.bBaln.getAddress()), eq(expectedBalnRewards), any(byte[].class));
-        BigInteger balnRewards  = (BigInteger) daofundScore.call("getBalnEarnings");
+        verify(mockBalanced.baln.mock).transfer(eq(mockBalanced.bBaln.getAddress()), eq(expectedBalnRewards),
+                any(byte[].class));
+        BigInteger balnRewards = (BigInteger) daofundScore.call("getBalnEarnings");
         assertEquals(expectedBalnRewards, balnRewards);
     }
 
@@ -204,16 +222,18 @@ class DAOfundImplTest extends TestBase {
         when(mockBalanced.rewards.mock.getUserSources(daofundScore.getAddress())).thenReturn(sources);
         when(mockBalanced.bBaln.mock.hasLocked(daofundScore.getAddress())).thenReturn(true);
         doAnswer(invocation -> {
-                daofundScore.invoke(mockBalanced.baln.account, "tokenFallback", mockBalanced.rewards.getAddress(), expectedBalnRewards, new byte[0]);
-                return null;
+            daofundScore.invoke(mockBalanced.baln.account, "tokenFallback", mockBalanced.rewards.getAddress(),
+                    expectedBalnRewards, new byte[0]);
+            return null;
         }).when(mockBalanced.rewards.mock).claimRewards(sources);
 
         // Act
         daofundScore.invoke(mockBalanced.governance.account, "claimRewards");
 
         // Assert
-        verify(mockBalanced.baln.mock).transfer(eq(mockBalanced.bBaln.getAddress()), eq(expectedBalnRewards), any(byte[].class));
-        BigInteger balnRewards  = (BigInteger) daofundScore.call("getBalnEarnings");
+        verify(mockBalanced.baln.mock).transfer(eq(mockBalanced.bBaln.getAddress()), eq(expectedBalnRewards),
+                any(byte[].class));
+        BigInteger balnRewards = (BigInteger) daofundScore.call("getBalnEarnings");
         assertEquals(expectedBalnRewards, balnRewards);
     }
 
@@ -226,9 +246,11 @@ class DAOfundImplTest extends TestBase {
         BigInteger sICXFees = BigInteger.TWO;
 
         doAnswer(invocation -> {
-                daofundScore.invoke(mockBalanced.sicx.account, "tokenFallback", mockBalanced.dividends.getAddress(), sICXFees, new byte[0]);
-                daofundScore.invoke(mockBalanced.bnUSD.account, "tokenFallback", mockBalanced.dividends.getAddress(), bnUSDFees, new byte[0]);
-                return null;
+            daofundScore.invoke(mockBalanced.sicx.account, "tokenFallback", mockBalanced.dividends.getAddress(),
+                    sICXFees, new byte[0]);
+            daofundScore.invoke(mockBalanced.bnUSD.account, "tokenFallback", mockBalanced.dividends.getAddress(),
+                    bnUSDFees, new byte[0]);
+            return null;
         }).when(mockBalanced.dividends.mock).claimDividends();
 
         // Act
@@ -256,8 +278,10 @@ class DAOfundImplTest extends TestBase {
         when(mockBalanced.dex.mock.balanceOf(daofundScore.getAddress(), pid)).thenReturn(lpBalance);
 
         // Act
-        assertOnlyCallableBy(mockBalanced.governance.getAddress(), daofundScore, "supplyLiquidity", baseToken, baseAmount, quoteToken, quoteAmount);
-        daofundScore.invoke(mockBalanced.governance.account, "supplyLiquidity", baseToken, baseAmount, quoteToken, quoteAmount);
+        assertOnlyCallableBy(mockBalanced.governance.getAddress(), daofundScore, "supplyLiquidity", baseToken,
+                baseAmount, quoteToken, quoteAmount);
+        daofundScore.invoke(mockBalanced.governance.account, "supplyLiquidity", baseToken, baseAmount, quoteToken,
+                quoteAmount);
 
         // Assert
         verify(mockBalanced.sicx.mock).transfer(mockBalanced.dex.getAddress(), baseAmount, tokenDepositData);

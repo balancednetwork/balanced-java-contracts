@@ -72,7 +72,7 @@ public class WorkerTokenImpl extends IRC2PresetFixedSupply implements WorkerToke
      * @return Governance address
      */
     @External(readonly = true)
-    public Address getGovernance(){
+    public Address getGovernance() {
         return governance.get();
     }
 

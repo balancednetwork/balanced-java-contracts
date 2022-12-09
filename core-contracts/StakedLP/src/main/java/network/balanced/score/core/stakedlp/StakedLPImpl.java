@@ -19,14 +19,15 @@ package network.balanced.score.core.stakedlp;
 import network.balanced.score.lib.interfaces.StakedLP;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.IterableDictDB;
+import network.balanced.score.lib.utils.Names;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
 import scorex.util.HashMap;
 
 import java.math.BigInteger;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 
 import static network.balanced.score.lib.utils.Check.*;
 
@@ -58,10 +59,12 @@ public class StakedLPImpl implements StakedLP {
      */
 
     @EventLog(indexed = 1)
-    public void Stake(Address _owner, BigInteger _id, BigInteger _value) {}
+    public void Stake(Address _owner, BigInteger _id, BigInteger _value) {
+    }
 
     @EventLog(indexed = 1)
-    public void Unstake(Address _owner, BigInteger _id, BigInteger _value) {}
+    public void Unstake(Address _owner, BigInteger _id, BigInteger _value) {
+    }
 
     @External(readonly = true)
     public String name() {
@@ -154,7 +157,7 @@ public class StakedLPImpl implements StakedLP {
     @External
     public void addDataSource(BigInteger id, String name) {
         only(governance);
-        Context.require(dataSourceNames.get(id) == null, "Datasource with id " + id  + " already exist");
+        Context.require(dataSourceNames.get(id) == null, "Datasource with id " + id + " already exist");
         dataSourceIds.set(name, id);
         dataSourceNames.set(id, name);
     }

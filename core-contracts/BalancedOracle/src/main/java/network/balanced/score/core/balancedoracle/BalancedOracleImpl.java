@@ -17,6 +17,7 @@
 package network.balanced.score.core.balancedoracle;
 
 import network.balanced.score.lib.interfaces.BalancedOracle;
+import network.balanced.score.lib.utils.Names;
 import score.Address;
 import score.Context;
 import score.annotation.External;

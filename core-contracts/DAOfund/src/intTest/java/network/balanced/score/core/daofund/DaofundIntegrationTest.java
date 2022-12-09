@@ -16,27 +16,24 @@
 
 package network.balanced.score.core.daofund;
 
-import foundation.icon.icx.Wallet;
+import com.eclipsesource.json.JsonArray;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
-import score.Address;
-
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-
-import com.eclipsesource.json.JsonArray;
-import com.eclipsesource.json.JsonObject;
+import score.Address;
 
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.Map;
 
+import static network.balanced.score.lib.test.integration.BalancedUtils.createParameter;
+import static network.balanced.score.lib.test.integration.BalancedUtils.createSingleTransaction;
+import static network.balanced.score.lib.utils.Constants.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static network.balanced.score.lib.utils.Constants.*;
-import static network.balanced.score.lib.test.integration.BalancedUtils.*;
 
 class DaofundIntegrationTest implements ScoreIntegrationTest {
     private static Balanced balanced;
@@ -51,9 +48,10 @@ class DaofundIntegrationTest implements ScoreIntegrationTest {
         reader = balanced.newClient(BigInteger.ZERO);
 
         JsonArray feeProcessingIntervalParameters = new JsonArray()
-            .add(createParameter(BigInteger.ZERO));
+                .add(createParameter(BigInteger.ZERO));
 
-        JsonArray actions = createSingleTransaction(balanced.feehandler._address(), "setFeeProcessingInterval", feeProcessingIntervalParameters);
+        JsonArray actions = createSingleTransaction(balanced.feehandler._address(), "setFeeProcessingInterval",
+                feeProcessingIntervalParameters);
         owner.governance.execute(actions.toString());
     }
 
@@ -73,17 +71,18 @@ class DaofundIntegrationTest implements ScoreIntegrationTest {
 
         // Act
         JsonArray addLiquidityParameters = new JsonArray()
-            .add(createParameter(balanced.sicx._address()))
-            .add(createParameter(lpAmount))
-            .add(createParameter(balanced.bnusd._address()))
-            .add(createParameter(lpAmount));
+                .add(createParameter(balanced.sicx._address()))
+                .add(createParameter(lpAmount))
+                .add(createParameter(balanced.bnusd._address()))
+                .add(createParameter(lpAmount));
 
-        JsonArray actions = createSingleTransaction(balanced.daofund._address(), "supplyLiquidity", addLiquidityParameters);
+        JsonArray actions = createSingleTransaction(balanced.daofund._address(), "supplyLiquidity",
+                addLiquidityParameters);
 
         owner.governance.execute(actions.toString());
 
         // Assert
-        BigInteger lpBalance =  reader.stakedLp.balanceOf(balanced.daofund._address(), pid);
+        BigInteger lpBalance = reader.stakedLp.balanceOf(balanced.daofund._address(), pid);
         assertTrue(lpBalance.compareTo(BigInteger.ZERO) > 0);
     }
 
@@ -93,7 +92,8 @@ class DaofundIntegrationTest implements ScoreIntegrationTest {
         // Arrange
         BalancedClient claimer = balanced.newClient();
         balanced.increaseDay(3);
-        owner.rewards.distribute((tx)->{});
+        owner.rewards.distribute((tx) -> {
+        });
 
         // Act
         BigInteger rewards = reader.rewards.getBalnHolding(balanced.daofund._address());
@@ -115,7 +115,8 @@ class DaofundIntegrationTest implements ScoreIntegrationTest {
 
         // Arrange
         balanced.increaseDay(1);
-        owner.rewards.distribute((tx)->{});
+        owner.rewards.distribute((tx) -> {
+        });
 
         // Act
         rewards = reader.rewards.getBalnHolding(balanced.daofund._address());
@@ -152,7 +153,8 @@ class DaofundIntegrationTest implements ScoreIntegrationTest {
         assertTrue(fees.get(balanced.sicx._address().toString()).compareTo(BigInteger.ZERO) > 0);
         assertTrue(fees.get(balanced.bnusd._address().toString()).compareTo(BigInteger.ZERO) > 0);
         assertEquals(fees.get(balanced.sicx._address().toString()), earnings.get(balanced.sicx._address().toString()));
-        assertEquals(fees.get(balanced.bnusd._address().toString()), earnings.get(balanced.bnusd._address().toString()));
+        assertEquals(fees.get(balanced.bnusd._address().toString()),
+                earnings.get(balanced.bnusd._address().toString()));
     }
 
     @Test
@@ -170,9 +172,10 @@ class DaofundIntegrationTest implements ScoreIntegrationTest {
 
         // Act
         JsonArray withdrawLiquidityParameters = new JsonArray()
-            .add(createParameter(pid))
-            .add(createParameter(withdrawAmount));
-        JsonArray actions = createSingleTransaction(balanced.daofund._address(), "withdrawLiquidity", withdrawLiquidityParameters);
+                .add(createParameter(pid))
+                .add(createParameter(withdrawAmount));
+        JsonArray actions = createSingleTransaction(balanced.daofund._address(), "withdrawLiquidity",
+                withdrawLiquidityParameters);
         owner.governance.execute(actions.toString());
 
         // Assert
@@ -195,9 +198,10 @@ class DaofundIntegrationTest implements ScoreIntegrationTest {
 
         // Act
         JsonArray withdrawLiquidityParameters = new JsonArray()
-            .add(createParameter(pid))
-            .add(createParameter(balance));
-        JsonArray actions = createSingleTransaction(balanced.daofund._address(), "withdrawLiquidity", withdrawLiquidityParameters);
+                .add(createParameter(pid))
+                .add(createParameter(balance));
+        JsonArray actions = createSingleTransaction(balanced.daofund._address(), "withdrawLiquidity",
+                withdrawLiquidityParameters);
         owner.governance.execute(actions.toString());
 
         // Assert

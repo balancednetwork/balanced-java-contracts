@@ -22,6 +22,8 @@ import score.Address;
 import score.Context;
 import score.VarDB;
 
+import java.math.BigInteger;
+
 import static network.balanced.score.lib.utils.BalancedAddressManager.getGovernance;
 
 public class Check {
@@ -62,7 +64,7 @@ public class Check {
         Address authorizedCaller2Address = authorizedCaller2.get();
         Context.require(authorizedCallerAddress != null ||
                         authorizedCaller2Address != null,
-                        "Authorization Check: Address not set");
+                "Authorization Check: Address not set");
         Context.require(caller.equals(authorizedCallerAddress) ||
                         caller.equals(authorizedCaller2Address),
                 "Authorization Check: Authorization failed. Caller: " + caller + " Authorized Caller: " + authorizedCallerAddress + " or " + authorizedCaller2Address);

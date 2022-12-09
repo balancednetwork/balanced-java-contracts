@@ -32,6 +32,9 @@ project(':Multicall').projectDir = file("core-contracts/Multicall")
 include(':BatchDisbursement')
 project(':BatchDisbursement').projectDir = file("core-contracts/BatchDisbursement")
 
+include(':Bribing')
+project(':Bribing').projectDir = file("core-contracts/Bribing")
+
 include(':Reserve')
 project(':Reserve').projectDir = file("core-contracts/Reserve")
 
