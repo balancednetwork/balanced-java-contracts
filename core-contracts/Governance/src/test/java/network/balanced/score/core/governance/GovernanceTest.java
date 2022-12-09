@@ -80,12 +80,12 @@ public class GovernanceTest extends GovernanceTestBase {
                 "SenderNotScoreOwnerOrContract: Sender=" + notOwner.getAddress() + " Owner=" + owner.getAddress() +
                         " Contract=" + governance.getAddress();
 
-         // Act & Assert
-         Executable withNotOwner = () -> governance.invoke(notOwner, "setAdmins");
-         expectErrorMessage(withNotOwner, expectedErrorMessage);
+        // Act & Assert
+        Executable withNotOwner = () -> governance.invoke(notOwner, "setAdmins");
+        expectErrorMessage(withNotOwner, expectedErrorMessage);
 
-         // Act
-         governance.invoke(owner, "setAdmins") ;
+        // Act
+        governance.invoke(owner, "setAdmins") ;
 
         // Assert
         //TODO
@@ -189,8 +189,8 @@ public class GovernanceTest extends GovernanceTestBase {
         delegation2._votes_in_per = BigInteger.valueOf(30);
 
         PrepDelegations[] delegations = new PrepDelegations[] {
-            delegation1,
-            delegation2
+                delegation1,
+                delegation2
         };
 
         Account notOwner = sm.createAccount();
@@ -216,7 +216,7 @@ public class GovernanceTest extends GovernanceTestBase {
         Address _from = Account.newScoreAccount(scoreCount++).getAddress();
         Address _to = Account.newScoreAccount(scoreCount++).getAddress();
         BigInteger _value = BigInteger.TEN;
-        byte[] _data  = new byte[0];
+        byte[] _data = new byte[0];
         Account notOwner = sm.createAccount();
         String expectedErrorMessage =
                 "SenderNotScoreOwnerOrContract: Sender=" + notOwner.getAddress() + " Owner=" + owner.getAddress() +

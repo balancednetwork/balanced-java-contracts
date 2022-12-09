@@ -17,7 +17,6 @@
 package network.balanced.score.core.stakedlp;
 
 import network.balanced.score.lib.interfaces.StakedLP;
-import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.IterableDictDB;
 import network.balanced.score.lib.utils.Names;
 import score.*;

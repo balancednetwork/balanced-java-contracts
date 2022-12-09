@@ -25,8 +25,6 @@ import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
 import org.json.JSONObject;
 import org.junit.jupiter.api.*;
 
-import com.eclipsesource.json.JsonArray;
-
 import java.math.BigInteger;
 import java.util.Map;
 

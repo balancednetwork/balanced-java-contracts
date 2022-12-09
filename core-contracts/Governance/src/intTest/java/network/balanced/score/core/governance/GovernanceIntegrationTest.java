@@ -16,37 +16,26 @@
 
 package network.balanced.score.core.governance;
 
-import static network.balanced.score.core.governance.DeploymentTester.src.main.java.network.balanced.score.core.deploymenttester.DeploymentTester.name;
-import static network.balanced.score.lib.test.integration.BalancedUtils.createParameter;
-import static network.balanced.score.lib.test.integration.BalancedUtils.createTransaction;
-import static network.balanced.score.lib.test.integration.BalancedUtils.getContractBytes;
-import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
-import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.newScoreClient;
-import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.getContractData;
-import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-
-import java.math.BigInteger;
-import java.util.Map;
-
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
-
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.score.client.DefaultScoreClient;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
-
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
 import score.Address;
 
+import java.math.BigInteger;
+import java.util.Map;
+
+import static network.balanced.score.core.governance.deploymentTester.DeploymentTester.name;
+import static network.balanced.score.lib.test.integration.BalancedUtils.*;
+import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
+import static org.junit.jupiter.api.Assertions.*;
 
 class GovernanceIntegrationTest implements ScoreIntegrationTest {
     private static Balanced balanced;

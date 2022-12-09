@@ -16,7 +16,6 @@
 
 package network.balanced.score.core.governance;
 
-import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.iconloop.score.test.Account;
 import network.balanced.score.core.governance.proposal.ProposalStatus;

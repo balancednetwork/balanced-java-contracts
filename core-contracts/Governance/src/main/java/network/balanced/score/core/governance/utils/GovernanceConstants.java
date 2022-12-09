@@ -24,8 +24,6 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-import network.balanced.score.lib.utils.Names;
-
 import static java.util.Map.entry;
 import static network.balanced.score.lib.utils.Math.pow;
 

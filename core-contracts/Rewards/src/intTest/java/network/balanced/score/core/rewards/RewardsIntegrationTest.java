@@ -27,8 +27,6 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import score.UserRevertedException;
 
-import com.eclipsesource.json.JsonArray;
-
 import java.math.BigInteger;
 import java.util.Map;
 

@@ -33,7 +33,6 @@ import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
 import score.UserRevertedException;
 
-
 import static network.balanced.score.lib.test.integration.BalancedUtils.createIRC2Token;
 import static network.balanced.score.lib.test.integration.BalancedUtils.*;
 import static network.balanced.score.lib.test.integration.BalancedUtils.hexObjectToBigInteger;

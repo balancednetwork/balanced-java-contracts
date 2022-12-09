@@ -28,8 +28,6 @@ import scorex.util.HashMap;
 import java.math.BigInteger;
 import java.util.Map;
 
-import network.balanced.score.lib.utils.Names;
-
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Math.pow;

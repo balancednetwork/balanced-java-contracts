@@ -28,8 +28,6 @@ import network.balanced.score.lib.interfaces.dex.DexTestScoreClient;
 import network.balanced.score.lib.test.integration.Balanced;
 import org.junit.jupiter.api.*;
 
-import com.eclipsesource.json.JsonArray;
-
 import java.io.File;
 import java.math.BigInteger;
 import java.util.Map;

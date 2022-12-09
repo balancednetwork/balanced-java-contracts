@@ -27,14 +27,10 @@ import network.balanced.score.lib.test.integration.Env;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
-import com.eclipsesource.json.JsonArray;
-import com.eclipsesource.json.JsonObject;
-
 import java.io.File;
 import java.math.BigInteger;
 import java.util.Map;
 
-import static network.balanced.score.lib.test.integration.BalancedUtils.*;
 import static foundation.icon.score.client.DefaultScoreClient._deploy;
 import static network.balanced.score.core.dex.utils.Const.SICXICX_MARKET_NAME;
 import static network.balanced.score.lib.test.integration.BalancedUtils.createParameter;

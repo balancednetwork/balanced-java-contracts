@@ -20,8 +20,6 @@ import network.balanced.score.lib.utils.Names;
 
 import java.math.BigInteger;
 
-import network.balanced.score.lib.utils.Names;
-
 import static network.balanced.score.lib.utils.Constants.*;
 import static network.balanced.score.lib.utils.Math.pow;
 

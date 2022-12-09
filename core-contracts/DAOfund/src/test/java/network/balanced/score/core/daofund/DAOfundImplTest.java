@@ -29,15 +29,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-
-import com.iconloop.score.test.Account;
-import com.iconloop.score.test.Score;
-import com.iconloop.score.test.ServiceManager;
-import com.iconloop.score.test.TestBase;
-
-import network.balanced.score.lib.structs.Disbursement;
-import network.balanced.score.lib.structs.PrepDelegations;
-import network.balanced.score.lib.test.mock.MockBalanced;
 import score.Address;
 import score.Context;
 
@@ -173,15 +164,6 @@ class DAOfundImplTest extends TestBase {
     // public void claimRewards() {
     //     POLManager.claimRewards();
     // }
-        //     String data;
-        // boolean hasLocked = Context.call(Boolean.class, getBoostedBaln(), "hasLocked", Context.getAddress());
-        // if (!hasLocked) {
-        //     data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
-        // } else {
-        //     data = "{\"method\":\"increaseAmount\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
-        // }
-
-        // Context.call(Context.getCaller(), "transfer", getBoostedBaln(), amount, data.getBytes());
     //     String data;
     // boolean hasLocked = Context.call(Boolean.class, getBoostedBaln(), "hasLocked", Context.getAddress());
     // if (!hasLocked) {

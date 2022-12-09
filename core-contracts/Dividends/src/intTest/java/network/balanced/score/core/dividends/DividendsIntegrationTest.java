@@ -20,14 +20,8 @@ import com.eclipsesource.json.JsonArray;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
-import network.balanced.score.lib.utils.Names;
-
 import org.json.JSONObject;
 import org.junit.jupiter.api.*;
-
-import com.eclipsesource.json.Json;
-import com.eclipsesource.json.JsonArray;
-
 import score.Address;
 
 import java.math.BigInteger;

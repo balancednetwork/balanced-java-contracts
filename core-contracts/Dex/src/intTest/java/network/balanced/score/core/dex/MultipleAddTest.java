@@ -32,7 +32,6 @@ import java.io.File;
 import java.math.BigInteger;
 import java.util.Map;
 
-import static network.balanced.score.lib.test.integration.BalancedUtils.*;
 import static foundation.icon.score.client.DefaultScoreClient._deploy;
 import static network.balanced.score.lib.test.integration.BalancedUtils.createParameter;
 import static network.balanced.score.lib.test.integration.BalancedUtils.createTransaction;

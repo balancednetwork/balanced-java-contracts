@@ -23,8 +23,6 @@ import score.Context;
 import score.annotation.External;
 import score.annotation.Optional;
 
-import network.balanced.score.lib.utils.Names;
-
 import java.math.BigInteger;
 import java.util.Map;
 
