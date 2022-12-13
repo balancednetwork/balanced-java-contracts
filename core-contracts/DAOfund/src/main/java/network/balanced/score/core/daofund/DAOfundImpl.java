@@ -24,6 +24,7 @@ import network.balanced.score.lib.utils.Names;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
+import score.annotation.Optional;
 import score.annotation.Payable;
 import scorex.util.HashMap;
 
@@ -123,7 +124,7 @@ public class DAOfundImpl implements DAOfund {
      * @param _amounts   Amounts of each asset type to disburse
      */
     @External
-    public void disburse(Address _recipient, Disbursement[] _amounts) {
+    public void disburse(Address _recipient, Disbursement[] _amounts, @Optional byte[] data) {
         onlyGovernance();
         Address daoAddress = Context.getAddress();
         for (Disbursement asset : _amounts) {
@@ -131,7 +132,7 @@ public class DAOfundImpl implements DAOfund {
             boolean requiredCondition = balance.compareTo(asset.amount) >= 0;
             Context.require(requiredCondition, TAG + ": Insufficient balance of asset " + asset.address.toString() +
                     " in DAOfund");
-            Context.call(asset.address, "transfer", _recipient, asset.amount, new byte[0]);
+            Context.call(asset.address, "transfer", _recipient, asset.amount, data);
             TokenTransfer(_recipient, asset.amount,
                     "Balanced DAOfund disbursement " + asset.amount + " sent to " + _recipient.toString());
         }

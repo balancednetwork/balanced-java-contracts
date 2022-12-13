@@ -26,6 +26,7 @@ import network.balanced.score.lib.structs.Disbursement;
 import network.balanced.score.lib.structs.PrepDelegations;
 import score.Address;
 import score.annotation.External;
+import score.annotation.Optional;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -44,7 +45,7 @@ public interface DAOfund extends Name, AddressManager, TokenFallback, Fallback {
     Map<String, Object> getDisbursementDetail(Address _user);
 
     @External(readonly = true)
-    void disburse(Address _recipient, Disbursement[] _amounts);
+    void disburse(Address _recipient, Disbursement[] _amounts, @Optional byte[] data);
     @External
     void claim();
 

@@ -100,15 +100,15 @@ class DAOfundImplTest extends TestBase {
         String expectedErrorMessage = "Reverted(0): " + TAG + ": Insufficient balance of asset " + mockBalanced.sicx.getAddress().toString() +
                 " in DAOfund";
         Executable disburseInsufficientFund = () -> daofundScore.invoke(mockBalanced.governance.account, "disburse",
-                receiver.getAddress(),amounts);
+                receiver.getAddress(), amounts, new byte[0]);
         expectErrorMessage(disburseInsufficientFund, expectedErrorMessage);
 
         // Act
         when(mockBalanced.sicx.mock.balanceOf(daofundScore.getAddress())).thenReturn(amount);
-        daofundScore.invoke(mockBalanced.governance.account, "disburse", receiver.getAddress(), amounts);
+        daofundScore.invoke(mockBalanced.governance.account, "disburse", receiver.getAddress(), amounts, new byte[1]);
 
         // Assert
-        verify(mockBalanced.sicx.mock).transfer(receiver.getAddress(), amount, new byte[0]);
+        verify(mockBalanced.sicx.mock).transfer(receiver.getAddress(), amount, new byte[1]);
     }
 
     @Test
