@@ -517,7 +517,7 @@ public class SourceWeightController {
     }
 
     public static Point getSourcePointsWeightAt(String sourceName, BigInteger time) {
-        return pointsWeight.at(sourceName).get(time);
+        return pointsWeight.at(sourceName).getOrDefault(time, new Point());
     }
 
     /**
