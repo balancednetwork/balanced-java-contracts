@@ -1703,7 +1703,7 @@ class LoansTest extends LoansTestBase {
         BigInteger expectedFee = calculateFee(loan);
         BigInteger debt = loan.add(expectedFee);
 
-        BigInteger maxRedemptionPercentage = BigInteger.valueOf(100);
+        BigInteger maxRedemptionPercentage = (BigInteger) loans.call("getMaxRetirePercent");
         BigInteger redemptionFee = (BigInteger) loans.call("getRedemptionFee");
         BigInteger daoFeePercentage = (BigInteger) loans.call("getRedemptionDaoFee");
 
@@ -1738,6 +1738,7 @@ class LoansTest extends LoansTestBase {
         takeLoanICX(account3, "bnUSD", collateral, loan);
         takeLoanICX(account4, "bnUSD", collateral, loan);
 
+        BigInteger redeemableAmount = (BigInteger)loans.call("getRedeemableAmount", sicx.getAddress(), 4);
         loans.invoke(redeemer, "redeemCollateral", sicx.getAddress(), amountToRedeem);
 
         // Assert
@@ -1750,6 +1751,8 @@ class LoansTest extends LoansTestBase {
         verifyPosition(account4.getAddress(), collateral, debt, "sICX");
         assertEquals(totalCollateralRedeemed, collateralRedeemedAccount1.add(collateralRedeemedAccount2).add(collateralRedeemedAccount3));
         verify(sicx.mock).transfer(eq(redeemer.getAddress()), eq(totalCollateralRedeemed), any(byte[].class));
+
+        assertEquals(redeemableAmount, debt.multiply(BigInteger.valueOf(4)).multiply(maxRedemptionPercentage).divide(POINTS));
     }
 
     @Test
@@ -1765,7 +1768,7 @@ class LoansTest extends LoansTestBase {
         BigInteger expectedFee = calculateFee(loan);
         BigInteger debt = loan.add(expectedFee);
 
-        BigInteger maxRedemptionPercentage = BigInteger.valueOf(100);
+        BigInteger maxRedemptionPercentage = (BigInteger) loans.call("getMaxRetirePercent");
         BigInteger redemptionFee = (BigInteger) loans.call("getRedemptionFee");
         BigInteger daoFeePercentage = (BigInteger) loans.call("getRedemptionDaoFee");
 
@@ -1800,6 +1803,7 @@ class LoansTest extends LoansTestBase {
         takeLoaniETH(account3, collateral, loan);
         takeLoaniETH(account4, collateral, loan);
 
+        BigInteger redeemableAmount = (BigInteger)loans.call("getRedeemableAmount", ieth.getAddress(), 4);
         loans.invoke(redeemer, "redeemCollateral", ieth.getAddress(), amountToRedeem);
 
         // Assert
@@ -1812,5 +1816,7 @@ class LoansTest extends LoansTestBase {
         verifyPosition(account4.getAddress(), collateral, debt, "iETH");
         assertEquals(totalCollateralRedeemed, collateralRedeemedAccount1.add(collateralRedeemedAccount2).add(collateralRedeemedAccount3));
         verify(ieth.mock).transfer(eq(redeemer.getAddress()), eq(totalCollateralRedeemed), any(byte[].class));
+
+        assertEquals(redeemableAmount, debt.multiply(BigInteger.valueOf(4)).multiply(maxRedemptionPercentage).divide(POINTS));
     }
 }

@@ -67,6 +67,7 @@ public class LoansImpl implements Loans {
             liquidationReward.set(LIQUIDATION_REWARD);
             retirementBonus.set(BAD_DEBT_RETIREMENT_BONUS);
             newLoanMinimum.set(NEW_BNUSD_LOAN_MINIMUM);
+            redeemBatch.set(REDEEM_BATCH_SIZE);
             maxRetirePercent.set(MAX_RETIRE_PERCENT);
         }
 
@@ -450,6 +451,21 @@ public class LoansImpl implements Loans {
         Rebalance(Context.getCaller(), "bnUSD", changeLog.toString(), _amount);
     }
 
+    @External(readonly = true)
+    public BigInteger getRedeemableAmount(Address _collateralAddress, @Optional int nrOfPositions) {
+        if (nrOfPositions == 0) {
+            nrOfPositions = redeemBatch.get();
+        }
+
+        BigInteger MAX_REDEMPTION = maxRetirePercent.get();
+        String collateralSymbol = CollateralDB.getSymbol(_collateralAddress);
+        
+        BigInteger totalDebt = DebtDB.getBorrowers(collateralSymbol).getTotalDebtFor(nrOfPositions);
+        BigInteger redeemAmount = totalDebt.multiply(MAX_REDEMPTION).divide(POINTS);
+
+        return redeemAmount;
+    }
+
     @External
     public void withdrawAndUnstake(BigInteger _value) {
         loansOn();
@@ -827,6 +843,17 @@ public class LoansImpl implements Loans {
                         _value.compareTo(BigInteger.valueOf(10_000)) <= 0,
                 "Input parameter must be in the range 0 to 10000 points.");
         maxRetirePercent.set(_value);
+    }
+
+    @External(readonly = true)
+    public BigInteger getMaxRetirePercent() {
+        return maxRetirePercent.get();
+    }
+
+    @External
+    public void setRedeemBatchSize(int _value) {
+        onlyGovernance();
+        redeemBatch.set(_value);
     }
 
     @External(readonly = true)

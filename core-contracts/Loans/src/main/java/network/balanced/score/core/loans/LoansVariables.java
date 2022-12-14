@@ -41,6 +41,7 @@ public class LoansVariables {
     private static final String LIQUIDATION_REWARD = "liquidation_reward";
     private static final String NEW_LOAN_MINIMUM = "new_loan_minimum";
 
+    private static final String REDEEM_BATCH_SIZE = "redeem_batch_size";
     private static final String MAX_RETIRE_PERCENT = "max_retire_percent";
 
     private static final String EXPECTED_TOKEN = "expectedToken";
@@ -63,6 +64,7 @@ public class LoansVariables {
     static final VarDB<BigInteger> retirementBonus = Context.newVarDB(RETIREMENT_BONUS, BigInteger.class);
     static final VarDB<BigInteger> liquidationReward = Context.newVarDB(LIQUIDATION_REWARD, BigInteger.class);
     static final VarDB<BigInteger> newLoanMinimum = Context.newVarDB(NEW_LOAN_MINIMUM, BigInteger.class);
+    static final VarDB<Integer> redeemBatch = Context.newVarDB(REDEEM_BATCH_SIZE, Integer.class);
     static final VarDB<BigInteger> maxRetirePercent = Context.newVarDB(MAX_RETIRE_PERCENT, BigInteger.class);
 
     static final VarDB<Address> expectedToken = Context.newVarDB(EXPECTED_TOKEN, Address.class);

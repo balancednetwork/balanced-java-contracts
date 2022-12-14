@@ -191,6 +191,27 @@ public class LinkedListDB {
         return batch;
     }
 
+    public BigInteger getTotalDebtFor(int nrOfPositions) {
+        Context.require(size != 0, name + ": No data in the list");
+
+        BigInteger totalDebt = BigInteger.ZERO;
+
+        Node head = getNode(headId);
+        Node currentNode = head;
+        int currentNodeId = headId;
+        BigInteger currentValue;
+
+        totalDebt = totalDebt.add(head.getValue());
+        for (int i = 1; i < nrOfPositions; i++) {
+            currentNodeId = currentNode.getNext();
+            currentNode = getNode(currentNodeId);
+            currentValue = currentNode.getValue();
+            totalDebt = totalDebt.add(currentValue);
+        }
+
+        return totalDebt;
+    }
+
     private void removeHead() {
         Node oldHead = getNode(headId);
 

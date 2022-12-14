@@ -112,6 +112,9 @@ public interface Loans extends Name, TokenFallback, AddressManager {
 
     @External
     void redeemCollateral(Address _collateralAddress, BigInteger _amount);
+    
+    @External(readonly = true)
+    BigInteger getRedeemableAmount(Address _collateralAddress, @Optional int nrOfPositions);
 
     @External
     void setLockingRatio(String _symbol, BigInteger _ratio);
@@ -166,6 +169,9 @@ public interface Loans extends Name, TokenFallback, AddressManager {
 
     @External
     void setMaxRetirePercent(BigInteger _value);
+
+    @External(readonly = true)
+    BigInteger getMaxRetirePercent();
 
     @External(readonly = true)
     Map<String, Object> getParameters();
