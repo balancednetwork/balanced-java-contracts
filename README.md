@@ -20,11 +20,18 @@ https://github.com/balancednetwork/balanced-contracts).
 $ git submodule update --init
 ```
 
-- Run unit tests
+- Build and run unit tests
 
 ```shell
 ./gradlew clean build optimizedJar
 ```
+
+- Run unit tests
+
+```shell
+./gradlew test
+```
+
 
 ## Running integration tests
 
