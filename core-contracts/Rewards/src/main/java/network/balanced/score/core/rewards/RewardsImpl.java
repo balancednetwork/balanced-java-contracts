@@ -27,6 +27,7 @@ import network.balanced.score.lib.structs.VotedSlope;
 import network.balanced.score.lib.utils.IterableDictDB;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.SetDB;
+
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -274,7 +275,9 @@ public class RewardsImpl implements Rewards {
             data.put("type", SourceWeightController.getSourceType(name));
             data.put("weight", SourceWeightController.getRelativeWeight(name, timestamp));
             data.put("currentWeight", SourceWeightController.getRelativeWeight(name, nextWeekTimestamp));
-            data.put("bBalnAmount", SourceWeightController.getSourcePointsWeight(name).bias);
+            Point sourceWeightPoint = SourceWeightController.getSourcePointsWeight(name);
+            data.put("currentBias", sourceWeightPoint.bias);
+            data.put("currentSlope", sourceWeightPoint.slope);
             dataSources.put(name, data);
         }
 
