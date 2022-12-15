@@ -254,8 +254,9 @@ class DaofundIntegrationTest implements ScoreIntegrationTest {
                 .add(createJsonDisbursement(balanced.bnusd._address(), loan));
 
         JsonArray disburseParameters = new JsonArray()
-                .add(createParameter(recipient.getAddress()))
-                .add(createParameter("Struct[]", disburseParam));
+        .add(createParameter(balanced.bnusd._address()))
+        .add(createParameter(recipient.getAddress()))
+        .add(createParameter(loan));
 
         JsonArray actions = createSingleTransaction(balanced.daofund._address(), "disburse",
                 disburseParameters);

@@ -20,7 +20,6 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
-import network.balanced.score.lib.structs.Disbursement;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.test.mock.MockBalanced;
 import org.junit.jupiter.api.BeforeEach;
@@ -90,22 +89,18 @@ class DAOfundImplTest extends TestBase {
     @DisplayName("Allocate the tokens for disbursement")
     void disburseTokens() {
         // Arrange
-        Disbursement disbursement = new Disbursement();
-        disbursement.address = mockBalanced.sicx.getAddress();
-        disbursement.amount = amount;
-        Disbursement[] amounts = new Disbursement[]{disbursement};
+        when(mockBalanced.sicx.mock.balanceOf(daofundScore.getAddress())).thenReturn(amount.subtract(BigInteger.ONE));
 
         // Act & Assert
-        when(mockBalanced.sicx.mock.balanceOf(daofundScore.getAddress())).thenReturn(amount.subtract(BigInteger.ONE));
         String expectedErrorMessage = "Reverted(0): " + TAG + ": Insufficient balance of asset " + mockBalanced.sicx.getAddress().toString() +
                 " in DAOfund";
         Executable disburseInsufficientFund = () -> daofundScore.invoke(mockBalanced.governance.account, "disburse",
-                receiver.getAddress(), amounts, new byte[0]);
+                mockBalanced.sicx.getAddress(), receiver.getAddress(), amount, new byte[0]);
         expectErrorMessage(disburseInsufficientFund, expectedErrorMessage);
 
         // Act
         when(mockBalanced.sicx.mock.balanceOf(daofundScore.getAddress())).thenReturn(amount);
-        daofundScore.invoke(mockBalanced.governance.account, "disburse", receiver.getAddress(), amounts, new byte[1]);
+        daofundScore.invoke(mockBalanced.governance.account, "disburse", mockBalanced.sicx.getAddress(), receiver.getAddress(), amount, new byte[1]);
 
         // Assert
         verify(mockBalanced.sicx.mock).transfer(receiver.getAddress(), amount, new byte[1]);

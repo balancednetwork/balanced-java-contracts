@@ -17,7 +17,6 @@
 package network.balanced.score.core.daofund;
 
 import network.balanced.score.lib.interfaces.DAOfund;
-import network.balanced.score.lib.structs.Disbursement;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.utils.EnumerableSetDB;
 import network.balanced.score.lib.utils.Names;
@@ -114,28 +113,16 @@ public class DAOfundImpl implements DAOfund {
         return Map.of("user", _user, "claimableTokens", userClaimableTokens);
     }
 
-    //Operational methods
-
-    /**
-     * Disbursement method will be called from the governance SCORE when a vote passes approving an expenditure by
-     * the DAO.
-     *
-     * @param _recipient Disbursement recipient address
-     * @param _amounts   Amounts of each asset type to disburse
-     */
     @External
-    public void disburse(Address _recipient, Disbursement[] _amounts, @Optional byte[] data) {
+    public void disburse(Address token, Address recipient, BigInteger amount, @Optional byte[] data) {
         onlyGovernance();
-        Address daoAddress = Context.getAddress();
-        for (Disbursement asset : _amounts) {
-            BigInteger balance = Context.call(BigInteger.class, asset.address, "balanceOf", daoAddress);
-            boolean requiredCondition = balance.compareTo(asset.amount) >= 0;
-            Context.require(requiredCondition, TAG + ": Insufficient balance of asset " + asset.address.toString() +
-                    " in DAOfund");
-            Context.call(asset.address, "transfer", _recipient, asset.amount, data);
-            TokenTransfer(_recipient, asset.amount,
-                    "Balanced DAOfund disbursement " + asset.amount + " sent to " + _recipient.toString());
-        }
+        BigInteger balance = Context.call(BigInteger.class, token, "balanceOf", Context.getAddress());
+        boolean requiredCondition = balance.compareTo(amount) >= 0;
+        Context.require(requiredCondition, TAG + ": Insufficient balance of asset " + token.toString() +
+                " in DAOfund");
+        Context.call(token, "transfer", recipient, amount, data);
+        TokenTransfer(recipient, amount,
+                "Balanced DAOfund disbursement " + amount + " sent to " + recipient.toString());
     }
 
     /**
