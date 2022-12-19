@@ -22,10 +22,10 @@ import network.balanced.score.lib.interfaces.addresses.AddressManager;
 import network.balanced.score.lib.interfaces.base.Fallback;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
-import network.balanced.score.lib.structs.Disbursement;
 import network.balanced.score.lib.structs.PrepDelegations;
 import score.Address;
 import score.annotation.External;
+import score.annotation.Optional;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -44,15 +44,8 @@ public interface DAOfund extends Name, AddressManager, TokenFallback, Fallback {
     Map<String, Object> getDisbursementDetail(Address _user);
 
     @External(readonly = true)
-    boolean disburse(Address _recipient, Disbursement[] _amounts);
+    void disburse(Address token, Address recipient, BigInteger amount, @Optional byte[] data);
 
-    @External
-    void addAcceptedToken(Address asset);
-
-    @External
-    void removeAcceptedToken(Address asset);
-
-    @External
     void claim();
 
     @External

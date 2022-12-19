@@ -43,7 +43,6 @@ public class SetupManager {
                     asset.get("collateral")
             );
             call(ContractManager.getAddress(Names.DIVIDENDS), "addAcceptedTokens", tokenAddress);
-            call(ContractManager.getAddress(Names.DAOFUND), "addAcceptedToken", tokenAddress);
         }
 
         Address[] acceptedFeeTokens = new Address[]{
