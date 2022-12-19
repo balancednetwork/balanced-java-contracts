@@ -26,10 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import score.Address;
-import score.Context;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -92,15 +89,17 @@ class DAOfundImplTest extends TestBase {
         when(mockBalanced.sicx.mock.balanceOf(daofundScore.getAddress())).thenReturn(amount.subtract(BigInteger.ONE));
 
         // Act & Assert
-        String expectedErrorMessage = "Reverted(0): " + TAG + ": Insufficient balance of asset " + mockBalanced.sicx.getAddress().toString() +
-                " in DAOfund";
+        String expectedErrorMessage =
+                "Reverted(0): " + TAG + ": Insufficient balance of asset " + mockBalanced.sicx.getAddress().toString() +
+                        " in DAOfund";
         Executable disburseInsufficientFund = () -> daofundScore.invoke(mockBalanced.governance.account, "disburse",
                 mockBalanced.sicx.getAddress(), receiver.getAddress(), amount, new byte[0]);
         expectErrorMessage(disburseInsufficientFund, expectedErrorMessage);
 
         // Act
         when(mockBalanced.sicx.mock.balanceOf(daofundScore.getAddress())).thenReturn(amount);
-        daofundScore.invoke(mockBalanced.governance.account, "disburse", mockBalanced.sicx.getAddress(), receiver.getAddress(), amount, new byte[1]);
+        daofundScore.invoke(mockBalanced.governance.account, "disburse", mockBalanced.sicx.getAddress(),
+                receiver.getAddress(), amount, new byte[1]);
 
         // Assert
         verify(mockBalanced.sicx.mock).transfer(receiver.getAddress(), amount, new byte[1]);
@@ -227,22 +226,24 @@ class DAOfundImplTest extends TestBase {
         // Act & Assert
         String expectedErrorMessage = "Price on dex was above allowed threshold";
         when(mockBalanced.dex.mock.getPrice(pid)).thenReturn(price.add(maxDiff));
-        Executable aboveThreshold = () -> daofundScore.invoke(mockBalanced.governance.account, "supplyLiquidity", baseToken,
-            baseAmount, quoteToken,quoteAmount);
+        Executable aboveThreshold = () -> daofundScore.invoke(mockBalanced.governance.account, "supplyLiquidity",
+                baseToken, baseAmount, quoteToken, quoteAmount);
         expectErrorMessage(aboveThreshold, expectedErrorMessage);
 
         when(mockBalanced.dex.mock.getPrice(pid)).thenReturn(price.add(maxDiff).subtract(BigInteger.ONE));
-        daofundScore.invoke(mockBalanced.governance.account, "supplyLiquidity", baseToken, baseAmount, quoteToken, quoteAmount);
+        daofundScore.invoke(mockBalanced.governance.account, "supplyLiquidity", baseToken, baseAmount, quoteToken,
+                quoteAmount);
 
         // Act & Assert
         expectedErrorMessage = "Price on dex was below allowed threshold";
         when(mockBalanced.dex.mock.getPrice(pid)).thenReturn(price.subtract(maxDiff));
-        Executable belowThreshold = () -> daofundScore.invoke(mockBalanced.governance.account, "supplyLiquidity", baseToken,
-            baseAmount, quoteToken,quoteAmount);
+        Executable belowThreshold = () -> daofundScore.invoke(mockBalanced.governance.account, "supplyLiquidity",
+                baseToken, baseAmount, quoteToken, quoteAmount);
         expectErrorMessage(belowThreshold, expectedErrorMessage);
 
         when(mockBalanced.dex.mock.getPrice(pid)).thenReturn(price.subtract(maxDiff).add(BigInteger.ONE));
-        daofundScore.invoke(mockBalanced.governance.account, "supplyLiquidity", baseToken, baseAmount, quoteToken,quoteAmount);
+        daofundScore.invoke(mockBalanced.governance.account, "supplyLiquidity", baseToken, baseAmount, quoteToken,
+                quoteAmount);
     }
 
     @Test

@@ -29,9 +29,7 @@ import java.math.BigInteger;
 import java.time.Instant;
 import java.util.Map;
 
-import static network.balanced.score.lib.test.integration.BalancedUtils.createParameter;
-import static network.balanced.score.lib.test.integration.BalancedUtils.createSingleTransaction;
-import static network.balanced.score.lib.test.integration.BalancedUtils.createJsonDisbursement;
+import static network.balanced.score.lib.test.integration.BalancedUtils.*;
 import static network.balanced.score.lib.utils.Constants.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -161,7 +159,7 @@ class DaofundIntegrationTest implements ScoreIntegrationTest {
 
     @Test
     @Order(4)
-    void protocolOwnedLiquidity_withdraw_partial() throws Exception {
+    void protocolOwnedLiquidity_withdraw_partial() {
         // Arrange
         BigInteger pid = reader.dex.getPoolId(balanced.sicx._address(), balanced.bnusd._address());
         BigInteger balance = reader.stakedLp.balanceOf(balanced.daofund._address(), pid);
@@ -188,7 +186,7 @@ class DaofundIntegrationTest implements ScoreIntegrationTest {
 
     @Test
     @Order(5)
-    void protocolOwnedLiquidity_withdraw_full() throws Exception {
+    void protocolOwnedLiquidity_withdraw_full() {
         // Arrange
         BigInteger pid = reader.dex.getPoolId(balanced.sicx._address(), balanced.bnusd._address());
         BigInteger balance = reader.stakedLp.balanceOf(balanced.daofund._address(), pid);
@@ -254,9 +252,9 @@ class DaofundIntegrationTest implements ScoreIntegrationTest {
                 .add(createJsonDisbursement(balanced.bnusd._address(), loan));
 
         JsonArray disburseParameters = new JsonArray()
-        .add(createParameter(balanced.bnusd._address()))
-        .add(createParameter(recipient.getAddress()))
-        .add(createParameter(loan));
+                .add(createParameter(balanced.bnusd._address()))
+                .add(createParameter(recipient.getAddress()))
+                .add(createParameter(loan));
 
         JsonArray actions = createSingleTransaction(balanced.daofund._address(), "disburse",
                 disburseParameters);

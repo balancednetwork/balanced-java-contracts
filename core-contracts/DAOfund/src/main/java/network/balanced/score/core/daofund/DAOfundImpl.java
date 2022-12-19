@@ -89,7 +89,8 @@ public class DAOfundImpl implements DAOfund {
     public Map<String, BigInteger> getBalances() {
         Map<String, BigInteger> balances = new HashMap<>();
         Address daoAddress = Context.getAddress();
-        for (int addressIndex = 0; addressIndex < address.length(); addressIndex++) {
+        int addressSize = address.length();
+        for (int addressIndex = 0; addressIndex < addressSize; addressIndex++) {
             String tokenAddressString = address.at(addressIndex);
             Address tokenAddress = Address.fromString(tokenAddressString);
             BigInteger balance = Context.call(BigInteger.class, tokenAddress, "balanceOf", daoAddress);
@@ -198,10 +199,8 @@ public class DAOfundImpl implements DAOfund {
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         if (POLManager.isProcessingFees()) {
             POLManager.handleFee(_value);
-            return;
         } else if (POLManager.isProcessingRewards()) {
             POLManager.handleRewards(_value);
-            return;
         }
     }
 
