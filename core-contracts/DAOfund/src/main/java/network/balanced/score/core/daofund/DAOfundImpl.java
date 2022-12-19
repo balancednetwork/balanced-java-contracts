@@ -17,13 +17,13 @@
 package network.balanced.score.core.daofund;
 
 import network.balanced.score.lib.interfaces.DAOfund;
-import network.balanced.score.lib.structs.Disbursement;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.utils.EnumerableSetDB;
 import network.balanced.score.lib.utils.Names;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
+import score.annotation.Optional;
 import score.annotation.Payable;
 import scorex.util.HashMap;
 
@@ -42,14 +42,13 @@ public class DAOfundImpl implements DAOfund {
 
     private static final String GOVERNANCE = "governance";
     private static final String ADDRESS = "address";
-    private static final String FUND = "fund";
     private static final String AWARDS = "awards";
 
     private static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
-    // fund represents the total amount that is available to disburse
-    private final DictDB<String, BigInteger> fund = Context.newDictDB(FUND, BigInteger.class);
+
+    // Deprecated, kept for backward compatibility
     private final EnumerableSetDB<String> address = new EnumerableSetDB<>(ADDRESS, String.class);
-    // Awards hold the amount that can be claimed by any user
+    // Awards hold the amount that can be claimed by any user. Only used for now for claiming old disbursements
     private final BranchDB<Address, DictDB<Address, BigInteger>> awards = Context.newBranchDB(AWARDS, BigInteger.class);
 
     public static final String TAG = Names.DAOFUND;
@@ -61,6 +60,7 @@ public class DAOfundImpl implements DAOfund {
         }
 
         setGovernance(governance.get());
+        POLManager.setPOLSupplySlippage(BigInteger.valueOf(1_000));
     }
 
     @External(readonly = true)
@@ -71,18 +71,6 @@ public class DAOfundImpl implements DAOfund {
     @External
     public void updateAddress(String name) {
         resetAddress(name);
-    }
-
-    @External
-    public void addAcceptedToken(Address address) {
-        onlyGovernance();
-        this.address.add(address.toString());
-    }
-
-    @External
-    public void removeAcceptedToken(Address address) {
-        onlyGovernance();
-        this.address.remove(address.toString());
     }
 
     @External(readonly = true)
@@ -96,14 +84,19 @@ public class DAOfundImpl implements DAOfund {
         Context.call(getStaking(), "delegate", (Object) prepDelegations);
     }
 
+    // Deprecated, kept for backward compatibility
     @External(readonly = true)
     public Map<String, BigInteger> getBalances() {
         Map<String, BigInteger> balances = new HashMap<>();
-
-        for (int addressIndex = 0; addressIndex < address.length(); addressIndex++) {
-            String tokenAddress = address.at(addressIndex);
-            balances.put(tokenAddress, fund.getOrDefault(tokenAddress, BigInteger.ZERO));
+        Address daoAddress = Context.getAddress();
+        int addressSize = address.length();
+        for (int addressIndex = 0; addressIndex < addressSize; addressIndex++) {
+            String tokenAddressString = address.at(addressIndex);
+            Address tokenAddress = Address.fromString(tokenAddressString);
+            BigInteger balance = Context.call(BigInteger.class, tokenAddress, "balanceOf", daoAddress);
+            balances.put(tokenAddressString, balance);
         }
+
         return balances;
     }
 
@@ -121,31 +114,16 @@ public class DAOfundImpl implements DAOfund {
         return Map.of("user", _user, "claimableTokens", userClaimableTokens);
     }
 
-    //Operational methods
-
-    /**
-     * Disbursement method will be called from the governance SCORE when a vote passes approving an expenditure by
-     * the DAO.
-     *
-     * @param _recipient Disbursement recipient address
-     * @param _amounts   Amounts of each asset type to disburse
-     */
     @External
-    public boolean disburse(Address _recipient, Disbursement[] _amounts) {
+    public void disburse(Address token, Address recipient, BigInteger amount, @Optional byte[] data) {
         onlyGovernance();
-        for (Disbursement asset : _amounts) {
-            BigInteger amountInDaofund = fund.getOrDefault(asset.address.toString(), BigInteger.ZERO);
-            BigInteger amountToBeClaimedByRecipient = awards.at(_recipient).getOrDefault(asset.address,
-                    BigInteger.ZERO);
-
-            boolean requiredCondition = amountInDaofund.compareTo(asset.amount) >= 0;
-            Context.require(requiredCondition, TAG + ": Insufficient balance of asset " + asset.address.toString() +
-                    " in DAOfund");
-
-            awards.at(_recipient).set(asset.address, amountToBeClaimedByRecipient.add(asset.amount));
-            fund.set(asset.address.toString(), amountInDaofund.subtract(asset.amount));
-        }
-        return Boolean.TRUE;
+        BigInteger balance = Context.call(BigInteger.class, token, "balanceOf", Context.getAddress());
+        boolean requiredCondition = balance.compareTo(amount) >= 0;
+        Context.require(requiredCondition, TAG + ": Insufficient balance of asset " + token.toString() +
+                " in DAOfund");
+        Context.call(token, "transfer", recipient, amount, data);
+        TokenTransfer(recipient, amount,
+                "Balanced DAOfund disbursement " + amount + " sent to " + recipient.toString());
     }
 
     /**
@@ -196,6 +174,17 @@ public class DAOfundImpl implements DAOfund {
         POLManager.stakeLPTokens(pid);
     }
 
+    @External
+    public void setPOLSupplySlippage(BigInteger points) {
+        onlyGovernance();
+        POLManager.setPOLSupplySlippage(points);
+    }
+
+    @External(readonly = true)
+    public BigInteger getPOLSupplySlippage() {
+        return POLManager.getPOLSupplySlippage();
+    }
+
     @External(readonly = true)
     public BigInteger getBalnEarnings() {
         return POLManager.getBalnEarnings();
@@ -210,16 +199,8 @@ public class DAOfundImpl implements DAOfund {
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         if (POLManager.isProcessingFees()) {
             POLManager.handleFee(_value);
-            return;
         } else if (POLManager.isProcessingRewards()) {
             POLManager.handleRewards(_value);
-            return;
-        }
-
-        String tokenContract = Context.getCaller().toString();
-        if (address.contains(tokenContract)) {
-            BigInteger tokenAmountInDAOfund = fund.getOrDefault(tokenContract, BigInteger.ZERO);
-            fund.set(tokenContract, tokenAmountInDAOfund.add(_value));
         }
     }
 
