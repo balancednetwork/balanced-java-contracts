@@ -20,17 +20,13 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
-import network.balanced.score.lib.structs.Disbursement;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.test.mock.MockBalanced;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import score.Address;
-import score.Context;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -39,6 +35,7 @@ import static network.balanced.score.core.daofund.DAOfundImpl.TAG;
 import static network.balanced.score.lib.test.UnitTest.assertOnlyCallableBy;
 import static network.balanced.score.lib.test.UnitTest.expectErrorMessage;
 import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Constants.POINTS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -86,93 +83,28 @@ class DAOfundImplTest extends TestBase {
     }
 
     @Test
-    void addSymbolToSetdb() {
-        try (MockedStatic<Context> loansMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS)) {
-            daofundScore.invoke(mockBalanced.governance.account, "addAcceptedToken", mockBalanced.sicx.getAddress());
-            daofundScore.invoke(mockBalanced.governance.account, "addAcceptedToken", mockBalanced.baln.getAddress());
-            daofundScore.invoke(mockBalanced.governance.account, "addAcceptedToken", mockBalanced.bnUSD.getAddress());
-
-            Map<String, BigInteger> expectedBalances = Map.of(
-                    mockBalanced.sicx.getAddress().toString(), BigInteger.ZERO,
-                    mockBalanced.baln.getAddress().toString(), BigInteger.ZERO,
-                    mockBalanced.bnUSD.getAddress().toString(), BigInteger.ZERO);
-            assertEquals(expectedBalances, daofundScore.call("getBalances"));
-        }
-    }
-
-    @Test
-    void receiveTokens() {
-        addSymbolToSetdb();
-
-        daofundScore.invoke(mockBalanced.sicx.account, "tokenFallback", owner.getAddress(), BigInteger.TEN.pow(20),
-                new byte[0]);
-        Map<String, BigInteger> expectedBalances = Map.of(mockBalanced.sicx.getAddress().toString(),
-                BigInteger.TEN.pow(20),
-                mockBalanced.baln.getAddress().toString(), BigInteger.ZERO,
-                mockBalanced.bnUSD.getAddress().toString(), BigInteger.ZERO);
-        assertEquals(expectedBalances, daofundScore.call("getBalances"));
-    }
-
-    @Test
     @DisplayName("Allocate the tokens for disbursement")
     void disburseTokens() {
-        receiveTokens();
+        // Arrange
+        when(mockBalanced.sicx.mock.balanceOf(daofundScore.getAddress())).thenReturn(amount.subtract(BigInteger.ONE));
 
-        Disbursement disbursement = new Disbursement();
-        disbursement.address = mockBalanced.sicx.getAddress();
-        disbursement.amount = amount;
-        Disbursement[] amounts = new Disbursement[]{disbursement};
-        daofundScore.invoke(mockBalanced.governance.account, "disburse", receiver.getAddress(), amounts);
-
-        Map<String, Object> expectedDisbursement = Map.of("user", receiver.getAddress(),
-                "claimableTokens", Map.of(mockBalanced.sicx.getAddress().toString(), amount,
-                        mockBalanced.baln.getAddress().toString(), BigInteger.ZERO,
-                        mockBalanced.bnUSD.getAddress().toString(), BigInteger.ZERO));
-        assertEquals(expectedDisbursement, daofundScore.call("getDisbursementDetail", receiver.getAddress()));
-
-        disbursement.address = mockBalanced.baln.getAddress();
+        // Act & Assert
+        String expectedErrorMessage =
+                "Reverted(0): " + TAG + ": Insufficient balance of asset " + mockBalanced.sicx.getAddress().toString() +
+                        " in DAOfund";
         Executable disburseInsufficientFund = () -> daofundScore.invoke(mockBalanced.governance.account, "disburse",
-                receiver.getAddress(), new Disbursement[]{disbursement});
-        expectErrorMessage(disburseInsufficientFund,
-                "Reverted(0): " + TAG + ": Insufficient balance of asset " + mockBalanced.baln.getAddress().toString() + " in" +
-                        " DAOfund");
+                mockBalanced.sicx.getAddress(), receiver.getAddress(), amount, new byte[0]);
+        expectErrorMessage(disburseInsufficientFund, expectedErrorMessage);
+
+        // Act
+        when(mockBalanced.sicx.mock.balanceOf(daofundScore.getAddress())).thenReturn(amount);
+        daofundScore.invoke(mockBalanced.governance.account, "disburse", mockBalanced.sicx.getAddress(),
+                receiver.getAddress(), amount, new byte[1]);
+
+        // Assert
+        verify(mockBalanced.sicx.mock).transfer(receiver.getAddress(), amount, new byte[1]);
     }
 
-    @Test
-    void claimTokens() {
-        disburseTokens();
-
-        try (MockedStatic<Context> tokenMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS)) {
-            tokenMock
-                    .when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class),
-                            any(BigInteger.class), any(byte[].class)))
-                    .thenReturn(null);
-
-            daofundScore.invoke(receiver, "claim");
-            verify(daofundSpy).TokenTransfer(receiver.getAddress(), amount,
-                    "Balanced DAOfund disbursement " + amount + " sent to " + receiver.getAddress());
-        }
-
-        Map<String, Object> expectedDisbursement = Map.of("user", receiver.getAddress(),
-                "claimableTokens", Map.of(mockBalanced.sicx.getAddress().toString(), BigInteger.ZERO,
-                        mockBalanced.baln.getAddress().toString(), BigInteger.ZERO,
-                        mockBalanced.bnUSD.getAddress().toString(), BigInteger.ZERO));
-        assertEquals(expectedDisbursement, daofundScore.call("getDisbursementDetail", receiver.getAddress()));
-    }
-
-    // @External
-    // public void claimRewards() {
-    //     POLManager.claimRewards();
-    // }
-    //     String data;
-    // boolean hasLocked = Context.call(Boolean.class, getBoostedBaln(), "hasLocked", Context.getAddress());
-    // if (!hasLocked) {
-    //     data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
-    // } else {
-    //     data = "{\"method\":\"increaseAmount\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
-    // }
-
-    // Context.call(Context.getCaller(), "transfer", getBoostedBaln(), amount, data.getBytes());
     @Test
     void claimRewards_noLock() {
         // Arrange
@@ -256,6 +188,7 @@ class DAOfundImplTest extends TestBase {
 
         BigInteger pid = BigInteger.TWO;
         BigInteger lpBalance = BigInteger.TEN;
+        when(mockBalanced.dex.mock.getPrice(pid)).thenReturn(quoteAmount.multiply(EXA).divide(baseAmount));
         when(mockBalanced.dex.mock.getPoolId(baseToken, quoteToken)).thenReturn(pid);
         when(mockBalanced.dex.mock.balanceOf(daofundScore.getAddress(), pid)).thenReturn(lpBalance);
 
@@ -270,6 +203,47 @@ class DAOfundImplTest extends TestBase {
         verify(mockBalanced.bnUSD.mock).transfer(mockBalanced.dex.getAddress(), quoteAmount, tokenDepositData);
         verify(mockBalanced.dex.mock).add(baseToken, quoteToken, baseAmount, quoteAmount, true);
         verify(mockBalanced.dex.mock).transfer(mockBalanced.stakedLp.getAddress(), lpBalance, pid, new byte[0]);
+    }
+
+    @Test
+    void supplyLiquidity_ToLargePriceChange() {
+        // Arrange
+        Address baseToken = mockBalanced.sicx.getAddress();
+        BigInteger baseAmount = EXA;
+
+        Address quoteToken = mockBalanced.bnUSD.getAddress();
+        BigInteger quoteAmount = EXA.multiply(BigInteger.TWO);
+
+        BigInteger pid = BigInteger.TWO;
+        BigInteger lpBalance = BigInteger.TEN;
+        when(mockBalanced.dex.mock.getPoolId(baseToken, quoteToken)).thenReturn(pid);
+        when(mockBalanced.dex.mock.balanceOf(daofundScore.getAddress(), pid)).thenReturn(lpBalance);
+
+        BigInteger price = quoteAmount.multiply(EXA).divide(baseAmount);
+        BigInteger priceChangeThreshold = (BigInteger) daofundScore.call("getPOLSupplySlippage");
+        BigInteger maxDiff = price.multiply(priceChangeThreshold).divide(POINTS);
+
+        // Act & Assert
+        String expectedErrorMessage = "Price on dex was above allowed threshold";
+        when(mockBalanced.dex.mock.getPrice(pid)).thenReturn(price.add(maxDiff));
+        Executable aboveThreshold = () -> daofundScore.invoke(mockBalanced.governance.account, "supplyLiquidity",
+                baseToken, baseAmount, quoteToken, quoteAmount);
+        expectErrorMessage(aboveThreshold, expectedErrorMessage);
+
+        when(mockBalanced.dex.mock.getPrice(pid)).thenReturn(price.add(maxDiff).subtract(BigInteger.ONE));
+        daofundScore.invoke(mockBalanced.governance.account, "supplyLiquidity", baseToken, baseAmount, quoteToken,
+                quoteAmount);
+
+        // Act & Assert
+        expectedErrorMessage = "Price on dex was below allowed threshold";
+        when(mockBalanced.dex.mock.getPrice(pid)).thenReturn(price.subtract(maxDiff));
+        Executable belowThreshold = () -> daofundScore.invoke(mockBalanced.governance.account, "supplyLiquidity",
+                baseToken, baseAmount, quoteToken, quoteAmount);
+        expectErrorMessage(belowThreshold, expectedErrorMessage);
+
+        when(mockBalanced.dex.mock.getPrice(pid)).thenReturn(price.subtract(maxDiff).add(BigInteger.ONE));
+        daofundScore.invoke(mockBalanced.governance.account, "supplyLiquidity", baseToken, baseAmount, quoteToken,
+                quoteAmount);
     }
 
     @Test
@@ -300,6 +274,16 @@ class DAOfundImplTest extends TestBase {
 
         // Assert
         verify(mockBalanced.dex.mock).transfer(mockBalanced.stakedLp.getAddress(), lpBalance, pid, new byte[0]);
+    }
+
+    @Test
+    void setPOLSupplySlippage() {
+        BigInteger slippage = BigInteger.valueOf(700);
+
+        assertOnlyCallableBy(mockBalanced.governance.getAddress(), daofundScore, "setPOLSupplySlippage", slippage);
+        daofundScore.invoke(mockBalanced.governance.account, "setPOLSupplySlippage", slippage);
+
+        assertEquals(slippage, daofundScore.call("getPOLSupplySlippage"));
     }
 
 }

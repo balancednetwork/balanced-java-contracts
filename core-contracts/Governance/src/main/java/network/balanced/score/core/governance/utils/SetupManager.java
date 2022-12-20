@@ -36,16 +36,15 @@ public class SetupManager {
         for (Map<String, Object> asset : ASSETS) {
                 Address tokenAddress = ContractManager.get((String) asset.get("address"));
                 call(ContractManager.getAddress(Names.DIVIDENDS), "addAcceptedTokens", tokenAddress);
-                call(ContractManager.getAddress(Names.DAOFUND), "addAcceptedToken", tokenAddress);
             }
 
-            call(
-                ContractManager.getAddress(Names.LOANS),
-                "addAsset",
-                ContractManager.getAddress(Names.SICX),
-                true,
-                true
-            );
+        call(
+            ContractManager.getAddress(Names.LOANS),
+            "addAsset",
+            ContractManager.getAddress(Names.SICX),
+            true,
+            true
+        );
 
         Address[] acceptedFeeTokens = new Address[]{
                 ContractManager.getAddress(Names.SICX),

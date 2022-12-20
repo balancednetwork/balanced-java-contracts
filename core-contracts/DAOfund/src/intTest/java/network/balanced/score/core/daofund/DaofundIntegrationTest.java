@@ -29,8 +29,7 @@ import java.math.BigInteger;
 import java.time.Instant;
 import java.util.Map;
 
-import static network.balanced.score.lib.test.integration.BalancedUtils.createParameter;
-import static network.balanced.score.lib.test.integration.BalancedUtils.createSingleTransaction;
+import static network.balanced.score.lib.test.integration.BalancedUtils.*;
 import static network.balanced.score.lib.utils.Constants.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -60,21 +59,22 @@ class DaofundIntegrationTest implements ScoreIntegrationTest {
     void protocolOwnedLiquidity_addLiquidity() {
         // Arrange
         BigInteger collateral = EXA.multiply(BigInteger.valueOf(10000));
-        BigInteger loan = EXA.multiply(BigInteger.valueOf(100));
-        BigInteger lpAmount = EXA.multiply(BigInteger.valueOf(100));
+        BigInteger quoteAmount = EXA.multiply(BigInteger.valueOf(100));
         BigInteger pid = reader.dex.getPoolId(balanced.sicx._address(), balanced.bnusd._address());
-        owner.stakeDepositAndBorrow(collateral, loan);
+        owner.stakeDepositAndBorrow(collateral, quoteAmount);
 
-        owner.staking.stakeICX(lpAmount.multiply(BigInteger.TWO), null, null);
-        owner.bnUSD.transfer(balanced.daofund._address(), lpAmount, null);
-        owner.sicx.transfer(balanced.daofund._address(), lpAmount, null);
+        BigInteger price = reader.dex.getPrice(pid);
+        BigInteger baseAmount = quoteAmount.multiply(EXA).divide(price);
+        owner.staking.stakeICX(baseAmount.multiply(BigInteger.TWO), null, null);
+        owner.bnUSD.transfer(balanced.daofund._address(), quoteAmount, null);
+        owner.sicx.transfer(balanced.daofund._address(), baseAmount, null);
 
         // Act
         JsonArray addLiquidityParameters = new JsonArray()
                 .add(createParameter(balanced.sicx._address()))
-                .add(createParameter(lpAmount))
+                .add(createParameter(baseAmount))
                 .add(createParameter(balanced.bnusd._address()))
-                .add(createParameter(lpAmount));
+                .add(createParameter(quoteAmount));
 
         JsonArray actions = createSingleTransaction(balanced.daofund._address(), "supplyLiquidity",
                 addLiquidityParameters);
@@ -159,7 +159,7 @@ class DaofundIntegrationTest implements ScoreIntegrationTest {
 
     @Test
     @Order(4)
-    void protocolOwnedLiquidity_withdraw_partial() throws Exception {
+    void protocolOwnedLiquidity_withdraw_partial() {
         // Arrange
         BigInteger pid = reader.dex.getPoolId(balanced.sicx._address(), balanced.bnusd._address());
         BigInteger balance = reader.stakedLp.balanceOf(balanced.daofund._address(), pid);
@@ -186,7 +186,7 @@ class DaofundIntegrationTest implements ScoreIntegrationTest {
 
     @Test
     @Order(5)
-    void protocolOwnedLiquidity_withdraw_full() throws Exception {
+    void protocolOwnedLiquidity_withdraw_full() {
         // Arrange
         BigInteger pid = reader.dex.getPoolId(balanced.sicx._address(), balanced.bnusd._address());
         BigInteger balance = reader.stakedLp.balanceOf(balanced.daofund._address(), pid);
@@ -211,7 +211,7 @@ class DaofundIntegrationTest implements ScoreIntegrationTest {
     }
 
     @Test
-    @Order(5)
+    @Order(6)
     void protocolOwnedLiquidity_stakeLpTokens() throws Exception {
         // Arrange
         byte[] tokenDepositData = "{\"method\":\"_deposit\"}".getBytes();
@@ -235,6 +235,35 @@ class DaofundIntegrationTest implements ScoreIntegrationTest {
         // Assert
         assertEquals(BigInteger.ZERO, client.dex.balanceOf(client.getAddress(), pid));
         assertEquals(lpBalance, client.stakedLp.balanceOf(balanced.daofund._address(), pid));
+    }
+
+    @Test
+    @Order(7)
+    void disburse() throws Exception {
+        // Arrange
+        BigInteger collateral = EXA.multiply(BigInteger.valueOf(10000));
+        BigInteger loan = EXA.multiply(BigInteger.valueOf(100));
+        owner.stakeDepositAndBorrow(collateral, loan);
+        BalancedClient recipient = balanced.newClient();
+        owner.bnUSD.transfer(balanced.daofund._address(), loan, null);
+
+        // Act
+        JsonArray disburseParam = new JsonArray()
+                .add(createJsonDisbursement(balanced.bnusd._address(), loan));
+
+        JsonArray disburseParameters = new JsonArray()
+                .add(createParameter(balanced.bnusd._address()))
+                .add(createParameter(recipient.getAddress()))
+                .add(createParameter(loan));
+
+        JsonArray actions = createSingleTransaction(balanced.daofund._address(), "disburse",
+                disburseParameters);
+
+        owner.governance.execute(actions.toString());
+
+        // Assert
+        BigInteger balance = reader.bnUSD.balanceOf(recipient.getAddress());
+        assertEquals(loan, balance);
     }
 
     private BigInteger getHoldingInPool(BigInteger pid, Address token, BigInteger lpTokens) {
