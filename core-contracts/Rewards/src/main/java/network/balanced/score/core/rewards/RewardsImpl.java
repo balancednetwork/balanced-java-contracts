@@ -782,7 +782,28 @@ public class RewardsImpl implements Rewards {
 
     @External(readonly = true)
     public Map<String, Map<String, BigInteger>> getUserVoteData(Address user) {
-        return SourceWeightController.getUserVoteData(user);
+        Map<String, Map<String, BigInteger>> data = new HashMap<>();
+        BigInteger currentTime = BigInteger.valueOf(Context.getBlockTimestamp());
+
+        int dataSourcesCount = DataSourceDB.size();
+        for (int i = 0; i < dataSourcesCount; i++) {
+            String source = DataSourceDB.names.get(i);
+            VotedSlope votedSlope = getUserSlope(user, source);
+            BigInteger lastVote = SourceWeightController.getLastUserVote(user, source);
+            BigInteger timeSinceLastVote = currentTime.subtract(lastVote);
+            if (timeSinceLastVote.compareTo(SourceWeightController.WEIGHT_VOTE_DELAY) > 0 && votedSlope.power.equals(BigInteger.ZERO)) {
+                continue;
+            }
+
+            Map<String, BigInteger> sourceData = new HashMap<>();
+            sourceData.put("slope", votedSlope.slope);
+            sourceData.put("power", votedSlope.power);
+            sourceData.put("end", votedSlope.end);
+            sourceData.put("lastVote", lastVote);
+            data.put(source, sourceData);
+        }
+
+        return data;
     }
 
     private void verifyPercentages() {

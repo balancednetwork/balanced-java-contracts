@@ -67,6 +67,7 @@ public class SourceWeightControllerTest extends UnitTest {
         sm.getBlock().increase(WEEK_BLOCKS *10);
 
         weightController = sm.deploy(owner, SourceWeightController.class, bBaln.getAddress());
+        SourceWeightController.rewards = (RewardsImpl)sm.deploy(owner, RewardsImpl.class, bBaln.getAddress()).getInstance();
         weightController.invoke(owner, "addType", stakedLPType, BigInteger.ZERO);
         weightController.invoke(owner, "addType", externalSources, BigInteger.ZERO);
 
@@ -197,39 +198,6 @@ public class SourceWeightControllerTest extends UnitTest {
         BigInteger bnUSDLpShare = (BigInteger) weightController.call("getRelativeWeight", "sICX/bnUSD", BigInteger.valueOf(sm.getBlock().getTimestamp()));
         assertEquals(EXA.divide(BigInteger.valueOf(3)), ICXLPShare);
         assertEquals(EXA.divide(BigInteger.valueOf(3)).multiply(BigInteger.TWO), bnUSDLpShare);
-    }
-
-    @Test
-    void getUserData() {
-        // Arrange
-        Account user = sm.createAccount();
-        mockUserWeight(user, EXA);
-
-        // Act
-        vote(user, "sICX/ICX", VOTE_POINTS.divide(BigInteger.TWO));
-        vote(user, "sICX/bnUSD", VOTE_POINTS.divide(BigInteger.TWO));
-        sm.getBlock().increase(WEEK_BLOCKS);
-        weightController.invoke(owner, "updateRelativeWeight", "sICX/ICX", BigInteger.valueOf(sm.getBlock().getTimestamp()));
-        weightController.invoke(owner, "updateRelativeWeight", "sICX/bnUSD", BigInteger.valueOf(sm.getBlock().getTimestamp()));
-
-        // Assert
-        Map<String, Map<String, BigInteger>> data = (Map<String, Map<String, BigInteger>>) weightController.call("getUserVoteData", user.getAddress());
-        assertTrue(data.containsKey("sICX/ICX"));
-        assertTrue(data.containsKey("sICX/bnUSD"));
-        assertEquals(VOTE_POINTS.divide(BigInteger.TWO), data.get("sICX/ICX").get("power"));
-        assertEquals(VOTE_POINTS.divide(BigInteger.TWO), data.get("sICX/bnUSD").get("power"));
-
-        // Act
-        sm.getBlock().increase(DAY_BLOCKS * 10);
-        vote(user, "sICX/ICX", BigInteger.ZERO);
-        vote(user, "sICX/bnUSD", VOTE_POINTS);
-        weightController.invoke(owner, "updateRelativeWeight", "sICX/bnUSD", BigInteger.valueOf(sm.getBlock().getTimestamp()));
-
-        // Assert
-        data = (Map<String, Map<String, BigInteger>>) weightController.call("getUserVoteData", user.getAddress());
-        assertTrue(!data.containsKey("sICX/ICX"));
-        assertTrue(data.containsKey("sICX/bnUSD"));
-        assertEquals(VOTE_POINTS, data.get("sICX/bnUSD").get("power"));
     }
 
     @Test

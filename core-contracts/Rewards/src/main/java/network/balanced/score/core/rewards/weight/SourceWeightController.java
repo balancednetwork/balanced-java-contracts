@@ -550,32 +550,13 @@ public class SourceWeightController {
     }
 
     public static VotedSlope getUserSlope(Address user, String source) {
-        return voteUserSlopes.at(user).get(source);
+        return voteUserSlopes.at(user).getOrDefault(source, new VotedSlope());
     }
 
     public static BigInteger getLastUserVote(Address user, String source) {
-        return lastUserVote.at(user).get(source);
+        return lastUserVote.at(user).getOrDefault(source, BigInteger.ZERO);
     }
 
-    public static Map<String, Map<String, BigInteger>> getUserVoteData(Address user) {
-        ArrayDB<String> userSources = activeUserWeights.at(user);
-        int nrOfSources = userSources.size();
-        Map<String, Map<String, BigInteger>> data = new HashMap<>();
-        for (int i = 0; i < nrOfSources; i++) {
-            String source = userSources.get(i);
-            VotedSlope votedSlope = voteUserSlopes.at(user).get(source);
-            BigInteger lastVote = lastUserVote.at(user).get(source);
-            Map<String, BigInteger> sourceData = new HashMap<>();
-            sourceData.put("slope", votedSlope.slope);
-            sourceData.put("power", votedSlope.power);
-            sourceData.put("end", votedSlope.end);
-            sourceData.put("lastVote", lastVote);
-
-            data.put(source, sourceData);
-        }
-
-        return data;
-    }
 
     public static int getSourceType(String sourceName) {
         return sourceTypes.get(sourceName) - 1;

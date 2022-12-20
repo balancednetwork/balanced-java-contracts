@@ -19,6 +19,7 @@ package network.balanced.score.core.rewards;
 import static network.balanced.score.core.rewards.weight.SourceWeightController.VOTE_POINTS;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -42,14 +43,14 @@ class RewardsTestRewardsPostMigration extends RewardsTestRewards {
 
     BigInteger migrationDay;
     DistributionPercentage sICXbnUSDDist = new DistributionPercentage();
-
+    Account user;
     @BeforeEach
     @Order(1)
     void setup() throws Exception {
         super.setup();
         sm.getBlock().increase(DAY *10);
         syncDistributions();
-        Account user = sm.createAccount();
+        user = sm.createAccount();
 
         BigInteger day = (BigInteger) rewardsScore.call("getDay");
         migrationDay = day.add(BigInteger.valueOf(14));
@@ -153,5 +154,35 @@ class RewardsTestRewardsPostMigration extends RewardsTestRewards {
 
         assertEquals(sICXBnusdFixed, distData.get("Fixed").get(sICXbnUSDDist.recipient_name));
         assertEquals(ICXFixed, distData.get("Fixed").get(icxPoolDist.recipient_name));
+    }
+
+    @Test
+    void getUserData() {
+        // Assert
+        Map<String, Map<String, BigInteger>> data = (Map<String, Map<String, BigInteger>>) rewardsScore.call("getUserVoteData", user.getAddress());
+        assertTrue(data.containsKey("sICX/ICX"));
+        assertTrue(data.containsKey("sICX/bnUSD"));
+        assertEquals(VOTE_POINTS.divide(BigInteger.TWO), data.get("sICX/ICX").get("power"));
+        assertEquals(VOTE_POINTS.divide(BigInteger.TWO), data.get("sICX/bnUSD").get("power"));
+
+        // Act
+        sm.getBlock().increase(DAY * 10);
+        vote(user, "sICX/ICX", BigInteger.ZERO);
+        vote(user, "sICX/bnUSD", VOTE_POINTS);
+        rewardsScore.invoke(owner, "updateRelativeSourceWeight", "sICX/bnUSD", BigInteger.valueOf(sm.getBlock().getTimestamp()));
+
+        // Assert
+        data = (Map<String, Map<String, BigInteger>>) rewardsScore.call("getUserVoteData", user.getAddress());
+        assertTrue(data.containsKey("sICX/ICX"));
+        assertTrue(data.containsKey("sICX/bnUSD"));
+        assertEquals(BigInteger.ZERO, data.get("sICX/ICX").get("power"));
+        assertEquals(VOTE_POINTS, data.get("sICX/bnUSD").get("power"));
+
+        sm.getBlock().increase(DAY * 10);
+
+        data = (Map<String, Map<String, BigInteger>>) rewardsScore.call("getUserVoteData", user.getAddress());
+        assertTrue(!data.containsKey("sICX/ICX"));
+        assertTrue(data.containsKey("sICX/bnUSD"));
+        assertEquals(VOTE_POINTS, data.get("sICX/bnUSD").get("power"));
     }
 }
