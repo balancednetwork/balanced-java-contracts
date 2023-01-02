@@ -41,6 +41,12 @@ public interface BalancedOracle extends
     BigInteger getLastPriceInLoop(String symbol);
 
     @External
+    BigInteger getPriceInUSD(String symbol);
+
+    @External(readonly = true)
+    BigInteger getLastPriceInUSD(String symbol);
+
+    @External
     void addDexPricedAsset(String symbol, BigInteger dexBnusdPoolId);
 
     @External

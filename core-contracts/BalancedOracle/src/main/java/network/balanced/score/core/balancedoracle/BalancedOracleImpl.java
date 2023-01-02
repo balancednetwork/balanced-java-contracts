@@ -63,12 +63,12 @@ public class BalancedOracleImpl implements BalancedOracle {
         return _getPriceInLoop(symbol);
     }
 
-    @External(readonly = true)
+    @External
     public BigInteger getPriceInUSD(String symbol) {
         return _getPriceInUSD(symbol);
     }
 
-    @External
+    @External(readonly = true)
     public BigInteger getLastPriceInUSD(String symbol) {
         return _getPriceInUSD(symbol);
     }
@@ -278,7 +278,7 @@ public class BalancedOracleImpl implements BalancedOracle {
 
         Context.require(blockTime.subtract(last_update_base).compareTo(threshold) < 0,
                 "The last price update for " + quote + " is outdated");
-        Context.require(blockTime.subtract(last_update_quote).compareTo(threshold) < 0, 
+        Context.require(blockTime.subtract(last_update_quote).compareTo(threshold) < 0,
                 "The last price update for " +  base + " is outdated");
 
         return (BigInteger) priceData.get("rate");
