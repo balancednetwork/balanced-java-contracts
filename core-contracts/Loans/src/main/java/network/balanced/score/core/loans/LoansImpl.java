@@ -405,8 +405,7 @@ public class LoansImpl implements Loans {
         BigInteger REDEMPTION_FEE = redemptionFee.get();
         BigInteger debtNeeded = _amount.multiply(POINTS.divide(MAX_REDEMPTION));
         BigInteger oldTotalDebt = DebtDB.getTotalDebt();
-        BigInteger USDRateInLoop = TokenUtils.getPriceInLoop(BNUSD_SYMBOL);
-        BigInteger collateralRateInLoop = TokenUtils.getPriceInLoop(collateralSymbol);
+        BigInteger collateralRateInUSD = TokenUtils.getPriceInUSD(collateralSymbol);
 
         PositionBatch batch = DebtDB.getBorrowers(collateralSymbol).readDataBatch(debtNeeded);
         Map<Integer, BigInteger> positionsMap = batch.positions;
@@ -425,7 +424,7 @@ public class LoansImpl implements Loans {
                 amountRepaid = debtToBeRepaid;
             }
 
-            BigInteger collateralSold = amountRepaid.multiply(USDRateInLoop).divide(collateralRateInLoop);
+            BigInteger collateralSold = amountRepaid.multiply(EXA).divide(collateralRateInUSD);
             BigInteger fee = REDEMPTION_FEE.multiply(collateralSold).divide(POINTS);
             collateralSold = collateralSold.subtract(fee);
             totalCollateralSold = totalCollateralSold.add(collateralSold);
@@ -511,7 +510,7 @@ public class LoansImpl implements Loans {
         BigInteger collateral = position.getCollateral(collateralSymbol);
         BigInteger reward = collateral.multiply(liquidationReward.get()).divide(POINTS);
         BigInteger forPool = collateral.subtract(reward);
-        BigInteger totalDebt = position.totalDebtInLoop(collateralSymbol);
+        BigInteger totalDebt = position.getDebt(collateralSymbol);
         BigInteger oldTotalDebt = DebtDB.getTotalDebt();
         BigInteger debt = position.getDebt(collateralSymbol);
         BigInteger oldUserDebt = position.getTotalDebt();
@@ -519,9 +518,8 @@ public class LoansImpl implements Loans {
         if (debt.compareTo(BigInteger.ZERO) > 0) {
             BigInteger badDebt = DebtDB.getBadDebt(collateralSymbol);
             DebtDB.setBadDebt(collateralSymbol, badDebt.add(debt));
-            BigInteger symbolDebt = debt.multiply(TokenUtils.getPriceInLoop(BNUSD_SYMBOL)).divide(EXA);
-            BigInteger share = forPool.multiply(symbolDebt).divide(totalDebt);
-            totalDebt = totalDebt.subtract(symbolDebt);
+            BigInteger share = forPool.multiply(debt).divide(totalDebt);
+            totalDebt = totalDebt.subtract(debt);
             forPool = forPool.subtract(share);
             DebtDB.setLiquidationPool(collateralSymbol, DebtDB.getLiquidationPool(collateralSymbol).add(share));
             position.setDebt(collateralSymbol, null);
@@ -540,15 +538,14 @@ public class LoansImpl implements Loans {
         Address collateralAddress = CollateralDB.getAddress(collateralSymbol);
 
         BigInteger collateralDecimals = pow(BigInteger.TEN, TokenUtils.decimals(collateralAddress).intValue());
-        BigInteger bnUSDPriceInLoop = TokenUtils.getPriceInLoop(BNUSD_SYMBOL);
-        BigInteger collateralPriceInLoop = TokenUtils.getPriceInLoop(collateralSymbol);
+        BigInteger collateralPriceInUSD = TokenUtils.getPriceInUSD(collateralSymbol);
         BigInteger inPool = DebtDB.getLiquidationPool(collateralSymbol);
         BigInteger badDebt = DebtDB.getBadDebt(collateralSymbol).subtract(badDebtAmount);
 
         BigInteger bonus = POINTS.add(retirementBonus.get());
         BigInteger badDebtCollateral =
-                bonus.multiply(badDebtAmount).multiply(bnUSDPriceInLoop).multiply(collateralDecimals).
-                        divide(collateralPriceInLoop.multiply(POINTS).multiply(EXA));
+                bonus.multiply(badDebtAmount).multiply(EXA).multiply(collateralDecimals).
+                        divide(collateralPriceInUSD.multiply(POINTS).multiply(EXA));
 
         DebtDB.setBadDebt(collateralSymbol, badDebt);
         if (inPool.compareTo(badDebtCollateral) >= 0) {
@@ -564,8 +561,6 @@ public class LoansImpl implements Loans {
 
         DebtDB.setLiquidationPool(collateralSymbol, null);
         BigInteger remainingCollateral = badDebtCollateral.subtract(inPool);
-        // TMP
-        BigInteger collateralPriceInUSD = Context.call(BigInteger.class, getBalancedOracle(), "getPriceInUSD", collateralSymbol);
         BigInteger remainingValue = remainingCollateral.multiply(collateralPriceInUSD).divide(collateralDecimals);
         Context.call(getReserve(), "redeem", from, remainingValue, collateralSymbol);
 
@@ -650,20 +645,20 @@ public class LoansImpl implements Loans {
 
         Context.require(position.getCollateral(collateralSymbol).compareTo(value) >= 0, TAG + ": Position holds less " +
                 "collateral than the requested withdrawal.");
-        BigInteger debtValue = position.totalDebtInLoop(collateralSymbol);
+        BigInteger debt = position.getDebt(collateralSymbol);
         BigInteger remainingCollateral = position.getCollateral(collateralSymbol).subtract(value);
 
         Address collateralAddress = CollateralDB.getAddress(collateralSymbol);
         BigInteger collateralDecimals = pow(BigInteger.TEN, TokenUtils.decimals(collateralAddress).intValue());
 
-        BigInteger remainingCollateralInLoop =
-                remainingCollateral.multiply(TokenUtils.getPriceInLoop(collateralSymbol)).divide(collateralDecimals);
+        BigInteger remainingCollateralInUSD =
+                remainingCollateral.multiply(TokenUtils.getPriceInUSD(collateralSymbol)).divide(collateralDecimals);
 
-        BigInteger lockingValue = getLockingRatio(collateralSymbol).multiply(debtValue).divide(POINTS);
-        Context.require(remainingCollateralInLoop.compareTo(lockingValue) >= 0,
+        BigInteger lockingValue = getLockingRatio(collateralSymbol).multiply(debt).divide(POINTS);
+        Context.require(remainingCollateralInUSD.compareTo(lockingValue) >= 0,
                 TAG + ": Requested withdrawal is more than available collateral. " +
-                        "total debt value: " + debtValue + " ICX " +
-                        "remaining collateral value: " + remainingCollateralInLoop + " ICX " +
+                        "total debt value: " + debt + " ICX " +
+                        "remaining collateral value: " + remainingCollateralInUSD + " ICX " +
                         "locking value (max debt): " + lockingValue + " ICX"
         );
 
@@ -675,33 +670,30 @@ public class LoansImpl implements Loans {
         Position position = PositionsDB.getPosition(from);
         BigInteger oldTotalDebt = DebtDB.getTotalDebt();
 
-        BigInteger collateral = position.totalCollateralInLoop(collateralSymbol);
+        BigInteger collateral = position.totalCollateralInUSD(collateralSymbol);
         BigInteger lockingRatio = getLockingRatio(collateralSymbol);
         Context.require(lockingRatio != null && lockingRatio.compareTo(BigInteger.ZERO) > 0,
                 "Locking ratio for " + collateralSymbol + " is not set");
         BigInteger maxDebtValue = POINTS.multiply(collateral).divide(lockingRatio);
         BigInteger fee = originationFee.get().multiply(amount).divide(POINTS);
 
-        BigInteger bnUSDPriceInLoop = TokenUtils.getPriceInLoop(BNUSD_SYMBOL);
 
         BigInteger newDebt = amount.add(fee);
-        BigInteger newDebtValue = bnUSDPriceInLoop.multiply(newDebt).divide(EXA);
         BigInteger holdings = position.getDebt(collateralSymbol);
         if (holdings.equals(BigInteger.ZERO)) {
-            BigInteger dollarValue = newDebtValue.multiply(EXA).divide(bnUSDPriceInLoop);
-            Context.require(dollarValue.compareTo(newLoanMinimum.get()) >= 0, TAG + ": The initial loan of any " +
+            Context.require(newDebt.compareTo(newLoanMinimum.get()) >= 0, TAG + ": The initial loan of any " +
                     "asset must have a minimum value of " + newLoanMinimum.get().divide(EXA) + " dollars.");
             if (!DebtDB.getBorrowers(collateralSymbol).contains(position.getId())) {
                 DebtDB.getBorrowers(collateralSymbol).append(newDebt, position.getId());
             }
         }
 
-        BigInteger totalDebt = position.totalDebtInLoop(collateralSymbol);
-        Context.require(totalDebt.add(newDebtValue).compareTo(maxDebtValue) <= 0,
+        BigInteger totalDebt = position.getDebt(collateralSymbol);
+        Context.require(totalDebt.add(newDebt).compareTo(maxDebtValue) <= 0,
                 TAG + ": " + collateral + " collateral is insufficient" +
                         " to originate a loan of " + amount + " " + BNUSD_SYMBOL +
                         " when max_debt_value = " + maxDebtValue + "," +
-                        " new_debt_value = " + newDebtValue + "," +
+                        " new_debt_value = " + newDebt + "," +
                         " which includes a fee of " + fee + " " + BNUSD_SYMBOL + "," +
                         " given an existing loan value of " + totalDebt + ".");
 

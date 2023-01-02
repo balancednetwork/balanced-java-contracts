@@ -172,26 +172,20 @@ public class Position {
         return !getTotalDebt().equals(BigInteger.ZERO);
     }
 
-    public BigInteger totalCollateralInLoop(String collateralSymbol) {
+    public BigInteger totalCollateralInUSD(String collateralSymbol) {
         Address collateralAddress = CollateralDB.getAddress(collateralSymbol);
 
         BigInteger amount = getCollateral(collateralSymbol);
         BigInteger decimals = pow(BigInteger.TEN, TokenUtils.decimals(collateralAddress).intValue());
-        BigInteger price = TokenUtils.getPriceInLoop(collateralSymbol);
+        BigInteger price = TokenUtils.getPriceInUSD(collateralSymbol);
 
         return amount.multiply(price).divide(decimals);
     }
 
-    public BigInteger totalDebtInLoop(String collateralSymbol) {
-        BigInteger amount = getDebt(collateralSymbol);
-        BigInteger price = TokenUtils.getPriceInLoop(BNUSD_SYMBOL);
-        return amount.multiply(price).divide(EXA);
-    }
-
     public Standing getStanding(String collateralSymbol) {
         Standing standing = new Standing();
-        standing.totalDebt = totalDebtInLoop(collateralSymbol);
-        standing.collateral = totalCollateralInLoop(collateralSymbol);
+        standing.totalDebt = getDebt(collateralSymbol);
+        standing.collateral = totalCollateralInUSD(collateralSymbol);
 
         if (standing.totalDebt.equals(BigInteger.ZERO)) {
             standing.ratio = BigInteger.ZERO;

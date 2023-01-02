@@ -38,12 +38,12 @@ public  class TokenUtils {
         return (BigInteger) call(tokenAddress, "balanceOf", address);
     }
 
-    public static BigInteger getPriceInLoop(String symbol) {
+    public static BigInteger getPriceInUSD(String symbol) {
         if (readonly()) {
-            return  (BigInteger) call(getBalancedOracle(), "getLastPriceInLoop", symbol);
+            return  (BigInteger) call(getBalancedOracle(), "getLastPriceInUSD", symbol);
         }
 
-        return (BigInteger) call(getBalancedOracle(), "getPriceInLoop", symbol);
+        return (BigInteger) call(getBalancedOracle(), "getPriceInUSD", symbol);
     }
 
     public static void mintAssetTo(Address to, BigInteger amount) {
