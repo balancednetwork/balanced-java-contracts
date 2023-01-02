@@ -28,9 +28,10 @@ import static network.balanced.score.lib.utils.Constants.EXA;
 
 public class DummyOracle {
     public static final DictDB<String, BigInteger> icxRates = Context.newDictDB("rates", BigInteger.class);
+    public static final BigInteger icxPrice =  BigInteger.valueOf(1672364619704314298L);
 
     public DummyOracle() {
-        icxRates.set("USD", BigInteger.valueOf(597955725813433531L));
+        icxRates.set("USD", EXA.multiply(EXA).divide(icxPrice));
         icxRates.set("BTC", new BigInteger("32c6eaee89097750da0", 16));
         icxRates.set("ETH", new BigInteger("2f723e28a3d2f1eddb84", 16));
     }
@@ -44,7 +45,7 @@ public class DummyOracle {
             result.put("last_update_quote", BigInteger.valueOf(Context.getBlockTimestamp()));
         }
         if (_base.equals("ICX") && _quote.equals("USD")) {
-            result.put("rate", BigInteger.valueOf(1672364619704314298L));
+            result.put("rate", icxPrice);
             result.put("last_update_base", BigInteger.valueOf(Context.getBlockTimestamp()));
             result.put("last_update_quote", BigInteger.valueOf(Context.getBlockTimestamp()));
         }
@@ -73,13 +74,13 @@ public class DummyOracle {
         }
 
         if (_base.equals("BTC") && _quote.equals("USD")) {
-            result.put("rate", icxRates.get("BTC").multiply(icxRates.get("USD")).divide(EXA));
+            result.put("rate", icxRates.get("BTC").multiply(icxPrice).divide(EXA));
             result.put("last_update_base", BigInteger.valueOf(Context.getBlockTimestamp()));
             result.put("last_update_quote", BigInteger.valueOf(Context.getBlockTimestamp()));
         }
 
         if (_base.equals("ETH") && _quote.equals("USD")) {
-            result.put("rate", icxRates.get("ETH").multiply(icxRates.get("USD")).divide(EXA));
+            result.put("rate", icxRates.get("ETH").multiply(icxPrice).divide(EXA));
             result.put("last_update_base", BigInteger.valueOf(Context.getBlockTimestamp()));
             result.put("last_update_quote", BigInteger.valueOf(Context.getBlockTimestamp()));
         }
