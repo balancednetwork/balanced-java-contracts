@@ -439,19 +439,18 @@ class LoansTest extends LoansTestBase {
         mockOraclePrice("sICX", rate);
         mockOraclePrice("iETH", rate);
         mockOraclePrice("bnUSD", rate);
-        BigInteger sICXCollateralInLoop = collateral.multiply(rate);
-        BigInteger iETHCollateralInLoop = collateral.multiply(rate);
-        BigInteger bnUSDPriceInLoop = rate;
+        BigInteger sICXCollateralInUSD = collateral.multiply(rate);
+        BigInteger iETHCollateralInUSD = collateral.multiply(rate);
         BigInteger sICXLockingRatio = BigInteger.valueOf(30_000);
         BigInteger iETHLockingRatio = BigInteger.valueOf(15_000);
 
-        BigInteger sICXMaxDebt = POINTS.multiply(sICXCollateralInLoop).divide(sICXLockingRatio);
+        BigInteger sICXMaxDebt = POINTS.multiply(sICXCollateralInUSD).divide(sICXLockingRatio);
         BigInteger sICXMaxLoan =
-                sICXMaxDebt.multiply(POINTS).divide(feePercentage.add(POINTS)).divide(bnUSDPriceInLoop);
+                sICXMaxDebt.multiply(POINTS).divide(feePercentage.add(POINTS)).divide(EXA);
 
-        BigInteger iETHMaxDebt = POINTS.multiply(iETHCollateralInLoop).divide(iETHLockingRatio);
+        BigInteger iETHMaxDebt = POINTS.multiply(iETHCollateralInUSD).divide(iETHLockingRatio);
         BigInteger iETHMaxLoan =
-                iETHMaxDebt.multiply(POINTS).divide(feePercentage.add(POINTS)).divide(bnUSDPriceInLoop);
+                iETHMaxDebt.multiply(POINTS).divide(feePercentage.add(POINTS)).divide(EXA);
 
         // Act
         loans.invoke(governance.account, "setLockingRatio", "sICX", sICXLockingRatio);
@@ -573,12 +572,12 @@ class LoansTest extends LoansTestBase {
         takeLoanICX(liquidatedLoanTaker, "bnUSD", collateral, loan);
         verifyPosition(liquidatedLoanTaker.getAddress(), collateral, loan.add(expectedFee));
 
-        BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
-        mockOraclePrice("bnUSD", newPrice);
+        BigInteger newPrice = EXA.divide(BigInteger.valueOf(4));
+        mockOraclePrice("sICX", newPrice);
 
         // Act
         loans.invoke(liquidator, "liquidate", liquidatedLoanTaker.getAddress(), "sICX");
-        mockOraclePrice("bnUSD", EXA);
+        mockOraclePrice("sICX", EXA);
 
         // Assert
         Map<String, Object> bnusdAsset = ((Map<String, Map<String, Object>>) loans.call("getAvailableAssets")).get(
@@ -1170,8 +1169,7 @@ class LoansTest extends LoansTestBase {
         takeLoanICX(account, "bnUSD", collateral, loan);
         verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
 
-        BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
-        mockOraclePrice("bnUSD", newPrice);
+        mockOraclePrice("sICX", EXA.divide(BigInteger.valueOf(4)));
 
         // Act
         loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
@@ -1240,8 +1238,8 @@ class LoansTest extends LoansTestBase {
         takeLoaniETH(account, collateral, loan);
         verifyPosition(account.getAddress(), collateral, loan.add(expectedFee), "iETH");
 
-        BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
-        mockOraclePrice("bnUSD", newPrice);
+        BigInteger newPrice = EXA.divide(BigInteger.valueOf(4));
+        mockOraclePrice("iETH", newPrice);
 
         // Act
         loans.invoke(liquidator, "liquidate", account.getAddress(), "iETH");
@@ -1285,45 +1283,43 @@ class LoansTest extends LoansTestBase {
         BigInteger sICXLiquidationRatio = BigInteger.valueOf(12_000);
         BigInteger iETHLiquidationRatio = BigInteger.valueOf(10_000);
 
-        BigInteger rate = EXA;
-        mockOraclePrice("sICX", EXA);
-        mockOraclePrice("iETH", EXA);
-
-        BigInteger sICXCollateralInLoop = collateral.multiply(EXA);
-        BigInteger iETHCollateralInLoop = collateral.multiply(EXA);
+        BigInteger sICXCollateralInUSD = collateral;
+        BigInteger iETHCollateralInUSD = collateral;
 
         BigInteger sICXLoanLiquidationRatio = sICXLiquidationRatio.multiply(EXA).divide(POINTS);
         BigInteger iETHLoanLiquidationRatio = iETHLiquidationRatio.multiply(EXA).divide(POINTS);
         BigInteger sICXLiquidationPrice =
-                sICXCollateralInLoop.multiply(EXA).divide(debt.multiply(sICXLoanLiquidationRatio));
+                debt.multiply(sICXLoanLiquidationRatio).divide(sICXCollateralInUSD);
         BigInteger iETHLiquidationPrice =
-                iETHCollateralInLoop.multiply(EXA).divide(debt.multiply(iETHLoanLiquidationRatio));
+                debt.multiply(iETHLoanLiquidationRatio).divide(iETHCollateralInUSD);
 
         loans.invoke(governance.account, "setLiquidationRatio", "sICX", sICXLiquidationRatio);
         loans.invoke(governance.account, "setLiquidationRatio", "iETH", iETHLiquidationRatio);
 
         // Act & Assert
-        BigInteger bnusdPrice = sICXLiquidationPrice.subtract(BigInteger.TEN);
-        mockOraclePrice("bnUSD", bnusdPrice);
+        BigInteger price = sICXLiquidationPrice.add(BigInteger.TEN);
+        mockOraclePrice("sICX", price);
+        mockOraclePrice("iETH", price);
         loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
         loans.invoke(liquidator, "liquidate", account.getAddress(), "iETH");
         verifyPosition(account.getAddress(), collateral, debt, "sICX");
         verifyPosition(account.getAddress(), collateral, debt, "iETH");
 
-        bnusdPrice = sICXLiquidationPrice;
-        mockOraclePrice("bnUSD", bnusdPrice);
+        price = sICXLiquidationPrice;
+        mockOraclePrice("sICX", price);
+        mockOraclePrice("iETH", price);
         loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
 
         verifyPosition(account.getAddress(), BigInteger.ZERO, BigInteger.ZERO, "sICX");
         verifyPosition(account.getAddress(), collateral, debt, "iETH");
 
         // Act & Assert
-        bnusdPrice = iETHLiquidationPrice.subtract(BigInteger.TEN);
-        mockOraclePrice("bnUSD", bnusdPrice);
+        price = iETHLiquidationPrice.add(BigInteger.TEN);
+        mockOraclePrice("iETH", price);
         loans.invoke(liquidator, "liquidate", account.getAddress(), "iETH");
         verifyPosition(account.getAddress(), collateral, debt, "iETH");
 
-        mockOraclePrice("bnUSD", iETHLiquidationPrice);
+        mockOraclePrice("iETH", iETHLiquidationPrice);
         loans.invoke(liquidator, "liquidate", account.getAddress(), "iETH");
         verifyPosition(account.getAddress(), BigInteger.ZERO, BigInteger.ZERO, "iETH");
         verifyTotalDebt(BigInteger.ZERO);
@@ -1341,8 +1337,7 @@ class LoansTest extends LoansTestBase {
         takeLoanICX(account, "bnUSD", collateral, loan);
         verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
 
-        BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
-        mockOraclePrice("bnUSD", newPrice);
+        mockOraclePrice("sICX", EXA.divide(BigInteger.valueOf(4)));
 
         // Act
         loans.invoke(liquidator, "liquidate", account.getAddress(), "iETH");
@@ -1400,8 +1395,9 @@ class LoansTest extends LoansTestBase {
         takeLoanICX(account, "bnUSD", collateral, loan);
         takeLoaniETH(account, collateral, loan);
 
-        BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
-        mockOraclePrice("bnUSD", newPrice);
+        BigInteger newPrice =  EXA.divide(BigInteger.valueOf(4));
+        mockOraclePrice("sICX", newPrice);
+        mockOraclePrice("iETH", newPrice);
         loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
         loans.invoke(liquidator, "liquidate", account.getAddress(), "iETH");
 
@@ -1413,10 +1409,8 @@ class LoansTest extends LoansTestBase {
 
         // Assert
         BigInteger bonus = POINTS.add(BigInteger.valueOf(1000));
-        BigInteger icxPrice = EXA;
-        BigInteger iETHPrice = EXA;
-        BigInteger debtInsICX = bonus.multiply(badDebtSICX).multiply(newPrice).divide(icxPrice.multiply(POINTS));
-        BigInteger debtIniETH = bonus.multiply(badDebtIETH).multiply(newPrice).divide(iETHPrice.multiply(POINTS));
+        BigInteger debtInsICX = bonus.multiply(badDebtSICX).multiply(EXA).divide(newPrice.multiply(POINTS));
+        BigInteger debtIniETH = bonus.multiply(badDebtIETH).multiply(EXA).divide(newPrice.multiply(POINTS));
 
         verify(sicx.mock).transfer(eq(badDebtReedemer.getAddress()), eq(debtInsICX), any(byte[].class));
         verify(ieth.mock).transfer(eq(badDebtReedemer.getAddress()), eq(debtIniETH), any(byte[].class));
@@ -1450,8 +1444,10 @@ class LoansTest extends LoansTestBase {
         takeLoanICX(account, "bnUSD", collateral, loan);
         takeLoaniETH(account, collateral, loan);
 
-        BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
-        mockOraclePrice("bnUSD", newPrice);
+        BigInteger newPrice = EXA.divide(BigInteger.valueOf(4));
+        mockOraclePrice("sICX", newPrice);
+        mockOraclePrice("iETH", newPrice);
+
         loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
         loans.invoke(liquidator, "liquidate", account.getAddress(), "iETH");
 
@@ -1491,28 +1487,25 @@ class LoansTest extends LoansTestBase {
         BigInteger expectedReward = collateral.multiply(liquidationReward).divide(POINTS);
         takeLoanICX(account, "bnUSD", collateral, loan);
 
-        BigInteger pricePreLiquidation = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
-        BigInteger pricePostLiquidation = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(6));
+        BigInteger pricePreLiquidation = EXA.divide(BigInteger.valueOf(4));
+        BigInteger pricePostLiquidation = EXA.divide(BigInteger.valueOf(6));
 
-        mockOraclePrice("bnUSD", pricePreLiquidation);
+        mockOraclePrice("sICX", pricePreLiquidation);
         loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
-        mockOraclePrice("bnUSD", pricePostLiquidation);
+        mockOraclePrice("sICX", pricePostLiquidation);
 
         BigInteger liquidationPool = collateral.subtract(expectedReward);
 
         BigInteger bonus = POINTS.add(BigInteger.valueOf(1000));
-        BigInteger icxPrice = EXA;
-        mockOraclePrice("sICX", icxPrice);
         BigInteger debtInsICX =
-                bonus.multiply(badDebtRedeemed).multiply(pricePostLiquidation).divide(icxPrice.multiply(POINTS));
+                bonus.multiply(badDebtRedeemed).multiply(EXA).divide(pricePostLiquidation.multiply(POINTS));
 
         // Act
-
         BigInteger amountRedeemed = debtInsICX.subtract(liquidationPool);
         loans.invoke(badDebtReedemer, "retireBadDebt", "bnUSD", badDebtRedeemed);
 
         // Assert
-        BigInteger valueNeededFromReserve = amountRedeemed.multiply(icxPrice).divide(EXA);
+        BigInteger valueNeededFromReserve = amountRedeemed.multiply(pricePostLiquidation).divide(EXA);
         verify(reserve.mock).redeem(badDebtReedemer.getAddress(), valueNeededFromReserve, "sICX");
 
         verify(bnusd.mock).burnFrom(badDebtReedemer.getAddress(), badDebtRedeemed);
@@ -1545,29 +1538,26 @@ class LoansTest extends LoansTestBase {
         BigInteger expectedReward = collateral.multiply(liquidationReward).divide(POINTS);
         takeLoanICX(account, "bnUSD", collateral, loan);
 
-        BigInteger pricePreLiquidation = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
-        BigInteger pricePostLiquidation = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(6));
+        BigInteger pricePreLiquidation =  EXA.divide(BigInteger.valueOf(4));
+        BigInteger pricePostLiquidation = EXA.divide(BigInteger.valueOf(6));
 
-        mockOraclePrice("bnUSD", pricePreLiquidation);
+        mockOraclePrice("sICX", pricePreLiquidation);
         loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
-        mockOraclePrice("bnUSD", pricePostLiquidation);
+        mockOraclePrice("sICX", pricePostLiquidation);
 
         BigInteger liquidationPool = collateral.subtract(expectedReward);
 
         BigInteger bonus = POINTS.add(BigInteger.valueOf(1000));
-        BigInteger icxPrice = EXA;
-        mockOraclePrice("sICX", icxPrice);
 
         BigInteger debtInsICX =
-                bonus.multiply(badDebtRedeemed).multiply(pricePostLiquidation).divide(icxPrice.multiply(POINTS));
+                bonus.multiply(badDebtRedeemed).multiply(EXA).divide(pricePostLiquidation.multiply(POINTS));
 
         // Act
-
         BigInteger amountRedeemed = debtInsICX.subtract(liquidationPool);
         loans.invoke(badDebtReedemer, "retireBadDebtForCollateral", "bnUSD", badDebtRedeemed, "sICX");
 
         // Assert
-        BigInteger valueNeededFromReserve = amountRedeemed.multiply(icxPrice).divide(EXA);
+        BigInteger valueNeededFromReserve = amountRedeemed.multiply(pricePostLiquidation).divide(EXA);
         verify(reserve.mock).redeem(badDebtReedemer.getAddress(), valueNeededFromReserve, "sICX");
 
         verify(bnusd.mock).burnFrom(badDebtReedemer.getAddress(), badDebtRedeemed);
@@ -1598,8 +1588,9 @@ class LoansTest extends LoansTestBase {
         takeLoanICX(account, "bnUSD", collateral, loan);
         takeLoaniETH(account, collateral, loan);
 
-        BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
-        mockOraclePrice("bnUSD", newPrice);
+        BigInteger newPrice = EXA.divide(BigInteger.valueOf(4));
+        mockOraclePrice("sICX", newPrice);
+        mockOraclePrice("iETH", newPrice);
         loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
         loans.invoke(liquidator, "liquidate", account.getAddress(), "iETH");
 
@@ -1611,8 +1602,7 @@ class LoansTest extends LoansTestBase {
 
         // Assert
         BigInteger bonus = POINTS.add(BigInteger.valueOf(1000));
-        BigInteger iETHPrice = EXA;
-        BigInteger debtIniETH = bonus.multiply(badDebtIETH).multiply(newPrice).divide(iETHPrice.multiply(POINTS));
+        BigInteger debtIniETH = bonus.multiply(badDebtIETH).multiply(EXA).divide(newPrice.multiply(POINTS));
 
         verify(bnusd.mock).burnFrom(badDebtReedemer.getAddress(), badDebtIETH);
         verify(ieth.mock).transfer(eq(badDebtReedemer.getAddress()), eq(debtIniETH), any(byte[].class));
@@ -1717,20 +1707,18 @@ class LoansTest extends LoansTestBase {
         BigInteger expectedRepaidAccount2 = maxRetire;
         BigInteger expectedRepaidAccount3 = amountRedeemed.subtract(maxRetire).subtract(maxRetire);
 
-        BigInteger sICXRate = EXA;
-        BigInteger bnUSDRate = BigInteger.TWO.multiply(EXA);
+        BigInteger sICXRate = EXA.divide(BigInteger.TWO);
         mockOraclePrice("sICX", sICXRate);
-        mockOraclePrice("bnUSD", bnUSDRate);
 
         BigInteger totalRedemptionFee = amountRedeemed.multiply(redemptionFee).divide(POINTS);
-        BigInteger totalCollateralRedeemed = amountRedeemed.subtract(totalRedemptionFee).multiply(bnUSDRate).divide(sICXRate);
+        BigInteger totalCollateralRedeemed = amountRedeemed.subtract(totalRedemptionFee).multiply(EXA).divide(sICXRate);
 
         BigInteger feeAccount1 = expectedRepaidAccount1.multiply(redemptionFee).divide(POINTS);
-        BigInteger collateralRedeemedAccount1 = expectedRepaidAccount1.subtract(feeAccount1).multiply(bnUSDRate).divide(sICXRate);
+        BigInteger collateralRedeemedAccount1 = expectedRepaidAccount1.subtract(feeAccount1).multiply(EXA).divide(sICXRate);
         BigInteger collateralRedeemedAccount2 = collateralRedeemedAccount1;
 
         BigInteger feeAccount3 = expectedRepaidAccount3.multiply(redemptionFee).divide(POINTS);
-        BigInteger collateralRedeemedAccount3 = expectedRepaidAccount3.subtract(feeAccount3).multiply(bnUSDRate).divide(sICXRate);
+        BigInteger collateralRedeemedAccount3 = expectedRepaidAccount3.subtract(feeAccount3).multiply(EXA).divide(sICXRate);
 
         // Act
         takeLoanICX(account1, "bnUSD", collateral, loan);
