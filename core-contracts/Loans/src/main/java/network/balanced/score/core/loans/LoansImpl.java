@@ -459,7 +459,7 @@ public class LoansImpl implements Loans {
 
         BigInteger MAX_REDEMPTION = maxRetirePercent.get();
         String collateralSymbol = CollateralDB.getSymbol(_collateralAddress);
-        
+
         BigInteger totalDebt = DebtDB.getBorrowers(collateralSymbol).getTotalDebtFor(nrOfPositions);
         BigInteger redeemAmount = totalDebt.multiply(MAX_REDEMPTION).divide(POINTS);
 
@@ -564,7 +564,9 @@ public class LoansImpl implements Loans {
 
         DebtDB.setLiquidationPool(collateralSymbol, null);
         BigInteger remainingCollateral = badDebtCollateral.subtract(inPool);
-        BigInteger remainingValue = remainingCollateral.multiply(collateralPriceInLoop).divide(collateralDecimals);
+        // TMP
+        BigInteger collateralPriceInUSD = Context.call(BigInteger.class, getBalancedOracle(), "getPriceInUSD", collateralSymbol);
+        BigInteger remainingValue = remainingCollateral.multiply(collateralPriceInUSD).divide(collateralDecimals);
         Context.call(getReserve(), "redeem", from, remainingValue, collateralSymbol);
 
         return inPool;

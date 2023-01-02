@@ -88,7 +88,7 @@ public class ReserveFund implements Reserve {
 
     @External
     @SuppressWarnings("unchecked")
-    public void redeem(Address _to, BigInteger _valueInLoop, String collateralSymbol) {
+    public void redeem(Address _to, BigInteger _valueInDollar, String collateralSymbol) {
         Address sender = Context.getCaller();
         Address loans = getLoans();
         Context.require(sender.equals(loans), TAG + ": The redeem method can only be called by the Loans " +
@@ -96,7 +96,7 @@ public class ReserveFund implements Reserve {
 
         Address oracle = getBalancedOracle();
 
-        BigInteger remainingValue = _valueInLoop;
+        BigInteger remainingValue = _valueInDollar;
         Map<String, String> collateralTokens = (Map<String, String>) Context.call(getLoans(),
                 "getCollateralTokens");
 
@@ -115,7 +115,7 @@ public class ReserveFund implements Reserve {
 
         Address balnTokenAddress = getBaln();
 
-        BigInteger balnRate = Context.call(BigInteger.class, oracle, "getPriceInLoop", "BALN");
+        BigInteger balnRate = Context.call(BigInteger.class, oracle, "getPriceInUSD", "BALN");
         BigInteger balance = getBalance(balnTokenAddress);
         BigInteger balnToSend = remainingValue.multiply(EXA).divide(balnRate);
 
@@ -171,7 +171,7 @@ public class ReserveFund implements Reserve {
 
     private BigInteger redeemAsset(String symbol, String collateralAddress, Address to, Address oracle,
                                    BigInteger remainingValue) {
-        BigInteger rate = Context.call(BigInteger.class, oracle, "getPriceInLoop", symbol);
+        BigInteger rate = Context.call(BigInteger.class, oracle, "getPriceInUSD", symbol);
         BigInteger balance = getBalance(collateralAddress);
         BigInteger decimals = getDecimals(collateralAddress);
         BigInteger totalValue = rate.multiply(balance).divide(decimals);

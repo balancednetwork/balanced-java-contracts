@@ -24,6 +24,8 @@ import scorex.util.HashMap;
 import java.math.BigInteger;
 import java.util.Map;
 
+import static network.balanced.score.lib.utils.Constants.EXA;
+
 public class DummyOracle {
     public static final DictDB<String, BigInteger> icxRates = Context.newDictDB("rates", BigInteger.class);
 
@@ -66,6 +68,18 @@ public class DummyOracle {
 
         if (_base.equals("ETH") && _quote.equals("ICX")) {
             result.put("rate", icxRates.get("ETH"));
+            result.put("last_update_base", BigInteger.valueOf(Context.getBlockTimestamp()));
+            result.put("last_update_quote", BigInteger.valueOf(Context.getBlockTimestamp()));
+        }
+
+        if (_base.equals("BTC") && _quote.equals("USD")) {
+            result.put("rate", icxRates.get("BTC").multiply(icxRates.get("USD")).divide(EXA));
+            result.put("last_update_base", BigInteger.valueOf(Context.getBlockTimestamp()));
+            result.put("last_update_quote", BigInteger.valueOf(Context.getBlockTimestamp()));
+        }
+
+        if (_base.equals("ETH") && _quote.equals("USD")) {
+            result.put("rate", icxRates.get("ETH").multiply(icxRates.get("USD")).divide(EXA));
             result.put("last_update_base", BigInteger.valueOf(Context.getBlockTimestamp()));
             result.put("last_update_quote", BigInteger.valueOf(Context.getBlockTimestamp()));
         }
