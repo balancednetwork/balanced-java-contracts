@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,32 +20,29 @@ package network.balanced.score.core.rewards;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
-import network.balanced.score.lib.interfaces.*;
-import network.balanced.score.lib.interfaces.tokens.*;
+import network.balanced.score.core.rewards.weight.SourceWeightController;
+import network.balanced.score.lib.interfaces.BoostedBaln;
+import network.balanced.score.lib.interfaces.BoostedBalnScoreInterface;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockContract;
-import score.Address;
-
-
-import java.math.BigInteger;
-import java.util.Map;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import score.Address;
 
+import java.math.BigInteger;
 
-import network.balanced.score.core.rewards.weight.SourceWeightController;
 import static network.balanced.score.core.rewards.weight.SourceWeightController.VOTE_POINTS;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.when;
 
 public class SourceWeightControllerTest extends UnitTest {
     static final Long DAY_BLOCKS = 43200L;
-    static final Long WEEK_BLOCKS = 7*43200L;
+    static final Long WEEK_BLOCKS = 7 * 43200L;
 
     static final ServiceManager sm = getServiceManager();
     static final Account owner = sm.createAccount();
@@ -61,13 +58,15 @@ public class SourceWeightControllerTest extends UnitTest {
     int externalSourcesId;
 
     BigInteger unlockTime;
+
     @BeforeEach
     void setup() throws Exception {
         bBaln = new MockContract<>(BoostedBalnScoreInterface.class, sm, owner);
-        sm.getBlock().increase(WEEK_BLOCKS *10);
+        sm.getBlock().increase(WEEK_BLOCKS * 10);
 
         weightController = sm.deploy(owner, SourceWeightController.class, bBaln.getAddress());
-        SourceWeightController.rewards = (RewardsImpl)sm.deploy(owner, RewardsImpl.class, bBaln.getAddress()).getInstance();
+        SourceWeightController.rewards =
+                (RewardsImpl) sm.deploy(owner, RewardsImpl.class, bBaln.getAddress()).getInstance();
         weightController.invoke(owner, "addType", stakedLPType, BigInteger.ZERO);
         weightController.invoke(owner, "addType", externalSources, BigInteger.ZERO);
 
@@ -95,12 +94,16 @@ public class SourceWeightControllerTest extends UnitTest {
         vote(user, "sICX/ICX", VOTE_POINTS.divide(BigInteger.TWO));
         vote(user, "sICX/bnUSD", VOTE_POINTS.divide(BigInteger.TWO));
         sm.getBlock().increase(WEEK_BLOCKS);
-        weightController.invoke(owner, "updateRelativeWeight", "sICX/ICX", BigInteger.valueOf(sm.getBlock().getTimestamp()));
-        weightController.invoke(owner, "updateRelativeWeight", "sICX/bnUSD", BigInteger.valueOf(sm.getBlock().getTimestamp()));
+        weightController.invoke(owner, "updateRelativeWeight", "sICX/ICX",
+                BigInteger.valueOf(sm.getBlock().getTimestamp()));
+        weightController.invoke(owner, "updateRelativeWeight", "sICX/bnUSD",
+                BigInteger.valueOf(sm.getBlock().getTimestamp()));
 
         // Assert
-        BigInteger ICXLPShare = (BigInteger) weightController.call("getRelativeWeight", "sICX/ICX", BigInteger.valueOf(sm.getBlock().getTimestamp()));
-        BigInteger bnUSDLpShare = (BigInteger) weightController.call("getRelativeWeight", "sICX/bnUSD", BigInteger.valueOf(sm.getBlock().getTimestamp()));
+        BigInteger ICXLPShare = (BigInteger) weightController.call("getRelativeWeight", "sICX/ICX",
+                BigInteger.valueOf(sm.getBlock().getTimestamp()));
+        BigInteger bnUSDLpShare = (BigInteger) weightController.call("getRelativeWeight", "sICX/bnUSD",
+                BigInteger.valueOf(sm.getBlock().getTimestamp()));
         assertEquals(expectedShare, ICXLPShare);
         assertEquals(expectedShare, bnUSDLpShare);
     }
@@ -116,29 +119,35 @@ public class SourceWeightControllerTest extends UnitTest {
         vote(user, "sICX/ICX", VOTE_POINTS.divide(BigInteger.TWO));
         vote(user, "sICX/bnUSD", VOTE_POINTS.divide(BigInteger.TWO));
         sm.getBlock().increase(WEEK_BLOCKS);
-        weightController.invoke(owner, "updateRelativeWeight", "sICX/ICX", BigInteger.valueOf(sm.getBlock().getTimestamp()));
-        weightController.invoke(owner, "updateRelativeWeight", "sICX/bnUSD", BigInteger.valueOf(sm.getBlock().getTimestamp()));
+        weightController.invoke(owner, "updateRelativeWeight", "sICX/ICX",
+                BigInteger.valueOf(sm.getBlock().getTimestamp()));
+        weightController.invoke(owner, "updateRelativeWeight", "sICX/bnUSD",
+                BigInteger.valueOf(sm.getBlock().getTimestamp()));
 
         weightController.invoke(owner, "setVotable", "sICX/bnUSD", false);
         sm.getBlock().increase(DAY_BLOCKS * 10);
 
         // Assert
         String expectedErrorMessage = "Reverted(0): sICX/bnUSD is not a votable source, you can only remove weight";
-        Executable voteOnDisabled_noPower =  () -> vote(user2, "sICX/bnUSD", VOTE_POINTS.divide(BigInteger.TWO));
+        Executable voteOnDisabled_noPower = () -> vote(user2, "sICX/bnUSD", VOTE_POINTS.divide(BigInteger.TWO));
         expectErrorMessage(voteOnDisabled_noPower, expectedErrorMessage);
 
-        Executable voteOnDisabled_changePower =  () -> vote(user, "sICX/bnUSD", VOTE_POINTS.divide(BigInteger.TEN));
+        Executable voteOnDisabled_changePower = () -> vote(user, "sICX/bnUSD", VOTE_POINTS.divide(BigInteger.TEN));
         expectErrorMessage(voteOnDisabled_changePower, expectedErrorMessage);
 
         vote(user, "sICX/bnUSD", BigInteger.ZERO);
 
         // Assert
         sm.getBlock().increase(WEEK_BLOCKS);
-        weightController.invoke(owner, "updateRelativeWeight", "sICX/ICX", BigInteger.valueOf(sm.getBlock().getTimestamp()));
-        weightController.invoke(owner, "updateRelativeWeight", "sICX/bnUSD", BigInteger.valueOf(sm.getBlock().getTimestamp()));
+        weightController.invoke(owner, "updateRelativeWeight", "sICX/ICX",
+                BigInteger.valueOf(sm.getBlock().getTimestamp()));
+        weightController.invoke(owner, "updateRelativeWeight", "sICX/bnUSD",
+                BigInteger.valueOf(sm.getBlock().getTimestamp()));
 
-        BigInteger ICXLPShare = (BigInteger) weightController.call("getRelativeWeight", "sICX/ICX", BigInteger.valueOf(sm.getBlock().getTimestamp()));
-        BigInteger bnUSDLpShare = (BigInteger) weightController.call("getRelativeWeight", "sICX/bnUSD", BigInteger.valueOf(sm.getBlock().getTimestamp()));
+        BigInteger ICXLPShare = (BigInteger) weightController.call("getRelativeWeight", "sICX/ICX",
+                BigInteger.valueOf(sm.getBlock().getTimestamp()));
+        BigInteger bnUSDLpShare = (BigInteger) weightController.call("getRelativeWeight", "sICX/bnUSD",
+                BigInteger.valueOf(sm.getBlock().getTimestamp()));
         assertEquals(EXA, ICXLPShare);
         assertEquals(BigInteger.ZERO, bnUSDLpShare);
     }
@@ -154,7 +163,8 @@ public class SourceWeightControllerTest extends UnitTest {
 
         // Assert
         String expectedErrorMessage = "Reverted(0): Used too much power";
-        Executable voteWithToMuchPower =  () -> vote(user, "sICX/bnUSD", VOTE_POINTS.divide(BigInteger.TWO).add(BigInteger.ONE));
+        Executable voteWithToMuchPower = () -> vote(user, "sICX/bnUSD",
+                VOTE_POINTS.divide(BigInteger.TWO).add(BigInteger.ONE));
         expectErrorMessage(voteWithToMuchPower, expectedErrorMessage);
     }
 
@@ -166,7 +176,7 @@ public class SourceWeightControllerTest extends UnitTest {
 
         // Act & Assert
         String expectedErrorMessage = "Reverted(0): Weight has to be between 0 and 10000";
-        Executable voteWithToMuchPower =  () -> vote(user, "sICX/ICX", BigInteger.ONE.negate());
+        Executable voteWithToMuchPower = () -> vote(user, "sICX/ICX", BigInteger.ONE.negate());
         expectErrorMessage(voteWithToMuchPower, expectedErrorMessage);
     }
 
@@ -182,7 +192,7 @@ public class SourceWeightControllerTest extends UnitTest {
 
         // Assert
         String expectedErrorMessage = "Reverted(0): Cannot vote so often";
-        Executable voteWithToMuchPower =  () -> vote(user, "sICX/ICX", VOTE_POINTS.divide(BigInteger.valueOf(4)));
+        Executable voteWithToMuchPower = () -> vote(user, "sICX/ICX", VOTE_POINTS.divide(BigInteger.valueOf(4)));
         expectErrorMessage(voteWithToMuchPower, expectedErrorMessage);
 
         // Act
@@ -190,12 +200,16 @@ public class SourceWeightControllerTest extends UnitTest {
         vote(user, "sICX/ICX", VOTE_POINTS.divide(BigInteger.valueOf(4)));
         sm.getBlock().increase(WEEK_BLOCKS);
 
-        weightController.invoke(owner, "updateRelativeWeight", "sICX/ICX", BigInteger.valueOf(sm.getBlock().getTimestamp()));
-        weightController.invoke(owner, "updateRelativeWeight", "sICX/bnUSD", BigInteger.valueOf(sm.getBlock().getTimestamp()));
+        weightController.invoke(owner, "updateRelativeWeight", "sICX/ICX",
+                BigInteger.valueOf(sm.getBlock().getTimestamp()));
+        weightController.invoke(owner, "updateRelativeWeight", "sICX/bnUSD",
+                BigInteger.valueOf(sm.getBlock().getTimestamp()));
 
         // Assert
-        BigInteger ICXLPShare = (BigInteger) weightController.call("getRelativeWeight", "sICX/ICX", BigInteger.valueOf(sm.getBlock().getTimestamp()));
-        BigInteger bnUSDLpShare = (BigInteger) weightController.call("getRelativeWeight", "sICX/bnUSD", BigInteger.valueOf(sm.getBlock().getTimestamp()));
+        BigInteger ICXLPShare = (BigInteger) weightController.call("getRelativeWeight", "sICX/ICX",
+                BigInteger.valueOf(sm.getBlock().getTimestamp()));
+        BigInteger bnUSDLpShare = (BigInteger) weightController.call("getRelativeWeight", "sICX/bnUSD",
+                BigInteger.valueOf(sm.getBlock().getTimestamp()));
         assertEquals(EXA.divide(BigInteger.valueOf(3)), ICXLPShare);
         assertEquals(EXA.divide(BigInteger.valueOf(3)).multiply(BigInteger.TWO), bnUSDLpShare);
     }
@@ -214,14 +228,20 @@ public class SourceWeightControllerTest extends UnitTest {
         vote(user, "sICX/bnUSD", VOTE_POINTS.divide(BigInteger.valueOf(4)));
         vote(user, "OMMbnUSD", VOTE_POINTS.divide(BigInteger.TWO));
         sm.getBlock().increase(WEEK_BLOCKS);
-        weightController.invoke(owner, "updateRelativeWeight", "sICX/ICX", BigInteger.valueOf(sm.getBlock().getTimestamp()));
-        weightController.invoke(owner, "updateRelativeWeight", "sICX/bnUSD", BigInteger.valueOf(sm.getBlock().getTimestamp()));
-        weightController.invoke(owner, "updateRelativeWeight", "OMMbnUSD", BigInteger.valueOf(sm.getBlock().getTimestamp()));
+        weightController.invoke(owner, "updateRelativeWeight", "sICX/ICX",
+                BigInteger.valueOf(sm.getBlock().getTimestamp()));
+        weightController.invoke(owner, "updateRelativeWeight", "sICX/bnUSD",
+                BigInteger.valueOf(sm.getBlock().getTimestamp()));
+        weightController.invoke(owner, "updateRelativeWeight", "OMMbnUSD",
+                BigInteger.valueOf(sm.getBlock().getTimestamp()));
 
         // Assert
-        BigInteger ICXLPShare = (BigInteger) weightController.call("getRelativeWeight", "sICX/ICX", BigInteger.valueOf(sm.getBlock().getTimestamp()));
-        BigInteger bnUSDLpShare = (BigInteger) weightController.call("getRelativeWeight", "sICX/bnUSD", BigInteger.valueOf(sm.getBlock().getTimestamp()));
-        BigInteger OMMbnUSDShare = (BigInteger) weightController.call("getRelativeWeight", "OMMbnUSD", BigInteger.valueOf(sm.getBlock().getTimestamp()));
+        BigInteger ICXLPShare = (BigInteger) weightController.call("getRelativeWeight", "sICX/ICX",
+                BigInteger.valueOf(sm.getBlock().getTimestamp()));
+        BigInteger bnUSDLpShare = (BigInteger) weightController.call("getRelativeWeight", "sICX/bnUSD",
+                BigInteger.valueOf(sm.getBlock().getTimestamp()));
+        BigInteger OMMbnUSDShare = (BigInteger) weightController.call("getRelativeWeight", "OMMbnUSD",
+                BigInteger.valueOf(sm.getBlock().getTimestamp()));
         assertEquals(expectedShare, ICXLPShare);
         assertEquals(expectedShare, bnUSDLpShare);
         assertEquals(expectedShare, OMMbnUSDShare);
@@ -231,9 +251,12 @@ public class SourceWeightControllerTest extends UnitTest {
         sm.getBlock().increase(WEEK_BLOCKS);
 
         // Assert
-        ICXLPShare = (BigInteger) weightController.call("getRelativeWeight", "sICX/ICX", BigInteger.valueOf(sm.getBlock().getTimestamp()));
-        bnUSDLpShare = (BigInteger) weightController.call("getRelativeWeight", "sICX/bnUSD", BigInteger.valueOf(sm.getBlock().getTimestamp()));
-        OMMbnUSDShare = (BigInteger) weightController.call("getRelativeWeight", "OMMbnUSD", BigInteger.valueOf(sm.getBlock().getTimestamp()));
+        ICXLPShare = (BigInteger) weightController.call("getRelativeWeight", "sICX/ICX",
+                BigInteger.valueOf(sm.getBlock().getTimestamp()));
+        bnUSDLpShare = (BigInteger) weightController.call("getRelativeWeight", "sICX/bnUSD",
+                BigInteger.valueOf(sm.getBlock().getTimestamp()));
+        OMMbnUSDShare = (BigInteger) weightController.call("getRelativeWeight", "OMMbnUSD",
+                BigInteger.valueOf(sm.getBlock().getTimestamp()));
         assertEquals(EXA.divide(BigInteger.valueOf(4)), ICXLPShare);
         assertEquals(EXA.divide(BigInteger.valueOf(4)), bnUSDLpShare);
         assertEquals(EXA.divide(BigInteger.TWO), OMMbnUSDShare);
@@ -258,8 +281,10 @@ public class SourceWeightControllerTest extends UnitTest {
         BigInteger timeAfterVote2 = BigInteger.valueOf(sm.getBlock().getTimestamp());
 
         // Assert
-        BigInteger lastUserVoteICX = (BigInteger) weightController.call("getLastUserVote", user.getAddress(), "sICX/ICX");
-        BigInteger lastUserVoteBnUSD = (BigInteger) weightController.call("getLastUserVote", user.getAddress(), "sICX/bnUSD");
+        BigInteger lastUserVoteICX = (BigInteger) weightController.call("getLastUserVote", user.getAddress(), "sICX" +
+                "/ICX");
+        BigInteger lastUserVoteBnUSD = (BigInteger) weightController.call("getLastUserVote", user.getAddress(), "sICX" +
+                "/bnUSD");
 
         assertTrue(lastUserVoteICX.compareTo(timeBeforeVote) > 0 && lastUserVoteICX.compareTo(timeAfterVote1) < 0);
         assertTrue(lastUserVoteBnUSD.compareTo(timeAfterVote1) > 0 && lastUserVoteBnUSD.compareTo(timeAfterVote2) < 0);

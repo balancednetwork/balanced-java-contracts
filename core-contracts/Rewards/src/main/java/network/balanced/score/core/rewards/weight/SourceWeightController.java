@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,13 @@
 
 package network.balanced.score.core.rewards.weight;
 
-import java.math.BigInteger;
-import java.util.Map;
-
-import score.Address;
-import score.ArrayDB;
-import score.BranchDB;
-import score.Context;
-import score.DictDB;
-import score.VarDB;
-import scorex.util.HashMap;
 import network.balanced.score.core.rewards.RewardsImpl;
 import network.balanced.score.lib.structs.Point;
 import network.balanced.score.lib.structs.VotedSlope;
 import network.balanced.score.lib.utils.EnumerableSetDB;
+import score.*;
+
+import java.math.BigInteger;
 
 import static network.balanced.score.core.rewards.RewardsImpl.boostedBaln;
 import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;

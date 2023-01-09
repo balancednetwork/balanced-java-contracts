@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import network.balanced.score.lib.structs.VotedSlope;
 import network.balanced.score.lib.utils.IterableDictDB;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.SetDB;
-
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -455,12 +454,11 @@ public class RewardsImpl implements Rewards {
     @External
     public void updateRewardsData(String _name, BigInteger _totalSupply, Address _user, BigInteger _balance) {
         DataSourceImpl dataSource = DataSourceDB.get(_name);
-        Context.require(dataSource.getContractAddress().equals(Context.getCaller()), TAG + ": Only data provider are allowed to " +
-                "update rewards data");
+        Context.require(dataSource.getContractAddress().equals(Context.getCaller()), TAG + ": Only data provider are " +
+                "allowed to update rewards data");
 
         BigInteger currentTime = getTime();
         distribute();
-
 
         BalanceData balances = new BalanceData();
         balances.boostedBalance = fetchBoostedBalance(_user);
@@ -471,7 +469,6 @@ public class RewardsImpl implements Rewards {
         balances.prevWorkingBalance = dataSource.getWorkingBalance(_user, _balance, false);
         balances.prevWorkingSupply = dataSource.getWorkingSupply(_totalSupply, false);
 
-
         updateUserAccruedRewards(_name, currentTime, dataSource, _user, balances);
     }
 
@@ -479,8 +476,8 @@ public class RewardsImpl implements Rewards {
     @External
     public void updateBatchRewardsData(String _name, BigInteger _totalSupply, RewardsDataEntry[] _data) {
         DataSourceImpl dataSource = DataSourceDB.get(_name);
-        Context.require(dataSource.getContractAddress().equals(Context.getCaller()), TAG + ": Only data provider are allowed to " +
-                "update rewards data");
+        Context.require(dataSource.getContractAddress().equals(Context.getCaller()), TAG + ": Only data provider are " +
+                "allowed to update rewards data");
 
         BigInteger currentTime = getTime();
         distribute();
@@ -505,8 +502,8 @@ public class RewardsImpl implements Rewards {
     @External
     public void updateBalanceAndSupply(String _name, BigInteger _totalSupply, Address _user, BigInteger _balance) {
         DataSourceImpl dataSource = DataSourceDB.get(_name);
-        Context.require(dataSource.getContractAddress().equals(Context.getCaller()), TAG + ": Only data provider are allowed to " +
-                "update rewards data");
+        Context.require(dataSource.getContractAddress().equals(Context.getCaller()), TAG + ": Only data provider are " +
+                "allowed to update rewards data");
 
         BigInteger currentTime = getTime();
         distribute();
@@ -519,15 +516,14 @@ public class RewardsImpl implements Rewards {
         balances.prevWorkingBalance = dataSource.getWorkingBalance(_user);
         balances.prevWorkingSupply = dataSource.getWorkingSupply();
 
-
         updateUserAccruedRewards(_name, currentTime, dataSource, _user, balances);
     }
 
     @External
     public void updateBalanceAndSupplyBatch(String _name, BigInteger _totalSupply, RewardsDataEntry[] _data) {
         DataSourceImpl dataSource = DataSourceDB.get(_name);
-        Context.require(dataSource.getContractAddress().equals(Context.getCaller()), TAG + ": Only data provider are allowed to " +
-                "update rewards data");
+        Context.require(dataSource.getContractAddress().equals(Context.getCaller()), TAG + ": Only data provider are " +
+                "allowed to update rewards data");
 
         BigInteger currentTime = getTime();
         distribute();
@@ -869,13 +865,14 @@ public class RewardsImpl implements Rewards {
             balances.balance = balanceAndSupply.get(BALANCE);
             balances.supply = balanceAndSupply.get(TOTAL_SUPPLY);
             balances.prevWorkingBalance = workingBalance;
-            balances.prevWorkingSupply = dataSource.getWorkingSupply( false);
+            balances.prevWorkingSupply = dataSource.getWorkingSupply(false);
 
-            updateUserAccruedRewards(name, currentTime,dataSource, user, balances);
+            updateUserAccruedRewards(name, currentTime, dataSource, user, balances);
         }
     }
 
-    private void updateUserAccruedRewards(String _name, BigInteger currentTime, DataSourceImpl dataSource, Address user, BalanceData balances) {
+    private void updateUserAccruedRewards(String _name, BigInteger currentTime, DataSourceImpl dataSource,
+                                          Address user, BalanceData balances) {
 
         BigInteger accruedRewards = dataSource.updateSingleUserData(currentTime, balances.prevWorkingSupply, user,
                 balances.prevWorkingBalance, false);
@@ -1132,7 +1129,7 @@ public class RewardsImpl implements Rewards {
 
     @EventLog(indexed = 2)
     public void VoteCast(String vote_name, boolean vote, Address voter, BigInteger stake, BigInteger total_for,
-                   BigInteger total_against) {
+                         BigInteger total_against) {
     }
 
     @EventLog(indexed = 2)
