@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -270,7 +270,7 @@ public class BalancedOracleImpl implements BalancedOracle {
     @SuppressWarnings("unchecked")
     private BigInteger getRate(String base, String quote) {
         Map<String, BigInteger> priceData = (Map<String, BigInteger>) Context.call(oracle.get(), "get_reference_data"
-                ,base, quote);
+                , base, quote);
         BigInteger last_update_base = priceData.get("last_update_base");
         BigInteger last_update_quote = priceData.get("last_update_quote");
         BigInteger blockTime = BigInteger.valueOf(Context.getBlockTimestamp());
@@ -279,7 +279,7 @@ public class BalancedOracleImpl implements BalancedOracle {
         Context.require(blockTime.subtract(last_update_base).compareTo(threshold) < 0,
                 "The last price update for " + quote + " is outdated");
         Context.require(blockTime.subtract(last_update_quote).compareTo(threshold) < 0,
-                "The last price update for " +  base + " is outdated");
+                "The last price update for " + base + " is outdated");
 
         return (BigInteger) priceData.get("rate");
     }
