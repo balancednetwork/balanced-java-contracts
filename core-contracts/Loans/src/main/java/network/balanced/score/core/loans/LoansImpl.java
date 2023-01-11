@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -289,7 +289,7 @@ public class LoansImpl implements Loans {
             CollateralReceived(depositor, SICX_SYMBOL, sicxDeposited);
         }
 
-        if (!BNUSD_SYMBOL.equals(_asset) || _amount == null || _amount.compareTo(BigInteger.ZERO) <= 0) {
+        if (!_asset.equals(BNUSD_SYMBOL) || _amount == null || _amount.compareTo(BigInteger.ZERO) <= 0) {
             return;
         }
 
