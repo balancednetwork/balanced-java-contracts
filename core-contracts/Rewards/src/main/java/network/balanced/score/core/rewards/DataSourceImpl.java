@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -171,7 +171,7 @@ public class DataSourceImpl {
     }
 
     public BigInteger getTotalDist(BigInteger day, boolean readonly) {
-        DictDB<BigInteger, BigInteger> distAt =  totalDist.at(dbKey);
+        DictDB<BigInteger, BigInteger> distAt = totalDist.at(dbKey);
         BigInteger dist = distAt.get(day);
         if (dist != null) {
             return dist;
