@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package network.balanced.score.lib.utils;
 
-import static network.balanced.score.lib.utils.Math.pow;
+import score.Address;
 
 import java.math.BigInteger;
 
-import score.Address;
+import static network.balanced.score.lib.utils.Math.pow;
 
 public class Constants {
     public final static BigInteger EXA = pow(BigInteger.TEN, 18);

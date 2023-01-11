@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,7 +85,7 @@ public class GovernanceTest extends GovernanceTestBase {
         expectErrorMessage(withNotOwner, expectedErrorMessage);
 
         // Act
-        governance.invoke(owner, "setAdmins") ;
+        governance.invoke(owner, "setAdmins");
 
         // Assert
         //TODO
@@ -188,7 +188,7 @@ public class GovernanceTest extends GovernanceTestBase {
         delegation2._address = Address.fromString("cx66d4d90f5f113eba575bf793570135f9b1022222");
         delegation2._votes_in_per = BigInteger.valueOf(30);
 
-        PrepDelegations[] delegations = new PrepDelegations[] {
+        PrepDelegations[] delegations = new PrepDelegations[]{
                 delegation1,
                 delegation2
         };

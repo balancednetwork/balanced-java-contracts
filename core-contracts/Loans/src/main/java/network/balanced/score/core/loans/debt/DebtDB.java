@@ -1,7 +1,20 @@
-package network.balanced.score.core.loans.debt;
+/*
+ * Copyright (c) 2023-2023 Balanced.network.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import java.math.BigInteger;
-import java.util.Map;
+package network.balanced.score.core.loans.debt;
 
 import network.balanced.score.core.loans.collateral.CollateralDB;
 import network.balanced.score.core.loans.linkedlist.LinkedListDB;
@@ -10,7 +23,11 @@ import score.Context;
 import score.DictDB;
 import scorex.util.HashMap;
 
-import static network.balanced.score.core.loans.utils.LoansConstants.*;
+import java.math.BigInteger;
+import java.util.Map;
+
+import static network.balanced.score.core.loans.utils.LoansConstants.BNUSD_SYMBOL;
+import static network.balanced.score.core.loans.utils.LoansConstants.SICX_SYMBOL;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getBnusd;
 
 public class DebtDB {
@@ -22,13 +39,14 @@ public class DebtDB {
     private static final String BORROWER_DB_PREFIX = "borrowers";
 
     private static final BranchDB<String, DictDB<String, BigInteger>> badDebts = Context.newBranchDB(
-        "multi_collateral_bad_debts", BigInteger.class);
+            "multi_collateral_bad_debts", BigInteger.class);
     private static final BranchDB<String, DictDB<String, BigInteger>> liquidationPools = Context.newBranchDB(
-        "multi_collateral_liquidation_pools", BigInteger.class);
+            "multi_collateral_liquidation_pools", BigInteger.class);
 
     private static final DictDB<String, BigInteger> totalDebts = Context.newDictDB(TOTAL_DEBT, BigInteger.class);
     private static final DictDB<String, BigInteger> debtCeiling = Context.newDictDB(DEBT_CEILINGS, BigInteger.class);
-    private static final BranchDB<String, DictDB<String, BigInteger>> totalPerCollateralDebts = Context.newBranchDB(TOTAL_COLLATERAL_DEBTS, BigInteger.class);
+    private static final BranchDB<String, DictDB<String, BigInteger>> totalPerCollateralDebts =
+            Context.newBranchDB(TOTAL_COLLATERAL_DEBTS, BigInteger.class);
 
     public static void setTotalDebt(BigInteger debt) {
         totalDebts.set(BNUSD_SYMBOL, debt);
@@ -78,7 +96,7 @@ public class DebtDB {
         }
     }
 
-    public static  Map<String, Object> debtData() {
+    public static Map<String, Object> debtData() {
         Map<String, Object> debtDetails = new HashMap<>();
         Map<String, Map<String, Object>> loansDetails = new HashMap<>();
 

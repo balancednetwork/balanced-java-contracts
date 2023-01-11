@@ -151,7 +151,7 @@ public class LinkedListDB {
         positionsMap.put(headId, head.getValue());
         batch.totalDebt = batch.totalDebt.add(head.getValue());
 
-        while (batch.totalDebt.compareTo(debtRequired) < 0) { 
+        while (batch.totalDebt.compareTo(debtRequired) < 0) {
             currentNodeId = currentNode.getNext();
             currentNode = getNode(currentNodeId);
             currentValue = currentNode.getValue();

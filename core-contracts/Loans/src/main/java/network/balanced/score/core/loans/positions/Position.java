@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import network.balanced.score.core.loans.collateral.CollateralDB;
 import network.balanced.score.core.loans.debt.DebtDB;
 import network.balanced.score.core.loans.utils.Standing;
 import network.balanced.score.core.loans.utils.TokenUtils;
-
 import score.*;
 import scorex.util.HashMap;
 
@@ -29,8 +28,8 @@ import java.math.BigInteger;
 import java.util.Map;
 
 import static network.balanced.score.core.loans.utils.LoansConstants.*;
-import static network.balanced.score.lib.utils.Math.pow;
 import static network.balanced.score.lib.utils.Check.readonly;
+import static network.balanced.score.lib.utils.Math.pow;
 
 public class Position {
     static final String TAG = "BalancedLoansPositions";
@@ -92,6 +91,7 @@ public class Position {
     private void setPositionTotalDebt(BigInteger value) {
         totalDebt.at(dbKey).set(BNUSD_SYMBOL, value);
     }
+
     public BigInteger getTotalDebt() {
         BigInteger totalDebt = this.totalDebt.at(dbKey).get(BNUSD_SYMBOL);
         if (totalDebt == null) {

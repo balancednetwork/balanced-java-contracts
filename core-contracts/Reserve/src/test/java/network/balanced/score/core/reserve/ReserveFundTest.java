@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -235,7 +235,8 @@ public class ReserveFundTest extends ReserveFundTestBase {
     @Test
     void transfer() {
         BigInteger amount = BigInteger.valueOf(10);
-        assertOnlyCallableBy(mockBalanced.governance.getAddress(), reserve, "transfer", sicx.getAddress(), loans.getAddress(), amount);
+        assertOnlyCallableBy(mockBalanced.governance.getAddress(), reserve, "transfer", sicx.getAddress(),
+                loans.getAddress(), amount);
         reserve.invoke(mockBalanced.governance.account, "transfer", sicx.getAddress(), loans.getAddress(), amount);
 
         verify(sicx.mock).transfer(loans.getAddress(), amount, new byte[0]);

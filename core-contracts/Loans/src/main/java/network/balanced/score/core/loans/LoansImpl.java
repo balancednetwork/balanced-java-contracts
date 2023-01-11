@@ -24,12 +24,11 @@ import network.balanced.score.core.loans.debt.DebtDB;
 import network.balanced.score.core.loans.positions.Position;
 import network.balanced.score.core.loans.positions.PositionsDB;
 import network.balanced.score.core.loans.utils.PositionBatch;
+import network.balanced.score.core.loans.utils.TokenUtils;
 import network.balanced.score.lib.interfaces.Loans;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import network.balanced.score.lib.utils.Names;
-import network.balanced.score.core.loans.utils.TokenUtils;
-
 import score.Address;
 import score.Context;
 import score.annotation.EventLog;
@@ -41,13 +40,15 @@ import scorex.util.HashMap;
 import java.math.BigInteger;
 import java.util.Map;
 
+import static network.balanced.score.core.loans.LoansVariables.loansOn;
 import static network.balanced.score.core.loans.LoansVariables.*;
 import static network.balanced.score.core.loans.utils.Checks.loansOn;
 import static network.balanced.score.core.loans.utils.LoansConstants.*;
 import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
 import static network.balanced.score.lib.utils.ArrayDBUtils.removeFromArraydb;
-import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.BalancedAddressManager.*;
+import static network.balanced.score.lib.utils.Check.onlyGovernance;
+import static network.balanced.score.lib.utils.Check.optionalDefault;
 import static network.balanced.score.lib.utils.Math.convertToNumber;
 import static network.balanced.score.lib.utils.Math.pow;
 
@@ -421,7 +422,7 @@ public class LoansImpl implements Loans {
             BigInteger userCollateral = position.getCollateral(collateralSymbol);
 
             BigInteger amountRepaid = userDebt.multiply(MAX_REDEMPTION).divide(POINTS);
-            if (amountRepaid.compareTo(debtToBeRepaid) > 0 ){
+            if (amountRepaid.compareTo(debtToBeRepaid) > 0) {
                 amountRepaid = debtToBeRepaid;
             }
 
@@ -441,7 +442,7 @@ public class LoansImpl implements Loans {
 
             debtToBeRepaid = debtToBeRepaid.subtract(amountRepaid);
             changeLog.append("'" + id + "': {" +
-                    "'d': " + amountRepaid.negate()  + ", " +
+                    "'d': " + amountRepaid.negate() + ", " +
                     "'c': " + collateralSold.negate() + "}, ");
         }
 
@@ -459,7 +460,7 @@ public class LoansImpl implements Loans {
 
         BigInteger MAX_REDEMPTION = maxRetirePercent.get();
         String collateralSymbol = CollateralDB.getSymbol(_collateralAddress);
-        
+
         BigInteger totalDebt = DebtDB.getBorrowers(collateralSymbol).getTotalDebtFor(nrOfPositions);
         BigInteger redeemAmount = totalDebt.multiply(MAX_REDEMPTION).divide(POINTS);
 
