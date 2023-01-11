@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ public class CollateralDB {
     public static ArrayDB<Address> collateralAddresses = Context.newArrayDB("collateral_only_address_list",
             Address.class);
     public static ArrayDB<String> collateralList = Context.newArrayDB("collateral", String.class);
-    public static final DictDB<String, String> symbolMap = Context.newDictDB("symbol|", String.class);
+    public static final DictDB<String, String> symbolMap = Context.newDictDB("symbol|address", String.class);
     public static final DictDB<String, String> addressMap = Context.newDictDB("address|symbol", String.class);
 
     public static void migrateAddressMap() {
