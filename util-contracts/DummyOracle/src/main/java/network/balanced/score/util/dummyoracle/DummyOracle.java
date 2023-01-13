@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import static network.balanced.score.lib.utils.Constants.EXA;
 
 public class DummyOracle {
     public static final DictDB<String, BigInteger> icxRates = Context.newDictDB("rates", BigInteger.class);
-    public static final BigInteger icxPrice =  BigInteger.valueOf(1672364619704314298L);
+    public static final BigInteger icxPrice = BigInteger.valueOf(1672364619704314298L);
 
     public DummyOracle() {
         icxRates.set("USD", EXA.multiply(EXA).divide(icxPrice));
