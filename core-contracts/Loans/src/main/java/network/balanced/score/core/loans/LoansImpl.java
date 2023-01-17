@@ -40,6 +40,7 @@ import scorex.util.HashMap;
 import java.math.BigInteger;
 import java.util.Map;
 
+import static network.balanced.score.core.loans.LoansVariables.loansOn;
 import static network.balanced.score.core.loans.LoansVariables.*;
 import static network.balanced.score.core.loans.utils.Checks.loansOn;
 import static network.balanced.score.core.loans.utils.LoansConstants.*;
@@ -288,7 +289,7 @@ public class LoansImpl implements Loans {
             CollateralReceived(depositor, SICX_SYMBOL, sicxDeposited);
         }
 
-        if (!BNUSD_SYMBOL.equals(_asset) || _amount == null || _amount.compareTo(BigInteger.ZERO) <= 0) {
+        if (!_asset.equals(BNUSD_SYMBOL) || _amount == null || _amount.compareTo(BigInteger.ZERO) <= 0) {
             return;
         }
 

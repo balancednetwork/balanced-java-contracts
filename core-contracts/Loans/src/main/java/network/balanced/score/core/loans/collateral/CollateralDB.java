@@ -35,7 +35,7 @@ public class CollateralDB {
     public static ArrayDB<Address> collateralAddresses = Context.newArrayDB("collateral_only_address_list",
             Address.class);
     public static ArrayDB<String> collateralList = Context.newArrayDB("collateral", String.class);
-    public static final DictDB<String, String> symbolMap = Context.newDictDB("symbol|", String.class);
+    public static final DictDB<String, String> symbolMap = Context.newDictDB("symbol|address", String.class);
     public static final DictDB<String, String> addressMap = Context.newDictDB("address|symbol", String.class);
 
     public static void migrateAddressMap() {

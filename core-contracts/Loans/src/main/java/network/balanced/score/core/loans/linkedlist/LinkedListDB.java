@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -151,7 +151,7 @@ public class LinkedListDB {
         positionsMap.put(headId, head.getValue());
         batch.totalDebt = batch.totalDebt.add(head.getValue());
 
-        while (batch.totalDebt.compareTo(debtRequired) < 0) { 
+        while (batch.totalDebt.compareTo(debtRequired) < 0) {
             currentNodeId = currentNode.getNext();
             currentNode = getNode(currentNodeId);
             currentValue = currentNode.getValue();
@@ -198,7 +198,7 @@ public class LinkedListDB {
 
         Node head = getNode(headId);
         Node currentNode = head;
-        int currentNodeId = headId;
+        int currentNodeId;
         BigInteger currentValue;
 
         totalDebt = totalDebt.add(head.getValue());

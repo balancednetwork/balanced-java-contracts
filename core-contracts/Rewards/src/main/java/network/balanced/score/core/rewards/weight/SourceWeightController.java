@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,22 @@
 
 package network.balanced.score.core.rewards.weight;
 
+import network.balanced.score.core.rewards.RewardsImpl;
 import network.balanced.score.lib.structs.Point;
 import network.balanced.score.lib.structs.VotedSlope;
 import network.balanced.score.lib.utils.EnumerableSetDB;
 import score.*;
-import scorex.util.HashMap;
 
 import java.math.BigInteger;
-import java.util.Map;
 
 import static network.balanced.score.core.rewards.RewardsImpl.boostedBaln;
-import static network.balanced.score.core.rewards.RewardsImpl.getEventLogger;
 import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
 import static network.balanced.score.lib.utils.ArrayDBUtils.removeFromArraydb;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
 public class SourceWeightController {
+    public static RewardsImpl rewards;
     // 7 * 86400 seconds - all future times are rounded by week
     public static final BigInteger WEEK = MICRO_SECONDS_IN_A_DAY.multiply(BigInteger.valueOf(7));
     // Cannot change weight votes more often than once in 10 days
@@ -286,7 +285,7 @@ public class SourceWeightController {
         }
 
         timeWeight.set(name, nextTime);
-        getEventLogger().NewSource(name, sourceType, weight);
+        rewards.NewSource(name, sourceType, weight);
     }
 
     /**
@@ -365,7 +364,7 @@ public class SourceWeightController {
         timeTotal.set(nextTime);
         timeTypeWeight.set(typeId, nextTime);
 
-        getEventLogger().NewTypeWeight(typeId, nextTime, oldWeight, totalWeight);
+        rewards.NewTypeWeight(typeId, nextTime, oldWeight, totalWeight);
     }
 
     /**
@@ -382,7 +381,7 @@ public class SourceWeightController {
             changeTypeWeight(typeId, weight);
         }
 
-        getEventLogger().AddType(name, typeId);
+        rewards.AddType(name, typeId);
     }
 
     /**
@@ -487,7 +486,7 @@ public class SourceWeightController {
         }
 
         lastUserVote.at(user).set(sourceName, timestamp);
-        getEventLogger().VoteForSource(sourceName, user, newWeight, nextTime);
+        rewards.VoteForSource(sourceName, user, newWeight, nextTime);
     }
 
     public static void setVotable(String name, boolean votable) {
@@ -511,7 +510,7 @@ public class SourceWeightController {
     }
 
     public static Point getSourcePointsWeightAt(String sourceName, BigInteger time) {
-        return pointsWeight.at(sourceName).get(time);
+        return pointsWeight.at(sourceName).getOrDefault(time, new Point());
     }
 
     /**
@@ -544,32 +543,13 @@ public class SourceWeightController {
     }
 
     public static VotedSlope getUserSlope(Address user, String source) {
-        return voteUserSlopes.at(user).get(source);
+        return voteUserSlopes.at(user).getOrDefault(source, new VotedSlope());
     }
 
     public static BigInteger getLastUserVote(Address user, String source) {
-        return lastUserVote.at(user).get(source);
+        return lastUserVote.at(user).getOrDefault(source, BigInteger.ZERO);
     }
 
-    public static Map<String, Map<String, BigInteger>> getUserVoteData(Address user) {
-        ArrayDB<String> userSources = activeUserWeights.at(user);
-        int nrOfSources = userSources.size();
-        Map<String, Map<String, BigInteger>> data = new HashMap<>();
-        for (int i = 0; i < nrOfSources; i++) {
-            String source = userSources.get(i);
-            VotedSlope votedSlope = voteUserSlopes.at(user).get(source);
-            BigInteger lastVote = lastUserVote.at(user).get(source);
-            Map<String, BigInteger> sourceData = new HashMap<>();
-            sourceData.put("slope", votedSlope.slope);
-            sourceData.put("power", votedSlope.power);
-            sourceData.put("end", votedSlope.end);
-            sourceData.put("lastVote", lastVote);
-
-            data.put(source, sourceData);
-        }
-
-        return data;
-    }
 
     public static int getSourceType(String sourceName) {
         return sourceTypes.get(sourceName) - 1;

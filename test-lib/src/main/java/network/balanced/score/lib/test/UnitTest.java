@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,16 +20,13 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
-
 import network.balanced.score.lib.utils.Check;
-
 import org.json.JSONObject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.function.Executable;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-
 import score.Address;
 import score.Context;
 
@@ -43,9 +40,10 @@ public class UnitTest extends TestBase {
     private static final ServiceManager sm = getServiceManager();
 
     protected static MockedStatic<Check> mockedCheck;
+
     public static void mockReadonly() {
         mockedCheck = Mockito.mockStatic(Check.class, Mockito.CALLS_REAL_METHODS);
-        mockedCheck.when(() -> Check.readonly()).thenAnswer((I) -> {
+        mockedCheck.when(Check::readonly).thenAnswer((I) -> {
             try {
                 // fails the fetch caller of readonly method
                 Context.getCaller();

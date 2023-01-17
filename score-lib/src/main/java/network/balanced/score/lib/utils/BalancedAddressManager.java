@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,10 @@ import score.DictDB;
 import static network.balanced.score.lib.utils.Check.readonly;
 
 public class BalancedAddressManager {
-    private static String TAG = "BalancedAddressManager";
+    private static final String TAG = "BalancedAddressManager";
     private static final Address mainnetGovernance = Address.fromString("cx44250a12074799e26fdeee75648ae47e2cc84219");
-    public static final DictDB<String, Address> contractAddresses = Context.newDictDB(TAG + "ContractAddresses", Address.class);
+    public static final DictDB<String, Address> contractAddresses = Context.newDictDB(TAG + "ContractAddresses",
+            Address.class);
 
     private static Address baln;
     private static Address bnusd;
@@ -70,7 +71,7 @@ public class BalancedAddressManager {
             address = fetchAddress(name);
             try {
                 contractAddresses.set(name, address);
-            } catch (Exception e) {
+            } catch (Exception ignored) {
             }
         }
 
@@ -81,7 +82,7 @@ public class BalancedAddressManager {
         if (baln != null) {
             return baln;
         } else if (readonly()) {
-             return getAddress(Names.BALN);
+            return getAddress(Names.BALN);
         }
         baln = getAddress(Names.BALN);
 
@@ -92,7 +93,7 @@ public class BalancedAddressManager {
         if (bnusd != null) {
             return bnusd;
         } else if (readonly()) {
-             return getAddress(Names.BNUSD);
+            return getAddress(Names.BNUSD);
         }
         bnusd = getAddress(Names.BNUSD);
 
@@ -103,7 +104,7 @@ public class BalancedAddressManager {
         if (bwt != null) {
             return bwt;
         } else if (readonly()) {
-             return getAddress(Names.WORKERTOKEN);
+            return getAddress(Names.WORKERTOKEN);
         }
         bwt = getAddress(Names.WORKERTOKEN);
 
@@ -114,7 +115,7 @@ public class BalancedAddressManager {
         if (daofund != null) {
             return daofund;
         } else if (readonly()) {
-             return getAddress(Names.DAOFUND);
+            return getAddress(Names.DAOFUND);
         }
         daofund = getAddress(Names.DAOFUND);
 
@@ -125,7 +126,7 @@ public class BalancedAddressManager {
         if (staking != null) {
             return staking;
         } else if (readonly()) {
-             return getAddress(Names.STAKING);
+            return getAddress(Names.STAKING);
         }
         staking = getAddress(Names.STAKING);
 
@@ -136,7 +137,7 @@ public class BalancedAddressManager {
         if (stakedLp != null) {
             return stakedLp;
         } else if (readonly()) {
-             return getAddress(Names.STAKEDLP);
+            return getAddress(Names.STAKEDLP);
         }
         stakedLp = getAddress(Names.STAKEDLP);
 
@@ -147,7 +148,7 @@ public class BalancedAddressManager {
         if (stabilityFund != null) {
             return stabilityFund;
         } else if (readonly()) {
-             return getAddress(Names.STABILITY);
+            return getAddress(Names.STABILITY);
         }
         stabilityFund = getAddress(Names.STABILITY);
 
@@ -158,7 +159,7 @@ public class BalancedAddressManager {
         if (sicx != null) {
             return sicx;
         } else if (readonly()) {
-             return getAddress(Names.SICX);
+            return getAddress(Names.SICX);
         }
         sicx = getAddress(Names.SICX);
 
@@ -169,7 +170,7 @@ public class BalancedAddressManager {
         if (rewards != null) {
             return rewards;
         } else if (readonly()) {
-             return getAddress(Names.REWARDS);
+            return getAddress(Names.REWARDS);
         }
         rewards = getAddress(Names.REWARDS);
 
@@ -180,7 +181,7 @@ public class BalancedAddressManager {
         if (reserve != null) {
             return reserve;
         } else if (readonly()) {
-             return getAddress(Names.RESERVE);
+            return getAddress(Names.RESERVE);
         }
         reserve = getAddress(Names.RESERVE);
 
@@ -191,7 +192,7 @@ public class BalancedAddressManager {
         if (rebalance != null) {
             return rebalance;
         } else if (readonly()) {
-             return getAddress(Names.REBALANCING);
+            return getAddress(Names.REBALANCING);
         }
         rebalance = getAddress(Names.REBALANCING);
 
@@ -202,7 +203,7 @@ public class BalancedAddressManager {
         if (oracle != null) {
             return oracle;
         } else if (readonly()) {
-             return getAddress(Names.ORACLE);
+            return getAddress(Names.ORACLE);
         }
         oracle = getAddress(Names.ORACLE);
 
@@ -213,7 +214,7 @@ public class BalancedAddressManager {
         if (balancedOracle != null) {
             return balancedOracle;
         } else if (readonly()) {
-             return getAddress(Names.BALANCEDORACLE);
+            return getAddress(Names.BALANCEDORACLE);
         }
         balancedOracle = getAddress(Names.BALANCEDORACLE);
 
@@ -224,7 +225,7 @@ public class BalancedAddressManager {
         if (loans != null) {
             return loans;
         } else if (readonly()) {
-             return getAddress(Names.LOANS);
+            return getAddress(Names.LOANS);
         }
         loans = getAddress(Names.LOANS);
 
@@ -235,7 +236,7 @@ public class BalancedAddressManager {
         if (feehandler != null) {
             return feehandler;
         } else if (readonly()) {
-             return getAddress(Names.FEEHANDLER);
+            return getAddress(Names.FEEHANDLER);
         }
         feehandler = getAddress(Names.FEEHANDLER);
 
@@ -246,7 +247,7 @@ public class BalancedAddressManager {
         if (dividends != null) {
             return dividends;
         } else if (readonly()) {
-             return getAddress(Names.DIVIDENDS);
+            return getAddress(Names.DIVIDENDS);
         }
         dividends = getAddress(Names.DIVIDENDS);
 
@@ -257,7 +258,7 @@ public class BalancedAddressManager {
         if (dex != null) {
             return dex;
         } else if (readonly()) {
-             return getAddress(Names.DEX);
+            return getAddress(Names.DEX);
         }
         dex = getAddress(Names.DEX);
 
@@ -268,7 +269,7 @@ public class BalancedAddressManager {
         if (boostedBaln != null) {
             return boostedBaln;
         } else if (readonly()) {
-             return getAddress(Names.BOOSTED_BALN);
+            return getAddress(Names.BOOSTED_BALN);
         }
         boostedBaln = getAddress(Names.BOOSTED_BALN);
 

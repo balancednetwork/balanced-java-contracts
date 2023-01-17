@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,12 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import network.balanced.score.lib.interfaces.BalancedOracle;
-import network.balanced.score.lib.interfaces.*;
+import network.balanced.score.lib.interfaces.Loans;
 import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
 import network.balanced.score.lib.interfaces.tokens.IRC2MintableScoreInterface;
 import network.balanced.score.lib.test.UnitTest;
-import network.balanced.score.lib.test.mock.MockContract;
 import network.balanced.score.lib.test.mock.MockBalanced;
+import network.balanced.score.lib.test.mock.MockContract;
 
 import java.math.BigInteger;
 

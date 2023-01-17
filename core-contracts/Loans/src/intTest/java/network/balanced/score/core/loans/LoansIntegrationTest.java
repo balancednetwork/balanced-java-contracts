@@ -59,11 +59,9 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         owner.governance.setBalnVoteDefinitionCriterion(BigInteger.ZERO);
         owner.governance.setQuorum(BigInteger.ONE);
 
-        JsonArray setMaxRetirePercentParameters = new JsonArray()
-                .add(createParameter(BigInteger.valueOf(1000)));
-        JsonArray setMaxRetirePercent = new JsonArray()
-                .add(createTransaction(balanced.loans._address(), "setMaxRetirePercent",
-                        setMaxRetirePercentParameters));
+        JsonArray setMaxRetirePercentParameters = new JsonArray().add(createParameter(BigInteger.valueOf(1000)));
+        JsonArray setMaxRetirePercent = new JsonArray().add(createTransaction(balanced.loans._address(),
+                "setMaxRetirePercent", setMaxRetirePercentParameters));
         owner.governance.execute(setMaxRetirePercent.toString());
 
         ethAddress = createIRC2Token(owner, "ICON ETH", "iETH", iethNumberOfDecimals);
@@ -83,16 +81,14 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
                 .add(createParameter(true))
                 .add(createParameter(true));
 
-        JsonArray actions = new JsonArray()
-                .add(createTransaction(balanced.loans._address(), "addAsset", addAssetParameters));
+        JsonArray actions = new JsonArray().add(createTransaction(balanced.loans._address(), "addAsset",
+                addAssetParameters));
         owner.governance.execute(actions.toString());
 
         assertTrue(reader.loans.getAssetTokens().containsKey("BALN"));
 
         // Act
-        String governanceParam = new JsonArray()
-                .add(createParameter(balanced.governance._address()))
-                .toString();
+        String governanceParam = new JsonArray().add(createParameter(balanced.governance._address())).toString();
 
         owner.governance.deployTo(balanced.loans._address(), getContractData("Loans"), governanceParam);
 
