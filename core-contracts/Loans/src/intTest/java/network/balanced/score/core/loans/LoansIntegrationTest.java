@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,6 @@
 package network.balanced.score.core.loans;
 
 
-import java.math.BigInteger;
-import java.util.Map;
-
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
@@ -31,19 +25,17 @@ import foundation.icon.score.client.RevertedException;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
 import score.UserRevertedException;
 
-import static network.balanced.score.lib.test.integration.BalancedUtils.createIRC2Token;
+import java.math.BigInteger;
+import java.util.Map;
+
 import static network.balanced.score.lib.test.integration.BalancedUtils.*;
-import static network.balanced.score.lib.test.integration.BalancedUtils.hexObjectToBigInteger;
-import static network.balanced.score.lib.utils.Constants.EXA;
-import static network.balanced.score.lib.utils.Constants.POINTS;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.getContractData;
 import static network.balanced.score.lib.utils.Constants.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
 
 abstract class LoansIntegrationTest implements ScoreIntegrationTest {
     protected static Balanced balanced;
@@ -68,14 +60,13 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         owner.governance.setQuorum(BigInteger.ONE);
 
         JsonArray setMaxRetirePercentParameters = new JsonArray()
-            .add(createParameter(BigInteger.valueOf(1000)));
+                .add(createParameter(BigInteger.valueOf(1000)));
         JsonArray setMaxRetirePercent = new JsonArray()
-            .add(createTransaction(balanced.loans._address(), "setMaxRetirePercent", setMaxRetirePercentParameters));
+                .add(createTransaction(balanced.loans._address(), "setMaxRetirePercent",
+                        setMaxRetirePercentParameters));
         owner.governance.execute(setMaxRetirePercent.toString());
 
         ethAddress = createIRC2Token(owner, "ICON ETH", "iETH", iethNumberOfDecimals);
-        owner.balancedOracle.getPriceInLoop((txr) -> {
-        }, "ETH");
         owner.irc2(ethAddress).setMinter(owner.getAddress());
 
         btcAddress = createIRC2Token(owner, "ICON BTC", "iBTC");
@@ -85,23 +76,23 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
 
     @Test
     @Order(0)
-    void removeBALN() throws Exception {
+    void removeBALN() {
         // Arrange
         JsonArray addAssetParameters = new JsonArray()
-            .add(createParameter(balanced.baln._address()))
-            .add(createParameter(true))
-            .add(createParameter(true));
+                .add(createParameter(balanced.baln._address()))
+                .add(createParameter(true))
+                .add(createParameter(true));
 
         JsonArray actions = new JsonArray()
-            .add(createTransaction(balanced.loans._address(), "addAsset", addAssetParameters));
+                .add(createTransaction(balanced.loans._address(), "addAsset", addAssetParameters));
         owner.governance.execute(actions.toString());
 
         assertTrue(reader.loans.getAssetTokens().containsKey("BALN"));
 
         // Act
         String governanceParam = new JsonArray()
-            .add(createParameter(balanced.governance._address()))
-            .toString();
+                .add(createParameter(balanced.governance._address()))
+                .toString();
 
         owner.governance.deployTo(balanced.loans._address(), getContractData("Loans"), governanceParam);
 
@@ -137,10 +128,8 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         // get enough baln to vote through a new collateral
         balanced.increaseDay(3);
         BigInteger ethAmount = BigInteger.valueOf(2).multiply(iethDecimals);
-        BigInteger ethPriceInLoop = reader.balancedOracle.getLastPriceInLoop("ETH");
-        BigInteger bnusdPriceInLoop = reader.balancedOracle.getLastPriceInLoop("bnUSD");
-        BigInteger ethValue = ethAmount.multiply(ethPriceInLoop).divide(iethDecimals);
-        BigInteger bnusdAmount = ethValue.multiply(EXA).divide(bnusdPriceInLoop);
+        BigInteger ethPrice = reader.balancedOracle.getLastPriceInUSD("ETH");
+        BigInteger bnusdAmount = ethAmount.multiply(ethPrice).divide(iethDecimals);
 
         addCollateralType(owner, ethAddress, ethAmount, bnusdAmount, "ETH");
 
@@ -180,8 +169,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
     void takeLoan_dexPricedCollateral() throws Exception {
         // Arrange
         BigInteger btcAmount = BigInteger.TEN.pow(18);
-        BigInteger bnusdAmount = btcAmount.multiply(reader.balancedOracle.getLastPriceInLoop("BTC"))
-                .divide(reader.balancedOracle.getLastPriceInLoop("USD"));
+        BigInteger bnusdAmount = btcAmount.multiply(reader.balancedOracle.getLastPriceInUSD("BTC")).divide(EXA);
         addDexCollateralType(owner, btcAddress, btcAmount, bnusdAmount);
 
         BalancedClient btcLoanTaker = balanced.newClient();
@@ -588,7 +576,8 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         BigInteger expectedFee = redeemAmount.multiply(daoFee).divide(POINTS);
         BigInteger expectedDebtRepaid = redeemAmount.subtract(expectedFee);
         assertEquals(initialTotalDebt.subtract(expectedDebtRepaid), getTotalDebt());
-        assertEquals(initialsICXDebt.subtract(expectedDebtRepaid), reader.loans.getTotalCollateralDebt("sICX", "bnUSD"));
+        assertEquals(initialsICXDebt.subtract(expectedDebtRepaid), reader.loans.getTotalCollateralDebt("sICX", "bnUSD"
+        ));
     }
 
     @Test
@@ -642,12 +631,12 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         BigInteger collateralETH = BigInteger.TEN.multiply(iethDecimals);
 
         owner.irc2(ethAddress).mintTo(loanTaker.getAddress(), collateralETH, null);
-
-        BigInteger collateralValue = icxCollateral.multiply(owner.sicx.lastPriceInLoop()).divide(EXA);
+        BigInteger icxPrice = reader.balancedOracle.getLastPriceInUSD("sICX");
+        BigInteger collateralValue = icxCollateral.multiply(icxPrice).divide(EXA);
         BigInteger feePercent = hexObjectToBigInteger(owner.loans.getParameters().get("origination fee"));
         BigInteger maxDebt = POINTS.multiply(collateralValue).divide(lockingRatio);
         BigInteger maxFee = maxDebt.multiply(feePercent).divide(POINTS);
-        BigInteger loan = (maxDebt.subtract(maxFee)).multiply(EXA).divide(owner.bnUSD.lastPriceInLoop());
+        BigInteger loan = maxDebt.subtract(maxFee);
         BigInteger fee = loan.multiply(feePercent).divide(POINTS);
 
         loanTaker.loans.depositAndBorrow(icxCollateral, "bnUSD", loan, null, null);
@@ -696,12 +685,11 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         owner.irc2(ethAddress).mintTo(loanTaker.getAddress(), collateralETH, null);
 
         BigInteger collateralValue =
-                collateralETH.multiply(reader.balancedOracle.getLastPriceInLoop("iETH")).divide(iethDecimals);
+                collateralETH.multiply(reader.balancedOracle.getLastPriceInUSD("iETH")).divide(iethDecimals);
         BigInteger feePercent = hexObjectToBigInteger(owner.loans.getParameters().get("origination fee"));
         BigInteger maxDebt = POINTS.multiply(collateralValue).divide(lockingRatio);
         BigInteger maxFee = maxDebt.multiply(feePercent).divide(POINTS);
-        BigInteger loan = (maxDebt.subtract(maxFee)).multiply(EXA).divide(reader.balancedOracle.getLastPriceInLoop(
-                "bnUSD"));
+        BigInteger loan = maxDebt.subtract(maxFee);
         BigInteger fee = loan.multiply(feePercent).divide(POINTS);
         loanTaker.depositAndBorrow(ethAddress, collateralETH, loan);
 
@@ -709,8 +697,6 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         BigInteger sICXDebt = sICXLoan.add(sICXLoan.multiply(feePercent).divide(POINTS));
 
         loanTaker.loans.depositAndBorrow(icxCollateral, "bnUSD", sICXLoan, null, null);
-        BigInteger expectedsICXCollateral = icxCollateral.multiply(EXA).divide(reader.balancedOracle.getLastPriceInLoop(
-                "sICX"));
 
         // Act
         BigInteger balancePreLiquidation = liquidator.irc2(ethAddress).balanceOf(liquidator.getAddress());
@@ -733,7 +719,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
 
         Map<String, BigInteger> LiquidatedUserBaS = reader.loans.getBalanceAndSupply("Loans", loanTaker.getAddress());
         assertEquals(initialDebt.add(sICXDebt), getTotalDebt());
-        assertEquals(expectedsICXCollateral, loanTaker.getLoansCollateralPosition("sICX"));
+        assertEquals(icxCollateral, loanTaker.getLoansCollateralPosition("sICX"));
         assertEquals(BigInteger.ZERO, loanTaker.getLoansCollateralPosition("iETH"));
         assertEquals(sICXDebt, loanTaker.getLoansAssetPosition("sICX", "bnUSD"));
         assertEquals(BigInteger.ZERO, loanTaker.getLoansAssetPosition("iETH", "bnUSD"));
@@ -778,7 +764,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         }
     }
 
-    protected void setLockingRatio(BalancedClient voter, String symbol, BigInteger ratio, String name) throws Exception {
+    protected void setLockingRatio(BalancedClient voter, String symbol, BigInteger ratio, String name) {
         JsonArray setLockingRatioParameters = new JsonArray()
                 .add(createParameter(symbol))
                 .add(createParameter(ratio));
