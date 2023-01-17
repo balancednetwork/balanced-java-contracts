@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,30 +16,25 @@
 
 package network.balanced.score.core.loans;
 
-import org.mockito.Mockito;
-import org.mockito.stubbing.Answer;
-
 import com.eclipsesource.json.JsonObject;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
-
 import network.balanced.score.lib.interfaces.*;
-import network.balanced.score.lib.interfaces.tokens.*;
+import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
+import network.balanced.score.lib.interfaces.tokens.IRC2MintableScoreInterface;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import network.balanced.score.lib.test.UnitTest;
-import network.balanced.score.lib.test.mock.MockContract;
 import network.balanced.score.lib.test.mock.MockBalanced;
+import network.balanced.score.lib.test.mock.MockContract;
+import org.mockito.Mockito;
+import org.mockito.stubbing.Answer;
 import score.Address;
 
 import java.math.BigInteger;
 import java.util.Map;
 
-import static network.balanced.score.core.loans.utils.LoansConstants.Standings;
-import static network.balanced.score.core.loans.utils.LoansConstants.StandingsMap;
-import static network.balanced.score.core.loans.utils.LoansConstants.LIQUIDATION_RATIO;
-import static network.balanced.score.core.loans.utils.LoansConstants.LOCKING_RATIO;
-import static network.balanced.score.lib.utils.Constants.*;
+import static network.balanced.score.core.loans.utils.LoansConstants.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -79,7 +74,8 @@ class LoansTestBase extends UnitTest {
         when(dex.mock.getBasePriceInQuote(BigInteger.valueOf(4))).thenReturn(rate);
     }
 
-    protected void mockSwap(MockContract<? extends IRC2Mintable> tokenSent, MockContract<? extends IRC2Mintable> tokenReceived, BigInteger in, BigInteger out) {
+    protected void mockSwap(MockContract<? extends IRC2Mintable> tokenSent,
+                            MockContract<? extends IRC2Mintable> tokenReceived, BigInteger in, BigInteger out) {
         Mockito.doAnswer((Answer<Void>) invocation -> {
             loans.invoke(tokenReceived.account, "tokenFallback", dex.getAddress(), out, new byte[0]);
             return null;
@@ -95,7 +91,7 @@ class LoansTestBase extends UnitTest {
     }
 
 
-    private void setupOracle() throws Exception {
+    private void setupOracle() {
         when(balancedOracle.mock.getPriceInLoop(Mockito.any(String.class))).thenReturn(EXA);
         when(balancedOracle.mock.getLastPriceInLoop(Mockito.any(String.class))).thenReturn(EXA);
     }
@@ -239,7 +235,7 @@ class LoansTestBase extends UnitTest {
         loans.invoke(governance.account, "addAsset", ieth.getAddress(), true, true);
 
         loans.invoke(governance.account, "setLockingRatio", "sICX", LOCKING_RATIO);
-        loans.invoke(governance.account, "setLiquidationRatio","sICX", LIQUIDATION_RATIO);
+        loans.invoke(governance.account, "setLiquidationRatio", "sICX", LIQUIDATION_RATIO);
         loans.invoke(governance.account, "setLockingRatio", "iETH", LOCKING_RATIO);
         loans.invoke(governance.account, "setLiquidationRatio", "iETH", LIQUIDATION_RATIO);
     }

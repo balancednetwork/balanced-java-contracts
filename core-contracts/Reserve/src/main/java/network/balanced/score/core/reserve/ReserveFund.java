@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,10 +28,10 @@ import scorex.util.HashMap;
 import java.math.BigInteger;
 import java.util.Map;
 
-import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.BalancedAddressManager.*;
+import static network.balanced.score.lib.utils.Check.onlyGovernance;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Math.pow;
-import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 
 public class ReserveFund implements Reserve {
 
@@ -49,7 +49,7 @@ public class ReserveFund implements Reserve {
             governance.set(_governance);
         }
 
-        if (governance.get()  != null) {
+        if (governance.get() != null) {
             setGovernance(_governance);
         }
     }
