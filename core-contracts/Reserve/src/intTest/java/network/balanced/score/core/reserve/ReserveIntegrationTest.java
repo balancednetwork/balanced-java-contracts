@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,8 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         ethAddress = createIRC2Token(owner, "ICON ETH", "iETH", BigInteger.valueOf(6));
         owner.irc2(ethAddress).setMinter(owner.getAddress());
 
-        owner.balancedOracle.getPriceInUSD((txr) -> {}, "BALN");
+        owner.balancedOracle.getPriceInUSD((txr) -> {
+        }, "BALN");
 
     }
 
@@ -81,7 +82,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         loanTakerICX4.loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
 
         BigInteger ethAmount = BigInteger.valueOf(2).multiply(iethDecimals);
-        BigInteger ethPrice= reader.balancedOracle.getLastPriceInUSD("ETH");
+        BigInteger ethPrice = reader.balancedOracle.getLastPriceInUSD("ETH");
         BigInteger bnusdAmount = ethAmount.multiply(ethPrice).divide(iethDecimals);
 
         addCollateralType(owner, ethAddress, ethAmount, bnusdAmount, "ETH");
@@ -178,7 +179,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         Map<String, Map<String, Object>> bnusdDebtDetails = (Map<String, Map<String, Object>>) bnusdDetails.get(
                 "debt_details");
 
-        BigInteger totalSICXBadDebt= hexObjectToBigInteger(bnusdDebtDetails.get("sICX").get("bad_debt"));
+        BigInteger totalSICXBadDebt = hexObjectToBigInteger(bnusdDebtDetails.get("sICX").get("bad_debt"));
         totalSICXBadDebt = totalSICXBadDebt.multiply(BAD_DEBT_RETIREMENT_BONUS.add(POINTS)).divide(POINTS);
 
         BigInteger totalIETHBadDebt = hexObjectToBigInteger(bnusdDebtDetails.get("iETH").get("bad_debt"));
@@ -381,7 +382,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         }
     }
 
-    protected void setLockingRatio(BalancedClient voter, String symbol, BigInteger ratio, String name) throws Exception {
+    protected void setLockingRatio(BalancedClient voter, String symbol, BigInteger ratio, String name) {
         JsonArray setLockingRatioParameters = new JsonArray()
                 .add(createParameter(symbol))
                 .add(createParameter(ratio));
@@ -391,7 +392,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         executeVote(balanced, voter, name, actions);
     }
 
-    protected void setLockingRatio(BalancedClient voter, BigInteger ratio, String name) throws Exception {
+    protected void setLockingRatio(BalancedClient voter, BigInteger ratio, String name) {
         JsonArray setLockingRatioParametersSICX = new JsonArray()
                 .add(createParameter("sICX"))
                 .add(createParameter(ratio));

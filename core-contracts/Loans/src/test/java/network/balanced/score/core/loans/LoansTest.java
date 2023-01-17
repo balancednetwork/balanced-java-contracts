@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,35 +16,28 @@
 
 package network.balanced.score.core.loans;
 
-import static network.balanced.score.core.loans.utils.LoansConstants.LOCKING_RATIO;
-import static network.balanced.score.core.loans.utils.LoansConstants.StandingsMap;
-import static network.balanced.score.lib.utils.Constants.EXA;
-import static network.balanced.score.lib.utils.Constants.POINTS;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.math.BigInteger;
-import java.util.Map;
-
+import com.eclipsesource.json.JsonObject;
+import com.iconloop.score.test.Account;
+import network.balanced.score.core.loans.utils.LoansConstants.Standings;
+import network.balanced.score.lib.interfaces.tokens.IRC2;
+import network.balanced.score.lib.interfaces.tokens.IRC2ScoreInterface;
+import network.balanced.score.lib.test.mock.MockContract;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
-import com.eclipsesource.json.JsonObject;
-import com.iconloop.score.test.Account;
+import java.math.BigInteger;
+import java.util.Map;
 
-import network.balanced.score.core.loans.utils.LoansConstants.Standings;
-import network.balanced.score.lib.interfaces.tokens.IRC2;
-import network.balanced.score.lib.interfaces.tokens.IRC2ScoreInterface;
-import network.balanced.score.lib.test.mock.MockContract;
+import static network.balanced.score.core.loans.utils.LoansConstants.LOCKING_RATIO;
+import static network.balanced.score.core.loans.utils.LoansConstants.StandingsMap;
+import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Constants.POINTS;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 
 @DisplayName("Loans Tests")
@@ -91,7 +84,8 @@ class LoansTest extends LoansTestBase {
 
     @Test
     void setMaxRetirePercent_ToLow() {
-        Executable setMaxRetirePercent = () -> loans.invoke(governance.account, "setMaxRetirePercent", BigInteger.valueOf(-1));
+        Executable setMaxRetirePercent = () -> loans.invoke(governance.account, "setMaxRetirePercent",
+                BigInteger.valueOf(-1));
         String expectedErrorMessage = "Reverted(0): Input parameter must be in the range 0 to 10000 points.";
 
         expectErrorMessage(setMaxRetirePercent, expectedErrorMessage);
@@ -99,7 +93,8 @@ class LoansTest extends LoansTestBase {
 
     @Test
     void setMaxRetirePercent_ToHigh() {
-        Executable setMaxRetirePercent = () -> loans.invoke(governance.account, "setMaxRetirePercent", BigInteger.valueOf(-2));
+        Executable setMaxRetirePercent = () -> loans.invoke(governance.account, "setMaxRetirePercent",
+                BigInteger.valueOf(-2));
         String expectedErrorMessage = "Reverted(0): Input parameter must be in the range 0 to 10000 points.";
 
         expectErrorMessage(setMaxRetirePercent, expectedErrorMessage);
@@ -244,7 +239,8 @@ class LoansTest extends LoansTestBase {
         String expectedErrorMessage = "Reverted(0): " + TAG + "Token value should be a positive number";
 
         // Assert & Act
-        Executable transferToken = () -> loans.invoke(sicx.account, "tokenFallback", account.getAddress(), value, new byte[0]);
+        Executable transferToken = () -> loans.invoke(sicx.account, "tokenFallback", account.getAddress(), value,
+                new byte[0]);
         expectErrorMessage(transferToken, expectedErrorMessage);
     }
 
@@ -256,7 +252,8 @@ class LoansTest extends LoansTestBase {
         String expectedErrorMessage = "Reverted(0): " + bnusd.getAddress() + " is not a supported collateral type.";
 
         // Assert & Act
-        Executable transferToken = () -> loans.invoke(bnusd.account, "tokenFallback", account.getAddress(), value, new byte[0]);
+        Executable transferToken = () -> loans.invoke(bnusd.account, "tokenFallback", account.getAddress(), value,
+                new byte[0]);
         expectErrorMessage(transferToken, expectedErrorMessage);
     }
 
@@ -779,7 +776,7 @@ class LoansTest extends LoansTestBase {
         String expectedErrorMessage = "Reverted(0): " + TAG + "Repaid amount is greater than the amount in the " +
                 "position of " + account.getAddress();
 
-                when(bnusd.mock.balanceOf(account.getAddress())).thenReturn(loanToRepay);
+        when(bnusd.mock.balanceOf(account.getAddress())).thenReturn(loanToRepay);
 
         takeLoanICX(account, "bnUSD", collateral, loan);
 
@@ -1395,7 +1392,7 @@ class LoansTest extends LoansTestBase {
         takeLoanICX(account, "bnUSD", collateral, loan);
         takeLoaniETH(account, collateral, loan);
 
-        BigInteger newPrice =  EXA.divide(BigInteger.valueOf(4));
+        BigInteger newPrice = EXA.divide(BigInteger.valueOf(4));
         mockOraclePrice("sICX", newPrice);
         mockOraclePrice("iETH", newPrice);
         loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
@@ -1538,7 +1535,7 @@ class LoansTest extends LoansTestBase {
         BigInteger expectedReward = collateral.multiply(liquidationReward).divide(POINTS);
         takeLoanICX(account, "bnUSD", collateral, loan);
 
-        BigInteger pricePreLiquidation =  EXA.divide(BigInteger.valueOf(4));
+        BigInteger pricePreLiquidation = EXA.divide(BigInteger.valueOf(4));
         BigInteger pricePostLiquidation = EXA.divide(BigInteger.valueOf(6));
 
         mockOraclePrice("sICX", pricePreLiquidation);
@@ -1714,11 +1711,13 @@ class LoansTest extends LoansTestBase {
         BigInteger totalCollateralRedeemed = amountRedeemed.subtract(totalRedemptionFee).multiply(EXA).divide(sICXRate);
 
         BigInteger feeAccount1 = expectedRepaidAccount1.multiply(redemptionFee).divide(POINTS);
-        BigInteger collateralRedeemedAccount1 = expectedRepaidAccount1.subtract(feeAccount1).multiply(EXA).divide(sICXRate);
+        BigInteger collateralRedeemedAccount1 =
+                expectedRepaidAccount1.subtract(feeAccount1).multiply(EXA).divide(sICXRate);
         BigInteger collateralRedeemedAccount2 = collateralRedeemedAccount1;
 
         BigInteger feeAccount3 = expectedRepaidAccount3.multiply(redemptionFee).divide(POINTS);
-        BigInteger collateralRedeemedAccount3 = expectedRepaidAccount3.subtract(feeAccount3).multiply(EXA).divide(sICXRate);
+        BigInteger collateralRedeemedAccount3 =
+                expectedRepaidAccount3.subtract(feeAccount3).multiply(EXA).divide(sICXRate);
 
         // Act
         takeLoanICX(account1, "bnUSD", collateral, loan);
@@ -1726,21 +1725,26 @@ class LoansTest extends LoansTestBase {
         takeLoanICX(account3, "bnUSD", collateral, loan);
         takeLoanICX(account4, "bnUSD", collateral, loan);
 
-        BigInteger redeemableAmount = (BigInteger)loans.call("getRedeemableAmount", sicx.getAddress(), 4);
+        BigInteger redeemableAmount = (BigInteger) loans.call("getRedeemableAmount", sicx.getAddress(), 4);
         loans.invoke(redeemer, "redeemCollateral", sicx.getAddress(), amountToRedeem);
 
         // Assert
         verify(bnusd.mock).burnFrom(redeemer.getAddress(), amountToRedeem);
         verify(bnusd.mock).mintTo(mockBalanced.daofund.getAddress(), expectedDaoFee, new byte[0]);
 
-        verifyPosition(account1.getAddress(), collateral.subtract(collateralRedeemedAccount1), debt.subtract(expectedRepaidAccount1), "sICX");
-        verifyPosition(account2.getAddress(), collateral.subtract(collateralRedeemedAccount2), debt.subtract(expectedRepaidAccount2), "sICX");
-        verifyPosition(account3.getAddress(), collateral.subtract(collateralRedeemedAccount3), debt.subtract(expectedRepaidAccount3), "sICX");
+        verifyPosition(account1.getAddress(), collateral.subtract(collateralRedeemedAccount1),
+                debt.subtract(expectedRepaidAccount1), "sICX");
+        verifyPosition(account2.getAddress(), collateral.subtract(collateralRedeemedAccount2),
+                debt.subtract(expectedRepaidAccount2), "sICX");
+        verifyPosition(account3.getAddress(), collateral.subtract(collateralRedeemedAccount3),
+                debt.subtract(expectedRepaidAccount3), "sICX");
         verifyPosition(account4.getAddress(), collateral, debt, "sICX");
-        assertEquals(totalCollateralRedeemed, collateralRedeemedAccount1.add(collateralRedeemedAccount2).add(collateralRedeemedAccount3));
+        assertEquals(totalCollateralRedeemed,
+                collateralRedeemedAccount1.add(collateralRedeemedAccount2).add(collateralRedeemedAccount3));
         verify(sicx.mock).transfer(eq(redeemer.getAddress()), eq(totalCollateralRedeemed), any(byte[].class));
 
-        assertEquals(redeemableAmount, debt.multiply(BigInteger.valueOf(4)).multiply(maxRedemptionPercentage).divide(POINTS));
+        assertEquals(redeemableAmount,
+                debt.multiply(BigInteger.valueOf(4)).multiply(maxRedemptionPercentage).divide(POINTS));
     }
 
     @Test
@@ -1776,14 +1780,17 @@ class LoansTest extends LoansTestBase {
         mockOraclePrice("bnUSD", bnUSDRate);
 
         BigInteger totalRedemptionFee = amountRedeemed.multiply(redemptionFee).divide(POINTS);
-        BigInteger totalCollateralRedeemed = amountRedeemed.subtract(totalRedemptionFee).multiply(bnUSDRate).divide(iETHRate);
+        BigInteger totalCollateralRedeemed =
+                amountRedeemed.subtract(totalRedemptionFee).multiply(bnUSDRate).divide(iETHRate);
 
         BigInteger feeAccount1 = expectedRepaidAccount1.multiply(redemptionFee).divide(POINTS);
-        BigInteger collateralRedeemedAccount1 = expectedRepaidAccount1.subtract(feeAccount1).multiply(bnUSDRate).divide(iETHRate);
+        BigInteger collateralRedeemedAccount1 =
+                expectedRepaidAccount1.subtract(feeAccount1).multiply(bnUSDRate).divide(iETHRate);
         BigInteger collateralRedeemedAccount2 = collateralRedeemedAccount1;
 
         BigInteger feeAccount3 = expectedRepaidAccount3.multiply(redemptionFee).divide(POINTS);
-        BigInteger collateralRedeemedAccount3 = expectedRepaidAccount3.subtract(feeAccount3).multiply(bnUSDRate).divide(iETHRate);
+        BigInteger collateralRedeemedAccount3 =
+                expectedRepaidAccount3.subtract(feeAccount3).multiply(bnUSDRate).divide(iETHRate);
 
         // Act
         takeLoaniETH(account1, collateral, loan);
@@ -1791,20 +1798,25 @@ class LoansTest extends LoansTestBase {
         takeLoaniETH(account3, collateral, loan);
         takeLoaniETH(account4, collateral, loan);
 
-        BigInteger redeemableAmount = (BigInteger)loans.call("getRedeemableAmount", ieth.getAddress(), 4);
+        BigInteger redeemableAmount = (BigInteger) loans.call("getRedeemableAmount", ieth.getAddress(), 4);
         loans.invoke(redeemer, "redeemCollateral", ieth.getAddress(), amountToRedeem);
 
         // Assert
         verify(bnusd.mock).burnFrom(redeemer.getAddress(), amountToRedeem);
         verify(bnusd.mock).mintTo(mockBalanced.daofund.getAddress(), expectedDaoFee, new byte[0]);
 
-        verifyPosition(account1.getAddress(), collateral.subtract(collateralRedeemedAccount1), debt.subtract(expectedRepaidAccount1), "iETH");
-        verifyPosition(account2.getAddress(), collateral.subtract(collateralRedeemedAccount2), debt.subtract(expectedRepaidAccount2), "iETH");
-        verifyPosition(account3.getAddress(), collateral.subtract(collateralRedeemedAccount3), debt.subtract(expectedRepaidAccount3), "iETH");
+        verifyPosition(account1.getAddress(), collateral.subtract(collateralRedeemedAccount1),
+                debt.subtract(expectedRepaidAccount1), "iETH");
+        verifyPosition(account2.getAddress(), collateral.subtract(collateralRedeemedAccount2),
+                debt.subtract(expectedRepaidAccount2), "iETH");
+        verifyPosition(account3.getAddress(), collateral.subtract(collateralRedeemedAccount3),
+                debt.subtract(expectedRepaidAccount3), "iETH");
         verifyPosition(account4.getAddress(), collateral, debt, "iETH");
-        assertEquals(totalCollateralRedeemed, collateralRedeemedAccount1.add(collateralRedeemedAccount2).add(collateralRedeemedAccount3));
+        assertEquals(totalCollateralRedeemed,
+                collateralRedeemedAccount1.add(collateralRedeemedAccount2).add(collateralRedeemedAccount3));
         verify(ieth.mock).transfer(eq(redeemer.getAddress()), eq(totalCollateralRedeemed), any(byte[].class));
 
-        assertEquals(redeemableAmount, debt.multiply(BigInteger.valueOf(4)).multiply(maxRedemptionPercentage).divide(POINTS));
+        assertEquals(redeemableAmount,
+                debt.multiply(BigInteger.valueOf(4)).multiply(maxRedemptionPercentage).divide(POINTS));
     }
 }
