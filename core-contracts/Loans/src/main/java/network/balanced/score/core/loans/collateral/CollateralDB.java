@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,18 @@
 
 package network.balanced.score.core.loans.collateral;
 
-import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
-import static network.balanced.score.lib.utils.Math.pow;
-
-import java.math.BigInteger;
-import java.util.Map;
-
 import network.balanced.score.core.loans.utils.TokenUtils;
 import score.Address;
 import score.ArrayDB;
 import score.Context;
 import score.DictDB;
 import scorex.util.HashMap;
+
+import java.math.BigInteger;
+import java.util.Map;
+
+import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
+import static network.balanced.score.lib.utils.Math.pow;
 
 
 public class CollateralDB {
@@ -57,7 +57,7 @@ public class CollateralDB {
     }
 
     public static String getSymbol(Address address) {
-        String symbol =  addressMap.get(address.toString());
+        String symbol = addressMap.get(address.toString());
         Context.require(symbol != null, address + " is not a supported collateral type.");
         return symbol;
     }
@@ -94,7 +94,8 @@ public class CollateralDB {
             Address collateralAddress = getAddress(symbol);
             BigInteger collateralDecimals = pow(BigInteger.TEN, TokenUtils.decimals(collateralAddress).intValue());
 
-            BigInteger value = TokenUtils.balanceOf(collateralAddress, Context.getAddress()).multiply(TokenUtils.getPriceInLoop(symbol)).divide(collateralDecimals);
+            BigInteger value =
+                    TokenUtils.balanceOf(collateralAddress, Context.getAddress()).multiply(TokenUtils.getPriceInUSD(symbol)).divide(collateralDecimals);
             totalCollateral = totalCollateral.add(value);
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import static network.balanced.score.lib.utils.BalancedAddressManager.getBalance
 import static network.balanced.score.lib.utils.BalancedAddressManager.getBnusd;
 import static network.balanced.score.lib.utils.Check.readonly;
 
-public  class TokenUtils {
+public class TokenUtils {
     public static String symbol(Address tokenAddress) {
         return (String) call(tokenAddress, "symbol");
     }
@@ -38,19 +38,19 @@ public  class TokenUtils {
         return (BigInteger) call(tokenAddress, "balanceOf", address);
     }
 
-    public static BigInteger getPriceInLoop(String symbol) {
+    public static BigInteger getPriceInUSD(String symbol) {
         if (readonly()) {
-            return  (BigInteger) call(getBalancedOracle(), "getLastPriceInLoop", symbol);
+            return (BigInteger) call(getBalancedOracle(), "getLastPriceInUSD", symbol);
         }
 
-        return (BigInteger) call(getBalancedOracle(), "getPriceInLoop", symbol);
+        return (BigInteger) call(getBalancedOracle(), "getPriceInUSD", symbol);
     }
 
     public static void mintAssetTo(Address to, BigInteger amount) {
         call(getBnusd(), "mintTo", to, amount, new byte[0]);
     }
 
-    public static void burnAsset( BigInteger amount) {
+    public static void burnAsset(BigInteger amount) {
         call(getBnusd(), "burn", amount);
     }
 
