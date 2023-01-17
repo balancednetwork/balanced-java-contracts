@@ -140,13 +140,13 @@ class LoansTest extends LoansTestBase {
         assertEquals(1, position.get("pos_id"));
         assertEquals(account.getAddress().toString(), position.get("address"));
 
-        assertEquals(loan.add(expectedFee), standings.get("sICX").get("total_debt"));
-        assertEquals(sICXCollateral, standings.get("sICX").get("collateral"));
+        assertEquals(loan.add(expectedFee), standings.get("sICX").get("total_debt_in_USD"));
+        assertEquals(sICXCollateral, standings.get("sICX").get("collateral_in_USD"));
         assertEquals(sICXCollateral.multiply(EXA).divide(loan.add(expectedFee)), standings.get("sICX").get("ratio"));
         assertEquals(StandingsMap.get(Standings.MINING), standings.get("sICX").get("standing"));
 
-        assertEquals(iETHloan.add(iETHExpectedFee), standings.get("iETH").get("total_debt"));
-        assertEquals(iETHCollateral, standings.get("iETH").get("collateral"));
+        assertEquals(iETHloan.add(iETHExpectedFee), standings.get("iETH").get("total_debt_in_USD"));
+        assertEquals(iETHCollateral, standings.get("iETH").get("collateral_in_USD"));
         assertEquals(iETHCollateral.multiply(EXA).divide(iETHloan.add(iETHExpectedFee)), standings.get("iETH").get(
                 "ratio"));
         assertEquals(StandingsMap.get(Standings.MINING), standings.get("iETH").get("standing"));
