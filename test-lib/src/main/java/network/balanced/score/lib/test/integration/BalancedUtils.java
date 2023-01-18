@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,8 +114,8 @@ public class BalancedUtils {
 
     public static JsonObject createJsonDisbursement(score.Address token, BigInteger amount) {
         return new JsonObject()
-            .add("address", createParameter(token))
-            .add("amount", createParameter(amount));
+                .add("address", createParameter(token))
+                .add("amount", createParameter(amount));
     }
 
     public static JsonObject createParameter(String value) {

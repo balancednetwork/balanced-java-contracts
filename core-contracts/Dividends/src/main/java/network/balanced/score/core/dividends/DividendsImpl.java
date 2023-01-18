@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,11 +36,11 @@ import static network.balanced.score.core.dividends.DividendsTracker.getBoostedT
 import static network.balanced.score.core.dividends.DividendsTracker.userBalance;
 import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
 import static network.balanced.score.lib.utils.ArrayDBUtils.removeFromArraydb;
+import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static network.balanced.score.lib.utils.Math.pow;
-import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 
 public class DividendsImpl implements Dividends {
 
@@ -808,7 +808,8 @@ public class DividendsImpl implements Dividends {
     private void routeFees() {
         try {
             Context.call(getFeehandler(), "routeFees");
-        } catch (Exception e) {}
+        } catch (Exception e) {
+        }
     }
 
     @EventLog(indexed = 3)

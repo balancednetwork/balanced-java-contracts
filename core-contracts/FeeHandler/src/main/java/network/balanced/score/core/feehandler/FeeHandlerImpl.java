@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,10 +26,11 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 
-import static network.balanced.score.lib.utils.Check.*;
-import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.BalancedAddressManager.*;
+import static network.balanced.score.lib.utils.Check.isContract;
+import static network.balanced.score.lib.utils.Check.onlyGovernance;
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
+import static network.balanced.score.lib.utils.Constants.EXA;
 
 public class FeeHandlerImpl implements FeeHandler {
     public static final String TAG = "FeeHandler";
@@ -46,7 +47,8 @@ public class FeeHandlerImpl implements FeeHandler {
     private static final String STABILITY_FEES_ACCRUED = "stability_fees_accrued";
 
     public static final ArrayDB<Address> acceptedDividendsTokens = Context.newArrayDB(DIVIDEND_TOKENS, Address.class);
-    private static final DictDB<Address, BigInteger> lastFeeProcessingBlock = Context.newDictDB(LAST_BLOCK, BigInteger.class);
+    private static final DictDB<Address, BigInteger> lastFeeProcessingBlock = Context.newDictDB(LAST_BLOCK,
+            BigInteger.class);
     private static final VarDB<BigInteger> feeProcessingInterval = Context.newVarDB(BLOCK_INTERVAL, BigInteger.class);
     private static final VarDB<byte[]> lastTxhash = Context.newVarDB(LAST_TXHASH, byte[].class);
     private static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
@@ -61,7 +63,7 @@ public class FeeHandlerImpl implements FeeHandler {
     public FeeHandlerImpl(Address _governance) {
         if (governance.get() == null) {
             isContract(_governance);
-            this.governance.set(_governance);
+            governance.set(_governance);
             enabled.set(true);
         }
 

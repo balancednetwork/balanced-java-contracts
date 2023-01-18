@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,52 +20,43 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
-
 import network.balanced.score.lib.interfaces.BalancedDollar;
 import network.balanced.score.lib.interfaces.BalancedToken;
 import network.balanced.score.lib.interfaces.Governance;
 import network.balanced.score.lib.interfaces.Sicx;
-import network.balanced.score.lib.interfaces.tokens.*;
+import network.balanced.score.lib.interfaces.tokens.IRC2;
+import network.balanced.score.lib.interfaces.tokens.IRC2ScoreInterface;
 import network.balanced.score.lib.test.mock.MockBalanced;
 import network.balanced.score.lib.test.mock.MockContract;
 import network.balanced.score.lib.utils.Names;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import score.Address;
-import score.Context;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static network.balanced.score.core.feehandler.FeeHandlerImpl.TAG;
-import static network.balanced.score.lib.test.UnitTest.*;
+import static network.balanced.score.lib.test.UnitTest.expectErrorMessage;
+import static network.balanced.score.lib.test.UnitTest.scoreCount;
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.Constants.EXA;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class FeeHandlerImplTest extends TestBase {
     private static final ServiceManager sm = getServiceManager();
     private static final Account owner = sm.createAccount();
 
-    private static  MockBalanced mockBalanced;
-    private static  MockContract<BalancedToken> baln;
-    private static  MockContract<Sicx> sicx;
-    private static  MockContract<BalancedDollar> bnusd;
-    private static  MockContract<Governance> governance;
+    private static MockBalanced mockBalanced;
+    private static MockContract<BalancedToken> baln;
+    private static MockContract<Sicx> sicx;
+    private static MockContract<BalancedDollar> bnusd;
+    private static MockContract<Governance> governance;
 
     private Score feeHandler;
 
@@ -205,8 +196,10 @@ class FeeHandlerImplTest extends TestBase {
         feeHandler.invoke(baln.account, "tokenFallback", mockBalanced.dex.getAddress(), dexFeeBaln, new byte[0]);
         feeHandler.invoke(usdc, "tokenFallback", mockBalanced.dex.getAddress(), dexFeeUsdc, new byte[0]);
 
-        feeHandler.invoke(bnusd.account, "tokenFallback", mockBalanced.stability.getAddress(), StabilityFeeBnsud, new byte[0]);
-        feeHandler.invoke(bnusd.account, "tokenFallback", mockBalanced.stability.getAddress(), StabilityFeeBnsud, new byte[0]);
+        feeHandler.invoke(bnusd.account, "tokenFallback", mockBalanced.stability.getAddress(), StabilityFeeBnsud,
+                new byte[0]);
+        feeHandler.invoke(bnusd.account, "tokenFallback", mockBalanced.stability.getAddress(), StabilityFeeBnsud,
+                new byte[0]);
 
         assertEquals(loanFee1.add(loanFee2), feeHandler.call("getLoanFeesAccrued"));
 
@@ -224,13 +217,14 @@ class FeeHandlerImplTest extends TestBase {
     @Test
     void setRoute() {
         // Arrange
-        Address[] path = new Address[] {bnusd.getAddress(), baln.getAddress()};
+        Address[] path = new Address[]{bnusd.getAddress(), baln.getAddress()};
         Object acceptedTokens = new Address[]{bnusd.getAddress()};
         feeHandler.invoke(governance.account, "setAcceptedDividendTokens", acceptedTokens);
 
         // Act
         feeHandler.invoke(governance.account, "setRoute", sicx.getAddress(), path);
-        Executable addAcceptedToken = () -> feeHandler.invoke(governance.account, "setRoute", bnusd.getAddress(), new Address[]{});
+        Executable addAcceptedToken = () -> feeHandler.invoke(governance.account, "setRoute", bnusd.getAddress(),
+                new Address[]{});
 
         // Assert
         List<String> route = (List<String>) feeHandler.call("getRoute", sicx.getAddress());
@@ -257,7 +251,7 @@ class FeeHandlerImplTest extends TestBase {
         Account tokenWithoutPool = Account.newScoreAccount(scoreCount++);
         Account tokenWithoutSupportedPool = Account.newScoreAccount(scoreCount++);
 
-        Address[] defaultPath = new Address[] {bnusd.getAddress(), baln.getAddress()};
+        Address[] defaultPath = new Address[]{bnusd.getAddress(), baln.getAddress()};
 
         Object acceptedTokens = new Address[]{acceptedToken.getAddress()};
         feeHandler.invoke(governance.account, "setAcceptedDividendTokens", acceptedTokens);
@@ -270,7 +264,7 @@ class FeeHandlerImplTest extends TestBase {
         feeHandler.invoke(governance.account, "setRoute", tokenWithPath.getAddress(), defaultPath);
 
         BigInteger pid = BigInteger.valueOf(4);
-        when(mockBalanced.dex.mock.getPoolId(tokenWithoutSupportedPool.getAddress(),  bnusd.getAddress())).thenReturn(pid);
+        when(mockBalanced.dex.mock.getPoolId(tokenWithoutSupportedPool.getAddress(), bnusd.getAddress())).thenReturn(pid);
         when(mockBalanced.stakedLp.mock.isSupportedPool(pid)).thenReturn(false);
 
 
@@ -279,13 +273,15 @@ class FeeHandlerImplTest extends TestBase {
         Executable nonQuote = () -> feeHandler.invoke(caller, "addDefaultRoute", nonQuoteToken.getAddress());
         Executable withPath = () -> feeHandler.invoke(caller, "addDefaultRoute", tokenWithPath.getAddress());
         Executable withoutPool = () -> feeHandler.invoke(caller, "addDefaultRoute", tokenWithoutPool.getAddress());
-        Executable withoutSupportedPool = () -> feeHandler.invoke(caller, "addDefaultRoute", tokenWithoutSupportedPool.getAddress());
+        Executable withoutSupportedPool = () -> feeHandler.invoke(caller, "addDefaultRoute",
+                tokenWithoutSupportedPool.getAddress());
 
         expectErrorMessage(withAcceptedToken, "Token is accepted, should not be routed");
         expectErrorMessage(nonQuote, "Only quote coins should be routed");
         expectErrorMessage(withPath, "Route is already defined");
         expectErrorMessage(withoutPool, "no default path exists for " + tokenWithoutPool.getAddress());
-        expectErrorMessage(withoutSupportedPool,"no default path exists for " + tokenWithoutSupportedPool.getAddress());
+        expectErrorMessage(withoutSupportedPool,
+                "no default path exists for " + tokenWithoutSupportedPool.getAddress());
     }
 
     @Test
@@ -296,7 +292,7 @@ class FeeHandlerImplTest extends TestBase {
         BigInteger pid = BigInteger.valueOf(4);
 
         when(mockBalanced.dex.mock.isQuoteCoinAllowed(token.getAddress())).thenReturn(true);
-        when(mockBalanced.dex.mock.getPoolId(token.getAddress(),  baln.getAddress())).thenReturn(pid);
+        when(mockBalanced.dex.mock.getPoolId(token.getAddress(), baln.getAddress())).thenReturn(pid);
         when(mockBalanced.stakedLp.mock.isSupportedPool(pid)).thenReturn(true);
 
         // Act
@@ -315,7 +311,7 @@ class FeeHandlerImplTest extends TestBase {
         BigInteger pid = BigInteger.valueOf(4);
 
         when(mockBalanced.dex.mock.isQuoteCoinAllowed(token.getAddress())).thenReturn(true);
-        when(mockBalanced.dex.mock.getPoolId(token.getAddress(),  bnusd.getAddress())).thenReturn(pid);
+        when(mockBalanced.dex.mock.getPoolId(token.getAddress(), bnusd.getAddress())).thenReturn(pid);
         when(mockBalanced.stakedLp.mock.isSupportedPool(pid)).thenReturn(true);
 
         // Act
@@ -332,7 +328,7 @@ class FeeHandlerImplTest extends TestBase {
     @Test
     void removeRoute() {
         // Arrange
-        Address[] path = new Address[] {bnusd.getAddress(), baln.getAddress()};
+        Address[] path = new Address[]{bnusd.getAddress(), baln.getAddress()};
         feeHandler.invoke(governance.account, "setRoute", sicx.getAddress(), path);
         List<String> route = (List<String>) feeHandler.call("getRoute", sicx.getAddress());
         assertEquals(2, route.size());
@@ -349,7 +345,7 @@ class FeeHandlerImplTest extends TestBase {
     void routeFees() throws Exception {
         // Arrange
         Account caller = sm.createAccount();
-        Address[] path = new Address[] {bnusd.getAddress(), baln.getAddress()};
+        Address[] path = new Address[]{bnusd.getAddress(), baln.getAddress()};
         MockContract<IRC2> token1 = new MockContract<>(IRC2ScoreInterface.class, IRC2.class, sm, owner);
         MockContract<IRC2> token2 = new MockContract<>(IRC2ScoreInterface.class, IRC2.class, sm, owner);
         BigInteger balance1 = BigInteger.valueOf(7);
@@ -374,7 +370,7 @@ class FeeHandlerImplTest extends TestBase {
     void manualRoute() throws Exception {
         // Arrange
         Account caller = sm.createAccount();
-        Address[] path = new Address[] {bnusd.getAddress(), baln.getAddress()};
+        Address[] path = new Address[]{bnusd.getAddress(), baln.getAddress()};
         MockContract<IRC2> token1 = new MockContract<>(IRC2ScoreInterface.class, IRC2.class, sm, owner);
         MockContract<IRC2> token2 = new MockContract<>(IRC2ScoreInterface.class, IRC2.class, sm, owner);
         BigInteger balance1 = BigInteger.valueOf(7);
@@ -396,7 +392,7 @@ class FeeHandlerImplTest extends TestBase {
     void manualRoute_restrictions() throws Exception {
         // Arrange
         Account caller = sm.createAccount();
-        Address[] path = new Address[] {bnusd.getAddress(), baln.getAddress()};
+        Address[] path = new Address[]{bnusd.getAddress(), baln.getAddress()};
         MockContract<IRC2> acceptedToken = new MockContract<>(IRC2ScoreInterface.class, IRC2.class, sm, owner);
         MockContract<IRC2> quoteToken = new MockContract<>(IRC2ScoreInterface.class, IRC2.class, sm, owner);
         MockContract<IRC2> tokenWithPath = new MockContract<>(IRC2ScoreInterface.class, IRC2.class, sm, owner);
@@ -422,7 +418,7 @@ class FeeHandlerImplTest extends TestBase {
         expectErrorMessage(withAcceptedToken, "Token is accepted, can not be routed");
         expectErrorMessage(withQuoteToken, "Only non quote coins can manually be routed");
         expectErrorMessage(withDefinedPath, "Automatically routed tokens can't be manually routed");
-        expectErrorMessage(withZeroBalance, zeroBalanceToken.getAddress() + " balance is 0" );
+        expectErrorMessage(withZeroBalance, zeroBalanceToken.getAddress() + " balance is 0");
     }
 
     @Test
@@ -475,7 +471,7 @@ class FeeHandlerImplTest extends TestBase {
     void configureRouteLimit_path() throws Exception {
         // Arrange
         Account caller = sm.createAccount();
-        Address[] path = new Address[] {sicx.getAddress(), bnusd.getAddress(), baln.getAddress()};
+        Address[] path = new Address[]{sicx.getAddress(), bnusd.getAddress(), baln.getAddress()};
         MockContract<IRC2> token = new MockContract<>(IRC2ScoreInterface.class, IRC2.class, sm, owner);
         BigInteger balnRouteLimit = (BigInteger) feeHandler.call("getBalnRouteLimit");
 

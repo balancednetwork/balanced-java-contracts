@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import network.balanced.score.lib.test.mock.MockContract;
 import java.math.BigInteger;
 import java.util.Map;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.spy;
 
 class DividendsImplTestBase extends UnitTest {
     protected static final ServiceManager sm = getServiceManager();

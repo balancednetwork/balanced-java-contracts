@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package network.balanced.score.core.dividends;
 
 import com.eclipsesource.json.JsonArray;
-import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import org.json.JSONObject;
@@ -416,16 +415,17 @@ public class DividendsIntegrationTest {
     void testRemoveCategories() {
         // test the removal of categories from dividends
         JsonArray categoryParameter = new JsonArray()
-            .add(createJsonDistribution( "baln_holders", BigInteger.ZERO))
-            .add(createJsonDistribution("daofund", new BigInteger("1000000000000000000")));
+                .add(createJsonDistribution("baln_holders", BigInteger.ZERO))
+                .add(createJsonDistribution("daofund", new BigInteger("1000000000000000000")));
         JsonArray categoryParameters = new JsonArray()
-            .add(createParameter("Struct[]", categoryParameter));
+                .add(createParameter("Struct[]", categoryParameter));
 
-        owner.governance.execute(createSingleTransaction(balanced.dividends._address(), "setDividendsCategoryPercentage", categoryParameters).toString());
+        owner.governance.execute(createSingleTransaction(balanced.dividends._address(),
+                "setDividendsCategoryPercentage", categoryParameters).toString());
 
         // removing the categories
         owner.governance.execute(createSingleTransaction(balanced.dividends._address(), "removeDividendsCategory",
-            new JsonArray().add(createParameter("baln_holders"))).toString());
+                new JsonArray().add(createParameter("baln_holders"))).toString());
 
         List<String> categories;
         categories = owner.dividends.getDividendsCategories();
@@ -438,7 +438,7 @@ public class DividendsIntegrationTest {
     void testAddCategories() {
         // add new categories in dividends
         owner.governance.execute(createSingleTransaction(balanced.dividends._address(), "addDividendsCategory",
-            new JsonArray().add(createParameter("baln_holders"))).toString());
+                new JsonArray().add(createParameter("baln_holders"))).toString());
 
         List<String> categories;
         categories = owner.dividends.getDividendsCategories();
@@ -452,12 +452,13 @@ public class DividendsIntegrationTest {
         balanced.increaseDay(1);
 
         JsonArray categoryParameter = new JsonArray()
-            .add(createJsonDistribution( "baln_holders", new BigInteger("900000000000000000")))
-            .add(createJsonDistribution("daofund", new BigInteger("100000000000000000")));
+                .add(createJsonDistribution("baln_holders", new BigInteger("900000000000000000")))
+                .add(createJsonDistribution("daofund", new BigInteger("100000000000000000")));
         JsonArray categoryParameters = new JsonArray()
-            .add(createParameter("Struct[]", categoryParameter));
+                .add(createParameter("Struct[]", categoryParameter));
 
-        owner.governance.execute(createSingleTransaction(balanced.dividends._address(), "setDividendsCategoryPercentage", categoryParameters).toString());
+        owner.governance.execute(createSingleTransaction(balanced.dividends._address(),
+                "setDividendsCategoryPercentage", categoryParameters).toString());
 
         BigInteger daoBalanceBefore = owner.bnUSD.balanceOf(balanced.daofund._address());
 
