@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -105,15 +105,17 @@ public class BalancedUtils {
     }
 
     public static JsonObject createJsonDistribution(String name, BigInteger dist) {
-        return new JsonObject()
-                .add("recipient_name", name)
-                .add("dist_percent", dist.toString());
+        JsonObject recipient = new JsonObject()
+                .add("recipient_name", createParameter(name))
+                .add("dist_percent", createParameter(dist));
+
+        return recipient;
     }
 
     public static JsonObject createJsonDisbursement(score.Address token, BigInteger amount) {
         return new JsonObject()
-            .add("address", createParameter(token))
-            .add("amount", createParameter(amount));
+                .add("address", createParameter(token))
+                .add("amount", createParameter(amount));
     }
 
     public static JsonObject createParameter(String value) {
