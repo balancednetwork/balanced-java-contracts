@@ -26,7 +26,7 @@ import java.math.BigInteger;
 import java.util.Map;
 
 import static network.balanced.score.lib.utils.BalancedAddressManager.*;
-import static network.balanced.score.lib.utils.Constants.MAX_LOCK_TIME;
+import static network.balanced.score.lib.utils.Constants.*;
 
 public class POLManager {
     private static final byte[] tokenDepositData = "{\"method\":\"_deposit\"}".getBytes();
@@ -35,6 +35,9 @@ public class POLManager {
     private static final IterableDictDB<Address, BigInteger> feeEarnings = new IterableDictDB<>(FEE_EARNINGS,
             BigInteger.class, Address.class, false);
     private static final VarDB<BigInteger> balnEarnings = Context.newVarDB(BALN_EARNINGS, BigInteger.class);
+
+    private static final String POL_SUPPLY_SLIPPAGE = "pol_supply_slippage";
+    private static final VarDB<BigInteger> polSupplySlippage = Context.newVarDB(POL_SUPPLY_SLIPPAGE, BigInteger.class);
 
     private static final String FEE_PROCESSING = "fee_processing";
     private static final String REWARDS_PROCESSING = "rewards_processing";
@@ -58,12 +61,20 @@ public class POLManager {
     public static void supplyLiquidity(Address baseAddress, BigInteger baseAmount, Address quoteAddress,
                                        BigInteger quoteAmount) {
         Address dex = getDex();
+        BigInteger pid = Context.call(BigInteger.class, dex, "getPoolId", baseAddress, quoteAddress);
+
+        BigInteger supplyPrice = quoteAmount.multiply(EXA).divide(baseAmount);
+        BigInteger dexPrice = Context.call(BigInteger.class, dex, "getPrice", pid);
+        BigInteger allowedDiff = supplyPrice.multiply(polSupplySlippage.get()).divide(POINTS);
+        Context.require(supplyPrice.subtract(allowedDiff).compareTo(dexPrice) < 0, "Price on dex was below allowed " +
+                "threshold");
+        Context.require(supplyPrice.add(allowedDiff).compareTo(dexPrice) > 0, "Price on dex was above allowed " +
+                "threshold");
+
         Context.call(baseAddress, "transfer", dex, baseAmount, tokenDepositData);
         Context.call(quoteAddress, "transfer", dex, quoteAmount, tokenDepositData);
         Context.call(dex, "add", baseAddress, quoteAddress, baseAmount, quoteAmount, true);
 
-
-        BigInteger pid = Context.call(BigInteger.class, dex, "getPoolId", baseAddress, quoteAddress);
         stakeLPTokens(pid);
     }
 
@@ -120,5 +131,15 @@ public class POLManager {
         Address tokenAddress = Context.getCaller();
         BigInteger previousEarnings = feeEarnings.getOrDefault(tokenAddress, BigInteger.ZERO);
         feeEarnings.set(tokenAddress, previousEarnings.add(amount));
+    }
+
+    public static void setPOLSupplySlippage(BigInteger points) {
+        Context.require(points.compareTo(BigInteger.ZERO) >= 0 &&
+                points.compareTo(POINTS) < 0, "slippage must be between 0 and " + POINTS);
+        polSupplySlippage.set(points);
+    }
+
+    public static BigInteger getPOLSupplySlippage() {
+        return polSupplySlippage.get();
     }
 }
