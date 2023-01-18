@@ -92,13 +92,13 @@ class LoansTestBase extends UnitTest {
 
 
     private void setupOracle() {
-        when(balancedOracle.mock.getPriceInLoop(Mockito.any(String.class))).thenReturn(EXA);
-        when(balancedOracle.mock.getLastPriceInLoop(Mockito.any(String.class))).thenReturn(EXA);
+        when(balancedOracle.mock.getPriceInUSD(Mockito.any(String.class))).thenReturn(EXA);
+        when(balancedOracle.mock.getLastPriceInUSD(Mockito.any(String.class))).thenReturn(EXA);
     }
 
     public void mockOraclePrice(String symbol, BigInteger rate) {
-        when(balancedOracle.mock.getPriceInLoop(symbol)).thenReturn(rate);
-        when(balancedOracle.mock.getLastPriceInLoop(symbol)).thenReturn(rate);
+        when(balancedOracle.mock.getPriceInUSD(symbol)).thenReturn(rate);
+        when(balancedOracle.mock.getLastPriceInUSD(symbol)).thenReturn(rate);
     }
 
     protected void takeLoanSICX(Account account, BigInteger collateral, BigInteger loan) {

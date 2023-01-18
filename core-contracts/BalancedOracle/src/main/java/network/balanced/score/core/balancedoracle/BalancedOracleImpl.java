@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,35 +55,22 @@ public class BalancedOracleImpl implements BalancedOracle {
 
     @External
     public BigInteger getPriceInLoop(String symbol) {
-        String pegSymbol = assetPeg.getOrDefault(symbol, symbol);
-        BigInteger priceInLoop;
-        if (pegSymbol.equals("sICX")) {
-            priceInLoop = getSICXPriceInLoop();
-        } else if (dexPricedAssets.get(pegSymbol) != null) {
-            priceInLoop = getDexPriceInLoop(pegSymbol);
-        } else {
-            priceInLoop = getLoopRate(pegSymbol);
-        }
-
-        return priceInLoop;
+        return _getPriceInLoop(symbol);
     }
 
     @External(readonly = true)
     public BigInteger getLastPriceInLoop(String symbol) {
-        String pegSymbol = assetPeg.getOrDefault(symbol, symbol);
-        BigInteger priceInLoop;
+        return _getPriceInLoop(symbol);
+    }
 
-        if (pegSymbol.equals("sICX")) {
-            priceInLoop = getSICXPriceInLoop();
-        } else if (dexPricedAssets.get(pegSymbol) != null) {
-            priceInLoop = EMACalculator.calculateEMA(pegSymbol, getDexPriceEMADecay());
-        } else {
-            priceInLoop = getLoopRate(pegSymbol);
-        }
+    @External
+    public BigInteger getPriceInUSD(String symbol) {
+        return _getPriceInUSD(symbol);
+    }
 
-        Context.require(priceInLoop.compareTo(BigInteger.ZERO) > 0, TAG + ": No price data exists for symbol");
-
-        return priceInLoop;
+    @External(readonly = true)
+    public BigInteger getLastPriceInUSD(String symbol) {
+        return _getPriceInUSD(symbol);
     }
 
     @External
@@ -215,7 +202,51 @@ public class BalancedOracleImpl implements BalancedOracle {
         return Context.call(BigInteger.class, staking.get(), "getTodayRate");
     }
 
+    private BigInteger loopToUSD(BigInteger loopAmount) {
+        BigInteger ICXPriceInUSD = getUSDRate("ICX");
+        return loopAmount.multiply(ICXPriceInUSD).divide(EXA);
+
+    }
+
+    public BigInteger _getPriceInLoop(String symbol) {
+        String pegSymbol = assetPeg.getOrDefault(symbol, symbol);
+        BigInteger priceInLoop;
+        if (pegSymbol.equals("sICX")) {
+            priceInLoop = getSICXPriceInLoop();
+        } else if (dexPricedAssets.get(pegSymbol) != null) {
+            priceInLoop = getDexPriceInLoop(pegSymbol);
+        } else {
+            priceInLoop = getLoopRate(pegSymbol);
+        }
+
+        Context.require(priceInLoop.compareTo(BigInteger.ZERO) > 0, TAG + ": No price data exists for symbol");
+
+        return priceInLoop;
+    }
+
+    public BigInteger _getPriceInUSD(String symbol) {
+        String pegSymbol = assetPeg.getOrDefault(symbol, symbol);
+        BigInteger priceInUSD;
+        if (pegSymbol.equals("sICX")) {
+            priceInUSD = loopToUSD(getSICXPriceInLoop());
+        } else if (pegSymbol.equals("USD")) {
+            return EXA;
+        } else if (dexPricedAssets.get(pegSymbol) != null) {
+            priceInUSD = loopToUSD(getDexPriceInLoop(pegSymbol));
+        } else {
+            priceInUSD = getUSDRate(pegSymbol);
+        }
+
+        Context.require(priceInUSD.compareTo(BigInteger.ZERO) > 0, TAG + ": No price data exists for symbol");
+
+        return priceInUSD;
+    }
+
     private BigInteger getDexPriceInLoop(String symbol) {
+        if (readonly()) {
+            return EMACalculator.calculateEMA(symbol, getDexPriceEMADecay());
+        }
+
         BigInteger poolID = dexPricedAssets.get(symbol);
         Address base = Context.call(Address.class, dex.get(), "getPoolBase", poolID);
         BigInteger nrDecimals = Context.call(BigInteger.class, base, "decimals");
@@ -228,19 +259,27 @@ public class BalancedOracleImpl implements BalancedOracle {
         return EMACalculator.updateEMA(symbol, priceInLoop, getDexPriceEMADecay());
     }
 
-    @SuppressWarnings("unchecked")
     private BigInteger getLoopRate(String symbol) {
+        return getRate(symbol, "ICX");
+    }
+
+    private BigInteger getUSDRate(String symbol) {
+        return getRate(symbol, "USD");
+    }
+
+    @SuppressWarnings("unchecked")
+    private BigInteger getRate(String base, String quote) {
         Map<String, BigInteger> priceData = (Map<String, BigInteger>) Context.call(oracle.get(), "get_reference_data"
-                , symbol, "ICX");
+                , base, quote);
         BigInteger last_update_base = priceData.get("last_update_base");
         BigInteger last_update_quote = priceData.get("last_update_quote");
         BigInteger blockTime = BigInteger.valueOf(Context.getBlockTimestamp());
         BigInteger threshold = lastUpdateThreshold.getOrDefault(BigInteger.ZERO);
 
         Context.require(blockTime.subtract(last_update_base).compareTo(threshold) < 0,
-                "The last price update for " + symbol + " is outdated");
-        Context.require(blockTime.subtract(last_update_quote).compareTo(threshold) < 0, "The last price update for " +
-                "ICX is outdated");
+                "The last price update for " + quote + " is outdated");
+        Context.require(blockTime.subtract(last_update_quote).compareTo(threshold) < 0,
+                "The last price update for " + base + " is outdated");
 
         return (BigInteger) priceData.get("rate");
     }

@@ -172,26 +172,20 @@ public class Position {
         return !getTotalDebt().equals(BigInteger.ZERO);
     }
 
-    public BigInteger totalCollateralInLoop(String collateralSymbol) {
+    public BigInteger totalCollateralInUSD(String collateralSymbol) {
         Address collateralAddress = CollateralDB.getAddress(collateralSymbol);
 
         BigInteger amount = getCollateral(collateralSymbol);
         BigInteger decimals = pow(BigInteger.TEN, TokenUtils.decimals(collateralAddress).intValue());
-        BigInteger price = TokenUtils.getPriceInLoop(collateralSymbol);
+        BigInteger price = TokenUtils.getPriceInUSD(collateralSymbol);
 
         return amount.multiply(price).divide(decimals);
     }
 
-    public BigInteger totalDebtInLoop(String collateralSymbol) {
-        BigInteger amount = getDebt(collateralSymbol);
-        BigInteger price = TokenUtils.getPriceInLoop(BNUSD_SYMBOL);
-        return amount.multiply(price).divide(EXA);
-    }
-
     public Standing getStanding(String collateralSymbol) {
         Standing standing = new Standing();
-        standing.totalDebt = totalDebtInLoop(collateralSymbol);
-        standing.collateral = totalCollateralInLoop(collateralSymbol);
+        standing.totalDebt = getDebt(collateralSymbol);
+        standing.collateral = totalCollateralInUSD(collateralSymbol);
 
         if (standing.totalDebt.equals(BigInteger.ZERO)) {
             standing.ratio = BigInteger.ZERO;
@@ -226,6 +220,8 @@ public class Position {
         //     "BALN" : 4000,
         // }
 
+        BigInteger loopPrice = TokenUtils.getPriceInUSD("ICX");
+
         Map<String, Map<String, BigInteger>> holdings = new HashMap<>();
         Map<String, Map<String, Object>> standings = new HashMap<>();
         int collateralSymbolsCount = CollateralDB.collateralList.size();
@@ -242,8 +238,10 @@ public class Position {
 
             Standing standing = getStanding(collateralSymbol);
             Map<String, Object> standingMap = new HashMap<>();
-            standingMap.put("total_debt", standing.totalDebt);
-            standingMap.put("collateral", standing.collateral);
+            standingMap.put("total_debt", standing.totalDebt.multiply(EXA).divide(loopPrice));
+            standingMap.put("collateral", standing.collateral.multiply(EXA).divide(loopPrice));
+            standingMap.put("total_debt_in_USD", standing.totalDebt);
+            standingMap.put("collateral_in_USD", standing.collateral);
             standingMap.put("ratio", standing.ratio);
 
             standingMap.put("standing", StandingsMap.get(standing.standing));
@@ -259,8 +257,8 @@ public class Position {
         positionDetails.put("assets", holdings.get("sICX"));
         positionDetails.put("holdings", holdings);
         positionDetails.put("standings", standings);
-        positionDetails.put("total_debt", sICXstanding.totalDebt);
-        positionDetails.put("collateral", sICXstanding.collateral);
+        positionDetails.put("total_debt", sICXstanding.totalDebt.multiply(EXA).divide(loopPrice));
+        positionDetails.put("collateral", sICXstanding.collateral.multiply(EXA).divide(loopPrice));
         positionDetails.put("ratio", sICXstanding.ratio);
         positionDetails.put("standing", StandingsMap.get(sICXstanding.standing));
 
