@@ -72,9 +72,7 @@ public class LoansImpl implements Loans {
             maxRetirePercent.set(MAX_RETIRE_PERCENT);
         }
 
-        if (governance.get() != null) {
-            setGovernance(_governance);
-        }
+        setGovernance(governance.get());
 
         if (arrayDbContains(CollateralDB.collateralList, "BALN")) {
             removeBALN();

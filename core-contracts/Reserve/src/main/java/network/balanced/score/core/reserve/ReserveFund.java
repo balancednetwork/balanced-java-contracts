@@ -49,9 +49,7 @@ public class ReserveFund implements Reserve {
             governance.set(_governance);
         }
 
-        if (governance.get() != null) {
-            setGovernance(_governance);
-        }
+        setGovernance(governance.get());
     }
 
     @EventLog(indexed = 2)
@@ -61,6 +59,16 @@ public class ReserveFund implements Reserve {
     @External(readonly = true)
     public String name() {
         return Names.RESERVE;
+    }
+
+    @External
+    public void updateAddress(String name) {
+        resetAddress(name);
+    }
+
+    @External(readonly = true)
+    public Address getAddress(String name) {
+        return getAddressByName(name);
     }
 
     @External
