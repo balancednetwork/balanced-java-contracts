@@ -53,6 +53,7 @@ project(':StakedLP').projectDir = file("core-contracts/StakedLP")
 include 'score-client'
 include 'score-lib'
 include 'test-lib'
+include 'xcall-lib'
 
 include(':WorkerToken')
 project(':WorkerToken').projectDir = file("token-contracts/WorkerToken")

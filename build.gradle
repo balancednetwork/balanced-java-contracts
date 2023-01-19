@@ -87,6 +87,11 @@ subprojects {
     apply plugin: 'foundation.icon.javaee'
 
     sourceSets {
+         main {
+            java {
+            srcDir 'build/generated/sources/annotationProcessor/java/main'
+            }
+        }
         intTest {
             compileClasspath += sourceSets.main.output
             runtimeClasspath += sourceSets.main.output

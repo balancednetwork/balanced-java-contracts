@@ -29,24 +29,17 @@ repositories {
 optimizedJar.enabled = false
 
 dependencies {
-    compileOnly Dependencies.javaeeApi
+    implementation Dependencies.javaeeApi
     implementation Dependencies.javaeeScorex
     implementation Dependencies.minimalJson
+    implementation("foundation.icon:javaee-annotation-processor:0.9.0")
+    implementation("com.squareup:javapoet:1.12.1")
 
-    compileOnly project(':xcall-lib')
-    annotationProcessor project(':xcall-lib')
     compileOnly Dependencies.javaeeScoreClient
     annotationProcessor Dependencies.javaeeScoreClient
 
     implementation Dependencies.jacksonDatabind
     implementation Dependencies.iconSdk
-
-    testImplementation Dependencies.javaeeUnitTest
-    testImplementation Dependencies.junitJupiter
-    testRuntimeOnly Dependencies.junitJupiterEngine
-    testImplementation project(':test-lib')
-    testImplementation Dependencies.mockitoCore
-    testRuntimeOnly Dependencies.mockitoInline
 }
 
 test {
