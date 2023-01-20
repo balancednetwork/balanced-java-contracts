@@ -87,8 +87,8 @@ class RewardsTestBase extends UnitTest {
                 "_balance", BigInteger.ZERO,
                 "_totalSupply", BigInteger.ZERO
         );
-        when(loans.mock.getBalanceAndSupply(any(String.class), any(Address.class))).thenReturn(emptyDataSource);
-        when(dex.mock.getBalanceAndSupply(any(String.class), any(Address.class))).thenReturn(emptyDataSource);
+        when(loans.mock.getBalanceAndSupply(any(String.class), any(String.class))).thenReturn(emptyDataSource);
+        when(dex.mock.getBalanceAndSupply(any(String.class), any(String.class))).thenReturn(emptyDataSource);
         when(loans.mock.precompute(any(BigInteger.class), any(BigInteger.class))).thenReturn(true);
         when(dex.mock.precompute(any(BigInteger.class), any(BigInteger.class))).thenReturn(true);
         when(bBaln.mock.balanceOf(any(Address.class), any(BigInteger.class))).thenReturn(BigInteger.ZERO);
@@ -144,7 +144,7 @@ class RewardsTestBase extends UnitTest {
                 "_totalSupply", supply
         );
 
-        when(dataSource.mock.getBalanceAndSupply(name, address)).thenReturn(balanceAndSupply);
+        when(dataSource.mock.getBalanceAndSupply(name, address.toString())).thenReturn(balanceAndSupply);
     }
 
     void verifyBalnReward(Address address, BigInteger expectedReward) {

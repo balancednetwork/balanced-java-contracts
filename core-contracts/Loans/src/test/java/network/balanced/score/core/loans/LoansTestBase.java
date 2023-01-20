@@ -184,7 +184,7 @@ class LoansTestBase extends UnitTest {
     @SuppressWarnings("unchecked")
     protected BigInteger getTotalDebt() {
         Map<String, BigInteger> balanceAndSupply = (Map<String, BigInteger>) loans.call("getBalanceAndSupply", "Loans"
-                , EOA_ZERO);
+                , EOA_ZERO.toString());
         BigInteger totalDebt = balanceAndSupply.get("_totalSupply");
 
         return totalDebt;

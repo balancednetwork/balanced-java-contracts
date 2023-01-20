@@ -138,15 +138,16 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         BigInteger debt = loanAmount.add(fee);
         totalDebt = debt.multiply(BigInteger.valueOf(6)).add(totalDebt);
 
-        Map<String, BigInteger> loanTakerIcxBaS = reader.loans.getBalanceAndSupply("Loans", loanTakerICX.getAddress());
+        Map<String, BigInteger> loanTakerIcxBaS = reader.loans.getBalanceAndSupply("Loans",
+                loanTakerICX.getAddress().toString());
         Map<String, BigInteger> loanTakerSicxBaS = reader.loans.getBalanceAndSupply("Loans",
-                loanTakerSICX.getAddress());
+                loanTakerSICX.getAddress().toString());
         Map<String, BigInteger> twoStepLoanTakerBaS = reader.loans.getBalanceAndSupply("Loans",
-                loanTakerSICX.getAddress());
+                loanTakerSICX.getAddress().toString());
         Map<String, BigInteger> loanTakerMultiBaS = reader.loans.getBalanceAndSupply("Loans",
-                loanTakerMulti.getAddress());
+                loanTakerMulti.getAddress().toString());
         Map<String, BigInteger> loanTakerIETHBaS = reader.loans.getBalanceAndSupply("Loans",
-                loanTakerIETH.getAddress());
+                loanTakerIETH.getAddress().toString());
 
         assertEquals(totalDebt, loanTakerIcxBaS.get("_totalSupply"));
         assertEquals(debt, loanTakerIcxBaS.get("_balance"));
@@ -181,7 +182,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         BigInteger fee = loanAmount.multiply(feePercent).divide(POINTS);
         BigInteger debt = loanAmount.add(fee);
 
-        Map<String, BigInteger> btcLoanTakerBaS = reader.loans.getBalanceAndSupply("Loans", btcLoanTaker.getAddress());
+        Map<String, BigInteger> btcLoanTakerBaS = reader.loans.getBalanceAndSupply("Loans", btcLoanTaker.getAddress().toString());
         assertEquals(debt, btcLoanTakerBaS.get("_balance"));
         assertEquals(collateralBTC, btcLoanTaker.getLoansCollateralPosition("iBTC"));
     }
@@ -236,13 +237,13 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
                 .add(reader.loans.getTotalCollateralDebt("iBTC", "bnUSD"))
                 .add(reader.loans.getTotalCollateralDebt("sICX", "bnUSD"));
         Map<String, BigInteger> loanTakerPartialRepayBaS = reader.loans.getBalanceAndSupply("Loans",
-                loanTakerPartialRepay.getAddress());
+                loanTakerPartialRepay.getAddress().toString());
         Map<String, BigInteger> loanTakerFullRepayBaS = reader.loans.getBalanceAndSupply("Loans",
-                loanTakerFullRepay.getAddress());
+                loanTakerFullRepay.getAddress().toString());
         Map<String, BigInteger> loanTakerIETHFullRepayBaS = reader.loans.getBalanceAndSupply("Loans",
-                loanTakerIETHFullRepay.getAddress());
+                loanTakerIETHFullRepay.getAddress().toString());
         Map<String, BigInteger> loanTakerMultiPartialRepayBaS = reader.loans.getBalanceAndSupply("Loans",
-                loanTakerMultiPartialRepay.getAddress());
+                loanTakerMultiPartialRepay.getAddress().toString());
 
         assertEquals(expectedTotalDebt, getTotalDebt());
         assertEquals(expectedTotalDebt, expectedSumDebt);
@@ -658,7 +659,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         assertTrue(bnUSDBalancePreRetire.compareTo(bnUSDBalancePostRetire) > 0);
         assertTrue(sICXBalancePreRetire.compareTo(sICXBalancePostRetire) < 0);
 
-        Map<String, BigInteger> LiquidatedUserBaS = reader.loans.getBalanceAndSupply("Loans", loanTaker.getAddress());
+        Map<String, BigInteger> LiquidatedUserBaS = reader.loans.getBalanceAndSupply("Loans", loanTaker.getAddress().toString());
         assertEquals(initialDebt.add(ethDebt), getTotalDebt());
         assertEquals(BigInteger.ZERO, loanTaker.getLoansCollateralPosition("sICX"));
         assertEquals(collateralETH, loanTaker.getLoansCollateralPosition("iETH"));
@@ -713,7 +714,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         assertTrue(bnUSDBalancePreRetire.compareTo(bnUSDBalancePostRetire) > 0);
         assertTrue(sICXBalancePreRetire.compareTo(sICXBalancePostRetire) < 0);
 
-        Map<String, BigInteger> LiquidatedUserBaS = reader.loans.getBalanceAndSupply("Loans", loanTaker.getAddress());
+        Map<String, BigInteger> LiquidatedUserBaS = reader.loans.getBalanceAndSupply("Loans", loanTaker.getAddress().toString());
         assertEquals(initialDebt.add(sICXDebt), getTotalDebt());
         assertEquals(icxCollateral, loanTaker.getLoansCollateralPosition("sICX"));
         assertEquals(BigInteger.ZERO, loanTaker.getLoansCollateralPosition("iETH"));
@@ -739,7 +740,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
     }
 
     protected BigInteger getTotalDebt() {
-        return reader.loans.getBalanceAndSupply("Loans", reader.getAddress()).get("_totalSupply");
+        return reader.loans.getBalanceAndSupply("Loans", reader.getAddress().toString()).get("_totalSupply");
     }
 
     protected void claimAllRewards() {

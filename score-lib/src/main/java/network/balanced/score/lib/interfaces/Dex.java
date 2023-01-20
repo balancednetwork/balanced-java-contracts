@@ -159,7 +159,7 @@ public interface Dex extends AdminAddress, BnusdAddress, GovernanceAddress, Name
     BigInteger totalDexAddresses(BigInteger _id);
 
     @External(readonly = true)
-    Map<String, BigInteger> getBalanceAndSupply(String _name, Address _owner);
+    Map<String, BigInteger> getBalanceAndSupply(String _name, String _owner);
 
     @External(readonly = true)
     BigInteger balanceOfAt(Address _account, BigInteger _id, BigInteger _snapshot_id, @Optional boolean _twa);

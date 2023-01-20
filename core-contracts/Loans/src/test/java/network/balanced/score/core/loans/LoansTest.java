@@ -168,7 +168,7 @@ class LoansTest extends LoansTestBase {
 
         // Assert
         Map<String, BigInteger> balanceAndSupply = (Map<String, BigInteger>) loans.call("getBalanceAndSupply", "Loans"
-                , account.getAddress());
+                , account.getAddress().toString());
         assertEquals(sICXdebt, balanceAndSupply.get("_balance"));
         assertEquals(sICXdebt, balanceAndSupply.get("_totalSupply"));
 
@@ -182,7 +182,7 @@ class LoansTest extends LoansTestBase {
         takeLoaniETH(account, iETHCollateral, iETHLoan);
 
         // Assert
-        balanceAndSupply = (Map<String, BigInteger>) loans.call("getBalanceAndSupply", "Loans", account.getAddress());
+        balanceAndSupply = (Map<String, BigInteger>) loans.call("getBalanceAndSupply", "Loans", account.getAddress().toString());
         assertEquals(iETHDebt.add(sICXdebt), balanceAndSupply.get("_balance"));
         assertEquals(iETHDebt.add(sICXdebt), balanceAndSupply.get("_totalSupply"));
     }
@@ -200,7 +200,7 @@ class LoansTest extends LoansTestBase {
 
         // Act
         Map<String, BigInteger> balanceAndSupply = (Map<String, BigInteger>) loans.call("getBalanceAndSupply", "Loans"
-                , zeroAccount.getAddress());
+                , zeroAccount.getAddress().toString());
 
         // Assert
         assertEquals(BigInteger.ZERO, balanceAndSupply.get("_balance"));
@@ -1184,9 +1184,9 @@ class LoansTest extends LoansTestBase {
         BigInteger expectedLiquidationPool = collateral.subtract(expectedReward);
         assertEquals(expectedBadDebt, bnusdDebtDetails.get("sICX").get("bad_debt"));
         assertEquals(expectedLiquidationPool, bnusdDebtDetails.get("sICX").get("liquidation_pool"));
-        verify(rewards.mock).updateRewardsData("Loans", originalTotalDebt, account.getAddress(), BigInteger.ZERO);
+        verify(rewards.mock).updateRewardsData("Loans", originalTotalDebt, account.getAddress().toString(), BigInteger.ZERO);
         verify(rewards.mock).updateRewardsData("Loans", originalTotalDebt.add(loan.add(expectedFee)),
-                account.getAddress(), loan.add(expectedFee));
+                account.getAddress().toString(), loan.add(expectedFee));
         verifyTotalDebt(originalTotalDebt);
     }
 
@@ -1255,9 +1255,9 @@ class LoansTest extends LoansTestBase {
         assertEquals(expectedBadDebt, bnusdDebtDetails.get("iETH").get("bad_debt"));
         assertEquals(expectedLiquidationPool, bnusdDebtDetails.get("iETH").get("liquidation_pool"));
 
-        verify(rewards.mock).updateRewardsData("Loans", originalTotalDebt, account.getAddress(), BigInteger.ZERO);
+        verify(rewards.mock).updateRewardsData("Loans", originalTotalDebt, account.getAddress().toString(), BigInteger.ZERO);
         verify(rewards.mock).updateRewardsData("Loans", originalTotalDebt.add(loan.add(expectedFee)),
-                account.getAddress(), loan.add(expectedFee));
+                account.getAddress().toString(), loan.add(expectedFee));
         verifyTotalDebt(originalTotalDebt);
     }
 

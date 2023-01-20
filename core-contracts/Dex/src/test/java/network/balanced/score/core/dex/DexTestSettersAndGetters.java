@@ -110,7 +110,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
 
         // Assert.
         Map<String, BigInteger> returnedData = (Map<String, BigInteger>) dexScore.call("getBalanceAndSupply",
-                poolName, ownerAccount.getAddress());
+                poolName, ownerAccount.getAddress().toString());
         assertEquals(expectedData, returnedData);
     }
 
@@ -132,7 +132,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
 
         // Assert.
         Map<String, BigInteger> returnedData = (Map<String, BigInteger>) dexScore.call("getBalanceAndSupply",
-                poolName, supplier.getAddress());
+                poolName, supplier.getAddress().toString());
         assertEquals(expectedData, returnedData);
     }
 

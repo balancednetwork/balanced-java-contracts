@@ -220,7 +220,7 @@ public class DataSourceImpl {
     public Map<String, BigInteger> loadCurrentSupply(Address owner) {
         try {
             DataSourceScoreInterface datasource = new DataSourceScoreInterface(getContractAddress());
-            return datasource.getBalanceAndSupply(getName(), owner);
+            return datasource.getBalanceAndSupply(getName(), owner.toString());
         } catch (Exception e) {
             return Map.of("_totalSupply", BigInteger.ZERO,
                     "_balance", BigInteger.ZERO

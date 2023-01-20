@@ -76,7 +76,7 @@ public interface Loans extends Name, TokenFallback, AddressManager {
     void addAsset(Address _token_address, boolean _active, boolean _collateral);
 
     @External(readonly = true)
-    Map<String, BigInteger> getBalanceAndSupply(String _name, Address _owner);
+    Map<String, BigInteger> getBalanceAndSupply(String _name, String _owner);
 
     @External(readonly = true)
     BigInteger getBnusdValue(String _name);

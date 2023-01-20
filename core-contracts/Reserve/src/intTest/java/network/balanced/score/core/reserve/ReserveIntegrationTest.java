@@ -163,7 +163,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         assertTrue(sICXBalancePreRetire.compareTo(sICXBalancePostRetire) < 0);
         assertTrue(iETHBalancePreRetire.compareTo(iETHBalancePostRetire) < 0);
 
-        Map<String, BigInteger> LiquidatedUserBaS = reader.loans.getBalanceAndSupply("Loans", loanTaker.getAddress());
+        Map<String, BigInteger> LiquidatedUserBaS = reader.loans.getBalanceAndSupply("Loans", loanTaker.getAddress().toString());
         assertEquals(BigInteger.ZERO, loanTaker.getLoansCollateralPosition("iETH"));
         assertEquals(BigInteger.ZERO, loanTaker.getLoansAssetPosition("IETH", "bnUSD"));
         assertEquals(BigInteger.ZERO, loanTaker.getLoansCollateralPosition("sICX"));
@@ -254,7 +254,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         assertTrue(bnUSDBalancePreRetire.compareTo(bnUSDBalancePostRetire) > 0);
         assertTrue(sICXBalancePreRetire.compareTo(sICXBalancePostRetire) < 0);
 
-        Map<String, BigInteger> LiquidatedUserBaS = reader.loans.getBalanceAndSupply("Loans", loanTaker.getAddress());
+        Map<String, BigInteger> LiquidatedUserBaS = reader.loans.getBalanceAndSupply("Loans", loanTaker.getAddress().toString());
         assertEquals(BigInteger.ZERO, loanTaker.getLoansCollateralPosition("sICX"));
         assertEquals(BigInteger.ZERO, loanTaker.getLoansAssetPosition("sICX", "bnUSD"));
         assertEquals(BigInteger.ZERO, LiquidatedUserBaS.get("_balance"));

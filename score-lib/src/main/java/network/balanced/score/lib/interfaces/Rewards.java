@@ -110,10 +110,16 @@ public interface Rewards extends
     BigInteger getAPY(String _name);
 
     @External
-    void updateRewardsData(String _name, BigInteger _totalSupply, Address _user, BigInteger _balance);
+    void updateRewardsData(String _name, BigInteger _totalSupply, String _user, BigInteger _balance);
 
     @External
     void updateBatchRewardsData(String _name, BigInteger _totalSupply, RewardsDataEntry[] _data);
+
+    @External
+    void updateBalanceAndSupply(String _name, BigInteger _totalSupply, String _user, BigInteger _balance);
+
+    @External
+    void updateBalanceAndSupplyBatch(String _name, BigInteger _totalSupply, RewardsDataEntry[] _data);
 
     @External
     void addDataProvider(Address _source);

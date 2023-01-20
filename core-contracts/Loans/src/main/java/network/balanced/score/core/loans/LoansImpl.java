@@ -205,12 +205,12 @@ public class LoansImpl implements Loans {
     }
 
     @External(readonly = true)
-    public Map<String, BigInteger> getBalanceAndSupply(String _name, Address _owner) {
+    public Map<String, BigInteger> getBalanceAndSupply(String _name, String _owner) {
         Context.require(_name.equals("Loans"), TAG + ": Unsupported data source name");
 
         BigInteger totalSupply = DebtDB.getTotalDebt();
 
-        int id = PositionsDB.getAddressIds(_owner);
+        int id = PositionsDB.getAddressIds(Address.fromString(_owner));
         if (id < 1) {
             return Map.of(
                     "_balance", BigInteger.ZERO,
@@ -383,7 +383,7 @@ public class LoansImpl implements Loans {
 
         TokenUtils.burnAssetFrom(from, repaid);
 
-        Context.call(getRewards(), "updateRewardsData", "Loans", oldSupply, from, oldUserDebt);
+        Context.call(getRewards(), "updateRewardsData", "Loans", oldSupply, from.toString(), oldUserDebt);
 
         String logMessage = "Loan of " + repaid + " " + BNUSD_SYMBOL + " repaid to Balanced.";
         LoanRepaid(from, BNUSD_SYMBOL, repaid, logMessage);
@@ -429,7 +429,7 @@ public class LoansImpl implements Loans {
             totalCollateralSold = totalCollateralSold.add(collateralSold);
 
             RewardsDataEntry userEntry = new RewardsDataEntry();
-            userEntry._user = position.getAddress();
+            userEntry._user = position.getAddress().toString();
             userEntry._balance = position.getTotalDebt();
             rewardsBatchList[dataEntryIndex] = userEntry;
             dataEntryIndex = dataEntryIndex + 1;
@@ -522,7 +522,7 @@ public class LoansImpl implements Loans {
             forPool = forPool.subtract(share);
             DebtDB.setLiquidationPool(collateralSymbol, DebtDB.getLiquidationPool(collateralSymbol).add(share));
             position.setDebt(collateralSymbol, null);
-            Context.call(getRewards(), "updateRewardsData", "Loans", oldTotalDebt, _owner, oldUserDebt);
+            Context.call(getRewards(), "updateRewardsData", "Loans", oldTotalDebt, _owner.toString(), oldUserDebt);
         }
 
         position.setCollateral(collateralSymbol, null);
@@ -629,7 +629,7 @@ public class LoansImpl implements Loans {
 
         TokenUtils.burnAssetFrom(Context.getAddress(), bnUSDReceived);
 
-        Context.call(getRewards(), "updateRewardsData", "Loans", oldSupply, from, oldUserDebt);
+        Context.call(getRewards(), "updateRewardsData", "Loans", oldSupply, from.toString(), oldUserDebt);
 
         String logMessage = "Loan of " + bnUSDReceived + " " + BNUSD_SYMBOL + " sold for" + collateralToSell + " " +
                 collateralSymbol + " to Balanced.";
@@ -698,7 +698,7 @@ public class LoansImpl implements Loans {
 
         BigInteger oldUserDebt = position.getTotalDebt();
         position.setDebt(collateralSymbol, holdings.add(newDebt));
-        Context.call(getRewards(), "updateRewardsData", "Loans", oldTotalDebt, from, oldUserDebt);
+        Context.call(getRewards(), "updateRewardsData", "Loans", oldTotalDebt, from.toString(), oldUserDebt);
 
         TokenUtils.mintAssetTo(from, amount);
         String logMessage = "Loan of " + amount + " " + BNUSD_SYMBOL + " from Balanced.";

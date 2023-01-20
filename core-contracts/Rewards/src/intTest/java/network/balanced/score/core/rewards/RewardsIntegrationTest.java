@@ -194,7 +194,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
 
         BigInteger lockDays = BigInteger.valueOf(7).multiply(BigInteger.valueOf(3));
         BigInteger lpBalance = BigInteger.TEN.pow(22);
-        BigInteger initialSupply = reader.dex.getBalanceAndSupply(sourceName, reader.getAddress()).get("_totalSupply");
+        BigInteger initialSupply = reader.dex.getBalanceAndSupply(sourceName, reader.getAddress().toString()).get("_totalSupply");
         icxSicxLp.dex._transfer(balanced.dex._address(), lpBalance, null);
         icxSicxLpBoosted.dex._transfer(balanced.dex._address(), lpBalance, null);
 
