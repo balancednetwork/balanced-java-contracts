@@ -55,26 +55,36 @@ public class XCallProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        Map<ClassName, List<Element>> classes = new HashMap<>();
+
+        boolean claimed = false;
         for (TypeElement annotation : annotations) {
             Set<? extends Element> annotationElements = roundEnv.getElementsAnnotatedWith(annotation);
             if (annotationElements.isEmpty()) {
-                return false ;
+                continue;
             }
 
-            generateProcessorClass(processingEnv.getFiler(), annotationElements);
-            generateMessageClass(processingEnv.getFiler(), annotationElements);
+            claimed = true;
+            for (Element element : annotationElements) {
+                TypeElement typeElement = (TypeElement) element.getEnclosingElement();
+                ClassName elementClassName = ClassName.get(typeElement);
+                List<Element> methods = classes.getOrDefault(elementClassName, new ArrayList<Element>());
 
-            return true;
+                methods.add(element);
+                classes.put(elementClassName, methods);
+            }
         }
 
-        return false;
+        classes.forEach((className, methodElements) -> {
+            generateProcessorClass(processingEnv.getFiler(), className, methodElements);
+            generateMessageClass(processingEnv.getFiler(), className, methodElements);
+        });
+
+        return claimed;
     }
 
-    private void generateProcessorClass(Filer filer, Set<? extends Element> elements) {
+    private void generateProcessorClass(Filer filer, ClassName elementClassName, List<? extends Element> elements) {
         Element element =  elements.iterator().next();
-        TypeElement typeElement = (TypeElement) element.getEnclosingElement();
-        ClassName elementClassName = ClassName.get(typeElement);
-
         XCall ann = element.getAnnotation(XCall.class);
         ClassName className = ClassName.get(elementClassName.packageName(), elementClassName.simpleName() + ann.suffix());
 
@@ -87,11 +97,7 @@ public class XCallProcessor extends AbstractProcessor {
         }
     }
 
-    private void generateMessageClass(Filer filer, Set<? extends Element> elements) {
-        Element element =  elements.iterator().next();
-        TypeElement typeElement = (TypeElement) element.getEnclosingElement();
-        ClassName elementClassName = ClassName.get(typeElement);
-
+    private void generateMessageClass(Filer filer, ClassName elementClassName, List<? extends Element> elements) {
         String messagesPackage  = this.getClass().getPackageName().replaceFirst("annotation", "messages");
         ClassName className = ClassName.get(messagesPackage, elementClassName.simpleName() + "Messages");
 
@@ -104,7 +110,7 @@ public class XCallProcessor extends AbstractProcessor {
         }
     }
 
-    private TypeSpec processorTypeSpec(ClassName elementClassName, ClassName className, Set<? extends Element> elements) {
+    private TypeSpec processorTypeSpec(ClassName elementClassName, ClassName className, List<? extends Element> elements) {
         TypeSpec.Builder builder = TypeSpec
                 .classBuilder(className)
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL);
@@ -151,7 +157,7 @@ public class XCallProcessor extends AbstractProcessor {
         return builder.build();
     }
 
-    private TypeSpec messagesTypeSpec(ClassName className, Set<? extends Element> elements) {
+    private TypeSpec messagesTypeSpec(ClassName className,  List<? extends Element> elements) {
         TypeSpec.Builder builder = TypeSpec
                 .classBuilder(className)
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL);
@@ -162,7 +168,8 @@ public class XCallProcessor extends AbstractProcessor {
                 .addModifiers(Modifier.PUBLIC)
                 .addModifiers(Modifier.STATIC)
                 .returns(XCallMessage.class)
-                .addStatement("$T msg = new $T()", XCallMessage.class, XCallMessage.class);
+                .addStatement("$T msg = new $T()", XCallMessage.class, XCallMessage.class)
+                .addStatement("msg.data.add($S)", methodName.toString());
 
             ExecutableElement executableElement = (ExecutableElement) element;
             List<? extends VariableElement> parameters = executableElement.getParameters();
