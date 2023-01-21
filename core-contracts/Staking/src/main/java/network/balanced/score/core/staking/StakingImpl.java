@@ -294,6 +294,7 @@ public class StakingImpl implements Staking {
 
     @External
     public void claimUnstakedICX(@Optional Address _to) {
+        Context.require(stakingOn.get());
         if (_to == null) {
             _to = Context.getCaller();
         }
