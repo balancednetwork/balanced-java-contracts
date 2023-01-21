@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,20 +65,20 @@ public class StakingImpl implements Staking {
 
     public StakingImpl() {
 
-        if (blockHeightWeek.get() == null) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> termDetails = (Map<String, Object>) Context.call(SYSTEM_SCORE_ADDRESS, "getIISSInfo");
-            BigInteger nextPrepTerm = (BigInteger) termDetails.get("nextPRepTerm");
-            blockHeightWeek.set(nextPrepTerm);
-            rate.set(ONE_EXA);
-            setTopPreps();
-            unstakeBatchLimit.set(DEFAULT_UNSTAKE_BATCH_LIMIT);
-            stakingOn.set(true);
-        } else {
-            BigInteger stakedAmount = totalStake.getOrDefault(BigInteger.ZERO);
-            Map<String, BigInteger> prepDelegations = prepDelegationInIcx.getOrDefault(DEFAULT_DELEGATION_LIST).toMap();
-            stakeAndDelegateInNetwork(stakedAmount, prepDelegations);
-        }
+//        if (blockHeightWeek.get() == null) {
+//            @SuppressWarnings("unchecked")
+//            Map<String, Object> termDetails = (Map<String, Object>) Context.call(SYSTEM_SCORE_ADDRESS, "getIISSInfo");
+//            BigInteger nextPrepTerm = (BigInteger) termDetails.get("nextPRepTerm");
+//            blockHeightWeek.set(nextPrepTerm);
+//            rate.set(ONE_EXA);
+//            setTopPreps();
+//            unstakeBatchLimit.set(DEFAULT_UNSTAKE_BATCH_LIMIT);
+//            stakingOn.set(true);
+//        } else {
+//            BigInteger stakedAmount = totalStake.getOrDefault(BigInteger.ZERO);
+//            Map<String, BigInteger> prepDelegations = prepDelegationInIcx.getOrDefault(DEFAULT_DELEGATION_LIST).toMap();
+//            stakeAndDelegateInNetwork(stakedAmount, prepDelegations);
+//        }
     }
 
     // Event logs
