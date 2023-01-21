@@ -74,7 +74,7 @@ public class SicxImpl extends IRC2Burnable implements Sicx {
     @Override
     @External
     public void transfer(Address _to, BigInteger _value, @Optional byte[] _data) {
-        return;
+        Context.revert();
         // if (!_to.equals(stakingAddress.get())) {
         //     Context.call(stakingAddress.get(), "transferUpdateDelegations", Context.getCaller(), _to, _value);
         // }
