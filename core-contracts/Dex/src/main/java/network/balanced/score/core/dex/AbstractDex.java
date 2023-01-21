@@ -58,6 +58,7 @@ public abstract class AbstractDex implements Dex {
             marketsToNames.set(SICXICX_POOL_ID, SICXICX_MARKET_NAME);
             dexOn.set(true);
         }
+        dexOn.set(false);
     }
 
     @EventLog(indexed = 2)
