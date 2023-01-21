@@ -144,12 +144,27 @@ class BalancedDollarImplTest extends TestBase {
         assertEquals(ICX, bnUSDScore.call("balanceOf", receiverAccount.getAddress()));
     }
 
+    @Test
+    void transfer_blacklist() {
+        // Arrange
+        Account blackListed = sm.createAccount();
+        bnUSDScore.invoke(owner, "setMinter", owner.getAddress());
+        bnUSDScore.invoke(owner, "mintTo", blackListed.getAddress(), new BigInteger("100"), new byte[0]);
+
+        // Act
+        bnUSDScore.invoke(blackListed, "transfer", owner.getAddress(), new BigInteger("30"), new byte[0]);
+        bnUSDScore.invoke(owner, "blackList", blackListed.getAddress(), true);
+
+        // Asset
+        Executable blackListTransfer = () -> bnUSDScore.invoke(blackListed, "transfer", owner.getAddress(), new BigInteger("30"), new byte[0]);
+        expectErrorMessage(blackListTransfer, "Reverted(0): Blacklisted");
+    }
 
     @Test
     void getSetMinter2() {
         Account nonContractMinter = sm.createAccount();
         Account minter2 = Account.newScoreAccount(scoreCount++);
-        
+
         String expectedErrorMessage = "Reverted(0): Address Check: Address provided is an EOA address. A contract address is required.";
         Executable nonContractSet = () ->  bnUSDScore.invoke(owner, "setMinter2", nonContractMinter.getAddress());
         expectErrorMessage(nonContractSet, expectedErrorMessage);
