@@ -216,6 +216,15 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
         return priceOfBnusdInIcx;
     }
 
+    @Override
+    @External
+    public void transfer(Address _to, BigInteger _value, @Optional byte[] _data) {
+        return;
+        // if (!_to.equals(stakingAddress.get())) {
+        //     Context.call(stakingAddress.get(), "transferUpdateDelegations", Context.getCaller(), _to, _value);
+        // }
+        // transfer(Context.getCaller(), _to, _value, _data);
+    }
     @EventLog(indexed = 3)
     public void OraclePrice(String market, String oracle_name, Address oracle_address, BigInteger price) {
     }
