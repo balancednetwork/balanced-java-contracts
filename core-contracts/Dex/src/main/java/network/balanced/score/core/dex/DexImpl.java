@@ -34,10 +34,10 @@ import java.math.BigInteger;
 import java.util.List;
 
 import static network.balanced.score.core.dex.DexDBVariables.*;
-import static network.balanced.score.core.dex.utils.Check.isDexOn;
 import static network.balanced.score.core.dex.utils.Const.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Math.convertToNumber;
+import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static score.Context.require;
 
 public class DexImpl extends AbstractDex {
@@ -48,7 +48,7 @@ public class DexImpl extends AbstractDex {
 
     @Payable
     public void fallback() {
-        isDexOn();
+        checkStatus();
 
         BigInteger orderValue = Context.getValue();
         require(orderValue.compareTo(BigInteger.TEN.multiply(EXA)) >= 0,
@@ -83,7 +83,7 @@ public class DexImpl extends AbstractDex {
 
     @External
     public void cancelSicxicxOrder() {
-        isDexOn();
+        checkStatus();
 
         Address user = Context.getCaller();
         BigInteger orderId = icxQueueOrderId.getOrDefault(user, BigInteger.ZERO);
@@ -110,14 +110,13 @@ public class DexImpl extends AbstractDex {
         rewardsEntry._user = user;
         rewardsEntry._balance = amount;
         rewardsList.add(rewardsEntry);
-        Context.call(rewards.get(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal,
+        Context.call(getRewards(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal,
                 rewardsList);
     }
 
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
-
-        isDexOn();
+        checkStatus();
 
         // Parse the transaction data submitted by the user
         String unpackedData = new String(_data);
@@ -147,7 +146,7 @@ public class DexImpl extends AbstractDex {
 
             }
             case "_swap_icx": {
-                require(fromToken.equals(sicx.get()),
+                require(fromToken.equals(getSicx()),
                         TAG + ": InvalidAsset: _swap_icx can only be called with sICX");
                 swapIcx(_from, _value);
                 break;
@@ -202,7 +201,7 @@ public class DexImpl extends AbstractDex {
 
     @External
     public void transfer(Address _to, BigInteger _value, BigInteger _id, @Optional byte[] _data) {
-        isDexOn();
+        checkStatus();
         if (_data == null) {
             _data = new byte[0];
         }
@@ -211,8 +210,8 @@ public class DexImpl extends AbstractDex {
 
     @External
     public void withdraw(Address _token, BigInteger _value) {
+        checkStatus();
         require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Must specify a positive amount");
-        isDexOn();
         Address sender = Context.getCaller();
         DictDB<Address, BigInteger> depositDetails = deposit.at(_token);
         BigInteger deposit_amount = depositDetails.getOrDefault(sender, BigInteger.ZERO);
@@ -232,7 +231,7 @@ public class DexImpl extends AbstractDex {
 
     @External
     public void remove(BigInteger _id, BigInteger _value, @Optional boolean _withdraw) {
-        isDexOn();
+        checkStatus();
         Address user = Context.getCaller();
         Address baseToken = poolBase.get(_id.intValue());
         require(baseToken != null, TAG + ": invalid pool id");
@@ -294,7 +293,7 @@ public class DexImpl extends AbstractDex {
     @External
     public void add(Address _baseToken, Address _quoteToken, BigInteger _baseValue, BigInteger _quoteValue,
                     @Optional boolean _withdraw_unused) {
-        isDexOn();
+        checkStatus();
 
         Address user = Context.getCaller();
 
@@ -425,7 +424,7 @@ public class DexImpl extends AbstractDex {
 
     @External
     public void withdrawSicxEarnings(@Optional BigInteger _value) {
-        isDexOn();
+        checkStatus();
         if (_value == null) {
             _value = BigInteger.ZERO;
         }
@@ -441,11 +440,12 @@ public class DexImpl extends AbstractDex {
 
         sicxEarnings.set(sender, sicxEarning.subtract(_value));
         ClaimSicxEarnings(sender, _value);
-        Context.call(sicx.get(), "transfer", sender, _value);
+        Context.call(getSicx(), "transfer", sender, _value);
     }
 
     @External
     public void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data) {
+        checkStatus();
         Context.revert(TAG + ": IRC31 Tokens not accepted");
     }
 

@@ -20,6 +20,7 @@ import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.BnusdAddress;
 import network.balanced.score.lib.interfaces.base.Name;
+import network.balanced.score.lib.interfaces.base.Emergency;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
 import score.Address;
 import score.annotation.External;
@@ -29,7 +30,7 @@ import java.util.List;
 
 @ScoreClient
 @ScoreInterface
-public interface Stability extends Name, TokenFallback, BnusdAddress {
+public interface Stability extends Name, TokenFallback, BnusdAddress, Emergency {
 
     @External
     void setFeeHandler(Address _address);

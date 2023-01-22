@@ -18,6 +18,7 @@ package network.balanced.score.core.daofund;
 
 import network.balanced.score.lib.interfaces.DAOfund;
 import network.balanced.score.lib.structs.PrepDelegations;
+import network.balanced.score.lib.utils.BalancedEmergencyHandling;
 import network.balanced.score.lib.utils.EnumerableSetDB;
 import network.balanced.score.lib.utils.Names;
 import score.*;
@@ -34,7 +35,7 @@ import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Check.isContract;
 import static network.balanced.score.lib.utils.Check.onlyGovernance;
 
-public class DAOfundImpl implements DAOfund {
+public class DAOfundImpl extends BalancedEmergencyHandling implements DAOfund {
 
     @EventLog(indexed = 2)
     public void TokenTransfer(Address recipient, BigInteger amount, String note) {
@@ -131,6 +132,7 @@ public class DAOfundImpl implements DAOfund {
      */
     @External
     public void claim() {
+        checkStatus();
         Address sender = Context.getCaller();
         DictDB<Address, BigInteger> disbursement = awards.at(sender);
 
@@ -148,11 +150,13 @@ public class DAOfundImpl implements DAOfund {
 
     @External
     public void claimRewards() {
+        checkStatus();
         POLManager.claimRewards();
     }
 
     @External
     public void claimNetworkFees() {
+        checkStatus();
         POLManager.claimNetworkFees();
     }
 
@@ -171,6 +175,7 @@ public class DAOfundImpl implements DAOfund {
 
     @External
     public void stakeLPTokens(BigInteger pid) {
+        checkStatus();
         POLManager.stakeLPTokens(pid);
     }
 
@@ -197,6 +202,7 @@ public class DAOfundImpl implements DAOfund {
 
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
+        checkStatus();
         if (POLManager.isProcessingFees()) {
             POLManager.handleFee(_value);
         } else if (POLManager.isProcessingRewards()) {
@@ -211,6 +217,7 @@ public class DAOfundImpl implements DAOfund {
 
     @External
     public void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data) {
+        checkStatus();
     }
 
 

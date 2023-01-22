@@ -47,7 +47,6 @@ public class LoansVariables {
     private static final String EXPECTED_TOKEN = "expectedToken";
     private static final String AMOUNT_RECEIVED = "amountReceived";
 
-    public static final VarDB<Boolean> loansOn = Context.newVarDB(LOANS_ON, Boolean.class);
     static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
 
     static final VarDB<BigInteger> timeOffset = Context.newVarDB(TIME_OFFSET, BigInteger.class);

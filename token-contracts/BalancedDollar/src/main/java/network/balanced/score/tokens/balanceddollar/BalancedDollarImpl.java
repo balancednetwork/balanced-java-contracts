@@ -86,6 +86,12 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
         return governance.get();
     }
 
+    @Override
+    @External(readonly = true)
+    public Address getEmergencyManager() {
+        return governance.get();
+    }
+
     @External
     public void setAdmin(Address _address) {
         only(governance);
@@ -185,6 +191,7 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
 
     @External
     public void burnFrom(Address _account, BigInteger _amount) {
+        checkStatus();
         onlyEither(minter, minter2);
         super.burn(_account, _amount);
     }
@@ -196,6 +203,7 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
 
     @External
     public void mintTo(Address _account, BigInteger _amount, @Optional byte[] _data) {
+        checkStatus();
         onlyEither(minter, minter2);
         mintWithTokenFallback(_account, _amount, _data);
     }
@@ -214,6 +222,13 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
         priceUpdateTime.set(BigInteger.valueOf(Context.getBlockTimestamp()));
         OraclePrice(USD_BASE + ICX_QUOTE, oracleName.get(), oracleAddress, priceOfBnusdInIcx);
         return priceOfBnusdInIcx;
+    }
+
+    @Override
+    @External
+    public void transfer(Address _to, BigInteger _value, @Optional byte[] _data) {
+        checkStatus();
+        transfer(Context.getCaller(), _to, _value, _data);
     }
 
     @EventLog(indexed = 3)

@@ -108,6 +108,12 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
         return this.governance.get();
     }
 
+    @Override
+    @External(readonly = true)
+    public Address getEmergencyManager() {
+        return governance.get();
+    }
+
     @External
     public void setAdmin(Address _address) {
         only(governance);
@@ -401,6 +407,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
 
     @External
     public void stake(BigInteger _value) {
+        checkStatus();
         this.stakingEnabledOnly();
         Address from = Context.getCaller();
 
@@ -448,6 +455,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
     @Override
     @External
     public void transfer(Address _to, BigInteger _value, @Optional byte[] _data) {
+        checkStatus();
         Address from = Context.getCaller();
         this.checkFirstTime(from);
         this.checkFirstTime(_to);
@@ -478,6 +486,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
     @Override
     @External
     public void mintTo(Address _account, BigInteger _amount, @Optional byte[] _data) {
+        checkStatus();
         this.checkFirstTime(_account);
         this.makeAvailable(_account);
         DictDB<Integer, BigInteger> stakingDetailOfReceiver = this.stakedBalances.at(_account);

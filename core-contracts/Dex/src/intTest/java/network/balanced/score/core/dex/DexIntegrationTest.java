@@ -150,21 +150,6 @@ class DexIntegrationTest {
 
 
     @Test
-    @Order(1)
-    void testGovernanceAddress() {
-        assertEquals("Balanced DEX", dexUserScoreClient.name());
-        score.Address governanceAddress = dexUserScoreClient.getGovernance();
-        assertEquals(governanceAddress, governanceScoreClient._address());
-    }
-
-    @Test
-    @Order(2)
-    void testAdminAddress() {
-        score.Address adminAddress = dexUserScoreClient.getGovernance();
-        assertEquals(adminAddress, governanceScoreClient._address());
-    }
-
-    @Test
     @Order(3)
     void testICXTransferSwapEarningAndCancelOrder() {
         assertEquals(SICXICX_MARKET_NAME, dexUserScoreClient.getPoolName(BigInteger.ONE));

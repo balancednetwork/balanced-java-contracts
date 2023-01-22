@@ -65,6 +65,12 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
         this.penaltyAddress.set(penaltyAddress);
     }
 
+    @Override
+    @External(readonly = true)
+    public Address getEmergencyManager() {
+        return Context.getOwner();
+    }
+
     @External(readonly = true)
     public Address getPenaltyAddress() {
         return this.penaltyAddress.get();
@@ -123,11 +129,13 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
 
     @External
     public void checkpoint() {
+        checkStatus();
         this.checkpoint(EOA_ZERO, new LockedBalance(), new LockedBalance());
     }
 
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
+        checkStatus();
         Address token = Context.getCaller();
         Context.require(token.equals(balnAddress.get()), "Token Fallback: Only Baln deposits are allowed");
         Context.require(_value.signum() > 0, "Token Fallback: Token value should be a positive number");
@@ -157,6 +165,7 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
 
     @External
     public void increaseUnlockTime(BigInteger unlockTime) {
+        checkStatus();
         globalReentryLock();
         Address sender = Context.getCaller();
         BigInteger blockTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());
@@ -176,6 +185,7 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
 
     @External
     public void kick(Address user) {
+        checkStatus();
         BigInteger bBalnBalance = balanceOf(user, BigInteger.ZERO);
         if (bBalnBalance.equals(BigInteger.ZERO)) {
             onKick(user);
@@ -186,6 +196,7 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
 
     @External
     public void withdraw() {
+        checkStatus();
         globalReentryLock();
         Address sender = Context.getCaller();
         BigInteger blockTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());
@@ -214,6 +225,7 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
 
     @External
     public void withdrawEarly() {
+        checkStatus();
         globalReentryLock();
         Address sender = Context.getCaller();
         BigInteger blockTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());

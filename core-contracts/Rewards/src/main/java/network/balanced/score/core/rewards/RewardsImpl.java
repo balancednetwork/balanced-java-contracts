@@ -24,6 +24,7 @@ import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.Point;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import network.balanced.score.lib.structs.VotedSlope;
+import network.balanced.score.lib.utils.BalancedEmergencyHandling;
 import network.balanced.score.lib.utils.IterableDictDB;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.SetDB;
@@ -51,7 +52,7 @@ import static network.balanced.score.lib.utils.Math.pow;
  * There can be unclaimed rewards if there are no participants in the data source. This can happen in testnet and
  * when we add new source where user haven't participated.
  */
-public class RewardsImpl implements Rewards {
+public class RewardsImpl extends BalancedEmergencyHandling implements Rewards {
     public static final String TAG = "BalancedRewards";
 
     private static final String GOVERNANCE = "governance";
@@ -326,6 +327,7 @@ public class RewardsImpl implements Rewards {
      */
     @External
     public boolean distribute() {
+        checkStatus();
         BigInteger platformDay = RewardsImpl.platformDay.get();
         BigInteger day = getDay();
 
@@ -370,6 +372,7 @@ public class RewardsImpl implements Rewards {
 
     @External
     public void boost(String[] sources) {
+        checkStatus();
         Address user = Context.getCaller();
         BigInteger boostedBalance = fetchBoostedBalance(user);
         BigInteger boostedSupply = fetchBoostedSupply();
@@ -378,6 +381,7 @@ public class RewardsImpl implements Rewards {
 
     @External
     public void claimRewards(@Optional String[] sources) {
+        checkStatus();
         if (sources == null) {
             sources = getAllSources();
         }
@@ -423,6 +427,7 @@ public class RewardsImpl implements Rewards {
 
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
+        checkStatus();
         Context.require(Context.getCaller().equals(balnAddress.get()),
                 TAG + ": The Rewards SCORE can only accept BALN tokens");
     }
@@ -453,6 +458,7 @@ public class RewardsImpl implements Rewards {
     // old versions only used by balanced contracts
     @External
     public void updateRewardsData(String _name, BigInteger _totalSupply, Address _user, BigInteger _balance) {
+        checkStatus();
         DataSourceImpl dataSource = DataSourceDB.get(_name);
         Context.require(dataSource.getContractAddress().equals(Context.getCaller()), TAG + ": Only data provider are " +
                 "allowed to update rewards data");
@@ -475,6 +481,7 @@ public class RewardsImpl implements Rewards {
     // old versions only used by balanced contracts
     @External
     public void updateBatchRewardsData(String _name, BigInteger _totalSupply, RewardsDataEntry[] _data) {
+        checkStatus();
         DataSourceImpl dataSource = DataSourceDB.get(_name);
         Context.require(dataSource.getContractAddress().equals(Context.getCaller()), TAG + ": Only data provider are " +
                 "allowed to update rewards data");
@@ -501,6 +508,7 @@ public class RewardsImpl implements Rewards {
 
     @External
     public void updateBalanceAndSupply(String _name, BigInteger _totalSupply, Address _user, BigInteger _balance) {
+        checkStatus();
         DataSourceImpl dataSource = DataSourceDB.get(_name);
         Context.require(dataSource.getContractAddress().equals(Context.getCaller()), TAG + ": Only data provider are " +
                 "allowed to update rewards data");
@@ -521,6 +529,7 @@ public class RewardsImpl implements Rewards {
 
     @External
     public void updateBalanceAndSupplyBatch(String _name, BigInteger _totalSupply, RewardsDataEntry[] _data) {
+        checkStatus();
         DataSourceImpl dataSource = DataSourceDB.get(_name);
         Context.require(dataSource.getContractAddress().equals(Context.getCaller()), TAG + ": Only data provider are " +
                 "allowed to update rewards data");
@@ -547,6 +556,7 @@ public class RewardsImpl implements Rewards {
 
     @External
     public void onKick(Address user) {
+        checkStatus();
         only(boostedBaln);
         BigInteger boostedSupply = fetchBoostedSupply();
         updateAllUserRewards(user, getAllSources(), BigInteger.ZERO, boostedSupply);
@@ -554,6 +564,7 @@ public class RewardsImpl implements Rewards {
 
     @External
     public void kick(Address user, String[] sources) {
+        checkStatus();
         BigInteger boostedBalance = fetchBoostedBalance(user);
         BigInteger boostedSupply = fetchBoostedSupply();
         updateAllUserRewards(user, sources, boostedBalance, boostedSupply);
@@ -561,6 +572,7 @@ public class RewardsImpl implements Rewards {
 
     @External
     public void onBalanceUpdate(Address user, BigInteger balance) {
+        checkStatus();
         only(boostedBaln);
         BigInteger boostedSupply = fetchBoostedSupply();
         updateAllUserRewards(user, getAllSources(), balance, boostedSupply);
@@ -699,16 +711,19 @@ public class RewardsImpl implements Rewards {
 
     @External
     public void checkpoint() {
+        checkStatus();
         SourceWeightController.checkpoint();
     }
 
     @External
     public void checkpointSource(String name) {
+        checkStatus();
         SourceWeightController.checkpointSource(name);
     }
 
     @External
     public BigInteger updateRelativeSourceWeight(String name, BigInteger time) {
+        checkStatus();
         return SourceWeightController.updateRelativeWeight(name, time);
     }
 
@@ -719,6 +734,7 @@ public class RewardsImpl implements Rewards {
 
     @External
     public void voteForSource(String name, BigInteger userWeight) {
+        checkStatus();
         SourceWeightController.voteForSourceWeights(name, userWeight);
     }
 
@@ -891,6 +907,12 @@ public class RewardsImpl implements Rewards {
         onlyOwner();
         isContract(_address);
         governance.set(_address);
+    }
+
+    @Override
+    @External(readonly = true)
+    public Address getEmergencyManager() {
+        return governance.get();
     }
 
     @External(readonly = true)

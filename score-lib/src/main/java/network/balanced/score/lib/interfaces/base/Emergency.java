@@ -14,16 +14,27 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.loans.utils;
+package network.balanced.score.lib.interfaces.base;
 
-import score.Context;
+import java.util.Map;
 
-import static network.balanced.score.core.loans.LoansImpl.TAG;
-import static network.balanced.score.core.loans.LoansVariables.loansOn;
+import score.Address;
+import score.annotation.External;
 
+public interface Emergency {
 
-public class Checks {
-    public static void loansOn() {
-        Context.require(loansOn.get(), TAG + ": Balanced Loans SCORE is not active.");
-    }
+    @External
+    public void enable();
+
+    @External
+    public void disable();
+
+    @External
+    public void updateBlacklist(Map<String, Boolean> blacklist);
+
+    @External(readonly = true)
+    public boolean isEnabled();
+
+    @External(readonly = true)
+    public Address getEmergencyManager();
 }

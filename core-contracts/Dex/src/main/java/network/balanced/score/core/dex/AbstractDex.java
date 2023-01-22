@@ -20,6 +20,8 @@ import network.balanced.score.core.dex.db.NodeDB;
 import network.balanced.score.lib.interfaces.Dex;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.structs.RewardsDataEntry;
+import network.balanced.score.lib.utils.BalancedEmergencyHandling;
+
 import score.Address;
 import score.BranchDB;
 import score.Context;
@@ -39,10 +41,11 @@ import static network.balanced.score.core.dex.utils.Const.*;
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.*;
 import static network.balanced.score.lib.utils.Math.pow;
+import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 
-public abstract class AbstractDex implements Dex {
+public abstract class AbstractDex extends BalancedEmergencyHandling implements Dex {
 
-    AbstractDex(Address _governance) {
+    public AbstractDex(Address _governance) {
         if (governance.get() == null) {
             governance.set(_governance);
 
@@ -56,8 +59,8 @@ public abstract class AbstractDex implements Dex {
             currentDay.set(BigInteger.valueOf(1L));
             namedMarkets.set(SICXICX_MARKET_NAME, SICXICX_POOL_ID);
             marketsToNames.set(SICXICX_POOL_ID, SICXICX_MARKET_NAME);
-            dexOn.set(true);
         }
+        setGovernance(governance.get());
     }
 
     @EventLog(indexed = 2)
@@ -101,148 +104,38 @@ public abstract class AbstractDex implements Dex {
         return TAG;
     }
 
-    @External(readonly = true)
-    public Address getAdmin() {
-        return admin.get();
-    }
 
     @External
-    public void setAdmin(Address _admin) {
-        only(governance);
-        admin.set(_admin);
+    public void updateAddress(String name) {
+        resetAddress(name);
     }
 
     @External(readonly = true)
-    public Address getSicx() {
-        return sicx.get();
-    }
-
-    @External
-    public void setSicx(Address _address) {
-        only(admin);
-        isContract(_address);
-        sicx.set(_address);
-        quoteCoins.add(_address);
-    }
-
-    @External
-    public void setDividends(Address _address) {
-        only(admin);
-        isContract(_address);
-        dividends.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getDividends() {
-        return dividends.get();
-    }
-
-    @External
-    public void setStaking(Address _address) {
-        only(admin);
-        isContract(_address);
-        staking.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getStaking() {
-        return staking.get();
-    }
-
-    @External
-    public void setGovernance(Address _address) {
-        onlyOwner();
-        isContract(_address);
-        governance.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getGovernance() {
-        return governance.get();
-    }
-
-    @External
-    public void setRewards(Address _address) {
-        only(admin);
-        isContract(_address);
-        rewards.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getRewards() {
-        return rewards.get();
-    }
-
-    @External
-    public void setBnusd(Address _address) {
-        only(admin);
-        isContract(_address);
-        bnUSD.set(_address);
-        quoteCoins.add(_address);
-    }
-
-    @External(readonly = true)
-    public Address getBnusd() {
-        return bnUSD.get();
-    }
-
-    @External
-    public void setBaln(Address _address) {
-        only(admin);
-        isContract(_address);
-        baln.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getBaln() {
-        return baln.get();
-    }
-
-    @External
-    public void setFeehandler(Address _address) {
-        only(admin);
-        isContract(_address);
-        feeHandler.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getFeehandler() {
-        return feeHandler.get();
-    }
-
-    @External
-    public void setStakedLp(Address _address) {
-        only(admin);
-        isContract(_address);
-        stakedLp.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getStakedLp() {
-        return stakedLp.get();
+    public Address getAddress(String name) {
+        return getAddressByName(name);
     }
 
     @External
     public void setPoolLpFee(BigInteger _value) {
-        only(admin);
+        onlyGovernance();
         poolLpFee.set(_value);
     }
 
     @External
     public void setPoolBalnFee(BigInteger _value) {
-        only(admin);
+        onlyGovernance();
         poolBalnFee.set(_value);
     }
 
     @External
     public void setIcxConversionFee(BigInteger _value) {
-        only(admin);
+        onlyGovernance();
         icxConversionFee.set(_value);
     }
 
     @External
     public void setIcxBalnFee(BigInteger _value) {
-        only(admin);
+        onlyGovernance();
         icxBalnFee.set(_value);
     }
 
@@ -264,7 +157,7 @@ public abstract class AbstractDex implements Dex {
 
     @External
     public void setMarketName(BigInteger _id, String _name) {
-        only(admin);
+        onlyGovernance();
         namedMarkets.set(_name, _id.intValue());
         marketsToNames.set(_id.intValue(), _name);
     }
@@ -275,19 +168,8 @@ public abstract class AbstractDex implements Dex {
     }
 
     @External
-    public void turnDexOn() {
-        only(admin);
-        dexOn.set(true);
-    }
-
-    @External(readonly = true)
-    public boolean getDexOn() {
-        return dexOn.get();
-    }
-
-    @External
     public void addQuoteCoin(Address _address) {
-        only(admin);
+        onlyGovernance();
         quoteCoins.add(_address);
     }
 
@@ -305,7 +187,7 @@ public abstract class AbstractDex implements Dex {
 
     @External
     public void setTimeOffset(BigInteger _delta_time) {
-        only(admin);
+        onlyGovernance();
         timeOffset.set(_delta_time);
     }
 
@@ -401,12 +283,12 @@ public abstract class AbstractDex implements Dex {
 
     @External(readonly = true)
     public BigInteger getBalnPrice() {
-        return getBasePriceInQuote(BigInteger.valueOf(poolId.at(baln.get()).get(bnUSD.get())));
+        return getBasePriceInQuote(BigInteger.valueOf(poolId.at(getBaln()).get(getBnusd())));
     }
 
     @External(readonly = true)
     public BigInteger getSicxBnusdPrice() {
-        return getBasePriceInQuote(BigInteger.valueOf(poolId.at(sicx.get()).get(bnUSD.get())));
+        return getBasePriceInQuote(BigInteger.valueOf(poolId.at(getSicx()).get(getBnusd())));
     }
 
     @External(readonly = true)
@@ -424,8 +306,8 @@ public abstract class AbstractDex implements Dex {
         }
 
         Address poolQuoteToken = poolQuote.get(_id);
-        Address sicxAddress = sicx.get();
-        Address bnusdAddress = bnUSD.get();
+        Address sicxAddress = getSicx();
+        Address bnusdAddress = getBnusd();
 
         if (poolQuoteToken.equals(sicxAddress)) {
             BigInteger sicxTotal = poolTotal.at(_id).get(sicxAddress).multiply(BigInteger.TWO);
@@ -461,7 +343,7 @@ public abstract class AbstractDex implements Dex {
         isValidPoolId(_id);
         Map<String, Object> poolStats = new HashMap<>();
         if (_id.intValue() == SICXICX_POOL_ID) {
-            poolStats.put("base_token", sicx.get());
+            poolStats.put("base_token", getSicx());
             poolStats.put("quote_token", null);
             poolStats.put("base", BigInteger.ZERO);
             poolStats.put("quote", icxQueueTotal.getOrDefault(BigInteger.ZERO));
@@ -518,7 +400,7 @@ public abstract class AbstractDex implements Dex {
         BigInteger poolId = lookupPid(_name);
         Context.require(poolId != null, TAG + ": Unsupported data source name");
 
-        Address stakedLpAddress = stakedLp.get();
+        Address stakedLpAddress = getStakedLp();
         BigInteger totalSupply = (BigInteger) Context.call(stakedLpAddress, "totalStaked", poolId);
         BigInteger balance = (BigInteger) Context.call(stakedLpAddress, "balanceOf", _owner, poolId);
         Map<String, BigInteger> rewardsData = new HashMap<>();
@@ -534,13 +416,13 @@ public abstract class AbstractDex implements Dex {
 
     @External
     public void permit(BigInteger _id, boolean _permission) {
-        only(admin);
+        onlyGovernance();
         active.set(_id.intValue(), _permission);
     }
 
     @External
     public void addLpAddresses(BigInteger _poolId, Address[] _addresses) {
-        only(admin);
+        onlyGovernance();
         for (Address address : _addresses) {
             if (balanceOf(address, _poolId).compareTo(BigInteger.ZERO) > 0) {
                 activeAddresses.get(_poolId.intValue()).add(address);
@@ -568,12 +450,12 @@ public abstract class AbstractDex implements Dex {
 
     @External
     public void delegate(PrepDelegations[] prepDelegations) {
-        only(governance);
-        Context.call(staking.get(), "delegate", (Object) prepDelegations);
+        onlyGovernance();
+        Context.call(getStaking(), "delegate", (Object) prepDelegations);
     }
 
     protected BigInteger getSicxRate() {
-        return (BigInteger) Context.call(staking.get(), "getTodayRate");
+        return (BigInteger) Context.call(getStaking(), "getTodayRate");
     }
 
     boolean isLockingPool(Integer id) {
@@ -583,9 +465,9 @@ public abstract class AbstractDex implements Dex {
     BigInteger getRewardableAmount(Address tokenAddress) {
         if (tokenAddress == null) {
             return BigInteger.TEN.multiply(EXA);
-        } else if (sicx.get().equals(tokenAddress)) {
+        } else if (getSicx().equals(tokenAddress)) {
             return (BigInteger.TEN.multiply(EXA.multiply(EXA))).divide(getSicxRate());
-        } else if (bnUSD.get().equals(tokenAddress)) {
+        } else if (getBnusd().equals(tokenAddress)) {
             return BigInteger.TEN.multiply(EXA);
         }
         return BigInteger.ZERO;
@@ -661,7 +543,7 @@ public abstract class AbstractDex implements Dex {
         Context.call(toToken, "transfer", receiver, sendAmount);
 
         // Send the platform fees to the fee handler SCORE
-        Context.call(poolQuoteToken, "transfer", feeHandler.get(), balnFees);
+        Context.call(poolQuoteToken, "transfer", getFeehandler(), balnFees);
 
         // Broadcast pool ending price
         BigInteger effectiveFillPrice = (value.multiply(EXA)).divide(sendAmount);
@@ -747,14 +629,14 @@ public abstract class AbstractDex implements Dex {
         BigInteger newIcxTotal = oldIcxTotal.subtract(orderIcxValue);
         icxQueueTotal.set(newIcxTotal);
         BigInteger effectiveFillPrice = (orderIcxValue.multiply(EXA)).divide(value);
-        Address sicxAddress = sicx.get();
+        Address sicxAddress = getSicx();
         Swap(BigInteger.valueOf(SICXICX_POOL_ID), sicxAddress, sicxAddress, EOA_ZERO, sender, sender, value,
                 orderIcxValue, BigInteger.valueOf(Context.getBlockTimestamp()), conversionFees, balnFees, newIcxTotal
                 , BigInteger.ZERO, sicxIcxPrice, effectiveFillPrice);
 
-        Context.call(rewards.get(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal,
+        Context.call(getRewards(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal,
                 oldData);
-        Context.call(sicxAddress, "transfer", feeHandler.get(), balnFees);
+        Context.call(sicxAddress, "transfer", getFeehandler(), balnFees);
         Context.transfer(sender, orderIcxValue);
     }
 
@@ -807,7 +689,7 @@ public abstract class AbstractDex implements Dex {
         BigInteger toBalance = poolLpBalanceOfUser.getOrDefault(to, BigInteger.ZERO);
         poolLpBalanceOfUser.set(from, fromBalance.subtract(value));
         poolLpBalanceOfUser.set(to, toBalance.add(value));
-        Address stakedLpAddress = stakedLp.get();
+        Address stakedLpAddress = getStakedLp();
 
         if (!from.equals(stakedLpAddress) && !to.equals(stakedLpAddress)) {
             if (value.compareTo(BigInteger.ZERO) > 0) {

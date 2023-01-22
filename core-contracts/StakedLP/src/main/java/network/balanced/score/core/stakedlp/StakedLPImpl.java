@@ -17,6 +17,7 @@
 package network.balanced.score.core.stakedlp;
 
 import network.balanced.score.lib.interfaces.StakedLP;
+import network.balanced.score.lib.utils.BalancedEmergencyHandling;
 import network.balanced.score.lib.utils.IterableDictDB;
 import network.balanced.score.lib.utils.Names;
 import score.*;
@@ -30,7 +31,7 @@ import java.util.Map;
 
 import static network.balanced.score.lib.utils.Check.*;
 
-public class StakedLPImpl implements StakedLP {
+public class StakedLPImpl extends BalancedEmergencyHandling implements StakedLP {
 
 
     private static final BranchDB<Address, DictDB<BigInteger, BigInteger>> poolStakedDetails =
@@ -94,6 +95,12 @@ public class StakedLPImpl implements StakedLP {
         StakedLPImpl.governance.set(governance);
     }
 
+    @Override
+    @External(readonly = true)
+    public Address getEmergencyManager() {
+        return Context.getOwner();
+    }
+
     @External(readonly = true)
     public Address getRewards() {
         return rewards.get();
@@ -118,6 +125,7 @@ public class StakedLPImpl implements StakedLP {
 
     @External
     public void unstake(BigInteger id, BigInteger value) {
+        checkStatus();
         Address caller = Context.getCaller();
         Context.require(value.compareTo(BigInteger.ZERO) > 0, "StakedLP: Cannot unstake less than zero value");
 
@@ -148,6 +156,7 @@ public class StakedLPImpl implements StakedLP {
 
     @External
     public void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data) {
+        checkStatus();
         only(dex);
         Context.require(_value.signum() > 0, "StakedLP: Token value should be a positive number");
         this.stake(_from, _id, _value);

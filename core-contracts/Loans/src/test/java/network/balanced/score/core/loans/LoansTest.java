@@ -48,16 +48,6 @@ class LoansTest extends LoansTestBase {
         super.setup();
     }
 
-    @Test
-    void getLoansOn() {
-        Boolean loansOn = (Boolean) loans.call("getLoansOn");
-        assertTrue(loansOn);
-
-        governanceCall("toggleLoansOn");
-        loansOn = (Boolean) loans.call("getLoansOn");
-        assertFalse(loansOn);
-    }
-
     @SuppressWarnings("unchecked")
     @Test
     void getSetParameters() {

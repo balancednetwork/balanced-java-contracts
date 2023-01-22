@@ -39,6 +39,8 @@ public class SetupManager {
         }
 
         call(ContractManager.getAddress(Names.LOANS), "addAsset", ContractManager.getAddress(Names.SICX), true, true);
+        call(ContractManager.getAddress(Names.DEX), "addQuoteCoin", ContractManager.getAddress(Names.SICX));
+        call(ContractManager.getAddress(Names.DEX), "addQuoteCoin", ContractManager.getAddress(Names.BNUSD));
 
         Address[] acceptedFeeTokens = new Address[]{
                 ContractManager.getAddress(Names.SICX),

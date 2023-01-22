@@ -57,6 +57,7 @@ public class Constant {
     public static final String UNSTAKE_DICT = "unstake_dict";
     public static final String USER_DELEGATION_PERCENTAGE = "user_delegation_percentage";
     public static final String PREP_DELEGATION_ICX = "prep_delegation_icx";
+    public static final String STATUS_MANAGER = "status_manager";
 
     public static DelegationListDBSdo DEFAULT_DELEGATION_LIST = getDelegationList();
 

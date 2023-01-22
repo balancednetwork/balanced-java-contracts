@@ -43,12 +43,6 @@ class DividendsImplTestSetup extends DividendsImplTestBase {
     }
 
     @Test
-    void setDistributionActivationStatus() {
-        dividendScore.invoke(governance.account, "setDistributionActivationStatus", true);
-        assertEquals(true, dividendScore.call("getDistributionActivationStatus"));
-    }
-
-    @Test
     void getAcceptedTokens() {
         List<Address> expected_list = new ArrayList<>();
         expected_list.add(baln.getAddress());

@@ -19,6 +19,7 @@ package network.balanced.score.core.dividends;
 import network.balanced.score.lib.interfaces.Dividends;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.PrepDelegations;
+import network.balanced.score.lib.utils.BalancedEmergencyHandling;
 import network.balanced.score.lib.utils.Names;
 import score.*;
 import score.annotation.EventLog;
@@ -42,7 +43,7 @@ import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static network.balanced.score.lib.utils.Math.pow;
 
-public class DividendsImpl implements Dividends {
+public class DividendsImpl extends BalancedEmergencyHandling implements Dividends {
 
     private static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
 
@@ -60,7 +61,6 @@ public class DividendsImpl implements Dividends {
     private static final ArrayDB<String> completeDividendsCategories =
             Context.newArrayDB(COMPLETE_DIVIDENDS_CATEGORIES, String.class);
 
-    private static final VarDB<Boolean> distributionActivate = Context.newVarDB(DISTRIBUTION_ACTIVATE, Boolean.class);
     private static final VarDB<BigInteger> dividendsBatchSize = Context.newVarDB(DIVIDENDS_BATCH_SIZE,
             BigInteger.class);
     private static final VarDB<BigInteger> timeOffset = Context.newVarDB(TIME_OFFSET, BigInteger.class);
@@ -76,7 +76,6 @@ public class DividendsImpl implements Dividends {
             DividendsImpl.governance.set(_governance);
             snapshotId.set(BigInteger.ONE);
             dividendsBatchSize.set(BigInteger.valueOf(50));
-            distributionActivate.set(true);
             addInitialCategories();
         }
 
@@ -100,17 +99,6 @@ public class DividendsImpl implements Dividends {
     @External(readonly = true)
     public Address getAddress(String name) {
         return getAddressByName(name);
-    }
-
-    @External(readonly = true)
-    public boolean getDistributionActivationStatus() {
-        return distributionActivate.getOrDefault(false);
-    }
-
-    @External
-    public void setDistributionActivationStatus(boolean _status) {
-        onlyGovernance();
-        distributionActivate.set(_status);
     }
 
     @External
@@ -294,14 +282,14 @@ public class DividendsImpl implements Dividends {
 
     @External
     public boolean distribute() {
+        checkStatus();
         return true;
     }
 
     @External
     public void transferDaofundDividends(@Optional int _start, @Optional int _end) {
+        checkStatus();
         Address daofund = getDaofund();
-        Context.require(distributionActivate.getOrDefault(false),
-                TAG + ": Distribution is not activated. Can't transfer.");
 
         int[] value = checkStartEnd(_start, _end);
         int start = value[0];
@@ -370,6 +358,7 @@ public class DividendsImpl implements Dividends {
 
     @External
     public void claimDividends() {
+        checkStatus();
         routeFees();
         Address user = Context.getCaller();
 
@@ -399,8 +388,7 @@ public class DividendsImpl implements Dividends {
 
     @External
     public void claim(@Optional int _start, @Optional int _end) {
-        Context.require(distributionActivate.getOrDefault(false),
-                TAG + ": Distribution is not activated. Can't transfer.");
+        checkStatus();
 
         int[] value = checkStartEnd(_start, _end);
         int start = value[0];
@@ -441,8 +429,7 @@ public class DividendsImpl implements Dividends {
 
     @External
     public void accumulateDividends(Address user, @Optional int _start, @Optional int _end) {
-        Context.require(distributionActivate.getOrDefault(false),
-                TAG + ": Distribution is not activated. Can't transfer.");
+        checkStatus();
 
         int[] value = checkStartEnd(_start, _end);
         int start = value[0];
@@ -480,6 +467,7 @@ public class DividendsImpl implements Dividends {
 
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
+        checkStatus();
         Address token = Context.getCaller();
         Context.require(arrayDbContains(acceptedTokens, token), "Dividends contract does not accept " + token);
 
@@ -498,6 +486,7 @@ public class DividendsImpl implements Dividends {
 
     @External
     public void updateBalnStake(Address user, BigInteger prevStakedBalance, BigInteger currentTotalSupply) {
+        checkStatus();
         only(getBaln());
         int size = acceptedTokens.size();
         DictDB<Address, BigInteger> userAccruedDividends = accruedDividends.at(user);
@@ -608,6 +597,7 @@ public class DividendsImpl implements Dividends {
 
     @External
     public void onKick(Address user) {
+        checkStatus();
         only(getBoostedBaln());
         BigInteger userPrevBalance = userBalance.getOrDefault(user, BigInteger.ZERO);
         Context.require(!userPrevBalance.equals(BigInteger.ZERO), TAG + " " + user + " User with no balance can not " +
@@ -620,6 +610,7 @@ public class DividendsImpl implements Dividends {
 
     @External
     public void onBalanceUpdate(Address user, BigInteger bBalnBalance) {
+        checkStatus();
         only(getBoostedBaln());
         BigInteger prevBalance = userBalance.getOrDefault(user, BigInteger.ZERO);
         updateUserDividends(user, prevBalance);

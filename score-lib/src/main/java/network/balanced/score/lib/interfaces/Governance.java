@@ -104,6 +104,36 @@ public interface Governance extends
     @External
     void execute(String transactions);
 
+    @External
+    void disable();
+
+    @External
+    void enable();
+
+    @External
+    void blacklist(String address);
+
+    @External
+    void removeBlacklist(String address);
+
+    @External
+    void updateBlacklist(String address);
+
+    @External(readonly = true)
+    Map<String, Boolean> getBlacklist();
+
+    @External
+    void addAuthorizedCallerBlacklist(Address address);
+
+    @External
+    void removeAuthorizedCallerBlacklist(Address address);
+
+    @External
+    void addAuthorizedCallerShutdown(Address address);
+
+    @External
+    void removeAuthorizedCallerShutdown(Address address);
+
     @External(readonly = true)
     BigInteger getProposalCount();
 
@@ -168,10 +198,6 @@ public interface Governance extends
     @External
     void addCollateral(Address _token_address, boolean _active, String _peg, BigInteger _lockingRatio,
                        BigInteger _liquidationRatio, BigInteger _debtCeiling);
-
-    @External
-    void addDexPricedCollateral(Address _token_address, boolean _active, BigInteger _lockingRatio,
-                                BigInteger _liquidationRatio, BigInteger _debtCeiling);
 
     @External
     void delegate(String contract, PrepDelegations[] _delegations);

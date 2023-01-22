@@ -35,8 +35,10 @@ public class SicxImpl extends IRC2Burnable implements Sicx {
     private static final String SYMBOL_NAME = "sICX";
     private static final BigInteger DECIMALS = BigInteger.valueOf(18);
     private static final String STAKING = "staking";
+    public static final String STATUS_MANAGER = "status_manager";
 
     private static final VarDB<Address> stakingAddress = Context.newVarDB(STAKING, Address.class);
+    private final VarDB<Address> statusManager = Context.newVarDB(STATUS_MANAGER, Address.class);
 
     public SicxImpl(Address _admin) {
         super(TOKEN_NAME, SYMBOL_NAME, DECIMALS);
@@ -61,6 +63,18 @@ public class SicxImpl extends IRC2Burnable implements Sicx {
         return stakingAddress.get();
     }
 
+    @External
+    public void setEmergencyManager(Address _address) {
+        onlyOwner();
+        statusManager.set(_address);
+    }
+
+    @Override
+    @External(readonly = true)
+    public Address getEmergencyManager() {
+        return statusManager.get();
+    }
+
     @External(readonly = true)
     public BigInteger priceInLoop() {
         return (BigInteger) Context.call(stakingAddress.get(), "getTodayRate");
@@ -74,6 +88,7 @@ public class SicxImpl extends IRC2Burnable implements Sicx {
     @Override
     @External
     public void transfer(Address _to, BigInteger _value, @Optional byte[] _data) {
+        checkStatus();
         if (!_to.equals(stakingAddress.get())) {
             Context.call(stakingAddress.get(), "transferUpdateDelegations", Context.getCaller(), _to, _value);
         }

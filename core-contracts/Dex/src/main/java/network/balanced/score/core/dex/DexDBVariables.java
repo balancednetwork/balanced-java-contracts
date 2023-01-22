@@ -30,18 +30,8 @@ public class DexDBVariables {
     private static final String TOTAL_SUPPLY_SNAPSHOT = "total_supply_snapshot";
     private static final String QUOTE_COINS = "quote_coins";
     private static final String ICX_QUEUE_TOTAL = "icx_queue_total";
-    private static final String SICX_ADDRESS = "sicx_address";
-    private static final String bnUSD_ADDRESS = "bnUSD_address";
-    private static final String BALN_ADDRESS = "baln_address";
-    private static final String STAKING_ADDRESS = "staking_address";
-    private static final String DIVIDENDS_ADDRESS = "dividends_address";
-    private static final String REWARDS_ADDRESS = "rewards_address";
     private static final String GOVERNANCE_ADDRESS = "governance_address";
-    private static final String FEEHANDLER_ADDRESS = "feehandler_address";
-    private static final String STAKEDLP_ADDRESS = "stakedLp_address";
     private static final String NAMED_MARKETS = "named_markets";
-    private static final String ADMIN = "admin";
-    private static final String DEX_ON = "dex_on";
 
     private static final String CURRENT_DAY = "current_day";
     private static final String TIME_OFFSET = "time_offset";
@@ -70,17 +60,7 @@ public class DexDBVariables {
     private static final String CONTINUOUS_REWARDS_DAY = "continuous_rewards_day";
 
 
-    final static VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
-    final static VarDB<Address> sicx = Context.newVarDB(SICX_ADDRESS, Address.class);
-    final static VarDB<Address> staking = Context.newVarDB(STAKING_ADDRESS, Address.class);
-    final static VarDB<Address> dividends = Context.newVarDB(DIVIDENDS_ADDRESS, Address.class);
     final static VarDB<Address> governance = Context.newVarDB(GOVERNANCE_ADDRESS, Address.class);
-    final static VarDB<Address> rewards = Context.newVarDB(REWARDS_ADDRESS, Address.class);
-    final static VarDB<Address> bnUSD = Context.newVarDB(bnUSD_ADDRESS, Address.class);
-    final static VarDB<Address> baln = Context.newVarDB(BALN_ADDRESS, Address.class);
-    final static VarDB<Address> feeHandler = Context.newVarDB(FEEHANDLER_ADDRESS, Address.class);
-    final static VarDB<Address> stakedLp = Context.newVarDB(STAKEDLP_ADDRESS, Address.class);
-    public final static VarDB<Boolean> dexOn = Context.newVarDB(DEX_ON, Boolean.class);
 
     // Deposits - Map: token_address -> user_address -> value
     final static BranchDB<Address, DictDB<Address, BigInteger>> deposit = Context.newBranchDB(DEPOSIT,

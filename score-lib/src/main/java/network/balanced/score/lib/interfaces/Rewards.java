@@ -22,6 +22,7 @@ import network.balanced.score.lib.interfaces.addresses.*;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
 import network.balanced.score.lib.interfaces.base.RewardsVoting;
+import network.balanced.score.lib.interfaces.base.Emergency;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import score.Address;
@@ -44,7 +45,8 @@ public interface Rewards extends
         DaoFundAddress,
         ReserveAddress,
         BoostedBalnAddress,
-        RewardsVoting {
+        RewardsVoting,
+        Emergency {
 
     @External(readonly = true)
     BigInteger getEmission(BigInteger _day);

@@ -18,6 +18,7 @@ package network.balanced.score.tokens;
 
 import com.iconloop.score.util.EnumerableSet;
 import network.balanced.score.lib.interfaces.BoostedBaln;
+import network.balanced.score.lib.utils.BalancedEmergencyHandling;
 import network.balanced.score.tokens.db.LockedBalance;
 import network.balanced.score.tokens.db.Point;
 import network.balanced.score.tokens.utils.UnsignedBigInteger;
@@ -35,7 +36,7 @@ import static network.balanced.score.tokens.Constants.*;
 import static network.balanced.score.tokens.utils.UnsignedBigInteger.pow10;
 
 
-public abstract class AbstractBoostedBaln implements BoostedBaln {
+public abstract class AbstractBoostedBaln extends BalancedEmergencyHandling implements BoostedBaln {
 
     public static final BigInteger MAX_TIME = MAX_LOCK_TIME;
     public static BigInteger ICX = pow(BigInteger.TEN, 18);

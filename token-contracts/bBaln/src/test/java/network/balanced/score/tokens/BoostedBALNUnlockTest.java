@@ -155,12 +155,12 @@ public class BoostedBALNUnlockTest extends AbstractBoostedBalnTest {
                 BigInteger.valueOf(unlockTime).divide(MICRO_SECONDS_IN_A_SECOND).divide(BigInteger.valueOf(4));
 
         sm.getBlock().increase(halfTime.longValue());
-        bBALNScore.call("kick", owner.getAddress());
+        bBALNScore.invoke(owner, "kick", owner.getAddress());
 
         verify(scoreSpy, times(2)).onBalanceUpdate(eq(owner.getAddress()), any(BigInteger.class));
 
         sm.getBlock().increase(halfTime.longValue());
-        bBALNScore.call("kick", owner.getAddress());
+        bBALNScore.invoke(owner, "kick", owner.getAddress());
 
         verify(scoreSpy).onKick(owner.getAddress());
     }

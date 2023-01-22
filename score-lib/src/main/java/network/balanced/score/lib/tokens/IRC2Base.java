@@ -17,6 +17,7 @@
 package network.balanced.score.lib.tokens;
 
 import network.balanced.score.lib.interfaces.tokens.IRC2;
+import network.balanced.score.lib.utils.BalancedEmergencyHandling;
 import score.Address;
 import score.Context;
 import score.DictDB;
@@ -27,7 +28,7 @@ import score.annotation.Optional;
 
 import java.math.BigInteger;
 
-public class IRC2Base implements IRC2 {
+public class IRC2Base extends BalancedEmergencyHandling implements IRC2 {
 
     private final static String NAME = "name";
     private final static String SYMBOL = "symbol";
@@ -43,7 +44,7 @@ public class IRC2Base implements IRC2 {
     private final VarDB<BigInteger> totalSupply = Context.newVarDB(TOTAL_SUPPLY, BigInteger.class);
     protected final DictDB<Address, BigInteger> balances = Context.newDictDB(BALANCES, BigInteger.class);
 
-    IRC2Base(String _tokenName, String _symbolName, @Optional BigInteger _decimals) {
+    public IRC2Base(String _tokenName, String _symbolName, @Optional BigInteger _decimals) {
         if (this.name.get() == null) {
             _decimals = _decimals == null ? BigInteger.valueOf(18L) : _decimals;
             Context.require(_decimals.compareTo(BigInteger.ZERO) >= 0, "Decimals cannot be less than zero");

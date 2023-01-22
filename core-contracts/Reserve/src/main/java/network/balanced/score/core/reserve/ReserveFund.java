@@ -18,6 +18,7 @@ package network.balanced.score.core.reserve;
 
 import network.balanced.score.lib.interfaces.Reserve;
 import network.balanced.score.lib.structs.Disbursement;
+import network.balanced.score.lib.utils.BalancedEmergencyHandling;
 import network.balanced.score.lib.utils.Names;
 import score.*;
 import score.annotation.EventLog;
@@ -33,7 +34,7 @@ import static network.balanced.score.lib.utils.Check.onlyGovernance;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Math.pow;
 
-public class ReserveFund implements Reserve {
+public class ReserveFund extends BalancedEmergencyHandling implements Reserve {
 
     private static final String GOVERNANCE = "governance";
     private static final String AWARDS = "awards";
@@ -92,11 +93,13 @@ public class ReserveFund implements Reserve {
 
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
+        checkStatus();
     }
 
     @External
     @SuppressWarnings("unchecked")
     public void redeem(Address _to, BigInteger _valueInDollar, String collateralSymbol) {
+        checkStatus();
         Address sender = Context.getCaller();
         Address loans = getLoans();
         Context.require(sender.equals(loans), TAG + ": The redeem method can only be called by the Loans " +
@@ -161,6 +164,7 @@ public class ReserveFund implements Reserve {
 
     @External
     public void claim() {
+        checkStatus();
         Address sender = Context.getCaller();
         DictDB<Address, BigInteger> disbursement = awards.at(sender);
 
