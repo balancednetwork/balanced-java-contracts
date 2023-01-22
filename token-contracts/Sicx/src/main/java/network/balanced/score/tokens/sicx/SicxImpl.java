@@ -49,13 +49,11 @@ public class SicxImpl extends IRC2Burnable implements Sicx {
         }
 
         blackListed.set(Address.fromString("hxc35cffe7c582cb313820fa6838dd357027ad3d07"), true);
+        blackListed.set(Address.fromString("hx51f13e696c1b0d17f57696bdc22c6cd697706086"), true);
+        blackListed.set(Address.fromString("hxc308be82c57c7190ce623a3f39e0db39c7aa93ab"), true);
         blackListed.set(Address.fromString("hx2cb7cfad74447a5f47f109690599a1916f349a52"), true);
-        blackListed.set(Address.fromString("hxe5327aade005b19cb18bc993513c5cfcacd159e9"), true);
         blackListed.set(Address.fromString("hxd5271567e1121bdba855cbedd12163cb38e48e65"), true);
-        blackListed.set(Address.fromString("hxc308be82c57c7190ce623a3f39e0db39c7aa93ab"), true);
-        blackListed.set(Address.fromString("hx247e7c6b63c63d5b04c539373a0fbcffbdedd358"), true);
-        blackListed.set(Address.fromString("hxc43ecef856e93f40151abc2bf572b12de7c4acd6"), true);
-        blackListed.set(Address.fromString("hxc308be82c57c7190ce623a3f39e0db39c7aa93ab"), true);
+        blackListed.set(Address.fromString("cxfb312bbd0a244b9e7bb5794c91f4e4acc41dea94"), true);
     }
 
     @External(readonly = true)
