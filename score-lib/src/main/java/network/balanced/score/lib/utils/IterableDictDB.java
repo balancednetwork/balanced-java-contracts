@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 
 package network.balanced.score.lib.utils;
-
 
 
 import score.Context;
@@ -35,6 +34,10 @@ public class IterableDictDB<K, V> {
     public IterableDictDB(String key, Class<V> valueType, Class<K> keyType, Boolean order) {
         this.keys = new SetDB<>(key + NAME + "_keys", keyType, order);
         this.values = Context.newDictDB(key + NAME + "_values", valueType);
+    }
+
+    public int size() {
+        return keys.size();
     }
 
     public List<K> keys() {
@@ -58,6 +61,10 @@ public class IterableDictDB<K, V> {
 
     public V get(K key) {
         return this.values.get(key);
+    }
+
+    public K getKey(int i) {
+        return this.keys.get(i);
     }
 
     public V getOrDefault(K key, V defaultValue) {

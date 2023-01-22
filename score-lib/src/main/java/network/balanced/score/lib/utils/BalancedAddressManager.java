@@ -276,6 +276,10 @@ public class BalancedAddressManager {
         return boostedBaln;
     }
 
+    public static Address getRouter() {
+        return getAddress(Names.ROUTER);
+    }
+
     public static Address getGovernance() {
         return contractAddresses.get(Names.GOVERNANCE);
     }

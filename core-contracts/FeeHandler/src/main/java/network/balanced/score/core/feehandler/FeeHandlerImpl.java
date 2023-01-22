@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,21 @@
 
 package network.balanced.score.core.feehandler;
 
-import com.eclipsesource.json.Json;
-import com.eclipsesource.json.JsonArray;
-import com.eclipsesource.json.JsonObject;
-import com.eclipsesource.json.JsonValue;
 import network.balanced.score.lib.interfaces.FeeHandler;
 import network.balanced.score.lib.utils.Names;
 import score.*;
 import score.annotation.External;
-import score.annotation.Optional;
 import scorex.util.ArrayList;
 
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
-import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.BalancedAddressManager.*;
+import static network.balanced.score.lib.utils.Check.isContract;
+import static network.balanced.score.lib.utils.Check.onlyGovernance;
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
+import static network.balanced.score.lib.utils.Constants.EXA;
 
 public class FeeHandlerImpl implements FeeHandler {
     public static final String TAG = "FeeHandler";
@@ -42,33 +39,21 @@ public class FeeHandlerImpl implements FeeHandler {
     private static final String LAST_BLOCK = "last_block";
     private static final String BLOCK_INTERVAL = "block_interval";
     private static final String LAST_TXHASH = "last_txhash";
-    private static final String ROUTES = "routes";
     private static final String GOVERNANCE = "governance";
-    private static final String LOANS = "loans";
-    private static final String DEX = "dex";
-    private static final String STABILITY = "stability";
     private static final String ENABLED = "enabled";
-    private static final String ALLOWED_ADDRESS = "allowed_address";
-    private static final String NEXT_ALLOWED_ADDRESS_INDEX = "_next_allowed_addresses_index";
-    private static final String ADMIN_ADDRESS = "admin_address";
+
     private static final String SWAP_FEES_ACCRUED = "swap_fees_accrued";
     private static final String LOANS_FEES_ACCRUED = "loans_fees_accrued";
     private static final String STABILITY_FEES_ACCRUED = "stability_fees_accrued";
 
-    private final ArrayDB<Address> acceptedDividendsTokens = Context.newArrayDB(DIVIDEND_TOKENS, Address.class);
-    private final DictDB<Address, BigInteger> lastFeeProcessingBlock = Context.newDictDB(LAST_BLOCK, BigInteger.class);
-    private final VarDB<BigInteger> feeProcessingInterval = Context.newVarDB(BLOCK_INTERVAL, BigInteger.class);
-    private final VarDB<byte[]> lastTxhash = Context.newVarDB(LAST_TXHASH, byte[].class);
-    private final BranchDB<Address, DictDB<Address, String>> routes = Context.newBranchDB(ROUTES, String.class);
-    private final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
-    private final VarDB<Address> loans = Context.newVarDB(LOANS, Address.class);
-    private final VarDB<Address> dex = Context.newVarDB(DEX, Address.class);
-    private final VarDB<Address> stabilityFund = Context.newVarDB(STABILITY, Address.class);
-    private final VarDB<Boolean> enabled = Context.newVarDB(ENABLED, Boolean.class);
-    private final ArrayDB<Address> allowedAddress = Context.newArrayDB(ALLOWED_ADDRESS, Address.class);
-    private final VarDB<Integer> nextAllowedAddressesIndex = Context.newVarDB(NEXT_ALLOWED_ADDRESS_INDEX,
-            Integer.class);
-    private final VarDB<Address> admin = Context.newVarDB(ADMIN_ADDRESS, Address.class);
+    public static final ArrayDB<Address> acceptedDividendsTokens = Context.newArrayDB(DIVIDEND_TOKENS, Address.class);
+    private static final DictDB<Address, BigInteger> lastFeeProcessingBlock = Context.newDictDB(LAST_BLOCK,
+            BigInteger.class);
+    private static final VarDB<BigInteger> feeProcessingInterval = Context.newVarDB(BLOCK_INTERVAL, BigInteger.class);
+    private static final VarDB<byte[]> lastTxhash = Context.newVarDB(LAST_TXHASH, byte[].class);
+    private static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
+    private static final VarDB<Boolean> enabled = Context.newVarDB(ENABLED, Boolean.class);
+
     private final DictDB<Address, BigInteger> swapFeesAccruedDB = Context.newDictDB(SWAP_FEES_ACCRUED,
             BigInteger.class);
     private final VarDB<BigInteger> loanFeesAccrued = Context.newVarDB(LOANS_FEES_ACCRUED, BigInteger.class);
@@ -78,10 +63,12 @@ public class FeeHandlerImpl implements FeeHandler {
     public FeeHandlerImpl(Address _governance) {
         if (governance.get() == null) {
             isContract(_governance);
-            this.governance.set(_governance);
+            governance.set(_governance);
             enabled.set(true);
-            admin.set(governance.get());
         }
+
+        setGovernance(governance.get());
+        FeeRouter.balnRouteLimit.set(BigInteger.valueOf(100).multiply(EXA));
     }
 
     @External(readonly = true)
@@ -90,15 +77,13 @@ public class FeeHandlerImpl implements FeeHandler {
     }
 
     @External
-    public void setGovernance(Address _address) {
-        onlyOwner();
-        isContract(_address);
-        governance.set(_address);
+    public void updateAddress(String name) {
+        resetAddress(name);
     }
 
     @External(readonly = true)
-    public Address getGovernance() {
-        return governance.get();
+    public Address getAddress(String name) {
+        return getAddressByName(name);
     }
 
     // acceptedDividendsTokens DB is used here to add the token types of fees generated by the DEX to swapFees DB
@@ -112,61 +97,14 @@ public class FeeHandlerImpl implements FeeHandler {
     }
 
     @External
-    public void setLoans(Address _address) {
-        onlyOwner();
-        isContract(_address);
-        loans.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getLoans() {
-        return loans.get();
-    }
-
-    @External
-    public void setDex(Address _address) {
-        onlyOwner();
-        isContract(_address);
-        dex.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getDex() {
-        return dex.get();
-    }
-
-    @External
-    public void setStabilityFund(Address _address) {
-        onlyOwner();
-        isContract(_address);
-        stabilityFund.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getStabilityFund() {
-        return stabilityFund.get();
-    }
-
-    @External
-    public void setAdmin(Address _address) {
-        only(governance);
-        admin.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getAdmin() {
-        return admin.get();
-    }
-
-    @External
     public void enable() {
-        only(admin);
+        onlyGovernance();
         enabled.set(true);
     }
 
     @External
     public void disable() {
-        only(admin);
+        onlyGovernance();
         enabled.set(false);
     }
 
@@ -177,7 +115,7 @@ public class FeeHandlerImpl implements FeeHandler {
 
     @External
     public void setAcceptedDividendTokens(Address[] _tokens) {
-        only(admin);
+        onlyGovernance();
         Context.require(_tokens.length <= 10, TAG + ": There can be a maximum of 10 accepted dividend tokens.");
         for (Address address : _tokens) {
             isContract(address);
@@ -204,49 +142,78 @@ public class FeeHandlerImpl implements FeeHandler {
     }
 
     @External
-    public void setRoute(Address _fromToken, Address _toToken, Address[] _path) {
-        only(admin);
-        JsonArray path = new JsonArray();
-        for (Address address : _path) {
-            isContract(address);
-            path.add(address.toString());
-        }
-
-        routes.at(_fromToken).set(_toToken, path.toString());
-    }
-
-    @External
-    public void deleteRoute(Address _fromToken, Address _toToken) {
-        only(admin);
-        routes.at(_fromToken).set(_toToken, null);
-    }
-
-    @External(readonly = true)
-    public Map<String, Object> getRoute(Address _fromToken, Address _toToken) {
-        String path = routes.at(_fromToken).getOrDefault(_toToken, "");
-        if (path.equals("")) {
-            return Map.of();
-        }
-
-        JsonArray pathJson = Json.parse(path).asArray();
-        List<String> routePathArray = new ArrayList<>();
-
-        for (JsonValue address : pathJson) {
-            routePathArray.add(address.asString());
-        }
-
-        return Map.of("fromToken", _fromToken, "toToken", _toToken, "path", routePathArray);
-    }
-
-    @External
     public void setFeeProcessingInterval(BigInteger _interval) {
-        only(admin);
+        onlyGovernance();
         feeProcessingInterval.set(_interval);
     }
 
     @External(readonly = true)
     public BigInteger getFeeProcessingInterval() {
         return feeProcessingInterval.get();
+    }
+
+    @External
+    public void setRoute(Address token, Address[] _path) {
+        onlyGovernance();
+        FeeRouter.setRoute(token, _path);
+    }
+
+    @External
+    public void setBalnRouteLimit(BigInteger limit) {
+        onlyGovernance();
+        FeeRouter.balnRouteLimit.set(limit);
+    }
+
+    @External(readonly = true)
+    public BigInteger getBalnRouteLimit() {
+        return FeeRouter.balnRouteLimit.get();
+    }
+
+    @External
+    public void addDefaultRoute(Address token) {
+        FeeRouter.addDefaultRoute(token);
+    }
+
+    @External
+    public void calculateRouteLimit(Address token) {
+        FeeRouter.calculateRouteLimit(token);
+    }
+
+
+    @External(readonly = true)
+    public BigInteger getRouteLimit(Address _fromToken) {
+        return FeeRouter.routeLimit.getOrDefault(_fromToken, BigInteger.ZERO);
+    }
+
+    @External
+    public void deleteRoute(Address token) {
+        onlyGovernance();
+        FeeRouter.deleteRoute(token);
+    }
+
+    @External
+    public void routeFees() {
+        FeeRouter.routeFees();
+    }
+
+    @External
+    public void routeToken(Address token, Address[] path) {
+        FeeRouter.routeToken(token, path);
+    }
+
+    @External(readonly = true)
+    public List<String> getRoute(Address _fromToken) {
+        return FeeRouter.getRoute(_fromToken);
+    }
+
+    @External(readonly = true)
+    public List<Address> getRoutedTokens() {
+        return FeeRouter.getRoutedTokens();
+    }
+
+    @External(readonly = true)
+    public int getNextAllowedAddressIndex() {
+        return FeeRouter.routeIndex.get();
     }
 
     @External
@@ -266,34 +233,10 @@ public class FeeHandlerImpl implements FeeHandler {
         int acceptedDividendsTokensCount = acceptedDividendsTokens.size();
         for (int i = 0; i < acceptedDividendsTokensCount; i++) {
             if (acceptedDividendsTokens.get(i).equals(sender)) {
-                transferToken(sender, getContractAddress("dividends"), getTokenBalance(sender), new byte[0]);
+                transferToken(sender, getDividends(), getTokenBalance(sender), new byte[0]);
                 return;
             }
         }
-    }
-
-    @External
-    public void addAllowedAddress(Address address) {
-        onlyOwner();
-        isContract(address);
-        allowedAddress.add(address);
-    }
-
-    @External(readonly = true)
-    public List<Address> get_allowed_address(@Optional int offset) {
-        Context.require(offset >= 0, "Negative value not allowed.");
-
-        int end = Math.min(allowedAddress.size(), offset + 20);
-        List<Address> addressList = new ArrayList<>();
-        for (int i = offset; i < end; i++) {
-            addressList.add(allowedAddress.get(i));
-        }
-        return addressList;
-    }
-
-    @External(readonly = true)
-    public int getNextAllowedAddressIndex() {
-        return nextAllowedAddressesIndex.getOrDefault(0);
     }
 
     @External(readonly = true)
@@ -311,78 +254,13 @@ public class FeeHandlerImpl implements FeeHandler {
         return swapFeesAccruedDB.getOrDefault(token, BigInteger.ZERO);
     }
 
-    @External
-    public void route_contract_balances() {
-        int cursor = nextAllowedAddressesIndex.getOrDefault(0);
-
-        Address tokenToRoute = null;
-        BigInteger feeCollectedInFeeHandler = null;
-
-        int totalAllowedAddress = allowedAddress.size();
-        Context.require(totalAllowedAddress > 0, TAG + ": No allowed addresses.");
-
-        // Search for allowed token with balance > 0
-        for (int i = 0; i < totalAllowedAddress; i++) {
-            int actualIndex = (i + cursor) % totalAllowedAddress;
-            tokenToRoute = allowedAddress.get(actualIndex);
-            feeCollectedInFeeHandler = getTokenBalance(tokenToRoute);
-            if (feeCollectedInFeeHandler.compareTo(BigInteger.ZERO) > 0) {
-                nextAllowedAddressesIndex.set((actualIndex + 1) % totalAllowedAddress);
-                break;
-            }
-            if (i == totalAllowedAddress - 1) {
-                throw new UserRevertedException(TAG + ": No fees on the contract.");
-            }
-        }
-
-        JsonArray path;
-        String BALN_CONTRACT = "baln";
-        String route = routes.at(tokenToRoute).get(getContractAddress(BALN_CONTRACT));
-        if (route == null) {
-            path = new JsonArray();
-        } else {
-            path = Json.parse(route).asArray();
-        }
-
-        String ROUTER_CONTRACT = "router";
-        String DIVIDENDS_CONTRACT = "dividends";
-        String DEX_CONTRACT = "dex";
-        if (path.size() > 0) {
-            transferToken(tokenToRoute, getContractAddress(ROUTER_CONTRACT), feeCollectedInFeeHandler,
-                    createDataFieldRouter(getContractAddress(DIVIDENDS_CONTRACT), path));
-        } else {
-            transferToken(tokenToRoute, getContractAddress(DEX_CONTRACT), feeCollectedInFeeHandler,
-                    createDataFieldDex(getContractAddress(BALN_CONTRACT), getContractAddress(DIVIDENDS_CONTRACT)));
-        }
-    }
-
-    private byte[] createDataFieldRouter(Address _receiver, JsonArray _path) {
-        JsonObject params = Json.object().add("path", _path).add("receiver", _receiver.toString());
-        JsonObject data = new JsonObject();
-        data.add("method", "_swap");
-        data.add("params", params);
-        return data.toString().getBytes();
-    }
-
-    private byte[] createDataFieldDex(Address _toToken, Address _receiver) {
-        JsonObject params = Json.object().add("toToken", _toToken.toString()).add("receiver", _receiver.toString());
-        JsonObject data = new JsonObject();
-        data.add("method", "_swap");
-        data.add("params", params);
-        return data.toString().getBytes();
-    }
-
-    private Address getContractAddress(String _contract) {
-        return (Address) Context.call(governance.get(), "getContractAddress", _contract);
-    }
-
     private void collectFeeData(Address sender, Address _from, BigInteger _value) {
         BigInteger accruedFees = swapFeesAccruedDB.get(sender);
         if (_from.equals(EOA_ZERO) && accruedFees != null) {
             loanFeesAccrued.set(loanFeesAccrued.getOrDefault(BigInteger.ZERO).add(_value));
-        } else if (accruedFees != null && _from.equals(dex.get())) {
+        } else if (accruedFees != null && _from.equals(getDex())) {
             swapFeesAccruedDB.set(sender, accruedFees.add(_value));
-        } else if (_from.equals(stabilityFund.get())) {
+        } else if (_from.equals(getStabilityFund())) {
             stabilityFundFeesAccrued.set(stabilityFundFeesAccrued.getOrDefault(BigInteger.ZERO).add(_value));
         }
     }
