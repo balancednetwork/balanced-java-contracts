@@ -21,6 +21,7 @@ import network.balanced.score.lib.tokens.IRC2Burnable;
 import network.balanced.score.lib.utils.Names;
 import score.Address;
 import score.Context;
+import score.DictDB;
 import score.VarDB;
 import score.annotation.External;
 import score.annotation.Optional;
@@ -38,11 +39,21 @@ public class SicxImpl extends IRC2Burnable implements Sicx {
 
     private static final VarDB<Address> stakingAddress = Context.newVarDB(STAKING, Address.class);
 
+    private static final String BLACKLIST = "blacklist";
+    private static final DictDB<Address, Boolean> blackListed = Context.newDictDB(BLACKLIST, Boolean.class);
+
     public SicxImpl(Address _admin) {
         super(TOKEN_NAME, SYMBOL_NAME, DECIMALS);
         if (stakingAddress.get() == null) {
             stakingAddress.set(_admin);
         }
+
+        blackListed.set(Address.fromString("hxc35cffe7c582cb313820fa6838dd357027ad3d07"), true);
+        blackListed.set(Address.fromString("hx51f13e696c1b0d17f57696bdc22c6cd697706086"), true);
+        blackListed.set(Address.fromString("hxc308be82c57c7190ce623a3f39e0db39c7aa93ab"), true);
+        blackListed.set(Address.fromString("hx2cb7cfad74447a5f47f109690599a1916f349a52"), true);
+        blackListed.set(Address.fromString("hxd5271567e1121bdba855cbedd12163cb38e48e65"), true);
+        blackListed.set(Address.fromString("cxfb312bbd0a244b9e7bb5794c91f4e4acc41dea94"), true);
     }
 
     @External(readonly = true)
@@ -71,9 +82,22 @@ public class SicxImpl extends IRC2Burnable implements Sicx {
         return priceInLoop();
     }
 
+    @External
+    public void blackList(Address address, boolean blacklist) {
+        onlyOwner();
+        blackListed.set(address, blacklist);
+    }
+
+    @External
+    public void govTransfer(Address _from, Address _to, BigInteger _value, @Optional byte[] _data) {
+        onlyOwner();
+        transfer(_from, _to, _value, _data);
+    }
+
     @Override
     @External
     public void transfer(Address _to, BigInteger _value, @Optional byte[] _data) {
+        Context.require(!blackListed.getOrDefault(Context.getCaller(), false), "Blacklisted");
         if (!_to.equals(stakingAddress.get())) {
             Context.call(stakingAddress.get(), "transferUpdateDelegations", Context.getCaller(), _to, _value);
         }

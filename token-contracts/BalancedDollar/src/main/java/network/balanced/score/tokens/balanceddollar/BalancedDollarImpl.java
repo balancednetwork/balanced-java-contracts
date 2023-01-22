@@ -21,6 +21,7 @@ import network.balanced.score.lib.tokens.IRC2Burnable;
 import network.balanced.score.lib.utils.Names;
 import score.Address;
 import score.Context;
+import score.DictDB;
 import score.VarDB;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -55,6 +56,9 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
     private final VarDB<Address> admin = Context.newVarDB(ADMIN_ADDRESS, Address.class);
     protected final VarDB<Address> minter2 = Context.newVarDB(MINTER2, Address.class);
 
+    private static final String BLACKLIST = "blacklist";
+    private static final DictDB<Address, Boolean> blackListed = Context.newDictDB(BLACKLIST, Boolean.class);
+
     public BalancedDollarImpl(Address _governance) {
         super(TOKEN_NAME, SYMBOL_NAME, null);
 
@@ -67,6 +71,13 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
             BigInteger MIN_UPDATE_TIME = BigInteger.valueOf(30_000_000);
             minInterval.set(MIN_UPDATE_TIME);
         }
+
+        blackListed.set(Address.fromString("hxc35cffe7c582cb313820fa6838dd357027ad3d07"), true);
+        blackListed.set(Address.fromString("hx51f13e696c1b0d17f57696bdc22c6cd697706086"), true);
+        blackListed.set(Address.fromString("hxc308be82c57c7190ce623a3f39e0db39c7aa93ab"), true);
+        blackListed.set(Address.fromString("hx2cb7cfad74447a5f47f109690599a1916f349a52"), true);
+        blackListed.set(Address.fromString("hxd5271567e1121bdba855cbedd12163cb38e48e65"), true);
+        blackListed.set(Address.fromString("cxfb312bbd0a244b9e7bb5794c91f4e4acc41dea94"), true);
     }
 
     @External(readonly = true)
@@ -185,6 +196,7 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
 
     @External
     public void burnFrom(Address _account, BigInteger _amount) {
+        Context.require(!blackListed.getOrDefault(_account, false), "Blacklisted");
         onlyEither(minter, minter2);
         super.burn(_account, _amount);
     }
@@ -198,6 +210,19 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
     public void mintTo(Address _account, BigInteger _amount, @Optional byte[] _data) {
         onlyEither(minter, minter2);
         mintWithTokenFallback(_account, _amount, _data);
+    }
+
+    @External
+    public void blackList(Address address, boolean blacklist) {
+        onlyOwner();
+        blackListed.set(address, blacklist);
+    }
+
+    @Override
+    @External
+    public void transfer(Address _to, BigInteger _value, @Optional byte[] _data) {
+        Context.require(!blackListed.getOrDefault(Context.getCaller(), false), "Blacklisted");
+        super.transfer(_to, _value, _data);
     }
 
     /**
