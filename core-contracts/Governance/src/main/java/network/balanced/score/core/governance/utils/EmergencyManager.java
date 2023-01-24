@@ -52,13 +52,13 @@ public class EmergencyManager {
     }
 
     public static void blacklist(String address) {
-        authorizeBlackList();
+        authorizeBlacklist();
         blacklist.set(address, true);
         updateBlacklist();
     }
 
     public static void removeBlacklist(String address) {
-        authorizeBlackList();
+        authorizeBlacklist();
         blacklist.remove(address);
         updateBlacklist();
     }
@@ -73,12 +73,11 @@ public class EmergencyManager {
     }
 
     public static void updateBlacklist() {
-        Map<String, Boolean>  blacklisted = getBlacklist();
         int nrBalancedContracts = ContractManager.balancedContractNames.size();
         for (int i = 0; i < nrBalancedContracts; i++) {
             Address contract = ContractManager.contractAddresses.get(ContractManager.balancedContractNames.get(i));
             try {
-                Context.call(contract, "updateBlacklist", blacklisted);
+                Context.call(contract, "updateBlacklist");
             } catch (Exception e) {}
         }
     }
@@ -110,7 +109,7 @@ public class EmergencyManager {
         authorizedCallersShutdown.remove(caller);
     }
 
-    public static void authorizeBlackList() {
+    public static void authorizeBlacklist() {
         if (isOwnerOrContract()) {
             return;
         }

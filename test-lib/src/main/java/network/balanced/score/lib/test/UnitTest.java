@@ -191,4 +191,5 @@ public class UnitTest extends TestBase {
         Executable unAuthorizedCall = () -> contractUnderTest.invoke(nonAuthorizedCaller, method, params);
         expectErrorMessage(unAuthorizedCall, expectedErrorMessage);
     }
+
 }

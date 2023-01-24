@@ -27,7 +27,7 @@ import score.annotation.External;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getGovernance;
 import static network.balanced.score.lib.utils.Check.*;
 
-public class BalancedEmergencyHandling implements Emergency{
+public class BalancedEmergencyHandling implements Emergency {
     private static String ENABLED = "BalancedStatus-balanced_contract_status";
 
     private static Map<String, Boolean> blacklist = null;
@@ -46,9 +46,9 @@ public class BalancedEmergencyHandling implements Emergency{
     }
 
     @External
-    public void updateBlacklist(Map<String, Boolean> blacklist) {
+    public void updateBlacklist() {
         only(getEmergencyManager());
-        BalancedEmergencyHandling.blacklist = blacklist;
+        fetchBlacklist();
     }
 
     @External(readonly = true)
@@ -86,6 +86,11 @@ public class BalancedEmergencyHandling implements Emergency{
             }
         }
 
-        return blacklist.getOrDefault(address, false);
+        Boolean blacklisted = blacklist.get(address);
+        if (blacklisted == null) {
+            return false;
+        }
+
+        return blacklisted;
     }
 }

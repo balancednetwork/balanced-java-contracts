@@ -30,7 +30,7 @@ public interface Emergency {
     public void disable();
 
     @External
-    public void updateBlacklist(Map<String, Boolean> blacklist);
+    public void updateBlacklist();
 
     @External(readonly = true)
     public boolean isEnabled();

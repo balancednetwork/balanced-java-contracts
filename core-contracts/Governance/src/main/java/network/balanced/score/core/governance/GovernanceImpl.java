@@ -334,13 +334,13 @@ public class GovernanceImpl implements Governance {
 
     @External
     public void blacklist(String address) {
-        EmergencyManager.authorizeBlackList();
+        EmergencyManager.authorizeBlacklist();
         EmergencyManager.blacklist(address);
     }
 
     @External
     public void removeBlacklist(String address) {
-        EmergencyManager.authorizeBlackList();
+        onlyOwnerOrContract();
         EmergencyManager.removeBlacklist(address);
     }
 

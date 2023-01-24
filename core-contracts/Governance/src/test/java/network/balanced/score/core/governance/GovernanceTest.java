@@ -29,9 +29,12 @@ import score.Address;
 import score.Context;
 
 import java.math.BigInteger;
+import java.util.Map;
 
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -320,5 +323,149 @@ public class GovernanceTest extends GovernanceTestBase {
         verify(rewards.mock).addNewDataSource("BALN/sICX", stakedLp.getAddress());
         verify(stakedLp.mock).addDataSource(balnSicxPid, "BALN/sICX");
         verify(rewards.mock, times(4)).updateBalTokenDistPercentage(any(DistributionPercentage[].class));
+    }
+
+    @Test
+    void disable() {
+        // Act
+        governance.invoke(owner, "disable");
+
+        // Assert
+        verify(daofund.mock).disable();
+        verify(dex.mock).disable();
+        verify(loans.mock).disable();
+        verify(reserve.mock).disable();
+        verify(stakedLp.mock).disable();
+        verify(staking.mock).disable();
+        verify(bBaln.mock).disable();
+        verify(stability.mock).disable();
+        verify(sicx.mock).disable();
+        verify(bnUSD.mock).disable();
+        verify(baln.mock).disable();
+    }
+
+    @Test
+    void enable() {
+        // Act
+        governance.invoke(owner, "enable");
+
+        // Assert
+        verify(daofund.mock).enable();
+        verify(dex.mock).enable();
+        verify(loans.mock).enable();
+        verify(reserve.mock).enable();
+        verify(stakedLp.mock).enable();
+        verify(staking.mock).enable();
+        verify(bBaln.mock).enable();
+        verify(stability.mock).enable();
+        verify(sicx.mock).enable();
+        verify(bnUSD.mock).enable();
+        verify(baln.mock).enable();
+    }
+
+    @Test
+    void disable_enable_permission() {
+        // Arrange
+        Account trustedUser = sm.createAccount();
+        Account trustedUser2 = sm.createAccount();
+        String expectedErrorMessage = "Not authorized";
+
+        // Act
+        governance.invoke(owner, "disable");
+        governance.invoke(governance.getAccount(), "disable");
+        Executable beforeAuth = () -> governance.invoke(trustedUser, "disable");
+        expectErrorMessage(beforeAuth, expectedErrorMessage);
+
+        governance.invoke(owner, "addAuthorizedCallerShutdown", trustedUser.getAddress());
+        governance.invoke(owner, "addAuthorizedCallerShutdown", trustedUser2.getAddress());
+
+        // Assert
+        governance.invoke(trustedUser, "disable");
+        governance.invoke(owner, "removeAuthorizedCallerShutdown", trustedUser2.getAddress());
+
+        Executable alreadyCalled = () -> governance.invoke(trustedUser, "enable");
+        expectErrorMessage(alreadyCalled, expectedErrorMessage);
+
+        Executable removedUser = () -> governance.invoke(trustedUser2, "disable");
+        expectErrorMessage(removedUser, expectedErrorMessage);
+    }
+
+
+    @Test
+    void blacklist() {
+        // Arrange
+        Account blacklistedUser = sm.createAccount();
+        Account blacklistedUser2 = sm.createAccount();
+
+        // Act
+        governance.invoke(owner, "blacklist", blacklistedUser.getAddress().toString());
+        governance.invoke(governance.getAccount(), "blacklist", blacklistedUser2.getAddress().toString());
+
+        // Assert
+        Map<String, Boolean> blacklist = (Map<String, Boolean>) governance.call("getBlacklist");
+        assertTrue(blacklist.get(blacklistedUser.getAddress().toString()));
+        assertTrue(blacklist.get(blacklistedUser2.getAddress().toString()));
+
+
+        // Act
+        governance.invoke(owner, "removeBlacklist", blacklistedUser.getAddress().toString());
+
+        // Assert
+        blacklist = (Map<String, Boolean>) governance.call("getBlacklist");
+        assertFalse(blacklist.getOrDefault(blacklistedUser.getAddress().toString(), false));
+        assertTrue(blacklist.get(blacklistedUser2.getAddress().toString()));
+
+        verify(daofund.mock, times(3)).updateBlacklist();
+        verify(dex.mock, times(3)).updateBlacklist();
+        verify(loans.mock, times(3)).updateBlacklist();
+        verify(reserve.mock, times(3)).updateBlacklist();
+        verify(stakedLp.mock, times(3)).updateBlacklist();
+        verify(staking.mock, times(3)).updateBlacklist();
+        verify(bBaln.mock, times(3)).updateBlacklist();
+        verify(stability.mock, times(3)).updateBlacklist();
+        verify(sicx.mock, times(3)).updateBlacklist();
+        verify(bnUSD.mock, times(3)).updateBlacklist();
+        verify(baln.mock, times(3)).updateBlacklist();
+    }
+
+    @Test
+    void blacklist_permissions() {
+        // Arrange
+        Account trustedUser = sm.createAccount();
+        Account trustedUser2 = sm.createAccount();
+        Account blacklistedUser1 = sm.createAccount();
+        Account blacklistedUser2 = sm.createAccount();
+        String expectedErrorMessage = "Not authorized";
+
+        // Act
+        Executable beforeAuth = () -> governance.invoke(trustedUser, "blacklist", blacklistedUser1.getAddress().toString());
+        expectErrorMessage(beforeAuth, expectedErrorMessage);
+
+        governance.invoke(owner, "addAuthorizedCallerBlacklist", trustedUser.getAddress());
+        governance.invoke(owner, "addAuthorizedCallerBlacklist", trustedUser2.getAddress());
+
+        // Assert
+        governance.invoke(trustedUser, "blacklist", blacklistedUser1.getAddress().toString());
+        governance.invoke(trustedUser, "blacklist", blacklistedUser2.getAddress().toString());
+        governance.invoke(owner, "removeAuthorizedCallerBlacklist", trustedUser2.getAddress());
+
+        Executable removedUser = () -> governance.invoke(trustedUser2, "disable");
+        expectErrorMessage(removedUser, expectedErrorMessage);
+    }
+
+    @Test
+    void addAndRemoveTrustedUsers() {
+        Account trustedUser = sm.createAccount();
+        assertOnlyCallableByContractOrOwner("addAuthorizedCallerBlacklist", trustedUser.getAddress());
+        assertOnlyCallableByContractOrOwner("addAuthorizedCallerBlacklist", trustedUser.getAddress());
+
+        assertOnlyCallableByContractOrOwner("removeAuthorizedCallerBlacklist", trustedUser.getAddress());
+        assertOnlyCallableByContractOrOwner("removeAuthorizedCallerBlacklist", trustedUser.getAddress());
+
+        assertOnlyCallableByContractOrOwner("addAuthorizedCallerShutdown", trustedUser.getAddress());
+        assertOnlyCallableByContractOrOwner("addAuthorizedCallerShutdown", trustedUser.getAddress());
+
+        assertOnlyCallableByContractOrOwner("removeAuthorizedCallerShutdown", trustedUser.getAddress());
+        assertOnlyCallableByContractOrOwner("removeAuthorizedCallerShutdown", trustedUser.getAddress());
     }
 }
