@@ -26,7 +26,10 @@ import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
+
 import score.Address;
+import score.UserRevertedException;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -369,6 +372,85 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
     //     System.out.println(tester.governance.name());
     //     assertEquals(updatedContract, tester.governance.name());
     // }
+
+    @Test
+    @Order(16)
+    void blacklist() throws Throwable {
+        // Arrange
+        BalancedClient blacklistedUser1 = balanced.newClient();
+        BalancedClient blacklistedUser2 = balanced.newClient();
+        BalancedClient user3 = balanced.newClient();
+        BigInteger loan = BigInteger.TEN.pow(20);
+        blacklistedUser1.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loan, null, null);
+        blacklistedUser2.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loan, null, null);
+        user3.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loan, null, null);
+
+        // Act
+        owner.governance.blacklist(blacklistedUser1.getAddress().toString());
+        owner.governance.blacklist(blacklistedUser2.getAddress().toString());
+
+        // Assert
+        Executable nonAllowedTransfer1 = () -> blacklistedUser1.bnUSD.transfer(owner.getAddress(), BigInteger.ONE, null);
+        Executable nonAllowedTransfer2 = () -> blacklistedUser2.bnUSD.transfer(owner.getAddress(), BigInteger.ONE, null);
+        Executable nonAllowedBurn = () -> blacklistedUser1.loans.returnAsset("bnUSD", BigInteger.TEN.pow(18), "sICX");
+        user3.bnUSD.transfer(owner.getAddress(), BigInteger.ONE, null);
+        assertThrows(UserRevertedException.class, nonAllowedTransfer1);
+        assertThrows(UserRevertedException.class, nonAllowedTransfer2);
+        assertThrows(UserRevertedException.class, nonAllowedBurn);
+
+        // Test update
+        // Arrange
+        JsonArray loansDeployParameters = new JsonArray()
+                .add(createParameter(balanced.governance._address()));
+
+        JsonArray deployToParameters = new JsonArray()
+                .add(createParameter(balanced.loans._address()))
+                .add(createParameter(getContractData("Loans")))
+                .add(createParameter(loansDeployParameters.toString()));
+
+        JsonArray actions = new JsonArray()
+                .add(createTransaction(balanced.governance._address(), "deployTo", deployToParameters));
+
+        owner.governance.execute(actions.toString());
+
+        // Assert
+        Executable nonAllowedBurn1 = () -> blacklistedUser1.loans.returnAsset("bnUSD", BigInteger.TEN.pow(18), "sICX");
+        Executable nonAllowedBurn2 = () -> blacklistedUser2.loans.returnAsset("bnUSD", BigInteger.TEN.pow(18), "sICX");
+        assertThrows(UserRevertedException.class, nonAllowedBurn1);
+        assertThrows(UserRevertedException.class, nonAllowedBurn2);
+
+        owner.governance.removeBlacklist(blacklistedUser2.getAddress().toString());
+        nonAllowedTransfer2.execute();
+    }
+
+    @Test
+    @Order(16)
+    void emergency_disable_enable() throws Throwable {
+        // Arrange
+        BalancedClient user = balanced.newClient();
+        BalancedClient trustedUser1 = balanced.newClient();
+        BalancedClient trustedUser2 = balanced.newClient();
+
+        BigInteger loan = BigInteger.TEN.pow(20);
+        user.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loan, null, null);
+
+        owner.governance.addAuthorizedCallerShutdown(trustedUser1.getAddress());
+        owner.governance.addAuthorizedCallerShutdown(trustedUser2.getAddress());
+
+        // Act & Assert
+        trustedUser1.governance.disable();
+        Executable disabledTransfer = () -> user.bnUSD.transfer(owner.getAddress(), BigInteger.ONE, null);
+        Executable sameUserEnable = () -> trustedUser1.governance.enable();
+        assertThrows(UserRevertedException.class, disabledTransfer);
+        assertThrows(UserRevertedException.class, sameUserEnable);
+
+        trustedUser2.governance.enable();
+        user.bnUSD.transfer(owner.getAddress(), BigInteger.ONE, null);
+        Executable user1Disable = () -> trustedUser1.governance.disable();
+        Executable user2Disable = () -> trustedUser2.governance.disable();
+        assertThrows(UserRevertedException.class, user1Disable);
+        assertThrows(UserRevertedException.class, user2Disable);
+    }
 
     private String getValue(Address address) {
         DefaultScoreClient client = newScoreClient(owner.wallet, address);

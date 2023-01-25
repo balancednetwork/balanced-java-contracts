@@ -30,7 +30,7 @@ import static network.balanced.score.lib.utils.Check.*;
 public class BalancedEmergencyHandling implements Emergency {
     private static String ENABLED = "BalancedStatus-balanced_contract_status";
 
-    private static Map<String, Boolean> blacklist = null;
+    static Map<String, Boolean> blacklist = null;
     private static final VarDB<Boolean> enabled = Context.newVarDB(ENABLED, Boolean.class);
 
     @External
@@ -42,12 +42,11 @@ public class BalancedEmergencyHandling implements Emergency {
     @External
     public void disable() {
         only(getEmergencyManager());
-        enabled.set(true);
+        enabled.set(false);
     }
 
     @External
     public void updateBlacklist() {
-        only(getEmergencyManager());
         fetchBlacklist();
     }
 
@@ -75,6 +74,9 @@ public class BalancedEmergencyHandling implements Emergency {
     @SuppressWarnings("unchecked")
     public void fetchBlacklist() {
         BalancedEmergencyHandling.blacklist = (Map<String, Boolean>) Context.call(getEmergencyManager(), "getBlacklist");
+        if (BalancedEmergencyHandling.blacklist == null) {
+            BalancedEmergencyHandling.blacklist = Map.of();
+        }
     }
 
     public boolean isBlacklisted(String address) {

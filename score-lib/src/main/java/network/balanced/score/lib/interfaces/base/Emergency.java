@@ -16,8 +16,6 @@
 
 package network.balanced.score.lib.interfaces.base;
 
-import java.util.Map;
-
 import score.Address;
 import score.annotation.External;
 

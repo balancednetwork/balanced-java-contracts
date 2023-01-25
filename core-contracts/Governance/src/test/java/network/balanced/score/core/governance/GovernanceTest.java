@@ -366,30 +366,42 @@ public class GovernanceTest extends GovernanceTestBase {
     @Test
     void disable_enable_permission() {
         // Arrange
-        Account trustedUser = sm.createAccount();
+        Account trustedUser1= sm.createAccount();
         Account trustedUser2 = sm.createAccount();
         String expectedErrorMessage = "Not authorized";
+        Map<Address, Boolean> authorizedCallers;
 
         // Act
         governance.invoke(owner, "disable");
         governance.invoke(governance.getAccount(), "disable");
-        Executable beforeAuth = () -> governance.invoke(trustedUser, "disable");
+        Executable beforeAuth = () -> governance.invoke(trustedUser1, "disable");
         expectErrorMessage(beforeAuth, expectedErrorMessage);
 
-        governance.invoke(owner, "addAuthorizedCallerShutdown", trustedUser.getAddress());
+        governance.invoke(owner, "addAuthorizedCallerShutdown", trustedUser1.getAddress());
         governance.invoke(owner, "addAuthorizedCallerShutdown", trustedUser2.getAddress());
 
+        authorizedCallers = (Map<Address, Boolean>) governance.call("getAuthorizedCallersShutdown");
+        assertTrue(authorizedCallers.get(trustedUser1.getAddress()));
+        assertTrue(authorizedCallers.get(trustedUser2.getAddress()));
+
         // Assert
-        governance.invoke(trustedUser, "disable");
+        governance.invoke(trustedUser1, "disable");
+        authorizedCallers = (Map<Address, Boolean>) governance.call("getAuthorizedCallersShutdown");
+        assertFalse(authorizedCallers.containsKey(trustedUser1.getAddress()));
+        assertTrue(authorizedCallers.get(trustedUser2.getAddress()));
+
         governance.invoke(owner, "removeAuthorizedCallerShutdown", trustedUser2.getAddress());
 
-        Executable alreadyCalled = () -> governance.invoke(trustedUser, "enable");
+        Executable alreadyCalled = () -> governance.invoke(trustedUser1, "enable");
         expectErrorMessage(alreadyCalled, expectedErrorMessage);
 
         Executable removedUser = () -> governance.invoke(trustedUser2, "disable");
         expectErrorMessage(removedUser, expectedErrorMessage);
-    }
 
+        authorizedCallers = (Map<Address, Boolean>) governance.call("getAuthorizedCallersShutdown");
+        assertFalse(authorizedCallers.containsKey(trustedUser1.getAddress()));
+        assertFalse(authorizedCallers.containsKey(trustedUser2.getAddress()));
+    }
 
     @Test
     void blacklist() {
@@ -431,26 +443,36 @@ public class GovernanceTest extends GovernanceTestBase {
     @Test
     void blacklist_permissions() {
         // Arrange
-        Account trustedUser = sm.createAccount();
+        Account trustedUser1 = sm.createAccount();
         Account trustedUser2 = sm.createAccount();
         Account blacklistedUser1 = sm.createAccount();
         Account blacklistedUser2 = sm.createAccount();
         String expectedErrorMessage = "Not authorized";
 
+        Map<Address, Boolean> authorizedCallers;
+
         // Act
-        Executable beforeAuth = () -> governance.invoke(trustedUser, "blacklist", blacklistedUser1.getAddress().toString());
+        Executable beforeAuth = () -> governance.invoke(trustedUser1, "blacklist", blacklistedUser1.getAddress().toString());
         expectErrorMessage(beforeAuth, expectedErrorMessage);
 
-        governance.invoke(owner, "addAuthorizedCallerBlacklist", trustedUser.getAddress());
+        governance.invoke(owner, "addAuthorizedCallerBlacklist", trustedUser1.getAddress());
         governance.invoke(owner, "addAuthorizedCallerBlacklist", trustedUser2.getAddress());
 
         // Assert
-        governance.invoke(trustedUser, "blacklist", blacklistedUser1.getAddress().toString());
-        governance.invoke(trustedUser, "blacklist", blacklistedUser2.getAddress().toString());
+        authorizedCallers = (Map<Address, Boolean>) governance.call("getAuthorizedCallersBlacklist");
+        assertTrue(authorizedCallers.get(trustedUser1.getAddress()));
+        assertTrue(authorizedCallers.get(trustedUser2.getAddress()));
+        governance.invoke(trustedUser1, "blacklist", blacklistedUser1.getAddress().toString());
+        governance.invoke(trustedUser1, "blacklist", blacklistedUser2.getAddress().toString());
         governance.invoke(owner, "removeAuthorizedCallerBlacklist", trustedUser2.getAddress());
 
         Executable removedUser = () -> governance.invoke(trustedUser2, "disable");
         expectErrorMessage(removedUser, expectedErrorMessage);
+        authorizedCallers = (Map<Address, Boolean>) governance.call("getAuthorizedCallersBlacklist");
+        assertTrue(authorizedCallers.get(trustedUser1.getAddress()));
+        assertFalse(authorizedCallers.containsKey(trustedUser2.getAddress()));
+
+
     }
 
     @Test

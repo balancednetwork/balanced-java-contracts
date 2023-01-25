@@ -135,6 +135,12 @@ public interface Governance extends
     void removeAuthorizedCallerShutdown(Address address);
 
     @External(readonly = true)
+    Map<Address, Boolean> getAuthorizedCallersShutdown();
+
+    @External(readonly = true)
+    Map<Address, Boolean> getAuthorizedCallersBlacklist();
+
+    @External(readonly = true)
     BigInteger getProposalCount();
 
     @External(readonly = true)

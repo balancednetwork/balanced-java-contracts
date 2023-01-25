@@ -378,6 +378,16 @@ public class GovernanceImpl implements Governance {
         EmergencyManager.removeAuthorizedCallerShutdown(address);
     }
 
+    @External(readonly = true)
+    public Map<Address, Boolean> getAuthorizedCallersShutdown() {
+        return EmergencyManager.getShutdownCallers();
+    }
+
+    @External(readonly = true)
+    public Map<Address, Boolean> getAuthorizedCallersBlacklist() {
+        return EmergencyManager.getBlacklistCallers();
+    }
+
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
     }

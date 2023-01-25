@@ -35,12 +35,30 @@ public class EmergencyManager {
         authorizedCallersBlacklist.remove(address);
     }
 
+    public static Map<Address, Boolean> getBlacklistCallers() {
+        Map<Address, Boolean>  blacklistCallers = new HashMap<>();
+        for (Address address : authorizedCallersBlacklist.keys()) {
+            blacklistCallers.put(address, true);
+        }
+
+        return blacklistCallers;
+    }
+
     public static void addAuthorizedCallerShutdown(Address address) {
         authorizedCallersShutdown.set(address, true);
     }
 
     public static void removeAuthorizedCallerShutdown(Address address) {
         authorizedCallersShutdown.remove(address);
+    }
+
+    public static Map<Address, Boolean> getShutdownCallers() {
+        Map<Address, Boolean>  shutdownCallers = new HashMap<>();
+        for (Address address : authorizedCallersShutdown.keys()) {
+            shutdownCallers.put(address, true);
+        }
+
+        return shutdownCallers;
     }
 
     public static void disable() {
