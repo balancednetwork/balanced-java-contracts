@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,8 @@ public class GovernanceImpl implements Governance {
     public static final VarDB<BigInteger> balnVoteDefinitionCriterion = Context.newVarDB(MIN_BALN, BigInteger.class);
     public static final VarDB<BigInteger> bnusdVoteDefinitionFee = Context.newVarDB(DEFINITION_FEE, BigInteger.class);
     public static final VarDB<BigInteger> quorum = Context.newVarDB(QUORUM, BigInteger.class);
+    private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
+    public static final String FUTURE_VERSION = "v1.0.0";
 
     public GovernanceImpl() {
         if (launched.getOrDefault(null) == null) {
@@ -56,13 +58,21 @@ public class GovernanceImpl implements Governance {
             setVoteDurationLimits(BigInteger.ONE, BigInteger.valueOf(14));
             return;
         }
-
-        ContractManager.migrateAddresses();
+//        ContractManager.migrateAddresses();
+        if (this.currentVersion.getOrDefault("").equals(FUTURE_VERSION)) {
+            Context.revert("Can't Update same version of code");
+        }
+        this.currentVersion.set(FUTURE_VERSION);
     }
 
     @External(readonly = true)
     public String name() {
         return Names.GOVERNANCE;
+    }
+
+    @External(readonly = true)
+    public String version() {
+        return currentVersion.getOrDefault("");
     }
 
     @External(readonly = true)
