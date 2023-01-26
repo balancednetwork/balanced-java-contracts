@@ -123,22 +123,20 @@ public interface Governance extends
     Map<String, Boolean> getBlacklist();
 
     @External
-    void addAuthorizedCallerBlacklist(Address address);
-
-    @External
-    void removeAuthorizedCallerBlacklist(Address address);
-
-    @External
     void addAuthorizedCallerShutdown(Address address);
 
     @External
     void removeAuthorizedCallerShutdown(Address address);
 
-    @External(readonly = true)
-    Map<Address, Boolean> getAuthorizedCallersShutdown();
+    @External
+    void setShutdownPrivilegeTimeLock(BigInteger days);
 
     @External(readonly = true)
-    Map<Address, Boolean> getAuthorizedCallersBlacklist();
+    BigInteger getShutdownPrivilegeTimeLock();
+
+
+    @External(readonly = true)
+    Map<Address, BigInteger> getAuthorizedCallersShutdown();
 
     @External(readonly = true)
     BigInteger getProposalCount();

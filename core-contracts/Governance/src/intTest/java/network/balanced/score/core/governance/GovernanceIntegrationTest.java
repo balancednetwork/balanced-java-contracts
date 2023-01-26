@@ -80,6 +80,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
         tester.baln.transfer(tester.boostedBaln._address(), balance.divide(BigInteger.TWO), data.getBytes());
 
+        owner.governance.setShutdownPrivilegeTimeLock(BigInteger.TEN);
     }
 
     @Test
@@ -424,7 +425,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
     }
 
     @Test
-    @Order(16)
+    @Order(17)
     void emergency_disable_enable() throws Throwable {
         // Arrange
         BalancedClient user = balanced.newClient();

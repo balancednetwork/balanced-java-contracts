@@ -321,20 +321,20 @@ public class GovernanceImpl implements Governance {
     }
 
     @External
-    public void disable() {
-        EmergencyManager.authorizeEnableAndDisable();
-        EmergencyManager.disable();
-    }
-
-    @External
     public void enable() {
         EmergencyManager.authorizeEnableAndDisable();
         EmergencyManager.enable();
     }
 
     @External
+    public void disable() {
+        EmergencyManager.authorizeEnableAndDisable();
+        EmergencyManager.disable();
+    }
+
+    @External
     public void blacklist(String address) {
-        EmergencyManager.authorizeBlacklist();
+        onlyOwnerOrContract();
         EmergencyManager.blacklist(address);
     }
 
@@ -355,18 +355,6 @@ public class GovernanceImpl implements Governance {
     }
 
     @External
-    public void addAuthorizedCallerBlacklist(Address address) {
-        onlyOwnerOrContract();
-        EmergencyManager.addAuthorizedCallerBlacklist(address);
-    }
-
-    @External
-    public void removeAuthorizedCallerBlacklist(Address address) {
-        onlyOwnerOrContract();
-        EmergencyManager.removeAuthorizedCallerBlacklist(address);
-    }
-
-    @External
     public void addAuthorizedCallerShutdown(Address address) {
         onlyOwnerOrContract();
         EmergencyManager.addAuthorizedCallerShutdown(address);
@@ -378,14 +366,20 @@ public class GovernanceImpl implements Governance {
         EmergencyManager.removeAuthorizedCallerShutdown(address);
     }
 
-    @External(readonly = true)
-    public Map<Address, Boolean> getAuthorizedCallersShutdown() {
-        return EmergencyManager.getShutdownCallers();
+    @External
+    public void setShutdownPrivilegeTimeLock(BigInteger days) {
+        onlyOwnerOrContract();
+        EmergencyManager.setShutdownPrivilegeTimeLock(days);
     }
 
     @External(readonly = true)
-    public Map<Address, Boolean> getAuthorizedCallersBlacklist() {
-        return EmergencyManager.getBlacklistCallers();
+    public BigInteger getShutdownPrivilegeTimeLock() {
+        return EmergencyManager.getShutdownPrivilegeTimeLock();
+    }
+
+    @External(readonly = true)
+    public Map<Address, BigInteger> getAuthorizedCallersShutdown() {
+        return EmergencyManager.getShutdownCallers();
     }
 
     @External

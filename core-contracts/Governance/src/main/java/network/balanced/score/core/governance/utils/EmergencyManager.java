@@ -16,49 +16,45 @@
 
 package network.balanced.score.core.governance.utils;
 
+import java.math.BigInteger;
 import java.util.Map;
 
 import network.balanced.score.lib.utils.IterableDictDB;
 import score.*;
 import scorex.util.HashMap;
 
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
+
 public class EmergencyManager {
-    private static final IterableDictDB<Address, Boolean> authorizedCallersBlacklist = new IterableDictDB<> ("authorized_black_list_callers", Boolean.class, Address.class, false);
-    private static final IterableDictDB<Address, Boolean> authorizedCallersShutdown = new IterableDictDB<> ("authorized_shutdown_callers", Boolean.class, Address.class, false);
+    private static final IterableDictDB<Address, BigInteger> authorizedCallersShutdown = new IterableDictDB<> ("authorized_shutdown_callers", BigInteger.class, Address.class, false);
     private static final IterableDictDB<String, Boolean> blacklist = new IterableDictDB<> ("balanced_black_list", Boolean.class, String.class, false);
-
-    public static void addAuthorizedCallerBlacklist(Address address) {
-        authorizedCallersBlacklist.set(address, true);
-    }
-
-    public static void removeAuthorizedCallerBlacklist(Address address) {
-        authorizedCallersBlacklist.remove(address);
-    }
-
-    public static Map<Address, Boolean> getBlacklistCallers() {
-        Map<Address, Boolean>  blacklistCallers = new HashMap<>();
-        for (Address address : authorizedCallersBlacklist.keys()) {
-            blacklistCallers.put(address, true);
-        }
-
-        return blacklistCallers;
-    }
+    private static final VarDB<BigInteger> enableDisableTimeLock = Context.newVarDB("enable_disable_time_lock", BigInteger.class);
 
     public static void addAuthorizedCallerShutdown(Address address) {
-        authorizedCallersShutdown.set(address, true);
+        authorizedCallersShutdown.set(address, BigInteger.ZERO);
     }
 
     public static void removeAuthorizedCallerShutdown(Address address) {
         authorizedCallersShutdown.remove(address);
     }
 
-    public static Map<Address, Boolean> getShutdownCallers() {
-        Map<Address, Boolean>  shutdownCallers = new HashMap<>();
+    public static Map<Address, BigInteger> getShutdownCallers() {
+        Map<Address, BigInteger>  shutdownCallers = new HashMap<>();
         for (Address address : authorizedCallersShutdown.keys()) {
-            shutdownCallers.put(address, true);
+            shutdownCallers.put(address, authorizedCallersShutdown.get(address));
         }
 
         return shutdownCallers;
+    }
+
+    public static void setShutdownPrivilegeTimeLock(BigInteger days) {
+        Context.require(BigInteger.ONE.compareTo(days) <= 0, "Invalid time lock, it must be between 1 and 30 days");
+        Context.require(BigInteger.valueOf(30).compareTo(days) >= 0, "Invalid time lock, it must be between 1 and 30 days");
+        enableDisableTimeLock.set(days.multiply(MICRO_SECONDS_IN_A_DAY));
+    }
+
+    public static BigInteger getShutdownPrivilegeTimeLock() {
+        return enableDisableTimeLock.get().divide(MICRO_SECONDS_IN_A_DAY);
     }
 
     public static void disable() {
@@ -70,13 +66,11 @@ public class EmergencyManager {
     }
 
     public static void blacklist(String address) {
-        authorizeBlacklist();
         blacklist.set(address, true);
         updateBlacklist();
     }
 
     public static void removeBlacklist(String address) {
-        authorizeBlacklist();
         blacklist.remove(address);
         updateBlacklist();
     }
@@ -123,16 +117,11 @@ public class EmergencyManager {
         }
 
         Address caller = Context.getCaller();
-        Context.require(authorizedCallersShutdown.getOrDefault(caller, false), "Not authorized");
-        authorizedCallersShutdown.remove(caller);
+        BigInteger nextCallTime = authorizedCallersShutdown.get(caller);
+        Context.require(nextCallTime != null, "Not authorized");
+        BigInteger blockTime = BigInteger.valueOf(Context.getBlockTimestamp());
+        Context.require(nextCallTime.compareTo(blockTime) < 0, "Your privileges are disabled until " + nextCallTime);
+
+        authorizedCallersShutdown.set(caller, blockTime.add(enableDisableTimeLock.get()));
     }
-
-    public static void authorizeBlacklist() {
-        if (isOwnerOrContract()) {
-            return;
-        }
-
-        Context.require(authorizedCallersBlacklist.getOrDefault(Context.getCaller(), false), "Not authorized");
-    }
-
 }
