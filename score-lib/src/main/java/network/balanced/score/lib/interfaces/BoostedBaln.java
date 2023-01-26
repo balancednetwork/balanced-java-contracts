@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import network.balanced.score.lib.interfaces.addresses.BalnAddress;
 import network.balanced.score.lib.interfaces.addresses.DividendsAddress;
 import network.balanced.score.lib.interfaces.addresses.RewardsAddress;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
+import network.balanced.score.lib.interfaces.base.Version;
 import score.Address;
 import score.annotation.External;
 import score.annotation.Optional;
@@ -32,7 +33,7 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface BoostedBaln extends BalnAddress, RewardsAddress, DividendsAddress, TokenFallback {
+public interface BoostedBaln extends BalnAddress, RewardsAddress, DividendsAddress, TokenFallback, Version {
     @External
     void setMinimumLockingAmount(BigInteger value);
 
