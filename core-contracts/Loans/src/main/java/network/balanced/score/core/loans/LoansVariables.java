@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,6 +58,7 @@ public class LoansVariables {
 
     private static final String EXPECTED_TOKEN = "expectedToken";
     private static final String AMOUNT_RECEIVED = "amountReceived";
+    private static final String VERSION = "version";
 
     public static final VarDB<Boolean> loansOn = Context.newVarDB(LOANS_ON, Boolean.class);
 
@@ -93,4 +94,6 @@ public class LoansVariables {
 
     static final VarDB<Address> expectedToken = Context.newVarDB(EXPECTED_TOKEN, Address.class);
     static final VarDB<BigInteger> amountReceived = Context.newVarDB(AMOUNT_RECEIVED, BigInteger.class);
+
+    public static final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
 }

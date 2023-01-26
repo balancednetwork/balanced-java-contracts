@@ -20,6 +20,7 @@ import network.balanced.score.lib.interfaces.Dividends;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.utils.Names;
+import network.balanced.score.lib.utils.Versions;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -70,6 +71,8 @@ public class DividendsImpl implements Dividends {
     private static final BranchDB<Address, DictDB<Address, BigInteger>> accruedDividends =
             Context.newBranchDB(ACCRUED_DIVIDENDS, BigInteger.class);
 
+    private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
+
     public DividendsImpl(@Optional Address _governance) {
         if (governance.get() == null) {
             isContract(_governance);
@@ -84,6 +87,11 @@ public class DividendsImpl implements Dividends {
         if (governance.get() != null) {
             setGovernance(governance.get());
         }
+
+        if (currentVersion.getOrDefault("").equals(Versions.DIVIDENDS)) {
+            Context.revert("Can't Update same version of code");
+        }
+        currentVersion.set(Versions.DIVIDENDS);
     }
 
     @External(readonly = true)
@@ -91,6 +99,10 @@ public class DividendsImpl implements Dividends {
         return Names.DIVIDENDS;
     }
 
+    @External(readonly = true)
+    public String version() {
+        return currentVersion.getOrDefault("");
+    }
 
     @External
     public void updateAddress(String name) {

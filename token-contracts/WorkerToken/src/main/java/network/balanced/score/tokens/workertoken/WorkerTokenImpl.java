@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package network.balanced.score.tokens.workertoken;
 import network.balanced.score.lib.interfaces.WorkerToken;
 import network.balanced.score.lib.tokens.IRC2PresetFixedSupply;
 import network.balanced.score.lib.utils.Names;
+import network.balanced.score.lib.utils.Versions;
 import score.Address;
 import score.ArrayDB;
 import score.Context;
@@ -44,11 +45,13 @@ public class WorkerTokenImpl extends IRC2PresetFixedSupply implements WorkerToke
     private static final String GOVERNANCE = "governance";
     private static final String BALN_TOKEN = "baln_token";
     private static final String ADMIN = "admin";
+    private static final String VERSION = "version";
 
     private final ArrayDB<Address> addresses = Context.newArrayDB(ACCOUNTS, Address.class);
     private final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
     private final VarDB<Address> balnToken = Context.newVarDB(BALN_TOKEN, Address.class);
     private final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
+    private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
 
     public WorkerTokenImpl(Address _governance) {
         super(TOKEN_NAME, SYMBOL_NAME, INITIAL_SUPPLY, DECIMALS);
@@ -56,6 +59,15 @@ public class WorkerTokenImpl extends IRC2PresetFixedSupply implements WorkerToke
             this.governance.set(_governance);
             addresses.add(Context.getCaller());
         }
+        if (currentVersion.getOrDefault("").equals(Versions.WORKERTOKEN)) {
+            Context.revert("Can't Update same version of code");
+        }
+        currentVersion.set(Versions.WORKERTOKEN);
+    }
+
+    @External(readonly = true)
+    public String version() {
+        return currentVersion.getOrDefault("");
     }
 
     /**

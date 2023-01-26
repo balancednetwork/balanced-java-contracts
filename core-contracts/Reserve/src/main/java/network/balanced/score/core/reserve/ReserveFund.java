@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package network.balanced.score.core.reserve;
 import network.balanced.score.lib.interfaces.Reserve;
 import network.balanced.score.lib.structs.Disbursement;
 import network.balanced.score.lib.utils.Names;
+import network.balanced.score.lib.utils.Versions;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -40,6 +41,7 @@ public class ReserveFund implements Reserve {
     private static final String BALN_TOKEN = "baln_token";
     private static final String SICX_TOKEN = "sicx_token";
     private static final String AWARDS = "awards";
+    private static final String VERSION = "version";
 
     public static final String SICX_SYMBOL = "sICX";
 
@@ -50,12 +52,17 @@ public class ReserveFund implements Reserve {
     private final VarDB<Address> balnToken = Context.newVarDB(BALN_TOKEN, Address.class);
     private final VarDB<Address> sicxToken = Context.newVarDB(SICX_TOKEN, Address.class);
     private final BranchDB<Address, DictDB<Address, BigInteger>> awards = Context.newBranchDB(AWARDS, BigInteger.class);
+    private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
 
     public ReserveFund(@Optional Address _governance) {
         if (governance.get() == null) {
             Context.require(_governance.isContract(), "ReserveFund: Governance address should be a contract");
             governance.set(_governance);
         }
+        if (currentVersion.getOrDefault("").equals(Versions.RESERVE)) {
+            Context.revert("Can't Update same version of code");
+        }
+        currentVersion.set(Versions.RESERVE);
     }
 
     @EventLog(indexed = 2)
@@ -65,6 +72,11 @@ public class ReserveFund implements Reserve {
     @External(readonly = true)
     public String name() {
         return Names.RESERVE;
+    }
+
+    @External(readonly = true)
+    public String version() {
+        return currentVersion.getOrDefault("");
     }
 
     @External

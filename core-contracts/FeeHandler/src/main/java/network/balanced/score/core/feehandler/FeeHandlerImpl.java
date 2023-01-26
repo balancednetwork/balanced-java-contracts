@@ -18,6 +18,7 @@ package network.balanced.score.core.feehandler;
 
 import network.balanced.score.lib.interfaces.FeeHandler;
 import network.balanced.score.lib.utils.Names;
+import network.balanced.score.lib.utils.Versions;
 import score.*;
 import score.annotation.External;
 import scorex.util.ArrayList;
@@ -45,6 +46,7 @@ public class FeeHandlerImpl implements FeeHandler {
     private static final String SWAP_FEES_ACCRUED = "swap_fees_accrued";
     private static final String LOANS_FEES_ACCRUED = "loans_fees_accrued";
     private static final String STABILITY_FEES_ACCRUED = "stability_fees_accrued";
+    public static final String VERSION = "version";
 
     public static final ArrayDB<Address> acceptedDividendsTokens = Context.newArrayDB(DIVIDEND_TOKENS, Address.class);
     private static final DictDB<Address, BigInteger> lastFeeProcessingBlock = Context.newDictDB(LAST_BLOCK,
@@ -60,6 +62,8 @@ public class FeeHandlerImpl implements FeeHandler {
     private final VarDB<BigInteger> stabilityFundFeesAccrued = Context.newVarDB(STABILITY_FEES_ACCRUED,
             BigInteger.class);
 
+    private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
+
     public FeeHandlerImpl(Address _governance) {
         if (governance.get() == null) {
             isContract(_governance);
@@ -67,13 +71,22 @@ public class FeeHandlerImpl implements FeeHandler {
             enabled.set(true);
         }
 
-        setGovernance(governance.get());
-        FeeRouter.balnRouteLimit.set(BigInteger.valueOf(100).multiply(EXA));
+//        setGovernance(governance.get());
+//        FeeRouter.balnRouteLimit.set(BigInteger.valueOf(100).multiply(EXA));
+        if (currentVersion.getOrDefault("").equals(Versions.FEEHANDLER)) {
+            Context.revert("Can't Update same version of code");
+        }
+        currentVersion.set(Versions.FEEHANDLER);
     }
 
     @External(readonly = true)
     public String name() {
         return Names.FEEHANDLER;
+    }
+
+    @External(readonly = true)
+    public String version() {
+        return currentVersion.getOrDefault("");
     }
 
     @External

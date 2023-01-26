@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import network.balanced.score.lib.interfaces.Loans;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import network.balanced.score.lib.utils.Names;
+import network.balanced.score.lib.utils.Versions;
 import score.Address;
 import score.Context;
 import score.annotation.EventLog;
@@ -79,11 +80,21 @@ public class LoansImpl implements Loans {
             CollateralDB.migrateToNewDBs();
             AssetDB.migrateToNewDBs();
         }
+
+        if (currentVersion.getOrDefault("").equals(Versions.LOANS)) {
+            Context.revert("Can't Update same version of code");
+        }
+        currentVersion.set(Versions.LOANS);
     }
 
     @External(readonly = true)
     public String name() {
         return Names.LOANS;
+    }
+
+    @External(readonly = true)
+    public String version() {
+        return currentVersion.getOrDefault("");
     }
 
     @External

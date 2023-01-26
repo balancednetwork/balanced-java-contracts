@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 import network.balanced.score.core.dex.db.NodeDB;
 import network.balanced.score.lib.structs.RewardsDataEntry;
+import network.balanced.score.lib.utils.Versions;
 import score.Address;
 import score.BranchDB;
 import score.Context;
@@ -44,6 +45,15 @@ public class DexImpl extends AbstractDex {
 
     public DexImpl(Address _governance) {
         super(_governance);
+        if (currentVersion.getOrDefault("").equals(Versions.DEX)) {
+            Context.revert("Can't Update same version of code");
+        }
+        currentVersion.set(Versions.DEX);
+    }
+
+    @External(readonly = true)
+    public String version() {
+        return currentVersion.getOrDefault("");
     }
 
     @Payable

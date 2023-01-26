@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package network.balanced.score.tokens.balanceddollar;
 import network.balanced.score.lib.interfaces.BalancedDollar;
 import network.balanced.score.lib.tokens.IRC2Burnable;
 import network.balanced.score.lib.utils.Names;
+import network.balanced.score.lib.utils.Versions;
 import score.Address;
 import score.Context;
 import score.DictDB;
@@ -46,6 +47,7 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
     private static final String MIN_INTERVAL = "min_interval";
     private static final String ADMIN_ADDRESS = "admin_address";
     private final String MINTER2 = "ExtraMinter";
+    public static final String VERSION = "version";
 
     private final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
     private final VarDB<Address> oracleAddress = Context.newVarDB(ORACLE_ADDRESS, Address.class);
@@ -58,6 +60,8 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
 
     private static final String BLACKLIST = "blacklist";
     private static final DictDB<Address, Boolean> blackListed = Context.newDictDB(BLACKLIST, Boolean.class);
+
+    private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
 
     public BalancedDollarImpl(Address _governance) {
         super(TOKEN_NAME, SYMBOL_NAME, null);
@@ -72,12 +76,21 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
             minInterval.set(MIN_UPDATE_TIME);
         }
 
-        blackListed.set(Address.fromString("hxc35cffe7c582cb313820fa6838dd357027ad3d07"), true);
-        blackListed.set(Address.fromString("hx51f13e696c1b0d17f57696bdc22c6cd697706086"), true);
-        blackListed.set(Address.fromString("hxc308be82c57c7190ce623a3f39e0db39c7aa93ab"), true);
-        blackListed.set(Address.fromString("hx2cb7cfad74447a5f47f109690599a1916f349a52"), true);
-        blackListed.set(Address.fromString("hxd5271567e1121bdba855cbedd12163cb38e48e65"), true);
-        blackListed.set(Address.fromString("cxfb312bbd0a244b9e7bb5794c91f4e4acc41dea94"), true);
+//        blackListed.set(Address.fromString("hxc35cffe7c582cb313820fa6838dd357027ad3d07"), true);
+//        blackListed.set(Address.fromString("hx51f13e696c1b0d17f57696bdc22c6cd697706086"), true);
+//        blackListed.set(Address.fromString("hxc308be82c57c7190ce623a3f39e0db39c7aa93ab"), true);
+//        blackListed.set(Address.fromString("hx2cb7cfad74447a5f47f109690599a1916f349a52"), true);
+//        blackListed.set(Address.fromString("hxd5271567e1121bdba855cbedd12163cb38e48e65"), true);
+//        blackListed.set(Address.fromString("cxfb312bbd0a244b9e7bb5794c91f4e4acc41dea94"), true);
+        if (this.currentVersion.getOrDefault("").equals(Versions.BNUSD)) {
+            Context.revert("Can't Update same version of code");
+        }
+        this.currentVersion.set(Versions.BNUSD);
+    }
+
+    @External(readonly = true)
+    public String version() {
+        return currentVersion.getOrDefault("");
     }
 
     @External(readonly = true)

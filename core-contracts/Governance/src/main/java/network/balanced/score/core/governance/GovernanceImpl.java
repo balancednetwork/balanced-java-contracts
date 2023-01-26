@@ -59,10 +59,10 @@ public class GovernanceImpl implements Governance {
             return;
         }
 //        ContractManager.migrateAddresses();
-        if (this.currentVersion.getOrDefault("").equals(Versions.GOVERNANCE)) {
+        if (currentVersion.getOrDefault("").equals(Versions.GOVERNANCE)) {
             Context.revert("Can't Update same version of code");
         }
-        this.currentVersion.set(Versions.GOVERNANCE);
+        currentVersion.set(Versions.GOVERNANCE);
     }
 
     @External(readonly = true)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package network.balanced.score.tokens.balancedtoken;
 
 import network.balanced.score.lib.interfaces.BalancedToken;
 import network.balanced.score.lib.tokens.IRC2Burnable;
+import network.balanced.score.lib.utils.Versions;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -69,6 +70,8 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
     private final VarDB<Boolean> enableSnapshots = Context.newVarDB(ENABLE_SNAPSHOTS, Boolean.class);
     private final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
 
+    private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
+
     public BalancedTokenImpl(Address _governance) {
         super(TOKEN_NAME, SYMBOL_NAME, null);
 
@@ -86,6 +89,15 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
             this.unstakingPeriod.set(DEFAULT_UNSTAKING_PERIOD);
             this.enableSnapshots.set(true);
         }
+        if (this.currentVersion.getOrDefault("").equals(Versions.BALN)) {
+            Context.revert("Can't Update same version of code");
+        }
+        this.currentVersion.set(Versions.BALN);
+    }
+
+    @External(readonly = true)
+    public String version() {
+        return currentVersion.getOrDefault("");
     }
 
     @EventLog(indexed = 3)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
     protected final EnumerableSet<Address> users = new EnumerableSet<>("users_list", Address.class);
     protected final VarDB<BigInteger> minimumLockingAmount = Context.newVarDB("Boosted_baln_minimum_locking_amount",
             BigInteger.class);
+
+    public final VarDB<String> currentVersion = Context.newVarDB("version", String.class);
 
     public AbstractBoostedBaln(Address balnAddress, Address rewardAddress, Address dividendsAddress, String name,
                                String symbol) {

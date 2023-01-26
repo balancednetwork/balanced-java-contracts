@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package network.balanced.score.core.stakedlp;
 import network.balanced.score.lib.interfaces.StakedLP;
 import network.balanced.score.lib.utils.IterableDictDB;
 import network.balanced.score.lib.utils.Names;
+import network.balanced.score.lib.utils.Versions;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -45,12 +46,17 @@ public class StakedLPImpl implements StakedLP {
     static final VarDB<Address> governance = Context.newVarDB("governanceAddress", Address.class);
     static final VarDB<Address> dex = Context.newVarDB("dexAddress", Address.class);
     private static final VarDB<Address> rewards = Context.newVarDB("rewardsAddress", Address.class);
+    private final VarDB<String> currentVersion = Context.newVarDB("version", String.class);
 
     public StakedLPImpl(Address governance) {
         if (StakedLPImpl.governance.get() == null) {
             Context.require(governance.isContract(), "StakedLP: Governance address should be a contract");
             StakedLPImpl.governance.set(governance);
         }
+        if (currentVersion.getOrDefault("").equals(Versions.STAKEDLP)) {
+            Context.revert("Can't Update same version of code");
+        }
+        currentVersion.set(Versions.STAKEDLP);
     }
 
     /*
@@ -68,6 +74,11 @@ public class StakedLPImpl implements StakedLP {
     @External(readonly = true)
     public String name() {
         return Names.STAKEDLP;
+    }
+
+    @External(readonly = true)
+    public String version() {
+        return currentVersion.getOrDefault("");
     }
 
     @External(readonly = true)

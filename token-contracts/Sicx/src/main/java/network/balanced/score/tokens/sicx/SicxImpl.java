@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package network.balanced.score.tokens.sicx;
 import network.balanced.score.lib.interfaces.Sicx;
 import network.balanced.score.lib.tokens.IRC2Burnable;
 import network.balanced.score.lib.utils.Names;
+import network.balanced.score.lib.utils.Versions;
 import score.Address;
 import score.Context;
 import score.DictDB;
@@ -36,11 +37,14 @@ public class SicxImpl extends IRC2Burnable implements Sicx {
     private static final String SYMBOL_NAME = "sICX";
     private static final BigInteger DECIMALS = BigInteger.valueOf(18);
     private static final String STAKING = "staking";
+    private static final String VERSION = "version";
 
     private static final VarDB<Address> stakingAddress = Context.newVarDB(STAKING, Address.class);
 
     private static final String BLACKLIST = "blacklist";
     private static final DictDB<Address, Boolean> blackListed = Context.newDictDB(BLACKLIST, Boolean.class);
+
+    private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
 
     public SicxImpl(Address _admin) {
         super(TOKEN_NAME, SYMBOL_NAME, DECIMALS);
@@ -48,12 +52,21 @@ public class SicxImpl extends IRC2Burnable implements Sicx {
             stakingAddress.set(_admin);
         }
 
-        blackListed.set(Address.fromString("hxc35cffe7c582cb313820fa6838dd357027ad3d07"), true);
-        blackListed.set(Address.fromString("hx51f13e696c1b0d17f57696bdc22c6cd697706086"), true);
-        blackListed.set(Address.fromString("hxc308be82c57c7190ce623a3f39e0db39c7aa93ab"), true);
-        blackListed.set(Address.fromString("hx2cb7cfad74447a5f47f109690599a1916f349a52"), true);
-        blackListed.set(Address.fromString("hxd5271567e1121bdba855cbedd12163cb38e48e65"), true);
-        blackListed.set(Address.fromString("cxfb312bbd0a244b9e7bb5794c91f4e4acc41dea94"), true);
+//        blackListed.set(Address.fromString("hxc35cffe7c582cb313820fa6838dd357027ad3d07"), true);
+//        blackListed.set(Address.fromString("hx51f13e696c1b0d17f57696bdc22c6cd697706086"), true);
+//        blackListed.set(Address.fromString("hxc308be82c57c7190ce623a3f39e0db39c7aa93ab"), true);
+//        blackListed.set(Address.fromString("hx2cb7cfad74447a5f47f109690599a1916f349a52"), true);
+//        blackListed.set(Address.fromString("hxd5271567e1121bdba855cbedd12163cb38e48e65"), true);
+//        blackListed.set(Address.fromString("cxfb312bbd0a244b9e7bb5794c91f4e4acc41dea94"), true);
+        if (currentVersion.getOrDefault("").equals(Versions.SICX)) {
+            Context.revert("Can't Update same version of code");
+        }
+        currentVersion.set(Versions.SICX);
+    }
+
+    @External(readonly = true)
+    public String version() {
+        return currentVersion.getOrDefault("");
     }
 
     @External(readonly = true)
