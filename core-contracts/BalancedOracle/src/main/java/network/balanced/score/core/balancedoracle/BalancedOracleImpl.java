@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package network.balanced.score.core.balancedoracle;
 
 import network.balanced.score.lib.interfaces.BalancedOracle;
 import network.balanced.score.lib.utils.Names;
+import network.balanced.score.lib.utils.Versions;
 import score.Address;
 import score.Context;
 import score.annotation.External;
@@ -36,21 +37,29 @@ public class BalancedOracleImpl implements BalancedOracle {
     public static final String TAG = Names.BALANCEDORACLE;
 
     public BalancedOracleImpl(@Optional Address _governance) {
-        if (governance.get() != null) {
-            return;
+        if (governance.get() == null) {
+            governance.set(_governance);
+            assetPeg.set("bnUSD", "USD");
+            dexPricedAssets.set("BALN", BigInteger.valueOf(3));
+            lastUpdateThreshold.set(MICRO_SECONDS_IN_A_DAY);
+            dexPriceEMADecay.set(EXA);
+            oraclePriceEMADecay.set(EXA);
         }
 
-        governance.set(_governance);
-        assetPeg.set("bnUSD", "USD");
-        dexPricedAssets.set("BALN", BigInteger.valueOf(3));
-        lastUpdateThreshold.set(MICRO_SECONDS_IN_A_DAY);
-        dexPriceEMADecay.set(EXA);
-        oraclePriceEMADecay.set(EXA);
+        if (currentVersion.getOrDefault("").equals(Versions.BALANCEDORACLE)) {
+            Context.revert("Can't Update same version of code");
+        }
+        currentVersion.set(Versions.BALANCEDORACLE);
     }
 
     @External(readonly = true)
     public String name() {
         return Names.BALANCEDORACLE;
+    }
+
+    @External(readonly = true)
+    public String version() {
+        return currentVersion.getOrDefault("");
     }
 
     @External
