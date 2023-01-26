@@ -24,6 +24,7 @@ import network.balanced.score.core.governance.utils.SetupManager;
 import network.balanced.score.lib.interfaces.Governance;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.utils.Names;
+import network.balanced.score.lib.utils.Versions;
 import score.Address;
 import score.Context;
 import score.VarDB;
@@ -50,7 +51,6 @@ public class GovernanceImpl implements Governance {
     public static final VarDB<BigInteger> bnusdVoteDefinitionFee = Context.newVarDB(DEFINITION_FEE, BigInteger.class);
     public static final VarDB<BigInteger> quorum = Context.newVarDB(QUORUM, BigInteger.class);
     private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
-    public static final String FUTURE_VERSION = "v1.0.0";
 
     public GovernanceImpl() {
         if (launched.getOrDefault(null) == null) {
@@ -59,10 +59,10 @@ public class GovernanceImpl implements Governance {
             return;
         }
 //        ContractManager.migrateAddresses();
-        if (this.currentVersion.getOrDefault("").equals(FUTURE_VERSION)) {
+        if (this.currentVersion.getOrDefault("").equals(Versions.GOVERNANCE)) {
             Context.revert("Can't Update same version of code");
         }
-        this.currentVersion.set(FUTURE_VERSION);
+        this.currentVersion.set(Versions.GOVERNANCE);
     }
 
     @External(readonly = true)
