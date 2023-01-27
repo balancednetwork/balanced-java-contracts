@@ -19,7 +19,6 @@ package network.balanced.score.core.loans;
 import score.Address;
 import score.Context;
 import score.DictDB;
-import score.BranchDB;
 import score.VarDB;
 
 import java.math.BigInteger;
@@ -28,14 +27,6 @@ public class LoansVariables {
 
     private static final String LOANS_ON = "loans_on";
     private static final String GOVERNANCE = "governance";
-    private static final String REBALANCE = "rebalance";
-    private static final String DEX = "dex";
-    private static final String DIVIDENDS = "dividends";
-    private static final String RESERVE = "reserve";
-    private static final String REWARDS = "rewards";
-    private static final String STAKING = "staking";
-    private static final String ORACLE = "oracle";
-    private static final String ADMIN = "admin";
 
     private static final String TIME_OFFSET = "time_offset";
 
@@ -45,13 +36,10 @@ public class LoansVariables {
     private static final String PER_COLLATERAL_LIQUIDATION_RATIO = "per_collateral_liquidation_ratio";
     private static final String ORIGINATION_FEE = "origination_fee";
     private static final String REDEMPTION_FEE = "redemption_fee";
+    private static final String REDEMPTION_DAO_FEE = "redemption_dao_fee";
     private static final String RETIREMENT_BONUS = "retirement_bonus";
     private static final String LIQUIDATION_REWARD = "liquidation_reward";
     private static final String NEW_LOAN_MINIMUM = "new_loan_minimum";
-    private static final String MAX_DEBTS_LIST_LENGTH = "max_debts_list_length";
-    private static final String TOTAL_DEBT = "totalDebts";
-    private static final String TOTAL_COLLATERAL_DEBTS = "totalCollateralDebts";
-    private static final String DEBT_CEILINGS = "debt_ceilings";
 
     private static final String REDEEM_BATCH_SIZE = "redeem_batch_size";
     private static final String MAX_RETIRE_PERCENT = "max_retire_percent";
@@ -61,34 +49,22 @@ public class LoansVariables {
     private static final String VERSION = "version";
 
     public static final VarDB<Boolean> loansOn = Context.newVarDB(LOANS_ON, Boolean.class);
-
-    static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
     static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
-    static final VarDB<Address> dex = Context.newVarDB(DEX, Address.class);
-    static final VarDB<Address> rebalancing = Context.newVarDB(REBALANCE, Address.class);
-    static final VarDB<Address> dividends = Context.newVarDB(DIVIDENDS, Address.class);
-    static final VarDB<Address> reserve = Context.newVarDB(RESERVE, Address.class);
-    static final VarDB<Address> rewards = Context.newVarDB(REWARDS, Address.class);
-    static final VarDB<Address> staking = Context.newVarDB(STAKING, Address.class);
-    public static final VarDB<Address> oracle = Context.newVarDB(ORACLE, Address.class);
 
     static final VarDB<BigInteger> timeOffset = Context.newVarDB(TIME_OFFSET, BigInteger.class);
     public static final VarDB<BigInteger> lockingRatioSICX = Context.newVarDB(LOCKING_RATIO, BigInteger.class);
     public static final DictDB<String, BigInteger> lockingRatio = Context.newDictDB(PER_COLLATERAL_LOCKING_RATIO,
             BigInteger.class);
-    public static final DictDB<String, BigInteger> totalDebts = Context.newDictDB(TOTAL_DEBT, BigInteger.class);
-    public static final DictDB<String, BigInteger> debtCeiling = Context.newDictDB(DEBT_CEILINGS, BigInteger.class);
-    public static final BranchDB<String, DictDB<String, BigInteger>> totalPerCollateralDebts = Context.newBranchDB(TOTAL_COLLATERAL_DEBTS, BigInteger.class);
 
     public static final VarDB<BigInteger> liquidationRatioSICX = Context.newVarDB(LIQUIDATION_RATIO, BigInteger.class);
     public static final DictDB<String, BigInteger> liquidationRatio =
             Context.newDictDB(PER_COLLATERAL_LIQUIDATION_RATIO, BigInteger.class);
     static final VarDB<BigInteger> originationFee = Context.newVarDB(ORIGINATION_FEE, BigInteger.class);
     static final VarDB<BigInteger> redemptionFee = Context.newVarDB(REDEMPTION_FEE, BigInteger.class);
+    static final VarDB<BigInteger> redemptionDaoFee = Context.newVarDB(REDEMPTION_DAO_FEE, BigInteger.class);
     static final VarDB<BigInteger> retirementBonus = Context.newVarDB(RETIREMENT_BONUS, BigInteger.class);
     static final VarDB<BigInteger> liquidationReward = Context.newVarDB(LIQUIDATION_REWARD, BigInteger.class);
     static final VarDB<BigInteger> newLoanMinimum = Context.newVarDB(NEW_LOAN_MINIMUM, BigInteger.class);
-    static final VarDB<Integer> maxDebtsListLength = Context.newVarDB(MAX_DEBTS_LIST_LENGTH, Integer.class);
     static final VarDB<Integer> redeemBatch = Context.newVarDB(REDEEM_BATCH_SIZE, Integer.class);
     static final VarDB<BigInteger> maxRetirePercent = Context.newVarDB(MAX_RETIRE_PERCENT, BigInteger.class);
 

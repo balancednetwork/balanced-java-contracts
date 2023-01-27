@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -233,37 +233,12 @@ public class GovernanceTest extends GovernanceTestBase {
     }
 
     @Test
-    void setAddressesOnContract() {
-        // Arrange
-        String _contract = "loans";
-        Account notOwner = sm.createAccount();
-        String expectedErrorMessage =
-                "SenderNotScoreOwnerOrContract: Sender=" + notOwner.getAddress() + " Owner=" + owner.getAddress() +
-                        " Contract=" + governance.getAddress();
-
-        // Act & Assert
-        Executable withNotOwner = () -> governance.invoke(notOwner, "setAddressesOnContract", _contract);
-        expectErrorMessage(withNotOwner, expectedErrorMessage);
-
-        // Act
-        governance.invoke(owner, "setAddressesOnContract", _contract);
-
-        // Assert
-        verify(loans.mock, times(1)).setDividends(dividends.getAddress());
-        verify(loans.mock, times(1)).setStaking(staking.getAddress());
-        verify(loans.mock, times(1)).setReserve(reserve.getAddress());
-        verify(loans.mock, times(1)).setRewards(rewards.getAddress());
-    }
-
-    @Test
     void configureBalanced() {
         // Act
         governance.invoke(owner, "configureBalanced");
 
         // Assert
         verify(loans.mock).addAsset(sicx.getAddress(), true, true);
-        verify(loans.mock).addAsset(bnUSD.getAddress(), true, false);
-        verify(loans.mock).addAsset(baln.getAddress(), false, true);
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,32 @@ import score.Address;
 import score.Context;
 import score.DictDB;
 
+import static network.balanced.score.lib.utils.Check.readonly;
+
 public class BalancedAddressManager {
-    private static String TAG = "BalancedAddressManager";
+    private static final String TAG = "BalancedAddressManager";
     private static final Address mainnetGovernance = Address.fromString("cx44250a12074799e26fdeee75648ae47e2cc84219");
     public static final DictDB<String, Address> contractAddresses = Context.newDictDB(TAG + "ContractAddresses",
             Address.class);
+
+    private static Address baln;
+    private static Address bnusd;
+    private static Address bwt;
+    private static Address daofund;
+    private static Address staking;
+    private static Address stakedLp;
+    private static Address stabilityFund;
+    private static Address sicx;
+    private static Address rewards;
+    private static Address reserve;
+    private static Address rebalance;
+    private static Address oracle;
+    private static Address balancedOracle;
+    private static Address loans;
+    private static Address feehandler;
+    private static Address dividends;
+    private static Address dex;
+    private static Address boostedBaln;
 
     public static void setGovernance(Address address) {
         contractAddresses.set(Names.GOVERNANCE, address);
@@ -50,7 +71,7 @@ public class BalancedAddressManager {
             address = fetchAddress(name);
             try {
                 contractAddresses.set(name, address);
-            } catch (Exception e) {
+            } catch (Exception ignored) {
             }
         }
 
@@ -58,75 +79,201 @@ public class BalancedAddressManager {
     }
 
     public static Address getBaln() {
-        return getAddress(Names.BALN);
+        if (baln != null) {
+            return baln;
+        } else if (readonly()) {
+            return getAddress(Names.BALN);
+        }
+        baln = getAddress(Names.BALN);
+
+        return baln;
     }
 
     public static Address getBnusd() {
-        return getAddress(Names.BNUSD);
+        if (bnusd != null) {
+            return bnusd;
+        } else if (readonly()) {
+            return getAddress(Names.BNUSD);
+        }
+        bnusd = getAddress(Names.BNUSD);
+
+        return bnusd;
     }
 
     public static Address getBwt() {
-        return getAddress(Names.WORKERTOKEN);
+        if (bwt != null) {
+            return bwt;
+        } else if (readonly()) {
+            return getAddress(Names.WORKERTOKEN);
+        }
+        bwt = getAddress(Names.WORKERTOKEN);
+
+        return bwt;
     }
 
     public static Address getDaofund() {
-        return getAddress(Names.DAOFUND);
+        if (daofund != null) {
+            return daofund;
+        } else if (readonly()) {
+            return getAddress(Names.DAOFUND);
+        }
+        daofund = getAddress(Names.DAOFUND);
+
+        return daofund;
     }
 
     public static Address getStaking() {
-        return getAddress(Names.STAKING);
+        if (staking != null) {
+            return staking;
+        } else if (readonly()) {
+            return getAddress(Names.STAKING);
+        }
+        staking = getAddress(Names.STAKING);
+
+        return staking;
     }
 
     public static Address getStakedLp() {
-        return getAddress(Names.STAKEDLP);
+        if (stakedLp != null) {
+            return stakedLp;
+        } else if (readonly()) {
+            return getAddress(Names.STAKEDLP);
+        }
+        stakedLp = getAddress(Names.STAKEDLP);
+
+        return stakedLp;
     }
 
     public static Address getStabilityFund() {
-        return getAddress(Names.STABILITY);
+        if (stabilityFund != null) {
+            return stabilityFund;
+        } else if (readonly()) {
+            return getAddress(Names.STABILITY);
+        }
+        stabilityFund = getAddress(Names.STABILITY);
+
+        return stabilityFund;
     }
 
     public static Address getSicx() {
-        return getAddress(Names.SICX);
+        if (sicx != null) {
+            return sicx;
+        } else if (readonly()) {
+            return getAddress(Names.SICX);
+        }
+        sicx = getAddress(Names.SICX);
+
+        return sicx;
     }
 
     public static Address getRewards() {
-        return getAddress(Names.REWARDS);
+        if (rewards != null) {
+            return rewards;
+        } else if (readonly()) {
+            return getAddress(Names.REWARDS);
+        }
+        rewards = getAddress(Names.REWARDS);
+
+        return rewards;
     }
 
     public static Address getReserve() {
-        return getAddress(Names.RESERVE);
+        if (reserve != null) {
+            return reserve;
+        } else if (readonly()) {
+            return getAddress(Names.RESERVE);
+        }
+        reserve = getAddress(Names.RESERVE);
+
+        return reserve;
     }
 
     public static Address getRebalance() {
-        return getAddress(Names.REBALANCING);
+        if (rebalance != null) {
+            return rebalance;
+        } else if (readonly()) {
+            return getAddress(Names.REBALANCING);
+        }
+        rebalance = getAddress(Names.REBALANCING);
+
+        return rebalance;
     }
 
     public static Address getOracle() {
-        return getAddress(Names.ORACLE);
+        if (oracle != null) {
+            return oracle;
+        } else if (readonly()) {
+            return getAddress(Names.ORACLE);
+        }
+        oracle = getAddress(Names.ORACLE);
+
+        return oracle;
     }
 
     public static Address getBalancedOracle() {
-        return getAddress(Names.BALANCEDORACLE);
+        if (balancedOracle != null) {
+            return balancedOracle;
+        } else if (readonly()) {
+            return getAddress(Names.BALANCEDORACLE);
+        }
+        balancedOracle = getAddress(Names.BALANCEDORACLE);
+
+        return balancedOracle;
     }
 
     public static Address getLoans() {
-        return getAddress(Names.LOANS);
+        if (loans != null) {
+            return loans;
+        } else if (readonly()) {
+            return getAddress(Names.LOANS);
+        }
+        loans = getAddress(Names.LOANS);
+
+        return loans;
     }
 
     public static Address getFeehandler() {
-        return getAddress(Names.FEEHANDLER);
+        if (feehandler != null) {
+            return feehandler;
+        } else if (readonly()) {
+            return getAddress(Names.FEEHANDLER);
+        }
+        feehandler = getAddress(Names.FEEHANDLER);
+
+        return feehandler;
     }
 
     public static Address getDividends() {
-        return getAddress(Names.DIVIDENDS);
+        if (dividends != null) {
+            return dividends;
+        } else if (readonly()) {
+            return getAddress(Names.DIVIDENDS);
+        }
+        dividends = getAddress(Names.DIVIDENDS);
+
+        return dividends;
     }
 
     public static Address getDex() {
-        return getAddress(Names.DEX);
+        if (dex != null) {
+            return dex;
+        } else if (readonly()) {
+            return getAddress(Names.DEX);
+        }
+        dex = getAddress(Names.DEX);
+
+        return dex;
     }
 
     public static Address getBoostedBaln() {
-        return getAddress(Names.BOOSTED_BALN);
+        if (boostedBaln != null) {
+            return boostedBaln;
+        } else if (readonly()) {
+            return getAddress(Names.BOOSTED_BALN);
+        }
+        boostedBaln = getAddress(Names.BOOSTED_BALN);
+
+        return boostedBaln;
     }
 
     public static Address getRouter() {

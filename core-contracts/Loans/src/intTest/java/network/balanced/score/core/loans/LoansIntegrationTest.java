@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 
 package network.balanced.score.core.loans;
+
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
@@ -32,6 +33,7 @@ import java.math.BigInteger;
 import java.util.Map;
 
 import static network.balanced.score.lib.test.integration.BalancedUtils.*;
+import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.getContractData;
 import static network.balanced.score.lib.utils.Constants.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -57,13 +59,41 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         owner.governance.setBalnVoteDefinitionCriterion(BigInteger.ZERO);
         owner.governance.setQuorum(BigInteger.ONE);
 
+        JsonArray setMaxRetirePercentParameters = new JsonArray().add(createParameter(BigInteger.valueOf(1000)));
+        JsonArray setMaxRetirePercent = new JsonArray().add(createTransaction(balanced.loans._address(),
+                "setMaxRetirePercent", setMaxRetirePercentParameters));
+        owner.governance.execute(setMaxRetirePercent.toString());
+
         ethAddress = createIRC2Token(owner, "ICON ETH", "iETH", iethNumberOfDecimals);
-        owner.balancedOracle.getPriceInLoop((txr) -> {
-        }, "ETH");
         owner.irc2(ethAddress).setMinter(owner.getAddress());
 
         btcAddress = createIRC2Token(owner, "ICON BTC", "iBTC");
         owner.irc2(btcAddress).setMinter(owner.getAddress());
+    }
+
+
+    @Test
+    @Order(0)
+    void removeBALN() {
+        // Arrange
+        JsonArray addAssetParameters = new JsonArray()
+                .add(createParameter(balanced.baln._address()))
+                .add(createParameter(true))
+                .add(createParameter(true));
+
+        JsonArray actions = new JsonArray().add(createTransaction(balanced.loans._address(), "addAsset",
+                addAssetParameters));
+        owner.governance.execute(actions.toString());
+
+        assertTrue(reader.loans.getAssetTokens().containsKey("BALN"));
+
+        // Act
+        String governanceParam = new JsonArray().add(createParameter(balanced.governance._address())).toString();
+
+        owner.governance.deployTo(balanced.loans._address(), getContractData("Loans"), governanceParam);
+
+        // Assert
+        assertFalse(reader.loans.getAssetTokens().containsKey("BALN"));
     }
 
     @Test
@@ -94,10 +124,8 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         // get enough baln to vote through a new collateral
         balanced.increaseDay(3);
         BigInteger ethAmount = BigInteger.valueOf(2).multiply(iethDecimals);
-        BigInteger ethPriceInLoop = reader.balancedOracle.getLastPriceInLoop("ETH");
-        BigInteger bnusdPriceInLoop = reader.balancedOracle.getLastPriceInLoop("bnUSD");
-        BigInteger ethValue = ethAmount.multiply(ethPriceInLoop).divide(iethDecimals);
-        BigInteger bnusdAmount = ethValue.multiply(EXA).divide(bnusdPriceInLoop);
+        BigInteger ethPrice = reader.balancedOracle.getLastPriceInUSD("ETH");
+        BigInteger bnusdAmount = ethAmount.multiply(ethPrice).divide(iethDecimals);
 
         addCollateralType(owner, ethAddress, ethAmount, bnusdAmount, "ETH");
 
@@ -137,8 +165,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
     void takeLoan_dexPricedCollateral() throws Exception {
         // Arrange
         BigInteger btcAmount = BigInteger.TEN.pow(18);
-        BigInteger bnusdAmount = btcAmount.multiply(reader.balancedOracle.getLastPriceInLoop("BTC"))
-                .divide(reader.balancedOracle.getLastPriceInLoop("USD"));
+        BigInteger bnusdAmount = btcAmount.multiply(reader.balancedOracle.getLastPriceInUSD("BTC")).divide(EXA);
         addDexCollateralType(owner, btcAddress, btcAmount, bnusdAmount);
 
         BalancedClient btcLoanTaker = balanced.newClient();
@@ -527,46 +554,51 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
 
     @Test
     @Order(21)
-    void rebalancing_raisePrice() throws Exception {
+    void redeemCollateral_sICX() throws Exception {
+        BigInteger daoFee = reader.loans.getRedemptionDaoFee();
+
+        BalancedClient loanTaker = balanced.newClient();
+        BigInteger collateral = BigInteger.TEN.pow(5).multiply(sicxDecimals);
+        BigInteger redeemAmount = BigInteger.TEN.pow(22);
+        loanTaker.stakeDepositAndBorrow(collateral, redeemAmount);
+
         BigInteger initialTotalDebt = getTotalDebt();
+        BigInteger initialsICXDebt = reader.loans.getTotalCollateralDebt("sICX", "bnUSD");
 
-        reducePriceBelowThreshold(balanced.sicx._address());
-        rebalance(balanced.sicx._address());
+        // Act
+        loanTaker.loans.redeemCollateral(balanced.sicx._address(), redeemAmount);
 
-        assertTrue(initialTotalDebt.compareTo(getTotalDebt()) > 0);
+        // Assert
+        BigInteger expectedFee = redeemAmount.multiply(daoFee).divide(POINTS);
+        BigInteger expectedDebtRepaid = redeemAmount.subtract(expectedFee);
+        assertEquals(initialTotalDebt.subtract(expectedDebtRepaid), getTotalDebt());
+        assertEquals(initialsICXDebt.subtract(expectedDebtRepaid), reader.loans.getTotalCollateralDebt("sICX", "bnUSD"
+        ));
     }
 
     @Test
     @Order(22)
-    void rebalancing_lowerPrice() throws Exception {
+    void redeemCollateral_iETH() throws Exception {
+        // Arrange
+        BigInteger daoFee = reader.loans.getRedemptionDaoFee();
+
+        BalancedClient loanTaker = balanced.newClient();
+        BigInteger collateral = BigInteger.TEN.multiply(iethDecimals);
+        BigInteger redeemAmount = BigInteger.TEN.pow(22);
+        owner.irc2(ethAddress).mintTo(loanTaker.getAddress(), collateral, null);
+        loanTaker.depositAndBorrow(ethAddress, collateral, redeemAmount);
+
         BigInteger initialTotalDebt = getTotalDebt();
+        BigInteger initialETHDebt = reader.loans.getTotalCollateralDebt("iETH", "bnUSD");
 
-        raisePriceAboveThreshold(balanced.sicx._address());
-        rebalance(balanced.sicx._address());
+        // Act
+        loanTaker.loans.redeemCollateral(ethAddress, redeemAmount);
 
-        assertTrue(initialTotalDebt.compareTo(getTotalDebt()) < 0);
-    }
-
-    @Test
-    @Order(23)
-    void rebalancing_raisePrice_ETH() throws Exception {
-        BigInteger initialTotalDebt = getTotalDebt();
-
-        reducePriceBelowThreshold(ethAddress);
-        rebalance(ethAddress);
-
-        assertTrue(initialTotalDebt.compareTo(getTotalDebt()) > 0);
-    }
-
-    @Test
-    @Order(24)
-    void rebalancing_lowerPrice_ETH() throws Exception {
-        BigInteger initialTotalDebt = getTotalDebt();
-
-        raisePriceAboveThreshold(ethAddress);
-        rebalance(ethAddress);
-
-        assertTrue(initialTotalDebt.compareTo(getTotalDebt()) < 0);
+        // Assert
+        BigInteger expectedFee = redeemAmount.multiply(daoFee).divide(POINTS);
+        BigInteger expectedDebtRepaid = redeemAmount.subtract(expectedFee);
+        assertEquals(initialTotalDebt.subtract(expectedDebtRepaid), getTotalDebt());
+        assertEquals(initialETHDebt.subtract(expectedDebtRepaid), reader.loans.getTotalCollateralDebt("iETH", "bnUSD"));
     }
 
     @Test
@@ -595,12 +627,12 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         BigInteger collateralETH = BigInteger.TEN.multiply(iethDecimals);
 
         owner.irc2(ethAddress).mintTo(loanTaker.getAddress(), collateralETH, null);
-
-        BigInteger collateralValue = icxCollateral.multiply(owner.sicx.lastPriceInLoop()).divide(EXA);
+        BigInteger icxPrice = reader.balancedOracle.getLastPriceInUSD("sICX");
+        BigInteger collateralValue = icxCollateral.multiply(icxPrice).divide(EXA);
         BigInteger feePercent = hexObjectToBigInteger(owner.loans.getParameters().get("origination fee"));
         BigInteger maxDebt = POINTS.multiply(collateralValue).divide(lockingRatio);
         BigInteger maxFee = maxDebt.multiply(feePercent).divide(POINTS);
-        BigInteger loan = (maxDebt.subtract(maxFee)).multiply(EXA).divide(owner.bnUSD.lastPriceInLoop());
+        BigInteger loan = maxDebt.subtract(maxFee);
         BigInteger fee = loan.multiply(feePercent).divide(POINTS);
 
         loanTaker.loans.depositAndBorrow(icxCollateral, "bnUSD", loan, null, null);
@@ -649,12 +681,11 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         owner.irc2(ethAddress).mintTo(loanTaker.getAddress(), collateralETH, null);
 
         BigInteger collateralValue =
-                collateralETH.multiply(reader.balancedOracle.getLastPriceInLoop("iETH")).divide(iethDecimals);
+                collateralETH.multiply(reader.balancedOracle.getLastPriceInUSD("iETH")).divide(iethDecimals);
         BigInteger feePercent = hexObjectToBigInteger(owner.loans.getParameters().get("origination fee"));
         BigInteger maxDebt = POINTS.multiply(collateralValue).divide(lockingRatio);
         BigInteger maxFee = maxDebt.multiply(feePercent).divide(POINTS);
-        BigInteger loan = (maxDebt.subtract(maxFee)).multiply(EXA).divide(reader.balancedOracle.getLastPriceInLoop(
-                "bnUSD"));
+        BigInteger loan = maxDebt.subtract(maxFee);
         BigInteger fee = loan.multiply(feePercent).divide(POINTS);
         loanTaker.depositAndBorrow(ethAddress, collateralETH, loan);
 
@@ -662,8 +693,6 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         BigInteger sICXDebt = sICXLoan.add(sICXLoan.multiply(feePercent).divide(POINTS));
 
         loanTaker.loans.depositAndBorrow(icxCollateral, "bnUSD", sICXLoan, null, null);
-        BigInteger expectedsICXCollateral = icxCollateral.multiply(EXA).divide(reader.balancedOracle.getLastPriceInLoop(
-                "sICX"));
 
         // Act
         BigInteger balancePreLiquidation = liquidator.irc2(ethAddress).balanceOf(liquidator.getAddress());
@@ -686,7 +715,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
 
         Map<String, BigInteger> LiquidatedUserBaS = reader.loans.getBalanceAndSupply("Loans", loanTaker.getAddress());
         assertEquals(initialDebt.add(sICXDebt), getTotalDebt());
-        assertEquals(expectedsICXCollateral, loanTaker.getLoansCollateralPosition("sICX"));
+        assertEquals(icxCollateral, loanTaker.getLoansCollateralPosition("sICX"));
         assertEquals(BigInteger.ZERO, loanTaker.getLoansCollateralPosition("iETH"));
         assertEquals(sICXDebt, loanTaker.getLoansAssetPosition("sICX", "bnUSD"));
         assertEquals(BigInteger.ZERO, loanTaker.getLoansAssetPosition("iETH", "bnUSD"));
@@ -701,85 +730,6 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         depositToStabilityContract(voter, voteDefinitionFee.multiply(BigInteger.TWO));
         setLockingRatio(voter, "sICX", initialLockingRatio, "restore locking ratio sICX");
         setLockingRatio(voter, "iETH", initialLockingRatio, "restore locking ratio iETH");
-    }
-
-    protected void rebalance(Address address) throws Exception {
-        BalancedClient rebalancer = balanced.newClient();
-        BigInteger threshold = owner.rebalancing.getPriceChangeThreshold();
-        while (true) {
-            if (threshold.abs().compareTo(calculateThreshold(address).abs()) > 0) {
-                return;
-            }
-
-            owner.rebalancing.rebalance(address);
-        }
-    }
-
-    protected void reducePriceBelowThreshold(Address address) throws Exception {
-        BigInteger threshold = owner.rebalancing.getPriceChangeThreshold();
-        while (calculateThreshold(address).multiply(BigInteger.valueOf(100)).compareTo(threshold.multiply(BigInteger.valueOf(105))) < 0) {
-            reducePrice(address);
-        }
-    }
-
-    protected void raisePriceAboveThreshold(Address address) throws Exception {
-        BigInteger threshold = owner.rebalancing.getPriceChangeThreshold();
-        while (calculateThreshold(address).multiply(BigInteger.valueOf(100)).compareTo(threshold.negate().multiply(BigInteger.valueOf(105))) > 0) {
-            raisePrice(address);
-        }
-    }
-
-    protected BigInteger calculateThreshold(Address collateralAddress) {
-        BigInteger bnusdPriceInIcx = owner.balancedOracle.getLastPriceInLoop("bnUSD");
-        BigInteger collateralPriceInIcx =
-                owner.balancedOracle.getLastPriceInLoop(reader.irc2(collateralAddress).symbol());
-
-        BigInteger poolId = owner.dex.getPoolId(collateralAddress, balanced.bnusd._address());
-        BigInteger decimals = BigInteger.TEN.pow(reader.irc2(collateralAddress).decimals().intValue());
-        Map<String, Object> poolStats = owner.dex.getPoolStats(poolId);
-        BigInteger collateralLiquidity = hexObjectToBigInteger(poolStats.get("base"));
-        BigInteger bnusdLiquidity = hexObjectToBigInteger(poolStats.get("quote"));
-
-        BigInteger actualBnusdPriceInCollateral = bnusdPriceInIcx.multiply(decimals).divide(collateralPriceInIcx);
-        BigInteger bnusdPriceInCollateral = collateralLiquidity.multiply(EXA).divide(bnusdLiquidity);
-        BigInteger priceDifferencePercentage =
-                (actualBnusdPriceInCollateral.subtract(bnusdPriceInCollateral)).multiply(EXA).divide(actualBnusdPriceInCollateral);
-
-        return priceDifferencePercentage;
-    }
-
-    protected void reducePrice(Address collateralAddress) throws Exception {
-        BalancedClient sellerClient = balanced.newClient();
-        BigInteger poolId = owner.dex.getPoolId(collateralAddress, balanced.bnusd._address());
-        Map<String, Object> poolStats = owner.dex.getPoolStats(poolId);
-        BigInteger bnusdLiquidity = hexObjectToBigInteger(poolStats.get("quote"));
-        BigInteger amountToSell = bnusdLiquidity.divide(BigInteger.valueOf(100));
-        depositToStabilityContract(sellerClient, amountToSell);
-        JsonObject swapData = Json.object();
-        JsonObject swapParams = Json.object();
-        swapParams.add("toToken", collateralAddress.toString());
-        swapData.add("method", "_swap");
-        swapData.add("params", swapParams);
-
-        sellerClient.bnUSD.transfer(balanced.dex._address(), sellerClient.bnUSD.balanceOf(sellerClient.getAddress()),
-                swapData.toString().getBytes());
-    }
-
-    protected void raisePrice(Address collateralAddress) throws Exception {
-        BalancedClient sellerClient = balanced.newClient();
-        BigInteger poolId = owner.dex.getPoolId(collateralAddress, balanced.bnusd._address());
-        Map<String, Object> poolStats = owner.dex.getPoolStats(poolId);
-        BigInteger collateralLiquidity = hexObjectToBigInteger(poolStats.get("base"));
-        BigInteger amountToSell = collateralLiquidity.divide(BigInteger.valueOf(100));
-        getTokens(sellerClient, collateralAddress, amountToSell);
-        JsonObject swapData = Json.object();
-        JsonObject swapParams = Json.object();
-        swapParams.add("toToken", balanced.bnusd._address().toString());
-        swapData.add("method", "_swap");
-        swapData.add("params", swapParams);
-
-        sellerClient.irc2(collateralAddress).transfer(balanced.dex._address(), amountToSell,
-                swapData.toString().getBytes());
     }
 
     protected void depositToStabilityContract(BalancedClient client, BigInteger icxAmount) {
@@ -810,7 +760,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         }
     }
 
-    protected void setLockingRatio(BalancedClient voter, String symbol, BigInteger ratio, String name) throws Exception {
+    protected void setLockingRatio(BalancedClient voter, String symbol, BigInteger ratio, String name) {
         JsonArray setLockingRatioParameters = new JsonArray()
                 .add(createParameter(symbol))
                 .add(createParameter(ratio));
@@ -916,14 +866,5 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
                 .add(createTransaction(balanced.loans._address(), "setDebtCeiling", setDebtCeilingParameter));
 
         owner.governance.execute(actions.toString());
-    }
-
-    private BigInteger getAmountToSell(Address address) {
-        if (address.equals(balanced.sicx._address())) {
-            return BigInteger.TEN.pow(21);
-        } else if (address.equals(ethAddress)) {
-            return iethDecimals;
-        }
-        return BigInteger.ZERO;
     }
 }
