@@ -71,7 +71,7 @@ public class ExampleScoreImplTest extends TestBase {
     }
 
     @Test
-    public void testDictDBMigration() {
+    public void testMethodTwo() {
         String from = "<BTPAddress>";
         XCallMessage msg = ExampleScoreMessages.methodTwo("example message");
         score.invoke(xCallScore, "handleCallMessage", from, msg.toBytes());
