@@ -61,10 +61,10 @@ public class DAOfundImpl implements DAOfund {
         if (governance.get() == null) {
             isContract(_governance);
             governance.set(_governance);
+            setGovernance(governance.get());
+            POLManager.setPOLSupplySlippage(BigInteger.valueOf(1_000));
         }
 
-//        setGovernance(governance.get());
-//        POLManager.setPOLSupplySlippage(BigInteger.valueOf(1_000));
         if (this.currentVersion.getOrDefault("").equals(Versions.DAOFUND)) {
             Context.revert("Can't Update same version of code");
         }

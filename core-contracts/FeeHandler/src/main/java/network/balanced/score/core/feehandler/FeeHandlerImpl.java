@@ -69,10 +69,10 @@ public class FeeHandlerImpl implements FeeHandler {
             isContract(_governance);
             governance.set(_governance);
             enabled.set(true);
+            setGovernance(governance.get());
+            FeeRouter.balnRouteLimit.set(BigInteger.valueOf(100).multiply(EXA));
         }
 
-//        setGovernance(governance.get());
-//        FeeRouter.balnRouteLimit.set(BigInteger.valueOf(100).multiply(EXA));
         if (currentVersion.getOrDefault("").equals(Versions.FEEHANDLER)) {
             Context.revert("Can't Update same version of code");
         }

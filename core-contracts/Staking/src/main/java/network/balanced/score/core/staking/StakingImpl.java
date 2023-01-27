@@ -77,11 +77,7 @@ public class StakingImpl implements Staking {
             unstakeBatchLimit.set(DEFAULT_UNSTAKE_BATCH_LIMIT);
             stakingOn.set(true);
         }
-//        else {
-//            BigInteger stakedAmount = totalStake.getOrDefault(BigInteger.ZERO);
-//            Map<String, BigInteger> prepDelegations = prepDelegationInIcx.getOrDefault(DEFAULT_DELEGATION_LIST).toMap();
-//            stakeAndDelegateInNetwork(stakedAmount, prepDelegations);
-//        }
+
         if (currentVersion.getOrDefault("").equals(Versions.STAKING)) {
             Context.revert("Can't Update same version of code");
         }
