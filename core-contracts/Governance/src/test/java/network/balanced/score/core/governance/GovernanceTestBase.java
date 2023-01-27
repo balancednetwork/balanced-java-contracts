@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,11 @@ import com.eclipsesource.json.JsonObject;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
-
-import org.junit.jupiter.api.function.Executable;
-
 import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockContract;
 import network.balanced.score.lib.utils.Names;
+import org.junit.jupiter.api.function.Executable;
 import score.Address;
 
 import java.math.BigInteger;
@@ -263,7 +261,7 @@ public class GovernanceTestBase extends UnitTest {
         Account nonAuthorizedCaller = sm.createAccount();
         String expectedErrorMessage =
                 "Reverted(0): SenderNotScoreOwnerOrContract: Sender=" + nonAuthorizedCaller.getAddress() +
-                " Owner=" + owner.getAddress() + " Contract=" + governance.getAccount().getAddress();
+                        " Owner=" + owner.getAddress() + " Contract=" + governance.getAccount().getAddress();
         Executable unAuthorizedCall = () -> governance.invoke(nonAuthorizedCaller, method, params);
         expectErrorMessage(unAuthorizedCall, expectedErrorMessage);
     }

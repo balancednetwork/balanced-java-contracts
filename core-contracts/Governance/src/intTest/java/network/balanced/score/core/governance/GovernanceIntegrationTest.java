@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
-
 import score.Address;
 import score.UserRevertedException;
 
@@ -391,8 +390,10 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         owner.governance.blacklist(blacklistedUser2.getAddress().toString());
 
         // Assert
-        Executable nonAllowedTransfer1 = () -> blacklistedUser1.bnUSD.transfer(owner.getAddress(), BigInteger.ONE, null);
-        Executable nonAllowedTransfer2 = () -> blacklistedUser2.bnUSD.transfer(owner.getAddress(), BigInteger.ONE, null);
+        Executable nonAllowedTransfer1 = () -> blacklistedUser1.bnUSD.transfer(owner.getAddress(), BigInteger.ONE,
+                null);
+        Executable nonAllowedTransfer2 = () -> blacklistedUser2.bnUSD.transfer(owner.getAddress(), BigInteger.ONE,
+                null);
         Executable nonAllowedBurn = () -> blacklistedUser1.loans.returnAsset("bnUSD", BigInteger.TEN.pow(18), "sICX");
         user3.bnUSD.transfer(owner.getAddress(), BigInteger.ONE, null);
         assertThrows(UserRevertedException.class, nonAllowedTransfer1);

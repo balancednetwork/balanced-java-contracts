@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,8 @@ import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.Constants.MAX_LOCK_TIME;
 import static network.balanced.score.lib.utils.Math.pow;
 import static network.balanced.score.lib.utils.NonReentrant.globalReentryLock;
-import static network.balanced.score.tokens.Constants.*;
+import static network.balanced.score.tokens.Constants.U_WEEK_IN_MICRO_SECONDS;
+import static network.balanced.score.tokens.Constants.WEEK_IN_MICRO_SECONDS;
 import static network.balanced.score.tokens.utils.UnsignedBigInteger.pow10;
 
 

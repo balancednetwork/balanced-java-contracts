@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package network.balanced.score.core.dex;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
+import network.balanced.score.lib.test.UnitTest;
+import network.balanced.score.lib.test.mock.MockBalanced;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
@@ -29,10 +31,6 @@ import score.annotation.Optional;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
-import network.balanced.score.lib.test.mock.MockBalanced;
-import network.balanced.score.lib.test.UnitTest;
 
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.mockito.ArgumentMatchers.any;
@@ -129,7 +127,7 @@ class DexTestBase extends UnitTest {
 
     // Not done yet. Fails for some reason.
     protected void swapSicxToIcx(Account sender, BigInteger value, BigInteger sicxIcxConversionRate) {
-                contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
+        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
         contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
         doReturn(sicxIcxConversionRate).when(dexScoreSpy).getSicxRate();
         contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("updateBatchRewardsData"), eq("sICX/ICX"
@@ -137,6 +135,7 @@ class DexTestBase extends UnitTest {
         contextMock.when(() -> Context.call(eq(sicxScore.getAddress()), eq("transfer"),
                 eq(feehandlerScore.getAddress()), any(BigInteger.class))).thenReturn(true);
         contextMock.when(() -> Context.transfer(eq(sender.getAddress()), any(BigInteger.class))).thenAnswer((Answer<Void>) invocation -> null);
-        dexScore.invoke(sicxScore, "tokenFallback", sender.getAddress(), value, tokenData("_swap_icx", new HashMap<>()));
+        dexScore.invoke(sicxScore, "tokenFallback", sender.getAddress(), value, tokenData("_swap_icx",
+                new HashMap<>()));
     }
 }

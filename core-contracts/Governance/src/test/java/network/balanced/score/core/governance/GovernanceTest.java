@@ -32,9 +32,7 @@ import java.math.BigInteger;
 import java.util.Map;
 
 import static network.balanced.score.lib.utils.Constants.EXA;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -366,7 +364,7 @@ public class GovernanceTest extends GovernanceTestBase {
     @Test
     void disable_enable_permission() {
         // Arrange
-        Account trustedUser1= sm.createAccount();
+        Account trustedUser1 = sm.createAccount();
         Account trustedUser2 = sm.createAccount();
         BigInteger timeLockDays = BigInteger.TEN;
         String expectedErrorMessageAuth = "Not authorized";
@@ -445,7 +443,8 @@ public class GovernanceTest extends GovernanceTestBase {
         governance.invoke(owner, "addAuthorizedCallerShutdown", trustedUser2.getAddress());
 
         // Assert
-        Map<Address, BigInteger> authorizedCallers = (Map<Address, BigInteger>) governance.call("getAuthorizedCallersShutdown");
+        Map<Address, BigInteger> authorizedCallers = (Map<Address, BigInteger>) governance.call(
+                "getAuthorizedCallersShutdown");
         assertEquals(authorizedCallers.get(trustedUser1.getAddress()), BigInteger.ZERO);
         assertEquals(authorizedCallers.get(trustedUser2.getAddress()), BigInteger.ZERO);
 

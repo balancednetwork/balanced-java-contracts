@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,11 @@ package network.balanced.score.lib.utils;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
+import network.balanced.score.lib.test.UnitTest;
+import network.balanced.score.lib.test.mock.MockBalanced;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
-
-import network.balanced.score.lib.test.UnitTest;
-import network.balanced.score.lib.test.mock.MockBalanced;
 import score.Address;
 import score.Context;
 import scorex.util.HashMap;
@@ -45,6 +44,7 @@ public class EmergencyTest extends UnitTest {
         public DummyScore(Address governance) {
             BalancedAddressManager.setGovernance(governance);
         }
+
         public void test() {
             checkStatus();
         }
@@ -52,9 +52,11 @@ public class EmergencyTest extends UnitTest {
 
     public static class proxyScore {
         Address target;
+
         public proxyScore(Address target) {
             this.target = target;
         }
+
         public void test() {
             Context.call(target, "test");
         }
@@ -75,7 +77,7 @@ public class EmergencyTest extends UnitTest {
     }
 
     @Test
-    void disableAndEnable() throws Exception {
+    void disableAndEnable() {
         // Arrange
         String expectedErrorMessage = "Balanced is currently disabled";
         Executable callTest = () -> score.invoke(owner, "test");
@@ -92,13 +94,13 @@ public class EmergencyTest extends UnitTest {
     }
 
     @Test
-    void blacklistAutoFetch() throws Exception {
+    void blacklistAutoFetch() {
         // Arrange
         String expectedErrorMessage = "This address is blacklisted";
         Account blacklistedUser = sm.createAccount();
         Executable callTest = () -> score.invoke(blacklistedUser, "test");
 
-        Map<String, Boolean> blacklist = new HashMap<String, Boolean>();
+        Map<String, Boolean> blacklist = new HashMap<>();
         blacklist.put(blacklistedUser.getAddress().toString(), true);
         when(mockBalanced.governance.mock.getBlacklist()).thenReturn(blacklist);
 
@@ -107,19 +109,19 @@ public class EmergencyTest extends UnitTest {
     }
 
     @Test
-    void blacklistUpdate() throws Exception {
+    void blacklistUpdate() {
         // Arrange
         String expectedErrorMessage = "This address is blacklisted";
         Account blacklistedUser = sm.createAccount();
         Account user = sm.createAccount();
         Executable callTest = () -> score.invoke(blacklistedUser, "test");
 
-        Map<String, Boolean> blacklist = new HashMap<String, Boolean>();
+        Map<String, Boolean> blacklist = new HashMap<>();
         when(mockBalanced.governance.mock.getBlacklist()).thenReturn(blacklist);
         assertDoesNotThrow(callTest);
 
         // Act
-        Map<String, Boolean> blacklistUpdated = new HashMap<String, Boolean>();
+        Map<String, Boolean> blacklistUpdated = new HashMap<>();
         blacklistUpdated.put(blacklistedUser.getAddress().toString(), true);
         when(mockBalanced.governance.mock.getBlacklist()).thenReturn(blacklistUpdated);
         assertDoesNotThrow(callTest);
@@ -139,7 +141,7 @@ public class EmergencyTest extends UnitTest {
         Account blacklistedUser = sm.createAccount();
         Executable proxyCallTest = () -> proxyScore.invoke(blacklistedUser, "test");
 
-        Map<String, Boolean> blacklist = new HashMap<String, Boolean>();
+        Map<String, Boolean> blacklist = new HashMap<>();
         blacklist.put(blacklistedUser.getAddress().toString(), true);
         when(mockBalanced.governance.mock.getBlacklist()).thenReturn(blacklist);
 
