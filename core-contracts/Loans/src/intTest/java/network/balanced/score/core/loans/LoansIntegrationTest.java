@@ -29,11 +29,11 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import score.UserRevertedException;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Map;
 
 import static network.balanced.score.lib.test.integration.BalancedUtils.*;
-import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.getContractData;
 import static network.balanced.score.lib.utils.Constants.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -74,7 +74,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
 
     @Test
     @Order(0)
-    void removeBALN() {
+    void removeBALN() throws IOException {
         // Arrange
         JsonArray addAssetParameters = new JsonArray()
                 .add(createParameter(balanced.baln._address()))
@@ -90,7 +90,9 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         // Act
         String governanceParam = new JsonArray().add(createParameter(balanced.governance._address())).toString();
 
-        owner.governance.deployTo(balanced.loans._address(), getContractData("Loans"), governanceParam);
+        byte[] loansRemoveBalnFileByte = getContractBytesFromResources(this.getClass(), "Loans-0.0.0-optimized.jar");
+
+        owner.governance.deployTo(balanced.loans._address(), loansRemoveBalnFileByte, governanceParam);
 
         // Assert
         assertFalse(reader.loans.getAssetTokens().containsKey("BALN"));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,12 +28,14 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import score.Address;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Map;
 
 import static network.balanced.score.core.governance.deploymentTester.DeploymentTester.name;
 import static network.balanced.score.lib.test.integration.BalancedUtils.*;
-import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
+import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
+import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.newScoreClient;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -42,10 +44,8 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
     private static BalancedClient owner;
     private static BalancedClient tester;
 
-    private static final String deploymentTesterJar1 = System.getProperty("user.dir") + "/src/intTest/java/network" +
-            "/balanced/score/core/governance/DeploymentTester-V1.jar";
-    private static final String deploymentTesterJar2 = System.getProperty("user.dir") + "/src/intTest/java/network" +
-            "/balanced/score/core/governance/DeploymentTester-V2.jar";
+    private static final String deploymentTesterJar1 = "DeploymentTester-V1.jar";
+    private static final String deploymentTesterJar2 = "DeploymentTester-V2.jar";
     private static final String deploymentTesterName = name;
 
     @BeforeAll
@@ -162,10 +162,10 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
 
     @Test
     @Order(10)
-    void deployNewContract() {
+    void deployNewContract() throws IOException {
         // Arrange
         String deploymentValueParameter = "first deployment";
-        byte[] contractData = getContractBytes(deploymentTesterJar1);
+        byte[] contractData = getContractBytesFromResources(this.getClass(), deploymentTesterJar1);
         JsonArray params = new JsonArray()
                 .add(createParameter(deploymentValueParameter));
 
@@ -181,14 +181,14 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
 
     @Test
     @Order(11)
-    void updateContractChangeValue() {
+    void updateContractChangeValue() throws IOException {
         // Arrange
         String deploymentValueParameter = "second deployment";
         Address contractAddress = owner.governance.getAddress(deploymentTesterName);
         String value = getValue(contractAddress);
         assertNotEquals(deploymentValueParameter, value);
 
-        byte[] contractData = getContractBytes(deploymentTesterJar1);
+        byte[] contractData = getContractBytesFromResources(this.getClass(), deploymentTesterJar1);
         JsonArray params = new JsonArray()
                 .add(createParameter(deploymentValueParameter));
 
@@ -202,20 +202,20 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
 
     @Test
     @Order(12)
-    void updateContractAndSetNewValue() {
+    void updateContractAndSetNewValue() throws IOException {
         // Arrange
         String deploymentValueParameter = "third deployment";
         String newSetterValue = "test new setter";
         Address contractAddress = owner.governance.getAddress(deploymentTesterName);
 
-        byte[] contractData = getContractBytes(deploymentTesterJar2);
+        byte[] contractData = getContractBytesFromResources(this.getClass(), deploymentTesterJar2);
 
         JsonArray deploymentParameters = new JsonArray()
                 .add(createParameter(deploymentValueParameter));
 
         JsonArray deployToParameters = new JsonArray()
                 .add(createParameter(contractAddress))
-                .add(createParameter(getContractBytes(deploymentTesterJar2)))
+                .add(createParameter(getContractBytesFromResources(this.getClass(), deploymentTesterJar2)))
                 .add(createParameter(deploymentParameters.toString()));
 
         JsonArray setNewValueParameter = new JsonArray()
@@ -236,8 +236,8 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
 
     @Test
     @Order(13)
-    void updateContractFromVote() {
-        // updating dex from vote
+    void updateContractFromVote() throws IOException {
+        // updating staking from vote
         // size of dex contract: 57,878 bytes
         // vote definition fee: fee=25907653000000000000 steps=2072612240 price=12500000000
         // vote execution fee: fee=25217133812500000000 steps=2017370705 price=12500000000
@@ -246,12 +246,11 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         String updatedContract = "Staked ICX Manager";
         Address contractAddress = owner.governance.getAddress("Staked ICX Manager");
 
-        JsonArray deploymentParameters = new JsonArray()
-                .add(createParameter(owner.governance._address()));
+        byte[] stakingFileByte = getContractBytesFromResources(this.getClass(), "Staking-1.2.0-optimized.jar");
 
         JsonArray deployToParameters = new JsonArray()
                 .add(createParameter(contractAddress))
-                .add(createParameter(getContractData("Staking")))
+                .add(createParameter(stakingFileByte))
                 .add(createParameter("[]"));
 
         JsonArray actions = new JsonArray()
@@ -284,7 +283,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
 
     @Test
     @Order(14)
-    void updateSmallContractFromVote() {
+    void updateSmallContractFromVote() throws IOException {
         // updating DeploymentTesterJar1 contract from vote
         // size of dex contract: 969 bytes
         // vote definition fee: fee=12754290212500000000 steps=1020343217 price=12500000000
@@ -292,7 +291,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
 
         String updateValueParameter = "update";
         String deploymentValueParameter = "first deployment";
-        byte[] contractData = getContractBytes(deploymentTesterJar1);
+        byte[] contractData = getContractBytesFromResources(this.getClass(), deploymentTesterJar1);
         JsonArray params = new JsonArray()
                 .add(createParameter(deploymentValueParameter));
         owner.governance.deploy(contractData, params.toString());
@@ -304,7 +303,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
 
         JsonArray deployToParameters = new JsonArray()
                 .add(createParameter(contractAddress))
-                .add(createParameter(getContractBytes(deploymentTesterJar1)))
+                .add(createParameter(getContractBytesFromResources(this.getClass(), deploymentTesterJar1)))
                 .add(createParameter(deploymentParameters.toString()));
 
         JsonArray actions = new JsonArray()
