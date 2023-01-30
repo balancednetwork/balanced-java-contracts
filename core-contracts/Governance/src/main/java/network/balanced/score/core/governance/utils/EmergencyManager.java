@@ -38,10 +38,10 @@ public class EmergencyManager {
         authorizedCallersShutdown.remove(address);
     }
 
-    public static Map<Address, BigInteger> getShutdownCallers() {
-        Map<Address, BigInteger>  shutdownCallers = new HashMap<>();
+    public static Map<String, BigInteger> getShutdownCallers() {
+        Map<String, BigInteger>  shutdownCallers = new HashMap<>();
         for (Address address : authorizedCallersShutdown.keys()) {
-            shutdownCallers.put(address, authorizedCallersShutdown.get(address));
+            shutdownCallers.put(address.toString(), authorizedCallersShutdown.getOrDefault(address, BigInteger.ZERO));
         }
 
         return shutdownCallers;
@@ -67,12 +67,10 @@ public class EmergencyManager {
 
     public static void blacklist(String address) {
         blacklist.set(address, true);
-        updateBlacklist();
     }
 
     public static void removeBlacklist(String address) {
         blacklist.remove(address);
-        updateBlacklist();
     }
 
     public static Map<String, Boolean> getBlacklist() {
@@ -84,14 +82,8 @@ public class EmergencyManager {
         return blacklisted;
     }
 
-    public static void updateBlacklist() {
-        int nrBalancedContracts = ContractManager.balancedContractNames.size();
-        for (int i = 0; i < nrBalancedContracts; i++) {
-            Address contract = ContractManager.contractAddresses.get(ContractManager.balancedContractNames.get(i));
-            try {
-                Context.call(contract, "updateBlacklist");
-            } catch (Exception e) {}
-        }
+    public static boolean isBlacklisted(String address) {
+        return blacklist.getOrDefault(address, false);
     }
 
     private static void setStatus(String status) {

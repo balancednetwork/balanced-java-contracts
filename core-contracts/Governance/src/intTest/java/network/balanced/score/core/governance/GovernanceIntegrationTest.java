@@ -398,30 +398,6 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         assertThrows(UserRevertedException.class, nonAllowedTransfer1);
         assertThrows(UserRevertedException.class, nonAllowedTransfer2);
         assertThrows(UserRevertedException.class, nonAllowedBurn);
-
-        // Test update
-        // Arrange
-        JsonArray loansDeployParameters = new JsonArray()
-                .add(createParameter(balanced.governance._address()));
-
-        JsonArray deployToParameters = new JsonArray()
-                .add(createParameter(balanced.loans._address()))
-                .add(createParameter(getContractData("Loans")))
-                .add(createParameter(loansDeployParameters.toString()));
-
-        JsonArray actions = new JsonArray()
-                .add(createTransaction(balanced.governance._address(), "deployTo", deployToParameters));
-
-        owner.governance.execute(actions.toString());
-
-        // Assert
-        Executable nonAllowedBurn1 = () -> blacklistedUser1.loans.returnAsset("bnUSD", BigInteger.TEN.pow(18), "sICX");
-        Executable nonAllowedBurn2 = () -> blacklistedUser2.loans.returnAsset("bnUSD", BigInteger.TEN.pow(18), "sICX");
-        assertThrows(UserRevertedException.class, nonAllowedBurn1);
-        assertThrows(UserRevertedException.class, nonAllowedBurn2);
-
-        owner.governance.removeBlacklist(blacklistedUser2.getAddress().toString());
-        nonAllowedTransfer2.execute();
     }
 
     @Test
@@ -451,6 +427,8 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         Executable user2Disable = () -> trustedUser2.governance.disable();
         assertThrows(UserRevertedException.class, user1Disable);
         assertThrows(UserRevertedException.class, user2Disable);
+
+        owner.governance.getAuthorizedCallersShutdown();
     }
 
     private String getValue(Address address) {

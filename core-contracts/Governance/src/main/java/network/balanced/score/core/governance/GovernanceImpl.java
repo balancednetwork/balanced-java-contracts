@@ -344,14 +344,14 @@ public class GovernanceImpl implements Governance {
         EmergencyManager.removeBlacklist(address);
     }
 
-    @External
-    public void updateBlacklist(String address) {
-        EmergencyManager.updateBlacklist();
-    }
-
     @External(readonly = true)
     public Map<String, Boolean> getBlacklist() {
         return EmergencyManager.getBlacklist();
+    }
+
+    @External(readonly = true)
+    public boolean isBlacklisted(String address) {
+        return EmergencyManager.isBlacklisted(address);
     }
 
     @External
@@ -378,7 +378,7 @@ public class GovernanceImpl implements Governance {
     }
 
     @External(readonly = true)
-    public Map<Address, BigInteger> getAuthorizedCallersShutdown() {
+    public Map<String, BigInteger> getAuthorizedCallersShutdown() {
         return EmergencyManager.getShutdownCallers();
     }
 

@@ -91,40 +91,18 @@ public class EmergencyTest extends UnitTest {
         assertDoesNotThrow(callTest);
     }
 
+
+
     @Test
-    void blacklistAutoFetch() throws Exception {
+    void blacklist() throws Exception {
         // Arrange
         String expectedErrorMessage = "This address is blacklisted";
         Account blacklistedUser = sm.createAccount();
         Executable callTest = () -> score.invoke(blacklistedUser, "test");
-
-        Map<String, Boolean> blacklist = new HashMap<String, Boolean>();
-        blacklist.put(blacklistedUser.getAddress().toString(), true);
-        when(mockBalanced.governance.mock.getBlacklist()).thenReturn(blacklist);
-
-        // Act & Assert
-        expectErrorMessage(callTest, expectedErrorMessage);
-    }
-
-    @Test
-    void blacklistUpdate() throws Exception {
-        // Arrange
-        String expectedErrorMessage = "This address is blacklisted";
-        Account blacklistedUser = sm.createAccount();
-        Account user = sm.createAccount();
-        Executable callTest = () -> score.invoke(blacklistedUser, "test");
-
-        Map<String, Boolean> blacklist = new HashMap<String, Boolean>();
-        when(mockBalanced.governance.mock.getBlacklist()).thenReturn(blacklist);
-        assertDoesNotThrow(callTest);
 
         // Act
-        Map<String, Boolean> blacklistUpdated = new HashMap<String, Boolean>();
-        blacklistUpdated.put(blacklistedUser.getAddress().toString(), true);
-        when(mockBalanced.governance.mock.getBlacklist()).thenReturn(blacklistUpdated);
         assertDoesNotThrow(callTest);
-
-        score.invoke(user, "updateBlacklist");
+        when(mockBalanced.governance.mock.isBlacklisted(blacklistedUser.getAddress().toString())).thenReturn(true);
 
         // Act & Assert
         expectErrorMessage(callTest, expectedErrorMessage);
@@ -139,9 +117,7 @@ public class EmergencyTest extends UnitTest {
         Account blacklistedUser = sm.createAccount();
         Executable proxyCallTest = () -> proxyScore.invoke(blacklistedUser, "test");
 
-        Map<String, Boolean> blacklist = new HashMap<String, Boolean>();
-        blacklist.put(blacklistedUser.getAddress().toString(), true);
-        when(mockBalanced.governance.mock.getBlacklist()).thenReturn(blacklist);
+        when(mockBalanced.governance.mock.isBlacklisted(blacklistedUser.getAddress().toString())).thenReturn(true);
 
         // Act & Assert
         expectErrorMessage(proxyCallTest, expectedErrorMessage);

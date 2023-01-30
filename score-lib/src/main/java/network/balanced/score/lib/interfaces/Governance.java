@@ -116,8 +116,8 @@ public interface Governance extends
     @External
     void removeBlacklist(String address);
 
-    @External
-    void updateBlacklist(String address);
+    @External(readonly = true)
+    boolean isBlacklisted(String address);
 
     @External(readonly = true)
     Map<String, Boolean> getBlacklist();
@@ -134,9 +134,8 @@ public interface Governance extends
     @External(readonly = true)
     BigInteger getShutdownPrivilegeTimeLock();
 
-
     @External(readonly = true)
-    Map<Address, BigInteger> getAuthorizedCallersShutdown();
+    Map<String, BigInteger> getAuthorizedCallersShutdown();
 
     @External(readonly = true)
     BigInteger getProposalCount();

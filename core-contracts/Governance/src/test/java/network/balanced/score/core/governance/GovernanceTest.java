@@ -412,18 +412,6 @@ public class GovernanceTest extends GovernanceTestBase {
         blacklist = (Map<String, Boolean>) governance.call("getBlacklist");
         assertFalse(blacklist.getOrDefault(blacklistedUser.getAddress().toString(), false));
         assertTrue(blacklist.get(blacklistedUser2.getAddress().toString()));
-
-        verify(daofund.mock, times(3)).updateBlacklist();
-        verify(dex.mock, times(3)).updateBlacklist();
-        verify(loans.mock, times(3)).updateBlacklist();
-        verify(reserve.mock, times(3)).updateBlacklist();
-        verify(stakedLp.mock, times(3)).updateBlacklist();
-        verify(staking.mock, times(3)).updateBlacklist();
-        verify(bBaln.mock, times(3)).updateBlacklist();
-        verify(stability.mock, times(3)).updateBlacklist();
-        verify(sicx.mock, times(3)).updateBlacklist();
-        verify(bnUSD.mock, times(3)).updateBlacklist();
-        verify(baln.mock, times(3)).updateBlacklist();
     }
 
     @Test

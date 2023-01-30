@@ -45,11 +45,6 @@ public class BalancedEmergencyHandling implements Emergency {
         enabled.set(false);
     }
 
-    @External
-    public void updateBlacklist() {
-        fetchBlacklist();
-    }
-
     @External(readonly = true)
     public boolean isEnabled() {
         return enabled.getOrDefault(true);
@@ -71,28 +66,12 @@ public class BalancedEmergencyHandling implements Emergency {
         Context.require(!isBlacklisted(Context.getOrigin().toString()), "This origin caller is blacklisted");
     }
 
-    @SuppressWarnings("unchecked")
-    public void fetchBlacklist() {
-        BalancedEmergencyHandling.blacklist = (Map<String, Boolean>) Context.call(getEmergencyManager(), "getBlacklist");
-        if (BalancedEmergencyHandling.blacklist == null) {
-            BalancedEmergencyHandling.blacklist = Map.of();
-        }
-    }
-
+    @External(readonly = true)
     public boolean isBlacklisted(String address) {
-        if (blacklist == null) {
-            try {
-                fetchBlacklist();
-            } catch (Exception e) {
-                return false;
-            }
-        }
-
-        Boolean blacklisted = blacklist.get(address);
-        if (blacklisted == null) {
+        try {
+            return Context.call(Boolean.class, getEmergencyManager(), "isBlacklisted", address);
+        } catch (Exception e) {
             return false;
         }
-
-        return blacklisted;
     }
 }

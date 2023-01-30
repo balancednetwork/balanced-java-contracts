@@ -27,12 +27,13 @@ public interface Emergency {
     @External
     public void disable();
 
-    @External
-    public void updateBlacklist();
 
     @External(readonly = true)
     public boolean isEnabled();
 
     @External(readonly = true)
     public Address getEmergencyManager();
+
+    @External(readonly = true)
+    public boolean isBlacklisted(String address);
 }
