@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,19 @@
 
 package network.balanced.score.lib.utils;
 
-import java.util.Map;
-
 import network.balanced.score.lib.interfaces.base.Emergency;
 import score.Address;
 import score.Context;
 import score.VarDB;
 import score.annotation.External;
 
+import java.util.Map;
+
 import static network.balanced.score.lib.utils.BalancedAddressManager.getGovernance;
-import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.Check.only;
 
 public class BalancedEmergencyHandling implements Emergency {
-    private static String ENABLED = "BalancedStatus-balanced_contract_status";
+    private static final String ENABLED = "BalancedStatus-balanced_contract_status";
 
     static Map<String, Boolean> blacklist = null;
     private static final VarDB<Boolean> enabled = Context.newVarDB(ENABLED, Boolean.class);

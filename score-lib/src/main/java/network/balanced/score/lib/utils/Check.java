@@ -21,6 +21,7 @@ import score.Context;
 import score.VarDB;
 
 import java.math.BigInteger;
+
 import static network.balanced.score.lib.utils.BalancedAddressManager.getGovernance;
 
 public class Check {

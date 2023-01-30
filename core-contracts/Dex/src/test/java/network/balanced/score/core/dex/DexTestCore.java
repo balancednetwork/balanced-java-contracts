@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,7 +90,7 @@ public class DexTestCore extends DexTestBase {
         Account supplier = sm.createAccount();
         BigInteger value = BigInteger.valueOf(1000).multiply(EXA);
 
-                supplyIcxLiquidity(supplier, value);
+        supplyIcxLiquidity(supplier, value);
         sm.getBlock().increase(100000);
 
         // Mock these.
@@ -113,7 +113,7 @@ public class DexTestCore extends DexTestBase {
         Account depositor = sm.createAccount();
         BigInteger depositValue = BigInteger.valueOf(100).multiply(EXA);
         BigInteger withdrawValue = BigInteger.valueOf(10).multiply(EXA);
-                depositToken(depositor, balnScore, depositValue);
+        depositToken(depositor, balnScore, depositValue);
 
         contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
         contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
@@ -152,7 +152,7 @@ public class DexTestCore extends DexTestBase {
         Account depositor = sm.createAccount();
         BigInteger depositValue = BigInteger.valueOf(100).multiply(EXA);
         BigInteger withdrawValue = BigInteger.valueOf(10).multiply(EXA);
-                depositToken(depositor, balnScore, depositValue);
+        depositToken(depositor, balnScore, depositValue);
 
         contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
         contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
@@ -212,7 +212,7 @@ public class DexTestCore extends DexTestBase {
         BigInteger depositValue = BigInteger.valueOf(100).multiply(EXA);
         BigInteger withdrawValue = BigInteger.valueOf(-1000).multiply(EXA);
         String expectedErrorMessage = "Reverted(0): Balanced DEX: Must specify a positive amount";
-                depositToken(depositor, balnScore, depositValue);
+        depositToken(depositor, balnScore, depositValue);
 
         // Act & assert.
         Executable withdrawalInvocation = () -> dexScore.invoke(depositor, "withdraw", balnScore.getAddress(),
@@ -227,7 +227,7 @@ public class DexTestCore extends DexTestBase {
         BigInteger depositValue = BigInteger.valueOf(100).multiply(EXA);
         BigInteger withdrawValue = BigInteger.valueOf(1000).multiply(EXA);
         String expectedErrorMessage = "Reverted(0): Balanced DEX: Insufficient Balance";
-                depositToken(depositor, balnScore, depositValue);
+        depositToken(depositor, balnScore, depositValue);
 
         // Act & assert.
         Executable withdrawalInvocation = () -> dexScore.invoke(depositor, "withdraw", balnScore.getAddress(),
@@ -241,7 +241,7 @@ public class DexTestCore extends DexTestBase {
         Account depositor = sm.createAccount();
         BigInteger depositValue = BigInteger.valueOf(100).multiply(EXA);
         BigInteger withdrawValue = BigInteger.valueOf(10).multiply(EXA);
-                depositToken(depositor, balnScore, depositValue);
+        depositToken(depositor, balnScore, depositValue);
 
         contextMock.when(() -> Context.call(eq(balnScore.getAddress()), eq("transfer"), eq(depositor.getAddress()),
                 eq(withdrawValue))).thenReturn(null);
@@ -375,7 +375,8 @@ public class DexTestCore extends DexTestBase {
         assertEquals(newToToken, newPoolStats.get("base"));
         assertEquals(balance, newBalance);
 
-        contextMock.verify(() -> Context.call(eq(bnusdScore.getAddress()), eq("transfer"), eq(feehandlerScore.getAddress()), eq(baln_fee)));
+        contextMock.verify(() -> Context.call(eq(bnusdScore.getAddress()), eq("transfer"),
+                eq(feehandlerScore.getAddress()), eq(baln_fee)));
     }
 
 
@@ -444,7 +445,8 @@ public class DexTestCore extends DexTestBase {
         assertEquals(newToTokenAfterFeeSwap, newPoolStats.get("quote"));
         assertEquals(balance, newBalance);
 
-        contextMock.verify(() -> Context.call(eq(bnusdScore.getAddress()), eq("transfer"), eq(feehandlerScore.getAddress()), eq(swappedBalnFee)));
+        contextMock.verify(() -> Context.call(eq(bnusdScore.getAddress()), eq("transfer"),
+                eq(feehandlerScore.getAddress()), eq(swappedBalnFee)));
     }
 
     @SuppressWarnings("unchecked")
@@ -508,7 +510,7 @@ public class DexTestCore extends DexTestBase {
     @Test
     void tokenfallback_swapSicx() {
         Account account = sm.createAccount();
-                final String data = "{" +
+        final String data = "{" +
                 "\"method\": \"_deposit\"" +
                 "}";
         contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);

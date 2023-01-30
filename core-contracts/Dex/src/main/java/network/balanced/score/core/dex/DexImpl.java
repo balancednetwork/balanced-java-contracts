@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,9 +35,10 @@ import java.util.List;
 
 import static network.balanced.score.core.dex.DexDBVariables.*;
 import static network.balanced.score.core.dex.utils.Const.*;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getRewards;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getSicx;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Math.convertToNumber;
-import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static score.Context.require;
 
 public class DexImpl extends AbstractDex {
@@ -110,8 +111,7 @@ public class DexImpl extends AbstractDex {
         rewardsEntry._user = user;
         rewardsEntry._balance = amount;
         rewardsList.add(rewardsEntry);
-        Context.call(getRewards(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal,
-                rewardsList);
+        Context.call(getRewards(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal, rewardsList);
     }
 
     @External

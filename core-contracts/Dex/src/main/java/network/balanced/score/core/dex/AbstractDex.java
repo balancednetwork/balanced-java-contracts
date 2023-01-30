@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import network.balanced.score.lib.interfaces.Dex;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import network.balanced.score.lib.utils.BalancedEmergencyHandling;
-
 import score.Address;
 import score.BranchDB;
 import score.Context;
@@ -38,10 +37,10 @@ import java.util.Map;
 import static network.balanced.score.core.dex.DexDBVariables.*;
 import static network.balanced.score.core.dex.utils.Check.isValidPoolId;
 import static network.balanced.score.core.dex.utils.Const.*;
-import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.BalancedAddressManager.*;
+import static network.balanced.score.lib.utils.Check.onlyGovernance;
 import static network.balanced.score.lib.utils.Constants.*;
 import static network.balanced.score.lib.utils.Math.pow;
-import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 
 public abstract class AbstractDex extends BalancedEmergencyHandling implements Dex {
 
@@ -554,8 +553,8 @@ public abstract class AbstractDex extends BalancedEmergencyHandling implements D
         }
 
         Swap(BigInteger.valueOf(id), poolBaseToken, fromToken, toToken, sender, receiver, value, sendAmount,
-                BigInteger.valueOf(Context.getBlockTimestamp()), lpFees, initialBalnFees, totalBase, totalQuote, endingPrice
-                , effectiveFillPrice);
+                BigInteger.valueOf(Context.getBlockTimestamp()), lpFees, initialBalnFees, totalBase, totalQuote,
+                endingPrice, effectiveFillPrice);
     }
 
     void donate(Address fromToken, Address toToken, BigInteger value) {
@@ -634,8 +633,7 @@ public abstract class AbstractDex extends BalancedEmergencyHandling implements D
                 orderIcxValue, BigInteger.valueOf(Context.getBlockTimestamp()), conversionFees, balnFees, newIcxTotal
                 , BigInteger.ZERO, sicxIcxPrice, effectiveFillPrice);
 
-        Context.call(getRewards(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal,
-                oldData);
+        Context.call(getRewards(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal, oldData);
         Context.call(sicxAddress, "transfer", getFeehandler(), balnFees);
         Context.transfer(sender, orderIcxValue);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,24 @@
 
 package network.balanced.score.core.governance.utils;
 
+import network.balanced.score.lib.utils.IterableDictDB;
+import score.Address;
+import score.Context;
+import score.VarDB;
+import scorex.util.HashMap;
+
 import java.math.BigInteger;
 import java.util.Map;
-
-import network.balanced.score.lib.utils.IterableDictDB;
-import score.*;
-import scorex.util.HashMap;
 
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
 public class EmergencyManager {
-    private static final IterableDictDB<Address, BigInteger> authorizedCallersShutdown = new IterableDictDB<> ("authorized_shutdown_callers", BigInteger.class, Address.class, false);
-    private static final IterableDictDB<String, Boolean> blacklist = new IterableDictDB<> ("balanced_black_list", Boolean.class, String.class, false);
-    private static final VarDB<BigInteger> enableDisableTimeLock = Context.newVarDB("enable_disable_time_lock", BigInteger.class);
+    private static final IterableDictDB<Address, BigInteger> authorizedCallersShutdown = new IterableDictDB<>(
+            "authorized_shutdown_callers", BigInteger.class, Address.class, false);
+    private static final IterableDictDB<String, Boolean> blacklist = new IterableDictDB<>("balanced_black_list",
+            Boolean.class, String.class, false);
+    private static final VarDB<BigInteger> enableDisableTimeLock = Context.newVarDB("enable_disable_time_lock",
+            BigInteger.class);
 
     public static void addAuthorizedCallerShutdown(Address address) {
         authorizedCallersShutdown.set(address, BigInteger.ZERO);
@@ -49,7 +54,8 @@ public class EmergencyManager {
 
     public static void setShutdownPrivilegeTimeLock(BigInteger days) {
         Context.require(BigInteger.ONE.compareTo(days) <= 0, "Invalid time lock, it must be between 1 and 30 days");
-        Context.require(BigInteger.valueOf(30).compareTo(days) >= 0, "Invalid time lock, it must be between 1 and 30 days");
+        Context.require(BigInteger.valueOf(30).compareTo(days) >= 0, "Invalid time lock, it must be between 1 and 30 " +
+                "days");
         enableDisableTimeLock.set(days.multiply(MICRO_SECONDS_IN_A_DAY));
     }
 
@@ -74,7 +80,7 @@ public class EmergencyManager {
     }
 
     public static Map<String, Boolean> getBlacklist() {
-        Map<String, Boolean>  blacklisted = new HashMap<>();
+        Map<String, Boolean> blacklisted = new HashMap<>();
         for (String address : blacklist.keys()) {
             blacklisted.put(address, true);
         }
@@ -92,7 +98,8 @@ public class EmergencyManager {
             Address contract = ContractManager.contractAddresses.get(ContractManager.balancedContractNames.get(i));
             try {
                 Context.call(contract, status);
-            } catch (Exception e) {}
+            } catch (Exception e) {
+            }
         }
     }
 
