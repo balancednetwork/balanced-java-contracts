@@ -138,7 +138,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
     void turnDexOnAndGetDexOn() {
         dexScore.invoke(governanceScore, "turnDexOn");
         assertEquals(true, dexScore.call("getDexOn"));
-        assertOnlyCallableByGovernance(dexScore, "turnDexOn");
+        assertOnlyCallableBy(governanceScore.getAddress(), dexScore, "turnDexOn");
     }
 
     @Test
