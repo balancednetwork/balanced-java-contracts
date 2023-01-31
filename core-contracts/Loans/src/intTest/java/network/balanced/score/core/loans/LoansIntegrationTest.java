@@ -662,7 +662,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         BigInteger sICXLoan = BigInteger.TEN.pow(21);
         BigInteger sICXDebt = sICXLoan.add(sICXLoan.multiply(feePercent).divide(POINTS));
 
-        loanTaker.loans.depositAndBorrow(icxCollateral, "bnUSD", sICXLoan, null, null);
+        loanTaker.stakeDepositAndBorrow(icxCollateral,  sICXLoan);
 
         // Act
         BigInteger balancePreLiquidation = liquidator.irc2(ethAddress).balanceOf(liquidator.getAddress());
