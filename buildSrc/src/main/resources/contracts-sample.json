@@ -165,9 +165,7 @@
       "symbol": "bBaln"
     },
     "addressParams": {
-      "balnAddress": "baln",
-      "rewardAddress": "rewards",
-      "dividendsAddress": "dividends"
+      "_governance": "governance"
     },
     "order": 3.0
   }
