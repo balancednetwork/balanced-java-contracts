@@ -158,15 +158,5 @@
   {
     "name": "multicall",
     "params": {}
-  },
-  {
-    "name": "bBaln",
-    "params": {
-      "symbol": "bBaln"
-    },
-    "addressParams": {
-      "_governance": "governance"
-    },
-    "order": 3.0
   }
 ]
