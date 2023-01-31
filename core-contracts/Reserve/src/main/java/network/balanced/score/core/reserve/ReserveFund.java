@@ -30,7 +30,6 @@ import java.util.Map;
 
 import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Check.onlyGovernance;
-import static network.balanced.score.lib.utils.Check.checkStatus;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Math.pow;
 
@@ -93,13 +92,11 @@ public class ReserveFund implements Reserve {
 
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
-        checkStatus();
     }
 
     @External
     @SuppressWarnings("unchecked")
     public void redeem(Address _to, BigInteger _valueInDollar, String collateralSymbol) {
-        checkStatus();
         Address sender = Context.getCaller();
         Address loans = getLoans();
         Context.require(sender.equals(loans), TAG + ": The redeem method can only be called by the Loans " +
@@ -164,7 +161,6 @@ public class ReserveFund implements Reserve {
 
     @External
     public void claim() {
-        checkStatus();
         Address sender = Context.getCaller();
         DictDB<Address, BigInteger> disbursement = awards.at(sender);
 

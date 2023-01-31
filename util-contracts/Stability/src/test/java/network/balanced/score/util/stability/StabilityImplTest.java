@@ -56,7 +56,6 @@ class StabilityImplTest extends TestBase {
 
     @BeforeEach
     void setUp() throws Exception {
-        contextMock.when(() -> Context.call(eq(owner.getAddress()), eq("checkStatus"), any(String.class))).thenReturn(null);
         stabilityScore = sm.deploy(owner, StabilityImpl.class, feeHandler.getAddress(), bnusd.getAddress(), feeIn, feeOut);
     }
 

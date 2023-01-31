@@ -17,7 +17,6 @@
 package network.balanced.score.util.stability;
 
 import network.balanced.score.lib.interfaces.Stability;
-import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.Names;
 import score.*;
 import score.annotation.External;
@@ -28,7 +27,6 @@ import java.util.List;
 
 import static network.balanced.score.lib.utils.Check.isContract;
 import static network.balanced.score.lib.utils.Check.onlyOwner;
-import static network.balanced.score.lib.utils.Check.checkStatus;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Math.pow;
 
@@ -65,8 +63,6 @@ public class StabilityImpl implements Stability {
             setFeeIn(_feeIn);
             setFeeOut(_feeOut);
         }
-
-        BalancedAddressManager.setGovernance(Context.getOwner());
     }
 
     @External(readonly = true)
@@ -208,7 +204,6 @@ public class StabilityImpl implements Stability {
 
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
-        checkStatus();
         if (_from.equals(EOA_ZERO_ADDRESS)) {
             return;
         }

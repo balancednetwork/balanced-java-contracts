@@ -81,6 +81,8 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         tester.baln.transfer(tester.boostedBaln._address(), balance.divide(BigInteger.TWO), data.getBytes());
 
         owner.governance.setShutdownPrivilegeTimeLock(BigInteger.TEN);
+        owner.staking.setEmergencyManager(balanced.governance._address());
+        owner.sicx.setEmergencyManager(balanced.governance._address());
     }
 
     @Test
@@ -411,17 +413,38 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         BalancedClient trustedUser2 = balanced.newClient();
 
         BigInteger loan = BigInteger.TEN.pow(20);
-        user.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loan, null, null);
+        BigInteger collateral = BigInteger.TEN.pow(23);
+        user.staking.stakeICX(collateral.multiply(BigInteger.TWO), null, null);
+        user.depositAndBorrow(balanced.sicx._address(), collateral, loan);
+        balanced.increaseDay(1);
+        user.rewards.claimRewards(new String[]{"Loans"});
 
         owner.governance.addAuthorizedCallerShutdown(trustedUser1.getAddress());
         owner.governance.addAuthorizedCallerShutdown(trustedUser2.getAddress());
 
         // Act & Assert
         trustedUser1.governance.disable();
-        Executable disabledTransfer = () -> user.bnUSD.transfer(owner.getAddress(), BigInteger.ONE, null);
         Executable sameUserEnable = () -> trustedUser1.governance.enable();
-        assertThrows(Exception.class, disabledTransfer);
         assertThrows(Exception.class, sameUserEnable);
+
+        Executable bnUSDStatusTest = () -> owner.bnUSD.transfer(owner.getAddress(), BigInteger.ONE, null);
+        Executable sICXStatusTest  = () -> user.sicx.transfer(owner.getAddress(), BigInteger.ONE, null);
+        Executable daofundStatusTest  = () -> user.daofund.claimNetworkFees();
+        Executable dexStatusTest  = () -> user.dex._transfer(balanced.dex._address(), BigInteger.valueOf(200).multiply(BigInteger.TEN.pow(18)), null);
+        Executable dividendsStatusTest  = () -> user.dividends.distribute((tx) -> {});
+        Executable loansStatusTest  = () -> user.loans.returnAsset("bnUSD", BigInteger.ONE, "sICX");
+        Executable rewardsStatusTest  = () -> user.rewards.distribute((tx) -> {});
+        Executable stakingStatusTest  = () -> user.staking.stakeICX(collateral.multiply(BigInteger.TWO), null, null);
+        Executable balnStatusTest  = () -> user.baln.transfer(owner.getAddress(), BigInteger.ONE, null);
+        assertThrows(Exception.class, bnUSDStatusTest);
+        assertThrows(Exception.class, sICXStatusTest);
+        assertThrows(Exception.class, daofundStatusTest);
+        assertThrows(Exception.class, dexStatusTest);
+        assertThrows(Exception.class, dividendsStatusTest);
+        assertThrows(Exception.class, loansStatusTest);
+        assertThrows(Exception.class, rewardsStatusTest);
+        assertThrows(Exception.class, stakingStatusTest);
+        assertThrows(Exception.class, balnStatusTest);
 
         trustedUser2.governance.enable();
         user.bnUSD.transfer(owner.getAddress(), BigInteger.ONE, null);
@@ -430,7 +453,15 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         assertThrows(Exception.class, user1Disable);
         assertThrows(Exception.class, user2Disable);
 
-        owner.governance.getAuthorizedCallersShutdown();
+        assertDoesNotThrow(bnUSDStatusTest);
+        assertDoesNotThrow(sICXStatusTest);
+        assertDoesNotThrow(daofundStatusTest);
+        assertDoesNotThrow(dexStatusTest);
+        assertDoesNotThrow(dividendsStatusTest);
+        assertDoesNotThrow(loansStatusTest);
+        assertDoesNotThrow(rewardsStatusTest);
+        assertDoesNotThrow(stakingStatusTest);
+        assertDoesNotThrow(balnStatusTest);
     }
 
     private String getValue(Address address) {

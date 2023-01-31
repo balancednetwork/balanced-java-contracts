@@ -17,7 +17,6 @@
 package network.balanced.score.core.stakedlp;
 
 import network.balanced.score.lib.interfaces.StakedLP;
-import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.IterableDictDB;
 import network.balanced.score.lib.utils.Names;
 import score.*;
@@ -52,8 +51,6 @@ public class StakedLPImpl implements StakedLP {
             Context.require(governance.isContract(), "StakedLP: Governance address should be a contract");
             StakedLPImpl.governance.set(governance);
         }
-
-        BalancedAddressManager.setGovernance(StakedLPImpl.governance.get());
     }
 
     /*
@@ -121,7 +118,6 @@ public class StakedLPImpl implements StakedLP {
 
     @External
     public void unstake(BigInteger id, BigInteger value) {
-        checkStatus();
         Address caller = Context.getCaller();
         Context.require(value.compareTo(BigInteger.ZERO) > 0, "StakedLP: Cannot unstake less than zero value");
 
@@ -152,7 +148,6 @@ public class StakedLPImpl implements StakedLP {
 
     @External
     public void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data) {
-        checkStatus();
         only(dex);
         Context.require(_value.signum() > 0, "StakedLP: Token value should be a positive number");
         this.stake(_from, _id, _value);
