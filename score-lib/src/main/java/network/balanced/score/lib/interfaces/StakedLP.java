@@ -18,7 +18,6 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
-import network.balanced.score.lib.interfaces.base.Emergency;
 import score.Address;
 import score.annotation.External;
 
@@ -28,7 +27,7 @@ import java.util.Map;
 
 @ScoreInterface
 @ScoreClient
-public interface StakedLP extends Emergency {
+public interface StakedLP {
     @External(readonly = true)
     Address getDex();
 

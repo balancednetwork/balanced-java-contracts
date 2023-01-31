@@ -18,6 +18,7 @@ package network.balanced.score.tokens.balanceddollar;
 
 import network.balanced.score.lib.interfaces.BalancedDollar;
 import network.balanced.score.lib.tokens.IRC2Burnable;
+import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.Names;
 import score.Address;
 import score.Context;
@@ -67,6 +68,8 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
             BigInteger MIN_UPDATE_TIME = BigInteger.valueOf(30_000_000);
             minInterval.set(MIN_UPDATE_TIME);
         }
+
+        BalancedAddressManager.setGovernance(governance.get());
     }
 
     @External(readonly = true)
@@ -83,12 +86,6 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
 
     @External(readonly = true)
     public Address getGovernance() {
-        return governance.get();
-    }
-
-    @Override
-    @External(readonly = true)
-    public Address getEmergencyManager() {
         return governance.get();
     }
 

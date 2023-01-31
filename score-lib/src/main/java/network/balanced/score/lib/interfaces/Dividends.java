@@ -19,7 +19,6 @@ package network.balanced.score.lib.interfaces;
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.AddressManager;
-import network.balanced.score.lib.interfaces.base.Emergency;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
 import network.balanced.score.lib.structs.DistributionPercentage;
@@ -34,7 +33,7 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface Dividends extends Name, TokenFallback, AddressManager, Emergency {
+public interface Dividends extends Name, TokenFallback, AddressManager {
     @External
     void onBalanceUpdate(Address user, BigInteger bBalnBalance);
 

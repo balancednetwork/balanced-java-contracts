@@ -19,7 +19,6 @@ package network.balanced.score.lib.interfaces;
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.StakingAddress;
-import network.balanced.score.lib.interfaces.base.Emergency;
 import network.balanced.score.lib.interfaces.tokens.IRC2BurnableInterface;
 import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
 import score.Address;
@@ -29,9 +28,12 @@ import java.math.BigInteger;
 
 @ScoreClient
 @ScoreInterface
-public interface Sicx extends StakingAddress, IRC2BurnableInterface, IRC2Mintable, Emergency {
+public interface Sicx extends StakingAddress, IRC2BurnableInterface, IRC2Mintable {
     @External
     void setEmergencyManager(Address _address);
+
+    @External(readonly = true)
+    Address getEmergencyManager();
 
     @External(readonly = true)
     String getPeg();

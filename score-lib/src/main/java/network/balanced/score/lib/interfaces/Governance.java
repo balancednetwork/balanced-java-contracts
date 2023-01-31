@@ -120,6 +120,12 @@ public interface Governance extends
     boolean isBlacklisted(String address);
 
     @External(readonly = true)
+    boolean getStatus();
+
+    @External
+    void checkStatus(String address);
+
+    @External(readonly = true)
     Map<String, Boolean> getBlacklist();
 
     @External

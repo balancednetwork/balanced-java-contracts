@@ -32,6 +32,7 @@ public class DexDBVariables {
     private static final String ICX_QUEUE_TOTAL = "icx_queue_total";
     private static final String GOVERNANCE_ADDRESS = "governance_address";
     private static final String NAMED_MARKETS = "named_markets";
+    private static final String DEX_ON = "dex_on";
 
     private static final String CURRENT_DAY = "current_day";
     private static final String TIME_OFFSET = "time_offset";
@@ -61,6 +62,7 @@ public class DexDBVariables {
 
 
     final static VarDB<Address> governance = Context.newVarDB(GOVERNANCE_ADDRESS, Address.class);
+    public final static VarDB<Boolean> dexOn = Context.newVarDB(DEX_ON, Boolean.class);
 
     // Deposits - Map: token_address -> user_address -> value
     final static BranchDB<Address, DictDB<Address, BigInteger>> deposit = Context.newBranchDB(DEPOSIT,

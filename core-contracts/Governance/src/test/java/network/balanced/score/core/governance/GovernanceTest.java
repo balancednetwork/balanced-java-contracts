@@ -325,40 +325,14 @@ public class GovernanceTest extends GovernanceTestBase {
 
     @Test
     void disable() {
-        // Act
         governance.invoke(owner, "disable");
-
-        // Assert
-        verify(daofund.mock).disable();
-        verify(dex.mock).disable();
-        verify(loans.mock).disable();
-        verify(reserve.mock).disable();
-        verify(stakedLp.mock).disable();
-        verify(staking.mock).disable();
-        verify(bBaln.mock).disable();
-        verify(stability.mock).disable();
-        verify(sicx.mock).disable();
-        verify(bnUSD.mock).disable();
-        verify(baln.mock).disable();
+        assertFalse((boolean)governance.call("getStatus"));
     }
 
     @Test
     void enable() {
-        // Act
         governance.invoke(owner, "enable");
-
-        // Assert
-        verify(daofund.mock).enable();
-        verify(dex.mock).enable();
-        verify(loans.mock).enable();
-        verify(reserve.mock).enable();
-        verify(stakedLp.mock).enable();
-        verify(staking.mock).enable();
-        verify(bBaln.mock).enable();
-        verify(stability.mock).enable();
-        verify(sicx.mock).enable();
-        verify(bnUSD.mock).enable();
-        verify(baln.mock).enable();
+        assertTrue((boolean)governance.call("getStatus"));
     }
 
     @Test

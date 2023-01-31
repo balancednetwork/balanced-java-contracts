@@ -17,7 +17,7 @@
 package network.balanced.score.util.stability;
 
 import network.balanced.score.lib.interfaces.Stability;
-import network.balanced.score.lib.utils.BalancedEmergencyHandling;
+import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.Names;
 import score.*;
 import score.annotation.External;
@@ -28,10 +28,11 @@ import java.util.List;
 
 import static network.balanced.score.lib.utils.Check.isContract;
 import static network.balanced.score.lib.utils.Check.onlyOwner;
+import static network.balanced.score.lib.utils.Check.checkStatus;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Math.pow;
 
-public class StabilityImpl extends BalancedEmergencyHandling implements Stability {
+public class StabilityImpl implements Stability {
 
     public static final String TAG = "Balanced Peg Stability";
     private static final Address EOA_ZERO_ADDRESS = new Address(new byte[Address.LENGTH]);
@@ -64,17 +65,13 @@ public class StabilityImpl extends BalancedEmergencyHandling implements Stabilit
             setFeeIn(_feeIn);
             setFeeOut(_feeOut);
         }
+
+        BalancedAddressManager.setGovernance(Context.getOwner());
     }
 
     @External(readonly = true)
     public String name() {
         return Names.STABILITY;
-    }
-
-    @Override
-    @External(readonly = true)
-    public Address getEmergencyManager() {
-        return Context.getOwner();
     }
 
     @External

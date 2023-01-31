@@ -18,7 +18,6 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
-import network.balanced.score.lib.interfaces.base.Emergency;
 import network.balanced.score.lib.structs.PrepDelegations;
 import score.Address;
 import score.annotation.External;
@@ -31,13 +30,16 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface Staking extends Emergency {
+public interface Staking {
 
     @External(readonly = true)
     String name();
 
     @External
     void setEmergencyManager(Address _address);
+
+    @External(readonly = true)
+    Address getEmergencyManager();
 
     @External
     void setBlockHeightWeek(BigInteger _height);

@@ -18,10 +18,7 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
-import network.balanced.score.lib.interfaces.addresses.BalnAddress;
-import network.balanced.score.lib.interfaces.addresses.DividendsAddress;
-import network.balanced.score.lib.interfaces.addresses.RewardsAddress;
-import network.balanced.score.lib.interfaces.base.Emergency;
+import network.balanced.score.lib.interfaces.addresses.AddressManager;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
 import score.Address;
 import score.annotation.External;
@@ -33,7 +30,7 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface BoostedBaln extends BalnAddress, RewardsAddress, DividendsAddress, TokenFallback, Emergency {
+public interface BoostedBaln extends AddressManager, TokenFallback {
     @External
     void setMinimumLockingAmount(BigInteger value);
 

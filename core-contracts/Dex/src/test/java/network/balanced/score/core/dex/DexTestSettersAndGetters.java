@@ -135,6 +135,13 @@ public class DexTestSettersAndGetters extends DexTestBase {
     }
 
     @Test
+    void turnDexOnAndGetDexOn() {
+        dexScore.invoke(governanceScore, "turnDexOn");
+        assertEquals(true, dexScore.call("getDexOn"));
+        assertOnlyCallableByGovernance(dexScore, "turnDexOn");
+    }
+
+    @Test
     void addQuoteCoinAndCheckIfAllowed() {
         // Arrange.
         Address quoteCoin = Account.newScoreAccount(1).getAddress();

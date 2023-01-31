@@ -18,6 +18,7 @@ package network.balanced.score.tokens.balancedtoken;
 
 import network.balanced.score.lib.interfaces.BalancedToken;
 import network.balanced.score.lib.tokens.IRC2Burnable;
+import network.balanced.score.lib.utils.BalancedAddressManager;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -86,6 +87,8 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
             this.unstakingPeriod.set(DEFAULT_UNSTAKING_PERIOD);
             this.enableSnapshots.set(true);
         }
+
+        BalancedAddressManager.setGovernance(governance.get());
     }
 
     @EventLog(indexed = 3)
@@ -106,12 +109,6 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
     @External(readonly = true)
     public Address getGovernance() {
         return this.governance.get();
-    }
-
-    @Override
-    @External(readonly = true)
-    public Address getEmergencyManager() {
-        return governance.get();
     }
 
     @External

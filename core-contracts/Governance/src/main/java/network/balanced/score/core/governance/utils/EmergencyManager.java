@@ -34,6 +34,8 @@ public class EmergencyManager {
             Boolean.class, String.class, false);
     private static final VarDB<BigInteger> enableDisableTimeLock = Context.newVarDB("enable_disable_time_lock",
             BigInteger.class);
+    private static final VarDB<Boolean> enabled = Context.newVarDB("balanced_status", Boolean.class);
+
 
     public static void addAuthorizedCallerShutdown(Address address) {
         authorizedCallersShutdown.set(address, BigInteger.ZERO);
@@ -64,11 +66,15 @@ public class EmergencyManager {
     }
 
     public static void disable() {
-        setStatus("disable");
+        enabled.set(false);
     }
 
     public static void enable() {
-        setStatus("enable");
+        enabled.set(true);
+    }
+
+    public static boolean getStatus() {
+        return enabled.getOrDefault(true);
     }
 
     public static void blacklist(String address) {
@@ -92,15 +98,10 @@ public class EmergencyManager {
         return blacklist.getOrDefault(address, false);
     }
 
-    private static void setStatus(String status) {
-        int nrBalancedContracts = ContractManager.balancedContractNames.size();
-        for (int i = 0; i < nrBalancedContracts; i++) {
-            Address contract = ContractManager.contractAddresses.get(ContractManager.balancedContractNames.get(i));
-            try {
-                Context.call(contract, status);
-            } catch (Exception e) {
-            }
-        }
+    public static void checkStatus(String address) {
+        Context.require(enabled.getOrDefault(true), "Balanced is currently disabled");
+        Context.require(!isBlacklisted(address), "This address is blacklisted");
+        Context.require(!isBlacklisted(Context.getOrigin().toString()), "This origin caller is blacklisted");
     }
 
     private static boolean isOwnerOrContract() {

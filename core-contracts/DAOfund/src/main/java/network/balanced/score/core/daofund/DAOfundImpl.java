@@ -18,7 +18,6 @@ package network.balanced.score.core.daofund;
 
 import network.balanced.score.lib.interfaces.DAOfund;
 import network.balanced.score.lib.structs.PrepDelegations;
-import network.balanced.score.lib.utils.BalancedEmergencyHandling;
 import network.balanced.score.lib.utils.EnumerableSetDB;
 import network.balanced.score.lib.utils.Names;
 import score.*;
@@ -34,8 +33,9 @@ import java.util.Map;
 import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Check.isContract;
 import static network.balanced.score.lib.utils.Check.onlyGovernance;
+import static network.balanced.score.lib.utils.Check.checkStatus;
 
-public class DAOfundImpl extends BalancedEmergencyHandling implements DAOfund {
+public class DAOfundImpl implements DAOfund {
 
     @EventLog(indexed = 2)
     public void TokenTransfer(Address recipient, BigInteger amount, String note) {

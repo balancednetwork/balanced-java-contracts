@@ -20,10 +20,17 @@ import score.Context;
 
 import java.math.BigInteger;
 
+import static network.balanced.score.core.dex.DexDBVariables.dexOn;
 import static network.balanced.score.core.dex.DexDBVariables.nonce;
 import static network.balanced.score.core.dex.utils.Const.TAG;
 
 public class Check {
+
+    public static void isDexOn() {
+        Context.require(dexOn.getOrDefault(false), "NotLaunched: Function cannot be called " +
+                "before the DEX is turned on");
+    }
+
     public static void isValidPoolId(BigInteger id) {
         isValidPoolId(id.intValue());
     }

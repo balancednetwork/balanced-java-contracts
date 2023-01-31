@@ -20,6 +20,7 @@ import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.score.client.DefaultScoreClient;
+import foundation.icon.score.client.RevertedException;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
@@ -396,9 +397,9 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
                 null);
         Executable nonAllowedBurn = () -> blacklistedUser1.loans.returnAsset("bnUSD", BigInteger.TEN.pow(18), "sICX");
         user3.bnUSD.transfer(owner.getAddress(), BigInteger.ONE, null);
-        assertThrows(UserRevertedException.class, nonAllowedTransfer1);
-        assertThrows(UserRevertedException.class, nonAllowedTransfer2);
-        assertThrows(UserRevertedException.class, nonAllowedBurn);
+        assertThrows(Exception.class, nonAllowedTransfer1);
+        assertThrows(Exception.class, nonAllowedTransfer2);
+        assertThrows(Exception.class, nonAllowedBurn);
     }
 
     @Test
@@ -419,15 +420,15 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         trustedUser1.governance.disable();
         Executable disabledTransfer = () -> user.bnUSD.transfer(owner.getAddress(), BigInteger.ONE, null);
         Executable sameUserEnable = () -> trustedUser1.governance.enable();
-        assertThrows(UserRevertedException.class, disabledTransfer);
-        assertThrows(UserRevertedException.class, sameUserEnable);
+        assertThrows(Exception.class, disabledTransfer);
+        assertThrows(Exception.class, sameUserEnable);
 
         trustedUser2.governance.enable();
         user.bnUSD.transfer(owner.getAddress(), BigInteger.ONE, null);
         Executable user1Disable = () -> trustedUser1.governance.disable();
         Executable user2Disable = () -> trustedUser2.governance.disable();
-        assertThrows(UserRevertedException.class, user1Disable);
-        assertThrows(UserRevertedException.class, user2Disable);
+        assertThrows(Exception.class, user1Disable);
+        assertThrows(Exception.class, user2Disable);
 
         owner.governance.getAuthorizedCallersShutdown();
     }

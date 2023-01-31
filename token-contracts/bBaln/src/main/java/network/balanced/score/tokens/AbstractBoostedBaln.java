@@ -18,7 +18,7 @@ package network.balanced.score.tokens;
 
 import com.iconloop.score.util.EnumerableSet;
 import network.balanced.score.lib.interfaces.BoostedBaln;
-import network.balanced.score.lib.utils.BalancedEmergencyHandling;
+import network.balanced.score.lib.utils.Names;
 import network.balanced.score.tokens.db.LockedBalance;
 import network.balanced.score.tokens.db.Point;
 import network.balanced.score.tokens.utils.UnsignedBigInteger;
@@ -31,13 +31,14 @@ import java.math.BigInteger;
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.Constants.MAX_LOCK_TIME;
 import static network.balanced.score.lib.utils.Math.pow;
+import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.NonReentrant.globalReentryLock;
 import static network.balanced.score.tokens.Constants.U_WEEK_IN_MICRO_SECONDS;
 import static network.balanced.score.tokens.Constants.WEEK_IN_MICRO_SECONDS;
 import static network.balanced.score.tokens.utils.UnsignedBigInteger.pow10;
 
 
-public abstract class AbstractBoostedBaln extends BalancedEmergencyHandling implements BoostedBaln {
+public abstract class AbstractBoostedBaln implements BoostedBaln {
 
     public static final BigInteger MAX_TIME = MAX_LOCK_TIME;
     public static BigInteger ICX = pow(BigInteger.TEN, 18);
@@ -52,10 +53,6 @@ public abstract class AbstractBoostedBaln extends BalancedEmergencyHandling impl
     protected final VarDB<String> symbol = Context.newVarDB("symbol", String.class);
     protected final VarDB<BigInteger> decimals = Context.newVarDB("decimals", BigInteger.class);
     protected final VarDB<BigInteger> supply = Context.newVarDB("Boosted_Baln_Supply", BigInteger.class);
-
-    protected final VarDB<Address> balnAddress = Context.newVarDB("balnAddress", Address.class);
-    protected final VarDB<Address> rewardAddress = Context.newVarDB("rewardAddress", Address.class);
-    protected final VarDB<Address> dividendsAddress = Context.newVarDB("dividendsAddress", Address.class);
 
     protected final VarDB<Address> penaltyAddress = Context.newVarDB("Boosted_baln_penalty_address", Address.class);
 
@@ -75,22 +72,20 @@ public abstract class AbstractBoostedBaln extends BalancedEmergencyHandling impl
     protected final VarDB<BigInteger> minimumLockingAmount = Context.newVarDB("Boosted_baln_minimum_locking_amount",
             BigInteger.class);
 
-    public AbstractBoostedBaln(Address balnAddress, Address rewardAddress, Address dividendsAddress, String name,
-                               String symbol) {
-        onInstall(balnAddress, rewardAddress, dividendsAddress, name, symbol);
+    public AbstractBoostedBaln(Address _governance, String name, String symbol) {
+        onInstall(_governance, name, symbol);
     }
 
-    private void onInstall(Address balnAddress, Address rewardAddress, Address dividendsAddress, String name,
-                           String symbol) {
+    private void onInstall(Address _governance, String name, String symbol) {
+        if (getAddressByName(Names.BALN) == null) {
+            setGovernance(_governance);
+        }
+
         if (this.name.get() != null) {
             return;
         }
 
-        this.balnAddress.set(balnAddress);
-        this.rewardAddress.set(rewardAddress);
-        this.dividendsAddress.set(dividendsAddress);
-
-        BigInteger decimals = Context.call(BigInteger.class, balnAddress, "decimals");
+        BigInteger decimals = Context.call(BigInteger.class, getBaln(), "decimals");
         this.decimals.set(decimals);
         this.name.set(name);
         this.symbol.set(symbol);
@@ -115,6 +110,16 @@ public abstract class AbstractBoostedBaln extends BalancedEmergencyHandling impl
 
     @EventLog
     public void Supply(BigInteger prevSupply, BigInteger supply) {
+    }
+
+    @External
+    public void updateAddress(String name) {
+        resetAddress(name);
+    }
+
+    @External(readonly = true)
+    public Address getAddress(String name) {
+        return getAddressByName(name);
     }
 
     @External(readonly = true)
@@ -403,12 +408,12 @@ public abstract class AbstractBoostedBaln extends BalancedEmergencyHandling impl
 
     protected void onKick(Address user) {
         try {
-            Context.call(dividendsAddress.get(), "onKick", user);
+            Context.call(getDividends(), "onKick", user);
         } catch (Exception ignored) {
         }
 
         try {
-            Context.call(rewardAddress.get(), "onKick", user);
+            Context.call(getRewards(), "onKick", user);
         } catch (Exception ignored) {
         }
 
@@ -416,12 +421,12 @@ public abstract class AbstractBoostedBaln extends BalancedEmergencyHandling impl
 
     protected void onBalanceUpdate(Address user, BigInteger newBalance) {
         try {
-            Context.call(rewardAddress.get(), "onBalanceUpdate", user, newBalance);
+            Context.call(getRewards(), "onBalanceUpdate", user, newBalance);
         } catch (Exception ignored) {
         }
 
         try {
-            Context.call(dividendsAddress.get(), "onBalanceUpdate", user, newBalance);
+            Context.call(getDividends(), "onBalanceUpdate", user, newBalance);
         } catch (Exception ignored) {
         }
     }

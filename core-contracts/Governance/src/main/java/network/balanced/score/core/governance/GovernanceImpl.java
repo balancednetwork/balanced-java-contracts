@@ -354,6 +354,16 @@ public class GovernanceImpl implements Governance {
         return EmergencyManager.isBlacklisted(address);
     }
 
+    @External(readonly = true)
+    public boolean getStatus() {
+        return EmergencyManager.getStatus();
+    }
+
+    @External
+    public void checkStatus(String address) {
+        EmergencyManager.checkStatus(address);
+    }
+
     @External
     public void addAuthorizedCallerShutdown(Address address) {
         onlyOwnerOrContract();

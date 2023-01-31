@@ -46,7 +46,7 @@ public class StakedLPTest extends UnitTest {
     public static final Account owner = sm.createAccount();
     private Score stakedLpScore;
 
-    public static final Account governanceScore = Account.newScoreAccount(1);
+    public static Account governanceScore;
     private final Account alice = sm.createAccount();
     private final Account bob = sm.createAccount();
 
@@ -58,9 +58,12 @@ public class StakedLPTest extends UnitTest {
 
     @BeforeEach
     public void setup() throws Exception {
-        stakedLpScore = sm.deploy(owner, StakedLPImpl.class, governanceScore.getAddress());
+        governanceScore = new MockContract<>(GovernanceScoreInterface.class, sm, owner).account;
         dex = new MockContract<>(DexScoreInterface.class, sm, owner);
         rewards = new MockContract<>(RewardsScoreInterface.class, sm, owner);
+
+        stakedLpScore = sm.deploy(owner, StakedLPImpl.class, governanceScore.getAddress());
+
 
         stakedLpScore.invoke(governanceScore, "addDataSource", BigInteger.ONE, poolOneName);
         stakedLpScore.invoke(governanceScore, "addDataSource", BigInteger.TWO, poolTwoName);

@@ -19,7 +19,6 @@ package network.balanced.score.lib.interfaces;
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.AddressManager;
-import network.balanced.score.lib.interfaces.base.Emergency;
 import network.balanced.score.lib.interfaces.base.Fallback;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
@@ -33,7 +32,7 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface DAOfund extends Name, AddressManager, TokenFallback, Fallback, Emergency {
+public interface DAOfund extends Name, AddressManager, TokenFallback, Fallback {
 
     @External
     void delegate(PrepDelegations[] prepDelegations);

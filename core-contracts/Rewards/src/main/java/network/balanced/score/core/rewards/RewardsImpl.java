@@ -24,7 +24,7 @@ import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.Point;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import network.balanced.score.lib.structs.VotedSlope;
-import network.balanced.score.lib.utils.BalancedEmergencyHandling;
+import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.IterableDictDB;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.SetDB;
@@ -52,7 +52,7 @@ import static network.balanced.score.lib.utils.Math.pow;
  * There can be unclaimed rewards if there are no participants in the data source. This can happen in testnet and
  * when we add new source where user haven't participated.
  */
-public class RewardsImpl extends BalancedEmergencyHandling implements Rewards {
+public class RewardsImpl implements Rewards {
     public static final String TAG = "BalancedRewards";
 
     private static final String GOVERNANCE = "governance";
@@ -141,6 +141,7 @@ public class RewardsImpl extends BalancedEmergencyHandling implements Rewards {
             boostWeight.set(WEIGHT);
         }
 
+        BalancedAddressManager.setGovernance(governance.get());
         SourceWeightController.rewards = this;
     }
 
@@ -907,12 +908,6 @@ public class RewardsImpl extends BalancedEmergencyHandling implements Rewards {
         onlyOwner();
         isContract(_address);
         governance.set(_address);
-    }
-
-    @Override
-    @External(readonly = true)
-    public Address getEmergencyManager() {
-        return governance.get();
     }
 
     @External(readonly = true)

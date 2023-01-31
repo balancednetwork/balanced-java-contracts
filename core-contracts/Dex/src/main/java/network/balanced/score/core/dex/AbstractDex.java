@@ -20,7 +20,6 @@ import network.balanced.score.core.dex.db.NodeDB;
 import network.balanced.score.lib.interfaces.Dex;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.structs.RewardsDataEntry;
-import network.balanced.score.lib.utils.BalancedEmergencyHandling;
 import score.Address;
 import score.BranchDB;
 import score.Context;
@@ -39,10 +38,11 @@ import static network.balanced.score.core.dex.utils.Check.isValidPoolId;
 import static network.balanced.score.core.dex.utils.Const.*;
 import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Check.onlyGovernance;
+import static network.balanced.score.lib.utils.Check.checkStatus;
 import static network.balanced.score.lib.utils.Constants.*;
 import static network.balanced.score.lib.utils.Math.pow;
 
-public abstract class AbstractDex extends BalancedEmergencyHandling implements Dex {
+public abstract class AbstractDex implements Dex {
 
     public AbstractDex(Address _governance) {
         if (governance.get() == null) {
@@ -58,6 +58,7 @@ public abstract class AbstractDex extends BalancedEmergencyHandling implements D
             currentDay.set(BigInteger.valueOf(1L));
             namedMarkets.set(SICXICX_MARKET_NAME, SICXICX_POOL_ID);
             marketsToNames.set(SICXICX_POOL_ID, SICXICX_MARKET_NAME);
+            dexOn.set(true);
         }
         setGovernance(governance.get());
     }
@@ -112,6 +113,17 @@ public abstract class AbstractDex extends BalancedEmergencyHandling implements D
     @External(readonly = true)
     public Address getAddress(String name) {
         return getAddressByName(name);
+    }
+
+    @External
+    public void turnDexOn() {
+        onlyGovernance();
+        dexOn.set(true);
+    }
+
+    @External(readonly = true)
+    public boolean getDexOn() {
+        return dexOn.get();
     }
 
     @External

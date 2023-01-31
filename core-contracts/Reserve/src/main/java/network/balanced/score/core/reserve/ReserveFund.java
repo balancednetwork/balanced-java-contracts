@@ -18,7 +18,6 @@ package network.balanced.score.core.reserve;
 
 import network.balanced.score.lib.interfaces.Reserve;
 import network.balanced.score.lib.structs.Disbursement;
-import network.balanced.score.lib.utils.BalancedEmergencyHandling;
 import network.balanced.score.lib.utils.Names;
 import score.*;
 import score.annotation.EventLog;
@@ -31,10 +30,11 @@ import java.util.Map;
 
 import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Check.onlyGovernance;
+import static network.balanced.score.lib.utils.Check.checkStatus;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Math.pow;
 
-public class ReserveFund extends BalancedEmergencyHandling implements Reserve {
+public class ReserveFund implements Reserve {
 
     private static final String GOVERNANCE = "governance";
     private static final String AWARDS = "awards";

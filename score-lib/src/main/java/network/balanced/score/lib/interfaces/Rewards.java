@@ -19,7 +19,6 @@ package network.balanced.score.lib.interfaces;
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.*;
-import network.balanced.score.lib.interfaces.base.Emergency;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.RewardsVoting;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
@@ -45,8 +44,7 @@ public interface Rewards extends
         DaoFundAddress,
         ReserveAddress,
         BoostedBalnAddress,
-        RewardsVoting,
-        Emergency {
+        RewardsVoting {
 
     @External(readonly = true)
     BigInteger getEmission(BigInteger _day);

@@ -17,7 +17,7 @@
 package network.balanced.score.core.stakedlp;
 
 import network.balanced.score.lib.interfaces.StakedLP;
-import network.balanced.score.lib.utils.BalancedEmergencyHandling;
+import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.IterableDictDB;
 import network.balanced.score.lib.utils.Names;
 import score.*;
@@ -31,7 +31,7 @@ import java.util.Map;
 
 import static network.balanced.score.lib.utils.Check.*;
 
-public class StakedLPImpl extends BalancedEmergencyHandling implements StakedLP {
+public class StakedLPImpl implements StakedLP {
 
 
     private static final BranchDB<Address, DictDB<BigInteger, BigInteger>> poolStakedDetails =
@@ -52,6 +52,8 @@ public class StakedLPImpl extends BalancedEmergencyHandling implements StakedLP 
             Context.require(governance.isContract(), "StakedLP: Governance address should be a contract");
             StakedLPImpl.governance.set(governance);
         }
+
+        BalancedAddressManager.setGovernance(StakedLPImpl.governance.get());
     }
 
     /*
@@ -93,12 +95,6 @@ public class StakedLPImpl extends BalancedEmergencyHandling implements StakedLP 
         onlyOwner();
         isContract(governance);
         StakedLPImpl.governance.set(governance);
-    }
-
-    @Override
-    @External(readonly = true)
-    public Address getEmergencyManager() {
-        return Context.getOwner();
     }
 
     @External(readonly = true)

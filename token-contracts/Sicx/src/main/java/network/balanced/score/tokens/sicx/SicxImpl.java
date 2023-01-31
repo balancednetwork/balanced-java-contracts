@@ -28,6 +28,7 @@ import score.annotation.Optional;
 import java.math.BigInteger;
 
 import static network.balanced.score.lib.utils.Check.onlyOwner;
+import static network.balanced.score.lib.utils.Check.checkStatus;
 
 public class SicxImpl extends IRC2Burnable implements Sicx {
     private static final String TAG = "sICX";
@@ -69,7 +70,6 @@ public class SicxImpl extends IRC2Burnable implements Sicx {
         statusManager.set(_address);
     }
 
-    @Override
     @External(readonly = true)
     public Address getEmergencyManager() {
         return statusManager.get();
@@ -88,7 +88,7 @@ public class SicxImpl extends IRC2Burnable implements Sicx {
     @Override
     @External
     public void transfer(Address _to, BigInteger _value, @Optional byte[] _data) {
-        checkStatus();
+        checkStatus(statusManager);
         if (!_to.equals(stakingAddress.get())) {
             Context.call(stakingAddress.get(), "transferUpdateDelegations", Context.getCaller(), _to, _value);
         }

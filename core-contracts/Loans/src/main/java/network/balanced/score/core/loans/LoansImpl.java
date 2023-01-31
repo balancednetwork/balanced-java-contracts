@@ -28,7 +28,6 @@ import network.balanced.score.core.loans.utils.TokenUtils;
 import network.balanced.score.lib.interfaces.Loans;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.structs.RewardsDataEntry;
-import network.balanced.score.lib.utils.BalancedEmergencyHandling;
 import network.balanced.score.lib.utils.Names;
 import score.Address;
 import score.Context;
@@ -41,23 +40,27 @@ import scorex.util.HashMap;
 import java.math.BigInteger;
 import java.util.Map;
 
+import static network.balanced.score.core.loans.LoansVariables.loansOn;
 import static network.balanced.score.core.loans.LoansVariables.*;
+import static network.balanced.score.core.loans.utils.Checks.loansOn;
 import static network.balanced.score.core.loans.utils.LoansConstants.*;
 import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
 import static network.balanced.score.lib.utils.ArrayDBUtils.removeFromArraydb;
 import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Check.onlyGovernance;
 import static network.balanced.score.lib.utils.Check.optionalDefault;
+import static network.balanced.score.lib.utils.Check.checkStatus;
 import static network.balanced.score.lib.utils.Math.convertToNumber;
 import static network.balanced.score.lib.utils.Math.pow;
 
-public class LoansImpl extends BalancedEmergencyHandling implements Loans {
+public class LoansImpl implements Loans {
 
     public static final String TAG = "BalancedLoans";
 
     public LoansImpl(Address _governance) {
         if (governance.get() == null) {
             governance.set(_governance);
+            loansOn.set(true);
             lockingRatio.set(SICX_SYMBOL, LOCKING_RATIO);
             liquidationRatio.set(SICX_SYMBOL, LIQUIDATION_RATIO);
             originationFee.set(ORIGINATION_FEE);
@@ -110,6 +113,18 @@ public class LoansImpl extends BalancedEmergencyHandling implements Loans {
     @External(readonly = true)
     public Address getAddress(String name) {
         return getAddressByName(name);
+    }
+
+    @External
+    public void toggleLoansOn() {
+        onlyGovernance();
+        loansOn.set(!loansOn.get());
+        ContractActive("Loans", loansOn.get() ? "Active" : "Inactive");
+    }
+
+    @External(readonly = true)
+    public boolean getLoansOn() {
+        return loansOn.get();
     }
 
     @External(readonly = true)
@@ -220,6 +235,7 @@ public class LoansImpl extends BalancedEmergencyHandling implements Loans {
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         checkStatus();
+        loansOn();
 
         Context.require(_value.signum() > 0, TAG + ": Token value should be a positive number");
 
@@ -252,6 +268,7 @@ public class LoansImpl extends BalancedEmergencyHandling implements Loans {
     @External
     public void borrow(String _collateralToBorrowAgainst, String _assetToBorrow, BigInteger _amountToBorrow) {
         checkStatus();
+        loansOn();
         Context.require(_amountToBorrow.compareTo(BigInteger.ZERO) > 0, TAG + ": _amountToBorrow needs to be larger " +
                 "than 0");
         Context.require(_assetToBorrow.equals(BNUSD_SYMBOL));
@@ -263,6 +280,7 @@ public class LoansImpl extends BalancedEmergencyHandling implements Loans {
     public void depositAndBorrow(@Optional String _asset, @Optional BigInteger _amount, @Optional Address _from,
                                  @Optional BigInteger _value) {
         checkStatus();
+        loansOn();
         BigInteger deposit = Context.getValue();
         Address depositor = Context.getCaller();
 
@@ -283,6 +301,7 @@ public class LoansImpl extends BalancedEmergencyHandling implements Loans {
     @External
     public void retireBadDebt(String _symbol, BigInteger _value) {
         checkStatus();
+        loansOn();
         Context.require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Amount retired must be greater than zero.");
         Address from = Context.getCaller();
 
@@ -317,6 +336,7 @@ public class LoansImpl extends BalancedEmergencyHandling implements Loans {
     @External
     public void retireBadDebtForCollateral(String _symbol, BigInteger _value, String _collateralSymbol) {
         checkStatus();
+        loansOn();
         Context.require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Amount retired must be greater than zero.");
 
         Address from = Context.getCaller();
@@ -340,6 +360,7 @@ public class LoansImpl extends BalancedEmergencyHandling implements Loans {
     @External
     public void returnAsset(String _symbol, BigInteger _value, @Optional String _collateralSymbol) {
         checkStatus();
+        loansOn();
         Context.require(_symbol.equals(BNUSD_SYMBOL));
         String collateralSymbol = optionalDefault(_collateralSymbol, SICX_SYMBOL);
         Context.require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Amount retired must be greater than zero.");
@@ -378,6 +399,7 @@ public class LoansImpl extends BalancedEmergencyHandling implements Loans {
     @External
     public void redeemCollateral(Address _collateralAddress, BigInteger _amount) {
         checkStatus();
+        loansOn();
         Address caller = Context.getCaller();
         String collateralSymbol = CollateralDB.getSymbol(_collateralAddress);
         BigInteger daofundFee = redemptionDaoFee.getOrDefault(BigInteger.ZERO).multiply(_amount).divide(POINTS);
@@ -453,6 +475,7 @@ public class LoansImpl extends BalancedEmergencyHandling implements Loans {
     @External
     public void withdrawAndUnstake(BigInteger _value) {
         checkStatus();
+        loansOn();
         Address from = Context.getCaller();
         removeCollateral(from, _value, SICX_SYMBOL);
 
@@ -466,6 +489,7 @@ public class LoansImpl extends BalancedEmergencyHandling implements Loans {
     @External
     public void withdrawCollateral(BigInteger _value, @Optional String _collateralSymbol) {
         checkStatus();
+        loansOn();
         String collateralSymbol = optionalDefault(_collateralSymbol, SICX_SYMBOL);
         Address from = Context.getCaller();
         removeCollateral(from, _value, collateralSymbol);
@@ -476,6 +500,7 @@ public class LoansImpl extends BalancedEmergencyHandling implements Loans {
     public void sellCollateral(BigInteger collateralAmountToSell, String collateralSymbol,
                                BigInteger minimumDebtRepaid) {
         checkStatus();
+        loansOn();
         Address from = Context.getCaller();
         sellUserCollateral(from, collateralAmountToSell, collateralSymbol, minimumDebtRepaid);
     }
@@ -483,6 +508,7 @@ public class LoansImpl extends BalancedEmergencyHandling implements Loans {
     @External
     public void liquidate(Address _owner, @Optional String _collateralSymbol) {
         checkStatus();
+        loansOn();
         String collateralSymbol = optionalDefault(_collateralSymbol, SICX_SYMBOL);
         Context.require(PositionsDB.hasPosition(_owner), TAG + ": This address does not have a position on Balanced.");
         Position position = PositionsDB.getPosition(_owner);

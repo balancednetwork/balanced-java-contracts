@@ -74,6 +74,8 @@ class DexTestBase extends UnitTest {
         feehandlerScore = mockBalanced.feehandler.account;
         stakedLPScore = mockBalanced.stakedLp.account;
 
+        contextMock.when(() -> Context.call(eq(governanceScore.getAddress()), eq("checkStatus"), any(String.class))).thenReturn(null);
+
         dexScore = sm.deploy(ownerAccount, DexImpl.class, governanceScore.getAddress());
         dexScore.invoke(governanceScore, "setTimeOffset", BigInteger.valueOf(Context.getBlockTimestamp()));
         dexScoreSpy = (DexImpl) spy(dexScore.getInstance());

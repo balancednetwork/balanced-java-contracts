@@ -19,7 +19,6 @@ package network.balanced.score.core.dividends;
 import network.balanced.score.lib.interfaces.Dividends;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.PrepDelegations;
-import network.balanced.score.lib.utils.BalancedEmergencyHandling;
 import network.balanced.score.lib.utils.Names;
 import score.*;
 import score.annotation.EventLog;
@@ -43,7 +42,7 @@ import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static network.balanced.score.lib.utils.Math.pow;
 
-public class DividendsImpl extends BalancedEmergencyHandling implements Dividends {
+public class DividendsImpl implements Dividends {
 
     private static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
 
