@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,8 @@ class SicxImplTest extends TestBase {
     private static final Account user = sm.createAccount();
     private Score sicxScore;
 
-    private static final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
+    private static final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class,
+            Mockito.CALLS_REAL_METHODS);
 
     private static final MockedStatic.Verification getTodayRate = () -> Context.call(staking.getAddress(),
             "getTodayRate");
@@ -200,24 +201,6 @@ class SicxImplTest extends TestBase {
         contextMock.verify(tokenFallback);
     }
 
-
-    @Test
-    void govTransfer() {
-        Account nonGovernance = Account.newScoreAccount(scoreCount++);
-        String expectedErrorMessage =
-                "Reverted(0): SenderNotScoreOwner";
-        Executable nonGovernanceTransfer = () -> sicxScore.invoke(nonGovernance, "govTransfer", owner.getAddress(),
-                sm.createAccount().getAddress(), ICX, new byte[0]);
-        expectErrorMessage(nonGovernanceTransfer, expectedErrorMessage);
-
-        sicxScore.invoke(staking, "mintTo", owner.getAddress(), BigInteger.valueOf(123).multiply(ICX), new byte[0]);
-
-        Account receiverAccount = sm.createAccount();
-        sicxScore.invoke(owner, "govTransfer", owner.getAddress(), receiverAccount.getAddress(), ICX,
-                new byte[0]);
-        assertEquals(ICX, sicxScore.call("balanceOf", receiverAccount.getAddress()));
-    }
-
     @Test
     void transfer() {
         String data = "";
@@ -241,22 +224,6 @@ class SicxImplTest extends TestBase {
         contextMock.when(tokenFallback).thenReturn(null);
         sicxScore.invoke(user, "transfer", scoreAddress.getAddress(), new BigInteger("10"), "data".getBytes());
         contextMock.verify(tokenFallback);
-    }
-
-    @Test
-    void transfer_blacklist() {
-        // Arrange
-        Account blackListed = sm.createAccount();
-        sicxScore.invoke(staking, "mintTo", blackListed.getAddress(), new BigInteger("100"), new byte[0]);
-
-        // Act
-        contextMock.when(transferUpdateDelegations).thenReturn(null);
-        sicxScore.invoke(blackListed, "transfer", user.getAddress(), new BigInteger("30"), new byte[0]);
-        sicxScore.invoke(owner, "blackList", blackListed.getAddress(), true);
-
-        // Asset
-        Executable blackListTransfer = () -> sicxScore.invoke(blackListed, "transfer", owner.getAddress(), new BigInteger("30"), new byte[0]);
-        expectErrorMessage(blackListTransfer, "Reverted(0): Blacklisted");
     }
 
     @AfterEach

@@ -23,7 +23,6 @@ import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.Versions;
 import score.Address;
 import score.Context;
-import score.DictDB;
 import score.VarDB;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -218,12 +217,6 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
         checkStatus();
         onlyEither(minter, minter2);
         mintWithTokenFallback(_account, _amount, _data);
-    }
-
-    @Override
-    @External
-    public void transfer(Address _to, BigInteger _value, @Optional byte[] _data) {
-        super.transfer(_to, _value, _data);
     }
 
     /**
