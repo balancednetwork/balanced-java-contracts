@@ -135,12 +135,12 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
 
         // Act
         BigInteger iETHBalancePreLiquidation = liquidator.irc2(ethAddress).balanceOf(liquidator.getAddress());
-        liquidator.loans.liquidate(loanTaker.getAddress(), "iETH");
+        liquidator.loans.liquidate(loanTaker.getAddress().toString(), "iETH");
         BigInteger iETHBalancePostLiquidation = liquidator.irc2(ethAddress).balanceOf(liquidator.getAddress());
         assertTrue(iETHBalancePreLiquidation.compareTo(iETHBalancePostLiquidation) < 0);
 
         BigInteger balancePreLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
-        liquidator.loans.liquidate(loanTaker.getAddress(), "sICX");
+        liquidator.loans.liquidate(loanTaker.getAddress().toString(), "sICX");
         BigInteger balancePostLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
         assertTrue(balancePreLiquidation.compareTo(balancePostLiquidation) < 0);
 
@@ -238,7 +238,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
 
         // Act
         BigInteger balancePreLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
-        liquidator.loans.liquidate(loanTaker.getAddress(), "sICX");
+        liquidator.loans.liquidate(loanTaker.getAddress().toString(), "sICX");
         BigInteger balancePostLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
         assertTrue(balancePreLiquidation.compareTo(balancePostLiquidation) < 0);
 
@@ -308,12 +308,12 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
 
         // Act
         BigInteger iETHBalancePreLiquidation = liquidator.irc2(ethAddress).balanceOf(liquidator.getAddress());
-        liquidator.loans.liquidate(loanTaker.getAddress(), "iETH");
+        liquidator.loans.liquidate(loanTaker.getAddress().toString(), "iETH");
         BigInteger iETHBalancePostLiquidation = liquidator.irc2(ethAddress).balanceOf(liquidator.getAddress());
         assertTrue(iETHBalancePreLiquidation.compareTo(iETHBalancePostLiquidation) < 0);
 
         BigInteger balancePreLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
-        liquidator.loans.liquidate(loanTaker.getAddress(), "sICX");
+        liquidator.loans.liquidate(loanTaker.getAddress().toString(), "sICX");
         BigInteger balancePostLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
         assertTrue(balancePreLiquidation.compareTo(balancePostLiquidation) < 0);
 

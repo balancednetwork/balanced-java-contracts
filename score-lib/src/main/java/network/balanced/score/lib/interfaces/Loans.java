@@ -46,7 +46,7 @@ public interface Loans extends Name, TokenFallback, AddressManager {
     void delegate(PrepDelegations[] prepDelegations);
 
     @External(readonly = true)
-    Address getPositionAddress(int _index);
+    String getPositionAddress(int _index);
 
     @External(readonly = true)
     Map<String, String> getAssetTokens();
@@ -58,7 +58,7 @@ public interface Loans extends Name, TokenFallback, AddressManager {
     BigInteger getTotalCollateral();
 
     @External(readonly = true)
-    Map<String, Object> getAccountPositions(Address _owner);
+    Map<String, Object> getAccountPositions(String _owner);
 
     @External(readonly = true)
     Map<String, Map<String, Object>> getAvailableAssets();
@@ -70,7 +70,7 @@ public interface Loans extends Name, TokenFallback, AddressManager {
     int borrowerCount();
 
     @External(readonly = true)
-    boolean hasDebt(Address _owner);
+    boolean hasDebt(String _owner);
 
     @External
     void addAsset(Address _token_address, boolean _active, boolean _collateral);
@@ -108,7 +108,7 @@ public interface Loans extends Name, TokenFallback, AddressManager {
     void withdrawCollateral(BigInteger _value, @Optional String _collateralSymbol);
 
     @External
-    void liquidate(Address _owner, @Optional String _collateralSymbol);
+    void liquidate(String _owner, @Optional String _collateralSymbol);
 
     @External
     void redeemCollateral(Address _collateralAddress, BigInteger _amount);

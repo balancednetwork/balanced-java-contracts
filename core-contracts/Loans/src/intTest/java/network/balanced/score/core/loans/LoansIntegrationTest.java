@@ -643,7 +643,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
 
         // Act
         BigInteger balancePreLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
-        liquidator.loans.liquidate(loanTaker.getAddress(), "sICX");
+        liquidator.loans.liquidate(loanTaker.getAddress().toString(), "sICX");
         BigInteger balancePostLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
         assertTrue(balancePreLiquidation.compareTo(balancePostLiquidation) < 0);
 
@@ -697,7 +697,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
 
         // Act
         BigInteger balancePreLiquidation = liquidator.irc2(ethAddress).balanceOf(liquidator.getAddress());
-        liquidator.loans.liquidate(loanTaker.getAddress(), "iETH");
+        liquidator.loans.liquidate(loanTaker.getAddress().toString(), "iETH");
         BigInteger balancePostLiquidation = liquidator.irc2(ethAddress).balanceOf(liquidator.getAddress());
         assertTrue(balancePreLiquidation.compareTo(balancePostLiquidation) < 0);
 

@@ -190,7 +190,7 @@ class LoansTestRewards extends LoansTestBase {
         mockOraclePrice("sICX", EXA.divide(BigInteger.valueOf(4)));
 
         // Act
-        loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
+        loans.invoke(liquidator, "liquidate", account.getAddress().toString(), "sICX");
 
         // Assert
         verify(sicx.mock).transfer(eq(liquidator.getAddress()), eq(expectedReward), any(byte[].class));

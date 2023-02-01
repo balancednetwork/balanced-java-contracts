@@ -128,7 +128,7 @@ class LoansTest extends LoansTestBase {
         takeLoaniETH(account, iETHCollateral, iETHloan);
 
         // Assert
-        Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", account.getAddress());
+        Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", account.getAddress().toString());
         Map<String, Map<String, BigInteger>> assets = (Map<String, Map<String, BigInteger>>) position.get("holdings");
         Map<String, Map<String, Object>> standings = (Map<String, Map<String, Object>>) position.get("standings");
 
@@ -314,7 +314,7 @@ class LoansTest extends LoansTestBase {
         takeLoanICX(account, "", collateral, loan);
 
         // Assert
-        Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", account.getAddress());
+        Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", account.getAddress().toString());
         Map<String, Map<String, BigInteger>> assetHoldings = (Map<String, Map<String, BigInteger>>) position.get(
                 "holdings");
 
@@ -370,7 +370,7 @@ class LoansTest extends LoansTestBase {
         takeLoanSICX(account, collateral, BigInteger.ZERO);
 
         // Assert
-        Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", account.getAddress());
+        Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", account.getAddress().toString());
         Map<String, Map<String, BigInteger>> assetHoldings = (Map<String, Map<String, BigInteger>>) position.get(
                 "holdings");
 
@@ -390,7 +390,7 @@ class LoansTest extends LoansTestBase {
         takeLoaniETH(account, collateral, BigInteger.ZERO);
 
         // Assert
-        Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", account.getAddress());
+        Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", account.getAddress().toString());
         Map<String, Map<String, BigInteger>> assetHoldings = (Map<String, Map<String, BigInteger>>) position.get(
                 "holdings");
 
@@ -413,7 +413,7 @@ class LoansTest extends LoansTestBase {
         // Act
         loans.invoke(account, "borrow", "sICX", "bnUSD", loan);
         // Assert
-        Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", account.getAddress());
+        Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", account.getAddress().toString());
         Map<String, Map<String, BigInteger>> assetHoldings = (Map<String, Map<String, BigInteger>>) position.get(
                 "holdings");
 
@@ -480,7 +480,7 @@ class LoansTest extends LoansTestBase {
         loans.invoke(account, "borrow", "iETH", "bnUSD", loan);
 
         // Assert
-        Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", account.getAddress());
+        Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", account.getAddress().toString());
         Map<String, Map<String, BigInteger>> assetHoldings = (Map<String, Map<String, BigInteger>>) position.get(
                 "holdings");
 
@@ -536,7 +536,7 @@ class LoansTest extends LoansTestBase {
         loans.invoke(account, "borrow", "sICX", "bnUSD", sICXLoan);
 
         // Assert
-        Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", account.getAddress());
+        Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", account.getAddress().toString());
         Map<String, Map<String, BigInteger>> assetHoldings = (Map<String, Map<String, BigInteger>>) position.get(
                 "holdings");
 
@@ -573,7 +573,7 @@ class LoansTest extends LoansTestBase {
         mockOraclePrice("sICX", newPrice);
 
         // Act
-        loans.invoke(liquidator, "liquidate", liquidatedLoanTaker.getAddress(), "sICX");
+        loans.invoke(liquidator, "liquidate", liquidatedLoanTaker.getAddress().toString(), "sICX");
         mockOraclePrice("sICX", EXA);
 
         // Assert
@@ -630,7 +630,7 @@ class LoansTest extends LoansTestBase {
 
 
         // Assert
-        Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", account.getAddress());
+        Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", account.getAddress().toString());
         Map<String, Map<String, BigInteger>> assetHoldings = (Map<String, Map<String, BigInteger>>) position.get(
                 "holdings");
 
@@ -753,14 +753,14 @@ class LoansTest extends LoansTestBase {
         loans.invoke(account, "returnAsset", "bnUSD", loan.add(expectedFee), "sICX");
 
         // Assert
-        assertFalse((boolean) loans.call("hasDebt", account.getAddress()));
+        assertFalse((boolean) loans.call("hasDebt", account.getAddress().toString()));
         verifyPosition(account.getAddress(), collateral, BigInteger.ZERO);
 
         // Act
         takeLoanICX(account, "bnUSD", BigInteger.ZERO, loan);
 
         // Assert
-        assertTrue((boolean) loans.call("hasDebt", account.getAddress()));
+        assertTrue((boolean) loans.call("hasDebt", account.getAddress().toString()));
         verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
         verifyTotalDebt(loan.add(expectedFee));
     }
@@ -1169,7 +1169,7 @@ class LoansTest extends LoansTestBase {
         mockOraclePrice("sICX", EXA.divide(BigInteger.valueOf(4)));
 
         // Act
-        loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
+        loans.invoke(liquidator, "liquidate", account.getAddress().toString(), "sICX");
 
         // Assert
         verify(sicx.mock).transfer(eq(liquidator.getAddress()), eq(expectedReward), any(byte[].class));
@@ -1214,7 +1214,7 @@ class LoansTest extends LoansTestBase {
         // Act & Assert
         String expectedErrorMessage = "Reverted(0): Liquidation ratio for iBTC is not set";
         Executable liquidateWithoutLiquidationRatio = () -> loans.invoke(liquidator, "liquidate",
-                account.getAddress(), "iBTC");
+                account.getAddress().toString(), "iBTC");
         expectErrorMessage(liquidateWithoutLiquidationRatio, expectedErrorMessage);
     }
 
@@ -1239,7 +1239,7 @@ class LoansTest extends LoansTestBase {
         mockOraclePrice("iETH", newPrice);
 
         // Act
-        loans.invoke(liquidator, "liquidate", account.getAddress(), "iETH");
+        loans.invoke(liquidator, "liquidate", account.getAddress().toString(), "iETH");
 
         // Assert
         verify(ieth.mock).transfer(eq(liquidator.getAddress()), eq(expectedReward), any(byte[].class));
@@ -1297,15 +1297,15 @@ class LoansTest extends LoansTestBase {
         BigInteger price = sICXLiquidationPrice.add(BigInteger.TEN);
         mockOraclePrice("sICX", price);
         mockOraclePrice("iETH", price);
-        loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
-        loans.invoke(liquidator, "liquidate", account.getAddress(), "iETH");
+        loans.invoke(liquidator, "liquidate", account.getAddress().toString(), "sICX");
+        loans.invoke(liquidator, "liquidate", account.getAddress().toString(), "iETH");
         verifyPosition(account.getAddress(), collateral, debt, "sICX");
         verifyPosition(account.getAddress(), collateral, debt, "iETH");
 
         price = sICXLiquidationPrice;
         mockOraclePrice("sICX", price);
         mockOraclePrice("iETH", price);
-        loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
+        loans.invoke(liquidator, "liquidate", account.getAddress().toString(), "sICX");
 
         verifyPosition(account.getAddress(), BigInteger.ZERO, BigInteger.ZERO, "sICX");
         verifyPosition(account.getAddress(), collateral, debt, "iETH");
@@ -1313,11 +1313,11 @@ class LoansTest extends LoansTestBase {
         // Act & Assert
         price = iETHLiquidationPrice.add(BigInteger.TEN);
         mockOraclePrice("iETH", price);
-        loans.invoke(liquidator, "liquidate", account.getAddress(), "iETH");
+        loans.invoke(liquidator, "liquidate", account.getAddress().toString(), "iETH");
         verifyPosition(account.getAddress(), collateral, debt, "iETH");
 
         mockOraclePrice("iETH", iETHLiquidationPrice);
-        loans.invoke(liquidator, "liquidate", account.getAddress(), "iETH");
+        loans.invoke(liquidator, "liquidate", account.getAddress().toString(), "iETH");
         verifyPosition(account.getAddress(), BigInteger.ZERO, BigInteger.ZERO, "iETH");
         verifyTotalDebt(BigInteger.ZERO);
     }
@@ -1337,7 +1337,7 @@ class LoansTest extends LoansTestBase {
         mockOraclePrice("sICX", EXA.divide(BigInteger.valueOf(4)));
 
         // Act
-        loans.invoke(liquidator, "liquidate", account.getAddress(), "iETH");
+        loans.invoke(liquidator, "liquidate", account.getAddress().toString(), "iETH");
 
         // Assert
         verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
@@ -1356,7 +1356,7 @@ class LoansTest extends LoansTestBase {
         verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
 
         // Act
-        loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
+        loans.invoke(liquidator, "liquidate", account.getAddress().toString(), "sICX");
 
         // Assert
         verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
@@ -1370,7 +1370,7 @@ class LoansTest extends LoansTestBase {
         String expectedErrorMessage = "Reverted(0): " + TAG + "This address does not have a position on Balanced.";
 
         // Assert & Act
-        Executable liquidateAccountWithNoPosition = () -> loans.invoke(liquidator, "liquidate", account.getAddress(),
+        Executable liquidateAccountWithNoPosition = () -> loans.invoke(liquidator, "liquidate", account.getAddress().toString(),
                 "sICX");
         expectErrorMessage(liquidateAccountWithNoPosition, expectedErrorMessage);
     }
@@ -1395,8 +1395,8 @@ class LoansTest extends LoansTestBase {
         BigInteger newPrice = EXA.divide(BigInteger.valueOf(4));
         mockOraclePrice("sICX", newPrice);
         mockOraclePrice("iETH", newPrice);
-        loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
-        loans.invoke(liquidator, "liquidate", account.getAddress(), "iETH");
+        loans.invoke(liquidator, "liquidate", account.getAddress().toString(), "sICX");
+        loans.invoke(liquidator, "liquidate", account.getAddress().toString(), "iETH");
 
         BigInteger badDebtSICX = expectedDebt;
         BigInteger badDebtIETH = expectedDebt;
@@ -1445,8 +1445,8 @@ class LoansTest extends LoansTestBase {
         mockOraclePrice("sICX", newPrice);
         mockOraclePrice("iETH", newPrice);
 
-        loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
-        loans.invoke(liquidator, "liquidate", account.getAddress(), "iETH");
+        loans.invoke(liquidator, "liquidate", account.getAddress().toString(), "sICX");
+        loans.invoke(liquidator, "liquidate", account.getAddress().toString(), "iETH");
 
         BigInteger badDebtSICX = expectedDebt;
         BigInteger badDebtIETH = expectedDebt;
@@ -1488,7 +1488,7 @@ class LoansTest extends LoansTestBase {
         BigInteger pricePostLiquidation = EXA.divide(BigInteger.valueOf(6));
 
         mockOraclePrice("sICX", pricePreLiquidation);
-        loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
+        loans.invoke(liquidator, "liquidate", account.getAddress().toString(), "sICX");
         mockOraclePrice("sICX", pricePostLiquidation);
 
         BigInteger liquidationPool = collateral.subtract(expectedReward);
@@ -1539,7 +1539,7 @@ class LoansTest extends LoansTestBase {
         BigInteger pricePostLiquidation = EXA.divide(BigInteger.valueOf(6));
 
         mockOraclePrice("sICX", pricePreLiquidation);
-        loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
+        loans.invoke(liquidator, "liquidate", account.getAddress().toString(), "sICX");
         mockOraclePrice("sICX", pricePostLiquidation);
 
         BigInteger liquidationPool = collateral.subtract(expectedReward);
@@ -1588,8 +1588,8 @@ class LoansTest extends LoansTestBase {
         BigInteger newPrice = EXA.divide(BigInteger.valueOf(4));
         mockOraclePrice("sICX", newPrice);
         mockOraclePrice("iETH", newPrice);
-        loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
-        loans.invoke(liquidator, "liquidate", account.getAddress(), "iETH");
+        loans.invoke(liquidator, "liquidate", account.getAddress().toString(), "sICX");
+        loans.invoke(liquidator, "liquidate", account.getAddress().toString(), "iETH");
 
         BigInteger badDebtIETH = expectedDebt;
 
@@ -1630,7 +1630,7 @@ class LoansTest extends LoansTestBase {
 
         BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
         mockOraclePrice("bnUSD", newPrice);
-        loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
+        loans.invoke(liquidator, "liquidate", account.getAddress().toString(), "sICX");
 
         // Assert & Act
         Executable retireBadDebtZeroAmount = () -> loans.invoke(badDebtReedemer, "retireBadDebt", "bnUSD",
@@ -1656,7 +1656,7 @@ class LoansTest extends LoansTestBase {
 
         BigInteger newPrice = BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(4));
         mockOraclePrice("bnUSD", newPrice);
-        loans.invoke(liquidator, "liquidate", account.getAddress(), "sICX");
+        loans.invoke(liquidator, "liquidate", account.getAddress().toString(), "sICX");
 
         // Assert & Act
         Executable retireBadDebtZeroAmount = () -> loans.invoke(badDebtReedemer, "retireBadDebt", "bnUSD", badDebt);
