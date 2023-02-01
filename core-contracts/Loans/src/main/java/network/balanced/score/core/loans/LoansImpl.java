@@ -29,6 +29,7 @@ import network.balanced.score.lib.interfaces.Loans;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import network.balanced.score.lib.utils.Names;
+import network.balanced.score.lib.utils.Versions;
 import score.Address;
 import score.Context;
 import score.annotation.EventLog;
@@ -85,6 +86,10 @@ public class LoansImpl implements Loans {
             redemptionDaoFee.set(REDEMPTION_DAO_FEE);
         }
 
+        if (currentVersion.getOrDefault("").equals(Versions.LOANS)) {
+            Context.revert("Can't Update same version of code");
+        }
+        currentVersion.set(Versions.LOANS);
     }
 
     private void removeBALN() {
@@ -103,6 +108,11 @@ public class LoansImpl implements Loans {
     @External(readonly = true)
     public String name() {
         return Names.LOANS;
+    }
+
+    @External(readonly = true)
+    public String version() {
+        return currentVersion.getOrDefault("");
     }
 
     @External

@@ -28,6 +28,7 @@ import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.IterableDictDB;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.SetDB;
+import network.balanced.score.lib.utils.Versions;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -72,6 +73,7 @@ public class RewardsImpl implements Rewards {
     private static final String DAILY_FIXED_DISTRIBUTIONS = "daily_fixed_distributions";
     private static final String DISTRIBUTION_PERCENTAGES = "distribution_percentages";
     private static final String FIXED_DISTRIBUTION_PERCENTAGES = "fixed_distribution_percentages";
+    private static final String VERSION = "version";
 
     private static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
     private static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
@@ -116,6 +118,8 @@ public class RewardsImpl implements Rewards {
     private static final ArrayDB<String> completeRecipient = Context.newArrayDB(COMPLETE_RECIPIENT, String.class);
     private static final ArrayDB<String> recipients = Context.newArrayDB(RECIPIENTS, String.class);
 
+    private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
+
 
     public RewardsImpl(@Optional Address _governance) {
         if (governance.get() == null) {
@@ -143,11 +147,20 @@ public class RewardsImpl implements Rewards {
 
         BalancedAddressManager.setGovernance(governance.get());
         SourceWeightController.rewards = this;
+        if (currentVersion.getOrDefault("").equals(Versions.REWARDS)) {
+            Context.revert("Can't Update same version of code");
+        }
+        currentVersion.set(Versions.REWARDS);
     }
 
     @External(readonly = true)
     public String name() {
         return Names.REWARDS;
+    }
+
+    @External(readonly = true)
+    public String version() {
+        return currentVersion.getOrDefault("");
     }
 
     @External(readonly = true)

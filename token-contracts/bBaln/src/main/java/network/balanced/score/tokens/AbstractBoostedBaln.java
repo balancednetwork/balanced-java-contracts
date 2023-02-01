@@ -72,6 +72,8 @@ public abstract class AbstractBoostedBaln implements BoostedBaln {
     protected final VarDB<BigInteger> minimumLockingAmount = Context.newVarDB("Boosted_baln_minimum_locking_amount",
             BigInteger.class);
 
+    public final VarDB<String> currentVersion = Context.newVarDB("version", String.class);
+
     public AbstractBoostedBaln(Address _governance, String name, String symbol) {
         onInstall(_governance, name, symbol);
     }

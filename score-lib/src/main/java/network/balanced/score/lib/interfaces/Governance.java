@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.base.Fallback;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
+import network.balanced.score.lib.interfaces.base.Version;
 import network.balanced.score.lib.structs.PrepDelegations;
 import score.Address;
 import score.annotation.External;
@@ -35,7 +36,8 @@ import java.util.Map;
 public interface Governance extends
         Name,
         TokenFallback,
-        Fallback {
+        Fallback,
+        Version {
 
     @External(readonly = true)
     BigInteger getDay();

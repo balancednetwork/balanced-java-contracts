@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,6 +59,7 @@ public class DexDBVariables {
     private static final String TOKEN_PRECISIONS = "token_precisions";
     private static final String CURRENT_TX = "current_tx";
     private static final String CONTINUOUS_REWARDS_DAY = "continuous_rewards_day";
+    public static final String VERSION = "version";
 
 
     final static VarDB<Address> governance = Context.newVarDB(GOVERNANCE_ADDRESS, Address.class);
@@ -141,4 +142,6 @@ public class DexDBVariables {
 
     // Activation of continuous rewards day
     final static VarDB<BigInteger> continuousRewardsDay = Context.newVarDB(CONTINUOUS_REWARDS_DAY, BigInteger.class);
+
+    public static final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
 }

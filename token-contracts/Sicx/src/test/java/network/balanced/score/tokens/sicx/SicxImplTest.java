@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,8 @@ class SicxImplTest extends TestBase {
     private static final Account user = sm.createAccount();
     private Score sicxScore;
 
-    private static final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
+    private static final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class,
+            Mockito.CALLS_REAL_METHODS);
 
     private static final MockedStatic.Verification getTodayRate = () -> Context.call(staking.getAddress(),
             "getTodayRate");

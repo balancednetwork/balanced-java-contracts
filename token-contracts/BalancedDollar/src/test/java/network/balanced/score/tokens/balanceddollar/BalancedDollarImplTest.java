@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -144,7 +144,6 @@ class BalancedDollarImplTest extends TestBase {
                 new byte[0]);
         assertEquals(ICX, bnUSDScore.call("balanceOf", receiverAccount.getAddress()));
     }
-
 
     @Test
     void getSetMinter2() {

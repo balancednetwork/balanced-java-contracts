@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Balanced.network.
+ * Copyright (c) 2021-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package network.balanced.score.tokens;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
-
 import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.Names;
+import network.balanced.score.lib.utils.Versions;
 import network.balanced.score.tokens.db.LockedBalance;
 import network.balanced.score.tokens.db.Point;
 import network.balanced.score.tokens.utils.UnsignedBigInteger;
@@ -47,6 +47,15 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
 
     public BoostedBalnImpl(Address _governance, String symbol) {
         super(_governance, Names.BOOSTED_BALN, symbol);
+        if (currentVersion.getOrDefault("").equals(Versions.BOOSTED_BALN)) {
+            Context.revert("Can't Update same version of code");
+        }
+        currentVersion.set(Versions.BOOSTED_BALN);
+    }
+
+    @External(readonly = true)
+    public String version() {
+        return currentVersion.getOrDefault("");
     }
 
     @External

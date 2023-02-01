@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import network.balanced.score.lib.interfaces.addresses.AdminAddress;
 import network.balanced.score.lib.interfaces.addresses.BalnAddress;
 import network.balanced.score.lib.interfaces.addresses.GovernanceAddress;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
+import network.balanced.score.lib.interfaces.base.Version;
 import network.balanced.score.lib.interfaces.tokens.IRC2;
 import score.Address;
 import score.annotation.External;
@@ -31,7 +32,7 @@ import java.math.BigInteger;
 
 @ScoreClient
 @ScoreInterface
-public interface WorkerToken extends GovernanceAddress, AdminAddress, BalnAddress, TokenFallback, IRC2 {
+public interface WorkerToken extends GovernanceAddress, AdminAddress, BalnAddress, TokenFallback, IRC2, Version {
 
     @External
     void adminTransfer(Address _from, Address _to, BigInteger _value, @Optional byte[] _data);

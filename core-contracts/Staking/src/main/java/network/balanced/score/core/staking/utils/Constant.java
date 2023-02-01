@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,6 +58,7 @@ public class Constant {
     public static final String USER_DELEGATION_PERCENTAGE = "user_delegation_percentage";
     public static final String PREP_DELEGATION_ICX = "prep_delegation_icx";
     public static final String STATUS_MANAGER = "status_manager";
+    public static final String VERSION = "version";
 
     public static DelegationListDBSdo DEFAULT_DELEGATION_LIST = getDelegationList();
 

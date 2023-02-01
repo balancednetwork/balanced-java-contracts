@@ -32,7 +32,7 @@ import java.util.Map;
 @ScoreClient
 @ScoreInterface
 public interface Dex extends Name, AddressManager, Fallback, TokenFallback,
-        IRC31Base {
+        IRC31Base, Version {
 
     @External
     void setPoolLpFee(BigInteger _value);
