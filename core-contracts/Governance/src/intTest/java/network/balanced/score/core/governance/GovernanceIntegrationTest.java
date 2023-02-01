@@ -20,7 +20,6 @@ import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.score.client.DefaultScoreClient;
-import foundation.icon.score.client.RevertedException;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
@@ -29,7 +28,6 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import score.Address;
-import score.UserRevertedException;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -241,7 +239,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
     }
 
     @Test
-    @Order(13)
+    @Order(99)
     void updateContractFromVote() throws IOException {
         // updating staking from vote
         // size of dex contract: 57,878 bytes
@@ -427,14 +425,17 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         assertThrows(Exception.class, sameUserEnable);
 
         Executable bnUSDStatusTest = () -> owner.bnUSD.transfer(owner.getAddress(), BigInteger.ONE, null);
-        Executable sICXStatusTest  = () -> user.sicx.transfer(owner.getAddress(), BigInteger.ONE, null);
-        Executable daofundStatusTest  = () -> user.daofund.claimNetworkFees();
-        Executable dexStatusTest  = () -> user.dex._transfer(balanced.dex._address(), BigInteger.valueOf(200).multiply(BigInteger.TEN.pow(18)), null);
-        Executable dividendsStatusTest  = () -> user.dividends.distribute((tx) -> {});
-        Executable loansStatusTest  = () -> user.loans.returnAsset("bnUSD", BigInteger.ONE, "sICX");
-        Executable rewardsStatusTest  = () -> user.rewards.distribute((tx) -> {});
-        Executable stakingStatusTest  = () -> user.staking.stakeICX(collateral.multiply(BigInteger.TWO), null, null);
-        Executable balnStatusTest  = () -> user.baln.transfer(owner.getAddress(), BigInteger.ONE, null);
+        Executable sICXStatusTest = () -> user.sicx.transfer(owner.getAddress(), BigInteger.ONE, null);
+        Executable daofundStatusTest = () -> user.daofund.claimNetworkFees();
+        Executable dexStatusTest = () -> user.dex._transfer(balanced.dex._address(),
+                BigInteger.valueOf(200).multiply(BigInteger.TEN.pow(18)), null);
+        Executable dividendsStatusTest = () -> user.dividends.distribute((tx) -> {
+        });
+        Executable loansStatusTest = () -> user.loans.returnAsset("bnUSD", BigInteger.ONE, "sICX");
+        Executable rewardsStatusTest = () -> user.rewards.distribute((tx) -> {
+        });
+        Executable stakingStatusTest = () -> user.staking.stakeICX(collateral.multiply(BigInteger.TWO), null, null);
+        Executable balnStatusTest = () -> user.baln.transfer(owner.getAddress(), BigInteger.ONE, null);
         assertThrows(Exception.class, bnUSDStatusTest);
         assertThrows(Exception.class, sICXStatusTest);
         assertThrows(Exception.class, daofundStatusTest);
