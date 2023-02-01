@@ -65,7 +65,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         owner.governance.setQuorum(BigInteger.ONE);
         balanced.increaseDay(1);
 
-        tester.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(20), null, null);
+        tester.stakeDepositAndBorrow(BigInteger.TEN.pow(23), BigInteger.TEN.pow(20));
 
         balanced.increaseDay(1);
         balanced.syncDistributions();
@@ -384,9 +384,9 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         BalancedClient blacklistedUser2 = balanced.newClient();
         BalancedClient user3 = balanced.newClient();
         BigInteger loan = BigInteger.TEN.pow(20);
-        blacklistedUser1.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loan, null, null);
-        blacklistedUser2.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loan, null, null);
-        user3.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", loan, null, null);
+        blacklistedUser1.stakeDepositAndBorrow(BigInteger.TEN.pow(23), loan);
+        blacklistedUser2.stakeDepositAndBorrow(BigInteger.TEN.pow(23), loan);
+        user3.stakeDepositAndBorrow(BigInteger.TEN.pow(23), loan);
 
         // Act
         owner.governance.blacklist(blacklistedUser1.getAddress().toString());
