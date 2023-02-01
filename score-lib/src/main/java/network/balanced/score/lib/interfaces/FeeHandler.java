@@ -20,6 +20,7 @@ import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.AddressManager;
 import network.balanced.score.lib.interfaces.base.Name;
+import network.balanced.score.lib.interfaces.base.Version;
 import score.Address;
 import score.annotation.External;
 
@@ -28,7 +29,7 @@ import java.util.List;
 
 @ScoreClient
 @ScoreInterface
-public interface FeeHandler extends Name, AddressManager {
+public interface FeeHandler extends Name, AddressManager, Version {
 
     @External
     void enable();

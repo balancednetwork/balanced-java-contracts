@@ -19,6 +19,9 @@ package network.balanced.score.tokens;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
+
+import network.balanced.score.lib.test.mock.MockBalanced;
+import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.tokens.utils.DummyContract;
 import network.balanced.score.tokens.utils.IRC2Token;
 import org.json.JSONObject;
@@ -81,10 +84,11 @@ public class VotingPowerTest extends AbstractBoostedBalnTest {
     @BeforeEach
     public void setup() throws Exception {
         tokenScore = sm.deploy(owner, IRC2Token.class, INITIAL_SUPPLY);
-        Score rewardScore = sm.deploy(owner, DummyContract.class);
-        Score dividendsScore = sm.deploy(owner, DummyContract.class);
-        bBALNScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(),
-                dividendsScore.getAddress(), B_BALANCED_SYMBOL);
+        MockBalanced mockBalanced = new MockBalanced(sm, owner);
+        MockBalanced.addressManagerMock.when(() -> BalancedAddressManager.getBaln()).thenReturn(tokenScore.getAddress());
+
+        bBALNScore = sm.deploy(owner, BoostedBalnImpl.class, mockBalanced.governance.getAddress(), B_BALANCED_SYMBOL);
+
         tokenScore.invoke(owner, "mintTo", alice.getAddress(), ICX.multiply(BigInteger.valueOf(100L)));
         tokenScore.invoke(owner, "mintTo", bob.getAddress(), ICX.multiply(BigInteger.valueOf(100L)));
 

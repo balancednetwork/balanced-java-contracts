@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,13 +47,13 @@ public class GovernanceConstants extends Constants {
     public static final String MIN_BALN = "min_baln";
     public static final String DEFINITION_FEE = "definition_fee";
     public static final String QUORUM = "quorum";
+    public static final String VERSION = "version";
 
     public static String[] CONTRACTS = {"loans", "dex", "staking", "rewards", "dividends", "daofund",
             "reserve", "sicx", "bnUSD", "baln", "bwt", "router", "feehandler", "stakedLp", "rebalancing", "bBaln",
             "balancedOracle"};
 
     public static Map<String, List<String>> ADDRESSES = Map.ofEntries(
-            entry("dex", List.of("rewards", "dividends", "staking", "sicx", "bnUSD", "baln", "feehandler", "stakedLp")),
             entry("rewards", List.of("reserve", "baln", "bwt", "daofund", "stakedLp", "bBaln")),
             entry("bnUSD", List.of("oracle")),
             entry("baln", List.of("dividends", "oracle", "dex", "bnUSD")),
@@ -65,7 +65,6 @@ public class GovernanceConstants extends Constants {
     );
 
     public static Map<String, String> ADMIN_ADDRESSES = Map.ofEntries(
-            entry("dex", "governance"),
             entry("rewards", "governance"),
             entry("bnUSD", "loans"),
             entry("baln", "rewards"),

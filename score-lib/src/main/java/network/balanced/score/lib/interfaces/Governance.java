@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.base.Fallback;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
+import network.balanced.score.lib.interfaces.base.Version;
 import network.balanced.score.lib.structs.PrepDelegations;
 import score.Address;
 import score.annotation.External;
@@ -35,7 +36,8 @@ import java.util.Map;
 public interface Governance extends
         Name,
         TokenFallback,
-        Fallback {
+        Fallback,
+        Version {
 
     @External(readonly = true)
     BigInteger getDay();
@@ -104,6 +106,45 @@ public interface Governance extends
     @External
     void execute(String transactions);
 
+    @External
+    void disable();
+
+    @External
+    void enable();
+
+    @External
+    void blacklist(String address);
+
+    @External
+    void removeBlacklist(String address);
+
+    @External(readonly = true)
+    boolean isBlacklisted(String address);
+
+    @External(readonly = true)
+    boolean getStatus();
+
+    @External
+    void checkStatus(String address);
+
+    @External(readonly = true)
+    Map<String, Boolean> getBlacklist();
+
+    @External
+    void addAuthorizedCallerShutdown(Address address);
+
+    @External
+    void removeAuthorizedCallerShutdown(Address address);
+
+    @External
+    void setShutdownPrivilegeTimeLock(BigInteger days);
+
+    @External(readonly = true)
+    BigInteger getShutdownPrivilegeTimeLock();
+
+    @External(readonly = true)
+    Map<String, BigInteger> getAuthorizedCallersShutdown();
+
     @External(readonly = true)
     BigInteger getProposalCount();
 
@@ -168,10 +209,6 @@ public interface Governance extends
     @External
     void addCollateral(Address _token_address, boolean _active, String _peg, BigInteger _lockingRatio,
                        BigInteger _liquidationRatio, BigInteger _debtCeiling);
-
-    @External
-    void addDexPricedCollateral(Address _token_address, boolean _active, BigInteger _lockingRatio,
-                                BigInteger _liquidationRatio, BigInteger _debtCeiling);
 
     @External
     void delegate(String contract, PrepDelegations[] _delegations);

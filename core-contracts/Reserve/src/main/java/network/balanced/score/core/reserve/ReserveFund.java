@@ -19,6 +19,7 @@ package network.balanced.score.core.reserve;
 import network.balanced.score.lib.interfaces.Reserve;
 import network.balanced.score.lib.structs.Disbursement;
 import network.balanced.score.lib.utils.Names;
+import network.balanced.score.lib.utils.Versions;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -37,12 +38,14 @@ public class ReserveFund implements Reserve {
 
     private static final String GOVERNANCE = "governance";
     private static final String AWARDS = "awards";
+    private static final String VERSION = "version";
 
     public static final String SICX_SYMBOL = "sICX";
 
     public static final String TAG = "BalancedReserveFund";
     public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
     private final BranchDB<Address, DictDB<Address, BigInteger>> awards = Context.newBranchDB(AWARDS, BigInteger.class);
+    private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
 
     public ReserveFund(@Optional Address _governance) {
         if (governance.get() == null) {
@@ -50,6 +53,10 @@ public class ReserveFund implements Reserve {
         }
 
         setGovernance(governance.get());
+        if (currentVersion.getOrDefault("").equals(Versions.RESERVE)) {
+            Context.revert("Can't Update same version of code");
+        }
+        currentVersion.set(Versions.RESERVE);
     }
 
     @EventLog(indexed = 2)
@@ -59,6 +66,11 @@ public class ReserveFund implements Reserve {
     @External(readonly = true)
     public String name() {
         return Names.RESERVE;
+    }
+
+    @External(readonly = true)
+    public String version() {
+        return currentVersion.getOrDefault("");
     }
 
     @External

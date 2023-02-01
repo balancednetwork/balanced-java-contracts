@@ -37,6 +37,7 @@ import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
@@ -63,6 +64,8 @@ class BalancedTokenImplTest extends TestBase {
 
     @BeforeEach
     void deploy() throws Exception {
+        contextMock.when(() -> Context.call(eq(governance.getAddress()), eq("checkStatus"), any(String.class))).thenReturn(null);
+
         balancedToken = sm.deploy(owner, BalancedTokenImpl.class, governance.getAddress());
         mockDexScore = sm.deploy(owner, MockDexScore.class);
 

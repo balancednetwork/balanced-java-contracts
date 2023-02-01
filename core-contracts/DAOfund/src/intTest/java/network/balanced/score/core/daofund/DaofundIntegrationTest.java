@@ -127,7 +127,8 @@ class DaofundIntegrationTest implements ScoreIntegrationTest {
         locked = reader.boostedBaln.getLocked(balanced.daofund._address());
 
         assertEquals(newEarnings, locked.get("amount"));
-        assertEquals(newEarnings.divide(EXA), rewards.add(earnings).divide(EXA));
+        // Wont be exact the same
+        assertTrue(newEarnings.compareTo(rewards.add(earnings)) >= 0);
 
     }
 

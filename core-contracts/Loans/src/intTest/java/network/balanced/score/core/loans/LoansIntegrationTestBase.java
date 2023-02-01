@@ -44,7 +44,6 @@ class LoansIntegrationTestBase extends LoansIntegrationTest {
     void checkBalances() {
         BigInteger sICXBalance = BigInteger.ZERO;
         BigInteger iETHBalance = BigInteger.ZERO;
-        BigInteger iBTCBalance = BigInteger.ZERO;
         BigInteger bnUSDBalance = BigInteger.ZERO;
         int i = 1;
         while (true) {
@@ -68,16 +67,10 @@ class LoansIntegrationTestBase extends LoansIntegrationTest {
                 iETHBalance = iETHBalance.add(hexObjectToBigInteger(assetsDetails.get("iETH").get("iETH")));
                 bnUSDBalance = bnUSDBalance.add(hexObjectToBigInteger(assetsDetails.get("iETH").get("bnUSD")));
             }
-
-            if (assetsDetails.containsKey("iBTC")) {
-                iBTCBalance = iBTCBalance.add(hexObjectToBigInteger(assetsDetails.get("iBTC").get("iBTC")));
-                bnUSDBalance = bnUSDBalance.add(hexObjectToBigInteger(assetsDetails.get("iBTC").get("bnUSD")));
-            }
         }
 
         assertEquals(sICXBalance, reader.sicx.balanceOf(balanced.loans._address()));
         assertEquals(iETHBalance, reader.irc2(ethAddress).balanceOf(balanced.loans._address()));
-        assertEquals(iBTCBalance, reader.irc2(btcAddress).balanceOf(balanced.loans._address()));
 
         BigInteger stabilityDebt = reader.sicx.balanceOf(balanced.stability._address());
         assertEquals(bnUSDBalance, reader.bnUSD.totalSupply().subtract(stabilityDebt));

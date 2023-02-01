@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,8 @@ public class BalancedOracleConstants {
     private static final String DEX_PRICE_DECAY = "dexPriceDecay";
     private static final String PRICE_UPDATE_THRESHOLD = "priceUpdateThreshold";
 
+    private static final String VERSION = "version";
+
     public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
     public static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
     public static final VarDB<Address> dex = Context.newVarDB(DEX, Address.class);
@@ -52,4 +54,5 @@ public class BalancedOracleConstants {
     public static final VarDB<BigInteger> dexPriceEMADecay = Context.newVarDB(DEX_PRICE_DECAY, BigInteger.class);
     public static final VarDB<BigInteger> lastUpdateThreshold = Context.newVarDB(PRICE_UPDATE_THRESHOLD,
             BigInteger.class);
+    public static final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
 }

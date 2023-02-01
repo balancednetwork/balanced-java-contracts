@@ -39,7 +39,6 @@ class DividendsImplTest extends DividendsImplTestBase {
         setupBase();
         dividendScore.invoke(governance.account, "addAcceptedTokens", bnUSD.getAddress());
         dividendScore.invoke(governance.account, "setDividendsBatchSize", batchSize);
-        dividendScore.invoke(governance.account, "setDistributionActivationStatus", true);
 
         dividendScore.invoke(owner, "distribute");
     }
