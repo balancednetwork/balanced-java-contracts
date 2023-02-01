@@ -37,6 +37,12 @@ public interface Staking extends Version {
     String name();
 
     @External
+    void setEmergencyManager(Address _address);
+
+    @External(readonly = true)
+    Address getEmergencyManager();
+
+    @External
     void setBlockHeightWeek(BigInteger _height);
 
     @External(readonly = true)

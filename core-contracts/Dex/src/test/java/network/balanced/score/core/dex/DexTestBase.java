@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import network.balanced.score.lib.test.UnitTest;
+import network.balanced.score.lib.test.mock.MockBalanced;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
@@ -30,13 +31,13 @@ import score.annotation.Optional;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
+
 
 class DexTestBase extends UnitTest {
     protected static final ServiceManager sm = getServiceManager();
@@ -45,53 +46,47 @@ class DexTestBase extends UnitTest {
     protected static Account prep_address = sm.createAccount();
 
     int scoreCount = 0;
-    protected final Account governanceScore = Account.newScoreAccount(scoreCount++);
-    protected final Account dividendsScore = Account.newScoreAccount(scoreCount++);
-    protected final Account stakingScore = Account.newScoreAccount(scoreCount++);
-    protected final Account rewardsScore = Account.newScoreAccount(scoreCount++);
-    protected final Account bnusdScore = Account.newScoreAccount(scoreCount++);
-    protected final Account balnScore = Account.newScoreAccount(scoreCount++);
-    protected final Account sicxScore = Account.newScoreAccount(scoreCount++);
-    protected final Account feehandlerScore = Account.newScoreAccount(scoreCount++);
-    protected final Account stakedLPScore = Account.newScoreAccount(scoreCount++);
+    private MockBalanced mockBalanced;
+    protected Account governanceScore;
+    protected Account dividendsScore;
+    protected Account stakingScore;
+    protected Account rewardsScore;
+    protected Account bnusdScore;
+    protected Account balnScore;
+    protected Account sicxScore;
+    protected Account feehandlerScore;
+    protected Account stakedLPScore;
 
     public static Score dexScore;
     public static DexImpl dexScoreSpy;
 
     protected final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
 
-    public void setup() {
+    public void setup() throws Exception {
+        mockBalanced = new MockBalanced(sm, ownerAccount);
+        governanceScore = mockBalanced.governance.account;
+        dividendsScore = mockBalanced.dividends.account;
+        stakingScore = mockBalanced.staking.account;
+        rewardsScore = mockBalanced.rewards.account;
+        bnusdScore = mockBalanced.bnUSD.account;
+        balnScore = mockBalanced.baln.account;
+        sicxScore = mockBalanced.sicx.account;
+        feehandlerScore = mockBalanced.feehandler.account;
+        stakedLPScore = mockBalanced.stakedLp.account;
+
+        contextMock.when(() -> Context.call(eq(governanceScore.getAddress()), eq("checkStatus"), any(String.class))).thenReturn(null);
+
+        dexScore = sm.deploy(ownerAccount, DexImpl.class, governanceScore.getAddress());
         dexScore.invoke(governanceScore, "setTimeOffset", BigInteger.valueOf(Context.getBlockTimestamp()));
         dexScoreSpy = (DexImpl) spy(dexScore.getInstance());
         dexScore.setInstance(dexScoreSpy);
-        dexScore.invoke(governanceScore, "turnDexOn");
+
+        dexScore.invoke(governanceScore, "addQuoteCoin", bnusdScore.getAddress());
+        dexScore.invoke(governanceScore, "addQuoteCoin", sicxScore.getAddress());
     }
 
-    protected void turnDexOn() {
-        dexScore.invoke(governanceScore, "turnDexOn");
-    }
-
-    protected void setupAddresses() {
-        dexScore.invoke(governanceScore, "setAdmin", governanceScore.getAddress());
-
-        Map<String, Address> addresses = Map.of(
-                "setDividends", dividendsScore.getAddress(),
-                "setStaking", stakingScore.getAddress(),
-                "setRewards", rewardsScore.getAddress(),
-                "setBnusd", bnusdScore.getAddress(),
-                "setBaln", balnScore.getAddress(),
-                "setSicx", sicxScore.getAddress(),
-                "setFeehandler", feehandlerScore.getAddress(),
-                "setStakedLp", stakedLPScore.getAddress()
-        );
-
-        for (Map.Entry<String, Address> address : addresses.entrySet()) {
-            dexScore.invoke(governanceScore, address.getKey(), address.getValue());
-        }
-    }
 
     protected void depositToken(Account depositor, Account tokenScore, BigInteger value) {
-        setupAddresses();
         contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
         contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
         contextMock.when(() -> Context.call(any(Address.class), eq("decimals"))).thenReturn(BigInteger.valueOf(18));
@@ -102,7 +97,6 @@ class DexTestBase extends UnitTest {
     protected void supplyLiquidity(Account supplier, Account baseTokenScore, Account quoteTokenScore,
                                    BigInteger baseValue, BigInteger quoteValue, @Optional boolean withdrawUnused) {
         // Configure dex.
-        turnDexOn();
         dexScore.invoke(governanceScore, "addQuoteCoin", quoteTokenScore.getAddress());
 
         // Mock these cross-contract calls.
@@ -135,7 +129,6 @@ class DexTestBase extends UnitTest {
 
     // Not done yet. Fails for some reason.
     protected void swapSicxToIcx(Account sender, BigInteger value, BigInteger sicxIcxConversionRate) {
-        turnDexOn();
         contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
         contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
         doReturn(sicxIcxConversionRate).when(dexScoreSpy).getSicxRate();
@@ -144,6 +137,7 @@ class DexTestBase extends UnitTest {
         contextMock.when(() -> Context.call(eq(sicxScore.getAddress()), eq("transfer"),
                 eq(feehandlerScore.getAddress()), any(BigInteger.class))).thenReturn(true);
         contextMock.when(() -> Context.transfer(eq(sender.getAddress()), any(BigInteger.class))).thenAnswer((Answer<Void>) invocation -> null);
-        dexScore.invoke(sicxScore, "tokenFallback", sender.getAddress(), value, tokenData("_swap_icx", new HashMap<>()));
+        dexScore.invoke(sicxScore, "tokenFallback", sender.getAddress(), value, tokenData("_swap_icx",
+                new HashMap<>()));
     }
 }

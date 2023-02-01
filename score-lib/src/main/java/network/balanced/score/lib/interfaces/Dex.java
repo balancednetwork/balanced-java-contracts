@@ -18,7 +18,7 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
-import network.balanced.score.lib.interfaces.addresses.*;
+import network.balanced.score.lib.interfaces.addresses.AddressManager;
 import network.balanced.score.lib.interfaces.base.*;
 import network.balanced.score.lib.structs.PrepDelegations;
 import score.Address;
@@ -31,8 +31,7 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface Dex extends AdminAddress, BnusdAddress, GovernanceAddress, Name, SicxAddress, StakingAddress,
-        DividendsAddress, RewardsAddress, BalnAddress, FeeHandlerAddress, StakedLpAddress, Fallback, TokenFallback,
+public interface Dex extends Name, AddressManager, Fallback, TokenFallback,
         IRC31Base, Version {
 
     @External
@@ -49,12 +48,6 @@ public interface Dex extends AdminAddress, BnusdAddress, GovernanceAddress, Name
 
     @External
     void setMarketName(BigInteger _id, String _name);
-
-    @External
-    void turnDexOn();
-
-    @External(readonly = true)
-    boolean getDexOn();
 
     @External
     void addQuoteCoin(Address _address);

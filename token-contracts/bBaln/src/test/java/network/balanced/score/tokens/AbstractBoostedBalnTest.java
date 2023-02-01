@@ -20,6 +20,7 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import network.balanced.score.lib.test.UnitTest;
+import network.balanced.score.lib.test.mock.MockBalanced;
 import network.balanced.score.tokens.utils.IRC2Token;
 import org.junit.jupiter.api.BeforeAll;
 
@@ -30,9 +31,6 @@ public class AbstractBoostedBalnTest extends UnitTest {
     protected static final ServiceManager sm = getServiceManager();
     protected static final Account owner = sm.createAccount();
 
-
-    protected Account rewardScore = Account.newScoreAccount(++scoreCount);
-    protected Account dividendsScore = Account.newScoreAccount(++scoreCount);
     protected static Score tokenScore;
     private static final BigInteger INITIAL_SUPPLY = BigInteger.valueOf(1000).multiply(ICX);
 

@@ -22,6 +22,7 @@ import network.balanced.score.lib.interfaces.addresses.StakingAddress;
 import network.balanced.score.lib.interfaces.base.Version;
 import network.balanced.score.lib.interfaces.tokens.IRC2BurnableInterface;
 import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
+import score.Address;
 import score.annotation.External;
 
 import java.math.BigInteger;
@@ -29,6 +30,11 @@ import java.math.BigInteger;
 @ScoreClient
 @ScoreInterface
 public interface Sicx extends StakingAddress, IRC2BurnableInterface, IRC2Mintable, Version {
+    @External
+    void setEmergencyManager(Address _address);
+
+    @External(readonly = true)
+    Address getEmergencyManager();
 
     @External(readonly = true)
     String getPeg();

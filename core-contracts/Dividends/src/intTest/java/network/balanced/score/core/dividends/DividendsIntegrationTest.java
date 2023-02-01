@@ -82,8 +82,8 @@ public class DividendsIntegrationTest {
 
         BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
         // take loans
-        owner.loans.depositAndBorrow(BigInteger.valueOf(1000).multiply(BigInteger.TEN.pow(18)), "bnUSD",
-                loanAmount, null, null);
+        owner.stakeDepositAndBorrow(BigInteger.valueOf(1000).multiply(BigInteger.TEN.pow(18)), loanAmount);
+
 
         BigInteger amount = new BigInteger("500").multiply(BigInteger.TEN.pow(18));
         // create bnusd market
@@ -136,8 +136,7 @@ public class DividendsIntegrationTest {
         BigInteger fee = loanAmount.multiply(feePercent).divide(POINTS);
 
         // loan taken after the update of the contract
-        owner.loans.depositAndBorrow(BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18)), "bnUSD"
-                , loanAmount, null, null);
+        owner.stakeDepositAndBorrow(BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18)), loanAmount);
         BigInteger daoFundBalancePost = owner.bnUSD.balanceOf(balanced.daofund._address());
 
         // dividends are sent to daofund directly as there are no boosted baln yet
@@ -206,7 +205,7 @@ public class DividendsIntegrationTest {
         // new fees are generated
         owner.staking.stakeICX(sICXFee, null, null);
         owner.sicx.transfer(balanced.feehandler._address(), sICXFee, null);
-        owner.loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
+        owner.stakeDepositAndBorrow(collateral, loanAmount);
 
         Map<String, BigInteger> unclaimedDividendsAfterBob = owner.dividends.getUnclaimedDividends(addressBob);
         Map<String, BigInteger> newDividendsAlice = owner.dividends.getUnclaimedDividends(addressAlice);
@@ -232,8 +231,7 @@ public class DividendsIntegrationTest {
 
         BigInteger collateral = BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18));
         BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
-        owner.loans.depositAndBorrow(collateral, "bnUSD"
-                , loanAmount, null, null);
+        owner.stakeDepositAndBorrow(collateral, loanAmount);
         BigInteger unclaimedDividendsAfterEve =
                 owner.dividends.getUnclaimedDividends(Eve.getAddress()).get(balanced.bnusd._address().toString());
 
@@ -262,8 +260,7 @@ public class DividendsIntegrationTest {
 
         BigInteger collateral = BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18));
         BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
-        owner.loans.depositAndBorrow(collateral, "bnUSD"
-                , loanAmount, null, null);
+        owner.stakeDepositAndBorrow(collateral, loanAmount);
         unclaimedDividendsAfterFerry =
                 owner.dividends.getUnclaimedDividends(addressFerry).get(balanced.bnusd._address().toString());
 
@@ -310,8 +307,7 @@ public class DividendsIntegrationTest {
         assertEquals(newUnclaimedDividendsAlice, BigInteger.ZERO);
 
         balanced.increaseDay(1);
-        owner.loans.depositAndBorrow(collateral, "bnUSD"
-                , loanAmount, null, null);
+        owner.stakeDepositAndBorrow(collateral, loanAmount);
 
         newUnclaimedDividendsAlice =
                 owner.dividends.getUnclaimedDividends(addressAlice).get(balanced.bnusd._address().toString());
@@ -346,8 +342,7 @@ public class DividendsIntegrationTest {
                 data.getBytes());
 
         // for dividends
-        owner.loans.depositAndBorrow(collateral, "bnUSD"
-                , loanAmount, null, null);
+        owner.stakeDepositAndBorrow(collateral, loanAmount);
 
         BigInteger unclaimedDividendsBeforeCharlie =
                 alice.dividends.getUnclaimedDividends(addressCharlie).get(owner.bnUSD._address().toString());
@@ -378,12 +373,10 @@ public class DividendsIntegrationTest {
         BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
         BigInteger collateral = BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18));
 
-        owner.loans.depositAndBorrow(collateral, "bnUSD"
-                , loanAmount, null, null);
+        owner.stakeDepositAndBorrow(collateral, loanAmount);
         BigInteger unclaimedDividendsBefore =
                 alice.dividends.getUnclaimedDividends(addressCharlie).get(owner.bnUSD._address().toString());
-        owner.loans.depositAndBorrow(collateral, "bnUSD"
-                , loanAmount, null, null);
+        owner.stakeDepositAndBorrow(collateral, loanAmount);
         BigInteger unclaimedDividendsAfter =
                 alice.dividends.getUnclaimedDividends(addressCharlie).get(owner.bnUSD._address().toString());
         // checking if the user are getting same dividends everytime
@@ -395,15 +388,13 @@ public class DividendsIntegrationTest {
         assertEquals(charlie.dividends.getUnclaimedDividends(addressCharlie).get(owner.bnUSD._address().toString()),
                 BigInteger.ZERO);
 
-        owner.loans.depositAndBorrow(collateral, "bnUSD"
-                , loanAmount, null, null);
+        owner.stakeDepositAndBorrow(collateral, loanAmount);
         unclaimedDividendsBefore =
                 charlie.dividends.getUnclaimedDividends(addressCharlie).get(owner.bnUSD._address().toString());
         charlie.dividends.claimDividends();
 
         alice.boostedBaln.kick(addressCharlie);
-        owner.loans.depositAndBorrow(collateral, "bnUSD"
-                , loanAmount, null, null);
+        owner.stakeDepositAndBorrow(collateral, loanAmount);
         unclaimedDividendsAfter =
                 alice.dividends.getUnclaimedDividends(addressCharlie).get(owner.bnUSD._address().toString());
         // user dividends is decreased once they are kicked
@@ -464,8 +455,8 @@ public class DividendsIntegrationTest {
 
         BigInteger loanAmount = BigInteger.valueOf(50).multiply(BigInteger.TEN.pow(18));
         // take loans
-        owner.loans.depositAndBorrow(BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18)), "bnUSD",
-                loanAmount, null, null);
+        owner.stakeDepositAndBorrow(BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18)), loanAmount);
+
 
         BigInteger originationFees = BigInteger.valueOf(100);
         BigInteger dividendsBalance = (loanAmount.multiply(originationFees)).divide(BigInteger.valueOf(10000));
@@ -490,8 +481,7 @@ public class DividendsIntegrationTest {
         BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
         BigInteger collateral = BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18));
 
-        owner.loans.depositAndBorrow(collateral, "bnUSD"
-                , loanAmount, null, null);
+        owner.stakeDepositAndBorrow(collateral, loanAmount);
 
         balanced.syncDistributions();
         balanced.increaseDay(10);
@@ -515,8 +505,7 @@ public class DividendsIntegrationTest {
         Ferry.baln.stake(stakedAmount);
 
         // loan taken to send some dividends to contract
-        owner.loans.depositAndBorrow(collateral, "bnUSD"
-                , loanAmount, null, null);
+        owner.stakeDepositAndBorrow(collateral, loanAmount);
     }
 
     private void verifyClaim(BalancedClient client) {

@@ -66,6 +66,11 @@ deployJar {
             nid = 0x7
             to = Addresses.berlin.stakedlp
         }
+        lisbon {
+            uri = 'https://lisbon.net.solidwallet.io/api/v3'
+            nid = 0x2
+            to = Addresses.lisbon.stakedlp
+        }
         local {
             uri = 'http://localhost:9082/api/v3'
             nid = 0x3
@@ -79,7 +84,7 @@ deployJar {
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
     parameters {
-        arg('_governance', Addresses.mainnet.governance)
+        arg('governance', Addresses.mainnet.governance)
     }
 }
 

@@ -18,6 +18,7 @@ package network.balanced.score.tokens.balanceddollar;
 
 import network.balanced.score.lib.interfaces.BalancedDollar;
 import network.balanced.score.lib.tokens.IRC2Burnable;
+import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.Versions;
 import score.Address;
@@ -58,9 +59,6 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
     private final VarDB<Address> admin = Context.newVarDB(ADMIN_ADDRESS, Address.class);
     protected final VarDB<Address> minter2 = Context.newVarDB(MINTER2, Address.class);
 
-    private static final String BLACKLIST = "blacklist";
-    private static final DictDB<Address, Boolean> blackListed = Context.newDictDB(BLACKLIST, Boolean.class);
-
     private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
 
     public BalancedDollarImpl(Address _governance) {
@@ -75,6 +73,8 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
             BigInteger MIN_UPDATE_TIME = BigInteger.valueOf(30_000_000);
             minInterval.set(MIN_UPDATE_TIME);
         }
+
+        BalancedAddressManager.setGovernance(governance.get());
 
         if (this.currentVersion.getOrDefault("").equals(Versions.BNUSD)) {
             Context.revert("Can't Update same version of code");
@@ -203,7 +203,7 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
 
     @External
     public void burnFrom(Address _account, BigInteger _amount) {
-        Context.require(!blackListed.getOrDefault(_account, false), "Blacklisted");
+        checkStatus();
         onlyEither(minter, minter2);
         super.burn(_account, _amount);
     }
@@ -215,20 +215,14 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
 
     @External
     public void mintTo(Address _account, BigInteger _amount, @Optional byte[] _data) {
+        checkStatus();
         onlyEither(minter, minter2);
         mintWithTokenFallback(_account, _amount, _data);
-    }
-
-    @External
-    public void blackList(Address address, boolean blacklist) {
-        onlyOwner();
-        blackListed.set(address, blacklist);
     }
 
     @Override
     @External
     public void transfer(Address _to, BigInteger _value, @Optional byte[] _data) {
-        Context.require(!blackListed.getOrDefault(Context.getCaller(), false), "Blacklisted");
         super.transfer(_to, _value, _data);
     }
 
@@ -246,6 +240,13 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
         priceUpdateTime.set(BigInteger.valueOf(Context.getBlockTimestamp()));
         OraclePrice(USD_BASE + ICX_QUOTE, oracleName.get(), oracleAddress, priceOfBnusdInIcx);
         return priceOfBnusdInIcx;
+    }
+
+    @Override
+    @External
+    public void transfer(Address _to, BigInteger _value, @Optional byte[] _data) {
+        checkStatus();
+        transfer(Context.getCaller(), _to, _value, _data);
     }
 
     @EventLog(indexed = 3)

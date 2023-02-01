@@ -20,13 +20,16 @@ import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.score.client.DefaultScoreClient;
+import foundation.icon.score.client.RevertedException;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 import score.Address;
+import score.UserRevertedException;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -62,7 +65,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         owner.governance.setQuorum(BigInteger.ONE);
         balanced.increaseDay(1);
 
-        tester.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(20), null, null);
+        tester.stakeDepositAndBorrow(BigInteger.TEN.pow(23), BigInteger.TEN.pow(20));
 
         balanced.increaseDay(1);
         balanced.syncDistributions();
@@ -77,6 +80,9 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
         tester.baln.transfer(tester.boostedBaln._address(), balance.divide(BigInteger.TWO), data.getBytes());
 
+        owner.governance.setShutdownPrivilegeTimeLock(BigInteger.TEN);
+        owner.staking.setEmergencyManager(balanced.governance._address());
+        owner.sicx.setEmergencyManager(balanced.governance._address());
     }
 
     @Test
@@ -368,6 +374,94 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
     //     System.out.println(tester.governance.name());
     //     assertEquals(updatedContract, tester.governance.name());
     // }
+
+    @Test
+    @Order(16)
+    void blacklist() throws Throwable {
+        // Arrange
+        BalancedClient blacklistedUser1 = balanced.newClient();
+        BalancedClient blacklistedUser2 = balanced.newClient();
+        BalancedClient user3 = balanced.newClient();
+        BigInteger loan = BigInteger.TEN.pow(20);
+        blacklistedUser1.stakeDepositAndBorrow(BigInteger.TEN.pow(23), loan);
+        blacklistedUser2.stakeDepositAndBorrow(BigInteger.TEN.pow(23), loan);
+        user3.stakeDepositAndBorrow(BigInteger.TEN.pow(23), loan);
+
+        // Act
+        owner.governance.blacklist(blacklistedUser1.getAddress().toString());
+        owner.governance.blacklist(blacklistedUser2.getAddress().toString());
+
+        // Assert
+        Executable nonAllowedTransfer1 = () -> blacklistedUser1.bnUSD.transfer(owner.getAddress(), BigInteger.ONE,
+                null);
+        Executable nonAllowedTransfer2 = () -> blacklistedUser2.bnUSD.transfer(owner.getAddress(), BigInteger.ONE,
+                null);
+        Executable nonAllowedBurn = () -> blacklistedUser1.loans.returnAsset("bnUSD", BigInteger.TEN.pow(18), "sICX");
+        user3.bnUSD.transfer(owner.getAddress(), BigInteger.ONE, null);
+        assertThrows(Exception.class, nonAllowedTransfer1);
+        assertThrows(Exception.class, nonAllowedTransfer2);
+        assertThrows(Exception.class, nonAllowedBurn);
+    }
+
+    @Test
+    @Order(17)
+    void emergency_disable_enable() throws Throwable {
+        // Arrange
+        BalancedClient user = balanced.newClient();
+        BalancedClient trustedUser1 = balanced.newClient();
+        BalancedClient trustedUser2 = balanced.newClient();
+
+        BigInteger loan = BigInteger.TEN.pow(20);
+        BigInteger collateral = BigInteger.TEN.pow(23);
+        user.staking.stakeICX(collateral.multiply(BigInteger.TWO), null, null);
+        user.depositAndBorrow(balanced.sicx._address(), collateral, loan);
+        balanced.increaseDay(1);
+        user.rewards.claimRewards(new String[]{"Loans"});
+
+        owner.governance.addAuthorizedCallerShutdown(trustedUser1.getAddress());
+        owner.governance.addAuthorizedCallerShutdown(trustedUser2.getAddress());
+
+        // Act & Assert
+        trustedUser1.governance.disable();
+        Executable sameUserEnable = () -> trustedUser1.governance.enable();
+        assertThrows(Exception.class, sameUserEnable);
+
+        Executable bnUSDStatusTest = () -> owner.bnUSD.transfer(owner.getAddress(), BigInteger.ONE, null);
+        Executable sICXStatusTest  = () -> user.sicx.transfer(owner.getAddress(), BigInteger.ONE, null);
+        Executable daofundStatusTest  = () -> user.daofund.claimNetworkFees();
+        Executable dexStatusTest  = () -> user.dex._transfer(balanced.dex._address(), BigInteger.valueOf(200).multiply(BigInteger.TEN.pow(18)), null);
+        Executable dividendsStatusTest  = () -> user.dividends.distribute((tx) -> {});
+        Executable loansStatusTest  = () -> user.loans.returnAsset("bnUSD", BigInteger.ONE, "sICX");
+        Executable rewardsStatusTest  = () -> user.rewards.distribute((tx) -> {});
+        Executable stakingStatusTest  = () -> user.staking.stakeICX(collateral.multiply(BigInteger.TWO), null, null);
+        Executable balnStatusTest  = () -> user.baln.transfer(owner.getAddress(), BigInteger.ONE, null);
+        assertThrows(Exception.class, bnUSDStatusTest);
+        assertThrows(Exception.class, sICXStatusTest);
+        assertThrows(Exception.class, daofundStatusTest);
+        assertThrows(Exception.class, dexStatusTest);
+        assertThrows(Exception.class, dividendsStatusTest);
+        assertThrows(Exception.class, loansStatusTest);
+        assertThrows(Exception.class, rewardsStatusTest);
+        assertThrows(Exception.class, stakingStatusTest);
+        assertThrows(Exception.class, balnStatusTest);
+
+        trustedUser2.governance.enable();
+        user.bnUSD.transfer(owner.getAddress(), BigInteger.ONE, null);
+        Executable user1Disable = () -> trustedUser1.governance.disable();
+        Executable user2Disable = () -> trustedUser2.governance.disable();
+        assertThrows(Exception.class, user1Disable);
+        assertThrows(Exception.class, user2Disable);
+
+        assertDoesNotThrow(bnUSDStatusTest);
+        assertDoesNotThrow(sICXStatusTest);
+        assertDoesNotThrow(daofundStatusTest);
+        assertDoesNotThrow(dexStatusTest);
+        assertDoesNotThrow(dividendsStatusTest);
+        assertDoesNotThrow(loansStatusTest);
+        assertDoesNotThrow(rewardsStatusTest);
+        assertDoesNotThrow(stakingStatusTest);
+        assertDoesNotThrow(balnStatusTest);
+    }
 
     private String getValue(Address address) {
         DefaultScoreClient client = newScoreClient(owner.wallet, address);

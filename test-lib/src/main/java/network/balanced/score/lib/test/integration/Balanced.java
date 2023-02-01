@@ -137,15 +137,12 @@ public class Balanced {
         governanceClient.deploy(getContractData("Stability"), StabilityParams);
 
         String BoostedBalnParams = new JsonArray()
-                .add(createParameter(baln._address()))
-                .add(createParameter(rewards._address()))
-                .add(createParameter(dividends._address()))
+                .add(createParameter(governance._address()))
                 .add(createParameter("bBaln"))
                 .toString();
 
         governanceClient.deploy(getContractData("bBaln"), BoostedBalnParams);
         bBaln = newScoreClient(owner, governanceClient.getAddress(Names.BOOSTED_BALN));
-
         Hash sicxTx = deployAsync(owner, "Sicx", Map.of("_admin", staking._address()));
 
 

@@ -35,13 +35,6 @@ import java.util.Map;
 @ScoreClient
 @ScoreInterface
 public interface Dividends extends Name, TokenFallback, AddressManager, Version {
-
-    @External(readonly = true)
-    boolean getDistributionActivationStatus();
-
-    @External
-    void setDistributionActivationStatus(boolean _status);
-
     @External
     void onBalanceUpdate(Address user, BigInteger bBalnBalance);
 

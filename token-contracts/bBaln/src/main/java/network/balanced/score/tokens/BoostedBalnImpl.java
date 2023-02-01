@@ -18,6 +18,7 @@ package network.balanced.score.tokens;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
+import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.Versions;
 import network.balanced.score.tokens.db.LockedBalance;
@@ -35,6 +36,8 @@ import java.util.List;
 import java.util.Map;
 
 import static network.balanced.score.lib.utils.Check.onlyOwner;
+import static network.balanced.score.lib.utils.Check.checkStatus;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getBaln;
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.Math.convertToNumber;
 import static network.balanced.score.lib.utils.NonReentrant.globalReentryLock;
@@ -42,9 +45,8 @@ import static network.balanced.score.tokens.Constants.WEEK_IN_MICRO_SECONDS;
 
 public class BoostedBalnImpl extends AbstractBoostedBaln {
 
-    public BoostedBalnImpl(Address balnAddress, Address rewardAddress, Address dividendsAddress,
-                           String symbol) {
-        super(balnAddress, rewardAddress, dividendsAddress, Names.BOOSTED_BALN, symbol);
+    public BoostedBalnImpl(Address _governance, String symbol) {
+        super(_governance, Names.BOOSTED_BALN, symbol);
         if (currentVersion.getOrDefault("").equals(Versions.BOOSTED_BALN)) {
             Context.revert("Can't Update same version of code");
         }
@@ -88,7 +90,7 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
 
     @External(readonly = true)
     public BigInteger getTotalLocked() {
-        return Context.call(BigInteger.class, this.balnAddress.get(), "balanceOf", Context.getAddress());
+        return Context.call(BigInteger.class, getBaln(), "balanceOf", Context.getAddress());
     }
 
     @External(readonly = true)
@@ -133,13 +135,15 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
 
     @External
     public void checkpoint() {
+        checkStatus();
         this.checkpoint(EOA_ZERO, new LockedBalance(), new LockedBalance());
     }
 
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
+        checkStatus();
         Address token = Context.getCaller();
-        Context.require(token.equals(balnAddress.get()), "Token Fallback: Only Baln deposits are allowed");
+        Context.require(token.equals(getBaln()), "Token Fallback: Only Baln deposits are allowed");
         Context.require(_value.signum() > 0, "Token Fallback: Token value should be a positive number");
 
         String unpackedData = new String(_data);
@@ -167,6 +171,7 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
 
     @External
     public void increaseUnlockTime(BigInteger unlockTime) {
+        checkStatus();
         globalReentryLock();
         Address sender = Context.getCaller();
         BigInteger blockTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());
@@ -186,6 +191,7 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
 
     @External
     public void kick(Address user) {
+        checkStatus();
         BigInteger bBalnBalance = balanceOf(user, BigInteger.ZERO);
         if (bBalnBalance.equals(BigInteger.ZERO)) {
             onKick(user);
@@ -196,6 +202,7 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
 
     @External
     public void withdraw() {
+        checkStatus();
         globalReentryLock();
         Address sender = Context.getCaller();
         BigInteger blockTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());
@@ -214,7 +221,7 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
 
         this.checkpoint(sender, oldLocked, locked);
 
-        Context.call(this.balnAddress.get(), "transfer", sender, value, "withdraw".getBytes());
+        Context.call(getBaln(), "transfer", sender, value, "withdraw".getBytes());
 
         users.remove(sender);
         Withdraw(sender, value, blockTimestamp);
@@ -224,6 +231,7 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
 
     @External
     public void withdrawEarly() {
+        checkStatus();
         globalReentryLock();
         Address sender = Context.getCaller();
         BigInteger blockTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());
@@ -245,9 +253,9 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
         BigInteger penaltyAmount = value.divide(BigInteger.TWO);
         BigInteger returnAmount = value.subtract(penaltyAmount);
 
-        Context.call(this.balnAddress.get(), "transfer", this.penaltyAddress.get(), penaltyAmount,
+        Context.call(getBaln(), "transfer", this.penaltyAddress.get(), penaltyAmount,
                 "withdrawPenalty".getBytes());
-        Context.call(this.balnAddress.get(), "transfer", sender, returnAmount, "withdrawEarly".getBytes());
+        Context.call(getBaln(), "transfer", sender, returnAmount, "withdrawEarly".getBytes());
 
         users.remove(sender);
         Withdraw(sender, value, blockTimestamp);
@@ -358,38 +366,5 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
     @External(readonly = true)
     public BigInteger userPointEpoch(Address address) {
         return this.userPointEpoch.getOrDefault(address, BigInteger.ZERO);
-    }
-
-    @External
-    public void setBaln(Address _address) {
-        onlyOwner();
-        balnAddress.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getBaln() {
-        return balnAddress.get();
-    }
-
-    @External
-    public void setDividends(Address _address) {
-        onlyOwner();
-        dividendsAddress.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getDividends() {
-        return dividendsAddress.get();
-    }
-
-    @External
-    public void setRewards(Address _address) {
-        onlyOwner();
-        rewardAddress.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getRewards() {
-        return rewardAddress.get();
     }
 }

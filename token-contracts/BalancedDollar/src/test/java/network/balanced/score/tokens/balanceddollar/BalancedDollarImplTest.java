@@ -61,6 +61,7 @@ class BalancedDollarImplTest extends TestBase {
 
         bnUSDSpy = (BalancedDollarImpl) spy(bnUSDScore.getInstance());
         bnUSDScore.setInstance(bnUSDSpy);
+        contextMock.when(() -> Context.call(eq( governanceScore.getAddress()), eq("checkStatus"), any(String.class))).thenReturn(null);
     }
 
     private void setup() {

@@ -20,8 +20,8 @@ import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.*;
 import network.balanced.score.lib.interfaces.base.Name;
-import network.balanced.score.lib.interfaces.base.TokenFallback;
 import network.balanced.score.lib.interfaces.base.RewardsVoting;
+import network.balanced.score.lib.interfaces.base.TokenFallback;
 import network.balanced.score.lib.interfaces.base.Version;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.RewardsDataEntry;
@@ -163,5 +163,5 @@ public interface Rewards extends
     void setFixedSourcePercentage(String name, BigInteger percentage);
 
     @External(readonly = true)
-    Map<String,  Map<String, BigInteger>> getDistributionPercentages();
+    Map<String, Map<String, BigInteger>> getDistributionPercentages();
 }

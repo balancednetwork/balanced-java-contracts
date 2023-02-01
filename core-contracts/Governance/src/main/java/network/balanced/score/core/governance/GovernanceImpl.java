@@ -20,6 +20,7 @@ import network.balanced.score.core.governance.proposal.ProposalDB;
 import network.balanced.score.core.governance.proposal.ProposalManager;
 import network.balanced.score.core.governance.utils.ArbitraryCallManager;
 import network.balanced.score.core.governance.utils.ContractManager;
+import network.balanced.score.core.governance.utils.EmergencyManager;
 import network.balanced.score.core.governance.utils.SetupManager;
 import network.balanced.score.lib.interfaces.Governance;
 import network.balanced.score.lib.structs.PrepDelegations;
@@ -330,6 +331,78 @@ public class GovernanceImpl implements Governance {
     }
 
     @External
+    public void enable() {
+        EmergencyManager.authorizeEnableAndDisable();
+        EmergencyManager.enable();
+    }
+
+    @External
+    public void disable() {
+        EmergencyManager.authorizeEnableAndDisable();
+        EmergencyManager.disable();
+    }
+
+    @External
+    public void blacklist(String address) {
+        onlyOwnerOrContract();
+        EmergencyManager.blacklist(address);
+    }
+
+    @External
+    public void removeBlacklist(String address) {
+        onlyOwnerOrContract();
+        EmergencyManager.removeBlacklist(address);
+    }
+
+    @External(readonly = true)
+    public Map<String, Boolean> getBlacklist() {
+        return EmergencyManager.getBlacklist();
+    }
+
+    @External(readonly = true)
+    public boolean isBlacklisted(String address) {
+        return EmergencyManager.isBlacklisted(address);
+    }
+
+    @External(readonly = true)
+    public boolean getStatus() {
+        return EmergencyManager.getStatus();
+    }
+
+    @External
+    public void checkStatus(String address) {
+        EmergencyManager.checkStatus(address);
+    }
+
+    @External
+    public void addAuthorizedCallerShutdown(Address address) {
+        onlyOwnerOrContract();
+        EmergencyManager.addAuthorizedCallerShutdown(address);
+    }
+
+    @External
+    public void removeAuthorizedCallerShutdown(Address address) {
+        onlyOwnerOrContract();
+        EmergencyManager.removeAuthorizedCallerShutdown(address);
+    }
+
+    @External
+    public void setShutdownPrivilegeTimeLock(BigInteger days) {
+        onlyOwnerOrContract();
+        EmergencyManager.setShutdownPrivilegeTimeLock(days);
+    }
+
+    @External(readonly = true)
+    public BigInteger getShutdownPrivilegeTimeLock() {
+        return EmergencyManager.getShutdownPrivilegeTimeLock();
+    }
+
+    @External(readonly = true)
+    public Map<String, BigInteger> getAuthorizedCallersShutdown() {
+        return EmergencyManager.getShutdownCallers();
+    }
+
+    @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
     }
 
@@ -343,13 +416,6 @@ public class GovernanceImpl implements Governance {
                               BigInteger _liquidationRatio, BigInteger _debtCeiling) {
         onlyOwnerOrContract();
         _addCollateral(_token_address, _active, _peg, _lockingRatio, _liquidationRatio, _debtCeiling);
-    }
-
-    @External
-    public void addDexPricedCollateral(Address _token_address, boolean _active, BigInteger _lockingRatio,
-                                       BigInteger _liquidationRatio, BigInteger _debtCeiling) {
-        onlyOwnerOrContract();
-        _addDexPricedCollateral(_token_address, _active, _lockingRatio, _liquidationRatio, _debtCeiling);
     }
 
     @External
@@ -408,27 +474,6 @@ public class GovernanceImpl implements Governance {
         _setLockingRatio(symbol, _lockingRatio);
         _setLiquidationRatio(symbol, _liquidationRatio);
     }
-
-    public void _addDexPricedCollateral(Address _token_address, boolean _active, BigInteger _lockingRatio,
-                                        BigInteger _liquidationRatio, BigInteger _debtCeiling) {
-        Address loansAddress = ContractManager.get("loans");
-        Context.call(loansAddress, "addAsset", _token_address, _active, true);
-
-        String symbol = Context.call(String.class, _token_address, "symbol");
-        BigInteger poolId = Context.call(BigInteger.class, ContractManager.get("dex"), "getPoolId", _token_address,
-                ContractManager.get("bnUSD"));
-
-        Address balancedOracleAddress = ContractManager.get("balancedOracle");
-        Context.call(balancedOracleAddress, "addDexPricedAsset", symbol, poolId);
-        BigInteger price = Context.call(BigInteger.class, balancedOracleAddress, "getPriceInLoop", symbol);
-        Context.require(price.compareTo(BigInteger.ZERO) > 0,
-                "Balanced oracle return a invalid icx price for " + symbol);
-
-        Context.call(loansAddress, "setDebtCeiling", symbol, _debtCeiling);
-        _setLockingRatio(symbol, _lockingRatio);
-        _setLiquidationRatio(symbol, _liquidationRatio);
-    }
-
 
     public void _setLockingRatio(String _symbol, BigInteger _value) {
         Context.call(ContractManager.get("loans"), "setLockingRatio", _symbol, _value);

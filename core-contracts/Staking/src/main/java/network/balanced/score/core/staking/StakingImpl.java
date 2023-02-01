@@ -43,6 +43,7 @@ import java.util.Map;
 import static network.balanced.score.core.staking.db.LinkedListDB.DEFAULT_NODE_ID;
 import static network.balanced.score.core.staking.utils.Checks.onlyOwner;
 import static network.balanced.score.core.staking.utils.Checks.stakingOn;
+import static network.balanced.score.lib.utils.Check.checkStatus;
 import static network.balanced.score.core.staking.utils.Constant.*;
 
 public class StakingImpl implements Staking {
@@ -64,6 +65,8 @@ public class StakingImpl implements Staking {
     private final VarDB<DelegationListDBSdo> prepDelegationInIcx = Context.newVarDB(PREP_DELEGATION_ICX,
             DelegationListDBSdo.class);
     private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
+
+    private final VarDB<Address> statusManager = Context.newVarDB(STATUS_MANAGER, Address.class);
 
     public StakingImpl() {
 
@@ -118,6 +121,18 @@ public class StakingImpl implements Staking {
     @External(readonly = true)
     public String version() {
         return currentVersion.getOrDefault("");
+    }
+
+    @External
+    public void setEmergencyManager(Address _address) {
+        onlyOwner();
+        statusManager.set(_address);
+    }
+
+    @Override
+    @External(readonly = true)
+    public Address getEmergencyManager() {
+        return statusManager.get();
     }
 
     @External
@@ -265,11 +280,13 @@ public class StakingImpl implements Staking {
 
     @Payable
     public void fallback() {
+        checkStatus(statusManager);
         stakeICX(Context.getCaller(), null);
     }
 
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
+        checkStatus(statusManager);
         stakingOn();
         Context.require(Context.getCaller().equals(sicxAddress.get()), TAG + ": The Staking contract only accepts " +
                 "sICX tokens.: " + sicxAddress.get());
@@ -302,6 +319,7 @@ public class StakingImpl implements Staking {
 
     @External
     public void claimUnstakedICX(@Optional Address _to) {
+        checkStatus(statusManager);
         if (_to == null) {
             _to = Context.getCaller();
         }
@@ -421,6 +439,7 @@ public class StakingImpl implements Staking {
 
     @External
     public void delegate(PrepDelegations[] _user_delegations) {
+        checkStatus(statusManager);
         stakingOn();
         Address to = Context.getCaller();
         performChecksForIscoreAndUnstakedBalance();
@@ -535,6 +554,7 @@ public class StakingImpl implements Staking {
     @External
     @Payable
     public BigInteger stakeICX(@Optional Address _to, @Optional byte[] _data) {
+        checkStatus(statusManager);
         stakingOn();
         if (_data == null) {
             _data = new byte[0];
@@ -566,6 +586,7 @@ public class StakingImpl implements Staking {
 
     @External
     public void transferUpdateDelegations(Address _from, Address _to, BigInteger _value) {
+        checkStatus(statusManager);
         stakingOn();
         if (!Context.getCaller().equals(sicxAddress.get())) {
             Context.revert(TAG + ": Only sicx token contract can call this function.");

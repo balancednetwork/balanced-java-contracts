@@ -18,6 +18,7 @@ package network.balanced.score.tokens.balancedtoken;
 
 import network.balanced.score.lib.interfaces.BalancedToken;
 import network.balanced.score.lib.tokens.IRC2Burnable;
+import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.Versions;
 import score.*;
 import score.annotation.EventLog;
@@ -89,6 +90,8 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
             this.unstakingPeriod.set(DEFAULT_UNSTAKING_PERIOD);
             this.enableSnapshots.set(true);
         }
+
+        BalancedAddressManager.setGovernance(governance.get());
         if (this.currentVersion.getOrDefault("").equals(Versions.BALN)) {
             Context.revert("Can't Update same version of code");
         }
@@ -413,6 +416,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
 
     @External
     public void stake(BigInteger _value) {
+        checkStatus();
         this.stakingEnabledOnly();
         Address from = Context.getCaller();
 
@@ -460,6 +464,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
     @Override
     @External
     public void transfer(Address _to, BigInteger _value, @Optional byte[] _data) {
+        checkStatus();
         Address from = Context.getCaller();
         this.checkFirstTime(from);
         this.checkFirstTime(_to);
@@ -490,6 +495,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
     @Override
     @External
     public void mintTo(Address _account, BigInteger _amount, @Optional byte[] _data) {
+        checkStatus();
         this.checkFirstTime(_account);
         this.makeAvailable(_account);
         DictDB<Integer, BigInteger> stakingDetailOfReceiver = this.stakedBalances.at(_account);

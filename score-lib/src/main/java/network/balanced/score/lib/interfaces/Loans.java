@@ -34,12 +34,6 @@ import java.util.Map;
 @ScoreClient
 @ScoreInterface
 public interface Loans extends Name, TokenFallback, AddressManager, Version {
-    @External
-    void toggleLoansOn();
-
-    @External(readonly = true)
-    boolean getLoansOn();
-
     @External(readonly = true)
     BigInteger getDay();
 
