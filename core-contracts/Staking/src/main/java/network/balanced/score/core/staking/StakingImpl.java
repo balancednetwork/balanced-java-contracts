@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import network.balanced.score.core.staking.utils.UnstakeDetails;
 import network.balanced.score.lib.interfaces.Staking;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.utils.Names;
+import network.balanced.score.lib.utils.Versions;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -42,6 +43,7 @@ import java.util.Map;
 import static network.balanced.score.core.staking.db.LinkedListDB.DEFAULT_NODE_ID;
 import static network.balanced.score.core.staking.utils.Checks.onlyOwner;
 import static network.balanced.score.core.staking.utils.Checks.stakingOn;
+import static network.balanced.score.lib.utils.Check.checkStatus;
 import static network.balanced.score.core.staking.utils.Constant.*;
 
 public class StakingImpl implements Staking {
@@ -62,6 +64,9 @@ public class StakingImpl implements Staking {
             Context.newDictDB(USER_DELEGATION_PERCENTAGE, DelegationListDBSdo.class);
     private final VarDB<DelegationListDBSdo> prepDelegationInIcx = Context.newVarDB(PREP_DELEGATION_ICX,
             DelegationListDBSdo.class);
+    private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
+
+    private final VarDB<Address> statusManager = Context.newVarDB(STATUS_MANAGER, Address.class);
 
     public StakingImpl() {
 
@@ -74,11 +79,12 @@ public class StakingImpl implements Staking {
             setTopPreps();
             unstakeBatchLimit.set(DEFAULT_UNSTAKE_BATCH_LIMIT);
             stakingOn.set(true);
-        } else {
-            BigInteger stakedAmount = totalStake.getOrDefault(BigInteger.ZERO);
-            Map<String, BigInteger> prepDelegations = prepDelegationInIcx.getOrDefault(DEFAULT_DELEGATION_LIST).toMap();
-            stakeAndDelegateInNetwork(stakedAmount, prepDelegations);
         }
+
+        if (currentVersion.getOrDefault("").equals(Versions.STAKING)) {
+            Context.revert("Can't Update same version of code");
+        }
+        currentVersion.set(Versions.STAKING);
     }
 
     // Event logs
@@ -110,6 +116,23 @@ public class StakingImpl implements Staking {
     @External(readonly = true)
     public String name() {
         return Names.STAKING;
+    }
+
+    @External(readonly = true)
+    public String version() {
+        return currentVersion.getOrDefault("");
+    }
+
+    @External
+    public void setEmergencyManager(Address _address) {
+        onlyOwner();
+        statusManager.set(_address);
+    }
+
+    @Override
+    @External(readonly = true)
+    public Address getEmergencyManager() {
+        return statusManager.get();
     }
 
     @External
@@ -257,11 +280,13 @@ public class StakingImpl implements Staking {
 
     @Payable
     public void fallback() {
+        checkStatus(statusManager);
         stakeICX(Context.getCaller(), null);
     }
 
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
+        checkStatus(statusManager);
         stakingOn();
         Context.require(Context.getCaller().equals(sicxAddress.get()), TAG + ": The Staking contract only accepts " +
                 "sICX tokens.: " + sicxAddress.get());
@@ -294,6 +319,7 @@ public class StakingImpl implements Staking {
 
     @External
     public void claimUnstakedICX(@Optional Address _to) {
+        checkStatus(statusManager);
         if (_to == null) {
             _to = Context.getCaller();
         }
@@ -413,6 +439,7 @@ public class StakingImpl implements Staking {
 
     @External
     public void delegate(PrepDelegations[] _user_delegations) {
+        checkStatus(statusManager);
         stakingOn();
         Address to = Context.getCaller();
         performChecksForIscoreAndUnstakedBalance();
@@ -527,6 +554,7 @@ public class StakingImpl implements Staking {
     @External
     @Payable
     public BigInteger stakeICX(@Optional Address _to, @Optional byte[] _data) {
+        checkStatus(statusManager);
         stakingOn();
         if (_data == null) {
             _data = new byte[0];
@@ -558,6 +586,7 @@ public class StakingImpl implements Staking {
 
     @External
     public void transferUpdateDelegations(Address _from, Address _to, BigInteger _value) {
+        checkStatus(statusManager);
         stakingOn();
         if (!Context.getCaller().equals(sicxAddress.get())) {
             Context.revert(TAG + ": Only sicx token contract can call this function.");

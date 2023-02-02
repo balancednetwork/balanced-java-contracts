@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ public class Constants {
     public static final String GOVERNANCE_ADDRESS = "governance_address";
     public static final String ADMIN = "admin";
     public static final String PRICE_THRESHOLD = "_price_threshold";
+    public static final String VERSION = "version";
 
     public static final BigInteger SICX_BNUSD_POOL_ID = BigInteger.TWO;
 }

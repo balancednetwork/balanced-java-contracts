@@ -22,6 +22,9 @@ import com.iconloop.score.test.ServiceManager;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.function.Executable;
 
+import network.balanced.score.lib.test.mock.MockBalanced;
+import network.balanced.score.lib.utils.BalancedAddressManager;
+
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -78,8 +81,10 @@ public class StateMachineTest extends AbstractBoostedBalnTest {
 
     @BeforeEach
     public void setup() throws Exception {
-        bBalnScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(),
-                dividendsScore.getAddress(), "bBALN");
+        MockBalanced mockBalanced = new MockBalanced(sm, owner);
+        MockBalanced.addressManagerMock.when(() -> BalancedAddressManager.getBaln()).thenReturn(tokenScore.getAddress());
+
+        bBalnScore = sm.deploy(owner, BoostedBalnImpl.class, mockBalanced.governance.getAddress(), "bBALN");
 
         scoreSpy = (BoostedBalnImpl) spy(bBalnScore.getInstance());
         bBalnScore.setInstance(scoreSpy);

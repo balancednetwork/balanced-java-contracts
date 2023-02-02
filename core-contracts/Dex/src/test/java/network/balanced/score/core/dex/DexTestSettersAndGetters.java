@@ -38,8 +38,6 @@ public class DexTestSettersAndGetters extends DexTestBase {
 
     @BeforeEach
     public void configureContract() throws Exception {
-        dexScore = sm.deploy(ownerAccount, DexImpl.class, governanceScore.getAddress());
-        setupAddresses();
         super.setup();
     }
 
@@ -79,7 +77,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
         // Act & assert - set all fees and assert that all fee methods are only settable by governance.
         for (Map.Entry<String, BigInteger> fee : fees.entrySet()) {
             dexScore.invoke(governanceScore, fee.getKey(), fee.getValue());
-            assertOnlyCallableByGovernance(dexScore, fee.getKey(), fee.getValue());
+            assertOnlyCallableBy(governanceScore.getAddress(), dexScore, fee.getKey(), fee.getValue());
         }
 
         // Assert - retrieve all fees and check validity.
@@ -140,7 +138,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
     void turnDexOnAndGetDexOn() {
         dexScore.invoke(governanceScore, "turnDexOn");
         assertEquals(true, dexScore.call("getDexOn"));
-        assertOnlyCallableByGovernance(dexScore, "turnDexOn");
+        assertOnlyCallableBy(governanceScore.getAddress(), dexScore, "turnDexOn");
     }
 
     @Test
@@ -154,7 +152,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
         // Assert.
         Boolean quoteCoinAllowed = (Boolean) dexScore.call("isQuoteCoinAllowed", quoteCoin);
         assertEquals(true, quoteCoinAllowed);
-        assertOnlyCallableByGovernance(dexScore, "addQuoteCoin", quoteCoin);
+        assertOnlyCallableBy(governanceScore.getAddress(), dexScore, "addQuoteCoin", quoteCoin);
     }
 
     @Test
@@ -168,7 +166,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
         // Assert.
         BigInteger retrievedTimeOffset = (BigInteger) dexScore.call("getTimeOffset");
         assertEquals(timeOffset, retrievedTimeOffset);
-        assertOnlyCallableByGovernance(dexScore, "setTimeOffset", timeOffset);
+        assertOnlyCallableBy(governanceScore.getAddress(), dexScore, "setTimeOffset", timeOffset);
     }
 
     @Test
@@ -342,7 +340,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
         // Assert.
         List<String> namedPools = (List<String>) dexScore.call("getNamedPools");
         assertEquals(expectedMarketNames, namedPools);
-        assertOnlyCallableByAdmin(dexScore, "setMarketName", poolId, poolName);
+        assertOnlyCallableBy(governanceScore.getAddress(), dexScore, "setMarketName", poolId, poolName);
     }
 
     @Test
@@ -605,7 +603,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
         Boolean permission = true;
 
         // Assert.
-        assertOnlyCallableByGovernance(dexScore, "permit", poolId, permission);
+        assertOnlyCallableBy(governanceScore.getAddress(), dexScore, "permit", poolId, permission);
     }
 
     @AfterEach

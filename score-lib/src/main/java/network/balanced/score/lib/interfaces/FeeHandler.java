@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,20 +18,18 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
-import network.balanced.score.lib.interfaces.addresses.*;
+import network.balanced.score.lib.interfaces.addresses.AddressManager;
 import network.balanced.score.lib.interfaces.base.Name;
-import network.balanced.score.lib.interfaces.base.TokenFallback;
+import network.balanced.score.lib.interfaces.base.Version;
 import score.Address;
 import score.annotation.External;
 
 import java.math.BigInteger;
 import java.util.List;
-import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface FeeHandler extends Name, GovernanceAddress, AdminAddress, TokenFallback, LoansAddress, DexAddress,
-        StabilityFundAddress {
+public interface FeeHandler extends Name, AddressManager, Version {
 
     @External
     void enable();
@@ -52,31 +50,10 @@ public interface FeeHandler extends Name, GovernanceAddress, AdminAddress, Token
     List<Address> getAcceptedDividendTokens();
 
     @External
-    void setRoute(Address _fromToken, Address _toToken, Address[] _path);
-
-    @External
-    void deleteRoute(Address _fromToken, Address _toToken);
-
-    @External(readonly = true)
-    Map<String, Object> getRoute(Address _fromToken, Address _toToken);
-
-    @External
     void setFeeProcessingInterval(BigInteger _interval);
 
     @External(readonly = true)
     BigInteger getFeeProcessingInterval();
-
-    @External
-    void addAllowedAddress(Address address);
-
-    @External(readonly = true)
-    List<Address> get_allowed_address(int offset);
-
-    @External(readonly = true)
-    int getNextAllowedAddressIndex();
-
-    @External
-    void route_contract_balances();
 
     @External(readonly = true)
     BigInteger getLoanFeesAccrued();
@@ -86,4 +63,40 @@ public interface FeeHandler extends Name, GovernanceAddress, AdminAddress, Token
 
     @External(readonly = true)
     BigInteger getSwapFeesAccruedByToken(Address token);
+
+    @External
+    void setRoute(Address token, Address[] _path);
+
+    @External
+    void setBalnRouteLimit(BigInteger limit);
+
+    @External(readonly = true)
+    BigInteger getBalnRouteLimit();
+
+    @External
+    void addDefaultRoute(Address token);
+
+    @External
+    void calculateRouteLimit(Address token);
+
+    @External(readonly = true)
+    BigInteger getRouteLimit(Address _fromToken);
+
+    @External
+    void deleteRoute(Address token);
+
+    @External
+    void routeFees();
+
+    @External
+    void routeToken(Address token, Address[] path);
+
+    @External(readonly = true)
+    List<String> getRoute(Address _fromToken);
+
+    @External(readonly = true)
+    List<Address> getRoutedTokens();
+
+    @External(readonly = true)
+    int getNextAllowedAddressIndex();
 }

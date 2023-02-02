@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package network.balanced.score.util.stability;
 
 import network.balanced.score.lib.interfaces.Stability;
 import network.balanced.score.lib.utils.Names;
+import network.balanced.score.lib.utils.Versions;
 import score.*;
 import score.annotation.External;
 import scorex.util.ArrayList;
@@ -44,6 +45,7 @@ public class StabilityImpl implements Stability {
     private static final String FEE_IN = "fee_in";
     private static final String FEE_OUT = "fee_out";
     private static final String ACCEPTED_TOKENS = "accepted_tokens";
+    private static final String VERSION = "version";
 
     private final VarDB<Address> feeHandler = Context.newVarDB(FEE_HANDLER_ADDRESS, Address.class);
     private final DictDB<Address, BigInteger> tokenLimits = Context.newDictDB(TOKEN_LIMIT, BigInteger.class);
@@ -54,6 +56,7 @@ public class StabilityImpl implements Stability {
     private final VarDB<BigInteger> feeOut = Context.newVarDB(FEE_OUT, BigInteger.class);
 
     private final ArrayDB<Address> acceptedTokens = Context.newArrayDB(ACCEPTED_TOKENS, Address.class);
+    private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
 
     public StabilityImpl(Address _feeHandler, Address _bnusd, BigInteger _feeIn, BigInteger _feeOut) {
 
@@ -63,11 +66,21 @@ public class StabilityImpl implements Stability {
             setFeeIn(_feeIn);
             setFeeOut(_feeOut);
         }
+
+        if (currentVersion.getOrDefault("").equals(Versions.STABILITY)) {
+            Context.revert("Can't Update same version of code");
+        }
+        currentVersion.set(Versions.STABILITY);
     }
 
     @External(readonly = true)
     public String name() {
         return Names.STABILITY;
+    }
+
+    @External(readonly = true)
+    public String version() {
+        return currentVersion.getOrDefault("");
     }
 
     @External

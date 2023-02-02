@@ -24,9 +24,11 @@ import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.Point;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import network.balanced.score.lib.structs.VotedSlope;
+import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.IterableDictDB;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.SetDB;
+import network.balanced.score.lib.utils.Versions;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -71,6 +73,7 @@ public class RewardsImpl implements Rewards {
     private static final String DAILY_FIXED_DISTRIBUTIONS = "daily_fixed_distributions";
     private static final String DISTRIBUTION_PERCENTAGES = "distribution_percentages";
     private static final String FIXED_DISTRIBUTION_PERCENTAGES = "fixed_distribution_percentages";
+    private static final String VERSION = "version";
 
     private static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
     private static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
@@ -115,6 +118,8 @@ public class RewardsImpl implements Rewards {
     private static final ArrayDB<String> completeRecipient = Context.newArrayDB(COMPLETE_RECIPIENT, String.class);
     private static final ArrayDB<String> recipients = Context.newArrayDB(RECIPIENTS, String.class);
 
+    private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
+
 
     public RewardsImpl(@Optional Address _governance) {
         if (governance.get() == null) {
@@ -140,12 +145,22 @@ public class RewardsImpl implements Rewards {
             boostWeight.set(WEIGHT);
         }
 
+        BalancedAddressManager.setGovernance(governance.get());
         SourceWeightController.rewards = this;
+        if (currentVersion.getOrDefault("").equals(Versions.REWARDS)) {
+            Context.revert("Can't Update same version of code");
+        }
+        currentVersion.set(Versions.REWARDS);
     }
 
     @External(readonly = true)
     public String name() {
         return Names.REWARDS;
+    }
+
+    @External(readonly = true)
+    public String version() {
+        return currentVersion.getOrDefault("");
     }
 
     @External(readonly = true)
@@ -326,6 +341,7 @@ public class RewardsImpl implements Rewards {
      */
     @External
     public boolean distribute() {
+        checkStatus();
         BigInteger platformDay = RewardsImpl.platformDay.get();
         BigInteger day = getDay();
 
@@ -370,6 +386,7 @@ public class RewardsImpl implements Rewards {
 
     @External
     public void boost(String[] sources) {
+        checkStatus();
         Address user = Context.getCaller();
         BigInteger boostedBalance = fetchBoostedBalance(user);
         BigInteger boostedSupply = fetchBoostedSupply();
@@ -378,6 +395,7 @@ public class RewardsImpl implements Rewards {
 
     @External
     public void claimRewards(@Optional String[] sources) {
+        checkStatus();
         if (sources == null) {
             sources = getAllSources();
         }
@@ -423,6 +441,7 @@ public class RewardsImpl implements Rewards {
 
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
+        checkStatus();
         Context.require(Context.getCaller().equals(balnAddress.get()),
                 TAG + ": The Rewards SCORE can only accept BALN tokens");
     }
@@ -453,6 +472,7 @@ public class RewardsImpl implements Rewards {
     // old versions only used by balanced contracts
     @External
     public void updateRewardsData(String _name, BigInteger _totalSupply, String _user, BigInteger _balance) {
+        checkStatus();
         Address user = Address.fromString(_user);
         DataSourceImpl dataSource = DataSourceDB.get(_name);
         Context.require(dataSource.getContractAddress().equals(Context.getCaller()), TAG + ": Only data provider are " +
@@ -476,6 +496,7 @@ public class RewardsImpl implements Rewards {
     // old versions only used by balanced contracts
     @External
     public void updateBatchRewardsData(String _name, BigInteger _totalSupply, RewardsDataEntry[] _data) {
+        checkStatus();
         DataSourceImpl dataSource = DataSourceDB.get(_name);
         Context.require(dataSource.getContractAddress().equals(Context.getCaller()), TAG + ": Only data provider are " +
                 "allowed to update rewards data");
@@ -502,6 +523,7 @@ public class RewardsImpl implements Rewards {
 
     @External
     public void updateBalanceAndSupply(String _name, BigInteger _totalSupply, String _user, BigInteger _balance) {
+        checkStatus();
         Address user = Address.fromString(_user);
         DataSourceImpl dataSource = DataSourceDB.get(_name);
         Context.require(dataSource.getContractAddress().equals(Context.getCaller()), TAG + ": Only data provider are " +
@@ -523,6 +545,7 @@ public class RewardsImpl implements Rewards {
 
     @External
     public void updateBalanceAndSupplyBatch(String _name, BigInteger _totalSupply, RewardsDataEntry[] _data) {
+        checkStatus();
         DataSourceImpl dataSource = DataSourceDB.get(_name);
         Context.require(dataSource.getContractAddress().equals(Context.getCaller()), TAG + ": Only data provider are " +
                 "allowed to update rewards data");
@@ -549,6 +572,7 @@ public class RewardsImpl implements Rewards {
 
     @External
     public void onKick(Address user) {
+        checkStatus();
         only(boostedBaln);
         BigInteger boostedSupply = fetchBoostedSupply();
         updateAllUserRewards(user, getAllSources(), BigInteger.ZERO, boostedSupply);
@@ -556,6 +580,7 @@ public class RewardsImpl implements Rewards {
 
     @External
     public void kick(Address user, String[] sources) {
+        checkStatus();
         BigInteger boostedBalance = fetchBoostedBalance(user);
         BigInteger boostedSupply = fetchBoostedSupply();
         updateAllUserRewards(user, sources, boostedBalance, boostedSupply);
@@ -563,6 +588,7 @@ public class RewardsImpl implements Rewards {
 
     @External
     public void onBalanceUpdate(Address user, BigInteger balance) {
+        checkStatus();
         only(boostedBaln);
         BigInteger boostedSupply = fetchBoostedSupply();
         updateAllUserRewards(user, getAllSources(), balance, boostedSupply);
@@ -701,16 +727,19 @@ public class RewardsImpl implements Rewards {
 
     @External
     public void checkpoint() {
+        checkStatus();
         SourceWeightController.checkpoint();
     }
 
     @External
     public void checkpointSource(String name) {
+        checkStatus();
         SourceWeightController.checkpointSource(name);
     }
 
     @External
     public BigInteger updateRelativeSourceWeight(String name, BigInteger time) {
+        checkStatus();
         return SourceWeightController.updateRelativeWeight(name, time);
     }
 
@@ -721,6 +750,7 @@ public class RewardsImpl implements Rewards {
 
     @External
     public void voteForSource(String name, BigInteger userWeight) {
+        checkStatus();
         SourceWeightController.voteForSourceWeights(name, userWeight);
     }
 

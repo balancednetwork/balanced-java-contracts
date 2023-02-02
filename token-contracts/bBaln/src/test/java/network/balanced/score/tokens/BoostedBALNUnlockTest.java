@@ -18,6 +18,9 @@ package network.balanced.score.tokens;
 
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
+
+import network.balanced.score.lib.test.mock.MockBalanced;
+import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.tokens.utils.DummyContract;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,9 +58,10 @@ public class BoostedBALNUnlockTest extends AbstractBoostedBalnTest {
 
     @BeforeEach
     public void setup() throws Exception {
-        Score rewardScore = sm.deploy(owner, DummyContract.class);
-        bBALNScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(),
-                dividendsScore.getAddress(), B_BALANCED_SYMBOL);
+        MockBalanced mockBalanced = new MockBalanced(sm, owner);
+        MockBalanced.addressManagerMock.when(() -> BalancedAddressManager.getBaln()).thenReturn(tokenScore.getAddress());
+
+        bBALNScore = sm.deploy(owner, BoostedBalnImpl.class, mockBalanced.governance.getAddress(), B_BALANCED_SYMBOL);
 
         scoreSpy = (BoostedBalnImpl) spy(bBALNScore.getInstance());
         bBALNScore.setInstance(scoreSpy);
@@ -155,12 +159,12 @@ public class BoostedBALNUnlockTest extends AbstractBoostedBalnTest {
                 BigInteger.valueOf(unlockTime).divide(MICRO_SECONDS_IN_A_SECOND).divide(BigInteger.valueOf(4));
 
         sm.getBlock().increase(halfTime.longValue());
-        bBALNScore.call("kick", owner.getAddress());
+        bBALNScore.invoke(owner, "kick", owner.getAddress());
 
         verify(scoreSpy, times(2)).onBalanceUpdate(eq(owner.getAddress()), any(BigInteger.class));
 
         sm.getBlock().increase(halfTime.longValue());
-        bBALNScore.call("kick", owner.getAddress());
+        bBALNScore.invoke(owner, "kick", owner.getAddress());
 
         verify(scoreSpy).onKick(owner.getAddress());
     }

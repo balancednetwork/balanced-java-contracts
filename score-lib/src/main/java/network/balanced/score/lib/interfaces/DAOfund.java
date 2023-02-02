@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import network.balanced.score.lib.interfaces.addresses.AddressManager;
 import network.balanced.score.lib.interfaces.base.Fallback;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
+import network.balanced.score.lib.interfaces.base.Version;
 import network.balanced.score.lib.structs.PrepDelegations;
 import score.Address;
 import score.annotation.External;
@@ -32,7 +33,7 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface DAOfund extends Name, AddressManager, TokenFallback, Fallback {
+public interface DAOfund extends Name, AddressManager, TokenFallback, Fallback, Version {
 
     @External
     void delegate(PrepDelegations[] prepDelegations);

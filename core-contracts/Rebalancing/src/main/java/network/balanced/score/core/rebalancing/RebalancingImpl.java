@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package network.balanced.score.core.rebalancing;
 
 import network.balanced.score.lib.interfaces.Rebalancing;
 import network.balanced.score.lib.utils.Names;
+import network.balanced.score.lib.utils.Versions;
 import score.Address;
 import score.Context;
 import score.VarDB;
@@ -44,6 +45,7 @@ public class RebalancingImpl implements Rebalancing {
     public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE_ADDRESS, Address.class);
     public static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
     private final VarDB<BigInteger> priceThreshold = Context.newVarDB(PRICE_THRESHOLD, BigInteger.class);
+    private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
 
     public RebalancingImpl(Address _governance) {
         if (governance.getOrDefault(null) == null) {
@@ -51,11 +53,20 @@ public class RebalancingImpl implements Rebalancing {
             governance.set(_governance);
             // priceThreshold.set(BigInteger.valueOf(100000000000000000L));
         }
+        if (currentVersion.getOrDefault("").equals(Versions.REBALANCING)) {
+            Context.revert("Can't Update same version of code");
+        }
+        currentVersion.set(Versions.REBALANCING);
     }
 
     @External(readonly = true)
     public String name() {
         return Names.REBALANCING;
+    }
+
+    @External(readonly = true)
+    public String version() {
+        return currentVersion.getOrDefault("");
     }
 
     @External

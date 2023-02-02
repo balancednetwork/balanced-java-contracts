@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,9 @@ import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.*;
 import network.balanced.score.lib.interfaces.base.Name;
-import network.balanced.score.lib.interfaces.base.TokenFallback;
 import network.balanced.score.lib.interfaces.base.RewardsVoting;
+import network.balanced.score.lib.interfaces.base.TokenFallback;
+import network.balanced.score.lib.interfaces.base.Version;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import score.Address;
@@ -44,7 +45,8 @@ public interface Rewards extends
         DaoFundAddress,
         ReserveAddress,
         BoostedBalnAddress,
-        RewardsVoting {
+        RewardsVoting,
+        Version {
 
     @External(readonly = true)
     BigInteger getEmission(BigInteger _day);
@@ -167,5 +169,5 @@ public interface Rewards extends
     void setFixedSourcePercentage(String name, BigInteger percentage);
 
     @External(readonly = true)
-    Map<String,  Map<String, BigInteger>> getDistributionPercentages();
+    Map<String, Map<String, BigInteger>> getDistributionPercentages();
 }

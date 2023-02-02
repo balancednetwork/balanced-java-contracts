@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,7 @@ public class Constants {
     static final String TAG = "Balanced Dividends";
 
     static final String GOVERNANCE = "governance";
-    static final String ADMIN = "admin";
-    static final String LOANS_SCORE = "loans_score";
     static final String DAOFUND = "daofund";
-    static final String BALN_SCORE = "baln_score";
-    static final String DEX_SCORE = "dex_score";
     static final String BBALN_SCORE = "boosted_baln_score";
     static final String BBALN_DAY = "boosted_baln_day";
     static final String USER_BBALN_BALANCE = "boosted_baln_balance_user";
@@ -84,4 +80,6 @@ public class Constants {
 
     static final String IDS = "ids";
     static final String AMOUNT = "amount";
+
+    public static final String VERSION = "version";
 }

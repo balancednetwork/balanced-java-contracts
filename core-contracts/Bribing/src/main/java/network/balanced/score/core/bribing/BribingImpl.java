@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package network.balanced.score.core.bribing;
 
+import network.balanced.score.lib.utils.Versions;
 import score.*;
 import score.annotation.External;
 
@@ -57,6 +58,8 @@ public class BribingImpl implements Bribing {
     //Source->bribeToken->HasAvailableBribes
     public static final BranchDB<String, DictDB<Address, Boolean>> bribesInSource = Context.newBranchDB("bribesInSource", Boolean.class);
 
+    private final VarDB<String> currentVersion = Context.newVarDB("version", String.class);
+
     private class SourceStatus {
         BigInteger period;
         BigInteger bribesPerToken;
@@ -67,11 +70,20 @@ public class BribingImpl implements Bribing {
             isContract(rewards);
             BribingImpl.rewards.set(rewards);
         }
+        if (this.currentVersion.getOrDefault("").equals(Versions.BRIBING)) {
+            Context.revert("Can't Update same version of code");
+        }
+        this.currentVersion.set(Versions.BRIBING);
     }
 
     @External(readonly=true)
     public String name() {
         return "Balanced Bribe";
+    }
+
+    @External(readonly = true)
+    public String version() {
+        return currentVersion.getOrDefault("");
     }
 
     @External(readonly=true)

@@ -67,9 +67,9 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         BigInteger fee = loanAmount.multiply(feePercent).divide(POINTS);
 
         // Act
-        loanTaker1.loans.depositAndBorrow(collateralAmount, "bnUSD", loanAmount, null, null);
-        loanTaker2.loans.depositAndBorrow(collateralAmount, "bnUSD", loanAmount, null, null);
-        loanTaker3.loans.depositAndBorrow(collateralAmount, "bnUSD", loanAmount, null, null);
+        loanTaker1.stakeDepositAndBorrow(collateralAmount, loanAmount);
+        loanTaker2.stakeDepositAndBorrow(collateralAmount, loanAmount);
+        loanTaker3.stakeDepositAndBorrow(collateralAmount, loanAmount);
 
         // Assert
         verifyRewards(loanTaker1);
@@ -90,7 +90,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         verifyRewards(loanTaker3);
 
         // Act
-        loanTaker2.loans.depositAndBorrow(BigInteger.ZERO, "bnUSD", loanAmount, null, null);
+        loanTaker2.loans.borrow("sICX", "bnUSD", loanAmount);
 
         // Assert
         verifyRewards(loanTaker1);
@@ -132,8 +132,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         BalancedClient sicxBnusdLP3 = balanced.newClient();
         BigInteger lpAmount = BigInteger.TEN.pow(22);
 
-        borrower.loans.depositAndBorrow(BigInteger.TEN.pow(24), "bnUSD", lpAmount.multiply(BigInteger.valueOf(3)),
-                null, null);
+        borrower.stakeDepositAndBorrow(BigInteger.TEN.pow(24), lpAmount.multiply(BigInteger.valueOf(3)));
 
         borrower.bnUSD.transfer(sicxBnusdLP1.getAddress(), lpAmount, null);
         borrower.bnUSD.transfer(sicxBnusdLP2.getAddress(), lpAmount, null);
@@ -317,7 +316,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         BalancedClient icxSicxLP = balanced.newClient();
         BigInteger collateralAmount = BigInteger.TEN.pow(23);
         BigInteger loanAmount = BigInteger.TEN.pow(21);
-        loanTaker.loans.depositAndBorrow(collateralAmount, "bnUSD", loanAmount, null, null);
+        loanTaker.stakeDepositAndBorrow(collateralAmount, loanAmount);
         icxSicxLP.dex._transfer(balanced.dex._address(), BigInteger.TEN.pow(22), null);
 
         // Act
@@ -391,7 +390,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         BalancedClient sicxBnusdLP = balanced.newClient();
         BigInteger lpAmount = BigInteger.TEN.pow(22);
 
-        borrower.loans.depositAndBorrow(BigInteger.TEN.pow(24), "bnUSD", lpAmount, null, null);
+        borrower.stakeDepositAndBorrow(BigInteger.TEN.pow(24), lpAmount);
         borrower.bnUSD.transfer(sicxBnusdLP.getAddress(), lpAmount, null);
         joinsICXBnusdLP(sicxBnusdLP, lpAmount, lpAmount);
         stakeICXBnusdLP(sicxBnusdLP);

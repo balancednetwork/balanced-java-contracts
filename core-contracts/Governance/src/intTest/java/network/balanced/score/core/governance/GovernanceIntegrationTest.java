@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,14 +26,17 @@ import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 import score.Address;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Map;
 
 import static network.balanced.score.core.governance.deploymentTester.DeploymentTester.name;
 import static network.balanced.score.lib.test.integration.BalancedUtils.*;
-import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
+import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.createWalletWithBalance;
+import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.newScoreClient;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -42,10 +45,8 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
     private static BalancedClient owner;
     private static BalancedClient tester;
 
-    private static final String deploymentTesterJar1 = System.getProperty("user.dir") + "/src/intTest/java/network" +
-            "/balanced/score/core/governance/DeploymentTester-V1.jar";
-    private static final String deploymentTesterJar2 = System.getProperty("user.dir") + "/src/intTest/java/network" +
-            "/balanced/score/core/governance/DeploymentTester-V2.jar";
+    private static final String deploymentTesterJar1 = "DeploymentTester-V1.jar";
+    private static final String deploymentTesterJar2 = "DeploymentTester-V2.jar";
     private static final String deploymentTesterName = name;
 
     @BeforeAll
@@ -62,7 +63,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         owner.governance.setQuorum(BigInteger.ONE);
         balanced.increaseDay(1);
 
-        tester.loans.depositAndBorrow(BigInteger.TEN.pow(23), "bnUSD", BigInteger.TEN.pow(20), null, null);
+        tester.stakeDepositAndBorrow(BigInteger.TEN.pow(23), BigInteger.TEN.pow(20));
 
         balanced.increaseDay(1);
         balanced.syncDistributions();
@@ -77,6 +78,9 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         String data = "{\"method\":\"createLock\",\"params\":{\"unlockTime\":" + unlockTime + "}}";
         tester.baln.transfer(tester.boostedBaln._address(), balance.divide(BigInteger.TWO), data.getBytes());
 
+        owner.governance.setShutdownPrivilegeTimeLock(BigInteger.TEN);
+        owner.staking.setEmergencyManager(balanced.governance._address());
+        owner.sicx.setEmergencyManager(balanced.governance._address());
     }
 
     @Test
@@ -162,10 +166,10 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
 
     @Test
     @Order(10)
-    void deployNewContract() {
+    void deployNewContract() throws IOException {
         // Arrange
         String deploymentValueParameter = "first deployment";
-        byte[] contractData = getContractBytes(deploymentTesterJar1);
+        byte[] contractData = getContractBytesFromResources(this.getClass(), deploymentTesterJar1);
         JsonArray params = new JsonArray()
                 .add(createParameter(deploymentValueParameter));
 
@@ -181,14 +185,14 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
 
     @Test
     @Order(11)
-    void updateContractChangeValue() {
+    void updateContractChangeValue() throws IOException {
         // Arrange
         String deploymentValueParameter = "second deployment";
         Address contractAddress = owner.governance.getAddress(deploymentTesterName);
         String value = getValue(contractAddress);
         assertNotEquals(deploymentValueParameter, value);
 
-        byte[] contractData = getContractBytes(deploymentTesterJar1);
+        byte[] contractData = getContractBytesFromResources(this.getClass(), deploymentTesterJar1);
         JsonArray params = new JsonArray()
                 .add(createParameter(deploymentValueParameter));
 
@@ -202,20 +206,20 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
 
     @Test
     @Order(12)
-    void updateContractAndSetNewValue() {
+    void updateContractAndSetNewValue() throws IOException {
         // Arrange
         String deploymentValueParameter = "third deployment";
         String newSetterValue = "test new setter";
         Address contractAddress = owner.governance.getAddress(deploymentTesterName);
 
-        byte[] contractData = getContractBytes(deploymentTesterJar2);
+        byte[] contractData = getContractBytesFromResources(this.getClass(), deploymentTesterJar2);
 
         JsonArray deploymentParameters = new JsonArray()
                 .add(createParameter(deploymentValueParameter));
 
         JsonArray deployToParameters = new JsonArray()
                 .add(createParameter(contractAddress))
-                .add(createParameter(getContractBytes(deploymentTesterJar2)))
+                .add(createParameter(getContractBytesFromResources(this.getClass(), deploymentTesterJar2)))
                 .add(createParameter(deploymentParameters.toString()));
 
         JsonArray setNewValueParameter = new JsonArray()
@@ -235,9 +239,9 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
     }
 
     @Test
-    @Order(13)
-    void updateContractFromVote() {
-        // updating dex from vote
+    @Order(99)
+    void updateContractFromVote() throws IOException {
+        // updating staking from vote
         // size of dex contract: 57,878 bytes
         // vote definition fee: fee=25907653000000000000 steps=2072612240 price=12500000000
         // vote execution fee: fee=25217133812500000000 steps=2017370705 price=12500000000
@@ -246,12 +250,11 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         String updatedContract = "Staked ICX Manager";
         Address contractAddress = owner.governance.getAddress("Staked ICX Manager");
 
-        JsonArray deploymentParameters = new JsonArray()
-                .add(createParameter(owner.governance._address()));
+        byte[] stakingFileByte = getContractBytesFromResources(this.getClass(), "Staking-1.2.0-optimized.jar");
 
         JsonArray deployToParameters = new JsonArray()
                 .add(createParameter(contractAddress))
-                .add(createParameter(getContractData("Staking")))
+                .add(createParameter(stakingFileByte))
                 .add(createParameter("[]"));
 
         JsonArray actions = new JsonArray()
@@ -284,7 +287,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
 
     @Test
     @Order(14)
-    void updateSmallContractFromVote() {
+    void updateSmallContractFromVote() throws IOException {
         // updating DeploymentTesterJar1 contract from vote
         // size of dex contract: 969 bytes
         // vote definition fee: fee=12754290212500000000 steps=1020343217 price=12500000000
@@ -292,7 +295,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
 
         String updateValueParameter = "update";
         String deploymentValueParameter = "first deployment";
-        byte[] contractData = getContractBytes(deploymentTesterJar1);
+        byte[] contractData = getContractBytesFromResources(this.getClass(), deploymentTesterJar1);
         JsonArray params = new JsonArray()
                 .add(createParameter(deploymentValueParameter));
         owner.governance.deploy(contractData, params.toString());
@@ -304,7 +307,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
 
         JsonArray deployToParameters = new JsonArray()
                 .add(createParameter(contractAddress))
-                .add(createParameter(getContractBytes(deploymentTesterJar1)))
+                .add(createParameter(getContractBytesFromResources(this.getClass(), deploymentTesterJar1)))
                 .add(createParameter(deploymentParameters.toString()));
 
         JsonArray actions = new JsonArray()
@@ -369,6 +372,97 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
     //     System.out.println(tester.governance.name());
     //     assertEquals(updatedContract, tester.governance.name());
     // }
+
+    @Test
+    @Order(16)
+    void blacklist() throws Throwable {
+        // Arrange
+        BalancedClient blacklistedUser1 = balanced.newClient();
+        BalancedClient blacklistedUser2 = balanced.newClient();
+        BalancedClient user3 = balanced.newClient();
+        BigInteger loan = BigInteger.TEN.pow(20);
+        blacklistedUser1.stakeDepositAndBorrow(BigInteger.TEN.pow(23), loan);
+        blacklistedUser2.stakeDepositAndBorrow(BigInteger.TEN.pow(23), loan);
+        user3.stakeDepositAndBorrow(BigInteger.TEN.pow(23), loan);
+
+        // Act
+        owner.governance.blacklist(blacklistedUser1.getAddress().toString());
+        owner.governance.blacklist(blacklistedUser2.getAddress().toString());
+
+        // Assert
+        Executable nonAllowedTransfer1 = () -> blacklistedUser1.bnUSD.transfer(owner.getAddress(), BigInteger.ONE,
+                null);
+        Executable nonAllowedTransfer2 = () -> blacklistedUser2.bnUSD.transfer(owner.getAddress(), BigInteger.ONE,
+                null);
+        Executable nonAllowedBurn = () -> blacklistedUser1.loans.returnAsset("bnUSD", BigInteger.TEN.pow(18), "sICX");
+        user3.bnUSD.transfer(owner.getAddress(), BigInteger.ONE, null);
+        assertThrows(Exception.class, nonAllowedTransfer1);
+        assertThrows(Exception.class, nonAllowedTransfer2);
+        assertThrows(Exception.class, nonAllowedBurn);
+    }
+
+    @Test
+    @Order(17)
+    void emergency_disable_enable() throws Throwable {
+        // Arrange
+        BalancedClient user = balanced.newClient();
+        BalancedClient trustedUser1 = balanced.newClient();
+        BalancedClient trustedUser2 = balanced.newClient();
+
+        BigInteger loan = BigInteger.TEN.pow(20);
+        BigInteger collateral = BigInteger.TEN.pow(23);
+        user.staking.stakeICX(collateral.multiply(BigInteger.TWO), null, null);
+        user.depositAndBorrow(balanced.sicx._address(), collateral, loan);
+        balanced.increaseDay(1);
+        user.rewards.claimRewards(new String[]{"Loans"});
+
+        owner.governance.addAuthorizedCallerShutdown(trustedUser1.getAddress());
+        owner.governance.addAuthorizedCallerShutdown(trustedUser2.getAddress());
+
+        // Act & Assert
+        trustedUser1.governance.disable();
+        Executable sameUserEnable = () -> trustedUser1.governance.enable();
+        assertThrows(Exception.class, sameUserEnable);
+
+        Executable bnUSDStatusTest = () -> owner.bnUSD.transfer(owner.getAddress(), BigInteger.ONE, null);
+        Executable sICXStatusTest = () -> user.sicx.transfer(owner.getAddress(), BigInteger.ONE, null);
+        Executable daofundStatusTest = () -> user.daofund.claimNetworkFees();
+        Executable dexStatusTest = () -> user.dex._transfer(balanced.dex._address(),
+                BigInteger.valueOf(200).multiply(BigInteger.TEN.pow(18)), null);
+        Executable dividendsStatusTest = () -> user.dividends.distribute((tx) -> {
+        });
+        Executable loansStatusTest = () -> user.loans.returnAsset("bnUSD", BigInteger.ONE, "sICX");
+        Executable rewardsStatusTest = () -> user.rewards.distribute((tx) -> {
+        });
+        Executable stakingStatusTest = () -> user.staking.stakeICX(collateral.multiply(BigInteger.TWO), null, null);
+        Executable balnStatusTest = () -> user.baln.transfer(owner.getAddress(), BigInteger.ONE, null);
+        assertThrows(Exception.class, bnUSDStatusTest);
+        assertThrows(Exception.class, sICXStatusTest);
+        assertThrows(Exception.class, daofundStatusTest);
+        assertThrows(Exception.class, dexStatusTest);
+        assertThrows(Exception.class, dividendsStatusTest);
+        assertThrows(Exception.class, loansStatusTest);
+        assertThrows(Exception.class, rewardsStatusTest);
+        assertThrows(Exception.class, stakingStatusTest);
+        assertThrows(Exception.class, balnStatusTest);
+
+        trustedUser2.governance.enable();
+        user.bnUSD.transfer(owner.getAddress(), BigInteger.ONE, null);
+        Executable user1Disable = () -> trustedUser1.governance.disable();
+        Executable user2Disable = () -> trustedUser2.governance.disable();
+        assertThrows(Exception.class, user1Disable);
+        assertThrows(Exception.class, user2Disable);
+
+        assertDoesNotThrow(bnUSDStatusTest);
+        assertDoesNotThrow(sICXStatusTest);
+        assertDoesNotThrow(daofundStatusTest);
+        assertDoesNotThrow(dexStatusTest);
+        assertDoesNotThrow(dividendsStatusTest);
+        assertDoesNotThrow(loansStatusTest);
+        assertDoesNotThrow(rewardsStatusTest);
+        assertDoesNotThrow(stakingStatusTest);
+        assertDoesNotThrow(balnStatusTest);
+    }
 
     private String getValue(Address address) {
         DefaultScoreClient client = newScoreClient(owner.wallet, address);

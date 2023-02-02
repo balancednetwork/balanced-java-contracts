@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,7 @@ class BalancedDollarImplTest extends TestBase {
 
         bnUSDSpy = (BalancedDollarImpl) spy(bnUSDScore.getInstance());
         bnUSDScore.setInstance(bnUSDSpy);
+        contextMock.when(() -> Context.call(eq( governanceScore.getAddress()), eq("checkStatus"), any(String.class))).thenReturn(null);
     }
 
     private void setup() {
@@ -144,12 +145,11 @@ class BalancedDollarImplTest extends TestBase {
         assertEquals(ICX, bnUSDScore.call("balanceOf", receiverAccount.getAddress()));
     }
 
-
     @Test
     void getSetMinter2() {
         Account nonContractMinter = sm.createAccount();
         Account minter2 = Account.newScoreAccount(scoreCount++);
-        
+
         String expectedErrorMessage = "Reverted(0): Address Check: Address provided is an EOA address. A contract address is required.";
         Executable nonContractSet = () ->  bnUSDScore.invoke(owner, "setMinter2", nonContractMinter.getAddress());
         expectErrorMessage(nonContractSet, expectedErrorMessage);
