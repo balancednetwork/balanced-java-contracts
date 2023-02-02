@@ -29,7 +29,7 @@ import java.math.BigInteger;
 import static org.mockito.Mockito.when;
 
 public class MockBalanced {
-    private static MockedStatic<BalancedAddressManager> addressManagerMock;
+    public static MockedStatic<BalancedAddressManager> addressManagerMock;
     public MockContract<Loans> loans;
     public MockContract<Dex> dex;
     public MockContract<Staking> staking;

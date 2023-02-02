@@ -20,6 +20,9 @@ import com.iconloop.score.test.Account;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+
+import network.balanced.score.lib.interfaces.GovernanceScoreInterface;
+import network.balanced.score.lib.test.mock.MockContract;
 import score.Address;
 
 import java.math.BigInteger;
@@ -35,6 +38,7 @@ class RewardsTestSetup extends RewardsTestBase {
 
     @BeforeEach
     void setup() throws Exception {
+        governance = new MockContract<>(GovernanceScoreInterface.class, sm, admin).account;
         rewardsScore = sm.deploy(owner, RewardsImpl.class, governance.getAddress());
     }
 

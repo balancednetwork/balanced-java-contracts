@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2023-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,12 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.dividends.utils;
+package network.balanced.score.lib.interfaces.base;
 
-import com.iconloop.score.token.irc2.IRC2Mintable;
-import score.Address;
+import score.annotation.External;
 
-import java.math.BigInteger;
+public interface Version {
 
-public class bnUSD extends IRC2Mintable {
-    public bnUSD(String _name, String _symbol, int _decimals) {
-        super(_name, _symbol, _decimals);
-    }
-
-    public void transfer(Address _to, BigInteger _amount, byte[] data) {
-    }
+    @External(readonly = true)
+    String version();
 }

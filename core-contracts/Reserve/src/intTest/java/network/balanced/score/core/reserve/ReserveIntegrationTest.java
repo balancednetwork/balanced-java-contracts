@@ -76,10 +76,10 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         BigInteger collateral = BigInteger.TEN.pow(23);
         BigInteger loanAmount = BigInteger.TEN.pow(22);
 
-        loanTakerICX1.loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
-        loanTakerICX2.loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
-        loanTakerICX3.loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
-        loanTakerICX4.loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
+        loanTakerICX1.stakeDepositAndBorrow(collateral, loanAmount);
+        loanTakerICX2.stakeDepositAndBorrow(collateral, loanAmount);
+        loanTakerICX3.stakeDepositAndBorrow(collateral, loanAmount);
+        loanTakerICX4.stakeDepositAndBorrow(collateral, loanAmount);
 
         BigInteger ethAmount = BigInteger.valueOf(2).multiply(iethDecimals);
         BigInteger ethPrice = reader.balancedOracle.getLastPriceInUSD("ETH");
@@ -232,7 +232,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         BigInteger loan = maxDebt.subtract(maxFee);
         BigInteger fee = loan.multiply(feePercent).divide(POINTS);
 
-        loanTaker.loans.depositAndBorrow(collateral, "bnUSD", loan, null, null);
+        loanTaker.stakeDepositAndBorrow(collateral, loan);
 
         setLockingRatio(voter, initialLockingRatio, "restore Locking ratio 32");
 

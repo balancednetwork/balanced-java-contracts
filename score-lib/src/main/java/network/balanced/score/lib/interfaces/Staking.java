@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
+import network.balanced.score.lib.interfaces.base.Version;
 import network.balanced.score.lib.structs.PrepDelegations;
 import score.Address;
 import score.annotation.External;
@@ -30,10 +31,16 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface Staking {
+public interface Staking extends Version {
 
     @External(readonly = true)
     String name();
+
+    @External
+    void setEmergencyManager(Address _address);
+
+    @External(readonly = true)
+    Address getEmergencyManager();
 
     @External
     void setBlockHeightWeek(BigInteger _height);

@@ -19,7 +19,6 @@ package network.balanced.score.core.dividends;
 import network.balanced.score.lib.structs.PrepDelegations;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import score.Context;
 
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -27,7 +26,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.verify;
 
 class DividendsImplTest extends DividendsImplTestBase {
 
@@ -38,18 +37,8 @@ class DividendsImplTest extends DividendsImplTestBase {
         sm.getBlock().increase(2 * DAY);
 
         setupBase();
-        dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
-        dividendScore.invoke(admin, "setDaofund", daoScore.getAddress());
-        dividendScore.invoke(admin, "setBaln", balnScore.getAddress());
-
-        dividendScore.invoke(governanceScore, "setAdmin", admin.getAddress());
-        dividendScore.invoke(admin, "setLoans", loansScore.getAddress());
-        dividendScore.invoke(admin, "setDex", dexScore.getAddress());
-        dividendScore.invoke(admin, "addAcceptedTokens", bnUSDScore.getAddress());
-        dividendScore.invoke(admin, "setDividendsBatchSize", batchSize);
-        dividendScore.invoke(admin, "setDistributionActivationStatus", true);
-
-        contextMock.when(() -> Context.call(eq(dexScore.getAddress()), eq("getTimeOffset"))).thenReturn(BigInteger.TWO);
+        dividendScore.invoke(governance.account, "addAcceptedTokens", bnUSD.getAddress());
+        dividendScore.invoke(governance.account, "setDividendsBatchSize", batchSize);
 
         dividendScore.invoke(owner, "distribute");
     }
@@ -70,18 +59,8 @@ class DividendsImplTest extends DividendsImplTestBase {
         prep._votes_in_per = BigInteger.valueOf(100);
         PrepDelegations[] preps = new PrepDelegations[]{prep};
 
-        contextMock.when(() -> Context.call(governanceScore.getAddress(), "getContractAddress", "staking")).thenReturn(stakingScore.getAddress());
-        contextMock.when(() -> Context.call(eq(stakingScore.getAddress()), eq("delegate"), any())).thenReturn(
-                "Staking delegate called");
-        dividendScore.invoke(governanceScore, "delegate", (Object) preps);
+        dividendScore.invoke(governance.account, "delegate", (Object) preps);
 
-        contextMock.verify(() -> Context.call(governanceScore.getAddress(), "getContractAddress", "staking"));
-        contextMock.verify(() -> Context.call(eq(stakingScore.getAddress()), eq("delegate"), any()));
-    }
-
-    @Test
-    void setBoostedBaln() {
-        dividendScore.invoke(owner, "setBoostedBaln", bBalnScore.getAddress());
-        assertEquals(bBalnScore.getAddress(), dividendScore.call("getBoostedBaln"));
+        verify(staking.mock).delegate(any());
     }
 }

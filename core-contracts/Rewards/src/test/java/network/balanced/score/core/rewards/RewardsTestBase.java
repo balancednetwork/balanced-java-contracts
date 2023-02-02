@@ -24,6 +24,7 @@ import network.balanced.score.lib.interfaces.BoostedBaln;
 import network.balanced.score.lib.interfaces.BoostedBalnScoreInterface;
 import network.balanced.score.lib.interfaces.DataSource;
 import network.balanced.score.lib.interfaces.DataSourceScoreInterface;
+import network.balanced.score.lib.interfaces.GovernanceScoreInterface;
 import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
 import network.balanced.score.lib.interfaces.tokens.IRC2MintableScoreInterface;
 import network.balanced.score.lib.structs.DistributionPercentage;
@@ -54,7 +55,7 @@ class RewardsTestBase extends UnitTest {
     DistributionPercentage daoDist = new DistributionPercentage();
 
     int scoreCount = 0;
-    final Account governance = Account.newScoreAccount(scoreCount++);
+    Account governance;
     final Account daoFund = Account.newScoreAccount(scoreCount++);
     final Account reserve = Account.newScoreAccount(scoreCount++);
 
@@ -67,6 +68,7 @@ class RewardsTestBase extends UnitTest {
     Score rewardsScore;
 
     void setup() throws Exception {
+        governance = new MockContract<>(GovernanceScoreInterface.class, sm, admin).account;
         dex = new MockContract<>(DataSourceScoreInterface.class, sm, admin);
         loans = new MockContract<>(DataSourceScoreInterface.class, sm, admin);
         baln = new MockContract<>(IRC2MintableScoreInterface.class, sm, admin);

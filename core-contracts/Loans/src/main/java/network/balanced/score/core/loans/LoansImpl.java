@@ -29,6 +29,7 @@ import network.balanced.score.lib.interfaces.Loans;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import network.balanced.score.lib.utils.Names;
+import network.balanced.score.lib.utils.Versions;
 import score.Address;
 import score.Context;
 import score.annotation.EventLog;
@@ -49,6 +50,7 @@ import static network.balanced.score.lib.utils.ArrayDBUtils.removeFromArraydb;
 import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Check.onlyGovernance;
 import static network.balanced.score.lib.utils.Check.optionalDefault;
+import static network.balanced.score.lib.utils.Check.checkStatus;
 import static network.balanced.score.lib.utils.Math.convertToNumber;
 import static network.balanced.score.lib.utils.Math.pow;
 
@@ -84,6 +86,10 @@ public class LoansImpl implements Loans {
             redemptionDaoFee.set(REDEMPTION_DAO_FEE);
         }
 
+        if (currentVersion.getOrDefault("").equals(Versions.LOANS)) {
+            Context.revert("Can't Update same version of code");
+        }
+        currentVersion.set(Versions.LOANS);
     }
 
     private void removeBALN() {
@@ -102,6 +108,11 @@ public class LoansImpl implements Loans {
     @External(readonly = true)
     public String name() {
         return Names.LOANS;
+    }
+
+    @External(readonly = true)
+    public String version() {
+        return currentVersion.getOrDefault("");
     }
 
     @External
@@ -233,6 +244,7 @@ public class LoansImpl implements Loans {
 
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
+        checkStatus();
         loansOn();
 
         Context.require(_value.signum() > 0, TAG + ": Token value should be a positive number");
@@ -265,6 +277,7 @@ public class LoansImpl implements Loans {
 
     @External
     public void borrow(String _collateralToBorrowAgainst, String _assetToBorrow, BigInteger _amountToBorrow) {
+        checkStatus();
         loansOn();
         Context.require(_amountToBorrow.compareTo(BigInteger.ZERO) > 0, TAG + ": _amountToBorrow needs to be larger " +
                 "than 0");
@@ -276,6 +289,7 @@ public class LoansImpl implements Loans {
     @Payable
     public void depositAndBorrow(@Optional String _asset, @Optional BigInteger _amount, @Optional Address _from,
                                  @Optional BigInteger _value) {
+        checkStatus();
         loansOn();
         BigInteger deposit = Context.getValue();
         String depositor = Context.getCaller().toString();
@@ -296,6 +310,7 @@ public class LoansImpl implements Loans {
 
     @External
     public void retireBadDebt(String _symbol, BigInteger _value) {
+        checkStatus();
         loansOn();
         Context.require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Amount retired must be greater than zero.");
         Address from = Context.getCaller();
@@ -330,6 +345,7 @@ public class LoansImpl implements Loans {
 
     @External
     public void retireBadDebtForCollateral(String _symbol, BigInteger _value, String _collateralSymbol) {
+        checkStatus();
         loansOn();
         Context.require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Amount retired must be greater than zero.");
 
@@ -353,6 +369,7 @@ public class LoansImpl implements Loans {
 
     @External
     public void returnAsset(String _symbol, BigInteger _value, @Optional String _collateralSymbol) {
+        checkStatus();
         loansOn();
         Context.require(_symbol.equals(BNUSD_SYMBOL));
         String collateralSymbol = optionalDefault(_collateralSymbol, SICX_SYMBOL);
@@ -391,6 +408,7 @@ public class LoansImpl implements Loans {
 
     @External
     public void redeemCollateral(Address _collateralAddress, BigInteger _amount) {
+        checkStatus();
         loansOn();
         Address caller = Context.getCaller();
         String collateralSymbol = CollateralDB.getSymbol(_collateralAddress);
@@ -466,6 +484,7 @@ public class LoansImpl implements Loans {
 
     @External
     public void withdrawAndUnstake(BigInteger _value) {
+        checkStatus();
         loansOn();
         String from = Context.getCaller().toString();
         removeCollateral(from, _value, SICX_SYMBOL);
@@ -479,6 +498,7 @@ public class LoansImpl implements Loans {
 
     @External
     public void withdrawCollateral(BigInteger _value, @Optional String _collateralSymbol) {
+        checkStatus();
         loansOn();
         String collateralSymbol = optionalDefault(_collateralSymbol, SICX_SYMBOL);
         Address from = Context.getCaller();
@@ -489,6 +509,7 @@ public class LoansImpl implements Loans {
     @External
     public void sellCollateral(BigInteger collateralAmountToSell, String collateralSymbol,
                                BigInteger minimumDebtRepaid) {
+        checkStatus();
         loansOn();
         Address from = Context.getCaller();
         sellUserCollateral(from.toString(), collateralAmountToSell, collateralSymbol, minimumDebtRepaid);
@@ -496,6 +517,7 @@ public class LoansImpl implements Loans {
 
     @External
     public void liquidate(String _owner, @Optional String _collateralSymbol) {
+        checkStatus();
         loansOn();
         String collateralSymbol = optionalDefault(_collateralSymbol, SICX_SYMBOL);
         Context.require(PositionsDB.hasPosition(_owner), TAG + ": This address does not have a position on Balanced.");

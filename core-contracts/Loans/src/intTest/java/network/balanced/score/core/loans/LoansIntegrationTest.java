@@ -29,11 +29,11 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import score.UserRevertedException;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Map;
 
 import static network.balanced.score.lib.test.integration.BalancedUtils.*;
-import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.getContractData;
 import static network.balanced.score.lib.utils.Constants.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -45,8 +45,6 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
     protected static BigInteger iethNumberOfDecimals = BigInteger.valueOf(24);
     protected static BigInteger iethDecimals = BigInteger.TEN.pow(iethNumberOfDecimals.intValue());
     protected static BigInteger sicxDecimals = EXA;
-
-    protected static Address btcAddress;
 
     private static BigInteger initialLockingRatio;
     private static BigInteger lockingRatio;
@@ -66,34 +64,6 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
 
         ethAddress = createIRC2Token(owner, "ICON ETH", "iETH", iethNumberOfDecimals);
         owner.irc2(ethAddress).setMinter(owner.getAddress());
-
-        btcAddress = createIRC2Token(owner, "ICON BTC", "iBTC");
-        owner.irc2(btcAddress).setMinter(owner.getAddress());
-    }
-
-
-    @Test
-    @Order(0)
-    void removeBALN() {
-        // Arrange
-        JsonArray addAssetParameters = new JsonArray()
-                .add(createParameter(balanced.baln._address()))
-                .add(createParameter(true))
-                .add(createParameter(true));
-
-        JsonArray actions = new JsonArray().add(createTransaction(balanced.loans._address(), "addAsset",
-                addAssetParameters));
-        owner.governance.execute(actions.toString());
-
-        assertTrue(reader.loans.getAssetTokens().containsKey("BALN"));
-
-        // Act
-        String governanceParam = new JsonArray().add(createParameter(balanced.governance._address())).toString();
-
-        owner.governance.deployTo(balanced.loans._address(), getContractData("Loans"), governanceParam);
-
-        // Assert
-        assertFalse(reader.loans.getAssetTokens().containsKey("BALN"));
     }
 
     @Test
@@ -159,32 +129,6 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         assertEquals(collateralETH, loanTakerMulti.getLoansCollateralPosition("iETH"));
         assertEquals(icxCollateral, loanTakerMulti.getLoansCollateralPosition("sICX"));
         assertEquals(collateralETH, loanTakerIETH.getLoansCollateralPosition("iETH"));
-    }
-
-    @Test
-    @Order(2)
-    void takeLoan_dexPricedCollateral() throws Exception {
-        // Arrange
-        BigInteger btcAmount = BigInteger.TEN.pow(18);
-        BigInteger bnusdAmount = btcAmount.multiply(reader.balancedOracle.getLastPriceInUSD("BTC")).divide(EXA);
-        addDexCollateralType(owner, btcAddress, btcAmount, bnusdAmount);
-
-        BalancedClient btcLoanTaker = balanced.newClient();
-        BigInteger collateralBTC = BigInteger.TEN.pow(19);
-        BigInteger loanAmount = BigInteger.TEN.pow(21);
-        owner.irc2(btcAddress).mintTo(btcLoanTaker.getAddress(), collateralBTC, null);
-
-        // Act
-        btcLoanTaker.depositAndBorrow(btcAddress, collateralBTC, loanAmount);
-
-        // Assert
-        BigInteger feePercent = hexObjectToBigInteger(owner.loans.getParameters().get("origination fee"));
-        BigInteger fee = loanAmount.multiply(feePercent).divide(POINTS);
-        BigInteger debt = loanAmount.add(fee);
-
-        Map<String, BigInteger> btcLoanTakerBaS = reader.loans.getBalanceAndSupply("Loans", btcLoanTaker.getAddress().toString());
-        assertEquals(debt, btcLoanTakerBaS.get("_balance"));
-        assertEquals(collateralBTC, btcLoanTaker.getLoansCollateralPosition("iBTC"));
     }
 
     @Test
@@ -693,7 +637,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         BigInteger sICXLoan = BigInteger.TEN.pow(21);
         BigInteger sICXDebt = sICXLoan.add(sICXLoan.multiply(feePercent).divide(POINTS));
 
-        loanTaker.loans.depositAndBorrow(icxCollateral, "bnUSD", sICXLoan, null, null);
+        loanTaker.stakeDepositAndBorrow(icxCollateral,  sICXLoan);
 
         // Act
         BigInteger balancePreLiquidation = liquidator.irc2(ethAddress).balanceOf(liquidator.getAddress());
