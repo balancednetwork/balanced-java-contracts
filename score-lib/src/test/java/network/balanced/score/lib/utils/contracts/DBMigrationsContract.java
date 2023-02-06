@@ -58,6 +58,22 @@ public class DBMigrationsContract {
         return migratedBranchDictDB.at(key).get(address);
     }
 
+    @External(readonly = true)
+    public String getOrDefaultBranchDB(String key,  String _default) {
+        return migratedBranchDB.at(key).getOrDefault(_default);
+    }
+
+
+    @External(readonly = true)
+    public String getOrDefaultDictDB(String address, String _default) {
+        return migratedDictDB.getOrDefault(address, _default);
+    }
+
+    @External(readonly = true)
+    public String getOrDefaultBranchedDictDB(String key, String address, String _default) {
+        return migratedBranchDictDB.at(key).getOrDefault(address, _default);
+    }
+
     @External
     public void setLegacyBranchDB(String key, Address value) {
         legacyBranchDB.at(key).set(value);
