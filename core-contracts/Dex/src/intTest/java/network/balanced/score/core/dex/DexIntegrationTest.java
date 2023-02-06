@@ -297,13 +297,13 @@ class DexIntegrationTest {
     @Order(8)
     void testNonContinuousAndContinuousReward() {
         balanced.syncDistributions();
-        BigInteger balnHolding = userRewardScoreClient.getBalnHolding(tUserAddress);
+        BigInteger balnHolding = userRewardScoreClient.getBalnHolding(tUserAddress.toString());
         tUserClient._transfer(dexScoreClient._address(), BigInteger.valueOf(200).multiply(EXA), null);
 
 
         balanced.syncDistributions();
         System.out.println("Baln total supply is: " + userBalnScoreClient.totalSupply());
-        BigInteger updatedBalnHolding = userRewardScoreClient.getBalnHolding(tUserAddress);
+        BigInteger updatedBalnHolding = userRewardScoreClient.getBalnHolding(tUserAddress.toString());
         System.out.println("baln holding: " + balnHolding);
         System.out.println("updated baln holding: " + updatedBalnHolding);
         assert balnHolding.compareTo(updatedBalnHolding) < 0;
@@ -314,7 +314,7 @@ class DexIntegrationTest {
             System.out.println(e.getMessage());
         }
 
-        BigInteger nextUpdatedBalnHolding = userRewardScoreClient.getBalnHolding(tUserAddress);
+        BigInteger nextUpdatedBalnHolding = userRewardScoreClient.getBalnHolding(tUserAddress.toString());
         assertEquals(beforeSleepDay, dexUserScoreClient.getDay());
 
         System.out.println("updated baln holding: " + updatedBalnHolding);

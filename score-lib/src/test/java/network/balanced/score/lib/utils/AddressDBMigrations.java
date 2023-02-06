@@ -98,5 +98,35 @@ public class AddressDBMigrations extends UnitTest {
         assertEquals(address3.toString(), score.call("getBranchDB", key3));
     }
 
+    @Test
+    public void testBranchDictDBMigration() {
+        // Arrange
+        Address address1 = sm.createAccount().getAddress();
+        Address address2 = sm.createAccount().getAddress();
+        Address address3 = sm.createAccount().getAddress();
 
+        String key1 = "key1";
+        String key2 = "key2";
+        String key3 = "key3";
+
+        String legacyValue1 = "legacy value 1";
+        String legacyValue2 = "legacy value 2";
+        String value1 = "value 1";
+        String value3 = "value 3";
+
+        // Act
+        // Value to be overwritten
+        score.invoke(owner, "setLegacyBranchedDictDB", key1, address1, legacyValue1);
+        // Legacy value to be read
+        score.invoke(owner, "setLegacyBranchedDictDB", key2, address2, legacyValue2);
+        // Overwrite value through new DB
+        score.invoke(owner, "setBranchedDictDB", key1, address1.toString(), value1);
+        // Add new value to new DB
+        score.invoke(owner, "setBranchedDictDB", key3, address3.toString(), value3);
+
+        // Assert
+        assertEquals(value1, score.call("getBranchedDictDB", key1, address1.toString()));
+        assertEquals(legacyValue2, score.call("getBranchedDictDB", key2, address2.toString()));
+        assertEquals(value3, score.call("getBranchedDictDB", key3, address3.toString()));
+    }
 }
