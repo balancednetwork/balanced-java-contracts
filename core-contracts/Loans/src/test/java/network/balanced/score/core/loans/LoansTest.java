@@ -1748,6 +1748,31 @@ class LoansTest extends LoansTestBase {
     }
 
     @Test
+    void redeemCollateral_redeemAboveMax() {
+        // Arrange
+        Account account1 = sm.createAccount();
+        Account account2 = sm.createAccount();
+        Account redeemer = sm.createAccount();
+        BigInteger collateral = BigInteger.valueOf(4000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(400).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
+        BigInteger debt = loan.add(expectedFee);
+
+        BigInteger sICXRate = EXA.divide(BigInteger.TWO);
+        mockOraclePrice("sICX", sICXRate);
+
+        // Act && Assert
+        takeLoanICX(account1, "bnUSD", collateral, loan);
+        takeLoanICX(account2, "bnUSD", collateral, loan);
+
+        String expectedErrorMessage = "Reached end of list";
+        Executable checkAboveMaxSize =  () -> loans.call("getRedeemableAmount", sicx.getAddress(), 3);
+        Executable redeemAboveMaxSize = () -> loans.invoke(redeemer, "redeemCollateral", sicx.getAddress(), debt);
+        expectErrorMessage(checkAboveMaxSize, expectedErrorMessage);
+        expectErrorMessage(redeemAboveMaxSize, expectedErrorMessage);
+    }
+
+    @Test
     void redeemCollateral_iETH() {
         // Arrange
         Account account1 = sm.createAccount();
