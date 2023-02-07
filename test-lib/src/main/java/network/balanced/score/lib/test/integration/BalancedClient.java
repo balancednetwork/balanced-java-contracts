@@ -99,11 +99,11 @@ public class BalancedClient {
     }
 
     public void stakeDepositAndBorrow(BigInteger collateral, BigInteger amount) {
-        BigInteger stakedBalance = sicx.balanceOf(getAddress());
-        staking.stakeICX(collateral, null, null);
-        BigInteger received = sicx.balanceOf(getAddress()).subtract(stakedBalance);
+        // Add approximately 10% extra to compensate for staking rewards
+        BigInteger stakeAmount = collateral.multiply(BigInteger.TEN).divide(BigInteger.valueOf(9));
+        staking.stakeICX(stakeAmount, null, null);
         byte[] params = createBorrowData(amount);
-        sicx.transfer(balanced.loans._address(), received, params);
+        sicx.transfer(balanced.loans._address(), collateral, params);
     }
 
     public void depositAndBorrow(Address collateralAddress, BigInteger collateral, BigInteger amount) {
