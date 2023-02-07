@@ -52,6 +52,10 @@ public class DebtDB {
         totalDebts.set(BNUSD_SYMBOL, debt);
     }
 
+    public static String getDBKey() {
+        return ASSET_DB_PREFIX + "|" + getBnusd().toString();
+    }
+
     public static BigInteger getTotalDebt() {
         return totalDebts.getOrDefault(BNUSD_SYMBOL, BigInteger.ZERO);
     }
@@ -73,26 +77,26 @@ public class DebtDB {
     }
 
     public static void setBadDebt(String symbol, BigInteger badDebt) {
-        badDebts.at(ASSET_DB_PREFIX + "|" + getBnusd()).set(symbol, badDebt);
+        badDebts.at(getDBKey()).set(symbol, badDebt);
     }
 
     public static BigInteger getBadDebt(String symbol) {
-        return badDebts.at(ASSET_DB_PREFIX + "|" + getBnusd()).getOrDefault(symbol, BigInteger.ZERO);
+        return badDebts.at(getDBKey()).getOrDefault(symbol, BigInteger.ZERO);
     }
 
     public static void setLiquidationPool(String collateralSymbol, BigInteger liquidationPool) {
-        liquidationPools.at(ASSET_DB_PREFIX + "|" + getBnusd()).set(collateralSymbol, liquidationPool);
+        liquidationPools.at(getDBKey()).set(collateralSymbol, liquidationPool);
     }
 
     public static BigInteger getLiquidationPool(String collateralSymbol) {
-        return liquidationPools.at(ASSET_DB_PREFIX + "|" + getBnusd()).getOrDefault(collateralSymbol, BigInteger.ZERO);
+        return liquidationPools.at(getDBKey()).getOrDefault(collateralSymbol, BigInteger.ZERO);
     }
 
     public static LinkedListDB getBorrowers(String collateralSymbol) {
         if (collateralSymbol.equals(SICX_SYMBOL)) {
-            return new LinkedListDB(BORROWER_DB_PREFIX, getBnusd().toString());
+            return new LinkedListDB(BORROWER_DB_PREFIX, getDBKey());
         } else {
-            return new LinkedListDB(collateralSymbol + "|" + BORROWER_DB_PREFIX, getBnusd().toString());
+            return new LinkedListDB(collateralSymbol + "|" + BORROWER_DB_PREFIX, getDBKey());
         }
     }
 

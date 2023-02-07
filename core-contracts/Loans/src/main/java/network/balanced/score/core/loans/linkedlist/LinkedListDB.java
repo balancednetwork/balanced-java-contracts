@@ -80,6 +80,7 @@ public class LinkedListDB {
     }
 
     private Node getNode(int nodeId) {
+        Context.require(nodeId > 0, name + ": Reached end of list");
         if (!dbKey.equals("")) {
             return new Node(nodeId + name, dbKey);
         }
