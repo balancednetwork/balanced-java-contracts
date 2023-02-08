@@ -20,6 +20,7 @@ import score.Address;
 import score.Context;
 import score.DictDB;
 
+import static network.balanced.score.lib.utils.Check.readonly;
 public class BalancedAddressManager {
     private static final String TAG = "BalancedAddressManager";
     private static final Address mainnetGovernance = Address.fromString("cx44250a12074799e26fdeee75648ae47e2cc84219");
@@ -48,9 +49,8 @@ public class BalancedAddressManager {
         Address address = contractAddresses.get(name);
         if (address == null) {
             address = fetchAddress(name);
-            try {
+            if (!readonly()) {
                 contractAddresses.set(name, address);
-            } catch (Exception ignored) {
             }
         }
 
