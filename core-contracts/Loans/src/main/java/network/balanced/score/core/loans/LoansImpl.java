@@ -76,33 +76,10 @@ public class LoansImpl implements Loans {
 
         setGovernance(governance.get());
 
-        if (arrayDbContains(CollateralDB.collateralList, "BALN")) {
-            removeBALN();
-        }
-
-        CollateralDB.migrateAddressMap();
-        if (redemptionDaoFee.get() == null) {
-            redemptionFee.set(REDEMPTION_FEE);
-            redemptionDaoFee.set(REDEMPTION_DAO_FEE);
-        }
-
         if (currentVersion.getOrDefault("").equals(Versions.LOANS)) {
             Context.revert("Can't Update same version of code");
         }
         currentVersion.set(Versions.LOANS);
-    }
-
-    private void removeBALN() {
-        String symbol = "BALN";
-        Address address = CollateralDB.getAddress(symbol);
-
-        CollateralDB.symbolMap.set(symbol, null);
-        removeFromArraydb(address, CollateralDB.collateralAddresses);
-        removeFromArraydb(symbol, CollateralDB.collateralList);
-
-        Context.require(CollateralDB.symbolMap.get(symbol) == null);
-        Context.require(!arrayDbContains(CollateralDB.collateralAddresses, address));
-        Context.require(!arrayDbContains(CollateralDB.collateralList, symbol));
     }
 
     @External(readonly = true)
