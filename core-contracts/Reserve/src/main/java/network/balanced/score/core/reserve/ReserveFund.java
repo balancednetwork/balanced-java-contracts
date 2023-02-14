@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package network.balanced.score.core.reserve;
 import network.balanced.score.lib.interfaces.Reserve;
 import network.balanced.score.lib.structs.Disbursement;
 import network.balanced.score.lib.utils.Names;
+import network.balanced.score.lib.utils.Versions;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -28,34 +29,34 @@ import scorex.util.HashMap;
 import java.math.BigInteger;
 import java.util.Map;
 
-import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.BalancedAddressManager.*;
+import static network.balanced.score.lib.utils.Check.onlyGovernance;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Math.pow;
 
 public class ReserveFund implements Reserve {
 
     private static final String GOVERNANCE = "governance";
-    private static final String ADMIN = "admin";
-    private static final String LOANS_SCORE = "loans_score";
-    private static final String BALN_TOKEN = "baln_token";
-    private static final String SICX_TOKEN = "sicx_token";
     private static final String AWARDS = "awards";
+    private static final String VERSION = "version";
 
     public static final String SICX_SYMBOL = "sICX";
 
     public static final String TAG = "BalancedReserveFund";
     public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
-    public static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
-    private final VarDB<Address> loansScore = Context.newVarDB(LOANS_SCORE, Address.class);
-    private final VarDB<Address> balnToken = Context.newVarDB(BALN_TOKEN, Address.class);
-    private final VarDB<Address> sicxToken = Context.newVarDB(SICX_TOKEN, Address.class);
     private final BranchDB<Address, DictDB<Address, BigInteger>> awards = Context.newBranchDB(AWARDS, BigInteger.class);
+    private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
 
     public ReserveFund(@Optional Address _governance) {
         if (governance.get() == null) {
-            Context.require(_governance.isContract(), "ReserveFund: Governance address should be a contract");
             governance.set(_governance);
         }
+
+        setGovernance(governance.get());
+        if (currentVersion.getOrDefault("").equals(Versions.RESERVE)) {
+            Context.revert("Can't Update same version of code");
+        }
+        currentVersion.set(Versions.RESERVE);
     }
 
     @EventLog(indexed = 2)
@@ -67,78 +68,31 @@ public class ReserveFund implements Reserve {
         return Names.RESERVE;
     }
 
-    @External
-    public void setGovernance(Address _address) {
-        onlyOwner();
-        isContract(_address);
-        governance.set(_address);
-    }
-
     @External(readonly = true)
-    public Address getGovernance() {
-        return governance.get();
+    public String version() {
+        return currentVersion.getOrDefault("");
     }
 
     @External
-    public void setAdmin(Address _address) {
-        only(governance);
-        admin.set(_address);
+    public void updateAddress(String name) {
+        resetAddress(name);
     }
 
     @External(readonly = true)
-    public Address getAdmin() {
-        return admin.get();
-    }
-
-    @External
-    public void setLoans(Address _address) {
-        only(admin);
-        isContract(_address);
-
-        loansScore.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getLoans() {
-        return loansScore.get();
-    }
-
-    @External
-    public void setBaln(Address _address) {
-        only(admin);
-        isContract(_address);
-
-        balnToken.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getBaln() {
-        return balnToken.get();
-    }
-
-    @External
-    public void setSicx(Address _address) {
-        only(admin);
-        isContract(_address);
-
-        sicxToken.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getSicx() {
-        return sicxToken.get();
+    public Address getAddress(String name) {
+        return getAddressByName(name);
     }
 
     @External
     public void transfer(Address _tokenAddress, Address _targetAddress, BigInteger _amount) {
-        only(governance);
+        onlyGovernance();
         Context.call(_tokenAddress, "transfer", _targetAddress, _amount, new byte[0]);
     }
 
     @External(readonly = true)
     @SuppressWarnings("unchecked")
     public Map<String, BigInteger> getBalances() {
-        Map<String, ?> collateralTokens = (Map<String, ?>) Context.call(loansScore.get(), "getCollateralTokens");
+        Map<String, ?> collateralTokens = (Map<String, ?>) Context.call(getLoans(), "getCollateralTokens");
         Map<String, BigInteger> balances = new HashMap<>();
         for (String symbol : collateralTokens.keySet()) {
             BigInteger balance = getBalance(Address.fromString((String) collateralTokens.get(symbol)));
@@ -154,16 +108,16 @@ public class ReserveFund implements Reserve {
 
     @External
     @SuppressWarnings("unchecked")
-    public void redeem(Address _to, BigInteger _valueInLoop, String collateralSymbol) {
+    public void redeem(Address _to, BigInteger _valueInDollar, String collateralSymbol) {
         Address sender = Context.getCaller();
-        Address loans = loansScore.get();
+        Address loans = getLoans();
         Context.require(sender.equals(loans), TAG + ": The redeem method can only be called by the Loans " +
                 "SCORE.");
 
-        Address oracle = Context.call(Address.class, loans, "getOracle");
+        Address oracle = getBalancedOracle();
 
-        BigInteger remainingValue = _valueInLoop;
-        Map<String, String> collateralTokens = (Map<String, String>) Context.call(loansScore.get(),
+        BigInteger remainingValue = _valueInDollar;
+        Map<String, String> collateralTokens = (Map<String, String>) Context.call(getLoans(),
                 "getCollateralTokens");
 
         String collateralAddress = collateralTokens.get(collateralSymbol);
@@ -179,9 +133,9 @@ public class ReserveFund implements Reserve {
             }
         }
 
-        Address balnTokenAddress = balnToken.get();
+        Address balnTokenAddress = getBaln();
 
-        BigInteger balnRate = Context.call(BigInteger.class, oracle, "getPriceInLoop", "BALN");
+        BigInteger balnRate = Context.call(BigInteger.class, oracle, "getPriceInUSD", "BALN");
         BigInteger balance = getBalance(balnTokenAddress);
         BigInteger balnToSend = remainingValue.multiply(EXA).divide(balnRate);
 
@@ -192,9 +146,9 @@ public class ReserveFund implements Reserve {
 
     @External
     public boolean disburse(Address _recipient, Disbursement[] _amounts) {
-        only(governance);
+        onlyGovernance();
         for (Disbursement asset : _amounts) {
-            if (asset.address.equals(sicxToken.get())) {
+            if (asset.address.equals(getSicx())) {
                 BigInteger sicxAmount = getBalance(asset.address);
                 BigInteger amountToBeClaimedByRecipient = awards.at(_recipient).getOrDefault(asset.address,
                         BigInteger.ZERO);
@@ -202,7 +156,7 @@ public class ReserveFund implements Reserve {
                 Context.require(sicxAmount.compareTo(asset.amount) >= 0,
                         TAG + ":Insufficient balance of asset " + asset.address + " in the reserve fund.");
                 awards.at(_recipient).set(asset.address, amountToBeClaimedByRecipient.add(asset.amount));
-            } else if (asset.address.equals(balnToken.get())) {
+            } else if (asset.address.equals(getBaln())) {
                 BigInteger balnAmount = getBalance(asset.address);
                 BigInteger amountToBeClaimedByRecipient = awards.at(_recipient).getOrDefault(asset.address,
                         BigInteger.ZERO);
@@ -223,8 +177,8 @@ public class ReserveFund implements Reserve {
         DictDB<Address, BigInteger> disbursement = awards.at(sender);
 
         Map<String, Address> assets = new HashMap<>();
-        assets.put("BALN", balnToken.get());
-        assets.put("sICX", sicxToken.get());
+        assets.put("BALN", getBaln());
+        assets.put("sICX", getSicx());
         for (String symbol : assets.keySet()) {
             Address tokenAddress = assets.get(symbol);
             BigInteger amountToClaim = disbursement.getOrDefault(tokenAddress, BigInteger.ZERO);
@@ -237,7 +191,7 @@ public class ReserveFund implements Reserve {
 
     private BigInteger redeemAsset(String symbol, String collateralAddress, Address to, Address oracle,
                                    BigInteger remainingValue) {
-        BigInteger rate = Context.call(BigInteger.class, oracle, "getPriceInLoop", symbol);
+        BigInteger rate = Context.call(BigInteger.class, oracle, "getPriceInUSD", symbol);
         BigInteger balance = getBalance(collateralAddress);
         BigInteger decimals = getDecimals(collateralAddress);
         BigInteger totalValue = rate.multiply(balance).divide(decimals);

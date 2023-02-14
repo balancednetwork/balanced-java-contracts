@@ -20,6 +20,9 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.token.irc2.IRC2Basic;
+
+import network.balanced.score.lib.test.mock.MockBalanced;
+import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.Names;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,8 +54,10 @@ class BoostedBalnTest extends AbstractBoostedBalnTest {
 
     @BeforeEach
     public void setup() throws Exception {
-        bBalnScore = sm.deploy(owner, BoostedBalnImpl.class, tokenScore.getAddress(), rewardScore.getAddress(),
-                dividendsScore.getAddress(), bBalnSymbol);
+        MockBalanced mockBalanced = new MockBalanced(sm, owner);
+        MockBalanced.addressManagerMock.when(() -> BalancedAddressManager.getBaln()).thenReturn(tokenScore.getAddress());
+
+        bBalnScore = sm.deploy(owner, BoostedBalnImpl.class, mockBalanced.governance.getAddress(), bBalnSymbol);
         BoostedBalnImpl scoreSpy = (BoostedBalnImpl) spy(bBalnScore.getInstance());
         bBalnScore.setInstance(scoreSpy);
 
@@ -78,22 +83,4 @@ class BoostedBalnTest extends AbstractBoostedBalnTest {
     void totalSupply() {
         assertEquals(BigInteger.ZERO, bBalnScore.call("totalSupply", BigInteger.ZERO));
     }
-
-    @Test
-    void setGetBaln() {
-        testOwnerControlMethods(bBalnScore, "setBaln", "getBaln", Account.newScoreAccount(scoreCount++).getAddress());
-    }
-
-    @Test
-    void setGetRewards() {
-        testOwnerControlMethods(bBalnScore, "setRewards", "getRewards",
-                Account.newScoreAccount(scoreCount++).getAddress());
-    }
-
-    @Test
-    void setGetDividends() {
-        testOwnerControlMethods(bBalnScore, "setDividends", "getDividends",
-                Account.newScoreAccount(scoreCount++).getAddress());
-    }
-
 }

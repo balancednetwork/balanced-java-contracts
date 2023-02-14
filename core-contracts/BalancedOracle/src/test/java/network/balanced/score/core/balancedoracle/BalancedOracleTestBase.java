@@ -48,6 +48,7 @@ class BalancedOracleTestBase extends UnitTest {
     protected static final BigInteger icxBnusdPoolId = BigInteger.TWO;
 
     protected void setup() throws Exception {
+        mockReadonly();
         dex = new MockContract<>(DexScoreInterface.class, sm, owner);
         oracle = new MockContract<>(OracleScoreInterface.class, sm, owner);
         staking = new MockContract<>(StakingScoreInterface.class, sm, owner);

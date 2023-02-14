@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,10 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
-import network.balanced.score.lib.interfaces.addresses.*;
+import network.balanced.score.lib.interfaces.addresses.AddressManager;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
+import network.balanced.score.lib.interfaces.base.Version;
 import network.balanced.score.lib.structs.PrepDelegations;
 import score.Address;
 import score.annotation.External;
@@ -32,15 +33,7 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, GovernanceAddress, StakingAddress,
-        RebalancingAddress, DividendsAddress, ReserveAddress, RewardsAddress, OracleAddress {
-
-    @External
-    void toggleLoansOn();
-
-    @External(readonly = true)
-    boolean getLoansOn();
-
+public interface Loans extends Name, TokenFallback, AddressManager, Version {
     @External(readonly = true)
     BigInteger getDay();
 
@@ -77,9 +70,6 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
     @External
     void addAsset(Address _token_address, boolean _active, boolean _collateral);
 
-    @External
-    void toggleAssetActive(String _symbol);
-
     @External(readonly = true)
     Map<String, BigInteger> getBalanceAndSupply(String _name, Address _owner);
 
@@ -104,12 +94,6 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
     void returnAsset(String _symbol, BigInteger _value, @Optional String _collateralSymbol);
 
     @External
-    void raisePrice(Address _collateralAddress, BigInteger _total_tokens_required);
-
-    @External
-    void lowerPrice(Address _collateralAddress, BigInteger _total_tokens_required);
-
-    @External
     void withdrawAndUnstake(BigInteger _value);
 
     @External
@@ -120,6 +104,12 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
 
     @External
     void liquidate(Address _owner, @Optional String _collateralSymbol);
+
+    @External
+    void redeemCollateral(Address _collateralAddress, BigInteger _amount);
+
+    @External(readonly = true)
+    BigInteger getRedeemableAmount(Address _collateralAddress, @Optional int nrOfPositions);
 
     @External
     void setLockingRatio(String _symbol, BigInteger _ratio);
@@ -138,6 +128,15 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
 
     @External
     void setRedemptionFee(BigInteger _fee);
+
+    @External(readonly = true)
+    BigInteger getRedemptionFee();
+
+    @External
+    void setRedemptionDaoFee(BigInteger _fee);
+
+    @External(readonly = true)
+    BigInteger getRedemptionDaoFee();
 
     @External
     void setRetirementBonus(BigInteger _points);
@@ -166,8 +165,8 @@ public interface Loans extends Name, TokenFallback, AdminAddress, DexAddress, Go
     @External
     void setMaxRetirePercent(BigInteger _value);
 
-    @External
-    void setRedeemBatchSize(int _value);
+    @External(readonly = true)
+    BigInteger getMaxRetirePercent();
 
     @External(readonly = true)
     Map<String, Object> getParameters();

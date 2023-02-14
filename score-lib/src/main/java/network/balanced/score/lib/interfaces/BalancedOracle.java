@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.*;
 import network.balanced.score.lib.interfaces.base.Name;
+import network.balanced.score.lib.interfaces.base.Version;
 import score.annotation.External;
 
 import java.math.BigInteger;
@@ -32,13 +33,20 @@ public interface BalancedOracle extends
         AdminAddress,
         DexAddress,
         OracleAddress,
-        StakingAddress {
+        StakingAddress,
+        Version {
 
     @External
     BigInteger getPriceInLoop(String symbol);
 
     @External(readonly = true)
     BigInteger getLastPriceInLoop(String symbol);
+
+    @External
+    BigInteger getPriceInUSD(String symbol);
+
+    @External(readonly = true)
+    BigInteger getLastPriceInUSD(String symbol);
 
     @External
     void addDexPricedAsset(String symbol, BigInteger dexBnusdPoolId);

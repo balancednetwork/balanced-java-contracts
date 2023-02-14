@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,6 +80,7 @@ public class LinkedListDB {
     }
 
     private Node getNode(int nodeId) {
+        Context.require(nodeId > 0, name + ": Reached end of list");
         if (!dbKey.equals("")) {
             return new Node(nodeId + name, dbKey);
         }
@@ -135,7 +136,7 @@ public class LinkedListDB {
         serialize();
     }
 
-    public PositionBatch readDataBatch(int batchSize) {
+    public PositionBatch readDataBatch(BigInteger debtRequired) {
         Context.require(size != 0, name + ": No data in the list");
 
         PositionBatch batch = new PositionBatch();
@@ -151,8 +152,7 @@ public class LinkedListDB {
         positionsMap.put(headId, head.getValue());
         batch.totalDebt = batch.totalDebt.add(head.getValue());
 
-        int iterations = Math.min(batchSize, size());
-        for (int i = 1; i < iterations; i++) {
+        while (batch.totalDebt.compareTo(debtRequired) < 0) {
             currentNodeId = currentNode.getNext();
             currentNode = getNode(currentNodeId);
             currentValue = currentNode.getValue();
@@ -161,7 +161,7 @@ public class LinkedListDB {
         }
 
         batch.positions = positionsMap;
-        batch.size = iterations;
+        batch.size = positionsMap.size();
 
         int nextId = currentNode.getNext();
         if (nextId == 0) {
@@ -190,6 +190,27 @@ public class LinkedListDB {
         serialize();
 
         return batch;
+    }
+
+    public BigInteger getTotalDebtFor(int nrOfPositions) {
+        Context.require(size != 0, name + ": No data in the list");
+
+        BigInteger totalDebt = BigInteger.ZERO;
+
+        Node head = getNode(headId);
+        Node currentNode = head;
+        int currentNodeId;
+        BigInteger currentValue;
+
+        totalDebt = totalDebt.add(head.getValue());
+        for (int i = 1; i < nrOfPositions; i++) {
+            currentNodeId = currentNode.getNext();
+            currentNode = getNode(currentNodeId);
+            currentValue = currentNode.getValue();
+            totalDebt = totalDebt.add(currentValue);
+        }
+
+        return totalDebt;
     }
 
     private void removeHead() {

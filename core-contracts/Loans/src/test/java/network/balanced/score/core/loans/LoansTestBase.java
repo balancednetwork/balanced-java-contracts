@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,25 +20,21 @@ import com.eclipsesource.json.JsonObject;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
-import network.balanced.score.core.loans.mocks.bnUSD.bnUSDMintBurn;
-import network.balanced.score.core.loans.mocks.iETH.iETHMintBurn;
-import network.balanced.score.core.loans.mocks.sICX.sICXMintBurn;
 import network.balanced.score.lib.interfaces.*;
+import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
+import network.balanced.score.lib.interfaces.tokens.IRC2MintableScoreInterface;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import network.balanced.score.lib.test.UnitTest;
+import network.balanced.score.lib.test.mock.MockBalanced;
 import network.balanced.score.lib.test.mock.MockContract;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
 import score.Address;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.Map;
 
-import static network.balanced.score.core.loans.utils.LoansConstants.Standings;
-import static network.balanced.score.core.loans.utils.LoansConstants.StandingsMap;
-import static network.balanced.score.core.loans.utils.LoansConstants.LIQUIDATION_RATIO;
-import static network.balanced.score.core.loans.utils.LoansConstants.LOCKING_RATIO;
+import static network.balanced.score.core.loans.utils.LoansConstants.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -54,9 +50,10 @@ class LoansTestBase extends UnitTest {
     protected final Account feehandler = Account.newScoreAccount(scoreCount++);
     protected final Account rebalancing = Account.newScoreAccount(scoreCount++);
     protected Score loans;
-    protected Score sicx;
-    protected Score bnusd;
-    protected Score ieth;
+    protected MockBalanced mockBalanced;
+    protected MockContract<Sicx> sicx;
+    protected MockContract<BalancedDollar> bnusd;
+    protected MockContract<? extends IRC2Mintable> ieth;
 
     protected MockContract<Dex> dex;
     protected MockContract<Staking> staking;
@@ -66,37 +63,6 @@ class LoansTestBase extends UnitTest {
     protected MockContract<Reserve> reserve;
     protected MockContract<BalancedOracle> balancedOracle;
     protected LoansImpl loansSpy;
-
-    protected final ArrayList<Account> accounts = new ArrayList<>();
-    protected final BigInteger MINT_AMOUNT = BigInteger.TEN.pow(40);
-    protected final BigInteger EXA = BigInteger.TEN.pow(18);
-    protected final BigInteger POINTS = BigInteger.valueOf(10000);
-
-    protected static final String nameSicx = "Staked icx";
-    protected static final String symbolSicx = "sICX";
-    protected static final String nameBnusd = "Balanced usd";
-    protected static final String symbolBnusd = "bnUSD";
-
-    protected static final int tokenDecimals = 18;
-    protected static final BigInteger initialSupplyTokens = BigInteger.TEN.pow(50);
-
-    protected void setupAccounts() {
-        int numberOfAccounts = 10;
-        for (int accountNumber = 0; accountNumber < numberOfAccounts; accountNumber++) {
-            Account account = sm.createAccount();
-            accounts.add(account);
-            sicx.invoke(admin, "mintTo", account.getAddress(), MINT_AMOUNT);
-            ieth.invoke(admin, "mintTo", account.getAddress(), MINT_AMOUNT);
-        }
-    }
-
-    private void setupDex() throws Exception {
-
-        dex = new MockContract<>(DexScoreInterface.class, sm, admin);
-        sicx.invoke(admin, "mintTo", dex.getAddress(), MINT_AMOUNT);
-        bnusd.invoke(admin, "mintTo", dex.getAddress(), MINT_AMOUNT);
-        ieth.invoke(admin, "mintTo", dex.getAddress(), MINT_AMOUNT);
-    }
 
     protected void mockSicxBnusdPrice(BigInteger rate) {
         when(dex.mock.getPoolId(sicx.getAddress(), bnusd.getAddress())).thenReturn(BigInteger.valueOf(3));
@@ -108,53 +74,31 @@ class LoansTestBase extends UnitTest {
         when(dex.mock.getBasePriceInQuote(BigInteger.valueOf(4))).thenReturn(rate);
     }
 
-    protected void mockSwap(Score tokenReceived, BigInteger in, BigInteger out) {
+    protected void mockSwap(MockContract<? extends IRC2Mintable> tokenSent,
+                            MockContract<? extends IRC2Mintable> tokenReceived, BigInteger in, BigInteger out) {
         Mockito.doAnswer((Answer<Void>) invocation -> {
-            tokenReceived.invoke(dex.account, "transfer", loans.getAddress(), out, new byte[0]);
+            loans.invoke(tokenReceived.account, "tokenFallback", dex.getAddress(), out, new byte[0]);
             return null;
-        }).when(dex.mock).tokenFallback(Mockito.eq(loans.getAddress()), Mockito.eq(in), Mockito.any(byte[].class));
-    }
-
-    private void setupGovernance() throws Exception {
-        governance = new MockContract<>(GovernanceScoreInterface.class, sm, admin);
-        when(governance.mock.getContractAddress("feehandler")).thenReturn(feehandler.getAddress());
-    }
-
-    private void setupStaking() throws Exception {
-        staking = new MockContract<>(StakingScoreInterface.class, sm, admin);
+        }).when(tokenSent.mock).transfer(Mockito.eq(dex.getAddress()), Mockito.eq(in), Mockito.any(byte[].class));
     }
 
     protected void mockStakeICX(BigInteger amount) {
         Mockito.doAnswer((Answer<Void>) invocation -> {
             final Object[] args = invocation.getArguments();
-            sicx.invoke(staking.account, "mintTo", args[0], amount);
+            loans.invoke(sicx.account, "tokenFallback", EOA_ZERO, amount, new byte[0]);
             return null;
         }).when(staking.mock).stakeICX(Mockito.any(Address.class), Mockito.any(byte[].class));
     }
 
-    private void setupReserve() throws Exception {
-        reserve = new MockContract<>(ReserveScoreInterface.class, sm, admin);
-    }
 
-    private void setupRewards() throws Exception {
-        rewards = new MockContract<>(RewardsScoreInterface.class, sm, admin);
-        when(rewards.mock.distribute()).thenReturn(true);
-    }
-
-    private void setupDividends() throws Exception {
-        dividends = new MockContract<>(DividendsScoreInterface.class, sm, admin);
-        when(dividends.mock.distribute()).thenReturn(true);
-    }
-
-    private void setupOracle() throws Exception {
-        balancedOracle = new MockContract<>(BalancedOracleScoreInterface.class, sm, admin);
-        when(balancedOracle.mock.getPriceInLoop(Mockito.any(String.class))).thenReturn(EXA);
-        when(balancedOracle.mock.getLastPriceInLoop(Mockito.any(String.class))).thenReturn(EXA);
+    private void setupOracle() {
+        when(balancedOracle.mock.getPriceInUSD(Mockito.any(String.class))).thenReturn(EXA);
+        when(balancedOracle.mock.getLastPriceInUSD(Mockito.any(String.class))).thenReturn(EXA);
     }
 
     public void mockOraclePrice(String symbol, BigInteger rate) {
-        when(balancedOracle.mock.getPriceInLoop(symbol)).thenReturn(rate);
-        when(balancedOracle.mock.getLastPriceInLoop(symbol)).thenReturn(rate);
+        when(balancedOracle.mock.getPriceInUSD(symbol)).thenReturn(rate);
+        when(balancedOracle.mock.getLastPriceInUSD(symbol)).thenReturn(rate);
     }
 
     protected void takeLoanSICX(Account account, BigInteger collateral, BigInteger loan) {
@@ -163,7 +107,7 @@ class LoansTestBase extends UnitTest {
                 .add("_amount", loan.toString());
         byte[] params = data.toString().getBytes();
 
-        sicx.invoke(account, "transfer", loans.getAddress(), collateral, params);
+        loans.invoke(sicx.account, "tokenFallback", account.getAddress(), collateral, params);
     }
 
     protected void takeLoaniETH(Account account, BigInteger collateral, BigInteger loan) {
@@ -171,8 +115,7 @@ class LoansTestBase extends UnitTest {
                 .add("_asset", "bnUSD")
                 .add("_amount", loan.toString());
         byte[] params = data.toString().getBytes();
-
-        ieth.invoke(account, "transfer", loans.getAddress(), collateral, params);
+        loans.invoke(ieth.account, "tokenFallback", account.getAddress(), collateral, params);
     }
 
     protected void takeLoanICX(Account account, String asset, BigInteger collateral, BigInteger loan) {
@@ -193,9 +136,9 @@ class LoansTestBase extends UnitTest {
     @SuppressWarnings("unchecked")
     protected void verifyPosition(Address address, BigInteger collateral, BigInteger loan, String collateralSymbol) {
         Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", address);
-        Map<String, Map<String, Object>> standings = (Map<String, Map<String, Object>>) position.get("standings");
-        assertEquals(loan, standings.get(collateralSymbol).get("total_debt"));
-        assertEquals(collateral, standings.get(collateralSymbol).get("collateral"));
+        Map<String, Map<String, Object>> standings = (Map<String, Map<String, Object>>) position.get("holdings");
+        assertEquals(loan, standings.get(collateralSymbol).get("bnUSD"));
+        assertEquals(collateral, standings.get(collateralSymbol).get(collateralSymbol));
     }
 
     protected boolean compareRewardsData(RewardsDataEntry[] expectedDataEntries, RewardsDataEntry[] dataEntries) {
@@ -241,7 +184,7 @@ class LoansTestBase extends UnitTest {
     @SuppressWarnings("unchecked")
     protected BigInteger getTotalDebt() {
         Map<String, BigInteger> balanceAndSupply = (Map<String, BigInteger>) loans.call("getBalanceAndSupply", "Loans"
-                , admin.getAddress());
+                , EOA_ZERO);
         BigInteger totalDebt = balanceAndSupply.get("_totalSupply");
 
         return totalDebt;
@@ -265,44 +208,35 @@ class LoansTestBase extends UnitTest {
     }
 
     public void setup() throws Exception {
-        sicx = sm.deploy(admin, sICXMintBurn.class, nameSicx, symbolSicx, tokenDecimals, initialSupplyTokens);
-        bnusd = sm.deploy(admin, bnUSDMintBurn.class, nameBnusd, symbolBnusd, tokenDecimals, initialSupplyTokens);
-        ieth = sm.deploy(admin, iETHMintBurn.class, "ICON ETH", "iETH", 18, initialSupplyTokens);
+        mockReadonly();
+        mockBalanced = new MockBalanced(sm, admin);
 
-        setupGovernance();
+        sicx = mockBalanced.sicx;
+        bnusd = mockBalanced.bnUSD;
+        dex = mockBalanced.dex;
+        staking = mockBalanced.staking;
+        governance = mockBalanced.governance;
+        rewards = mockBalanced.rewards;
+        dividends = mockBalanced.dividends;
+        reserve = mockBalanced.reserve;
+        balancedOracle = mockBalanced.balancedOracle;
+
+        ieth = new MockContract<>(IRC2MintableScoreInterface.class, sm, admin);
+        when(ieth.mock.symbol()).thenReturn("iETH");
+        when(ieth.mock.decimals()).thenReturn(BigInteger.valueOf(18));
 
         loans = sm.deploy(admin, LoansImpl.class, governance.getAddress());
         loansSpy = (LoansImpl) spy(loans.getInstance());
         loans.setInstance(loansSpy);
 
-        setupAccounts();
-        setupStaking();
-        setupRewards();
-        setupDividends();
-        setupReserve();
-        setupDex();
         setupOracle();
 
-        loans.invoke(governance.account, "setAdmin", admin.getAddress());
-        loans.invoke(admin, "setDex", dex.getAddress());
-        loans.invoke(admin, "setDividends", dividends.getAddress());
-        loans.invoke(admin, "setReserve", reserve.getAddress());
-        loans.invoke(admin, "setRebalance", rebalancing.getAddress());
-        loans.invoke(admin, "setStaking", staking.getAddress());
-        loans.invoke(admin, "setOracle", balancedOracle.getAddress());
+        loans.invoke(governance.account, "addAsset", sicx.getAddress(), true, true);
+        loans.invoke(governance.account, "addAsset", ieth.getAddress(), true, true);
 
-        loans.invoke(admin, "setRewards", rewards.getAddress());
-        loans.invoke(admin, "setDividends", rewards.getAddress());
-        loans.invoke(admin, "setReserve", reserve.getAddress());
-        sicx.invoke(admin, "setMinter", staking.getAddress());
-        bnusd.invoke(admin, "setMinter", loans.getAddress());
-        loans.invoke(admin, "addAsset", bnusd.getAddress(), true, false);
-        loans.invoke(admin, "addAsset", sicx.getAddress(), true, true);
-        loans.invoke(admin, "addAsset", ieth.getAddress(), true, true);
-
-        loans.invoke(admin, "setLockingRatio", "sICX", LOCKING_RATIO);
-        loans.invoke(admin, "setLiquidationRatio","sICX", LIQUIDATION_RATIO);
-        loans.invoke(admin, "setLockingRatio", "iETH", LOCKING_RATIO);
-        loans.invoke(admin, "setLiquidationRatio", "iETH", LIQUIDATION_RATIO);
+        loans.invoke(governance.account, "setLockingRatio", "sICX", LOCKING_RATIO);
+        loans.invoke(governance.account, "setLiquidationRatio", "sICX", LIQUIDATION_RATIO);
+        loans.invoke(governance.account, "setLockingRatio", "iETH", LOCKING_RATIO);
+        loans.invoke(governance.account, "setLiquidationRatio", "iETH", LIQUIDATION_RATIO);
     }
 }

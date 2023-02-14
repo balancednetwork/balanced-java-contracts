@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,11 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import network.balanced.score.lib.interfaces.BalancedOracle;
-import network.balanced.score.lib.interfaces.BalancedOracleScoreInterface;
 import network.balanced.score.lib.interfaces.Loans;
-import network.balanced.score.lib.interfaces.LoansScoreInterface;
 import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
 import network.balanced.score.lib.interfaces.tokens.IRC2MintableScoreInterface;
 import network.balanced.score.lib.test.UnitTest;
+import network.balanced.score.lib.test.mock.MockBalanced;
 import network.balanced.score.lib.test.mock.MockContract;
 
 import java.math.BigInteger;
@@ -43,20 +42,21 @@ public class ReserveFundTestBase extends UnitTest {
 
     public static final Account governanceScore = Account.newScoreAccount(1);
     protected Score reserve;
-
+    MockBalanced mockBalanced;
     MockContract<Loans> loans;
-    MockContract<IRC2Mintable> baln;
-    MockContract<IRC2Mintable> sicx;
-    MockContract<IRC2Mintable> ieth;
+    MockContract<? extends IRC2Mintable> baln;
+    MockContract<? extends IRC2Mintable> sicx;
+    MockContract<? extends IRC2Mintable> ieth;
     MockContract<BalancedOracle> balancedOracle;
 
     protected void setup() throws Exception {
-        loans = new MockContract<>(LoansScoreInterface.class, sm, admin);
-        baln = new MockContract<>(IRC2MintableScoreInterface.class, sm, admin);
-        sicx = new MockContract<>(IRC2MintableScoreInterface.class, sm, admin);
+        mockBalanced = new MockBalanced(sm, admin);
+        loans = mockBalanced.loans;
+        baln = mockBalanced.baln;
+        sicx = mockBalanced.sicx;
         ieth = new MockContract<>(IRC2MintableScoreInterface.class, sm, admin);
-        balancedOracle = new MockContract<>(BalancedOracleScoreInterface.class, sm, admin);
-        reserve = sm.deploy(owner, ReserveFund.class, governanceScore.getAddress());
+        balancedOracle = mockBalanced.balancedOracle;
+        reserve = sm.deploy(owner, ReserveFund.class, mockBalanced.governance.getAddress());
 
         when(sicx.mock.decimals()).thenReturn(BigInteger.valueOf(18));
         when(ieth.mock.decimals()).thenReturn(nrDecimalsIETH);

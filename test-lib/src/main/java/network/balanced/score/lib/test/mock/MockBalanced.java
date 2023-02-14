@@ -29,7 +29,7 @@ import java.math.BigInteger;
 import static org.mockito.Mockito.when;
 
 public class MockBalanced {
-    private static MockedStatic<BalancedAddressManager> addressManagerMock;
+    public static MockedStatic<BalancedAddressManager> addressManagerMock;
     public MockContract<Loans> loans;
     public MockContract<Dex> dex;
     public MockContract<Staking> staking;
@@ -96,8 +96,27 @@ public class MockBalanced {
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.FEEHANDLER)).thenReturn(feehandler.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.STAKEDLP)).thenReturn(stakedLp.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.STABILITY)).thenReturn(stability.getAddress());
-        addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.BALANCEDORACLE)).thenReturn(balancedOracle.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.BOOSTED_BALN)).thenReturn(bBaln.getAddress());
+
+        addressManagerMock.when(() -> BalancedAddressManager.getLoans()).thenReturn(loans.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.getDex()).thenReturn(dex.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.getStaking()).thenReturn(staking.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.getRewards()).thenReturn(rewards.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.getReserve()).thenReturn(reserve.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.getDividends()).thenReturn(dividends.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.getDaofund()).thenReturn(daofund.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.getOracle()).thenReturn(oracle.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.getSicx()).thenReturn(sicx.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.getBnusd()).thenReturn(bnUSD.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.getBaln()).thenReturn(baln.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.getBwt()).thenReturn(bwt.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.getRebalance()).thenReturn(rebalancing.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.getFeehandler()).thenReturn(feehandler.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.getStakedLp()).thenReturn(stakedLp.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.getStabilityFund()).thenReturn(stability.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.getBalancedOracle()).thenReturn(balancedOracle.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.getBoostedBaln()).thenReturn(bBaln.getAddress());
+
 
         when(bnUSD.mock.symbol()).thenReturn("bnUSD");
         when(sicx.mock.symbol()).thenReturn("sICX");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import java.util.Map;
 
 import static network.balanced.score.core.reserve.ReserveFund.TAG;
 import static network.balanced.score.lib.utils.Constants.EXA;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 
@@ -44,33 +45,32 @@ public class ReserveFundTest extends ReserveFundTestBase {
         when(loans.mock.getCollateralTokens()).thenReturn(tokens);
     }
 
-    private void setBalance(MockContract<IRC2Mintable> token, BigInteger amount) {
+    private void setBalance(MockContract<? extends IRC2Mintable> token, BigInteger amount) {
         when(token.mock.balanceOf(reserve.getAddress())).thenReturn(amount);
     }
 
-    private void setRate(String symbol, BigInteger rateInLoop) {
-        when(balancedOracle.mock.getPriceInLoop(symbol)).thenReturn(rateInLoop);
+    private void setRate(String symbol, BigInteger rateInUSD) {
+        when(balancedOracle.mock.getPriceInUSD(symbol)).thenReturn(rateInUSD);
     }
 
     @BeforeEach
     public void setupContract() throws Exception {
         super.setup();
-        reserve.invoke(governanceScore, "setAdmin", admin.getAddress());
-        reserve.invoke(admin, "setSicx", sicx.getAddress());
-        reserve.invoke(admin, "setBaln", baln.getAddress());
-        reserve.invoke(admin, "setLoans", loans.getAddress());
-
         setupCollaterals();
-        when(loans.mock.getOracle()).thenReturn(balancedOracle.getAddress());
+    }
 
+    @Test
+    void name() {
+        String contractName = "Balanced Reserve Fund";
+        assertEquals(contractName, reserve.call("name"));
     }
 
     @Test
     void redeem_sicxOnly() {
         // Arrange
-        BigInteger loopValueToRedeem = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger dollarValueToRedeem = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger sicxRate = BigInteger.TWO.multiply(EXA);
-        BigInteger expectedSicxSent = loopValueToRedeem.multiply(EXA).divide(sicxRate);
+        BigInteger expectedSicxSent = dollarValueToRedeem.multiply(EXA).divide(sicxRate);
         BigInteger sicxBalance = BigInteger.valueOf(1200).multiply(EXA);
         Account redeemer = sm.createAccount();
 
@@ -78,7 +78,7 @@ public class ReserveFundTest extends ReserveFundTestBase {
         setRate("sICX", sicxRate);
 
         // Act
-        reserve.invoke(loans.account, "redeem", redeemer.getAddress(), loopValueToRedeem, "sICX");
+        reserve.invoke(loans.account, "redeem", redeemer.getAddress(), dollarValueToRedeem, "sICX");
 
         // Assert
         verify(sicx.mock).transfer(redeemer.getAddress(), expectedSicxSent, new byte[0]);
@@ -87,13 +87,13 @@ public class ReserveFundTest extends ReserveFundTestBase {
     @Test
     void redeem_multiCollateral() {
         // Arrange
-        BigInteger loopValueToRedeem = BigInteger.valueOf(1400).multiply(EXA);
+        BigInteger dollarValueToRedeem = BigInteger.valueOf(1400).multiply(EXA);
         BigInteger sicxRate = BigInteger.TWO.multiply(EXA);
         BigInteger iethRate = BigInteger.valueOf(300).multiply(EXA);
         BigInteger sicxBalance = BigInteger.valueOf(400).multiply(EXA);
         BigInteger iethBalance = BigInteger.valueOf(3).multiply(iETHDecimals);
 
-        BigInteger valueRemaining = loopValueToRedeem.subtract(iethBalance.multiply(iethRate).divide(iETHDecimals));
+        BigInteger valueRemaining = dollarValueToRedeem.subtract(iethBalance.multiply(iethRate).divide(iETHDecimals));
         BigInteger expectedSICXSent = valueRemaining.multiply(EXA).divide(sicxRate);
 
         Account redeemer = sm.createAccount();
@@ -105,7 +105,7 @@ public class ReserveFundTest extends ReserveFundTestBase {
         setRate("iETH", iethRate);
 
         // Act
-        reserve.invoke(loans.account, "redeem", redeemer.getAddress(), loopValueToRedeem, "iETH");
+        reserve.invoke(loans.account, "redeem", redeemer.getAddress(), dollarValueToRedeem, "iETH");
 
         // Assert
         verify(ieth.mock).transfer(redeemer.getAddress(), iethBalance, new byte[0]);
@@ -115,7 +115,7 @@ public class ReserveFundTest extends ReserveFundTestBase {
     @Test
     void redeem_useBaln_iETH() {
         // Arrange
-        BigInteger loopValueToRedeem = BigInteger.valueOf(2000).multiply(EXA);
+        BigInteger dollarValueToRedeem = BigInteger.valueOf(2000).multiply(EXA);
         BigInteger sicxRate = EXA;
         BigInteger iethRate = BigInteger.valueOf(500).multiply(EXA);
         BigInteger balnRate = BigInteger.TWO.multiply(EXA);
@@ -123,7 +123,7 @@ public class ReserveFundTest extends ReserveFundTestBase {
         BigInteger iethBalance = BigInteger.valueOf(1).multiply(iETHDecimals);
         BigInteger balnBalance = BigInteger.valueOf(1000).multiply(EXA);
 
-        BigInteger valueRemaining = loopValueToRedeem.subtract(iethBalance.multiply(iethRate).divide(iETHDecimals));
+        BigInteger valueRemaining = dollarValueToRedeem.subtract(iethBalance.multiply(iethRate).divide(iETHDecimals));
         valueRemaining = valueRemaining.subtract(sicxBalance.multiply(sicxRate).divide(EXA));
         BigInteger expectedBalnSent = valueRemaining.multiply(EXA).divide(balnRate);
 
@@ -139,7 +139,7 @@ public class ReserveFundTest extends ReserveFundTestBase {
         setRate("BALN", balnRate);
 
         // Act
-        reserve.invoke(loans.account, "redeem", redeemer.getAddress(), loopValueToRedeem, "iETH");
+        reserve.invoke(loans.account, "redeem", redeemer.getAddress(), dollarValueToRedeem, "iETH");
 
         // Assert
         verify(ieth.mock).transfer(redeemer.getAddress(), iethBalance, new byte[0]);
@@ -150,7 +150,7 @@ public class ReserveFundTest extends ReserveFundTestBase {
     @Test
     void redeem_useBaln_sICX() {
         // Arrange
-        BigInteger loopValueToRedeem = BigInteger.valueOf(1500).multiply(EXA);
+        BigInteger dollarValueToRedeem = BigInteger.valueOf(1500).multiply(EXA);
         BigInteger sicxRate = EXA;
         BigInteger iethRate = BigInteger.valueOf(500).multiply(EXA);
         BigInteger balnRate = BigInteger.TWO.multiply(EXA);
@@ -158,7 +158,7 @@ public class ReserveFundTest extends ReserveFundTestBase {
         BigInteger iethBalance = BigInteger.valueOf(1).multiply(EXA);
         BigInteger balnBalance = BigInteger.valueOf(1000).multiply(EXA);
 
-        BigInteger valueRemaining = loopValueToRedeem.subtract(sicxBalance.multiply(sicxRate).divide(EXA));
+        BigInteger valueRemaining = dollarValueToRedeem.subtract(sicxBalance.multiply(sicxRate).divide(EXA));
         BigInteger expectedBalnSent = valueRemaining.multiply(EXA).divide(balnRate);
 
         Account redeemer = sm.createAccount();
@@ -173,7 +173,7 @@ public class ReserveFundTest extends ReserveFundTestBase {
         setRate("BALN", balnRate);
 
         // Act
-        reserve.invoke(loans.account, "redeem", redeemer.getAddress(), loopValueToRedeem, "sICX");
+        reserve.invoke(loans.account, "redeem", redeemer.getAddress(), dollarValueToRedeem, "sICX");
 
         // Assert
         verify(sicx.mock).transfer(redeemer.getAddress(), sicxBalance, new byte[0]);
@@ -183,7 +183,7 @@ public class ReserveFundTest extends ReserveFundTestBase {
     @Test
     void redeem_notEnoughBalance() {
         // Arrange
-        BigInteger loopValueToRedeem = BigInteger.valueOf(5000).multiply(EXA);
+        BigInteger dollarValueToRedeem = BigInteger.valueOf(5000).multiply(EXA);
         BigInteger sicxRate = EXA;
         BigInteger iethRate = BigInteger.valueOf(500).multiply(EXA);
         BigInteger balnRate = BigInteger.TWO.multiply(EXA);
@@ -205,7 +205,7 @@ public class ReserveFundTest extends ReserveFundTestBase {
         // Act
         String expectedErrorMessage = TAG + ": Unable to process request at this time.";
         Executable withToHighValue = () -> reserve.invoke(loans.account, "redeem", redeemer.getAddress(),
-                loopValueToRedeem, "iETH");
+                dollarValueToRedeem, "iETH");
         expectErrorMessage(withToHighValue, expectedErrorMessage);
 
         // Assert
@@ -224,7 +224,7 @@ public class ReserveFundTest extends ReserveFundTestBase {
         setBalance(sicx, BigInteger.TEN.pow(21));
 
         // Act
-        reserve.invoke(governanceScore, "disburse", target.getAddress(), disbursements);
+        reserve.invoke(mockBalanced.governance.account, "disburse", target.getAddress(), disbursements);
 
         // Assert
         reserve.invoke(target, "claim");
@@ -235,8 +235,9 @@ public class ReserveFundTest extends ReserveFundTestBase {
     @Test
     void transfer() {
         BigInteger amount = BigInteger.valueOf(10);
-        assertOnlyCallableByGovernance(reserve, "transfer", sicx.getAddress(), loans.getAddress(), amount);
-        reserve.invoke(governanceScore, "transfer", sicx.getAddress(), loans.getAddress(), amount);
+        assertOnlyCallableBy(mockBalanced.governance.getAddress(), reserve, "transfer", sicx.getAddress(),
+                loans.getAddress(), amount);
+        reserve.invoke(mockBalanced.governance.account, "transfer", sicx.getAddress(), loans.getAddress(), amount);
 
         verify(sicx.mock).transfer(loans.getAddress(), amount, new byte[0]);
     }

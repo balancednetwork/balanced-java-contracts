@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import network.balanced.score.lib.interfaces.Router;
 import network.balanced.score.lib.utils.Names;
+import network.balanced.score.lib.utils.Versions;
 import score.Address;
 import score.Context;
 import score.UserRevertException;
@@ -43,6 +44,7 @@ public class RouterImpl implements Router {
     private static final String STAKING_ADDRESS = "staking_address";
     private static final String GOVERNANCE_ADDRESS = "governance_address";
     private static final String ADMIN = "admin";
+    private static final String VERSION = "version";
 
     public static final int MAX_NUMBER_OF_ITERATIONS = 4;
     private static final Address MINT_ADDRESS = new Address(new byte[Address.LENGTH]);
@@ -53,17 +55,27 @@ public class RouterImpl implements Router {
     private final VarDB<Address> sicx = Context.newVarDB(SICX_ADDRESS, Address.class);
     private final VarDB<Address> staking = Context.newVarDB(STAKING_ADDRESS, Address.class);
     private final VarDB<Address> dex = Context.newVarDB(DEX_ADDRESS, Address.class);
+    private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
 
     public RouterImpl(Address _governance) {
         if (governance.get() == null) {
             isContract(_governance);
             governance.set(_governance);
         }
+        if (currentVersion.getOrDefault("").equals(Versions.ROUTER)) {
+            Context.revert("Can't Update same version of code");
+        }
+        currentVersion.set(Versions.ROUTER);
     }
 
     @External(readonly = true)
     public String name() {
         return Names.ROUTER;
+    }
+
+    @External(readonly = true)
+    public String version() {
+        return currentVersion.getOrDefault("");
     }
 
     @External

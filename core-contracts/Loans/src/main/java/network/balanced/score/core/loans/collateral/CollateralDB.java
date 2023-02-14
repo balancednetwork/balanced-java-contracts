@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package network.balanced.score.core.loans.collateral;
 
-import network.balanced.score.core.loans.utils.Token;
+import network.balanced.score.core.loans.utils.TokenUtils;
 import score.Address;
 import score.ArrayDB;
 import score.Context;
@@ -29,27 +29,21 @@ import java.util.Map;
 import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
 import static network.balanced.score.lib.utils.Math.pow;
 
+
 public class CollateralDB {
     private static final String TAG = "BalancedLoansAssets";
-    private static final String COLLATERAL_DB_PREFIX = "asset";
-
-    // new
     public static ArrayDB<Address> collateralAddresses = Context.newArrayDB("collateral_only_address_list",
             Address.class);
     public static ArrayDB<String> collateralList = Context.newArrayDB("collateral", String.class);
     public static final DictDB<String, String> symbolMap = Context.newDictDB("symbol|address", String.class);
+    public static final DictDB<String, String> addressMap = Context.newDictDB("address|symbol", String.class);
 
-    public static void migrateToNewDBs() {
-        int totalCollateralCount = collateralList.size();
-        if (collateralAddresses.size() > 0) {
-            return;
-        }
-
-        for (int i = 0; i < totalCollateralCount; i++) {
+    public static void migrateAddressMap() {
+        int collateralCount = collateralList.size();
+        for (int i = 0; i < collateralCount; i++) {
             String symbol = collateralList.get(i);
-            Collateral collateral = getCollateral(symbol);
-
-            collateralAddresses.add(collateral.getAssetAddress());
+            String collateralAddress = symbolMap.get(symbol);
+            addressMap.set(collateralAddress, symbol);
         }
     }
 
@@ -57,31 +51,27 @@ public class CollateralDB {
         return collateralAddresses.size();
     }
 
-    public static Collateral getCollateral(String symbol) {
+    public static Address getAddress(String symbol) {
         Context.require(arrayDbContains(collateralList, symbol), symbol + " is not a supported collateral type.");
-        String collateralAddress = symbolMap.get(symbol);
-        return new Collateral(COLLATERAL_DB_PREFIX + "|" + collateralAddress);
+        return Address.fromString(symbolMap.get(symbol));
     }
 
-    public static Collateral getCollateral(Address address) {
-        Context.require(arrayDbContains(collateralAddresses, address), address + " is not a supported collateral type" +
-                ".");
-        return new Collateral(COLLATERAL_DB_PREFIX + "|" + address.toString());
+    public static String getSymbol(Address address) {
+        String symbol = addressMap.get(address.toString());
+        Context.require(symbol != null, address + " is not a supported collateral type.");
+        return symbol;
     }
 
-    public static void addCollateral(Address address, Boolean active) {
+    public static void addCollateral(Address address, String symbol) {
         String collateralToAdd = address.toString();
         Context.require(!arrayDbContains(collateralAddresses, address), TAG + ": " + collateralToAdd + " already " +
                 "exists in the database.");
 
         collateralAddresses.add(address);
 
-        Collateral collateral = new Collateral(COLLATERAL_DB_PREFIX + "|" + collateralToAdd);
-        collateral.setCollateral(address, active);
-
-        Token collateralContract = new Token(address);
-        String symbol = collateralContract.symbol();
         symbolMap.set(symbol, collateralToAdd);
+        addressMap.set(collateralToAdd, symbol);
+
         collateralList.add(symbol);
     }
 
@@ -101,17 +91,11 @@ public class CollateralDB {
         int collateralCount = collateralList.size();
         for (int i = 0; i < collateralCount; i++) {
             String symbol = collateralList.get(i);
-            Collateral collateral = getCollateral(symbol);
-            if (!collateral.isActive()) {
-                continue;
-            }
-
-            Address collateralAddress = collateral.getAssetAddress();
-            Token collateralContract = new Token(collateralAddress);
-            BigInteger collateralDecimals = pow(BigInteger.TEN, collateralContract.decimals().intValue());
+            Address collateralAddress = getAddress(symbol);
+            BigInteger collateralDecimals = pow(BigInteger.TEN, TokenUtils.decimals(collateralAddress).intValue());
 
             BigInteger value =
-                    collateralContract.balanceOf(Context.getAddress()).multiply(collateralContract.lastPriceInLoop()).divide(collateralDecimals);
+                    TokenUtils.balanceOf(collateralAddress, Context.getAddress()).multiply(TokenUtils.getPriceInUSD(symbol)).divide(collateralDecimals);
             totalCollateral = totalCollateral.add(value);
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,9 @@ import score.Address;
 import score.Context;
 import score.DictDB;
 
+import static network.balanced.score.lib.utils.Check.readonly;
 public class BalancedAddressManager {
-    private static String TAG = "BalancedAddressManager";
+    private static final String TAG = "BalancedAddressManager";
     private static final Address mainnetGovernance = Address.fromString("cx44250a12074799e26fdeee75648ae47e2cc84219");
     public static final DictDB<String, Address> contractAddresses = Context.newDictDB(TAG + "ContractAddresses",
             Address.class);
@@ -48,9 +49,8 @@ public class BalancedAddressManager {
         Address address = contractAddresses.get(name);
         if (address == null) {
             address = fetchAddress(name);
-            try {
+            if (!readonly()) {
                 contractAddresses.set(name, address);
-            } catch (Exception e) {
             }
         }
 
@@ -134,6 +134,6 @@ public class BalancedAddressManager {
     }
 
     public static Address getGovernance() {
-        return contractAddresses.get(Names.GOVERNANCE);
+        return contractAddresses.getOrDefault(Names.GOVERNANCE, mainnetGovernance);
     }
 }

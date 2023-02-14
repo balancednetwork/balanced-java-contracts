@@ -65,7 +65,7 @@ class BalancedTokenImplIntTest {
         BigInteger loanAmount = BigInteger.valueOf(50).multiply(BigInteger.TEN.pow(18));
         // take loans
         BigInteger collateral = BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18));
-        balanced.ownerClient.loans.depositAndBorrow(collateral, "bnUSD", loanAmount, null, null);
+        balanced.ownerClient.stakeDepositAndBorrow(collateral, loanAmount);
         balanced.increaseDay(1);
         balanced.syncDistributions();
 

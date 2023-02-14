@@ -38,7 +38,6 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         setupBase();
         dividendScore.invoke(governance.account, "addAcceptedTokens", bnUSD.getAddress());
         dividendScore.invoke(governance.account, "setDividendsBatchSize", batchSize);
-        dividendScore.invoke(governance.account, "setDistributionActivationStatus", true);
 
         BigInteger day = getDay();
         dividendScore.invoke(governance.account, "setDividendsOnlyToStakedBalnDay", day.add(BigInteger.ONE));

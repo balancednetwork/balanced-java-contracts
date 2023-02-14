@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,15 +35,12 @@ public class SetupManager {
     public static void configureBalanced() {
         for (Map<String, Object> asset : ASSETS) {
             Address tokenAddress = ContractManager.get((String) asset.get("address"));
-            call(
-                    ContractManager.getAddress(Names.LOANS),
-                    "addAsset",
-                    tokenAddress,
-                    asset.get("active"),
-                    asset.get("collateral")
-            );
             call(ContractManager.getAddress(Names.DIVIDENDS), "addAcceptedTokens", tokenAddress);
         }
+
+        call(ContractManager.getAddress(Names.LOANS), "addAsset", ContractManager.getAddress(Names.SICX), true, true);
+        call(ContractManager.getAddress(Names.DEX), "addQuoteCoin", ContractManager.getAddress(Names.SICX));
+        call(ContractManager.getAddress(Names.DEX), "addQuoteCoin", ContractManager.getAddress(Names.BNUSD));
 
         Address[] acceptedFeeTokens = new Address[]{
                 ContractManager.getAddress(Names.SICX),

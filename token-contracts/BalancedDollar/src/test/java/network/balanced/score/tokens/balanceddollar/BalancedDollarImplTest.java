@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,7 @@ class BalancedDollarImplTest extends TestBase {
 
         bnUSDSpy = (BalancedDollarImpl) spy(bnUSDScore.getInstance());
         bnUSDScore.setInstance(bnUSDSpy);
+        contextMock.when(() -> Context.call(eq( governanceScore.getAddress()), eq("checkStatus"), any(String.class))).thenReturn(null);
     }
 
     private void setup() {
@@ -142,22 +143,6 @@ class BalancedDollarImplTest extends TestBase {
         bnUSDScore.invoke(governanceScore, "govTransfer", owner.getAddress(), receiverAccount.getAddress(), ICX,
                 new byte[0]);
         assertEquals(ICX, bnUSDScore.call("balanceOf", receiverAccount.getAddress()));
-    }
-
-    @Test
-    void transfer_blacklist() {
-        // Arrange
-        Account blackListed = sm.createAccount();
-        bnUSDScore.invoke(owner, "setMinter", owner.getAddress());
-        bnUSDScore.invoke(owner, "mintTo", blackListed.getAddress(), new BigInteger("100"), new byte[0]);
-
-        // Act
-        bnUSDScore.invoke(blackListed, "transfer", owner.getAddress(), new BigInteger("30"), new byte[0]);
-        bnUSDScore.invoke(owner, "blackList", blackListed.getAddress(), true);
-
-        // Asset
-        Executable blackListTransfer = () -> bnUSDScore.invoke(blackListed, "transfer", owner.getAddress(), new BigInteger("30"), new byte[0]);
-        expectErrorMessage(blackListTransfer, "Reverted(0): Blacklisted");
     }
 
     @Test

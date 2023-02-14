@@ -21,8 +21,10 @@ import com.eclipsesource.json.JsonObject;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
 
+import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -82,6 +84,13 @@ public class BalancedUtils {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static byte[] getContractBytesFromResources(Class clazz, String resourceName) throws IOException {
+        URL url = clazz.getClassLoader().getResource(resourceName);
+        assert url != null;
+        File file = new File(url.getFile());
+        return Files.readAllBytes(file.toPath());
     }
 
     public static Address createIRC2Token(BalancedClient owner, String name, String symbol) {

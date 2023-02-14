@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,9 +29,10 @@ import score.Address;
 import score.Context;
 
 import java.math.BigInteger;
+import java.util.Map;
 
 import static network.balanced.score.lib.utils.Constants.EXA;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -135,50 +136,6 @@ public class GovernanceTest extends GovernanceTestBase {
     }
 
     @Test
-    void addDexPricedCollateral() {
-        // Arrange
-        Address tokenAddress = bwt.getAddress();
-        boolean active = false;
-        String symbol = "BALW";
-        BigInteger lockingRatio = BigInteger.valueOf(30_000);
-        BigInteger liquidationRatio = BigInteger.valueOf(10_000);
-        BigInteger debtCeiling = BigInteger.TEN.pow(20);
-        BigInteger poolID = BigInteger.valueOf(7);
-        Account notOwner = sm.createAccount();
-        String expectedErrorMessage =
-                "SenderNotScoreOwnerOrContract: Sender=" + notOwner.getAddress() + " Owner=" + owner.getAddress() +
-                        " Contract=" + governance.getAddress();
-
-        // Act & Assert
-        Executable withNotOwner = () -> governance.invoke(notOwner, "addDexPricedCollateral", tokenAddress, active,
-                lockingRatio, liquidationRatio, debtCeiling);
-        expectErrorMessage(withNotOwner, expectedErrorMessage);
-
-        // Arrange
-        when(bwt.mock.symbol()).thenReturn(symbol);
-        when(dex.mock.getPoolId(tokenAddress, bnUSD.getAddress())).thenReturn(poolID);
-
-        // Act & Assert
-        when(balancedOracle.mock.getPriceInLoop(symbol)).thenReturn(BigInteger.ZERO);
-        expectedErrorMessage = "Reverted(0): Balanced oracle return a invalid icx price for " + symbol;
-        Executable withFaultyPeg = () -> governance.invoke(owner, "addDexPricedCollateral", tokenAddress, active,
-                lockingRatio, liquidationRatio, debtCeiling);
-        expectErrorMessage(withFaultyPeg, expectedErrorMessage);
-
-        // Act
-        when(balancedOracle.mock.getPriceInLoop(symbol)).thenReturn(ICX);
-        governance.invoke(owner, "addDexPricedCollateral", tokenAddress, active, lockingRatio, liquidationRatio,
-                debtCeiling);
-
-        // Assert
-        verify(loans.mock, times(2)).addAsset(tokenAddress, active, true);
-        verify(balancedOracle.mock, times(2)).addDexPricedAsset(symbol, poolID);
-        verify(loans.mock).setLockingRatio(symbol, lockingRatio);
-        verify(loans.mock).setLiquidationRatio(symbol, liquidationRatio);
-        verify(loans.mock).setDebtCeiling(symbol, debtCeiling);
-    }
-
-    @Test
     void delegate() {
         // Arrange
         PrepDelegations delegation1 = new PrepDelegations();
@@ -233,37 +190,12 @@ public class GovernanceTest extends GovernanceTestBase {
     }
 
     @Test
-    void setAddressesOnContract() {
-        // Arrange
-        String _contract = "loans";
-        Account notOwner = sm.createAccount();
-        String expectedErrorMessage =
-                "SenderNotScoreOwnerOrContract: Sender=" + notOwner.getAddress() + " Owner=" + owner.getAddress() +
-                        " Contract=" + governance.getAddress();
-
-        // Act & Assert
-        Executable withNotOwner = () -> governance.invoke(notOwner, "setAddressesOnContract", _contract);
-        expectErrorMessage(withNotOwner, expectedErrorMessage);
-
-        // Act
-        governance.invoke(owner, "setAddressesOnContract", _contract);
-
-        // Assert
-        verify(loans.mock, times(1)).setDividends(dividends.getAddress());
-        verify(loans.mock, times(1)).setStaking(staking.getAddress());
-        verify(loans.mock, times(1)).setReserve(reserve.getAddress());
-        verify(loans.mock, times(1)).setRewards(rewards.getAddress());
-    }
-
-    @Test
     void configureBalanced() {
         // Act
         governance.invoke(owner, "configureBalanced");
 
         // Assert
         verify(loans.mock).addAsset(sicx.getAddress(), true, true);
-        verify(loans.mock).addAsset(bnUSD.getAddress(), true, false);
-        verify(loans.mock).addAsset(baln.getAddress(), false, true);
     }
 
     @Test
@@ -389,5 +321,123 @@ public class GovernanceTest extends GovernanceTestBase {
         verify(rewards.mock).addNewDataSource("BALN/sICX", stakedLp.getAddress());
         verify(stakedLp.mock).addDataSource(balnSicxPid, "BALN/sICX");
         verify(rewards.mock, times(4)).updateBalTokenDistPercentage(any(DistributionPercentage[].class));
+    }
+
+    @Test
+    void disable() {
+        governance.invoke(owner, "disable");
+        assertFalse((boolean)governance.call("getStatus"));
+    }
+
+    @Test
+    void enable() {
+        governance.invoke(owner, "enable");
+        assertTrue((boolean)governance.call("getStatus"));
+    }
+
+    @Test
+    void disable_enable_permission() {
+        // Arrange
+        Account trustedUser1 = sm.createAccount();
+        Account trustedUser2 = sm.createAccount();
+        BigInteger timeLockDays = BigInteger.TEN;
+        String expectedErrorMessageAuth = "Not authorized";
+        String expectedErrorMessageTime = "Your privileges are disabled until ";
+        governance.invoke(owner, "setShutdownPrivilegeTimeLock", timeLockDays);
+
+        // Act
+        Executable beforeAuth = () -> governance.invoke(trustedUser1, "disable");
+        expectErrorMessage(beforeAuth, expectedErrorMessageAuth);
+
+        governance.invoke(owner, "addAuthorizedCallerShutdown", trustedUser1.getAddress());
+        governance.invoke(owner, "addAuthorizedCallerShutdown", trustedUser2.getAddress());
+        governance.invoke(trustedUser1, "disable");
+
+        // Assert
+        Executable onTimeLock = () -> governance.invoke(trustedUser1, "enable");
+        expectErrorMessage(onTimeLock, expectedErrorMessageTime);
+
+        governance.invoke(trustedUser2, "enable");
+        sm.getBlock().increase(DAY * timeLockDays.longValue());
+        governance.invoke(trustedUser1, "disable");
+    }
+
+    @Test
+    void blacklist() {
+        // Arrange
+        Account blacklistedUser = sm.createAccount();
+        Account blacklistedUser2 = sm.createAccount();
+
+        // Act
+        governance.invoke(owner, "blacklist", blacklistedUser.getAddress().toString());
+        governance.invoke(governance.getAccount(), "blacklist", blacklistedUser2.getAddress().toString());
+
+        // Assert
+        Map<String, Boolean> blacklist = (Map<String, Boolean>) governance.call("getBlacklist");
+        assertTrue(blacklist.get(blacklistedUser.getAddress().toString()));
+        assertTrue(blacklist.get(blacklistedUser2.getAddress().toString()));
+
+        // Act
+        governance.invoke(owner, "removeBlacklist", blacklistedUser.getAddress().toString());
+
+        // Assert
+        blacklist = (Map<String, Boolean>) governance.call("getBlacklist");
+        assertFalse(blacklist.getOrDefault(blacklistedUser.getAddress().toString(), false));
+        assertTrue(blacklist.get(blacklistedUser2.getAddress().toString()));
+    }
+
+    @Test
+    void blacklist_permissions() {
+        Account blacklistedUser = sm.createAccount();
+        assertOnlyCallableByContractOrOwner("blacklist", blacklistedUser.getAddress().toString());
+    }
+
+    @Test
+    void addRemoveTrustedUsersPermissions() {
+        // Arrange
+        Account trustedUser1 = sm.createAccount();
+        Account trustedUser2 = sm.createAccount();
+        assertOnlyCallableByContractOrOwner("addAuthorizedCallerShutdown", trustedUser1.getAddress());
+        assertOnlyCallableByContractOrOwner("removeAuthorizedCallerShutdown", trustedUser2.getAddress());
+
+        // Act
+        governance.invoke(owner, "addAuthorizedCallerShutdown", trustedUser1.getAddress());
+        governance.invoke(owner, "addAuthorizedCallerShutdown", trustedUser2.getAddress());
+
+        // Assert
+        Map<String, BigInteger> authorizedCallers = (Map<String, BigInteger>) governance.call(
+                "getAuthorizedCallersShutdown");
+        assertEquals(authorizedCallers.get(trustedUser1.getAddress().toString()), BigInteger.ZERO);
+        assertEquals(authorizedCallers.get(trustedUser2.getAddress().toString()), BigInteger.ZERO);
+
+        // Act
+        governance.invoke(owner, "removeAuthorizedCallerShutdown", trustedUser2.getAddress());
+
+        // Assert
+        authorizedCallers = (Map<String, BigInteger>) governance.call("getAuthorizedCallersShutdown");
+        assertEquals(authorizedCallers.get(trustedUser1.getAddress().toString()), BigInteger.ZERO);
+        assertFalse(authorizedCallers.containsKey(trustedUser2.getAddress().toString()));
+    }
+
+    @Test
+    void setShutdownPrivilegeTimeLock() {
+        // Arrange
+        BigInteger toLowTimeLock = BigInteger.ZERO;
+        BigInteger toHighTimeLock = BigInteger.valueOf(31);
+        BigInteger timeLock = BigInteger.TEN;
+        String expectedErrorMessage = "Invalid time lock, it must be between 1 and 30 days";
+        assertOnlyCallableByContractOrOwner("setShutdownPrivilegeTimeLock", timeLock);
+
+        // Act
+        Executable toLow = () -> governance.invoke(owner, "setShutdownPrivilegeTimeLock", toLowTimeLock);
+        expectErrorMessage(toLow, expectedErrorMessage);
+
+        Executable toHigh = () -> governance.invoke(owner, "setShutdownPrivilegeTimeLock", toHighTimeLock);
+        expectErrorMessage(toHigh, expectedErrorMessage);
+
+        governance.invoke(owner, "setShutdownPrivilegeTimeLock", timeLock);
+
+        // Assert
+        assertEquals(timeLock, governance.call("getShutdownPrivilegeTimeLock"));
     }
 }

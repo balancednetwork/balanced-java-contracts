@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,24 @@ public class Check {
         Address caller = Context.getCaller();
         Address owner = Context.getOwner();
         Context.require(caller.equals(owner), "SenderNotScoreOwner: Sender=" + caller + "Owner=" + owner);
+    }
+
+    public static void checkStatus() {
+        checkStatus(getGovernance());
+    }
+
+    public static void checkStatus(VarDB<Address> address) {
+        Address handler = address.get();
+        if (handler == null) {
+            return;
+        }
+
+        checkStatus(handler);
+    }
+
+    public static void checkStatus(Address handler) {
+        String caller = Context.getCaller().toString();
+        Context.call(handler, "checkStatus", caller);
     }
 
     public static void onlyGovernance() {
@@ -95,5 +113,16 @@ public class Check {
         }
 
         return value;
+    }
+
+    /**
+     * Note:
+     * This method does not work for non readonly interscore calls to readonly methods.
+     * In this case there will be a transactions hash but the interscore call will still be readonly.
+     * If anything is written Access denied error will be raised. Both variables and databases.
+     * @return Whether a call is readonly or not.
+     */
+    public static boolean readonly() {
+        return Context.getTransactionHash() == null;
     }
 }
