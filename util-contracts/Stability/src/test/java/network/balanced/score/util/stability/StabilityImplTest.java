@@ -56,7 +56,8 @@ class StabilityImplTest extends TestBase {
 
     @BeforeEach
     void setUp() throws Exception {
-        stabilityScore = sm.deploy(owner, StabilityImpl.class, feeHandler.getAddress(), bnusd.getAddress(), feeIn, feeOut);
+        stabilityScore = sm.deploy(owner, StabilityImpl.class, feeHandler.getAddress(), bnusd.getAddress(),
+                feeIn, feeOut);
     }
 
     @Test
@@ -110,9 +111,10 @@ class StabilityImplTest extends TestBase {
     void whitelistTokens() {
 
         Account nonOwner = sm.createAccount();
-        String expectedErrorMessage =
-                "Reverted(0): SenderNotScoreOwner: Sender=" + nonOwner.getAddress() + "Owner=" + owner.getAddress();
-        Executable notOwnerCall = () -> stabilityScore.invoke(nonOwner, "whitelistTokens", iusdc.getAddress(), limit);
+        String expectedErrorMessage = "Reverted(0): SenderNotScoreOwner: Sender=" + nonOwner.getAddress()
+                + "Owner=" + owner.getAddress();
+        Executable notOwnerCall = () -> stabilityScore.invoke(nonOwner, "whitelistTokens", iusdc.getAddress(),
+                limit);
         expectErrorMessage(notOwnerCall, expectedErrorMessage);
 
         Account nonContractAddress = sm.createAccount();
@@ -130,15 +132,18 @@ class StabilityImplTest extends TestBase {
         BigInteger iusdcDecimals = BigInteger.valueOf(6);
         contextMock.when(() -> Context.call(iusdc.getAddress(), "decimals")).thenReturn(iusdcDecimals);
         stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit);
-        assertEquals(limit.multiply(BigInteger.TEN.pow(iusdcDecimals.intValue())), stabilityScore.call("getLimit",
-                iusdc.getAddress()));
+        assertEquals(limit.multiply(BigInteger.TEN.pow(iusdcDecimals.intValue())),
+                stabilityScore.call("getLimit",
+                        iusdc.getAddress()));
 
         List<Address> tokens = new ArrayList<>();
         tokens.add(iusdc.getAddress());
-        assertArrayEquals(tokens.toArray(), ((List<Address>) stabilityScore.call("getAcceptedTokens")).toArray());
+        assertArrayEquals(tokens.toArray(),
+                ((List<Address>) stabilityScore.call("getAcceptedTokens")).toArray());
 
         expectedErrorMessage = "Reverted(0): " + TAG + ": Already whitelisted";
-        Executable doubleListing = () -> stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit);
+        Executable doubleListing = () -> stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(),
+                limit);
         expectErrorMessage(doubleListing, expectedErrorMessage);
     }
 
@@ -147,9 +152,10 @@ class StabilityImplTest extends TestBase {
         BigInteger newLimit = BigInteger.valueOf(1_000);
 
         Account nonOwner = sm.createAccount();
-        String expectedErrorMessage =
-                "Reverted(0): SenderNotScoreOwner: Sender=" + nonOwner.getAddress() + "Owner=" + owner.getAddress();
-        Executable notOwnerCall = () -> stabilityScore.invoke(nonOwner, "updateLimit", iusdc.getAddress(), newLimit);
+        String expectedErrorMessage = "Reverted(0): SenderNotScoreOwner: Sender=" + nonOwner.getAddress()
+                + "Owner=" + owner.getAddress();
+        Executable notOwnerCall = () -> stabilityScore.invoke(nonOwner, "updateLimit", iusdc.getAddress(),
+                newLimit);
         expectErrorMessage(notOwnerCall, expectedErrorMessage);
 
         BigInteger negativeLimit = newLimit.negate();
@@ -159,18 +165,19 @@ class StabilityImplTest extends TestBase {
         expectErrorMessage(negativeLimitCall, expectedErrorMessage);
 
         expectedErrorMessage = "Reverted(0): " + TAG + ": Address not white listed previously";
-        Executable nonWhiteListed = () -> stabilityScore.invoke(owner, "updateLimit", iusdc.getAddress(), newLimit);
+        Executable nonWhiteListed = () -> stabilityScore.invoke(owner, "updateLimit", iusdc.getAddress(),
+                newLimit);
         expectErrorMessage(nonWhiteListed, expectedErrorMessage);
 
         BigInteger iusdcDecimals = BigInteger.valueOf(6);
         contextMock.when(() -> Context.call(iusdc.getAddress(), "decimals")).thenReturn(iusdcDecimals);
         stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit);
-        assertEquals(limit.multiply(BigInteger.TEN.pow(iusdcDecimals.intValue())), stabilityScore.call("getLimit",
-                iusdc.getAddress()));
+        assertEquals(limit.multiply(BigInteger.TEN.pow(iusdcDecimals.intValue())),
+                stabilityScore.call("getLimit", iusdc.getAddress()));
 
         stabilityScore.invoke(owner, "updateLimit", iusdc.getAddress(), newLimit);
-        assertEquals(newLimit.multiply(BigInteger.TEN.pow(iusdcDecimals.intValue())), stabilityScore.call("getLimit",
-                iusdc.getAddress()));
+        assertEquals(newLimit.multiply(BigInteger.TEN.pow(iusdcDecimals.intValue())),
+                stabilityScore.call("getLimit", iusdc.getAddress()));
     }
 
     @Nested
@@ -192,8 +199,10 @@ class StabilityImplTest extends TestBase {
 
         @Test
         void zeroOrNegativeAmount() {
-            String expectedErrorMessage = "Reverted(0): " + TAG + ": Transfer amount must be greater than zero";
-            Executable negativeAmount = () -> stabilityScore.invoke(iusdc, "tokenFallback", user.getAddress(),
+            String expectedErrorMessage = "Reverted(0): " + TAG
+                    + ": Transfer amount must be greater than zero";
+            Executable negativeAmount = () -> stabilityScore.invoke(iusdc, "tokenFallback",
+                    user.getAddress(),
                     usdcAmount.negate(), new byte[0]);
             expectErrorMessage(negativeAmount, expectedErrorMessage);
             Executable zeroAmount = () -> stabilityScore.invoke(iusdc, "tokenFallback", user.getAddress(),
@@ -204,9 +213,9 @@ class StabilityImplTest extends TestBase {
         @Test
         void nonWhiteListed() {
             String expectedErrorMessage = TAG + ": Only whitelisted tokens or bnusd is accepted.";
-            Executable nonWhiteListed = () -> stabilityScore.invoke(iusdc, "tokenFallback", user.getAddress(),
-                    usdcAmount
-                    , new byte[0]);
+            Executable nonWhiteListed = () -> stabilityScore.invoke(iusdc, "tokenFallback",
+                    user.getAddress(),
+                    usdcAmount, new byte[0]);
             expectErrorMessage(nonWhiteListed, expectedErrorMessage);
         }
 
@@ -218,17 +227,23 @@ class StabilityImplTest extends TestBase {
             stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit);
 
             // Error from exceeding limit
-            contextMock.when(() -> Context.call(iusdc.getAddress(), "balanceOf", stabilityScore.getAddress())).
-                    thenReturn(limit.multiply(BigInteger.TEN.pow(iusdcDecimals.intValue())));
-            String expectedErrorMessage = "Reverted(0): " + TAG + ": Asset to exchange with bnusd limit crossed.";
-            Executable exceedLimit = () -> stabilityScore.invoke(iusdc, "tokenFallback", user.getAddress(), usdcAmount,
+            contextMock.when(() -> Context.call(iusdc.getAddress(), "balanceOf",
+                    stabilityScore.getAddress()))
+                    .thenReturn(limit.multiply(BigInteger.TEN.pow(iusdcDecimals.intValue())
+                            .add(BigInteger.ONE)));
+            String expectedErrorMessage = "Reverted(0): " + TAG
+                    + ": Asset to exchange with bnusd limit crossed.";
+            Executable exceedLimit = () -> stabilityScore.invoke(iusdc, "tokenFallback", user.getAddress(),
+                    usdcAmount,
                     new byte[0]);
             expectErrorMessage(exceedLimit, expectedErrorMessage);
 
             // Error from zero bnusd to mint
-            contextMock.when(() -> Context.call(iusdc.getAddress(), "balanceOf", stabilityScore.getAddress())).thenReturn(BigInteger.ZERO);
+            contextMock.when(() -> Context.call(iusdc.getAddress(), "balanceOf",
+                    stabilityScore.getAddress())).thenReturn(BigInteger.ZERO);
             expectedErrorMessage = "Reverted(0): " + TAG + ": Bnusd amount must be greater than zero";
-            Executable mintZeroAmount = () -> stabilityScore.invoke(iusdc, "tokenFallback", user.getAddress(),
+            Executable mintZeroAmount = () -> stabilityScore.invoke(iusdc, "tokenFallback",
+                    user.getAddress(),
                     BigInteger.TEN, new byte[0]);
             expectErrorMessage(mintZeroAmount, expectedErrorMessage);
 
@@ -243,17 +258,21 @@ class StabilityImplTest extends TestBase {
         void verifyBnusdMint() {
             contextMock.when(() -> Context.call(iusdc.getAddress(), "decimals")).thenReturn(iusdcDecimals);
             stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit);
-            contextMock.when(() -> Context.call(iusdc.getAddress(), "balanceOf", stabilityScore.getAddress())).thenReturn(BigInteger.ZERO);
+            contextMock.when(() -> Context.call(iusdc.getAddress(), "balanceOf",
+                    stabilityScore.getAddress())).thenReturn(BigInteger.ZERO);
 
-            contextMock.when(() -> Context.call(eq(bnusd.getAddress()), eq("mint"), any(BigInteger.class))).thenReturn(null);
+            contextMock.when(() -> Context.call(eq(bnusd.getAddress()), eq("mint"), any(BigInteger.class)))
+                    .thenReturn(null);
             contextMock.when(() -> Context.call(eq(bnusd.getAddress()), eq("transfer"), any(Address.class),
                     any(BigInteger.class))).thenReturn(null);
             stabilityScore.invoke(iusdc, "tokenFallback", user.getAddress(), usdcAmount, new byte[0]);
 
-            BigInteger equivalentBnusd = usdcAmount.multiply(ICX).divide(BigInteger.TEN.pow(iusdcDecimals.intValue()));
+            BigInteger equivalentBnusd = usdcAmount.multiply(ICX)
+                    .divide(BigInteger.TEN.pow(iusdcDecimals.intValue()));
             BigInteger fee = feeIn.multiply(equivalentBnusd).divide(BigInteger.valueOf(100).multiply(ICX));
             contextMock.verify(() -> Context.call(bnusd.getAddress(), "mint", equivalentBnusd));
-            contextMock.verify(() -> Context.call(bnusd.getAddress(), "transfer", feeHandler.getAddress(), fee));
+            contextMock.verify(() -> Context.call(bnusd.getAddress(), "transfer", feeHandler.getAddress(),
+                    fee));
             contextMock.verify(() -> Context.call(bnusd.getAddress(), "transfer", user.getAddress(),
                     equivalentBnusd.subtract(fee)));
         }
@@ -261,7 +280,8 @@ class StabilityImplTest extends TestBase {
         @Test
         void nonWhitelistedReturn() {
             String expectedErrorMessage = "Reverted(0): " + TAG + ": Whitelisted tokens can only be sent";
-            Executable nonWhitelistedAsset = () -> stabilityScore.invoke(bnusd, "tokenFallback", user.getAddress(),
+            Executable nonWhitelistedAsset = () -> stabilityScore.invoke(bnusd, "tokenFallback",
+                    user.getAddress(),
                     bnusdAmount, iusdcData);
             expectErrorMessage(nonWhitelistedAsset, expectedErrorMessage);
         }
@@ -281,9 +301,12 @@ class StabilityImplTest extends TestBase {
                     BigInteger.TEN.pow(11), iusdcData);
             expectErrorMessage(zeroAssetOut, expectedErrorMessage);
 
-            contextMock.when(() -> Context.call(iusdc.getAddress(), "balanceOf", stabilityScore.getAddress())).thenReturn(BigInteger.ZERO);
-            expectedErrorMessage = "Reverted(0): " + TAG + ": Insufficient asset out balance in the contract";
-            Executable noBalanceToTransfer = () -> stabilityScore.invoke(bnusd, "tokenFallback", user.getAddress(),
+            contextMock.when(() -> Context.call(iusdc.getAddress(), "balanceOf",
+                    stabilityScore.getAddress())).thenReturn(BigInteger.ZERO);
+            expectedErrorMessage = "Reverted(0): " + TAG
+                    + ": Insufficient asset out balance in the contract";
+            Executable noBalanceToTransfer = () -> stabilityScore.invoke(bnusd, "tokenFallback",
+                    user.getAddress(),
                     bnusdAmount, iusdcData);
             expectErrorMessage(noBalanceToTransfer, expectedErrorMessage);
         }
@@ -295,17 +318,21 @@ class StabilityImplTest extends TestBase {
 
             BigInteger fee = feeOut.multiply(bnusdAmount).divide(BigInteger.valueOf(100).multiply(ICX));
             BigInteger bnusdToConvert = bnusdAmount.subtract(fee);
-            BigInteger equivalentAssetOut = bnusdToConvert.multiply(BigInteger.TEN.pow(iusdcDecimals.intValue())).divide(ICX);
+            BigInteger equivalentAssetOut = bnusdToConvert
+                    .multiply(BigInteger.TEN.pow(iusdcDecimals.intValue())).divide(ICX);
 
-            contextMock.when(() -> Context.call(iusdc.getAddress(), "balanceOf", stabilityScore.getAddress())).thenReturn(equivalentAssetOut);
+            contextMock.when(() -> Context.call(iusdc.getAddress(), "balanceOf",
+                    stabilityScore.getAddress())).thenReturn(equivalentAssetOut);
 
-            contextMock.when(() -> Context.call(eq(bnusd.getAddress()), eq("burn"), any(BigInteger.class))).thenReturn(null);
+            contextMock.when(() -> Context.call(eq(bnusd.getAddress()), eq("burn"), any(BigInteger.class)))
+                    .thenReturn(null);
             contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class),
                     any(BigInteger.class))).thenReturn(null);
             stabilityScore.invoke(bnusd, "tokenFallback", user.getAddress(), bnusdAmount, iusdcData);
 
             contextMock.verify(() -> Context.call(bnusd.getAddress(), "burn", bnusdToConvert));
-            contextMock.verify(() -> Context.call(bnusd.getAddress(), "transfer", feeHandler.getAddress(), fee));
+            contextMock.verify(() -> Context.call(bnusd.getAddress(), "transfer", feeHandler.getAddress(),
+                    fee));
             contextMock.verify(() -> Context.call(iusdc.getAddress(), "transfer", user.getAddress(),
                     equivalentAssetOut));
         }
