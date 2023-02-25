@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
 import java.math.BigInteger;
+import java.util.List;
 import java.util.Map;
 
 import static network.balanced.score.core.loans.utils.LoansConstants.LOCKING_RATIO;
@@ -1843,5 +1844,56 @@ class LoansTest extends LoansTestBase {
 
         assertEquals(redeemableAmount,
                 debt.multiply(BigInteger.valueOf(4)).multiply(maxRedemptionPercentage).divide(POINTS));
+    }
+
+
+    @Test
+    void getBorrowerData() {
+        // Arrange
+        Account account1 = sm.createAccount();
+        Account account2 = sm.createAccount();
+        Account account3 = sm.createAccount();
+        Account account4 = sm.createAccount();
+        BigInteger collateral = BigInteger.valueOf(4000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(400).multiply(EXA);
+
+        // Act
+        takeLoanICX(account1, "bnUSD", collateral, loan);
+        takeLoanICX(account2, "bnUSD", collateral, loan);
+        takeLoanICX(account3, "bnUSD", collateral, loan);
+        takeLoanICX(account4, "bnUSD", collateral, loan);
+        takeLoaniETH(account3, collateral, loan);
+        takeLoaniETH(account2, collateral, loan);
+
+        // Assert
+        int icxCount = (int)loans.call("getBorrowerCount", sicx.getAddress());
+        int iETHCount = (int)loans.call("getBorrowerCount", ieth.getAddress());
+        int sICXHead = (int)loans.call("getBorrowerHead", sicx.getAddress());
+        int iETHHead = (int)loans.call("getBorrowerHead", ieth.getAddress());
+        int sICXTail = (int)loans.call("getBorrowerTail", sicx.getAddress());
+        int iETHTail = (int)loans.call("getBorrowerTail", ieth.getAddress());
+
+        List<Map<String, Object>> sICXBorrowers = (List<Map<String, Object>>)loans.call("getBorrowers", sicx.getAddress(), 3, 0);
+        List<Map<String, Object>> sICXTailBorrower = (List<Map<String, Object>>)loans.call("getBorrowers", sicx.getAddress(), 1, sICXBorrowers.get(2).get("nextId"));
+        List<Map<String, Object>> iETHBorrowers = (List<Map<String, Object>>)loans.call("getBorrowers", ieth.getAddress(), iETHCount, iETHTail);
+
+        assertEquals(4, icxCount);
+        assertEquals(2, iETHCount);
+        assertEquals(1, sICXHead);
+        assertEquals(3, iETHHead);
+        assertEquals(4, sICXTail);
+        assertEquals(2, iETHTail);
+
+        assertEquals(account1.getAddress().toString(), sICXBorrowers.get(0).get("address"));
+        assertEquals(account2.getAddress().toString(), sICXBorrowers.get(1).get("address"));
+        assertEquals(account3.getAddress().toString(), sICXBorrowers.get(2).get("address"));
+        assertEquals(3,  sICXBorrowers.size());
+
+        assertEquals(account4.getAddress().toString(), sICXTailBorrower.get(0).get("address"));
+        assertEquals(1,  sICXTailBorrower.size());
+
+        assertEquals(account2.getAddress().toString(), iETHBorrowers.get(0).get("address"));
+        assertEquals(account3.getAddress().toString(), iETHBorrowers.get(1).get("address"));
+        assertEquals(2,  iETHBorrowers.size());
     }
 }
