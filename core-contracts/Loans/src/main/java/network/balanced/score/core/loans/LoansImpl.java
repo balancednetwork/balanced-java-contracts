@@ -39,6 +39,7 @@ import score.annotation.Payable;
 import scorex.util.HashMap;
 
 import java.math.BigInteger;
+import java.util.List;
 import java.util.Map;
 
 import static network.balanced.score.core.loans.LoansVariables.loansOn;
@@ -204,6 +205,30 @@ public class LoansImpl implements Loans {
         return PositionsDB.getPosition(_owner).hasDebt();
     }
 
+    @External(readonly = true)
+    public int getBorrowerCount(Address collateralAddress) {
+        String symbol = CollateralDB.getSymbol(collateralAddress);
+        return DebtDB.getBorrowers(symbol).size();
+    }
+
+    @External(readonly = true)
+    public List<Map<String, Object>> getBorrowers(Address collateralAddress, int nrOfPositions,
+                                                  @Optional int startId) {
+        return DebtDB.getBorrowers(collateralAddress, nrOfPositions, startId);
+    }
+
+    @External(readonly = true)
+    public int getBorrowerHead(Address collateralAddress) {
+        String symbol = CollateralDB.getSymbol(collateralAddress);
+        return DebtDB.getBorrowers(symbol).getHeadId();
+    }
+
+    @External(readonly = true)
+    public int getBorrowerTail(Address collateralAddress) {
+        String symbol = CollateralDB.getSymbol(collateralAddress);
+        return DebtDB.getBorrowers(symbol).getTailId();
+    }
+
     // only adds collateral, name is kept for backwards compatibility
     @External
     public void addAsset(Address _token_address, boolean _active, boolean _collateral) {
@@ -301,7 +326,8 @@ public class LoansImpl implements Loans {
             CollateralReceived(depositor, SICX_SYMBOL, sicxDeposited);
         }
 
-        if (!_asset.equals(BNUSD_SYMBOL) || _amount == null || _amount.compareTo(BigInteger.ZERO) <= 0) {
+        if (_asset == null || !_asset.equals(BNUSD_SYMBOL) || _amount == null
+                || _amount.compareTo(BigInteger.ZERO) <= 0) {
             return;
         }
 
@@ -698,7 +724,6 @@ public class LoansImpl implements Loans {
         BigInteger maxDebtValue = POINTS.multiply(collateral).divide(lockingRatio);
         BigInteger fee = originationFee.get().multiply(amount).divide(POINTS);
 
-
         BigInteger newDebt = amount.add(fee);
         BigInteger holdings = position.getDebt(collateralSymbol);
         if (holdings.equals(BigInteger.ZERO)) {
@@ -885,7 +910,6 @@ public class LoansImpl implements Loans {
 
         return parameters;
     }
-
 
     @EventLog(indexed = 1)
     public void ContractActive(String _contract, String _state) {
