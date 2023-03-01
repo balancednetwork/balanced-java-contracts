@@ -106,7 +106,7 @@ public class DebtDB {
     }
 
     public static List<Map<String, Object>> getBorrowers(Address collateralAddress, int nrOfPositions, int startId) {
-        List<Map<String, Object>> data = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> data = new ArrayList<>();
         String symbol = CollateralDB.getSymbol(collateralAddress);
         LinkedListDB db = getBorrowers(symbol);
 
@@ -120,7 +120,7 @@ public class DebtDB {
         Map<String, Object> positionData;
         for (int i = 0; i < nrOfPositions; i++) {
             position = PositionsDB.uncheckedGet(id);
-            positionData = new HashMap<String, Object>();
+            positionData = new HashMap<>();
             positionData.put(symbol, position.getCollateral(symbol));
             positionData.put("debt", position.getDebt(symbol));
             positionData.put("address", position.getAddress().toString());

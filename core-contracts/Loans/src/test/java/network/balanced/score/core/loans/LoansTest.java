@@ -1767,7 +1767,7 @@ class LoansTest extends LoansTestBase {
         takeLoanICX(account2, "bnUSD", collateral, loan);
 
         String expectedErrorMessage = "Reached end of list";
-        Executable checkAboveMaxSize =  () -> loans.call("getRedeemableAmount", sicx.getAddress(), 3);
+        Executable checkAboveMaxSize = () -> loans.call("getRedeemableAmount", sicx.getAddress(), 3);
         Executable redeemAboveMaxSize = () -> loans.invoke(redeemer, "redeemCollateral", sicx.getAddress(), debt);
         expectErrorMessage(checkAboveMaxSize, expectedErrorMessage);
         expectErrorMessage(redeemAboveMaxSize, expectedErrorMessage);
@@ -1866,16 +1866,19 @@ class LoansTest extends LoansTestBase {
         takeLoaniETH(account2, collateral, loan);
 
         // Assert
-        int icxCount = (int)loans.call("getBorrowerCount", sicx.getAddress());
-        int iETHCount = (int)loans.call("getBorrowerCount", ieth.getAddress());
-        int sICXHead = (int)loans.call("getBorrowerHead", sicx.getAddress());
-        int iETHHead = (int)loans.call("getBorrowerHead", ieth.getAddress());
-        int sICXTail = (int)loans.call("getBorrowerTail", sicx.getAddress());
-        int iETHTail = (int)loans.call("getBorrowerTail", ieth.getAddress());
+        int icxCount = (int) loans.call("getBorrowerCount", sicx.getAddress());
+        int iETHCount = (int) loans.call("getBorrowerCount", ieth.getAddress());
+        int sICXHead = (int) loans.call("getBorrowerHead", sicx.getAddress());
+        int iETHHead = (int) loans.call("getBorrowerHead", ieth.getAddress());
+        int sICXTail = (int) loans.call("getBorrowerTail", sicx.getAddress());
+        int iETHTail = (int) loans.call("getBorrowerTail", ieth.getAddress());
 
-        List<Map<String, Object>> sICXBorrowers = (List<Map<String, Object>>)loans.call("getBorrowers", sicx.getAddress(), 3, 0);
-        List<Map<String, Object>> sICXTailBorrower = (List<Map<String, Object>>)loans.call("getBorrowers", sicx.getAddress(), 1, sICXBorrowers.get(2).get("nextId"));
-        List<Map<String, Object>> iETHBorrowers = (List<Map<String, Object>>)loans.call("getBorrowers", ieth.getAddress(), iETHCount, iETHTail);
+        List<Map<String, Object>> sICXBorrowers = (List<Map<String, Object>>) loans.call("getBorrowers",
+                sicx.getAddress(), 3, 0);
+        List<Map<String, Object>> sICXTailBorrower = (List<Map<String, Object>>) loans.call("getBorrowers",
+                sicx.getAddress(), 1, sICXBorrowers.get(2).get("nextId"));
+        List<Map<String, Object>> iETHBorrowers = (List<Map<String, Object>>) loans.call("getBorrowers",
+                ieth.getAddress(), iETHCount, iETHTail);
 
         assertEquals(4, icxCount);
         assertEquals(2, iETHCount);
@@ -1887,13 +1890,13 @@ class LoansTest extends LoansTestBase {
         assertEquals(account1.getAddress().toString(), sICXBorrowers.get(0).get("address"));
         assertEquals(account2.getAddress().toString(), sICXBorrowers.get(1).get("address"));
         assertEquals(account3.getAddress().toString(), sICXBorrowers.get(2).get("address"));
-        assertEquals(3,  sICXBorrowers.size());
+        assertEquals(3, sICXBorrowers.size());
 
         assertEquals(account4.getAddress().toString(), sICXTailBorrower.get(0).get("address"));
-        assertEquals(1,  sICXTailBorrower.size());
+        assertEquals(1, sICXTailBorrower.size());
 
         assertEquals(account2.getAddress().toString(), iETHBorrowers.get(0).get("address"));
         assertEquals(account3.getAddress().toString(), iETHBorrowers.get(1).get("address"));
-        assertEquals(2,  iETHBorrowers.size());
+        assertEquals(2, iETHBorrowers.size());
     }
 }

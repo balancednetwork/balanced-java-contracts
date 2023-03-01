@@ -213,8 +213,8 @@ public class LoansImpl implements Loans {
 
     @External(readonly = true)
     public List<Map<String, Object>> getBorrowers(Address collateralAddress, int nrOfPositions,
-            @Optional int startId) {
-            return DebtDB.getBorrowers(collateralAddress, nrOfPositions, startId);
+                                                  @Optional int startId) {
+        return DebtDB.getBorrowers(collateralAddress, nrOfPositions, startId);
     }
 
     @External(readonly = true)
