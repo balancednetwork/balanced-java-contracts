@@ -23,7 +23,6 @@ import java.math.BigInteger;
 import static network.balanced.score.core.loans.LoansImpl.call;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getBalancedOracle;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getBnusd;
-import static network.balanced.score.lib.utils.Check.readonly;
 
 public class TokenUtils {
     public static String symbol(Address tokenAddress) {
@@ -39,11 +38,7 @@ public class TokenUtils {
     }
 
     public static BigInteger getPriceInUSD(String symbol) {
-        if (readonly()) {
-            return (BigInteger) call(getBalancedOracle(), "getLastPriceInUSD", symbol);
-        }
-
-        return (BigInteger) call(getBalancedOracle(), "getPriceInUSD", symbol);
+        return (BigInteger) call(getBalancedOracle(), "getLastPriceInUSD", symbol);
     }
 
     public static void mintAssetTo(Address to, BigInteger amount) {

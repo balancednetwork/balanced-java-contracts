@@ -106,6 +106,10 @@ public class Position {
     }
 
     public BigInteger getCollateral(String symbol) {
+        return getCollateral(symbol, false);
+    }
+
+    public BigInteger getCollateral(String symbol, boolean readonly) {
         if (symbol.equals(SICX_SYMBOL)) {
             if (!dataMigrationStatus.at(dbKey).getOrDefault(SICX_SYMBOL, false) &&
                     collateral.at(dbKey).getOrDefault(SICX_SYMBOL, BigInteger.ZERO).equals(BigInteger.ZERO)) {
@@ -113,7 +117,7 @@ public class Position {
                 int lastSnapIndex = snaps.at(dbKey).size() - 1;
                 int lastSnap = snaps.at(dbKey).get(lastSnapIndex);
                 BigInteger collateralAmount = assets.at(dbKey).at(lastSnap).getOrDefault(SICX_SYMBOL, BigInteger.ZERO);
-                if (readonly()) {
+                if (readonly() || readonly) {
                     return collateralAmount;
                 }
 
@@ -173,9 +177,13 @@ public class Position {
     }
 
     public BigInteger totalCollateralInUSD(String collateralSymbol) {
+        return totalCollateralInUSD(collateralSymbol, false);
+    }
+
+    public BigInteger totalCollateralInUSD(String collateralSymbol, boolean readonly) {
         Address collateralAddress = CollateralDB.getAddress(collateralSymbol);
 
-        BigInteger amount = getCollateral(collateralSymbol);
+        BigInteger amount = getCollateral(collateralSymbol, readonly);
         BigInteger decimals = pow(BigInteger.TEN, TokenUtils.decimals(collateralAddress).intValue());
         BigInteger price = TokenUtils.getPriceInUSD(collateralSymbol);
 
@@ -183,9 +191,13 @@ public class Position {
     }
 
     public Standing getStanding(String collateralSymbol) {
+        return getStanding(collateralSymbol, false);
+    }
+
+    public Standing getStanding(String collateralSymbol, boolean readonly) {
         Standing standing = new Standing();
         standing.totalDebt = getDebt(collateralSymbol);
-        standing.collateral = totalCollateralInUSD(collateralSymbol);
+        standing.collateral = totalCollateralInUSD(collateralSymbol, readonly);
 
         if (standing.totalDebt.equals(BigInteger.ZERO)) {
             standing.ratio = BigInteger.ZERO;
@@ -231,12 +243,12 @@ public class Position {
 
             collateralAmounts.put(BNUSD_SYMBOL, getDebt(collateralSymbol));
 
-            BigInteger amount = getCollateral(collateralSymbol);
+            BigInteger amount = getCollateral(collateralSymbol, true);
 
             collateralAmounts.put(collateralSymbol, amount);
             holdings.put(collateralSymbol, collateralAmounts);
 
-            Standing standing = getStanding(collateralSymbol);
+            Standing standing = getStanding(collateralSymbol, true);
             Map<String, Object> standingMap = new HashMap<>();
             standingMap.put("total_debt", standing.totalDebt.multiply(EXA).divide(loopPrice));
             standingMap.put("collateral", standing.collateral.multiply(EXA).divide(loopPrice));
@@ -250,7 +262,7 @@ public class Position {
 
         Map<String, Object> positionDetails = new HashMap<>();
 
-        Standing sICXstanding = getStanding(SICX_SYMBOL);
+        Standing sICXstanding = getStanding(SICX_SYMBOL, true);
         positionDetails.put("pos_id", getId());
         positionDetails.put("created", getCreated());
         positionDetails.put("address", getAddress().toString());
