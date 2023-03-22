@@ -103,4 +103,4 @@ include(':bBaln')
 project(':bBaln').projectDir = file("token-contracts/bBaln")
 
 include(':OTC')
-project(':OTC').projectDir = file("core-contracts//OTC")
+project(':OTC').projectDir = file("util-contracts/OTC")
