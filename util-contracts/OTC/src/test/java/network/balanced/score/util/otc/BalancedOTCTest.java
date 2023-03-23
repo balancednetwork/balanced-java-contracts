@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.otc;
+package network.balanced.score.util.otc;
 
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;

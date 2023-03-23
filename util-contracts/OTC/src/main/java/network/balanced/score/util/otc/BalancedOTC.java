@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.otc;
+package network.balanced.score.util.otc;
 
 import network.balanced.score.lib.utils.IterableDictDB;
 import network.balanced.score.lib.utils.Names;
