@@ -7,9 +7,9 @@ Only supported payout token currently is bnUSD.
 Balanced OTC trades tokens for bnUSD based on oracle pricing with a discount to allow the balanced dao to acquire
 different tokens cheap and efficiently.
 
-## Creating a order
+## Creating an order
 
-To create a order send bnUSD from daofund where the _data field is a the address of the wanted token.
+To create an order send bnUSD from daofund where the _data field is the address of the wanted token.
 This is done via a vote action on the format:
 
 ```
@@ -59,10 +59,10 @@ Discounts can be set via a vote action on the format:
 }
 ```
 
-## Canceling a Order
+## Canceling an Order
 
-Canceling a order returns deposited bnUSD to the daofund.
-A order can be canceled via a vote action on the format:
+Canceling an order returns deposited bnUSD to the daofund.
+An order can be canceled via a vote action on the format:
 
 ```
 {
@@ -77,9 +77,9 @@ A order can be canceled via a vote action on the format:
 }
 ```
 
-## Purchasing from a order
+## Purchasing from an order
 
-To purchase a order simply send tokens to the contract. Since there can currently one be one order per token.
+To purchase an order simply send tokens to the contract. Since there can currently one be one order per token.
 If the payout bnUSD is equal to or less than the order size the order will be filled.
 
 A purchase can be tested via:
@@ -106,7 +106,7 @@ List<Map<String, Object>> getOrders();
 ```
 
 Returns a List of orders represented as Maps.
-A order map contains the keys:
+An order map contains the keys:
 
 token: The token wanted by the order/daofund.
 
