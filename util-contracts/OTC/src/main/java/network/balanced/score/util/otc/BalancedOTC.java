@@ -190,10 +190,6 @@ public class BalancedOTC {
         String unpackedData = new String(data);
         if (unpackedData.equals("")) {
             return true;
-        } else if (unpackedData.equals("None")) {
-            return true;
-        }
-
-        return false;
+        } else return unpackedData.equals("None");
     }
 }
