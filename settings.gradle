@@ -38,7 +38,7 @@ project(':Bribing').projectDir = file("core-contracts/Bribing")
 include(':Reserve')
 project(':Reserve').projectDir = file("core-contracts/Reserve")
 
-include (':Dividends')
+include(':Dividends')
 project(':Dividends').projectDir = file("core-contracts/Dividends")
 
 include(':Rebalancing')

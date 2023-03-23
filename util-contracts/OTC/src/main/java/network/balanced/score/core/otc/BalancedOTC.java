@@ -19,7 +19,10 @@ package network.balanced.score.core.otc;
 import network.balanced.score.lib.utils.IterableDictDB;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.Versions;
-import score.*;
+import score.Address;
+import score.Context;
+import score.DictDB;
+import score.VarDB;
 import score.annotation.External;
 import scorex.util.ArrayList;
 
@@ -28,11 +31,9 @@ import java.util.List;
 import java.util.Map;
 
 import static network.balanced.score.lib.utils.BalancedAddressManager.*;
-import static network.balanced.score.lib.utils.Check.onlyGovernance;
-import static network.balanced.score.lib.utils.Check.only;
-import static network.balanced.score.lib.utils.Check.checkStatus;
+import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.POINTS;
-import static network.balanced.score.lib.utils.Constants.EXA;;
 
 public class BalancedOTC {
     public static final String ORDERS = "orders";
