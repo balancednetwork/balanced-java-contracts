@@ -38,7 +38,7 @@ project(':Bribing').projectDir = file("core-contracts/Bribing")
 include(':Reserve')
 project(':Reserve').projectDir = file("core-contracts/Reserve")
 
-include (':Dividends')
+include(':Dividends')
 project(':Dividends').projectDir = file("core-contracts/Dividends")
 
 include(':Rebalancing')
@@ -101,3 +101,6 @@ project(':BalancedOracle').projectDir = file("core-contracts/BalancedOracle")
 
 include(':bBaln')
 project(':bBaln').projectDir = file("token-contracts/bBaln")
+
+include(':OTC')
+project(':OTC').projectDir = file("util-contracts/OTC")
