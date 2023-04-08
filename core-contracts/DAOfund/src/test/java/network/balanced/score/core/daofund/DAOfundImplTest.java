@@ -201,6 +201,11 @@ class DAOfundImplTest extends TestBase {
         // Assert
         verify(mockBalanced.sicx.mock).transfer(mockBalanced.dex.getAddress(), baseAmount, tokenDepositData);
         verify(mockBalanced.bnUSD.mock).transfer(mockBalanced.dex.getAddress(), quoteAmount, tokenDepositData);
+
+        // Act
+        assertOnlyCallableBy(mockBalanced.governance.getAddress(), daofundScore, "stakeLpTokens", pid, lpBalance);
+        daofundScore.invoke(mockBalanced.governance.account, "stakeLpTokens", pid, lpBalance);
+
         verify(mockBalanced.dex.mock).add(baseToken, quoteToken, baseAmount, quoteAmount, true);
         verify(mockBalanced.dex.mock).transfer(mockBalanced.stakedLp.getAddress(), lpBalance, pid, new byte[0]);
     }
@@ -247,6 +252,20 @@ class DAOfundImplTest extends TestBase {
     }
 
     @Test
+    void unstakeLpTokens() {
+        // Arrange
+        BigInteger pid = BigInteger.TWO;
+        BigInteger lpBalance = BigInteger.TEN;
+
+        // Act
+        assertOnlyCallableBy(mockBalanced.governance.getAddress(), daofundScore, "unstakeLpTokens", pid, lpBalance);
+        daofundScore.invoke(mockBalanced.governance.account, "unstakeLpTokens", pid, lpBalance);
+
+        // Assert
+        verify(mockBalanced.stakedLp.mock).unstake(pid, lpBalance);
+    }
+
+    @Test
     void withdrawLiquidity() {
         // Arrange
         BigInteger pid = BigInteger.TWO;
@@ -257,20 +276,19 @@ class DAOfundImplTest extends TestBase {
         daofundScore.invoke(mockBalanced.governance.account, "withdrawLiquidity", pid, lpBalance);
 
         // Assert
-        verify(mockBalanced.stakedLp.mock).unstake(pid, lpBalance);
         verify(mockBalanced.dex.mock).remove(pid, lpBalance, true);
     }
 
     @Test
     void stakeLP() {
         // Arrange
-        Account caller = sm.createAccount();
         BigInteger pid = BigInteger.TWO;
         BigInteger lpBalance = BigInteger.TEN;
         when(mockBalanced.dex.mock.balanceOf(daofundScore.getAddress(), pid)).thenReturn(lpBalance);
 
         // Act
-        daofundScore.invoke(caller, "stakeLPTokens", pid);
+        assertOnlyCallableBy(mockBalanced.governance.getAddress(), daofundScore, "stakeLpTokens", pid, lpBalance);
+        daofundScore.invoke(mockBalanced.governance.account, "stakeLpTokens", pid, lpBalance);
 
         // Assert
         verify(mockBalanced.dex.mock).transfer(mockBalanced.stakedLp.getAddress(), lpBalance, pid, new byte[0]);
