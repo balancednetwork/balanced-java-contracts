@@ -111,6 +111,18 @@ class LoansTest extends LoansTestBase {
         assertNull(loans.call("getDebtCeiling", "iETH"));
     }
 
+    @Test
+    void addCollateralDuplicateSymbol() throws Exception {
+        MockContract<IRC2> fakeSICX = new MockContract<>(IRC2ScoreInterface.class, sm, admin);
+        when(fakeSICX.mock.symbol()).thenReturn("sICX");
+
+        String expectedErrorMessage = "sICX already exists in the database.";
+
+        // Assert & Act
+        Executable addAsset = () -> loans.invoke(governance.account, "addAsset", fakeSICX.getAddress(), true, true);
+        expectErrorMessage(addAsset, expectedErrorMessage);
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     void getAccountPositions() {

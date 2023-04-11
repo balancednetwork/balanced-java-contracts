@@ -781,12 +781,15 @@ public class LoansImpl implements Loans {
     @External
     public void setOriginationFee(BigInteger _fee) {
         onlyGovernance();
+        Context.require(_fee.compareTo(BigInteger.ZERO) >= 0, "origination fee can't be negative");
+
         originationFee.set(_fee);
     }
 
     @External
     public void setRedemptionFee(BigInteger _fee) {
         onlyGovernance();
+        Context.require(_fee.compareTo(BigInteger.ZERO) >= 0, "redemption fee can't be negative");
         redemptionFee.set(_fee);
     }
 
@@ -798,6 +801,7 @@ public class LoansImpl implements Loans {
     @External
     public void setRedemptionDaoFee(BigInteger _fee) {
         onlyGovernance();
+        Context.require(_fee.compareTo(BigInteger.ZERO) >= 0, "redemption dao fee can't be negative");
         redemptionDaoFee.set(_fee);
     }
 
@@ -809,24 +813,28 @@ public class LoansImpl implements Loans {
     @External
     public void setRetirementBonus(BigInteger _points) {
         onlyGovernance();
+        Context.require(_points.compareTo(BigInteger.ZERO) >= 0, "retirement bonus can't be negative");
         retirementBonus.set(_points);
     }
 
     @External
     public void setLiquidationReward(BigInteger _points) {
         onlyGovernance();
+        Context.require(_points.compareTo(BigInteger.ZERO) >= 0, "liquidation reward can't be negative");
         liquidationReward.set(_points);
     }
 
     @External
     public void setNewLoanMinimum(BigInteger _minimum) {
         onlyGovernance();
+        Context.require(_minimum.compareTo(BigInteger.ZERO) >= 0, "loan minimum can't be negative");
         newLoanMinimum.set(_minimum);
     }
 
     @External
     public void setDebtCeiling(String symbol, BigInteger ceiling) {
         onlyGovernance();
+        Context.require(ceiling.compareTo(BigInteger.ZERO) >= 0, "debt ceiling can't be negative");
         DebtDB.setDebtCeiling(symbol, ceiling);
     }
 

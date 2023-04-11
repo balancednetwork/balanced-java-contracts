@@ -66,6 +66,8 @@ public class CollateralDB {
         String collateralToAdd = address.toString();
         Context.require(!arrayDbContains(collateralAddresses, address), TAG + ": " + collateralToAdd + " already " +
                 "exists in the database.");
+        Context.require(!arrayDbContains(collateralList, symbol), TAG + ": " + symbol + " already " +
+                "exists in the database.");
 
         collateralAddresses.add(address);
 
