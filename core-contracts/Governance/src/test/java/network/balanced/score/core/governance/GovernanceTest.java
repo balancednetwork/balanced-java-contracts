@@ -440,4 +440,29 @@ public class GovernanceTest extends GovernanceTestBase {
         // Assert
         assertEquals(timeLock, governance.call("getShutdownPrivilegeTimeLock"));
     }
+
+    @Test
+    void setVoteDurationLimits() {
+        // Arrange
+        BigInteger min = BigInteger.TWO;
+        BigInteger max = BigInteger.valueOf(31);
+        String expectedErrorMessage;
+
+        // Act & Assert
+        assertOnlyCallableByContractOrOwner("setVoteDurationLimits", min, max);
+
+        expectedErrorMessage = "Minimum vote duration has to be above 1";
+        Executable minToLow = () -> governance.invoke(owner, "setVoteDurationLimits", BigInteger.ZERO, max);
+        expectErrorMessage(minToLow, expectedErrorMessage);
+
+        expectedErrorMessage = "Maximum vote duration has to be above or equal to minimum vote duration";
+        Executable maxToLow = () -> governance.invoke(owner, "setVoteDurationLimits", min, min.subtract(BigInteger.ONE));
+        expectErrorMessage(maxToLow, expectedErrorMessage);
+
+
+        governance.invoke(owner, "setVoteDurationLimits", min, max);
+
+        assertEquals(min, governance.call("getMinVoteDuration"));
+        assertEquals(max, governance.call("getMaxVoteDuration"));
+    }
 }

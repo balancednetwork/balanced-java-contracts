@@ -96,6 +96,7 @@ public class GovernanceImpl implements Governance {
     public void setVoteDurationLimits(BigInteger min, BigInteger max) {
         onlyOwnerOrContract();
         Context.require(min.compareTo(BigInteger.ONE) >= 0, "Minimum vote duration has to be above 1");
+        Context.require(max.compareTo(min) >= 0, "Maximum vote duration has to be above or equal to minimum vote duration");
         minVoteDuration.set(min);
         maxVoteDuration.set(max);
     }
