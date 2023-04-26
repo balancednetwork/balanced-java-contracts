@@ -250,7 +250,9 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
 
         this.checkpoint(sender, oldLocked, locked);
 
-        BigInteger penaltyAmount = value.divide(BigInteger.TWO);
+        BigInteger maxPenalty = value.divide(BigInteger.TWO);
+        BigInteger variablePenalty = value.subtract(balanceOf(sender, null));
+        BigInteger penaltyAmount = variablePenalty.max(maxPenalty);
         BigInteger returnAmount = value.subtract(penaltyAmount);
 
         Context.call(getBaln(), "transfer", this.penaltyAddress.get(), penaltyAmount,
