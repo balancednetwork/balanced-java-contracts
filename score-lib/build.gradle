@@ -32,9 +32,13 @@ dependencies {
     compileOnly Dependencies.javaeeApi
     implementation Dependencies.javaeeScorex
     implementation Dependencies.minimalJson
+    implementation 'xcall-lib:score-lib'
 
     compileOnly Dependencies.javaeeScoreClient
     annotationProcessor Dependencies.javaeeScoreClient
+
+    compileOnly 'xcall-lib:xcall-lib'
+    annotationProcessor 'xcall-lib:xcall-lib'
 
     implementation Dependencies.jacksonDatabind
     implementation Dependencies.iconSdk

@@ -2,3 +2,7 @@
 	path = gochain-local
 	url = git@github.com:nightowl121/gochain-local.git
 	branch = master
+[submodule "xcall-lib"]
+	path = xcall-lib
+	url = git@github.com:AntonAndell/XCall-lib.git
+	branch = master

@@ -21,6 +21,8 @@ import com.iconloop.score.test.ServiceManager;
 import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.Names;
+import xcall.score.lib.interfaces.*;
+
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
@@ -49,6 +51,7 @@ public class MockBalanced {
     public MockContract<Oracle> oracle;
     public MockContract<BalancedOracle> balancedOracle;
     public MockContract<BoostedBaln> bBaln;
+    public MockContract<XCall> xCall;
     public MockContract<Governance> governance;
 
     public MockBalanced(ServiceManager sm, Account owner) throws Exception {
@@ -71,6 +74,7 @@ public class MockBalanced {
         oracle = new MockContract<>(OracleScoreInterface.class, Oracle.class, sm, owner);
         balancedOracle = new MockContract<>(BalancedOracleScoreInterface.class, BalancedOracle.class, sm, owner);
         bBaln = new MockContract<>(BoostedBalnScoreInterface.class, BoostedBaln.class, sm, owner);
+        xCall = new MockContract<>(XCallScoreInterface.class, XCall.class, sm, owner);
         governance = new MockContract<>(GovernanceScoreInterface.class, Governance.class, sm, owner);
 
         if (addressManagerMock != null) {
@@ -97,6 +101,7 @@ public class MockBalanced {
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.STAKEDLP)).thenReturn(stakedLp.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.STABILITY)).thenReturn(stability.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.BOOSTED_BALN)).thenReturn(bBaln.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.XCALL)).thenReturn(xCall.getAddress());
 
         addressManagerMock.when(() -> BalancedAddressManager.getLoans()).thenReturn(loans.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.getDex()).thenReturn(dex.getAddress());
@@ -116,6 +121,7 @@ public class MockBalanced {
         addressManagerMock.when(() -> BalancedAddressManager.getStabilityFund()).thenReturn(stability.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.getBalancedOracle()).thenReturn(balancedOracle.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.getBoostedBaln()).thenReturn(bBaln.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.getXCall()).thenReturn(xCall.getAddress());
 
 
         when(bnUSD.mock.symbol()).thenReturn("bnUSD");
