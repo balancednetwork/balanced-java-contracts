@@ -229,7 +229,7 @@ public class GovernanceTest extends GovernanceTestBase {
 
         BigInteger sicxBnusdPid = BigInteger.TWO;
 
-        when(bnUSD.mock.priceInLoop()).thenReturn(bnusdPrice);
+        when(balancedOracle.mock.getPriceInLoop("USD")).thenReturn(bnusdPrice);
 
         when(bnUSD.mock.balanceOf(governance.getAddress())).thenReturn(bnUSDValue);
         when(sicx.mock.balanceOf(governance.getAddress())).thenReturn(sICXValue);
