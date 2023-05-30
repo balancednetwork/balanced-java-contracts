@@ -49,6 +49,8 @@ public class BalancedClient {
     public DividendsScoreClient dividends;
     public ReserveScoreClient reserve;
     public BalancedOracleScoreClient balancedOracle;
+    public AssetManagerScoreClient assetManager;
+    public XCallMockScoreClient xcall;
     public SystemInterfaceScoreClient systemScore;
 
     public BalancedClient(Balanced balanced, KeyWallet wallet) {
@@ -76,7 +78,10 @@ public class BalancedClient {
         reserve = new ReserveScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.reserve._address());
         balancedOracle = new BalancedOracleScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
                 balanced.balancedOracle._address());
-
+        assetManager = new AssetManagerScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
+                balanced.assetManager._address());
+        xcall = new XCallMockScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
+                balanced.xcall._address());
         systemScore = new SystemInterfaceScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
                 DefaultScoreClient.ZERO_ADDRESS);
     }

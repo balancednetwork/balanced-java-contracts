@@ -105,4 +105,13 @@ project(':bBaln').projectDir = file("token-contracts/bBaln")
 include(':OTC')
 project(':OTC').projectDir = file("util-contracts/OTC")
 
+include(':AssetManager')
+project(':AssetManager').projectDir = file("core-contracts/AssetManager")
+
+include(':AssetToken')
+project(':AssetToken').projectDir = file("token-contracts/AssetToken")
+
+include(':XCallMock')
+project(':XCallMock').projectDir = file("util-contracts/XCallMock")
+
 includeBuild 'xcall-lib'

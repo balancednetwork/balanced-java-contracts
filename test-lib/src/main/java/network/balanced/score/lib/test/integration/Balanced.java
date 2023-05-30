@@ -59,6 +59,8 @@ public class Balanced {
     public DefaultScoreClient stability;
     public DefaultScoreClient bBaln;
     public DefaultScoreClient balancedOracle;
+    public DefaultScoreClient assetManager;
+    public DefaultScoreClient xcall;
     public Governance governanceClient;
 
     public Map<score.Address, BalancedClient> balancedClients;
@@ -83,6 +85,8 @@ public class Balanced {
     }
 
     public void deployContracts() {
+        xcall = deploy(owner, "XCallMock", Map.of("networkId", "0x1.ICON_LOCAL"));
+
         governance = deploy(owner, "Governance", null);
         governanceClient = new GovernanceScoreClient(chain.getEndpointURL(), chain.networkId, owner,
                 governance._address());
@@ -90,6 +94,7 @@ public class Balanced {
                 .add(createParameter(governance._address()))
                 .toString();
 
+        governanceClient.addExternalContract(Names.XCALL, xcall._address());
         governanceClient.deploy(getContractData("BalancedToken"), governanceParam);
         governanceClient.deploy(getContractData("WorkerToken"), governanceParam);
         governanceClient.deploy(getContractData("Dex"), governanceParam);
@@ -105,6 +110,12 @@ public class Balanced {
         governanceClient.deploy(getContractData("Router"), governanceParam);
         governanceClient.deploy(getContractData("StakedLP"), governanceParam);
         governanceClient.deploy(getContractData("BalancedOracle"), governanceParam);
+
+        String assetManagerParams = new JsonArray()
+            .add(createParameter(governance._address()))
+            .add(createParameter(getContractData("XCallMock")))
+            .toString();
+        governanceClient.deploy(getContractData("AssetManager"), assetManagerParams);
 
         Hash oracleTx = deployAsync(owner, "DummyOracle", null);
         Hash stakingTx = deployAsync(owner, "Staking", null);
@@ -123,6 +134,7 @@ public class Balanced {
         stakedLp = newScoreClient(owner, governanceClient.getAddress(Names.STAKEDLP));
         balancedOracle = newScoreClient(owner, governanceClient.getAddress(Names.BALANCEDORACLE));
         feehandler = newScoreClient(owner, governanceClient.getAddress(Names.FEEHANDLER));
+        assetManager = newScoreClient(owner, governanceClient.getAddress(Names.ASSET_MANAGER));
 
         oracle = getDeploymentResult(owner, oracleTx);
         staking = getDeploymentResult(owner, stakingTx);

@@ -137,6 +137,10 @@ public class BalancedAddressManager {
         return getAddress(Names.XCALL);
     }
 
+    public static Address getAssetManager() {
+        return getAddress(Names.ASSET_MANAGER);
+    }
+
     public static Address getGovernance() {
         return contractAddresses.getOrDefault(Names.GOVERNANCE, mainnetGovernance);
     }
