@@ -47,7 +47,7 @@ class LoansIntegrationTestBase extends LoansIntegrationTest {
         BigInteger bnUSDBalance = BigInteger.ZERO;
         int i = 1;
         while (true) {
-            score.Address address;
+            String address;
             try {
                 address = reader.loans.getPositionAddress(i);
             } catch (Exception e) {
@@ -55,7 +55,7 @@ class LoansIntegrationTestBase extends LoansIntegrationTest {
             }
             i++;
 
-            Map<String, Object> position = reader.loans.getAccountPositions(address);
+            Map<String, Object> position = reader.loans.getAccountPositions(address.toString());
             Map<String, Map<String, Object>> assetsDetails = (Map<String, Map<String, Object>>) position.get(
                     "holdings");
             if (assetsDetails.containsKey("sICX")) {

@@ -81,8 +81,8 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
 
         loanTaker2.loans.returnAsset("bnUSD", loanAmount.add(fee), "sICX");
         loanTaker3.loans.returnAsset("bnUSD", loanAmount.divide(BigInteger.TWO), "sICX");
-        loanTaker2.rewards.claimRewards(reader.rewards.getUserSources(loanTaker2.getAddress()));
-        loanTaker3.rewards.claimRewards(reader.rewards.getUserSources(loanTaker3.getAddress()));
+        loanTaker2.rewards.claimRewards(reader.rewards.getUserSources(loanTaker2.getAddress().toString()));
+        loanTaker3.rewards.claimRewards(reader.rewards.getUserSources(loanTaker3.getAddress().toString()));
 
         // Assert
         verifyRewards(loanTaker1);
@@ -115,7 +115,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
 
         // Act
         icxSicxLpLeaving.dex.cancelSicxicxOrder();
-        icxSicxLpLeaving.rewards.claimRewards(reader.rewards.getUserSources(icxSicxLpLeaving.getAddress()));
+        icxSicxLpLeaving.rewards.claimRewards(reader.rewards.getUserSources(icxSicxLpLeaving.getAddress().toString()));
 
         // Assert
         verifyRewards(icxSicxLp);
@@ -165,8 +165,8 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         // Act
         unstakeICXBnusdLP(sicxBnusdLP2);
         unstakeICXBnusdLP(sicxBnusdLP3);
-        sicxBnusdLP2.rewards.claimRewards(reader.rewards.getUserSources(sicxBnusdLP2.getAddress()));
-        sicxBnusdLP3.rewards.claimRewards(reader.rewards.getUserSources(sicxBnusdLP3.getAddress()));
+        sicxBnusdLP2.rewards.claimRewards(reader.rewards.getUserSources(sicxBnusdLP2.getAddress().toString()));
+        sicxBnusdLP3.rewards.claimRewards(reader.rewards.getUserSources(sicxBnusdLP3.getAddress().toString()));
 
         // Assert
         verifyRewards(sicxBnusdLP1);
@@ -213,11 +213,11 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         verifyRewards(icxSicxLpBoosted);
 
         Map<String, BigInteger> currentWorkingBalanceAndSupply = reader.rewards.getWorkingBalanceAndSupply(sourceName
-                , icxSicxLpBoosted.getAddress());
+                , icxSicxLpBoosted.getAddress().toString());
         assertTrue(currentWorkingBalanceAndSupply.get("workingSupply").compareTo(initialSupply) > 0);
         assertTrue(currentWorkingBalanceAndSupply.get("workingBalance").compareTo(lpBalance) > 0);
 
-        Map<String, Map<String, BigInteger>> boostData = reader.rewards.getBoostData(icxSicxLpBoosted.getAddress(),
+        Map<String, Map<String, BigInteger>> boostData = reader.rewards.getBoostData(icxSicxLpBoosted.getAddress().toString(),
                 new String[]{"sICX/ICX", "Loans"});
         assertEquals(currentWorkingBalanceAndSupply.get("workingSupply"), boostData.get("sICX/ICX").get(
                 "workingSupply"));
@@ -233,7 +233,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
 
         // Assert
         currentWorkingBalanceAndSupply = reader.rewards.getWorkingBalanceAndSupply(sourceName,
-                icxSicxLpBoosted.getAddress());
+                icxSicxLpBoosted.getAddress().toString());
         assertEquals(currentWorkingBalanceAndSupply.get("workingSupply"), initialSupply);
         assertEquals(currentWorkingBalanceAndSupply.get("workingBalance"), lpBalance);
     }
@@ -482,7 +482,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
 
     private BigInteger verifyRewards(BalancedClient client) {
         BigInteger balancePreClaim = client.baln.balanceOf(client.getAddress());
-        client.rewards.claimRewards(client.rewards.getUserSources(client.getAddress()));
+        client.rewards.claimRewards(client.rewards.getUserSources(client.getAddress().toString()));
         BigInteger balancePostClaim = client.baln.balanceOf(client.getAddress());
         assertTrue(balancePostClaim.compareTo(balancePreClaim) > 0);
 
@@ -491,7 +491,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
 
     private void verifyNoRewards(BalancedClient client) {
         BigInteger balancePreClaim = client.baln.balanceOf(client.getAddress());
-        client.rewards.claimRewards(client.rewards.getUserSources(client.getAddress()));
+        client.rewards.claimRewards(client.rewards.getUserSources(client.getAddress().toString()));
         BigInteger balancePostClaim = client.baln.balanceOf(client.getAddress());
         assertEquals(balancePostClaim, balancePreClaim);
     }

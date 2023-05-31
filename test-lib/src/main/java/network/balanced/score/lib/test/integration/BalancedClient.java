@@ -112,14 +112,13 @@ public class BalancedClient {
     }
 
     public void borrowFrom(String collateral, BigInteger amount) {
-        byte[] params = createBorrowData(amount);
         loans.borrow(collateral, "bnUSD", amount);
     }
 
     @SuppressWarnings("unchecked")
     public BigInteger getLoansCollateralPosition(String symbol) {
         Map<String, Map<String, String>> assets =
-                (Map<String, Map<String, String>>) loans.getAccountPositions(getAddress()).get("holdings");
+                (Map<String, Map<String, String>>) loans.getAccountPositions(getAddress().toString()).get("holdings");
         if (!assets.containsKey(symbol)) {
             return BigInteger.ZERO;
         }
@@ -129,7 +128,7 @@ public class BalancedClient {
     @SuppressWarnings("unchecked")
     public BigInteger getLoansAssetPosition(String collateralSymbol, String assetSymbol) {
         Map<String, Map<String, String>> assets =
-                (Map<String, Map<String, String>>) loans.getAccountPositions(getAddress()).get("holdings");
+                (Map<String, Map<String, String>>) loans.getAccountPositions(getAddress().toString()).get("holdings");
         if (!assets.containsKey(collateralSymbol) || !assets.get(collateralSymbol).containsKey(assetSymbol)) {
             return BigInteger.ZERO;
         }

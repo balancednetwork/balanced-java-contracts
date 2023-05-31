@@ -148,14 +148,14 @@ public class NonStakedLPRewardsTest {
             balanced.ownerClient.rewards.distribute(distributeConsumer);
         }
         // users without staking LP tokens will get 0 rewards
-        assertEquals(BigInteger.ZERO, rewards.getBalnHolding(userAddress));
+        assertEquals(BigInteger.ZERO, rewards.getBalnHolding(userAddress.toString()));
 
         byte[] stakeLp = "{\"method\":\"_stake\"}".getBytes();
         dexUserScoreClient.transfer(balanced.stakedLp._address(), BigInteger.valueOf(90), BigInteger.valueOf(4),
                 stakeLp);
 
         // user gets rewards after lp token is staked
-        assertTrue(rewards.getBalnHolding(userAddress).compareTo(BigInteger.ZERO) > 0);
+        assertTrue(rewards.getBalnHolding(userAddress.toString()).compareTo(BigInteger.ZERO) > 0);
         BigInteger previousUserBalance = baln.balanceOf(userAddress);
         userWalletRewardsClient.claimRewards(null);
         BigInteger newBalance = baln.balanceOf(userAddress);

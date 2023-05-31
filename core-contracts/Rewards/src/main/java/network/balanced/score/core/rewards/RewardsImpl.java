@@ -178,18 +178,18 @@ public class RewardsImpl implements Rewards {
     }
 
     @External(readonly = true)
-    public Map<String, BigInteger> getBalnHoldings(Address[] _holders) {
+    public Map<String, BigInteger> getBalnHoldings(String[] _holders) {
         Map<String, BigInteger> holdings = new HashMap<>();
-        for (Address address : _holders) {
-            holdings.put(address.toString(), balnHoldings.getOrDefault(address.toString(), BigInteger.ZERO));
+        for (String address : _holders) {
+            holdings.put(address, balnHoldings.getOrDefault(address, BigInteger.ZERO));
         }
 
         return holdings;
     }
 
     @External(readonly = true)
-    public BigInteger getBalnHolding(Address _holder) {
-        BigInteger accruedRewards = balnHoldings.getOrDefault(_holder.toString(), BigInteger.ZERO);
+    public BigInteger getBalnHolding(String _holder) {
+        BigInteger accruedRewards = balnHoldings.getOrDefault(_holder, BigInteger.ZERO);
 
         int dataSourcesCount = DataSourceDB.size();
         // TODO If we remove data source, user can't claim rewards for that data source
@@ -304,7 +304,7 @@ public class RewardsImpl implements Rewards {
     }
 
     @External(readonly = true)
-    public Map<String, BigInteger> getWorkingBalanceAndSupply(String _name, Address _user) {
+    public Map<String, BigInteger> getWorkingBalanceAndSupply(String _name, String _user) {
         DataSourceImpl datasource = DataSourceDB.get(_name);
         return Map.of(
                 "workingSupply", datasource.getWorkingSupply(true),
@@ -313,7 +313,7 @@ public class RewardsImpl implements Rewards {
     }
 
     @External(readonly = true)
-    public Map<String, Map<String, BigInteger>> getBoostData(Address user, @Optional String[] sources) {
+    public Map<String, Map<String, BigInteger>> getBoostData(String user, @Optional String[] sources) {
         if (sources == null) {
             sources = getAllSources();
         }
@@ -390,7 +390,7 @@ public class RewardsImpl implements Rewards {
         Address user = Context.getCaller();
         BigInteger boostedBalance = fetchBoostedBalance(user);
         BigInteger boostedSupply = fetchBoostedSupply();
-        updateAllUserRewards(user, sources, boostedBalance, boostedSupply);
+        updateAllUserRewards(user.toString(), sources, boostedBalance, boostedSupply);
     }
 
     @External
@@ -399,17 +399,17 @@ public class RewardsImpl implements Rewards {
         if (sources == null) {
             sources = getAllSources();
         }
-
-        Address address = Context.getCaller();
-        BigInteger boostedBalance = fetchBoostedBalance(address);
+        Address caller = Context.getCaller();
+        String address = caller.toString();
+        BigInteger boostedBalance = fetchBoostedBalance(caller);
         BigInteger boostedSupply = fetchBoostedSupply();
         updateAllUserRewards(address, sources, boostedBalance, boostedSupply);
 
-        BigInteger userClaimableRewards = balnHoldings.getOrDefault(address.toString(), BigInteger.ZERO);
+        BigInteger userClaimableRewards = balnHoldings.getOrDefault(address, BigInteger.ZERO);
         if (userClaimableRewards.compareTo(BigInteger.ZERO) > 0) {
-            balnHoldings.set(address.toString(), null);
-            Context.call(balnAddress.get(), "transfer", address, userClaimableRewards, new byte[0]);
-            RewardsClaimed(address, userClaimableRewards);
+            balnHoldings.set(address, null);
+            Context.call(balnAddress.get(), "transfer", caller, userClaimableRewards, new byte[0]);
+            RewardsClaimed(caller, userClaimableRewards);
         }
     }
 
@@ -473,7 +473,6 @@ public class RewardsImpl implements Rewards {
     @External
     public void updateRewardsData(String _name, BigInteger _totalSupply, String _user, BigInteger _balance) {
         checkStatus();
-        Address user = Address.fromString(_user);
         DataSourceImpl dataSource = DataSourceDB.get(_name);
         Context.require(dataSource.getContractAddress().equals(Context.getCaller()), TAG + ": Only data provider are " +
                 "allowed to update rewards data");
@@ -482,15 +481,15 @@ public class RewardsImpl implements Rewards {
         distribute();
 
         BalanceData balances = new BalanceData();
-        balances.boostedBalance = fetchBoostedBalance(user);
+        balances.boostedBalance = fetchBoostedBalance(Address.fromString(_user));
         balances.boostedSupply = fetchBoostedSupply();
-        Map<String, BigInteger> balanceAndSupply = dataSource.loadCurrentSupply(user);
+        Map<String, BigInteger> balanceAndSupply = dataSource.loadCurrentSupply(_user);
         balances.balance = balanceAndSupply.get(BALANCE);
         balances.supply = balanceAndSupply.get(TOTAL_SUPPLY);
-        balances.prevWorkingBalance = dataSource.getWorkingBalance(user, _balance, false);
+        balances.prevWorkingBalance = dataSource.getWorkingBalance(_user, _balance, false);
         balances.prevWorkingSupply = dataSource.getWorkingSupply(_totalSupply, false);
 
-        updateUserAccruedRewards(_name, currentTime, dataSource, user, balances);
+        updateUserAccruedRewards(_name, currentTime, dataSource, _user, balances);
     }
 
     // old versions only used by balanced contracts
@@ -507,24 +506,22 @@ public class RewardsImpl implements Rewards {
         BigInteger boostedSupply = fetchBoostedSupply();
 
         for (RewardsDataEntry entry : _data) {
-            Address user = Address.fromString(entry._user);
             BalanceData balances = new BalanceData();
             balances.boostedSupply = boostedSupply;
-            balances.boostedBalance = fetchBoostedBalance(user);
-            Map<String, BigInteger> balanceAndSupply = dataSource.loadCurrentSupply(user);
+            balances.boostedBalance = fetchBoostedBalance(Address.fromString(entry._user));
+            Map<String, BigInteger> balanceAndSupply = dataSource.loadCurrentSupply(entry._user);
             balances.balance = balanceAndSupply.get(BALANCE);
             balances.supply = balanceAndSupply.get(TOTAL_SUPPLY);
-            balances.prevWorkingBalance = dataSource.getWorkingBalance(user, entry._balance, false);
+            balances.prevWorkingBalance = dataSource.getWorkingBalance(entry._user, entry._balance, false);
             balances.prevWorkingSupply = dataSource.getWorkingSupply(_totalSupply, false);
 
-            updateUserAccruedRewards(_name, currentTime, dataSource, user, balances);
+            updateUserAccruedRewards(_name, currentTime, dataSource, entry._user, balances);
         }
     }
 
     @External
     public void updateBalanceAndSupply(String _name, BigInteger _totalSupply, String _user, BigInteger _balance) {
         checkStatus();
-        Address user = Address.fromString(_user);
         DataSourceImpl dataSource = DataSourceDB.get(_name);
         Context.require(dataSource.getContractAddress().equals(Context.getCaller()), TAG + ": Only data provider are " +
                 "allowed to update rewards data");
@@ -533,14 +530,14 @@ public class RewardsImpl implements Rewards {
         distribute();
 
         BalanceData balances = new BalanceData();
-        balances.boostedBalance = fetchBoostedBalance(user);
+        balances.boostedBalance = fetchBoostedBalance(Address.fromString(_user));
         balances.boostedSupply = fetchBoostedSupply();
         balances.balance = _balance;
         balances.supply = _totalSupply;
-        balances.prevWorkingBalance = dataSource.getWorkingBalance(user);
+        balances.prevWorkingBalance = dataSource.getWorkingBalance(_user);
         balances.prevWorkingSupply = dataSource.getWorkingSupply();
 
-        updateUserAccruedRewards(_name, currentTime, dataSource, user, balances);
+        updateUserAccruedRewards(_name, currentTime, dataSource, _user, balances);
     }
 
     @External
@@ -563,10 +560,10 @@ public class RewardsImpl implements Rewards {
             balances.boostedSupply = boostedSupply;
             balances.balance = entry._balance;
             balances.supply = _totalSupply;
-            balances.prevWorkingBalance = dataSource.getWorkingBalance(user);
+            balances.prevWorkingBalance = dataSource.getWorkingBalance(entry._user);
             balances.prevWorkingSupply = dataSource.getWorkingSupply();
 
-            updateUserAccruedRewards(_name, currentTime, dataSource, user, balances);
+            updateUserAccruedRewards(_name, currentTime, dataSource, entry._user, balances);
         }
     }
 
@@ -575,7 +572,7 @@ public class RewardsImpl implements Rewards {
         checkStatus();
         only(boostedBaln);
         BigInteger boostedSupply = fetchBoostedSupply();
-        updateAllUserRewards(user, getAllSources(), BigInteger.ZERO, boostedSupply);
+        updateAllUserRewards(user.toString(), getAllSources(), BigInteger.ZERO, boostedSupply);
     }
 
     @External
@@ -583,7 +580,7 @@ public class RewardsImpl implements Rewards {
         checkStatus();
         BigInteger boostedBalance = fetchBoostedBalance(user);
         BigInteger boostedSupply = fetchBoostedSupply();
-        updateAllUserRewards(user, sources, boostedBalance, boostedSupply);
+        updateAllUserRewards(user.toString(), sources, boostedBalance, boostedSupply);
     }
 
     @External
@@ -591,7 +588,7 @@ public class RewardsImpl implements Rewards {
         checkStatus();
         only(boostedBaln);
         BigInteger boostedSupply = fetchBoostedSupply();
-        updateAllUserRewards(user, getAllSources(), balance, boostedSupply);
+        updateAllUserRewards(user.toString(), getAllSources(), balance, boostedSupply);
     }
 
     @External
@@ -609,9 +606,8 @@ public class RewardsImpl implements Rewards {
     }
 
     @External(readonly = true)
-    public String[] getUserSources(Address user) {
+    public String[] getUserSources(String user) {
         int dataSourcesCount = DataSourceDB.size();
-
         List<String> sources = new ArrayList<>();
         for (int i = 0; i < dataSourcesCount; i++) {
             String name = DataSourceDB.names.get(i);
@@ -879,7 +875,7 @@ public class RewardsImpl implements Rewards {
         return sources;
     }
 
-    private void updateAllUserRewards(Address user, String[] sources, BigInteger boostedBalance,
+    private void updateAllUserRewards(String user, String[] sources, BigInteger boostedBalance,
                                       BigInteger boostedSupply) {
         distribute();
         BigInteger currentTime = getTime();
@@ -891,7 +887,7 @@ public class RewardsImpl implements Rewards {
             }
 
             BalanceData balances = new BalanceData();
-            balances.boostedBalance = fetchBoostedBalance(user);
+            balances.boostedBalance = fetchBoostedBalance(Address.fromString(user));
             balances.boostedSupply = boostedSupply;
             Map<String, BigInteger> balanceAndSupply = dataSource.loadCurrentSupply(user);
             balances.balance = balanceAndSupply.get(BALANCE);
@@ -904,7 +900,7 @@ public class RewardsImpl implements Rewards {
     }
 
     private void updateUserAccruedRewards(String _name, BigInteger currentTime, DataSourceImpl dataSource,
-                                          Address user, BalanceData balances) {
+                                          String user, BalanceData balances) {
 
         BigInteger accruedRewards = dataSource.updateSingleUserData(currentTime, balances.prevWorkingSupply, user,
                 balances.prevWorkingBalance, false);
@@ -912,8 +908,8 @@ public class RewardsImpl implements Rewards {
 
         if (accruedRewards.compareTo(BigInteger.ZERO) > 0) {
             BigInteger newHoldings =
-                    balnHoldings.getOrDefault(user.toString(), BigInteger.ZERO).add(accruedRewards);
-            balnHoldings.set(user.toString(), newHoldings);
+                    balnHoldings.getOrDefault(user, BigInteger.ZERO).add(accruedRewards);
+            balnHoldings.set(user, newHoldings);
             RewardsAccrued(user, _name, accruedRewards);
         }
     }
@@ -1156,7 +1152,7 @@ public class RewardsImpl implements Rewards {
     }
 
     @EventLog(indexed = 2)
-    public void RewardsAccrued(Address _user, String _source, BigInteger _value) {
+    public void RewardsAccrued(String _user, String _source, BigInteger _value) {
     }
 
     @EventLog(indexed = 2)

@@ -76,33 +76,10 @@ public class LoansImpl implements Loans {
 
         setGovernance(governance.get());
 
-        if (arrayDbContains(CollateralDB.collateralList, "BALN")) {
-            removeBALN();
-        }
-
-        CollateralDB.migrateAddressMap();
-        if (redemptionDaoFee.get() == null) {
-            redemptionFee.set(REDEMPTION_FEE);
-            redemptionDaoFee.set(REDEMPTION_DAO_FEE);
-        }
-
         if (currentVersion.getOrDefault("").equals(Versions.LOANS)) {
             Context.revert("Can't Update same version of code");
         }
         currentVersion.set(Versions.LOANS);
-    }
-
-    private void removeBALN() {
-        String symbol = "BALN";
-        Address address = CollateralDB.getAddress(symbol);
-
-        CollateralDB.symbolMap.set(symbol, null);
-        removeFromArraydb(address, CollateralDB.collateralAddresses);
-        removeFromArraydb(symbol, CollateralDB.collateralList);
-
-        Context.require(CollateralDB.symbolMap.get(symbol) == null);
-        Context.require(!arrayDbContains(CollateralDB.collateralAddresses, address));
-        Context.require(!arrayDbContains(CollateralDB.collateralList, symbol));
     }
 
     @External(readonly = true)
@@ -155,7 +132,7 @@ public class LoansImpl implements Loans {
     }
 
     @External(readonly = true)
-    public Address getPositionAddress(int _index) {
+    public String getPositionAddress(int _index) {
         return PositionsDB.get(_index).getAddress();
     }
 
@@ -179,7 +156,7 @@ public class LoansImpl implements Loans {
     }
 
     @External(readonly = true)
-    public Map<String, Object> getAccountPositions(Address _owner) {
+    public Map<String, Object> getAccountPositions(String _owner) {
         Context.require(PositionsDB.hasPosition(_owner), _owner + " does not have a position in Balanced");
         return PositionsDB.listPosition(_owner);
     }
@@ -200,7 +177,7 @@ public class LoansImpl implements Loans {
     }
 
     @External(readonly = true)
-    public boolean hasDebt(Address _owner) {
+    public boolean hasDebt(String _owner) {
         return PositionsDB.getPosition(_owner).hasDebt();
     }
 
@@ -221,7 +198,7 @@ public class LoansImpl implements Loans {
 
         BigInteger totalSupply = DebtDB.getTotalDebt();
 
-        int id = PositionsDB.getAddressIds(Address.fromString(_owner));
+        int id = PositionsDB.getAddressIds(_owner);
         if (id < 1) {
             return Map.of(
                     "_balance", BigInteger.ZERO,
@@ -269,9 +246,9 @@ public class LoansImpl implements Loans {
         JsonValue amount = json.get("_amount");
         BigInteger requestedAmount = amount == null ? null : convertToNumber(amount);
 
-        depositCollateral(collateralSymbol, _value, _from);
+        depositCollateral(collateralSymbol, _value, _from.toString());
         if (BigInteger.ZERO.compareTo(requestedAmount) < 0) {
-            originateLoan(collateralSymbol, requestedAmount, _from);
+            originateLoan(collateralSymbol, requestedAmount, _from.toString());
         }
     }
 
@@ -282,7 +259,7 @@ public class LoansImpl implements Loans {
         Context.require(_amountToBorrow.compareTo(BigInteger.ZERO) > 0, TAG + ": _amountToBorrow needs to be larger " +
                 "than 0");
         Context.require(_assetToBorrow.equals(BNUSD_SYMBOL));
-        originateLoan(_collateralToBorrowAgainst, _amountToBorrow, Context.getCaller());
+        originateLoan(_collateralToBorrowAgainst, _amountToBorrow, Context.getCaller().toString());
     }
 
     @External
@@ -292,7 +269,7 @@ public class LoansImpl implements Loans {
         checkStatus();
         loansOn();
         BigInteger deposit = Context.getValue();
-        Address depositor = Context.getCaller();
+        String depositor = Context.getCaller().toString();
 
         if (!deposit.equals(BigInteger.ZERO)) {
             Position position = PositionsDB.getPosition(depositor);
@@ -378,11 +355,11 @@ public class LoansImpl implements Loans {
         Address from = Context.getCaller();
 
         Context.require(TokenUtils.balanceOf(getBnusd(), from).compareTo(_value) >= 0, TAG + ": Insufficient balance.");
-        Context.require(PositionsDB.hasPosition(from), TAG + ": No debt repaid because, " + from + " does not have a " +
+        Context.require(PositionsDB.hasPosition(from.toString()), TAG + ": No debt repaid because, " + from + " does not have a " +
                 "position in Balanced");
 
         BigInteger oldSupply = DebtDB.getTotalDebt();
-        Position position = PositionsDB.getPosition(from);
+        Position position = PositionsDB.getPosition(from.toString());
         BigInteger oldUserDebt = position.getTotalDebt();
         BigInteger borrowed = position.getDebt(collateralSymbol);
         Context.require(_value.compareTo(borrowed) <= 0, TAG + ": Repaid amount is greater than the amount in the " +
@@ -486,12 +463,12 @@ public class LoansImpl implements Loans {
     public void withdrawAndUnstake(BigInteger _value) {
         checkStatus();
         loansOn();
-        Address from = Context.getCaller();
+        String from = Context.getCaller().toString();
         removeCollateral(from, _value, SICX_SYMBOL);
 
         JsonObject data = new JsonObject();
         data.set("method", "unstake");
-        data.set("user", from.toString());
+        data.set("user", from);
         transferCollateral(SICX_SYMBOL, getStaking(), _value, "SICX Collateral withdrawn and unstaked",
                 data.toString().getBytes());
     }
@@ -502,7 +479,7 @@ public class LoansImpl implements Loans {
         loansOn();
         String collateralSymbol = optionalDefault(_collateralSymbol, SICX_SYMBOL);
         Address from = Context.getCaller();
-        removeCollateral(from, _value, collateralSymbol);
+        removeCollateral(from.toString(), _value, collateralSymbol);
         transferCollateral(collateralSymbol, from, _value, "Collateral withdrawn.", new byte[0]);
     }
 
@@ -512,11 +489,11 @@ public class LoansImpl implements Loans {
         checkStatus();
         loansOn();
         Address from = Context.getCaller();
-        sellUserCollateral(from, collateralAmountToSell, collateralSymbol, minimumDebtRepaid);
+        sellUserCollateral(from.toString(), collateralAmountToSell, collateralSymbol, minimumDebtRepaid);
     }
 
     @External
-    public void liquidate(Address _owner, @Optional String _collateralSymbol) {
+    public void liquidate(String _owner, @Optional String _collateralSymbol) {
         checkStatus();
         loansOn();
         String collateralSymbol = optionalDefault(_collateralSymbol, SICX_SYMBOL);
@@ -588,14 +565,14 @@ public class LoansImpl implements Loans {
         return inPool;
     }
 
-    private void depositCollateral(String _symbol, BigInteger _amount, Address _from) {
+    private void depositCollateral(String _symbol, BigInteger _amount, String _from) {
         Position position = PositionsDB.getPosition(_from);
 
         position.setCollateral(_symbol, position.getCollateral(_symbol).add(_amount));
         CollateralReceived(_from, _symbol, _amount);
     }
 
-    private void sellUserCollateral(Address from, BigInteger collateralToSell, String collateralSymbol,
+    private void sellUserCollateral(String from, BigInteger collateralToSell, String collateralSymbol,
                                     BigInteger minimumDebtToRepay) {
         Context.require(collateralToSell.compareTo(BigInteger.ZERO) > 0, TAG + ": Sell amount must be more than zero.");
         Context.require(PositionsDB.hasPosition(from), TAG + ": This address does not have a position on Balanced.");
@@ -658,7 +635,7 @@ public class LoansImpl implements Loans {
         CollateralSold(from, BNUSD_SYMBOL, collateralSymbol, bnUSDReceived, logMessage);
     }
 
-    private void removeCollateral(Address from, BigInteger value, String collateralSymbol) {
+    private void removeCollateral(String from, BigInteger value, String collateralSymbol) {
         Context.require(value.compareTo(BigInteger.ZERO) > 0, TAG + ": Withdraw amount must be more than zero.");
         Context.require(PositionsDB.hasPosition(from), TAG + ": This address does not have a position on Balanced.");
 
@@ -686,7 +663,7 @@ public class LoansImpl implements Loans {
         position.setCollateral(collateralSymbol, remainingCollateral);
     }
 
-    private void originateLoan(String collateralSymbol, BigInteger amount, Address from) {
+    private void originateLoan(String collateralSymbol, BigInteger amount, String from) {
 
         Position position = PositionsDB.getPosition(from);
         BigInteger oldTotalDebt = DebtDB.getTotalDebt();
@@ -722,7 +699,7 @@ public class LoansImpl implements Loans {
         position.setDebt(collateralSymbol, holdings.add(newDebt));
         Context.call(getRewards(), "updateRewardsData", "Loans", oldTotalDebt, from.toString(), oldUserDebt);
 
-        TokenUtils.mintAssetTo(from, amount);
+        TokenUtils.mintAssetTo(Address.fromString(from), amount);
         String logMessage = "Loan of " + amount + " " + BNUSD_SYMBOL + " from Balanced.";
         OriginateLoan(from, BNUSD_SYMBOL, amount, logMessage);
         TokenUtils.mintAssetTo(getFeehandler(), fee);
@@ -904,11 +881,11 @@ public class LoansImpl implements Loans {
     }
 
     @EventLog(indexed = 2)
-    public void CollateralReceived(Address account, String symbol, BigInteger value) {
+    public void CollateralReceived(String account, String symbol, BigInteger value) {
     }
 
     @EventLog(indexed = 3)
-    public void OriginateLoan(Address recipient, String symbol, BigInteger amount, String note) {
+    public void OriginateLoan(String recipient, String symbol, BigInteger amount, String note) {
     }
 
     @EventLog(indexed = 3)
@@ -916,7 +893,7 @@ public class LoansImpl implements Loans {
     }
 
     @EventLog(indexed = 3)
-    public void CollateralSold(Address account, String assetSymbol, String collateralSymbol, BigInteger amount,
+    public void CollateralSold(String account, String assetSymbol, String collateralSymbol, BigInteger amount,
                                String note) {
     }
 
@@ -925,7 +902,7 @@ public class LoansImpl implements Loans {
     }
 
     @EventLog(indexed = 2)
-    public void Liquidate(Address account, BigInteger amount, String note) {
+    public void Liquidate(String account, BigInteger amount, String note) {
     }
 
     @EventLog(indexed = 3)
