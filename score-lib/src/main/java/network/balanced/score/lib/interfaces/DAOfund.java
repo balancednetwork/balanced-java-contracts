@@ -59,6 +59,9 @@ public interface DAOfund extends Name, AddressManager, TokenFallback, Fallback, 
     void supplyLiquidity(Address baseAddress, BigInteger baseAmount, Address quoteAddress, BigInteger quoteAmount);
 
     @External
+    void unstakeLpTokens(BigInteger pid, BigInteger amount);
+
+    @External
     void withdrawLiquidity(BigInteger pid, BigInteger amount);
 
     @External
@@ -68,7 +71,7 @@ public interface DAOfund extends Name, AddressManager, TokenFallback, Fallback, 
     BigInteger getPOLSupplySlippage();
 
     @External
-    void stakeLPTokens(BigInteger pid);
+    void stakeLpTokens(BigInteger pid, @Optional BigInteger amount);
 
     @External(readonly = true)
     BigInteger getBalnEarnings();

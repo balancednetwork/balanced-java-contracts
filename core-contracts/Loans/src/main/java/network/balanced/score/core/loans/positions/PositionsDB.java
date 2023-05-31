@@ -72,9 +72,13 @@ public class PositionsDB {
     }
 
     public static Position getPosition(String owner) {
+        return getPosition(owner, false);
+    }
+
+    public static Position getPosition(String owner, boolean readonly) {
         int id = getAddressIds(owner);
         if (id == 0) {
-            if (readonly()) {
+            if (readonly() || readonly) {
                 Context.revert(TAG + ": Address " + owner + " has no open position");
             }
             return newPosition(owner);

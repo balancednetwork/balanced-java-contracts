@@ -240,6 +240,10 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
         Context.require(blockTimestamp.compareTo(locked.getEnd()) < 0, "Withdraw: The lock has expired, use withdraw " +
                 "method");
         BigInteger value = locked.amount;
+        BigInteger maxPenalty = value.divide(BigInteger.TWO);
+        BigInteger variablePenalty = balanceOf(sender, null);
+        BigInteger penaltyAmount = variablePenalty.min(maxPenalty);
+        BigInteger returnAmount = value.subtract(penaltyAmount);
 
         LockedBalance oldLocked = locked.newLockedBalance();
         locked.end = UnsignedBigInteger.ZERO;
@@ -250,8 +254,6 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
 
         this.checkpoint(sender, oldLocked, locked);
 
-        BigInteger penaltyAmount = value.divide(BigInteger.TWO);
-        BigInteger returnAmount = value.subtract(penaltyAmount);
 
         Context.call(getBaln(), "transfer", this.penaltyAddress.get(), penaltyAmount,
                 "withdrawPenalty".getBytes());

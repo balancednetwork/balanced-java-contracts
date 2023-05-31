@@ -18,12 +18,17 @@ package network.balanced.score.core.loans.debt;
 
 import network.balanced.score.core.loans.collateral.CollateralDB;
 import network.balanced.score.core.loans.linkedlist.LinkedListDB;
+import network.balanced.score.core.loans.positions.Position;
+import network.balanced.score.core.loans.positions.PositionsDB;
+import score.Address;
 import score.BranchDB;
 import score.Context;
 import score.DictDB;
+import scorex.util.ArrayList;
 import scorex.util.HashMap;
 
 import java.math.BigInteger;
+import java.util.List;
 import java.util.Map;
 
 import static network.balanced.score.core.loans.utils.LoansConstants.BNUSD_SYMBOL;
@@ -98,6 +103,39 @@ public class DebtDB {
         } else {
             return new LinkedListDB(collateralSymbol + "|" + BORROWER_DB_PREFIX, getDBKey());
         }
+    }
+
+    public static List<Map<String, Object>> getBorrowers(Address collateralAddress, int nrOfPositions, int startId) {
+        List<Map<String, Object>> data = new ArrayList<>();
+        String symbol = CollateralDB.getSymbol(collateralAddress);
+        LinkedListDB db = getBorrowers(symbol);
+
+        int tail = db.getTailId();
+        int id = startId;
+        if (id == 0) {
+            id = db.getHeadId();
+        }
+
+        Position position;
+        Map<String, Object> positionData;
+        for (int i = 0; i < nrOfPositions; i++) {
+            position = PositionsDB.uncheckedGet(id);
+            positionData = new HashMap<>();
+            positionData.put(symbol, position.getCollateral(symbol));
+            positionData.put("debt", position.getDebt(symbol));
+            positionData.put("address", position.getAddress().toString());
+            positionData.put("id", id);
+            if (id == tail) {
+                id = db.getHeadId();
+            } else {
+                id = db.getNextId(id);
+            }
+
+            positionData.put("nextId", id);
+            data.add(positionData);
+        }
+
+        return data;
     }
 
     public static Map<String, Object> debtData() {

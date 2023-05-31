@@ -115,6 +115,13 @@ public class Check {
         return value;
     }
 
+    /**
+     * Note:
+     * This method does not work for non readonly interscore calls to readonly methods.
+     * In this case there will be a transactions hash but the interscore call will still be readonly.
+     * If anything is written Access denied error will be raised. Both variables and databases.
+     * @return Whether a call is readonly or not.
+     */
     public static boolean readonly() {
         return Context.getTransactionHash() == null;
     }

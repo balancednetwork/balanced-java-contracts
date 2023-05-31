@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Balanced.network.
+ * Copyright (c) 2021-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -417,20 +417,37 @@ public class StateMachineTest extends AbstractBoostedBalnTest {
             votingBalances.put(accounts.get(0), new VotingBalance());
         }
 
-        @DisplayName("early before the expiry")
+        @DisplayName("early before the expiry, after max penalty")
         @Test
-        void unlockEarlyBeforeExpiry() {
+        void unlockEarlyBeforeExpiry_belowMaxPenalty() {
             long deltaBlock = (addWeeksToCurrentTimestamp(lockedWeeks) - sm.getBlock().getTimestamp()) / BLOCK_TIME + 1;
             sm.getBlock().increase(deltaBlock / 2);
 
+            BigInteger penalty = (BigInteger) bBalnScore.call("balanceOf", accounts.get(0).getAddress(), BigInteger.valueOf(sm.getBlock().getTimestamp()  + BLOCK_TIME));
             bBalnScore.invoke(accounts.get(0), "withdrawEarly");
-            BigInteger penaltyAmount = value.divide(BigInteger.TWO);
-            assertEquals(MINT_AMOUNT.subtract(penaltyAmount), tokenScore.call("balanceOf",
+
+            assertEquals(MINT_AMOUNT.subtract(penalty), tokenScore.call("balanceOf",
                     accounts.get(0).getAddress()));
-            assertEquals(penaltyAmount, tokenScore.call("balanceOf", penaltyAddress.getAddress()));
+            assertEquals(penalty, tokenScore.call("balanceOf", penaltyAddress.getAddress()));
             votingBalances.put(accounts.get(0), new VotingBalance());
 
-            tokenScore.invoke(penaltyAddress, "transfer", accounts.get(0).getAddress(), penaltyAmount, new byte[0]);
+            tokenScore.invoke(penaltyAddress, "transfer", accounts.get(0).getAddress(), penalty, new byte[0]);
+        }
+
+        @DisplayName("early before the expiry, with max penalty")
+        @Test
+        void unlockEarlyBeforeExpiry_aboveMaxPenalty() {
+            long increasedUnlockTime = addWeeksToCurrentTimestamp(180);
+            increaseUnlockTime(accounts.get(0), BigInteger.valueOf(increasedUnlockTime));
+            bBalnScore.invoke(accounts.get(0), "withdrawEarly");
+
+            BigInteger maxPenalty = value.divide(BigInteger.TWO);
+            assertEquals(MINT_AMOUNT.subtract(maxPenalty), tokenScore.call("balanceOf",
+                    accounts.get(0).getAddress()));
+            assertEquals(maxPenalty, tokenScore.call("balanceOf", penaltyAddress.getAddress()));
+            votingBalances.put(accounts.get(0), new VotingBalance());
+
+            tokenScore.invoke(penaltyAddress, "transfer", accounts.get(0).getAddress(), maxPenalty, new byte[0]);
         }
 
         @DisplayName("early after the expiry")

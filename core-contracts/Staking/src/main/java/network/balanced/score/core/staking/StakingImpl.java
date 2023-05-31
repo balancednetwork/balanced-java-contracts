@@ -566,8 +566,6 @@ public class StakingImpl implements Staking {
         BigInteger addedIcx = Context.getValue();
 
         BigInteger sicxToMint = (ONE_EXA.multiply(addedIcx)).divide(getTodayRate());
-        Context.call(sicxAddress.get(), "mintTo", _to, sicxToMint, _data);
-        TokenTransfer(_to, sicxToMint, sicxToMint + " sICX minted to " + _to);
 
         Map<String, BigInteger> userCurrentDelegation = userDelegationInPercentage.getOrDefault(_to,
                 DEFAULT_DELEGATION_LIST).toMap();
@@ -581,6 +579,8 @@ public class StakingImpl implements Staking {
         BigInteger newTotalStake = this.totalStake.getOrDefault(BigInteger.ZERO).add(addedIcx);
         this.totalStake.set(newTotalStake);
         stakeAndDelegateInNetwork(newTotalStake, finalDelegation);
+        Context.call(sicxAddress.get(), "mintTo", _to, sicxToMint, _data);
+        TokenTransfer(_to, sicxToMint, sicxToMint + " sICX minted to " + _to);
         return sicxToMint;
     }
 

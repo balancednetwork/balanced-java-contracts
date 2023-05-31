@@ -201,8 +201,8 @@ public class StabilityImpl implements Stability {
         Context.require(fee.compareTo(BigInteger.ZERO) > 0, TAG + ": Fee must be greater than zero");
 
         BigInteger bnusdToConvert = _amount.subtract(fee);
-        BigInteger equivalentAssetAmount =
-                (bnusdToConvert.multiply(pow(BigInteger.TEN, assetOutDecimals))).divide(ONE_BNUSD);
+        BigInteger equivalentAssetAmount = (bnusdToConvert.multiply(pow(BigInteger.TEN, assetOutDecimals)))
+                .divide(ONE_BNUSD);
         Context.require(equivalentAssetAmount.compareTo(BigInteger.ZERO) > 0, TAG + ": Asset to return can't be zero " +
                 "or less");
 
@@ -230,7 +230,7 @@ public class StabilityImpl implements Stability {
             returnBnusd(_from, _value, _data, token);
         } else if (limit != null) {
             BigInteger assetInBalance = (BigInteger) Context.call(token, "balanceOf", Context.getAddress());
-            Context.require(assetInBalance.add(_value).compareTo(limit) <= 0, TAG + ": Asset to exchange with bnusd " +
+            Context.require(assetInBalance.compareTo(limit) <= 0, TAG + ": Asset to exchange with bnusd " +
                     "limit crossed.");
             mintBnusd(_value, token, _from, bnusdAddress);
         } else {

@@ -37,5 +37,6 @@ public class Names {
     public final static String ROUTER = "Balanced Router";
     public final static String STAKEDLP = "Balanced StakedLP";
     public final static String BOOSTED_BALN = "Boosted Baln";
+    public final static String BALANCED_OTC = "Balanced OTC";
 
 }

@@ -74,18 +74,18 @@ public class POLManager {
         Context.call(baseAddress, "transfer", dex, baseAmount, tokenDepositData);
         Context.call(quoteAddress, "transfer", dex, quoteAmount, tokenDepositData);
         Context.call(dex, "add", baseAddress, quoteAddress, baseAmount, quoteAmount, true);
-
-        stakeLPTokens(pid);
     }
 
-    public static void stakeLPTokens(BigInteger pid) {
+    public static void stake(BigInteger pid, BigInteger amount) {
         Address dex = getDex();
-        BigInteger balance = Context.call(BigInteger.class, dex, "balanceOf", Context.getAddress(), pid);
-        Context.call(dex, "transfer", getStakedLp(), balance, pid, new byte[0]);
+        Context.call(dex, "transfer", getStakedLp(), amount, pid, new byte[0]);
     }
 
-    public static void withdrawLiquidity(BigInteger pid, BigInteger amount) {
+    public static void unstake(BigInteger pid, BigInteger amount) {
         Context.call(getStakedLp(), "unstake", pid, amount);
+    }
+
+    public static void withdraw(BigInteger pid, BigInteger amount) {
         Context.call(getDex(), "remove", pid, amount, true);
     }
 

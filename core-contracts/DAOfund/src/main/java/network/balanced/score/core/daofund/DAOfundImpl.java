@@ -182,15 +182,25 @@ public class DAOfundImpl implements DAOfund {
     }
 
     @External
-    public void withdrawLiquidity(BigInteger pid, BigInteger amount) {
+    public void unstakeLpTokens(BigInteger pid, BigInteger amount) {
         onlyGovernance();
-        POLManager.withdrawLiquidity(pid, amount);
+        POLManager.unstake(pid, amount);
     }
 
     @External
-    public void stakeLPTokens(BigInteger pid) {
-        checkStatus();
-        POLManager.stakeLPTokens(pid);
+    public void withdrawLiquidity(BigInteger pid, BigInteger amount) {
+        onlyGovernance();
+        POLManager.withdraw(pid, amount);
+    }
+
+    @External
+    public void stakeLpTokens(BigInteger pid, @Optional BigInteger amount) {
+        onlyGovernance();
+        if (amount.equals(BigInteger.ZERO)) {
+            amount = Context.call(BigInteger.class, getDex(), "balanceOf", Context.getAddress(), pid);
+        }
+
+        POLManager.stake(pid, amount);
     }
 
     @External
