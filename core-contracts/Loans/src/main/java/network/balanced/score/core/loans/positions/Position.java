@@ -21,6 +21,7 @@ import network.balanced.score.core.loans.collateral.CollateralDB;
 import network.balanced.score.core.loans.debt.DebtDB;
 import network.balanced.score.core.loans.utils.Standing;
 import network.balanced.score.core.loans.utils.TokenUtils;
+import network.balanced.score.lib.utils.BranchedAddressVarDB;
 import score.*;
 import scorex.util.HashMap;
 
@@ -36,7 +37,7 @@ public class Position {
 
     private final BranchDB<String, VarDB<Integer>> id = Context.newBranchDB("id", Integer.class);
     private final BranchDB<String, VarDB<BigInteger>> created = Context.newBranchDB("created", BigInteger.class);
-    private final BranchDB<String, VarDB<Address>> address = Context.newBranchDB("address", Address.class);
+    private final BranchedAddressVarDB<String> address = new BranchedAddressVarDB<>("address");
     private final BranchDB<String, BranchDB<String, DictDB<String, BigInteger>>> debt = Context.newBranchDB(
             "loan_balance", BigInteger.class); // Address:CollateralSymbol:AssetSymbol:debt
     private final BranchDB<String, DictDB<String, BigInteger>> collateral = Context.newBranchDB("collateral_balance"
@@ -72,11 +73,11 @@ public class Position {
         return created.at(dbKey).get();
     }
 
-    public void setAddress(Address address) {
+    public void setAddress(String address) {
         this.address.at(dbKey).set(address);
     }
 
-    public Address getAddress() {
+    public String getAddress() {
         return address.at(dbKey).get();
     }
 

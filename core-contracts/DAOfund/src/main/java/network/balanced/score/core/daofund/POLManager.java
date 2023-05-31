@@ -47,7 +47,7 @@ public class POLManager {
     public static void claimRewards() {
         rewardsProcessing.set(true);
         Address rewardsAddress = getRewards();
-        String[] sources = Context.call(String[].class, rewardsAddress, "getUserSources", Context.getAddress());
+        String[] sources = Context.call(String[].class, rewardsAddress, "getUserSources", Context.getAddress().toString());
         Context.call(rewardsAddress, "claimRewards", (Object) sources);
         rewardsProcessing.set(false);
     }

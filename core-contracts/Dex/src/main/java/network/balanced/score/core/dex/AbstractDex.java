@@ -401,10 +401,11 @@ public abstract class AbstractDex implements Dex {
     }
 
     @External(readonly = true)
-    public Map<String, BigInteger> getBalanceAndSupply(String _name, Address _owner) {
+    public Map<String, BigInteger> getBalanceAndSupply(String _name, String _owner) {
+        Address owner = Address.fromString(_owner);
         if (_name.equals(SICXICX_MARKET_NAME)) {
             Map<String, BigInteger> rewardsData = new HashMap<>();
-            rewardsData.put("_balance", balanceOf(_owner, BigInteger.valueOf(SICXICX_POOL_ID)));
+            rewardsData.put("_balance", balanceOf(owner, BigInteger.valueOf(SICXICX_POOL_ID)));
             rewardsData.put("_totalSupply", totalSupply(BigInteger.valueOf(SICXICX_POOL_ID)));
             return rewardsData;
         }
@@ -413,7 +414,7 @@ public abstract class AbstractDex implements Dex {
 
         Address stakedLpAddress = getStakedLp();
         BigInteger totalSupply = (BigInteger) Context.call(stakedLpAddress, "totalStaked", poolId);
-        BigInteger balance = (BigInteger) Context.call(stakedLpAddress, "balanceOf", _owner, poolId);
+        BigInteger balance = (BigInteger) Context.call(stakedLpAddress, "balanceOf", owner, poolId);
         Map<String, BigInteger> rewardsData = new HashMap<>();
         rewardsData.put("_balance", balance);
         rewardsData.put("_totalSupply", totalSupply);
@@ -611,7 +612,7 @@ public abstract class AbstractDex implements Dex {
             BigInteger counterpartyIcx = counterpartyOrder.getSize();
 
             RewardsDataEntry rewardsEntry = new RewardsDataEntry();
-            rewardsEntry._user = counterpartyAddress;
+            rewardsEntry._user = counterpartyAddress.toString();
             rewardsEntry._balance = counterpartyIcx;
 
             oldData.add(rewardsEntry);

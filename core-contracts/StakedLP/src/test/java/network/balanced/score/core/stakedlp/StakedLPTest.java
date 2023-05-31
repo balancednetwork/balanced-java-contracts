@@ -173,7 +173,7 @@ public class StakedLPTest extends UnitTest {
         assertEquals(BigInteger.valueOf(20L), stakedLpScore.call("totalStaked", BigInteger.TWO));
 
         stakeLpTokens(bob, BigInteger.TWO, BigInteger.valueOf(20L));
-        verify(rewards.mock).updateRewardsData(poolTwoName, BigInteger.valueOf(20L), bob.getAddress(), BigInteger.ZERO);
+        verify(rewards.mock).updateRewardsData(poolTwoName, BigInteger.valueOf(20L), bob.getAddress().toString(), BigInteger.ZERO);
         assertEquals(BigInteger.valueOf(40L), stakedLpScore.call("totalStaked", BigInteger.TWO));
         assertEquals(BigInteger.valueOf(20L), stakedLpScore.call("balanceOf", alice.getAddress(), BigInteger.TWO));
         assertEquals(BigInteger.valueOf(20L), stakedLpScore.call("balanceOf", bob.getAddress(), BigInteger.TWO));
@@ -216,7 +216,7 @@ public class StakedLPTest extends UnitTest {
         assertEquals(totalStakedBalanceBeforeUnstake.subtract(aliceUnstakeAmount), stakedLpScore.call("totalStaked",
                 BigInteger.ONE));
         verify(dex.mock).transfer(alice.getAddress(), aliceUnstakeAmount, BigInteger.ONE, new byte[0]);
-        verify(rewards.mock).updateRewardsData(poolOneName, totalStakedBalanceBeforeUnstake, alice.getAddress(),
+        verify(rewards.mock).updateRewardsData(poolOneName, totalStakedBalanceBeforeUnstake, alice.getAddress().toString(),
                 aliceStakedBalance);
 
         // Adjust the values after first unstake
@@ -281,18 +281,18 @@ public class StakedLPTest extends UnitTest {
         stakeLpTokens(alice, poolId, BigInteger.TEN);
 
         // Assert
-        Map<String, BigInteger> balanceAndSupply = (Map<String, BigInteger>) stakedLpScore.call("getBalanceAndSupply", name, alice.getAddress());
+        Map<String, BigInteger> balanceAndSupply = (Map<String, BigInteger>) stakedLpScore.call("getBalanceAndSupply", name, alice.getAddress().toString());
         assertEquals(BigInteger.TEN, balanceAndSupply.get("_balance"));
         assertEquals(BigInteger.TEN, balanceAndSupply.get("_totalSupply"));
-        verify(rewards.mock).updateRewardsData(name, BigInteger.ZERO, alice.getAddress(), BigInteger.ZERO);
+        verify(rewards.mock).updateRewardsData(name, BigInteger.ZERO, alice.getAddress().toString(), BigInteger.ZERO);
 
         // Act
         stakedLpScore.invoke(alice, "unstake", poolId, BigInteger.TWO);
 
         // Assert
-        balanceAndSupply = (Map<String, BigInteger>) stakedLpScore.call("getBalanceAndSupply", name, alice.getAddress());
+        balanceAndSupply = (Map<String, BigInteger>) stakedLpScore.call("getBalanceAndSupply", name, alice.getAddress().toString());
         assertEquals(BigInteger.valueOf(8), balanceAndSupply.get("_balance"));
         assertEquals(BigInteger.valueOf(8), balanceAndSupply.get("_totalSupply"));
-        verify(rewards.mock).updateRewardsData(name, BigInteger.TEN, alice.getAddress(), BigInteger.TEN);
+        verify(rewards.mock).updateRewardsData(name, BigInteger.TEN, alice.getAddress().toString(), BigInteger.TEN);
     }
 }

@@ -148,7 +148,7 @@ public class StakedLPImpl implements StakedLP {
 
         Unstake(caller, id, value);
 
-        Context.call(rewards.get(), "updateRewardsData", poolName, previousTotal, caller, previousBalance);
+        Context.call(rewards.get(), "updateRewardsData", poolName, previousTotal, caller.toString(), previousBalance);
 
         try {
             Context.call(dex.get(), "transfer", caller, value, id, new byte[0]);
@@ -173,10 +173,10 @@ public class StakedLPImpl implements StakedLP {
     }
 
     @External(readonly = true)
-    public Map<String, BigInteger> getBalanceAndSupply(String _name, Address _owner) {
+    public Map<String, BigInteger> getBalanceAndSupply(String _name, String _owner) {
         BigInteger poolId = dataSourceIds.get(_name);
         BigInteger totalSupply = totalStaked(poolId);
-        BigInteger balance = balanceOf(_owner, poolId);
+        BigInteger balance = balanceOf(Address.fromString(_owner), poolId);
 
         Map<String, BigInteger> rewardsData = new HashMap<>();
         rewardsData.put("_balance", balance);
@@ -236,7 +236,7 @@ public class StakedLPImpl implements StakedLP {
 
         Stake(user, id, value);
 
-        Context.call(rewards.get(), "updateRewardsData", poolName, previousTotal, user, previousBalance);
+        Context.call(rewards.get(), "updateRewardsData", poolName, previousTotal, user.toString(), previousBalance);
     }
 
 

@@ -188,7 +188,6 @@ public class Balanced {
         ownerClient.governance.createBnusdMarket(BigInteger.valueOf(40000).multiply(BigInteger.TEN.pow(18)));
         increaseDay(1);
 
-        BigInteger balnBalance = ownerClient.rewards.getBalnHolding(governance._address());
         BigInteger initialPoolDepths = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
         ownerClient.governance.createBalnMarket(initialPoolDepths, initialPoolDepths);
         ownerClient.staking.stakeICX(initialPoolDepths.multiply(BigInteger.TWO), null, null);

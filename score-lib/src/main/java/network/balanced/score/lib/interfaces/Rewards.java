@@ -52,10 +52,10 @@ public interface Rewards extends
     BigInteger getEmission(BigInteger _day);
 
     @External(readonly = true)
-    Map<String, BigInteger> getBalnHoldings(Address[] _holders);
+    Map<String, BigInteger> getBalnHoldings(String[] _holders);
 
     @External(readonly = true)
-    BigInteger getBalnHolding(Address _holder);
+    BigInteger getBalnHolding(String _holder);
 
     @External(readonly = true)
     Map<String, Object> distStatus();
@@ -94,7 +94,7 @@ public interface Rewards extends
     Map<String, Object> getSourceData(String _name);
 
     @External(readonly = true)
-    Map<String, BigInteger> getWorkingBalanceAndSupply(String _name, Address _user);
+    Map<String, BigInteger> getWorkingBalanceAndSupply(String _name, String _user);
 
     @External
     boolean distribute();
@@ -112,10 +112,16 @@ public interface Rewards extends
     BigInteger getAPY(String _name);
 
     @External
-    void updateRewardsData(String _name, BigInteger _totalSupply, Address _user, BigInteger _balance);
+    void updateRewardsData(String _name, BigInteger _totalSupply, String _user, BigInteger _balance);
 
     @External
     void updateBatchRewardsData(String _name, BigInteger _totalSupply, RewardsDataEntry[] _data);
+
+    @External
+    void updateBalanceAndSupply(String _name, BigInteger _totalSupply, String _user, BigInteger _balance);
+
+    @External
+    void updateBalanceAndSupplyBatch(String _name, BigInteger _totalSupply, RewardsDataEntry[] _data);
 
     @External
     void addDataProvider(Address _source);
@@ -145,10 +151,10 @@ public interface Rewards extends
     BigInteger getBoostWeight();
 
     @External(readonly = true)
-    String[] getUserSources(Address user);
+    String[] getUserSources(String user);
 
     @External(readonly = true)
-    Map<String, Map<String, BigInteger>> getBoostData(Address user, String[] sources);
+    Map<String, Map<String, BigInteger>> getBoostData(String user, String[] sources);
 
     @External
     void setMigrateToVotingDay(BigInteger day);

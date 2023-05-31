@@ -135,12 +135,12 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
 
         // Act
         BigInteger iETHBalancePreLiquidation = liquidator.irc2(ethAddress).balanceOf(liquidator.getAddress());
-        liquidator.loans.liquidate(loanTaker.getAddress(), "iETH");
+        liquidator.loans.liquidate(loanTaker.getAddress().toString(), "iETH");
         BigInteger iETHBalancePostLiquidation = liquidator.irc2(ethAddress).balanceOf(liquidator.getAddress());
         assertTrue(iETHBalancePreLiquidation.compareTo(iETHBalancePostLiquidation) < 0);
 
         BigInteger balancePreLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
-        liquidator.loans.liquidate(loanTaker.getAddress(), "sICX");
+        liquidator.loans.liquidate(loanTaker.getAddress().toString(), "sICX");
         BigInteger balancePostLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
         assertTrue(balancePreLiquidation.compareTo(balancePostLiquidation) < 0);
 
@@ -163,7 +163,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         assertTrue(sICXBalancePreRetire.compareTo(sICXBalancePostRetire) < 0);
         assertTrue(iETHBalancePreRetire.compareTo(iETHBalancePostRetire) < 0);
 
-        Map<String, BigInteger> LiquidatedUserBaS = reader.loans.getBalanceAndSupply("Loans", loanTaker.getAddress());
+        Map<String, BigInteger> LiquidatedUserBaS = reader.loans.getBalanceAndSupply("Loans", loanTaker.getAddress().toString());
         assertEquals(BigInteger.ZERO, loanTaker.getLoansCollateralPosition("iETH"));
         assertEquals(BigInteger.ZERO, loanTaker.getLoansAssetPosition("IETH", "bnUSD"));
         assertEquals(BigInteger.ZERO, loanTaker.getLoansCollateralPosition("sICX"));
@@ -238,7 +238,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
 
         // Act
         BigInteger balancePreLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
-        liquidator.loans.liquidate(loanTaker.getAddress(), "sICX");
+        liquidator.loans.liquidate(loanTaker.getAddress().toString(), "sICX");
         BigInteger balancePostLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
         assertTrue(balancePreLiquidation.compareTo(balancePostLiquidation) < 0);
 
@@ -254,7 +254,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         assertTrue(bnUSDBalancePreRetire.compareTo(bnUSDBalancePostRetire) > 0);
         assertTrue(sICXBalancePreRetire.compareTo(sICXBalancePostRetire) < 0);
 
-        Map<String, BigInteger> LiquidatedUserBaS = reader.loans.getBalanceAndSupply("Loans", loanTaker.getAddress());
+        Map<String, BigInteger> LiquidatedUserBaS = reader.loans.getBalanceAndSupply("Loans", loanTaker.getAddress().toString());
         assertEquals(BigInteger.ZERO, loanTaker.getLoansCollateralPosition("sICX"));
         assertEquals(BigInteger.ZERO, loanTaker.getLoansAssetPosition("sICX", "bnUSD"));
         assertEquals(BigInteger.ZERO, LiquidatedUserBaS.get("_balance"));
@@ -308,12 +308,12 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
 
         // Act
         BigInteger iETHBalancePreLiquidation = liquidator.irc2(ethAddress).balanceOf(liquidator.getAddress());
-        liquidator.loans.liquidate(loanTaker.getAddress(), "iETH");
+        liquidator.loans.liquidate(loanTaker.getAddress().toString(), "iETH");
         BigInteger iETHBalancePostLiquidation = liquidator.irc2(ethAddress).balanceOf(liquidator.getAddress());
         assertTrue(iETHBalancePreLiquidation.compareTo(iETHBalancePostLiquidation) < 0);
 
         BigInteger balancePreLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
-        liquidator.loans.liquidate(loanTaker.getAddress(), "sICX");
+        liquidator.loans.liquidate(loanTaker.getAddress().toString(), "sICX");
         BigInteger balancePostLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
         assertTrue(balancePreLiquidation.compareTo(balancePostLiquidation) < 0);
 
@@ -366,7 +366,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
 
     protected void claimAllRewards() {
         for (BalancedClient client : balanced.balancedClients.values()) {
-            if (client.rewards.getBalnHolding(client.getAddress()).compareTo(EXA) < 0) {
+            if (client.rewards.getBalnHolding(client.getAddress().toString()).compareTo(EXA) < 0) {
                 continue;
             }
 

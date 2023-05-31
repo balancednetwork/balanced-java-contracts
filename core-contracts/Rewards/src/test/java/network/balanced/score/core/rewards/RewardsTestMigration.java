@@ -93,9 +93,9 @@ class RewardsTestMigration extends RewardsTestBase {
 
         BigInteger votingPercentage = BigInteger.valueOf(30).multiply(EXA).divide(BigInteger.valueOf(100));
 
-        rewardsScore.invoke(loans.account, "updateRewardsData", "Loans", BigInteger.ZERO, owner.getAddress(), BigInteger.ONE);
-        rewardsScore.invoke(dex.account, "updateRewardsData", "sICX/ICX", BigInteger.ZERO, owner.getAddress(), BigInteger.ONE);
-        rewardsScore.invoke(dex.account, "updateRewardsData", "sICX/bnUSD", BigInteger.ZERO, owner.getAddress(), BigInteger.ONE);
+        rewardsScore.invoke(loans.account, "updateRewardsData", "Loans", BigInteger.ZERO, owner.getAddress().toString(), BigInteger.ONE);
+        rewardsScore.invoke(dex.account, "updateRewardsData", "sICX/ICX", BigInteger.ZERO, owner.getAddress().toString(), BigInteger.ONE);
+        rewardsScore.invoke(dex.account, "updateRewardsData", "sICX/bnUSD", BigInteger.ZERO, owner.getAddress().toString(), BigInteger.ONE);
 
         // Act
         vote(user, "sICX/ICX", VOTE_POINTS.divide(BigInteger.TWO));

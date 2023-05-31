@@ -122,7 +122,7 @@ public class DexImpl extends AbstractDex {
     private void sendRewardsData(Address user, BigInteger amount, BigInteger oldIcxTotal) {
         List<RewardsDataEntry> rewardsList = new ArrayList<>();
         RewardsDataEntry rewardsEntry = new RewardsDataEntry();
-        rewardsEntry._user = user;
+        rewardsEntry._user = user.toString();
         rewardsEntry._balance = amount;
         rewardsList.add(rewardsEntry);
         Context.call(getRewards(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal, rewardsList);

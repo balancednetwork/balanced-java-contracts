@@ -17,9 +17,8 @@
 package network.balanced.score.core.loans.positions;
 
 import network.balanced.score.core.loans.utils.IdFactory;
-import score.Address;
+import network.balanced.score.lib.utils.AddressDictDB;
 import score.Context;
-import score.DictDB;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -35,9 +34,9 @@ public class PositionsDB {
     private static final String ADDRESS_ID = "addressid";
 
     private static final IdFactory idFactory = new IdFactory(ID_FACTORY);
-    private static final DictDB<Address, Integer> addressIds = Context.newDictDB(ADDRESS_ID, Integer.class);
+    private static final AddressDictDB<Integer> addressIds = new AddressDictDB<>(ADDRESS_ID, Integer.class);
 
-    public static Integer getAddressIds(Address _owner) {
+    public static Integer getAddressIds(String _owner) {
         return addressIds.getOrDefault(_owner, 0);
     }
 
@@ -60,11 +59,11 @@ public class PositionsDB {
         return idFactory.getLastUid();
     }
 
-    public static Boolean hasPosition(Address address) {
+    public static Boolean hasPosition(String address) {
         return getAddressIds(address) != 0;
     }
 
-    public static Map<String, Object> listPosition(Address _owner) {
+    public static Map<String, Object> listPosition(String _owner) {
         int id = getAddressIds(_owner);
         if (id == 0) {
             return Map.of("message", "That address has no outstanding loans or deposited collateral.");
@@ -72,11 +71,11 @@ public class PositionsDB {
         return get(id).toMap();
     }
 
-    public static Position getPosition(Address owner) {
+    public static Position getPosition(String owner) {
         return getPosition(owner, false);
     }
 
-    public static Position getPosition(Address owner, boolean readonly) {
+    public static Position getPosition(String owner, boolean readonly) {
         int id = getAddressIds(owner);
         if (id == 0) {
             if (readonly() || readonly) {
@@ -88,7 +87,7 @@ public class PositionsDB {
         return get(id);
     }
 
-    private static Position newPosition(Address owner) {
+    private static Position newPosition(String owner) {
         Context.require(getAddressIds(owner) == 0, TAG + ": A position already exists for that address");
         int id = idFactory.getUid();
         addressIds.set(owner, id);
