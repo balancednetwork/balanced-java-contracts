@@ -17,6 +17,7 @@
 package network.balanced.score.lib.utils.contracts;
 
 import network.balanced.score.lib.utils.AddressDictDB;
+import network.balanced.score.lib.utils.BranchedAddressDictDB;
 import network.balanced.score.lib.utils.BranchedAddressVarDB;
 import score.*;
 import score.annotation.External;
@@ -26,6 +27,13 @@ public class DBMigrationsContract {
     private static final String BRANCH_DB_ID = "branch_db";
     private static final BranchDB<String, VarDB<Address>> legacyBranchDB = Context.newBranchDB(BRANCH_DB_ID, String.class);
     private static final BranchedAddressVarDB<String> migratedBranchDB = new BranchedAddressVarDB<String>(BRANCH_DB_ID);
+
+
+    private static final String BRANCH_DICT_DB_ID = "branch_dict_db";
+    private static final BranchDB<String, DictDB<Address, String>> legacyBranchDictDB =
+            Context.newBranchDB(BRANCH_DICT_DB_ID, String.class);
+    private static final BranchedAddressDictDB<String, String> migratedBranchDictDB =
+        new BranchedAddressDictDB<>(BRANCH_DICT_DB_ID, String.class);
 
     private static final String DICT_DB_ID = "dict_db";
     private static final DictDB<Address, String> legacyDictDB = Context.newDictDB(DICT_DB_ID, String.class);
@@ -43,6 +51,27 @@ public class DBMigrationsContract {
     @External(readonly = true)
     public String getDictDB(String address) {
         return migratedDictDB.get(address);
+    }
+
+    @External(readonly = true)
+    public String getBranchedDictDB(String key, String address) {
+        return migratedBranchDictDB.at(key).get(address);
+    }
+
+    @External(readonly = true)
+    public String getOrDefaultBranchDB(String key,  String _default) {
+        return migratedBranchDB.at(key).getOrDefault(_default);
+    }
+
+
+    @External(readonly = true)
+    public String getOrDefaultDictDB(String address, String _default) {
+        return migratedDictDB.getOrDefault(address, _default);
+    }
+
+    @External(readonly = true)
+    public String getOrDefaultBranchedDictDB(String key, String address, String _default) {
+        return migratedBranchDictDB.at(key).getOrDefault(address, _default);
     }
 
     @External
@@ -63,5 +92,15 @@ public class DBMigrationsContract {
     @External
     public void setDictDB(String address, String value) {
         migratedDictDB.set(address, value);
+    }
+
+    @External
+    public void setLegacyBranchedDictDB(String key, Address address, String value) {
+        legacyBranchDictDB.at(key).set(address, value);
+    }
+
+    @External
+    public void setBranchedDictDB(String key, String address, String value) {
+        migratedBranchDictDB.at(key).set(address, value);
     }
 }

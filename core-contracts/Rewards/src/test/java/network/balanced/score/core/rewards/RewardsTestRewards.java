@@ -523,7 +523,7 @@ class RewardsTestRewards extends RewardsTestBase {
         BigInteger startTimeInUS = BigInteger.valueOf(sm.getBlock().getTimestamp());
 
 
-        BigInteger initialRewards = (BigInteger) rewardsScore.call("getBalnHolding", account.getAddress());
+        BigInteger initialRewards = (BigInteger) rewardsScore.call("getBalnHolding", account.getAddress().toString());
         assertEquals(BigInteger.ZERO, initialRewards);
 
         sm.getBlock().increase(DAY*3);
@@ -535,7 +535,7 @@ class RewardsTestRewards extends RewardsTestBase {
         BigInteger loansDistribution = loansDist.dist_percent.multiply(emission).divide(EXA);
         BigInteger userDistribution = loansDistribution.multiply(currentBalance).divide(currentTotalSupply);
 
-        BigInteger rewards = (BigInteger) rewardsScore.call("getBalnHolding", account.getAddress());
+        BigInteger rewards = (BigInteger) rewardsScore.call("getBalnHolding", account.getAddress().toString());
 
         BigInteger diffInUS = timeInUS.subtract(startTimeInUS);
         BigInteger expectedRewards = userDistribution.multiply(diffInUS).divide(MICRO_SECONDS_IN_A_DAY);
@@ -574,7 +574,7 @@ class RewardsTestRewards extends RewardsTestBase {
         BigInteger timeDiffInUS = endTimeInUS.subtract(startTimeInUS);
         BigInteger expectedRewards = distribution.multiply(timeDiffInUS).divide(MICRO_SECONDS_IN_A_DAY);
 
-        Object users = new Address[]{account.getAddress()};
+        Object users = new String[]{account.getAddress().toString()};
         Map<String, BigInteger> rewards = (Map<String, BigInteger>) rewardsScore.call("getBalnHoldings", users);
 
         BigInteger reward = rewards.get(account.getAddress().toString()).divide(BigInteger.TEN);
@@ -631,7 +631,7 @@ class RewardsTestRewards extends RewardsTestBase {
         BigInteger user1ExpectedRewards = user1Distribution.multiply(timeDiffInUS).divide(MICRO_SECONDS_IN_A_DAY);
         BigInteger user2ExpectedRewards = user2Distribution.multiply(timeDiffInUS).divide(MICRO_SECONDS_IN_A_DAY);
 
-        Object users = new Address[]{account1.getAddress(), account2.getAddress()};
+        Object users = new String[]{account1.getAddress().toString(), account2.getAddress().toString()};
         Map<String, BigInteger> rewards = (Map<String, BigInteger>) rewardsScore.call("getBalnHoldings", users);
 
         BigInteger user1Rewards = rewards.get(account1.getAddress().toString()).divide(BigInteger.TEN);

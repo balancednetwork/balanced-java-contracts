@@ -157,16 +157,16 @@ class RewardsTestBase extends UnitTest {
     }
 
     BigInteger getOneDayRewards(Address address) {
-        BigInteger rewardsPre = (BigInteger) rewardsScore.call("getBalnHolding", address);
+        BigInteger rewardsPre = (BigInteger) rewardsScore.call("getBalnHolding", address.toString());
         sm.getBlock().increase(DAY);
         rewardsScore.invoke(admin, "distribute");
-        BigInteger rewardsPost = (BigInteger) rewardsScore.call("getBalnHolding", address);
+        BigInteger rewardsPost = (BigInteger) rewardsScore.call("getBalnHolding", address.toString());
 
         return rewardsPost.subtract(rewardsPre);
     }
 
     Object getUserSources(Address address) {
-        return rewardsScore.call("getUserSources", address);
+        return rewardsScore.call("getUserSources", address.toString());
     }
 
     void snapshotDistributionPercentage() {

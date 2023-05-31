@@ -25,8 +25,12 @@ public class AddressVarDB {
             return value;
         }
 
-        value = legacyAddressDB.get().toString();
-        if (value != null && !readonly()) {
+        Address legacyValue = legacyAddressDB.get();
+        if (legacyValue != null) {
+            value = legacyValue.toString();
+        }
+
+        if (!readonly()) {
             set(value);
         }
 

@@ -96,7 +96,7 @@ class DaofundIntegrationTest implements ScoreIntegrationTest {
         });
 
         // Act
-        BigInteger rewards = reader.rewards.getBalnHolding(balanced.daofund._address());
+        BigInteger rewards = reader.rewards.getBalnHolding(balanced.daofund._address().toString());
         claimer.daofund.claimRewards();
 
         // Assert
@@ -119,7 +119,7 @@ class DaofundIntegrationTest implements ScoreIntegrationTest {
         });
 
         // Act
-        rewards = reader.rewards.getBalnHolding(balanced.daofund._address());
+        rewards = reader.rewards.getBalnHolding(balanced.daofund._address().toString());
         claimer.daofund.claimRewards();
 
         // Assert

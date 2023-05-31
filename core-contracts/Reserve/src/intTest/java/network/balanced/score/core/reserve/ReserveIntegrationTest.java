@@ -366,7 +366,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
 
     protected void claimAllRewards() {
         for (BalancedClient client : balanced.balancedClients.values()) {
-            if (client.rewards.getBalnHolding(client.getAddress()).compareTo(EXA) < 0) {
+            if (client.rewards.getBalnHolding(client.getAddress().toString()).compareTo(EXA) < 0) {
                 continue;
             }
 

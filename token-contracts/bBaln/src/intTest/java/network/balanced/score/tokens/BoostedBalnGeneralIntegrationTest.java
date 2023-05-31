@@ -65,7 +65,7 @@ public class BoostedBalnGeneralIntegrationTest implements ScoreIntegrationTest {
         //check the effect of checkpoint external method call
         owner.boostedBaln.checkpoint();
         score.Address userAddress = score.Address.fromString(balanced.owner.getAddress().toString());
-        BigInteger updatedBalnHolding = owner.rewards.getBalnHolding(userAddress);
+        BigInteger updatedBalnHolding = owner.rewards.getBalnHolding(userAddress.toString());
         System.out.println("baln holding from reward: " + updatedBalnHolding);
         owner.rewards.claimRewards(null);
         BigInteger availableBalnBalance = owner.baln.availableBalanceOf(userAddress);
