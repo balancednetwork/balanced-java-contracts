@@ -123,6 +123,12 @@ public class HubTokenImpl extends SpokeTokenImpl implements HubToken {
     public void xCrossTransfer(String from, String _from, String _to, BigInteger _value, byte[] _data) {
         NetworkAddress spokeContract = NetworkAddress.valueOf(from);
         Context.require(spokeContracts.get(spokeContract.net()).equals(spokeContract), from + " is not a connected contract");
+        if (_to.isEmpty() || _to.equals(_from)) {
+            _transferToICON(spokeContract, NetworkAddress.valueOf(_from), _value);
+            XTransfer(BigInteger.ZERO, _from, _from, _value, _data);
+            return;
+        }
+
         NetworkAddress to = NetworkAddress.valueOf(_to);
         try {
             _transferToICON(spokeContract, to, _value);

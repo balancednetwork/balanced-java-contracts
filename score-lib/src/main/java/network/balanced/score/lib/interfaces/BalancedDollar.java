@@ -20,7 +20,7 @@ import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.AddressManager;
 import network.balanced.score.lib.interfaces.base.Version;
-import network.balanced.score.lib.interfaces.tokens.IRC2;
+import network.balanced.score.lib.interfaces.tokens.HubToken;
 import network.balanced.score.lib.interfaces.tokens.IRC2BurnableInterface;
 import score.Address;
 import score.annotation.External;
@@ -30,7 +30,7 @@ import java.math.BigInteger;
 
 @ScoreClient
 @ScoreInterface
-public interface BalancedDollar extends IRC2BurnableInterface, IRC2, AddressManager, Version {
+public interface BalancedDollar extends IRC2BurnableInterface, HubToken, AddressManager, Version {
 
     @External(readonly = true)
     String getPeg();

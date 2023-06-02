@@ -157,12 +157,6 @@ public interface Rewards extends
     Map<String, Map<String, BigInteger>> getBoostData(String user, String[] sources);
 
     @External
-    void setMigrateToVotingDay(BigInteger day);
-
-    @External(readonly = true)
-    BigInteger getMigrateToVotingDay();
-
-    @External
     void setPlatformDistPercentage(String name, BigInteger percentage);
 
     @External

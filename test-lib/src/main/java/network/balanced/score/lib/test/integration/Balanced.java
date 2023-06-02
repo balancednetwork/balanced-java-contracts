@@ -16,7 +16,10 @@
 
 package network.balanced.score.lib.test.integration;
 
+import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.JsonObject;
+
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.jsonrpc.model.Hash;
@@ -25,6 +28,7 @@ import foundation.icon.score.client.DefaultScoreClient;
 import network.balanced.score.lib.interfaces.Governance;
 import network.balanced.score.lib.interfaces.GovernanceScoreClient;
 import network.balanced.score.lib.utils.Names;
+import xcall.score.lib.util.NetworkAddress;
 
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -33,6 +37,7 @@ import java.util.function.Consumer;
 
 import static network.balanced.score.lib.test.integration.BalancedUtils.createParameter;
 import static network.balanced.score.lib.test.integration.BalancedUtils.createSingleTransaction;
+import static network.balanced.score.lib.test.integration.BalancedUtils.createTransaction;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
@@ -63,6 +68,22 @@ public class Balanced {
     public DefaultScoreClient xcall;
     public Governance governanceClient;
 
+    public final String ICON_NID = "0x3.ICON";
+
+    public String ETH_NID = "0x1.ETH";
+    public String ETH_ASSET_MANAGER = "0x2";
+    public String ETH_BNUSD_ADDRESS = "0x3";
+    public String ETH_TOKEN_ADDRESS = "0x4";
+    public String ETH_TOKEN_SYMBOL = "ETHA";
+    public Address ethBaseAsset;
+
+    public String BSC_NID = "0x3.BSC";
+    public String BSC_ASSET_MANAGER = "0x5";
+    public String BSC_BNUSD_ADDRESS = "0x6";
+    public String BSC_TOKEN_ADDRESS = "0x7";
+    public String BSC_TOKEN_SYMBOL = "BNBA";
+    public Address bscBaseAsset;
+
     public Map<score.Address, BalancedClient> balancedClients;
 
     public Balanced() throws Exception {
@@ -85,7 +106,7 @@ public class Balanced {
     }
 
     public void deployContracts() {
-        xcall = deploy(owner, "XCallMock", Map.of("networkId", "0x1.ICON_LOCAL"));
+        xcall = deploy(owner, "XCallMock", Map.of("networkId", ICON_NID));
 
         governance = deploy(owner, "Governance", null);
         governanceClient = new GovernanceScoreClient(chain.getEndpointURL(), chain.networkId, owner,
@@ -113,7 +134,7 @@ public class Balanced {
 
         String assetManagerParams = new JsonArray()
             .add(createParameter(governance._address()))
-            .add(createParameter(getContractData("XCallMock")))
+            .add(createParameter(getContractData("AssetToken")))
             .toString();
         governanceClient.deploy(getContractData("AssetManager"), assetManagerParams);
 
@@ -161,7 +182,35 @@ public class Balanced {
         stability = newScoreClient(owner, governanceClient.getAddress(Names.STABILITY));
         sicx = getDeploymentResult(owner, sicxTx);
 
+        setupSpoke(BSC_NID, BSC_ASSET_MANAGER, BSC_BNUSD_ADDRESS, BSC_TOKEN_ADDRESS, BSC_TOKEN_SYMBOL);
+        setupSpoke(ETH_NID, ETH_ASSET_MANAGER, ETH_BNUSD_ADDRESS, ETH_TOKEN_ADDRESS, ETH_TOKEN_SYMBOL);
+
         ownerClient = new BalancedClient(this, owner);
+        bscBaseAsset = new Address(ownerClient.assetManager.getAssetAddress(new NetworkAddress(BSC_NID, BSC_TOKEN_ADDRESS).toString()).toString());;
+        ethBaseAsset = new Address(ownerClient.assetManager.getAssetAddress(new NetworkAddress(ETH_NID, ETH_TOKEN_ADDRESS).toString()).toString());
+    }
+
+    public void setupSpoke(String nid, String spokeAssetManager, String spokeBnUSd, String tokenAddress, String tokenSymbol) {
+        JsonArray addBSCAssetManagerParam = new JsonArray().add(createParameter(new NetworkAddress(nid, spokeAssetManager).toString()));
+        JsonObject addBSCAssetManager = createTransaction(assetManager._address(), "addSpokeManager", addBSCAssetManagerParam);
+
+        JsonArray addBSCAssetParams = new JsonArray()
+            .add(createParameter(new NetworkAddress(nid, tokenAddress).toString()))
+            .add(createParameter(tokenSymbol))
+            .add(createParameter(tokenSymbol));
+        JsonObject addBSCAsset = createTransaction(assetManager._address(), "deployAsset", addBSCAssetParams);
+
+
+        JsonArray addBSCBnUSDParams = new JsonArray()
+            .add(createParameter(new NetworkAddress(nid, spokeBnUSd).toString()))
+            .add(createParameter(BigInteger.TEN.pow(28)));
+        JsonObject addBSCBnUSD = createTransaction(bnusd._address(), "addChain", addBSCBnUSDParams);
+
+        JsonArray transactions = new JsonArray()
+            .add(addBSCAssetManager)
+            .add(addBSCAsset)
+            .add(addBSCBnUSD);
+        governanceClient.execute(transactions.toString());
     }
 
     public void setupAddresses() {

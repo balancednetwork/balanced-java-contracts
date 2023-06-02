@@ -48,8 +48,6 @@ class LoansTestBase extends UnitTest {
     protected static final ServiceManager sm = getServiceManager();
 
     protected final Account admin = sm.createAccount();
-    protected final Account feehandler = Account.newScoreAccount(scoreCount++);
-    protected final Account rebalancing = Account.newScoreAccount(scoreCount++);
     protected Score loans;
     protected MockBalanced mockBalanced;
     protected MockContract<Sicx> sicx;
@@ -136,7 +134,12 @@ class LoansTestBase extends UnitTest {
 
     @SuppressWarnings("unchecked")
     protected void verifyPosition(Address address, BigInteger collateral, BigInteger loan, String collateralSymbol) {
-        Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", address.toString());
+        verifyPosition(address.toString(), collateral, loan, collateralSymbol);
+    }
+
+    @SuppressWarnings("unchecked")
+    protected void verifyPosition(String address, BigInteger collateral, BigInteger loan, String collateralSymbol) {
+        Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", address);
         Map<String, Map<String, Object>> standings = (Map<String, Map<String, Object>>) position.get("holdings");
         assertEquals(loan, standings.get(collateralSymbol).get("bnUSD"));
         assertEquals(collateral, standings.get(collateralSymbol).get(collateralSymbol));

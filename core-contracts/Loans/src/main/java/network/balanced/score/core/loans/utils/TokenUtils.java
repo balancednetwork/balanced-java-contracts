@@ -41,6 +41,10 @@ public class TokenUtils {
         return (BigInteger) call(getBalancedOracle(), "getLastPriceInUSD", symbol);
     }
 
+    public static void mintAsset(BigInteger amount) {
+        call(getBnusd(), "mint", amount, new byte[0]);
+    }
+
     public static void mintAssetTo(Address to, BigInteger amount) {
         call(getBnusd(), "mintTo", to, amount, new byte[0]);
     }
@@ -51,5 +55,13 @@ public class TokenUtils {
 
     public static void burnAssetFrom(Address from, BigInteger amount) {
         call(getBnusd(), "burnFrom", from, amount);
+    }
+
+    public static void crossTransfer(String to, BigInteger amount) {
+        call(getBnusd(), "crossTransfer", to, amount, new byte[0]);
+    }
+
+    public static void transfer(Address to, BigInteger amount) {
+        call(getBnusd(), "transfer", to , amount, new byte[0]);
     }
 }

@@ -26,6 +26,7 @@ repositories {
 dependencies {
     compileOnly Dependencies.javaeeApi
     implementation project(':score-lib')
+    implementation 'xcall-lib:score-lib'
 
     implementation Dependencies.javaeeScorex
     implementation Dependencies.minimalJson

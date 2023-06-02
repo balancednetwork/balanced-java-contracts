@@ -18,10 +18,11 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
+import icon.xcall.lib.annotation.XCall;
 import network.balanced.score.lib.interfaces.addresses.AddressManager;
 import network.balanced.score.lib.interfaces.base.Name;
-import network.balanced.score.lib.interfaces.base.TokenFallback;
 import network.balanced.score.lib.interfaces.base.Version;
+import network.balanced.score.lib.interfaces.tokens.XTokenReceiver;
 import network.balanced.score.lib.structs.PrepDelegations;
 import score.Address;
 import score.annotation.External;
@@ -33,7 +34,7 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface Loans extends Name, TokenFallback, AddressManager, Version {
+public interface Loans extends Name, AddressManager, Version, XTokenReceiver {
     @External(readonly = true)
     BigInteger getDay();
 
@@ -170,4 +171,10 @@ public interface Loans extends Name, TokenFallback, AddressManager, Version {
 
     @External(readonly = true)
     Map<String, Object> getParameters();
+
+    @XCall
+    void xBorrow(String from, String _collateralToBorrowAgainst, BigInteger _amountToBorrow);
+
+    @XCall
+    void xWithdraw(String from, BigInteger _value, String _collateralSymbol);
 }

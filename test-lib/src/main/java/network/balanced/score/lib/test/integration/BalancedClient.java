@@ -22,6 +22,8 @@ import foundation.icon.score.client.DefaultScoreClient;
 import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
 import network.balanced.score.lib.interfaces.tokens.IRC2MintableScoreClient;
+import network.balanced.score.lib.interfaces.tokens.SpokeToken;
+import network.balanced.score.lib.interfaces.tokens.SpokeTokenScoreClient;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -92,6 +94,11 @@ public class BalancedClient {
 
     public IRC2Mintable irc2(score.Address address) {
         return new IRC2MintableScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
+                new Address(address.toString()));
+    }
+
+    public SpokeToken spokeToken(score.Address address) {
+        return new SpokeTokenScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
                 new Address(address.toString()));
     }
 

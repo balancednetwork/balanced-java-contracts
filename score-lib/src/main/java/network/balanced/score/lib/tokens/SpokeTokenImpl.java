@@ -182,7 +182,7 @@ public class SpokeTokenImpl implements SpokeToken {
         if (isNative(minter)) {
             Transfer(ZERO_ADDRESS, Address.fromString(minter.account()), amount, "mint".getBytes());
         } else {
-            HubTransfer(ZERO_ADDRESS.toString(), minter.toString(), amount, null);
+            HubTransfer(ZERO_ADDRESS.toString(), minter.toString(), amount, new byte[0]);
         }
     }
 
@@ -199,7 +199,7 @@ public class SpokeTokenImpl implements SpokeToken {
         if (isNative(owner)) {
             Transfer(Address.fromString(owner.account()), ZERO_ADDRESS, amount, "mint".getBytes());
         } else {
-            HubTransfer(owner.toString(), ZERO_ADDRESS.toString(), amount, null);
+            HubTransfer(owner.toString(), ZERO_ADDRESS.toString(), amount, new byte[0]);
         }
     }
 

@@ -325,7 +325,7 @@ class LoansTest extends LoansTestBase {
     }
 
     @Test
-    void DepositAndBorrow_OriginateLoan_LowerThanMinimum() {
+    void depositAndBorrow_OriginateLoan_LowerThanMinimum() {
         // Arrange
         Account account = sm.createAccount();
         BigInteger newLoanMinimum = (BigInteger) getParam("new loan minimum");
@@ -342,7 +342,7 @@ class LoansTest extends LoansTestBase {
     }
 
     @Test
-    void DepositAndBorrow_OriginateLoan_ToLargeDebt() {
+    void depositAndBorrow_OriginateLoan_ToLargeDebt() {
         // Arrange
         Account account = sm.createAccount();
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);

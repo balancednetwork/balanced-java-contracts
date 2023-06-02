@@ -481,7 +481,7 @@ public class RewardsImpl implements Rewards {
         distribute();
 
         BalanceData balances = new BalanceData();
-        balances.boostedBalance = fetchBoostedBalance(Address.fromString(_user));
+        balances.boostedBalance = fetchBoostedBalance(_user);
         balances.boostedSupply = fetchBoostedSupply();
         Map<String, BigInteger> balanceAndSupply = dataSource.loadCurrentSupply(_user);
         balances.balance = balanceAndSupply.get(BALANCE);
@@ -508,7 +508,7 @@ public class RewardsImpl implements Rewards {
         for (RewardsDataEntry entry : _data) {
             BalanceData balances = new BalanceData();
             balances.boostedSupply = boostedSupply;
-            balances.boostedBalance = fetchBoostedBalance(Address.fromString(entry._user));
+            balances.boostedBalance = fetchBoostedBalance(entry._user);
             Map<String, BigInteger> balanceAndSupply = dataSource.loadCurrentSupply(entry._user);
             balances.balance = balanceAndSupply.get(BALANCE);
             balances.supply = balanceAndSupply.get(TOTAL_SUPPLY);
@@ -530,7 +530,7 @@ public class RewardsImpl implements Rewards {
         distribute();
 
         BalanceData balances = new BalanceData();
-        balances.boostedBalance = fetchBoostedBalance(Address.fromString(_user));
+        balances.boostedBalance = fetchBoostedBalance(_user);
         balances.boostedSupply = fetchBoostedSupply();
         balances.balance = _balance;
         balances.supply = _totalSupply;
@@ -553,10 +553,8 @@ public class RewardsImpl implements Rewards {
         BigInteger boostedSupply = fetchBoostedSupply();
 
         for (RewardsDataEntry entry : _data) {
-            Address user = Address.fromString(entry._user);
-
             BalanceData balances = new BalanceData();
-            balances.boostedBalance = fetchBoostedBalance(user);
+            balances.boostedBalance = fetchBoostedBalance(entry._user);
             balances.boostedSupply = boostedSupply;
             balances.balance = entry._balance;
             balances.supply = _totalSupply;
@@ -887,7 +885,7 @@ public class RewardsImpl implements Rewards {
             }
 
             BalanceData balances = new BalanceData();
-            balances.boostedBalance = fetchBoostedBalance(Address.fromString(user));
+            balances.boostedBalance = fetchBoostedBalance(user);
             balances.boostedSupply = boostedSupply;
             Map<String, BigInteger> balanceAndSupply = dataSource.loadCurrentSupply(user);
             balances.balance = balanceAndSupply.get(BALANCE);
@@ -1085,6 +1083,14 @@ public class RewardsImpl implements Rewards {
 
             return minDistribution.max(distribution);
         }
+    }
+
+    private BigInteger fetchBoostedBalance(String user) {
+        if (user.contains("/")) {
+            return BigInteger.ZERO;
+        }
+
+        return fetchBoostedBalance(Address.fromString(user));
     }
 
     private void migrateWeightController() {
