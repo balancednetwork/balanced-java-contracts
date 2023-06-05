@@ -44,7 +44,6 @@ class LoansTestRewards extends LoansTestBase {
     void depositAndBorrow_rewardsUpdate_noInitialLoan() {
         // Arrange
         Account account = sm.createAccount();
-        BigInteger initialDebt = BigInteger.ZERO;
 
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
@@ -54,8 +53,9 @@ class LoansTestRewards extends LoansTestBase {
         takeLoanICX(account, "bnUSD", collateral, loan);
 
         // Assert
-        verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
-        verify(rewards.mock).updateRewardsData("Loans", BigInteger.ZERO, account.getAddress().toString(), initialDebt);
+        BigInteger expectedDebt = loan.add(expectedFee);
+        verifyPosition(account.getAddress(), collateral, expectedDebt);
+        verify(rewards.mock).updateBalanceAndSupply("Loans", expectedDebt, account.getAddress().toString(), expectedDebt);
     }
 
     @Test
@@ -79,8 +79,8 @@ class LoansTestRewards extends LoansTestBase {
         // Assert
         verifyTotalDebt(exceptedDebt);
         verifyPosition(account.getAddress(), collateral.add(initialCollateral), exceptedDebt);
-        verify(rewards.mock).updateRewardsData("Loans", BigInteger.ZERO, account.getAddress().toString(), BigInteger.ZERO);
-        verify(rewards.mock).updateRewardsData("Loans", initialDebt, account.getAddress().toString(), initialDebt);
+        verify(rewards.mock).updateBalanceAndSupply("Loans", initialDebt, account.getAddress().toString(), initialDebt);
+        verify(rewards.mock).updateBalanceAndSupply("Loans", exceptedDebt, account.getAddress().toString(), exceptedDebt);
     }
 
     @Test
@@ -104,8 +104,8 @@ class LoansTestRewards extends LoansTestBase {
         verifyTotalDebt(IETHDebt.add(sICXDebt));
         verifyPosition(account.getAddress(), iETHCollateral, IETHDebt, "iETH");
         verifyPosition(account.getAddress(), sICXCollateral, sICXDebt, "sICX");
-        verify(rewards.mock).updateRewardsData("Loans", BigInteger.ZERO, account.getAddress().toString(), BigInteger.ZERO);
-        verify(rewards.mock).updateRewardsData("Loans", sICXDebt, account.getAddress().toString(), sICXDebt);
+        verify(rewards.mock).updateBalanceAndSupply("Loans", sICXDebt, account.getAddress().toString(), sICXDebt);
+        verify(rewards.mock).updateBalanceAndSupply("Loans", IETHDebt.add(sICXDebt), account.getAddress().toString(), IETHDebt.add(sICXDebt));
     }
 
     @Test
@@ -128,9 +128,10 @@ class LoansTestRewards extends LoansTestBase {
         verifyPosition(account.getAddress(), collateral, loan.subtract(loanToRepay).add(expectedFee));
 
         verifyTotalDebt(loan.add(expectedFee).subtract(loanToRepay));
-        verify(rewards.mock).updateRewardsData("Loans", BigInteger.ZERO, account.getAddress().toString(), BigInteger.ZERO);
-        verify(rewards.mock).updateRewardsData("Loans", loan.add(expectedFee), account.getAddress().toString(),
+        verify(rewards.mock).updateBalanceAndSupply("Loans", loan.add(expectedFee), account.getAddress().toString(),
                 loan.add(expectedFee));
+        verify(rewards.mock).updateBalanceAndSupply("Loans", loan.add(expectedFee).subtract(loanToRepay), account.getAddress().toString(),
+                loan.add(expectedFee).subtract(loanToRepay));
     }
 
     @Test
@@ -159,16 +160,18 @@ class LoansTestRewards extends LoansTestBase {
         loans.invoke(account, "returnAsset", "bnUSD", iETHLoanToRepay, "iETH");
 
         // Assert
+        BigInteger expectedTotalDebt = iETHDebt.add(sICXDebt).subtract(sICXLoanToRepay).subtract(iETHLoanToRepay);
         verifyPosition(account.getAddress(), sICXCollateral, sICXDebt.subtract(sICXLoanToRepay), "sICX");
         verifyPosition(account.getAddress(), iETHCollateral, iETHDebt.subtract(iETHLoanToRepay), "iETH");
-        verifyTotalDebt(iETHDebt.add(sICXDebt).subtract(sICXLoanToRepay).subtract(iETHLoanToRepay));
+        verifyTotalDebt(expectedTotalDebt);
 
-        verify(rewards.mock).updateRewardsData("Loans", BigInteger.ZERO, account.getAddress().toString(), BigInteger.ZERO);
-        verify(rewards.mock).updateRewardsData("Loans", iETHDebt, account.getAddress().toString(), iETHDebt);
-        verify(rewards.mock).updateRewardsData("Loans", iETHDebt.add(sICXDebt), account.getAddress().toString(),
+        verify(rewards.mock).updateBalanceAndSupply("Loans", iETHDebt, account.getAddress().toString(), iETHDebt);
+        verify(rewards.mock).updateBalanceAndSupply("Loans", iETHDebt.add(sICXDebt), account.getAddress().toString(),
                 iETHDebt.add(sICXDebt));
-        verify(rewards.mock).updateRewardsData("Loans", iETHDebt.add(sICXDebt).subtract(sICXLoanToRepay),
+        verify(rewards.mock).updateBalanceAndSupply("Loans", iETHDebt.add(sICXDebt).subtract(sICXLoanToRepay),
                 account.getAddress().toString(), iETHDebt.add(sICXDebt).subtract(sICXLoanToRepay));
+        verify(rewards.mock).updateBalanceAndSupply("Loans", expectedTotalDebt, account.getAddress().toString(), expectedTotalDebt);
+
     }
 
     @SuppressWarnings("unchecked")
@@ -208,8 +211,8 @@ class LoansTestRewards extends LoansTestBase {
         assertEquals(expectedLiquidationPool, bnusdDebtDetails.get("sICX").get("liquidation_pool"));
 
         verifyTotalDebt(BigInteger.ZERO);
-        verify(rewards.mock).updateRewardsData("Loans", BigInteger.ZERO, account.getAddress().toString(), BigInteger.ZERO);
-        verify(rewards.mock).updateRewardsData("Loans", loan.add(expectedFee), account.getAddress().toString(),
+        verify(rewards.mock).updateBalanceAndSupply("Loans", BigInteger.ZERO, account.getAddress().toString(), BigInteger.ZERO);
+        verify(rewards.mock).updateBalanceAndSupply("Loans", loan.add(expectedFee), account.getAddress().toString(),
                 loan.add(expectedFee));
     }
 }

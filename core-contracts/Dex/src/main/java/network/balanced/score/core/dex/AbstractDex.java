@@ -588,7 +588,7 @@ public abstract class AbstractDex implements Dex {
         BigInteger sicxIcxPrice = getSicxRate();
 
         BigInteger oldIcxTotal = icxQueueTotal.getOrDefault(BigInteger.ZERO);
-        List<RewardsDataEntry> oldData = new ArrayList<>();
+        List<RewardsDataEntry> data = new ArrayList<>();
 
         BigInteger balnFees = (value.multiply(icxBalnFee.get())).divide(FEE_SCALE);
         BigInteger conversionFees = value.multiply(icxConversionFee.get()).divide(FEE_SCALE);
@@ -613,9 +613,7 @@ public abstract class AbstractDex implements Dex {
 
             RewardsDataEntry rewardsEntry = new RewardsDataEntry();
             rewardsEntry._user = counterpartyAddress.toString();
-            rewardsEntry._balance = counterpartyIcx;
 
-            oldData.add(rewardsEntry);
             BigInteger matchedIcx = counterpartyIcx.min(orderRemainingIcx);
             orderRemainingIcx = orderRemainingIcx.subtract(matchedIcx);
 
@@ -624,10 +622,14 @@ public abstract class AbstractDex implements Dex {
                 icxQueue.removeHead();
                 icxQueueOrderId.set(counterpartyAddress, null);
                 activeAddresses.get(SICXICX_POOL_ID).remove(counterpartyAddress);
+                rewardsEntry._balance = BigInteger.ZERO;
             } else {
                 BigInteger newCounterpartyValue = counterpartyIcx.subtract(matchedIcx);
                 counterpartyOrder.setSize(newCounterpartyValue);
+                rewardsEntry._balance = newCounterpartyValue;
             }
+
+            data.add(rewardsEntry);
 
             BigInteger lpSicxEarnings = (lpSicxSize.multiply(matchedIcx)).divide(orderIcxValue);
             BigInteger newSicxEarnings = getSicxEarnings(counterpartyAddress).add(lpSicxEarnings);
@@ -646,7 +648,7 @@ public abstract class AbstractDex implements Dex {
                 orderIcxValue, BigInteger.valueOf(Context.getBlockTimestamp()), conversionFees, balnFees, newIcxTotal
                 , BigInteger.ZERO, sicxIcxPrice, effectiveFillPrice);
 
-        Context.call(getRewards(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal, oldData);
+        Context.call(getRewards(), "updateBalanceAndSupplyBatch", SICXICX_MARKET_NAME, newIcxTotal, data);
         Context.call(sicxAddress, "transfer", getFeehandler(), balnFees);
         Context.transfer(sender, orderIcxValue);
     }

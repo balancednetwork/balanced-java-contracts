@@ -23,6 +23,7 @@ import network.balanced.score.lib.interfaces.Rewards;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.Point;
 import network.balanced.score.lib.structs.RewardsDataEntry;
+import network.balanced.score.lib.structs.RewardsDataEntryOld;
 import network.balanced.score.lib.structs.VotedSlope;
 import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.IterableDictDB;
@@ -471,7 +472,7 @@ public class RewardsImpl implements Rewards {
 
     // old versions only used by balanced contracts
     @External
-    public void updateRewardsData(String _name, BigInteger _totalSupply, String _user, BigInteger _balance) {
+    public void updateRewardsData(String _name, BigInteger _totalSupply, Address _user, BigInteger _balance) {
         checkStatus();
         DataSourceImpl dataSource = DataSourceDB.get(_name);
         Context.require(dataSource.getContractAddress().equals(Context.getCaller()), TAG + ": Only data provider are " +
@@ -479,22 +480,22 @@ public class RewardsImpl implements Rewards {
 
         BigInteger currentTime = getTime();
         distribute();
-
+        String user = _user.toString();
         BalanceData balances = new BalanceData();
         balances.boostedBalance = fetchBoostedBalance(_user);
         balances.boostedSupply = fetchBoostedSupply();
-        Map<String, BigInteger> balanceAndSupply = dataSource.loadCurrentSupply(_user);
+        Map<String, BigInteger> balanceAndSupply = dataSource.loadCurrentSupply(user);
         balances.balance = balanceAndSupply.get(BALANCE);
         balances.supply = balanceAndSupply.get(TOTAL_SUPPLY);
-        balances.prevWorkingBalance = dataSource.getWorkingBalance(_user, _balance, false);
+        balances.prevWorkingBalance = dataSource.getWorkingBalance(user, _balance, false);
         balances.prevWorkingSupply = dataSource.getWorkingSupply(_totalSupply, false);
 
-        updateUserAccruedRewards(_name, currentTime, dataSource, _user, balances);
+        updateUserAccruedRewards(_name, currentTime, dataSource, user, balances);
     }
 
     // old versions only used by balanced contracts
     @External
-    public void updateBatchRewardsData(String _name, BigInteger _totalSupply, RewardsDataEntry[] _data) {
+    public void updateBatchRewardsData(String _name, BigInteger _totalSupply, RewardsDataEntryOld[] _data) {
         checkStatus();
         DataSourceImpl dataSource = DataSourceDB.get(_name);
         Context.require(dataSource.getContractAddress().equals(Context.getCaller()), TAG + ": Only data provider are " +
@@ -505,17 +506,18 @@ public class RewardsImpl implements Rewards {
 
         BigInteger boostedSupply = fetchBoostedSupply();
 
-        for (RewardsDataEntry entry : _data) {
+        for (RewardsDataEntryOld entry : _data) {
             BalanceData balances = new BalanceData();
             balances.boostedSupply = boostedSupply;
             balances.boostedBalance = fetchBoostedBalance(entry._user);
-            Map<String, BigInteger> balanceAndSupply = dataSource.loadCurrentSupply(entry._user);
+            String user = entry._user.toString();
+            Map<String, BigInteger> balanceAndSupply = dataSource.loadCurrentSupply(user);
             balances.balance = balanceAndSupply.get(BALANCE);
             balances.supply = balanceAndSupply.get(TOTAL_SUPPLY);
-            balances.prevWorkingBalance = dataSource.getWorkingBalance(entry._user, entry._balance, false);
+            balances.prevWorkingBalance = dataSource.getWorkingBalance(user, entry._balance, false);
             balances.prevWorkingSupply = dataSource.getWorkingSupply(_totalSupply, false);
 
-            updateUserAccruedRewards(_name, currentTime, dataSource, entry._user, balances);
+            updateUserAccruedRewards(_name, currentTime, dataSource, user, balances);
         }
     }
 
