@@ -96,22 +96,22 @@ class AssetManagerTest extends TestBase {
         bscAsset1 = new MockContract<>(AssetTokenScoreInterface.class, AssetToken.class, sm, governance.account);
 
         try (MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS)) {
-            contextMock.when(() -> Context.deploy(tokeBytes, governance.getAddress(), "ETH1", "ETH TEST TOKEN 1")).thenReturn(ethAsset1.getAddress());
+            contextMock.when(() -> Context.deploy(tokeBytes, governance.getAddress(), "ETH1", "ETH TEST TOKEN 1", BigInteger.valueOf(18))).thenReturn(ethAsset1.getAddress());
             contextMock.when(() -> Context.call(AssetManagerImpl.getSystemScoreAddress(), "setScoreOwner", ethAsset1.getAddress(), governance.getAddress())).thenReturn(null);
-            assetManager.invoke(governance.account, "deployAsset", new NetworkAddress(ETH_NID, ethAsset1Address).toString(), "ETH1", "ETH TEST TOKEN 1");
+            assetManager.invoke(governance.account, "deployAsset", new NetworkAddress(ETH_NID, ethAsset1Address).toString(), "ETH1", "ETH TEST TOKEN 1", BigInteger.valueOf(18));
         }
 
         try (MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS)) {
-            contextMock.when(() -> Context.deploy(tokeBytes, governance.getAddress(), "ETH2", "ETH TEST TOKEN 2")).thenReturn(ethAsset2.getAddress());
+            contextMock.when(() -> Context.deploy(tokeBytes, governance.getAddress(), "ETH2", "ETH TEST TOKEN 2", BigInteger.valueOf(18))).thenReturn(ethAsset2.getAddress());
             contextMock.when(() -> Context.call(AssetManagerImpl.getSystemScoreAddress(), "setScoreOwner", ethAsset2.getAddress(), governance.getAddress())).thenReturn(null);
-            assetManager.invoke(governance.account, "deployAsset", new NetworkAddress(ETH_NID, ethAsset2Address).toString(), "ETH2", "ETH TEST TOKEN 2");
+            assetManager.invoke(governance.account, "deployAsset", new NetworkAddress(ETH_NID, ethAsset2Address).toString(), "ETH2", "ETH TEST TOKEN 2", BigInteger.valueOf(18));
         }
 
         assetManager.invoke(governance.account, "addSpokeManager", bscSpoke.toString());
         try (MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS)) {
-            contextMock.when(() -> Context.deploy(tokeBytes, governance.getAddress(),  "BSC", "BSC TEST TOKEN")).thenReturn(bscAsset1.getAddress());
+            contextMock.when(() -> Context.deploy(tokeBytes, governance.getAddress(),  "BSC", "BSC TEST TOKEN", BigInteger.valueOf(18))).thenReturn(bscAsset1.getAddress());
             contextMock.when(() -> Context.call(AssetManagerImpl.getSystemScoreAddress(), "setScoreOwner", bscAsset1.getAddress(), governance.getAddress())).thenReturn(null);
-            assetManager.invoke(governance.account, "deployAsset", new NetworkAddress(BSC_NID, bscAsset1Address).toString(),  "BSC", "BSC TEST TOKEN");
+            assetManager.invoke(governance.account, "deployAsset", new NetworkAddress(BSC_NID, bscAsset1Address).toString(),  "BSC", "BSC TEST TOKEN", BigInteger.valueOf(18));
         }
     }
 

@@ -38,6 +38,7 @@ import score.annotation.External;
 import score.annotation.Optional;
 import score.annotation.Payable;
 import scorex.util.HashMap;
+import xcall.score.lib.util.NetworkAddress;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -251,9 +252,6 @@ public class LoansImpl implements Loans {
         checkStatus();
 
         Context.require(_value.signum() > 0, TAG + ": Token value should be a positive number");
-        if (_from.equals(getReserve().toString())) {
-            return;
-        }
 
         String unpackedData = new String(_data);
         Context.require(!unpackedData.equals(""), TAG + ": Token Fallback: Data can't be empty");
@@ -267,9 +265,7 @@ public class LoansImpl implements Loans {
             TokenUtils.burnAsset(_value);
             _returnAsset(_from, _value, collateralSymbol);
             if (BigInteger.ZERO.compareTo(collateralToWithdraw) < 0) {
-                removeCollateral(_from, collateralToWithdraw, collateralSymbol);
-                // Todo withdraw collateral if applicable?
-                Context.call( CollateralDB.getAddress(collateralSymbol), "hubTransfer", _from, collateralToWithdraw, new byte[0]);
+                xWithdraw(_from, collateralToWithdraw, collateralSymbol);
             }
         } else {
             String collateralSymbol = CollateralDB.getSymbol(token);
@@ -781,8 +777,9 @@ public class LoansImpl implements Loans {
     private void originateBnUSD(String from, BigInteger amount, BigInteger fee) {
         TokenUtils.mintAsset(amount);
         if (from.contains("/")) {
-            // get/check fee
-            TokenUtils.crossTransfer(from, amount);
+            String net = NetworkAddress.valueOf(from).net();
+            BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", net, true);
+            TokenUtils.crossTransfer(xCallFee, from, amount);
         } else {
             TokenUtils.transfer(Address.fromString(from), amount);
         }
@@ -947,6 +944,10 @@ public class LoansImpl implements Loans {
         parameters.put("retire percent max", maxRetirePercent.get());
 
         return parameters;
+    }
+
+    @Payable
+    public void fallback() {
     }
 
     @EventLog(indexed = 1)

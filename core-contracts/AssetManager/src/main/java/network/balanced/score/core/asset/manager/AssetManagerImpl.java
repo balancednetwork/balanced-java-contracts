@@ -35,6 +35,7 @@ import score.annotation.Payable;
 import scorex.util.HashMap;
 import xcall.score.lib.util.NetworkAddress;
 import icon.xcall.lib.messages.AssetManagerMessages;
+import icon.xcall.lib.messages.SpokeAssetManagerMessages;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -96,13 +97,13 @@ public class AssetManagerImpl implements AssetManager {
     }
 
     @External
-    public void deployAsset(String tokenNetworkAddress, String symbol, String name) {
+    public void deployAsset(String tokenNetworkAddress, String symbol, String name, BigInteger decimals) {
         onlyGovernance();
         NetworkAddress nativeAddress = NetworkAddress.valueOf(tokenNetworkAddress);
 
         Context.require(spokes.get(nativeAddress.net()) != null);
         Context.require(assets.get(tokenNetworkAddress) == null);
-        Address token = Context.deploy(tokenBytes, BalancedAddressManager.getGovernance(), symbol, name);
+        Address token = Context.deploy(tokenBytes, BalancedAddressManager.getGovernance(), symbol, name, decimals);
         assets.set(tokenNetworkAddress, token);
         assetNativeAddress.set(token, tokenNetworkAddress);
         Address SYSTEM_SCORE_ADDRESS = getSystemScoreAddress();
@@ -162,7 +163,7 @@ public class AssetManagerImpl implements AssetManager {
             rollbackAddress = to;
         }
 
-        byte[] msg = AssetManagerMessages.withdraw(tokenAddress.account(), targetAddress.account(), amount);
+        byte[] msg = SpokeAssetManagerMessages.withdrawTo(tokenAddress.account(), targetAddress.account(), amount);
         byte[] rollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), rollbackAddress, amount);
         Context.call(Context.getValue(), BalancedAddressManager.getXCall(), "sendCallMesssage", spokes.get(tokenAddress.net()), msg, rollback);
     }

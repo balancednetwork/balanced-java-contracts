@@ -18,6 +18,7 @@ package network.balanced.score.core.daofund;
 
 import network.balanced.score.lib.interfaces.DAOfund;
 import network.balanced.score.lib.structs.PrepDelegations;
+import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.EnumerableSetDB;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.Versions;
@@ -46,6 +47,7 @@ public class DAOfundImpl implements DAOfund {
     private static final String ADDRESS = "address";
     private static final String AWARDS = "awards";
     public static final String VERSION = "version";
+    public static final String XCALL_FEE_PERMISSIONS = "xcall_fee_permissions";
 
     private static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
 
@@ -55,6 +57,7 @@ public class DAOfundImpl implements DAOfund {
     private final BranchDB<Address, DictDB<Address, BigInteger>> awards = Context.newBranchDB(AWARDS, BigInteger.class);
 
     private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
+    DictDB<Address, Boolean> xCallFeePermissions = Context.newDictDB(XCALL_FEE_PERMISSIONS, Boolean.class);
 
     public static final String TAG = Names.DAOFUND;
 
@@ -141,6 +144,12 @@ public class DAOfundImpl implements DAOfund {
                 "Balanced DAOfund disbursement " + amount + " sent to " + recipient.toString());
     }
 
+    @External
+    public void disburseICX(Address recipient, BigInteger amount) {
+        onlyGovernance();
+        Context.transfer(recipient, amount);
+    }
+
     /**
      * Any funds that are authorized for disbursement through Balanced Governance may be claimed using this method.
      */
@@ -225,6 +234,30 @@ public class DAOfundImpl implements DAOfund {
     }
 
     @External
+    public void setXCallFeePermission(Address contract, boolean permission) {
+        onlyGovernance();
+        xCallFeePermissions.set(contract, permission);
+    }
+
+    @External(readonly = true)
+    public boolean getXCallFeePermission(Address contract) {
+        return xCallFeePermissions.getOrDefault(contract, false);
+    }
+
+    @External
+    public BigInteger claimXCallFee(String net, boolean response) {
+        Address contract = Context.getCaller();
+        Context.require(xCallFeePermissions.getOrDefault(contract, false), contract + " is not allowed to use fees from daofund");
+        BigInteger fee = Context.call(BigInteger.class, BalancedAddressManager.getXCall(), "getFee", net, response);
+        if (fee.compareTo(Context.getBalance(Context.getAddress())) > 0 || fee.equals(BigInteger.ZERO)) {
+            return BigInteger.ZERO;
+        }
+
+        Context.transfer(contract, fee);
+        return fee;
+    }
+
+    @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         checkStatus();
         if (POLManager.isProcessingFees()) {
@@ -236,7 +269,6 @@ public class DAOfundImpl implements DAOfund {
 
     @Payable
     public void fallback() {
-        Context.revert("ICX not accepted in this contract");
     }
 
     @External

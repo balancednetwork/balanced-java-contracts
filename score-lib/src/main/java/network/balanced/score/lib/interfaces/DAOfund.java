@@ -47,6 +47,9 @@ public interface DAOfund extends Name, AddressManager, TokenFallback, Fallback, 
     @External(readonly = true)
     void disburse(Address token, Address recipient, BigInteger amount, @Optional byte[] data);
 
+    @External
+    void disburseICX(Address recipient, BigInteger amount);
+
     void claim();
 
     @External
@@ -78,4 +81,13 @@ public interface DAOfund extends Name, AddressManager, TokenFallback, Fallback, 
 
     @External(readonly = true)
     Map<String, BigInteger> getFeeEarnings();
+
+    @External
+    void setXCallFeePermission(Address contract, boolean permission);
+
+    @External(readonly = true)
+    boolean getXCallFeePermission(Address contract);
+
+    @External
+    BigInteger claimXCallFee(String net, boolean response);
 }

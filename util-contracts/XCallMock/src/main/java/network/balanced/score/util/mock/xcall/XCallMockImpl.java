@@ -62,6 +62,8 @@ public class XCallMockImpl implements XCallMock {
             rollbacks.set(sn, _rollback);
             rollbackCaller.set(sn, Context.getCaller());
         }
+        String net = NetworkAddress.valueOf(_to).net();
+        Context.require(Context.getValue().equals(getFee(net, _rollback != null)), "Not enough fee");
         CallMessage(sn, _to, _data);
         return sn;
     }
@@ -76,6 +78,11 @@ public class XCallMockImpl implements XCallMock {
         Context.call(rollbackCaller.get(_sn), "handleCallMessage", new NetworkAddress(nid, Context.getAddress()), rollbacks.get(_sn));
         rollbacks.set(_sn, null);
         rollbackCaller.set(_sn, null);
+    }
+
+    @External(readonly=true)
+    public BigInteger getFee(String net, boolean response) {
+        return BigInteger.ONE;
     }
 
     @EventLog(indexed=1)

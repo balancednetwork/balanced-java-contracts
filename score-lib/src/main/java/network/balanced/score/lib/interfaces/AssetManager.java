@@ -33,7 +33,7 @@ import java.util.Map;
 @ScoreInterface
 public interface AssetManager extends AddressManager, Version {
     @External
-    void deployAsset(String tokenNetworkAddress, String symbol, String name);
+    void deployAsset(String tokenNetworkAddress, String symbol, String name, BigInteger decimals);
 
     @External
     void addSpokeManager(String spokeAssetManager);

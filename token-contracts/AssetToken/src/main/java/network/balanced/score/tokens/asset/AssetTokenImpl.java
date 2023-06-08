@@ -38,8 +38,8 @@ public class AssetTokenImpl extends SpokeTokenImpl implements AssetToken {
 
     private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
 
-    public AssetTokenImpl(Address _governance, String name, String symbol) {
-        super("", name, symbol, null);
+    public AssetTokenImpl(Address _governance, String name, String symbol, BigInteger decimals) {
+        super("", name, symbol, decimals);
         if (BalancedAddressManager.getAddressByName(Names.GOVERNANCE) == null) {
             BalancedAddressManager.setGovernance(_governance);
         }

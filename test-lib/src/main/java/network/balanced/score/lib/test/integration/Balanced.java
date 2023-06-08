@@ -182,24 +182,25 @@ public class Balanced {
         stability = newScoreClient(owner, governanceClient.getAddress(Names.STABILITY));
         sicx = getDeploymentResult(owner, sicxTx);
 
-        setupSpoke(BSC_NID, BSC_ASSET_MANAGER, BSC_BNUSD_ADDRESS, BSC_TOKEN_ADDRESS, BSC_TOKEN_SYMBOL);
-        setupSpoke(ETH_NID, ETH_ASSET_MANAGER, ETH_BNUSD_ADDRESS, ETH_TOKEN_ADDRESS, ETH_TOKEN_SYMBOL);
+        setupSpoke(BSC_NID, BSC_ASSET_MANAGER, BSC_BNUSD_ADDRESS, BSC_TOKEN_ADDRESS, BSC_TOKEN_SYMBOL, BigInteger.valueOf(18));
+        setupSpoke(ETH_NID, ETH_ASSET_MANAGER, ETH_BNUSD_ADDRESS, ETH_TOKEN_ADDRESS, ETH_TOKEN_SYMBOL, BigInteger.valueOf(18));
 
         ownerClient = new BalancedClient(this, owner);
-        bscBaseAsset = new Address(ownerClient.assetManager.getAssetAddress(new NetworkAddress(BSC_NID, BSC_TOKEN_ADDRESS).toString()).toString());;
+        bscBaseAsset = new Address(ownerClient.assetManager.getAssetAddress(new NetworkAddress(BSC_NID, BSC_TOKEN_ADDRESS).toString()).toString());
         ethBaseAsset = new Address(ownerClient.assetManager.getAssetAddress(new NetworkAddress(ETH_NID, ETH_TOKEN_ADDRESS).toString()).toString());
+        transfer(daofund._address(), BigInteger.valueOf(1000).multiply(BigInteger.TEN.pow(18)));
     }
 
-    public void setupSpoke(String nid, String spokeAssetManager, String spokeBnUSd, String tokenAddress, String tokenSymbol) {
+    public void setupSpoke(String nid, String spokeAssetManager, String spokeBnUSd, String tokenAddress, String tokenSymbol, BigInteger decimals) {
         JsonArray addBSCAssetManagerParam = new JsonArray().add(createParameter(new NetworkAddress(nid, spokeAssetManager).toString()));
         JsonObject addBSCAssetManager = createTransaction(assetManager._address(), "addSpokeManager", addBSCAssetManagerParam);
 
         JsonArray addBSCAssetParams = new JsonArray()
             .add(createParameter(new NetworkAddress(nid, tokenAddress).toString()))
             .add(createParameter(tokenSymbol))
-            .add(createParameter(tokenSymbol));
+            .add(createParameter(tokenSymbol))
+            .add(createParameter(decimals));
         JsonObject addBSCAsset = createTransaction(assetManager._address(), "deployAsset", addBSCAssetParams);
-
 
         JsonArray addBSCBnUSDParams = new JsonArray()
             .add(createParameter(new NetworkAddress(nid, spokeBnUSd).toString()))

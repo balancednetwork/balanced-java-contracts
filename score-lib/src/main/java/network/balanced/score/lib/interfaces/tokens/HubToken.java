@@ -21,6 +21,7 @@ import java.math.BigInteger;
 import icon.xcall.lib.annotation.XCall;
 import score.annotation.EventLog;
 import score.annotation.External;
+import score.annotation.Payable;
 
 public interface HubToken extends SpokeToken {
     /**
@@ -51,6 +52,7 @@ public interface HubToken extends SpokeToken {
      * XCall rollback message is specified to match {@link #xTransferRevert}.
      */
     @External
+    @Payable
     void crossTransfer(String _to, BigInteger _value, byte[] _data);
 
     /**

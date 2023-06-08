@@ -18,25 +18,21 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
-
-import score.Address;
-import score.annotation.EventLog;
-import score.annotation.External;
+import icon.xcall.lib.annotation.XCall;
 
 import java.math.BigInteger;
 
 @ScoreClient
 @ScoreInterface
-public interface XCallMock extends xcall.score.lib.interfaces.XCall  {
-    @External
-     void sendCall(Address to, String from, byte[] message);
+public interface SpokeAssetManager{
 
-    @External
-    void rollback(BigInteger _sn);
-
-    @External(readonly=true)
-    BigInteger getFee(String net, boolean response);
-
-    @EventLog(indexed=1)
-    void CallMessage(BigInteger _sn, String to, byte[] data);
+    /**
+     * Burns tokens from user
+     * @param from xCall caller.
+     * @param tokenAddress native token address as string.
+     * @param toAddress native caller address as string.
+     * @param amount amount to withdraw.
+     */
+    @XCall
+    void withdrawTo(String from, String tokenAddress, String toAddress, BigInteger amount);
 }

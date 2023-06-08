@@ -20,6 +20,7 @@ import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
+import score.annotation.Payable;
 import network.balanced.score.lib.interfaces.tokens.HubToken;
 import network.balanced.score.lib.interfaces.tokens.HubTokenXCall;
 import network.balanced.score.lib.utils.BalancedAddressManager;
@@ -101,6 +102,7 @@ public class HubTokenImpl extends SpokeTokenImpl implements HubToken {
     }
 
     @External
+    @Payable
     public void crossTransfer(String _to, BigInteger _value, @Optional byte[] _data) {
         NetworkAddress from = new NetworkAddress(NATIVE_NID, Context.getCaller());
         NetworkAddress to = NetworkAddress.valueOf(_to, NATIVE_NID);
@@ -130,25 +132,19 @@ public class HubTokenImpl extends SpokeTokenImpl implements HubToken {
         }
 
         NetworkAddress to = NetworkAddress.valueOf(_to);
-        try {
-            _transferToICON(spokeContract, to, _value);
+        _transferToICON(spokeContract, to, _value);
 
-            if (!isNative(to)) {
-                _transferToSpoke(BigInteger.ZERO, to, to, _value, _data);
-                return;
-            }
-
-            Address address = Address.fromString(to.account());
-            if (address.isContract()) {
-                Context.call(address, "xTokenFallback", _from, _value, _data);
-            }
-
-            XTransfer(BigInteger.ZERO, _from, _to, _value, _data);
-        } catch (Exception e) {
-            Context.println("Transfer failed, credit sender: " + e.getMessage());
-            _transferToICON(spokeContract, NetworkAddress.valueOf(_from), _value);
-            XTransfer(BigInteger.ZERO, _from, _from, _value, _data);
+        if (!isNative(to)) {
+            _transferToSpoke(BigInteger.ZERO, to, to, _value, _data);
+            return;
         }
+
+        Address address = Address.fromString(to.account());
+        if (address.isContract()) {
+            Context.call(address, "xTokenFallback", _from, _value, _data);
+        }
+
+        XTransfer(BigInteger.ZERO, _from, _to, _value, _data);
     }
 
     public void xWithdraw(String from, BigInteger _value) {
