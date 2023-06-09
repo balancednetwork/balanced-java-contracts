@@ -70,7 +70,7 @@ public interface AssetManager extends AddressManager, Version {
      * @param _data        transfer data
      */
     @XCall
-    void deposit(String from, String tokenAddress, String fromAddress, String toAddress, BigInteger _amount, @Optional byte[] _data);
+    void deposit(String from, String tokenAddress, String fromAddress, String toAddress, BigInteger _amount, byte[] _data);
 
     /**
      * Burns tokens from user

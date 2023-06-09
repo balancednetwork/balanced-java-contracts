@@ -20,7 +20,6 @@ import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.AddressManager;
 import network.balanced.score.lib.interfaces.base.Version;
-import score.Address;
 import score.annotation.External;
 import score.annotation.Optional;
 
@@ -33,13 +32,7 @@ public interface AssetToken extends IRC2, AddressManager, Version {
     void govHubTransfer(String _from, String _to, BigInteger _value, @Optional byte[] _data);
 
     @External
-    void burn(BigInteger _amount);
-
-    @External
     void burnFrom(String _account, BigInteger _amount);
-
-    @External
-    void mint(BigInteger _amount, @Optional byte[] _data);
 
     @External
     void mintAndTransfer(String _from, String _to, BigInteger _amount, @Optional byte[] _data);

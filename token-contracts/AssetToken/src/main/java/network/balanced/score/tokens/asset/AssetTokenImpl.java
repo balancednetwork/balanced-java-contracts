@@ -74,28 +74,17 @@ public class AssetTokenImpl extends SpokeTokenImpl implements AssetToken {
     }
 
     @External
-    public void burn(BigInteger _amount) {
-        burnFrom(Context.getCaller().toString(), _amount);
-    }
-
-    @External
     public void burnFrom(String _account, BigInteger _amount) {
-        checkStatus();
         only(getAssetManager());
         super.burn(NetworkAddress.valueOf(_account, NATIVE_NID), _amount);
     }
 
-    @External
-    public void mint(BigInteger _amount, @Optional byte[] _data) {
-        only(getAssetManager());
-        super.mint(new NetworkAddress(NATIVE_NID, Context.getAddress()), _amount);
-    }
 
     @External
     public void mintAndTransfer(String _from, String _to, BigInteger _amount, @Optional byte[] _data) {
         only(getAssetManager());
         NetworkAddress from = NetworkAddress.valueOf(_from);
-        NetworkAddress to = NetworkAddress.valueOf(_to, NATIVE_NID);
+        NetworkAddress to = NetworkAddress.valueOf(_to);
         super.mint(from, _amount);
         if (_from.equals(_to)) {
             return;

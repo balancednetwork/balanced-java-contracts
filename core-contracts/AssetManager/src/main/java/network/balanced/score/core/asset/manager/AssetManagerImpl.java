@@ -153,16 +153,12 @@ public class AssetManagerImpl implements AssetManager {
     public void withdrawTo(Address asset, String to, BigInteger amount) {
         Context.call(asset, "burnFrom", Context.getCaller().toString(), amount);
         NetworkAddress tokenAddress = NetworkAddress.valueOf(assetNativeAddress.get(asset));
-        NetworkAddress targetAddress = NetworkAddress.parse(to);
-        String rollbackAddress = new NetworkAddress(NATIVE_NID, Context.getCaller()).toString();
-        if (targetAddress.net().isEmpty()) {
-            Context.require(tokenAddress.net().equals(targetAddress.net()));
-            rollbackAddress = to;
-        }
+        NetworkAddress targetAddress = NetworkAddress.valueOf(to);
+        Context.require(targetAddress.net().equals(tokenAddress.net()), "Wrong network");
 
         byte[] msg = SpokeAssetManagerMessages.withdrawTo(tokenAddress.account(), targetAddress.account(), amount);
-        byte[] rollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), rollbackAddress, amount);
-        Context.call(Context.getValue(), BalancedAddressManager.getXCall(), "sendCallMesssage", spokes.get(tokenAddress.net()), msg, rollback);
+        byte[] rollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), to, amount);
+        Context.call(Context.getValue(), BalancedAddressManager.getXCall(), "sendCallMessage", spokes.get(tokenAddress.net()), msg, rollback);
     }
 
     public void withdrawRollback(String from, String tokenAddress, String _to, BigInteger _amount) {
@@ -173,13 +169,13 @@ public class AssetManagerImpl implements AssetManager {
         Context.call(assetAddress, "mintAndTransfer", _to, _to, _amount, new byte[0]);
     }
 
-    public void deposit(String from, String tokenAddress, String fromAddress, String toAddress, BigInteger _amount, @Optional byte[] _data) {
+    public void deposit(String from, String tokenAddress, String fromAddress, String toAddress, BigInteger _amount,  byte[] _data) {
         NetworkAddress spokeAssetManager = NetworkAddress.valueOf(from);
         Context.require(from.equals(spokes.get(spokeAssetManager.net())), "Asset manager needs to be whitelisted");
         NetworkAddress spokeTokenAddress = new NetworkAddress(spokeAssetManager.net(), tokenAddress);
         Address assetAddress = assets.get(spokeTokenAddress.toString());
         Context.require(assetAddress != null, "Token is not yet deployed");
-        NetworkAddress fromNetworkAddress = NetworkAddress.valueOf(fromAddress, spokeAssetManager.net());
+        NetworkAddress fromNetworkAddress = new NetworkAddress(spokeAssetManager.net(), fromAddress);
         if (toAddress.isEmpty()) {
             toAddress = fromNetworkAddress.toString();
         } else {
@@ -199,7 +195,7 @@ public class AssetManagerImpl implements AssetManager {
         Address assetAddress = assets.get(spokeTokenAddress.toString());
         Context.require(assetAddress != null, "Token is not yet deployed");
 
-        Context.call(assetAddress, "burnFrom", userAddress, _amount);
+        Context.call(assetAddress, "burnFrom", userAddress.toString(), _amount);
     }
 
     public static Address getSystemScoreAddress() {

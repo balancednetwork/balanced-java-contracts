@@ -51,6 +51,7 @@ public class MockBalanced {
     public MockContract<Oracle> oracle;
     public MockContract<BalancedOracle> balancedOracle;
     public MockContract<BoostedBaln> bBaln;
+    public MockContract<AssetManager> assetManager;
     public MockContract<XCall> xCall;
     public MockContract<Governance> governance;
 
@@ -74,6 +75,7 @@ public class MockBalanced {
         oracle = new MockContract<>(OracleScoreInterface.class, Oracle.class, sm, owner);
         balancedOracle = new MockContract<>(BalancedOracleScoreInterface.class, BalancedOracle.class, sm, owner);
         bBaln = new MockContract<>(BoostedBalnScoreInterface.class, BoostedBaln.class, sm, owner);
+        assetManager = new MockContract<>(AssetManagerScoreInterface.class, AssetManager.class, sm, owner);
         xCall = new MockContract<>(XCallScoreInterface.class, XCall.class, sm, owner);
         governance = new MockContract<>(GovernanceScoreInterface.class, Governance.class, sm, owner);
 
@@ -101,6 +103,7 @@ public class MockBalanced {
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.STAKEDLP)).thenReturn(stakedLp.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.STABILITY)).thenReturn(stability.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.BOOSTED_BALN)).thenReturn(bBaln.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.ASSET_MANAGER)).thenReturn(assetManager.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.XCALL)).thenReturn(xCall.getAddress());
 
         addressManagerMock.when(() -> BalancedAddressManager.getLoans()).thenReturn(loans.getAddress());
@@ -121,6 +124,7 @@ public class MockBalanced {
         addressManagerMock.when(() -> BalancedAddressManager.getStabilityFund()).thenReturn(stability.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.getBalancedOracle()).thenReturn(balancedOracle.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.getBoostedBaln()).thenReturn(bBaln.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.getAssetManager()).thenReturn(assetManager.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.getXCall()).thenReturn(xCall.getAddress());
 
 
