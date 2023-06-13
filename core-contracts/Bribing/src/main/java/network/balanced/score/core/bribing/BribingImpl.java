@@ -59,6 +59,7 @@ public class BribingImpl implements Bribing {
     public static final BranchDB<String, DictDB<Address, Boolean>> bribesInSource = Context.newBranchDB("bribesInSource", Boolean.class);
 
     private final VarDB<String> currentVersion = Context.newVarDB("version", String.class);
+    private final VarDB<BigInteger> migrationPeriod = Context.newVarDB("migration_period", BigInteger.class);
 
     private class SourceStatus {
         BigInteger period;
@@ -69,7 +70,10 @@ public class BribingImpl implements Bribing {
         if (BribingImpl.rewards.get() == null) {
             isContract(rewards);
             BribingImpl.rewards.set(rewards);
+        } else {
+            migrationPeriod.set(getCurrentPeriod());
         }
+
         if (this.currentVersion.getOrDefault("").equals(Versions.BRIBING)) {
             Context.revert("Can't Update same version of code");
         }
@@ -133,7 +137,7 @@ public class BribingImpl implements Bribing {
 
     @External(readonly=true)
     public BigInteger getClaimedBribes(String source, Address bribeToken) {
-        return rewardPerSource.at(source).getOrDefault(bribeToken, BigInteger.ZERO);
+        return claimsPerSource.at(source).getOrDefault(bribeToken, BigInteger.ZERO);
     }
 
     @External(readonly=true)
@@ -232,14 +236,14 @@ public class BribingImpl implements Bribing {
             return BigInteger.ZERO;
         }
 
-        BigInteger slope = getUserSlope(user, source);
-        BigInteger amount = slope.multiply(status.bribesPerToken).divide(EXA);
+        BigInteger bias = calculateUserBias(user, source);
+        BigInteger amount = bias.multiply(status.bribesPerToken).divide(EXA);
 
         return amount;
     }
 
     private SourceStatus updateSource(String source, Address bribeToken, boolean readOnly) {
-        BigInteger blockTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());
+        BigInteger blockTimestamp = getBlockTime();
         SourceStatus status = new SourceStatus();
         status.period = activePeriod.at(source).getOrDefault(bribeToken, BigInteger.ZERO);
         status.bribesPerToken = bribePerToken.at(source).getOrDefault(bribeToken, BigInteger.ZERO);
@@ -253,16 +257,15 @@ public class BribingImpl implements Bribing {
         }
 
         status.period = blockTimestamp.divide(WEEK).multiply(WEEK);
-
-        BigInteger slope = getSourceSlope(source, status.period);
+        BigInteger bias = getSourceBias(source, status.period);
         BigInteger claimedBribes = claimsPerSource.at(source).getOrDefault(bribeToken, BigInteger.ZERO);
         BigInteger totalPreviousAmount = rewardPerSource.at(source).getOrDefault(bribeToken, BigInteger.ZERO);
         BigInteger addedAmount = futureBribePerSource.at(source).at(bribeToken).getOrDefault(status.period, BigInteger.ZERO);
         BigInteger newTotal = totalPreviousAmount.add(addedAmount);
         BigInteger amount = newTotal.subtract(claimedBribes);
         status.bribesPerToken = BigInteger.ZERO;
-        if (!amount.equals(BigInteger.ZERO)) {
-            status.bribesPerToken = amount.multiply(EXA).divide(slope);
+        if (!amount.equals(BigInteger.ZERO) && !bias.equals(BigInteger.ZERO)) {
+            status.bribesPerToken = amount.multiply(EXA).divide(bias);
         }
 
         if (!readOnly) {
@@ -285,21 +288,43 @@ public class BribingImpl implements Bribing {
         bribesInSource.at(source).set(bribe, true);
     }
 
-    public BigInteger getSourceSlope(String source, BigInteger period) {
+    public BigInteger getSourceBias(String source, BigInteger period) {
         Map<String, BigInteger> point  = (Map<String, BigInteger>) Context.call(rewards.get(), "getSourceWeight", source, period);
-        if (!point.containsKey("slope")) {
+        if (!point.containsKey("bias")) {
             return BigInteger.ZERO;
         }
 
-        return point.get("slope");
+        return point.get("bias");
     }
 
-    public BigInteger getUserSlope(Address user, String source) {
+
+    public Map<String, BigInteger> getUserSlope(Address user, String source) {
         Map<String, BigInteger> userSlope  = (Map<String, BigInteger>)Context.call(rewards.get(), "getUserSlope", user, source);
-        if (!userSlope.containsKey("slope")) {
+        return userSlope;
+    }
+
+    public BigInteger calculateUserBias(Address user, String source) {
+        BigInteger period = getCurrentPeriod();
+        Map<String, BigInteger> userSlope = getUserSlope(user, source);
+        BigInteger end = userSlope.get("end");
+        BigInteger slope = userSlope.get("slope");
+
+        if (period.add(WEEK).compareTo(end) >= 0){
             return BigInteger.ZERO;
         }
 
-        return userSlope.get("slope");
+        if (period.equals(migrationPeriod.get())) {
+            return slope;
+        }
+
+        return slope.multiply(end.subtract(period));
+    }
+
+    public BigInteger getCurrentPeriod() {
+        return  getBlockTime().divide(WEEK).multiply(WEEK);
+    }
+
+    public BigInteger getBlockTime() {
+        return BigInteger.valueOf(Context.getBlockTimestamp());
     }
 }
