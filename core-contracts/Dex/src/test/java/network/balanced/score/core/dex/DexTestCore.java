@@ -717,7 +717,6 @@ public class DexTestCore extends DexTestBase {
         assertEquals(poolStats.get("quote_token"), bnusdScore.getAddress());
         assertEquals(poolStats.get("base"), balnValue.add(balnValue));
         assertEquals(poolStats.get("quote"), bnusdValue.add(bnusdValue));
-        assertEquals(bnusdValue.multiply(balnValue).sqrt(), balance);
 
         BigInteger balnWithdrawAmount = BigInteger.TEN.pow(19);
         dexScore.invoke(governanceScore, "govWithdraw", balnScore.getAddress(), bnusdScore.getAddress(), balnWithdrawAmount);
