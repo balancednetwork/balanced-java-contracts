@@ -207,6 +207,10 @@ public class DexImpl extends AbstractDex {
 
                 break;
             }
+            case "_donate_sICX": {
+                require(fromToken.equals(getSicx()));
+                break;
+            }
             default:
                 // If no supported method was sent, revert the transaction
                 Context.revert(100, TAG + ": Unsupported method supplied");
