@@ -696,9 +696,8 @@ public abstract class AbstractDex implements Dex {
 
         Context.require(fromBalance.compareTo(value) >= 0, TAG + ": Out of balance");
 
-        BigInteger toBalance = poolLpBalanceOfUser.getOrDefault(to, BigInteger.ZERO);
-        poolLpBalanceOfUser.set(from, fromBalance.subtract(value));
-        poolLpBalanceOfUser.set(to, toBalance.add(value));
+        poolLpBalanceOfUser.set(from, poolLpBalanceOfUser.get(from).subtract(value));
+        poolLpBalanceOfUser.set(to, poolLpBalanceOfUser.getOrDefault(to, BigInteger.ZERO).add(value));
         Address stakedLpAddress = getStakedLp();
 
         if (!from.equals(stakedLpAddress) && !to.equals(stakedLpAddress)) {
