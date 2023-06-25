@@ -461,6 +461,12 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
         Context.call(dividendsScore.get(), "updateBalnStake", from, stakedAmount, newTotal);
     }
 
+    @External
+    public void govTransfer(Address _from, Address _to, BigInteger _value, @Optional byte[] _data) {
+        onlyGovernance();
+        transfer(_from, _to, _value, _data);
+    }
+
     @Override
     @External
     public void transfer(Address _to, BigInteger _value, @Optional byte[] _data) {

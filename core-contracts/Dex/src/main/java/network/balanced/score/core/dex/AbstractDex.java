@@ -583,6 +583,34 @@ public abstract class AbstractDex implements Dex {
         totalTokensInPool.set(fromToken, newFromToken);
     }
 
+    @External
+    public void govWithdraw(Address fromToken, Address toToken, BigInteger value) {
+        onlyGovernance();
+        int id = getPoolId(fromToken, toToken).intValue();
+        isValidPoolId(id);
+        Context.require(id != SICXICX_POOL_ID, TAG + ":  Not supported on this API, use the ICX swap API.");
+
+        DictDB<Address, BigInteger> totalTokensInPool = poolTotal.at(id);
+        BigInteger oldFromToken = totalTokensInPool.get(fromToken);
+
+        BigInteger newFromToken = oldFromToken.subtract(value);
+
+        totalTokensInPool.set(fromToken, newFromToken);
+        Context.call(toToken, "transfer", getDaofund(), value);
+    }
+
+    @External
+    public void govSetPoolTotal(int pid, BigInteger total) {
+        onlyGovernance();
+        poolLpTotal.set(pid, total);
+    }
+
+    @External
+    public void govSetUserPoolTotal(int pid, Address user, BigInteger total) {
+        onlyGovernance();
+        balance.at(pid).set(user, total);
+    }
+
     void swapIcx(Address sender, BigInteger value) {
         BigInteger sicxIcxPrice = getSicxRate();
 

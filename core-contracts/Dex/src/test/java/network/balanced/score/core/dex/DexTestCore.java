@@ -684,6 +684,52 @@ public class DexTestCore extends DexTestBase {
         contextMock.verify(() -> Context.call(eq(stakingScore.getAddress()), eq("delegate"), any()));
     }
 
+    @Test
+    void govWithdraw() {
+        Account account = sm.createAccount();
+        Account account1 = sm.createAccount();
+
+        final String data = "{" +
+                "\"method\": \"_deposit\"" +
+                "}";
+
+        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
+        contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
+        contextMock.when(() -> Context.call(any(Address.class), eq("decimals"))).thenReturn(BigInteger.valueOf(18));
+        contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class),
+                any(BigInteger.class))).thenReturn(null);
+
+        BigInteger FIFTY = BigInteger.valueOf(50L).multiply(EXA);
+        //deposit
+        BigInteger bnusdValue = BigInteger.valueOf(276L).multiply(EXA);
+        BigInteger balnValue = BigInteger.valueOf(100L).multiply(EXA);
+        dexScore.invoke(bnusdScore, "tokenFallback", account.getAddress(), bnusdValue, data.getBytes());
+        dexScore.invoke(balnScore, "tokenFallback", account.getAddress(), balnValue, data.getBytes());
+        dexScore.invoke(bnusdScore, "tokenFallback", account1.getAddress(), bnusdValue, data.getBytes());
+        dexScore.invoke(balnScore, "tokenFallback", account1.getAddress(), balnValue, data.getBytes());
+        // add liquidity pool
+        dexScore.invoke(account, "add", balnScore.getAddress(), bnusdScore.getAddress(), balnValue, bnusdValue, false);
+        dexScore.invoke(account1, "add", balnScore.getAddress(), bnusdScore.getAddress(), balnValue, bnusdValue, false);
+
+        BigInteger poolId = (BigInteger) dexScore.call("getPoolId", bnusdScore.getAddress(), balnScore.getAddress());
+        Map<String, Object> poolStats = (Map<String, Object>) dexScore.call("getPoolStats", poolId);
+        assertEquals(poolStats.get("base_token"), balnScore.getAddress());
+        assertEquals(poolStats.get("quote_token"), bnusdScore.getAddress());
+        assertEquals(poolStats.get("base"), balnValue.add(balnValue));
+        assertEquals(poolStats.get("quote"), bnusdValue.add(bnusdValue));
+        assertEquals(bnusdValue.multiply(balnValue).sqrt(), balance);
+
+        BigInteger balnWithdrawAmount = BigInteger.TEN.pow(19);
+        dexScore.invoke(governanceScore, "govWithdraw", balnScore.getAddress(), bnusdScore.getAddress(), balnWithdrawAmount);
+
+        BigInteger bnUSDWithdrawAmount = BigInteger.valueOf(3).multiply(BigInteger.TEN.pow(19));
+        dexScore.invoke(governanceScore, "govWithdraw", bnusdScore.getAddress(), balnScore.getAddress(), bnUSDWithdrawAmount);
+
+        poolStats = (Map<String, Object>) dexScore.call("getPoolStats", poolId);
+        assertEquals(poolStats.get("base"), balnValue.add(balnValue).subtract(balnWithdrawAmount));
+        assertEquals(poolStats.get("quote"), bnusdValue.add(bnusdValue).subtract(bnUSDWithdrawAmount));
+    }
+
     @AfterEach
     void closeMock() {
         contextMock.close();
