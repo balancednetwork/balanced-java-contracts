@@ -207,10 +207,6 @@ public class DexImpl extends AbstractDex {
 
                 break;
             }
-            case "_donate_sICX": {
-                require(fromToken.equals(getSicx()));
-                break;
-            }
             default:
                 // If no supported method was sent, revert the transaction
                 Context.revert(100, TAG + ": Unsupported method supplied");
@@ -263,7 +259,6 @@ public class DexImpl extends AbstractDex {
         require(active.getOrDefault(_id.intValue(), false), TAG + ": Pool is not active");
         require(_value.compareTo(BigInteger.ZERO) > 0, TAG + " Cannot withdraw a negative or zero balance");
         require(_value.compareTo(userBalance) <= 0, TAG + ": Insufficient balance");
-
 
         Address quoteToken = poolQuote.get(_id.intValue());
         DictDB<Address, BigInteger> totalTokensInPool = poolTotal.at(_id.intValue());
