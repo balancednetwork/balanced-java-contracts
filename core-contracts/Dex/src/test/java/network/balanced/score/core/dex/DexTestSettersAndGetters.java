@@ -608,7 +608,7 @@ public class DexTestSettersAndGetters extends DexTestBase {
 
     @Test
     void govWithdraw() {
-        assertOnlyCallableBy(governanceScore.getAddress(), dexScore, "govWithdraw", dexScore.getAddress(), dexScore.getAddress(), BigInteger.ZERO);
+        assertOnlyCallableBy(governanceScore.getAddress(), dexScore, "govWithdraw", 1, dexScore.getAddress(), BigInteger.ZERO);
     }
 
     @Test

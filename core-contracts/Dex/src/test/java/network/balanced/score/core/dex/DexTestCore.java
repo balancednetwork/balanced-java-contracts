@@ -751,12 +751,16 @@ public class DexTestCore extends DexTestBase {
         assertEquals(poolStats.get("quote"), bnusdValue.add(bnusdValue));
 
         BigInteger balnWithdrawAmount = BigInteger.TEN.pow(19);
-        dexScore.invoke(governanceScore, "govWithdraw", balnScore.getAddress(), bnusdScore.getAddress(), balnWithdrawAmount);
+        dexScore.invoke(governanceScore, "govWithdraw", 2, balnScore.getAddress(), balnWithdrawAmount);
 
         BigInteger bnUSDWithdrawAmount = BigInteger.valueOf(3).multiply(BigInteger.TEN.pow(19));
-        dexScore.invoke(governanceScore, "govWithdraw", bnusdScore.getAddress(), balnScore.getAddress(), bnUSDWithdrawAmount);
+        dexScore.invoke(governanceScore, "govWithdraw", 2, bnusdScore.getAddress(), bnUSDWithdrawAmount);
 
         poolStats = (Map<String, Object>) dexScore.call("getPoolStats", poolId);
+        contextMock.verify(() -> Context.call(eq(bnusdScore.getAddress()), eq("transfer"), eq(mockBalanced.daofund.getAddress()),
+            eq(bnUSDWithdrawAmount)));
+        contextMock.verify(() -> Context.call(eq(balnScore.getAddress()), eq("transfer"), eq(mockBalanced.daofund.getAddress()),
+            eq(balnWithdrawAmount)));
         assertEquals(poolStats.get("base"), balnValue.add(balnValue).subtract(balnWithdrawAmount));
         assertEquals(poolStats.get("quote"), bnusdValue.add(bnusdValue).subtract(bnUSDWithdrawAmount));
     }
