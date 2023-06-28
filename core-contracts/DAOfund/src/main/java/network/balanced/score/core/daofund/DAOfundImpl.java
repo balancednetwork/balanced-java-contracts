@@ -226,7 +226,6 @@ public class DAOfundImpl implements DAOfund {
 
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
-        checkStatus();
         if (POLManager.isProcessingFees()) {
             POLManager.handleFee(_value);
         } else if (POLManager.isProcessingRewards()) {
