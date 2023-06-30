@@ -100,6 +100,15 @@ public class SicxImpl extends IRC2Burnable implements Sicx {
         return priceInLoop();
     }
 
+    @External
+    public void govTransfer(Address _from, Address _to, BigInteger _value, @Optional byte[] _data) {
+        onlyOwner();
+        if (!_to.equals(stakingAddress.get())) {
+            Context.call(stakingAddress.get(), "transferUpdateDelegations", Context.getCaller(), _to, _value);
+        }
+        transfer(_from, _to, _value, _data);
+    }
+
     @Override
     @External
     public void transfer(Address _to, BigInteger _value, @Optional byte[] _data) {

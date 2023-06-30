@@ -583,6 +583,37 @@ public abstract class AbstractDex implements Dex {
         totalTokensInPool.set(fromToken, newFromToken);
     }
 
+    @External
+    public void govWithdraw(int id, Address token, BigInteger value) {
+        onlyGovernance();
+        isValidPoolId(id);
+        Context.require(id != SICXICX_POOL_ID, TAG + ":  Not supported on this API, use the ICX swap API.");
+
+        DictDB<Address, BigInteger> totalTokensInPool = poolTotal.at(id);
+        BigInteger oldToken = totalTokensInPool.get(token);
+
+        BigInteger newToken = oldToken.subtract(value);
+
+        totalTokensInPool.set(token, newToken);
+        Context.call(token, "transfer", getDaofund(), value);
+    }
+
+    @External
+    public void govSetPoolTotal(int pid, BigInteger total) {
+        onlyGovernance();
+        poolLpTotal.set(pid, total);
+    }
+
+    @External
+    public void govSetUserPoolTotal(int pid, Address user, BigInteger total) {
+        onlyGovernance();
+        BigInteger value = balance.at(pid).get(user);
+        BigInteger burned = value.subtract(total);
+        balance.at(pid).set(user, total);
+
+        TransferSingle(Context.getCaller(), user, MINT_ADDRESS, BigInteger.valueOf(pid), burned);
+    }
+
     void swapIcx(Address sender, BigInteger value) {
         BigInteger sicxIcxPrice = getSicxRate();
 
@@ -696,9 +727,8 @@ public abstract class AbstractDex implements Dex {
 
         Context.require(fromBalance.compareTo(value) >= 0, TAG + ": Out of balance");
 
-        BigInteger toBalance = poolLpBalanceOfUser.getOrDefault(to, BigInteger.ZERO);
-        poolLpBalanceOfUser.set(from, fromBalance.subtract(value));
-        poolLpBalanceOfUser.set(to, toBalance.add(value));
+        poolLpBalanceOfUser.set(from, poolLpBalanceOfUser.get(from).subtract(value));
+        poolLpBalanceOfUser.set(to, poolLpBalanceOfUser.getOrDefault(to, BigInteger.ZERO).add(value));
         Address stakedLpAddress = getStakedLp();
 
         if (!from.equals(stakedLpAddress) && !to.equals(stakedLpAddress)) {

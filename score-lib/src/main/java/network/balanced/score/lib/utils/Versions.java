@@ -17,11 +17,11 @@
 package network.balanced.score.lib.utils;
 
 public class Versions {
-    public final static String BALN = "v1.0.0";
+    public final static String BALN = "v1.0.1";
     public final static String DIVIDENDS = "v1.0.0";
     public final static String LOANS = "v1.0.2";
     public final static String RESERVE = "v1.0.0";
-    public final static String SICX = "v1.0.0";
+    public final static String SICX = "v1.0.1";
     public final static String STAKING = "v1.0.1";
     public final static String WORKERTOKEN = "v1.0.0";
     public final static String BNUSD = "v1.0.0";
@@ -30,7 +30,7 @@ public class Versions {
     public final static String STABILITY = "v1.0.0";
     public final static String BALANCEDORACLE = "v1.0.0";
     public final static String DAOFUND = "v1.0.2";
-    public final static String DEX = "v1.0.0";
+    public final static String DEX = "v1.0.1";
     public final static String GOVERNANCE = "v1.0.0";
     public final static String REBALANCING = "v1.0.0";
     public final static String ROUTER = "v1.0.0";

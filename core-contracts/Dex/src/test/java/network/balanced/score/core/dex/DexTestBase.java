@@ -46,7 +46,7 @@ class DexTestBase extends UnitTest {
     protected static Account prep_address = sm.createAccount();
 
     int scoreCount = 0;
-    private MockBalanced mockBalanced;
+    protected MockBalanced mockBalanced;
     protected Account governanceScore;
     protected Account dividendsScore;
     protected Account stakingScore;

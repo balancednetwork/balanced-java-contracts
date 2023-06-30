@@ -260,7 +260,6 @@ public class DexImpl extends AbstractDex {
         require(_value.compareTo(BigInteger.ZERO) > 0, TAG + " Cannot withdraw a negative or zero balance");
         require(_value.compareTo(userBalance) <= 0, TAG + ": Insufficient balance");
 
-
         Address quoteToken = poolQuote.get(_id.intValue());
         DictDB<Address, BigInteger> totalTokensInPool = poolTotal.at(_id.intValue());
         BigInteger totalBase = totalTokensInPool.get(baseToken);
