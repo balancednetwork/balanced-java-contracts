@@ -197,8 +197,6 @@ public class DexImpl extends AbstractDex {
                 break;
             }
             case "_donate": {
-                require(_from.equals(Context.getOwner()), "Only owner is allowed to donate");
-
                 JsonObject params = json.get("params").asObject();
                 require(params.contains("toToken"), TAG + ": No toToken specified in swap");
                 Address toToken = Address.fromString(params.get("toToken").asString());
