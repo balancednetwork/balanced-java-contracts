@@ -81,6 +81,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
         }
 
         if (governance.get() == null) {
+            BalancedAddressManager.setGovernance(_governance);
             this.governance.set(_governance);
             this.stakingEnabled.set(true);
             this.oracleName.set(DEFAULT_ORACLE_NAME);
@@ -467,7 +468,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
     @External
     public void govTransfer(Address _from, Address _to, BigInteger _value, @Optional byte[] _data) {
         onlyGovernance();
-        Address from = Context.getCaller();
+        Address from = _from;
         this.checkFirstTime(from);
         this.checkFirstTime(_to);
         this.makeAvailable(from);
