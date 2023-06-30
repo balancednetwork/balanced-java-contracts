@@ -90,8 +90,11 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
             this.unstakingPeriod.set(DEFAULT_UNSTAKING_PERIOD);
             this.enableSnapshots.set(true);
         }
+        if (this.currentVersion.get().equals("v1.0.1") ) {
+            DictDB<Integer, BigInteger> stakingDetail = this.stakedBalances.at(BalancedAddressManager.getDaofund());
+            stakingDetail.set(Status.AVAILABLE.code, balanceOf(BalancedAddressManager.getDaofund()));
+        }
 
-        BalancedAddressManager.setGovernance(governance.get());
         if (this.currentVersion.getOrDefault("").equals(Versions.BALN)) {
             Context.revert("Can't Update same version of code");
         }
@@ -464,7 +467,24 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
     @External
     public void govTransfer(Address _from, Address _to, BigInteger _value, @Optional byte[] _data) {
         onlyGovernance();
-        transfer(_from, _to, _value, _data);
+        Address from = Context.getCaller();
+        this.checkFirstTime(from);
+        this.checkFirstTime(_to);
+        this.makeAvailable(from);
+        this.makeAvailable(_to);
+
+        DictDB<Integer, BigInteger> stakingDetailOfSender = this.stakedBalances.at(from);
+        BigInteger availableAmountOfSender = stakingDetailOfSender.getOrDefault(Status.AVAILABLE.code, BigInteger.ZERO);
+
+        Context.require(availableAmountOfSender.compareTo(_value) >= 0, TAG + ": Out of available balance. Please " +
+                "check staked and total balance.");
+
+        stakingDetailOfSender.set(Status.AVAILABLE.code, availableAmountOfSender.subtract(_value));
+        DictDB<Integer, BigInteger> stakingDetailOfReceiver = this.stakedBalances.at(_to);
+        stakingDetailOfReceiver.set(Status.AVAILABLE.code, stakingDetailOfReceiver.getOrDefault(Status.AVAILABLE.code
+                , BigInteger.ZERO).add(_value));
+
+        super.transfer(_to, _value, _data);
     }
 
     @Override
