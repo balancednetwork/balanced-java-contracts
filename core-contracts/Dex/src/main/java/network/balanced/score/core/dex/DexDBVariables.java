@@ -63,7 +63,6 @@ public class DexDBVariables {
 
 
     final static VarDB<Address> governance = Context.newVarDB(GOVERNANCE_ADDRESS, Address.class);
-    public final static VarDB<Boolean> dexOn = Context.newVarDB(DEX_ON, Boolean.class);
 
     // Deposits - Map: token_address -> user_address -> value
     final static BranchDB<Address, DictDB<Address, BigInteger>> deposit = Context.newBranchDB(DEPOSIT,

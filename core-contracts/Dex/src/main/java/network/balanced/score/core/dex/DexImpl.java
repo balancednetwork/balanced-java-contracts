@@ -34,7 +34,6 @@ import scorex.util.ArrayList;
 import java.math.BigInteger;
 import java.util.List;
 
-import static network.balanced.score.core.dex.utils.Check.isDexOn;
 import static network.balanced.score.core.dex.DexDBVariables.*;
 import static network.balanced.score.core.dex.utils.Const.*;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getRewards;
@@ -61,7 +60,6 @@ public class DexImpl extends AbstractDex {
 
     @Payable
     public void fallback() {
-        isDexOn();
         checkStatus();
 
         BigInteger orderValue = Context.getValue();
@@ -97,7 +95,6 @@ public class DexImpl extends AbstractDex {
 
     @External
     public void cancelSicxicxOrder() {
-        isDexOn();
         checkStatus();
 
         Address user = Context.getCaller();
@@ -130,7 +127,6 @@ public class DexImpl extends AbstractDex {
 
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
-        isDexOn();
         checkStatus();
 
         // Parse the transaction data submitted by the user
@@ -216,7 +212,6 @@ public class DexImpl extends AbstractDex {
 
     @External
     public void transfer(Address _to, BigInteger _value, BigInteger _id, @Optional byte[] _data) {
-        isDexOn();
         checkStatus();
         if (_data == null) {
             _data = new byte[0];
@@ -226,7 +221,6 @@ public class DexImpl extends AbstractDex {
 
     @External
     public void withdraw(Address _token, BigInteger _value) {
-        isDexOn();
         checkStatus();
         require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Must specify a positive amount");
         Address sender = Context.getCaller();
@@ -248,7 +242,6 @@ public class DexImpl extends AbstractDex {
 
     @External
     public void remove(BigInteger _id, BigInteger _value, @Optional boolean _withdraw) {
-        isDexOn();
         checkStatus();
         Address user = Context.getCaller();
         Address baseToken = poolBase.get(_id.intValue());
@@ -311,7 +304,6 @@ public class DexImpl extends AbstractDex {
     @External
     public void add(Address _baseToken, Address _quoteToken, BigInteger _baseValue, BigInteger _quoteValue,
                     @Optional boolean _withdraw_unused) {
-        isDexOn();
         checkStatus();
 
         Address user = Context.getCaller();
@@ -406,6 +398,8 @@ public class DexImpl extends AbstractDex {
                     TAG + ": LP tokens to mint is less than zero");
         }
 
+        require(active.getOrDefault(id, false), TAG + ": Pool is not active");
+
         // Apply the funds to the pool
 
         poolBaseAmount = poolBaseAmount.add(baseToCommit);
@@ -443,7 +437,6 @@ public class DexImpl extends AbstractDex {
 
     @External
     public void withdrawSicxEarnings(@Optional BigInteger _value) {
-        isDexOn();
         checkStatus();
         if (_value == null) {
             _value = BigInteger.ZERO;

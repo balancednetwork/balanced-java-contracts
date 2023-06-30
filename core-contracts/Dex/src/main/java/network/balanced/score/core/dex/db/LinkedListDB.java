@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,8 @@ public class LinkedListDB {
 
     public BigInteger append(BigInteger size, Address user, BigInteger nodeId) {
         NodeDB nodeToAppend = createNode(size, user, nodeId);
-        if (length.getOrDefault(BigInteger.ZERO).equals(BigInteger.ZERO)) {
+        BigInteger oldLength = length.getOrDefault(BigInteger.ZERO);
+        if (oldLength.equals(BigInteger.ZERO)) {
             headId.set(nodeId);
         } else {
             BigInteger tailId = this.tailId.getOrDefault(DEFAULT_NODE_ID);
@@ -71,7 +72,7 @@ public class LinkedListDB {
             nodeToAppend.setPrev(tailId);
         }
         tailId.set(nodeId);
-        length.set(length.getOrDefault(BigInteger.ZERO).add(BigInteger.ONE));
+        length.set(oldLength.add(BigInteger.ONE));
         return nodeId;
     }
 
@@ -103,8 +104,7 @@ public class LinkedListDB {
     }
 
 
-    public NodeDB createNode(BigInteger size, Address user,
-                             BigInteger nodeId) {
+    public NodeDB createNode(BigInteger size, Address user, BigInteger nodeId) {
         NodeDB node = createNodeInstance(nodeId);
         if (node.exists()) {
             LinkedNodeAlreadyExists(name, nodeId);

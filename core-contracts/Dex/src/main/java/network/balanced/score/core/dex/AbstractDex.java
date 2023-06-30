@@ -38,7 +38,6 @@ import static network.balanced.score.core.dex.utils.Check.isValidPoolId;
 import static network.balanced.score.core.dex.utils.Const.*;
 import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Check.onlyGovernance;
-import static network.balanced.score.lib.utils.Check.checkStatus;
 import static network.balanced.score.lib.utils.Constants.*;
 import static network.balanced.score.lib.utils.Math.pow;
 
@@ -58,7 +57,6 @@ public abstract class AbstractDex implements Dex {
             currentDay.set(BigInteger.valueOf(1L));
             namedMarkets.set(SICXICX_MARKET_NAME, SICXICX_POOL_ID);
             marketsToNames.set(SICXICX_POOL_ID, SICXICX_MARKET_NAME);
-            dexOn.set(true);
         }
         setGovernance(governance.get());
     }
@@ -113,17 +111,6 @@ public abstract class AbstractDex implements Dex {
     @External(readonly = true)
     public Address getAddress(String name) {
         return getAddressByName(name);
-    }
-
-    @External
-    public void turnDexOn() {
-        onlyGovernance();
-        dexOn.set(true);
-    }
-
-    @External(readonly = true)
-    public boolean getDexOn() {
-        return dexOn.get();
     }
 
     @External
@@ -692,12 +679,12 @@ public abstract class AbstractDex implements Dex {
                 TAG + ": Transferring value cannot be less than 0.");
 
         DictDB<Address, BigInteger> poolLpBalanceOfUser = balance.at(id);
-        BigInteger fromBalance = poolLpBalanceOfUser.getOrDefault(from, BigInteger.ZERO);
 
+        BigInteger fromBalance = poolLpBalanceOfUser.getOrDefault(from, BigInteger.ZERO);
         Context.require(fromBalance.compareTo(value) >= 0, TAG + ": Out of balance");
+        poolLpBalanceOfUser.set(from, fromBalance.subtract(value));
 
         BigInteger toBalance = poolLpBalanceOfUser.getOrDefault(to, BigInteger.ZERO);
-        poolLpBalanceOfUser.set(from, fromBalance.subtract(value));
         poolLpBalanceOfUser.set(to, toBalance.add(value));
         Address stakedLpAddress = getStakedLp();
 

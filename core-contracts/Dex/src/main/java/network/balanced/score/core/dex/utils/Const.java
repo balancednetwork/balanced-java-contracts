@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import score.Address;
 import java.math.BigInteger;
 
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
-import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
 public class Const {
 
@@ -31,12 +30,8 @@ public class Const {
     public static final int SICXICX_POOL_ID = 1;
     public static final BigInteger MIN_LIQUIDITY = BigInteger.valueOf(1_000);
     public static final BigInteger FEE_SCALE = BigInteger.valueOf(10_000);
-    public static final int FIRST_NON_BALANCED_POOL = 6;
     public static final Integer ICX_QUEUE_FILL_DEPTH = 50;
 
-    public static final int USDS_BNUSD_ID = 10;
-    public static final int IUSDT_BNUSD_ID = 15;
-    public static final BigInteger WITHDRAW_LOCK_TIMEOUT = MICRO_SECONDS_IN_A_DAY;
     public static final Address MINT_ADDRESS = EOA_ZERO;
     public static final String TAG = Names.DEX;
 
