@@ -91,7 +91,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
             this.unstakingPeriod.set(DEFAULT_UNSTAKING_PERIOD);
             this.enableSnapshots.set(true);
         }
-        if (this.currentVersion.get().equals("v1.0.1") ) {
+        if (this.currentVersion.getOrDefault("").equals("v1.0.1") ) {
             DictDB<Integer, BigInteger> stakingDetail = this.stakedBalances.at(BalancedAddressManager.getDaofund());
             stakingDetail.set(Status.AVAILABLE.code, balanceOf(BalancedAddressManager.getDaofund()));
         }
