@@ -84,7 +84,6 @@ class LoansTestBase extends UnitTest {
 
     protected void mockStakeICX(BigInteger amount) {
         Mockito.doAnswer((Answer<Void>) invocation -> {
-            final Object[] args = invocation.getArguments();
             loans.invoke(sicx.account, "tokenFallback", EOA_ZERO, amount, new byte[0]);
             return null;
         }).when(staking.mock).stakeICX(Mockito.any(Address.class), Mockito.any(byte[].class));
@@ -106,7 +105,11 @@ class LoansTestBase extends UnitTest {
                 .add("_asset", "bnUSD")
                 .add("_amount", loan.toString());
         byte[] params = data.toString().getBytes();
-
+        BigInteger balance = sicx.mock.balanceOf(loans.getAddress());
+        if (balance == null) {
+            balance = BigInteger.ZERO;
+        }
+        when(sicx.mock.balanceOf(loans.getAddress())).thenReturn(balance.add(collateral));
         loans.invoke(sicx.account, "tokenFallback", account.getAddress(), collateral, params);
     }
 
@@ -115,11 +118,22 @@ class LoansTestBase extends UnitTest {
                 .add("_asset", "bnUSD")
                 .add("_amount", loan.toString());
         byte[] params = data.toString().getBytes();
+        BigInteger balance = ieth.mock.balanceOf(ieth.getAddress());
+        if (balance == null) {
+            balance = BigInteger.ZERO;
+        }
+
+        when(ieth.mock.balanceOf(loans.getAddress())).thenReturn(balance.add(collateral));
         loans.invoke(ieth.account, "tokenFallback", account.getAddress(), collateral, params);
     }
 
     protected void takeLoanICX(Account account, String asset, BigInteger collateral, BigInteger loan) {
         mockStakeICX(collateral);
+        BigInteger balance = sicx.mock.balanceOf(loans.getAddress());
+        if (balance == null) {
+            balance = BigInteger.ZERO;
+        }
+        when(sicx.mock.balanceOf(loans.getAddress())).thenReturn(balance.add(collateral));
         sm.call(account, collateral, loans.getAddress(), "depositAndBorrow", asset, loan, account.getAddress(),
                 BigInteger.ZERO);
     }

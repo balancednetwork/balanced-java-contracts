@@ -59,6 +59,12 @@ public interface Stability extends Name, TokenFallback, BnusdAddress, Version {
     @External(readonly = true)
     BigInteger getLimit(Address _address);
 
+    @External
+    void updateFloor(Address _address, BigInteger _floor);
+
+    @External(readonly = true)
+    BigInteger getFloor(Address _address);
+
     @External(readonly = true)
     List<Address> getAcceptedTokens();
 }

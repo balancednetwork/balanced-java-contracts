@@ -45,6 +45,7 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
     private static final String PRICE_UPDATE_TIME = "price_update_time";
     private static final String LAST_PRICE = "last_price";
     private static final String MIN_INTERVAL = "min_interval";
+    private static final String DEBT_CEILING = "debt_ceiling";
     private static final String ADMIN_ADDRESS = "admin_address";
     private final String MINTER2 = "ExtraMinter";
     public static final String VERSION = "version";
@@ -57,6 +58,9 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
     private final VarDB<BigInteger> minInterval = Context.newVarDB(MIN_INTERVAL, BigInteger.class);
     private final VarDB<Address> admin = Context.newVarDB(ADMIN_ADDRESS, Address.class);
     protected final VarDB<Address> minter2 = Context.newVarDB(MINTER2, Address.class);
+
+    private final VarDB<BigInteger> debtCeiling = Context.newVarDB(DEBT_CEILING, BigInteger.class);
+
 
     private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
 
@@ -153,6 +157,17 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
         return priceUpdateTime.getOrDefault(BigInteger.ZERO);
     }
 
+    @External
+    public void setDebtCeiling(BigInteger ceiling) {
+        only(governance);
+        debtCeiling.set(ceiling);
+    }
+
+    @External(readonly = true)
+    public BigInteger getDebtCeiling() {
+        return debtCeiling.get();
+    }
+
     /**
      * @return the price of the asset in loop. Makes a call to the oracle if the last recorded price is not recent
      * enough.
@@ -216,7 +231,13 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
     public void mintTo(Address _account, BigInteger _amount, @Optional byte[] _data) {
         checkStatus();
         onlyEither(minter, minter2);
+
         mintWithTokenFallback(_account, _amount, _data);
+        BigInteger ceiling = debtCeiling.get();
+        if (ceiling != null) {
+            Context.require(totalSupply().compareTo(ceiling) <= 0, "Debt ceiling reached, DAO vote required to mint more bnUSD");
+
+        }
     }
 
     /**

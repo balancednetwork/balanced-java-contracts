@@ -16,26 +16,44 @@
 
 package network.balanced.score.util.stability;
 
-import com.iconloop.score.test.Account;
-import com.iconloop.score.test.Score;
-import com.iconloop.score.test.ServiceManager;
-import com.iconloop.score.test.TestBase;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.function.Executable;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import score.Address;
-import score.Context;
+import static network.balanced.score.lib.test.UnitTest.expectErrorMessage;
+import static network.balanced.score.lib.test.UnitTest.scoreCount;
+import static network.balanced.score.lib.test.UnitTest.testIsContract;
+import static network.balanced.score.lib.test.UnitTest.testOwnerControlMethods;
+import static network.balanced.score.util.stability.StabilityImpl.TAG;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-import static network.balanced.score.lib.test.UnitTest.*;
-import static network.balanced.score.util.stability.StabilityImpl.TAG;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+
+import com.iconloop.score.test.Account;
+import com.iconloop.score.test.Score;
+import com.iconloop.score.test.ServiceManager;
+import com.iconloop.score.test.TestBase;
+
+import network.balanced.score.lib.interfaces.BalancedDollar;
+import network.balanced.score.lib.interfaces.tokens.IRC2;
+import network.balanced.score.lib.interfaces.tokens.IRC2ScoreInterface;
+import network.balanced.score.lib.test.mock.MockBalanced;
+import network.balanced.score.lib.test.mock.MockContract;
+import score.Address;
+import score.Context;
 
 class StabilityImplTest extends TestBase {
 
@@ -44,19 +62,29 @@ class StabilityImplTest extends TestBase {
 
     private Score stabilityScore;
 
-    private static final Account feeHandler = Account.newScoreAccount(scoreCount++);
-    private static final Account bnusd = Account.newScoreAccount(scoreCount++);
+    private static Account feeHandler;
     private static final BigInteger feeIn = BigInteger.valueOf(5).multiply(BigInteger.TEN.pow(17));
     private static final BigInteger feeOut = BigInteger.valueOf(5).multiply(BigInteger.TEN.pow(17));
 
-    private static final Account iusdc = Account.newScoreAccount(scoreCount++);
-    private static final BigInteger limit = BigInteger.valueOf(1_000_000);
+    private static MockContract<IRC2> iusdc;
+    private static MockContract<BalancedDollar> bnusd;
 
-    private final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
+    private static final BigInteger limit = BigInteger.valueOf(1_000_000);
+    private static MockBalanced mockBalanced;
+
+    BigInteger iusdcDecimals = BigInteger.valueOf(6);
+    byte[] iusdcData;
 
     @BeforeEach
     void setUp() throws Exception {
-        stabilityScore = sm.deploy(owner, StabilityImpl.class, feeHandler.getAddress(), bnusd.getAddress(),
+        mockBalanced = new MockBalanced(sm, owner);
+        iusdc = new MockContract<IRC2>(IRC2ScoreInterface.class, sm, owner);
+        iusdcData = iusdc.getAddress().toString().getBytes();
+        bnusd = mockBalanced.bnUSD;
+        feeHandler = mockBalanced.feehandler.account;
+        when(iusdc.mock.decimals()).thenReturn(iusdcDecimals);
+        when(iusdc.mock.balanceOf(any(Address.class))).thenReturn(BigInteger.ZERO);
+        stabilityScore = sm.deploy(owner, StabilityImpl.class, mockBalanced.feehandler.getAddress(), bnusd.getAddress(),
                 feeIn, feeOut);
     }
 
@@ -129,8 +157,6 @@ class StabilityImplTest extends TestBase {
                 negativeLimit);
         expectErrorMessage(negativeLimitCall, expectedErrorMessage);
 
-        BigInteger iusdcDecimals = BigInteger.valueOf(6);
-        contextMock.when(() -> Context.call(iusdc.getAddress(), "decimals")).thenReturn(iusdcDecimals);
         stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit);
         assertEquals(limit.multiply(BigInteger.TEN.pow(iusdcDecimals.intValue())),
                 stabilityScore.call("getLimit",
@@ -169,8 +195,6 @@ class StabilityImplTest extends TestBase {
                 newLimit);
         expectErrorMessage(nonWhiteListed, expectedErrorMessage);
 
-        BigInteger iusdcDecimals = BigInteger.valueOf(6);
-        contextMock.when(() -> Context.call(iusdc.getAddress(), "decimals")).thenReturn(iusdcDecimals);
         stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit);
         assertEquals(limit.multiply(BigInteger.TEN.pow(iusdcDecimals.intValue())),
                 stabilityScore.call("getLimit", iusdc.getAddress()));
@@ -180,32 +204,59 @@ class StabilityImplTest extends TestBase {
                 stabilityScore.call("getLimit", iusdc.getAddress()));
     }
 
+    @Test
+    void updateFloor() {
+        BigInteger newFloor = BigInteger.valueOf(1_000);
+
+        Account nonOwner = sm.createAccount();
+        String expectedErrorMessage = "Reverted(0): SenderNotScoreOwner: Sender=" + nonOwner.getAddress()
+                + "Owner=" + owner.getAddress();
+        Executable notOwnerCall = () -> stabilityScore.invoke(nonOwner, "updateFloor", iusdc.getAddress(),
+        newFloor);
+        expectErrorMessage(notOwnerCall, expectedErrorMessage);
+
+        BigInteger negativeFloor = newFloor.negate();
+        expectedErrorMessage = "Reverted(0): " + TAG + ": Floor can't be set negative";
+        Executable negativeFloorCall = () -> stabilityScore.invoke(owner, "updateFloor", iusdc.getAddress(),
+            negativeFloor);
+        expectErrorMessage(negativeFloorCall, expectedErrorMessage);
+
+        expectedErrorMessage = "Reverted(0): " + TAG + ": Address not white listed previously";
+        Executable nonWhiteListed = () -> stabilityScore.invoke(owner, "updateFloor", iusdc.getAddress(),
+            newFloor);
+        expectErrorMessage(nonWhiteListed, expectedErrorMessage);
+
+        stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), BigInteger.ZERO);
+
+        stabilityScore.invoke(owner, "updateFloor", iusdc.getAddress(), newFloor);
+        assertEquals(newFloor.multiply(BigInteger.TEN.pow(iusdcDecimals.intValue())),
+                stabilityScore.call("getFloor", iusdc.getAddress()));
+    }
+
     @Nested
     class TokenFallback {
         Address ZERO_ADDRESS = new Address(new byte[Address.LENGTH]);
-        BigInteger iusdcDecimals = BigInteger.valueOf(6);
         BigInteger usdcAmount = BigInteger.valueOf(3217).multiply(BigInteger.TEN.pow(iusdcDecimals.intValue()));
         Account user = sm.createAccount();
         BigInteger bnusdAmount = BigInteger.valueOf(317).multiply(ICX);
-        byte[] iusdcData = iusdc.getAddress().toString().getBytes();
 
         @Test
         @DisplayName("No interaction with from being zero address in case of mint")
         void noInteraction() {
-            stabilityScore.invoke(iusdc, "tokenFallback", ZERO_ADDRESS, usdcAmount, new byte[0]);
-            contextMock.verify(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class),
-                    any(BigInteger.class)), never());
+            stabilityScore.invoke(iusdc.account, "tokenFallback", ZERO_ADDRESS, usdcAmount, new byte[0]);
+            verify(iusdc.mock, never()).transfer(any(Address.class),
+                    any(BigInteger.class), any(byte[].class));
         }
 
         @Test
         void zeroOrNegativeAmount() {
             String expectedErrorMessage = "Reverted(0): " + TAG
                     + ": Transfer amount must be greater than zero";
-            Executable negativeAmount = () -> stabilityScore.invoke(iusdc, "tokenFallback",
+            Executable negativeAmount = () -> stabilityScore.invoke(iusdc.account, "tokenFallback",
                     user.getAddress(),
                     usdcAmount.negate(), new byte[0]);
             expectErrorMessage(negativeAmount, expectedErrorMessage);
-            Executable zeroAmount = () -> stabilityScore.invoke(iusdc, "tokenFallback", user.getAddress(),
+            Executable zeroAmount = () -> stabilityScore.invoke(iusdc.account, "tokenFallback", user.getAddress(),
                     BigInteger.ZERO, new byte[0]);
             expectErrorMessage(zeroAmount, expectedErrorMessage);
         }
@@ -213,7 +264,7 @@ class StabilityImplTest extends TestBase {
         @Test
         void nonWhiteListed() {
             String expectedErrorMessage = TAG + ": Only whitelisted tokens or bnusd is accepted.";
-            Executable nonWhiteListed = () -> stabilityScore.invoke(iusdc, "tokenFallback",
+            Executable nonWhiteListed = () -> stabilityScore.invoke(iusdc.account, "tokenFallback",
                     user.getAddress(),
                     usdcAmount, new byte[0]);
             expectErrorMessage(nonWhiteListed, expectedErrorMessage);
@@ -223,64 +274,53 @@ class StabilityImplTest extends TestBase {
         void exceedingLimit() {
             // Whitelist iusdc token
             iusdcDecimals = BigInteger.valueOf(20);
-            contextMock.when(() -> Context.call(iusdc.getAddress(), "decimals")).thenReturn(iusdcDecimals);
+            when(iusdc.mock.decimals()).thenReturn(iusdcDecimals);
             stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit);
 
             // Error from exceeding limit
-            contextMock.when(() -> Context.call(iusdc.getAddress(), "balanceOf",
-                    stabilityScore.getAddress()))
+            when(iusdc.mock.balanceOf(stabilityScore.getAddress()))
                     .thenReturn(limit.multiply(BigInteger.TEN.pow(iusdcDecimals.intValue())
                             .add(BigInteger.ONE)));
             String expectedErrorMessage = "Reverted(0): " + TAG
                     + ": Asset to exchange with bnusd limit crossed.";
-            Executable exceedLimit = () -> stabilityScore.invoke(iusdc, "tokenFallback", user.getAddress(),
+            Executable exceedLimit = () -> stabilityScore.invoke(iusdc.account, "tokenFallback", user.getAddress(),
                     usdcAmount,
                     new byte[0]);
             expectErrorMessage(exceedLimit, expectedErrorMessage);
 
             // Error from zero bnusd to mint
-            contextMock.when(() -> Context.call(iusdc.getAddress(), "balanceOf",
-                    stabilityScore.getAddress())).thenReturn(BigInteger.ZERO);
+            when(iusdc.mock.balanceOf(stabilityScore.getAddress()))
+                    .thenReturn(BigInteger.ZERO);
             expectedErrorMessage = "Reverted(0): " + TAG + ": Bnusd amount must be greater than zero";
-            Executable mintZeroAmount = () -> stabilityScore.invoke(iusdc, "tokenFallback",
+            Executable mintZeroAmount = () -> stabilityScore.invoke(iusdc.account, "tokenFallback",
                     user.getAddress(),
                     BigInteger.TEN, new byte[0]);
             expectErrorMessage(mintZeroAmount, expectedErrorMessage);
 
             // Error from zero fee
             expectedErrorMessage = "Reverted(0): " + TAG + ": Fee must be greater than zero";
-            Executable zeroFee = () -> stabilityScore.invoke(iusdc, "tokenFallback", user.getAddress(),
+            Executable zeroFee = () -> stabilityScore.invoke(iusdc.account, "tokenFallback", user.getAddress(),
                     BigInteger.valueOf(100), new byte[0]);
             expectErrorMessage(zeroFee, expectedErrorMessage);
         }
 
         @Test
         void verifyBnusdMint() {
-            contextMock.when(() -> Context.call(iusdc.getAddress(), "decimals")).thenReturn(iusdcDecimals);
             stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit);
-            contextMock.when(() -> Context.call(iusdc.getAddress(), "balanceOf",
-                    stabilityScore.getAddress())).thenReturn(BigInteger.ZERO);
-
-            contextMock.when(() -> Context.call(eq(bnusd.getAddress()), eq("mint"), any(BigInteger.class)))
-                    .thenReturn(null);
-            contextMock.when(() -> Context.call(eq(bnusd.getAddress()), eq("transfer"), any(Address.class),
-                    any(BigInteger.class))).thenReturn(null);
-            stabilityScore.invoke(iusdc, "tokenFallback", user.getAddress(), usdcAmount, new byte[0]);
+            stabilityScore.invoke(iusdc.account, "tokenFallback", user.getAddress(), usdcAmount, new byte[0]);
 
             BigInteger equivalentBnusd = usdcAmount.multiply(ICX)
                     .divide(BigInteger.TEN.pow(iusdcDecimals.intValue()));
             BigInteger fee = feeIn.multiply(equivalentBnusd).divide(BigInteger.valueOf(100).multiply(ICX));
-            contextMock.verify(() -> Context.call(bnusd.getAddress(), "mint", equivalentBnusd));
-            contextMock.verify(() -> Context.call(bnusd.getAddress(), "transfer", feeHandler.getAddress(),
-                    fee));
-            contextMock.verify(() -> Context.call(bnusd.getAddress(), "transfer", user.getAddress(),
-                    equivalentBnusd.subtract(fee)));
+            verify(bnusd.mock).mint(equivalentBnusd, new byte[0]);
+            verify(bnusd.mock).transfer(feeHandler.getAddress(), fee, new byte[0]);
+            verify(bnusd.mock).transfer(user.getAddress(), equivalentBnusd.subtract(fee), new byte[0]);
         }
 
         @Test
         void nonWhitelistedReturn() {
             String expectedErrorMessage = "Reverted(0): " + TAG + ": Whitelisted tokens can only be sent";
-            Executable nonWhitelistedAsset = () -> stabilityScore.invoke(bnusd, "tokenFallback",
+            Executable nonWhitelistedAsset = () -> stabilityScore.invoke(bnusd.account, "tokenFallback",
                     user.getAddress(),
                     bnusdAmount, iusdcData);
             expectErrorMessage(nonWhitelistedAsset, expectedErrorMessage);
@@ -288,32 +328,46 @@ class StabilityImplTest extends TestBase {
 
         @Test
         void outAssetZero() {
-            contextMock.when(() -> Context.call(iusdc.getAddress(), "decimals")).thenReturn(iusdcDecimals);
             stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit);
 
             String expectedErrorMessage = "Reverted(0): " + TAG + ": Fee must be greater than zero";
-            Executable zeroFee = () -> stabilityScore.invoke(bnusd, "tokenFallback", user.getAddress(),
+            Executable zeroFee = () -> stabilityScore.invoke(bnusd.account, "tokenFallback", user.getAddress(),
                     BigInteger.ONE, iusdcData);
             expectErrorMessage(zeroFee, expectedErrorMessage);
 
             expectedErrorMessage = "Reverted(0): " + TAG + ": Asset to return can't be zero or less";
-            Executable zeroAssetOut = () -> stabilityScore.invoke(bnusd, "tokenFallback", user.getAddress(),
+            Executable zeroAssetOut = () -> stabilityScore.invoke(bnusd.account, "tokenFallback", user.getAddress(),
                     BigInteger.TEN.pow(11), iusdcData);
             expectErrorMessage(zeroAssetOut, expectedErrorMessage);
 
-            contextMock.when(() -> Context.call(iusdc.getAddress(), "balanceOf",
-                    stabilityScore.getAddress())).thenReturn(BigInteger.ZERO);
             expectedErrorMessage = "Reverted(0): " + TAG
                     + ": Insufficient asset out balance in the contract";
-            Executable noBalanceToTransfer = () -> stabilityScore.invoke(bnusd, "tokenFallback",
+            Executable noBalanceToTransfer = () -> stabilityScore.invoke(bnusd.account, "tokenFallback",
                     user.getAddress(),
                     bnusdAmount, iusdcData);
             expectErrorMessage(noBalanceToTransfer, expectedErrorMessage);
         }
 
         @Test
+        void belowFloor() {
+            BigInteger floor = BigInteger.valueOf(1000);
+            stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit);
+            stabilityScore.invoke(owner, "updateFloor", iusdc.getAddress(), floor);
+
+            BigInteger fee = feeOut.multiply(bnusdAmount).divide(BigInteger.valueOf(100).multiply(ICX));
+            BigInteger bnusdToConvert = bnusdAmount.subtract(fee);
+            BigInteger equivalentAssetOut = bnusdToConvert
+                    .multiply(BigInteger.TEN.pow(iusdcDecimals.intValue())).divide(ICX);
+
+            when(iusdc.mock.balanceOf(any(Address.class))).thenReturn(floor.multiply(BigInteger.TEN.pow(iusdcDecimals.intValue())).add(equivalentAssetOut).subtract(BigInteger.ONE));
+
+            Executable belowFloor = () -> stabilityScore.invoke(bnusd.account, "tokenFallback", user.getAddress(), bnusdAmount, iusdcData);
+            expectErrorMessage(belowFloor, "Below asset floor");
+
+        }
+
+        @Test
         void verifyBnusdBurn() {
-            contextMock.when(() -> Context.call(iusdc.getAddress(), "decimals")).thenReturn(iusdcDecimals);
             stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit);
 
             BigInteger fee = feeOut.multiply(bnusdAmount).divide(BigInteger.valueOf(100).multiply(ICX));
@@ -321,25 +375,14 @@ class StabilityImplTest extends TestBase {
             BigInteger equivalentAssetOut = bnusdToConvert
                     .multiply(BigInteger.TEN.pow(iusdcDecimals.intValue())).divide(ICX);
 
-            contextMock.when(() -> Context.call(iusdc.getAddress(), "balanceOf",
-                    stabilityScore.getAddress())).thenReturn(equivalentAssetOut);
 
-            contextMock.when(() -> Context.call(eq(bnusd.getAddress()), eq("burn"), any(BigInteger.class)))
-                    .thenReturn(null);
-            contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class),
-                    any(BigInteger.class))).thenReturn(null);
-            stabilityScore.invoke(bnusd, "tokenFallback", user.getAddress(), bnusdAmount, iusdcData);
+            when(iusdc.mock.balanceOf(any(Address.class))).thenReturn(equivalentAssetOut);
 
-            contextMock.verify(() -> Context.call(bnusd.getAddress(), "burn", bnusdToConvert));
-            contextMock.verify(() -> Context.call(bnusd.getAddress(), "transfer", feeHandler.getAddress(),
-                    fee));
-            contextMock.verify(() -> Context.call(iusdc.getAddress(), "transfer", user.getAddress(),
-                    equivalentAssetOut));
+            stabilityScore.invoke(bnusd.account, "tokenFallback", user.getAddress(), bnusdAmount, iusdcData);
+
+            verify(bnusd.mock).burn(bnusdToConvert);
+            verify(bnusd.mock).transfer(feeHandler.getAddress(), fee, new byte[0]);
+            verify(iusdc.mock).transfer(user.getAddress(), equivalentAssetOut, new byte[0]);
         }
-    }
-
-    @AfterEach
-    void closeMock() {
-        contextMock.close();
     }
 }

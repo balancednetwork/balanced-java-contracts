@@ -51,6 +51,12 @@ public interface BalancedDollar extends IRC2BurnableInterface, IRC2Mintable, Gov
     @External(readonly = true)
     BigInteger getMinInterval();
 
+    @External
+    void setDebtCeiling(BigInteger ceiling);
+
+    @External(readonly = true)
+    BigInteger getDebtCeiling();
+
     @External(readonly = true)
     BigInteger getPriceUpdateTime();
 

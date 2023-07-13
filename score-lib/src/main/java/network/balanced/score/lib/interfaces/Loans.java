@@ -150,6 +150,12 @@ public interface Loans extends Name, TokenFallback, AddressManager, Version {
     @External
     void setDebtCeiling(String symbol, BigInteger limit);
 
+    @External
+    void setCollateralFloor(String symbol, BigInteger floor);
+
+    @External(readonly = true)
+    BigInteger getCollateralFloor(String symbol);
+
     @External(readonly = true)
     BigInteger getDebtCeiling(String symbol);
 

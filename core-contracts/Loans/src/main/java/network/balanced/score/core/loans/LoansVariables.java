@@ -48,6 +48,8 @@ public class LoansVariables {
     private static final String AMOUNT_RECEIVED = "amountReceived";
     private static final String VERSION = "version";
 
+    private static final String COLLATERAL_FLOORS = "collateral_floors";
+
     public static final VarDB<Boolean> loansOn = Context.newVarDB(LOANS_ON, Boolean.class);
     static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
 
@@ -72,4 +74,6 @@ public class LoansVariables {
     static final VarDB<BigInteger> amountReceived = Context.newVarDB(AMOUNT_RECEIVED, BigInteger.class);
 
     public static final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
+
+    public static final DictDB<String, BigInteger> collateralFloors = Context.newDictDB(COLLATERAL_FLOORS, BigInteger.class);
 }

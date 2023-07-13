@@ -112,6 +112,20 @@ class LoansTest extends LoansTestBase {
         assertNull(loans.call("getDebtCeiling", "iETH"));
     }
 
+    @Test
+    void setGetCollateralFloor() {
+        BigInteger floorSICX = BigInteger.TEN.pow(23);
+        BigInteger floorIETH = BigInteger.TEN.pow(21);
+        assertOnlyCallableBy(governance.getAddress(), loans, "setCollateralFloor", "sICX", floorSICX);
+
+        loans.invoke(governance.account, "setCollateralFloor", "sICX", floorSICX);
+        loans.invoke(governance.account, "setCollateralFloor", "iETH", floorIETH);
+
+        assertEquals(floorSICX, loans.call("getCollateralFloor", "sICX"));
+        assertEquals(floorIETH, loans.call("getCollateralFloor", "iETH"));
+        assertEquals(BigInteger.ZERO, loans.call("getCollateralFloor", "bTCB"));
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     void getAccountPositions() {
@@ -1038,6 +1052,34 @@ class LoansTest extends LoansTestBase {
         verify(sicx.mock).transfer(eq(account.getAddress()), eq(collateralToWithdraw), any(byte[].class));
         verify(ieth.mock).transfer(eq(account.getAddress()), eq(iETHCollateralToWithdraw), any(byte[].class));
         verifyPosition(account.getAddress(), collateral.subtract(collateralToWithdraw), loan.add(expectedFee), "sICX");
+        verifyPosition(account.getAddress(), collateral.subtract(iETHCollateralToWithdraw), loan.add(expectedFee),
+                "iETH");
+        verifyTotalDebt(loan.add(expectedFee).add(loan.add(expectedFee)));
+    }
+
+    @Test
+    void withdrawCollateral_withCollateralFloor() {
+        // Arrange
+        Account account = sm.createAccount();
+        BigInteger collateral = BigInteger.valueOf(2000).multiply(EXA);
+        BigInteger loan = BigInteger.ZERO;
+        BigInteger collateralToWithdraw = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger iETHCollateralToWithdraw = BigInteger.valueOf(80).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
+
+        takeLoanICX(account, "bnUSD", collateral, loan);
+        takeLoaniETH(account, collateral, loan);
+
+        // Act
+        loans.invoke(governance.account, "setCollateralFloor", "sICX", collateral.subtract(collateralToWithdraw.subtract(BigInteger.ONE)));
+        loans.invoke(governance.account, "setCollateralFloor", "iETH", collateral.subtract(iETHCollateralToWithdraw));
+
+        Executable withdrawCollateralBelowFloor = () -> loans.invoke(account, "withdrawCollateral", collateralToWithdraw, "sICX");
+        loans.invoke(account, "withdrawCollateral", iETHCollateralToWithdraw, "iETH");
+
+        // Assert
+        expectErrorMessage(withdrawCollateralBelowFloor, "Collateral floor reached");
+        verify(ieth.mock).transfer(eq(account.getAddress()), eq(iETHCollateralToWithdraw), any(byte[].class));
         verifyPosition(account.getAddress(), collateral.subtract(iETHCollateralToWithdraw), loan.add(expectedFee),
                 "iETH");
         verifyTotalDebt(loan.add(expectedFee).add(loan.add(expectedFee)));

@@ -40,6 +40,7 @@ public class StabilityImpl implements Stability {
 
     private static final String FEE_HANDLER_ADDRESS = "fee_handler_address";
     private static final String TOKEN_LIMIT = "token_limit";
+    private static final String TOKEN_FLOOR = "token_floor";
     private static final String TOKEN_DECIMALS = "token_decimals";
     private static final String BNUSD_ADDRESS = "bnusd_address";
     private static final String FEE_IN = "fee_in";
@@ -49,6 +50,7 @@ public class StabilityImpl implements Stability {
 
     private final VarDB<Address> feeHandler = Context.newVarDB(FEE_HANDLER_ADDRESS, Address.class);
     private final DictDB<Address, BigInteger> tokenLimits = Context.newDictDB(TOKEN_LIMIT, BigInteger.class);
+    private final DictDB<Address, BigInteger> tokenFloors = Context.newDictDB(TOKEN_FLOOR, BigInteger.class);
     private final DictDB<Address, Integer> decimals = Context.newDictDB(TOKEN_DECIMALS, Integer.class);
     private final VarDB<Address> bnusdAddress = Context.newVarDB(BNUSD_ADDRESS, Address.class);
 
@@ -167,6 +169,22 @@ public class StabilityImpl implements Stability {
         return tokenLimits.get(_address);
     }
 
+    @External
+    public void updateFloor(Address _address, BigInteger _floor) {
+        onlyOwner();
+        Context.require(_floor.compareTo(BigInteger.ZERO) >= 0, TAG + ": Floor can't be set negative");
+        Context.require(tokenLimits.get(_address) != null, TAG + ": Address not white listed previously");
+
+        int tokenDecimal = decimals.get(_address);
+        BigInteger actualFloor = _floor.multiply(pow(BigInteger.TEN, tokenDecimal));
+        tokenFloors.set(_address, actualFloor);
+    }
+
+    @External(readonly = true)
+    public BigInteger getFloor(Address _address) {
+        return tokenFloors.get(_address);
+    }
+
     @External(readonly = true)
     public List<Address> getAcceptedTokens() {
         List<Address> acceptedTokens = new ArrayList<>();
@@ -185,9 +203,9 @@ public class StabilityImpl implements Stability {
         BigInteger fee = (feeIn.get().multiply(equivalentBnusd)).divide(HUNDRED_PERCENTAGE);
         Context.require(fee.compareTo(BigInteger.ZERO) > 0, TAG + ": Fee must be greater than zero");
 
-        Context.call(bnusdAddress, "mint", equivalentBnusd);
-        Context.call(bnusdAddress, "transfer", feeHandler.get(), fee);
-        Context.call(bnusdAddress, "transfer", _user, equivalentBnusd.subtract(fee));
+        Context.call(bnusdAddress, "mint", equivalentBnusd, new byte[0]);
+        Context.call(bnusdAddress, "transfer", feeHandler.get(), fee, new byte[0]);
+        Context.call(bnusdAddress, "transfer", _user, equivalentBnusd.subtract(fee), new byte[0]);
     }
 
     private void returnBnusd(Address _user, BigInteger _amount, byte[] _data, Address bnusdAddress) {
@@ -210,9 +228,12 @@ public class StabilityImpl implements Stability {
         Context.require(equivalentAssetAmount.compareTo(assetOutBalance) <= 0, TAG + ": Insufficient asset out " +
                 "balance in the contract");
 
+        BigInteger floor = tokenFloors.getOrDefault(assetToReturn, BigInteger.ZERO);
+        Context.require(floor.compareTo(assetOutBalance.subtract(equivalentAssetAmount)) <= 0, TAG + ": Below asset floor, DAO vote required to lower floor.");
+
         Context.call(bnusdAddress, "burn", bnusdToConvert);
-        Context.call(bnusdAddress, "transfer", feeHandler.get(), fee);
-        Context.call(assetToReturn, "transfer", _user, equivalentAssetAmount);
+        Context.call(bnusdAddress, "transfer", feeHandler.get(), fee, new byte[0]);
+        Context.call(assetToReturn, "transfer", _user, equivalentAssetAmount, new byte[0]);
     }
 
     @External

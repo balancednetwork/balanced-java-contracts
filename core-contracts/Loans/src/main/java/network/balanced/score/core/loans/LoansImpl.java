@@ -755,6 +755,8 @@ public class LoansImpl implements Loans {
     }
 
     private void transferCollateral(String tokenSymbol, Address to, BigInteger amount, String msg, byte[] data) {
+        BigInteger balance = Context.call(BigInteger.class, CollateralDB.getAddress(tokenSymbol), "balanceOf", Context.getAddress());
+        Context.require(balance.subtract(amount).compareTo(getCollateralFloor(tokenSymbol)) >= 0, "Collateral floor reached, DAO vote required to lower floor");
         Context.call(CollateralDB.getAddress(tokenSymbol), "transfer", to, amount, data);
         String logMessage = msg + " " + amount.toString() + " " + tokenSymbol + " sent to " + to;
         TokenTransfer(to, amount, logMessage);
@@ -858,6 +860,17 @@ public class LoansImpl implements Loans {
     @External(readonly = true)
     public BigInteger getDebtCeiling(String symbol) {
         return DebtDB.getDebtCeiling(symbol);
+    }
+
+    @External
+    public void setCollateralFloor(String symbol, BigInteger floor) {
+        onlyGovernance();
+        collateralFloors.set(symbol, floor);
+    }
+
+    @External(readonly = true)
+    public BigInteger getCollateralFloor(String symbol) {
+        return collateralFloors.getOrDefault(symbol, BigInteger.ZERO);
     }
 
     @External(readonly = true)
