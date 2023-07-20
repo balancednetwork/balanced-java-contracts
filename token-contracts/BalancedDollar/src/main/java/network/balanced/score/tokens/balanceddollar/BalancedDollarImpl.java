@@ -45,6 +45,7 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
     private static final String PRICE_UPDATE_TIME = "price_update_time";
     private static final String LAST_PRICE = "last_price";
     private static final String MIN_INTERVAL = "min_interval";
+    private static final String DEBT_CEILING = "debt_ceiling";
     private static final String ADMIN_ADDRESS = "admin_address";
     private final String MINTER2 = "ExtraMinter";
     public static final String VERSION = "version";
@@ -55,6 +56,7 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
     private final VarDB<BigInteger> priceUpdateTime = Context.newVarDB(PRICE_UPDATE_TIME, BigInteger.class);
     private final VarDB<BigInteger> lastPrice = Context.newVarDB(LAST_PRICE, BigInteger.class);
     private final VarDB<BigInteger> minInterval = Context.newVarDB(MIN_INTERVAL, BigInteger.class);
+    private final VarDB<BigInteger> debtCeiling = Context.newVarDB(DEBT_CEILING, BigInteger.class);
     private final VarDB<Address> admin = Context.newVarDB(ADMIN_ADDRESS, Address.class);
     protected final VarDB<Address> minter2 = Context.newVarDB(MINTER2, Address.class);
 
@@ -148,6 +150,17 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
         return minInterval.get();
     }
 
+    @External
+    public void setDebtCeiling(BigInteger ceiling) {
+        onlyGovernance();
+        debtCeiling.set(ceiling);
+    }
+
+    @External(readonly = true)
+    public BigInteger getDebtCeiling() {
+        return debtCeiling.get();
+    }
+
     @External(readonly = true)
     public BigInteger getPriceUpdateTime() {
         return priceUpdateTime.getOrDefault(BigInteger.ZERO);
@@ -216,6 +229,11 @@ public class BalancedDollarImpl extends IRC2Burnable implements BalancedDollar {
     public void mintTo(Address _account, BigInteger _amount, @Optional byte[] _data) {
         checkStatus();
         onlyEither(minter, minter2);
+        BigInteger ceiling = debtCeiling.get();
+        if (ceiling != null) {
+            Context.require(totalSupply().add(_amount).compareTo(ceiling) <= 0, "Debt ceiling reached, DAO vote required to mint more bnUSD");
+        }
+
         mintWithTokenFallback(_account, _amount, _data);
     }
 

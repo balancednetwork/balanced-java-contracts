@@ -108,6 +108,11 @@ class BalancedDollarImplTest extends TestBase {
     }
 
     @Test
+    void setAndGetDebtCeiling() {
+        testGovernanceControlMethods(bnUSDScore, governanceScore, owner, "setDebtCeiling", BigInteger.ONE, "getDebtCeiling");
+    }
+
+    @Test
     void priceInLoop() {
         setup();
         BigInteger newBnusdPrice = BigInteger.valueOf(120).multiply(BigInteger.TEN.pow(16));
@@ -161,7 +166,6 @@ class BalancedDollarImplTest extends TestBase {
     @Test
     void mintTo_withTwoMinters() {
         bnUSDScore.invoke(owner, "setMinter", owner.getAddress());
-        Account newReceiver = sm.createAccount();
         Account minter2 = Account.newScoreAccount(scoreCount++);
         mintTests(owner);
         bnUSDScore.invoke(owner, "setMinter2", minter2.getAddress());
@@ -174,6 +178,8 @@ class BalancedDollarImplTest extends TestBase {
         Account newReceiver = sm.createAccount();
         BigInteger mintAmount = BigInteger.valueOf(193).multiply(ICX);
         Address minter2 = (Address) bnUSDScore.call("getMinter2");
+        BigInteger supply = (BigInteger)bnUSDScore.call("totalSupply");
+        bnUSDScore.invoke(governanceScore, "setDebtCeiling", supply.add(mintAmount));
 
         Account nonMinter = sm.createAccount();
         String expectedErrorMessage =
@@ -196,10 +202,16 @@ class BalancedDollarImplTest extends TestBase {
                 ICX.negate(), new byte[0]);
         expectErrorMessage(negativeAmountMint, expectedErrorMessage);
 
-        BigInteger beforeTotalSupply = (BigInteger) bnUSDScore.call("totalSupply");
+        bnUSDScore.invoke(governanceScore, "setDebtCeiling", supply);
+        expectedErrorMessage = "Debt ceiling reached, DAO vote required to mint more bnUSD";
+        Executable mintAboveCeiling = () -> bnUSDScore.invoke(minter, "mintTo", newReceiver.getAddress(),
+                BigInteger.ONE, new byte[0]);
+        expectErrorMessage(mintAboveCeiling, expectedErrorMessage);
+
+        bnUSDScore.invoke(governanceScore, "setDebtCeiling", supply.add(mintAmount));
         bnUSDScore.invoke(minter, "mintTo", newReceiver.getAddress(), mintAmount, new byte[0]);
         assertEquals(mintAmount, bnUSDScore.call("balanceOf", newReceiver.getAddress()));
-        assertEquals(beforeTotalSupply.add(mintAmount), bnUSDScore.call("totalSupply"));
+        assertEquals(supply.add(mintAmount), bnUSDScore.call("totalSupply"));
         verify(bnUSDSpy).Transfer(new Address(new byte[Address.LENGTH]), newReceiver.getAddress(), mintAmount, "mint".getBytes());
     }
 

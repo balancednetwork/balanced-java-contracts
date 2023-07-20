@@ -22,6 +22,7 @@ import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.RevertedException;
+import network.balanced.score.lib.interfaces.Governance;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
@@ -65,33 +66,6 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         ethAddress = createIRC2Token(owner, "ICON ETH", "iETH", iethNumberOfDecimals);
         owner.irc2(ethAddress).setMinter(owner.getAddress());
 
-    }
-
-
-    @Test
-    @Order(0)
-    void removeBALN() throws IOException {
-        // Arrange
-        JsonArray addAssetParameters = new JsonArray()
-                .add(createParameter(balanced.baln._address()))
-                .add(createParameter(true))
-                .add(createParameter(true));
-
-        JsonArray actions = new JsonArray().add(createTransaction(balanced.loans._address(), "addAsset",
-                addAssetParameters));
-        owner.governance.execute(actions.toString());
-
-        assertTrue(reader.loans.getAssetTokens().containsKey("BALN"));
-
-        // Act
-        String governanceParam = new JsonArray().add(createParameter(balanced.governance._address())).toString();
-
-        byte[] loansRemoveBalnFileByte = getContractBytesFromResources(this.getClass(), "Loans-0.0.0-optimized.jar");
-
-        owner.governance.deployTo(balanced.loans._address(), loansRemoveBalnFileByte, governanceParam);
-
-        // Assert
-        assertFalse(reader.loans.getAssetTokens().containsKey("BALN"));
     }
 
     @Test
@@ -323,6 +297,55 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         assertTrue(loanTakerETHFullDebtSellDebtPositionPost.compareTo(loanTakerETHFullDebtSellDebtPositionPre) < 0);
         assertTrue(loanTakerPartialDebtSellDebtPositionPost.compareTo(loanTakerPartialDebtSellDebtPositionPre) < 0);
         assertTrue(loanTakerETHPartialDebtSellDebtPositionPost.compareTo(loanTakerETHPartialDebtSellDebtPositionPre) < 0);
+    }
+
+    @Test
+    @Order(4)
+    void rateLimits() throws Exception {
+        // Arrange
+        BalancedClient loanTaker = balanced.newClient();
+
+        BigInteger totalCollateral = reader.sicx.balanceOf(balanced.loans._address());
+        BigInteger collateral = totalCollateral.divide(BigInteger.TEN); // increase total collateral by 10%
+
+        // Act
+        loanTaker.stakeDepositAndBorrow(collateral, BigInteger.ZERO);
+
+        JsonArray setPercentageParameters = new JsonArray()
+            .add(createParameter(BigInteger.valueOf(500)));//5%
+        JsonArray actions = new JsonArray()
+                .add(createTransaction(balanced.loans._address(), "setFloorPercentage", setPercentageParameters));
+        owner.governance.execute(actions.toString());
+
+        JsonArray setTimeDelay = new JsonArray()
+            .add(createParameter(MICRO_SECONDS_IN_A_DAY)); // 1 day delay
+        actions = new JsonArray()
+                .add(createTransaction(balanced.loans._address(), "setTimeDelayMs", setTimeDelay));
+        owner.governance.execute(actions.toString());
+
+
+        // Assert
+        assertThrows(UserRevertedException.class, () ->
+            loanTaker.loans.withdrawCollateral(collateral, "sICX"));
+
+        BigInteger floor = reader.loans.getCurrentFloor(balanced.sicx._address());
+        assertEquals(totalCollateral.add(collateral).multiply(BigInteger.valueOf(9500)).divide(POINTS), floor);
+        loanTaker.loans.withdrawCollateral(collateral.divide(BigInteger.TWO), "sICX");
+
+        BigInteger newFloor = reader.loans.getCurrentFloor(balanced.sicx._address());
+        assertTrue(floor.compareTo(newFloor) > 0);
+        // Assert floor is decreasing
+        Thread.sleep(1000);
+        BigInteger newFloor2 = reader.loans.getCurrentFloor(balanced.sicx._address());
+        assertTrue(newFloor.compareTo(newFloor2) > 0);
+
+
+        setPercentageParameters = new JsonArray()
+            .add(createParameter(POINTS));
+        actions = new JsonArray()
+                .add(createTransaction(balanced.loans._address(), "setFloorPercentage", setPercentageParameters));
+        owner.governance.execute(actions.toString());
+
     }
 
     @Test
