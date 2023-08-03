@@ -723,6 +723,11 @@ public class RewardsImpl implements Rewards {
         return allPercentages;
     }
 
+    public void revote(Address user) {
+        checkStatus();
+        SourceWeightController.revote(user, getAllSources());
+    }
+
     @External
     public void checkpoint() {
         checkStatus();
@@ -866,7 +871,7 @@ public class RewardsImpl implements Rewards {
         return total;
     }
 
-    private String[] getAllSources() {
+    public static String[] getAllSources() {
         int dataSourcesCount = DataSourceDB.size();
         String[] sources = new String[dataSourcesCount];
         for (int i = 0; i < dataSourcesCount; i++) {
