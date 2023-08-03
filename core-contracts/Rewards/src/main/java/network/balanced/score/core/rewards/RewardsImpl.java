@@ -126,6 +126,7 @@ public class RewardsImpl implements Rewards {
             // On "install" code
             isContract(_governance);
             governance.set(_governance);
+            BalancedAddressManager.setGovernance(governance.get());
             platformDay.set(BigInteger.ONE);
             distributionPercentages.set(WORKER_TOKENS, BigInteger.ZERO);
             distributionPercentages.set(RewardsConstants.RESERVE_FUND, BigInteger.ZERO);
@@ -143,9 +144,10 @@ public class RewardsImpl implements Rewards {
             completeRecipient.add(RewardsConstants.RESERVE_FUND);
             completeRecipient.add(DAOFUND);
             boostWeight.set(WEIGHT);
+        }else {
+            SourceWeightController.reset(getAllSources());
         }
 
-        BalancedAddressManager.setGovernance(governance.get());
         SourceWeightController.rewards = this;
         if (currentVersion.getOrDefault("").equals(Versions.REWARDS)) {
             Context.revert("Can't Update same version of code");

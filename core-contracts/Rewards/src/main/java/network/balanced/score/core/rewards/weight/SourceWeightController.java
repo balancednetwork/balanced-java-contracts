@@ -101,7 +101,7 @@ public class SourceWeightController {
         timeTotal.set(getWeekTimestamp());
     }
 
-    public void reset(String[] sources) {
+    public static void reset(String[] sources) {
         BigInteger nextWeekTimestamp = getNextWeekTimestamp();
         // Move timesum of sources and type sums to next week then set to zero
         for (String sourceName : sources) {
