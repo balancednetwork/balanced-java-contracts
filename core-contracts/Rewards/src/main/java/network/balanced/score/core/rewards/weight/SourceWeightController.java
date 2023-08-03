@@ -21,6 +21,7 @@ import network.balanced.score.lib.structs.Point;
 import network.balanced.score.lib.structs.VotedSlope;
 import network.balanced.score.lib.utils.EnumerableSetDB;
 import score.*;
+import scorex.util.HashMap;
 
 import java.math.BigInteger;
 
@@ -93,9 +94,13 @@ public class SourceWeightController {
     private static final DictDB<Integer, BigInteger> timeTypeWeight = Context.newDictDB("timeTypeWeight",
             BigInteger.class);
 
+
+    private static final VarDB<BigInteger> fixCheckpoint = Context.newVarDB("fixCheckpoint", BigInteger.class);
+
     public SourceWeightController(Address bBalnAddress) {
         boostedBaln.set(bBalnAddress);
         timeTotal.set(getWeekTimestamp());
+        fixCheckpoint.set(BigInteger.valueOf(Context.getBlockTimestamp()));
     }
 
     /**
@@ -217,11 +222,14 @@ public class SourceWeightController {
      * @param source Name of the source
      * @return Source weight
      */
-    private static BigInteger getWeight(String source) {
+      private static BigInteger getWeight(String source) {
+        return _getWeight(source).bias;
+    }
+    private static Point _getWeight(String source) {
         BigInteger time = timeWeight.getOrDefault(source, BigInteger.ZERO);
         BigInteger timestamp = BigInteger.valueOf(Context.getBlockTimestamp());
         if (time.compareTo(BigInteger.ZERO) <= 0) {
-            return BigInteger.ZERO;
+            return new Point();
         }
 
         Point pt = pointsWeight.at(source).getOrDefault(time, new Point());
@@ -246,7 +254,7 @@ public class SourceWeightController {
             }
         }
 
-        return pt.bias;
+        return pt;
     }
 
     /**
@@ -286,6 +294,93 @@ public class SourceWeightController {
 
         timeWeight.set(name, nextTime);
         rewards.NewSource(name, sourceType, weight);
+    }
+
+    public static void resetTotal(String[] sources) {
+        getTotal();
+        HashMap<Integer, BigInteger> sums = new HashMap<>();
+        HashMap<Integer, BigInteger> slopes = new HashMap<>();
+        for (String src : sources) {
+            Integer type = getSourceType(src);
+            if (!sums.containsKey(type) ){
+                sums.put(type, BigInteger.ZERO);
+                slopes.put(type, BigInteger.ZERO);
+            }
+            Point pt = _getWeight(src);
+            sums.put(type, sums.get(type).add(pt.bias));
+            slopes.put(type, slopes.get(type).add(pt.slope));
+        }
+
+        BigInteger total = BigInteger.ZERO;
+        for (Integer type : sums.keySet()) {
+            BigInteger time = timeSum.getOrDefault(type, BigInteger.ZERO);
+
+            Point currentPts = pointsSum.at(type).get(time);
+            currentPts.bias = sums.get(type);
+            currentPts.slope = slopes.get(type);
+            pointsSum.at(type).set(time, currentPts);
+
+            BigInteger typeWeight = pointsTypeWeight.at(type).getOrDefault(time, BigInteger.ZERO);
+            total = total.add(currentPts.bias.multiply(typeWeight));
+        }
+
+        BigInteger time = timeTotal.getOrDefault(BigInteger.ZERO);
+        pointsTotal.set(time, total);
+
+        BigInteger timestamp = getNextWeekTimestamp();
+        BigInteger sum = BigInteger.ZERO;
+        for (String src : sources) {
+            sum = sum.add(getRelativeWeight(src, timestamp));
+        }
+
+        Context.require(sum.compareTo(EXA) <= 0, sum.toString() + " <= " + EXA.toString());
+        Context.require(sum.compareTo(EXA.subtract(BigInteger.valueOf(100))) >= 0, sum.toString() + " > " + EXA.toString());
+    }
+
+    public static void updateUserVote(Address user, String[] sources) {
+        BigInteger timestamp = BigInteger.valueOf(Context.getBlockTimestamp());
+        BigInteger nextTime = getNextWeekTimestamp();
+        BigInteger checkpoint = fixCheckpoint.get();
+        for (String src : sources) {
+            Integer type = getSourceType(src);
+            VotedSlope slope = voteUserSlopes.at(user).get(src);
+            BigInteger lastVote = getLastUserVote(user, src);
+            if (lastVote.compareTo(checkpoint) > 0) {
+                continue;
+            }
+
+            if (slope == null ){
+                continue;
+            }
+
+            BigInteger oldWeight = changesWeight.at(src).get(slope.end);
+            BigInteger oldSum = changesSum.at(type).get(slope.end);
+            BigInteger end = slope.end.divide(WEEK).multiply(WEEK);
+            BigInteger weight = changesWeight.at(src).getOrDefault(end, BigInteger.ZERO);
+            BigInteger sum = changesSum.at(type).getOrDefault(end, BigInteger.ZERO);
+
+            // add since it was subtracted wrongfully on last version
+            changesWeight.at(src).set(slope.end, oldWeight.add(slope.slope));
+            changesSum.at(type).set(slope.end, oldSum.add(slope.slope));
+
+            BigInteger weightTime = timeWeight.getOrDefault(src, BigInteger.ZERO);
+            if (end.compareTo(weightTime) > 0) {
+                // add the slope change to the next timestampx
+                changesWeight.at(src).set(weightTime, weight.add(slope.slope));
+            } else {
+                // add the slope change to the correct timestamp
+                changesWeight.at(src).set(end, weight.add(slope.slope));
+            }
+
+            BigInteger sumTime = timeWeight.getOrDefault(src, BigInteger.ZERO);
+            if (end.compareTo(sumTime) > 0) {
+                // add the slope change to the next timestampx
+                changesSum.at(type).set(sumTime, sum.add(slope.slope));
+            } else {
+                // add the slope change to the correct timestamp
+                changesSum.at(type).set(end, sum.add(slope.slope));
+            }
+        }
     }
 
     /**
@@ -398,6 +493,7 @@ public class SourceWeightController {
         Address user = Context.getCaller();
         BigInteger slope = Context.call(BigInteger.class, bBalnAddress, "getLastUserSlope", user);
         BigInteger lockEnd = Context.call(BigInteger.class, bBalnAddress, "lockedEnd", user);
+        lockEnd = lockEnd.divide(WEEK).multiply(WEEK);
         BigInteger timestamp = BigInteger.valueOf(Context.getBlockTimestamp());
         BigInteger nextTime = getNextWeekTimestamp();
 
@@ -464,11 +560,15 @@ public class SourceWeightController {
 
         // Add slope changes for new slopes
         BigInteger newWeight = changesWeight.at(sourceName).getOrDefault(newSlope.end, BigInteger.ZERO);
-        changesWeight.at(sourceName).set(newSlope.end, newWeight.subtract(newSlope.slope));
+        changesWeight.at(sourceName).set(newSlope.end, newWeight.add(newSlope.slope));
         BigInteger newSum = changesSum.at(sourceType).getOrDefault(newSlope.end, BigInteger.ZERO);
-        changesSum.at(sourceType).set(newSlope.end, newSum.subtract(newSlope.slope));
+        changesSum.at(sourceType).set(newSlope.end, newSum.add(newSlope.slope));
 
-
+        // Previous version for reference
+        // BigInteger newWeight = changesWeight.at(sourceName).getOrDefault(newSlope.end, BigInteger.ZERO);
+        // changesWeight.at(sourceName).set(newSlope.end, newWeight.subtract(newSlope.slope));
+        // BigInteger newSum = changesSum.at(sourceType).getOrDefault(newSlope.end, BigInteger.ZERO);
+        // changesSum.at(sourceType).set(newSlope.end, newSum.subtract(newSlope.slope));
         pointsWeight.at(sourceName).set(nextTime, weightPoint);
         pointsSum.at(sourceType).set(nextTime, sumPoint);
 

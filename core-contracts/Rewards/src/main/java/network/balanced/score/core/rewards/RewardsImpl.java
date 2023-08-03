@@ -723,6 +723,16 @@ public class RewardsImpl implements Rewards {
         return allPercentages;
     }
 
+    public void resetTotal() {
+        checkStatus();
+        SourceWeightController.resetTotal(getAllSources());
+    }
+
+    public void updateUserVote(Address user) {
+        checkStatus();
+        SourceWeightController.updateUserVote(user, getAllSources());
+    }
+
     @External
     public void checkpoint() {
         checkStatus();
