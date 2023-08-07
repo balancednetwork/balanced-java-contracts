@@ -68,7 +68,7 @@ public class SourceWeightController {
             , Point.class);
 
     private static final BranchDB<String, DictDB<BigInteger, BigInteger>> changesWeight = Context.newBranchDB(
-            "changesWeight", BigInteger.class);
+            "changesWeight-v2", BigInteger.class);
 
     private static final DictDB<String, BigInteger> timeWeight = Context.newDictDB("timeWeight", BigInteger.class);
 
@@ -76,7 +76,7 @@ public class SourceWeightController {
             Point.class);
 
     private static final BranchDB<Integer, DictDB<BigInteger, BigInteger>> changesSum = Context.newBranchDB(
-            "changesSum", BigInteger.class);
+            "changesSum-v2", BigInteger.class);
 
     private static final DictDB<Integer, BigInteger> timeSum = Context.newDictDB("timeSum", BigInteger.class);
 
@@ -93,9 +93,28 @@ public class SourceWeightController {
     private static final DictDB<Integer, BigInteger> timeTypeWeight = Context.newDictDB("timeTypeWeight",
             BigInteger.class);
 
+
+    private static final DictDB<Address, Boolean> isRevoted = Context.newDictDB("isRevoted", Boolean.class);
+
     public SourceWeightController(Address bBalnAddress) {
         boostedBaln.set(bBalnAddress);
         timeTotal.set(getWeekTimestamp());
+    }
+
+    public static void reset(String[] sources) {
+        BigInteger nextWeekTimestamp = getNextWeekTimestamp();
+        // Move timesum of sources and type sums to next week then set to zero
+        for (String sourceName : sources) {
+            getWeight(sourceName);
+            pointsWeight.at(sourceName).set(nextWeekTimestamp, new Point());
+        }
+        getTotal();
+        // We can now safley set these to 0 and revote all users before next week
+        int nrSourceTypes = sourceTypeNames.length();
+        for (int id = 0; id < nrSourceTypes; id++) {
+            pointsSum.at(id).set(nextWeekTimestamp, new Point());
+        }
+        pointsTotal.set(nextWeekTimestamp, BigInteger.ZERO);
     }
 
     /**
@@ -257,7 +276,6 @@ public class SourceWeightController {
      * @param weight     Source weight
      */
     public static void addSource(String name, int sourceType, BigInteger weight) {
-
         Context.require(sourceTypeNames.at(sourceType) != null, "Not a valid sourceType");
         Context.require(sourceTypes.get(name) == null, "Source with name " + name + " already exists");
 
@@ -269,7 +287,9 @@ public class SourceWeightController {
             BigInteger oldSum = getSum(sourceType);
             BigInteger oldTotal = getTotal();
 
-            pointsSum.at(sourceType).getOrDefault(nextTime, new Point()).bias = weight.add(oldSum);
+            Point ptSum = pointsSum.at(sourceType).getOrDefault(nextTime, new Point());
+            ptSum.bias = weight.add(oldSum);
+            pointsSum.at(sourceType).set(nextTime, ptSum);
             timeSum.set(sourceType, nextTime);
             pointsTotal.set(nextTime, oldTotal.add(typeWeight.multiply(weight)));
             timeTotal.set(nextTime);
@@ -286,6 +306,52 @@ public class SourceWeightController {
 
         timeWeight.set(name, nextTime);
         rewards.NewSource(name, sourceType, weight);
+    }
+
+    public static void revote(Address user, String[] sources) {
+        Context.require(!isRevoted.getOrDefault(user, false), "This user already had its vote applied");
+        BigInteger timestamp = BigInteger.valueOf(Context.getBlockTimestamp());
+        BigInteger nextTime = getNextWeekTimestamp();
+        for (String sourceName : sources) {
+            int sourceType = sourceTypes.get(sourceName) - 1;
+            Context.require(sourceType >= 0, "Source not added");
+            // Prepare slopes and biases in memory
+            VotedSlope slope = voteUserSlopes.at(user).get(sourceName);
+            if (slope == null) {
+                continue;
+            }
+
+            slope.end = slope.end.divide(WEEK).multiply(WEEK);
+
+
+            if (slope.end.compareTo(nextTime) <= 0) {
+                continue;
+            }
+
+            BigInteger newDt = slope.end.subtract(nextTime);
+            BigInteger newBias = slope.slope.multiply(newDt);
+
+            Point weightPoint = pointsWeight.at(sourceName).getOrDefault(nextTime, new Point());
+            weightPoint.bias = weightPoint.bias.add(newBias);
+            Point sumPoint = pointsSum.at(sourceType).getOrDefault(nextTime, new Point());
+            sumPoint.bias = sumPoint.bias.add(newBias);
+
+            weightPoint.slope = weightPoint.slope.add(slope.slope);
+            sumPoint.slope = sumPoint.slope.add(slope.slope);
+
+            // Add slope changes for new slopes
+            BigInteger newChangeWeight = changesWeight.at(sourceName).getOrDefault(slope.end, BigInteger.ZERO);
+            changesWeight.at(sourceName).set(slope.end, newChangeWeight.add(slope.slope));
+            BigInteger newChangeSum = changesSum.at(sourceType).getOrDefault(slope.end, BigInteger.ZERO);
+            changesSum.at(sourceType).set(slope.end, newChangeSum.add(slope.slope));
+
+            pointsWeight.at(sourceName).set(nextTime, weightPoint);
+            pointsSum.at(sourceType).set(nextTime, sumPoint);
+
+            getTotal();
+            voteUserSlopes.at(user).set(sourceName, slope);
+
+        }
     }
 
     /**
@@ -391,6 +457,10 @@ public class SourceWeightController {
      * @param userWeight Weight for a source in bps (units of 0.01%). Minimal is 0.01%. Ignored if 0
      */
     public static void voteForSourceWeights(String sourceName, BigInteger userWeight) {
+        if (isRevoted.getOrDefault(Context.getCaller(), false)) {
+            revote(Context.getCaller(), RewardsImpl.getAllSources());
+        }
+
         Context.require(isVotable.getOrDefault(sourceName, true) || userWeight.equals(BigInteger.ZERO), sourceName +
                 " is not a votable source, you can only remove weight");
 
@@ -398,6 +468,7 @@ public class SourceWeightController {
         Address user = Context.getCaller();
         BigInteger slope = Context.call(BigInteger.class, bBalnAddress, "getLastUserSlope", user);
         BigInteger lockEnd = Context.call(BigInteger.class, bBalnAddress, "lockedEnd", user);
+        lockEnd = lockEnd.divide(WEEK).multiply(WEEK);
         BigInteger timestamp = BigInteger.valueOf(Context.getBlockTimestamp());
         BigInteger nextTime = getNextWeekTimestamp();
 
@@ -464,10 +535,9 @@ public class SourceWeightController {
 
         // Add slope changes for new slopes
         BigInteger newWeight = changesWeight.at(sourceName).getOrDefault(newSlope.end, BigInteger.ZERO);
-        changesWeight.at(sourceName).set(newSlope.end, newWeight.subtract(newSlope.slope));
+        changesWeight.at(sourceName).set(newSlope.end, newWeight.add(newSlope.slope));
         BigInteger newSum = changesSum.at(sourceType).getOrDefault(newSlope.end, BigInteger.ZERO);
-        changesSum.at(sourceType).set(newSlope.end, newSum.subtract(newSlope.slope));
-
+        changesSum.at(sourceType).set(newSlope.end, newSum.add(newSlope.slope));
 
         pointsWeight.at(sourceName).set(nextTime, weightPoint);
         pointsSum.at(sourceType).set(nextTime, sumPoint);
