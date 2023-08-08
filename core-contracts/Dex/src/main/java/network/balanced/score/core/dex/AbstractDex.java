@@ -20,6 +20,9 @@ import network.balanced.score.core.dex.db.NodeDB;
 import network.balanced.score.lib.interfaces.Dex;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.structs.RewardsDataEntry;
+import network.balanced.score.lib.utils.FloorLimited;
+import network.balanced.score.lib.utils.BalancedFloorLimits;
+
 import score.Address;
 import score.BranchDB;
 import score.Context;
@@ -42,7 +45,7 @@ import static network.balanced.score.lib.utils.Check.checkStatus;
 import static network.balanced.score.lib.utils.Constants.*;
 import static network.balanced.score.lib.utils.Math.pow;
 
-public abstract class AbstractDex implements Dex {
+public abstract class AbstractDex extends FloorLimited implements Dex {
 
     public AbstractDex(Address _governance) {
         if (governance.get() == null) {
@@ -551,6 +554,7 @@ public abstract class AbstractDex implements Dex {
         BigInteger totalQuote = isSell ? newToToken : newFromToken;
 
         // Send the trader their funds
+        BalancedFloorLimits.verifyWithdraw(toToken, sendAmount);
         Context.call(toToken, "transfer", receiver, sendAmount);
 
         // Send the platform fees to the fee handler SCORE
@@ -678,6 +682,7 @@ public abstract class AbstractDex implements Dex {
 
         Context.call(getRewards(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal, oldData);
         Context.call(sicxAddress, "transfer", getFeehandler(), balnFees);
+        BalancedFloorLimits.verifyNativeWithdraw(orderIcxValue);
         Context.transfer(sender, orderIcxValue);
     }
 

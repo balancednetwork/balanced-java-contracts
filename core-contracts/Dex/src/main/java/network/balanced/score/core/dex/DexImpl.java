@@ -22,6 +22,7 @@ import com.eclipsesource.json.JsonObject;
 import network.balanced.score.core.dex.db.NodeDB;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import network.balanced.score.lib.utils.Versions;
+import network.balanced.score.lib.utils.BalancedFloorLimits;
 import score.Address;
 import score.BranchDB;
 import score.Context;
@@ -235,6 +236,7 @@ public class DexImpl extends AbstractDex {
         depositDetails.set(sender, deposit_amount.subtract(_value));
 
         Withdraw(_token, sender, _value);
+        BalancedFloorLimits.verifyWithdraw(_token, _value);
         Context.call(_token, "transfer", sender, _value);
     }
 
@@ -457,7 +459,9 @@ public class DexImpl extends AbstractDex {
 
         sicxEarnings.set(sender, sicxEarning.subtract(_value));
         ClaimSicxEarnings(sender, _value);
-        Context.call(getSicx(), "transfer", sender, _value);
+        Address sICX = getSicx();
+        BalancedFloorLimits.verifyWithdraw(sICX, _value);
+        Context.call(sICX, "transfer", sender, _value);
     }
 
     @External

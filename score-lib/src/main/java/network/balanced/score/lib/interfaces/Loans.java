@@ -33,7 +33,7 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface Loans extends Name, TokenFallback, AddressManager, Version {
+public interface Loans extends Name, TokenFallback, AddressManager, Version, FloorLimitedInterface {
     @External(readonly = true)
     BigInteger getDay();
 
