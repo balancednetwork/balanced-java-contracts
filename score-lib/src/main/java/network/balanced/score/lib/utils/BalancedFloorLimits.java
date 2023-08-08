@@ -44,11 +44,11 @@ public class BalancedFloorLimits {
         return percentage.get();
     }
 
-    public static void setTimeDelayMs(BigInteger ms) {
-        delay.set(ms);
+    public static void setTimeDelayMicroSeconds(BigInteger us) {
+        delay.set(us);
     }
 
-    public static BigInteger getTimeDelayMs() {
+    public static BigInteger getTimeDelayMicroSeconds() {
         return delay.get();
     }
 
@@ -77,11 +77,11 @@ public class BalancedFloorLimits {
         }
 
         BigInteger percentageInPoints = percentage.get();
-        BigInteger delayInMs = delay.get();
-        BigInteger lastUpdateMs = lastUpdate.getOrDefault(address, BigInteger.ZERO);
+        BigInteger delayInUs = delay.get();
+        BigInteger lastUpdateUs = lastUpdate.getOrDefault(address, BigInteger.ZERO);
         BigInteger lastFloor = floor.getOrDefault(address, BigInteger.ZERO);
 
-        if (percentageInPoints == null || delayInMs == null) {
+        if (percentageInPoints == null || delayInUs == null) {
             return BigInteger.ZERO;
         }
 
@@ -98,8 +98,8 @@ public class BalancedFloorLimits {
         }
 
         BigInteger maxWithdraw = balance.multiply(percentageInPoints).divide(POINTS);
-        BigInteger timePassed = currentTime.subtract(lastUpdateMs);
-        BigInteger floorRemoved = maxWithdraw.multiply(timePassed).divide(delayInMs);
+        BigInteger timePassed = currentTime.subtract(lastUpdateUs);
+        BigInteger floorRemoved = maxWithdraw.multiply(timePassed).divide(delayInUs);
 
         BigInteger newFloor = lastFloor.subtract(floorRemoved);
         newFloor = newFloor.max(minFloor);

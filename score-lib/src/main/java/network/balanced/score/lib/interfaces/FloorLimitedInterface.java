@@ -13,10 +13,10 @@ public interface FloorLimitedInterface {
     BigInteger getFloorPercentage();
 
     @External
-    void setTimeDelayMs(BigInteger ms);
+    void setTimeDelayMicroSeconds(BigInteger ms);
 
     @External(readonly = true)
-    BigInteger getTimeDelayMs();
+    BigInteger getTimeDelayMicroSeconds();
 
     @External
     void setDisabled(Address token, boolean disabled);

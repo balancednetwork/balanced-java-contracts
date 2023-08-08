@@ -66,7 +66,7 @@ public class BalancedFloorLimitsTest extends UnitTest {
         BigInteger balance = BigInteger.valueOf(1000);
         BigInteger percentage = BigInteger.valueOf(1000);// 10%
         score.invoke(owner, "setFloorPercentage", percentage);
-        score.invoke(owner, "setTimeDelayMs", MICRO_SECONDS_IN_A_DAY);
+        score.invoke(owner, "setTimeDelayMicroSeconds", MICRO_SECONDS_IN_A_DAY);
         when(token1.mock.balanceOf(score.getAddress())).thenReturn(balance);
 
         // Act
@@ -86,7 +86,7 @@ public class BalancedFloorLimitsTest extends UnitTest {
         BigInteger balance = BigInteger.valueOf(1000);
         BigInteger percentage = BigInteger.valueOf(1000);// 10%
         score.invoke(owner, "setFloorPercentage", percentage);
-        score.invoke(owner, "setTimeDelayMs", MICRO_SECONDS_IN_A_DAY);
+        score.invoke(owner, "setTimeDelayMicroSeconds", MICRO_SECONDS_IN_A_DAY);
         when(token1.mock.balanceOf(score.getAddress())).thenReturn(balance);
 
         // Act
@@ -108,7 +108,7 @@ public class BalancedFloorLimitsTest extends UnitTest {
         BigInteger balance = BigInteger.valueOf(1000);
         BigInteger percentage = BigInteger.valueOf(1000);// 10%
         score.invoke(owner, "setFloorPercentage", percentage);
-        score.invoke(owner, "setTimeDelayMs", MICRO_SECONDS_IN_A_DAY);
+        score.invoke(owner, "setTimeDelayMicroSeconds", MICRO_SECONDS_IN_A_DAY);
         score.getAccount().addBalance("ICX", balance);
 
         // Act
@@ -132,7 +132,7 @@ public class BalancedFloorLimitsTest extends UnitTest {
         BigInteger balance = BigInteger.valueOf(1000);
         BigInteger percentage = BigInteger.valueOf(1000);// 10%
         score.invoke(owner, "setFloorPercentage", percentage);
-        score.invoke(owner, "setTimeDelayMs", MICRO_SECONDS_IN_A_DAY);
+        score.invoke(owner, "setTimeDelayMicroSeconds", MICRO_SECONDS_IN_A_DAY);
         when(token1.mock.balanceOf(score.getAddress())).thenReturn(balance);
 
         // Act
@@ -167,7 +167,7 @@ public class BalancedFloorLimitsTest extends UnitTest {
         BigInteger balance = BigInteger.valueOf(1000);
         BigInteger percentage = BigInteger.valueOf(1000);// 10%
         score.invoke(owner, "setFloorPercentage", percentage);
-        score.invoke(owner, "setTimeDelayMs", MICRO_SECONDS_IN_A_DAY);
+        score.invoke(owner, "setTimeDelayMicroSeconds", MICRO_SECONDS_IN_A_DAY);
         when(token1.mock.balanceOf(score.getAddress())).thenReturn(balance);
         score.invoke(owner, "verifyWithdraw", token1.getAddress(), BigInteger.valueOf(100));
         when(token1.mock.balanceOf(score.getAddress())).thenReturn(balance.subtract(BigInteger.valueOf(100)));
@@ -191,7 +191,7 @@ public class BalancedFloorLimitsTest extends UnitTest {
         BigInteger percentage = BigInteger.valueOf(2500);// 25%
 
         score.invoke(owner, "setFloorPercentage", percentage);
-        score.invoke(owner, "setTimeDelayMs", MICRO_SECONDS_IN_A_DAY.multiply(BigInteger.TWO));
+        score.invoke(owner, "setTimeDelayMicroSeconds", MICRO_SECONDS_IN_A_DAY.multiply(BigInteger.TWO));
         when(token1.mock.balanceOf(score.getAddress())).thenReturn(balance1);
         when(token2.mock.balanceOf(score.getAddress())).thenReturn(balance2);
 
