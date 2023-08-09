@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,22 +20,15 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
-
 import network.balanced.score.lib.interfaces.Governance;
 import network.balanced.score.lib.interfaces.tokens.AssetToken;
 import network.balanced.score.lib.interfaces.tokens.AssetTokenScoreInterface;
-import network.balanced.score.lib.structs.PrepDelegations;
-import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.mock.MockBalanced;
 import network.balanced.score.lib.test.mock.MockContract;
-
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-
 import score.Address;
 import score.Context;
 import xcall.score.lib.util.NetworkAddress;
@@ -43,15 +36,10 @@ import xcall.score.lib.util.NetworkAddress;
 import java.math.BigInteger;
 import java.util.Map;
 
-import static network.balanced.score.lib.test.UnitTest.assertOnlyCallableBy;
-import static network.balanced.score.lib.test.UnitTest.expectErrorMessage;
-import static network.balanced.score.lib.utils.Constants.EXA;
-import static network.balanced.score.lib.utils.Constants.POINTS;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 class AssetManagerTest extends TestBase {
     private static final ServiceManager sm = getServiceManager();
@@ -109,27 +97,27 @@ class AssetManagerTest extends TestBase {
 
         assetManager.invoke(governance.account, "addSpokeManager", bscSpoke.toString());
         try (MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS)) {
-            contextMock.when(() -> Context.deploy(tokeBytes, governance.getAddress(),  "BSC", "BSC TEST TOKEN", BigInteger.valueOf(18))).thenReturn(bscAsset1.getAddress());
+            contextMock.when(() -> Context.deploy(tokeBytes, governance.getAddress(), "BSC", "BSC TEST TOKEN", BigInteger.valueOf(18))).thenReturn(bscAsset1.getAddress());
             contextMock.when(() -> Context.call(AssetManagerImpl.getSystemScoreAddress(), "setScoreOwner", bscAsset1.getAddress(), governance.getAddress())).thenReturn(null);
-            assetManager.invoke(governance.account, "deployAsset", new NetworkAddress(BSC_NID, bscAsset1Address).toString(),  "BSC", "BSC TEST TOKEN", BigInteger.valueOf(18));
+            assetManager.invoke(governance.account, "deployAsset", new NetworkAddress(BSC_NID, bscAsset1Address).toString(), "BSC", "BSC TEST TOKEN", BigInteger.valueOf(18));
         }
     }
 
     @Test
     void verifyManagers() {
-        assertArrayEquals(new String[]{ethSpoke.toString(), bscSpoke.toString()}, (String[])assetManager.call("getSpokes"));
+        assertArrayEquals(new String[]{ethSpoke.toString(), bscSpoke.toString()}, (String[]) assetManager.call("getSpokes"));
     }
 
     @Test
     void verifyAssets() {
-        Map<String, String> assets = (Map<String, String>)assetManager.call("getAssets");
+        Map<String, String> assets = (Map<String, String>) assetManager.call("getAssets");
         assertEquals(assets.get(new NetworkAddress(ETH_NID, ethAsset1Address).toString()), ethAsset1.getAddress().toString());
         assertEquals(assets.get(new NetworkAddress(ETH_NID, ethAsset2Address).toString()), ethAsset2.getAddress().toString());
         assertEquals(assets.get(new NetworkAddress(BSC_NID, bscAsset1Address).toString()), bscAsset1.getAddress().toString());
 
-        assertEquals(ethAsset1.getAddress(), (Address)assetManager.call("getAssetAddress", new NetworkAddress(ETH_NID, ethAsset1Address).toString()));
-        assertEquals(ethAsset2.getAddress(), (Address)assetManager.call("getAssetAddress", new NetworkAddress(ETH_NID, ethAsset2Address).toString()));
-        assertEquals(bscAsset1.getAddress(), (Address)assetManager.call("getAssetAddress", new NetworkAddress(BSC_NID, bscAsset1Address).toString()));
+        assertEquals(ethAsset1.getAddress(), (Address) assetManager.call("getAssetAddress", new NetworkAddress(ETH_NID, ethAsset1Address).toString()));
+        assertEquals(ethAsset2.getAddress(), (Address) assetManager.call("getAssetAddress", new NetworkAddress(ETH_NID, ethAsset2Address).toString()));
+        assertEquals(bscAsset1.getAddress(), (Address) assetManager.call("getAssetAddress", new NetworkAddress(BSC_NID, bscAsset1Address).toString()));
     }
 
     // TODO more test when functionallity is more decided

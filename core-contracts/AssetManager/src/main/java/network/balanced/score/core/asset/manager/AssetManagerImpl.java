@@ -16,33 +16,30 @@
 
 package network.balanced.score.core.asset.manager;
 
-import network.balanced.score.lib.interfaces.base.Version;
+import icon.xcall.lib.messages.AssetManagerMessages;
+import icon.xcall.lib.messages.SpokeAssetManagerMessages;
 import network.balanced.score.lib.interfaces.AssetManager;
 import network.balanced.score.lib.interfaces.AssetManagerXCall;
 import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.IterableDictDB;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.Versions;
-
 import score.Address;
 import score.Context;
 import score.DictDB;
 import score.VarDB;
-import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
 import score.annotation.Payable;
 import scorex.util.HashMap;
 import xcall.score.lib.util.NetworkAddress;
-import icon.xcall.lib.messages.AssetManagerMessages;
-import icon.xcall.lib.messages.SpokeAssetManagerMessages;
 
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-import static network.balanced.score.lib.utils.Check.onlyGovernance;
 import static network.balanced.score.lib.utils.Check.only;
+import static network.balanced.score.lib.utils.Check.onlyGovernance;
 
 public class AssetManagerImpl implements AssetManager {
 
@@ -58,8 +55,8 @@ public class AssetManagerImpl implements AssetManager {
     // net -> networkAddress
     private final IterableDictDB<String, String> spokes = new IterableDictDB<>(SPOKES, String.class, String.class, false);
     // networkAddress -> native
-    private final IterableDictDB<String, Address> assets =  new IterableDictDB<>(ASSETS, Address.class, String.class, false);
-    private final DictDB<Address, String> assetNativeAddress =  Context.newDictDB(NATIVE_ASSET_ADDRESS, String.class);
+    private final IterableDictDB<String, Address> assets = new IterableDictDB<>(ASSETS, Address.class, String.class, false);
+    private final DictDB<Address, String> assetNativeAddress = Context.newDictDB(NATIVE_ASSET_ADDRESS, String.class);
 
     public AssetManagerImpl(Address _governance, byte[] tokenBytes) {
         AssetManagerImpl.tokenBytes = tokenBytes;
@@ -119,7 +116,7 @@ public class AssetManagerImpl implements AssetManager {
 
     @External(readonly = true)
     public Map<String, String> getAssets() {
-        Map<String, String>  assetsMap = new HashMap<>();
+        Map<String, String> assetsMap = new HashMap<>();
         List<String> spokeTokensList = assets.keys();
         for (String token : spokeTokensList) {
             assetsMap.put(token, assets.get(token).toString());

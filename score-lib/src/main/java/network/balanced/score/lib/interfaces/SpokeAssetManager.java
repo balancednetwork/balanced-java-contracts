@@ -24,14 +24,15 @@ import java.math.BigInteger;
 
 @ScoreClient
 @ScoreInterface
-public interface SpokeAssetManager{
+public interface SpokeAssetManager {
 
     /**
      * Burns tokens from user
-     * @param from xCall caller.
+     *
+     * @param from         xCall caller.
      * @param tokenAddress native token address as string.
-     * @param toAddress native caller address as string.
-     * @param amount amount to withdraw.
+     * @param toAddress    native caller address as string.
+     * @param amount       amount to withdraw.
      */
     @XCall
     void withdrawTo(String from, String tokenAddress, String toAddress, BigInteger amount);

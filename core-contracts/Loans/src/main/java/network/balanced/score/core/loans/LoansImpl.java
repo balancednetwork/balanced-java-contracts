@@ -49,13 +49,10 @@ import static network.balanced.score.core.loans.LoansVariables.*;
 import static network.balanced.score.core.loans.utils.Checks.loansOn;
 import static network.balanced.score.core.loans.utils.LoansConstants.*;
 import static network.balanced.score.lib.utils.BalancedAddressManager.*;
-import static network.balanced.score.lib.utils.Check.onlyGovernance;
-import static network.balanced.score.lib.utils.Check.only;
-import static network.balanced.score.lib.utils.Check.optionalDefault;
-import static network.balanced.score.lib.utils.Check.checkStatus;
+import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.Math.convertToNumber;
 import static network.balanced.score.lib.utils.Math.pow;
-import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 
 public class LoansImpl implements Loans {
 
@@ -458,7 +455,7 @@ public class LoansImpl implements Loans {
             position.setDebt(_collateralSymbol, null);
         }
 
-        Context.call(getRewards(), "updateBalanceAndSupply", "Loans", DebtDB.getTotalDebt(), _from,  position.getTotalDebt());
+        Context.call(getRewards(), "updateBalanceAndSupply", "Loans", DebtDB.getTotalDebt(), _from, position.getTotalDebt());
         String logMessage = "Loan of " + _value + " " + BNUSD_SYMBOL + " repaid to Balanced.";
         LoanRepaid(_from, BNUSD_SYMBOL, _value, logMessage);
     }

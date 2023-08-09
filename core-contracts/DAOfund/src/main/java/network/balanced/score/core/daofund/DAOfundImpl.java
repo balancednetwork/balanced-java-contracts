@@ -33,9 +33,7 @@ import java.math.BigInteger;
 import java.util.Map;
 
 import static network.balanced.score.lib.utils.BalancedAddressManager.*;
-import static network.balanced.score.lib.utils.Check.isContract;
-import static network.balanced.score.lib.utils.Check.onlyGovernance;
-import static network.balanced.score.lib.utils.Check.checkStatus;
+import static network.balanced.score.lib.utils.Check.*;
 
 public class DAOfundImpl implements DAOfund {
 

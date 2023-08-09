@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,29 +16,29 @@
 
 package network.balanced.score.lib.interfaces.tokens;
 
-import java.math.BigInteger;
-
 import icon.xcall.lib.annotation.XCall;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Payable;
 
+import java.math.BigInteger;
+
 public interface HubToken extends SpokeToken {
     /**
-    * Returns the total token supply across all connected chains.
-    */
+     * Returns the total token supply across all connected chains.
+     */
     @External(readonly = true)
     BigInteger xTotalSupply();
 
-     /**
-    * Returns the total token supply on a connected chain.
-    */
+    /**
+     * Returns the total token supply on a connected chain.
+     */
     @External(readonly = true)
     BigInteger xSupply(String spokeAddress);
 
     /**
-    * Returns a list of all contracts across all connected chains
-    */
+     * Returns a list of all contracts across all connected chains
+     */
     @External(readonly = true)
     String[] getConnectedChains();
 
@@ -68,7 +68,7 @@ public interface HubToken extends SpokeToken {
     @XCall
     void xCrossTransferRevert(String from, String _to, BigInteger _value);
 
-      /**
+    /**
      * From is a EOA address of a connected chain
      * Uses From to xTransfer the balance on ICON to native address on calling chain.
      */

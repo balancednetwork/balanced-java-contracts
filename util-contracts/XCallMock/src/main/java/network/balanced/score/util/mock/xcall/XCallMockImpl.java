@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 ICON Foundation
+ * Copyright (c) 2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package network.balanced.score.util.mock.xcall;
 
+import network.balanced.score.lib.interfaces.XCallMock;
 import score.Address;
 import score.Context;
 import score.DictDB;
@@ -27,7 +28,6 @@ import score.annotation.Payable;
 import xcall.score.lib.util.NetworkAddress;
 
 import java.math.BigInteger;
-import network.balanced.score.lib.interfaces.XCallMock;
 
 public class XCallMockImpl implements XCallMock {
     public static String nid;
@@ -41,7 +41,7 @@ public class XCallMockImpl implements XCallMock {
     }
 
     /* Implementation-specific external */
-    @External(readonly=true)
+    @External(readonly = true)
     public String getNetworkId() {
         return nid;
     }
@@ -56,7 +56,7 @@ public class XCallMockImpl implements XCallMock {
 
     @Payable
     @External
-    public BigInteger sendCallMessage(String _to, byte[] _data,  @Optional byte[] _rollback) {
+    public BigInteger sendCallMessage(String _to, byte[] _data, @Optional byte[] _rollback) {
         BigInteger sn = getNextSn();
         if (_rollback != null) {
             rollbacks.set(sn, _rollback);
@@ -80,11 +80,12 @@ public class XCallMockImpl implements XCallMock {
         rollbackCaller.set(_sn, null);
     }
 
-    @External(readonly=true)
+    @External(readonly = true)
     public BigInteger getFee(String net, boolean response) {
         return BigInteger.ONE;
     }
 
-    @EventLog(indexed=1)
-    public void CallMessage(BigInteger _sn, String to, byte[] data) {}
+    @EventLog(indexed = 1)
+    public void CallMessage(BigInteger _sn, String to, byte[] data) {
+    }
 }

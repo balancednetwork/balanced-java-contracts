@@ -4,7 +4,7 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *s
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
@@ -30,8 +30,8 @@ import xcall.score.lib.util.NetworkAddress;
 
 import java.math.BigInteger;
 
-import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getAssetManager;
+import static network.balanced.score.lib.utils.Check.*;
 
 public class AssetTokenImpl extends SpokeTokenImpl implements AssetToken {
     public static final String VERSION = "version";
@@ -88,7 +88,7 @@ public class AssetTokenImpl extends SpokeTokenImpl implements AssetToken {
     @External
     public void mint(BigInteger _amount, @Optional byte[] _data) {
         only(getAssetManager());
-        super.mint(new NetworkAddress(NATIVE_NID ,Context.getAddress()), _amount);
+        super.mint(new NetworkAddress(NATIVE_NID, Context.getAddress()), _amount);
     }
 
     @External
@@ -115,6 +115,6 @@ public class AssetTokenImpl extends SpokeTokenImpl implements AssetToken {
     @External
     public void transfer(Address _to, BigInteger _value, @Optional byte[] _data) {
         checkStatus();
-        super.transfer( _to, _value, _data);
+        super.transfer(_to, _value, _data);
     }
 }

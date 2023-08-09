@@ -16,19 +16,21 @@
 
 package network.balanced.score.lib.tokens;
 
-import score.*;
+import icon.xcall.lib.messages.HubTokenMessages;
+import network.balanced.score.lib.interfaces.tokens.HubToken;
+import network.balanced.score.lib.interfaces.tokens.HubTokenXCall;
+import network.balanced.score.lib.utils.BalancedAddressManager;
+import score.Address;
+import score.ArrayDB;
+import score.Context;
+import score.DictDB;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
 import score.annotation.Payable;
-import network.balanced.score.lib.interfaces.tokens.HubToken;
-import network.balanced.score.lib.interfaces.tokens.HubTokenXCall;
-import network.balanced.score.lib.utils.BalancedAddressManager;
 import xcall.score.lib.util.NetworkAddress;
 
 import java.math.BigInteger;
-
-import icon.xcall.lib.messages.HubTokenMessages;
 
 import static network.balanced.score.lib.utils.Check.only;
 import static network.balanced.score.lib.utils.Check.onlyOwner;
@@ -49,7 +51,7 @@ public class HubTokenImpl extends SpokeTokenImpl implements HubToken {
     protected final DictDB<String, BigInteger> spokeLimits = Context.newDictDB(SPOKE_LIMITS, BigInteger.class);
 
     public HubTokenImpl(String _nid, String _tokenName, String _symbolName, @Optional BigInteger _decimals) {
-       super(_nid, _tokenName, _symbolName, _decimals);
+        super(_nid, _tokenName, _symbolName, _decimals);
     }
 
     @EventLog(indexed = 1)
@@ -152,7 +154,7 @@ public class HubTokenImpl extends SpokeTokenImpl implements HubToken {
         _transferToSpoke(BigInteger.ZERO, caller, caller, _value, new byte[0]);
     }
 
-    public void _transferToICON(NetworkAddress spokeContract, NetworkAddress to,  BigInteger value) {
+    public void _transferToICON(NetworkAddress spokeContract, NetworkAddress to, BigInteger value) {
         BigInteger prevSourceSupply = crossChainSupply.getOrDefault(spokeContract.toString(), BigInteger.ZERO);
         BigInteger newSupply = prevSourceSupply.subtract(value);
         Context.require(newSupply.compareTo(BigInteger.ZERO) >= 0);
@@ -160,7 +162,7 @@ public class HubTokenImpl extends SpokeTokenImpl implements HubToken {
         _mint(to, value);
     }
 
-    public void _transferToSpoke(BigInteger fee, NetworkAddress from, NetworkAddress to,  BigInteger value, byte[] data) {
+    public void _transferToSpoke(BigInteger fee, NetworkAddress from, NetworkAddress to, BigInteger value, byte[] data) {
         _burn(from, value);
         NetworkAddress spokeAddress = spokeContracts.get(to.net());
         Context.require(spokeAddress != null, to.net() + " is not yet connected");

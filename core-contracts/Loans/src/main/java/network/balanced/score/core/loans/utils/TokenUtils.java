@@ -21,7 +21,6 @@ import score.Context;
 
 import java.math.BigInteger;
 
-import static network.balanced.score.core.loans.LoansImpl.call;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getBalancedOracle;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getBnusd;
 
@@ -58,11 +57,11 @@ public class TokenUtils {
         Context.call(getBnusd(), "burnFrom", from, amount);
     }
 
-    public static void crossTransfer(BigInteger fee ,String to, BigInteger amount) {
+    public static void crossTransfer(BigInteger fee, String to, BigInteger amount) {
         Context.call(fee, getBnusd(), "crossTransfer", to, amount, new byte[0]);
     }
 
     public static void transfer(Address to, BigInteger amount) {
-        Context.call(getBnusd(), "transfer", to , amount, new byte[0]);
+        Context.call(getBnusd(), "transfer", to, amount, new byte[0]);
     }
 }

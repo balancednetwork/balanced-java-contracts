@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,8 @@
 
 package network.balanced.score.lib.test.integration;
 
-import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
-
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.jsonrpc.model.Hash;
@@ -35,9 +33,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import static network.balanced.score.lib.test.integration.BalancedUtils.createParameter;
-import static network.balanced.score.lib.test.integration.BalancedUtils.createSingleTransaction;
-import static network.balanced.score.lib.test.integration.BalancedUtils.createTransaction;
+import static network.balanced.score.lib.test.integration.BalancedUtils.*;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
@@ -133,9 +129,9 @@ public class Balanced {
         governanceClient.deploy(getContractData("BalancedOracle"), governanceParam);
 
         String assetManagerParams = new JsonArray()
-            .add(createParameter(governance._address()))
-            .add(createParameter(getContractData("AssetToken")))
-            .toString();
+                .add(createParameter(governance._address()))
+                .add(createParameter(getContractData("AssetToken")))
+                .toString();
         governanceClient.deploy(getContractData("AssetManager"), assetManagerParams);
 
         Hash oracleTx = deployAsync(owner, "DummyOracle", null);
@@ -196,21 +192,21 @@ public class Balanced {
         JsonObject addBSCAssetManager = createTransaction(assetManager._address(), "addSpokeManager", addBSCAssetManagerParam);
 
         JsonArray addBSCAssetParams = new JsonArray()
-            .add(createParameter(new NetworkAddress(nid, tokenAddress).toString()))
-            .add(createParameter(tokenSymbol))
-            .add(createParameter(tokenSymbol))
-            .add(createParameter(decimals));
+                .add(createParameter(new NetworkAddress(nid, tokenAddress).toString()))
+                .add(createParameter(tokenSymbol))
+                .add(createParameter(tokenSymbol))
+                .add(createParameter(decimals));
         JsonObject addBSCAsset = createTransaction(assetManager._address(), "deployAsset", addBSCAssetParams);
 
         JsonArray addBSCBnUSDParams = new JsonArray()
-            .add(createParameter(new NetworkAddress(nid, spokeBnUSd).toString()))
-            .add(createParameter(BigInteger.TEN.pow(28)));
+                .add(createParameter(new NetworkAddress(nid, spokeBnUSd).toString()))
+                .add(createParameter(BigInteger.TEN.pow(28)));
         JsonObject addBSCBnUSD = createTransaction(bnusd._address(), "addChain", addBSCBnUSDParams);
 
         JsonArray transactions = new JsonArray()
-            .add(addBSCAssetManager)
-            .add(addBSCAsset)
-            .add(addBSCBnUSD);
+                .add(addBSCAssetManager)
+                .add(addBSCAsset)
+                .add(addBSCBnUSD);
         governanceClient.execute(transactions.toString());
     }
 
