@@ -18,14 +18,14 @@ public abstract class FloorLimited {
     }
 
     @External
-    public void setTimeDelayMs(BigInteger ms) {
+    public void setTimeDelayMicroSeconds(BigInteger us) {
         Check.onlyGovernance();
-        BalancedFloorLimits.setTimeDelayMs(ms);
+        BalancedFloorLimits.setTimeDelayMicroSeconds(us);
     }
 
     @External(readonly = true)
-    public BigInteger getTimeDelayMs() {
-        return BalancedFloorLimits.getTimeDelayMs();
+    public BigInteger getTimeDelayMicroSeconds() {
+        return BalancedFloorLimits.getTimeDelayMicroSeconds();
     }
 
     @External

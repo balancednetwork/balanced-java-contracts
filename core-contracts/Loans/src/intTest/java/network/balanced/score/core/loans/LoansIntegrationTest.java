@@ -320,7 +320,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         JsonArray setTimeDelay = new JsonArray()
             .add(createParameter(MICRO_SECONDS_IN_A_DAY)); // 1 day delay
         actions = new JsonArray()
-                .add(createTransaction(balanced.loans._address(), "setTimeDelayMs", setTimeDelay));
+                .add(createTransaction(balanced.loans._address(), "setTimeDelayMicroSeconds", setTimeDelay));
         owner.governance.execute(actions.toString());
 
 
