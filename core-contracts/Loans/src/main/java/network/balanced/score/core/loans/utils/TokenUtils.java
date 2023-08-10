@@ -61,6 +61,10 @@ public class TokenUtils {
         Context.call(fee, getBnusd(), "crossTransfer", to, amount, new byte[0]);
     }
 
+    public static void hubTransfer(String to, BigInteger amount) {
+        Context.call(getBnusd(), "hubTransfer", to, amount, new byte[0]);
+    }
+
     public static void transfer(Address to, BigInteger amount) {
         Context.call(getBnusd(), "transfer", to, amount, new byte[0]);
     }

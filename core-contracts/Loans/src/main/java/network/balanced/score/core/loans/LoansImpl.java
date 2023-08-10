@@ -775,8 +775,12 @@ public class LoansImpl implements Loans {
         TokenUtils.mintAsset(amount);
         if (from.contains("/")) {
             String net = NetworkAddress.valueOf(from).net();
-            BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", net, true);
-            TokenUtils.crossTransfer(xCallFee, from, amount);
+            try {
+                BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", net, true);
+                TokenUtils.crossTransfer(xCallFee, from, amount);
+            } catch (Exception e) {
+                TokenUtils.hubTransfer(from, amount);
+            }
         } else {
             TokenUtils.transfer(Address.fromString(from), amount);
         }

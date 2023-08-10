@@ -33,7 +33,7 @@ import java.util.Map;
 @ScoreInterface
 public interface AssetManager extends AddressManager, Version {
     @External
-    void deployAsset(String tokenNetworkAddress, String symbol, String name, BigInteger decimals);
+    void deployAsset(String tokenNetworkAddress, String name, String symbol, BigInteger decimals);
 
     @External
     void addSpokeManager(String spokeAssetManager);
@@ -70,7 +70,7 @@ public interface AssetManager extends AddressManager, Version {
      * @param _data        transfer data
      */
     @XCall
-    void deposit(String from, String tokenAddress, String fromAddress, String toAddress, BigInteger _amount, byte[] _data);
+    void deposit(String from, String tokenAddress, String fromAddress, String toAddress, BigInteger _amount, @Optional byte[] _data);
 
     /**
      * Burns tokens from user

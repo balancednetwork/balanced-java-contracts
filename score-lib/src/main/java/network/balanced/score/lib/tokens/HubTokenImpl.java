@@ -117,8 +117,7 @@ public class HubTokenImpl extends SpokeTokenImpl implements HubToken {
     }
 
     public void xCrossTransferRevert(String from, String _to, BigInteger _value) {
-        // Could be unsafe
-        Context.require(NetworkAddress.valueOf(from).account().equals(BalancedAddressManager.getXCall().toString()));
+        Context.require(from.equals(new NetworkAddress(NATIVE_NID, BalancedAddressManager.getXCall()).toString()));
         NetworkAddress to = NetworkAddress.valueOf(_to);
         NetworkAddress spokeContract = spokeContracts.get(to.net());
         _transferToICON(spokeContract, to, _value);
@@ -142,11 +141,11 @@ public class HubTokenImpl extends SpokeTokenImpl implements HubToken {
         }
 
         Address address = Address.fromString(to.account());
+        XTransfer(BigInteger.ZERO, _from, _to, _value, _data);
         if (address.isContract()) {
             Context.call(address, "xTokenFallback", _from, _value, _data);
         }
 
-        XTransfer(BigInteger.ZERO, _from, _to, _value, _data);
     }
 
     public void xWithdraw(String from, BigInteger _value) {

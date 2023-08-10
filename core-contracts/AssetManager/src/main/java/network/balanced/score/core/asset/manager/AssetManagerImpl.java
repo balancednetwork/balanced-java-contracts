@@ -16,6 +16,7 @@
 
 package network.balanced.score.core.asset.manager;
 
+import network.balanced.score.lib.interfaces.base.Version;
 import icon.xcall.lib.messages.AssetManagerMessages;
 import icon.xcall.lib.messages.SpokeAssetManagerMessages;
 import network.balanced.score.lib.interfaces.AssetManager;
@@ -40,6 +41,7 @@ import java.util.Map;
 
 import static network.balanced.score.lib.utils.Check.only;
 import static network.balanced.score.lib.utils.Check.onlyGovernance;
+import static network.balanced.score.lib.utils.Check.checkStatus;
 
 public class AssetManagerImpl implements AssetManager {
 
@@ -94,13 +96,13 @@ public class AssetManagerImpl implements AssetManager {
     }
 
     @External
-    public void deployAsset(String tokenNetworkAddress, String symbol, String name, BigInteger decimals) {
+    public void deployAsset(String tokenNetworkAddress, String name, String symbol, BigInteger decimals) {
         onlyGovernance();
         NetworkAddress nativeAddress = NetworkAddress.valueOf(tokenNetworkAddress);
 
         Context.require(spokes.get(nativeAddress.net()) != null);
         Context.require(assets.get(tokenNetworkAddress) == null);
-        Address token = Context.deploy(tokenBytes, BalancedAddressManager.getGovernance(), symbol, name, decimals);
+        Address token = Context.deploy(tokenBytes, BalancedAddressManager.getGovernance(), name, symbol, decimals);
         assets.set(tokenNetworkAddress, token);
         assetNativeAddress.set(token, tokenNetworkAddress);
         Address SYSTEM_SCORE_ADDRESS = getSystemScoreAddress();
@@ -145,12 +147,14 @@ public class AssetManagerImpl implements AssetManager {
     @External
     public void handleCallMessage(String _from, byte[] _data) {
         only(BalancedAddressManager.getXCall());
+        checkStatus();
         AssetManagerXCall.process(this, _from, _data);
     }
 
     @External
     @Payable
     public void withdrawTo(Address asset, String to, BigInteger amount) {
+        checkStatus();
         Context.call(asset, "burnFrom", Context.getCaller().toString(), amount);
         NetworkAddress tokenAddress = NetworkAddress.valueOf(assetNativeAddress.get(asset));
         NetworkAddress targetAddress = NetworkAddress.valueOf(to);
@@ -169,7 +173,7 @@ public class AssetManagerImpl implements AssetManager {
         Context.call(assetAddress, "mintAndTransfer", _to, _to, _amount, new byte[0]);
     }
 
-    public void deposit(String from, String tokenAddress, String fromAddress, String toAddress, BigInteger _amount,  byte[] _data) {
+    public void deposit(String from, String tokenAddress, String fromAddress, String toAddress, BigInteger _amount, byte[] _data) {
         NetworkAddress spokeAssetManager = NetworkAddress.valueOf(from);
         Context.require(from.equals(spokes.get(spokeAssetManager.net())), "Asset manager needs to be whitelisted");
         NetworkAddress spokeTokenAddress = new NetworkAddress(spokeAssetManager.net(), tokenAddress);

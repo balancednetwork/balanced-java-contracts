@@ -247,7 +247,8 @@ public class DAOfundImpl implements DAOfund {
         Address contract = Context.getCaller();
         Context.require(xCallFeePermissions.getOrDefault(contract, false), contract + " is not allowed to use fees from daofund");
         BigInteger fee = Context.call(BigInteger.class, BalancedAddressManager.getXCall(), "getFee", net, response);
-        if (fee.compareTo(Context.getBalance(Context.getAddress())) > 0 || fee.equals(BigInteger.ZERO)) {
+        Context.require(fee.compareTo(Context.getBalance(Context.getAddress())) <= 0 );
+        if (fee.equals(BigInteger.ZERO)) {
             return BigInteger.ZERO;
         }
 
