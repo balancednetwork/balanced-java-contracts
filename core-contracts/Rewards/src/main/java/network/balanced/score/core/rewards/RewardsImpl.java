@@ -725,6 +725,7 @@ public class RewardsImpl implements Rewards {
         return allPercentages;
     }
 
+    @External
     public void revote(Address user) {
         checkStatus();
         SourceWeightController.revote(user, getAllSources());

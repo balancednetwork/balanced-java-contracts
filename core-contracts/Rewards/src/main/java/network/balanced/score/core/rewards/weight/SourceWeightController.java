@@ -310,7 +310,6 @@ public class SourceWeightController {
 
     public static void revote(Address user, String[] sources) {
         Context.require(!isRevoted.getOrDefault(user, false), "This user already had its vote applied");
-        BigInteger timestamp = BigInteger.valueOf(Context.getBlockTimestamp());
         BigInteger nextTime = getNextWeekTimestamp();
         for (String sourceName : sources) {
             int sourceType = sourceTypes.get(sourceName) - 1;
@@ -352,6 +351,7 @@ public class SourceWeightController {
             voteUserSlopes.at(user).set(sourceName, slope);
 
         }
+        isRevoted.set(user, true);
     }
 
     /**
