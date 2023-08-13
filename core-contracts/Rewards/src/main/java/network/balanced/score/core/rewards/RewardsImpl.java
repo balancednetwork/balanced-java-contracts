@@ -144,8 +144,6 @@ public class RewardsImpl implements Rewards {
             completeRecipient.add(RewardsConstants.RESERVE_FUND);
             completeRecipient.add(DAOFUND);
             boostWeight.set(WEIGHT);
-        }else {
-            SourceWeightController.reset(getAllSources());
         }
 
         SourceWeightController.rewards = this;

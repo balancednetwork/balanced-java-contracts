@@ -344,8 +344,7 @@ public class SourceWeightController {
             pointsWeight.at(sourceName).set(nextTime, weightPoint);
             pointsSum.at(sourceType).set(nextTime, sumPoint);
 
-            getTotal();
-            voteUserSlopes.at(user).set(sourceName, slope);
+            // getTotal();
 
         }
         isRevoted.set(user, true);
