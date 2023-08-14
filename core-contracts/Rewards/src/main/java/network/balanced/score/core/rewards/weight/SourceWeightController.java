@@ -68,7 +68,7 @@ public class SourceWeightController {
             , Point.class);
 
     private static final BranchDB<String, DictDB<BigInteger, BigInteger>> changesWeight = Context.newBranchDB(
-            "changesWeight-v2", BigInteger.class);
+            "changesWeight-v3", BigInteger.class);
 
     private static final DictDB<String, BigInteger> timeWeight = Context.newDictDB("timeWeight", BigInteger.class);
 
@@ -76,7 +76,7 @@ public class SourceWeightController {
             Point.class);
 
     private static final BranchDB<Integer, DictDB<BigInteger, BigInteger>> changesSum = Context.newBranchDB(
-            "changesSum-v2", BigInteger.class);
+            "changesSum-v3", BigInteger.class);
 
     private static final DictDB<Integer, BigInteger> timeSum = Context.newDictDB("timeSum", BigInteger.class);
 
@@ -343,10 +343,8 @@ public class SourceWeightController {
 
             pointsWeight.at(sourceName).set(nextTime, weightPoint);
             pointsSum.at(sourceType).set(nextTime, sumPoint);
-
-            // getTotal();
-
         }
+
         isRevoted.set(user, true);
     }
 
