@@ -144,10 +144,9 @@ public class RewardsImpl implements Rewards {
             completeRecipient.add(RewardsConstants.RESERVE_FUND);
             completeRecipient.add(DAOFUND);
             boostWeight.set(WEIGHT);
-        }else {
+        } else {
             SourceWeightController.reset(getAllSources());
         }
-
         SourceWeightController.rewards = this;
         if (currentVersion.getOrDefault("").equals(Versions.REWARDS)) {
             Context.revert("Can't Update same version of code");
@@ -725,6 +724,7 @@ public class RewardsImpl implements Rewards {
         return allPercentages;
     }
 
+    @External
     public void revote(Address user) {
         checkStatus();
         SourceWeightController.revote(user, getAllSources());
