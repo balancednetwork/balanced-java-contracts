@@ -185,6 +185,20 @@ public class Balanced {
         bscBaseAsset = new Address(ownerClient.assetManager.getAssetAddress(new NetworkAddress(BSC_NID, BSC_TOKEN_ADDRESS).toString()).toString());
         ethBaseAsset = new Address(ownerClient.assetManager.getAssetAddress(new NetworkAddress(ETH_NID, ETH_TOKEN_ADDRESS).toString()).toString());
         transfer(daofund._address(), BigInteger.valueOf(1000).multiply(BigInteger.TEN.pow(18)));
+
+        addXCallFeePermission(loans._address(), BSC_NID, true);
+        addXCallFeePermission(loans._address(), ETH_NID, true);
+        addXCallFeePermission(router._address(), BSC_NID, true);
+        addXCallFeePermission(router._address(), ETH_NID, true);
+    }
+
+    public void addXCallFeePermission(Address contract, String net, boolean permission) {
+        JsonArray params = new JsonArray()
+            .add(createParameter(contract))
+            .add(createParameter(net))
+            .add(createParameter(permission));
+        JsonArray tx = createSingleTransaction(daofund._address(), "setXCallFeePermission", params);
+        governanceClient.execute(tx.toString());
     }
 
     public void setupSpoke(String nid, String spokeAssetManager, String spokeBnUSd, String tokenAddress, String tokenSymbol, BigInteger decimals) {

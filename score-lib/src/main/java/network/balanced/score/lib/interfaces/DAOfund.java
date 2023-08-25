@@ -83,10 +83,10 @@ public interface DAOfund extends Name, AddressManager, TokenFallback, Fallback, 
     Map<String, BigInteger> getFeeEarnings();
 
     @External
-    void setXCallFeePermission(Address contract, boolean permission);
+    void setXCallFeePermission(Address contract, String net, boolean permission);
 
     @External(readonly = true)
-    boolean getXCallFeePermission(Address contract);
+    boolean getXCallFeePermission(Address contract, String net);
 
     @External
     BigInteger claimXCallFee(String net, boolean response);

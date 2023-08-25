@@ -28,6 +28,10 @@ import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
 import score.annotation.Payable;
+import network.balanced.score.lib.interfaces.tokens.HubToken;
+import network.balanced.score.lib.interfaces.tokens.HubTokenXCall;
+import network.balanced.score.lib.interfaces.tokens.HubTokenMessages;
+import network.balanced.score.lib.utils.BalancedAddressManager;
 import xcall.score.lib.util.NetworkAddress;
 
 import java.math.BigInteger;
@@ -55,7 +59,7 @@ public class HubTokenImpl extends SpokeTokenImpl implements HubToken {
     }
 
     @EventLog(indexed = 1)
-    public void XTransfer(BigInteger id, String _from, String _to, BigInteger _value, byte[] _data) {
+    public void XTransfer(String _from, String _to, BigInteger _value, byte[] _data) {
 
     }
 
@@ -86,8 +90,8 @@ public class HubTokenImpl extends SpokeTokenImpl implements HubToken {
     }
 
     @External(readonly = true)
-    public BigInteger xSupply(String spokeAddress) {
-        return crossChainSupply.getOrDefault(spokeAddress, BigInteger.ZERO);
+    public BigInteger xSupply(String net) {
+        return crossChainSupply.getOrDefault(net, BigInteger.ZERO);
     }
 
     @External(readonly = true)
@@ -96,7 +100,7 @@ public class HubTokenImpl extends SpokeTokenImpl implements HubToken {
         int numberOfChains = connectedChains.size();
         for (int i = 0; i < numberOfChains; i++) {
             NetworkAddress spokeAddress = connectedChains.get(i);
-            BigInteger supplyAt = crossChainSupply.getOrDefault(spokeAddress.toString(), BigInteger.ZERO);
+            BigInteger supplyAt = crossChainSupply.getOrDefault(spokeAddress.net(), BigInteger.ZERO);
             supply = supply.add(supplyAt);
         }
 
@@ -126,38 +130,68 @@ public class HubTokenImpl extends SpokeTokenImpl implements HubToken {
     public void xCrossTransfer(String from, String _from, String _to, BigInteger _value, byte[] _data) {
         NetworkAddress spokeContract = NetworkAddress.valueOf(from);
         Context.require(spokeContracts.get(spokeContract.net()).equals(spokeContract), from + " is not a connected contract");
+
         if (_to.isEmpty() || _to.equals(_from)) {
             _transferToICON(spokeContract, NetworkAddress.valueOf(_from), _value);
-            XTransfer(BigInteger.ZERO, _from, _from, _value, _data);
+            XTransfer(_from, _from, _value, _data);
             return;
         }
 
         NetworkAddress to = NetworkAddress.valueOf(_to);
         _transferToICON(spokeContract, to, _value);
+        XTransfer(_from, _to, _value, _data);
 
         if (!isNative(to)) {
-            _transferToSpoke(BigInteger.ZERO, to, to, _value, _data);
+            BigInteger fee = getHopFee(to.net());
+            if (fee.equals(BigInteger.ONE.negate())) {
+                return;
+            }
+
+            BigInteger tokenFee = getTokenFee(to.net(), fee, _value);
+            _value = _value.subtract(tokenFee);
+            burn(to, tokenFee);
+            Context.require(_value.compareTo(BigInteger.ZERO) > 0, "Transfer amount is to low");
+            _transferToSpoke(fee, to, to, _value, _data);
             return;
         }
 
         Address address = Address.fromString(to.account());
-        XTransfer(BigInteger.ZERO, _from, _to, _value, _data);
         if (address.isContract()) {
             Context.call(address, "xTokenFallback", _from, _value, _data);
         }
-
     }
 
-    public void xWithdraw(String from, BigInteger _value) {
-        NetworkAddress caller = NetworkAddress.valueOf(from);
-        _transferToSpoke(BigInteger.ZERO, caller, caller, _value, new byte[0]);
+    //Override to pay for the fee used for spoke to spoke transfers
+    public BigInteger getHopFee(String net) {
+        return BigInteger.valueOf(-1);
+    }
+
+    // Override to deduct value from a spoke to spoke transfers.
+    // Returned amount is burned. To transfer mint amount returned to wanted address.
+    public BigInteger getTokenFee(String net, BigInteger fee, BigInteger value) {
+        return BigInteger.ZERO;
+    }
+
+    public void xWithdraw(String from, String _from, BigInteger _value) {
+        NetworkAddress spokeContract = NetworkAddress.valueOf(from);
+        NetworkAddress spokeAddress = spokeContracts.get(spokeContract.net());
+        Context.require(spokeContract.equals(spokeAddress), from + " is not a connected contract");
+
+        NetworkAddress user = new NetworkAddress(spokeAddress.net(), _from);
+        _burn(user, _value);
+
+        BigInteger prevSupply = crossChainSupply.getOrDefault(spokeAddress.net(), BigInteger.ZERO);
+        BigInteger newSupply = prevSupply.add(_value);
+        Context.require(newSupply.compareTo(spokeLimits.getOrDefault(spokeAddress.net(), BigInteger.ZERO)) < 0, "This chain is not allowed to mint more tokens");
+        crossChainSupply.set(spokeAddress.net(), newSupply);
+        XTransfer(user.toString(), user.toString(), _value, new byte[0]);
     }
 
     public void _transferToICON(NetworkAddress spokeContract, NetworkAddress to, BigInteger value) {
-        BigInteger prevSourceSupply = crossChainSupply.getOrDefault(spokeContract.toString(), BigInteger.ZERO);
+        BigInteger prevSourceSupply = crossChainSupply.getOrDefault(spokeContract.net(), BigInteger.ZERO);
         BigInteger newSupply = prevSourceSupply.subtract(value);
         Context.require(newSupply.compareTo(BigInteger.ZERO) >= 0);
-        crossChainSupply.set(spokeContract.toString(), newSupply);
+        crossChainSupply.set(spokeContract.net(), newSupply);
         _mint(to, value);
     }
 
@@ -165,17 +199,17 @@ public class HubTokenImpl extends SpokeTokenImpl implements HubToken {
         _burn(from, value);
         NetworkAddress spokeAddress = spokeContracts.get(to.net());
         Context.require(spokeAddress != null, to.net() + " is not yet connected");
-        BigInteger prevSupply = crossChainSupply.getOrDefault(spokeAddress.toString(), BigInteger.ZERO);
+        BigInteger prevSupply = crossChainSupply.getOrDefault(spokeAddress.net(), BigInteger.ZERO);
         BigInteger newSupply = prevSupply.add(value);
         Context.require(newSupply.compareTo(spokeLimits.getOrDefault(to.net(), BigInteger.ZERO)) < 0, "This chain is not allowed to mint more tokens");
-        crossChainSupply.set(spokeAddress.toString(), newSupply);
+        crossChainSupply.set(spokeAddress.net(), newSupply);
 
         data = (data == null) ? new byte[0] : data;
         byte[] rollback = HubTokenMessages.xCrossTransferRevert(to.toString(), value);
         byte[] callData = HubTokenMessages.xCrossTransfer(from.toString(), to.toString(), value, data);
 
         Context.call(fee, BalancedAddressManager.getXCall(), "sendCallMessage", spokeAddress.toString(), callData, rollback);
-        XTransfer(BigInteger.ZERO, from.toString(), to.toString(), value, data);
+        XTransfer(from.toString(), to.toString(), value, data);
     }
 
     @Override

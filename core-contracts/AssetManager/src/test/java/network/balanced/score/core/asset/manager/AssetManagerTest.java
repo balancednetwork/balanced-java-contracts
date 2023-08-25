@@ -23,14 +23,13 @@ import com.iconloop.score.test.TestBase;
 import network.balanced.score.lib.interfaces.Governance;
 import network.balanced.score.lib.interfaces.tokens.AssetToken;
 import network.balanced.score.lib.interfaces.tokens.AssetTokenScoreInterface;
+import network.balanced.score.lib.interfaces.AssetManagerMessages;
+import network.balanced.score.lib.interfaces.SpokeAssetManagerMessages;
 import xcall.score.lib.interfaces.*;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.mock.MockBalanced;
 import network.balanced.score.lib.test.mock.MockContract;
-
-import icon.xcall.lib.messages.AssetManagerMessages;
-import icon.xcall.lib.messages.SpokeAssetManagerMessages;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

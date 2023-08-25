@@ -48,6 +48,9 @@ public interface AssetManager extends AddressManager, Version {
     @External(readonly = true)
     Address getAssetAddress(String spokeAddress);
 
+    @External(readonly = true)
+    String getNativeAssetAddress(Address token);
+
     /**
      * withdraws amount to `to` address
      *

@@ -37,11 +37,12 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import score.UserRevertedException;
 import xcall.score.lib.util.NetworkAddress;
-import icon.xcall.lib.messages.*;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Map;
+import network.balanced.score.lib.interfaces.*;
+import network.balanced.score.lib.interfaces.tokens.*;
 
 import static network.balanced.score.lib.test.integration.BalancedUtils.*;
 import static network.balanced.score.lib.utils.Constants.*;

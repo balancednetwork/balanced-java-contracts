@@ -21,6 +21,8 @@ import icon.xcall.lib.messages.AssetManagerMessages;
 import icon.xcall.lib.messages.SpokeAssetManagerMessages;
 import network.balanced.score.lib.interfaces.AssetManager;
 import network.balanced.score.lib.interfaces.AssetManagerXCall;
+import network.balanced.score.lib.interfaces.AssetManagerMessages;
+import network.balanced.score.lib.interfaces.SpokeAssetManagerMessages;
 import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.IterableDictDB;
 import network.balanced.score.lib.utils.Names;
@@ -142,6 +144,11 @@ public class AssetManagerImpl implements AssetManager {
     @External(readonly = true)
     public Address getAssetAddress(String spokeAddress) {
         return assets.get(spokeAddress);
+    }
+
+    @External(readonly = true)
+    public String getNativeAssetAddress(Address token) {
+        return assetNativeAddress.get(token);
     }
 
     @External

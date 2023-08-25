@@ -34,7 +34,7 @@ public interface HubToken extends SpokeToken {
      * Returns the total token supply on a connected chain.
      */
     @External(readonly = true)
-    BigInteger xSupply(String spokeAddress);
+    BigInteger xSupply(String net);
 
     /**
      * Returns a list of all contracts across all connected chains
@@ -73,12 +73,12 @@ public interface HubToken extends SpokeToken {
      * Uses From to xTransfer the balance on ICON to native address on calling chain.
      */
     @XCall
-    void xWithdraw(String from, BigInteger _value);
+    void xWithdraw(String from, String _from, BigInteger _value);
 
     /**
      * (EventLog) Must trigger on any successful token transfers from cross chain addresses.
      */
     @EventLog(indexed = 1)
-    void XTransfer(BigInteger id, String _from, String _to, BigInteger _value, byte[] _data);
+    void XTransfer(String _from, String _to, BigInteger _value, byte[] _data);
 }
 

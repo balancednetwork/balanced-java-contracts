@@ -31,9 +31,9 @@ import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
 
-import icon.xcall.lib.messages.SpokeTokenMessages;
 import network.balanced.score.lib.test.mock.MockBalanced;
 import network.balanced.score.lib.test.mock.MockContract;
+import network.balanced.score.lib.interfaces.tokens.SpokeTokenMessages;
 import score.Context;
 import score.DictDB;
 import score.annotation.External;
@@ -168,7 +168,8 @@ class SpokeTokenTest extends TestBase {
         // Assert
         assertEquals(BigInteger.ZERO, balanceOf(alice));
         assertEquals(amount, balanceOf(bob));
-        verify(tokenSpy).HubTransfer(new NetworkAddress(ICON_NID, alice.getAddress()).toString(), bob.toString(), amount, new byte[0]);
+        verify(tokenSpy).Transfer(alice.getAddress(), SpokeTokenImpl.ZERO_ADDRESS, amount, new byte[0]);
+        verify(tokenSpy).HubTransfer(SpokeTokenImpl.ZERO_ADDRESS.toString(), bob.toString(), amount, new byte[0]);
     }
 
     @Test
@@ -187,7 +188,8 @@ class SpokeTokenTest extends TestBase {
         // Assert
         assertEquals(BigInteger.ZERO, balanceOf(alice));
         assertEquals(amount, balanceOf(bob));
-        verify(tokenSpy).HubTransfer(alice.toString(), new NetworkAddress(ICON_NID, bob.getAddress()).toString(), amount, new byte[0]);
+        verify(tokenSpy).HubTransfer(alice.toString(), SpokeTokenImpl.ZERO_ADDRESS.toString(), amount, new byte[0]);
+        verify(tokenSpy).Transfer(SpokeTokenImpl.ZERO_ADDRESS, bob.getAddress(), amount, new byte[0]);
     }
 
     @Test
@@ -205,7 +207,8 @@ class SpokeTokenTest extends TestBase {
         // Assert
         assertEquals(BigInteger.ZERO, balanceOf(alice));
         assertEquals(amount, balanceOf(receiverContract.account));
-        verify(tokenSpy).HubTransfer(alice.toString(), new NetworkAddress(ICON_NID,receiverContract.getAddress()).toString(), amount, new byte[0]);
+        verify(tokenSpy).HubTransfer(alice.toString(), SpokeTokenImpl.ZERO_ADDRESS.toString(), amount, new byte[0]);
+        verify(tokenSpy).Transfer(SpokeTokenImpl.ZERO_ADDRESS, receiverContract.getAddress(), amount, new byte[0]);
         verify(receiverContract.mock).xTokenFallback(alice.toString(), amount, new byte[0]);
     }
 

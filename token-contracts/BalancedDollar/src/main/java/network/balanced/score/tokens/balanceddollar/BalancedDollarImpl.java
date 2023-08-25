@@ -34,6 +34,7 @@ import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getLoans;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getStabilityFund;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getBalancedOracle;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getDaofund;
 
 public class BalancedDollarImpl extends HubTokenImpl implements BalancedDollar {
     private static final String TOKEN_NAME = Names.BNUSD;
@@ -135,6 +136,18 @@ public class BalancedDollarImpl extends HubTokenImpl implements BalancedDollar {
     public void handleCallMessage(String _from, byte[] _data) {
         checkStatus();
         super.handleCallMessage(_from, _data);
+    }
+
+    @Override
+    public BigInteger getHopFee(String net) {
+        if (!canWithdraw(net)) {
+            return BigInteger.ONE.negate();
+        }
+        return Context.call(BigInteger.class, getDaofund(), "claimXCallFee", net, true);
+    }
+
+    private boolean canWithdraw(String net) {
+        return Context.call(Boolean.class, getDaofund(), "getXCallFeePermission", Context.getAddress(), net);
     }
 
     @Override

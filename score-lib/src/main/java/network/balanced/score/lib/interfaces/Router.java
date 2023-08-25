@@ -32,7 +32,7 @@ import java.math.BigInteger;
 
 @ScoreClient
 @ScoreInterface
-public interface Router extends Name, GovernanceAddress, AdminAddress, DexAddress, SicxAddress, StakingAddress,
+public interface Router extends Name, AddressManager,
         TokenFallback, Fallback, Version {
 
     @Payable
