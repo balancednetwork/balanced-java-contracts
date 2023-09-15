@@ -140,7 +140,7 @@ class AssetManagerTest extends TestBase {
         assetManager.invoke(user, "withdrawTo", ethAsset1.getAddress(), ethAccount.toString(), amount);
 
         // Assert
-        byte[] expectedMsg = SpokeAssetManagerMessages.withdrawTo(tokenAddress.account(), ethAccount.account(), amount);
+        byte[] expectedMsg = SpokeAssetManagerMessages.WithdrawTo(tokenAddress.account(), ethAccount.account(), amount);
         byte[] expectedRollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), ethAccount.toString(), amount);
 
         verify(mockBalanced.xCall.mock).sendCallMessage(ethSpoke.toString(), expectedMsg, expectedRollback);

@@ -189,20 +189,6 @@ class RouterTest extends TestBase {
     }
 
     @Test
-    void fallback() {
-
-        Account nonDex = sm.createAccount();
-        nonDex.addBalance("ICX", BigInteger.TEN);
-        Executable nonDexCall = () -> sm.transfer(nonDex, routerScore.getAddress(), BigInteger.TEN);
-        String expectedErrorMessage = "Reverted(0): Authorization Check: Authorization failed. Caller: " + nonDex.getAddress() +
-                " Authorized Caller: " + balanced.dex.account.getAddress();
-        expectErrorMessage(nonDexCall, expectedErrorMessage);
-
-        balanced.dex.account.addBalance("ICX", BigInteger.TEN);
-        sm.transfer(balanced.dex.account, routerScore.getAddress(), BigInteger.TEN);
-    }
-
-    @Test
     void xTrade_WithdrawToken() throws Exception {
         // Arrange
         MockContract<SpokeToken> token = new MockContract<>(SpokeTokenScoreInterface.class, SpokeToken.class, sm, owner);

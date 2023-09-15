@@ -167,7 +167,7 @@ public class AssetManagerImpl implements AssetManager {
         NetworkAddress targetAddress = NetworkAddress.valueOf(to);
         Context.require(targetAddress.net().equals(tokenAddress.net()), "Wrong network");
 
-        byte[] msg = SpokeAssetManagerMessages.withdrawTo(tokenAddress.account(), targetAddress.account(), amount);
+        byte[] msg = SpokeAssetManagerMessages.WithdrawTo(tokenAddress.account(), targetAddress.account(), amount);
         byte[] rollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), to, amount);
         Context.call(Context.getValue(), BalancedAddressManager.getXCall(), "sendCallMessage", spokes.get(tokenAddress.net()), msg, rollback);
     }

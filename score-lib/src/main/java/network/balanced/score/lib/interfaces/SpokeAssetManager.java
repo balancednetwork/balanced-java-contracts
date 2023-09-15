@@ -35,5 +35,5 @@ public interface SpokeAssetManager {
      * @param amount       amount to withdraw.
      */
     @XCall
-    void withdrawTo(String from, String tokenAddress, String toAddress, BigInteger amount);
+    void WithdrawTo(String from, String tokenAddress, String toAddress, BigInteger amount);
 }

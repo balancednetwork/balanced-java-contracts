@@ -270,7 +270,6 @@ public class RouterImpl implements Router {
 
     @Payable
     public void fallback() {
-        only(getDex());
     }
 
     @EventLog(indexed = 1)
