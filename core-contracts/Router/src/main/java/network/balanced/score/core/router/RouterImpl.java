@@ -147,19 +147,22 @@ public class RouterImpl implements Router {
     }
 
     private void transferResult(Address token, String to, BigInteger amount) {
-        if (to.contains("/")) {
-            String toNet = NetworkAddress.valueOf(to).net();
-            if (canWithdraw(toNet)) {
-                if (token.equals( getBnusd())) {
-                    transferBnUSD(token, to, amount);
-                } else {
-                    transferHubToken(token, to, amount);
-                }
+        String nativeNid = BalancedAddressManager.getNativeNid();
+        NetworkAddress networkAddress = NetworkAddress.valueOf(to, nativeNid);
+        if (networkAddress.net().equals(nativeNid)) {
+            Context.call(token, "transfer", Address.fromString(networkAddress.account()), amount , new byte[0]);
+            return;
+        }
+
+        String toNet = NetworkAddress.valueOf(to).net();
+        if (canWithdraw(toNet)) {
+            if (token.equals(getBnusd())) {
+                transferBnUSD(token, to, amount);
             } else {
-                Context.call(token, "hubTransfer", to, amount, new byte[0]);
+                transferHubToken(token, to, amount);
             }
         } else {
-            Context.call(token, "transfer", Address.fromString(to), amount , new byte[0]);
+            Context.call(token, "hubTransfer", to, amount, new byte[0]);
         }
     }
 

@@ -284,38 +284,6 @@ class HubTokenTest extends TestBase {
    }
 
    @Test
-   void withdraw() {
-        // Arrange
-        NetworkAddress bob = new NetworkAddress(ethNid, "0x32");
-        BigInteger amount = BigInteger.TWO.pow(18);
-        addBalance(bob, amount);
-
-        // Act
-        byte[] msg = HubTokenMessages.xWithdraw(bob.account(), amount);
-        tokenScore.invoke(xCall.account, "handleCallMessage", ethereumSpokeAddress.toString(), msg);
-
-        // Assert
-        assertEquals(BigInteger.ZERO, balanceOf(bob));
-        assertEquals(totalSupply, tokenScore.call("xTotalSupply"));
-        assertEquals(amount, tokenScore.call("xSupply", ethereumSpokeAddress.net()));
-        verify(tokenSpy).XTransfer(bob.toString(), bob.toString(), amount, new byte[0]);
-   }
-
-   @Test
-   void withdraw_invalidCaller() {
-        // Arrange
-        NetworkAddress bob = new NetworkAddress(ethNid, "0x32");
-        NetworkAddress invalidSpokeContract = new NetworkAddress("dummy", "0x1");
-        BigInteger amount = BigInteger.TWO.pow(18);
-        addBalance(bob, amount);
-
-        // Act & Assert
-        byte[] msg = HubTokenMessages.xWithdraw(bob.account(), amount);
-        Executable invalidSpoke = () -> tokenScore.invoke(xCall.account, "handleCallMessage", invalidSpokeContract.toString(), msg);
-        expectErrorMessage(invalidSpoke, "is not a connected contract");
-   }
-
-   @Test
    void crossTransfer_Limits() {
         // Arrange
         Account alice = sm.createAccount();
@@ -330,7 +298,33 @@ class HubTokenTest extends TestBase {
 
         // Assert
         assertEquals("Reverted(0): This chain is not allowed to mint more tokens", e.getMessage());
-   }
+    }
+
+   @Test
+   void xTransfer() {
+       // Arrange
+       NetworkAddress bob = new NetworkAddress(ethNid, "0x32");
+       BigInteger amount = BigInteger.TWO.pow(18);
+       addBalance(bob, amount);
+       BigInteger xCallFee = BigInteger.TEN;
+       BigInteger fee = BigInteger.valueOf(7);
+       when(tokenSpy.getHopFee(bob.net())).thenReturn(xCallFee);
+       when(tokenSpy.getTokenFee(bob.net(), xCallFee, amount)).thenReturn(fee);
+
+       byte[] expectedCallData = HubTokenMessages.xCrossTransfer(bob.toString(), bob.toString(), amount.subtract(fee), new byte[0]);
+       byte[] expectedRollbackData = HubTokenMessages.xCrossTransferRevert(bob.toString(), amount.subtract(fee));
+
+       // Act
+       byte[] msg = HubTokenMessages.xTransfer(bob.toString(), amount, new byte[0]);
+       tokenScore.invoke(xCall.account, "handleCallMessage", bob.toString(), msg);
+
+       // Assert
+       assertEquals(BigInteger.ZERO, balanceOf(bob));
+       assertEquals(totalSupply.subtract(fee), tokenScore.call("xTotalSupply"));
+       assertEquals(amount.subtract(fee), tokenScore.call("xSupply", ethereumSpokeAddress.net()));
+       verify(tokenSpy).XTransfer(bob.toString(), bob.toString(), amount.subtract(fee), new byte[0]);
+       verify(xCall.mock).sendCallMessage(Mockito.eq(ethereumSpokeAddress.toString()), AdditionalMatchers.aryEq(expectedCallData), AdditionalMatchers.aryEq(expectedRollbackData));
+    }
 
     void addBalance(Account account, BigInteger amount) {
         tokenScore.invoke(owner, "transfer", account.getAddress(), amount, new byte[0]);

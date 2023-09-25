@@ -20,6 +20,7 @@ import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import icon.xcall.lib.annotation.XCall;
 import network.balanced.score.lib.interfaces.addresses.AddressManager;
+import network.balanced.score.lib.interfaces.base.Fallback;
 import network.balanced.score.lib.interfaces.base.Version;
 import score.Address;
 import score.annotation.External;
@@ -31,7 +32,7 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface AssetManager extends AddressManager, Version {
+public interface AssetManager extends AddressManager, Version, Fallback {
     @External
     void deployAsset(String tokenNetworkAddress, String name, String symbol, BigInteger decimals);
 
@@ -76,15 +77,14 @@ public interface AssetManager extends AddressManager, Version {
     void deposit(String from, String tokenAddress, String fromAddress, String toAddress, BigInteger _amount, @Optional byte[] _data);
 
     /**
-     * Burns tokens from user
+     * Withdraws tokens back to caller
      *
      * @param from         xCall caller.
-     * @param tokenAddress native token address as string.
-     * @param _from        native caller address as string.
-     * @param _amount      amount to withdraw.
+     * @param tokenAddress token address
+     * @param amount       amount to withdraw.
      */
     @XCall
-    void withdraw(String from, String tokenAddress, String _from, BigInteger _amount);
+    void xWithdraw(String from, Address tokenAddress, BigInteger amount);
 
     /**
      * return amount to _to in case of withdraw failure

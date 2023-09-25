@@ -161,15 +161,11 @@ public class AssetManagerImpl implements AssetManager {
     @External
     @Payable
     public void withdrawTo(Address asset, String to, BigInteger amount) {
-        checkStatus();
-        Context.call(asset, "burnFrom", Context.getCaller().toString(), amount);
-        NetworkAddress tokenAddress = NetworkAddress.valueOf(assetNativeAddress.get(asset));
-        NetworkAddress targetAddress = NetworkAddress.valueOf(to);
-        Context.require(targetAddress.net().equals(tokenAddress.net()), "Wrong network");
+        _withdrawTo(asset, Context.getCaller().toString(), to, amount, Context.getValue());
+    }
 
-        byte[] msg = SpokeAssetManagerMessages.WithdrawTo(tokenAddress.account(), targetAddress.account(), amount);
-        byte[] rollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), to, amount);
-        Context.call(Context.getValue(), BalancedAddressManager.getXCall(), "sendCallMessage", spokes.get(tokenAddress.net()), msg, rollback);
+    @Payable
+    public void fallback() {
     }
 
     public void withdrawRollback(String from, String tokenAddress, String _to, BigInteger _amount) {
@@ -196,17 +192,22 @@ public class AssetManagerImpl implements AssetManager {
         Context.call(assetAddress, "mintAndTransfer", fromNetworkAddress.toString(), toAddress, _amount, _data);
     }
 
-    // used with success verification
-    public void withdraw(String from, String tokenAddress, String _from, BigInteger _amount) {
-        NetworkAddress spokeAssetManager = NetworkAddress.valueOf(from);
-        NetworkAddress spokeTokenAddress = new NetworkAddress(spokeAssetManager.net(), tokenAddress);
-        NetworkAddress userAddress = new NetworkAddress(spokeAssetManager.net(), _from);
-        Context.require(from.equals(spokes.get(spokeAssetManager.net())), "Asset manager needs to be whitelisted");
+    public void xWithdraw(String from, Address tokenAddress, BigInteger amount) {
+        NetworkAddress _from = NetworkAddress.valueOf(from);
+        BigInteger xCallFee = Context.call(BigInteger.class, BalancedAddressManager.getDaofund(), "claimXCallFee", _from.net(), true);
+        _withdrawTo(tokenAddress, from, from, amount, xCallFee);
+    }
 
-        Address assetAddress = assets.get(spokeTokenAddress.toString());
-        Context.require(assetAddress != null, "Token is not yet deployed");
+    private void _withdrawTo(Address asset, String from, String to, BigInteger amount, BigInteger fee) {
+        checkStatus();
+        Context.call(asset, "burnFrom", from, amount);
+        NetworkAddress tokenAddress = NetworkAddress.valueOf(assetNativeAddress.get(asset));
+        NetworkAddress targetAddress = NetworkAddress.valueOf(to);
+        Context.require(targetAddress.net().equals(tokenAddress.net()), "Wrong network");
 
-        Context.call(assetAddress, "burnFrom", userAddress.toString(), _amount);
+        byte[] msg = SpokeAssetManagerMessages.WithdrawTo(tokenAddress.account(), targetAddress.account(), amount);
+        byte[] rollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), to, amount);
+        Context.call(fee, BalancedAddressManager.getXCall(), "sendCallMessage", spokes.get(tokenAddress.net()), msg, rollback);
     }
 
     public static Address getSystemScoreAddress() {

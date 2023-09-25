@@ -19,11 +19,13 @@ package network.balanced.score.lib.utils;
 import score.Address;
 import score.Context;
 import score.DictDB;
+import score.VarDB;
 
 import static network.balanced.score.lib.utils.Check.readonly;
 public class BalancedAddressManager {
     private static final String TAG = "BalancedAddressManager";
     private static final Address mainnetGovernance = Address.fromString("cx44250a12074799e26fdeee75648ae47e2cc84219");
+    private static final VarDB<String> nativeNid = Context.newVarDB("TAG" + "NativeNetworkId", String.class);
     public static final DictDB<String, Address> contractAddresses = Context.newDictDB(TAG + "ContractAddresses",
             Address.class);
 
@@ -55,6 +57,15 @@ public class BalancedAddressManager {
         }
 
         return address;
+    }
+
+    public static String getNativeNid() {
+        String nid = nativeNid.get();
+        if (nid == null) {
+            nid = Context.call(String.class, getXCall(), "getNetworkId");
+        }
+
+        return nid;
     }
 
     public static Address getBaln() {

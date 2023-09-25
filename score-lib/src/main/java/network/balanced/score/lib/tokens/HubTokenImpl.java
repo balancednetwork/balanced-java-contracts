@@ -142,16 +142,7 @@ public class HubTokenImpl extends SpokeTokenImpl implements HubToken {
         XTransfer(_from, _to, _value, _data);
 
         if (!isNative(to)) {
-            BigInteger fee = getHopFee(to.net());
-            if (fee.equals(BigInteger.ONE.negate())) {
-                return;
-            }
-
-            BigInteger tokenFee = getTokenFee(to.net(), fee, _value);
-            _value = _value.subtract(tokenFee);
-            burn(to, tokenFee);
-            Context.require(_value.compareTo(BigInteger.ZERO) > 0, "Transfer amount is to low");
-            _transferToSpoke(fee, to, to, _value, _data);
+            _transferToSpokeWithFee(to, to, _value, _data);
             return;
         }
 
@@ -159,6 +150,25 @@ public class HubTokenImpl extends SpokeTokenImpl implements HubToken {
         if (address.isContract()) {
             Context.call(address, "xTokenFallback", _from, _value, _data);
         }
+    }
+
+    public void _transferToSpokeWithFee(NetworkAddress from, NetworkAddress to, BigInteger value, byte[] data) {
+        BigInteger fee = getHopFee(to.net());
+        if (fee.equals(BigInteger.ONE.negate())) {
+            return;
+        }
+
+        BigInteger tokenFee = getTokenFee(to.net(), fee, value);
+        value = value.subtract(tokenFee);
+        burn(from, tokenFee);
+        Context.require(value.compareTo(BigInteger.ZERO) > 0, "Transfer amount is to low");
+        _transferToSpoke(fee, from, to, value, data);
+    }
+
+    public void xTransfer(String from, String _to, BigInteger _value, byte[] _data) {
+        NetworkAddress _from = NetworkAddress.valueOf(from);
+        NetworkAddress to = NetworkAddress.valueOf(_to);
+        _transferToSpokeWithFee(_from, to, _value, _data);
     }
 
     //Override to pay for the fee used for spoke to spoke transfers
@@ -170,21 +180,6 @@ public class HubTokenImpl extends SpokeTokenImpl implements HubToken {
     // Returned amount is burned. To transfer mint amount returned to wanted address.
     public BigInteger getTokenFee(String net, BigInteger fee, BigInteger value) {
         return BigInteger.ZERO;
-    }
-
-    public void xWithdraw(String from, String _from, BigInteger _value) {
-        NetworkAddress spokeContract = NetworkAddress.valueOf(from);
-        NetworkAddress spokeAddress = spokeContracts.get(spokeContract.net());
-        Context.require(spokeContract.equals(spokeAddress), from + " is not a connected contract");
-
-        NetworkAddress user = new NetworkAddress(spokeAddress.net(), _from);
-        _burn(user, _value);
-
-        BigInteger prevSupply = crossChainSupply.getOrDefault(spokeAddress.net(), BigInteger.ZERO);
-        BigInteger newSupply = prevSupply.add(_value);
-        Context.require(newSupply.compareTo(spokeLimits.getOrDefault(spokeAddress.net(), BigInteger.ZERO)) < 0, "This chain is not allowed to mint more tokens");
-        crossChainSupply.set(spokeAddress.net(), newSupply);
-        XTransfer(user.toString(), user.toString(), _value, new byte[0]);
     }
 
     public void _transferToICON(NetworkAddress spokeContract, NetworkAddress to, BigInteger value) {

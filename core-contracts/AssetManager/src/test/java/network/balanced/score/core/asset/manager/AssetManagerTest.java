@@ -180,37 +180,19 @@ class AssetManagerTest extends TestBase {
         // Arrange
         NetworkAddress ethAccount = new NetworkAddress(ETH_NID, "0xTest");
         BigInteger amount = BigInteger.TEN;
-        byte[] withdraw = AssetManagerMessages.withdraw(ethAsset1Address, ethAccount.account(), amount);
+        NetworkAddress tokenAddress = new NetworkAddress(ETH_NID, ethAsset1Address);
+        byte[] withdraw = AssetManagerMessages.xWithdraw(ethAsset1.getAddress(), amount);
 
         // Act
-        assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", ethSpoke.toString(), withdraw);
+        assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", ethAccount.toString(), withdraw);
 
         // Assert
+        byte[] expectedMsg = SpokeAssetManagerMessages.WithdrawTo(tokenAddress.account(), ethAccount.account(), amount);
+        byte[] expectedRollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), ethAccount.toString(), amount);
+
+        verify(mockBalanced.xCall.mock).sendCallMessage(ethSpoke.toString(), expectedMsg, expectedRollback);
         verify(ethAsset1.mock).burnFrom(ethAccount.toString(), amount);
-    }
-
-    @Test
-    void xCallWithdraw_invalidSpokeManager() {
-        // Arrange
-        NetworkAddress ethAccount = new NetworkAddress(ETH_NID, "0xTest");
-        BigInteger amount = BigInteger.TEN;
-        byte[] withdraw = AssetManagerMessages.withdraw(ethAsset1Address, ethAccount.account(), amount);
-
-        // Act & Assert
-        Executable invalidSpokeManager = () -> assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", "none/0x1", withdraw);
-        expectErrorMessage(invalidSpokeManager, "Asset manager needs to be whitelisted");
-    }
-
-    @Test
-    void xCallWithdraw_wrongSpokeManager() {
-        // Arrange
-        NetworkAddress ethAccount = new NetworkAddress(ETH_NID, "0xTest");
-        BigInteger amount = BigInteger.TEN;
-        byte[] withdraw = AssetManagerMessages.withdraw(ethAsset1Address, ethAccount.account(), amount);
-
-        // Act & Assert
-        Executable wrongSpokeManager = () -> assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", bscSpoke.toString(), withdraw);
-        expectErrorMessage(wrongSpokeManager, "Token is not yet deployed");
+        verify(mockBalanced.daofund.mock).claimXCallFee(ETH_NID, true);
     }
 
     @Test

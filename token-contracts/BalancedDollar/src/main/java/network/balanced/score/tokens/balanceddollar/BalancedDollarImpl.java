@@ -26,6 +26,7 @@ import score.Context;
 import score.VarDB;
 import score.annotation.External;
 import score.annotation.Optional;
+import score.annotation.Payable;
 import xcall.score.lib.util.NetworkAddress;
 
 import java.math.BigInteger;
@@ -155,5 +156,9 @@ public class BalancedDollarImpl extends HubTokenImpl implements BalancedDollar {
     public void transfer(Address _to, BigInteger _value, @Optional byte[] _data) {
         checkStatus();
         super.transfer( _to, _value, _data);
+    }
+
+    @Payable
+    public void fallback() {
     }
 }
