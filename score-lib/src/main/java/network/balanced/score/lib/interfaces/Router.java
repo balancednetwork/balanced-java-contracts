@@ -37,5 +37,5 @@ public interface Router extends Name, AddressManager,
 
     @Payable
     @External
-    void route(Address[] path, @Optional BigInteger _minReceive);
+    void route(Address[] path, @Optional BigInteger _minReceive, @Optional String _receiver);
 }

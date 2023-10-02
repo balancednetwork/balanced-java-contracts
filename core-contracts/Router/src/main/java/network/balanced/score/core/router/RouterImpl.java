@@ -79,7 +79,6 @@ public class RouterImpl implements Router {
         return currentVersion.getOrDefault("");
     }
 
-
     @External
     public void updateAddress(String name) {
         BalancedAddressManager.resetAddress(name);
@@ -89,8 +88,6 @@ public class RouterImpl implements Router {
     public Address getAddress(String name) {
         return BalancedAddressManager.getAddressByName(name);
     }
-
-
 
     private void swap(Address fromToken, Address toToken) {
         if (fromToken == null) {
@@ -135,7 +132,10 @@ public class RouterImpl implements Router {
             BigInteger balance = Context.getBalance(Context.getAddress());
             Context.require(balance.compareTo(_minReceive) >= 0,
                     TAG + ": Below minimum receive amount of " + _minReceive);
-            Context.transfer(Address.fromString(from), balance);
+            String nativeNid = BalancedAddressManager.getNativeNid();
+            NetworkAddress networkAddress = NetworkAddress.valueOf(from, nativeNid);
+            Context.require(networkAddress.net().equals(nativeNid), "Receiver must be a ICON address");
+            Context.transfer(Address.fromString(networkAddress.account()), balance);
             Route(fromAddress, fromAmount, EOA_ZERO, balance);
         } else {
             BigInteger balance = (BigInteger) Context.call(currentToken, "balanceOf", Context.getAddress());
@@ -150,7 +150,7 @@ public class RouterImpl implements Router {
         String nativeNid = BalancedAddressManager.getNativeNid();
         NetworkAddress networkAddress = NetworkAddress.valueOf(to, nativeNid);
         if (networkAddress.net().equals(nativeNid)) {
-            Context.call(token, "transfer", Address.fromString(networkAddress.account()), amount , new byte[0]);
+            Context.call(token, "transfer", Address.fromString(networkAddress.account()), amount, new byte[0]);
             return;
         }
 
@@ -176,7 +176,7 @@ public class RouterImpl implements Router {
         String toNet = NetworkAddress.valueOf(to).net();
         Address assetManager = getAssetManager();
         String nativeAddress = Context.call(String.class, assetManager, "getNativeAssetAddress", token);
-        if (nativeAddress != null && NetworkAddress.valueOf(nativeAddress).net().equals(toNet) ) {
+        if (nativeAddress != null && NetworkAddress.valueOf(nativeAddress).net().equals(toNet)) {
             BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", toNet, true);
             Context.call(xCallFee, assetManager, "withdrawTo", token, to, amount);
         } else {
@@ -190,9 +190,12 @@ public class RouterImpl implements Router {
 
     @Payable
     @External
-    public void route(Address[] _path, @Optional BigInteger _minReceive) {
+    public void route(Address[] _path, @Optional BigInteger _minReceive, @Optional String _receiver) {
         if (_minReceive == null) {
             _minReceive = BigInteger.ZERO;
+        }
+        if (_receiver == null) {
+            _receiver = Context.getCaller().toString();
         }
 
         Context.require(_minReceive.signum() >= 0, TAG + ": Must specify a positive number for minimum to receive");
@@ -200,11 +203,12 @@ public class RouterImpl implements Router {
         Context.require(_path.length <= MAX_NUMBER_OF_ITERATIONS,
                 TAG + ": Passed max swaps of " + MAX_NUMBER_OF_ITERATIONS);
 
-        route(Context.getCaller().toString(), null, _path, _minReceive);
+        route(_receiver, null, _path, _minReceive);
     }
 
     /**
-     * This is invoked when a token is transferred to this score. It expects a JSON object with the following format:
+     * This is invoked when a token is transferred to this score. It expects a JSON
+     * object with the following format:
      * <blockquote>
      * {"method": "METHOD_NAME", "params":{...}}
      * </blockquote>
