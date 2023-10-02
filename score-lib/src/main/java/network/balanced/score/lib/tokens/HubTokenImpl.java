@@ -16,7 +16,6 @@
 
 package network.balanced.score.lib.tokens;
 
-import icon.xcall.lib.messages.HubTokenMessages;
 import network.balanced.score.lib.interfaces.tokens.HubToken;
 import network.balanced.score.lib.interfaces.tokens.HubTokenXCall;
 import network.balanced.score.lib.utils.BalancedAddressManager;
@@ -28,10 +27,7 @@ import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
 import score.annotation.Payable;
-import network.balanced.score.lib.interfaces.tokens.HubToken;
-import network.balanced.score.lib.interfaces.tokens.HubTokenXCall;
 import network.balanced.score.lib.interfaces.tokens.HubTokenMessages;
-import network.balanced.score.lib.utils.BalancedAddressManager;
 import xcall.score.lib.util.NetworkAddress;
 
 import java.math.BigInteger;

@@ -71,13 +71,13 @@ public interface HubToken extends SpokeToken {
     /**
      * Method for transferring hub balances to a spoke chain
      * From is a EOA address of a connected chain
-     * Uses From to xTransfer the balance on ICON to native address on calling chain.
+     * Uses From to xTransfer the balance on ICON to native address on a calling chain.
      */
     @XCall
     void xTransfer(String from, String _to, BigInteger _value, byte[] _data);
 
     /**
-     * (EventLog) Must trigger on any successful token transfers from cross chain addresses.
+     * (EventLog) Must trigger on any successful token transfers from cross-chain addresses.
      */
     @EventLog(indexed = 1)
     void XTransfer(String _from, String _to, BigInteger _value, byte[] _data);

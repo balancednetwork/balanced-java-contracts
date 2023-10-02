@@ -20,33 +20,30 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
+import network.balanced.score.lib.interfaces.AssetManagerMessages;
 import network.balanced.score.lib.interfaces.Governance;
+import network.balanced.score.lib.interfaces.SpokeAssetManagerMessages;
 import network.balanced.score.lib.interfaces.tokens.AssetToken;
 import network.balanced.score.lib.interfaces.tokens.AssetTokenScoreInterface;
-import network.balanced.score.lib.interfaces.AssetManagerMessages;
-import network.balanced.score.lib.interfaces.SpokeAssetManagerMessages;
-import xcall.score.lib.interfaces.*;
-import network.balanced.score.lib.structs.PrepDelegations;
-import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.mock.MockBalanced;
 import network.balanced.score.lib.test.mock.MockContract;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import score.Address;
 import score.Context;
-import xcall.score.lib.interfaces.XCallScoreInterface;
 import xcall.score.lib.util.NetworkAddress;
 
 import java.math.BigInteger;
 import java.util.Map;
 
+import static network.balanced.score.lib.test.UnitTest.assertOnlyCallableBy;
+import static network.balanced.score.lib.test.UnitTest.expectErrorMessage;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class AssetManagerTest extends TestBase {
     private static final ServiceManager sm = getServiceManager();
