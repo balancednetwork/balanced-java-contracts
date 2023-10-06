@@ -22,6 +22,7 @@ import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import network.balanced.score.lib.interfaces.Router;
 import network.balanced.score.lib.utils.BalancedAddressManager;
+import network.balanced.score.lib.utils.XCallUtils;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.Versions;
 import score.Address;
@@ -32,7 +33,7 @@ import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
 import score.annotation.Payable;
-import xcall.score.lib.util.NetworkAddress;
+import foundation.icon.xcall.NetworkAddress;
 
 import java.math.BigInteger;
 
@@ -132,7 +133,7 @@ public class RouterImpl implements Router {
             BigInteger balance = Context.getBalance(Context.getAddress());
             Context.require(balance.compareTo(_minReceive) >= 0,
                     TAG + ": Below minimum receive amount of " + _minReceive);
-            String nativeNid = BalancedAddressManager.getNativeNid();
+            String nativeNid = XCallUtils.getNativeNid();
             NetworkAddress networkAddress = NetworkAddress.valueOf(from, nativeNid);
             Context.require(networkAddress.net().equals(nativeNid), "Receiver must be a ICON address");
             Context.transfer(Address.fromString(networkAddress.account()), balance);
@@ -147,7 +148,7 @@ public class RouterImpl implements Router {
     }
 
     private void transferResult(Address token, String to, BigInteger amount) {
-        String nativeNid = BalancedAddressManager.getNativeNid();
+        String nativeNid = XCallUtils.getNativeNid();
         NetworkAddress networkAddress = NetworkAddress.valueOf(to, nativeNid);
         if (networkAddress.net().equals(nativeNid)) {
             Context.call(token, "transfer", Address.fromString(networkAddress.account()), amount, new byte[0]);

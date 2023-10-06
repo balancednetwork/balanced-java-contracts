@@ -114,4 +114,7 @@ project(':AssetToken').projectDir = file("token-contracts/AssetToken")
 include(':XCallMock')
 project(':XCallMock').projectDir = file("util-contracts/XCallMock")
 
+include(':XCallManager')
+project(':XCallManager').projectDir = file("util-contracts/XCallManager")
+
 includeBuild 'xcall-lib'

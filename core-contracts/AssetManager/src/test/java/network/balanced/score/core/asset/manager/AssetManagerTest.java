@@ -25,6 +25,8 @@ import network.balanced.score.lib.interfaces.Governance;
 import network.balanced.score.lib.interfaces.SpokeAssetManagerMessages;
 import network.balanced.score.lib.interfaces.tokens.AssetToken;
 import network.balanced.score.lib.interfaces.tokens.AssetTokenScoreInterface;
+import network.balanced.score.lib.structs.ProtocolConfig;
+import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.mock.MockBalanced;
 import network.balanced.score.lib.test.mock.MockContract;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,7 +36,7 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import score.Address;
 import score.Context;
-import xcall.score.lib.util.NetworkAddress;
+import foundation.icon.xcall.NetworkAddress;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -69,7 +71,8 @@ class AssetManagerTest extends TestBase {
     String ethAsset1Address = "0x3";
     String ethAsset2Address = "0x4";
     String bscAsset1Address = "0x5";
-
+    String[] defaultProtocols = new String[]{"a", "b"};
+    String[] defaultDestinationsProtocols = new String[]{"c", "d"};
     private final byte[] tokeBytes = "test".getBytes();
 
     @BeforeEach
@@ -78,6 +81,9 @@ class AssetManagerTest extends TestBase {
         governance = mockBalanced.governance;
         when(mockBalanced.xCall.mock.getNetworkId()).thenReturn(NATIVE_NID);
         assetManager = sm.deploy(owner, AssetManagerImpl.class, governance.getAddress(), tokeBytes);
+
+        when(mockBalanced.xCallManager.mock.getProtocols(ETH_NID)).thenReturn(Map.of("sources", defaultProtocols, "destinations", defaultDestinationsProtocols));
+        when(mockBalanced.xCallManager.mock.getProtocols(BSC_NID)).thenReturn(Map.of("sources", defaultProtocols, "destinations", defaultDestinationsProtocols));
 
         assetManager.invoke(governance.account, "addSpokeManager", ethSpoke.toString());
         assetManagerSpy = (AssetManagerImpl) spy(assetManager.getInstance());
@@ -140,7 +146,7 @@ class AssetManagerTest extends TestBase {
         byte[] expectedMsg = SpokeAssetManagerMessages.WithdrawTo(tokenAddress.account(), ethAccount.account(), amount);
         byte[] expectedRollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), ethAccount.toString(), amount);
 
-        verify(mockBalanced.xCall.mock).sendCallMessage(ethSpoke.toString(), expectedMsg, expectedRollback);
+        verify(mockBalanced.xCall.mock).sendCallMessage(ethSpoke.toString(), expectedMsg, expectedRollback, defaultProtocols, defaultDestinationsProtocols);
         verify(ethAsset1.mock).burnFrom(user.getAddress().toString(), amount);
     }
 
@@ -166,7 +172,7 @@ class AssetManagerTest extends TestBase {
         byte[] rollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), ethAccount.toString(), amount);
 
         // Act
-        assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", xCallAddress.toString(), rollback);
+        assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", xCallAddress.toString(), rollback, defaultProtocols);
 
         // Assert
         verify(ethAsset1.mock).mintAndTransfer(ethAccount.toString(), ethAccount.toString(), amount, new byte[0]);
@@ -181,13 +187,13 @@ class AssetManagerTest extends TestBase {
         byte[] withdraw = AssetManagerMessages.xWithdraw(ethAsset1.getAddress(), amount);
 
         // Act
-        assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", ethAccount.toString(), withdraw);
+        assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", ethAccount.toString(), withdraw, defaultProtocols);
 
         // Assert
         byte[] expectedMsg = SpokeAssetManagerMessages.WithdrawTo(tokenAddress.account(), ethAccount.account(), amount);
         byte[] expectedRollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), ethAccount.toString(), amount);
 
-        verify(mockBalanced.xCall.mock).sendCallMessage(ethSpoke.toString(), expectedMsg, expectedRollback);
+        verify(mockBalanced.xCall.mock).sendCallMessage(ethSpoke.toString(), expectedMsg, expectedRollback, defaultProtocols, defaultDestinationsProtocols);
         verify(ethAsset1.mock).burnFrom(ethAccount.toString(), amount);
         verify(mockBalanced.daofund.mock).claimXCallFee(ETH_NID, true);
     }
@@ -203,9 +209,9 @@ class AssetManagerTest extends TestBase {
         byte[] deposit = AssetManagerMessages.deposit(ethAsset1Address, ethAccount.account(), receiverAddress, amount, new byte[0]);
 
         // Act
-        assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", ethSpoke.toString(), deposit);
+        assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", ethSpoke.toString(), deposit, defaultProtocols);
 
-        // Assert
+        // Assertk
         verify(ethAsset1.mock).mintAndTransfer(ethAccount.toString(), receiverAddress, amount, new byte[0]);
     }
 
@@ -218,7 +224,7 @@ class AssetManagerTest extends TestBase {
         byte[] deposit = AssetManagerMessages.deposit(ethAsset1Address, ethAccount.account(), "", amount, new byte[0]);
 
         // Act
-        assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", ethSpoke.toString(), deposit);
+        assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", ethSpoke.toString(), deposit, defaultProtocols);
 
         // Assert
         verify(ethAsset1.mock).mintAndTransfer(ethAccount.toString(), ethAccount.toString(), amount, new byte[0]);
@@ -233,7 +239,7 @@ class AssetManagerTest extends TestBase {
         byte[] deposit = AssetManagerMessages.deposit(ethAsset1Address, ethAccount.account(), "", amount, new byte[0]);
 
         // Act & Assert
-        Executable invalidSpokeManager = () -> assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", "none/0x1", deposit);
+        Executable invalidSpokeManager = () -> assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", "none/0x1", deposit,defaultProtocols);
         expectErrorMessage(invalidSpokeManager, "Asset manager needs to be whitelisted");
     }
 
@@ -247,7 +253,7 @@ class AssetManagerTest extends TestBase {
         byte[] deposit = AssetManagerMessages.deposit(ethAsset1Address, ethAccount.account(), "", amount, new byte[0]);
 
         // Act & Assert
-        Executable wrongSpokeManager = () -> assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", bscSpoke.toString(), deposit);
+        Executable wrongSpokeManager = () -> assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", bscSpoke.toString(), deposit, defaultProtocols);
         expectErrorMessage(wrongSpokeManager, "Token is not yet deployed");
     }
 
@@ -260,7 +266,7 @@ class AssetManagerTest extends TestBase {
         byte[] deposit = AssetManagerMessages.deposit(new NetworkAddress(ETH_NID, ethAsset1Address).toString(), ethAccount.account(), "", amount, new byte[0]);
 
         // Act & Assert
-        Executable wrongSpokeManager = () -> assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", bscSpoke.toString(), deposit);
+        Executable wrongSpokeManager = () -> assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", bscSpoke.toString(), deposit, defaultProtocols);
         expectErrorMessage(wrongSpokeManager, "Token is not yet deployed");
     }
 
@@ -268,6 +274,6 @@ class AssetManagerTest extends TestBase {
     void permissions() {
         assertOnlyCallableBy(governance.getAddress(), assetManager, "deployAsset", new NetworkAddress(BSC_NID, bscAsset1Address).toString(), "BSC", "BSC TEST TOKEN", BigInteger.valueOf(18));
         assertOnlyCallableBy(governance.getAddress(), assetManager, "addSpokeManager", "");
-        assertOnlyCallableBy(mockBalanced.xCall.getAddress(), assetManager, "handleCallMessage", "", new byte[0]);
+        assertOnlyCallableBy(mockBalanced.xCall.getAddress(), assetManager, "handleCallMessage", "", new byte[0], defaultProtocols);
     }
 }

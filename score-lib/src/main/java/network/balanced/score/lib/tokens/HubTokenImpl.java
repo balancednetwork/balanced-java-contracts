@@ -19,6 +19,7 @@ package network.balanced.score.lib.tokens;
 import network.balanced.score.lib.interfaces.tokens.HubToken;
 import network.balanced.score.lib.interfaces.tokens.HubTokenXCall;
 import network.balanced.score.lib.utils.BalancedAddressManager;
+import network.balanced.score.lib.utils.XCallUtils;
 import score.Address;
 import score.ArrayDB;
 import score.Context;
@@ -28,12 +29,13 @@ import score.annotation.External;
 import score.annotation.Optional;
 import score.annotation.Payable;
 import network.balanced.score.lib.interfaces.tokens.HubTokenMessages;
-import xcall.score.lib.util.NetworkAddress;
+import foundation.icon.xcall.NetworkAddress;
 
 import java.math.BigInteger;
 
 import static network.balanced.score.lib.utils.Check.only;
 import static network.balanced.score.lib.utils.Check.onlyOwner;
+import static network.balanced.score.lib.utils.Check.checkStatus;
 
 public class HubTokenImpl extends SpokeTokenImpl implements HubToken {
     private final static String CROSS_CHAIN_SUPPLY = "cross_chain_supply";
@@ -199,14 +201,17 @@ public class HubTokenImpl extends SpokeTokenImpl implements HubToken {
         byte[] rollback = HubTokenMessages.xCrossTransferRevert(to.toString(), value);
         byte[] callData = HubTokenMessages.xCrossTransfer(from.toString(), to.toString(), value, data);
 
-        Context.call(fee, BalancedAddressManager.getXCall(), "sendCallMessage", spokeAddress.toString(), callData, rollback);
+        XCallUtils.sendCall(fee, spokeAddress, callData, rollback);
+
         XTransfer(from.toString(), to.toString(), value, data);
     }
 
     @Override
     @External
-    public void handleCallMessage(String _from, byte[] _data) {
+    public void handleCallMessage(String _from, byte[] _data, @Optional String[] _protocols) {
+        checkStatus();
         only(BalancedAddressManager.getXCall());
+        XCallUtils.verifyXCallProtocols(_from, _protocols);
         HubTokenXCall.process(this, _from, _data);
     }
 

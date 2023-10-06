@@ -27,7 +27,7 @@ import score.VarDB;
 import score.annotation.External;
 import score.annotation.Optional;
 import score.annotation.Payable;
-import xcall.score.lib.util.NetworkAddress;
+import foundation.icon.xcall.NetworkAddress;
 
 import java.math.BigInteger;
 
@@ -130,13 +130,6 @@ public class BalancedDollarImpl extends HubTokenImpl implements BalancedDollar {
         if (_to.isContract()) {
             Context.call(_to, "tokenFallback", new Address(new byte[Address.LENGTH]), _amount, data);
         }
-    }
-
-    @Override
-    @External
-    public void handleCallMessage(String _from, byte[] _data) {
-        checkStatus();
-        super.handleCallMessage(_from, _data);
     }
 
     @Override

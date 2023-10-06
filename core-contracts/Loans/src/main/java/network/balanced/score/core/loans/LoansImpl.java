@@ -31,6 +31,7 @@ import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.Versions;
+import network.balanced.score.lib.utils.XCallUtils;
 import score.Address;
 import score.Context;
 import score.annotation.EventLog;
@@ -38,7 +39,7 @@ import score.annotation.External;
 import score.annotation.Optional;
 import score.annotation.Payable;
 import scorex.util.HashMap;
-import xcall.score.lib.util.NetworkAddress;
+import foundation.icon.xcall.NetworkAddress;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -313,9 +314,10 @@ public class LoansImpl implements Loans {
     }
 
     @External
-    public void handleCallMessage(String _from, byte[] _data) {
+    public void handleCallMessage(String _from, byte[] _data, @Optional String[] _protocols) {
         checkStatus();
         only(getXCall());
+        XCallUtils.verifyXCallProtocols(_from, _protocols);
         LoansXCall.process(this, _from, _data);
     }
 

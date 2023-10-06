@@ -24,14 +24,16 @@ import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.IterableDictDB;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.Versions;
+import network.balanced.score.lib.utils.XCallUtils;
 import score.Address;
 import score.Context;
 import score.DictDB;
 import score.VarDB;
 import score.annotation.External;
+import score.annotation.Optional;
 import score.annotation.Payable;
 import scorex.util.HashMap;
-import xcall.score.lib.util.NetworkAddress;
+import foundation.icon.xcall.NetworkAddress;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -146,9 +148,10 @@ public class AssetManagerImpl implements AssetManager {
     }
 
     @External
-    public void handleCallMessage(String _from, byte[] _data) {
-        only(BalancedAddressManager.getXCall());
+    public void handleCallMessage(String _from, byte[] _data, @Optional String[] _protocols) {
         checkStatus();
+        only(BalancedAddressManager.getXCall());
+        XCallUtils.verifyXCallProtocols(_from, _protocols);
         AssetManagerXCall.process(this, _from, _data);
     }
 
@@ -198,10 +201,10 @@ public class AssetManagerImpl implements AssetManager {
         NetworkAddress tokenAddress = NetworkAddress.valueOf(assetNativeAddress.get(asset));
         NetworkAddress targetAddress = NetworkAddress.valueOf(to);
         Context.require(targetAddress.net().equals(tokenAddress.net()), "Wrong network");
-
+        NetworkAddress spoke = NetworkAddress.valueOf(spokes.get(tokenAddress.net()));
         byte[] msg = SpokeAssetManagerMessages.WithdrawTo(tokenAddress.account(), targetAddress.account(), amount);
         byte[] rollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), to, amount);
-        Context.call(fee, BalancedAddressManager.getXCall(), "sendCallMessage", spokes.get(tokenAddress.net()), msg, rollback);
+        XCallUtils.sendCall(fee, spoke, msg, rollback);
     }
 
     public static Address getSystemScoreAddress() {

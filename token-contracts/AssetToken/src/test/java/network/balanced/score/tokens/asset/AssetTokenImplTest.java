@@ -35,7 +35,7 @@ import org.mockito.Mockito;
 
 import score.Address;
 import score.Context;
-import xcall.score.lib.util.NetworkAddress;
+import foundation.icon.xcall.NetworkAddress;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -128,6 +128,6 @@ class AssetTokenImplTest extends TestBase {
         assertOnlyCallableBy(governance.getAddress(), asset, "govHubTransfer", "", "", BigInteger.ZERO, new byte[0]);
         assertOnlyCallableBy(assetManager.getAddress(), asset, "burnFrom", "", BigInteger.ZERO);
         assertOnlyCallableBy(assetManager.getAddress(), asset, "mintAndTransfer", "","", BigInteger.ZERO, new byte[0]);
-        assertOnlyCallableBy(mockBalanced.xCall.getAddress(), asset, "handleCallMessage", "", new byte[0]);
+        assertOnlyCallableBy(mockBalanced.xCall.getAddress(), asset, "handleCallMessage", "", new byte[0], new String[0]);
     }
 }

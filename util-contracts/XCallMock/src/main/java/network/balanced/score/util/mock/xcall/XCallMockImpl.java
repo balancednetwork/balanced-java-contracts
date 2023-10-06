@@ -25,7 +25,7 @@ import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
 import score.annotation.Payable;
-import xcall.score.lib.util.NetworkAddress;
+import foundation.icon.xcall.NetworkAddress;
 
 import java.math.BigInteger;
 
@@ -56,14 +56,18 @@ public class XCallMockImpl implements XCallMock {
 
     @Payable
     @External
-    public BigInteger sendCallMessage(String _to, byte[] _data, @Optional byte[] _rollback) {
+    public BigInteger sendCallMessage(String _to,
+                                    byte[] _data,
+                                    @Optional byte[] _rollback,
+                                    @Optional String[] _sources,
+                                    @Optional String[] _destinations) {
         BigInteger sn = getNextSn();
         if (_rollback != null) {
             rollbacks.set(sn, _rollback);
             rollbackCaller.set(sn, Context.getCaller());
         }
         String net = NetworkAddress.valueOf(_to).net();
-        Context.require(Context.getValue().equals(getFee(net, _rollback != null)), "Not enough fee");
+        Context.require(Context.getValue().equals(getFee(net, _rollback != null, _sources)), "Not enough fee");
         CallMessage(sn, _to, _data);
         return sn;
     }
@@ -81,7 +85,7 @@ public class XCallMockImpl implements XCallMock {
     }
 
     @External(readonly = true)
-    public BigInteger getFee(String net, boolean response) {
+    public BigInteger getFee(String net, boolean response, @Optional String[] _sourceProtocols) {
         return BigInteger.ONE;
     }
 

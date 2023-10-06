@@ -25,7 +25,7 @@ import network.balanced.score.lib.interfaces.tokens.SpokeToken;
 import network.balanced.score.lib.interfaces.tokens.SpokeTokenScoreInterface;
 import network.balanced.score.lib.interfaces.LoansMessages;
 import network.balanced.score.lib.test.mock.MockContract;
-import xcall.score.lib.util.NetworkAddress;
+import foundation.icon.xcall.NetworkAddress;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -181,7 +181,7 @@ class LoansTestCrosschain extends LoansTestBase {
 
         // Act
         byte[] msg = LoansMessages.xBorrow(BNB_SYMBOL, loan);
-        loans.invoke(mockBalanced.xCall.account, "handleCallMessage", user.toString(), msg);
+        loans.invoke(mockBalanced.xCall.account, "handleCallMessage", user.toString(), msg, new String[0]);
 
         // Assert
         verify(bnusd.mock).crossTransfer(user.toString(), loan, new byte[0]);
@@ -201,7 +201,7 @@ class LoansTestCrosschain extends LoansTestBase {
 
         // Act
         byte[] msg = LoansMessages.xBorrow(BNB_SYMBOL, loan);
-        loans.invoke(mockBalanced.xCall.account, "handleCallMessage", user.toString(), msg);
+        loans.invoke(mockBalanced.xCall.account, "handleCallMessage", user.toString(), msg, new String[0]);
 
         // Assert
         verify(bnusd.mock).hubTransfer(user.toString(), loan, new byte[0]);
@@ -219,7 +219,7 @@ class LoansTestCrosschain extends LoansTestBase {
 
         // Act
         byte[] msg = LoansMessages.xWithdraw(collateral, BNB_SYMBOL);
-        loans.invoke(mockBalanced.xCall.account, "handleCallMessage", user.toString(), msg);
+        loans.invoke(mockBalanced.xCall.account, "handleCallMessage", user.toString(), msg, new String[0]);
 
         // Assert
         verify(bnb.mock).hubTransfer(user.toString(), collateral, new byte[0]);

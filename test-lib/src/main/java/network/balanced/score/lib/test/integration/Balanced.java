@@ -26,7 +26,7 @@ import foundation.icon.score.client.DefaultScoreClient;
 import network.balanced.score.lib.interfaces.Governance;
 import network.balanced.score.lib.interfaces.GovernanceScoreClient;
 import network.balanced.score.lib.utils.Names;
-import xcall.score.lib.util.NetworkAddress;
+import foundation.icon.xcall.NetworkAddress;
 
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -62,6 +62,7 @@ public class Balanced {
     public DefaultScoreClient balancedOracle;
     public DefaultScoreClient assetManager;
     public DefaultScoreClient xcall;
+    public DefaultScoreClient xcallManager;
     public Governance governanceClient;
 
     public final String ICON_NID = "0x3.ICON";
@@ -127,6 +128,7 @@ public class Balanced {
         governanceClient.deploy(getContractData("Router"), governanceParam);
         governanceClient.deploy(getContractData("StakedLP"), governanceParam);
         governanceClient.deploy(getContractData("BalancedOracle"), governanceParam);
+        governanceClient.deploy(getContractData("XCallManager"), governanceParam);
 
         String assetManagerParams = new JsonArray()
                 .add(createParameter(governance._address()))
@@ -152,6 +154,7 @@ public class Balanced {
         balancedOracle = newScoreClient(owner, governanceClient.getAddress(Names.BALANCEDORACLE));
         feehandler = newScoreClient(owner, governanceClient.getAddress(Names.FEEHANDLER));
         assetManager = newScoreClient(owner, governanceClient.getAddress(Names.ASSET_MANAGER));
+        xcallManager = newScoreClient(owner, governanceClient.getAddress(Names.XCALL_MANAGER));
 
         oracle = getDeploymentResult(owner, oracleTx);
         staking = getDeploymentResult(owner, stakingTx);
@@ -202,25 +205,32 @@ public class Balanced {
     }
 
     public void setupSpoke(String nid, String spokeAssetManager, String spokeBnUSd, String tokenAddress, String tokenSymbol, BigInteger decimals) {
-        JsonArray addBSCAssetManagerParam = new JsonArray().add(createParameter(new NetworkAddress(nid, spokeAssetManager).toString()));
-        JsonObject addBSCAssetManager = createTransaction(assetManager._address(), "addSpokeManager", addBSCAssetManagerParam);
+        JsonArray addAssetManagerParam = new JsonArray().add(createParameter(new NetworkAddress(nid, spokeAssetManager).toString()));
+        JsonObject addAssetManager = createTransaction(assetManager._address(), "addSpokeManager", addAssetManagerParam);
 
-        JsonArray addBSCAssetParams = new JsonArray()
+        JsonArray addAssetParams = new JsonArray()
                 .add(createParameter(new NetworkAddress(nid, tokenAddress).toString()))
                 .add(createParameter(tokenSymbol))
                 .add(createParameter(tokenSymbol))
                 .add(createParameter(decimals));
-        JsonObject addBSCAsset = createTransaction(assetManager._address(), "deployAsset", addBSCAssetParams);
+        JsonObject addAsset = createTransaction(assetManager._address(), "deployAsset", addAssetParams);
 
-        JsonArray addBSCBnUSDParams = new JsonArray()
+        JsonArray addBnUSDParams = new JsonArray()
                 .add(createParameter(new NetworkAddress(nid, spokeBnUSd).toString()))
                 .add(createParameter(BigInteger.TEN.pow(28)));
-        JsonObject addBSCBnUSD = createTransaction(bnusd._address(), "addChain", addBSCBnUSDParams);
+        JsonObject addBnUSD = createTransaction(bnusd._address(), "addChain", addBnUSDParams);
+
+        JsonArray setProtocolParams = new JsonArray()
+            .add(createParameter(nid))
+            .add(createParameter("String[]", new JsonArray()))
+            .add(createParameter("String[]", new JsonArray()));
+        JsonObject setProtocol = createTransaction(xcallManager._address(), "configureProtocols", setProtocolParams);
 
         JsonArray transactions = new JsonArray()
-                .add(addBSCAssetManager)
-                .add(addBSCAsset)
-                .add(addBSCBnUSD);
+                .add(addAssetManager)
+                .add(addAsset)
+                .add(addBnUSD)
+                .add(setProtocol);
         governanceClient.execute(transactions.toString());
     }
 

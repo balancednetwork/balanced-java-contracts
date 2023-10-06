@@ -33,6 +33,7 @@ dependencies {
     implementation Dependencies.javaeeScorex
     implementation Dependencies.minimalJson
     implementation 'xcall-lib:score-lib'
+    implementation 'xyz.venture23:xcall-lib:0.1.1'
 
     compileOnly Dependencies.javaeeScoreClient
     annotationProcessor Dependencies.javaeeScoreClient

@@ -24,12 +24,15 @@ import score.annotation.External;
 import score.annotation.Optional;
 import network.balanced.score.lib.interfaces.tokens.SpokeToken;
 import network.balanced.score.lib.interfaces.tokens.SpokeTokenXCall;
-import xcall.score.lib.util.NetworkAddress;
+import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.NetworkAddressDictDB;
+import network.balanced.score.lib.utils.XCallUtils;
+
 import java.math.BigInteger;
 
 import static network.balanced.score.lib.utils.Check.only;
+import static network.balanced.score.lib.utils.Check.checkStatus;
 
 public class SpokeTokenImpl implements SpokeToken {
     private final static String NAME = "name";
@@ -138,8 +141,10 @@ public class SpokeTokenImpl implements SpokeToken {
     }
 
     @External
-    public void handleCallMessage(String _from, byte[] _data) {
+    public void handleCallMessage(String _from, byte[] _data, @Optional String[] _protocols) {
+        checkStatus();
         only(BalancedAddressManager.getXCall());
+        XCallUtils.verifyXCallProtocols(_from, _protocols);
         SpokeTokenXCall.process(this, _from, _data);
     }
 

@@ -14,36 +14,42 @@
  * limitations under the License.
  */
 
+
 import network.balanced.score.dependencies.Addresses
 import network.balanced.score.dependencies.Dependencies
 
-plugins {
-    id 'java'
-}
-
-version '0.1.0'
+version = '0.1.0'
 
 repositories {
+    // Use Maven Central for resolving dependencies.
     mavenCentral()
 }
 
 dependencies {
     compileOnly Dependencies.javaeeApi
     implementation Dependencies.javaeeScorex
+    implementation Dependencies.minimalJson
     implementation project(':score-lib')
-    implementation 'xyz.venture23:xcall-lib:0.1.1'
-    implementation Dependencies.javaeeTokens
 
     testImplementation Dependencies.javaeeUnitTest
+    testImplementation Dependencies.javaeeTokens
+    // Use JUnit Jupiter for testing.
+
     testImplementation Dependencies.junitJupiter
     testRuntimeOnly Dependencies.junitJupiterEngine
-    testImplementation project(':test-lib')
     testImplementation Dependencies.mockitoCore
-    testRuntimeOnly Dependencies.mockitoInline
+    testImplementation Dependencies.mockitoInline
+
+    intTestImplementation project(":score-client")
+    intTestAnnotationProcessor project(":score-client")
+    intTestImplementation Dependencies.iconSdk
+    intTestImplementation Dependencies.jacksonDatabind
+
+    testImplementation project(':test-lib')
 }
 
 optimizedJar {
-    mainClassName = 'network.balanced.score.tokens.balanceddollar.BalancedDollarImpl'
+    mainClassName = 'network.balanced.score.util.xcall.manager.XCallManagerImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
@@ -55,17 +61,14 @@ deployJar {
         sejong {
             uri = 'https://sejong.net.solidwallet.io/api/v3'
             nid = 0x53
-            to = Addresses.sejong.bnUSD
         }
         berlin {
             uri = 'https://berlin.net.solidwallet.io/api/v3'
             nid = 0x7
-            to = Addresses.berlin.bnUSD
         }
         lisbon {
             uri = 'https://lisbon.net.solidwallet.io/api/v3'
             nid = 0x2
-            to = Addresses.lisbon.bnUSD
         }
         local {
             uri = 'http://localhost:9082/api/v3'
@@ -74,17 +77,17 @@ deployJar {
         mainnet {
             uri = 'https://ctz.solidwallet.io/api/v3'
             nid = 0x1
-            to = Addresses.mainnet.bnUSD
         }
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
     parameters {
-        arg("_governance", Addresses.mainnet.governance)
+        arg('_governance', Addresses.mainnet.governance)
     }
 }
 
-test {
+tasks.named('test') {
+    // Use JUnit Platform for unit tests.
     useJUnitPlatform()
     finalizedBy jacocoTestReport
 }
@@ -95,5 +98,24 @@ jacocoTestReport {
         xml.required = false
         csv.required = false
         html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+    }
+}
+
+task integrationTest(type: Test) {
+    useJUnitPlatform()
+
+    rootProject.allprojects {
+        if (it.getTasks().findByName('optimizedJar')) {
+            dependsOn(it.getTasks().getByName('optimizedJar'))
+        }
+    }
+
+    options {
+        testLogging.showStandardStreams = true
+        description = 'Runs integration tests.'
+        group = 'verification'
+
+        testClassesDirs = sourceSets.intTest.output.classesDirs
+        classpath = sourceSets.intTest.runtimeClasspath
     }
 }
