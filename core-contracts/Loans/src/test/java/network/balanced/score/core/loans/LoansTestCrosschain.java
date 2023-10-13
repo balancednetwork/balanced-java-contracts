@@ -201,6 +201,26 @@ class LoansTestCrosschain extends LoansTestBase {
 
         // Act
         byte[] msg = LoansMessages.xBorrow(BNB_SYMBOL, loan);
+        loans.invoke(mockBalanced.xCall.account, "handleCallMessage", user.toString(), msg);
+
+        // Assert
+        verify(bnusd.mock).hubTransfer(user.toString(), loan, new byte[0]);
+        verifyPosition(user.toString(), collateral, loan.add(expectedFee), BNB_SYMBOL);
+    }
+
+    @Test
+    void xBorrow_withoutWithdraw() {
+        // Arrange
+        NetworkAddress user = new NetworkAddress(BSC_NID, "0x1");
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
+        takeLoanBNB(user, collateral, BigInteger.ZERO);
+
+        when(mockBalanced.daofund.mock.getXCallFeePermission(loans.getAddress(), BSC_NID)).thenReturn(false);
+
+        // Act
+        byte[] msg = LoansMessages.xBorrow(BNB_SYMBOL, loan);
         loans.invoke(mockBalanced.xCall.account, "handleCallMessage", user.toString(), msg, new String[0]);
 
         // Assert

@@ -30,7 +30,6 @@ import score.Context;
 import score.DictDB;
 import score.VarDB;
 import score.annotation.External;
-import score.annotation.Optional;
 import score.annotation.Payable;
 import scorex.util.HashMap;
 import foundation.icon.xcall.NetworkAddress;

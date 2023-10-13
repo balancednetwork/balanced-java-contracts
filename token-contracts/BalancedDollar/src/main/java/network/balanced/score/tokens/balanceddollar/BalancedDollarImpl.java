@@ -145,6 +145,18 @@ public class BalancedDollarImpl extends HubTokenImpl implements BalancedDollar {
     }
 
     @Override
+    public BigInteger getHopFee(String net) {
+        if (!canWithdraw(net)) {
+            return BigInteger.ONE.negate();
+        }
+        return Context.call(BigInteger.class, getDaofund(), "claimXCallFee", net, true);
+    }
+
+    private boolean canWithdraw(String net) {
+        return Context.call(Boolean.class, getDaofund(), "getXCallFeePermission", Context.getAddress(), net);
+    }
+
+    @Override
     @External
     public void transfer(Address _to, BigInteger _value, @Optional byte[] _data) {
         checkStatus();
