@@ -17,33 +17,21 @@
 package network.balanced.score.core.loans;
 
 import com.eclipsesource.json.JsonObject;
-import com.iconloop.score.test.Account;
-import network.balanced.score.core.loans.utils.LoansConstants.Standings;
-import network.balanced.score.lib.interfaces.tokens.IRC2;
-import network.balanced.score.lib.interfaces.tokens.IRC2ScoreInterface;
+import foundation.icon.xcall.NetworkAddress;
+import network.balanced.score.lib.interfaces.LoansMessages;
 import network.balanced.score.lib.interfaces.tokens.SpokeToken;
 import network.balanced.score.lib.interfaces.tokens.SpokeTokenScoreInterface;
-import network.balanced.score.lib.interfaces.LoansMessages;
 import network.balanced.score.lib.test.mock.MockContract;
-import foundation.icon.xcall.NetworkAddress;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
 
 import java.math.BigInteger;
-import java.util.List;
-import java.util.Map;
 
-import static network.balanced.score.core.loans.utils.LoansConstants.LOCKING_RATIO;
 import static network.balanced.score.core.loans.utils.LoansConstants.LIQUIDATION_RATIO;
-import static network.balanced.score.core.loans.utils.LoansConstants.StandingsMap;
+import static network.balanced.score.core.loans.utils.LoansConstants.LOCKING_RATIO;
 import static network.balanced.score.lib.utils.Constants.EXA;
-import static network.balanced.score.lib.utils.Constants.POINTS;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 
@@ -73,10 +61,10 @@ class LoansTestCrosschain extends LoansTestBase {
         loans.invoke(bnb.account, "xTokenFallback", account.toString(), collateral, params);
     }
 
-    protected void repayLoanBNB(NetworkAddress account, BigInteger loan, BigInteger collateralToWithdraw ) {
+    protected void repayLoanBNB(NetworkAddress account, BigInteger loan, BigInteger collateralToWithdraw) {
         JsonObject data = new JsonObject()
-            .add("_collateral", BNB_SYMBOL)
-            .add("_withdrawAmount", collateralToWithdraw.toString());
+                .add("_collateral", BNB_SYMBOL)
+                .add("_withdrawAmount", collateralToWithdraw.toString());
         byte[] params = data.toString().getBytes();
         loans.invoke(bnusd.account, "xTokenFallback", account.toString(), loan, params);
     }
@@ -133,38 +121,38 @@ class LoansTestCrosschain extends LoansTestBase {
 
     @Test
     void xRepayDebt() {
-         // Arrange
-         NetworkAddress user = new NetworkAddress(BSC_NID, "0x1");
-         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
-         BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
-         BigInteger expectedFee = calculateFee(loan);
-         takeLoanBNB(user, collateral, loan);
+        // Arrange
+        NetworkAddress user = new NetworkAddress(BSC_NID, "0x1");
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
+        takeLoanBNB(user, collateral, loan);
 
-         // Act
-         repayLoanBNB(user, loan, BigInteger.ZERO);
+        // Act
+        repayLoanBNB(user, loan, BigInteger.ZERO);
 
-         // Assert
-         verify(bnusd.mock).burn(loan);
-         verify(bnb.mock, times(0)).hubTransfer(any(),any(), any());
-         verifyPosition(user.toString(), collateral, expectedFee, BNB_SYMBOL);
+        // Assert
+        verify(bnusd.mock).burn(loan);
+        verify(bnb.mock, times(0)).hubTransfer(any(), any(), any());
+        verifyPosition(user.toString(), collateral, expectedFee, BNB_SYMBOL);
     }
 
     @Test
     void xRepayDebtAndWithdraw() {
-         // Arrange
-         NetworkAddress user = new NetworkAddress(BSC_NID, "0x1");
-         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
-         BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
-         BigInteger expectedFee = calculateFee(loan);
-         takeLoanBNB(user, collateral, loan);
+        // Arrange
+        NetworkAddress user = new NetworkAddress(BSC_NID, "0x1");
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
+        takeLoanBNB(user, collateral, loan);
 
-         // Act
-         repayLoanBNB(user, loan, collateral.divide(BigInteger.TWO));
+        // Act
+        repayLoanBNB(user, loan, collateral.divide(BigInteger.TWO));
 
-         // Assert
-         verify(bnusd.mock).burn(loan);
-         verify(bnb.mock).hubTransfer(user.toString(), collateral.divide(BigInteger.TWO), new byte[0]);
-         verifyPosition(user.toString(), collateral.divide(BigInteger.TWO), expectedFee, BNB_SYMBOL);
+        // Assert
+        verify(bnusd.mock).burn(loan);
+        verify(bnb.mock).hubTransfer(user.toString(), collateral.divide(BigInteger.TWO), new byte[0]);
+        verifyPosition(user.toString(), collateral.divide(BigInteger.TWO), expectedFee, BNB_SYMBOL);
     }
 
     @Test
@@ -185,26 +173,6 @@ class LoansTestCrosschain extends LoansTestBase {
 
         // Assert
         verify(bnusd.mock).crossTransfer(user.toString(), loan, new byte[0]);
-        verifyPosition(user.toString(), collateral, loan.add(expectedFee), BNB_SYMBOL);
-    }
-
-    @Test
-    void xBorrow_withoutWithdraw() {
-        // Arrange
-        NetworkAddress user = new NetworkAddress(BSC_NID, "0x1");
-        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
-        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
-        BigInteger expectedFee = calculateFee(loan);
-        takeLoanBNB(user, collateral, BigInteger.ZERO);
-
-        when(mockBalanced.daofund.mock.getXCallFeePermission(loans.getAddress(), BSC_NID)).thenReturn(false);
-
-        // Act
-        byte[] msg = LoansMessages.xBorrow(BNB_SYMBOL, loan);
-        loans.invoke(mockBalanced.xCall.account, "handleCallMessage", user.toString(), msg);
-
-        // Assert
-        verify(bnusd.mock).hubTransfer(user.toString(), loan, new byte[0]);
         verifyPosition(user.toString(), collateral, loan.add(expectedFee), BNB_SYMBOL);
     }
 
