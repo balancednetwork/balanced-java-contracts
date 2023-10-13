@@ -57,8 +57,6 @@ public class SetupManager {
         call(rewardsAddress, "addDataProvider", ContractManager.getAddress(Names.LOANS));
 
         call(ContractManager.getAddress(Names.BALN), "setMinter", rewardsAddress);
-
-        call(ContractManager.getAddress(Names.DAOFUND), "setXCallFeePermission", ContractManager.getAddress(Names.LOANS), true);
     }
 
     public static void launchBalanced() {

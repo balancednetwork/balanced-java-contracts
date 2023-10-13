@@ -326,9 +326,19 @@ public class LoansImpl implements Loans {
 
     public void xWithdraw(String from, BigInteger _value, String _collateralSymbol) {
         removeCollateral(from, _value, _collateralSymbol);
-        // Todo withdraw collateral if applicable?
         Address token = CollateralDB.getAddress(_collateralSymbol);
-        Context.call(token, "hubTransfer", from, _value, new byte[0]);
+        String nativeAddress = Context.call(String.class, getAssetManager(), "getNativeAssetAddress", token);
+        String fromNet = NetworkAddress.valueOf(from).net();
+        if (nativeAddress != null && NetworkAddress.valueOf(nativeAddress).net().equals(fromNet) && canWithdraw(fromNet) ) {
+            BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", fromNet, true);
+            Context.call(xCallFee, getAssetManager(), "withdrawTo", token, from, _value);
+        } else {
+            Context.call(token, "hubTransfer", from, _value, new byte[0]);
+        }
+    }
+
+    private boolean canWithdraw(String net) {
+        return Context.call(Boolean.class, getDaofund(), "getXCallFeePermission", Context.getAddress(), net);
     }
 
     @External
@@ -775,8 +785,13 @@ public class LoansImpl implements Loans {
         TokenUtils.mintAsset(amount);
         if (from.contains("/")) {
             String net = NetworkAddress.valueOf(from).net();
-            BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", net, true);
-            TokenUtils.crossTransfer(xCallFee, from, amount);
+            boolean canWithdraw = Context.call(Boolean.class, getDaofund(), "getXCallFeePermission", Context.getAddress(), net);
+            if (canWithdraw) {
+                BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", net, true);
+                TokenUtils.crossTransfer(xCallFee, from, amount);
+            } else {
+                TokenUtils.hubTransfer(from, amount);
+            }
         } else {
             TokenUtils.transfer(Address.fromString(from), amount);
         }

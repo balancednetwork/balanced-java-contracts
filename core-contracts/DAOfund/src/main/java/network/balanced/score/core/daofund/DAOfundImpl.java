@@ -55,7 +55,7 @@ public class DAOfundImpl implements DAOfund {
     private final BranchDB<Address, DictDB<Address, BigInteger>> awards = Context.newBranchDB(AWARDS, BigInteger.class);
 
     private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
-    DictDB<Address, Boolean> xCallFeePermissions = Context.newDictDB(XCALL_FEE_PERMISSIONS, Boolean.class);
+    BranchDB<Address,DictDB<String, Boolean>> xCallFeePermissions = Context.newBranchDB(XCALL_FEE_PERMISSIONS, Boolean.class);
 
     public static final String TAG = Names.DAOFUND;
 
@@ -232,22 +232,23 @@ public class DAOfundImpl implements DAOfund {
     }
 
     @External
-    public void setXCallFeePermission(Address contract, boolean permission) {
+    public void setXCallFeePermission(Address contract, String net, boolean permission) {
         onlyGovernance();
-        xCallFeePermissions.set(contract, permission);
+        xCallFeePermissions.at(contract).set(net, permission);
     }
 
     @External(readonly = true)
-    public boolean getXCallFeePermission(Address contract) {
-        return xCallFeePermissions.getOrDefault(contract, false);
+    public boolean getXCallFeePermission(Address contract, String net) {
+        return xCallFeePermissions.at(contract).getOrDefault(net, false);
     }
 
     @External
     public BigInteger claimXCallFee(String net, boolean response) {
         Address contract = Context.getCaller();
-        Context.require(xCallFeePermissions.getOrDefault(contract, false), contract + " is not allowed to use fees from daofund");
+        Context.require(xCallFeePermissions.at(contract).getOrDefault(net, false), contract + " is not allowed to use fees from daofund");
         BigInteger fee = Context.call(BigInteger.class, BalancedAddressManager.getXCall(), "getFee", net, response);
-        if (fee.compareTo(Context.getBalance(Context.getAddress())) > 0 || fee.equals(BigInteger.ZERO)) {
+        Context.require(fee.compareTo(Context.getBalance(Context.getAddress())) <= 0, "Daofund out of Balance" );
+        if (fee.equals(BigInteger.ZERO)) {
             return BigInteger.ZERO;
         }
 

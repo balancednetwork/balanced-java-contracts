@@ -23,8 +23,8 @@ import network.balanced.score.lib.interfaces.tokens.IRC2;
 import network.balanced.score.lib.interfaces.tokens.IRC2ScoreInterface;
 import network.balanced.score.lib.interfaces.tokens.SpokeToken;
 import network.balanced.score.lib.interfaces.tokens.SpokeTokenScoreInterface;
+import network.balanced.score.lib.interfaces.LoansMessages;
 import network.balanced.score.lib.test.mock.MockContract;
-import icon.xcall.lib.messages.LoansMessages;
 import xcall.score.lib.util.NetworkAddress;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -105,10 +105,29 @@ class LoansTestCrosschain extends LoansTestBase {
         BigInteger expectedFee = calculateFee(loan);
 
         // Act
+        when(mockBalanced.daofund.mock.getXCallFeePermission(loans.getAddress(), BSC_NID)).thenReturn(true);
+        when(mockBalanced.daofund.mock.claimXCallFee(BSC_NID, true)).thenReturn(BigInteger.TEN);
         takeLoanBNB(user, collateral, loan);
 
         // Assert
         verify(bnusd.mock).crossTransfer(user.toString(), loan, new byte[0]);
+        verifyPosition(user.toString(), collateral, loan.add(expectedFee), BNB_SYMBOL);
+    }
+
+    @Test
+    void xDepositCollateralAndBorrow_withoutWithdraw() {
+        // Arrange
+        NetworkAddress user = new NetworkAddress(BSC_NID, "0x1");
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
+
+        // Act
+        when(mockBalanced.daofund.mock.getXCallFeePermission(loans.getAddress(), BSC_NID)).thenReturn(false);
+        takeLoanBNB(user, collateral, loan);
+
+        // Assert
+        verify(bnusd.mock).hubTransfer(user.toString(), loan, new byte[0]);
         verifyPosition(user.toString(), collateral, loan.add(expectedFee), BNB_SYMBOL);
     }
 
@@ -157,12 +176,35 @@ class LoansTestCrosschain extends LoansTestBase {
         BigInteger expectedFee = calculateFee(loan);
         takeLoanBNB(user, collateral, BigInteger.ZERO);
 
+        when(mockBalanced.daofund.mock.getXCallFeePermission(loans.getAddress(), BSC_NID)).thenReturn(true);
+        when(mockBalanced.daofund.mock.claimXCallFee(BSC_NID, true)).thenReturn(BigInteger.TEN);
+
         // Act
         byte[] msg = LoansMessages.xBorrow(BNB_SYMBOL, loan);
         loans.invoke(mockBalanced.xCall.account, "handleCallMessage", user.toString(), msg);
 
         // Assert
         verify(bnusd.mock).crossTransfer(user.toString(), loan, new byte[0]);
+        verifyPosition(user.toString(), collateral, loan.add(expectedFee), BNB_SYMBOL);
+    }
+
+    @Test
+    void xBorrow_withoutWithdraw() {
+        // Arrange
+        NetworkAddress user = new NetworkAddress(BSC_NID, "0x1");
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
+        takeLoanBNB(user, collateral, BigInteger.ZERO);
+
+        when(mockBalanced.daofund.mock.getXCallFeePermission(loans.getAddress(), BSC_NID)).thenReturn(false);
+
+        // Act
+        byte[] msg = LoansMessages.xBorrow(BNB_SYMBOL, loan);
+        loans.invoke(mockBalanced.xCall.account, "handleCallMessage", user.toString(), msg);
+
+        // Assert
+        verify(bnusd.mock).hubTransfer(user.toString(), loan, new byte[0]);
         verifyPosition(user.toString(), collateral, loan.add(expectedFee), BNB_SYMBOL);
     }
 

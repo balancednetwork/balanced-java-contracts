@@ -34,7 +34,7 @@ public interface HubToken extends SpokeToken {
      * Returns the total token supply on a connected chain.
      */
     @External(readonly = true)
-    BigInteger xSupply(String spokeAddress);
+    BigInteger xSupply(String net);
 
     /**
      * Returns a list of all contracts across all connected chains
@@ -56,7 +56,7 @@ public interface HubToken extends SpokeToken {
     void crossTransfer(String _to, BigInteger _value, byte[] _data);
 
     /**
-     * XCall version of xTransfer.
+     * Method for processing cross chain transfers from spokes
      * If {@code _to} is a contract trigger xTokenFallback(String, int, byte[])
      * instead of regular tokenFallback.
      * Internal behavior same as {@link #xTransfer} but from parameters is specified by
@@ -69,16 +69,17 @@ public interface HubToken extends SpokeToken {
     void xCrossTransferRevert(String from, String _to, BigInteger _value);
 
     /**
+     * Method for transferring hub balances to a spoke chain
      * From is a EOA address of a connected chain
-     * Uses From to xTransfer the balance on ICON to native address on calling chain.
+     * Uses From to xTransfer the balance on ICON to native address on a calling chain.
      */
     @XCall
-    void xWithdraw(String from, BigInteger _value);
+    void xTransfer(String from, String _to, BigInteger _value, byte[] _data);
 
     /**
-     * (EventLog) Must trigger on any successful token transfers from cross chain addresses.
+     * (EventLog) Must trigger on any successful token transfers from cross-chain addresses.
      */
     @EventLog(indexed = 1)
-    void XTransfer(BigInteger id, String _from, String _to, BigInteger _value, byte[] _data);
+    void XTransfer(String _from, String _to, BigInteger _value, byte[] _data);
 }
 

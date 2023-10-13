@@ -155,7 +155,12 @@ public class SpokeTokenImpl implements SpokeToken {
         byte[] dataBytes = (_data == null) ? "None".getBytes() : _data;
         if (isNative(_to) && isNative(_from)) {
             Transfer(Address.fromString(_from.account()), Address.fromString(_to.account()), _value, dataBytes);
-
+        } else if (isNative(_to)) {
+            HubTransfer(_from.toString(), ZERO_ADDRESS.toString(), _value, dataBytes);
+            Transfer(ZERO_ADDRESS, Address.fromString(_to.account()), _value, dataBytes);
+        } else if (isNative(_from)) {
+            Transfer(Address.fromString(_from.account()), ZERO_ADDRESS, _value, dataBytes);
+            HubTransfer(ZERO_ADDRESS.toString(), _to.toString(), _value, dataBytes);
         } else {
             HubTransfer(_from.toString(), _to.toString(), _value, dataBytes);
         }
