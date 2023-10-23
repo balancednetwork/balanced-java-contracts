@@ -57,8 +57,6 @@ public class SetupManager {
         call(rewardsAddress, "addDataProvider", ContractManager.getAddress(Names.LOANS));
 
         call(ContractManager.getAddress(Names.BALN), "setMinter", rewardsAddress);
-        call(ContractManager.getAddress(Names.BNUSD), "setMinter", ContractManager.getAddress(Names.LOANS));
-        call(ContractManager.getAddress(Names.BNUSD), "setMinter2", ContractManager.getAddress(Names.STABILITY));
     }
 
     public static void launchBalanced() {
@@ -91,10 +89,11 @@ public class SetupManager {
         Address dexAddress = ContractManager.getAddress(Names.DEX);
         Address sICXAddress = ContractManager.getAddress(Names.SICX);
         Address bnUSDAddress = ContractManager.getAddress(Names.BNUSD);
+        Address oracle = ContractManager.getAddress(Names.BALANCEDORACLE);
         Address stakingAddress = ContractManager.getAddress(Names.STAKING);
         Address loansAddress = ContractManager.getAddress(Names.LOANS);
 
-        BigInteger price = call(BigInteger.class, bnUSDAddress, "priceInLoop");
+        BigInteger price = call(BigInteger.class, oracle, "getPriceInLoop", "USD");
         BigInteger amount = EXA.multiply(value).divide(price.multiply(BigInteger.valueOf(7)));
         call(value.divide(BigInteger.valueOf(7)), stakingAddress, "stakeICX", Context.getAddress(),
                 new byte[0]);

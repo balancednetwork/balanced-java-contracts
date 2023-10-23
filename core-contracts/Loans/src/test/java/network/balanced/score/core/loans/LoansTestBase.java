@@ -21,6 +21,7 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import network.balanced.score.lib.interfaces.*;
+import network.balanced.score.lib.interfaces.tokens.IRC2;
 import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
 import network.balanced.score.lib.interfaces.tokens.IRC2MintableScoreInterface;
 import network.balanced.score.lib.structs.RewardsDataEntry;
@@ -74,8 +75,8 @@ class LoansTestBase extends UnitTest {
         when(dex.mock.getBasePriceInQuote(BigInteger.valueOf(4))).thenReturn(rate);
     }
 
-    protected void mockSwap(MockContract<? extends IRC2Mintable> tokenSent,
-                            MockContract<? extends IRC2Mintable> tokenReceived, BigInteger in, BigInteger out) {
+    protected void mockSwap(MockContract<? extends IRC2> tokenSent,
+                            MockContract<? extends IRC2> tokenReceived, BigInteger in, BigInteger out) {
         Mockito.doAnswer((Answer<Void>) invocation -> {
             loans.invoke(tokenReceived.account, "tokenFallback", dex.getAddress(), out, new byte[0]);
             return null;

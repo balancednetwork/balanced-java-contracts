@@ -133,6 +133,10 @@ public class BalancedAddressManager {
         return getAddress(Names.ROUTER);
     }
 
+    public static Address getXCall() {
+        return getAddress(Names.XCALL);
+    }
+
     public static Address getGovernance() {
         return contractAddresses.getOrDefault(Names.GOVERNANCE, mainnetGovernance);
     }
