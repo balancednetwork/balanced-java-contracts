@@ -24,7 +24,7 @@ public class Versions {
     public final static String SICX = "v1.0.0";
     public final static String STAKING = "v1.0.1";
     public final static String WORKERTOKEN = "v1.0.0";
-    public final static String BNUSD = "v1.0.0";
+    public final static String BNUSD = "v1.1.0";
     public final static String FEEHANDLER = "v1.0.0";
     public final static String REWARDS = "v1.0.0";
     public final static String STABILITY = "v1.0.0";
