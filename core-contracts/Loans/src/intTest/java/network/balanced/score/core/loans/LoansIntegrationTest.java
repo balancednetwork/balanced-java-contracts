@@ -16,7 +16,6 @@
 
 package network.balanced.score.core.loans;
 
-
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
@@ -25,17 +24,30 @@ import foundation.icon.score.client.RevertedException;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.ClassOrderer;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestClassOrder;
+import org.junit.jupiter.api.TestMethodOrder;
+
 import score.UserRevertedException;
+import foundation.icon.xcall.NetworkAddress;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Map;
+import network.balanced.score.lib.interfaces.*;
+import network.balanced.score.lib.interfaces.tokens.*;
 
 import static network.balanced.score.lib.test.integration.BalancedUtils.*;
 import static network.balanced.score.lib.utils.Constants.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Answers.valueOf;
 
 abstract class LoansIntegrationTest implements ScoreIntegrationTest {
     protected static Balanced balanced;
@@ -46,11 +58,12 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
     protected static BigInteger iethDecimals = BigInteger.TEN.pow(iethNumberOfDecimals.intValue());
     protected static BigInteger sicxDecimals = EXA;
 
+    protected static BalancedClient nativeLoanTaker;
     private static BigInteger initialLockingRatio;
     private static BigInteger lockingRatio;
     protected static BigInteger voteDefinitionFee = BigInteger.TEN.pow(10);
 
-    public static void setup() {
+    public static void setup() throws Exception {
         whitelistToken(balanced, balanced.sicx._address(), BigInteger.TEN.pow(10));
         owner.governance.setVoteDefinitionFee(voteDefinitionFee);
         owner.governance.setBalnVoteDefinitionCriterion(BigInteger.ZERO);
@@ -63,6 +76,10 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
 
         ethAddress = createIRC2Token(owner, "ICON ETH", "iETH", iethNumberOfDecimals);
         owner.irc2(ethAddress).setMinter(owner.getAddress());
+        addCollateral(balanced.bscBaseAsset, "ETH");
+        addCollateral(balanced.ethBaseAsset, "ETH");
+
+        nativeLoanTaker = balanced.newClient();
     }
 
     @Test
@@ -96,7 +113,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         BigInteger ethPrice = reader.balancedOracle.getLastPriceInUSD("ETH");
         BigInteger bnusdAmount = ethAmount.multiply(ethPrice).divide(iethDecimals);
 
-        addCollateralType(owner, ethAddress, ethAmount, bnusdAmount, "ETH");
+        addCollateralAndLiquidity(owner, ethAddress, ethAmount, bnusdAmount, "ETH");
 
         loanTakerMulti.depositAndBorrow(ethAddress, collateralETH, loanAmount);
         loanTakerIETH.depositAndBorrow(ethAddress, collateralETH, loanAmount);
@@ -128,6 +145,145 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         assertEquals(collateralETH, loanTakerMulti.getLoansCollateralPosition("iETH"));
         assertEquals(icxCollateral, loanTakerMulti.getLoansCollateralPosition("sICX"));
         assertEquals(collateralETH, loanTakerIETH.getLoansCollateralPosition("iETH"));
+    }
+
+    @Nested
+    @DisplayName("Crosschain Loans")
+    @TestMethodOrder(value = MethodOrderer.OrderAnnotation.class)
+    class CrosschainTests {
+        NetworkAddress ethUser = new NetworkAddress(balanced.ETH_NID, "0x11");
+        NetworkAddress bscUser = new NetworkAddress(balanced.BSC_NID, "0x12");
+        NetworkAddress bscHubUser = new NetworkAddress(balanced.BSC_NID, "0x13");
+        NetworkAddress bscBridgeUser = new NetworkAddress(balanced.BSC_NID, "0x14");
+        String loansNetAddress = new NetworkAddress(balanced.ICON_NID, balanced.loans._address()).toString();
+        BigInteger collateral = BigInteger.TEN.multiply(sicxDecimals);
+        BigInteger loanAmount = BigInteger.TEN.pow(22);
+
+
+
+        @Test
+        @Order(1)
+        void crossChainDepositAndBorrow() throws Exception {
+            // Arrange
+            BigInteger totalDebt = getTotalDebt();
+
+            // Act
+            // Borrow directly trough deposit
+            JsonObject loanData = new JsonObject()
+                .add("_amount", loanAmount.toString());
+            byte[] depositAndBorrowETH = AssetManagerMessages.deposit(balanced.ETH_TOKEN_ADDRESS, ethUser.account().toString(), loansNetAddress, collateral, loanData.toString().getBytes());
+            owner.xcall.sendCall(balanced.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), depositAndBorrowETH);
+
+            // Deposit first then borrow
+            byte[] depositBSC = AssetManagerMessages.deposit(balanced.BSC_TOKEN_ADDRESS, bscUser.account().toString(), loansNetAddress, collateral, "{}".getBytes());
+            owner.xcall.sendCall(balanced.assetManager._address(), new NetworkAddress(balanced.BSC_NID, balanced.BSC_ASSET_MANAGER).toString(), depositBSC);
+            byte[] borrowBSC = LoansMessages.xBorrow(balanced.BSC_TOKEN_SYMBOL, loanAmount);
+            owner.xcall.sendCall(balanced.loans._address(), bscUser.toString(), borrowBSC);
+
+            // Bridge collateral to hub wallet first then borrow
+            byte[] transferBSC = AssetManagerMessages.deposit(balanced.BSC_TOKEN_ADDRESS, bscHubUser.account().toString(), bscHubUser.toString(), collateral, new byte[0]);
+            owner.xcall.sendCall(balanced.assetManager._address(), new NetworkAddress(balanced.BSC_NID, balanced.BSC_ASSET_MANAGER).toString(), transferBSC);
+
+            byte[] depositAndBorrowTransfer = SpokeTokenMessages.xHubTransfer(loansNetAddress, collateral, loanData.toString().getBytes());
+            owner.xcall.sendCall(balanced.bscBaseAsset, bscHubUser.toString(), depositAndBorrowTransfer);
+
+            // Bridge collateral to ICON wallet first then borrow
+            byte[] transferBSCToICON = AssetManagerMessages.deposit(balanced.BSC_TOKEN_ADDRESS, bscHubUser.account().toString(), new NetworkAddress(balanced.ICON_NID, nativeLoanTaker.getAddress()).toString(), collateral, new byte[0]);
+            owner.xcall.sendCall(balanced.assetManager._address(), new NetworkAddress(balanced.BSC_NID, balanced.BSC_ASSET_MANAGER).toString(), transferBSCToICON);
+            nativeLoanTaker.spokeToken(balanced.bscBaseAsset).transfer(balanced.loans._address(), collateral, loanData.toString().getBytes());
+
+            // Assert
+            BigInteger feePercent = hexObjectToBigInteger(owner.loans.getParameters().get("origination fee"));
+            BigInteger fee = loanAmount.multiply(feePercent).divide(POINTS);
+            BigInteger debt = loanAmount.add(fee);
+            totalDebt = debt.multiply(BigInteger.valueOf(4)).add(totalDebt);
+
+            Map<String, BigInteger> loanTakerETH = reader.loans.getBalanceAndSupply("Loans", ethUser.toString());
+            Map<String, BigInteger> loanTakerBSC= reader.loans.getBalanceAndSupply("Loans", bscUser.toString());
+            Map<String, BigInteger> loanTakerHUBBSC = reader.loans.getBalanceAndSupply("Loans", bscHubUser.toString());
+            Map<String, BigInteger> nativeLoanTakerBSC = reader.loans.getBalanceAndSupply("Loans", nativeLoanTaker.getAddress().toString());
+
+            assertEquals(totalDebt, loanTakerETH.get("_totalSupply"));
+            assertEquals(debt, loanTakerETH.get("_balance"));
+            assertEquals(debt, loanTakerBSC.get("_balance"));
+            assertEquals(debt, loanTakerHUBBSC.get("_balance"));
+            assertEquals(debt, nativeLoanTakerBSC.get("_balance"));
+
+            Map<String, Map<String, String>> assetsETH = (Map<String, Map<String, String>>) reader.loans.getAccountPositions(ethUser.toString()).get("holdings");
+            Map<String, Map<String, String>> assetsBSC = (Map<String, Map<String, String>>) reader.loans.getAccountPositions(bscUser.toString()).get("holdings");
+            Map<String, Map<String, String>> assetsBSCHUB = (Map<String, Map<String, String>>) reader.loans.getAccountPositions(bscHubUser.toString()).get("holdings");
+
+            assertEquals(collateral, hexObjectToBigInteger(assetsETH.get(balanced.ETH_TOKEN_SYMBOL).get(balanced.ETH_TOKEN_SYMBOL)));
+            assertEquals(collateral, hexObjectToBigInteger(assetsBSC.get(balanced.BSC_TOKEN_SYMBOL).get(balanced.BSC_TOKEN_SYMBOL)));
+            assertEquals(collateral, hexObjectToBigInteger(assetsBSCHUB.get(balanced.BSC_TOKEN_SYMBOL).get(balanced.BSC_TOKEN_SYMBOL)));
+            assertEquals(collateral, nativeLoanTaker.getLoansCollateralPosition(balanced.BSC_TOKEN_SYMBOL));
+        }
+
+        @Test
+        @Order(3)
+        void crossChainRepayAndWithdraw() throws Exception {
+            // Arrange
+            BigInteger totalDebt = getTotalDebt();
+            BigInteger amountToWithdraw = collateral.divide(BigInteger.TWO);
+            BigInteger amountToRepay = loanAmount;
+
+            // Act
+            // Repay and withdraw through croschain transfer
+            JsonObject repayData = new JsonObject()
+                .add("_collateral", balanced.ETH_TOKEN_SYMBOL)
+                .add("_withdrawAmount", amountToWithdraw.toString());
+            byte[] repayAndWithdraw = HubTokenMessages.xCrossTransfer(ethUser.toString(), loansNetAddress, amountToRepay, repayData.toString().getBytes());
+            owner.xcall.sendCall(balanced.bnusd._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_BNUSD_ADDRESS).toString(), repayAndWithdraw);
+
+            // Repay through transfer, then withdraw via xCall
+            repayData = new JsonObject()
+                .add("_collateral", balanced.BSC_TOKEN_SYMBOL)
+                .add("_withdrawAmount", "0");
+            byte[] repay = HubTokenMessages.xCrossTransfer(bscUser.toString(), loansNetAddress, amountToRepay, repayData.toString().getBytes());
+            owner.xcall.sendCall(balanced.bnusd._address(), new NetworkAddress(balanced.BSC_NID, balanced.BSC_BNUSD_ADDRESS).toString(), repay);
+
+            byte[] withdraw = LoansMessages.xWithdraw(amountToWithdraw, balanced.BSC_TOKEN_SYMBOL);
+            owner.xcall.sendCall(balanced.loans._address(), bscUser.toString(), withdraw);
+
+            // Repay and withdraw with bnUSD on the hub.
+            byte[] deposit = HubTokenMessages.xCrossTransfer(bscHubUser.toString(), bscHubUser.toString(), amountToRepay, new byte[0]);
+            owner.xcall.sendCall(balanced.bnusd._address(), new NetworkAddress(balanced.BSC_NID, balanced.BSC_BNUSD_ADDRESS).toString(), deposit);
+            repayData = new JsonObject()
+                .add("_collateral", balanced.BSC_TOKEN_SYMBOL)
+                .add("_withdrawAmount", amountToWithdraw.toString());
+
+            byte[] repayTransfer = HubTokenMessages.xHubTransfer(loansNetAddress, amountToRepay, repayData.toString().getBytes());
+            owner.xcall.sendCall(balanced.bnusd._address(), bscHubUser.toString(), repayTransfer);
+
+            // Repay and withdraw with bnUSD on the ICON wallet.
+            nativeLoanTaker.loans.returnAsset("bnUSD", amountToRepay, balanced.BSC_TOKEN_SYMBOL);
+            nativeLoanTaker.loans.withdrawCollateral(amountToWithdraw, balanced.BSC_TOKEN_SYMBOL);
+
+            // Assert
+            BigInteger feePercent = hexObjectToBigInteger(owner.loans.getParameters().get("origination fee"));
+            BigInteger fee = loanAmount.multiply(feePercent).divide(POINTS);
+            BigInteger initialDebt = loanAmount.add(fee);
+
+            Map<String, BigInteger> loanTakerETH = reader.loans.getBalanceAndSupply("Loans", ethUser.toString());
+            Map<String, BigInteger> loanTakerBSC = reader.loans.getBalanceAndSupply("Loans", bscUser.toString());
+            Map<String, BigInteger> loanTakerHUBBSC = reader.loans.getBalanceAndSupply("Loans", bscHubUser.toString());
+            Map<String, BigInteger> nativeLoanTakerBSC = reader.loans.getBalanceAndSupply("Loans", nativeLoanTaker.getAddress().toString());
+
+            assertEquals(totalDebt.subtract(amountToRepay.multiply(BigInteger.valueOf(4))), loanTakerETH.get("_totalSupply"));
+            assertEquals(initialDebt.subtract(amountToRepay), loanTakerETH.get("_balance"));
+            assertEquals(initialDebt.subtract(amountToRepay), loanTakerBSC.get("_balance"));
+            assertEquals(initialDebt.subtract(amountToRepay), loanTakerHUBBSC.get("_balance"));
+            assertEquals(initialDebt.subtract(amountToRepay), nativeLoanTakerBSC.get("_balance"));
+
+            Map<String, Map<String, String>> assetsETH = (Map<String, Map<String, String>>) reader.loans.getAccountPositions(ethUser.toString()).get("holdings");
+            Map<String, Map<String, String>> assetsBSC = (Map<String, Map<String, String>>) reader.loans.getAccountPositions(bscUser.toString()).get("holdings");
+            Map<String, Map<String, String>> assetsBSCHUB = (Map<String, Map<String, String>>) reader.loans.getAccountPositions(bscHubUser.toString()).get("holdings");
+
+            assertEquals(collateral.subtract(amountToWithdraw), hexObjectToBigInteger(assetsETH.get(balanced.ETH_TOKEN_SYMBOL).get(balanced.ETH_TOKEN_SYMBOL)));
+            assertEquals(collateral.subtract(amountToWithdraw), hexObjectToBigInteger(assetsBSC.get(balanced.BSC_TOKEN_SYMBOL).get(balanced.BSC_TOKEN_SYMBOL)));
+            assertEquals(collateral.subtract(amountToWithdraw), hexObjectToBigInteger(assetsBSCHUB.get(balanced.BSC_TOKEN_SYMBOL).get(balanced.BSC_TOKEN_SYMBOL)));
+            assertEquals(collateral.subtract(amountToWithdraw), nativeLoanTaker.getLoansCollateralPosition(balanced.BSC_TOKEN_SYMBOL));
+        }
     }
 
     @Test
@@ -714,7 +870,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         executeVote(balanced, voter, name, actions);
     }
 
-    private void addCollateralType(BalancedClient minter, Address collateralAddress, BigInteger tokenAmount,
+    private void addCollateralAndLiquidity(BalancedClient minter, Address collateralAddress, BigInteger tokenAmount,
                                    BigInteger bnUSDAmount, String peg) {
         minter.irc2(collateralAddress).mintTo(owner.getAddress(), tokenAmount, new byte[0]);
         depositToStabilityContract(owner, bnUSDAmount.add(voteDefinitionFee).multiply(BigInteger.TWO));
@@ -724,6 +880,10 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
 
         owner.bnUSD.transfer(balanced.dex._address(), bnUSDAmount, depositData.toString().getBytes());
         owner.dex.add(collateralAddress, balanced.bnusd._address(), tokenAmount, bnUSDAmount, false);
+        addCollateral(collateralAddress, peg);
+    }
+
+    private static void addCollateral(Address collateralAddress, String peg) {
         BigInteger lockingRatio = BigInteger.valueOf(40_000);
         BigInteger liquidationRatio = BigInteger.valueOf(15_000);
         BigInteger debtCeiling = BigInteger.TEN.pow(30);
@@ -739,10 +899,8 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         JsonArray actions = new JsonArray()
                 .add(createTransaction(balanced.governance._address(), "addCollateral", addCollateralParameters));
 
-
         String symbol = reader.irc2(collateralAddress).symbol();
-        claimAllRewards();
-        executeVote(balanced, owner, "add collateral " + symbol, actions);
+        owner.governance.execute(actions.toString());
 
         assertEquals(lockingRatio, reader.loans.getLockingRatio(symbol));
         assertEquals(liquidationRatio, reader.loans.getLiquidationRatio(symbol));

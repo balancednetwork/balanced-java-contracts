@@ -73,6 +73,6 @@ class LoansIntegrationTestBase extends LoansIntegrationTest {
         assertEquals(iETHBalance, reader.irc2(ethAddress).balanceOf(balanced.loans._address()));
 
         BigInteger stabilityDebt = reader.sicx.balanceOf(balanced.stability._address());
-        assertEquals(bnUSDBalance, reader.bnUSD.totalSupply().subtract(stabilityDebt));
+        assertEquals(bnUSDBalance, reader.bnUSD.xTotalSupply().subtract(stabilityDebt));
     }
 }

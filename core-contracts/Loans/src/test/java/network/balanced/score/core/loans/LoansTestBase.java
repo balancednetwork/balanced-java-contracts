@@ -21,6 +21,7 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import network.balanced.score.lib.interfaces.*;
+import network.balanced.score.lib.interfaces.tokens.IRC2;
 import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
 import network.balanced.score.lib.interfaces.tokens.IRC2MintableScoreInterface;
 import network.balanced.score.lib.structs.RewardsDataEntry;
@@ -47,8 +48,6 @@ class LoansTestBase extends UnitTest {
     protected static final ServiceManager sm = getServiceManager();
 
     protected final Account admin = sm.createAccount();
-    protected final Account feehandler = Account.newScoreAccount(scoreCount++);
-    protected final Account rebalancing = Account.newScoreAccount(scoreCount++);
     protected Score loans;
     protected MockBalanced mockBalanced;
     protected MockContract<Sicx> sicx;
@@ -74,8 +73,8 @@ class LoansTestBase extends UnitTest {
         when(dex.mock.getBasePriceInQuote(BigInteger.valueOf(4))).thenReturn(rate);
     }
 
-    protected void mockSwap(MockContract<? extends IRC2Mintable> tokenSent,
-                            MockContract<? extends IRC2Mintable> tokenReceived, BigInteger in, BigInteger out) {
+    protected void mockSwap(MockContract<? extends IRC2> tokenSent,
+                            MockContract<? extends IRC2> tokenReceived, BigInteger in, BigInteger out) {
         Mockito.doAnswer((Answer<Void>) invocation -> {
             loans.invoke(tokenReceived.account, "tokenFallback", dex.getAddress(), out, new byte[0]);
             return null;
@@ -135,7 +134,12 @@ class LoansTestBase extends UnitTest {
 
     @SuppressWarnings("unchecked")
     protected void verifyPosition(Address address, BigInteger collateral, BigInteger loan, String collateralSymbol) {
-        Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", address.toString());
+        verifyPosition(address.toString(), collateral, loan, collateralSymbol);
+    }
+
+    @SuppressWarnings("unchecked")
+    protected void verifyPosition(String address, BigInteger collateral, BigInteger loan, String collateralSymbol) {
+        Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", address);
         Map<String, Map<String, Object>> standings = (Map<String, Map<String, Object>>) position.get("holdings");
         assertEquals(loan, standings.get(collateralSymbol).get("bnUSD"));
         assertEquals(collateral, standings.get(collateralSymbol).get(collateralSymbol));

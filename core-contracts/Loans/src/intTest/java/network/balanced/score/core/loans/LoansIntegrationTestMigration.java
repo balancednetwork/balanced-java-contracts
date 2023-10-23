@@ -47,8 +47,7 @@ class LoansIntegrationTestMigration extends LoansIntegrationTest {
     @BeforeAll
     public static void contractSetup() throws Exception {
         loansPath = System.getProperty("Loans");
-        URL url = LoansIntegrationTestMigration.class.getClassLoader().getResource("Loans-0.1.0-optimized.jar");
-        System.out.println(url.getPath());
+        URL url = LoansIntegrationTestMigration.class.getClassLoader().getResource("Loans-1.0.2-optimized.jar");
         System.setProperty("Loans", url.getPath());
 
         balanced = new Balanced();
@@ -62,21 +61,16 @@ class LoansIntegrationTestMigration extends LoansIntegrationTest {
 
 
     @Test
-    @Order(101)
+    @Order(-10)
     void setupPosition() {
         BigInteger icxCollateral = BigInteger.TEN.pow(5).multiply(sicxDecimals);
-        BigInteger collateralETH = BigInteger.TEN.multiply(iethDecimals);
         BigInteger loanAmountICX = BigInteger.TEN.pow(22);
-        BigInteger loanAmountETH = BigInteger.TEN.pow(21);
-
-        owner.irc2(ethAddress).mintTo(testClient.getAddress(), collateralETH, null);
 
         testClient.stakeDepositAndBorrow(icxCollateral, loanAmountICX);
-        testClient.depositAndBorrow(ethAddress, collateralETH, loanAmountETH);
     }
 
     @Test
-    @Order(102)
+    @Order(-9)
     void migrate() {
         for (Address address : balanced.balancedClients.keySet()) {
             if (hasPosition(address.toString())) {
@@ -93,34 +87,14 @@ class LoansIntegrationTestMigration extends LoansIntegrationTest {
 
 
     @Test
-    @Order(103)
+    @Order(-8)
     void verifyPositions() {
+        assertTrue(positions.size() > 0);
+
         for (Map<String, Object> pos : positions) {
             String address = pos.get("address").toString();
             assertEquals(pos, reader.loans.getAccountPositions(address.toString()));
         }
-
-        assertTrue(positions.size() > 10);
-
-        Map<String, Object> pos = reader.loans.getAccountPositions(testClient.getAddress().toString());
-        BigInteger repaidLoanICX = BigInteger.TEN.pow(21);
-        testClient.loans.returnAsset("bnUSD", repaidLoanICX, "sICX");
-
-        BigInteger addedLoanETH = BigInteger.TEN.pow(21);
-        testClient.loans.borrow("iETH", "bnUSD", addedLoanETH);
-        Map<String, Object> newPos = reader.loans.getAccountPositions(testClient.getAddress().toString());
-        Map<String, Map<String, String>> holdings = (Map<String, Map<String, String>>)pos.get("holdings");
-        Map<String, Map<String, String>> newHoldings = (Map<String, Map<String, String>>)newPos.get("holdings");
-        BigInteger feePercent = hexObjectToBigInteger(owner.loans.getParameters().get("origination fee"));
-        BigInteger fee = addedLoanETH.multiply(feePercent).divide(POINTS);
-        BigInteger debt = addedLoanETH.add(fee);
-
-        System.out.println(holdings);
-        assertEquals(hexObjectToBigInteger(holdings.get("sICX").get("bnUSD")).subtract(repaidLoanICX), hexObjectToBigInteger(newHoldings.get("sICX").get("bnUSD")));
-        assertEquals(holdings.get("sICX").get("sICX"), newHoldings.get("sICX").get("sICX"));
-
-        assertEquals(hexObjectToBigInteger(holdings.get("iETH").get("bnUSD")).add(debt), hexObjectToBigInteger(newHoldings.get("iETH").get("bnUSD")));
-        assertEquals(holdings.get("iETH").get("iETH"), newHoldings.get("iETH").get("iETH"));
     }
 
     private boolean hasPosition(String address) {

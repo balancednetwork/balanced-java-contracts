@@ -22,6 +22,8 @@ import foundation.icon.score.client.DefaultScoreClient;
 import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
 import network.balanced.score.lib.interfaces.tokens.IRC2MintableScoreClient;
+import network.balanced.score.lib.interfaces.tokens.SpokeToken;
+import network.balanced.score.lib.interfaces.tokens.SpokeTokenScoreClient;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -49,6 +51,9 @@ public class BalancedClient {
     public DividendsScoreClient dividends;
     public ReserveScoreClient reserve;
     public BalancedOracleScoreClient balancedOracle;
+    public AssetManagerScoreClient assetManager;
+    public XCallMockScoreClient xcall;
+    public XCallManagerScoreClient xcallManager;
     public SystemInterfaceScoreClient systemScore;
 
     public BalancedClient(Balanced balanced, KeyWallet wallet) {
@@ -76,7 +81,12 @@ public class BalancedClient {
         reserve = new ReserveScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.reserve._address());
         balancedOracle = new BalancedOracleScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
                 balanced.balancedOracle._address());
-
+        assetManager = new AssetManagerScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
+                balanced.assetManager._address());
+        xcall = new XCallMockScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
+                balanced.xcall._address());
+        xcallManager = new XCallManagerScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
+                balanced.xcall._address());
         systemScore = new SystemInterfaceScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
                 DefaultScoreClient.ZERO_ADDRESS);
     }
@@ -87,6 +97,11 @@ public class BalancedClient {
 
     public IRC2Mintable irc2(score.Address address) {
         return new IRC2MintableScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
+                new Address(address.toString()));
+    }
+
+    public SpokeToken spokeToken(score.Address address) {
+        return new SpokeTokenScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
                 new Address(address.toString()));
     }
 

@@ -74,16 +74,13 @@ public class Check {
                 "Authorization Check: Authorization failed. Caller: " + caller + " Authorized Caller: " + authorizedCallerAddress);
     }
 
-    public static void onlyEither(VarDB<Address> authorizedCaller, VarDB<Address> authorizedCaller2) {
+    public static void onlyEither(Address authorizedCaller, Address authorizedCaller2) {
         Address caller = Context.getCaller();
-        Address authorizedCallerAddress = authorizedCaller.get();
-        Address authorizedCaller2Address = authorizedCaller2.get();
-        Context.require(authorizedCallerAddress != null ||
-                        authorizedCaller2Address != null,
+        Context.require(authorizedCaller != null || authorizedCaller2 != null,
                 "Authorization Check: Address not set");
-        Context.require(caller.equals(authorizedCallerAddress) ||
-                        caller.equals(authorizedCaller2Address),
-                "Authorization Check: Authorization failed. Caller: " + caller + " Authorized Caller: " + authorizedCallerAddress + " or " + authorizedCaller2Address);
+        Context.require(caller.equals(authorizedCaller) ||
+                        caller.equals(authorizedCaller2),
+                "Authorization Check: Authorization failed. Caller: " + caller + " Authorized Caller: " + authorizedCaller + " or " + authorizedCaller2);
     }
 
     public static void isContract(Address address) {

@@ -218,14 +218,18 @@ public class DataSourceImpl {
         return totalSupply.at(dbKey).getOrDefault(BigInteger.ZERO);
     }
 
+    @SuppressWarnings("unchecked")
     public Map<String, BigInteger> loadCurrentSupply(String owner) {
+        // Bad handling that is only relevant during migration, otherwise it will always succeed on first scenario
         try {
-            DataSourceScoreInterface datasource = new DataSourceScoreInterface(getContractAddress());
-            return datasource.getBalanceAndSupply(getName(), owner);
+            return (Map<String, BigInteger>) Context.call(getContractAddress(), "getBalanceAndSupply", getName(), owner);
         } catch (Exception e) {
-            return Map.of("_totalSupply", BigInteger.ZERO,
-                    "_balance", BigInteger.ZERO
-            );
+            try {
+                return (Map<String, BigInteger>) Context.call(getContractAddress(), "getBalanceAndSupply", getName(), Address.fromString(owner));
+            } catch (Exception _e) {
+                return Map.of("_totalSupply", BigInteger.ZERO,
+                        "_balance", BigInteger.ZERO);
+            }
         }
     }
 

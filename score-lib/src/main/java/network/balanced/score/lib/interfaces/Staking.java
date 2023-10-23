@@ -18,6 +18,7 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
+import network.balanced.score.lib.interfaces.base.Fallback;
 import network.balanced.score.lib.interfaces.base.Version;
 import network.balanced.score.lib.structs.PrepDelegations;
 import score.Address;
@@ -31,7 +32,7 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface Staking extends Version {
+public interface Staking extends Version, Fallback {
 
     @External(readonly = true)
     String name();

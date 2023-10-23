@@ -38,5 +38,8 @@ public class Names {
     public final static String STAKEDLP = "Balanced StakedLP";
     public final static String BOOSTED_BALN = "Boosted Baln";
     public final static String BALANCED_OTC = "Balanced OTC";
+    public final static String XCALL = "Native XCall";
+    public final static String ASSET_MANAGER = "Balanced Asset Manager";
+    public final static String XCALL_MANAGER = "Balanced XCall Manager";
 
 }

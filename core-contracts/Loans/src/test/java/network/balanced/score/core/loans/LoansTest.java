@@ -325,7 +325,7 @@ class LoansTest extends LoansTestBase {
     }
 
     @Test
-    void DepositAndBorrow_OriginateLoan_LowerThanMinimum() {
+    void depositAndBorrow_OriginateLoan_LowerThanMinimum() {
         // Arrange
         Account account = sm.createAccount();
         BigInteger newLoanMinimum = (BigInteger) getParam("new loan minimum");
@@ -342,7 +342,7 @@ class LoansTest extends LoansTestBase {
     }
 
     @Test
-    void DepositAndBorrow_OriginateLoan_ToLargeDebt() {
+    void depositAndBorrow_OriginateLoan_ToLargeDebt() {
         // Arrange
         Account account = sm.createAccount();
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
@@ -1185,8 +1185,8 @@ class LoansTest extends LoansTestBase {
         BigInteger expectedLiquidationPool = collateral.subtract(expectedReward);
         assertEquals(expectedBadDebt, bnusdDebtDetails.get("sICX").get("bad_debt"));
         assertEquals(expectedLiquidationPool, bnusdDebtDetails.get("sICX").get("liquidation_pool"));
-        verify(rewards.mock).updateRewardsData("Loans", originalTotalDebt, account.getAddress().toString(), BigInteger.ZERO);
-        verify(rewards.mock).updateRewardsData("Loans", originalTotalDebt.add(loan.add(expectedFee)),
+        verify(rewards.mock).updateBalanceAndSupply("Loans", originalTotalDebt, account.getAddress().toString(), BigInteger.ZERO);
+        verify(rewards.mock).updateBalanceAndSupply("Loans", originalTotalDebt.add(loan.add(expectedFee)),
                 account.getAddress().toString(), loan.add(expectedFee));
         verifyTotalDebt(originalTotalDebt);
     }
@@ -1256,8 +1256,8 @@ class LoansTest extends LoansTestBase {
         assertEquals(expectedBadDebt, bnusdDebtDetails.get("iETH").get("bad_debt"));
         assertEquals(expectedLiquidationPool, bnusdDebtDetails.get("iETH").get("liquidation_pool"));
 
-        verify(rewards.mock).updateRewardsData("Loans", originalTotalDebt, account.getAddress().toString(), BigInteger.ZERO);
-        verify(rewards.mock).updateRewardsData("Loans", originalTotalDebt.add(loan.add(expectedFee)),
+        verify(rewards.mock).updateBalanceAndSupply("Loans", originalTotalDebt, account.getAddress().toString(), BigInteger.ZERO);
+        verify(rewards.mock).updateBalanceAndSupply("Loans", originalTotalDebt.add(loan.add(expectedFee)),
                 account.getAddress().toString(), loan.add(expectedFee));
         verifyTotalDebt(originalTotalDebt);
     }

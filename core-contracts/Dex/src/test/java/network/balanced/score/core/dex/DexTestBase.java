@@ -121,8 +121,8 @@ class DexTestBase extends UnitTest {
         contextMock.when(Context::getValue).thenReturn(value);
         contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
         contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
-        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("updateBatchRewardsData"),
-                any(String.class), any(BigInteger.class), any())).thenReturn(null);
+        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("updateBalanceAndSupply"),
+                any(String.class), any(BigInteger.class), any(String.class), any(BigInteger.class))).thenReturn(null);
         supplier.addBalance("ICX", value);
         sm.transfer(supplier, dexScore.getAddress(), value);
     }
@@ -132,8 +132,8 @@ class DexTestBase extends UnitTest {
         contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
         contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
         doReturn(sicxIcxConversionRate).when(dexScoreSpy).getSicxRate();
-        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("updateBatchRewardsData"), eq("sICX/ICX"
-        ), eq(BigInteger.class), any(List.class))).thenReturn(true);
+        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("updateBalanceAndSupplyBatch"), any(),
+                any(), any())).thenReturn(null);
         contextMock.when(() -> Context.call(eq(sicxScore.getAddress()), eq("transfer"),
                 eq(feehandlerScore.getAddress()), any(BigInteger.class))).thenReturn(true);
         contextMock.when(() -> Context.transfer(eq(sender.getAddress()), any(BigInteger.class))).thenAnswer((Answer<Void>) invocation -> null);

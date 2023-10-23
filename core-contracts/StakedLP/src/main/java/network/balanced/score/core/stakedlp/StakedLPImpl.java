@@ -148,7 +148,7 @@ public class StakedLPImpl implements StakedLP {
 
         Unstake(caller, id, value);
 
-        Context.call(rewards.get(), "updateRewardsData", poolName, previousTotal, caller.toString(), previousBalance);
+        Context.call(rewards.get(), "updateBalanceAndSupply", poolName, newTotal, caller.toString(), newBalance);
 
         try {
             Context.call(dex.get(), "transfer", caller, value, id, new byte[0]);
@@ -236,7 +236,7 @@ public class StakedLPImpl implements StakedLP {
 
         Stake(user, id, value);
 
-        Context.call(rewards.get(), "updateRewardsData", poolName, previousTotal, user.toString(), previousBalance);
+        Context.call(rewards.get(), "updateBalanceAndSupply", poolName, newTotal, user.toString(), newBalance);
     }
 
 

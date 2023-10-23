@@ -25,6 +25,7 @@ import network.balanced.score.lib.interfaces.base.TokenFallback;
 import network.balanced.score.lib.interfaces.base.Version;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.RewardsDataEntry;
+import network.balanced.score.lib.structs.RewardsDataEntryOld;
 import score.Address;
 import score.annotation.External;
 import score.annotation.Optional;
@@ -112,10 +113,10 @@ public interface Rewards extends
     BigInteger getAPY(String _name);
 
     @External
-    void updateRewardsData(String _name, BigInteger _totalSupply, String _user, BigInteger _balance);
+    void updateRewardsData(String _name, BigInteger _totalSupply, Address _user, BigInteger _balance);
 
     @External
-    void updateBatchRewardsData(String _name, BigInteger _totalSupply, RewardsDataEntry[] _data);
+    void updateBatchRewardsData(String _name, BigInteger _totalSupply, RewardsDataEntryOld[] _data);
 
     @External
     void updateBalanceAndSupply(String _name, BigInteger _totalSupply, String _user, BigInteger _balance);
@@ -155,12 +156,6 @@ public interface Rewards extends
 
     @External(readonly = true)
     Map<String, Map<String, BigInteger>> getBoostData(String user, String[] sources);
-
-    @External
-    void setMigrateToVotingDay(BigInteger day);
-
-    @External(readonly = true)
-    BigInteger getMigrateToVotingDay();
 
     @External
     void setPlatformDistPercentage(String name, BigInteger percentage);
