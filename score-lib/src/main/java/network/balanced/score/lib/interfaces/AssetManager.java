@@ -20,6 +20,7 @@ import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import icon.xcall.lib.annotation.XCall;
 import network.balanced.score.lib.interfaces.addresses.AddressManager;
+import network.balanced.score.lib.interfaces.base.Fallback;
 import network.balanced.score.lib.interfaces.base.Version;
 import score.Address;
 import score.annotation.External;
@@ -31,9 +32,9 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface AssetManager extends AddressManager, Version {
+public interface AssetManager extends AddressManager, Version, Fallback {
     @External
-    void deployAsset(String tokenNetworkAddress, String symbol, String name);
+    void deployAsset(String tokenNetworkAddress, String name, String symbol, BigInteger decimals);
 
     @External
     void addSpokeManager(String spokeAssetManager);
@@ -48,10 +49,14 @@ public interface AssetManager extends AddressManager, Version {
     @External(readonly = true)
     Address getAssetAddress(String spokeAddress);
 
+    @External(readonly = true)
+    String getNativeAssetAddress(Address token);
+
     /**
      * withdraws amount to `to` address
-     * @param asset icon asset address to be withdrawn.
-     * @param to address to withdraw to.
+     *
+     * @param asset  icon asset address to be withdrawn.
+     * @param to     address to withdraw to.
      * @param amount amount to withdraw.
      */
     @External
@@ -59,33 +64,35 @@ public interface AssetManager extends AddressManager, Version {
     void withdrawTo(Address asset, String to, BigInteger amount);
 
     /**
-     * deposits to fromAddress then initiates a transfer to toAddress
-     * @param from xCall caller.
+     * deposits to fromAddress then initiate a transfer to toAddress
+     *
+     * @param from         xCall caller.
      * @param tokenAddress native token address as string.
-     * @param fromAddress native caller address as string.
-     * @param toAddress network address to receive deposit, if empty string deposit is to fromAddress
-     * @param _amount amount to deposit and transfer
-     * @param _data transfer data
+     * @param fromAddress  native caller address as string.
+     * @param toAddress    network address to receive deposit, if empty string deposit is to fromAddress
+     * @param _amount      amount to deposit and transfer
+     * @param _data        transfer data
      */
     @XCall
     void deposit(String from, String tokenAddress, String fromAddress, String toAddress, BigInteger _amount, @Optional byte[] _data);
 
     /**
-     * Burns tokens from user
-     * @param from xCall caller.
-     * @param tokenAddress native token address as string.
-     * @param _from native caller address as string.
-     * @param _amount amount to withdraw.
+     * Withdraws tokens back to caller
+     *
+     * @param from         xCall caller.
+     * @param tokenAddress token address
+     * @param amount       amount to withdraw.
      */
     @XCall
-    void withdraw(String from, String tokenAddress, String _from, BigInteger _amount);
+    void xWithdraw(String from, Address tokenAddress, BigInteger amount);
 
     /**
-     * return amount to _to incase of withdraw failure
-     * @param from Always XCall address.
+     * return amount to _to in case of withdraw failure
+     *
+     * @param from         Always XCall address.
      * @param tokenAddress native token address as string.
-     * @param _to rollback network address.
-     * @param _amount amount to return.
+     * @param _to          rollback network address.
+     * @param _amount      amount to return.
      */
     @XCall
     void withdrawRollback(String from, String tokenAddress, String _to, BigInteger _amount);

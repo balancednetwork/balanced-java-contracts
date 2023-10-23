@@ -33,11 +33,12 @@ public class Versions {
     public final static String DEX = "v1.0.0";
     public final static String GOVERNANCE = "v1.0.0";
     public final static String REBALANCING = "v1.0.0";
-    public final static String ROUTER = "v1.0.0";
+    public final static String ROUTER = "v1.0.1";
     public final static String STAKEDLP = "v1.0.0";
     public final static String BOOSTED_BALN = "v1.1.0";
     public final static String BRIBING = "v1.0.0";
     public final static String BALANCED_OTC = "v1.0.0";
     public final static String BALANCED_ASSETS = "v1.0.0";
-    public final static String BALANCED_ASSET_MANAGER = "v1.0.0";
+    public final static String BALANCED_ASSET_MANAGER = "v1.0.1";
+    public final static String XCALL_MANAGER = "v1.0.0";
 }

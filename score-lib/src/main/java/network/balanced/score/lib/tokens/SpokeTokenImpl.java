@@ -24,12 +24,15 @@ import score.annotation.External;
 import score.annotation.Optional;
 import network.balanced.score.lib.interfaces.tokens.SpokeToken;
 import network.balanced.score.lib.interfaces.tokens.SpokeTokenXCall;
-import xcall.score.lib.util.NetworkAddress;
+import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.NetworkAddressDictDB;
+import network.balanced.score.lib.utils.XCallUtils;
+
 import java.math.BigInteger;
 
 import static network.balanced.score.lib.utils.Check.only;
+import static network.balanced.score.lib.utils.Check.checkStatus;
 
 public class SpokeTokenImpl implements SpokeToken {
     private final static String NAME = "name";
@@ -138,8 +141,10 @@ public class SpokeTokenImpl implements SpokeToken {
     }
 
     @External
-    public void handleCallMessage(String _from, byte[] _data) {
+    public void handleCallMessage(String _from, byte[] _data, @Optional String[] _protocols) {
+        checkStatus();
         only(BalancedAddressManager.getXCall());
+        XCallUtils.verifyXCallProtocols(_from, _protocols);
         SpokeTokenXCall.process(this, _from, _data);
     }
 
@@ -155,7 +160,12 @@ public class SpokeTokenImpl implements SpokeToken {
         byte[] dataBytes = (_data == null) ? "None".getBytes() : _data;
         if (isNative(_to) && isNative(_from)) {
             Transfer(Address.fromString(_from.account()), Address.fromString(_to.account()), _value, dataBytes);
-
+        } else if (isNative(_to)) {
+            HubTransfer(_from.toString(), ZERO_ADDRESS.toString(), _value, dataBytes);
+            Transfer(ZERO_ADDRESS, Address.fromString(_to.account()), _value, dataBytes);
+        } else if (isNative(_from)) {
+            Transfer(Address.fromString(_from.account()), ZERO_ADDRESS, _value, dataBytes);
+            HubTransfer(ZERO_ADDRESS.toString(), _to.toString(), _value, dataBytes);
         } else {
             HubTransfer(_from.toString(), _to.toString(), _value, dataBytes);
         }

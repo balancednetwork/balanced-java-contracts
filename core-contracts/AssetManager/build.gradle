@@ -26,7 +26,7 @@ repositories {
 dependencies {
     compileOnly Dependencies.javaeeApi
     implementation project(':score-lib')
-    implementation 'xcall-lib:score-lib'
+    implementation 'xyz.venture23:xcall-lib:0.1.1'
 
     implementation Dependencies.javaeeScorex
     implementation Dependencies.minimalJson
@@ -61,17 +61,15 @@ deployJar {
         sejong {
             uri = 'https://sejong.net.solidwallet.io/api/v3'
             nid = 0x53
-            to = Addresses.sejong.loans
         }
         berlin {
             uri = 'https://berlin.net.solidwallet.io/api/v3'
             nid = 0x7
-            to = Addresses.berlin.loans
+            to = "cx957ee1fe04ced630f8e5d78ca74610cd55fc419d"
         }
         lisbon {
             uri = 'https://lisbon.net.solidwallet.io/api/v3'
             nid = 0x2
-            to = Addresses.lisbon.loans
         }
         local {
             uri = 'http://localhost:9082/api/v3'
@@ -80,7 +78,6 @@ deployJar {
         mainnet {
             uri = 'https://ctz.solidwallet.io/api/v3'
             nid = 0x1
-            to = Addresses.mainnet.loans
         }
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''

@@ -18,22 +18,35 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
-
-import score.Address;
 import score.annotation.EventLog;
 import score.annotation.External;
+import score.annotation.Optional;
+import score.Address;
 
 import java.math.BigInteger;
 
 @ScoreClient
 @ScoreInterface
-public interface XCallMock extends xcall.score.lib.interfaces.XCall  {
+public interface XCallMock {
     @External
-     void sendCall(Address to, String from, byte[] message);
+    BigInteger sendCallMessage(String _to,
+                        byte[] _data,
+                        @Optional byte[] _rollback,
+                        @Optional String[] _sources,
+                        @Optional String[] _destinations);
+
+    @External(readonly = true)
+    String getNetworkId();
+
+    @External
+    void sendCall(Address to, String from, byte[] message);
 
     @External
     void rollback(BigInteger _sn);
 
-    @EventLog(indexed=1)
+    @External(readonly = true)
+    BigInteger getFee(String net, boolean response, @Optional String[] _sourceProtocols);
+
+    @EventLog(indexed = 1)
     void CallMessage(BigInteger _sn, String to, byte[] data);
 }

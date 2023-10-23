@@ -17,51 +17,55 @@
 package network.balanced.score.core.loans.utils;
 
 import score.Address;
+import score.Context;
 
 import java.math.BigInteger;
 
-import static network.balanced.score.core.loans.LoansImpl.call;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getBalancedOracle;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getBnusd;
 
 public class TokenUtils {
     public static String symbol(Address tokenAddress) {
-        return (String) call(tokenAddress, "symbol");
+        return (String) Context.call(tokenAddress, "symbol");
     }
 
     public static BigInteger decimals(Address tokenAddress) {
-        return (BigInteger) call(tokenAddress, "decimals");
+        return (BigInteger) Context.call(tokenAddress, "decimals");
     }
 
     public static BigInteger balanceOf(Address tokenAddress, Address address) {
-        return (BigInteger) call(tokenAddress, "balanceOf", address);
+        return (BigInteger) Context.call(tokenAddress, "balanceOf", address);
     }
 
     public static BigInteger getPriceInUSD(String symbol) {
-        return (BigInteger) call(getBalancedOracle(), "getLastPriceInUSD", symbol);
+        return (BigInteger) Context.call(getBalancedOracle(), "getLastPriceInUSD", symbol);
     }
 
     public static void mintAsset(BigInteger amount) {
-        call(getBnusd(), "mint", amount, new byte[0]);
+        Context.call(getBnusd(), "mint", amount, new byte[0]);
     }
 
     public static void mintAssetTo(Address to, BigInteger amount) {
-        call(getBnusd(), "mintTo", to, amount, new byte[0]);
+        Context.call(getBnusd(), "mintTo", to, amount, new byte[0]);
     }
 
     public static void burnAsset(BigInteger amount) {
-        call(getBnusd(), "burn", amount);
+        Context.call(getBnusd(), "burn", amount);
     }
 
     public static void burnAssetFrom(Address from, BigInteger amount) {
-        call(getBnusd(), "burnFrom", from, amount);
+        Context.call(getBnusd(), "burnFrom", from, amount);
     }
 
-    public static void crossTransfer(String to, BigInteger amount) {
-        call(getBnusd(), "crossTransfer", to, amount, new byte[0]);
+    public static void crossTransfer(BigInteger fee, String to, BigInteger amount) {
+        Context.call(fee, getBnusd(), "crossTransfer", to, amount, new byte[0]);
+    }
+
+    public static void hubTransfer(String to, BigInteger amount) {
+        Context.call(getBnusd(), "hubTransfer", to, amount, new byte[0]);
     }
 
     public static void transfer(Address to, BigInteger amount) {
-        call(getBnusd(), "transfer", to , amount, new byte[0]);
+        Context.call(getBnusd(), "transfer", to, amount, new byte[0]);
     }
 }

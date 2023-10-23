@@ -21,7 +21,10 @@ import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
 
+import network.balanced.score.lib.interfaces.AssetManager;
+import network.balanced.score.lib.interfaces.Governance;
 import network.balanced.score.lib.test.mock.MockBalanced;
+import network.balanced.score.lib.test.mock.MockContract;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,7 +35,7 @@ import org.mockito.Mockito;
 
 import score.Address;
 import score.Context;
-import xcall.score.lib.util.NetworkAddress;
+import foundation.icon.xcall.NetworkAddress;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -47,5 +50,84 @@ import static org.mockito.Mockito.when;
 
 class AssetTokenImplTest extends TestBase {
 
-    // TODO more test when functionallity is more decided
+    private static final ServiceManager sm = getServiceManager();
+
+    private static final Account owner = sm.createAccount();
+
+    private MockBalanced mockBalanced;
+
+    private Score asset;
+    // private AssetManagerImpl assetManagerSpy;
+    private MockContract<Governance> governance;
+    private MockContract<AssetManager> assetManager;
+
+
+    private final String ETH_NID = "0x1.ETH";
+    private final String BSC_NID = "0x1.BSC";
+    private final String NATIVE_NID = "0x1.ICON";
+
+    String name = "test";
+    String symbol = "tst";
+    BigInteger decimals = BigInteger.valueOf(16);
+
+    @BeforeEach
+    void setup() throws Exception {
+        mockBalanced = new MockBalanced(sm, owner);
+        governance = mockBalanced.governance;
+        assetManager = mockBalanced.assetManager;
+        when(mockBalanced.xCall.mock.getNetworkId()).thenReturn(NATIVE_NID);
+        asset = sm.deploy(owner, AssetTokenImpl.class, governance.getAddress(), name, symbol, decimals);
+    }
+
+    @Test
+    void name() {
+        assertEquals(name, asset.call("name"));
+    }
+
+    @Test
+    void symbol() {
+        assertEquals(symbol, asset.call("symbol"));
+    }
+
+    @Test
+    void decimals() {
+        assertEquals(decimals, asset.call("decimals"));
+    }
+
+    @Test
+    void mintAndTransfer() {
+        // Arrange
+        NetworkAddress from = new NetworkAddress(BSC_NID, "0xTestBSC");
+        NetworkAddress to = new NetworkAddress(ETH_NID, "0xTestETH");
+        BigInteger amount = BigInteger.TEN;
+
+        // Act
+        asset.invoke(assetManager.account, "mintAndTransfer", from.toString(), to.toString(), amount, new byte[0]);
+
+        // Assert
+        assertEquals(amount, asset.call("xBalanceOf",  to.toString()));
+        assertEquals(BigInteger.ZERO, asset.call("xBalanceOf", from.toString()));
+        assertEquals(amount, asset.call("totalSupply"));
+    }
+
+    void mintAndTransfer_toSelf() {
+        // Arrange
+        NetworkAddress from = new NetworkAddress(BSC_NID, "0xTestBSC");
+        BigInteger amount = BigInteger.TEN;
+
+        // Act
+        asset.invoke(assetManager.account, "mintAndTransfer", from.toString(), from.toString(), amount, new byte[0]);
+
+        // Assert
+        assertEquals(amount, asset.call("xBalanceOf",  from.toString()));
+        assertEquals(amount, asset.call("totalSupply"));
+    }
+
+    @Test
+    void permissions() {
+        assertOnlyCallableBy(governance.getAddress(), asset, "govHubTransfer", "", "", BigInteger.ZERO, new byte[0]);
+        assertOnlyCallableBy(assetManager.getAddress(), asset, "burnFrom", "", BigInteger.ZERO);
+        assertOnlyCallableBy(assetManager.getAddress(), asset, "mintAndTransfer", "","", BigInteger.ZERO, new byte[0]);
+        assertOnlyCallableBy(mockBalanced.xCall.getAddress(), asset, "handleCallMessage", "", new byte[0], new String[0]);
+    }
 }

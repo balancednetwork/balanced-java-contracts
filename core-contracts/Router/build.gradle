@@ -32,6 +32,7 @@ dependencies {
     implementation Dependencies.javaeeScorex
     implementation Dependencies.minimalJson
     implementation project(':score-lib')
+    implementation 'xyz.venture23:xcall-lib:0.1.1'
 
     testImplementation Dependencies.javaeeUnitTest
     // Use JUnit Jupiter for testing.
@@ -87,4 +88,14 @@ deployJar {
 
 test {
     useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = false
+        csv.required = false
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+    }
 }

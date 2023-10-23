@@ -31,6 +31,7 @@ import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.Versions;
+import network.balanced.score.lib.utils.XCallUtils;
 import score.Address;
 import score.Context;
 import score.annotation.EventLog;
@@ -38,6 +39,7 @@ import score.annotation.External;
 import score.annotation.Optional;
 import score.annotation.Payable;
 import scorex.util.HashMap;
+import foundation.icon.xcall.NetworkAddress;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -48,13 +50,10 @@ import static network.balanced.score.core.loans.LoansVariables.*;
 import static network.balanced.score.core.loans.utils.Checks.loansOn;
 import static network.balanced.score.core.loans.utils.LoansConstants.*;
 import static network.balanced.score.lib.utils.BalancedAddressManager.*;
-import static network.balanced.score.lib.utils.Check.onlyGovernance;
-import static network.balanced.score.lib.utils.Check.only;
-import static network.balanced.score.lib.utils.Check.optionalDefault;
-import static network.balanced.score.lib.utils.Check.checkStatus;
+import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.Math.convertToNumber;
 import static network.balanced.score.lib.utils.Math.pow;
-import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 
 public class LoansImpl implements Loans {
 
@@ -251,9 +250,6 @@ public class LoansImpl implements Loans {
         checkStatus();
 
         Context.require(_value.signum() > 0, TAG + ": Token value should be a positive number");
-        if (_from.equals(getReserve().toString())) {
-            return;
-        }
 
         String unpackedData = new String(_data);
         Context.require(!unpackedData.equals(""), TAG + ": Token Fallback: Data can't be empty");
@@ -267,9 +263,7 @@ public class LoansImpl implements Loans {
             TokenUtils.burnAsset(_value);
             _returnAsset(_from, _value, collateralSymbol);
             if (BigInteger.ZERO.compareTo(collateralToWithdraw) < 0) {
-                removeCollateral(_from, collateralToWithdraw, collateralSymbol);
-                // Todo withdraw collateral if applicable?
-                Context.call( CollateralDB.getAddress(collateralSymbol), "hubTransfer", _from, collateralToWithdraw, new byte[0]);
+                xWithdraw(_from, collateralToWithdraw, collateralSymbol);
             }
         } else {
             String collateralSymbol = CollateralDB.getSymbol(token);
@@ -320,9 +314,10 @@ public class LoansImpl implements Loans {
     }
 
     @External
-    public void handleCallMessage(String _from, byte[] _data) {
+    public void handleCallMessage(String _from, byte[] _data, @Optional String[] _protocols) {
         checkStatus();
         only(getXCall());
+        XCallUtils.verifyXCallProtocols(_from, _protocols);
         LoansXCall.process(this, _from, _data);
     }
 
@@ -333,9 +328,19 @@ public class LoansImpl implements Loans {
 
     public void xWithdraw(String from, BigInteger _value, String _collateralSymbol) {
         removeCollateral(from, _value, _collateralSymbol);
-        // Todo withdraw collateral if applicable?
         Address token = CollateralDB.getAddress(_collateralSymbol);
-        Context.call(token, "hubTransfer", from, _value, new byte[0]);
+        String nativeAddress = Context.call(String.class, getAssetManager(), "getNativeAssetAddress", token);
+        String fromNet = NetworkAddress.valueOf(from).net();
+        if (nativeAddress != null && NetworkAddress.valueOf(nativeAddress).net().equals(fromNet) && canWithdraw(fromNet) ) {
+            BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", fromNet, true);
+            Context.call(xCallFee, getAssetManager(), "withdrawTo", token, from, _value);
+        } else {
+            Context.call(token, "hubTransfer", from, _value, new byte[0]);
+        }
+    }
+
+    private boolean canWithdraw(String net) {
+        return Context.call(Boolean.class, getDaofund(), "getXCallFeePermission", Context.getAddress(), net);
     }
 
     @External
@@ -462,7 +467,7 @@ public class LoansImpl implements Loans {
             position.setDebt(_collateralSymbol, null);
         }
 
-        Context.call(getRewards(), "updateBalanceAndSupply", "Loans", DebtDB.getTotalDebt(), _from,  position.getTotalDebt());
+        Context.call(getRewards(), "updateBalanceAndSupply", "Loans", DebtDB.getTotalDebt(), _from, position.getTotalDebt());
         String logMessage = "Loan of " + _value + " " + BNUSD_SYMBOL + " repaid to Balanced.";
         LoanRepaid(_from, BNUSD_SYMBOL, _value, logMessage);
     }
@@ -781,8 +786,14 @@ public class LoansImpl implements Loans {
     private void originateBnUSD(String from, BigInteger amount, BigInteger fee) {
         TokenUtils.mintAsset(amount);
         if (from.contains("/")) {
-            // get/check fee
-            TokenUtils.crossTransfer(from, amount);
+            String net = NetworkAddress.valueOf(from).net();
+            boolean canWithdraw = Context.call(Boolean.class, getDaofund(), "getXCallFeePermission", Context.getAddress(), net);
+            if (canWithdraw) {
+                BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", net, true);
+                TokenUtils.crossTransfer(xCallFee, from, amount);
+            } else {
+                TokenUtils.hubTransfer(from, amount);
+            }
         } else {
             TokenUtils.transfer(Address.fromString(from), amount);
         }
@@ -947,6 +958,10 @@ public class LoansImpl implements Loans {
         parameters.put("retire percent max", maxRetirePercent.get());
 
         return parameters;
+    }
+
+    @Payable
+    public void fallback() {
     }
 
     @EventLog(indexed = 1)

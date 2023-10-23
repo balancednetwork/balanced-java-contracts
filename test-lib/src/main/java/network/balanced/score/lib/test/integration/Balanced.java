@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,8 @@
 
 package network.balanced.score.lib.test.integration;
 
-import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
-
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.jsonrpc.model.Hash;
@@ -28,16 +26,14 @@ import foundation.icon.score.client.DefaultScoreClient;
 import network.balanced.score.lib.interfaces.Governance;
 import network.balanced.score.lib.interfaces.GovernanceScoreClient;
 import network.balanced.score.lib.utils.Names;
-import xcall.score.lib.util.NetworkAddress;
+import foundation.icon.xcall.NetworkAddress;
 
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import static network.balanced.score.lib.test.integration.BalancedUtils.createParameter;
-import static network.balanced.score.lib.test.integration.BalancedUtils.createSingleTransaction;
-import static network.balanced.score.lib.test.integration.BalancedUtils.createTransaction;
+import static network.balanced.score.lib.test.integration.BalancedUtils.*;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
@@ -66,6 +62,7 @@ public class Balanced {
     public DefaultScoreClient balancedOracle;
     public DefaultScoreClient assetManager;
     public DefaultScoreClient xcall;
+    public DefaultScoreClient xcallManager;
     public Governance governanceClient;
 
     public final String ICON_NID = "0x3.ICON";
@@ -131,11 +128,12 @@ public class Balanced {
         governanceClient.deploy(getContractData("Router"), governanceParam);
         governanceClient.deploy(getContractData("StakedLP"), governanceParam);
         governanceClient.deploy(getContractData("BalancedOracle"), governanceParam);
+        governanceClient.deploy(getContractData("XCallManager"), governanceParam);
 
         String assetManagerParams = new JsonArray()
-            .add(createParameter(governance._address()))
-            .add(createParameter(getContractData("AssetToken")))
-            .toString();
+                .add(createParameter(governance._address()))
+                .add(createParameter(getContractData("AssetToken")))
+                .toString();
         governanceClient.deploy(getContractData("AssetManager"), assetManagerParams);
 
         Hash oracleTx = deployAsync(owner, "DummyOracle", null);
@@ -156,6 +154,7 @@ public class Balanced {
         balancedOracle = newScoreClient(owner, governanceClient.getAddress(Names.BALANCEDORACLE));
         feehandler = newScoreClient(owner, governanceClient.getAddress(Names.FEEHANDLER));
         assetManager = newScoreClient(owner, governanceClient.getAddress(Names.ASSET_MANAGER));
+        xcallManager = newScoreClient(owner, governanceClient.getAddress(Names.XCALL_MANAGER));
 
         oracle = getDeploymentResult(owner, oracleTx);
         staking = getDeploymentResult(owner, stakingTx);
@@ -182,34 +181,56 @@ public class Balanced {
         stability = newScoreClient(owner, governanceClient.getAddress(Names.STABILITY));
         sicx = getDeploymentResult(owner, sicxTx);
 
-        setupSpoke(BSC_NID, BSC_ASSET_MANAGER, BSC_BNUSD_ADDRESS, BSC_TOKEN_ADDRESS, BSC_TOKEN_SYMBOL);
-        setupSpoke(ETH_NID, ETH_ASSET_MANAGER, ETH_BNUSD_ADDRESS, ETH_TOKEN_ADDRESS, ETH_TOKEN_SYMBOL);
+        setupSpoke(BSC_NID, BSC_ASSET_MANAGER, BSC_BNUSD_ADDRESS, BSC_TOKEN_ADDRESS, BSC_TOKEN_SYMBOL, BigInteger.valueOf(18));
+        setupSpoke(ETH_NID, ETH_ASSET_MANAGER, ETH_BNUSD_ADDRESS, ETH_TOKEN_ADDRESS, ETH_TOKEN_SYMBOL, BigInteger.valueOf(18));
 
         ownerClient = new BalancedClient(this, owner);
-        bscBaseAsset = new Address(ownerClient.assetManager.getAssetAddress(new NetworkAddress(BSC_NID, BSC_TOKEN_ADDRESS).toString()).toString());;
+        bscBaseAsset = new Address(ownerClient.assetManager.getAssetAddress(new NetworkAddress(BSC_NID, BSC_TOKEN_ADDRESS).toString()).toString());
         ethBaseAsset = new Address(ownerClient.assetManager.getAssetAddress(new NetworkAddress(ETH_NID, ETH_TOKEN_ADDRESS).toString()).toString());
+        transfer(daofund._address(), BigInteger.valueOf(1000).multiply(BigInteger.TEN.pow(18)));
+
+        addXCallFeePermission(loans._address(), BSC_NID, true);
+        addXCallFeePermission(loans._address(), ETH_NID, true);
+        addXCallFeePermission(router._address(), BSC_NID, true);
+        addXCallFeePermission(router._address(), ETH_NID, true);
     }
 
-    public void setupSpoke(String nid, String spokeAssetManager, String spokeBnUSd, String tokenAddress, String tokenSymbol) {
-        JsonArray addBSCAssetManagerParam = new JsonArray().add(createParameter(new NetworkAddress(nid, spokeAssetManager).toString()));
-        JsonObject addBSCAssetManager = createTransaction(assetManager._address(), "addSpokeManager", addBSCAssetManagerParam);
+    public void addXCallFeePermission(Address contract, String net, boolean permission) {
+        JsonArray params = new JsonArray()
+            .add(createParameter(contract))
+            .add(createParameter(net))
+            .add(createParameter(permission));
+        JsonArray tx = createSingleTransaction(daofund._address(), "setXCallFeePermission", params);
+        governanceClient.execute(tx.toString());
+    }
 
-        JsonArray addBSCAssetParams = new JsonArray()
-            .add(createParameter(new NetworkAddress(nid, tokenAddress).toString()))
-            .add(createParameter(tokenSymbol))
-            .add(createParameter(tokenSymbol));
-        JsonObject addBSCAsset = createTransaction(assetManager._address(), "deployAsset", addBSCAssetParams);
+    public void setupSpoke(String nid, String spokeAssetManager, String spokeBnUSd, String tokenAddress, String tokenSymbol, BigInteger decimals) {
+        JsonArray addAssetManagerParam = new JsonArray().add(createParameter(new NetworkAddress(nid, spokeAssetManager).toString()));
+        JsonObject addAssetManager = createTransaction(assetManager._address(), "addSpokeManager", addAssetManagerParam);
 
+        JsonArray addAssetParams = new JsonArray()
+                .add(createParameter(new NetworkAddress(nid, tokenAddress).toString()))
+                .add(createParameter(tokenSymbol))
+                .add(createParameter(tokenSymbol))
+                .add(createParameter(decimals));
+        JsonObject addAsset = createTransaction(assetManager._address(), "deployAsset", addAssetParams);
 
-        JsonArray addBSCBnUSDParams = new JsonArray()
-            .add(createParameter(new NetworkAddress(nid, spokeBnUSd).toString()))
-            .add(createParameter(BigInteger.TEN.pow(28)));
-        JsonObject addBSCBnUSD = createTransaction(bnusd._address(), "addChain", addBSCBnUSDParams);
+        JsonArray addBnUSDParams = new JsonArray()
+                .add(createParameter(new NetworkAddress(nid, spokeBnUSd).toString()))
+                .add(createParameter(BigInteger.TEN.pow(28)));
+        JsonObject addBnUSD = createTransaction(bnusd._address(), "addChain", addBnUSDParams);
+
+        JsonArray setProtocolParams = new JsonArray()
+            .add(createParameter(nid))
+            .add(createParameter("String[]", new JsonArray()))
+            .add(createParameter("String[]", new JsonArray()));
+        JsonObject setProtocol = createTransaction(xcallManager._address(), "configureProtocols", setProtocolParams);
 
         JsonArray transactions = new JsonArray()
-            .add(addBSCAssetManager)
-            .add(addBSCAsset)
-            .add(addBSCBnUSD);
+                .add(addAssetManager)
+                .add(addAsset)
+                .add(addBnUSD)
+                .add(setProtocol);
         governanceClient.execute(transactions.toString());
     }
 

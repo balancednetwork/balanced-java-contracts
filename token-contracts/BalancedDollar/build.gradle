@@ -31,7 +31,7 @@ dependencies {
     compileOnly Dependencies.javaeeApi
     implementation Dependencies.javaeeScorex
     implementation project(':score-lib')
-    implementation 'xcall-lib:score-lib'
+    implementation 'xyz.venture23:xcall-lib:0.1.1'
     implementation Dependencies.javaeeTokens
 
     testImplementation Dependencies.javaeeUnitTest
