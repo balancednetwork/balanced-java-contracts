@@ -16,37 +16,26 @@
 
 package network.balanced.score.lib.interfaces;
 
+import network.balanced.score.lib.structs.ProtocolConfig;
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
-import score.annotation.EventLog;
+import network.balanced.score.lib.interfaces.addresses.AddressManager;
+import network.balanced.score.lib.interfaces.base.Name;
+import network.balanced.score.lib.interfaces.base.Version;
 import score.annotation.External;
 import score.annotation.Optional;
-import score.Address;
 
-import java.math.BigInteger;
+import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface XCallMock {
+public interface XCallManager extends Name, AddressManager, Version {
     @External
-    BigInteger sendCallMessage(String _to,
-                        byte[] _data,
-                        @Optional byte[] _rollback,
-                        @Optional String[] _sources,
-                        @Optional String[] _destinations);
+    void configureProtocols(String nid, String[] sources, String destinations[]);
 
     @External(readonly = true)
-    String getNetworkId();
-
-    @External
-    void sendCall(Address to, String from, byte[] message);
-
-    @External
-    void rollback(BigInteger _sn);
+    Map<String, String[]> getProtocols(String nid);
 
     @External(readonly = true)
-    BigInteger getFee(String net, boolean response, @Optional String[] _sourceProtocols);
-
-    @EventLog(indexed = 1)
-    void CallMessage(BigInteger _sn, String to, byte[] data);
+    void verifyProtocols(String nid, @Optional String[] protocols);
 }

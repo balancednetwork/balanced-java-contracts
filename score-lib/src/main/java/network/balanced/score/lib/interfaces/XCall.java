@@ -14,39 +14,20 @@
  * limitations under the License.
  */
 
-package network.balanced.score.lib.interfaces;
+ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
-import score.annotation.EventLog;
+import foundation.icon.xcall.CallService;
+import foundation.icon.xcall.FeeManage;
 import score.annotation.External;
-import score.annotation.Optional;
-import score.Address;
 
-import java.math.BigInteger;
-
-@ScoreClient
 @ScoreInterface
-public interface XCallMock {
-    @External
-    BigInteger sendCallMessage(String _to,
-                        byte[] _data,
-                        @Optional byte[] _rollback,
-                        @Optional String[] _sources,
-                        @Optional String[] _destinations);
+@ScoreClient
+public interface XCall extends CallService, FeeManage {
+    @External(readonly = true)
+    String getNetworkAddress();
 
     @External(readonly = true)
     String getNetworkId();
-
-    @External
-    void sendCall(Address to, String from, byte[] message);
-
-    @External
-    void rollback(BigInteger _sn);
-
-    @External(readonly = true)
-    BigInteger getFee(String net, boolean response, @Optional String[] _sourceProtocols);
-
-    @EventLog(indexed = 1)
-    void CallMessage(BigInteger _sn, String to, byte[] data);
 }

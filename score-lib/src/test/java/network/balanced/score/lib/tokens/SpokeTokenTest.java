@@ -22,6 +22,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
 import java.math.BigInteger;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,13 +35,15 @@ import com.iconloop.score.test.TestBase;
 import network.balanced.score.lib.test.mock.MockBalanced;
 import network.balanced.score.lib.test.mock.MockContract;
 import network.balanced.score.lib.interfaces.tokens.SpokeTokenMessages;
+import network.balanced.score.lib.interfaces.XCall;
+import network.balanced.score.lib.utils.BalancedAddressManager;
 import score.Context;
 import score.DictDB;
+import score.Address;
 import score.annotation.External;
-import xcall.score.lib.interfaces.XCall;
 import xcall.score.lib.interfaces.XTokenReceiver;
 import xcall.score.lib.interfaces.XTokenReceiverScoreInterface;
-import xcall.score.lib.util.NetworkAddress;
+import foundation.icon.xcall.NetworkAddress;
 
 class SpokeTokenTest extends TestBase {
     private static final String name = "MyIRC2Token";
@@ -59,10 +62,12 @@ class SpokeTokenTest extends TestBase {
     private static SpokeTokenTester tokenSpy;
     private static String ICON_NID = "01.ICON";
 
-    public static class SpokeTokenTester extends SpokeTokenImpl {
-        public SpokeTokenTester(String _nid, String _tokenName, String _symbolName, BigInteger _decimals, BigInteger _initialSupply) {
-            super(_nid, _tokenName, _symbolName, _decimals);
+    String[] defaultDestinationsProtocols = new String[]{"c", "d"};
 
+    public static class SpokeTokenTester extends SpokeTokenImpl {
+        public SpokeTokenTester(Address governance, String _nid, String _tokenName, String _symbolName, BigInteger _decimals, BigInteger _initialSupply) {
+            super(_nid, _tokenName, _symbolName, _decimals);
+            BalancedAddressManager.setGovernance(governance);
             // mint the initial token supply here
             mint(new NetworkAddress(_nid, Context.getCaller()), _initialSupply);
         }
@@ -76,11 +81,12 @@ class SpokeTokenTest extends TestBase {
 
     @BeforeEach
     public void setup() throws Exception {
-        tokenScore = sm.deploy(owner, SpokeTokenTester.class,
-            ICON_NID, name, symbol, decimals, totalSupply);
-
         mockBalanced = new MockBalanced(sm, owner);
+        tokenScore = sm.deploy(owner, SpokeTokenTester.class,
+            mockBalanced.governance.getAddress(), ICON_NID, name, symbol, decimals, totalSupply);
+
         xCall = mockBalanced.xCall;
+
         tokenSpy = (SpokeTokenTester) spy(tokenScore.getInstance());
         tokenScore.setInstance(tokenSpy);
         receiverContract = new MockContract<>(XTokenReceiverScoreInterface.class, sm, owner);
@@ -183,7 +189,7 @@ class SpokeTokenTest extends TestBase {
         // Act
         byte[] msg = SpokeTokenMessages.xHubTransfer(new NetworkAddress(ICON_NID, bob.getAddress()).toString(), amount, new byte[0]);
 
-        tokenScore.invoke(xCall.account, "handleCallMessage", alice.toString(), msg);
+        tokenScore.invoke(xCall.account, "handleCallMessage", alice.toString(), msg, defaultDestinationsProtocols);
 
         // Assert
         assertEquals(BigInteger.ZERO, balanceOf(alice));
@@ -202,7 +208,7 @@ class SpokeTokenTest extends TestBase {
 
         // Act
         byte[] msg = SpokeTokenMessages.xHubTransfer(receiverContractNetworkAddress.toString(), amount, new byte[0]);
-        tokenScore.invoke(xCall.account, "handleCallMessage", alice.toString(), msg);
+        tokenScore.invoke(xCall.account, "handleCallMessage", alice.toString(), msg, defaultDestinationsProtocols);
 
         // Assert
         assertEquals(BigInteger.ZERO, balanceOf(alice));

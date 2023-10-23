@@ -4,7 +4,7 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *s
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
@@ -16,6 +16,7 @@
 
 package network.balanced.score.tokens.balanceddollar;
 
+import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.lib.interfaces.BalancedDollar;
 import network.balanced.score.lib.tokens.HubTokenImpl;
 import network.balanced.score.lib.utils.BalancedAddressManager;
@@ -27,15 +28,11 @@ import score.VarDB;
 import score.annotation.External;
 import score.annotation.Optional;
 import score.annotation.Payable;
-import xcall.score.lib.util.NetworkAddress;
 
 import java.math.BigInteger;
 
+import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Check.*;
-import static network.balanced.score.lib.utils.BalancedAddressManager.getLoans;
-import static network.balanced.score.lib.utils.BalancedAddressManager.getStabilityFund;
-import static network.balanced.score.lib.utils.BalancedAddressManager.getBalancedOracle;
-import static network.balanced.score.lib.utils.BalancedAddressManager.getDaofund;
 
 public class BalancedDollarImpl extends HubTokenImpl implements BalancedDollar {
     private static final String TOKEN_NAME = Names.BNUSD;
@@ -78,6 +75,7 @@ public class BalancedDollarImpl extends HubTokenImpl implements BalancedDollar {
     public Address getAddress(String name) {
         return BalancedAddressManager.getAddressByName(name);
     }
+
     @External
     public BigInteger priceInLoop() {
         return Context.call(BigInteger.class, getBalancedOracle(), "getPriceInLoop", USD_BASE);
@@ -133,13 +131,6 @@ public class BalancedDollarImpl extends HubTokenImpl implements BalancedDollar {
     }
 
     @Override
-    @External
-    public void handleCallMessage(String _from, byte[] _data) {
-        checkStatus();
-        super.handleCallMessage(_from, _data);
-    }
-
-    @Override
     public BigInteger getHopFee(String net) {
         if (!canWithdraw(net)) {
             return BigInteger.ONE.negate();
@@ -155,7 +146,7 @@ public class BalancedDollarImpl extends HubTokenImpl implements BalancedDollar {
     @External
     public void transfer(Address _to, BigInteger _value, @Optional byte[] _data) {
         checkStatus();
-        super.transfer( _to, _value, _data);
+        super.transfer(_to, _value, _data);
     }
 
     @Payable

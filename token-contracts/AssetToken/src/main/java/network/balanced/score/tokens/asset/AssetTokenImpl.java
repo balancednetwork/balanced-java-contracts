@@ -26,7 +26,7 @@ import score.Context;
 import score.VarDB;
 import score.annotation.External;
 import score.annotation.Optional;
-import xcall.score.lib.util.NetworkAddress;
+import foundation.icon.xcall.NetworkAddress;
 
 import java.math.BigInteger;
 
@@ -92,12 +92,6 @@ public class AssetTokenImpl extends SpokeTokenImpl implements AssetToken {
         super._transfer(from, to, _amount, _data);
     }
 
-    @Override
-    @External
-    public void handleCallMessage(String _from, byte[] _data) {
-        checkStatus();
-        super.handleCallMessage(_from, _data);
-    }
 
     @Override
     @External
