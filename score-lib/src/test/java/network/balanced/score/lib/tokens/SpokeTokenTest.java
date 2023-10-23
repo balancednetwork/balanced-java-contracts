@@ -164,6 +164,7 @@ class SpokeTokenTest extends TestBase {
     void hubTransfer_ICONUserToXCallUser() {
         // Arrange
         Account alice = sm.createAccount();
+        NetworkAddress aliceNetworkAddress = new NetworkAddress(ICON_NID, alice.getAddress().toString());
         NetworkAddress bob = new NetworkAddress("01.eth", "0x1");
         BigInteger amount = BigInteger.TWO.pow(18);
         addBalance(alice, amount);
@@ -174,8 +175,8 @@ class SpokeTokenTest extends TestBase {
         // Assert
         assertEquals(BigInteger.ZERO, balanceOf(alice));
         assertEquals(amount, balanceOf(bob));
-        verify(tokenSpy).Transfer(alice.getAddress(), SpokeTokenImpl.ZERO_ADDRESS, amount, new byte[0]);
-        verify(tokenSpy).HubTransfer(SpokeTokenImpl.ZERO_ADDRESS.toString(), bob.toString(), amount, new byte[0]);
+        verify(tokenSpy).Transfer(alice.getAddress(), SpokeTokenImpl.ZERO_ADDRESS, amount, "burn".getBytes());
+        verify(tokenSpy).HubTransfer(aliceNetworkAddress.toString(), bob.toString(), amount, new byte[0]);
     }
 
     @Test
@@ -185,17 +186,18 @@ class SpokeTokenTest extends TestBase {
         Account bob = sm.createAccount();
         BigInteger amount = BigInteger.TWO.multiply(BigInteger.TEN.pow(18));
         addBalance(alice, amount);
+        NetworkAddress bobNetworkAddress = new NetworkAddress(ICON_NID, bob.getAddress());
 
         // Act
-        byte[] msg = SpokeTokenMessages.xHubTransfer(new NetworkAddress(ICON_NID, bob.getAddress()).toString(), amount, new byte[0]);
+        byte[] msg = SpokeTokenMessages.xHubTransfer(bobNetworkAddress.toString(), amount, new byte[0]);
 
         tokenScore.invoke(xCall.account, "handleCallMessage", alice.toString(), msg, defaultDestinationsProtocols);
 
         // Assert
         assertEquals(BigInteger.ZERO, balanceOf(alice));
         assertEquals(amount, balanceOf(bob));
-        verify(tokenSpy).HubTransfer(alice.toString(), SpokeTokenImpl.ZERO_ADDRESS.toString(), amount, new byte[0]);
-        verify(tokenSpy).Transfer(SpokeTokenImpl.ZERO_ADDRESS, bob.getAddress(), amount, new byte[0]);
+        verify(tokenSpy).HubTransfer(alice.toString(), bobNetworkAddress.toString(), amount, new byte[0]);
+        verify(tokenSpy).Transfer(SpokeTokenImpl.ZERO_ADDRESS, bob.getAddress(), amount, "mint".getBytes());
     }
 
     @Test
@@ -213,8 +215,8 @@ class SpokeTokenTest extends TestBase {
         // Assert
         assertEquals(BigInteger.ZERO, balanceOf(alice));
         assertEquals(amount, balanceOf(receiverContract.account));
-        verify(tokenSpy).HubTransfer(alice.toString(), SpokeTokenImpl.ZERO_ADDRESS.toString(), amount, new byte[0]);
-        verify(tokenSpy).Transfer(SpokeTokenImpl.ZERO_ADDRESS, receiverContract.getAddress(), amount, new byte[0]);
+        verify(tokenSpy).HubTransfer(alice.toString(), receiverContractNetworkAddress.toString(), amount, new byte[0]);
+        verify(tokenSpy).Transfer(SpokeTokenImpl.ZERO_ADDRESS, receiverContract.getAddress(), amount, "mint".getBytes());
         verify(receiverContract.mock).xTokenFallback(alice.toString(), amount, new byte[0]);
     }
 

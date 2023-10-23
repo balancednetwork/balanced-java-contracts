@@ -17,6 +17,7 @@
 package network.balanced.score.lib.interfaces.tokens;
 import score.annotation.External;
 import score.annotation.Optional;
+import score.annotation.EventLog;
 
 import java.math.BigInteger;
 
@@ -66,5 +67,6 @@ public interface SpokeToken extends IRC2 {
     /**
      * (EventLog) Must trigger on any successful hub token transfers.
      */
+    @EventLog
     void HubTransfer(String _from, String _to, BigInteger _value, byte[] _data);
 }

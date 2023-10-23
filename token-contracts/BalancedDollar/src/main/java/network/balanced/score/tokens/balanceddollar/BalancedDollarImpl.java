@@ -4,7 +4,7 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ *s
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
@@ -33,6 +33,9 @@ import java.math.BigInteger;
 
 import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getLoans;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getStabilityFund;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getBalancedOracle;
 
 public class BalancedDollarImpl extends HubTokenImpl implements BalancedDollar {
     private static final String TOKEN_NAME = Names.BNUSD;
