@@ -155,8 +155,13 @@ public class SpokeTokenImpl implements SpokeToken {
         byte[] dataBytes = (_data == null) ? "None".getBytes() : _data;
         if (isNative(_to) && isNative(_from)) {
             Transfer(Address.fromString(_from.account()), Address.fromString(_to.account()), _value, dataBytes);
-
         } else {
+            if (isNative(_to)) {
+                Transfer(ZERO_ADDRESS, Address.fromString(_to.account()), _value, "mint".getBytes());
+            } else if (isNative(_from)) {
+                Transfer(Address.fromString(_from.account()), ZERO_ADDRESS, _value, "burn".getBytes());
+            }
+
             HubTransfer(_from.toString(), _to.toString(), _value, dataBytes);
         }
 
@@ -182,7 +187,7 @@ public class SpokeTokenImpl implements SpokeToken {
         if (isNative(minter)) {
             Transfer(ZERO_ADDRESS, Address.fromString(minter.account()), amount, "mint".getBytes());
         } else {
-            HubTransfer(ZERO_ADDRESS.toString(), minter.toString(), amount, null);
+            HubTransfer(ZERO_ADDRESS.toString(), minter.toString(), amount, "mint".getBytes());
         }
     }
 
@@ -197,9 +202,9 @@ public class SpokeTokenImpl implements SpokeToken {
     protected void burn(NetworkAddress owner, BigInteger amount) {
         _burn(owner, amount);
         if (isNative(owner)) {
-            Transfer(Address.fromString(owner.account()), ZERO_ADDRESS, amount, "mint".getBytes());
+            Transfer(Address.fromString(owner.account()), ZERO_ADDRESS, amount, "burn".getBytes());
         } else {
-            HubTransfer(owner.toString(), ZERO_ADDRESS.toString(), amount, null);
+            HubTransfer(owner.toString(), ZERO_ADDRESS.toString(), amount, "burn".getBytes());
         }
     }
 
