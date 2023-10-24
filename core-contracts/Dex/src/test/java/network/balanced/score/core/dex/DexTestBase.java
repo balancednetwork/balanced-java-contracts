@@ -31,6 +31,7 @@ import score.annotation.Optional;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.mockito.ArgumentMatchers.any;
@@ -87,11 +88,15 @@ class DexTestBase extends UnitTest {
 
 
     protected void depositToken(Account depositor, Account tokenScore, BigInteger value) {
-        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
-        contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
         contextMock.when(() -> Context.call(any(Address.class), eq("decimals"))).thenReturn(BigInteger.valueOf(18));
         dexScore.invoke(tokenScore, "tokenFallback", depositor.getAddress(), value, tokenData("_deposit",
                 new HashMap<>()));
+    }
+
+    protected void xDepositToken(String depositor, Account to, Account tokenScore, BigInteger value) {
+        contextMock.when(() -> Context.call(any(Address.class), eq("decimals"))).thenReturn(BigInteger.valueOf(18));
+        dexScore.invoke(tokenScore, "xTokenFallback", depositor, value, tokenData("_deposit",
+                Map.of("address", to.getAddress().toString())));
     }
 
     protected void supplyLiquidity(Account supplier, Account baseTokenScore, Account quoteTokenScore,
