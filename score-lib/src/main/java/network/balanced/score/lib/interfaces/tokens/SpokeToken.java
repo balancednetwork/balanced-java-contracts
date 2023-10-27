@@ -20,8 +20,13 @@ import score.annotation.Optional;
 import score.annotation.EventLog;
 
 import java.math.BigInteger;
+
+import foundation.icon.score.client.ScoreClient;
+import foundation.icon.score.client.ScoreInterface;
 import icon.xcall.lib.annotation.XCall;
 
+@ScoreInterface
+@ScoreClient
 public interface SpokeToken extends IRC2 {
     /**
      * Returns the account balance of another account with string address {@code _owner},

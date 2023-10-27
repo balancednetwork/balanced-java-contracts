@@ -18,6 +18,7 @@ package network.balanced.score.core.rewards;
 
 import network.balanced.score.core.rewards.utils.BalanceData;
 import network.balanced.score.lib.interfaces.DataSourceScoreInterface;
+import network.balanced.score.lib.utils.BranchedAddressDictDB;
 import score.*;
 import scorex.util.HashMap;
 
@@ -43,9 +44,9 @@ public class DataSourceImpl {
             BigInteger.class);
     private final BranchDB<String, VarDB<BigInteger>> distPercent = Context.newBranchDB("dist_percent",
             BigInteger.class);
-    private final BranchDB<String, DictDB<Address, BigInteger>> userWeight = Context.newBranchDB("user_weight",
+    private final BranchedAddressDictDB<String, BigInteger> userWeight = new BranchedAddressDictDB<>("user_weight",
             BigInteger.class);
-    private final BranchDB<String, DictDB<Address, BigInteger>> userWorkingBalance = Context.newBranchDB(
+    private final BranchedAddressDictDB<String, BigInteger> userWorkingBalance = new BranchedAddressDictDB<>(
             "user_working_balance", BigInteger.class);
     private final BranchDB<String, VarDB<BigInteger>> lastUpdateTimeUs = Context.newBranchDB("last_update_us",
             BigInteger.class);
@@ -91,7 +92,7 @@ public class DataSourceImpl {
             return workingSupply;
         }
 
-        workingSupply = loadCurrentSupply(EOA_ZERO).get(TOTAL_SUPPLY);
+        workingSupply = loadCurrentSupply(EOA_ZERO.toString()).get(TOTAL_SUPPLY);
         if (!readonly) {
             setWorkingSupply(workingSupply);
         }
@@ -122,7 +123,7 @@ public class DataSourceImpl {
     }
 
     // Used for migration if it happens on Claim
-    public BigInteger getWorkingBalance(Address user, boolean readonly) {
+    public BigInteger getWorkingBalance(String user, boolean readonly) {
         BigInteger workingBalance = userWorkingBalance.at(dbKey).get(user);
         if (workingBalance != null) {
             return workingBalance;
@@ -137,7 +138,7 @@ public class DataSourceImpl {
     }
 
     // Used for migration if it happens on BalanceUpdate
-    public BigInteger getWorkingBalance(Address user, BigInteger prevBalance, boolean readonly) {
+    public BigInteger getWorkingBalance(String user, BigInteger prevBalance, boolean readonly) {
         BigInteger workingBalance = userWorkingBalance.at(dbKey).get(user);
         if (workingBalance != null) {
             return workingBalance;
@@ -150,11 +151,11 @@ public class DataSourceImpl {
         return prevBalance;
     }
 
-    public BigInteger getWorkingBalance(Address user) {
+    public BigInteger getWorkingBalance(String user) {
         return userWorkingBalance.at(dbKey).getOrDefault(user, BigInteger.ZERO);
     }
 
-    private void setWorkingBalance(Address user, BigInteger balance) {
+    private void setWorkingBalance(String user, BigInteger balance) {
         this.userWorkingBalance.at(dbKey).set(user, balance);
     }
 
@@ -201,7 +202,7 @@ public class DataSourceImpl {
         this.distPercent.at(dbKey).set(distPercent);
     }
 
-    public BigInteger getUserWeight(Address user) {
+    public BigInteger getUserWeight(String user) {
         return userWeight.at(dbKey).getOrDefault(user, BigInteger.ZERO);
     }
 
@@ -217,18 +218,22 @@ public class DataSourceImpl {
         return totalSupply.at(dbKey).getOrDefault(BigInteger.ZERO);
     }
 
-    public Map<String, BigInteger> loadCurrentSupply(Address owner) {
+    @SuppressWarnings("unchecked")
+    public Map<String, BigInteger> loadCurrentSupply(String owner) {
+        // Bad handling that is only relevant during migration, otherwise it will always succeed on first scenario
         try {
-            DataSourceScoreInterface datasource = new DataSourceScoreInterface(getContractAddress());
-            return datasource.getBalanceAndSupply(getName(), owner);
+            return (Map<String, BigInteger>) Context.call(getContractAddress(), "getBalanceAndSupply", getName(), owner);
         } catch (Exception e) {
-            return Map.of("_totalSupply", BigInteger.ZERO,
-                    "_balance", BigInteger.ZERO
-            );
+            try {
+                return (Map<String, BigInteger>) Context.call(getContractAddress(), "getBalanceAndSupply", getName(), Address.fromString(owner));
+            } catch (Exception _e) {
+                return Map.of("_totalSupply", BigInteger.ZERO,
+                        "_balance", BigInteger.ZERO);
+            }
         }
     }
 
-    public BigInteger updateSingleUserData(BigInteger currentTime, BigInteger prevTotalSupply, Address user,
+    public BigInteger updateSingleUserData(BigInteger currentTime, BigInteger prevTotalSupply, String user,
                                            BigInteger prevBalance, boolean readOnlyContext) {
         BigInteger currentUserWeight = getUserWeight(user);
         BigInteger lastUpdateTimestamp = getLastUpdateTimeUs();
@@ -252,7 +257,7 @@ public class DataSourceImpl {
         return accruedRewards;
     }
 
-    public void updateWorkingBalanceAndSupply(Address user, BalanceData balances) {
+    public void updateWorkingBalanceAndSupply(String user, BalanceData balances) {
         BigInteger balance = balances.balance;
         BigInteger supply = balances.supply;
         Context.require(balance.compareTo(BigInteger.ZERO) >= 0);

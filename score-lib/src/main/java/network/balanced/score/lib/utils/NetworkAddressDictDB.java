@@ -3,7 +3,7 @@ package network.balanced.score.lib.utils;
 import score.Address;
 import score.Context;
 import score.DictDB;
-import xcall.score.lib.util.NetworkAddress;
+import foundation.icon.xcall.NetworkAddress;
 
 //Class to add btp address support to already existing DictDB address db to support string addresses
 public class NetworkAddressDictDB<V> {

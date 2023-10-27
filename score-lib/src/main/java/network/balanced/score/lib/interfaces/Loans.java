@@ -18,10 +18,11 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
+import icon.xcall.lib.annotation.XCall;
 import network.balanced.score.lib.interfaces.addresses.AddressManager;
 import network.balanced.score.lib.interfaces.base.Name;
-import network.balanced.score.lib.interfaces.base.TokenFallback;
 import network.balanced.score.lib.interfaces.base.Version;
+import network.balanced.score.lib.interfaces.tokens.XTokenReceiver;
 import network.balanced.score.lib.structs.PrepDelegations;
 import score.Address;
 import score.annotation.External;
@@ -33,7 +34,7 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface Loans extends Name, TokenFallback, AddressManager, Version {
+public interface Loans extends Name, AddressManager, Version, XTokenReceiver {
     @External(readonly = true)
     BigInteger getDay();
 
@@ -41,7 +42,7 @@ public interface Loans extends Name, TokenFallback, AddressManager, Version {
     void delegate(PrepDelegations[] prepDelegations);
 
     @External(readonly = true)
-    Address getPositionAddress(int _index);
+    String getPositionAddress(int _index);
 
     @External(readonly = true)
     Map<String, String> getAssetTokens();
@@ -53,7 +54,7 @@ public interface Loans extends Name, TokenFallback, AddressManager, Version {
     BigInteger getTotalCollateral();
 
     @External(readonly = true)
-    Map<String, Object> getAccountPositions(Address _owner);
+    Map<String, Object> getAccountPositions(String _owner);
 
     @External(readonly = true)
     Map<String, Map<String, Object>> getAvailableAssets();
@@ -65,13 +66,13 @@ public interface Loans extends Name, TokenFallback, AddressManager, Version {
     int borrowerCount();
 
     @External(readonly = true)
-    boolean hasDebt(Address _owner);
+    boolean hasDebt(String _owner);
 
     @External
     void addAsset(Address _token_address, boolean _active, boolean _collateral);
 
     @External(readonly = true)
-    Map<String, BigInteger> getBalanceAndSupply(String _name, Address _owner);
+    Map<String, BigInteger> getBalanceAndSupply(String _name, String _owner);
 
     @External(readonly = true)
     BigInteger getBnusdValue(String _name);
@@ -103,7 +104,7 @@ public interface Loans extends Name, TokenFallback, AddressManager, Version {
     void withdrawCollateral(BigInteger _value, @Optional String _collateralSymbol);
 
     @External
-    void liquidate(Address _owner, @Optional String _collateralSymbol);
+    void liquidate(String _owner, @Optional String _collateralSymbol);
 
     @External
     void redeemCollateral(Address _collateralAddress, BigInteger _amount);
@@ -170,4 +171,10 @@ public interface Loans extends Name, TokenFallback, AddressManager, Version {
 
     @External(readonly = true)
     Map<String, Object> getParameters();
+
+    @XCall
+    void xBorrow(String from, String _collateralToBorrowAgainst, BigInteger _amountToBorrow);
+
+    @XCall
+    void xWithdraw(String from, BigInteger _value, String _collateralSymbol);
 }

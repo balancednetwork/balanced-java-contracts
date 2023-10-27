@@ -92,7 +92,7 @@ public class DexImpl extends AbstractDex {
 
         activeAddresses.get(SICXICX_POOL_ID).add(user);
 
-        sendRewardsData(user, oldOrderValue, oldIcxTotal);
+        sendRewardsData(user, orderValue, currentIcxTotal);
     }
 
     @External
@@ -115,17 +115,17 @@ public class DexImpl extends AbstractDex {
         icxQueueOrderId.set(user, null);
         activeAddresses.get(SICXICX_POOL_ID).remove(user);
 
-        sendRewardsData(user, withdrawAmount, oldIcxTotal);
+        sendRewardsData(user, BigInteger.ZERO, currentIcxTotal);
         Context.transfer(user, withdrawAmount);
     }
 
     private void sendRewardsData(Address user, BigInteger amount, BigInteger oldIcxTotal) {
         List<RewardsDataEntry> rewardsList = new ArrayList<>();
         RewardsDataEntry rewardsEntry = new RewardsDataEntry();
-        rewardsEntry._user = user;
+        rewardsEntry._user = user.toString();
         rewardsEntry._balance = amount;
         rewardsList.add(rewardsEntry);
-        Context.call(getRewards(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal, rewardsList);
+        Context.call(getRewards(), "updateBalanceAndSupply", SICXICX_MARKET_NAME, oldIcxTotal, user.toString(), amount);
     }
 
     @External

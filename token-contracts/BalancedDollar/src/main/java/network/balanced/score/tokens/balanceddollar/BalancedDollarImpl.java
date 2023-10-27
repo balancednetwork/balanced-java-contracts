@@ -16,6 +16,7 @@
 
 package network.balanced.score.tokens.balanceddollar;
 
+import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.lib.interfaces.BalancedDollar;
 import network.balanced.score.lib.tokens.HubTokenImpl;
 import network.balanced.score.lib.utils.BalancedAddressManager;
@@ -26,10 +27,11 @@ import score.Context;
 import score.VarDB;
 import score.annotation.External;
 import score.annotation.Optional;
-import xcall.score.lib.util.NetworkAddress;
+import score.annotation.Payable;
 
 import java.math.BigInteger;
 
+import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getLoans;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getStabilityFund;
@@ -76,6 +78,7 @@ public class BalancedDollarImpl extends HubTokenImpl implements BalancedDollar {
     public Address getAddress(String name) {
         return BalancedAddressManager.getAddressByName(name);
     }
+
     @External
     public BigInteger priceInLoop() {
         return Context.call(BigInteger.class, getBalancedOracle(), "getPriceInLoop", USD_BASE);
@@ -131,16 +134,25 @@ public class BalancedDollarImpl extends HubTokenImpl implements BalancedDollar {
     }
 
     @Override
-    @External
-    public void handleCallMessage(String _from, byte[] _data) {
-        checkStatus();
-        super.handleCallMessage(_from, _data);
+    public BigInteger getHopFee(String net) {
+        if (!canWithdraw(net)) {
+            return BigInteger.ONE.negate();
+        }
+        return Context.call(BigInteger.class, getDaofund(), "claimXCallFee", net, true);
+    }
+
+    private boolean canWithdraw(String net) {
+        return Context.call(Boolean.class, getDaofund(), "getXCallFeePermission", Context.getAddress(), net);
     }
 
     @Override
     @External
     public void transfer(Address _to, BigInteger _value, @Optional byte[] _data) {
         checkStatus();
-        super.transfer( _to, _value, _data);
+        super.transfer(_to, _value, _data);
+    }
+
+    @Payable
+    public void fallback() {
     }
 }

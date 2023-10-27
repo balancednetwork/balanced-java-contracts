@@ -22,6 +22,8 @@ import foundation.icon.score.client.DefaultScoreClient;
 import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
 import network.balanced.score.lib.interfaces.tokens.IRC2MintableScoreClient;
+import network.balanced.score.lib.interfaces.tokens.SpokeToken;
+import network.balanced.score.lib.interfaces.tokens.SpokeTokenScoreClient;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -49,6 +51,9 @@ public class BalancedClient {
     public DividendsScoreClient dividends;
     public ReserveScoreClient reserve;
     public BalancedOracleScoreClient balancedOracle;
+    public AssetManagerScoreClient assetManager;
+    public XCallMockScoreClient xcall;
+    public XCallManagerScoreClient xcallManager;
     public SystemInterfaceScoreClient systemScore;
 
     public BalancedClient(Balanced balanced, KeyWallet wallet) {
@@ -76,7 +81,12 @@ public class BalancedClient {
         reserve = new ReserveScoreClient(chain.getEndpointURL(), chain.networkId, wallet, balanced.reserve._address());
         balancedOracle = new BalancedOracleScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
                 balanced.balancedOracle._address());
-
+        assetManager = new AssetManagerScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
+                balanced.assetManager._address());
+        xcall = new XCallMockScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
+                balanced.xcall._address());
+        xcallManager = new XCallManagerScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
+                balanced.xcall._address());
         systemScore = new SystemInterfaceScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
                 DefaultScoreClient.ZERO_ADDRESS);
     }
@@ -87,6 +97,11 @@ public class BalancedClient {
 
     public IRC2Mintable irc2(score.Address address) {
         return new IRC2MintableScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
+                new Address(address.toString()));
+    }
+
+    public SpokeToken spokeToken(score.Address address) {
+        return new SpokeTokenScoreClient(chain.getEndpointURL(), chain.networkId, wallet,
                 new Address(address.toString()));
     }
 
@@ -112,14 +127,13 @@ public class BalancedClient {
     }
 
     public void borrowFrom(String collateral, BigInteger amount) {
-        byte[] params = createBorrowData(amount);
         loans.borrow(collateral, "bnUSD", amount);
     }
 
     @SuppressWarnings("unchecked")
     public BigInteger getLoansCollateralPosition(String symbol) {
         Map<String, Map<String, String>> assets =
-                (Map<String, Map<String, String>>) loans.getAccountPositions(getAddress()).get("holdings");
+                (Map<String, Map<String, String>>) loans.getAccountPositions(getAddress().toString()).get("holdings");
         if (!assets.containsKey(symbol)) {
             return BigInteger.ZERO;
         }
@@ -129,7 +143,7 @@ public class BalancedClient {
     @SuppressWarnings("unchecked")
     public BigInteger getLoansAssetPosition(String collateralSymbol, String assetSymbol) {
         Map<String, Map<String, String>> assets =
-                (Map<String, Map<String, String>>) loans.getAccountPositions(getAddress()).get("holdings");
+                (Map<String, Map<String, String>>) loans.getAccountPositions(getAddress().toString()).get("holdings");
         if (!assets.containsKey(collateralSymbol) || !assets.get(collateralSymbol).containsKey(assetSymbol)) {
             return BigInteger.ZERO;
         }

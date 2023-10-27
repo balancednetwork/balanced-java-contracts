@@ -28,6 +28,7 @@ repositories {
 
 optimizedJar.enabled = false
 dependencies {
+    implementation 'xyz.venture23:xcall-lib:0.1.1'
     implementation Dependencies.iconSdk
     implementation project(':score-lib')
     annotationProcessor project(':score-client')

@@ -58,7 +58,6 @@ public class GovernanceConstants extends Constants {
             entry("bnUSD", List.of("oracle")),
             entry("baln", List.of("dividends", "oracle", "dex", "bnUSD")),
             entry("bwt", List.of("baln")),
-            entry("router", List.of("dex", "sicx", "staking")),
             entry("stakedLp", List.of("dex", "rewards")),
             entry("rebalancing", List.of("loans", "dex", "bnUSD", "sicx", "balancedOracle")),
             entry("balancedOracle", List.of("dex", "staking", "oracle"))
@@ -68,7 +67,6 @@ public class GovernanceConstants extends Constants {
             entry("rewards", "governance"),
             entry("baln", "rewards"),
             entry("bwt", "governance"),
-            entry("router", "governance"),
             entry("rebalancing", "governance"),
             entry("balancedOracle", "governance")
     );
