@@ -46,7 +46,7 @@ class DexTestBase extends UnitTest {
     protected static Account prep_address = sm.createAccount();
 
     int scoreCount = 0;
-    private MockBalanced mockBalanced;
+    protected MockBalanced mockBalanced;
     protected Account governanceScore;
     protected Account dividendsScore;
     protected Account stakingScore;
@@ -75,6 +75,7 @@ class DexTestBase extends UnitTest {
         stakedLPScore = mockBalanced.stakedLp.account;
 
         contextMock.when(() -> Context.call(eq(governanceScore.getAddress()), eq("checkStatus"), any(String.class))).thenReturn(null);
+        contextMock.when(() -> Context.call(eq(BigInteger.class), any(Address.class), eq("balanceOf"), any(Address.class))).thenReturn(BigInteger.ZERO);
 
         dexScore = sm.deploy(ownerAccount, DexImpl.class, governanceScore.getAddress());
         dexScore.invoke(governanceScore, "setTimeOffset", BigInteger.valueOf(Context.getBlockTimestamp()));

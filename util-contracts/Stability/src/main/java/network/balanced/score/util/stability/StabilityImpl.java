@@ -17,8 +17,10 @@
 package network.balanced.score.util.stability;
 
 import network.balanced.score.lib.interfaces.Stability;
+import network.balanced.score.lib.utils.BalancedFloorLimits;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.Versions;
+import network.balanced.score.lib.utils.FloorLimited;
 import score.*;
 import score.annotation.External;
 import scorex.util.ArrayList;
@@ -31,7 +33,7 @@ import static network.balanced.score.lib.utils.Check.onlyOwner;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Math.pow;
 
-public class StabilityImpl implements Stability {
+public class StabilityImpl extends FloorLimited implements Stability {
 
     public static final String TAG = "Balanced Peg Stability";
     private static final Address EOA_ZERO_ADDRESS = new Address(new byte[Address.LENGTH]);
@@ -212,6 +214,7 @@ public class StabilityImpl implements Stability {
 
         Context.call(bnusdAddress, "burn", bnusdToConvert);
         Context.call(bnusdAddress, "transfer", feeHandler.get(), fee);
+        BalancedFloorLimits.verifyWithdraw(assetToReturn, equivalentAssetAmount);
         Context.call(assetToReturn, "transfer", _user, equivalentAssetAmount);
     }
 
