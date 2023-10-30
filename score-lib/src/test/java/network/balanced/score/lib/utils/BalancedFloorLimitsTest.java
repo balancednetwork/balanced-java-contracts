@@ -38,7 +38,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
-import static score.Context.newArrayDB;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 
