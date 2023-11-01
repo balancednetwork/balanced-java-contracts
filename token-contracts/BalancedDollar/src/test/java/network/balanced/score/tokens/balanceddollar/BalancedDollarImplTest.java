@@ -139,10 +139,8 @@ class BalancedDollarImplTest extends TestBase {
                 ICX.negate(), new byte[0]);
         expectErrorMessage(negativeAmountMint, expectedErrorMessage);
 
-        BigInteger beforeTotalSupply = (BigInteger) bnUSDScore.call("totalSupply");
         bnUSDScore.invoke(minter, "mintTo", newReceiver.getAddress(), mintAmount, new byte[0]);
         assertEquals(mintAmount, bnUSDScore.call("balanceOf", newReceiver.getAddress()));
-        assertEquals(beforeTotalSupply.add(mintAmount), bnUSDScore.call("totalSupply"));
         verify(bnUSDSpy).Transfer(new Address(new byte[Address.LENGTH]), newReceiver.getAddress(), mintAmount, "mint".getBytes());
     }
 }

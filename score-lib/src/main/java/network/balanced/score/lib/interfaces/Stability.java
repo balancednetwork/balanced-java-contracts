@@ -30,7 +30,7 @@ import java.util.List;
 
 @ScoreClient
 @ScoreInterface
-public interface Stability extends Name, TokenFallback, BnusdAddress, Version {
+public interface Stability extends Name, TokenFallback, BnusdAddress, Version, FloorLimitedInterface {
 
     @External
     void setFeeHandler(Address _address);

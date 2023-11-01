@@ -22,6 +22,7 @@ import com.eclipsesource.json.JsonObject;
 import network.balanced.score.core.dex.db.NodeDB;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import network.balanced.score.lib.utils.Versions;
+import network.balanced.score.lib.utils.BalancedFloorLimits;
 import score.Address;
 import score.BranchDB;
 import score.Context;
@@ -216,8 +217,6 @@ public class DexImpl extends AbstractDex {
                 break;
             }
             case "_donate": {
-                require(_from.equals(Context.getOwner()), "Only owner is allowed to donate");
-
                 JsonObject params = json.get("params").asObject();
                 require(params.contains("toToken"), TAG + ": No toToken specified in swap");
                 Address toToken = Address.fromString(params.get("toToken").asString());
@@ -256,6 +255,7 @@ public class DexImpl extends AbstractDex {
         depositDetails.set(sender, deposit_amount.subtract(_value));
 
         Withdraw(_token, sender, _value);
+        BalancedFloorLimits.verifyWithdraw(_token, _value);
         Context.call(_token, "transfer", sender, _value);
     }
 
@@ -278,7 +278,6 @@ public class DexImpl extends AbstractDex {
         require(active.getOrDefault(_id.intValue(), false), TAG + ": Pool is not active");
         require(_value.compareTo(BigInteger.ZERO) > 0, TAG + " Cannot withdraw a negative or zero balance");
         require(_value.compareTo(userBalance) <= 0, TAG + ": Insufficient balance");
-
 
         Address quoteToken = poolQuote.get(_id.intValue());
         DictDB<Address, BigInteger> totalTokensInPool = poolTotal.at(_id.intValue());
@@ -479,7 +478,9 @@ public class DexImpl extends AbstractDex {
 
         sicxEarnings.set(sender, sicxEarning.subtract(_value));
         ClaimSicxEarnings(sender, _value);
-        Context.call(getSicx(), "transfer", sender, _value);
+        Address sICX = getSicx();
+        BalancedFloorLimits.verifyWithdraw(sICX, _value);
+        Context.call(sICX, "transfer", sender, _value);
     }
 
     @External

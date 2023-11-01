@@ -57,7 +57,7 @@ public class UnitTest extends TestBase {
     @AfterEach
     public void teardownMocks() {
         if (mockedCheck != null) {
-            mockedCheck.close();
+            mockedCheck.closeOnDemand();
         }
     }
 

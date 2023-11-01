@@ -606,6 +606,22 @@ public class DexTestSettersAndGetters extends DexTestBase {
         assertOnlyCallableBy(governanceScore.getAddress(), dexScore, "permit", poolId, permission);
     }
 
+    @Test
+    void govWithdraw() {
+        assertOnlyCallableBy(governanceScore.getAddress(), dexScore, "govWithdraw", 1, dexScore.getAddress(), BigInteger.ZERO);
+    }
+
+    @Test
+    void govSetPoolTotal() {
+        assertOnlyCallableBy(governanceScore.getAddress(), dexScore, "govSetPoolTotal", 1, BigInteger.ZERO);
+
+    }
+
+    @Test
+    void govSetUserPoolTotal() {
+        assertOnlyCallableBy(governanceScore.getAddress(), dexScore, "govSetUserPoolTotal", 1, dexScore.getAddress(), BigInteger.ZERO);
+    }
+
     @AfterEach
     void closeMock() {
         contextMock.close();

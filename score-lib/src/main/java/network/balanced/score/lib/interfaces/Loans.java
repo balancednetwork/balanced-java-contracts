@@ -34,7 +34,7 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface Loans extends Name, AddressManager, Version, XTokenReceiver {
+public interface Loans extends Name, AddressManager, Version, XTokenReceiver, FloorLimitedInterface {
     @External(readonly = true)
     BigInteger getDay();
 
