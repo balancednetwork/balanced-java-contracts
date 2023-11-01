@@ -16,6 +16,7 @@
 
 package network.balanced.score.core.loans.linkedlist;
 
+import network.balanced.score.core.loans.debt.DebtDB;
 import network.balanced.score.core.loans.utils.PositionBatch;
 import score.Context;
 import score.VarDB;
@@ -136,7 +137,7 @@ public class LinkedListDB {
         serialize();
     }
 
-    public PositionBatch readDataBatch(BigInteger debtRequired) {
+    public PositionBatch readDataBatch(BigInteger debtRequired, String collateralSymbol) {
         Context.require(size != 0, name + ": No data in the list");
 
         PositionBatch batch = new PositionBatch();
@@ -149,13 +150,17 @@ public class LinkedListDB {
         int currentNodeId = headId;
         BigInteger currentValue;
 
-        positionsMap.put(headId, head.getValue());
-        batch.totalDebt = batch.totalDebt.add(head.getValue());
+        BigInteger totalDebt = DebtDB.getCollateralDebt(collateralSymbol);
+        BigInteger totalShares = DebtDB.getCollateralDebtShares(collateralSymbol);
+
+        currentValue = head.getValue().multiply(totalDebt).divide(totalShares);
+        positionsMap.put(headId, currentValue);
+        batch.totalDebt = batch.totalDebt.add(currentValue);
 
         while (batch.totalDebt.compareTo(debtRequired) < 0) {
             currentNodeId = currentNode.getNext();
             currentNode = getNode(currentNodeId);
-            currentValue = currentNode.getValue();
+            currentValue = currentNode.getValue().multiply(totalDebt).divide(totalShares);
             batch.totalDebt = batch.totalDebt.add(currentValue);
             positionsMap.put(currentNodeId, currentValue);
         }
@@ -192,23 +197,25 @@ public class LinkedListDB {
         return batch;
     }
 
-    public BigInteger getTotalDebtFor(int nrOfPositions) {
+    public BigInteger getTotalDebtFor(int nrOfPositions, String symbol) {
         Context.require(size != 0, name + ": No data in the list");
 
-        BigInteger totalDebt = BigInteger.ZERO;
+        BigInteger totalShares = BigInteger.ZERO;
 
         Node head = getNode(headId);
         Node currentNode = head;
         int currentNodeId;
         BigInteger currentValue;
 
-        totalDebt = totalDebt.add(head.getValue());
+        totalShares = totalShares.add(head.getValue());
         for (int i = 1; i < nrOfPositions; i++) {
             currentNodeId = currentNode.getNext();
             currentNode = getNode(currentNodeId);
             currentValue = currentNode.getValue();
-            totalDebt = totalDebt.add(currentValue);
+            totalShares = totalShares.add(currentValue);
         }
+
+        BigInteger totalDebt = totalShares.multiply(DebtDB.getCollateralDebt(symbol)).divide(DebtDB.getCollateralDebtShares(symbol));
 
         return totalDebt;
     }

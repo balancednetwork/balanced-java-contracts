@@ -117,4 +117,10 @@ project(':XCallMock').projectDir = file("util-contracts/XCallMock")
 include(':XCallManager')
 project(':XCallManager').projectDir = file("util-contracts/XCallManager")
 
+include(':BalancedSavingRate')
+project(':BalancedSavingRate').projectDir = file("token-contracts/BalancedSavingRate")
+
+include(':Savings')
+project(':Savings').projectDir = file("core-contracts/Savings")
+
 includeBuild 'xcall-lib'
