@@ -62,7 +62,7 @@ class SavingsTest extends UnitTest {
 
     @Test
     void depositBnUSD() {
-        //Arrange 
+        //Arrange
         Account user = sm.createAccount();
         BigInteger BSRSupply = BigInteger.valueOf(20000).multiply(EXA);
         BigInteger bnUSDBalance = BigInteger.valueOf(30000).multiply(EXA);
@@ -84,7 +84,7 @@ class SavingsTest extends UnitTest {
 
     @Test
     void xDepositBnUSD() {
-        //Arrange 
+        //Arrange
         String user = "nid/address";
         BigInteger BSRSupply = BigInteger.valueOf(20000).multiply(EXA);
         BigInteger bnUSDBalance = BigInteger.valueOf(30000).multiply(EXA);
@@ -106,7 +106,7 @@ class SavingsTest extends UnitTest {
 
     @Test
     void withdraw() {
-        //Arrange 
+        //Arrange
         Account user = sm.createAccount();
         BigInteger BSRSupply = BigInteger.valueOf(20000).multiply(EXA);
         BigInteger bnUSDBalance = BigInteger.valueOf(30000).multiply(EXA);
@@ -129,7 +129,7 @@ class SavingsTest extends UnitTest {
 
     @Test
     void xWithdraw() {
-        //Arrange 
+        //Arrange
         String user = "nid/address";
         BigInteger BSRSupply = BigInteger.valueOf(20000).multiply(EXA);
         BigInteger bnUSDBalance = BigInteger.valueOf(30000).multiply(EXA);
@@ -152,7 +152,7 @@ class SavingsTest extends UnitTest {
 
     @Test
     void withdraw_invalidToken() {
-        //Arrange 
+        //Arrange
         Account user = sm.createAccount();
         BigInteger lockAmount = BigInteger.valueOf(100).multiply(EXA);
 
@@ -164,7 +164,7 @@ class SavingsTest extends UnitTest {
 
     @Test
     void lockBSR() {
-        //Arrange 
+        //Arrange
         Account user = sm.createAccount();
         BigInteger lockAmount = BigInteger.valueOf(100).multiply(EXA);
 
@@ -179,7 +179,7 @@ class SavingsTest extends UnitTest {
 
     @Test
     void xLockBSR() {
-        //Arrange 
+        //Arrange
         String user = "nid/address";
         BigInteger lockAmount = BigInteger.valueOf(100).multiply(EXA);
 
@@ -187,11 +187,11 @@ class SavingsTest extends UnitTest {
         byte[] data = tokenData("_lock", Map.of());
         Executable xLock = () -> savings.invoke(mockBalanced.bsr.account, "xTokenFallback", user, lockAmount, data);
         expectErrorMessage(xLock, "Only ICON addresses are allowed to lock into the saving account at this time");
-    }   
+    }
 
     @Test
     void lock_invalidToken() {
-        //Arrange 
+        //Arrange
         Account user = sm.createAccount();
         BigInteger lockAmount = BigInteger.valueOf(100).multiply(EXA);
 
@@ -203,7 +203,7 @@ class SavingsTest extends UnitTest {
 
     @Test
     void unlockBSR() {
-        //Arrange 
+        //Arrange
         Account user = sm.createAccount();
         BigInteger lockAmount = BigInteger.valueOf(100).multiply(EXA);
         BigInteger withdrawAmount = lockAmount.divide(BigInteger.TWO);
@@ -227,7 +227,7 @@ class SavingsTest extends UnitTest {
 
     @Test
     void unlockBSR_moreThanBalance() {
-        //Arrange 
+        //Arrange
         Account user = sm.createAccount();
         BigInteger lockAmount = BigInteger.valueOf(100).multiply(EXA);
         byte[] data = tokenData("_lock", Map.of());
@@ -240,7 +240,7 @@ class SavingsTest extends UnitTest {
 
     @Test
     void unlockBSR_negativeAmount() {
-        //Arrange 
+        //Arrange
         Account user = sm.createAccount();
 
         // Act & Assert
@@ -263,7 +263,7 @@ class SavingsTest extends UnitTest {
     @Test
     @SuppressWarnings("unchecked")
     void tokenRewards() {
-        //Arrange 
+        //Arrange
         Account user1 = sm.createAccount();
         Account user2 = sm.createAccount();
         Account user3 = sm.createAccount();
@@ -288,14 +288,14 @@ class SavingsTest extends UnitTest {
         Map<String, BigInteger> rewards3 = (Map<String, BigInteger>) savings.call("getUnclaimedRewards", user3.getAddress().toString());
 
         BigInteger total = lockAmount1.add(lockAmount2);
-        System.out.println(rewards1.get(mockBalanced.sicx.getAddress().toString()));
-        System.out.println(rewards1.get(mockBalanced.baln.getAddress().toString()));
-
-        System.out.println(rewards2.get(mockBalanced.sicx.getAddress().toString()));
-        System.out.println(rewards2.get(mockBalanced.baln.getAddress().toString()));
-
-        System.out.println(rewards3.get(mockBalanced.sicx.getAddress().toString()));
-        System.out.println(rewards3.get(mockBalanced.baln.getAddress().toString()));
+        BigInteger sICXWeight = sICXRewards.multiply(EXA).divide(total);
+        BigInteger balnWeight = balnRewards.multiply(EXA).divide(total);
+        assertEquals(sICXWeight.multiply(lockAmount1).divide(EXA), rewards1.get(mockBalanced.sicx.getAddress().toString()));
+        assertEquals(balnWeight.multiply(lockAmount1).divide(EXA), rewards1.get(mockBalanced.baln.getAddress().toString()));
+        assertEquals(sICXWeight.multiply(lockAmount2).divide(EXA), rewards2.get(mockBalanced.sicx.getAddress().toString()));
+        assertEquals(balnWeight.multiply(lockAmount2).divide(EXA), rewards2.get(mockBalanced.baln.getAddress().toString()));
+        assertEquals(BigInteger.ZERO, rewards3.get(mockBalanced.sicx.getAddress().toString()));
+        assertEquals(BigInteger.ZERO, rewards3.get(mockBalanced.baln.getAddress().toString()));
 
 
         // Act
@@ -307,19 +307,20 @@ class SavingsTest extends UnitTest {
         rewards2 = (Map<String, BigInteger>) savings.call("getUnclaimedRewards", user2.getAddress().toString());
         rewards3 = (Map<String, BigInteger>) savings.call("getUnclaimedRewards", user3.getAddress().toString());
 
-        System.out.println(rewards1.get(mockBalanced.sicx.getAddress().toString()));
-        System.out.println(rewards1.get(mockBalanced.baln.getAddress().toString()));
-
-        System.out.println(rewards2.get(mockBalanced.sicx.getAddress().toString()));
-        System.out.println(rewards2.get(mockBalanced.baln.getAddress().toString()));
-
-        System.out.println(rewards3.get(mockBalanced.sicx.getAddress().toString()));
-        System.out.println(rewards3.get(mockBalanced.baln.getAddress().toString()));
+        BigInteger newTotal = lockAmount1.add(lockAmount2).add(lockAmount3);
+        BigInteger newSICXWeight = sICXWeight.add(sICXRewards.multiply(EXA).divide(newTotal));
+        BigInteger newBalnWeight = balnWeight.add(balnRewards.multiply(EXA).divide(newTotal));
+        assertEquals(newSICXWeight.multiply(lockAmount1).divide(EXA), rewards1.get(mockBalanced.sicx.getAddress().toString()));
+        assertEquals(newBalnWeight.multiply(lockAmount1).divide(EXA), rewards1.get(mockBalanced.baln.getAddress().toString()));
+        assertEquals(newSICXWeight.multiply(lockAmount2).divide(EXA), rewards2.get(mockBalanced.sicx.getAddress().toString()));
+        assertEquals(newBalnWeight.multiply(lockAmount2).divide(EXA), rewards2.get(mockBalanced.baln.getAddress().toString()));
+        assertEquals(newSICXWeight.subtract(sICXWeight).multiply(lockAmount3).divide(EXA), rewards3.get(mockBalanced.sicx.getAddress().toString()));
+        assertEquals(newBalnWeight.subtract(balnWeight).multiply(lockAmount3).divide(EXA), rewards3.get(mockBalanced.baln.getAddress().toString()));
     }
-   
+
     @Test
-    void permissions() { 
-        assertOnlyCallableByGovernance(savings, "addAcceptedToken", mockBalanced.sicx.getAddress());
-        assertOnlyCallableByGovernance(savings, "removeAcceptedToken", mockBalanced.sicx.getAddress());
+    void permissions() {
+        assertOnlyCallableBy(mockBalanced.governance.getAddress(), savings, "addAcceptedToken", mockBalanced.sicx.getAddress());
+        assertOnlyCallableBy(mockBalanced.governance.getAddress(), savings, "removeAcceptedToken", mockBalanced.sicx.getAddress());
     }
 }
