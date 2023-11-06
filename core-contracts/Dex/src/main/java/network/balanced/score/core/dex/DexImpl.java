@@ -143,17 +143,12 @@ public class DexImpl extends AbstractDex {
 
         require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Invalid token transfer value");
 
-        switch (method) {
-            case "_deposit": {
-                JsonObject params = json.get("params").asObject();
-                Address to = Address.fromString(params.get("address").asString());
-                deposit(fromToken, to, _value);
-                break;
-            }
-            default:
-                // If no supported method was sent, revert the transaction
-                Context.revert(100, TAG + ": Unsupported method supplied");
-                break;
+        if (method.equals("_deposit")) {
+            JsonObject params = json.get("params").asObject();
+            Address to = Address.fromString(params.get("address").asString());
+            deposit(fromToken, to, _value);
+        } else {// If no supported method was sent, revert the transaction
+            Context.revert(100, TAG + ": Unsupported method supplied");
         }
     }
 

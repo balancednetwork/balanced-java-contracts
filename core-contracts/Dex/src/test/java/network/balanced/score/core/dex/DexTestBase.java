@@ -30,7 +30,6 @@ import score.annotation.Optional;
 
 import java.math.BigInteger;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static network.balanced.score.lib.utils.Constants.EXA;
