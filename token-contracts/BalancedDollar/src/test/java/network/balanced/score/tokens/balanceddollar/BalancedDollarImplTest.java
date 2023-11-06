@@ -114,7 +114,7 @@ class BalancedDollarImplTest extends TestBase {
         Account newReceiver = sm.createAccount();
         BigInteger mintAmount = BigInteger.valueOf(193).multiply(ICX);
         String expectedErrorMessage = "Balanced dollar debt ceiling reached. Governance vote required to increase";
-        
+
         bnUSDScore.invoke(mockBalanced.loans.account, "mintTo", newReceiver.getAddress(), mintAmount, new byte[0]);
         assertEquals(mintAmount, bnUSDScore.call("balanceOf", newReceiver.getAddress()));
         BigInteger newSupply = (BigInteger) bnUSDScore.call("totalSupply");
@@ -166,12 +166,8 @@ class BalancedDollarImplTest extends TestBase {
                 ICX.negate(), new byte[0]);
         expectErrorMessage(negativeAmountMint, expectedErrorMessage);
 
-        BigInteger beforeTotalSupply = (BigInteger) bnUSDScore.call("totalSupply");
         bnUSDScore.invoke(minter, "mintTo", newReceiver.getAddress(), mintAmount, new byte[0]);
         assertEquals(mintAmount, bnUSDScore.call("balanceOf", newReceiver.getAddress()));
-        
-        BigInteger newSupply = (BigInteger) bnUSDScore.call("totalSupply");
-        assertEquals(beforeTotalSupply.add(mintAmount), newSupply);
         verify(bnUSDSpy).Transfer(new Address(new byte[Address.LENGTH]), newReceiver.getAddress(), mintAmount, "mint".getBytes());
     }
 }

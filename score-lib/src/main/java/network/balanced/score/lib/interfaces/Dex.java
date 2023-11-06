@@ -20,7 +20,6 @@ import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.AddressManager;
 import network.balanced.score.lib.interfaces.base.*;
-import network.balanced.score.lib.interfaces.tokens.*;
 import network.balanced.score.lib.structs.PrepDelegations;
 import score.Address;
 import score.annotation.External;
@@ -32,8 +31,8 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface Dex extends Name, AddressManager, Fallback, XTokenReceiver,
-        IRC31Base, Version {
+public interface Dex extends Name, AddressManager, Fallback, TokenFallback,
+        IRC31Base, Version, FloorLimitedInterface {
 
     @External
     void setPoolLpFee(BigInteger _value);

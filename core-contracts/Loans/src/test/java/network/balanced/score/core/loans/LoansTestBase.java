@@ -37,6 +37,7 @@ import java.util.Map;
 
 import static network.balanced.score.core.loans.utils.LoansConstants.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
@@ -228,6 +229,7 @@ class LoansTestBase extends UnitTest {
         ieth = new MockContract<>(IRC2MintableScoreInterface.class, sm, admin);
         when(ieth.mock.symbol()).thenReturn("iETH");
         when(ieth.mock.decimals()).thenReturn(BigInteger.valueOf(18));
+        when(ieth.mock.balanceOf(any(Address.class))).thenReturn(BigInteger.ZERO);
 
         loans = sm.deploy(admin, LoansImpl.class, governance.getAddress());
         loansSpy = (LoansImpl) spy(loans.getInstance());
