@@ -151,6 +151,26 @@ class AssetManagerTest extends TestBase {
     }
 
     @Test
+    void withdrawNativeTo() {
+        // Arrange
+        Account user = sm.createAccount();
+        NetworkAddress ethAccount = new NetworkAddress(ETH_NID, "0xTest");
+        BigInteger amount = BigInteger.TEN;
+        NetworkAddress tokenAddress = new NetworkAddress(ETH_NID, ethAsset1Address);
+
+        // Act
+        assetManager.invoke(user, "withdrawNativeTo", ethAsset1.getAddress(), ethAccount.toString(), amount);
+
+        // Assert
+        byte[] expectedMsg = SpokeAssetManagerMessages.WithdrawNativeTo(tokenAddress.account(), ethAccount.account(), amount);
+        byte[] expectedRollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), ethAccount.toString(), amount);
+
+        verify(mockBalanced.xCall.mock).sendCallMessage(ethSpoke.toString(), expectedMsg, expectedRollback, defaultProtocols, defaultDestinationsProtocols);
+        verify(ethAsset1.mock).burnFrom(user.getAddress().toString(), amount);
+    }
+
+
+    @Test
     void withdrawTo_invalidNetwork() {
         // Arrange
         Account user = sm.createAccount();

@@ -96,6 +96,7 @@ class RouterTest extends TestBase {
 
         when(balanced.sicx.mock.balanceOf(routerScore.getAddress())).thenReturn(icxToTrade);
         Address[] path = new Address[] { sicxScore.getAddress() };
+        routerScore.getAccount().addBalance("ICX", icxToTrade);
 
         Executable lessThanMinimumReceivable = () -> sm.call(owner, icxToTrade, routerScore.getAddress(), "route",
                 path, icxToTrade.multiply(BigInteger.TWO), "");
@@ -103,6 +104,7 @@ class RouterTest extends TestBase {
                 + icxToTrade.multiply(BigInteger.TWO);
         expectErrorMessage(lessThanMinimumReceivable, expectedErrorMessage);
 
+        routerScore.getAccount().addBalance("ICX", icxToTrade);
         sm.call(owner, icxToTrade, routerScore.getAddress(), "route", path, BigInteger.ZERO,
                 owner.getAddress().toString());
         verify(sicxScore.mock).transfer(owner.getAddress(), icxToTrade, new byte[0]);
@@ -179,7 +181,7 @@ class RouterTest extends TestBase {
                 new Object[] { balanced.baln.getAddress().toString(), null }));
         Executable nonSicxIcxTrade = () -> routerScore.invoke(sicxScore.account, "tokenFallback", owner.getAddress(),
                 BigInteger.TEN, invalidPathWithSicxTerminalToken);
-        expectedErrorMessage = "Reverted(0): " + TAG + ": ICX can only be traded with sICX token";
+        expectedErrorMessage = "Reverted(0): " + TAG + ": Native swaps not available to icon from " + balanced.baln.getAddress();
         expectErrorMessage(nonSicxIcxTrade, expectedErrorMessage);
 
         Account newReceiver = sm.createAccount();
@@ -261,6 +263,77 @@ class RouterTest extends TestBase {
 
         // Assert
         verify(token.mock).hubTransfer(receiver.toString(), amount, new byte[0]);
+    }
+
+    @Test
+    void xTradeNative_ToNetworkAddressWithDifferentNet() throws Exception {
+        // Arrange
+        MockContract<SpokeToken> token = new MockContract<>(SpokeTokenScoreInterface.class, SpokeToken.class, sm,
+                owner);
+        String net = "0x1.eth";
+        String net2 = "0x3.bsc";
+        BigInteger fee = BigInteger.TEN;
+        NetworkAddress receiver = new NetworkAddress(net, "cx1");
+        BigInteger amount = BigInteger.TEN.multiply(ICX);
+        when(balanced.sicx.mock.balanceOf(routerScore.getAddress())).thenReturn(amount);
+        when(token.mock.balanceOf(routerScore.getAddress())).thenReturn(amount);
+        when(balanced.daofund.mock.getXCallFeePermission(routerScore.getAddress(), net)).thenReturn(true);
+        when(balanced.assetManager.mock.getNativeAssetAddress(token.getAddress()))
+                .thenReturn(new NetworkAddress(net2, "cx3").toString());
+
+        // Act & Assert
+        byte[] path = tokenData("_swap", Map.of("path",
+                new Object[] { token.getAddress().toString(), null }, "receiver", receiver.toString()));
+        Executable nativeToWrongNet = () -> routerScore.invoke(balanced.sicx.account, "tokenFallback", owner.getAddress(), amount, path);
+        String expectedErrorMessage = "Reverted(0): " + TAG + ": Native swaps are not supported to other networks";
+        expectErrorMessage(nativeToWrongNet, expectedErrorMessage);
+    }
+
+    @Test
+    void xTradeNative_cannotWithdraw() throws Exception {
+        // Arrange
+        MockContract<SpokeToken> token = new MockContract<>(SpokeTokenScoreInterface.class, SpokeToken.class, sm,
+                owner);
+        String net = "0x1.eth";
+        BigInteger fee = BigInteger.TEN;
+        NetworkAddress receiver = new NetworkAddress(net, "cx1");
+        BigInteger amount = BigInteger.TEN.multiply(ICX);
+        when(balanced.sicx.mock.balanceOf(routerScore.getAddress())).thenReturn(amount);
+        when(token.mock.balanceOf(routerScore.getAddress())).thenReturn(amount);
+        when(balanced.daofund.mock.getXCallFeePermission(routerScore.getAddress(), net)).thenReturn(false);
+        when(balanced.assetManager.mock.getNativeAssetAddress(token.getAddress()))
+                .thenReturn(new NetworkAddress(net, "cx3").toString());
+
+        // Act & Assert
+        byte[] path = tokenData("_swap", Map.of("path",
+                new Object[] { token.getAddress().toString(), null }, "receiver", receiver.toString()));
+        Executable nativeToWrongNet = () -> routerScore.invoke(balanced.sicx.account, "tokenFallback", owner.getAddress(), amount, path);
+        String expectedErrorMessage = "Reverted(0): " + TAG + ": Native swaps are not supported for this network";
+        expectErrorMessage(nativeToWrongNet, expectedErrorMessage);
+    }
+
+    @Test
+    void xTrade_toNative() throws Exception {
+        // Arrange
+        MockContract<SpokeToken> token = new MockContract<>(SpokeTokenScoreInterface.class, SpokeToken.class, sm,
+                owner);
+        String net = "0x1.eth";
+        BigInteger fee = BigInteger.TEN;
+        NetworkAddress receiver = new NetworkAddress(net, "cx1");
+        BigInteger amount = BigInteger.TEN.multiply(ICX);
+        when(balanced.sicx.mock.balanceOf(routerScore.getAddress())).thenReturn(amount);
+        when(token.mock.balanceOf(routerScore.getAddress())).thenReturn(amount);
+        when(balanced.daofund.mock.getXCallFeePermission(routerScore.getAddress(), net)).thenReturn(true);
+        when(balanced.assetManager.mock.getNativeAssetAddress(token.getAddress()))
+                .thenReturn(new NetworkAddress(net, "cx3").toString());
+
+        // Act
+        byte[] path = tokenData("_swap", Map.of("path",
+                new Object[] { token.getAddress().toString(), null }, "receiver", receiver.toString()));
+        routerScore.invoke(balanced.sicx.account, "tokenFallback", owner.getAddress(), amount, path);
+
+        // Assert
+        verify(balanced.assetManager.mock).withdrawNativeTo(token.getAddress(), receiver.toString(), amount);
     }
 
     @Test
