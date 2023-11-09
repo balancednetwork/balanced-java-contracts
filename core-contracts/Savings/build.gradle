@@ -49,7 +49,7 @@ dependencies {
 }
 
 optimizedJar {
-    mainClassName = 'network.balanced.score.core.daofund.DAOfundImpl'
+    mainClassName = 'network.balanced.score.core.savings.SavingsImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }

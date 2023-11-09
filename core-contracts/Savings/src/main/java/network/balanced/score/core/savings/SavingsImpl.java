@@ -154,13 +154,18 @@ public class SavingsImpl  {
         switch (method) {
             case "_deposit": {
                 Context.require(token.equals(getBnusd()));
-                BigInteger bsrToMint = (_value.multiply(getBSRSupply())).divide(getBnUSDBalance().subtract(_value));
-                Context.call(getBSR(), "mintTo", _from, bsrToMint, new byte[0]);
+                BigInteger bnUSDBalance = getBnUSDBalance().subtract(_value);
+                BigInteger bsrToMint;
+                if (bnUSDBalance.equals(BigInteger.ZERO)) {
+                    bsrToMint =_value;
+                } else {
+                    bsrToMint = (_value.multiply(getBSRSupply())).divide(getBnUSDBalance().subtract(_value));
+                }
 
+                Context.call(getBSR(), "mintTo", _from, bsrToMint, new byte[0]);
                 break;
             }
             case "_lock": {
-                // OR Bnusd?
                 Context.require(token.equals(getBSR()), "Only BSR can be locked");
                 RewardsManager.changeLock(_from, _value);
                 break;
@@ -172,9 +177,6 @@ public class SavingsImpl  {
                 BigInteger amountToWithdraw = _value.multiply(rate).divide(EXA);
                 Context.call(getBSR(), "burn", _value);
                 Context.call(getBnusd(), "hubTransfer", _from, amountToWithdraw, new byte[0]);
-
-                // TMP
-                Context.require(rate.equals(getRate()), "Rate changed wrong");
                 break;
             }
             default:

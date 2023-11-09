@@ -61,6 +61,26 @@ class SavingsTest extends UnitTest {
     }
 
     @Test
+    void depositBnUSD_empty() {
+        //Arrange
+        Account user = sm.createAccount();
+        BigInteger BSRSupply = BigInteger.ZERO;
+        BigInteger deposit = BigInteger.valueOf(100).multiply(EXA);
+
+        BigInteger expectedBsr = deposit;
+
+        when(mockBalanced.bnUSD.mock.balanceOf(savings.getAddress())).thenReturn(deposit);
+        when(mockBalanced.bsr.mock.xTotalSupply()).thenReturn(BSRSupply);
+
+        // Act
+        byte[] data = tokenData("_deposit", Map.of());
+        savings.invoke(mockBalanced.bnUSD.account, "tokenFallback", user.getAddress(), deposit, data);
+
+        // Assert
+        verify(mockBalanced.bsr.mock).mintTo(user.getAddress().toString(), expectedBsr, new byte[0]);
+    }
+
+    @Test
     void depositBnUSD() {
         //Arrange
         Account user = sm.createAccount();
@@ -316,6 +336,13 @@ class SavingsTest extends UnitTest {
         assertEquals(newBalnWeight.multiply(lockAmount2).divide(EXA), rewards2.get(mockBalanced.baln.getAddress().toString()));
         assertEquals(newSICXWeight.subtract(sICXWeight).multiply(lockAmount3).divide(EXA), rewards3.get(mockBalanced.sicx.getAddress().toString()));
         assertEquals(newBalnWeight.subtract(balnWeight).multiply(lockAmount3).divide(EXA), rewards3.get(mockBalanced.baln.getAddress().toString()));
+
+        // Act
+        savings.invoke(user1, "claimRewards");
+
+        // Assert
+        verify(mockBalanced.sicx.mock).transfer(user1.getAddress(), rewards1.get(mockBalanced.sicx.getAddress().toString()), new byte[0]);
+        verify(mockBalanced.baln.mock).transfer(user1.getAddress(), rewards1.get(mockBalanced.baln.getAddress().toString()), new byte[0]);
     }
 
     @Test

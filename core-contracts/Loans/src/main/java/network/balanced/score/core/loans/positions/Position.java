@@ -85,8 +85,8 @@ public class Position {
         if (share.equals(BigInteger.ZERO)) {
             return share;
         }
-        
-        return share.multiply(DebtDB.getCollateralDebt(collateral).divide(DebtDB.getCollateralDebtShares(collateral)));
+
+        return share.multiply(DebtDB.getCollateralDebt(collateral)).divide(DebtDB.getCollateralDebtShares(collateral));
     }
 
     private BigInteger getDebtShare(String collateral) {

@@ -34,7 +34,7 @@ import java.math.BigInteger;
 import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Check.*;
 
-public class BalancedSavingRateImpl extends HubTokenImpl implements BalancedSavingsRate{
+public class BalancedSavingRateImpl extends HubTokenImpl implements BalancedSavingsRate {
     private static final String TOKEN_NAME = Names.BSR;
     private static final String SYMBOL_NAME = "BSR";
     public static final String VERSION = "version";

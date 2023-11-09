@@ -40,6 +40,7 @@ import static network.balanced.score.core.loans.utils.LoansConstants.SICX_SYMBOL
 import static network.balanced.score.lib.utils.BalancedAddressManager.getBnusd;
 import static network.balanced.score.lib.utils.Constants.YEAR_IN_MICRO_SECONDS;
 import static network.balanced.score.lib.utils.Constants.POINTS;
+import static network.balanced.score.lib.utils.Constants.EXA;
 
 public class DebtDB {
     private static final String TOTAL_COLLATERAL_DEBTS = "totalCollateralDebts";
@@ -179,15 +180,20 @@ public class DebtDB {
             return;
         }
 
+
         BigInteger interestRate = getInterestRate(collateralSymbol);
         BigInteger diff = now.subtract(lastUpdate);
         BigInteger interest = totalDebt.multiply(interestRate).multiply(diff).divide(YEAR_IN_MICRO_SECONDS.multiply(POINTS));
+        if (interest.compareTo(EXA) < 0) {
+            return;
+        }
+
         totalDebt = totalDebt.add(interest);
 
         setCollateralDebt(collateralSymbol, totalDebt);
 
         BigInteger currentAmount = accumulatedInterest.getOrDefault(BigInteger.ZERO);
-        accumulatedInterest.set(currentAmount);
+        accumulatedInterest.set(currentAmount.add(interest));
     }
 
     public static void claimInterest() {

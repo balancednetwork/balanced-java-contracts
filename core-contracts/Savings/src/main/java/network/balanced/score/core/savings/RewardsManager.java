@@ -30,7 +30,7 @@ public class RewardsManager {
 
     }
     private static BigInteger updateUserRewards(String user, Address token, BigInteger userBalance, boolean readonly) {
-            BigInteger prevRewards = userRewards.at(user).getOrDefault(token, BigInteger.ZERO);
+        BigInteger prevRewards = userRewards.at(user).getOrDefault(token, BigInteger.ZERO);
         BigInteger totalWeight = tokenWeight.getOrDefault(token, BigInteger.ZERO);
         BigInteger userWeight = userWeights.at(user).getOrDefault(token, BigInteger.ZERO);
         BigInteger deltaWeight = totalWeight.subtract(userWeight);
@@ -82,6 +82,7 @@ public class RewardsManager {
     }
 
     public static void claimRewards(Address user) {
+        updateAllUserRewards(user.toString());
         int numberOfTokens = allowedTokens.length();
         DictDB<Address, BigInteger> rewards = userRewards.at(user.toString());
 
