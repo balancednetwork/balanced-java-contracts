@@ -25,7 +25,7 @@ import java.math.BigInteger;
 import java.util.Map;
 public class XCallUtils {
     private static final String TAG = "XCallUtils";
-    private static final VarDB<String> nativeNid = Context.newVarDB("TAG" + "NativeNetworkId", String.class);
+    private static final VarDB<String> nativeNid = Context.newVarDB(TAG + "NativeNetworkId", String.class);
 
     public static String getNativeNid() {
         String nid = nativeNid.get();
