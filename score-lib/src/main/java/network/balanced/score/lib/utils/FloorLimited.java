@@ -2,10 +2,11 @@ package network.balanced.score.lib.utils;
 
 import java.math.BigInteger;
 
+import network.balanced.score.lib.interfaces.FloorLimitedInterface;
 import score.Address;
 import score.annotation.External;
 
-public abstract class FloorLimited {
+public abstract class FloorLimited implements FloorLimitedInterface {
     @External
     public void setFloorPercentage(BigInteger points) {
         Check.onlyGovernance();
@@ -26,6 +27,33 @@ public abstract class FloorLimited {
     @External(readonly = true)
     public BigInteger getTimeDelayMicroSeconds() {
         return BalancedFloorLimits.getTimeDelayMicroSeconds();
+    }
+
+    @External
+    public void enableFloors(Address[] tokens) {
+        Check.onlyGovernance();
+        for (Address token: tokens) {
+            BalancedFloorLimits.setDisabled(token, false);
+        }
+    }
+
+    @External
+    public void disableFloors(Address[] tokens) {
+        Check.onlyGovernance();
+        for (Address token: tokens) {
+            BalancedFloorLimits.setDisabled(token, true);
+        }
+    }
+
+    @External
+    public void setMinimumFloor(Address token, BigInteger minFloor) {
+        Check.onlyGovernance();
+        BalancedFloorLimits.setMinimumFloor(token, minFloor);
+    }
+
+    @External(readonly = true)
+    public BigInteger getMinimumFloor(Address token) {
+        return BalancedFloorLimits.getMinimumFloor(token);
     }
 
     @External

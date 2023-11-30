@@ -57,6 +57,9 @@ public class BalancedFloorLimitsTest extends UnitTest {
         token1 = new MockContract<IRC2>(IRC2ScoreInterface.class, sm, owner);
         token2 = new MockContract<IRC2>(IRC2ScoreInterface.class, sm, owner);
         score = sm.deploy(owner, BalancedFloorLimits.class);
+        score.invoke(owner, "setDisabled", token1.getAddress(), false);
+        score.invoke(owner, "setDisabled", token2.getAddress(), false);
+        score.invoke(owner, "setDisabled", EOA_ZERO, false);
     }
 
     @Test
@@ -225,5 +228,57 @@ public class BalancedFloorLimitsTest extends UnitTest {
         // 3750 - 25%/2 ~=3281.25
         assertTrue(floor2.compareTo(BigInteger.valueOf(3285)) < 0);
         assertTrue(floor2.compareTo(BigInteger.valueOf(3275)) > 0);
+    }
+
+    @Test
+    public void minimumFloor_native(){
+         // Arrange
+        BigInteger balance = BigInteger.valueOf(1000);
+        BigInteger percentage = BigInteger.valueOf(1000);// 10%
+        score.invoke(owner, "setFloorPercentage", percentage);
+        score.invoke(owner, "setTimeDelayMicroSeconds", MICRO_SECONDS_IN_A_DAY);
+        score.getAccount().addBalance("ICX", balance);
+
+        // Act
+        BigInteger floor = (BigInteger) score.call("getCurrentFloor", EOA_ZERO);
+        assertNotEquals(BigInteger.ZERO, floor);
+        score.invoke(owner, "setMinimumFloor", EOA_ZERO, balance.add(BigInteger.ONE));
+
+        // Assert
+        floor = (BigInteger) score.call("getCurrentFloor", EOA_ZERO);
+        assertEquals(BigInteger.ZERO, floor);
+
+        // Act
+        score.getAccount().addBalance("ICX", balance);
+
+        // Assert
+        floor = (BigInteger) score.call("getCurrentFloor", EOA_ZERO);
+        assertEquals(BigInteger.valueOf(1800), floor);
+    }
+
+    @Test
+    public void minimumFloor(){
+         // Arrange
+        BigInteger balance = BigInteger.valueOf(1000);
+        BigInteger percentage = BigInteger.valueOf(1000);// 10%
+        score.invoke(owner, "setFloorPercentage", percentage);
+        score.invoke(owner, "setTimeDelayMicroSeconds", MICRO_SECONDS_IN_A_DAY);
+        when(token1.mock.balanceOf(score.getAddress())).thenReturn(balance);
+
+        // Act
+        BigInteger floor = (BigInteger) score.call("getCurrentFloor", token1.getAddress());
+        assertNotEquals(BigInteger.ZERO, floor);
+        score.invoke(owner, "setMinimumFloor", token1.getAddress(), balance.add(BigInteger.ONE));
+
+        // Assert
+        floor = (BigInteger) score.call("getCurrentFloor", token1.getAddress());
+        assertEquals(BigInteger.ZERO, floor);
+
+        // Act
+        when(token1.mock.balanceOf(score.getAddress())).thenReturn(balance.multiply(BigInteger.TWO));
+
+        // Assert
+        floor = (BigInteger) score.call("getCurrentFloor", token1.getAddress());
+        assertEquals(BigInteger.valueOf(1800), floor);
     }
 }
