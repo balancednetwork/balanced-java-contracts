@@ -31,6 +31,8 @@ public class BalancedFloorLimits {
     static final DictDB<Address, BigInteger> floor = Context.newDictDB(TAG + "floor",BigInteger.class);
     static final DictDB<Address, BigInteger> lastUpdate = Context.newDictDB(TAG + "last_update",BigInteger.class);
     static final DictDB<Address, Boolean> disabled = Context.newDictDB(TAG + "disabled",Boolean.class);
+    static final DictDB<Address, BigInteger> minFloor = Context.newDictDB(TAG + "token_minimum_floor_limits",BigInteger.class);
+
     static final VarDB<BigInteger> percentage = Context.newVarDB(TAG + "percentage",BigInteger.class);
     static final VarDB<BigInteger> delay = Context.newVarDB(TAG + "delay",BigInteger.class);
 
@@ -60,6 +62,14 @@ public class BalancedFloorLimits {
         return disabled.getOrDefault(token, false);
     }
 
+    public static void setMinimumFloor(Address token, BigInteger min) {
+        minFloor.set(token, min);
+    }
+
+    public static BigInteger getMinimumFloor(Address token) {
+        return minFloor.getOrDefault(token, BigInteger.ZERO);
+    }
+
     public static BigInteger getCurrentFloor(Address tokenAddress) {
         BigInteger balance;
         if (tokenAddress.equals(EOA_ZERO)) {
@@ -72,8 +82,10 @@ public class BalancedFloorLimits {
     }
 
     private static BigInteger updateFloor(Address address, BigInteger balance, boolean readonly) {
-        if (disabled.getOrDefault(address, false)) {
+        if (disabled.getOrDefault(address, true)) {
             return BigInteger.ZERO;
+        } else if (isBelowLimit(address, balance)) {
+            return  BigInteger.ZERO;
         }
 
         BigInteger percentageInPoints = percentage.get();
@@ -129,6 +141,10 @@ public class BalancedFloorLimits {
         }
 
         Context.require(balance.subtract(amount).compareTo(floor) >= 0, getErrorMessage());
+    }
+
+    public static boolean isBelowLimit(Address token, BigInteger balance) {
+        return balance.compareTo(minFloor.getOrDefault(token, balance)) < 0;
     }
 
     public static String getErrorMessage() {

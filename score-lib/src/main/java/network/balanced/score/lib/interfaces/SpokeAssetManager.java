@@ -27,7 +27,7 @@ import java.math.BigInteger;
 public interface SpokeAssetManager {
 
     /**
-     * Burns tokens from user
+     * Burns tokens from user and unlocks on source
      *
      * @param from         xCall caller.
      * @param tokenAddress native token address as string.
@@ -36,4 +36,15 @@ public interface SpokeAssetManager {
      */
     @XCall
     void WithdrawTo(String from, String tokenAddress, String toAddress, BigInteger amount);
+
+        /**
+     * Burns tokens from user and unlocks on source and tries to acquire the native token
+     *
+     * @param from         xCall caller.
+     * @param tokenAddress native token address as string.
+     * @param toAddress    native caller address as string.
+     * @param amount       amount to withdraw.
+     */
+    @XCall
+    void WithdrawNativeTo(String from, String tokenAddress, String toAddress, BigInteger amount);
 }

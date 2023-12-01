@@ -21,7 +21,6 @@ import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.RevertedException;
-import network.balanced.score.lib.interfaces.Governance;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
@@ -478,6 +477,14 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
                 .add(createTransaction(balanced.loans._address(), "setTimeDelayMicroSeconds", setTimeDelay));
         owner.governance.execute(actions.toString());
 
+        JsonObject param = new JsonObject()
+            .add("type", "Address[]")
+            .add("value",  new JsonArray().add(balanced.sicx._address().toString()));
+        JsonArray enableFloors = new JsonArray()
+            .add(param);
+        actions = new JsonArray()
+                .add(createTransaction(balanced.loans._address(), "enableFloors", enableFloors));
+        owner.governance.execute(actions.toString());
 
         // Assert
         assertThrows(UserRevertedException.class, () ->

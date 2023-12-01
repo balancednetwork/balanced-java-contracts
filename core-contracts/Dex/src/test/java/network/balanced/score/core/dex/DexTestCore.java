@@ -109,6 +109,15 @@ public class DexTestCore extends DexTestBase {
     }
 
     @Test
+    void crossChainDeposit() {
+        Account user = sm.createAccount();
+        BigInteger depositValue = BigInteger.valueOf(100).multiply(EXA);
+        xDepositToken("0x1.ETH/0x123", user, bnusdScore, depositValue);
+        BigInteger retrievedValue = (BigInteger) dexScore.call("getDeposit", bnusdScore.getAddress(), user.getAddress());
+        assertEquals(depositValue, retrievedValue);
+    }
+
+    @Test
     void withdrawSicxEarnings() {
         Account depositor = sm.createAccount();
         BigInteger depositValue = BigInteger.valueOf(100).multiply(EXA);

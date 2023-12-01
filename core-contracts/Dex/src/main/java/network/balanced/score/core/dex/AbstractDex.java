@@ -488,6 +488,19 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
         return BigInteger.ZERO;
     }
 
+    void deposit(Address token, Address to, BigInteger amount) {
+        DictDB<Address, BigInteger> depositDetails = deposit.at(token);
+        BigInteger userBalance = depositDetails.getOrDefault(to, BigInteger.ZERO);
+        userBalance = userBalance.add(amount);
+        depositDetails.set(to, userBalance);
+        Deposit(token, to, amount);
+
+        if (tokenPrecisions.get(token) == null) {
+            BigInteger decimalValue = (BigInteger) Context.call(token, "decimals");
+            tokenPrecisions.set(token, decimalValue);
+        }
+    }
+
     void exchange(Address fromToken, Address toToken, Address sender,
                   Address receiver, BigInteger value, BigInteger minimumReceive) {
 

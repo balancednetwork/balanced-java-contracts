@@ -16,19 +16,16 @@
 
 package network.balanced.score.lib.utils;
 
-import score.Address;
 import score.Context;
-import score.DictDB;
 import score.VarDB;
 import foundation.icon.xcall.NetworkAddress;
 
-import static network.balanced.score.lib.utils.Check.readonly;
 
 import java.math.BigInteger;
 import java.util.Map;
 public class XCallUtils {
     private static final String TAG = "XCallUtils";
-    private static final VarDB<String> nativeNid = Context.newVarDB("TAG" + "NativeNetworkId", String.class);
+    private static final VarDB<String> nativeNid = Context.newVarDB(TAG + "NativeNetworkId", String.class);
 
     public static String getNativeNid() {
         String nid = nativeNid.get();
@@ -41,10 +38,7 @@ public class XCallUtils {
 
     public static void verifyXCallProtocols(String _from, String[] protocols) {
         NetworkAddress from = NetworkAddress.valueOf(_from);
-        NetworkAddress xCall = new NetworkAddress(getNativeNid(), BalancedAddressManager.getXCall());
-        if (!from.equals(xCall)) {
-            Context.call(BalancedAddressManager.getXCallManager(), "verifyProtocols", from.net(), protocols);
-        }
+        Context.call(BalancedAddressManager.getXCallManager(), "verifyProtocols", from.net(), protocols);
     }
 
     @SuppressWarnings("unchecked")
