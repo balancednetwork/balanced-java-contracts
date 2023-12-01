@@ -404,10 +404,11 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
     }
 
     @External(readonly = true)
-    public Map<String, BigInteger> getBalanceAndSupply(String _name, Address _owner) {
+    public Map<String, BigInteger> getBalanceAndSupply(String _name, String _owner) {
+        Address owner = Address.fromString(_owner);
         if (_name.equals(SICXICX_MARKET_NAME)) {
             Map<String, BigInteger> rewardsData = new HashMap<>();
-            rewardsData.put("_balance", balanceOf(_owner, BigInteger.valueOf(SICXICX_POOL_ID)));
+            rewardsData.put("_balance", balanceOf(owner, BigInteger.valueOf(SICXICX_POOL_ID)));
             rewardsData.put("_totalSupply", totalSupply(BigInteger.valueOf(SICXICX_POOL_ID)));
             return rewardsData;
         }
@@ -416,7 +417,7 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
 
         Address stakedLpAddress = getStakedLp();
         BigInteger totalSupply = (BigInteger) Context.call(stakedLpAddress, "totalStaked", poolId);
-        BigInteger balance = (BigInteger) Context.call(stakedLpAddress, "balanceOf", _owner, poolId);
+        BigInteger balance = (BigInteger) Context.call(stakedLpAddress, "balanceOf", owner, poolId);
         Map<String, BigInteger> rewardsData = new HashMap<>();
         rewardsData.put("_balance", balance);
         rewardsData.put("_totalSupply", totalSupply);
@@ -485,6 +486,19 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
             return BigInteger.TEN.multiply(EXA);
         }
         return BigInteger.ZERO;
+    }
+
+    void deposit(Address token, Address to, BigInteger amount) {
+        DictDB<Address, BigInteger> depositDetails = deposit.at(token);
+        BigInteger userBalance = depositDetails.getOrDefault(to, BigInteger.ZERO);
+        userBalance = userBalance.add(amount);
+        depositDetails.set(to, userBalance);
+        Deposit(token, to, amount);
+
+        if (tokenPrecisions.get(token) == null) {
+            BigInteger decimalValue = (BigInteger) Context.call(token, "decimals");
+            tokenPrecisions.set(token, decimalValue);
+        }
     }
 
     void exchange(Address fromToken, Address toToken, Address sender,
@@ -622,7 +636,7 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
         BigInteger sicxIcxPrice = getSicxRate();
 
         BigInteger oldIcxTotal = icxQueueTotal.getOrDefault(BigInteger.ZERO);
-        List<RewardsDataEntry> oldData = new ArrayList<>();
+        List<RewardsDataEntry> data = new ArrayList<>();
 
         BigInteger balnFees = (value.multiply(icxBalnFee.get())).divide(FEE_SCALE);
         BigInteger conversionFees = value.multiply(icxConversionFee.get()).divide(FEE_SCALE);
@@ -646,10 +660,8 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
             BigInteger counterpartyIcx = counterpartyOrder.getSize();
 
             RewardsDataEntry rewardsEntry = new RewardsDataEntry();
-            rewardsEntry._user = counterpartyAddress;
-            rewardsEntry._balance = counterpartyIcx;
+            rewardsEntry._user = counterpartyAddress.toString();
 
-            oldData.add(rewardsEntry);
             BigInteger matchedIcx = counterpartyIcx.min(orderRemainingIcx);
             orderRemainingIcx = orderRemainingIcx.subtract(matchedIcx);
 
@@ -658,10 +670,14 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
                 icxQueue.removeHead();
                 icxQueueOrderId.set(counterpartyAddress, null);
                 activeAddresses.get(SICXICX_POOL_ID).remove(counterpartyAddress);
+                rewardsEntry._balance = BigInteger.ZERO;
             } else {
                 BigInteger newCounterpartyValue = counterpartyIcx.subtract(matchedIcx);
                 counterpartyOrder.setSize(newCounterpartyValue);
+                rewardsEntry._balance = newCounterpartyValue;
             }
+
+            data.add(rewardsEntry);
 
             BigInteger lpSicxEarnings = (lpSicxSize.multiply(matchedIcx)).divide(orderIcxValue);
             BigInteger newSicxEarnings = getSicxEarnings(counterpartyAddress).add(lpSicxEarnings);
@@ -680,7 +696,7 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
                 orderIcxValue, BigInteger.valueOf(Context.getBlockTimestamp()), conversionFees, balnFees, newIcxTotal
                 , BigInteger.ZERO, sicxIcxPrice, effectiveFillPrice);
 
-        Context.call(getRewards(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal, oldData);
+        Context.call(getRewards(), "updateBalanceAndSupplyBatch", SICXICX_MARKET_NAME, newIcxTotal, data);
         Context.call(sicxAddress, "transfer", getFeehandler(), balnFees);
         BalancedFloorLimits.verifyNativeWithdraw(orderIcxValue);
         Context.transfer(sender, orderIcxValue);

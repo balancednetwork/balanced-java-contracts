@@ -47,7 +47,7 @@ class LoansIntegrationTestBase extends LoansIntegrationTest {
         BigInteger bnUSDBalance = BigInteger.ZERO;
         int i = 1;
         while (true) {
-            score.Address address;
+            String address;
             try {
                 address = reader.loans.getPositionAddress(i);
             } catch (Exception e) {
@@ -55,7 +55,7 @@ class LoansIntegrationTestBase extends LoansIntegrationTest {
             }
             i++;
 
-            Map<String, Object> position = reader.loans.getAccountPositions(address);
+            Map<String, Object> position = reader.loans.getAccountPositions(address.toString());
             Map<String, Map<String, Object>> assetsDetails = (Map<String, Map<String, Object>>) position.get(
                     "holdings");
             if (assetsDetails.containsKey("sICX")) {
@@ -73,6 +73,6 @@ class LoansIntegrationTestBase extends LoansIntegrationTest {
         assertEquals(iETHBalance, reader.irc2(ethAddress).balanceOf(balanced.loans._address()));
 
         BigInteger stabilityDebt = reader.sicx.balanceOf(balanced.stability._address());
-        assertEquals(bnUSDBalance, reader.bnUSD.totalSupply().subtract(stabilityDebt));
+        assertEquals(bnUSDBalance, reader.bnUSD.xTotalSupply().subtract(stabilityDebt));
     }
 }

@@ -93,7 +93,7 @@ public class DexImpl extends AbstractDex {
 
         activeAddresses.get(SICXICX_POOL_ID).add(user);
 
-        sendRewardsData(user, oldOrderValue, oldIcxTotal);
+        sendRewardsData(user, orderValue, currentIcxTotal);
     }
 
     @External
@@ -116,17 +116,40 @@ public class DexImpl extends AbstractDex {
         icxQueueOrderId.set(user, null);
         activeAddresses.get(SICXICX_POOL_ID).remove(user);
 
-        sendRewardsData(user, withdrawAmount, oldIcxTotal);
+        sendRewardsData(user, BigInteger.ZERO, currentIcxTotal);
         Context.transfer(user, withdrawAmount);
     }
 
     private void sendRewardsData(Address user, BigInteger amount, BigInteger oldIcxTotal) {
         List<RewardsDataEntry> rewardsList = new ArrayList<>();
         RewardsDataEntry rewardsEntry = new RewardsDataEntry();
-        rewardsEntry._user = user;
+        rewardsEntry._user = user.toString();
         rewardsEntry._balance = amount;
         rewardsList.add(rewardsEntry);
-        Context.call(getRewards(), "updateBatchRewardsData", SICXICX_MARKET_NAME, oldIcxTotal, rewardsList);
+        Context.call(getRewards(), "updateBalanceAndSupply", SICXICX_MARKET_NAME, oldIcxTotal, user.toString(), amount);
+    }
+
+    @External
+    public void xTokenFallback(String _from, BigInteger _value, byte[] _data) {
+        isDexOn();
+
+        String unpackedData = new String(_data);
+        require(!unpackedData.equals(""), "Token Fallback: Data can't be empty");
+
+        JsonObject json = Json.parse(unpackedData).asObject();
+
+        String method = json.get("method").asString();
+        Address fromToken = Context.getCaller();
+
+        require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Invalid token transfer value");
+
+        if (method.equals("_deposit")) {
+            JsonObject params = json.get("params").asObject();
+            Address to = Address.fromString(params.get("address").asString());
+            deposit(fromToken, to, _value);
+        } else {// If no supported method was sent, revert the transaction
+            Context.revert(100, TAG + ": Unsupported method supplied");
+        }
     }
 
     @External
@@ -148,16 +171,7 @@ public class DexImpl extends AbstractDex {
         // Call an internal method based on the "method" param sent in tokenFallBack
         switch (method) {
             case "_deposit": {
-                DictDB<Address, BigInteger> depositDetails = deposit.at(fromToken);
-                BigInteger userBalance = depositDetails.getOrDefault(_from, BigInteger.ZERO);
-                userBalance = userBalance.add(_value);
-                depositDetails.set(_from, userBalance);
-                Deposit(fromToken, _from, _value);
-
-                if (tokenPrecisions.get(fromToken) == null) {
-                    BigInteger decimalValue = (BigInteger) Context.call(fromToken, "decimals");
-                    tokenPrecisions.set(fromToken, decimalValue);
-                }
+                deposit(fromToken, _from, _value);
                 break;
 
             }

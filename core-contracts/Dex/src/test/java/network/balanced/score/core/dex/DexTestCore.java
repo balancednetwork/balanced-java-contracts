@@ -55,8 +55,8 @@ public class DexTestCore extends DexTestBase {
         contextMock.when(Context::getValue).thenReturn(icxValue);
         contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
         contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
-        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("updateBatchRewardsData"),
-                any(String.class), any(BigInteger.class), any())).thenReturn(null);
+        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("updateBalanceAndSupply"),
+                any(String.class), any(BigInteger.class), any(String.class), any(BigInteger.class))).thenReturn(null);
         contextMock.when(() -> Context.call(any(Address.class), eq("getTodayRate"))).thenReturn(EXA);
         dexScore.invoke(ownerAccount, "fallback");
 
@@ -96,8 +96,8 @@ public class DexTestCore extends DexTestBase {
         // Mock these.
         contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
         contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
-        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("updateBatchRewardsData"),
-                any(String.class), any(BigInteger.class), any())).thenReturn(null);
+        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("updateBalanceAndSupply"),
+                any(String.class), any(BigInteger.class), any(String.class), any(BigInteger.class))).thenReturn(null);
         contextMock.when(() -> Context.transfer(eq(supplier.getAddress()), eq(value))).thenAnswer((Answer<Void>) invocation -> null);
 
         // Act.
@@ -106,6 +106,15 @@ public class DexTestCore extends DexTestBase {
         // Assert.
         BigInteger IcxBalance = (BigInteger) dexScore.call("getICXBalance", supplier.getAddress());
         assertEquals(BigInteger.ZERO, IcxBalance);
+    }
+
+    @Test
+    void crossChainDeposit() {
+        Account user = sm.createAccount();
+        BigInteger depositValue = BigInteger.valueOf(100).multiply(EXA);
+        xDepositToken("0x1.ETH/0x123", user, bnusdScore, depositValue);
+        BigInteger retrievedValue = (BigInteger) dexScore.call("getDeposit", bnusdScore.getAddress(), user.getAddress());
+        assertEquals(depositValue, retrievedValue);
     }
 
     @Test
@@ -136,10 +145,8 @@ public class DexTestCore extends DexTestBase {
                 depositor.getAddress());
         assertEquals(depositValue.subtract(withdrawValue), currentDepositValue);
 
-        JsonObject jsonData = new JsonObject();
-        jsonData.add("method", "_swap_icx");
         BigInteger swapValue = BigInteger.valueOf(50L).multiply(EXA);
-        dexScore.invoke(sicxScore, "tokenFallback", depositor.getAddress(), swapValue, jsonData.toString().getBytes());
+        swapSicxToIcx(depositor, swapValue, EXA);
 
         BigInteger sicxEarning = (BigInteger) dexScore.call("getSicxEarnings", depositor.getAddress());
         dexScore.invoke(depositor, "withdrawSicxEarnings", sicxEarning);
@@ -175,10 +182,8 @@ public class DexTestCore extends DexTestBase {
                 depositor.getAddress());
         assertEquals(depositValue.subtract(withdrawValue), currentDepositValue);
 
-        JsonObject jsonData = new JsonObject();
-        jsonData.add("method", "_swap_icx");
         BigInteger swapValue = BigInteger.valueOf(100L).multiply(EXA);
-        dexScore.invoke(sicxScore, "tokenFallback", depositor.getAddress(), swapValue, jsonData.toString().getBytes());
+        swapSicxToIcx(depositor, swapValue, EXA);
 
         BigInteger sicxEarning = (BigInteger) dexScore.call("getSicxEarnings", depositor.getAddress());
     }
@@ -529,10 +534,8 @@ public class DexTestCore extends DexTestBase {
         BigInteger balance = (BigInteger) dexScore.call("balanceOf", account.getAddress(), poolId);
 
         // test swap
-        JsonObject jsonData = new JsonObject();
-        jsonData.add("method", "_swap_icx");
         BigInteger swapValue = BigInteger.valueOf(50L).multiply(EXA);
-        dexScore.invoke(sicxScore, "tokenFallback", account.getAddress(), swapValue, jsonData.toString().getBytes());
+        swapSicxToIcx(account, swapValue, EXA);
 
         BigInteger newBalance = (BigInteger) dexScore.call("balanceOf", account.getAddress(), poolId);
         BigInteger sicxEarning = (BigInteger) dexScore.call("getSicxEarnings", account.getAddress());

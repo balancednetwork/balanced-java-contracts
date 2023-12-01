@@ -60,6 +60,10 @@ optimizedJar {
     enableDebug = false
 }
 
+compileIntTestJava {
+    dependsOn ":DeploymentTester:optimizedJar"
+}
+
 deployJar {
     endpoints {
         sejong {
@@ -109,6 +113,7 @@ jacocoTestReport {
 
 task integrationTest(type: Test) {
     useJUnitPlatform()
+
 
     rootProject.allprojects {
         if (it.getTasks().findByName('optimizedJar')) {

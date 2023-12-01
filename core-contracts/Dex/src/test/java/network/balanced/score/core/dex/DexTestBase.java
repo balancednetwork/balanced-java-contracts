@@ -30,7 +30,7 @@ import score.annotation.Optional;
 
 import java.math.BigInteger;
 import java.util.HashMap;
-import java.util.List;
+import java.util.Map;
 
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.mockito.ArgumentMatchers.any;
@@ -88,11 +88,15 @@ class DexTestBase extends UnitTest {
 
 
     protected void depositToken(Account depositor, Account tokenScore, BigInteger value) {
-        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
-        contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
         contextMock.when(() -> Context.call(any(Address.class), eq("decimals"))).thenReturn(BigInteger.valueOf(18));
         dexScore.invoke(tokenScore, "tokenFallback", depositor.getAddress(), value, tokenData("_deposit",
                 new HashMap<>()));
+    }
+
+    protected void xDepositToken(String depositor, Account to, Account tokenScore, BigInteger value) {
+        contextMock.when(() -> Context.call(any(Address.class), eq("decimals"))).thenReturn(BigInteger.valueOf(18));
+        dexScore.invoke(tokenScore, "xTokenFallback", depositor, value, tokenData("_deposit",
+                Map.of("address", to.getAddress().toString())));
     }
 
     protected void supplyLiquidity(Account supplier, Account baseTokenScore, Account quoteTokenScore,
@@ -122,8 +126,8 @@ class DexTestBase extends UnitTest {
         contextMock.when(Context::getValue).thenReturn(value);
         contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
         contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
-        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("updateBatchRewardsData"),
-                any(String.class), any(BigInteger.class), any())).thenReturn(null);
+        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("updateBalanceAndSupply"),
+                any(String.class), any(BigInteger.class), any(String.class), any(BigInteger.class))).thenReturn(null);
         supplier.addBalance("ICX", value);
         sm.transfer(supplier, dexScore.getAddress(), value);
     }
@@ -133,8 +137,8 @@ class DexTestBase extends UnitTest {
         contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("distribute"))).thenReturn(true);
         contextMock.when(() -> Context.call(eq(dividendsScore.getAddress()), eq("distribute"))).thenReturn(true);
         doReturn(sicxIcxConversionRate).when(dexScoreSpy).getSicxRate();
-        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("updateBatchRewardsData"), eq("sICX/ICX"
-        ), eq(BigInteger.class), any(List.class))).thenReturn(true);
+        contextMock.when(() -> Context.call(eq(rewardsScore.getAddress()), eq("updateBalanceAndSupplyBatch"), any(),
+                any(), any())).thenReturn(null);
         contextMock.when(() -> Context.call(eq(sicxScore.getAddress()), eq("transfer"),
                 eq(feehandlerScore.getAddress()), any(BigInteger.class))).thenReturn(true);
         contextMock.when(() -> Context.transfer(eq(sender.getAddress()), any(BigInteger.class))).thenAnswer((Answer<Void>) invocation -> null);

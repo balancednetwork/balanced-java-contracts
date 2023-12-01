@@ -52,7 +52,7 @@ public class BoostedBalnIncreaseTimeTest {
         balanced.syncDistributions();
         ownerClient._transfer(owner.dex._address(), BigInteger.valueOf(1000).multiply(EXA), null);
         waitDays(1);
-        BigInteger updatedBalnHolding = owner.rewards.getBalnHolding(userAddress);
+        BigInteger updatedBalnHolding = owner.rewards.getBalnHolding(userAddress.toString());
         System.out.println("baln holding from reward: " + updatedBalnHolding);
         owner.rewards.claimRewards(null);
         BigInteger availableBalnBalance = owner.baln.availableBalanceOf(userAddress);
@@ -103,7 +103,7 @@ public class BoostedBalnIncreaseTimeTest {
         score.Address userAddress = score.Address.fromString(balanced.owner.getAddress().toString());
         ownerClient._transfer(owner.dex._address(), BigInteger.valueOf(1000).multiply(EXA), null);
         waitDays(1);
-        BigInteger updatedBalnHolding = owner.rewards.getBalnHolding(userAddress);
+        BigInteger updatedBalnHolding = owner.rewards.getBalnHolding(userAddress.toString());
         System.out.println("baln holding from reward: " + updatedBalnHolding);
         owner.rewards.claimRewards(null);
         BigInteger availableBalnBalance = owner.baln.availableBalanceOf(userAddress);

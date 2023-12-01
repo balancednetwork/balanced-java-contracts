@@ -110,7 +110,7 @@ class DAOfundImplTest extends TestBase {
         // Arrange
         BigInteger expectedBalnRewards = BigInteger.TEN;
         String[] sources = {"sICX/bnUSD", "BALN/bnUSD"};
-        when(mockBalanced.rewards.mock.getUserSources(daofundScore.getAddress())).thenReturn(sources);
+        when(mockBalanced.rewards.mock.getUserSources(daofundScore.getAddress().toString())).thenReturn(sources);
         when(mockBalanced.bBaln.mock.hasLocked(daofundScore.getAddress())).thenReturn(false);
         doAnswer(invocation -> {
             daofundScore.invoke(mockBalanced.baln.account, "tokenFallback", mockBalanced.rewards.getAddress(),
@@ -133,7 +133,7 @@ class DAOfundImplTest extends TestBase {
         // Arrange
         BigInteger expectedBalnRewards = BigInteger.TEN;
         String[] sources = {"sICX/bnUSD", "BALN/bnUSD"};
-        when(mockBalanced.rewards.mock.getUserSources(daofundScore.getAddress())).thenReturn(sources);
+        when(mockBalanced.rewards.mock.getUserSources(daofundScore.getAddress().toString())).thenReturn(sources);
         when(mockBalanced.bBaln.mock.hasLocked(daofundScore.getAddress())).thenReturn(true);
         doAnswer(invocation -> {
             daofundScore.invoke(mockBalanced.baln.account, "tokenFallback", mockBalanced.rewards.getAddress(),

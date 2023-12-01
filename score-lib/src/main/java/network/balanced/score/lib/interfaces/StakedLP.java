@@ -63,7 +63,7 @@ public interface StakedLP extends Version {
     void addDataSource(BigInteger id, String name);
 
     @External(readonly = true)
-    Map<String, BigInteger> getBalanceAndSupply(String _name, Address _owner);
+    Map<String, BigInteger> getBalanceAndSupply(String _name, String _owner);
 
     @External(readonly = true)
     BigInteger getBnusdValue(String _name);

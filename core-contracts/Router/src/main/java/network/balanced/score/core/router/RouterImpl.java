@@ -21,6 +21,8 @@ import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import network.balanced.score.lib.interfaces.Router;
+import network.balanced.score.lib.utils.BalancedAddressManager;
+import network.balanced.score.lib.utils.XCallUtils;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.Versions;
 import score.Address;
@@ -31,19 +33,22 @@ import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
 import score.annotation.Payable;
+import foundation.icon.xcall.NetworkAddress;
 
 import java.math.BigInteger;
 
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.StringUtils.convertStringToBigInteger;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getSicx;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getStaking;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getDex;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getDaofund;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getAssetManager;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getBnusd;
 
 public class RouterImpl implements Router {
-    private static final String DEX_ADDRESS = "dex_address";
-    private static final String SICX_ADDRESS = "sicx_address";
-    private static final String STAKING_ADDRESS = "staking_address";
     private static final String GOVERNANCE_ADDRESS = "governance_address";
-    private static final String ADMIN = "admin";
     private static final String VERSION = "version";
 
     public static final int MAX_NUMBER_OF_ITERATIONS = 4;
@@ -51,10 +56,6 @@ public class RouterImpl implements Router {
     public static final String TAG = "Balanced Router";
 
     private final VarDB<Address> governance = Context.newVarDB(GOVERNANCE_ADDRESS, Address.class);
-    private final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
-    private final VarDB<Address> sicx = Context.newVarDB(SICX_ADDRESS, Address.class);
-    private final VarDB<Address> staking = Context.newVarDB(STAKING_ADDRESS, Address.class);
-    private final VarDB<Address> dex = Context.newVarDB(DEX_ADDRESS, Address.class);
     private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
 
     public RouterImpl(Address _governance) {
@@ -62,6 +63,7 @@ public class RouterImpl implements Router {
             isContract(_governance);
             governance.set(_governance);
         }
+        BalancedAddressManager.setGovernance(governance.get());
         if (currentVersion.getOrDefault("").equals(Versions.ROUTER)) {
             Context.revert("Can't Update same version of code");
         }
@@ -79,76 +81,29 @@ public class RouterImpl implements Router {
     }
 
     @External
-    public void setGovernance(Address _address) {
-        onlyOwner();
-        isContract(_address);
-        governance.set(_address);
+    public void updateAddress(String name) {
+        BalancedAddressManager.resetAddress(name);
     }
 
     @External(readonly = true)
-    public Address getGovernance() {
-        return governance.get();
+    public Address getAddress(String name) {
+        return BalancedAddressManager.getAddressByName(name);
     }
-
-    @External
-    public void setAdmin(Address _admin) {
-        only(governance);
-        admin.set(_admin);
-    }
-
-    @External(readonly = true)
-    public Address getAdmin() {
-        return admin.get();
-    }
-
-    @External
-    public void setDex(Address _dex) {
-        only(admin);
-        isContract(_dex);
-        dex.set(_dex);
-    }
-
-    @External(readonly = true)
-    public Address getDex() {
-        return dex.get();
-    }
-
-    @External
-    public void setSicx(Address _address) {
-        only(admin);
-        isContract(_address);
-        sicx.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getSicx() {
-        return sicx.get();
-    }
-
-    @External
-    public void setStaking(Address _address) {
-        only(admin);
-        isContract(_address);
-        staking.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getStaking() {
-        return staking.get();
-    }
-
 
     private void swap(Address fromToken, Address toToken) {
         if (fromToken == null) {
-            Context.require(toToken.equals(sicx.get()), TAG + ": ICX can only be traded for sICX");
+            Context.require(toToken.equals(getSicx()), TAG + ": ICX can only be traded for sICX");
             BigInteger balance = Context.getBalance(Context.getAddress());
-            Context.transfer(staking.get(), balance);
+            Context.require(balance.compareTo(BigInteger.ZERO) > 0, "Invalid Trade path");
+            Context.transfer(getStaking(), balance);
         } else if (toToken == null) {
-            Context.require(fromToken.equals(sicx.get()), TAG + ": ICX can only be traded with sICX token");
+            if (!fromToken.equals(getSicx())) {
+                return;
+            }
             JsonObject data = new JsonObject();
             data.add("method", "_swap_icx");
             BigInteger balance = (BigInteger) Context.call(fromToken, "balanceOf", Context.getAddress());
-            Context.call(fromToken, "transfer", dex.get(), balance, data.toString().getBytes());
+            Context.call(fromToken, "transfer", getDex(), balance, data.toString().getBytes());
         } else {
             JsonObject params = new JsonObject();
             params.add("toToken", toToken.toString());
@@ -156,11 +111,12 @@ public class RouterImpl implements Router {
             data.add("method", "_swap");
             data.add("params", params);
             BigInteger balance = (BigInteger) Context.call(fromToken, "balanceOf", Context.getAddress());
-            Context.call(fromToken, "transfer", dex.get(), balance, data.toString().getBytes());
+            Context.call(fromToken, "transfer", getDex(), balance, data.toString().getBytes());
         }
     }
 
-    private void route(Address from, Address startToken, Address[] _path, BigInteger _minReceive) {
+    private void route(String from, Address startToken, Address[] _path, BigInteger _minReceive) {
+        Address prevToken = null;
         Address currentToken = startToken;
         BigInteger fromAmount;
         Address fromAddress;
@@ -174,41 +130,104 @@ public class RouterImpl implements Router {
 
         for (Address token : _path) {
             swap(currentToken, token);
+            prevToken = currentToken;
             currentToken = token;
         }
 
-        if (currentToken == null) {
+        String nativeNid = XCallUtils.getNativeNid();
+        NetworkAddress networkAddress = NetworkAddress.valueOf(from, nativeNid);
+        if (currentToken == null && prevToken.equals(getSicx())) {
+            currentToken = EOA_ZERO;
             BigInteger balance = Context.getBalance(Context.getAddress());
             Context.require(balance.compareTo(_minReceive) >= 0,
                     TAG + ": Below minimum receive amount of " + _minReceive);
-            Context.transfer(from, balance);
+            Context.require(networkAddress.net().equals(nativeNid), "Receiver must be a ICON address");
+            Context.transfer(Address.fromString(networkAddress.account()), balance);
             Route(fromAddress, fromAmount, EOA_ZERO, balance);
-        } else {
-            BigInteger balance = (BigInteger) Context.call(currentToken, "balanceOf", Context.getAddress());
-            Context.require(balance.compareTo(_minReceive) >= 0,
-                    TAG + ": Below minimum receive amount of " + _minReceive);
-            Context.call(currentToken, "transfer", from, balance);
-            Route(fromAddress, fromAmount, currentToken, balance);
+            return;
         }
+
+        boolean toNative = currentToken == null;
+        if (toNative) {
+            currentToken = prevToken;
+        }
+
+        BigInteger balance = (BigInteger) Context.call(currentToken, "balanceOf", Context.getAddress());
+        Context.require(balance.compareTo(_minReceive) >= 0, TAG + ": Below minimum receive amount of " + _minReceive);
+
+        if (networkAddress.net().equals(nativeNid)) {
+            Context.require(!toNative, TAG + ": Native swaps not available to icon from " + currentToken);
+            Context.call(currentToken, "transfer", Address.fromString(networkAddress.account()), balance, new byte[0]);
+        } else {
+            transferCrossChainResult(currentToken, networkAddress, balance, toNative);
+        }
+
+
+        Route(fromAddress, fromAmount, currentToken, balance);
+    }
+
+
+    private void transferCrossChainResult(Address token, NetworkAddress to, BigInteger amount, boolean toNative) {
+        String toNet = to.net();
+        if (canWithdraw(toNet)) {
+            if (token.equals(getBnusd())) {
+                transferBnUSD(token, to, amount);
+            } else {
+                transferHubToken(token, to, amount, toNative);
+            }
+        } else {
+            Context.require(!toNative, TAG + ": Native swaps are not supported for this network");
+            Context.call(token, "hubTransfer", to.toString(), amount, new byte[0]);
+        }
+    }
+
+    private void transferBnUSD(Address bnusd, NetworkAddress to, BigInteger amount) {
+        String toNet = to.net();
+        BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", toNet, true);
+        Context.call(xCallFee, bnusd, "crossTransfer", to.toString(), amount, new byte[0]);
+    }
+
+    private void transferHubToken(Address token, NetworkAddress to, BigInteger amount, boolean toNative) {
+        String toNet = to.net();
+        Address assetManager = getAssetManager();
+        String nativeAddress = Context.call(String.class, assetManager, "getNativeAssetAddress", token);
+        if (nativeAddress != null && NetworkAddress.valueOf(nativeAddress).net().equals(toNet)) {
+            BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", toNet, true);
+            String method = "withdrawTo";
+            if (toNative) {
+                method = "withdrawNativeTo";
+            }
+            Context.call(xCallFee, assetManager, method, token, to.toString(), amount);
+        } else {
+            Context.require(!toNative, TAG + ": Native swaps are not supported to other networks");
+            Context.call(token, "hubTransfer", to.toString(), amount, new byte[0]);
+        }
+    }
+
+    private boolean canWithdraw(String net) {
+        return Context.call(Boolean.class, getDaofund(), "getXCallFeePermission", Context.getAddress(), net);
     }
 
     @Payable
     @External
-    public void route(Address[] _path, @Optional BigInteger _minReceive) {
+    public void route(Address[] _path, @Optional BigInteger _minReceive, @Optional String _receiver) {
         if (_minReceive == null) {
             _minReceive = BigInteger.ZERO;
         }
+        if (_receiver == null || _receiver.equals("")) {
+            _receiver = Context.getCaller().toString();
+        }
 
         Context.require(_minReceive.signum() >= 0, TAG + ": Must specify a positive number for minimum to receive");
-
         Context.require(_path.length <= MAX_NUMBER_OF_ITERATIONS,
                 TAG + ": Passed max swaps of " + MAX_NUMBER_OF_ITERATIONS);
 
-        route(Context.getCaller(), null, _path, _minReceive);
+        route(_receiver, null, _path, _minReceive);
     }
 
     /**
-     * This is invoked when a token is transferred to this score. It expects a JSON object with the following format:
+     * This is invoked when a token is transferred to this score. It expects a JSON
+     * object with the following format:
      * <blockquote>
      * {"method": "METHOD_NAME", "params":{...}}
      * </blockquote>
@@ -219,8 +238,13 @@ public class RouterImpl implements Router {
      */
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
+        xTokenFallback(_from.toString(), _value, _data);
+    }
+
+    @External
+    public void xTokenFallback(String _from, BigInteger _value, byte[] _data) {
         // Receive token transfers from Balanced DEX and staking while in mid-route
-        if (_from.equals(dex.get()) || _from.equals(MINT_ADDRESS)) {
+        if (_from.equals(getDex().toString()) || _from.equals(MINT_ADDRESS.toString())) {
             return;
         }
 
@@ -244,9 +268,9 @@ public class RouterImpl implements Router {
             Context.require(minimumReceive.signum() >= 0, TAG + ": Must specify a positive number for minimum to " +
                     "receive");
         }
-        Address receiver;
+        String receiver;
         if (params.contains("receiver")) {
-            receiver = Address.fromString(params.get("receiver").asString());
+            receiver = params.get("receiver").asString();
         } else {
             receiver = _from;
         }
@@ -272,7 +296,6 @@ public class RouterImpl implements Router {
 
     @Payable
     public void fallback() {
-        only(dex);
     }
 
     @EventLog(indexed = 1)

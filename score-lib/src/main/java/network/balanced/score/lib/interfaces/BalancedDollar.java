@@ -18,14 +18,12 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
-import network.balanced.score.lib.interfaces.addresses.AdminAddress;
-import network.balanced.score.lib.interfaces.addresses.GovernanceAddress;
-import network.balanced.score.lib.interfaces.addresses.OracleAddress;
+import network.balanced.score.lib.interfaces.addresses.AddressManager;
+import network.balanced.score.lib.interfaces.base.Fallback;
 import network.balanced.score.lib.interfaces.base.Version;
+import network.balanced.score.lib.interfaces.tokens.HubToken;
 import network.balanced.score.lib.interfaces.tokens.IRC2BurnableInterface;
-import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
 import score.Address;
-import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
 
@@ -33,48 +31,21 @@ import java.math.BigInteger;
 
 @ScoreClient
 @ScoreInterface
-public interface BalancedDollar extends IRC2BurnableInterface, IRC2Mintable, GovernanceAddress, AdminAddress,
-        OracleAddress, Version {
+public interface BalancedDollar extends IRC2BurnableInterface, HubToken, AddressManager, Version, Fallback {
 
     @External(readonly = true)
     String getPeg();
 
     @External
-    void setOracleName(String _name);
-
-    @External(readonly = true)
-    String getOracleName();
-
-    @External
-    void setMinInterval(BigInteger _interval);
-
-    @External(readonly = true)
-    BigInteger getMinInterval();
-
-    @External(readonly = true)
-    BigInteger getPriceUpdateTime();
-
-    @External
-    void setDebtCeiling(BigInteger ceiling);
-
-    @External(readonly = true)
-    BigInteger getDebtCeiling();
-
-    @External
-    BigInteger priceInLoop();
-
-    @External(readonly = true)
-    BigInteger lastPriceInLoop();
-
-    @External
-    void setMinter2(Address _address);
-
-    @External(readonly = true)
-    Address getMinter2();
-
-    @External
     void govTransfer(Address _from, Address _to, BigInteger _value, @Optional byte[] _data);
 
-    @EventLog(indexed = 3)
-    void OraclePrice(String market, String oracle_name, Address oracle_address, BigInteger price);
+    @External
+    void govHubTransfer(String _from, String _to, BigInteger _value, @Optional byte[] _data);
+
+    @External
+    void mint(BigInteger _amount, @Optional byte[] _data);
+
+    @External
+    void mintTo(Address _account, BigInteger _amount, @Optional byte[] _data);
+
 }
