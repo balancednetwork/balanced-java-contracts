@@ -42,8 +42,10 @@ public class BalancedDollarImpl extends HubTokenImpl implements BalancedDollar {
     private static final String SYMBOL_NAME = "bnUSD";
     private final String USD_BASE = "USD";
     public static final String VERSION = "version";
+    public static final String DEBT_CEILING = "debtCeiling";
 
     private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
+    private final VarDB<BigInteger> debtCeiling = Context.newVarDB(DEBT_CEILING, BigInteger.class);
 
     public BalancedDollarImpl(Address _governance) {
         super("", TOKEN_NAME, SYMBOL_NAME, null);
@@ -102,6 +104,17 @@ public class BalancedDollarImpl extends HubTokenImpl implements BalancedDollar {
     }
 
     @External
+    public void setDebtCeiling(BigInteger ceiling) {
+        onlyGovernance();
+        debtCeiling.set(ceiling);
+    }
+
+    @External(readonly = true)
+    public BigInteger getDebtCeiling() {
+        return debtCeiling.get();
+    }
+
+    @External
     public void burn(BigInteger _amount) {
         burnFrom(Context.getCaller(), _amount);
     }
@@ -131,6 +144,17 @@ public class BalancedDollarImpl extends HubTokenImpl implements BalancedDollar {
         if (_to.isContract()) {
             Context.call(_to, "tokenFallback", new Address(new byte[Address.LENGTH]), _amount, data);
         }
+    }
+
+    @Override
+    protected void _mint(NetworkAddress minter, BigInteger amount) {
+        BigInteger ceiling = debtCeiling.get();
+        if (ceiling != null) {
+            BigInteger newTotalDebt = totalSupply().add(amount);
+            Context.require( newTotalDebt.compareTo(ceiling) <= 0, "Balanced dollar debt ceiling reached. Governance vote required to increase");
+        }
+
+        super._mint(minter, amount);
     }
 
     @Override

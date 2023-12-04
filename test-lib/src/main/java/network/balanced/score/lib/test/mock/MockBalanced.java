@@ -18,9 +18,11 @@ package network.balanced.score.lib.test.mock;
 
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.ServiceManager;
+
 import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.XCallUtils;
+import score.Address;
 import network.balanced.score.lib.utils.Names;
 
 import org.mockito.MockedStatic;
@@ -28,6 +30,8 @@ import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.util.Map;
+
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 public class MockBalanced {
@@ -148,6 +152,10 @@ public class MockBalanced {
         when(bsr.mock.decimals()).thenReturn(BigInteger.valueOf(18));
         when(sicx.mock.decimals()).thenReturn(BigInteger.valueOf(18));
         when(baln.mock.decimals()).thenReturn(BigInteger.valueOf(18));
+
+        when(bnUSD.mock.balanceOf(any(Address.class))).thenReturn(BigInteger.ZERO);
+        when(sicx.mock.balanceOf(any(Address.class))).thenReturn(BigInteger.ZERO);
+        when(baln.mock.balanceOf(any(Address.class))).thenReturn(BigInteger.ZERO);
     }
 
 

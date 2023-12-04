@@ -94,9 +94,12 @@ public class RouterImpl implements Router {
         if (fromToken == null) {
             Context.require(toToken.equals(getSicx()), TAG + ": ICX can only be traded for sICX");
             BigInteger balance = Context.getBalance(Context.getAddress());
+            Context.require(balance.compareTo(BigInteger.ZERO) > 0, "Invalid Trade path");
             Context.transfer(getStaking(), balance);
         } else if (toToken == null) {
-            Context.require(fromToken.equals(getSicx()), TAG + ": ICX can only be traded with sICX token");
+            if (!fromToken.equals(getSicx())) {
+                return;
+            }
             JsonObject data = new JsonObject();
             data.add("method", "_swap_icx");
             BigInteger balance = (BigInteger) Context.call(fromToken, "balanceOf", Context.getAddress());
@@ -113,6 +116,7 @@ public class RouterImpl implements Router {
     }
 
     private void route(String from, Address startToken, Address[] _path, BigInteger _minReceive) {
+        Address prevToken = null;
         Address currentToken = startToken;
         BigInteger fromAmount;
         Address fromAddress;
@@ -126,25 +130,82 @@ public class RouterImpl implements Router {
 
         for (Address token : _path) {
             swap(currentToken, token);
+            prevToken = currentToken;
             currentToken = token;
         }
 
-        if (currentToken == null) {
+        String nativeNid = XCallUtils.getNativeNid();
+        NetworkAddress networkAddress = NetworkAddress.valueOf(from, nativeNid);
+        if (currentToken == null && prevToken.equals(getSicx())) {
+            currentToken = EOA_ZERO;
             BigInteger balance = Context.getBalance(Context.getAddress());
             Context.require(balance.compareTo(_minReceive) >= 0,
                     TAG + ": Below minimum receive amount of " + _minReceive);
-            String nativeNid = XCallUtils.getNativeNid();
-            NetworkAddress networkAddress = NetworkAddress.valueOf(from, nativeNid);
             Context.require(networkAddress.net().equals(nativeNid), "Receiver must be a ICON address");
             Context.transfer(Address.fromString(networkAddress.account()), balance);
             Route(fromAddress, fromAmount, EOA_ZERO, balance);
-        } else {
-            BigInteger balance = (BigInteger) Context.call(currentToken, "balanceOf", Context.getAddress());
-            Context.require(balance.compareTo(_minReceive) >= 0,
-                    TAG + ": Below minimum receive amount of " + _minReceive);
-            transferResult(currentToken, from, balance);
-            Route(fromAddress, fromAmount, currentToken, balance);
+            return;
         }
+
+        boolean toNative = currentToken == null;
+        if (toNative) {
+            currentToken = prevToken;
+        }
+
+        BigInteger balance = (BigInteger) Context.call(currentToken, "balanceOf", Context.getAddress());
+        Context.require(balance.compareTo(_minReceive) >= 0, TAG + ": Below minimum receive amount of " + _minReceive);
+
+        if (networkAddress.net().equals(nativeNid)) {
+            Context.require(!toNative, TAG + ": Native swaps not available to icon from " + currentToken);
+            Context.call(currentToken, "transfer", Address.fromString(networkAddress.account()), balance, new byte[0]);
+        } else {
+            transferCrossChainResult(currentToken, networkAddress, balance, toNative);
+        }
+
+
+        Route(fromAddress, fromAmount, currentToken, balance);
+    }
+
+
+    private void transferCrossChainResult(Address token, NetworkAddress to, BigInteger amount, boolean toNative) {
+        String toNet = to.net();
+        if (canWithdraw(toNet)) {
+            if (token.equals(getBnusd())) {
+                transferBnUSD(token, to, amount);
+            } else {
+                transferHubToken(token, to, amount, toNative);
+            }
+        } else {
+            Context.require(!toNative, TAG + ": Native swaps are not supported for this network");
+            Context.call(token, "hubTransfer", to.toString(), amount, new byte[0]);
+        }
+    }
+
+    private void transferBnUSD(Address bnusd, NetworkAddress to, BigInteger amount) {
+        String toNet = to.net();
+        BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", toNet, true);
+        Context.call(xCallFee, bnusd, "crossTransfer", to.toString(), amount, new byte[0]);
+    }
+
+    private void transferHubToken(Address token, NetworkAddress to, BigInteger amount, boolean toNative) {
+        String toNet = to.net();
+        Address assetManager = getAssetManager();
+        String nativeAddress = Context.call(String.class, assetManager, "getNativeAssetAddress", token);
+        if (nativeAddress != null && NetworkAddress.valueOf(nativeAddress).net().equals(toNet)) {
+            BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", toNet, true);
+            String method = "withdrawTo";
+            if (toNative) {
+                method = "withdrawNativeTo";
+            }
+            Context.call(xCallFee, assetManager, method, token, to.toString(), amount);
+        } else {
+            Context.require(!toNative, TAG + ": Native swaps are not supported to other networks");
+            Context.call(token, "hubTransfer", to.toString(), amount, new byte[0]);
+        }
+    }
+
+    private boolean canWithdraw(String net) {
+        return Context.call(Boolean.class, getDaofund(), "getXCallFeePermission", Context.getAddress(), net);
     }
 
     private void transferResult(Address token, String to, BigInteger amount) {
@@ -195,12 +256,11 @@ public class RouterImpl implements Router {
         if (_minReceive == null) {
             _minReceive = BigInteger.ZERO;
         }
-        if (_receiver == null) {
+        if (_receiver == null || _receiver.equals("")) {
             _receiver = Context.getCaller().toString();
         }
 
         Context.require(_minReceive.signum() >= 0, TAG + ": Must specify a positive number for minimum to receive");
-
         Context.require(_path.length <= MAX_NUMBER_OF_ITERATIONS,
                 TAG + ": Passed max swaps of " + MAX_NUMBER_OF_ITERATIONS);
 

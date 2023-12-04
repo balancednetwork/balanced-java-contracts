@@ -20,6 +20,9 @@ import network.balanced.score.core.dex.db.NodeDB;
 import network.balanced.score.lib.interfaces.Dex;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.structs.RewardsDataEntry;
+import network.balanced.score.lib.utils.FloorLimited;
+import network.balanced.score.lib.utils.BalancedFloorLimits;
+
 import score.Address;
 import score.BranchDB;
 import score.Context;
@@ -42,7 +45,7 @@ import static network.balanced.score.lib.utils.Check.checkStatus;
 import static network.balanced.score.lib.utils.Constants.*;
 import static network.balanced.score.lib.utils.Math.pow;
 
-public abstract class AbstractDex implements Dex {
+public abstract class AbstractDex extends FloorLimited implements Dex {
 
     public AbstractDex(Address _governance) {
         if (governance.get() == null) {
@@ -485,6 +488,19 @@ public abstract class AbstractDex implements Dex {
         return BigInteger.ZERO;
     }
 
+    void deposit(Address token, Address to, BigInteger amount) {
+        DictDB<Address, BigInteger> depositDetails = deposit.at(token);
+        BigInteger userBalance = depositDetails.getOrDefault(to, BigInteger.ZERO);
+        userBalance = userBalance.add(amount);
+        depositDetails.set(to, userBalance);
+        Deposit(token, to, amount);
+
+        if (tokenPrecisions.get(token) == null) {
+            BigInteger decimalValue = (BigInteger) Context.call(token, "decimals");
+            tokenPrecisions.set(token, decimalValue);
+        }
+    }
+
     void exchange(Address fromToken, Address toToken, Address sender,
                   Address receiver, BigInteger value, BigInteger minimumReceive) {
 
@@ -552,6 +568,7 @@ public abstract class AbstractDex implements Dex {
         BigInteger totalQuote = isSell ? newToToken : newFromToken;
 
         // Send the trader their funds
+        BalancedFloorLimits.verifyWithdraw(toToken, sendAmount);
         Context.call(toToken, "transfer", receiver, sendAmount);
 
         // Send the platform fees to the fee handler SCORE
@@ -582,6 +599,37 @@ public abstract class AbstractDex implements Dex {
         BigInteger newFromToken = oldFromToken.add(value);
 
         totalTokensInPool.set(fromToken, newFromToken);
+    }
+
+    @External
+    public void govWithdraw(int id, Address token, BigInteger value) {
+        onlyGovernance();
+        isValidPoolId(id);
+        Context.require(id != SICXICX_POOL_ID, TAG + ":  Not supported on this API, use the ICX swap API.");
+
+        DictDB<Address, BigInteger> totalTokensInPool = poolTotal.at(id);
+        BigInteger oldToken = totalTokensInPool.get(token);
+
+        BigInteger newToken = oldToken.subtract(value);
+
+        totalTokensInPool.set(token, newToken);
+        Context.call(token, "transfer", getDaofund(), value);
+    }
+
+    @External
+    public void govSetPoolTotal(int pid, BigInteger total) {
+        onlyGovernance();
+        poolLpTotal.set(pid, total);
+    }
+
+    @External
+    public void govSetUserPoolTotal(int pid, Address user, BigInteger total) {
+        onlyGovernance();
+        BigInteger value = balance.at(pid).get(user);
+        BigInteger burned = value.subtract(total);
+        balance.at(pid).set(user, total);
+
+        TransferSingle(Context.getCaller(), user, MINT_ADDRESS, BigInteger.valueOf(pid), burned);
     }
 
     void swapIcx(Address sender, BigInteger value) {
@@ -650,6 +698,7 @@ public abstract class AbstractDex implements Dex {
 
         Context.call(getRewards(), "updateBalanceAndSupplyBatch", SICXICX_MARKET_NAME, newIcxTotal, data);
         Context.call(sicxAddress, "transfer", getFeehandler(), balnFees);
+        BalancedFloorLimits.verifyNativeWithdraw(orderIcxValue);
         Context.transfer(sender, orderIcxValue);
     }
 
@@ -699,9 +748,8 @@ public abstract class AbstractDex implements Dex {
 
         Context.require(fromBalance.compareTo(value) >= 0, TAG + ": Out of balance");
 
-        BigInteger toBalance = poolLpBalanceOfUser.getOrDefault(to, BigInteger.ZERO);
-        poolLpBalanceOfUser.set(from, fromBalance.subtract(value));
-        poolLpBalanceOfUser.set(to, toBalance.add(value));
+        poolLpBalanceOfUser.set(from, poolLpBalanceOfUser.get(from).subtract(value));
+        poolLpBalanceOfUser.set(to, poolLpBalanceOfUser.getOrDefault(to, BigInteger.ZERO).add(value));
         Address stakedLpAddress = getStakedLp();
 
         if (!from.equals(stakedLpAddress) && !to.equals(stakedLpAddress)) {

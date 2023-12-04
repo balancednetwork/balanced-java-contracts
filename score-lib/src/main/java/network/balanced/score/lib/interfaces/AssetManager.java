@@ -63,6 +63,17 @@ public interface AssetManager extends AddressManager, Version, Fallback {
     @Payable
     void withdrawTo(Address asset, String to, BigInteger amount);
 
+        /**
+     * withdraws amount to `to` address and converts to the chain native token
+     *
+     * @param asset  icon asset address to be withdrawn.
+     * @param to     address to withdraw to.
+     * @param amount amount to withdraw.
+     */
+    @External
+    @Payable
+    void withdrawNativeTo(Address asset, String to, BigInteger amount);
+
     /**
      * deposits to fromAddress then initiate a transfer to toAddress
      *

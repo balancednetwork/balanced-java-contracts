@@ -46,14 +46,6 @@
     "order": 2.0
   },
   {
-    "name": "disbursement",
-    "params": {},
-    "addressParams": {
-      "_governance": "governance"
-    },
-    "order": 2.0
-  },
-  {
     "name": "dividends",
     "params": {},
     "addressParams": {

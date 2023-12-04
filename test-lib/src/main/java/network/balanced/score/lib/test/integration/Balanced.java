@@ -193,6 +193,13 @@ public class Balanced {
         addXCallFeePermission(loans._address(), ETH_NID, true);
         addXCallFeePermission(router._address(), BSC_NID, true);
         addXCallFeePermission(router._address(), ETH_NID, true);
+
+        JsonArray setProtocolParams = new JsonArray()
+            .add(createParameter(ICON_NID))
+            .add(createParameter("String[]", new JsonArray()))
+            .add(createParameter("String[]", new JsonArray()));
+        JsonArray setProtocol = createSingleTransaction(xcallManager._address(), "configureProtocols", setProtocolParams);
+        governanceClient.execute(setProtocol.toString());
     }
 
     public void addXCallFeePermission(Address contract, String net, boolean permission) {

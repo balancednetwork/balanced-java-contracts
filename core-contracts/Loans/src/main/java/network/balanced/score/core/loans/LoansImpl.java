@@ -29,7 +29,9 @@ import network.balanced.score.lib.interfaces.Loans;
 import network.balanced.score.lib.interfaces.LoansXCall;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.structs.RewardsDataEntry;
+import network.balanced.score.lib.utils.BalancedFloorLimits;
 import network.balanced.score.lib.utils.Names;
+import network.balanced.score.lib.utils.FloorLimited;
 import network.balanced.score.lib.utils.Versions;
 import network.balanced.score.lib.utils.XCallUtils;
 import score.Address;
@@ -55,7 +57,7 @@ import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.Math.convertToNumber;
 import static network.balanced.score.lib.utils.Math.pow;
 
-public class LoansImpl implements Loans {
+public class LoansImpl extends FloorLimited implements Loans {
 
     public static final String TAG = "BalancedLoans";
 
@@ -323,7 +325,6 @@ public class LoansImpl implements Loans {
         LoansXCall.process(this, _from, _data);
     }
 
-    
     public void xBorrow(String from, String _collateralToBorrowAgainst, BigInteger _amountToBorrow) {
         originateLoan(_collateralToBorrowAgainst, _amountToBorrow, from);
     }
@@ -806,7 +807,9 @@ public class LoansImpl implements Loans {
     }
 
     private void transferCollateral(String tokenSymbol, Address to, BigInteger amount, String msg, byte[] data) {
-        Context.call(CollateralDB.getAddress(tokenSymbol), "transfer", to, amount, data);
+        Address tokenAddress = CollateralDB.getAddress(tokenSymbol);
+        BalancedFloorLimits.verifyWithdraw(tokenAddress, amount);
+        Context.call(tokenAddress, "transfer", to, amount, data);
         String logMessage = msg + " " + amount.toString() + " " + tokenSymbol + " sent to " + to;
         TokenTransfer(to, amount, logMessage);
     }

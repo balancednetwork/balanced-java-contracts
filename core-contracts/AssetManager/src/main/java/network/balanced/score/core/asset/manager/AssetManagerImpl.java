@@ -157,6 +157,12 @@ public class AssetManagerImpl implements AssetManager {
         _withdrawTo(asset, Context.getCaller().toString(), to, amount, Context.getValue());
     }
 
+    @External
+    @Payable
+    public void withdrawNativeTo(Address asset, String to, BigInteger amount) {
+        _withdrawTo(asset, Context.getCaller().toString(), to, amount, Context.getValue(), true);
+    }
+
     @Payable
     public void fallback() {
     }
@@ -192,14 +198,25 @@ public class AssetManagerImpl implements AssetManager {
     }
 
     private void _withdrawTo(Address asset, String from, String to, BigInteger amount, BigInteger fee) {
+        _withdrawTo(asset, from, to, amount, fee, false);
+    }
+
+    private void _withdrawTo(Address asset, String from, String to, BigInteger amount, BigInteger fee, boolean toNative) {
         checkStatus();
         Context.call(asset, "burnFrom", from, amount);
         NetworkAddress tokenAddress = NetworkAddress.valueOf(assetNativeAddress.get(asset));
         NetworkAddress targetAddress = NetworkAddress.valueOf(to);
         Context.require(targetAddress.net().equals(tokenAddress.net()), "Wrong network");
         NetworkAddress spoke = NetworkAddress.valueOf(spokes.get(tokenAddress.net()));
-        byte[] msg = SpokeAssetManagerMessages.WithdrawTo(tokenAddress.account(), targetAddress.account(), amount);
+        byte[] msg;
         byte[] rollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), to, amount);
+
+        if (toNative) {
+            msg  = SpokeAssetManagerMessages.WithdrawNativeTo(tokenAddress.account(), targetAddress.account(), amount);
+        } else {
+            msg  = SpokeAssetManagerMessages.WithdrawTo(tokenAddress.account(), targetAddress.account(), amount);
+        }
+
         XCallUtils.sendCall(fee, spoke, msg, rollback);
     }
 
