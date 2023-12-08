@@ -21,19 +21,19 @@ import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.*;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.Version;
+import network.balanced.score.lib.structs.PriceProtectionConfig;
 import score.annotation.External;
+import score.annotation.Optional;
+import icon.xcall.lib.annotation.XCall;
 
 import java.math.BigInteger;
+import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
 public interface BalancedOracle extends
         Name,
-        GovernanceAddress,
-        AdminAddress,
-        DexAddress,
-        OracleAddress,
-        StakingAddress,
+        AddressManager,
         Version {
 
     @External
@@ -47,6 +47,9 @@ public interface BalancedOracle extends
 
     @External(readonly = true)
     BigInteger getLastPriceInUSD(String symbol);
+
+    @External(readonly = true)
+    Map<String, BigInteger> getPriceDataInUSD(String symbol);
 
     @External
     void addDexPricedAsset(String symbol, BigInteger dexBnusdPoolId);
@@ -74,4 +77,19 @@ public interface BalancedOracle extends
 
     @External(readonly = true)
     BigInteger getOraclePriceEMADecay();
+
+    @XCall
+    void updatePriceData(String from, String symbol, BigInteger rate, BigInteger timestamp);
+
+    @External
+    void addExternalPriceProxy(String symbol, String address, @Optional PriceProtectionConfig priceProtectionConfig);
+
+    @External
+    void removeExternalPriceProxy(String symbol, String address);
+
+    @External(readonly = true)
+    String getExternalPriceProvider(String symbol);
+
+    @External(readonly = true)
+    PriceProtectionConfig getExternalPriceProtectionConfig(String symbol);
 }

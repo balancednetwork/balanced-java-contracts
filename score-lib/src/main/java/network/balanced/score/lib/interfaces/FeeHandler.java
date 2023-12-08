@@ -61,6 +61,12 @@ public interface FeeHandler extends Name, AddressManager, Version {
     @External(readonly = true)
     BigInteger getStabilityFundFeesAccrued();
 
+    @External
+    void accrueStabilityYieldFee(BigInteger amount);
+
+    @External(readonly = true)
+    BigInteger getStabilityFundYieldFeesAccrued();
+
     @External(readonly = true)
     BigInteger getSwapFeesAccruedByToken(Address token);
 

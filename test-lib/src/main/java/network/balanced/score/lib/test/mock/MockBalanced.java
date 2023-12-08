@@ -21,7 +21,6 @@ import com.iconloop.score.test.ServiceManager;
 
 import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.utils.BalancedAddressManager;
-import network.balanced.score.lib.utils.XCallUtils;
 import score.Address;
 import network.balanced.score.lib.utils.Names;
 
@@ -29,7 +28,6 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
-import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;

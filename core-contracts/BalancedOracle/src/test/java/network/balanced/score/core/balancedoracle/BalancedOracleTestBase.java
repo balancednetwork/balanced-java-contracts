@@ -24,6 +24,7 @@ import network.balanced.score.lib.interfaces.tokens.IRC2;
 import network.balanced.score.lib.interfaces.tokens.IRC2ScoreInterface;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockContract;
+import network.balanced.score.lib.test.mock.MockBalanced;
 
 import java.math.BigInteger;
 
@@ -34,8 +35,8 @@ class BalancedOracleTestBase extends UnitTest {
 
     protected static final ServiceManager sm = getServiceManager();
     protected static final Account owner = sm.createAccount();
-    protected static final Account adminAccount = sm.createAccount();
 
+    protected MockBalanced mockBalanced;
     protected MockContract<Dex> dex;
     protected MockContract<Oracle> oracle;
     protected MockContract<Staking> staking;
@@ -43,20 +44,19 @@ class BalancedOracleTestBase extends UnitTest {
     protected MockContract<IRC2> iusdc;
 
     protected Score balancedOracle;
-    protected static final Account governance = Account.newScoreAccount(scoreCount);
 
     protected static final BigInteger icxBnusdPoolId = BigInteger.TWO;
 
     protected void setup() throws Exception {
         mockReadonly();
-        dex = new MockContract<>(DexScoreInterface.class, sm, owner);
-        oracle = new MockContract<>(OracleScoreInterface.class, sm, owner);
-        staking = new MockContract<>(StakingScoreInterface.class, sm, owner);
-        baln = new MockContract<>(BalancedTokenScoreInterface.class, sm, owner);
+        mockBalanced = new MockBalanced(sm, owner);
+        dex = mockBalanced.dex;
+        oracle = mockBalanced.oracle;
+        staking = mockBalanced.staking;
+        baln = mockBalanced.baln;
         iusdc = new MockContract<>(IRC2ScoreInterface.class, sm, owner);
-        balancedOracle = sm.deploy(owner, BalancedOracleImpl.class, governance.getAddress());
+        balancedOracle = sm.deploy(owner, BalancedOracleImpl.class, mockBalanced.governance.getAddress());
 
-        when(baln.mock.decimals()).thenReturn(BigInteger.valueOf(18));
         when(iusdc.mock.decimals()).thenReturn(BigInteger.valueOf(6));
         sm.getBlock().increase(DAY);
     }

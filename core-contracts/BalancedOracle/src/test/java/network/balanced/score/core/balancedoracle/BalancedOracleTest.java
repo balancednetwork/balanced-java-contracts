@@ -33,11 +33,35 @@ class BalancedOracleTest extends BalancedOracleTestBase {
     @BeforeEach
     public void setupContract() throws Exception {
         setup();
-        balancedOracle.invoke(governance, "setAdmin", governance.getAddress());
-        balancedOracle.invoke(governance, "setDex", dex.getAddress());
-        balancedOracle.invoke(governance, "setOracle", oracle.getAddress());
-        balancedOracle.invoke(governance, "setStaking", staking.getAddress());
         balancedOracle.invoke(owner, "setLastUpdateThreshold", MICRO_SECONDS_IN_A_DAY);
+    }
+
+    @Test
+    void addRemoveDexPricedAssets() {
+        // Arrange
+        String balnSymbol = "BALN";
+        String ommSymbol = "OMM";
+
+        BigInteger balnBnusdPoolID = BigInteger.valueOf(3);
+        BigInteger ommBnusdPoolID = BigInteger.valueOf(4);
+
+        // Act
+        balancedOracle.invoke(owner, "addDexPricedAsset", balnSymbol, balnBnusdPoolID);
+        balancedOracle.invoke(owner, "addDexPricedAsset", ommSymbol, ommBnusdPoolID);
+
+        // Assert
+        assertEquals(balnBnusdPoolID, balancedOracle.call("getAssetBnusdPoolId", balnSymbol));
+        assertEquals(ommBnusdPoolID, balancedOracle.call("getAssetBnusdPoolId", ommSymbol));
+
+        // Act
+        balancedOracle.invoke(owner, "removeDexPricedAsset", balnSymbol);
+
+        // Assert
+        String expectedErrorMessage = balnSymbol + " is not listed as a dex priced asset";
+        Executable getBalnPoolID = () -> balancedOracle.call("getAssetBnusdPoolId", balnSymbol);
+        expectErrorMessage(getBalnPoolID, expectedErrorMessage);
+
+        assertEquals(ommBnusdPoolID, balancedOracle.call("getAssetBnusdPoolId", ommSymbol));
     }
 
     @Test
@@ -47,7 +71,7 @@ class BalancedOracleTest extends BalancedOracleTestBase {
         when(staking.mock.getTodayRate()).thenReturn(sicxRate);
 
         // Act
-        balancedOracle.invoke(adminAccount, "getPriceInLoop", "sICX");
+        balancedOracle.invoke(owner, "getPriceInLoop", "sICX");
         BigInteger priceInLoop = (BigInteger) balancedOracle.call("getLastPriceInLoop", "sICX");
 
         // Assert
@@ -64,7 +88,7 @@ class BalancedOracleTest extends BalancedOracleTestBase {
         mockUSDRate("ICX", icxRateInUSD);
 
         // Act
-        balancedOracle.invoke(adminAccount, "getPriceInUSD", "sICX");
+        balancedOracle.invoke(owner, "getPriceInUSD", "sICX");
         BigInteger priceInUSD = (BigInteger) balancedOracle.call("getLastPriceInUSD", "sICX");
 
         // Assert
@@ -87,7 +111,7 @@ class BalancedOracleTest extends BalancedOracleTestBase {
         BigInteger BTCUSDRate = BigInteger.valueOf(1000).multiply(EXA);
         mockUSDRate("BTC", BTCUSDRate);
         // Act
-        balancedOracle.invoke(adminAccount, "getPriceInUSD", "BTC");
+        balancedOracle.invoke(owner, "getPriceInUSD", "BTC");
         BigInteger priceInUSD = (BigInteger) balancedOracle.call("getLastPriceInUSD", "BTC");
 
         // Assert
@@ -95,12 +119,29 @@ class BalancedOracleTest extends BalancedOracleTestBase {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    void getPriceDataInUSD() {
+        // Arrange
+        BigInteger BTCUSDRate = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger baseUpdateTime = BigInteger.TEN;
+        BigInteger quoteUpdateTime = BigInteger.TWO;
+        mockUSDRate("BTC", BTCUSDRate, baseUpdateTime, quoteUpdateTime);
+        // Act
+        Map<String, BigInteger> priceInUSD = (Map<String, BigInteger>) balancedOracle.call("getPriceDataInUSD", "BTC");
+
+        // Assert
+        assertEquals(BTCUSDRate, priceInUSD.get("rate"));
+        assertEquals(quoteUpdateTime, priceInUSD.get("timestamp"));
+    }
+
+    @Test
     void getBnUSDPriceInLoop_useBnUSD() {
         // Arrange
         BigInteger bnusdRate = BigInteger.valueOf(7).multiply(BigInteger.TEN.pow(17));
         mockRate("USD", bnusdRate);
+
         // Act
-        balancedOracle.invoke(adminAccount, "getPriceInLoop", "bnUSD");
+        balancedOracle.invoke(owner, "getPriceInLoop", "bnUSD");
         BigInteger priceInLoop = (BigInteger) balancedOracle.call("getLastPriceInLoop", "bnUSD");
 
         // Assert
@@ -114,7 +155,7 @@ class BalancedOracleTest extends BalancedOracleTestBase {
         BigInteger poolID = BigInteger.valueOf(3);
         when(dex.mock.getPoolBase(poolID)).thenReturn(baln.getAddress());
 
-        balancedOracle.invoke(governance, "addDexPricedAsset", tokenSymbol, poolID);
+        balancedOracle.invoke(owner, "addDexPricedAsset", tokenSymbol, poolID);
 
         BigInteger icxRateInUSD = BigInteger.TEN.pow(17);
         BigInteger bnusdRate = BigInteger.valueOf(7).multiply(BigInteger.TEN.pow(17));
@@ -129,7 +170,7 @@ class BalancedOracleTest extends BalancedOracleTestBase {
         when(dex.mock.getQuotePriceInBase(poolID)).thenReturn(bnusdPriceInBaln);
 
         // Act
-        balancedOracle.invoke(adminAccount, "getPriceInLoop", tokenSymbol);
+        balancedOracle.invoke(owner, "getPriceInLoop", tokenSymbol);
         BigInteger priceInLoop = (BigInteger) balancedOracle.call("getLastPriceInLoop", tokenSymbol);
         BigInteger priceInDollars = (BigInteger) balancedOracle.call("getLastPriceInUSD", tokenSymbol);
 
@@ -145,7 +186,7 @@ class BalancedOracleTest extends BalancedOracleTestBase {
         BigInteger poolID = BigInteger.valueOf(4);
         when(dex.mock.getPoolBase(poolID)).thenReturn(iusdc.getAddress());
 
-        balancedOracle.invoke(governance, "addDexPricedAsset", tokenSymbol, poolID);
+        balancedOracle.invoke(owner, "addDexPricedAsset", tokenSymbol, poolID);
 
         BigInteger bnusdRate = BigInteger.valueOf(7).multiply(BigInteger.TEN.pow(17));
         BigInteger bnusdPriceIUSDC = BigInteger.valueOf(20).multiply(BigInteger.TEN.pow(5));
@@ -155,7 +196,7 @@ class BalancedOracleTest extends BalancedOracleTestBase {
         when(dex.mock.getQuotePriceInBase(poolID)).thenReturn(bnusdPriceIUSDC);
 
         // Act
-        balancedOracle.invoke(adminAccount, "getPriceInLoop", tokenSymbol);
+        balancedOracle.invoke(owner, "getPriceInLoop", tokenSymbol);
         BigInteger priceInLoop = (BigInteger) balancedOracle.call("getLastPriceInLoop", tokenSymbol);
 
         // Assert
@@ -169,18 +210,18 @@ class BalancedOracleTest extends BalancedOracleTestBase {
         BigInteger poolID = BigInteger.valueOf(3);
         when(dex.mock.getPoolBase(poolID)).thenReturn(baln.getAddress());
 
-        balancedOracle.invoke(governance, "addDexPricedAsset", tokenSymbol, poolID);
+        balancedOracle.invoke(owner, "addDexPricedAsset", tokenSymbol, poolID);
         when(dex.mock.getQuotePriceInBase(poolID)).thenReturn(ICX);
 
         BigInteger alpha = ICX.divide(BigInteger.valueOf(DAY));
         BigInteger decay = ICX.subtract(alpha);
-        balancedOracle.invoke(governance, "setDexPriceEMADecay", alpha);
+        balancedOracle.invoke(owner, "setDexPriceEMADecay", alpha);
 
         // Act
         BigInteger rate1 = BigInteger.valueOf(6).multiply(BigInteger.TEN.pow(17));
         BigInteger price1 = ICX.multiply(ICX).divide(rate1);
         mockDexRate(poolID, rate1);
-        balancedOracle.invoke(adminAccount, "getPriceInLoop", tokenSymbol);
+        balancedOracle.invoke(owner, "getPriceInLoop", tokenSymbol);
         BigInteger EMA = price1;
 
         int blockDiff = (int) DAY / 4;
@@ -189,7 +230,7 @@ class BalancedOracleTest extends BalancedOracleTestBase {
         BigInteger rate2 = BigInteger.valueOf(6).multiply(BigInteger.TEN.pow(17));
         BigInteger price2 = ICX.multiply(ICX).divide(rate2);
         mockDexRate(poolID, rate2);
-        balancedOracle.invoke(adminAccount, "getPriceInLoop", tokenSymbol);
+        balancedOracle.invoke(owner, "getPriceInLoop", tokenSymbol);
         BigInteger factor = exaPow(decay, blockDiff);
         BigInteger priceDiff = price1.subtract(EMA);
         EMA = price1.subtract(priceDiff.multiply(factor).divide(ICX));
@@ -199,7 +240,7 @@ class BalancedOracleTest extends BalancedOracleTestBase {
         BigInteger rate3 = BigInteger.valueOf(5).multiply(BigInteger.TEN.pow(17));
         BigInteger price3 = ICX.multiply(ICX).divide(rate3);
         mockDexRate(poolID, rate3);
-        balancedOracle.invoke(adminAccount, "getPriceInLoop", tokenSymbol);
+        balancedOracle.invoke(owner, "getPriceInLoop", tokenSymbol);
         factor = exaPow(decay, blockDiff);
         priceDiff = price2.subtract(EMA);
         EMA = price2.subtract(priceDiff.multiply(factor).divide(ICX));
@@ -209,7 +250,7 @@ class BalancedOracleTest extends BalancedOracleTestBase {
 
         BigInteger rate4 = BigInteger.valueOf(10).multiply(BigInteger.TEN.pow(17));
         mockDexRate(poolID, rate4);
-        balancedOracle.invoke(adminAccount, "getPriceInLoop", tokenSymbol);
+        balancedOracle.invoke(owner, "getPriceInLoop", tokenSymbol);
         factor = exaPow(decay, blockDiff);
         priceDiff = price3.subtract(EMA);
         EMA = price3.subtract(priceDiff.multiply(factor).divide(ICX));

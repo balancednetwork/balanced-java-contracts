@@ -17,8 +17,11 @@
 package network.balanced.score.core.balancedoracle;
 
 import network.balanced.score.lib.interfaces.BalancedOracle;
+import network.balanced.score.lib.interfaces.BalancedOracleXCall;
+import network.balanced.score.lib.structs.PriceProtectionConfig;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.Versions;
+import network.balanced.score.lib.utils.XCallUtils;
 import score.Address;
 import score.Context;
 import score.annotation.External;
@@ -29,6 +32,7 @@ import java.util.Map;
 
 import static network.balanced.score.core.balancedoracle.BalancedOracleConstants.*;
 import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static network.balanced.score.lib.utils.Math.pow;
@@ -38,12 +42,14 @@ public class BalancedOracleImpl implements BalancedOracle {
 
     public BalancedOracleImpl(@Optional Address _governance) {
         if (governance.get() == null) {
-            governance.set(_governance);
+            setGovernance(_governance);
             assetPeg.set("bnUSD", "USD");
             dexPricedAssets.set("BALN", BigInteger.valueOf(3));
             lastUpdateThreshold.set(MICRO_SECONDS_IN_A_DAY);
             dexPriceEMADecay.set(EXA);
             oraclePriceEMADecay.set(EXA);
+        } else {
+            setGovernance(governance.get());
         }
 
         if (currentVersion.getOrDefault("").equals(Versions.BALANCEDORACLE)) {
@@ -60,6 +66,16 @@ public class BalancedOracleImpl implements BalancedOracle {
     @External(readonly = true)
     public String version() {
         return currentVersion.getOrDefault("");
+    }
+
+    @External
+    public void updateAddress(String name) {
+        resetAddress(name);
+    }
+
+    @External(readonly = true)
+    public Address getAddress(String name) {
+        return getAddressByName(name);
     }
 
     @External
@@ -82,15 +98,20 @@ public class BalancedOracleImpl implements BalancedOracle {
         return _getPriceInUSD(symbol);
     }
 
+    @External(readonly = true)
+    public Map<String, BigInteger> getPriceDataInUSD(String symbol) {
+        return _getUSDPriceData(symbol).toMap();
+    }
+
     @External
     public void addDexPricedAsset(String symbol, BigInteger dexBnusdPoolId) {
-        only(admin);
+        onlyOwner();
         dexPricedAssets.set(symbol, dexBnusdPoolId);
     }
 
     @External
     public void removeDexPricedAsset(String symbol) {
-        only(admin);
+        onlyOwner();
         dexPricedAssets.set(symbol, null);
     }
 
@@ -103,7 +124,7 @@ public class BalancedOracleImpl implements BalancedOracle {
 
     @External
     public void setPeg(String symbol, String peg) {
-        only(admin);
+        onlyOwner();
         assetPeg.set(symbol, peg);
     }
 
@@ -125,7 +146,7 @@ public class BalancedOracleImpl implements BalancedOracle {
 
     @External
     public void setDexPriceEMADecay(BigInteger decay) {
-        only(admin);
+        onlyOwner();
         Context.require(decay.compareTo(EXA) <= 0, TAG + ": decay has to be less than " + EXA);
         Context.require(decay.compareTo(BigInteger.ZERO) > 0, TAG + ": decay has to be larger than zero");
         dexPriceEMADecay.set(decay);
@@ -138,7 +159,7 @@ public class BalancedOracleImpl implements BalancedOracle {
 
     @External
     public void setOraclePriceEMADecay(BigInteger decay) {
-        only(admin);
+        onlyOwner();
         Context.require(decay.compareTo(EXA) <= 0, TAG + ": decay has to be less than " + EXA);
         Context.require(decay.compareTo(BigInteger.ZERO) > 0, TAG + ": decay has to be larger than zero");
         oraclePriceEMADecay.set(decay);
@@ -149,66 +170,59 @@ public class BalancedOracleImpl implements BalancedOracle {
         return oraclePriceEMADecay.get();
     }
 
+    // XCall
+    public void updatePriceData(String from, String symbol, BigInteger rate, BigInteger timestamp) {
+        Context.require(from.equals(priceProvider.get(symbol)), from + " is not allowed to update the price of " + symbol);
+        Context.require(timestamp.compareTo(BigInteger.valueOf(Context.getBlockTimestamp())) < 0, "Time cannot be in the future");
+        PriceData currentPriceData = externalPriceData.get(symbol);
+        if (currentPriceData == null) {
+            externalPriceData.set(symbol, new PriceData(rate, timestamp));
+            return;
+        }
+
+        Context.require(currentPriceData.timestamp.compareTo(timestamp) < 0, "Price must be more recent than the current one");
+        PriceProtectionConfig priceProtectionConfig = externalPriceProtectionConfig.get(symbol);
+        if (priceProtectionConfig != null) {
+            priceProtectionConfig.verifyPriceUpdate(currentPriceData.timestamp, currentPriceData.rate, timestamp, rate);
+        }
+
+        externalPriceData.set(symbol, new PriceData(rate, timestamp));
+    }
+
     @External
-    public void setGovernance(Address _address) {
+    public void addExternalPriceProxy(String symbol, String address, @Optional PriceProtectionConfig priceProtectionConfig) {
         onlyOwner();
-        governance.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getGovernance() {
-        return governance.get();
+        priceProvider.set(symbol, address);
+        externalPriceProtectionConfig.set(symbol, priceProtectionConfig);
     }
 
     @External
-    public void setAdmin(Address _address) {
-        only(governance);
-        admin.set(_address);
+    public void removeExternalPriceProxy(String symbol, String address) {
+        onlyOwner();
+        priceProvider.set(symbol, null);
+        externalPriceProtectionConfig.set(symbol, null);
     }
 
     @External(readonly = true)
-    public Address getAdmin() {
-        return admin.get();
+    public String getExternalPriceProvider(String symbol) {
+        return priceProvider.get(symbol);
+    }
+
+    @External(readonly = true)
+    public PriceProtectionConfig getExternalPriceProtectionConfig(String symbol) {
+        return externalPriceProtectionConfig.get(symbol);
     }
 
     @External
-    public void setOracle(Address _address) {
-        only(admin);
-        isContract(_address);
-        oracle.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getOracle() {
-        return oracle.get();
-    }
-
-    @External
-    public void setDex(Address _address) {
-        only(admin);
-        isContract(_address);
-        dex.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getDex() {
-        return dex.get();
-    }
-
-    @External
-    public void setStaking(Address _address) {
-        only(admin);
-        isContract(_address);
-        staking.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getStaking() {
-        return staking.get();
+    public void handleCallMessage(String _from, byte[] _data, @Optional String[] _protocols) {
+        checkStatus();
+        only(getXCall());
+        XCallUtils.verifyXCallProtocols(_from, _protocols);
+        BalancedOracleXCall.process(this, _from, _data);
     }
 
     private BigInteger getSICXPriceInLoop() {
-        return Context.call(BigInteger.class, staking.get(), "getTodayRate");
+        return Context.call(BigInteger.class, getStaking(), "getTodayRate");
     }
 
     private BigInteger loopToUSD(BigInteger loopAmount) {
@@ -257,11 +271,11 @@ public class BalancedOracleImpl implements BalancedOracle {
         }
 
         BigInteger poolID = dexPricedAssets.get(symbol);
-        Address base = Context.call(Address.class, dex.get(), "getPoolBase", poolID);
+        Address base = Context.call(Address.class, getDex(), "getPoolBase", poolID);
         BigInteger nrDecimals = Context.call(BigInteger.class, base, "decimals");
         BigInteger decimals = pow(BigInteger.TEN, nrDecimals.intValue());
 
-        BigInteger bnusdPriceInAsset = Context.call(BigInteger.class, dex.get(), "getQuotePriceInBase", poolID);
+        BigInteger bnusdPriceInAsset = Context.call(BigInteger.class, getDex(), "getQuotePriceInBase", poolID);
 
         BigInteger loopRate = getLoopRate("USD");
         BigInteger priceInLoop = loopRate.multiply(decimals).divide(bnusdPriceInAsset);
@@ -277,8 +291,21 @@ public class BalancedOracleImpl implements BalancedOracle {
     }
 
     @SuppressWarnings("unchecked")
+    private PriceData _getUSDPriceData(String symbol) {
+        String pegSymbol = assetPeg.getOrDefault(symbol, symbol);
+        if (priceProvider.get(pegSymbol) != null) {
+            return externalPriceData.get(pegSymbol);
+        } else {
+            Map<String, BigInteger> priceData = (Map<String, BigInteger>) Context.call(getOracle(), "get_reference_data", pegSymbol, "USD");
+            BigInteger last_update_base = priceData.get("last_update_base");
+            BigInteger last_update_quote = priceData.get("last_update_quote");
+            return new PriceData(priceData.get("rate"), last_update_base.min(last_update_quote));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     private BigInteger getRate(String base, String quote) {
-        Map<String, BigInteger> priceData = (Map<String, BigInteger>) Context.call(oracle.get(), "get_reference_data"
+        Map<String, BigInteger> priceData = (Map<String, BigInteger>) Context.call(getOracle(), "get_reference_data"
                 , base, quote);
         BigInteger last_update_base = priceData.get("last_update_base");
         BigInteger last_update_quote = priceData.get("last_update_quote");
