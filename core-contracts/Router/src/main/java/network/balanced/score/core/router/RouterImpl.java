@@ -208,48 +208,6 @@ public class RouterImpl implements Router {
         return Context.call(Boolean.class, getDaofund(), "getXCallFeePermission", Context.getAddress(), net);
     }
 
-    private void transferResult(Address token, String to, BigInteger amount) {
-        String nativeNid = XCallUtils.getNativeNid();
-        NetworkAddress networkAddress = NetworkAddress.valueOf(to, nativeNid);
-        if (networkAddress.net().equals(nativeNid)) {
-            Context.call(token, "transfer", Address.fromString(networkAddress.account()), amount, new byte[0]);
-            return;
-        }
-
-        String toNet = NetworkAddress.valueOf(to).net();
-        if (canWithdraw(toNet)) {
-            if (token.equals(getBnusd())) {
-                transferBnUSD(token, to, amount);
-            } else {
-                transferHubToken(token, to, amount);
-            }
-        } else {
-            Context.call(token, "hubTransfer", to, amount, new byte[0]);
-        }
-    }
-
-    private void transferBnUSD(Address bnusd, String to, BigInteger amount) {
-        String toNet = NetworkAddress.valueOf(to).net();
-        BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", toNet, true);
-        Context.call(xCallFee, bnusd, "crossTransfer", to, amount, new byte[0]);
-    }
-
-    private void transferHubToken(Address token, String to, BigInteger amount) {
-        String toNet = NetworkAddress.valueOf(to).net();
-        Address assetManager = getAssetManager();
-        String nativeAddress = Context.call(String.class, assetManager, "getNativeAssetAddress", token);
-        if (nativeAddress != null && NetworkAddress.valueOf(nativeAddress).net().equals(toNet)) {
-            BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", toNet, true);
-            Context.call(xCallFee, assetManager, "withdrawTo", token, to, amount);
-        } else {
-            Context.call(token, "hubTransfer", to, amount, new byte[0]);
-        }
-    }
-
-    private boolean canWithdraw(String net) {
-        return Context.call(Boolean.class, getDaofund(), "getXCallFeePermission", Context.getAddress(), net);
-    }
-
     @Payable
     @External
     public void route(Address[] _path, @Optional BigInteger _minReceive, @Optional String _receiver) {
