@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
 import network.balanced.score.lib.structs.PriceProtectionConfig;
+import network.balanced.score.lib.structs.PriceProtectionParameter;
 
 import network.balanced.score.lib.interfaces.BalancedOracleMessages;
 
@@ -43,7 +44,7 @@ class BalancedOracleTestExternal extends BalancedOracleTestBase {
     void externalPriceProxy_noProtection() {
         // Arrange
         balancedOracle.invoke(owner, "addExternalPriceProxy", symbol, externalPriceProxy,
-                new PriceProtectionConfig(false, BigInteger.ZERO, BigInteger.ZERO));
+                newPriceProtectionParameter(false, BigInteger.ZERO, BigInteger.ZERO));
         BigInteger initialRate = BigInteger.TEN.pow(18);
         BigInteger timestamp = BigInteger.ZERO;
         updatePrice(externalPriceProxy, symbol, initialRate, timestamp);
@@ -62,7 +63,7 @@ class BalancedOracleTestExternal extends BalancedOracleTestBase {
     void externalPriceProxy_oldTimestamp() {
         // Arrange
         balancedOracle.invoke(owner, "addExternalPriceProxy", symbol, externalPriceProxy,
-                new PriceProtectionConfig(false, BigInteger.ZERO, BigInteger.ZERO));
+                newPriceProtectionParameter(false, BigInteger.ZERO, BigInteger.ZERO));
         BigInteger initialRate = BigInteger.TEN.pow(18);
         BigInteger timestamp = BigInteger.ZERO;
         updatePrice(externalPriceProxy, symbol, initialRate, timestamp);
@@ -79,7 +80,7 @@ class BalancedOracleTestExternal extends BalancedOracleTestBase {
     void externalPriceProxy_futureTimestamp() {
         // Arrange
         balancedOracle.invoke(owner, "addExternalPriceProxy", symbol, externalPriceProxy,
-                new PriceProtectionConfig(false, BigInteger.ZERO, BigInteger.ZERO));
+                newPriceProtectionParameter(false, BigInteger.ZERO, BigInteger.ZERO));
         BigInteger initialRate = BigInteger.TEN.pow(18);
         BigInteger timestamp = BigInteger.valueOf(sm.getBlock().getTimestamp()).add(MICRO_SECONDS_IN_A_DAY);
 
@@ -95,7 +96,7 @@ class BalancedOracleTestExternal extends BalancedOracleTestBase {
     void externalPriceProxy_increaseOnly() {
         // Arrange
         balancedOracle.invoke(owner, "addExternalPriceProxy", symbol, externalPriceProxy,
-                new PriceProtectionConfig(true, BigInteger.ZERO, BigInteger.ZERO));
+                newPriceProtectionParameter(true, BigInteger.ZERO, BigInteger.ZERO));
         BigInteger initialRate = BigInteger.TEN.pow(18);
         BigInteger timestamp = BigInteger.ZERO;
         updatePrice(externalPriceProxy, symbol, initialRate, timestamp);
@@ -119,7 +120,7 @@ class BalancedOracleTestExternal extends BalancedOracleTestBase {
         BigInteger priceChangeInPoints = BigInteger.valueOf(1000); // 10%
         BigInteger priceChangeTimeWindowUs = MICRO_SECONDS_IN_A_DAY; // 1 Day
         balancedOracle.invoke(owner, "addExternalPriceProxy", symbol, externalPriceProxy,
-                new PriceProtectionConfig(false, priceChangeInPoints, priceChangeTimeWindowUs));
+                newPriceProtectionParameter(false, priceChangeInPoints, priceChangeTimeWindowUs));
 
         BigInteger initialRate = BigInteger.TEN.pow(18);
         BigInteger timestamp = BigInteger.ZERO;
@@ -145,7 +146,7 @@ class BalancedOracleTestExternal extends BalancedOracleTestBase {
         BigInteger priceChangeInPoints = BigInteger.valueOf(1000); // 10%
         BigInteger priceChangeTimeWindowUs = MICRO_SECONDS_IN_A_DAY; // 1 Day
         balancedOracle.invoke(owner, "addExternalPriceProxy", symbol, externalPriceProxy,
-                new PriceProtectionConfig(false, priceChangeInPoints, priceChangeTimeWindowUs));
+                newPriceProtectionParameter(false, priceChangeInPoints, priceChangeTimeWindowUs));
 
         BigInteger initialRate = BigInteger.TEN.pow(18);
         BigInteger timestamp = BigInteger.ZERO;
@@ -171,7 +172,7 @@ class BalancedOracleTestExternal extends BalancedOracleTestBase {
         BigInteger priceChangeInPoints = BigInteger.valueOf(1000); // 10%
         BigInteger priceChangeTimeWindowUs = MICRO_SECONDS_IN_A_DAY; // 1 Day
         balancedOracle.invoke(owner, "addExternalPriceProxy", symbol, externalPriceProxy,
-                new PriceProtectionConfig(false, priceChangeInPoints, priceChangeTimeWindowUs));
+                newPriceProtectionParameter(false, priceChangeInPoints, priceChangeTimeWindowUs));
 
         BigInteger initialRate = BigInteger.TEN.pow(18);
         BigInteger timestamp = BigInteger.ZERO;
@@ -195,7 +196,7 @@ class BalancedOracleTestExternal extends BalancedOracleTestBase {
         assertOnlyCallableBy(mockBalanced.xCall.getAddress(), balancedOracle, "handleCallMessage", "", new byte[0],
                 (Object) new String[0]);
         balancedOracle.invoke(owner, "addExternalPriceProxy", symbol, externalPriceProxy,
-                new PriceProtectionConfig(false, BigInteger.ZERO, BigInteger.ZERO));
+                newPriceProtectionParameter(false, BigInteger.ZERO, BigInteger.ZERO));
         expectErrorMessage(() -> updatePrice("avax/wrongOracle", "hyUSDC", BigInteger.ZERO, BigInteger.ZERO),
                 "is not allowed to update the price");
     }
@@ -211,5 +212,14 @@ class BalancedOracleTestExternal extends BalancedOracleTestBase {
 
         assertEquals(timestamp, priceData.get("timestamp"));
         assertEquals(rate, priceData.get("rate"));
+    }
+
+    protected PriceProtectionParameter newPriceProtectionParameter(Boolean increaseOnly, BigInteger priceChangePoints,
+            BigInteger priceChangeTimeWindowUs) {
+        PriceProtectionParameter param = new PriceProtectionParameter();
+        param.increaseOnly = increaseOnly;
+        param.priceChangePoints = priceChangePoints;
+        param.priceChangeTimeWindowUs = priceChangeTimeWindowUs;
+        return param;
     }
 }

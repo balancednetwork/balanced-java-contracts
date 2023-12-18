@@ -33,12 +33,14 @@ import com.eclipsesource.json.JsonObject;
 import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.Versions;
+import network.balanced.score.lib.interfaces.Savings;
+
 import score.Address;
 import score.Context;
 import score.VarDB;
 import score.annotation.External;
 
-public class SavingsImpl  {
+public class SavingsImpl implements Savings {
     public static final String LOCKED_SAVINGS = "Locked savings";
     public static final String VERSION = "version";
 
@@ -48,10 +50,10 @@ public class SavingsImpl  {
     public SavingsImpl(Address _governance) {
         BalancedAddressManager.setGovernance(_governance);
 
-        if (this.currentVersion.getOrDefault("").equals(Versions.DAOFUND)) {
+        if (this.currentVersion.getOrDefault("").equals(Versions.SAVINGS)) {
             Context.revert("Can't Update same version of code");
         }
-        this.currentVersion.set(Versions.DAOFUND);
+        this.currentVersion.set(Versions.SAVINGS);
     }
 
     @External(readonly = true)
@@ -93,18 +95,18 @@ public class SavingsImpl  {
         return Context.call(BigInteger.class, getBnusd(), "balanceOf", Context.getAddress());
     }
 
-    @External 
+    @External
     public void unlock(BigInteger amount) {
         Context.require(amount.compareTo(BigInteger.ZERO) > 0, "Cannot unlock a negative or zero amount");
         RewardsManager.changeLock(Context.getCaller().toString(), amount.negate());
     }
 
-    @External 
+    @External
     public void claimRewards() {
         RewardsManager.claimRewards(Context.getCaller());
     }
 
-    @External(readonly = true) 
+    @External(readonly = true)
     public Map<String, BigInteger> getUnclaimedRewards(String user) {
         return RewardsManager.getUnclaimedRewards(user);
     }
@@ -155,11 +157,12 @@ public class SavingsImpl  {
             case "_deposit": {
                 Context.require(token.equals(getBnusd()));
                 BigInteger bnUSDBalance = getBnUSDBalance().subtract(_value);
+                BigInteger bsrSupply = getBSRSupply();
                 BigInteger bsrToMint;
-                if (bnUSDBalance.equals(BigInteger.ZERO)) {
+                if (bnUSDBalance.equals(BigInteger.ZERO) || bsrSupply.equals(BigInteger.ZERO)) {
                     bsrToMint =_value;
                 } else {
-                    bsrToMint = (_value.multiply(getBSRSupply())).divide(getBnUSDBalance().subtract(_value));
+                    bsrToMint = (_value.multiply(bsrSupply)).divide(getBnUSDBalance().subtract(_value));
                 }
 
                 Context.call(getBSR(), "mintTo", _from, bsrToMint, new byte[0]);
@@ -189,7 +192,6 @@ public class SavingsImpl  {
         if (token.equals(getBnusd())) {
             return;
         };
-
         Context.require(!token.equals(getBSR()), "BSR can't be a rewards tokens");
         RewardsManager.addWeight(token, value);
     }

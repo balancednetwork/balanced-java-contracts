@@ -25,19 +25,23 @@ import score.ObjectWriter;
 import java.math.BigInteger;
 import static network.balanced.score.lib.utils.Constants.POINTS;
 
-public class PriceProtectionConfig {
-    public boolean increaseOnly;
-    public BigInteger priceChangePoints;
-    public BigInteger priceChangeTimeWindowUs;
+public class PriceProtectionConfig extends PriceProtectionParameter {
 
-    private PriceProtectionConfig() {
-    }
-
-    public PriceProtectionConfig(boolean increaseOnly, BigInteger priceChangePoints,
+    public PriceProtectionConfig(Boolean increaseOnly, BigInteger priceChangePoints,
             BigInteger priceChangeTimeWindowUs) {
         this.increaseOnly = increaseOnly;
         this.priceChangePoints = priceChangePoints;
         this.priceChangeTimeWindowUs = priceChangeTimeWindowUs;
+    }
+
+    public PriceProtectionConfig(PriceProtectionParameter priceProtectionParameter) {
+        this.increaseOnly = priceProtectionParameter.increaseOnly;
+        this.priceChangePoints = priceProtectionParameter.priceChangePoints;
+        this.priceChangeTimeWindowUs = priceProtectionParameter.priceChangeTimeWindowUs;
+    }
+
+    private PriceProtectionConfig() {
+
     }
 
     public void verifyPriceUpdate(BigInteger prevTimestamp, BigInteger prevPrice, BigInteger currentTimestamp, BigInteger currentPrice) {
@@ -51,9 +55,6 @@ public class PriceProtectionConfig {
         BigInteger priceChange = currentPrice.multiply(POINTS).divide(prevPrice).subtract(POINTS).abs();
         BigInteger timeElapsed = currentTimestamp.subtract(prevTimestamp);
         BigInteger maxPriceChange = priceChangePoints.multiply(timeElapsed).divide(priceChangeTimeWindowUs);
-        System.out.println(priceChange);
-        System.out.println(timeElapsed);
-        System.out.println(maxPriceChange);
         Context.require(maxPriceChange.compareTo(priceChange) >= 0, "Price of this asset has moved to fast");
     }
 

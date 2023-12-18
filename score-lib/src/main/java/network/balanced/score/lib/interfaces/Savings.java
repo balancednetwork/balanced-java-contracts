@@ -30,19 +30,19 @@ import java.util.Map;
 @ScoreClient
 @ScoreInterface
 public interface Savings extends Name, Version, XTokenReceiver, AddressManager {
- 
+
     @External(readonly = true)
     BigInteger getRate();
 
     @External(readonly = true)
     BigInteger getLockedAmount(String user);
 
-    @External 
+    @External
     void unlock(BigInteger amount);
 
-    @External 
+    @External
     void claimRewards();
 
-    @External 
-    Map<String, BigInteger> getUnclaimedRewards();
+    @External(readonly = true)
+    Map<String, BigInteger> getUnclaimedRewards(String user);
 }

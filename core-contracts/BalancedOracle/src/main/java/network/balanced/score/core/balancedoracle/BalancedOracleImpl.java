@@ -19,6 +19,7 @@ package network.balanced.score.core.balancedoracle;
 import network.balanced.score.lib.interfaces.BalancedOracle;
 import network.balanced.score.lib.interfaces.BalancedOracleXCall;
 import network.balanced.score.lib.structs.PriceProtectionConfig;
+import network.balanced.score.lib.structs.PriceProtectionParameter;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.Versions;
 import network.balanced.score.lib.utils.XCallUtils;
@@ -190,10 +191,12 @@ public class BalancedOracleImpl implements BalancedOracle {
     }
 
     @External
-    public void addExternalPriceProxy(String symbol, String address, @Optional PriceProtectionConfig priceProtectionConfig) {
+    public void addExternalPriceProxy(String symbol, String address, @Optional PriceProtectionParameter priceProtectionConfig) {
         onlyOwner();
         priceProvider.set(symbol, address);
-        externalPriceProtectionConfig.set(symbol, priceProtectionConfig);
+        if (priceProtectionConfig != null) {
+            externalPriceProtectionConfig.set(symbol, new PriceProtectionConfig(priceProtectionConfig));
+        }
     }
 
     @External

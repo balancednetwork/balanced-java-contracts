@@ -19,27 +19,18 @@ package network.balanced.score.core.savings;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
-import com.iconloop.score.test.TestBase;
-import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockBalanced;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
-import score.Address;
 
 import java.math.BigInteger;
 import java.util.Map;
 
-import static network.balanced.score.lib.test.UnitTest.assertOnlyCallableBy;
-import static network.balanced.score.lib.test.UnitTest.expectErrorMessage;
 import static network.balanced.score.lib.utils.Constants.EXA;
-import static network.balanced.score.lib.utils.Constants.POINTS;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class SavingsTest extends UnitTest {

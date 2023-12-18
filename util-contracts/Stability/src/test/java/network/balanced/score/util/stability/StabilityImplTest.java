@@ -337,7 +337,7 @@ class StabilityImplTest extends TestBase {
         void yieldBearingToBnUSD() {
             // Arrange
             BigInteger decimals = BigInteger.TEN.pow(hyUSDCDecimals.intValue());
-            BigInteger rate = BigInteger.valueOf(11).multiply(decimals);
+            BigInteger rate = BigInteger.valueOf(11).multiply(EXA);
             BigInteger timestamp = BigInteger.valueOf(sm.getBlock().getTimestamp());
             setRate(rate, timestamp);
             BigInteger amount = BigInteger.valueOf(200).multiply(decimals);
@@ -355,7 +355,7 @@ class StabilityImplTest extends TestBase {
         void bnUSDToYieldBearing() {
             // Arrange
             BigInteger decimals = BigInteger.TEN.pow(hyUSDCDecimals.intValue());
-            BigInteger rate = BigInteger.valueOf(11).multiply(decimals);
+            BigInteger rate = BigInteger.valueOf(11).multiply(EXA);
             BigInteger timestamp = BigInteger.valueOf(sm.getBlock().getTimestamp());
             setRate(rate, timestamp);
             BigInteger amount = BigInteger.valueOf(200).multiply(EXA);
@@ -380,7 +380,7 @@ class StabilityImplTest extends TestBase {
             stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit, false);
             BigInteger decimals = BigInteger.TEN.pow(hyUSDCDecimals.intValue());
             BigInteger usdcDecimals = BigInteger.TEN.pow(iusdcDecimals.intValue());
-            BigInteger rate = BigInteger.valueOf(11).multiply(decimals);
+            BigInteger rate = BigInteger.valueOf(11).multiply(EXA);
             BigInteger timestamp = BigInteger.valueOf(sm.getBlock().getTimestamp());
             setRate(rate, timestamp);
             BigInteger amount = BigInteger.valueOf(200).multiply(decimals);
@@ -400,7 +400,7 @@ class StabilityImplTest extends TestBase {
             // Arrange
             String expectedErrorMessage = "Reverted(0): " + TAG + ": Only whitelisted tokens is allowed";
             BigInteger decimals = BigInteger.TEN.pow(hyUSDCDecimals.intValue());
-            BigInteger rate = BigInteger.valueOf(11).multiply(decimals);
+            BigInteger rate = BigInteger.valueOf(11).multiply(EXA);
             BigInteger timestamp = BigInteger.valueOf(sm.getBlock().getTimestamp());
             setRate(rate, timestamp);
             BigInteger amount = BigInteger.valueOf(200).multiply(decimals);
@@ -419,7 +419,7 @@ class StabilityImplTest extends TestBase {
             String expectedErrorMessage = "Reverted(0): " + TAG
                     + ": Price for hyUSDC has to be updated before using the stability fund";
             BigInteger decimals = BigInteger.TEN.pow(hyUSDCDecimals.intValue());
-            BigInteger rate = BigInteger.valueOf(11).multiply(decimals);
+            BigInteger rate = BigInteger.valueOf(11).multiply(EXA);
             BigInteger timestamp = BigInteger.valueOf(sm.getBlock().getTimestamp()).subtract(MICRO_SECONDS_IN_A_DAY);
             setRate(rate, timestamp);
             BigInteger amount = BigInteger.valueOf(200).multiply(decimals);
@@ -437,7 +437,7 @@ class StabilityImplTest extends TestBase {
             // Arrange
             String expectedErrorMessage = "Reverted(0): " + TAG + ": Only swaps to non yield bering assets is allowed";
             BigInteger decimals = BigInteger.TEN.pow(hyUSDCDecimals.intValue());
-            BigInteger rate = BigInteger.valueOf(11).multiply(decimals);
+            BigInteger rate = BigInteger.valueOf(11).multiply(EXA);
             BigInteger timestamp = BigInteger.valueOf(sm.getBlock().getTimestamp());
             setRate(rate, timestamp);
             BigInteger amount = BigInteger.valueOf(200).multiply(decimals);
@@ -454,7 +454,7 @@ class StabilityImplTest extends TestBase {
         void xTokenFallback_toBnUSD() {
             // Arrange
             BigInteger decimals = BigInteger.TEN.pow(hyUSDCDecimals.intValue());
-            BigInteger rate = BigInteger.valueOf(11).multiply(decimals);
+            BigInteger rate = BigInteger.valueOf(11).multiply(EXA);
             BigInteger timestamp = BigInteger.valueOf(sm.getBlock().getTimestamp());
             setRate(rate, timestamp);
             BigInteger amount = BigInteger.valueOf(200).multiply(decimals);
@@ -476,7 +476,7 @@ class StabilityImplTest extends TestBase {
             stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit, false);
             BigInteger decimals = BigInteger.TEN.pow(hyUSDCDecimals.intValue());
             BigInteger usdcDecimals = BigInteger.TEN.pow(iusdcDecimals.intValue());
-            BigInteger rate = BigInteger.valueOf(11).multiply(decimals);
+            BigInteger rate = BigInteger.valueOf(11).multiply(EXA);
             BigInteger timestamp = BigInteger.valueOf(sm.getBlock().getTimestamp());
             setRate(rate, timestamp);
             BigInteger amount = BigInteger.valueOf(200).multiply(decimals);
@@ -509,7 +509,7 @@ class StabilityImplTest extends TestBase {
 
             BigInteger USDCBacking = BigInteger.valueOf(200).multiply(usdcDecimals);
             BigInteger amountYieldBearingTokens =  BigInteger.valueOf(100).multiply(EXA);
-            BigInteger hyUSDCRate = hyUSDCDecimals.add(hyUSDCDecimals.divide(BigInteger.TEN)); // 1.1 USD
+            BigInteger hyUSDCRate = EXA.add(EXA.divide(BigInteger.TEN)); // 1.1 USD
             // this gives a mint of 10 USD,-10 = 1000-700-200-110
             BigInteger expectedMint = BigInteger.TEN.multiply(hyUSDCDecimals); // 100 supply , 70 debt, 20 USDC 10
             BigInteger timestamp = BigInteger.valueOf(sm.getBlock().getTimestamp());

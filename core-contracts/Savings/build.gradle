@@ -40,6 +40,7 @@ dependencies {
     testImplementation Dependencies.mockitoCore
     testImplementation Dependencies.mockitoInline
 
+    intTestImplementation 'xyz.venture23:xcall-lib:0.1.1'
     intTestImplementation project(":score-client")
     intTestAnnotationProcessor project(":score-client")
     intTestImplementation Dependencies.iconSdk
@@ -120,9 +121,6 @@ task integrationTest(type: Test) {
 
         testClassesDirs = sourceSets.intTest.output.classesDirs
         classpath = sourceSets.intTest.runtimeClasspath
-
-        systemProperty "python", new File(project(':test-lib').projectDir, 'python-contracts/daofund.zip')
-        systemProperty "java", optimizedJar.outputJarName
     }
 
 }

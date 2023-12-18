@@ -54,7 +54,7 @@ public class RewardsManager {
             updateUserRewards(user, token, balance);
         }
     }
-    
+
     public static void updateAllUserRewards(String user, BigInteger userBalance) {
         int numberOfTokens = allowedTokens.length();
         for (int i = 0; i < numberOfTokens; i++) {
@@ -66,6 +66,7 @@ public class RewardsManager {
     public static void addWeight(Address token, BigInteger amount) {
         BigInteger prevWeight = tokenWeight.getOrDefault(token, BigInteger.ZERO);
         BigInteger addedWeight = amount.multiply(EXA).divide(totalWorkingBalance.getOrDefault(BigInteger.ZERO));
+
         tokenWeight.set(token, prevWeight.add(addedWeight));
     }
 
@@ -97,7 +98,6 @@ public class RewardsManager {
     public static Map<String, BigInteger> getUnclaimedRewards(String user) {
         int numberOfTokens = allowedTokens.length();
         BigInteger balance = workingBalance.getOrDefault(user, BigInteger.ZERO);
-
         Map<String, BigInteger> unclaimedRewards = new HashMap<>();
         for (int i = 0; i < numberOfTokens; i++) {
             Address token = allowedTokens.at(i);

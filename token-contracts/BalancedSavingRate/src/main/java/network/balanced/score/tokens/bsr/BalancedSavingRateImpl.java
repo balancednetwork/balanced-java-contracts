@@ -49,10 +49,10 @@ public class BalancedSavingRateImpl extends HubTokenImpl implements BalancedSavi
 
         NATIVE_NID = Context.call(String.class, BalancedAddressManager.getXCall(), "getNetworkId");
 
-        if (this.currentVersion.getOrDefault("").equals(Versions.BNUSD)) {
+        if (this.currentVersion.getOrDefault("").equals(Versions.BSR)) {
             Context.revert("Can't Update same version of code");
         }
-        this.currentVersion.set(Versions.BNUSD);
+        this.currentVersion.set(Versions.BSR);
     }
 
     @External(readonly = true)

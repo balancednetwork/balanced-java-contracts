@@ -56,6 +56,9 @@ public interface Stability extends Name, XTokenReceiver,  Version, FloorLimitedI
     void whitelistTokens(Address _address, BigInteger _limit, @Optional boolean yieldBearing);
 
     @External
+    void mintExcess();
+
+    @External
     void updateLimit(Address _address, BigInteger _limit);
 
     @External(readonly = true)

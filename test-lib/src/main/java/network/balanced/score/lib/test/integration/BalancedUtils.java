@@ -56,9 +56,14 @@ public class BalancedUtils {
     }
 
     public static void whitelistToken(Balanced balanced, Address address, BigInteger limit) {
+        whitelistToken(balanced, address, limit, false);
+    }
+
+    public static void whitelistToken(Balanced balanced, Address address, BigInteger limit,  boolean yieldBearing) {
         JsonArray whitelistTokensParams = new JsonArray()
                 .add(createParameter(address))
-                .add(createParameter(limit));
+                .add(createParameter(limit))
+                .add(createParameter(yieldBearing));
 
         JsonArray whitelistTokens = createSingleTransaction(
                 balanced.stability._address(),

@@ -198,9 +198,12 @@ public class DebtDB {
 
     public static void claimInterest() {
         BigInteger accumulatedAmount = accumulatedInterest.getOrDefault(BigInteger.ZERO);
+        if (accumulatedAmount.equals(BigInteger.ZERO)) {
+            return;
+        }
+
         accumulatedInterest.set(BigInteger.ZERO);
         BigInteger savingsRateAmount = savingsShare.get().multiply(accumulatedAmount).divide(POINTS);
-
         TokenUtils.mintAssetTo(BalancedAddressManager.getSavings(), savingsRateAmount);
         TokenUtils.mintAssetTo(BalancedAddressManager.getFeehandler(), accumulatedAmount.subtract(savingsRateAmount));
     }

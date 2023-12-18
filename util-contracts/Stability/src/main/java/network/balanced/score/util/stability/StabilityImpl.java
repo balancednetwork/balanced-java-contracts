@@ -150,8 +150,8 @@ public class StabilityImpl extends FloorLimited implements Stability {
             BigInteger backing = rate.multiply(balance).divide(assetDecimals);
             stabilityBacking = stabilityBacking.add(backing);
         }
-
         BigInteger excess = stabilityBacking.subtract(supply.subtract(debt));
+
         Context.call(bnUSD, "mint", excess, new byte[0]);
         Context.call(bnUSD, "transfer", getDaofund(), excess, new byte[0]);
         Context.call(getFeehandler(), "accrueStabilityYieldFee", excess);
@@ -210,6 +210,7 @@ public class StabilityImpl extends FloorLimited implements Stability {
         return acceptedTokens;
     }
 
+    @SuppressWarnings("unchecked")
     private BigInteger getRate(Address _asset) {
         if (!yieldBearing.getOrDefault(_asset, false)) {
             return ONE_BNUSD;
@@ -221,8 +222,11 @@ public class StabilityImpl extends FloorLimited implements Stability {
         BigInteger rate = priceData.get("rate");
         BigInteger timestamp = priceData.get("timestamp");
         BigInteger currentTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());
-        Context.require(currentTimestamp.subtract(timestamp).compareTo(maxPriceDelay.get()) <= 0,
-                TAG + ": Price for " + symbol + " has to be updated before using the stability fund");
+        BigInteger delay = maxPriceDelay.get();
+        if (delay != null) {
+            Context.require(currentTimestamp.subtract(timestamp).compareTo(delay) <= 0,
+                    TAG + ": Price for " + symbol + " has to be updated before using the stability fund");
+        }
 
         return rate;
     }
@@ -232,7 +236,7 @@ public class StabilityImpl extends FloorLimited implements Stability {
         BigInteger equivalentBnusd = (_amount.multiply(getRate(_asset))).divide(pow(BigInteger.TEN, assetInDecimals));
         Context.require(equivalentBnusd.compareTo(BigInteger.ZERO) > 0, TAG + ": Bnusd amount must be greater than " +
                 "zero");
-        BigInteger fee = (feeIn.get().multiply(equivalentBnusd)).divide(HUNDRED_PERCENTAGE);
+        BigInteger fee = (feeIn.getOrDefault(BigInteger.ZERO).multiply(equivalentBnusd)).divide(HUNDRED_PERCENTAGE);
 
         Context.call(bnusdAddress, "mint", equivalentBnusd, new byte[0]);
         if (fee.compareTo(BigInteger.ZERO) > 0) {
@@ -244,11 +248,11 @@ public class StabilityImpl extends FloorLimited implements Stability {
     private void yieldAssetToAsset(BigInteger _amount, Address inAsset, Address _user, Address outAsset) {
         BigInteger assetInDecimals = pow(BigInteger.TEN, decimals.get(inAsset));
         BigInteger assetOutDecimals = pow(BigInteger.TEN, decimals.get(outAsset));
-        BigInteger fee = (feeIn.get().multiply(_amount)).divide(HUNDRED_PERCENTAGE);
+        BigInteger fee = (feeIn.getOrDefault(BigInteger.ZERO).multiply(_amount)).divide(HUNDRED_PERCENTAGE);
 
         BigInteger amount = _amount.subtract(fee);
         BigInteger value = (amount.multiply(getRate(inAsset))).divide(assetInDecimals);
-        BigInteger equivalentAmount = value.multiply(assetOutDecimals).divide(assetInDecimals);
+        BigInteger equivalentAmount = value.multiply(assetOutDecimals).divide(EXA);
         Context.require(equivalentAmount.compareTo(BigInteger.ZERO) > 0, TAG + ": Amount must be greater than zero");
 
         if (fee.compareTo(BigInteger.ZERO) > 0) {
@@ -314,12 +318,13 @@ public class StabilityImpl extends FloorLimited implements Stability {
         BigInteger assetInBalance = (BigInteger) Context.call(token, "balanceOf", Context.getAddress());
         Context.require(assetInBalance.compareTo(limit) <= 0, TAG + ": Asset to exchange with bnusd " +
                 "limit crossed.");
-        if (yieldBearing.get(token) && _data != null) {
+        if (yieldBearing.getOrDefault(token, false) && _data != null) {
             String asset = new String(_data);
-            if (_data.length > 0 && asset != "None") {
+            if (_data.length > 0 && !asset.equals("None")) {
                 Address toAsset = Address.fromString(asset);
                 Context.require(tokenLimits.get(toAsset) != null, TAG + ": Only whitelisted tokens is allowed");
-                Context.require(!yieldBearing.get(toAsset), TAG + ": Only swaps to non yield bering assets is allowed");
+                Context.require(!yieldBearing.getOrDefault(toAsset, false),
+                        TAG + ": Only swaps to non yield bering assets is allowed");
                 yieldAssetToAsset(_value, token, _from, toAsset);
                 return;
             }

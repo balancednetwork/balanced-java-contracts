@@ -22,6 +22,7 @@ import network.balanced.score.lib.interfaces.addresses.*;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.Version;
 import network.balanced.score.lib.structs.PriceProtectionConfig;
+import network.balanced.score.lib.structs.PriceProtectionParameter;
 import score.annotation.External;
 import score.annotation.Optional;
 import icon.xcall.lib.annotation.XCall;
@@ -82,7 +83,7 @@ public interface BalancedOracle extends
     void updatePriceData(String from, String symbol, BigInteger rate, BigInteger timestamp);
 
     @External
-    void addExternalPriceProxy(String symbol, String address, @Optional PriceProtectionConfig priceProtectionConfig);
+    void addExternalPriceProxy(String symbol, String address, @Optional PriceProtectionParameter priceProtectionConfig);
 
     @External
     void removeExternalPriceProxy(String symbol, String address);
