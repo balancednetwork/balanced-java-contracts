@@ -187,10 +187,22 @@ public class BalancedUtils {
                 .add("method", method)
                 .add("parameters", parameters);
     }
+        public static JsonObject createTransaction(BigInteger value, Address address, String method, JsonArray parameters) {
+        return new JsonObject()
+                .add("address", address.toString())
+                .add("method", method)
+                .add("value", value.toString())
+                .add("parameters", parameters);
+    }
 
     public static JsonArray createSingleTransaction(Address address, String method, JsonArray parameters) {
         return new JsonArray()
                 .add(createTransaction(address, method, parameters));
+    }
+
+    public static JsonArray createSingleTransaction(BigInteger value,Address address, String method, JsonArray parameters) {
+        return new JsonArray()
+                .add(createTransaction(value, address, method, parameters));
     }
 
     private static String getHex(byte[] raw) {

@@ -206,29 +206,23 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
 
     @Test
     @Order(12)
-    void updateContractAndSetNewValue() throws IOException {
+    void updateContractViaStoreAndSetNewValue() throws IOException {
         // Arrange
         String deploymentValueParameter = "third deployment";
         String newSetterValue = "test new setter";
         Address contractAddress = owner.governance.getAddress(deploymentTesterName);
 
         byte[] contractData = getContractBytesFromResources(this.getClass(), deploymentTesterJar2);
-
         JsonArray deploymentParameters = new JsonArray()
-                .add(createParameter(deploymentValueParameter));
-
-        JsonArray deployToParameters = new JsonArray()
-                .add(createParameter(contractAddress))
-                .add(createParameter(getContractBytesFromResources(this.getClass(), deploymentTesterJar2)))
-                .add(createParameter(deploymentParameters.toString()));
+        .add(createParameter(deploymentValueParameter));
 
         JsonArray setNewValueParameter = new JsonArray()
                 .add(createParameter(newSetterValue));
 
-        JsonArray actions = new JsonArray()
-                .add(createTransaction(balanced.governance._address(), "deployTo", deployToParameters))
-                .add(createTransaction(new foundation.icon.jsonrpc.Address(contractAddress.toString()), "setValue2",
-                        setNewValueParameter));
+        owner.governance.storeContract(deploymentTesterName, score.impl.Crypto.keccack256(contractData), deploymentParameters.toString());
+        tester.governance.deployStoredContract(deploymentTesterName, contractData);
+        JsonArray actions = createSingleTransaction(new foundation.icon.jsonrpc.Address(contractAddress.toString()), "setValue2",
+                        setNewValueParameter);
 
         // Act
         owner.governance.execute(actions.toString());
@@ -331,6 +325,22 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         assertEquals(updateValueParameter, getValue(contractAddress));
     }
 
+    @Test
+    @Order(15)
+    void xCallAction() throws IOException {
+        // Arrange
+        owner.governance._transfer(balanced.governance._address(), BigInteger.ONE, null);
+
+        // Act
+        JsonArray callParameters = new JsonArray()
+                .add(createParameter("nid/address"))
+                .add(createParameter(new byte[0]));
+        JsonArray action = createSingleTransaction(BigInteger.ONE, balanced.xcall._address(), "sendCallMessage", callParameters);
+        owner.governance.execute(action.toString());
+
+        // Assert
+
+    }
     // need to remove owner/contract lock on changeOwner to test this
     // @Test
     // @Order(15)
