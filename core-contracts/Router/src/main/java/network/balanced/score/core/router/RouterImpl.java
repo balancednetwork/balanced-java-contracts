@@ -55,6 +55,7 @@ public class RouterImpl implements Router {
     private static final Address MINT_ADDRESS = new Address(new byte[Address.LENGTH]);
     public static final String TAG = "Balanced Router";
 
+    public static final byte[] EMPTY_DATA = "None".getBytes();
     private final VarDB<Address> governance = Context.newVarDB(GOVERNANCE_ADDRESS, Address.class);
     private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
 
@@ -157,7 +158,7 @@ public class RouterImpl implements Router {
 
         if (networkAddress.net().equals(nativeNid)) {
             Context.require(!toNative, TAG + ": Native swaps not available to icon from " + currentToken);
-            Context.call(currentToken, "transfer", Address.fromString(networkAddress.account()), balance, new byte[0]);
+            Context.call(currentToken, "transfer", Address.fromString(networkAddress.account()), balance, EMPTY_DATA);
         } else {
             transferCrossChainResult(currentToken, networkAddress, balance, toNative);
         }
