@@ -120,4 +120,9 @@ project(':XCallManager').projectDir = file("util-contracts/XCallManager")
 include(':Savings')
 project(':Savings').projectDir = file("core-contracts/Savings")
 
+include(':Trickler')
+project(':Trickler').projectDir = file("util-contracts/Trickler")
+
 includeBuild 'xcall-lib'
+
+

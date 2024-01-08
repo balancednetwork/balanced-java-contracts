@@ -19,6 +19,7 @@ package network.balanced.score.core.savings;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getAddressByName;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getBnusd;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getLoans;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getTrickler;
 import static network.balanced.score.lib.utils.BalancedAddressManager.resetAddress;
 import static network.balanced.score.lib.utils.Check.checkStatus;
 import static network.balanced.score.lib.utils.Check.onlyGovernance;
@@ -84,9 +85,13 @@ public class SavingsImpl extends FloorLimited implements Savings {
 
     @External
     public void gatherRewards() {
-        Context.call(getLoans(), "applyInterest");
-        Context.call(getLoans(), "claimInterest");
-        // Tick trickler
+        try {
+            Context.call(getLoans(), "applyInterest");
+            Context.call(getLoans(), "claimInterest");
+            Context.call(getTrickler(), "claimAllRewards");
+        } catch (Exception e) {
+        }
+
     }
 
     @External
@@ -102,7 +107,7 @@ public class SavingsImpl extends FloorLimited implements Savings {
 
     @External
     public void claimRewards() {
-        // gatherRewards();
+        gatherRewards();
         RewardsManager.claimRewards(Context.getCaller());
     }
 

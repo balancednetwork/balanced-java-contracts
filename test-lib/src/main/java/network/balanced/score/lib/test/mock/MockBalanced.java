@@ -55,6 +55,7 @@ public class MockBalanced {
     public MockContract<BoostedBaln> bBaln;
     public MockContract<AssetManager> assetManager;
     public MockContract<Savings> savings;
+    public MockContract<Trickler> trickler;
     public MockContract<XCall> xCall;
     public MockContract<XCallManager> xCallManager;
     public MockContract<Governance> governance;
@@ -81,6 +82,7 @@ public class MockBalanced {
         bBaln = new MockContract<>(BoostedBalnScoreInterface.class, BoostedBaln.class, sm, owner);
         assetManager = new MockContract<>(AssetManagerScoreInterface.class, AssetManager.class, sm, owner);
         savings = new MockContract<>(SavingsScoreInterface.class, Savings.class, sm, owner);
+        trickler = new MockContract<>(TricklerScoreInterface.class, Trickler.class, sm, owner);
         xCall = new MockContract<>(XCallScoreInterface.class, XCall.class, sm, owner);
         xCallManager = new MockContract<>(XCallManagerScoreInterface.class, XCallManager.class, sm, owner);
         governance = new MockContract<>(GovernanceScoreInterface.class, Governance.class, sm, owner);
@@ -111,6 +113,7 @@ public class MockBalanced {
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.BOOSTED_BALN)).thenReturn(bBaln.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.ASSET_MANAGER)).thenReturn(assetManager.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.SAVINGS)).thenReturn(savings.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.TRICKLER)).thenReturn(trickler.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.XCALL)).thenReturn(xCall.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.XCALL_MANAGER)).thenReturn(xCallManager.getAddress());
 
@@ -134,6 +137,7 @@ public class MockBalanced {
         addressManagerMock.when(() -> BalancedAddressManager.getBoostedBaln()).thenReturn(bBaln.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.getAssetManager()).thenReturn(assetManager.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.getSavings()).thenReturn(savings.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.getTrickler()).thenReturn(trickler.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.getXCall()).thenReturn(xCall.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.getXCallManager()).thenReturn(xCallManager.getAddress());
 

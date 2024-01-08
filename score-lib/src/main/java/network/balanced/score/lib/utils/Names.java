@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2024 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,5 +42,5 @@ public class Names {
     public final static String ASSET_MANAGER = "Balanced Asset Manager";
     public final static String XCALL_MANAGER = "Balanced XCall Manager";
     public final static String SAVINGS = "Balanced Savings";
-
+    public final static String TRICKLER = "Balanced Trickler";
 }
