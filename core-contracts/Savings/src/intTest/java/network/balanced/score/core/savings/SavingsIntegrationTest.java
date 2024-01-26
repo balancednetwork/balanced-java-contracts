@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2022-2024 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ class SavingsIntegrationTest implements ScoreIntegrationTest {
     private static Address hyUSDCAsset;
     private static BigInteger hyUSDCDecimals = BigInteger.valueOf(12);
     private static BigInteger rate = EXA;
-    // Use high interest rate on loans so we can see that it accrues in real time
+    // Use high interest rate on loans, so we can see that it accrues in real time
     // during test
     // 1000%
     private static BigInteger interestRate = POINTS.multiply(BigInteger.TEN);
