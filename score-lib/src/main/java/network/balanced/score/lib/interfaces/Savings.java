@@ -29,11 +29,7 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface Savings extends Name, Version, XTokenReceiver, AddressManager {
-
-    @External(readonly = true)
-    BigInteger getRate();
-
+public interface Savings extends Name, Version, AddressManager, FloorLimitedInterface {
     @External(readonly = true)
     BigInteger getLockedAmount(String user);
 

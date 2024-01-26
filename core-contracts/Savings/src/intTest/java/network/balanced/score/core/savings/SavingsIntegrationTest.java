@@ -63,8 +63,7 @@ class SavingsIntegrationTest implements ScoreIntegrationTest {
 
     private static BigInteger stabilityLimit = BigInteger.TEN.pow(30);
 
-    private static BalancedClient bsrHolder;
-    private static BalancedClient bsrStaker;
+    private static BalancedClient user;
 
     @BeforeAll
     static void setup() throws Exception {
@@ -73,8 +72,7 @@ class SavingsIntegrationTest implements ScoreIntegrationTest {
 
         owner = balanced.ownerClient;
         reader = balanced.newClient(BigInteger.ZERO);
-        bsrHolder = balanced.newClient();
-        bsrStaker = balanced.newClient();
+        user = balanced.newClient();
 
         JsonArray addAssetParams = new JsonArray()
                 .add(createParameter(new NetworkAddress(balanced.ETH_NID, hyUSDCAddress).toString()))
@@ -101,11 +99,21 @@ class SavingsIntegrationTest implements ScoreIntegrationTest {
                 "addExternalPriceProxy",
                 addExternalPriceProxyParams);
 
+        JsonArray addSICXParams = new JsonArray()
+                .add(createParameter(balanced.sicx._address()));
+        JsonObject addSICX = createTransaction(balanced.savings._address(), "addAcceptedToken", addSICXParams);
+
+        JsonArray addBnUSDParams = new JsonArray()
+            .add(createParameter(balanced.bnusd._address()));
+        JsonObject addBnUSD = createTransaction(balanced.savings._address(), "addAcceptedToken", addBnUSDParams);
+
         JsonArray transactions = new JsonArray()
                 .add(addAsset)
                 .add(setInterestRate)
                 .add(setSavingsRateShare)
-                .add(addExternalPriceProxy);
+                .add(addExternalPriceProxy)
+                .add(addSICX)
+                .add(addBnUSD);
         owner.governance.execute(transactions.toString());
 
         stableAsset = createIRC2Token(owner, stableAssetSymbol, stableAssetSymbol, stableAssetDecimals);
@@ -121,20 +129,17 @@ class SavingsIntegrationTest implements ScoreIntegrationTest {
 
     @Test
     @Order(1)
-    void takeLoanAndLockInBSR() throws Exception {
+    void takeLoanAndLockInSavings() throws Exception {
         BigInteger collateralAmount = BigInteger.TEN.pow(23);
         BigInteger loanAmount = BigInteger.TEN.pow(21);
-        bsrHolder.stakeDepositAndBorrow(collateralAmount, loanAmount);
-        bsrStaker.stakeDepositAndBorrow(collateralAmount, loanAmount);
+        user.stakeDepositAndBorrow(collateralAmount, loanAmount);
 
         JsonObject deposit = new JsonObject().add("method", "_deposit");
         JsonObject lock = new JsonObject().add("method", "_lock");
-        bsrHolder.bnUSD.transfer(balanced.savings._address(), loanAmount, deposit.toString().getBytes());
-        bsrStaker.bnUSD.transfer(balanced.savings._address(), loanAmount, deposit.toString().getBytes());
-        bsrStaker.bsr.transfer(balanced.savings._address(), loanAmount, lock.toString().getBytes());
+        user.bnUSD.transfer(balanced.savings._address(), loanAmount, lock.toString().getBytes());
+        System.out.println(reader.savings.getLockedAmount(user.getAddress().toString()));
 
-        assertEquals(loanAmount, reader.bsr.balanceOf(bsrHolder.getAddress()));
-        assertEquals(loanAmount, reader.savings.getLockedAmount(bsrStaker.getAddress().toString()));
+        assertEquals(loanAmount, reader.savings.getLockedAmount(user.getAddress().toString()));
     }
 
     @Test
@@ -172,7 +177,7 @@ class SavingsIntegrationTest implements ScoreIntegrationTest {
 
         BigInteger doafundBalance = reader.bnUSD.balanceOf(balanced.daofund._address());
         // adding assets should not change any backing
-        bsrHolder.stability.mintExcess();
+        user.stability.mintExcess();
         assertEquals(doafundBalance, reader.bnUSD.balanceOf(balanced.daofund._address()));
     }
 
@@ -189,7 +194,7 @@ class SavingsIntegrationTest implements ScoreIntegrationTest {
         updatePrice(rate);
 
         // Act
-        bsrHolder.stability.mintExcess();
+        user.stability.mintExcess();
 
         // Assert
         // We should have minted 10% of the backing HyUSDC
@@ -202,7 +207,6 @@ class SavingsIntegrationTest implements ScoreIntegrationTest {
     void applyAndClaimLoansInterest() throws Exception {
         // Arrange
         BigInteger previousDebt = reader.loans.getTotalDebt("");
-        BalancedClient user = balanced.newClient();
         BigInteger savingsBalance = reader.bnUSD.balanceOf(balanced.savings._address());
 
         // Act
@@ -215,35 +219,30 @@ class SavingsIntegrationTest implements ScoreIntegrationTest {
         BigInteger accruedInterest = newDebt.subtract(previousDebt);
         BigInteger savingsAmount = accruedInterest.multiply(savingsShare).divide(POINTS);
         assertEquals(savingsBalance.add(savingsAmount), newSavingsBalance);
-        assertEquals(newSavingsBalance.multiply(EXA).divide(reader.bsr.xTotalSupply()), reader.savings.getRate());
+        System.out.println(reader.savings.getUnclaimedRewards(user.getAddress().toString()));
+        System.out.println(reader.savings.getLockedAmount(user.getAddress().toString()));
+        BigInteger expectedBnUSDRewards = reader.savings.getUnclaimedRewards(user.getAddress().toString()).get(balanced.bnusd._address().toString());
+        assertEquals(savingsAmount, expectedBnUSDRewards);
     }
 
     @Test
     @Order(5)
     void donateStakedICXToSavings() throws Exception {
         // Arrange
-        JsonArray addAcceptedTokenParams = new JsonArray()
-                .add(createParameter(balanced.sicx._address()));
-        JsonArray addAcceptedToken = createSingleTransaction(balanced.savings._address(), "addAcceptedToken",
-                addAcceptedTokenParams);
-        owner.governance.execute(addAcceptedToken.toString());
-
         BigInteger amount = BigInteger.valueOf(100).multiply(EXA);
         owner.staking.stakeICX(amount, balanced.savings._address(), null);
-        BigInteger balance = reader.sicx.balanceOf(bsrStaker.getAddress());
+        BigInteger balance = reader.sicx.balanceOf(user.getAddress());
 
         // Act
-        Map<String, BigInteger> rewardsStaker = reader.savings.getUnclaimedRewards(bsrStaker.getAddress().toString());
-        Map<String, BigInteger> rewardsHolder = reader.savings.getUnclaimedRewards(bsrHolder.getAddress().toString());
-        bsrStaker.savings.claimRewards();
-        Map<String, BigInteger> rewardsStakerAfterClaim = reader.savings
-                .getUnclaimedRewards(bsrStaker.getAddress().toString());
+        Map<String, BigInteger> rewards = reader.savings.getUnclaimedRewards(user.getAddress().toString());
+        user.savings.claimRewards();
+        Map<String, BigInteger> rewardsAfterClaim = reader.savings
+                .getUnclaimedRewards(user.getAddress().toString());
 
         // Assert
-        assertEquals(amount, rewardsStaker.get(balanced.sicx._address().toString()));
-        assertEquals(BigInteger.ZERO, rewardsHolder.get(balanced.sicx._address().toString()));
-        assertEquals(BigInteger.ZERO, rewardsStakerAfterClaim.get(balanced.sicx._address().toString()));
-        assertEquals(balance.add(amount), reader.sicx.balanceOf(bsrStaker.getAddress()));
+        assertEquals(amount, rewards.get(balanced.sicx._address().toString()));
+        assertEquals(BigInteger.ZERO, rewardsAfterClaim.get(balanced.sicx._address().toString()));
+        assertEquals(balance.add(amount), reader.sicx.balanceOf(user.getAddress()));
     }
 
     @Order(6)
@@ -279,7 +278,7 @@ class SavingsIntegrationTest implements ScoreIntegrationTest {
 
         // adding assets should not change any backing
         BigInteger doafundBalance = reader.bnUSD.balanceOf(balanced.daofund._address());
-        bsrHolder.stability.mintExcess();
+        user.stability.mintExcess();
         assertEquals(doafundBalance, reader.bnUSD.balanceOf(balanced.daofund._address()));
     }
 
@@ -289,21 +288,21 @@ class SavingsIntegrationTest implements ScoreIntegrationTest {
         // Arrange
         BigInteger collateralAmount = BigInteger.TEN.pow(22);
         BigInteger amount = BigInteger.TEN.pow(20);
-        bsrHolder.stakeDepositAndBorrow(collateralAmount, amount);
+        user.stakeDepositAndBorrow(collateralAmount, amount);
         // Fee is 1% in bnUSD
         BigInteger expectedFee = amount.divide(BigInteger.valueOf(100));
         BigInteger expectedYieldAsset = amount.subtract(expectedFee)
                 .multiply(BigInteger.TEN.pow(hyUSDCDecimals.intValue())).divide(rate);
 
         // Act
-        bsrHolder.bnUSD.transfer(balanced.stability._address(), amount, hyUSDCAsset.toString().getBytes());
+        user.bnUSD.transfer(balanced.stability._address(), amount, hyUSDCAsset.toString().getBytes());
 
         // Assert
-        assertEquals(expectedYieldAsset, reader.irc2(hyUSDCAsset).balanceOf(bsrHolder.getAddress()));
+        assertEquals(expectedYieldAsset, reader.irc2(hyUSDCAsset).balanceOf(user.getAddress()));
 
         // withdrawing should not change any backing
         BigInteger doafundBalance = reader.bnUSD.balanceOf(balanced.daofund._address());
-        bsrHolder.stability.mintExcess();
+        user.stability.mintExcess();
         assertEquals(doafundBalance, reader.bnUSD.balanceOf(balanced.daofund._address()));
     }
 
