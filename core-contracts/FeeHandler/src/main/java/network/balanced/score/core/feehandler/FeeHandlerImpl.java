@@ -246,7 +246,10 @@ public class FeeHandlerImpl implements FeeHandler {
         int acceptedDividendsTokensCount = acceptedDividendsTokens.size();
         for (int i = 0; i < acceptedDividendsTokensCount; i++) {
             if (acceptedDividendsTokens.get(i).equals(sender)) {
-                transferToken(sender, getDividends(), getTokenBalance(sender), new byte[0]);
+                BigInteger balance = getTokenBalance(sender);
+                BigInteger burnAmount = balance.divide(BigInteger.TWO);
+                transferToken(sender, getICONBurner(), burnAmount, new byte[0]);
+                transferToken(sender, getDividends(), balance.subtract(burnAmount), new byte[0]);
                 return;
             }
         }

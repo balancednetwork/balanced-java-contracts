@@ -34,4 +34,5 @@ public class Constants {
     public final static Address EOA_ZERO = new Address(new byte[Address.LENGTH]);
     public static final BigInteger MAX_LOCK_TIME = BigInteger.valueOf(4L).multiply(YEAR_IN_MICRO_SECONDS);
 
+    public static final Address SYSTEM_ADDRESS = Address.fromString("cx0000000000000000000000000000000000000000");
 }

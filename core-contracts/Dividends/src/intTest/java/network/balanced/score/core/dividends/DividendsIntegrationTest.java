@@ -132,13 +132,19 @@ public class DividendsIntegrationTest {
 
         // Act
         BigInteger daoFundBalancePre = owner.bnUSD.balanceOf(balanced.daofund._address());
+        BigInteger burnBalancePre = owner.bnUSD.balanceOf(balanced.iconBurner._address());
         BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
         BigInteger fee = loanAmount.multiply(feePercent).divide(POINTS);
+        // 50% Burn split
+        BigInteger burn = fee.divide(BigInteger.TWO);
+        fee = fee.subtract(burn);
 
         // loan taken after the update of the contract
         owner.stakeDepositAndBorrow(BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18)), loanAmount);
         BigInteger daoFundBalancePost = owner.bnUSD.balanceOf(balanced.daofund._address());
+        BigInteger burnBalancePost = owner.bnUSD.balanceOf(balanced.iconBurner._address());
 
+        assertEquals(burnBalancePre.add(burn), burnBalancePost);
         // dividends are sent to daofund directly as there are no boosted baln yet
         assertEquals(daoFundBalancePre.add(fee), daoFundBalancePost);
         // dividends shouldn't increase once bbalnDay is set unless there is some transaction
@@ -182,6 +188,9 @@ public class DividendsIntegrationTest {
 
         BigInteger daoFundBnUSDBalancePre = owner.bnUSD.balanceOf(balanced.daofund._address());
         BigInteger daoFundSICXBalancePre = owner.sicx.balanceOf(balanced.daofund._address());
+        BigInteger burnBnUSDBalancePre = owner.bnUSD.balanceOf(balanced.iconBurner._address());
+        BigInteger burnSICXBalancePre = owner.sicx.balanceOf(balanced.iconBurner._address());
+
         Map<String, BigInteger> unclaimedDividendsBeforeAlice = owner.dividends.getUnclaimedDividends(addressAlice);
 
         // did tx to create a dividends
@@ -194,13 +203,22 @@ public class DividendsIntegrationTest {
 
         BigInteger daoFundBnUSDBalancePost = reader.bnUSD.balanceOf(balanced.daofund._address());
         BigInteger daoFundSICXBalancePost = reader.sicx.balanceOf(balanced.daofund._address());
+        BigInteger burnBnUSDBalancePost = reader.bnUSD.balanceOf(balanced.iconBurner._address());
+        BigInteger burnSICXBalancePost = reader.sicx.balanceOf(balanced.iconBurner._address());
+
         BigInteger daoPercentage = reader.dividends.getDividendsPercentage().get("daofund");
-        BigInteger daoFeeBnUSD = fee.multiply(daoPercentage).divide(EXA);
-        BigInteger daoFeeSICX = sICXFee.multiply(daoPercentage).divide(EXA);
+        // 50% Burn split
+        BigInteger BnUSDBurn = fee.divide(BigInteger.TWO);
+        BigInteger sICXBurn = sICXFee.divide(BigInteger.TWO);
+
+        BigInteger daoFeeBnUSD = fee.subtract(BnUSDBurn).multiply(daoPercentage).divide(EXA);
+        BigInteger daoFeeSICX = sICXFee.subtract(sICXBurn).multiply(daoPercentage).divide(EXA);
 
         // daofund doesn't get all the dividends value once there is a supply in bbaln
         assertEquals(daoFundBnUSDBalancePre.add(daoFeeBnUSD), daoFundBnUSDBalancePost);
         assertEquals(daoFundSICXBalancePre.add(daoFeeSICX), daoFundSICXBalancePost);
+        assertEquals(burnBnUSDBalancePre.add(BnUSDBurn), burnBnUSDBalancePost);
+        assertEquals(burnSICXBalancePre.add(sICXBurn), burnSICXBalancePost);
 
         // new fees are generated
         owner.staking.stakeICX(sICXFee, null, null);
@@ -452,6 +470,7 @@ public class DividendsIntegrationTest {
                 "setDividendsCategoryPercentage", categoryParameters).toString());
 
         BigInteger daoBalanceBefore = owner.bnUSD.balanceOf(balanced.daofund._address());
+        BigInteger burnBalanceBefore = owner.bnUSD.balanceOf(balanced.iconBurner._address());
 
         BigInteger loanAmount = BigInteger.valueOf(50).multiply(BigInteger.TEN.pow(18));
         // take loans
@@ -459,12 +478,16 @@ public class DividendsIntegrationTest {
 
 
         BigInteger originationFees = BigInteger.valueOf(100);
-        BigInteger dividendsBalance = (loanAmount.multiply(originationFees)).divide(BigInteger.valueOf(10000));
+        BigInteger fee = (loanAmount.multiply(originationFees)).divide(BigInteger.valueOf(10000));
+        // 50% Burn split
+        BigInteger feeToBurn = fee.divide(BigInteger.TWO);
+
         Map<String, BigInteger> daoFundDividendsPercent = owner.dividends.getDividendsPercentage();
-        BigInteger dividendsToDao = daoFundDividendsPercent.get("daofund").multiply(dividendsBalance).divide(EXA);
-
+        BigInteger dividendsToDao = daoFundDividendsPercent.get("daofund").multiply(fee.subtract(feeToBurn)).divide(EXA);
         BigInteger daoBalanceAfter = owner.bnUSD.balanceOf(balanced.daofund._address());
+        BigInteger burnBalanceAfter = owner.bnUSD.balanceOf(balanced.iconBurner._address());
 
+        assertEquals(burnBalanceAfter, burnBalanceBefore.add(feeToBurn));
         assertEquals(daoBalanceAfter, daoBalanceBefore.add(dividendsToDao));
     }
 

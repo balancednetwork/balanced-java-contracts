@@ -117,4 +117,7 @@ project(':XCallMock').projectDir = file("util-contracts/XCallMock")
 include(':XCallManager')
 project(':XCallManager').projectDir = file("util-contracts/XCallManager")
 
+include(':Burner')
+project(':Burner').projectDir = file("util-contracts/Burner")
+
 includeBuild 'xcall-lib'
