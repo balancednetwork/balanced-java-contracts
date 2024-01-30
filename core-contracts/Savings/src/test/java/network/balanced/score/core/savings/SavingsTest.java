@@ -191,6 +191,10 @@ class SavingsTest extends UnitTest {
         assertEquals(newSICXWeight.subtract(sICXWeight).multiply(lockAmount3).divide(EXA), rewards3.get(mockBalanced.sicx.getAddress().toString()));
         assertEquals(newBalnWeight.subtract(balnWeight).multiply(lockAmount3).divide(EXA), rewards3.get(mockBalanced.baln.getAddress().toString()));
 
+        assertEquals(sICXRewards.multiply(BigInteger.TWO), savings.call("getTotalPayout", mockBalanced.sicx.getAddress()));
+        assertEquals(balnRewards.multiply(BigInteger.TWO), savings.call("getTotalPayout", mockBalanced.baln.getAddress()));
+        assertEquals(bnUSDRewards, savings.call("getTotalPayout", mockBalanced.bnUSD.getAddress()));
+
         // Act
         savings.invoke(user1, "claimRewards");
 

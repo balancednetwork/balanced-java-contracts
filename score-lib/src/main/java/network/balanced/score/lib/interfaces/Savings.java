@@ -23,6 +23,7 @@ import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.Version;
 import network.balanced.score.lib.interfaces.tokens.XTokenReceiver;
 import score.annotation.External;
+import score.Address;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -35,6 +36,9 @@ public interface Savings extends Name, Version, AddressManager, FloorLimitedInte
 
     @External
     void unlock(BigInteger amount);
+
+    @External(readonly = true)
+    BigInteger getTotalPayout(Address token);
 
     @External
     void claimRewards();

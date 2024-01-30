@@ -41,11 +41,13 @@ import network.balanced.score.lib.utils.BalancedFloorLimits;
 import score.Address;
 import score.Context;
 import score.VarDB;
+import score.DictDB;
 import score.annotation.External;
 
 public class SavingsImpl extends FloorLimited implements Savings {
     public static final String LOCKED_SAVINGS = "Locked savings";
     public static final String VERSION = "version";
+    private static final DictDB<Address, BigInteger> totalPayout = Context.newDictDB("TOTAL_PAYOUT", BigInteger.class);
 
     private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
     public static final String TAG = Names.SAVINGS;
@@ -121,6 +123,11 @@ public class SavingsImpl extends FloorLimited implements Savings {
         return RewardsManager.getLockedAmount(user);
     }
 
+    @External(readonly = true)
+    public BigInteger getTotalPayout(Address token) {
+        return totalPayout.getOrDefault(token, BigInteger.ZERO);
+    }
+
     @External
     public void addAcceptedToken(Address token) {
         onlyGovernance();
@@ -144,6 +151,7 @@ public class SavingsImpl extends FloorLimited implements Savings {
 
         Address token = Context.getCaller();
         if (_data == null || _data.length == 0) {
+            totalPayout.set(token, totalPayout.getOrDefault(token, BigInteger.ZERO).add(_value));
             RewardsManager.addWeight(token, _value);
             return;
         }
