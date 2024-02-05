@@ -21,12 +21,16 @@ import network.balanced.score.lib.utils.Names;
 import score.*;
 import scorex.util.HashMap;
 
+import java.util.Arrays;
 import java.util.Map;
 
 import static network.balanced.score.core.governance.GovernanceImpl.call;
 import static network.balanced.score.core.governance.utils.GovernanceConstants.*;
 
 public class ContractManager {
+    public static final DictDB<String, byte[]> contractHashes = Context.newDictDB("CONTRACT_DEPLOYMENT_HASHES", byte[].class);
+    public static final DictDB<byte[], String> contractParams = Context.newDictDB("CONTRACT_DEPLOYMENT_PARAMS", String.class);
+
     private static final VarDB<Address> loans = Context.newVarDB("loans", Address.class);
     private static final VarDB<Address> dex = Context.newVarDB("dex", Address.class);
     private static final VarDB<Address> staking = Context.newVarDB("staking", Address.class);
@@ -227,6 +231,26 @@ public class ContractManager {
     public static void updateContract(Address targetContract, byte[] contractData, String params) {
         Object[] parsedParams = ArbitraryCallManager.getConvertedParameters(params);
         Context.deploy(targetContract, contractData, parsedParams);
+    }
+
+    public static String deployStoredContract(String name, byte[] contractData) {
+        byte[] hash = Context.hash("keccak-256", contractData);
+        byte[] storedHash = contractHashes.get(name);
+        Context.require(Arrays.equals(storedHash, hash), "Hash mismatch");
+        String params = contractParams.get(storedHash);
+        contractHashes.set(name, null);
+        contractParams.set(storedHash, null);
+        try {
+            updateContract(getAddress(name), contractData, params);
+            return "";
+        } catch (Exception e) {
+            return e.getMessage();
+        }
+    }
+
+    public static void storeContract(String name, byte[] dataHash, String params) {
+        contractHashes.set(name, dataHash);
+        contractParams.set(dataHash, params);
     }
 
     public static void newContract(byte[] contractData, String params) {

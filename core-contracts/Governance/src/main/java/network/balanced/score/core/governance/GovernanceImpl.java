@@ -32,6 +32,7 @@ import score.VarDB;
 import score.annotation.External;
 import score.annotation.Optional;
 import score.annotation.Payable;
+import score.annotation.EventLog;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -39,6 +40,7 @@ import java.util.Map;
 
 import static network.balanced.score.core.governance.utils.GovernanceConstants.*;
 import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
 public class GovernanceImpl implements Governance {
     public static final VarDB<BigInteger> launchDay = Context.newVarDB(LAUNCH_DAY, BigInteger.class);
@@ -313,6 +315,18 @@ public class GovernanceImpl implements Governance {
     }
 
     @External
+    public void storeContract(String name, byte[] dataHash, String deploymentParams) {
+        onlyOwnerOrContract();
+        ContractManager.storeContract(name, dataHash, deploymentParams);
+    }
+
+    @External
+    public void deployStoredContract(String name, byte[] contractData) {
+        String msg = ContractManager.deployStoredContract(name, contractData);
+        ContractUpdated(name, msg);
+    }
+
+    @External
     public void deployTo(Address targetContract, byte[] contractData, String deploymentParams) {
         onlyOwnerOrContract();
         ContractManager.updateContract(targetContract, contractData, deploymentParams);
@@ -430,6 +444,10 @@ public class GovernanceImpl implements Governance {
         Context.call(ContractManager.getAddress(Names.WORKERTOKEN), "adminTransfer", _from, _to, _value, _data);
     }
 
+    @EventLog(indexed = 1)
+    public void ContractUpdated(String name, String error) {
+
+    }
     public static void call(Address targetAddress, String method, Object... params) {
         Context.call(targetAddress, method, params);
     }

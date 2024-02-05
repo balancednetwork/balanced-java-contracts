@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2023 Balanced.network.
+ * Copyright (c) 2023-2024 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,4 +42,5 @@ public class Versions {
     public final static String BALANCED_ASSET_MANAGER = "v1.0.2";
     public final static String XCALL_MANAGER = "v1.0.0";
     public final static String SAVINGS = "v1.0.0";
+    public final static String TRICKLER = "v1.0.0";
 }

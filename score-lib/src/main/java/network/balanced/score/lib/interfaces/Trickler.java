@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balanced.network.
+ * Copyright (c) 2024-2024 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,29 +20,39 @@ import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.AddressManager;
 import network.balanced.score.lib.interfaces.base.Name;
+import network.balanced.score.lib.interfaces.base.TokenFallback;
 import network.balanced.score.lib.interfaces.base.Version;
-import network.balanced.score.lib.interfaces.tokens.XTokenReceiver;
-import score.annotation.External;
 import score.Address;
+import score.annotation.External;
 
 import java.math.BigInteger;
-import java.util.Map;
+import java.util.List;
 
 @ScoreClient
 @ScoreInterface
-public interface Savings extends Name, Version, AddressManager, FloorLimitedInterface {
-    @External(readonly = true)
-    BigInteger getLockedAmount(String user);
+public interface Trickler extends Version, TokenFallback, Name, AddressManager {
 
     @External
-    void unlock(BigInteger amount);
+    void setDistributionPeriod(BigInteger blocks);
 
     @External(readonly = true)
-    BigInteger getTotalPayout(Address token);
+    BigInteger getDistributionPeriod();
 
     @External
-    void claimRewards();
+    void addAllowedToken(Address token);
+
+    @External
+    void removeAllowedToken(Address token);
 
     @External(readonly = true)
-    Map<String, BigInteger> getUnclaimedRewards(String user);
+    List<Address> getAllowListTokens();
+
+    @External
+    void claimRewards(Address token);
+
+    @External
+    void claimAllRewards();
+
+    @External(readonly = true)
+    BigInteger getRewards(Address token);
 }
