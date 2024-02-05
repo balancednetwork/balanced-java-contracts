@@ -231,25 +231,25 @@ public class FeeHandlerImpl implements FeeHandler {
 
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
-        Address sender = Context.getCaller();
-        collectFeeData(sender, _from, _value);
+        Address token = Context.getCaller();
+        collectFeeData(token, _from, _value);
 
         if (Arrays.equals(lastTxhash.getOrDefault(new byte[0]), Context.getTransactionHash())) {
             return;
-        } else if (!isTimeForFeeProcessing(sender)) {
+        } else if (!isTimeForFeeProcessing(token)) {
             return;
         }
 
         lastTxhash.set(Context.getTransactionHash());
-        lastFeeProcessingBlock.set(sender, BigInteger.valueOf(Context.getBlockHeight()));
+        lastFeeProcessingBlock.set(token, BigInteger.valueOf(Context.getBlockHeight()));
 
         int acceptedDividendsTokensCount = acceptedDividendsTokens.size();
         for (int i = 0; i < acceptedDividendsTokensCount; i++) {
-            if (acceptedDividendsTokens.get(i).equals(sender)) {
-                BigInteger balance = getTokenBalance(sender);
+            if (acceptedDividendsTokens.get(i).equals(token)) {
+                BigInteger balance = getTokenBalance(token);
                 BigInteger burnAmount = balance.divide(BigInteger.TWO);
-                transferToken(sender, getICONBurner(), burnAmount, new byte[0]);
-                transferToken(sender, getDividends(), balance.subtract(burnAmount), new byte[0]);
+                transferToken(token, getICONBurner(), burnAmount, new byte[0]);
+                transferToken(token, getDividends(), balance.subtract(burnAmount), new byte[0]);
                 return;
             }
         }
