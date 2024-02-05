@@ -63,6 +63,7 @@ public class Balanced {
     public DefaultScoreClient assetManager;
     public DefaultScoreClient xcall;
     public DefaultScoreClient xcallManager;
+    public DefaultScoreClient iconBurner;
     public Governance governanceClient;
 
     public final String ICON_NID = "0x3.ICON";
@@ -129,6 +130,7 @@ public class Balanced {
         governanceClient.deploy(getContractData("StakedLP"), governanceParam);
         governanceClient.deploy(getContractData("BalancedOracle"), governanceParam);
         governanceClient.deploy(getContractData("XCallManager"), governanceParam);
+        governanceClient.deploy(getContractData("Burner"), governanceParam);
 
         String assetManagerParams = new JsonArray()
                 .add(createParameter(governance._address()))
@@ -155,6 +157,7 @@ public class Balanced {
         feehandler = newScoreClient(owner, governanceClient.getAddress(Names.FEEHANDLER));
         assetManager = newScoreClient(owner, governanceClient.getAddress(Names.ASSET_MANAGER));
         xcallManager = newScoreClient(owner, governanceClient.getAddress(Names.XCALL_MANAGER));
+        iconBurner = newScoreClient(owner, governanceClient.getAddress(Names.BURNER));
 
         oracle = getDeploymentResult(owner, oracleTx);
         staking = getDeploymentResult(owner, stakingTx);

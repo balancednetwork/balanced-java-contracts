@@ -151,17 +151,18 @@ class FeeHandlerImplTest extends TestBase {
         setAcceptedDividendTokens_NoPreviousTokens();
         setFeeProcessingInterval();
         feeHandler.invoke(governance.account, "disable");
-
-        when(sicx.mock.balanceOf(feeHandler.getAddress())).thenReturn(BigInteger.TEN);
+        BigInteger amount = BigInteger.valueOf(11);
+        when(sicx.mock.balanceOf(feeHandler.getAddress())).thenReturn(amount);
 
         // Act
-        feeHandler.invoke(sicx.account, "tokenFallback", baln.getAddress(), BigInteger.TEN.pow(2), new byte[0]);
+        feeHandler.invoke(sicx.account, "tokenFallback", baln.getAddress(), amount, new byte[0]);
         feeHandler.invoke(governance.account, "enable");
-        feeHandler.invoke(sicx.account, "tokenFallback", baln.getAddress(), BigInteger.TEN.pow(2), new byte[0]);
-        feeHandler.invoke(sicx.account, "tokenFallback", baln.getAddress(), BigInteger.TEN.pow(2), new byte[0]);
+        feeHandler.invoke(sicx.account, "tokenFallback", baln.getAddress(), amount, new byte[0]);
+        feeHandler.invoke(sicx.account, "tokenFallback", baln.getAddress(), amount, new byte[0]);
 
         // Assert
-        verify(sicx.mock, times(1)).transfer(mockBalanced.dividends.getAddress(), BigInteger.TEN, new byte[0]);
+        verify(sicx.mock, times(1)).transfer(mockBalanced.iconBurner.getAddress(), BigInteger.valueOf(5), new byte[0]);
+        verify(sicx.mock, times(1)).transfer(mockBalanced.dividends.getAddress(), BigInteger.valueOf(6), new byte[0]);
     }
 
     @Test

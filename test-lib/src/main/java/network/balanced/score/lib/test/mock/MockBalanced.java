@@ -58,6 +58,7 @@ public class MockBalanced {
     public MockContract<AssetManager> assetManager;
     public MockContract<XCall> xCall;
     public MockContract<XCallManager> xCallManager;
+    public MockContract<ICONBurner> iconBurner;
     public MockContract<Governance> governance;
 
     public MockBalanced(ServiceManager sm, Account owner) throws Exception {
@@ -83,6 +84,7 @@ public class MockBalanced {
         assetManager = new MockContract<>(AssetManagerScoreInterface.class, AssetManager.class, sm, owner);
         xCall = new MockContract<>(XCallScoreInterface.class, XCall.class, sm, owner);
         xCallManager = new MockContract<>(XCallManagerScoreInterface.class, XCallManager.class, sm, owner);
+        iconBurner = new MockContract<>(ICONBurnerScoreInterface.class, ICONBurner.class, sm, owner);
         governance = new MockContract<>(GovernanceScoreInterface.class, Governance.class, sm, owner);
 
         if (addressManagerMock != null) {
@@ -112,6 +114,7 @@ public class MockBalanced {
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.ASSET_MANAGER)).thenReturn(assetManager.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.XCALL)).thenReturn(xCall.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.XCALL_MANAGER)).thenReturn(xCallManager.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.BURNER)).thenReturn(iconBurner.getAddress());
 
         addressManagerMock.when(() -> BalancedAddressManager.getLoans()).thenReturn(loans.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.getDex()).thenReturn(dex.getAddress());
@@ -134,6 +137,7 @@ public class MockBalanced {
         addressManagerMock.when(() -> BalancedAddressManager.getAssetManager()).thenReturn(assetManager.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.getXCall()).thenReturn(xCall.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.getXCallManager()).thenReturn(xCallManager.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.getICONBurner()).thenReturn(iconBurner.getAddress());
 
 
         when(bnUSD.mock.symbol()).thenReturn("bnUSD");
