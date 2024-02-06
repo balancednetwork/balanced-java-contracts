@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balanced.network.
+ * Copyright (c) 2022-2024 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import java.util.List;
 
 @ScoreClient
 @ScoreInterface
-public interface Stability extends Name, XTokenReceiver,  Version, FloorLimitedInterface, AddressManager {
+public interface Stability extends Name, XTokenReceiver, Version, FloorLimitedInterface, AddressManager {
 
     @External
     void setFeeIn(BigInteger _feeIn);

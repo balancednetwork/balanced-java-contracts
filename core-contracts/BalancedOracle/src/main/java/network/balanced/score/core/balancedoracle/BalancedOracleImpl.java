@@ -297,7 +297,10 @@ public class BalancedOracleImpl implements BalancedOracle {
     private PriceData _getUSDPriceData(String symbol) {
         String pegSymbol = assetPeg.getOrDefault(symbol, symbol);
         if (priceProvider.get(pegSymbol) != null) {
-            return externalPriceData.get(pegSymbol);
+            PriceData data = externalPriceData.get(pegSymbol);
+            Context.require(data != null, "No price data exits for " + pegSymbol);
+
+            return data;
         } else {
             Map<String, BigInteger> priceData = (Map<String, BigInteger>) Context.call(getOracle(), "get_reference_data", pegSymbol, "USD");
             BigInteger last_update_base = priceData.get("last_update_base");

@@ -153,7 +153,7 @@ public class StabilityImpl extends FloorLimited implements Stability {
         BigInteger excess = stabilityBacking.subtract(supply.subtract(debt));
 
         Context.call(bnUSD, "mint", excess, new byte[0]);
-        Context.call(bnUSD, "transfer", getDaofund(), excess, new byte[0]);
+        Context.call(bnUSD, "transfer", getFeehandler(), excess, new byte[0]);
         Context.call(getFeehandler(), "accrueStabilityYieldFee", excess);
         MintExcess(excess);
     }

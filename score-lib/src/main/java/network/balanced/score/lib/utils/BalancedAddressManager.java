@@ -161,8 +161,8 @@ public class BalancedAddressManager {
         return getAddress(Names.SAVINGS);
     }
 
-    public static Address getBSR() {
-        return getAddress(Names.BSR);
+    public static Address getTrickler() {
+        return getAddress(Names.TRICKLER);
     }
 
     public static Address getGovernance() {

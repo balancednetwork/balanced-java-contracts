@@ -63,7 +63,6 @@ public class Balanced {
     public DefaultScoreClient balancedOracle;
     public DefaultScoreClient assetManager;
     public DefaultScoreClient savings;
-    public DefaultScoreClient bsr;
     public DefaultScoreClient xcall;
     public DefaultScoreClient xcallManager;
     public Governance governanceClient;
@@ -131,7 +130,6 @@ public class Balanced {
         governanceClient.deploy(getContractData("Router"), governanceParam);
         governanceClient.deploy(getContractData("StakedLP"), governanceParam);
         governanceClient.deploy(getContractData("Savings"), governanceParam);
-        governanceClient.deploy(getContractData("BalancedSavingRate"), governanceParam);
         governanceClient.deploy(getContractData("BalancedOracle"), governanceParam);
         governanceClient.deploy(getContractData("XCallManager"), governanceParam);
         governanceClient.deploy(getContractData("Stability"), governanceParam);
@@ -163,7 +161,6 @@ public class Balanced {
         xcallManager = newScoreClient(owner, governanceClient.getAddress(Names.XCALL_MANAGER));
         stability = newScoreClient(owner, governanceClient.getAddress(Names.STABILITY));
         savings = newScoreClient(owner, governanceClient.getAddress(Names.SAVINGS));
-        bsr = newScoreClient(owner, governanceClient.getAddress(Names.BSR));
 
         oracle = getDeploymentResult(owner, oracleTx);
         staking = getDeploymentResult(owner, stakingTx);

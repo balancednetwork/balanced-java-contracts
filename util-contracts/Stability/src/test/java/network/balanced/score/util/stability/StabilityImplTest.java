@@ -414,7 +414,7 @@ class StabilityImplTest extends TestBase {
         }
 
         @Test
-        void yieldBearing_toOld() {
+        void yieldBearing_tooOld() {
             // Arrange
             String expectedErrorMessage = "Reverted(0): " + TAG
                     + ": Price for hyUSDC has to be updated before using the stability fund";
@@ -527,7 +527,7 @@ class StabilityImplTest extends TestBase {
             // Assert
             verify(mockBalanced.loans.mock).claimInterest();
             verify(mockBalanced.bnUSD.mock).mint(expectedMint, new byte[0]);
-            verify(mockBalanced.bnUSD.mock).transfer(mockBalanced.daofund.getAddress(), expectedMint, new byte[0]);
+            verify(mockBalanced.bnUSD.mock).transfer(mockBalanced.feehandler.getAddress(), expectedMint, new byte[0]);
             verify(mockBalanced.feehandler.mock).accrueStabilityYieldFee(expectedMint);
         }
 

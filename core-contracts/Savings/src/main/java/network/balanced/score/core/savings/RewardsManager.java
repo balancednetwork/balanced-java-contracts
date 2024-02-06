@@ -5,6 +5,7 @@ import static network.balanced.score.lib.utils.Constants.EXA;
 import java.math.BigInteger;
 import java.util.Map;
 
+import network.balanced.score.lib.utils.BalancedFloorLimits;
 import network.balanced.score.lib.utils.EnumerableSetDB;
 import score.Address;
 import score.BranchDB;
@@ -91,6 +92,7 @@ public class RewardsManager {
             Address token = allowedTokens.at(i);
             BigInteger amount = rewards.get(token);
             rewards.set(token, null);
+            BalancedFloorLimits.verifyWithdraw(token, amount);
             Context.call(token, "transfer", user, amount, new byte[0]);
         }
     }
@@ -106,6 +108,10 @@ public class RewardsManager {
         }
 
         return unclaimedRewards;
+    }
+
+    public static final BigInteger getTotalWorkingbalance() {
+        return totalWorkingBalance.get();
     }
 
     public static BigInteger getLockedAmount(String user) {

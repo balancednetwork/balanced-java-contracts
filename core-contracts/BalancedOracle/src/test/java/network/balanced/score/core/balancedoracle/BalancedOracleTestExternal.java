@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balanced.network.
+ * Copyright (c) 2022-2024 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,11 @@
 
 package network.balanced.score.core.balancedoracle;
 
+import network.balanced.score.lib.interfaces.BalancedOracleMessages;
+import network.balanced.score.lib.structs.PriceProtectionParameter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
-
-import network.balanced.score.lib.structs.PriceProtectionConfig;
-import network.balanced.score.lib.structs.PriceProtectionParameter;
-
-import network.balanced.score.lib.interfaces.BalancedOracleMessages;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -86,7 +83,6 @@ class BalancedOracleTestExternal extends BalancedOracleTestBase {
 
         // Act
         Executable updateWithFutureTimestamp = () -> updatePrice(externalPriceProxy, symbol, initialRate, timestamp);
-        ;
 
         // Assert
         expectErrorMessage(updateWithFutureTimestamp, "Time cannot be in the future");
@@ -215,7 +211,7 @@ class BalancedOracleTestExternal extends BalancedOracleTestBase {
     }
 
     protected PriceProtectionParameter newPriceProtectionParameter(Boolean increaseOnly, BigInteger priceChangePoints,
-            BigInteger priceChangeTimeWindowUs) {
+                                                                   BigInteger priceChangeTimeWindowUs) {
         PriceProtectionParameter param = new PriceProtectionParameter();
         param.increaseOnly = increaseOnly;
         param.priceChangePoints = priceChangePoints;
