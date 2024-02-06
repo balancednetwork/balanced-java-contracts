@@ -36,6 +36,7 @@ import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
+import static network.balanced.score.lib.utils.Constants.WEEK_IN_MICRO_SECONDS;
 import static network.balanced.score.lib.utils.Math.pow;
 
 public class BalancedOracleImpl implements BalancedOracle {
@@ -174,9 +175,11 @@ public class BalancedOracleImpl implements BalancedOracle {
     // XCall
     public void updatePriceData(String from, String symbol, BigInteger rate, BigInteger timestamp) {
         Context.require(from.equals(priceProvider.get(symbol)), from + " is not allowed to update the price of " + symbol);
-        Context.require(timestamp.compareTo(BigInteger.valueOf(Context.getBlockTimestamp())) < 0, "Time cannot be in the future");
+        BigInteger currentTime = BigInteger.valueOf(Context.getBlockTimestamp());
+        Context.require(timestamp.compareTo(currentTime) < 0, "Time cannot be in the future");
         PriceData currentPriceData = externalPriceData.get(symbol);
         if (currentPriceData == null) {
+            Context.require(timestamp.compareTo(currentTime.subtract(WEEK_IN_MICRO_SECONDS)) >= 0, "First timestamp can be older than a week old");
             externalPriceData.set(symbol, new PriceData(rate, timestamp));
             return;
         }
