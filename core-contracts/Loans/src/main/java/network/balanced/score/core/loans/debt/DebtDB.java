@@ -67,7 +67,7 @@ public class DebtDB {
             Context.newDictDB(TOTAL_COLLATERAL_DEBT_SHARES, BigInteger.class);
     private static final DictDB<String, BigInteger> interestRates =
             Context.newDictDB(INTEREST_RATES, BigInteger.class);
-    private static final DictDB<String, BigInteger> lastInterestCompound =
+    private static final DictDB<String, BigInteger> lastInterestCompoundTimestamp =
             Context.newDictDB(LAST_INTEREST_COMPOUND, BigInteger.class);
     private static final VarDB<BigInteger> accumulatedInterest =
             Context.newVarDB(ACCUMULATED_INTEREST, BigInteger.class);
@@ -158,12 +158,12 @@ public class DebtDB {
         return savingsShare.getOrDefault(BigInteger.ZERO);
     }
 
-    private static void setLastInterestCompound(String collateralSymbol, BigInteger debt) {
-        lastInterestCompound.set(collateralSymbol, debt);
+    private static void setLastInterestCompoundTimestamp(String collateralSymbol, BigInteger debt) {
+        lastInterestCompoundTimestamp.set(collateralSymbol, debt);
     }
 
-    public static BigInteger getLastInterestCompound(String collateralSymbol) {
-        BigInteger time =  lastInterestCompound.get(collateralSymbol);
+    public static BigInteger getLastInterestCompoundTimestamp(String collateralSymbol) {
+        BigInteger time =  lastInterestCompoundTimestamp.get(collateralSymbol);
         if (time == null) {
             time = BigInteger.valueOf(Context.getBlockTimestamp());
         }
@@ -173,18 +173,14 @@ public class DebtDB {
 
     public static void applyInterest(String collateralSymbol) {
         BigInteger totalDebt = getCollateralDebt(collateralSymbol);
-        BigInteger lastUpdate = getLastInterestCompound(collateralSymbol);
+        BigInteger lastUpdate = getLastInterestCompoundTimestamp(collateralSymbol);
         BigInteger now = BigInteger.valueOf(Context.getBlockTimestamp());
-        setLastInterestCompound(collateralSymbol, now);
-        if (totalDebt.equals(BigInteger.ZERO)) {
-            return;
-        }
-
+        setLastInterestCompoundTimestamp(collateralSymbol, now);
 
         BigInteger interestRate = getInterestRate(collateralSymbol);
         BigInteger diff = now.subtract(lastUpdate);
         BigInteger interest = totalDebt.multiply(interestRate).multiply(diff).divide(YEAR_IN_MICRO_SECONDS.multiply(POINTS));
-        if (interest.compareTo(EXA) < 0) {
+        if (interest.equals(BigInteger.ZERO)) {
             return;
         }
 
