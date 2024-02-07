@@ -32,6 +32,8 @@ class BalancedOracleTestExternal extends BalancedOracleTestBase {
     String symbol = "hyUSDC";
     String externalPriceProxy = "avax/cx1";
 
+    long BLOCKS_IN_A_DAY = 86400/2;
+
     @BeforeEach
     public void setupContract() throws Exception {
         setup();
@@ -43,7 +45,7 @@ class BalancedOracleTestExternal extends BalancedOracleTestBase {
         balancedOracle.invoke(owner, "addExternalPriceProxy", symbol, externalPriceProxy,
                 newPriceProtectionParameter(false, BigInteger.ZERO, BigInteger.ZERO));
         BigInteger initialRate = BigInteger.TEN.pow(18);
-        BigInteger timestamp = BigInteger.ZERO;
+        BigInteger timestamp = BigInteger.valueOf(sm.getBlock().getTimestamp());
         updatePrice(externalPriceProxy, symbol, initialRate, timestamp);
         verifyPrice(symbol, initialRate, timestamp);
 
@@ -62,7 +64,7 @@ class BalancedOracleTestExternal extends BalancedOracleTestBase {
         balancedOracle.invoke(owner, "addExternalPriceProxy", symbol, externalPriceProxy,
                 newPriceProtectionParameter(false, BigInteger.ZERO, BigInteger.ZERO));
         BigInteger initialRate = BigInteger.TEN.pow(18);
-        BigInteger timestamp = BigInteger.ZERO;
+        BigInteger timestamp = BigInteger.valueOf(sm.getBlock().getTimestamp());
         updatePrice(externalPriceProxy, symbol, initialRate, timestamp);
 
         // Act
@@ -94,15 +96,15 @@ class BalancedOracleTestExternal extends BalancedOracleTestBase {
         balancedOracle.invoke(owner, "addExternalPriceProxy", symbol, externalPriceProxy,
                 newPriceProtectionParameter(true, BigInteger.ZERO, BigInteger.ZERO));
         BigInteger initialRate = BigInteger.TEN.pow(18);
-        BigInteger timestamp = BigInteger.ZERO;
+        BigInteger timestamp = BigInteger.valueOf(sm.getBlock().getTimestamp());
         updatePrice(externalPriceProxy, symbol, initialRate, timestamp);
 
         // Act
         BigInteger newRate = initialRate.add(BigInteger.ONE);
         timestamp = timestamp.add(BigInteger.ONE);
-        updatePrice(externalPriceProxy, symbol, newRate, BigInteger.ONE);
-        Executable decreasePrice = () -> updatePrice(externalPriceProxy, symbol, newRate.subtract(BigInteger.ONE),
-                BigInteger.TWO);
+        updatePrice(externalPriceProxy, symbol, newRate, timestamp);
+        BigInteger ts = timestamp.add(BigInteger.ONE);
+        Executable decreasePrice = () -> updatePrice(externalPriceProxy, symbol, newRate.subtract(BigInteger.ONE), ts);
 
         // Assert
         expectErrorMessage(decreasePrice, "Price of this asset can only increase");
@@ -119,16 +121,19 @@ class BalancedOracleTestExternal extends BalancedOracleTestBase {
                 newPriceProtectionParameter(false, priceChangeInPoints, priceChangeTimeWindowUs));
 
         BigInteger initialRate = BigInteger.TEN.pow(18);
-        BigInteger timestamp = BigInteger.ZERO;
+        BigInteger timestamp = BigInteger.valueOf(sm.getBlock().getTimestamp());
         updatePrice(externalPriceProxy, symbol, initialRate, timestamp);
 
         // Act
         BigInteger newRate = initialRate.multiply(BigInteger.valueOf(11)).divide(BigInteger.TEN);
+
+        BigInteger toLowTimestamp = timestamp.add(BigInteger.ONE);
         // update 10% with very little time difference
         Executable fastPriceChange = () -> updatePrice(externalPriceProxy, symbol, newRate,
-                BigInteger.ONE);
+            toLowTimestamp);
         expectErrorMessage(fastPriceChange, "Price of this asset has moved to fast");
-        timestamp = MICRO_SECONDS_IN_A_DAY;
+        timestamp = timestamp.add(MICRO_SECONDS_IN_A_DAY);
+        sm.getBlock().increase(BLOCKS_IN_A_DAY);
         updatePrice(externalPriceProxy, symbol, newRate, timestamp);
 
         // Assert
@@ -145,16 +150,18 @@ class BalancedOracleTestExternal extends BalancedOracleTestBase {
                 newPriceProtectionParameter(false, priceChangeInPoints, priceChangeTimeWindowUs));
 
         BigInteger initialRate = BigInteger.TEN.pow(18);
-        BigInteger timestamp = BigInteger.ZERO;
+        BigInteger timestamp = BigInteger.valueOf(sm.getBlock().getTimestamp());
         updatePrice(externalPriceProxy, symbol, initialRate, timestamp);
 
         // Act
         BigInteger newRate = initialRate.multiply(BigInteger.valueOf(13)).divide(BigInteger.TEN);
+        BigInteger toLowTimestamp = timestamp.add(MICRO_SECONDS_IN_A_DAY.multiply(BigInteger.TWO));
+        sm.getBlock().increase(BLOCKS_IN_A_DAY*4);
+
         // update 30% with only two day time difference
-        Executable fastPriceChange = () -> updatePrice(externalPriceProxy, symbol, newRate,
-                MICRO_SECONDS_IN_A_DAY.multiply(BigInteger.TWO));
+        Executable fastPriceChange = () -> updatePrice(externalPriceProxy, symbol, newRate,  toLowTimestamp);
         expectErrorMessage(fastPriceChange, "Price of this asset has moved to fast");
-        timestamp = MICRO_SECONDS_IN_A_DAY.multiply(BigInteger.valueOf(3));
+        timestamp = timestamp.add(MICRO_SECONDS_IN_A_DAY.multiply(BigInteger.valueOf(3)));
         updatePrice(externalPriceProxy, symbol, newRate, timestamp);
 
         // Assert
@@ -171,16 +178,17 @@ class BalancedOracleTestExternal extends BalancedOracleTestBase {
                 newPriceProtectionParameter(false, priceChangeInPoints, priceChangeTimeWindowUs));
 
         BigInteger initialRate = BigInteger.TEN.pow(18);
-        BigInteger timestamp = BigInteger.ZERO;
+        BigInteger timestamp = BigInteger.valueOf(sm.getBlock().getTimestamp());
         updatePrice(externalPriceProxy, symbol, initialRate, timestamp);
 
         // Act
         BigInteger newRate = initialRate.multiply(BigInteger.valueOf(105)).divide(BigInteger.valueOf(100));
         // update 5% with 1/4 day difference
-        Executable fastPriceChange = () -> updatePrice(externalPriceProxy, symbol, newRate,
-                MICRO_SECONDS_IN_A_DAY.divide(BigInteger.valueOf(4)));
+        sm.getBlock().increase(BLOCKS_IN_A_DAY);
+        BigInteger toLowTimestamp = timestamp.add(MICRO_SECONDS_IN_A_DAY.divide(BigInteger.valueOf(4)));
+        Executable fastPriceChange = () -> updatePrice(externalPriceProxy, symbol, newRate, toLowTimestamp);
         expectErrorMessage(fastPriceChange, "Price of this asset has moved to fast");
-        timestamp = MICRO_SECONDS_IN_A_DAY.divide(BigInteger.TWO);
+        timestamp = timestamp.add(MICRO_SECONDS_IN_A_DAY.divide(BigInteger.TWO));
         updatePrice(externalPriceProxy, symbol, newRate, timestamp);
 
         // Assert
@@ -211,7 +219,7 @@ class BalancedOracleTestExternal extends BalancedOracleTestBase {
     }
 
     protected PriceProtectionParameter newPriceProtectionParameter(Boolean increaseOnly, BigInteger priceChangePoints,
-                                                                   BigInteger priceChangeTimeWindowUs) {
+            BigInteger priceChangeTimeWindowUs) {
         PriceProtectionParameter param = new PriceProtectionParameter();
         param.increaseOnly = increaseOnly;
         param.priceChangePoints = priceChangePoints;

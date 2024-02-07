@@ -3,6 +3,7 @@ package network.balanced.score.core.savings;
 import static network.balanced.score.lib.utils.Constants.EXA;
 
 import java.math.BigInteger;
+import java.net.ContentHandler;
 import java.util.Map;
 
 import network.balanced.score.lib.utils.BalancedFloorLimits;
@@ -66,8 +67,9 @@ public class RewardsManager {
 
     public static void addWeight(Address token, BigInteger amount) {
         BigInteger prevWeight = tokenWeight.getOrDefault(token, BigInteger.ZERO);
-        BigInteger addedWeight = amount.multiply(EXA).divide(totalWorkingBalance.getOrDefault(BigInteger.ZERO));
-
+        BigInteger workingTotal = totalWorkingBalance.getOrDefault(BigInteger.ZERO);
+        Context.require(workingTotal.compareTo(BigInteger.ZERO) > 0, "bnUSD must be locked in order to deposit rewards");
+        BigInteger addedWeight = amount.multiply(EXA).divide(workingTotal);
         tokenWeight.set(token, prevWeight.add(addedWeight));
     }
 
@@ -90,10 +92,12 @@ public class RewardsManager {
 
         for (int i = 0; i < numberOfTokens; i++) {
             Address token = allowedTokens.at(i);
-            BigInteger amount = rewards.get(token);
+            BigInteger amount = rewards.getOrDefault(token, BigInteger.ZERO);
             rewards.set(token, null);
             BalancedFloorLimits.verifyWithdraw(token, amount);
-            Context.call(token, "transfer", user, amount, new byte[0]);
+            if (!amount.equals(BigInteger.ZERO)) {
+                Context.call(token, "transfer", user, amount, new byte[0]);
+            }
         }
     }
 
