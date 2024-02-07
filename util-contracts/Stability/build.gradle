@@ -32,6 +32,7 @@ dependencies {
     compileOnly Dependencies.javaeeApi
     implementation Dependencies.javaeeScorex
     implementation project(':score-lib')
+    implementation Dependencies.minimalJson
 
     testImplementation Dependencies.javaeeUnitTest
     // Use JUnit Jupiter for testing.

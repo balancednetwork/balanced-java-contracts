@@ -56,9 +56,14 @@ public class BalancedUtils {
     }
 
     public static void whitelistToken(Balanced balanced, Address address, BigInteger limit) {
+        whitelistToken(balanced, address, limit, false);
+    }
+
+    public static void whitelistToken(Balanced balanced, Address address, BigInteger limit,  boolean yieldBearing) {
         JsonArray whitelistTokensParams = new JsonArray()
                 .add(createParameter(address))
-                .add(createParameter(limit));
+                .add(createParameter(limit))
+                .add(createParameter(yieldBearing));
 
         JsonArray whitelistTokens = createSingleTransaction(
                 balanced.stability._address(),
@@ -182,10 +187,22 @@ public class BalancedUtils {
                 .add("method", method)
                 .add("parameters", parameters);
     }
+        public static JsonObject createTransaction(BigInteger value, Address address, String method, JsonArray parameters) {
+        return new JsonObject()
+                .add("address", address.toString())
+                .add("method", method)
+                .add("value", value.toString())
+                .add("parameters", parameters);
+    }
 
     public static JsonArray createSingleTransaction(Address address, String method, JsonArray parameters) {
         return new JsonArray()
                 .add(createTransaction(address, method, parameters));
+    }
+
+    public static JsonArray createSingleTransaction(BigInteger value,Address address, String method, JsonArray parameters) {
+        return new JsonArray()
+                .add(createTransaction(value, address, method, parameters));
     }
 
     private static String getHex(byte[] raw) {

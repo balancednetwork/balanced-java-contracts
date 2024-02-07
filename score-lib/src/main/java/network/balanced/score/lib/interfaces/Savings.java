@@ -23,26 +23,26 @@ import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.Version;
 import network.balanced.score.lib.interfaces.tokens.XTokenReceiver;
 import score.annotation.External;
+import score.Address;
 
 import java.math.BigInteger;
 import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface Savings extends Name, Version, XTokenReceiver, AddressManager {
- 
-    @External(readonly = true)
-    BigInteger getRate();
-
+public interface Savings extends Name, Version, AddressManager, FloorLimitedInterface {
     @External(readonly = true)
     BigInteger getLockedAmount(String user);
 
-    @External 
+    @External
     void unlock(BigInteger amount);
 
-    @External 
+    @External(readonly = true)
+    BigInteger getTotalPayout(Address token);
+
+    @External
     void claimRewards();
 
-    @External 
-    Map<String, BigInteger> getUnclaimedRewards();
+    @External(readonly = true)
+    Map<String, BigInteger> getUnclaimedRewards(String user);
 }

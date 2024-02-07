@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balanced.network.
+ * Copyright (c) 2022-2024 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,25 +18,21 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
-import network.balanced.score.lib.interfaces.addresses.BnusdAddress;
 import network.balanced.score.lib.interfaces.base.Name;
+import network.balanced.score.lib.interfaces.addresses.AddressManager;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
+import network.balanced.score.lib.interfaces.tokens.XTokenReceiver;
 import network.balanced.score.lib.interfaces.base.Version;
 import score.Address;
 import score.annotation.External;
+import score.annotation.Optional;
 
 import java.math.BigInteger;
 import java.util.List;
 
 @ScoreClient
 @ScoreInterface
-public interface Stability extends Name, TokenFallback, BnusdAddress, Version, FloorLimitedInterface {
-
-    @External
-    void setFeeHandler(Address _address);
-
-    @External(readonly = true)
-    Address getFeeHandler();
+public interface Stability extends Name, XTokenReceiver, Version, FloorLimitedInterface, AddressManager {
 
     @External
     void setFeeIn(BigInteger _feeIn);
@@ -51,7 +47,16 @@ public interface Stability extends Name, TokenFallback, BnusdAddress, Version, F
     BigInteger getFeeOut();
 
     @External
-    void whitelistTokens(Address _address, BigInteger _limit);
+    void setMaxPriceDelay(BigInteger delayInDays);
+
+    @External(readonly = true)
+    BigInteger getMaxPriceDelay();
+
+    @External
+    void whitelistTokens(Address _address, BigInteger _limit, @Optional boolean yieldBearing);
+
+    @External
+    void mintExcess();
 
     @External
     void updateLimit(Address _address, BigInteger _limit);

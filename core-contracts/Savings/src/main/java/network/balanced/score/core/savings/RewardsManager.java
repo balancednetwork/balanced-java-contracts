@@ -3,8 +3,10 @@ package network.balanced.score.core.savings;
 import static network.balanced.score.lib.utils.Constants.EXA;
 
 import java.math.BigInteger;
+import java.net.ContentHandler;
 import java.util.Map;
 
+import network.balanced.score.lib.utils.BalancedFloorLimits;
 import network.balanced.score.lib.utils.EnumerableSetDB;
 import score.Address;
 import score.BranchDB;
@@ -92,6 +94,7 @@ public class RewardsManager {
             Address token = allowedTokens.at(i);
             BigInteger amount = rewards.getOrDefault(token, BigInteger.ZERO);
             rewards.set(token, null);
+            BalancedFloorLimits.verifyWithdraw(token, amount);
             if (!amount.equals(BigInteger.ZERO)) {
                 Context.call(token, "transfer", user, amount, new byte[0]);
             }
@@ -101,7 +104,6 @@ public class RewardsManager {
     public static Map<String, BigInteger> getUnclaimedRewards(String user) {
         int numberOfTokens = allowedTokens.length();
         BigInteger balance = workingBalance.getOrDefault(user, BigInteger.ZERO);
-
         Map<String, BigInteger> unclaimedRewards = new HashMap<>();
         for (int i = 0; i < numberOfTokens; i++) {
             Address token = allowedTokens.at(i);
@@ -110,6 +112,10 @@ public class RewardsManager {
         }
 
         return unclaimedRewards;
+    }
+
+    public static final BigInteger getTotalWorkingbalance() {
+        return totalWorkingBalance.get();
     }
 
     public static BigInteger getLockedAmount(String user) {

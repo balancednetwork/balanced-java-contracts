@@ -26,6 +26,7 @@ import score.Address;
 import score.Context;
 import scorex.util.HashMap;
 
+import java.math.BigInteger;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -33,6 +34,7 @@ public class ArbitraryCallManager {
     public static final String METHOD = "method";
     public static final String ADDRESS = "address";
     public static final String PARAMS = "parameters";
+    public static final String VALUE = "value";
 
     public static void executeTransactions(String transactions) {
         JsonArray actionsList = Json.parse(transactions).asArray();
@@ -46,8 +48,9 @@ public class ArbitraryCallManager {
         Address address = Address.fromString(transaction.get(ADDRESS).asString());
         String method = transaction.get(METHOD).asString();
         JsonArray jsonParams = transaction.get(PARAMS).asArray();
+        BigInteger value = Math.convertToNumber(transaction.get(VALUE), BigInteger.ZERO);
         Object[] params = getConvertedParameters(jsonParams);
-        GovernanceImpl.call(address, method, params);
+        GovernanceImpl.call(value, address, method, params);
     }
 
     public static Object[] getConvertedParameters(String params) {
