@@ -179,7 +179,7 @@ public class BalancedOracleImpl implements BalancedOracle {
         Context.require(timestamp.compareTo(currentTime) < 0, "Time cannot be in the future");
         PriceData currentPriceData = externalPriceData.get(symbol);
         if (currentPriceData == null) {
-            Context.require(timestamp.compareTo(currentTime.subtract(WEEK_IN_MICRO_SECONDS)) >= 0, "First timestamp can be older than a week old");
+            Context.require(timestamp.compareTo(currentTime.subtract(WEEK_IN_MICRO_SECONDS)) >= 0, "First timestamp can't be older than a week old");
             externalPriceData.set(symbol, new PriceData(rate, timestamp));
             return;
         }
