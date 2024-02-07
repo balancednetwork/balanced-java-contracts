@@ -137,7 +137,6 @@ class SavingsIntegrationTest implements ScoreIntegrationTest {
         JsonObject deposit = new JsonObject().add("method", "_deposit");
         JsonObject lock = new JsonObject().add("method", "_lock");
         user.bnUSD.transfer(balanced.savings._address(), loanAmount, lock.toString().getBytes());
-        System.out.println(reader.savings.getLockedAmount(user.getAddress().toString()));
 
         assertEquals(loanAmount, reader.savings.getLockedAmount(user.getAddress().toString()));
     }
@@ -175,10 +174,10 @@ class SavingsIntegrationTest implements ScoreIntegrationTest {
                 reader.irc2(hyUSDCAsset).balanceOf(balanced.stability._address()));
         assertEquals(BigInteger.valueOf(30000), reader.bnUSD.balanceOf(depositor.getAddress()).divide(EXA));
 
-        BigInteger doafundBalance = reader.bnUSD.balanceOf(balanced.daofund._address());
         // adding assets should not change any backing
+        BigInteger prevYield = reader.feeHandler.getStabilityFundYieldFeesAccrued();
         user.stability.mintExcess();
-        assertEquals(doafundBalance, reader.bnUSD.balanceOf(balanced.daofund._address()));
+        assertEquals(prevYield, reader.feeHandler.getStabilityFundYieldFeesAccrued());
     }
 
     @Test
@@ -187,8 +186,9 @@ class SavingsIntegrationTest implements ScoreIntegrationTest {
         // Arrange
         BigInteger backingHyUSDC = reader.irc2(hyUSDCAsset).balanceOf(balanced.stability._address())
                 .divide(BigInteger.TEN.pow(hyUSDCDecimals.intValue()));
-        BigInteger daofundBalance = reader.bnUSD.balanceOf(balanced.daofund._address());
         BigInteger expectedMint = backingHyUSDC.multiply(EXA).divide(BigInteger.TEN);
+        BigInteger prevYield = reader.feeHandler.getStabilityFundYieldFeesAccrued();
+
         // up by 10%
         rate = EXA.multiply(BigInteger.valueOf(11)).divide(BigInteger.TEN);
         updatePrice(rate);
@@ -198,8 +198,7 @@ class SavingsIntegrationTest implements ScoreIntegrationTest {
 
         // Assert
         // We should have minted 10% of the backing HyUSDC
-        BigInteger newDaofundBalance = reader.bnUSD.balanceOf(balanced.daofund._address());
-        assertEquals(daofundBalance.add(expectedMint), newDaofundBalance);
+        assertEquals(prevYield.add(expectedMint), reader.feeHandler.getStabilityFundYieldFeesAccrued());
     }
 
     @Test
@@ -207,6 +206,8 @@ class SavingsIntegrationTest implements ScoreIntegrationTest {
     void applyAndClaimLoansInterest() throws Exception {
         // Arrange
         BigInteger previousDebt = reader.loans.getTotalDebt("");
+        BigInteger prevBnUSDRewards = reader.savings.getUnclaimedRewards(user.getAddress().toString()).get(balanced.bnusd._address().toString());
+
         BigInteger savingsBalance = reader.bnUSD.balanceOf(balanced.savings._address());
 
         // Act
@@ -219,10 +220,10 @@ class SavingsIntegrationTest implements ScoreIntegrationTest {
         BigInteger accruedInterest = newDebt.subtract(previousDebt);
         BigInteger savingsAmount = accruedInterest.multiply(savingsShare).divide(POINTS);
         assertEquals(savingsBalance.add(savingsAmount), newSavingsBalance);
-        System.out.println(reader.savings.getUnclaimedRewards(user.getAddress().toString()));
-        System.out.println(reader.savings.getLockedAmount(user.getAddress().toString()));
-        BigInteger expectedBnUSDRewards = reader.savings.getUnclaimedRewards(user.getAddress().toString()).get(balanced.bnusd._address().toString());
-        assertEquals(savingsAmount, expectedBnUSDRewards);
+        BigInteger bnUSDRewards = reader.savings.getUnclaimedRewards(user.getAddress().toString()).get(balanced.bnusd._address().toString());
+        BigInteger lockedAmount = reader.savings.getLockedAmount(user.getAddress().toString());
+        BigInteger roundedAmount = savingsAmount.multiply(EXA).divide(lockedAmount).multiply(lockedAmount).divide(EXA);
+        assertEquals(roundedAmount, bnUSDRewards.subtract(prevBnUSDRewards));
     }
 
     @Test
@@ -277,9 +278,9 @@ class SavingsIntegrationTest implements ScoreIntegrationTest {
         assertEquals(expectedBnUSDAmount, reader.bnUSD.balanceOf(depositor.getAddress()));
 
         // adding assets should not change any backing
-        BigInteger doafundBalance = reader.bnUSD.balanceOf(balanced.daofund._address());
+        BigInteger prevYield = reader.feeHandler.getStabilityFundYieldFeesAccrued();
         user.stability.mintExcess();
-        assertEquals(doafundBalance, reader.bnUSD.balanceOf(balanced.daofund._address()));
+        assertEquals(prevYield, reader.feeHandler.getStabilityFundYieldFeesAccrued());
     }
 
     @Test
@@ -301,9 +302,9 @@ class SavingsIntegrationTest implements ScoreIntegrationTest {
         assertEquals(expectedYieldAsset, reader.irc2(hyUSDCAsset).balanceOf(user.getAddress()));
 
         // withdrawing should not change any backing
-        BigInteger doafundBalance = reader.bnUSD.balanceOf(balanced.daofund._address());
+        BigInteger prevYield = reader.feeHandler.getStabilityFundYieldFeesAccrued();
         user.stability.mintExcess();
-        assertEquals(doafundBalance, reader.bnUSD.balanceOf(balanced.daofund._address()));
+        assertEquals(prevYield, reader.feeHandler.getStabilityFundYieldFeesAccrued());
     }
 
     private static void depositHyUSDC(String from, String to, BigInteger amount, byte[] data) {
