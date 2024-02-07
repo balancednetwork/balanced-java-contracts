@@ -17,8 +17,9 @@
 package network.balanced.score.core.savings;
 
 import static network.balanced.score.lib.utils.BalancedAddressManager.getAddressByName;
-import static network.balanced.score.lib.utils.BalancedAddressManager.getBSR;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getBnusd;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getLoans;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getTrickler;
 import static network.balanced.score.lib.utils.BalancedAddressManager.resetAddress;
 import static network.balanced.score.lib.utils.Check.checkStatus;
 import static network.balanced.score.lib.utils.Check.onlyGovernance;
@@ -34,15 +35,19 @@ import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.Versions;
 import network.balanced.score.lib.interfaces.Savings;
+import network.balanced.score.lib.utils.FloorLimited;
+import network.balanced.score.lib.utils.BalancedFloorLimits;
 
 import score.Address;
 import score.Context;
 import score.VarDB;
+import score.DictDB;
 import score.annotation.External;
 
-public class SavingsImpl implements Savings {
+public class SavingsImpl extends FloorLimited implements Savings {
     public static final String LOCKED_SAVINGS = "Locked savings";
     public static final String VERSION = "version";
+    private static final DictDB<Address, BigInteger> totalPayout = Context.newDictDB("TOTAL_PAYOUT", BigInteger.class);
 
     private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
     public static final String TAG = Names.SAVINGS;
@@ -76,33 +81,35 @@ public class SavingsImpl implements Savings {
         return getAddressByName(name);
     }
 
-    @External(readonly = true)
-    public BigInteger getRate() {
-        BigInteger bnUSDDeposits = getBnUSDBalance();
-        if (bnUSDDeposits.equals(BigInteger.ZERO)) {
-            return EXA;
-        }
-
-        BigInteger totalSupply = getBSRSupply();
-        return bnUSDDeposits.multiply(EXA).divide(totalSupply);
-    }
-
-    private BigInteger getBSRSupply() {
-        return Context.call(BigInteger.class, getBSR(), "xTotalSupply");
-    }
-
     private BigInteger getBnUSDBalance() {
         return Context.call(BigInteger.class, getBnusd(), "balanceOf", Context.getAddress());
+    }
+
+    @External
+    public void gatherRewards() {
+        try {
+            Context.call(getLoans(), "applyInterest");
+            Context.call(getLoans(), "claimInterest");
+            Context.call(getTrickler(), "claimAllRewards");
+        } catch (Exception e) {
+        }
+
     }
 
     @External
     public void unlock(BigInteger amount) {
         Context.require(amount.compareTo(BigInteger.ZERO) > 0, "Cannot unlock a negative or zero amount");
         RewardsManager.changeLock(Context.getCaller().toString(), amount.negate());
+        Address bnUSD = getBnusd();
+        BalancedFloorLimits.verifyWithdraw(bnUSD, amount);
+        BigInteger balance = Context.call(BigInteger.class, bnUSD, "balanceOf", Context.getAddress());
+        Context.require(RewardsManager.getTotalWorkingbalance().compareTo(balance.subtract(amount)) <= 0, "Sanity check, unauthorized withdrawals");
+        Context.call(bnUSD, "transfer", Context.getCaller(), amount, new byte[0]);
     }
 
     @External
     public void claimRewards() {
+        gatherRewards();
         RewardsManager.claimRewards(Context.getCaller());
     }
 
@@ -114,6 +121,11 @@ public class SavingsImpl implements Savings {
     @External(readonly = true)
     public BigInteger getLockedAmount(String user) {
         return RewardsManager.getLockedAmount(user);
+    }
+
+    @External(readonly = true)
+    public BigInteger getTotalPayout(Address token) {
+        return totalPayout.getOrDefault(token, BigInteger.ZERO);
     }
 
     @External
@@ -129,11 +141,6 @@ public class SavingsImpl implements Savings {
     }
 
     @External
-    public void xTokenFallback(String _from, BigInteger _value, byte[] _data) {
-        handleTokenDeposit(_from, _value, _data);
-    }
-
-    @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         handleTokenDeposit(_from.toString(), _value, _data);
     }
@@ -144,7 +151,8 @@ public class SavingsImpl implements Savings {
 
         Address token = Context.getCaller();
         if (_data == null || _data.length == 0) {
-            handleRewards(token, _value);
+            totalPayout.set(token, totalPayout.getOrDefault(token, BigInteger.ZERO).add(_value));
+            RewardsManager.addWeight(token, _value);
             return;
         }
 
@@ -154,45 +162,15 @@ public class SavingsImpl implements Savings {
 
         String method = json.get("method").asString();
         switch (method) {
-            case "_deposit": {
-                Context.require(token.equals(getBnusd()));
-                BigInteger bnUSDBalance = getBnUSDBalance().subtract(_value);
-                BigInteger bsrSupply = getBSRSupply();
-                BigInteger bsrToMint;
-                if (bnUSDBalance.equals(BigInteger.ZERO) || bsrSupply.equals(BigInteger.ZERO)) {
-                    bsrToMint =_value;
-                } else {
-                    bsrToMint = (_value.multiply(bsrSupply)).divide(getBnUSDBalance().subtract(_value));
-                }
-
-                Context.call(getBSR(), "mintTo", _from, bsrToMint, new byte[0]);
-                break;
-            }
             case "_lock": {
-                Context.require(token.equals(getBSR()), "Only BSR can be locked");
+                Context.require(token.equals(getBnusd()), "Only BnUSD can be locked");
+                gatherRewards();
                 RewardsManager.changeLock(_from, _value);
-                break;
-            }
-            case "_withdraw": {
-                Context.require(token.equals(getBSR()), "Only BSR can be withdrawn");
-
-                BigInteger rate = getRate();
-                BigInteger amountToWithdraw = _value.multiply(rate).divide(EXA);
-                Context.call(getBSR(), "burn", _value);
-                Context.call(getBnusd(), "hubTransfer", _from, amountToWithdraw, new byte[0]);
                 break;
             }
             default:
                 Context.revert(100, "Unsupported method supplied");
                 break;
         }
-    }
-
-    private void handleRewards(Address token, BigInteger value) {
-        if (token.equals(getBnusd())) {
-            return;
-        };
-        Context.require(!token.equals(getBSR()), "BSR can't be a rewards tokens");
-        RewardsManager.addWeight(token, value);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,8 @@ plugins {
     id 'java'
 }
 
-version '0.1.0'
+group = 'network.balanced.score.util'
+version = '0.1.0'
 
 repositories {
     mavenCentral()
@@ -29,21 +30,18 @@ repositories {
 
 dependencies {
     compileOnly Dependencies.javaeeApi
-    implementation Dependencies.javaeeScorex
     implementation project(':score-lib')
-    implementation Dependencies.javaeeTokens
-    implementation 'xyz.venture23:xcall-lib:0.1.1'
 
     testImplementation Dependencies.javaeeUnitTest
     testImplementation Dependencies.junitJupiter
     testRuntimeOnly Dependencies.junitJupiterEngine
-    testImplementation project(':test-lib')
     testImplementation Dependencies.mockitoCore
-    testRuntimeOnly Dependencies.mockitoInline
+    testImplementation Dependencies.mockitoInline
+    testImplementation project(':test-lib')
 }
 
 optimizedJar {
-    mainClassName = 'network.balanced.score.tokens.bsr.BalancedSavingRateImpl'
+    mainClassName = 'network.balanced.score.util.trickler.TricklerImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
@@ -52,20 +50,13 @@ optimizedJar {
 
 deployJar {
     endpoints {
-        sejong {
-            uri = 'https://sejong.net.solidwallet.io/api/v3'
-            nid = 0x53
-            to = Addresses.sejong.bnUSD
-        }
         berlin {
             uri = 'https://berlin.net.solidwallet.io/api/v3'
             nid = 0x7
-            to = Addresses.berlin.bnUSD
         }
         lisbon {
             uri = 'https://lisbon.net.solidwallet.io/api/v3'
             nid = 0x2
-            to = Addresses.lisbon.bnUSD
         }
         local {
             uri = 'http://localhost:9082/api/v3'
@@ -74,13 +65,12 @@ deployJar {
         mainnet {
             uri = 'https://ctz.solidwallet.io/api/v3'
             nid = 0x1
-            to = Addresses.mainnet.bnUSD
         }
     }
     keystore = rootProject.hasProperty('keystoreName') ? "$keystoreName" : ''
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
     parameters {
-        arg("_governance", Addresses.mainnet.governance)
+        arg('_governance', Addresses.mainnet.governance)
     }
 }
 
