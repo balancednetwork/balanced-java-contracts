@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balanced.network.
+ * Copyright (c) 2022-2024 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -156,7 +156,7 @@ public class Position {
         BigInteger totalDebt = DebtDB.getCollateralDebt(collateralSymbol);
         BigInteger shares = getDebtShare(collateralSymbol);
 
-        BigInteger shareChange = BigInteger.ZERO;
+        BigInteger shareChange;
         if (totalDebt.equals(BigInteger.ZERO)) {
             shareChange = debtChange;
         } else {

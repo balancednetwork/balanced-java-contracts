@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2023 Balanced.network.
+ * Copyright (c) 2023-2024 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,8 +59,7 @@ public class DebtDB {
     private static final BranchDB<String, DictDB<String, BigInteger>> liquidationPools = Context.newBranchDB(
             "multi_collateral_liquidation_pools", BigInteger.class);
 
-
-            private static final DictDB<String, BigInteger> debtCeiling = Context.newDictDB(DEBT_CEILINGS, BigInteger.class);
+    private static final DictDB<String, BigInteger> debtCeiling = Context.newDictDB(DEBT_CEILINGS, BigInteger.class);
     private static final BranchDB<String, DictDB<String, BigInteger>> totalPerCollateralDebts =
             Context.newBranchDB(TOTAL_COLLATERAL_DEBTS, BigInteger.class);
     private static final DictDB<String, BigInteger> totalPerCollateralDebtShares =
