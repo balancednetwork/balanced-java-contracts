@@ -39,7 +39,6 @@ public class TricklerImpl implements Trickler {
     private static final String VERSION = "version";
     private static final String DISTRIBUTION_PERIOD = "distribution_period";
     private static final String TOKENS_ALLOW_LIST = "tokens_allow_list";
-    private static final String STARTING_BLOCK = "starting_block";
     private static final String TOKEN_REWARD_RATE = "token_reward_rate";
     private static final String LAST_CLAIMED_BLOCK = "last_claimed_block";
 

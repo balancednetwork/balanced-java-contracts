@@ -79,6 +79,7 @@ public class DebtDB {
         int len = collateralList.size();
         for (int i = 0; i < len; i++) {
             String symbol = collateralList.get(i);
+            Context.require(totalPerCollateralDebtShares.get(symbol) == null, "Already migrated");
             totalPerCollateralDebtShares.set(symbol, getCollateralDebt(symbol));
         }
     }
