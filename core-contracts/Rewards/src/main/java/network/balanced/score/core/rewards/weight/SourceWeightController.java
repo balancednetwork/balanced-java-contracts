@@ -68,7 +68,7 @@ public class SourceWeightController {
             , Point.class);
 
     private static final BranchDB<String, DictDB<BigInteger, BigInteger>> changesWeight = Context.newBranchDB(
-            "changesWeight-v3", BigInteger.class);
+            "changesWeight-v4", BigInteger.class);
 
     private static final DictDB<String, BigInteger> timeWeight = Context.newDictDB("timeWeight", BigInteger.class);
 
@@ -76,7 +76,7 @@ public class SourceWeightController {
             Point.class);
 
     private static final BranchDB<Integer, DictDB<BigInteger, BigInteger>> changesSum = Context.newBranchDB(
-            "changesSum-v3", BigInteger.class);
+            "changesSum-v4", BigInteger.class);
 
     private static final DictDB<Integer, BigInteger> timeSum = Context.newDictDB("timeSum", BigInteger.class);
 
@@ -94,7 +94,8 @@ public class SourceWeightController {
             BigInteger.class);
 
 
-    private static final DictDB<Address, Boolean> isRevoted = Context.newDictDB("isRevoted", Boolean.class);
+    private static final DictDB<Address, Boolean> isRevoted = Context.newDictDB("isRevoted-v2", Boolean.class);
+    private static final VarDB<Boolean> isReset = Context.newVarDB("votesReset-v1", Boolean.class);
 
     public SourceWeightController(Address bBalnAddress) {
         boostedBaln.set(bBalnAddress);
@@ -102,6 +103,7 @@ public class SourceWeightController {
     }
 
     public static void reset(String[] sources) {
+        Context.require(!isReset.getOrDefault(false), "Votes have already been reset");
         BigInteger nextWeekTimestamp = getNextWeekTimestamp();
         // Move timesum of sources and type sums to next week then set to zero
         for (String sourceName : sources) {
@@ -115,6 +117,8 @@ public class SourceWeightController {
             pointsSum.at(id).set(nextWeekTimestamp, new Point());
         }
         pointsTotal.set(nextWeekTimestamp, BigInteger.ZERO);
+
+        isReset.set(true);
     }
 
     /**

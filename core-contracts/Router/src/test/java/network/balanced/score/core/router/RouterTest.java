@@ -44,6 +44,7 @@ import java.util.Map;
 
 import static network.balanced.score.core.router.RouterImpl.MAX_NUMBER_OF_ITERATIONS;
 import static network.balanced.score.core.router.RouterImpl.TAG;
+import static network.balanced.score.core.router.RouterImpl.EMPTY_DATA;
 import static network.balanced.score.lib.test.UnitTest.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -107,7 +108,7 @@ class RouterTest extends TestBase {
         routerScore.getAccount().addBalance("ICX", icxToTrade);
         sm.call(owner, icxToTrade, routerScore.getAddress(), "route", path, BigInteger.ZERO,
                 owner.getAddress().toString());
-        verify(sicxScore.mock).transfer(owner.getAddress(), icxToTrade, new byte[0]);
+        verify(sicxScore.mock).transfer(owner.getAddress(), icxToTrade, EMPTY_DATA);
 
         Executable negativeMinimumBalance = () -> sm.call(owner, icxToTrade, routerScore.getAddress(),
                 "route", path, icxToTrade.negate(), "");
@@ -431,7 +432,7 @@ class RouterTest extends TestBase {
         routerScore.invoke(balanced.bnUSD.account, "xTokenFallback", user.toString(), amount, path);
 
         // Assert
-        verify(balanced.sicx.mock).transfer(receiver.getAddress(), amount, new byte[0]);
+        verify(balanced.sicx.mock).transfer(receiver.getAddress(), amount, EMPTY_DATA);
     }
 
 }

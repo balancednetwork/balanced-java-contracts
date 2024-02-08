@@ -41,6 +41,7 @@ public class Names {
     public final static String XCALL = "Native XCall";
     public final static String ASSET_MANAGER = "Balanced Asset Manager";
     public final static String XCALL_MANAGER = "Balanced XCall Manager";
+    public final static String BURNER = "Balanced-ICON Burner";
     public final static String SAVINGS = "Balanced Savings";
     public final static String TRICKLER = "Balanced Trickler";
 }

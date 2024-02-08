@@ -157,6 +157,11 @@ public class BalancedAddressManager {
         return getAddress(Names.XCALL_MANAGER);
     }
 
+    public static Address getICONBurner() {
+        return getAddress(Names.BURNER);
+    }
+
+
     public static Address getSavings() {
         return getAddress(Names.SAVINGS);
     }
