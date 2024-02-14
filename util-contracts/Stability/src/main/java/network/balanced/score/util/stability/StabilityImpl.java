@@ -68,9 +68,12 @@ public class StabilityImpl extends FloorLimited implements Stability {
     private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
 
     public StabilityImpl(Address _governance) {
-
         if (getAddressByName(Names.GOVERNANCE) == null) {
             setGovernance(_governance);
+        }
+
+        if (maxPriceDelay.get() == null) {
+            maxPriceDelay.set(BigInteger.valueOf(7).multiply(MICRO_SECONDS_IN_A_DAY));
         }
 
         if (currentVersion.getOrDefault("").equals(Versions.STABILITY)) {
@@ -151,6 +154,9 @@ public class StabilityImpl extends FloorLimited implements Stability {
             stabilityBacking = stabilityBacking.add(backing);
         }
         BigInteger excess = stabilityBacking.subtract(supply.subtract(debt));
+        if (excess.equals(BigInteger.ZERO)) {
+            return;
+        }
 
         Context.call(bnUSD, "mint", excess, new byte[0]);
         Context.call(bnUSD, "transfer", getFeehandler(), excess, new byte[0]);

@@ -158,8 +158,8 @@ public class DebtDB {
         return savingsShare.getOrDefault(BigInteger.ZERO);
     }
 
-    private static void setLastInterestCompoundTimestamp(String collateralSymbol, BigInteger debt) {
-        lastInterestCompoundTimestamp.set(collateralSymbol, debt);
+    private static void setLastInterestCompoundTimestamp(String collateralSymbol, BigInteger time) {
+        lastInterestCompoundTimestamp.set(collateralSymbol, time);
     }
 
     public static BigInteger getLastInterestCompoundTimestamp(String collateralSymbol) {
