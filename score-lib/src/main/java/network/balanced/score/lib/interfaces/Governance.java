@@ -26,6 +26,7 @@ import score.Address;
 import score.annotation.External;
 import score.annotation.Optional;
 import score.annotation.Payable;
+import score.annotation.EventLog;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -96,6 +97,12 @@ public interface Governance extends
 
     @External
     void addExternalContract(String name, Address address);
+
+    @External
+    void storeContract(String name, byte[] dataHash, String deploymentParams);
+
+    @External
+    void deployStoredContract(String name, byte[] contractData);
 
     @External
     void deployTo(Address targetContract, byte[] contractData, String deploymentParams);
@@ -218,4 +225,7 @@ public interface Governance extends
 
     @External
     void setAddressesOnContract(String _contract);
+
+    @EventLog(indexed = 1)
+    void ContractUpdated(String name, String error);
 }

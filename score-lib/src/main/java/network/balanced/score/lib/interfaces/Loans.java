@@ -154,6 +154,24 @@ public interface Loans extends Name, AddressManager, Version, XTokenReceiver, Fl
     @External(readonly = true)
     BigInteger getDebtCeiling(String symbol);
 
+    @External
+    void setInterestRate(String symbol, BigInteger rate);
+
+    @External(readonly = true)
+    BigInteger getInterestRate(String symbol);
+
+    @External
+    void setSavingsRateShare(BigInteger share);
+
+    @External(readonly = true)
+    BigInteger getSavingsRateShare();
+
+    @External
+    void applyInterest();
+
+    @External
+    void claimInterest();
+
     @External(readonly = true)
     BigInteger getTotalDebt(String assetSymbol);
 

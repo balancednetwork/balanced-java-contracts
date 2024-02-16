@@ -200,7 +200,7 @@ public class AssetManagerImpl implements AssetManager {
     private void _withdrawTo(Address asset, String from, String to, BigInteger amount, BigInteger fee) {
         _withdrawTo(asset, from, to, amount, fee, false);
     }
-    
+
     private void _withdrawTo(Address asset, String from, String to, BigInteger amount, BigInteger fee, boolean toNative) {
         checkStatus();
         Context.call(asset, "burnFrom", from, amount);
@@ -216,7 +216,7 @@ public class AssetManagerImpl implements AssetManager {
         } else {
             msg  = SpokeAssetManagerMessages.WithdrawTo(tokenAddress.account(), targetAddress.account(), amount);
         }
-        
+
         XCallUtils.sendCall(fee, spoke, msg, rollback);
     }
 

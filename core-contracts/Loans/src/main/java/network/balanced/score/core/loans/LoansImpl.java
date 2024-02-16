@@ -80,6 +80,8 @@ public class LoansImpl extends FloorLimited implements Loans {
             setGovernance(_governance);
         }
 
+        DebtDB.migrate();
+
         if (currentVersion.getOrDefault("").equals(Versions.LOANS)) {
             Context.revert("Can't Update same version of code");
         }
@@ -323,7 +325,6 @@ public class LoansImpl extends FloorLimited implements Loans {
         LoansXCall.process(this, _from, _data);
     }
 
-
     public void xBorrow(String from, String _collateralToBorrowAgainst, BigInteger _amountToBorrow) {
         originateLoan(_collateralToBorrowAgainst, _amountToBorrow, from);
     }
@@ -491,7 +492,7 @@ public class LoansImpl extends FloorLimited implements Loans {
         BigInteger debtNeeded = _amount.multiply(POINTS.divide(MAX_REDEMPTION));
         BigInteger collateralRateInUSD = TokenUtils.getPriceInUSD(collateralSymbol);
 
-        PositionBatch batch = DebtDB.getBorrowers(collateralSymbol).readDataBatch(debtNeeded);
+        PositionBatch batch = DebtDB.getBorrowers(collateralSymbol).readDataBatch(debtNeeded, collateralSymbol);
         Map<Integer, BigInteger> positionsMap = batch.positions;
         StringBuilder changeLog = new StringBuilder("{");
         RewardsDataEntry[] rewardsBatchList = new RewardsDataEntry[batch.size];
@@ -543,7 +544,7 @@ public class LoansImpl extends FloorLimited implements Loans {
         BigInteger MAX_REDEMPTION = maxRetirePercent.get();
         String collateralSymbol = CollateralDB.getSymbol(_collateralAddress);
 
-        BigInteger totalDebt = DebtDB.getBorrowers(collateralSymbol).getTotalDebtFor(nrOfPositions);
+        BigInteger totalDebt = DebtDB.getBorrowers(collateralSymbol).getTotalDebtFor(nrOfPositions, collateralSymbol);
         BigInteger redeemAmount = totalDebt.multiply(MAX_REDEMPTION).divide(POINTS);
 
         return redeemAmount;
@@ -750,9 +751,9 @@ public class LoansImpl extends FloorLimited implements Loans {
     }
 
     private void originateLoan(String collateralSymbol, BigInteger amount, String from) {
+        DebtDB.applyInterest(collateralSymbol);
 
         Position position = PositionsDB.getPosition(from);
-
         BigInteger collateral = position.totalCollateralInUSD(collateralSymbol);
         BigInteger lockingRatio = getLockingRatio(collateralSymbol);
         Context.require(lockingRatio != null && lockingRatio.compareTo(BigInteger.ZERO) > 0,
@@ -911,6 +912,40 @@ public class LoansImpl extends FloorLimited implements Loans {
     @External(readonly = true)
     public BigInteger getDebtCeiling(String symbol) {
         return DebtDB.getDebtCeiling(symbol);
+    }
+
+    @External
+    public void setInterestRate(String symbol, BigInteger rate) {
+        onlyGovernance();
+        DebtDB.setInterestRate(symbol, rate);
+    }
+
+    @External(readonly = true)
+    public BigInteger getInterestRate(String symbol) {
+        return DebtDB.getInterestRate(symbol);
+    }
+
+    @External
+    public void setSavingsRateShare(BigInteger share) {
+        onlyGovernance();
+        DebtDB.setSavingsRateShare(share);
+    }
+
+    @External(readonly = true)
+    public BigInteger getSavingsRateShare() {
+        return DebtDB.getSavingsRateShare();
+    }
+
+    @External
+    public void applyInterest() {
+        for (String collateralSymbol : CollateralDB.getCollateral().keySet()) {
+            DebtDB.applyInterest(collateralSymbol);
+        }
+    }
+
+    @External
+    public void claimInterest() {
+        DebtDB.claimInterest();
     }
 
     @External(readonly = true)

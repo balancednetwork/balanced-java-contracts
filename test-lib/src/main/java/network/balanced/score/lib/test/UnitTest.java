@@ -187,7 +187,6 @@ public class UnitTest extends TestBase {
         String expectedErrorMessage =
                 "Reverted(0): Authorization Check: Authorization failed. Caller: " + nonAuthorizedCaller.getAddress() +
                         " Authorized Caller: " + caller;
-        System.out.println(expectedErrorMessage);
         Executable unAuthorizedCall = () -> contractUnderTest.invoke(nonAuthorizedCaller, method, params);
         expectErrorMessage(unAuthorizedCall, expectedErrorMessage);
     }

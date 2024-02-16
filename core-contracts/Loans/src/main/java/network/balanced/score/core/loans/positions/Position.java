@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Balanced.network.
+ * Copyright (c) 2022-2024 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,12 +38,10 @@ public class Position {
     private final BranchDB<String, VarDB<Integer>> id = Context.newBranchDB("id", Integer.class);
     private final BranchDB<String, VarDB<BigInteger>> created = Context.newBranchDB("created", BigInteger.class);
     private final BranchedAddressVarDB<String> address = new BranchedAddressVarDB<>("address");
-    private final BranchDB<String, BranchDB<String, DictDB<String, BigInteger>>> debt = Context.newBranchDB(
-            "loan_balance", BigInteger.class); // Address:CollateralSymbol:AssetSymbol:debt
+    private final BranchDB<String, BranchDB<String, DictDB<String, BigInteger>>> debtShare = Context.newBranchDB(
+            "loan_balance", BigInteger.class); // Address:CollateralSymbol:AssetSymbol:debtShare
     private final BranchDB<String, DictDB<String, BigInteger>> collateral = Context.newBranchDB("collateral_balance"
             , BigInteger.class);
-    private final BranchDB<String, DictDB<String, BigInteger>> totalDebt = Context.newBranchDB(
-            "total_debt_in_asset", BigInteger.class);
 
     private final BranchDB<String, BranchDB<Integer, DictDB<String, BigInteger>>> assets = Context.newBranchDB("assets",
             BigInteger.class);
@@ -81,25 +79,33 @@ public class Position {
         return address.at(dbKey).get();
     }
 
-    private void setLoansPosition(String collateral, BigInteger value) {
-        debt.at(dbKey).at(collateral).set(BNUSD_SYMBOL, value);
-    }
 
     public BigInteger getDebt(String collateral) {
-        return debt.at(dbKey).at(collateral).getOrDefault(BNUSD_SYMBOL, BigInteger.ZERO);
-    }
-
-    private void setPositionTotalDebt(BigInteger value) {
-        totalDebt.at(dbKey).set(BNUSD_SYMBOL, value);
-    }
-
-    public BigInteger getTotalDebt() {
-        BigInteger totalDebt = this.totalDebt.at(dbKey).get(BNUSD_SYMBOL);
-        if (totalDebt == null) {
-            totalDebt = getDebt(SICX_SYMBOL);
+        BigInteger share = getDebtShare(collateral);
+        if (share.equals(BigInteger.ZERO)) {
+            return share;
         }
 
-        return totalDebt;
+        return share.multiply(DebtDB.getCollateralDebt(collateral)).divide(DebtDB.getCollateralDebtShares(collateral));
+    }
+
+    private BigInteger getDebtShare(String collateral) {
+        return debtShare.at(dbKey).at(collateral).getOrDefault(BNUSD_SYMBOL, BigInteger.ZERO);
+    }
+
+    private void setDebtShare(String collateral, BigInteger share) {
+        debtShare.at(dbKey).at(collateral).set(BNUSD_SYMBOL, share);
+    }
+
+
+    public BigInteger getTotalDebt() {
+        ArrayDB<String> collateralList = CollateralDB.collateralList;
+        int len = collateralList.size();
+        BigInteger total = BigInteger.ZERO;
+        for (int i = 0; i < len; i++) {
+            total = total.add(getDebt(collateralList.get(i)));
+        }
+        return total;
     }
 
     public void setCollateral(String symbol, BigInteger value) {
@@ -140,37 +146,47 @@ public class Position {
 
     public void setDebt(String collateralSymbol, BigInteger value) {
         BigInteger previousDebt = getDebt(collateralSymbol);
-        BigInteger previousUserDebt = getTotalDebt();
-
-        BigInteger previousTotalDebt = DebtDB.getTotalDebt();
-        BigInteger previousTotalPerCollateralDebt = DebtDB.getCollateralDebt(collateralSymbol);
-        BigInteger currentValue = BigInteger.ZERO;
+        BigInteger amount = BigInteger.ZERO;
         if (value != null) {
-            currentValue = value;
+            amount = value;
         }
 
-        BigInteger debtChange = currentValue.subtract(previousDebt);
-        BigInteger newTotalDebt = previousTotalDebt.add(debtChange);
-        BigInteger newTotalPerCollateralDebt = previousTotalPerCollateralDebt.add(debtChange);
+        BigInteger debtChange = amount.subtract(previousDebt);
+        BigInteger totalShares = DebtDB.getCollateralDebtShares(collateralSymbol);
+        BigInteger totalDebt = DebtDB.getCollateralDebt(collateralSymbol);
+        BigInteger shares = getDebtShare(collateralSymbol);
 
-        BigInteger debtAndBadDebtPerCollateral = newTotalPerCollateralDebt.add(DebtDB.getBadDebt(collateralSymbol));
-        BigInteger debtCeiling = DebtDB.getDebtCeiling(collateralSymbol);
-        Context.require(debtCeiling == null
-                        || debtChange.signum() != 1
-                        || debtAndBadDebtPerCollateral.compareTo(debtCeiling) <= 0,
-                TAG + ": Cannot mint more " + BNUSD_SYMBOL + " on collateral " + collateralSymbol);
+        BigInteger shareChange;
+        if (totalDebt.equals(BigInteger.ZERO)) {
+            shareChange = debtChange;
+        } else {
+            shareChange = debtChange.multiply(totalShares).divide(totalDebt);
+        }
 
-        DebtDB.setTotalDebt(newTotalDebt);
-        DebtDB.setCollateralDebt(collateralSymbol, newTotalPerCollateralDebt);
+        BigInteger newTotal = totalDebt.add(debtChange);
+        if (debtChange.signum() >= 0) {
+            verifyDebtCeiling(collateralSymbol, newTotal);
+        }
 
-        setLoansPosition(collateralSymbol, value);
-        setPositionTotalDebt(previousUserDebt.add(debtChange));
+        DebtDB.setCollateralDebt(collateralSymbol, newTotal);
+        DebtDB.setCollateralDebtShares(collateralSymbol, totalShares.add(shareChange));
+
+        BigInteger newShare =  shares.add(shareChange);
+        setDebtShare(collateralSymbol, newShare);
 
         if (value == null) {
             DebtDB.getBorrowers(collateralSymbol).remove(getId());
         } else {
-            DebtDB.getBorrowers(collateralSymbol).set(getId(), currentValue);
+            DebtDB.getBorrowers(collateralSymbol).set(getId(), newShare);
         }
+    }
+
+    private void verifyDebtCeiling(String collateral, BigInteger newTotalDebt) {
+        BigInteger debtAndBadDebtPerCollateral = newTotalDebt.add(DebtDB.getBadDebt(collateral));
+        BigInteger debtCeiling = DebtDB.getDebtCeiling(collateral);
+        Context.require(debtCeiling == null
+                        || debtAndBadDebtPerCollateral.compareTo(debtCeiling) <= 0,
+                TAG + ": Cannot mint more " + BNUSD_SYMBOL + " on collateral " + collateral);
     }
 
     public boolean hasDebt() {

@@ -22,19 +22,26 @@ import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.function.Executable;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
+import network.balanced.score.lib.test.mock.MockBalanced;
+import network.balanced.score.lib.test.mock.MockContract;
 import score.Address;
-import score.Context;
+import com.eclipsesource.json.JsonObject;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
+import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
+import network.balanced.score.lib.interfaces.tokens.IRC2MintableScoreInterface;
 
 import static network.balanced.score.lib.test.UnitTest.*;
 import static network.balanced.score.util.stability.StabilityImpl.TAG;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 class StabilityImplTest extends TestBase {
@@ -44,38 +51,30 @@ class StabilityImplTest extends TestBase {
 
     private Score stabilityScore;
 
-    private static final Account feeHandler = Account.newScoreAccount(scoreCount++);
-    private static final Account bnusd = Account.newScoreAccount(scoreCount++);
-    private static final BigInteger feeIn = BigInteger.valueOf(5).multiply(BigInteger.TEN.pow(17));
-    private static final BigInteger feeOut = BigInteger.valueOf(5).multiply(BigInteger.TEN.pow(17));
-
-    private static final Account iusdc = Account.newScoreAccount(scoreCount++);
+    private static BigInteger feeIn = BigInteger.valueOf(5).multiply(BigInteger.TEN.pow(17));
+    private static BigInteger feeOut = BigInteger.valueOf(5).multiply(BigInteger.TEN.pow(17));
+    private static final BigInteger iusdcDecimals = BigInteger.valueOf(6);
+    protected MockContract<? extends IRC2Mintable> iusdc;
     private static final BigInteger limit = BigInteger.valueOf(1_000_000);
 
-    private final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
+    private MockBalanced mockBalanced;
 
     @BeforeEach
     void setUp() throws Exception {
-        stabilityScore = sm.deploy(owner, StabilityImpl.class, feeHandler.getAddress(), bnusd.getAddress(),
-                feeIn, feeOut);
-        contextMock.when(() -> Context.call(eq(BigInteger.class), any(Address.class), eq("balanceOf"), any(Address.class))).thenReturn(BigInteger.ZERO);
+        mockBalanced = new MockBalanced(sm, owner);
+        iusdc = new MockContract<>(IRC2MintableScoreInterface.class, sm, owner);
+        when(iusdc.mock.symbol()).thenReturn("IUSDC");
+        when(iusdc.mock.decimals()).thenReturn(iusdcDecimals);
+        when(iusdc.mock.balanceOf(any(Address.class))).thenReturn(BigInteger.ZERO);
+
+        stabilityScore = sm.deploy(owner, StabilityImpl.class, mockBalanced.governance.getAddress());
+        stabilityScore.invoke(owner, "setFeeIn", feeIn);
+        stabilityScore.invoke(owner, "setFeeOut", feeOut);
     }
 
     @Test
     void name() {
         assertEquals("Balanced Peg Stability", stabilityScore.call("name"));
-    }
-
-    @Test
-    void setAndGetFeeHandler() {
-        testOwnerControlMethods(stabilityScore, "setFeeHandler", "getFeeHandler", feeHandler.getAddress());
-        testIsContract(owner, stabilityScore, "setFeeHandler", feeHandler.getAddress(), "getFeeHandler");
-    }
-
-    @Test
-    void setAndGetBnusdAddress() {
-        testOwnerControlMethods(stabilityScore, "setBnusd", "getBnusd", bnusd.getAddress());
-        testIsContract(owner, stabilityScore, "setBnusd", bnusd.getAddress(), "getBnusd");
     }
 
     private void testIsValidPercentage(String setterMethod, String getterMethod, BigInteger percentageToSet) {
@@ -115,24 +114,22 @@ class StabilityImplTest extends TestBase {
         String expectedErrorMessage = "Reverted(0): SenderNotScoreOwner: Sender=" + nonOwner.getAddress()
                 + "Owner=" + owner.getAddress();
         Executable notOwnerCall = () -> stabilityScore.invoke(nonOwner, "whitelistTokens", iusdc.getAddress(),
-                limit);
+                limit, false);
         expectErrorMessage(notOwnerCall, expectedErrorMessage);
 
         Account nonContractAddress = sm.createAccount();
         expectedErrorMessage = "Reverted(0): Address Check: Address provided is an EOA address. A contract address is required.";
         Executable nonContractParameter = () -> stabilityScore.invoke(owner, "whitelistTokens",
-                nonContractAddress.getAddress(), limit);
+                nonContractAddress.getAddress(), limit, false);
         expectErrorMessage(nonContractParameter, expectedErrorMessage);
 
         BigInteger negativeLimit = limit.negate();
         expectedErrorMessage = "Reverted(0): " + TAG + ": Limit can't be set negative";
         Executable negativeLimitCall = () -> stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(),
-                negativeLimit);
+                negativeLimit, false);
         expectErrorMessage(negativeLimitCall, expectedErrorMessage);
 
-        BigInteger iusdcDecimals = BigInteger.valueOf(6);
-        contextMock.when(() -> Context.call(iusdc.getAddress(), "decimals")).thenReturn(iusdcDecimals);
-        stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit);
+        stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit, false);
         assertEquals(limit.multiply(BigInteger.TEN.pow(iusdcDecimals.intValue())),
                 stabilityScore.call("getLimit",
                         iusdc.getAddress()));
@@ -144,7 +141,7 @@ class StabilityImplTest extends TestBase {
 
         expectedErrorMessage = "Reverted(0): " + TAG + ": Already whitelisted";
         Executable doubleListing = () -> stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(),
-                limit);
+                limit, false);
         expectErrorMessage(doubleListing, expectedErrorMessage);
     }
 
@@ -171,8 +168,7 @@ class StabilityImplTest extends TestBase {
         expectErrorMessage(nonWhiteListed, expectedErrorMessage);
 
         BigInteger iusdcDecimals = BigInteger.valueOf(6);
-        contextMock.when(() -> Context.call(iusdc.getAddress(), "decimals")).thenReturn(iusdcDecimals);
-        stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit);
+        stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit, false);
         assertEquals(limit.multiply(BigInteger.TEN.pow(iusdcDecimals.intValue())),
                 stabilityScore.call("getLimit", iusdc.getAddress()));
 
@@ -188,25 +184,31 @@ class StabilityImplTest extends TestBase {
         BigInteger usdcAmount = BigInteger.valueOf(3217).multiply(BigInteger.TEN.pow(iusdcDecimals.intValue()));
         Account user = sm.createAccount();
         BigInteger bnusdAmount = BigInteger.valueOf(317).multiply(ICX);
-        byte[] iusdcData = iusdc.getAddress().toString().getBytes();
+        byte[] iusdcData;
+
+        @BeforeEach
+        void setUp() throws Exception {
+            iusdcData = iusdc.getAddress().toString().getBytes();
+        }
 
         @Test
         @DisplayName("No interaction with from being zero address in case of mint")
         void noInteraction() {
-            stabilityScore.invoke(iusdc, "tokenFallback", ZERO_ADDRESS, usdcAmount, new byte[0]);
-            contextMock.verify(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class),
-                    any(BigInteger.class)), never());
+            stabilityScore.invoke(mockBalanced.bnUSD.account, "tokenFallback", ZERO_ADDRESS, bnusdAmount, new byte[0]);
+            verify(mockBalanced.bnUSD.mock, never()).transfer(any(), any(), any());
+            verify(mockBalanced.bnUSD.mock, never()).mint(any(), any());
+            verify(iusdc.mock, never()).transfer(any(), any(), any());
         }
 
         @Test
         void zeroOrNegativeAmount() {
             String expectedErrorMessage = "Reverted(0): " + TAG
                     + ": Transfer amount must be greater than zero";
-            Executable negativeAmount = () -> stabilityScore.invoke(iusdc, "tokenFallback",
+            Executable negativeAmount = () -> stabilityScore.invoke(iusdc.account, "tokenFallback",
                     user.getAddress(),
                     usdcAmount.negate(), new byte[0]);
             expectErrorMessage(negativeAmount, expectedErrorMessage);
-            Executable zeroAmount = () -> stabilityScore.invoke(iusdc, "tokenFallback", user.getAddress(),
+            Executable zeroAmount = () -> stabilityScore.invoke(iusdc.account, "tokenFallback", user.getAddress(),
                     BigInteger.ZERO, new byte[0]);
             expectErrorMessage(zeroAmount, expectedErrorMessage);
         }
@@ -214,7 +216,7 @@ class StabilityImplTest extends TestBase {
         @Test
         void nonWhiteListed() {
             String expectedErrorMessage = TAG + ": Only whitelisted tokens or bnusd is accepted.";
-            Executable nonWhiteListed = () -> stabilityScore.invoke(iusdc, "tokenFallback",
+            Executable nonWhiteListed = () -> stabilityScore.invoke(iusdc.account, "tokenFallback",
                     user.getAddress(),
                     usdcAmount, new byte[0]);
             expectErrorMessage(nonWhiteListed, expectedErrorMessage);
@@ -224,64 +226,45 @@ class StabilityImplTest extends TestBase {
         void exceedingLimit() {
             // Whitelist iusdc token
             iusdcDecimals = BigInteger.valueOf(20);
-            contextMock.when(() -> Context.call(iusdc.getAddress(), "decimals")).thenReturn(iusdcDecimals);
-            stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit);
+            when(iusdc.mock.decimals()).thenReturn(iusdcDecimals);
+            when(iusdc.mock.balanceOf(stabilityScore.getAddress()))
+                    .thenReturn(limit.multiply(BigInteger.TEN.pow(iusdcDecimals.intValue()).add(BigInteger.ONE)));
+            stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit, false);
 
-            // Error from exceeding limit
-            contextMock.when(() -> Context.call(iusdc.getAddress(), "balanceOf",
-                    stabilityScore.getAddress()))
-                    .thenReturn(limit.multiply(BigInteger.TEN.pow(iusdcDecimals.intValue())
-                            .add(BigInteger.ONE)));
             String expectedErrorMessage = "Reverted(0): " + TAG
                     + ": Asset to exchange with bnusd limit crossed.";
-            Executable exceedLimit = () -> stabilityScore.invoke(iusdc, "tokenFallback", user.getAddress(),
+            Executable exceedLimit = () -> stabilityScore.invoke(iusdc.account, "tokenFallback", user.getAddress(),
                     usdcAmount,
                     new byte[0]);
             expectErrorMessage(exceedLimit, expectedErrorMessage);
 
             // Error from zero bnusd to mint
-            contextMock.when(() -> Context.call(iusdc.getAddress(), "balanceOf",
-                    stabilityScore.getAddress())).thenReturn(BigInteger.ZERO);
+            when(iusdc.mock.balanceOf(stabilityScore.getAddress())).thenReturn(BigInteger.ZERO);
+
             expectedErrorMessage = "Reverted(0): " + TAG + ": Bnusd amount must be greater than zero";
-            Executable mintZeroAmount = () -> stabilityScore.invoke(iusdc, "tokenFallback",
+            Executable mintZeroAmount = () -> stabilityScore.invoke(iusdc.account, "tokenFallback",
                     user.getAddress(),
                     BigInteger.TEN, new byte[0]);
             expectErrorMessage(mintZeroAmount, expectedErrorMessage);
-
-            // Error from zero fee
-            expectedErrorMessage = "Reverted(0): " + TAG + ": Fee must be greater than zero";
-            Executable zeroFee = () -> stabilityScore.invoke(iusdc, "tokenFallback", user.getAddress(),
-                    BigInteger.valueOf(100), new byte[0]);
-            expectErrorMessage(zeroFee, expectedErrorMessage);
         }
 
         @Test
         void verifyBnusdMint() {
-            contextMock.when(() -> Context.call(iusdc.getAddress(), "decimals")).thenReturn(iusdcDecimals);
-            stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit);
-            contextMock.when(() -> Context.call(iusdc.getAddress(), "balanceOf",
-                    stabilityScore.getAddress())).thenReturn(BigInteger.ZERO);
-
-            contextMock.when(() -> Context.call(eq(bnusd.getAddress()), eq("mint"), any(BigInteger.class)))
-                    .thenReturn(null);
-            contextMock.when(() -> Context.call(eq(bnusd.getAddress()), eq("transfer"), any(Address.class),
-                    any(BigInteger.class))).thenReturn(null);
-            stabilityScore.invoke(iusdc, "tokenFallback", user.getAddress(), usdcAmount, new byte[0]);
+            stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit, false);
+            stabilityScore.invoke(iusdc.account, "tokenFallback", user.getAddress(), usdcAmount, new byte[0]);
 
             BigInteger equivalentBnusd = usdcAmount.multiply(ICX)
                     .divide(BigInteger.TEN.pow(iusdcDecimals.intValue()));
             BigInteger fee = feeIn.multiply(equivalentBnusd).divide(BigInteger.valueOf(100).multiply(ICX));
-            contextMock.verify(() -> Context.call(bnusd.getAddress(), "mint", equivalentBnusd));
-            contextMock.verify(() -> Context.call(bnusd.getAddress(), "transfer", feeHandler.getAddress(),
-                    fee));
-            contextMock.verify(() -> Context.call(bnusd.getAddress(), "transfer", user.getAddress(),
-                    equivalentBnusd.subtract(fee)));
+            verify(mockBalanced.bnUSD.mock).mint(equivalentBnusd, new byte[0]);
+            verify(mockBalanced.bnUSD.mock).transfer(mockBalanced.feehandler.getAddress(), fee, new byte[0]);
+            verify(mockBalanced.bnUSD.mock).transfer(user.getAddress(), equivalentBnusd.subtract(fee), new byte[0]);
         }
 
         @Test
         void nonWhitelistedReturn() {
             String expectedErrorMessage = "Reverted(0): " + TAG + ": Whitelisted tokens can only be sent";
-            Executable nonWhitelistedAsset = () -> stabilityScore.invoke(bnusd, "tokenFallback",
+            Executable nonWhitelistedAsset = () -> stabilityScore.invoke(mockBalanced.bnUSD.account, "tokenFallback",
                     user.getAddress(),
                     bnusdAmount, iusdcData);
             expectErrorMessage(nonWhitelistedAsset, expectedErrorMessage);
@@ -289,24 +272,23 @@ class StabilityImplTest extends TestBase {
 
         @Test
         void outAssetZero() {
-            contextMock.when(() -> Context.call(iusdc.getAddress(), "decimals")).thenReturn(iusdcDecimals);
-            stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit);
+            stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit, false);
 
             String expectedErrorMessage = "Reverted(0): " + TAG + ": Fee must be greater than zero";
-            Executable zeroFee = () -> stabilityScore.invoke(bnusd, "tokenFallback", user.getAddress(),
+            Executable zeroFee = () -> stabilityScore.invoke(mockBalanced.bnUSD.account, "tokenFallback",
+                    user.getAddress(),
                     BigInteger.ONE, iusdcData);
             expectErrorMessage(zeroFee, expectedErrorMessage);
 
             expectedErrorMessage = "Reverted(0): " + TAG + ": Asset to return can't be zero or less";
-            Executable zeroAssetOut = () -> stabilityScore.invoke(bnusd, "tokenFallback", user.getAddress(),
+            Executable zeroAssetOut = () -> stabilityScore.invoke(mockBalanced.bnUSD.account, "tokenFallback",
+                    user.getAddress(),
                     BigInteger.TEN.pow(11), iusdcData);
             expectErrorMessage(zeroAssetOut, expectedErrorMessage);
 
-            contextMock.when(() -> Context.call(iusdc.getAddress(), "balanceOf",
-                    stabilityScore.getAddress())).thenReturn(BigInteger.ZERO);
             expectedErrorMessage = "Reverted(0): " + TAG
                     + ": Insufficient asset out balance in the contract";
-            Executable noBalanceToTransfer = () -> stabilityScore.invoke(bnusd, "tokenFallback",
+            Executable noBalanceToTransfer = () -> stabilityScore.invoke(mockBalanced.bnUSD.account, "tokenFallback",
                     user.getAddress(),
                     bnusdAmount, iusdcData);
             expectErrorMessage(noBalanceToTransfer, expectedErrorMessage);
@@ -314,33 +296,244 @@ class StabilityImplTest extends TestBase {
 
         @Test
         void verifyBnusdBurn() {
-            contextMock.when(() -> Context.call(iusdc.getAddress(), "decimals")).thenReturn(iusdcDecimals);
-            stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit);
+            stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit, false);
 
             BigInteger fee = feeOut.multiply(bnusdAmount).divide(BigInteger.valueOf(100).multiply(ICX));
             BigInteger bnusdToConvert = bnusdAmount.subtract(fee);
             BigInteger equivalentAssetOut = bnusdToConvert
                     .multiply(BigInteger.TEN.pow(iusdcDecimals.intValue())).divide(ICX);
 
-            contextMock.when(() -> Context.call(iusdc.getAddress(), "balanceOf",
-                    stabilityScore.getAddress())).thenReturn(equivalentAssetOut);
+            when(iusdc.mock.balanceOf(stabilityScore.getAddress())).thenReturn(equivalentAssetOut);
+            stabilityScore.invoke(mockBalanced.bnUSD.account, "tokenFallback", user.getAddress(), bnusdAmount,
+                    iusdcData);
 
-            contextMock.when(() -> Context.call(eq(bnusd.getAddress()), eq("burn"), any(BigInteger.class)))
-                    .thenReturn(null);
-            contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class),
-                    any(BigInteger.class))).thenReturn(null);
-            stabilityScore.invoke(bnusd, "tokenFallback", user.getAddress(), bnusdAmount, iusdcData);
-
-            contextMock.verify(() -> Context.call(bnusd.getAddress(), "burn", bnusdToConvert));
-            contextMock.verify(() -> Context.call(bnusd.getAddress(), "transfer", feeHandler.getAddress(),
-                    fee));
-            contextMock.verify(() -> Context.call(iusdc.getAddress(), "transfer", user.getAddress(),
-                    equivalentAssetOut));
+            verify(mockBalanced.bnUSD.mock).burn(bnusdToConvert);
+            verify(mockBalanced.bnUSD.mock).transfer(mockBalanced.feehandler.getAddress(), fee, new byte[0]);
+            verify(iusdc.mock).transfer(user.getAddress(), equivalentAssetOut, new byte[0]);
         }
     }
 
-    @AfterEach
-    void closeMock() {
-        contextMock.close();
+    @Nested
+    class YieldBearing {
+        MockContract<? extends IRC2Mintable> hyUSDC;
+        String hyUSDCSymbol = "hyUSDC";
+        BigInteger hyUSDCDecimals = BigInteger.valueOf(18);
+        BigInteger limit = BigInteger.TEN.pow(30);
+        BigInteger priceDelayInDays = BigInteger.ONE;
+        Account user = sm.createAccount();
+
+        @BeforeEach
+        void setUp() throws Exception {
+            stabilityScore.invoke(owner, "setFeeIn", BigInteger.ZERO);
+            stabilityScore.invoke(owner, "setMaxPriceDelay", priceDelayInDays);
+            hyUSDC = new MockContract<>(IRC2MintableScoreInterface.class, sm, owner);
+            when(hyUSDC.mock.symbol()).thenReturn(hyUSDCSymbol);
+            when(hyUSDC.mock.decimals()).thenReturn(hyUSDCDecimals);
+            when(hyUSDC.mock.balanceOf(any(Address.class))).thenReturn(BigInteger.ZERO);
+            stabilityScore.invoke(owner, "whitelistTokens", hyUSDC.getAddress(), limit, true);
+        }
+
+        @Test
+        void yieldBearingToBnUSD() {
+            // Arrange
+            BigInteger decimals = BigInteger.TEN.pow(hyUSDCDecimals.intValue());
+            BigInteger rate = BigInteger.valueOf(11).multiply(EXA);
+            BigInteger timestamp = BigInteger.valueOf(sm.getBlock().getTimestamp());
+            setRate(rate, timestamp);
+            BigInteger amount = BigInteger.valueOf(200).multiply(decimals);
+            BigInteger expectedBnUSDAmount = amount.multiply(rate).divide(decimals);
+
+            // Act
+            stabilityScore.invoke(hyUSDC.account, "tokenFallback", user.getAddress(), amount, new byte[0]);
+
+            // Assert
+            verify(mockBalanced.bnUSD.mock).mint(expectedBnUSDAmount, new byte[0]);
+            verify(mockBalanced.bnUSD.mock).transfer(user.getAddress(), expectedBnUSDAmount, new byte[0]);
+        }
+
+        @Test
+        void bnUSDToYieldBearing() {
+            // Arrange
+            BigInteger decimals = BigInteger.TEN.pow(hyUSDCDecimals.intValue());
+            BigInteger rate = BigInteger.valueOf(11).multiply(EXA);
+            BigInteger timestamp = BigInteger.valueOf(sm.getBlock().getTimestamp());
+            setRate(rate, timestamp);
+            BigInteger amount = BigInteger.valueOf(200).multiply(EXA);
+            BigInteger fee = feeOut.multiply(amount).divide(BigInteger.valueOf(100).multiply(EXA));
+            BigInteger expectedHYAmount = amount.subtract(fee).multiply(decimals).divide(rate);
+
+            when(hyUSDC.mock.balanceOf(stabilityScore.getAddress())).thenReturn(expectedHYAmount);
+
+            // Act
+            stabilityScore.invoke(mockBalanced.bnUSD.account, "tokenFallback", user.getAddress(), amount,
+                    hyUSDC.getAddress().toString().getBytes());
+
+            // Assert
+            verify(mockBalanced.bnUSD.mock).burn(amount.subtract(fee));
+            verify(mockBalanced.bnUSD.mock).transfer(mockBalanced.feehandler.getAddress(), fee, new byte[0]);
+            verify(hyUSDC.mock).transfer(user.getAddress(), expectedHYAmount, new byte[0]);
+        }
+
+        @Test
+        void yieldBearingToAsset() {
+            // Arrange
+            stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit, false);
+            BigInteger decimals = BigInteger.TEN.pow(hyUSDCDecimals.intValue());
+            BigInteger usdcDecimals = BigInteger.TEN.pow(iusdcDecimals.intValue());
+            BigInteger rate = BigInteger.valueOf(11).multiply(EXA);
+            BigInteger timestamp = BigInteger.valueOf(sm.getBlock().getTimestamp());
+            setRate(rate, timestamp);
+            BigInteger amount = BigInteger.valueOf(200).multiply(decimals);
+            BigInteger expectedUSDCAmount = amount.multiply(rate).multiply(usdcDecimals).divide(decimals)
+                    .divide(decimals);
+
+            // Act
+            stabilityScore.invoke(hyUSDC.account, "tokenFallback", user.getAddress(), amount,
+                    iusdc.getAddress().toString().getBytes());
+
+            // Assert
+            verify(iusdc.mock).transfer(user.getAddress(), expectedUSDCAmount, new byte[0]);
+        }
+
+        @Test
+        void yieldBearingToAsset_ToBnUSD() {
+            // Arrange
+            String expectedErrorMessage = "Reverted(0): " + TAG + ": Only whitelisted tokens is allowed";
+            BigInteger decimals = BigInteger.TEN.pow(hyUSDCDecimals.intValue());
+            BigInteger rate = BigInteger.valueOf(11).multiply(EXA);
+            BigInteger timestamp = BigInteger.valueOf(sm.getBlock().getTimestamp());
+            setRate(rate, timestamp);
+            BigInteger amount = BigInteger.valueOf(200).multiply(decimals);
+
+            // Act
+            Executable yieldToBnUSDwithData = () -> stabilityScore.invoke(hyUSDC.account, "tokenFallback",
+                    user.getAddress(), amount, mockBalanced.bnUSD.getAddress().toString().getBytes());
+
+            // Assert
+            expectErrorMessage(yieldToBnUSDwithData, expectedErrorMessage);
+        }
+
+        @Test
+        void yieldBearing_tooOld() {
+            // Arrange
+            String expectedErrorMessage = "Reverted(0): " + TAG
+                    + ": Price for hyUSDC has to be updated before using the stability fund";
+            BigInteger decimals = BigInteger.TEN.pow(hyUSDCDecimals.intValue());
+            BigInteger rate = BigInteger.valueOf(11).multiply(EXA);
+            BigInteger timestamp = BigInteger.valueOf(sm.getBlock().getTimestamp()).subtract(MICRO_SECONDS_IN_A_DAY);
+            setRate(rate, timestamp);
+            BigInteger amount = BigInteger.valueOf(200).multiply(decimals);
+
+            // Act
+            Executable oraclePriceToOld = () -> stabilityScore.invoke(hyUSDC.account, "tokenFallback",
+                    user.getAddress(), amount, new byte[0]);
+
+            // Assert
+            expectErrorMessage(oraclePriceToOld, expectedErrorMessage);
+        }
+
+        @Test
+        void yieldBearing_toYieldBearing() {
+            // Arrange
+            String expectedErrorMessage = "Reverted(0): " + TAG + ": Only swaps to non yield bering assets is allowed";
+            BigInteger decimals = BigInteger.TEN.pow(hyUSDCDecimals.intValue());
+            BigInteger rate = BigInteger.valueOf(11).multiply(EXA);
+            BigInteger timestamp = BigInteger.valueOf(sm.getBlock().getTimestamp());
+            setRate(rate, timestamp);
+            BigInteger amount = BigInteger.valueOf(200).multiply(decimals);
+
+            // Act
+            Executable yieldToYield = () -> stabilityScore.invoke(hyUSDC.account, "tokenFallback", user.getAddress(),
+                    amount, hyUSDC.getAddress().toString().getBytes());
+
+            // Assert
+            expectErrorMessage(yieldToYield, expectedErrorMessage);
+        }
+
+        @Test
+        void xTokenFallback_toBnUSD() {
+            // Arrange
+            BigInteger decimals = BigInteger.TEN.pow(hyUSDCDecimals.intValue());
+            BigInteger rate = BigInteger.valueOf(11).multiply(EXA);
+            BigInteger timestamp = BigInteger.valueOf(sm.getBlock().getTimestamp());
+            setRate(rate, timestamp);
+            BigInteger amount = BigInteger.valueOf(200).multiply(decimals);
+            BigInteger expectedBnUSDAmount = amount.multiply(rate).divide(decimals);
+
+            // Act
+            JsonObject data = new JsonObject()
+                .add("receiver", user.getAddress().toString());
+            stabilityScore.invoke(hyUSDC.account, "xTokenFallback", "0x1.avax/cx1", amount, data.toString().getBytes());
+
+            // Assert
+            verify(mockBalanced.bnUSD.mock).mint(expectedBnUSDAmount, new byte[0]);
+            verify(mockBalanced.bnUSD.mock).transfer(user.getAddress(), expectedBnUSDAmount, new byte[0]);
+        }
+
+        @Test
+        void xTokenFallback_toAsset() {
+            // Arrange
+            stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit, false);
+            BigInteger decimals = BigInteger.TEN.pow(hyUSDCDecimals.intValue());
+            BigInteger usdcDecimals = BigInteger.TEN.pow(iusdcDecimals.intValue());
+            BigInteger rate = BigInteger.valueOf(11).multiply(EXA);
+            BigInteger timestamp = BigInteger.valueOf(sm.getBlock().getTimestamp());
+            setRate(rate, timestamp);
+            BigInteger amount = BigInteger.valueOf(200).multiply(decimals);
+            BigInteger expectedUSDCAmount = amount.multiply(rate).multiply(usdcDecimals).divide(decimals)
+                    .divide(decimals);
+
+            // Act
+            JsonObject data = new JsonObject()
+                .add("receiver", user.getAddress().toString())
+                .add("toAsset", iusdc.getAddress().toString());
+            stabilityScore.invoke(hyUSDC.account, "xTokenFallback", "0x1.avax/cx1", amount, data.toString().getBytes());
+
+            // Assert
+            verify(iusdc.mock).transfer(user.getAddress(), expectedUSDCAmount, new byte[0]);
+        }
+
+        @Test
+        void getSetPriceDelay() {
+            testOwnerControlMethods(stabilityScore, "setMaxPriceDelay", "getMaxPriceDelay", BigInteger.ONE);
+        }
+
+        @Test
+        void mintExcess() {
+            stabilityScore.invoke(owner, "whitelistTokens", iusdc.getAddress(), limit, false);
+            BigInteger totalSupply = BigInteger.valueOf(1000).multiply(EXA);
+            BigInteger totalDebt = BigInteger.valueOf(700).multiply(EXA);
+
+            BigInteger usdcDecimals = BigInteger.TEN.pow(iusdcDecimals.intValue());
+            BigInteger hyUSDCDecimals = BigInteger.TEN.pow(this.hyUSDCDecimals.intValue());
+
+            BigInteger USDCBacking = BigInteger.valueOf(200).multiply(usdcDecimals);
+            BigInteger amountYieldBearingTokens =  BigInteger.valueOf(100).multiply(EXA);
+            BigInteger hyUSDCRate = EXA.add(EXA.divide(BigInteger.TEN)); // 1.1 USD
+            // this gives a mint of 10 USD,-10 = 1000-700-200-110
+            BigInteger expectedMint = BigInteger.TEN.multiply(hyUSDCDecimals); // 100 supply , 70 debt, 20 USDC 10
+            BigInteger timestamp = BigInteger.valueOf(sm.getBlock().getTimestamp());
+
+            when(mockBalanced.bnUSD.mock.xTotalSupply()).thenReturn(totalSupply);
+            when(mockBalanced.loans.mock.getTotalDebt("")).thenReturn(totalDebt);
+
+            when(iusdc.mock.balanceOf(stabilityScore.getAddress())).thenReturn(USDCBacking);
+            when(hyUSDC.mock.balanceOf(stabilityScore.getAddress())).thenReturn(amountYieldBearingTokens);
+            setRate(hyUSDCRate, timestamp);
+
+            // Act
+            stabilityScore.invoke(sm.createAccount(), "mintExcess");
+
+            // Assert
+            verify(mockBalanced.loans.mock).claimInterest();
+            verify(mockBalanced.bnUSD.mock).mint(expectedMint, new byte[0]);
+            verify(mockBalanced.bnUSD.mock).transfer(mockBalanced.feehandler.getAddress(), expectedMint, new byte[0]);
+            verify(mockBalanced.feehandler.mock).accrueStabilityYieldFee(expectedMint);
+        }
+
+        protected void setRate(BigInteger rate, BigInteger timestamp) {
+            when(mockBalanced.balancedOracle.mock.getPriceDataInUSD(hyUSDCSymbol))
+                    .thenReturn(Map.of("rate", rate, "timestamp", timestamp));
+        }
     }
 }

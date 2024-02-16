@@ -162,6 +162,14 @@ public class BalancedAddressManager {
     }
 
 
+    public static Address getSavings() {
+        return getAddress(Names.SAVINGS);
+    }
+
+    public static Address getTrickler() {
+        return getAddress(Names.TRICKLER);
+    }
+
     public static Address getGovernance() {
         return contractAddresses.getOrDefault(Names.GOVERNANCE, mainnetGovernance);
     }

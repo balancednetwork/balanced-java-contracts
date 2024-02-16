@@ -24,15 +24,17 @@ import score.VarDB;
 
 import java.math.BigInteger;
 
+import network.balanced.score.lib.structs.PriceProtectionConfig;
+
 public class BalancedOracleConstants {
     private static final String GOVERNANCE = "governance";
-    private static final String ADMIN = "admin";
-    private static final String DEX = "dex";
-    private static final String ORACLE = "oracle";
-    private static final String STAKING = "staking";
 
     private static final String DEX_PRICED_ASSETS = "dexPriceAssets";
     private static final String ASSET_SYMBOL_PEG = "assetPegMap";
+
+    private static final String PRICE_PROVIDER = "priceProvider";
+    private static final String EXTERNAL_PRICE_DATA = "ExternalPriceData";
+    private static final String EXTERNAL_PRICE_PROTECTION_CONFIG = "externalPriceProtectionConfig";
 
     private static final String ORACLE_PRICE_DECAY = "oraclePriceDecay";
     private static final String DEX_PRICE_DECAY = "dexPriceDecay";
@@ -41,14 +43,14 @@ public class BalancedOracleConstants {
     private static final String VERSION = "version";
 
     public static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
-    public static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
-    public static final VarDB<Address> dex = Context.newVarDB(DEX, Address.class);
-    public static final VarDB<Address> oracle = Context.newVarDB(ORACLE, Address.class);
-    public static final VarDB<Address> staking = Context.newVarDB(STAKING, Address.class);
 
     public static final DictDB<String, BigInteger> dexPricedAssets = Context.newDictDB(DEX_PRICED_ASSETS,
             BigInteger.class);
     public static final DictDB<String, String> assetPeg = Context.newDictDB(ASSET_SYMBOL_PEG, String.class);
+
+    public static final DictDB<String, String> priceProvider = Context.newDictDB(PRICE_PROVIDER, String.class);
+    public static final DictDB<String, PriceData> externalPriceData = Context.newDictDB(EXTERNAL_PRICE_DATA, PriceData.class);
+    public static final DictDB<String, PriceProtectionConfig> externalPriceProtectionConfig = Context.newDictDB(EXTERNAL_PRICE_PROTECTION_CONFIG, PriceProtectionConfig.class);
 
     public static final VarDB<BigInteger> oraclePriceEMADecay = Context.newVarDB(ORACLE_PRICE_DECAY, BigInteger.class);
     public static final VarDB<BigInteger> dexPriceEMADecay = Context.newVarDB(DEX_PRICE_DECAY, BigInteger.class);

@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static network.balanced.score.core.feehandler.FeeHandlerImpl.TAG;
+import static network.balanced.score.lib.test.UnitTest.assertOnlyCallableBy;
 import static network.balanced.score.lib.test.UnitTest.expectErrorMessage;
 import static network.balanced.score.lib.test.UnitTest.scoreCount;
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
@@ -516,5 +517,25 @@ class FeeHandlerImplTest extends TestBase {
 
         Executable withNoRoute = () -> feeHandler.invoke(caller, "calculateRouteLimit", token.getAddress());
         expectErrorMessage(withNoRoute, "No Route exists for " + token.getAddress());
+    }
+
+    @Test
+    void stabilityYieldFees() {
+        // Arrange
+        BigInteger amount1 = BigInteger.valueOf(5);
+        BigInteger amount2 = BigInteger.valueOf(7);
+
+        // Act
+        feeHandler.invoke(mockBalanced.stability.account, "accrueStabilityYieldFee", amount1);
+
+        // Assert
+        assertEquals(amount1, feeHandler.call("getStabilityFundYieldFeesAccrued"));
+
+        // Act
+        feeHandler.invoke(mockBalanced.stability.account, "accrueStabilityYieldFee", amount2);
+
+        // Assert
+        assertEquals(amount1.add(amount2), feeHandler.call("getStabilityFundYieldFeesAccrued"));
+        assertOnlyCallableBy(mockBalanced.stability.getAddress(), feeHandler, "accrueStabilityYieldFee", amount1);
     }
 }

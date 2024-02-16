@@ -35,6 +35,7 @@ import java.util.function.Consumer;
 
 import static network.balanced.score.lib.test.integration.BalancedUtils.*;
 import static network.balanced.score.lib.test.integration.ScoreIntegrationTest.*;
+import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
 public class Balanced {
@@ -61,6 +62,7 @@ public class Balanced {
     public DefaultScoreClient bBaln;
     public DefaultScoreClient balancedOracle;
     public DefaultScoreClient assetManager;
+    public DefaultScoreClient savings;
     public DefaultScoreClient xcall;
     public DefaultScoreClient xcallManager;
     public DefaultScoreClient iconBurner;
@@ -128,9 +130,11 @@ public class Balanced {
         governanceClient.deploy(getContractData("Reserve"), governanceParam);
         governanceClient.deploy(getContractData("Router"), governanceParam);
         governanceClient.deploy(getContractData("StakedLP"), governanceParam);
+        governanceClient.deploy(getContractData("Savings"), governanceParam);
         governanceClient.deploy(getContractData("BalancedOracle"), governanceParam);
         governanceClient.deploy(getContractData("XCallManager"), governanceParam);
         governanceClient.deploy(getContractData("Burner"), governanceParam);
+        governanceClient.deploy(getContractData("Stability"), governanceParam);
 
         String assetManagerParams = new JsonArray()
                 .add(createParameter(governance._address()))
@@ -158,18 +162,16 @@ public class Balanced {
         assetManager = newScoreClient(owner, governanceClient.getAddress(Names.ASSET_MANAGER));
         xcallManager = newScoreClient(owner, governanceClient.getAddress(Names.XCALL_MANAGER));
         iconBurner = newScoreClient(owner, governanceClient.getAddress(Names.BURNER));
+        stability = newScoreClient(owner, governanceClient.getAddress(Names.STABILITY));
+        savings = newScoreClient(owner, governanceClient.getAddress(Names.SAVINGS));
 
         oracle = getDeploymentResult(owner, oracleTx);
         staking = getDeploymentResult(owner, stakingTx);
 
-        String StabilityParams = new JsonArray()
-                .add(createParameter(feehandler._address()))
-                .add(createParameter(bnusd._address()))
-                .add(createParameter(BigInteger.TEN.pow(18)))
-                .add(createParameter(BigInteger.TEN.pow(18)))
-                .toString();
-
-        governanceClient.deploy(getContractData("Stability"), StabilityParams);
+        JsonArray setStabilityFeeOut = new JsonArray()
+            .add(createParameter(EXA));
+        JsonArray setFeeOut = createSingleTransaction(stability._address(), "setFeeOut", setStabilityFeeOut);
+        governanceClient.execute(setFeeOut.toString());
 
         String BoostedBalnParams = new JsonArray()
                 .add(createParameter(governance._address()))
@@ -180,8 +182,6 @@ public class Balanced {
         bBaln = newScoreClient(owner, governanceClient.getAddress(Names.BOOSTED_BALN));
         Hash sicxTx = deployAsync(owner, "Sicx", Map.of("_admin", staking._address()));
 
-
-        stability = newScoreClient(owner, governanceClient.getAddress(Names.STABILITY));
         sicx = getDeploymentResult(owner, sicxTx);
 
         setupSpoke(BSC_NID, BSC_ASSET_MANAGER, BSC_BNUSD_ADDRESS, BSC_TOKEN_ADDRESS, BSC_TOKEN_SYMBOL, BigInteger.valueOf(18));

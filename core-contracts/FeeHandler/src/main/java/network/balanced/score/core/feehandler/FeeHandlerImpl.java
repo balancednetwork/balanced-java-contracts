@@ -29,6 +29,7 @@ import java.util.List;
 
 import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Check.isContract;
+import static network.balanced.score.lib.utils.Check.only;
 import static network.balanced.score.lib.utils.Check.onlyGovernance;
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.Constants.EXA;
@@ -46,6 +47,7 @@ public class FeeHandlerImpl implements FeeHandler {
     private static final String SWAP_FEES_ACCRUED = "swap_fees_accrued";
     private static final String LOANS_FEES_ACCRUED = "loans_fees_accrued";
     private static final String STABILITY_FEES_ACCRUED = "stability_fees_accrued";
+    private static final String STABILITY_YIELD_FEES_ACCRUED = "stability_yield_fees_accrued";
     public static final String VERSION = "version";
 
     public static final ArrayDB<Address> acceptedDividendsTokens = Context.newArrayDB(DIVIDEND_TOKENS, Address.class);
@@ -61,6 +63,8 @@ public class FeeHandlerImpl implements FeeHandler {
     private final VarDB<BigInteger> loanFeesAccrued = Context.newVarDB(LOANS_FEES_ACCRUED, BigInteger.class);
     private final VarDB<BigInteger> stabilityFundFeesAccrued = Context.newVarDB(STABILITY_FEES_ACCRUED,
             BigInteger.class);
+    private final VarDB<BigInteger> stabilityFundYieldFeesAccrued = Context.newVarDB(STABILITY_YIELD_FEES_ACCRUED,
+        BigInteger.class);
 
     private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
 
@@ -263,6 +267,18 @@ public class FeeHandlerImpl implements FeeHandler {
     @External(readonly = true)
     public BigInteger getStabilityFundFeesAccrued() {
         return stabilityFundFeesAccrued.getOrDefault(BigInteger.ZERO);
+    }
+
+    @External
+    public void accrueStabilityYieldFee(BigInteger amount) {
+        only(getStabilityFund());
+        BigInteger currentAmount = stabilityFundYieldFeesAccrued.getOrDefault(BigInteger.ZERO);
+        stabilityFundYieldFeesAccrued.set(currentAmount.add(amount));
+    }
+
+    @External(readonly = true)
+    public BigInteger getStabilityFundYieldFeesAccrued() {
+        return stabilityFundYieldFeesAccrued.getOrDefault(BigInteger.ZERO);
     }
 
     @External(readonly = true)

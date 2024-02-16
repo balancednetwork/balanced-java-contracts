@@ -21,7 +21,6 @@ import com.iconloop.score.test.ServiceManager;
 
 import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.utils.BalancedAddressManager;
-import network.balanced.score.lib.utils.XCallUtils;
 import score.Address;
 import network.balanced.score.lib.utils.Names;
 
@@ -29,7 +28,6 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
-import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -56,6 +54,8 @@ public class MockBalanced {
     public MockContract<BalancedOracle> balancedOracle;
     public MockContract<BoostedBaln> bBaln;
     public MockContract<AssetManager> assetManager;
+    public MockContract<Savings> savings;
+    public MockContract<Trickler> trickler;
     public MockContract<XCall> xCall;
     public MockContract<XCallManager> xCallManager;
     public MockContract<ICONBurner> iconBurner;
@@ -82,6 +82,8 @@ public class MockBalanced {
         balancedOracle = new MockContract<>(BalancedOracleScoreInterface.class, BalancedOracle.class, sm, owner);
         bBaln = new MockContract<>(BoostedBalnScoreInterface.class, BoostedBaln.class, sm, owner);
         assetManager = new MockContract<>(AssetManagerScoreInterface.class, AssetManager.class, sm, owner);
+        savings = new MockContract<>(SavingsScoreInterface.class, Savings.class, sm, owner);
+        trickler = new MockContract<>(TricklerScoreInterface.class, Trickler.class, sm, owner);
         xCall = new MockContract<>(XCallScoreInterface.class, XCall.class, sm, owner);
         xCallManager = new MockContract<>(XCallManagerScoreInterface.class, XCallManager.class, sm, owner);
         iconBurner = new MockContract<>(ICONBurnerScoreInterface.class, ICONBurner.class, sm, owner);
@@ -112,6 +114,8 @@ public class MockBalanced {
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.STABILITY)).thenReturn(stability.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.BOOSTED_BALN)).thenReturn(bBaln.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.ASSET_MANAGER)).thenReturn(assetManager.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.SAVINGS)).thenReturn(savings.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.TRICKLER)).thenReturn(trickler.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.XCALL)).thenReturn(xCall.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.XCALL_MANAGER)).thenReturn(xCallManager.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.BURNER)).thenReturn(iconBurner.getAddress());
@@ -135,10 +139,11 @@ public class MockBalanced {
         addressManagerMock.when(() -> BalancedAddressManager.getBalancedOracle()).thenReturn(balancedOracle.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.getBoostedBaln()).thenReturn(bBaln.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.getAssetManager()).thenReturn(assetManager.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.getSavings()).thenReturn(savings.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.getTrickler()).thenReturn(trickler.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.getXCall()).thenReturn(xCall.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.getXCallManager()).thenReturn(xCallManager.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.getICONBurner()).thenReturn(iconBurner.getAddress());
-
 
         when(bnUSD.mock.symbol()).thenReturn("bnUSD");
         when(sicx.mock.symbol()).thenReturn("sICX");
