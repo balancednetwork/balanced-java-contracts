@@ -93,7 +93,6 @@ public class AssetManagerImpl implements AssetManager {
     public void deployAsset(String tokenNetworkAddress, String name, String symbol, BigInteger decimals) {
         onlyGovernance();
         NetworkAddress nativeAddress = NetworkAddress.valueOf(tokenNetworkAddress);
-
         Context.require(spokes.get(nativeAddress.net()) != null);
         Context.require(assets.get(tokenNetworkAddress) == null);
         Address token = Context.deploy(tokenBytes, BalancedAddressManager.getGovernance(), name, symbol, decimals);
@@ -101,6 +100,27 @@ public class AssetManagerImpl implements AssetManager {
         assetNativeAddress.set(token, tokenNetworkAddress);
         Address SYSTEM_SCORE_ADDRESS = getSystemScoreAddress();
         Context.call(SYSTEM_SCORE_ADDRESS, "setScoreOwner", token, BalancedAddressManager.getGovernance());
+    }
+
+    @External
+    public void linkToken(String tokenNetworkAddress, Address token) {
+        onlyGovernance();
+        NetworkAddress networkAddress = NetworkAddress.valueOf(tokenNetworkAddress);
+        Context.require(spokes.get(networkAddress.net()) != null, "Add the spoke spoke manager first");
+        Context.require(assets.get(tokenNetworkAddress) == null, "Token is already available");
+        assets.set(tokenNetworkAddress, token);
+        assetNativeAddress.set(token, tokenNetworkAddress);
+    }
+
+    @External
+    public void removeToken(Address token) {
+        onlyGovernance();
+        String tokenNetworkAddress = assetNativeAddress.get(token);
+        Context.require(tokenNetworkAddress != null, "Token is not available");
+        assetNativeAddress.set(token, null);
+        if(assets.get(tokenNetworkAddress) != null) {
+            assets.remove(tokenNetworkAddress);
+        }
     }
 
     @External
