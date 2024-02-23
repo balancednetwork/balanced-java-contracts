@@ -137,6 +137,27 @@ public class LinkedListDB {
         serialize();
     }
 
+    public boolean isMissing(int id) {
+        Node node = getNode(id);
+        Context.require(size > 1, "List is to short");
+        return node.exists() && node.getPrev() == 0 && node.getNext() == 0;
+    }
+
+    public void appendMissing(int id) {
+        Context.require(isMissing(id), "Node is not missing");
+        Node node = getNode(id);
+        Node tail = getNode(tailId);
+        tail.setNext(id);
+        tail.repack();
+
+        node.setPrev(tailId);
+
+        node.repack();
+        tailId = id;
+        size = size + 1;
+        serialize();
+    }
+
     public PositionBatch readDataBatch(BigInteger debtRequired, String collateralSymbol) {
         Context.require(size != 0, name + ": No data in the list");
 
