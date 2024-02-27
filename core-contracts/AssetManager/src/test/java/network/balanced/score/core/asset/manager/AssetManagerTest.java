@@ -43,8 +43,7 @@ import java.util.Map;
 
 import static network.balanced.score.lib.test.UnitTest.assertOnlyCallableBy;
 import static network.balanced.score.lib.test.UnitTest.expectErrorMessage;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class AssetManagerTest extends TestBase {
@@ -309,7 +308,12 @@ class AssetManagerTest extends TestBase {
 
     @Test
     void link_token() {
+        // Arrange
         NetworkAddress tokenNetworkAddress = new NetworkAddress(INJ_NID, injAsset1Address);
+        BigInteger amount = BigInteger.TEN;
+        NetworkAddress injAccount = new NetworkAddress(INJ_NID,  "inj1x32");
+
+        // Act & Assert
         //test no spoke manager
         Executable noSpokeManager = () -> assetManager.invoke(mockBalanced.governance.account, "linkToken", tokenNetworkAddress.toString(), injLinkAsset.getAddress());
         expectErrorMessage(noSpokeManager, "Reverted(0): Add the spoke spoke manager first");
@@ -323,33 +327,32 @@ class AssetManagerTest extends TestBase {
         expectErrorMessage(alreadyLinked, "Reverted(0): Token is already available");
 
         //test for deposit to be success
-        BigInteger amount = BigInteger.TEN;
-        NetworkAddress injAccount = new NetworkAddress(INJ_NID,  "inj1x32");
-
         byte[] deposit = AssetManagerMessages.deposit(injAsset1Address, injAccount.account(), "", amount, new byte[0]);
         assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", injSpoke.toString(), deposit, defaultProtocols);
-        // Assert
         verify(injLinkAsset.mock).mintAndTransfer(injAccount.toString(), injAccount.toString(), amount, new byte[0]);
     }
 
     @Test
     void remove_token() {
+        // Arrange
         NetworkAddress tokenNetworkAddress = new NetworkAddress(INJ_NID, injAsset1Address);
-        //test token not available
-        Executable noSpokeManager = () -> assetManager.invoke(mockBalanced.governance.account, "removeToken", invalidAsset.getAddress());
-        expectErrorMessage(noSpokeManager, "Reverted(0): Token is not available");
-
-        //test success case
-        assetManager.invoke(governance.account, "addSpokeManager", injSpoke.toString());
-        assetManager.invoke(mockBalanced.governance.account, "linkToken", tokenNetworkAddress.toString(), injLinkAsset.getAddress());
-        assetManager.invoke(mockBalanced.governance.account, "removeToken", injLinkAsset.getAddress());
-
-        //test for deposit to fail
         BigInteger amount = BigInteger.TEN;
         NetworkAddress injAccount = new NetworkAddress(INJ_NID,  "inj1x32");
 
-        byte[] deposit = AssetManagerMessages.deposit(injAsset1Address, injAccount.account(), "", amount, new byte[0]);
-        Executable noToken = () -> assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", injSpoke.toString(), deposit, defaultProtocols);
-        expectErrorMessage(noToken, "Reverted(0): Token is not yet deployed");
+        // Act
+        //fail for not available
+        Executable noSpokeManager = () -> assetManager.invoke(mockBalanced.governance.account, "removeToken", invalidAsset.getAddress(), INJ_NID);
+        expectErrorMessage(noSpokeManager, "Reverted(0): Token is not available");
+
+        //pass
+        assetManager.invoke(governance.account, "addSpokeManager", injSpoke.toString());
+        assetManager.invoke(mockBalanced.governance.account, "linkToken", tokenNetworkAddress.toString(), injLinkAsset.getAddress());
+        assetManager.invoke(mockBalanced.governance.account, "removeToken", injLinkAsset.getAddress(), INJ_NID);
+
+        // Assert
+        String nativeAddress = (String) assetManager.call( "getNativeAssetAddress", injLinkAsset.getAddress(), INJ_NID);
+        assertNull(nativeAddress);
+
+
     }
 }

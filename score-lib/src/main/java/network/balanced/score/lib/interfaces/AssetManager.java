@@ -28,6 +28,7 @@ import score.annotation.Optional;
 import score.annotation.Payable;
 
 import java.math.BigInteger;
+import java.util.List;
 import java.util.Map;
 
 @ScoreClient
@@ -48,9 +49,11 @@ public interface AssetManager extends AddressManager, Version, Fallback {
 
     @External(readonly = true)
     Address getAssetAddress(String spokeAddress);
+    
+    public String getNativeAssetAddress(Address token, String NID);
 
     @External(readonly = true)
-    String getNativeAssetAddress(Address token);
+    List<String> getNativeAssetAddress(Address token);
 
     /**
      * withdraws amount to `to` address
@@ -110,5 +113,5 @@ public interface AssetManager extends AddressManager, Version, Fallback {
 
     void linkToken(String tokenNetworkAddress, Address token);
 
-    void removeToken(Address token);
+    void removeToken(Address token, String NID);
 }
