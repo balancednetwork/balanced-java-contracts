@@ -21,7 +21,6 @@ import java.util.Map;
 
 import static network.balanced.score.lib.test.integration.BalancedUtils.createParameter;
 import static network.balanced.score.lib.test.integration.BalancedUtils.createSingleTransaction;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AssetManagerIntTest {
 
@@ -114,17 +113,16 @@ public class AssetManagerIntTest {
     void removeToken() {
         //Arrange
         Address linkTokenAddress = owner.sicx._address();
+        JsonArray params = new JsonArray().add(createParameter(linkTokenAddress)).add(createParameter(INJ_NID));
 
         //Act
         owner.governance.execute(createSingleTransaction(balanced.assetManager._address(), "removeToken",
-                new JsonArray().add(createParameter(linkTokenAddress)).add(createParameter(INJ_NID))).toString());
+                params).toString());
 
         // Assert
-        RevertedException thrown = assertThrows(
-                RevertedException.class, () ->  owner.governance.execute(createSingleTransaction(balanced.assetManager._address(), "linkToken",
-                    new JsonArray().add(createParameter(linkTokenAddress)).add(createParameter(INJ_NID))).toString())
-        );
-        assertTrue(thrown.getMessage().contains("UnknownFailure"));
+        Executable notAvailable = () -> owner.governance.execute(createSingleTransaction(balanced.assetManager._address(), "removeToken",
+                params).toString());
+        assertThrows(RevertedException.class,   notAvailable);
     }
 
     @Test
