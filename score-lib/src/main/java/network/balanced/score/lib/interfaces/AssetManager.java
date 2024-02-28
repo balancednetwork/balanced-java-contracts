@@ -49,8 +49,9 @@ public interface AssetManager extends AddressManager, Version, Fallback {
 
     @External(readonly = true)
     Address getAssetAddress(String spokeAddress);
-    
-    public String getNativeAssetAddress(Address token, String NID);
+
+    @External(readonly = true)
+    String getNativeAssetAddress(Address token, String NID);
 
     @External(readonly = true)
     List<String> getNativeAssetAddress(Address token);

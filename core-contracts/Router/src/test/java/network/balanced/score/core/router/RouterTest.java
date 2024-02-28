@@ -207,7 +207,7 @@ class RouterTest extends TestBase {
         when(token.mock.balanceOf(routerScore.getAddress())).thenReturn(amount);
         when(balanced.daofund.mock.getXCallFeePermission(routerScore.getAddress(), net)).thenReturn(true);
         when(balanced.daofund.mock.claimXCallFee(net, true)).thenReturn(fee);
-        when(balanced.assetManager.mock.getNativeAssetAddress(token.getAddress()))
+        when(balanced.assetManager.mock.getNativeAssetAddress(token.getAddress(), net))
                 .thenReturn(new NetworkAddress(net, "cx3").toString());
 
         // Act
@@ -254,7 +254,7 @@ class RouterTest extends TestBase {
         when(balanced.sicx.mock.balanceOf(routerScore.getAddress())).thenReturn(amount);
         when(token.mock.balanceOf(routerScore.getAddress())).thenReturn(amount);
         when(balanced.daofund.mock.getXCallFeePermission(routerScore.getAddress(), net)).thenReturn(true);
-        when(balanced.assetManager.mock.getNativeAssetAddress(token.getAddress()))
+        when(balanced.assetManager.mock.getNativeAssetAddress(token.getAddress(), net2))
                 .thenReturn(new NetworkAddress(net2, "cx3").toString());
 
         // Act
@@ -279,7 +279,7 @@ class RouterTest extends TestBase {
         when(balanced.sicx.mock.balanceOf(routerScore.getAddress())).thenReturn(amount);
         when(token.mock.balanceOf(routerScore.getAddress())).thenReturn(amount);
         when(balanced.daofund.mock.getXCallFeePermission(routerScore.getAddress(), net)).thenReturn(true);
-        when(balanced.assetManager.mock.getNativeAssetAddress(token.getAddress()))
+        when(balanced.assetManager.mock.getNativeAssetAddress(token.getAddress(), net2))
                 .thenReturn(new NetworkAddress(net2, "cx3").toString());
 
         // Act & Assert
@@ -302,7 +302,7 @@ class RouterTest extends TestBase {
         when(balanced.sicx.mock.balanceOf(routerScore.getAddress())).thenReturn(amount);
         when(token.mock.balanceOf(routerScore.getAddress())).thenReturn(amount);
         when(balanced.daofund.mock.getXCallFeePermission(routerScore.getAddress(), net)).thenReturn(false);
-        when(balanced.assetManager.mock.getNativeAssetAddress(token.getAddress()))
+        when(balanced.assetManager.mock.getNativeAssetAddress(token.getAddress(), net))
                 .thenReturn(new NetworkAddress(net, "cx3").toString());
 
         // Act & Assert
@@ -325,7 +325,7 @@ class RouterTest extends TestBase {
         when(balanced.sicx.mock.balanceOf(routerScore.getAddress())).thenReturn(amount);
         when(token.mock.balanceOf(routerScore.getAddress())).thenReturn(amount);
         when(balanced.daofund.mock.getXCallFeePermission(routerScore.getAddress(), net)).thenReturn(true);
-        when(balanced.assetManager.mock.getNativeAssetAddress(token.getAddress()))
+        when(balanced.assetManager.mock.getNativeAssetAddress(token.getAddress(), net))
                 .thenReturn(new NetworkAddress(net, "cx3").toString());
 
         // Act
