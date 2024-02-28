@@ -1,19 +1,18 @@
 package network.balanced.score.core.asset.manager;
 
 import com.eclipsesource.json.JsonArray;
-import foundation.icon.score.client.DefaultScoreClient;
 import foundation.icon.score.client.RevertedException;
 import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.lib.interfaces.AssetManagerMessages;
-import network.balanced.score.lib.interfaces.tokens.SpokeTokenScoreClient;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
-import network.balanced.score.lib.test.integration.Env;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.function.Executable;
 import score.Address;
 
 import java.math.BigInteger;
@@ -26,16 +25,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AssetManagerIntTest {
 
-    private static final Env.Chain chain = Env.getDefaultChain();
     private static Balanced balanced;
     private static BalancedClient owner;
     private static BalancedClient reader;
     private static BalancedClient user;
 
     public String INJ_NID = "0x4.INJ";
+    public String LINK_NID = "0x4.LINK";
     String injAsset1Address = "inj1x3";
+    String linkAsset1Address = "link1x3";
 
     NetworkAddress injSpoke = new NetworkAddress(INJ_NID, "inj1x1");
+    NetworkAddress linkSpoke = new NetworkAddress(LINK_NID, "link1x1");
 
     @BeforeAll
     static void setup() throws Exception {
@@ -54,33 +55,58 @@ public class AssetManagerIntTest {
         NetworkAddress tokenNetworkAddress = new NetworkAddress(INJ_NID, injAsset1Address);
         Address linkTokenAddress = owner.sicx._address();
 
-
         //Act
-        RevertedException thrown = assertThrows(
-                RevertedException.class, () ->  owner.governance.execute(createSingleTransaction(balanced.assetManager._address(), "linkToken",
-                    new JsonArray().add(createParameter(tokenNetworkAddress.toString())).add(createParameter(linkTokenAddress))).toString())
-        );
-        assertTrue(thrown.getMessage().contains("UnknownFailure"));
+        JsonArray params =  new JsonArray().add(createParameter(tokenNetworkAddress.toString())).add(createParameter(linkTokenAddress));
+        Executable linkTokenWithoutAssetManager = () -> owner.governance.execute(createSingleTransaction(balanced.assetManager._address(), "linkToken", params).toString());
+        assertThrows(RevertedException.class,   linkTokenWithoutAssetManager);
 
         owner.governance.execute(createSingleTransaction(balanced.assetManager._address(), "addSpokeManager",
                 new JsonArray().add(createParameter(injSpoke.toString()))).toString());
 
         owner.governance.execute(createSingleTransaction(balanced.assetManager._address(), "linkToken",
-                new JsonArray().add(createParameter(tokenNetworkAddress.toString())).add(createParameter(linkTokenAddress))).toString());
+                params).toString());
 
-        thrown = assertThrows(
-                RevertedException.class, () ->  owner.governance.execute(createSingleTransaction(balanced.assetManager._address(), "linkToken",
-                    new JsonArray().add(createParameter(tokenNetworkAddress.toString())).add(createParameter(linkTokenAddress))).toString())
-        );
-        assertTrue(thrown.getMessage().contains("UnknownFailure"));
+        Executable tokenNetworkAlreadyLinked = () -> owner.governance.execute(createSingleTransaction(balanced.assetManager._address(), "linkToken", params).toString());
+        assertThrows(RevertedException.class,   tokenNetworkAlreadyLinked);
 
         //Assert
         Address assetAddress = user.assetManager.getAssetAddress(tokenNetworkAddress.toString());
         assert  assetAddress.equals(linkTokenAddress);
 
-        List<String> nativeAssetAddresses = user.assetManager.getNativeAssetAddress(linkTokenAddress);
+        List<String> nativeAssetAddresses = user.assetManager.getNativeAssetAddresses(linkTokenAddress);
         assert nativeAssetAddresses.get(0).equals(tokenNetworkAddress.toString());
 
+    }
+
+    @Test
+    @Order(9)
+    void linkToken_multipleNetworkAddress() {
+        // Arrange
+        NetworkAddress tokenNetworkAddress = new NetworkAddress(INJ_NID, injAsset1Address);
+        NetworkAddress nextTokenNetworkAddress = new NetworkAddress(LINK_NID, linkAsset1Address);
+        Address linkTokenAddress = owner.sicx._address();
+
+        //Act
+//        owner.governance.execute(createSingleTransaction(balanced.assetManager._address(), "addSpokeManager",
+//                new JsonArray().add(createParameter(injSpoke.toString()))).toString());
+        owner.governance.execute(createSingleTransaction(balanced.assetManager._address(), "addSpokeManager",
+                new JsonArray().add(createParameter(linkSpoke.toString()))).toString());
+
+//        owner.governance.execute(createSingleTransaction(balanced.assetManager._address(), "linkToken",
+//                new JsonArray().add(createParameter(tokenNetworkAddress.toString())).add(createParameter(linkTokenAddress))).toString());
+        owner.governance.execute(createSingleTransaction(balanced.assetManager._address(), "linkToken",
+                new JsonArray().add(createParameter(nextTokenNetworkAddress.toString())).add(createParameter(linkTokenAddress))).toString());
+
+
+        //Assert
+        Address assetAddress = user.assetManager.getAssetAddress(tokenNetworkAddress.toString());
+        Address nextAssetAddress = user.assetManager.getAssetAddress(nextTokenNetworkAddress.toString());
+        assert  assetAddress.equals(linkTokenAddress);
+        assert  nextAssetAddress.equals(linkTokenAddress);
+
+        List<String> nativeAssetAddresses = user.assetManager.getNativeAssetAddresses(linkTokenAddress);
+        assert nativeAssetAddresses.get(0).equals(tokenNetworkAddress.toString());
+        assert nativeAssetAddresses.get(1).equals(nextTokenNetworkAddress.toString());
     }
 
     @Test
@@ -117,7 +143,7 @@ public class AssetManagerIntTest {
         // Act
         String[] spokes = user.assetManager.getSpokes();
         // Assert
-        assert spokes.length == 3 ;
+        assert spokes.length == 4 ;
     }
 
     @Test
@@ -128,10 +154,7 @@ public class AssetManagerIntTest {
         BigInteger amount = BigInteger.TEN;
         NetworkAddress nativeAssetAddress = new NetworkAddress(balanced.ETH_NID, balanced.ETH_TOKEN_ADDRESS);
 
-        //setup client
         Address assetAddress = user.assetManager.getAssetAddress(nativeAssetAddress.toString());
-        DefaultScoreClient defaultScoreClient = new SpokeTokenScoreClient(chain.getEndpointURL(), chain.networkId, chain.godWallet, (foundation.icon.jsonrpc.Address) assetAddress);
-        SpokeTokenScoreClient spokeTokenScoreClient = new SpokeTokenScoreClient(defaultScoreClient);
 
         // Act
         //deposit
@@ -140,7 +163,7 @@ public class AssetManagerIntTest {
 
         // Assert
         //verify deposited amount
-        BigInteger balance = spokeTokenScoreClient.xBalanceOf(ethAccount.toString());
+        BigInteger balance = user.spokeToken(assetAddress).xBalanceOf(ethAccount.toString());
         assert balance.equals(amount.add(amount));
     }
 
@@ -152,10 +175,7 @@ public class AssetManagerIntTest {
         BigInteger amount = BigInteger.TEN;
         NetworkAddress nativeAssetAddress = new NetworkAddress(balanced.ETH_NID, balanced.ETH_TOKEN_ADDRESS);
 
-        //setup client
         Address assetAddress = user.assetManager.getAssetAddress(nativeAssetAddress.toString());
-        DefaultScoreClient defaultScoreClient = new SpokeTokenScoreClient(chain.getEndpointURL(), chain.networkId, chain.godWallet, (foundation.icon.jsonrpc.Address) assetAddress);
-        SpokeTokenScoreClient spokeTokenScoreClient = new SpokeTokenScoreClient(defaultScoreClient);
 
         // Act
         //deposit
@@ -163,14 +183,13 @@ public class AssetManagerIntTest {
         owner.xcall.sendCall(owner.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit);
 
         //withdraw
-        owner.governance.execute(createSingleTransaction(balanced.daofund._address(), "setXCallFeePermission",
-                new JsonArray().add(createParameter(balanced.assetManager._address())).add(createParameter(balanced.ETH_NID)).add(createParameter(true))).toString());
+        balanced.addXCallFeePermission(balanced.assetManager._address(), balanced.ETH_NID,true);
         byte[] withdraw = AssetManagerMessages.xWithdraw(assetAddress, amount);
         owner.xcall.sendCall(owner.assetManager._address(), ethAccount.toString(), withdraw);
 
         // Assert
         //verify deposited amount
-        BigInteger balance = spokeTokenScoreClient.xBalanceOf(ethAccount.toString());
+        BigInteger balance = user.spokeToken(assetAddress).xBalanceOf(ethAccount.toString());
         assert balance.equals(amount);
     }
 
@@ -182,10 +201,7 @@ public class AssetManagerIntTest {
         BigInteger amount = BigInteger.TEN;
         NetworkAddress nativeAssetAddress = new NetworkAddress(balanced.ETH_NID, balanced.ETH_TOKEN_ADDRESS);
 
-        //setup client
         Address assetAddress = user.assetManager.getAssetAddress(nativeAssetAddress.toString());
-        DefaultScoreClient defaultScoreClient = new SpokeTokenScoreClient(chain.getEndpointURL(), chain.networkId, chain.godWallet, (foundation.icon.jsonrpc.Address) assetAddress);
-        SpokeTokenScoreClient spokeTokenScoreClient = new SpokeTokenScoreClient(defaultScoreClient);
 
         // Act
         //deposit
@@ -193,20 +209,17 @@ public class AssetManagerIntTest {
         owner.xcall.sendCall(owner.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit);
 
         //withdraw
-        owner.governance.execute(createSingleTransaction(balanced.daofund._address(), "setXCallFeePermission",
-                new JsonArray().add(createParameter(balanced.assetManager._address())).add(createParameter(balanced.ETH_NID)).add(createParameter(true))).toString());
+        balanced.addXCallFeePermission(balanced.assetManager._address(), balanced.ETH_NID,true);
         byte[] withdraw = AssetManagerMessages.xWithdraw(assetAddress, amount);
         owner.xcall.sendCall(owner.assetManager._address(), ethAccount.toString(), withdraw);
 
         //withdraw rollback
-        owner.governance.execute(createSingleTransaction(balanced.daofund._address(), "setXCallFeePermission",
-                new JsonArray().add(createParameter(balanced.assetManager._address())).add(createParameter(balanced.ETH_NID)).add(createParameter(true))).toString());
         byte[] withdrawRollback = AssetManagerMessages.withdrawRollback(nativeAssetAddress.toString(), ethAccount.toString(), amount);
         owner.xcall.sendCall(owner.assetManager._address(), new NetworkAddress(balanced.ICON_NID, owner.xcall._address()).toString(), withdrawRollback);
 
         // Assert
         //verify deposited amount
-        BigInteger balance = spokeTokenScoreClient.xBalanceOf(ethAccount.toString());
+        BigInteger balance = user.spokeToken(assetAddress).xBalanceOf(ethAccount.toString());
         assert balance.equals(amount);
     }
 
@@ -218,8 +231,7 @@ public class AssetManagerIntTest {
         BigInteger amount = BigInteger.TEN;
         NetworkAddress nativeAssetAddress = new NetworkAddress(balanced.ETH_NID, balanced.ETH_TOKEN_ADDRESS);
         Address assetAddress = user.assetManager.getAssetAddress(nativeAssetAddress.toString());
-        DefaultScoreClient defaultScoreClient = new SpokeTokenScoreClient(chain.getEndpointURL(), chain.networkId, chain.godWallet, (foundation.icon.jsonrpc.Address) assetAddress);
-        SpokeTokenScoreClient spokeTokenScoreClient = new SpokeTokenScoreClient(defaultScoreClient);
+
         NetworkAddress iconAccount = new NetworkAddress(balanced.ICON_NID, user.getAddress());
 
         // Act
@@ -231,35 +243,10 @@ public class AssetManagerIntTest {
 
         // Assert
         //validate balance after withdraw
-        BigInteger balance = spokeTokenScoreClient.xBalanceOf(iconAccount.toString());
+        BigInteger balance = user.spokeToken(assetAddress).xBalanceOf(iconAccount.toString());
         assert balance.equals(BigInteger.ZERO);
     }
 
-
-    //withdrawNativeTo method seems identical with withdrawTo except method name on icon side. integration test identical too
-    @Test
-    @Order(9)
-    void withdrawNativeTo() {
-        // Arrange
-        NetworkAddress ethAccount = new NetworkAddress(balanced.ETH_NID, "0x123");
-        BigInteger amount = BigInteger.TEN;
-        NetworkAddress nativeAssetAddress = new NetworkAddress(balanced.ETH_NID, balanced.ETH_TOKEN_ADDRESS);
-        Address assetAddress = user.assetManager.getAssetAddress(nativeAssetAddress.toString());
-        DefaultScoreClient defaultScoreClient = new SpokeTokenScoreClient(chain.getEndpointURL(), chain.networkId, chain.godWallet, (foundation.icon.jsonrpc.Address) assetAddress);
-        SpokeTokenScoreClient spokeTokenScoreClient = new SpokeTokenScoreClient(defaultScoreClient);
-        NetworkAddress iconAccount = new NetworkAddress(balanced.ICON_NID, user.getAddress());
-
-        // Act
-        //deposit amount to withdraw
-        byte[] deposit = AssetManagerMessages.deposit(balanced.ETH_TOKEN_ADDRESS, ethAccount.account(), iconAccount.toString(), amount, new byte[0]);
-        owner.xcall.sendCall(owner.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit);
-        //withdraw the amount
-        user.assetManager.withdrawNativeTo(BigInteger.ONE, assetAddress, ethAccount.toString(), amount);
-
-        // Assert
-        BigInteger balance = spokeTokenScoreClient.xBalanceOf(iconAccount.toString());
-        assert balance.equals(BigInteger.ZERO);
-    }
 
 
 }
