@@ -43,6 +43,7 @@ public class AssetManagerImpl implements AssetManager {
     public static final String ASSETS = "assets";
     public static final String NATIVE_ASSET_ADDRESS = "native_asset_address";
     public static final String NATIVE_ASSET_ADDRESSES = "native_asset_addresses";
+    public static final String DATA_MIGRATED = "data_migrated";
     public static final String ASSET_DEPOSIT_CHAIN_LIMIT = "asset_deposit_chain_limit";
     public static final String ASSET_MAX_SUPPLY = "asset_max_supply";
 
@@ -56,9 +57,10 @@ public class AssetManagerImpl implements AssetManager {
     private final IterableDictDB<String, Address> assets = new IterableDictDB<>(ASSETS, Address.class, String.class, false);
     private final DictDB<Address, String> assetNativeAddress = newDictDB(NATIVE_ASSET_ADDRESS, String.class);
     private final BranchDB<Address, DictDB<String, String>> assetNativeAddresses = newBranchDB(NATIVE_ASSET_ADDRESSES, String.class);
-    private final VarDB<Boolean> dataMigrated = newVarDB(VERSION, Boolean.class);
     private final BranchDB<Address, DictDB<String, BigInteger>> assetChainDepositLimit = newBranchDB(ASSET_DEPOSIT_CHAIN_LIMIT, BigInteger.class);
     private final DictDB<Address, BigInteger> assetMaxSupply = newDictDB(ASSET_MAX_SUPPLY, BigInteger.class);
+    private final VarDB<Boolean> dataMigrated = newVarDB(DATA_MIGRATED, Boolean.class);
+
     public AssetManagerImpl(Address _governance, byte[] tokenBytes) {
         AssetManagerImpl.tokenBytes = tokenBytes;
         if (BalancedAddressManager.getAddressByName(Names.GOVERNANCE) == null) {
@@ -72,8 +74,8 @@ public class AssetManagerImpl implements AssetManager {
         }
 
         currentVersion.set(Versions.BALANCED_ASSET_MANAGER);
-        if(dataMigrated.get()==null){
-            dataMigrated.set(false);
+        if (dataMigrated.get()==null) {
+            migrateTokenNativeAddress();
         }
     }
 
@@ -132,20 +134,19 @@ public class AssetManagerImpl implements AssetManager {
         call(SYSTEM_SCORE_ADDRESS, "setScoreOwner", token, BalancedAddressManager.getGovernance());
     }
 
-    @External
-    public void migrateTokenNativeAddress() {
-        onlyGovernance();
-        if(dataMigrated.get()){
-            return;
-        }
+    private void migrateTokenNativeAddress() {
         List<String> nativeAddresses = assets.keys();
-        for(String na: nativeAddresses){
+        for (String na: nativeAddresses) {
              Address address = assets.get(na);
-             if(assetNativeAddress.get(address)!=null) {
+             if (assetNativeAddress.get(address)!=null) {
                  NetworkAddress networkAddress = NetworkAddress.valueOf(na);
                  assetNativeAddresses.at(address).set(networkAddress.net(), networkAddress.account());
+                 //delete once migrated
+                 //assetNativeAddress.set(address, null);
              }
         }
+
+        dataMigrated.set(true);
     }
 
     @External
@@ -159,11 +160,12 @@ public class AssetManagerImpl implements AssetManager {
     }
 
     @External
-    public void removeToken(Address token, String NID) {
+    public void removeToken(Address token, String nid) {
         onlyGovernance();
-        String nativeAddress = assetNativeAddresses.at(token).get(NID);
+        String nativeAddress = assetNativeAddresses.at(token).get(nid);
         require(nativeAddress != null, "Token is not available");
-        assetNativeAddresses.at(token).set(NID, null);
+        assetNativeAddresses.at(token).set(nid, null);
+        assets.set(new NetworkAddress(nid, nativeAddress).toString(), null);
     }
 
     @External
@@ -178,8 +180,11 @@ public class AssetManagerImpl implements AssetManager {
         Map<String, String> assetsMap = new HashMap<>();
         List<String> spokeTokensList = assets.keys();
         for (String token : spokeTokensList) {
-            assetsMap.put(token, assets.get(token).toString());
+            if(assets.get(token)!=null) {
+                assetsMap.put(token, assets.get(token).toString());
+            }
         }
+
         return assetsMap;
     }
 
@@ -191,6 +196,7 @@ public class AssetManagerImpl implements AssetManager {
         for (int i = 0; i < size; i++) {
             spokeAddresses[i] = spokes.get(networks.get(i));
         }
+
         return spokeAddresses;
     }
 
@@ -200,12 +206,16 @@ public class AssetManagerImpl implements AssetManager {
     }
 
     @External(readonly = true)
-    public String getNativeAssetAddress(Address token, String NID) {
-        return assetNativeAddresses.at(token).get(NID);
+    public String getNativeAssetAddress(Address token, @Optional String nid) {
+        if(nid==null || nid.isEmpty()){
+           return assetNativeAddress.get(token);
+        }
+
+        return new NetworkAddress(nid, assetNativeAddresses.at(token).get(nid)).toString();
     }
 
     @External(readonly = true)
-    public List<String> getNativeAssetAddress(Address token) {
+    public List<String> getNativeAssetAddresses(Address token) {
         ArrayList<String> nativeAddresses = new ArrayList<>();
         List<String > networkAddresses = assets.keys();
         for(String na: networkAddresses){
@@ -213,6 +223,7 @@ public class AssetManagerImpl implements AssetManager {
                 nativeAddresses.add(na);
             }
         }
+
         return  nativeAddresses;
     }
 

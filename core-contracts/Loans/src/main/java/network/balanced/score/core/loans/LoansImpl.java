@@ -332,9 +332,9 @@ public class LoansImpl extends FloorLimited implements Loans {
     public void xWithdraw(String from, BigInteger _value, String _collateralSymbol) {
         removeCollateral(from, _value, _collateralSymbol);
         Address token = CollateralDB.getAddress(_collateralSymbol);
-        String nativeAddress = Context.call(String.class, getAssetManager(), "getNativeAssetAddress", token);
         String fromNet = NetworkAddress.valueOf(from).net();
-        if (nativeAddress != null && NetworkAddress.valueOf(nativeAddress).net().equals(fromNet) && canWithdraw(fromNet) ) {
+        String nativeAddress = Context.call(String.class, getAssetManager(), "getNativeAssetAddress", token, fromNet);
+        if (nativeAddress != null && canWithdraw(fromNet) ) {
             BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", fromNet, true);
             Context.call(xCallFee, getAssetManager(), "withdrawTo", token, from, _value);
         } else {

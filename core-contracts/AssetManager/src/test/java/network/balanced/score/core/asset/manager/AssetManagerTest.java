@@ -60,6 +60,7 @@ class AssetManagerTest extends TestBase {
     private MockContract<AssetToken> ethAsset2;
     private MockContract<AssetToken> bscAsset1;
     private MockContract<AssetToken> injLinkAsset;
+    private MockContract<AssetToken> linkAsset2;
     private MockContract<AssetToken> invalidAsset;
 
 
@@ -67,15 +68,18 @@ class AssetManagerTest extends TestBase {
     private final String BSC_NID = "0x1.BSC";
     private final String NATIVE_NID = "0x1.ICON";
     private final String INJ_NID = "0x1.INJ";
+    private final String LINK2_NID = "0x1.link";
 
 
     NetworkAddress ethSpoke = new NetworkAddress(ETH_NID, "0x1");
     NetworkAddress bscSpoke = new NetworkAddress(BSC_NID, "0x2");
     NetworkAddress injSpoke = new NetworkAddress(INJ_NID, "inj1x1");
+    NetworkAddress link2Spoke = new NetworkAddress(LINK2_NID, "link1x1");
     String ethAsset1Address = "0x3";
     String ethAsset2Address = "0x4";
     String bscAsset1Address = "0x5";
     String injAsset1Address = "inj1x3";
+    String link2Asset1Address = "link1x3";
 
 
     String[] defaultProtocols = new String[]{"a", "b"};
@@ -100,6 +104,8 @@ class AssetManagerTest extends TestBase {
         ethAsset2 = new MockContract<>(AssetTokenScoreInterface.class, AssetToken.class, sm, governance.account);
         bscAsset1 = new MockContract<>(AssetTokenScoreInterface.class, AssetToken.class, sm, governance.account);
         injLinkAsset = new MockContract<>(AssetTokenScoreInterface.class, AssetToken.class, sm, governance.account);
+        linkAsset2 = new MockContract<>(AssetTokenScoreInterface.class, AssetToken.class, sm, governance.account);
+
         invalidAsset = new MockContract<>(AssetTokenScoreInterface.class, AssetToken.class, sm, governance.account);
 
         try (MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS)) {
@@ -307,7 +313,7 @@ class AssetManagerTest extends TestBase {
     }
 
     @Test
-    void link_token() {
+    void linkToken() {
         // Arrange
         NetworkAddress tokenNetworkAddress = new NetworkAddress(INJ_NID, injAsset1Address);
         BigInteger amount = BigInteger.TEN;
@@ -333,7 +339,33 @@ class AssetManagerTest extends TestBase {
     }
 
     @Test
-    void remove_token() {
+    void linkToken_multipleNetworkAddresses(){
+        // Arrange
+        NetworkAddress tokenNetworkAddress = new NetworkAddress(INJ_NID, injAsset1Address);
+        NetworkAddress link2TokenNetworkAddress = new NetworkAddress(LINK2_NID, link2Asset1Address);
+        BigInteger amount = BigInteger.TEN;
+        NetworkAddress injAccount = new NetworkAddress(INJ_NID,  "inj1x32");
+        NetworkAddress link2Account = new NetworkAddress(LINK2_NID,  "link1x32");
+
+        // Act
+        assetManager.invoke(governance.account, "addSpokeManager", injSpoke.toString());
+        assetManager.invoke(governance.account, "addSpokeManager", link2Spoke.toString());
+        assetManager.invoke(mockBalanced.governance.account, "linkToken", tokenNetworkAddress.toString(), injLinkAsset.getAddress());
+        assetManager.invoke(mockBalanced.governance.account, "linkToken", link2TokenNetworkAddress.toString(), injLinkAsset.getAddress());
+
+        // Assert
+        //test for deposit to be success
+        byte[] deposit = AssetManagerMessages.deposit(injAsset1Address, injAccount.account(), "", amount, new byte[0]);
+        assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", injSpoke.toString(), deposit, defaultProtocols);
+        byte[] link2deposit = AssetManagerMessages.deposit(link2Asset1Address, link2Account.account(), injAccount.toString(), amount, new byte[0]);
+        assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", link2Spoke.toString(), link2deposit, defaultProtocols);
+
+        verify(injLinkAsset.mock).mintAndTransfer(injAccount.toString(), injAccount.toString(), amount, new byte[0]);
+        verify(injLinkAsset.mock).mintAndTransfer(link2Account.toString(), injAccount.toString(), amount, new byte[0]);
+    }
+
+    @Test
+    void removeToken() {
         // Arrange
         NetworkAddress tokenNetworkAddress = new NetworkAddress(INJ_NID, injAsset1Address);
         BigInteger amount = BigInteger.TEN;

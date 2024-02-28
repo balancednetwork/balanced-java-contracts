@@ -49,11 +49,12 @@ public interface AssetManager extends AddressManager, Version, Fallback {
 
     @External(readonly = true)
     Address getAssetAddress(String spokeAddress);
-    
-    public String getNativeAssetAddress(Address token, String NID);
 
     @External(readonly = true)
-    List<String> getNativeAssetAddress(Address token);
+    String getNativeAssetAddress(Address token, String nid);
+
+    @External(readonly = true)
+    List<String> getNativeAssetAddresses(Address token);
 
     /**
      * withdraws amount to `to` address
@@ -113,5 +114,5 @@ public interface AssetManager extends AddressManager, Version, Fallback {
 
     void linkToken(String tokenNetworkAddress, Address token);
 
-    void removeToken(Address token, String NID);
+    void removeToken(Address token, String nid);
 }
