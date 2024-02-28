@@ -185,7 +185,12 @@ public class AssetManagerImpl implements AssetManager {
            return assetNativeAddress.get(token);
         }
 
-        return new NetworkAddress(nid, assetNativeAddresses.at(token).get(nid)).toString();
+        String nativeAssetAddress = assetNativeAddresses.at(token).get(nid);
+        if(nativeAssetAddress!=null) {
+            return new NetworkAddress(nid, nativeAssetAddress).toString();
+        }
+
+        return null;
     }
 
     @External(readonly = true)
