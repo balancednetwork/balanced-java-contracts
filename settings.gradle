@@ -50,6 +50,7 @@ project(':Rewards').projectDir = file("core-contracts/Rewards")
 include(':StakedLP')
 project(':StakedLP').projectDir = file("core-contracts/StakedLP")
 
+include 'xcall-annotations'
 include 'score-client'
 include 'score-lib'
 include 'test-lib'
@@ -125,5 +126,3 @@ project(':Savings').projectDir = file("core-contracts/Savings")
 
 include(':Trickler')
 project(':Trickler').projectDir = file("util-contracts/Trickler")
-
-includeBuild 'xcall-lib'

@@ -62,7 +62,7 @@ public class UnitTest extends TestBase {
     }
 
     public static void expectErrorMessage(Executable contractCall, String expectedErrorMessage) {
-        AssertionError e = Assertions.assertThrows(AssertionError.class, contractCall);
+        Throwable e = Assertions.assertThrows(Throwable.class, contractCall);
         assertTrue(e.getMessage().contains(expectedErrorMessage));
     }
 
@@ -187,6 +187,15 @@ public class UnitTest extends TestBase {
         String expectedErrorMessage =
                 "Reverted(0): Authorization Check: Authorization failed. Caller: " + nonAuthorizedCaller.getAddress() +
                         " Authorized Caller: " + caller;
+        Executable unAuthorizedCall = () -> contractUnderTest.invoke(nonAuthorizedCaller, method, params);
+        expectErrorMessage(unAuthorizedCall, expectedErrorMessage);
+    }
+
+    public static void assertOnlyCallableByOwner(Address owner, Score contractUnderTest, String method, Object... params) {
+        Account nonAuthorizedCaller = sm.createAccount();
+        String expectedErrorMessage =
+                "Reverted(0): SenderNotScoreOwner: Sender=" + nonAuthorizedCaller.getAddress() +
+                        "Owner=" + owner;
         Executable unAuthorizedCall = () -> contractUnderTest.invoke(nonAuthorizedCaller, method, params);
         expectErrorMessage(unAuthorizedCall, expectedErrorMessage);
     }
