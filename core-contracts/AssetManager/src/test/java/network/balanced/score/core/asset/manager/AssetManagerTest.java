@@ -41,6 +41,8 @@ import foundation.icon.xcall.NetworkAddress;
 import java.math.BigInteger;
 import java.util.Map;
 
+import static java.math.BigInteger.ONE;
+import static java.math.BigInteger.ZERO;
 import static network.balanced.score.lib.test.UnitTest.assertOnlyCallableBy;
 import static network.balanced.score.lib.test.UnitTest.expectErrorMessage;
 import static org.junit.jupiter.api.Assertions.*;
@@ -126,6 +128,7 @@ class AssetManagerTest extends TestBase {
             contextMock.when(() -> Context.call(AssetManagerImpl.getSystemScoreAddress(), "setScoreOwner", bscAsset1.getAddress(), governance.getAddress())).thenReturn(null);
             assetManager.invoke(governance.account, "deployAsset", new NetworkAddress(BSC_NID, bscAsset1Address).toString(), "BSC", "BSC TEST TOKEN", BigInteger.valueOf(18));
         }
+
     }
 
     @Test
@@ -384,7 +387,34 @@ class AssetManagerTest extends TestBase {
         // Assert
         String nativeAddress = (String) assetManager.call( "getNativeAssetAddress", injLinkAsset.getAddress(), INJ_NID);
         assertNull(nativeAddress);
-
-
     }
+
+    @Test
+    void setMaxSupply(){
+        // Arrange
+        BigInteger maxSupply = BigInteger.valueOf(1000000);
+
+        // Act
+        assetManager.invoke(governance.account, "setAssetMaxSupply", ethAsset1.getAddress(), maxSupply);
+
+        // Assert
+        BigInteger assetMaxSupply = (BigInteger) assetManager.call("getAssetMaxSupply", ethAsset1.getAddress());
+        assertEquals(maxSupply, assetMaxSupply);
+    }
+
+    @Test
+    void chainDepositLimit(){
+        // Arrange
+        BigInteger limit = BigInteger.valueOf(1000000);
+
+        // Act
+        assetManager.invoke(governance.account, "setAssetChainDepositLimit", ethAsset1.getAddress(), ETH_NID, limit);
+
+        // Assert
+        BigInteger ethLimit = (BigInteger) assetManager.call("getAssetChainDepositLimit", ethAsset1.getAddress(), ETH_NID);
+        assertEquals(limit, ethLimit);
+    }
+
+
+
 }
