@@ -129,3 +129,6 @@ project(':Trickler').projectDir = file("util-contracts/Trickler")
 
 include(':SpokeXCallManager')
 project(':SpokeXCallManager').projectDir = file("spoke-contracts/SpokeXCallManager")
+
+include(':SpokeBalancedDollar')
+project(':SpokeBalancedDollar').projectDir = file("spoke-contracts/SpokeBalancedDollar")
