@@ -18,6 +18,7 @@ package network.balanced.score.core.loans.positions;
 
 import network.balanced.score.core.loans.LoansVariables;
 import network.balanced.score.core.loans.collateral.CollateralDB;
+import network.balanced.score.core.loans.linkedlist.LinkedListDB;
 import network.balanced.score.core.loans.debt.DebtDB;
 import network.balanced.score.core.loans.utils.Standing;
 import network.balanced.score.core.loans.utils.TokenUtils;
@@ -53,6 +54,34 @@ public class Position {
 
     Position(String dbKey) {
         this.dbKey = dbKey;
+    }
+
+    public void fixPos(String collateralSymbol) {
+        BigInteger shares = getDebtShare(collateralSymbol);
+        LinkedListDB db = DebtDB.getBorrowers(collateralSymbol);
+
+        // Rounding error has left user with a small debt but has been removed from db
+        if (shares.compareTo(BigInteger.valueOf(1000)) < 0 && !db.contains(getId())) {
+            //Split the rounding error between all other loan takers
+            setDebtShare(collateralSymbol, BigInteger.ZERO);
+            BigInteger totalShares = DebtDB.getCollateralDebtShares(collateralSymbol);
+            DebtDB.setCollateralDebtShares(collateralSymbol, totalShares.subtract(shares));
+            return;
+        }
+
+        // User has a loan but without being appended even though node exists
+        if (shares.compareTo(BigInteger.ZERO) > 0 && db.isMissing(getId())) {
+            db.appendMissing(getId());
+            return;
+        }
+
+        // User has a loan but without being in the db
+        if (shares.compareTo(BigInteger.ZERO) > 0 && !db.contains(getId())) {
+            db.append(shares, getId());
+            return;
+        }
+
+        Context.revert("Position is correct");
     }
 
     void setId(Integer id) {
@@ -156,11 +185,11 @@ public class Position {
         BigInteger totalDebt = DebtDB.getCollateralDebt(collateralSymbol);
         BigInteger shares = getDebtShare(collateralSymbol);
 
-        BigInteger shareChange;
+        BigInteger newShares;
         if (totalDebt.equals(BigInteger.ZERO)) {
-            shareChange = debtChange;
+            newShares = amount;
         } else {
-            shareChange = debtChange.multiply(totalShares).divide(totalDebt);
+            newShares = amount.multiply(totalShares).divide(totalDebt);
         }
 
         BigInteger newTotal = totalDebt.add(debtChange);
@@ -169,15 +198,14 @@ public class Position {
         }
 
         DebtDB.setCollateralDebt(collateralSymbol, newTotal);
-        DebtDB.setCollateralDebtShares(collateralSymbol, totalShares.add(shareChange));
+        DebtDB.setCollateralDebtShares(collateralSymbol, totalShares.add(newShares).subtract(shares));
 
-        BigInteger newShare =  shares.add(shareChange);
-        setDebtShare(collateralSymbol, newShare);
+        setDebtShare(collateralSymbol, newShares);
 
         if (value == null) {
             DebtDB.getBorrowers(collateralSymbol).remove(getId());
         } else {
-            DebtDB.getBorrowers(collateralSymbol).set(getId(), newShare);
+            DebtDB.getBorrowers(collateralSymbol).set(getId(), newShares);
         }
     }
 
