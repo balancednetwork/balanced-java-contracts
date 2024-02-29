@@ -18,7 +18,7 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
-import icon.xcall.lib.annotation.XCall;
+import network.balanced.score.lib.annotations.XCall;
 
 import java.math.BigInteger;
 
