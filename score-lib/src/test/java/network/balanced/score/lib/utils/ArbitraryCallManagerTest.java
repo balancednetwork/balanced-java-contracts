@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.governance;
+package network.balanced.score.lib.utils;
 
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 
-import network.balanced.score.core.governance.utils.ArbitraryCallManager;
 import network.balanced.score.lib.test.UnitTest;
 
 import org.junit.jupiter.api.Assertions;
