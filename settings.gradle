@@ -127,6 +127,9 @@ project(':Savings').projectDir = file("core-contracts/Savings")
 include(':Trickler')
 project(':Trickler').projectDir = file("util-contracts/Trickler")
 
+include(':SpokeAssetManager')
+project(':SpokeAssetManager').projectDir = file("spoke-contracts/SpokeAssetManager")
+
 include(':SpokeXCallManager')
 project(':SpokeXCallManager').projectDir = file("spoke-contracts/SpokeXCallManager")
 
