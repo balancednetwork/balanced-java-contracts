@@ -70,7 +70,7 @@ public class AssetManagerImpl implements AssetManager {
         }
 
         currentVersion.set(Versions.BALANCED_ASSET_MANAGER);
-        if (dataMigrated.get()==null) {
+        if (dataMigrated.get() == null) {
             migrateTokenNativeAddress();
         }
     }
@@ -110,14 +110,14 @@ public class AssetManagerImpl implements AssetManager {
 
     private void migrateTokenNativeAddress() {
         List<String> nativeAddresses = assets.keys();
-        for (String na: nativeAddresses) {
-             Address address = assets.get(na);
-             if (assetNativeAddress.get(address)!=null) {
-                 NetworkAddress networkAddress = NetworkAddress.valueOf(na);
-                 assetNativeAddresses.at(address).set(networkAddress.net(), networkAddress.account());
-                 //delete once migrated
-                 //assetNativeAddress.set(address, null);
-             }
+        for (String na : nativeAddresses) {
+            Address address = assets.get(na);
+            if (assetNativeAddress.get(address) != null) {
+                NetworkAddress networkAddress = NetworkAddress.valueOf(na);
+                assetNativeAddresses.at(address).set(networkAddress.net(), networkAddress.account());
+                //delete once migrated
+                //assetNativeAddress.set(address, null);
+            }
         }
 
         dataMigrated.set(true);
@@ -154,7 +154,7 @@ public class AssetManagerImpl implements AssetManager {
         Map<String, String> assetsMap = new HashMap<>();
         List<String> spokeTokensList = assets.keys();
         for (String token : spokeTokensList) {
-            if(assets.get(token)!=null) {
+            if (assets.get(token) != null) {
                 assetsMap.put(token, assets.get(token).toString());
             }
         }
@@ -181,12 +181,12 @@ public class AssetManagerImpl implements AssetManager {
 
     @External(readonly = true)
     public String getNativeAssetAddress(Address token, @Optional String nid) {
-        if(nid==null || nid.isEmpty()){
-           return assetNativeAddress.get(token);
+        if (nid == null || nid.isEmpty()) {
+            return assetNativeAddress.get(token);
         }
 
         String nativeAssetAddress = assetNativeAddresses.at(token).get(nid);
-        if(nativeAssetAddress!=null) {
+        if (nativeAssetAddress != null) {
             return new NetworkAddress(nid, nativeAssetAddress).toString();
         }
 
@@ -196,14 +196,14 @@ public class AssetManagerImpl implements AssetManager {
     @External(readonly = true)
     public List<String> getNativeAssetAddresses(Address token) {
         ArrayList<String> nativeAddresses = new ArrayList<>();
-        List<String > networkAddresses = assets.keys();
-        for(String na: networkAddresses){
-            if (assets.get(na).equals(token)){
+        List<String> networkAddresses = assets.keys();
+        for (String na : networkAddresses) {
+            if (assets.get(na).equals(token)) {
                 nativeAddresses.add(na);
             }
         }
 
-        return  nativeAddresses;
+        return nativeAddresses;
     }
 
     @External
@@ -269,7 +269,7 @@ public class AssetManagerImpl implements AssetManager {
         Context.call(asset, "burnFrom", from, amount);
         NetworkAddress targetAddress = NetworkAddress.valueOf(to);
         String nativeTokenAddress = assetNativeAddresses.at(asset).get(targetAddress.net());
-        Context.require(nativeTokenAddress!=null, "Wrong network");
+        Context.require(nativeTokenAddress != null, "Wrong network");
 
         NetworkAddress tokenAddress = new NetworkAddress(targetAddress.net(), nativeTokenAddress);
         NetworkAddress spoke = NetworkAddress.valueOf(spokes.get(tokenAddress.net()));
@@ -277,9 +277,9 @@ public class AssetManagerImpl implements AssetManager {
         byte[] rollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), to, amount);
 
         if (toNative) {
-            msg  = SpokeAssetManagerMessages.WithdrawNativeTo(tokenAddress.account(), targetAddress.account(), amount);
+            msg = SpokeAssetManagerMessages.WithdrawNativeTo(tokenAddress.account(), targetAddress.account(), amount);
         } else {
-            msg  = SpokeAssetManagerMessages.WithdrawTo(tokenAddress.account(), targetAddress.account(), amount);
+            msg = SpokeAssetManagerMessages.WithdrawTo(tokenAddress.account(), targetAddress.account(), amount);
         }
 
         XCallUtils.sendCall(fee, spoke, msg, rollback);
