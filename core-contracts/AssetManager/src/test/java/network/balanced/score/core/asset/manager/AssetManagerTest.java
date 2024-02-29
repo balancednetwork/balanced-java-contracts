@@ -415,6 +415,35 @@ class AssetManagerTest extends TestBase {
         assertEquals(limit, ethLimit);
     }
 
+    @Test
+    void deposit_maxSupply() {
+        // Arrange
+        NetworkAddress ethAccount = new NetworkAddress(ETH_NID, "0xTest");
+        BigInteger maxSupply = BigInteger.valueOf(5);
+        assetManager.invoke(governance.account, "setAssetMaxSupply", ethAsset1.getAddress(), maxSupply);
+        BigInteger amount = BigInteger.TEN;
+        byte[] deposit = AssetManagerMessages.deposit(ethAsset1Address, ethAccount.account(), "", amount, new byte[0]);
+
+        // Act & Assert
+        doReturn(ZERO).when(assetManagerSpy).getTotalSupply(ethAsset1.getAddress());
+        Executable maxSupplyReached = () -> assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", ethSpoke.toString(), deposit, defaultProtocols);
+        expectErrorMessage(maxSupplyReached, "Token max supply reached");
+    }
+
+    @Test
+    void deposit_limitDeposit() {
+        // Arrange
+        NetworkAddress ethAccount = new NetworkAddress(ETH_NID, "0xTest");
+        BigInteger limit = BigInteger.valueOf(5);
+        assetManager.invoke(governance.account, "setAssetChainDepositLimit", ethAsset1.getAddress(), ETH_NID, limit);
+        BigInteger amount = BigInteger.TEN;
+        byte[] deposit = AssetManagerMessages.deposit(ethAsset1Address, ethAccount.account(), "", amount, new byte[0]);
+
+        // Act & Assert
+        doReturn(ZERO).when(assetManagerSpy).getTotalSupply(ethAsset1.getAddress());
+        Executable maxSupplyReached = () -> assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", ethSpoke.toString(), deposit, defaultProtocols);
+        expectErrorMessage(maxSupplyReached, "Max deposit limit exceeded");
+    }
 
 
 }

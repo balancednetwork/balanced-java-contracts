@@ -271,7 +271,7 @@ public class AssetManagerImpl implements AssetManager {
         Address assetAddress = assets.get(spokeTokenAddress.toString());
         require(assetAddress != null, "Token is not yet deployed");
 
-        BigInteger assetCurrentSupply = call(BigInteger.class, assetAddress, "totalSupply");
+        BigInteger assetCurrentSupply = getTotalSupply(assetAddress);
         BigInteger assetTotalMaxSupply = assetMaxSupply.get(assetAddress);
         require(assetTotalMaxSupply==null || assetCurrentSupply.add(_amount).compareTo(assetTotalMaxSupply)<=0, "Token max supply reached");
         BigInteger currentChainDepositLimit = assetChainDepositLimit.at(assetAddress).get(spokeAssetManager.net());
@@ -316,6 +316,10 @@ public class AssetManagerImpl implements AssetManager {
         }
 
         XCallUtils.sendCall(fee, spoke, msg, rollback);
+    }
+
+    BigInteger getTotalSupply(Address assetAddress){
+        return  call(BigInteger.class, assetAddress, "totalSupply");
     }
 
     public static Address getSystemScoreAddress() {
