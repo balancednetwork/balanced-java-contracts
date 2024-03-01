@@ -45,7 +45,7 @@ public class AssetManagerImpl implements AssetManager {
     public static final String NATIVE_ASSET_ADDRESSES = "native_asset_addresses";
     public static final String DATA_MIGRATED = "data_migrated";
     public static final String ASSET_DEPOSIT_CHAIN_LIMIT = "asset_deposit_chain_limit";
-    public static final String ASSET_MAX_SUPPLY = "asset_max_supply";
+    public static final String ASSET_DEPOSITS = "asset_deposits";
 
     public static String NATIVE_NID;
     public static byte[] tokenBytes;
@@ -58,7 +58,7 @@ public class AssetManagerImpl implements AssetManager {
     private final DictDB<Address, String> assetNativeAddress = newDictDB(NATIVE_ASSET_ADDRESS, String.class);
     private final BranchDB<Address, DictDB<String, String>> assetNativeAddresses = newBranchDB(NATIVE_ASSET_ADDRESSES, String.class);
     private final BranchDB<Address, DictDB<String, BigInteger>> assetChainDepositLimit = newBranchDB(ASSET_DEPOSIT_CHAIN_LIMIT, BigInteger.class);
-    private final DictDB<Address, BigInteger> assetMaxSupply = newDictDB(ASSET_MAX_SUPPLY, BigInteger.class);
+    private final DictDB<Address, BigInteger> assetDeposits = newDictDB(ASSET_DEPOSITS, BigInteger.class);
     private final VarDB<Boolean> dataMigrated = newVarDB(DATA_MIGRATED, Boolean.class);
 
     public AssetManagerImpl(Address _governance, byte[] tokenBytes) {
@@ -75,7 +75,7 @@ public class AssetManagerImpl implements AssetManager {
 
         currentVersion.set(Versions.BALANCED_ASSET_MANAGER);
         if (dataMigrated.get()==null) {
-            migrateTokenNativeAddress();
+            migrateTokenNativeAddressAndAssetDeposits();
         }
     }
 
@@ -100,25 +100,14 @@ public class AssetManagerImpl implements AssetManager {
     }
 
     @External
-    public void setAssetMaxSupply(Address asset, BigInteger maxSupply){
+    public void setAssetChainDepositLimit(Address asset, String nid, BigInteger limit){
         onlyGovernance();
-        assetMaxSupply.set(asset, maxSupply);
+        assetChainDepositLimit.at(asset).set(nid, limit);
     }
 
     @External(readonly = true)
-    public BigInteger getAssetMaxSupply(Address asset){
-        return assetMaxSupply.get(asset);
-    }
-
-    @External
-    public void setAssetChainDepositLimit(Address asset, String NID, BigInteger limit){
-        onlyGovernance();
-        assetChainDepositLimit.at(asset).set(NID, limit);
-    }
-
-    @External(readonly = true)
-    public BigInteger getAssetChainDepositLimit(Address asset, String NID){
-        return assetChainDepositLimit.at(asset).get(NID);
+    public BigInteger getAssetChainDepositLimit(Address asset, String nid){
+        return assetChainDepositLimit.at(asset).get(nid);
     }
 
     @External
@@ -134,7 +123,7 @@ public class AssetManagerImpl implements AssetManager {
         call(SYSTEM_SCORE_ADDRESS, "setScoreOwner", token, BalancedAddressManager.getGovernance());
     }
 
-    private void migrateTokenNativeAddress() {
+    private void migrateTokenNativeAddressAndAssetDeposits() {
         List<String> nativeAddresses = assets.keys();
         for (String na: nativeAddresses) {
              Address address = assets.get(na);
@@ -144,6 +133,8 @@ public class AssetManagerImpl implements AssetManager {
                  //delete once migrated
                  //assetNativeAddress.set(address, null);
              }
+
+             assetDeposits.set(address, getTotalSupply(address));
         }
 
         dataMigrated.set(true);
@@ -232,6 +223,11 @@ public class AssetManagerImpl implements AssetManager {
         return  nativeAddresses;
     }
 
+    @External(readonly = true)
+    public BigInteger getAssetDeposit(Address asset){
+        return assetDeposits.getOrDefault(asset, BigInteger.ZERO);
+    }
+
     @External
     public void handleCallMessage(String _from, byte[] _data, @Optional String[] _protocols) {
         checkStatus();
@@ -261,6 +257,8 @@ public class AssetManagerImpl implements AssetManager {
         require(xCall.net().equals(NATIVE_NID));
         require(xCall.account().equals(BalancedAddressManager.getXCall().toString()));
         Address assetAddress = assets.get(tokenAddress.toString());
+
+        assetDeposits.set(assetAddress, getAssetDeposit(assetAddress).add(_amount));
         call(assetAddress, "mintAndTransfer", _to, _to, _amount, new byte[0]);
     }
 
@@ -271,9 +269,6 @@ public class AssetManagerImpl implements AssetManager {
         Address assetAddress = assets.get(spokeTokenAddress.toString());
         require(assetAddress != null, "Token is not yet deployed");
 
-        BigInteger assetCurrentSupply = getTotalSupply(assetAddress);
-        BigInteger assetTotalMaxSupply = assetMaxSupply.get(assetAddress);
-        require(assetTotalMaxSupply==null || assetCurrentSupply.add(_amount).compareTo(assetTotalMaxSupply)<=0, "Token max supply reached");
         BigInteger currentChainDepositLimit = assetChainDepositLimit.at(assetAddress).get(spokeAssetManager.net());
         require(currentChainDepositLimit==null || _amount.compareTo(currentChainDepositLimit)<=0, "Max deposit limit exceeded");
 
@@ -283,6 +278,8 @@ public class AssetManagerImpl implements AssetManager {
         } else {
             NetworkAddress.valueOf(toAddress);
         }
+
+        assetDeposits.set(assetAddress, getAssetDeposit(assetAddress).add(_amount));
 
         call(assetAddress, "mintAndTransfer", fromNetworkAddress.toString(), toAddress, _amount, _data);
     }
@@ -314,6 +311,8 @@ public class AssetManagerImpl implements AssetManager {
         } else {
             msg  = SpokeAssetManagerMessages.WithdrawTo(tokenAddress.account(), targetAddress.account(), amount);
         }
+
+        assetDeposits.set(asset, getAssetDeposit(asset).subtract(amount));
 
         XCallUtils.sendCall(fee, spoke, msg, rollback);
     }

@@ -161,6 +161,8 @@ class AssetManagerTest extends TestBase {
         assetManager.invoke(user, "withdrawTo", ethAsset1.getAddress(), ethAccount.toString(), amount);
 
         // Assert
+        BigInteger assetDeposit = (BigInteger) assetManager.call("getAssetDeposit", ethAsset1.getAddress());
+        assertEquals(assetDeposit, amount.negate());
         byte[] expectedMsg = SpokeAssetManagerMessages.WithdrawTo(tokenAddress.account(), ethAccount.account(), amount);
         byte[] expectedRollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), ethAccount.toString(), amount);
 
@@ -180,6 +182,8 @@ class AssetManagerTest extends TestBase {
         assetManager.invoke(user, "withdrawNativeTo", ethAsset1.getAddress(), ethAccount.toString(), amount);
 
         // Assert
+        BigInteger assetDeposit = (BigInteger) assetManager.call("getAssetDeposit", ethAsset1.getAddress());
+        assertEquals(assetDeposit, amount.negate());
         byte[] expectedMsg = SpokeAssetManagerMessages.WithdrawNativeTo(tokenAddress.account(), ethAccount.account(), amount);
         byte[] expectedRollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), ethAccount.toString(), amount);
 
@@ -213,6 +217,8 @@ class AssetManagerTest extends TestBase {
         assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", xCallAddress.toString(), rollback, defaultProtocols);
 
         // Assert
+        BigInteger assetDeposit = (BigInteger) assetManager.call("getAssetDeposit", ethAsset1.getAddress());
+        assertEquals(assetDeposit, amount);
         verify(ethAsset1.mock).mintAndTransfer(ethAccount.toString(), ethAccount.toString(), amount, new byte[0]);
     }
 
@@ -228,6 +234,8 @@ class AssetManagerTest extends TestBase {
         assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", ethAccount.toString(), withdraw, defaultProtocols);
 
         // Assert
+        BigInteger assetDeposit = (BigInteger) assetManager.call("getAssetDeposit", ethAsset1.getAddress());
+        assertEquals(assetDeposit, amount.negate());
         byte[] expectedMsg = SpokeAssetManagerMessages.WithdrawTo(tokenAddress.account(), ethAccount.account(), amount);
         byte[] expectedRollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), ethAccount.toString(), amount);
 
@@ -265,6 +273,8 @@ class AssetManagerTest extends TestBase {
         assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", ethSpoke.toString(), deposit, defaultProtocols);
 
         // Assert
+        BigInteger assetDeposit = (BigInteger) assetManager.call("getAssetDeposit", ethAsset1.getAddress());
+        assertEquals(assetDeposit, amount);
         verify(ethAsset1.mock).mintAndTransfer(ethAccount.toString(), ethAccount.toString(), amount, new byte[0]);
     }
 
@@ -390,19 +400,6 @@ class AssetManagerTest extends TestBase {
     }
 
     @Test
-    void setMaxSupply(){
-        // Arrange
-        BigInteger maxSupply = BigInteger.valueOf(1000000);
-
-        // Act
-        assetManager.invoke(governance.account, "setAssetMaxSupply", ethAsset1.getAddress(), maxSupply);
-
-        // Assert
-        BigInteger assetMaxSupply = (BigInteger) assetManager.call("getAssetMaxSupply", ethAsset1.getAddress());
-        assertEquals(maxSupply, assetMaxSupply);
-    }
-
-    @Test
     void chainDepositLimit(){
         // Arrange
         BigInteger limit = BigInteger.valueOf(1000000);
@@ -413,21 +410,6 @@ class AssetManagerTest extends TestBase {
         // Assert
         BigInteger ethLimit = (BigInteger) assetManager.call("getAssetChainDepositLimit", ethAsset1.getAddress(), ETH_NID);
         assertEquals(limit, ethLimit);
-    }
-
-    @Test
-    void deposit_maxSupply() {
-        // Arrange
-        NetworkAddress ethAccount = new NetworkAddress(ETH_NID, "0xTest");
-        BigInteger maxSupply = BigInteger.valueOf(5);
-        assetManager.invoke(governance.account, "setAssetMaxSupply", ethAsset1.getAddress(), maxSupply);
-        BigInteger amount = BigInteger.TEN;
-        byte[] deposit = AssetManagerMessages.deposit(ethAsset1Address, ethAccount.account(), "", amount, new byte[0]);
-
-        // Act & Assert
-        doReturn(ZERO).when(assetManagerSpy).getTotalSupply(ethAsset1.getAddress());
-        Executable maxSupplyReached = () -> assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", ethSpoke.toString(), deposit, defaultProtocols);
-        expectErrorMessage(maxSupplyReached, "Token max supply reached");
     }
 
     @Test
