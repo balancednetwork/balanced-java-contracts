@@ -158,7 +158,7 @@ class AssetManagerTest extends TestBase {
         assetManager.invoke(user, "withdrawTo", ethAsset1.getAddress(), ethAccount.toString(), amount);
 
         // Assert
-        BigInteger assetDeposit = (BigInteger) assetManager.call("getAssetDeposit", ethAsset1.getAddress());
+        BigInteger assetDeposit = (BigInteger) assetManager.call("getAssetDeposit", ethAsset1.getAddress(), ETH_NID);
         assertEquals(assetDeposit, amount.negate());
         byte[] expectedMsg = SpokeAssetManagerMessages.WithdrawTo(tokenAddress.account(), ethAccount.account(), amount);
         byte[] expectedRollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), ethAccount.toString(), amount);
@@ -179,7 +179,7 @@ class AssetManagerTest extends TestBase {
         assetManager.invoke(user, "withdrawNativeTo", ethAsset1.getAddress(), ethAccount.toString(), amount);
 
         // Assert
-        BigInteger assetDeposit = (BigInteger) assetManager.call("getAssetDeposit", ethAsset1.getAddress());
+        BigInteger assetDeposit = (BigInteger) assetManager.call("getAssetDeposit", ethAsset1.getAddress(), ETH_NID);
         assertEquals(assetDeposit, amount.negate());
         byte[] expectedMsg = SpokeAssetManagerMessages.WithdrawNativeTo(tokenAddress.account(), ethAccount.account(), amount);
         byte[] expectedRollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), ethAccount.toString(), amount);
@@ -214,7 +214,7 @@ class AssetManagerTest extends TestBase {
         assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", xCallAddress.toString(), rollback, defaultProtocols);
 
         // Assert
-        BigInteger assetDeposit = (BigInteger) assetManager.call("getAssetDeposit", ethAsset1.getAddress());
+        BigInteger assetDeposit = (BigInteger) assetManager.call("getAssetDeposit", ethAsset1.getAddress(), ETH_NID);
         assertEquals(assetDeposit, amount);
         verify(ethAsset1.mock).mintAndTransfer(ethAccount.toString(), ethAccount.toString(), amount, new byte[0]);
     }
@@ -231,7 +231,7 @@ class AssetManagerTest extends TestBase {
         assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", ethAccount.toString(), withdraw, defaultProtocols);
 
         // Assert
-        BigInteger assetDeposit = (BigInteger) assetManager.call("getAssetDeposit", ethAsset1.getAddress());
+        BigInteger assetDeposit = (BigInteger) assetManager.call("getAssetDeposit", ethAsset1.getAddress(), ETH_NID);
         assertEquals(assetDeposit, amount.negate());
         byte[] expectedMsg = SpokeAssetManagerMessages.WithdrawTo(tokenAddress.account(), ethAccount.account(), amount);
         byte[] expectedRollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), ethAccount.toString(), amount);
@@ -270,7 +270,7 @@ class AssetManagerTest extends TestBase {
         assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", ethSpoke.toString(), deposit, defaultProtocols);
 
         // Assert
-        BigInteger assetDeposit = (BigInteger) assetManager.call("getAssetDeposit", ethAsset1.getAddress());
+        BigInteger assetDeposit = (BigInteger) assetManager.call("getAssetDeposit", ethAsset1.getAddress(), ETH_NID);
         assertEquals(assetDeposit, amount);
         verify(ethAsset1.mock).mintAndTransfer(ethAccount.toString(), ethAccount.toString(), amount, new byte[0]);
     }
