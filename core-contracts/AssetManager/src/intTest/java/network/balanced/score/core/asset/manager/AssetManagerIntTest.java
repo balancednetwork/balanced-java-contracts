@@ -14,7 +14,6 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-import static java.math.BigInteger.ZERO;
 import static network.balanced.score.lib.test.integration.BalancedUtils.createParameter;
 import static network.balanced.score.lib.test.integration.BalancedUtils.createSingleTransaction;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -42,7 +41,7 @@ public class AssetManagerIntTest {
         balanced.setupBalanced();
 
         owner = balanced.ownerClient;
-        reader = balanced.newClient(ZERO);
+        reader = balanced.newClient(BigInteger.ZERO);
         user = balanced.newClient();
     }
 
@@ -104,7 +103,7 @@ public class AssetManagerIntTest {
         NetworkAddress nativeAssetAddress = new NetworkAddress(balanced.ETH_NID, balanced.ETH_TOKEN_ADDRESS);
 
         Address assetAddress = user.assetManager.getAssetAddress(nativeAssetAddress.toString());
-        BigInteger prevAssetDeposit = user.assetManager.getAssetDeposit(assetAddress, balanced.ETH_NID);
+        BigInteger prevAssetDeposit = user.assetManager.getAssetDeposit(nativeAssetAddress.toString());
 
         // Act
         byte[] deposit = AssetManagerMessages.deposit(balanced.ETH_TOKEN_ADDRESS, ethAccount.account(), "", amount, new byte[0]);
@@ -118,7 +117,7 @@ public class AssetManagerIntTest {
         owner.xcall.sendCall(owner.assetManager._address(), new NetworkAddress(balanced.ICON_NID, owner.xcall._address()).toString(), withdrawRollback);
 
         // Assert
-        BigInteger assetDeposit = user.assetManager.getAssetDeposit(assetAddress, balanced.ETH_NID);
+        BigInteger assetDeposit = user.assetManager.getAssetDeposit(nativeAssetAddress.toString());
         assertEquals(assetDeposit, prevAssetDeposit.add(amount));
         BigInteger balance = user.spokeToken(assetAddress).xBalanceOf(ethAccount.toString());
         assert balance.equals(amount);
@@ -192,7 +191,7 @@ public class AssetManagerIntTest {
         NetworkAddress nativeAssetAddress = new NetworkAddress(balanced.ETH_NID, balanced.ETH_TOKEN_ADDRESS);
 
         Address assetAddress = user.assetManager.getAssetAddress(nativeAssetAddress.toString());
-        BigInteger prevAssetDeposit = user.assetManager.getAssetDeposit(assetAddress, balanced.ETH_NID);
+        BigInteger prevAssetDeposit = user.assetManager.getAssetDeposit(nativeAssetAddress.toString());
 
         // Act
         byte[] deposit = AssetManagerMessages.deposit(balanced.ETH_TOKEN_ADDRESS, ethAccount.account(), "", amount, new byte[0]);
@@ -203,7 +202,7 @@ public class AssetManagerIntTest {
         owner.xcall.sendCall(owner.assetManager._address(), ethAccount.toString(), withdraw);
 
         // Assert
-        BigInteger assetDeposit = user.assetManager.getAssetDeposit(assetAddress, balanced.ETH_NID);
+        BigInteger assetDeposit = user.assetManager.getAssetDeposit(nativeAssetAddress.toString());
         assertEquals(assetDeposit, prevAssetDeposit);
         BigInteger balance = user.spokeToken(assetAddress).xBalanceOf(ethAccount.toString());
         assert balance.equals(amount);
@@ -218,14 +217,14 @@ public class AssetManagerIntTest {
         NetworkAddress nativeAssetAddress = new NetworkAddress(balanced.ETH_NID, balanced.ETH_TOKEN_ADDRESS);
 
         Address assetAddress = user.assetManager.getAssetAddress(nativeAssetAddress.toString());
-        BigInteger prevAssetDeposit = user.assetManager.getAssetDeposit(assetAddress, balanced.ETH_NID);
+        BigInteger prevAssetDeposit = user.assetManager.getAssetDeposit(nativeAssetAddress.toString());
 
         // Act
         byte[] deposit = AssetManagerMessages.deposit(balanced.ETH_TOKEN_ADDRESS, ethAccount.account(), "", amount, new byte[0]);
         owner.xcall.sendCall(owner.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit);
 
         // Assert
-        BigInteger assetDeposit = user.assetManager.getAssetDeposit(assetAddress, balanced.ETH_NID);
+        BigInteger assetDeposit = user.assetManager.getAssetDeposit(nativeAssetAddress.toString());
         assertEquals(assetDeposit, prevAssetDeposit.add(amount));
         BigInteger balance = user.spokeToken(assetAddress).xBalanceOf(ethAccount.toString());
         assert balance.equals(amount.add(amount));
@@ -246,7 +245,7 @@ public class AssetManagerIntTest {
         byte[] deposit = AssetManagerMessages.deposit(balanced.ETH_TOKEN_ADDRESS, ethAccount.account(), "", amount, new byte[0]);
         owner.xcall.sendCall(owner.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit);
 
-        JsonArray params = new JsonArray().add(createParameter(assetAddress)).add(createParameter(balanced.ETH_NID)).add(createParameter(amount.subtract(BigInteger.ONE)));
+        JsonArray params = new JsonArray().add(createParameter(nativeAssetAddress.toString())).add(createParameter(amount.subtract(BigInteger.ONE)));
         owner.governance.execute(createSingleTransaction(balanced.assetManager._address(), "setAssetChainDepositLimit",
                 params).toString());
         //fail

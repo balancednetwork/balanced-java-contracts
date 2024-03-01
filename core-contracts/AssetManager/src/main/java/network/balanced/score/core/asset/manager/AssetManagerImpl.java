@@ -56,8 +56,8 @@ public class AssetManagerImpl implements AssetManager {
     private final IterableDictDB<String, Address> assets = new IterableDictDB<>(ASSETS, Address.class, String.class, false);
     private final DictDB<Address, String> assetNativeAddress = Context.newDictDB(NATIVE_ASSET_ADDRESS, String.class);
     private final BranchDB<Address, DictDB<String, String>> assetNativeAddresses = Context.newBranchDB(NATIVE_ASSET_ADDRESSES, String.class);
-    private final BranchDB<Address, DictDB<String, BigInteger>> assetChainDepositLimit = Context.newBranchDB(ASSET_DEPOSIT_CHAIN_LIMIT, BigInteger.class);
-    private final BranchDB<Address, DictDB<String, BigInteger>> assetDeposits = Context.newBranchDB(ASSET_DEPOSITS, BigInteger.class);
+    private final DictDB<String, BigInteger> assetChainDepositLimit = Context.newDictDB(ASSET_DEPOSIT_CHAIN_LIMIT, BigInteger.class);
+    private final DictDB<String, BigInteger> assetDeposits = Context.newDictDB(ASSET_DEPOSITS, BigInteger.class);
     private final VarDB<Boolean> dataMigrated = Context.newVarDB(DATA_MIGRATED, Boolean.class);
 
     public AssetManagerImpl(Address _governance, byte[] tokenBytes) {
@@ -99,14 +99,14 @@ public class AssetManagerImpl implements AssetManager {
     }
 
     @External
-    public void setAssetChainDepositLimit(Address asset, String nid, BigInteger limit) {
+    public void setAssetChainDepositLimit(String tokenNetworkAddress, BigInteger limit) {
         onlyGovernance();
-        assetChainDepositLimit.at(asset).set(nid, limit);
+        assetChainDepositLimit.set(tokenNetworkAddress, limit);
     }
 
     @External(readonly = true)
-    public BigInteger getAssetChainDepositLimit(Address asset, String nid) {
-        return assetChainDepositLimit.at(asset).get(nid);
+    public BigInteger getAssetChainDepositLimit(String tokenNetworkAddress) {
+        return assetChainDepositLimit.getOrDefault(tokenNetworkAddress, BigInteger.ZERO);
     }
 
     @External
@@ -133,7 +133,7 @@ public class AssetManagerImpl implements AssetManager {
                 //assetNativeAddress.set(address, null);
             }
 
-            assetDeposits.at(address).set(na, getTotalSupply(address));
+            assetDeposits.set(na, getTotalSupply(address));
         }
 
         dataMigrated.set(true);
@@ -223,8 +223,8 @@ public class AssetManagerImpl implements AssetManager {
     }
 
     @External(readonly = true)
-    public BigInteger getAssetDeposit(Address asset, String nid) {
-        return assetDeposits.at(asset).getOrDefault(nid, BigInteger.ZERO);
+    public BigInteger getAssetDeposit(String tokenNetworkAddress) {
+        return assetDeposits.getOrDefault(tokenNetworkAddress, BigInteger.ZERO);
     }
 
     @External
@@ -257,20 +257,19 @@ public class AssetManagerImpl implements AssetManager {
         Context.require(xCall.account().equals(BalancedAddressManager.getXCall().toString()));
         Address assetAddress = assets.get(tokenAddress.toString());
 
-        String net = NetworkAddress.valueOf(_to).net();
-        assetDeposits.at(assetAddress).set(net, getAssetDeposit(assetAddress, net).add(_amount));
+        assetDeposits.set(tokenAddress, getAssetDeposit(tokenAddress).add(_amount));
         Context.call(assetAddress, "mintAndTransfer", _to, _to, _amount, new byte[0]);
     }
 
     public void deposit(String from, String tokenAddress, String fromAddress, String toAddress, BigInteger _amount, byte[] _data) {
         String net = NetworkAddress.valueOf(from).net();
         Context.require(from.equals(spokes.get(net)), "Asset manager needs to be whitelisted");
-        NetworkAddress spokeTokenAddress = new NetworkAddress(net, tokenAddress);
-        Address assetAddress = assets.get(spokeTokenAddress.toString());
+        String spokeTokenAddress = new NetworkAddress(net, tokenAddress).toString();
+        Address assetAddress = assets.get(spokeTokenAddress);
         Context.require(assetAddress != null, "Token is not yet deployed");
 
-        BigInteger currentChainDepositLimit = assetChainDepositLimit.at(assetAddress).get(net);
-        Context.require(currentChainDepositLimit == null || _amount.compareTo(currentChainDepositLimit) <= 0, "Max deposit limit exceeded");
+        BigInteger tokenAddressDepositLimit = assetChainDepositLimit.get(spokeTokenAddress);
+        Context.require(tokenAddressDepositLimit == null || getAssetDeposit(spokeTokenAddress).add(_amount).compareTo(tokenAddressDepositLimit) <= 0, "Max deposit limit exceeded");
 
         NetworkAddress fromNetworkAddress = new NetworkAddress(net, fromAddress);
         if (toAddress.isEmpty()) {
@@ -279,9 +278,7 @@ public class AssetManagerImpl implements AssetManager {
             NetworkAddress.valueOf(toAddress);
         }
 
-
-        assetDeposits.at(assetAddress).set(net, getAssetDeposit(assetAddress, net).add(_amount));
-
+        assetDeposits.set(spokeTokenAddress, getAssetDeposit(spokeTokenAddress).add(_amount));
         Context.call(assetAddress, "mintAndTransfer", fromNetworkAddress.toString(), toAddress, _amount, _data);
     }
 
@@ -315,12 +312,12 @@ public class AssetManagerImpl implements AssetManager {
         }
 
 
-        assetDeposits.at(asset).set(net, getAssetDeposit(asset, net).subtract(amount));
+        assetDeposits.set(tokenAddress.toString(), getAssetDeposit(tokenAddress.toString()).subtract(amount));
 
         XCallUtils.sendCall(fee, spoke, msg, rollback);
     }
 
-    BigInteger getTotalSupply(Address assetAddress) {
+    private BigInteger getTotalSupply(Address assetAddress) {
         return Context.call(BigInteger.class, assetAddress, "totalSupply");
     }
 
