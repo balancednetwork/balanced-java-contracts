@@ -39,7 +39,6 @@ import score.Context;
 import java.math.BigInteger;
 import java.util.Map;
 
-import static java.math.BigInteger.ONE;
 import static java.math.BigInteger.ZERO;
 import static network.balanced.score.lib.test.UnitTest.assertOnlyCallableBy;
 import static network.balanced.score.lib.test.UnitTest.expectErrorMessage;
@@ -392,7 +391,7 @@ class AssetManagerTest extends TestBase {
     }
 
     @Test
-    void chainDepositLimit(){
+    void chainDepositLimit() {
         // Arrange
         BigInteger limit = BigInteger.valueOf(1000000);
 

@@ -56,6 +56,9 @@ public interface AssetManager extends AddressManager, Version, Fallback {
     @External(readonly = true)
     List<String> getNativeAssetAddresses(Address token);
 
+    @External(readonly = true)
+    BigInteger getAssetDeposit(Address asset);
+
     /**
      * withdraws amount to `to` address
      *
