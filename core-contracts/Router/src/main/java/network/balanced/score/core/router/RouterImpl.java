@@ -191,8 +191,8 @@ public class RouterImpl implements Router {
     private void transferHubToken(Address token, NetworkAddress to, BigInteger amount, boolean toNative) {
         String toNet = to.net();
         Address assetManager = getAssetManager();
-        String nativeAddress = Context.call(String.class, assetManager, "getNativeAssetAddress", token);
-        if (nativeAddress != null && NetworkAddress.valueOf(nativeAddress).net().equals(toNet)) {
+        String nativeAddress = Context.call(String.class, assetManager, "getNativeAssetAddress", token, toNet);
+        if (nativeAddress != null) {
             BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", toNet, true);
             String method = "withdrawTo";
             if (toNative) {
