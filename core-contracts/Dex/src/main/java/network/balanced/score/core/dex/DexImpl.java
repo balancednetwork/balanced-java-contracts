@@ -323,7 +323,7 @@ public class DexImpl extends AbstractDex {
 
     @External
     public void add(Address _baseToken, Address _quoteToken, BigInteger _baseValue, BigInteger _quoteValue,
-                    @Optional boolean _withdraw_unused) {
+                    @Optional boolean _withdraw_unused, @Optional BigInteger _slippagePercentage) {
         isDexOn();
         checkStatus();
 
@@ -418,9 +418,13 @@ public class DexImpl extends AbstractDex {
             require(liquidity.compareTo(BigInteger.ZERO) >= 0,
                     TAG + ": LP tokens to mint is less than zero");
         }
+        BigInteger hundred = BigInteger.valueOf(100);
+        BigInteger acceptedSlippage = _slippagePercentage!=null?_slippagePercentage:hundred;
+        BigInteger poolPrice = poolBaseAmount.multiply(hundred).divide(poolQuoteAmount);
+        BigInteger priceOfAssetToCommit = baseToCommit.multiply(hundred).divide(quoteToCommit);
+        require((poolPrice.subtract(priceOfAssetToCommit)).compareTo(acceptedSlippage)<=0, TAG + " : insufficient slippage provided" );
 
         // Apply the funds to the pool
-
         poolBaseAmount = poolBaseAmount.add(baseToCommit);
         poolQuoteAmount = poolQuoteAmount.add(quoteToCommit);
 
