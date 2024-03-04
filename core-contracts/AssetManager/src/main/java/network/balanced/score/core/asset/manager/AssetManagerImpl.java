@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 
 import static network.balanced.score.lib.utils.Check.*;
-import static score.Context.*;
 
 public class AssetManagerImpl implements AssetManager {
 
@@ -44,18 +43,22 @@ public class AssetManagerImpl implements AssetManager {
     public static final String NATIVE_ASSET_ADDRESS = "native_asset_address";
     public static final String NATIVE_ASSET_ADDRESSES = "native_asset_addresses";
     public static final String DATA_MIGRATED = "data_migrated";
+    public static final String ASSET_DEPOSIT_CHAIN_LIMIT = "asset_deposit_chain_limit";
+    public static final String ASSET_DEPOSITS = "asset_deposits";
 
     public static String NATIVE_NID;
     public static byte[] tokenBytes;
 
-    private final VarDB<String> currentVersion = newVarDB(VERSION, String.class);
+    private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
     // net -> networkAddress
     private final IterableDictDB<String, String> spokes = new IterableDictDB<>(SPOKES, String.class, String.class, false);
     // networkAddress -> native
     private final IterableDictDB<String, Address> assets = new IterableDictDB<>(ASSETS, Address.class, String.class, false);
-    private final DictDB<Address, String> assetNativeAddress = newDictDB(NATIVE_ASSET_ADDRESS, String.class);
-    private final BranchDB<Address, DictDB<String, String>> assetNativeAddresses = newBranchDB(NATIVE_ASSET_ADDRESSES, String.class);
-    private final VarDB<Boolean> dataMigrated = newVarDB(DATA_MIGRATED, Boolean.class);
+    private final DictDB<Address, String> assetNativeAddress = Context.newDictDB(NATIVE_ASSET_ADDRESS, String.class);
+    private final BranchDB<Address, DictDB<String, String>> assetNativeAddresses = Context.newBranchDB(NATIVE_ASSET_ADDRESSES, String.class);
+    private final DictDB<String, BigInteger> assetChainDepositLimit = Context.newDictDB(ASSET_DEPOSIT_CHAIN_LIMIT, BigInteger.class);
+    private final DictDB<String, BigInteger> assetDeposits = Context.newDictDB(ASSET_DEPOSITS, BigInteger.class);
+    private final VarDB<Boolean> dataMigrated = Context.newVarDB(DATA_MIGRATED, Boolean.class);
 
     public AssetManagerImpl(Address _governance, byte[] tokenBytes) {
         AssetManagerImpl.tokenBytes = tokenBytes;
@@ -71,7 +74,7 @@ public class AssetManagerImpl implements AssetManager {
 
         currentVersion.set(Versions.BALANCED_ASSET_MANAGER);
         if (dataMigrated.get() == null) {
-            migrateTokenNativeAddress();
+            migrateTokenNativeAddressAndAssetDeposits();
         }
     }
 
@@ -96,6 +99,17 @@ public class AssetManagerImpl implements AssetManager {
     }
 
     @External
+    public void setAssetChainDepositLimit(String tokenNetworkAddress, BigInteger limit) {
+        onlyGovernance();
+        assetChainDepositLimit.set(tokenNetworkAddress, limit);
+    }
+
+    @External(readonly = true)
+    public BigInteger getAssetChainDepositLimit(String tokenNetworkAddress) {
+        return assetChainDepositLimit.getOrDefault(tokenNetworkAddress, BigInteger.ZERO);
+    }
+
+    @External
     public void deployAsset(String tokenNetworkAddress, String name, String symbol, BigInteger decimals) {
         onlyGovernance();
         NetworkAddress nativeAddress = NetworkAddress.valueOf(tokenNetworkAddress);
@@ -108,7 +122,7 @@ public class AssetManagerImpl implements AssetManager {
         Context.call(SYSTEM_SCORE_ADDRESS, "setScoreOwner", token, BalancedAddressManager.getGovernance());
     }
 
-    private void migrateTokenNativeAddress() {
+    private void migrateTokenNativeAddressAndAssetDeposits() {
         List<String> nativeAddresses = assets.keys();
         for (String na : nativeAddresses) {
             Address address = assets.get(na);
@@ -118,6 +132,8 @@ public class AssetManagerImpl implements AssetManager {
                 //delete once migrated
                 //assetNativeAddress.set(address, null);
             }
+
+            assetDeposits.set(na, getTotalSupply(address));
         }
 
         dataMigrated.set(true);
@@ -206,6 +222,11 @@ public class AssetManagerImpl implements AssetManager {
         return nativeAddresses;
     }
 
+    @External(readonly = true)
+    public BigInteger getAssetDeposit(String tokenNetworkAddress) {
+        return assetDeposits.getOrDefault(tokenNetworkAddress, BigInteger.ZERO);
+    }
+
     @External
     public void handleCallMessage(String _from, byte[] _data, @Optional String[] _protocols) {
         checkStatus();
@@ -235,22 +256,29 @@ public class AssetManagerImpl implements AssetManager {
         Context.require(xCall.net().equals(NATIVE_NID));
         Context.require(xCall.account().equals(BalancedAddressManager.getXCall().toString()));
         Address assetAddress = assets.get(tokenAddress.toString());
+
+        assetDeposits.set(tokenAddress, getAssetDeposit(tokenAddress).add(_amount));
         Context.call(assetAddress, "mintAndTransfer", _to, _to, _amount, new byte[0]);
     }
 
     public void deposit(String from, String tokenAddress, String fromAddress, String toAddress, BigInteger _amount, byte[] _data) {
-        NetworkAddress spokeAssetManager = NetworkAddress.valueOf(from);
-        Context.require(from.equals(spokes.get(spokeAssetManager.net())), "Asset manager needs to be whitelisted");
-        NetworkAddress spokeTokenAddress = new NetworkAddress(spokeAssetManager.net(), tokenAddress);
-        Address assetAddress = assets.get(spokeTokenAddress.toString());
+        String net = NetworkAddress.valueOf(from).net();
+        Context.require(from.equals(spokes.get(net)), "Asset manager needs to be whitelisted");
+        String spokeTokenAddress = new NetworkAddress(net, tokenAddress).toString();
+        Address assetAddress = assets.get(spokeTokenAddress);
         Context.require(assetAddress != null, "Token is not yet deployed");
-        NetworkAddress fromNetworkAddress = new NetworkAddress(spokeAssetManager.net(), fromAddress);
+
+        BigInteger tokenAddressDepositLimit = assetChainDepositLimit.get(spokeTokenAddress);
+        Context.require(tokenAddressDepositLimit == null || getAssetDeposit(spokeTokenAddress).add(_amount).compareTo(tokenAddressDepositLimit) <= 0, "Max deposit limit exceeded");
+
+        NetworkAddress fromNetworkAddress = new NetworkAddress(net, fromAddress);
         if (toAddress.isEmpty()) {
             toAddress = fromNetworkAddress.toString();
         } else {
             NetworkAddress.valueOf(toAddress);
         }
 
+        assetDeposits.set(spokeTokenAddress, getAssetDeposit(spokeTokenAddress).add(_amount));
         Context.call(assetAddress, "mintAndTransfer", fromNetworkAddress.toString(), toAddress, _amount, _data);
     }
 
@@ -268,10 +296,11 @@ public class AssetManagerImpl implements AssetManager {
         checkStatus();
         Context.call(asset, "burnFrom", from, amount);
         NetworkAddress targetAddress = NetworkAddress.valueOf(to);
-        String nativeTokenAddress = assetNativeAddresses.at(asset).get(targetAddress.net());
+        String net = targetAddress.net();
+        String nativeTokenAddress = assetNativeAddresses.at(asset).get(net);
         Context.require(nativeTokenAddress != null, "Wrong network");
 
-        NetworkAddress tokenAddress = new NetworkAddress(targetAddress.net(), nativeTokenAddress);
+        NetworkAddress tokenAddress = new NetworkAddress(net, nativeTokenAddress);
         NetworkAddress spoke = NetworkAddress.valueOf(spokes.get(tokenAddress.net()));
         byte[] msg;
         byte[] rollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), to, amount);
@@ -282,7 +311,14 @@ public class AssetManagerImpl implements AssetManager {
             msg = SpokeAssetManagerMessages.WithdrawTo(tokenAddress.account(), targetAddress.account(), amount);
         }
 
+
+        assetDeposits.set(tokenAddress.toString(), getAssetDeposit(tokenAddress.toString()).subtract(amount));
+
         XCallUtils.sendCall(fee, spoke, msg, rollback);
+    }
+
+    private BigInteger getTotalSupply(Address assetAddress) {
+        return Context.call(BigInteger.class, assetAddress, "totalSupply");
     }
 
     public static Address getSystemScoreAddress() {
