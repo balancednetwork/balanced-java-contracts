@@ -80,12 +80,16 @@ public class LoansImpl extends FloorLimited implements Loans {
             setGovernance(_governance);
         }
 
-        DebtDB.migrate();
-
         if (currentVersion.getOrDefault("").equals(Versions.LOANS)) {
             Context.revert("Can't Update same version of code");
         }
         currentVersion.set(Versions.LOANS);
+    }
+
+    @External
+    public void fix(Address address, String collateralSymbol) {
+        Position position = PositionsDB.getPosition(address.toString());
+        position.fixPos(collateralSymbol);
     }
 
     @External(readonly = true)
@@ -750,6 +754,7 @@ public class LoansImpl extends FloorLimited implements Loans {
         position.setCollateral(collateralSymbol, remainingCollateral);
     }
 
+
     private void originateLoan(String collateralSymbol, BigInteger amount, String from) {
         DebtDB.applyInterest(collateralSymbol);
 
@@ -767,7 +772,7 @@ public class LoansImpl extends FloorLimited implements Loans {
             Context.require(newDebt.compareTo(newLoanMinimum.get()) >= 0, TAG + ": The initial loan of any " +
                     "asset must have a minimum value of " + newLoanMinimum.get().divide(EXA) + " dollars.");
             if (!DebtDB.getBorrowers(collateralSymbol).contains(position.getId())) {
-                DebtDB.getBorrowers(collateralSymbol).append(newDebt, position.getId());
+                DebtDB.getBorrowers(collateralSymbol).append(BigInteger.ZERO, position.getId());
             }
         }
 
