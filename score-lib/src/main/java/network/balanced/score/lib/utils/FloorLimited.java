@@ -9,7 +9,7 @@ import score.annotation.External;
 public abstract class FloorLimited implements FloorLimitedInterface {
     @External
     public void setFloorPercentage(BigInteger points) {
-        Check.onlyGovernance();
+        Check.onlyOwner();
         BalancedFloorLimits.setFloorPercentage(points);
     }
 
@@ -20,7 +20,7 @@ public abstract class FloorLimited implements FloorLimitedInterface {
 
     @External
     public void setTimeDelayMicroSeconds(BigInteger us) {
-        Check.onlyGovernance();
+        Check.onlyOwner();
         BalancedFloorLimits.setTimeDelayMicroSeconds(us);
     }
 
@@ -31,7 +31,7 @@ public abstract class FloorLimited implements FloorLimitedInterface {
 
     @External
     public void enableFloors(Address[] tokens) {
-        Check.onlyGovernance();
+        Check.onlyOwner();
         for (Address token: tokens) {
             BalancedFloorLimits.setDisabled(token, false);
         }
@@ -39,7 +39,7 @@ public abstract class FloorLimited implements FloorLimitedInterface {
 
     @External
     public void disableFloors(Address[] tokens) {
-        Check.onlyGovernance();
+        Check.onlyOwner();
         for (Address token: tokens) {
             BalancedFloorLimits.setDisabled(token, true);
         }
@@ -47,7 +47,7 @@ public abstract class FloorLimited implements FloorLimitedInterface {
 
     @External
     public void setMinimumFloor(Address token, BigInteger minFloor) {
-        Check.onlyGovernance();
+        Check.onlyOwner();
         BalancedFloorLimits.setMinimumFloor(token, minFloor);
     }
 
@@ -58,7 +58,7 @@ public abstract class FloorLimited implements FloorLimitedInterface {
 
     @External
     public void setDisabled(Address token, boolean disabled) {
-        Check.onlyGovernance();
+        Check.onlyOwner();
         BalancedFloorLimits.setDisabled(token, disabled);
     }
 

@@ -19,12 +19,19 @@ package network.balanced.score.lib.interfaces;
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.annotations.XCall;
+import network.balanced.score.lib.interfaces.base.TokenFallback;
+import network.balanced.score.lib.interfaces.base.Version;
+import network.balanced.score.lib.interfaces.base.Name;
+import score.Address;
+import score.annotation.External;
+import score.annotation.Payable;
+import score.annotation.Optional;
 
 import java.math.BigInteger;
 
 @ScoreClient
 @ScoreInterface
-public interface SpokeAssetManager {
+public interface SpokeAssetManager extends Version, Name {
 
     /**
      * Burns tokens from user and unlocks on source
@@ -47,4 +54,37 @@ public interface SpokeAssetManager {
      */
     @XCall
     void WithdrawNativeTo(String from, String tokenAddress, String toAddress, BigInteger amount);
+
+        /**
+     * EReverts a deposit message
+     *
+     * @param from         xCall caller.
+     * @param token        token to be returned
+     * @param to           the user who originally sent the funds
+     * @param amount       amount to return
+     */
+    @XCall
+    void DepositRevert(String from, Address token, Address to, BigInteger amount);
+
+    @External
+    void setXCallManager(Address address);
+
+    @External(readonly = true)
+    Address getXCallManager();
+
+    @External
+    void setICONAssetManager(String address);
+
+    @External(readonly = true)
+    String getICONAssetManager();
+
+    @External
+    void setXCall(Address address);
+
+    @External(readonly = true)
+    Address getXCall();
+
+    @External
+    @Payable
+    void deposit(@Optional String _to, @Optional byte[] _data);
 }
