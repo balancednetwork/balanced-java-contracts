@@ -50,6 +50,12 @@ public interface AssetManager extends AddressManager, Version, Fallback {
     @External(readonly = true)
     Address getAssetAddress(String spokeAddress);
 
+    @External
+    void setAssetChainDepositLimit(String tokenNetworkAddress, BigInteger limit);
+
+    @External(readonly = true)
+    BigInteger getAssetChainDepositLimit(String tokenNetworkAddress);
+
     @External(readonly = true)
     String getNativeAssetAddress(Address token, String nid);
 
