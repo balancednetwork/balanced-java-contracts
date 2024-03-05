@@ -261,23 +261,23 @@ class DexIntegrationTest {
         mintAndTransferTestTokens(tokenDeposit);
         transferSicxToken();
         dexUserScoreClient.add(tokenBAddress, Address.fromString(sIcxScoreClient._address().toString()),
-                BigInteger.valueOf(50).multiply(EXA), BigInteger.valueOf(25).multiply(EXA), false);
+                BigInteger.valueOf(50).multiply(EXA), BigInteger.valueOf(25).multiply(EXA), false, BigInteger.valueOf(100));
         mintAndTransferTestTokens(tokenDeposit);
         transferSicxToken();
         dexUserScoreClient.add(Address.fromString(sIcxScoreClient._address().toString()), tokenAAddress,
-                BigInteger.valueOf(50).multiply(EXA), BigInteger.valueOf(25).multiply(EXA), false);
+                BigInteger.valueOf(50).multiply(EXA), BigInteger.valueOf(25).multiply(EXA), false, BigInteger.valueOf(100));
         mintAndTransferTestTokens(tokenDeposit);
         transferSicxToken();
         dexUserScoreClient.add(tokenBAddress, tokenAAddress, BigInteger.valueOf(50).multiply(EXA),
-                BigInteger.valueOf(25).multiply(EXA), false);
+                BigInteger.valueOf(25).multiply(EXA), false, BigInteger.valueOf(100));
         mintAndTransferTestTokens(tokenDeposit);
         transferSicxToken();
         dexUserScoreClient.add(Address.fromString(sIcxScoreClient._address().toString()), tokenCAddress,
-                BigInteger.valueOf(50).multiply(EXA), BigInteger.valueOf(25).multiply(EXA), false);
+                BigInteger.valueOf(50).multiply(EXA), BigInteger.valueOf(25).multiply(EXA), false, BigInteger.valueOf(100));
         mintAndTransferTestTokens(tokenDeposit);
         transferSicxToken();
         dexUserScoreClient.add(tokenBAddress, tokenCAddress, BigInteger.valueOf(50).multiply(EXA),
-                BigInteger.valueOf(25).multiply(EXA), false);
+                BigInteger.valueOf(25).multiply(EXA), false, BigInteger.valueOf(100));
 
         waitForADay();
 

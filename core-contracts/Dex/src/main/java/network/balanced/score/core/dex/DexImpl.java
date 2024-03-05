@@ -359,6 +359,9 @@ public class DexImpl extends AbstractDex {
         BigInteger poolLpAmount = poolLpTotal.getOrDefault(id, BigInteger.ZERO);
         BigInteger userLpAmount = balance.at(id).getOrDefault(user, BigInteger.ZERO);
 
+        BigInteger hundred = BigInteger.valueOf(100);
+        BigInteger acceptedSlippage = _slippagePercentage!=null?_slippagePercentage:hundred;
+
         // We need to only supply new base and quote in the pool ratio.
         // If there isn't a pool yet, we can form one with the supplied ratios.
 
@@ -401,6 +404,9 @@ public class DexImpl extends AbstractDex {
             poolBaseAmount = totalTokensInPool.get(_baseToken);
             poolQuoteAmount = totalTokensInPool.get(_quoteToken);
 
+            BigInteger poolPrice = poolBaseAmount.multiply(EXA).divide(poolQuoteAmount);
+            BigInteger priceOfAssetToCommit = baseToCommit.multiply(EXA).divide(quoteToCommit);
+            require((priceOfAssetToCommit.subtract(poolPrice)).abs().compareTo(acceptedSlippage.multiply(poolPrice).divide(BigInteger.valueOf(10000)))<=0, TAG + " : insufficient slippage provided" );
 
             BigInteger baseFromQuote = _quoteValue.multiply(poolBaseAmount).divide(poolQuoteAmount);
             BigInteger quoteFromBase = _baseValue.multiply(poolQuoteAmount).divide(poolBaseAmount);
@@ -411,6 +417,8 @@ public class DexImpl extends AbstractDex {
                 baseToCommit = baseFromQuote;
             }
 
+
+
             BigInteger liquidityFromBase = (poolLpAmount.multiply(baseToCommit)).divide(poolBaseAmount);
             BigInteger liquidityFromQuote = (poolLpAmount.multiply(quoteToCommit)).divide(poolQuoteAmount);
 
@@ -418,11 +426,6 @@ public class DexImpl extends AbstractDex {
             require(liquidity.compareTo(BigInteger.ZERO) >= 0,
                     TAG + ": LP tokens to mint is less than zero");
         }
-        BigInteger hundred = BigInteger.valueOf(100);
-        BigInteger acceptedSlippage = _slippagePercentage!=null?_slippagePercentage:hundred;
-        BigInteger poolPrice = poolBaseAmount.multiply(hundred).divide(poolQuoteAmount);
-        BigInteger priceOfAssetToCommit = baseToCommit.multiply(hundred).divide(quoteToCommit);
-        require((poolPrice.subtract(priceOfAssetToCommit)).compareTo(acceptedSlippage)<=0, TAG + " : insufficient slippage provided" );
 
         // Apply the funds to the pool
         poolBaseAmount = poolBaseAmount.add(baseToCommit);

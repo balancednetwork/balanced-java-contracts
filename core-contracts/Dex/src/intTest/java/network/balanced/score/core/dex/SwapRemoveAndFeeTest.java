@@ -117,7 +117,7 @@ public class SwapRemoveAndFeeTest {
         this.mintAndTransferTestTokens(tokenDeposit);
 
         dexUserScoreClient.add(Address.fromString(dexTestBaseScoreAddress), Address.fromString(dexTestScoreAddress),
-                BigInteger.valueOf(50).multiply(EXA), BigInteger.valueOf(50).multiply(EXA), true);
+                BigInteger.valueOf(50).multiply(EXA), BigInteger.valueOf(50).multiply(EXA), true, BigInteger.valueOf(100));
 
         BigInteger poolId = dexUserScoreClient.getPoolId(Address.fromString(dexTestBaseScoreAddress),
                 Address.fromString(dexTestScoreAddress));
