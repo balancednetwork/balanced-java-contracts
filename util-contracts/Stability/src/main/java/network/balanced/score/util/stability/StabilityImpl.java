@@ -264,6 +264,8 @@ public class StabilityImpl extends FloorLimited implements Stability {
         if (fee.compareTo(BigInteger.ZERO) > 0) {
             Context.call(inAsset, "transfer", getFeehandler(), fee, new byte[0]);
         }
+
+        BalancedFloorLimits.verifyWithdraw(outAsset, equivalentAmount);
         Context.call(outAsset, "transfer", _user, equivalentAmount, new byte[0]);
     }
 
