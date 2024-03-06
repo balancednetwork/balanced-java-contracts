@@ -44,8 +44,9 @@ public interface SpokeAssetManager extends Version, Name {
     @XCall
     void WithdrawTo(String from, String tokenAddress, String toAddress, BigInteger amount);
 
-        /**
-     * Burns tokens from user and unlocks on source and tries to acquire the native token
+    /**
+     * Burns tokens from user and unlocks on source and tries to acquire the native
+     * token
      *
      * @param from         xCall caller.
      * @param tokenAddress native token address as string.
@@ -55,13 +56,13 @@ public interface SpokeAssetManager extends Version, Name {
     @XCall
     void WithdrawNativeTo(String from, String tokenAddress, String toAddress, BigInteger amount);
 
-        /**
-     * EReverts a deposit message
+    /**
+     * Reverts a deposit message
      *
-     * @param from         xCall caller.
-     * @param token        token to be returned
-     * @param to           the user who originally sent the funds
-     * @param amount       amount to return
+     * @param from   xCall caller.
+     * @param token  token to be returned
+     * @param to     the user who originally sent the funds
+     * @param amount amount to return
      */
     @XCall
     void DepositRevert(String from, Address token, Address to, BigInteger amount);
