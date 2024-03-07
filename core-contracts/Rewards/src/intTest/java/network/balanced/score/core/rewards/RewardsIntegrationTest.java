@@ -459,7 +459,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
 
         BigInteger sicxDeposit = client.sicx.balanceOf(client.getAddress());
         client.sicx.transfer(balanced.dex._address(), sicxDeposit, depositData.toString().getBytes());
-        client.dex.add(balanced.sicx._address(), balanced.bnusd._address(), sicxDeposit, bnusdAmount, true);
+        client.dex.add(balanced.sicx._address(), balanced.bnusd._address(), sicxDeposit, bnusdAmount, true, BigInteger.valueOf(100));
     }
 
     private void leaveICXBnusdLP(BalancedClient client) {

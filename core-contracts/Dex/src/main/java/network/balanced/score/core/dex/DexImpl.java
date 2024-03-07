@@ -21,8 +21,8 @@ import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 import network.balanced.score.core.dex.db.NodeDB;
 import network.balanced.score.lib.structs.RewardsDataEntry;
-import network.balanced.score.lib.utils.Versions;
 import network.balanced.score.lib.utils.BalancedFloorLimits;
+import network.balanced.score.lib.utils.Versions;
 import score.Address;
 import score.BranchDB;
 import score.Context;
@@ -35,14 +35,16 @@ import scorex.util.ArrayList;
 import java.math.BigInteger;
 import java.util.List;
 
-import static network.balanced.score.core.dex.utils.Check.isDexOn;
 import static network.balanced.score.core.dex.DexDBVariables.*;
+import static network.balanced.score.core.dex.utils.Check.isDexOn;
+import static network.balanced.score.core.dex.utils.Check.isValidSlippagePercent;
 import static network.balanced.score.core.dex.utils.Const.*;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getRewards;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getSicx;
-import static network.balanced.score.lib.utils.Constants.EXA;
-import static network.balanced.score.lib.utils.Math.convertToNumber;
 import static network.balanced.score.lib.utils.Check.checkStatus;
+import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Constants.POINTS;
+import static network.balanced.score.lib.utils.Math.convertToNumber;
 import static score.Context.require;
 
 public class DexImpl extends AbstractDex {
@@ -315,6 +317,9 @@ public class DexImpl extends AbstractDex {
         userQuoteDeposit.set(user, depositedQuote.add(quoteToWithdraw));
 
         if (_withdraw) {
+            if(_id.intValue()==SICXICX_POOL_ID){
+                BalancedFloorLimits.verifyNativeWithdraw(baseToWithdraw);
+            }
             withdraw(baseToken, baseToWithdraw);
             withdraw(quoteToken, quoteToWithdraw);
         }
@@ -326,6 +331,7 @@ public class DexImpl extends AbstractDex {
                     @Optional boolean _withdraw_unused, @Optional BigInteger _slippagePercentage) {
         isDexOn();
         checkStatus();
+        isValidSlippagePercent(_slippagePercentage.intValue());
 
         Address user = Context.getCaller();
 
@@ -359,8 +365,7 @@ public class DexImpl extends AbstractDex {
         BigInteger poolLpAmount = poolLpTotal.getOrDefault(id, BigInteger.ZERO);
         BigInteger userLpAmount = balance.at(id).getOrDefault(user, BigInteger.ZERO);
 
-        BigInteger hundred = BigInteger.valueOf(100);
-        BigInteger acceptedSlippage = _slippagePercentage!=null?_slippagePercentage:hundred;
+
 
         // We need to only supply new base and quote in the pool ratio.
         // If there isn't a pool yet, we can form one with the supplied ratios.
@@ -406,7 +411,13 @@ public class DexImpl extends AbstractDex {
 
             BigInteger poolPrice = poolBaseAmount.multiply(EXA).divide(poolQuoteAmount);
             BigInteger priceOfAssetToCommit = baseToCommit.multiply(EXA).divide(quoteToCommit);
-            require((priceOfAssetToCommit.subtract(poolPrice)).abs().compareTo(acceptedSlippage.multiply(poolPrice).divide(BigInteger.valueOf(10000)))<=0, TAG + " : insufficient slippage provided" );
+            Context.println("pool price: "+poolPrice);
+            Context.println("price of asset to commit: "+priceOfAssetToCommit);
+
+            require(
+                    (priceOfAssetToCommit.subtract(poolPrice)).abs().compareTo(_slippagePercentage.multiply(poolPrice).divide(POINTS)) <= 0,
+                    TAG + " : insufficient slippage provided"
+            );
 
             BigInteger baseFromQuote = _quoteValue.multiply(poolBaseAmount).divide(poolQuoteAmount);
             BigInteger quoteFromBase = _baseValue.multiply(poolQuoteAmount).divide(poolBaseAmount);
@@ -416,8 +427,6 @@ public class DexImpl extends AbstractDex {
             } else {
                 baseToCommit = baseFromQuote;
             }
-
-
 
             BigInteger liquidityFromBase = (poolLpAmount.multiply(baseToCommit)).divide(poolBaseAmount);
             BigInteger liquidityFromQuote = (poolLpAmount.multiply(quoteToCommit)).divide(poolQuoteAmount);

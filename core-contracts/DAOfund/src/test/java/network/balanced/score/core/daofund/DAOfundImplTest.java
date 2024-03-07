@@ -194,9 +194,9 @@ class DAOfundImplTest extends TestBase {
 
         // Act
         assertOnlyCallableBy(mockBalanced.governance.getAddress(), daofundScore, "supplyLiquidity", baseToken,
-                baseAmount, quoteToken, quoteAmount);
+                baseAmount, quoteToken, quoteAmount, BigInteger.valueOf(100));
         daofundScore.invoke(mockBalanced.governance.account, "supplyLiquidity", baseToken, baseAmount, quoteToken,
-                quoteAmount);
+                quoteAmount, BigInteger.valueOf(100));
 
         // Assert
         verify(mockBalanced.sicx.mock).transfer(mockBalanced.dex.getAddress(), baseAmount, tokenDepositData);
@@ -206,7 +206,7 @@ class DAOfundImplTest extends TestBase {
         assertOnlyCallableBy(mockBalanced.governance.getAddress(), daofundScore, "stakeLpTokens", pid, lpBalance);
         daofundScore.invoke(mockBalanced.governance.account, "stakeLpTokens", pid, lpBalance);
 
-        verify(mockBalanced.dex.mock).add(baseToken, quoteToken, baseAmount, quoteAmount, true);
+        verify(mockBalanced.dex.mock).add(baseToken, quoteToken, baseAmount, quoteAmount, true, BigInteger.valueOf(100));
         verify(mockBalanced.dex.mock).transfer(mockBalanced.stakedLp.getAddress(), lpBalance, pid, new byte[0]);
     }
 
@@ -232,23 +232,23 @@ class DAOfundImplTest extends TestBase {
         String expectedErrorMessage = "Price on dex was above allowed threshold";
         when(mockBalanced.dex.mock.getPrice(pid)).thenReturn(price.add(maxDiff));
         Executable aboveThreshold = () -> daofundScore.invoke(mockBalanced.governance.account, "supplyLiquidity",
-                baseToken, baseAmount, quoteToken, quoteAmount);
+                baseToken, baseAmount, quoteToken, quoteAmount, BigInteger.valueOf(100));
         expectErrorMessage(aboveThreshold, expectedErrorMessage);
 
         when(mockBalanced.dex.mock.getPrice(pid)).thenReturn(price.add(maxDiff).subtract(BigInteger.ONE));
         daofundScore.invoke(mockBalanced.governance.account, "supplyLiquidity", baseToken, baseAmount, quoteToken,
-                quoteAmount);
+                quoteAmount, BigInteger.valueOf(100));
 
         // Act & Assert
         expectedErrorMessage = "Price on dex was below allowed threshold";
         when(mockBalanced.dex.mock.getPrice(pid)).thenReturn(price.subtract(maxDiff));
         Executable belowThreshold = () -> daofundScore.invoke(mockBalanced.governance.account, "supplyLiquidity",
-                baseToken, baseAmount, quoteToken, quoteAmount);
+                baseToken, baseAmount, quoteToken, quoteAmount, BigInteger.valueOf(100));
         expectErrorMessage(belowThreshold, expectedErrorMessage);
 
         when(mockBalanced.dex.mock.getPrice(pid)).thenReturn(price.subtract(maxDiff).add(BigInteger.ONE));
         daofundScore.invoke(mockBalanced.governance.account, "supplyLiquidity", baseToken, baseAmount, quoteToken,
-                quoteAmount);
+                quoteAmount, BigInteger.valueOf(100));
     }
 
     @Test

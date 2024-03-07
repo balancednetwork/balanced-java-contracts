@@ -104,7 +104,7 @@ public class DividendsIntegrationTest {
         // provides liquidity to baln/Sicx pool by owner
         owner.baln.transfer(balanced.dex._address(), lpAmount, data.toString().getBytes());
         owner.sicx.transfer(balanced.dex._address(), lpAmount, data.toString().getBytes());
-        owner.dex.add(balanced.baln._address(), balanced.sicx._address(), lpAmount, lpAmount, true);
+        owner.dex.add(balanced.baln._address(), balanced.sicx._address(), lpAmount, lpAmount, true, BigInteger.valueOf(100));
         owner.baln.transfer(Dave.getAddress(),
                 BigInteger.valueOf(50).multiply(BigInteger.TEN.pow(18)), null);
     }

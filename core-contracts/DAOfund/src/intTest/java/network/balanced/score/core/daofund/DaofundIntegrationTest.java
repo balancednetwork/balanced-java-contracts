@@ -74,7 +74,8 @@ class DaofundIntegrationTest implements ScoreIntegrationTest {
                 .add(createParameter(balanced.sicx._address()))
                 .add(createParameter(baseAmount))
                 .add(createParameter(balanced.bnusd._address()))
-                .add(createParameter(quoteAmount));
+                .add(createParameter(quoteAmount))
+                .add(createParameter(BigInteger.valueOf(100)));
         JsonArray stakeLpTokensParameters = new JsonArray()
                 .add(createParameter(pid));
 
@@ -232,7 +233,7 @@ class DaofundIntegrationTest implements ScoreIntegrationTest {
         client.staking.stakeICX(lpAmount.multiply(BigInteger.TWO), null, null);
         client.bnUSD.transfer(balanced.dex._address(), lpAmount, tokenDepositData);
         client.sicx.transfer(balanced.dex._address(), lpAmount, tokenDepositData);
-        client.dex.add(balanced.sicx._address(), balanced.bnusd._address(), lpAmount, lpAmount, true);
+        client.dex.add(balanced.sicx._address(), balanced.bnusd._address(), lpAmount, lpAmount, true, BigInteger.valueOf(10000));
         BigInteger lpBalance = client.dex.balanceOf(client.getAddress(), pid);
 
         // Act

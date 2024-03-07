@@ -23,6 +23,7 @@ import java.math.BigInteger;
 import static network.balanced.score.core.dex.DexDBVariables.dexOn;
 import static network.balanced.score.core.dex.DexDBVariables.nonce;
 import static network.balanced.score.core.dex.utils.Const.TAG;
+import static network.balanced.score.lib.utils.Constants.POINTS;
 
 public class Check {
 
@@ -37,5 +38,9 @@ public class Check {
 
     public static void isValidPoolId(Integer id) {
         Context.require(id > 0 && id <= nonce.get(), TAG + ": Invalid pool ID");
+    }
+
+    public static void isValidSlippagePercent(Integer slippagePercent) {
+        Context.require(slippagePercent >= 0 && slippagePercent <= POINTS.intValue(), TAG + ": Invalid slippage percentage");
     }
 }

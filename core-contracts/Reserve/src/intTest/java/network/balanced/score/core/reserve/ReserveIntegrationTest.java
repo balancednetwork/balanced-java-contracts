@@ -418,7 +418,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
 
         BigInteger bnusdDeposit = owner.bnUSD.balanceOf(owner.getAddress());
         owner.bnUSD.transfer(balanced.dex._address(), bnusdDeposit, depositData.toString().getBytes());
-        owner.dex.add(collateralAddress, balanced.bnusd._address(), tokenAmount, bnusdDeposit, false);
+        owner.dex.add(collateralAddress, balanced.bnusd._address(), tokenAmount, bnusdDeposit, false, BigInteger.valueOf(100));
 
         BigInteger lockingRatio = BigInteger.valueOf(40_000);
         BigInteger liquidationRatio = BigInteger.valueOf(15_000);
