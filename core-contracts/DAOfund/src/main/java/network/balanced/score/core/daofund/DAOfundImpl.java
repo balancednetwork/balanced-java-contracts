@@ -183,9 +183,9 @@ public class DAOfundImpl implements DAOfund {
 
     @External
     public void supplyLiquidity(Address baseAddress, BigInteger baseAmount, Address quoteAddress,
-                                BigInteger quoteAmount, @Optional BigInteger slippagePercentage) {
+                                BigInteger quoteAmount) {
         onlyGovernance();
-        POLManager.supplyLiquidity(baseAddress, baseAmount, quoteAddress, quoteAmount, slippagePercentage);
+        POLManager.supplyLiquidity(baseAddress, baseAmount, quoteAddress, quoteAmount);
     }
 
     @External

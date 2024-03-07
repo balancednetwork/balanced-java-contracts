@@ -410,8 +410,6 @@ public class DexImpl extends AbstractDex {
 
             BigInteger poolPrice = poolBaseAmount.multiply(EXA).divide(poolQuoteAmount);
             BigInteger priceOfAssetToCommit = baseToCommit.multiply(EXA).divide(quoteToCommit);
-            Context.println("pool price: "+poolPrice);
-            Context.println("price of asset to commit: "+priceOfAssetToCommit);
 
             require(
                     (priceOfAssetToCommit.subtract(poolPrice)).abs().compareTo(_slippagePercentage.multiply(poolPrice).divide(POINTS)) <= 0,

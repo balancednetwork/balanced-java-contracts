@@ -59,7 +59,7 @@ public class POLManager {
     }
 
     public static void supplyLiquidity(Address baseAddress, BigInteger baseAmount, Address quoteAddress,
-                                       BigInteger quoteAmount, BigInteger slippagePercentage) {
+                                       BigInteger quoteAmount) {
         Address dex = getDex();
         BigInteger pid = Context.call(BigInteger.class, dex, "getPoolId", baseAddress, quoteAddress);
 
@@ -73,7 +73,7 @@ public class POLManager {
 
         Context.call(baseAddress, "transfer", dex, baseAmount, tokenDepositData);
         Context.call(quoteAddress, "transfer", dex, quoteAmount, tokenDepositData);
-        Context.call(dex, "add", baseAddress, quoteAddress, baseAmount, quoteAmount, true, slippagePercentage);
+        Context.call(dex, "add", baseAddress, quoteAddress, baseAmount, quoteAmount, true, getPOLSupplySlippage());
     }
 
     public static void stake(BigInteger pid, BigInteger amount) {

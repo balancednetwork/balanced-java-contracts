@@ -74,8 +74,7 @@ class DaofundIntegrationTest implements ScoreIntegrationTest {
                 .add(createParameter(balanced.sicx._address()))
                 .add(createParameter(baseAmount))
                 .add(createParameter(balanced.bnusd._address()))
-                .add(createParameter(quoteAmount))
-                .add(createParameter(BigInteger.valueOf(100)));
+                .add(createParameter(quoteAmount));
         JsonArray stakeLpTokensParameters = new JsonArray()
                 .add(createParameter(pid));
 

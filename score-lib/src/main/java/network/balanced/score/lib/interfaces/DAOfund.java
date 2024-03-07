@@ -59,7 +59,7 @@ public interface DAOfund extends Name, AddressManager, TokenFallback, Fallback, 
     void claimNetworkFees();
 
     @External
-    void supplyLiquidity(Address baseAddress, BigInteger baseAmount, Address quoteAddress, BigInteger quoteAmount, @Optional BigInteger supplyLiquidity);
+    void supplyLiquidity(Address baseAddress, BigInteger baseAmount, Address quoteAddress, BigInteger quoteAmount);
 
     @External
     void unstakeLpTokens(BigInteger pid, BigInteger amount);
