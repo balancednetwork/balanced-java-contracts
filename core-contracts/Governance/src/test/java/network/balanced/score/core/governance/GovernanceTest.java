@@ -343,19 +343,25 @@ public class GovernanceTest extends GovernanceTestBase {
         BigInteger timeLockDays = BigInteger.TEN;
         String expectedErrorMessageAuth = "Not authorized";
         String expectedErrorMessageTime = "Your privileges are disabled until ";
+        String expectedErrorMessageDisableOnly = "This address does not have permission to enable balanced";
         governance.invoke(owner, "setShutdownPrivilegeTimeLock", timeLockDays);
 
         // Act
         Executable beforeAuth = () -> governance.invoke(trustedUser1, "disable");
         expectErrorMessage(beforeAuth, expectedErrorMessageAuth);
 
-        governance.invoke(owner, "addAuthorizedCallerShutdown", trustedUser1.getAddress());
-        governance.invoke(owner, "addAuthorizedCallerShutdown", trustedUser2.getAddress());
+        governance.invoke(owner, "addAuthorizedCallerShutdown", trustedUser1.getAddress(), true);
+        governance.invoke(owner, "addAuthorizedCallerShutdown", trustedUser2.getAddress(), false);
         governance.invoke(trustedUser1, "disable");
 
         // Assert
         Executable onTimeLock = () -> governance.invoke(trustedUser1, "enable");
         expectErrorMessage(onTimeLock, expectedErrorMessageTime);
+
+        sm.getBlock().increase(DAY * timeLockDays.longValue());
+
+        Executable disableOnly  = () -> governance.invoke(trustedUser1, "enable");
+        expectErrorMessage(onTimeLock, expectedErrorMessageDisableOnly);
 
         governance.invoke(trustedUser2, "enable");
         sm.getBlock().increase(DAY * timeLockDays.longValue());
@@ -397,12 +403,12 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         Account trustedUser1 = sm.createAccount();
         Account trustedUser2 = sm.createAccount();
-        assertOnlyCallableByContractOrOwner("addAuthorizedCallerShutdown", trustedUser1.getAddress());
+        assertOnlyCallableByContractOrOwner("addAuthorizedCallerShutdown", trustedUser1.getAddress(), false);
         assertOnlyCallableByContractOrOwner("removeAuthorizedCallerShutdown", trustedUser2.getAddress());
 
         // Act
-        governance.invoke(owner, "addAuthorizedCallerShutdown", trustedUser1.getAddress());
-        governance.invoke(owner, "addAuthorizedCallerShutdown", trustedUser2.getAddress());
+        governance.invoke(owner, "addAuthorizedCallerShutdown", trustedUser1.getAddress(), false);
+        governance.invoke(owner, "addAuthorizedCallerShutdown", trustedUser2.getAddress(), false);
 
         // Assert
         Map<String, BigInteger> authorizedCallers = (Map<String, BigInteger>) governance.call(
