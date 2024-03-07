@@ -119,6 +119,8 @@ public class DexImpl extends AbstractDex {
         activeAddresses.get(SICXICX_POOL_ID).remove(user);
 
         sendRewardsData(user, BigInteger.ZERO, currentIcxTotal);
+
+        BalancedFloorLimits.verifyNativeWithdraw(withdrawAmount);
         Context.transfer(user, withdrawAmount);
     }
 
@@ -317,9 +319,6 @@ public class DexImpl extends AbstractDex {
         userQuoteDeposit.set(user, depositedQuote.add(quoteToWithdraw));
 
         if (_withdraw) {
-            if(_id.intValue()==SICXICX_POOL_ID){
-                BalancedFloorLimits.verifyNativeWithdraw(baseToWithdraw);
-            }
             withdraw(baseToken, baseToWithdraw);
             withdraw(quoteToken, quoteToWithdraw);
         }
