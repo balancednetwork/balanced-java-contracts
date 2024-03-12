@@ -62,7 +62,6 @@ public class GovernanceConstants extends Constants {
     );
 
     public static Map<String, String> ADMIN_ADDRESSES = Map.ofEntries(
-            entry("rewards", "governance"),
             entry("baln", "rewards"),
             entry("bwt", "governance")
     );

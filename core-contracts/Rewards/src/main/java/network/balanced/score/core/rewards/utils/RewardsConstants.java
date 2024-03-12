@@ -30,6 +30,9 @@ public class RewardsConstants extends Constants {
     public static final String TOTAL_SUPPLY = "_totalSupply";
     public static final String BALANCE = "_balance";
 
+    public static final String coreTypeName = "BALN Core";
+    public static final String communityTypeName = "Community";
+
     public static final BigInteger HUNDRED_PERCENTAGE = EXA;
     public static final BigInteger WEIGHT = BigInteger.valueOf(40)
             .multiply(HUNDRED_PERCENTAGE)

@@ -38,7 +38,7 @@ class RewardsTestSetup extends RewardsTestBase {
 
     @BeforeEach
     void setup() throws Exception {
-        governance = new MockContract<>(GovernanceScoreInterface.class, sm, admin).account;
+        governance = new MockContract<>(GovernanceScoreInterface.class, sm, owner).account;
         rewardsScore = sm.deploy(owner, RewardsImpl.class, governance.getAddress());
     }
 
@@ -48,56 +48,14 @@ class RewardsTestSetup extends RewardsTestBase {
     }
 
     @Test
-    void setAndGetAdmin() {
-        testAdmin(rewardsScore, governance, admin);
-    }
-
-    @Test
-    void setAndGetGovernance() {
-        testGovernance(rewardsScore, governance, owner);
-    }
-
-    @Test
-    void setAndGetBwt() {
-        testContractSettersAndGetters(rewardsScore, governance, admin, "setBwt",
-                testAccount.getAddress(), "getBwt");
-    }
-
-    @Test
-    void setAndGetBaln() {
-        testContractSettersAndGetters(rewardsScore, governance, admin, "setBaln",
-                testAccount.getAddress(), "getBaln");
-    }
-
-    @Test
-    void setAndGetReserve() {
-        testContractSettersAndGetters(rewardsScore, governance, admin, "setReserve",
-                testAccount.getAddress(), "getReserve");
-    }
-
-    @Test
-    void setAndGetDaofund() {
-        testContractSettersAndGetters(rewardsScore, governance, admin, "setDaofund",
-                testAccount.getAddress(), "getDaofund");
-    }
-
-    @Test
     void setAndGetTimeOffset() {
         BigInteger timeOffset = BigInteger.ONE.multiply(MICRO_SECONDS_IN_A_DAY).negate();
-        String expectedErrorMessage = "Authorization Check: Address not set";
+        Account nonOwner = sm.createAccount();
+        String expectedErrorMessage = "SenderNotScoreOwner";
+        Executable setNotFromOwner = () -> rewardsScore.invoke(nonOwner, "setTimeOffset",timeOffset);
+        expectErrorMessage(setNotFromOwner, expectedErrorMessage);
 
-        Executable setWithoutAdmin = () -> rewardsScore.invoke(admin, "setTimeOffset", timeOffset);
-        expectErrorMessage(setWithoutAdmin, expectedErrorMessage);
-
-        rewardsScore.invoke(governance, "setAdmin", admin.getAddress());
-
-        Account nonAdmin = sm.createAccount();
-        expectedErrorMessage = "Authorization Check: Authorization failed. Caller: " + nonAdmin.getAddress() +
-                " Authorized Caller: " + admin.getAddress();
-        Executable setNotFromAdmin = () -> rewardsScore.invoke(nonAdmin, "setTimeOffset", timeOffset);
-        expectErrorMessage(setNotFromAdmin, expectedErrorMessage);
-
-        rewardsScore.invoke(admin, "setTimeOffset", timeOffset);
+        rewardsScore.invoke(owner, "setTimeOffset", timeOffset);
         assertEquals(timeOffset, rewardsScore.call("getTimeOffset"));
     }
 
@@ -135,28 +93,20 @@ class RewardsTestSetup extends RewardsTestBase {
         BigInteger weight = BigInteger.valueOf(50).multiply(HUNDRED_PERCENTAGE).divide(BigInteger.valueOf(100));
         BigInteger weightAbove = HUNDRED_PERCENTAGE.add(BigInteger.ONE);
         BigInteger weightBelow = HUNDRED_PERCENTAGE.divide(BigInteger.valueOf(100)).subtract(BigInteger.ONE);
-        String expectedErrorMessage = "Authorization Check: Address not set";
 
-        Executable setWithoutAdmin = () -> rewardsScore.invoke(admin, "setBoostWeight", weight);
-        expectErrorMessage(setWithoutAdmin, expectedErrorMessage);
-
-        rewardsScore.invoke(governance, "setAdmin", admin.getAddress());
-
-        Account nonAdmin = sm.createAccount();
-        expectedErrorMessage = "Authorization Check: Authorization failed. Caller: " + nonAdmin.getAddress() +
-                " Authorized Caller: " + admin.getAddress();
-        Executable setNotFromAdmin = () -> rewardsScore.invoke(nonAdmin, "setBoostWeight", weight);
-        expectErrorMessage(setNotFromAdmin, expectedErrorMessage);
-
+        Account nonOwner = sm.createAccount();
+        String expectedErrorMessage = "SenderNotScoreOwner";
+        Executable setNotFromOwner = () -> rewardsScore.invoke(nonOwner, "setBoostWeight",weight);
+        expectErrorMessage(setNotFromOwner, expectedErrorMessage);
         expectedErrorMessage = "Reverted(0): Boost weight has to be above 1%";
-        Executable setWeightAbove = () -> rewardsScore.invoke(admin, "setBoostWeight", weightBelow);
+        Executable setWeightAbove = () -> rewardsScore.invoke(owner, "setBoostWeight", weightBelow);
         expectErrorMessage(setWeightAbove, expectedErrorMessage);
 
         expectedErrorMessage = "Reverted(0): Boost weight has to be below 100%";
-        Executable setWeightBelow = () -> rewardsScore.invoke(admin, "setBoostWeight", weightAbove);
+        Executable setWeightBelow = () -> rewardsScore.invoke(owner, "setBoostWeight", weightAbove);
         expectErrorMessage(setWeightBelow, expectedErrorMessage);
 
-        rewardsScore.invoke(admin, "setBoostWeight", weight);
+        rewardsScore.invoke(owner, "setBoostWeight", weight);
         assertEquals(weight, rewardsScore.call("getBoostWeight"));
     }
 }

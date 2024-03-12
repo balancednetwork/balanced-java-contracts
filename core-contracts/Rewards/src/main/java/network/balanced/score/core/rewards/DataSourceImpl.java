@@ -33,12 +33,7 @@ public class DataSourceImpl {
     private final BranchDB<String, VarDB<Address>> contractAddress = Context.newBranchDB("contract_address",
             Address.class);
     private final BranchDB<String, VarDB<String>> name = Context.newBranchDB("name", String.class);
-    private final BranchDB<String, VarDB<BigInteger>> day = Context.newBranchDB("day", BigInteger.class);
-    private final BranchDB<String, VarDB<Boolean>> precomp = Context.newBranchDB("precomp", Boolean.class);
-    private final BranchDB<String, VarDB<Integer>> offset = Context.newBranchDB("offset", Integer.class);
     private final BranchDB<String, VarDB<BigInteger>> workingSupply = Context.newBranchDB("working_supply",
-            BigInteger.class);
-    private final BranchDB<String, DictDB<BigInteger, BigInteger>> totalValue = Context.newBranchDB("total_value",
             BigInteger.class);
     private final BranchDB<String, DictDB<BigInteger, BigInteger>> totalDist = Context.newBranchDB("total_dist",
             BigInteger.class);
@@ -47,7 +42,7 @@ public class DataSourceImpl {
     private final BranchedAddressDictDB<String, BigInteger> userWeight = new BranchedAddressDictDB<>("user_weight",
             BigInteger.class);
     private final BranchedAddressDictDB<String, BigInteger> userWorkingBalance = new BranchedAddressDictDB<>(
-            "user_working_balance", BigInteger.class);
+                "user_working_balance", BigInteger.class);
     private final BranchDB<String, VarDB<BigInteger>> lastUpdateTimeUs = Context.newBranchDB("last_update_us",
             BigInteger.class);
     private final BranchDB<String, VarDB<BigInteger>> totalWeight = Context.newBranchDB("running_total",
@@ -75,14 +70,6 @@ public class DataSourceImpl {
 
     public void setName(String name) {
         this.name.at(dbKey).set(name);
-    }
-
-    public BigInteger getDay() {
-        return day.at(dbKey).getOrDefault(BigInteger.ZERO);
-    }
-
-    public void setDay(BigInteger day) {
-        this.day.at(dbKey).set(day);
     }
 
     // Used for migration if it happens on Claim
@@ -157,18 +144,6 @@ public class DataSourceImpl {
 
     private void setWorkingBalance(String user, BigInteger balance) {
         this.userWorkingBalance.at(dbKey).set(user, balance);
-    }
-
-    public Boolean getPrecomp() {
-        return precomp.at(dbKey).getOrDefault(false);
-    }
-
-    public Integer getOffset() {
-        return offset.at(dbKey).getOrDefault(0);
-    }
-
-    public BigInteger getTotalValue(BigInteger day) {
-        return totalValue.at(dbKey).getOrDefault(day, BigInteger.ZERO);
     }
 
     public BigInteger getTotalDist(BigInteger day, boolean readonly) {
@@ -350,20 +325,15 @@ public class DataSourceImpl {
 
     public Map<String, Object> getDataAt(BigInteger day) {
         Map<String, Object> sourceData = new HashMap<>();
-        sourceData.put("day", day);
         sourceData.put("contract_address", getContractAddress());
-        // dist_percent is deprecated
-        sourceData.put("dist_percent", getDistPercent());
         sourceData.put("workingSupply", getWorkingSupply());
-        sourceData.put("total_value", getTotalValue(day));
         sourceData.put("total_dist", getTotalDist(day, true));
 
         return sourceData;
     }
 
     public Map<String, Object> getData() {
-        BigInteger day = this.getDay();
-        return getDataAt(day);
+        return getDataAt(RewardsImpl.getDay());
     }
 
     private BigInteger computeUserRewards(BigInteger prevUserBalance, BigInteger totalWeight, BigInteger userWeight) {

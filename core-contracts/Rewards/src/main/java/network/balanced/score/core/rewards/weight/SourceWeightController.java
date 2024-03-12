@@ -24,11 +24,11 @@ import score.*;
 
 import java.math.BigInteger;
 
-import static network.balanced.score.core.rewards.RewardsImpl.boostedBaln;
 import static network.balanced.score.lib.utils.ArrayDBUtils.arrayDbContains;
 import static network.balanced.score.lib.utils.ArrayDBUtils.removeFromArraydb;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
+import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 
 public class SourceWeightController {
     public static RewardsImpl rewards;
@@ -94,31 +94,9 @@ public class SourceWeightController {
             BigInteger.class);
 
 
-    private static final DictDB<Address, Boolean> isRevoted = Context.newDictDB("isRevoted-v2", Boolean.class);
-    private static final VarDB<Boolean> isReset = Context.newVarDB("votesReset-v1", Boolean.class);
 
-    public SourceWeightController(Address bBalnAddress) {
-        boostedBaln.set(bBalnAddress);
+    public SourceWeightController() {
         timeTotal.set(getWeekTimestamp());
-    }
-
-    public static void reset(String[] sources) {
-        Context.require(!isReset.getOrDefault(false), "Votes have already been reset");
-        BigInteger nextWeekTimestamp = getNextWeekTimestamp();
-        // Move timesum of sources and type sums to next week then set to zero
-        for (String sourceName : sources) {
-            getWeight(sourceName);
-            pointsWeight.at(sourceName).set(nextWeekTimestamp, new Point());
-        }
-        getTotal();
-        // We can now safley set these to 0 and revote all users before next week
-        int nrSourceTypes = sourceTypeNames.length();
-        for (int id = 0; id < nrSourceTypes; id++) {
-            pointsSum.at(id).set(nextWeekTimestamp, new Point());
-        }
-        pointsTotal.set(nextWeekTimestamp, BigInteger.ZERO);
-
-        isReset.set(true);
     }
 
     /**
@@ -312,45 +290,7 @@ public class SourceWeightController {
         rewards.NewSource(name, sourceType, weight);
     }
 
-    public static void revote(Address user, String[] sources) {
-        Context.require(!isRevoted.getOrDefault(user, false), "This user already had its vote applied");
-        BigInteger nextTime = getNextWeekTimestamp();
-        for (String sourceName : sources) {
-            int sourceType = sourceTypes.get(sourceName) - 1;
-            Context.require(sourceType >= 0, "Source not added");
-            // Prepare slopes and biases in memory
-            VotedSlope slope = voteUserSlopes.at(user).get(sourceName);
-            if (slope == null) {
-                continue;
-            }
 
-            if (slope.end.compareTo(nextTime) <= 0) {
-                continue;
-            }
-
-            BigInteger newDt = slope.end.subtract(nextTime);
-            BigInteger newBias = slope.slope.multiply(newDt);
-
-            Point weightPoint = pointsWeight.at(sourceName).getOrDefault(nextTime, new Point());
-            weightPoint.bias = weightPoint.bias.add(newBias);
-            Point sumPoint = pointsSum.at(sourceType).getOrDefault(nextTime, new Point());
-            sumPoint.bias = sumPoint.bias.add(newBias);
-
-            weightPoint.slope = weightPoint.slope.add(slope.slope);
-            sumPoint.slope = sumPoint.slope.add(slope.slope);
-
-            // Add slope changes for new slopes
-            BigInteger newChangeWeight = changesWeight.at(sourceName).getOrDefault(slope.end, BigInteger.ZERO);
-            changesWeight.at(sourceName).set(slope.end, newChangeWeight.add(slope.slope));
-            BigInteger newChangeSum = changesSum.at(sourceType).getOrDefault(slope.end, BigInteger.ZERO);
-            changesSum.at(sourceType).set(slope.end, newChangeSum.add(slope.slope));
-
-            pointsWeight.at(sourceName).set(nextTime, weightPoint);
-            pointsSum.at(sourceType).set(nextTime, sumPoint);
-        }
-
-        isRevoted.set(user, true);
-    }
 
     /**
      * Checkpoint to fill data common for all sources
@@ -455,14 +395,10 @@ public class SourceWeightController {
      * @param userWeight Weight for a source in bps (units of 0.01%). Minimal is 0.01%. Ignored if 0
      */
     public static void voteForSourceWeights(String sourceName, BigInteger userWeight) {
-        if (!isRevoted.getOrDefault(Context.getCaller(), false)) {
-            revote(Context.getCaller(), RewardsImpl.getAllSources());
-        }
-
         Context.require(isVotable.getOrDefault(sourceName, true) || userWeight.equals(BigInteger.ZERO), sourceName +
                 " is not a votable source, you can only remove weight");
 
-        Address bBalnAddress = boostedBaln.get();
+        Address bBalnAddress = getBoostedBaln();
         Address user = Context.getCaller();
         BigInteger slope = Context.call(BigInteger.class, bBalnAddress, "getLastUserSlope", user);
         BigInteger lockEnd = Context.call(BigInteger.class, bBalnAddress, "lockedEnd", user);
@@ -475,7 +411,7 @@ public class SourceWeightController {
                 "Weight has to be between 0 and 10000");
         BigInteger nextUserVote =
                 lastUserVote.at(user).getOrDefault(sourceName, BigInteger.ZERO).add(WEIGHT_VOTE_DELAY);
-        Context.require(timestamp.compareTo(nextUserVote) >= 0, "Cannot vote so often");
+                Context.require(timestamp.compareTo(nextUserVote) >= 0, "Cannot vote so often");
 
         int sourceType = sourceTypes.get(sourceName) - 1;
         Context.require(sourceType >= 0, "Source not added");

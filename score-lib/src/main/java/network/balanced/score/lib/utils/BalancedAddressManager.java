@@ -48,7 +48,7 @@ public class BalancedAddressManager {
                 "getAddress", name);
     }
 
-    private static Address getAddress(String name) {
+    public static Address getAddress(String name) {
         Address address = contractAddresses.get(name);
         if (address == null) {
             address = fetchAddress(name);
