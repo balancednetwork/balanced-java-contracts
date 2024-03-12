@@ -219,34 +219,7 @@ class DAOfundImplTest extends TestBase {
         Address quoteToken = mockBalanced.bnUSD.getAddress();
         BigInteger quoteAmount = EXA.multiply(BigInteger.TWO);
 
-        BigInteger pid = BigInteger.TWO;
-        BigInteger lpBalance = BigInteger.TEN;
-        when(mockBalanced.dex.mock.getPoolId(baseToken, quoteToken)).thenReturn(pid);
-        when(mockBalanced.dex.mock.balanceOf(daofundScore.getAddress(), pid)).thenReturn(lpBalance);
-
-        BigInteger price = quoteAmount.multiply(EXA).divide(baseAmount);
-        BigInteger priceChangeThreshold = (BigInteger) daofundScore.call("getPOLSupplySlippage");
-        BigInteger maxDiff = price.multiply(priceChangeThreshold).divide(POINTS);
-
         // Act & Assert
-        String expectedErrorMessage = "Price on dex was above allowed threshold";
-        when(mockBalanced.dex.mock.getPrice(pid)).thenReturn(price.add(maxDiff));
-        Executable aboveThreshold = () -> daofundScore.invoke(mockBalanced.governance.account, "supplyLiquidity",
-                baseToken, baseAmount, quoteToken, quoteAmount);
-        expectErrorMessage(aboveThreshold, expectedErrorMessage);
-
-        when(mockBalanced.dex.mock.getPrice(pid)).thenReturn(price.add(maxDiff).subtract(BigInteger.ONE));
-        daofundScore.invoke(mockBalanced.governance.account, "supplyLiquidity", baseToken, baseAmount, quoteToken,
-                quoteAmount);
-
-        // Act & Assert
-        expectedErrorMessage = "Price on dex was below allowed threshold";
-        when(mockBalanced.dex.mock.getPrice(pid)).thenReturn(price.subtract(maxDiff));
-        Executable belowThreshold = () -> daofundScore.invoke(mockBalanced.governance.account, "supplyLiquidity",
-                baseToken, baseAmount, quoteToken, quoteAmount);
-        expectErrorMessage(belowThreshold, expectedErrorMessage);
-
-        when(mockBalanced.dex.mock.getPrice(pid)).thenReturn(price.subtract(maxDiff).add(BigInteger.ONE));
         daofundScore.invoke(mockBalanced.governance.account, "supplyLiquidity", baseToken, baseAmount, quoteToken,
                 quoteAmount);
     }

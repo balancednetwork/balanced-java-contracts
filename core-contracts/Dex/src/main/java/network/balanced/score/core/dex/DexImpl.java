@@ -364,8 +364,6 @@ public class DexImpl extends AbstractDex {
         BigInteger poolLpAmount = poolLpTotal.getOrDefault(id, BigInteger.ZERO);
         BigInteger userLpAmount = balance.at(id).getOrDefault(user, BigInteger.ZERO);
 
-
-
         // We need to only supply new base and quote in the pool ratio.
         // If there isn't a pool yet, we can form one with the supplied ratios.
 

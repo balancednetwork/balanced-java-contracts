@@ -61,16 +61,6 @@ public class POLManager {
     public static void supplyLiquidity(Address baseAddress, BigInteger baseAmount, Address quoteAddress,
                                        BigInteger quoteAmount) {
         Address dex = getDex();
-        BigInteger pid = Context.call(BigInteger.class, dex, "getPoolId", baseAddress, quoteAddress);
-
-        BigInteger supplyPrice = quoteAmount.multiply(EXA).divide(baseAmount);
-        BigInteger dexPrice = Context.call(BigInteger.class, dex, "getPrice", pid);
-        BigInteger allowedDiff = supplyPrice.multiply(polSupplySlippage.get()).divide(POINTS);
-        Context.require(supplyPrice.subtract(allowedDiff).compareTo(dexPrice) < 0, "Price on dex was below allowed " +
-                "threshold");
-        Context.require(supplyPrice.add(allowedDiff).compareTo(dexPrice) > 0, "Price on dex was above allowed " +
-                "threshold");
-
         Context.call(baseAddress, "transfer", dex, baseAmount, tokenDepositData);
         Context.call(quoteAddress, "transfer", dex, quoteAmount, tokenDepositData);
         Context.call(dex, "add", baseAddress, quoteAddress, baseAmount, quoteAmount, true, getPOLSupplySlippage());
