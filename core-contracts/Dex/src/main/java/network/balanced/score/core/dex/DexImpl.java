@@ -173,14 +173,12 @@ public class DexImpl extends AbstractDex {
             case "_deposit": {
                 deposit(fromToken, _from, _value);
                 break;
-
             }
             case "_swap_icx": {
                 require(fromToken.equals(getSicx()),
                         TAG + ": InvalidAsset: _swap_icx can only be called with sICX");
                 swapIcx(_from, _value);
                 break;
-
             }
             case "_swap": {
 
@@ -208,16 +206,13 @@ public class DexImpl extends AbstractDex {
 
                 // Perform the swap
                 exchange(fromToken, toToken, _from, receiver, _value, minimumReceive);
-
                 break;
             }
             case "_donate": {
                 JsonObject params = json.get("params").asObject();
                 require(params.contains("toToken"), TAG + ": No toToken specified in swap");
                 Address toToken = Address.fromString(params.get("toToken").asString());
-
                 donate(fromToken, toToken, _value);
-
                 break;
             }
             default:

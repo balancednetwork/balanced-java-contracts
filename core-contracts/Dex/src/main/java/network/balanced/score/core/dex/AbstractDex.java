@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 
 import static network.balanced.score.core.dex.DexDBVariables.*;
+import static network.balanced.score.core.dex.utils.Check.isValidPercent;
 import static network.balanced.score.core.dex.utils.Check.isValidPoolId;
 import static network.balanced.score.core.dex.utils.Const.*;
 import static network.balanced.score.lib.utils.BalancedAddressManager.*;
@@ -176,6 +177,46 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
         marketsToNames.set(_id.intValue(), _name);
     }
 
+    @External
+    public void setOracleProtection(BigInteger pid, BigInteger percentage){
+        isValidPoolId(pid);
+        isValidPercent(percentage.intValue());
+        validateTokenOraclePrice(poolBase.get(pid.intValue()));
+        validateTokenOraclePrice(poolQuote.get(pid.intValue()));
+
+        oracleProtection.set(pid, percentage);
+    }
+
+    private void  validateTokenOraclePrice(Address token){
+        BigInteger price = getOraclePrice(token);
+        Context.require(price != null && !price.equals(BigInteger.ZERO),
+                "Token must be supported by the balanced Oracle");
+    }
+
+    private BigInteger getOraclePrice(Address token){
+        String symbol = Context.call(String.class, token, "symbol");
+        return Context.call(BigInteger.class, getBalancedOracle(), "getPriceInUSD", symbol);
+    }
+
+    protected void oracleProtection(Integer pid){
+        BigInteger poolId = BigInteger.valueOf(pid);
+        BigInteger oracleProtectionPercentage = oracleProtection.get(poolId);
+        if(oracleProtectionPercentage==null || oracleProtectionPercentage.signum()==0){
+            return;
+        }
+        Address quoteToken = poolQuote.get(pid);
+        BigInteger oraclePriceQuote = getOraclePrice(quoteToken);
+        BigInteger priceQuote = getQuotePriceInBase(poolId);
+        BigInteger protectedAmountQuote = priceQuote.multiply(oracleProtectionPercentage).divide(POINTS);
+        Context.require(oraclePriceQuote.compareTo(priceQuote.add(protectedAmountQuote))<=0 || oraclePriceQuote.compareTo(priceQuote.subtract(protectedAmountQuote))>=0, TAG + ": oracle protection price violated");
+
+        Address baseToken = poolBase.get(pid);
+        BigInteger oraclePriceBase = getOraclePrice(baseToken);
+        BigInteger priceBase = getBasePriceInQuote(poolId);
+        BigInteger protectedAmountBase = priceBase.multiply(oracleProtectionPercentage).divide(POINTS);
+        Context.require(oraclePriceBase.compareTo(priceBase.add(protectedAmountBase))<=0 || oraclePriceBase.compareTo(priceBase.subtract(protectedAmountBase))>=0, TAG + ": oracle protection price violated");
+    }
+
     @External(readonly = true)
     public String getPoolName(BigInteger _id) {
         return marketsToNames.get(_id.intValue());
@@ -260,6 +301,11 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
     @External(readonly = true)
     public Address getPoolQuote(BigInteger _id) {
         return poolQuote.get(_id.intValue());
+    }
+
+    @External(readonly = true)
+    public BigInteger getOracleProtection(BigInteger pid){
+        return oracleProtection.get(pid);
     }
 
     @External(readonly = true)
@@ -469,6 +515,10 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
         Context.call(getStaking(), "delegate", (Object) prepDelegations);
     }
 
+    private static BigInteger getPriceInUSD(String symbol) {
+        return (BigInteger) Context.call(getBalancedOracle(), "getLastPriceInUSD", symbol);
+    }
+
     protected BigInteger getSicxRate() {
         return (BigInteger) Context.call(getStaking(), "getTodayRate");
     }
@@ -562,6 +612,7 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
         // Save updated pool totals
         totalTokensInPool.set(fromToken, newFromToken);
         totalTokensInPool.set(toToken, newToToken);
+        oracleProtection(id);
 
         // Capture details for event logs
         BigInteger totalBase = isSell ? newFromToken : newToToken;
