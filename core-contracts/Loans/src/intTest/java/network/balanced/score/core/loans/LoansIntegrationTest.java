@@ -936,7 +936,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         owner.irc2(collateralAddress).transfer(balanced.dex._address(), tokenAmount, depositData.toString().getBytes());
 
         owner.bnUSD.transfer(balanced.dex._address(), bnUSDAmount, depositData.toString().getBytes());
-        owner.dex.add(collateralAddress, balanced.bnusd._address(), tokenAmount, bnUSDAmount, false);
+        owner.dex.add(collateralAddress, balanced.bnusd._address(), tokenAmount, bnUSDAmount, false, BigInteger.valueOf(100));
         addCollateral(collateralAddress, peg);
     }
 
@@ -973,7 +973,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         owner.irc2(collateralAddress).transfer(balanced.dex._address(), tokenAmount, depositData.toString().getBytes());
 
         owner.bnUSD.transfer(balanced.dex._address(), bnUSDAmount, depositData.toString().getBytes());
-        owner.dex.add(collateralAddress, balanced.bnusd._address(), tokenAmount, bnUSDAmount, false);
+        owner.dex.add(collateralAddress, balanced.bnusd._address(), tokenAmount, bnUSDAmount, false, BigInteger.valueOf(100));
         BigInteger lockingRatio = BigInteger.valueOf(40_000);
         BigInteger liquidationRatio = BigInteger.valueOf(15_000);
         BigInteger debtCeiling = BigInteger.TEN.pow(30);

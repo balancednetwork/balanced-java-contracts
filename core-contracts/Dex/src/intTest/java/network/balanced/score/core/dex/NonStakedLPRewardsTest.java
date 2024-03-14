@@ -126,7 +126,7 @@ public class NonStakedLPRewardsTest {
         //deposit quote token
         userBalnScoreClient.transfer(dexScoreClient._address(), BigInteger.valueOf(100).multiply(EXA), tokenDeposit);
         dexUserScoreClient.add(balanced.baln._address(), balanced.sicx._address(),
-                BigInteger.valueOf(100).multiply(EXA), BigInteger.valueOf(100).multiply(EXA), false);
+                BigInteger.valueOf(100).multiply(EXA), BigInteger.valueOf(100).multiply(EXA), false, BigInteger.valueOf(100));
 
         waitForADay();
         balanced.syncDistributions();

@@ -174,7 +174,7 @@ public interface Dex extends Name, AddressManager, Fallback, TokenFallback,
 
     @External
     void add(Address _baseToken, Address _quoteToken, BigInteger _baseValue, BigInteger _quoteValue,
-             @Optional boolean _withdraw_unused);
+             @Optional boolean _withdraw_unused, @Optional BigInteger _slippagePercentage);
 
     @External
     void withdrawSicxEarnings(@Optional BigInteger _value);

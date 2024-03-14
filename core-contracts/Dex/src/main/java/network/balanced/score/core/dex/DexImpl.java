@@ -21,8 +21,8 @@ import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 import network.balanced.score.core.dex.db.NodeDB;
 import network.balanced.score.lib.structs.RewardsDataEntry;
-import network.balanced.score.lib.utils.Versions;
 import network.balanced.score.lib.utils.BalancedFloorLimits;
+import network.balanced.score.lib.utils.Versions;
 import score.Address;
 import score.BranchDB;
 import score.Context;
@@ -35,14 +35,16 @@ import scorex.util.ArrayList;
 import java.math.BigInteger;
 import java.util.List;
 
-import static network.balanced.score.core.dex.utils.Check.isDexOn;
 import static network.balanced.score.core.dex.DexDBVariables.*;
+import static network.balanced.score.core.dex.utils.Check.isDexOn;
+import static network.balanced.score.core.dex.utils.Check.isValidSlippagePercent;
 import static network.balanced.score.core.dex.utils.Const.*;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getRewards;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getSicx;
-import static network.balanced.score.lib.utils.Constants.EXA;
-import static network.balanced.score.lib.utils.Math.convertToNumber;
 import static network.balanced.score.lib.utils.Check.checkStatus;
+import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Constants.POINTS;
+import static network.balanced.score.lib.utils.Math.convertToNumber;
 import static score.Context.require;
 
 public class DexImpl extends AbstractDex {
@@ -117,6 +119,8 @@ public class DexImpl extends AbstractDex {
         activeAddresses.get(SICXICX_POOL_ID).remove(user);
 
         sendRewardsData(user, BigInteger.ZERO, currentIcxTotal);
+
+        BalancedFloorLimits.verifyNativeWithdraw(withdrawAmount);
         Context.transfer(user, withdrawAmount);
     }
 
@@ -323,9 +327,10 @@ public class DexImpl extends AbstractDex {
 
     @External
     public void add(Address _baseToken, Address _quoteToken, BigInteger _baseValue, BigInteger _quoteValue,
-                    @Optional boolean _withdraw_unused) {
+                    @Optional boolean _withdraw_unused, @Optional BigInteger _slippagePercentage) {
         isDexOn();
         checkStatus();
+        isValidSlippagePercent(_slippagePercentage.intValue());
 
         Address user = Context.getCaller();
 
@@ -401,6 +406,13 @@ public class DexImpl extends AbstractDex {
             poolBaseAmount = totalTokensInPool.get(_baseToken);
             poolQuoteAmount = totalTokensInPool.get(_quoteToken);
 
+            BigInteger poolPrice = poolBaseAmount.multiply(EXA).divide(poolQuoteAmount);
+            BigInteger priceOfAssetToCommit = baseToCommit.multiply(EXA).divide(quoteToCommit);
+
+            require(
+                    (priceOfAssetToCommit.subtract(poolPrice)).abs().compareTo(_slippagePercentage.multiply(poolPrice).divide(POINTS)) <= 0,
+                    TAG + " : insufficient slippage provided"
+            );
 
             BigInteger baseFromQuote = _quoteValue.multiply(poolBaseAmount).divide(poolQuoteAmount);
             BigInteger quoteFromBase = _baseValue.multiply(poolQuoteAmount).divide(poolBaseAmount);
@@ -420,7 +432,6 @@ public class DexImpl extends AbstractDex {
         }
 
         // Apply the funds to the pool
-
         poolBaseAmount = poolBaseAmount.add(baseToCommit);
         poolQuoteAmount = poolQuoteAmount.add(quoteToCommit);
 
