@@ -56,6 +56,7 @@ class DexTestBase extends UnitTest {
     protected Account sicxScore;
     protected Account feehandlerScore;
     protected Account stakedLPScore;
+    protected Account balancedOracle;
 
     public static Score dexScore;
     public static DexImpl dexScoreSpy;
@@ -73,6 +74,7 @@ class DexTestBase extends UnitTest {
         sicxScore = mockBalanced.sicx.account;
         feehandlerScore = mockBalanced.feehandler.account;
         stakedLPScore = mockBalanced.stakedLp.account;
+        balancedOracle = mockBalanced.balancedOracle.account;
 
         contextMock.when(() -> Context.call(eq(governanceScore.getAddress()), eq("checkStatus"), any(String.class))).thenReturn(null);
         contextMock.when(() -> Context.call(eq(BigInteger.class), any(Address.class), eq("balanceOf"), any(Address.class))).thenReturn(BigInteger.ZERO);
