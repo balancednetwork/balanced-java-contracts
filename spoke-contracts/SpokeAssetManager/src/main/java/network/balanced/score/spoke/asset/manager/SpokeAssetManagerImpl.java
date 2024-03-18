@@ -28,9 +28,6 @@ import score.annotation.External;
 import score.annotation.Optional;
 import score.annotation.Payable;
 
-import com.eclipsesource.json.Json;
-import com.eclipsesource.json.JsonObject;
-
 import foundation.icon.xcall.NetworkAddress;
 
 import java.math.BigInteger;
@@ -40,7 +37,6 @@ import java.util.Map;
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.BalancedFloorLimits.verifyNativeWithdraw;
-import static network.balanced.score.lib.utils.BalancedFloorLimits.verifyWithdraw;
 
 public class SpokeAssetManagerImpl extends FloorLimited implements SpokeAssetManager {
 
@@ -71,7 +67,6 @@ public class SpokeAssetManagerImpl extends FloorLimited implements SpokeAssetMan
             Context.revert("Can't Update same version of code");
         }
         this.currentVersion.set(Versions.SPOKE_ASSET_MANAGER);
-
     }
 
     @External(readonly = true)
@@ -100,13 +95,12 @@ public class SpokeAssetManagerImpl extends FloorLimited implements SpokeAssetMan
     }
 
     private void withdraw(Address token, Address to, BigInteger amount) {
-        if (token.equals(EOA_ZERO)) {
-            verifyNativeWithdraw(amount);
-            Context.transfer(to, amount);
-        } else {
-            verifyWithdraw(token, amount);
-            Context.call(to, "transfer", to, amount);
+        if (!token.equals(EOA_ZERO)) {
+            Context.revert("Only native token is currently supported");
         }
+
+        verifyNativeWithdraw(amount);
+        Context.transfer(to, amount);
     }
 
     @External
