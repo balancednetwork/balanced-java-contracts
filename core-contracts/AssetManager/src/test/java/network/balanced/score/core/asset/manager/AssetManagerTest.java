@@ -153,13 +153,12 @@ class AssetManagerTest extends TestBase {
         NetworkAddress ethAccount = new NetworkAddress(ETH_NID, "0xTest");
         BigInteger amount = BigInteger.TEN;
         NetworkAddress tokenAddress = new NetworkAddress(ETH_NID, ethAsset1Address);
+        doReturn(amount).when(assetManagerSpy).getAssetDeposit(tokenAddress.toString());
 
         // Act
         assetManager.invoke(user, "withdrawTo", ethAsset1.getAddress(), ethAccount.toString(), amount);
 
         // Assert
-        BigInteger assetDeposit = (BigInteger) assetManager.call("getAssetDeposit", tokenAddress.toString());
-        assertEquals(assetDeposit, amount.negate());
         byte[] expectedMsg = SpokeAssetManagerMessages.WithdrawTo(tokenAddress.account(), ethAccount.account(), amount);
         byte[] expectedRollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), ethAccount.toString(), amount);
 
@@ -174,13 +173,12 @@ class AssetManagerTest extends TestBase {
         NetworkAddress ethAccount = new NetworkAddress(ETH_NID, "0xTest");
         BigInteger amount = BigInteger.TEN;
         NetworkAddress tokenAddress = new NetworkAddress(ETH_NID, ethAsset1Address);
+        doReturn(amount).when(assetManagerSpy).getAssetDeposit(tokenAddress.toString());
 
         // Act
         assetManager.invoke(user, "withdrawNativeTo", ethAsset1.getAddress(), ethAccount.toString(), amount);
 
         // Assert
-        BigInteger assetDeposit = (BigInteger) assetManager.call("getAssetDeposit", tokenAddress.toString());
-        assertEquals(assetDeposit, amount.negate());
         byte[] expectedMsg = SpokeAssetManagerMessages.WithdrawNativeTo(tokenAddress.account(), ethAccount.account(), amount);
         byte[] expectedRollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), ethAccount.toString(), amount);
 
@@ -226,13 +224,12 @@ class AssetManagerTest extends TestBase {
         BigInteger amount = BigInteger.TEN;
         NetworkAddress tokenAddress = new NetworkAddress(ETH_NID, ethAsset1Address);
         byte[] withdraw = AssetManagerMessages.xWithdraw(ethAsset1.getAddress(), amount);
+        doReturn(amount).when(assetManagerSpy).getAssetDeposit(tokenAddress.toString());
 
         // Act
         assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", ethAccount.toString(), withdraw, defaultProtocols);
 
         // Assert
-        BigInteger assetDeposit = (BigInteger) assetManager.call("getAssetDeposit", tokenAddress.toString());
-        assertEquals(assetDeposit, amount.negate());
         byte[] expectedMsg = SpokeAssetManagerMessages.WithdrawTo(tokenAddress.account(), ethAccount.account(), amount);
         byte[] expectedRollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), ethAccount.toString(), amount);
 

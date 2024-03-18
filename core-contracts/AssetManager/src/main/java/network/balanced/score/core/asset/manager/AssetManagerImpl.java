@@ -311,8 +311,9 @@ public class AssetManagerImpl implements AssetManager {
             msg = SpokeAssetManagerMessages.WithdrawTo(tokenAddress.account(), targetAddress.account(), amount);
         }
 
-
-        assetDeposits.set(tokenAddress.toString(), getAssetDeposit(tokenAddress.toString()).subtract(amount));
+        BigInteger remainingDeposit = getAssetDeposit(tokenAddress.toString()).subtract(amount);
+        Context.require(remainingDeposit.signum()>=0, "Remaining deposit can't be negative");
+        assetDeposits.set(tokenAddress.toString(), remainingDeposit);
 
         XCallUtils.sendCall(fee, spoke, msg, rollback);
     }
