@@ -48,7 +48,6 @@ class SpokeXCallManagerTest extends TestBase {
 
     private static final Account owner = sm.createAccount();
     private static final Account user = sm.createAccount();
-    private static final Account proposer = sm.createAccount();
     public MockContract<XCall> xCall;
     public MockContract<SpokeXCallManager> xCallManager;
     public Score manager;
@@ -95,6 +94,7 @@ class SpokeXCallManagerTest extends TestBase {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void configureProtocol() {
         // Arrange
         String[] sources = new String[] { "new src" };
@@ -115,6 +115,7 @@ class SpokeXCallManagerTest extends TestBase {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void configureProtocol_default() {
         // Arrange
         byte[] msg = SpokeXCallManagerMessages.configureProtocols(new String[] {}, new String[] {});
@@ -135,6 +136,7 @@ class SpokeXCallManagerTest extends TestBase {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void configureProtocol_withProposedRemoval() {
         // Arrange
         String[] sources = new String[] { "new src" };
@@ -157,6 +159,7 @@ class SpokeXCallManagerTest extends TestBase {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void configureProtocol_backToDefault_withProposedRemoval() {
         // Arrange
         String[] sources = new String[] { "src" };

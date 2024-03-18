@@ -19,7 +19,6 @@ package network.balanced.score.lib.interfaces;
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.annotations.XCall;
-import network.balanced.score.lib.interfaces.base.TokenFallback;
 import network.balanced.score.lib.interfaces.base.Version;
 import network.balanced.score.lib.interfaces.base.Name;
 import score.Address;

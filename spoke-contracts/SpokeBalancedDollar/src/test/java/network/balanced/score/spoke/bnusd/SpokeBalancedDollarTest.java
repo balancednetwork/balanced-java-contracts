@@ -25,11 +25,9 @@ import network.balanced.score.lib.test.mock.MockContract;
 import network.balanced.score.lib.utils.Names;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import score.Address;
-import score.UserRevertedException;
 import foundation.icon.xcall.NetworkAddress;
 
 import java.math.BigInteger;
@@ -38,12 +36,8 @@ import java.util.Map;
 import static network.balanced.score.lib.test.UnitTest.assertOnlyCallableBy;
 import static network.balanced.score.lib.test.UnitTest.assertOnlyCallableByOwner;
 import static network.balanced.score.lib.test.UnitTest.expectErrorMessage;
-import static network.balanced.score.lib.utils.Constants.EXA;
-import static network.balanced.score.lib.utils.Constants.POINTS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class SpokeBalancedDollarTest extends TestBase {
