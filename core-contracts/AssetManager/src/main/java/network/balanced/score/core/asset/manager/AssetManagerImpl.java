@@ -312,7 +312,7 @@ public class AssetManagerImpl implements AssetManager {
         }
 
         BigInteger remainingDeposit = getAssetDeposit(tokenAddress.toString()).subtract(amount);
-        Context.require(remainingDeposit.signum()>=0, "Remaining deposit can't be negative");
+        Context.require(remainingDeposit.signum() >= 0, "Remaining deposit can't be negative");
         assetDeposits.set(tokenAddress.toString(), remainingDeposit);
 
         XCallUtils.sendCall(fee, spoke, msg, rollback);
