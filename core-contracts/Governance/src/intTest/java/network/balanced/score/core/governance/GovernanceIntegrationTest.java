@@ -20,6 +20,7 @@ import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import foundation.icon.icx.KeyWallet;
 import foundation.icon.score.client.DefaultScoreClient;
+import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import score.Address;
+import score.UserRevertedException;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -233,6 +235,36 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
     }
 
     @Test
+    @Order(14)
+    void deployContractWithSameName() throws IOException {
+        // Arrange
+        String deploymentValueParameter = "first deployment";
+        byte[] contractData = getContractBytesFromResources(this.getClass(), deploymentTesterJar1);
+        JsonArray params = new JsonArray()
+                .add(createParameter(deploymentValueParameter));
+
+        // Act & Assert
+        Executable contractAlreadyExists = () -> owner.governance.deploy(contractData, params.toString());
+        assertThrows(UserRevertedException.class, contractAlreadyExists);
+        Executable addContractAlreadyExists = () -> owner.governance.addExternalContract(Names.LOANS, owner.staking._address());
+        assertThrows(UserRevertedException.class, contractAlreadyExists);
+    }
+
+    @Test
+    @Order(15)
+    void deployToWrongContract() throws IOException {
+        // Arrange
+        String deploymentValueParameter = "first deployment";
+        byte[] contractData = getContractBytesFromResources(this.getClass(), deploymentTesterJar1);
+        JsonArray params = new JsonArray()
+                .add(createParameter(deploymentValueParameter));
+
+        // Act & Assert
+        Executable wrongContractTarget = () -> owner.governance.deployTo(owner.loans._address(), contractData, params.toString());
+        assertThrows(UserRevertedException.class, wrongContractTarget);
+    }
+
+    @Test
     @Order(99)
     void updateContractFromVote() throws IOException {
         // updating staking from vote
@@ -292,7 +324,6 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         byte[] contractData = getContractBytesFromResources(this.getClass(), deploymentTesterJar1);
         JsonArray params = new JsonArray()
                 .add(createParameter(deploymentValueParameter));
-        owner.governance.deploy(contractData, params.toString());
 
         Address contractAddress = owner.governance.getAddress(deploymentTesterName);
 
@@ -426,8 +457,8 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
         balanced.increaseDay(1);
         user.rewards.claimRewards(new String[]{"Loans"});
 
-        owner.governance.addAuthorizedCallerShutdown(trustedUser1.getAddress());
-        owner.governance.addAuthorizedCallerShutdown(trustedUser2.getAddress());
+        owner.governance.addAuthorizedCallerShutdown(trustedUser1.getAddress(), false);
+        owner.governance.addAuthorizedCallerShutdown(trustedUser2.getAddress(), false);
 
         // Act & Assert
         trustedUser1.governance.disable();

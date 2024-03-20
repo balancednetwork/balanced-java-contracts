@@ -20,6 +20,7 @@ import network.balanced.score.lib.utils.IterableDictDB;
 import score.Address;
 import score.Context;
 import score.VarDB;
+import score.DictDB;
 import scorex.util.HashMap;
 
 import java.math.BigInteger;
@@ -30,6 +31,7 @@ import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 public class EmergencyManager {
     private static final IterableDictDB<Address, BigInteger> authorizedCallersShutdown = new IterableDictDB<>(
             "authorized_shutdown_callers", BigInteger.class, Address.class, false);
+    private static final DictDB<Address, Boolean> disableOnly = Context.newDictDB("disable_only", Boolean.class);
     private static final IterableDictDB<String, Boolean> blacklist = new IterableDictDB<>("balanced_black_list",
             Boolean.class, String.class, false);
     private static final VarDB<BigInteger> enableDisableTimeLock = Context.newVarDB("enable_disable_time_lock",
@@ -37,12 +39,18 @@ public class EmergencyManager {
     private static final VarDB<Boolean> enabled = Context.newVarDB("balanced_status", Boolean.class);
 
 
-    public static void addAuthorizedCallerShutdown(Address address) {
+    public static void addAuthorizedCallerShutdown(Address address, boolean onlyDisable) {
         authorizedCallersShutdown.set(address, BigInteger.ZERO);
+        disableOnly.set(address, onlyDisable);
     }
 
     public static void removeAuthorizedCallerShutdown(Address address) {
         authorizedCallersShutdown.remove(address);
+        disableOnly.set(address, null);
+    }
+
+    public static boolean canOnlyDisable(Address address) {
+        return disableOnly.getOrDefault(address, false);
     }
 
     public static Map<String, BigInteger> getShutdownCallers() {

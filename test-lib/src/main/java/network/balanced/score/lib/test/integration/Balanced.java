@@ -123,7 +123,6 @@ public class Balanced {
         governanceClient.deploy(getContractData("Loans"), governanceParam);
         governanceClient.deploy(getContractData("Rebalancing"), governanceParam);
         governanceClient.deploy(getContractData("Rewards"), governanceParam);
-        governanceClient.deploy(getContractData("Staking"), "[]");
         governanceClient.deploy(getContractData("BalancedDollar"), governanceParam);
         governanceClient.deploy(getContractData("DAOfund"), governanceParam);
         governanceClient.deploy(getContractData("Dividends"), governanceParam);

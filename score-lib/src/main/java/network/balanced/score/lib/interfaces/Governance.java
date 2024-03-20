@@ -138,7 +138,7 @@ public interface Governance extends
     Map<String, Boolean> getBlacklist();
 
     @External
-    void addAuthorizedCallerShutdown(Address address);
+    void addAuthorizedCallerShutdown(Address address, @Optional boolean disableOnly);
 
     @External
     void removeAuthorizedCallerShutdown(Address address);
