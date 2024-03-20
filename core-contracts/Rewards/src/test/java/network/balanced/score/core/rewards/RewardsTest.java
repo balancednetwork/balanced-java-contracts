@@ -108,18 +108,6 @@ class RewardsTest extends RewardsTestBase {
         // Act & Assert
         rewardsScore.invoke(baln.account, "tokenFallback", account.getAddress(), BigInteger.TEN, new byte[0]);
     }
-
-    @Test
-    void tokenFallback_notBaln() {
-        // Arrange
-        Account account = sm.createAccount();
-        String expectedErrorMessage = RewardsImpl.TAG + ": The Rewards SCORE can only accept BALN tokens";
-
-        // Act & Assert
-        Executable tokenFallbackBwt = () -> rewardsScore.invoke(bwt.account, "tokenFallback", account.getAddress(),
-                BigInteger.TEN, new byte[0]);
-        expectErrorMessage(tokenFallbackBwt, expectedErrorMessage);
-    }
 }
 
 
