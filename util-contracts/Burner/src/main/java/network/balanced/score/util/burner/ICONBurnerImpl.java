@@ -85,19 +85,22 @@ public class ICONBurnerImpl implements ICONBurner {
         return totalBurn.getOrDefault(BigInteger.ZERO);
     }
 
-
     @External(readonly = true)
     public BigInteger getPendingBurn() {
         BigInteger sICXbalance = Context.call(BigInteger.class, getSicx(), "balanceOf", Context.getAddress());
         BigInteger bnUSDBalance = Context.call(BigInteger.class, getBnusd(), "balanceOf", Context.getAddress());
         BigInteger sICXPrice = Context.call(BigInteger.class, getBalancedOracle(), "getLastPriceInLoop", "sICX");
         BigInteger bnUSDPrice = Context.call(BigInteger.class, getBalancedOracle(), "getLastPriceInLoop", "bnUSD");
-        BigInteger total = sICXPrice.multiply(sICXbalance).divide(EXA).add(bnUSDBalance.multiply(bnUSDPrice).divide(EXA));
+        return sICXPrice.multiply(sICXbalance).divide(EXA).add(bnUSDBalance.multiply(bnUSDPrice).divide(EXA));
+    }
+
+    @External(readonly = true)
+    public BigInteger getUnstakingBurn() {
         List<Map<String, Object>> unstakeData =  (List<Map<String, Object>>) Context.call(getStaking(), "getUserUnstakeInfo", Context.getAddress());
+        BigInteger total = BigInteger.ZERO;
         for (Map<String,Object> data : unstakeData) {
             total = total.add((BigInteger)data.get("amount"));
         }
-
         BigInteger claimableICX = Context.call(BigInteger.class, getStaking(), "claimableICX", Context.getAddress());
 
         return total.add(claimableICX);
