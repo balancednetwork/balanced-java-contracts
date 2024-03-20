@@ -23,6 +23,7 @@ import network.balanced.score.lib.structs.Point;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import network.balanced.score.lib.structs.RewardsDataEntryOld;
 import network.balanced.score.lib.structs.VotedSlope;
+import network.balanced.score.lib.utils.ArrayDBUtils;
 import network.balanced.score.lib.utils.IterableDictDB;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.SetDB;
@@ -39,11 +40,16 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+import com.eclipsesource.json.Json;
+import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.JsonValue;
+
 import static network.balanced.score.core.rewards.utils.RewardsConstants.*;
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static network.balanced.score.lib.utils.Constants.WEEK_IN_MICRO_SECONDS;
+import static network.balanced.score.lib.utils.Math.convertToNumber;
 import static network.balanced.score.lib.utils.Math.pow;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getBaln;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getBoostedBaln;
@@ -57,6 +63,9 @@ public class RewardsImpl implements Rewards {
     public static final String TAG = "BalancedRewards";
     private static final String START_TIMESTAMP = "start_timestamp";
     private static final String BALN_HOLDINGS = "baln_holdings";
+    private static final String EXTERNAL_HOLDINGS = "external_holdings";
+    private static final String EXTERNAL_REWARD_PROVIDERS = "external_reward_providers";
+    private static final String EXTERNAL_REWARD_TOKENS = "external_reward_tokens";
     private static final String PLATFORM_DAY = "platform_day";
     private static final String DATA_PROVIDERS = "data_providers";
     private static final String BOOST_WEIGHT = "boost_weight";
@@ -68,6 +77,9 @@ public class RewardsImpl implements Rewards {
 
     private static final VarDB<BigInteger> startTimestamp = Context.newVarDB(START_TIMESTAMP, BigInteger.class);
     static final DictDB<String, BigInteger> balnHoldings = Context.newDictDB(BALN_HOLDINGS, BigInteger.class);
+    static final BranchDB<String, DictDB<Address, BigInteger>> externalHoldings = Context.newBranchDB(EXTERNAL_HOLDINGS, BigInteger.class);
+    static final DictDB<Address, Boolean> externalRewardProviders = Context.newDictDB(EXTERNAL_REWARD_PROVIDERS, Boolean.class);
+    static final IterableDictDB<Address, Boolean> externalRewardTokens = new IterableDictDB<>(EXTERNAL_REWARD_TOKENS, Boolean.class, Address.class, false);
 
     private static final VarDB<BigInteger> platformDay = Context.newVarDB(PLATFORM_DAY, BigInteger.class);
     private final static SetDB<Address> dataProviders = new SetDB<>(DATA_PROVIDERS, Address.class, null);
@@ -103,8 +115,6 @@ public class RewardsImpl implements Rewards {
             distributionPercentages.set(Names.RESERVE, distributionPercentages.get(RESERVE_FUND));
             distributionPercentages.set(Names.DAOFUND, distributionPercentages.get(DAOFUND));
         }
-
-
 
         if (currentVersion.getOrDefault("").equals(Versions.REWARDS)) {
             Context.revert("Can't Update same version of code");
@@ -156,20 +166,45 @@ public class RewardsImpl implements Rewards {
         return holdings;
     }
 
+
+    @External(readonly = true)
+    public Map<Address, BigInteger> getHoldings(String _holder) {
+        List<Address> tokens = externalRewardTokens.keys();
+        DictDB<Address, BigInteger> holdingsDB = externalHoldings.at(_holder);
+        Map<Address, BigInteger> holdings = new HashMap<>();
+
+        for (Address token : tokens) {
+            holdings.put(token, holdingsDB.getOrDefault(token, BigInteger.ZERO));
+        }
+
+        holdings.put(getBaln(), balnHoldings.getOrDefault(_holder, BigInteger.ZERO));
+
+        return holdings;
+    }
+
     @External(readonly = true)
     public BigInteger getBalnHolding(String _holder) {
-        BigInteger accruedRewards = balnHoldings.getOrDefault(_holder, BigInteger.ZERO);
+        Address baln = getBaln();
+        return getRewards(_holder).get(baln);
+    }
 
+    @External(readonly = true)
+    public Map<Address, BigInteger> getRewards(String _holder) {
+        Map<Address, BigInteger> accruedRewards = getHoldings(_holder);
         int dataSourcesCount = DataSourceDB.size();
         for (int i = 0; i < dataSourcesCount; i++) {
             String name = DataSourceDB.names.get(i);
             DataSourceImpl dataSource = DataSourceDB.get(name);
             BigInteger currentTime = getTime();
-
-            BigInteger sourceRewards = dataSource.updateSingleUserData(currentTime, dataSource.getWorkingSupply(true)
-                    , _holder, dataSource.getWorkingBalance(_holder, true), true);
-
-            accruedRewards = accruedRewards.add(sourceRewards);
+            BalanceData balances = new BalanceData();
+            balances.prevBalance = dataSource.getBalance(_holder);
+            balances.prevSupply = dataSource.getTotalSupply();
+            balances.prevWorkingBalance = dataSource.getWorkingBalance(_holder, true);
+            balances.prevWorkingSupply = dataSource.getWorkingSupply(true);
+            Map<Address, BigInteger> sourceRewards = dataSource.updateSingleUserData(currentTime, balances, _holder, true);
+            for (Map.Entry<Address, BigInteger> entry : sourceRewards.entrySet()) {
+                accruedRewards.put(entry.getKey(), accruedRewards.get(entry.getKey()).add(entry.getValue()));
+            }
         }
 
         return accruedRewards;
@@ -351,25 +386,82 @@ public class RewardsImpl implements Rewards {
         BigInteger boostedSupply = fetchBoostedSupply();
         updateAllUserRewards(address, sources, boostedBalance, boostedSupply);
 
+        List<Address> tokens = externalRewardTokens.keys();
+        DictDB<Address, BigInteger> holdingsDB = externalHoldings.at(address);
+
+        for (Address token : tokens) {
+            BigInteger amount = holdingsDB.getOrDefault(token, BigInteger.ZERO);
+            if (amount.compareTo(BigInteger.ZERO) > 0) {
+                Context.call(token, "transfer", caller, amount, new byte[0]);
+                holdingsDB.set(token, null);
+                RewardsClaimedV2(token, address, amount);
+            }
+        }
+
         BigInteger userClaimableRewards = balnHoldings.getOrDefault(address, BigInteger.ZERO);
         if (userClaimableRewards.compareTo(BigInteger.ZERO) > 0) {
             balnHoldings.set(address, null);
-            Context.call(getBaln(), "transfer", caller, userClaimableRewards, new byte[0]);
+            Address baln = getBaln();
+
+            Context.call(baln, "transfer", caller, userClaimableRewards, new byte[0]);
             RewardsClaimed(caller, userClaimableRewards);
+            RewardsClaimedV2(baln, address, userClaimableRewards);
         }
     }
 
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         checkStatus();
-        Context.require(Context.getCaller().equals(getBaln()),
-                TAG + ": The Rewards SCORE can only accept BALN tokens");
+        Address token = Context.getCaller();
+        if (token.equals(getBaln())) {
+            return;
+        }
+
+        Context.require(externalRewardTokens.getOrDefault(token, false), "Only whitelisted tokens is allowed as rewards tokens");
+        Context.require(externalRewardProviders.getOrDefault(_from, false), "Only whitelisted addresses is allowed to provider external rewards");
+        String unpackedData = new String(_data);
+        Context.require(!unpackedData.isEmpty(), "Token Fallback: Data can't be empty");
+
+        JsonArray amounts = Json.parse(unpackedData).asArray();
+
+        BigInteger rewardDay = getDay().add(BigInteger.ONE);
+        BigInteger total = BigInteger.ZERO;
+        for (JsonValue jsonValue : amounts) {
+            BigInteger amount = convertToNumber(jsonValue.asObject().get("amount"));
+            String source = jsonValue.asObject().get("source").asString();
+
+            total = total.add(amount);
+
+            DataSourceImpl dataSource = DataSourceDB.get(source);
+            if (dataSource.getTotalExternalWeight(token).equals(BigInteger.ZERO)) {
+                if (!ArrayDBUtils.arrayDbContains(dataSource.getRewardTokensDB(), token)) {
+                    dataSource.addRewardToken(token);
+                }
+            }
+
+            BigInteger prevAmount = dataSource.getTotalDist(rewardDay);
+            dataSource.setTotalExternalDist(rewardDay, token, amount.add(prevAmount));
+        }
+
+        Context.require(total.equals(_value), "Total allocations do not match amount deposited");
     }
 
     @External
     public void addDataProvider(Address _source) {
         onlyOwner();
         dataProviders.add(_source);
+    }
+
+    @External
+    public void configureExternalReward(Address token, boolean allow) {
+        onlyOwner();
+        externalRewardTokens.set(token, allow);
+    }
+
+    @External
+    public void configureExternalRewardProvider(Address provider, boolean allow) {
+        onlyOwner();
+        externalRewardProviders.set(provider, allow);
     }
 
     @External(readonly = true)
@@ -406,6 +498,8 @@ public class RewardsImpl implements Rewards {
         Map<String, BigInteger> balanceAndSupply = dataSource.loadCurrentSupply(user);
         balances.balance = balanceAndSupply.get(BALANCE);
         balances.supply = balanceAndSupply.get(TOTAL_SUPPLY);
+        balances.prevBalance = dataSource.getBalance(user);
+        balances.prevSupply = dataSource.getTotalSupply();
         balances.prevWorkingBalance = dataSource.getWorkingBalance(user, _balance, false);
         balances.prevWorkingSupply = dataSource.getWorkingSupply(_totalSupply, false);
 
@@ -433,6 +527,8 @@ public class RewardsImpl implements Rewards {
             Map<String, BigInteger> balanceAndSupply = dataSource.loadCurrentSupply(user);
             balances.balance = balanceAndSupply.get(BALANCE);
             balances.supply = balanceAndSupply.get(TOTAL_SUPPLY);
+            balances.prevBalance = dataSource.getBalance(user);
+            balances.prevSupply = dataSource.getTotalSupply();
             balances.prevWorkingBalance = dataSource.getWorkingBalance(user, entry._balance, false);
             balances.prevWorkingSupply = dataSource.getWorkingSupply(_totalSupply, false);
 
@@ -455,6 +551,8 @@ public class RewardsImpl implements Rewards {
         balances.boostedSupply = fetchBoostedSupply();
         balances.balance = _balance;
         balances.supply = _totalSupply;
+        balances.prevBalance = dataSource.getBalance(_user);
+        balances.prevSupply = dataSource.getTotalSupply();
         balances.prevWorkingBalance = dataSource.getWorkingBalance(_user);
         balances.prevWorkingSupply = dataSource.getWorkingSupply();
 
@@ -479,6 +577,8 @@ public class RewardsImpl implements Rewards {
             balances.boostedSupply = boostedSupply;
             balances.balance = entry._balance;
             balances.supply = _totalSupply;
+            balances.prevBalance = dataSource.getBalance(entry._user);
+            balances.prevSupply = dataSource.getTotalSupply();
             balances.prevWorkingBalance = dataSource.getWorkingBalance(entry._user);
             balances.prevWorkingSupply = dataSource.getWorkingSupply();
 
@@ -794,6 +894,8 @@ public class RewardsImpl implements Rewards {
             Map<String, BigInteger> balanceAndSupply = dataSource.loadCurrentSupply(user);
             balances.balance = balanceAndSupply.get(BALANCE);
             balances.supply = balanceAndSupply.get(TOTAL_SUPPLY);
+            balances.prevBalance = dataSource.getBalance(user);
+            balances.prevSupply = dataSource.getTotalSupply();
             balances.prevWorkingBalance = workingBalance;
             balances.prevWorkingSupply = dataSource.getWorkingSupply(false);
 
@@ -804,16 +906,24 @@ public class RewardsImpl implements Rewards {
     private void updateUserAccruedRewards(String _name, BigInteger currentTime, DataSourceImpl dataSource,
                                           String user, BalanceData balances) {
 
-        BigInteger accruedRewards = dataSource.updateSingleUserData(currentTime, balances.prevWorkingSupply, user,
-                balances.prevWorkingBalance, false);
+        Map<Address, BigInteger> accruedRewards = dataSource.updateSingleUserData(currentTime, balances, user, false);
         dataSource.updateWorkingBalanceAndSupply(user, balances);
 
-        if (accruedRewards.compareTo(BigInteger.ZERO) > 0) {
+        Address baln = getBaln();
+        if (accruedRewards.get(baln).compareTo(BigInteger.ZERO) > 0) {
             BigInteger newHoldings =
-                    balnHoldings.getOrDefault(user, BigInteger.ZERO).add(accruedRewards);
+                    balnHoldings.getOrDefault(user, BigInteger.ZERO).add(accruedRewards.get(baln));
             balnHoldings.set(user, newHoldings);
-            RewardsAccrued(user, _name, accruedRewards);
+            RewardsAccrued(user, _name, accruedRewards.get(baln));
+            accruedRewards.remove(baln);
+
         }
+        DictDB<Address, BigInteger> externalHoldingsDB = externalHoldings.at(user);
+        for (Map.Entry<Address, BigInteger> entry : accruedRewards.entrySet()) {
+            BigInteger prevRewards = externalHoldingsDB.getOrDefault(entry.getKey(), BigInteger.ZERO);
+            externalHoldingsDB.set(entry.getKey(), prevRewards.add(entry.getValue()));
+        }
+
     }
 
     @External
@@ -920,6 +1030,11 @@ public class RewardsImpl implements Rewards {
     @EventLog(indexed = 1)
     public void RewardsClaimed(Address _address, BigInteger _amount) {
     }
+
+    @EventLog(indexed = 2)
+    public void RewardsClaimedV2(Address _token, String _address, BigInteger _amount) {
+    }
+
 
     @EventLog(indexed = 2)
     public void Report(BigInteger _day, String _name, BigInteger _dist, BigInteger _value) {
