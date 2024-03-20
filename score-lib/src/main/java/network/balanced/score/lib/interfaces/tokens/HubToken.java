@@ -16,7 +16,7 @@
 
 package network.balanced.score.lib.interfaces.tokens;
 
-import icon.xcall.lib.annotation.XCall;
+import network.balanced.score.lib.annotations.XCall;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Payable;
@@ -43,8 +43,14 @@ public interface HubToken extends SpokeToken {
     String[] getConnectedChains();
 
     /**
+     * @param _to NetworkAddress to send to.
+     * @param _value amount to send.
+     * @param _data _data used in tokenFallbacks.
+     */
+
+    /**
      * If {@code _to} is a ICON address, use IRC2 transfer
-     * If {@code _to} is a BTPAddress, then the transaction must
+     * If {@code _to} is a NetworkAddress, then the transaction must
      * trigger xTransfer via XCall on corresponding spoke chain
      * and MUST fire the {@code XTransfer} event.
      * {@code _data} can be attached to this token transaction.
@@ -54,6 +60,13 @@ public interface HubToken extends SpokeToken {
     @External
     @Payable
     void crossTransfer(String _to, BigInteger _value, byte[] _data);
+
+    /**
+     * @param _from  from NetworkAddress
+     * @param _to     NetworkAddress to send to.
+     * @param _value amount to send.
+     * @param _data _data used in tokenFallbacks.
+     */
 
     /**
      * Method for processing cross chain transfers from spokes

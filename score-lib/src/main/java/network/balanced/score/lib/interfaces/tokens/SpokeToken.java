@@ -23,7 +23,7 @@ import java.math.BigInteger;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
-import icon.xcall.lib.annotation.XCall;
+import network.balanced.score.lib.annotations.XCall;
 
 @ScoreInterface
 @ScoreClient

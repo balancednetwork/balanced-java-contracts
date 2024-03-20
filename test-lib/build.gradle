@@ -33,7 +33,6 @@ dependencies {
     implementation project(':score-lib')
     annotationProcessor project(':score-client')
     implementation project(':score-client')
-    implementation 'xcall-lib:score-lib'
     implementation Dependencies.junitJupiterApi
     implementation Dependencies.jacksonDatabind
     implementation Dependencies.javaeeUnitTest

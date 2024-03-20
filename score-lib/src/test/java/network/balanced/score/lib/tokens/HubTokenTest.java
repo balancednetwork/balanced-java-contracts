@@ -44,10 +44,8 @@ import network.balanced.score.lib.test.mock.MockContract;
 import network.balanced.score.lib.utils.BalancedAddressManager;
 import score.Context;
 import score.Address;
-import xcall.score.lib.interfaces.XTokenReceiver;
-import xcall.score.lib.interfaces.XTokenReceiverScoreInterface;
 import foundation.icon.xcall.NetworkAddress;
-import network.balanced.score.lib.interfaces.tokens.HubTokenMessages;
+import network.balanced.score.lib.interfaces.tokens.*;
 import network.balanced.score.lib.interfaces.*;
 
 class HubTokenTest extends TestBase {

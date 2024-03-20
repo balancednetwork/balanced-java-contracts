@@ -18,7 +18,6 @@ package network.balanced.score.core.governance;
 
 import network.balanced.score.core.governance.proposal.ProposalDB;
 import network.balanced.score.core.governance.proposal.ProposalManager;
-import network.balanced.score.core.governance.utils.ArbitraryCallManager;
 import network.balanced.score.core.governance.utils.ContractManager;
 import network.balanced.score.core.governance.utils.EmergencyManager;
 import network.balanced.score.core.governance.utils.SetupManager;
@@ -26,6 +25,7 @@ import network.balanced.score.lib.interfaces.Governance;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.Versions;
+import network.balanced.score.lib.utils.ArbitraryCallManager;
 import score.Address;
 import score.Context;
 import score.VarDB;

@@ -18,6 +18,7 @@ package network.balanced.score.core.governance.utils;
 
 import network.balanced.score.core.governance.GovernanceImpl;
 import network.balanced.score.lib.utils.Names;
+import network.balanced.score.lib.utils.ArbitraryCallManager;
 import score.*;
 import scorex.util.HashMap;
 

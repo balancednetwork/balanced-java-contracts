@@ -52,6 +52,7 @@ project(':StakedLP').projectDir = file("core-contracts/StakedLP")
 
 include 'score-client'
 include 'score-lib'
+include 'xcall-annotations'
 include 'test-lib'
 
 include(':WorkerToken')
@@ -126,4 +127,11 @@ project(':Savings').projectDir = file("core-contracts/Savings")
 include(':Trickler')
 project(':Trickler').projectDir = file("util-contracts/Trickler")
 
-includeBuild 'xcall-lib'
+include(':SpokeAssetManager')
+project(':SpokeAssetManager').projectDir = file("spoke-contracts/SpokeAssetManager")
+
+include(':SpokeXCallManager')
+project(':SpokeXCallManager').projectDir = file("spoke-contracts/SpokeXCallManager")
+
+include(':SpokeBalancedDollar')
+project(':SpokeBalancedDollar').projectDir = file("spoke-contracts/SpokeBalancedDollar")
