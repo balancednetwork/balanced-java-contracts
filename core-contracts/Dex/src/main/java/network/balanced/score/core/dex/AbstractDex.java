@@ -197,18 +197,22 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
         return (BigInteger) Context.call(getBalancedOracle(), "getPriceInUSD", symbol);
     }
 
-    protected void oracleProtection(Integer pid) {
+    protected void oracleProtection(Integer pid, BigInteger priceBase) {
         BigInteger poolId = BigInteger.valueOf(pid);
         BigInteger oracleProtectionPercentage = oracleProtection.get(poolId);
         if (oracleProtectionPercentage == null || oracleProtectionPercentage.signum() == 0) {
             return;
         }
 
+        Address quoteToken = poolQuote.get(pid);
         Address baseToken = poolBase.get(pid);
+        BigInteger oraclePriceQuote = getOraclePrice(quoteToken);
         BigInteger oraclePriceBase = getOraclePrice(baseToken);
-        BigInteger priceBase = getBasePriceInQuote(poolId);
-        BigInteger protectedAmountBase = oraclePriceBase.multiply(oracleProtectionPercentage).divide(POINTS);
-        Context.require(oraclePriceBase.compareTo(priceBase.add(protectedAmountBase)) <= 0 && oraclePriceBase.compareTo(priceBase.subtract(protectedAmountBase)) >= 0, TAG + ": oracle protection price violated");
+
+        BigInteger oraclePriceBaseRatio = oraclePriceBase.multiply(EXA).divide(oraclePriceQuote);
+        BigInteger oracleProtectionExa = oraclePriceBaseRatio.multiply(oracleProtectionPercentage).divide(POINTS);
+
+        Context.require(priceBase.compareTo(oraclePriceBaseRatio.add(oracleProtectionExa)) <= 0 && priceBase.compareTo(oraclePriceBaseRatio.subtract(oracleProtectionExa)) >= 0, TAG + ": oracle protection price violated");
     }
 
     @External(readonly = true)
@@ -606,7 +610,8 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
         // Save updated pool totals
         totalTokensInPool.set(fromToken, newFromToken);
         totalTokensInPool.set(toToken, newToToken);
-        oracleProtection(id);
+        BigInteger basePrice = fromToken.equals(poolBaseToken) ? newToToken.multiply(EXA).divide(newFromToken) : newFromToken.multiply(EXA).divide(newToToken);
+        oracleProtection(id, basePrice);
 
         // Capture details for event logs
         BigInteger totalBase = isSell ? newFromToken : newToToken;
@@ -735,7 +740,6 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
 
         BigInteger newIcxTotal = oldIcxTotal.subtract(orderIcxValue);
         icxQueueTotal.set(newIcxTotal);
-        oracleProtection(1);
         BigInteger effectiveFillPrice = (orderIcxValue.multiply(EXA)).divide(value);
         Address sicxAddress = getSicx();
         Swap(BigInteger.valueOf(SICXICX_POOL_ID), sicxAddress, sicxAddress, EOA_ZERO, sender, sender, value,
