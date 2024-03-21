@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
 import score.ArrayDB;
+import score.Address;
 import scorex.util.ArrayList;
 
 import java.math.BigInteger;
@@ -51,15 +52,26 @@ public class BalancedFloorLimitsTest extends UnitTest {
 
     private static final long BLOCKS_IN_A_DAY = 86400/2;
 
+    public static class FloorLimitedTest extends BalancedFloorLimits {
+
+        public static void setLegacyPercentage(BigInteger percent) {
+            BalancedFloorLimits.percentage.set(percent);
+        }
+
+        public static void setLegacyDelay(BigInteger us) {
+            BalancedFloorLimits.delay.set(us);
+        }
+
+        public static void setLegacyDisable(Address token, boolean _disabled) {
+            BalancedFloorLimits.disabled.set(token, _disabled);
+        }
+    }
 
     @BeforeEach
     public void setup() throws Exception {
         token1 = new MockContract<IRC2>(IRC2ScoreInterface.class, sm, owner);
         token2 = new MockContract<IRC2>(IRC2ScoreInterface.class, sm, owner);
-        score = sm.deploy(owner, BalancedFloorLimits.class);
-        score.invoke(owner, "setDisabled", token1.getAddress(), false);
-        score.invoke(owner, "setDisabled", token2.getAddress(), false);
-        score.invoke(owner, "setDisabled", EOA_ZERO, false);
+        score = sm.deploy(owner, FloorLimitedTest.class);
     }
 
     @Test
@@ -67,8 +79,8 @@ public class BalancedFloorLimitsTest extends UnitTest {
         // Arrange
         BigInteger balance = BigInteger.valueOf(1000);
         BigInteger percentage = BigInteger.valueOf(1000);// 10%
-        score.invoke(owner, "setFloorPercentage", percentage);
-        score.invoke(owner, "setTimeDelayMicroSeconds", MICRO_SECONDS_IN_A_DAY);
+        score.invoke(owner, "setFloorPercentage", token1.getAddress(), percentage);
+        score.invoke(owner, "setTimeDelayMicroSeconds", token1.getAddress(), MICRO_SECONDS_IN_A_DAY);
         when(token1.mock.balanceOf(score.getAddress())).thenReturn(balance);
 
         // Act
@@ -87,8 +99,8 @@ public class BalancedFloorLimitsTest extends UnitTest {
          // Arrange
         BigInteger balance = BigInteger.valueOf(1000);
         BigInteger percentage = BigInteger.valueOf(1000);// 10%
-        score.invoke(owner, "setFloorPercentage", percentage);
-        score.invoke(owner, "setTimeDelayMicroSeconds", MICRO_SECONDS_IN_A_DAY);
+        score.invoke(owner, "setFloorPercentage", token1.getAddress(), percentage);
+        score.invoke(owner, "setTimeDelayMicroSeconds", token1.getAddress(), MICRO_SECONDS_IN_A_DAY);
         when(token1.mock.balanceOf(score.getAddress())).thenReturn(balance);
 
         // Act
@@ -109,8 +121,8 @@ public class BalancedFloorLimitsTest extends UnitTest {
          // Arrange
         BigInteger balance = BigInteger.valueOf(1000);
         BigInteger percentage = BigInteger.valueOf(1000);// 10%
-        score.invoke(owner, "setFloorPercentage", percentage);
-        score.invoke(owner, "setTimeDelayMicroSeconds", MICRO_SECONDS_IN_A_DAY);
+        score.invoke(owner, "setFloorPercentage", EOA_ZERO, percentage);
+        score.invoke(owner, "setTimeDelayMicroSeconds", EOA_ZERO, MICRO_SECONDS_IN_A_DAY);
         score.getAccount().addBalance("ICX", balance);
 
         // Act
@@ -133,8 +145,8 @@ public class BalancedFloorLimitsTest extends UnitTest {
          // Arrange
         BigInteger balance = BigInteger.valueOf(1000);
         BigInteger percentage = BigInteger.valueOf(1000);// 10%
-        score.invoke(owner, "setFloorPercentage", percentage);
-        score.invoke(owner, "setTimeDelayMicroSeconds", MICRO_SECONDS_IN_A_DAY);
+        score.invoke(owner, "setFloorPercentage", token1.getAddress(), percentage);
+        score.invoke(owner, "setTimeDelayMicroSeconds", token1.getAddress(), MICRO_SECONDS_IN_A_DAY);
         when(token1.mock.balanceOf(score.getAddress())).thenReturn(balance);
 
         // Act
@@ -168,8 +180,8 @@ public class BalancedFloorLimitsTest extends UnitTest {
          // Arrange
         BigInteger balance = BigInteger.valueOf(1000);
         BigInteger percentage = BigInteger.valueOf(1000);// 10%
-        score.invoke(owner, "setFloorPercentage", percentage);
-        score.invoke(owner, "setTimeDelayMicroSeconds", MICRO_SECONDS_IN_A_DAY);
+        score.invoke(owner, "setFloorPercentage", token1.getAddress(), percentage);
+        score.invoke(owner, "setTimeDelayMicroSeconds", token1.getAddress(), MICRO_SECONDS_IN_A_DAY);
         when(token1.mock.balanceOf(score.getAddress())).thenReturn(balance);
         score.invoke(owner, "verifyWithdraw", token1.getAddress(), BigInteger.valueOf(100));
         when(token1.mock.balanceOf(score.getAddress())).thenReturn(balance.subtract(BigInteger.valueOf(100)));
@@ -178,7 +190,7 @@ public class BalancedFloorLimitsTest extends UnitTest {
         assertTrue(floor.compareTo(BigInteger.ZERO) > 0);
 
         // Act
-        score.invoke(owner, "setDisabled", token1.getAddress(), true);
+        score.invoke(owner, "setFloorPercentage", token1.getAddress(), BigInteger.ZERO);
 
         // Assert
         floor = (BigInteger) score.call("getCurrentFloor", token1.getAddress());
@@ -192,8 +204,11 @@ public class BalancedFloorLimitsTest extends UnitTest {
         BigInteger balance2 = BigInteger.valueOf(5000);
         BigInteger percentage = BigInteger.valueOf(2500);// 25%
 
-        score.invoke(owner, "setFloorPercentage", percentage);
-        score.invoke(owner, "setTimeDelayMicroSeconds", MICRO_SECONDS_IN_A_DAY.multiply(BigInteger.TWO));
+        score.invoke(owner, "setFloorPercentage", token1.getAddress(), percentage);
+        score.invoke(owner, "setTimeDelayMicroSeconds", token1.getAddress(), MICRO_SECONDS_IN_A_DAY.multiply(BigInteger.TWO));
+        score.invoke(owner, "setFloorPercentage", token2.getAddress(), percentage);
+        score.invoke(owner, "setTimeDelayMicroSeconds", token2.getAddress(), MICRO_SECONDS_IN_A_DAY.multiply(BigInteger.TWO));
+
         when(token1.mock.balanceOf(score.getAddress())).thenReturn(balance1);
         when(token2.mock.balanceOf(score.getAddress())).thenReturn(balance2);
 
@@ -235,8 +250,8 @@ public class BalancedFloorLimitsTest extends UnitTest {
          // Arrange
         BigInteger balance = BigInteger.valueOf(1000);
         BigInteger percentage = BigInteger.valueOf(1000);// 10%
-        score.invoke(owner, "setFloorPercentage", percentage);
-        score.invoke(owner, "setTimeDelayMicroSeconds", MICRO_SECONDS_IN_A_DAY);
+        score.invoke(owner, "setFloorPercentage", EOA_ZERO, percentage);
+        score.invoke(owner, "setTimeDelayMicroSeconds", EOA_ZERO, MICRO_SECONDS_IN_A_DAY);
         score.getAccount().addBalance("ICX", balance);
 
         // Act
@@ -261,8 +276,8 @@ public class BalancedFloorLimitsTest extends UnitTest {
          // Arrange
         BigInteger balance = BigInteger.valueOf(1000);
         BigInteger percentage = BigInteger.valueOf(1000);// 10%
-        score.invoke(owner, "setFloorPercentage", percentage);
-        score.invoke(owner, "setTimeDelayMicroSeconds", MICRO_SECONDS_IN_A_DAY);
+        score.invoke(owner, "setFloorPercentage", token1.getAddress(), percentage);
+        score.invoke(owner, "setTimeDelayMicroSeconds", token1.getAddress(), MICRO_SECONDS_IN_A_DAY);
         when(token1.mock.balanceOf(score.getAddress())).thenReturn(balance);
 
         // Act
@@ -281,4 +296,26 @@ public class BalancedFloorLimitsTest extends UnitTest {
         floor = (BigInteger) score.call("getCurrentFloor", token1.getAddress());
         assertEquals(BigInteger.valueOf(1800), floor);
     }
+
+    @Test
+    public void migrate(){
+         // Arrange
+        BigInteger balance = BigInteger.valueOf(1000);
+        BigInteger percentage = BigInteger.valueOf(1000);// 10%
+        score.invoke(owner, "setLegacyPercentage", percentage);
+        score.invoke(owner, "setLegacyDelay", MICRO_SECONDS_IN_A_DAY);
+        score.invoke(owner, "setLegacyDisable", token1.getAddress(), false);
+        when(token1.mock.balanceOf(score.getAddress())).thenReturn(balance);
+
+        // Act
+        Executable withdrawMoreThanAllowed =  () -> score.invoke(owner, "verifyWithdraw", token1.getAddress(), BigInteger.valueOf(101));
+        Executable withdrawAllowed =  () -> score.invoke(owner, "verifyWithdraw", token1.getAddress(), BigInteger.valueOf(100));
+        BigInteger floor = (BigInteger) score.call("getCurrentFloor", token1.getAddress());
+
+        // Assert
+        assertEquals(BigInteger.valueOf(900), floor);
+        expectErrorMessage(withdrawMoreThanAllowed, BalancedFloorLimits.getErrorMessage());
+        assertDoesNotThrow(withdrawAllowed);
+    }
+
 }
