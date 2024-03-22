@@ -12,19 +12,21 @@ public class Route {
 
     public List<RouteAction> actions;
 
-    public Route(){};
+    public Route() {
+        this.actions = new ArrayList<>();
+    }
 
-    public Route(List<RouteAction> actions){
+    ;
+
+    public Route(List<RouteAction> actions) {
         this.actions = actions;
     }
 
     public static Route readObject(ObjectReader reader) {
         Route obj = new Route();
         reader.beginList();
-        int size = reader.readInt();
-        List<RouteAction> actions = new ArrayList<>(size);
-
-        for (int i = 0; i < size; i++) {
+        List<RouteAction> actions = new ArrayList<>();
+        while (reader.hasNext()) {
             RouteAction data = reader.read(RouteAction.class);
             actions.add(data);
         }
@@ -35,8 +37,8 @@ public class Route {
 
     public static void writeObject(ObjectWriter w, Route obj) {
         w.beginList(obj.actions.size());
-        for(RouteAction address : obj.actions) {
-            w.write(address);
+        for (RouteAction action : obj.actions) {
+            w.write(action);
         }
         w.end();
     }
