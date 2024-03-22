@@ -20,36 +20,30 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
-
+import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.lib.interfaces.Sicx;
 import network.balanced.score.lib.interfaces.tokens.IRC2;
 import network.balanced.score.lib.interfaces.tokens.IRC2ScoreInterface;
 import network.balanced.score.lib.interfaces.tokens.SpokeToken;
 import network.balanced.score.lib.interfaces.tokens.SpokeTokenScoreInterface;
+import network.balanced.score.lib.structs.Route;
+import network.balanced.score.lib.structs.RouteAction;
 import network.balanced.score.lib.test.mock.MockBalanced;
 import network.balanced.score.lib.test.mock.MockContract;
-
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import score.Address;
-import score.Context;
-import foundation.icon.xcall.NetworkAddress;
+import scorex.util.ArrayList;
 
 import java.math.BigInteger;
+import java.util.List;
 import java.util.Map;
 
-import static network.balanced.score.core.router.RouterImpl.MAX_NUMBER_OF_ITERATIONS;
-import static network.balanced.score.core.router.RouterImpl.TAG;
-import static network.balanced.score.core.router.RouterImpl.EMPTY_DATA;
+import static network.balanced.score.core.router.RouterImpl.*;
 import static network.balanced.score.lib.test.UnitTest.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -79,7 +73,7 @@ class RouterTest extends TestBase {
         BigInteger icxToTrade = BigInteger.TEN.multiply(ICX);
 
         Account balnToken = Account.newScoreAccount(scoreCount++);
-        Address[] pathWithNonSicx = new Address[] { balnToken.getAddress() };
+        Address[] pathWithNonSicx = new Address[]{balnToken.getAddress()};
         Executable nonSicxTrade = () -> sm.call(owner, icxToTrade, routerScore.getAddress(), "route", pathWithNonSicx,
                 BigInteger.ZERO, "");
         String expectedErrorMessage = "Reverted(0): " + TAG + ": ICX can only be traded for sICX";
@@ -96,7 +90,7 @@ class RouterTest extends TestBase {
         expectErrorMessage(maxTradeHops, expectedErrorMessage);
 
         when(balanced.sicx.mock.balanceOf(routerScore.getAddress())).thenReturn(icxToTrade);
-        Address[] path = new Address[] { sicxScore.getAddress() };
+        Address[] path = new Address[]{sicxScore.getAddress()};
         routerScore.getAccount().addBalance("ICX", icxToTrade);
 
         Executable lessThanMinimumReceivable = () -> sm.call(owner, icxToTrade, routerScore.getAddress(), "route",
@@ -179,7 +173,7 @@ class RouterTest extends TestBase {
         when(balanced.sicx.mock.balanceOf(routerScore.getAddress())).thenReturn(BigInteger.TEN);
 
         byte[] invalidPathWithSicxTerminalToken = tokenData("_swap", Map.of("path",
-                new Object[] { balanced.baln.getAddress().toString(), null }));
+                new Object[]{balanced.baln.getAddress().toString(), null}));
         Executable nonSicxIcxTrade = () -> routerScore.invoke(sicxScore.account, "tokenFallback", owner.getAddress(),
                 BigInteger.TEN, invalidPathWithSicxTerminalToken);
         expectedErrorMessage = "Reverted(0): " + TAG + ": Native swaps not available to icon from " + balanced.baln.getAddress();
@@ -187,7 +181,7 @@ class RouterTest extends TestBase {
 
         Account newReceiver = sm.createAccount();
         byte[] pathWithSicxTerminalToken = tokenData("_swap", Map.of("path",
-                new Object[] { sicxScore.getAddress().toString(), null }, "receiver",
+                new Object[]{sicxScore.getAddress().toString(), null}, "receiver",
                 newReceiver.getAddress().toString()));
         routerScore.invoke(balanced.baln.account, "tokenFallback", owner.getAddress(), BigInteger.TEN,
                 pathWithSicxTerminalToken);
@@ -212,7 +206,7 @@ class RouterTest extends TestBase {
 
         // Act
         byte[] path = tokenData("_swap", Map.of("path",
-                new Object[] { token.getAddress().toString() }, "receiver", receiver.toString()));
+                new Object[]{token.getAddress().toString()}, "receiver", receiver.toString()));
         routerScore.invoke(balanced.sicx.account, "tokenFallback", owner.getAddress(), amount, path);
 
         // Assert
@@ -234,7 +228,7 @@ class RouterTest extends TestBase {
 
         // Act
         byte[] path = tokenData("_swap", Map.of("path",
-                new Object[] { token.getAddress().toString() }, "receiver", receiver.toString()));
+                new Object[]{token.getAddress().toString()}, "receiver", receiver.toString()));
         routerScore.invoke(balanced.sicx.account, "tokenFallback", owner.getAddress(), amount, path);
 
         // Assert
@@ -259,7 +253,7 @@ class RouterTest extends TestBase {
 
         // Act
         byte[] path = tokenData("_swap", Map.of("path",
-                new Object[] { token.getAddress().toString() }, "receiver", receiver.toString()));
+                new Object[]{token.getAddress().toString()}, "receiver", receiver.toString()));
         routerScore.invoke(balanced.sicx.account, "tokenFallback", owner.getAddress(), amount, path);
 
         // Assert
@@ -284,7 +278,7 @@ class RouterTest extends TestBase {
 
         // Act & Assert
         byte[] path = tokenData("_swap", Map.of("path",
-                new Object[] { token.getAddress().toString(), null }, "receiver", receiver.toString()));
+                new Object[]{token.getAddress().toString(), null}, "receiver", receiver.toString()));
         Executable nativeToWrongNet = () -> routerScore.invoke(balanced.sicx.account, "tokenFallback", owner.getAddress(), amount, path);
         String expectedErrorMessage = "Reverted(0): " + TAG + ": Native swaps are not supported to other networks";
         expectErrorMessage(nativeToWrongNet, expectedErrorMessage);
@@ -307,7 +301,7 @@ class RouterTest extends TestBase {
 
         // Act & Assert
         byte[] path = tokenData("_swap", Map.of("path",
-                new Object[] { token.getAddress().toString(), null }, "receiver", receiver.toString()));
+                new Object[]{token.getAddress().toString(), null}, "receiver", receiver.toString()));
         Executable nativeToWrongNet = () -> routerScore.invoke(balanced.sicx.account, "tokenFallback", owner.getAddress(), amount, path);
         String expectedErrorMessage = "Reverted(0): " + TAG + ": Native swaps are not supported for this network";
         expectErrorMessage(nativeToWrongNet, expectedErrorMessage);
@@ -330,7 +324,7 @@ class RouterTest extends TestBase {
 
         // Act
         byte[] path = tokenData("_swap", Map.of("path",
-                new Object[] { token.getAddress().toString(), null }, "receiver", receiver.toString()));
+                new Object[]{token.getAddress().toString(), null}, "receiver", receiver.toString()));
         routerScore.invoke(balanced.sicx.account, "tokenFallback", owner.getAddress(), amount, path);
 
         // Assert
@@ -351,7 +345,7 @@ class RouterTest extends TestBase {
 
         // Act
         byte[] path = tokenData("_swap", Map.of("path",
-                new Object[] { balanced.bnUSD.getAddress().toString() }, "receiver", receiver.toString()));
+                new Object[]{balanced.bnUSD.getAddress().toString()}, "receiver", receiver.toString()));
         routerScore.invoke(balanced.sicx.account, "tokenFallback", owner.getAddress(), amount, path);
 
         // Assert
@@ -371,7 +365,7 @@ class RouterTest extends TestBase {
 
         // Act & Assert
         byte[] path = tokenData("_swap", Map.of("path",
-                new Object[] { balanced.sicx.getAddress().toString() }));
+                new Object[]{balanced.sicx.getAddress().toString()}));
         Executable tradeToIRC2WithNetworkAddress = () -> routerScore.invoke(balanced.bnUSD.account, "xTokenFallback",
                 user.toString(), amount, path);
         expectErrorMessage(tradeToIRC2WithNetworkAddress, "hubTransfer");
@@ -388,7 +382,7 @@ class RouterTest extends TestBase {
 
         // Act & Assert
         byte[] path = tokenData("_swap", Map.of("path",
-                new Object[] { balanced.sicx.getAddress().toString(), null }));
+                new Object[]{balanced.sicx.getAddress().toString(), null}));
         assertThrows(AssertionError.class,
                 () -> routerScore.invoke(balanced.bnUSD.account, "xTokenFallback", user.toString(), amount, path));
     }
@@ -405,7 +399,7 @@ class RouterTest extends TestBase {
 
         // Act
         byte[] path = tokenData("_swap", Map.of("path",
-                new Object[] { balanced.sicx.getAddress().toString(), null }, "receiver",
+                new Object[]{balanced.sicx.getAddress().toString(), null}, "receiver",
                 receiver.getAddress().toString()));
         routerScore.getAccount().addBalance("ICX", amount);
         routerScore.invoke(balanced.bnUSD.account, "xTokenFallback", user.toString(), amount, path);
@@ -427,12 +421,126 @@ class RouterTest extends TestBase {
 
         // Act
         byte[] path = tokenData("_swap", Map.of("path",
-                new Object[] { balanced.sicx.getAddress().toString() }, "receiver", receiver.getAddress().toString()));
+                new Object[]{balanced.sicx.getAddress().toString()}, "receiver", receiver.getAddress().toString()));
         routerScore.getAccount().addBalance("ICX", amount);
         routerScore.invoke(balanced.bnUSD.account, "xTokenFallback", user.toString(), amount, path);
 
         // Assert
         verify(balanced.sicx.mock).transfer(receiver.getAddress(), amount, EMPTY_DATA);
     }
+
+    @Test
+    void routeV2_swap_icxSicx() {
+        // Arrange
+        BigInteger icxToTrade = BigInteger.TEN.multiply(ICX);
+        Account balnToken = Account.newScoreAccount(scoreCount++);
+        List<RouteAction> actions = new ArrayList<>(1);
+        actions.add(new RouteAction(SWAP, balnToken.getAddress()));
+        Route route = new Route(actions);
+        byte[] pathWithNonSicx = route.toBytes();
+
+        // Act
+        Executable nonSicxTrade = () -> sm.call(owner, icxToTrade, routerScore.getAddress(), "routeV2", pathWithNonSicx,
+                BigInteger.ZERO, "");
+
+        // Assert
+        String expectedErrorMessage = "Reverted(0): " + TAG + ": ICX can only be traded for sICX";
+        expectErrorMessage(nonSicxTrade, expectedErrorMessage);
+    }
+
+    @Test
+    void routeV2_swap_pathWithMoreHops() {
+        // Arrange
+        BigInteger icxToTrade = BigInteger.TEN.multiply(ICX);
+        List<RouteAction> actions = new ArrayList<>(MAX_NUMBER_OF_ITERATIONS + 1);
+        for (int i = 0; i < MAX_NUMBER_OF_ITERATIONS + 1; i++) {
+            actions.add(new RouteAction(SWAP, Account.newScoreAccount(scoreCount++).getAddress()));
+        }
+        Route route = new Route(actions);
+        byte[] pathWithMoreHops = route.toBytes();
+
+        // Act
+        Executable maxTradeHops = () -> sm.call(owner, icxToTrade, routerScore.getAddress(), "routeV2",
+                pathWithMoreHops, BigInteger.ZERO, "");
+
+        // Assert
+        String expectedErrorMessage = "Reverted(0): " + TAG + ": Passed max swaps of " + MAX_NUMBER_OF_ITERATIONS;
+        expectErrorMessage(maxTradeHops, expectedErrorMessage);
+    }
+
+    @Test
+    void routeV2_swap_belowMinimumReceive() {
+        // Arrange
+        BigInteger icxToTrade = BigInteger.TEN.multiply(ICX);
+        when(balanced.sicx.mock.balanceOf(routerScore.getAddress())).thenReturn(icxToTrade);
+        routerScore.getAccount().addBalance("ICX", icxToTrade);
+        List<RouteAction> actions = new ArrayList<>(1);
+        actions.add(new RouteAction(SWAP, sicxScore.getAddress()));
+        Route route = new Route(actions);
+        byte[] path = route.toBytes();
+
+        // Act
+        Executable lessThanMinimumReceivable = () -> sm.call(owner, icxToTrade, routerScore.getAddress(), "routeV2",
+                path, icxToTrade.multiply(BigInteger.TWO), "");
+
+        //Assert
+        String expectedErrorMessage = "Reverted(0): " + TAG + ": Below minimum receive amount of "
+                + icxToTrade.multiply(BigInteger.TWO);
+        expectErrorMessage(lessThanMinimumReceivable, expectedErrorMessage);
+    }
+
+    @Test
+    void routeV2_swap_positiveMinimumReceive() {
+        // Arrange
+        BigInteger icxToTrade = BigInteger.TEN.multiply(ICX);
+        List<RouteAction> actions = new ArrayList<>(1);
+        actions.add(new RouteAction(SWAP, sicxScore.getAddress()));
+        Route route = new Route(actions);
+        byte[] path = route.toBytes();
+
+        // Act
+        Executable negativeMinimumBalance = () -> sm.call(owner, icxToTrade, routerScore.getAddress(),
+                "routeV2", path, icxToTrade.negate(), "");
+
+        // Assert
+        String expectedErrorMessage = "Reverted(0): " + TAG + ": Must specify a positive number for minimum to receive";
+        expectErrorMessage(negativeMinimumBalance, expectedErrorMessage);
+    }
+
+    @Test
+    void routeV2_swapStable() throws Exception {
+        // Arrange
+        BigInteger icxToTrade = BigInteger.TEN.multiply(ICX);
+        List<RouteAction> actions = new ArrayList<>(MAX_NUMBER_OF_ITERATIONS);
+        routerScore.getAccount().addBalance("ICX", icxToTrade);
+        List<MockContract<IRC2>> tokens = new ArrayList<>(MAX_NUMBER_OF_ITERATIONS - 1);
+        for (int i = 0; i < MAX_NUMBER_OF_ITERATIONS; i++) {
+            if (i == 0) {
+                actions.add(new RouteAction(SWAP, balanced.sicx.getAddress()));
+                continue;
+            }
+            MockContract<IRC2> token = new MockContract<>(IRC2ScoreInterface.class, IRC2.class, sm, owner);
+            when(token.mock.balanceOf(routerScore.getAddress())).thenReturn(icxToTrade);
+            actions.add(new RouteAction(STABILITY_SWAP, token.getAddress()));
+            tokens.add(token);
+        }
+        Route route = new Route(actions);
+        byte[] pathWithMoreHops = route.toBytes();
+
+        // Act
+        sm.call(owner, icxToTrade, routerScore.getAddress(), "routeV2",
+                pathWithMoreHops, BigInteger.ZERO, "");
+
+        // Assert
+        int i = 0;
+        for (MockContract<IRC2> token : tokens) {
+            if (i < tokens.size() - 1) {
+                byte[] data = tokens.get(i + 1).getAddress().toString().getBytes();
+                verify(token.mock).transfer(balanced.stability.getAddress(), icxToTrade, data);
+            }
+            i++;
+        }
+    }
+
 
 }
