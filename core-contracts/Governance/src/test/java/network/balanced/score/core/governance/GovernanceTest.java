@@ -25,6 +25,7 @@ import network.balanced.score.lib.utils.Names;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.mockito.Mockito;
 import score.Address;
 import score.Context;
 
@@ -235,6 +236,7 @@ public class GovernanceTest extends GovernanceTestBase {
         when(sicx.mock.balanceOf(governance.getAddress())).thenReturn(sICXValue);
         when(dex.mock.getPoolId(sicx.getAddress(), bnUSD.getAddress())).thenReturn(sicxBnusdPid);
 
+
         // Act
         sm.call(owner, initialICX, governance.getAddress(), "createBnusdMarket");
 
@@ -249,7 +251,7 @@ public class GovernanceTest extends GovernanceTestBase {
         verify(bnUSD.mock).transfer(dex.getAddress(), bnUSDValue, depositData.toString().getBytes());
         verify(sicx.mock).transfer(dex.getAddress(), sICXValue, depositData.toString().getBytes());
 
-        verify(dex.mock).add(sicx.getAddress(), bnUSD.getAddress(), sICXValue, bnUSDValue, false);
+        verify(dex.mock).add(sicx.getAddress(), bnUSD.getAddress(), sICXValue, bnUSDValue, false, BigInteger.ZERO);
         verify(dex.mock).setMarketName(sicxBnusdPid, "sICX/bnUSD");
 
         verify(rewards.mock).addNewDataSource("sICX/bnUSD", stakedLp.getAddress());
@@ -281,7 +283,7 @@ public class GovernanceTest extends GovernanceTestBase {
         verify(bnUSD.mock, times(2)).transfer(dex.getAddress(), bnUSDValue, depositData.toString().getBytes());
         verify(baln.mock).transfer(dex.getAddress(), balnValue, depositData.toString().getBytes());
 
-        verify(dex.mock).add(baln.getAddress(), bnUSD.getAddress(), balnValue, bnUSDValue, false);
+        verify(dex.mock).add(baln.getAddress(), bnUSD.getAddress(), balnValue, bnUSDValue, false, BigInteger.ZERO);
         verify(dex.mock).setMarketName(balnBnusdPid, "BALN/bnUSD");
 
         verify(rewards.mock).addNewDataSource("BALN/bnUSD", stakedLp.getAddress());
@@ -315,7 +317,7 @@ public class GovernanceTest extends GovernanceTestBase {
         verify(sicx.mock, times(2)).transfer(dex.getAddress(), sicxValue, depositData.toString().getBytes());
         verify(baln.mock, times(2)).transfer(dex.getAddress(), balnValue, depositData.toString().getBytes());
 
-        verify(dex.mock).add(baln.getAddress(), sicx.getAddress(), balnValue, sicxValue, false);
+        verify(dex.mock).add(baln.getAddress(), sicx.getAddress(), balnValue, sicxValue, false, BigInteger.ZERO);
         verify(dex.mock).setMarketName(balnSicxPid, "BALN/sICX");
 
         verify(rewards.mock).addNewDataSource("BALN/sICX", stakedLp.getAddress());

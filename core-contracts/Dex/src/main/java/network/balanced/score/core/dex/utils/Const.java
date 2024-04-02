@@ -31,12 +31,7 @@ public class Const {
     public static final int SICXICX_POOL_ID = 1;
     public static final BigInteger MIN_LIQUIDITY = BigInteger.valueOf(1_000);
     public static final BigInteger FEE_SCALE = BigInteger.valueOf(10_000);
-    public static final int FIRST_NON_BALANCED_POOL = 6;
     public static final Integer ICX_QUEUE_FILL_DEPTH = 50;
-
-    public static final int USDS_BNUSD_ID = 10;
-    public static final int IUSDT_BNUSD_ID = 15;
-    public static final BigInteger WITHDRAW_LOCK_TIMEOUT = MICRO_SECONDS_IN_A_DAY;
     public static final Address MINT_ADDRESS = EOA_ZERO;
     public static final String TAG = Names.DEX;
 

@@ -29,11 +29,11 @@ public class Versions {
     public final static String REWARDS = "v1.1.1";
     public final static String STABILITY = "v1.1.1";
     public final static String BALANCEDORACLE = "v1.1.0";
-    public final static String DAOFUND = "v1.1.0";
-    public final static String DEX = "v1.1.0";
-    public final static String GOVERNANCE = "v1.0.1";
+    public final static String DAOFUND = "v1.1.1";
+    public final static String DEX = "v1.1.1";
+    public final static String GOVERNANCE = "v1.0.2";
     public final static String REBALANCING = "v1.0.0";
-    public final static String ROUTER = "v1.1.1";
+    public final static String ROUTER = "v1.1.3";
     public final static String STAKEDLP = "v1.0.1";
     public final static String BOOSTED_BALN = "v1.1.0";
     public final static String BRIBING = "v1.0.1";

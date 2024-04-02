@@ -117,7 +117,7 @@ class DexTestBase extends UnitTest {
         dexScore.invoke(quoteTokenScore, "tokenFallback", supplier.getAddress(), quoteValue, tokenData("_deposit",
                 new HashMap<>()));
         dexScore.invoke(supplier, "add", baseTokenScore.getAddress(), quoteTokenScore.getAddress(), baseValue,
-                quoteValue, withdrawUnused);
+                quoteValue, withdrawUnused, BigInteger.valueOf(100));
     }
 
     protected BigInteger computePrice(BigInteger tokenAValue, BigInteger tokenBValue) {
