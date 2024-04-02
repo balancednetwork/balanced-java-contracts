@@ -37,7 +37,7 @@ import java.util.List;
 
 import static network.balanced.score.core.dex.DexDBVariables.*;
 import static network.balanced.score.core.dex.utils.Check.isDexOn;
-import static network.balanced.score.core.dex.utils.Check.isValidSlippagePercent;
+import static network.balanced.score.core.dex.utils.Check.isValidPercent;
 import static network.balanced.score.core.dex.utils.Const.*;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getRewards;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getSicx;
@@ -325,7 +325,7 @@ public class DexImpl extends AbstractDex {
                     @Optional boolean _withdraw_unused, @Optional BigInteger _slippagePercentage) {
         isDexOn();
         checkStatus();
-        isValidSlippagePercent(_slippagePercentage.intValue());
+        isValidPercent(_slippagePercentage.intValue());
 
         Address user = Context.getCaller();
 
