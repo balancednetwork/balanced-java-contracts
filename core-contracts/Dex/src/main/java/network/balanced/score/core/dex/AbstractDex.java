@@ -610,12 +610,13 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
         // Save updated pool totals
         totalTokensInPool.set(fromToken, newFromToken);
         totalTokensInPool.set(toToken, newToToken);
-        BigInteger basePrice = fromToken.equals(poolBaseToken) ? newToToken.multiply(EXA).divide(newFromToken) : newFromToken.multiply(EXA).divide(newToToken);
-        oracleProtection(id, basePrice);
 
         // Capture details for event logs
         BigInteger totalBase = isSell ? newFromToken : newToToken;
         BigInteger totalQuote = isSell ? newToToken : newFromToken;
+
+        BigInteger endingPrice = totalQuote.multiply(EXA).divide(totalBase);
+        oracleProtection(id, endingPrice);
 
         // Send the trader their funds
         BalancedFloorLimits.verifyWithdraw(toToken, sendAmount);
@@ -626,7 +627,6 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
 
         // Broadcast pool ending price
         BigInteger effectiveFillPrice = (value.multiply(EXA)).divide(sendAmount);
-        BigInteger endingPrice = totalQuote.multiply(EXA).divide(totalBase);
 
         if (!isSell) {
             effectiveFillPrice = (sendAmount.multiply(EXA)).divide(value);
