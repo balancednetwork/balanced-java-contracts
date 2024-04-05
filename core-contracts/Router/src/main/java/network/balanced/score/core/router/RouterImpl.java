@@ -95,19 +95,19 @@ public class RouterImpl implements Router {
     }
 
     private void swap(Address fromToken, Address toToken, int action) {
-        if (action == SWAP) {
+        if(action == SWAP){
             swapDefault(fromToken, toToken);
-        } else if (action == STABILITY_SWAP) {
+        }else if(action == STABILITY_SWAP){
             swapStable(fromToken, toToken);
         }
     }
 
-    private void swapStable(Address fromToken, Address toToken) {
+    private void swapStable(Address fromToken, Address toToken){
         BigInteger balance = (BigInteger) Context.call(fromToken, "balanceOf", Context.getAddress());
         Context.call(fromToken, "transfer", getStabilityFund(), balance, toToken.toString().getBytes());
     }
 
-    private void swapDefault(Address fromToken, Address toToken) {
+    private void swapDefault(Address fromToken, Address toToken){
         if (fromToken == null) {
             Context.require(toToken.equals(getSicx()), TAG + ": ICX can only be traded for sICX");
             BigInteger balance = Context.getBalance(Context.getAddress());
@@ -234,7 +234,7 @@ public class RouterImpl implements Router {
             _receiver = Context.getCaller().toString();
         }
         List<RouteAction> routeActions = new ArrayList<>();
-        for (Address path : _path) {
+        for(Address path: _path){
             routeActions.add(new RouteAction(1, path));
         }
         route(_receiver, null, routeActions, _minReceive);
@@ -252,7 +252,7 @@ public class RouterImpl implements Router {
         route(_receiver, null, actions, _minReceive);
     }
 
-    private void validateRoutePayload(int _pathLength, BigInteger _minReceive) {
+    private void validateRoutePayload(int _pathLength, BigInteger _minReceive){
         if (_minReceive == null) {
             _minReceive = BigInteger.ZERO;
         }

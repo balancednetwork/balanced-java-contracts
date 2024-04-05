@@ -16,8 +16,6 @@ public class Route {
         this.actions = new ArrayList<>();
     }
 
-    ;
-
     public Route(List<RouteAction> actions) {
         this.actions = actions;
     }

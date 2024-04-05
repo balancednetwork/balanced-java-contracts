@@ -12,8 +12,6 @@ public class RouteAction {
     public RouteAction() {
     }
 
-    ;
-
     public RouteAction(Integer action, Address toAddress) {
         this.action = action;
         this.toAddress = toAddress;
