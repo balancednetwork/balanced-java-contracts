@@ -50,6 +50,9 @@ public interface Dex extends Name, AddressManager, Fallback, TokenFallback,
     void setMarketName(BigInteger _id, String _name);
 
     @External
+    void setOracleProtection(BigInteger pid, BigInteger percentage);
+
+    @External
     void addQuoteCoin(Address _address);
 
     @External(readonly = true)

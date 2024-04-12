@@ -40,7 +40,8 @@ public class Check {
         Context.require(id > 0 && id <= nonce.get(), TAG + ": Invalid pool ID");
     }
 
-    public static void isValidSlippagePercent(Integer slippagePercent) {
-        Context.require(slippagePercent >= 0 && slippagePercent <= POINTS.intValue(), TAG + ": Invalid slippage percentage");
+    public static void isValidPercent(Integer percent) {
+        Context.require(percent >= 0 && percent <= POINTS.intValue(), TAG + ": Invalid percentage");
     }
+
 }

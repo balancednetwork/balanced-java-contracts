@@ -20,9 +20,8 @@ import network.balanced.score.core.dex.db.NodeDB;
 import network.balanced.score.lib.interfaces.Dex;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.structs.RewardsDataEntry;
-import network.balanced.score.lib.utils.FloorLimited;
 import network.balanced.score.lib.utils.BalancedFloorLimits;
-
+import network.balanced.score.lib.utils.FloorLimited;
 import score.Address;
 import score.BranchDB;
 import score.Context;
@@ -37,11 +36,11 @@ import java.util.List;
 import java.util.Map;
 
 import static network.balanced.score.core.dex.DexDBVariables.*;
+import static network.balanced.score.core.dex.utils.Check.isValidPercent;
 import static network.balanced.score.core.dex.utils.Check.isValidPoolId;
 import static network.balanced.score.core.dex.utils.Const.*;
 import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Check.onlyGovernance;
-import static network.balanced.score.lib.utils.Check.checkStatus;
 import static network.balanced.score.lib.utils.Constants.*;
 import static network.balanced.score.lib.utils.Math.pow;
 
@@ -176,6 +175,46 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
         marketsToNames.set(_id.intValue(), _name);
     }
 
+    @External
+    public void setOracleProtection(BigInteger pid, BigInteger percentage) {
+        onlyGovernance();
+        isValidPoolId(pid);
+        isValidPercent(percentage.intValue());
+        validateTokenOraclePrice(poolBase.get(pid.intValue()));
+        validateTokenOraclePrice(poolQuote.get(pid.intValue()));
+
+        oracleProtection.set(pid, percentage);
+    }
+
+    private void validateTokenOraclePrice(Address token) {
+        BigInteger price = getOraclePrice(token);
+        Context.require(price != null && !price.equals(BigInteger.ZERO),
+                "Token must be supported by the balanced Oracle");
+    }
+
+    private BigInteger getOraclePrice(Address token) {
+        String symbol = (String) Context.call(token, "symbol");
+        return (BigInteger) Context.call(getBalancedOracle(), "getPriceInUSD", symbol);
+    }
+
+    protected void oracleProtection(Integer pid, BigInteger priceBase) {
+        BigInteger poolId = BigInteger.valueOf(pid);
+        BigInteger oracleProtectionPercentage = oracleProtection.get(poolId);
+        if (oracleProtectionPercentage == null || oracleProtectionPercentage.signum() == 0) {
+            return;
+        }
+
+        Address quoteToken = poolQuote.get(pid);
+        Address baseToken = poolBase.get(pid);
+        BigInteger oraclePriceQuote = getOraclePrice(quoteToken);
+        BigInteger oraclePriceBase = getOraclePrice(baseToken);
+
+        BigInteger oraclePriceBaseRatio = oraclePriceBase.multiply(EXA).divide(oraclePriceQuote);
+        BigInteger oracleProtectionExa = oraclePriceBaseRatio.multiply(oracleProtectionPercentage).divide(POINTS);
+
+        Context.require(priceBase.compareTo(oraclePriceBaseRatio.add(oracleProtectionExa)) <= 0 && priceBase.compareTo(oraclePriceBaseRatio.subtract(oracleProtectionExa)) >= 0, TAG + ": oracle protection price violated");
+    }
+
     @External(readonly = true)
     public String getPoolName(BigInteger _id) {
         return marketsToNames.get(_id.intValue());
@@ -260,6 +299,11 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
     @External(readonly = true)
     public Address getPoolQuote(BigInteger _id) {
         return poolQuote.get(_id.intValue());
+    }
+
+    @External(readonly = true)
+    public BigInteger getOracleProtection(BigInteger pid) {
+        return oracleProtection.get(pid);
     }
 
     @External(readonly = true)
@@ -469,6 +513,10 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
         Context.call(getStaking(), "delegate", (Object) prepDelegations);
     }
 
+    private static BigInteger getPriceInUSD(String symbol) {
+        return (BigInteger) Context.call(getBalancedOracle(), "getLastPriceInUSD", symbol);
+    }
+
     protected BigInteger getSicxRate() {
         return (BigInteger) Context.call(getStaking(), "getTodayRate");
     }
@@ -567,6 +615,9 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
         BigInteger totalBase = isSell ? newFromToken : newToToken;
         BigInteger totalQuote = isSell ? newToToken : newFromToken;
 
+        BigInteger endingPrice = totalQuote.multiply(EXA).divide(totalBase);
+        oracleProtection(id, endingPrice);
+
         // Send the trader their funds
         BalancedFloorLimits.verifyWithdraw(toToken, sendAmount);
         Context.call(toToken, "transfer", receiver, sendAmount);
@@ -576,7 +627,6 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
 
         // Broadcast pool ending price
         BigInteger effectiveFillPrice = (value.multiply(EXA)).divide(sendAmount);
-        BigInteger endingPrice = totalQuote.multiply(EXA).divide(totalBase);
 
         if (!isSell) {
             effectiveFillPrice = (sendAmount.multiply(EXA)).divide(value);

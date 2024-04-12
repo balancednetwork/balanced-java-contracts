@@ -37,7 +37,7 @@ import java.util.List;
 
 import static network.balanced.score.core.dex.DexDBVariables.*;
 import static network.balanced.score.core.dex.utils.Check.isDexOn;
-import static network.balanced.score.core.dex.utils.Check.isValidSlippagePercent;
+import static network.balanced.score.core.dex.utils.Check.isValidPercent;
 import static network.balanced.score.core.dex.utils.Const.*;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getRewards;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getSicx;
@@ -177,14 +177,12 @@ public class DexImpl extends AbstractDex {
             case "_deposit": {
                 deposit(fromToken, _from, _value);
                 break;
-
             }
             case "_swap_icx": {
                 require(fromToken.equals(getSicx()),
                         TAG + ": InvalidAsset: _swap_icx can only be called with sICX");
                 swapIcx(_from, _value);
                 break;
-
             }
             case "_swap": {
 
@@ -212,16 +210,13 @@ public class DexImpl extends AbstractDex {
 
                 // Perform the swap
                 exchange(fromToken, toToken, _from, receiver, _value, minimumReceive);
-
                 break;
             }
             case "_donate": {
                 JsonObject params = json.get("params").asObject();
                 require(params.contains("toToken"), TAG + ": No toToken specified in swap");
                 Address toToken = Address.fromString(params.get("toToken").asString());
-
                 donate(fromToken, toToken, _value);
-
                 break;
             }
             default:
@@ -330,7 +325,7 @@ public class DexImpl extends AbstractDex {
                     @Optional boolean _withdraw_unused, @Optional BigInteger _slippagePercentage) {
         isDexOn();
         checkStatus();
-        isValidSlippagePercent(_slippagePercentage.intValue());
+        isValidPercent(_slippagePercentage.intValue());
 
         Address user = Context.getCaller();
 
