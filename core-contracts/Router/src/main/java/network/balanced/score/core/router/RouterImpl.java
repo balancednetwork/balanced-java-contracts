@@ -314,7 +314,7 @@ public class RouterImpl implements Router {
         }
 
         List<RouteAction> actions = new ArrayList<>();
-        if (!params.contains("isStable")) {
+        if (!params.contains("isStableSwap")) {
             JsonArray pathArray = params.get("path").asArray();
             Context.require(pathArray.size() <= MAX_NUMBER_OF_ITERATIONS,
                     TAG + ": Passed max swaps of " + MAX_NUMBER_OF_ITERATIONS);
