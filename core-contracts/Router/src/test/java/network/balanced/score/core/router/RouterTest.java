@@ -16,6 +16,8 @@
 
 package network.balanced.score.core.router;
 
+import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.JsonObject;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
@@ -537,6 +539,43 @@ class RouterTest extends TestBase {
             if (i < tokens.size() - 1) {
                 byte[] data = tokens.get(i + 1).getAddress().toString().getBytes();
                 verify(token.mock).transfer(balanced.stability.getAddress(), icxToTrade, data);
+            }
+            i++;
+        }
+    }
+
+    @Test
+    void tokenFallback_swapStable() throws Exception {
+        // Arrange
+        BigInteger balnToSwap = BigInteger.TEN.multiply(ICX);
+        JsonArray actions = new JsonArray();
+        List<MockContract<IRC2>> tokens = new ArrayList<>(MAX_NUMBER_OF_ITERATIONS - 1);
+        for (int i = 0; i < MAX_NUMBER_OF_ITERATIONS; i++) {
+            if (i == 0) {
+                actions.add(new JsonObject().add("action", SWAP).add("toAddress", balanced.sicx.getAddress().toString()));
+                continue;
+            }
+            MockContract<IRC2> token = new MockContract<>(IRC2ScoreInterface.class, IRC2.class, sm, owner);
+            when(token.mock.balanceOf(routerScore.getAddress())).thenReturn(balnToSwap);
+            actions.add(new JsonObject().add("action", STABILITY_SWAP).add("toAddress", token.getAddress().toString()));
+            tokens.add(token);
+        }
+
+        Account newReceiver = sm.createAccount();
+        byte[] data = tokenData("_swap", Map.of("path",
+                actions.toString(), "isStable", true, "receiver",
+                newReceiver.getAddress().toString()));
+
+        // Act
+        routerScore.invoke(balanced.baln.account, "tokenFallback", owner.getAddress(), balnToSwap,
+                data);
+
+        // Assert
+        int i = 0;
+        for (MockContract<IRC2> token : tokens) {
+            if (i < tokens.size() - 1) {
+                byte[] d = tokens.get(i + 1).getAddress().toString().getBytes();
+                verify(token.mock).transfer(balanced.stability.getAddress(), balnToSwap, d);
             }
             i++;
         }
