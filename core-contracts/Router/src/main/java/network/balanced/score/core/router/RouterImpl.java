@@ -314,20 +314,7 @@ public class RouterImpl implements Router {
         }
 
         List<RouteAction> actions = new ArrayList<>();
-        if (!params.contains("isStableSwap")) {
-            JsonArray pathArray = params.get("path").asArray();
-            Context.require(pathArray.size() <= MAX_NUMBER_OF_ITERATIONS,
-                    TAG + ": Passed max swaps of " + MAX_NUMBER_OF_ITERATIONS);
-
-            for (int i = 0; i < pathArray.size(); i++) {
-                JsonValue addressJsonValue = pathArray.get(i);
-                if (addressJsonValue == null || addressJsonValue.toString().equals("null")) {
-                    actions.add(new RouteAction(1, null));
-                } else {
-                    actions.add(new RouteAction(1, Address.fromString(addressJsonValue.asString())));
-                }
-            }
-        } else {
+        if (method.contains("_swapV2")) {
             JsonArray pathArray = (JsonArray) Json.parse(params.get("path").asString());
             Context.require(pathArray.size() <= MAX_NUMBER_OF_ITERATIONS,
                     TAG + ": Passed max swaps of " + MAX_NUMBER_OF_ITERATIONS);
@@ -340,6 +327,19 @@ public class RouterImpl implements Router {
                     actions.add(new RouteAction(action, null));
                 } else {
                     actions.add(new RouteAction(action, Address.fromString(addressJsonValue.asString())));
+                }
+            }
+        } else {
+            JsonArray pathArray = params.get("path").asArray();
+            Context.require(pathArray.size() <= MAX_NUMBER_OF_ITERATIONS,
+                    TAG + ": Passed max swaps of " + MAX_NUMBER_OF_ITERATIONS);
+
+            for (int i = 0; i < pathArray.size(); i++) {
+                JsonValue addressJsonValue = pathArray.get(i);
+                if (addressJsonValue == null || addressJsonValue.toString().equals("null")) {
+                    actions.add(new RouteAction(1, null));
+                } else {
+                    actions.add(new RouteAction(1, Address.fromString(addressJsonValue.asString())));
                 }
             }
         }

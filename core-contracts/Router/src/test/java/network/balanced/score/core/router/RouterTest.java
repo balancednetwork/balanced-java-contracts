@@ -562,8 +562,8 @@ class RouterTest extends TestBase {
         }
 
         Account newReceiver = sm.createAccount();
-        byte[] data = tokenData("_swap", Map.of("path",
-                actions.toString(), "isStableSwap", true, "receiver",
+        byte[] data = tokenData("_swapV2", Map.of("path",
+                actions.toString(),  "receiver",
                 newReceiver.getAddress().toString()));
 
         // Act
