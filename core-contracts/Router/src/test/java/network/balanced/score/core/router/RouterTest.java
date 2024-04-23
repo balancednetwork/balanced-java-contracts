@@ -16,8 +16,6 @@
 
 package network.balanced.score.core.router;
 
-import com.eclipsesource.json.JsonArray;
-import com.eclipsesource.json.JsonObject;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
@@ -548,22 +546,25 @@ class RouterTest extends TestBase {
     void tokenFallback_swapStable() throws Exception {
         // Arrange
         BigInteger balnToSwap = BigInteger.TEN.multiply(ICX);
-        JsonArray actions = new JsonArray();
+        List<RouteAction> actions = new ArrayList<>(MAX_NUMBER_OF_ITERATIONS);
         List<MockContract<IRC2>> tokens = new ArrayList<>(MAX_NUMBER_OF_ITERATIONS - 1);
         for (int i = 0; i < MAX_NUMBER_OF_ITERATIONS; i++) {
             if (i == 0) {
-                actions.add(new JsonObject().add("action", SWAP).add("toAddress", balanced.sicx.getAddress().toString()));
+                actions.add(new RouteAction(STABILITY_SWAP, balanced.sicx.getAddress()));
                 continue;
             }
             MockContract<IRC2> token = new MockContract<>(IRC2ScoreInterface.class, IRC2.class, sm, owner);
             when(token.mock.balanceOf(routerScore.getAddress())).thenReturn(balnToSwap);
-            actions.add(new JsonObject().add("action", STABILITY_SWAP).add("toAddress", token.getAddress().toString()));
+            actions.add(new RouteAction(STABILITY_SWAP, token.getAddress()));
             tokens.add(token);
         }
 
+        Route route = new Route(actions);
+        byte[] pathWithMoreHops = route.toBytes();
+
         Account newReceiver = sm.createAccount();
         byte[] data = tokenData("_swapV2", Map.of("path",
-                actions.toString(),  "receiver",
+                pathWithMoreHops, "receiver",
                 newReceiver.getAddress().toString()));
 
         // Act

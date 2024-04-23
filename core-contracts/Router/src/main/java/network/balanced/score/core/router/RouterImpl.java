@@ -45,6 +45,7 @@ import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Check.isContract;
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.StringUtils.convertStringToBigInteger;
+import static network.balanced.score.lib.utils.StringUtils.parseStringToByteArray;
 
 public class RouterImpl implements Router {
     private static final String GOVERNANCE_ADDRESS = "governance_address";
@@ -279,6 +280,7 @@ public class RouterImpl implements Router {
         xTokenFallback(_from.toString(), _value, _data);
     }
 
+
     @External
     public void xTokenFallback(String _from, BigInteger _value, byte[] _data) {
         // Receive token transfers from Balanced DEX and staking while in mid-route
@@ -315,20 +317,8 @@ public class RouterImpl implements Router {
 
         List<RouteAction> actions = new ArrayList<>();
         if (method.contains("_swapV2")) {
-            JsonArray pathArray = (JsonArray) Json.parse(params.get("path").asString());
-            Context.require(pathArray.size() <= MAX_NUMBER_OF_ITERATIONS,
-                    TAG + ": Passed max swaps of " + MAX_NUMBER_OF_ITERATIONS);
-
-            for (int i = 0; i < pathArray.size(); i++) {
-                JsonObject routeActionJsonValue = pathArray.get(i).asObject();
-                Integer action = routeActionJsonValue.get("action").asInt();
-                JsonValue addressJsonValue = routeActionJsonValue.get("toAddress");
-                if (addressJsonValue == null || addressJsonValue.toString().equals("null")) {
-                    actions.add(new RouteAction(action, null));
-                } else {
-                    actions.add(new RouteAction(action, Address.fromString(addressJsonValue.asString())));
-                }
-            }
+            byte[] pathByteArray = parseStringToByteArray(params.get("path").asArray().toString());
+            actions = Route.fromBytes(pathByteArray).actions;
         } else {
             JsonArray pathArray = params.get("path").asArray();
             Context.require(pathArray.size() <= MAX_NUMBER_OF_ITERATIONS,
