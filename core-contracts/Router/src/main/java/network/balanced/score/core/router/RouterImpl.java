@@ -24,6 +24,7 @@ import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.lib.interfaces.Router;
 import network.balanced.score.lib.structs.Route;
 import network.balanced.score.lib.structs.RouteAction;
+import network.balanced.score.lib.structs.RouteData;
 import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.Versions;
@@ -45,7 +46,6 @@ import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Check.isContract;
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.StringUtils.convertStringToBigInteger;
-import static network.balanced.score.lib.utils.StringUtils.parseStringToByteArray;
 
 public class RouterImpl implements Router {
     private static final String GOVERNANCE_ADDRESS = "governance_address";
@@ -289,7 +289,11 @@ public class RouterImpl implements Router {
         }
 
         String unpackedData = new String(_data);
-        Context.require(!unpackedData.equals(""), "Token Fallback: Data can't be empty");
+        Context.require(unpackedData.length() > 0, "Token Fallback: Data can't be empty");
+        if (!unpackedData.startsWith("{")) {
+            tokenFallbackV2(_from, _data);
+            return;
+        }
         JsonObject json = Json.parse(unpackedData).asObject();
         String method = json.get("method").asString();
         JsonObject params = json.get("params").asObject();
@@ -316,26 +320,41 @@ public class RouterImpl implements Router {
         }
 
         List<RouteAction> actions = new ArrayList<>();
-        if (method.contains("_swapV2")) {
-            byte[] pathByteArray = parseStringToByteArray(params.get("path").asArray().toString());
-            actions = Route.fromBytes(pathByteArray).actions;
-        } else {
-            JsonArray pathArray = params.get("path").asArray();
-            Context.require(pathArray.size() <= MAX_NUMBER_OF_ITERATIONS,
-                    TAG + ": Passed max swaps of " + MAX_NUMBER_OF_ITERATIONS);
+        JsonArray pathArray = params.get("path").asArray();
+        Context.require(pathArray.size() <= MAX_NUMBER_OF_ITERATIONS,
+                TAG + ": Passed max swaps of " + MAX_NUMBER_OF_ITERATIONS);
 
-            for (int i = 0; i < pathArray.size(); i++) {
-                JsonValue addressJsonValue = pathArray.get(i);
-                if (addressJsonValue == null || addressJsonValue.toString().equals("null")) {
-                    actions.add(new RouteAction(1, null));
-                } else {
-                    actions.add(new RouteAction(1, Address.fromString(addressJsonValue.asString())));
-                }
+        for (int i = 0; i < pathArray.size(); i++) {
+            JsonValue addressJsonValue = pathArray.get(i);
+            if (addressJsonValue == null || addressJsonValue.toString().equals("null")) {
+                actions.add(new RouteAction(1, null));
+            } else {
+                actions.add(new RouteAction(1, Address.fromString(addressJsonValue.asString())));
             }
         }
 
         Address fromToken = Context.getCaller();
         route(receiver, fromToken, actions, minimumReceive);
+    }
+
+    private void tokenFallbackV2(String _from, byte[] data) {
+        RouteData routeData = RouteData.fromBytes(data);
+        Context.require(routeData.method.contains("_swapV2"), TAG + ": Fallback directly not allowed.");
+
+        Address fromToken = Context.getCaller();
+        BigInteger minimumReceive = BigInteger.ZERO;
+        if (routeData.minimumReceive != null) {
+            minimumReceive = routeData.minimumReceive;
+        }
+
+        String receiver;
+        if (routeData.receiver != null) {
+            receiver = routeData.receiver;
+        } else {
+            receiver = _from;
+        }
+
+        route(receiver, fromToken, routeData.actions, minimumReceive);
     }
 
     @Payable

@@ -16,6 +16,7 @@
 
 package network.balanced.score.lib.utils;
 
+import com.eclipsesource.json.JsonArray;
 import score.Context;
 import score.UserRevertException;
 
@@ -34,19 +35,4 @@ public class StringUtils {
         }
     }
 
-    public static byte[] parseStringToByteArray(String str) {
-        // Check if the string is null or empty
-        Context.require(str != null && !str.isEmpty(), "Input string cannot be null or empty");
-
-        try{
-            String[] parts = str.substring(1, str.length() - 1).split(","); // Remove brackets and split
-            byte[] bytes = new byte[parts.length];
-            for (int i = 0; i < parts.length; i++) {
-                bytes[i] = Byte.parseByte(parts[i].trim());
-            }
-            return bytes;
-        } catch (Exception e){
-            throw new UserRevertException("Unsupported byte array format in string");
-        }
-    }
 }

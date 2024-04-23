@@ -28,6 +28,7 @@ import network.balanced.score.lib.interfaces.tokens.SpokeToken;
 import network.balanced.score.lib.interfaces.tokens.SpokeTokenScoreInterface;
 import network.balanced.score.lib.structs.Route;
 import network.balanced.score.lib.structs.RouteAction;
+import network.balanced.score.lib.structs.RouteData;
 import network.balanced.score.lib.test.mock.MockBalanced;
 import network.balanced.score.lib.test.mock.MockContract;
 import org.junit.jupiter.api.BeforeEach;
@@ -559,13 +560,43 @@ class RouterTest extends TestBase {
             tokens.add(token);
         }
 
-        Route route = new Route(actions);
-        byte[] pathWithMoreHops = route.toBytes();
+        Account newReceiver = sm.createAccount();
+        byte[] data = new RouteData("_swapV2", newReceiver.getAddress().toString(), BigInteger.ZERO, actions).toBytes();
+
+        // Act
+        routerScore.invoke(balanced.baln.account, "tokenFallback", owner.getAddress(), balnToSwap,
+                data);
+
+        // Assert
+        int i = 0;
+        for (MockContract<IRC2> token : tokens) {
+            if (i < tokens.size() - 1) {
+                byte[] d = tokens.get(i + 1).getAddress().toString().getBytes();
+                verify(token.mock).transfer(balanced.stability.getAddress(), balnToSwap, d);
+            }
+            i++;
+        }
+    }
+
+    @Test
+    void tokenFallback_swapStableWithoutOptField() throws Exception {
+        // Arrange
+        BigInteger balnToSwap = BigInteger.TEN.multiply(ICX);
+        List<RouteAction> actions = new ArrayList<>(MAX_NUMBER_OF_ITERATIONS);
+        List<MockContract<IRC2>> tokens = new ArrayList<>(MAX_NUMBER_OF_ITERATIONS - 1);
+        for (int i = 0; i < MAX_NUMBER_OF_ITERATIONS; i++) {
+            if (i == 0) {
+                actions.add(new RouteAction(STABILITY_SWAP, balanced.sicx.getAddress()));
+                continue;
+            }
+            MockContract<IRC2> token = new MockContract<>(IRC2ScoreInterface.class, IRC2.class, sm, owner);
+            when(token.mock.balanceOf(routerScore.getAddress())).thenReturn(balnToSwap);
+            actions.add(new RouteAction(STABILITY_SWAP, token.getAddress()));
+            tokens.add(token);
+        }
 
         Account newReceiver = sm.createAccount();
-        byte[] data = tokenData("_swapV2", Map.of("path",
-                pathWithMoreHops, "receiver",
-                newReceiver.getAddress().toString()));
+        byte[] data = new RouteData("_swapV2", actions).toBytes();
 
         // Act
         routerScore.invoke(balanced.baln.account, "tokenFallback", owner.getAddress(), balnToSwap,
