@@ -551,7 +551,7 @@ class RouterTest extends TestBase {
         List<MockContract<IRC2>> tokens = new ArrayList<>(MAX_NUMBER_OF_ITERATIONS - 1);
         for (int i = 0; i < MAX_NUMBER_OF_ITERATIONS; i++) {
             if (i == 0) {
-                actions.add(new RouteAction(STABILITY_SWAP, balanced.sicx.getAddress()));
+                actions.add(new RouteAction(SWAP, balanced.sicx.getAddress()));
                 continue;
             }
             MockContract<IRC2> token = new MockContract<>(IRC2ScoreInterface.class, IRC2.class, sm, owner);
@@ -561,7 +561,7 @@ class RouterTest extends TestBase {
         }
 
         Account newReceiver = sm.createAccount();
-        byte[] data = new RouteData("_swapV2", newReceiver.getAddress().toString(), BigInteger.ZERO, actions).toBytes();
+        byte[] data = new RouteData("_swap", newReceiver.getAddress().toString(), BigInteger.ZERO, actions).toBytes();
 
         // Act
         routerScore.invoke(balanced.baln.account, "tokenFallback", owner.getAddress(), balnToSwap,
@@ -579,24 +579,28 @@ class RouterTest extends TestBase {
     }
 
     @Test
-    void tokenFallback_swapStableWithoutOptField() throws Exception {
+    void tokenFallback_swapStableWithoutOptField_AndMixedSwapTypes() throws Exception {
         // Arrange
         BigInteger balnToSwap = BigInteger.TEN.multiply(ICX);
         List<RouteAction> actions = new ArrayList<>(MAX_NUMBER_OF_ITERATIONS);
         List<MockContract<IRC2>> tokens = new ArrayList<>(MAX_NUMBER_OF_ITERATIONS - 1);
         for (int i = 0; i < MAX_NUMBER_OF_ITERATIONS; i++) {
             if (i == 0) {
-                actions.add(new RouteAction(STABILITY_SWAP, balanced.sicx.getAddress()));
+                actions.add(new RouteAction(SWAP, balanced.sicx.getAddress()));
                 continue;
             }
             MockContract<IRC2> token = new MockContract<>(IRC2ScoreInterface.class, IRC2.class, sm, owner);
             when(token.mock.balanceOf(routerScore.getAddress())).thenReturn(balnToSwap);
-            actions.add(new RouteAction(STABILITY_SWAP, token.getAddress()));
+            if(i%2==0) {
+                actions.add(new RouteAction(STABILITY_SWAP, token.getAddress()));
+            }else{
+                actions.add(new RouteAction(SWAP, token.getAddress()));
+            }
             tokens.add(token);
         }
 
         Account newReceiver = sm.createAccount();
-        byte[] data = new RouteData("_swapV2", actions).toBytes();
+        byte[] data = new RouteData("_swap", actions).toBytes();
 
         // Act
         routerScore.invoke(balanced.baln.account, "tokenFallback", owner.getAddress(), balnToSwap,
@@ -607,7 +611,9 @@ class RouterTest extends TestBase {
         for (MockContract<IRC2> token : tokens) {
             if (i < tokens.size() - 1) {
                 byte[] d = tokens.get(i + 1).getAddress().toString().getBytes();
-                verify(token.mock).transfer(balanced.stability.getAddress(), balnToSwap, d);
+                if(i%2==0) {
+                    verify(token.mock).transfer(balanced.stability.getAddress(), balnToSwap, d);
+                }
             }
             i++;
         }

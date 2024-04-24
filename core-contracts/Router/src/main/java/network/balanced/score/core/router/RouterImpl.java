@@ -339,7 +339,7 @@ public class RouterImpl implements Router {
 
     private void tokenFallbackV2(String _from, byte[] data) {
         RouteData routeData = RouteData.fromBytes(data);
-        Context.require(routeData.method.contains("_swapV2"), TAG + ": Fallback directly not allowed.");
+        Context.require(routeData.method.contains("_swap"), TAG + ": Fallback directly not allowed.");
 
         Address fromToken = Context.getCaller();
         BigInteger minimumReceive = BigInteger.ZERO;
