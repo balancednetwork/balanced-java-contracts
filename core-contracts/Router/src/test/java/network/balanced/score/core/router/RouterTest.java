@@ -88,6 +88,8 @@ class RouterTest extends TestBase {
         Executable maxTradeHops = () -> sm.call(owner, icxToTrade, routerScore.getAddress(), "route",
                 pathWithMoreHops, BigInteger.ZERO, "");
         expectedErrorMessage = "Reverted(0): " + TAG + ": Passed max swaps of " + MAX_NUMBER_OF_ITERATIONS;
+
+        resetInRoute();
         expectErrorMessage(maxTradeHops, expectedErrorMessage);
 
         when(balanced.sicx.mock.balanceOf(routerScore.getAddress())).thenReturn(icxToTrade);
@@ -98,9 +100,12 @@ class RouterTest extends TestBase {
                 path, icxToTrade.multiply(BigInteger.TWO), "");
         expectedErrorMessage = "Reverted(0): " + TAG + ": Below minimum receive amount of "
                 + icxToTrade.multiply(BigInteger.TWO);
+
+        resetInRoute();
         expectErrorMessage(lessThanMinimumReceivable, expectedErrorMessage);
 
         routerScore.getAccount().addBalance("ICX", icxToTrade);
+        resetInRoute();
         sm.call(owner, icxToTrade, routerScore.getAddress(), "route", path, BigInteger.ZERO,
                 owner.getAddress().toString());
         verify(sicxScore.mock).transfer(owner.getAddress(), icxToTrade, EMPTY_DATA);
@@ -180,6 +185,7 @@ class RouterTest extends TestBase {
         expectedErrorMessage = "Reverted(0): " + TAG + ": Native swaps not available to icon from " + balanced.baln.getAddress();
         expectErrorMessage(nonSicxIcxTrade, expectedErrorMessage);
 
+        resetInRoute();
         Account newReceiver = sm.createAccount();
         byte[] pathWithSicxTerminalToken = tokenData("_swap", Map.of("path",
                 new Object[]{sicxScore.getAddress().toString(), null}, "receiver",
@@ -619,5 +625,8 @@ class RouterTest extends TestBase {
         }
     }
 
-
+    private void resetInRoute() {
+        // in Production this happens between each tx
+        ((RouterImpl)routerScore.getInstance()).inRoute = false;
+    }
 }

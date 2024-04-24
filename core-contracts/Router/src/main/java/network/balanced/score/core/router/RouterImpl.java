@@ -62,6 +62,7 @@ public class RouterImpl implements Router {
     // ENUM of actions
     static final int SWAP = 1;
     static final int STABILITY_SWAP = 2;
+    public boolean inRoute = false;
 
     public RouterImpl(Address _governance) {
         if (governance.get() == null) {
@@ -146,11 +147,13 @@ public class RouterImpl implements Router {
             fromAddress = startToken;
         }
 
+        inRoute = true;
         for (RouteAction action : _path) {
             swap(currentToken, action.toAddress, action.action);
             prevToken = currentToken;
             currentToken = action.toAddress;
         }
+        inRoute = false;
 
         String nativeNid = XCallUtils.getNativeNid();
         NetworkAddress networkAddress = NetworkAddress.valueOf(from, nativeNid);
@@ -179,7 +182,6 @@ public class RouterImpl implements Router {
         } else {
             transferCrossChainResult(currentToken, networkAddress, balance, toNative);
         }
-
 
         Route(fromAddress, fromAmount, currentToken, balance);
     }
@@ -229,6 +231,7 @@ public class RouterImpl implements Router {
     @Payable
     @External
     public void route(Address[] _path, @Optional BigInteger _minReceive, @Optional String _receiver) {
+        Context.require(!inRoute);
         validateRoutePayload(_path.length, _minReceive);
 
         if (_receiver == null || _receiver.equals("")) {
@@ -244,6 +247,7 @@ public class RouterImpl implements Router {
     @Payable
     @External
     public void routeV2(byte[] _path, @Optional BigInteger _minReceive, @Optional String _receiver) {
+        Context.require(!inRoute);
         List<RouteAction> actions = Route.fromBytes(_path).actions;
         validateRoutePayload(actions.size(), _minReceive);
         if (_receiver == null || _receiver.equals("")) {
@@ -283,17 +287,41 @@ public class RouterImpl implements Router {
 
     @External
     public void xTokenFallback(String _from, BigInteger _value, byte[] _data) {
-        // Receive token transfers from Balanced DEX and staking while in mid-route
-        if (_from.equals(getDex().toString()) || _from.equals(MINT_ADDRESS.toString())) {
+        if (inRoute) {
             return;
+        }
+        Context.require(_data.length > 0, "Token Fallback: Data can't be empty");
+
+        // "{" is 123 as byte
+        if (_data[0] == 123) {
+            jsonRoute(_from, _data);
+            return;
+        }
+        executeRoute(_from, _data);
+    }
+
+    private void executeRoute(String _from, byte[] data) {
+        RouteData routeData = RouteData.fromBytes(data);
+        Context.require(routeData.method.contains("_swap"), TAG + ": Fallback directly not allowed.");
+
+        Address fromToken = Context.getCaller();
+        BigInteger minimumReceive = BigInteger.ZERO;
+        if (routeData.minimumReceive != null) {
+            minimumReceive = routeData.minimumReceive;
         }
 
-        String unpackedData = new String(_data);
-        Context.require(unpackedData.length() > 0, "Token Fallback: Data can't be empty");
-        if (!unpackedData.startsWith("{")) {
-            tokenFallbackV2(_from, _data);
-            return;
+        String receiver;
+        if (routeData.receiver != null) {
+            receiver = routeData.receiver;
+        } else {
+            receiver = _from;
         }
+
+        route(receiver, fromToken, routeData.actions, minimumReceive);
+    }
+
+    private void jsonRoute(String _from, byte[] data) {
+        String unpackedData = new String(data);
         JsonObject json = Json.parse(unpackedData).asObject();
         String method = json.get("method").asString();
         JsonObject params = json.get("params").asObject();
@@ -335,26 +363,6 @@ public class RouterImpl implements Router {
 
         Address fromToken = Context.getCaller();
         route(receiver, fromToken, actions, minimumReceive);
-    }
-
-    private void tokenFallbackV2(String _from, byte[] data) {
-        RouteData routeData = RouteData.fromBytes(data);
-        Context.require(routeData.method.contains("_swap"), TAG + ": Fallback directly not allowed.");
-
-        Address fromToken = Context.getCaller();
-        BigInteger minimumReceive = BigInteger.ZERO;
-        if (routeData.minimumReceive != null) {
-            minimumReceive = routeData.minimumReceive;
-        }
-
-        String receiver;
-        if (routeData.receiver != null) {
-            receiver = routeData.receiver;
-        } else {
-            receiver = _from;
-        }
-
-        route(receiver, fromToken, routeData.actions, minimumReceive);
     }
 
     @Payable
