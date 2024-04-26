@@ -73,9 +73,8 @@ public class AssetManagerImpl implements AssetManager {
         }
 
         currentVersion.set(Versions.BALANCED_ASSET_MANAGER);
-        if (dataMigrated.get() == null) {
-            migrateTokenNativeAddressAndAssetDeposits();
-        }
+        // Clear db to avoid mistake reuse in the future
+        dataMigrated.set(null);
     }
 
     @External(readonly = true)
@@ -118,26 +117,14 @@ public class AssetManagerImpl implements AssetManager {
         Address token = Context.deploy(tokenBytes, BalancedAddressManager.getGovernance(), name, symbol, decimals);
         assets.set(tokenNetworkAddress, token);
         assetNativeAddresses.at(token).set(nativeAddress.net(), nativeAddress.account());
+        if (assetNativeAddress.get(token) == null) {
+            assetNativeAddress.set(token, tokenNetworkAddress);
+        }
+
         Address SYSTEM_SCORE_ADDRESS = getSystemScoreAddress();
         Context.call(SYSTEM_SCORE_ADDRESS, "setScoreOwner", token, BalancedAddressManager.getGovernance());
     }
 
-    private void migrateTokenNativeAddressAndAssetDeposits() {
-        List<String> nativeAddresses = assets.keys();
-        for (String na : nativeAddresses) {
-            Address address = assets.get(na);
-            if (assetNativeAddress.get(address) != null) {
-                NetworkAddress networkAddress = NetworkAddress.valueOf(na);
-                assetNativeAddresses.at(address).set(networkAddress.net(), networkAddress.account());
-                //delete once migrated
-                //assetNativeAddress.set(address, null);
-            }
-
-            assetDeposits.set(na, getTotalSupply(address));
-        }
-
-        dataMigrated.set(true);
-    }
 
     @External
     public void linkToken(String tokenNetworkAddress, Address token) {
@@ -147,6 +134,9 @@ public class AssetManagerImpl implements AssetManager {
         Context.require(assets.get(tokenNetworkAddress) == null, "Token is already available");
         assets.set(tokenNetworkAddress, token);
         assetNativeAddresses.at(token).set(networkAddress.net(), networkAddress.account());
+        if (assetNativeAddress.get(token) == null) {
+            assetNativeAddress.set(token, tokenNetworkAddress);
+        }
     }
 
     @External
@@ -156,6 +146,14 @@ public class AssetManagerImpl implements AssetManager {
         Context.require(nativeAddress != null, "Token is not available");
         assetNativeAddresses.at(token).set(nid, null);
         assets.set(new NetworkAddress(nid, nativeAddress).toString(), null);
+    }
+
+    @External
+    public void overrideChainDeposits(String tokenNetworkAddress, BigInteger addedAmount) {
+        onlyGovernance();
+        BigInteger remainingDeposit = getAssetDeposit(tokenNetworkAddress).add(addedAmount);
+        Context.require(remainingDeposit.signum() >= 0, "Remaining deposit can't be negative");
+        assetDeposits.set(tokenNetworkAddress, remainingDeposit);
     }
 
     @External
