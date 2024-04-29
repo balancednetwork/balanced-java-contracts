@@ -61,7 +61,7 @@ public class GovernanceImpl implements Governance {
             setVoteDurationLimits(BigInteger.ONE, BigInteger.valueOf(14));
             return;
         }
-//        ContractManager.migrateAddresses();
+
         if (currentVersion.getOrDefault("").equals(Versions.GOVERNANCE)) {
             Context.revert("Can't Update same version of code");
         }
@@ -95,6 +95,7 @@ public class GovernanceImpl implements Governance {
         Context.call(SYSTEM_SCORE_ADDRESS, "setScoreOwner", score, newOwner);
     }
 
+    @External
     public void setVoteDurationLimits(BigInteger min, BigInteger max) {
         onlyOwnerOrContract();
         Context.require(min.compareTo(BigInteger.ONE) >= 0, "Minimum vote duration has to be above 1");
@@ -347,6 +348,7 @@ public class GovernanceImpl implements Governance {
     @External
     public void enable() {
         EmergencyManager.authorizeEnableAndDisable();
+        Context.require(!EmergencyManager.canOnlyDisable(Context.getCaller()), "This address does not have permission to enable balanced");
         EmergencyManager.enable();
     }
 
@@ -389,9 +391,9 @@ public class GovernanceImpl implements Governance {
     }
 
     @External
-    public void addAuthorizedCallerShutdown(Address address) {
+    public void addAuthorizedCallerShutdown(Address address, @Optional boolean disableOnly) {
         onlyOwnerOrContract();
-        EmergencyManager.addAuthorizedCallerShutdown(address);
+        EmergencyManager.addAuthorizedCallerShutdown(address, disableOnly);
     }
 
     @External
