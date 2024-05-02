@@ -16,6 +16,8 @@
 
 package network.balanced.score.lib.utils;
 
+import com.eclipsesource.json.JsonArray;
+import score.Context;
 import score.UserRevertException;
 
 import java.math.BigInteger;
@@ -32,4 +34,5 @@ public class StringUtils {
             throw new UserRevertException("Invalid numeric value: " + number);
         }
     }
+
 }
