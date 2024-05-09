@@ -121,7 +121,7 @@ public interface AssetManager extends AddressManager, Version, Fallback {
     @XCall
     void withdrawRollback(String from, String tokenAddress, String _to, BigInteger _amount);
 
-    void linkToken(String tokenNetworkAddress, Address token);
+    void linkToken(String tokenNetworkAddress, Address token, @Optional BigInteger decimals);
 
     void removeToken(Address token, String nid);
 }
