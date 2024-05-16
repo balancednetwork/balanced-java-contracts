@@ -44,4 +44,5 @@ public class Versions {
     public final static String BURNER = "v1.0.0";
     public final static String SAVINGS = "v1.0.0";
     public final static String TRICKLER = "v1.0.0";
+    public final static String PAYMENTS = "v1.0.0";
 }

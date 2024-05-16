@@ -44,4 +44,5 @@ public class Names {
     public final static String BURNER = "Balanced-ICON Burner";
     public final static String SAVINGS = "Balanced Savings";
     public final static String TRICKLER = "Balanced Trickler";
+    public final static String PAYMENTS = "Balanced Payment contract";
 }
