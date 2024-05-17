@@ -313,6 +313,7 @@ public class AssetManagerImpl implements AssetManager {
         byte[] rollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), to, amount);
 
         BigInteger sendAmount = translateOutgoingDecimals(tokenAddress.toString(), amount);
+        Context.require(sendAmount.compareTo(BigInteger.ZERO) > 0, "Amount needs to be greater than 0 on the destination chain");
         if (toNative) {
             msg = SpokeAssetManagerMessages.WithdrawNativeTo(tokenAddress.account(), targetAddress.account(), sendAmount);
         } else {
