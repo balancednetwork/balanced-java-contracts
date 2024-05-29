@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 
 import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.Math.pow;
 
 public class AssetManagerImpl implements AssetManager {
 
@@ -42,9 +43,9 @@ public class AssetManagerImpl implements AssetManager {
     public static final String ASSETS = "assets";
     public static final String NATIVE_ASSET_ADDRESS = "native_asset_address";
     public static final String NATIVE_ASSET_ADDRESSES = "native_asset_addresses";
-    public static final String DATA_MIGRATED = "data_migrated";
     public static final String ASSET_DEPOSIT_CHAIN_LIMIT = "asset_deposit_chain_limit";
     public static final String ASSET_DEPOSITS = "asset_deposits";
+    public static final String DECIMAL_TRANSFORMATIONS = "decimal_transformations";
 
     public static String NATIVE_NID;
     public static byte[] tokenBytes;
@@ -58,7 +59,7 @@ public class AssetManagerImpl implements AssetManager {
     private final BranchDB<Address, DictDB<String, String>> assetNativeAddresses = Context.newBranchDB(NATIVE_ASSET_ADDRESSES, String.class);
     private final DictDB<String, BigInteger> assetChainDepositLimit = Context.newDictDB(ASSET_DEPOSIT_CHAIN_LIMIT, BigInteger.class);
     private final DictDB<String, BigInteger> assetDeposits = Context.newDictDB(ASSET_DEPOSITS, BigInteger.class);
-    private final VarDB<Boolean> dataMigrated = Context.newVarDB(DATA_MIGRATED, Boolean.class);
+    private final DictDB<String, BigInteger> decimalTransformations = Context.newDictDB(DECIMAL_TRANSFORMATIONS, BigInteger.class);
 
     public AssetManagerImpl(Address _governance, byte[] tokenBytes) {
         AssetManagerImpl.tokenBytes = tokenBytes;
@@ -73,8 +74,6 @@ public class AssetManagerImpl implements AssetManager {
         }
 
         currentVersion.set(Versions.BALANCED_ASSET_MANAGER);
-        // Clear db to avoid mistake reuse in the future
-        dataMigrated.set(null);
     }
 
     @External(readonly = true)
@@ -127,8 +126,15 @@ public class AssetManagerImpl implements AssetManager {
 
 
     @External
-    public void linkToken(String tokenNetworkAddress, Address token) {
+    public void linkToken(String tokenNetworkAddress, Address token, @Optional BigInteger decimals) {
         onlyGovernance();
+        BigInteger tokenDecimals = Context.call(BigInteger.class, token, "decimals");
+        if (decimals != null && !decimals.equals(BigInteger.ZERO) && !decimals.equals(tokenDecimals) ) {
+            BigInteger diff =  decimals.subtract(tokenDecimals);
+            BigInteger transformation = pow(BigInteger.TEN, diff.abs().intValue()).multiply(BigInteger.valueOf(diff.signum()));
+            decimalTransformations.set(tokenNetworkAddress, transformation);
+        }
+
         NetworkAddress networkAddress = NetworkAddress.valueOf(tokenNetworkAddress);
         Context.require(spokes.get(networkAddress.net()) != null, "Add the spoke spoke manager first");
         Context.require(assets.get(tokenNetworkAddress) == null, "Token is already available");
@@ -143,9 +149,11 @@ public class AssetManagerImpl implements AssetManager {
     public void removeToken(Address token, String nid) {
         onlyGovernance();
         String nativeAddress = assetNativeAddresses.at(token).get(nid);
+        String networkAddress = new NetworkAddress(nid, nativeAddress).toString();
         Context.require(nativeAddress != null, "Token is not available");
         assetNativeAddresses.at(token).set(nid, null);
-        assets.set(new NetworkAddress(nid, nativeAddress).toString(), null);
+        decimalTransformations.set(networkAddress, null);
+        assets.set(networkAddress, null);
     }
 
     @External
@@ -266,6 +274,7 @@ public class AssetManagerImpl implements AssetManager {
         Address assetAddress = assets.get(spokeTokenAddress);
         Context.require(assetAddress != null, "Token is not yet deployed");
 
+        _amount = translateIncomingDecimals(spokeTokenAddress, _amount);
         BigInteger tokenAddressDepositLimit = assetChainDepositLimit.get(spokeTokenAddress);
         Context.require(tokenAddressDepositLimit == null || getAssetDeposit(spokeTokenAddress).add(_amount).compareTo(tokenAddressDepositLimit) <= 0, "Max deposit limit exceeded");
 
@@ -303,10 +312,12 @@ public class AssetManagerImpl implements AssetManager {
         byte[] msg;
         byte[] rollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), to, amount);
 
+        BigInteger sendAmount = translateOutgoingDecimals(tokenAddress.toString(), amount);
+        Context.require(sendAmount.compareTo(BigInteger.ZERO) > 0, "Amount needs to be greater than 0 on the destination chain");
         if (toNative) {
-            msg = SpokeAssetManagerMessages.WithdrawNativeTo(tokenAddress.account(), targetAddress.account(), amount);
+            msg = SpokeAssetManagerMessages.WithdrawNativeTo(tokenAddress.account(), targetAddress.account(), sendAmount);
         } else {
-            msg = SpokeAssetManagerMessages.WithdrawTo(tokenAddress.account(), targetAddress.account(), amount);
+            msg = SpokeAssetManagerMessages.WithdrawTo(tokenAddress.account(), targetAddress.account(), sendAmount);
         }
 
         BigInteger remainingDeposit = getAssetDeposit(tokenAddress.toString()).subtract(amount);
@@ -314,6 +325,27 @@ public class AssetManagerImpl implements AssetManager {
         assetDeposits.set(tokenAddress.toString(), remainingDeposit);
 
         XCallUtils.sendCall(fee, spoke, msg, rollback);
+    }
+
+    private BigInteger translateOutgoingDecimals(String token, BigInteger amount) {
+        return translateDecimals(token, amount, 1);
+    }
+
+    private BigInteger translateIncomingDecimals(String token, BigInteger amount) {
+        return translateDecimals(token, amount, -1);
+    }
+
+    private BigInteger translateDecimals(String token, BigInteger amount, int sign) {
+        BigInteger translation = decimalTransformations.get(token);
+        if (translation == null) {
+            return amount;
+        }
+
+        if (translation.signum() == sign) {
+            return amount.multiply(translation).abs();
+        } else {
+            return amount.divide(translation).abs();
+        }
     }
 
     private BigInteger getTotalSupply(Address assetAddress) {
