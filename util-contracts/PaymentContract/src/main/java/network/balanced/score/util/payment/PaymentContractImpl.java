@@ -108,7 +108,8 @@ public class PaymentContractImpl {
         Context.require(rewardRate.get() == null, Names.PAYMENTS + ": Contract is already initiated, please cancel current contract to before reuse");
 
         BigInteger currentBlock = BigInteger.valueOf(Context.getBlockHeight());
-        BigInteger rate = _value.divide(currentBlock);
+        lastClaimedBlock.set(currentBlock);
+        BigInteger rate = _value.divide(distributionPeriod.get());
         rewardRate.set(rate);
     }
 
