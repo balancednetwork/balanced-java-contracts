@@ -8,41 +8,25 @@ import score.annotation.External;
 
 public abstract class FloorLimited implements FloorLimitedInterface {
     @External
-    public void setFloorPercentage(BigInteger points) {
+    public void setFloorPercentage(Address token, BigInteger points) {
         Check.onlyOwner();
-        BalancedFloorLimits.setFloorPercentage(points);
+        BalancedFloorLimits.setFloorPercentage(token, points);
     }
 
     @External(readonly = true)
-    public BigInteger getFloorPercentage() {
-        return BalancedFloorLimits.getFloorPercentage();
+    public BigInteger getFloorPercentage(Address token) {
+        return BalancedFloorLimits.getFloorPercentage(token, true);
     }
 
     @External
-    public void setTimeDelayMicroSeconds(BigInteger us) {
+    public void setTimeDelayMicroSeconds(Address token, BigInteger us) {
         Check.onlyOwner();
-        BalancedFloorLimits.setTimeDelayMicroSeconds(us);
+        BalancedFloorLimits.setTimeDelayMicroSeconds(token, us);
     }
 
     @External(readonly = true)
-    public BigInteger getTimeDelayMicroSeconds() {
-        return BalancedFloorLimits.getTimeDelayMicroSeconds();
-    }
-
-    @External
-    public void enableFloors(Address[] tokens) {
-        Check.onlyOwner();
-        for (Address token: tokens) {
-            BalancedFloorLimits.setDisabled(token, false);
-        }
-    }
-
-    @External
-    public void disableFloors(Address[] tokens) {
-        Check.onlyOwner();
-        for (Address token: tokens) {
-            BalancedFloorLimits.setDisabled(token, true);
-        }
+    public BigInteger getTimeDelayMicroSeconds(Address token) {
+        return BalancedFloorLimits.getTimeDelayMicroSeconds(token, true);
     }
 
     @External
@@ -54,17 +38,6 @@ public abstract class FloorLimited implements FloorLimitedInterface {
     @External(readonly = true)
     public BigInteger getMinimumFloor(Address token) {
         return BalancedFloorLimits.getMinimumFloor(token);
-    }
-
-    @External
-    public void setDisabled(Address token, boolean disabled) {
-        Check.onlyOwner();
-        BalancedFloorLimits.setDisabled(token, disabled);
-    }
-
-    @External(readonly = true)
-    public boolean isDisabled(Address token) {
-        return BalancedFloorLimits.isDisabled(token);
     }
 
     @External(readonly = true)

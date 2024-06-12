@@ -34,6 +34,7 @@ import java.util.Map;
 import static network.balanced.score.lib.utils.BalancedAddressManager.setGovernance;
 import static network.balanced.score.lib.utils.BalancedAddressManager.resetAddress;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getAddressByName;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getXCall;
 import static network.balanced.score.lib.utils.Check.isContract;
 import static network.balanced.score.lib.utils.Check.onlyOwner;
 import static network.balanced.score.lib.utils.Check.checkStatus;
@@ -46,12 +47,14 @@ public class XCallManagerImpl implements XCallManager {
     DictDB<String, ProtocolConfig> protocols = Context.newDictDB(PROTOCOLS, ProtocolConfig.class);
 
     public static final String TAG = Names.XCALL_MANAGER;
+    public static String NATIVE_NID;
 
     public XCallManagerImpl(Address _governance) {
         if (this.currentVersion.get() == null) {
             setGovernance(_governance);
         }
 
+        NATIVE_NID = Context.call(String.class, getXCall(), "getNetworkId");
         if (this.currentVersion.getOrDefault("").equals(Versions.XCALL_MANAGER)) {
             Context.revert("Can't Update same version of code");
         }
@@ -96,6 +99,11 @@ public class XCallManagerImpl implements XCallManager {
 
     @External(readonly = true)
     public void verifyProtocols(String nid, @Optional String[] protocols) {
+        if (nid.equals(NATIVE_NID)) {
+            // Is a rollback
+            return;
+        }
+
         ProtocolConfig cfg = this.protocols.get(nid);
         Context.require(cfg != null, TAG + ": Network is not configured");
         if (cfg.sources.length == 0) {

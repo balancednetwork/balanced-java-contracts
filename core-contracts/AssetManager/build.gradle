@@ -45,6 +45,16 @@ dependencies {
     intTestImplementation Dependencies.jacksonDatabind
 }
 
+sourceSets {
+    intTest {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+        java {
+            srcDirs("src/intTest")
+        }
+    }
+}
+
 optimizedJar {
     mainClassName = 'network.balanced.score.core.asset.manager.AssetManagerImpl'
 

@@ -30,36 +30,48 @@ public class BalancedFloorLimits {
     private static final String TAG = "BalancedFloorLimits";
     static final DictDB<Address, BigInteger> floor = Context.newDictDB(TAG + "floor",BigInteger.class);
     static final DictDB<Address, BigInteger> lastUpdate = Context.newDictDB(TAG + "last_update",BigInteger.class);
-    static final DictDB<Address, Boolean> disabled = Context.newDictDB(TAG + "disabled",Boolean.class);
-    static final DictDB<Address, BigInteger> minFloor = Context.newDictDB(TAG + "token_minimum_floor_limits",BigInteger.class);
 
+    static final DictDB<Address, BigInteger> minFloor = Context.newDictDB(TAG + "token_minimum_floor_limits",BigInteger.class);
+    static final DictDB<Address, BigInteger> withdrawPercentage = Context.newDictDB(TAG + "withdraw_percentage",BigInteger.class);
+    static final DictDB<Address, BigInteger> delayInUs = Context.newDictDB(TAG + "delay_in_us", BigInteger.class);
+
+    // Legacy
+    static final DictDB<Address, Boolean> disabled = Context.newDictDB(TAG + "disabled",Boolean.class);
     static final VarDB<BigInteger> percentage = Context.newVarDB(TAG + "percentage",BigInteger.class);
     static final VarDB<BigInteger> delay = Context.newVarDB(TAG + "delay",BigInteger.class);
 
-    public static void setFloorPercentage(BigInteger points) {
+    public static void setFloorPercentage(Address token, BigInteger points) {
         Context.require(POINTS.compareTo(points) >= 0, TAG + ": points value must be between 0 and " + POINTS);
-        Context.require(BigInteger.ZERO.compareTo(points) < 0, TAG + ": points value must be between 0 and " + POINTS);
-        percentage.set(points);
+        Context.require(BigInteger.ZERO.compareTo(points) <= 0, TAG + ": points value must be between 0 and " + POINTS);
+        withdrawPercentage.set(token, points);
     }
 
-    public static BigInteger getFloorPercentage() {
-        return percentage.get();
+    public static BigInteger getFloorPercentage(Address token, boolean readonly) {
+        BigInteger percent =  withdrawPercentage.get(token);
+        if (percent == null && !disabled.getOrDefault(token, true)) {
+            percent = percentage.getOrDefault(BigInteger.ZERO);
+            if (!readonly) {
+                withdrawPercentage.set(token, percent);
+            }
+        }
+
+        return percent;
     }
 
-    public static void setTimeDelayMicroSeconds(BigInteger us) {
-        delay.set(us);
+    public static void setTimeDelayMicroSeconds(Address token, BigInteger us) {
+        delayInUs.set(token, us);
     }
 
-    public static BigInteger getTimeDelayMicroSeconds() {
-        return delay.get();
-    }
+    public static BigInteger getTimeDelayMicroSeconds(Address token, boolean readonly) {
+        BigInteger us =  delayInUs.get(token);
+        if (us == null && !disabled.getOrDefault(token, true)) {
+            us = delay.getOrDefault(BigInteger.ZERO);
+            if (!readonly) {
+                delayInUs.set(token, us);
+            }
+        }
 
-    public static void setDisabled(Address token, boolean _disabled) {
-        disabled.set(token, _disabled);
-    }
-
-    public static Boolean isDisabled(Address token) {
-        return disabled.getOrDefault(token, false);
+        return us;
     }
 
     public static void setMinimumFloor(Address token, BigInteger min) {
@@ -82,14 +94,15 @@ public class BalancedFloorLimits {
     }
 
     private static BigInteger updateFloor(Address address, BigInteger balance, boolean readonly) {
-        if (disabled.getOrDefault(address, true)) {
+        BigInteger percentageInPoints = getFloorPercentage(address, readonly);
+
+        if (percentageInPoints == null || percentageInPoints.equals(BigInteger.ZERO)) {
             return BigInteger.ZERO;
         } else if (isBelowLimit(address, balance)) {
             return  BigInteger.ZERO;
         }
 
-        BigInteger percentageInPoints = percentage.get();
-        BigInteger delayInUs = delay.get();
+        BigInteger delayInUs = getTimeDelayMicroSeconds(address, readonly);
         BigInteger lastUpdateUs = lastUpdate.getOrDefault(address, BigInteger.ZERO);
         BigInteger lastFloor = floor.getOrDefault(address, BigInteger.ZERO);
 

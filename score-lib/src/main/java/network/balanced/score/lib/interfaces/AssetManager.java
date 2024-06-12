@@ -28,6 +28,7 @@ import score.annotation.Optional;
 import score.annotation.Payable;
 
 import java.math.BigInteger;
+import java.util.List;
 import java.util.Map;
 
 @ScoreClient
@@ -49,8 +50,20 @@ public interface AssetManager extends AddressManager, Version, Fallback {
     @External(readonly = true)
     Address getAssetAddress(String spokeAddress);
 
+    @External
+    void setAssetChainDepositLimit(String tokenNetworkAddress, BigInteger limit);
+
     @External(readonly = true)
-    String getNativeAssetAddress(Address token);
+    BigInteger getAssetChainDepositLimit(String tokenNetworkAddress);
+
+    @External(readonly = true)
+    String getNativeAssetAddress(Address token, String nid);
+
+    @External(readonly = true)
+    List<String> getNativeAssetAddresses(Address token);
+
+    @External(readonly = true)
+    BigInteger getAssetDeposit(String tokenNetworkAddress);
 
     /**
      * withdraws amount to `to` address
@@ -107,4 +120,8 @@ public interface AssetManager extends AddressManager, Version, Fallback {
      */
     @XCall
     void withdrawRollback(String from, String tokenAddress, String _to, BigInteger _amount);
+
+    void linkToken(String tokenNetworkAddress, Address token, @Optional BigInteger decimals);
+
+    void removeToken(Address token, String nid);
 }
