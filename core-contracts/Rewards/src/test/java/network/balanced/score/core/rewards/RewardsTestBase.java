@@ -21,7 +21,6 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import network.balanced.score.lib.interfaces.*;
-import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.test.mock.MockContract;
@@ -34,7 +33,6 @@ import java.math.BigInteger;
 import java.util.Map;
 
 import static network.balanced.score.core.rewards.weight.SourceWeightController.VOTE_POINTS;
-import static network.balanced.score.core.rewards.weight.SourceWeightController.rewards;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;

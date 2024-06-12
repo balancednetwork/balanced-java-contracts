@@ -18,6 +18,7 @@ package network.balanced.score.core.rewards;
 
 import network.balanced.score.core.rewards.utils.BalanceData;
 import network.balanced.score.core.rewards.weight.SourceWeightController;
+import network.balanced.score.lib.interfaces.Rewards;
 import network.balanced.score.lib.structs.Point;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import network.balanced.score.lib.structs.RewardsDataEntryOld;
@@ -32,6 +33,7 @@ import score.annotation.External;
 import score.annotation.Optional;
 import scorex.util.ArrayList;
 import scorex.util.HashMap;
+import network.balanced.score.lib.utils.BalancedAddressManager;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -41,14 +43,17 @@ import static network.balanced.score.core.rewards.utils.RewardsConstants.*;
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
+import static network.balanced.score.lib.utils.Constants.WEEK_IN_MICRO_SECONDS;
 import static network.balanced.score.lib.utils.Math.pow;
-import static network.balanced.score.lib.utils.BalancedAddressManager.*;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getBaln;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getBoostedBaln;
+
 
 /***
  * There can be unclaimed rewards if there are no participants in the data source. This can happen in testnet and
  * when we add new source where user haven't participated.
  */
-public class RewardsImpl {
+public class RewardsImpl implements Rewards {
     public static final String TAG = "BalancedRewards";
     private static final String START_TIMESTAMP = "start_timestamp";
     private static final String BALN_HOLDINGS = "baln_holdings";
@@ -82,9 +87,9 @@ public class RewardsImpl {
     public RewardsImpl(@Optional Address _governance) {
         SourceWeightController.rewards = this;
 
-        if (getAddressByName(Names.GOVERNANCE) == null) {
+        if (BalancedAddressManager.getAddressByName(Names.GOVERNANCE) == null) {
             // On "install" code
-            setGovernance(_governance);
+            BalancedAddressManager.setGovernance(_governance);
             platformDay.set(BigInteger.ONE);
             distributionPercentages.set(Names.WORKERTOKEN, BigInteger.ZERO);
             distributionPercentages.set(Names.RESERVE, BigInteger.ZERO);
@@ -115,6 +120,16 @@ public class RewardsImpl {
     @External(readonly = true)
     public String version() {
         return currentVersion.getOrDefault("");
+    }
+
+    @External
+    public void updateAddress(String name) {
+        BalancedAddressManager.resetAddress(name);
+    }
+
+    @External(readonly = true)
+    public Address getAddress(String name) {
+        return BalancedAddressManager.getAddressByName(name);
     }
 
     @External(readonly = true)
@@ -294,7 +309,7 @@ public class RewardsImpl {
         for (String recipient : recipients) {
             BigInteger split = distributionPercentages.get(recipient);
             BigInteger share = split.multiply(remaining).divide(shares);
-            Context.call(getBaln(), "transfer", getAddress(recipient) , share, new byte[0]);
+            Context.call(getBaln(), "transfer", BalancedAddressManager.getAddress(recipient) , share, new byte[0]);
             remaining = remaining.subtract(share);
             shares = shares.subtract(split);
         }

@@ -18,7 +18,6 @@ package network.balanced.score.core.governance.utils;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
-import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.utils.Names;
 import score.Address;
 import score.Context;

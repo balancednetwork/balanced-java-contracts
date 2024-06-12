@@ -17,7 +17,6 @@
 package network.balanced.score.core.rewards;
 
 import com.iconloop.score.test.Account;
-import network.balanced.score.lib.structs.DistributionPercentage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -27,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.when;
 
 class RewardsTest extends RewardsTestBase {
 

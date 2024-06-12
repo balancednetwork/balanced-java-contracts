@@ -20,7 +20,6 @@ import score.Address;
 import score.Context;
 import score.DictDB;
 import score.VarDB;
-import foundation.icon.xcall.NetworkAddress;
 
 import static network.balanced.score.lib.utils.Check.readonly;
 public class BalancedAddressManager {
