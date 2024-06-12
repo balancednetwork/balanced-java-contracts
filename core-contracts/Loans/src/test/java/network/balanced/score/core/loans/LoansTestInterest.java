@@ -150,7 +150,7 @@ class LoansTestInterest extends LoansTestBase {
         BigInteger debt = getUserDebt(account, "sICX");
 
         when(bnusd.mock.balanceOf(account.getAddress())).thenReturn(debt);
-        loans.invoke(account, "returnAsset", "bnUSD", debt, "sICX");
+        loans.invoke(account, "returnAsset", "bnUSD", debt, "sICX", "");
 
         // Assert
         BigInteger interest = expectedDebt.multiply(SICX_INTEREST).multiply(timePassed.multiply(MICRO_SECONDS_IN_A_SECOND))
