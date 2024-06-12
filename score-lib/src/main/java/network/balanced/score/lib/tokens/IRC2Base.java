@@ -43,7 +43,7 @@ public class IRC2Base implements IRC2 {
     private final VarDB<BigInteger> totalSupply = Context.newVarDB(TOTAL_SUPPLY, BigInteger.class);
     protected final DictDB<Address, BigInteger> balances = Context.newDictDB(BALANCES, BigInteger.class);
 
-    IRC2Base(String _tokenName, String _symbolName, @Optional BigInteger _decimals) {
+    protected IRC2Base(String _tokenName, String _symbolName, @Optional BigInteger _decimals) {
         if (this.name.get() == null) {
             _decimals = _decimals == null ? BigInteger.valueOf(18L) : _decimals;
             Context.require(_decimals.compareTo(BigInteger.ZERO) >= 0, "Decimals cannot be less than zero");

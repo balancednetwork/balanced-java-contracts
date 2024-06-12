@@ -25,7 +25,7 @@ import network.balanced.score.lib.structs.PriceProtectionConfig;
 import network.balanced.score.lib.structs.PriceProtectionParameter;
 import score.annotation.External;
 import score.annotation.Optional;
-import icon.xcall.lib.annotation.XCall;
+import network.balanced.score.lib.annotations.XCall;
 
 import java.math.BigInteger;
 import java.util.Map;

@@ -36,13 +36,13 @@ import network.balanced.score.lib.test.mock.MockBalanced;
 import network.balanced.score.lib.test.mock.MockContract;
 import network.balanced.score.lib.interfaces.tokens.SpokeTokenMessages;
 import network.balanced.score.lib.interfaces.XCall;
+import network.balanced.score.lib.interfaces.tokens.XTokenReceiver;
+import network.balanced.score.lib.interfaces.tokens.XTokenReceiverScoreInterface;
 import network.balanced.score.lib.utils.BalancedAddressManager;
 import score.Context;
 import score.DictDB;
 import score.Address;
 import score.annotation.External;
-import xcall.score.lib.interfaces.XTokenReceiver;
-import xcall.score.lib.interfaces.XTokenReceiverScoreInterface;
 import foundation.icon.xcall.NetworkAddress;
 
 class SpokeTokenTest extends TestBase {

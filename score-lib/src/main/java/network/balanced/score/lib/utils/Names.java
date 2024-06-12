@@ -44,4 +44,7 @@ public class Names {
     public final static String BURNER = "Balanced-ICON Burner";
     public final static String SAVINGS = "Balanced Savings";
     public final static String TRICKLER = "Balanced Trickler";
+
+    public final static String SPOKE_ASSET_MANAGER = "Balanced Spoke Asset Manager";
+    public final static String SPOKE_XCALL_MANAGER = "Balanced Spoke XCall Manager";
 }

@@ -9,7 +9,7 @@ import score.annotation.External;
 public abstract class FloorLimited implements FloorLimitedInterface {
     @External
     public void setFloorPercentage(Address token, BigInteger points) {
-        Check.onlyGovernance();
+        Check.onlyOwner();
         BalancedFloorLimits.setFloorPercentage(token, points);
     }
 
@@ -20,7 +20,7 @@ public abstract class FloorLimited implements FloorLimitedInterface {
 
     @External
     public void setTimeDelayMicroSeconds(Address token, BigInteger us) {
-        Check.onlyGovernance();
+        Check.onlyOwner();
         BalancedFloorLimits.setTimeDelayMicroSeconds(token, us);
     }
 
@@ -31,7 +31,7 @@ public abstract class FloorLimited implements FloorLimitedInterface {
 
     @External
     public void setMinimumFloor(Address token, BigInteger minFloor) {
-        Check.onlyGovernance();
+        Check.onlyOwner();
         BalancedFloorLimits.setMinimumFloor(token, minFloor);
     }
 
