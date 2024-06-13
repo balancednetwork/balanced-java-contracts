@@ -25,6 +25,7 @@ import network.balanced.score.lib.utils.Names;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.mockito.Mockito;
 import score.Address;
 import score.Context;
 
@@ -231,6 +232,7 @@ public class GovernanceTest extends GovernanceTestBase {
         when(sicx.mock.balanceOf(governance.getAddress())).thenReturn(sICXValue);
         when(dex.mock.getPoolId(sicx.getAddress(), bnUSD.getAddress())).thenReturn(sicxBnusdPid);
 
+
         // Act
         sm.call(owner, initialICX, governance.getAddress(), "createBnusdMarket");
 
@@ -245,7 +247,7 @@ public class GovernanceTest extends GovernanceTestBase {
         verify(bnUSD.mock).transfer(dex.getAddress(), bnUSDValue, depositData.toString().getBytes());
         verify(sicx.mock).transfer(dex.getAddress(), sICXValue, depositData.toString().getBytes());
 
-        verify(dex.mock).add(sicx.getAddress(), bnUSD.getAddress(), sICXValue, bnUSDValue, false);
+        verify(dex.mock).add(sicx.getAddress(), bnUSD.getAddress(), sICXValue, bnUSDValue, false, BigInteger.ZERO);
         verify(dex.mock).setMarketName(sicxBnusdPid, "sICX/bnUSD");
 
         verify(stakedLp.mock).addDataSource(sicxBnusdPid, "sICX/bnUSD");
@@ -275,7 +277,7 @@ public class GovernanceTest extends GovernanceTestBase {
         verify(bnUSD.mock, times(2)).transfer(dex.getAddress(), bnUSDValue, depositData.toString().getBytes());
         verify(baln.mock).transfer(dex.getAddress(), balnValue, depositData.toString().getBytes());
 
-        verify(dex.mock).add(baln.getAddress(), bnUSD.getAddress(), balnValue, bnUSDValue, false);
+        verify(dex.mock).add(baln.getAddress(), bnUSD.getAddress(), balnValue, bnUSDValue, false, BigInteger.ZERO);
         verify(dex.mock).setMarketName(balnBnusdPid, "BALN/bnUSD");
 
         verify(stakedLp.mock).addDataSource(balnBnusdPid, "BALN/bnUSD");
@@ -307,7 +309,7 @@ public class GovernanceTest extends GovernanceTestBase {
         verify(sicx.mock, times(2)).transfer(dex.getAddress(), sicxValue, depositData.toString().getBytes());
         verify(baln.mock, times(2)).transfer(dex.getAddress(), balnValue, depositData.toString().getBytes());
 
-        verify(dex.mock).add(baln.getAddress(), sicx.getAddress(), balnValue, sicxValue, false);
+        verify(dex.mock).add(baln.getAddress(), sicx.getAddress(), balnValue, sicxValue, false, BigInteger.ZERO);
         verify(dex.mock).setMarketName(balnSicxPid, "BALN/sICX");
 
         verify(stakedLp.mock).addDataSource(balnSicxPid, "BALN/sICX");
@@ -333,19 +335,25 @@ public class GovernanceTest extends GovernanceTestBase {
         BigInteger timeLockDays = BigInteger.TEN;
         String expectedErrorMessageAuth = "Not authorized";
         String expectedErrorMessageTime = "Your privileges are disabled until ";
+        String expectedErrorMessageDisableOnly = "This address does not have permission to enable balanced";
         governance.invoke(owner, "setShutdownPrivilegeTimeLock", timeLockDays);
 
         // Act
         Executable beforeAuth = () -> governance.invoke(trustedUser1, "disable");
         expectErrorMessage(beforeAuth, expectedErrorMessageAuth);
 
-        governance.invoke(owner, "addAuthorizedCallerShutdown", trustedUser1.getAddress());
-        governance.invoke(owner, "addAuthorizedCallerShutdown", trustedUser2.getAddress());
+        governance.invoke(owner, "addAuthorizedCallerShutdown", trustedUser1.getAddress(), true);
+        governance.invoke(owner, "addAuthorizedCallerShutdown", trustedUser2.getAddress(), false);
         governance.invoke(trustedUser1, "disable");
 
         // Assert
         Executable onTimeLock = () -> governance.invoke(trustedUser1, "enable");
         expectErrorMessage(onTimeLock, expectedErrorMessageTime);
+
+        sm.getBlock().increase(DAY * timeLockDays.longValue());
+
+        Executable disableOnly  = () -> governance.invoke(trustedUser1, "enable");
+        expectErrorMessage(onTimeLock, expectedErrorMessageDisableOnly);
 
         governance.invoke(trustedUser2, "enable");
         sm.getBlock().increase(DAY * timeLockDays.longValue());
@@ -387,12 +395,12 @@ public class GovernanceTest extends GovernanceTestBase {
         // Arrange
         Account trustedUser1 = sm.createAccount();
         Account trustedUser2 = sm.createAccount();
-        assertOnlyCallableByContractOrOwner("addAuthorizedCallerShutdown", trustedUser1.getAddress());
+        assertOnlyCallableByContractOrOwner("addAuthorizedCallerShutdown", trustedUser1.getAddress(), false);
         assertOnlyCallableByContractOrOwner("removeAuthorizedCallerShutdown", trustedUser2.getAddress());
 
         // Act
-        governance.invoke(owner, "addAuthorizedCallerShutdown", trustedUser1.getAddress());
-        governance.invoke(owner, "addAuthorizedCallerShutdown", trustedUser2.getAddress());
+        governance.invoke(owner, "addAuthorizedCallerShutdown", trustedUser1.getAddress(), false);
+        governance.invoke(owner, "addAuthorizedCallerShutdown", trustedUser2.getAddress(), false);
 
         // Assert
         Map<String, BigInteger> authorizedCallers = (Map<String, BigInteger>) governance.call(

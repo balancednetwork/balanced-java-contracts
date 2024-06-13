@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2022 Balanced.network.
+ * Copyright (c) 2023-2023 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.governance.utils;
+package network.balanced.score.lib.utils;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
-import network.balanced.score.core.governance.GovernanceImpl;
-import network.balanced.score.lib.utils.Math;
 import score.Address;
 import score.Context;
 import scorex.util.HashMap;
+import score.UserRevertedException;
 
 import java.math.BigInteger;
 import java.util.Map;
+
 import java.util.function.Function;
 
 public class ArbitraryCallManager {
@@ -50,7 +50,7 @@ public class ArbitraryCallManager {
         JsonArray jsonParams = transaction.get(PARAMS).asArray();
         BigInteger value = Math.convertToNumber(transaction.get(VALUE), BigInteger.ZERO);
         Object[] params = getConvertedParameters(jsonParams);
-        GovernanceImpl.call(value, address, method, params);
+        Context.call(value, address, method, params);
     }
 
     public static Object[] getConvertedParameters(String params) {
@@ -89,7 +89,7 @@ public class ArbitraryCallManager {
             case "BigInteger":
             case "Long":
             case "Short":
-                return parse(value, isArray, Math::convertToNumber);
+                return parse(value, isArray, ArbitraryCallManager::convertToNumber);
             case "boolean":
             case "Boolean":
                 return parse(value, isArray, JsonValue::asBoolean);
@@ -138,6 +138,27 @@ public class ArbitraryCallManager {
         }
 
         return bytes;
+    }
+
+    private static BigInteger convertToNumber(JsonValue value) {
+        if (value == null) {
+            return null;
+        }
+        if (value.isString()) {
+            String number = value.asString();
+            try {
+                if (number.startsWith("0x") || number.startsWith("-0x")) {
+                    return new BigInteger(number.replace("0x", ""), 16);
+                } else {
+                    return new BigInteger(number);
+                }
+            } catch (NumberFormatException e) {
+                throw new UserRevertedException("Invalid numeric value: " + number);
+            }
+        } else if (value.isNumber()) {
+            return new BigInteger(value.toString());
+        }
+        throw new UserRevertedException("Invalid value format for number in json: " + value);
     }
 
     private static Object parseStruct(JsonObject jsonStruct) {

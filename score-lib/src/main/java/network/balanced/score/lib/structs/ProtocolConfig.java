@@ -27,6 +27,8 @@ import java.util.List;
 public class ProtocolConfig {
     public final String[] sources;
     public final String[] destinations;
+    public static final String sourcesKey = "sources";
+    public static final String destinationsKey = "destinations";
 
     public ProtocolConfig(String[] sources, String[] destinations) {
         this.sources = sources;

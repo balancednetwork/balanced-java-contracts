@@ -112,7 +112,7 @@ public class SetupManager {
         call(bnUSDAddress, "transfer", dexAddress, bnUSDValue, depositData.toString().getBytes());
         call(sICXAddress, "transfer", dexAddress, sICXValue, depositData.toString().getBytes());
 
-        call(dexAddress, "add", sICXAddress, bnUSDAddress, sICXValue, bnUSDValue, false);
+        call(dexAddress, "add", sICXAddress, bnUSDAddress, sICXValue, bnUSDValue, false, BigInteger.ZERO);
         String name = "sICX/bnUSD";
         BigInteger pid = call(BigInteger.class, dexAddress, "getPoolId", sICXAddress, bnUSDAddress);
         call(dexAddress, "setMarketName", pid, name);
@@ -140,7 +140,7 @@ public class SetupManager {
         call(bnUSDAddress, "transfer", dexAddress, _bnUSD_amount, depositData.toString().getBytes());
         call(balnAddress, "transfer", dexAddress, _baln_amount, depositData.toString().getBytes());
 
-        call(dexAddress, "add", balnAddress, bnUSDAddress, _baln_amount, _bnUSD_amount, false);
+        call(dexAddress, "add", balnAddress, bnUSDAddress, _baln_amount, _bnUSD_amount, false, BigInteger.ZERO);
         String name = "BALN/bnUSD";
         BigInteger pid = call(BigInteger.class, dexAddress, "getPoolId", balnAddress, bnUSDAddress);
         call(dexAddress, "setMarketName", pid, name);
@@ -163,7 +163,7 @@ public class SetupManager {
         call(sICXAddress, "transfer", dexAddress, _sicx_amount, depositData.toString().getBytes());
         call(balnAddress, "transfer", dexAddress, _baln_amount, depositData.toString().getBytes());
 
-        call(dexAddress, "add", balnAddress, sICXAddress, _baln_amount, _sicx_amount, false);
+        call(dexAddress, "add", balnAddress, sICXAddress, _baln_amount, _sicx_amount, false, BigInteger.ZERO);
         String name = "BALN/sICX";
         BigInteger pid = call(BigInteger.class, dexAddress, "getPoolId", balnAddress, sICXAddress);
         call(dexAddress, "setMarketName", pid, name);

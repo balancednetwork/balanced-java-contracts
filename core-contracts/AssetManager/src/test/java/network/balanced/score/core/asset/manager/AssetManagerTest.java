@@ -94,6 +94,7 @@ class AssetManagerTest extends TestBase {
 
         when(mockBalanced.xCallManager.mock.getProtocols(ETH_NID)).thenReturn(Map.of("sources", defaultProtocols, "destinations", defaultDestinationsProtocols));
         when(mockBalanced.xCallManager.mock.getProtocols(BSC_NID)).thenReturn(Map.of("sources", defaultProtocols, "destinations", defaultDestinationsProtocols));
+        when(mockBalanced.xCallManager.mock.getProtocols(INJ_NID)).thenReturn(Map.of("sources", defaultProtocols, "destinations", defaultDestinationsProtocols));
 
         assetManager.invoke(governance.account, "addSpokeManager", ethSpoke.toString());
         assetManagerSpy = (AssetManagerImpl) spy(assetManager.getInstance());
@@ -153,13 +154,12 @@ class AssetManagerTest extends TestBase {
         NetworkAddress ethAccount = new NetworkAddress(ETH_NID, "0xTest");
         BigInteger amount = BigInteger.TEN;
         NetworkAddress tokenAddress = new NetworkAddress(ETH_NID, ethAsset1Address);
+        doReturn(amount).when(assetManagerSpy).getAssetDeposit(tokenAddress.toString());
 
         // Act
         assetManager.invoke(user, "withdrawTo", ethAsset1.getAddress(), ethAccount.toString(), amount);
 
         // Assert
-        BigInteger assetDeposit = (BigInteger) assetManager.call("getAssetDeposit", tokenAddress.toString());
-        assertEquals(assetDeposit, amount.negate());
         byte[] expectedMsg = SpokeAssetManagerMessages.WithdrawTo(tokenAddress.account(), ethAccount.account(), amount);
         byte[] expectedRollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), ethAccount.toString(), amount);
 
@@ -174,13 +174,12 @@ class AssetManagerTest extends TestBase {
         NetworkAddress ethAccount = new NetworkAddress(ETH_NID, "0xTest");
         BigInteger amount = BigInteger.TEN;
         NetworkAddress tokenAddress = new NetworkAddress(ETH_NID, ethAsset1Address);
+        doReturn(amount).when(assetManagerSpy).getAssetDeposit(tokenAddress.toString());
 
         // Act
         assetManager.invoke(user, "withdrawNativeTo", ethAsset1.getAddress(), ethAccount.toString(), amount);
 
         // Assert
-        BigInteger assetDeposit = (BigInteger) assetManager.call("getAssetDeposit", tokenAddress.toString());
-        assertEquals(assetDeposit, amount.negate());
         byte[] expectedMsg = SpokeAssetManagerMessages.WithdrawNativeTo(tokenAddress.account(), ethAccount.account(), amount);
         byte[] expectedRollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), ethAccount.toString(), amount);
 
@@ -226,13 +225,12 @@ class AssetManagerTest extends TestBase {
         BigInteger amount = BigInteger.TEN;
         NetworkAddress tokenAddress = new NetworkAddress(ETH_NID, ethAsset1Address);
         byte[] withdraw = AssetManagerMessages.xWithdraw(ethAsset1.getAddress(), amount);
+        doReturn(amount).when(assetManagerSpy).getAssetDeposit(tokenAddress.toString());
 
         // Act
         assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", ethAccount.toString(), withdraw, defaultProtocols);
 
         // Assert
-        BigInteger assetDeposit = (BigInteger) assetManager.call("getAssetDeposit", tokenAddress.toString());
-        assertEquals(assetDeposit, amount.negate());
         byte[] expectedMsg = SpokeAssetManagerMessages.WithdrawTo(tokenAddress.account(), ethAccount.account(), amount);
         byte[] expectedRollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), ethAccount.toString(), amount);
 
@@ -330,13 +328,13 @@ class AssetManagerTest extends TestBase {
         NetworkAddress injAccount = new NetworkAddress(INJ_NID, "inj1x32");
 
         // Act
-        Executable noSpokeManager = () -> assetManager.invoke(mockBalanced.governance.account, "linkToken", tokenNetworkAddress.toString(), injLinkAsset.getAddress());
+        Executable noSpokeManager = () -> assetManager.invoke(mockBalanced.governance.account, "linkToken", tokenNetworkAddress.toString(), injLinkAsset.getAddress(), BigInteger.ZERO);
         expectErrorMessage(noSpokeManager, "Reverted(0): Add the spoke spoke manager first");
 
         assetManager.invoke(governance.account, "addSpokeManager", injSpoke.toString());
-        assetManager.invoke(mockBalanced.governance.account, "linkToken", tokenNetworkAddress.toString(), injLinkAsset.getAddress());
+        assetManager.invoke(mockBalanced.governance.account, "linkToken", tokenNetworkAddress.toString(), injLinkAsset.getAddress(), BigInteger.ZERO);
 
-        Executable alreadyLinked = () -> assetManager.invoke(mockBalanced.governance.account, "linkToken", tokenNetworkAddress.toString(), injLinkAsset.getAddress());
+        Executable alreadyLinked = () -> assetManager.invoke(mockBalanced.governance.account, "linkToken", tokenNetworkAddress.toString(), injLinkAsset.getAddress(), BigInteger.ZERO);
         expectErrorMessage(alreadyLinked, "Reverted(0): Token is already available");
 
         byte[] deposit = AssetManagerMessages.deposit(injAsset1Address, injAccount.account(), "", amount, new byte[0]);
@@ -356,8 +354,8 @@ class AssetManagerTest extends TestBase {
         NetworkAddress link2Account = new NetworkAddress(LINK2_NID, "link1x32");
         assetManager.invoke(governance.account, "addSpokeManager", injSpoke.toString());
         assetManager.invoke(governance.account, "addSpokeManager", link2Spoke.toString());
-        assetManager.invoke(mockBalanced.governance.account, "linkToken", tokenNetworkAddress.toString(), injLinkAsset.getAddress());
-        assetManager.invoke(mockBalanced.governance.account, "linkToken", link2TokenNetworkAddress.toString(), injLinkAsset.getAddress());
+        assetManager.invoke(mockBalanced.governance.account, "linkToken", tokenNetworkAddress.toString(), injLinkAsset.getAddress(), BigInteger.ZERO);
+        assetManager.invoke(mockBalanced.governance.account, "linkToken", link2TokenNetworkAddress.toString(), injLinkAsset.getAddress(), BigInteger.ZERO);
 
         // Act
         byte[] deposit = AssetManagerMessages.deposit(injAsset1Address, injAccount.account(), "", amount, new byte[0]);
@@ -371,6 +369,123 @@ class AssetManagerTest extends TestBase {
     }
 
     @Test
+    void linkToken_lowerDecimals_deposit() {
+        // Arrange
+        NetworkAddress tokenNetworkAddress = new NetworkAddress(INJ_NID, injAsset1Address);
+        NetworkAddress injAccount = new NetworkAddress(INJ_NID, "inj1x32");
+        BigInteger decimals = BigInteger.valueOf(18);
+        BigInteger tokenDecimals = BigInteger.valueOf(6);
+        BigInteger amount = BigInteger.TEN;
+        BigInteger depositAmount = amount.pow(tokenDecimals.intValue());
+        BigInteger mintAmount = amount.pow(decimals.intValue());
+
+        when(injLinkAsset.mock.decimals()).thenReturn(decimals);
+        assetManager.invoke(governance.account, "addSpokeManager", injSpoke.toString());
+        assetManager.invoke(mockBalanced.governance.account, "linkToken", tokenNetworkAddress.toString(), injLinkAsset.getAddress(), tokenDecimals);
+
+        // Act
+        byte[] deposit = AssetManagerMessages.deposit(injAsset1Address, injAccount.account(), "", depositAmount, new byte[0]);
+        assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", injSpoke.toString(), deposit, defaultProtocols);
+
+        // Assert
+        verify(injLinkAsset.mock).mintAndTransfer(injAccount.toString(), injAccount.toString(), mintAmount, new byte[0]);
+        BigInteger assetDeposit = (BigInteger) assetManager.call("getAssetDeposit", tokenNetworkAddress.toString());
+        assertEquals(assetDeposit, mintAmount);
+    }
+
+    @Test
+    void linkToken_lowerDecimals_withdraw() {
+        // Arrange
+        NetworkAddress tokenNetworkAddress = new NetworkAddress(INJ_NID, injAsset1Address);
+        Account user = sm.createAccount();
+        NetworkAddress injAccount = new NetworkAddress(INJ_NID, "inj1x32");
+        BigInteger decimals = BigInteger.valueOf(18);
+        BigInteger tokenDecimals = BigInteger.valueOf(6);
+        BigInteger amount = BigInteger.TEN;
+        BigInteger withdrawAmount = amount.pow(tokenDecimals.intValue());
+        BigInteger burnAmount = amount.pow(decimals.intValue());
+        when(injLinkAsset.mock.decimals()).thenReturn(decimals);
+
+        assetManager.invoke(governance.account, "addSpokeManager", injSpoke.toString());
+        assetManager.invoke(mockBalanced.governance.account, "linkToken", tokenNetworkAddress.toString(), injLinkAsset.getAddress(), tokenDecimals);
+
+        byte[] deposit = AssetManagerMessages.deposit(injAsset1Address, injAccount.account(), "", withdrawAmount, new byte[0]);
+        assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", injSpoke.toString(), deposit, defaultProtocols);
+
+        // Act
+        assetManager.invoke(user, "withdrawTo", injLinkAsset.getAddress(), injAccount.toString(), burnAmount);
+
+        // Assert
+        byte[] expectedMsg = SpokeAssetManagerMessages.WithdrawTo(tokenNetworkAddress.account(), injAccount.account(), withdrawAmount);
+        byte[] expectedRollback = AssetManagerMessages.withdrawRollback(tokenNetworkAddress.toString(), injAccount.toString(), burnAmount);
+
+        verify(mockBalanced.xCall.mock).sendCallMessage(injSpoke.toString(), expectedMsg, expectedRollback, defaultProtocols, defaultDestinationsProtocols);
+        verify(injLinkAsset.mock).burnFrom(user.getAddress().toString(), burnAmount);
+        BigInteger assetDeposit = (BigInteger) assetManager.call("getAssetDeposit", tokenNetworkAddress.toString());
+        assertEquals(assetDeposit, BigInteger.ZERO);
+    }
+
+    @Test
+    void linkToken_higherDecimals_deposit() {
+        // Arrange
+        NetworkAddress tokenNetworkAddress = new NetworkAddress(INJ_NID, injAsset1Address);
+        NetworkAddress injAccount = new NetworkAddress(INJ_NID, "inj1x32");
+        BigInteger decimals = BigInteger.valueOf(15);
+        BigInteger tokenDecimals = BigInteger.valueOf(18);
+        BigInteger amount = BigInteger.TEN;
+        BigInteger depositAmount = amount.pow(tokenDecimals.intValue());
+        BigInteger mintAmount = amount.pow(decimals.intValue());
+
+        when(injLinkAsset.mock.decimals()).thenReturn(decimals);
+        assetManager.invoke(governance.account, "addSpokeManager", injSpoke.toString());
+        assetManager.invoke(mockBalanced.governance.account, "linkToken", tokenNetworkAddress.toString(), injLinkAsset.getAddress(), tokenDecimals);
+
+        // Act
+        byte[] deposit = AssetManagerMessages.deposit(injAsset1Address, injAccount.account(), "", depositAmount, new byte[0]);
+        assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", injSpoke.toString(), deposit, defaultProtocols);
+
+        // Assert
+        verify(injLinkAsset.mock).mintAndTransfer(injAccount.toString(), injAccount.toString(), mintAmount, new byte[0]);
+        BigInteger assetDeposit = (BigInteger) assetManager.call("getAssetDeposit", tokenNetworkAddress.toString());
+        assertEquals(assetDeposit, mintAmount);
+    }
+
+    @Test
+    void linkToken_higherDecimals_withdraw() {
+        // Arrange
+        NetworkAddress tokenNetworkAddress = new NetworkAddress(INJ_NID, injAsset1Address);
+        Account user = sm.createAccount();
+        NetworkAddress injAccount = new NetworkAddress(INJ_NID, "inj1x32");
+        BigInteger decimals = BigInteger.valueOf(15);
+        BigInteger tokenDecimals = BigInteger.valueOf(8);
+        BigInteger amount = BigInteger.TEN;
+        BigInteger withdrawAmount = amount.pow(tokenDecimals.intValue());
+        BigInteger burnAmount = amount.pow(decimals.intValue());
+        when(injLinkAsset.mock.decimals()).thenReturn(decimals);
+
+        assetManager.invoke(governance.account, "addSpokeManager", injSpoke.toString());
+        assetManager.invoke(mockBalanced.governance.account, "linkToken", tokenNetworkAddress.toString(), injLinkAsset.getAddress(), tokenDecimals);
+
+        byte[] deposit = AssetManagerMessages.deposit(injAsset1Address, injAccount.account(), "", withdrawAmount, new byte[0]);
+        assetManager.invoke(mockBalanced.xCall.account, "handleCallMessage", injSpoke.toString(), deposit, defaultProtocols);
+
+        // Act
+        assetManager.invoke(user, "withdrawTo", injLinkAsset.getAddress(), injAccount.toString(), burnAmount);
+
+        // Assert
+        byte[] expectedMsg = SpokeAssetManagerMessages.WithdrawTo(tokenNetworkAddress.account(), injAccount.account(), withdrawAmount);
+        byte[] expectedRollback = AssetManagerMessages.withdrawRollback(tokenNetworkAddress.toString(), injAccount.toString(), burnAmount);
+
+        verify(mockBalanced.xCall.mock).sendCallMessage(injSpoke.toString(), expectedMsg, expectedRollback, defaultProtocols, defaultDestinationsProtocols);
+        verify(injLinkAsset.mock).burnFrom(user.getAddress().toString(), burnAmount);
+        BigInteger assetDeposit = (BigInteger) assetManager.call("getAssetDeposit", tokenNetworkAddress.toString());
+        assertEquals(assetDeposit, BigInteger.ZERO);
+    }
+
+
+
+
+    @Test
     void removeToken() {
         // Arrange
         NetworkAddress tokenNetworkAddress = new NetworkAddress(INJ_NID, injAsset1Address);
@@ -382,7 +497,7 @@ class AssetManagerTest extends TestBase {
         expectErrorMessage(noSpokeManager, "Reverted(0): Token is not available");
 
         assetManager.invoke(governance.account, "addSpokeManager", injSpoke.toString());
-        assetManager.invoke(mockBalanced.governance.account, "linkToken", tokenNetworkAddress.toString(), injLinkAsset.getAddress());
+        assetManager.invoke(mockBalanced.governance.account, "linkToken", tokenNetworkAddress.toString(), injLinkAsset.getAddress(), BigInteger.ZERO);
         assetManager.invoke(mockBalanced.governance.account, "removeToken", injLinkAsset.getAddress(), INJ_NID);
 
         // Assert

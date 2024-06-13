@@ -16,7 +16,6 @@
 
 package network.balanced.score.lib.interfaces;
 
-import network.balanced.score.lib.structs.ProtocolConfig;
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.AddressManager;

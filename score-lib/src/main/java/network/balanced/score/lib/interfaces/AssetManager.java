@@ -18,7 +18,7 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
-import icon.xcall.lib.annotation.XCall;
+import network.balanced.score.lib.annotations.XCall;
 import network.balanced.score.lib.interfaces.addresses.AddressManager;
 import network.balanced.score.lib.interfaces.base.Fallback;
 import network.balanced.score.lib.interfaces.base.Version;
@@ -121,7 +121,7 @@ public interface AssetManager extends AddressManager, Version, Fallback {
     @XCall
     void withdrawRollback(String from, String tokenAddress, String _to, BigInteger _amount);
 
-    void linkToken(String tokenNetworkAddress, Address token);
+    void linkToken(String tokenNetworkAddress, Address token, @Optional BigInteger decimals);
 
     void removeToken(Address token, String nid);
 }

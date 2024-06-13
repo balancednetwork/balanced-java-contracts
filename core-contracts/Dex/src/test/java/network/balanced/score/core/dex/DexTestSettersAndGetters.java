@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static network.balanced.score.lib.utils.BalancedAddressManager.getBalancedOracle;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
@@ -167,6 +168,29 @@ public class DexTestSettersAndGetters extends DexTestBase {
         BigInteger retrievedTimeOffset = (BigInteger) dexScore.call("getTimeOffset");
         assertEquals(timeOffset, retrievedTimeOffset);
         assertOnlyCallableBy(governanceScore.getAddress(), dexScore, "setTimeOffset", timeOffset);
+    }
+
+    @Test
+    void setOracleProtection() {
+        // Arrange
+        BigInteger points = BigInteger.valueOf(30);
+        String symbolBase = "BALN";
+        String symbolQuote = "bnUSD";
+
+        supplyLiquidity(sm.createAccount(), balnScore, bnusdScore, BigInteger.valueOf(30000).multiply(EXA),
+                BigInteger.valueOf(10000).multiply(EXA), true);
+
+        contextMock.when(() -> Context.call(eq(balnScore.getAddress()), eq("symbol"))).thenReturn(symbolBase);
+        contextMock.when(() -> Context.call(eq(bnusdScore.getAddress()), eq("symbol"))).thenReturn(symbolBase);
+        contextMock.when(() -> Context.call(eq(balancedOracle.getAddress()), eq("getPriceInUSD"), eq(symbolBase))).thenReturn(EXA.divide(BigInteger.TWO));
+        contextMock.when(() -> Context.call(eq(balancedOracle.getAddress()), eq("getPriceInUSD"), eq(symbolQuote))).thenReturn(EXA);
+
+        // Act
+        dexScore.invoke(governanceScore, "setOracleProtection", BigInteger.TWO, points);
+
+        // Asset
+        BigInteger oracleProtection = (BigInteger) dexScore.call("getOracleProtection", BigInteger.TWO);
+        assertEquals(oracleProtection, points);
     }
 
     @Test
@@ -620,6 +644,11 @@ public class DexTestSettersAndGetters extends DexTestBase {
     @Test
     void govSetUserPoolTotal() {
         assertOnlyCallableBy(governanceScore.getAddress(), dexScore, "govSetUserPoolTotal", 1, dexScore.getAddress(), BigInteger.ZERO);
+    }
+
+    @Test
+    void govSetOracleProtection() {
+        assertOnlyCallableBy(governanceScore.getAddress(), dexScore, "setOracleProtection", BigInteger.ZERO, BigInteger.TWO);
     }
 
     @AfterEach

@@ -60,6 +60,7 @@ public class DexDBVariables {
     private static final String CURRENT_TX = "current_tx";
     private static final String CONTINUOUS_REWARDS_DAY = "continuous_rewards_day";
     public static final String VERSION = "version";
+    public static final String ORACLE_PROTECTION = "oracle_protection";
 
 
     final static VarDB<Address> governance = Context.newVarDB(GOVERNANCE_ADDRESS, Address.class);
@@ -144,4 +145,7 @@ public class DexDBVariables {
     final static VarDB<BigInteger> continuousRewardsDay = Context.newVarDB(CONTINUOUS_REWARDS_DAY, BigInteger.class);
 
     public static final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
+
+    //Map: pid -> percentage
+    public final static DictDB<BigInteger, BigInteger> oracleProtection = Context.newDictDB(ORACLE_PROTECTION, BigInteger.class);
 }

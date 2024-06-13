@@ -118,7 +118,7 @@ public class StakedlpIntegrationTest {
 
         // add tokens on dex and receive lp
         testerScoreDex.add(tokenAClient._address(), tokenBClient._address(), BigInteger.valueOf(190).multiply(EXA),
-                BigInteger.valueOf(190).multiply(EXA), false);
+                BigInteger.valueOf(190).multiply(EXA), false, BigInteger.valueOf(100));
 
         BigInteger poolId = dex.getPoolId(tokenAClient._address(), tokenBClient._address());
         BigInteger balance = dex.balanceOf(userAddress, poolId);

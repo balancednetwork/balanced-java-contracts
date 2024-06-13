@@ -16,8 +16,8 @@
 
 package network.balanced.score.core.governance.proposal;
 
-import network.balanced.score.core.governance.utils.ArbitraryCallManager;
 import network.balanced.score.core.governance.utils.ContractManager;
+import network.balanced.score.lib.utils.ArbitraryCallManager;
 import network.balanced.score.lib.utils.Names;
 import score.Address;
 import score.Context;

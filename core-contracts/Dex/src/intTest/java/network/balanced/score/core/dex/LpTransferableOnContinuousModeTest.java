@@ -108,7 +108,7 @@ public class LpTransferableOnContinuousModeTest {
         mintAndTransferTestTokens(tokenDeposit);
         dexUserScoreClient.add(Address.fromString(dexTestBaseScoreAddress),
                 Address.fromString(dexTestFourthScoreClient._address().toString()),
-                BigInteger.valueOf(50).multiply(EXA), BigInteger.valueOf(50).multiply(EXA), false);
+                BigInteger.valueOf(50).multiply(EXA), BigInteger.valueOf(50).multiply(EXA), false, BigInteger.valueOf(100));
         BigInteger poolId = dexUserScoreClient.getPoolId(Address.fromString(dexTestBaseScoreAddress),
                 Address.fromString(dexTestFourthScoreAddress));
         //assert pool id is less than 5
