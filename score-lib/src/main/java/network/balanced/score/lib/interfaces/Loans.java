@@ -78,7 +78,7 @@ public interface Loans extends Name, AddressManager, Version, XTokenReceiver, Fl
     BigInteger getBnusdValue(String _name);
 
     @External
-    void borrow(String _collateralToBorrowAgainst, String _assetToBorrow, BigInteger _amountToBorrow);
+    void borrow(String _collateralToBorrowAgainst, String _assetToBorrow, BigInteger _amountToBorrow, @Optional String _to,  @Optional byte[] _data);
 
     @External
     @Payable
@@ -92,7 +92,7 @@ public interface Loans extends Name, AddressManager, Version, XTokenReceiver, Fl
     void retireBadDebtForCollateral(String _symbol, BigInteger _value, String _collateralSymbol);
 
     @External
-    void returnAsset(String _symbol, BigInteger _value, @Optional String _collateralSymbol);
+    void returnAsset(String _symbol, BigInteger _value, @Optional String _collateralSymbol, @Optional String to);
 
     @External
     void withdrawAndUnstake(BigInteger _value);
@@ -191,7 +191,7 @@ public interface Loans extends Name, AddressManager, Version, XTokenReceiver, Fl
     Map<String, Object> getParameters();
 
     @XCall
-    void xBorrow(String from, String _collateralToBorrowAgainst, BigInteger _amountToBorrow);
+    void xBorrow(String from, String _collateralToBorrowAgainst, BigInteger _amountToBorrow, @Optional String _to,  @Optional byte[] _data);
 
     @XCall
     void xWithdraw(String from, BigInteger _value, String _collateralSymbol);

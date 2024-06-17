@@ -79,8 +79,8 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         // Act
         loanTaker1.bnUSD.transfer(loanTaker2.getAddress(), fee, null);
 
-        loanTaker2.loans.returnAsset("bnUSD", loanAmount.add(fee), "sICX");
-        loanTaker3.loans.returnAsset("bnUSD", loanAmount.divide(BigInteger.TWO), "sICX");
+        loanTaker2.loans.returnAsset("bnUSD", loanAmount.add(fee), "sICX", "");
+        loanTaker3.loans.returnAsset("bnUSD", loanAmount.divide(BigInteger.TWO), "sICX", "");
         loanTaker2.rewards.claimRewards(reader.rewards.getUserSources(loanTaker2.getAddress().toString()));
         loanTaker3.rewards.claimRewards(reader.rewards.getUserSources(loanTaker3.getAddress().toString()));
 
@@ -90,7 +90,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         verifyRewards(loanTaker3);
 
         // Act
-        loanTaker2.loans.borrow("sICX", "bnUSD", loanAmount);
+        loanTaker2.loans.borrow("sICX", "bnUSD", loanAmount, "", null);
 
         // Assert
         verifyRewards(loanTaker1);

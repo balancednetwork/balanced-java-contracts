@@ -166,28 +166,37 @@ public class XCallProcessor extends AbstractProcessor {
                 throw new RuntimeException("First parameter in a XCall must be the from parameter, (String from)");
             }
 
-            handleMethod.addCode("case $S: \n", methodName.toString().toLowerCase());
-            handleMethod.addCode("$> score." + methodName + "(from");
+            handleMethod.addCode("case $S:{ \n", methodName.toString().toLowerCase());
+            handleMethod.addCode("$>");
+            for (int i = 1; i < parameters.size(); i++) {
+                TypeMirror type = parameters.get(i).asType();
+                String name = parameters.get(i).getSimpleName().toString();
+                handleMethod.addStatement("$T $L", type, name);
+            }
 
             for (int i = 1; i < parameters.size(); i++) {
-                String nullable = "";
-                if (parameters.get(i).getAnnotation(Optional.class) != null) {
-                    nullable = "Nullable";
-                }
                 TypeMirror type = parameters.get(i).asType();
-                if (type.getKind() == TypeKind.ARRAY) {
-                    if (((ArrayType)type).getComponentType().toString().equals("java.lang.String")) {
-                        handleMethod.addCode(", $T.readStringArray(reader)", RLPUtils.class);
-                    } else {
-                        handleMethod.addCode(", reader.read$L($T.class)", nullable, type);
-                    }
+                String name = parameters.get(i).getSimpleName().toString();
+                if (isStringArray(type)) {
+                    handleMethod.addStatement("$L = $T.readStringArray(reader)", name, RLPUtils.class);
                 } else {
-                    handleMethod.addCode(", reader.read$L($T.class)", nullable, type);
+                    if (parameters.get(i).getAnnotation(Optional.class) != null) {
+                        handleMethod.addStatement("$L = reader.hasNext() ? reader.readNullable($T.class): null", name, type);
+                    } else {
+                        handleMethod.addStatement("$L = reader.read($T.class)", name, type);
+                    }
                 }
             }
 
-            handleMethod.addCode(");\n$<");
-            handleMethod.addStatement("$>break$<");
+            handleMethod.addCode("score." + methodName + "(from");
+            for (int i = 1; i < parameters.size(); i++) {
+                handleMethod.addCode(", " + parameters.get(i).getSimpleName().toString());
+            }
+
+            handleMethod.addCode(");\n");
+            handleMethod.addCode("break; $<\n");
+            handleMethod.addCode("} ");
+
 
         }
 
@@ -199,6 +208,9 @@ public class XCallProcessor extends AbstractProcessor {
         return builder.build();
     }
 
+    private boolean isStringArray(TypeMirror type) {
+        return type.getKind() == TypeKind.ARRAY && ((ArrayType)type).getComponentType().toString().equals("java.lang.String");
+    }
     private TypeSpec messagesTypeSpec(ClassName className,  List<? extends Element> elements) {
         TypeSpec.Builder builder = TypeSpec
                 .classBuilder(className)

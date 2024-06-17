@@ -57,15 +57,15 @@ public class TokenUtils {
         Context.call(getBnusd(), "burnFrom", from, amount);
     }
 
-    public static void crossTransfer(BigInteger fee, String to, BigInteger amount) {
-        Context.call(fee, getBnusd(), "crossTransfer", to, amount, new byte[0]);
+    public static void crossTransfer(BigInteger fee, String to, BigInteger amount, byte[] data) {
+        Context.call(fee, getBnusd(), "crossTransfer", to, amount, data);
     }
 
-    public static void hubTransfer(String to, BigInteger amount) {
-        Context.call(getBnusd(), "hubTransfer", to, amount, new byte[0]);
+    public static void hubTransfer(String to, BigInteger amount, byte[] data) {
+        Context.call(getBnusd(), "hubTransfer", to, amount, data);
     }
 
-    public static void transfer(Address to, BigInteger amount) {
-        Context.call(getBnusd(), "transfer", to, amount, new byte[0]);
+    public static void transfer(Address to, BigInteger amount, byte[] data) {
+        Context.call(getBnusd(), "transfer", to, amount, data);
     }
 }
