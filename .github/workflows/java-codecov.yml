@@ -1,0 +1,23 @@
+name: Codecov javascore
+
+on:
+  push:
+    branches:
+      - "**"
+env:
+  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+jobs:
+  Coverage-Codecov:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Javascore contracts coverage
+        run: ./gradlew test
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          flags: java

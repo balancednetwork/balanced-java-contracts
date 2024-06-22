@@ -2,6 +2,7 @@
 
 ![Gradle](https://img.shields.io/badge/gradle-7.4.2-blue)
 [![build](https://github.com/balancednetwork/balanced-java-contracts/actions/workflows/pr-test.yml/badge.svg?branch=main)](https://github.com/balancednetwork/balanced-java-contracts/actions/workflows/pr-test.yml)
+[![codecov](https://codecov.io/gh/balancednetwork/balanced-java-contracts/graph/badge.svg?token=ESRLDMPPTG)](https://codecov.io/gh/balancednetwork/balanced-java-contracts)
 
 This repository contains the smart contracts for Balanced in Java. For python contracts check [balanced-contracts](
 https://github.com/balancednetwork/balanced-contracts). 
