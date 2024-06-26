@@ -25,21 +25,10 @@ import java.util.Map;
 
 @ScoreInterface
 public interface DataSource {
-    @External
-    Object precompute(BigInteger _snapshot_id, BigInteger batch_size);
+    @External(readonly = true)
+    Map<String, BigInteger> getBalanceAndSupply(String _name, String _owner);
 
     @External(readonly = true)
-    BigInteger getTotalValue(String _name, BigInteger _snapshot_id);
-
-    @External
     BigInteger getBnusdValue(String _name);
 
-    @External
-    Map<String, BigInteger> getDataBatch(String _name, int _snapshot_id, int _limit, int _offset);
-
-    @External
-    BigInteger getBalnPrice();
-
-    @External
-    Map<String, BigInteger> getBalanceAndSupply(String _name, String _owner);
 }

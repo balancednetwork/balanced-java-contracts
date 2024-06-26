@@ -20,7 +20,6 @@ import score.Address;
 import score.Context;
 import score.DictDB;
 import score.VarDB;
-import foundation.icon.xcall.NetworkAddress;
 
 import static network.balanced.score.lib.utils.Check.readonly;
 public class BalancedAddressManager {
@@ -48,7 +47,7 @@ public class BalancedAddressManager {
                 "getAddress", name);
     }
 
-    private static Address getAddress(String name) {
+    public static Address getAddress(String name) {
         Address address = contractAddresses.get(name);
         if (address == null) {
             address = fetchAddress(name);
