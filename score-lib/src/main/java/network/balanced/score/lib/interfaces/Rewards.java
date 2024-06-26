@@ -49,6 +49,9 @@ public interface Rewards extends
     Map<String, BigInteger> getBalnHoldings(String[] _holders);
 
     @External(readonly = true)
+    Map<String, BigInteger> getRewards(String _holder);
+
+    @External(readonly = true)
     BigInteger getBalnHolding(String _holder);
 
     @External(readonly = true)

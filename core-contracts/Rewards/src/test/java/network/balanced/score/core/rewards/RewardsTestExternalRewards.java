@@ -88,27 +88,27 @@ class RewardsTestExternalRewards extends RewardsTestBase {
         // Assert
         // starts after 1 day, fully distributed after 2
         nextDay();
-        Map<Address, BigInteger> rewards = (Map<Address, BigInteger>) rewardsScore.call("getRewards",
+        Map<String, BigInteger> rewards = (Map<String, BigInteger>) rewardsScore.call("getRewards",
                 account.getAddress().toString());
-        assertEquals(BigInteger.ZERO, rewards.get(mockBalanced.sicx.getAddress()));
+        assertEquals(BigInteger.ZERO, rewards.get(mockBalanced.sicx.getAddress().toString()));
 
         nextDay();
-        rewards = (Map<Address, BigInteger>) rewardsScore.call("getRewards",
+        rewards = (Map<String, BigInteger>) rewardsScore.call("getRewards",
                 account.getAddress().toString());
         rewardsScore.invoke(account, "claimRewards", getUserSources(account.getAddress()));
         BigInteger timeInUS = BigInteger.valueOf(sm.getBlock().getTimestamp());
         BigInteger diff = timeInUS.subtract(startTime);
         BigInteger expectedBalnRewards = userDist.multiply(diff).divide(MICRO_SECONDS_IN_A_DAY);
-        assertEquals(expectedRewards, rewards.get(mockBalanced.sicx.getAddress()));
+        assertEquals(expectedRewards, rewards.get(mockBalanced.sicx.getAddress().toString()));
         verify(mockBalanced.sicx.mock).transfer(account.getAddress(), expectedRewards, new byte[0]);
         verifyBalnReward(account.getAddress(), expectedBalnRewards.subtract(BigInteger.ONE));
 
 
         // No more is distributed
         nextDay();
-        rewards = (Map<Address, BigInteger>) rewardsScore.call("getRewards",
+        rewards = (Map<String, BigInteger>) rewardsScore.call("getRewards",
                 account.getAddress().toString());
-        assertEquals(BigInteger.ZERO, rewards.get(mockBalanced.sicx.getAddress()));
+        assertEquals(BigInteger.ZERO, rewards.get(mockBalanced.sicx.getAddress().toString()));
     }
 
     @Test
@@ -142,9 +142,9 @@ class RewardsTestExternalRewards extends RewardsTestBase {
         // starts after 1 day
         nextDay();
         sm.getBlock().increase(DAY / 4);
-        Map<Address, BigInteger> rewards = (Map<Address, BigInteger>) rewardsScore.call("getRewards",
+        Map<String, BigInteger> rewards = (Map<String, BigInteger>) rewardsScore.call("getRewards",
                 account.getAddress().toString());
-        assertEquals(expectedRewards.divide(BigInteger.valueOf(4)), rewards.get(mockBalanced.sicx.getAddress()));
+        assertEquals(expectedRewards.divide(BigInteger.valueOf(4)), rewards.get(mockBalanced.sicx.getAddress().toString()));
     }
 
     @Test
@@ -189,12 +189,12 @@ class RewardsTestExternalRewards extends RewardsTestBase {
         nextDay();
 
         // Assert
-        Map<Address, BigInteger> rewards = (Map<Address, BigInteger>) rewardsScore.call("getRewards",
+        Map<String, BigInteger> rewards = (Map<String, BigInteger>) rewardsScore.call("getRewards",
                 account.getAddress().toString());
         rewardsScore.invoke(account, "claimRewards", getUserSources(account.getAddress()));
         verify(mockBalanced.sicx.mock).transfer(account.getAddress(), expectedRewards1.add(expectedRewards2),
                 new byte[0]);
-        assertEquals(expectedRewards1.add(expectedRewards2), rewards.get(mockBalanced.sicx.getAddress()));
+        assertEquals(expectedRewards1.add(expectedRewards2), rewards.get(mockBalanced.sicx.getAddress().toString()));
     }
 
     @Test
@@ -236,17 +236,17 @@ class RewardsTestExternalRewards extends RewardsTestBase {
         nextDay();
 
         // Assert
-        Map<Address, BigInteger> rewards = (Map<Address, BigInteger>) rewardsScore.call("getRewards",
+        Map<String, BigInteger> rewards = (Map<String, BigInteger>) rewardsScore.call("getRewards",
                 account1.getAddress().toString());
         rewardsScore.invoke(account1, "claimRewards", getUserSources(account1.getAddress()));
         verify(mockBalanced.sicx.mock).transfer(account1.getAddress(), expectedRewards1, new byte[0]);
-        assertEquals(expectedRewards1, rewards.get(mockBalanced.sicx.getAddress()));
+        assertEquals(expectedRewards1, rewards.get(mockBalanced.sicx.getAddress().toString()));
 
-        rewards = (Map<Address, BigInteger>) rewardsScore.call("getRewards",
+        rewards = (Map<String, BigInteger>) rewardsScore.call("getRewards",
                 account2.getAddress().toString());
         rewardsScore.invoke(account2, "claimRewards", getUserSources(account2.getAddress()));
         verify(mockBalanced.sicx.mock).transfer(account2.getAddress(), expectedRewards2, new byte[0]);
-        assertEquals(expectedRewards2, rewards.get(mockBalanced.sicx.getAddress()));
+        assertEquals(expectedRewards2, rewards.get(mockBalanced.sicx.getAddress().toString()));
     }
 
     @Test
@@ -288,19 +288,19 @@ class RewardsTestExternalRewards extends RewardsTestBase {
         // starts after 1 day, fully distributed after 2
         nextDay();
         nextDay();
-        Map<Address, BigInteger> rewards = (Map<Address, BigInteger>) rewardsScore.call("getRewards",
+        Map<String, BigInteger> rewards = (Map<String, BigInteger>) rewardsScore.call("getRewards",
                 account.getAddress().toString());
         rewardsScore.invoke(account, "claimRewards", getUserSources(account.getAddress()));
-        assertEquals(expectedSICXRewards, rewards.get(mockBalanced.sicx.getAddress()));
-        assertEquals(expectedBnUSDRewards, rewards.get(mockBalanced.bnUSD.getAddress()));
+        assertEquals(expectedSICXRewards, rewards.get(mockBalanced.sicx.getAddress().toString()));
+        assertEquals(expectedBnUSDRewards, rewards.get(mockBalanced.bnUSD.getAddress().toString()));
         verify(mockBalanced.sicx.mock).transfer(account.getAddress(), expectedSICXRewards, new byte[0]);
         verify(mockBalanced.bnUSD.mock).transfer(account.getAddress(), expectedBnUSDRewards, new byte[0]);
 
         // No more is distributed
         nextDay();
-        rewards = (Map<Address, BigInteger>) rewardsScore.call("getRewards",
+        rewards = (Map<String, BigInteger>) rewardsScore.call("getRewards",
                 account.getAddress().toString());
-        assertEquals(BigInteger.ZERO, rewards.get(mockBalanced.sicx.getAddress()));
+        assertEquals(BigInteger.ZERO, rewards.get(mockBalanced.sicx.getAddress().toString()));
     }
 
     @Test

@@ -114,6 +114,9 @@ public class RewardsImpl implements Rewards {
             distributionPercentages.set(Names.WORKERTOKEN, distributionPercentages.get(WORKER_TOKENS));
             distributionPercentages.set(Names.RESERVE, distributionPercentages.get(RESERVE_FUND));
             distributionPercentages.set(Names.DAOFUND, distributionPercentages.get(DAOFUND));
+            distributionPercentages.remove(WORKER_TOKENS);
+            distributionPercentages.remove(RESERVE_FUND);
+            distributionPercentages.remove(DAOFUND);
         }
 
         if (currentVersion.getOrDefault("").equals(Versions.REWARDS)) {
@@ -168,16 +171,16 @@ public class RewardsImpl implements Rewards {
 
 
     @External(readonly = true)
-    public Map<Address, BigInteger> getHoldings(String _holder) {
+    public Map<String, BigInteger> getHoldings(String _holder) {
         List<Address> tokens = externalRewardTokens.keys();
         DictDB<Address, BigInteger> holdingsDB = externalHoldings.at(_holder);
-        Map<Address, BigInteger> holdings = new HashMap<>();
+        Map<String, BigInteger> holdings = new HashMap<>();
 
         for (Address token : tokens) {
-            holdings.put(token, holdingsDB.getOrDefault(token, BigInteger.ZERO));
+            holdings.put(token.toString(), holdingsDB.getOrDefault(token, BigInteger.ZERO));
         }
 
-        holdings.put(getBaln(), balnHoldings.getOrDefault(_holder, BigInteger.ZERO));
+        holdings.put(getBaln().toString(), balnHoldings.getOrDefault(_holder, BigInteger.ZERO));
 
         return holdings;
     }
@@ -185,12 +188,12 @@ public class RewardsImpl implements Rewards {
     @External(readonly = true)
     public BigInteger getBalnHolding(String _holder) {
         Address baln = getBaln();
-        return getRewards(_holder).get(baln);
+        return getRewards(_holder).get(baln.toString());
     }
 
     @External(readonly = true)
-    public Map<Address, BigInteger> getRewards(String _holder) {
-        Map<Address, BigInteger> accruedRewards = getHoldings(_holder);
+    public Map<String, BigInteger> getRewards(String _holder) {
+        Map<String, BigInteger> accruedRewards = getHoldings(_holder);
         int dataSourcesCount = DataSourceDB.size();
         for (int i = 0; i < dataSourcesCount; i++) {
             String name = DataSourceDB.names.get(i);
@@ -203,7 +206,7 @@ public class RewardsImpl implements Rewards {
             balances.prevWorkingSupply = dataSource.getWorkingSupply(true);
             Map<Address, BigInteger> sourceRewards = dataSource.updateSingleUserData(currentTime, balances, _holder, true);
             for (Map.Entry<Address, BigInteger> entry : sourceRewards.entrySet()) {
-                accruedRewards.put(entry.getKey(), accruedRewards.get(entry.getKey()).add(entry.getValue()));
+                accruedRewards.put(entry.getKey().toString(), accruedRewards.get(entry.getKey().toString()).add(entry.getValue()));
             }
         }
 
