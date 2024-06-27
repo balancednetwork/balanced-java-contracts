@@ -248,6 +248,19 @@ public class RewardsImpl implements Rewards {
     }
 
     @External(readonly = true)
+    public Map<String, Map<String, Object>> getUserSourceData(String user) {
+        Map<String, Map<String, Object>> dataSources = new HashMap<>();
+        int dataSourcesCount = DataSourceDB.size();
+        for (int i = 0; i < dataSourcesCount; i++) {
+            String name = DataSourceDB.names.get(i);
+            DataSourceImpl dataSource = DataSourceDB.get(name);
+            dataSources.put(name, dataSource.getUserData(user));
+        }
+
+        return dataSources;
+    }
+
+    @External(readonly = true)
     public Map<String, Map<String, Object>> getDataSourcesAt(BigInteger _day) {
         Map<String, Map<String, Object>> dataSources = new HashMap<>();
         int dataSourcesCount = DataSourceDB.size();

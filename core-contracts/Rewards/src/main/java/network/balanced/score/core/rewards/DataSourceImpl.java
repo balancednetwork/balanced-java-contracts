@@ -278,10 +278,6 @@ public class DataSourceImpl {
         Map<Address, BigInteger> totalWeight = updateTotalWeight(lastUpdateTimestamp, currentTime, balances, externalRewards, readOnlyContext);
         Map<Address, BigInteger> accruedRewards = new HashMap<>(externalRewards.length+1);
         accruedRewards.put(baln, BigInteger.ZERO);
-        if (currentUserWeight.equals(totalWeight.get(baln))) {
-            return accruedRewards;
-        }
-
 
         //  If the user's current weight is less than the total, update their weight and issue rewards
         if (balances.prevWorkingBalance.compareTo(BigInteger.ZERO) > 0) {
@@ -418,12 +414,32 @@ public class DataSourceImpl {
         sourceData.put("contract_address", getContractAddress());
         sourceData.put("workingSupply", getWorkingSupply());
         sourceData.put("total_dist", getTotalDist(day, true));
+        Address[] externalRewards = getRewardTokens();
+        Map<String, Object> externalData = new HashMap<>();
+        for (Address addr : externalRewards) {
+            externalData.put("external_dist", getTotalExternalDist(day, addr));
+            externalData.put("total_weight", getTotalExternalWeight(addr));
+            sourceData.put(addr.toString(), externalData);
+        }
 
         return sourceData;
     }
 
     public Map<String, Object> getData() {
         return getDataAt(RewardsImpl.getDay());
+    }
+
+    public Map<String, Object> getUserData(String user) {
+        Map<String, Object> data = new HashMap<>();
+        Address[] externalRewards = getRewardTokens();
+        data.put("user_weight", getUserWeight(user));
+        data.put("balance", getBalance(user));
+        data.put("working balance", getWorkingBalance(user, true));
+
+        for (Address addr : externalRewards) {
+            data.put(addr.toString() + "_weight", getExternalUserWeight(user,addr));
+        }
+        return data;
     }
 
     private BigInteger computeUserRewards(BigInteger prevUserBalance, BigInteger totalWeight, BigInteger userWeight) {
