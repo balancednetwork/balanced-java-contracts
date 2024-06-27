@@ -117,8 +117,6 @@ class RewardsTestBase extends UnitTest {
         // One vote period to apply votes
         sm.getBlock().increase(DAY*10);
 
-        BigInteger day = (BigInteger) rewardsScore.call("getDay");
-
         rewardsScore.invoke(owner, "updateRelativeSourceWeight", "sICX/ICX",
                 BigInteger.valueOf(sm.getBlock().getTimestamp()));
         rewardsScore.invoke(owner, "updateRelativeSourceWeight", "sICX/bnUSD",
