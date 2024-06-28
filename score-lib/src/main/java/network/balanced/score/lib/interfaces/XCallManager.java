@@ -36,5 +36,8 @@ public interface XCallManager extends Name, AddressManager, Version {
     Map<String, String[]> getProtocols(String nid);
 
     @External(readonly = true)
+    byte[] getProtocolsRaw(String nid);
+
+    @External(readonly = true)
     void verifyProtocols(String nid, @Optional String[] protocols);
 }

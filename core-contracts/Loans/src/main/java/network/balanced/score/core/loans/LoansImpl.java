@@ -347,7 +347,7 @@ public class LoansImpl extends FloorLimited implements Loans {
         String fromNet = NetworkAddress.valueOf(from).net();
         String nativeAddress = Context.call(String.class, getAssetManager(), "getNativeAssetAddress", token, fromNet);
         if (nativeAddress != null && canWithdraw(fromNet) ) {
-            BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", fromNet, true);
+            BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", fromNet, false);
             Context.call(xCallFee, getAssetManager(), "withdrawTo", token, from, _value);
         } else {
             Context.call(token, "hubTransfer", from, _value, new byte[0]);
@@ -817,7 +817,7 @@ public class LoansImpl extends FloorLimited implements Loans {
             String net = NetworkAddress.valueOf(to).net();
             boolean canWithdraw = Context.call(Boolean.class, getDaofund(), "getXCallFeePermission", Context.getAddress(), net);
             if (canWithdraw) {
-                BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", net, true);
+                BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", net, false);
                 TokenUtils.crossTransfer(xCallFee, to, amount, data);
             } else {
                 TokenUtils.hubTransfer(to, amount, data);

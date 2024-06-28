@@ -72,8 +72,16 @@ public class XCallMockImpl implements XCallMock {
         return sn;
     }
 
+    @Payable
     @External
-    public void sendCall(Address to, String from, byte[] message) {
+    public BigInteger sendCall(String _to, byte[] _data) {
+        BigInteger sn = getNextSn();
+        CallMessage(sn, _to, _data);
+        return sn;
+    }
+
+    @External
+    public void recvCall(Address to, String from, byte[] message) {
         Context.call(to, "handleCallMessage", from, message);
     }
 

@@ -35,11 +35,15 @@ public interface XCallMock {
                         @Optional String[] _sources,
                         @Optional String[] _destinations);
 
+    @External
+    BigInteger sendCall(String _to,
+                        byte[] _data);
+
     @External(readonly = true)
     String getNetworkId();
 
     @External
-    void sendCall(Address to, String from, byte[] message);
+    void recvCall(Address to, String from, byte[] message);
 
     @External
     void rollback(BigInteger _sn);

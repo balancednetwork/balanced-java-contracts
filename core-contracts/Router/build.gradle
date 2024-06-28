@@ -32,7 +32,7 @@ dependencies {
     implementation Dependencies.javaeeScorex
     implementation Dependencies.minimalJson
     implementation project(':score-lib')
-    implementation 'xyz.venture23:xcall-lib:0.1.1'
+    implementation 'xyz.venture23:xcall-lib:2.1.0'
 
     testImplementation Dependencies.javaeeUnitTest
     // Use JUnit Jupiter for testing.
