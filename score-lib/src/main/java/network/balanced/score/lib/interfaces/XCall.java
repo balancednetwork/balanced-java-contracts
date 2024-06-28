@@ -16,15 +16,22 @@
 
  package network.balanced.score.lib.interfaces;
 
+import java.math.BigInteger;
+
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import foundation.icon.xcall.CallService;
 import foundation.icon.xcall.FeeManage;
 import score.annotation.External;
+import score.annotation.Payable;
 
 @ScoreInterface
 @ScoreClient
 public interface XCall extends CallService, FeeManage {
+    @Payable
+    @External
+    BigInteger sendCall(String _to, byte[] _data);
+
     @External(readonly = true)
     String getNetworkAddress();
 

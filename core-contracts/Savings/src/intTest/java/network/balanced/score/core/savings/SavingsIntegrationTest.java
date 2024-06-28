@@ -309,14 +309,14 @@ class SavingsIntegrationTest implements ScoreIntegrationTest {
 
     private static void depositHyUSDC(String from, String to, BigInteger amount, byte[] data) {
         byte[] deposit = AssetManagerMessages.deposit(hyUSDCAddress, from, to, amount, data);
-        owner.xcall.sendCall(balanced.assetManager._address(),
+        owner.xcall.recvCall(balanced.assetManager._address(),
                 new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit);
     }
 
     private static void updatePrice(BigInteger rate) {
         BigInteger time = BigInteger.valueOf(Instant.now().getEpochSecond()).multiply(MICRO_SECONDS_IN_A_SECOND);
         byte[] priceUpdate = BalancedOracleMessages.updatePriceData(hyUSDCSymbol, rate, time);
-        owner.xcall.sendCall(balanced.balancedOracle._address(),
+        owner.xcall.recvCall(balanced.balancedOracle._address(),
                 new NetworkAddress(balanced.ETH_NID, externalOracle).toString(), priceUpdate);
     }
 }

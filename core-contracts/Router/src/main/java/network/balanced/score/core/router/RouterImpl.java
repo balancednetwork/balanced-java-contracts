@@ -203,7 +203,7 @@ public class RouterImpl implements Router {
 
     private void transferBnUSD(Address bnusd, NetworkAddress to, BigInteger amount) {
         String toNet = to.net();
-        BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", toNet, true);
+        BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", toNet, false);
         Context.call(xCallFee, bnusd, "crossTransfer", to.toString(), amount, new byte[0]);
     }
 
@@ -212,7 +212,7 @@ public class RouterImpl implements Router {
         Address assetManager = getAssetManager();
         String nativeAddress = Context.call(String.class, assetManager, "getNativeAssetAddress", token, toNet);
         if (nativeAddress != null) {
-            BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", toNet, true);
+            BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", toNet, false);
             String method = "withdrawTo";
             if (toNative) {
                 method = "withdrawNativeTo";

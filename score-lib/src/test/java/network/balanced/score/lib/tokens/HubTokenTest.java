@@ -23,10 +23,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import static network.balanced.score.lib.test.UnitTest.expectErrorMessage;
-
 import java.math.BigInteger;
-import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,10 +39,12 @@ import com.iconloop.score.test.TestBase;
 import network.balanced.score.lib.test.mock.MockBalanced;
 import network.balanced.score.lib.test.mock.MockContract;
 import network.balanced.score.lib.utils.BalancedAddressManager;
+import network.balanced.score.lib.utils.XCallUtils;
 import score.Context;
 import score.Address;
 import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.lib.interfaces.tokens.*;
+import network.balanced.score.lib.structs.ProtocolConfig;
 import network.balanced.score.lib.interfaces.*;
 
 class HubTokenTest extends TestBase {
@@ -93,8 +92,8 @@ class HubTokenTest extends TestBase {
         receiverContract = new MockContract<>(XTokenReceiverScoreInterface.class, sm, owner);
         xCall = mockBalanced.xCall;
 
-        when(mockBalanced.xCallManager.mock.getProtocols(ethNid)).thenReturn(Map.of("sources", defaultProtocols, "destinations", defaultDestinationsProtocols));
-        when(mockBalanced.xCallManager.mock.getProtocols(bscNid)).thenReturn(Map.of("sources", defaultProtocols, "destinations", defaultDestinationsProtocols));
+        when(mockBalanced.xCallManager.mock.getProtocolsRaw(ethNid)).thenReturn(new ProtocolConfig(defaultProtocols, defaultDestinationsProtocols).toBytes());
+        when(mockBalanced.xCallManager.mock.getProtocolsRaw(bscNid)).thenReturn(new ProtocolConfig(defaultProtocols, defaultDestinationsProtocols).toBytes());
 
         tokenScore.invoke(owner, "addChain", ethereumSpokeAddress.toString(), baseLimit);
         tokenScore.invoke(owner, "addChain", bscSpokeAddress.toString(), baseLimit);
@@ -126,8 +125,8 @@ class HubTokenTest extends TestBase {
         BigInteger amount = BigInteger.TWO.pow(18);
         addBalance(alice, amount);
 
-        byte[] expectedCallData = HubTokenMessages.xCrossTransfer(aliceNetworkAddress.toString(), bob.toString(), amount, new byte[0]);
-        byte[] expectedRollbackData = HubTokenMessages.xCrossTransferRevert(bob.toString(), amount);
+        byte[] expectedMsg = HubTokenMessages.xCrossTransfer(aliceNetworkAddress.toString(), bob.toString(), amount, new byte[0]);
+        byte[] expectedCallData = XCallUtils.createPersistentMessage(expectedMsg, defaultProtocols, defaultDestinationsProtocols);
 
         // Act
         tokenScore.invoke(alice, "crossTransfer", bob.toString(), amount, new byte[0]);
@@ -138,11 +137,7 @@ class HubTokenTest extends TestBase {
         assertEquals(totalSupply, tokenScore.call("xTotalSupply"));
         assertEquals(amount, tokenScore.call("xSupply", ethereumSpokeAddress.net()));
         verify(tokenSpy).XTransfer(aliceNetworkAddress.toString(), bob.toString(), amount, new byte[0]);
-        verify(xCall.mock).sendCallMessage(Mockito.eq(ethereumSpokeAddress.toString()),
-                                                    AdditionalMatchers.aryEq(expectedCallData),
-                                                    AdditionalMatchers.aryEq(expectedRollbackData),
-                                                    AdditionalMatchers.aryEq(defaultProtocols),
-                                                    AdditionalMatchers.aryEq(defaultDestinationsProtocols));
+        verify(xCall.mock).sendCall(ethereumSpokeAddress.toString(), expectedCallData);
     }
 
    @Test
@@ -198,14 +193,13 @@ class HubTokenTest extends TestBase {
         NetworkAddress xCallNetworkAddress = new NetworkAddress(ICON_NID,  xCall.getAddress().toString());
         BigInteger amount = BigInteger.TWO.pow(18);
         addBalance(alice, amount);
-        byte[] expectedCallData = HubTokenMessages.xCrossTransfer(aliceNetworkAddress.toString(), bob.toString(), amount, new byte[0]);
+        byte[] expectedMsg = HubTokenMessages.xCrossTransfer(aliceNetworkAddress.toString(), bob.toString(), amount, new byte[0]);
+        byte[] expectedCallData = XCallUtils.createPersistentMessage(expectedMsg, defaultProtocols, defaultDestinationsProtocols);
         byte[] expectedRollbackData = HubTokenMessages.xCrossTransferRevert(bob.toString(), amount);
+
         tokenScore.invoke(alice, "crossTransfer", bob.toString(), amount, new byte[0]);
-        verify(xCall.mock).sendCallMessage(Mockito.eq(ethereumSpokeAddress.toString()),
-                                                    AdditionalMatchers.aryEq(expectedCallData),
-                                                    AdditionalMatchers.aryEq(expectedRollbackData),
-                                                    AdditionalMatchers.aryEq(defaultProtocols),
-                                                    AdditionalMatchers.aryEq(defaultDestinationsProtocols));
+        verify(xCall.mock).sendCall(ethereumSpokeAddress.toString(), expectedCallData);
+
         // Act
         tokenScore.invoke(xCall.account, "handleCallMessage", xCallNetworkAddress.toString(), expectedRollbackData, defaultDestinationsProtocols);
 
@@ -225,8 +219,8 @@ class HubTokenTest extends TestBase {
         BigInteger amount = BigInteger.TWO.pow(18);
         tokenScore.invoke(owner, "crossTransfer", alice.toString(), amount, new byte[0]);
 
-        byte[] expectedCallData = HubTokenMessages.xCrossTransfer(bob.toString(), bob.toString(), amount, new byte[0]);
-        byte[] expectedRollbackData = HubTokenMessages.xCrossTransferRevert(bob.toString(), amount);
+        byte[] expectedMsg = HubTokenMessages.xCrossTransfer(bob.toString(), bob.toString(), amount, new byte[0]);
+        byte[] expectedCallData = XCallUtils.createPersistentMessage(expectedMsg, defaultProtocols, defaultDestinationsProtocols);
 
         when(tokenSpy.getHopFee(bob.net())).thenReturn(BigInteger.TEN);
 
@@ -241,11 +235,7 @@ class HubTokenTest extends TestBase {
         assertEquals(amount, tokenScore.call("xSupply", ethereumSpokeAddress.net()));
         assertEquals(BigInteger.ZERO, tokenScore.call("xSupply", bscSpokeAddress.net()));
         verify(tokenSpy).XTransfer(bob.toString(), bob.toString(), amount, new byte[0]);
-        verify(xCall.mock).sendCallMessage(Mockito.eq(ethereumSpokeAddress.toString()),
-                                                    AdditionalMatchers.aryEq(expectedCallData),
-                                                    AdditionalMatchers.aryEq(expectedRollbackData),
-                                                    AdditionalMatchers.aryEq(defaultProtocols),
-                                                    AdditionalMatchers.aryEq(defaultDestinationsProtocols));
+        verify(xCall.mock).sendCall(ethereumSpokeAddress.toString(), expectedCallData);
     }
 
    @Test
@@ -285,8 +275,8 @@ class HubTokenTest extends TestBase {
         byte[] msg = HubTokenMessages.xCrossTransfer(alice.toString(), bob.toString(), amount, new byte[0]);
         amount = amount.subtract(fee);
 
-        byte[] expectedCallData = HubTokenMessages.xCrossTransfer(bob.toString(), bob.toString(), amount, new byte[0]);
-        byte[] expectedRollbackData = HubTokenMessages.xCrossTransferRevert(bob.toString(), amount);
+        byte[] expectedMsg = HubTokenMessages.xCrossTransfer(bob.toString(), bob.toString(), amount, new byte[0]);
+        byte[] expectedCallData = XCallUtils.createPersistentMessage(expectedMsg, defaultProtocols, defaultDestinationsProtocols);
 
         // Act
         tokenScore.invoke(xCall.account, "handleCallMessage", bscSpokeAddress.toString(), msg, defaultDestinationsProtocols);
@@ -298,11 +288,7 @@ class HubTokenTest extends TestBase {
         assertEquals(amount, tokenScore.call("xSupply", ethereumSpokeAddress.net()));
         assertEquals(BigInteger.ZERO, tokenScore.call("xSupply", bscSpokeAddress.net()));
         verify(tokenSpy).XTransfer(bob.toString(), bob.toString(), amount, new byte[0]);
-        verify(xCall.mock).sendCallMessage(Mockito.eq(ethereumSpokeAddress.toString()),
-                                                    AdditionalMatchers.aryEq(expectedCallData),
-                                                    AdditionalMatchers.aryEq(expectedRollbackData),
-                                                    AdditionalMatchers.aryEq(defaultProtocols),
-                                                    AdditionalMatchers.aryEq(defaultDestinationsProtocols));
+        verify(mockBalanced.xCall.mock).sendCall(ethereumSpokeAddress.toString(), expectedCallData);
     }
 
    @Test
@@ -333,8 +319,8 @@ class HubTokenTest extends TestBase {
        when(tokenSpy.getHopFee(bob.net())).thenReturn(xCallFee);
        when(tokenSpy.getTokenFee(bob.net(), xCallFee, amount)).thenReturn(fee);
 
-       byte[] expectedCallData = HubTokenMessages.xCrossTransfer(bob.toString(), bob.toString(), amount.subtract(fee), new byte[0]);
-       byte[] expectedRollbackData = HubTokenMessages.xCrossTransferRevert(bob.toString(), amount.subtract(fee));
+       byte[] expectedMsg = HubTokenMessages.xCrossTransfer(bob.toString(), bob.toString(), amount.subtract(fee), new byte[0]);
+       byte[] expectedCallData = XCallUtils.createPersistentMessage(expectedMsg, defaultProtocols, defaultDestinationsProtocols);
 
        // Act
        byte[] msg = HubTokenMessages.xTransfer(bob.toString(), amount, new byte[0]);
@@ -345,11 +331,7 @@ class HubTokenTest extends TestBase {
        assertEquals(totalSupply.subtract(fee), tokenScore.call("xTotalSupply"));
        assertEquals(amount.subtract(fee), tokenScore.call("xSupply", ethereumSpokeAddress.net()));
        verify(tokenSpy).XTransfer(bob.toString(), bob.toString(), amount.subtract(fee), new byte[0]);
-       verify(xCall.mock).sendCallMessage(Mockito.eq(ethereumSpokeAddress.toString()),
-                                                    AdditionalMatchers.aryEq(expectedCallData),
-                                                    AdditionalMatchers.aryEq(expectedRollbackData),
-                                                    AdditionalMatchers.aryEq(defaultProtocols),
-                                                    AdditionalMatchers.aryEq(defaultDestinationsProtocols));
+       verify(xCall.mock).sendCall(ethereumSpokeAddress.toString(), expectedCallData);
     }
 
     void addBalance(Account account, BigInteger amount) {

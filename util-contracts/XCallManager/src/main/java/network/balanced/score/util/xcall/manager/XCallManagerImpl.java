@@ -19,32 +19,25 @@ package network.balanced.score.util.xcall.manager;
 import network.balanced.score.lib.interfaces.XCallManager;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.Versions;
-import network.balanced.score.lib.utils.Versions;
 import network.balanced.score.lib.structs.ProtocolConfig;
 import score.*;
-import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
-import score.annotation.Payable;
-import scorex.util.HashMap;
 
-import java.math.BigInteger;
 import java.util.Map;
 
 import static network.balanced.score.lib.utils.BalancedAddressManager.setGovernance;
 import static network.balanced.score.lib.utils.BalancedAddressManager.resetAddress;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getAddressByName;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getXCall;
-import static network.balanced.score.lib.utils.Check.isContract;
 import static network.balanced.score.lib.utils.Check.onlyOwner;
-import static network.balanced.score.lib.utils.Check.checkStatus;
 
 public class XCallManagerImpl implements XCallManager {
     public static final String VERSION = "version";
     public static final String PROTOCOLS = "protocols";
 
     private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
-    DictDB<String, ProtocolConfig> protocols = Context.newDictDB(PROTOCOLS, ProtocolConfig.class);
+    public static final DictDB<String, ProtocolConfig> protocols = Context.newDictDB(PROTOCOLS, ProtocolConfig.class);
 
     public static final String TAG = Names.XCALL_MANAGER;
     public static String NATIVE_NID;
@@ -93,9 +86,16 @@ public class XCallManagerImpl implements XCallManager {
     public Map<String, String[]> getProtocols(String nid) {
         ProtocolConfig cfg = protocols.get(nid);
         Context.require(cfg != null, TAG + ": Network is not configured");
-
         return Map.of("sources", cfg.sources, "destinations", cfg.destinations);
     }
+
+    @External(readonly = true)
+    public byte[] getProtocolsRaw(String nid) {
+        ProtocolConfig cfg = protocols.get(nid);
+        Context.require(cfg != null, TAG + ": Network is not configured");
+        return cfg.toBytes();
+    }
+
 
     @External(readonly = true)
     public void verifyProtocols(String nid, @Optional String[] protocols) {

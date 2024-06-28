@@ -172,24 +172,24 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
             JsonObject loanData = new JsonObject()
                 .add("_amount", loanAmount.toString());
             byte[] depositAndBorrowETH = AssetManagerMessages.deposit(balanced.ETH_TOKEN_ADDRESS, ethUser.account().toString(), loansNetAddress, collateral, loanData.toString().getBytes());
-            owner.xcall.sendCall(balanced.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), depositAndBorrowETH);
+            owner.xcall.recvCall(balanced.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), depositAndBorrowETH);
 
             // Deposit first then borrow
             byte[] depositBSC = AssetManagerMessages.deposit(balanced.BSC_TOKEN_ADDRESS, bscUser.account().toString(), loansNetAddress, collateral, "{}".getBytes());
-            owner.xcall.sendCall(balanced.assetManager._address(), new NetworkAddress(balanced.BSC_NID, balanced.BSC_ASSET_MANAGER).toString(), depositBSC);
+            owner.xcall.recvCall(balanced.assetManager._address(), new NetworkAddress(balanced.BSC_NID, balanced.BSC_ASSET_MANAGER).toString(), depositBSC);
             byte[] borrowBSC = LoansMessages.xBorrow(balanced.BSC_TOKEN_SYMBOL, loanAmount, "", new byte[0]);
-            owner.xcall.sendCall(balanced.loans._address(), bscUser.toString(), borrowBSC);
+            owner.xcall.recvCall(balanced.loans._address(), bscUser.toString(), borrowBSC);
 
             // Bridge collateral to hub wallet first then borrow
             byte[] transferBSC = AssetManagerMessages.deposit(balanced.BSC_TOKEN_ADDRESS, bscHubUser.account().toString(), bscHubUser.toString(), collateral, new byte[0]);
-            owner.xcall.sendCall(balanced.assetManager._address(), new NetworkAddress(balanced.BSC_NID, balanced.BSC_ASSET_MANAGER).toString(), transferBSC);
+            owner.xcall.recvCall(balanced.assetManager._address(), new NetworkAddress(balanced.BSC_NID, balanced.BSC_ASSET_MANAGER).toString(), transferBSC);
 
             byte[] depositAndBorrowTransfer = SpokeTokenMessages.xHubTransfer(loansNetAddress, collateral, loanData.toString().getBytes());
-            owner.xcall.sendCall(balanced.bscBaseAsset, bscHubUser.toString(), depositAndBorrowTransfer);
+            owner.xcall.recvCall(balanced.bscBaseAsset, bscHubUser.toString(), depositAndBorrowTransfer);
 
             // Bridge collateral to ICON wallet first then borrow
             byte[] transferBSCToICON = AssetManagerMessages.deposit(balanced.BSC_TOKEN_ADDRESS, bscHubUser.account().toString(), new NetworkAddress(balanced.ICON_NID, nativeLoanTaker.getAddress()).toString(), collateral, new byte[0]);
-            owner.xcall.sendCall(balanced.assetManager._address(), new NetworkAddress(balanced.BSC_NID, balanced.BSC_ASSET_MANAGER).toString(), transferBSCToICON);
+            owner.xcall.recvCall(balanced.assetManager._address(), new NetworkAddress(balanced.BSC_NID, balanced.BSC_ASSET_MANAGER).toString(), transferBSCToICON);
             nativeLoanTaker.spokeToken(balanced.bscBaseAsset).transfer(balanced.loans._address(), collateral, loanData.toString().getBytes());
 
             // Assert
@@ -233,27 +233,27 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
                 .add("_collateral", balanced.ETH_TOKEN_SYMBOL)
                 .add("_withdrawAmount", amountToWithdraw.toString());
             byte[] repayAndWithdraw = HubTokenMessages.xCrossTransfer(ethUser.toString(), loansNetAddress, amountToRepay, repayData.toString().getBytes());
-            owner.xcall.sendCall(balanced.bnusd._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_BNUSD_ADDRESS).toString(), repayAndWithdraw);
+            owner.xcall.recvCall(balanced.bnusd._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_BNUSD_ADDRESS).toString(), repayAndWithdraw);
 
             // Repay through transfer, then withdraw via xCall
             repayData = new JsonObject()
                 .add("_collateral", balanced.BSC_TOKEN_SYMBOL)
                 .add("_withdrawAmount", "0");
             byte[] repay = HubTokenMessages.xCrossTransfer(bscUser.toString(), loansNetAddress, amountToRepay, repayData.toString().getBytes());
-            owner.xcall.sendCall(balanced.bnusd._address(), new NetworkAddress(balanced.BSC_NID, balanced.BSC_BNUSD_ADDRESS).toString(), repay);
+            owner.xcall.recvCall(balanced.bnusd._address(), new NetworkAddress(balanced.BSC_NID, balanced.BSC_BNUSD_ADDRESS).toString(), repay);
 
             byte[] withdraw = LoansMessages.xWithdraw(amountToWithdraw, balanced.BSC_TOKEN_SYMBOL);
-            owner.xcall.sendCall(balanced.loans._address(), bscUser.toString(), withdraw);
+            owner.xcall.recvCall(balanced.loans._address(), bscUser.toString(), withdraw);
 
             // Repay and withdraw with bnUSD on the hub.
             byte[] deposit = HubTokenMessages.xCrossTransfer(bscHubUser.toString(), bscHubUser.toString(), amountToRepay, new byte[0]);
-            owner.xcall.sendCall(balanced.bnusd._address(), new NetworkAddress(balanced.BSC_NID, balanced.BSC_BNUSD_ADDRESS).toString(), deposit);
+            owner.xcall.recvCall(balanced.bnusd._address(), new NetworkAddress(balanced.BSC_NID, balanced.BSC_BNUSD_ADDRESS).toString(), deposit);
             repayData = new JsonObject()
                 .add("_collateral", balanced.BSC_TOKEN_SYMBOL)
                 .add("_withdrawAmount", amountToWithdraw.toString());
 
             byte[] repayTransfer = HubTokenMessages.xHubTransfer(loansNetAddress, amountToRepay, repayData.toString().getBytes());
-            owner.xcall.sendCall(balanced.bnusd._address(), bscHubUser.toString(), repayTransfer);
+            owner.xcall.recvCall(balanced.bnusd._address(), bscHubUser.toString(), repayTransfer);
 
             // Repay and withdraw with bnUSD on the ICON wallet.
             nativeLoanTaker.loans.returnAsset("bnUSD", amountToRepay, balanced.BSC_TOKEN_SYMBOL, "");
