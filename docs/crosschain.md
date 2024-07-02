@@ -20,22 +20,15 @@ The integration with xCall enables efficient cross-chain communication by transp
     - [Cross-Chain Transfer and Withdrawal Mechanism](#cross-chain-transfer-and-withdrawal-mechanism)
   - [3. xCall Manager Contract](#3-xcall-manager-contract)
     - [Configuration and Validation](#configuration-and-validation-2)
+    - [Ownership Proxy](#ownership-proxy)
     - [Protocol Management](#protocol-management)
 - [Cross-Chain Message Structures in Balanced](#cross-chain-message-structures-in-balanced)
   - [Asset Manager Contract](#asset-manager-contract)
   - [Balanced Dollar Contract](#balanced-dollar-contract)
   - [xCall Manager Contract](#xcall-manager-contract)
-- [Methods Involved in Cross-Chain Communications in Balanced](#methods-involved-in-cross-chain-communications-in-balanced)
-  - [Key Contracts and Methods](#key-contracts-and-methods)
-  - [Asset Manager Contract](#asset-manager-contract-1)
-  - [Balanced Dollar Contract](#balanced-dollar-contract-1)
-  - [xCall Manager Contract](#xcall-manager-contract-1)
 - [Supported Blockchains on Balanced](#supported-blockchains-on-balanced)
+  - [Methods Involved in Cross-Chain Communications in Balanced](#methods-involved-in-cross-chain-communications-in-balanced)
 - [Contract Details on Each Blockchain](#contract-details-on-each-blockchain)
-  - [ICON (Hub)](#icon-hub)
-    - [ICON Asset Manager Contract](#icon-asset-manager-contract)
-    - [Balanced Dollar Contract](#balanced-dollar-contract-2)
-    - [Governance Contract](#governance-contract)
   - [EVM-Compatible Blockchains (Ethereum, Binance Smart Chain, Avalanche, Base, Arbitrum)](#evm-compatible-blockchains-ethereum-binance-smart-chain-avalanche-base-arbitrum)
   - [Cosmos-Related Blockchains (Archway, Injective)](#cosmos-related-blockchains-archway-injective)
   - [SUI](#sui)
@@ -95,17 +88,10 @@ The spoke Balanced Dollar contract is also configured to interact with the xCall
 
 Balanced employs a burn and mint mechanism for handling cross-chain transfers and withdrawals of bnUSD:
 
-1. **Cross-Chain Transfer:**
-    - When a user initiates a cross-chain transfer in the spoke Balanced Dollar contract (i.e., transferring bnUSD to the ICON chain), the user's bnUSD balance on the spoke chain is burned.
-    - xCall is used to pass a cross-transfer message to the ICON Balanced Dollar contract.
-    - Upon receiving the encoded message, the respective Balanced Dollar contract on the ICON chain decodes it and mints an equivalent amount of bnUSD for the user on the ICON chain.
-
-2. **Withdrawal:**
-    - When a user wishes to convert ICON bnUSD back to the spoke chain's bnUSD, they initiate a withdrawal request on the ICON chain.
-    - The ICON Balanced Dollar contract burns the user's bnUSD amount on the ICON chain.
-    - A message is sent via xCall to the spoke Balanced Dollar contract.
-    - The spoke Balanced Dollar contract receives the message, verifies it, and mints the equivalent amount of bnUSD for the user on the spoke chain.
-
+  - When a user initiates a cross-chain transfer in the spoke Balanced Dollar contract (i.e., transferring bnUSD to the ICON chain), the user's bnUSD balance  is burned.
+  - xCall is used to pass a cross-transfer message to the ICON Balanced Dollar contract.
+  - Upon receiving the encoded message, the Balanced Dollar contract on the ICON chain decodes it and relays the message to the correct bnUSD contract on the target chain.
+  - bnUSD is minted on the target chain.
 In the event that a cross-chain transaction fails at any point, a rollback transaction is initiated to refund the bnUSD to the user.
 
 ## 3. xCall Manager Contract
@@ -114,7 +100,10 @@ The xCall Manager contract is a crucial component in the Balanced ecosystem, res
 
 ### Configuration and Validation
 
-In the xCall Manager contract, the ICON governance contract address is configured to enable identification and validation of the ICON governance contract. Similarly, the spoke xCall address is configured within the xCall Manager for the same purpose. This configuration ensures secure and verified communication between the ICON and spoke chain contracts.
+In the xCall Manager contract is the proxy of the ICON governance contract managing the Balanced DAO spoke contracts on a specific chain.
+
+### Ownership Proxy
+TODO
 
 ### Protocol Management
 
@@ -130,7 +119,6 @@ The ICON governance contract plays a crucial role in managing the protocols used
 
 - **Protocol Utilization:**
     - The spoke Asset Manager and the spoke Balanced Dollar contracts use the same protocols that are configured on the xCall Manager contract, ensuring proper and clear cross-chain communication.
-
 
 
 
@@ -244,94 +232,7 @@ Regardless of the blockchain's external methods, the message structures must rem
 
 Consistent message structures are critical for maintaining the integrity and reliability of cross-chain transactions within the Balanced ecosystem. By adhering to these standardized formats, the platform ensures smooth and secure communication between the ICON hub and various spoke chains, regardless of their underlying programming languages or external methods.secure communication between the ICON hub and various spoke chains, regardless of their underlying programming languages or external methods.
 
-# Methods Involved in Cross-Chain Communications in Balanced
 
-Cross-chain communication in the Balanced ecosystem involves multiple blockchains, each potentially supporting different programming languages for their smart contracts. Due to the inherent differences in language design, it is impractical to maintain identical external method signatures across all chains. Nevertheless, the Balanced architecture is designed to facilitate seamless cross-chain interactions, ensuring that while method signatures may vary, the core functionalities remain consistent.
-
-## Key Contracts and Methods
-
-The primary contracts involved in cross-chain communications within Balanced are the Asset Manager, Balanced Dollar, and xCall Manager contracts. Below is a detailed overview of the common methods used in these contracts for cross-chain operations.
-
-## Asset Manager Contract
-
-1. **Deposit**
-The "deposit" method is used to deposit user balances from a spoke chain to the ICON hub.
-
-* **Method Name:** `deposit`
-* **Purpose:** To deposit the user's balance.
-* **Typical Signature:**
-  ```solidity
-  external deposit(
-      address token,
-      uint amount,
-      string memory to,
-      bytes memory data
-  )
-  ```
-* **Description:** This method facilitates the transfer of tokens from the user’s account on the spoke chain to the Asset Manager contract. It includes parameters for the token address, the amount to be deposited, the recipient's network address as well as optional transaction data.
-
-1. **Handle Call Message**
-The "handleCallMessage" method handles messages from the ICON hub's Asset Manager contract. This includes processing withdrawal messages from the ICON Asset Manager contract and handling deposit revert messages from the spoke xCall.
-
-* **Method Name:** `handleCallMessage`
-* **Purpose:** To handle messages from the ICON hub's Asset Manager contract.
-* **Typical Signature:**
-  ```solidity
-  external handleCallMessage(
-      string calldata from,
-      bytes calldata data,
-      string[] calldata protocols
-  )
-  ```
-* **Description:** This method is invoked to process cross-chain messages, such as withdrawal requests from the ICON Asset Manager contract and deposit reverts. It validates the sender's address, decodes the message data, and applies the necessary protocols to complete the transaction.
-
-## Balanced Dollar Contract
-
-1. **Cross Transfer**
-The "crossTransfer" method enables the transfer of bnUSD stablecoin across chains.
-
-* **Method Name:** `crossTransfer`
-* **Purpose:** To facilitate cross-chain transfer of bnUSD stablecoin.
-* **Typical Signature:**
-  ```solidity
-  external crossTransfer(
-      string memory to,
-      uint value
-  )
-  ```
-* **Description:** This method handles the burning of bnUSD on the originating spoke chain and sends a message to the ICON hub to mint an equivalent amount of bnUSD for the recipient.
-
-2. **Handle Call Message**
-Similar to the Asset Manager, the "handleCallMessage" method in the Balanced Dollar contract processes messages from the ICON hub, including handling cross-transfer reverts.
-
-* **Method Name:** `handleCallMessage`
-* **Purpose:** To handle messages from the ICON hub's Balanced Dollar contract.
-* **Typical Signature:**
-  ```solidity
-  external handleCallMessage(
-      string calldata from,
-      bytes calldata data,
-      string[] calldata protocols
-  )
-  ```
-* **Description:** This method processes messages related to cross-chain bnUSD transfers, including managing reverts in case of transaction failures. It ensures that any cross-chain communication is correctly interpreted and executed.
-
-## xCall Manager Contract
-
-1. **Handle Call Message**
-The `handleCallMessage` method in the xCall Manager contract processes cross-chain protocol configuration messages as dictated by the ICON governance contract.
-
-* **Method Name:** `handleCallMessage`
-* **Purpose:** To handle messages related to protocol configuration from the ICON governance contract.
-* **Typical Signature:**
-  ```solidity
-  external handleCallMessage(
-      string calldata from,
-      bytes calldata data,
-      string[] calldata protocols
-  )
-  ```
-* **Description:** This method allows the xCall Manager contract to set up and update the necessary protocols for cross-chain transactions. It ensures that the protocols are correctly configured and disseminated to the relevant contracts.
 
 # Supported Blockchains on Balanced
 
@@ -350,12 +251,14 @@ Balanced's support for a wide range of blockchains through the xCall protocol en
 - Stellar
 - Solana
 
+##  Methods Involved in Cross-Chain Communications in Balanced
+Cross-chain communication in the Balanced ecosystem involves multiple blockchains, each potentially supporting different programming languages for their smart contracts. Due to the inherent differences in language design, it is impractical to maintain identical external method signatures across all chains. Nevertheless, the Balanced architecture is designed to facilitate seamless cross-chain interactions, ensuring that while method signatures may vary, the core functionalities remain consistent.
 
 # Contract Details on Each Blockchain
 
 Balanced utilizes a diverse codebase tailored to the programming languages and frameworks prevalent on each supported blockchain. The details of the smart contracts on each blockchain are as follows:
 
-## ICON (Hub)
+<!-- ## ICON (Hub)
 
 - **Programming Language:** Java
 - **Role:** Acts as the central hub, managing and tracking the balances of all tokens for users from every spoke chain. It facilitates cross-chain transactions and ensures the integrity and consistency of data across the network.
@@ -413,6 +316,7 @@ The Governance contract oversees the configuration and management of protocols f
     * Validates all cross-chain transactions to maintain the integrity of the network.
     * Ensures that all interactions between ICON and spoke chains adhere to the established protocols.
 
+-->
 ## EVM-Compatible Blockchains (Ethereum, Binance Smart Chain, Avalanche, Base, Arbitrum)
 
 * **Programming Language:** Solidity
