@@ -280,7 +280,7 @@ public class LoansImpl extends FloorLimited implements Loans {
             TokenUtils.burnAsset(_value);
             _returnAsset(to, _value, collateralSymbol);
             if (BigInteger.ZERO.compareTo(collateralToWithdraw) < 0 && to.equals(_from)) {
-                xWithdraw(_from, collateralToWithdraw, collateralSymbol);
+                xWithdraw(_from, collateralToWithdraw, collateralSymbol, null);
             }
         } else {
             String collateralSymbol = CollateralDB.getSymbol(token);
@@ -342,16 +342,19 @@ public class LoansImpl extends FloorLimited implements Loans {
         originateLoan(_collateralToBorrowAgainst, _amountToBorrow, from, _to, _data);
     }
 
-    public void xWithdraw(String from, BigInteger _value, String _collateralSymbol) {
+    public void xWithdraw(String from, BigInteger _value, String _collateralSymbol, @Optional String _to) {
+        if (_to == null || _to.equals("")) {
+            _to = from;
+        }
         removeCollateral(from, _value, _collateralSymbol);
         Address token = CollateralDB.getAddress(_collateralSymbol);
-        String fromNet = NetworkAddress.valueOf(from).net();
-        String nativeAddress = Context.call(String.class, getAssetManager(), "getNativeAssetAddress", token, fromNet);
-        if (nativeAddress != null && canWithdraw(fromNet) ) {
-            BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", fromNet, true);
-            Context.call(xCallFee, getAssetManager(), "withdrawTo", token, from, _value);
+        String toNet = NetworkAddress.valueOf(_to).net();
+        String nativeAddress = Context.call(String.class, getAssetManager(), "getNativeAssetAddress", token, toNet);
+        if (nativeAddress != null && canWithdraw(toNet) ) {
+            BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", toNet, true);
+            Context.call(xCallFee, getAssetManager(), "withdrawTo", token, _to, _value);
         } else {
-            Context.call(token, "hubTransfer", from, _value, new byte[0]);
+            Context.call(token, "hubTransfer", _to, _value, new byte[0]);
         }
     }
 
