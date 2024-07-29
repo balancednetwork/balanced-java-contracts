@@ -28,6 +28,7 @@ dependencies {
     compileOnly Dependencies.javaeeApi
     implementation Dependencies.javaeeScorex
     implementation project(':score-lib')
+    implementation Dependencies.minimalJson
 
     testImplementation Dependencies.javaeeUnitTest
     testImplementation Dependencies.junitJupiter
@@ -35,6 +36,7 @@ dependencies {
     testImplementation Dependencies.mockitoCore
     testImplementation Dependencies.mockitoInline
     testImplementation project(':test-lib')
+    testImplementation Dependencies.json
 
     intTestAnnotationProcessor project(':score-client')
     intTestImplementation project(':score-client')

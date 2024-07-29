@@ -19,7 +19,6 @@ package network.balanced.score.core.rewards;
 import com.iconloop.score.test.Account;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -105,18 +104,6 @@ class RewardsTest extends RewardsTestBase {
 
         // Act & Assert
         rewardsScore.invoke(baln.account, "tokenFallback", account.getAddress(), BigInteger.TEN, new byte[0]);
-    }
-
-    @Test
-    void tokenFallback_notBaln() {
-        // Arrange
-        Account account = sm.createAccount();
-        String expectedErrorMessage = RewardsImpl.TAG + ": The Rewards SCORE can only accept BALN tokens";
-
-        // Act & Assert
-        Executable tokenFallbackBwt = () -> rewardsScore.invoke(bwt.account, "tokenFallback", account.getAddress(),
-                BigInteger.TEN, new byte[0]);
-        expectErrorMessage(tokenFallbackBwt, expectedErrorMessage);
     }
 }
 

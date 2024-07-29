@@ -34,8 +34,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class RewardsTestSetup extends RewardsTestBase {
 
-    private final Account testAccount = Account.newScoreAccount(scoreCount++);
-
     @BeforeEach
     void setup() throws Exception {
         governance = new MockContract<>(GovernanceScoreInterface.class, sm, owner).account;
