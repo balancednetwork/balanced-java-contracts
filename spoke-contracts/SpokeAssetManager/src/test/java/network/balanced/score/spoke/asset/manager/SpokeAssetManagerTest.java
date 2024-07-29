@@ -21,6 +21,7 @@ import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
 import network.balanced.score.lib.interfaces.*;
+import network.balanced.score.lib.interfaces.tokens.*;
 import network.balanced.score.lib.test.mock.MockContract;
 import network.balanced.score.lib.utils.Names;
 
@@ -49,6 +50,7 @@ class SpokeAssetManagerTest extends TestBase {
 
     public MockContract<XCall> xCall;
     public MockContract<SpokeXCallManager> xCallManager;
+    public MockContract<HSP20> token;
     public Score assetManager;
     public static final String ICON_ASSET_MANAGER = "0x1.icon/cx1";
     public static final String NID = "0x111.icon";
@@ -63,6 +65,7 @@ class SpokeAssetManagerTest extends TestBase {
         xCallManager = new MockContract<>(SpokeXCallManagerScoreInterface.class, SpokeXCallManager.class, sm, owner);
         when(xCall.mock.getNetworkAddress()).thenReturn(new NetworkAddress(NID, xCall.getAddress()).toString());
         when(xCallManager.mock.getProtocols()).thenReturn(Map.of("sources", SOURCES, "destinations", DESTINATIONS));
+        token = new MockContract<>(HSP20ScoreInterface.class, HSP20.class, sm, owner);
         assetManager = sm.deploy(owner, SpokeAssetManagerImpl.class, xCall.getAddress(), ICON_ASSET_MANAGER,
                 xCallManager.getAddress());
     }
@@ -86,6 +89,22 @@ class SpokeAssetManagerTest extends TestBase {
         // Assert
         assertEquals(user.getBalance(), amount);
     }
+
+
+    @Test
+    void withdrawTo_token() {
+        // Arrange
+        BigInteger amount = BigInteger.TEN;
+        byte[] withdrawMsg = SpokeAssetManagerMessages.WithdrawTo(token.getAddress().toString(), user.getAddress().toString(),
+                amount);
+
+        // Act
+        assetManager.invoke(xCall.account, "handleCallMessage", ICON_ASSET_MANAGER, withdrawMsg, SOURCES);
+
+        // Assert
+        verify(token.mock).transfer(user.getAddress(), amount);
+    }
+
 
     @Test
     void withdrawTo_onlyAssetManager() {
@@ -182,6 +201,43 @@ class SpokeAssetManagerTest extends TestBase {
 
         // Assert
         assertEquals(user.getBalance(), amount);
+    }
+
+
+    @Test
+    void depositToken() {
+        // Arrange
+        BigInteger amount = BigInteger.valueOf(100);
+        BigInteger fee = BigInteger.TEN;
+        String to = new NetworkAddress("0x1.icon", "hx1").toString();
+        user.addBalance(fee);
+        when(xCall.mock.getFee("0x1.icon", true, SOURCES)).thenReturn(fee);
+        when(token.mock.transferFrom(user.getAddress(), assetManager.getAddress(), amount)).thenReturn(true);
+
+        byte[] depositMsg = AssetManagerMessages.deposit(token.getAddress().toString(), user.getAddress().toString(), to,
+                amount, new byte[0]);
+        byte[] revertMsg = SpokeAssetManagerMessages.DepositRevert(token.getAddress(), user.getAddress(), amount);
+
+        // Act
+        assetManager.invoke(user, fee, "depositToken", token.getAddress(), amount, to, new byte[0]);
+
+        // Assert
+        verify(token.mock).transferFrom(user.getAddress(), assetManager.getAddress(), amount);
+        verify(xCall.mock).sendCallMessage(ICON_ASSET_MANAGER, depositMsg, revertMsg, SOURCES, DESTINATIONS);
+    }
+
+    @Test
+    void depositRevert_token() {
+        // Arrange
+        BigInteger amount = BigInteger.TEN;
+        byte[] depositRevert = SpokeAssetManagerMessages.DepositRevert(token.getAddress(), user.getAddress(), amount);
+
+        // Act
+        assetManager.invoke(xCall.account, "handleCallMessage", new NetworkAddress(NID, xCall.getAddress()).toString(),
+                depositRevert, SOURCES);
+
+        // Assert
+        verify(token.mock).transfer(user.getAddress(), amount);
     }
 
     @Test

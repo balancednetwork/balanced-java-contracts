@@ -37,6 +37,7 @@ import java.util.Map;
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.BalancedFloorLimits.verifyNativeWithdraw;
+import static network.balanced.score.lib.utils.BalancedFloorLimits.verifyWithdraw;
 
 public class SpokeAssetManagerImpl extends FloorLimited implements SpokeAssetManager {
 
@@ -96,7 +97,9 @@ public class SpokeAssetManagerImpl extends FloorLimited implements SpokeAssetMan
 
     private void withdraw(Address token, Address to, BigInteger amount) {
         if (!token.equals(EOA_ZERO)) {
-            Context.revert("Only native token is currently supported");
+            verifyWithdraw(token, amount);
+            Context.call(token, "transfer", to, amount);
+            return;
         }
 
         verifyNativeWithdraw(amount);
@@ -149,17 +152,20 @@ public class SpokeAssetManagerImpl extends FloorLimited implements SpokeAssetMan
         _deposit(EOA_ZERO, Context.getCaller(), _to, BigInteger.ZERO, _data);
     }
 
-    // No way to support token deposit due to no way to recv fees, but not needed for Havah initially.
-    // @External
-    // public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
-    //     String unpackedData = new String(_data);
-    //     Context.require(!unpackedData.equals(""), TAG + ": Token Fallback: Data can't be empty");
-    //     JsonObject json = Json.parse(unpackedData).asObject();
-    //     String to = json.getString("to", "");
-    //     byte[] data = json.getString("data", "").getBytes();
+    @External
+    @Payable
+    public void depositToken(Address token, BigInteger amount, @Optional String _to, @Optional byte[] _data) {
+        Context.require((boolean)Context.call(token, "transferFrom", Context.getCaller(), Context.getAddress(), amount));
+        if (_to == null) {
+            _to = "";
+        }
 
-    //     _deposit(Context.getCaller(), _from, to, _value, data);
-    // }
+        if (_data == null) {
+            _data = new byte[0];
+        }
+        _deposit(token, Context.getCaller(), _to, amount, _data);
+    }
+
 
     private void _deposit(Address token, Address from, String _to, BigInteger amount, byte[] _data) {
         NetworkAddress iconAssetManager = NetworkAddress.valueOf(this.iconAssetManager.get());
@@ -172,8 +178,8 @@ public class SpokeAssetManagerImpl extends FloorLimited implements SpokeAssetMan
         }
 
         Context.require(amount.compareTo(BigInteger.ZERO) > 0, "amount must be larger than 0");
-        byte[] depositMsg =  AssetManagerMessages.deposit(EOA_ZERO.toString(), from.toString(), _to, amount, _data);
-        byte[] revertMsg = SpokeAssetManagerMessages.DepositRevert(EOA_ZERO, from, amount);
+        byte[] depositMsg =  AssetManagerMessages.deposit(token.toString(), from.toString(), _to, amount, _data);
+        byte[] revertMsg = SpokeAssetManagerMessages.DepositRevert(token, from, amount);
 
         Context.call(fee, xCall, "sendCallMessage", iconAssetManager.toString(), depositMsg, revertMsg, protocols.get("sources"), protocols.get("destinations"));
     }
