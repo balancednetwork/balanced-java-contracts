@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigInteger;
 
 import static network.balanced.score.core.loans.utils.LoansConstants.LIQUIDATION_RATIO;
+import static network.balanced.score.core.loans.utils.LoansConstants.LIQUIDATION_THRESHOLD;
 import static network.balanced.score.core.loans.utils.LoansConstants.LOCKING_RATIO;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.mockito.ArgumentMatchers.any;
@@ -50,7 +51,7 @@ class LoansTestCrosschain extends LoansTestBase {
 
         loans.invoke(governance.account, "addAsset", bnb.getAddress(), true, true);
         loans.invoke(governance.account, "setLockingRatio", BNB_SYMBOL, LOCKING_RATIO);
-        loans.invoke(governance.account, "setLiquidationRatio", BNB_SYMBOL, LIQUIDATION_RATIO);
+        loans.invoke(governance.account, "setLiquidationThreshold", BNB_SYMBOL, LIQUIDATION_THRESHOLD);
     }
 
     protected void takeLoanBNB(NetworkAddress account, BigInteger collateral, BigInteger loan) {

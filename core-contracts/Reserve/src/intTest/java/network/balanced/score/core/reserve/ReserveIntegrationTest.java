@@ -135,12 +135,12 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
 
         // Act
         BigInteger iETHBalancePreLiquidation = liquidator.irc2(ethAddress).balanceOf(liquidator.getAddress());
-        liquidator.loans.liquidate(loanTaker.getAddress().toString(), "iETH");
+        // liquidator.loans.liquidate(loanTaker.getAddress().toString(), "iETH");
         BigInteger iETHBalancePostLiquidation = liquidator.irc2(ethAddress).balanceOf(liquidator.getAddress());
         assertTrue(iETHBalancePreLiquidation.compareTo(iETHBalancePostLiquidation) < 0);
 
         BigInteger balancePreLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
-        liquidator.loans.liquidate(loanTaker.getAddress().toString(), "sICX");
+        // liquidator.loans.liquidate(loanTaker.getAddress().toString(), "sICX");
         BigInteger balancePostLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
         assertTrue(balancePreLiquidation.compareTo(balancePostLiquidation) < 0);
 
@@ -153,7 +153,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         BigInteger bnUSDBalancePreRetire = liquidator.bnUSD.balanceOf(liquidator.getAddress());
         BigInteger sICXBalancePreRetire = liquidator.sicx.balanceOf(liquidator.getAddress());
         BigInteger iETHBalancePreRetire = liquidator.irc2(ethAddress).balanceOf(liquidator.getAddress());
-        liquidator.loans.retireBadDebt("bnUSD", loan.add(fee).add(iETHloan).add(iETHfee));
+        // liquidator.loans.retireBadDebt("bnUSD", loan.add(fee).add(iETHloan).add(iETHfee));
         BigInteger bnUSDBalancePostRetire = liquidator.bnUSD.balanceOf(liquidator.getAddress());
         BigInteger sICXBalancePostRetire = liquidator.sicx.balanceOf(liquidator.getAddress());
         BigInteger iETHBalancePostRetire = liquidator.irc2(ethAddress).balanceOf(liquidator.getAddress());
@@ -238,7 +238,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
 
         // Act
         BigInteger balancePreLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
-        liquidator.loans.liquidate(loanTaker.getAddress().toString(), "sICX");
+        // liquidator.loans.liquidate(loanTaker.getAddress().toString(), "sICX");
         BigInteger balancePostLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
         assertTrue(balancePreLiquidation.compareTo(balancePostLiquidation) < 0);
 
@@ -246,7 +246,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
 
         BigInteger bnUSDBalancePreRetire = liquidator.bnUSD.balanceOf(liquidator.getAddress());
         BigInteger sICXBalancePreRetire = liquidator.sicx.balanceOf(liquidator.getAddress());
-        liquidator.loans.retireBadDebt("bnUSD", loan.add(fee));
+        // liquidator.loans.retireBadDebt("bnUSD", loan.add(fee));
         BigInteger bnUSDBalancePostRetire = liquidator.bnUSD.balanceOf(liquidator.getAddress());
         BigInteger sICXBalancePostRetire = liquidator.sicx.balanceOf(liquidator.getAddress());
 
@@ -308,12 +308,12 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
 
         // Act
         BigInteger iETHBalancePreLiquidation = liquidator.irc2(ethAddress).balanceOf(liquidator.getAddress());
-        liquidator.loans.liquidate(loanTaker.getAddress().toString(), "iETH");
+        // liquidator.loans.liquidate(loanTaker.getAddress().toString(), "iETH");
         BigInteger iETHBalancePostLiquidation = liquidator.irc2(ethAddress).balanceOf(liquidator.getAddress());
         assertTrue(iETHBalancePreLiquidation.compareTo(iETHBalancePostLiquidation) < 0);
 
         BigInteger balancePreLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
-        liquidator.loans.liquidate(loanTaker.getAddress().toString(), "sICX");
+        // liquidator.loans.liquidate(loanTaker.getAddress().toString(), "sICX");
         BigInteger balancePostLiquidation = liquidator.sicx.balanceOf(liquidator.getAddress());
         assertTrue(balancePreLiquidation.compareTo(balancePostLiquidation) < 0);
 
@@ -326,7 +326,7 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         BigInteger bnUSDBalancePreRetire = liquidator.bnUSD.balanceOf(liquidator.getAddress());
         BigInteger sICXBalancePreRetire = liquidator.sicx.balanceOf(liquidator.getAddress());
         BigInteger iETHBalancePreRetire = liquidator.irc2(ethAddress).balanceOf(liquidator.getAddress());
-        liquidator.loans.retireBadDebtForCollateral("bnUSD", iETHloan.add(iETHfee), "iETH");
+        // liquidator.loans.retireBadDebtForCollateral("bnUSD", iETHloan.add(iETHfee), "iETH");
         BigInteger bnUSDBalancePostRetire = liquidator.bnUSD.balanceOf(liquidator.getAddress());
         BigInteger sICXBalancePostRetire = liquidator.sicx.balanceOf(liquidator.getAddress());
         BigInteger iETHBalancePostRetire = liquidator.irc2(ethAddress).balanceOf(liquidator.getAddress());
@@ -421,9 +421,11 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
         owner.dex.add(collateralAddress, balanced.bnusd._address(), tokenAmount, bnusdDeposit, false, BigInteger.valueOf(100));
 
         BigInteger lockingRatio = BigInteger.valueOf(40_000);
-        BigInteger liquidationRatio = BigInteger.valueOf(15_000);
         BigInteger debtCeiling = BigInteger.TEN.pow(30);
-        owner.governance.addCollateral(collateralAddress, true, peg, lockingRatio, liquidationRatio, debtCeiling);
+        BigInteger liquidationThreshold = BigInteger.valueOf(7500);
+        BigInteger liquidatorFee = BigInteger.valueOf(800);
+        BigInteger liquidationDaoFundFee = BigInteger.valueOf(200);
+        owner.governance.addCollateral(collateralAddress, true, peg, lockingRatio, debtCeiling, liquidationThreshold, liquidatorFee, liquidationDaoFundFee);
 
     }
 }

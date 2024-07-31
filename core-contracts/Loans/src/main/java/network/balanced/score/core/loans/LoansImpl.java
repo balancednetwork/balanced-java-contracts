@@ -23,6 +23,7 @@ import network.balanced.score.core.loans.collateral.CollateralDB;
 import network.balanced.score.core.loans.debt.DebtDB;
 import network.balanced.score.core.loans.positions.Position;
 import network.balanced.score.core.loans.positions.PositionsDB;
+import network.balanced.score.core.loans.utils.LoansConstants.Standings;
 import network.balanced.score.core.loans.utils.PositionBatch;
 import network.balanced.score.core.loans.utils.TokenUtils;
 import network.balanced.score.lib.interfaces.Loans;
@@ -47,13 +48,15 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-import static network.balanced.score.core.loans.LoansVariables.loansOn;
 import static network.balanced.score.core.loans.LoansVariables.*;
 import static network.balanced.score.core.loans.utils.Checks.loansOn;
 import static network.balanced.score.core.loans.utils.LoansConstants.*;
 import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
+import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
+import static network.balanced.score.lib.utils.Constants.POINTS;
 import static network.balanced.score.lib.utils.Math.convertToNumber;
 import static network.balanced.score.lib.utils.Math.pow;
 
@@ -66,11 +69,12 @@ public class LoansImpl extends FloorLimited implements Loans {
             governance.set(_governance);
             loansOn.set(true);
             lockingRatio.set(SICX_SYMBOL, LOCKING_RATIO);
-            liquidationRatio.set(SICX_SYMBOL, LIQUIDATION_RATIO);
+            liquidationThreshold.set(SICX_SYMBOL, LIQUIDATION_THRESHOLD);
+            liquidatorFee.set(SICX_SYMBOL, LIQUIDATOR_FEE);
+            liquidationDaoFundFee.set(SICX_SYMBOL, DAO_FUND_FEE);
             originationFee.set(ORIGINATION_FEE);
             redemptionFee.set(REDEMPTION_FEE);
             redemptionDaoFee.set(REDEMPTION_DAO_FEE);
-            liquidationReward.set(LIQUIDATION_REWARD);
             retirementBonus.set(BAD_DEBT_RETIREMENT_BONUS);
             newLoanMinimum.set(NEW_BNUSD_LOAN_MINIMUM);
             redeemBatch.set(REDEEM_BATCH_SIZE);
@@ -199,7 +203,7 @@ public class LoansImpl extends FloorLimited implements Loans {
 
     @External(readonly = true)
     public List<Map<String, Object>> getBorrowers(Address collateralAddress, int nrOfPositions,
-                                                  @Optional int startId) {
+            @Optional int startId) {
         return DebtDB.getBorrowers(collateralAddress, nrOfPositions, startId);
     }
 
@@ -385,13 +389,10 @@ public class LoansImpl extends FloorLimited implements Loans {
     }
 
     @External
-    public void retireBadDebt(String _symbol, BigInteger _value) {
+    public void cancelBadDebt(String _symbol, BigInteger _value) {
         checkStatus();
-        loansOn();
-        Context.require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Amount retired must be greater than zero.");
-        Address from = Context.getCaller();
-
-        Context.require(TokenUtils.balanceOf(getBnusd(), from).compareTo(_value) >= 0, TAG + ": Insufficient balance.");
+        Context.require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Amount cancelled must be greater than zero.");
+        Address caller = Context.getCaller();
 
         BigInteger totalBadDebt = BigInteger.ZERO;
         BigInteger remainingValue = _value;
@@ -402,10 +403,8 @@ public class LoansImpl extends FloorLimited implements Loans {
             }
 
             BigInteger badDebtAmount = badDebt.min(remainingValue);
-            TokenUtils.burnAssetFrom(from, badDebtAmount);
-            BigInteger collateralToRedeem = badDebtRedeem(from, collateralSymbol, badDebtAmount);
-            transferCollateral(collateralSymbol, from, collateralToRedeem, "Bad Debt redeemed.", new byte[0]);
-
+            TokenUtils.burnAssetFrom(caller, badDebtAmount);
+            DebtDB.cancelBadDebt(collateralSymbol, badDebtAmount);
             remainingValue = remainingValue.subtract(badDebtAmount);
             totalBadDebt = totalBadDebt.add(badDebtAmount);
             if (remainingValue.equals(BigInteger.ZERO)) {
@@ -413,34 +412,7 @@ public class LoansImpl extends FloorLimited implements Loans {
             }
         }
 
-        Context.require(totalBadDebt.compareTo(BigInteger.ZERO) > 0, TAG + ": No bad debt for " + BNUSD_SYMBOL);
-        Context.require(_value.compareTo(totalBadDebt) >= 0, TAG + "Cannot retire more debt than value");
-
-        BadDebtRetired(from, BNUSD_SYMBOL, totalBadDebt);
-    }
-
-    @External
-    public void retireBadDebtForCollateral(String _symbol, BigInteger _value, String _collateralSymbol) {
-        checkStatus();
-        loansOn();
-        Context.require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Amount retired must be greater than zero.");
-
-        Address from = Context.getCaller();
-
-        Context.require(TokenUtils.balanceOf(getBnusd(), from).compareTo(_value) >= 0, TAG + ": Insufficient balance.");
-
-        BigInteger badDebt = DebtDB.getBadDebt(_collateralSymbol);
-        Context.require(badDebt.compareTo(BigInteger.ZERO) > 0, TAG + ": No bad debt for " + BNUSD_SYMBOL);
-
-        BigInteger badDebtRedeemed = badDebt.min(_value);
-        Context.require(badDebtRedeemed.compareTo(BigInteger.ZERO) >= 0, TAG + ": Amount retired must be greater than" +
-                " zero.");
-        TokenUtils.burnAssetFrom(from, badDebtRedeemed);
-
-        BigInteger collateralToRedeem = badDebtRedeem(from, _collateralSymbol, badDebtRedeemed);
-
-        transferCollateral(_collateralSymbol, from, collateralToRedeem, "Bad Debt redeemed.", new byte[0]);
-        BadDebtRetired(from, _symbol, badDebtRedeemed);
+        BadDebtCancelled(caller.toString(), _symbol, totalBadDebt);
     }
 
     @External
@@ -588,74 +560,104 @@ public class LoansImpl extends FloorLimited implements Loans {
     }
 
     @External
-    public void liquidate(String _owner, @Optional String _collateralSymbol) {
+    public void liquidate(String _owner, BigInteger _amount, @Optional String _collateralSymbol) {
+        // Validate input and initial conditions
+        Context.require(_amount.signum() > 0, TAG + ": Liquidation amount should be a positive number");
         checkStatus();
         loansOn();
-        String collateralSymbol = optionalDefault(_collateralSymbol, SICX_SYMBOL);
-        Context.require(PositionsDB.hasPosition(_owner), TAG + ": This address does not have a position on Balanced.");
-        Position position = PositionsDB.getPosition(_owner);
-        Standings standing = position.getStanding(collateralSymbol).standing;
 
+        // Default collateral symbol to SICX_SYMBOL if not provided
+        String symbol = optionalDefault(_collateralSymbol, SICX_SYMBOL);
+
+        // Ensure the position exists
+        Context.require(PositionsDB.hasPosition(_owner), TAG + ": This address does not have a position on Balanced.");
+
+        Position position = PositionsDB.getPosition(_owner);
+        Standings standing = position.getStanding(symbol).standing;
+
+        // Return if the standing is not LIQUIDATE
         if (standing != Standings.LIQUIDATE) {
             return;
         }
 
-        BigInteger collateral = position.getCollateral(collateralSymbol);
-        BigInteger reward = collateral.multiply(liquidationReward.get()).divide(POINTS);
-        BigInteger forPool = collateral.subtract(reward);
-        BigInteger totalDebt = position.getDebt(collateralSymbol);
-        BigInteger debt = position.getDebt(collateralSymbol);
+        // Retrieve collateral and debt amounts
+        BigInteger collateral = position.getCollateral(symbol);
+        BigInteger totalDebt = position.getDebt(symbol);
 
-        if (debt.compareTo(BigInteger.ZERO) > 0) {
-            BigInteger badDebt = DebtDB.getBadDebt(collateralSymbol);
-            DebtDB.setBadDebt(collateralSymbol, badDebt.add(debt));
-            BigInteger share = forPool.multiply(debt).divide(totalDebt);
-            totalDebt = totalDebt.subtract(debt);
-            forPool = forPool.subtract(share);
-            DebtDB.setLiquidationPool(collateralSymbol, DebtDB.getLiquidationPool(collateralSymbol).add(share));
-            position.setDebt(collateralSymbol, null);
-            Context.call(getRewards(), "updateBalanceAndSupply", "Loans", DebtDB.getTotalDebt(), _owner.toString(), position.getTotalDebt());
+        // Fetch thresholds and fees
+        BigInteger liquidationThreshold = getLiquidationThreshold(symbol);
+        BigInteger liquidationFee = getLiquidatorFee(symbol);
+        BigInteger daofundFee = getLiquidationDaoFundFee(symbol);
+        BigInteger totalFee = liquidationFee.add(daofundFee);
+
+        // Calculate various thresholds and prices
+        BigInteger userCollateralUSD = position.totalCollateralInUSD(symbol, true);
+        BigInteger collateralPrice = TokenUtils.getPriceInUSD(symbol);
+        BigInteger liquidationPrice = collateralPrice.multiply(POINTS.subtract(totalFee)).divide(POINTS);
+        BigInteger liquidationThresholdValue = userCollateralUSD.multiply(liquidationThreshold).divide(POINTS);
+
+        // Determine the maximum amount to liquidate
+        BigInteger maxAmountToLiquidateTotalCollateral = collateral.multiply(liquidationPrice).divide(EXA);
+        BigInteger liquidationAmount = _amount.min(maxAmountToLiquidateTotalCollateral);
+        BigInteger adjustedLoan = totalDebt.subtract(liquidationThresholdValue);
+        BigInteger effectiveCollateralValue = POINTS
+                .subtract(liquidationThreshold.multiply(collateralPrice).divide(liquidationPrice));
+
+        // Calculate the maximum amount to spend to maintain threshold
+        BigInteger maxAmountToSpendToMaintainThreshold = effectiveCollateralValue.compareTo(BigInteger.ZERO) > 0
+                ? adjustedLoan.multiply(POINTS).divide(effectiveCollateralValue)
+                : liquidationAmount;
+
+        // Finalize liquidation amount and calculate collateral to liquidate
+        liquidationAmount = liquidationAmount.min(maxAmountToSpendToMaintainThreshold);
+        BigInteger collateralToLiquidate = liquidationAmount.multiply(EXA).divide(liquidationPrice);
+        BigInteger principalNeeded = liquidationAmount;
+
+        BigInteger remainingCollateral = collateral.subtract(collateralToLiquidate);
+        BigInteger remainingDebt = totalDebt.subtract(principalNeeded);
+
+        // Ensure minimum debt threshold is maintained
+        BigInteger minDebtThreshold = DebtDB.getMinimumDebtThreshold();
+        if (remainingDebt.compareTo(minDebtThreshold) < 0 && remainingCollateral.compareTo(BigInteger.ZERO) > 0) {
+            principalNeeded = _amount.min(maxAmountToLiquidateTotalCollateral).min(totalDebt);
+            collateralToLiquidate = principalNeeded.multiply(EXA).divide(liquidationPrice);
+            remainingCollateral = collateral.subtract(collateralToLiquidate);
+            remainingDebt = totalDebt.subtract(principalNeeded);
         }
 
-        position.setCollateral(collateralSymbol, null);
-        transferCollateral(collateralSymbol, Context.getCaller(), reward, "Liquidation reward of", new byte[0]);
+        // Calculate fees
+        BigInteger daofundFeeAmount = collateralToLiquidate.multiply(daofundFee).divide(POINTS);
+        BigInteger liquidationFeeAmount = collateralToLiquidate.multiply(liquidationFee).divide(POINTS);
+        BigInteger liquidatedCollateral = collateralToLiquidate.subtract(daofundFeeAmount)
+                .subtract(liquidationFeeAmount);
 
+        // Update the position with remaining collateral and debt
+        position.setCollateral(symbol, remainingCollateral);
+        position.setDebt(symbol, remainingDebt);
+
+        // Update bad debt if collateral is zero but debt remains
+        if (remainingCollateral.compareTo(BigInteger.ZERO) == 0 && remainingDebt.compareTo(BigInteger.ZERO) > 0) {
+            BigInteger badDebt = DebtDB.getBadDebt(symbol);
+            DebtDB.setBadDebt(symbol, badDebt.add(remainingDebt));
+            position.setDebt(symbol, null);
+
+        }
+
+        // Burn the liquidated asset
+        TokenUtils.burnAssetFrom(Context.getCaller(), principalNeeded);
+
+        // Update balances and supply in the rewards system
+        Context.call(getRewards(), "updateBalanceAndSupply", "Loans", DebtDB.getTotalDebt(), _owner,
+                position.getTotalDebt());
+
+        // Transfer collateral for liquidation and fees
+        transferCollateral(symbol, Context.getCaller(), liquidatedCollateral.add(liquidationFeeAmount),
+                "Liquidation reward of", new byte[0]);
+        transferCollateral(symbol, getDaofund(), daofundFeeAmount, "Daofund fee", new byte[0]);
+
+        // Log the liquidation event
         String logMessage = collateral + " liquidated from " + _owner;
         Liquidate(_owner, collateral, logMessage);
-    }
-
-    private BigInteger badDebtRedeem(Address from, String collateralSymbol, BigInteger badDebtAmount) {
-
-        Address collateralAddress = CollateralDB.getAddress(collateralSymbol);
-
-        BigInteger collateralDecimals = pow(BigInteger.TEN, TokenUtils.decimals(collateralAddress).intValue());
-        BigInteger collateralPriceInUSD = TokenUtils.getPriceInUSD(collateralSymbol);
-        BigInteger inPool = DebtDB.getLiquidationPool(collateralSymbol);
-        BigInteger badDebt = DebtDB.getBadDebt(collateralSymbol).subtract(badDebtAmount);
-
-        BigInteger bonus = POINTS.add(retirementBonus.get());
-        BigInteger badDebtCollateral =
-                bonus.multiply(badDebtAmount).multiply(EXA).multiply(collateralDecimals).
-                        divide(collateralPriceInUSD.multiply(POINTS).multiply(EXA));
-
-        DebtDB.setBadDebt(collateralSymbol, badDebt);
-        if (inPool.compareTo(badDebtCollateral) >= 0) {
-            DebtDB.setLiquidationPool(collateralSymbol, inPool.subtract(badDebtCollateral));
-            if (badDebt.equals(BigInteger.ZERO)) {
-                transferCollateral(collateralSymbol, getReserve(), inPool.subtract(badDebtCollateral), "Sweep to " +
-                        "ReserveFund:", new byte[0]);
-                DebtDB.setLiquidationPool(collateralSymbol, null);
-            }
-
-            return badDebtCollateral;
-        }
-
-        DebtDB.setLiquidationPool(collateralSymbol, null);
-        BigInteger remainingCollateral = badDebtCollateral.subtract(inPool);
-        BigInteger remainingValue = remainingCollateral.multiply(collateralPriceInUSD).divide(collateralDecimals);
-        Context.call(getReserve(), "redeem", from, remainingValue, collateralSymbol);
-
-        return inPool;
     }
 
     private void depositCollateral(String _symbol, BigInteger _amount, String _from) {
@@ -851,15 +853,48 @@ public class LoansImpl extends FloorLimited implements Loans {
     }
 
     @External
-    public void setLiquidationRatio(String _symbol, BigInteger _ratio) {
+    public void setLiquidationThreshold(String _symbol, BigInteger _threshold) {
         onlyGovernance();
-        Context.require(_ratio.compareTo(BigInteger.ZERO) > 0, "Liquidation Ratio has to be greater than 0");
-        liquidationRatio.set(_symbol, _ratio);
+        Context.require(_threshold.compareTo(BigInteger.ZERO) > 0, "Liquidation Threshold has to be greater than 0");
+        liquidationThreshold.set(_symbol, _threshold);
     }
 
     @External(readonly = true)
-    public BigInteger getLiquidationRatio(String _symbol) {
-        return liquidationRatio.get(_symbol);
+    public BigInteger getLiquidationThreshold(String _symbol) {
+        return liquidationThreshold.getOrDefault(_symbol, BigInteger.ZERO);
+    }
+
+    @External
+    public void setLiquidatorFee(String _symbol, BigInteger _fee) {
+        onlyGovernance();
+        liquidatorFee.set(_symbol, _fee);
+    }
+
+    @External(readonly = true)
+    public BigInteger getLiquidatorFee(String _symbol) {
+        return liquidatorFee.getOrDefault(_symbol, BigInteger.ZERO);
+    }
+
+    @External
+    public void setLiquidationDaoFundFee(String _symbol, BigInteger _fee) {
+        onlyGovernance();
+        liquidationDaoFundFee.set(_symbol, _fee);
+    }
+
+    @External(readonly = true)
+    public BigInteger getLiquidationDaoFundFee(String _symbol) {
+        return liquidationDaoFundFee.getOrDefault(_symbol, BigInteger.ZERO);
+    }
+
+    @External
+    public void setMinimumDebtThreshold(BigInteger _threshold) {
+        onlyGovernance();
+        DebtDB.setMinimumDebtThreshold(_threshold);
+    }
+
+    @External(readonly = true)
+    public BigInteger getMinimumDebtThreshold() {
+        return DebtDB.getMinimumDebtThreshold();
     }
 
     @External
@@ -894,12 +929,6 @@ public class LoansImpl extends FloorLimited implements Loans {
     public void setRetirementBonus(BigInteger _points) {
         onlyGovernance();
         retirementBonus.set(_points);
-    }
-
-    @External
-    public void setLiquidationReward(BigInteger _points) {
-        onlyGovernance();
-        liquidationReward.set(_points);
     }
 
     @External
@@ -993,13 +1022,14 @@ public class LoansImpl extends FloorLimited implements Loans {
     public Map<String, Object> getParameters() {
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("locking ratio", lockingRatio.get(SICX_SYMBOL));
-        parameters.put("liquidation ratio", liquidationRatio.get(SICX_SYMBOL));
+        parameters.put("liquidation threshold", liquidationThreshold.get(SICX_SYMBOL));
         parameters.put("origination fee", originationFee.get());
         parameters.put("redemption fee", redemptionFee.get());
-        parameters.put("liquidation reward", liquidationReward.get());
         parameters.put("new loan minimum", newLoanMinimum.get());
         parameters.put("time offset", timeOffset.getOrDefault(BigInteger.ZERO));
         parameters.put("retire percent max", maxRetirePercent.get());
+        parameters.put("liquidator fee", liquidatorFee.get(SICX_SYMBOL));
+        parameters.put("liquidation daofund fee", liquidationDaoFundFee.get(SICX_SYMBOL));
 
         return parameters;
     }
@@ -1042,7 +1072,7 @@ public class LoansImpl extends FloorLimited implements Loans {
     }
 
     @EventLog(indexed = 3)
-    public void BadDebtRetired(Address account, String symbol, BigInteger amount) {
+    public void BadDebtCancelled(String account, String symbol, BigInteger amount) {
     }
 
     @EventLog(indexed = 2)

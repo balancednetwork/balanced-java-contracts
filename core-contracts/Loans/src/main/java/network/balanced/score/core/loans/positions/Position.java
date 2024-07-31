@@ -255,14 +255,14 @@ public class Position {
             return standing;
         }
 
-        standing.ratio = standing.collateral.multiply(EXA).divide(standing.totalDebt);
-        BigInteger liquidationRatio = LoansVariables.liquidationRatio.get(collateralSymbol);
-        Context.require(liquidationRatio != null && liquidationRatio.compareTo(BigInteger.ZERO) > 0, "Liquidation " +
-                "ratio for " + collateralSymbol + " is not set");
-        if (standing.ratio.compareTo(liquidationRatio.multiply(EXA).divide(POINTS)) > 0) {
-            standing.standing = Standings.MINING;
-        } else {
+        standing.ratio = standing.totalDebt.multiply(EXA).divide(standing.collateral);
+        BigInteger liquidationThreshold = LoansVariables.liquidationThreshold.get(collateralSymbol);
+        Context.require(liquidationThreshold != null && liquidationThreshold.compareTo(BigInteger.ZERO) > 0, "Liquidation " +
+                "threshold for " + collateralSymbol + " is not set");
+        if (standing.ratio.compareTo(liquidationThreshold.multiply(EXA).divide(POINTS)) > 0) {
             standing.standing = Standings.LIQUIDATE;
+        } else {
+            standing.standing = Standings.MINING;
         }
 
         return standing;

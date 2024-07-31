@@ -31,6 +31,9 @@ public class LoansConstants extends Constants {
     public static final BigInteger REDEMPTION_DAO_FEE = BigInteger.valueOf(50);
     public static final BigInteger BAD_DEBT_RETIREMENT_BONUS = BigInteger.valueOf(1_000);
     public static final BigInteger MAX_RETIRE_PERCENT = BigInteger.valueOf(100);
+    public static final BigInteger LIQUIDATION_THRESHOLD = BigInteger.valueOf(8500);
+    public static final BigInteger LIQUIDATOR_FEE = BigInteger.valueOf(400);
+    public static final BigInteger DAO_FUND_FEE = BigInteger.valueOf(100);
 
     //In USD
     public static final BigInteger NEW_BNUSD_LOAN_MINIMUM = BigInteger.TEN.multiply(EXA);
