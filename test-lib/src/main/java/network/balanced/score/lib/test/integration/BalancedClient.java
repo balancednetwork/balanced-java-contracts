@@ -133,7 +133,7 @@ public class BalancedClient {
     }
 
     public void borrowFrom(String collateral, BigInteger amount) {
-        loans.borrow(collateral, "bnUSD", amount);
+        loans.borrow(collateral, "bnUSD", amount, null, null);
     }
 
     @SuppressWarnings("unchecked")

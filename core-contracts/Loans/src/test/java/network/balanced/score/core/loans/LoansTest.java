@@ -414,7 +414,7 @@ class LoansTest extends LoansTestBase {
         takeLoanSICX(account, collateral, BigInteger.ZERO);
 
         // Act
-        loans.invoke(account, "borrow", "sICX", "bnUSD", loan);
+        loans.invoke(account, "borrow", "sICX", "bnUSD", loan, "", new byte[0]);
         // Assert
         Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", account.getAddress().toString());
         Map<String, Map<String, BigInteger>> assetHoldings = (Map<String, Map<String, BigInteger>>) position.get(
@@ -457,13 +457,13 @@ class LoansTest extends LoansTestBase {
         loans.invoke(governance.account, "setLockingRatio", "iETH", iETHLockingRatio);
 
         // Assert
-        Executable borrowSICX = () -> loans.invoke(account, "borrow", "sICX", "bnUSD", sICXMaxLoan.add(BigInteger.ONE));
-        Executable borrowIETH = () -> loans.invoke(account, "borrow", "iETH", "bnUSD", iETHMaxLoan.add(BigInteger.ONE));
+        Executable borrowSICX = () -> loans.invoke(account, "borrow", "sICX", "bnUSD", sICXMaxLoan.add(BigInteger.ONE), "", new byte[0]);
+        Executable borrowIETH = () -> loans.invoke(account, "borrow", "iETH", "bnUSD", iETHMaxLoan.add(BigInteger.ONE), "", new byte[0]);
         expectErrorMessage(borrowSICX, "collateral is insufficient to originate a loan of");
         expectErrorMessage(borrowIETH, "collateral is insufficient to originate a loan of");
 
-        loans.invoke(account, "borrow", "sICX", "bnUSD", sICXMaxLoan);
-        loans.invoke(account, "borrow", "iETH", "bnUSD", iETHMaxLoan);
+        loans.invoke(account, "borrow", "sICX", "bnUSD", sICXMaxLoan,  "", new byte[0]);
+        loans.invoke(account, "borrow", "iETH", "bnUSD", iETHMaxLoan,  "", new byte[0]);
 
         verifyTotalDebt(iETHMaxDebt.add(sICXMaxDebt).divide(EXA));
     }
@@ -480,7 +480,7 @@ class LoansTest extends LoansTestBase {
         takeLoaniETH(account, collateral, BigInteger.ZERO);
 
         // Act
-        loans.invoke(account, "borrow", "iETH", "bnUSD", loan);
+        loans.invoke(account, "borrow", "iETH", "bnUSD", loan, "", new byte[0]);
 
         // Assert
         Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", account.getAddress().toString());
@@ -509,11 +509,11 @@ class LoansTest extends LoansTestBase {
 
         // Act & Assert
         String expectedErrorMessage = "BalancedLoansPositions: Cannot mint more bnUSD on collateral iETH";
-        Executable overDebtCeilingiETH = () -> loans.invoke(account, "borrow", "iETH", "bnUSD", iETHLoan);
+        Executable overDebtCeilingiETH = () -> loans.invoke(account, "borrow", "iETH", "bnUSD", iETHLoan, "", new byte[0]);
         expectErrorMessage(overDebtCeilingiETH, expectedErrorMessage);
 
         expectedErrorMessage = "BalancedLoansPositions: Cannot mint more bnUSD on collateral sICX";
-        Executable overDebtCeilingsICX = () -> loans.invoke(account, "borrow", "sICX", "bnUSD", sICXLoan);
+        Executable overDebtCeilingsICX = () -> loans.invoke(account, "borrow", "sICX", "bnUSD", sICXLoan, "", new byte[0]);
         expectErrorMessage(overDebtCeilingsICX, expectedErrorMessage);
     }
 
@@ -535,8 +535,8 @@ class LoansTest extends LoansTestBase {
         loans.invoke(governance.account, "setDebtCeiling", "sICX", sICXLoan.add(sICXExpectedFee));
 
         // Act
-        loans.invoke(account, "borrow", "iETH", "bnUSD", iETHLoan);
-        loans.invoke(account, "borrow", "sICX", "bnUSD", sICXLoan);
+        loans.invoke(account, "borrow", "iETH", "bnUSD", iETHLoan, "", new byte[0]);
+        loans.invoke(account, "borrow", "sICX", "bnUSD", sICXLoan, "", new byte[0]);
 
         // Assert
         Map<String, Object> position = (Map<String, Object>) loans.call("getAccountPositions", account.getAddress().toString());
@@ -625,8 +625,8 @@ class LoansTest extends LoansTestBase {
                 loan + " bnUSD when max_debt_value = 0," +
                 " new_debt_value = " + loan.add(expectedFee) + ", which includes a fee of " +
                 expectedFee + " bnUSD, given an existing loan value of 0.";
-        Executable returnToMuch = () -> loans.invoke(account, "borrow", "iETH", "bnUSD", loan);
-        expectErrorMessage(returnToMuch, expectedErrorMessage);
+        Executable borrowWrong = () -> loans.invoke(account, "borrow", "iETH", "bnUSD", loan, "", new byte[0]);
+        expectErrorMessage(borrowWrong, expectedErrorMessage);
 
 
         // Assert
@@ -658,7 +658,7 @@ class LoansTest extends LoansTestBase {
 
         // Act & Assert
         String expectedErrorMessage = "Reverted(0): Locking ratio for iBTC is not set";
-        Executable loanWithoutLockingRatio = () -> loans.invoke(account, "borrow", "iBTC", "bnUSD", loan);
+        Executable loanWithoutLockingRatio = () -> loans.invoke(account, "borrow", "iBTC", "bnUSD", loan, "", new byte[0]);
         expectErrorMessage(loanWithoutLockingRatio, expectedErrorMessage);
     }
 
@@ -673,7 +673,7 @@ class LoansTest extends LoansTestBase {
 
         // Act & Assert
         String expectedErrorMessage = "_amountToBorrow needs to be larger than 0";
-        Executable negativeLoan = () -> loans.invoke(account, "borrow", "sICX", "bnUSD", sICXLoan);
+        Executable negativeLoan = () -> loans.invoke(account, "borrow", "sICX", "bnUSD", sICXLoan, "", new byte[0]);
         expectErrorMessage(negativeLoan, expectedErrorMessage);
     }
 
@@ -726,8 +726,8 @@ class LoansTest extends LoansTestBase {
         when(bnusd.mock.balanceOf(account.getAddress())).thenReturn(iETHLoan.add(loan));
 
         // Act
-        loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, "sICX");
-        loans.invoke(account, "returnAsset", "bnUSD", iETHloanToRepay, "iETH");
+        loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, "sICX", "");
+        loans.invoke(account, "returnAsset", "bnUSD", iETHloanToRepay, "iETH", "");
 
         // Assert
         verify(bnusd.mock).burnFrom(account.getAddress(), loanToRepay);
@@ -741,6 +741,31 @@ class LoansTest extends LoansTestBase {
     }
 
     @Test
+    void returnAsset_to() {
+        // Arrange
+        Account account = sm.createAccount();
+        Account repayer = sm.createAccount();
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
+
+
+        BigInteger loanToRepay = BigInteger.valueOf(100).multiply(EXA);
+
+        takeLoanICX(account, "bnUSD", collateral, loan);
+        when(bnusd.mock.balanceOf(repayer.getAddress())).thenReturn(loanToRepay);
+
+        // Act
+        loans.invoke(repayer, "returnAsset", "bnUSD", loanToRepay, "sICX", account.getAddress().toString());
+
+        // Assert
+        verify(bnusd.mock).burnFrom(repayer.getAddress(), loanToRepay);
+        verifyPosition(account.getAddress(), collateral, loan.subtract(loanToRepay).add(expectedFee), "sICX");
+        BigInteger expectedTotal = loan.subtract(loanToRepay).add(expectedFee);
+        verifyTotalDebt(expectedTotal);
+    }
+
+    @Test
     void returnAssetAndReopenPosition() {
         // Arrange
         Account account = sm.createAccount();
@@ -750,7 +775,7 @@ class LoansTest extends LoansTestBase {
 
         takeLoanICX(account, "bnUSD", collateral, loan);
         when(bnusd.mock.balanceOf(account.getAddress())).thenReturn(expectedFee.add(loan));
-        loans.invoke(account, "returnAsset", "bnUSD", loan.add(expectedFee), "sICX");
+        loans.invoke(account, "returnAsset", "bnUSD", loan.add(expectedFee), "sICX", "");
 
         // Assert
         assertFalse((boolean) loans.call("hasDebt", account.getAddress().toString()));
@@ -781,7 +806,7 @@ class LoansTest extends LoansTestBase {
         takeLoanICX(account, "bnUSD", collateral, loan);
 
         // Assert & Act
-        Executable returnToMuch = () -> loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, "sICX");
+        Executable returnToMuch = () -> loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, "sICX", "");
         expectErrorMessage(returnToMuch, expectedErrorMessage);
     }
 
@@ -799,7 +824,7 @@ class LoansTest extends LoansTestBase {
         when(bnusd.mock.balanceOf(account.getAddress())).thenReturn(loan);
 
         // Assert & Act
-        Executable returnForiETH = () -> loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, "iETH");
+        Executable returnForiETH = () -> loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, "iETH", "");
         expectErrorMessage(returnForiETH, expectedErrorMessage);
     }
 
@@ -818,7 +843,7 @@ class LoansTest extends LoansTestBase {
 
         // Assert & Act
         Executable returnWithInsufficientBalance = () -> loans.invoke(account, "returnAsset", "bnUSD", loanToRepay,
-                "sICX");
+                "sICX", "");
         expectErrorMessage(returnWithInsufficientBalance, expectedErrorMessage);
     }
 
@@ -833,7 +858,7 @@ class LoansTest extends LoansTestBase {
                 "does not have a position in Balanced";
 
         // Assert & Act
-        Executable returnWithNoPosition = () -> loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, "sICX");
+        Executable returnWithNoPosition = () -> loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, "sICX", "");
         expectErrorMessage(returnWithNoPosition, expectedErrorMessage);
     }
 
@@ -857,7 +882,7 @@ class LoansTest extends LoansTestBase {
         verifyTotalDebt(expectedDebt.multiply(BigInteger.TWO));
 
         // Act
-        loans.invoke(loanRepayer, "returnAsset", "bnUSD", loanToRepay, "sICX");
+        loans.invoke(loanRepayer, "returnAsset", "bnUSD", loanToRepay, "sICX", "");
 
         // Assert
         verify(bnusd.mock).burnFrom(loanRepayer.getAddress(), loanToRepay);

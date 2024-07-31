@@ -18,7 +18,7 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
-import icon.xcall.lib.annotation.XCall;
+import network.balanced.score.lib.annotations.XCall;
 import network.balanced.score.lib.interfaces.addresses.AddressManager;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.Version;
@@ -78,7 +78,7 @@ public interface Loans extends Name, AddressManager, Version, XTokenReceiver, Fl
     BigInteger getBnusdValue(String _name);
 
     @External
-    void borrow(String _collateralToBorrowAgainst, String _assetToBorrow, BigInteger _amountToBorrow);
+    void borrow(String _collateralToBorrowAgainst, String _assetToBorrow, BigInteger _amountToBorrow, @Optional String _to,  @Optional byte[] _data);
 
     @External
     @Payable
@@ -89,7 +89,7 @@ public interface Loans extends Name, AddressManager, Version, XTokenReceiver, Fl
     void cancelBadDebt(String _symbol, BigInteger _value);
 
     @External
-    void returnAsset(String _symbol, BigInteger _value, @Optional String _collateralSymbol);
+    void returnAsset(String _symbol, BigInteger _value, @Optional String _collateralSymbol, @Optional String to);
 
     @External
     void withdrawAndUnstake(BigInteger _value);
@@ -203,7 +203,7 @@ public interface Loans extends Name, AddressManager, Version, XTokenReceiver, Fl
     Map<String, Object> getParameters();
 
     @XCall
-    void xBorrow(String from, String _collateralToBorrowAgainst, BigInteger _amountToBorrow);
+    void xBorrow(String from, String _collateralToBorrowAgainst, BigInteger _amountToBorrow, @Optional String _to,  @Optional byte[] _data);
 
     @XCall
     void xWithdraw(String from, BigInteger _value, String _collateralSymbol);

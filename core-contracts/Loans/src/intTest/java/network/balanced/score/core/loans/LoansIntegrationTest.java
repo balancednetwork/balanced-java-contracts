@@ -178,7 +178,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
             // Deposit first then borrow
             byte[] depositBSC = AssetManagerMessages.deposit(balanced.BSC_TOKEN_ADDRESS, bscUser.account().toString(), loansNetAddress, collateral, "{}".getBytes());
             owner.xcall.sendCall(balanced.assetManager._address(), new NetworkAddress(balanced.BSC_NID, balanced.BSC_ASSET_MANAGER).toString(), depositBSC);
-            byte[] borrowBSC = LoansMessages.xBorrow(balanced.BSC_TOKEN_SYMBOL, loanAmount);
+            byte[] borrowBSC = LoansMessages.xBorrow(balanced.BSC_TOKEN_SYMBOL, loanAmount, "", new byte[0]);
             owner.xcall.sendCall(balanced.loans._address(), bscUser.toString(), borrowBSC);
 
             // Bridge collateral to hub wallet first then borrow
@@ -257,7 +257,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
             owner.xcall.sendCall(balanced.bnusd._address(), bscHubUser.toString(), repayTransfer);
 
             // Repay and withdraw with bnUSD on the ICON wallet.
-            nativeLoanTaker.loans.returnAsset("bnUSD", amountToRepay, balanced.BSC_TOKEN_SYMBOL);
+            nativeLoanTaker.loans.returnAsset("bnUSD", amountToRepay, balanced.BSC_TOKEN_SYMBOL, "");
             nativeLoanTaker.loans.withdrawCollateral(amountToWithdraw, balanced.BSC_TOKEN_SYMBOL);
 
             // Assert
@@ -317,17 +317,17 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         loanTakerIETHFullRepay.depositAndBorrow(ethAddress, collateralETH, loanAmount);
         loanTakerMultiPartialRepay.depositAndBorrow(ethAddress, collateralETH, loanAmount);
 
-        loanTakerPartialRepay.loans.returnAsset("bnUSD", debt.divide(BigInteger.TWO), "sICX");
+        loanTakerPartialRepay.loans.returnAsset("bnUSD", debt.divide(BigInteger.TWO), "sICX", "");
         loanTakerPartialRepay.bnUSD.transfer(loanTakerFullRepay.getAddress(), fee, null);
         loanTakerPartialRepay.bnUSD.transfer(loanTakerIETHFullRepay.getAddress(), fee, null);
-        loanTakerFullRepay.loans.returnAsset("bnUSD", debt, "sICX");
+        loanTakerFullRepay.loans.returnAsset("bnUSD", debt, "sICX", "");
 
         assertThrows(UserRevertedException.class, () ->
-                loanTakerIETHFullRepay.loans.returnAsset("bnUSD", debt, "sICX"));
+                loanTakerIETHFullRepay.loans.returnAsset("bnUSD", debt, "sICX", ""));
 
-        loanTakerIETHFullRepay.loans.returnAsset("bnUSD", debt, "iETH");
-        loanTakerMultiPartialRepay.loans.returnAsset("bnUSD", debt.divide(BigInteger.TWO), "sICX");
-        loanTakerMultiPartialRepay.loans.returnAsset("bnUSD", debt.divide(BigInteger.TWO), "iETH");
+        loanTakerIETHFullRepay.loans.returnAsset("bnUSD", debt, "iETH", "");
+        loanTakerMultiPartialRepay.loans.returnAsset("bnUSD", debt.divide(BigInteger.TWO), "sICX", "");
+        loanTakerMultiPartialRepay.loans.returnAsset("bnUSD", debt.divide(BigInteger.TWO), "iETH", "");
 
         BigInteger outstandingNewDebt = BigInteger.valueOf(3).multiply(debt.divide(BigInteger.TWO));
 
@@ -537,10 +537,10 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         loanTakerPartialWithdraw.bnUSD.transfer(loanTakerFullWithdraw.getAddress(), fee, null);
         loanTakerPartialWithdraw.bnUSD.transfer(loanTakerETHFullWithdraw.getAddress(), fee, null);
 
-        loanTakerFullWithdraw.loans.returnAsset("bnUSD", debt, "sICX");
+        loanTakerFullWithdraw.loans.returnAsset("bnUSD", debt, "sICX", "");
         loanTakerFullWithdraw.loans.withdrawCollateral(collateral, "sICX");
 
-        loanTakerETHFullWithdraw.loans.returnAsset("bnUSD", debt, "iETH");
+        loanTakerETHFullWithdraw.loans.returnAsset("bnUSD", debt, "iETH", "");
         loanTakerETHFullWithdraw.loans.withdrawCollateral(collateralETH, "iETH");
 
         BigInteger amountToWithdraw = BigInteger.TEN.pow(20);
@@ -608,14 +608,14 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         loanTakerPartialRepay.bnUSD.transfer(loanTakerFullClose.getAddress(), fee, null);
         loanTakerPartialRepay.bnUSD.transfer(loanTakerETHFullClose.getAddress(), fee, null);
 
-        loanTakerCloseLoanOnly.loans.returnAsset("bnUSD", debt, "sICX");
-        loanTakerFullClose.loans.returnAsset("bnUSD", debt, "sICX");
-        loanTakerETHFullClose.loans.returnAsset("bnUSD", debt, "iETH");
+        loanTakerCloseLoanOnly.loans.returnAsset("bnUSD", debt, "sICX", "");
+        loanTakerFullClose.loans.returnAsset("bnUSD", debt, "sICX", "");
+        loanTakerETHFullClose.loans.returnAsset("bnUSD", debt, "iETH", "");
 
         BigInteger amountRepaid = BigInteger.TEN.pow(21);
         BigInteger amountETHRepaid = BigInteger.TEN.pow(18);
-        loanTakerPartialRepay.loans.returnAsset("bnUSD", amountRepaid, "sICX");
-        loanTakerETHPartialRepay.loans.returnAsset("bnUSD", amountETHRepaid, "iETH");
+        loanTakerPartialRepay.loans.returnAsset("bnUSD", amountRepaid, "sICX", "");
+        loanTakerETHPartialRepay.loans.returnAsset("bnUSD", amountETHRepaid, "iETH", "");
 
         loanTakerFullClose.loans.withdrawCollateral(loanTakerFullClose.getLoansCollateralPosition("sICX"), null);
         loanTakerETHFullClose.loans.withdrawCollateral(loanTakerETHFullClose.getLoansCollateralPosition("iETH"),
@@ -689,7 +689,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         loanTaker1.stakeDepositAndBorrow(sICXCollateral, loanAmount1);
         assertThrows(RevertedException.class, () -> loanTaker2.stakeDepositAndBorrow(sICXCollateral, loanAmount2));
 
-        loanTaker1.loans.returnAsset("bnUSD", debt2, "sICX");
+        loanTaker1.loans.returnAsset("bnUSD", debt2, "sICX", "");
         loanTaker2.stakeDepositAndBorrow(sICXCollateral, loanAmount2);
         assertThrows(UserRevertedException.class, () -> loanTaker1.borrowFrom("sICX", debt2));
 

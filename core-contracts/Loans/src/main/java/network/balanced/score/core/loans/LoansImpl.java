@@ -271,10 +271,15 @@ public class LoansImpl extends FloorLimited implements Loans {
         if (token.equals(getBnusd())) {
             String collateralSymbol = json.get("_collateral").asString();
             JsonValue withdrawAmount = json.get("_withdrawAmount");
+            String to = json.getString("_to", _from);
+            if (to.equals(""))  {
+                to = _from;
+            }
+
             BigInteger collateralToWithdraw = convertToNumber(withdrawAmount, BigInteger.ZERO);
             TokenUtils.burnAsset(_value);
-            _returnAsset(_from, _value, collateralSymbol);
-            if (BigInteger.ZERO.compareTo(collateralToWithdraw) < 0) {
+            _returnAsset(to, _value, collateralSymbol);
+            if (BigInteger.ZERO.compareTo(collateralToWithdraw) < 0 && to.equals(_from)) {
                 xWithdraw(_from, collateralToWithdraw, collateralSymbol);
             }
         } else {
@@ -284,7 +289,7 @@ public class LoansImpl extends FloorLimited implements Loans {
 
             depositCollateral(collateralSymbol, _value, _from);
             if (BigInteger.ZERO.compareTo(requestedAmount) < 0) {
-                originateLoan(collateralSymbol, requestedAmount, _from);
+                originateLoan(collateralSymbol, requestedAmount, _from, null, new byte[0]);
             }
         }
     }
@@ -321,7 +326,7 @@ public class LoansImpl extends FloorLimited implements Loans {
 
         depositCollateral(collateralSymbol, _value, _from.toString());
         if (BigInteger.ZERO.compareTo(requestedAmount) < 0) {
-            originateLoan(collateralSymbol, requestedAmount, _from.toString());
+            originateLoan(collateralSymbol, requestedAmount, _from.toString(), null, new byte[0]);
         }
     }
 
@@ -333,8 +338,8 @@ public class LoansImpl extends FloorLimited implements Loans {
         LoansXCall.process(this, _from, _data);
     }
 
-    public void xBorrow(String from, String _collateralToBorrowAgainst, BigInteger _amountToBorrow) {
-        originateLoan(_collateralToBorrowAgainst, _amountToBorrow, from);
+    public void xBorrow(String from, String _collateralToBorrowAgainst, BigInteger _amountToBorrow, String _to, byte[] _data) {
+        originateLoan(_collateralToBorrowAgainst, _amountToBorrow, from, _to, _data);
     }
 
     public void xWithdraw(String from, BigInteger _value, String _collateralSymbol) {
@@ -355,13 +360,13 @@ public class LoansImpl extends FloorLimited implements Loans {
     }
 
     @External
-    public void borrow(String _collateralToBorrowAgainst, String _assetToBorrow, BigInteger _amountToBorrow) {
+    public void borrow(String _collateralToBorrowAgainst, String _assetToBorrow, BigInteger _amountToBorrow, @Optional String _to, @Optional byte[] _data) {
         checkStatus();
         loansOn();
         Context.require(_amountToBorrow.compareTo(BigInteger.ZERO) > 0, TAG + ": _amountToBorrow needs to be larger " +
                 "than 0");
         Context.require(_assetToBorrow.equals(BNUSD_SYMBOL));
-        originateLoan(_collateralToBorrowAgainst, _amountToBorrow, Context.getCaller().toString());
+        originateLoan(_collateralToBorrowAgainst, _amountToBorrow, Context.getCaller().toString(), _to, _data);
     }
 
     @External
@@ -385,7 +390,7 @@ public class LoansImpl extends FloorLimited implements Loans {
             return;
         }
 
-        originateLoan(SICX_SYMBOL, _amount, depositor);
+        originateLoan(SICX_SYMBOL, _amount, depositor, null, new byte[0]);
     }
 
     @External
@@ -416,14 +421,18 @@ public class LoansImpl extends FloorLimited implements Loans {
     }
 
     @External
-    public void returnAsset(String _symbol, BigInteger _value, @Optional String _collateralSymbol) {
+    public void returnAsset(String _symbol, BigInteger _value, @Optional String _collateralSymbol, @Optional String to) {
         Address from = Context.getCaller();
+        if (to == null || to.equals("") ){
+            to = from.toString();
+        }
+
         Context.require(_symbol.equals(BNUSD_SYMBOL));
         String collateralSymbol = optionalDefault(_collateralSymbol, SICX_SYMBOL);
 
         Context.require(TokenUtils.balanceOf(getBnusd(), from).compareTo(_value) >= 0, TAG + ": Insufficient balance.");
         TokenUtils.burnAssetFrom(from, _value);
-        _returnAsset(from.toString(), _value, collateralSymbol);
+        _returnAsset(to, _value, collateralSymbol);
 
     }
 
@@ -757,7 +766,7 @@ public class LoansImpl extends FloorLimited implements Loans {
     }
 
 
-    private void originateLoan(String collateralSymbol, BigInteger amount, String from) {
+    private void originateLoan(String collateralSymbol, BigInteger amount, String from, String to, byte[] data) {
         DebtDB.applyInterest(collateralSymbol);
 
         Position position = PositionsDB.getPosition(from);
@@ -790,22 +799,30 @@ public class LoansImpl extends FloorLimited implements Loans {
         position.setDebt(collateralSymbol, holdings.add(newDebt));
         Context.call(getRewards(), "updateBalanceAndSupply", "Loans", DebtDB.getTotalDebt(), from.toString(), position.getTotalDebt());
 
-        originateBnUSD(from, amount, fee);
+        originateBnUSD(from, amount, fee, to, data);
     }
 
-    private void originateBnUSD(String from, BigInteger amount, BigInteger fee) {
+    private void originateBnUSD(String from, BigInteger amount, BigInteger fee, String to, byte[] data) {
         TokenUtils.mintAsset(amount);
-        if (from.contains("/")) {
-            String net = NetworkAddress.valueOf(from).net();
+        if (to == null || to.equals("")) {
+            to = from;
+        }
+
+        if (data == null) {
+            data = new byte[0];
+        }
+
+        if (to.contains("/")) {
+            String net = NetworkAddress.valueOf(to).net();
             boolean canWithdraw = Context.call(Boolean.class, getDaofund(), "getXCallFeePermission", Context.getAddress(), net);
             if (canWithdraw) {
                 BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", net, true);
-                TokenUtils.crossTransfer(xCallFee, from, amount);
+                TokenUtils.crossTransfer(xCallFee, to, amount, data);
             } else {
-                TokenUtils.hubTransfer(from, amount);
+                TokenUtils.hubTransfer(to, amount, data);
             }
         } else {
-            TokenUtils.transfer(Address.fromString(from), amount);
+            TokenUtils.transfer(Address.fromString(to), amount, data);
         }
         String logMessage = "Loan of " + amount + " " + BNUSD_SYMBOL + " from Balanced.";
         OriginateLoan(from, BNUSD_SYMBOL, amount, logMessage);

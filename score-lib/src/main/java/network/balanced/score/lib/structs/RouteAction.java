@@ -25,7 +25,7 @@ public class RouteAction {
         RouteAction obj = new RouteAction();
         reader.beginList();
         obj.action = reader.readInt();
-        obj.toAddress = reader.readAddress();
+        obj.toAddress = reader.readNullable(Address.class);
         reader.end();
         return obj;
     }
@@ -33,7 +33,7 @@ public class RouteAction {
     public void writeObject(ObjectWriter writer) {
         writer.beginList(2);
         writer.write(this.action);
-        writer.write(this.toAddress);
+        writer.writeNullable(this.toAddress);
         writer.end();
     }
 

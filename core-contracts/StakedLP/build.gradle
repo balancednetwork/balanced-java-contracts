@@ -46,6 +46,7 @@ dependencies {
     intTestImplementation Dependencies.jacksonDatabind
 }
 
+
 optimizedJar {
     mainClassName = 'network.balanced.score.core.stakedlp.StakedLPImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
@@ -97,7 +98,7 @@ tasks.named('test') {
 jacocoTestReport {
     dependsOn test
     reports {
-        xml.required = false
+        xml.required = true
         csv.required = false
         html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
     }

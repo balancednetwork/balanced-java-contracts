@@ -585,6 +585,29 @@ class RouterTest extends TestBase {
     }
 
     @Test
+    void tokenFallback_swapToICX() throws Exception {
+        // Arrange
+        BigInteger USDToSwap = BigInteger.TEN.multiply(ICX);
+        BigInteger sICXResult = BigInteger.valueOf(100).multiply(ICX);
+        BigInteger ICXResult = BigInteger.valueOf(110).multiply(ICX);
+        List<RouteAction> actions = new ArrayList<>(2);
+        actions.add(new RouteAction(SWAP, balanced.sicx.getAddress()));
+        actions.add(new RouteAction(SWAP, null));
+        when(balanced.sicx.mock.balanceOf(routerScore.getAddress())).thenReturn(sICXResult);
+        routerScore.getAccount().addBalance("ICX", ICXResult);
+
+        Account newReceiver = sm.createAccount();
+        byte[] data = new RouteData("_swap", newReceiver.getAddress().toString(), BigInteger.ZERO, actions).toBytes();
+
+        // Act
+        routerScore.invoke(balanced.baln.account, "tokenFallback", owner.getAddress(), USDToSwap,
+                data);
+
+        // Assert
+        assertEquals(ICXResult, newReceiver.getBalance());
+    }
+
+    @Test
     void tokenFallback_swapStableWithoutOptField_AndMixedSwapTypes() throws Exception {
         // Arrange
         BigInteger balnToSwap = BigInteger.TEN.multiply(ICX);

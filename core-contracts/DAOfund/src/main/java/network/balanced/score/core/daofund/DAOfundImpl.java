@@ -18,10 +18,12 @@ package network.balanced.score.core.daofund;
 
 import network.balanced.score.lib.interfaces.DAOfund;
 import network.balanced.score.lib.structs.PrepDelegations;
+import network.balanced.score.lib.structs.ProtocolConfig;
 import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.EnumerableSetDB;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.Versions;
+import network.balanced.score.lib.utils.XCallUtils;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -246,7 +248,8 @@ public class DAOfundImpl implements DAOfund {
     public BigInteger claimXCallFee(String net, boolean response) {
         Address contract = Context.getCaller();
         Context.require(xCallFeePermissions.at(contract).getOrDefault(net, false), contract + " is not allowed to use fees from daofund");
-        BigInteger fee = Context.call(BigInteger.class, BalancedAddressManager.getXCall(), "getFee", net, response);
+        Map<String, String[]> protocol = XCallUtils.getProtocols(net);
+        BigInteger fee = Context.call(BigInteger.class, BalancedAddressManager.getXCall(), "getFee", net, response, protocol.get(ProtocolConfig.sourcesKey));
         Context.require(fee.compareTo(Context.getBalance(Context.getAddress())) <= 0, "Daofund out of Balance" );
         if (fee.equals(BigInteger.ZERO)) {
             return BigInteger.ZERO;

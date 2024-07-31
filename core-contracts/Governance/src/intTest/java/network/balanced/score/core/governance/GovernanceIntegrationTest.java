@@ -435,7 +435,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
                 null);
         Executable nonAllowedTransfer2 = () -> blacklistedUser2.bnUSD.transfer(owner.getAddress(), BigInteger.ONE,
                 null);
-        Executable nonAllowedBurn = () -> blacklistedUser1.loans.returnAsset("bnUSD", BigInteger.TEN.pow(18), "sICX");
+        Executable nonAllowedBurn = () -> blacklistedUser1.loans.returnAsset("bnUSD", BigInteger.TEN.pow(18), "sICX", "");
         user3.bnUSD.transfer(owner.getAddress(), BigInteger.ONE, null);
         assertThrows(Exception.class, nonAllowedTransfer1);
         assertThrows(Exception.class, nonAllowedTransfer2);
@@ -472,7 +472,7 @@ class GovernanceIntegrationTest implements ScoreIntegrationTest {
                 BigInteger.valueOf(200).multiply(BigInteger.TEN.pow(18)), null);
         Executable dividendsStatusTest = () -> user.dividends.distribute((tx) -> {
         });
-        Executable loansStatusTest = () -> user.loans.returnAsset("bnUSD", BigInteger.ONE, "sICX");
+        Executable loansStatusTest = () -> user.loans.returnAsset("bnUSD", BigInteger.ONE, "sICX", "");
         Executable rewardsStatusTest = () -> user.rewards.distribute((tx) -> {
         });
         Executable stakingStatusTest = () -> user.staking.stakeICX(collateral.multiply(BigInteger.TWO), null, null);

@@ -19,7 +19,7 @@ package network.balanced.score.lib.utils;
 import score.Context;
 import score.VarDB;
 import foundation.icon.xcall.NetworkAddress;
-
+import network.balanced.score.lib.structs.ProtocolConfig;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -48,7 +48,7 @@ public class XCallUtils {
 
     public static void sendCall(BigInteger fee, NetworkAddress to, byte[] data, byte[] rollback) {
         Map<String, String[]> protocols = getProtocols(to.net());
-        Context.call(fee, BalancedAddressManager.getXCall(), "sendCallMessage", to.toString(), data, rollback, protocols.get("sources"), protocols.get("destinations"));
+        Context.call(fee, BalancedAddressManager.getXCall(), "sendCallMessage", to.toString(), data, rollback, protocols.get(ProtocolConfig.sourcesKey), protocols.get(ProtocolConfig.destinationsKey));
     }
 
 }

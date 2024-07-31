@@ -33,7 +33,6 @@ dependencies {
     implementation project(':score-lib')
     annotationProcessor project(':score-client')
     implementation project(':score-client')
-    implementation 'xcall-lib:score-lib'
     implementation Dependencies.junitJupiterApi
     implementation Dependencies.jacksonDatabind
     implementation Dependencies.javaeeUnitTest
@@ -50,4 +49,14 @@ dependencies {
 
 test {
     useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        csv.required = false
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+    }
 }

@@ -121,7 +121,7 @@ class LoansTestRewards extends LoansTestBase {
         when(bnusd.mock.balanceOf(account.getAddress())).thenReturn(loan.subtract(expectedFee));
 
         // Act
-        loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, "sICX");
+        loans.invoke(account, "returnAsset", "bnUSD", loanToRepay, "sICX", "");
 
         // Assert
         verify(bnusd.mock).burnFrom(account.getAddress(), loanToRepay);
@@ -156,8 +156,8 @@ class LoansTestRewards extends LoansTestBase {
         when(bnusd.mock.balanceOf(account.getAddress())).thenReturn(sICXloan.add(iETHloan));
 
         // Act
-        loans.invoke(account, "returnAsset", "bnUSD", sICXLoanToRepay, "sICX");
-        loans.invoke(account, "returnAsset", "bnUSD", iETHLoanToRepay, "iETH");
+        loans.invoke(account, "returnAsset", "bnUSD", sICXLoanToRepay, "sICX", "");
+        loans.invoke(account, "returnAsset", "bnUSD", iETHLoanToRepay, "iETH", "");
 
         // Assert
         BigInteger expectedTotalDebt = iETHDebt.add(sICXDebt).subtract(sICXLoanToRepay).subtract(iETHLoanToRepay);

@@ -74,8 +74,17 @@ deployJar {
 
 test {
     useJUnitPlatform()
+    finalizedBy jacocoTestReport
 }
 
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        csv.required = false
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+    }
+}
 optimizedJar {
     mainClassName = 'network.balanced.score.tokens.workertoken.WorkerTokenImpl'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
