@@ -1607,7 +1607,8 @@ BigInteger calculateThresholdPoint(BigInteger totalDebt, BigInteger liquidationT
         mockOraclePrice("iBTC", EXA);
         loans.invoke(iBTC.account, "tokenFallback", account.getAddress(), collateral,
                         data.toString().getBytes());
-        loans.invoke(account, "borrow", "iBTC", "bnUSD", loan);
+        loans.invoke(account, "borrow", "iBTC", "bnUSD", loan, "", new byte[0]);
+
         // Act & Assert
         String expectedErrorMessage = "Reverted(0): Liquidation threshold for iBTC is not set";
         Executable liquidateWithoutLiquidationRatio = () -> loans.invoke(liquidator, "liquidate",
