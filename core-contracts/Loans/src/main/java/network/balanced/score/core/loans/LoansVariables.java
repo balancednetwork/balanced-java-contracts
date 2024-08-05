@@ -33,7 +33,7 @@ public class LoansVariables {
     private static final String LOCKING_RATIO = "locking_ratio";
     private static final String PER_COLLATERAL_LOCKING_RATIO = "per_collateral_locking_ratio";
 
-    private static final String PER_COLLATERAL_LIQUIDATION_THRESHOLD = "per_collateral_liquidation_threshold";
+    private static final String PER_COLLATERAL_LIQUIDATION_RATIO = "per_collateral_liquidation_ratio";
     private static final String PER_COLLATERAL_LIQUIDATOR_FEE = "per_collateral_liquidator_fee";
     private static final String PER_COLLATERAL_DAOFUND_FEE = "per_collateral_liquidation_dao_fund_fee";
 
@@ -58,7 +58,7 @@ public class LoansVariables {
     public static final DictDB<String, BigInteger> lockingRatio = Context.newDictDB(PER_COLLATERAL_LOCKING_RATIO,
             BigInteger.class);
 
-    public static final DictDB<String, BigInteger> liquidationThreshold = Context.newDictDB(PER_COLLATERAL_LIQUIDATION_THRESHOLD, BigInteger.class);
+    public static final DictDB<String, BigInteger> liquidationRatio = Context.newDictDB(PER_COLLATERAL_LIQUIDATION_RATIO, BigInteger.class);
     public static final DictDB<String, BigInteger> liquidatorFee = Context.newDictDB(PER_COLLATERAL_LIQUIDATOR_FEE, BigInteger.class);
     public static final DictDB<String, BigInteger> liquidationDaoFundFee = Context.newDictDB(PER_COLLATERAL_DAOFUND_FEE, BigInteger.class);
 

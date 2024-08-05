@@ -430,10 +430,10 @@ public class GovernanceImpl implements Governance {
     // External shorthand calls, could be done by a set of transactions
     @External
     public void addCollateral(Address _token_address, boolean _active, String _peg, BigInteger _lockingRatio,
-            BigInteger _debtCeiling, BigInteger _liquidationThreshold, BigInteger _liquidatorFee,
+            BigInteger _debtCeiling, BigInteger _liquidationRatio, BigInteger _liquidatorFee,
             BigInteger _daoFundFee) {
         onlyOwnerOrContract();
-        _addCollateral(_token_address, _active, _peg, _lockingRatio, _debtCeiling, _liquidationThreshold,
+        _addCollateral(_token_address, _active, _peg, _lockingRatio, _debtCeiling, _liquidationRatio,
                 _liquidatorFee, _daoFundFee);
     }
 
@@ -482,7 +482,7 @@ public class GovernanceImpl implements Governance {
     }
 
     public void _addCollateral(Address _token_address, boolean _active, String _peg, BigInteger _lockingRatio,
-            BigInteger _debtCeiling, BigInteger _liquidationThreshold, BigInteger _liquidatorFee,
+            BigInteger _debtCeiling, BigInteger _liquidationRatio, BigInteger _liquidatorFee,
             BigInteger _daoFundFee) {
         Address loansAddress = ContractManager.get("loans");
         Context.call(loansAddress, "addAsset", _token_address, _active, true);
@@ -497,13 +497,13 @@ public class GovernanceImpl implements Governance {
 
         Context.call(loansAddress, "setDebtCeiling", symbol, _debtCeiling);
         _setLockingRatio(symbol, _lockingRatio);
-        _setLiquidationThreshold(symbol, _liquidationThreshold);
+        _setLiquidationRatio(symbol, _liquidationRatio);
         _setLiquidatorFee(symbol, _liquidatorFee);
         _setDaoFundFee(symbol, _daoFundFee);
     }
 
-    public void _setLiquidationThreshold(String _symbol, BigInteger _value) {
-        Context.call(ContractManager.get("loans"), "setLiquidationThreshold", _symbol, _value);
+    public void _setLiquidationRatio(String _symbol, BigInteger _value) {
+        Context.call(ContractManager.get("loans"), "setLiquidationRatio", _symbol, _value);
     }
 
     public void _setLiquidatorFee(String _symbol, BigInteger _value) {

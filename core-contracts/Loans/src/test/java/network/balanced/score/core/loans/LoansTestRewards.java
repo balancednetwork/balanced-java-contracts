@@ -188,7 +188,7 @@ class LoansTestRewards extends LoansTestBase {
         BigInteger liquidateAmount = BigInteger.valueOf(200).multiply(EXA);
         System.out.println("total debt: " + originalTotalDebt);
 
-        liquidateSetup(collateral_symbol, BigInteger.valueOf(8500), BigInteger.valueOf(400), BigInteger.valueOf(100), BigInteger.valueOf(10).multiply(EXA));
+        liquidateSetup(collateral_symbol, BigInteger.valueOf(12000), BigInteger.valueOf(400), BigInteger.valueOf(100), BigInteger.valueOf(10).multiply(EXA));
 
         takeLoanICX(account, "bnUSD", collateral, loan);
 
@@ -202,7 +202,7 @@ class LoansTestRewards extends LoansTestBase {
         // Act
         loans.invoke(liquidator, "liquidate", account.getAddress().toString(), liquidateAmount, "sICX");
 
-        //Since the liquidation threshold is 85%, mock price is 1/5 which makes collateral value 200, and liquidation value 190(95% of 200)
+        //Since the Liquidation ratio  is 85%, mock price is 1/5 which makes collateral value 200, and liquidation value 190(95% of 200)
         //since liquidation ratio is 202/200 so all collateral will be liquidated for the value of 190
 
         BigInteger liquidatorFee = BigInteger.valueOf(400).multiply(collateral).divide(POINTS);

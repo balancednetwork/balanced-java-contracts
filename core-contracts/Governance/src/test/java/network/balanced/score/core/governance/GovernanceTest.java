@@ -100,7 +100,7 @@ public class GovernanceTest extends GovernanceTestBase {
         boolean active = false;
         BigInteger lockingRatio = BigInteger.valueOf(30_000);
         BigInteger debtCeiling = BigInteger.TEN.pow(20);
-        BigInteger liquidationThreshold = BigInteger.valueOf(7000);
+        BigInteger liquidationRatio = BigInteger.valueOf(7000);
         BigInteger liquidatorFee = BigInteger.valueOf(300);
         BigInteger daoFundFee = BigInteger.valueOf(100);
 
@@ -113,7 +113,7 @@ public class GovernanceTest extends GovernanceTestBase {
 
         // Act & Assert
         Executable withNotOwner = () -> governance.invoke(notOwner, "addCollateral", tokenAddress, active, peg,
-                lockingRatio, debtCeiling, liquidationThreshold, liquidatorFee, daoFundFee);
+                lockingRatio, debtCeiling, liquidationRatio, liquidatorFee, daoFundFee);
         expectErrorMessage(withNotOwner, expectedErrorMessage);
 
         // Arrange
@@ -123,20 +123,20 @@ public class GovernanceTest extends GovernanceTestBase {
         when(balancedOracle.mock.getPriceInLoop(symbol)).thenReturn(BigInteger.ZERO);
         expectedErrorMessage = "Reverted(0): Balanced oracle return a invalid icx price for " + symbol + "/" + peg;
         Executable withFaultyPeg = () -> governance.invoke(owner, "addCollateral", tokenAddress, active, peg,
-                lockingRatio, debtCeiling, liquidationThreshold, liquidatorFee, daoFundFee);
+                lockingRatio, debtCeiling, liquidationRatio, liquidatorFee, daoFundFee);
         expectErrorMessage(withFaultyPeg, expectedErrorMessage);
 
         // Act
         when(balancedOracle.mock.getPriceInLoop(symbol)).thenReturn(ICX);
         governance.invoke(owner, "addCollateral", tokenAddress, active, peg, lockingRatio,
-                debtCeiling, liquidationThreshold, liquidatorFee, daoFundFee);
+                debtCeiling, liquidationRatio, liquidatorFee, daoFundFee);
 
         // Assert
         verify(loans.mock, times(2)).addAsset(tokenAddress, active, true);
         verify(balancedOracle.mock, times(2)).setPeg(symbol, peg);
         verify(loans.mock).setLockingRatio(symbol, lockingRatio);
         verify(loans.mock).setDebtCeiling(symbol, debtCeiling);
-        verify(loans.mock).setLiquidationThreshold(symbol, liquidationThreshold);
+        verify(loans.mock).setLiquidationRatio(symbol, liquidationRatio);
         verify(loans.mock).setLiquidatorFee(symbol, liquidatorFee);
         verify(loans.mock).setLiquidationDaoFundFee(symbol, daoFundFee);
     }

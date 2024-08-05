@@ -942,7 +942,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         BigInteger lockingRatio = BigInteger.valueOf(40_000);
         BigInteger debtCeiling = BigInteger.TEN.pow(30);
 
-        BigInteger liquidationThreshold = BigInteger.valueOf(7500);
+        BigInteger liquidationRatio = BigInteger.valueOf(7500);
         BigInteger liquidatorFee = BigInteger.valueOf(800);
         BigInteger daofundFee = BigInteger.valueOf(200);
 
@@ -952,7 +952,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
                 .add(createParameter(peg))
                 .add(createParameter(lockingRatio))
                 .add(createParameter(debtCeiling))
-                .add(createParameter(liquidationThreshold))
+                .add(createParameter(liquidationRatio))
                 .add(createParameter(liquidatorFee))
                 .add(createParameter(daofundFee));
 
@@ -978,7 +978,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
         owner.dex.add(collateralAddress, balanced.bnusd._address(), tokenAmount, bnUSDAmount, false, BigInteger.valueOf(100));
         BigInteger lockingRatio = BigInteger.valueOf(40_000);
         BigInteger debtCeiling = BigInteger.TEN.pow(30);
-        BigInteger liquidationThreshold = BigInteger.valueOf(7500);
+        BigInteger liquidationRatio = BigInteger.valueOf(7500);
         BigInteger liquidatorFee = BigInteger.valueOf(800);
         BigInteger daofundFee = BigInteger.valueOf(200);
 
@@ -987,7 +987,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
                 .add(createParameter(true))
                 .add(createParameter(lockingRatio))
                 .add(createParameter(debtCeiling))
-                .add(createParameter(liquidationThreshold))
+                .add(createParameter(liquidationRatio))
                 .add(createParameter(liquidatorFee))
                 .add(createParameter(daofundFee));
 

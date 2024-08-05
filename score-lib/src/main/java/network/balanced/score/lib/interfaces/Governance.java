@@ -215,7 +215,7 @@ public interface Governance extends
 
     @External
     void addCollateral(Address _token_address, boolean _active, String _peg, BigInteger _lockingRatio,
-             BigInteger _debtCeiling, BigInteger _liquidationThreshold,
+             BigInteger _debtCeiling, BigInteger _liquidationRatio,
             BigInteger _liquidatorFee, BigInteger _daoFundFee);
 
     @External

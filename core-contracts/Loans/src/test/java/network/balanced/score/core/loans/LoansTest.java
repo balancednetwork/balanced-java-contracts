@@ -69,7 +69,7 @@ class LoansTest extends LoansTestBase {
         loans.invoke(governance.account, "setNewLoanMinimum", BigInteger.valueOf(5));
         loans.invoke(governance.account, "setRedemptionFee", BigInteger.valueOf(7));
         loans.invoke(governance.account, "setOriginationFee", BigInteger.valueOf(8));
-        loans.invoke(governance.account, "setLiquidationThreshold", "sICX", BigInteger.valueOf(6500));
+        loans.invoke(governance.account, "setLiquidationRatio", "sICX", BigInteger.valueOf(6500));
         loans.invoke(governance.account, "setLockingRatio", "sICX", BigInteger.valueOf(10));
 
         Map<String, Object> params = (Map<String, Object>) loans.call("getParameters");
@@ -80,7 +80,7 @@ class LoansTest extends LoansTestBase {
         assertEquals(BigInteger.valueOf(7), params.get("redemption fee"));
         assertEquals(BigInteger.valueOf(8), params.get("origination fee"));
         assertEquals(BigInteger.valueOf(10), params.get("locking ratio"));
-        assertEquals(BigInteger.valueOf(6500), params.get("liquidation threshold"));
+        assertEquals(BigInteger.valueOf(6500), params.get("Liquidation ratio "));
     }
 
     @Test
@@ -138,13 +138,13 @@ class LoansTest extends LoansTestBase {
 
         assertEquals(loan.add(expectedFee), standings.get("sICX").get("total_debt_in_USD"));
         assertEquals(sICXCollateral, standings.get("sICX").get("collateral_in_USD"));
-        assertEquals(loan.add(expectedFee).multiply(EXA).divide(sICXCollateral),
+        assertEquals(sICXCollateral.multiply(EXA).divide(loan.add(expectedFee)),
                         standings.get("sICX").get("ratio"));
         assertEquals(StandingsMap.get(Standings.MINING), standings.get("sICX").get("standing"));
 
         assertEquals(iETHloan.add(iETHExpectedFee), standings.get("iETH").get("total_debt_in_USD"));
         assertEquals(iETHCollateral, standings.get("iETH").get("collateral_in_USD"));
-        assertEquals(iETHloan.add(iETHExpectedFee).multiply(EXA).divide(iETHCollateral),
+        assertEquals(iETHCollateral.multiply(EXA).divide(iETHloan.add(iETHExpectedFee)),
                         standings.get("iETH").get(
                                         "ratio"));
         assertEquals(StandingsMap.get(Standings.MINING), standings.get("iETH").get("standing"));
@@ -1187,7 +1187,7 @@ class LoansTest extends LoansTestBase {
         BigInteger liquidateAmount = BigInteger.valueOf(100).multiply(EXA);
 
         BigInteger minimumDebtThreshold = BigInteger.valueOf(10).multiply(EXA);
-        liquidateSetup(collateral_symbol, BigInteger.valueOf(8500), BigInteger.valueOf(400),
+        liquidateSetup(collateral_symbol, BigInteger.valueOf(12000), BigInteger.valueOf(400),
                         BigInteger.valueOf(100), minimumDebtThreshold);
 
         takeLoanICX(account, "bnUSD", collateral, loan);
@@ -1222,7 +1222,7 @@ class LoansTest extends LoansTestBase {
         String collateralSymbol = "sICX";
         BigInteger collateralAmount = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loanAmount = BigInteger.valueOf(200).multiply(EXA);
-        BigInteger liquidationThreshold = BigInteger.valueOf(8500); // 85%
+        BigInteger liquidationRatio = BigInteger.valueOf(12000); // 85%
         BigInteger liquidatorFeePercent = BigInteger.valueOf(400); // 4%
         BigInteger daoFundFeePercent = BigInteger.valueOf(100); // 1%
         BigInteger oraclePriceValue = EXA.divide(BigInteger.valueOf(5)); // 1/5
@@ -1232,7 +1232,7 @@ class LoansTest extends LoansTestBase {
         BigInteger originalTotalDebt = getTotalDebt();
 
         BigInteger minimumDebtThreshold = BigInteger.valueOf(10).multiply(EXA);
-        liquidateSetup(collateralSymbol, liquidationThreshold, liquidatorFeePercent, daoFundFeePercent,
+        liquidateSetup(collateralSymbol, liquidationRatio, liquidatorFeePercent, daoFundFeePercent,
                         minimumDebtThreshold);
         takeLoanICX(account, "bnUSD", collateralAmount, loanAmount);
 
@@ -1283,7 +1283,7 @@ class LoansTest extends LoansTestBase {
         String collateralSymbol = "sICX";
         BigInteger collateralAmount = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loanAmount = BigInteger.valueOf(100).multiply(EXA);
-        BigInteger liquidationThreshold = BigInteger.valueOf(8500); // 85%
+        BigInteger liquidationRatio = BigInteger.valueOf(12000); // 85%
         BigInteger liquidatorFeePercent = BigInteger.valueOf(400); // 4%
         BigInteger daoFundFeePercent = BigInteger.valueOf(100); // 1%
         BigInteger oraclePriceValue = EXA.divide(BigInteger.valueOf(5)); // 1/5
@@ -1292,7 +1292,7 @@ class LoansTest extends LoansTestBase {
         BigInteger expectedFee = calculateFee(loanAmount);
 
         BigInteger minimumDebtThreshold = BigInteger.valueOf(10).multiply(EXA);
-        liquidateSetup(collateralSymbol, liquidationThreshold, liquidatorFeePercent, daoFundFeePercent,
+        liquidateSetup(collateralSymbol, liquidationRatio, liquidatorFeePercent, daoFundFeePercent,
                         minimumDebtThreshold);
         takeLoanICX(account, "bnUSD", collateralAmount, loanAmount);
 
@@ -1318,7 +1318,7 @@ class LoansTest extends LoansTestBase {
         String collateralSymbol = "sICX";
         BigInteger collateralAmount = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loanAmount = BigInteger.valueOf(220).multiply(EXA);
-        BigInteger liquidationThreshold = BigInteger.valueOf(8500); // 85%
+        BigInteger liquidationRatio = BigInteger.valueOf(12000); // 85%
         BigInteger liquidatorFeePercent = BigInteger.valueOf(400); // 4%
         BigInteger daoFundFeePercent = BigInteger.valueOf(100); // 1%
         BigInteger oraclePriceValue = EXA.divide(BigInteger.valueOf(5)); // 1/5
@@ -1327,7 +1327,7 @@ class LoansTest extends LoansTestBase {
         BigInteger expectedFee = calculateFee(loanAmount);
 
         BigInteger minimumDebtThreshold = BigInteger.valueOf(10).multiply(EXA);
-        liquidateSetup(collateralSymbol, liquidationThreshold, liquidatorFeePercent, daoFundFeePercent,
+        liquidateSetup(collateralSymbol, liquidationRatio, liquidatorFeePercent, daoFundFeePercent,
                         minimumDebtThreshold);
         takeLoanICX(account, "bnUSD", collateralAmount, loanAmount);
 
@@ -1359,7 +1359,7 @@ class LoansTest extends LoansTestBase {
         String collateralSymbol = "sICX";
         BigInteger collateralAmount = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loanAmount = BigInteger.valueOf(180).multiply(EXA);
-        BigInteger liquidationThreshold = BigInteger.valueOf(8500); // 85%
+        BigInteger liquidationRatio = BigInteger.valueOf(12000); // 85%
         BigInteger liquidatorFeePercent = BigInteger.valueOf(400); // 4%
         BigInteger daoFundFeePercent = BigInteger.valueOf(100); // 1%
         BigInteger oraclePriceValue = EXA.divide(BigInteger.valueOf(5)); // 1/5
@@ -1368,7 +1368,7 @@ class LoansTest extends LoansTestBase {
         BigInteger expectedFee = calculateFee(loanAmount);
 
         BigInteger minimumDebtThreshold = BigInteger.valueOf(10).multiply(EXA);
-        liquidateSetup(collateralSymbol, liquidationThreshold, liquidatorFeePercent, daoFundFeePercent,
+        liquidateSetup(collateralSymbol, liquidationRatio, liquidatorFeePercent, daoFundFeePercent,
                         minimumDebtThreshold);
         takeLoanICX(account, "bnUSD", collateralAmount, loanAmount);
 
@@ -1401,14 +1401,14 @@ class LoansTest extends LoansTestBase {
         String collateralSymbol = "sICX";
         BigInteger collateralAmount = BigInteger.valueOf(600).multiply(EXA);
         BigInteger loanAmount = BigInteger.valueOf(120).multiply(EXA);
-        BigInteger liquidationThreshold = BigInteger.valueOf(7000); // 70%
+        BigInteger liquidationRatio = BigInteger.valueOf(14000); // 70%
         BigInteger liquidatorFeePercent = BigInteger.valueOf(500); // 5%
         BigInteger daoFundFeePercent = BigInteger.valueOf(200); // 2%
         BigInteger oraclePriceValue = EXA.divide(BigInteger.valueOf(4)); // 1/4
         BigInteger liquidateAmount = BigInteger.valueOf(120).multiply(EXA);
         BigInteger expectedFee = calculateFee(loanAmount);
         BigInteger minimumDebtThreshold = BigInteger.valueOf(10).multiply(EXA);
-        liquidateSetup(collateralSymbol, liquidationThreshold, liquidatorFeePercent, daoFundFeePercent,
+        liquidateSetup(collateralSymbol, liquidationRatio, liquidatorFeePercent, daoFundFeePercent,
                         minimumDebtThreshold);
         takeLoanICX(account, "bnUSD", collateralAmount, loanAmount);
         BigInteger totalLoan = loanAmount.add(expectedFee);
@@ -1419,10 +1419,8 @@ class LoansTest extends LoansTestBase {
         // Act
         loans.invoke(liquidator, "liquidate", account.getAddress().toString(), liquidateAmount,
                         collateralSymbol);
-        // It will liquidate until the liquidation threshold is reached,
-        BigInteger maxLiquidatedAmount = calculateThresholdPoint(totalLoan, liquidationThreshold,
-                        oraclePriceValue, liquidationPrice, liquidationThreshold.multiply(collateralAmount)
-                                        .divide(EXA).multiply(oraclePriceValue).divide(POINTS));
+        // It will liquidate until the Liquidation ratio  is reached,
+        BigInteger maxLiquidatedAmount = calculateThresholdPoint(collateralAmount, liquidationRatio, oraclePriceValue, liquidationPrice, totalLoan.multiply(liquidationRatio).divide(POINTS));
         BigInteger collateralLiquidated = maxLiquidatedAmount.multiply(EXA).divide(liquidationPrice);
         BigInteger totalAmountSpent = maxLiquidatedAmount;
         BigInteger remainingCollateral = collateralAmount.subtract(collateralLiquidated);
@@ -1431,6 +1429,7 @@ class LoansTest extends LoansTestBase {
         BigInteger liquidatorFee = liquidatorFeePercent.multiply(collateralLiquidated).divide(POINTS);
         BigInteger daoFundFee = daoFundFeePercent.multiply(collateralLiquidated).divide(POINTS);
         BigInteger expectedLiquidation = collateralLiquidated.subtract(liquidatorFee).subtract(daoFundFee);
+
         verify(sicx.mock).transfer(eq(liquidator.getAddress()), eq(expectedLiquidation.add(liquidatorFee)),
                         any(byte[].class));
         verify(sicx.mock).transfer(eq(mockBalanced.daofund.getAddress()), eq(daoFundFee), any(byte[].class));
@@ -1440,16 +1439,19 @@ class LoansTest extends LoansTestBase {
         verify(rewards.mock).updateBalanceAndSupply("Loans", remainingDebt, account.getAddress().toString(),
                         remainingDebt);
         verifyTotalDebt(remainingDebt);
-}
-BigInteger calculateThresholdPoint(BigInteger totalDebt, BigInteger liquidationThreshold,
-                BigInteger collateralPrice, BigInteger liquidationPrice, BigInteger liquidationThresholdValue) {
-        BigInteger adjustedLoan = totalDebt.subtract(liquidationThresholdValue);
-        BigInteger effectiveCollateralValue = POINTS
-                        .subtract((liquidationThreshold.multiply(collateralPrice)).divide(liquidationPrice));
-        if (effectiveCollateralValue.compareTo(BigInteger.ZERO) <= 0) {
-                return BigInteger.ZERO;
+     }
+     
+     BigInteger calculateThresholdPoint(BigInteger collateral, BigInteger liquidationRatio,
+        BigInteger collateralPrice, BigInteger liquidationPrice, BigInteger liquidationRatioValue) {
+
+        BigInteger extraCollateral = liquidationRatioValue.subtract(collateralPrice.multiply(collateral).divide(EXA));
+        BigInteger collateralLiquidatedPerUnitDebtPay = collateralPrice.multiply(EXA).divide(liquidationPrice);
+        BigInteger collateralNeededPerUnitDebt = liquidationRatio.multiply(EXA).divide(POINTS);
+        BigInteger effectiveCollateralValue = collateralNeededPerUnitDebt.subtract(collateralLiquidatedPerUnitDebtPay);
+                if (effectiveCollateralValue.compareTo(BigInteger.ZERO) <= 0) {
+        return BigInteger.ZERO;
         }
-        BigInteger maxAmountToSpendToMaintainThreshold = adjustedLoan.multiply(POINTS)
+        BigInteger maxAmountToSpendToMaintainThreshold = extraCollateral.multiply(EXA)
                         .divide(effectiveCollateralValue);
         return maxAmountToSpendToMaintainThreshold;
      }
@@ -1463,14 +1465,14 @@ BigInteger calculateThresholdPoint(BigInteger totalDebt, BigInteger liquidationT
         String collateralSymbol = "sICX";
         BigInteger collateralAmount = BigInteger.valueOf(500).multiply(EXA);
         BigInteger loanAmount = BigInteger.valueOf(100).multiply(EXA);
-        BigInteger liquidationThreshold = BigInteger.valueOf(8500); // 85%
+        BigInteger liquidationRatio = BigInteger.valueOf(12000); // 85%
         BigInteger liquidatorFeePercent = BigInteger.valueOf(1000); // 10%
         BigInteger daoFundFeePercent = BigInteger.valueOf(500); // 5%
         BigInteger oraclePriceValue = EXA.divide(BigInteger.valueOf(5)); // 1/5
         BigInteger liquidateAmount = BigInteger.valueOf(100).multiply(EXA);
         BigInteger expectedFee = calculateFee(loanAmount);
         BigInteger minimumDebtThreshold = BigInteger.valueOf(10).multiply(EXA);
-        liquidateSetup(collateralSymbol, liquidationThreshold, liquidatorFeePercent, daoFundFeePercent,
+        liquidateSetup(collateralSymbol, liquidationRatio, liquidatorFeePercent, daoFundFeePercent,
                         minimumDebtThreshold);
         takeLoanICX(account, "bnUSD", collateralAmount, loanAmount);
         BigInteger totalLoan = loanAmount.add(expectedFee);
@@ -1502,14 +1504,14 @@ BigInteger calculateThresholdPoint(BigInteger totalDebt, BigInteger liquidationT
         String collateralSymbol = "sICX";
         BigInteger collateralAmount = BigInteger.valueOf(800).multiply(EXA);
         BigInteger loanAmount = BigInteger.valueOf(150).multiply(EXA);
-        BigInteger liquidationThreshold = BigInteger.valueOf(9000); // 90%
+        BigInteger liquidationRatio = BigInteger.valueOf(11111); // 90%
         BigInteger liquidatorFeePercent = BigInteger.valueOf(400); // 4%
         BigInteger daoFundFeePercent = BigInteger.valueOf(100); // 1%
         BigInteger oraclePriceValue = EXA.divide(BigInteger.valueOf(5)); // 1/5
         BigInteger liquidateAmount = BigInteger.valueOf(200).multiply(EXA);
         BigInteger expectedFee = calculateFee(loanAmount);
         BigInteger minimumDebtThreshold = BigInteger.valueOf(10).multiply(EXA);
-        liquidateSetup(collateralSymbol, liquidationThreshold, liquidatorFeePercent, daoFundFeePercent,
+        liquidateSetup(collateralSymbol, liquidationRatio, liquidatorFeePercent, daoFundFeePercent,
                         minimumDebtThreshold);
         takeLoanICX(account, "bnUSD", collateralAmount, loanAmount);
         BigInteger totalLoan = loanAmount.add(expectedFee);
@@ -1552,7 +1554,7 @@ BigInteger calculateThresholdPoint(BigInteger totalDebt, BigInteger liquidationT
         BigInteger liquidateAmount = BigInteger.valueOf(200).multiply(EXA);
 
         BigInteger minimumDebtThreshold = BigInteger.valueOf(10).multiply(EXA);
-        liquidateSetup(collateral_symbol, BigInteger.valueOf(8500), BigInteger.valueOf(400),
+        liquidateSetup(collateral_symbol, BigInteger.valueOf(12000), BigInteger.valueOf(400),
                         BigInteger.valueOf(100), minimumDebtThreshold);
         takeLoanICX(account, "bnUSD", collateral, loan);
         BigInteger totalLoan = loan.add(expectedFee);
@@ -1563,7 +1565,7 @@ BigInteger calculateThresholdPoint(BigInteger totalDebt, BigInteger liquidationT
         mockOraclePrice("sICX", price);
         // Act
         loans.invoke(liquidator, "liquidate", account.getAddress().toString(), liquidateAmount, "sICX");
-        // Since the liquidation threshold is 85%, mock price is 1/5 which makes
+        // Since the Liquidation ratio  is 85%, mock price is 1/5 which makes
         // collateral value 200, and liquidation value 190(95% of 200)
         // since liquidation ratio is 202/200 so all collateral will be liquidated for
         // the value of 190
@@ -1610,7 +1612,7 @@ BigInteger calculateThresholdPoint(BigInteger totalDebt, BigInteger liquidationT
         loans.invoke(account, "borrow", "iBTC", "bnUSD", loan, "", new byte[0]);
 
         // Act & Assert
-        String expectedErrorMessage = "Reverted(0): Liquidation threshold for iBTC is not set";
+        String expectedErrorMessage = "Reverted(0): Liquidation ratio for iBTC is not set";
         Executable liquidateWithoutLiquidationRatio = () -> loans.invoke(liquidator, "liquidate",
                         account.getAddress().toString(), liquidateAmount, "iBTC");
         expectErrorMessage(liquidateWithoutLiquidationRatio, expectedErrorMessage);
@@ -1635,7 +1637,7 @@ BigInteger calculateThresholdPoint(BigInteger totalDebt, BigInteger liquidationT
                         .divide(POINTS);
         mockOraclePrice("iETH", price);
         BigInteger minDebtThreshold = BigInteger.valueOf(10).multiply(EXA);
-        liquidateSetup(collateral_symbol, BigInteger.valueOf(8500), BigInteger.valueOf(400),
+        liquidateSetup(collateral_symbol, BigInteger.valueOf(12000), BigInteger.valueOf(400),
                         BigInteger.valueOf(100), minDebtThreshold);
         // Act
         loans.invoke(liquidator, "liquidate", account.getAddress().toString(), liquidateAmount, "iETH");

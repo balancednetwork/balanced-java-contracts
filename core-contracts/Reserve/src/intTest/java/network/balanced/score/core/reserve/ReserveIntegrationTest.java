@@ -422,10 +422,10 @@ class ReserveIntegrationTest implements ScoreIntegrationTest {
 
         BigInteger lockingRatio = BigInteger.valueOf(40_000);
         BigInteger debtCeiling = BigInteger.TEN.pow(30);
-        BigInteger liquidationThreshold = BigInteger.valueOf(7500);
+        BigInteger liquidationRatio = BigInteger.valueOf(7500);
         BigInteger liquidatorFee = BigInteger.valueOf(800);
         BigInteger liquidationDaoFundFee = BigInteger.valueOf(200);
-        owner.governance.addCollateral(collateralAddress, true, peg, lockingRatio, debtCeiling, liquidationThreshold, liquidatorFee, liquidationDaoFundFee);
+        owner.governance.addCollateral(collateralAddress, true, peg, lockingRatio, debtCeiling, liquidationRatio, liquidatorFee, liquidationDaoFundFee);
 
     }
 }

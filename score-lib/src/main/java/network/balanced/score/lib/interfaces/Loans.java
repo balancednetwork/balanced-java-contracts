@@ -116,7 +116,7 @@ public interface Loans extends Name, AddressManager, Version, XTokenReceiver, Fl
     BigInteger getLockingRatio(String _symbol);
 
     @External
-    void setLiquidationThreshold(String _symbol, BigInteger _threshold);
+    void setLiquidationRatio(String _symbol, BigInteger _threshold);
 
     @External
     void setLiquidatorFee(String _symbol, BigInteger _fee);
@@ -131,7 +131,7 @@ public interface Loans extends Name, AddressManager, Version, XTokenReceiver, Fl
     BigInteger getMinimumDebtThreshold();
 
     @External(readonly = true)
-    BigInteger getLiquidationThreshold(String _symbol);
+    BigInteger getLiquidationRatio(String _symbol);
 
     @External(readonly = true)
     BigInteger getLiquidatorFee(String _symbol);

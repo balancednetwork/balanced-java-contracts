@@ -94,10 +94,10 @@ class LoansTestBase extends UnitTest {
         }).when(staking.mock).stakeICX(Mockito.any(Address.class), Mockito.any(byte[].class));
     }
 
-    protected void liquidateSetup(String symbol, BigInteger liquidationThreshold, BigInteger liquidationFee, BigInteger daofundFee, BigInteger minimumDebtThreshold) {
+    protected void liquidateSetup(String symbol, BigInteger liquidationRatio, BigInteger liquidationFee, BigInteger daofundFee, BigInteger minimumDebtThreshold) {
         loans.invoke(governance.account, "setLiquidatorFee", symbol, liquidationFee);
         loans.invoke(governance.account, "setLiquidationDaoFundFee", symbol, daofundFee);
-        loans.invoke(governance.account, "setLiquidationThreshold", symbol, liquidationThreshold);
+        loans.invoke(governance.account, "setLiquidationRatio", symbol, liquidationRatio);
         loans.invoke(governance.account, "setMinimumDebtThreshold", minimumDebtThreshold);
     }
 
@@ -258,9 +258,9 @@ class LoansTestBase extends UnitTest {
         loans.invoke(governance.account, "addAsset", ieth.getAddress(), true, true);
 
         loans.invoke(governance.account, "setLockingRatio", "sICX", LOCKING_RATIO);
-        loans.invoke(governance.account, "setLiquidationThreshold", "sICX", LIQUIDATION_THRESHOLD);
+        loans.invoke(governance.account, "setLiquidationRatio", "sICX", LIQUIDATION_RATIO);
         loans.invoke(governance.account, "setLockingRatio", "iETH", LOCKING_RATIO);
-        loans.invoke(governance.account, "setLiquidationThreshold", "iETH", LIQUIDATION_THRESHOLD);
+        loans.invoke(governance.account, "setLiquidationRatio", "iETH", LIQUIDATION_RATIO);
 
 
     }
