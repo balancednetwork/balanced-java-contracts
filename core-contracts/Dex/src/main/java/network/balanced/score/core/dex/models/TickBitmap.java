@@ -20,7 +20,7 @@ import static java.math.BigInteger.ONE;
 import static java.math.BigInteger.ZERO;
 import static network.balanced.score.core.dex.utils.IntUtils.uint8;
 import java.math.BigInteger;
-import network.balanced.score.core.dex.librairies.BitMath;
+import network.balanced.score.core.dex.libs.BitMath;
 import network.balanced.score.core.dex.structs.pool.NextInitializedTickWithinOneWordResult;
 import network.balanced.score.core.dex.utils.IntUtils;
 import score.Context;

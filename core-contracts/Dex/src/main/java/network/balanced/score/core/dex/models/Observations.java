@@ -20,7 +20,7 @@ import static java.math.BigInteger.ONE;
 import static java.math.BigInteger.ZERO;
 
 import java.math.BigInteger;
-import network.balanced.score.core.dex.librairies.OracleLib;
+import network.balanced.score.core.dex.libs.OracleLib;
 import network.balanced.score.core.dex.structs.pool.BeforeAfterObservation;
 import network.balanced.score.core.dex.structs.pool.InitializeResult;
 import network.balanced.score.core.dex.structs.pool.ObserveResult;

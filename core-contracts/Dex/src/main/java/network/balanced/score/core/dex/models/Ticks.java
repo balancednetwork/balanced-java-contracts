@@ -19,7 +19,7 @@ package network.balanced.score.core.dex.models;
 import static java.math.BigInteger.ZERO;
 
 import java.math.BigInteger;
-import network.balanced.score.core.dex.librairies.LiquidityMath;
+import network.balanced.score.core.dex.libs.LiquidityMath;
 import network.balanced.score.core.dex.structs.pool.Tick;
 import network.balanced.score.core.dex.structs.pool.Tick.Info;
 import network.balanced.score.core.dex.utils.EnumerableMap;

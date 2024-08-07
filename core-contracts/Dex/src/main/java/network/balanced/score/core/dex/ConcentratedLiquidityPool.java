@@ -21,15 +21,15 @@ import static network.balanced.score.core.dex.utils.IntUtils.uint256;
 import java.math.BigInteger;
 import network.balanced.score.core.dex.interfaces.factory.IBalancedFactory;
 import network.balanced.score.core.dex.interfaces.irc2.IIRC2ICX;
-import network.balanced.score.core.dex.interfaces.pool.IBalancedPoolCallee;
-import network.balanced.score.core.dex.librairies.FixedPoint128;
-import network.balanced.score.core.dex.librairies.FullMath;
-import network.balanced.score.core.dex.librairies.LiquidityMath;
-import network.balanced.score.core.dex.librairies.PositionLib;
-import network.balanced.score.core.dex.librairies.SqrtPriceMath;
-import network.balanced.score.core.dex.librairies.SwapMath;
-import network.balanced.score.core.dex.librairies.TickLib;
-import network.balanced.score.core.dex.librairies.TickMath;
+import network.balanced.score.core.dex.interfaces.pool.IConcentratedLiquidityPoolCallee;
+import network.balanced.score.core.dex.libs.FixedPoint128;
+import network.balanced.score.core.dex.libs.FullMath;
+import network.balanced.score.core.dex.libs.LiquidityMath;
+import network.balanced.score.core.dex.libs.PositionLib;
+import network.balanced.score.core.dex.libs.SqrtPriceMath;
+import network.balanced.score.core.dex.libs.SwapMath;
+import network.balanced.score.core.dex.libs.TickLib;
+import network.balanced.score.core.dex.libs.TickMath;
 import network.balanced.score.core.dex.models.Observations;
 import network.balanced.score.core.dex.models.Positions;
 import network.balanced.score.core.dex.models.TickBitmap;
@@ -61,7 +61,7 @@ import score.annotation.External;
 import score.annotation.Optional;
 import score.annotation.Payable;
 
-public class BalancedPool {
+public class ConcentratedLiquidityPool {
   // ================================================
   // Consts
   // ================================================
@@ -302,10 +302,9 @@ public class BalancedPool {
   // ================================================
   /**
    * @notice Contract constructor
-   * @dev This contract should be not deployed, as this class is abstract anyway. 
-   * See {@code BalancedPoolFactored} constructor for the actual pool deployed on the network
+   * See {@code ConcentratedLiquidityPoolFactored} constructor for the actual pool deployed on the network
    */
-  protected BalancedPool (Parameters parameters) {
+  public ConcentratedLiquidityPool (Parameters parameters) {
     // Initialize settings
     this.settings = new PoolSettings (
       parameters.factory,
@@ -314,7 +313,7 @@ public class BalancedPool {
       parameters.fee,
       parameters.tickSpacing,
       TickLib.tickSpacingToMaxLiquidityPerTick(parameters.tickSpacing),
-      "Balanced Pool (" + IIRC2ICX.symbol(parameters.token0) + " / " + IIRC2ICX.symbol(parameters.token1) + " " + ((float) parameters.fee / 10000) + "%)"
+      "Balanced Concentrated Liquidity Pool (" + IIRC2ICX.symbol(parameters.token0) + " / " + IIRC2ICX.symbol(parameters.token1) + " " + ((float) parameters.fee / 10000) + "%)"
     );
 
     // Default values
@@ -467,7 +466,7 @@ public class BalancedPool {
       balance1Before = balance1();
     }
 
-    IBalancedPoolCallee.balancedMintCallback(caller, amount0, amount1, data);
+    IConcentratedLiquidityPoolCallee.balancedMintCallback(caller, amount0, amount1, data);
 
     if (amount0.compareTo(ZERO) > 0) {
       BigInteger expected = balance0Before.add(amount0);
@@ -816,7 +815,7 @@ public class BalancedPool {
       }
 
       BigInteger balance0Before = balance0();
-      IBalancedPoolCallee.balancedSwapCallback(caller, amount0, amount1, data);
+      IConcentratedLiquidityPoolCallee.balancedSwapCallback(caller, amount0, amount1, data);
 
       Context.require(balance0Before.add(amount0).compareTo(balance0()) <= 0, 
         "swap: the callback didn't charge the payment (1)");
@@ -826,7 +825,7 @@ public class BalancedPool {
       }
 
       BigInteger balance1Before = balance1();
-      IBalancedPoolCallee.balancedSwapCallback(caller, amount0, amount1, data);
+      IConcentratedLiquidityPoolCallee.balancedSwapCallback(caller, amount0, amount1, data);
 
       Context.require(balance1Before.add(amount1).compareTo(balance1()) <= 0, 
         "swap: the callback didn't charge the payment (2)");
@@ -880,7 +879,7 @@ public class BalancedPool {
       pay(this.settings.token1, recipient, amount1);
     }
 
-    IBalancedPoolCallee.balancedFlashCallback(caller, fee0, fee1, data);
+    IConcentratedLiquidityPoolCallee.balancedFlashCallback(caller, fee0, fee1, data);
 
     BigInteger balance0After = balance0();
     BigInteger balance1After = balance1();

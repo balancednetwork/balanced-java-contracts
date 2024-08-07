@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package network.balanced.score.core.dex.librairies;
+package network.balanced.score.core.dex.libs;
 
 import java.math.BigInteger;
 import network.balanced.score.core.dex.utils.IntUtils;

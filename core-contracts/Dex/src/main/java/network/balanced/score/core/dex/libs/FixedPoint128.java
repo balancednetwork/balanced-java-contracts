@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.dex.librairies;
+package network.balanced.score.core.dex.libs;
 
 import java.math.BigInteger;
-import static network.balanced.score.core.dex.utils.MathUtils.gt;
 
-public class UnsafeMath {
-  public static BigInteger divRoundingUp(BigInteger x, BigInteger y) {
-    return x.divide(y).add(gt(x.mod(y), BigInteger.ZERO));
-  }
+// @title FixedPoint128
+// @notice A library for handling binary fixed point numbers, see https://en.wikipedia.org/wiki/Q_(number_format)
+public class FixedPoint128 {
+  public final static BigInteger Q128 = new BigInteger("100000000000000000000000000000000", 16);
 }

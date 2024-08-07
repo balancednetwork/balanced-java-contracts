@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.dex.librairies;
+package network.balanced.score.core.dex.libs;
 
 import java.math.BigInteger;
 
-// @title FixedPoint128
-// @notice A library for handling binary fixed point numbers, see https://en.wikipedia.org/wiki/Q_(number_format)
-public class FixedPoint128 {
-  public final static BigInteger Q128 = new BigInteger("100000000000000000000000000000000", 16);
+/// @title FixedPoint96
+/// @notice A library for handling binary fixed point numbers, see https://en.wikipedia.org/wiki/Q_(number_format)
+public class FixedPoint96 {
+  public static final int RESOLUTION = 96;
+  public static final BigInteger Q96 = new BigInteger("1000000000000000000000000", 16);
 }

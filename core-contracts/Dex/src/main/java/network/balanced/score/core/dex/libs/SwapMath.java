@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.dex.librairies;
+package network.balanced.score.core.dex.libs;
 
 import static java.math.BigInteger.ZERO;
 

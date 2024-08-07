@@ -20,9 +20,9 @@ import java.math.BigInteger;
 
 public interface IBalancedMintCallback {
   /**
-   * @notice Called to `Context.getCaller()` after minting liquidity to a position from BalancedPool#mint.
+   * @notice Called to `Context.getCaller()` after minting liquidity to a position from ConcentratedLiquidityPool#mint.
    * @dev In the implementation you must pay the pool tokens owed for the minted liquidity.
-   * The caller of this method must be checked to be a BalancedPool deployed by the canonical BalancedPoolFactory.
+   * The caller of this method must be checked to be a ConcentratedLiquidityPool deployed by the canonical ConcentratedLiquidityPoolFactory.
    * @param amount0Owed The amount of token0 due to the pool for the minted liquidity
    * @param amount1Owed The amount of token1 due to the pool for the minted liquidity
    * @param data Any data passed through by the caller via the mint call

@@ -28,7 +28,7 @@ import network.balanced.score.core.dex.structs.pool.Oracle.Observation;
 import score.Address;
 import score.Context;
 
-public class IBalancedPool {
+public class IConcentratedLiquidityPool {
 
   // Write methods
   public static PairAmounts mint (

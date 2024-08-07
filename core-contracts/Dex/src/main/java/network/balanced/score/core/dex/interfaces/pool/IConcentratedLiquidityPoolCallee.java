@@ -20,7 +20,7 @@ import java.math.BigInteger;
 import score.Address;
 import score.Context;
 
-public class IBalancedPoolCallee {
+public class IConcentratedLiquidityPoolCallee {
 
   // Write methods
   public static void balancedMintCallback (

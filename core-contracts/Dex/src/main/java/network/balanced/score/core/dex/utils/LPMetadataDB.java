@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.dex.librairies;
+package network.balanced.score.core.dex.utils;
 
-import java.math.BigInteger;
+import network.balanced.score.lib.utils.EnumerableSetDB;
+import score.Address;
 
-/// @title FixedPoint96
-/// @notice A library for handling binary fixed point numbers, see https://en.wikipedia.org/wiki/Q_(number_format)
-public class FixedPoint96 {
-  public static final int RESOLUTION = 96;
-  public static final BigInteger Q96 = new BigInteger("1000000000000000000000000", 16);
+public class LPMetadataDB {
+    private static final String LP_METADATA_PREFIX = "lp";
+
+    public EnumerableSetDB<Address> get(Integer id) {
+        return new EnumerableSetDB<>(LP_METADATA_PREFIX + id, Address.class);
+    }
+
 }

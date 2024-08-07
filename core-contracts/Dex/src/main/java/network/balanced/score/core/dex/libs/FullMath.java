@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.dex.librairies;
+package network.balanced.score.core.dex.libs;
 
 import static network.balanced.score.core.dex.utils.IntUtils.MAX_UINT256;
 import static java.math.BigInteger.ONE;

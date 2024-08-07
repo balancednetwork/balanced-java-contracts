@@ -19,7 +19,7 @@ package network.balanced.score.core.dex.interfaces.pooldeployer;
 import network.balanced.score.core.dex.structs.factory.Parameters;
 import score.annotation.External;
 
-public interface IBalancedPoolDeployer {
+public interface IConcentratedLiquidityPoolDeployer {
 
   // ================================================
   // Methods

@@ -23,7 +23,7 @@ import score.Context;
 import score.VarDB;
 import score.annotation.External;
 
-public class BalancedPoolDeployer {
+public class ConcentratedLiquidityPoolDeployer {
 
   // ================================================
   // Consts

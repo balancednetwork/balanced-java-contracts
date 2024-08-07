@@ -17,10 +17,10 @@
 package network.balanced.score.core.dex;
 
 import java.math.BigInteger;
-import network.balanced.score.core.dex.models.BalancedPoolDeployer;
-import network.balanced.score.core.dex.interfaces.pooldeployer.IBalancedPoolDeployer;
+import network.balanced.score.core.dex.models.ConcentratedLiquidityPoolDeployer;
+import network.balanced.score.core.dex.interfaces.pooldeployer.IConcentratedLiquidityPoolDeployer;
 import network.balanced.score.core.dex.structs.factory.Parameters;
-import network.balanced.score.core.dex.interfaces.pool.IBalancedPool;
+import network.balanced.score.core.dex.interfaces.pool.IConcentratedLiquidityPool;
 import network.balanced.score.core.dex.utils.AddressUtils;
 import network.balanced.score.core.dex.utils.EnumerableSet;
 import score.Address;
@@ -35,14 +35,14 @@ import score.annotation.External;
  * @title Canonical Balanced factory
  * @notice Deploys Balanced pools and manages ownership and control over pool protocol fees
  */
-public class BalancedPoolFactory implements IBalancedPoolDeployer {
+public class ConcentratedLiquidityPoolFactory implements IConcentratedLiquidityPoolDeployer {
 
     // ================================================
     // Consts
     // ================================================
     
     // Contract class name
-    private static final String NAME = "BalancedPoolFactory";
+    private static final String NAME = "ConcentratedLiquidityPoolFactory";
 
     // Contract name
     private final String name;
@@ -56,8 +56,8 @@ public class BalancedPoolFactory implements IBalancedPoolDeployer {
     protected final VarDB<byte[]> poolContract = Context.newVarDB(NAME + "_poolContract", byte[].class);
     protected final EnumerableSet<Address> poolsSet = new EnumerableSet<Address>(NAME + "_poolsSet", Address.class);
 
-    // Implements IBalancedPoolDeployer
-    private final BalancedPoolDeployer poolDeployer;
+    // Implements IConcentratedLiquidityPoolDeployer
+    private final ConcentratedLiquidityPoolDeployer poolDeployer;
 
     // ================================================
     // Event Logs
@@ -108,8 +108,8 @@ public class BalancedPoolFactory implements IBalancedPoolDeployer {
     /**
      *  Contract constructor
      */
-    public BalancedPoolFactory() {
-        this.poolDeployer = new BalancedPoolDeployer();
+    public ConcentratedLiquidityPoolFactory() {
+        this.poolDeployer = new ConcentratedLiquidityPoolDeployer();
 
         final Address caller = Context.getCaller();
         this.name = "Balanced Factory";
@@ -212,10 +212,10 @@ public class BalancedPoolFactory implements IBalancedPoolDeployer {
         checkOwner();
 
         // OK
-        Address token0 = IBalancedPool.token0(pool);
-        Address token1 = IBalancedPool.token1(pool);
-        int fee = IBalancedPool.fee(pool);
-        int tickSpacing = IBalancedPool.tickSpacing(pool);
+        Address token0 = IConcentratedLiquidityPool.token0(pool);
+        Address token1 = IConcentratedLiquidityPool.token1(pool);
+        int fee = IConcentratedLiquidityPool.fee(pool);
+        int tickSpacing = IConcentratedLiquidityPool.tickSpacing(pool);
 
         this.poolDeployer.update (
             pool,
@@ -387,7 +387,7 @@ public class BalancedPoolFactory implements IBalancedPoolDeployer {
         return this.getPool.at(token0).at(token1).get(fee);
     }
 
-    // --- Implement IBalancedPoolDeployer ---
+    // --- Implement IConcentratedLiquidityPoolDeployer ---
     @External(readonly = true)
     public Parameters parameters() {
         return this.poolDeployer.parameters();
