@@ -21,6 +21,7 @@ import com.iconloop.score.test.Account;
 import network.balanced.score.core.loans.utils.LoansConstants.Standings;
 import network.balanced.score.lib.interfaces.tokens.IRC2;
 import network.balanced.score.lib.interfaces.tokens.IRC2ScoreInterface;
+import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.mock.MockContract;
 
 import org.junit.jupiter.api.Assertions;
@@ -35,6 +36,7 @@ import java.util.Map;
 
 import static network.balanced.score.core.loans.utils.LoansConstants.LOCKING_RATIO;
 import static network.balanced.score.core.loans.utils.LoansConstants.StandingsMap;
+import static network.balanced.score.lib.test.integration.BalancedUtils.hexObjectToBigInteger;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.POINTS;
 import static org.junit.jupiter.api.Assertions.*;
@@ -1617,6 +1619,7 @@ class LoansTest extends LoansTestBase {
                         account.getAddress().toString(), liquidateAmount, "iBTC");
         expectErrorMessage(liquidateWithoutLiquidationRatio, expectedErrorMessage);
      }
+     
      @SuppressWarnings("unchecked")
      @Test
      void liquidate_iETH() {

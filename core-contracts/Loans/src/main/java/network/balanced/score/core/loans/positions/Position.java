@@ -229,13 +229,17 @@ public class Position {
     }
 
     public BigInteger totalCollateralInUSD(String collateralSymbol, boolean readonly) {
-        Address collateralAddress = CollateralDB.getAddress(collateralSymbol);
-
         BigInteger amount = getCollateral(collateralSymbol, readonly);
-        BigInteger decimals = pow(BigInteger.TEN, TokenUtils.decimals(collateralAddress).intValue());
+        BigInteger decimals = getDecimals(collateralSymbol);
         BigInteger price = TokenUtils.getPriceInUSD(collateralSymbol);
 
         return amount.multiply(price).divide(decimals);
+    }
+
+    public BigInteger getDecimals(String collateralSymbol) {
+        Address collateralAddress = CollateralDB.getAddress(collateralSymbol);
+        BigInteger decimals = pow(BigInteger.TEN, TokenUtils.decimals(collateralAddress).intValue());
+        return decimals;
     }
 
     public Standing getStanding(String collateralSymbol) {

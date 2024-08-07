@@ -100,7 +100,7 @@ public class GovernanceTest extends GovernanceTestBase {
         boolean active = false;
         BigInteger lockingRatio = BigInteger.valueOf(30_000);
         BigInteger debtCeiling = BigInteger.TEN.pow(20);
-        BigInteger liquidationRatio = BigInteger.valueOf(7000);
+        BigInteger liquidationRatio = BigInteger.valueOf(15_000);
         BigInteger liquidatorFee = BigInteger.valueOf(300);
         BigInteger daoFundFee = BigInteger.valueOf(100);
 
