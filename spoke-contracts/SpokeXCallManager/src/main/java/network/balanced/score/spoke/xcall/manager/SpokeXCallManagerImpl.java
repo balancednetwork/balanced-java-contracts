@@ -45,6 +45,7 @@ public class SpokeXCallManagerImpl implements SpokeXCallManager {
     public static final String PROTOCOL_CONFIG = "protocol_config";
     public static final String PROPOSED_REMOVAL = "proposed_removal";
     public static final String ADMIN = "admin";
+    public static final String WHITELISTED_ACTION = "whitelisted action";
 
     private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
     private final VarDB<Address> xCall = Context.newVarDB(XCALL, Address.class);
@@ -53,6 +54,7 @@ public class SpokeXCallManagerImpl implements SpokeXCallManager {
     private final VarDB<ProtocolConfig> protocolConfig = Context.newVarDB(PROTOCOL_CONFIG, ProtocolConfig.class);
     private final VarDB<String> proposedRemoval = Context.newVarDB(PROPOSED_REMOVAL, String.class);
     private final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
+    private final VarDB<String> whitelistedAction = Context.newVarDB(WHITELISTED_ACTION, String.class);
     public static final String TAG = Names.SPOKE_XCALL_MANAGER;
 
     public SpokeXCallManagerImpl(Address _xCall, String _iconGovernance, ProtocolConfig _protocolConfig) {
@@ -81,7 +83,9 @@ public class SpokeXCallManagerImpl implements SpokeXCallManager {
     }
 
     public void execute(String from, String transactions) {
+        Context.require(transactions.equals(whitelistedAction.get()), "Action has to be whitelisted");
         ArbitraryCallManager.executeTransactions(transactions);
+        whitelistedAction.set(null);
     }
 
     public void configureProtocols(String from, String[] sources, String[] destinations) {
@@ -136,6 +140,12 @@ public class SpokeXCallManagerImpl implements SpokeXCallManager {
     @External(readonly = true)
     public String getProposedRemoval() {
         return proposedRemoval.get();
+    }
+
+    @External
+    public void whitelistAction(String action) {
+        only(admin);
+        whitelistedAction.set(action);
     }
 
     @External

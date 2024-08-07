@@ -216,12 +216,34 @@ class SpokeXCallManagerTest extends TestBase {
                 .add("parameters", new JsonArray().add(param));
         String transactions = new JsonArray().add(data).toString();
         byte[] executeMessage = SpokeXCallManagerMessages.execute(transactions);
+        manager.invoke(owner, "whitelistAction", transactions);
 
         // Act
         manager.invoke(xCall.account, "handleCallMessage", ICON_GOVERNANCE, executeMessage, SOURCES);
 
         // Assert
         assertEquals(user.getAddress(), manager.call("getXCall"));
+    }
+
+    @Test
+    void execute_notWhitelisted() {
+        // Arrange
+        JsonObject param = new JsonObject()
+                .add("type", "Address")
+                .add("value", user.getAddress().toString());
+
+        JsonObject data = new JsonObject()
+                .add("address", manager.getAddress().toString())
+                .add("method", "setXCall")
+                .add("parameters", new JsonArray().add(param));
+        String transactions = new JsonArray().add(data).toString();
+        byte[] executeMessage = SpokeXCallManagerMessages.execute(transactions);
+
+        // Act
+        Executable notWhitelistedCall = () ->  manager.invoke(xCall.account, "handleCallMessage", ICON_GOVERNANCE, executeMessage, SOURCES);
+
+        // Assert
+        expectErrorMessage(notWhitelistedCall, "Action has to be whitelisted");
     }
 
     @Test
