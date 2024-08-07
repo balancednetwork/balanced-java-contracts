@@ -166,7 +166,7 @@ public class GovernanceImpl implements Governance {
 
     @External
     public void defineVote(String name, String description, BigInteger vote_start, BigInteger duration,
-                           String forumLink, @Optional String transactions) {
+            String forumLink, @Optional String transactions) {
         transactions = optionalDefault(transactions, "[]");
         ProposalManager.defineVote(name, description, vote_start, duration, forumLink, transactions);
     }
@@ -348,7 +348,8 @@ public class GovernanceImpl implements Governance {
     @External
     public void enable() {
         EmergencyManager.authorizeEnableAndDisable();
-        Context.require(!EmergencyManager.canOnlyDisable(Context.getCaller()), "This address does not have permission to enable balanced");
+        Context.require(!EmergencyManager.canOnlyDisable(Context.getCaller()),
+                "This address does not have permission to enable balanced");
         EmergencyManager.enable();
     }
 
@@ -429,9 +430,11 @@ public class GovernanceImpl implements Governance {
     // External shorthand calls, could be done by a set of transactions
     @External
     public void addCollateral(Address _token_address, boolean _active, String _peg, BigInteger _lockingRatio,
-                              BigInteger _liquidationRatio, BigInteger _debtCeiling) {
+            BigInteger _debtCeiling, BigInteger _liquidationRatio, BigInteger _liquidatorFee,
+            BigInteger _daoFundFee) {
         onlyOwnerOrContract();
-        _addCollateral(_token_address, _active, _peg, _lockingRatio, _liquidationRatio, _debtCeiling);
+        _addCollateral(_token_address, _active, _peg, _lockingRatio, _debtCeiling, _liquidationRatio,
+                _liquidatorFee, _daoFundFee);
     }
 
     @External
@@ -450,6 +453,7 @@ public class GovernanceImpl implements Governance {
     public void ContractUpdated(String name, String error) {
 
     }
+
     public static void call(Address targetAddress, String method, Object... params) {
         Context.call(targetAddress, method, params);
     }
@@ -463,8 +467,8 @@ public class GovernanceImpl implements Governance {
     }
 
     public static BigInteger _getDay() {
-        BigInteger blockTime =
-                BigInteger.valueOf(Context.getBlockTimestamp()).subtract(timeOffset.getOrDefault(BigInteger.ZERO));
+        BigInteger blockTime = BigInteger.valueOf(Context.getBlockTimestamp())
+                .subtract(timeOffset.getOrDefault(BigInteger.ZERO));
         return blockTime.divide(MICRO_SECONDS_IN_A_DAY);
     }
 
@@ -478,7 +482,8 @@ public class GovernanceImpl implements Governance {
     }
 
     public void _addCollateral(Address _token_address, boolean _active, String _peg, BigInteger _lockingRatio,
-                               BigInteger _liquidationRatio, BigInteger _debtCeiling) {
+            BigInteger _debtCeiling, BigInteger _liquidationRatio, BigInteger _liquidatorFee,
+            BigInteger _daoFundFee) {
         Address loansAddress = ContractManager.get("loans");
         Context.call(loansAddress, "addAsset", _token_address, _active, true);
 
@@ -493,14 +498,24 @@ public class GovernanceImpl implements Governance {
         Context.call(loansAddress, "setDebtCeiling", symbol, _debtCeiling);
         _setLockingRatio(symbol, _lockingRatio);
         _setLiquidationRatio(symbol, _liquidationRatio);
+        _setLiquidatorFee(symbol, _liquidatorFee);
+        _setDaoFundFee(symbol, _daoFundFee);
+    }
+
+    public void _setLiquidationRatio(String _symbol, BigInteger _value) {
+        Context.call(ContractManager.get("loans"), "setLiquidationRatio", _symbol, _value);
+    }
+
+    public void _setLiquidatorFee(String _symbol, BigInteger _value) {
+        Context.call(ContractManager.get("loans"), "setLiquidatorFee", _symbol, _value);
+    }
+
+    public void _setDaoFundFee(String _symbol, BigInteger _value) {
+        Context.call(ContractManager.get("loans"), "setLiquidationDaoFundFee", _symbol, _value);
     }
 
     public void _setLockingRatio(String _symbol, BigInteger _value) {
         Context.call(ContractManager.get("loans"), "setLockingRatio", _symbol, _value);
-    }
-
-    public void _setLiquidationRatio(String _symbol, BigInteger _ratio) {
-        Context.call(ContractManager.get("loans"), "setLiquidationRatio", _symbol, _ratio);
     }
 
     private static Address getSystemScoreAddress() {

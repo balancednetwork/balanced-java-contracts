@@ -20,6 +20,7 @@ import network.balanced.score.core.loans.LoansVariables;
 import network.balanced.score.core.loans.collateral.CollateralDB;
 import network.balanced.score.core.loans.linkedlist.LinkedListDB;
 import network.balanced.score.core.loans.debt.DebtDB;
+import network.balanced.score.core.loans.utils.LoansConstants.Standings;
 import network.balanced.score.core.loans.utils.Standing;
 import network.balanced.score.core.loans.utils.TokenUtils;
 import network.balanced.score.lib.utils.BranchedAddressVarDB;
@@ -31,6 +32,8 @@ import java.util.Map;
 
 import static network.balanced.score.core.loans.utils.LoansConstants.*;
 import static network.balanced.score.lib.utils.Check.readonly;
+import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Constants.POINTS;
 import static network.balanced.score.lib.utils.Math.pow;
 
 public class Position {
@@ -226,13 +229,17 @@ public class Position {
     }
 
     public BigInteger totalCollateralInUSD(String collateralSymbol, boolean readonly) {
-        Address collateralAddress = CollateralDB.getAddress(collateralSymbol);
-
         BigInteger amount = getCollateral(collateralSymbol, readonly);
-        BigInteger decimals = pow(BigInteger.TEN, TokenUtils.decimals(collateralAddress).intValue());
+        BigInteger decimals = getDecimals(collateralSymbol);
         BigInteger price = TokenUtils.getPriceInUSD(collateralSymbol);
 
         return amount.multiply(price).divide(decimals);
+    }
+
+    public BigInteger getDecimals(String collateralSymbol) {
+        Address collateralAddress = CollateralDB.getAddress(collateralSymbol);
+        BigInteger decimals = pow(BigInteger.TEN, TokenUtils.decimals(collateralAddress).intValue());
+        return decimals;
     }
 
     public Standing getStanding(String collateralSymbol) {

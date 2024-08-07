@@ -20,6 +20,8 @@ import com.eclipsesource.json.JsonObject;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
+
+import network.balanced.score.core.loans.utils.LoansConstants.Standings;
 import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.interfaces.tokens.IRC2;
 import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
@@ -36,6 +38,8 @@ import java.math.BigInteger;
 import java.util.Map;
 
 import static network.balanced.score.core.loans.utils.LoansConstants.*;
+import static network.balanced.score.lib.utils.Constants.EXA;
+import static network.balanced.score.lib.utils.Constants.POINTS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.spy;
@@ -90,6 +94,12 @@ class LoansTestBase extends UnitTest {
         }).when(staking.mock).stakeICX(Mockito.any(Address.class), Mockito.any(byte[].class));
     }
 
+    protected void liquidateSetup(String symbol, BigInteger liquidationRatio, BigInteger liquidationFee, BigInteger daofundFee, BigInteger minimumDebtThreshold) {
+        loans.invoke(governance.account, "setLiquidatorFee", symbol, liquidationFee);
+        loans.invoke(governance.account, "setLiquidationDaoFundFee", symbol, daofundFee);
+        loans.invoke(governance.account, "setLiquidationRatio", symbol, liquidationRatio);
+        loans.invoke(governance.account, "setMinimumDebtThreshold", minimumDebtThreshold);
+    }
 
     private void setupOracle() {
         when(balancedOracle.mock.getPriceInUSD(Mockito.any(String.class))).thenReturn(EXA);
@@ -131,6 +141,13 @@ class LoansTestBase extends UnitTest {
 
     protected void verifyPosition(Address address, BigInteger collateral, BigInteger loan) {
         verifyPosition(address, collateral, loan, "sICX");
+    }
+
+    protected void verifyBadDebt(Address account, BigInteger expectedBadDebt) {
+        Map<String, Object> bnusdAsset = ((Map<String, Map<String, Object>>) loans.call("getAvailableAssets")).get("bnUSD");
+        Map<String, Map<String, Object>> bnusdDebtDetails = (Map<String, Map<String, Object>>) bnusdAsset.get("debt_details");
+    
+        assertEquals(expectedBadDebt, bnusdDebtDetails.get("sICX").get("bad_debt"));
     }
 
     @SuppressWarnings("unchecked")
@@ -244,5 +261,7 @@ class LoansTestBase extends UnitTest {
         loans.invoke(governance.account, "setLiquidationRatio", "sICX", LIQUIDATION_RATIO);
         loans.invoke(governance.account, "setLockingRatio", "iETH", LOCKING_RATIO);
         loans.invoke(governance.account, "setLiquidationRatio", "iETH", LIQUIDATION_RATIO);
+
+
     }
 }

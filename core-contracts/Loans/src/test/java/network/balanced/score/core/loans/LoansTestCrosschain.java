@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigInteger;
 
 import static network.balanced.score.core.loans.utils.LoansConstants.LIQUIDATION_RATIO;
+import static network.balanced.score.core.loans.utils.LoansConstants.LIQUIDATION_RATIO;
 import static network.balanced.score.core.loans.utils.LoansConstants.LOCKING_RATIO;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.mockito.ArgumentMatchers.any;

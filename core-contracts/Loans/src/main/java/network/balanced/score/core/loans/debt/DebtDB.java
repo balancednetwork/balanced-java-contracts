@@ -50,6 +50,7 @@ public class DebtDB {
     private static final String LAST_INTEREST_COMPOUND = "lastInterestCompound";
     private static final String ACCUMULATED_INTEREST = "accumulatedInterest";
     private static final String SAVINGS_SHARE = "savingsShare";
+    private static final String MINIMUM_DEBT_THRESHOLD = "minimumDebtThreshold";
 
     private static final String ASSET_DB_PREFIX = "asset";
     private static final String BORROWER_DB_PREFIX = "borrowers";
@@ -72,6 +73,8 @@ public class DebtDB {
             Context.newVarDB(ACCUMULATED_INTEREST, BigInteger.class);
     private static final VarDB<BigInteger> savingsShare =
             Context.newVarDB(SAVINGS_SHARE, BigInteger.class);
+    private static final VarDB<BigInteger> minimumDebtThreshold = Context.newVarDB(MINIMUM_DEBT_THRESHOLD,
+    BigInteger.class);
 
 
     public static void migrate() {
@@ -97,6 +100,11 @@ public class DebtDB {
         }
 
         return total;
+    }
+
+    public static void cancelBadDebt(String symbol, BigInteger amount) {
+        badDebts.at(getDBKey()).set(symbol,
+                badDebts.at(getDBKey()).getOrDefault(symbol, BigInteger.ZERO).subtract(amount));
     }
 
     public static void setCollateralDebt(String collateralSymbol, BigInteger debt) {
@@ -146,6 +154,14 @@ public class DebtDB {
 
     public static BigInteger getInterestRate(String collateralSymbol) {
         return interestRates.getOrDefault(collateralSymbol, BigInteger.ZERO);
+    }
+
+    public static void setMinimumDebtThreshold(BigInteger threshold) {
+        minimumDebtThreshold.set(threshold);
+    }
+
+    public static BigInteger getMinimumDebtThreshold() {
+        return minimumDebtThreshold.getOrDefault(BigInteger.ZERO);
     }
 
     public static void setSavingsRateShare(BigInteger share) {

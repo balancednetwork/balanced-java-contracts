@@ -180,24 +180,39 @@ class LoansTestRewards extends LoansTestBase {
         // Arrange
         Account account = sm.createAccount();
         Account liquidator = sm.createAccount();
+        String collateral_symbol = "sICX";
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
         BigInteger loan = BigInteger.valueOf(200).multiply(EXA);
         BigInteger expectedFee = calculateFee(loan);
+        BigInteger originalTotalDebt = getTotalDebt();
+        BigInteger liquidateAmount = BigInteger.valueOf(200).multiply(EXA);
+        System.out.println("total debt: " + originalTotalDebt);
 
-        BigInteger liquidationReward = (BigInteger) getParam("liquidation reward");
-        BigInteger expectedReward = collateral.multiply(liquidationReward).divide(POINTS);
+        liquidateSetup(collateral_symbol, BigInteger.valueOf(12000), BigInteger.valueOf(400), BigInteger.valueOf(100), BigInteger.valueOf(10).multiply(EXA));
 
         takeLoanICX(account, "bnUSD", collateral, loan);
-        verifyPosition(account.getAddress(), collateral, loan.add(expectedFee));
 
-        mockOraclePrice("sICX", EXA.divide(BigInteger.valueOf(4)));
+        BigInteger totalLoan = loan.add(expectedFee);
+        verifyPosition(account.getAddress(), collateral, totalLoan);
 
+        BigInteger price = EXA.divide(BigInteger.valueOf(5));
+        BigInteger liquidationPrice = price.multiply(POINTS.subtract(BigInteger.valueOf(400).add(BigInteger.valueOf(100)))).divide(POINTS);
+
+        mockOraclePrice("sICX", price);
         // Act
-        loans.invoke(liquidator, "liquidate", account.getAddress().toString(), "sICX");
+        loans.invoke(liquidator, "liquidate", account.getAddress().toString(), liquidateAmount, "sICX");
+
+        //Since the Liquidation ratio  is 85%, mock price is 1/5 which makes collateral value 200, and liquidation value 190(95% of 200)
+        //since liquidation ratio is 202/200 so all collateral will be liquidated for the value of 190
+
+        BigInteger liquidatorFee = BigInteger.valueOf(400).multiply(collateral).divide(POINTS);
+        BigInteger daoFundFee = BigInteger.valueOf(100).multiply(collateral).divide(POINTS);
+        BigInteger expectedLiquidation = collateral.subtract(liquidatorFee).subtract(daoFundFee);
 
         // Assert
-        verify(sicx.mock).transfer(eq(liquidator.getAddress()), eq(expectedReward), any(byte[].class));
-
+        verify(sicx.mock).transfer(eq(liquidator.getAddress()), eq(expectedLiquidation.add(liquidatorFee)), any(byte[].class));
+        verify(sicx.mock).transfer(eq(mockBalanced.daofund.getAddress()), eq(daoFundFee), any(byte[].class));
+        verify(bnusd.mock).burnFrom(liquidator.getAddress(), BigInteger.valueOf(190).multiply(EXA));
         verifyPosition(account.getAddress(), BigInteger.ZERO, BigInteger.ZERO);
 
         Map<String, Object> bnusdAsset = ((Map<String, Map<String, Object>>) loans.call("getAvailableAssets")).get(
@@ -205,14 +220,11 @@ class LoansTestRewards extends LoansTestBase {
         Map<String, Map<String, Object>> bnusdDebtDetails = (Map<String, Map<String, Object>>) bnusdAsset.get(
                 "debt_details");
 
-        BigInteger expectedBadDebt = loan.add(expectedFee);
-        BigInteger expectedLiquidationPool = collateral.subtract(expectedReward);
-        assertEquals(expectedBadDebt, bnusdDebtDetails.get("sICX").get("bad_debt"));
-        assertEquals(expectedLiquidationPool, bnusdDebtDetails.get("sICX").get("liquidation_pool"));
+        BigInteger toralAmountSpent = collateral.multiply(liquidationPrice).divide(EXA);
 
-        verifyTotalDebt(BigInteger.ZERO);
+        BigInteger expectedBadDebt = totalLoan.subtract(toralAmountSpent);
+        assertEquals(expectedBadDebt, bnusdDebtDetails.get("sICX").get("bad_debt"));
         verify(rewards.mock).updateBalanceAndSupply("Loans", BigInteger.ZERO, account.getAddress().toString(), BigInteger.ZERO);
-        verify(rewards.mock).updateBalanceAndSupply("Loans", loan.add(expectedFee), account.getAddress().toString(),
-                loan.add(expectedFee));
     }
+
 }
