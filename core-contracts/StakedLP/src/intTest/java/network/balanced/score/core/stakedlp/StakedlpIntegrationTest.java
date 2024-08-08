@@ -123,14 +123,6 @@ public class StakedlpIntegrationTest {
         BigInteger poolId = dex.getPoolId(tokenAClient._address(), tokenBClient._address());
         BigInteger balance = dex.balanceOf(userAddress, poolId);
 
-        // init rewards weight controller
-        BigInteger day = balanced.ownerClient.governance.getDay();
-        JsonArray setMigrateToVotingDayParameters = new JsonArray()
-                .add(createParameter(day.add(BigInteger.TEN)));
-        JsonArray actions = createSingleTransaction(balanced.rewards._address(), "setMigrateToVotingDay",
-                setMigrateToVotingDayParameters);
-        balanced.ownerClient.governance.execute(actions.toString());
-
         //set name
         addNewDataSource("test", poolId, BigInteger.ONE);
 

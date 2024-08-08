@@ -32,7 +32,7 @@ import java.util.Map;
 @ScoreClient
 @ScoreInterface
 public interface Dex extends Name, AddressManager, Fallback, TokenFallback,
-        IRC31Base, Version, FloorLimitedInterface {
+        IRC31Base, Version, FloorLimitedInterface, DataSource {
 
     @External
     void setPoolLpFee(BigInteger _value);
@@ -150,9 +150,6 @@ public interface Dex extends Name, AddressManager, Fallback, TokenFallback,
 
     @External(readonly = true)
     BigInteger totalDexAddresses(BigInteger _id);
-
-    @External(readonly = true)
-    Map<String, BigInteger> getBalanceAndSupply(String _name, String _owner);
 
     @External(readonly = true)
     BigInteger balanceOfAt(Address _account, BigInteger _id, BigInteger _snapshot_id, @Optional boolean _twa);

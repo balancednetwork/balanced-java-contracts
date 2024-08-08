@@ -34,7 +34,7 @@ import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface Loans extends Name, AddressManager, Version, XTokenReceiver, FloorLimitedInterface {
+public interface Loans extends Name, AddressManager, Version, XTokenReceiver, FloorLimitedInterface, DataSource {
     @External(readonly = true)
     BigInteger getDay();
 
@@ -70,9 +70,6 @@ public interface Loans extends Name, AddressManager, Version, XTokenReceiver, Fl
 
     @External
     void addAsset(Address _token_address, boolean _active, boolean _collateral);
-
-    @External(readonly = true)
-    Map<String, BigInteger> getBalanceAndSupply(String _name, String _owner);
 
     @External(readonly = true)
     BigInteger getBnusdValue(String _name);

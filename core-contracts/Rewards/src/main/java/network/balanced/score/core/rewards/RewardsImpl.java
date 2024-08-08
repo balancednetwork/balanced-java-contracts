@@ -17,15 +17,13 @@
 package network.balanced.score.core.rewards;
 
 import network.balanced.score.core.rewards.utils.BalanceData;
-import network.balanced.score.core.rewards.utils.RewardsConstants;
 import network.balanced.score.core.rewards.weight.SourceWeightController;
 import network.balanced.score.lib.interfaces.Rewards;
-import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.Point;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import network.balanced.score.lib.structs.RewardsDataEntryOld;
 import network.balanced.score.lib.structs.VotedSlope;
-import network.balanced.score.lib.utils.BalancedAddressManager;
+import network.balanced.score.lib.utils.ArrayDBUtils;
 import network.balanced.score.lib.utils.IterableDictDB;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.SetDB;
@@ -36,18 +34,25 @@ import score.annotation.External;
 import score.annotation.Optional;
 import scorex.util.ArrayList;
 import scorex.util.HashMap;
+import network.balanced.score.lib.utils.BalancedAddressManager;
 
 import java.math.BigInteger;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import com.eclipsesource.json.Json;
+import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.JsonValue;
 
 import static network.balanced.score.core.rewards.utils.RewardsConstants.*;
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
-import static network.balanced.score.lib.utils.DBHelpers.contains;
+import static network.balanced.score.lib.utils.Constants.WEEK_IN_MICRO_SECONDS;
+import static network.balanced.score.lib.utils.Math.convertToNumber;
 import static network.balanced.score.lib.utils.Math.pow;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getBaln;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getBoostedBaln;
 
 
 /***
@@ -56,17 +61,11 @@ import static network.balanced.score.lib.utils.Math.pow;
  */
 public class RewardsImpl implements Rewards {
     public static final String TAG = "BalancedRewards";
-
-    private static final String GOVERNANCE = "governance";
-    private static final String ADMIN = "admin";
-    private static final String BALN_ADDRESS = "baln_address";
-    private static final String BOOSTED_BALN_ADDRESS = "boosted_baln_address";
-    private static final String BWT_ADDRESS = "bwt_address";
-    private static final String RESERVE_FUND = "reserve_fund";
-    private static final String DAO_FUND = "dao_fund";
-
     private static final String START_TIMESTAMP = "start_timestamp";
     private static final String BALN_HOLDINGS = "baln_holdings";
+    private static final String EXTERNAL_HOLDINGS = "external_holdings";
+    private static final String EXTERNAL_REWARD_PROVIDERS = "external_reward_providers";
+    private static final String EXTERNAL_REWARD_TOKENS = "external_reward_tokens";
     private static final String PLATFORM_DAY = "platform_day";
     private static final String DATA_PROVIDERS = "data_providers";
     private static final String BOOST_WEIGHT = "boost_weight";
@@ -76,15 +75,11 @@ public class RewardsImpl implements Rewards {
     private static final String FIXED_DISTRIBUTION_PERCENTAGES = "fixed_distribution_percentages";
     private static final String VERSION = "version";
 
-    private static final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
-    private static final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
-    private static final VarDB<Address> balnAddress = Context.newVarDB(BALN_ADDRESS, Address.class);
-    public static final VarDB<Address> boostedBaln = Context.newVarDB(BOOSTED_BALN_ADDRESS, Address.class);
-    private static final VarDB<Address> bwtAddress = Context.newVarDB(BWT_ADDRESS, Address.class);
-    private static final VarDB<Address> reserveFund = Context.newVarDB(RESERVE_FUND, Address.class);
-    private static final VarDB<Address> daofund = Context.newVarDB(DAO_FUND, Address.class);
     private static final VarDB<BigInteger> startTimestamp = Context.newVarDB(START_TIMESTAMP, BigInteger.class);
     static final DictDB<String, BigInteger> balnHoldings = Context.newDictDB(BALN_HOLDINGS, BigInteger.class);
+    static final BranchDB<String, DictDB<Address, BigInteger>> externalHoldings = Context.newBranchDB(EXTERNAL_HOLDINGS, BigInteger.class);
+    static final DictDB<Address, Boolean> externalRewardProviders = Context.newDictDB(EXTERNAL_REWARD_PROVIDERS, Boolean.class);
+    static final IterableDictDB<Address, Boolean> externalRewardTokens = new IterableDictDB<>(EXTERNAL_REWARD_TOKENS, Boolean.class, Address.class, false);
 
     private static final VarDB<BigInteger> platformDay = Context.newVarDB(PLATFORM_DAY, BigInteger.class);
     private final static SetDB<Address> dataProviders = new SetDB<>(DATA_PROVIDERS, Address.class, null);
@@ -93,62 +88,37 @@ public class RewardsImpl implements Rewards {
             Context.newDictDB(DAILY_VOTABLE_DISTRIBUTIONS, BigInteger.class);
     public static final BranchDB<String, DictDB<BigInteger, BigInteger>> dailyFixedDistribution =
             Context.newBranchDB(DAILY_FIXED_DISTRIBUTIONS, BigInteger.class);
-    public static final VarDB<BigInteger> weightControllerMigrationDay = Context.newVarDB(
-            "weightControllerMigrationDay", BigInteger.class);
     private static final IterableDictDB<String, BigInteger> distributionPercentages =
             new IterableDictDB<>(DISTRIBUTION_PERCENTAGES, BigInteger.class, String.class, false);
     private static final IterableDictDB<String, BigInteger> fixedDistributionPercentages =
             new IterableDictDB<>(FIXED_DISTRIBUTION_PERCENTAGES, BigInteger.class, String.class, false);
-    private static final Map<String, VarDB<Address>> platformRecipients = Map.of(WORKER_TOKENS, bwtAddress,
-            RewardsConstants.RESERVE_FUND, reserveFund,
-            DAOFUND, daofund);
-
-    // deprecated
-    private static final String RECIPIENT_SPLIT = "recipient_split";
-    private static final String SNAPSHOT_RECIPIENT = "snapshot_recipient";
-    private static final String COMPLETE_RECIPIENT = "complete_recipient";
-    private static final String TOTAL_SNAPSHOTS = "total_snapshots";
-    private static final String RECIPIENTS = "recipients";
-
-    private static final DictDB<String, BigInteger> recipientSplit = Context.newDictDB(RECIPIENT_SPLIT,
-            BigInteger.class);
-    private static final DictDB<String, BigInteger> totalSnapshots = Context.newDictDB(TOTAL_SNAPSHOTS,
-            BigInteger.class);
-    private static final BranchDB<String, BranchDB<BigInteger, DictDB<String, BigInteger>>> snapshotRecipient =
-            Context.newBranchDB(SNAPSHOT_RECIPIENT, BigInteger.class);
-    private static final ArrayDB<String> completeRecipient = Context.newArrayDB(COMPLETE_RECIPIENT, String.class);
-    private static final ArrayDB<String> recipients = Context.newArrayDB(RECIPIENTS, String.class);
 
     private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
 
 
     public RewardsImpl(@Optional Address _governance) {
-        if (governance.get() == null) {
-            // On "install" code
-            isContract(_governance);
-            governance.set(_governance);
-            BalancedAddressManager.setGovernance(governance.get());
-            platformDay.set(BigInteger.ONE);
-            distributionPercentages.set(WORKER_TOKENS, BigInteger.ZERO);
-            distributionPercentages.set(RewardsConstants.RESERVE_FUND, BigInteger.ZERO);
-            distributionPercentages.set(DAOFUND, BigInteger.ZERO);
-
-            // deprecated setters
-            recipientSplit.set(WORKER_TOKENS, BigInteger.ZERO);
-            recipientSplit.set(RewardsConstants.RESERVE_FUND, BigInteger.ZERO);
-            recipientSplit.set(DAOFUND, BigInteger.ZERO);
-
-            recipients.add(WORKER_TOKENS);
-            recipients.add(RewardsConstants.RESERVE_FUND);
-            recipients.add(DAOFUND);
-            completeRecipient.add(WORKER_TOKENS);
-            completeRecipient.add(RewardsConstants.RESERVE_FUND);
-            completeRecipient.add(DAOFUND);
-            boostWeight.set(WEIGHT);
-        } else {
-            SourceWeightController.reset(getAllSources());
-        }
         SourceWeightController.rewards = this;
+
+        if (BalancedAddressManager.getAddressByName(Names.GOVERNANCE) == null) {
+            // On "install" code
+            BalancedAddressManager.setGovernance(_governance);
+            platformDay.set(BigInteger.ONE);
+            distributionPercentages.set(Names.WORKERTOKEN, BigInteger.ZERO);
+            distributionPercentages.set(Names.RESERVE, BigInteger.ZERO);
+            distributionPercentages.set(Names.DAOFUND, BigInteger.ZERO);
+
+            SourceWeightController.addType(coreTypeName, EXA);
+            SourceWeightController.addType(communityTypeName, EXA);
+            boostWeight.set(WEIGHT);
+        } else if (distributionPercentages.get(WORKER_TOKENS) != null) {
+            distributionPercentages.set(Names.WORKERTOKEN, distributionPercentages.get(WORKER_TOKENS));
+            distributionPercentages.set(Names.RESERVE, distributionPercentages.get(RESERVE_FUND));
+            distributionPercentages.set(Names.DAOFUND, distributionPercentages.get(DAOFUND));
+            distributionPercentages.remove(WORKER_TOKENS);
+            distributionPercentages.remove(RESERVE_FUND);
+            distributionPercentages.remove(DAOFUND);
+        }
+
         if (currentVersion.getOrDefault("").equals(Versions.REWARDS)) {
             Context.revert("Can't Update same version of code");
         }
@@ -163,6 +133,16 @@ public class RewardsImpl implements Rewards {
     @External(readonly = true)
     public String version() {
         return currentVersion.getOrDefault("");
+    }
+
+    @External
+    public void updateAddress(String name) {
+        BalancedAddressManager.resetAddress(name);
+    }
+
+    @External(readonly = true)
+    public Address getAddress(String name) {
+        return BalancedAddressManager.getAddressByName(name);
     }
 
     @External(readonly = true)
@@ -189,21 +169,45 @@ public class RewardsImpl implements Rewards {
         return holdings;
     }
 
+
+    @External(readonly = true)
+    public Map<String, BigInteger> getHoldings(String _holder) {
+        List<Address> tokens = externalRewardTokens.keys();
+        DictDB<Address, BigInteger> holdingsDB = externalHoldings.at(_holder);
+        Map<String, BigInteger> holdings = new HashMap<>();
+
+        for (Address token : tokens) {
+            holdings.put(token.toString(), holdingsDB.getOrDefault(token, BigInteger.ZERO));
+        }
+
+        holdings.put(getBaln().toString(), balnHoldings.getOrDefault(_holder, BigInteger.ZERO));
+
+        return holdings;
+    }
+
     @External(readonly = true)
     public BigInteger getBalnHolding(String _holder) {
-        BigInteger accruedRewards = balnHoldings.getOrDefault(_holder, BigInteger.ZERO);
+        Address baln = getBaln();
+        return getRewards(_holder).get(baln.toString());
+    }
 
+    @External(readonly = true)
+    public Map<String, BigInteger> getRewards(String _holder) {
+        Map<String, BigInteger> accruedRewards = getHoldings(_holder);
         int dataSourcesCount = DataSourceDB.size();
-        // TODO If we remove data source, user can't claim rewards for that data source
         for (int i = 0; i < dataSourcesCount; i++) {
             String name = DataSourceDB.names.get(i);
             DataSourceImpl dataSource = DataSourceDB.get(name);
             BigInteger currentTime = getTime();
-
-            BigInteger sourceRewards = dataSource.updateSingleUserData(currentTime, dataSource.getWorkingSupply(true)
-                    , _holder, dataSource.getWorkingBalance(_holder, true), true);
-
-            accruedRewards = accruedRewards.add(sourceRewards);
+            BalanceData balances = new BalanceData();
+            balances.prevBalance = dataSource.getBalance(_holder);
+            balances.prevSupply = dataSource.getTotalSupply();
+            balances.prevWorkingBalance = dataSource.getWorkingBalance(_holder, true);
+            balances.prevWorkingSupply = dataSource.getWorkingSupply(true);
+            Map<Address, BigInteger> sourceRewards = dataSource.updateSingleUserData(currentTime, balances, _holder, true);
+            for (Map.Entry<Address, BigInteger> entry : sourceRewards.entrySet()) {
+                accruedRewards.put(entry.getKey().toString(), accruedRewards.get(entry.getKey().toString()).add(entry.getValue()));
+            }
         }
 
         return accruedRewards;
@@ -220,31 +224,9 @@ public class RewardsImpl implements Rewards {
         return names;
     }
 
-    // Split to allow creation of mainnet like scenario
-    // In the future use createDataSource
-    @External
-    public void addNewDataSource(String _name, Address _address) {
-        only(governance);
-        Context.require(!contains(recipients, _name), TAG + ": Recipient already exists");
-        Context.require(_address.isContract(), TAG + " : Data source must be a contract.");
-
-        recipients.add(_name);
-        completeRecipient.add(_name);
-        DataSourceDB.newSource(_name, _address);
-    }
-
-    @External
-    public void addDataSource(String name, int sourceType, BigInteger weight) {
-        only(governance);
-        DataSourceImpl dataSource = DataSourceDB.get(name);
-        Context.require(name.equals(dataSource.getName()), "There is no data source with the name " + name);
-        SourceWeightController.addSource(name, sourceType, weight);
-    }
-
     @External
     public void createDataSource(String _name, Address _address, int sourceType) {
-        only(governance);
-        Context.require(!contains(recipients, _name), TAG + ": Recipient already exists");
+        onlyOwner();
         Context.require(_address.isContract(), TAG + " : Data source must be a contract.");
 
         DataSourceDB.newSource(_name, _address);
@@ -260,6 +242,19 @@ public class RewardsImpl implements Rewards {
             DataSourceImpl dataSource = DataSourceDB.get(name);
 
             dataSources.put(name, dataSource.getData());
+        }
+
+        return dataSources;
+    }
+
+    @External(readonly = true)
+    public Map<String, Map<String, Object>> getUserSourceData(String user) {
+        Map<String, Map<String, Object>> dataSources = new HashMap<>();
+        int dataSourcesCount = DataSourceDB.size();
+        for (int i = 0; i < dataSourcesCount; i++) {
+            String name = DataSourceDB.names.get(i);
+            DataSourceImpl dataSource = DataSourceDB.get(name);
+            dataSources.put(name, dataSource.getUserData(user));
         }
 
         return dataSources;
@@ -357,7 +352,7 @@ public class RewardsImpl implements Rewards {
 
     private boolean mintAndAllocateBalnReward(BigInteger platformDay) {
         BigInteger distribution = dailyDistribution(platformDay);
-        Context.call(balnAddress.get(), "mint", distribution, new byte[0]);
+        Context.call(getBaln(), "mint", distribution, new byte[0]);
 
         BigInteger shares = HUNDRED_PERCENTAGE;
         BigInteger remaining = distribution;
@@ -365,7 +360,7 @@ public class RewardsImpl implements Rewards {
         for (String recipient : recipients) {
             BigInteger split = distributionPercentages.get(recipient);
             BigInteger share = split.multiply(remaining).divide(shares);
-            Context.call(balnAddress.get(), "transfer", platformRecipients.get(recipient).get(), share, new byte[0]);
+            Context.call(getBaln(), "transfer", BalancedAddressManager.getAddress(recipient) , share, new byte[0]);
             remaining = remaining.subtract(share);
             shares = shares.subtract(split);
         }
@@ -407,51 +402,82 @@ public class RewardsImpl implements Rewards {
         BigInteger boostedSupply = fetchBoostedSupply();
         updateAllUserRewards(address, sources, boostedBalance, boostedSupply);
 
+        List<Address> tokens = externalRewardTokens.keys();
+        DictDB<Address, BigInteger> holdingsDB = externalHoldings.at(address);
+
+        for (Address token : tokens) {
+            BigInteger amount = holdingsDB.getOrDefault(token, BigInteger.ZERO);
+            if (amount.compareTo(BigInteger.ZERO) > 0) {
+                Context.call(token, "transfer", caller, amount, new byte[0]);
+                holdingsDB.set(token, null);
+                RewardsClaimedV2(token, address, amount);
+            }
+        }
+
         BigInteger userClaimableRewards = balnHoldings.getOrDefault(address, BigInteger.ZERO);
         if (userClaimableRewards.compareTo(BigInteger.ZERO) > 0) {
             balnHoldings.set(address, null);
-            Context.call(balnAddress.get(), "transfer", caller, userClaimableRewards, new byte[0]);
+            Address baln = getBaln();
+
+            Context.call(baln, "transfer", caller, userClaimableRewards, new byte[0]);
             RewardsClaimed(caller, userClaimableRewards);
+            RewardsClaimedV2(baln, address, userClaimableRewards);
         }
-    }
-
-    @External(readonly = true)
-    public BigInteger getAPY(String _name) {
-        DataSourceImpl dexDataSource = DataSourceDB.get("sICX/ICX");
-        DataSourceImpl dataSource = DataSourceDB.get(_name);
-        BigInteger emission = this.getEmission(BigInteger.valueOf(-1));
-
-        BigInteger balnPrice = Context.call(BigInteger.class, dexDataSource.getContractAddress(), "getBalnPrice");
-        BigInteger migrationDay = weightControllerMigrationDay.get();
-        BigInteger percentage;
-
-        if (migrationDay == null || migrationDay.compareTo(getDay()) > 0) {
-            percentage = dataSource.getDistPercent();
-        } else {
-            BigInteger relativePercentage = SourceWeightController.getRelativeWeight(_name,
-                    BigInteger.valueOf(Context.getBlockTimestamp()));
-            percentage = relativePercentage.multiply(getVotableDist()).divide(HUNDRED_PERCENTAGE);
-        }
-
-        BigInteger sourceValue = dataSource.getValue();
-        BigInteger year = BigInteger.valueOf(365);
-
-        BigInteger sourceAmount = year.multiply(emission).multiply(percentage);
-
-        return sourceAmount.multiply(balnPrice).divide(sourceValue.multiply(HUNDRED_PERCENTAGE));
     }
 
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         checkStatus();
-        Context.require(Context.getCaller().equals(balnAddress.get()),
-                TAG + ": The Rewards SCORE can only accept BALN tokens");
+        Address token = Context.getCaller();
+        if (token.equals(getBaln())) {
+            return;
+        }
+
+        Context.require(externalRewardTokens.getOrDefault(token, false), "Only whitelisted tokens is allowed as rewards tokens");
+        Context.require(externalRewardProviders.getOrDefault(_from, false), "Only whitelisted addresses is allowed to provider external rewards");
+        String unpackedData = new String(_data);
+        Context.require(!unpackedData.isEmpty(), "Token Fallback: Data can't be empty");
+
+        JsonArray amounts = Json.parse(unpackedData).asArray();
+
+        BigInteger rewardDay = getDay().add(BigInteger.ONE);
+        BigInteger total = BigInteger.ZERO;
+        for (JsonValue jsonValue : amounts) {
+            BigInteger amount = convertToNumber(jsonValue.asObject().get("amount"));
+            String source = jsonValue.asObject().get("source").asString();
+
+            total = total.add(amount);
+
+            DataSourceImpl dataSource = DataSourceDB.get(source);
+            if (dataSource.getTotalExternalWeight(token).equals(BigInteger.ZERO)) {
+                if (!ArrayDBUtils.arrayDbContains(dataSource.getRewardTokensDB(), token)) {
+                    dataSource.addRewardToken(token);
+                }
+            }
+
+            BigInteger prevAmount = dataSource.getTotalDist(rewardDay);
+            dataSource.setTotalExternalDist(rewardDay, token, amount.add(prevAmount));
+        }
+
+        Context.require(total.equals(_value), "Total allocations do not match amount deposited");
     }
 
     @External
     public void addDataProvider(Address _source) {
         onlyOwner();
         dataProviders.add(_source);
+    }
+
+    @External
+    public void configureExternalReward(Address token, boolean allow) {
+        onlyOwner();
+        externalRewardTokens.set(token, allow);
+    }
+
+    @External
+    public void configureExternalRewardProvider(Address provider, boolean allow) {
+        onlyOwner();
+        externalRewardProviders.set(provider, allow);
     }
 
     @External(readonly = true)
@@ -488,6 +514,8 @@ public class RewardsImpl implements Rewards {
         Map<String, BigInteger> balanceAndSupply = dataSource.loadCurrentSupply(user);
         balances.balance = balanceAndSupply.get(BALANCE);
         balances.supply = balanceAndSupply.get(TOTAL_SUPPLY);
+        balances.prevBalance = dataSource.getBalance(user);
+        balances.prevSupply = dataSource.getTotalSupply();
         balances.prevWorkingBalance = dataSource.getWorkingBalance(user, _balance, false);
         balances.prevWorkingSupply = dataSource.getWorkingSupply(_totalSupply, false);
 
@@ -515,6 +543,8 @@ public class RewardsImpl implements Rewards {
             Map<String, BigInteger> balanceAndSupply = dataSource.loadCurrentSupply(user);
             balances.balance = balanceAndSupply.get(BALANCE);
             balances.supply = balanceAndSupply.get(TOTAL_SUPPLY);
+            balances.prevBalance = dataSource.getBalance(user);
+            balances.prevSupply = dataSource.getTotalSupply();
             balances.prevWorkingBalance = dataSource.getWorkingBalance(user, entry._balance, false);
             balances.prevWorkingSupply = dataSource.getWorkingSupply(_totalSupply, false);
 
@@ -537,6 +567,8 @@ public class RewardsImpl implements Rewards {
         balances.boostedSupply = fetchBoostedSupply();
         balances.balance = _balance;
         balances.supply = _totalSupply;
+        balances.prevBalance = dataSource.getBalance(_user);
+        balances.prevSupply = dataSource.getTotalSupply();
         balances.prevWorkingBalance = dataSource.getWorkingBalance(_user);
         balances.prevWorkingSupply = dataSource.getWorkingSupply();
 
@@ -561,6 +593,8 @@ public class RewardsImpl implements Rewards {
             balances.boostedSupply = boostedSupply;
             balances.balance = entry._balance;
             balances.supply = _totalSupply;
+            balances.prevBalance = dataSource.getBalance(entry._user);
+            balances.prevSupply = dataSource.getTotalSupply();
             balances.prevWorkingBalance = dataSource.getWorkingBalance(entry._user);
             balances.prevWorkingSupply = dataSource.getWorkingSupply();
 
@@ -571,7 +605,7 @@ public class RewardsImpl implements Rewards {
     @External
     public void onKick(Address user) {
         checkStatus();
-        only(boostedBaln);
+        only(getBoostedBaln());
         BigInteger boostedSupply = fetchBoostedSupply();
         updateAllUserRewards(user.toString(), getAllSources(), BigInteger.ZERO, boostedSupply);
     }
@@ -587,14 +621,14 @@ public class RewardsImpl implements Rewards {
     @External
     public void onBalanceUpdate(Address user, BigInteger balance) {
         checkStatus();
-        only(boostedBaln);
+        only(getBoostedBaln());
         BigInteger boostedSupply = fetchBoostedSupply();
         updateAllUserRewards(user.toString(), getAllSources(), balance, boostedSupply);
     }
 
     @External
     public void setBoostWeight(BigInteger weight) {
-        only(admin);
+        onlyOwner();
         Context.require(weight.compareTo(HUNDRED_PERCENTAGE.divide(BigInteger.valueOf(100))) >= 0, "Boost weight has " +
                 "to be above 1%");
         Context.require(weight.compareTo(HUNDRED_PERCENTAGE) <= 0, "Boost weight has to be below 100%");
@@ -630,49 +664,32 @@ public class RewardsImpl implements Rewards {
 
     @External
     public void setVotable(String name, boolean votable) {
-        only(governance);
+        onlyOwner();
         SourceWeightController.setVotable(name, votable);
     }
 
     @External
     public void addType(String name) {
-        only(governance);
+        onlyOwner();
         SourceWeightController.addType(name, BigInteger.ZERO);
     }
 
     @External
     public void changeTypeWeight(int typeId, BigInteger weight) {
-        only(governance);
+        onlyOwner();
         SourceWeightController.changeTypeWeight(typeId, weight);
     }
 
     @External
-    public void setMigrateToVotingDay(BigInteger day) {
-        onlyOwner();
-        Context.require(day.compareTo(platformDay.get()) > 0, "day has to be greater than platformDay");
-        if (weightControllerMigrationDay.get() == null) {
-            migrateWeightController();
-        }
-
-        weightControllerMigrationDay.set(day);
-    }
-
-    @External(readonly = true)
-    public BigInteger getMigrateToVotingDay() {
-        return weightControllerMigrationDay.get();
-    }
-
-    @External
     public void setPlatformDistPercentage(String name, BigInteger percentage) {
-        only(governance);
-        Context.require(platformRecipients.containsKey(name), name + " is not a platform recipient");
+        onlyOwner();
         distributionPercentages.set(name, percentage);
         verifyPercentages();
     }
 
     @External
     public void setFixedSourcePercentage(String name, BigInteger percentage) {
-        only(governance);
+        onlyOwner();
         DataSourceImpl dataSource = DataSourceDB.get(name);
         Context.require(dataSource.getName().equals(name), "There is no data source with the name " + name);
         if (percentage.equals(BigInteger.ZERO)) {
@@ -720,12 +737,6 @@ public class RewardsImpl implements Rewards {
         allPercentages.put("Voting", votePercentages);
 
         return allPercentages;
-    }
-
-    @External
-    public void revote(Address user) {
-        checkStatus();
-        SourceWeightController.revote(user, getAllSources());
     }
 
     @External
@@ -899,6 +910,8 @@ public class RewardsImpl implements Rewards {
             Map<String, BigInteger> balanceAndSupply = dataSource.loadCurrentSupply(user);
             balances.balance = balanceAndSupply.get(BALANCE);
             balances.supply = balanceAndSupply.get(TOTAL_SUPPLY);
+            balances.prevBalance = dataSource.getBalance(user);
+            balances.prevSupply = dataSource.getTotalSupply();
             balances.prevWorkingBalance = workingBalance;
             balances.prevWorkingSupply = dataSource.getWorkingSupply(false);
 
@@ -909,104 +922,29 @@ public class RewardsImpl implements Rewards {
     private void updateUserAccruedRewards(String _name, BigInteger currentTime, DataSourceImpl dataSource,
                                           String user, BalanceData balances) {
 
-        BigInteger accruedRewards = dataSource.updateSingleUserData(currentTime, balances.prevWorkingSupply, user,
-                balances.prevWorkingBalance, false);
+        Map<Address, BigInteger> accruedRewards = dataSource.updateSingleUserData(currentTime, balances, user, false);
         dataSource.updateWorkingBalanceAndSupply(user, balances);
 
-        if (accruedRewards.compareTo(BigInteger.ZERO) > 0) {
+        Address baln = getBaln();
+        if (accruedRewards.get(baln).compareTo(BigInteger.ZERO) > 0) {
             BigInteger newHoldings =
-                    balnHoldings.getOrDefault(user, BigInteger.ZERO).add(accruedRewards);
+                    balnHoldings.getOrDefault(user, BigInteger.ZERO).add(accruedRewards.get(baln));
             balnHoldings.set(user, newHoldings);
-            RewardsAccrued(user, _name, accruedRewards);
+            RewardsAccrued(user, _name, accruedRewards.get(baln));
+            accruedRewards.remove(baln);
+
         }
-    }
+        DictDB<Address, BigInteger> externalHoldingsDB = externalHoldings.at(user);
+        for (Map.Entry<Address, BigInteger> entry : accruedRewards.entrySet()) {
+            BigInteger prevRewards = externalHoldingsDB.getOrDefault(entry.getKey(), BigInteger.ZERO);
+            externalHoldingsDB.set(entry.getKey(), prevRewards.add(entry.getValue()));
+        }
 
-    @External
-    public void setGovernance(Address _address) {
-        onlyOwner();
-        isContract(_address);
-        governance.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getGovernance() {
-        return governance.get();
-    }
-
-    @External
-    public void setAdmin(Address _address) {
-        only(governance);
-        admin.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getAdmin() {
-        return admin.get();
-    }
-
-    @External
-    public void setBaln(Address _address) {
-        only(admin);
-        isContract(_address);
-        balnAddress.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getBaln() {
-        return balnAddress.get();
-    }
-
-    @External
-    public void setBoostedBaln(Address _address) {
-        only(admin);
-        isContract(_address);
-        boostedBaln.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getBoostedBaln() {
-        return boostedBaln.get();
-    }
-
-    @External
-    public void setBwt(Address _address) {
-        only(admin);
-        isContract(_address);
-        bwtAddress.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getBwt() {
-        return bwtAddress.get();
-    }
-
-    @External
-    public void setReserve(Address _address) {
-        only(admin);
-        isContract(_address);
-        reserveFund.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getReserve() {
-        return reserveFund.get();
-    }
-
-    @External
-    public void setDaofund(Address _address) {
-        only(admin);
-        isContract(_address);
-        daofund.set(_address);
-    }
-
-    @External(readonly = true)
-    public Address getDaofund() {
-        return daofund.get();
     }
 
     @External
     public void setTimeOffset(BigInteger _timestamp) {
-        only(admin);
+        onlyOwner();
         startTimestamp.set(_timestamp);
         Context.require(getDay().compareTo(BigInteger.ZERO) > 0,
                 TAG + ": Day should begin from 1. Please set earlier time offset");
@@ -1031,19 +969,6 @@ public class RewardsImpl implements Rewards {
     }
 
     public static BigInteger getTotalDist(String sourceName, BigInteger day, boolean readonly) {
-        BigInteger migrationDay = weightControllerMigrationDay.get();
-        if (migrationDay == null || migrationDay.compareTo(day) > 0) {
-            BigInteger dist = dailyDistribution(day);
-            Map<String, BigInteger> recipientDistribution = _recipientAt(day);
-
-            BigInteger split = recipientDistribution.get(sourceName);
-            if (split == null) {
-                return BigInteger.ZERO;
-            }
-
-            return split.multiply(dist).divide(HUNDRED_PERCENTAGE);
-        }
-
         BigInteger dist = dailyVotableDistribution.getOrDefault(day, BigInteger.ZERO);
         BigInteger time = day.multiply(MICRO_SECONDS_IN_A_DAY).add(startTimestamp.get());
         BigInteger weight;
@@ -1102,49 +1027,9 @@ public class RewardsImpl implements Rewards {
         return fetchBoostedBalance(Address.fromString(user));
     }
 
-    private void migrateWeightController() {
-        String coreTypeName = "BALN Core";
-        String communityTypeName = "Community";
-        SourceWeightController.addType(coreTypeName, EXA);
-        SourceWeightController.addType(communityTypeName, EXA);
-        int coreType = SourceWeightController.getTypeId(coreTypeName);
-        int communityType = SourceWeightController.getTypeId(communityTypeName);
-        Map<String, BigInteger> recipients = recipientAt(getDay());
-
-        // core
-        if (DataSourceDB.hasSource("Loans")) {
-            SourceWeightController.addSource("Loans", coreType, BigInteger.ZERO);
-            SourceWeightController.setVotable("Loans", false);
-            fixedDistributionPercentages.set("Loans", recipients.get("Loans"));
-        }
-        if (DataSourceDB.hasSource("sICX/bnUSD")) {
-            SourceWeightController.addSource("sICX/bnUSD", coreType, BigInteger.ZERO);
-        }
-        if (DataSourceDB.hasSource("BALN/bnUSD")) {
-            SourceWeightController.addSource("BALN/bnUSD", coreType, BigInteger.ZERO);
-        }
-        if (DataSourceDB.hasSource("BALN/sICX")) {
-            SourceWeightController.addSource("BALN/sICX", coreType, BigInteger.ZERO);
-        }
-
-        // Community
-        if (DataSourceDB.hasSource("sICX/ICX")) {
-            SourceWeightController.addSource("sICX/ICX", communityType, BigInteger.ZERO);
-        }
-        if (DataSourceDB.hasSource("IUSDC/bnUSD")) {
-            SourceWeightController.addSource("IUSDC/bnUSD", communityType, BigInteger.ZERO);
-        }
-        if (DataSourceDB.hasSource("USDS/bnUSD")) {
-            SourceWeightController.addSource("USDS/bnUSD", communityType, BigInteger.ZERO);
-        }
-        if (DataSourceDB.hasSource("IUSDT/bnUSD")) {
-            SourceWeightController.addSource("IUSDT/bnUSD", communityType, BigInteger.ZERO);
-        }
-    }
-
     private BigInteger fetchBoostedBalance(Address user) {
         try {
-            return (BigInteger) RewardsImpl.call(boostedBaln.get(), "balanceOf", user, BigInteger.ZERO);
+            return (BigInteger) RewardsImpl.call(getBoostedBaln(), "balanceOf", user, BigInteger.ZERO);
         } catch (Exception e) {
             return BigInteger.ZERO;
         }
@@ -1152,7 +1037,7 @@ public class RewardsImpl implements Rewards {
 
     private BigInteger fetchBoostedSupply() {
         try {
-            return (BigInteger) RewardsImpl.call(boostedBaln.get(), "totalSupply", BigInteger.ZERO);
+            return (BigInteger) RewardsImpl.call(getBoostedBaln(), "totalSupply", BigInteger.ZERO);
         } catch (Exception e) {
             return BigInteger.ZERO;
         }
@@ -1161,6 +1046,11 @@ public class RewardsImpl implements Rewards {
     @EventLog(indexed = 1)
     public void RewardsClaimed(Address _address, BigInteger _amount) {
     }
+
+    @EventLog(indexed = 2)
+    public void RewardsClaimedV2(Address _token, String _address, BigInteger _amount) {
+    }
+
 
     @EventLog(indexed = 2)
     public void Report(BigInteger _day, String _name, BigInteger _dist, BigInteger _value) {
@@ -1191,176 +1081,4 @@ public class RewardsImpl implements Rewards {
     public void NewSource(String sourceName, int typeId, BigInteger weight) {
     }
 
-    // deprecated functions
-    @External(readonly = true)
-    public List<String> getRecipients() {
-        List<String> names = new ArrayList<>();
-        int recipientsCount = recipients.size();
-        for (int i = 0; i < recipientsCount; i++) {
-            names.add(recipients.get(i));
-        }
-        return names;
-    }
-
-    @External(readonly = true)
-    public Map<String, BigInteger> getRecipientsSplit() {
-        return recipientAt(getDay());
-    }
-
-    @External(readonly = true)
-    public Map<String, Object> distStatus() {
-        Map<String, BigInteger> sourceDays = new HashMap<>();
-        int dataSourcesCount = DataSourceDB.size();
-        for (int i = 0; i < dataSourcesCount; i++) {
-            String name = DataSourceDB.names.get(i);
-            DataSourceImpl dataSource = DataSourceDB.get(name);
-
-            sourceDays.put(name, dataSource.getDay());
-        }
-
-        return Map.of(
-                "platform_day", platformDay.get(),
-                "source_days", sourceDays
-        );
-    }
-
-
-    @External(readonly = true)
-    public Map<String, BigInteger> recipientAt(BigInteger _day) {
-        return _recipientAt(_day);
-    }
-
-    public static Map<String, BigInteger> _recipientAt(BigInteger _day) {
-        Context.require(_day.compareTo(BigInteger.ZERO) >= 0, TAG + ": day:" + _day + " must be equal to or greater " +
-                "then Zero");
-
-        Map<String, BigInteger> distributions = new HashMap<>();
-
-        int completeRecipientCount = completeRecipient.size();
-        for (int i = 0; i < completeRecipientCount; i++) {
-            String recipient = completeRecipient.get(i);
-            BigInteger totalSnapshotsTaken = totalSnapshots.getOrDefault(recipient, BigInteger.ZERO);
-            BranchDB<BigInteger, DictDB<String, BigInteger>> snapshot = snapshotRecipient.at(recipient);
-            if (totalSnapshotsTaken.equals(BigInteger.ZERO)) {
-                distributions.put(recipient, recipientSplit.getOrDefault(recipient, BigInteger.ZERO));
-                continue;
-            } else if (snapshot.at(totalSnapshotsTaken.subtract(BigInteger.ONE)).getOrDefault(IDS, BigInteger.ZERO).compareTo(_day) <= 0) {
-                distributions.put(recipient,
-                        snapshot.at(totalSnapshotsTaken.subtract(BigInteger.ONE)).getOrDefault(AMOUNT,
-                                BigInteger.ZERO));
-                continue;
-            } else if (snapshot.at(BigInteger.ZERO).getOrDefault(IDS, BigInteger.ZERO).compareTo(_day) > 0) {
-                distributions.put(recipient, recipientSplit.getOrDefault(recipient, BigInteger.ZERO));
-                continue;
-            }
-
-            BigInteger low = BigInteger.ZERO;
-            BigInteger high = totalSnapshotsTaken.subtract(BigInteger.ONE);
-            while (high.compareTo(low) > 0) {
-                BigInteger mid = high.subtract(high.subtract(low).divide(BigInteger.TWO));
-                DictDB<String, BigInteger> midValue = snapshot.at(mid);
-                BigInteger index = midValue.getOrDefault(IDS, BigInteger.ZERO);
-                if (index.equals(_day)) {
-                    low = mid;
-                    break;
-                } else if (index.compareTo(_day) < 0) {
-                    low = mid;
-                } else {
-                    high = mid.subtract(BigInteger.ONE);
-                }
-            }
-
-            distributions.put(recipient, snapshot.at(low).getOrDefault(AMOUNT, BigInteger.ZERO));
-        }
-
-        Iterator<Map.Entry<String, BigInteger>> it;
-        for (it = distributions.entrySet().iterator(); it.hasNext(); ) {
-            Map.Entry<String, BigInteger> entry = it.next();
-            if (entry.getValue().equals(BigInteger.ZERO)) {
-                it.remove();
-            }
-        }
-
-        return distributions;
-    }
-
-    /**
-     * This method provides a means to adjust the allocation of rewards tokens.
-     * To maintain consistency a change to these percentages will only be
-     * accepted if they sum to 100%, with 100% represented by the value 10**18.
-     * This method must only be called when rewards are fully up-to-date.
-     * param _recipient_list: List of json containing the allocation spec.
-     * type _recipient_list: List[TypedDict]
-     **/
-    @External
-    public void updateBalTokenDistPercentage(DistributionPercentage[] _recipient_list) {
-        only(governance);
-        Context.require(_recipient_list.length == recipients.size(), TAG + ": Recipient lists lengths mismatched!");
-        BigInteger totalPercentage = BigInteger.ZERO;
-        BigInteger day = getDay();
-
-        for (DistributionPercentage recipient : _recipient_list) {
-            String name = recipient.recipient_name;
-
-            Context.require(contains(recipients, name), TAG + ": Recipient " + name + " does not exist.");
-
-            BigInteger percentage = recipient.dist_percent;
-            updateRecipientSnapshot(name, percentage);
-            DataSourceImpl dataSource = DataSourceDB.get(name);
-            BigInteger dataSourceDay = dataSource.getDay();
-            if (dataSource.getTotalDist(dataSourceDay).equals(BigInteger.ZERO)) {
-                dataSource.setDay(day);
-            }
-
-            if (distributionPercentages.get(name) != null) {
-                distributionPercentages.set(name, percentage);
-            }
-
-            dataSource.setDistPercent(percentage);
-            totalPercentage = totalPercentage.add(percentage);
-        }
-
-        Context.require(totalPercentage.equals(HUNDRED_PERCENTAGE), TAG + ": Total percentage does not sum up to 100.");
-    }
-
-    @External
-    public void removeDataSource(String _name) {
-        only(governance);
-        if (!contains(recipients, _name)) {
-            return;
-        }
-
-        BigInteger day = getDay();
-        Map<String, BigInteger> recipientDistribution = recipientAt(day);
-        Context.require(!recipientDistribution.containsKey(_name), TAG + ": Data source rewards percentage must be " +
-                "set to 0 before removing.");
-        // TODO this doesn't allow user to claim rewards from previous data source
-        String topRecipient = recipients.pop();
-        if (!topRecipient.equals(_name)) {
-            for (int i = 0; i < recipients.size(); i++) {
-                if (recipients.get(i).equals(_name)) {
-                    recipients.set(i, topRecipient);
-                }
-            }
-        }
-
-        DataSourceDB.removeSource(_name);
-    }
-
-    private void updateRecipientSnapshot(String recipient, BigInteger percentage) {
-        BigInteger currentDay = getDay();
-        BigInteger totalSnapshotsTaken = totalSnapshots.getOrDefault(recipient, BigInteger.ZERO);
-        BranchDB<BigInteger, DictDB<String, BigInteger>> snapshot = snapshotRecipient.at(recipient);
-
-        BigInteger recipientDay = snapshot.at(totalSnapshotsTaken.subtract(BigInteger.ONE)).getOrDefault(IDS,
-                BigInteger.ZERO);
-
-        if (totalSnapshotsTaken.compareTo(BigInteger.ZERO) > 0 && recipientDay.equals(currentDay)) {
-            snapshot.at(totalSnapshotsTaken.subtract(BigInteger.ONE)).set(AMOUNT, percentage);
-        } else {
-            snapshot.at(totalSnapshotsTaken).set(IDS, currentDay);
-            snapshot.at(totalSnapshotsTaken).set(AMOUNT, percentage);
-            totalSnapshots.set(recipient, totalSnapshotsTaken.add(BigInteger.ONE));
-        }
-    }
 }

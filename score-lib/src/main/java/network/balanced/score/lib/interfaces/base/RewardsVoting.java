@@ -31,9 +31,6 @@ public interface RewardsVoting {
     void setVotable(String name, boolean votable);
 
     @External
-    void addDataSource(String name, int sourceType, BigInteger weight);
-
-    @External
     void addType(String name);
 
     @External

@@ -18,7 +18,6 @@ package network.balanced.score.core.governance.utils;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
-import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.utils.Names;
 import score.Address;
 import score.Context;
@@ -28,6 +27,7 @@ import java.util.Map;
 
 import static network.balanced.score.core.governance.GovernanceImpl.*;
 import static network.balanced.score.core.governance.utils.GovernanceConstants.*;
+import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Math.pow;
 
 public class SetupManager {
@@ -75,12 +75,16 @@ public class SetupManager {
         _setTimeOffset(timeDelta);
 
         for (Map<String, String> source : DATA_SOURCES) {
-            call(ContractManager.getAddress(Names.REWARDS), "addNewDataSource", source.get("name"),
-                    ContractManager.get(source.get("address")));
+            call(ContractManager.getAddress(Names.REWARDS), "createDataSource", source.get("name"),
+                    ContractManager.get(source.get("address")), 0);
         }
 
-        call(ContractManager.getAddress(Names.REWARDS), "updateBalTokenDistPercentage", (Object) RECIPIENTS);
-    }
+        call(ContractManager.getAddress(Names.REWARDS), "setPlatformDistPercentage", Names.DAOFUND, BigInteger.valueOf(5).multiply(pow(BigInteger.TEN, 16)));
+        call(ContractManager.getAddress(Names.REWARDS), "setPlatformDistPercentage", Names.RESERVE, BigInteger.valueOf(5).multiply(pow(BigInteger.TEN, 16)));
+        call(ContractManager.getAddress(Names.REWARDS), "setPlatformDistPercentage", Names.WORKERTOKEN, BigInteger.valueOf(20).multiply(pow(BigInteger.TEN, 16)));
+        call(ContractManager.getAddress(Names.REWARDS), "setFixedSourcePercentage", "Loans", BigInteger.valueOf(20).multiply(pow(BigInteger.TEN, 16)));
+        call(ContractManager.getAddress(Names.REWARDS), "setFixedSourcePercentage", "sICX/ICX", BigInteger.TEN.multiply(pow(BigInteger.TEN, 16)));
+    };
 
     public static void createBnusdMarket() {
         BigInteger value = Context.getValue();
@@ -115,16 +119,9 @@ public class SetupManager {
 
         _addLPDataSource(name, pid);
 
-        DistributionPercentage[] recipients = new DistributionPercentage[]{
-                createDistributionPercentage("Loans", BigInteger.valueOf(25).multiply(pow(BigInteger.TEN, 16))),
-                createDistributionPercentage("sICX/ICX", BigInteger.TEN.multiply(pow(BigInteger.TEN, 16))),
-                createDistributionPercentage("Worker Tokens", BigInteger.valueOf(20).multiply(pow(BigInteger.TEN, 16))),
-                createDistributionPercentage("Reserve Fund", BigInteger.valueOf(5).multiply(pow(BigInteger.TEN, 16))),
-                createDistributionPercentage("DAOfund", BigInteger.valueOf(225).multiply(pow(BigInteger.TEN, 15))),
-                createDistributionPercentage("sICX/bnUSD", BigInteger.valueOf(175).multiply(pow(BigInteger.TEN, 15)))
-        };
+        call(ContractManager.getAddress(Names.REWARDS), "setFixedSourcePercentage", "sICX/bnUSD", BigInteger.valueOf(15).multiply(pow(BigInteger.TEN, 16)));
 
-        call(ContractManager.getAddress(Names.REWARDS), "updateBalTokenDistPercentage", (Object) recipients);
+
     }
 
     public static void createBalnMarket(BigInteger _bnUSD_amount, BigInteger _baln_amount) {
@@ -149,18 +146,7 @@ public class SetupManager {
         call(dexAddress, "setMarketName", pid, name);
 
         _addLPDataSource(name, pid);
-
-        DistributionPercentage[] recipients = new DistributionPercentage[]{
-                createDistributionPercentage("Loans", BigInteger.valueOf(25).multiply(pow(BigInteger.TEN, 16))),
-                createDistributionPercentage("sICX/ICX", BigInteger.TEN.multiply(pow(BigInteger.TEN, 16))),
-                createDistributionPercentage("Worker Tokens", BigInteger.valueOf(20).multiply(pow(BigInteger.TEN, 16))),
-                createDistributionPercentage("Reserve Fund", BigInteger.valueOf(5).multiply(pow(BigInteger.TEN, 16))),
-                createDistributionPercentage("DAOfund", BigInteger.valueOf(5).multiply(pow(BigInteger.TEN, 16))),
-                createDistributionPercentage("sICX/bnUSD", BigInteger.valueOf(175).multiply(pow(BigInteger.TEN, 15))),
-                createDistributionPercentage("BALN/bnUSD", BigInteger.valueOf(175).multiply(pow(BigInteger.TEN, 15)))
-        };
-
-        call(rewardsAddress, "updateBalTokenDistPercentage", (Object) recipients);
+        call(ContractManager.getAddress(Names.REWARDS), "setFixedSourcePercentage", "BALN/bnUSD", BigInteger.valueOf(15).multiply(pow(BigInteger.TEN, 16)));
     }
 
     public static void createBalnSicxMarket(BigInteger _sicx_amount, BigInteger _baln_amount) {
@@ -184,23 +170,13 @@ public class SetupManager {
 
         _addLPDataSource(name, pid);
 
-        DistributionPercentage[] recipients = new DistributionPercentage[]{
-                createDistributionPercentage("Loans", BigInteger.valueOf(20).multiply(pow(BigInteger.TEN, 16))),
-                createDistributionPercentage("sICX/ICX", BigInteger.TEN.multiply(pow(BigInteger.TEN, 16))),
-                createDistributionPercentage("Worker Tokens", BigInteger.valueOf(20).multiply(pow(BigInteger.TEN, 16))),
-                createDistributionPercentage("Reserve Fund", BigInteger.valueOf(5).multiply(pow(BigInteger.TEN, 16))),
-                createDistributionPercentage("DAOfund", BigInteger.valueOf(5).multiply(pow(BigInteger.TEN, 16))),
-                createDistributionPercentage("sICX/bnUSD", BigInteger.valueOf(15).multiply(pow(BigInteger.TEN, 16))),
-                createDistributionPercentage("BALN/bnUSD", BigInteger.valueOf(15).multiply(pow(BigInteger.TEN, 16))),
-                createDistributionPercentage("BALN/sICX", BigInteger.valueOf(10).multiply(pow(BigInteger.TEN, 16)))
-        };
+        call(ContractManager.getAddress(Names.REWARDS), "setFixedSourcePercentage", "BALN/sICX", BigInteger.valueOf(10).multiply(pow(BigInteger.TEN, 16)));
 
-        call(ContractManager.getAddress(Names.REWARDS), "updateBalTokenDistPercentage", (Object) recipients);
     }
 
     private static void _addNewDataSource(String _data_source_name, String _contract_address) {
-        Context.call(ContractManager.getAddress(Names.REWARDS), "addNewDataSource", _data_source_name,
-                Address.fromString(_contract_address));
+        Context.call(ContractManager.getAddress(Names.REWARDS), "createDataSource", _data_source_name,
+                Address.fromString(_contract_address), 0);
     }
 
     private static void _addLPDataSource(String _name, BigInteger _poolId) {
