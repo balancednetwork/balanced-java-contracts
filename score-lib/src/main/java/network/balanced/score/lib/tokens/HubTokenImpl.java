@@ -198,10 +198,9 @@ public class HubTokenImpl extends SpokeTokenImpl implements HubToken {
         crossChainSupply.set(spokeAddress.net(), newSupply);
 
         data = (data == null) ? new byte[0] : data;
-        byte[] rollback = HubTokenMessages.xCrossTransferRevert(to.toString(), value);
         byte[] callData = HubTokenMessages.xCrossTransfer(from.toString(), to.toString(), value, data);
 
-        XCallUtils.sendCall(fee, spokeAddress, callData, rollback);
+        XCallUtils.sendPersistentCall(fee, spokeAddress, callData);
 
         XTransfer(from.toString(), to.toString(), value, data);
     }

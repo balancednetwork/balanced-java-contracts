@@ -28,6 +28,8 @@ import network.balanced.score.lib.interfaces.tokens.AssetToken;
 import network.balanced.score.lib.interfaces.tokens.AssetTokenScoreInterface;
 import network.balanced.score.lib.test.mock.MockBalanced;
 import network.balanced.score.lib.test.mock.MockContract;
+import network.balanced.score.lib.utils.XCallUtils;
+import network.balanced.score.lib.structs.ProtocolConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -92,9 +94,9 @@ class AssetManagerTest extends TestBase {
         when(mockBalanced.xCall.mock.getNetworkId()).thenReturn(NATIVE_NID);
         assetManager = sm.deploy(owner, AssetManagerImpl.class, governance.getAddress(), tokeBytes);
 
-        when(mockBalanced.xCallManager.mock.getProtocols(ETH_NID)).thenReturn(Map.of("sources", defaultProtocols, "destinations", defaultDestinationsProtocols));
-        when(mockBalanced.xCallManager.mock.getProtocols(BSC_NID)).thenReturn(Map.of("sources", defaultProtocols, "destinations", defaultDestinationsProtocols));
-        when(mockBalanced.xCallManager.mock.getProtocols(INJ_NID)).thenReturn(Map.of("sources", defaultProtocols, "destinations", defaultDestinationsProtocols));
+        when(mockBalanced.xCallManager.mock.getProtocolsRaw(ETH_NID)).thenReturn(new ProtocolConfig(defaultProtocols, defaultDestinationsProtocols).toBytes());
+        when(mockBalanced.xCallManager.mock.getProtocolsRaw(BSC_NID)).thenReturn(new ProtocolConfig(defaultProtocols, defaultDestinationsProtocols).toBytes());
+        when(mockBalanced.xCallManager.mock.getProtocolsRaw(INJ_NID)).thenReturn(new ProtocolConfig(defaultProtocols, defaultDestinationsProtocols).toBytes());
 
         assetManager.invoke(governance.account, "addSpokeManager", ethSpoke.toString());
         assetManagerSpy = (AssetManagerImpl) spy(assetManager.getInstance());
@@ -161,9 +163,9 @@ class AssetManagerTest extends TestBase {
 
         // Assert
         byte[] expectedMsg = SpokeAssetManagerMessages.WithdrawTo(tokenAddress.account(), ethAccount.account(), amount);
-        byte[] expectedRollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), ethAccount.toString(), amount);
+        byte[] expectedCallData = XCallUtils.createPersistentMessage(expectedMsg, defaultProtocols, defaultDestinationsProtocols);
 
-        verify(mockBalanced.xCall.mock).sendCallMessage(ethSpoke.toString(), expectedMsg, expectedRollback, defaultProtocols, defaultDestinationsProtocols);
+        verify(mockBalanced.xCall.mock).sendCall(ethSpoke.toString(), expectedCallData);
         verify(ethAsset1.mock).burnFrom(user.getAddress().toString(), amount);
     }
 
@@ -181,9 +183,9 @@ class AssetManagerTest extends TestBase {
 
         // Assert
         byte[] expectedMsg = SpokeAssetManagerMessages.WithdrawNativeTo(tokenAddress.account(), ethAccount.account(), amount);
-        byte[] expectedRollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), ethAccount.toString(), amount);
+        byte[] expectedCallData = XCallUtils.createPersistentMessage(expectedMsg, defaultProtocols, defaultDestinationsProtocols);
 
-        verify(mockBalanced.xCall.mock).sendCallMessage(ethSpoke.toString(), expectedMsg, expectedRollback, defaultProtocols, defaultDestinationsProtocols);
+        verify(mockBalanced.xCall.mock).sendCall(ethSpoke.toString(), expectedCallData);
         verify(ethAsset1.mock).burnFrom(user.getAddress().toString(), amount);
     }
 
@@ -232,11 +234,11 @@ class AssetManagerTest extends TestBase {
 
         // Assert
         byte[] expectedMsg = SpokeAssetManagerMessages.WithdrawTo(tokenAddress.account(), ethAccount.account(), amount);
-        byte[] expectedRollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), ethAccount.toString(), amount);
+        byte[] expectedCallData = XCallUtils.createPersistentMessage(expectedMsg, defaultProtocols, defaultDestinationsProtocols);
 
-        verify(mockBalanced.xCall.mock).sendCallMessage(ethSpoke.toString(), expectedMsg, expectedRollback, defaultProtocols, defaultDestinationsProtocols);
+        verify(mockBalanced.xCall.mock).sendCall(ethSpoke.toString(), expectedCallData);
         verify(ethAsset1.mock).burnFrom(ethAccount.toString(), amount);
-        verify(mockBalanced.daofund.mock).claimXCallFee(ETH_NID, true);
+        verify(mockBalanced.daofund.mock).claimXCallFee(ETH_NID, false);
     }
 
     @Test
@@ -417,9 +419,9 @@ class AssetManagerTest extends TestBase {
 
         // Assert
         byte[] expectedMsg = SpokeAssetManagerMessages.WithdrawTo(tokenNetworkAddress.account(), injAccount.account(), withdrawAmount);
-        byte[] expectedRollback = AssetManagerMessages.withdrawRollback(tokenNetworkAddress.toString(), injAccount.toString(), burnAmount);
+        byte[] expectedCallData = XCallUtils.createPersistentMessage(expectedMsg, defaultProtocols, defaultDestinationsProtocols);
 
-        verify(mockBalanced.xCall.mock).sendCallMessage(injSpoke.toString(), expectedMsg, expectedRollback, defaultProtocols, defaultDestinationsProtocols);
+        verify(mockBalanced.xCall.mock).sendCall(injSpoke.toString(), expectedCallData);
         verify(injLinkAsset.mock).burnFrom(user.getAddress().toString(), burnAmount);
         BigInteger assetDeposit = (BigInteger) assetManager.call("getAssetDeposit", tokenNetworkAddress.toString());
         assertEquals(assetDeposit, BigInteger.ZERO);
@@ -474,9 +476,9 @@ class AssetManagerTest extends TestBase {
 
         // Assert
         byte[] expectedMsg = SpokeAssetManagerMessages.WithdrawTo(tokenNetworkAddress.account(), injAccount.account(), withdrawAmount);
-        byte[] expectedRollback = AssetManagerMessages.withdrawRollback(tokenNetworkAddress.toString(), injAccount.toString(), burnAmount);
+        byte[] expectedCallData = XCallUtils.createPersistentMessage(expectedMsg, defaultProtocols, defaultDestinationsProtocols);
 
-        verify(mockBalanced.xCall.mock).sendCallMessage(injSpoke.toString(), expectedMsg, expectedRollback, defaultProtocols, defaultDestinationsProtocols);
+        verify(mockBalanced.xCall.mock).sendCall(injSpoke.toString(), expectedCallData);
         verify(injLinkAsset.mock).burnFrom(user.getAddress().toString(), burnAmount);
         BigInteger assetDeposit = (BigInteger) assetManager.call("getAssetDeposit", tokenNetworkAddress.toString());
         assertEquals(assetDeposit, BigInteger.ZERO);

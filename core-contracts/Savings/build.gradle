@@ -40,7 +40,7 @@ dependencies {
     testImplementation Dependencies.mockitoCore
     testImplementation Dependencies.mockitoInline
 
-    intTestImplementation 'xyz.venture23:xcall-lib:0.1.1'
+    intTestImplementation 'xyz.venture23:xcall-lib:2.1.0'
     intTestImplementation project(":score-client")
     intTestAnnotationProcessor project(":score-client")
     intTestImplementation Dependencies.iconSdk
