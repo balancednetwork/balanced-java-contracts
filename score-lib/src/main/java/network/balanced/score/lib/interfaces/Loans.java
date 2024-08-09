@@ -206,5 +206,5 @@ public interface Loans extends Name, AddressManager, Version, XTokenReceiver, Fl
     void xBorrow(String from, String _collateralToBorrowAgainst, BigInteger _amountToBorrow, @Optional String _to,  @Optional byte[] _data);
 
     @XCall
-    void xWithdraw(String from, BigInteger _value, String _collateralSymbol);
+    void xWithdraw(String from, BigInteger _value, String _collateralSymbol, @Optional String _to);
 }
