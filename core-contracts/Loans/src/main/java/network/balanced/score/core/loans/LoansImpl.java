@@ -655,6 +655,10 @@ public class LoansImpl extends FloorLimited implements Loans {
             remainingCollateral = null;
         }
 
+        if (remainingDebt!=null && remainingDebt.compareTo(BigInteger.ZERO)==0){
+            remainingDebt = null;
+        }
+
         // Update the position with remaining collateral and debt
         position.setCollateral(symbol, remainingCollateral);
         position.setDebt(symbol, remainingDebt);
@@ -672,10 +676,10 @@ public class LoansImpl extends FloorLimited implements Loans {
         transferCollateral(symbol, getDaofund(), daofundFeeAmount, "Daofund fee", new byte[0]);
     
         // Log the liquidation event
-        String logMessage = collateral + " liquidated from " + _owner;
-        Liquidate(_owner, collateral, logMessage);
-    }
-    
+        String logMessage = collateralToLiquidate + " liquidated from " + _owner;
+        Liquidate(_owner, collateralToLiquidate, logMessage);
+}
+
     private void depositCollateral(String _symbol, BigInteger _amount, String _from) {
         Position position = PositionsDB.getPosition(_from);
 
