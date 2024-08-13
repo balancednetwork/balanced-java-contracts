@@ -243,7 +243,7 @@ abstract class LoansIntegrationTest implements ScoreIntegrationTest {
             byte[] repay = HubTokenMessages.xCrossTransfer(bscUser.toString(), loansNetAddress, amountToRepay, repayData.toString().getBytes());
             owner.xcall.sendCall(balanced.bnusd._address(), new NetworkAddress(balanced.BSC_NID, balanced.BSC_BNUSD_ADDRESS).toString(), repay);
 
-            byte[] withdraw = LoansMessages.xWithdraw(amountToWithdraw, balanced.BSC_TOKEN_SYMBOL);
+            byte[] withdraw = LoansMessages.xWithdraw(amountToWithdraw, balanced.BSC_TOKEN_SYMBOL, "");
             owner.xcall.sendCall(balanced.loans._address(), bscUser.toString(), withdraw);
 
             // Repay and withdraw with bnUSD on the hub.
