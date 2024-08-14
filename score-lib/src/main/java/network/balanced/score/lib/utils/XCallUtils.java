@@ -53,11 +53,6 @@ public class XCallUtils {
         return ProtocolConfig.fromBytes(Context.call(byte[].class, BalancedAddressManager.getXCallManager(), "getProtocolsRaw", nid));
     }
 
-    public static void sendCall(BigInteger fee, NetworkAddress to, byte[] data, byte[] rollback) {
-        Map<String, String[]> protocols = getProtocols(to.net());
-        Context.call(fee, BalancedAddressManager.getXCall(), "sendCallMessage", to.toString(), data, rollback, protocols.get(ProtocolConfig.sourcesKey), protocols.get(ProtocolConfig.destinationsKey));
-    }
-
     public static void sendPersistentCall(BigInteger fee, NetworkAddress to, byte[] data) {
         ProtocolConfig protocols = getProtocolsRaw(to.net());
         byte[] msg = createPersistentMessage(data, protocols.sources, protocols.destinations);
