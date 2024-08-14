@@ -19,44 +19,28 @@ package network.balanced.score.core.rewards;
 import com.iconloop.score.test.Account;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import network.balanced.score.lib.structs.RewardsDataEntryOld;
+import network.balanced.score.lib.utils.Names;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 
 import java.math.BigInteger;
 import java.util.Map;
 
 import static network.balanced.score.core.rewards.utils.RewardsConstants.WEIGHT;
+import static network.balanced.score.core.rewards.weight.SourceWeightController.VOTE_POINTS;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class RewardsTestRewards extends RewardsTestBase {
-
     @BeforeEach
     void setup() throws Exception {
         super.setup();
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    void getDataSourcesAt() {
-        // Arrange
-        sm.getBlock().increase(DAY);
-        BigInteger currentDay = (BigInteger) rewardsScore.call("getDay");
-        BigInteger previousDay = currentDay.subtract(BigInteger.ONE);
-        rewardsScore.invoke(admin, "distribute");
-
-        // Act
-        Map<String, Map<String, Object>> data = (Map<String, Map<String, Object>>) rewardsScore.call(
-                "getDataSourcesAt", previousDay);
-
-        // Assert
-        BigInteger emission = (BigInteger) rewardsScore.call("getEmission", BigInteger.valueOf(-1));
-        assertEquals(loansDist.dist_percent.multiply(emission).divide(EXA), data.get("Loans").get("total_dist"));
-        assertEquals(icxPoolDist.dist_percent.multiply(emission).divide(EXA), data.get("sICX/ICX").get("total_dist"));
     }
 
     @Test
@@ -69,12 +53,12 @@ class RewardsTestRewards extends RewardsTestBase {
         // Assert
         BigInteger emission = (BigInteger) rewardsScore.call("getEmission", BigInteger.valueOf(-1));
 
-        verify(baln.mock, times(day)).transfer(bwt.getAddress(), bwtDist.dist_percent.multiply(emission).divide(EXA),
-                new byte[0]);
+        verify(baln.mock, times(day)).transfer(bwt.getAddress(),
+            defaultPlatformDist.multiply(emission).divide(EXA), new byte[0]);
         verify(baln.mock, times(day)).transfer(daoFund.getAddress(),
-                daoDist.dist_percent.multiply(emission).divide(EXA), new byte[0]);
+            defaultPlatformDist.multiply(emission).divide(EXA), new byte[0]);
         verify(baln.mock, times(day)).transfer(reserve.getAddress(),
-                reserveDist.dist_percent.multiply(emission).divide(EXA), new byte[0]);
+            defaultPlatformDist.multiply(emission).divide(EXA), new byte[0]);
     }
 
     @Test
@@ -99,10 +83,11 @@ class RewardsTestRewards extends RewardsTestBase {
         sm.getBlock().increase(DAY*2);
 
         // Assert
+        System.out.println( getVotePercentage("Loans"));
         BigInteger emission = (BigInteger) rewardsScore.call("getEmission", BigInteger.valueOf(-1));
-        BigInteger loansDistribution = loansDist.dist_percent.multiply(emission).divide(EXA);
+        BigInteger loansDistribution = getVotePercentage("Loans").multiply(emission).divide(EXA);
         BigInteger userLoansDistribution = loansDistribution.multiply(loansBalance).divide(loansTotalSupply);
-        BigInteger swapDistribution = icxPoolDist.dist_percent.multiply(emission).divide(EXA);
+        BigInteger swapDistribution = getVotePercentage("sICX/ICX").multiply(emission).divide(EXA);
         BigInteger userSwapDistribution = swapDistribution.multiply(swapBalance).divide(swapTotalSupply);
 
         rewardsScore.invoke(account, "claimRewards", getUserSources(account.getAddress()));
@@ -146,9 +131,9 @@ class RewardsTestRewards extends RewardsTestBase {
 
         // Assert
         BigInteger emission = (BigInteger) rewardsScore.call("getEmission", BigInteger.valueOf(-1));
-        BigInteger loansDistribution = loansDist.dist_percent.multiply(emission).divide(EXA);
+        BigInteger loansDistribution = getVotePercentage("Loans").multiply(emission).divide(EXA);
         BigInteger userLoansDistribution = loansDistribution.multiply(loansBalance).divide(loansTotalSupply);
-        BigInteger swapDistribution = icxPoolDist.dist_percent.multiply(emission).divide(EXA);
+        BigInteger swapDistribution = getVotePercentage("sICX/ICX").multiply(emission).divide(EXA);
         BigInteger userSwapDistribution = swapDistribution.multiply(swapBalance).divide(swapTotalSupply);
 
         rewardsScore.invoke(account, "claimRewards", getUserSources(account.getAddress()));
@@ -180,7 +165,7 @@ class RewardsTestRewards extends RewardsTestBase {
 
         // Assert
         BigInteger emission = (BigInteger) rewardsScore.call("getEmission", BigInteger.valueOf(-1));
-        BigInteger loansDistribution = loansDist.dist_percent.multiply(emission).divide(EXA);
+        BigInteger loansDistribution = getVotePercentage("Loans").multiply(emission).divide(EXA);
         BigInteger userLoansDistribution = loansDistribution.multiply(loansBalance).divide(currentSupply);
 
         BigInteger unBoostedRewards = getOneDayRewards(account.getAddress());
@@ -221,7 +206,7 @@ class RewardsTestRewards extends RewardsTestBase {
 
         // Assert
         BigInteger emission = (BigInteger) rewardsScore.call("getEmission", BigInteger.valueOf(-1));
-        BigInteger loansDistribution = loansDist.dist_percent.multiply(emission).divide(EXA);
+        BigInteger loansDistribution = getVotePercentage("Loans").multiply(emission).divide(EXA);
         BigInteger userLoansDistribution = loansDistribution.multiply(loansBalance).divide(currentSupply);
 
         BigInteger unBoostedRewards = getOneDayRewards(account.getAddress());
@@ -260,7 +245,7 @@ class RewardsTestRewards extends RewardsTestBase {
 
         // Assert
         BigInteger emission = (BigInteger) rewardsScore.call("getEmission", BigInteger.valueOf(-1));
-        BigInteger loansDistribution = loansDist.dist_percent.multiply(emission).divide(EXA);
+        BigInteger loansDistribution = getVotePercentage("Loans").multiply(emission).divide(EXA);
         BigInteger userLoansDistribution = loansDistribution.multiply(loansBalance).divide(loansTotalSupply);
 
         BigInteger unBoostedRewards = getOneDayRewards(account.getAddress());
@@ -312,7 +297,7 @@ class RewardsTestRewards extends RewardsTestBase {
 
         // Assert
         BigInteger emission = (BigInteger) rewardsScore.call("getEmission", BigInteger.valueOf(-1));
-        BigInteger loansDistribution = loansDist.dist_percent.multiply(emission).divide(EXA);
+        BigInteger loansDistribution = getVotePercentage("Loans").multiply(emission).divide(EXA);
         BigInteger userLoansDistribution = loansDistribution.multiply(loansBalance).divide(loansTotalSupply);
 
         BigInteger unBoostedRewards = getOneDayRewards(account.getAddress());
@@ -363,7 +348,7 @@ class RewardsTestRewards extends RewardsTestBase {
 
         // Assert
         BigInteger emission = (BigInteger) rewardsScore.call("getEmission", BigInteger.valueOf(-1));
-        BigInteger loansDistribution = loansDist.dist_percent.multiply(emission).divide(EXA);
+        BigInteger loansDistribution = getVotePercentage("Loans").multiply(emission).divide(EXA);
         BigInteger userLoansDistribution = loansDistribution.multiply(loansBalance).divide(loansTotalSupply);
 
         BigInteger unBoostedRewards = getOneDayRewards(account.getAddress());
@@ -433,7 +418,7 @@ class RewardsTestRewards extends RewardsTestBase {
 
         // Assert
         BigInteger emission = (BigInteger) rewardsScore.call("getEmission", BigInteger.valueOf(-1));
-        BigInteger loansDistribution = loansDist.dist_percent.multiply(emission).divide(EXA);
+        BigInteger loansDistribution = getVotePercentage("Loans").multiply(emission).divide(EXA);
         BigInteger user1Distribution = loansDistribution.multiply(user1CurrentBalance).divide(currentTotalSupply);
 
         rewardsScore.invoke(account1, "claimRewards", getUserSources(account1.getAddress()));
@@ -487,7 +472,7 @@ class RewardsTestRewards extends RewardsTestBase {
 
         // Assert
         BigInteger emission = (BigInteger) rewardsScore.call("getEmission", BigInteger.valueOf(-1));
-        BigInteger loansDistribution = loansDist.dist_percent.multiply(emission).divide(EXA);
+        BigInteger loansDistribution = getVotePercentage("Loans").multiply(emission).divide(EXA);
         BigInteger user1Distribution = loansDistribution.multiply(user1CurrentBalance).divide(currentTotalSupply);
 
         rewardsScore.invoke(account1, "claimRewards", getUserSources(account1.getAddress()));
@@ -527,12 +512,12 @@ class RewardsTestRewards extends RewardsTestBase {
         assertEquals(BigInteger.ZERO, initialRewards);
 
         sm.getBlock().increase(DAY*3);
-        rewardsScore.invoke(admin, "distribute");
+        rewardsScore.invoke(owner, "distribute");
         BigInteger timeInUS = BigInteger.valueOf(sm.getBlock().getTimestamp());
 
         // Assert
         BigInteger emission = (BigInteger) rewardsScore.call("getEmission", BigInteger.valueOf(-1));
-        BigInteger loansDistribution = loansDist.dist_percent.multiply(emission).divide(EXA);
+        BigInteger loansDistribution = getVotePercentage("Loans").multiply(emission).divide(EXA);
         BigInteger userDistribution = loansDistribution.multiply(currentBalance).divide(currentTotalSupply);
 
         BigInteger rewards = (BigInteger) rewardsScore.call("getBalnHolding", account.getAddress().toString());
@@ -568,7 +553,7 @@ class RewardsTestRewards extends RewardsTestBase {
 
         // Assert
         BigInteger emission = (BigInteger) rewardsScore.call("getEmission", BigInteger.valueOf(-1));
-        BigInteger loansDistribution = loansDist.dist_percent.multiply(emission).divide(EXA);
+        BigInteger loansDistribution = getVotePercentage("Loans").multiply(emission).divide(EXA);
         BigInteger distribution = loansDistribution.multiply(currentBalance).divide(currentSupply);
 
         BigInteger timeDiffInUS = endTimeInUS.subtract(startTimeInUS);
@@ -623,7 +608,7 @@ class RewardsTestRewards extends RewardsTestBase {
 
         // Assert
         BigInteger emission = (BigInteger) rewardsScore.call("getEmission", BigInteger.valueOf(-1));
-        BigInteger loansDistribution = loansDist.dist_percent.multiply(emission).divide(EXA);
+        BigInteger loansDistribution = getVotePercentage("Loans").multiply(emission).divide(EXA);
         BigInteger user1Distribution = loansDistribution.multiply(user1CurrentBalance).divide(currentTotalSupply);
         BigInteger user2Distribution = loansDistribution.multiply(user2CurrentBalance).divide(currentTotalSupply);
 
@@ -638,5 +623,121 @@ class RewardsTestRewards extends RewardsTestBase {
         BigInteger user2Rewards = rewards.get(account2.getAddress().toString()).divide(BigInteger.TEN);
         assertEquals(user1ExpectedRewards.divide(BigInteger.TEN), user1Rewards);
         assertEquals(user2ExpectedRewards.divide(BigInteger.TEN), user2Rewards);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void setPlatformDistPercentage() {
+        // Arrange
+        distribute();
+        // assertOnlyCallableByGovernance(rewardsScore, "setPlatformDistPercentage", Names.DAOFUND,
+        //         ICX.divide(BigInteger.TEN));
+
+        // Act
+        String expectedErrorMessage = "Reverted(0): Sum of distributions exceeds 100%";
+        Executable overHundredPercent = () -> rewardsScore.invoke(owner, "setPlatformDistPercentage", Names.DAOFUND,
+                EXA);
+        expectErrorMessage(overHundredPercent, expectedErrorMessage);
+        // reduce by 10 %
+        rewardsScore.invoke(owner, "setPlatformDistPercentage", Names.DAOFUND, ICX.divide(BigInteger.TEN));
+        BigInteger votingPercentage = BigInteger.valueOf(4).multiply(EXA).divide(BigInteger.TEN);
+
+        // Assert
+        Map<String, Map<String, BigInteger>> distData = (Map<String, Map<String, BigInteger>>) rewardsScore.call(
+                "getDistributionPercentages");
+        assertEquals(ICX.divide(BigInteger.TEN), distData.get("Base").get(Names.DAOFUND));
+        assertEquals(votingPercentage.divide(BigInteger.TWO), getVotePercentage("sICX/bnUSD"));
+        assertEquals(votingPercentage.divide(BigInteger.TWO), getVotePercentage("sICX/ICX"));
+
+        sm.getBlock().increase(DAY);
+        BigInteger emission = (BigInteger) rewardsScore.call("getEmission", BigInteger.valueOf(-1));
+        rewardsScore.invoke(owner, "distribute");
+
+        verify(baln.mock).transfer(daoFund.getAddress(),
+                ICX.divide(BigInteger.TEN).multiply(emission).divide(EXA), new byte[0]);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void setFixedSourcePercentage() {
+        // Arrange
+        BigInteger ICXFixed = BigInteger.valueOf(3).multiply(EXA).divide(BigInteger.valueOf(100)); // 3%
+        BigInteger sICXBnusdFixed = BigInteger.valueOf(7).multiply(EXA).divide(BigInteger.valueOf(100)); // 7%
+        BigInteger votingPercentage = BigInteger.valueOf(2).multiply(EXA).divide(BigInteger.TEN);
+        // assertOnlyCallableBy(rewardsScore, "setFixedSourcePercentage", "sICX/bnUSD",
+        //         sICXBnusdFixed);
+
+        // Act
+        String expectedErrorMessage = "Reverted(0): Sum of distributions exceeds 100%";
+        Executable overHundredPercent = () -> rewardsScore.invoke(owner, "setFixedSourcePercentage",
+        "sICX/bnUSD", EXA);
+        expectErrorMessage(overHundredPercent, expectedErrorMessage);
+        rewardsScore.invoke(owner, "setFixedSourcePercentage", "sICX/bnUSD", sICXBnusdFixed);
+        rewardsScore.invoke(owner, "setFixedSourcePercentage", "sICX/ICX", ICXFixed);
+
+        // Assert
+        Map<String, Map<String, BigInteger>> distData = (Map<String, Map<String, BigInteger>>) rewardsScore.call(
+                "getDistributionPercentages");
+        assertEquals(votingPercentage.divide(BigInteger.TWO), distData.get("Voting").get("sICX/bnUSD"));
+        assertEquals(votingPercentage.divide(BigInteger.TWO), distData.get("Voting").get("sICX/bnUSD"));
+
+        assertEquals(sICXBnusdFixed, distData.get("Fixed").get("sICX/bnUSD"));
+        assertEquals(ICXFixed, distData.get("Fixed").get("sICX/ICX"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void getUserData() {
+        // Assert
+        Map<String, Map<String, BigInteger>> data = (Map<String, Map<String, BigInteger>>) rewardsScore.call(
+                "getUserVoteData", user.getAddress());
+        assertTrue(data.containsKey("sICX/ICX"));
+        assertTrue(data.containsKey("sICX/bnUSD"));
+        assertEquals(VOTE_POINTS.divide(BigInteger.TWO), data.get("sICX/ICX").get("power"));
+        assertEquals(VOTE_POINTS.divide(BigInteger.TWO), data.get("sICX/bnUSD").get("power"));
+
+        // Act
+        sm.getBlock().increase(DAY * 10);
+        vote(user, "sICX/ICX", BigInteger.ZERO);
+        vote(user, "sICX/bnUSD", VOTE_POINTS);
+        rewardsScore.invoke(owner, "updateRelativeSourceWeight", "sICX/bnUSD",
+                BigInteger.valueOf(sm.getBlock().getTimestamp()));
+
+        // Assert
+        data = (Map<String, Map<String, BigInteger>>) rewardsScore.call("getUserVoteData", user.getAddress());
+        assertTrue(data.containsKey("sICX/ICX"));
+        assertTrue(data.containsKey("sICX/bnUSD"));
+        assertEquals(BigInteger.ZERO, data.get("sICX/ICX").get("power"));
+        assertEquals(VOTE_POINTS, data.get("sICX/bnUSD").get("power"));
+
+        sm.getBlock().increase(DAY * 10);
+
+        data = (Map<String, Map<String, BigInteger>>) rewardsScore.call("getUserVoteData", user.getAddress());
+        assertTrue(!data.containsKey("sICX/ICX"));
+        assertTrue(data.containsKey("sICX/bnUSD"));
+        assertEquals(VOTE_POINTS, data.get("sICX/bnUSD").get("power"));
+    }
+
+    @Test
+    void setGetVotable() {
+        assertTrue((boolean)rewardsScore.call("isVotable", "sICX/ICX"));
+        // assertOnlyCallableByGovernance(rewardsScore, "setVotable", "sICX/ICX", false);
+        rewardsScore.invoke(owner, "setVotable", "sICX/ICX", false);
+        assertTrue(!(boolean)rewardsScore.call("isVotable", "sICX/ICX"));
+    }
+
+    @Test
+    void addType() {
+        // assertOnlyCallableByGovernance(rewardsScore, "addType", "newType");
+    }
+
+    @Test
+    void setGetTypeWeight() {
+        int type = (int)rewardsScore.call("getSourceType", "sICX/ICX");
+        rewardsScore.invoke(owner, "checkpoint");
+        assertEquals(EXA ,rewardsScore.call("getCurrentTypeWeight", type));
+        // assertOnlyCallableByGovernance(rewardsScore, "changeTypeWeight", type, EXA.multiply(BigInteger.TWO));
+        rewardsScore.invoke(owner, "changeTypeWeight", type, EXA.multiply(BigInteger.TWO));
+        assertEquals(EXA.multiply(BigInteger.TWO) ,rewardsScore.call("getCurrentTypeWeight", type));
     }
 }

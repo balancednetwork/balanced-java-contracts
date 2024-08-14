@@ -212,10 +212,6 @@ public class GovernanceTest extends GovernanceTestBase {
         verify(rewards.mock).setTimeOffset(any(BigInteger.class));
         verify(dex.mock).setTimeOffset(any(BigInteger.class));
 
-        verify(rewards.mock).addNewDataSource("Loans", loans.getAddress());
-        verify(rewards.mock).addNewDataSource("sICX/ICX", dex.getAddress());
-
-        verify(rewards.mock).updateBalTokenDistPercentage(any(DistributionPercentage[].class));
     }
 
     @Test
@@ -254,9 +250,7 @@ public class GovernanceTest extends GovernanceTestBase {
         verify(dex.mock).add(sicx.getAddress(), bnUSD.getAddress(), sICXValue, bnUSDValue, false, BigInteger.ZERO);
         verify(dex.mock).setMarketName(sicxBnusdPid, "sICX/bnUSD");
 
-        verify(rewards.mock).addNewDataSource("sICX/bnUSD", stakedLp.getAddress());
         verify(stakedLp.mock).addDataSource(sicxBnusdPid, "sICX/bnUSD");
-        verify(rewards.mock, times(2)).updateBalTokenDistPercentage(any(DistributionPercentage[].class));
     }
 
     @Test
@@ -286,9 +280,7 @@ public class GovernanceTest extends GovernanceTestBase {
         verify(dex.mock).add(baln.getAddress(), bnUSD.getAddress(), balnValue, bnUSDValue, false, BigInteger.ZERO);
         verify(dex.mock).setMarketName(balnBnusdPid, "BALN/bnUSD");
 
-        verify(rewards.mock).addNewDataSource("BALN/bnUSD", stakedLp.getAddress());
         verify(stakedLp.mock).addDataSource(balnBnusdPid, "BALN/bnUSD");
-        verify(rewards.mock, times(3)).updateBalTokenDistPercentage(any(DistributionPercentage[].class));
     }
 
     @Test
@@ -320,9 +312,7 @@ public class GovernanceTest extends GovernanceTestBase {
         verify(dex.mock).add(baln.getAddress(), sicx.getAddress(), balnValue, sicxValue, false, BigInteger.ZERO);
         verify(dex.mock).setMarketName(balnSicxPid, "BALN/sICX");
 
-        verify(rewards.mock).addNewDataSource("BALN/sICX", stakedLp.getAddress());
         verify(stakedLp.mock).addDataSource(balnSicxPid, "BALN/sICX");
-        verify(rewards.mock, times(4)).updateBalTokenDistPercentage(any(DistributionPercentage[].class));
     }
 
     @Test

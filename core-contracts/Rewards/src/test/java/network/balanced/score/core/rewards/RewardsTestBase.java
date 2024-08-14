@@ -20,22 +20,23 @@ package network.balanced.score.core.rewards;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
-import network.balanced.score.lib.interfaces.BoostedBaln;
-import network.balanced.score.lib.interfaces.BoostedBalnScoreInterface;
-import network.balanced.score.lib.interfaces.DataSource;
-import network.balanced.score.lib.interfaces.DataSourceScoreInterface;
-import network.balanced.score.lib.interfaces.GovernanceScoreInterface;
-import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
-import network.balanced.score.lib.interfaces.tokens.IRC2MintableScoreInterface;
-import network.balanced.score.lib.structs.DistributionPercentage;
+import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.test.UnitTest;
+import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.test.mock.MockContract;
+import network.balanced.score.lib.test.mock.MockBalanced;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
+
 import score.Address;
 
 import java.math.BigInteger;
 import java.util.Map;
 
+import static network.balanced.score.core.rewards.weight.SourceWeightController.VOTE_POINTS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class RewardsTestBase extends UnitTest {
@@ -46,44 +47,50 @@ class RewardsTestBase extends UnitTest {
 
     static final ServiceManager sm = getServiceManager();
     static final Account owner = sm.createAccount();
-    static final Account admin = sm.createAccount();
 
-    DistributionPercentage loansDist = new DistributionPercentage();
-    DistributionPercentage icxPoolDist = new DistributionPercentage();
-    DistributionPercentage bwtDist = new DistributionPercentage();
-    DistributionPercentage reserveDist = new DistributionPercentage();
-    DistributionPercentage daoDist = new DistributionPercentage();
+    BigInteger defaultPlatformDist = ICX.divide(BigInteger.valueOf(5));
 
     int scoreCount = 0;
     Account governance;
-    final Account daoFund = Account.newScoreAccount(scoreCount++);
-    final Account reserve = Account.newScoreAccount(scoreCount++);
+    Account daoFund;
+    Account reserve;
+    Account user;
+    MockBalanced mockBalanced;
 
-    MockContract<DataSource> dex;
-    MockContract<DataSource> loans;
-    MockContract<IRC2Mintable> baln;
-    MockContract<IRC2Mintable> bwt;
+    MockContract<Dex> dex;
+    MockContract<Loans> loans;
+    MockContract<BalancedToken> baln;
+    MockContract<WorkerToken> bwt;
     MockContract<BoostedBaln> bBaln;
 
     Score rewardsScore;
 
     void setup() throws Exception {
-        governance = new MockContract<>(GovernanceScoreInterface.class, sm, admin).account;
-        dex = new MockContract<>(DataSourceScoreInterface.class, sm, admin);
-        loans = new MockContract<>(DataSourceScoreInterface.class, sm, admin);
-        baln = new MockContract<>(IRC2MintableScoreInterface.class, sm, admin);
-        bwt = new MockContract<>(IRC2MintableScoreInterface.class, sm, admin);
-        bBaln = new MockContract<>(BoostedBalnScoreInterface.class, sm, admin);
+        mockBalanced = new MockBalanced(sm, owner);
+        governance = mockBalanced.governance.account;
+        dex = mockBalanced.dex;
+        loans = mockBalanced.loans;
+        baln = mockBalanced.baln;
+        bwt = mockBalanced.bwt;
+        bBaln = mockBalanced.bBaln;
+        daoFund = mockBalanced.daofund.account;
+        reserve = mockBalanced.reserve.account;
+
+        user = sm.createAccount();
 
         BigInteger startTime = BigInteger.valueOf(sm.getBlock().getTimestamp());
-        sm.getBlock().increase(DAY);
+        // One vote period before being able to start voting
+        sm.getBlock().increase(DAY*10);
+
         rewardsScore = sm.deploy(owner, RewardsImpl.class, governance.getAddress());
+        setupDistributions();
+        rewardsScore.invoke(owner, "setTimeOffset", startTime);
+        rewardsScore.invoke(owner, "addDataProvider", loans.getAddress());
+        rewardsScore.invoke(owner, "addDataProvider", dex.getAddress());
 
-        rewardsScore.invoke(governance, "setAdmin", admin.getAddress());
-        rewardsScore.invoke(admin, "setTimeOffset", startTime);
-
-        rewardsScore.invoke(governance, "addNewDataSource", "sICX/ICX", dex.getAddress());
-        rewardsScore.invoke(governance, "addNewDataSource", "Loans", loans.getAddress());
+        rewardsScore.invoke(owner, "createDataSource", "sICX/ICX", dex.getAddress(), 0);
+        rewardsScore.invoke(owner, "createDataSource", "sICX/bnUSD", dex.getAddress(), 0);
+        rewardsScore.invoke(owner, "createDataSource", "Loans", loans.getAddress(), 0);
 
         Map<String, BigInteger> emptyDataSource = Map.of(
                 "_balance", BigInteger.ZERO,
@@ -91,55 +98,45 @@ class RewardsTestBase extends UnitTest {
         );
         when(loans.mock.getBalanceAndSupply(any(String.class), any(String.class))).thenReturn(emptyDataSource);
         when(dex.mock.getBalanceAndSupply(any(String.class), any(String.class))).thenReturn(emptyDataSource);
-        when(loans.mock.precompute(any(BigInteger.class), any(BigInteger.class))).thenReturn(true);
-        when(dex.mock.precompute(any(BigInteger.class), any(BigInteger.class))).thenReturn(true);
         when(bBaln.mock.balanceOf(any(Address.class), any(BigInteger.class))).thenReturn(BigInteger.ZERO);
         when(bBaln.mock.totalSupply(any(BigInteger.class))).thenReturn(BigInteger.ZERO);
 
-        rewardsScore.invoke(admin, "setBaln", baln.getAddress());
-        rewardsScore.invoke(admin, "setBwt", bwt.getAddress());
-        rewardsScore.invoke(admin, "setDaofund", daoFund.getAddress());
-        rewardsScore.invoke(admin, "setReserve", reserve.getAddress());
-        rewardsScore.invoke(admin, "setBoostedBaln", bBaln.getAddress());
 
-        rewardsScore.invoke(owner, "addDataProvider", loans.getAddress());
-        rewardsScore.invoke(owner, "addDataProvider", dex.getAddress());
-
-        setupDistributions();
+        BigInteger currentTime = BigInteger.valueOf(sm.getBlock().getTimestamp());
+        BigInteger unlockTime = currentTime.add(MICRO_SECONDS_IN_A_DAY.multiply(BigInteger.valueOf(365)));
+        when(bBaln.mock.lockedEnd(any(Address.class))).thenReturn(unlockTime);
         sm.getBlock().increase(DAY);
-        syncDistributions();
+
+        mockUserWeight(user, EXA);
+
+
+        vote(user, "sICX/ICX", VOTE_POINTS.divide(BigInteger.TWO));
+        vote(user, "sICX/bnUSD", VOTE_POINTS.divide(BigInteger.TWO));
+        rewardsScore.invoke(owner, "setFixedSourcePercentage", "Loans", EXA.divide(BigInteger.TEN));
+
+        // One vote period to apply votes
+        sm.getBlock().increase(DAY*10);
+
+        rewardsScore.invoke(owner, "updateRelativeSourceWeight", "sICX/ICX",
+                BigInteger.valueOf(sm.getBlock().getTimestamp()));
+        rewardsScore.invoke(owner, "updateRelativeSourceWeight", "sICX/bnUSD",
+                BigInteger.valueOf(sm.getBlock().getTimestamp()));
     }
 
     protected void setupDistributions() {
-        loansDist.recipient_name = "Loans";
-        loansDist.dist_percent = ICX.divide(BigInteger.valueOf(5)); //20%
-
-        icxPoolDist.recipient_name = "sICX/ICX";
-        icxPoolDist.dist_percent = ICX.divide(BigInteger.valueOf(5)); //20%
-
-        bwtDist.recipient_name = "Worker Tokens";
-        bwtDist.dist_percent = ICX.divide(BigInteger.valueOf(5)); //20%
-
-        reserveDist.recipient_name = "Reserve Fund";
-        reserveDist.dist_percent = ICX.divide(BigInteger.valueOf(5)); //20%
-
-        daoDist.recipient_name = "DAOfund";
-        daoDist.dist_percent = ICX.divide(BigInteger.valueOf(5)); //20%
-
-        DistributionPercentage[] distributionPercentages = new DistributionPercentage[]{loansDist, icxPoolDist,
-                bwtDist, reserveDist, daoDist};
-
-        rewardsScore.invoke(governance, "updateBalTokenDistPercentage", (Object) distributionPercentages);
+        rewardsScore.invoke(owner, "setPlatformDistPercentage", Names.DAOFUND, defaultPlatformDist);
+        rewardsScore.invoke(owner, "setPlatformDistPercentage", Names.WORKERTOKEN, defaultPlatformDist);
+        rewardsScore.invoke(owner, "setPlatformDistPercentage", Names.RESERVE, defaultPlatformDist);
     }
 
     void syncDistributions() {
         BigInteger currentDay = (BigInteger) rewardsScore.call("getDay");
         for (long i = 0; i < currentDay.intValue(); i++) {
-            rewardsScore.invoke(admin, "distribute");
+            rewardsScore.invoke(owner, "distribute");
         }
     }
 
-    void mockBalanceAndSupply(MockContract<DataSource> dataSource, String name, Address address,
+    void mockBalanceAndSupply(MockContract<? extends DataSource> dataSource, String name, Address address,
                               BigInteger balance, BigInteger supply) {
         Map<String, BigInteger> balanceAndSupply = Map.of(
                 "_balance", balance,
@@ -159,7 +156,7 @@ class RewardsTestBase extends UnitTest {
     BigInteger getOneDayRewards(Address address) {
         BigInteger rewardsPre = (BigInteger) rewardsScore.call("getBalnHolding", address.toString());
         sm.getBlock().increase(DAY);
-        rewardsScore.invoke(admin, "distribute");
+        rewardsScore.invoke(owner, "distribute");
         BigInteger rewardsPost = (BigInteger) rewardsScore.call("getBalnHolding", address.toString());
 
         return rewardsPost.subtract(rewardsPre);
@@ -169,19 +166,17 @@ class RewardsTestBase extends UnitTest {
         return rewardsScore.call("getUserSources", address.toString());
     }
 
-    void snapshotDistributionPercentage() {
-        Object distributionPercentages = new DistributionPercentage[]{loansDist, icxPoolDist, bwtDist, reserveDist,
-                daoDist};
-
-        rewardsScore.invoke(governance, "updateBalTokenDistPercentage", distributionPercentages);
-        sm.getBlock().increase(DAY);
-    }
-
     void vote(Account user, String name, BigInteger weight) {
         rewardsScore.invoke(user, "voteForSource", name, weight);
     }
 
     void mockUserWeight(Account user, BigInteger weight) {
         when(bBaln.mock.getLastUserSlope(user.getAddress())).thenReturn(weight);
+    }
+
+    @SuppressWarnings("unchecked")
+    BigInteger getVotePercentage(String name){
+        Map<String, Map<String, BigInteger>> data = (Map<String, Map<String, BigInteger>>) rewardsScore.call("getDistributionPercentages");
+        return data.get("Voting").get(name).add(data.get("Fixed").getOrDefault(name, BigInteger.ZERO));
     }
 }

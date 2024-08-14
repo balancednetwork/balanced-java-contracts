@@ -18,6 +18,7 @@ package network.balanced.score.core.rewards;
 
 import network.balanced.score.core.rewards.utils.BalanceData;
 import network.balanced.score.lib.interfaces.DataSourceScoreInterface;
+import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.BranchedAddressDictDB;
 import score.*;
 import scorex.util.HashMap;
@@ -33,12 +34,7 @@ public class DataSourceImpl {
     private final BranchDB<String, VarDB<Address>> contractAddress = Context.newBranchDB("contract_address",
             Address.class);
     private final BranchDB<String, VarDB<String>> name = Context.newBranchDB("name", String.class);
-    private final BranchDB<String, VarDB<BigInteger>> day = Context.newBranchDB("day", BigInteger.class);
-    private final BranchDB<String, VarDB<Boolean>> precomp = Context.newBranchDB("precomp", Boolean.class);
-    private final BranchDB<String, VarDB<Integer>> offset = Context.newBranchDB("offset", Integer.class);
     private final BranchDB<String, VarDB<BigInteger>> workingSupply = Context.newBranchDB("working_supply",
-            BigInteger.class);
-    private final BranchDB<String, DictDB<BigInteger, BigInteger>> totalValue = Context.newBranchDB("total_value",
             BigInteger.class);
     private final BranchDB<String, DictDB<BigInteger, BigInteger>> totalDist = Context.newBranchDB("total_dist",
             BigInteger.class);
@@ -47,13 +43,26 @@ public class DataSourceImpl {
     private final BranchedAddressDictDB<String, BigInteger> userWeight = new BranchedAddressDictDB<>("user_weight",
             BigInteger.class);
     private final BranchedAddressDictDB<String, BigInteger> userWorkingBalance = new BranchedAddressDictDB<>(
-            "user_working_balance", BigInteger.class);
+                "user_working_balance", BigInteger.class);
     private final BranchDB<String, VarDB<BigInteger>> lastUpdateTimeUs = Context.newBranchDB("last_update_us",
             BigInteger.class);
     private final BranchDB<String, VarDB<BigInteger>> totalWeight = Context.newBranchDB("running_total",
             BigInteger.class);
-    private final BranchDB<String, VarDB<BigInteger>> totalSupply = Context.newBranchDB("total_supply",
+
+    // name -> token -> day -> amount
+    private final BranchDB<String, BranchDB<Address, DictDB<BigInteger, BigInteger>>> externalDist = Context
+            .newBranchDB("external_total_dist", BigInteger.class);
+    private final BranchDB<String, DictDB<String, BigInteger>> userBalance = Context.newBranchDB("user_balance",
             BigInteger.class);
+    private final BranchDB<String, VarDB<BigInteger>> totalSupply = Context.newBranchDB("total_supplyV2",
+            BigInteger.class);
+    // name -> token -> user -> amount
+    private final BranchDB<String, BranchDB<Address, DictDB<String, BigInteger>>> externalUserWeight = Context
+            .newBranchDB("external_user_weight", BigInteger.class);
+    // name -> token -> weight
+    private final BranchDB<String, DictDB<Address, BigInteger>> externalTotalWeights = Context
+            .newBranchDB("external_running_total", BigInteger.class);
+    private final BranchDB<String, ArrayDB<Address>> rewardTokens = Context.newBranchDB("reward_tokens", Address.class);
 
     private final String dbKey;
 
@@ -75,14 +84,6 @@ public class DataSourceImpl {
 
     public void setName(String name) {
         this.name.at(dbKey).set(name);
-    }
-
-    public BigInteger getDay() {
-        return day.at(dbKey).getOrDefault(BigInteger.ZERO);
-    }
-
-    public void setDay(BigInteger day) {
-        this.day.at(dbKey).set(day);
     }
 
     // Used for migration if it happens on Claim
@@ -122,6 +123,14 @@ public class DataSourceImpl {
         this.workingSupply.at(dbKey).set(supply);
     }
 
+    public BigInteger getTotalSupply() {
+        return totalSupply.at(dbKey).getOrDefault(BigInteger.ZERO);
+    }
+
+    private void setTotalSupply(BigInteger supply) {
+        this.totalSupply.at(dbKey).set(supply);
+    }
+
     // Used for migration if it happens on Claim
     public BigInteger getWorkingBalance(String user, boolean readonly) {
         BigInteger workingBalance = userWorkingBalance.at(dbKey).get(user);
@@ -159,16 +168,12 @@ public class DataSourceImpl {
         this.userWorkingBalance.at(dbKey).set(user, balance);
     }
 
-    public Boolean getPrecomp() {
-        return precomp.at(dbKey).getOrDefault(false);
+    public BigInteger getBalance(String user) {
+        return userBalance.at(dbKey).getOrDefault(user, BigInteger.ZERO);
     }
 
-    public Integer getOffset() {
-        return offset.at(dbKey).getOrDefault(0);
-    }
-
-    public BigInteger getTotalValue(BigInteger day) {
-        return totalValue.at(dbKey).getOrDefault(day, BigInteger.ZERO);
+    private void setBalance(String user, BigInteger balance) {
+        this.userBalance.at(dbKey).set(user, balance);
     }
 
     public BigInteger getTotalDist(BigInteger day, boolean readonly) {
@@ -194,6 +199,14 @@ public class DataSourceImpl {
         totalDist.at(dbKey).set(day, value);
     }
 
+    public BigInteger getTotalExternalDist(BigInteger day, Address token) {
+        return externalDist.at(dbKey).at(token).getOrDefault(day, BigInteger.ZERO);
+    }
+
+    public void setTotalExternalDist(BigInteger day, Address token, BigInteger value) {
+        externalDist.at(dbKey).at(token).set(day, value);
+    }
+
     public BigInteger getDistPercent() {
         return distPercent.at(dbKey).getOrDefault(BigInteger.ZERO);
     }
@@ -206,6 +219,10 @@ public class DataSourceImpl {
         return userWeight.at(dbKey).getOrDefault(user, BigInteger.ZERO);
     }
 
+    public BigInteger getExternalUserWeight(String user, Address token) {
+        return externalUserWeight.at(dbKey).at(token).getOrDefault(user, BigInteger.ZERO);
+    }
+
     public BigInteger getLastUpdateTimeUs() {
         return lastUpdateTimeUs.at(dbKey).getOrDefault(BigInteger.ZERO);
     }
@@ -214,8 +231,28 @@ public class DataSourceImpl {
         return totalWeight.at(dbKey).getOrDefault(BigInteger.ZERO);
     }
 
-    public BigInteger getTotalSupply() {
-        return totalSupply.at(dbKey).getOrDefault(BigInteger.ZERO);
+
+    public BigInteger getTotalExternalWeight(Address token) {
+        return externalTotalWeights.at(dbKey).getOrDefault(token, BigInteger.ZERO);
+    }
+
+    public Address[] getRewardTokens() {
+        ArrayDB<Address> tokens = rewardTokens.at(dbKey);
+        int size = tokens.size();
+        Address[] tokensArray = new Address[size];
+        for (int i = 0; i < tokens.size(); i++) {
+            tokensArray[i] = tokens.get(i);
+        }
+
+        return tokensArray;
+    }
+
+    public ArrayDB<Address> getRewardTokensDB() {
+        return rewardTokens.at(dbKey);
+    }
+
+    public void addRewardToken(Address token) {
+        rewardTokens.at(dbKey).add(token);
     }
 
     @SuppressWarnings("unchecked")
@@ -233,25 +270,28 @@ public class DataSourceImpl {
         }
     }
 
-    public BigInteger updateSingleUserData(BigInteger currentTime, BigInteger prevTotalSupply, String user,
-                                           BigInteger prevBalance, boolean readOnlyContext) {
+    public Map<Address, BigInteger> updateSingleUserData(BigInteger currentTime, BalanceData balances, String user, boolean readOnlyContext) {
         BigInteger currentUserWeight = getUserWeight(user);
         BigInteger lastUpdateTimestamp = getLastUpdateTimeUs();
+        Address[] externalRewards = getRewardTokens();
+        Address baln = BalancedAddressManager.getBaln();
+        Map<Address, BigInteger> totalWeight = updateTotalWeight(lastUpdateTimestamp, currentTime, balances, externalRewards, readOnlyContext);
+        Map<Address, BigInteger> accruedRewards = new HashMap<>(externalRewards.length+1);
+        accruedRewards.put(baln, BigInteger.ZERO);
 
-        BigInteger totalWeight = updateTotalWeight(lastUpdateTimestamp, currentTime, prevTotalSupply, readOnlyContext);
-
-        if (currentUserWeight.equals(totalWeight)) {
-            return BigInteger.ZERO;
-        }
-
-        BigInteger accruedRewards = BigInteger.ZERO;
         //  If the user's current weight is less than the total, update their weight and issue rewards
-        if (prevBalance.compareTo(BigInteger.ZERO) > 0) {
-            accruedRewards = computeUserRewards(prevBalance, totalWeight, currentUserWeight);
+        if (balances.prevWorkingBalance.compareTo(BigInteger.ZERO) > 0) {
+            accruedRewards.put(baln, computeUserRewards(balances.prevWorkingBalance, totalWeight.get(baln), currentUserWeight));
+            for (Address token : externalRewards) {
+                accruedRewards.put(token, computeUserRewards(balances.prevBalance, totalWeight.get(token), getExternalUserWeight(user, token)));
+            }
         }
 
         if (!readOnlyContext) {
-            userWeight.at(dbKey).set(user, totalWeight);
+            userWeight.at(dbKey).set(user, totalWeight.get(baln));
+            for (Address token : externalRewards) {
+                externalUserWeight.at(dbKey).at(token).set(user, totalWeight.get(token));
+            }
         }
 
         return accruedRewards;
@@ -262,6 +302,9 @@ public class DataSourceImpl {
         BigInteger supply = balances.supply;
         Context.require(balance.compareTo(BigInteger.ZERO) >= 0);
         Context.require(supply.compareTo(BigInteger.ZERO) >= 0);
+
+        setBalance(user, balance);
+        setTotalSupply(supply);
 
         BigInteger weight = RewardsImpl.boostWeight.get();
         BigInteger max = balance.multiply(EXA).divide(weight);
@@ -304,10 +347,14 @@ public class DataSourceImpl {
         return previousTotalWeight.add(weightDelta);
     }
 
-    private BigInteger updateTotalWeight(BigInteger lastUpdateTimestamp, BigInteger currentTime,
-                                         BigInteger totalSupply, boolean readOnlyContext) {
-
-        BigInteger runningTotal = getTotalWeight();
+    private Map<Address, BigInteger> updateTotalWeight(BigInteger lastUpdateTimestamp, BigInteger currentTime,
+            BalanceData balances, Address[] externalRewards, boolean readOnlyContext) {
+        Address baln = BalancedAddressManager.getBaln();
+        Map<Address, BigInteger> externalTotals = new HashMap<>(externalRewards.length+1);
+        externalTotals.put(baln, getTotalWeight());
+        for (Address token : externalRewards) {
+            externalTotals.put(token, externalTotalWeights.at(dbKey).getOrDefault(token, BigInteger.ZERO));
+        }
 
         if (lastUpdateTimestamp.equals(BigInteger.ZERO)) {
             lastUpdateTimestamp = currentTime;
@@ -317,7 +364,7 @@ public class DataSourceImpl {
         }
 
         if (currentTime.equals(lastUpdateTimestamp)) {
-            return runningTotal;
+            return externalTotals;
         }
 
         // Emit rewards based on the time delta * reward rate
@@ -330,17 +377,31 @@ public class DataSourceImpl {
             BigInteger endComputeTimestampUs = previousDayEndUs.min(currentTime);
 
             BigInteger emission = getTotalDist(previousRewardsDay, readOnlyContext);
-            runningTotal = computeTotalWeight(runningTotal, emission, totalSupply, lastUpdateTimestamp,
-                    endComputeTimestampUs);
+            externalTotals.put(baln, computeTotalWeight(externalTotals.get(baln), emission, balances.prevWorkingSupply, lastUpdateTimestamp,
+            endComputeTimestampUs));
+            for (Address token : externalRewards) {
+                BigInteger externalEmission = getTotalExternalDist(previousRewardsDay, token);
+                if (externalEmission.equals(BigInteger.ZERO)) {
+                    continue;
+                }
+
+                externalTotals.put(token, computeTotalWeight(externalTotals.get(token), externalEmission,
+                        balances.prevSupply, lastUpdateTimestamp, endComputeTimestampUs));
+            }
+
             lastUpdateTimestamp = endComputeTimestampUs;
         }
 
         if (!readOnlyContext) {
-            totalWeight.at(dbKey).set(runningTotal);
+            totalWeight.at(dbKey).set(externalTotals.get(baln));
+            for (Address token : externalRewards) {
+                externalTotalWeights.at(dbKey).set(token, externalTotals.get(token));
+            }
+
             lastUpdateTimeUs.at(dbKey).set(currentTime);
         }
 
-        return runningTotal;
+        return externalTotals;
     }
 
     public BigInteger getValue() {
@@ -350,20 +411,35 @@ public class DataSourceImpl {
 
     public Map<String, Object> getDataAt(BigInteger day) {
         Map<String, Object> sourceData = new HashMap<>();
-        sourceData.put("day", day);
         sourceData.put("contract_address", getContractAddress());
-        // dist_percent is deprecated
-        sourceData.put("dist_percent", getDistPercent());
         sourceData.put("workingSupply", getWorkingSupply());
-        sourceData.put("total_value", getTotalValue(day));
         sourceData.put("total_dist", getTotalDist(day, true));
+        Address[] externalRewards = getRewardTokens();
+        Map<String, Object> externalData = new HashMap<>();
+        for (Address addr : externalRewards) {
+            externalData.put("external_dist", getTotalExternalDist(day, addr));
+            externalData.put("total_weight", getTotalExternalWeight(addr));
+            sourceData.put(addr.toString(), externalData);
+        }
 
         return sourceData;
     }
 
     public Map<String, Object> getData() {
-        BigInteger day = this.getDay();
-        return getDataAt(day);
+        return getDataAt(RewardsImpl.getDay());
+    }
+
+    public Map<String, Object> getUserData(String user) {
+        Map<String, Object> data = new HashMap<>();
+        Address[] externalRewards = getRewardTokens();
+        data.put("user_weight", getUserWeight(user));
+        data.put("balance", getBalance(user));
+        data.put("working balance", getWorkingBalance(user, true));
+
+        for (Address addr : externalRewards) {
+            data.put(addr.toString() + "_weight", getExternalUserWeight(user,addr));
+        }
+        return data;
     }
 
     private BigInteger computeUserRewards(BigInteger prevUserBalance, BigInteger totalWeight, BigInteger userWeight) {

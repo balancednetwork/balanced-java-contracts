@@ -26,7 +26,7 @@ public class Versions {
     public final static String WORKERTOKEN = "v1.0.0";
     public final static String BNUSD = "v1.1.0";
     public final static String FEEHANDLER = "v1.0.1";
-    public final static String REWARDS = "v1.1.1";
+    public final static String REWARDS = "v1.2.0";
     public final static String STABILITY = "v1.1.1";
     public final static String BALANCEDORACLE = "v1.1.0";
     public final static String DAOFUND = "v1.1.1";
