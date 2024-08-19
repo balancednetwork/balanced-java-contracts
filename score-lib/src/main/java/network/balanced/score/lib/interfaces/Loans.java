@@ -155,9 +155,6 @@ public interface Loans extends Name, AddressManager, Version, XTokenReceiver, Fl
     BigInteger getRedemptionDaoFee();
 
     @External
-    void setRetirementBonus(BigInteger _points);
-
-    @External
     void setNewLoanMinimum(BigInteger _minimum);
 
     @External
