@@ -16,10 +16,12 @@
 
 package network.balanced.score.core.balancedoracle;
 
+import network.balanced.score.core.balancedoracle.structs.PriceData;
 import network.balanced.score.lib.interfaces.BalancedOracle;
 import network.balanced.score.lib.interfaces.BalancedOracleXCall;
 import network.balanced.score.lib.structs.PriceProtectionConfig;
 import network.balanced.score.lib.structs.PriceProtectionParameter;
+import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.Versions;
 import network.balanced.score.lib.utils.XCallUtils;
@@ -36,23 +38,24 @@ import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
-import static network.balanced.score.lib.utils.Constants.WEEK_IN_MICRO_SECONDS;
-import static network.balanced.score.lib.utils.Math.pow;
+import static network.balanced.score.lib.utils.Constants.POINTS;
 
 public class BalancedOracleImpl implements BalancedOracle {
     public static final String TAG = Names.BALANCEDORACLE;
 
     public BalancedOracleImpl(@Optional Address _governance) {
-        if (governance.get() == null) {
+        if (BalancedAddressManager.getAddressByName(Names.GOVERNANCE) == null) {
             setGovernance(_governance);
             assetPeg.set("bnUSD", "USD");
-            dexPricedAssets.set("BALN", BigInteger.valueOf(3));
             lastUpdateThreshold.set(MICRO_SECONDS_IN_A_DAY);
-            dexPriceEMADecay.set(EXA);
-            oraclePriceEMADecay.set(EXA);
-        } else {
-            setGovernance(governance.get());
         }
+        BandOracle.availablePrices.set("ICX", true);
+        BandOracle.availablePrices.set("BTC", true);
+        BandOracle.availablePrices.set("ETH", true);
+        BandOracle.availablePrices.set("INJ", true);
+        BandOracle.availablePrices.set("BNB", true);
+        BandOracle.availablePrices.set("AVAX", true);
+        BandOracle.availablePrices.set("SUI", true);
 
         if (currentVersion.getOrDefault("").equals(Versions.BALANCEDORACLE)) {
             Context.revert("Can't Update same version of code");
@@ -82,46 +85,31 @@ public class BalancedOracleImpl implements BalancedOracle {
 
     @External
     public BigInteger getPriceInLoop(String symbol) {
-        return _getPriceInLoop(symbol);
+        return getLastPriceInLoop(symbol);
     }
 
     @External(readonly = true)
     public BigInteger getLastPriceInLoop(String symbol) {
-        return _getPriceInLoop(symbol);
+        if (symbol.equals("sICX")) {
+            return Context.call(BigInteger.class, getStaking(), "getTodayRate");
+        }
+
+        return USDToLoop(getPrice(symbol).rate);
     }
 
     @External
     public BigInteger getPriceInUSD(String symbol) {
-        return _getPriceInUSD(symbol);
+        return getPrice(symbol).rate;
     }
 
     @External(readonly = true)
     public BigInteger getLastPriceInUSD(String symbol) {
-        return _getPriceInUSD(symbol);
+        return getPrice(symbol).rate;
     }
 
     @External(readonly = true)
     public Map<String, BigInteger> getPriceDataInUSD(String symbol) {
-        return _getUSDPriceData(symbol).toMap();
-    }
-
-    @External
-    public void addDexPricedAsset(String symbol, BigInteger dexBnusdPoolId) {
-        onlyOwner();
-        dexPricedAssets.set(symbol, dexBnusdPoolId);
-    }
-
-    @External
-    public void removeDexPricedAsset(String symbol) {
-        onlyOwner();
-        dexPricedAssets.set(symbol, null);
-    }
-
-    @External(readonly = true)
-    public BigInteger getAssetBnusdPoolId(String symbol) {
-        BigInteger poolID = dexPricedAssets.get(symbol);
-        Context.require(poolID != null, symbol + " is not listed as a dex priced asset");
-        return poolID;
+        return getPriceData(symbol).toMap();
     }
 
     @External
@@ -129,6 +117,12 @@ public class BalancedOracleImpl implements BalancedOracle {
         onlyOwner();
         assetPeg.set(symbol, peg);
     }
+
+    @External(readonly = true)
+    public String getPeg(String symbol) {
+        return assetPeg.get(symbol);
+    }
+
 
     @External(readonly = true)
     public BigInteger getLastUpdateThreshold() {
@@ -142,71 +136,31 @@ public class BalancedOracleImpl implements BalancedOracle {
     }
 
     @External(readonly = true)
-    public String getPeg(String symbol) {
-        return assetPeg.get(symbol);
+    public BigInteger getPriceDiffThreshold() {
+        return priceDiffThreshold.get();
     }
 
     @External
-    public void setDexPriceEMADecay(BigInteger decay) {
+    public void setPriceDiffThreshold(BigInteger threshold) {
         onlyOwner();
-        Context.require(decay.compareTo(EXA) <= 0, TAG + ": decay has to be less than " + EXA);
-        Context.require(decay.compareTo(BigInteger.ZERO) > 0, TAG + ": decay has to be larger than zero");
-        dexPriceEMADecay.set(decay);
-    }
-
-    @External(readonly = true)
-    public BigInteger getDexPriceEMADecay() {
-        return dexPriceEMADecay.get();
-    }
-
-    @External
-    public void setOraclePriceEMADecay(BigInteger decay) {
-        onlyOwner();
-        Context.require(decay.compareTo(EXA) <= 0, TAG + ": decay has to be less than " + EXA);
-        Context.require(decay.compareTo(BigInteger.ZERO) > 0, TAG + ": decay has to be larger than zero");
-        oraclePriceEMADecay.set(decay);
-    }
-
-    @External(readonly = true)
-    public BigInteger getOraclePriceEMADecay() {
-        return oraclePriceEMADecay.get();
+        priceDiffThreshold.set(threshold);
     }
 
     // XCall
     public void updatePriceData(String from, String symbol, BigInteger rate, BigInteger timestamp) {
-        Context.require(from.equals(priceProvider.get(symbol)), from + " is not allowed to update the price of " + symbol);
-        BigInteger currentTime = BigInteger.valueOf(Context.getBlockTimestamp());
-        Context.require(timestamp.compareTo(currentTime) < 0, "Time cannot be in the future");
-        PriceData currentPriceData = externalPriceData.get(symbol);
-        if (currentPriceData == null) {
-            Context.require(timestamp.compareTo(currentTime.subtract(WEEK_IN_MICRO_SECONDS)) >= 0, "First timestamp can't be older than a week old");
-            externalPriceData.set(symbol, new PriceData(rate, timestamp));
-            return;
-        }
-
-        Context.require(currentPriceData.timestamp.compareTo(timestamp) < 0, "Price must be more recent than the current one");
-        PriceProtectionConfig priceProtectionConfig = externalPriceProtectionConfig.get(symbol);
-        if (priceProtectionConfig != null) {
-            priceProtectionConfig.verifyPriceUpdate(currentPriceData.timestamp, currentPriceData.rate, timestamp, rate);
-        }
-
-        externalPriceData.set(symbol, new PriceData(rate, timestamp));
+        ExternalOracle.updatePriceData(from, symbol, rate, timestamp);
     }
 
     @External
     public void addExternalPriceProxy(String symbol, String address, @Optional PriceProtectionParameter priceProtectionConfig) {
         onlyOwner();
-        priceProvider.set(symbol, address);
-        if (priceProtectionConfig != null) {
-            externalPriceProtectionConfig.set(symbol, new PriceProtectionConfig(priceProtectionConfig));
-        }
+        ExternalOracle.addExternalPriceProxy(symbol, address, priceProtectionConfig);
     }
 
     @External
     public void removeExternalPriceProxy(String symbol, String address) {
         onlyOwner();
-        priceProvider.set(symbol, null);
-        externalPriceProtectionConfig.set(symbol, null);
+        ExternalOracle.removeExternalPriceProxy(symbol, address);
     }
 
     @External(readonly = true)
@@ -220,6 +174,18 @@ public class BalancedOracleImpl implements BalancedOracle {
     }
 
     @External
+    public void configurePythPriceId(String base, byte[] id) {
+        onlyOwner();
+        PythOracle.configurePythPriceId(base, id);
+    }
+
+    @External
+    public void configureBandPrice(String base) {
+        onlyOwner();
+        BandOracle.addPrice(base);
+    }
+
+    @External
     public void handleCallMessage(String _from, byte[] _data, @Optional String[] _protocols) {
         checkStatus();
         only(getXCall());
@@ -227,105 +193,51 @@ public class BalancedOracleImpl implements BalancedOracle {
         BalancedOracleXCall.process(this, _from, _data);
     }
 
-    private BigInteger getSICXPriceInLoop() {
-        return Context.call(BigInteger.class, getStaking(), "getTodayRate");
-    }
-
-    private BigInteger loopToUSD(BigInteger loopAmount) {
-        BigInteger ICXPriceInUSD = getUSDRate("ICX");
-        return loopAmount.multiply(ICXPriceInUSD).divide(EXA);
-
-    }
-
-    public BigInteger _getPriceInLoop(String symbol) {
-        String pegSymbol = assetPeg.getOrDefault(symbol, symbol);
-        BigInteger priceInLoop;
-        if (pegSymbol.equals("sICX")) {
-            priceInLoop = getSICXPriceInLoop();
-        } else if (dexPricedAssets.get(pegSymbol) != null) {
-            priceInLoop = getDexPriceInLoop(pegSymbol);
-        } else {
-            priceInLoop = getLoopRate(pegSymbol);
-        }
-
-        Context.require(priceInLoop.compareTo(BigInteger.ZERO) > 0, TAG + ": No price data exists for symbol");
-
-        return priceInLoop;
-    }
-
-    public BigInteger _getPriceInUSD(String symbol) {
-        String pegSymbol = assetPeg.getOrDefault(symbol, symbol);
-        BigInteger priceInUSD;
-        if (pegSymbol.equals("sICX")) {
-            priceInUSD = loopToUSD(getSICXPriceInLoop());
-        } else if (pegSymbol.equals("USD")) {
-            return EXA;
-        } else if (dexPricedAssets.get(pegSymbol) != null) {
-            priceInUSD = loopToUSD(getDexPriceInLoop(pegSymbol));
-        } else {
-            priceInUSD = getUSDRate(pegSymbol);
-        }
-
-        Context.require(priceInUSD.compareTo(BigInteger.ZERO) > 0, TAG + ": No price data exists for symbol");
-
-        return priceInUSD;
-    }
-
-    private BigInteger getDexPriceInLoop(String symbol) {
-        if (readonly()) {
-            return EMACalculator.calculateEMA(symbol, getDexPriceEMADecay());
-        }
-
-        BigInteger poolID = dexPricedAssets.get(symbol);
-        Address base = Context.call(Address.class, getDex(), "getPoolBase", poolID);
-        BigInteger nrDecimals = Context.call(BigInteger.class, base, "decimals");
-        BigInteger decimals = pow(BigInteger.TEN, nrDecimals.intValue());
-
-        BigInteger bnusdPriceInAsset = Context.call(BigInteger.class, getDex(), "getQuotePriceInBase", poolID);
-
-        BigInteger loopRate = getLoopRate("USD");
-        BigInteger priceInLoop = loopRate.multiply(decimals).divide(bnusdPriceInAsset);
-        return EMACalculator.updateEMA(symbol, priceInLoop, getDexPriceEMADecay());
-    }
-
-    private BigInteger getLoopRate(String symbol) {
-        return getRate(symbol, "ICX");
-    }
-
-    private BigInteger getUSDRate(String symbol) {
-        return getRate(symbol, "USD");
-    }
-
-    @SuppressWarnings("unchecked")
-    private PriceData _getUSDPriceData(String symbol) {
-        String pegSymbol = assetPeg.getOrDefault(symbol, symbol);
-        if (priceProvider.get(pegSymbol) != null) {
-            PriceData data = externalPriceData.get(pegSymbol);
-            Context.require(data != null, "No price data exits for " + pegSymbol);
-
-            return data;
-        } else {
-            Map<String, BigInteger> priceData = (Map<String, BigInteger>) Context.call(getOracle(), "get_reference_data", pegSymbol, "USD");
-            BigInteger last_update_base = priceData.get("last_update_base");
-            BigInteger last_update_quote = priceData.get("last_update_quote");
-            return new PriceData(priceData.get("rate"), last_update_base.min(last_update_quote));
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private BigInteger getRate(String base, String quote) {
-        Map<String, BigInteger> priceData = (Map<String, BigInteger>) Context.call(getOracle(), "get_reference_data"
-                , base, quote);
-        BigInteger last_update_base = priceData.get("last_update_base");
-        BigInteger last_update_quote = priceData.get("last_update_quote");
+    public static PriceData getPrice(String symbol) {
+        PriceData data = getPriceData(symbol);
         BigInteger blockTime = BigInteger.valueOf(Context.getBlockTimestamp());
         BigInteger threshold = lastUpdateThreshold.getOrDefault(BigInteger.ZERO);
+        Context.require(blockTime.subtract(data.timestamp).compareTo(threshold) < 0, "The last price update for " + symbol + " is outdated");
 
-        Context.require(blockTime.subtract(last_update_base).compareTo(threshold) < 0,
-                "The last price update for " + quote + " is outdated");
-        Context.require(blockTime.subtract(last_update_quote).compareTo(threshold) < 0,
-                "The last price update for " + base + " is outdated");
-
-        return (BigInteger) priceData.get("rate");
+        return data;
     }
+
+    public static PriceData getPriceData(String symbol) {
+        String pegSymbol = assetPeg.getOrDefault(symbol, symbol);
+        PriceData data = null;
+        if (pegSymbol.equals("sICX")) {
+                BigInteger ICXPrice = Context.call(BigInteger.class, getStaking(), "getTodayRate");
+                data = getPrice("ICX");
+                data.rate = ICXPrice.multiply(data.rate).divide(EXA);
+        } else if (pegSymbol.equals("ICX")) {
+            data = BandOracle.getRate(pegSymbol);
+        } else if (pegSymbol.equals("USD")) {
+            data = new PriceData(EXA, BigInteger.valueOf(Context.getBlockTimestamp()));
+        } else if (PythOracle.has(pegSymbol)) {
+            data = PythOracle.getRate(pegSymbol);
+            if (BandOracle.has(pegSymbol)) {
+                PriceData refData = BandOracle.getRate(pegSymbol);
+                BigInteger diff = data.rate.subtract(refData.rate).abs();
+                BigInteger avg =  data.rate.add(refData.rate).divide(BigInteger.TWO);
+                BigInteger pointsDiff = diff.multiply(POINTS).divide(avg);
+
+                BigInteger diffThreshold = priceDiffThreshold.get();
+                Context.require(diffThreshold == null  || pointsDiff.compareTo(diffThreshold) < 0, " Difference between Pyth and Band is bigger than threshold");
+            }
+        } else if (BandOracle.has(pegSymbol)) {
+            data = BandOracle.getRate(pegSymbol);
+        } else if (priceProvider.get(pegSymbol) != null) {
+            data = ExternalOracle.getRate(pegSymbol);
+        }
+
+        return data;
+    }
+
+
+    private BigInteger USDToLoop(BigInteger price) {
+        BigInteger ICXPriceInUSD = getPrice("ICX").rate;
+        return price.multiply(ICXPriceInUSD).divide(EXA);
+    }
+
+
 }

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package network.balanced.score.core.balancedoracle;
+package network.balanced.score.core.balancedoracle.structs;
 
 import score.ByteArrayObjectWriter;
 import score.Context;

@@ -169,6 +169,11 @@ public class BalancedAddressManager {
         return getAddress(Names.TRICKLER);
     }
 
+    public static Address getPythOracle() {
+        return getAddress(Names.PYTH_ORACLE);
+    }
+
+
     public static Address getGovernance() {
         return contractAddresses.getOrDefault(Names.GOVERNANCE, mainnetGovernance);
     }

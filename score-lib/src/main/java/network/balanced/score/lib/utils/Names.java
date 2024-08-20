@@ -27,6 +27,7 @@ public class Names {
     public final static String BNUSD = "Balanced Dollar";
     public final static String FEEHANDLER = "Balanced FeeHandler";
     public final static String ORACLE = "Band Oracle";
+    public final static String PYTH_ORACLE = "Pyth Oracle";
     public final static String REWARDS = "Balanced Rewards";
     public final static String STABILITY = "Balanced Peg Stability";
     public final static String BALANCEDORACLE = "Balanced Oracle";

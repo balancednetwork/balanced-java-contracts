@@ -53,31 +53,10 @@ public interface BalancedOracle extends
     Map<String, BigInteger> getPriceDataInUSD(String symbol);
 
     @External
-    void addDexPricedAsset(String symbol, BigInteger dexBnusdPoolId);
-
-    @External
-    void removeDexPricedAsset(String symbol);
-
-    @External(readonly = true)
-    BigInteger getAssetBnusdPoolId(String symbol);
-
-    @External
     void setPeg(String symbol, String peg);
 
     @External(readonly = true)
     String getPeg(String symbol);
-
-    @External
-    void setDexPriceEMADecay(BigInteger decay);
-
-    @External(readonly = true)
-    BigInteger getDexPriceEMADecay();
-
-    @External
-    void setOraclePriceEMADecay(BigInteger decay);
-
-    @External(readonly = true)
-    BigInteger getOraclePriceEMADecay();
 
     @XCall
     void updatePriceData(String from, String symbol, BigInteger rate, BigInteger timestamp);
@@ -93,4 +72,10 @@ public interface BalancedOracle extends
 
     @External(readonly = true)
     PriceProtectionConfig getExternalPriceProtectionConfig(String symbol);
+
+    @External
+    void configurePythPriceId(String base, byte[] id);
+
+    @External
+    void configureBandPrice(String base);
 }

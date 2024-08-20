@@ -25,7 +25,7 @@ import java.util.Map;
 
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
-import static network.balanced.score.lib.utils.Math.exaPow;
+import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_SECOND;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
@@ -34,34 +34,6 @@ class BalancedOracleTest extends BalancedOracleTestBase {
     public void setupContract() throws Exception {
         setup();
         balancedOracle.invoke(owner, "setLastUpdateThreshold", MICRO_SECONDS_IN_A_DAY);
-    }
-
-    @Test
-    void addRemoveDexPricedAssets() {
-        // Arrange
-        String balnSymbol = "BALN";
-        String ommSymbol = "OMM";
-
-        BigInteger balnBnusdPoolID = BigInteger.valueOf(3);
-        BigInteger ommBnusdPoolID = BigInteger.valueOf(4);
-
-        // Act
-        balancedOracle.invoke(owner, "addDexPricedAsset", balnSymbol, balnBnusdPoolID);
-        balancedOracle.invoke(owner, "addDexPricedAsset", ommSymbol, ommBnusdPoolID);
-
-        // Assert
-        assertEquals(balnBnusdPoolID, balancedOracle.call("getAssetBnusdPoolId", balnSymbol));
-        assertEquals(ommBnusdPoolID, balancedOracle.call("getAssetBnusdPoolId", ommSymbol));
-
-        // Act
-        balancedOracle.invoke(owner, "removeDexPricedAsset", balnSymbol);
-
-        // Assert
-        String expectedErrorMessage = balnSymbol + " is not listed as a dex priced asset";
-        Executable getBalnPoolID = () -> balancedOracle.call("getAssetBnusdPoolId", balnSymbol);
-        expectErrorMessage(getBalnPoolID, expectedErrorMessage);
-
-        assertEquals(ommBnusdPoolID, balancedOracle.call("getAssetBnusdPoolId", ommSymbol));
     }
 
     @Test
@@ -123,142 +95,26 @@ class BalancedOracleTest extends BalancedOracleTestBase {
     void getPriceDataInUSD() {
         // Arrange
         BigInteger BTCUSDRate = BigInteger.valueOf(1000).multiply(EXA);
-        BigInteger baseUpdateTime = BigInteger.TEN;
-        BigInteger quoteUpdateTime = BigInteger.TWO;
-        mockUSDRate("BTC", BTCUSDRate, baseUpdateTime, quoteUpdateTime);
+        mockUSDRate("BTC", BTCUSDRate);
+        // round to seconds for pyth
+        BigInteger time = BigInteger.valueOf(sm.getBlock().getTimestamp()).divide(MICRO_SECONDS_IN_A_SECOND)
+                .multiply(MICRO_SECONDS_IN_A_SECOND);
+
         // Act
         Map<String, BigInteger> priceInUSD = (Map<String, BigInteger>) balancedOracle.call("getPriceDataInUSD", "BTC");
 
         // Assert
         assertEquals(BTCUSDRate, priceInUSD.get("rate"));
-        assertEquals(quoteUpdateTime, priceInUSD.get("timestamp"));
+        assertEquals(time, priceInUSD.get("timestamp"));
     }
 
     @Test
     void getBnUSDPriceInLoop_useBnUSD() {
-        // Arrange
-        BigInteger bnusdRate = BigInteger.valueOf(7).multiply(BigInteger.TEN.pow(17));
-        mockRate("USD", bnusdRate);
-
         // Act
-        balancedOracle.invoke(owner, "getPriceInLoop", "bnUSD");
-        BigInteger priceInLoop = (BigInteger) balancedOracle.call("getLastPriceInLoop", "bnUSD");
+        BigInteger res = (BigInteger) balancedOracle.call("getLastPriceInUSD", "bnUSD");
 
         // Assert
-        assertEquals(bnusdRate, priceInLoop);
-    }
-
-    @Test
-    void getDexPrice() {
-        // Arrange
-        String tokenSymbol = "BALN";
-        BigInteger poolID = BigInteger.valueOf(3);
-        when(dex.mock.getPoolBase(poolID)).thenReturn(baln.getAddress());
-
-        balancedOracle.invoke(owner, "addDexPricedAsset", tokenSymbol, poolID);
-
-        BigInteger icxRateInUSD = BigInteger.TEN.pow(17);
-        BigInteger bnusdRate = BigInteger.valueOf(7).multiply(BigInteger.TEN.pow(17));
-        BigInteger bnusdPriceInBaln = BigInteger.valueOf(20).multiply(BigInteger.TEN.pow(17));
-        BigInteger expectedBalnpriceInLoop = bnusdRate.multiply(BigInteger.TEN.pow(18)).divide(bnusdPriceInBaln);
-        BigInteger expectedBalnpriceInDollars = expectedBalnpriceInLoop.multiply(icxRateInUSD).divide(EXA);
-
-        mockRate("USD", bnusdRate);
-
-        mockUSDRate("ICX", icxRateInUSD);
-
-        when(dex.mock.getQuotePriceInBase(poolID)).thenReturn(bnusdPriceInBaln);
-
-        // Act
-        balancedOracle.invoke(owner, "getPriceInLoop", tokenSymbol);
-        BigInteger priceInLoop = (BigInteger) balancedOracle.call("getLastPriceInLoop", tokenSymbol);
-        BigInteger priceInDollars = (BigInteger) balancedOracle.call("getLastPriceInUSD", tokenSymbol);
-
-        // Assert
-        assertEquals(expectedBalnpriceInLoop, priceInLoop);
-        assertEquals(expectedBalnpriceInDollars, priceInDollars);
-    }
-
-    @Test
-    void getDexPriceInLoop_IUSDC() {
-        // Arrange
-        String tokenSymbol = "IUSDC";
-        BigInteger poolID = BigInteger.valueOf(4);
-        when(dex.mock.getPoolBase(poolID)).thenReturn(iusdc.getAddress());
-
-        balancedOracle.invoke(owner, "addDexPricedAsset", tokenSymbol, poolID);
-
-        BigInteger bnusdRate = BigInteger.valueOf(7).multiply(BigInteger.TEN.pow(17));
-        BigInteger bnusdPriceIUSDC = BigInteger.valueOf(20).multiply(BigInteger.TEN.pow(5));
-        BigInteger expectedIUSDCpriceInLoop = bnusdRate.multiply(BigInteger.TEN.pow(6)).divide(bnusdPriceIUSDC);
-
-        mockRate("USD", bnusdRate);
-        when(dex.mock.getQuotePriceInBase(poolID)).thenReturn(bnusdPriceIUSDC);
-
-        // Act
-        balancedOracle.invoke(owner, "getPriceInLoop", tokenSymbol);
-        BigInteger priceInLoop = (BigInteger) balancedOracle.call("getLastPriceInLoop", tokenSymbol);
-
-        // Assert
-        assertEquals(expectedIUSDCpriceInLoop, priceInLoop);
-    }
-
-    @Test
-    void EMA_DexAsset() {
-        // Arrange
-        String tokenSymbol = "BALN";
-        BigInteger poolID = BigInteger.valueOf(3);
-        when(dex.mock.getPoolBase(poolID)).thenReturn(baln.getAddress());
-
-        balancedOracle.invoke(owner, "addDexPricedAsset", tokenSymbol, poolID);
-        when(dex.mock.getQuotePriceInBase(poolID)).thenReturn(ICX);
-
-        BigInteger alpha = ICX.divide(BigInteger.valueOf(DAY));
-        BigInteger decay = ICX.subtract(alpha);
-        balancedOracle.invoke(owner, "setDexPriceEMADecay", alpha);
-
-        // Act
-        BigInteger rate1 = BigInteger.valueOf(6).multiply(BigInteger.TEN.pow(17));
-        BigInteger price1 = ICX.multiply(ICX).divide(rate1);
-        mockDexRate(poolID, rate1);
-        balancedOracle.invoke(owner, "getPriceInLoop", tokenSymbol);
-        BigInteger EMA = price1;
-
-        int blockDiff = (int) DAY / 4;
-        sm.getBlock().increase(blockDiff - 1);
-
-        BigInteger rate2 = BigInteger.valueOf(6).multiply(BigInteger.TEN.pow(17));
-        BigInteger price2 = ICX.multiply(ICX).divide(rate2);
-        mockDexRate(poolID, rate2);
-        balancedOracle.invoke(owner, "getPriceInLoop", tokenSymbol);
-        BigInteger factor = exaPow(decay, blockDiff);
-        BigInteger priceDiff = price1.subtract(EMA);
-        EMA = price1.subtract(priceDiff.multiply(factor).divide(ICX));
-
-        sm.getBlock().increase(blockDiff - 1);
-
-        BigInteger rate3 = BigInteger.valueOf(5).multiply(BigInteger.TEN.pow(17));
-        BigInteger price3 = ICX.multiply(ICX).divide(rate3);
-        mockDexRate(poolID, rate3);
-        balancedOracle.invoke(owner, "getPriceInLoop", tokenSymbol);
-        factor = exaPow(decay, blockDiff);
-        priceDiff = price2.subtract(EMA);
-        EMA = price2.subtract(priceDiff.multiply(factor).divide(ICX));
-
-        blockDiff = (int) DAY;
-        sm.getBlock().increase(blockDiff - 1);
-
-        BigInteger rate4 = BigInteger.valueOf(10).multiply(BigInteger.TEN.pow(17));
-        mockDexRate(poolID, rate4);
-        balancedOracle.invoke(owner, "getPriceInLoop", tokenSymbol);
-        factor = exaPow(decay, blockDiff);
-        priceDiff = price3.subtract(EMA);
-        EMA = price3.subtract(priceDiff.multiply(factor).divide(ICX));
-
-        // Assert
-        BigInteger priceInLoop = (BigInteger) balancedOracle.call("getLastPriceInLoop", tokenSymbol);
-
-        assertEquals(EMA, priceInLoop);
+        assertEquals(EXA, res);
     }
 
     @Test
@@ -267,47 +123,80 @@ class BalancedOracleTest extends BalancedOracleTestBase {
         BigInteger threshold = MICRO_SECONDS_IN_A_DAY;
         BigInteger rate = BigInteger.TEN;
 
-        BigInteger baseUpdateTime = BigInteger.valueOf(sm.getBlock().getTimestamp());
-        BigInteger quoteUpdateTime = BigInteger.valueOf(sm.getBlock().getTimestamp()).subtract(threshold);
-        mockRate("USD", rate, baseUpdateTime, quoteUpdateTime);
+        BigInteger baseUpdateTime = BigInteger.valueOf(sm.getBlock().getTimestamp()).subtract(threshold);
+        BigInteger quoteUpdateTime = BigInteger.valueOf(sm.getBlock().getTimestamp());
+        mockUSDRate("BTC", rate, baseUpdateTime, quoteUpdateTime);
 
         // Act & Assert
         String expectedErrorMessage = "";
-        Executable quoteAboveThreshold = () -> balancedOracle.call("getLastPriceInLoop", "USD");
-        expectErrorMessage(quoteAboveThreshold, expectedErrorMessage);
-
-        // Arrange
-        baseUpdateTime = BigInteger.valueOf(sm.getBlock().getTimestamp()).subtract(threshold);
-        quoteUpdateTime = BigInteger.valueOf(sm.getBlock().getTimestamp());
-        mockRate("USD", rate, baseUpdateTime, quoteUpdateTime);
-
-        // Act & Assert
-        expectedErrorMessage = "";
-        Executable baseAboveThreshold = () -> balancedOracle.call("getLastPriceInLoop", "USD");
+        Executable baseAboveThreshold = () -> balancedOracle.call("getLastPriceInUSD", "BTC");
         expectErrorMessage(baseAboveThreshold, expectedErrorMessage);
 
         // Act
-        baseUpdateTime = BigInteger.valueOf(sm.getBlock().getTimestamp()).subtract(threshold).add(BigInteger.TEN);
-        quoteUpdateTime = BigInteger.valueOf(sm.getBlock().getTimestamp()).subtract(threshold).add(BigInteger.TEN);
-        mockRate("USD", rate, baseUpdateTime, quoteUpdateTime);
-        BigInteger priceInLoop = (BigInteger) balancedOracle.call("getLastPriceInLoop", "USD");
+        baseUpdateTime = BigInteger.valueOf(sm.getBlock().getTimestamp()).subtract(threshold)
+                .add(BigInteger.TEN.multiply(MICRO_SECONDS_IN_A_SECOND));
+        quoteUpdateTime = BigInteger.valueOf(sm.getBlock().getTimestamp()).subtract(threshold)
+                .add(BigInteger.TEN.multiply(MICRO_SECONDS_IN_A_SECOND));
+        mockUSDRate("BTC", rate, baseUpdateTime, quoteUpdateTime);
+        BigInteger priceInLoop = (BigInteger) balancedOracle.call("getLastPriceInUSD", "BTC");
 
         // Assert
         assertEquals(rate, priceInLoop);
     }
 
-    private void mockRate(String symbol, BigInteger rate) {
-        mockRate(symbol, rate, BigInteger.valueOf(sm.getBlock().getTimestamp()),
-                BigInteger.valueOf(sm.getBlock().getTimestamp()));
+    @Test
+    void getPriceInUSD_BandOnly() {
+
+        // Arrange
+        BigInteger ETHUSDRate = BigInteger.valueOf(1000).multiply(EXA);
+        mockUSDRate("ETH", ETHUSDRate);
+        balancedOracle.invoke(owner, "configureBandPrice", "ETH");
+
+        // Act
+        balancedOracle.invoke(owner, "getPriceInUSD", "ETH");
+        BigInteger priceInUSD = (BigInteger) balancedOracle.call("getLastPriceInUSD", "ETH");
+
+        // Assert
+        assertEquals(ETHUSDRate, priceInUSD);
     }
 
-    private void mockRate(String symbol, BigInteger rate, BigInteger baseUpdateTime, BigInteger quoteUpdateTime) {
-        Map<String, Object> priceData = Map.of(
-                "rate", rate,
-                "last_update_base", baseUpdateTime,
-                "last_update_quote", quoteUpdateTime
-        );
-        when(oracle.mock.get_reference_data(symbol, "ICX")).thenReturn(priceData);
+
+    @Test
+    void getPriceInUSD_BandAndPyth() {
+
+        // Arrange
+        BigInteger ETHUSDRate_pyth = BigInteger.valueOf(1002).multiply(EXA);
+        BigInteger ETHUSDRate_band = BigInteger.valueOf(1001).multiply(EXA);
+        mockBandUSDRate("ETH", ETHUSDRate_band);
+        mockPythUSDRate("ETH", ETHUSDRate_pyth);
+        balancedOracle.invoke(owner, "configurePythPriceId", "ETH", "ETH".getBytes());
+        balancedOracle.invoke(owner, "configureBandPrice", "ETH");
+
+        // Act
+        balancedOracle.invoke(owner, "getPriceInUSD", "ETH");
+        BigInteger priceInUSD = (BigInteger) balancedOracle.call("getLastPriceInUSD", "ETH");
+
+        // Assert
+        assertEquals(ETHUSDRate_pyth, priceInUSD);
+    }
+
+    @Test
+    void getPriceInUSD_InvalidPriceDiff() {
+        // Arrange
+        BigInteger ETHUSDRate_pyth = BigInteger.valueOf(1011).multiply(EXA);
+        BigInteger ETHUSDRate_band = BigInteger.valueOf(1000).multiply(EXA);
+        mockBandUSDRate("ETH", ETHUSDRate_band);
+        mockPythUSDRate("ETH", ETHUSDRate_pyth);
+        balancedOracle.invoke(owner, "setPriceDiffThreshold", BigInteger.valueOf(100)); // 1%
+        balancedOracle.invoke(owner, "configurePythPriceId", "ETH", "ETH".getBytes());
+        balancedOracle.invoke(owner, "configureBandPrice", "ETH");
+
+        // Act
+        String expectedErrorMessage = "Difference between Pyth and Band is bigger than threshold";
+        Executable baseAboveThreshold = () -> balancedOracle.call("getLastPriceInUSD", "ETH");
+
+        // Assert
+        expectErrorMessage(baseAboveThreshold, expectedErrorMessage);
     }
 
     private void mockUSDRate(String symbol, BigInteger rate) {
@@ -319,13 +208,31 @@ class BalancedOracleTest extends BalancedOracleTestBase {
         Map<String, Object> priceData = Map.of(
                 "rate", rate,
                 "last_update_base", baseUpdateTime,
-                "last_update_quote", quoteUpdateTime
-        );
+                "last_update_quote", quoteUpdateTime);
+
+        Map<String, BigInteger> pythData = Map.of(
+                "price", rate,
+                "expo", BigInteger.valueOf(-18),
+                "publishTime", baseUpdateTime.divide(MICRO_SECONDS_IN_A_SECOND));
+        when(oracle.mock.get_reference_data(symbol, "USD")).thenReturn(priceData);
+        when(pyth.mock.getPrice(symbol.getBytes())).thenReturn(pythData);
+    }
+
+    private void mockBandUSDRate(String symbol, BigInteger rate) {
+        Map<String, Object> priceData = Map.of(
+                "rate", rate,
+                "last_update_base", BigInteger.valueOf(sm.getBlock().getTimestamp()),
+                "last_update_quote", BigInteger.valueOf(sm.getBlock().getTimestamp()));
         when(oracle.mock.get_reference_data(symbol, "USD")).thenReturn(priceData);
     }
 
-    private void mockDexRate(BigInteger poolID, BigInteger rate) {
-        mockRate("USD", ICX);
-        when(dex.mock.getQuotePriceInBase(poolID)).thenReturn(rate);
+    private void mockPythUSDRate(String symbol, BigInteger rate) {
+        Map<String, BigInteger> pythData = Map.of(
+            "price", rate,
+            "expo", BigInteger.valueOf(-18),
+            "publishTime", BigInteger.valueOf(sm.getBlock().getTimestamp()).divide(MICRO_SECONDS_IN_A_SECOND));
+        when(pyth.mock.getPrice(symbol.getBytes())).thenReturn(pythData);
     }
+
+
 }
