@@ -266,7 +266,8 @@ public class Position {
         BigInteger liquidationRatio = LoansVariables.liquidationRatio.get(collateralSymbol);
         Context.require(liquidationRatio != null && liquidationRatio.compareTo(BigInteger.ZERO) > 0, "Liquidation " +
                 "ratio for " + collateralSymbol + " is not set");
-        if (standing.ratio.compareTo(liquidationRatio.multiply(EXA).divide(POINTS)) > 0) {
+        BigInteger liquidationRatioValue = standing.totalDebt.multiply(liquidationRatio).divide(POINTS);
+        if (standing.collateral.compareTo(liquidationRatioValue)>0) {
             standing.standing = Standings.MINING;
         } else {
             standing.standing = Standings.LIQUIDATE;

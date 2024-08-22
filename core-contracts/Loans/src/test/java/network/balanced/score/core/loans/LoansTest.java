@@ -1412,6 +1412,7 @@ class LoansTest extends LoansTestBase {
         BigInteger minimumDebtThreshold = BigInteger.valueOf(10).multiply(EXA);
         liquidateSetup(collateralSymbol, liquidationRatio, liquidatorFeePercent, daoFundFeePercent,
                         minimumDebtThreshold);
+        liquidationRatio = liquidationRatio.add(BigInteger.TEN); // 70%
         takeLoanICX(account, "bnUSD", collateralAmount, loanAmount);
         BigInteger totalLoan = loanAmount.add(expectedFee);
         verifyPosition(account.getAddress(), collateralAmount, totalLoan);
@@ -1422,7 +1423,7 @@ class LoansTest extends LoansTestBase {
         loans.invoke(liquidator, "liquidate", account.getAddress().toString(), liquidateAmount,
                         collateralSymbol);
         // It will liquidate until the Liquidation ratio  is reached,
-        BigInteger maxLiquidatedAmount = calculateThresholdPoint(collateralAmount, liquidationRatio, oraclePriceValue, liquidationPrice, totalLoan.multiply(liquidationRatio).divide(POINTS));
+        BigInteger maxLiquidatedAmount = calculateThresholdPoint(collateralAmount, liquidationRatio, oraclePriceValue, liquidationPrice, totalLoan);
         BigInteger collateralLiquidated = maxLiquidatedAmount.multiply(EXA).divide(liquidationPrice);
         BigInteger totalAmountSpent = maxLiquidatedAmount;
         BigInteger remainingCollateral = collateralAmount.subtract(collateralLiquidated);
@@ -1444,8 +1445,8 @@ class LoansTest extends LoansTestBase {
      }
      
      BigInteger calculateThresholdPoint(BigInteger collateral, BigInteger liquidationRatio,
-        BigInteger collateralPrice, BigInteger liquidationPrice, BigInteger liquidationRatioValue) {
-
+        BigInteger collateralPrice, BigInteger liquidationPrice, BigInteger totalDebt) {
+        BigInteger liquidationRatioValue = totalDebt.multiply(liquidationRatio).divide(POINTS);
         BigInteger extraCollateral = liquidationRatioValue.subtract(collateralPrice.multiply(collateral).divide(EXA));
         BigInteger collateralLiquidatedPerUnitDebtPay = collateralPrice.multiply(EXA).divide(liquidationPrice);
         BigInteger collateralNeededPerUnitDebt = liquidationRatio.multiply(EXA).divide(POINTS);

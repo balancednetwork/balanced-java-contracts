@@ -594,7 +594,8 @@ public class LoansImpl extends FloorLimited implements Loans {
         BigInteger totalDebt = position.getDebt(symbol);
 
         // Fetch thresholds and fees
-        BigInteger liquidationRatio = getLiquidationRatio(symbol);
+        // Adding 0.1% to liquidation ratio to cover the precision loss
+        BigInteger liquidationRatio = getLiquidationRatio(symbol).add(BigInteger.TEN);
         BigInteger liquidationFee = getLiquidatorFee(symbol);
         BigInteger daofundFee = getLiquidationDaoFundFee(symbol);
         BigInteger totalFee = liquidationFee.add(daofundFee);
