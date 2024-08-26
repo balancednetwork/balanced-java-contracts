@@ -609,10 +609,14 @@ public class LoansImpl extends FloorLimited implements Loans {
         BigInteger liquidationPrice = collateralPrice.multiply(liquidationDiscountRatio).divide(POINTS);
         BigInteger liquidationRatioValue = totalDebt.multiply(liquidationRatio).divide(POINTS);
 
+        BigInteger maxCollateralToLiquidate = _amount.multiply(EXA).divide(liquidationPrice);
+
         // Determine the maximum amount to liquidate based on total collateral
         BigInteger maxAmountToLiquidateTotalCollateral = userCollateralUSD.multiply(liquidationDiscountRatio).divide(POINTS);
         BigInteger liquidationAmount = _amount.min(maxAmountToLiquidateTotalCollateral);
-
+        
+        BigInteger collateralToLiquidate = collateral.min(maxCollateralToLiquidate);
+        
         // Calculate extra collateral needed to meet the liquidation ratio
         BigInteger extraCollateral = liquidationRatioValue.subtract(userCollateralUSD);
         // Calculate the amount of collateral in USD liquidated per unit of debt
@@ -626,10 +630,12 @@ public class LoansImpl extends FloorLimited implements Loans {
         BigInteger maxAmountToSpendToMaintainThreshold = effectiveCollateralValue.compareTo(BigInteger.ZERO) > 0
                 ? extraCollateral.multiply(collateralDecimals).divide(effectiveCollateralValue)
                 : liquidationAmount;
+    
+        BigInteger correspondingCollateral = maxAmountToSpendToMaintainThreshold.multiply(collateralDecimals).divide(liquidationPrice);
 
         // Finalize liquidation amount and calculate collateral to liquidate
         liquidationAmount = liquidationAmount.min(maxAmountToSpendToMaintainThreshold);
-        BigInteger collateralToLiquidate = liquidationAmount.multiply(collateralDecimals).divide(liquidationPrice);
+        collateralToLiquidate = collateralToLiquidate.min(correspondingCollateral);
 
         BigInteger remainingCollateral = collateral.subtract(collateralToLiquidate);
         BigInteger remainingDebt = totalDebt.subtract(liquidationAmount);
