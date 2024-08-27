@@ -568,6 +568,57 @@ public class LoansImpl extends FloorLimited implements Loans {
         sellUserCollateral(from.toString(), collateralAmountToSell, collateralSymbol, minimumDebtRepaid);
     }
 
+
+    public class LiquidationResult {
+        public BigInteger liquidationAmount;
+        public BigInteger collateralToLiquidate;
+    }
+
+
+    public LiquidationResult _liquidate(BigInteger amount, BigInteger collateral, BigInteger totalDebt, BigInteger fee, BigInteger collateralDecimals, BigInteger collateralPrice, BigInteger liquidationRatio, BigInteger minDebtThreshold) {
+        BigInteger userCollateralUSD = collateralPrice.multiply(collateral).divide(collateralDecimals);
+        BigInteger liquidationDiscountRatio = POINTS.subtract(fee);
+        BigInteger liquidationPrice = collateralPrice.multiply(liquidationDiscountRatio).divide(POINTS);
+        BigInteger liquidationRatioValue = totalDebt.multiply(liquidationRatio).divide(POINTS);
+
+        BigInteger maxCollateralToLiquidate = amount.multiply(collateralDecimals).divide(liquidationPrice);
+
+        // Determine the maximum amount to liquidate based on total collateral
+        BigInteger maxAmountToLiquidateTotalCollateral = userCollateralUSD.multiply(liquidationDiscountRatio).divide(POINTS);
+        BigInteger liquidationAmount = amount.min(maxAmountToLiquidateTotalCollateral);
+        BigInteger collateralToLiquidate = collateral.min(maxCollateralToLiquidate);
+
+        // Calculate extra collateral needed to meet the liquidation ratio
+        BigInteger extraCollateral = liquidationRatioValue.subtract(userCollateralUSD);
+        // Calculate the amount of collateral in USD liquidated per unit of debt
+        BigInteger collateralLiquidatedPerUnitDebtPay = collateralPrice.multiply(collateralDecimals).divide(liquidationPrice);
+        // Calculate effective collateral needed for 1 unit of debt according to the liquidation ratio
+        BigInteger collateralNeededPerUnitDebt = liquidationRatio.multiply(collateralDecimals).divide(POINTS);
+        // Calculate the effective collateral value after considering the liquidation ratio and liquidation discount
+        BigInteger effectiveCollateralValue = collateralNeededPerUnitDebt.subtract(collateralLiquidatedPerUnitDebtPay);
+        // Calculate the maximum amount to spend to maintain threshold
+        BigInteger maxAmountToSpendToMaintainThreshold = effectiveCollateralValue.compareTo(BigInteger.ZERO) > 0
+                ? extraCollateral.multiply(collateralDecimals).divide(effectiveCollateralValue)
+                : liquidationAmount;
+
+        BigInteger correspondingCollateral = maxAmountToSpendToMaintainThreshold.multiply(collateralDecimals).divide(liquidationPrice);
+
+        // Finalize liquidation amount and calculate collateral to liquidate
+        LiquidationResult  res = new LiquidationResult();
+        res.liquidationAmount = liquidationAmount.min(maxAmountToSpendToMaintainThreshold);
+        res.collateralToLiquidate = collateralToLiquidate.min(correspondingCollateral);
+
+        BigInteger remainingCollateral = collateral.subtract(res.collateralToLiquidate);
+        BigInteger remainingDebt = totalDebt.subtract(res.liquidationAmount);
+
+        if (remainingDebt.compareTo(minDebtThreshold) < 0 && remainingCollateral.compareTo(BigInteger.ZERO) > 0) {
+            res.liquidationAmount = amount.min(maxAmountToLiquidateTotalCollateral).min(totalDebt);
+            res.collateralToLiquidate = res.liquidationAmount.multiply(collateralDecimals).divide(liquidationPrice);
+        }
+
+        return res;
+    }
+
     @External
     public void liquidate(String _owner, BigInteger _amount, @Optional String _collateralSymbol) {
         // Validate input and initial conditions
@@ -604,55 +655,13 @@ public class LoansImpl extends FloorLimited implements Loans {
 
         // Calculate various ratios and prices
         BigInteger collateralPrice = TokenUtils.getPriceInUSD(symbol);
-        BigInteger userCollateralUSD = collateralPrice.multiply(collateral).divide(collateralDecimals);
-        BigInteger liquidationDiscountRatio = POINTS.subtract(totalFee);
-        BigInteger liquidationPrice = collateralPrice.multiply(liquidationDiscountRatio).divide(POINTS);
-        BigInteger liquidationRatioValue = totalDebt.multiply(liquidationRatio).divide(POINTS);
-
-        BigInteger maxCollateralToLiquidate = _amount.multiply(EXA).divide(liquidationPrice);
-
-        // Determine the maximum amount to liquidate based on total collateral
-        BigInteger maxAmountToLiquidateTotalCollateral = userCollateralUSD.multiply(liquidationDiscountRatio).divide(POINTS);
-        BigInteger liquidationAmount = _amount.min(maxAmountToLiquidateTotalCollateral);
-        
-        BigInteger collateralToLiquidate = collateral.min(maxCollateralToLiquidate);
-        
-        // Calculate extra collateral needed to meet the liquidation ratio
-        BigInteger extraCollateral = liquidationRatioValue.subtract(userCollateralUSD);
-        // Calculate the amount of collateral in USD liquidated per unit of debt
-        BigInteger collateralLiquidatedPerUnitDebtPay = collateralPrice.multiply(collateralDecimals).divide(liquidationPrice);
-        // Calculate effective collateral needed for 1 unit of debt according to the liquidation ratio
-        BigInteger collateralNeededPerUnitDebt = liquidationRatio.multiply(collateralDecimals).divide(POINTS);
-        // Calculate the effective collateral value after considering the liquidation ratio and liquidation discount
-        BigInteger effectiveCollateralValue = collateralNeededPerUnitDebt.subtract(collateralLiquidatedPerUnitDebtPay);
-
-        // Calculate the maximum amount to spend to maintain threshold
-        BigInteger maxAmountToSpendToMaintainThreshold = effectiveCollateralValue.compareTo(BigInteger.ZERO) > 0
-                ? extraCollateral.multiply(collateralDecimals).divide(effectiveCollateralValue)
-                : liquidationAmount;
-    
-        BigInteger correspondingCollateral = maxAmountToSpendToMaintainThreshold.multiply(collateralDecimals).divide(liquidationPrice);
-
-        // Finalize liquidation amount and calculate collateral to liquidate
-        liquidationAmount = liquidationAmount.min(maxAmountToSpendToMaintainThreshold);
-        collateralToLiquidate = collateralToLiquidate.min(correspondingCollateral);
-
-        BigInteger remainingCollateral = collateral.subtract(collateralToLiquidate);
-        BigInteger remainingDebt = totalDebt.subtract(liquidationAmount);
-
-        // Ensure minimum debt threshold is maintained
-        BigInteger minDebtThreshold = DebtDB.getMinimumDebtThreshold();
-        if (remainingDebt.compareTo(minDebtThreshold) < 0 && remainingCollateral.compareTo(BigInteger.ZERO) > 0) {
-            liquidationAmount = _amount.min(maxAmountToLiquidateTotalCollateral).min(totalDebt);
-            collateralToLiquidate = liquidationAmount.multiply(collateralDecimals).divide(liquidationPrice);
-            remainingCollateral = collateral.subtract(collateralToLiquidate);
-            remainingDebt = totalDebt.subtract(liquidationAmount);
-        }
-
+        LiquidationResult res = _liquidate(_amount, collateral, totalDebt, totalFee, collateralDecimals, collateralPrice, liquidationRatio,  DebtDB.getMinimumDebtThreshold());
+        BigInteger remainingCollateral = collateral.subtract(res.collateralToLiquidate);
+        BigInteger remainingDebt = totalDebt.subtract(res.liquidationAmount);
         // Calculate fees
-        BigInteger daofundFeeAmount = collateralToLiquidate.multiply(daofundFee).divide(POINTS);
-        BigInteger liquidationFeeAmount = collateralToLiquidate.multiply(liquidationFee).divide(POINTS);
-        BigInteger liquidatedCollateral = collateralToLiquidate.subtract(daofundFeeAmount)
+        BigInteger daofundFeeAmount = res.collateralToLiquidate.multiply(daofundFee).divide(POINTS);
+        BigInteger liquidationFeeAmount = res.collateralToLiquidate.multiply(liquidationFee).divide(POINTS);
+        BigInteger liquidatedCollateral = res.collateralToLiquidate.subtract(daofundFeeAmount)
                 .subtract(liquidationFeeAmount);
 
         if (remainingCollateral.compareTo(BigInteger.ZERO) <= 0 && remainingDebt.compareTo(BigInteger.ZERO) > 0) {
@@ -671,7 +680,7 @@ public class LoansImpl extends FloorLimited implements Loans {
         position.setDebt(symbol, remainingDebt);
 
         // Burn the liquidated asset
-        TokenUtils.burnAssetFrom(Context.getCaller(), liquidationAmount);
+        TokenUtils.burnAssetFrom(Context.getCaller(), res.liquidationAmount);
 
         // Update balances and supply in the rewards system
         Context.call(getRewards(), "updateBalanceAndSupply", "Loans", DebtDB.getTotalDebt(), _owner,
@@ -683,8 +692,8 @@ public class LoansImpl extends FloorLimited implements Loans {
         transferCollateral(symbol, getDaofund(), daofundFeeAmount, "Daofund fee", new byte[0]);
 
         // Log the liquidation event
-        String logMessage = collateralToLiquidate + " liquidated from " + _owner;
-        Liquidate(_owner, collateralToLiquidate, logMessage);
+        String logMessage = res.collateralToLiquidate + " liquidated from " + _owner;
+        Liquidate(_owner, res.collateralToLiquidate, logMessage);
 }
 
     private void depositCollateral(String _symbol, BigInteger _amount, String _from) {
