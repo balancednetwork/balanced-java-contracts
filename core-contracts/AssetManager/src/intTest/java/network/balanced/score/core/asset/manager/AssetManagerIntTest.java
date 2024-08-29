@@ -86,7 +86,7 @@ public class AssetManagerIntTest {
 
         // Act
         byte[] deposit = AssetManagerMessages.deposit(balanced.ETH_TOKEN_ADDRESS, ethAccount.account(), iconAccount.toString(), amount, new byte[0]);
-        owner.xcall.sendCall(owner.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit);
+        owner.xcall.recvCall(owner.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit);
         user.assetManager.withdrawTo(BigInteger.ONE, assetAddress, ethAccount.toString(), amount);
 
         // Assert
@@ -107,14 +107,14 @@ public class AssetManagerIntTest {
 
         // Act
         byte[] deposit = AssetManagerMessages.deposit(balanced.ETH_TOKEN_ADDRESS, ethAccount.account(), "", amount, new byte[0]);
-        owner.xcall.sendCall(owner.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit);
+        owner.xcall.recvCall(owner.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit);
 
         balanced.addXCallFeePermission(balanced.assetManager._address(), balanced.ETH_NID, true);
         byte[] withdraw = AssetManagerMessages.xWithdraw(assetAddress, amount);
-        owner.xcall.sendCall(owner.assetManager._address(), ethAccount.toString(), withdraw);
+        owner.xcall.recvCall(owner.assetManager._address(), ethAccount.toString(), withdraw);
 
         byte[] withdrawRollback = AssetManagerMessages.withdrawRollback(nativeAssetAddress.toString(), ethAccount.toString(), amount);
-        owner.xcall.sendCall(owner.assetManager._address(), new NetworkAddress(balanced.ICON_NID, owner.xcall._address()).toString(), withdrawRollback);
+        owner.xcall.recvCall(owner.assetManager._address(), new NetworkAddress(balanced.ICON_NID, owner.xcall._address()).toString(), withdrawRollback);
 
         // Assert
         BigInteger assetDeposit = user.assetManager.getAssetDeposit(nativeAssetAddress.toString());
@@ -195,11 +195,11 @@ public class AssetManagerIntTest {
 
         // Act
         byte[] deposit = AssetManagerMessages.deposit(balanced.ETH_TOKEN_ADDRESS, ethAccount.account(), "", amount, new byte[0]);
-        owner.xcall.sendCall(owner.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit);
+        owner.xcall.recvCall(owner.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit);
 
         balanced.addXCallFeePermission(balanced.assetManager._address(), balanced.ETH_NID, true);
         byte[] withdraw = AssetManagerMessages.xWithdraw(assetAddress, amount);
-        owner.xcall.sendCall(owner.assetManager._address(), ethAccount.toString(), withdraw);
+        owner.xcall.recvCall(owner.assetManager._address(), ethAccount.toString(), withdraw);
 
         // Assert
         BigInteger assetDeposit = user.assetManager.getAssetDeposit(nativeAssetAddress.toString());
@@ -221,7 +221,7 @@ public class AssetManagerIntTest {
 
         // Act
         byte[] deposit = AssetManagerMessages.deposit(balanced.ETH_TOKEN_ADDRESS, ethAccount.account(), "", amount, new byte[0]);
-        owner.xcall.sendCall(owner.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit);
+        owner.xcall.recvCall(owner.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit);
 
         // Assert
         BigInteger assetDeposit = user.assetManager.getAssetDeposit(nativeAssetAddress.toString());
@@ -243,13 +243,13 @@ public class AssetManagerIntTest {
         // Act & Assert
         //pass
         byte[] deposit = AssetManagerMessages.deposit(balanced.ETH_TOKEN_ADDRESS, ethAccount.account(), "", amount, new byte[0]);
-        owner.xcall.sendCall(owner.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit);
+        owner.xcall.recvCall(owner.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit);
 
         JsonArray params = new JsonArray().add(createParameter(nativeAssetAddress.toString())).add(createParameter(amount.subtract(BigInteger.ONE)));
         owner.governance.execute(createSingleTransaction(balanced.assetManager._address(), "setAssetChainDepositLimit",
                 params).toString());
         //fail
-        Executable ethChainDepositLimitExceeded = () -> owner.xcall.sendCall(owner.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit);
+        Executable ethChainDepositLimitExceeded = () -> owner.xcall.recvCall(owner.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit);
         assertThrows(RevertedException.class,   ethChainDepositLimitExceeded);
     }
 

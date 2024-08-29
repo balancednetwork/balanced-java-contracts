@@ -25,8 +25,8 @@ import scorex.util.ArrayList;
 import java.util.List;
 
 public class ProtocolConfig {
-    public final String[] sources;
-    public final String[] destinations;
+    public String[] sources;
+    public String[] destinations;
     public static final String sourcesKey = "sources";
     public static final String destinationsKey = "destinations";
 

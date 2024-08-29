@@ -19,6 +19,9 @@ package network.balanced.score.lib.utils;
 import score.Context;
 import score.VarDB;
 import foundation.icon.xcall.NetworkAddress;
+import foundation.icon.xcall.messages.Message;
+import foundation.icon.xcall.messages.PersistentMessage;
+import foundation.icon.xcall.messages.XCallEnvelope;
 import network.balanced.score.lib.structs.ProtocolConfig;
 
 import java.math.BigInteger;
@@ -46,9 +49,19 @@ public class XCallUtils {
         return (Map<String, String[]>) Context.call(BalancedAddressManager.getXCallManager(), "getProtocols", nid);
     }
 
-    public static void sendCall(BigInteger fee, NetworkAddress to, byte[] data, byte[] rollback) {
-        Map<String, String[]> protocols = getProtocols(to.net());
-        Context.call(fee, BalancedAddressManager.getXCall(), "sendCallMessage", to.toString(), data, rollback, protocols.get(ProtocolConfig.sourcesKey), protocols.get(ProtocolConfig.destinationsKey));
+    public static ProtocolConfig getProtocolsRaw(String nid) {
+        return ProtocolConfig.fromBytes(Context.call(byte[].class, BalancedAddressManager.getXCallManager(), "getProtocolsRaw", nid));
+    }
+
+    public static void sendPersistentCall(BigInteger fee, NetworkAddress to, byte[] data) {
+        ProtocolConfig protocols = getProtocolsRaw(to.net());
+        byte[] msg = createPersistentMessage(data, protocols.sources, protocols.destinations);
+        Context.call(fee, BalancedAddressManager.getXCall(), "sendCall", to.toString(), msg);
+    }
+
+    public static byte[] createPersistentMessage(byte[] data, String[] sources, String[] destinations) {
+        Message msg = new PersistentMessage(data);
+        return new XCallEnvelope(msg, sources, destinations).toBytes();
     }
 
 }
