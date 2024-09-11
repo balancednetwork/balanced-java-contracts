@@ -50,12 +50,14 @@ public class BalancedOracleImpl implements BalancedOracle {
             lastUpdateThreshold.set(MICRO_SECONDS_IN_A_DAY);
         }
         BandOracle.availablePrices.set("ICX", true);
+        BandOracle.availablePrices.set("USDC", true);
         BandOracle.availablePrices.set("BTC", true);
         BandOracle.availablePrices.set("ETH", true);
         BandOracle.availablePrices.set("INJ", true);
         BandOracle.availablePrices.set("BNB", true);
         BandOracle.availablePrices.set("AVAX", true);
         BandOracle.availablePrices.set("SUI", true);
+        BandOracle.availablePrices.set("NTRN", true);
 
         if (currentVersion.getOrDefault("").equals(Versions.BALANCEDORACLE)) {
             Context.revert("Can't Update same version of code");
@@ -181,7 +183,6 @@ public class BalancedOracleImpl implements BalancedOracle {
 
     @External
     public void configureBandPrice(String base) {
-        onlyOwner();
         BandOracle.addPrice(base);
     }
 
