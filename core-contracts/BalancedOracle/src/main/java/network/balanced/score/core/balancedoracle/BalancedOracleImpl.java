@@ -51,6 +51,7 @@ public class BalancedOracleImpl implements BalancedOracle {
         }
         BandOracle.availablePrices.set("ICX", true);
         BandOracle.availablePrices.set("USDC", true);
+        BandOracle.availablePrices.set("USD", true);
         BandOracle.availablePrices.set("BTC", true);
         BandOracle.availablePrices.set("ETH", true);
         BandOracle.availablePrices.set("INJ", true);
