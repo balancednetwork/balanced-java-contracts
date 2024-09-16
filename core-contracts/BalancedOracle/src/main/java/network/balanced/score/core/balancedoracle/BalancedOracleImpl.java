@@ -238,7 +238,7 @@ public class BalancedOracleImpl implements BalancedOracle {
 
     private BigInteger USDToLoop(BigInteger price) {
         BigInteger ICXPriceInUSD = getPrice("ICX").rate;
-        return price.multiply(ICXPriceInUSD).divide(EXA);
+        return price.multiply(EXA).divide(ICXPriceInUSD);
     }
 
 
