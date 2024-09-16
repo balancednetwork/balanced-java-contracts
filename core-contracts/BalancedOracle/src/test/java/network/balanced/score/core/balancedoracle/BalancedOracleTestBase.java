@@ -39,6 +39,7 @@ class BalancedOracleTestBase extends UnitTest {
     protected MockBalanced mockBalanced;
     protected MockContract<Dex> dex;
     protected MockContract<Oracle> oracle;
+    protected MockContract<network.balanced.score.lib.interfaces.PythOracle> pyth;
     protected MockContract<Staking> staking;
     protected MockContract<BalancedToken> baln;
     protected MockContract<IRC2> iusdc;
@@ -52,6 +53,7 @@ class BalancedOracleTestBase extends UnitTest {
         mockBalanced = new MockBalanced(sm, owner);
         dex = mockBalanced.dex;
         oracle = mockBalanced.oracle;
+        pyth = mockBalanced.pyth;
         staking = mockBalanced.staking;
         baln = mockBalanced.baln;
         iusdc = new MockContract<>(IRC2ScoreInterface.class, sm, owner);
@@ -59,5 +61,6 @@ class BalancedOracleTestBase extends UnitTest {
 
         when(iusdc.mock.decimals()).thenReturn(BigInteger.valueOf(6));
         sm.getBlock().increase(DAY);
+        balancedOracle.invoke(owner, "configurePythPriceId", "BTC", "BTC".getBytes());
     }
 }
