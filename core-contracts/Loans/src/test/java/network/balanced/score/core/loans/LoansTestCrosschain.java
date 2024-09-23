@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigInteger;
 
 import static network.balanced.score.core.loans.utils.LoansConstants.LIQUIDATION_RATIO;
+import static network.balanced.score.core.loans.utils.LoansConstants.LIQUIDATION_RATIO;
 import static network.balanced.score.core.loans.utils.LoansConstants.LOCKING_RATIO;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.mockito.ArgumentMatchers.any;
@@ -261,16 +262,32 @@ class LoansTestCrosschain extends LoansTestBase {
         // Arrange
         NetworkAddress user = new NetworkAddress(BSC_NID, "0x1");
         BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
-        BigInteger loan = BigInteger.valueOf(100).multiply(EXA);
-        BigInteger expectedFee = calculateFee(loan);
         takeLoanBNB(user, collateral, BigInteger.ZERO);
 
         // Act
-        byte[] msg = LoansMessages.xWithdraw(collateral, BNB_SYMBOL);
+        byte[] msg = LoansMessages.xWithdraw(collateral, BNB_SYMBOL, "");
         loans.invoke(mockBalanced.xCall.account, "handleCallMessage", user.toString(), msg, new String[0]);
 
         // Assert
         verify(bnb.mock).hubTransfer(user.toString(), collateral, new byte[0]);
+        verifyPosition(user.toString(), BigInteger.ZERO, BigInteger.ZERO, BNB_SYMBOL);
+    }
+
+
+    @Test
+    void xWithdraw_to() {
+        // Arrange
+        NetworkAddress user = new NetworkAddress(BSC_NID, "0x1");
+        NetworkAddress toUser = new NetworkAddress(ETH_NID, "0x1");
+        BigInteger collateral = BigInteger.valueOf(1000).multiply(EXA);
+        takeLoanBNB(user, collateral, BigInteger.ZERO);
+
+        // Act
+        byte[] msg = LoansMessages.xWithdraw(collateral, BNB_SYMBOL, toUser.toString());
+        loans.invoke(mockBalanced.xCall.account, "handleCallMessage", user.toString(), msg, new String[0]);
+
+        // Assert
+        verify(bnb.mock).hubTransfer(toUser.toString(), collateral, new byte[0]);
         verifyPosition(user.toString(), BigInteger.ZERO, BigInteger.ZERO, BNB_SYMBOL);
     }
 }
