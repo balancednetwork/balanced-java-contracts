@@ -19,7 +19,7 @@ package network.balanced.score.spoke.bnusd;
 import network.balanced.score.lib.interfaces.SpokeBalancedDollarMessages;
 import network.balanced.score.lib.interfaces.SpokeBalancedDollarXCall;
 import network.balanced.score.lib.interfaces.SpokeBalancedDollar;
-import network.balanced.score.lib.tokens.IRC2Base;
+import network.balanced.score.lib.tokens.IRC2HSP20;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.Versions;
 import score.*;
@@ -33,7 +33,7 @@ import java.util.Map;
 
 import static network.balanced.score.lib.utils.Check.*;
 
-public class SpokeBalancedDollarImpl extends IRC2Base implements SpokeBalancedDollar {
+public class SpokeBalancedDollarImpl extends IRC2HSP20 implements SpokeBalancedDollar {
 
     public static final String VERSION = "version";
     public static final String XCALL = "xcall";
@@ -52,7 +52,7 @@ public class SpokeBalancedDollarImpl extends IRC2Base implements SpokeBalancedDo
     private static final String SYMBOL_NAME = "bnUSD";
 
     public SpokeBalancedDollarImpl(Address _xCall, String _iconBnUSD, Address _xCallManager) {
-        super(Names.BNUSD, SYMBOL_NAME, null);
+        super(Names.BNUSD, SYMBOL_NAME, 18);
         if (currentVersion.get() == null) {
             xCall.set(_xCall);
             NetworkAddress _xCallNetworkAddress = NetworkAddress.valueOf(Context.call(String.class, _xCall, "getNetworkAddress"));

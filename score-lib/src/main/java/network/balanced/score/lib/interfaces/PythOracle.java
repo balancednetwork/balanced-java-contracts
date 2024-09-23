@@ -1,5 +1,6 @@
+
 /*
- * Copyright (c) 2022-2023 Balanced.network.
+ * Copyright (c) 2022-2022 Balanced.network.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,26 +19,15 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
-import network.balanced.score.lib.interfaces.addresses.AddressManager;
-import network.balanced.score.lib.interfaces.base.Name;
-import network.balanced.score.lib.interfaces.base.Version;
 import score.annotation.External;
-import score.annotation.Optional;
 
+import java.math.BigInteger;
 import java.util.Map;
 
-@ScoreClient
 @ScoreInterface
-public interface XCallManager extends Name, AddressManager, Version {
-    @External
-    void configureProtocols(String nid, String[] sources, String destinations[]);
-
+@ScoreClient
+public interface PythOracle {
     @External(readonly = true)
-    Map<String, String[]> getProtocols(String nid);
-
-    @External(readonly = true)
-    byte[] getProtocolsRaw(String nid);
-
-    @External(readonly = true)
-    void verifyProtocols(String nid, @Optional String[] protocols);
+    Map<String, BigInteger> getPrice(byte[] id);
 }
+

@@ -51,6 +51,7 @@ public class MockBalanced {
     public MockContract<StakedLP> stakedLp;
     public MockContract<Stability> stability;
     public MockContract<Oracle> oracle;
+    public MockContract<PythOracle> pyth;
     public MockContract<BalancedOracle> balancedOracle;
     public MockContract<BoostedBaln> bBaln;
     public MockContract<AssetManager> assetManager;
@@ -79,6 +80,7 @@ public class MockBalanced {
         stakedLp = new MockContract<>(StakedLPScoreInterface.class, StakedLP.class, sm, owner);
         stability = new MockContract<>(StabilityScoreInterface.class, Stability.class, sm, owner);
         oracle = new MockContract<>(OracleScoreInterface.class, Oracle.class, sm, owner);
+        pyth = new MockContract<>(PythOracleScoreInterface.class, PythOracle.class, sm, owner);
         balancedOracle = new MockContract<>(BalancedOracleScoreInterface.class, BalancedOracle.class, sm, owner);
         bBaln = new MockContract<>(BoostedBalnScoreInterface.class, BoostedBaln.class, sm, owner);
         assetManager = new MockContract<>(AssetManagerScoreInterface.class, AssetManager.class, sm, owner);
@@ -102,6 +104,7 @@ public class MockBalanced {
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.DIVIDENDS)).thenReturn(dividends.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.DAOFUND)).thenReturn(daofund.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.ORACLE)).thenReturn(oracle.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.PYTH_ORACLE)).thenReturn(pyth.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.BALANCEDORACLE)).thenReturn(balancedOracle.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.SICX)).thenReturn(sicx.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.fetchAddress(Names.BNUSD)).thenReturn(bnUSD.getAddress());
@@ -128,6 +131,7 @@ public class MockBalanced {
         addressManagerMock.when(() -> BalancedAddressManager.getDividends()).thenReturn(dividends.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.getDaofund()).thenReturn(daofund.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.getOracle()).thenReturn(oracle.getAddress());
+        addressManagerMock.when(() -> BalancedAddressManager.getPythOracle()).thenReturn(pyth.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.getSicx()).thenReturn(sicx.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.getBnusd()).thenReturn(bnUSD.getAddress());
         addressManagerMock.when(() -> BalancedAddressManager.getBaln()).thenReturn(baln.getAddress());

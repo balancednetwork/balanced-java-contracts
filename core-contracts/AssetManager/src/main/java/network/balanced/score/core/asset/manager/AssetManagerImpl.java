@@ -291,7 +291,7 @@ public class AssetManagerImpl implements AssetManager {
 
     public void xWithdraw(String from, Address tokenAddress, BigInteger amount) {
         NetworkAddress _from = NetworkAddress.valueOf(from);
-        BigInteger xCallFee = Context.call(BigInteger.class, BalancedAddressManager.getDaofund(), "claimXCallFee", _from.net(), true);
+        BigInteger xCallFee = Context.call(BigInteger.class, BalancedAddressManager.getDaofund(), "claimXCallFee", _from.net(), false);
         _withdrawTo(tokenAddress, from, from, amount, xCallFee);
     }
 
@@ -310,7 +310,6 @@ public class AssetManagerImpl implements AssetManager {
         NetworkAddress tokenAddress = new NetworkAddress(net, nativeTokenAddress);
         NetworkAddress spoke = NetworkAddress.valueOf(spokes.get(tokenAddress.net()));
         byte[] msg;
-        byte[] rollback = AssetManagerMessages.withdrawRollback(tokenAddress.toString(), to, amount);
 
         BigInteger sendAmount = translateOutgoingDecimals(tokenAddress.toString(), amount);
         Context.require(sendAmount.compareTo(BigInteger.ZERO) > 0, "Amount needs to be greater than 0 on the destination chain");
@@ -324,7 +323,7 @@ public class AssetManagerImpl implements AssetManager {
         Context.require(remainingDeposit.signum() >= 0, "Remaining deposit can't be negative");
         assetDeposits.set(tokenAddress.toString(), remainingDeposit);
 
-        XCallUtils.sendCall(fee, spoke, msg, rollback);
+        XCallUtils.sendPersistentCall(fee, spoke, msg);
     }
 
     private BigInteger translateOutgoingDecimals(String token, BigInteger amount) {

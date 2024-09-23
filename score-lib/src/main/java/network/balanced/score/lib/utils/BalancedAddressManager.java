@@ -20,7 +20,6 @@ import score.Address;
 import score.Context;
 import score.DictDB;
 import score.VarDB;
-import foundation.icon.xcall.NetworkAddress;
 
 import static network.balanced.score.lib.utils.Check.readonly;
 public class BalancedAddressManager {
@@ -48,7 +47,7 @@ public class BalancedAddressManager {
                 "getAddress", name);
     }
 
-    private static Address getAddress(String name) {
+    public static Address getAddress(String name) {
         Address address = contractAddresses.get(name);
         if (address == null) {
             address = fetchAddress(name);
@@ -169,6 +168,11 @@ public class BalancedAddressManager {
     public static Address getTrickler() {
         return getAddress(Names.TRICKLER);
     }
+
+    public static Address getPythOracle() {
+        return getAddress(Names.PYTH_ORACLE);
+    }
+
 
     public static Address getGovernance() {
         return contractAddresses.getOrDefault(Names.GOVERNANCE, mainnetGovernance);

@@ -22,9 +22,9 @@ import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import network.balanced.score.core.rewards.weight.SourceWeightController;
 import network.balanced.score.lib.interfaces.BoostedBaln;
-import network.balanced.score.lib.interfaces.BoostedBalnScoreInterface;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockContract;
+import network.balanced.score.lib.test.mock.MockBalanced;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -37,7 +37,7 @@ import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 public class SourceWeightControllerTest extends UnitTest {
@@ -47,6 +47,7 @@ public class SourceWeightControllerTest extends UnitTest {
     static final ServiceManager sm = getServiceManager();
     static final Account owner = sm.createAccount();
 
+    MockBalanced mockBalanced;
     MockContract<BoostedBaln> bBaln;
 
     Score weightController;
@@ -61,12 +62,13 @@ public class SourceWeightControllerTest extends UnitTest {
 
     @BeforeEach
     void setup() throws Exception {
-        bBaln = new MockContract<>(BoostedBalnScoreInterface.class, sm, owner);
+        mockBalanced = new MockBalanced(sm, owner);
+        bBaln = mockBalanced.bBaln;
         sm.getBlock().increase(WEEK_BLOCKS * 10);
 
-        weightController = sm.deploy(owner, SourceWeightController.class, bBaln.getAddress());
+        weightController = sm.deploy(owner, SourceWeightController.class);
         SourceWeightController.rewards =
-                (RewardsImpl) sm.deploy(owner, RewardsImpl.class, bBaln.getAddress()).getInstance();
+                (RewardsImpl) sm.deploy(owner, RewardsImpl.class, mockBalanced.governance.getAddress()).getInstance();
         weightController.invoke(owner, "addType", stakedLPType, BigInteger.ZERO);
         weightController.invoke(owner, "addType", externalSources, BigInteger.ZERO);
 

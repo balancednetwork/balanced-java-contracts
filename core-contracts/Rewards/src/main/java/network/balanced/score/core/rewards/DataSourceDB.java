@@ -48,32 +48,6 @@ public class DataSourceDB {
         names.add(name);
         DataSourceImpl dataSource = get(name);
         dataSource.setName(name);
-        dataSource.setDay(RewardsImpl.getDay());
         dataSource.setContractAddress(address);
-    }
-
-    public static void removeSource(String name) {
-        // TODO Shouldn't be removed (Also add test cases)
-        //  Avoid removing data source, must be disabled instead
-        // TODO Double check, remove one, return boolean
-        if (!contains(names, name)) {
-            return;
-        }
-        DataSourceImpl dataSource = get(name);
-        dataSource.setName(null);
-        dataSource.setDay(null);
-        dataSource.setContractAddress(null);
-
-        // TODO Use helper method to remove from array db
-        String topSourceName = names.pop();
-        if (topSourceName.equals(name)) {
-            return;
-        }
-
-        for (int i = 0; i < names.size(); i++) {
-            if (names.get(i).equals(name)) {
-                names.set(i, topSourceName);
-            }
-        }
     }
 }

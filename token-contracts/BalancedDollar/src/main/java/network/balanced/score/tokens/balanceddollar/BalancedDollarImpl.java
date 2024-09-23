@@ -162,7 +162,7 @@ public class BalancedDollarImpl extends HubTokenImpl implements BalancedDollar {
         if (!canWithdraw(net)) {
             return BigInteger.ONE.negate();
         }
-        return Context.call(BigInteger.class, getDaofund(), "claimXCallFee", net, true);
+        return Context.call(BigInteger.class, getDaofund(), "claimXCallFee", net, false);
     }
 
     private boolean canWithdraw(String net) {
