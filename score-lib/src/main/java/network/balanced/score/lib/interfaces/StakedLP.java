@@ -18,9 +18,11 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
+import network.balanced.score.lib.annotations.XCall;
 import network.balanced.score.lib.interfaces.base.Version;
 import score.Address;
 import score.annotation.External;
+import score.annotation.Optional;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -54,10 +56,19 @@ public interface StakedLP extends Version {
     BigInteger totalStaked(BigInteger _id);
 
     @External
+    void handleCallMessage(String _from, byte[] _data, @Optional String[] _protocols);
+
+    @External
     void unstake(BigInteger id, BigInteger value);
+
+    @XCall
+    void xUnstake(String from, BigInteger id, BigInteger value);
 
     @External
     void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data);
+
+    @External
+    void onIRC31Received(String _operator, String _from, BigInteger _id, BigInteger _value, byte[] _data);
 
     @External
     void addDataSource(BigInteger id, String name);

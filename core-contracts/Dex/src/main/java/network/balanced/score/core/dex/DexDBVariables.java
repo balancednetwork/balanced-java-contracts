@@ -18,6 +18,8 @@ package network.balanced.score.core.dex;
 
 import network.balanced.score.core.dex.db.LinkedListDB;
 import network.balanced.score.core.dex.utils.LPMetadataDB;
+import network.balanced.score.lib.utils.BranchedAddressDictDB;
+import network.balanced.score.lib.utils.BranchedNetworkAddressDictDB;
 import network.balanced.score.lib.utils.IterableDictDB;
 import network.balanced.score.lib.utils.SetDB;
 import score.*;
@@ -67,7 +69,9 @@ public class DexDBVariables {
     public final static VarDB<Boolean> dexOn = Context.newVarDB(DEX_ON, Boolean.class);
 
     // Deposits - Map: token_address -> user_address -> value
-    final static BranchDB<Address, DictDB<Address, BigInteger>> deposit = Context.newBranchDB(DEPOSIT,
+//    final static BranchDB<Address, DictDB<Address, BigInteger>> deposit = Context.newBranchDB(DEPOSIT,
+//            BigInteger.class);
+    final static BranchedNetworkAddressDictDB<Address, BigInteger> deposit = new BranchedNetworkAddressDictDB<>(DEPOSIT,
             BigInteger.class);
     // Pool IDs - Map: token address -> opposite token_address -> id
     final static BranchDB<Address, DictDB<Address, Integer>> poolId = Context.newBranchDB(POOL_ID, Integer.class);
@@ -85,8 +89,11 @@ public class DexDBVariables {
 
     // User Balances
     // Map: pool_id -> user address -> lp token balance
-    final static BranchDB<Integer, DictDB<Address, BigInteger>> balance = Context.newBranchDB(BALANCE,
+//    final static BranchDB<Integer, DictDB<Address, BigInteger>> balance = Context.newBranchDB(BALANCE,
+//            BigInteger.class);
+    final static BranchedNetworkAddressDictDB<Integer, BigInteger> balance = new BranchedNetworkAddressDictDB<>(BALANCE,
             BigInteger.class);
+
 
     // Map: pool_id -> user address -> ids/values/length -> length/0 -> value
     final static BranchDB<Integer, BranchDB<Address, BranchDB<String, DictDB<BigInteger, BigInteger>>>> accountBalanceSnapshot =
