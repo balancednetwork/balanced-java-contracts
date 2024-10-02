@@ -16,12 +16,14 @@
 
 package network.balanced.score.core.dex;
 
+import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.core.dex.db.NodeDB;
 import network.balanced.score.lib.interfaces.Dex;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.structs.RewardsDataEntry;
+import network.balanced.score.lib.utils.AddressDictDB;
 import network.balanced.score.lib.utils.BalancedFloorLimits;
-import network.balanced.score.lib.utils.FloorLimited;
+import network.balanced.score.lib.utils.NetworkAddressDictDB;
 import score.Address;
 import score.BranchDB;
 import score.Context;
@@ -39,12 +41,13 @@ import static network.balanced.score.core.dex.DexDBVariables.*;
 import static network.balanced.score.core.dex.utils.Check.isValidPercent;
 import static network.balanced.score.core.dex.utils.Check.isValidPoolId;
 import static network.balanced.score.core.dex.utils.Const.*;
+import static network.balanced.score.lib.tokens.SpokeTokenImpl.NATIVE_NID;
 import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Check.onlyGovernance;
 import static network.balanced.score.lib.utils.Constants.*;
 import static network.balanced.score.lib.utils.Math.pow;
 
-public abstract class AbstractDex extends FloorLimited implements Dex {
+public abstract class AbstractDex extends IRC31StandardSpokeLpToken {
 
     public AbstractDex(Address _governance) {
         if (governance.get() == null) {
@@ -82,15 +85,27 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
     }
 
     @EventLog(indexed = 3)
+    public void AddV2(BigInteger _id, String _owner, BigInteger _value, BigInteger _base, BigInteger _quote) {
+    }
+
+    @EventLog(indexed = 3)
     public void Remove(BigInteger _id, Address _owner, BigInteger _value, BigInteger _base, BigInteger _quote) {
     }
 
-    @EventLog(indexed = 2)
-    public void Deposit(Address _token, Address _owner, BigInteger _value) {
+    @EventLog(indexed = 3)
+    public void RemoveV2(BigInteger _id, String _owner, BigInteger _value, BigInteger _base, BigInteger _quote) {
     }
 
     @EventLog(indexed = 2)
-    public void Withdraw(Address _token, Address _owner, BigInteger _value) {
+    public void Deposit(Address _token, String _owner, BigInteger _value) {
+    }
+
+//    @EventLog(indexed = 2)
+//    public void Withdraw(Address _token, Address _owner, BigInteger _value) {
+//    }
+
+    @EventLog(indexed = 2)
+    public void Withdraw(Address _token, String _owner, BigInteger _value) {
     }
 
     @EventLog(indexed = 2)
@@ -98,7 +113,7 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
     }
 
     @EventLog(indexed = 3)
-    public void TransferSingle(Address _operator, Address _from, Address _to, BigInteger _id, BigInteger _value) {
+    public void TransferSingle(String _operator, String _from, String _to, BigInteger _id, BigInteger _value) {
     }
 
     @External(readonly = true)
@@ -256,7 +271,14 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
 
     @External(readonly = true)
     public BigInteger getDeposit(Address _tokenAddress, Address _user) {
-        return deposit.at(_tokenAddress).getOrDefault(_user, BigInteger.ZERO);
+        NetworkAddress user =  new NetworkAddress(NATIVE_NID, _user);
+        return deposit.at(_tokenAddress).getOrDefault(user, BigInteger.ZERO);
+    }
+
+    @External(readonly = true)
+    public BigInteger getDepositV2(Address _tokenAddress, String _user) {
+        NetworkAddress user = NetworkAddress.valueOf(_user);
+        return deposit.at(_tokenAddress).getOrDefault(user, BigInteger.ZERO);
     }
 
     @External(readonly = true)
@@ -388,15 +410,6 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
     }
 
     @External(readonly = true)
-    public BigInteger getICXBalance(Address _address) {
-        BigInteger orderId = icxQueueOrderId.get(_address);
-        if (orderId == null) {
-            return BigInteger.ZERO;
-        }
-        return icxQueue.getNode(orderId).getSize();
-    }
-
-    @External(readonly = true)
     public Map<String, Object> getPoolStats(BigInteger _id) {
         isValidPoolId(_id);
         Map<String, Object> poolStats = new HashMap<>();
@@ -489,24 +502,6 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
         }
     }
 
-    @External(readonly = true)
-    public BigInteger balanceOf(Address _owner, BigInteger _id) {
-        if (_id.intValue() == SICXICX_POOL_ID) {
-            return getICXBalance(_owner);
-        } else {
-            return DexDBVariables.balance.at(_id.intValue()).getOrDefault(_owner, BigInteger.ZERO);
-        }
-    }
-
-    @External(readonly = true)
-    public BigInteger totalSupply(BigInteger _id) {
-        if (_id.intValue() == SICXICX_POOL_ID) {
-            return icxQueueTotal.getOrDefault(BigInteger.ZERO);
-        }
-
-        return poolLpTotal.getOrDefault(_id.intValue(), BigInteger.ZERO);
-    }
-
     @External
     public void delegate(PrepDelegations[] prepDelegations) {
         onlyGovernance();
@@ -536,12 +531,12 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
         return BigInteger.ZERO;
     }
 
-    void deposit(Address token, Address to, BigInteger amount) {
-        DictDB<Address, BigInteger> depositDetails = deposit.at(token);
+    void deposit(Address token, NetworkAddress to, BigInteger amount) {
+        NetworkAddressDictDB<BigInteger> depositDetails = deposit.at(token);
         BigInteger userBalance = depositDetails.getOrDefault(to, BigInteger.ZERO);
         userBalance = userBalance.add(amount);
         depositDetails.set(to, userBalance);
-        Deposit(token, to, amount);
+        Deposit(token, to.toString(), amount);
 
         if (tokenPrecisions.get(token) == null) {
             BigInteger decimalValue = (BigInteger) Context.call(token, "decimals");
@@ -675,12 +670,24 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
     @External
     public void govSetUserPoolTotal(int pid, Address user, BigInteger total) {
         onlyGovernance();
-        BigInteger value = balance.at(pid).get(user);
-        BigInteger burned = value.subtract(total);
-        balance.at(pid).set(user, total);
-
-        TransferSingle(Context.getCaller(), user, MINT_ADDRESS, BigInteger.valueOf(pid), burned);
+        NetworkAddress _user =  new NetworkAddress(NATIVE_NID, user);
+        setUserPoolTotal(pid, _user, total);
     }
+
+    //todo: make sure if this method is required
+    @External
+    public void govSetUserPoolTotalV2(int pid, String user, BigInteger total) {
+        onlyGovernance();
+        setUserPoolTotal(pid, NetworkAddress.parse(user), total);
+    }
+    private void setUserPoolTotal(int pid, NetworkAddress _user, BigInteger total){
+        BigInteger value = balance.at(pid).get(_user);
+        BigInteger burned = value.subtract(total);
+        balance.at(pid).set(_user, total);
+
+        TransferSingle(Context.getCaller().toString(), _user.toString(), MINT_ADDRESS.toString(), BigInteger.valueOf(pid), burned);
+    }
+
 
     void swapIcx(Address sender, BigInteger value) {
         BigInteger sicxIcxPrice = getSicxRate();
@@ -787,34 +794,4 @@ public abstract class AbstractDex extends FloorLimited implements Dex {
         return snapshot.at(VALUES).getOrDefault(matchedIndex, BigInteger.ZERO);
     }
 
-    void _transfer(Address from, Address to, BigInteger value, Integer id, byte[] data) {
-
-        Context.require(!isLockingPool(id), TAG + ": Nontransferable token id");
-        Context.require(value.compareTo(BigInteger.ZERO) >= 0,
-                TAG + ": Transferring value cannot be less than 0.");
-
-        DictDB<Address, BigInteger> poolLpBalanceOfUser = balance.at(id);
-        BigInteger fromBalance = poolLpBalanceOfUser.getOrDefault(from, BigInteger.ZERO);
-
-        Context.require(fromBalance.compareTo(value) >= 0, TAG + ": Out of balance");
-
-        poolLpBalanceOfUser.set(from, poolLpBalanceOfUser.get(from).subtract(value));
-        poolLpBalanceOfUser.set(to, poolLpBalanceOfUser.getOrDefault(to, BigInteger.ZERO).add(value));
-        Address stakedLpAddress = getStakedLp();
-
-        if (!from.equals(stakedLpAddress) && !to.equals(stakedLpAddress)) {
-            if (value.compareTo(BigInteger.ZERO) > 0) {
-                activeAddresses.get(id).add(to);
-            }
-
-            if ((fromBalance.subtract(value)).equals(BigInteger.ZERO)) {
-                activeAddresses.get(id).remove(from);
-            }
-        }
-        TransferSingle(from, from, to, BigInteger.valueOf(id), value);
-
-        if (to.isContract()) {
-            Context.call(to, "onIRC31Received", from, from, id, value, data);
-        }
-    }
 }

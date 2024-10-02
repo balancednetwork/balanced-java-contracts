@@ -210,6 +210,7 @@ public class HubTokenImpl extends SpokeTokenImpl implements HubToken {
     public void handleCallMessage(String _from, byte[] _data, @Optional String[] _protocols) {
         checkStatus();
         only(BalancedAddressManager.getXCall());
+        Context.println(_from);
         XCallUtils.verifyXCallProtocols(_from, _protocols);
         HubTokenXCall.process(this, _from, _data);
     }
