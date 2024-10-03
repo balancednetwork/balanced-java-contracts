@@ -40,13 +40,11 @@ import score.Context;
 
 import java.math.BigInteger;
 import java.util.Map;
-
 import static java.math.BigInteger.ZERO;
 import static network.balanced.score.lib.test.UnitTest.assertOnlyCallableBy;
 import static network.balanced.score.lib.test.UnitTest.expectErrorMessage;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
-
 class AssetManagerTest extends TestBase {
     private static final ServiceManager sm = getServiceManager();
 

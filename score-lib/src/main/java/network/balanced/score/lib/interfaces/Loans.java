@@ -83,10 +83,7 @@ public interface Loans extends Name, AddressManager, Version, XTokenReceiver, Fl
                           @Optional BigInteger _value);
 
     @External
-    void retireBadDebt(String _symbol, BigInteger _value);
-
-    @External
-    void retireBadDebtForCollateral(String _symbol, BigInteger _value, String _collateralSymbol);
+    void cancelBadDebt(String _symbol, BigInteger _value);
 
     @External
     void returnAsset(String _symbol, BigInteger _value, @Optional String _collateralSymbol, @Optional String to);
@@ -101,7 +98,7 @@ public interface Loans extends Name, AddressManager, Version, XTokenReceiver, Fl
     void withdrawCollateral(BigInteger _value, @Optional String _collateralSymbol);
 
     @External
-    void liquidate(String _owner, @Optional String _collateralSymbol);
+    void liquidate(String _owner, BigInteger _amount, @Optional String _collateralSymbol);
 
     @External
     void redeemCollateral(Address _collateralAddress, BigInteger _amount);
@@ -116,10 +113,28 @@ public interface Loans extends Name, AddressManager, Version, XTokenReceiver, Fl
     BigInteger getLockingRatio(String _symbol);
 
     @External
-    void setLiquidationRatio(String _symbol, BigInteger _ratio);
+    void setLiquidationRatio(String _symbol, BigInteger _threshold);
+
+    @External
+    void setLiquidatorFee(String _symbol, BigInteger _fee);
+
+    @External
+    void setLiquidationDaoFundFee(String _symbol, BigInteger _fee);
+
+    @External
+    void setMinimumDebtThreshold(BigInteger _threshold);
+
+    @External(readonly = true)
+    BigInteger getMinimumDebtThreshold();
 
     @External(readonly = true)
     BigInteger getLiquidationRatio(String _symbol);
+
+    @External(readonly = true)
+    BigInteger getLiquidatorFee(String _symbol);
+
+    @External(readonly = true)
+    BigInteger getLiquidationDaoFundFee(String _symbol);
 
     @External
     void setOriginationFee(BigInteger _fee);
@@ -135,12 +150,6 @@ public interface Loans extends Name, AddressManager, Version, XTokenReceiver, Fl
 
     @External(readonly = true)
     BigInteger getRedemptionDaoFee();
-
-    @External
-    void setRetirementBonus(BigInteger _points);
-
-    @External
-    void setLiquidationReward(BigInteger _points);
 
     @External
     void setNewLoanMinimum(BigInteger _minimum);
@@ -191,5 +200,5 @@ public interface Loans extends Name, AddressManager, Version, XTokenReceiver, Fl
     void xBorrow(String from, String _collateralToBorrowAgainst, BigInteger _amountToBorrow, @Optional String _to,  @Optional byte[] _data);
 
     @XCall
-    void xWithdraw(String from, BigInteger _value, String _collateralSymbol);
+    void xWithdraw(String from, BigInteger _value, String _collateralSymbol, @Optional String _to);
 }
