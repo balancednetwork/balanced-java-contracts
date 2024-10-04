@@ -66,5 +66,6 @@ public interface Constants {
     String ENABLE_SNAPSHOTS = "enable_snapshots";
     String ADMIN = "admin_address";
     String VERSION = "version";
+    String MINTER = "admin";
 
 }
