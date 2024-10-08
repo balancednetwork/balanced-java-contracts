@@ -98,11 +98,11 @@ public class Balanced {
         increaseDay(1);
         setupContracts();
         // delegate(adminWallet);
-        String className = new Exception().getStackTrace()[1].getClassName();
+        //String className = new Exception().getStackTrace()[1].getClassName();
         // no need to set up market in staking integration test case
-        if (!className.equals("network.balanced.score.core.staking.StakingIntegrationTest")) {
-            setupMarkets();
-        }
+//        if (!className.equals("network.balanced.score.core.staking.StakingIntegrationTest")) {
+//            setupMarkets();
+//        }
     }
 
     public void deployContracts() {

@@ -18,6 +18,7 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
+import network.balanced.score.lib.annotations.XCall;
 import network.balanced.score.lib.interfaces.addresses.*;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.RewardsVoting;
@@ -83,6 +84,9 @@ public interface Rewards extends
 
     @External
     void claimRewards(@Optional String[] sources);
+
+    @XCall
+    void xClaimRewards(String from, String to, @Optional String[] sources);
 
     @External
     void updateRewardsData(String _name, BigInteger _totalSupply, Address _user, BigInteger _balance);

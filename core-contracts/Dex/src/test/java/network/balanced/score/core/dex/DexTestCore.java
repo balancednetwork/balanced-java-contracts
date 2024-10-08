@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.mockito.stubbing.Answer;
 import score.Address;
+import score.ByteArrayObjectWriter;
 import score.Context;
 
 import java.math.BigInteger;
@@ -35,6 +36,7 @@ import java.util.Map;
 import static network.balanced.score.core.dex.utils.Const.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
@@ -109,11 +111,135 @@ public class DexTestCore extends DexTestBase {
 
     @Test
     void crossChainDeposit() {
-        Account user = sm.createAccount();
+        String fromNetworkAddress = "0x1.ETH/0x123";
         BigInteger depositValue = BigInteger.valueOf(100).multiply(EXA);
-        xDepositToken("0x1.ETH/0x123", user, bnusdScore, depositValue);
-        BigInteger retrievedValue = (BigInteger) dexScore.call("getDeposit", bnusdScore.getAddress(), user.getAddress());
+        xDepositToken(fromNetworkAddress,  fromNetworkAddress, bnusdScore, depositValue);
+        BigInteger retrievedValue = (BigInteger) dexScore.call("getDepositV2", bnusdScore.getAddress(), fromNetworkAddress);
         assertEquals(depositValue, retrievedValue);
+    }
+
+    @Test
+    void crossChainLP(){
+        // Arrange
+        String fromNetworkAddress = "0x1.ETH/0x123";
+        BigInteger depositValue = BigInteger.valueOf(100).multiply(EXA);
+        xDepositToken(fromNetworkAddress,  fromNetworkAddress, bnusdScore, depositValue);
+        BigInteger retrievedValue = (BigInteger) dexScore.call("getDepositV2", bnusdScore.getAddress(), fromNetworkAddress);
+        assertEquals(depositValue, retrievedValue);
+
+        xDepositToken(fromNetworkAddress,  fromNetworkAddress, sicxScore, depositValue);
+        BigInteger sicxValue = (BigInteger) dexScore.call("getDepositV2", bnusdScore.getAddress(), fromNetworkAddress);
+        assertEquals(depositValue, sicxValue);
+
+        // Act
+        String[] protocols = new String[0];
+        byte[] data = getAddLPData(bnusdScore.getAddress(), sicxScore.getAddress(), depositValue, depositValue, false, BigInteger.ZERO);
+        handleCallMessageWithOutProtocols(fromNetworkAddress, data, protocols);
+
+        // Assert
+        BigInteger poolId = (BigInteger) dexScore.call("getPoolId", bnusdScore.getAddress(), sicxScore.getAddress());
+        BigInteger lpTokenBalance = (BigInteger) dexScore.call("xBalanceOf", fromNetworkAddress, poolId);
+        assertTrue(lpTokenBalance.compareTo(BigInteger.ZERO)>0);
+
+    }
+
+    @Test
+    void xRemoveNotWithdraw(){
+        // Arrange
+        String fromNetworkAddress = "0x1.ETH/0x123";
+        BigInteger depositValue = BigInteger.valueOf(100).multiply(EXA);
+        xDepositToken(fromNetworkAddress,  fromNetworkAddress, bnusdScore, depositValue);
+        BigInteger retrievedValue = (BigInteger) dexScore.call("getDepositV2", bnusdScore.getAddress(), fromNetworkAddress);
+        assertEquals(depositValue, retrievedValue);
+
+        xDepositToken(fromNetworkAddress,  fromNetworkAddress, sicxScore, depositValue);
+        BigInteger sicxValue = (BigInteger) dexScore.call("getDepositV2", bnusdScore.getAddress(), fromNetworkAddress);
+        assertEquals(depositValue, sicxValue);
+
+        String[] protocols = new String[0];
+        byte[] data = getAddLPData(bnusdScore.getAddress(), sicxScore.getAddress(), depositValue, depositValue, false, BigInteger.ZERO);
+        handleCallMessageWithOutProtocols(fromNetworkAddress, data, protocols);
+
+        BigInteger poolId = (BigInteger) dexScore.call("getPoolId", bnusdScore.getAddress(), sicxScore.getAddress());
+        BigInteger lpTokenBalance = (BigInteger) dexScore.call("xBalanceOf", fromNetworkAddress, poolId);
+        BigInteger lpTokensToRemove = BigInteger.valueOf(1000);
+
+        // Arrange - increase blocks past withdrawal lock.
+        sm.getBlock().increase(100000000);
+
+
+        //Act
+        byte[] xRemoveData = getXRemoveData(poolId, lpTokensToRemove, false);
+
+        contextMock.when(() -> Context.call(eq(stakingScore.getAddress()), eq("getTodayRate"))).thenReturn(EXA);
+        handleCallMessageWithOutProtocols(fromNetworkAddress, xRemoveData, protocols);
+
+        //
+        BigInteger newLpTokenBalance = (BigInteger) dexScore.call("xBalanceOf", fromNetworkAddress, poolId);
+        assertEquals(lpTokenBalance.subtract(lpTokensToRemove), newLpTokenBalance);
+    }
+
+    @Test
+    void xRemoveAndWithdraw(){
+        // Arrange - deposit tokens
+        String fromNetworkAddress = "0x1.ETH/0x123";
+        BigInteger depositValue = BigInteger.valueOf(100).multiply(EXA);
+        xDepositToken(fromNetworkAddress,  fromNetworkAddress, bnusdScore, depositValue);
+        BigInteger retrievedValue = (BigInteger) dexScore.call("getDepositV2", bnusdScore.getAddress(), fromNetworkAddress);
+        assertEquals(depositValue, retrievedValue);
+
+        xDepositToken(fromNetworkAddress,  fromNetworkAddress, sicxScore, depositValue);
+        BigInteger sicxValue = (BigInteger) dexScore.call("getDepositV2", bnusdScore.getAddress(), fromNetworkAddress);
+        assertEquals(depositValue, sicxValue);
+
+        // Arrange supply liquidity
+        String[] protocols = new String[0];
+        byte[] data = getAddLPData(bnusdScore.getAddress(), sicxScore.getAddress(), depositValue, depositValue, false, BigInteger.ZERO);
+        handleCallMessageWithOutProtocols(fromNetworkAddress, data, protocols);
+
+        BigInteger poolId = (BigInteger) dexScore.call("getPoolId", bnusdScore.getAddress(), sicxScore.getAddress());
+        BigInteger lpTokenBalance = (BigInteger) dexScore.call("xBalanceOf", fromNetworkAddress, poolId);
+        BigInteger lpTokensToRemove = BigInteger.valueOf(1000);
+
+        // Arrange - increase blocks past withdrawal lock.
+        sm.getBlock().increase(100000000);
+
+
+        // Act
+        byte[] xRemoveData = getXRemoveData(poolId, lpTokensToRemove, true);
+        contextMock.when(() -> Context.call(eq(bnusdScore.getAddress()), eq("hubTransfer"), any(), any())).thenReturn(true);
+        contextMock.when(() -> Context.call(eq(sicxScore.getAddress()), eq("hubTransfer"), any(), any())).thenReturn(true);
+        contextMock.when(() -> Context.call(eq(stakingScore.getAddress()), eq("getTodayRate"))).thenReturn(EXA);
+        handleCallMessageWithOutProtocols(fromNetworkAddress, xRemoveData, protocols);
+
+        // Verify
+        BigInteger newLpTokenBalance = (BigInteger) dexScore.call("xBalanceOf", fromNetworkAddress, poolId);
+        assertEquals(lpTokenBalance.subtract(lpTokensToRemove), newLpTokenBalance);
+    }
+
+    static byte[] getXRemoveData(BigInteger poolId, BigInteger lpTokenBalance, Boolean withdraw) {
+        ByteArrayObjectWriter writer = Context.newByteArrayObjectWriter("RLPn");
+        writer.beginList(4);
+        writer.write("xremove");
+        writer.write(poolId);
+        writer.write(lpTokenBalance);
+        writer.write(withdraw);
+        writer.end();
+        return writer.toByteArray();
+    }
+
+    static byte[] getAddLPData(Address baseToken, Address quoteToken, BigInteger baseValue, BigInteger quoteValue, Boolean withdraw_unused, BigInteger slippagePercentage) {
+        ByteArrayObjectWriter writer = Context.newByteArrayObjectWriter("RLPn");
+        writer.beginList(7);
+        writer.write("xadd");
+        writer.write(baseToken);
+        writer.write(quoteToken);
+        writer.write(baseValue);
+        writer.write(quoteValue);
+        writer.write(withdraw_unused);
+        writer.write(slippagePercentage);
+        writer.end();
+        return writer.toByteArray();
     }
 
     @Test

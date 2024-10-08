@@ -27,6 +27,6 @@ public interface IRC31Base {
     @External(readonly = true)
     BigInteger balanceOf(Address _owner, BigInteger _id);
 
-    @EventLog(indexed = 3)
-    void TransferSingle(Address _operator, Address _from, Address _to, BigInteger _id, BigInteger _value);
+//    @EventLog(indexed = 3)
+//    void TransferSingle(Address _operator, Address _from, Address _to, BigInteger _id, BigInteger _value);
 }
