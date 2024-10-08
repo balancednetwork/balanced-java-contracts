@@ -126,6 +126,18 @@ public class SicxImpl extends HubTokenImpl implements Sicx {
         super.transfer(_to, _value, _data);
     }
 
+    @Override
+    public BigInteger getHopFee(String net) {
+        if (!canWithdraw(net)) {
+            return BigInteger.ONE.negate();
+        }
+        return Context.call(BigInteger.class, BalancedAddressManager.getDaofund(), "claimXCallFee", net, false);
+    }
+
+    private boolean canWithdraw(String net) {
+        return Context.call(Boolean.class, BalancedAddressManager.getDaofund(), "getXCallFeePermission", Context.getAddress(), net);
+    }
+
     @External
     public void burn(BigInteger _amount) {
         burnFrom(Context.getCaller(), _amount);

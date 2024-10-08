@@ -513,6 +513,18 @@ public class BalancedTokenImpl extends HubTokenImpl implements BalancedToken {
     }
 
     @Override
+    public BigInteger getHopFee(String net) {
+        if (!canWithdraw(net)) {
+            return BigInteger.ONE.negate();
+        }
+        return Context.call(BigInteger.class, BalancedAddressManager.getDaofund(), "claimXCallFee", net, false);
+    }
+
+    private boolean canWithdraw(String net) {
+        return Context.call(Boolean.class, BalancedAddressManager.getDaofund(), "getXCallFeePermission", Context.getAddress(), net);
+    }
+
+    @Override
     @External
     public void burnFrom(Address _account, BigInteger _amount) {
         this.checkFirstTime(_account);
