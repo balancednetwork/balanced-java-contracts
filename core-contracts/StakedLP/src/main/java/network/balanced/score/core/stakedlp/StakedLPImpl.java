@@ -30,6 +30,7 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+import static network.balanced.score.lib.utils.BalancedAddressManager.getXCall;
 import static network.balanced.score.lib.utils.Check.*;
 
 public class StakedLPImpl implements StakedLP {
@@ -57,31 +58,22 @@ public class StakedLPImpl implements StakedLP {
         if (StakedLPImpl.governance.get() == null) {
             Context.require(governance.isContract(), "StakedLP: Governance address should be a contract");
             StakedLPImpl.governance.set(governance);
+            BalancedAddressManager.setGovernance(governance);
         }
         if (currentVersion.getOrDefault("").equals(Versions.STAKEDLP)) {
             Context.revert("Can't Update same version of code");
         }
         currentVersion.set(Versions.STAKEDLP);
-        NATIVE_NID = (String) Context.call(BalancedAddressManager.getXCall(), "getNetworkId");
+        NATIVE_NID = (String) Context.call(getXCall(), "getNetworkId");
     }
 
     /*
      * Events
      */
 
-    //todo: verify this fix works
-//    @EventLog(indexed = 1)
-//    public void Stake(Address _owner, BigInteger _id, BigInteger _value) {
-//    }
-
     @EventLog(indexed = 1)
     public void Stake(String _owner, BigInteger _id, BigInteger _value) {
     }
-
-    //
-//    @EventLog(indexed = 1)
-//    public void Unstake(Address _owner, BigInteger _id, BigInteger _value) {
-//    }
 
     @EventLog(indexed = 1)
     public void Unstake(String _owner, BigInteger _id, BigInteger _value) {
@@ -140,7 +132,7 @@ public class StakedLPImpl implements StakedLP {
     }
 
     @External(readonly = true)
-    public BigInteger balanceOfV2(String _owner, BigInteger _id) {
+    public BigInteger xBalanceOf(String _owner, BigInteger _id) {
         NetworkAddress owner = NetworkAddress.valueOf(_owner);
         return poolStakedDetails.at(owner).getOrDefault(_id, BigInteger.ZERO);
     }
@@ -152,9 +144,8 @@ public class StakedLPImpl implements StakedLP {
 
     @External
     public void handleCallMessage(String _from, byte[] _data, @Optional String[] _protocols) {
-        //todo: uncomment after unit test fix
-        //checkStatus();
-        only(BalancedAddressManager.getXCall());
+        checkStatus();
+        only(getXCall());
         XCallUtils.verifyXCallProtocols(_from, _protocols);
         StakedLPXCall.process(this, _from, _data);
     }
@@ -197,7 +188,7 @@ public class StakedLPImpl implements StakedLP {
         }
     }
 
-    @Override
+    @External
     public void onIRC31Received(String _operator, String _from, BigInteger _id, BigInteger _value, byte[] _data) {
         only(dex);
         Context.require(_value.signum() > 0, "StakedLP: Token value should be a positive number");
@@ -205,13 +196,13 @@ public class StakedLPImpl implements StakedLP {
         this.stake(from, _id, _value);
     }
 
-    @External
-    public void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data) {
-        only(dex);
-        Context.require(_value.signum() > 0, "StakedLP: Token value should be a positive number");
-        NetworkAddress from = NetworkAddress.valueOf(_from.toString(), NATIVE_NID);
-        this.stake(from, _id, _value);
-    }
+//    @External
+//    public void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data) {
+//        only(dex);
+//        Context.require(_value.signum() > 0, "StakedLP: Token value should be a positive number");
+//        NetworkAddress from = NetworkAddress.valueOf(_from.toString(), NATIVE_NID);
+//        this.stake(from, _id, _value);
+//    }
 
     @External
     public void addDataSource(BigInteger id, String name) {

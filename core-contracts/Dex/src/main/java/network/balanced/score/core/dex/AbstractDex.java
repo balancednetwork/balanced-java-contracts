@@ -18,10 +18,8 @@ package network.balanced.score.core.dex;
 
 import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.core.dex.db.NodeDB;
-import network.balanced.score.lib.interfaces.Dex;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.structs.RewardsDataEntry;
-import network.balanced.score.lib.utils.AddressDictDB;
 import network.balanced.score.lib.utils.BalancedFloorLimits;
 import network.balanced.score.lib.utils.NetworkAddressDictDB;
 import score.Address;
@@ -41,7 +39,6 @@ import static network.balanced.score.core.dex.DexDBVariables.*;
 import static network.balanced.score.core.dex.utils.Check.isValidPercent;
 import static network.balanced.score.core.dex.utils.Check.isValidPoolId;
 import static network.balanced.score.core.dex.utils.Const.*;
-import static network.balanced.score.lib.tokens.SpokeTokenImpl.NATIVE_NID;
 import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Check.onlyGovernance;
 import static network.balanced.score.lib.utils.Constants.*;

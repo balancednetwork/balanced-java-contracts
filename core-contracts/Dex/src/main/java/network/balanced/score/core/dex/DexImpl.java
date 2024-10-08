@@ -37,14 +37,12 @@ import static network.balanced.score.core.dex.DexDBVariables.*;
 import static network.balanced.score.core.dex.utils.Check.isDexOn;
 import static network.balanced.score.core.dex.utils.Check.isValidPercent;
 import static network.balanced.score.core.dex.utils.Const.*;
-import static network.balanced.score.lib.utils.BalancedAddressManager.getRewards;
-import static network.balanced.score.lib.utils.BalancedAddressManager.getSicx;
+import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Check.checkStatus;
 import static network.balanced.score.lib.utils.Check.only;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.POINTS;
 import static network.balanced.score.lib.utils.Math.convertToNumber;
-import static score.Context.println;
 import static score.Context.require;
 
 public class DexImpl extends AbstractDex {
@@ -55,7 +53,7 @@ public class DexImpl extends AbstractDex {
             Context.revert("Can't Update same version of code");
         }
         currentVersion.set(Versions.DEX);
-        NATIVE_NID = (String) Context.call(BalancedAddressManager.getXCall(), "getNetworkId");
+        NATIVE_NID = (String) Context.call(getXCall(), "getNetworkId");
     }
 
     @External(readonly = true)
@@ -154,7 +152,7 @@ public class DexImpl extends AbstractDex {
     @External
     public void handleCallMessage(String _from, byte[] _data, @Optional String[] _protocols) {
         checkStatus();
-        only(BalancedAddressManager.getXCall());
+        only(getXCall());
         XCallUtils.verifyXCallProtocols(_from, _protocols);
         DexXCall.process(this, _from, _data);
     }
@@ -334,7 +332,6 @@ public class DexImpl extends AbstractDex {
         userLPBalance.set(_user, newUserBalance);
         poolLpTotal.set(_id.intValue(), newTotal);
 
-        //todo: uncomment after
         RemoveV2(_id, _user.toString(), _value, baseToWithdraw, quoteToWithdraw);
 //        TransferSingle(_user, _user, MINT_ADDRESS, _id, _value);
 

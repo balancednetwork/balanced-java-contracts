@@ -53,6 +53,9 @@ public interface StakedLP extends Version {
     BigInteger balanceOf(Address _owner, BigInteger _id);
 
     @External(readonly = true)
+    BigInteger xBalanceOf(String _owner, BigInteger _id);
+
+    @External(readonly = true)
     BigInteger totalStaked(BigInteger _id);
 
     @External
@@ -64,8 +67,8 @@ public interface StakedLP extends Version {
     @XCall
     void xUnstake(String from, BigInteger id, BigInteger value);
 
-    @External
-    void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data);
+//    @External
+//    void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data);
 
     @External
     void onIRC31Received(String _operator, String _from, BigInteger _id, BigInteger _value, byte[] _data);
