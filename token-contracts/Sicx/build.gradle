@@ -27,6 +27,7 @@ repositories {
 dependencies {
     compileOnly Dependencies.javaeeApi
     implementation project(':score-lib')
+    implementation 'xyz.venture23:xcall-lib:2.1.0'
 
     testImplementation Dependencies.javaeeUnitTest
     testImplementation Dependencies.javaeeTokens
@@ -83,6 +84,7 @@ deployJar {
     password = rootProject.hasProperty('keystorePass') ? "$keystorePass" : ''
     parameters {
         arg("_admin", Addresses.mainnet.staking)
+        arg("_governance", Addresses.mainnet.governance)
     }
 }
 

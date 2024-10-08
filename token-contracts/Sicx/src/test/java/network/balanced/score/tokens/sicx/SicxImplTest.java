@@ -20,6 +20,10 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
+
+import network.balanced.score.lib.test.mock.MockBalanced;
+import network.balanced.score.lib.utils.Names;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,8 +39,11 @@ import java.math.BigInteger;
 import static network.balanced.score.lib.test.UnitTest.expectErrorMessage;
 import static network.balanced.score.lib.test.UnitTest.scoreCount;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.when;
 
 class SicxImplTest extends TestBase {
 
@@ -45,6 +52,10 @@ class SicxImplTest extends TestBase {
     private static final Account staking = Account.newScoreAccount(scoreCount++);
     private static final Account scoreAddress = Account.newScoreAccount(scoreCount++);
     private static final Account user = sm.createAccount();
+
+    private static MockBalanced mockBalanced;
+    private static Account governanceScore;
+    private static Account xCall;
     private Score sicxScore;
 
     private static final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class,
@@ -59,7 +70,12 @@ class SicxImplTest extends TestBase {
 
     @BeforeEach
     void setup() throws Exception {
-        sicxScore = sm.deploy(owner, SicxImpl.class, staking.getAddress());
+        mockBalanced = new MockBalanced(sm, owner);
+        governanceScore = mockBalanced.governance.account;
+        xCall = mockBalanced.xCall.account;
+        contextMock.when(() -> Context.call(eq(xCall.getAddress()), eq("getNetworkId"), any(String.class)))
+                .thenReturn("0x1.icon");
+        sicxScore = sm.deploy(owner, SicxImpl.class, staking.getAddress(), governanceScore.getAddress());
         assertEquals(staking.getAddress(), sicxScore.call("getStaking"));
         sicxScore.invoke(owner, "setMinter", staking.getAddress());
     }
