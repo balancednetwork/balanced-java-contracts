@@ -146,7 +146,8 @@ public class StakedLPTest extends UnitTest {
     }
 
     private void stakeLpTokens(Account from, BigInteger poolId, BigInteger value) {
-        stakedLpScore.invoke(dex.account, "onIRC31Received", from.getAddress(), from.getAddress(), poolId, value,
+        String fromNetworkAddress = NetworkAddress.valueOf(from.getAddress().toString(), NATIVE_NID).toString();
+        stakedLpScore.invoke(dex.account, "onIRC31Received", fromNetworkAddress, fromNetworkAddress, poolId, value,
                 new byte[0]);
     }
 
@@ -175,22 +176,22 @@ public class StakedLPTest extends UnitTest {
         // Pool 1 related tests
         // Stake 10 LP tokens from alice account
         stakeLpTokens(fromNetworkAddress1, BigInteger.ONE, BigInteger.TEN);
-        assertEquals(BigInteger.TEN, stakedLpScore.call("balanceOfV2", fromNetworkAddress1, BigInteger.ONE));
+        assertEquals(BigInteger.TEN, stakedLpScore.call("xBalanceOf", fromNetworkAddress1, BigInteger.ONE));
         assertEquals(BigInteger.TEN, stakedLpScore.call("totalStaked", BigInteger.ONE));
 
         // Stake 100 more LP tokens from alice account
         stakeLpTokens(fromNetworkAddress1, BigInteger.ONE, BigInteger.valueOf(100L));
-        assertEquals(BigInteger.valueOf(110L), stakedLpScore.call("balanceOfV2", fromNetworkAddress1, BigInteger.ONE));
+        assertEquals(BigInteger.valueOf(110L), stakedLpScore.call("xBalanceOf", fromNetworkAddress1, BigInteger.ONE));
         assertEquals(BigInteger.valueOf(110L), stakedLpScore.call("totalStaked", BigInteger.ONE));
 
         // Stake 20 LP tokens from bob account
         stakeLpTokens(fromNetworkAddress2, BigInteger.ONE, BigInteger.valueOf(20L));
-        assertEquals(BigInteger.valueOf(20L), stakedLpScore.call("balanceOfV2", fromNetworkAddress2, BigInteger.ONE));
+        assertEquals(BigInteger.valueOf(20L), stakedLpScore.call("xBalanceOf", fromNetworkAddress2, BigInteger.ONE));
         assertEquals(BigInteger.valueOf(130L), stakedLpScore.call("totalStaked", BigInteger.ONE));
 
         // Pool 2 related tests
-        assertEquals(BigInteger.ZERO, stakedLpScore.call("balanceOfV2", fromNetworkAddress1, BigInteger.TWO));
-        assertEquals(BigInteger.ZERO, stakedLpScore.call("balanceOfV2", fromNetworkAddress2, BigInteger.TWO));
+        assertEquals(BigInteger.ZERO, stakedLpScore.call("xBalanceOf", fromNetworkAddress1, BigInteger.TWO));
+        assertEquals(BigInteger.ZERO, stakedLpScore.call("xBalanceOf", fromNetworkAddress2, BigInteger.TWO));
         assertEquals(BigInteger.ZERO, stakedLpScore.call("totalStaked", BigInteger.TWO));
 
         // Stake 20 LP tokens from alice and bob account
@@ -200,8 +201,8 @@ public class StakedLPTest extends UnitTest {
         stakeLpTokens(fromNetworkAddress2, BigInteger.TWO, BigInteger.valueOf(20L));
         verify(rewards.mock).updateBalanceAndSupply(poolTwoName, BigInteger.valueOf(20L), fromNetworkAddress1, BigInteger.valueOf(20L));
         assertEquals(BigInteger.valueOf(40L), stakedLpScore.call("totalStaked", BigInteger.TWO));
-        assertEquals(BigInteger.valueOf(20L), stakedLpScore.call("balanceOfV2", fromNetworkAddress1, BigInteger.TWO));
-        assertEquals(BigInteger.valueOf(20L), stakedLpScore.call("balanceOfV2", fromNetworkAddress2, BigInteger.TWO));
+        assertEquals(BigInteger.valueOf(20L), stakedLpScore.call("xBalanceOf", fromNetworkAddress1, BigInteger.TWO));
+        assertEquals(BigInteger.valueOf(20L), stakedLpScore.call("xBalanceOf", fromNetworkAddress2, BigInteger.TWO));
     }
 
     @Test
