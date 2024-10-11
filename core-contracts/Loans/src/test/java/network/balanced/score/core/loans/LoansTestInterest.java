@@ -163,40 +163,6 @@ class LoansTestInterest extends LoansTestBase {
     }
 
     @Test
-    void sellCollateral() {
-        // Arrange
-        Account account = sm.createAccount();
-        BigInteger collateral = BigInteger.valueOf(1000000).multiply(EXA);
-        BigInteger loan = BigInteger.valueOf(100000).multiply(EXA);
-        BigInteger collateralToSell = BigInteger.valueOf(100).multiply(EXA);
-        BigInteger minimumReceiveSicxCollateralSell = BigInteger.valueOf(10000).multiply(EXA);
-        BigInteger expectedFee = calculateFee(loan);
-        BigInteger expectedDebt = loan.add(expectedFee);
-        BigInteger timePassed = BigInteger.valueOf(20000);
-
-        takeLoanICX(account, "bnUSD", collateral, loan);
-        sm.getBlock().increase(timePassed.longValue()/2);
-        loans.invoke(mockBalanced.governance.account, "applyInterest");
-        BigInteger interest = expectedDebt.multiply(SICX_INTEREST).multiply(timePassed.multiply(MICRO_SECONDS_IN_A_SECOND))
-                .divide(YEAR_IN_MICRO_SECONDS.multiply(POINTS));
-        BigInteger rate = EXA.divide(BigInteger.TWO);
-        mockSicxBnusdPrice(rate);
-
-        BigInteger expectedBnusdRepaidForSicx = collateralToSell.multiply(BigInteger.TWO);
-        mockSwap(sicx, bnusd, collateralToSell, expectedBnusdRepaidForSicx);
-
-        // Act
-        loans.invoke(account, "sellCollateral", collateralToSell, "sICX", minimumReceiveSicxCollateralSell);
-
-        //  Assert
-        assertTrue(interest.compareTo(EXA) > 0);
-        BigInteger debt = getUserDebt(account, "sICX");
-        verifyPosition(account.getAddress(), collateral.subtract(collateralToSell),
-            debt, "sICX");
-        assertRoundedEquals(expectedDebt.subtract(expectedBnusdRepaidForSicx).add(interest), debt);
-    }
-
-    @Test
     void claimInterest() {
         // Arrange
         Account account = sm.createAccount();

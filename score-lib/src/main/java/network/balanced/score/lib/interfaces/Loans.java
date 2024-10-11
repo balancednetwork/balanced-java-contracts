@@ -92,9 +92,6 @@ public interface Loans extends Name, AddressManager, Version, XTokenReceiver, Fl
     void withdrawAndUnstake(BigInteger _value);
 
     @External
-    void sellCollateral(BigInteger collateralAmountToSell, String collateralSymbol, BigInteger minimumDebtRepaid);
-
-    @External
     void withdrawCollateral(BigInteger _value, @Optional String _collateralSymbol);
 
     @External
