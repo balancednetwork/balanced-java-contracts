@@ -60,6 +60,9 @@ public class SpokeTokenImpl implements SpokeToken {
             this.symbol.set(ensureNotEmpty(_symbolName));
             this.decimals.set(_decimals);
         }
+        if (this.symbol.get().equals("XML")) {
+            this.symbol.set("XLM");
+        }
     }
 
     @EventLog(indexed = 3)

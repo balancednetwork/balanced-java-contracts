@@ -19,7 +19,7 @@ package network.balanced.score.lib.utils;
 public class Versions {
     public final static String BALN = "v1.0.2";
     public final static String DIVIDENDS = "v1.0.0";
-    public final static String LOANS = "v1.2.0";
+    public final static String LOANS = "v1.2.0.1";
     public final static String RESERVE = "v1.0.0";
     public final static String SICX = "v1.0.1";
     public final static String STAKING = "v1.0.1";
@@ -38,7 +38,7 @@ public class Versions {
     public final static String BOOSTED_BALN = "v1.1.0";
     public final static String BRIBING = "v1.0.1";
     public final static String BALANCED_OTC = "v1.0.0";
-    public final static String BALANCED_ASSETS = "v1.0.0";
+    public final static String BALANCED_ASSETS = "v1.0.0.1";
     public final static String BALANCED_ASSET_MANAGER = "v1.0.6";
     public final static String XCALL_MANAGER = "v1.0.2";
     public final static String BURNER = "v1.0.0";

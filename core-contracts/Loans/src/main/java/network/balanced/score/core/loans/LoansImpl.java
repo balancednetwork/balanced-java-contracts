@@ -30,6 +30,7 @@ import network.balanced.score.lib.interfaces.Loans;
 import network.balanced.score.lib.interfaces.LoansXCall;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.structs.RewardsDataEntry;
+import network.balanced.score.lib.utils.ArrayDBUtils;
 import network.balanced.score.lib.utils.BalancedFloorLimits;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.FloorLimited;
@@ -85,6 +86,17 @@ public class LoansImpl extends FloorLimited implements Loans {
             Context.revert("Can't Update same version of code");
         }
         currentVersion.set(Versions.LOANS);
+
+        String symbol = "XLM";
+        String badSymbol = "XML";
+        String xlm =  CollateralDB.symbolMap.get(badSymbol);
+        Context.require(0 == DebtDB.getBorrowers(badSymbol).size());
+        Context.require(xlm.equals("cx518f64edcd35db9044a2de63fdc10abfd5f7d611"));
+        CollateralDB.symbolMap.set(symbol, xlm);
+        CollateralDB.symbolMap.set(badSymbol, null);
+        CollateralDB.addressMap.set(xlm, symbol);
+        ArrayDBUtils.removeFromArraydb(badSymbol, CollateralDB.collateralList);
+        CollateralDB.collateralList.add(symbol);
     }
 
     @External
