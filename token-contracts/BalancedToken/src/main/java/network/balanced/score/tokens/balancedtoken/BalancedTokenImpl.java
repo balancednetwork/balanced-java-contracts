@@ -17,7 +17,7 @@
 package network.balanced.score.tokens.balancedtoken;
 
 import network.balanced.score.lib.interfaces.BalancedToken;
-import network.balanced.score.lib.tokens.IRC2Burnable;
+import network.balanced.score.lib.tokens.HubTokenImpl;
 import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.Versions;
 import score.*;
@@ -28,53 +28,21 @@ import score.annotation.Optional;
 import java.math.BigInteger;
 import java.util.Map;
 
+import foundation.icon.xcall.NetworkAddress;
+
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static network.balanced.score.lib.utils.Math.pow;
 import static network.balanced.score.tokens.balancedtoken.Constants.*;
+import static network.balanced.score.tokens.balancedtoken.BalancedTokenVariables.*;
 
-public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
+public class BalancedTokenImpl extends HubTokenImpl implements BalancedToken {
 
-    private final VarDB<Address> dexScore = Context.newVarDB(DEX_SCORE, Address.class);
-    private final VarDB<Address> bnusdScore = Context.newVarDB(BNUSD_SCORE, Address.class);
-    private final VarDB<Address> governance = Context.newVarDB(GOVERNANCE, Address.class);
-    private final VarDB<Address> oracle = Context.newVarDB(ORACLE, Address.class);
-
-    private final VarDB<String> oracleName = Context.newVarDB(ORACLE_NAME, String.class);
-    private final VarDB<BigInteger> priceUpdateTime = Context.newVarDB(PRICE_UPDATE_TIME, BigInteger.class);
-    private final VarDB<BigInteger> lastPrice = Context.newVarDB(LAST_PRICE, BigInteger.class);
-    private final VarDB<BigInteger> minInterval = Context.newVarDB(MIN_INTERVAL, BigInteger.class);
-
-    private final VarDB<Boolean> stakingEnabled = Context.newVarDB(STAKING_ENABLED, Boolean.class);
-    private final BranchDB<Address, DictDB<Integer, BigInteger>> stakedBalances = Context.newBranchDB(STAKED_BALANCES
-            , BigInteger.class);
-    private final VarDB<BigInteger> minimumStake = Context.newVarDB(MINIMUM_STAKE, BigInteger.class);
-    private final VarDB<BigInteger> unstakingPeriod = Context.newVarDB(UNSTAKING_PERIOD, BigInteger.class);
-    private final VarDB<BigInteger> totalStakedBalance = Context.newVarDB(TOTAL_STAKED_BALANCE, BigInteger.class);
-
-    private final VarDB<Address> dividendsScore = Context.newVarDB(DIVIDENDS_SCORE, Address.class);
-    private final VarDB<BigInteger> timeOffset = Context.newVarDB(TIME_OFFSET, BigInteger.class);
-
-    // [address][snapshot_id]["ids" || "amount"]
-    private final BranchDB<Address, BranchDB<Integer, DictDB<String, BigInteger>>> stakeSnapshots =
-            Context.newBranchDB(STAKE_SNAPSHOTS, BigInteger.class);
-    // [address] = total_number_of_snapshots_taken
-    private final DictDB<Address, Integer> totalSnapshots = Context.newDictDB(TOTAL_SNAPSHOTS, Integer.class);
-
-    // [snapshot_id]["ids" || "amount"]
-    private final BranchDB<Integer, DictDB<String, BigInteger>> totalStakedSnapshot =
-            Context.newBranchDB(TOTAL_STAKED_SNAPSHOT, BigInteger.class);
-    private final VarDB<Integer> totalStakedSnapshotCount = Context.newVarDB(TOTAL_STAKED_SNAPSHOT_COUNT,
-            Integer.class);
-
-    private final VarDB<Boolean> enableSnapshots = Context.newVarDB(ENABLE_SNAPSHOTS, Boolean.class);
-    private final VarDB<Address> admin = Context.newVarDB(ADMIN, Address.class);
-
-    private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
+    protected final VarDB<Address> minter = Context.newVarDB(MINTER, Address.class);
 
     public BalancedTokenImpl(Address _governance) {
-        super(TOKEN_NAME, SYMBOL_NAME, null);
+        super("", TOKEN_NAME, SYMBOL_NAME, null);
 
         if (governance.get() != null && admin.get() == null) {
             admin.set(_governance);
@@ -82,24 +50,26 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
 
         if (governance.get() == null) {
             BalancedAddressManager.setGovernance(_governance);
-            this.governance.set(_governance);
-            this.stakingEnabled.set(true);
-            this.oracleName.set(DEFAULT_ORACLE_NAME);
-            this.lastPrice.set(INITIAL_PRICE_ESTIMATE);
-            this.minInterval.set(MIN_UPDATE_TIME);
-            this.minimumStake.set(MINIMUM_STAKE_AMOUNT);
-            this.unstakingPeriod.set(DEFAULT_UNSTAKING_PERIOD);
-            this.enableSnapshots.set(true);
+            governance.set(_governance);
+            stakingEnabled.set(true);
+            oracleName.set(DEFAULT_ORACLE_NAME);
+            lastPrice.set(INITIAL_PRICE_ESTIMATE);
+            minInterval.set(MIN_UPDATE_TIME);
+            minimumStake.set(MINIMUM_STAKE_AMOUNT);
+            unstakingPeriod.set(DEFAULT_UNSTAKING_PERIOD);
+            enableSnapshots.set(true);
         }
-        if (this.currentVersion.getOrDefault("").equals("v1.0.1") ) {
-            DictDB<Integer, BigInteger> stakingDetail = this.stakedBalances.at(BalancedAddressManager.getDaofund());
-            stakingDetail.set(Status.AVAILABLE.code, balanceOf(BalancedAddressManager.getDaofund()));
+        if (currentVersion.getOrDefault("").equals("v1.0.1") ) {
+        DictDB<Integer, BigInteger> stakingDetail =
+        stakedBalances.at(BalancedAddressManager.getDaofund());
+        stakingDetail.set(Status.AVAILABLE.code,
+        balanceOf(BalancedAddressManager.getDaofund()));
+    }
+        NATIVE_NID = (String)Context.call(BalancedAddressManager.getXCall(), "getNetworkId");
+        if (currentVersion.getOrDefault("").equals(Versions.BALN)) {
+        Context.revert("Can't Update same version of code");
         }
-
-        if (this.currentVersion.getOrDefault("").equals(Versions.BALN)) {
-            Context.revert("Can't Update same version of code");
-        }
-        this.currentVersion.set(Versions.BALN);
+        currentVersion.set(Versions.BALN);
     }
 
     @External(readonly = true)
@@ -119,12 +89,12 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
     @External
     public void setGovernance(Address _address) {
         onlyOwner();
-        this.governance.set(_address);
+        governance.set(_address);
     }
 
     @External(readonly = true)
     public Address getGovernance() {
-        return this.governance.get();
+        return governance.get();
     }
 
     @External
@@ -142,70 +112,70 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
     public void setBnusd(Address _address) {
         only(governance);
         isContract(_address);
-        this.bnusdScore.set(_address);
+        bnusdScore.set(_address);
     }
 
     @External(readonly = true)
     public Address getBnusd() {
-        return this.bnusdScore.get();
+        return bnusdScore.get();
     }
 
     @External
     public void setOracle(Address _address) {
         only(governance);
         isContract(_address);
-        this.oracle.set(_address);
+        oracle.set(_address);
     }
 
     @External(readonly = true)
     public Address getOracle() {
-        return this.oracle.get();
+        return oracle.get();
     }
 
     @External
     public void setDex(Address _address) {
         only(governance);
         isContract(_address);
-        this.dexScore.set(_address);
+        dexScore.set(_address);
     }
 
     @External(readonly = true)
     public Address getDex() {
-        return this.dexScore.get();
+        return dexScore.get();
     }
 
     @External
     public void setDividends(Address _address) {
         only(governance);
         isContract(_address);
-        this.dividendsScore.set(_address);
+        dividendsScore.set(_address);
     }
 
     @External(readonly = true)
     public Address getDividends() {
-        return this.dividendsScore.get();
+        return dividendsScore.get();
     }
 
     @External
     public void setOracleName(String _name) {
         only(governance);
-        this.oracleName.set(_name);
+        oracleName.set(_name);
     }
 
     @External(readonly = true)
     public String getOracleName() {
-        return this.oracleName.get();
+        return oracleName.get();
     }
 
     @External
     public void setMinInterval(BigInteger _interval) {
         only(governance);
-        this.minInterval.set(_interval);
+        minInterval.set(_interval);
     }
 
     @External(readonly = true)
     public BigInteger getMinInterval() {
-        return this.minInterval.get();
+        return minInterval.get();
     }
 
     @External(readonly = true)
@@ -214,18 +184,19 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
     }
 
     /**
-     * Returns the price of the asset in loop. Makes a call to the oracle if the last recorded price is not recent
+     * Returns the price of the asset in loop. Makes a call to the oracle if the
+     * last recorded price is not recent
      * enough.
      **/
     @External
     public BigInteger priceInLoop() {
         BigInteger currentTime = BigInteger.valueOf(Context.getBlockTimestamp());
-        BigInteger lastPriceUpdateTime = this.priceUpdateTime.getOrDefault(BigInteger.ZERO);
-        BigInteger interval = this.minInterval.getOrDefault(BigInteger.ZERO);
+        BigInteger lastPriceUpdateTime = priceUpdateTime.getOrDefault(BigInteger.ZERO);
+        BigInteger interval = minInterval.getOrDefault(BigInteger.ZERO);
         if (currentTime.subtract(lastPriceUpdateTime).compareTo(interval) > 0) {
             this.updateAssetValue();
         }
-        return this.lastPrice.get();
+        return lastPrice.get();
     }
 
     /**
@@ -234,12 +205,12 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
     @SuppressWarnings("unchecked")
     @External(readonly = true)
     public BigInteger lastPriceInLoop() {
-        Address dexScore = this.dexScore.get();
-        Address oracleAddress = this.oracle.get();
+        Address dexScore = BalancedTokenVariables.dexScore.get();
+        Address oracleAddress = oracle.get();
 
         BigInteger balnPriceInUsd = Context.call(BigInteger.class, dexScore, "getBalnPrice");
-        Map<String, BigInteger> priceData = (Map<String, BigInteger>) Context.call(oracleAddress, "get_reference_data"
-                , "USD", "ICX");
+        Map<String, BigInteger> priceData = (Map<String, BigInteger>) Context.call(oracleAddress, "get_reference_data",
+                "USD", "ICX");
 
         return balnPriceInUsd.multiply(priceData.get("rate")).divide(EXA);
     }
@@ -253,9 +224,9 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
 
         BigInteger newPrice = lastPriceInLoop();
 
-        this.lastPrice.set(newPrice);
-        this.priceUpdateTime.set(BigInteger.valueOf(Context.getBlockTimestamp()));
-        this.OraclePrice(base + quote, this.oracleName.get(), dexScore.get(), newPrice);
+        lastPrice.set(newPrice);
+        priceUpdateTime.set(BigInteger.valueOf(Context.getBlockTimestamp()));
+        this.OraclePrice(base + quote, oracleName.get(), dexScore.get(), newPrice);
     }
 
     @External
@@ -264,12 +235,12 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
         Context.require(_amount.compareTo(BigInteger.ZERO) >= 0, TAG + ": Amount cannot be less than zero.");
 
         BigInteger totalAmount = _amount.multiply(pow(BigInteger.TEN, decimals().intValue()));
-        this.minimumStake.set(totalAmount);
+        minimumStake.set(totalAmount);
     }
 
     @External(readonly = true)
     public BigInteger getMinimumStake() {
-        return this.minimumStake.getOrDefault(BigInteger.ZERO);
+        return minimumStake.getOrDefault(BigInteger.ZERO);
     }
 
     @External
@@ -278,64 +249,66 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
         Context.require(_time.compareTo(BigInteger.ZERO) >= 0, TAG + ": Time cannot be negative.");
 
         BigInteger totalTime = _time.multiply(MICRO_SECONDS_IN_A_DAY);
-        this.unstakingPeriod.set(totalTime);
+        unstakingPeriod.set(totalTime);
     }
 
     @External(readonly = true)
     public BigInteger getUnstakingPeriod() {
-        BigInteger timeInMicroseconds = this.unstakingPeriod.getOrDefault(BigInteger.ZERO);
+        BigInteger timeInMicroseconds = unstakingPeriod.getOrDefault(BigInteger.ZERO);
         return timeInMicroseconds.divide(MICRO_SECONDS_IN_A_DAY);
     }
 
     @External
     public void toggleStakingEnabled() {
         only(governance);
-        this.stakingEnabled.set(!this.stakingEnabled.getOrDefault(false));
+        stakingEnabled.set(!stakingEnabled.getOrDefault(false));
     }
 
     @External(readonly = true)
     public boolean getStakingEnabled() {
-        return this.stakingEnabled.getOrDefault(false);
+        return stakingEnabled.getOrDefault(false);
     }
 
     @External
     public void toggleEnableSnapshot() {
         onlyOwner();
-        this.enableSnapshots.set(!this.enableSnapshots.getOrDefault(false));
+        enableSnapshots.set(!enableSnapshots.getOrDefault(false));
     }
 
     @External(readonly = true)
     public boolean getSnapshotEnabled() {
-        return this.enableSnapshots.getOrDefault(false);
+        return enableSnapshots.getOrDefault(false);
     }
 
     @External
     public void setTimeOffset() {
         onlyOwner();
 
-        Address dexScore = this.dexScore.get();
+        Address dexScore = BalancedTokenVariables.dexScore.get();
         Context.require(dexScore != null, TAG + ": Dex score address must be set first");
 
         BigInteger deltaTime = Context.call(BigInteger.class, dexScore, "getTimeOffset");
-        this.timeOffset.set(deltaTime);
+        timeOffset.set(deltaTime);
     }
 
     @External(readonly = true)
     public BigInteger getTimeOffset() {
-        return this.timeOffset.getOrDefault(BigInteger.ZERO);
+        return timeOffset.getOrDefault(BigInteger.ZERO);
     }
 
     /**
-     * Returns the current day (floored). Used for snapshotting, paying rewards, and paying dividends.
+     * Returns the current day (floored). Used for snapshotting, paying rewards, and
+     * paying dividends.
      **/
     @External(readonly = true)
     public BigInteger getDay() {
-        return BigInteger.valueOf(Context.getBlockTimestamp()).subtract(this.timeOffset.getOrDefault(BigInteger.ZERO)).divide(MICRO_SECONDS_IN_A_DAY);
+        return BigInteger.valueOf(Context.getBlockTimestamp()).subtract(timeOffset.getOrDefault(BigInteger.ZERO))
+                .divide(MICRO_SECONDS_IN_A_DAY);
     }
 
     @External(readonly = true)
     public Map<String, BigInteger> detailsBalanceOf(Address _owner) {
-        DictDB<Integer, BigInteger> stakingDetail = this.stakedBalances.at(_owner);
+        DictDB<Integer, BigInteger> stakingDetail = stakedBalances.at(_owner);
         BigInteger unstakingTime = stakingDetail.getOrDefault(Status.UNSTAKING_PERIOD.code, BigInteger.ZERO);
         BigInteger currUnstaked = stakingDetail.getOrDefault(Status.UNSTAKING.code, BigInteger.ZERO);
         BigInteger availableBalance = stakingDetail.getOrDefault(Status.AVAILABLE.code, BigInteger.ZERO);
@@ -345,8 +318,8 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
             currUnstaked = BigInteger.ZERO;
         }
 
-        BigInteger unstakingAmount =
-                stakingDetail.getOrDefault(Status.UNSTAKING.code, BigInteger.ZERO).subtract(currUnstaked);
+        BigInteger unstakingAmount = stakingDetail.getOrDefault(Status.UNSTAKING.code, BigInteger.ZERO)
+                .subtract(currUnstaked);
 
         if (unstakingAmount.equals(BigInteger.ZERO)) {
             unstakingTime = BigInteger.ZERO;
@@ -361,12 +334,11 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
                 "Available balance", availableBalance.add(currUnstaked),
                 "Staked balance", stakedBalance,
                 "Unstaking balance", unstakingAmount,
-                "Unstaking time (in microseconds)", unstakingTime
-        );
+                "Unstaking time (in microseconds)", unstakingTime);
     }
 
     private boolean firstTime(Address from) {
-        DictDB<Integer, BigInteger> stakingDetail = this.stakedBalances.at(from);
+        DictDB<Integer, BigInteger> stakingDetail = stakedBalances.at(from);
         return (stakingDetail.getOrDefault(Status.AVAILABLE.code, BigInteger.ZERO).equals(BigInteger.ZERO)
                 && stakingDetail.getOrDefault(Status.STAKED.code, BigInteger.ZERO).equals(BigInteger.ZERO)
                 && stakingDetail.getOrDefault(Status.UNSTAKING.code, BigInteger.ZERO).equals(BigInteger.ZERO)
@@ -381,7 +353,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
 
     @External(readonly = true)
     public BigInteger stakedBalanceOf(Address _owner) {
-        return this.stakedBalances.at(_owner).getOrDefault(Status.STAKED.code, BigInteger.ZERO);
+        return stakedBalances.at(_owner).getOrDefault(Status.STAKED.code, BigInteger.ZERO);
     }
 
     @External(readonly = true)
@@ -392,13 +364,13 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
 
     @External(readonly = true)
     public BigInteger totalStakedBalance() {
-        return this.totalStakedBalance.getOrDefault(BigInteger.ZERO);
+        return totalStakedBalance.getOrDefault(BigInteger.ZERO);
     }
 
     private void checkFirstTime(Address from) {
         // If first time copy the balance to available staked balances
         if (this.firstTime(from)) {
-            this.stakedBalances.at(from).set(Status.AVAILABLE.code, this.balanceOf(from));
+            stakedBalances.at(from).set(Status.AVAILABLE.code, this.balanceOf(from));
         }
     }
 
@@ -407,7 +379,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
     }
 
     private void makeAvailable(Address from) {
-        DictDB<Integer, BigInteger> stakingDetail = this.stakedBalances.at(from);
+        DictDB<Integer, BigInteger> stakingDetail = stakedBalances.at(from);
 
         BigInteger unstakingTime = stakingDetail.getOrDefault(Status.UNSTAKING_PERIOD.code, BigInteger.ZERO);
         if (unstakingTime.compareTo(BigInteger.valueOf(Context.getBlockTimestamp())) <= 0) {
@@ -426,7 +398,8 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
 
         Context.require(_value.compareTo(BigInteger.ZERO) >= 0, TAG + ": Staked BALN value can't be less than zero");
         Context.require(_value.compareTo(this.balanceOf(from)) <= 0, TAG + ": Out of BALN balance.");
-        if ((_value.compareTo(this.minimumStake.getOrDefault(BigInteger.ZERO)) < 0) && !(_value.equals(BigInteger.ZERO))) {
+        if ((_value.compareTo(minimumStake.getOrDefault(BigInteger.ZERO)) < 0)
+                && !(_value.equals(BigInteger.ZERO))) {
             throw new UserRevertedException(TAG + ": Staked BALN must be greater than the minimum stake amount and " +
                     "non zero");
         }
@@ -434,7 +407,7 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
         this.checkFirstTime(from);
         this.makeAvailable(from);
 
-        DictDB<Integer, BigInteger> stakingDetail = this.stakedBalances.at(from);
+        DictDB<Integer, BigInteger> stakingDetail = stakedBalances.at(from);
         BigInteger stakedAmount = stakingDetail.getOrDefault(Status.STAKED.code, BigInteger.ZERO);
 
         BigInteger oldStake = stakedAmount.add(stakingDetail.getOrDefault(Status.UNSTAKING.code, BigInteger.ZERO));
@@ -451,13 +424,13 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
 
         stakingDetail.set(Status.STAKED.code, _value);
         stakingDetail.set(Status.UNSTAKING.code, unstakeAmount);
-        stakingDetail.set(Status.UNSTAKING_PERIOD.code, BigInteger.valueOf(Context.getBlockTimestamp()).
-                add(this.unstakingPeriod.getOrDefault(BigInteger.ZERO)));
+        stakingDetail.set(Status.UNSTAKING_PERIOD.code, BigInteger.valueOf(Context.getBlockTimestamp())
+                .add(unstakingPeriod.getOrDefault(BigInteger.ZERO)));
 
-        BigInteger newTotal = this.totalStakedBalance.getOrDefault(BigInteger.ZERO).add(stakeIncrement);
-        this.totalStakedBalance.set(newTotal);
+        BigInteger newTotal = totalStakedBalance.getOrDefault(BigInteger.ZERO).add(stakeIncrement);
+        totalStakedBalance.set(newTotal);
 
-        if (this.enableSnapshots.getOrDefault(false)) {
+        if (enableSnapshots.getOrDefault(false)) {
             this.updateSnapshotForAddress(Context.getCaller(), _value);
             this.updateTotalStakedSnapshot(newTotal);
         }
@@ -474,16 +447,16 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
         this.makeAvailable(from);
         this.makeAvailable(_to);
 
-        DictDB<Integer, BigInteger> stakingDetailOfSender = this.stakedBalances.at(from);
+        DictDB<Integer, BigInteger> stakingDetailOfSender = stakedBalances.at(from);
         BigInteger availableAmountOfSender = stakingDetailOfSender.getOrDefault(Status.AVAILABLE.code, BigInteger.ZERO);
 
         Context.require(availableAmountOfSender.compareTo(_value) >= 0, TAG + ": Out of available balance. Please " +
                 "check staked and total balance.");
 
         stakingDetailOfSender.set(Status.AVAILABLE.code, availableAmountOfSender.subtract(_value));
-        DictDB<Integer, BigInteger> stakingDetailOfReceiver = this.stakedBalances.at(_to);
-        stakingDetailOfReceiver.set(Status.AVAILABLE.code, stakingDetailOfReceiver.getOrDefault(Status.AVAILABLE.code
-                , BigInteger.ZERO).add(_value));
+        DictDB<Integer, BigInteger> stakingDetailOfReceiver = stakedBalances.at(_to);
+        stakingDetailOfReceiver.set(Status.AVAILABLE.code,
+                stakingDetailOfReceiver.getOrDefault(Status.AVAILABLE.code, BigInteger.ZERO).add(_value));
 
         super.transfer(_to, _value, _data);
     }
@@ -498,16 +471,16 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
         this.makeAvailable(from);
         this.makeAvailable(_to);
 
-        DictDB<Integer, BigInteger> stakingDetailOfSender = this.stakedBalances.at(from);
+        DictDB<Integer, BigInteger> stakingDetailOfSender = stakedBalances.at(from);
         BigInteger availableAmountOfSender = stakingDetailOfSender.getOrDefault(Status.AVAILABLE.code, BigInteger.ZERO);
 
         Context.require(availableAmountOfSender.compareTo(_value) >= 0, TAG + ": Out of available balance. Please " +
                 "check staked and total balance.");
 
         stakingDetailOfSender.set(Status.AVAILABLE.code, availableAmountOfSender.subtract(_value));
-        DictDB<Integer, BigInteger> stakingDetailOfReceiver = this.stakedBalances.at(_to);
-        stakingDetailOfReceiver.set(Status.AVAILABLE.code, stakingDetailOfReceiver.getOrDefault(Status.AVAILABLE.code
-                , BigInteger.ZERO).add(_value));
+        DictDB<Integer, BigInteger> stakingDetailOfReceiver = stakedBalances.at(_to);
+        stakingDetailOfReceiver.set(Status.AVAILABLE.code,
+                stakingDetailOfReceiver.getOrDefault(Status.AVAILABLE.code, BigInteger.ZERO).add(_value));
 
         super.transfer(_to, _value, _data);
     }
@@ -525,11 +498,11 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
         checkStatus();
         this.checkFirstTime(_account);
         this.makeAvailable(_account);
-        DictDB<Integer, BigInteger> stakingDetailOfReceiver = this.stakedBalances.at(_account);
-        stakingDetailOfReceiver.set(Status.AVAILABLE.code, stakingDetailOfReceiver.getOrDefault(Status.AVAILABLE.code
-                , BigInteger.ZERO).add(_amount));
+        DictDB<Integer, BigInteger> stakingDetailOfReceiver = stakedBalances.at(_account);
+        stakingDetailOfReceiver.set(Status.AVAILABLE.code,
+                stakingDetailOfReceiver.getOrDefault(Status.AVAILABLE.code, BigInteger.ZERO).add(_amount));
 
-        super.mintTo(_account, _amount, _data);
+        mintWithTokenFallback(_account, _amount, _data);
     }
 
     @Override
@@ -540,19 +513,39 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
     }
 
     @Override
+    public BigInteger getHopFee(String net) {
+        if (!canWithdraw(net)) {
+            return BigInteger.ONE.negate();
+        }
+        return Context.call(BigInteger.class, BalancedAddressManager.getDaofund(), "claimXCallFee", net, false);
+    }
+
+    private boolean canWithdraw(String net) {
+        return Context.call(Boolean.class, BalancedAddressManager.getDaofund(), "getXCallFeePermission", Context.getAddress(), net);
+    }
+
+    @Override
     @External
     public void burnFrom(Address _account, BigInteger _amount) {
         this.checkFirstTime(_account);
         this.makeAvailable(_account);
 
-        DictDB<Integer, BigInteger> stakingDetail = this.stakedBalances.at(_account);
+        DictDB<Integer, BigInteger> stakingDetail = stakedBalances.at(_account);
         BigInteger availableBalance = stakingDetail.getOrDefault(Status.AVAILABLE.code, BigInteger.ZERO);
 
         Context.require(availableBalance.compareTo(_amount) >= 0, TAG + ": Out of available balance. Please check " +
                 "staked and total balance.");
         stakingDetail.set(Status.AVAILABLE.code, availableBalance.subtract(_amount));
 
-        super.burnFrom(_account, _amount);
+        super.burn(new NetworkAddress(NATIVE_NID, _account), _amount);
+    }
+
+    protected void mintWithTokenFallback(Address _to, BigInteger _amount, byte[] _data) {
+        mint(new NetworkAddress(NATIVE_NID, _to), _amount);
+        byte[] data = (_data == null) ? new byte[0] : _data;
+        if (_to.isContract()) {
+            Context.call(_to, "tokenFallback", new Address(new byte[Address.LENGTH]), _amount, data);
+        }
     }
 
     // ----------------------------------------------------------
@@ -560,40 +553,40 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
     // ----------------------------------------------------------
 
     private void updateSnapshotForAddress(Address account, BigInteger amount) {
-        if (this.timeOffset.getOrDefault(BigInteger.ZERO).equals(BigInteger.ZERO)) {
+        if (timeOffset.getOrDefault(BigInteger.ZERO).equals(BigInteger.ZERO)) {
             this.setTimeOffset();
         }
 
         BigInteger currentId = this.getDay();
-        int totalSnapshotsTaken = this.totalSnapshots.getOrDefault(account, 0);
+        int totalSnapshotsTaken = totalSnapshots.getOrDefault(account, 0);
 
-        BranchDB<Integer, DictDB<String, BigInteger>> stakeSnapshots = this.stakeSnapshots.at(account);
+        BranchDB<Integer, DictDB<String, BigInteger>> stakeSnapshots = BalancedTokenVariables.stakeSnapshots.at(account);
         if (totalSnapshotsTaken > 0 && stakeSnapshots.at(totalSnapshotsTaken - 1).getOrDefault(IDS, BigInteger.ZERO)
                 .equals(currentId)) {
             stakeSnapshots.at(totalSnapshotsTaken - 1).set(AMOUNT, amount);
         } else {
             stakeSnapshots.at(totalSnapshotsTaken).set(IDS, currentId);
             stakeSnapshots.at(totalSnapshotsTaken).set(AMOUNT, amount);
-            this.totalSnapshots.set(account, totalSnapshotsTaken + 1);
+            totalSnapshots.set(account, totalSnapshotsTaken + 1);
         }
     }
 
     private void updateTotalStakedSnapshot(BigInteger amount) {
 
-        if (this.timeOffset.getOrDefault(BigInteger.ZERO).equals(BigInteger.ZERO)) {
+        if (timeOffset.getOrDefault(BigInteger.ZERO).equals(BigInteger.ZERO)) {
             this.setTimeOffset();
         }
 
         BigInteger currentId = this.getDay();
-        int totalSnapshotsTaken = this.totalStakedSnapshotCount.getOrDefault(0);
+        int totalSnapshotsTaken = totalStakedSnapshotCount.getOrDefault(0);
 
-        if (totalSnapshotsTaken > 0 && this.totalStakedSnapshot.at(totalSnapshotsTaken - 1).getOrDefault(IDS,
+        if (totalSnapshotsTaken > 0 && totalStakedSnapshot.at(totalSnapshotsTaken - 1).getOrDefault(IDS,
                 BigInteger.ZERO).equals(currentId)) {
-            this.totalStakedSnapshot.at(totalSnapshotsTaken - 1).set(AMOUNT, amount);
+            totalStakedSnapshot.at(totalSnapshotsTaken - 1).set(AMOUNT, amount);
         } else {
-            this.totalStakedSnapshot.at(totalSnapshotsTaken).set(IDS, currentId);
-            this.totalStakedSnapshot.at(totalSnapshotsTaken).set(AMOUNT, amount);
-            this.totalStakedSnapshotCount.set(totalSnapshotsTaken + 1);
+            totalStakedSnapshot.at(totalSnapshotsTaken).set(IDS, currentId);
+            totalStakedSnapshot.at(totalSnapshotsTaken).set(AMOUNT, amount);
+            totalStakedSnapshotCount.set(totalSnapshotsTaken + 1);
         }
     }
 
@@ -604,12 +597,12 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
             Context.revert(TAG + ": Asked _day is greater than current day");
         }
 
-        int totalSnapshotsTaken = this.totalSnapshots.getOrDefault(_account, 0);
+        int totalSnapshotsTaken = totalSnapshots.getOrDefault(_account, 0);
         if (totalSnapshotsTaken == 0) {
             return BigInteger.ZERO;
         }
 
-        BranchDB<Integer, DictDB<String, BigInteger>> stakeSnapshotDetail = this.stakeSnapshots.at(_account);
+        BranchDB<Integer, DictDB<String, BigInteger>> stakeSnapshotDetail = stakeSnapshots.at(_account);
         if (stakeSnapshotDetail.at(totalSnapshotsTaken - 1).getOrDefault(IDS, BigInteger.ZERO).compareTo(_day) <= 0) {
             return stakeSnapshotDetail.at(totalSnapshotsTaken - 1).getOrDefault(AMOUNT, BigInteger.ZERO);
         }
@@ -617,8 +610,8 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
         return getSnapshotAmount(_day, totalSnapshotsTaken, stakeSnapshotDetail);
     }
 
-    private BigInteger getSnapshotAmount(BigInteger _day, int totalSnapshotsTaken, BranchDB<Integer, DictDB<String,
-            BigInteger>> stakeSnapshotDetail) {
+    private BigInteger getSnapshotAmount(BigInteger _day, int totalSnapshotsTaken,
+            BranchDB<Integer, DictDB<String, BigInteger>> stakeSnapshotDetail) {
         if (stakeSnapshotDetail.at(0).getOrDefault(IDS, BigInteger.ZERO).compareTo(_day) > 0) {
             return BigInteger.ZERO;
         }
@@ -647,17 +640,28 @@ public class BalancedTokenImpl extends IRC2Burnable implements BalancedToken {
             Context.revert(TAG + ": Asked _day is greater than current day");
         }
 
-        int totalSnapshotsTaken = this.totalStakedSnapshotCount.getOrDefault(0);
+        int totalSnapshotsTaken = totalStakedSnapshotCount.getOrDefault(0);
         if (totalSnapshotsTaken == 0) {
             return BigInteger.ZERO;
         }
 
-        BranchDB<Integer, DictDB<String, BigInteger>> totalStakedSnapshot = this.totalStakedSnapshot;
+        BranchDB<Integer, DictDB<String, BigInteger>> totalStakedSnapshot = BalancedTokenVariables.totalStakedSnapshot;
         BigInteger id = totalStakedSnapshot.at(totalSnapshotsTaken - 1).getOrDefault(IDS, BigInteger.ZERO);
         if (id.compareTo(_day) <= 0) {
             return totalStakedSnapshot.at(totalSnapshotsTaken - 1).getOrDefault(AMOUNT, BigInteger.ZERO);
         }
 
         return getSnapshotAmount(_day, totalSnapshotsTaken, totalStakedSnapshot);
+    }
+
+    @External
+    public void setMinter(Address _address) {
+        onlyOwner();
+        minter.set(_address);
+    }
+
+    @External(readonly = true)
+    public Address getMinter() {
+        return minter.get();
     }
 }

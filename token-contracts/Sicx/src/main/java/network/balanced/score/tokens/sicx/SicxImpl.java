@@ -17,22 +17,24 @@
 package network.balanced.score.tokens.sicx;
 
 import network.balanced.score.lib.interfaces.Sicx;
-import network.balanced.score.lib.tokens.IRC2Burnable;
+import network.balanced.score.lib.tokens.HubTokenImpl;
+import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.Versions;
 import score.Address;
 import score.Context;
-import score.DictDB;
 import score.VarDB;
 import score.annotation.External;
 import score.annotation.Optional;
 
 import java.math.BigInteger;
+import foundation.icon.xcall.NetworkAddress;
 
 import static network.balanced.score.lib.utils.Check.onlyOwner;
 import static network.balanced.score.lib.utils.Check.checkStatus;
+import static network.balanced.score.lib.utils.Check.only;
 
-public class SicxImpl extends IRC2Burnable implements Sicx {
+public class SicxImpl extends HubTokenImpl implements Sicx {
     private static final String TAG = "sICX";
     private static final String TOKEN_NAME = Names.SICX;
     private static final String SYMBOL_NAME = "sICX";
@@ -40,18 +42,23 @@ public class SicxImpl extends IRC2Burnable implements Sicx {
     private static final String STAKING = "staking";
     public static final String STATUS_MANAGER = "status_manager";
     private static final String VERSION = "version";
+    private final String MINTER = "admin";
 
     private static final VarDB<Address> stakingAddress = Context.newVarDB(STAKING, Address.class);
     private final VarDB<Address> statusManager = Context.newVarDB(STATUS_MANAGER, Address.class);
 
     private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
+    protected final VarDB<Address> minter = Context.newVarDB(MINTER, Address.class);
 
-    public SicxImpl(Address _admin) {
-        super(TOKEN_NAME, SYMBOL_NAME, DECIMALS);
+    public SicxImpl(Address _admin, Address _governance) {
+        super("",TOKEN_NAME, SYMBOL_NAME, DECIMALS);
         if (stakingAddress.get() == null) {
             stakingAddress.set(_admin);
         }
-
+        if (BalancedAddressManager.getAddressByName(Names.GOVERNANCE) == null) {
+            BalancedAddressManager.setGovernance(_governance);
+        }
+        NATIVE_NID = (String)Context.call(BalancedAddressManager.getXCall(), "getNetworkId");
         if (currentVersion.getOrDefault("").equals(Versions.SICX)) {
             Context.revert("Can't Update same version of code");
         }
@@ -106,7 +113,7 @@ public class SicxImpl extends IRC2Burnable implements Sicx {
         if (!_to.equals(stakingAddress.get())) {
             Context.call(stakingAddress.get(), "transferUpdateDelegations", Context.getCaller(), _to, _value);
         }
-        transfer(_from, _to, _value, _data);
+        super.transfer(_to, _value, _data);
     }
 
     @Override
@@ -116,7 +123,60 @@ public class SicxImpl extends IRC2Burnable implements Sicx {
         if (!_to.equals(stakingAddress.get())) {
             Context.call(stakingAddress.get(), "transferUpdateDelegations", Context.getCaller(), _to, _value);
         }
-        transfer(Context.getCaller(), _to, _value, _data);
+        super.transfer(_to, _value, _data);
+    }
+
+    @Override
+    public BigInteger getHopFee(String net) {
+        if (!canWithdraw(net)) {
+            return BigInteger.ONE.negate();
+        }
+        return Context.call(BigInteger.class, BalancedAddressManager.getDaofund(), "claimXCallFee", net, false);
+    }
+
+    private boolean canWithdraw(String net) {
+        return Context.call(Boolean.class, BalancedAddressManager.getDaofund(), "getXCallFeePermission", Context.getAddress(), net);
+    }
+
+    @External
+    public void burn(BigInteger _amount) {
+        burnFrom(Context.getCaller(), _amount);
+    }
+
+    @External
+    public void burnFrom(Address _account, BigInteger _amount) {
+        only(minter);
+        super.burn(new NetworkAddress(NATIVE_NID, _account), _amount);
+    }
+
+    @External
+    public void setMinter(Address _address) {
+        onlyOwner();
+        minter.set(_address);
+    }
+
+    @External(readonly = true)
+    public Address getMinter() {
+        return minter.get();
+    }
+
+    @External
+    public void mint(BigInteger _amount, @Optional byte[] _data) {
+        mintTo(Context.getCaller(), _amount, _data);
+    }
+
+    @External
+    public void mintTo(Address _account, BigInteger _amount, @Optional byte[] _data) {
+        only(minter);
+        mintWithTokenFallback(_account, _amount, _data);
+    }
+
+    protected void mintWithTokenFallback(Address _to, BigInteger _amount, byte[] _data) {
+        mint(new NetworkAddress(NATIVE_NID, _to), _amount);
+        byte[] data = (_data == null) ? new byte[0] : _data;
+        if (_to.isContract()) {
+            Context.call(_to, "tokenFallback", new Address(new byte[Address.LENGTH]), _amount, data);
+        }
     }
 
 }

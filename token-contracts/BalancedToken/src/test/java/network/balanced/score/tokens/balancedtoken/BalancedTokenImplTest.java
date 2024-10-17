@@ -20,6 +20,10 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
+
+import network.balanced.score.lib.test.mock.MockBalanced;
+import network.balanced.score.lib.utils.Names;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,6 +44,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class BalancedTokenImplTest extends TestBase {
     protected static final Long DAY = 43200L;
@@ -52,7 +57,6 @@ class BalancedTokenImplTest extends TestBase {
     private Score mockDexScore;
 
     private final Account addressProvider = sm.createAccount();
-    private final Account governance = Account.newScoreAccount(scoreCount++);
     private final Account adminAccount = sm.createAccount();
 
     private final Account dexScore = Account.newScoreAccount(scoreCount++);
@@ -62,11 +66,20 @@ class BalancedTokenImplTest extends TestBase {
 
     private final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
 
+    private static MockBalanced mockBalanced;
+    private static Account governanceScore;
+    private static Account xCall;
+
     @BeforeEach
     void deploy() throws Exception {
-        contextMock.when(() -> Context.call(eq(governance.getAddress()), eq("checkStatus"), any(String.class))).thenReturn(null);
-
-        balancedToken = sm.deploy(owner, BalancedTokenImpl.class, governance.getAddress());
+        mockBalanced = new MockBalanced(sm, owner);
+        governanceScore = mockBalanced.governance.account;
+        xCall = mockBalanced.xCall.account;
+        contextMock.when(() -> Context.call(eq(governanceScore.getAddress()), eq("checkStatus"), any(String.class)))
+                .thenReturn(null);
+        contextMock.when(() -> Context.call(eq(xCall.getAddress()), eq("getNetworkId"), any(String.class)))
+                .thenReturn("0x1.icon");
+        balancedToken = sm.deploy(owner, BalancedTokenImpl.class, governanceScore.getAddress());
         mockDexScore = sm.deploy(owner, MockDexScore.class);
 
         balancedTokenSpy = (BalancedTokenImpl) spy(balancedToken.getInstance());
@@ -74,15 +87,16 @@ class BalancedTokenImplTest extends TestBase {
     }
 
     private void setup() {
-        balancedToken.invoke(governance, "setAdmin", adminAccount.getAddress());
-        balancedToken.invoke(governance, "setBnusd", bnusdScore.getAddress());
-        balancedToken.invoke(governance, "setOracle", oracleScore.getAddress());
-        balancedToken.invoke(governance, "setDex", dexScore.getAddress());
-        balancedToken.invoke(governance, "setDividends", dividendsScore.getAddress());
+        balancedToken.invoke(governanceScore, "setAdmin", adminAccount.getAddress());
+        balancedToken.invoke(governanceScore, "setBnusd", bnusdScore.getAddress());
+        balancedToken.invoke(governanceScore, "setOracle", oracleScore.getAddress());
+        balancedToken.invoke(governanceScore, "setDex", dexScore.getAddress());
+        balancedToken.invoke(governanceScore, "setDividends", dividendsScore.getAddress());
     }
 
     private void mockUpdateBalnStake(Address from, BigInteger oldStake, BigInteger newTotal) {
-        contextMock.when(() -> Context.call(dividendsScore.getAddress(), "updateBalnStake", from, oldStake, newTotal)).thenReturn(null);
+        contextMock.when(() -> Context.call(dividendsScore.getAddress(), "updateBalnStake", from, oldStake, newTotal))
+                .thenReturn(null);
     }
 
     @Test
@@ -92,35 +106,37 @@ class BalancedTokenImplTest extends TestBase {
 
     @Test
     void setAndGetGovernance() {
-        testGovernance(balancedToken, governance, owner);
+        testGovernance(balancedToken, governanceScore, owner);
     }
 
     @Test
     void setAndGetAdmin() {
-        testAdmin(balancedToken, governance, adminAccount);
+        testAdmin(balancedToken, governanceScore, adminAccount);
     }
 
     @Test
     void setAndGetBnusd() {
-        testContractSettersAndGetters(balancedToken, governance, governance, "setBnusd", bnusdScore.getAddress(),
+        testContractSettersAndGetters(balancedToken, governanceScore, governanceScore, "setBnusd",
+                bnusdScore.getAddress(),
                 "getBnusd");
     }
 
     @Test
     void setAndGetOracle() {
-        testContractSettersAndGetters(balancedToken, governance, governance, "setOracle", oracleScore.getAddress(),
+        testContractSettersAndGetters(balancedToken, governanceScore, governanceScore, "setOracle",
+                oracleScore.getAddress(),
                 "getOracle");
     }
 
     @Test
     void setAndGetDex() {
-        testContractSettersAndGetters(balancedToken, governance, governance, "setDex", dexScore.getAddress(),
+        testContractSettersAndGetters(balancedToken, governanceScore, governanceScore, "setDex", dexScore.getAddress(),
                 "getDex");
     }
 
     @Test
     void setAndGetDividends() {
-        testContractSettersAndGetters(balancedToken, governance, governance, "setDividends",
+        testContractSettersAndGetters(balancedToken, governanceScore, governanceScore, "setDividends",
                 dividendsScore.getAddress(), "getDividends");
     }
 
@@ -129,7 +145,7 @@ class BalancedTokenImplTest extends TestBase {
         assertEquals("Balanced DEX", balancedToken.call("getOracleName"));
 
         String newOracleName = "ChainLink";
-        testAdminControlMethods(balancedToken, governance, governance, "setOracleName", newOracleName,
+        testAdminControlMethods(balancedToken, governanceScore, governanceScore, "setOracleName", newOracleName,
                 "getOracleName");
     }
 
@@ -138,8 +154,8 @@ class BalancedTokenImplTest extends TestBase {
         BigInteger TWO_SECONDS = BigInteger.valueOf(2_000_000);
         assertEquals(TWO_SECONDS, balancedToken.call("getMinInterval"));
         BigInteger newMinInterval = BigInteger.valueOf(20_000_000);
-//		balancedToken.invoke(owner, "removeGovernance");
-        testAdminControlMethods(balancedToken, governance, governance, "setMinInterval", newMinInterval,
+        // balancedToken.invoke(owner, "removeGovernance");
+        testAdminControlMethods(balancedToken, governanceScore, governanceScore, "setMinInterval", newMinInterval,
                 "getMinInterval");
     }
 
@@ -153,9 +169,11 @@ class BalancedTokenImplTest extends TestBase {
 
         Map<String, Object> priceData = Map.of("last_update_base", "0x5dd26d3bd5dcf", "last_update_quote",
                 "0x5dd26cb9b4680", "rate", newUsdPriceInIcx);
-        contextMock.when(() -> Context.call(eq(oracleScore.getAddress()), eq("get_reference_data"), eq("USD"), eq("ICX"
-        ))).thenReturn(priceData);
-        contextMock.when(() -> Context.call(BigInteger.class, dexScore.getAddress(), "getBalnPrice")).thenReturn(newBalnPriceInUsd);
+        contextMock
+                .when(() -> Context.call(eq(oracleScore.getAddress()), eq("get_reference_data"), eq("USD"), eq("ICX")))
+                .thenReturn(priceData);
+        contextMock.when(() -> Context.call(BigInteger.class, dexScore.getAddress(), "getBalnPrice"))
+                .thenReturn(newBalnPriceInUsd);
 
         balancedToken.invoke(owner, "priceInLoop");
         verify(balancedTokenSpy).OraclePrice("BALNICX", "Balanced DEX", dexScore.getAddress(), newBalnPriceInIcx);
@@ -173,9 +191,9 @@ class BalancedTokenImplTest extends TestBase {
         assertEquals(BigInteger.valueOf(1000000000000000000L), minStake);
 
         BigInteger newMinStake = TEN.add(TWO).add(ONE);
-        balancedToken.invoke(governance, "setAdmin", governance.getAddress());
+        balancedToken.invoke(governanceScore, "setAdmin", governanceScore.getAddress());
 
-        balancedToken.invoke(governance, "setMinimumStake", newMinStake);
+        balancedToken.invoke(governanceScore, "setMinimumStake", newMinStake);
 
         minStake = (BigInteger) balancedToken.call("getMinimumStake");
 
@@ -186,13 +204,13 @@ class BalancedTokenImplTest extends TestBase {
     @SuppressWarnings("unchecked")
     @Test
     void ShouldMint() {
-        balancedToken.invoke(governance, "setAdmin", adminAccount.getAddress());
+        balancedToken.invoke(governanceScore, "setAdmin", adminAccount.getAddress());
         balancedToken.invoke(owner, "setMinter", adminAccount.getAddress());
 
         BigInteger amount = BigInteger.valueOf(10000L);
         balancedToken.invoke(adminAccount, "mint", amount, "init gold".getBytes());
         Map<String, BigInteger> balanceDetails = (Map<String, BigInteger>) balancedToken.call("detailsBalanceOf",
-				adminAccount.getAddress());
+                adminAccount.getAddress());
 
         assertNotNull(balanceDetails);
         assertEquals(amount, balanceDetails.get("Total balance"));
@@ -203,7 +221,7 @@ class BalancedTokenImplTest extends TestBase {
     @Test
     void ShouldMintToSomeone() {
         Account accountToMint = sm.createAccount();
-        balancedToken.invoke(governance, "setAdmin", adminAccount.getAddress());
+        balancedToken.invoke(governanceScore, "setAdmin", adminAccount.getAddress());
 
         BigInteger amount = BigInteger.valueOf(10000L);
         balancedToken.invoke(owner, "setMinter", adminAccount.getAddress());
@@ -211,7 +229,7 @@ class BalancedTokenImplTest extends TestBase {
         balancedToken.invoke(adminAccount, "mintTo", accountToMint.getAddress(), amount, "init gold".getBytes());
 
         Map<String, BigInteger> balanceDetails = (Map<String, BigInteger>) balancedToken.call("detailsBalanceOf",
-				accountToMint.getAddress());
+                accountToMint.getAddress());
         assertNotNull(balanceDetails);
         assertEquals(amount, balanceDetails.get("Total balance"));
         assertEquals(amount, balanceDetails.get("Available balance"));
@@ -220,20 +238,21 @@ class BalancedTokenImplTest extends TestBase {
     @SuppressWarnings("unchecked")
     @Test
     void ShouldMintAndStake() {
-        //mint some tokens
+        // mint some tokens
         BigInteger amountToMint = BigInteger.valueOf(10000L).multiply(ICX);
         balancedToken.invoke(owner, "setMinter", adminAccount.getAddress());
-        balancedToken.invoke(governance, "setAdmin", governance.getAddress());
-        balancedToken.invoke(governance, "setDividends", dividendsScore.getAddress());
+        balancedToken.invoke(governanceScore, "setAdmin", governanceScore.getAddress());
+        balancedToken.invoke(governanceScore, "setDividends", dividendsScore.getAddress());
 
         balancedToken.invoke(adminAccount, "mint", amountToMint, "init gold".getBytes());
 
         BigInteger stakedAmount = amountToMint.divide(TWO);
-        balancedToken.invoke(governance, "setDex", mockDexScore.getAddress());
-        contextMock.when(() -> Context.call(BigInteger.class, mockDexScore.getAddress(), "getTimeOffset")).thenReturn(BigInteger.valueOf(500));
+        balancedToken.invoke(governanceScore, "setDex", mockDexScore.getAddress());
+        contextMock.when(() -> Context.call(BigInteger.class, mockDexScore.getAddress(), "getTimeOffset"))
+                .thenReturn(BigInteger.valueOf(500));
         balancedToken.invoke(owner, "setTimeOffset");
 
-        //stake
+        // stake
         mockUpdateBalnStake(adminAccount.getAddress(), BigInteger.ZERO, stakedAmount);
         balancedToken.invoke(adminAccount, "stake", stakedAmount);
 
@@ -249,30 +268,31 @@ class BalancedTokenImplTest extends TestBase {
     @SuppressWarnings("unchecked")
     @Test
     void ShouldGetATransferAndStake() {
-        //set admin
-        balancedToken.invoke(governance, "setAdmin", adminAccount.getAddress());
+        // set admin
+        balancedToken.invoke(governanceScore, "setAdmin", adminAccount.getAddress());
         balancedToken.invoke(owner, "setMinter", adminAccount.getAddress());
-        balancedToken.invoke(governance, "setDividends", dividendsScore.getAddress());
+        balancedToken.invoke(governanceScore, "setDividends", dividendsScore.getAddress());
 
-        //mint some tokens
+        // mint some tokens
         BigInteger amountToMint = BigInteger.valueOf(10000L).multiply(ICX);
         balancedToken.invoke(adminAccount, "mint", amountToMint, "init gold".getBytes());
 
-        //transfer
+        // transfer
         Account user = sm.createAccount();
         BigInteger amountToTransfer = amountToMint.divide(TWO).divide(TWO);
         balancedToken.invoke(adminAccount, "transfer", user.getAddress(), amountToTransfer, "quezadillas".getBytes());
 
         BigInteger stakedAmount = amountToTransfer.divide(TWO);
-        balancedToken.invoke(governance, "setDex", mockDexScore.getAddress());
-        contextMock.when(() -> Context.call(BigInteger.class, mockDexScore.getAddress(), "getTimeOffset")).thenReturn(BigInteger.valueOf(500));
+        balancedToken.invoke(governanceScore, "setDex", mockDexScore.getAddress());
+        contextMock.when(() -> Context.call(BigInteger.class, mockDexScore.getAddress(), "getTimeOffset"))
+                .thenReturn(BigInteger.valueOf(500));
         balancedToken.invoke(owner, "setTimeOffset");
-        //stake
+        // stake
         mockUpdateBalnStake(user.getAddress(), BigInteger.ZERO, stakedAmount);
         balancedToken.invoke(user, "stake", stakedAmount);
 
         Map<String, BigInteger> balanceDetails = (Map<String, BigInteger>) balancedToken.call("detailsBalanceOf",
-				user.getAddress());
+                user.getAddress());
 
         assertNotNull(balanceDetails);
         assertEquals(amountToTransfer, balanceDetails.get("Total balance"));
@@ -286,11 +306,11 @@ class BalancedTokenImplTest extends TestBase {
     @SuppressWarnings("unchecked")
     @Test
     void ShouldTransfer() {
-        //set admin
-        balancedToken.invoke(governance, "setAdmin", adminAccount.getAddress());
-        balancedToken.invoke(governance, "setDividends", dividendsScore.getAddress());
+        // set admin
+        balancedToken.invoke(governanceScore, "setAdmin", adminAccount.getAddress());
+        balancedToken.invoke(governanceScore, "setDividends", dividendsScore.getAddress());
 
-        //mint some tokens
+        // mint some tokens
         BigInteger amountToMint = BigInteger.valueOf(10000L).multiply(ICX);
         balancedToken.invoke(owner, "setMinter", adminAccount.getAddress());
 
@@ -298,22 +318,23 @@ class BalancedTokenImplTest extends TestBase {
 
         BigInteger stakedAmount = amountToMint.divide(TWO);
 
-        balancedToken.invoke(governance, "setDex", mockDexScore.getAddress());
+        balancedToken.invoke(governanceScore, "setDex", mockDexScore.getAddress());
 
-        contextMock.when(() -> Context.call(BigInteger.class, mockDexScore.getAddress(), "getTimeOffset")).thenReturn(BigInteger.valueOf(500));
+        contextMock.when(() -> Context.call(BigInteger.class, mockDexScore.getAddress(), "getTimeOffset"))
+                .thenReturn(BigInteger.valueOf(500));
         balancedToken.invoke(owner, "setTimeOffset");
 
-        //Stake
+        // Stake
         mockUpdateBalnStake(adminAccount.getAddress(), BigInteger.ZERO, stakedAmount);
         balancedToken.invoke(adminAccount, "stake", stakedAmount);
 
-        //transfer
+        // transfer
         Account user = sm.createAccount();
         BigInteger amountToTransfer = amountToMint.divide(TWO).divide(TWO);
         balancedToken.invoke(adminAccount, "transfer", user.getAddress(), amountToTransfer, "tacos".getBytes());
 
         Map<String, BigInteger> balanceDetails = (Map<String, BigInteger>) balancedToken.call("detailsBalanceOf",
-				user.getAddress());
+                user.getAddress());
 
         assertNotNull(balanceDetails);
         assertEquals(amountToTransfer, balanceDetails.get("Total balance"));
@@ -324,12 +345,12 @@ class BalancedTokenImplTest extends TestBase {
     @SuppressWarnings("unchecked")
     @Test
     void ShouldBurn() {
-        balancedToken.invoke(governance, "setAdmin", adminAccount.getAddress());
+        balancedToken.invoke(governanceScore, "setAdmin", adminAccount.getAddress());
         balancedToken.invoke(owner, "setMinter", adminAccount.getAddress());
         BigInteger amount = BigInteger.valueOf(10000L);
         balancedToken.invoke(adminAccount, "mint", amount, "init gold".getBytes());
         Map<String, BigInteger> balanceDetails = (Map<String, BigInteger>) balancedToken.call("detailsBalanceOf",
-				adminAccount.getAddress());
+                adminAccount.getAddress());
 
         assertNotNull(balanceDetails);
         assertEquals(amount, balanceDetails.get("Total balance"));
@@ -349,12 +370,12 @@ class BalancedTokenImplTest extends TestBase {
     @Test
     void ShouldBurnFrom() {
         Account accountToMint = sm.createAccount();
-        balancedToken.invoke(governance, "setAdmin", adminAccount.getAddress());
+        balancedToken.invoke(governanceScore, "setAdmin", adminAccount.getAddress());
         balancedToken.invoke(owner, "setMinter", adminAccount.getAddress());
         BigInteger amount = BigInteger.valueOf(10000L);
         balancedToken.invoke(adminAccount, "mintTo", accountToMint.getAddress(), amount, "init gold".getBytes());
         Map<String, BigInteger> balanceDetails = (Map<String, BigInteger>) balancedToken.call("detailsBalanceOf",
-				accountToMint.getAddress());
+                accountToMint.getAddress());
 
         assertNotNull(balanceDetails);
         assertEquals(amount, balanceDetails.get("Total balance"));
@@ -373,38 +394,39 @@ class BalancedTokenImplTest extends TestBase {
     @SuppressWarnings("unchecked")
     @Test
     void ShouldGetStakedBalanceOfAt() {
-        balancedToken.invoke(governance, "setDividends", dividendsScore.getAddress());
+        balancedToken.invoke(governanceScore, "setDividends", dividendsScore.getAddress());
         boolean snapshotEnabled = (boolean) balancedToken.call("getSnapshotEnabled");
         if (!snapshotEnabled) {
-            //enable snapshot of staked balances
+            // enable snapshot of staked balances
             balancedToken.invoke(owner, "toggleEnableSnapshot");
         }
 
-        //set admin
-        balancedToken.invoke(governance, "setAdmin", adminAccount.getAddress());
+        // set admin
+        balancedToken.invoke(governanceScore, "setAdmin", adminAccount.getAddress());
         balancedToken.invoke(owner, "setMinter", adminAccount.getAddress());
 
-        //mint some tokens
+        // mint some tokens
         BigInteger amountToMint = BigInteger.valueOf(10000L).multiply(ICX);
         balancedToken.invoke(adminAccount, "mintTo", owner.getAddress(), amountToMint, "init gold".getBytes());
 
-        //enable staking
+        // enable staking
         if (!(boolean) balancedToken.call("getStakingEnabled")) {
-            balancedToken.invoke(governance, "toggleStakingEnabled");
+            balancedToken.invoke(governanceScore, "toggleStakingEnabled");
         }
 
-        balancedToken.invoke(governance, "setDex", mockDexScore.getAddress());
+        balancedToken.invoke(governanceScore, "setDex", mockDexScore.getAddress());
         BigInteger stakedAmount = amountToMint.divide(TWO);
 
-        //staked balance when there is no stake for this address
+        // staked balance when there is no stake for this address
         BigInteger day = BigInteger.valueOf(Context.getBlockTimestamp()).divide(MICRO_SECONDS_IN_A_DAY);
         BigInteger stakedBalance = (BigInteger) balancedToken.call("stakedBalanceOfAt", owner.getAddress(), day);
 
         assertNotNull(stakedBalance);
         assertEquals(ZERO, stakedBalance);
 
-        contextMock.when(() -> Context.call(BigInteger.class, mockDexScore.getAddress(), "getTimeOffset")).thenReturn(BigInteger.valueOf(500));
-        //stake
+        contextMock.when(() -> Context.call(BigInteger.class, mockDexScore.getAddress(), "getTimeOffset"))
+                .thenReturn(BigInteger.valueOf(500));
+        // stake
         mockUpdateBalnStake(owner.getAddress(), BigInteger.ZERO, stakedAmount);
         balancedToken.invoke(owner, "stake", stakedAmount);
 
@@ -416,32 +438,32 @@ class BalancedTokenImplTest extends TestBase {
 
         balancedToken.invoke(owner, "setTimeOffset");
 
-        //move the day, so there are 2 snapshots
+        // move the day, so there are 2 snapshots
         sm.getBlock().increase(100_000_000_000L);
 
-        //stake at next day
+        // stake at next day
         BigInteger stakedAmountAtSecondDay = stakedAmount.divide(TWO);
         mockUpdateBalnStake(owner.getAddress(), stakedAmount, stakedAmountAtSecondDay);
         balancedToken.invoke(owner, "stake", stakedAmountAtSecondDay);
 
         day = BigInteger.valueOf(Context.getBlockTimestamp()).divide(MICRO_SECONDS_IN_A_DAY);
-        //ask for staked balance of snapshot 1
+        // ask for staked balance of snapshot 1
         stakedBalance = (BigInteger) balancedToken.call("stakedBalanceOfAt", owner.getAddress(), day);
 
         assertNotNull(stakedBalance);
         assertEquals(stakedAmountAtSecondDay, stakedBalance);
 
-        //get stake amount of 1st snapshot at 2nd day
-        day =
-				BigInteger.valueOf(Context.getBlockTimestamp()).subtract(MICRO_SECONDS_IN_A_DAY).divide(MICRO_SECONDS_IN_A_DAY);
-        //ask for staked balance of snapshot 1
+        // get stake amount of 1st snapshot at 2nd day
+        day = BigInteger.valueOf(Context.getBlockTimestamp()).subtract(MICRO_SECONDS_IN_A_DAY)
+                .divide(MICRO_SECONDS_IN_A_DAY);
+        // ask for staked balance of snapshot 1
         stakedBalance = (BigInteger) balancedToken.call("stakedBalanceOfAt", owner.getAddress(), day);
 
         assertNotNull(stakedBalance);
         assertEquals(stakedAmount, stakedBalance);
 
         Map<String, BigInteger> balanceDetails = (Map<String, BigInteger>) balancedToken.call("detailsBalanceOf",
-				owner.getAddress());
+                owner.getAddress());
         assertNotNull(balanceDetails);
 
         assertEquals(amountToMint, balanceDetails.get("Total balance"));
@@ -453,42 +475,42 @@ class BalancedTokenImplTest extends TestBase {
         assertEquals(stakedAmountAtSecondDay, balanceDetails.get("Unstaking balance"));
     }
 
-
     @Test
     void ShouldGetTotalStakedBalanceOfAt() {
-        balancedToken.invoke(governance, "setDividends", dividendsScore.getAddress());
+        balancedToken.invoke(governanceScore, "setDividends", dividendsScore.getAddress());
         Account staker = sm.createAccount();
         boolean snapshotEnabled = (boolean) balancedToken.call("getSnapshotEnabled");
         if (!snapshotEnabled) {
-            //enable snapshot of staked balances
+            // enable snapshot of staked balances
             balancedToken.invoke(owner, "toggleEnableSnapshot");
         }
 
-        //set admin
-        balancedToken.invoke(governance, "setAdmin", adminAccount.getAddress());
+        // set admin
+        balancedToken.invoke(governanceScore, "setAdmin", adminAccount.getAddress());
         balancedToken.invoke(owner, "setMinter", adminAccount.getAddress());
 
-        //mint some tokens
+        // mint some tokens
         BigInteger amountToMint = BigInteger.valueOf(10000L).multiply(ICX);
         balancedToken.invoke(adminAccount, "mintTo", owner.getAddress(), amountToMint, "init gold".getBytes());
         balancedToken.invoke(adminAccount, "mintTo", staker.getAddress(), amountToMint, "init gold".getBytes());
 
-        //enable staking
+        // enable staking
         if (!(boolean) balancedToken.call("getStakingEnabled")) {
-            balancedToken.invoke(governance, "toggleStakingEnabled");
+            balancedToken.invoke(governanceScore, "toggleStakingEnabled");
         }
 
-        balancedToken.invoke(governance, "setDex", mockDexScore.getAddress());
+        balancedToken.invoke(governanceScore, "setDex", mockDexScore.getAddress());
         BigInteger stakedAmount = amountToMint.divide(TWO);
 
-        //staked balance when there is no stake for this address
+        // staked balance when there is no stake for this address
         BigInteger day1 = BigInteger.valueOf(Context.getBlockTimestamp()).divide(MICRO_SECONDS_IN_A_DAY);
         BigInteger expectedTotalStakeDay1 = BigInteger.ZERO;
 
-        contextMock.when(() -> Context.call(BigInteger.class, mockDexScore.getAddress(), "getTimeOffset")).thenReturn(BigInteger.valueOf(500));
+        contextMock.when(() -> Context.call(BigInteger.class, mockDexScore.getAddress(), "getTimeOffset"))
+                .thenReturn(BigInteger.valueOf(500));
         sm.getBlock().increase(DAY);
 
-        //stake
+        // stake
         mockUpdateBalnStake(owner.getAddress(), BigInteger.ZERO, stakedAmount);
         balancedToken.invoke(owner, "stake", stakedAmount);
 
@@ -498,7 +520,7 @@ class BalancedTokenImplTest extends TestBase {
 
         sm.getBlock().increase(DAY);
 
-        //stake at next day
+        // stake at next day
         mockUpdateBalnStake(staker.getAddress(), BigInteger.ZERO, stakedAmount.add(amountToMint));
         balancedToken.invoke(staker, "stake", amountToMint);
 
@@ -533,16 +555,16 @@ class BalancedTokenImplTest extends TestBase {
 
     @Test
     void ShouldSetUnstakingPeriod() {
-        balancedToken.invoke(governance, "setAdmin", governance.getAddress());
+        balancedToken.invoke(governanceScore, "setAdmin", governanceScore.getAddress());
 
-        balancedToken.invoke(governance, "setUnstakingPeriod", TEN);
+        balancedToken.invoke(governanceScore, "setUnstakingPeriod", TEN);
 
         BigInteger unstakingPeriod = (BigInteger) balancedToken.call("getUnstakingPeriod");
 
         assertNotNull(unstakingPeriod);
         assertEquals(TEN, unstakingPeriod);
 
-        balancedToken.invoke(governance, "setUnstakingPeriod", ZERO);
+        balancedToken.invoke(governanceScore, "setUnstakingPeriod", ZERO);
 
         unstakingPeriod = (BigInteger) balancedToken.call("getUnstakingPeriod");
 
@@ -552,9 +574,9 @@ class BalancedTokenImplTest extends TestBase {
 
     @Test
     void ShouldSetDividends() {
-        //set admin
-        balancedToken.invoke(governance, "setAdmin", governance.getAddress());
-        balancedToken.invoke(governance, "setDividends", dividendsScore.getAddress());
+        // set admin
+        balancedToken.invoke(governanceScore, "setAdmin", governanceScore.getAddress());
+        balancedToken.invoke(governanceScore, "setDividends", dividendsScore.getAddress());
 
         Address dividendsAddress = (Address) balancedToken.call("getDividends");
 
