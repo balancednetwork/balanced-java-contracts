@@ -275,6 +275,10 @@ public class StakedLPImpl implements StakedLP {
 
         Stake(user.toString(), id, value);
 
-        Context.call(rewards.get(), "updateBalanceAndSupply", poolName, newTotal, user.toString(), newBalance);
+        if(user.net().equals(NATIVE_NID)) {
+            Context.call(rewards.get(), "updateBalanceAndSupply", poolName, newTotal, user.account(), newBalance);
+        }else{
+            Context.call(rewards.get(), "updateBalanceAndSupply", poolName, newTotal, user.toString(), newBalance);
+        }
     }
 }

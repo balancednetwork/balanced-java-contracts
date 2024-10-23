@@ -1049,11 +1049,16 @@ public class RewardsImpl implements Rewards {
     }
 
     private BigInteger fetchBoostedBalance(String user) {
-        if (user.contains("/")) {
+        NetworkAddress networkAddress = NetworkAddress.valueOf(user, NATIVE_NID);
+        Address address = null;
+        try{
+            address = Address.fromString(user);
+        } catch (Exception ignored){}
+        if (!networkAddress.net().equals(NATIVE_NID) || address == null) {
             return BigInteger.ZERO;
         }
 
-        return fetchBoostedBalance(Address.fromString(user));
+        return fetchBoostedBalance(address);
     }
 
     private BigInteger fetchBoostedBalance(Address user) {
