@@ -413,6 +413,11 @@ class DexIntegrationTest {
                 quoteAssetAddress);
         BigInteger balance = dexUserScoreClient.xBalanceOf(ethAccount.toString(), poolId);
         BigInteger withdrawAmount = balance.divide(BigInteger.TWO);
+        JsonArray setXCallFeePermissionParameters = new JsonArray()
+                .add(createParameter(balanced.dex._address())).add(createParameter(balanced.ETH_NID)).add(createParameter(true));
+        JsonArray actions = new JsonArray()
+                .add(createTransaction(balanced.daofund._address(), "setXCallFeePermission", setXCallFeePermissionParameters));
+        owner.governance.execute(actions.toString());
 
         // Act
         byte[] removeLPMsg = getXRemoveData(poolId, withdrawAmount, true);

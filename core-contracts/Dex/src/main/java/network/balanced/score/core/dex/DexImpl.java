@@ -63,6 +63,10 @@ public class DexImpl extends AbstractDex {
 
     @Payable
     public void fallback() {
+        Address user = Context.getCaller();
+        if(user.equals(BalancedAddressManager.getDaofund())){
+            return;
+        }
         isDexOn();
         checkStatus();
 
@@ -70,7 +74,7 @@ public class DexImpl extends AbstractDex {
         require(orderValue.compareTo(BigInteger.TEN.multiply(EXA)) >= 0,
                 TAG + ": Minimum pool contribution is 10 ICX");
 
-        Address user = Context.getCaller();
+
         BigInteger oldOrderValue = BigInteger.ZERO;
         BigInteger orderId = icxQueueOrderId.getOrDefault(user, BigInteger.ZERO);
 
@@ -264,11 +268,9 @@ public class DexImpl extends AbstractDex {
 
         Withdraw(_token, sender.toString(), _value);
         BalancedFloorLimits.verifyWithdraw(_token, _value);
-        if(sender.net().equals(NATIVE_NID)) {
-            Context.call(_token, "transfer", Address.fromString(sender.account()), _value);
-        }else{
-            Context.call(_token, "hubTransfer", sender.toString(), _value);
-        }
+
+        //transfer the token
+        TokenTransfer.transfer(_token, sender.toString(), _value);
     }
 
     @External(readonly = true)
