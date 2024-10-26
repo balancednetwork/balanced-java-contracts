@@ -18,6 +18,8 @@ package network.balanced.score.core.rewards;
 
 import com.iconloop.score.test.Account;
 
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import score.Address;
 
 import org.json.JSONArray;
@@ -27,11 +29,12 @@ import org.junit.jupiter.api.function.Executable;
 import score.ByteArrayObjectWriter;
 import score.Context;
 
+import static network.balanced.score.lib.utils.Constants.*;
+import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
-import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
-import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_SECOND;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -194,6 +197,7 @@ class RewardsTestExternalRewards extends RewardsTestBase {
         // Assert
         Map<String, BigInteger> rewards = (Map<String, BigInteger>) rewardsScore.call("getRewards",
                 account.getAddress().toString());
+
         rewardsScore.invoke(account, "claimRewards", getUserSources(account.getAddress()));
         verify(mockBalanced.sicx.mock).transfer(account.getAddress(), expectedRewards1.add(expectedRewards2),
                 new byte[0]);
@@ -370,6 +374,8 @@ class RewardsTestExternalRewards extends RewardsTestBase {
                 fromNetworkAddress);
         String[] sources = {"sICX/ICX", "sICX/bnUSD"};
         String[] protocols = {};
+
+
         rewardsScore.invoke(mockBalanced.xCall.account, "handleCallMessage", fromNetworkAddress, getClaimRewardData(fromNetworkAddress, sources), protocols);
 
         //todo: calculate the expected value and replace the hard coded value

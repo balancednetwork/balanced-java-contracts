@@ -424,13 +424,7 @@ public class RewardsImpl implements Rewards {
         for (Address token : tokens) {
             BigInteger amount = holdingsDB.getOrDefault(token, BigInteger.ZERO);
             if (amount.compareTo(BigInteger.ZERO) > 0) {
-                if(networkAddress.net().equals(NATIVE_NID)) {
-                    Context.call(token, "transfer", Address.fromString(networkAddress.account()), amount, new byte[0]);
-                }else{
-                    try {
-                        Context.call(token, "xTransfer", address, amount, new byte[0]);
-                    }catch (Exception ignored){}
-                }
+                TokenTransfer.transfer(token, networkAddress.toString(), amount);
                 holdingsDB.set(token, null);
                 RewardsClaimedV2(token, address, amount);
             }
@@ -440,16 +434,7 @@ public class RewardsImpl implements Rewards {
         if (userClaimableRewards.compareTo(BigInteger.ZERO) > 0) {
             balnHoldings.set(address, null);
             Address baln = getBaln();
-            if(networkAddress.net().equals(NATIVE_NID)) {
-                Address nativeAddress = Address.fromString(networkAddress.account());
-                Context.call(baln, "transfer", nativeAddress, userClaimableRewards, new byte[0]);
-                RewardsClaimed(nativeAddress, userClaimableRewards);
-            }else{
-                try {
-                    Context.call(baln, "xTransfer", address, userClaimableRewards, new byte[0]);
-                }catch (Exception ignored){}
-            }
-
+            TokenTransfer.transfer(baln, networkAddress.toString(), userClaimableRewards);
             RewardsClaimedV2(baln, address, userClaimableRewards);
         }
 
