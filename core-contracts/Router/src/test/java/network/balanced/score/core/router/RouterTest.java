@@ -22,19 +22,20 @@ import com.iconloop.score.test.ServiceManager;
 import com.iconloop.score.test.TestBase;
 import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.lib.interfaces.Sicx;
-import network.balanced.score.lib.interfaces.tokens.IRC2;
-import network.balanced.score.lib.interfaces.tokens.IRC2ScoreInterface;
-import network.balanced.score.lib.interfaces.tokens.SpokeToken;
-import network.balanced.score.lib.interfaces.tokens.SpokeTokenScoreInterface;
+import network.balanced.score.lib.interfaces.tokens.*;
 import network.balanced.score.lib.structs.Route;
 import network.balanced.score.lib.structs.RouteAction;
 import network.balanced.score.lib.structs.RouteData;
 import network.balanced.score.lib.test.mock.MockBalanced;
 import network.balanced.score.lib.test.mock.MockContract;
+import network.balanced.score.lib.tokens.HubTokenImpl;
+import network.balanced.score.lib.tokens.IRC2Base;
+import network.balanced.score.lib.tokens.IRC2Mintable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import score.Address;
+import score.Context;
 import scorex.util.ArrayList;
 
 import java.math.BigInteger;
@@ -43,8 +44,11 @@ import java.util.Map;
 
 import static network.balanced.score.core.router.RouterImpl.*;
 import static network.balanced.score.lib.test.UnitTest.*;
+import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -245,7 +249,7 @@ class RouterTest extends TestBase {
     @Test
     void xTrade_ToNetworkAddressWithDifferentNet() throws Exception {
         // Arrange
-        MockContract<SpokeToken> token = new MockContract<>(SpokeTokenScoreInterface.class, SpokeToken.class, sm,
+        MockContract<HubToken> token = new MockContract<>(HubTokenScoreInterface.class, HubToken.class, sm,
                 owner);
         String net = "0x1.eth";
         String net2 = "0x3.bsc";
@@ -264,7 +268,7 @@ class RouterTest extends TestBase {
         routerScore.invoke(balanced.sicx.account, "tokenFallback", owner.getAddress(), amount, path);
 
         // Assert
-        verify(token.mock).hubTransfer(receiver.toString(), amount, new byte[0]);
+        verify(token.mock).crossTransfer(receiver.toString(), amount, new byte[0]);
     }
 
     @Test
@@ -287,7 +291,7 @@ class RouterTest extends TestBase {
         byte[] path = tokenData("_swap", Map.of("path",
                 new Object[]{token.getAddress().toString(), null}, "receiver", receiver.toString()));
         Executable nativeToWrongNet = () -> routerScore.invoke(balanced.sicx.account, "tokenFallback", owner.getAddress(), amount, path);
-        String expectedErrorMessage = "Reverted(0): " + TAG + ": Native swaps are not supported to other networks";
+        String expectedErrorMessage = "Reverted(0): Native swaps are not supported for this network";
         expectErrorMessage(nativeToWrongNet, expectedErrorMessage);
     }
 
@@ -310,7 +314,7 @@ class RouterTest extends TestBase {
         byte[] path = tokenData("_swap", Map.of("path",
                 new Object[]{token.getAddress().toString(), null}, "receiver", receiver.toString()));
         Executable nativeToWrongNet = () -> routerScore.invoke(balanced.sicx.account, "tokenFallback", owner.getAddress(), amount, path);
-        String expectedErrorMessage = "Reverted(0): " + TAG + ": Native swaps are not supported for this network";
+        String expectedErrorMessage = "Reverted(0): Native swaps are not supported for this network";
         expectErrorMessage(nativeToWrongNet, expectedErrorMessage);
     }
 
@@ -362,20 +366,21 @@ class RouterTest extends TestBase {
     @Test
     void xTrade_toIRC20() throws Exception {
         // Arrange
+        MockContract<IRC2> token = new MockContract<>(IRC2ScoreInterface.class, IRC2.class, sm, owner);
         String net = "0x1.eth";
 
         NetworkAddress user = new NetworkAddress(net, "cx1");
         BigInteger amount = BigInteger.TEN.multiply(ICX);
-        when(balanced.sicx.mock.balanceOf(routerScore.getAddress())).thenReturn(amount);
+        when(token.mock.balanceOf(routerScore.getAddress())).thenReturn(amount);
         when(balanced.bnUSD.mock.balanceOf(routerScore.getAddress())).thenReturn(amount);
         when(balanced.daofund.mock.getXCallFeePermission(routerScore.getAddress(), net)).thenReturn(true);
 
         // Act & Assert
         byte[] path = tokenData("_swap", Map.of("path",
-                new Object[]{balanced.sicx.getAddress().toString()}));
+                new Object[]{token.getAddress().toString()}));
         Executable tradeToIRC2WithNetworkAddress = () -> routerScore.invoke(balanced.bnUSD.account, "xTokenFallback",
                 user.toString(), amount, path);
-        expectErrorMessage(tradeToIRC2WithNetworkAddress, "hubTransfer");
+        expectErrorMessage(tradeToIRC2WithNetworkAddress, "crossTransfer");
     }
 
     @Test
