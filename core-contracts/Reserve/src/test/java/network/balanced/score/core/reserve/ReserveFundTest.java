@@ -17,6 +17,7 @@
 package network.balanced.score.core.reserve;
 
 import com.iconloop.score.test.Account;
+import network.balanced.score.lib.interfaces.tokens.HubToken;
 import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
 import network.balanced.score.lib.structs.Disbursement;
 import network.balanced.score.lib.test.mock.MockContract;
@@ -45,7 +46,11 @@ public class ReserveFundTest extends ReserveFundTestBase {
         when(loans.mock.getCollateralTokens()).thenReturn(tokens);
     }
 
-    private void setBalance(MockContract<? extends IRC2Mintable> token, BigInteger amount) {
+    private void setBalance(MockContract<? extends HubToken> token, BigInteger amount) {
+        when(token.mock.balanceOf(reserve.getAddress())).thenReturn(amount);
+    }
+
+    private void setIRC2Balance(MockContract<? extends IRC2Mintable> token, BigInteger amount) {
         when(token.mock.balanceOf(reserve.getAddress())).thenReturn(amount);
     }
 
@@ -101,7 +106,7 @@ public class ReserveFundTest extends ReserveFundTestBase {
         setBalance(sicx, sicxBalance);
         setRate("sICX", sicxRate);
 
-        setBalance(ieth, iethBalance);
+        setIRC2Balance(ieth, iethBalance);
         setRate("iETH", iethRate);
 
         // Act
@@ -132,7 +137,7 @@ public class ReserveFundTest extends ReserveFundTestBase {
         setBalance(sicx, sicxBalance);
         setRate("sICX", sicxRate);
 
-        setBalance(ieth, iethBalance);
+        setIRC2Balance(ieth, iethBalance);
         setRate("iETH", iethRate);
 
         setBalance(baln, balnBalance);
@@ -166,7 +171,7 @@ public class ReserveFundTest extends ReserveFundTestBase {
         setBalance(sicx, sicxBalance);
         setRate("sICX", sicxRate);
 
-        setBalance(ieth, iethBalance);
+        setIRC2Balance(ieth, iethBalance);
         setRate("iETH", iethRate);
 
         setBalance(baln, balnBalance);
@@ -196,7 +201,7 @@ public class ReserveFundTest extends ReserveFundTestBase {
         setBalance(sicx, sicxBalance);
         setRate("sICX", sicxRate);
 
-        setBalance(ieth, iethBalance);
+        setIRC2Balance(ieth, iethBalance);
         setRate("iETH", iethRate);
 
         setBalance(baln, balnBalance);

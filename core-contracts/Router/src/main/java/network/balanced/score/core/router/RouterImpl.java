@@ -25,10 +25,7 @@ import network.balanced.score.lib.interfaces.Router;
 import network.balanced.score.lib.structs.Route;
 import network.balanced.score.lib.structs.RouteAction;
 import network.balanced.score.lib.structs.RouteData;
-import network.balanced.score.lib.utils.BalancedAddressManager;
-import network.balanced.score.lib.utils.Names;
-import network.balanced.score.lib.utils.Versions;
-import network.balanced.score.lib.utils.XCallUtils;
+import network.balanced.score.lib.utils.*;
 import score.Address;
 import score.Context;
 import score.UserRevertException;
@@ -176,57 +173,16 @@ public class RouterImpl implements Router {
         BigInteger balance = (BigInteger) Context.call(currentToken, "balanceOf", Context.getAddress());
         Context.require(balance.compareTo(_minReceive) >= 0, TAG + ": Below minimum receive amount of " + _minReceive);
 
-        if (networkAddress.net().equals(nativeNid)) {
+        byte[] data = new byte[0];
+        if(networkAddress.net().equals(nativeNid)){
             Context.require(!toNative, TAG + ": Native swaps not available to icon from " + currentToken);
-            Context.call(currentToken, "transfer", Address.fromString(networkAddress.account()), balance, EMPTY_DATA);
-        } else {
-            transferCrossChainResult(currentToken, networkAddress, balance, toNative);
+            data = EMPTY_DATA;
         }
+        TokenTransfer.transfer(currentToken, networkAddress.toString(), balance, toNative, data);
 
         Route(fromAddress, fromAmount, currentToken, balance);
     }
 
-
-    private void transferCrossChainResult(Address token, NetworkAddress to, BigInteger amount, boolean toNative) {
-        String toNet = to.net();
-        if (canWithdraw(toNet)) {
-            if (token.equals(getBnusd())) {
-                transferBnUSD(token, to, amount);
-            } else {
-                transferHubToken(token, to, amount, toNative);
-            }
-        } else {
-            Context.require(!toNative, TAG + ": Native swaps are not supported for this network");
-            Context.call(token, "hubTransfer", to.toString(), amount, new byte[0]);
-        }
-    }
-
-    private void transferBnUSD(Address bnusd, NetworkAddress to, BigInteger amount) {
-        String toNet = to.net();
-        BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", toNet, false);
-        Context.call(xCallFee, bnusd, "crossTransfer", to.toString(), amount, new byte[0]);
-    }
-
-    private void transferHubToken(Address token, NetworkAddress to, BigInteger amount, boolean toNative) {
-        String toNet = to.net();
-        Address assetManager = getAssetManager();
-        String nativeAddress = Context.call(String.class, assetManager, "getNativeAssetAddress", token, toNet);
-        if (nativeAddress != null) {
-            BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", toNet, false);
-            String method = "withdrawTo";
-            if (toNative) {
-                method = "withdrawNativeTo";
-            }
-            Context.call(xCallFee, assetManager, method, token, to.toString(), amount);
-        } else {
-            Context.require(!toNative, TAG + ": Native swaps are not supported to other networks");
-            Context.call(token, "hubTransfer", to.toString(), amount, new byte[0]);
-        }
-    }
-
-    private boolean canWithdraw(String net) {
-        return Context.call(Boolean.class, getDaofund(), "getXCallFeePermission", Context.getAddress(), net);
-    }
 
     @Payable
     @External
