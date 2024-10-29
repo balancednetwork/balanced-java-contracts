@@ -189,20 +189,20 @@ public class StakedLPImpl implements StakedLP {
     }
 
     @External
-    public void onIRC31Received(String _operator, String _from, BigInteger _id, BigInteger _value, byte[] _data) {
+    public void onXIRC31Received(String _operator, String _from, BigInteger _id, BigInteger _value, byte[] _data) {
         only(dex);
         Context.require(_value.signum() > 0, "StakedLP: Token value should be a positive number");
         NetworkAddress from = NetworkAddress.valueOf(_from);
         this.stake(from, _id, _value);
     }
 
-//    @External
-//    public void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data) {
-//        only(dex);
-//        Context.require(_value.signum() > 0, "StakedLP: Token value should be a positive number");
-//        NetworkAddress from = NetworkAddress.valueOf(_from.toString(), NATIVE_NID);
-//        this.stake(from, _id, _value);
-//    }
+    @External
+    public void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data) {
+        only(dex);
+        Context.require(_value.signum() > 0, "StakedLP: Token value should be a positive number");
+        NetworkAddress from = NetworkAddress.valueOf(_from.toString(), NATIVE_NID);
+        this.stake(from, _id, _value);
+    }
 
     @External
     public void addDataSource(BigInteger id, String name) {

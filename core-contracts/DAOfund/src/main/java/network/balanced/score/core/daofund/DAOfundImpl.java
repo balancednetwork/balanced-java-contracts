@@ -272,11 +272,14 @@ public class DAOfundImpl implements DAOfund {
     public void fallback() {
     }
 
-    //todo: verify if this is the solution
     @External
-    public void onIRC31Received(String _operator, String _from, BigInteger _id, BigInteger _value, byte[] _data) {
+    public void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data) {
         checkStatus();
     }
 
+    @External
+    public void onXIRC31Received(String _operator, String _from, BigInteger _id, BigInteger _value, byte[] _data) {
+        checkStatus();
+    }
 
 }

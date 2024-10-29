@@ -101,7 +101,7 @@ public abstract class IRC31StandardSpokeLpToken extends FloorLimited implements 
 
         byte[] dataBytes = (_data == null) ? "None".getBytes() : _data;
 
-        HubTransfer(BigInteger.valueOf(_id), _from.toString(), _to.toString(), _value, dataBytes);
+        HubTransferSingle(BigInteger.valueOf(_id), _from.toString(), _to.toString(), _value, dataBytes);
         if (!_to.net().equals(NATIVE_NID)) {
             return;
         }
@@ -111,7 +111,7 @@ public abstract class IRC31StandardSpokeLpToken extends FloorLimited implements 
             return;
         }
 
-        Context.call(contractAddress, "onIRC31Received", _from.toString(), _from.toString(), _id, _value, dataBytes);
+        Context.call(contractAddress, "onXIRC31Received", _from.toString(), _from.toString(), _id, _value, dataBytes);
     }
 
     protected boolean isNative(NetworkAddress address) {
@@ -123,9 +123,10 @@ public abstract class IRC31StandardSpokeLpToken extends FloorLimited implements 
     }
 
     @EventLog(indexed = 3)
-    public void HubTransfer(BigInteger _id, String _from, String _to, BigInteger _value, byte[] _data) {
-    }
+    public void TransferSingle(Address _operator, Address _from, Address _to, BigInteger _id, BigInteger _value){}
+
     @EventLog(indexed = 3)
-    public void Transfer(Address _from, Address _to, BigInteger _value, byte[] _data) {
+    public void HubTransferSingle(BigInteger _id, String _from, String _to, BigInteger _value, byte[] _data) {
     }
+
 }
