@@ -643,10 +643,6 @@ public class DexTestSettersAndGetters extends DexTestBase {
 
     }
 
-    @Test
-    void govSetUserPoolTotal() {
-        assertOnlyCallableBy(governanceScore.getAddress(), dexScore, "govSetUserPoolTotal", 1, dexScore.getAddress(), BigInteger.ZERO);
-    }
 
     @Test
     void govSetOracleProtection() {

@@ -314,8 +314,6 @@ public class DexImpl extends AbstractDex {
 
         if (userQuoteLeft.compareTo(getRewardableAmount(quoteToken)) < 0) {
             _value = userBalance;
-            //todo: verify we don't need activeAddresses
-            //activeAddresses.get(_id.intValue()).remove(_user);
         }
 
         BigInteger baseToWithdraw = _value.multiply(totalBase).divide(totalLPToken);
@@ -482,12 +480,7 @@ public class DexImpl extends AbstractDex {
         balance.at(id).set(_from, userLpAmount);
         poolLpTotal.set(id, poolLpAmount);
         AddV2(BigInteger.valueOf(id), _from.toString(), liquidity, baseToCommit, quoteToCommit);
-        //todo: check if this event solves
-        //TransferSingle(from, MINT_ADDRESS.toString(), from, BigInteger.valueOf(id), liquidity);
-        HubTransfer(BigInteger.valueOf(id), MINT_ADDRESS.toString(), _from.toString(), liquidity, new byte[0]);
-
-        //todo: fix and uncomment
-        //activeAddresses.get(id).add(from);
+        HubTransferSingle(BigInteger.valueOf(id), MINT_ADDRESS.toString(), _from.toString(), liquidity, new byte[0]);
 
         if (userDepositedBase.compareTo(BigInteger.ZERO) > 0) {
             withdraw(_baseToken, userDepositedBase);

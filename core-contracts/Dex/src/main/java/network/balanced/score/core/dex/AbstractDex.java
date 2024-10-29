@@ -109,15 +109,10 @@ public abstract class AbstractDex extends IRC31StandardSpokeLpToken {
     public void ClaimSicxEarnings(Address _owner, BigInteger _value) {
     }
 
-    @EventLog(indexed = 3)
-    public void TransferSingle(String _operator, String _from, String _to, BigInteger _id, BigInteger _value) {
-    }
-
     @External(readonly = true)
     public String name() {
         return TAG;
     }
-
 
     @External
     public void updateAddress(String name) {
@@ -663,28 +658,6 @@ public abstract class AbstractDex extends IRC31StandardSpokeLpToken {
         onlyGovernance();
         poolLpTotal.set(pid, total);
     }
-
-    @External
-    public void govSetUserPoolTotal(int pid, Address user, BigInteger total) {
-        onlyGovernance();
-        NetworkAddress _user =  new NetworkAddress(NATIVE_NID, user);
-        setUserPoolTotal(pid, _user, total);
-    }
-
-    //todo: make sure if this method is required
-    @External
-    public void govSetUserPoolTotalV2(int pid, String user, BigInteger total) {
-        onlyGovernance();
-        setUserPoolTotal(pid, NetworkAddress.parse(user), total);
-    }
-    private void setUserPoolTotal(int pid, NetworkAddress _user, BigInteger total){
-        BigInteger value = balance.at(pid).get(_user);
-        BigInteger burned = value.subtract(total);
-        balance.at(pid).set(_user, total);
-
-        TransferSingle(Context.getCaller().toString(), _user.toString(), MINT_ADDRESS.toString(), BigInteger.valueOf(pid), burned);
-    }
-
 
     void swapIcx(Address sender, BigInteger value) {
         BigInteger sicxIcxPrice = getSicxRate();

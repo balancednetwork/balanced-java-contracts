@@ -150,12 +150,11 @@ public class RouterImpl implements Router {
             prevToken = currentToken;
             currentToken = action.toAddress;
         }
-        inRoute = false;
 
+        inRoute = false;
         String nativeNid = XCallUtils.getNativeNid();
         NetworkAddress networkAddress = NetworkAddress.valueOf(from, nativeNid);
         if (currentToken == null && prevToken.equals(getSicx())) {
-            currentToken = EOA_ZERO;
             BigInteger balance = Context.getBalance(Context.getAddress());
             Context.require(balance.compareTo(_minReceive) >= 0,
                     TAG + ": Below minimum receive amount of " + _minReceive);
@@ -165,21 +164,15 @@ public class RouterImpl implements Router {
             return;
         }
 
-        boolean toNative = currentToken == null;
-        if (toNative) {
-            currentToken = prevToken;
-        }
-
         BigInteger balance = (BigInteger) Context.call(currentToken, "balanceOf", Context.getAddress());
         Context.require(balance.compareTo(_minReceive) >= 0, TAG + ": Below minimum receive amount of " + _minReceive);
 
         byte[] data = new byte[0];
         if(networkAddress.net().equals(nativeNid)){
-            Context.require(!toNative, TAG + ": Native swaps not available to icon from " + currentToken);
             data = EMPTY_DATA;
         }
-        TokenTransfer.transfer(currentToken, networkAddress.toString(), balance, toNative, data);
 
+        TokenTransfer.transfer(currentToken, networkAddress.toString(), balance, data);
         Route(fromAddress, fromAmount, currentToken, balance);
     }
 
@@ -296,6 +289,7 @@ public class RouterImpl implements Router {
             Context.require(minimumReceive.signum() >= 0, TAG + ": Must specify a positive number for minimum to " +
                     "receive");
         }
+
         String receiver;
         if (params.contains("receiver")) {
             receiver = params.get("receiver").asString();

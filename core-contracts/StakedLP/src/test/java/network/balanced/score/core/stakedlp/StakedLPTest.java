@@ -147,12 +147,12 @@ public class StakedLPTest extends UnitTest {
 
     private void stakeLpTokens(Account from, BigInteger poolId, BigInteger value) {
         String fromNetworkAddress = NetworkAddress.valueOf(from.getAddress().toString(), NATIVE_NID).toString();
-        stakedLpScore.invoke(dex.account, "onIRC31Received", fromNetworkAddress, fromNetworkAddress, poolId, value,
+        stakedLpScore.invoke(dex.account, "onXIRC31Received", fromNetworkAddress, fromNetworkAddress, poolId, value,
                 new byte[0]);
     }
 
     private void stakeLpTokens(String from, BigInteger poolId, BigInteger value) {
-        stakedLpScore.invoke(dex.account, "onIRC31Received", from, from, poolId, value,
+        stakedLpScore.invoke(dex.account, "onXIRC31Received", from, from, poolId, value,
                 new byte[0]);
     }
 

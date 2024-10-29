@@ -67,11 +67,11 @@ public interface StakedLP extends Version {
     @XCall
     void xUnstake(String from, BigInteger id, BigInteger value);
 
-//    @External
-//    void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data);
+    @External
+    void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data);
 
     @External
-    void onIRC31Received(String _operator, String _from, BigInteger _id, BigInteger _value, byte[] _data);
+    void onXIRC31Received(String _operator, String _from, BigInteger _id, BigInteger _value, byte[] _data);
 
     @External
     void addDataSource(BigInteger id, String name);
