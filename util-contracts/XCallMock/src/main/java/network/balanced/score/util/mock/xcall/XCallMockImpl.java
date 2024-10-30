@@ -82,7 +82,6 @@ public class XCallMockImpl implements XCallMock {
 
     @External
     public void recvCall(Address to, String from, byte[] message) {
-        Context.println(to.toString());
         Context.call(to, "handleCallMessage", from, message);
     }
 

@@ -35,10 +35,6 @@ import static network.balanced.score.lib.utils.Check.*;
 
 public class StakedLPImpl implements StakedLP {
 
-    //todo: verify this migration works
-//    private static final BranchDB<Address, DictDB<BigInteger, BigInteger>> poolStakedDetails =
-//            Context.newBranchDB("poolStakeDetails", BigInteger.class);
-
     final static AddressBranchDictDB<BigInteger, BigInteger> poolStakedDetails = new AddressBranchDictDB<>("poolStakeDetails",
             BigInteger.class);
 

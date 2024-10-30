@@ -295,8 +295,7 @@ class DexIntegrationTest {
         BigInteger nextUpdatedBalnHolding = userRewardScoreClient.getBalnHolding(tUserAddress.toString());
         assertEquals(beforeSleepDay, dexUserScoreClient.getDay());
 
-        System.out.println("updated baln holding: " + updatedBalnHolding);
-        System.out.println("next updated baln holding: " + nextUpdatedBalnHolding);
+
         assert updatedBalnHolding.compareTo(nextUpdatedBalnHolding) < 0;
 
     }

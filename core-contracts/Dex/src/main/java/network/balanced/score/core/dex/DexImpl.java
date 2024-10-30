@@ -64,7 +64,7 @@ public class DexImpl extends AbstractDex {
     @Payable
     public void fallback() {
         Address user = Context.getCaller();
-        if(user.equals(BalancedAddressManager.getDaofund())){
+        if (user.equals(BalancedAddressManager.getDaofund())) {
             return;
         }
         isDexOn();
@@ -139,7 +139,7 @@ public class DexImpl extends AbstractDex {
         require(!unpackedData.equals(""), "Token Fallback: Data can't be empty");
         JsonObject json = Json.parse(unpackedData).asObject();
         String method = json.get("method").asString();
-        Address fromToken =  Context.getCaller();
+        Address fromToken = Context.getCaller();
 
         require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Invalid token transfer value");
 
@@ -173,13 +173,13 @@ public class DexImpl extends AbstractDex {
         JsonObject json = Json.parse(unpackedData).asObject();
 
         String method = json.get("method").asString();
-        Address fromToken =   Context.getCaller();
+        Address fromToken = Context.getCaller();
         require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Invalid token transfer value");
 
         // Call an internal method based on the "method" param sent in tokenFallBack
         switch (method) {
             case "_deposit": {
-                NetworkAddress from =  new NetworkAddress(NATIVE_NID, _from);
+                NetworkAddress from = new NetworkAddress(NATIVE_NID, _from);
                 deposit(fromToken, from, _value);
                 break;
             }
@@ -238,24 +238,24 @@ public class DexImpl extends AbstractDex {
         if (_data == null) {
             _data = new byte[0];
         }
-        NetworkAddress from =  new NetworkAddress(NATIVE_NID, Context.getCaller());
-        NetworkAddress to =  new NetworkAddress(NATIVE_NID, _to);
-        _transfer( from, to, _value, _id.intValue(), _data);
+        NetworkAddress from = new NetworkAddress(NATIVE_NID, Context.getCaller());
+        NetworkAddress to = new NetworkAddress(NATIVE_NID, _to);
+        _transfer(from, to, _value, _id.intValue(), _data);
     }
 
     public void xWithdraw(String from, Address _token, BigInteger _value) {
-        NetworkAddress sender =  NetworkAddress.valueOf(from);
+        NetworkAddress sender = NetworkAddress.valueOf(from);
         _withdraw(sender, _token, _value);
     }
 
     @External
     public void withdraw(Address _token, BigInteger _value) {
         Address caller = Context.getCaller();
-        NetworkAddress sender =  new NetworkAddress(NATIVE_NID, caller);
+        NetworkAddress sender = new NetworkAddress(NATIVE_NID, caller);
         _withdraw(sender, _token, _value);
     }
 
-    private void _withdraw(NetworkAddress sender, Address _token, BigInteger _value){
+    private void _withdraw(NetworkAddress sender, Address _token, BigInteger _value) {
         isDexOn();
         checkStatus();
         require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Must specify a positive amount");
@@ -275,7 +275,7 @@ public class DexImpl extends AbstractDex {
 
     @External(readonly = true)
     public BigInteger depositOfUser(Address _owner, Address _token) {
-        NetworkAddress owner =  new NetworkAddress(NATIVE_NID, _owner);
+        NetworkAddress owner = new NetworkAddress(NATIVE_NID, _owner);
         NetworkAddressDictDB<BigInteger> depositDetails = deposit.at(_token);
         return depositDetails.getOrDefault(owner, BigInteger.ZERO);
     }
@@ -287,7 +287,7 @@ public class DexImpl extends AbstractDex {
 
     @External
     public void remove(BigInteger _id, BigInteger _value, @Optional boolean _withdraw) {
-        NetworkAddress owner =  new NetworkAddress(NATIVE_NID, Context.getCaller());
+        NetworkAddress owner = new NetworkAddress(NATIVE_NID, Context.getCaller());
         _remove(_id, owner, _value, _withdraw);
     }
 
@@ -351,17 +351,17 @@ public class DexImpl extends AbstractDex {
     }
 
     public void xAdd(String from, Address _baseToken, Address _quoteToken, BigInteger _baseValue, BigInteger _quoteValue,
-                    @Optional Boolean _withdraw_unused, @Optional BigInteger _slippagePercentage) {
+                     @Optional Boolean _withdraw_unused, @Optional BigInteger _slippagePercentage) {
         isDexOn();
         checkStatus();
         isValidPercent(_slippagePercentage.intValue());
 
-        addInternal(NetworkAddress.parse(from),  _baseToken, _quoteToken, _baseValue, _quoteValue,
+        addInternal(NetworkAddress.parse(from), _baseToken, _quoteToken, _baseValue, _quoteValue,
                 _withdraw_unused, _slippagePercentage);
     }
 
     public void addInternal(NetworkAddress _from, Address _baseToken, Address _quoteToken, BigInteger _baseValue, BigInteger _quoteValue,
-                            @Optional Boolean _withdraw_unused, @Optional BigInteger _slippagePercentage){
+                            @Optional Boolean _withdraw_unused, @Optional BigInteger _slippagePercentage) {
         // We check if there is a previously seen pool with this id.
         // If none is found (return 0), we create a new pool.
         Integer id = poolId.at(_baseToken).getOrDefault(_quoteToken, 0);
@@ -499,8 +499,8 @@ public class DexImpl extends AbstractDex {
         checkStatus();
         isValidPercent(_slippagePercentage.intValue());
 
-        NetworkAddress user =  new NetworkAddress(NATIVE_NID, Context.getCaller());
-        addInternal(user,  _baseToken, _quoteToken, _baseValue, _quoteValue,
+        NetworkAddress user = new NetworkAddress(NATIVE_NID, Context.getCaller());
+        addInternal(user, _baseToken, _quoteToken, _baseValue, _quoteValue,
                 _withdraw_unused, _slippagePercentage);
 
     }
