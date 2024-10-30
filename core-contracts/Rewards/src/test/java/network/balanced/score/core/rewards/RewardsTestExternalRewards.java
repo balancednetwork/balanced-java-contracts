@@ -378,7 +378,6 @@ class RewardsTestExternalRewards extends RewardsTestBase {
 
         rewardsScore.invoke(mockBalanced.xCall.account, "handleCallMessage", fromNetworkAddress, getClaimRewardData(fromNetworkAddress, sources), protocols);
 
-        //todo: calculate the expected value and replace the hard coded value
         verify(rewardsScoreSpy).RewardsClaimedV2(mockBalanced.sicx.account.getAddress(), fromNetworkAddress, new BigInteger("350000000000000000000"));
         verify(rewardsScoreSpy).RewardsClaimedV2(mockBalanced.baln.account.getAddress(), fromNetworkAddress, new BigInteger("8997986111111111111108"));
     }

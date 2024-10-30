@@ -168,7 +168,7 @@ public class RouterImpl implements Router {
         Context.require(balance.compareTo(_minReceive) >= 0, TAG + ": Below minimum receive amount of " + _minReceive);
 
         byte[] data = new byte[0];
-        if(networkAddress.net().equals(nativeNid)){
+        if (networkAddress.net().equals(nativeNid)) {
             data = EMPTY_DATA;
         }
 

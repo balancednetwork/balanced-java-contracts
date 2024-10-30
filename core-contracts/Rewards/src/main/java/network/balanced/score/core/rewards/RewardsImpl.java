@@ -358,7 +358,7 @@ public class RewardsImpl implements Rewards {
         for (String recipient : recipients) {
             BigInteger split = distributionPercentages.get(recipient);
             BigInteger share = split.multiply(remaining).divide(shares);
-            Context.call(getBaln(), "transfer", BalancedAddressManager.getAddress(recipient) , share, new byte[0]);
+            Context.call(getBaln(), "transfer", BalancedAddressManager.getAddress(recipient), share, new byte[0]);
             remaining = remaining.subtract(share);
             shares = shares.subtract(split);
         }
@@ -397,7 +397,7 @@ public class RewardsImpl implements Rewards {
     }
 
     public void xClaimRewards(String from, @Optional String to, @Optional String[] sources) {
-        if (to.isEmpty()){
+        if (to.isEmpty()) {
             to = from;
         }
         _claimRewards(to, sources);
@@ -406,13 +406,13 @@ public class RewardsImpl implements Rewards {
     @External
     public void claimRewards(@Optional String[] sources) {
         checkStatus();
-        if (sources == null || sources.length==0) {
+        if (sources == null || sources.length == 0) {
             sources = getAllSources();
         }
         _claimRewards(Context.getCaller().toString(), sources);
     }
 
-    private void _claimRewards(String address, String[] sources){
+    private void _claimRewards(String address, String[] sources) {
         NetworkAddress networkAddress = NetworkAddress.valueOf(address, NATIVE_NID);
         BigInteger boostedBalance = fetchBoostedBalance(address);
         BigInteger boostedSupply = fetchBoostedSupply();
@@ -439,6 +439,7 @@ public class RewardsImpl implements Rewards {
         }
 
     }
+
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
         checkStatus();
@@ -1036,9 +1037,10 @@ public class RewardsImpl implements Rewards {
     private BigInteger fetchBoostedBalance(String user) {
         NetworkAddress networkAddress = NetworkAddress.valueOf(user, NATIVE_NID);
         Address address = null;
-        try{
+        try {
             address = Address.fromString(user);
-        } catch (Exception ignored){}
+        } catch (Exception ignored) {
+        }
         if (!networkAddress.net().equals(NATIVE_NID) || address == null) {
             return BigInteger.ZERO;
         }

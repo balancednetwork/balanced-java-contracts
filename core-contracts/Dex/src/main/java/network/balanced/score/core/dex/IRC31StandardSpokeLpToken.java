@@ -12,6 +12,7 @@ import score.annotation.Optional;
 import java.math.BigInteger;
 
 import foundation.icon.xcall.NetworkAddress;
+
 import static network.balanced.score.core.dex.DexDBVariables.*;
 import static network.balanced.score.core.dex.DexDBVariables.poolLpTotal;
 import static network.balanced.score.core.dex.utils.Const.SICXICX_POOL_ID;
@@ -26,7 +27,7 @@ public abstract class IRC31StandardSpokeLpToken extends FloorLimited implements 
         if (_id.intValue() == SICXICX_POOL_ID) {
             return getICXBalance(_owner);
         } else {
-            NetworkAddress owner =  new NetworkAddress(NATIVE_NID, _owner);
+            NetworkAddress owner = new NetworkAddress(NATIVE_NID, _owner);
             return DexDBVariables.balance.at(_id.intValue()).getOrDefault(owner, BigInteger.ZERO);
         }
     }
@@ -123,7 +124,8 @@ public abstract class IRC31StandardSpokeLpToken extends FloorLimited implements 
     }
 
     @EventLog(indexed = 3)
-    public void TransferSingle(Address _operator, Address _from, Address _to, BigInteger _id, BigInteger _value){}
+    public void TransferSingle(Address _operator, Address _from, Address _to, BigInteger _id, BigInteger _value) {
+    }
 
     @EventLog(indexed = 3)
     public void HubTransferSingle(BigInteger _id, String _from, String _to, BigInteger _value, byte[] _data) {
