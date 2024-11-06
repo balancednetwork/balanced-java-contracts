@@ -145,7 +145,10 @@ public class DexImpl extends AbstractDex {
 
         if (method.equals("_deposit")) {
             JsonObject params = json.get("params").asObject();
-            String to = params.get("address").asString();
+            String to = _from;
+            if(params.get("address")!=null){
+                to = params.get("address").asString();
+            }
             deposit(fromToken, NetworkAddress.valueOf(to), _value);
         } else {
             // If no supported method was sent, revert the transaction
@@ -483,11 +486,11 @@ public class DexImpl extends AbstractDex {
         HubTransferSingle(BigInteger.valueOf(id), MINT_ADDRESS.toString(), _from.toString(), liquidity, new byte[0]);
 
         if (userDepositedBase.compareTo(BigInteger.ZERO) > 0) {
-            withdraw(_baseToken, userDepositedBase);
+            xWithdraw(_from.toString(), _baseToken, userDepositedBase);
         }
 
         if (userDepositedQuote.compareTo(BigInteger.ZERO) > 0) {
-            withdraw(_quoteToken, userDepositedQuote);
+            xWithdraw(_from.toString(), _quoteToken, userDepositedQuote);
         }
     }
 
