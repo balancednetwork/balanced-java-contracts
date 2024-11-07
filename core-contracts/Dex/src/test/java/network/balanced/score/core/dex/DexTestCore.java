@@ -41,6 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
 
 
 public class DexTestCore extends DexTestBase {
@@ -114,8 +115,18 @@ public class DexTestCore extends DexTestBase {
     @Test
     void crossChainDeposit() {
         String fromNetworkAddress = "0x1.ETH/0x123";
+        String toNetworkAddress = "0x1.ETH/0x124";
         BigInteger depositValue = BigInteger.valueOf(100).multiply(EXA);
-        xDepositToken(fromNetworkAddress,  fromNetworkAddress, bnusdScore, depositValue);
+        xDepositToken(fromNetworkAddress,  toNetworkAddress, bnusdScore, depositValue);
+        BigInteger retrievedValue = (BigInteger) dexScore.call("getDepositV2", bnusdScore.getAddress(), toNetworkAddress);
+        assertEquals(depositValue, retrievedValue);
+    }
+
+    @Test
+    void crossChainDepositWithNoToAddress() {
+        String fromNetworkAddress = "0x1.ETH/0x123";
+        BigInteger depositValue = BigInteger.valueOf(100).multiply(EXA);
+        xDepositTokenWithoutTo(fromNetworkAddress,  null, bnusdScore, depositValue);
         BigInteger retrievedValue = (BigInteger) dexScore.call("getDepositV2", bnusdScore.getAddress(), fromNetworkAddress);
         assertEquals(depositValue, retrievedValue);
     }
@@ -143,6 +154,32 @@ public class DexTestCore extends DexTestBase {
         BigInteger lpTokenBalance = (BigInteger) dexScore.call("xBalanceOf", fromNetworkAddress, poolId);
         assertTrue(lpTokenBalance.compareTo(BigInteger.ZERO)>0);
 
+    }
+
+    @Test
+    void crossChainLPWithWithdraw(){
+        // Arrange
+        String fromNetworkAddress = "0x1.ETH/0x123";
+        BigInteger depositValue = BigInteger.valueOf(200).multiply(EXA);
+        BigInteger addValue = depositValue.divide(BigInteger.TWO);
+        xDepositToken(fromNetworkAddress,  fromNetworkAddress, bnusdScore, depositValue);
+        BigInteger retrievedValue = (BigInteger) dexScore.call("getDepositV2", bnusdScore.getAddress(), fromNetworkAddress);
+        assertEquals(depositValue, retrievedValue);
+
+        xDepositToken(fromNetworkAddress,  fromNetworkAddress, sicxScore, depositValue);
+        BigInteger sicxValue = (BigInteger) dexScore.call("getDepositV2", bnusdScore.getAddress(), fromNetworkAddress);
+        assertEquals(depositValue, sicxValue);
+
+        // Act - create pool
+        String[] protocols = new String[0];
+        byte[] data = getAddLPData(bnusdScore.getAddress(), sicxScore.getAddress(), addValue, addValue, false, BigInteger.ZERO);
+        contextMock.when(() -> Context.call(any(Address.class), eq("getXCallFeePermission"), any(Address.class), any(String.class))).thenReturn(true);
+        contextMock.when(() -> Context.call(any(Address.class), eq("getNativeAssetAddress"), any(Address.class), any(String.class))).thenReturn(null);
+        contextMock.when(() -> Context.call(any(Address.class), eq("claimXCallFee"), any(String.class), any(Boolean.class))).thenReturn(EXA);
+        contextMock.when(() -> Context.call(any(BigInteger.class), any(Address.class), eq("crossTransfer"), any(String.class), any(BigInteger.class), any(byte[].class))).thenReturn(null);
+        handleCallMessageWithOutProtocols(fromNetworkAddress, data, protocols);
+
+        contextMock.verify(() -> Context.call(any(BigInteger.class), any(Address.class), eq("crossTransfer"), any(String.class), any(BigInteger.class), any(byte[].class)), times(2));
     }
 
     @Test
