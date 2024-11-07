@@ -108,6 +108,11 @@ class DexTestBase extends UnitTest {
                 Map.of("address", to)));
     }
 
+    protected void xDepositTokenWithoutTo(String depositor, String to, Account tokenScore, BigInteger value) {
+        contextMock.when(() -> Context.call(any(Address.class), eq("decimals"))).thenReturn(BigInteger.valueOf(18));
+        dexScore.invoke(tokenScore, "xTokenFallback", depositor, value, tokenData("_deposit", Map.of()));
+    }
+
     /*
     * String _from, byte[] _data, @Optional String[] _protocols
     * */
