@@ -43,7 +43,7 @@ public class DataSourceImpl {
     private final BranchedAddressDictDB<String, BigInteger> userWeight = new BranchedAddressDictDB<>("user_weight",
             BigInteger.class);
     private final BranchedAddressDictDB<String, BigInteger> userWorkingBalance = new BranchedAddressDictDB<>(
-                "user_working_balance", BigInteger.class);
+            "user_working_balance", BigInteger.class);
     private final BranchDB<String, VarDB<BigInteger>> lastUpdateTimeUs = Context.newBranchDB("last_update_us",
             BigInteger.class);
     private final BranchDB<String, VarDB<BigInteger>> totalWeight = Context.newBranchDB("running_total",
@@ -276,7 +276,7 @@ public class DataSourceImpl {
         Address[] externalRewards = getRewardTokens();
         Address baln = BalancedAddressManager.getBaln();
         Map<Address, BigInteger> totalWeight = updateTotalWeight(lastUpdateTimestamp, currentTime, balances, externalRewards, readOnlyContext);
-        Map<Address, BigInteger> accruedRewards = new HashMap<>(externalRewards.length+1);
+        Map<Address, BigInteger> accruedRewards = new HashMap<>(externalRewards.length + 1);
         accruedRewards.put(baln, BigInteger.ZERO);
 
         //  If the user's current weight is less than the total, update their weight and issue rewards
@@ -348,9 +348,9 @@ public class DataSourceImpl {
     }
 
     private Map<Address, BigInteger> updateTotalWeight(BigInteger lastUpdateTimestamp, BigInteger currentTime,
-            BalanceData balances, Address[] externalRewards, boolean readOnlyContext) {
+                                                       BalanceData balances, Address[] externalRewards, boolean readOnlyContext) {
         Address baln = BalancedAddressManager.getBaln();
-        Map<Address, BigInteger> externalTotals = new HashMap<>(externalRewards.length+1);
+        Map<Address, BigInteger> externalTotals = new HashMap<>(externalRewards.length + 1);
         externalTotals.put(baln, getTotalWeight());
         for (Address token : externalRewards) {
             externalTotals.put(token, externalTotalWeights.at(dbKey).getOrDefault(token, BigInteger.ZERO));
@@ -378,7 +378,7 @@ public class DataSourceImpl {
 
             BigInteger emission = getTotalDist(previousRewardsDay, readOnlyContext);
             externalTotals.put(baln, computeTotalWeight(externalTotals.get(baln), emission, balances.prevWorkingSupply, lastUpdateTimestamp,
-            endComputeTimestampUs));
+                    endComputeTimestampUs));
             for (Address token : externalRewards) {
                 BigInteger externalEmission = getTotalExternalDist(previousRewardsDay, token);
                 if (externalEmission.equals(BigInteger.ZERO)) {
@@ -437,7 +437,7 @@ public class DataSourceImpl {
         data.put("working balance", getWorkingBalance(user, true));
 
         for (Address addr : externalRewards) {
-            data.put(addr.toString() + "_weight", getExternalUserWeight(user,addr));
+            data.put(addr.toString() + "_weight", getExternalUserWeight(user, addr));
         }
         return data;
     }

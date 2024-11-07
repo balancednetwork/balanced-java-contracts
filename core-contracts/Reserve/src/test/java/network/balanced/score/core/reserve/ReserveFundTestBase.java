@@ -20,7 +20,9 @@ import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import network.balanced.score.lib.interfaces.BalancedOracle;
+import network.balanced.score.lib.interfaces.BalancedToken;
 import network.balanced.score.lib.interfaces.Loans;
+import network.balanced.score.lib.interfaces.Sicx;
 import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
 import network.balanced.score.lib.interfaces.tokens.IRC2MintableScoreInterface;
 import network.balanced.score.lib.test.UnitTest;
@@ -44,8 +46,8 @@ public class ReserveFundTestBase extends UnitTest {
     protected Score reserve;
     MockBalanced mockBalanced;
     MockContract<Loans> loans;
-    MockContract<? extends IRC2Mintable> baln;
-    MockContract<? extends IRC2Mintable> sicx;
+    MockContract<BalancedToken> baln;
+    MockContract<Sicx> sicx;
     MockContract<? extends IRC2Mintable> ieth;
     MockContract<BalancedOracle> balancedOracle;
 

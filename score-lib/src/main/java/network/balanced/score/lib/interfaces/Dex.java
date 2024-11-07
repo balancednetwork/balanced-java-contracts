@@ -18,6 +18,7 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
+import network.balanced.score.lib.annotations.XCall;
 import network.balanced.score.lib.interfaces.addresses.AddressManager;
 import network.balanced.score.lib.interfaces.base.*;
 import network.balanced.score.lib.structs.PrepDelegations;
@@ -32,7 +33,7 @@ import java.util.Map;
 @ScoreClient
 @ScoreInterface
 public interface Dex extends Name, AddressManager, Fallback, TokenFallback,
-        IRC31Base, Version, FloorLimitedInterface, DataSource {
+         IRC31Base, Version, FloorLimitedInterface, DataSource {
 
     @External
     void setPoolLpFee(BigInteger _value);
@@ -71,7 +72,13 @@ public interface Dex extends Name, AddressManager, Fallback, TokenFallback,
     void cancelSicxicxOrder();
 
     @External
+    void xTokenFallback(String _from, BigInteger _value, byte[] _data);
+
+    @External
     void transfer(Address _to, BigInteger _value, BigInteger _id, @Optional byte[] _data);
+
+    @External
+    void hubTransfer(String _to, BigInteger _value, BigInteger _id, @Optional byte[] _data);
 
     @External
     void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data);
@@ -81,6 +88,9 @@ public interface Dex extends Name, AddressManager, Fallback, TokenFallback,
 
     @External(readonly = true)
     BigInteger getDeposit(Address _tokenAddress, Address _user);
+
+    @External(readonly = true)
+    BigInteger getDepositV2(Address _tokenAddress, String _user);
 
     @External(readonly = true)
     BigInteger getSicxEarnings(Address _user);
@@ -175,6 +185,21 @@ public interface Dex extends Name, AddressManager, Fallback, TokenFallback,
     @External
     void add(Address _baseToken, Address _quoteToken, BigInteger _baseValue, BigInteger _quoteValue,
              @Optional boolean _withdraw_unused, @Optional BigInteger _slippagePercentage);
+
+    @XCall
+    void xAdd(String from, Address _baseToken, Address _quoteToken, BigInteger _baseValue, BigInteger _quoteValue,
+              @Optional Boolean _withdraw_unused, @Optional BigInteger _slippagePercentage);
+
+    @XCall
+    void xHubTransfer(String from, String _to, BigInteger _value, BigInteger _id, byte[] _data);
+
+    @XCall
+    void xWithdraw(String from, Address _token, BigInteger _value);
+
+    @XCall
+    void xRemove(String from, BigInteger id, BigInteger value, @Optional Boolean withdraw);
+
+    BigInteger xBalanceOf(String _owner, BigInteger _id);
 
     @External
     void withdrawSicxEarnings(@Optional BigInteger _value);

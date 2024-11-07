@@ -16,6 +16,8 @@
 
 package network.balanced.score.lib.interfaces.tokens;
 
+import foundation.icon.score.client.ScoreClient;
+import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.annotations.XCall;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -23,6 +25,8 @@ import score.annotation.Payable;
 
 import java.math.BigInteger;
 
+@ScoreClient
+@ScoreInterface
 public interface HubToken extends SpokeToken {
     /**
      * Returns the total token supply across all connected chains.

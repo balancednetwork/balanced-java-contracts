@@ -18,7 +18,6 @@ package network.balanced.score.core.asset.manager;
 
 import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.lib.interfaces.AssetManager;
-import network.balanced.score.lib.interfaces.AssetManagerMessages;
 import network.balanced.score.lib.interfaces.AssetManagerXCall;
 import network.balanced.score.lib.interfaces.SpokeAssetManagerMessages;
 import network.balanced.score.lib.utils.*;

@@ -20,18 +20,20 @@ import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.*;
 import network.balanced.score.lib.interfaces.base.Version;
+import network.balanced.score.lib.interfaces.tokens.HubToken;
 import network.balanced.score.lib.interfaces.tokens.IRC2BurnableInterface;
 import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
 import score.Address;
 import score.annotation.EventLog;
 import score.annotation.External;
+import score.annotation.Optional;
 
 import java.math.BigInteger;
 import java.util.Map;
 
 @ScoreClient
 @ScoreInterface
-public interface BalancedToken extends IRC2Mintable, IRC2BurnableInterface, GovernanceAddress, AdminAddress,
+public interface BalancedToken extends HubToken, IRC2BurnableInterface, GovernanceAddress, AdminAddress,
         BnusdAddress, OracleAddress, DexAddress, DividendsAddress, Version {
 
     @External
@@ -117,4 +119,16 @@ public interface BalancedToken extends IRC2Mintable, IRC2BurnableInterface, Gove
 
     @EventLog(indexed = 3)
     void OraclePrice(String market, String oracle_name, Address oracle_address, BigInteger price);
+
+    @External
+    void setMinter(Address _address);
+
+    @External(readonly = true)
+    Address getMinter();
+
+    @External
+    void mint(BigInteger _amount, @Optional byte[] _data);
+
+    @External
+    void mintTo(Address _account, BigInteger _amount, @Optional byte[] _data);
 }

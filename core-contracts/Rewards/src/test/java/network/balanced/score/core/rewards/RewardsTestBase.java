@@ -27,7 +27,10 @@ import network.balanced.score.lib.test.mock.MockContract;
 import network.balanced.score.lib.test.mock.MockBalanced;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import score.Address;
+import score.Context;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -65,6 +68,10 @@ class RewardsTestBase extends UnitTest {
 
     Score rewardsScore;
 
+    RewardsImpl rewardsScoreSpy;
+
+    public final String NATIVE_NID = "0x1.ICON";
+
     void setup() throws Exception {
         mockBalanced = new MockBalanced(sm, owner);
         governance = mockBalanced.governance.account;
@@ -82,7 +89,14 @@ class RewardsTestBase extends UnitTest {
         // One vote period before being able to start voting
         sm.getBlock().increase(DAY*10);
 
+        when(mockBalanced.xCall.mock.getNetworkId()).thenReturn(NATIVE_NID);
+        doNothing().when(mockBalanced.sicx.mock).transfer(any(Address.class), any(BigInteger.class), any(byte[].class));
+        doNothing().when(mockBalanced.baln.mock).transfer(any(Address.class), any(BigInteger.class), any(byte[].class));
+        when(mockBalanced.daofund.mock.getXCallFeePermission(any(Address.class), any(String.class))).thenReturn(true);
+
         rewardsScore = sm.deploy(owner, RewardsImpl.class, governance.getAddress());
+        rewardsScoreSpy = (RewardsImpl) spy(rewardsScore.getInstance());
+        rewardsScore.setInstance(rewardsScoreSpy);
         setupDistributions();
         rewardsScore.invoke(owner, "setTimeOffset", startTime);
         rewardsScore.invoke(owner, "addDataProvider", loans.getAddress());
@@ -144,6 +158,16 @@ class RewardsTestBase extends UnitTest {
         );
 
         when(dataSource.mock.getBalanceAndSupply(name, address.toString())).thenReturn(balanceAndSupply);
+    }
+
+    void mockBalanceAndSupply(MockContract<? extends DataSource> dataSource, String name, String address,
+                              BigInteger balance, BigInteger supply) {
+        Map<String, BigInteger> balanceAndSupply = Map.of(
+                "_balance", balance,
+                "_totalSupply", supply
+        );
+
+        when(dataSource.mock.getBalanceAndSupply(name, address)).thenReturn(balanceAndSupply);
     }
 
     void verifyBalnReward(Address address, BigInteger expectedReward) {

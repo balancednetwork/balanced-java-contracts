@@ -20,16 +20,18 @@ import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.StakingAddress;
 import network.balanced.score.lib.interfaces.base.Version;
+import network.balanced.score.lib.interfaces.tokens.HubToken;
 import network.balanced.score.lib.interfaces.tokens.IRC2BurnableInterface;
 import network.balanced.score.lib.interfaces.tokens.IRC2Mintable;
 import score.Address;
 import score.annotation.External;
+import score.annotation.Optional;
 
 import java.math.BigInteger;
 
 @ScoreClient
 @ScoreInterface
-public interface Sicx extends StakingAddress, IRC2BurnableInterface, IRC2Mintable, Version {
+public interface Sicx extends StakingAddress, HubToken, IRC2BurnableInterface, Version {
     @External
     void setEmergencyManager(Address _address);
 
@@ -44,4 +46,16 @@ public interface Sicx extends StakingAddress, IRC2BurnableInterface, IRC2Mintabl
 
     @External(readonly = true)
     BigInteger lastPriceInLoop();
+
+    @External
+    void setMinter(Address _address);
+
+    @External(readonly = true)
+    Address getMinter();
+
+    @External
+    void mint(BigInteger _amount, @Optional byte[] _data);
+
+    @External
+    void mintTo(Address _account, BigInteger _amount, @Optional byte[] _data);
 }

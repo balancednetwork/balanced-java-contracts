@@ -19,30 +19,47 @@ package network.balanced.score.core.rewards;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
+import com.iconloop.score.test.Account;
+import foundation.icon.jsonrpc.Address;
+import foundation.icon.score.client.DefaultScoreClient;
+import foundation.icon.xcall.NetworkAddress;
+import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
+import org.json.JSONArray;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import score.ByteArrayObjectWriter;
+import score.Context;
 import score.UserRevertedException;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static network.balanced.score.lib.test.integration.BalancedUtils.*;
 import static network.balanced.score.lib.utils.Constants.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.verify;
 
 class RewardsIntegrationTest implements ScoreIntegrationTest {
     private static Balanced balanced;
     private static BalancedClient owner;
     private static BalancedClient reader;
+    private static DexScoreClient dex;
+    private static StakedLPScoreClient stakedlp;
+    private static RewardsScoreClient rewards;
 
     @BeforeAll
     static void setup() throws Exception {
         balanced = new Balanced();
         balanced.setupBalanced();
+        dex = new DexScoreClient(balanced.dex);
+        stakedlp = new StakedLPScoreClient(balanced.stakedLp);
+        rewards = new RewardsScoreClient(balanced.rewards);
 
         owner = balanced.ownerClient;
         reader = balanced.newClient(BigInteger.ZERO);
@@ -346,6 +363,67 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
     }
 
     @Test
+    void crossChainClaimRewards(){
+        // Arrange
+        NetworkAddress ethBaseAssetAddress = new NetworkAddress(balanced.ETH_NID, balanced.ETH_TOKEN_ADDRESS);
+        NetworkAddress ethQuoteAssetAddress = new NetworkAddress(balanced.ETH_NID, "ox100");
+        NetworkAddress ethAccount = new NetworkAddress(balanced.ETH_NID, "0x123");
+        BigInteger amount = BigInteger.valueOf(100).multiply(EXA);
+        String toNetworkAddress = new NetworkAddress(balanced.ICON_NID, dex._address()).toString();
+        String stakingAddress = new NetworkAddress(balanced.ICON_NID, stakedlp._address()).toString();
+
+        // Arrange - deploy a new token
+        JsonArray addAssetParams = new JsonArray()
+                .add(createParameter(ethQuoteAssetAddress.toString()))
+                .add(createParameter("ETHZ"))
+                .add(createParameter("ETHZ"))
+                .add(createParameter(BigInteger.valueOf(18)));
+        JsonObject addAsset = createTransaction(balanced.assetManager._address(), "deployAsset", addAssetParams);
+        JsonArray transactions = new JsonArray()
+                .add(addAsset);
+        balanced.governanceClient.execute(transactions.toString());
+
+        score.Address baseAssetAddress = owner.assetManager.getAssetAddress(ethBaseAssetAddress.toString());
+        score.Address quoteAssetAddress = owner.assetManager.getAssetAddress(ethQuoteAssetAddress.toString());
+
+        // Arrange - deposits
+        byte[] deposit1 = AssetManagerMessages.deposit(balanced.ETH_TOKEN_ADDRESS, ethAccount.account(), toNetworkAddress,  amount, tokenData("_deposit",
+                new JsonObject().set( "address", ethAccount.toString())));
+        owner.xcall.recvCall(owner.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit1);
+
+        byte[] deposit2 = AssetManagerMessages.deposit("ox100", ethAccount.account(), toNetworkAddress,  amount, tokenData("_deposit",
+                new JsonObject().set( "address", ethAccount.toString())));
+        owner.xcall.recvCall(owner.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit2);
+
+        // Arrange add quote token
+        dexAddQuoteCoin((Address) quoteAssetAddress);
+
+        // Arrange - add pool
+        byte[] xaddMessage = getAddLPData(baseAssetAddress, quoteAssetAddress, amount, amount, false, BigInteger.valueOf(5) );
+        owner.xcall.recvCall(dex._address(), ethAccount.toString(), xaddMessage);
+
+        // Arrange - stake
+        BigInteger poolId = dex.getPoolId(baseAssetAddress,
+                quoteAssetAddress);
+        try{
+            addNewDataSource("test1", poolId, BigInteger.ONE);
+        } catch (Exception ignored){}
+        BigInteger balance = dex.xBalanceOf(ethAccount.toString(), poolId);
+        byte[] stakeData = getStakeData(stakingAddress, balance, poolId, "stake".getBytes());
+        owner.xcall.recvCall(owner.dex._address(), ethAccount.toString(), stakeData);
+
+        // Act
+        balanced.increaseDay(2);
+
+        String[] sources = new String[] {};
+        byte[] claimData = getClaimRewardData(ethAccount.toString(), sources);
+        owner.xcall.recvCall(rewards._address(), ethAccount.toString(), claimData);
+
+        // Verify
+
+    }
+
+    @Test
     @Order(30)
     void voting() throws Exception {
         // Arrange
@@ -458,12 +536,77 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         assertEquals(balancePostClaim, balancePreClaim);
     }
 
-    private JsonObject createDistributionPercentage(String name, BigInteger percentage) {
-        JsonObject recipient = new JsonObject()
-                .add("recipient_name", createParameter(name))
-                .add("dist_percent", createParameter(percentage));
-
-        return recipient;
+    static byte[] getStakeData(String to, BigInteger amount, BigInteger poolId, byte[] data) {
+        ByteArrayObjectWriter writer = Context.newByteArrayObjectWriter("RLPn");
+        writer.beginList(5);
+        writer.write("xhubtransfer");
+        writer.write(to);
+        writer.write(amount);
+        writer.write(poolId);
+        writer.write(data);
+        writer.end();
+        return writer.toByteArray();
     }
 
+    static byte[] getClaimRewardData(String to, String[] sources) {
+        ByteArrayObjectWriter writer = Context.newByteArrayObjectWriter("RLPn");
+        writer.beginList(3);
+        writer.write("xclaimrewards");
+        writer.write(to);
+        writer.beginList(sources.length);
+        for(String source : sources) {
+            writer.write(source);
+        }
+        writer.end();
+        writer.end();
+        return writer.toByteArray();
+    }
+
+    private void addNewDataSource(String name, BigInteger id, BigInteger type) {
+        JsonArray lpSourceParameters = new JsonArray()
+                .add(createParameter(id))
+                .add(createParameter(name));
+
+        JsonArray rewardsSourceParameters = new JsonArray()
+                .add(createParameter(name))
+                .add(createParameter(balanced.stakedLp._address()))
+                .add(createParameter(type));
+
+        JsonArray actions = new JsonArray()
+                .add(createTransaction(balanced.stakedLp._address(), "addDataSource", lpSourceParameters))
+                .add(createTransaction(balanced.rewards._address(), "createDataSource", rewardsSourceParameters));
+
+        balanced.ownerClient.governance.execute(actions.toString());
+    }
+
+    static byte[] getAddLPData(score.Address baseToken, score.Address quoteToken, BigInteger baseValue, BigInteger quoteValue, Boolean withdraw_unused, BigInteger slippagePercentage) {
+        ByteArrayObjectWriter writer = Context.newByteArrayObjectWriter("RLPn");
+        writer.beginList(7);
+        writer.write("xadd");
+        writer.write(baseToken);
+        writer.write(quoteToken);
+        writer.write(baseValue);
+        writer.write(quoteValue);
+        writer.write(withdraw_unused);
+        writer.write(slippagePercentage);
+        writer.end();
+        return writer.toByteArray();
+    }
+
+    public static byte[] tokenData(String method, JsonObject params) {
+        JsonObject data = new JsonObject();
+        data.set("method", method);
+        data.set("params", params);
+        return data.toString().getBytes();
+    }
+
+    private void dexAddQuoteCoin(Address address) {
+        JsonArray params = new JsonArray()
+                .add(createParameter(address));
+
+        JsonArray actions = new JsonArray()
+                .add(createTransaction(balanced.dex._address(), "addQuoteCoin", params));
+
+        balanced.ownerClient.governance.execute(actions.toString());
+    }
 }
