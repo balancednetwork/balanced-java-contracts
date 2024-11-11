@@ -21,7 +21,7 @@ public class Versions {
     public final static String DIVIDENDS = "v1.0.0";
     public final static String LOANS = "v1.2.0";
     public final static String RESERVE = "v1.0.0";
-    public final static String SICX = "v1.1.0";
+    public final static String SICX = "v1.1.1";
     public final static String STAKING = "v1.0.1";
     public final static String WORKERTOKEN = "v1.0.0";
     public final static String BNUSD = "v1.1.1";
