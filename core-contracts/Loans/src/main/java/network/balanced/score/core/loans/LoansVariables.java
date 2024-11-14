@@ -42,6 +42,7 @@ public class LoansVariables {
     private static final String REDEMPTION_DAO_FEE = "redemption_dao_fee";
     private static final String RETIREMENT_BONUS = "retirement_bonus";
     private static final String NEW_LOAN_MINIMUM = "new_loan_minimum";
+    private static final String REDEMPTION_EXEMPTIONS = "redemption_exemptions";
 
     private static final String REDEEM_BATCH_SIZE = "redeem_batch_size";
     private static final String MAX_RETIRE_PERCENT = "max_retire_percent";
@@ -69,6 +70,7 @@ public class LoansVariables {
     static final VarDB<BigInteger> newLoanMinimum = Context.newVarDB(NEW_LOAN_MINIMUM, BigInteger.class);
     static final VarDB<Integer> redeemBatch = Context.newVarDB(REDEEM_BATCH_SIZE, Integer.class);
     static final VarDB<BigInteger> maxRetirePercent = Context.newVarDB(MAX_RETIRE_PERCENT, BigInteger.class);
+    static final DictDB<Address, Boolean> redemptionExemptions= Context.newDictDB(REDEMPTION_EXEMPTIONS, Boolean.class);
 
     static final VarDB<Address> expectedToken = Context.newVarDB(EXPECTED_TOKEN, Address.class);
     static final VarDB<BigInteger> amountReceived = Context.newVarDB(AMOUNT_RECEIVED, BigInteger.class);

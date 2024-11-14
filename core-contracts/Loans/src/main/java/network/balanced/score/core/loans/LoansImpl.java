@@ -464,6 +464,7 @@ public class LoansImpl extends FloorLimited implements Loans {
     public void redeemCollateral(Address _collateralAddress, BigInteger _amount) {
         checkStatus();
         loansOn();
+        Context.require(!getRedemptionExemption(_collateralAddress), "bnUSD cannot be redeemed for this collateral");
         Address caller = Context.getCaller();
         String collateralSymbol = CollateralDB.getSymbol(_collateralAddress);
         BigInteger daofundFee = redemptionDaoFee.getOrDefault(BigInteger.ZERO).multiply(_amount).divide(POINTS);
@@ -886,6 +887,17 @@ public class LoansImpl extends FloorLimited implements Loans {
     @External(readonly = true)
     public BigInteger getRedemptionFee() {
         return redemptionFee.get();
+    }
+
+    @External
+    public void setRedemptionExemption(Address token, boolean exempt) {
+        onlyGovernance();
+        redemptionExemptions.set(token, exempt);
+    }
+
+    @External(readonly = true)
+    public boolean getRedemptionExemption(Address token) {
+        return redemptionExemptions.getOrDefault(token, false);
     }
 
     @External
