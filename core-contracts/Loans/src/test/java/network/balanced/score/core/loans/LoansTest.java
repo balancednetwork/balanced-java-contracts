@@ -1680,6 +1680,27 @@ class LoansTest extends LoansTestBase {
     }
 
     @Test
+    void redeemCollateral_exemptCollateral() {
+        // Arrange
+        Account account1 = sm.createAccount();
+        Account redeemer = sm.createAccount();
+        BigInteger collateral = BigInteger.valueOf(4000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(400).multiply(EXA);
+
+        BigInteger sICXRate = EXA.divide(BigInteger.TWO);
+        mockOraclePrice("sICX", sICXRate);
+
+        // Act && Assert
+        loans.invoke(governance.account, "setRedemptionExemption", sicx.getAddress(), true);
+        takeLoanICX(account1, "bnUSD", collateral, loan);
+
+        String expectedErrorMessage = "bnUSD cannot be redeemed for this collateral";
+        Executable redeemExemptToken = () -> loans.invoke(redeemer, "redeemCollateral", sicx.getAddress(), BigInteger.ONE);
+        expectErrorMessage(redeemExemptToken, expectedErrorMessage);
+    }
+
+
+    @Test
     void redeemCollateral_iETH() {
         // Arrange
         Account account1 = sm.createAccount();
