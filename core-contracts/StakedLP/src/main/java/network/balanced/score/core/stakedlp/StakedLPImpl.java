@@ -147,6 +147,9 @@ public class StakedLPImpl implements StakedLP {
     }
 
     public void xUnstake(String from, BigInteger id, BigInteger value) {
+        Context.println("from is: "+from);
+        Context.println("id is: "+id);
+        Context.println("value is: "+value);
         unstake(id, NetworkAddress.valueOf(from), value);
     }
 
@@ -158,6 +161,7 @@ public class StakedLPImpl implements StakedLP {
     }
 
     private void unstake(BigInteger id, NetworkAddress user, BigInteger value){
+        Context.println("value is: "+value);
         Context.require(value.compareTo(BigInteger.ZERO) > 0, "StakedLP: Cannot unstake less than zero value");
         BigInteger previousBalance = poolStakedDetails.at(user).getOrDefault(id, BigInteger.ZERO);
         BigInteger previousTotal = totalStaked(id);

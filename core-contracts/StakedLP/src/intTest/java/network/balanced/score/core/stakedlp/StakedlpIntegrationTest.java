@@ -207,7 +207,7 @@ public class StakedlpIntegrationTest {
         dexAddQuoteCoin((Address) quoteAssetAddress);
 
         // Arrange - add pool
-        byte[] xaddMessage = getAddLPData(baseAssetAddress, quoteAssetAddress, amount, amount, false, BigInteger.valueOf(5) );
+        byte[] xaddMessage = getAddLPData(baseAssetAddress.toString(), quoteAssetAddress.toString(), amount, amount, false, BigInteger.valueOf(5) );
         owner.xcall.recvCall(dexScoreClient._address(), ethAccount.toString(), xaddMessage);
 
         // Act - stake
@@ -275,7 +275,7 @@ public class StakedlpIntegrationTest {
         balanced.ownerClient.governance.execute(actions.toString());
     }
 
-    static byte[] getAddLPData(score.Address baseToken, score.Address quoteToken, BigInteger baseValue, BigInteger quoteValue, Boolean withdraw_unused, BigInteger slippagePercentage) {
+    static byte[] getAddLPData(String baseToken, String quoteToken, BigInteger baseValue, BigInteger quoteValue, Boolean withdraw_unused, BigInteger slippagePercentage) {
         ByteArrayObjectWriter writer = Context.newByteArrayObjectWriter("RLPn");
         writer.beginList(7);
         writer.write("xadd");

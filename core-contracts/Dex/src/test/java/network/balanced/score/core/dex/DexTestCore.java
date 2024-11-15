@@ -146,7 +146,7 @@ public class DexTestCore extends DexTestBase {
 
         // Act
         String[] protocols = new String[0];
-        byte[] data = getAddLPData(bnusdScore.getAddress(), sicxScore.getAddress(), depositValue, depositValue, false, BigInteger.ZERO);
+        byte[] data = getAddLPData(bnusdScore.getAddress().toString(), sicxScore.getAddress().toString(), depositValue, depositValue, false, BigInteger.ZERO);
         handleCallMessageWithOutProtocols(fromNetworkAddress, data, protocols);
 
         // Assert
@@ -154,6 +154,16 @@ public class DexTestCore extends DexTestBase {
         BigInteger lpTokenBalance = (BigInteger) dexScore.call("xBalanceOf", fromNetworkAddress, poolId);
         assertTrue(lpTokenBalance.compareTo(BigInteger.ZERO)>0);
 
+    }
+
+    public static byte[] hexStringToByteArray(String hex) {
+        int length = hex.length();
+        byte[] data = new byte[length / 2];
+        for (int i = 0; i < length; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4)
+                    + Character.digit(hex.charAt(i+1), 16));
+        }
+        return data;
     }
 
     @Test
@@ -172,7 +182,7 @@ public class DexTestCore extends DexTestBase {
 
         // Act - create pool
         String[] protocols = new String[0];
-        byte[] data = getAddLPData(bnusdScore.getAddress(), sicxScore.getAddress(), addValue, addValue, false, BigInteger.ZERO);
+        byte[] data = getAddLPData(bnusdScore.getAddress().toString(), sicxScore.getAddress().toString(), addValue, addValue, false, BigInteger.ZERO);
         contextMock.when(() -> Context.call(any(Address.class), eq("getXCallFeePermission"), any(Address.class), any(String.class))).thenReturn(true);
         contextMock.when(() -> Context.call(any(Address.class), eq("getNativeAssetAddress"), any(Address.class), any(String.class))).thenReturn(null);
         contextMock.when(() -> Context.call(any(Address.class), eq("claimXCallFee"), any(String.class), any(Boolean.class))).thenReturn(EXA);
@@ -196,7 +206,7 @@ public class DexTestCore extends DexTestBase {
         assertEquals(depositValue, sicxValue);
 
         String[] protocols = new String[0];
-        byte[] data = getAddLPData(bnusdScore.getAddress(), sicxScore.getAddress(), depositValue, depositValue, false, BigInteger.ZERO);
+        byte[] data = getAddLPData(bnusdScore.getAddress().toString(), sicxScore.getAddress().toString(), depositValue, depositValue, false, BigInteger.ZERO);
         handleCallMessageWithOutProtocols(fromNetworkAddress, data, protocols);
 
         BigInteger poolId = (BigInteger) dexScore.call("getPoolId", bnusdScore.getAddress(), sicxScore.getAddress());
@@ -233,7 +243,7 @@ public class DexTestCore extends DexTestBase {
 
         // Arrange supply liquidity
         String[] protocols = new String[0];
-        byte[] data = getAddLPData(bnusdScore.getAddress(), sicxScore.getAddress(), depositValue, depositValue, false, BigInteger.ZERO);
+        byte[] data = getAddLPData(bnusdScore.getAddress().toString(), sicxScore.getAddress().toString(), depositValue, depositValue, false, BigInteger.ZERO);
         handleCallMessageWithOutProtocols(fromNetworkAddress, data, protocols);
 
         BigInteger poolId = (BigInteger) dexScore.call("getPoolId", bnusdScore.getAddress(), sicxScore.getAddress());
@@ -269,7 +279,7 @@ public class DexTestCore extends DexTestBase {
         return writer.toByteArray();
     }
 
-    static byte[] getAddLPData(Address baseToken, Address quoteToken, BigInteger baseValue, BigInteger quoteValue, Boolean withdraw_unused, BigInteger slippagePercentage) {
+    static byte[] getAddLPData(String baseToken, String quoteToken, BigInteger baseValue, BigInteger quoteValue, Boolean withdraw_unused, BigInteger slippagePercentage) {
         ByteArrayObjectWriter writer = Context.newByteArrayObjectWriter("RLPn");
         writer.beginList(7);
         writer.write("xadd");
