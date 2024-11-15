@@ -246,9 +246,9 @@ public class DexImpl extends AbstractDex {
         _transfer(from, to, _value, _id.intValue(), _data);
     }
 
-    public void xWithdraw(String from, Address _token, BigInteger _value) {
+    public void xWithdraw(String from, String _token, BigInteger _value) {
         NetworkAddress sender = NetworkAddress.valueOf(from);
-        _withdraw(sender, _token, _value);
+        _withdraw(sender, Address.fromString(_token), _value);
     }
 
     @External
@@ -347,19 +347,19 @@ public class DexImpl extends AbstractDex {
         userQuoteDeposit.set(_user, depositedQuote.add(quoteToWithdraw));
 
         if (_withdraw) {
-            xWithdraw(_user.toString(), baseToken, baseToWithdraw);
-            xWithdraw(_user.toString(), quoteToken, quoteToWithdraw);
+            xWithdraw(_user.toString(),  baseToken.toString(), baseToWithdraw);
+            xWithdraw(_user.toString(), quoteToken.toString(), quoteToWithdraw);
         }
 
     }
 
-    public void xAdd(String from, Address _baseToken, Address _quoteToken, BigInteger _baseValue, BigInteger _quoteValue,
+    public void xAdd(String from, String _baseToken, String _quoteToken, BigInteger _baseValue, BigInteger _quoteValue,
                      @Optional Boolean _withdraw_unused, @Optional BigInteger _slippagePercentage) {
         isDexOn();
         checkStatus();
         isValidPercent(_slippagePercentage.intValue());
 
-        addInternal(NetworkAddress.parse(from), _baseToken, _quoteToken, _baseValue, _quoteValue,
+        addInternal(NetworkAddress.parse(from), Address.fromString(_baseToken), Address.fromString(_quoteToken), _baseValue, _quoteValue,
                 _withdraw_unused, _slippagePercentage);
     }
 
@@ -486,11 +486,11 @@ public class DexImpl extends AbstractDex {
         HubTransferSingle(BigInteger.valueOf(id), MINT_ADDRESS.toString(), _from.toString(), liquidity, new byte[0]);
 
         if (userDepositedBase.compareTo(BigInteger.ZERO) > 0) {
-            xWithdraw(_from.toString(), _baseToken, userDepositedBase);
+            xWithdraw(_from.toString(), _baseToken.toString(), userDepositedBase);
         }
 
         if (userDepositedQuote.compareTo(BigInteger.ZERO) > 0) {
-            xWithdraw(_from.toString(), _quoteToken, userDepositedQuote);
+            xWithdraw(_from.toString(), _quoteToken.toString(), userDepositedQuote);
         }
     }
 

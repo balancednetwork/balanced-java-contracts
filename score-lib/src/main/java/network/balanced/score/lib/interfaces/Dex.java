@@ -187,14 +187,14 @@ public interface Dex extends Name, AddressManager, Fallback, TokenFallback,
              @Optional boolean _withdraw_unused, @Optional BigInteger _slippagePercentage);
 
     @XCall
-    void xAdd(String from, Address _baseToken, Address _quoteToken, BigInteger _baseValue, BigInteger _quoteValue,
+    void xAdd(String from, String _baseToken, String _quoteToken, BigInteger _baseValue, BigInteger _quoteValue,
               @Optional Boolean _withdraw_unused, @Optional BigInteger _slippagePercentage);
 
     @XCall
     void xHubTransfer(String from, String _to, BigInteger _value, BigInteger _id, byte[] _data);
 
     @XCall
-    void xWithdraw(String from, Address _token, BigInteger _value);
+    void xWithdraw(String from, String _token, BigInteger _value);
 
     @XCall
     void xRemove(String from, BigInteger id, BigInteger value, @Optional Boolean withdraw);
