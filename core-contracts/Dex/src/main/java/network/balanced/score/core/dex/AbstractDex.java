@@ -645,6 +645,19 @@ public abstract class AbstractDex extends IRC31StandardSpokeLpToken {
     }
 
     @External
+    public void governanceBorrow(Address token, BigInteger amount, Address recipient) {
+        onlyGovernance();
+        BigInteger currentDebt = governanceDebt.getOrDefault(token, BigInteger.ZERO);
+        governanceDebt.set(token, currentDebt.add(amount));
+        Context.call(token, "transfer", recipient, amount);
+    }
+
+    @External(readonly=true)
+    public BigInteger getGovernanceDebt(Address token) {
+        return governanceDebt.getOrDefault(token, BigInteger.ZERO);
+    }
+
+    @External
     public void govSetPoolTotal(int pid, BigInteger total) {
         onlyGovernance();
         poolLpTotal.set(pid, total);

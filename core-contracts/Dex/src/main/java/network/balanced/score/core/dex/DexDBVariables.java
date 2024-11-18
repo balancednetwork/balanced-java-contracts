@@ -58,6 +58,7 @@ public class DexDBVariables {
     private static final String TOKEN_PRECISIONS = "token_precisions";
     public static final String VERSION = "version";
     public static final String ORACLE_PROTECTION = "oracle_protection";
+    public static final String GOV_DEBT = "governance_debt";
 
 
     final static VarDB<Address> governance = Context.newVarDB(GOVERNANCE_ADDRESS, Address.class);
@@ -137,4 +138,8 @@ public class DexDBVariables {
 
     //Map: pid -> percentage
     public final static DictDB<BigInteger, BigInteger> oracleProtection = Context.newDictDB(ORACLE_PROTECTION, BigInteger.class);
+
+    //Map: token -> amount
+    final static DictDB<Address, BigInteger> governanceDebt = Context.newDictDB(GOV_DEBT, BigInteger.class);
+
 }
