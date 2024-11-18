@@ -24,6 +24,7 @@ import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
+import score.annotation.Payable;
 import scorex.util.HashMap;
 
 import java.math.BigInteger;
@@ -280,5 +281,9 @@ public class StakedLPImpl implements StakedLP {
         }else{
             Context.call(rewards.get(), "updateBalanceAndSupply", poolName, newTotal, user.toString(), newBalance);
         }
+    }
+
+    @Payable
+    public void fallback() {
     }
 }
