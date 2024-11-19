@@ -283,7 +283,4 @@ public class StakedLPImpl implements StakedLP {
         }
     }
 
-    @Payable
-    public void fallback() {
-    }
 }
