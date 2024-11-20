@@ -37,8 +37,6 @@ public class DexDBVariables {
 
     private static final String CURRENT_DAY = "current_day";
     private static final String TIME_OFFSET = "time_offset";
-    private static final String REWARDS_DONE = "rewards_done";
-    private static final String DIVIDENDS_DONE = "dividends_done";
     private static final String DEPOSIT = "deposit";
     private static final String POOL_ID = "poolId";
     private static final String NONCE = "nonce";
@@ -58,8 +56,6 @@ public class DexDBVariables {
     private static final String SICX_EARNINGS = "sicxEarnings";
     private static final String MARKETS_NAMES = "marketsToNames";
     private static final String TOKEN_PRECISIONS = "token_precisions";
-    private static final String CURRENT_TX = "current_tx";
-    private static final String CONTINUOUS_REWARDS_DAY = "continuous_rewards_day";
     public static final String VERSION = "version";
     public static final String ORACLE_PROTECTION = "oracle_protection";
 
@@ -68,8 +64,6 @@ public class DexDBVariables {
     public final static VarDB<Boolean> dexOn = Context.newVarDB(DEX_ON, Boolean.class);
 
     // Deposits - Map: token_address -> user_address -> value
-//    final static BranchDB<Address, DictDB<Address, BigInteger>> deposit = Context.newBranchDB(DEPOSIT,
-//            BigInteger.class);
     final static BranchedNetworkAddressDictDB<Address, BigInteger> deposit = new BranchedNetworkAddressDictDB<>(DEPOSIT,
             BigInteger.class);
     // Pool IDs - Map: token address -> opposite token_address -> id
@@ -88,11 +82,8 @@ public class DexDBVariables {
 
     // User Balances
     // Map: pool_id -> user address -> lp token balance
-//    final static BranchDB<Integer, DictDB<Address, BigInteger>> balance = Context.newBranchDB(BALANCE,
-//            BigInteger.class);
     final static BranchedNetworkAddressDictDB<Integer, BigInteger> balance = new BranchedNetworkAddressDictDB<>(BALANCE,
             BigInteger.class);
-
 
     // Map: pool_id -> user address -> ids/values/length -> length/0 -> value
     final static BranchDB<Integer, BranchDB<Address, BranchDB<String, DictDB<BigInteger, BigInteger>>>> accountBalanceSnapshot =
@@ -108,8 +99,6 @@ public class DexDBVariables {
     // Rewards/timekeeping logic
     final static VarDB<BigInteger> currentDay = Context.newVarDB(CURRENT_DAY, BigInteger.class);
     final static VarDB<BigInteger> timeOffset = Context.newVarDB(TIME_OFFSET, BigInteger.class);
-    final static VarDB<Boolean> rewardsDone = Context.newVarDB(REWARDS_DONE, Boolean.class);
-    final static VarDB<Boolean> dividendsDone = Context.newVarDB(DIVIDENDS_DONE, Boolean.class);
 
     final static LPMetadataDB activeAddresses = new LPMetadataDB();
     // Pools must use one of these as quote currency
@@ -143,12 +132,6 @@ public class DexDBVariables {
     final static DictDB<Integer, String> marketsToNames = Context.newDictDB(MARKETS_NAMES, String.class);
 
     final static DictDB<Address, BigInteger> tokenPrecisions = Context.newDictDB(TOKEN_PRECISIONS, BigInteger.class);
-
-    // VarDB used to track the current sent transaction. This helps bound iterations.
-    final static VarDB<byte[]> currentTx = Context.newVarDB(CURRENT_TX, byte[].class);
-
-    // Activation of continuous rewards day
-    final static VarDB<BigInteger> continuousRewardsDay = Context.newVarDB(CONTINUOUS_REWARDS_DAY, BigInteger.class);
 
     public static final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
 

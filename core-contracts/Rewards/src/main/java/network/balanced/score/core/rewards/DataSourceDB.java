@@ -38,10 +38,6 @@ public class DataSourceDB {
         return names.size();
     }
 
-    public static boolean hasSource(String name) {
-        return contains(names, name);
-    }
-
     public static void newSource(String name, Address address) {
         Context.require(!contains(names, name), TAG + ": Data source already exists");
 

@@ -24,7 +24,6 @@ import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
-import score.annotation.Payable;
 import scorex.util.HashMap;
 
 import java.math.BigInteger;
@@ -51,6 +50,7 @@ public class StakedLPImpl implements StakedLP {
     private static final VarDB<Address> rewards = Context.newVarDB("rewardsAddress", Address.class);
     private final VarDB<String> currentVersion = Context.newVarDB("version", String.class);
     public static String NATIVE_NID;
+
     public StakedLPImpl(Address governance) {
         if (StakedLPImpl.governance.get() == null) {
             Context.require(governance.isContract(), "StakedLP: Governance address should be a contract");
@@ -148,9 +148,9 @@ public class StakedLPImpl implements StakedLP {
     }
 
     public void xUnstake(String from, BigInteger id, BigInteger value) {
-        Context.println("from is: "+from);
-        Context.println("id is: "+id);
-        Context.println("value is: "+value);
+        Context.println("from is: " + from);
+        Context.println("id is: " + id);
+        Context.println("value is: " + value);
         unstake(id, NetworkAddress.valueOf(from), value);
     }
 
@@ -161,8 +161,8 @@ public class StakedLPImpl implements StakedLP {
         unstake(id, user, value);
     }
 
-    private void unstake(BigInteger id, NetworkAddress user, BigInteger value){
-        Context.println("value is: "+value);
+    private void unstake(BigInteger id, NetworkAddress user, BigInteger value) {
+        Context.println("value is: " + value);
         Context.require(value.compareTo(BigInteger.ZERO) > 0, "StakedLP: Cannot unstake less than zero value");
         BigInteger previousBalance = poolStakedDetails.at(user).getOrDefault(id, BigInteger.ZERO);
         BigInteger previousTotal = totalStaked(id);
@@ -276,9 +276,9 @@ public class StakedLPImpl implements StakedLP {
 
         Stake(user.toString(), id, value);
 
-        if(user.net().equals(NATIVE_NID)) {
+        if (user.net().equals(NATIVE_NID)) {
             Context.call(rewards.get(), "updateBalanceAndSupply", poolName, newTotal, user.account(), newBalance);
-        }else{
+        } else {
             Context.call(rewards.get(), "updateBalanceAndSupply", poolName, newTotal, user.toString(), newBalance);
         }
     }

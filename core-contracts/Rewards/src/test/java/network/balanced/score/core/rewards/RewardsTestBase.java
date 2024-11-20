@@ -25,6 +25,7 @@ import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.test.mock.MockContract;
 import network.balanced.score.lib.test.mock.MockBalanced;
+
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
 import org.mockito.MockedStatic;
@@ -44,7 +45,7 @@ import static org.mockito.Mockito.*;
 
 class RewardsTestBase extends UnitTest {
     static final Long DAY = 43200L;
-    static final Long WEEK_BLOCKS = 7*DAY;
+    static final Long WEEK_BLOCKS = 7 * DAY;
 
     static final BigInteger EXA = BigInteger.TEN.pow(18);
 
@@ -87,7 +88,7 @@ class RewardsTestBase extends UnitTest {
 
         BigInteger startTime = BigInteger.valueOf(sm.getBlock().getTimestamp());
         // One vote period before being able to start voting
-        sm.getBlock().increase(DAY*10);
+        sm.getBlock().increase(DAY * 10);
 
         when(mockBalanced.xCall.mock.getNetworkId()).thenReturn(NATIVE_NID);
         doNothing().when(mockBalanced.sicx.mock).transfer(any(Address.class), any(BigInteger.class), any(byte[].class));
@@ -129,7 +130,7 @@ class RewardsTestBase extends UnitTest {
         rewardsScore.invoke(owner, "setFixedSourcePercentage", "Loans", EXA.divide(BigInteger.TEN));
 
         // One vote period to apply votes
-        sm.getBlock().increase(DAY*10);
+        sm.getBlock().increase(DAY * 10);
 
         rewardsScore.invoke(owner, "updateRelativeSourceWeight", "sICX/ICX",
                 BigInteger.valueOf(sm.getBlock().getTimestamp()));
@@ -199,7 +200,7 @@ class RewardsTestBase extends UnitTest {
     }
 
     @SuppressWarnings("unchecked")
-    BigInteger getVotePercentage(String name){
+    BigInteger getVotePercentage(String name) {
         Map<String, Map<String, BigInteger>> data = (Map<String, Map<String, BigInteger>>) rewardsScore.call("getDistributionPercentages");
         return data.get("Voting").get(name).add(data.get("Fixed").getOrDefault(name, BigInteger.ZERO));
     }

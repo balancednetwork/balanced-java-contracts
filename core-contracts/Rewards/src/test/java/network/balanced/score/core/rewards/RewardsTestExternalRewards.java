@@ -18,10 +18,6 @@ package network.balanced.score.core.rewards;
 
 import com.iconloop.score.test.Account;
 
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import score.Address;
-
 import org.json.JSONArray;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,10 +26,7 @@ import score.ByteArrayObjectWriter;
 import score.Context;
 
 import static network.balanced.score.lib.utils.Constants.*;
-import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
 import java.math.BigInteger;
@@ -86,7 +79,7 @@ class RewardsTestExternalRewards extends RewardsTestBase {
         JSONArray data = new JSONArray(_data);
 
         rewardsScore.invoke(mockBalanced.sicx.account, "tokenFallback", externalRewardsProvider.getAddress(),
-             sICXRewards, data.toString().getBytes());
+                sICXRewards, data.toString().getBytes());
         BigInteger emission = (BigInteger) rewardsScore.call("getEmission", BigInteger.valueOf(-1));
         BigInteger dist = getVotePercentage("sICX/ICX").multiply(emission).divide(EXA);
         BigInteger userDist = dist.multiply(balance).divide(totalSupply);
@@ -387,17 +380,13 @@ class RewardsTestExternalRewards extends RewardsTestBase {
         writer.beginList(3);
         writer.write("xclaimrewards");
         writer.write(to);
-            writer.beginList(sources.length);
-            for(String source : sources) {
-                writer.write(source);
-            }
-            writer.end();
+        writer.beginList(sources.length);
+        for (String source : sources) {
+            writer.write(source);
+        }
+        writer.end();
         writer.end();
         return writer.toByteArray();
-    }
-
-    protected void handleCallMessageWithOutProtocols(String from, byte[] data, String[] protocols ) {
-        rewardsScore.invoke(mockBalanced.xCall.account, "handleCallMessage", from, data, protocols);
     }
 
 

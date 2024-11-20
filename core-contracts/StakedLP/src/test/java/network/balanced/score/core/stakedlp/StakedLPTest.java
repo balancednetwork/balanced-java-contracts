@@ -24,14 +24,11 @@ import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockBalanced;
 import network.balanced.score.lib.test.mock.MockContract;
-import network.balanced.score.lib.utils.BalancedAddressManager;
-import network.balanced.score.lib.utils.Names;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
-import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import score.Address;
 import score.ByteArrayObjectWriter;
@@ -53,7 +50,6 @@ public class StakedLPTest extends UnitTest {
     public static final Account owner = sm.createAccount();
     private Score stakedLpScore;
 
-    //public static final Account governanceScore = Account.newScoreAccount(1);
     private final Account alice = sm.createAccount();
     private final Account bob = sm.createAccount();
 
@@ -67,6 +63,7 @@ public class StakedLPTest extends UnitTest {
     public static final String poolOneName = "pool1";
     public static final String poolTwoName = "pool2";
     private final String NATIVE_NID = "0x1.ICON";
+
     @BeforeEach
     public void setup() throws Exception {
         mockBalanced = new MockBalanced(sm, owner);
@@ -157,7 +154,7 @@ public class StakedLPTest extends UnitTest {
     }
 
     @Test
-    void crossChainStake(){
+    void crossChainStake() {
         setAndGetDex();
         setAndGetRewards();
         String fromNetworkAddress1 = "0x1.ETH/0x123";
@@ -206,7 +203,7 @@ public class StakedLPTest extends UnitTest {
     }
 
     @Test
-    void xUnstake(){
+    void xUnstake() {
         setAndGetDex();
         setAndGetRewards();
         String fromNetworkAddress = "0x1.ETH/0x123";
@@ -230,7 +227,7 @@ public class StakedLPTest extends UnitTest {
     }
 
 
-    protected void handleCallMessageWithOutProtocols(String from, byte[] data, String[] protocols ) {
+    protected void handleCallMessageWithOutProtocols(String from, byte[] data, String[] protocols) {
         stakedLpScore.invoke(mockBalanced.xCall.account, "handleCallMessage", from, data, protocols);
     }
 
@@ -322,7 +319,7 @@ public class StakedLPTest extends UnitTest {
                 BigInteger.ONE));
         verify(dex.mock).hubTransfer(NetworkAddress.valueOf(alice.getAddress().toString(), NATIVE_NID).toString(), aliceUnstakeAmount, BigInteger.ONE, new byte[0]);
         verify(rewards.mock).updateBalanceAndSupply(poolOneName, totalStakedBalanceBeforeUnstake, NetworkAddress.valueOf(alice.getAddress().toString(), NATIVE_NID).toString(),
-            aliceStakedBalance);
+                aliceStakedBalance);
 
         // Adjust the values after first unstake
 
@@ -343,10 +340,6 @@ public class StakedLPTest extends UnitTest {
         assertEquals(totalStakedBalanceBeforeUnstake.subtract(aliceStakedBalance), stakedLpScore.call("totalStaked",
                 BigInteger.ONE));
         verify(dex.mock, times(2)).hubTransfer(NetworkAddress.valueOf(alice.getAddress().toString(), NATIVE_NID).toString(), aliceStakedBalance, BigInteger.ONE, new byte[0]);
-
-        // Unstake from pool 2
-        // Unstake from unsupported pool
-//        stakedLpScore.invoke(Account.getAccount(governanceScore.getAddress()), "removePool", BigInteger.TWO);
 
         BigInteger aliceStakedBalancePool2 = (BigInteger) stakedLpScore.call("balanceOf", alice.getAddress(),
                 BigInteger.TWO);
@@ -375,7 +368,7 @@ public class StakedLPTest extends UnitTest {
         when(dex.mock.balanceOf(alice.getAddress(), poolId)).thenReturn(initialLpTokenBalance);
 
         // Act & Assert
-        Executable zeroStakeValue = () ->  stakeLpTokens(alice, poolId, BigInteger.TEN);
+        Executable zeroStakeValue = () -> stakeLpTokens(alice, poolId, BigInteger.TEN);
         String expectedErrorMessage = "Pool id: " + poolId + " is not a valid pool";
         expectErrorMessage(zeroStakeValue, expectedErrorMessage);
 
@@ -396,6 +389,6 @@ public class StakedLPTest extends UnitTest {
         balanceAndSupply = (Map<String, BigInteger>) stakedLpScore.call("getBalanceAndSupply", name, alice.getAddress().toString());
         assertEquals(BigInteger.valueOf(8), balanceAndSupply.get("_balance"));
         assertEquals(BigInteger.valueOf(8), balanceAndSupply.get("_totalSupply"));
-        verify(rewards.mock).updateBalanceAndSupply(name, balanceAndSupply.get("_totalSupply"), NetworkAddress.valueOf(alice.getAddress().toString(), NATIVE_NID).toString(),  balanceAndSupply.get("_balance"));
+        verify(rewards.mock).updateBalanceAndSupply(name, balanceAndSupply.get("_totalSupply"), NetworkAddress.valueOf(alice.getAddress().toString(), NATIVE_NID).toString(), balanceAndSupply.get("_balance"));
     }
 }

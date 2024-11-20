@@ -18,7 +18,6 @@ package network.balanced.score.core.stakedlp;
 
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
-import foundation.icon.icx.KeyWallet;
 import foundation.icon.icx.Wallet;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
@@ -91,7 +90,7 @@ public class StakedlpIntegrationTest {
                     chain.networkId, balanced.owner, tokenAClient._address());
             ownerDexTestBaseScoreClient = new DexTestScoreClient(chain.getEndpointURL(),
                     chain.networkId, balanced.owner, tokenBClient._address());
-        }catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
             System.out.println("Error on init test: " + e.getMessage());
         }
@@ -195,27 +194,28 @@ public class StakedlpIntegrationTest {
         score.Address quoteAssetAddress = owner.assetManager.getAssetAddress(ethQuoteAssetAddress.toString());
 
         // Arrange - deposits
-        byte[] deposit1 = AssetManagerMessages.deposit(balanced.ETH_TOKEN_ADDRESS, ethAccount.account(), toNetworkAddress,  amount, tokenData("_deposit",
-                new JsonObject().set( "address", ethAccount.toString())));
+        byte[] deposit1 = AssetManagerMessages.deposit(balanced.ETH_TOKEN_ADDRESS, ethAccount.account(), toNetworkAddress, amount, tokenData("_deposit",
+                new JsonObject().set("address", ethAccount.toString())));
         owner.xcall.recvCall(owner.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit1);
 
-        byte[] deposit2 = AssetManagerMessages.deposit("ox100", ethAccount.account(), toNetworkAddress,  amount, tokenData("_deposit",
-                new JsonObject().set( "address", ethAccount.toString())));
+        byte[] deposit2 = AssetManagerMessages.deposit("ox100", ethAccount.account(), toNetworkAddress, amount, tokenData("_deposit",
+                new JsonObject().set("address", ethAccount.toString())));
         owner.xcall.recvCall(owner.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit2);
 
         // Arrange add quote token
         dexAddQuoteCoin((Address) quoteAssetAddress);
 
         // Arrange - add pool
-        byte[] xaddMessage = getAddLPData(baseAssetAddress.toString(), quoteAssetAddress.toString(), amount, amount, false, BigInteger.valueOf(5) );
+        byte[] xaddMessage = getAddLPData(baseAssetAddress.toString(), quoteAssetAddress.toString(), amount, amount, false, BigInteger.valueOf(5));
         owner.xcall.recvCall(dexScoreClient._address(), ethAccount.toString(), xaddMessage);
 
         // Act - stake
         BigInteger poolId = dexScoreClient.getPoolId(baseAssetAddress,
                 quoteAssetAddress);
-        try{
+        try {
             addNewDataSource("test1", poolId, BigInteger.ONE);
-        } catch (Exception ignored){}
+        } catch (Exception ignored) {
+        }
         BigInteger balance = dexScoreClient.xBalanceOf(ethAccount.toString(), poolId);
         byte[] stakeData = getStakeData(stakingAddress, balance, poolId, "stake".getBytes());
         owner.xcall.recvCall(owner.dex._address(), ethAccount.toString(), stakeData);
