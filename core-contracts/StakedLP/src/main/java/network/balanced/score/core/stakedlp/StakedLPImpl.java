@@ -124,7 +124,7 @@ public class StakedLPImpl implements StakedLP {
 
     @External(readonly = true)
     public BigInteger balanceOf(Address _owner, BigInteger _id) {
-        NetworkAddress owner = NetworkAddress.valueOf(_owner.toString(), NATIVE_NID);
+        NetworkAddress owner = new NetworkAddress(NATIVE_NID, _owner.toString());
         return poolStakedDetails.at(owner).getOrDefault(_id, BigInteger.ZERO);
     }
 
@@ -148,21 +148,17 @@ public class StakedLPImpl implements StakedLP {
     }
 
     public void xUnstake(String from, BigInteger id, BigInteger value) {
-        Context.println("from is: " + from);
-        Context.println("id is: " + id);
-        Context.println("value is: " + value);
         unstake(id, NetworkAddress.valueOf(from), value);
     }
 
     @External
     public void unstake(BigInteger id, BigInteger value) {
         Address caller = Context.getCaller();
-        NetworkAddress user = NetworkAddress.valueOf(caller.toString(), NATIVE_NID);
+        NetworkAddress user = new NetworkAddress(NATIVE_NID, caller);
         unstake(id, user, value);
     }
 
     private void unstake(BigInteger id, NetworkAddress user, BigInteger value) {
-        Context.println("value is: " + value);
         Context.require(value.compareTo(BigInteger.ZERO) > 0, "StakedLP: Cannot unstake less than zero value");
         BigInteger previousBalance = poolStakedDetails.at(user).getOrDefault(id, BigInteger.ZERO);
         BigInteger previousTotal = totalStaked(id);
@@ -201,7 +197,7 @@ public class StakedLPImpl implements StakedLP {
     public void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data) {
         only(dex);
         Context.require(_value.signum() > 0, "StakedLP: Token value should be a positive number");
-        NetworkAddress from = NetworkAddress.valueOf(_from.toString(), NATIVE_NID);
+        NetworkAddress from = new NetworkAddress(NATIVE_NID, _from);
         this.stake(from, _id, _value);
     }
 
