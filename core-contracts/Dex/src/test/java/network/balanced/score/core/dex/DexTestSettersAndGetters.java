@@ -482,26 +482,6 @@ public class DexTestSettersAndGetters extends DexTestBase {
         assertEquals(expectedPoolValue, poolValue);
     }
 
-    // @Test
-    // void getBnusdValue_sicxIsQuote() {
-    //     // Arrange.
-    //     BigInteger balnValue = BigInteger.valueOf(195).multiply(EXA);
-    //     BigInteger sicxValue = BigInteger.valueOf(350).multiply(EXA);
-    //     String poolName = "bnUSD/sICX";
-    //     BigInteger poolId = BigInteger.TWO;
-    //     BigInteger sicxBnusdPrice = BigInteger.valueOf(10).multiply(EXA);
-    //     BigInteger expectedValue = (sicxValue.multiply(BigInteger.TWO).multiply(sicxBnusdPrice)).divide(EXA);
-    //     doReturn(sicxBnusdPrice).when(dexScoreSpy).getSicxBnusdPrice();
-
-    //     // Act. Why can I not supply with sicx as quote currency? Fails.
-    //     dexScore.invoke(governanceScore, "setMarketName", poolId, poolName);
-    //     supplyLiquidity(ownerAccount, bnusdScore, sicxScore, balnValue, sicxValue, false);
-
-    //     // Assert.
-    //     //BigInteger poolValue = (BigInteger) dexScore.call( "getBnusdValue", poolName);
-    //     //assertEquals(expectedValue, poolValue);
-    // }
-
     @Test
     void getBnusdValue_bnusdIsQuote() {
         // Arrange.

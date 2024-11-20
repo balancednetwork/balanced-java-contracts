@@ -146,7 +146,7 @@ public class DexImpl extends AbstractDex {
         if (method.equals("_deposit")) {
             JsonObject params = json.get("params").asObject();
             String to = _from;
-            if(params.get("address")!=null){
+            if (params.get("address") != null) {
                 to = params.get("address").asString();
             }
             deposit(fromToken, NetworkAddress.valueOf(to), _value);
@@ -347,7 +347,7 @@ public class DexImpl extends AbstractDex {
         userQuoteDeposit.set(_user, depositedQuote.add(quoteToWithdraw));
 
         if (_withdraw) {
-            xWithdraw(_user.toString(),  baseToken.toString(), baseToWithdraw);
+            xWithdraw(_user.toString(), baseToken.toString(), baseToWithdraw);
             xWithdraw(_user.toString(), quoteToken.toString(), quoteToWithdraw);
         }
 

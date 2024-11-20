@@ -881,23 +881,6 @@ public class RewardsImpl implements Rewards {
         Context.require(total.compareTo(HUNDRED_PERCENTAGE) <= 0, "Sum of distributions exceeds 100%");
     }
 
-    private BigInteger getVotableDist() {
-        BigInteger total = HUNDRED_PERCENTAGE;
-        List<String> recipients = distributionPercentages.keys();
-        for (String recipient : recipients) {
-            BigInteger split = distributionPercentages.get(recipient);
-            total = total.subtract(split);
-        }
-
-        List<String> fixedPercentageSources = fixedDistributionPercentages.keys();
-        for (String recipient : fixedPercentageSources) {
-            BigInteger split = fixedDistributionPercentages.get(recipient);
-            total = total.subtract(split);
-        }
-
-        return total;
-    }
-
     public static String[] getAllSources() {
         int dataSourcesCount = DataSourceDB.size();
         String[] sources = new String[dataSourcesCount];

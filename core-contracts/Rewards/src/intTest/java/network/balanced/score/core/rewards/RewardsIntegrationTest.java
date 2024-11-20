@@ -19,15 +19,12 @@ package network.balanced.score.core.rewards;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
-import com.iconloop.score.test.Account;
 import foundation.icon.jsonrpc.Address;
-import foundation.icon.score.client.DefaultScoreClient;
 import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
-import org.json.JSONArray;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -36,14 +33,11 @@ import score.Context;
 import score.UserRevertedException;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import static network.balanced.score.lib.test.integration.BalancedUtils.*;
 import static network.balanced.score.lib.utils.Constants.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.verify;
 
 class RewardsIntegrationTest implements ScoreIntegrationTest {
     private static Balanced balanced;
@@ -232,7 +226,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
 
         Map<String, Map<String, BigInteger>> boostData = reader.rewards.getBoostData(
                 icxSicxLpBoosted.getAddress().toString(),
-                new String[] { "sICX/ICX", "Loans" });
+                new String[]{"sICX/ICX", "Loans"});
         assertEquals(currentWorkingBalanceAndSupply.get("workingSupply"), boostData.get("sICX/ICX").get(
                 "workingSupply"));
         assertEquals(currentWorkingBalanceAndSupply.get("workingBalance"), boostData.get("sICX/ICX").get(
@@ -363,7 +357,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
     }
 
     @Test
-    void crossChainClaimRewards(){
+    void crossChainClaimRewards() {
         // Arrange
         NetworkAddress ethBaseAssetAddress = new NetworkAddress(balanced.ETH_NID, balanced.ETH_TOKEN_ADDRESS);
         NetworkAddress ethQuoteAssetAddress = new NetworkAddress(balanced.ETH_NID, "ox100");
@@ -387,27 +381,28 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         score.Address quoteAssetAddress = owner.assetManager.getAssetAddress(ethQuoteAssetAddress.toString());
 
         // Arrange - deposits
-        byte[] deposit1 = AssetManagerMessages.deposit(balanced.ETH_TOKEN_ADDRESS, ethAccount.account(), toNetworkAddress,  amount, tokenData("_deposit",
-                new JsonObject().set( "address", ethAccount.toString())));
+        byte[] deposit1 = AssetManagerMessages.deposit(balanced.ETH_TOKEN_ADDRESS, ethAccount.account(), toNetworkAddress, amount, tokenData("_deposit",
+                new JsonObject().set("address", ethAccount.toString())));
         owner.xcall.recvCall(owner.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit1);
 
-        byte[] deposit2 = AssetManagerMessages.deposit("ox100", ethAccount.account(), toNetworkAddress,  amount, tokenData("_deposit",
-                new JsonObject().set( "address", ethAccount.toString())));
+        byte[] deposit2 = AssetManagerMessages.deposit("ox100", ethAccount.account(), toNetworkAddress, amount, tokenData("_deposit",
+                new JsonObject().set("address", ethAccount.toString())));
         owner.xcall.recvCall(owner.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit2);
 
         // Arrange add quote token
         dexAddQuoteCoin((Address) quoteAssetAddress);
 
         // Arrange - add pool
-        byte[] xaddMessage = getAddLPData(baseAssetAddress.toString(), quoteAssetAddress.toString(), amount, amount, false, BigInteger.valueOf(5) );
+        byte[] xaddMessage = getAddLPData(baseAssetAddress.toString(), quoteAssetAddress.toString(), amount, amount, false, BigInteger.valueOf(5));
         owner.xcall.recvCall(dex._address(), ethAccount.toString(), xaddMessage);
 
         // Arrange - stake
         BigInteger poolId = dex.getPoolId(baseAssetAddress,
                 quoteAssetAddress);
-        try{
+        try {
             addNewDataSource("test1", poolId, BigInteger.ONE);
-        } catch (Exception ignored){}
+        } catch (Exception ignored) {
+        }
         BigInteger balance = dex.xBalanceOf(ethAccount.toString(), poolId);
         byte[] stakeData = getStakeData(stakingAddress, balance, poolId, "stake".getBytes());
         owner.xcall.recvCall(owner.dex._address(), ethAccount.toString(), stakeData);
@@ -415,7 +410,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         // Act
         balanced.increaseDay(2);
 
-        String[] sources = new String[] {};
+        String[] sources = new String[]{};
         byte[] claimData = getClaimRewardData(ethAccount.toString(), sources);
         owner.xcall.recvCall(rewards._address(), ethAccount.toString(), claimData);
 
@@ -554,7 +549,7 @@ class RewardsIntegrationTest implements ScoreIntegrationTest {
         writer.write("xclaimrewards");
         writer.write(to);
         writer.beginList(sources.length);
-        for(String source : sources) {
+        for (String source : sources) {
             writer.write(source);
         }
         writer.end();

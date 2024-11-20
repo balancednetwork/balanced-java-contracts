@@ -727,16 +727,10 @@ class RewardsTestRewards extends RewardsTestBase {
     }
 
     @Test
-    void addType() {
-        // assertOnlyCallableByGovernance(rewardsScore, "addType", "newType");
-    }
-
-    @Test
     void setGetTypeWeight() {
         int type = (int)rewardsScore.call("getSourceType", "sICX/ICX");
         rewardsScore.invoke(owner, "checkpoint");
         assertEquals(EXA ,rewardsScore.call("getCurrentTypeWeight", type));
-        // assertOnlyCallableByGovernance(rewardsScore, "changeTypeWeight", type, EXA.multiply(BigInteger.TWO));
         rewardsScore.invoke(owner, "changeTypeWeight", type, EXA.multiply(BigInteger.TWO));
         assertEquals(EXA.multiply(BigInteger.TWO) ,rewardsScore.call("getCurrentTypeWeight", type));
     }
