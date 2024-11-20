@@ -414,7 +414,7 @@ public class RewardsImpl implements Rewards {
     }
 
     private void _claimRewards(String address, String[] sources) {
-        NetworkAddress networkAddress = NetworkAddress.valueOf(address, NATIVE_NID);
+        NetworkAddress networkAddress = new NetworkAddress(NATIVE_NID, address);
         BigInteger boostedBalance = fetchBoostedBalance(address);
         BigInteger boostedSupply = fetchBoostedSupply();
         updateAllUserRewards(address, sources, boostedBalance, boostedSupply);
@@ -1019,7 +1019,7 @@ public class RewardsImpl implements Rewards {
     }
 
     private BigInteger fetchBoostedBalance(String user) {
-        NetworkAddress networkAddress = NetworkAddress.valueOf(user, NATIVE_NID);
+        NetworkAddress networkAddress = new NetworkAddress(NATIVE_NID, user);
         Address address = null;
         try {
             address = Address.fromString(user);
