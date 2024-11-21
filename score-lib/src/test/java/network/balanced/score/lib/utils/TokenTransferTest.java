@@ -5,6 +5,8 @@ import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.lib.test.UnitTest;
+import network.balanced.score.lib.test.mock.MockBalanced;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -27,12 +29,15 @@ public class TokenTransferTest extends UnitTest {
 
     private static Score dummyScore;
 
-    protected final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
-    protected final MockedStatic<BalancedAddressManager> addressManagerMock = Mockito.mockStatic(BalancedAddressManager.class, Mockito.CALLS_REAL_METHODS);
+    protected static MockedStatic<Context> contextMock;
+    protected static MockedStatic<BalancedAddressManager> addressManagerMock;
 
     @BeforeAll
     public static void setup() throws Exception{
         dummyScore = sm.deploy(owner, DummyScore.class);
+        MockBalanced mockBalanced = new MockBalanced(sm, owner);
+        contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
+        addressManagerMock = MockBalanced.addressManagerMock;
     }
 
     @Test
@@ -59,9 +64,6 @@ public class TokenTransferTest extends UnitTest {
         // Verify
         TokenTransfer.transfer(dummyScore.getAddress(), new NetworkAddress("0x1.ETH", user.getAddress()).toString(), BigInteger.TWO);
 
-        //close mock
-        contextMock.close();
-        addressManagerMock.close();
     }
 
     @Test
@@ -87,9 +89,6 @@ public class TokenTransferTest extends UnitTest {
         // Verify
         TokenTransfer.transfer(dummyScore.getAddress(), new NetworkAddress("0x1.ETH", user.getAddress()).toString(), BigInteger.TWO);
 
-        //close mock
-        contextMock.close();
-        addressManagerMock.close();
     }
 
     @Test
@@ -111,9 +110,7 @@ public class TokenTransferTest extends UnitTest {
         // Verify
         TokenTransfer.transfer(dummyScore.getAddress(), new NetworkAddress("0x2.ICON", user.getAddress()).toString(), BigInteger.TWO); // native nid for transfer
 
-        //close mock
-        contextMock.close();
-        addressManagerMock.close();
+
     }
 
     @Test
@@ -139,11 +136,19 @@ public class TokenTransferTest extends UnitTest {
         // Verify
         TokenTransfer.transfer(dummyScore.getAddress(), new NetworkAddress("0x1.ETH", user.getAddress()).toString(), BigInteger.TWO);
 
-        //close mock
-        contextMock.close();
-        addressManagerMock.close();
     }
 
+    @AfterAll
+    public static void teardown() {
+        if (contextMock != null) {
+            contextMock.close();
+            contextMock = null;
+        }
+        if (addressManagerMock != null) {
+            addressManagerMock.close();
+            addressManagerMock = null;
+        }
+    }
 
     public static class DummyScore {
         public DummyScore() {
