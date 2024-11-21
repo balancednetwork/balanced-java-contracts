@@ -15,8 +15,10 @@ import score.Address;
 import score.Context;
 
 import java.math.BigInteger;
+import java.util.EmptyStackException;
 
 import static network.balanced.score.lib.utils.Constants.EXA;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
@@ -32,12 +34,15 @@ public class TokenTransferTest extends UnitTest {
     protected static MockedStatic<Context> contextMock;
     protected static MockedStatic<BalancedAddressManager> addressManagerMock;
 
+    protected static  MockedStatic<TokenTransfer> tokenTransferMock;
+
     @BeforeAll
     public static void setup() throws Exception{
         dummyScore = sm.deploy(owner, DummyScore.class);
         MockBalanced mockBalanced = new MockBalanced(sm, owner);
         contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
         addressManagerMock = MockBalanced.addressManagerMock;
+        tokenTransferMock = Mockito.mockStatic(TokenTransfer.class, Mockito.CALLS_REAL_METHODS);
     }
 
     @Test
@@ -55,9 +60,9 @@ public class TokenTransferTest extends UnitTest {
         contextMock.when(() -> Context.call(any(Address.class), eq("claimXCallFee"), any(String.class), any(Boolean.class))).thenReturn(EXA);
 
         // Act
-        try {
-            TokenTransfer.transfer(dummyScore.getAddress(), new NetworkAddress("0x1.ETH", user.getAddress()).toString(), BigInteger.TWO);
-        }catch (Exception ignore){}
+        assertThrows(
+                EmptyStackException.class,
+                () -> TokenTransfer.transfer(dummyScore.getAddress(), new NetworkAddress("0x1.ETH", user.getAddress()).toString(), BigInteger.TWO) );
 
         contextMock.when(() -> Context.call(any(BigInteger.class), any(Address.class), eq("crossTransfer"), any(String.class), any(BigInteger.class), any(byte[].class))).thenReturn(true);
 
@@ -80,9 +85,9 @@ public class TokenTransferTest extends UnitTest {
         contextMock.when(() -> Context.call(any(Address.class), eq("claimXCallFee"), any(String.class), any(Boolean.class))).thenReturn(EXA);
 
         // Act
-        try {
-            TokenTransfer.transfer(dummyScore.getAddress(), new NetworkAddress("0x1.ETH", user.getAddress()).toString(), BigInteger.TWO);
-        }catch (Exception ignore){}
+        assertThrows(
+                EmptyStackException.class,
+                () -> TokenTransfer.transfer(dummyScore.getAddress(), new NetworkAddress("0x1.ETH", user.getAddress()).toString(), BigInteger.TWO));
 
         contextMock.when(() -> Context.call(any(Address.class), eq("hubTransfer"), any(String.class), any(BigInteger.class), any(byte[].class))).thenReturn(true);
 
@@ -100,10 +105,9 @@ public class TokenTransferTest extends UnitTest {
 
         contextMock.when(() -> Context.call(any(Address.class), eq("getNetworkId"))).thenReturn("0x2.ICON");
 
-        // Act
-        try {
-            TokenTransfer.transfer(dummyScore.getAddress(), new NetworkAddress("0x2.ICON", user.getAddress()).toString(), BigInteger.TWO); // native nid for transfer
-        }catch (Exception ignore){}
+        assertThrows(
+                EmptyStackException.class,
+                () -> TokenTransfer.transfer(dummyScore.getAddress(), new NetworkAddress("0x2.ICON", user.getAddress()).toString(), BigInteger.TWO));
 
         contextMock.when(() -> Context.call(any(Address.class), eq("transfer"), any(Address.class), any(BigInteger.class), any(byte[].class))).thenReturn(true);
 
@@ -130,6 +134,10 @@ public class TokenTransferTest extends UnitTest {
         try {
             TokenTransfer.transfer(dummyScore.getAddress(), new NetworkAddress("0x1.ETH", user.getAddress()).toString(), BigInteger.TWO);
         }catch (Exception ignore){}
+
+        assertThrows(
+                EmptyStackException.class,
+                () -> TokenTransfer.transfer(dummyScore.getAddress(), new NetworkAddress("0x1.ETH", user.getAddress()).toString(), BigInteger.TWO));
 
         contextMock.when(() -> Context.call(any(BigInteger.class), any(Address.class), eq("withdrawTo"), any(Address.class), any(String.class), any(BigInteger.class))).thenReturn(true);
 
