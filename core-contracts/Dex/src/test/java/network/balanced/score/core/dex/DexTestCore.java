@@ -35,7 +35,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static network.balanced.score.core.dex.utils.Const.*;
-import static network.balanced.score.lib.utils.BalancedAddressManager.getDaofund;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -156,15 +155,6 @@ public class DexTestCore extends DexTestBase {
 
     }
 
-    public static byte[] hexStringToByteArray(String hex) {
-        int length = hex.length();
-        byte[] data = new byte[length / 2];
-        for (int i = 0; i < length; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4)
-                    + Character.digit(hex.charAt(i+1), 16));
-        }
-        return data;
-    }
 
     @Test
     void crossChainLPWithWithdraw(){
@@ -810,10 +800,21 @@ public class DexTestCore extends DexTestBase {
         BigInteger initialValue = (BigInteger) dexScore.call("balanceOf", account.getAddress(), poolId);
         dexScore.invoke(account, "transfer", account1.getAddress(), transferValue, poolId, data.getBytes());
 
-        BigInteger value = (BigInteger) dexScore.call("balanceOf", account.getAddress(), poolId);
-        assertEquals(value, initialValue.subtract(transferValue));
-        value = (BigInteger) dexScore.call("balanceOf", account1.getAddress(), poolId);
-        assertEquals(value, transferValue);
+        BigInteger sendersBalanceAfterTransfer = (BigInteger) dexScore.call("balanceOf", account.getAddress(), poolId);
+        assertEquals(sendersBalanceAfterTransfer, initialValue.subtract(transferValue));
+        BigInteger receiversBalance = (BigInteger) dexScore.call("balanceOf", account1.getAddress(), poolId);
+        assertEquals(receiversBalance, transferValue);
+
+
+        //test hub transfer
+        String toHubAddress = "0x1.ETH/0x123";
+        dexScore.invoke(account, "hubTransfer", toHubAddress, transferValue, poolId, data.getBytes());
+
+        BigInteger sendersBalanceAfterHubTransfer = (BigInteger) dexScore.call("balanceOf", account.getAddress(), poolId);
+        assertEquals(sendersBalanceAfterHubTransfer, sendersBalanceAfterTransfer.subtract(transferValue));
+        BigInteger hubReceiversBalance = (BigInteger) dexScore.call("xBalanceOf", toHubAddress, poolId);
+        assertEquals(hubReceiversBalance, transferValue);
+
     }
 
     @Test

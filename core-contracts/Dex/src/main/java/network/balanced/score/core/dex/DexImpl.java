@@ -234,18 +234,6 @@ public class DexImpl extends AbstractDex {
         }
     }
 
-    @External
-    public void transfer(Address _to, BigInteger _value, BigInteger _id, @Optional byte[] _data) {
-        isDexOn();
-        checkStatus();
-        if (_data == null) {
-            _data = new byte[0];
-        }
-        NetworkAddress from = new NetworkAddress(NATIVE_NID, Context.getCaller());
-        NetworkAddress to = new NetworkAddress(NATIVE_NID, _to);
-        _transfer(from, to, _value, _id.intValue(), _data);
-    }
-
     public void xWithdraw(String from, String _token, BigInteger _value) {
         NetworkAddress sender = NetworkAddress.valueOf(from);
         _withdraw(sender, Address.fromString(_token), _value);

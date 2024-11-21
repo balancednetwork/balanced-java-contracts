@@ -15,8 +15,10 @@ import foundation.icon.xcall.NetworkAddress;
 
 import static network.balanced.score.core.dex.DexDBVariables.*;
 import static network.balanced.score.core.dex.DexDBVariables.poolLpTotal;
+import static network.balanced.score.core.dex.utils.Check.isDexOn;
 import static network.balanced.score.core.dex.utils.Const.SICXICX_POOL_ID;
 import static network.balanced.score.core.dex.utils.Const.TAG;
+import static network.balanced.score.lib.utils.Check.checkStatus;
 
 public abstract class IRC31StandardSpokeLpToken extends FloorLimited implements Dex {
 
@@ -40,16 +42,23 @@ public abstract class IRC31StandardSpokeLpToken extends FloorLimited implements 
 
     @External
     public void transfer(Address _to, BigInteger _value, BigInteger _id, @Optional byte[] _data) {
-        _transfer(
-                new NetworkAddress(NATIVE_NID, Context.getCaller()),
-                new NetworkAddress(NATIVE_NID, _to),
-                _value,
-                _id.intValue(),
-                _data);
+        isDexOn();
+        checkStatus();
+        if (_data == null) {
+            _data = new byte[0];
+        }
+        NetworkAddress from = new NetworkAddress(NATIVE_NID, Context.getCaller());
+        NetworkAddress to = new NetworkAddress(NATIVE_NID, _to);
+        _transfer(from, to, _value, _id.intValue(), _data);
     }
 
     @External
     public void hubTransfer(String _to, BigInteger _value, BigInteger _id, @Optional byte[] _data) {
+        isDexOn();
+        checkStatus();
+        if (_data == null) {
+            _data = new byte[0];
+        }
         _transfer(
                 new NetworkAddress(NATIVE_NID, Context.getCaller()),
                 NetworkAddress.valueOf(_to, NATIVE_NID),
@@ -57,7 +66,6 @@ public abstract class IRC31StandardSpokeLpToken extends FloorLimited implements 
                 _id.intValue(),
                 _data);
     }
-
 
     public void xHubTransfer(String from, String _to, BigInteger _value, BigInteger _id, byte[] _data) {
         _transfer(
@@ -113,10 +121,6 @@ public abstract class IRC31StandardSpokeLpToken extends FloorLimited implements 
         }
 
         Context.call(contractAddress, "onXIRC31Received", _from.toString(), _from.toString(), _id, _value, dataBytes);
-    }
-
-    protected boolean isNative(NetworkAddress address) {
-        return address.net().equals(NATIVE_NID);
     }
 
     boolean isLockingPool(Integer id) {
