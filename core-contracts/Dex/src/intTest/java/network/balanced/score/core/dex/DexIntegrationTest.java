@@ -223,11 +223,11 @@ class DexIntegrationTest {
         byte[] tokenDeposit = "{\"method\":\"_deposit\",\"params\":{\"none\":\"none\"}}".getBytes();
         this.mintAndTransferTestTokens(tokenDeposit);
         BigInteger withdrawAMount = BigInteger.valueOf(50);
-        BigInteger balanceBeforeWithdraw = dexUserScoreClient.depositOfUser(userAddress, tokenAAddress);
+        BigInteger balanceBeforeWithdraw = dexUserScoreClient.getDeposit(userAddress, tokenAAddress);
         //withdraw test token
         dexUserScoreClient.withdraw(tokenAAddress, withdrawAMount);
 
-        BigInteger balanceAfterWithdraw = dexUserScoreClient.depositOfUser(userAddress, tokenAAddress);
+        BigInteger balanceAfterWithdraw = dexUserScoreClient.getDeposit(userAddress, tokenAAddress);
 
         assert balanceBeforeWithdraw.equals(balanceAfterWithdraw.add(withdrawAMount));
     }

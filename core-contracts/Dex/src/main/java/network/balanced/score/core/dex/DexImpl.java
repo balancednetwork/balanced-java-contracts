@@ -139,7 +139,7 @@ public class DexImpl extends AbstractDex {
         require(!unpackedData.equals(""), "Token Fallback: Data can't be empty");
         JsonObject json = Json.parse(unpackedData).asObject();
         String method = json.get("method").asString();
-        Address fromToken = Context.getCaller();
+        Address token = Context.getCaller();
 
         require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Invalid token transfer value");
 
@@ -149,7 +149,7 @@ public class DexImpl extends AbstractDex {
             if (params.get("address") != null) {
                 to = params.get("address").asString();
             }
-            deposit(fromToken, NetworkAddress.valueOf(to), _value);
+            deposit(token, NetworkAddress.valueOf(to), _value);
         } else {
             // If no supported method was sent, revert the transaction
             Context.revert(100, TAG + ": Unsupported method supplied");
@@ -262,13 +262,6 @@ public class DexImpl extends AbstractDex {
 
         //transfer the token
         TokenTransfer.transfer(_token, sender.toString(), _value);
-    }
-
-    @External(readonly = true)
-    public BigInteger depositOfUser(Address _owner, Address _token) {
-        NetworkAddress owner = new NetworkAddress(NATIVE_NID, _owner);
-        NetworkAddressDictDB<BigInteger> depositDetails = deposit.at(_token);
-        return depositDetails.getOrDefault(owner, BigInteger.ZERO);
     }
 
     public void xRemove(String from, BigInteger id, BigInteger value, @Optional Boolean _withdraw) {

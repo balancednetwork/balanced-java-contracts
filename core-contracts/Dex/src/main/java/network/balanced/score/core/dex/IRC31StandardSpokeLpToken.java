@@ -120,7 +120,15 @@ public abstract class IRC31StandardSpokeLpToken extends FloorLimited implements 
             return;
         }
 
-        Context.call(contractAddress, "onXIRC31Received", _from.toString(), _from.toString(), _id, _value, dataBytes);
+        if(isNative(_from)){
+            Context.call(contractAddress, "onIRC31Received", Address.fromString(_from.account()), Address.fromString(_from.account()), _id, _value, dataBytes);
+        }else {
+            Context.call(contractAddress, "onXIRC31Received", _from.toString(), _from.toString(), _id, _value, dataBytes);
+        }
+    }
+
+    protected boolean isNative(NetworkAddress address) {
+        return address.net().equals(NATIVE_NID);
     }
 
     boolean isLockingPool(Integer id) {

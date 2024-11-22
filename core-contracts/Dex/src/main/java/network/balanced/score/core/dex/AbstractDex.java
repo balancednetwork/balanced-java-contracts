@@ -42,7 +42,6 @@ import static network.balanced.score.core.dex.utils.Const.*;
 import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Check.onlyGovernance;
 import static network.balanced.score.lib.utils.Constants.*;
-import static network.balanced.score.lib.utils.Math.pow;
 
 public abstract class AbstractDex extends IRC31StandardSpokeLpToken {
 
@@ -96,10 +95,6 @@ public abstract class AbstractDex extends IRC31StandardSpokeLpToken {
     @EventLog(indexed = 2)
     public void Deposit(Address _token, String _owner, BigInteger _value) {
     }
-
-//    @EventLog(indexed = 2)
-//    public void Withdraw(Address _token, Address _owner, BigInteger _value) {
-//    }
 
     @EventLog(indexed = 2)
     public void Withdraw(Address _token, String _owner, BigInteger _value) {
@@ -500,10 +495,6 @@ public abstract class AbstractDex extends IRC31StandardSpokeLpToken {
         Context.call(getStaking(), "delegate", (Object) prepDelegations);
     }
 
-    private static BigInteger getPriceInUSD(String symbol) {
-        return (BigInteger) Context.call(getBalancedOracle(), "getLastPriceInUSD", symbol);
-    }
-
     protected BigInteger getSicxRate() {
         return (BigInteger) Context.call(getStaking(), "getTodayRate");
     }
@@ -727,15 +718,6 @@ public abstract class AbstractDex extends IRC31StandardSpokeLpToken {
         Context.call(sicxAddress, "transfer", getFeehandler(), balnFees);
         BalancedFloorLimits.verifyNativeWithdraw(orderIcxValue);
         Context.transfer(sender, orderIcxValue);
-    }
-
-
-    private BigInteger getUnitValue(Address tokenAddress) {
-        if (tokenAddress == null) {
-            return EXA;
-        } else {
-            return pow(BigInteger.TEN, tokenPrecisions.get(tokenAddress).intValue());
-        }
     }
 
     BigInteger snapshotValueAt(BigInteger _snapshot_id,
