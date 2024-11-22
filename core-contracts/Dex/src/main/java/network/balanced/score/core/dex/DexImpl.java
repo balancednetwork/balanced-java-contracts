@@ -149,7 +149,7 @@ public class DexImpl extends AbstractDex {
             if (params.get("address") != null) {
                 to = params.get("address").asString();
             }
-            deposit(token, NetworkAddress.valueOf(to), _value);
+            deposit(token, NetworkAddress.valueOf(to, NATIVE_NID), _value);
         } else {
             // If no supported method was sent, revert the transaction
             Context.revert(100, TAG + ": Unsupported method supplied");
