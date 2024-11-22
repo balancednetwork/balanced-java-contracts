@@ -207,7 +207,5 @@ public interface Dex extends Name, AddressManager, Fallback, TokenFallback,
     @External
     void addLpAddresses(BigInteger _poolId, Address[] _addresses);
 
-    @External(readonly = true)
-    BigInteger depositOfUser(Address _owner, Address _token);
 }
 
