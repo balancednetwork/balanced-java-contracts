@@ -36,7 +36,7 @@ public abstract class IRC31StandardSpokeLpToken extends FloorLimited implements 
 
     @External(readonly = true)
     public BigInteger xBalanceOf(String _owner, BigInteger _id) {
-        NetworkAddress address = NetworkAddress.valueOf(_owner);
+        NetworkAddress address = NetworkAddress.valueOf(_owner, NATIVE_NID);
         return DexDBVariables.balance.at(_id.intValue()).getOrDefault(address, BigInteger.ZERO);
     }
 

@@ -130,7 +130,7 @@ public class StakedLPImpl implements StakedLP {
 
     @External(readonly = true)
     public BigInteger xBalanceOf(String _owner, BigInteger _id) {
-        NetworkAddress owner = NetworkAddress.valueOf(_owner);
+        NetworkAddress owner = NetworkAddress.valueOf(_owner, NATIVE_NID);
         return poolStakedDetails.at(owner).getOrDefault(_id, BigInteger.ZERO);
     }
 
