@@ -80,7 +80,7 @@ class RouterTest extends TestBase {
         Account balnToken = Account.newScoreAccount(scoreCount++);
         Address[] pathWithNonSicx = new Address[]{balnToken.getAddress()};
         Executable nonSicxTrade = () -> sm.call(owner, icxToTrade, routerScore.getAddress(), "route", pathWithNonSicx,
-                BigInteger.ZERO, "");
+                BigInteger.ZERO, "", "None".getBytes());
         String expectedErrorMessage = "Reverted(0): " + TAG + ": ICX can only be traded for sICX";
         expectErrorMessage(nonSicxTrade, expectedErrorMessage);
 
@@ -90,7 +90,7 @@ class RouterTest extends TestBase {
         }
 
         Executable maxTradeHops = () -> sm.call(owner, icxToTrade, routerScore.getAddress(), "route",
-                pathWithMoreHops, BigInteger.ZERO, "");
+                pathWithMoreHops, BigInteger.ZERO, "", "None".getBytes());
         expectedErrorMessage = "Reverted(0): " + TAG + ": Passed max swaps of " + MAX_NUMBER_OF_ITERATIONS;
 
         resetInRoute();
@@ -101,7 +101,7 @@ class RouterTest extends TestBase {
         routerScore.getAccount().addBalance("ICX", icxToTrade);
 
         Executable lessThanMinimumReceivable = () -> sm.call(owner, icxToTrade, routerScore.getAddress(), "route",
-                path, icxToTrade.multiply(BigInteger.TWO), "");
+                path, icxToTrade.multiply(BigInteger.TWO), "", "None".getBytes());
         expectedErrorMessage = "Reverted(0): " + TAG + ": Below minimum receive amount of "
                 + icxToTrade.multiply(BigInteger.TWO);
 
@@ -111,11 +111,11 @@ class RouterTest extends TestBase {
         routerScore.getAccount().addBalance("ICX", icxToTrade);
         resetInRoute();
         sm.call(owner, icxToTrade, routerScore.getAddress(), "route", path, BigInteger.ZERO,
-                owner.getAddress().toString());
+                owner.getAddress().toString(), "None".getBytes());
         verify(sicxScore.mock).transfer(owner.getAddress(), icxToTrade, EMPTY_DATA);
 
         Executable negativeMinimumBalance = () -> sm.call(owner, icxToTrade, routerScore.getAddress(),
-                "route", path, icxToTrade.negate(), "");
+                "route", path, icxToTrade.negate(), "", "None".getBytes());
         expectedErrorMessage = "Reverted(0): " + TAG + ": Must specify a positive number for minimum to receive";
         expectErrorMessage(negativeMinimumBalance, expectedErrorMessage);
     }
@@ -243,7 +243,7 @@ class RouterTest extends TestBase {
         routerScore.invoke(balanced.sicx.account, "tokenFallback", owner.getAddress(), amount, path);
 
         // Assert
-        verify(token.mock).hubTransfer(receiver.toString(), amount, new byte[0]);
+        verify(token.mock).hubTransfer(receiver.toString(), amount, "None".getBytes());
     }
 
     @Test
@@ -268,7 +268,7 @@ class RouterTest extends TestBase {
         routerScore.invoke(balanced.sicx.account, "tokenFallback", owner.getAddress(), amount, path);
 
         // Assert
-        verify(token.mock).crossTransfer(receiver.toString(), amount, new byte[0]);
+        verify(token.mock).crossTransfer(receiver.toString(), amount, "None".getBytes());
     }
 
     @Test
@@ -289,7 +289,7 @@ class RouterTest extends TestBase {
         routerScore.invoke(balanced.sicx.account, "tokenFallback", owner.getAddress(), amount, path);
 
         // Assert
-        verify(balanced.bnUSD.mock).crossTransfer(receiver.toString(), amount, new byte[0]);
+        verify(balanced.bnUSD.mock).crossTransfer(receiver.toString(), amount, "None".getBytes());
     }
 
     @Test
@@ -382,7 +382,7 @@ class RouterTest extends TestBase {
 
         // Act
         Executable nonSicxTrade = () -> sm.call(owner, icxToTrade, routerScore.getAddress(), "routeV2", pathWithNonSicx,
-                BigInteger.ZERO, "");
+                BigInteger.ZERO, "", "none".getBytes());
 
         // Assert
         String expectedErrorMessage = "Reverted(0): " + TAG + ": ICX can only be traded for sICX";
@@ -402,7 +402,7 @@ class RouterTest extends TestBase {
 
         // Act
         Executable maxTradeHops = () -> sm.call(owner, icxToTrade, routerScore.getAddress(), "routeV2",
-                pathWithMoreHops, BigInteger.ZERO, "");
+                pathWithMoreHops, BigInteger.ZERO, "", "None".getBytes());
 
         // Assert
         String expectedErrorMessage = "Reverted(0): " + TAG + ": Passed max swaps of " + MAX_NUMBER_OF_ITERATIONS;
@@ -422,7 +422,7 @@ class RouterTest extends TestBase {
 
         // Act
         Executable lessThanMinimumReceivable = () -> sm.call(owner, icxToTrade, routerScore.getAddress(), "routeV2",
-                path, icxToTrade.multiply(BigInteger.TWO), "");
+                path, icxToTrade.multiply(BigInteger.TWO), "", "None".getBytes());
 
         //Assert
         String expectedErrorMessage = "Reverted(0): " + TAG + ": Below minimum receive amount of "
@@ -441,7 +441,7 @@ class RouterTest extends TestBase {
 
         // Act
         Executable negativeMinimumBalance = () -> sm.call(owner, icxToTrade, routerScore.getAddress(),
-                "routeV2", path, icxToTrade.negate(), "");
+                "routeV2", path, icxToTrade.negate(), "", "None".getBytes());
 
         // Assert
         String expectedErrorMessage = "Reverted(0): " + TAG + ": Must specify a positive number for minimum to receive";
@@ -470,7 +470,7 @@ class RouterTest extends TestBase {
 
         // Act
         sm.call(owner, icxToTrade, routerScore.getAddress(), "routeV2",
-                pathWithMoreHops, BigInteger.ZERO, "");
+                pathWithMoreHops, BigInteger.ZERO, "", "None".getBytes());
 
         // Assert
         int i = 0;
