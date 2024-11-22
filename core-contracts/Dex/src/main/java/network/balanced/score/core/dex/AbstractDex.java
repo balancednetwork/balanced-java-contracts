@@ -264,7 +264,7 @@ public abstract class AbstractDex extends IRC31StandardSpokeLpToken {
 
     @External(readonly = true)
     public BigInteger getDepositV2(Address _tokenAddress, String _user) {
-        NetworkAddress user = NetworkAddress.valueOf(_user);
+        NetworkAddress user = NetworkAddress.valueOf(_user, NATIVE_NID);
         return deposit.at(_tokenAddress).getOrDefault(user, BigInteger.ZERO);
     }
 

@@ -340,7 +340,7 @@ public class DexImpl extends AbstractDex {
         checkStatus();
         isValidPercent(_slippagePercentage.intValue());
 
-        addInternal(NetworkAddress.parse(from), Address.fromString(_baseToken), Address.fromString(_quoteToken), _baseValue, _quoteValue,
+        addInternal(NetworkAddress.valueOf(from), Address.fromString(_baseToken), Address.fromString(_quoteToken), _baseValue, _quoteValue,
                 _withdraw_unused, _slippagePercentage);
     }
 

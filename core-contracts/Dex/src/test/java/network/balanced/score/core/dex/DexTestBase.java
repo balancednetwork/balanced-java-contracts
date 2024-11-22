@@ -118,7 +118,7 @@ class DexTestBase extends UnitTest {
     * */
 
     protected void handleCallMessageWithOutProtocols(String from, byte[] data, String[] protocols ) {
-        NetworkAddress fromNetworkAddress = NetworkAddress.parse(from);
+        NetworkAddress fromNetworkAddress = NetworkAddress.valueOf(from);
         contextMock.when(() -> Context.call(eq(BalancedAddressManager.getXCallManager()), eq("verifyProtocols"), eq(fromNetworkAddress.net()), eq(protocols))).thenReturn(true);
         dexScore.invoke(xcallScore, "handleCallMessage", from, data, protocols);
     }

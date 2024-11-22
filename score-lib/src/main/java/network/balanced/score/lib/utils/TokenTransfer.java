@@ -11,8 +11,8 @@ import static network.balanced.score.lib.utils.BalancedAddressManager.getDaofund
 public class TokenTransfer {
 
     public static void transfer(Address token, String to, BigInteger amount, byte[] data){
-       NetworkAddress toNetworkAddress = NetworkAddress.parse(to);
        String NATIVE_NID = (String) Context.call(BalancedAddressManager.getXCall(), "getNetworkId");
+       NetworkAddress toNetworkAddress = NetworkAddress.valueOf(to, NATIVE_NID);
        if(!NATIVE_NID.equals(toNetworkAddress.net())) {
            if(canWithdraw(toNetworkAddress.net())) {
                String nativeAddress = (String) Context.call(BalancedAddressManager.getAssetManager(), "getNativeAssetAddress", token, toNetworkAddress.net());
