@@ -131,7 +131,7 @@ public class RouterImpl implements Router {
         }
     }
 
-    private void route(String from, Address startToken, List<RouteAction> _path, BigInteger _minReceive) {
+    private void route(String from, Address startToken, List<RouteAction> _path, BigInteger _minReceive, byte[] data) {
         Address prevToken = null;
         Address currentToken = startToken;
         BigInteger fromAmount;
@@ -167,10 +167,6 @@ public class RouterImpl implements Router {
         BigInteger balance = (BigInteger) Context.call(currentToken, "balanceOf", Context.getAddress());
         Context.require(balance.compareTo(_minReceive) >= 0, TAG + ": Below minimum receive amount of " + _minReceive);
 
-        byte[] data = new byte[0];
-        if (networkAddress.net().equals(nativeNid)) {
-            data = EMPTY_DATA;
-        }
 
         TokenTransfer.transfer(currentToken, networkAddress.toString(), balance, data);
         Route(fromAddress, fromAmount, currentToken, balance);
@@ -179,7 +175,7 @@ public class RouterImpl implements Router {
 
     @Payable
     @External
-    public void route(Address[] _path, @Optional BigInteger _minReceive, @Optional String _receiver) {
+    public void route(Address[] _path, @Optional BigInteger _minReceive, @Optional String _receiver, @Optional byte[] _data) {
         Context.require(!inRoute);
         validateRoutePayload(_path.length, _minReceive);
 
@@ -190,12 +186,12 @@ public class RouterImpl implements Router {
         for (Address path : _path) {
             routeActions.add(new RouteAction(1, path));
         }
-        route(_receiver, null, routeActions, _minReceive);
+        route(_receiver, null, routeActions, _minReceive, _data);
     }
 
     @Payable
     @External
-    public void routeV2(byte[] _path, @Optional BigInteger _minReceive, @Optional String _receiver) {
+    public void routeV2(byte[] _path, @Optional BigInteger _minReceive, @Optional String _receiver, @Optional byte[] _data) {
         Context.require(!inRoute);
         List<RouteAction> actions = Route.fromBytes(_path).actions;
         validateRoutePayload(actions.size(), _minReceive);
@@ -203,7 +199,7 @@ public class RouterImpl implements Router {
             _receiver = Context.getCaller().toString();
         }
 
-        route(_receiver, null, actions, _minReceive);
+        route(_receiver, null, actions, _minReceive, _data);
     }
 
     private void validateRoutePayload(int _pathLength, BigInteger _minReceive) {
@@ -266,7 +262,7 @@ public class RouterImpl implements Router {
             receiver = _from;
         }
 
-        route(receiver, fromToken, routeData.actions, minimumReceive);
+        route(receiver, fromToken, routeData.actions, minimumReceive, EMPTY_DATA);
     }
 
     private void jsonRoute(String _from, byte[] data) {
@@ -312,7 +308,7 @@ public class RouterImpl implements Router {
         }
 
         Address fromToken = Context.getCaller();
-        route(receiver, fromToken, actions, minimumReceive);
+        route(receiver, fromToken, actions, minimumReceive, EMPTY_DATA);
     }
 
     @Payable
