@@ -23,7 +23,6 @@ import static network.balanced.score.lib.utils.BalancedAddressManager.getTrickle
 import static network.balanced.score.lib.utils.BalancedAddressManager.resetAddress;
 import static network.balanced.score.lib.utils.Check.checkStatus;
 import static network.balanced.score.lib.utils.Check.onlyGovernance;
-import static network.balanced.score.lib.utils.Constants.EXA;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -45,12 +44,10 @@ import score.DictDB;
 import score.annotation.External;
 
 public class SavingsImpl extends FloorLimited implements Savings {
-    public static final String LOCKED_SAVINGS = "Locked savings";
     public static final String VERSION = "version";
     private static final DictDB<Address, BigInteger> totalPayout = Context.newDictDB("TOTAL_PAYOUT", BigInteger.class);
 
     private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
-    public static final String TAG = Names.SAVINGS;
 
     public SavingsImpl(Address _governance) {
         BalancedAddressManager.setGovernance(_governance);
