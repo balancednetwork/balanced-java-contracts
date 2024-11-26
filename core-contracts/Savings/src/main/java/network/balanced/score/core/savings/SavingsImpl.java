@@ -21,8 +21,7 @@ import static network.balanced.score.lib.utils.BalancedAddressManager.getBnusd;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getLoans;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getTrickler;
 import static network.balanced.score.lib.utils.BalancedAddressManager.resetAddress;
-import static network.balanced.score.lib.utils.Check.checkStatus;
-import static network.balanced.score.lib.utils.Check.onlyGovernance;
+import static network.balanced.score.lib.utils.Check.*;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -30,18 +29,17 @@ import java.util.Map;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 
-import network.balanced.score.lib.utils.BalancedAddressManager;
-import network.balanced.score.lib.utils.Names;
-import network.balanced.score.lib.utils.Versions;
+import network.balanced.score.lib.interfaces.RewardsXCall;
+import network.balanced.score.lib.interfaces.SavingsXCall;
+import network.balanced.score.lib.utils.*;
 import network.balanced.score.lib.interfaces.Savings;
-import network.balanced.score.lib.utils.FloorLimited;
-import network.balanced.score.lib.utils.BalancedFloorLimits;
 
 import score.Address;
 import score.Context;
 import score.VarDB;
 import score.DictDB;
 import score.annotation.External;
+import score.annotation.Optional;
 
 public class SavingsImpl extends FloorLimited implements Savings {
     public static final String VERSION = "version";
@@ -105,9 +103,22 @@ public class SavingsImpl extends FloorLimited implements Savings {
     }
 
     @External
+    public void handleCallMessage(String _from, byte[] _data, @Optional String[] _protocols) {
+        checkStatus();
+        only(BalancedAddressManager.getXCall());
+        XCallUtils.verifyXCallProtocols(_from, _protocols);
+        SavingsXCall.process(this, _from, _data);
+    }
+
+    public void xClaimRewards(String from) {
+        gatherRewards();
+        RewardsManager.claimRewards(from);
+    }
+
+    @External
     public void claimRewards() {
         gatherRewards();
-        RewardsManager.claimRewards(Context.getCaller());
+        RewardsManager.claimRewards(Context.getCaller().toString());
     }
 
     @External(readonly = true)
@@ -142,6 +153,11 @@ public class SavingsImpl extends FloorLimited implements Savings {
         handleTokenDeposit(_from.toString(), _value, _data);
     }
 
+    @External
+    public void xTokenFallback(String _from, BigInteger _value, byte[] _data) {
+        handleTokenDeposit(_from, _value, _data);
+    }
+
     private void handleTokenDeposit(String _from, BigInteger _value, byte[] _data) {
         checkStatus();
         Context.require(_value.compareTo(BigInteger.ZERO) > 0, "Zero transfers not allowed");
@@ -156,8 +172,11 @@ public class SavingsImpl extends FloorLimited implements Savings {
         String unpackedData  = new String(_data);
         Context.require(!unpackedData.equals(""), "Token Fallback: Data can't be empty");
         JsonObject json = Json.parse(unpackedData).asObject();
-
         String method = json.get("method").asString();
+        JsonObject params = json.get("params").asObject();
+        if(params.get("to")!=null){
+            _from = params.get("to").asString();
+        }
         switch (method) {
             case "_lock": {
                 Context.require(token.equals(getBnusd()), "Only BnUSD can be locked");

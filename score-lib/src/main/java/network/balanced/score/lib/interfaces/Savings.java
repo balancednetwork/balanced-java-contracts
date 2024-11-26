@@ -18,11 +18,13 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
+import network.balanced.score.lib.annotations.XCall;
 import network.balanced.score.lib.interfaces.addresses.AddressManager;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.Version;
 import score.annotation.External;
 import score.Address;
+import score.annotation.Optional;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -39,6 +41,8 @@ public interface Savings extends Name, Version, AddressManager, FloorLimitedInte
     @External(readonly = true)
     BigInteger getTotalPayout(Address token);
 
+    @XCall
+    void xClaimRewards(String from);
     @External
     void claimRewards();
 

@@ -19,11 +19,15 @@ package network.balanced.score.core.savings;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
+import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockBalanced;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import score.Address;
+import score.ByteArrayObjectWriter;
+import score.Context;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -41,15 +45,18 @@ class SavingsTest extends UnitTest {
     private MockBalanced mockBalanced;
 
     private Score savings;
+    private final String NATIVE_NID = "0x1.ICON";
 
 
     @BeforeEach
     void setup() throws Exception {
         mockBalanced = new MockBalanced(sm, owner);
+        when(mockBalanced.xCall.mock.getNetworkId()).thenReturn(NATIVE_NID);
         savings = sm.deploy(owner, SavingsImpl.class, mockBalanced.governance.getAddress());
         savings.invoke(mockBalanced.governance.account, "addAcceptedToken", mockBalanced.sicx.getAddress());
         savings.invoke(mockBalanced.governance.account, "addAcceptedToken", mockBalanced.baln.getAddress());
         savings.invoke(mockBalanced.governance.account, "addAcceptedToken", mockBalanced.bnUSD.getAddress());
+
     }
 
     @Test
@@ -207,5 +214,120 @@ class SavingsTest extends UnitTest {
     void permissions() {
         assertOnlyCallableBy(mockBalanced.governance.getAddress(), savings, "addAcceptedToken", mockBalanced.sicx.getAddress());
         assertOnlyCallableBy(mockBalanced.governance.getAddress(), savings, "removeAcceptedToken", mockBalanced.sicx.getAddress());
+    }
+
+    @Test
+    void lockCrosschainBnUSDWithOutTo() {
+        //Arrange
+        String user = new NetworkAddress("0x1.ETH", "0x120").toString();
+        BigInteger lockAmount = BigInteger.valueOf(100).multiply(EXA);
+
+        // Act
+        byte[] data = tokenData("_lock", Map.of());
+        savings.invoke(mockBalanced.bnUSD.account, "xTokenFallback", user, lockAmount, data);
+
+        // Assert
+        BigInteger amountLocked = (BigInteger) savings.call("getLockedAmount", user);
+        assertEquals(lockAmount, amountLocked);
+    }
+
+    @Test
+    void lockCrosschainBnUSDWithTo() {
+        //Arrange
+        String user = new NetworkAddress("0x1.ETH", "0x120").toString();
+        String toUser = new NetworkAddress("0x1.ETH", "0x121").toString();
+        BigInteger lockAmount = BigInteger.valueOf(100).multiply(EXA);
+
+        // Act
+        byte[] data = tokenData("_lock", Map.of("to", toUser ));
+        savings.invoke(mockBalanced.bnUSD.account, "xTokenFallback", user, lockAmount, data);
+
+        // Assert
+        BigInteger amountLocked = (BigInteger) savings.call("getLockedAmount", toUser);
+        assertEquals(lockAmount, amountLocked);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void crossChainClaimRewards() {
+        //Arrange
+        String user1 = new NetworkAddress("0x1.ETH", "0x120").toString();
+        String user2 = new NetworkAddress("0x1.ETH", "0x121").toString();
+        String user3 = new NetworkAddress("0x1.ETH", "0x122").toString();
+        BigInteger lockAmount1 = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger lockAmount2 = BigInteger.valueOf(200).multiply(EXA);
+        BigInteger lockAmount3 = BigInteger.valueOf(200).multiply(EXA);
+
+        byte[] data = tokenData("_lock", Map.of());
+        savings.invoke(mockBalanced.bnUSD.account, "xTokenFallback", user1, lockAmount1, data);
+        savings.invoke(mockBalanced.bnUSD.account, "xTokenFallback", user2, lockAmount2, data);
+
+        // Act
+        BigInteger balnRewards = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger sICXRewards = BigInteger.valueOf(100).multiply(EXA);
+        BigInteger bnUSDRewards = BigInteger.valueOf(2000).multiply(EXA);
+        savings.invoke(mockBalanced.baln.account, "tokenFallback", mockBalanced.daofund.getAddress(), balnRewards, new byte[0]);
+        savings.invoke(mockBalanced.sicx.account, "tokenFallback", mockBalanced.daofund.getAddress(), sICXRewards, new byte[0]);
+        savings.invoke(mockBalanced.bnUSD.account, "tokenFallback", mockBalanced.daofund.getAddress(), bnUSDRewards, new byte[0]);
+        savings.invoke(mockBalanced.bnUSD.account, "xTokenFallback", user3, lockAmount3, data);
+
+        // Assert
+        Map<String, BigInteger> rewards1 = (Map<String, BigInteger>) savings.call("getUnclaimedRewards", user1);
+        Map<String, BigInteger> rewards2 = (Map<String, BigInteger>) savings.call("getUnclaimedRewards", user2);
+        Map<String, BigInteger> rewards3 = (Map<String, BigInteger>) savings.call("getUnclaimedRewards", user3);
+
+        BigInteger total = lockAmount1.add(lockAmount2);
+        BigInteger sICXWeight = sICXRewards.multiply(EXA).divide(total);
+        BigInteger balnWeight = balnRewards.multiply(EXA).divide(total);
+        BigInteger bnUSDWeight = bnUSDRewards.multiply(EXA).divide(total);
+        assertEquals(sICXWeight.multiply(lockAmount1).divide(EXA), rewards1.get(mockBalanced.sicx.getAddress().toString()));
+        assertEquals(balnWeight.multiply(lockAmount1).divide(EXA), rewards1.get(mockBalanced.baln.getAddress().toString()));
+        assertEquals(bnUSDWeight.multiply(lockAmount1).divide(EXA), rewards1.get(mockBalanced.bnUSD.getAddress().toString()));
+        assertEquals(sICXWeight.multiply(lockAmount2).divide(EXA), rewards2.get(mockBalanced.sicx.getAddress().toString()));
+        assertEquals(balnWeight.multiply(lockAmount2).divide(EXA), rewards2.get(mockBalanced.baln.getAddress().toString()));
+        assertEquals(bnUSDWeight.multiply(lockAmount2).divide(EXA), rewards2.get(mockBalanced.bnUSD.getAddress().toString()));
+        assertEquals(BigInteger.ZERO, rewards3.get(mockBalanced.sicx.getAddress().toString()));
+        assertEquals(BigInteger.ZERO, rewards3.get(mockBalanced.baln.getAddress().toString()));
+        assertEquals(BigInteger.ZERO, rewards3.get(mockBalanced.bnUSD.getAddress().toString()));
+
+
+        // Act
+        savings.invoke(mockBalanced.baln.account, "tokenFallback", mockBalanced.daofund.getAddress(), balnRewards, new byte[0]);
+        savings.invoke(mockBalanced.sicx.account, "tokenFallback", mockBalanced.daofund.getAddress(), sICXRewards, new byte[0]);
+
+        // Assert
+        rewards1 = (Map<String, BigInteger>) savings.call("getUnclaimedRewards", user1);
+        rewards2 = (Map<String, BigInteger>) savings.call("getUnclaimedRewards", user2);
+        rewards3 = (Map<String, BigInteger>) savings.call("getUnclaimedRewards", user3);
+
+        BigInteger newTotal = lockAmount1.add(lockAmount2).add(lockAmount3);
+        BigInteger newSICXWeight = sICXWeight.add(sICXRewards.multiply(EXA).divide(newTotal));
+        BigInteger newBalnWeight = balnWeight.add(balnRewards.multiply(EXA).divide(newTotal));
+        assertEquals(newSICXWeight.multiply(lockAmount1).divide(EXA), rewards1.get(mockBalanced.sicx.getAddress().toString()));
+        assertEquals(newBalnWeight.multiply(lockAmount1).divide(EXA), rewards1.get(mockBalanced.baln.getAddress().toString()));
+        assertEquals(newSICXWeight.multiply(lockAmount2).divide(EXA), rewards2.get(mockBalanced.sicx.getAddress().toString()));
+        assertEquals(newBalnWeight.multiply(lockAmount2).divide(EXA), rewards2.get(mockBalanced.baln.getAddress().toString()));
+        assertEquals(newSICXWeight.subtract(sICXWeight).multiply(lockAmount3).divide(EXA), rewards3.get(mockBalanced.sicx.getAddress().toString()));
+        assertEquals(newBalnWeight.subtract(balnWeight).multiply(lockAmount3).divide(EXA), rewards3.get(mockBalanced.baln.getAddress().toString()));
+
+        assertEquals(sICXRewards.multiply(BigInteger.TWO), savings.call("getTotalPayout", mockBalanced.sicx.getAddress()));
+        assertEquals(balnRewards.multiply(BigInteger.TWO), savings.call("getTotalPayout", mockBalanced.baln.getAddress()));
+        assertEquals(bnUSDRewards, savings.call("getTotalPayout", mockBalanced.bnUSD.getAddress()));
+
+        // Act
+        when(mockBalanced.daofund.mock.getXCallFeePermission(any(Address.class), any(String.class))).thenReturn(true);
+        savings.invoke(mockBalanced.xCall.account, "handleCallMessage", user1,  getClaimRewardsData(), new String[0]);
+
+        // Assert
+        verify(mockBalanced.sicx.mock).crossTransfer(user1, rewards1.get(mockBalanced.sicx.getAddress().toString()), new byte[0]);
+        verify(mockBalanced.baln.mock).crossTransfer(user1, rewards1.get(mockBalanced.baln.getAddress().toString()), new byte[0]);
+    }
+
+    static byte[] getClaimRewardsData() {
+        ByteArrayObjectWriter writer = Context.newByteArrayObjectWriter("RLPn");
+        writer.beginList(1);
+        writer.write("xclaimrewards");
+        writer.end();
+        return writer.toByteArray();
     }
 }
