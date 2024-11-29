@@ -33,7 +33,6 @@ import java.math.BigInteger;
 import java.util.Map;
 
 import static network.balanced.score.lib.utils.Constants.EXA;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
@@ -321,6 +320,33 @@ class SavingsTest extends UnitTest {
         // Assert
         verify(mockBalanced.sicx.mock).crossTransfer(user1, rewards1.get(mockBalanced.sicx.getAddress().toString()), new byte[0]);
         verify(mockBalanced.baln.mock).crossTransfer(user1, rewards1.get(mockBalanced.baln.getAddress().toString()), new byte[0]);
+    }
+
+    @Test
+    void xUnlock() {
+        //Arrange
+        String user = new NetworkAddress("0x1.ETH", "0x120").toString();
+        BigInteger lockAmount = BigInteger.valueOf(100).multiply(EXA);
+        byte[] data = tokenData("_lock", Map.of());
+        savings.invoke(mockBalanced.bnUSD.account, "xTokenFallback", user, lockAmount, data);
+
+        // Act
+        BigInteger unlockAmount = lockAmount.divide(BigInteger.TWO);
+        when(mockBalanced.bnUSD.mock.balanceOf(savings.getAddress())).thenReturn(lockAmount);
+        when(mockBalanced.daofund.mock.getXCallFeePermission(any(Address.class), any(String.class))).thenReturn(true);
+        savings.invoke(mockBalanced.xCall.account, "handleCallMessage", user,  getUnlockData(unlockAmount), new String[0]);
+
+        // Assert
+        verify(mockBalanced.bnUSD.mock).crossTransfer(user, unlockAmount, new byte[0]);
+    }
+
+    static byte[] getUnlockData(BigInteger amount) {
+        ByteArrayObjectWriter writer = Context.newByteArrayObjectWriter("RLPn");
+        writer.beginList(2);
+        writer.write("xunlock");
+        writer.write(amount);
+        writer.end();
+        return writer.toByteArray();
     }
 
     static byte[] getClaimRewardsData() {

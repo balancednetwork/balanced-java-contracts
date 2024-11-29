@@ -38,6 +38,9 @@ public interface Savings extends Name, Version, AddressManager, FloorLimitedInte
     @External
     void unlock(BigInteger amount);
 
+    @XCall
+    void xUnlock(String from, BigInteger amount);
+
     @External(readonly = true)
     BigInteger getTotalPayout(Address token);
 

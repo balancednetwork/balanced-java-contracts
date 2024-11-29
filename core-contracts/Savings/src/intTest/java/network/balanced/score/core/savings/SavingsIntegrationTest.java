@@ -24,15 +24,19 @@ import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.ScoreIntegrationTest;
 import network.balanced.score.lib.interfaces.*;
 
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
 import score.Address;
 import foundation.icon.xcall.NetworkAddress;
+import score.ByteArrayObjectWriter;
+import score.Context;
 
 import java.math.BigInteger;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 
 import static network.balanced.score.lib.test.integration.BalancedUtils.*;
@@ -125,6 +129,7 @@ class SavingsIntegrationTest implements ScoreIntegrationTest {
 
         // set initial rate to 1 USD
         updatePrice(rate);
+        addCollateral(balanced.ethBaseAsset, "ETH");
     }
 
     @Test
@@ -134,7 +139,6 @@ class SavingsIntegrationTest implements ScoreIntegrationTest {
         BigInteger loanAmount = BigInteger.TEN.pow(21);
         user.stakeDepositAndBorrow(collateralAmount, loanAmount);
 
-        JsonObject deposit = new JsonObject().add("method", "_deposit");
         JsonObject lock = new JsonObject().add("method", "_lock");
         user.bnUSD.transfer(balanced.savings._address(), loanAmount, lock.toString().getBytes());
 
@@ -285,7 +289,7 @@ class SavingsIntegrationTest implements ScoreIntegrationTest {
 
     @Test
     @Order(7)
-    void withdrawYieldAssetFromStability() throws Exception {
+    void withdrawYieldAssetFromStability() {
         // Arrange
         BigInteger collateralAmount = BigInteger.TEN.pow(22);
         BigInteger amount = BigInteger.TEN.pow(20);
@@ -307,6 +311,150 @@ class SavingsIntegrationTest implements ScoreIntegrationTest {
         assertEquals(prevYield, reader.feeHandler.getStabilityFundYieldFeesAccrued());
     }
 
+    private static void addCollateral(foundation.icon.jsonrpc.Address collateralAddress, String peg) {
+        BigInteger lockingRatio = BigInteger.valueOf(40_000);
+        BigInteger debtCeiling = BigInteger.TEN.pow(30);
+
+        BigInteger liquidationRatio = BigInteger.valueOf(14_000);
+        BigInteger liquidatorFee = BigInteger.valueOf(800);
+        BigInteger daofundFee = BigInteger.valueOf(200);
+
+        JsonArray addCollateralParameters = new JsonArray()
+                .add(createParameter(collateralAddress))
+                .add(createParameter(true))
+                .add(createParameter(peg))
+                .add(createParameter(lockingRatio))
+                .add(createParameter(debtCeiling))
+                .add(createParameter(liquidationRatio))
+                .add(createParameter(liquidatorFee))
+                .add(createParameter(daofundFee));
+
+        JsonArray actions = new JsonArray()
+                .add(createTransaction(balanced.governance._address(), "addCollateral", addCollateralParameters));
+
+        String symbol = reader.irc2(collateralAddress).symbol();
+        owner.governance.execute(actions.toString());
+
+        assertEquals(lockingRatio, reader.loans.getLockingRatio(symbol));
+        assertEquals(debtCeiling, reader.loans.getDebtCeiling(symbol));
+    }
+
+    @Test
+    @Order(8)
+    void crossChainLock(){
+
+        // Arrange - prepare accounts
+        NetworkAddress ethBnUSD = new NetworkAddress(balanced.ETH_NID, balanced.ETH_BNUSD_ADDRESS);
+        NetworkAddress ethAccount = new NetworkAddress(balanced.ETH_NID, "0x123");
+        String savingsAddress = new NetworkAddress(balanced.ICON_NID, balanced.savings._address()).toString();
+        String loanAddress = new NetworkAddress(balanced.ICON_NID, balanced.loans._address()).toString();
+        BigInteger loanAmount = BigInteger.valueOf(20).multiply(EXA);
+
+        // Arrange - deposit and borrow bnUSD loan
+        JsonObject loanData = new JsonObject()
+                .add("_amount", loanAmount.toString());
+        byte[] depositAndBorrowETH = AssetManagerMessages.deposit(balanced.ETH_TOKEN_ADDRESS, "0x123", loanAddress, BigInteger.valueOf(200).multiply(EXA), loanData.toString().getBytes());
+        owner.xcall.recvCall(balanced.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), depositAndBorrowETH);
+
+        // Arrange - prepare data
+        byte[] data = tokenData("_lock", new JsonObject());
+        byte[] lockData = getCrossTransferData(ethAccount.toString(), savingsAddress, loanAmount, data);
+
+        // Act
+        owner.xcall.recvCall(owner.bnUSD._address(), ethBnUSD.toString(), lockData);
+
+        //Verify
+        BigInteger lockedAmount = owner.savings.getLockedAmount(ethAccount.toString());
+        assertEquals(lockedAmount, loanAmount);
+
+    }
+
+    @Test
+    @Order(9)
+    void crossChainClaimRewards(){
+
+        // Arrange - prepare accounts
+        NetworkAddress ethBnUSD = new NetworkAddress(balanced.ETH_NID, balanced.ETH_BNUSD_ADDRESS);
+        NetworkAddress ethAccount = new NetworkAddress(balanced.ETH_NID, "0x123");
+        String savingsAddress = new NetworkAddress(balanced.ICON_NID, balanced.savings._address()).toString();
+        String loanAddress = new NetworkAddress(balanced.ICON_NID, balanced.loans._address()).toString();
+        BigInteger loanAmount = BigInteger.valueOf(20).multiply(EXA);
+
+        // Arrange - deposit and borrow bnUSD loan
+        JsonObject loanData = new JsonObject()
+                .add("_amount", loanAmount.toString());
+        byte[] depositAndBorrowETH = AssetManagerMessages.deposit(balanced.ETH_TOKEN_ADDRESS, "0x123", loanAddress, BigInteger.valueOf(200).multiply(EXA), loanData.toString().getBytes());
+        owner.xcall.recvCall(balanced.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), depositAndBorrowETH);
+
+        // Arrange - prepare data
+        byte[] data = tokenData("_lock", new JsonObject());
+        byte[] lockData = getCrossTransferData(ethAccount.toString(), savingsAddress, loanAmount, data);
+
+        // Arrange - lock bnUSD
+        owner.xcall.recvCall(owner.bnUSD._address(), ethBnUSD.toString(), lockData);
+
+        // Arrange - set xcall fee permission
+        JsonArray setXCallFeePermissionParameters = new JsonArray()
+                .add(createParameter(balanced.savings._address())).add(createParameter(balanced.ETH_NID)).add(createParameter(true));
+        JsonArray actions = new JsonArray()
+                .add(createTransaction(balanced.daofund._address(), "setXCallFeePermission", setXCallFeePermissionParameters));
+        owner.governance.execute(actions.toString());
+
+        // Act
+        afterNextDays(2);
+        owner.xcall.recvCall(owner.savings._address(), ethAccount.toString(), getClaimRewardsData());
+
+        // Verify
+
+    }
+
+    @Test
+    @Order(10)
+    void crossChainUnlock(){
+
+        // Arrange - prepare accounts
+        NetworkAddress ethBnUSD = new NetworkAddress(balanced.ETH_NID, balanced.ETH_BNUSD_ADDRESS);
+        NetworkAddress ethAccount = new NetworkAddress(balanced.ETH_NID, "0x123");
+        String savingsAddress = new NetworkAddress(balanced.ICON_NID, balanced.savings._address()).toString();
+        String loanAddress = new NetworkAddress(balanced.ICON_NID, balanced.loans._address()).toString();
+        BigInteger loanAmount = BigInteger.valueOf(20).multiply(EXA);
+
+        // Arrange - deposit and borrow bnUSD loan
+        JsonObject loanData = new JsonObject()
+                .add("_amount", loanAmount.toString());
+        byte[] depositAndBorrowETH = AssetManagerMessages.deposit(balanced.ETH_TOKEN_ADDRESS, "0x123", loanAddress, BigInteger.valueOf(200).multiply(EXA), loanData.toString().getBytes());
+        owner.xcall.recvCall(balanced.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), depositAndBorrowETH);
+
+        // Arrange - prepare data
+        byte[] data = tokenData("_lock", new JsonObject());
+        byte[] lockData = getCrossTransferData(ethAccount.toString(), savingsAddress, loanAmount, data);
+
+        // Arrange - lock bnUSD
+        owner.xcall.recvCall(owner.bnUSD._address(), ethBnUSD.toString(), lockData);
+
+        // Arrange - set xcall fee permission
+        JsonArray setXCallFeePermissionParameters = new JsonArray()
+                .add(createParameter(balanced.savings._address())).add(createParameter(balanced.ETH_NID)).add(createParameter(true));
+        JsonArray actions = new JsonArray()
+                .add(createTransaction(balanced.daofund._address(), "setXCallFeePermission", setXCallFeePermissionParameters));
+        owner.governance.execute(actions.toString());
+
+        // Act
+        afterNextDays(2);
+        BigInteger unlockAmount = loanAmount.divide(BigInteger.TWO);
+        BigInteger previousLockedAmount = owner.savings.getLockedAmount(ethAccount.toString());
+        owner.xcall.recvCall(owner.savings._address(), ethAccount.toString(), getUnlockData(unlockAmount));
+
+        //Verify
+        BigInteger lockedAmount = owner.savings.getLockedAmount(ethAccount.toString());
+        assertEquals(lockedAmount, previousLockedAmount.subtract(unlockAmount));
+
+    }
+
+    void afterNextDays(int days) {
+        balanced.increaseDay(days);
+    }
+
     private static void depositHyUSDC(String from, String to, BigInteger amount, byte[] data) {
         byte[] deposit = AssetManagerMessages.deposit(hyUSDCAddress, from, to, amount, data);
         owner.xcall.recvCall(balanced.assetManager._address(),
@@ -318,5 +466,41 @@ class SavingsIntegrationTest implements ScoreIntegrationTest {
         byte[] priceUpdate = BalancedOracleMessages.updatePriceData(hyUSDCSymbol, rate, time);
         owner.xcall.recvCall(balanced.balancedOracle._address(),
                 new NetworkAddress(balanced.ETH_NID, externalOracle).toString(), priceUpdate);
+    }
+
+    public static byte[] tokenData(String method, JsonObject params) {
+        JsonObject data = new JsonObject();
+        data.set("method", method);
+        data.set("params", params);
+        return data.toString().getBytes();
+    }
+
+    static byte[] getCrossTransferData(String from, String to, BigInteger value, byte[] data) {
+        ByteArrayObjectWriter writer = Context.newByteArrayObjectWriter("RLPn");
+        writer.beginList(5);
+        writer.write("xcrosstransfer");
+        writer.write(from);
+        writer.write(to);
+        writer.write(value);
+        writer.write(data);
+        writer.end();
+        return writer.toByteArray();
+    }
+
+    static byte[] getClaimRewardsData() {
+        ByteArrayObjectWriter writer = Context.newByteArrayObjectWriter("RLPn");
+        writer.beginList(1);
+        writer.write("xclaimrewards");
+        writer.end();
+        return writer.toByteArray();
+    }
+
+    static byte[] getUnlockData(BigInteger amount) {
+        ByteArrayObjectWriter writer = Context.newByteArrayObjectWriter("RLPn");
+        writer.beginList(2);
+        writer.write("xunlock");
+        writer.write(amount);
+        writer.end();
+        return writer.toByteArray();
     }
 }

@@ -29,7 +29,6 @@ import java.util.Map;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 
-import network.balanced.score.lib.interfaces.RewardsXCall;
 import network.balanced.score.lib.interfaces.SavingsXCall;
 import network.balanced.score.lib.utils.*;
 import network.balanced.score.lib.interfaces.Savings;
@@ -40,6 +39,7 @@ import score.VarDB;
 import score.DictDB;
 import score.annotation.External;
 import score.annotation.Optional;
+import score.annotation.Payable;
 
 public class SavingsImpl extends FloorLimited implements Savings {
     public static final String VERSION = "version";
@@ -76,10 +76,6 @@ public class SavingsImpl extends FloorLimited implements Savings {
         return getAddressByName(name);
     }
 
-    private BigInteger getBnUSDBalance() {
-        return Context.call(BigInteger.class, getBnusd(), "balanceOf", Context.getAddress());
-    }
-
     @External
     public void gatherRewards() {
         try {
@@ -93,13 +89,21 @@ public class SavingsImpl extends FloorLimited implements Savings {
 
     @External
     public void unlock(BigInteger amount) {
+        unlockInternal(Context.getCaller().toString(), amount);
+    }
+
+    public void xUnlock(String from, BigInteger amount) {
+        unlockInternal(from, amount);
+    }
+
+    private void unlockInternal(String user, BigInteger amount){
         Context.require(amount.compareTo(BigInteger.ZERO) > 0, "Cannot unlock a negative or zero amount");
-        RewardsManager.changeLock(Context.getCaller().toString(), amount.negate());
+        RewardsManager.changeLock(user, amount.negate());
         Address bnUSD = getBnusd();
         BalancedFloorLimits.verifyWithdraw(bnUSD, amount);
         BigInteger balance = Context.call(BigInteger.class, bnUSD, "balanceOf", Context.getAddress());
         Context.require(RewardsManager.getTotalWorkingbalance().compareTo(balance.subtract(amount)) <= 0, "Sanity check, unauthorized withdrawals");
-        Context.call(bnUSD, "transfer", Context.getCaller(), amount, new byte[0]);
+        TokenTransfer.transfer(bnUSD, user, amount);
     }
 
     @External
@@ -171,11 +175,13 @@ public class SavingsImpl extends FloorLimited implements Savings {
 
         String unpackedData  = new String(_data);
         Context.require(!unpackedData.equals(""), "Token Fallback: Data can't be empty");
-        JsonObject json = Json.parse(unpackedData).asObject();
+        JsonObject json =  Json.parse(unpackedData).asObject();
         String method = json.get("method").asString();
-        JsonObject params = json.get("params").asObject();
-        if(params.get("to")!=null){
-            _from = params.get("to").asString();
+        if(json.get("params")!=null) {
+            JsonObject params = json.get("params").asObject();
+            if (params.get("to") != null) {
+                _from = params.get("to").asString();
+            }
         }
         switch (method) {
             case "_lock": {
@@ -188,5 +194,10 @@ public class SavingsImpl extends FloorLimited implements Savings {
                 Context.revert(100, "Unsupported method supplied");
                 break;
         }
+    }
+
+    @Payable
+    public void fallback() {
+
     }
 }
