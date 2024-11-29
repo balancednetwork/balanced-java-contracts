@@ -92,9 +92,6 @@ public interface Loans extends Name, AddressManager, Version, XTokenReceiver, Fl
     void withdrawAndUnstake(BigInteger _value);
 
     @External
-    void sellCollateral(BigInteger collateralAmountToSell, String collateralSymbol, BigInteger minimumDebtRepaid);
-
-    @External
     void withdrawCollateral(BigInteger _value, @Optional String _collateralSymbol);
 
     @External
@@ -150,6 +147,12 @@ public interface Loans extends Name, AddressManager, Version, XTokenReceiver, Fl
 
     @External(readonly = true)
     BigInteger getRedemptionDaoFee();
+
+    @External
+    void setRedemptionExemption(Address token, boolean exempt);
+
+    @External(readonly = true)
+    boolean getRedemptionExemption(Address token);
 
     @External
     void setNewLoanMinimum(BigInteger _minimum);

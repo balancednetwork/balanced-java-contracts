@@ -261,11 +261,8 @@ public class RouterImpl implements Router {
         } else {
             receiver = _from;
         }
-        byte[] _data = EMPTY_DATA;
-        if(routeData.data!=null){
-            _data = routeData.data;
-        }
-        route(receiver, fromToken, routeData.actions, minimumReceive, _data);
+
+        route(receiver, fromToken, routeData.actions, minimumReceive, EMPTY_DATA);
     }
 
     private void jsonRoute(String _from, byte[] data) {
@@ -311,11 +308,7 @@ public class RouterImpl implements Router {
         }
 
         Address fromToken = Context.getCaller();
-        byte[] _data = EMPTY_DATA;
-        if(params.get("data")!=null){
-            _data = params.get("data").asString().getBytes();
-        }
-        route(receiver, fromToken, actions, minimumReceive, _data);
+        route(receiver, fromToken, actions, minimumReceive, EMPTY_DATA);
     }
 
     @Payable
