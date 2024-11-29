@@ -88,6 +88,11 @@ public class HubTokenImpl extends SpokeTokenImpl implements HubToken {
     }
 
     @External(readonly = true)
+    public BigInteger getSpokeLmit(String networkId) {
+        return spokeLimits.getOrDefault(networkId, BigInteger.ZERO);
+    }
+
+    @External(readonly = true)
     public BigInteger xSupply(String net) {
         return crossChainSupply.getOrDefault(net, BigInteger.ZERO);
     }
