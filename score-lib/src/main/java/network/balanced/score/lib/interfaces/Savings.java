@@ -21,7 +21,6 @@ import foundation.icon.score.client.ScoreInterface;
 import network.balanced.score.lib.interfaces.addresses.AddressManager;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.Version;
-import network.balanced.score.lib.interfaces.tokens.XTokenReceiver;
 import score.annotation.External;
 import score.Address;
 
