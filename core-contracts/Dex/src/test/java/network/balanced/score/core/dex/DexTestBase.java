@@ -19,8 +19,10 @@ package network.balanced.score.core.dex;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
+import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockBalanced;
+import network.balanced.score.lib.utils.BalancedAddressManager;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
@@ -35,8 +37,7 @@ import java.util.Map;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.*;
 
 
 class DexTestBase extends UnitTest {
@@ -57,9 +58,13 @@ class DexTestBase extends UnitTest {
     protected Account feehandlerScore;
     protected Account stakedLPScore;
     protected Account balancedOracle;
+    protected Account xcallScore;
+
 
     public static Score dexScore;
     public static DexImpl dexScoreSpy;
+
+    private final String NATIVE_NID = "0x1.ICON";
 
     protected final MockedStatic<Context> contextMock = Mockito.mockStatic(Context.class, Mockito.CALLS_REAL_METHODS);
 
@@ -75,10 +80,12 @@ class DexTestBase extends UnitTest {
         feehandlerScore = mockBalanced.feehandler.account;
         stakedLPScore = mockBalanced.stakedLp.account;
         balancedOracle = mockBalanced.balancedOracle.account;
+        xcallScore = mockBalanced.xCall.account;
 
         contextMock.when(() -> Context.call(eq(governanceScore.getAddress()), eq("checkStatus"), any(String.class))).thenReturn(null);
         contextMock.when(() -> Context.call(eq(BigInteger.class), any(Address.class), eq("balanceOf"), any(Address.class))).thenReturn(BigInteger.ZERO);
 
+        contextMock.when(() -> Context.call(eq(BalancedAddressManager.getXCall()), eq("getNetworkId"))).thenReturn(NATIVE_NID);
         dexScore = sm.deploy(ownerAccount, DexImpl.class, governanceScore.getAddress());
         dexScore.invoke(governanceScore, "setTimeOffset", BigInteger.valueOf(Context.getBlockTimestamp()));
         dexScoreSpy = (DexImpl) spy(dexScore.getInstance());
@@ -95,10 +102,25 @@ class DexTestBase extends UnitTest {
                 new HashMap<>()));
     }
 
-    protected void xDepositToken(String depositor, Account to, Account tokenScore, BigInteger value) {
+    protected void xDepositToken(String depositor, String to, Account tokenScore, BigInteger value) {
         contextMock.when(() -> Context.call(any(Address.class), eq("decimals"))).thenReturn(BigInteger.valueOf(18));
         dexScore.invoke(tokenScore, "xTokenFallback", depositor, value, tokenData("_deposit",
-                Map.of("address", to.getAddress().toString())));
+                Map.of("address", to)));
+    }
+
+    protected void xDepositTokenWithoutTo(String depositor, String to, Account tokenScore, BigInteger value) {
+        contextMock.when(() -> Context.call(any(Address.class), eq("decimals"))).thenReturn(BigInteger.valueOf(18));
+        dexScore.invoke(tokenScore, "xTokenFallback", depositor, value, tokenData("_deposit", Map.of()));
+    }
+
+    /*
+    * String _from, byte[] _data, @Optional String[] _protocols
+    * */
+
+    protected void handleCallMessageWithOutProtocols(String from, byte[] data, String[] protocols ) {
+        NetworkAddress fromNetworkAddress = NetworkAddress.valueOf(from);
+        contextMock.when(() -> Context.call(eq(BalancedAddressManager.getXCallManager()), eq("verifyProtocols"), eq(fromNetworkAddress.net()), eq(protocols))).thenReturn(true);
+        dexScore.invoke(xcallScore, "handleCallMessage", from, data, protocols);
     }
 
     protected void supplyLiquidity(Account supplier, Account baseTokenScore, Account quoteTokenScore,

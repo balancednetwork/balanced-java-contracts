@@ -16,25 +16,23 @@
 
 package network.balanced.score.core.rewards;
 
+import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.core.rewards.utils.BalanceData;
 import network.balanced.score.core.rewards.weight.SourceWeightController;
 import network.balanced.score.lib.interfaces.Rewards;
+import network.balanced.score.lib.interfaces.RewardsXCall;
 import network.balanced.score.lib.structs.Point;
 import network.balanced.score.lib.structs.RewardsDataEntry;
 import network.balanced.score.lib.structs.RewardsDataEntryOld;
 import network.balanced.score.lib.structs.VotedSlope;
-import network.balanced.score.lib.utils.ArrayDBUtils;
-import network.balanced.score.lib.utils.IterableDictDB;
-import network.balanced.score.lib.utils.Names;
-import network.balanced.score.lib.utils.SetDB;
-import network.balanced.score.lib.utils.Versions;
+import network.balanced.score.lib.utils.*;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
 import score.annotation.Optional;
+import score.annotation.Payable;
 import scorex.util.ArrayList;
 import scorex.util.HashMap;
-import network.balanced.score.lib.utils.BalancedAddressManager;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -94,7 +92,7 @@ public class RewardsImpl implements Rewards {
             new IterableDictDB<>(FIXED_DISTRIBUTION_PERCENTAGES, BigInteger.class, String.class, false);
 
     private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
-
+    private static String NATIVE_NID;
 
     public RewardsImpl(@Optional Address _governance) {
         SourceWeightController.rewards = this;
@@ -123,6 +121,7 @@ public class RewardsImpl implements Rewards {
             Context.revert("Can't Update same version of code");
         }
         currentVersion.set(Versions.REWARDS);
+        NATIVE_NID = (String) Context.call(BalancedAddressManager.getXCall(), "getNetworkId");
     }
 
     @External(readonly = true)
@@ -360,7 +359,7 @@ public class RewardsImpl implements Rewards {
         for (String recipient : recipients) {
             BigInteger split = distributionPercentages.get(recipient);
             BigInteger share = split.multiply(remaining).divide(shares);
-            Context.call(getBaln(), "transfer", BalancedAddressManager.getAddress(recipient) , share, new byte[0]);
+            Context.call(getBaln(), "transfer", BalancedAddressManager.getAddress(recipient), share, new byte[0]);
             remaining = remaining.subtract(share);
             shares = shares.subtract(split);
         }
@@ -391,14 +390,32 @@ public class RewardsImpl implements Rewards {
     }
 
     @External
+    public void handleCallMessage(String _from, byte[] _data, @Optional String[] _protocols) {
+        checkStatus();
+        only(BalancedAddressManager.getXCall());
+        XCallUtils.verifyXCallProtocols(_from, _protocols);
+        RewardsXCall.process(this, _from, _data);
+    }
+
+    public void xClaimRewards(String from, @Optional String to, @Optional String[] sources) {
+        if (to.isEmpty()) {
+            to = from;
+        }
+        _claimRewards(to, sources);
+    }
+
+    @External
     public void claimRewards(@Optional String[] sources) {
         checkStatus();
-        if (sources == null) {
+        if (sources == null || sources.length == 0) {
             sources = getAllSources();
         }
-        Address caller = Context.getCaller();
-        String address = caller.toString();
-        BigInteger boostedBalance = fetchBoostedBalance(caller);
+        _claimRewards(Context.getCaller().toString(), sources);
+    }
+
+    private void _claimRewards(String address, String[] sources) {
+        NetworkAddress networkAddress = NetworkAddress.valueOf(address, NATIVE_NID);
+        BigInteger boostedBalance = fetchBoostedBalance(address);
         BigInteger boostedSupply = fetchBoostedSupply();
         updateAllUserRewards(address, sources, boostedBalance, boostedSupply);
 
@@ -408,7 +425,7 @@ public class RewardsImpl implements Rewards {
         for (Address token : tokens) {
             BigInteger amount = holdingsDB.getOrDefault(token, BigInteger.ZERO);
             if (amount.compareTo(BigInteger.ZERO) > 0) {
-                Context.call(token, "transfer", caller, amount, new byte[0]);
+                TokenTransfer.transfer(token, networkAddress.toString(), amount);
                 holdingsDB.set(token, null);
                 RewardsClaimedV2(token, address, amount);
             }
@@ -418,11 +435,10 @@ public class RewardsImpl implements Rewards {
         if (userClaimableRewards.compareTo(BigInteger.ZERO) > 0) {
             balnHoldings.set(address, null);
             Address baln = getBaln();
-
-            Context.call(baln, "transfer", caller, userClaimableRewards, new byte[0]);
-            RewardsClaimed(caller, userClaimableRewards);
+            TokenTransfer.transfer(baln, networkAddress.toString(), userClaimableRewards);
             RewardsClaimedV2(baln, address, userClaimableRewards);
         }
+
     }
 
     @External
@@ -865,23 +881,6 @@ public class RewardsImpl implements Rewards {
         Context.require(total.compareTo(HUNDRED_PERCENTAGE) <= 0, "Sum of distributions exceeds 100%");
     }
 
-    private BigInteger getVotableDist() {
-        BigInteger total = HUNDRED_PERCENTAGE;
-        List<String> recipients = distributionPercentages.keys();
-        for (String recipient : recipients) {
-            BigInteger split = distributionPercentages.get(recipient);
-            total = total.subtract(split);
-        }
-
-        List<String> fixedPercentageSources = fixedDistributionPercentages.keys();
-        for (String recipient : fixedPercentageSources) {
-            BigInteger split = fixedDistributionPercentages.get(recipient);
-            total = total.subtract(split);
-        }
-
-        return total;
-    }
-
     public static String[] getAllSources() {
         int dataSourcesCount = DataSourceDB.size();
         String[] sources = new String[dataSourcesCount];
@@ -1020,11 +1019,17 @@ public class RewardsImpl implements Rewards {
     }
 
     private BigInteger fetchBoostedBalance(String user) {
-        if (user.contains("/")) {
+        NetworkAddress networkAddress = NetworkAddress.valueOf(user, NATIVE_NID);
+        Address address = null;
+        try {
+            address = Address.fromString(user);
+        } catch (Exception ignored) {
+        }
+        if (!networkAddress.net().equals(NATIVE_NID) || address == null) {
             return BigInteger.ZERO;
         }
 
-        return fetchBoostedBalance(Address.fromString(user));
+        return fetchBoostedBalance(address);
     }
 
     private BigInteger fetchBoostedBalance(Address user) {
@@ -1041,6 +1046,10 @@ public class RewardsImpl implements Rewards {
         } catch (Exception e) {
             return BigInteger.ZERO;
         }
+    }
+
+    @Payable
+    public void fallback() {
     }
 
     @EventLog(indexed = 1)

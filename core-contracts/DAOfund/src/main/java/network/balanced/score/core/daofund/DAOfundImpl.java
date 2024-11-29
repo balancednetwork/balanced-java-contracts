@@ -277,5 +277,9 @@ public class DAOfundImpl implements DAOfund {
         checkStatus();
     }
 
+    @External
+    public void onXIRC31Received(String _operator, String _from, BigInteger _id, BigInteger _value, byte[] _data) {
+        checkStatus();
+    }
 
 }

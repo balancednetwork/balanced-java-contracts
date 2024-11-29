@@ -19,10 +19,10 @@ package network.balanced.score.core.dex;
 
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
+import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.core.dex.db.NodeDB;
-import network.balanced.score.lib.structs.RewardsDataEntry;
-import network.balanced.score.lib.utils.BalancedFloorLimits;
-import network.balanced.score.lib.utils.Versions;
+import network.balanced.score.lib.interfaces.DexXCall;
+import network.balanced.score.lib.utils.*;
 import score.Address;
 import score.BranchDB;
 import score.Context;
@@ -30,18 +30,16 @@ import score.DictDB;
 import score.annotation.External;
 import score.annotation.Optional;
 import score.annotation.Payable;
-import scorex.util.ArrayList;
 
 import java.math.BigInteger;
-import java.util.List;
 
 import static network.balanced.score.core.dex.DexDBVariables.*;
 import static network.balanced.score.core.dex.utils.Check.isDexOn;
 import static network.balanced.score.core.dex.utils.Check.isValidPercent;
 import static network.balanced.score.core.dex.utils.Const.*;
-import static network.balanced.score.lib.utils.BalancedAddressManager.getRewards;
-import static network.balanced.score.lib.utils.BalancedAddressManager.getSicx;
+import static network.balanced.score.lib.utils.BalancedAddressManager.*;
 import static network.balanced.score.lib.utils.Check.checkStatus;
+import static network.balanced.score.lib.utils.Check.only;
 import static network.balanced.score.lib.utils.Constants.EXA;
 import static network.balanced.score.lib.utils.Constants.POINTS;
 import static network.balanced.score.lib.utils.Math.convertToNumber;
@@ -55,6 +53,7 @@ public class DexImpl extends AbstractDex {
             Context.revert("Can't Update same version of code");
         }
         currentVersion.set(Versions.DEX);
+        NATIVE_NID = (String) Context.call(getXCall(), "getNetworkId");
     }
 
     @External(readonly = true)
@@ -64,6 +63,10 @@ public class DexImpl extends AbstractDex {
 
     @Payable
     public void fallback() {
+        Address user = Context.getCaller();
+        if (user.equals(BalancedAddressManager.getDaofund())) {
+            return;
+        }
         isDexOn();
         checkStatus();
 
@@ -71,7 +74,7 @@ public class DexImpl extends AbstractDex {
         require(orderValue.compareTo(BigInteger.TEN.multiply(EXA)) >= 0,
                 TAG + ": Minimum pool contribution is 10 ICX");
 
-        Address user = Context.getCaller();
+
         BigInteger oldOrderValue = BigInteger.ZERO;
         BigInteger orderId = icxQueueOrderId.getOrDefault(user, BigInteger.ZERO);
 
@@ -125,11 +128,6 @@ public class DexImpl extends AbstractDex {
     }
 
     private void sendRewardsData(Address user, BigInteger amount, BigInteger oldIcxTotal) {
-        List<RewardsDataEntry> rewardsList = new ArrayList<>();
-        RewardsDataEntry rewardsEntry = new RewardsDataEntry();
-        rewardsEntry._user = user.toString();
-        rewardsEntry._balance = amount;
-        rewardsList.add(rewardsEntry);
         Context.call(getRewards(), "updateBalanceAndSupply", SICXICX_MARKET_NAME, oldIcxTotal, user.toString(), amount);
     }
 
@@ -139,21 +137,31 @@ public class DexImpl extends AbstractDex {
 
         String unpackedData = new String(_data);
         require(!unpackedData.equals(""), "Token Fallback: Data can't be empty");
-
         JsonObject json = Json.parse(unpackedData).asObject();
-
         String method = json.get("method").asString();
-        Address fromToken = Context.getCaller();
+        Address token = Context.getCaller();
 
         require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Invalid token transfer value");
 
         if (method.equals("_deposit")) {
             JsonObject params = json.get("params").asObject();
-            Address to = Address.fromString(params.get("address").asString());
-            deposit(fromToken, to, _value);
-        } else {// If no supported method was sent, revert the transaction
+            String to = _from;
+            if (params.get("address") != null) {
+                to = params.get("address").asString();
+            }
+            deposit(token, NetworkAddress.valueOf(to, NATIVE_NID), _value);
+        } else {
+            // If no supported method was sent, revert the transaction
             Context.revert(100, TAG + ": Unsupported method supplied");
         }
+    }
+
+    @External
+    public void handleCallMessage(String _from, byte[] _data, @Optional String[] _protocols) {
+        checkStatus();
+        only(getXCall());
+        XCallUtils.verifyXCallProtocols(_from, _protocols);
+        DexXCall.process(this, _from, _data);
     }
 
     @External
@@ -169,13 +177,13 @@ public class DexImpl extends AbstractDex {
 
         String method = json.get("method").asString();
         Address fromToken = Context.getCaller();
-
         require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Invalid token transfer value");
 
         // Call an internal method based on the "method" param sent in tokenFallBack
         switch (method) {
             case "_deposit": {
-                deposit(fromToken, _from, _value);
+                NetworkAddress from = new NetworkAddress(NATIVE_NID, _from);
+                deposit(fromToken, from, _value);
                 break;
             }
             case "_swap_icx": {
@@ -226,48 +234,55 @@ public class DexImpl extends AbstractDex {
         }
     }
 
-    @External
-    public void transfer(Address _to, BigInteger _value, BigInteger _id, @Optional byte[] _data) {
-        isDexOn();
-        checkStatus();
-        if (_data == null) {
-            _data = new byte[0];
-        }
-        _transfer(Context.getCaller(), _to, _value, _id.intValue(), _data);
+    public void xWithdraw(String from, String _token, BigInteger _value) {
+        NetworkAddress sender = NetworkAddress.valueOf(from);
+        _withdraw(sender, Address.fromString(_token), _value);
     }
 
     @External
     public void withdraw(Address _token, BigInteger _value) {
+        Address caller = Context.getCaller();
+        NetworkAddress sender = new NetworkAddress(NATIVE_NID, caller);
+        _withdraw(sender, _token, _value);
+    }
+
+    private void _withdraw(NetworkAddress sender, Address _token, BigInteger _value) {
         isDexOn();
         checkStatus();
         require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Must specify a positive amount");
-        Address sender = Context.getCaller();
-        DictDB<Address, BigInteger> depositDetails = deposit.at(_token);
+        NetworkAddressDictDB<BigInteger> depositDetails = deposit.at(_token);
+
         BigInteger deposit_amount = depositDetails.getOrDefault(sender, BigInteger.ZERO);
         require(_value.compareTo(deposit_amount) <= 0, TAG + ": Insufficient Balance");
 
         depositDetails.set(sender, deposit_amount.subtract(_value));
 
-        Withdraw(_token, sender, _value);
+        Withdraw(_token, sender.toString(), _value);
         BalancedFloorLimits.verifyWithdraw(_token, _value);
-        Context.call(_token, "transfer", sender, _value);
+
+        //transfer the token
+        TokenTransfer.transfer(_token, sender.toString(), _value);
     }
 
-    @External(readonly = true)
-    public BigInteger depositOfUser(Address _owner, Address _token) {
-        DictDB<Address, BigInteger> depositDetails = deposit.at(_token);
-        return depositDetails.getOrDefault(_owner, BigInteger.ZERO);
+    public void xRemove(String from, BigInteger id, BigInteger value, @Optional Boolean _withdraw) {
+        NetworkAddress _from = NetworkAddress.valueOf(from);
+        _remove(id, _from, value, _withdraw);
     }
 
     @External
     public void remove(BigInteger _id, BigInteger _value, @Optional boolean _withdraw) {
+        NetworkAddress owner = new NetworkAddress(NATIVE_NID, Context.getCaller());
+        _remove(_id, owner, _value, _withdraw);
+    }
+
+
+    void _remove(BigInteger _id, NetworkAddress _user, BigInteger _value, @Optional boolean _withdraw) {
         isDexOn();
         checkStatus();
-        Address user = Context.getCaller();
         Address baseToken = poolBase.get(_id.intValue());
         require(baseToken != null, TAG + ": invalid pool id");
-        DictDB<Address, BigInteger> userLPBalance = balance.at(_id.intValue());
-        BigInteger userBalance = userLPBalance.getOrDefault(user, BigInteger.ZERO);
+        NetworkAddressDictDB<BigInteger> userLPBalance = balance.at(_id.intValue());
+        BigInteger userBalance = userLPBalance.getOrDefault(_user, BigInteger.ZERO);
 
         require(active.getOrDefault(_id.intValue(), false), TAG + ": Pool is not active");
         require(_value.compareTo(BigInteger.ZERO) > 0, TAG + " Cannot withdraw a negative or zero balance");
@@ -283,7 +298,6 @@ public class DexImpl extends AbstractDex {
 
         if (userQuoteLeft.compareTo(getRewardableAmount(quoteToken)) < 0) {
             _value = userBalance;
-            activeAddresses.get(_id.intValue()).remove(user);
         }
 
         BigInteger baseToWithdraw = _value.multiply(totalBase).divide(totalLPToken);
@@ -299,36 +313,39 @@ public class DexImpl extends AbstractDex {
 
         totalTokensInPool.set(baseToken, newBase);
         totalTokensInPool.set(quoteToken, newQuote);
-        userLPBalance.set(user, newUserBalance);
+        userLPBalance.set(_user, newUserBalance);
         poolLpTotal.set(_id.intValue(), newTotal);
 
-        Remove(_id, user, _value, baseToWithdraw, quoteToWithdraw);
-        TransferSingle(user, user, MINT_ADDRESS, _id, _value);
+        RemoveV2(_id, _user.toString(), _value, baseToWithdraw, quoteToWithdraw);
+//        TransferSingle(_user, _user, MINT_ADDRESS, _id, _value);
 
-        DictDB<Address, BigInteger> userBaseDeposit = deposit.at(baseToken);
-        BigInteger depositedBase = userBaseDeposit.getOrDefault(user, BigInteger.ZERO);
-        userBaseDeposit.set(user, depositedBase.add(baseToWithdraw));
+        NetworkAddressDictDB<BigInteger> userBaseDeposit = deposit.at(baseToken);
+        BigInteger depositedBase = userBaseDeposit.getOrDefault(_user, BigInteger.ZERO);
+        userBaseDeposit.set(_user, depositedBase.add(baseToWithdraw));
 
-        DictDB<Address, BigInteger> userQuoteDeposit = deposit.at(quoteToken);
-        BigInteger depositedQuote = userQuoteDeposit.getOrDefault(user, BigInteger.ZERO);
-        userQuoteDeposit.set(user, depositedQuote.add(quoteToWithdraw));
+        NetworkAddressDictDB<BigInteger> userQuoteDeposit = deposit.at(quoteToken);
+        BigInteger depositedQuote = userQuoteDeposit.getOrDefault(_user, BigInteger.ZERO);
+        userQuoteDeposit.set(_user, depositedQuote.add(quoteToWithdraw));
 
         if (_withdraw) {
-            withdraw(baseToken, baseToWithdraw);
-            withdraw(quoteToken, quoteToWithdraw);
+            xWithdraw(_user.toString(), baseToken.toString(), baseToWithdraw);
+            xWithdraw(_user.toString(), quoteToken.toString(), quoteToWithdraw);
         }
 
     }
 
-    @External
-    public void add(Address _baseToken, Address _quoteToken, BigInteger _baseValue, BigInteger _quoteValue,
-                    @Optional boolean _withdraw_unused, @Optional BigInteger _slippagePercentage) {
+    public void xAdd(String from, String _baseToken, String _quoteToken, BigInteger _baseValue, BigInteger _quoteValue,
+                     @Optional Boolean _withdraw_unused, @Optional BigInteger _slippagePercentage) {
         isDexOn();
         checkStatus();
         isValidPercent(_slippagePercentage.intValue());
 
-        Address user = Context.getCaller();
+        addInternal(NetworkAddress.valueOf(from), Address.fromString(_baseToken), Address.fromString(_quoteToken), _baseValue, _quoteValue,
+                _withdraw_unused, _slippagePercentage);
+    }
 
+    public void addInternal(NetworkAddress _from, Address _baseToken, Address _quoteToken, BigInteger _baseValue, BigInteger _quoteValue,
+                            @Optional Boolean _withdraw_unused, @Optional BigInteger _slippagePercentage) {
         // We check if there is a previously seen pool with this id.
         // If none is found (return 0), we create a new pool.
         Integer id = poolId.at(_baseToken).getOrDefault(_quoteToken, 0);
@@ -340,8 +357,8 @@ public class DexImpl extends AbstractDex {
         require(_quoteValue.compareTo(BigInteger.ZERO) > 0,
                 TAG + ": Cannot send 0 or negative quote token");
 
-        BigInteger userDepositedBase = deposit.at(_baseToken).getOrDefault(user, BigInteger.ZERO);
-        BigInteger userDepositedQuote = deposit.at(_quoteToken).getOrDefault(user, BigInteger.ZERO);
+        BigInteger userDepositedBase = deposit.at(_baseToken).getOrDefault(_from, BigInteger.ZERO);
+        BigInteger userDepositedQuote = deposit.at(_quoteToken).getOrDefault(_from, BigInteger.ZERO);
 
         // Check deposits are sufficient to cover balances
         require(userDepositedBase.compareTo(_baseValue) >= 0,
@@ -357,7 +374,7 @@ public class DexImpl extends AbstractDex {
         BigInteger poolBaseAmount = BigInteger.ZERO;
         BigInteger poolQuoteAmount = BigInteger.ZERO;
         BigInteger poolLpAmount = poolLpTotal.getOrDefault(id, BigInteger.ZERO);
-        BigInteger userLpAmount = balance.at(id).getOrDefault(user, BigInteger.ZERO);
+        BigInteger userLpAmount = balance.at(id).getOrDefault(_from, BigInteger.ZERO);
 
         // We need to only supply new base and quote in the pool ratio.
         // If there isn't a pool yet, we can form one with the supplied ratios.
@@ -436,28 +453,40 @@ public class DexImpl extends AbstractDex {
 
         // Deduct the user's deposit
         userDepositedBase = userDepositedBase.subtract(baseToCommit);
-        deposit.at(_baseToken).set(user, userDepositedBase);
+        deposit.at(_baseToken).set(_from, userDepositedBase);
         userDepositedQuote = userDepositedQuote.subtract(quoteToCommit);
-        deposit.at(_quoteToken).set(user, userDepositedQuote);
+        deposit.at(_quoteToken).set(_from, userDepositedQuote);
 
         // Credit the user LP Tokens
         userLpAmount = userLpAmount.add(liquidity);
         poolLpAmount = poolLpAmount.add(liquidity);
 
-        balance.at(id).set(user, userLpAmount);
+        balance.at(id).set(_from, userLpAmount);
         poolLpTotal.set(id, poolLpAmount);
-        Add(BigInteger.valueOf(id), user, liquidity, baseToCommit, quoteToCommit);
-        TransferSingle(user, MINT_ADDRESS, user, BigInteger.valueOf(id), liquidity);
-
-        activeAddresses.get(id).add(user);
+        AddV2(BigInteger.valueOf(id), _from.toString(), liquidity, baseToCommit, quoteToCommit);
+        HubTransferSingle(BigInteger.valueOf(id), MINT_ADDRESS.toString(), _from.toString(), liquidity, new byte[0]);
 
         if (userDepositedBase.compareTo(BigInteger.ZERO) > 0) {
-            withdraw(_baseToken, userDepositedBase);
+            xWithdraw(_from.toString(), _baseToken.toString(), userDepositedBase);
         }
 
         if (userDepositedQuote.compareTo(BigInteger.ZERO) > 0) {
-            withdraw(_quoteToken, userDepositedQuote);
+            xWithdraw(_from.toString(), _quoteToken.toString(), userDepositedQuote);
         }
+    }
+
+
+    @External
+    public void add(Address _baseToken, Address _quoteToken, BigInteger _baseValue, BigInteger _quoteValue,
+                    @Optional boolean _withdraw_unused, @Optional BigInteger _slippagePercentage) {
+        isDexOn();
+        checkStatus();
+        isValidPercent(_slippagePercentage.intValue());
+
+        NetworkAddress user = new NetworkAddress(NATIVE_NID, Context.getCaller());
+        addInternal(user, _baseToken, _quoteToken, _baseValue, _quoteValue,
+                _withdraw_unused, _slippagePercentage);
+
     }
 
     @External

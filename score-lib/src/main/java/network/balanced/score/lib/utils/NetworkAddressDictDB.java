@@ -5,6 +5,8 @@ import score.Context;
 import score.DictDB;
 import foundation.icon.xcall.NetworkAddress;
 
+import static network.balanced.score.lib.utils.Check.readonly;
+
 //Class to add btp address support to already existing DictDB address db to support string addresses
 public class NetworkAddressDictDB<V> {
     private DictDB<Address, V> legacyAddressDB;
@@ -32,6 +34,10 @@ public class NetworkAddressDictDB<V> {
         String address = key.account();
         if (address.startsWith("hx") || address.startsWith("cx")) {
             value = legacyAddressDB.get(Address.fromString(address));
+        }
+
+        if (value != null && !readonly()) {
+            set(key, value);
         }
 
 

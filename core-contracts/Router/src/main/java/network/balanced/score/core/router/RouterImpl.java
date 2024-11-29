@@ -25,10 +25,7 @@ import network.balanced.score.lib.interfaces.Router;
 import network.balanced.score.lib.structs.Route;
 import network.balanced.score.lib.structs.RouteAction;
 import network.balanced.score.lib.structs.RouteData;
-import network.balanced.score.lib.utils.BalancedAddressManager;
-import network.balanced.score.lib.utils.Names;
-import network.balanced.score.lib.utils.Versions;
-import network.balanced.score.lib.utils.XCallUtils;
+import network.balanced.score.lib.utils.*;
 import score.Address;
 import score.Context;
 import score.UserRevertException;
@@ -134,7 +131,7 @@ public class RouterImpl implements Router {
         }
     }
 
-    private void route(String from, Address startToken, List<RouteAction> _path, BigInteger _minReceive) {
+    private void route(String from, Address startToken, List<RouteAction> _path, BigInteger _minReceive, byte[] data) {
         Address prevToken = null;
         Address currentToken = startToken;
         BigInteger fromAmount;
@@ -153,12 +150,11 @@ public class RouterImpl implements Router {
             prevToken = currentToken;
             currentToken = action.toAddress;
         }
-        inRoute = false;
 
+        inRoute = false;
         String nativeNid = XCallUtils.getNativeNid();
         NetworkAddress networkAddress = NetworkAddress.valueOf(from, nativeNid);
         if (currentToken == null && prevToken.equals(getSicx())) {
-            currentToken = EOA_ZERO;
             BigInteger balance = Context.getBalance(Context.getAddress());
             Context.require(balance.compareTo(_minReceive) >= 0,
                     TAG + ": Below minimum receive amount of " + _minReceive);
@@ -168,69 +164,18 @@ public class RouterImpl implements Router {
             return;
         }
 
-        boolean toNative = currentToken == null;
-        if (toNative) {
-            currentToken = prevToken;
-        }
-
         BigInteger balance = (BigInteger) Context.call(currentToken, "balanceOf", Context.getAddress());
         Context.require(balance.compareTo(_minReceive) >= 0, TAG + ": Below minimum receive amount of " + _minReceive);
 
-        if (networkAddress.net().equals(nativeNid)) {
-            Context.require(!toNative, TAG + ": Native swaps not available to icon from " + currentToken);
-            Context.call(currentToken, "transfer", Address.fromString(networkAddress.account()), balance, EMPTY_DATA);
-        } else {
-            transferCrossChainResult(currentToken, networkAddress, balance, toNative);
-        }
 
+        TokenTransfer.transfer(currentToken, networkAddress.toString(), balance, data);
         Route(fromAddress, fromAmount, currentToken, balance);
     }
 
 
-    private void transferCrossChainResult(Address token, NetworkAddress to, BigInteger amount, boolean toNative) {
-        String toNet = to.net();
-        if (canWithdraw(toNet)) {
-            if (token.equals(getBnusd())) {
-                transferBnUSD(token, to, amount);
-            } else {
-                transferHubToken(token, to, amount, toNative);
-            }
-        } else {
-            Context.require(!toNative, TAG + ": Native swaps are not supported for this network");
-            Context.call(token, "hubTransfer", to.toString(), amount, new byte[0]);
-        }
-    }
-
-    private void transferBnUSD(Address bnusd, NetworkAddress to, BigInteger amount) {
-        String toNet = to.net();
-        BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", toNet, false);
-        Context.call(xCallFee, bnusd, "crossTransfer", to.toString(), amount, new byte[0]);
-    }
-
-    private void transferHubToken(Address token, NetworkAddress to, BigInteger amount, boolean toNative) {
-        String toNet = to.net();
-        Address assetManager = getAssetManager();
-        String nativeAddress = Context.call(String.class, assetManager, "getNativeAssetAddress", token, toNet);
-        if (nativeAddress != null) {
-            BigInteger xCallFee = Context.call(BigInteger.class, getDaofund(), "claimXCallFee", toNet, false);
-            String method = "withdrawTo";
-            if (toNative) {
-                method = "withdrawNativeTo";
-            }
-            Context.call(xCallFee, assetManager, method, token, to.toString(), amount);
-        } else {
-            Context.require(!toNative, TAG + ": Native swaps are not supported to other networks");
-            Context.call(token, "hubTransfer", to.toString(), amount, new byte[0]);
-        }
-    }
-
-    private boolean canWithdraw(String net) {
-        return Context.call(Boolean.class, getDaofund(), "getXCallFeePermission", Context.getAddress(), net);
-    }
-
     @Payable
     @External
-    public void route(Address[] _path, @Optional BigInteger _minReceive, @Optional String _receiver) {
+    public void route(Address[] _path, @Optional BigInteger _minReceive, @Optional String _receiver, @Optional byte[] _data) {
         Context.require(!inRoute);
         validateRoutePayload(_path.length, _minReceive);
 
@@ -241,12 +186,12 @@ public class RouterImpl implements Router {
         for (Address path : _path) {
             routeActions.add(new RouteAction(1, path));
         }
-        route(_receiver, null, routeActions, _minReceive);
+        route(_receiver, null, routeActions, _minReceive, _data);
     }
 
     @Payable
     @External
-    public void routeV2(byte[] _path, @Optional BigInteger _minReceive, @Optional String _receiver) {
+    public void routeV2(byte[] _path, @Optional BigInteger _minReceive, @Optional String _receiver, @Optional byte[] _data) {
         Context.require(!inRoute);
         List<RouteAction> actions = Route.fromBytes(_path).actions;
         validateRoutePayload(actions.size(), _minReceive);
@@ -254,7 +199,7 @@ public class RouterImpl implements Router {
             _receiver = Context.getCaller().toString();
         }
 
-        route(_receiver, null, actions, _minReceive);
+        route(_receiver, null, actions, _minReceive, _data);
     }
 
     private void validateRoutePayload(int _pathLength, BigInteger _minReceive) {
@@ -317,7 +262,7 @@ public class RouterImpl implements Router {
             receiver = _from;
         }
 
-        route(receiver, fromToken, routeData.actions, minimumReceive);
+        route(receiver, fromToken, routeData.actions, minimumReceive, EMPTY_DATA);
     }
 
     private void jsonRoute(String _from, byte[] data) {
@@ -340,6 +285,7 @@ public class RouterImpl implements Router {
             Context.require(minimumReceive.signum() >= 0, TAG + ": Must specify a positive number for minimum to " +
                     "receive");
         }
+
         String receiver;
         if (params.contains("receiver")) {
             receiver = params.get("receiver").asString();
@@ -362,7 +308,7 @@ public class RouterImpl implements Router {
         }
 
         Address fromToken = Context.getCaller();
-        route(receiver, fromToken, actions, minimumReceive);
+        route(receiver, fromToken, actions, minimumReceive, EMPTY_DATA);
     }
 
     @Payable

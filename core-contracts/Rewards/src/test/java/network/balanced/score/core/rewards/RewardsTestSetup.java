@@ -50,7 +50,7 @@ class RewardsTestSetup extends RewardsTestBase {
         BigInteger timeOffset = BigInteger.ONE.multiply(MICRO_SECONDS_IN_A_DAY).negate();
         Account nonOwner = sm.createAccount();
         String expectedErrorMessage = "SenderNotScoreOwner";
-        Executable setNotFromOwner = () -> rewardsScore.invoke(nonOwner, "setTimeOffset",timeOffset);
+        Executable setNotFromOwner = () -> rewardsScore.invoke(nonOwner, "setTimeOffset", timeOffset);
         expectErrorMessage(setNotFromOwner, expectedErrorMessage);
 
         rewardsScore.invoke(owner, "setTimeOffset", timeOffset);
@@ -94,7 +94,7 @@ class RewardsTestSetup extends RewardsTestBase {
 
         Account nonOwner = sm.createAccount();
         String expectedErrorMessage = "SenderNotScoreOwner";
-        Executable setNotFromOwner = () -> rewardsScore.invoke(nonOwner, "setBoostWeight",weight);
+        Executable setNotFromOwner = () -> rewardsScore.invoke(nonOwner, "setBoostWeight", weight);
         expectErrorMessage(setNotFromOwner, expectedErrorMessage);
         expectedErrorMessage = "Reverted(0): Boost weight has to be above 1%";
         Executable setWeightAbove = () -> rewardsScore.invoke(owner, "setBoostWeight", weightBelow);

@@ -18,17 +18,16 @@ package network.balanced.score.core.rewards;
 
 import com.iconloop.score.test.Account;
 
-import score.Address;
-
 import org.json.JSONArray;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import score.ByteArrayObjectWriter;
+import score.Context;
 
+import static network.balanced.score.lib.utils.Constants.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
-import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
-import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_SECOND;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -80,7 +79,7 @@ class RewardsTestExternalRewards extends RewardsTestBase {
         JSONArray data = new JSONArray(_data);
 
         rewardsScore.invoke(mockBalanced.sicx.account, "tokenFallback", externalRewardsProvider.getAddress(),
-             sICXRewards, data.toString().getBytes());
+                sICXRewards, data.toString().getBytes());
         BigInteger emission = (BigInteger) rewardsScore.call("getEmission", BigInteger.valueOf(-1));
         BigInteger dist = getVotePercentage("sICX/ICX").multiply(emission).divide(EXA);
         BigInteger userDist = dist.multiply(balance).divide(totalSupply);
@@ -191,6 +190,7 @@ class RewardsTestExternalRewards extends RewardsTestBase {
         // Assert
         Map<String, BigInteger> rewards = (Map<String, BigInteger>) rewardsScore.call("getRewards",
                 account.getAddress().toString());
+
         rewardsScore.invoke(account, "claimRewards", getUserSources(account.getAddress()));
         verify(mockBalanced.sicx.mock).transfer(account.getAddress(), expectedRewards1.add(expectedRewards2),
                 new byte[0]);
@@ -321,4 +321,73 @@ class RewardsTestExternalRewards extends RewardsTestBase {
                 BigInteger.ONE, data.toString().getBytes());
         expectErrorMessage(invalidAmounts, "Total allocations do not match amount deposited");
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void externalRewards_crosschain() {
+        // Arrange
+        String fromNetworkAddress = "0x1.ETH/0x123";
+        Account supplyAccount = sm.createAccount();
+        BigInteger balance1 = BigInteger.TWO.multiply(EXA);
+        BigInteger balance2 = BigInteger.valueOf(3).multiply(EXA);
+        BigInteger totalSupply1 = BigInteger.TEN.multiply(EXA);
+        BigInteger totalSupply2 = BigInteger.valueOf(30).multiply(EXA);
+        BigInteger sICXRewards1 = BigInteger.valueOf(1000).multiply(EXA);
+        BigInteger sICXRewards2 = BigInteger.valueOf(1500).multiply(EXA);
+        BigInteger expectedRewards = BigInteger.valueOf(200).multiply(EXA);
+
+        // Arrange - Update rewards
+        rewardsScore.invoke(dex.account, "updateBalanceAndSupply", "sICX/ICX", totalSupply1.subtract(balance1),
+                supplyAccount.getAddress().toString(), totalSupply1.subtract(balance1));
+        rewardsScore.invoke(dex.account, "updateBalanceAndSupply", "sICX/bnUSD", totalSupply2.subtract(balance2),
+                supplyAccount.getAddress().toString(), totalSupply2.subtract(balance2));
+
+        rewardsScore.invoke(dex.account, "updateBalanceAndSupply", "sICX/ICX", totalSupply1,
+                fromNetworkAddress, balance1);
+
+        rewardsScore.invoke(dex.account, "updateBalanceAndSupply", "sICX/bnUSD", totalSupply2,
+                fromNetworkAddress, balance2);
+
+        mockBalanceAndSupply(dex, "sICX/ICX", fromNetworkAddress, balance1, totalSupply1);
+        mockBalanceAndSupply(dex, "sICX/bnUSD", fromNetworkAddress, balance2, totalSupply2);
+
+        List<Object> _data = new ArrayList<>(2);
+        _data.add(Map.of("source", "sICX/ICX", "amount", sICXRewards1));
+        _data.add(Map.of("source", "sICX/bnUSD", "amount", sICXRewards2));
+        JSONArray data = new JSONArray(_data);
+
+        rewardsScore.invoke(mockBalanced.sicx.account, "tokenFallback", externalRewardsProvider.getAddress(),
+                sICXRewards1.add(sICXRewards2), data.toString().getBytes());
+        // starts after 1 day, fully distributed after 2
+        nextDay();
+        nextDay();
+
+        // Act
+        Map<String, BigInteger> rewards = (Map<String, BigInteger>) rewardsScore.call("getRewards",
+                fromNetworkAddress);
+        String[] sources = {"sICX/ICX", "sICX/bnUSD"};
+        String[] protocols = {};
+
+
+        rewardsScore.invoke(mockBalanced.xCall.account, "handleCallMessage", fromNetworkAddress, getClaimRewardData(fromNetworkAddress, sources), protocols);
+
+        verify(rewardsScoreSpy).RewardsClaimedV2(mockBalanced.sicx.account.getAddress(), fromNetworkAddress, new BigInteger("350000000000000000000"));
+        verify(rewardsScoreSpy).RewardsClaimedV2(mockBalanced.baln.account.getAddress(), fromNetworkAddress, new BigInteger("8997986111111111111108"));
+    }
+
+    static byte[] getClaimRewardData(String to, String[] sources) {
+        ByteArrayObjectWriter writer = Context.newByteArrayObjectWriter("RLPn");
+        writer.beginList(3);
+        writer.write("xclaimrewards");
+        writer.write(to);
+        writer.beginList(sources.length);
+        for (String source : sources) {
+            writer.write(source);
+        }
+        writer.end();
+        writer.end();
+        return writer.toByteArray();
+    }
+
+
 }

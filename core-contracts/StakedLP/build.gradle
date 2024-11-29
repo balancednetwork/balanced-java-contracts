@@ -28,6 +28,7 @@ dependencies {
     compileOnly Dependencies.javaeeApi
     implementation project(':score-lib')
     implementation Dependencies.javaeeScorex
+    implementation 'xyz.venture23:xcall-lib:2.1.0'
 
     testImplementation project(':test-lib')
     testImplementation Dependencies.javaeeUnitTest

@@ -20,6 +20,7 @@ import foundation.icon.icx.Wallet;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.jsonrpc.model.TransactionResult;
 import foundation.icon.score.client.DefaultScoreClient;
+import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.test.integration.Balanced;
 import network.balanced.score.lib.test.integration.Env;
@@ -151,7 +152,8 @@ public class NonStakedLPRewardsTest {
         assertEquals(BigInteger.ZERO, rewards.getBalnHolding(userAddress.toString()));
 
         byte[] stakeLp = "{\"method\":\"_stake\"}".getBytes();
-        dexUserScoreClient.transfer(balanced.stakedLp._address(), BigInteger.valueOf(90), BigInteger.valueOf(4),
+        BigInteger poolId =  dexUserScoreClient.getPoolId(balanced.baln._address(), balanced.sicx._address());
+        dexUserScoreClient.transfer(balanced.stakedLp._address(), BigInteger.valueOf(90), poolId,
                 stakeLp);
 
         // user gets rewards after lp token is staked

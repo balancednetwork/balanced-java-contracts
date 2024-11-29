@@ -18,6 +18,7 @@ package network.balanced.score.core.dex;
 
 import network.balanced.score.core.dex.db.LinkedListDB;
 import network.balanced.score.core.dex.utils.LPMetadataDB;
+import network.balanced.score.lib.utils.BranchedNetworkAddressDictDB;
 import network.balanced.score.lib.utils.IterableDictDB;
 import network.balanced.score.lib.utils.SetDB;
 import score.*;
@@ -36,8 +37,6 @@ public class DexDBVariables {
 
     private static final String CURRENT_DAY = "current_day";
     private static final String TIME_OFFSET = "time_offset";
-    private static final String REWARDS_DONE = "rewards_done";
-    private static final String DIVIDENDS_DONE = "dividends_done";
     private static final String DEPOSIT = "deposit";
     private static final String POOL_ID = "poolId";
     private static final String NONCE = "nonce";
@@ -57,17 +56,16 @@ public class DexDBVariables {
     private static final String SICX_EARNINGS = "sicxEarnings";
     private static final String MARKETS_NAMES = "marketsToNames";
     private static final String TOKEN_PRECISIONS = "token_precisions";
-    private static final String CURRENT_TX = "current_tx";
-    private static final String CONTINUOUS_REWARDS_DAY = "continuous_rewards_day";
     public static final String VERSION = "version";
     public static final String ORACLE_PROTECTION = "oracle_protection";
+    public static final String GOV_DEBT = "governance_debt";
 
 
     final static VarDB<Address> governance = Context.newVarDB(GOVERNANCE_ADDRESS, Address.class);
     public final static VarDB<Boolean> dexOn = Context.newVarDB(DEX_ON, Boolean.class);
 
     // Deposits - Map: token_address -> user_address -> value
-    final static BranchDB<Address, DictDB<Address, BigInteger>> deposit = Context.newBranchDB(DEPOSIT,
+    final static BranchedNetworkAddressDictDB<Address, BigInteger> deposit = new BranchedNetworkAddressDictDB<>(DEPOSIT,
             BigInteger.class);
     // Pool IDs - Map: token address -> opposite token_address -> id
     final static BranchDB<Address, DictDB<Address, Integer>> poolId = Context.newBranchDB(POOL_ID, Integer.class);
@@ -85,7 +83,7 @@ public class DexDBVariables {
 
     // User Balances
     // Map: pool_id -> user address -> lp token balance
-    final static BranchDB<Integer, DictDB<Address, BigInteger>> balance = Context.newBranchDB(BALANCE,
+    final static BranchedNetworkAddressDictDB<Integer, BigInteger> balance = new BranchedNetworkAddressDictDB<>(BALANCE,
             BigInteger.class);
 
     // Map: pool_id -> user address -> ids/values/length -> length/0 -> value
@@ -102,8 +100,6 @@ public class DexDBVariables {
     // Rewards/timekeeping logic
     final static VarDB<BigInteger> currentDay = Context.newVarDB(CURRENT_DAY, BigInteger.class);
     final static VarDB<BigInteger> timeOffset = Context.newVarDB(TIME_OFFSET, BigInteger.class);
-    final static VarDB<Boolean> rewardsDone = Context.newVarDB(REWARDS_DONE, Boolean.class);
-    final static VarDB<Boolean> dividendsDone = Context.newVarDB(DIVIDENDS_DONE, Boolean.class);
 
     final static LPMetadataDB activeAddresses = new LPMetadataDB();
     // Pools must use one of these as quote currency
@@ -138,14 +134,12 @@ public class DexDBVariables {
 
     final static DictDB<Address, BigInteger> tokenPrecisions = Context.newDictDB(TOKEN_PRECISIONS, BigInteger.class);
 
-    // VarDB used to track the current sent transaction. This helps bound iterations.
-    final static VarDB<byte[]> currentTx = Context.newVarDB(CURRENT_TX, byte[].class);
-
-    // Activation of continuous rewards day
-    final static VarDB<BigInteger> continuousRewardsDay = Context.newVarDB(CONTINUOUS_REWARDS_DAY, BigInteger.class);
-
     public static final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
 
     //Map: pid -> percentage
     public final static DictDB<BigInteger, BigInteger> oracleProtection = Context.newDictDB(ORACLE_PROTECTION, BigInteger.class);
+
+    //Map: token -> amount
+    final static DictDB<Address, BigInteger> governanceDebt = Context.newDictDB(GOV_DEBT, BigInteger.class);
+
 }

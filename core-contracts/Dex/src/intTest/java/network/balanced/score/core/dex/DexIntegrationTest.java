@@ -16,16 +16,21 @@
 
 package network.balanced.score.core.dex;
 
+import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonArray;
 import foundation.icon.icx.Wallet;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
+import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.interfaces.dex.DexTestScoreClient;
 import network.balanced.score.lib.test.integration.Balanced;
+import network.balanced.score.lib.test.integration.BalancedClient;
 import network.balanced.score.lib.test.integration.Env;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import score.ByteArrayObjectWriter;
+import score.Context;
 
 import java.io.File;
 import java.math.BigInteger;
@@ -58,6 +63,7 @@ class DexIntegrationTest {
     private static DefaultScoreClient tokenCClient;
     private static DefaultScoreClient tokenDClient;
     private static DefaultScoreClient daoFundScoreClient;
+    private static BalancedClient owner;
 
     private static final File jarfile = new File("src/intTest/java/network/balanced/score/core/dex/testtokens" +
             "/DexIntTestToken.jar");
@@ -87,6 +93,7 @@ class DexIntegrationTest {
             balnScoreClient = balanced.baln;
             rewardsScoreClient = balanced.rewards;
             daoFundScoreClient = balanced.daofund;
+            owner = balanced.ownerClient;
 
             Rewards rewards = new RewardsScoreClient(balanced.rewards);
             Loans loans = new LoansScoreClient(balanced.loans);
@@ -209,35 +216,6 @@ class DexIntegrationTest {
         dexUserScoreClient.cancelSicxicxOrder();
     }
 
-    /*@Test
-    @Order(4)
-    void testBalnPoolTokenTransferableOnContinuousRewards(){
-
-        if(dexUserScoreClient.getContinuousRewardsDay()==null) {
-            governanceDexScoreClient.setContinuousRewardsDay(dexUserScoreClient.getDay().add(BigInteger.ONE));
-        }
-        waitForADay();
-        balanced.syncDistributions();
-        //continuous starts
-        byte[] tokenDeposit = "{\"method\":\"_deposit\",\"params\":{\"none\":\"none\"}}".getBytes();
-        mintAndTransferTestTokens(tokenDeposit);
-        dexUserScoreClient.add(Address.fromString(dexTestBaseScoreAddress), Address.fromString
-        (dexTestFourthScoreClient._address().toString()), BigInteger.valueOf(50).multiply(EXA), BigInteger.valueOf
-        (50).multiply(EXA), false);
-        BigInteger poolId = dexUserScoreClient.getPoolId(Address.fromString(dexTestBaseScoreAddress), Address
-        .fromString(dexTestFourthScoreAddress));
-        //assert pool id is less than 5
-        assert poolId.compareTo(BigInteger.valueOf(6)) < 0;
-        BigInteger liquidity = (BigInteger.valueOf(50).multiply(EXA).multiply(BigInteger.valueOf(50).multiply(EXA)))
-        .sqrt();
-        BigInteger balance = dexUserScoreClient.balanceOf(userAddress, poolId);
-        BigInteger tUsersPrevBalance = dexUserScoreClient.balanceOf(tUserAddress, poolId);
-
-        assertEquals(balance, liquidity);
-        dexUserScoreClient.transfer(tUserAddress, BigInteger.valueOf(5).multiply(EXA), poolId, new byte[0]);
-        BigInteger tUsersBalance = dexUserScoreClient.balanceOf(tUserAddress, poolId);
-        assertEquals(tUsersPrevBalance.add(BigInteger.valueOf(5).multiply(EXA)), tUsersBalance);
-    }*/
 
     @Test
     @Order(6)
@@ -245,11 +223,11 @@ class DexIntegrationTest {
         byte[] tokenDeposit = "{\"method\":\"_deposit\",\"params\":{\"none\":\"none\"}}".getBytes();
         this.mintAndTransferTestTokens(tokenDeposit);
         BigInteger withdrawAMount = BigInteger.valueOf(50);
-        BigInteger balanceBeforeWithdraw = dexUserScoreClient.depositOfUser(userAddress, tokenAAddress);
+        BigInteger balanceBeforeWithdraw = dexUserScoreClient.getDeposit(tokenAAddress, userAddress);
         //withdraw test token
         dexUserScoreClient.withdraw(tokenAAddress, withdrawAMount);
 
-        BigInteger balanceAfterWithdraw = dexUserScoreClient.depositOfUser(userAddress, tokenAAddress);
+        BigInteger balanceAfterWithdraw = dexUserScoreClient.getDeposit(tokenAAddress, userAddress);
 
         assert balanceBeforeWithdraw.equals(balanceAfterWithdraw.add(withdrawAMount));
     }
@@ -317,10 +295,190 @@ class DexIntegrationTest {
         BigInteger nextUpdatedBalnHolding = userRewardScoreClient.getBalnHolding(tUserAddress.toString());
         assertEquals(beforeSleepDay, dexUserScoreClient.getDay());
 
-        System.out.println("updated baln holding: " + updatedBalnHolding);
-        System.out.println("next updated baln holding: " + nextUpdatedBalnHolding);
+
         assert updatedBalnHolding.compareTo(nextUpdatedBalnHolding) < 0;
 
+    }
+
+    @Test
+    @Order(9)
+    void crossChainDepositViaAssetManagerDirect() {
+        //Arrange
+        NetworkAddress ethAccount = new NetworkAddress(balanced.ETH_NID, "0x123");
+        BigInteger amount = BigInteger.valueOf(100).multiply(EXA);
+        NetworkAddress ethAssetAddress = new NetworkAddress(balanced.ETH_NID, balanced.ETH_TOKEN_ADDRESS);
+        String toNetworkAddress = new NetworkAddress(balanced.ICON_NID, dexScoreClient._address()).toString();
+        score.Address assetAddress = owner.assetManager.getAssetAddress(ethAssetAddress.toString());
+
+        // Act
+        byte[] depositData = tokenData("_deposit",
+                new JsonObject().set( "address", ethAccount.toString()));
+        byte[] deposit = AssetManagerMessages.deposit(balanced.ETH_TOKEN_ADDRESS, ethAccount.account(), toNetworkAddress,  amount, depositData);
+        owner.xcall.recvCall(owner.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit);
+
+        // Verify
+        BigInteger retrievedValue = dexUserScoreClient.getDepositV2(assetAddress, ethAccount.toString());
+        assertEquals(amount, retrievedValue);
+    }
+
+    @Test
+    @Order(10)
+    void crossChainDeposit() {
+        //Arrange
+        NetworkAddress ethAccount = new NetworkAddress(balanced.ETH_NID, "0x123");
+        BigInteger amount = BigInteger.valueOf(100).multiply(EXA);
+        NetworkAddress ethAssetAddress = new NetworkAddress(balanced.ETH_NID, balanced.ETH_TOKEN_ADDRESS);
+        String toNetworkAddress = new NetworkAddress(balanced.ICON_NID, dexScoreClient._address()).toString();
+        score.Address assetAddress = owner.assetManager.getAssetAddress(ethAssetAddress.toString());
+
+        // Arrange - Initial deposit
+        byte[] deposit = AssetManagerMessages.deposit(balanced.ETH_TOKEN_ADDRESS, ethAccount.account(), "",  amount, new byte[0]);
+        owner.xcall.recvCall(owner.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit);
+
+        // Act
+        byte[] message = depositMsg(ethAccount.toString(), toNetworkAddress, amount, tokenData("_deposit",
+                new JsonObject().set( "address", ethAccount.toString())));
+        owner.xcall.recvCall(assetAddress, ethAccount.toString(), message);
+
+        // Verify
+        BigInteger retrievedValue = dexUserScoreClient.getDepositV2(assetAddress, ethAccount.toString());
+        assertEquals(amount.add(amount), retrievedValue);
+    }
+
+    @Test
+    @Order(11)
+    void crossChainLP() {
+        // Arrange
+        NetworkAddress ethBaseAssetAddress = new NetworkAddress(balanced.ETH_NID, balanced.ETH_TOKEN_ADDRESS);
+        NetworkAddress ethQuoteAssetAddress = new NetworkAddress(balanced.ETH_NID, "ox100");
+        NetworkAddress ethAccount = new NetworkAddress(balanced.ETH_NID, "0x123");
+        BigInteger amount = BigInteger.valueOf(100).multiply(EXA);
+        String toNetworkAddress = new NetworkAddress(balanced.ICON_NID, dexScoreClient._address()).toString();
+
+        // Arrange - deploy a new token
+        JsonArray addAssetParams = new JsonArray()
+                .add(createParameter(ethQuoteAssetAddress.toString()))
+                .add(createParameter("ETHZ"))
+                .add(createParameter("ETHZ"))
+                .add(createParameter(BigInteger.valueOf(18)));
+        JsonObject addAsset = createTransaction(balanced.assetManager._address(), "deployAsset", addAssetParams);
+        JsonArray transactions = new JsonArray()
+                .add(addAsset);
+        balanced.governanceClient.execute(transactions.toString());
+
+        score.Address baseAssetAddress = owner.assetManager.getAssetAddress(ethBaseAssetAddress.toString());
+        score.Address quoteAssetAddress = owner.assetManager.getAssetAddress(ethQuoteAssetAddress.toString());
+
+        // Arrange - deposits
+        byte[] deposit1 = AssetManagerMessages.deposit(balanced.ETH_TOKEN_ADDRESS, ethAccount.account(), toNetworkAddress,  amount, tokenData("_deposit",
+                new JsonObject().set( "address", ethAccount.toString())));
+        owner.xcall.recvCall(owner.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit1);
+
+        byte[] deposit2 = AssetManagerMessages.deposit("ox100", ethAccount.account(), toNetworkAddress,  amount, tokenData("_deposit",
+                new JsonObject().set( "address", ethAccount.toString())));
+        owner.xcall.recvCall(owner.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit2);
+
+       // Arrange add quote token
+        dexAddQuoteCoin((Address) quoteAssetAddress);
+
+        // Act
+        byte[] xaddMessage = getAddLPData(baseAssetAddress.toString(), quoteAssetAddress.toString(), amount, amount, false, BigInteger.valueOf(5) );
+        owner.xcall.recvCall(dexScoreClient._address(), ethAccount.toString(), xaddMessage);
+
+        // Verify
+        BigInteger poolId = dexUserScoreClient.getPoolId(baseAssetAddress,
+                quoteAssetAddress);
+        assert poolId.compareTo(BigInteger.valueOf(6)) < 0;
+        BigInteger liquidity =
+                (amount.multiply(amount)).sqrt();
+        BigInteger balance = dexUserScoreClient.xBalanceOf(ethAccount.toString(), poolId);
+
+        assertEquals(balance, liquidity);
+    }
+
+    //depends on crossChainLP test
+    @Test
+    @Order(12)
+    void xRemove(){
+        // Arrange
+        NetworkAddress ethAccount = new NetworkAddress(balanced.ETH_NID, "0x123");
+        NetworkAddress ethBaseAssetAddress = new NetworkAddress(balanced.ETH_NID, balanced.ETH_TOKEN_ADDRESS);
+        NetworkAddress ethQuoteAssetAddress = new NetworkAddress(balanced.ETH_NID, "ox100");
+
+        score.Address baseAssetAddress = owner.assetManager.getAssetAddress(ethBaseAssetAddress.toString());
+        score.Address quoteAssetAddress = owner.assetManager.getAssetAddress(ethQuoteAssetAddress.toString());
+
+        BigInteger poolId = dexUserScoreClient.getPoolId(baseAssetAddress,
+                quoteAssetAddress);
+        BigInteger balance = dexUserScoreClient.xBalanceOf(ethAccount.toString(), poolId);
+        BigInteger withdrawAmount = balance.divide(BigInteger.TWO);
+        JsonArray setXCallFeePermissionParameters = new JsonArray()
+                .add(createParameter(balanced.dex._address())).add(createParameter(balanced.ETH_NID)).add(createParameter(true));
+        JsonArray actions = new JsonArray()
+                .add(createTransaction(balanced.daofund._address(), "setXCallFeePermission", setXCallFeePermissionParameters));
+        owner.governance.execute(actions.toString());
+
+        // Act
+        byte[] removeLPMsg = getXRemoveData(poolId, withdrawAmount, true);
+        owner.xcall.recvCall(dexScoreClient._address(), ethAccount.toString(), removeLPMsg);
+
+        // Verify
+        BigInteger updatedBalance = dexUserScoreClient.xBalanceOf(ethAccount.toString(), poolId);
+        assertEquals(withdrawAmount, updatedBalance);
+    }
+
+    public static byte[] tokenData(String method, JsonObject params) {
+        JsonObject data = new JsonObject();
+        data.set("method", method);
+        data.set("params", params);
+        return data.toString().getBytes();
+    }
+
+    static byte[] depositMsg(String from, String to, BigInteger amount, byte[] data) {
+        ByteArrayObjectWriter writer = Context.newByteArrayObjectWriter("RLPn");
+        writer.beginList(4);
+        writer.write("xhubtransfer");
+        writer.write(to);
+        writer.write(amount);
+        writer.write(data);
+        writer.end();
+        return writer.toByteArray();
+    }
+    static byte[] getXRemoveData(BigInteger poolId, BigInteger lpTokenBalance, Boolean withdraw) {
+        ByteArrayObjectWriter writer = Context.newByteArrayObjectWriter("RLPn");
+        writer.beginList(4);
+        writer.write("xremove");
+        writer.write(poolId);
+        writer.write(lpTokenBalance);
+        writer.write(withdraw);
+        writer.end();
+        return writer.toByteArray();
+    }
+
+    static byte[] getStakeData(BigInteger poolId, BigInteger amount, String to, byte[] data) {
+        ByteArrayObjectWriter writer = Context.newByteArrayObjectWriter("RLPn");
+        writer.beginList(4);
+        writer.write("xhubtransfer");
+        writer.write(to);
+        writer.write(amount);
+        writer.write(poolId);
+        writer.write(data);
+        writer.end();
+        return writer.toByteArray();
+    }
+
+    static byte[] getAddLPData(String baseToken, String quoteToken, BigInteger baseValue, BigInteger quoteValue, Boolean withdraw_unused, BigInteger slippagePercentage) {
+        ByteArrayObjectWriter writer = Context.newByteArrayObjectWriter("RLPn");
+        writer.beginList(7);
+        writer.write("xadd");
+        writer.write(baseToken);
+        writer.write(quoteToken);
+        writer.write(baseValue);
+        writer.write(quoteValue);
+        writer.write(withdraw_unused);
+        writer.write(slippagePercentage);
+        writer.end();
+        return writer.toByteArray();
     }
 
     void transferSicxToken() {

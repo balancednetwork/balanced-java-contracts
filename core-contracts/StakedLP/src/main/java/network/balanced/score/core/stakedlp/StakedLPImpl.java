@@ -16,26 +16,28 @@
 
 package network.balanced.score.core.stakedlp;
 
+import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.lib.interfaces.StakedLP;
-import network.balanced.score.lib.utils.IterableDictDB;
-import network.balanced.score.lib.utils.Names;
-import network.balanced.score.lib.utils.Versions;
+import network.balanced.score.lib.interfaces.StakedLPXCall;
+import network.balanced.score.lib.utils.*;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
+import score.annotation.Optional;
 import scorex.util.HashMap;
 
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+import static network.balanced.score.lib.utils.BalancedAddressManager.getXCall;
 import static network.balanced.score.lib.utils.Check.*;
 
 public class StakedLPImpl implements StakedLP {
 
+    final static AddressBranchDictDB<BigInteger, BigInteger> poolStakedDetails = new AddressBranchDictDB<>("poolStakeDetails",
+            BigInteger.class);
 
-    private static final BranchDB<Address, DictDB<BigInteger, BigInteger>> poolStakedDetails =
-            Context.newBranchDB("poolStakeDetails", BigInteger.class);
     private static final DictDB<BigInteger, BigInteger> totalStakedAmount = Context.newDictDB("totalStaked",
             BigInteger.class);
     private static final IterableDictDB<BigInteger, String> dataSourceNames = new IterableDictDB<>("dataSourceNames",
@@ -47,16 +49,19 @@ public class StakedLPImpl implements StakedLP {
     static final VarDB<Address> dex = Context.newVarDB("dexAddress", Address.class);
     private static final VarDB<Address> rewards = Context.newVarDB("rewardsAddress", Address.class);
     private final VarDB<String> currentVersion = Context.newVarDB("version", String.class);
+    public static String NATIVE_NID;
 
     public StakedLPImpl(Address governance) {
         if (StakedLPImpl.governance.get() == null) {
             Context.require(governance.isContract(), "StakedLP: Governance address should be a contract");
             StakedLPImpl.governance.set(governance);
+            BalancedAddressManager.setGovernance(governance);
         }
         if (currentVersion.getOrDefault("").equals(Versions.STAKEDLP)) {
             Context.revert("Can't Update same version of code");
         }
         currentVersion.set(Versions.STAKEDLP);
+        NATIVE_NID = (String) Context.call(getXCall(), "getNetworkId");
     }
 
     /*
@@ -64,11 +69,11 @@ public class StakedLPImpl implements StakedLP {
      */
 
     @EventLog(indexed = 1)
-    public void Stake(Address _owner, BigInteger _id, BigInteger _value) {
+    public void Stake(String _owner, BigInteger _id, BigInteger _value) {
     }
 
     @EventLog(indexed = 1)
-    public void Unstake(Address _owner, BigInteger _id, BigInteger _value) {
+    public void Unstake(String _owner, BigInteger _id, BigInteger _value) {
     }
 
     @External(readonly = true)
@@ -119,7 +124,14 @@ public class StakedLPImpl implements StakedLP {
 
     @External(readonly = true)
     public BigInteger balanceOf(Address _owner, BigInteger _id) {
-        return poolStakedDetails.at(_owner).getOrDefault(_id, BigInteger.ZERO);
+        NetworkAddress owner = new NetworkAddress(NATIVE_NID, _owner.toString());
+        return poolStakedDetails.at(owner).getOrDefault(_id, BigInteger.ZERO);
+    }
+
+    @External(readonly = true)
+    public BigInteger xBalanceOf(String _owner, BigInteger _id) {
+        NetworkAddress owner = NetworkAddress.valueOf(_owner, NATIVE_NID);
+        return poolStakedDetails.at(owner).getOrDefault(_id, BigInteger.ZERO);
     }
 
     @External(readonly = true)
@@ -128,40 +140,65 @@ public class StakedLPImpl implements StakedLP {
     }
 
     @External
+    public void handleCallMessage(String _from, byte[] _data, @Optional String[] _protocols) {
+        checkStatus();
+        only(getXCall());
+        XCallUtils.verifyXCallProtocols(_from, _protocols);
+        StakedLPXCall.process(this, _from, _data);
+    }
+
+    public void xUnstake(String from, BigInteger id, BigInteger value) {
+        unstake(id, NetworkAddress.valueOf(from), value);
+    }
+
+    @External
     public void unstake(BigInteger id, BigInteger value) {
         Address caller = Context.getCaller();
-        Context.require(value.compareTo(BigInteger.ZERO) > 0, "StakedLP: Cannot unstake less than zero value");
+        NetworkAddress user = new NetworkAddress(NATIVE_NID, caller);
+        unstake(id, user, value);
+    }
 
-        BigInteger previousBalance = poolStakedDetails.at(caller).getOrDefault(id, BigInteger.ZERO);
+    private void unstake(BigInteger id, NetworkAddress user, BigInteger value) {
+        Context.require(value.compareTo(BigInteger.ZERO) > 0, "StakedLP: Cannot unstake less than zero value");
+        BigInteger previousBalance = poolStakedDetails.at(user).getOrDefault(id, BigInteger.ZERO);
         BigInteger previousTotal = totalStaked(id);
         String poolName = getSourceName(id);
 
         Context.require(previousBalance.compareTo(value) >= 0, "StakedLP: Cannot unstake, user don't have enough " +
-                "staked balance, Amount to unstake: " + value + " Staked balance of user: " + caller + " is: " + previousBalance);
+                "staked balance, Amount to unstake: " + value + " Staked balance of user: " + user + " is: " + previousBalance);
 
         BigInteger newBalance = previousBalance.subtract(value);
         BigInteger newTotal = previousTotal.subtract(value);
         Context.require(newBalance.signum() >= 0 && newTotal.signum() >= 0, "StakedLP: New staked balance of user and" +
                 " total amount can't be negative");
-        poolStakedDetails.at(caller).set(id, newBalance);
+        poolStakedDetails.at(user).set(id, newBalance);
         totalStakedAmount.set(id, newTotal);
 
-        Unstake(caller, id, value);
+        Unstake(user.toString(), id, value);
 
-        Context.call(rewards.get(), "updateBalanceAndSupply", poolName, newTotal, caller.toString(), newBalance);
+        Context.call(rewards.get(), "updateBalanceAndSupply", poolName, newTotal, user.toString(), newBalance);
 
         try {
-            Context.call(dex.get(), "transfer", caller, value, id, new byte[0]);
+            Context.call(dex.get(), "hubTransfer", user.toString(), value, id, new byte[0]);
         } catch (Exception e) {
             Context.revert("StakedLP: Failed to transfer LP tokens back to user. Reason: " + e.getMessage());
         }
     }
 
     @External
+    public void onXIRC31Received(String _operator, String _from, BigInteger _id, BigInteger _value, byte[] _data) {
+        only(dex);
+        Context.require(_value.signum() > 0, "StakedLP: Token value should be a positive number");
+        NetworkAddress from = NetworkAddress.valueOf(_from);
+        this.stake(from, _id, _value);
+    }
+
+    @External
     public void onIRC31Received(Address _operator, Address _from, BigInteger _id, BigInteger _value, byte[] _data) {
         only(dex);
         Context.require(_value.signum() > 0, "StakedLP: Token value should be a positive number");
-        this.stake(_from, _id, _value);
+        NetworkAddress from = new NetworkAddress(NATIVE_NID, _from);
+        this.stake(from, _id, _value);
     }
 
     @External
@@ -220,12 +257,11 @@ public class StakedLPImpl implements StakedLP {
         return name != null;
     }
 
-    private void stake(Address user, BigInteger id, BigInteger value) {
+    private void stake(NetworkAddress user, BigInteger id, BigInteger value) {
         // Validate inputs
         Context.require(value.compareTo(BigInteger.ZERO) > 0,
                 "StakedLP: Cannot stake less than zero, value to stake " + value);
         String poolName = getSourceName(id);
-
         // Compute and store changes
         BigInteger previousBalance = poolStakedDetails.at(user).getOrDefault(id, BigInteger.ZERO);
         BigInteger previousTotal = totalStaked(id);
@@ -234,15 +270,13 @@ public class StakedLPImpl implements StakedLP {
         poolStakedDetails.at(user).set(id, newBalance);
         totalStakedAmount.set(id, newTotal);
 
-        Stake(user, id, value);
+        Stake(user.toString(), id, value);
 
-        Context.call(rewards.get(), "updateBalanceAndSupply", poolName, newTotal, user.toString(), newBalance);
+        if (user.net().equals(NATIVE_NID)) {
+            Context.call(rewards.get(), "updateBalanceAndSupply", poolName, newTotal, user.account(), newBalance);
+        } else {
+            Context.call(rewards.get(), "updateBalanceAndSupply", poolName, newTotal, user.toString(), newBalance);
+        }
     }
 
-
-    private void migratePool(String name) {
-        BigInteger id = Context.call(BigInteger.class, dex.get(), "lookupPid", name);
-        dataSourceIds.set(name, id);
-        dataSourceNames.set(id, name);
-    }
 }

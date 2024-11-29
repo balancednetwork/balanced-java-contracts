@@ -17,16 +17,21 @@
 package network.balanced.score.core.stakedlp;
 
 import com.eclipsesource.json.JsonArray;
-import foundation.icon.icx.KeyWallet;
+import com.eclipsesource.json.JsonObject;
 import foundation.icon.icx.Wallet;
 import foundation.icon.jsonrpc.Address;
 import foundation.icon.score.client.DefaultScoreClient;
+import foundation.icon.xcall.NetworkAddress;
+import network.balanced.score.lib.interfaces.AssetManagerMessages;
 import network.balanced.score.lib.interfaces.DexScoreClient;
 import network.balanced.score.lib.interfaces.GovernanceScoreClient;
 import network.balanced.score.lib.interfaces.StakedLPScoreClient;
 import network.balanced.score.lib.interfaces.dex.DexTestScoreClient;
 import network.balanced.score.lib.test.integration.Balanced;
+import network.balanced.score.lib.test.integration.BalancedClient;
 import org.junit.jupiter.api.*;
+import score.ByteArrayObjectWriter;
+import score.Context;
 
 import java.io.File;
 import java.math.BigInteger;
@@ -40,9 +45,8 @@ import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class StakedlpIntegrationTest {
-    static KeyWallet owner;
+    private static BalancedClient owner;
     static Balanced balanced;
     private static Wallet userWallet;
     static StakedLPScoreClient stakedlp;
@@ -51,51 +55,51 @@ public class StakedlpIntegrationTest {
     static GovernanceScoreClient governance;
     private static DefaultScoreClient tokenAClient;
     private static DefaultScoreClient tokenBClient;
-    static DexScoreClient testerScoreDex;
+    static DexScoreClient dexScoreClient;
 
     private static final File jarfile = new File("src/intTest/java/network/balanced/score/core/stakedlp/testtokens" +
             "/DexIntTestToken.jar");
 
-    DexTestScoreClient ownerDexTestScoreClient = new DexTestScoreClient(chain.getEndpointURL(),
-            chain.networkId, owner, tokenAClient._address());
-    DexTestScoreClient ownerDexTestBaseScoreClient = new DexTestScoreClient(chain.getEndpointURL(),
-            chain.networkId, owner, tokenBClient._address());
+    static DexTestScoreClient ownerDexTestScoreClient;
+    static DexTestScoreClient ownerDexTestBaseScoreClient;
 
 
-    @BeforeAll
-    static void setup() throws Exception {
+    static {
+        try {
+            userWallet = createWalletWithBalance(BigInteger.valueOf(800).multiply(EXA));
+            balanced = new Balanced();
+            balanced.setupBalanced();
+            owner = balanced.ownerClient;
 
-        userWallet = createWalletWithBalance(BigInteger.valueOf(800).multiply(EXA));
-        balanced = new Balanced();
-        balanced.setupBalanced();
+            stakedlp = new StakedLPScoreClient(balanced.stakedLp);
+            dex = new DexScoreClient(balanced.dex);
+            governance = new GovernanceScoreClient(balanced.governance);
+            DefaultScoreClient clientWithTester3 = new DefaultScoreClient("http://localhost:9082/api/v3",
+                    BigInteger.valueOf(3), userWallet, balanced.dex._address());
 
+            DefaultScoreClient clientWithTester4 = new DefaultScoreClient("http://localhost:9082/api/v3",
+                    BigInteger.valueOf(3), userWallet, balanced.stakedLp._address());
+            tokenAClient = _deploy(chain.getEndpointURL(), chain.networkId, balanced.owner, jarfile.getPath(),
+                    Map.of("name", "Test Token", "symbol", "TT"));
+            tokenBClient = _deploy(chain.getEndpointURL(), chain.networkId, balanced.owner, jarfile.getPath(),
+                    Map.of("name", "Test Base Token", "symbol", "TB"));
+            dexScoreClient = new DexScoreClient(clientWithTester3);
+            stakedlpUser = new StakedLPScoreClient(clientWithTester4);
 
-        owner = balanced.owner;
-
-        stakedlp = new StakedLPScoreClient(balanced.stakedLp);
-        dex = new DexScoreClient(balanced.dex);
-        governance = new GovernanceScoreClient(balanced.governance);
-        DefaultScoreClient clientWithTester3 = new DefaultScoreClient("http://localhost:9082/api/v3",
-                BigInteger.valueOf(3), userWallet, balanced.dex._address());
-
-        DefaultScoreClient clientWithTester4 = new DefaultScoreClient("http://localhost:9082/api/v3",
-                BigInteger.valueOf(3), userWallet, balanced.stakedLp._address());
-        tokenAClient = _deploy(chain.getEndpointURL(), chain.networkId, owner, jarfile.getPath(),
-                Map.of("name", "Test Token", "symbol", "TT"));
-        tokenBClient = _deploy(chain.getEndpointURL(), chain.networkId, owner, jarfile.getPath(),
-                Map.of("name", "Test Base Token", "symbol", "TB"));
-        testerScoreDex = new DexScoreClient(clientWithTester3);
-        stakedlpUser = new StakedLPScoreClient(clientWithTester4);
-
+            ownerDexTestScoreClient = new DexTestScoreClient(chain.getEndpointURL(),
+                    chain.networkId, balanced.owner, tokenAClient._address());
+            ownerDexTestBaseScoreClient = new DexTestScoreClient(chain.getEndpointURL(),
+                    chain.networkId, balanced.owner, tokenBClient._address());
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Error on init test: " + e.getMessage());
+        }
     }
-
-    Address userAddress = Address.of(userWallet);
-
 
     @Test
     @Order(1)
     void testStakeAndUnstake() {
-
+        Address userAddress = Address.of(userWallet);
         DexTestScoreClient userDexTestScoreClient = new DexTestScoreClient("http://localhost:9082/api/v3",
                 BigInteger.valueOf(3), userWallet, tokenAClient._address());
         DexTestScoreClient userDexTestBaseScoreClient = new DexTestScoreClient("http://localhost:9082/api/v3",
@@ -117,7 +121,7 @@ public class StakedlpIntegrationTest {
         dexAddQuoteCoin(tokenBClient._address());
 
         // add tokens on dex and receive lp
-        testerScoreDex.add(tokenAClient._address(), tokenBClient._address(), BigInteger.valueOf(190).multiply(EXA),
+        dexScoreClient.add(tokenAClient._address(), tokenBClient._address(), BigInteger.valueOf(190).multiply(EXA),
                 BigInteger.valueOf(190).multiply(EXA), false, BigInteger.valueOf(100));
 
         BigInteger poolId = dex.getPoolId(tokenAClient._address(), tokenBClient._address());
@@ -131,7 +135,7 @@ public class StakedlpIntegrationTest {
         assertEquals(stakedlp.totalStaked(BigInteger.valueOf(5)), BigInteger.ZERO);
 
         // stake lp to stakedlp contract
-        testerScoreDex.transfer(Address.fromString(stakedlp._address().toString()), balance,
+        dexScoreClient.transfer(Address.fromString(stakedlp._address().toString()), balance,
                 poolId, null);
 
         assertEquals(dex.balanceOf(userAddress, poolId), BigInteger.ZERO);
@@ -156,13 +160,102 @@ public class StakedlpIntegrationTest {
         assertEquals(stakedlp.totalStaked(poolId), BigInteger.ZERO);
 
         // stakes lp to stakedlp contract
-        testerScoreDex.transfer(Address.fromString(stakedlp._address().toString()), remaining,
+        dexScoreClient.transfer(Address.fromString(stakedlp._address().toString()), remaining,
                 poolId, null);
 
         assertEquals(dex.balanceOf(userAddress, poolId), balance.subtract(remaining));
         assertEquals(stakedlp.balanceOf(userAddress, poolId), remaining);
         assertEquals(stakedlp.totalStaked(poolId), remaining);
+    }
 
+    @Test
+    @Order(2)
+    void crossChainStakeAndUnstake() {
+        // Arrange
+        NetworkAddress ethBaseAssetAddress = new NetworkAddress(balanced.ETH_NID, balanced.ETH_TOKEN_ADDRESS);
+        NetworkAddress ethQuoteAssetAddress = new NetworkAddress(balanced.ETH_NID, "ox100");
+        NetworkAddress ethAccount = new NetworkAddress(balanced.ETH_NID, "0x123");
+        BigInteger amount = BigInteger.valueOf(100).multiply(EXA);
+        String toNetworkAddress = new NetworkAddress(balanced.ICON_NID, dexScoreClient._address()).toString();
+        String stakingAddress = new NetworkAddress(balanced.ICON_NID, stakedlp._address()).toString();
+
+        // Arrange - deploy a new token
+        JsonArray addAssetParams = new JsonArray()
+                .add(createParameter(ethQuoteAssetAddress.toString()))
+                .add(createParameter("ETHZ"))
+                .add(createParameter("ETHZ"))
+                .add(createParameter(BigInteger.valueOf(18)));
+        JsonObject addAsset = createTransaction(balanced.assetManager._address(), "deployAsset", addAssetParams);
+        JsonArray transactions = new JsonArray()
+                .add(addAsset);
+        balanced.governanceClient.execute(transactions.toString());
+
+        score.Address baseAssetAddress = owner.assetManager.getAssetAddress(ethBaseAssetAddress.toString());
+        score.Address quoteAssetAddress = owner.assetManager.getAssetAddress(ethQuoteAssetAddress.toString());
+
+        // Arrange - deposits
+        byte[] deposit1 = AssetManagerMessages.deposit(balanced.ETH_TOKEN_ADDRESS, ethAccount.account(), toNetworkAddress, amount, tokenData("_deposit",
+                new JsonObject().set("address", ethAccount.toString())));
+        owner.xcall.recvCall(owner.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit1);
+
+        byte[] deposit2 = AssetManagerMessages.deposit("ox100", ethAccount.account(), toNetworkAddress, amount, tokenData("_deposit",
+                new JsonObject().set("address", ethAccount.toString())));
+        owner.xcall.recvCall(owner.assetManager._address(), new NetworkAddress(balanced.ETH_NID, balanced.ETH_ASSET_MANAGER).toString(), deposit2);
+
+        // Arrange add quote token
+        dexAddQuoteCoin((Address) quoteAssetAddress);
+
+        // Arrange - add pool
+        byte[] xaddMessage = getAddLPData(baseAssetAddress.toString(), quoteAssetAddress.toString(), amount, amount, false, BigInteger.valueOf(5));
+        owner.xcall.recvCall(dexScoreClient._address(), ethAccount.toString(), xaddMessage);
+
+        // Act - stake
+        BigInteger poolId = dexScoreClient.getPoolId(baseAssetAddress,
+                quoteAssetAddress);
+        try {
+            addNewDataSource("test1", poolId, BigInteger.ONE);
+        } catch (Exception ignored) {
+        }
+        BigInteger balance = dexScoreClient.xBalanceOf(ethAccount.toString(), poolId);
+        byte[] stakeData = getStakeData(stakingAddress, balance, poolId, "stake".getBytes());
+        owner.xcall.recvCall(owner.dex._address(), ethAccount.toString(), stakeData);
+
+        // Verify stake
+        assertEquals(dex.xBalanceOf(ethAccount.toString(), poolId), BigInteger.ZERO);
+        assertEquals(stakedlp.xBalanceOf(ethAccount.toString(), poolId), balance);
+        assertEquals(stakedlp.totalStaked(poolId), balance);
+
+        //act - unstake
+        BigInteger remainingStake = balance.divide(BigInteger.TWO);
+        byte[] unstakeData = getUnStakeData(poolId, remainingStake);
+        owner.xcall.recvCall(owner.stakedLp._address(), ethAccount.toString(), unstakeData);
+
+        // Verify unstake
+        assertEquals(dex.xBalanceOf(ethAccount.toString(), poolId), remainingStake);
+        assertEquals(stakedlp.xBalanceOf(ethAccount.toString(), poolId), remainingStake);
+        assertEquals(stakedlp.totalStaked(poolId), remainingStake);
+    }
+
+    static byte[] getStakeData(String to, BigInteger amount, BigInteger poolId, byte[] data) {
+        ByteArrayObjectWriter writer = Context.newByteArrayObjectWriter("RLPn");
+        writer.beginList(5);
+        writer.write("xhubtransfer");
+        writer.write(to);
+        writer.write(amount);
+        writer.write(poolId);
+        writer.write(data);
+        writer.end();
+        return writer.toByteArray();
+    }
+
+    static byte[] getUnStakeData(BigInteger poolId, BigInteger amount) {
+        ByteArrayObjectWriter writer = Context.newByteArrayObjectWriter("RLPn");
+        writer.beginList(3);
+        writer.write("xunstake");
+        writer.write(poolId);
+        writer.write(amount);
+        writer.end();
+        return writer.toByteArray();
     }
 
     private void addNewDataSource(String name, BigInteger id, BigInteger type) {
@@ -180,6 +273,27 @@ public class StakedlpIntegrationTest {
                 .add(createTransaction(balanced.rewards._address(), "createDataSource", rewardsSourceParameters));
 
         balanced.ownerClient.governance.execute(actions.toString());
+    }
+
+    static byte[] getAddLPData(String baseToken, String quoteToken, BigInteger baseValue, BigInteger quoteValue, Boolean withdraw_unused, BigInteger slippagePercentage) {
+        ByteArrayObjectWriter writer = Context.newByteArrayObjectWriter("RLPn");
+        writer.beginList(7);
+        writer.write("xadd");
+        writer.write(baseToken);
+        writer.write(quoteToken);
+        writer.write(baseValue);
+        writer.write(quoteValue);
+        writer.write(withdraw_unused);
+        writer.write(slippagePercentage);
+        writer.end();
+        return writer.toByteArray();
+    }
+
+    public static byte[] tokenData(String method, JsonObject params) {
+        JsonObject data = new JsonObject();
+        data.set("method", method);
+        data.set("params", params);
+        return data.toString().getBytes();
     }
 
     private void dexAddQuoteCoin(Address address) {
