@@ -297,8 +297,5 @@ public class Balanced {
 
     public void increaseDay(int nrOfDays) {
         ownerClient.governance.setTimeOffset(ownerClient.governance.getTimeOffset().subtract(MICRO_SECONDS_IN_A_DAY.multiply(BigInteger.valueOf(nrOfDays))));
-        JsonArray setTimeOffset = createSingleTransaction(baln._address(), "setTimeOffset", new JsonArray());
-
-        ownerClient.governance.execute(setTimeOffset.toString());
     }
 }
