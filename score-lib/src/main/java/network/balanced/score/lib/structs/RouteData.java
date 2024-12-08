@@ -12,13 +12,16 @@ public class RouteData {
     public String method;
     public String receiver;
     public BigInteger minimumReceive;
+    public byte[] data;
     public List<RouteAction> actions;
+
     public RouteData(){}
 
-    public RouteData(String method, String receiver, BigInteger minimumReceive, List<RouteAction> actions) {
+    public RouteData(String method, String receiver, BigInteger minimumReceive, List<RouteAction> actions, byte[] data) {
         this.method = method;
         this.receiver = receiver;
         this.minimumReceive = minimumReceive;
+        this.data = data;
         this.actions = actions;
     }
 
@@ -34,6 +37,7 @@ public class RouteData {
         obj.method = reader.readString();
         obj.receiver = reader.readNullable(String.class);
         obj.minimumReceive = reader.readNullable((BigInteger.class));
+        obj.data = reader.readNullable(byte[].class);
         while (reader.hasNext()) {
             RouteAction data = reader.read(RouteAction.class);
             actions.add(data);
@@ -48,6 +52,7 @@ public class RouteData {
         w.write(obj.method);
         w.writeNullable(obj.receiver);
         w.writeNullable(obj.minimumReceive);
+        w.writeNullable(obj.data);
         for (RouteAction action : obj.actions) {
             w.write(action);
         }
