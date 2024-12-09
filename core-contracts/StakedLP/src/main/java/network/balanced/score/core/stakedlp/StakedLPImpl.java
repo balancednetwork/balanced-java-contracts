@@ -35,8 +35,7 @@ import static network.balanced.score.lib.utils.Check.*;
 
 public class StakedLPImpl implements StakedLP {
 
-    final static AddressBranchDictDB<BigInteger, BigInteger> poolStakedDetails = new AddressBranchDictDB<>("poolStakeDetails",
-            BigInteger.class);
+    final static AddressBranchDictDB poolStakedDetails = new AddressBranchDictDB("poolStakeDetails");
 
     private static final DictDB<BigInteger, BigInteger> totalStakedAmount = Context.newDictDB("totalStaked",
             BigInteger.class);
@@ -125,13 +124,13 @@ public class StakedLPImpl implements StakedLP {
     @External(readonly = true)
     public BigInteger balanceOf(Address _owner, BigInteger _id) {
         NetworkAddress owner = new NetworkAddress(NATIVE_NID, _owner.toString());
-        return poolStakedDetails.at(owner).getOrDefault(_id, BigInteger.ZERO);
+        return poolStakedDetails.get(owner, _id, true);
     }
 
     @External(readonly = true)
     public BigInteger xBalanceOf(String _owner, BigInteger _id) {
         NetworkAddress owner = NetworkAddress.valueOf(_owner, NATIVE_NID);
-        return poolStakedDetails.at(owner).getOrDefault(_id, BigInteger.ZERO);
+        return poolStakedDetails.get(owner, _id, true);
     }
 
     @External(readonly = true)
@@ -160,7 +159,8 @@ public class StakedLPImpl implements StakedLP {
 
     private void unstake(BigInteger id, NetworkAddress user, BigInteger value) {
         Context.require(value.compareTo(BigInteger.ZERO) > 0, "StakedLP: Cannot unstake less than zero value");
-        BigInteger previousBalance = poolStakedDetails.at(user).getOrDefault(id, BigInteger.ZERO);
+        BigInteger previousBalance = poolStakedDetails.get(user, id, false);
+
         BigInteger previousTotal = totalStaked(id);
         String poolName = getSourceName(id);
 
@@ -171,7 +171,7 @@ public class StakedLPImpl implements StakedLP {
         BigInteger newTotal = previousTotal.subtract(value);
         Context.require(newBalance.signum() >= 0 && newTotal.signum() >= 0, "StakedLP: New staked balance of user and" +
                 " total amount can't be negative");
-        poolStakedDetails.at(user).set(id, newBalance);
+        poolStakedDetails.set(user, id, newBalance);
         totalStakedAmount.set(id, newTotal);
 
         Unstake(user.toString(), id, value);
@@ -263,11 +263,11 @@ public class StakedLPImpl implements StakedLP {
                 "StakedLP: Cannot stake less than zero, value to stake " + value);
         String poolName = getSourceName(id);
         // Compute and store changes
-        BigInteger previousBalance = poolStakedDetails.at(user).getOrDefault(id, BigInteger.ZERO);
+        BigInteger previousBalance = poolStakedDetails.get(user, id, false);
         BigInteger previousTotal = totalStaked(id);
         BigInteger newBalance = previousBalance.add(value);
         BigInteger newTotal = previousTotal.add(value);
-        poolStakedDetails.at(user).set(id, newBalance);
+        poolStakedDetails.set(user, id, newBalance);
         totalStakedAmount.set(id, newTotal);
 
         Stake(user.toString(), id, value);
