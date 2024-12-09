@@ -10,9 +10,9 @@ import java.math.BigInteger;
 
 public class AddressBranchDictDB {
 
-    private BranchDB<Address, DictDB<BigInteger, BigInteger>> legacyAddressDictDB;
-    private BranchDB<String, DictDB<BigInteger, BigInteger>> addressDictDB;
-    private BranchDB<Address, DictDB<BigInteger, Boolean>> migrationDB;
+    protected BranchDB<Address, DictDB<BigInteger, BigInteger>> legacyAddressDictDB;
+    protected BranchDB<String, DictDB<BigInteger, BigInteger>> addressDictDB;
+    protected BranchDB<Address, DictDB<BigInteger, Boolean>> migrationDB;
 
     public AddressBranchDictDB(String id) {
         this.legacyAddressDictDB = Context.newBranchDB(id, BigInteger.class);
@@ -24,11 +24,11 @@ public class AddressBranchDictDB {
         return legacyAddressDictDB.at(address).getOrDefault(key, BigInteger.ZERO);
     }
 
-    private Boolean isMigrated(Address address, BigInteger key) {
+    public Boolean isMigrated(Address address, BigInteger key) {
         return migrationDB.at(address).getOrDefault(key, false);
     }
 
-    public BigInteger get(NetworkAddress address, BigInteger id, Boolean readonly) {
+    public BigInteger get(NetworkAddress address, BigInteger id, boolean readonly) {
         BigInteger total = addressDictDB.at(address.toString()).getOrDefault(id, BigInteger.ZERO);
         if (address.account().startsWith("hx") || address.account().startsWith("cx")) {
             Address iconAddr = Address.fromString(address.account());
@@ -44,7 +44,7 @@ public class AddressBranchDictDB {
     }
 
     public void set(NetworkAddress address, BigInteger id, BigInteger value) {
-        addressDictDB.at(address.toString()).set(id,  value);
+        addressDictDB.at(address.toString()).set(id, value);
     }
 
 }
