@@ -245,8 +245,18 @@ public class RouterImpl implements Router {
         executeRoute(_from, _data);
     }
 
+    private RouteData getRouteData(byte[] data){
+        RouteData routeData;
+        try {
+            routeData = RouteData.fromBytes(data);
+        }catch(IllegalStateException ignored ){
+            routeData = RouteData.fromBytesOld(data);
+        }
+        return routeData;
+    }
+
     private void executeRoute(String _from, byte[] data) {
-        RouteData routeData = RouteData.fromBytes(data);
+        RouteData routeData = getRouteData(data);
         Context.require(routeData.method.contains("_swap"), TAG + ": Fallback directly not allowed.");
 
         Address fromToken = Context.getCaller();

@@ -33,7 +33,7 @@ public class Versions {
     public final static String DEX = "v1.1.8";
     public final static String GOVERNANCE = "v1.0.2";
     public final static String REBALANCING = "v1.0.0";
-    public final static String ROUTER = "v1.2.3";
+    public final static String ROUTER = "v1.2.4";
     public final static String STAKEDLP = "v1.0.8";
     public final static String BOOSTED_BALN = "v1.1.0";
     public final static String BRIBING = "v1.0.1";

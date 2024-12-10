@@ -47,6 +47,22 @@ public class RouteData {
         return obj;
     }
 
+    public static RouteData readObjectOld(ObjectReader reader) {
+        RouteData obj = new RouteData();
+        reader.beginList();
+        List<RouteAction> actions = new ArrayList<>();
+        obj.method = reader.readString();
+        obj.receiver = reader.readNullable(String.class);
+        obj.minimumReceive = reader.readNullable((BigInteger.class));
+        while (reader.hasNext()) {
+            RouteAction data = reader.read(RouteAction.class);
+            actions.add(data);
+        }
+        obj.actions = actions;
+        reader.end();
+        return obj;
+    }
+
     public static void writeObject(ObjectWriter w, RouteData obj) {
         w.beginList(obj.actions.size()+4);
         w.write(obj.method);
@@ -62,6 +78,11 @@ public class RouteData {
     public static RouteData fromBytes(byte[] bytes) {
         ObjectReader reader = Context.newByteArrayObjectReader("RLPn", bytes);
         return RouteData.readObject(reader);
+    }
+
+    public static RouteData fromBytesOld(byte[] bytes) {
+        ObjectReader reader = Context.newByteArrayObjectReader("RLPn", bytes);
+        return RouteData.readObjectOld(reader);
     }
 
     public byte[] toBytes() {
