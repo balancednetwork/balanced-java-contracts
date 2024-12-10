@@ -21,7 +21,7 @@ public class Versions {
     public final static String DIVIDENDS = "v1.0.0";
     public final static String LOANS = "v1.2.3";
     public final static String RESERVE = "v1.0.0";
-    public final static String SICX = "v1.1.1";
+    public final static String SICX = "v1.1.0";
     public final static String STAKING = "v1.0.1";
     public final static String WORKERTOKEN = "v1.0.0";
     public final static String BNUSD = "v1.1.1";
@@ -33,7 +33,7 @@ public class Versions {
     public final static String DEX = "v1.1.8";
     public final static String GOVERNANCE = "v1.0.2";
     public final static String REBALANCING = "v1.0.0";
-    public final static String ROUTER = "v1.1.8";
+    public final static String ROUTER = "v1.2.4";
     public final static String STAKEDLP = "v1.0.8";
     public final static String BOOSTED_BALN = "v1.1.0";
     public final static String BRIBING = "v1.0.1";
@@ -42,7 +42,7 @@ public class Versions {
     public final static String BALANCED_ASSET_MANAGER = "v1.0.6";
     public final static String XCALL_MANAGER = "v1.0.2";
     public final static String BURNER = "v1.0.0";
-    public final static String SAVINGS = "v1.0.0";
+    public final static String SAVINGS = "v1.0.1";
     public final static String TRICKLER = "v1.0.0";
 
     public final static String SPOKE_ASSET_MANAGER = "v1.0.2";

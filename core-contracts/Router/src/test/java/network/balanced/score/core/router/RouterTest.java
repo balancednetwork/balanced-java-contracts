@@ -28,14 +28,10 @@ import network.balanced.score.lib.structs.RouteAction;
 import network.balanced.score.lib.structs.RouteData;
 import network.balanced.score.lib.test.mock.MockBalanced;
 import network.balanced.score.lib.test.mock.MockContract;
-import network.balanced.score.lib.tokens.HubTokenImpl;
-import network.balanced.score.lib.tokens.IRC2Base;
-import network.balanced.score.lib.tokens.IRC2Mintable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import score.Address;
-import score.Context;
 import scorex.util.ArrayList;
 
 import java.math.BigInteger;
@@ -44,11 +40,8 @@ import java.util.Map;
 
 import static network.balanced.score.core.router.RouterImpl.*;
 import static network.balanced.score.lib.test.UnitTest.*;
-import static network.balanced.score.lib.utils.Constants.EXA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -182,14 +175,7 @@ class RouterTest extends TestBase {
         when(balanced.baln.mock.balanceOf(routerScore.getAddress())).thenReturn(BigInteger.TEN);
         when(balanced.sicx.mock.balanceOf(routerScore.getAddress())).thenReturn(BigInteger.TEN);
 
-//        byte[] invalidPathWithSicxTerminalToken = tokenData("_swap", Map.of("path",
-//                new Object[]{balanced.baln.getAddress().toString(), null}));
-//        Executable nonSicxIcxTrade = () -> routerScore.invoke(sicxScore.account, "tokenFallback", owner.getAddress(),
-//                BigInteger.TEN, invalidPathWithSicxTerminalToken);
-//        expectedErrorMessage = "Reverted(0): " + TAG + ": Native swaps not available to icon from " + balanced.baln.getAddress();
-//        expectErrorMessage(nonSicxIcxTrade, expectedErrorMessage);
-//
-//        resetInRoute();
+
         Account newReceiver = sm.createAccount();
         byte[] pathWithSicxTerminalToken = tokenData("_swap", Map.of("path",
                 new Object[]{sicxScore.getAddress().toString(), null}, "receiver",
@@ -501,7 +487,7 @@ class RouterTest extends TestBase {
         }
 
         Account newReceiver = sm.createAccount();
-        byte[] data = new RouteData("_swap", newReceiver.getAddress().toString(), BigInteger.ZERO, actions).toBytes();
+        byte[] data = new RouteData("_swap", newReceiver.getAddress().toString(), BigInteger.ZERO, actions, null).toBytes();
 
         // Act
         routerScore.invoke(balanced.baln.account, "tokenFallback", owner.getAddress(), balnToSwap,
@@ -531,7 +517,7 @@ class RouterTest extends TestBase {
         routerScore.getAccount().addBalance("ICX", ICXResult);
 
         Account newReceiver = sm.createAccount();
-        byte[] data = new RouteData("_swap", newReceiver.getAddress().toString(), BigInteger.ZERO, actions).toBytes();
+        byte[] data = new RouteData("_swap", newReceiver.getAddress().toString(), BigInteger.ZERO, actions, null).toBytes();
 
         // Act
         routerScore.invoke(balanced.baln.account, "tokenFallback", owner.getAddress(), USDToSwap,
@@ -586,4 +572,51 @@ class RouterTest extends TestBase {
         // in Production this happens between each tx
         ((RouterImpl)routerScore.getInstance()).inRoute = false;
     }
+
+    @Test
+    void stakeToSavingsWithJSONRoute(){
+        // Arrange
+        //baln as usdc
+        when(balanced.baln.mock.balanceOf(routerScore.getAddress())).thenReturn(BigInteger.TEN);
+        when(balanced.bnUSD.mock.balanceOf(routerScore.getAddress())).thenReturn(BigInteger.TEN);
+
+        String data = new String(tokenData("_lock", Map.of()));
+        Account newReceiver = balanced.savings.account;
+        byte[] pathWithUSDCBnUSD = tokenData("_swap", Map.of("path",
+                new Object[]{balanced.bnUSD.getAddress().toString()}, "receiver",
+                newReceiver.getAddress().toString(), "data", data));
+
+        // Act
+        routerScore.invoke(balanced.baln.account, "tokenFallback", owner.getAddress(), BigInteger.TEN,
+                pathWithUSDCBnUSD);
+
+
+        // Verify
+        verify(balanced.bnUSD.mock).transfer(balanced.savings.getAddress(), BigInteger.TEN, data.getBytes());
+    }
+
+    @Test
+    void stakeToSavingsWithRLPData(){
+        // Arrange
+        //baln as usdc
+        BigInteger balnToSwap = BigInteger.TEN.multiply(ICX);
+        when(balanced.baln.mock.balanceOf(routerScore.getAddress())).thenReturn(balnToSwap);
+        when(balanced.bnUSD.mock.balanceOf(routerScore.getAddress())).thenReturn(balnToSwap);
+
+        List<RouteAction> actions = new ArrayList<>(1);
+        actions.add(new RouteAction(SWAP, balanced.bnUSD.getAddress()));
+
+        byte[] data = tokenData("_lock", Map.of());
+        Account newReceiver = balanced.savings.account;
+        byte[] routeData = new RouteData("_swap", newReceiver.getAddress().toString(), BigInteger.ZERO, actions, data).toBytes();
+
+        // Act
+        routerScore.invoke(balanced.baln.account, "tokenFallback", owner.getAddress(), balnToSwap,
+                routeData);
+
+
+        // Verify
+        verify(balanced.bnUSD.mock).transfer(balanced.savings.getAddress(), balnToSwap, data);
+    }
+
 }

@@ -8,6 +8,7 @@ import java.util.Map;
 
 import network.balanced.score.lib.utils.BalancedFloorLimits;
 import network.balanced.score.lib.utils.EnumerableSetDB;
+import network.balanced.score.lib.utils.TokenTransfer;
 import score.Address;
 import score.BranchDB;
 import score.Context;
@@ -74,7 +75,6 @@ public class RewardsManager {
     }
 
     public static void changeLock(String user, BigInteger change) {
-        checkAddressIsICON(user);
         BigInteger prevAmount = workingBalance.getOrDefault(user, BigInteger.ZERO);
         BigInteger prevTotal = totalWorkingBalance.getOrDefault(BigInteger.ZERO);
         updateAllUserRewards(user, prevAmount);
@@ -85,10 +85,10 @@ public class RewardsManager {
         totalWorkingBalance.set(prevTotal.add(change));
     }
 
-    public static void claimRewards(Address user) {
-        updateAllUserRewards(user.toString());
+    public static void claimRewards(String user) {
+        updateAllUserRewards(user);
         int numberOfTokens = allowedTokens.length();
-        DictDB<Address, BigInteger> rewards = userRewards.at(user.toString());
+        DictDB<Address, BigInteger> rewards = userRewards.at(user);
 
         for (int i = 0; i < numberOfTokens; i++) {
             Address token = allowedTokens.at(i);
@@ -96,7 +96,7 @@ public class RewardsManager {
             rewards.set(token, null);
             BalancedFloorLimits.verifyWithdraw(token, amount);
             if (!amount.equals(BigInteger.ZERO)) {
-                Context.call(token, "transfer", user, amount, new byte[0]);
+                TokenTransfer.transfer(token, user, amount, new byte[0]);
             }
         }
     }
@@ -130,10 +130,4 @@ public class RewardsManager {
         allowedTokens.remove(token);
     }
 
-    // For now only allow ICON addresses to lock
-    // But keep as string to allow it in the future easily
-    private static void checkAddressIsICON(String str) {
-        Context.require(str.length() == Address.LENGTH * 2, "Only ICON addresses are allowed to lock into the saving account at this time");
-        Context.require(str.startsWith("hx") || str.startsWith("cx"), "Only ICON addresses are allowed to lock into the saving account at this time");
-    }
 }
