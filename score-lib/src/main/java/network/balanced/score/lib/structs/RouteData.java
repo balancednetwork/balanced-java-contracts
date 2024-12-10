@@ -48,7 +48,7 @@ public class RouteData {
     }
 
     public static void writeObject(ObjectWriter w, RouteData obj) {
-        w.beginList(obj.actions.size()+3);
+        w.beginList(obj.actions.size()+4);
         w.write(obj.method);
         w.writeNullable(obj.receiver);
         w.writeNullable(obj.minimumReceive);
